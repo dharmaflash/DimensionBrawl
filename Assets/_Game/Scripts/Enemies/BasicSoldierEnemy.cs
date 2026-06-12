@@ -276,10 +276,10 @@ namespace DimensionBrawl.Enemies
 
         private void UpdateApproach(float deltaTime)
         {
-            SelectPatternFromDeck();
+            bool hasReadyPattern = SelectPatternFromDeck();
             FaceTarget(deltaTime);
 
-            if (IsTargetInAttackRange())
+            if (hasReadyPattern && IsTargetInAttackRange())
             {
                 BeginTelegraph();
                 return;
@@ -368,6 +368,7 @@ namespace DimensionBrawl.Enemies
                 return;
             }
 
+            activePatternDeckIndex = -1;
             EnterState(SoldierState.Approach, CombatAiPatternState.Tracking);
             stateTimer = 0f;
         }
@@ -384,6 +385,7 @@ namespace DimensionBrawl.Enemies
                 return;
             }
 
+            activePatternDeckIndex = -1;
             EnterState(SoldierState.Approach, CombatAiPatternState.Tracking);
             stateTimer = 0f;
             SetBodyColor(normalColor);
@@ -500,33 +502,57 @@ namespace DimensionBrawl.Enemies
             return IsTargetInAttackRange();
         }
 
-        private void SelectPatternFromDeck()
+        private bool SelectPatternFromDeck()
         {
-            if (patternDeck == null || target == null)
+            if (patternDeck == null)
             {
-                return;
+                return true;
+            }
+
+            if (target == null)
+            {
+                return false;
             }
 
             EnsurePatternDeckState();
+            float targetDistance = HorizontalDistanceToTarget();
+            if (ShouldKeepActiveDeckSelection(targetDistance))
+            {
+                return true;
+            }
+
             if (!patternDeck.TrySelectPattern(
-                    HorizontalDistanceToTarget(),
+                    targetDistance,
                     patternProfile,
                     Time.time,
                     patternDeckLastUseTimes,
                     out CombatAiPatternProfile selectedProfile,
                     out int selectedIndex))
             {
-                return;
+                activePatternDeckIndex = -1;
+                return false;
             }
 
             activePatternDeckIndex = selectedIndex;
             if (selectedProfile == patternProfile)
             {
-                return;
+                return true;
             }
 
             patternProfile = selectedProfile;
             PatternStateChanged?.Invoke(currentPatternState, patternProfile);
+            return true;
+        }
+
+        private bool ShouldKeepActiveDeckSelection(float targetDistance)
+        {
+            if (activePatternDeckIndex < 0 || patternDeck == null || activePatternDeckIndex >= patternDeck.EntryCount)
+            {
+                return false;
+            }
+
+            CombatAiPatternDeckEntry entry = patternDeck.GetEntry(activePatternDeckIndex);
+            return entry.Profile == patternProfile && entry.IsDistanceInRange(targetDistance);
         }
 
         private void EnsurePatternDeckState()

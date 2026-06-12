@@ -113,17 +113,22 @@ namespace DimensionBrawl.AI
                 return false;
             }
 
-            if (targetDistance < minimumDistance)
-            {
-                return false;
-            }
-
-            if (maximumDistance > 0f && targetDistance > maximumDistance)
+            if (!IsDistanceInRange(targetDistance))
             {
                 return false;
             }
 
             return cooldownSeconds <= 0f || lastUseTime < 0f || timeSeconds - lastUseTime >= cooldownSeconds;
+        }
+
+        public bool IsDistanceInRange(float targetDistance)
+        {
+            if (targetDistance < minimumDistance)
+            {
+                return false;
+            }
+
+            return maximumDistance <= 0f || targetDistance <= maximumDistance;
         }
     }
 }

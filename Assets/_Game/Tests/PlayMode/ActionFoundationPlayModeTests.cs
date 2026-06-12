@@ -520,6 +520,13 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(trainingDeck.TrySelectPattern(4.0f, fanPressure, 10.2f, lastUseTimes, out selected, out selectedIndex));
             Assert.AreSame(linePressure, selected, "A cooling fan row should let the next valid lower-priority pressure row take over instead of repeating immediately.");
             Assert.AreEqual(3, selectedIndex);
+
+            lastUseTimes[3] = 10f;
+            Assert.IsFalse(
+                trainingDeck.TrySelectPattern(4.0f, linePressure, 10.2f, lastUseTimes, out selected, out selectedIndex),
+                "When every valid row is cooling down, the deck should not silently reuse the previous profile.");
+            Assert.IsNull(selected);
+            Assert.AreEqual(-1, selectedIndex);
         }
 
         [UnityTest]
@@ -642,6 +649,45 @@ namespace DimensionBrawl.Tests
             }
 
             Assert.Less(playerHealth.CurrentHealth, healthBeforeFan, "FanPressure should damage a target inside the committed fan cone.");
+        }
+
+        [UnityTest]
+        public IEnumerator PatternDeckKeepsCommittedLungeUntilWindup()
+        {
+            BasicSoldierEnemy closePunish = RequireNamedRootComponent<BasicSoldierEnemy>(ClosePunishEnemyRootName);
+            BasicSoldierEnemy lungeStrike = RequireNamedRootComponent<BasicSoldierEnemy>(LungeStrikeEnemyRootName);
+            BasicSoldierEnemy heavyWindup = RequireNamedRootComponent<BasicSoldierEnemy>(HeavyWindupEnemyRootName);
+            BasicSoldierEnemy linePressure = RequireNamedRootComponent<BasicSoldierEnemy>(LinePressureEnemyRootName);
+            BasicSoldierEnemy fanPressure = RequireNamedRootComponent<BasicSoldierEnemy>(FanPressureEnemyRootName);
+            BasicSoldierEnemy trainingDeckSoldier = RequireNamedRootComponent<BasicSoldierEnemy>(TrainingDeckEnemyRootName);
+            CombatHealth playerHealth = RequirePlayerHealth();
+
+            closePunish.enabled = false;
+            lungeStrike.enabled = false;
+            heavyWindup.enabled = false;
+            linePressure.enabled = false;
+            fanPressure.enabled = false;
+            trainingDeckSoldier.enabled = true;
+            trainingDeckSoldier.transform.position = Vector3.zero;
+            trainingDeckSoldier.transform.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
+            playerHealth.transform.position = Vector3.forward * 2.4f;
+            Physics.SyncTransforms();
+
+            yield return null;
+
+            Assert.AreEqual("LungeStrike", trainingDeckSoldier.PatternId, "Training deck should initially choose LungeStrike for this mid-range approach band.");
+            Assert.AreEqual(1, trainingDeckSoldier.ActivePatternDeckIndex, "The selected lunge row should be visible while the soldier approaches.");
+
+            float timeout = 0.5f;
+            while (timeout > 0f && trainingDeckSoldier.CurrentPatternState != CombatAiPatternState.Windup)
+            {
+                yield return null;
+                timeout -= Time.deltaTime;
+            }
+
+            Assert.AreEqual(CombatAiPatternState.Windup, trainingDeckSoldier.CurrentPatternState, "A committed lunge row should reach windup instead of being replaced by ClosePunish while closing distance.");
+            Assert.AreEqual("LungeStrike", trainingDeckSoldier.PatternId, "The committed lunge row should remain active until its warning starts.");
+            Assert.AreEqual(1, trainingDeckSoldier.ActivePatternDeckIndex, "The active deck index should still point at the committed lunge row during windup.");
         }
 
         [UnityTest]
