@@ -118,6 +118,8 @@ Primary references:
 
 When implementing an action feature, state which reference idea is being used and which scope-expanding parts are deliberately excluded.
 
+For timing and tuning values, consult the collected numeric ranges before inventing new defaults. Start from documented ranges in `COMBAT_FEEL_FRAME_REFERENCE_RESEARCH.md`, `ComboSystemReferenceDataset.json`, `CombatFeelFrameReferenceDataset.json`, and related design data, then record any deliberate deviation.
+
 ## Architecture Guardrails
 
 Action feel work must stay inspectable and modular.
@@ -160,6 +162,7 @@ Read these first:
 Implement only the next smallest action-feel step.
 Do not implement summon behavior, boss phases, progression, full HUD, or broad runtime generation.
 Use the collected design docs actively: name the timing/feel idea being implemented and the parts deliberately excluded.
+Use the collected reference numeric data actively: choose initial timing/tuning values from documented ranges for movement, stop feel, attack startup/active/recovery, dodge duration/avoidance/recovery, hit-stop, camera cue duration, and enemy telegraph timing; record any deliberate deviation.
 Keep code ownership narrow and inspectable.
 Stop before adding more than three new gameplay scripts without an ownership review.
 ```
