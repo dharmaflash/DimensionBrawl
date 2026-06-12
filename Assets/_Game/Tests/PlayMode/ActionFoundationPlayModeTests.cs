@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Enemies;
 using DimensionBrawl.Player;
@@ -16,6 +17,9 @@ namespace DimensionBrawl.Tests
     public sealed class ActionFoundationPlayModeTests
     {
         private const string ScenePath = "Assets/_Game/Scenes/ActionFoundationTest.unity";
+        private const string PlayerVisualName = "CombatGirlSwordShield_PlayerVisual";
+        private const string EnemyVisualName = "MaintenanceWorker_BasicSoldierVisual";
+        private const string EnemyPlaceholderBodyName = "SciFiSoldierPlaceholderBody";
 
         [UnitySetUp]
         public IEnumerator LoadActionFoundationScene()
@@ -38,7 +42,7 @@ namespace DimensionBrawl.Tests
             PlayerMovementController movement = RequireObject<PlayerMovementController>();
             PlayerActionController actions = RequireObject<PlayerActionController>();
             CombatHealth enemyHealth = RequireEnemyHealth();
-            Animator playerAnimator = RequireObject<Animator>();
+            Animator playerAnimator = RequirePlayerAnimator();
 
             Vector3 startPosition = movement.transform.position;
             movement.SetMoveInput(Vector2.up);
@@ -89,7 +93,7 @@ namespace DimensionBrawl.Tests
         {
             PlayerMovementController movement = RequireObject<PlayerMovementController>();
             PlayerActionController actions = RequireObject<PlayerActionController>();
-            Animator playerAnimator = RequireObject<Animator>();
+            Animator playerAnimator = RequirePlayerAnimator();
 
             movement.SetMoveInput(Vector2.zero);
             movement.transform.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
@@ -125,7 +129,7 @@ namespace DimensionBrawl.Tests
             PlayerMovementController movement = RequireObject<PlayerMovementController>();
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
             RequireObject<ActionCameraCueDriver>();
-            Animator playerAnimator = RequireObject<Animator>();
+            Animator playerAnimator = RequirePlayerAnimator();
 
             movement.SetMoveInput(Vector2.up);
             yield return new WaitForSeconds(0.08f);
@@ -172,7 +176,7 @@ namespace DimensionBrawl.Tests
             PlayerMovementController movement = RequireObject<PlayerMovementController>();
             PlayerActionController actions = RequireObject<PlayerActionController>();
             CombatHealth enemyHealth = RequireEnemyHealth();
-            Animator playerAnimator = RequireObject<Animator>();
+            Animator playerAnimator = RequirePlayerAnimator();
 
             PositionPlayerForAttack(movement.transform, enemyHealth.transform);
             Physics.SyncTransforms();
@@ -232,6 +236,216 @@ namespace DimensionBrawl.Tests
 
             Assert.Less(enemyHealth.CurrentHealth, enemyStartHealth, "Basic attack should damage the soldier during the slow-motion guard test.");
             Assert.AreEqual(1f, Time.timeScale, 0.001f, "Successful normal attack damage should leave global time scale unchanged.");
+        }
+
+        [UnityTest]
+        public IEnumerator BasicSoldierUsesSharedTargetSensorContract()
+        {
+            BasicSoldierEnemy soldier = RequireObject<BasicSoldierEnemy>();
+            CombatTargetSensor targetSensor = RequireObject<CombatTargetSensor>();
+            CombatHealth playerHealth = RequirePlayerHealth();
+
+            yield return null;
+
+            Assert.AreSame(targetSensor, soldier.TargetSensor, "Basic soldier should use the shared combat target sensor instead of private-only target lookup.");
+            Assert.AreEqual("SciFiSoldier.Basic", soldier.EnemyTypeId, "Enemy type should stay serialized so future models and Animator controllers can swap per prefab.");
+            Assert.AreEqual("ClosePunish", soldier.PatternId, "The first soldier should declare the reference-backed ClosePunish pattern sample.");
+            Assert.AreEqual(1, targetSensor.TargetCandidateCount, "Shared target sensor should use authored candidates instead of scene-wide target searches.");
+            Assert.IsTrue(targetSensor.TryGetCurrentTarget(out Transform sensedTarget, out CombatHealth sensedHealth), "Shared target sensor should find a hostile target in the action foundation scene.");
+            Assert.AreSame(playerHealth, sensedHealth, "Enemy target sensing should resolve the current player as the hostile target.");
+            Assert.AreSame(playerHealth.transform, sensedTarget, "Shared target sensor should expose both target Transform and CombatHealth.");
+        }
+
+        [UnityTest]
+        public IEnumerator BasicSoldierUsesPromotedMaintenanceWorkerVisualAndAnimator()
+        {
+            GameObject enemyVisual = RequireNamedGameObject(EnemyVisualName);
+            GameObject placeholderBody = RequireNamedGameObject(EnemyPlaceholderBodyName);
+            Animator enemyAnimator = enemyVisual.GetComponent<Animator>();
+            EnemyAttackTelegraphPresenter telegraphPresenter = RequireObject<EnemyAttackTelegraphPresenter>();
+            Renderer[] renderers = enemyVisual.GetComponentsInChildren<Renderer>(true);
+
+            yield return null;
+
+            Assert.IsTrue(enemyVisual.activeInHierarchy, "Promoted MaintenanceWorker visual should be active in the scene.");
+            Assert.IsFalse(placeholderBody.activeSelf, "The old capsule placeholder should stay inactive after the promoted enemy visual is wired.");
+            Assert.IsNotNull(enemyAnimator, "Promoted MaintenanceWorker visual should own the enemy Animator.");
+            Assert.IsNotNull(enemyAnimator.avatar, "Promoted MaintenanceWorker Animator should use the imported humanoid avatar.");
+            Assert.IsNotNull(enemyAnimator.runtimeAnimatorController, "Promoted MaintenanceWorker Animator should use a game-owned Animator Controller.");
+            Assert.IsFalse(enemyAnimator.applyRootMotion, "Enemy animation should stay presentation-only while movement remains owned by BasicSoldierEnemy.");
+            Assert.Greater(renderers.Length, 0, "Promoted MaintenanceWorker visual should expose renderers for hit feedback.");
+            Assert.AreSame(enemyVisual.transform, telegraphPresenter.PoseRoot, "Enemy telegraph pose offsets should animate the promoted visual instead of the disabled placeholder.");
+        }
+
+        [UnityTest]
+        public IEnumerator BasicSoldierPromotedAnimatorReceivesPatternTriggers()
+        {
+            PlayerMovementController movement = RequireObject<PlayerMovementController>();
+            CombatHealth playerHealth = RequirePlayerHealth();
+            CombatHealth enemyHealth = RequireEnemyHealth();
+            Animator enemyAnimator = RequireNamedGameObject(EnemyVisualName).GetComponent<Animator>();
+            Assert.IsNotNull(enemyAnimator, "Promoted enemy visual should have an Animator before pattern trigger validation.");
+
+            PositionPlayerForAttack(movement.transform, enemyHealth.transform);
+            Physics.SyncTransforms();
+            yield return null;
+
+            bool reachedAttack = false;
+            float timeout = 1.2f;
+            while (timeout > 0f)
+            {
+                if (AnimatorIsInOrTransitioningTo(enemyAnimator, "Attack"))
+                {
+                    reachedAttack = true;
+                    break;
+                }
+
+                yield return null;
+                timeout -= Time.deltaTime;
+            }
+
+            Assert.IsTrue(reachedAttack, "Basic soldier ClosePunish timing should request the promoted attack animation after readable windup.");
+
+            enemyHealth.TryApplyDamage(new DamageInfo(
+                playerHealth,
+                DamageTeam.Player,
+                1f,
+                enemyHealth.transform.position,
+                Vector3.forward,
+                0f));
+
+            bool reachedHit = false;
+            timeout = 0.35f;
+            while (timeout > 0f)
+            {
+                if (AnimatorIsInOrTransitioningTo(enemyAnimator, "Hit"))
+                {
+                    reachedHit = true;
+                    break;
+                }
+
+                yield return null;
+                timeout -= Time.deltaTime;
+            }
+
+            Assert.IsTrue(reachedHit, "Enemy light damage should request the promoted hit reaction animation.");
+
+            enemyHealth.TryApplyDamage(new DamageInfo(
+                playerHealth,
+                DamageTeam.Player,
+                enemyHealth.MaxHealth,
+                enemyHealth.transform.position,
+                Vector3.forward,
+                0f));
+
+            bool reachedDeath = false;
+            timeout = 0.35f;
+            while (timeout > 0f)
+            {
+                if (AnimatorIsInOrTransitioningTo(enemyAnimator, "Death"))
+                {
+                    reachedDeath = true;
+                    break;
+                }
+
+                yield return null;
+                timeout -= Time.deltaTime;
+            }
+
+            Assert.IsTrue(reachedDeath, "Enemy death should request the promoted death animation.");
+        }
+
+        [UnityTest]
+        public IEnumerator BasicSoldierFatalDamageRoutesDirectlyToDeathAnimation()
+        {
+            CombatHealth playerHealth = RequirePlayerHealth();
+            CombatHealth enemyHealth = RequireEnemyHealth();
+            Animator enemyAnimator = RequireNamedGameObject(EnemyVisualName).GetComponent<Animator>();
+            CharacterController enemyController = RequireObject<BasicSoldierEnemy>().GetComponent<CharacterController>();
+            Assert.IsNotNull(enemyAnimator, "Promoted enemy visual should have an Animator before fatal-damage validation.");
+            Assert.IsNotNull(enemyController, "Basic soldier should keep a controller for ground-height validation.");
+
+            yield return null;
+
+            enemyHealth.TryApplyDamage(new DamageInfo(
+                playerHealth,
+                DamageTeam.Player,
+                enemyHealth.MaxHealth,
+                enemyHealth.transform.position,
+                Vector3.forward,
+                0f));
+
+            bool reachedDeath = false;
+            bool reachedHit = false;
+            float timeout = 0.45f;
+            while (timeout > 0f)
+            {
+                if (AnimatorIsInOrTransitioningTo(enemyAnimator, "Hit"))
+                {
+                    reachedHit = true;
+                }
+
+                if (AnimatorIsInOrTransitioningTo(enemyAnimator, "Death"))
+                {
+                    reachedDeath = true;
+                    break;
+                }
+
+                yield return null;
+                timeout -= Time.deltaTime;
+            }
+
+            Assert.IsTrue(reachedDeath, "Fatal damage should route the enemy directly to the promoted death animation.");
+            Assert.IsFalse(reachedHit, "Fatal damage should not request the light hit reaction before death.");
+
+            yield return new WaitForSeconds(0.35f);
+
+            Bounds deathBounds = CollectRenderableBounds(enemyAnimator.gameObject);
+            float controllerGroundY = enemyController.bounds.min.y;
+            Assert.LessOrEqual(
+                deathBounds.min.y,
+                controllerGroundY + 0.08f,
+                "Enemy death pose should settle near the ground instead of hovering above the controller base.");
+        }
+
+        [Test]
+        public void PlayerAndAllySummonTeamsShareFriendlyFireRules()
+        {
+            Assert.IsTrue(CombatTeamUtility.AreAllied(DamageTeam.Player, DamageTeam.AllySummon), "Player and future AllySummon teams should share friendly-fire rules.");
+            Assert.IsTrue(CombatTeamUtility.AreHostile(DamageTeam.Enemy, DamageTeam.AllySummon), "Enemies should treat future AllySummon actors as hostile targets.");
+            Assert.IsTrue(CombatTeamUtility.AreHostile(DamageTeam.Enemy, DamageTeam.Player), "Enemies should still treat the player as hostile.");
+        }
+
+        [UnityTest]
+        public IEnumerator BasicSoldierTelegraphPresenterMakesWindupReadable()
+        {
+            EnemyAttackTelegraphPresenter telegraphPresenter = RequireObject<EnemyAttackTelegraphPresenter>();
+            Assert.IsNotNull(telegraphPresenter.TelegraphRenderer, "Basic soldier telegraph should have a renderer for visible attack warning.");
+            Assert.IsNotNull(telegraphPresenter.PoseRoot, "Basic soldier telegraph should have a pose root so windup can read before real enemy animations are promoted.");
+
+            telegraphPresenter.Hide();
+            yield return null;
+
+            Vector3 hiddenPosePosition = telegraphPresenter.PoseRoot.localPosition;
+            Assert.IsFalse(telegraphPresenter.IsVisible, "Telegraph should start hidden outside the windup/active attack window.");
+
+            telegraphPresenter.ShowWindup(0.75f);
+            yield return null;
+
+            Assert.IsTrue(telegraphPresenter.IsVisible, "Telegraph should become visible during enemy windup.");
+            Assert.Greater(telegraphPresenter.TelegraphRenderer.transform.localScale.z, 1f, "Windup telegraph should grow forward enough to read attack reach.");
+            Assert.Less(telegraphPresenter.PoseRoot.localPosition.z, hiddenPosePosition.z, "Windup should pull the promoted enemy visual back before attack release.");
+
+            telegraphPresenter.ShowActive(0f);
+            yield return null;
+
+            Assert.Greater(telegraphPresenter.TelegraphRenderer.transform.localScale.z, 1.6f, "Active telegraph should flash larger than the windup range at release.");
+
+            telegraphPresenter.Hide();
+            yield return null;
+
+            Assert.IsFalse(telegraphPresenter.IsVisible, "Telegraph should hide cleanly after the active attack cue.");
+            Assert.Less(Vector3.Distance(hiddenPosePosition, telegraphPresenter.PoseRoot.localPosition), 0.001f, "Telegraph presenter should restore pose offset after hiding.");
         }
 
         [UnityTest]
@@ -437,6 +651,23 @@ namespace DimensionBrawl.Tests
             return renderers;
         }
 
+        private static Bounds CollectRenderableBounds(GameObject root)
+        {
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0)
+            {
+                Assert.Fail($"{root.name} should have at least one child renderer.");
+            }
+
+            Bounds bounds = renderers[0].bounds;
+            for (int i = 1; i < renderers.Length; i++)
+            {
+                bounds.Encapsulate(renderers[i].bounds);
+            }
+
+            return bounds;
+        }
+
         private static void PositionPlayerForAttack(Transform player, Transform enemy)
         {
             player.position = enemy.position - Vector3.forward * 1.25f;
@@ -451,6 +682,36 @@ namespace DimensionBrawl.Tests
         private static CombatHealth RequireEnemyHealth()
         {
             return RequireHealth(DamageTeam.Enemy);
+        }
+
+        private static Animator RequirePlayerAnimator()
+        {
+            Animator animator = RequireNamedGameObject(PlayerVisualName).GetComponent<Animator>();
+            if (animator == null)
+            {
+                Assert.Fail($"{PlayerVisualName} is missing Animator.");
+            }
+
+            return animator;
+        }
+
+        private static GameObject RequireNamedGameObject(string objectName)
+        {
+            GameObject[] roots = SceneManager.GetActiveScene().GetRootGameObjects();
+            for (int i = 0; i < roots.Length; i++)
+            {
+                Transform[] transforms = roots[i].GetComponentsInChildren<Transform>(true);
+                for (int j = 0; j < transforms.Length; j++)
+                {
+                    if (transforms[j].name == objectName)
+                    {
+                        return transforms[j].gameObject;
+                    }
+                }
+            }
+
+            Assert.Fail($"Missing required GameObject {objectName}.");
+            return null;
         }
 
         private static CombatHealth RequireHealth(DamageTeam team)

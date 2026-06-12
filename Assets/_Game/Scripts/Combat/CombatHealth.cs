@@ -8,7 +8,38 @@ namespace DimensionBrawl.Combat
     {
         Neutral = 0,
         Player = 1,
-        Enemy = 2
+        Enemy = 2,
+        AllySummon = 3
+    }
+
+    public static class CombatTeamUtility
+    {
+        public static bool AreAllied(DamageTeam first, DamageTeam second)
+        {
+            if (first == DamageTeam.Neutral || second == DamageTeam.Neutral)
+            {
+                return false;
+            }
+
+            if (first == second)
+            {
+                return true;
+            }
+
+            return IsPlayerSide(first) && IsPlayerSide(second);
+        }
+
+        public static bool AreHostile(DamageTeam first, DamageTeam second)
+        {
+            return first != DamageTeam.Neutral
+                && second != DamageTeam.Neutral
+                && !AreAllied(first, second);
+        }
+
+        public static bool IsPlayerSide(DamageTeam team)
+        {
+            return team == DamageTeam.Player || team == DamageTeam.AllySummon;
+        }
     }
 
     public readonly struct DamageInfo
@@ -59,6 +90,11 @@ namespace DimensionBrawl.Combat
         public bool IsAlive => !isDead;
         public bool IsInvulnerable => Time.time < invulnerableUntilTime;
 
+        public void ConfigureTeam(DamageTeam newTeam)
+        {
+            team = newTeam;
+        }
+
         private void Awake()
         {
             currentHealth = startAtFullHealth ? maxHealth : Mathf.Clamp(currentHealth, 0f, maxHealth);
@@ -81,7 +117,7 @@ namespace DimensionBrawl.Combat
                 return false;
             }
 
-            if (damageInfo.SourceTeam != DamageTeam.Neutral && damageInfo.SourceTeam == team)
+            if (CombatTeamUtility.AreAllied(damageInfo.SourceTeam, team))
             {
                 return false;
             }

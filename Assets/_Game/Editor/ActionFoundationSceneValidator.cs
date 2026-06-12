@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Enemies;
 using DimensionBrawl.Player;
@@ -33,6 +34,17 @@ namespace DimensionBrawl.Editor
         private const string DodgeBackClipPath = "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/SS_DodgeBack.fbx";
         private const string DodgeLeftClipPath = "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/SS_DodgeLeft.fbx";
         private const string DodgeRightClipPath = "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/SS_DodgeRight.fbx";
+        private const string EnemyVisualName = "MaintenanceWorker_BasicSoldierVisual";
+        private const string EnemyPlaceholderBodyName = "SciFiSoldierPlaceholderBody";
+        private const string EnemyModelPath = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/MaintenanceWorker/Models/SK_MaintenanceWorkerAllMeshes.fbx";
+        private const string EnemyMaterialRoot = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/MaintenanceWorker/Materials";
+        private const string EnemyTextureRoot = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/MaintenanceWorker/Textures";
+        private const string EnemyAnimatorControllerPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/DB_MaintenanceWorker_BasicSoldier.controller";
+        private const string EnemyIdleClipPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/MW_IdleCombat.fbx";
+        private const string EnemyRunClipPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/MW_RunCombat.fbx";
+        private const string EnemyAttackClipPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/MW_AttackCombat.fbx";
+        private const string EnemyHitClipPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/MW_GetHitFrontLight.fbx";
+        private const string EnemyDeathClipPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/MW_DeathFront.fbx";
 
         [MenuItem("DimensionBrawl/Validate Action Foundation Test Scene")]
         public static void ValidateMenu()
@@ -120,6 +132,55 @@ namespace DimensionBrawl.Editor
             Debug.Log("Reapplied StopStep responsiveness tuning in ActionFoundationTest.");
         }
 
+        [MenuItem("DimensionBrawl/Reapply Action Foundation Shared Combat AI")]
+        public static void ReapplySharedCombatAiMenu()
+        {
+            Scene scene = SceneManager.GetActiveScene();
+            if (!scene.IsValid() || scene.path != ScenePath)
+            {
+                scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            }
+
+            GameObject[] roots = scene.GetRootGameObjects();
+            PlayerActionController playerActions = RequireObject<PlayerActionController>(roots, "player actions");
+            BasicSoldierEnemy soldier = RequireObject<BasicSoldierEnemy>(roots, "basic soldier");
+            CombatHealth playerHealth = RequireComponent<CombatHealth>(playerActions.gameObject, "player health");
+            CombatHealth soldierHealth = RequireComponent<CombatHealth>(soldier.gameObject, "basic soldier health");
+            GameObject soldierBody = RequireNamedObject(roots, EnemyPlaceholderBodyName, "basic soldier placeholder body");
+            GameObject soldierVisual = FindNamedObject(roots, EnemyVisualName);
+            Transform poseRoot = soldierVisual != null ? soldierVisual.transform : soldierBody.transform;
+            GameObject telegraphObject = RequireNamedObject(roots, "ReadableAttackTelegraph", "basic soldier attack telegraph");
+            Renderer telegraphRenderer = RequireComponent<Renderer>(telegraphObject, "basic soldier attack telegraph renderer");
+            CombatTargetSensor targetSensor = EnsureComponent<CombatTargetSensor>(soldier.gameObject);
+            EnemyAttackTelegraphPresenter telegraphPresenter = EnsureComponent<EnemyAttackTelegraphPresenter>(soldier.gameObject);
+
+            SetObjectReference(targetSensor, "selfHealth", soldierHealth);
+            SetFloat(targetSensor, "searchRadius", 12f);
+            SetFloat(targetSensor, "retargetIntervalSeconds", 0.2f);
+            SetObjectReferenceArray(targetSensor, "targetCandidates", new UnityEngine.Object[] { playerHealth });
+            SetObjectReference(telegraphPresenter, "telegraphObject", telegraphObject);
+            SetObjectReference(telegraphPresenter, "telegraphTransform", telegraphObject.transform);
+            SetObjectReference(telegraphPresenter, "telegraphRenderer", telegraphRenderer);
+            SetObjectReference(telegraphPresenter, "poseRoot", poseRoot);
+            SetVector3(telegraphPresenter, "windupStartScale", new Vector3(0.35f, 0.02f, 0.65f));
+            SetVector3(telegraphPresenter, "windupEndScale", new Vector3(1.05f, 0.02f, 1.55f));
+            SetVector3(telegraphPresenter, "activeScale", new Vector3(1.25f, 0.025f, 1.8f));
+            SetVector3(telegraphPresenter, "windupPoseOffset", new Vector3(0f, 0f, -0.08f));
+            SetVector3(telegraphPresenter, "activePoseOffset", new Vector3(0f, 0f, 0.12f));
+            SetObjectReference(soldier, "targetSensor", targetSensor);
+            SetObjectReference(soldier, "telegraphPresenter", telegraphPresenter);
+            SetString(soldier, "enemyTypeId", "SciFiSoldier.Basic");
+            SetString(soldier, "patternId", "ClosePunish");
+
+            EditorUtility.SetDirty(targetSensor);
+            EditorUtility.SetDirty(telegraphPresenter);
+            EditorUtility.SetDirty(soldier);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            AssetDatabase.SaveAssets();
+            Debug.Log("Reapplied shared combat AI target sensor wiring in ActionFoundationTest.");
+        }
+
         public static void ValidateSceneAsset()
         {
             Scene previousScene = SceneManager.GetActiveScene();
@@ -149,7 +210,11 @@ namespace DimensionBrawl.Editor
             GameObject[] roots = scene.GetRootGameObjects();
             PlayerMovementController movement = RequireObject<PlayerMovementController>(roots, "player movement");
             PlayerActionController playerActions = RequireObject<PlayerActionController>(roots, "player actions");
+            CombatHealth playerHealth = RequireComponent<CombatHealth>(playerActions.gameObject, "player health");
             BasicSoldierEnemy soldier = RequireObject<BasicSoldierEnemy>(roots, "basic soldier");
+            CombatTargetSensor soldierTargetSensor = RequireComponent<CombatTargetSensor>(soldier.gameObject, "basic soldier target sensor");
+            EnemyAttackTelegraphPresenter soldierTelegraphPresenter = RequireComponent<EnemyAttackTelegraphPresenter>(soldier.gameObject, "basic soldier telegraph presenter");
+            CombatHitFeedback soldierHitFeedback = RequireComponent<CombatHitFeedback>(soldier.gameObject, "basic soldier hit feedback");
             ActionCameraController cameraController = RequireObject<ActionCameraController>(roots, "action camera");
             ActionCameraCueDriver cameraCueDriver = RequireObject<ActionCameraCueDriver>(roots, "action camera cue driver");
             Type dodgeFeedbackType = RequireType("DimensionBrawl.Presentation.PlayerDodgeFeedback, DimensionBrawl.Runtime");
@@ -159,10 +224,16 @@ namespace DimensionBrawl.Editor
             CombatGirlWeaponSocketBinder weaponBinder = RequireComponent<CombatGirlWeaponSocketBinder>(playerVisual, "weapon socket binder");
             List<CombatHitFeedback> hitFeedbacks = CollectObjects<CombatHitFeedback>(roots);
             ActionFoundationTestEncounter encounter = RequireObject<ActionFoundationTestEncounter>(roots, "test encounter");
+            GameObject soldierVisual = RequireNamedObject(roots, EnemyVisualName, "promoted basic soldier visual");
+            Animator soldierVisualAnimator = RequireComponent<Animator>(soldierVisual, "basic soldier visual animator");
+            Renderer[] soldierVisualRenderers = soldierVisual.GetComponentsInChildren<Renderer>(true);
+            GameObject soldierBody = RequireNamedObject(roots, EnemyPlaceholderBodyName, "basic soldier placeholder body");
+            GameObject telegraphObject = RequireNamedObject(roots, "ReadableAttackTelegraph", "basic soldier attack telegraph");
 
             List<CombatHealth> healths = CollectObjects<CombatHealth>(roots);
             RequireAtLeast(healths.Count, 2, "player and enemy health components");
             RequireAtLeast(hitFeedbacks.Count, 2, "player and enemy hit feedback components");
+            RequireAtLeast(soldierVisualRenderers.Length, 1, "basic soldier promoted visual renderers");
 
             ValidateReference(movement, "referenceCamera");
             ValidateReference(movement, "animator");
@@ -198,14 +269,41 @@ namespace DimensionBrawl.Editor
             ValidateString(playerActions, "dodgeLeftTrigger", "DodgeLeft");
             ValidateString(playerActions, "dodgeRightTrigger", "DodgeRight");
 
+            ValidateString(soldier, "enemyTypeId", "SciFiSoldier.Basic");
+            ValidateString(soldier, "patternId", "ClosePunish");
+            ValidateReference(soldier, "targetSensor");
             ValidateReference(soldier, "target");
             ValidateReference(soldier, "targetHealth");
             ValidateReference(soldier, "selfHealth");
             ValidateReference(soldier, "telegraphIndicator");
+            ValidateReference(soldier, "telegraphPresenter");
+            ValidateObjectReference(soldier, "animator", soldierVisualAnimator);
+            ValidateObjectReference(soldier, "bodyRenderer", soldierVisualRenderers[0]);
+            ValidateBool(soldier, "usePrototypeBodyColors", false);
             ValidateFloat(soldier, "telegraphSeconds", 0.65f);
             ValidateFloat(soldier, "activeSeconds", 0.14f);
             ValidateFloat(soldier, "recoverySeconds", 0.45f);
             ValidateFloat(soldier, "hitReactionSeconds", 0.24f);
+            ValidateReference(soldierTargetSensor, "selfHealth");
+            ValidateFloat(soldierTargetSensor, "searchRadius", 12f);
+            ValidateFloat(soldierTargetSensor, "retargetIntervalSeconds", 0.2f);
+            ValidateObjectReferenceArray(soldierTargetSensor, "targetCandidates", new UnityEngine.Object[] { playerHealth });
+            ValidateObjectReference(soldierTelegraphPresenter, "telegraphObject", telegraphObject);
+            ValidateObjectReference(soldierTelegraphPresenter, "telegraphTransform", telegraphObject.transform);
+            ValidateObjectReference(soldierTelegraphPresenter, "telegraphRenderer", RequireComponent<Renderer>(telegraphObject, "basic soldier attack telegraph renderer"));
+            ValidateObjectReference(soldierTelegraphPresenter, "poseRoot", soldierVisual.transform);
+            ValidateVector3(soldierTelegraphPresenter, "windupStartScale", new Vector3(0.35f, 0.02f, 0.65f));
+            ValidateVector3(soldierTelegraphPresenter, "windupEndScale", new Vector3(1.05f, 0.02f, 1.55f));
+            ValidateVector3(soldierTelegraphPresenter, "activeScale", new Vector3(1.25f, 0.025f, 1.8f));
+            ValidateVector3(soldierTelegraphPresenter, "windupPoseOffset", new Vector3(0f, 0f, -0.08f));
+            ValidateVector3(soldierTelegraphPresenter, "activePoseOffset", new Vector3(0f, 0f, 0.12f));
+            ValidateBool(soldierHitFeedback, "applyIdleColorOnEnable", false);
+            ValidateArrayMinSize(soldierHitFeedback, "flashRenderers", 1);
+
+            if (soldierBody.activeSelf)
+            {
+                throw new InvalidOperationException($"{EnemyPlaceholderBodyName} should stay inactive once the promoted MaintenanceWorker visual is wired.");
+            }
 
             ValidateReference(cameraController, "target");
             ValidateReference(cameraController, "threat");
@@ -275,6 +373,25 @@ namespace DimensionBrawl.Editor
             ValidateAnyStateTriggerTransition(playerVisualAnimator, "DodgeLeft", "DodgeLeft");
             ValidateAnyStateTriggerTransition(playerVisualAnimator, "DodgeRight", "DodgeRight");
             ValidateCombatGirlMaterials(playerVisual);
+
+            ValidateObjectReferenceAssetPath(soldierVisualAnimator, "m_Avatar", EnemyModelPath);
+            ValidateObjectReferenceAssetPath(soldierVisualAnimator, "m_Controller", EnemyAnimatorControllerPath);
+            ValidateBool(soldierVisualAnimator, "m_ApplyRootMotion", false);
+            ValidateAnimatorParameter(soldierVisualAnimator, "MoveSpeed", AnimatorControllerParameterType.Float);
+            ValidateAnimatorParameter(soldierVisualAnimator, "Attack", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(soldierVisualAnimator, "Hit", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(soldierVisualAnimator, "Death", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorStateMotion(soldierVisualAnimator, "Idle", EnemyIdleClipPath);
+            ValidateAnimatorStateMotion(soldierVisualAnimator, "Run", EnemyRunClipPath);
+            ValidateAnimatorStateMotion(soldierVisualAnimator, "Attack", EnemyAttackClipPath);
+            ValidateAnimatorStateMotion(soldierVisualAnimator, "Hit", EnemyHitClipPath);
+            ValidateAnimatorStateMotion(soldierVisualAnimator, "Death", EnemyDeathClipPath);
+            ValidateAnimationClipHeightFromFeet(EnemyDeathClipPath, "MW_DeathFront");
+            ValidateAnyStateTriggerTransition(soldierVisualAnimator, "Attack", "Attack");
+            ValidateAnyStateTriggerTransition(soldierVisualAnimator, "Hit", "Hit");
+            ValidateAnyStateTriggerTransition(soldierVisualAnimator, "Death", "Death");
+            ValidateAnyStateTriggerPriority(soldierVisualAnimator, "Death", "Hit", "Attack");
+            ValidateMaintenanceWorkerMaterials(soldierVisual);
 
             ValidateReference(dodgeFeedback, "actionController");
             ValidateArrayMinSize(dodgeFeedback, "targetRenderers", 1);
@@ -446,6 +563,16 @@ namespace DimensionBrawl.Editor
             if (!owner.TryGetComponent(out T component))
             {
                 throw new InvalidOperationException($"{owner.name} is missing required {label}.");
+            }
+
+            return component;
+        }
+
+        private static T EnsureComponent<T>(GameObject owner) where T : Component
+        {
+            if (!owner.TryGetComponent(out T component))
+            {
+                component = owner.AddComponent<T>();
             }
 
             return component;
@@ -634,6 +761,45 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static void ValidateMaintenanceWorkerMaterials(GameObject soldierVisual)
+        {
+            Renderer[] renderers = soldierVisual.GetComponentsInChildren<Renderer>(true);
+            RequireAtLeast(renderers.Length, 1, "MaintenanceWorker visual renderers");
+
+            int baseTextureCount = 0;
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Material[] sharedMaterials = renderers[i].sharedMaterials;
+                for (int j = 0; j < sharedMaterials.Length; j++)
+                {
+                    Material material = sharedMaterials[j];
+                    if (material == null)
+                    {
+                        throw new InvalidOperationException($"{renderers[i].name} has a missing MaintenanceWorker material slot.");
+                    }
+
+                    string materialPath = AssetDatabase.GetAssetPath(material).Replace('\\', '/');
+                    if (!materialPath.StartsWith(EnemyMaterialRoot + "/", StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException($"{renderers[i].name} uses non-game-owned MaintenanceWorker material: {materialPath}");
+                    }
+
+                    if (material.HasProperty("_BaseMap") && material.GetTexture("_BaseMap") != null)
+                    {
+                        string texturePath = AssetDatabase.GetAssetPath(material.GetTexture("_BaseMap")).Replace('\\', '/');
+                        if (!texturePath.StartsWith(EnemyTextureRoot + "/", StringComparison.Ordinal))
+                        {
+                            throw new InvalidOperationException($"{material.name} uses non-game-owned MaintenanceWorker base texture: {texturePath}");
+                        }
+
+                        baseTextureCount++;
+                    }
+                }
+            }
+
+            RequireAtLeast(baseTextureCount, 1, "MaintenanceWorker promoted base textures");
+        }
+
         private static void RequireAtLeast(int actual, int expected, string label)
         {
             if (actual < expected)
@@ -648,6 +814,32 @@ namespace DimensionBrawl.Editor
             if (property.objectReferenceValue == null)
             {
                 throw new InvalidOperationException($"{target.name} has no reference assigned for {propertyName}.");
+            }
+        }
+
+        private static void ValidateObjectReference(UnityEngine.Object target, string propertyName, UnityEngine.Object expected)
+        {
+            SerializedProperty property = FindProperty(target, propertyName);
+            if (property.objectReferenceValue != expected)
+            {
+                UnityEngine.Object actual = property.objectReferenceValue;
+                throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected.name}, found {(actual != null ? actual.name : "null")}.");
+            }
+        }
+
+        private static void ValidateObjectReferenceAssetPath(UnityEngine.Object target, string propertyName, string expectedPath)
+        {
+            SerializedProperty property = FindProperty(target, propertyName);
+            UnityEngine.Object actual = property.objectReferenceValue;
+            if (actual == null)
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} expected asset {expectedPath}, found null.");
+            }
+
+            string actualPath = AssetDatabase.GetAssetPath(actual).Replace('\\', '/');
+            if (!string.Equals(actualPath, expectedPath, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} expected asset {expectedPath}, found {actualPath}.");
             }
         }
 
@@ -666,6 +858,24 @@ namespace DimensionBrawl.Editor
             if (!property.isArray || property.arraySize < minimum)
             {
                 throw new InvalidOperationException($"{target.name}.{propertyName} expected at least {minimum}, found {property.arraySize}.");
+            }
+        }
+
+        private static void ValidateObjectReferenceArray(UnityEngine.Object target, string propertyName, UnityEngine.Object[] expected)
+        {
+            SerializedProperty property = FindProperty(target, propertyName);
+            if (!property.isArray || property.arraySize != expected.Length)
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} expected array size {expected.Length}, found {property.arraySize}.");
+            }
+
+            for (int i = 0; i < expected.Length; i++)
+            {
+                UnityEngine.Object actual = property.GetArrayElementAtIndex(i).objectReferenceValue;
+                if (actual != expected[i])
+                {
+                    throw new InvalidOperationException($"{target.name}.{propertyName}[{i}] expected {expected[i].name}, found {(actual != null ? actual.name : "null")}.");
+                }
             }
         }
 
@@ -722,6 +932,64 @@ namespace DimensionBrawl.Editor
             }
 
             property.floatValue = value;
+            serializedObject.ApplyModifiedProperties();
+        }
+
+        private static void SetVector3(UnityEngine.Object target, string propertyName, Vector3 value)
+        {
+            SerializedObject serializedObject = new SerializedObject(target);
+            SerializedProperty property = serializedObject.FindProperty(propertyName);
+            if (property == null)
+            {
+                throw new InvalidOperationException($"{target.name} is missing serialized property {propertyName}.");
+            }
+
+            property.vector3Value = value;
+            serializedObject.ApplyModifiedProperties();
+        }
+
+        private static void SetString(UnityEngine.Object target, string propertyName, string value)
+        {
+            SerializedObject serializedObject = new SerializedObject(target);
+            SerializedProperty property = serializedObject.FindProperty(propertyName);
+            if (property == null)
+            {
+                throw new InvalidOperationException($"{target.name} is missing serialized property {propertyName}.");
+            }
+
+            property.stringValue = value;
+            serializedObject.ApplyModifiedProperties();
+        }
+
+        private static void SetObjectReference(UnityEngine.Object target, string propertyName, UnityEngine.Object value)
+        {
+            SerializedObject serializedObject = new SerializedObject(target);
+            SerializedProperty property = serializedObject.FindProperty(propertyName);
+            if (property == null)
+            {
+                throw new InvalidOperationException($"{target.name} is missing serialized property {propertyName}.");
+            }
+
+            property.objectReferenceValue = value;
+            serializedObject.ApplyModifiedProperties();
+        }
+
+        private static void SetObjectReferenceArray(UnityEngine.Object target, string propertyName, UnityEngine.Object[] values)
+        {
+            SerializedObject serializedObject = new SerializedObject(target);
+            SerializedProperty property = serializedObject.FindProperty(propertyName);
+            if (property == null || !property.isArray)
+            {
+                throw new InvalidOperationException($"{target.name} is missing serialized array property {propertyName}.");
+            }
+
+            property.ClearArray();
+            for (int i = 0; i < values.Length; i++)
+            {
+                property.InsertArrayElementAtIndex(i);
+                property.GetArrayElementAtIndex(i).objectReferenceValue = values[i];
+            }
+
             serializedObject.ApplyModifiedProperties();
         }
 
@@ -816,6 +1084,35 @@ namespace DimensionBrawl.Editor
             }
 
             throw new InvalidOperationException($"{controller.name} is missing Animator state {stateName}.");
+        }
+
+        private static void ValidateAnimationClipHeightFromFeet(string clipPath, string clipName)
+        {
+            if (AssetImporter.GetAtPath(clipPath) is not ModelImporter importer)
+            {
+                throw new InvalidOperationException($"Missing animation importer at {clipPath}.");
+            }
+
+            ModelImporterClipAnimation[] clips = importer.clipAnimations.Length > 0
+                ? importer.clipAnimations
+                : importer.defaultClipAnimations;
+            for (int i = 0; i < clips.Length; i++)
+            {
+                if (!string.Equals(clips[i].name, clipName, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                if (!clips[i].heightFromFeet || clips[i].keepOriginalPositionY)
+                {
+                    throw new InvalidOperationException(
+                        $"{clipPath} should use feet-based Y import for {clipName} so the death pose stays grounded.");
+                }
+
+                return;
+            }
+
+            throw new InvalidOperationException($"{clipPath} is missing imported clip {clipName}.");
         }
 
         private static void ValidateAnimatorStateSpeed(Animator animator, string stateName, float expectedSpeed)
@@ -967,6 +1264,58 @@ namespace DimensionBrawl.Editor
             }
 
             throw new InvalidOperationException($"{controller.name} is missing Any State -> {destinationStateName} transition on trigger {triggerName}.");
+        }
+
+        private static void ValidateAnyStateTriggerPriority(Animator animator, string requiredFirstTrigger, params string[] lowerPriorityTriggers)
+        {
+            AnimatorController controller = RequireAnimatorController(animator);
+            for (int i = 0; i < controller.layers.Length; i++)
+            {
+                AnimatorStateTransition[] transitions = controller.layers[i].stateMachine.anyStateTransitions;
+                int requiredIndex = FindAnyStateTriggerTransitionIndex(transitions, requiredFirstTrigger);
+                if (requiredIndex < 0)
+                {
+                    continue;
+                }
+
+                for (int j = 0; j < lowerPriorityTriggers.Length; j++)
+                {
+                    int lowerPriorityIndex = FindAnyStateTriggerTransitionIndex(transitions, lowerPriorityTriggers[j]);
+                    if (lowerPriorityIndex >= 0 && requiredIndex > lowerPriorityIndex)
+                    {
+                        throw new InvalidOperationException(
+                            $"{controller.name} Any State trigger {requiredFirstTrigger} must be evaluated before {lowerPriorityTriggers[j]} so death is not consumed by another reaction.");
+                    }
+                }
+
+                return;
+            }
+
+            throw new InvalidOperationException($"{controller.name} is missing Any State trigger {requiredFirstTrigger}.");
+        }
+
+        private static int FindAnyStateTriggerTransitionIndex(AnimatorStateTransition[] transitions, string triggerName)
+        {
+            for (int i = 0; i < transitions.Length; i++)
+            {
+                AnimatorStateTransition transition = transitions[i];
+                if (transition == null)
+                {
+                    continue;
+                }
+
+                AnimatorCondition[] conditions = transition.conditions;
+                for (int j = 0; j < conditions.Length; j++)
+                {
+                    if (conditions[j].mode == AnimatorConditionMode.If
+                        && string.Equals(conditions[j].parameter, triggerName, StringComparison.Ordinal))
+                    {
+                        return i;
+                    }
+                }
+            }
+
+            return -1;
         }
 
         private static AnimatorController RequireAnimatorController(Animator animator)

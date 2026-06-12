@@ -1,10 +1,13 @@
 ﻿using DimensionBrawl.Combat;
+using DimensionBrawl.AI;
+using DimensionBrawl.Presentation;
 using UnityEngine;
 
 namespace DimensionBrawl.Enemies
 {
     [RequireComponent(typeof(CharacterController))]
     [RequireComponent(typeof(CombatHealth))]
+    [RequireComponent(typeof(CombatTargetSensor))]
     public sealed class BasicSoldierEnemy : MonoBehaviour
     {
         private enum SoldierState
@@ -17,13 +20,22 @@ namespace DimensionBrawl.Enemies
             Dead
         }
 
+        [Header("Enemy Type")]
+        [Tooltip("Prefab-level enemy identity. Visual model, Animator controller, and animation trigger names stay swappable per enemy type.")]
+        [SerializeField] private string enemyTypeId = "SciFiSoldier.Basic";
+
+        [Tooltip("Reference-backed pattern sample: ClosePunish = Track -> Windup -> MeleeBurst -> Recover.")]
+        [SerializeField] private string patternId = "ClosePunish";
+
         [Header("References")]
+        [SerializeField] private CombatTargetSensor targetSensor;
         [SerializeField] private Transform target;
         [SerializeField] private CombatHealth targetHealth;
         [SerializeField] private CombatHealth selfHealth;
         [SerializeField] private CharacterController characterController;
         [SerializeField] private Animator animator;
         [SerializeField] private GameObject telegraphIndicator;
+        [SerializeField] private EnemyAttackTelegraphPresenter telegraphPresenter;
         [SerializeField] private Renderer bodyRenderer;
 
         [Header("Movement")]
@@ -56,6 +68,7 @@ namespace DimensionBrawl.Enemies
         [SerializeField] private string deathTrigger = "Death";
 
         [Header("Readable Prototype Colors")]
+        [SerializeField] private bool usePrototypeBodyColors = true;
         [SerializeField] private string colorProperty = "_BaseColor";
         [SerializeField] private Color normalColor = new Color(0.55f, 0.7f, 0.9f);
         [SerializeField] private Color telegraphColor = new Color(1f, 0.65f, 0.2f);
@@ -68,6 +81,10 @@ namespace DimensionBrawl.Enemies
         private float stateTimer;
         private float verticalVelocity;
         private bool dealtDamageThisSwing;
+
+        public string EnemyTypeId => enemyTypeId;
+        public string PatternId => patternId;
+        public CombatTargetSensor TargetSensor => targetSensor;
 
         public void ConfigureTarget(Transform newTarget, CombatHealth newTargetHealth)
         {
@@ -85,6 +102,16 @@ namespace DimensionBrawl.Enemies
             if (characterController == null)
             {
                 characterController = GetComponent<CharacterController>();
+            }
+
+            if (targetSensor == null)
+            {
+                targetSensor = GetComponent<CombatTargetSensor>();
+            }
+
+            if (telegraphPresenter == null)
+            {
+                telegraphPresenter = GetComponent<EnemyAttackTelegraphPresenter>();
             }
 
             propertyBlock = new MaterialPropertyBlock();
@@ -113,6 +140,8 @@ namespace DimensionBrawl.Enemies
 
         private void Update()
         {
+            ResolveCurrentTarget();
+
             if (state == SoldierState.Dead || target == null || targetHealth == null || !targetHealth.IsAlive)
             {
                 UpdateAnimation(0f);
@@ -141,6 +170,27 @@ namespace DimensionBrawl.Enemies
             }
         }
 
+        private void ResolveCurrentTarget()
+        {
+            if (targetSensor == null)
+            {
+                return;
+            }
+
+            if (targetSensor.TryGetCurrentTarget(out Transform sensedTarget, out CombatHealth sensedHealth))
+            {
+                target = sensedTarget;
+                targetHealth = sensedHealth;
+                return;
+            }
+
+            if (targetHealth == null || !targetHealth.IsAlive)
+            {
+                target = null;
+                targetHealth = null;
+            }
+        }
+
         private void UpdateApproach(float deltaTime)
         {
             FaceTarget(deltaTime);
@@ -162,7 +212,7 @@ namespace DimensionBrawl.Enemies
             state = SoldierState.Telegraph;
             stateTimer = 0f;
             dealtDamageThisSwing = false;
-            SetTelegraphVisible(true);
+            ShowTelegraphWindup(0f);
             SetBodyColor(telegraphColor);
         }
 
@@ -172,6 +222,7 @@ namespace DimensionBrawl.Enemies
             FaceTarget(deltaTime);
             Move(Vector3.zero, deltaTime);
             UpdateAnimation(0f);
+            ShowTelegraphWindup(telegraphSeconds > 0f ? stateTimer / telegraphSeconds : 1f);
 
             if (stateTimer < telegraphSeconds)
             {
@@ -180,7 +231,7 @@ namespace DimensionBrawl.Enemies
 
             state = SoldierState.Active;
             stateTimer = 0f;
-            SetTelegraphVisible(false);
+            ShowTelegraphActive(0f);
             TriggerAnimator(attackTrigger);
         }
 
@@ -189,6 +240,7 @@ namespace DimensionBrawl.Enemies
             stateTimer += deltaTime;
             FaceTarget(deltaTime);
             Move(Vector3.zero, deltaTime);
+            ShowTelegraphActive(activeSeconds > 0f ? stateTimer / activeSeconds : 1f);
 
             if (!dealtDamageThisSwing && IsTargetInAttackRange())
             {
@@ -203,6 +255,7 @@ namespace DimensionBrawl.Enemies
 
             state = SoldierState.Recovery;
             stateTimer = 0f;
+            HideTelegraph();
             SetBodyColor(normalColor);
         }
 
@@ -259,10 +312,15 @@ namespace DimensionBrawl.Enemies
                 return;
             }
 
+            if (selfHealth != null && selfHealth.CurrentHealth <= 0f)
+            {
+                return;
+            }
+
             state = SoldierState.Stagger;
             stateTimer = 0f;
             knockbackVelocity = Vector3.ProjectOnPlane(damageInfo.Direction, Vector3.up).normalized * knockbackSpeed;
-            SetTelegraphVisible(false);
+            HideTelegraph();
             SetBodyColor(staggerColor);
             TriggerAnimator(hitTrigger);
         }
@@ -270,8 +328,11 @@ namespace DimensionBrawl.Enemies
         private void HandleDied()
         {
             state = SoldierState.Dead;
-            SetTelegraphVisible(false);
+            HideTelegraph();
             SetBodyColor(deadColor);
+            ResetAnimatorTrigger(attackTrigger);
+            ResetAnimatorTrigger(hitTrigger);
+            UpdateAnimation(0f);
             TriggerAnimator(deathTrigger);
         }
 
@@ -347,8 +408,46 @@ namespace DimensionBrawl.Enemies
             }
         }
 
+        private void ShowTelegraphWindup(float normalizedProgress)
+        {
+            if (telegraphPresenter != null)
+            {
+                telegraphPresenter.ShowWindup(normalizedProgress);
+                return;
+            }
+
+            SetTelegraphVisible(true);
+        }
+
+        private void ShowTelegraphActive(float normalizedProgress)
+        {
+            if (telegraphPresenter != null)
+            {
+                telegraphPresenter.ShowActive(normalizedProgress);
+                return;
+            }
+
+            SetTelegraphVisible(true);
+        }
+
+        private void HideTelegraph()
+        {
+            if (telegraphPresenter != null)
+            {
+                telegraphPresenter.Hide();
+                return;
+            }
+
+            SetTelegraphVisible(false);
+        }
+
         private void SetBodyColor(Color color)
         {
+            if (!usePrototypeBodyColors)
+            {
+                return;
+            }
+
             if (bodyRenderer == null)
             {
                 return;
@@ -367,6 +466,14 @@ namespace DimensionBrawl.Enemies
             if (animator != null && !string.IsNullOrWhiteSpace(triggerName))
             {
                 animator.SetTrigger(triggerName);
+            }
+        }
+
+        private void ResetAnimatorTrigger(string triggerName)
+        {
+            if (animator != null && !string.IsNullOrWhiteSpace(triggerName))
+            {
+                animator.ResetTrigger(triggerName);
             }
         }
     }

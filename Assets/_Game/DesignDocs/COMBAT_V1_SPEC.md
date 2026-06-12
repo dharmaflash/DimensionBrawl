@@ -88,7 +88,18 @@ The soldier must provide enough pressure to validate player actions:
 - One simple attack or ranged pressure pattern.
 - Health, hit reaction, and death.
 - Clear attack telegraph if it can damage the player.
+- Readable windup/active presentation can use a narrow presentation component before final enemy animations are promoted, but that component must not own target choice, damage, or pattern state.
 - No complex squads, boss phases, affixes, or summon-answer mechanics yet.
+
+The first enemy AI should still prepare the correct shared contract for later summons:
+
+- Enemy and future summon actors share the same small target-sensing, team, and hostile-selection rules.
+- Target candidates should be authored or supplied by encounter code; do not use scene-wide searches as the normal AI targeting path.
+- The first soldier can use the reference `ClosePunish` pattern shape: track, windup, melee burst, recover.
+- Enemy type id, pattern id, visual model, Animator Controller, animation trigger names, and tuning values stay serialized/prefab-level data.
+- Do not hardcode sci-fi soldier model paths, animation clip paths, material paths, or `_Imported/` paths in behavior code.
+- Do not create a broad AI manager or monolithic enemy brain for one soldier test.
+- When the imported soldier art is promoted, start from the smallest useful animation set: `Idle`, `Run`, `Attack`, `Hit`, and `Death`. Seconds-based reference data should justify serialized timing windows and tests, not become hidden hardcoded frame logic inside runtime behavior.
 
 If the imported soldier art is not ready for game-owned promotion, use a temporary authored placeholder in the test scene and keep the raw pack under `Assets/_Imported/`.
 
@@ -100,6 +111,7 @@ For this V1 spec:
 
 - Reserve three top-right summon slots in the screen model.
 - Keep the future roles open for later `Break`, `Tank`, `Arrow`, and `Heal` decisions.
+- It is acceptable for enemy code to share team and target-sensing contracts with future summons, because this prevents duplicate AI paths later.
 - Do not implement summon targeting, summon AI, cooldown economy, or summon animations before the player action loop is playable.
 - Do not return to hand-of-cards UI or direct target-selection UI as the default summon control.
 
