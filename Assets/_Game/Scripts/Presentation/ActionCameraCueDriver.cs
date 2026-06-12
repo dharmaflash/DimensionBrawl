@@ -1,4 +1,3 @@
-using System;
 using DimensionBrawl.Player;
 using UnityEngine;
 
@@ -6,28 +5,18 @@ namespace DimensionBrawl.Presentation
 {
     public sealed class ActionCameraCueDriver : MonoBehaviour
     {
-        [Serializable]
-        private struct CameraCueProfile
-        {
-            public bool enabled;
-            public Vector3 localOffset;
-            public float planarDirectionOffset;
-            public float fieldOfViewDelta;
-            public float cameraDistanceDelta;
-            public float focusHeightDelta;
-            public float durationSeconds;
-            public float finisherScale;
-        }
-
         [Header("References")]
         [SerializeField] private PlayerActionController actionController;
         [SerializeField] private PlayerMovementController movement;
         [SerializeField] private ActionCameraController cameraController;
         [SerializeField] private Transform cueSpace;
 
+        [Header("Profile")]
+        [SerializeField] private ActionCameraCueProfile cueProfile;
+
         [Header("Cue Profiles")]
         [Tooltip("Run-start cue. Uses the low end of short action cue timing so movement start feels deliberate without camera lock.")]
-        [SerializeField] private CameraCueProfile runStartCue = new CameraCueProfile
+        [SerializeField] private ActionCameraCueProfile.CameraCue runStartCue = new ActionCameraCueProfile.CameraCue
         {
             enabled = true,
             localOffset = new Vector3(0f, 0.02f, -0.10f),
@@ -40,7 +29,7 @@ namespace DimensionBrawl.Presentation
         };
 
         [Tooltip("Short stop-settle cue. Uses the 0.15-0.35s dodge/hit emphasis range conservatively.")]
-        [SerializeField] private CameraCueProfile stopSettleCue = new CameraCueProfile
+        [SerializeField] private ActionCameraCueProfile.CameraCue stopSettleCue = new ActionCameraCueProfile.CameraCue
         {
             enabled = true,
             localOffset = new Vector3(0f, -0.02f, -0.06f),
@@ -53,7 +42,7 @@ namespace DimensionBrawl.Presentation
         };
 
         [Tooltip("Sharp movement turn cue. Keeps 90-degree direction changes readable without a full lock-on camera.")]
-        [SerializeField] private CameraCueProfile sharpTurnCue = new CameraCueProfile
+        [SerializeField] private ActionCameraCueProfile.CameraCue sharpTurnCue = new ActionCameraCueProfile.CameraCue
         {
             enabled = true,
             localOffset = new Vector3(0.08f, 0f, -0.10f),
@@ -66,7 +55,7 @@ namespace DimensionBrawl.Presentation
         };
 
         [Tooltip("Dodge read cue. Uses the collected short camera cue range around 0.20-0.32s.")]
-        [SerializeField] private CameraCueProfile dodgeCue = new CameraCueProfile
+        [SerializeField] private ActionCameraCueProfile.CameraCue dodgeCue = new ActionCameraCueProfile.CameraCue
         {
             enabled = true,
             localOffset = new Vector3(0f, 0.04f, -0.20f),
@@ -79,7 +68,7 @@ namespace DimensionBrawl.Presentation
         };
 
         [Tooltip("Basic attack entry cue. Small by default so normal attacks do not become cinematic locks.")]
-        [SerializeField] private CameraCueProfile attackStartCue = new CameraCueProfile
+        [SerializeField] private ActionCameraCueProfile.CameraCue attackStartCue = new ActionCameraCueProfile.CameraCue
         {
             enabled = true,
             localOffset = new Vector3(0f, -0.03f, 0.14f),
@@ -92,7 +81,7 @@ namespace DimensionBrawl.Presentation
         };
 
         [Tooltip("Successful hit cue. Kept shorter than attack state emphasis; hit-stop already carries impact.")]
-        [SerializeField] private CameraCueProfile attackHitCue = new CameraCueProfile
+        [SerializeField] private ActionCameraCueProfile.CameraCue attackHitCue = new ActionCameraCueProfile.CameraCue
         {
             enabled = true,
             localOffset = new Vector3(0f, 0.03f, 0.12f),
@@ -103,6 +92,15 @@ namespace DimensionBrawl.Presentation
             durationSeconds = 0.18f,
             finisherScale = 1.3f
         };
+
+        public ActionCameraCueProfile CueProfile => cueProfile;
+
+        private ActionCameraCueProfile.CameraCue ActiveRunStartCue => cueProfile != null ? cueProfile.RunStartCue : runStartCue;
+        private ActionCameraCueProfile.CameraCue ActiveStopSettleCue => cueProfile != null ? cueProfile.StopSettleCue : stopSettleCue;
+        private ActionCameraCueProfile.CameraCue ActiveSharpTurnCue => cueProfile != null ? cueProfile.SharpTurnCue : sharpTurnCue;
+        private ActionCameraCueProfile.CameraCue ActiveDodgeCue => cueProfile != null ? cueProfile.DodgeCue : dodgeCue;
+        private ActionCameraCueProfile.CameraCue ActiveAttackStartCue => cueProfile != null ? cueProfile.AttackStartCue : attackStartCue;
+        private ActionCameraCueProfile.CameraCue ActiveAttackHitCue => cueProfile != null ? cueProfile.AttackHitCue : attackHitCue;
 
         private void Awake()
         {
@@ -148,38 +146,40 @@ namespace DimensionBrawl.Presentation
 
         private void HandleRunStarted()
         {
-            RequestCue(runStartCue, ResolvePlanarDirection(), 1f);
+            RequestCue(ActiveRunStartCue, ResolvePlanarDirection(), 1f);
         }
 
         private void HandleStopSettleStarted()
         {
-            RequestCue(stopSettleCue, -ResolvePlanarDirection(), 1f);
+            RequestCue(ActiveStopSettleCue, -ResolvePlanarDirection(), 1f);
         }
 
         private void HandleSharpTurnStarted(float signedAngle)
         {
             float side = signedAngle < 0f ? -1f : 1f;
             Vector3 turnDirection = Quaternion.AngleAxis(35f * side, Vector3.up) * ResolvePlanarDirection();
-            RequestCue(sharpTurnCue, turnDirection, 1f);
+            RequestCue(ActiveSharpTurnCue, turnDirection, 1f);
         }
 
         private void HandleDodgeStarted()
         {
             Vector3 dodgeDirection = actionController != null ? actionController.LastDodgeDirection : ResolvePlanarDirection();
-            RequestCue(dodgeCue, dodgeDirection, 1f);
+            RequestCue(ActiveDodgeCue, dodgeDirection, 1f);
         }
 
         private void HandleBasicAttackStarted(int comboIndex)
         {
-            RequestCue(attackStartCue, ResolvePlanarDirection(), ResolveComboScale(comboIndex, attackStartCue));
+            ActionCameraCueProfile.CameraCue cue = ActiveAttackStartCue;
+            RequestCue(cue, ResolvePlanarDirection(), ResolveComboScale(comboIndex, cue));
         }
 
         private void HandleBasicAttackHit(int comboIndex)
         {
-            RequestCue(attackHitCue, ResolvePlanarDirection(), ResolveComboScale(comboIndex, attackHitCue));
+            ActionCameraCueProfile.CameraCue cue = ActiveAttackHitCue;
+            RequestCue(cue, ResolvePlanarDirection(), ResolveComboScale(comboIndex, cue));
         }
 
-        private void RequestCue(CameraCueProfile cue, Vector3 planarDirection, float scale)
+        private void RequestCue(ActionCameraCueProfile.CameraCue cue, Vector3 planarDirection, float scale)
         {
             if (!cue.enabled || cameraController == null)
             {
@@ -225,7 +225,7 @@ namespace DimensionBrawl.Presentation
             return movement.FacingDirection;
         }
 
-        private static float ResolveComboScale(int comboIndex, CameraCueProfile cue)
+        private static float ResolveComboScale(int comboIndex, ActionCameraCueProfile.CameraCue cue)
         {
             if (comboIndex <= 0)
             {

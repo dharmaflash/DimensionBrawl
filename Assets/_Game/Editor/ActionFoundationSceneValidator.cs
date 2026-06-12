@@ -209,6 +209,9 @@ namespace DimensionBrawl.Editor
             }
 
             GameObject[] roots = scene.GetRootGameObjects();
+            PlayerActionProfile playerActionProfile = LoadProfile<PlayerActionProfile>(ActionFoundationProfileSetup.PlayerActionProfilePath);
+            ActionCameraCueProfile cameraCueProfile = LoadProfile<ActionCameraCueProfile>(ActionFoundationProfileSetup.CameraCueProfilePath);
+            EnemyPatternProfile enemyPatternProfile = LoadProfile<EnemyPatternProfile>(ActionFoundationProfileSetup.EnemyPatternProfilePath);
             PlayerMovementController movement = RequireObject<PlayerMovementController>(roots, "player movement");
             PlayerActionController playerActions = RequireObject<PlayerActionController>(roots, "player actions");
             CombatHealth playerHealth = RequireComponent<CombatHealth>(playerActions.gameObject, "player health");
@@ -252,26 +255,11 @@ namespace DimensionBrawl.Editor
             ValidateReference(playerActions, "movement");
             ValidateReference(playerActions, "health");
             ValidateReference(playerActions, "animator");
-            ValidateArraySize(playerActions, "basicCombo", 5);
-            ValidateAttackStep(playerActions, "basicCombo", 0, "Attack1", 0.12f, 0.08f, 0.28f, 0.10f, 0.06f, 20f, 0.55f, 1.35f, 0.03f);
-            ValidateAttackStep(playerActions, "basicCombo", 1, "Attack2", 0.14f, 0.09f, 0.32f, 0.10f, 0.08f, 24f, 0.60f, 1.45f, 0.03f);
-            ValidateAttackStep(playerActions, "basicCombo", 2, "Attack3", 0.16f, 0.10f, 0.30f, 0.12f, 0.10f, 34f, 0.70f, 1.55f, 0.04f);
-            ValidateAttackStep(playerActions, "basicCombo", 3, "Attack4", 0.17f, 0.10f, 0.34f, 0.12f, 0.12f, 40f, 0.72f, 1.62f, 0.05f);
-            ValidateAttackStep(playerActions, "basicCombo", 4, "Attack5", 0.20f, 0.12f, 0.46f, 0.12f, 0.14f, 56f, 0.82f, 1.75f, 0.05f);
-            ValidateFloat(playerActions, "comboQueueOpenAfterSeconds", 0.10f);
-            ValidateFloat(playerActions, "comboChainRecoveryRatio", 0.45f);
-            ValidateFloat(playerActions, "dodgeDurationSeconds", 0.56f);
-            ValidateFloat(playerActions, "dodgeInvulnerableFromSeconds", 0.05f);
-            ValidateFloat(playerActions, "dodgeInvulnerableToSeconds", 0.32f);
-            ValidateFloat(playerActions, "dodgeRecoverySeconds", 0.14f);
-            ValidateFloat(playerActions, "dodgeSpeed", 10.2f);
-            ValidateString(playerActions, "dodgeTrigger", "DodgeForward");
-            ValidateString(playerActions, "dodgeBackTrigger", "DodgeBack");
-            ValidateString(playerActions, "dodgeLeftTrigger", "DodgeLeft");
-            ValidateString(playerActions, "dodgeRightTrigger", "DodgeRight");
+            ValidateObjectReferenceAssetPath(playerActions, "actionProfile", ActionFoundationProfileSetup.PlayerActionProfilePath);
+            ValidatePlayerActionProfile(playerActionProfile);
 
-            ValidateString(soldier, "enemyTypeId", "SciFiSoldier.Basic");
-            ValidateString(soldier, "patternId", "ClosePunish");
+            ValidateObjectReferenceAssetPath(soldier, "patternProfile", ActionFoundationProfileSetup.EnemyPatternProfilePath);
+            ValidateEnemyPatternProfile(enemyPatternProfile);
             ValidateReference(soldier, "targetSensor");
             ValidateReference(soldier, "target");
             ValidateReference(soldier, "targetHealth");
@@ -281,10 +269,6 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(soldier, "animator", soldierVisualAnimator);
             ValidateObjectReference(soldier, "bodyRenderer", soldierVisualRenderers[0]);
             ValidateBool(soldier, "usePrototypeBodyColors", false);
-            ValidateFloat(soldier, "telegraphSeconds", 0.65f);
-            ValidateFloat(soldier, "activeSeconds", 0.14f);
-            ValidateFloat(soldier, "recoverySeconds", 0.45f);
-            ValidateFloat(soldier, "hitReactionSeconds", 0.24f);
             ValidateReference(soldierTargetSensor, "selfHealth");
             ValidateFloat(soldierTargetSensor, "searchRadius", 12f);
             ValidateFloat(soldierTargetSensor, "retargetIntervalSeconds", 0.2f);
@@ -327,12 +311,8 @@ namespace DimensionBrawl.Editor
             ValidateReference(cameraCueDriver, "movement");
             ValidateReference(cameraCueDriver, "cameraController");
             ValidateReference(cameraCueDriver, "cueSpace");
-            ValidateCameraCueProfile(cameraCueDriver, "runStartCue", new Vector3(0f, 0.02f, -0.10f), 0.08f, 0.8f, -0.08f, 0.01f, 0.20f, 1f);
-            ValidateCameraCueProfile(cameraCueDriver, "stopSettleCue", new Vector3(0f, -0.02f, -0.06f), -0.02f, -0.8f, -0.12f, -0.02f, 0.22f, 1f);
-            ValidateCameraCueProfile(cameraCueDriver, "sharpTurnCue", new Vector3(0.08f, 0f, -0.10f), 0.06f, 0.6f, -0.06f, 0f, 0.24f, 1f);
-            ValidateCameraCueProfile(cameraCueDriver, "dodgeCue", new Vector3(0f, 0.04f, -0.2f), -0.18f, 2.2f, -0.2f, 0.03f, 0.28f, 1f);
-            ValidateCameraCueProfile(cameraCueDriver, "attackStartCue", new Vector3(0f, -0.03f, 0.14f), 0.08f, -1.2f, 0.12f, -0.02f, 0.22f, 1.2f);
-            ValidateCameraCueProfile(cameraCueDriver, "attackHitCue", new Vector3(0f, 0.03f, 0.12f), 0.06f, -1.8f, 0.16f, 0.01f, 0.18f, 1.3f);
+            ValidateObjectReferenceAssetPath(cameraCueDriver, "cueProfile", ActionFoundationProfileSetup.CameraCueProfilePath);
+            ValidateActionCameraCueProfile(cameraCueProfile);
 
             ValidateReference(playerVisualAnimator, "m_Avatar");
             ValidateReference(playerVisualAnimator, "m_Controller");
@@ -870,6 +850,17 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static T LoadProfile<T>(string path) where T : ScriptableObject
+        {
+            T profile = AssetDatabase.LoadAssetAtPath<T>(path);
+            if (profile == null)
+            {
+                throw new InvalidOperationException($"Missing required gameplay profile asset at {path}.");
+            }
+
+            return profile;
+        }
+
         private static void ValidateArraySize(UnityEngine.Object target, string propertyName, int expected)
         {
             SerializedProperty property = FindProperty(target, propertyName);
@@ -886,6 +877,60 @@ namespace DimensionBrawl.Editor
             {
                 throw new InvalidOperationException($"{target.name}.{propertyName} expected at least {minimum}, found {property.arraySize}.");
             }
+        }
+
+        private static void ValidatePlayerActionProfile(PlayerActionProfile profile)
+        {
+            ValidateArraySize(profile, "basicCombo", 5);
+            ValidateAttackStep(profile, "basicCombo", 0, "Attack1", 0.12f, 0.08f, 0.28f, 0.10f, 0.06f, 20f, 0.55f, 1.35f, 0.03f);
+            ValidateAttackStep(profile, "basicCombo", 1, "Attack2", 0.14f, 0.09f, 0.32f, 0.10f, 0.08f, 24f, 0.60f, 1.45f, 0.03f);
+            ValidateAttackStep(profile, "basicCombo", 2, "Attack3", 0.16f, 0.10f, 0.30f, 0.12f, 0.10f, 34f, 0.70f, 1.55f, 0.04f);
+            ValidateAttackStep(profile, "basicCombo", 3, "Attack4", 0.17f, 0.10f, 0.34f, 0.12f, 0.12f, 40f, 0.72f, 1.62f, 0.05f);
+            ValidateAttackStep(profile, "basicCombo", 4, "Attack5", 0.20f, 0.12f, 0.46f, 0.12f, 0.14f, 56f, 0.82f, 1.75f, 0.05f);
+            ValidateFloat(profile, "comboResetSeconds", 0.75f);
+            ValidateFloat(profile, "comboQueueOpenAfterSeconds", 0.10f);
+            ValidateFloat(profile, "comboChainRecoveryRatio", 0.45f);
+            ValidateFloat(profile, "dodgeDurationSeconds", 0.56f);
+            ValidateFloat(profile, "dodgeInvulnerableFromSeconds", 0.05f);
+            ValidateFloat(profile, "dodgeInvulnerableToSeconds", 0.32f);
+            ValidateFloat(profile, "dodgeRecoverySeconds", 0.14f);
+            ValidateFloat(profile, "dodgeSpeed", 10.2f);
+            ValidateString(profile, "dodgeTrigger", "DodgeForward");
+            ValidateString(profile, "dodgeBackTrigger", "DodgeBack");
+            ValidateString(profile, "dodgeLeftTrigger", "DodgeLeft");
+            ValidateString(profile, "dodgeRightTrigger", "DodgeRight");
+            ValidateString(profile, "dodgingParameter", "IsDodging");
+        }
+
+        private static void ValidateActionCameraCueProfile(ActionCameraCueProfile profile)
+        {
+            ValidateCameraCueProfile(profile, "runStartCue", new Vector3(0f, 0.02f, -0.10f), 0.08f, 0.8f, -0.08f, 0.01f, 0.20f, 1f);
+            ValidateCameraCueProfile(profile, "stopSettleCue", new Vector3(0f, -0.02f, -0.06f), -0.02f, -0.8f, -0.12f, -0.02f, 0.22f, 1f);
+            ValidateCameraCueProfile(profile, "sharpTurnCue", new Vector3(0.08f, 0f, -0.10f), 0.06f, 0.6f, -0.06f, 0f, 0.24f, 1f);
+            ValidateCameraCueProfile(profile, "dodgeCue", new Vector3(0f, 0.04f, -0.2f), -0.18f, 2.2f, -0.2f, 0.03f, 0.28f, 1f);
+            ValidateCameraCueProfile(profile, "attackStartCue", new Vector3(0f, -0.03f, 0.14f), 0.08f, -1.2f, 0.12f, -0.02f, 0.22f, 1.2f);
+            ValidateCameraCueProfile(profile, "attackHitCue", new Vector3(0f, 0.03f, 0.12f), 0.06f, -1.8f, 0.16f, 0.01f, 0.18f, 1.3f);
+        }
+
+        private static void ValidateEnemyPatternProfile(EnemyPatternProfile profile)
+        {
+            ValidateString(profile, "enemyTypeId", "SciFiSoldier.Basic");
+            ValidateString(profile, "patternId", "ClosePunish");
+            ValidateFloat(profile, "approachSpeed", 2.7f);
+            ValidateFloat(profile, "turnRateDegrees", 540f);
+            ValidateFloat(profile, "gravity", -24f);
+            ValidateFloat(profile, "attackRange", 1.65f);
+            ValidateFloat(profile, "telegraphSeconds", 0.65f);
+            ValidateFloat(profile, "activeSeconds", 0.14f);
+            ValidateFloat(profile, "recoverySeconds", 0.45f);
+            ValidateFloat(profile, "damage", 15f);
+            ValidateFloat(profile, "hitStopSeconds", 0.03f);
+            ValidateFloat(profile, "hitReactionSeconds", 0.24f);
+            ValidateFloat(profile, "knockbackSpeed", 2f);
+            ValidateString(profile, "moveSpeedParameter", "MoveSpeed");
+            ValidateString(profile, "attackTrigger", "Attack");
+            ValidateString(profile, "hitTrigger", "Hit");
+            ValidateString(profile, "deathTrigger", "Death");
         }
 
         private static void ValidateObjectReferenceArray(UnityEngine.Object target, string propertyName, UnityEngine.Object[] expected)

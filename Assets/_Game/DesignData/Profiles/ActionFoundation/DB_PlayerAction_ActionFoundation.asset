@@ -1,0 +1,78 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fdd6bf7af3617e04cb74e4ec000dd610, type: 3}
+  m_Name: DB_PlayerAction_ActionFoundation
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerActionProfile
+  basicCombo:
+  - animationTrigger: Attack1
+    startupSeconds: 0.12
+    activeSeconds: 0.08
+    recoverySeconds: 0.28
+    inputBufferSeconds: 0.1
+    dodgeCancelAfterSeconds: 0.06
+    damage: 20
+    hitRadius: 0.55
+    hitDistance: 1.35
+    hitStopSeconds: 0.03
+  - animationTrigger: Attack2
+    startupSeconds: 0.14
+    activeSeconds: 0.09
+    recoverySeconds: 0.32
+    inputBufferSeconds: 0.1
+    dodgeCancelAfterSeconds: 0.08
+    damage: 24
+    hitRadius: 0.6
+    hitDistance: 1.45
+    hitStopSeconds: 0.03
+  - animationTrigger: Attack3
+    startupSeconds: 0.16
+    activeSeconds: 0.1
+    recoverySeconds: 0.3
+    inputBufferSeconds: 0.12
+    dodgeCancelAfterSeconds: 0.1
+    damage: 34
+    hitRadius: 0.7
+    hitDistance: 1.55
+    hitStopSeconds: 0.04
+  - animationTrigger: Attack4
+    startupSeconds: 0.17
+    activeSeconds: 0.1
+    recoverySeconds: 0.34
+    inputBufferSeconds: 0.12
+    dodgeCancelAfterSeconds: 0.12
+    damage: 40
+    hitRadius: 0.72
+    hitDistance: 1.62
+    hitStopSeconds: 0.05
+  - animationTrigger: Attack5
+    startupSeconds: 0.2
+    activeSeconds: 0.12
+    recoverySeconds: 0.46
+    inputBufferSeconds: 0.12
+    dodgeCancelAfterSeconds: 0.14
+    damage: 56
+    hitRadius: 0.82
+    hitDistance: 1.75
+    hitStopSeconds: 0.05
+  comboResetSeconds: 0.75
+  comboQueueOpenAfterSeconds: 0.1
+  comboChainRecoveryRatio: 0.45
+  dodgeDurationSeconds: 0.56
+  dodgeInvulnerableFromSeconds: 0.05
+  dodgeInvulnerableToSeconds: 0.32
+  dodgeRecoverySeconds: 0.14
+  dodgeSpeed: 10.2
+  dodgeTrigger: DodgeForward
+  dodgeBackTrigger: DodgeBack
+  dodgeLeftTrigger: DodgeLeft
+  dodgeRightTrigger: DodgeRight
+  dodgingParameter: IsDodging

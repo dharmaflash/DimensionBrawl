@@ -266,6 +266,7 @@ MonoBehaviour:
   movement: {fileID: 4004}
   cameraController: {fileID: 1004}
   cueSpace: {fileID: 4001}
+  cueProfile: {fileID: 11400000, guid: a31d129dad592f844954532630dca6a0, type: 2}
   runStartCue:
     enabled: 1
     localOffset: {x: 0, y: 0.02, z: -0.1}
@@ -752,6 +753,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 4294967295
   animator: {fileID: 986963292427936881}
+  actionProfile: {fileID: 11400000, guid: 5b11fbbc641daed49a52bb5d26ea2f9e, type: 2}
   basicCombo:
   - animationTrigger: Attack1
     startupSeconds: 0.12
@@ -1167,6 +1169,7 @@ MonoBehaviour:
   m_EditorClassIdentifier:
   enemyTypeId: SciFiSoldier.Basic
   patternId: ClosePunish
+  patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
   targetSensor: {fileID: 5006}
   target: {fileID: 4001}
   targetHealth: {fileID: 4003}

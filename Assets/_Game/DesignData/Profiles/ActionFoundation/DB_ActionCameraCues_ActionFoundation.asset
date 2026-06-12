@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b4cdcb5212e0e349b51bdcaeb6900ad, type: 3}
+  m_Name: DB_ActionCameraCues_ActionFoundation
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionCameraCueProfile
+  runStartCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.02, z: -0.1}
+    planarDirectionOffset: 0.08
+    fieldOfViewDelta: 0.8
+    cameraDistanceDelta: -0.08
+    focusHeightDelta: 0.01
+    durationSeconds: 0.2
+    finisherScale: 1
+  stopSettleCue:
+    enabled: 1
+    localOffset: {x: 0, y: -0.02, z: -0.06}
+    planarDirectionOffset: -0.02
+    fieldOfViewDelta: -0.8
+    cameraDistanceDelta: -0.12
+    focusHeightDelta: -0.02
+    durationSeconds: 0.22
+    finisherScale: 1
+  sharpTurnCue:
+    enabled: 1
+    localOffset: {x: 0.08, y: 0, z: -0.1}
+    planarDirectionOffset: 0.06
+    fieldOfViewDelta: 0.6
+    cameraDistanceDelta: -0.06
+    focusHeightDelta: 0
+    durationSeconds: 0.24
+    finisherScale: 1
+  dodgeCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.04, z: -0.2}
+    planarDirectionOffset: -0.18
+    fieldOfViewDelta: 2.2
+    cameraDistanceDelta: -0.2
+    focusHeightDelta: 0.03
+    durationSeconds: 0.28
+    finisherScale: 1
+  attackStartCue:
+    enabled: 1
+    localOffset: {x: 0, y: -0.03, z: 0.14}
+    planarDirectionOffset: 0.08
+    fieldOfViewDelta: -1.2
+    cameraDistanceDelta: 0.12
+    focusHeightDelta: -0.02
+    durationSeconds: 0.22
+    finisherScale: 1.2
+  attackHitCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.03, z: 0.12}
+    planarDirectionOffset: 0.06
+    fieldOfViewDelta: -1.8
+    cameraDistanceDelta: 0.16
+    focusHeightDelta: 0.01
+    durationSeconds: 0.18
+    finisherScale: 1.3

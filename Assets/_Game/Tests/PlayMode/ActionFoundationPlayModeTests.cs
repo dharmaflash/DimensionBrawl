@@ -178,6 +178,7 @@ namespace DimensionBrawl.Tests
             CombatHealth enemyHealth = RequireEnemyHealth();
             Animator playerAnimator = RequirePlayerAnimator();
 
+            Assert.IsNotNull(actions.ActionProfile, "Player action timing should come from a game-owned PlayerActionProfile asset.");
             PositionPlayerForAttack(movement.transform, enemyHealth.transform);
             Physics.SyncTransforms();
             yield return null;
@@ -247,6 +248,7 @@ namespace DimensionBrawl.Tests
 
             yield return null;
 
+            Assert.IsNotNull(soldier.PatternProfile, "Basic soldier should read behavior timing from a game-owned EnemyPatternProfile asset.");
             Assert.AreSame(targetSensor, soldier.TargetSensor, "Basic soldier should use the shared combat target sensor instead of private-only target lookup.");
             Assert.AreEqual("SciFiSoldier.Basic", soldier.EnemyTypeId, "Enemy type should stay serialized so future models and Animator controllers can swap per prefab.");
             Assert.AreEqual("ClosePunish", soldier.PatternId, "The first soldier should declare the reference-backed ClosePunish pattern sample.");
@@ -476,10 +478,11 @@ namespace DimensionBrawl.Tests
             PlayerMovementController movement = RequireObject<PlayerMovementController>();
             PlayerActionController actions = RequireObject<PlayerActionController>();
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
-            RequireObject<ActionCameraCueDriver>();
+            ActionCameraCueDriver cameraCueDriver = RequireObject<ActionCameraCueDriver>();
             CombatHealth enemyHealth = RequireEnemyHealth();
             Camera mainCamera = Camera.main;
             Assert.IsNotNull(mainCamera, "Action foundation scene should have a main camera.");
+            Assert.IsNotNull(cameraCueDriver.CueProfile, "Action camera cues should come from a game-owned ActionCameraCueProfile asset.");
             float baseFieldOfView = mainCamera.fieldOfView;
 
             actions.QueueDodge();

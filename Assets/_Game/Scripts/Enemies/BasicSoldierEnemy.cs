@@ -27,6 +27,9 @@ namespace DimensionBrawl.Enemies
         [Tooltip("Reference-backed pattern sample: ClosePunish = Track -> Windup -> MeleeBurst -> Recover.")]
         [SerializeField] private string patternId = "ClosePunish";
 
+        [Header("Profile")]
+        [SerializeField] private EnemyPatternProfile patternProfile;
+
         [Header("References")]
         [SerializeField] private CombatTargetSensor targetSensor;
         [SerializeField] private Transform target;
@@ -82,9 +85,26 @@ namespace DimensionBrawl.Enemies
         private float verticalVelocity;
         private bool dealtDamageThisSwing;
 
-        public string EnemyTypeId => enemyTypeId;
-        public string PatternId => patternId;
+        public EnemyPatternProfile PatternProfile => patternProfile;
+        public string EnemyTypeId => patternProfile != null ? patternProfile.EnemyTypeId : enemyTypeId;
+        public string PatternId => patternProfile != null ? patternProfile.PatternId : patternId;
         public CombatTargetSensor TargetSensor => targetSensor;
+
+        private float ActiveApproachSpeed => patternProfile != null ? patternProfile.ApproachSpeed : approachSpeed;
+        private float ActiveTurnRateDegrees => patternProfile != null ? patternProfile.TurnRateDegrees : turnRateDegrees;
+        private float ActiveGravity => patternProfile != null ? patternProfile.Gravity : gravity;
+        private float ActiveAttackRange => patternProfile != null ? patternProfile.AttackRange : attackRange;
+        private float ActiveTelegraphSeconds => patternProfile != null ? patternProfile.TelegraphSeconds : telegraphSeconds;
+        private float ActiveActiveSeconds => patternProfile != null ? patternProfile.ActiveSeconds : activeSeconds;
+        private float ActiveRecoverySeconds => patternProfile != null ? patternProfile.RecoverySeconds : recoverySeconds;
+        private float ActiveDamage => patternProfile != null ? patternProfile.Damage : damage;
+        private float ActiveHitStopSeconds => patternProfile != null ? patternProfile.HitStopSeconds : hitStopSeconds;
+        private float ActiveHitReactionSeconds => patternProfile != null ? patternProfile.HitReactionSeconds : hitReactionSeconds;
+        private float ActiveKnockbackSpeed => patternProfile != null ? patternProfile.KnockbackSpeed : knockbackSpeed;
+        private string ActiveMoveSpeedParameter => patternProfile != null ? patternProfile.MoveSpeedParameter : moveSpeedParameter;
+        private string ActiveAttackTrigger => patternProfile != null ? patternProfile.AttackTrigger : attackTrigger;
+        private string ActiveHitTrigger => patternProfile != null ? patternProfile.HitTrigger : hitTrigger;
+        private string ActiveDeathTrigger => patternProfile != null ? patternProfile.DeathTrigger : deathTrigger;
 
         public void ConfigureTarget(Transform newTarget, CombatHealth newTargetHealth)
         {
@@ -202,8 +222,8 @@ namespace DimensionBrawl.Enemies
             }
 
             Vector3 direction = DirectionToTarget();
-            Move(direction * approachSpeed, deltaTime);
-            UpdateAnimation(approachSpeed);
+            Move(direction * ActiveApproachSpeed, deltaTime);
+            UpdateAnimation(ActiveApproachSpeed);
             SetBodyColor(normalColor);
         }
 
@@ -222,9 +242,9 @@ namespace DimensionBrawl.Enemies
             FaceTarget(deltaTime);
             Move(Vector3.zero, deltaTime);
             UpdateAnimation(0f);
-            ShowTelegraphWindup(telegraphSeconds > 0f ? stateTimer / telegraphSeconds : 1f);
+            ShowTelegraphWindup(ActiveTelegraphSeconds > 0f ? stateTimer / ActiveTelegraphSeconds : 1f);
 
-            if (stateTimer < telegraphSeconds)
+            if (stateTimer < ActiveTelegraphSeconds)
             {
                 return;
             }
@@ -232,7 +252,7 @@ namespace DimensionBrawl.Enemies
             state = SoldierState.Active;
             stateTimer = 0f;
             ShowTelegraphActive(0f);
-            TriggerAnimator(attackTrigger);
+            TriggerAnimator(ActiveAttackTrigger);
         }
 
         private void UpdateActive(float deltaTime)
@@ -240,7 +260,7 @@ namespace DimensionBrawl.Enemies
             stateTimer += deltaTime;
             FaceTarget(deltaTime);
             Move(Vector3.zero, deltaTime);
-            ShowTelegraphActive(activeSeconds > 0f ? stateTimer / activeSeconds : 1f);
+            ShowTelegraphActive(ActiveActiveSeconds > 0f ? stateTimer / ActiveActiveSeconds : 1f);
 
             if (!dealtDamageThisSwing && IsTargetInAttackRange())
             {
@@ -248,7 +268,7 @@ namespace DimensionBrawl.Enemies
                 ApplyDamageToTarget();
             }
 
-            if (stateTimer < activeSeconds)
+            if (stateTimer < ActiveActiveSeconds)
             {
                 return;
             }
@@ -265,7 +285,7 @@ namespace DimensionBrawl.Enemies
             FaceTarget(deltaTime);
             Move(Vector3.zero, deltaTime);
 
-            if (stateTimer < recoverySeconds)
+            if (stateTimer < ActiveRecoverySeconds)
             {
                 return;
             }
@@ -278,10 +298,10 @@ namespace DimensionBrawl.Enemies
         {
             stateTimer += deltaTime;
             Move(knockbackVelocity, deltaTime);
-            knockbackVelocity = Vector3.MoveTowards(knockbackVelocity, Vector3.zero, knockbackSpeed * deltaTime);
+            knockbackVelocity = Vector3.MoveTowards(knockbackVelocity, Vector3.zero, ActiveKnockbackSpeed * deltaTime);
             UpdateAnimation(0f);
 
-            if (stateTimer < hitReactionSeconds)
+            if (stateTimer < ActiveHitReactionSeconds)
             {
                 return;
             }
@@ -297,10 +317,10 @@ namespace DimensionBrawl.Enemies
             DamageInfo damageInfo = new DamageInfo(
                 selfHealth,
                 selfHealth != null ? selfHealth.Team : DamageTeam.Enemy,
-                damage,
+                ActiveDamage,
                 target.position,
                 direction,
-                hitStopSeconds);
+                ActiveHitStopSeconds);
 
             targetHealth.TryApplyDamage(damageInfo);
         }
@@ -319,10 +339,10 @@ namespace DimensionBrawl.Enemies
 
             state = SoldierState.Stagger;
             stateTimer = 0f;
-            knockbackVelocity = Vector3.ProjectOnPlane(damageInfo.Direction, Vector3.up).normalized * knockbackSpeed;
+            knockbackVelocity = Vector3.ProjectOnPlane(damageInfo.Direction, Vector3.up).normalized * ActiveKnockbackSpeed;
             HideTelegraph();
             SetBodyColor(staggerColor);
-            TriggerAnimator(hitTrigger);
+            TriggerAnimator(ActiveHitTrigger);
         }
 
         private void HandleDied()
@@ -330,10 +350,10 @@ namespace DimensionBrawl.Enemies
             state = SoldierState.Dead;
             HideTelegraph();
             SetBodyColor(deadColor);
-            ResetAnimatorTrigger(attackTrigger);
-            ResetAnimatorTrigger(hitTrigger);
+            ResetAnimatorTrigger(ActiveAttackTrigger);
+            ResetAnimatorTrigger(ActiveHitTrigger);
             UpdateAnimation(0f);
-            TriggerAnimator(deathTrigger);
+            TriggerAnimator(ActiveDeathTrigger);
         }
 
         private bool IsTargetInAttackRange()
@@ -344,7 +364,7 @@ namespace DimensionBrawl.Enemies
             }
 
             Vector3 toTarget = Vector3.ProjectOnPlane(target.position - transform.position, Vector3.up);
-            if (toTarget.magnitude > attackRange)
+            if (toTarget.magnitude > ActiveAttackRange)
             {
                 return false;
             }
@@ -372,7 +392,7 @@ namespace DimensionBrawl.Enemies
             }
 
             Quaternion targetRotation = Quaternion.LookRotation(direction, Vector3.up);
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, turnRateDegrees * deltaTime);
+            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, ActiveTurnRateDegrees * deltaTime);
         }
 
         private void Move(Vector3 planarVelocity, float deltaTime)
@@ -388,15 +408,15 @@ namespace DimensionBrawl.Enemies
                 verticalVelocity = -1f;
             }
 
-            verticalVelocity += gravity * deltaTime;
+            verticalVelocity += ActiveGravity * deltaTime;
             characterController.Move((planarVelocity + Vector3.up * verticalVelocity) * deltaTime);
         }
 
         private void UpdateAnimation(float planarSpeed)
         {
-            if (animator != null && !string.IsNullOrWhiteSpace(moveSpeedParameter))
+            if (animator != null && !string.IsNullOrWhiteSpace(ActiveMoveSpeedParameter))
             {
-                animator.SetFloat(moveSpeedParameter, planarSpeed);
+                animator.SetFloat(ActiveMoveSpeedParameter, planarSpeed);
             }
         }
 

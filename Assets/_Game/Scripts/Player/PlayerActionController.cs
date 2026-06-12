@@ -7,21 +7,6 @@ namespace DimensionBrawl.Player
 {
     public sealed class PlayerActionController : MonoBehaviour
     {
-        [System.Serializable]
-        private struct AttackStep
-        {
-            public string animationTrigger;
-            public float startupSeconds;
-            public float activeSeconds;
-            public float recoverySeconds;
-            public float inputBufferSeconds;
-            public float dodgeCancelAfterSeconds;
-            public float damage;
-            public float hitRadius;
-            public float hitDistance;
-            public float hitStopSeconds;
-        }
-
         private enum PlayerActionState
         {
             Free,
@@ -41,11 +26,14 @@ namespace DimensionBrawl.Player
         [SerializeField] private LayerMask hittableLayers = ~0;
         [SerializeField] private Animator animator;
 
+        [Header("Profile")]
+        [SerializeField] private PlayerActionProfile actionProfile;
+
         [Header("Basic Attack")]
         [Tooltip("Defaults use documented startup/active/recovery/hit-stop ranges from Combat Feel Frame Reference.")]
-        [SerializeField] private AttackStep[] basicCombo =
+        [SerializeField] private PlayerActionProfile.AttackStep[] basicCombo =
         {
-            new AttackStep
+            new PlayerActionProfile.AttackStep
             {
                 animationTrigger = "Attack1",
                 startupSeconds = 0.12f,
@@ -58,7 +46,7 @@ namespace DimensionBrawl.Player
                 hitDistance = 1.35f,
                 hitStopSeconds = 0.03f
             },
-            new AttackStep
+            new PlayerActionProfile.AttackStep
             {
                 animationTrigger = "Attack2",
                 startupSeconds = 0.14f,
@@ -71,7 +59,7 @@ namespace DimensionBrawl.Player
                 hitDistance = 1.45f,
                 hitStopSeconds = 0.03f
             },
-            new AttackStep
+            new PlayerActionProfile.AttackStep
             {
                 animationTrigger = "Attack3",
                 startupSeconds = 0.16f,
@@ -84,7 +72,7 @@ namespace DimensionBrawl.Player
                 hitDistance = 1.55f,
                 hitStopSeconds = 0.04f
             },
-            new AttackStep
+            new PlayerActionProfile.AttackStep
             {
                 animationTrigger = "Attack4",
                 startupSeconds = 0.17f,
@@ -97,7 +85,7 @@ namespace DimensionBrawl.Player
                 hitDistance = 1.62f,
                 hitStopSeconds = 0.05f
             },
-            new AttackStep
+            new PlayerActionProfile.AttackStep
             {
                 animationTrigger = "Attack5",
                 startupSeconds = 0.20f,
@@ -146,13 +134,34 @@ namespace DimensionBrawl.Player
         private bool dodgeFeedbackActive;
         private bool nextAttackQueued;
 
-        public bool IsDodging => state == PlayerActionState.Dodging && actionTimer < dodgeDurationSeconds;
+        public PlayerActionProfile ActionProfile => actionProfile;
+        public bool IsDodging => state == PlayerActionState.Dodging && actionTimer < ActiveDodgeDurationSeconds;
         public Vector3 LastDodgeDirection { get; private set; } = Vector3.forward;
 
         public event Action<int> BasicAttackStarted;
         public event Action<int> BasicAttackHit;
         public event Action DodgeStarted;
         public event Action DodgeEnded;
+
+        private PlayerActionProfile.AttackStep[] ActiveBasicCombo =>
+            actionProfile != null && actionProfile.BasicCombo != null && actionProfile.BasicCombo.Length > 0
+                ? actionProfile.BasicCombo
+                : basicCombo;
+
+        private int ActiveBasicComboLength => ActiveBasicCombo != null ? ActiveBasicCombo.Length : 0;
+        private float ActiveComboResetSeconds => actionProfile != null ? actionProfile.ComboResetSeconds : comboResetSeconds;
+        private float ActiveComboQueueOpenAfterSeconds => actionProfile != null ? actionProfile.ComboQueueOpenAfterSeconds : comboQueueOpenAfterSeconds;
+        private float ActiveComboChainRecoveryRatio => actionProfile != null ? actionProfile.ComboChainRecoveryRatio : comboChainRecoveryRatio;
+        private float ActiveDodgeDurationSeconds => actionProfile != null ? actionProfile.DodgeDurationSeconds : dodgeDurationSeconds;
+        private float ActiveDodgeInvulnerableFromSeconds => actionProfile != null ? actionProfile.DodgeInvulnerableFromSeconds : dodgeInvulnerableFromSeconds;
+        private float ActiveDodgeInvulnerableToSeconds => actionProfile != null ? actionProfile.DodgeInvulnerableToSeconds : dodgeInvulnerableToSeconds;
+        private float ActiveDodgeRecoverySeconds => actionProfile != null ? actionProfile.DodgeRecoverySeconds : dodgeRecoverySeconds;
+        private float ActiveDodgeSpeed => actionProfile != null ? actionProfile.DodgeSpeed : dodgeSpeed;
+        private string ActiveDodgeTrigger => actionProfile != null ? actionProfile.DodgeTrigger : dodgeTrigger;
+        private string ActiveDodgeBackTrigger => actionProfile != null ? actionProfile.DodgeBackTrigger : dodgeBackTrigger;
+        private string ActiveDodgeLeftTrigger => actionProfile != null ? actionProfile.DodgeLeftTrigger : dodgeLeftTrigger;
+        private string ActiveDodgeRightTrigger => actionProfile != null ? actionProfile.DodgeRightTrigger : dodgeRightTrigger;
+        private string ActiveDodgingParameter => actionProfile != null ? actionProfile.DodgingParameter : dodgingParameter;
 
         public void QueueBasicAttack()
         {
@@ -242,7 +251,7 @@ namespace DimensionBrawl.Player
         private void StartAttack(int index)
         {
             state = PlayerActionState.Attacking;
-            comboIndex = Mathf.Clamp(index, 0, Mathf.Max(0, basicCombo.Length - 1));
+            comboIndex = Mathf.Clamp(index, 0, Mathf.Max(0, ActiveBasicComboLength - 1));
             actionTimer = 0f;
             attackHasHit = false;
             attackBufferTimer = 0f;
@@ -253,7 +262,7 @@ namespace DimensionBrawl.Player
 
         private void UpdateAttack(float deltaTime, bool dodgePressed)
         {
-            AttackStep step = CurrentAttackStep();
+            PlayerActionProfile.AttackStep step = CurrentAttackStep();
             actionTimer += deltaTime;
 
             TryQueueNextAttack();
@@ -271,8 +280,8 @@ namespace DimensionBrawl.Player
             }
 
             float activeEnd = step.startupSeconds + step.activeSeconds;
-            float chainStart = activeEnd + step.recoverySeconds * comboChainRecoveryRatio;
-            bool canContinue = nextAttackQueued && comboIndex < basicCombo.Length - 1;
+            float chainStart = activeEnd + step.recoverySeconds * ActiveComboChainRecoveryRatio;
+            bool canContinue = nextAttackQueued && comboIndex < ActiveBasicComboLength - 1;
             if (canContinue && actionTimer >= chainStart)
             {
                 StartAttack(comboIndex + 1);
@@ -285,17 +294,17 @@ namespace DimensionBrawl.Player
                 return;
             }
 
-            if (canContinue || (attackBufferTimer > 0f && comboIndex < basicCombo.Length - 1))
+            if (canContinue || (attackBufferTimer > 0f && comboIndex < ActiveBasicComboLength - 1))
             {
                 StartAttack(comboIndex + 1);
                 return;
             }
 
-            comboResetTimer = comboResetSeconds;
+            comboResetTimer = ActiveComboResetSeconds;
             state = PlayerActionState.Free;
         }
 
-        private void TryApplyAttackHit(AttackStep step)
+        private void TryApplyAttackHit(PlayerActionProfile.AttackStep step)
         {
             Vector3 direction = movement != null ? movement.FacingDirection : transform.forward;
             Vector3 hitCenter = transform.position + Vector3.up * 1f + direction.normalized * step.hitDistance;
@@ -358,23 +367,23 @@ namespace DimensionBrawl.Player
             LastDodgeDirection = dodgeDirection.sqrMagnitude > 0f ? dodgeDirection.normalized : ResolvePlanarBack(transform.forward);
             if (movement != null)
             {
-                movement.BeginExternalPlanarBurst(LastDodgeDirection * dodgeSpeed, dodgeDurationSeconds);
+                movement.BeginExternalPlanarBurst(LastDodgeDirection * ActiveDodgeSpeed, ActiveDodgeDurationSeconds);
             }
 
             TriggerAnimator(ResolveDodgeTrigger(LastDodgeDirection));
-            SetAnimatorBool(dodgingParameter, true);
+            SetAnimatorBool(ActiveDodgingParameter, true);
             dodgeFeedbackActive = true;
             DodgeStarted?.Invoke();
         }
 
         private void TryQueueNextAttack()
         {
-            if (state != PlayerActionState.Attacking || nextAttackQueued || comboIndex >= basicCombo.Length - 1)
+            if (state != PlayerActionState.Attacking || nextAttackQueued || comboIndex >= ActiveBasicComboLength - 1)
             {
                 return;
             }
 
-            if (attackBufferTimer > 0f && actionTimer >= comboQueueOpenAfterSeconds)
+            if (attackBufferTimer > 0f && actionTimer >= ActiveComboQueueOpenAfterSeconds)
             {
                 nextAttackQueued = true;
                 attackBufferTimer = 0f;
@@ -385,22 +394,22 @@ namespace DimensionBrawl.Player
         {
             actionTimer += deltaTime;
 
-            if (health != null && actionTimer >= dodgeInvulnerableFromSeconds && actionTimer <= dodgeInvulnerableToSeconds)
+            if (health != null && actionTimer >= ActiveDodgeInvulnerableFromSeconds && actionTimer <= ActiveDodgeInvulnerableToSeconds)
             {
-                health.SetInvulnerableUntil(Time.time + Mathf.Max(0f, dodgeInvulnerableToSeconds - actionTimer));
+                health.SetInvulnerableUntil(Time.time + Mathf.Max(0f, ActiveDodgeInvulnerableToSeconds - actionTimer));
             }
 
-            if (actionTimer >= dodgeDurationSeconds)
+            if (actionTimer >= ActiveDodgeDurationSeconds)
             {
                 EndDodgeFeedbackIfNeeded();
             }
 
-            if (actionTimer < dodgeDurationSeconds + dodgeRecoverySeconds)
+            if (actionTimer < ActiveDodgeDurationSeconds + ActiveDodgeRecoverySeconds)
             {
                 return;
             }
 
-            SetAnimatorBool(dodgingParameter, false);
+            SetAnimatorBool(ActiveDodgingParameter, false);
             state = PlayerActionState.Free;
         }
 
@@ -443,16 +452,16 @@ namespace DimensionBrawl.Player
         {
             if (dodgeDirection.sqrMagnitude <= 0.0001f)
             {
-                return dodgeTrigger;
+                return ActiveDodgeTrigger;
             }
 
             Vector3 localDirection = transform.InverseTransformDirection(dodgeDirection.normalized);
             if (Mathf.Abs(localDirection.x) > Mathf.Abs(localDirection.z))
             {
-                return localDirection.x < 0f ? dodgeLeftTrigger : dodgeRightTrigger;
+                return localDirection.x < 0f ? ActiveDodgeLeftTrigger : ActiveDodgeRightTrigger;
             }
 
-            return localDirection.z < 0f ? dodgeBackTrigger : dodgeTrigger;
+            return localDirection.z < 0f ? ActiveDodgeBackTrigger : ActiveDodgeTrigger;
         }
 
         private void EndDodgeFeedbackIfNeeded()
@@ -466,11 +475,12 @@ namespace DimensionBrawl.Player
             DodgeEnded?.Invoke();
         }
 
-        private AttackStep CurrentAttackStep()
+        private PlayerActionProfile.AttackStep CurrentAttackStep()
         {
-            if (basicCombo == null || basicCombo.Length == 0)
+            PlayerActionProfile.AttackStep[] combo = ActiveBasicCombo;
+            if (combo == null || combo.Length == 0)
             {
-                return new AttackStep
+                return new PlayerActionProfile.AttackStep
                 {
                     startupSeconds = 0.12f,
                     activeSeconds = 0.08f,
@@ -484,7 +494,7 @@ namespace DimensionBrawl.Player
                 };
             }
 
-            return basicCombo[Mathf.Clamp(comboIndex, 0, basicCombo.Length - 1)];
+            return combo[Mathf.Clamp(comboIndex, 0, combo.Length - 1)];
         }
 
         private static bool EnableActionIfNeeded(InputActionReference actionReference)
