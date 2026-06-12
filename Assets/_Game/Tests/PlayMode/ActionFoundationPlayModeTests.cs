@@ -417,6 +417,9 @@ namespace DimensionBrawl.Tests
             Assert.Greater(lungeStrike.TelegraphActiveScale.z, closePunish.TelegraphActiveScale.z, "LungeStrike should expose a longer forward telegraph than ClosePunish.");
             Assert.Less(lungeStrike.TelegraphActiveScale.x, closePunish.TelegraphActiveScale.x, "LungeStrike should expose a narrow line-shaped telegraph instead of the same melee footprint.");
             Assert.Greater(heavyWindup.TelegraphActiveScale.x, closePunish.TelegraphActiveScale.x, "HeavyWindup should expose a wider heavy-warning telegraph than ClosePunish.");
+            Assert.Greater(lungeStrike.ActiveCameraCue.fieldOfViewDelta, closePunish.ActiveCameraCue.fieldOfViewDelta, "Pattern camera cue intensity should now be profile data instead of a driver enum switch.");
+            Assert.Greater(heavyWindup.WindupCameraCue.durationSeconds, closePunish.WindupCameraCue.durationSeconds, "HeavyWindup should own its longer warning camera cue timing through profile data.");
+            Assert.IsTrue(closePunish.DeathCameraCue.enabled, "Shared death readability should still be profile-owned so future monster types can override it without driver code.");
             Assert.AreNotEqual(closePunish.WindupEndColor, lungeStrike.WindupEndColor, "Pattern samples should not share identical warning colors when they are meant to be visually distinguishable.");
             Assert.AreEqual(closePunish.AttackTrigger, lungeStrike.AttackTrigger, "Both patterns should reuse the same current Animator request until a new animation is promoted.");
         }

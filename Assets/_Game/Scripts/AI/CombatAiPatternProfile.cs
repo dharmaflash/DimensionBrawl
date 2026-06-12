@@ -36,6 +36,39 @@ namespace DimensionBrawl.AI
         [SerializeField, Min(0f)] private float windupThreatLevel = 1f;
         [SerializeField, Min(0f)] private float activeCameraCueStrength = 1f;
         [SerializeField, Min(0f)] private float deathCameraCueStrength = 0.6f;
+        [SerializeField] private CombatAiCameraCue windupCameraCue = new CombatAiCameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0.06f, 0.02f, -0.06f),
+            planarDirectionOffset = 0.06f,
+            fieldOfViewDelta = 0.4f,
+            cameraDistanceDelta = -0.04f,
+            focusHeightDelta = 0.01f,
+            durationSeconds = 0.23f,
+            finisherScale = 1f
+        };
+        [SerializeField] private CombatAiCameraCue activeCameraCue = new CombatAiCameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, 0.03f, 0.08f),
+            planarDirectionOffset = 0.08f,
+            fieldOfViewDelta = 0.7f,
+            cameraDistanceDelta = -0.08f,
+            focusHeightDelta = 0.02f,
+            durationSeconds = 0.22f,
+            finisherScale = 1f
+        };
+        [SerializeField] private CombatAiCameraCue deathCameraCue = new CombatAiCameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, 0.02f, 0.10f),
+            planarDirectionOffset = 0.06f,
+            fieldOfViewDelta = -0.6f,
+            cameraDistanceDelta = 0.08f,
+            focusHeightDelta = -0.02f,
+            durationSeconds = 0.24f,
+            finisherScale = 1f
+        };
 
         [Header("Telegraph Presentation")]
         [SerializeField] private Vector3 telegraphWindupStartScale = new Vector3(0.35f, 0.02f, 0.65f);
@@ -74,6 +107,9 @@ namespace DimensionBrawl.AI
         public float WindupThreatLevel => windupThreatLevel;
         public float ActiveCameraCueStrength => activeCameraCueStrength;
         public float DeathCameraCueStrength => deathCameraCueStrength;
+        public CombatAiCameraCue WindupCameraCue => windupCameraCue;
+        public CombatAiCameraCue ActiveCameraCue => activeCameraCue;
+        public CombatAiCameraCue DeathCameraCue => deathCameraCue;
         public Vector3 TelegraphWindupStartScale => telegraphWindupStartScale;
         public Vector3 TelegraphWindupEndScale => telegraphWindupEndScale;
         public Vector3 TelegraphActiveScale => telegraphActiveScale;

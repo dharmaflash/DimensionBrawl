@@ -507,6 +507,9 @@ namespace DimensionBrawl.Editor
                 0.85f,
                 0.75f,
                 0.6f,
+                CreateCombatAiCameraCue(new Vector3(0.06f, 0.02f, -0.06f), 0.06f, 0.4f, -0.04f, 0.01f, 0.23f, 1f),
+                CreateCombatAiCameraCue(new Vector3(0f, 0.03f, 0.08f), 0.08f, 0.7f, -0.08f, 0.02f, 0.22f, 1f),
+                CreateCombatAiCameraCue(new Vector3(0f, 0.02f, 0.10f), 0.06f, -0.6f, 0.08f, -0.02f, 0.24f, 1f),
                 new Vector3(0.35f, 0.02f, 0.65f),
                 new Vector3(1.05f, 0.02f, 1.55f),
                 new Vector3(1.25f, 0.025f, 1.8f),
@@ -542,6 +545,9 @@ namespace DimensionBrawl.Editor
                 1.1f,
                 1.2f,
                 0.6f,
+                CreateCombatAiCameraCue(new Vector3(0.09f, 0.03f, -0.10f), 0.12f, 0.8f, -0.08f, 0.02f, 0.29f, 1f),
+                CreateCombatAiCameraCue(new Vector3(0f, 0.04f, 0.14f), 0.18f, 1.4f, -0.16f, 0.03f, 0.28f, 1f),
+                CreateCombatAiCameraCue(new Vector3(0f, 0.02f, 0.10f), 0.06f, -0.6f, 0.08f, -0.02f, 0.24f, 1f),
                 new Vector3(0.22f, 0.02f, 1.1f),
                 new Vector3(0.46f, 0.02f, 3.0f),
                 new Vector3(0.58f, 0.025f, 3.7f),
@@ -577,6 +583,9 @@ namespace DimensionBrawl.Editor
                 1.45f,
                 1.25f,
                 0.65f,
+                CreateCombatAiCameraCue(new Vector3(0.12f, 0.04f, -0.14f), 0.16f, 1.1f, -0.12f, 0.04f, 0.32f, 1f),
+                CreateCombatAiCameraCue(new Vector3(0f, 0.05f, 0.18f), 0.14f, 1.8f, -0.18f, 0.04f, 0.26f, 1f),
+                CreateCombatAiCameraCue(new Vector3(0f, 0.02f, 0.10f), 0.06f, -0.6f, 0.08f, -0.02f, 0.24f, 1f),
                 new Vector3(0.55f, 0.02f, 0.9f),
                 new Vector3(1.9f, 0.02f, 2.05f),
                 new Vector3(2.25f, 0.03f, 2.35f),
@@ -657,6 +666,9 @@ namespace DimensionBrawl.Editor
             float windupThreatLevel,
             float activeCameraCueStrength,
             float deathCameraCueStrength,
+            CombatAiCameraCue windupCameraCue,
+            CombatAiCameraCue activeCameraCue,
+            CombatAiCameraCue deathCameraCue,
             Vector3 telegraphWindupStartScale,
             Vector3 telegraphWindupEndScale,
             Vector3 telegraphActiveScale,
@@ -692,6 +704,9 @@ namespace DimensionBrawl.Editor
             SetFloat(serializedObject, "windupThreatLevel", windupThreatLevel);
             SetFloat(serializedObject, "activeCameraCueStrength", activeCameraCueStrength);
             SetFloat(serializedObject, "deathCameraCueStrength", deathCameraCueStrength);
+            SetCombatAiCameraCue(serializedObject.FindProperty("windupCameraCue"), windupCameraCue);
+            SetCombatAiCameraCue(serializedObject.FindProperty("activeCameraCue"), activeCameraCue);
+            SetCombatAiCameraCue(serializedObject.FindProperty("deathCameraCue"), deathCameraCue);
             SetVector3(serializedObject, "telegraphWindupStartScale", telegraphWindupStartScale);
             SetVector3(serializedObject, "telegraphWindupEndScale", telegraphWindupEndScale);
             SetVector3(serializedObject, "telegraphActiveScale", telegraphActiveScale);
@@ -811,6 +826,40 @@ namespace DimensionBrawl.Editor
             SetRelativeFloat(cue, "focusHeightDelta", focusHeightDelta);
             SetRelativeFloat(cue, "durationSeconds", durationSeconds);
             SetRelativeFloat(cue, "finisherScale", finisherScale);
+        }
+
+        private static CombatAiCameraCue CreateCombatAiCameraCue(
+            Vector3 localOffset,
+            float planarDirectionOffset,
+            float fieldOfViewDelta,
+            float cameraDistanceDelta,
+            float focusHeightDelta,
+            float durationSeconds,
+            float finisherScale)
+        {
+            return new CombatAiCameraCue
+            {
+                enabled = true,
+                localOffset = localOffset,
+                planarDirectionOffset = planarDirectionOffset,
+                fieldOfViewDelta = fieldOfViewDelta,
+                cameraDistanceDelta = cameraDistanceDelta,
+                focusHeightDelta = focusHeightDelta,
+                durationSeconds = durationSeconds,
+                finisherScale = finisherScale
+            };
+        }
+
+        private static void SetCombatAiCameraCue(SerializedProperty cue, CombatAiCameraCue value)
+        {
+            SetRelativeBool(cue, "enabled", value.enabled);
+            SetRelativeVector3(cue, "localOffset", value.localOffset);
+            SetRelativeFloat(cue, "planarDirectionOffset", value.planarDirectionOffset);
+            SetRelativeFloat(cue, "fieldOfViewDelta", value.fieldOfViewDelta);
+            SetRelativeFloat(cue, "cameraDistanceDelta", value.cameraDistanceDelta);
+            SetRelativeFloat(cue, "focusHeightDelta", value.focusHeightDelta);
+            SetRelativeFloat(cue, "durationSeconds", value.durationSeconds);
+            SetRelativeFloat(cue, "finisherScale", value.finisherScale);
         }
 
         private static void SetObjectReference(UnityEngine.Object target, string propertyName, UnityEngine.Object value)

@@ -12,94 +12,6 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private ActionCameraController cameraController;
         [SerializeField] private Transform cueSpace;
 
-        [Header("Close Punish")]
-        [SerializeField] private ActionCameraCueProfile.CameraCue closeWindupCue = new ActionCameraCueProfile.CameraCue
-        {
-            enabled = true,
-            localOffset = new Vector3(0.06f, 0.02f, -0.06f),
-            planarDirectionOffset = 0.06f,
-            fieldOfViewDelta = 0.4f,
-            cameraDistanceDelta = -0.04f,
-            focusHeightDelta = 0.01f,
-            durationSeconds = 0.18f,
-            finisherScale = 1f
-        };
-
-        [SerializeField] private ActionCameraCueProfile.CameraCue closeActiveCue = new ActionCameraCueProfile.CameraCue
-        {
-            enabled = true,
-            localOffset = new Vector3(0f, 0.03f, 0.08f),
-            planarDirectionOffset = 0.08f,
-            fieldOfViewDelta = 0.7f,
-            cameraDistanceDelta = -0.08f,
-            focusHeightDelta = 0.02f,
-            durationSeconds = 0.16f,
-            finisherScale = 1f
-        };
-
-        [Header("Lunge Strike")]
-        [SerializeField] private ActionCameraCueProfile.CameraCue lungeWindupCue = new ActionCameraCueProfile.CameraCue
-        {
-            enabled = true,
-            localOffset = new Vector3(0.09f, 0.03f, -0.10f),
-            planarDirectionOffset = 0.12f,
-            fieldOfViewDelta = 0.8f,
-            cameraDistanceDelta = -0.08f,
-            focusHeightDelta = 0.02f,
-            durationSeconds = 0.24f,
-            finisherScale = 1f
-        };
-
-        [SerializeField] private ActionCameraCueProfile.CameraCue lungeActiveCue = new ActionCameraCueProfile.CameraCue
-        {
-            enabled = true,
-            localOffset = new Vector3(0f, 0.04f, 0.14f),
-            planarDirectionOffset = 0.18f,
-            fieldOfViewDelta = 1.4f,
-            cameraDistanceDelta = -0.16f,
-            focusHeightDelta = 0.03f,
-            durationSeconds = 0.24f,
-            finisherScale = 1f
-        };
-
-        [Header("Heavy Windup")]
-        [SerializeField] private ActionCameraCueProfile.CameraCue heavyWindupCue = new ActionCameraCueProfile.CameraCue
-        {
-            enabled = true,
-            localOffset = new Vector3(0.12f, 0.04f, -0.14f),
-            planarDirectionOffset = 0.16f,
-            fieldOfViewDelta = 1.1f,
-            cameraDistanceDelta = -0.12f,
-            focusHeightDelta = 0.04f,
-            durationSeconds = 0.30f,
-            finisherScale = 1f
-        };
-
-        [SerializeField] private ActionCameraCueProfile.CameraCue heavyActiveCue = new ActionCameraCueProfile.CameraCue
-        {
-            enabled = true,
-            localOffset = new Vector3(0f, 0.05f, 0.18f),
-            planarDirectionOffset = 0.14f,
-            fieldOfViewDelta = 1.8f,
-            cameraDistanceDelta = -0.18f,
-            focusHeightDelta = 0.04f,
-            durationSeconds = 0.26f,
-            finisherScale = 1f
-        };
-
-        [Header("Shared")]
-        [SerializeField] private ActionCameraCueProfile.CameraCue deathCue = new ActionCameraCueProfile.CameraCue
-        {
-            enabled = true,
-            localOffset = new Vector3(0f, 0.02f, 0.10f),
-            planarDirectionOffset = 0.06f,
-            fieldOfViewDelta = -0.6f,
-            cameraDistanceDelta = 0.08f,
-            focusHeightDelta = -0.02f,
-            durationSeconds = 0.24f,
-            finisherScale = 1f
-        };
-
         private ICombatAiAgent agent;
 
         public MonoBehaviour AgentSource => agentSource;
@@ -135,21 +47,20 @@ namespace DimensionBrawl.Presentation
             switch (state)
             {
                 case CombatAiPatternState.Windup:
-                    RequestCue(ResolveWindupCue(profile), ResolveWindupScale(profile), ResolveWindupDuration(profile));
+                    RequestCue(profile != null ? profile.WindupCameraCue : DefaultWindupCue, ResolveWindupScale(profile));
                     break;
                 case CombatAiPatternState.AttackActive:
-                    RequestCue(ResolveActiveCue(profile), ResolveActiveScale(profile), ResolveActiveDuration(profile));
+                    RequestCue(profile != null ? profile.ActiveCameraCue : DefaultActiveCue, ResolveActiveScale(profile));
                     break;
                 case CombatAiPatternState.Death:
-                    RequestCue(deathCue, ResolveDeathScale(profile), deathCue.durationSeconds);
+                    RequestCue(profile != null ? profile.DeathCameraCue : DefaultDeathCue, ResolveDeathScale(profile));
                     break;
             }
         }
 
         private void RequestCue(
-            ActionCameraCueProfile.CameraCue cue,
-            float scale,
-            float durationSeconds)
+            CombatAiCameraCue cue,
+            float scale)
         {
             if (!cue.enabled || cameraController == null)
             {
@@ -166,41 +77,16 @@ namespace DimensionBrawl.Presentation
 
             float clampedScale = Mathf.Max(0f, scale);
             cameraController.RequestCue(
-                offset * clampedScale,
-                durationSeconds,
-                cue.fieldOfViewDelta * clampedScale,
-                cue.cameraDistanceDelta * clampedScale,
-                cue.focusHeightDelta * clampedScale);
+                offset * clampedScale * cue.finisherScale,
+                cue.durationSeconds,
+                cue.fieldOfViewDelta * clampedScale * cue.finisherScale,
+                cue.cameraDistanceDelta * clampedScale * cue.finisherScale,
+                cue.focusHeightDelta * clampedScale * cue.finisherScale);
         }
 
         private void ResolveAgent()
         {
             agent = agentSource as ICombatAiAgent;
-        }
-
-        private ActionCameraCueProfile.CameraCue ResolveWindupCue(CombatAiPatternProfile profile)
-        {
-            return ResolveCameraCueKind(profile) switch
-            {
-                CombatAiCameraCueKind.LungeStrike => lungeWindupCue,
-                CombatAiCameraCueKind.HeavyWindup => heavyWindupCue,
-                _ => closeWindupCue
-            };
-        }
-
-        private ActionCameraCueProfile.CameraCue ResolveActiveCue(CombatAiPatternProfile profile)
-        {
-            return ResolveCameraCueKind(profile) switch
-            {
-                CombatAiCameraCueKind.LungeStrike => lungeActiveCue,
-                CombatAiCameraCueKind.HeavyWindup => heavyActiveCue,
-                _ => closeActiveCue
-            };
-        }
-
-        private static CombatAiCameraCueKind ResolveCameraCueKind(CombatAiPatternProfile profile)
-        {
-            return profile != null ? profile.CameraCueKind : CombatAiCameraCueKind.ClosePunish;
         }
 
         private static float ResolveWindupScale(CombatAiPatternProfile profile)
@@ -216,26 +102,6 @@ namespace DimensionBrawl.Presentation
         private static float ResolveDeathScale(CombatAiPatternProfile profile)
         {
             return profile != null ? profile.DeathCameraCueStrength : 0.6f;
-        }
-
-        private static float ResolveWindupDuration(CombatAiPatternProfile profile)
-        {
-            if (profile == null)
-            {
-                return 0.20f;
-            }
-
-            return Mathf.Clamp(profile.TelegraphSeconds * 0.35f, 0.14f, 0.32f);
-        }
-
-        private static float ResolveActiveDuration(CombatAiPatternProfile profile)
-        {
-            if (profile == null)
-            {
-                return 0.18f;
-            }
-
-            return Mathf.Clamp(profile.ActiveSeconds + 0.08f, 0.12f, 0.28f);
         }
 
         private Vector3 ResolveThreatDirection()
@@ -255,5 +121,41 @@ namespace DimensionBrawl.Presentation
 
             return agentSource != null ? Vector3.ProjectOnPlane(agentSource.transform.forward, Vector3.up).normalized : transform.forward;
         }
+
+        private static CombatAiCameraCue DefaultWindupCue => new CombatAiCameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0.06f, 0.02f, -0.06f),
+            planarDirectionOffset = 0.06f,
+            fieldOfViewDelta = 0.4f,
+            cameraDistanceDelta = -0.04f,
+            focusHeightDelta = 0.01f,
+            durationSeconds = 0.20f,
+            finisherScale = 1f
+        };
+
+        private static CombatAiCameraCue DefaultActiveCue => new CombatAiCameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, 0.03f, 0.08f),
+            planarDirectionOffset = 0.08f,
+            fieldOfViewDelta = 0.7f,
+            cameraDistanceDelta = -0.08f,
+            focusHeightDelta = 0.02f,
+            durationSeconds = 0.18f,
+            finisherScale = 1f
+        };
+
+        private static CombatAiCameraCue DefaultDeathCue => new CombatAiCameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, 0.02f, 0.10f),
+            planarDirectionOffset = 0.06f,
+            fieldOfViewDelta = -0.6f,
+            cameraDistanceDelta = 0.08f,
+            focusHeightDelta = -0.02f,
+            durationSeconds = 0.24f,
+            finisherScale = 1f
+        };
     }
 }

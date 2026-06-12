@@ -33,6 +33,33 @@ MonoBehaviour:
   windupThreatLevel: 1.1
   activeCameraCueStrength: 1.2
   deathCameraCueStrength: 0.6
+  windupCameraCue:
+    enabled: 1
+    localOffset: {x: 0.09, y: 0.03, z: -0.1}
+    planarDirectionOffset: 0.12
+    fieldOfViewDelta: 0.8
+    cameraDistanceDelta: -0.08
+    focusHeightDelta: 0.02
+    durationSeconds: 0.29
+    finisherScale: 1
+  activeCameraCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.04, z: 0.14}
+    planarDirectionOffset: 0.18
+    fieldOfViewDelta: 1.4
+    cameraDistanceDelta: -0.16
+    focusHeightDelta: 0.03
+    durationSeconds: 0.28
+    finisherScale: 1
+  deathCameraCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.02, z: 0.1}
+    planarDirectionOffset: 0.06
+    fieldOfViewDelta: -0.6
+    cameraDistanceDelta: 0.08
+    focusHeightDelta: -0.02
+    durationSeconds: 0.24
+    finisherScale: 1
   telegraphWindupStartScale: {x: 0.22, y: 0.02, z: 1.1}
   telegraphWindupEndScale: {x: 0.46, y: 0.02, z: 3}
   telegraphActiveScale: {x: 0.58, y: 0.025, z: 3.7}
