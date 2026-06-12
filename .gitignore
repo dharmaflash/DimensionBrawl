@@ -24,3 +24,8 @@ Release/
 DS_Store
 .DS_Store
 Thumbs.db
+
+# Local-only raw asset packs imported from external stores.
+# Keep curated game-ready prefabs/data under Assets/_Game instead.
+Assets/_Imported/
+Assets/_Imported.meta
