@@ -1,0 +1,958 @@
+{
+  "version": 1,
+  "lastUpdatedKst": "2026-06-12",
+  "scopeGuard": {
+    "summary": "Seed catalog for player feel, dodge/counter timing, hit reaction, pressure break, combat energy, frame tagging, and camera/VFX/SFX cue bundles.",
+    "notScopeExpansion": true,
+    "preserveInputBudget": [
+      "position",
+      "direction",
+      "dodge",
+      "summon_timing",
+      "ultimate"
+    ],
+    "avoid": [
+      "manual_basic_attack_mash_as_core",
+      "many_active_attack_buttons",
+      "baseline_parry_button",
+      "full_party_switching",
+      "hard_target_selection_ui",
+      "long_execution_combo_strings"
+    ],
+    "assetReuseBoundary": "Do not import proprietary animation clips, full source files, raw tables, meshes, textures, or audio. Extract schemas, timing ranges, field relationships, and authoring ideas."
+  },
+  "sources": [
+    {
+      "id": "zzz_wiki_dodge",
+      "game": "Zenless Zone Zero",
+      "type": "wiki",
+      "url": "https://zenless-zone-zero.fandom.com/wiki/Dodge",
+      "usefulFor": [
+        "dodge",
+        "dash_attack",
+        "perfect_dodge",
+        "dodge_counter",
+        "invulnerability"
+      ]
+    },
+    {
+      "id": "zzz_wiki_daze",
+      "game": "Zenless Zone Zero",
+      "type": "wiki",
+      "url": "https://zenless-zone-zero.fandom.com/wiki/Daze",
+      "usefulFor": [
+        "daze_meter",
+        "stun",
+        "chain_opportunity",
+        "damage_multiplier",
+        "enemy_strength"
+      ]
+    },
+    {
+      "id": "zzz_wiki_decibels",
+      "game": "Zenless Zone Zero",
+      "type": "wiki",
+      "url": "https://zenless-zone-zero.fandom.com/wiki/Decibels",
+      "usefulFor": [
+        "ultimate_energy",
+        "perfect_dodge_reward",
+        "assist_reward",
+        "interrupt_reward"
+      ]
+    },
+    {
+      "id": "zzz_data_witch_time",
+      "game": "Zenless Zone Zero",
+      "type": "github_data_mirror",
+      "url": "https://github.com/360NENZ/Dimbreath-ZenlessData",
+      "observedPaths": [
+        "Data/Ability_WitchTime.json",
+        "Data/BUFF_WitchTime_Dodge.json",
+        "Data/BUFF_WitchTime_Trigger.json"
+      ],
+      "observedFields": [
+        "AbilityName",
+        "AbilitySpecials.DurationTime.Value",
+        "DefaultModifier.OnDodgeSuccess",
+        "Modifiers.BlockManagementModifier.Duration",
+        "ProcessModifierBlockAction",
+        "WitchSlowDownMixin",
+        "InvincibleBuffModifier"
+      ],
+      "exampleValues": {
+        "DurationTime": 4
+      }
+    },
+    {
+      "id": "zzz_data_frame_mixins",
+      "game": "Zenless Zone Zero",
+      "type": "github_data_mirror",
+      "url": "https://github.com/360NENZ/Dimbreath-ZenlessData",
+      "observedPaths": [
+        "Data/Anbi_PerfectCombo.json"
+      ],
+      "observedFields": [
+        "AttachStateWithModifierMixin",
+        "ActwithStateFrameMixin",
+        "AnimatorStateName",
+        "Frame",
+        "FrameCountLow",
+        "FrameCountHigh",
+        "ForceTriggerOnTransitionIn",
+        "ForceTriggerOnTransitionOut",
+        "ModifierNameList"
+      ],
+      "application": "Bind combo, cue, and modifier logic to animation states and frames rather than only button presses."
+    },
+    {
+      "id": "zzz_data_camera_event",
+      "game": "Zenless Zone Zero",
+      "type": "github_data_mirror",
+      "url": "https://github.com/360NENZ/Dimbreath-ZenlessData",
+      "observedPaths": [
+        "Data/Billy_CameraEvent.json"
+      ],
+      "observedFields": [
+        "AnimatorStateName",
+        "NormalizedTimeLow",
+        "NormalizedTimeHigh",
+        "CameraEventModifier_Normal_02",
+        "CameraZoomEndAction",
+        "CameraStretchEndAction"
+      ],
+      "exampleAnimationStates": [
+        "Attack_Normal_02_Start",
+        "Attack_Normal_02_A",
+        "Attack_Normal_02_B",
+        "Attack_Normal_02_End",
+        "Attack_Normal_03_Start",
+        "Attack_Normal_03_A",
+        "Attack_Normal_03_End"
+      ],
+      "exampleValues": {
+        "fullStateNormalizedTime": [
+          0.0,
+          1.0
+        ],
+        "shortEndSegmentExamples": [
+          0.216,
+          0.212,
+          0.003
+        ]
+      }
+    },
+    {
+      "id": "pgr_wiki_combat_guide",
+      "game": "Punishing: Gray Raven",
+      "type": "wiki",
+      "url": "https://punishing-gray-raven.fandom.com/wiki/Combat_Guide",
+      "usefulFor": [
+        "matrix",
+        "three_ping",
+        "qte",
+        "dodge_reward",
+        "class_roles"
+      ]
+    },
+    {
+      "id": "pgr_data_fight_tables",
+      "game": "Punishing: Gray Raven",
+      "type": "github_data_mirror",
+      "url": "https://github.com/Kengxxiao/Punishing_GrayRaven_Tab",
+      "observedPaths": [
+        "table/client/fight/FightConfig.tab",
+        "table/client/fight/RoleEffect.tab",
+        "table/client/fight/ScreenEffect.tab",
+        "table/client/fight/npc/NpcAnimatorAction.tab",
+        "table/client/camera/CameraParam.tab",
+        "table/client/resourcelut/camera/track/CameraTrackLut.tab",
+        "table/client/sound/EffectsSound.tab"
+      ],
+      "observedFields": {
+        "FightConfig": [
+          "HpTransitionDuration",
+          "EnergyTransitionDuration",
+          "HpShakeDuration",
+          "HpShakeRange"
+        ],
+        "NpcAnimatorAction": [
+          "Id",
+          "Name",
+          "IsTrigger"
+        ],
+        "RoleEffect": [
+          "Type",
+          "Order",
+          "Models",
+          "Intensity",
+          "FadeIn",
+          "FadeOut",
+          "Params"
+        ],
+        "ScreenEffect": [
+          "Id",
+          "Type",
+          "Name",
+          "SortOrder",
+          "PlayAlone"
+        ],
+        "CameraParam": [
+          "Distance",
+          "ZoomSpeed",
+          "TargetAngleX",
+          "TargetAngleY",
+          "XAxisSpeed",
+          "YAxisSpeed",
+          "OffsetViewportX",
+          "OffsetViewportY"
+        ]
+      },
+      "exampleValues": {
+        "HpTransitionDuration": 0.8,
+        "EnergyTransitionDuration": 0.3,
+        "HpShakeDuration": 0.2,
+        "HpShakeRange": 3,
+        "npcAnimatorActions": [
+          "Stand1",
+          "Stand2",
+          "Stand3",
+          "Run",
+          "Walk",
+          "Born",
+          "Death",
+          "Hit1",
+          "Hit2",
+          "Behitfly"
+        ]
+      }
+    },
+    {
+      "id": "hi3_wiki_combat",
+      "game": "Honkai Impact 3rd",
+      "type": "wiki",
+      "url": "https://honkaiimpact3.fandom.com/wiki/Combat",
+      "usefulFor": [
+        "evasion",
+        "ultimate_evasion",
+        "qte",
+        "attack_sequence",
+        "special_button_replacement"
+      ]
+    },
+    {
+      "id": "hi3_data_attack_speed",
+      "game": "Honkai Impact 3rd",
+      "type": "github_data_mirror",
+      "url": "https://github.com/nairieberry/HonkaiImpactData",
+      "observedPaths": [
+        "Global/ExcelOutputAsset/AvatarAttackSpeedParam.json"
+      ],
+      "observedFields": [
+        "AvatarID",
+        "IsFixAttackSpeed",
+        "K1",
+        "K2",
+        "K3",
+        "K4",
+        "K5",
+        "K6",
+        "K7",
+        "K8",
+        "K9",
+        "K10",
+        "K11",
+        "K12"
+      ]
+    },
+    {
+      "id": "hi3_data_attack_punish",
+      "game": "Honkai Impact 3rd",
+      "type": "github_data_mirror",
+      "url": "https://github.com/nairieberry/HonkaiImpactData",
+      "observedPaths": [
+        "Global/ExcelOutputAsset/AttackPunishData.json"
+      ],
+      "observedFields": [
+        "LevelDifference",
+        "DamageReduceRate"
+      ],
+      "exampleValues": [
+        {
+          "LevelDifference": 0,
+          "DamageReduceRate": 0.0
+        },
+        {
+          "LevelDifference": 6,
+          "DamageReduceRate": 0.0
+        },
+        {
+          "LevelDifference": 7,
+          "DamageReduceRate": 0.5
+        },
+        {
+          "LevelDifference": 10,
+          "DamageReduceRate": 0.8
+        }
+      ]
+    },
+    {
+      "id": "wuwa_wiki_combat",
+      "game": "Wuthering Waves",
+      "type": "wiki",
+      "url": "https://wutheringwaves.fandom.com/wiki/Combat",
+      "usefulFor": [
+        "dodge_counter",
+        "basic_attack_variants",
+        "intro_outro",
+        "resonance_skill",
+        "resonance_liberation"
+      ]
+    },
+    {
+      "id": "wuwa_wiki_vibration",
+      "game": "Wuthering Waves",
+      "type": "wiki",
+      "url": "https://wutheringwaves.fandom.com/wiki/Vibration_Strength",
+      "usefulFor": [
+        "break_gauge",
+        "immobilize",
+        "counterattack_break_value",
+        "boss_pressure_break"
+      ]
+    },
+    {
+      "id": "genshin_wiki_hitlag",
+      "game": "Genshin Impact",
+      "type": "wiki",
+      "url": "https://genshin-impact.fandom.com/wiki/Hitlag",
+      "usefulFor": [
+        "hitstop",
+        "hitlag_extension",
+        "attacker_target_slow",
+        "impact_readability"
+      ]
+    },
+    {
+      "id": "genshin_wiki_interruption",
+      "game": "Genshin Impact",
+      "type": "wiki",
+      "url": "https://genshin-impact.fandom.com/wiki/Interruption_Resistance",
+      "usefulFor": [
+        "poise",
+        "stagger",
+        "knockback",
+        "armor_interaction"
+      ]
+    },
+    {
+      "id": "local_code_v2",
+      "game": "IsekaiBrawl",
+      "type": "local_repo",
+      "url": "local",
+      "observedFiles": [
+        "Assets/_Game/Scripts/Battle/BattleEnergySystem.cs",
+        "Assets/_Game/Scripts/Core/BattleCamera.cs",
+        "Assets/_Game/Scripts/Core/CameraShake.cs",
+        "Assets/_Game/Scripts/Player/PlayerSkillController.cs",
+        "Assets/_Game/Scripts/Battle/StoryPveEncounterRuntime.cs",
+        "Assets/_Game/Scripts/UI/StoryPveSummonQueueV2.cs",
+        "Assets/_Game/Scripts/UI/SummonPresentationUtility.cs"
+      ],
+      "observedValues": {
+        "energyMaxExamples": [
+          124,
+          130,
+          138,
+          150
+        ],
+        "startingEnergyExamples": [
+          28,
+          40
+        ],
+        "shotCooldown": 0.72,
+        "empoweredShotCooldownMultiplier": 0.68,
+        "impactShakeDuration": 0.08,
+        "impactShakeMagnitude": 0.08,
+        "blockerBreakBreathingWindowSeconds": 0.9,
+        "bossBreakCameraCueDuration": 0.26,
+        "finalKillCameraCueDuration": 0.42
+      }
+    }
+  ],
+  "frameTagDictionary": [
+    {
+      "tag": "read",
+      "meaning": "Telegraph or readable opportunity begins.",
+      "typicalRangeSeconds": [
+        0.25,
+        0.9
+      ]
+    },
+    {
+      "tag": "startup",
+      "meaning": "Actor commits before active threat or hitbox.",
+      "typicalRangeSeconds": [
+        0.12,
+        0.45
+      ]
+    },
+    {
+      "tag": "active",
+      "meaning": "Hitbox, projectile, heal, taunt, or field is live.",
+      "typicalRangeSeconds": [
+        0.04,
+        0.45
+      ]
+    },
+    {
+      "tag": "hitConfirm",
+      "meaning": "First valid hit point for reward and cue emission.",
+      "typicalRangeSeconds": [
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "tag": "hitstop",
+      "meaning": "Micro pause used to sell impact.",
+      "typicalRangeSeconds": [
+        0.02,
+        0.22
+      ]
+    },
+    {
+      "tag": "reaction",
+      "meaning": "Target stagger, flinch, launch, or armor reaction.",
+      "typicalRangeSeconds": [
+        0.12,
+        1.4
+      ]
+    },
+    {
+      "tag": "cancelToDodge",
+      "meaning": "Dodge cancel accepted.",
+      "typicalRangeSeconds": [
+        0.06,
+        0.3
+      ]
+    },
+    {
+      "tag": "cancelToSummon",
+      "meaning": "Summon call accepted safely.",
+      "typicalRangeSeconds": [
+        0.12,
+        1.4
+      ]
+    },
+    {
+      "tag": "counterWindow",
+      "meaning": "Perfect dodge or counter branch accepted.",
+      "typicalRangeSeconds": [
+        0.12,
+        0.22
+      ]
+    },
+    {
+      "tag": "recovery",
+      "meaning": "Actor regains normal control.",
+      "typicalRangeSeconds": [
+        0.1,
+        0.6
+      ]
+    },
+    {
+      "tag": "relief",
+      "meaning": "Enemy pressure is visibly lower and the player can push.",
+      "typicalRangeSeconds": [
+        1.6,
+        3.0
+      ]
+    },
+    {
+      "tag": "cleanup",
+      "meaning": "Camera, screen, UI, VFX, and SFX fade or reset.",
+      "typicalRangeSeconds": [
+        0.1,
+        0.45
+      ]
+    }
+  ],
+  "secondsToFrames60": {
+    "0.05": 3,
+    "0.083": 5,
+    "0.10": 6,
+    "0.15": 9,
+    "0.20": 12,
+    "0.30": 18,
+    "0.50": 30,
+    "0.72": 43,
+    "1.00": 60,
+    "2.00": 120,
+    "3.00": 180
+  },
+  "proposedDataContracts": {
+    "CombatActionFrameProfile": {
+      "fields": [
+        "id",
+        "actorKind",
+        "actionKind",
+        "durationSeconds",
+        "frames60",
+        "windows",
+        "cancelRules",
+        "hitstopProfileId",
+        "cameraCueIds",
+        "vfxCueIds",
+        "sfxCueIds",
+        "energyEvents",
+        "summonOpportunityTags"
+      ]
+    },
+    "DodgeCounterWindowProfile": {
+      "fields": [
+        "id",
+        "totalDuration",
+        "inputBuffer",
+        "invulnerableFrom",
+        "invulnerableTo",
+        "perfectWindowBeforeImpact",
+        "perfectWindowAfterImpact",
+        "recovery",
+        "perfectReward"
+      ]
+    },
+    "HitReactionProfile": {
+      "fields": [
+        "id",
+        "hitStrength",
+        "poiseDamage",
+        "staggerSeconds",
+        "knockbackMeters",
+        "canInterruptWindup",
+        "armorInteraction",
+        "cameraCue",
+        "screenEffect",
+        "vfxCue"
+      ]
+    },
+    "PressureBreakProfile": {
+      "fields": [
+        "id",
+        "targetKind",
+        "breakGauge",
+        "requiredEvents",
+        "immobilizeSeconds",
+        "reliefSeconds",
+        "damageMultiplier",
+        "summonFollowupWindow",
+        "cameraCue",
+        "uiCallout"
+      ]
+    },
+    "CombatEnergyEvent": {
+      "fields": [
+        "id",
+        "source",
+        "amount",
+        "internalCooldown",
+        "uiPulse",
+        "summonHintPriorityBonus",
+        "notes"
+      ]
+    },
+    "CombatCueBundle": {
+      "fields": [
+        "id",
+        "cameraCue",
+        "hitstop",
+        "shake",
+        "screenEffect",
+        "vfx",
+        "sfx",
+        "cleanupSeconds"
+      ]
+    },
+    "SummonOpportunityFrameTag": {
+      "fields": [
+        "id",
+        "trigger",
+        "role",
+        "validFrom",
+        "validUntil",
+        "priority",
+        "targetingRule",
+        "pocketShiftTarget",
+        "uiHint"
+      ]
+    }
+  },
+  "firstTuningEnvelopes": {
+    "playerMovementAndDodge": {
+      "baseDodgeTotal": [
+        0.55,
+        0.7
+      ],
+      "invulnerableSection": [
+        0.28,
+        0.42
+      ],
+      "perfectTimingAcceptance": [
+        0.14,
+        0.22
+      ],
+      "inputBuffer": [
+        0.08,
+        0.12
+      ],
+      "dodgeRecovery": [
+        0.12,
+        0.22
+      ],
+      "perfectDodgeEnergy": [
+        12,
+        18
+      ],
+      "perfectDodgeOverdrive": [
+        2.0,
+        3.0
+      ],
+      "perfectDodgeCameraCue": [
+        0.2,
+        0.32
+      ]
+    },
+    "autoBasicFire": {
+      "neutralCooldown": 0.72,
+      "neutralCooldownFrames60": 43,
+      "empoweredCooldown": 0.49,
+      "empoweredCooldownFrames60": 29,
+      "neutralHitstop": [
+        0.02,
+        0.04
+      ],
+      "empoweredHitstop": [
+        0.04,
+        0.07
+      ],
+      "neutralHitEnergy": [
+        0,
+        0.6
+      ]
+    },
+    "summonCall": {
+      "opportunityAcceptance": [
+        0.75,
+        1.4
+      ],
+      "entryAnticipation": [
+        0.1,
+        0.18
+      ],
+      "entryImpact": [
+        0.18,
+        0.32
+      ],
+      "entryHitstop": [
+        0.06,
+        0.1
+      ],
+      "correctRoleRefund": [
+        4,
+        8
+      ],
+      "visiblePocketShift": [
+        2.0,
+        3.0
+      ]
+    },
+    "hitReactionAndBreak": {
+      "lightEnemyStagger": [
+        0.18,
+        0.35
+      ],
+      "heavyEnemyStagger": [
+        0.4,
+        0.85
+      ],
+      "smallEnemyLaunchOrDown": [
+        0.7,
+        1.25
+      ],
+      "eliteArmorFlinch": [
+        0.1,
+        0.22
+      ],
+      "elitePressureBreak": [
+        1.4,
+        2.4
+      ],
+      "bossPressureBreak": [
+        2.0,
+        4.0
+      ],
+      "blockerReliefTestValues": [
+        1.6,
+        2.2,
+        3.0
+      ]
+    }
+  },
+  "firstProductionProfiles": [
+    {
+      "id": "player_dodge_default",
+      "type": "DodgeCounterWindowProfile",
+      "totalDuration": 0.62,
+      "inputBuffer": 0.1,
+      "invulnerableFrom": 0.05,
+      "invulnerableTo": 0.4,
+      "perfectWindowBeforeImpact": 0.18,
+      "perfectWindowAfterImpact": 0.06,
+      "recovery": 0.18,
+      "perfectReward": {
+        "slowAccent": 0.16,
+        "overdriveDuration": 2.4,
+        "energy": 14,
+        "summonOpportunity": 1.2,
+        "cameraCue": "dodge_counter_snap"
+      }
+    },
+    {
+      "id": "player_auto_basic_neutral",
+      "type": "CombatActionFrameProfile",
+      "durationSeconds": 0.72,
+      "frames60": 43,
+      "windows": [
+        {
+          "tag": "startup",
+          "start": 0.0,
+          "end": 0.12
+        },
+        {
+          "tag": "active",
+          "start": 0.12,
+          "end": 0.18
+        },
+        {
+          "tag": "recovery",
+          "start": 0.18,
+          "end": 0.72
+        }
+      ],
+      "hitstop": 0.03,
+      "shake": {
+        "duration": 0.05,
+        "magnitude": 0.05
+      },
+      "energy": {
+        "onHit": [
+          0,
+          0.4
+        ]
+      },
+      "summonOpportunityTags": []
+    },
+    {
+      "id": "player_auto_basic_empowered",
+      "type": "CombatActionFrameProfile",
+      "durationSeconds": 0.49,
+      "frames60": 29,
+      "windows": [
+        {
+          "tag": "startup",
+          "start": 0.0,
+          "end": 0.1
+        },
+        {
+          "tag": "active",
+          "start": 0.1,
+          "end": 0.16
+        },
+        {
+          "tag": "cancelToSummon",
+          "start": 0.16,
+          "end": 0.91
+        },
+        {
+          "tag": "recovery",
+          "start": 0.16,
+          "end": 0.49
+        }
+      ],
+      "hitstop": 0.05,
+      "shake": {
+        "duration": 0.07,
+        "magnitude": 0.08
+      },
+      "energy": {
+        "onHit": [
+          0.4,
+          0.8
+        ]
+      },
+      "summonOpportunityTags": [
+        "basic_fire_beat"
+      ]
+    },
+    {
+      "id": "summon_break_entry",
+      "type": "CombatCueBundle",
+      "anticipation": 0.14,
+      "impact": 0.24,
+      "hitstop": 0.08,
+      "blockerReliefSeconds": 2.2,
+      "correctRoleRefund": 6,
+      "cameraFlow": [
+        "SummonCall",
+        "BossBreakOrHitIfBreakSucceeds"
+      ],
+      "vfx": [
+        "summon_landing_ring",
+        "armor_crack_sparks"
+      ],
+      "sfx": [
+        "summon_drop",
+        "crack_high"
+      ]
+    },
+    {
+      "id": "boss_pressure_break",
+      "type": "PressureBreakProfile",
+      "triggerSources": [
+        "perfect_dodge_chain",
+        "correct_summon",
+        "structure_crack",
+        "ultimate_hit"
+      ],
+      "breakCue": [
+        0.26,
+        0.36
+      ],
+      "reliefSeconds": 2.4,
+      "summonFollowup": 1.4,
+      "cameraCue": "BossBreak",
+      "uiCallout": "OPEN"
+    }
+  ],
+  "energyEconomyRecommendations": [
+    {
+      "source": "passive_trickle",
+      "amountRange": [
+        0.8,
+        1.4
+      ],
+      "unit": "energy_per_second",
+      "notes": "Keeps the loop moving but should not dominate summon timing."
+    },
+    {
+      "source": "aggressive_safe_forward_zone",
+      "amountRange": [
+        0.5,
+        1.2
+      ],
+      "unit": "energy_per_second",
+      "notes": "Restores the project brief's aggressive-position energy reward."
+    },
+    {
+      "source": "perfect_dodge",
+      "amountRange": [
+        12,
+        18
+      ],
+      "unit": "flat_energy",
+      "notes": "Primary timing reward."
+    },
+    {
+      "source": "correct_role_summon_refund",
+      "amountRange": [
+        4,
+        8
+      ],
+      "unit": "flat_energy",
+      "notes": "Rewards matching Break/Tank/Arrow/Heal to the current need."
+    },
+    {
+      "source": "structure_or_blocker_break",
+      "amountRange": [
+        14,
+        22
+      ],
+      "unit": "flat_energy",
+      "notes": "Should create next-call tempo without making neutral DPS the best farm."
+    },
+    {
+      "source": "boss_pressure_break",
+      "amountRange": [
+        18,
+        28
+      ],
+      "unit": "flat_energy",
+      "notes": "Big payoff moment for correct reading and summon use."
+    },
+    {
+      "source": "neutral_auto_fire_hit",
+      "amountRange": [
+        0,
+        0.6
+      ],
+      "unit": "flat_energy",
+      "notes": "Keep low so the player does not farm energy by idle firing."
+    }
+  ],
+  "summonOpportunityRules": [
+    {
+      "id": "perfect_dodge_success_any_role",
+      "trigger": "perfect_dodge_success",
+      "role": "AnyFrontCard",
+      "validUntil": 1.2,
+      "priority": 1,
+      "pocketShiftTarget": "safe_counter_pressure"
+    },
+    {
+      "id": "structure_cracked_break",
+      "trigger": "structure_cracked",
+      "role": "Break",
+      "validUntil": 1.4,
+      "priority": 4,
+      "pocketShiftTarget": "open_frontline"
+    },
+    {
+      "id": "player_danger_tank_or_heal",
+      "trigger": "player_hp_danger_or_unscreened_pressure",
+      "role": "TankOrHeal",
+      "validUntil": 1.2,
+      "priority": 4,
+      "pocketShiftTarget": "survive_pressure"
+    },
+    {
+      "id": "backline_windup_arrow",
+      "trigger": "enemy_backline_windup_read",
+      "role": "Arrow",
+      "validUntil": 1.2,
+      "priority": 3,
+      "pocketShiftTarget": "interrupt_cast"
+    },
+    {
+      "id": "boss_pressure_break_followup",
+      "trigger": "boss_pressure_break",
+      "role": "BreakOrArrow",
+      "validUntil": 1.4,
+      "priority": 5,
+      "pocketShiftTarget": "push_boss_retreat"
+    }
+  ],
+  "implementationRecommendations": [
+    "Create a data-only CombatActionFrameProfile authoring surface before widening action scripts.",
+    "Author seconds as source of truth and generate 60fps frame equivalents for review.",
+    "Wire existing BattleCamera.RequestCue from frame tags instead of scattered ad hoc calls.",
+    "Create a central CombatCueBundle table so hit-stop, shake, VFX, SFX, screen effects, and UI pulse stay synchronized.",
+    "Tune energy through event rewards first; passive trickle should support but not define summon timing.",
+    "Preserve one-button dodge and summon-first identity; do not add a parry button or manual combo layer.",
+    "Validate with 60fps video review and tag read/startup/active/hit/recovery/relief."
+  ],
+  "nextSmallestFollowUps": [
+    "Create COMBAT_FEEL_FRAME_SPEC.md with final v1 profile IDs and numeric values.",
+    "Add CombatActionFrameProfile and CombatCueBundle data structures or ScriptableObject equivalents.",
+    "Test only player_dodge_default, player_auto_basic_empowered, summon_break_entry, and boss_pressure_break first.",
+    "Capture one 60fps run and tag first dodge, first summon call, first blocker break, first boss break, and final kill."
+  ]
+}

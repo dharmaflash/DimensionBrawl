@@ -1,0 +1,816 @@
+{
+  "version": 1,
+  "lastUpdatedKst": "2026-06-12",
+  "scopeGuard": {
+    "isScopeFence": false,
+    "summary": "Reference dataset for stage entry, result reward, daily routine, account/growth gates, passive home rewards, and post-run progression wrappers around the horizontal ARPG Story PvE combat slice.",
+    "activeIdentity": [
+      "landscape_horizontal_arpg_story_pve",
+      "summon_first_combat",
+      "three_to_five_minute_run",
+      "instant_retry",
+      "stage_result_reward_growth_wrapper"
+    ],
+    "activeV1Warning": "PROJECT_BRIEF excludes meta progression and collection from the immediate v1 slice. Use this dataset to prepare the wrapper after combat feel is stable.",
+    "avoid": [
+      "pvp",
+      "hand_of_cards_ui",
+      "direct_target_selection",
+      "lane_first_input",
+      "collection_first_scope_creep",
+      "idle_rewards_before_combat_fun",
+      "large_currency_zoo",
+      "hidden_stat_inflation_as_primary_progression"
+    ]
+  },
+  "sources": [
+    {
+      "id": "zzz_battery_charge",
+      "game": "Zenless Zone Zero",
+      "type": "wiki",
+      "url": "https://zenless-zone-zero.fandom.com/wiki/Battery_Charge",
+      "confidence": "high",
+      "observed": {
+        "cap": 240,
+        "regen": "1 per 6 minutes",
+        "emptyToCap": "24 hours",
+        "overcapMax": 1000,
+        "activityCosts": {
+          "CombatSimulation": "20-100",
+          "ExpertChallenge": 40,
+          "RoutineCleanup": 60,
+          "NotoriousHunt": 60
+        },
+        "spendTiming": "consumed on completion/reward claim"
+      },
+      "usefulFor": [
+        "reward_claim_resource",
+        "retry_friendly_stamina",
+        "daily_refill_interaction"
+      ]
+    },
+    {
+      "id": "zzz_inter_knot",
+      "game": "Zenless Zone Zero",
+      "type": "wiki",
+      "url": "https://zenless-zone-zero.fandom.com/wiki/Inter-Knot_Level",
+      "confidence": "high",
+      "observed": {
+        "rankUpEveryLevels": 10,
+        "startsAtLevel": 20,
+        "rankUpCommissions": true,
+        "unlocks": [
+          "agent_level_caps",
+          "bangboo_level_caps",
+          "w_engine_level_caps",
+          "new_challenge_difficulties",
+          "higher_rewards"
+        ]
+      },
+      "usefulFor": [
+        "account_rank_gate",
+        "difficulty_reward_tier",
+        "readiness_test_stage"
+      ]
+    },
+    {
+      "id": "zzz_data_loop_tables",
+      "game": "Zenless Zone Zero",
+      "type": "github_data_mirror",
+      "url": "https://github.com/360NENZ/Dimbreath-ZenlessData",
+      "confidence": "medium",
+      "observedPaths": [
+        "FileCfg/DailyQuestTemplateTb.json",
+        "FileCfg/DailyLevelTemplateTb.json",
+        "FileCfg/DailyRewardTypeTemplateTb.json",
+        "FileCfg/DailyScheduleTemplateTb.json",
+        "FileCfg/LevelQuestTemplateTb.json",
+        "FileCfg/BattleRankingRewardsTemplateTb.json",
+        "FileCfg/AbyssRewardBarTemplateTb.json",
+        "FileCfg/ActivityTaskTemplateTb.json",
+        "FileCfg/DropPackTemplateTb.json",
+        "FileCfg/DungeonDropPoolTemplateTb.json",
+        "Data/LevelDailyVR_EnterSceneEffect_*.json",
+        "Data/Card_DailyUse_*.json"
+      ],
+      "usefulFor": [
+        "daily_task_tables",
+        "reward_bar_tables",
+        "drop_pool_tables",
+        "stage_entry_effect_tables"
+      ]
+    },
+    {
+      "id": "pgr_serum",
+      "game": "Punishing: Gray Raven",
+      "type": "wiki",
+      "url": "https://punishing-gray-raven.fandom.com/wiki/Serum",
+      "confidence": "medium",
+      "observed": {
+        "cap": 160,
+        "regen": "1 per 6 minutes",
+        "squadExpRatio": "1 Serum to 1 Squad EXP",
+        "spendTiming": "mission completion"
+      },
+      "usefulFor": [
+        "stamina_to_account_exp",
+        "completion_spend",
+        "retry_friendly_costing"
+      ]
+    },
+    {
+      "id": "pgr_beginner_unlocks",
+      "game": "Punishing: Gray Raven",
+      "type": "wiki",
+      "url": "https://punishing-gray-raven.fandom.com/wiki/Beginner%27s_Guide",
+      "confidence": "medium",
+      "observed": {
+        "storyUnlocks": {
+          "noviceMissions": "clear 1-6 Normal",
+          "dailyLoginReward": "clear 1-9 Normal",
+          "dailies": "clear 1-10 Normal",
+          "gacha": "clear 1-12 Normal",
+          "shop": "clear 2-3 Normal",
+          "dorm": "clear 4-2 Normal",
+          "warZone": "clear 4-8 Normal",
+          "phantomPainCage": "level 35 or clear 5-7 Normal"
+        },
+        "retryPolicy": "failed attempts do not consume Serum"
+      },
+      "usefulFor": [
+        "progressive_system_unlock",
+        "tutorial_spine",
+        "free_retry_messaging"
+      ]
+    },
+    {
+      "id": "pgr_score_modes",
+      "game": "Punishing: Gray Raven",
+      "type": "wiki",
+      "urls": [
+        "https://punishing-gray-raven.fandom.com/wiki/War_Zone",
+        "https://punishing-gray-raven.fandom.com/wiki/Phantom_Pain_Cage"
+      ],
+      "confidence": "medium",
+      "observed": {
+        "warZone": [
+          "unlimited entry",
+          "no serum cost",
+          "biweekly cycle",
+          "recruitment_battle_result_phases",
+          "ranked_score"
+        ],
+        "phantomPainCage": [
+          "boss_score_mode",
+          "daily_attempt_limit",
+          "weekly_character_ap",
+          "difficulty_ladder",
+          "discard_score_retry_protection"
+        ]
+      },
+      "usefulFor": [
+        "practice_vs_submission",
+        "boss_drill",
+        "result_scoring"
+      ]
+    },
+    {
+      "id": "pgr_dorm",
+      "game": "Punishing: Gray Raven",
+      "type": "wiki",
+      "url": "https://punishing-gray-raven.fandom.com/wiki/Dorm",
+      "confidence": "medium",
+      "observed": [
+        "tenant_slots",
+        "chores",
+        "decor_stats",
+        "character_stamina",
+        "mood",
+        "gift_frequency"
+      ],
+      "usefulFor": [
+        "future_summon_camp",
+        "character_attachment",
+        "passive_small_materials"
+      ]
+    },
+    {
+      "id": "hi3_missions",
+      "game": "Honkai Impact 3rd",
+      "type": "wiki",
+      "url": "https://honkaiimpact3.fandom.com/wiki/Missions",
+      "confidence": "high",
+      "observed": [
+        "daily_login_stamina",
+        "story_stage_daily_tasks",
+        "material_event_tasks",
+        "spend_stamina_tasks",
+        "dorm_tasks",
+        "arena_abyss_realm_tasks",
+        "accumulated_bp_rewards"
+      ],
+      "usefulFor": [
+        "daily_behavior_routing",
+        "threshold_reward_track",
+        "task_deep_linking"
+      ]
+    },
+    {
+      "id": "hi3_data_loop_tables",
+      "game": "Honkai Impact 3rd",
+      "type": "github_data_mirror",
+      "url": "https://github.com/nairieberry/HonkaiImpactData",
+      "confidence": "medium",
+      "observedPaths": [
+        "Global/ExcelOutputAsset/Decrypted/MissionData.json",
+        "Global/ExcelOutputAsset/Decrypted/RewardData.json",
+        "Global/ExcelOutputAsset/Decrypted/StageData_Main.json",
+        "Global/ExcelOutputAsset/DutyDailyData.json",
+        "Global/ExcelOutputAsset/LoginRewardSchedule.json",
+        "Global/ExcelOutputAsset/FarmMaterial.json",
+        "Global/ExcelOutputAsset/GeneralActivityStageReward.json"
+      ],
+      "observedFieldSamples": {
+        "MissionData": [
+          "id",
+          "type",
+          "subType",
+          "title",
+          "description",
+          "finishWay",
+          "finishParaInt",
+          "finishParaStr",
+          "totalProgress",
+          "rewardId",
+          "LinkType",
+          "LinkParams",
+          "PreviewTime",
+          "Priority"
+        ],
+        "DutyDailyData": [
+          "dutyId",
+          "needDuty",
+          "rewardId",
+          "unlockLv"
+        ]
+      },
+      "usefulFor": [
+        "mission_row_schema",
+        "reward_row_schema",
+        "daily_threshold_schema",
+        "login_reward_schedule"
+      ]
+    },
+    {
+      "id": "wuwa_guidebook_waveplate",
+      "game": "Wuthering Waves",
+      "type": "wiki",
+      "urls": [
+        "https://wutheringwaves.fandom.com/wiki/Guidebook",
+        "https://wutheringwaves.fandom.com/wiki/Waveplate"
+      ],
+      "confidence": "medium",
+      "observed": {
+        "dailyActivity": "20 point reward steps up to 100",
+        "guidebookTabs": [
+          "Activity",
+          "Milestones",
+          "Material Spots",
+          "Recurring Challenges",
+          "Path of Growth",
+          "Enemy Tracing"
+        ],
+        "waveplateCosts": {
+          "SimulationChallenge": 40,
+          "BossChallenge": 60,
+          "WeeklyChallenge": 60,
+          "TacetField": 60,
+          "ForgeryChallenge": 40
+        }
+      },
+      "usefulFor": [
+        "tactical_guide",
+        "growth_milestones",
+        "enemy_trace",
+        "material_routing"
+      ]
+    },
+    {
+      "id": "genshin_hsr_reward_claim",
+      "games": [
+        "Genshin Impact",
+        "Honkai: Star Rail"
+      ],
+      "type": "wiki",
+      "urls": [
+        "https://genshin-impact.fandom.com/wiki/Original_Resin",
+        "https://honkai-star-rail.fandom.com/wiki/Trailblaze_Power"
+      ],
+      "confidence": "medium",
+      "observed": {
+        "genshin": "Original Resin claims Ley Line, Domain, and Boss rewards; activities may be completed without claiming rewards.",
+        "hsr": "Trailblaze Power claims material, relic, boss, and simulation rewards and grants account EXP per power used."
+      },
+      "usefulFor": [
+        "reward_claim_vs_encounter_completion",
+        "practice_clear",
+        "account_exp_ratio"
+      ]
+    },
+    {
+      "id": "blue_archive_campaign_farm",
+      "game": "Blue Archive",
+      "type": "wiki",
+      "urls": [
+        "https://bluearchive.fandom.com/wiki/Mission",
+        "https://bluearchive.fandom.com/wiki/Special_Request"
+      ],
+      "confidence": "medium",
+      "observed": {
+        "normalMission": {
+          "mainReward": "equipment",
+          "cost": "10 AP",
+          "quickClearUnlock": "3-star clear"
+        },
+        "hardMission": {
+          "mainReward": "student fragments",
+          "cost": "20 AP",
+          "dailyLimit": 3,
+          "paidReset": true
+        },
+        "specialRequest": {
+          "mainRewards": [
+            "EXP reports",
+            "credits"
+          ],
+          "apCostRange": "5-40",
+          "skipAfterThreeStar": true
+        }
+      },
+      "usefulFor": [
+        "mastery_unlocks_sweep",
+        "daily_fragment_caps",
+        "clear_quality_objectives"
+      ]
+    },
+    {
+      "id": "nikke_outpost",
+      "game": "GODDESS OF VICTORY: NIKKE",
+      "type": "wiki",
+      "url": "https://nikke-goddess-of-victory-international.fandom.com/wiki/Outpost",
+      "confidence": "medium",
+      "observed": {
+        "passiveRewards": [
+          "Credits",
+          "Battle Data",
+          "Core Dust",
+          "Player EXP"
+        ],
+        "storageCap": "24 hours",
+        "levelRule": "every 5 campaign stages cleared",
+        "wipeOut": "2 hours of resources; first daily free"
+      },
+      "usefulFor": [
+        "passive_camp_reward",
+        "campaign_to_idle_rate",
+        "return_beat"
+      ]
+    },
+    {
+      "id": "arknights_sanity_riic",
+      "game": "Arknights",
+      "type": "wiki",
+      "urls": [
+        "https://arknights.fandom.com/wiki/Sanity",
+        "https://arknights.fandom.com/wiki/Rhodes_Island_Infrastructure_Complex"
+      ],
+      "confidence": "medium",
+      "observed": {
+        "sanity": {
+          "regen": "1 per 6 minutes",
+          "operationCostRange": "6-36",
+          "refundPolicy": "full or partial depending on first clear/challenge",
+          "levelUp": "cap increase and full restore"
+        },
+        "riic": [
+          "facility_resource_production",
+          "operator_morale",
+          "dorm_recovery",
+          "trust_interaction",
+          "crafting_and_recruitment_support"
+        ]
+      },
+      "usefulFor": [
+        "explicit_cost_refund_rules",
+        "passive_base_delay_warning",
+        "resource_production_contract"
+      ]
+    },
+    {
+      "id": "local_result_shell",
+      "game": "IsekaiBrawl",
+      "type": "local_code",
+      "url": "local",
+      "confidence": "high",
+      "observedPaths": [
+        "Assets/_Game/Scripts/UI/BattleResultUI.cs",
+        "Assets/_Game/Scripts/Battle/BattleManager.cs",
+        "Assets/_Game/Scripts/Battle/BattleEnergySystem.cs",
+        "Assets/_Game/Scripts/StoryPve/StoryPveObjectiveSystem.cs",
+        "Assets/_Game/Scripts/UI/MetaMenuController.cs"
+      ],
+      "usefulFor": [
+        "current_result_summary",
+        "advance_rewards",
+        "just_dodge_summary",
+        "stage_context",
+        "structure_energy_rewards"
+      ]
+    }
+  ],
+  "observedLoopShapes": [
+    {
+      "id": "reward_claim_resource_not_retry_tax",
+      "sources": [
+        "zzz_battery_charge",
+        "pgr_serum",
+        "genshin_hsr_reward_claim",
+        "arknights_sanity_riic"
+      ],
+      "insight": "Major gacha/action RPGs protect reward pacing with stamina-like resources while allowing retry or reward-claim separation. This is especially important for action games where learning a fight must not feel expensive.",
+      "isekaiBrawlUse": "Keep immediate retry free. If a stamina-like system appears later, spend it on result reward claim, not on failed learning attempts."
+    },
+    {
+      "id": "account_rank_bundles_cap_difficulty_reward",
+      "sources": [
+        "zzz_inter_knot",
+        "pgr_beginner_unlocks"
+      ],
+      "insight": "Account progression bundles character/summon cap increases, new difficulty rows, and reward tier increases behind readiness checks.",
+      "isekaiBrawlUse": "Later account rank should unlock run tier, summon role cap, and boss deck modifier together after a short readiness run."
+    },
+    {
+      "id": "story_milestones_unlock_systems",
+      "sources": [
+        "pgr_beginner_unlocks",
+        "blue_archive_campaign_farm"
+      ],
+      "insight": "New players see systems in slices as story stages are cleared. This keeps the first-session burden low while still giving long-term structure.",
+      "isekaiBrawlUse": "Unlock StageSelect/Result first, then SummonUpgrade, DailyPractice, and BossDrill only after each combat lesson is taught."
+    },
+    {
+      "id": "daily_tasks_are_behavior_routes",
+      "sources": [
+        "hi3_missions",
+        "hi3_data_loop_tables",
+        "wuwa_guidebook_waveplate"
+      ],
+      "insight": "Daily task rows route players into specific behaviors and screens, carry deep-link data, and feed threshold reward tracks.",
+      "isekaiBrawlUse": "Daily tasks should be combat lesson tasks: perfect dodge, Tank rescue, Break structure, Arrow backline, Heal under pressure."
+    },
+    {
+      "id": "guidebook_as_action_router",
+      "sources": [
+        "wuwa_guidebook_waveplate",
+        "genshin_hsr_reward_claim"
+      ],
+      "insight": "A guidebook can unify daily activity, material routing, training, milestones, recurring challenges, and enemy tracing.",
+      "isekaiBrawlUse": "Create a compact Tactical Guide later with Today, Growth, Boss Drill, Summon Role Practice, and Enemy Trace tabs."
+    },
+    {
+      "id": "mastery_unlocks_convenience",
+      "sources": [
+        "blue_archive_campaign_farm"
+      ],
+      "insight": "Clear quality such as 3-star completion can unlock sweep/quick clear without replacing the initial combat experience.",
+      "isekaiBrawlUse": "Use mastery objectives to unlock quick replay/simulated clear only after the player proves the intended combat answers."
+    },
+    {
+      "id": "score_modes_separate_practice_and_submission",
+      "sources": [
+        "pgr_score_modes"
+      ],
+      "insight": "Score modes can allow unlimited or protected practice while controlling official attempts or final score submission.",
+      "isekaiBrawlUse": "Boss Drill should be practice-friendly. Result score should initially be local proof, not competitive ranking."
+    },
+    {
+      "id": "passive_base_rewards_are_long_tail_not_v1_core",
+      "sources": [
+        "pgr_dorm",
+        "nikke_outpost",
+        "arknights_sanity_riic"
+      ],
+      "insight": "Dorm/base/outpost systems can deepen retention and character attachment, but they become their own management game if introduced too early.",
+      "isekaiBrawlUse": "Delay full base management. Prepare only a small Summon Camp concept for passive low-value materials and role training later."
+    }
+  ],
+  "isekaiBrawlApplications": {
+    "firstCurrencies": [
+      {
+        "id": "CommandExp",
+        "source": "run clear, first clear, daily practice",
+        "sink": "account and tutorial unlocks",
+        "reason": "Proves the player is learning the command role."
+      },
+      {
+        "id": "SummonCore",
+        "source": "first-clear and challenge rewards",
+        "sink": "summon role nodes",
+        "reason": "Connects rewards to the unique summon identity."
+      },
+      {
+        "id": "TacticChip",
+        "source": "repeat clears and summon-answer bonuses",
+        "sink": "small per-role tuning",
+        "reason": "Lets repeat play matter without gacha."
+      },
+      {
+        "id": "StyleMedal",
+        "source": "clean timing objectives",
+        "sink": "cosmetic/result rank only at first",
+        "reason": "Rewards skill without power creep."
+      }
+    ],
+    "firstResultMetrics": [
+      "ClearTime",
+      "PlayerDamageTaken",
+      "PerfectDodges",
+      "SummonCalls",
+      "CorrectSummonAnswers",
+      "StructureBreaks",
+      "ForwardPressureSeconds",
+      "FinalBossHPRemovedBySummons"
+    ],
+    "resultGrades": [
+      {
+        "id": "Clear",
+        "condition": "finish the run"
+      },
+      {
+        "id": "Clean",
+        "condition": "clear plus low damage or no down"
+      },
+      {
+        "id": "Tactical",
+        "condition": "clear plus at least one authored summon-answer objective"
+      },
+      {
+        "id": "Breakthrough",
+        "condition": "clear plus final boss kill, two or more correct summon answers, and forward pressure target"
+      }
+    ]
+  },
+  "proposedDataContracts": [
+    {
+      "id": "StageProgressionNode",
+      "purpose": "Where the player can go next and what this stage teaches.",
+      "fields": [
+        "id",
+        "chapterId",
+        "displayName",
+        "unlockRule",
+        "recommendedPower",
+        "runDefinitionId",
+        "firstClearRewardPlanId",
+        "repeatRewardPlanId",
+        "masteryObjectiveIds",
+        "featuredSummonNeed",
+        "bossPatternDeckId",
+        "stageEntryCueId",
+        "resultThemeId",
+        "retryPolicy"
+      ]
+    },
+    {
+      "id": "RunRewardPlan",
+      "purpose": "What the result screen can grant.",
+      "fields": [
+        "id",
+        "entryCost",
+        "claimCost",
+        "firstClearRewards",
+        "repeatRewards",
+        "rankRewards",
+        "summonAnswerRewards",
+        "masteryRewards",
+        "accountExpPerClear",
+        "practiceModeRewardScale",
+        "dropPoolId",
+        "rewardRevealCueId"
+      ]
+    },
+    {
+      "id": "MasteryObjective",
+      "purpose": "Stage stars without importing lane/turn assumptions.",
+      "fields": [
+        "id",
+        "kind",
+        "targetValue",
+        "displayPriority",
+        "rewardTag",
+        "recommendedSummon",
+        "failDoesNotBlockClear"
+      ],
+      "firstKinds": [
+        "ClearStage",
+        "ClearUnderTime",
+        "NoPlayerDown",
+        "UseSummonForNeed",
+        "BreakStructure",
+        "PerfectDodgeCount",
+        "ForwardPressureSeconds",
+        "FinalBossKill"
+      ]
+    },
+    {
+      "id": "DailyRoutineTask",
+      "purpose": "Daily tasks that teach the real combat loop.",
+      "fields": [
+        "id",
+        "category",
+        "unlockRule",
+        "objectiveKind",
+        "targetValue",
+        "linkedStageId",
+        "linkedGuideId",
+        "rewardId",
+        "activityPoints",
+        "priority",
+        "expiresAtReset"
+      ],
+      "firstTasks": [
+        "Clear one Story PvE run",
+        "Trigger two perfect dodges",
+        "Call Tank during immediate pressure",
+        "Break one structure with Break",
+        "Use Arrow against a backline threat",
+        "Use Heal when HP is low"
+      ]
+    },
+    {
+      "id": "GrowthSink",
+      "purpose": "Where rewards go.",
+      "fields": [
+        "id",
+        "ownerKind",
+        "ownerId",
+        "tier",
+        "cost",
+        "unlockRule",
+        "effectKind",
+        "effectValue",
+        "presentationCueId",
+        "combatRiskNote"
+      ],
+      "safeFirstSinks": [
+        "Break structure damage and cue clarity",
+        "Tank spawn shield and relief duration test",
+        "Arrow backline lock-on consistency",
+        "Heal field duration and clarity",
+        "Ultimate recharge tutorial upgrade"
+      ]
+    },
+    {
+      "id": "RewardRevealCue",
+      "purpose": "Result polish without one-off UI animation.",
+      "fields": [
+        "id",
+        "rankStampCue",
+        "rewardCardCue",
+        "countUpDuration",
+        "rareRewardGlint",
+        "skipPolicy",
+        "sfxTier",
+        "bgmContext",
+        "nextActionHighlight"
+      ]
+    }
+  ],
+  "firstStageLoop": [
+    {
+      "beat": 1,
+      "screen": "Lobby",
+      "playerSees": "guide character, current energy, next stage",
+      "dataRowsNeeded": [
+        "LobbyGuideFeedback",
+        "DailyRoutineTask"
+      ],
+      "note": "Reuse UI cue research; no full base yet."
+    },
+    {
+      "beat": 2,
+      "screen": "StageSelect",
+      "playerSees": "boss threat, reward, recommended summon need",
+      "dataRowsNeeded": [
+        "StageProgressionNode",
+        "RunRewardPlan",
+        "BossPatternDeck"
+      ],
+      "note": "Show Break/Tank/Arrow/Heal need, not long text."
+    },
+    {
+      "beat": 3,
+      "screen": "Prep",
+      "playerSees": "current summon queue, one tactical hint",
+      "dataRowsNeeded": [
+        "StageEntryCue",
+        "SummonLoadoutHint"
+      ],
+      "note": "No hand-of-cards return."
+    },
+    {
+      "beat": 4,
+      "screen": "Combat",
+      "playerSees": "3 to 5 minute horizontal ARPG Story PvE run",
+      "dataRowsNeeded": [
+        "BossRunDefinition",
+        "EncounterPressurePlan"
+      ],
+      "note": "Existing boss/run research owns this."
+    },
+    {
+      "beat": 5,
+      "screen": "Result",
+      "playerSees": "rank, action proof, rewards",
+      "dataRowsNeeded": [
+        "RunResultSummary",
+        "RewardRevealCue"
+      ],
+      "note": "Reward reveal should be skippable."
+    },
+    {
+      "beat": 6,
+      "screen": "Growth",
+      "playerSees": "one recommended upgrade",
+      "dataRowsNeeded": [
+        "GrowthSink",
+        "CurrencyBalance"
+      ],
+      "note": "Show one next improvement, not a huge menu."
+    },
+    {
+      "beat": 7,
+      "screen": "Next",
+      "playerSees": "retry, next stage, or guide task",
+      "dataRowsNeeded": [
+        "NextActionRecommendation"
+      ],
+      "note": "Instant retry remains visible."
+    }
+  ],
+  "firstStageSet": [
+    {
+      "id": "S1-1",
+      "name": "Break Gate",
+      "combatLesson": "Break opens structure relief.",
+      "featuredReward": "SummonCore:Break",
+      "masteryObjective": "Break one structure.",
+      "nextUnlock": "S1-2"
+    },
+    {
+      "id": "S1-2",
+      "name": "Backline Signal",
+      "combatLesson": "Arrow removes backline pressure.",
+      "featuredReward": "TacticChip:Arrow",
+      "masteryObjective": "Arrow hits priority threat.",
+      "nextUnlock": "S1-3"
+    },
+    {
+      "id": "S1-3",
+      "name": "Tank Rescue",
+      "combatLesson": "Tank creates a breathing window.",
+      "featuredReward": "SummonCore:Tank",
+      "masteryObjective": "Call Tank during danger.",
+      "nextUnlock": "S1-4"
+    },
+    {
+      "id": "S1-4",
+      "name": "Heal Pocket",
+      "combatLesson": "Heal saves the push under pressure.",
+      "featuredReward": "TacticChip:Heal",
+      "masteryObjective": "Heal while under boss pressure.",
+      "nextUnlock": "S1-5"
+    },
+    {
+      "id": "S1-5",
+      "name": "Boss Stand",
+      "combatLesson": "Combine all summons into final boss kill.",
+      "featuredReward": "CommandExp+StyleMedal",
+      "masteryObjective": "Final boss kill and no-death bonus.",
+      "nextUnlock": "DailyPractice"
+    }
+  ],
+  "implementationRecommendations": [
+    "Draft StageProgressionNode and RunRewardPlan data before adding a store, inventory, or base.",
+    "Extend the current result shell to show run proof first: clear time, perfect dodge, summon answer, structure break, final boss.",
+    "Add only one growth sink per core summon role.",
+    "Make daily tasks combat-teaching tasks, not menu chores.",
+    "Keep reward claim separate from combat retry if any stamina-like resource appears.",
+    "Delay idle/base production until the player wants to repeat the core run without being bribed."
+  ],
+  "nextSmallestFollowUps": [
+    "Write STAGE_REWARD_GROWTH_SPEC.md with exact ScriptableObject or JSON field names.",
+    "Add a first-pass RunResultSummary contract that maps current BattleResultUI signals to result ranks.",
+    "Prototype only one reward/growth path: S1-1 Break Gate -> Break role upgrade -> S1-2 Backline Signal."
+  ]
+}
