@@ -11,6 +11,8 @@ This contract exists to prevent AI-style overbuilding.
 5. Verify with Unity compile/test/manual checklist when available.
 6. Update `CURRENT_STATE.md` or `DECISIONS.md` only when the project state or a real decision changes.
 
+For combat or action-feel work, `Assets/_Game/DesignDocs/COMBAT_V1_SPEC.md` and `Assets/_Game/DesignDocs/ACTION_FEEL_TARGETS.md` are required reading before implementation.
+
 ## Code Rules
 
 - One MonoBehaviour should own one behavior.
@@ -42,3 +44,5 @@ A change is acceptable only if a reviewer can answer:
 - How is it configured?
 - How can it be tested?
 - What did it deliberately not include?
+
+For action-feel changes, a reviewer must also be able to answer which movement, camera, attack, dodge, hit, or enemy feel target improved.
