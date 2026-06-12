@@ -30,3 +30,14 @@ Decision: Build the first playable around one player, one basic enemy, one attac
 
 Reason: A small complete loop exposes real needs earlier than large speculative architecture.
 
+## 2026-06-12: Direct-Control ARPG With Summon Slots
+
+Decision: `DimensionBrawl` V1 should follow a direct-control ARPG shape: the player manually moves, attacks, dodges, and clears linear combat sections, while three summon slots are reserved as later combat resources.
+
+Reason: The target references and current visual direction point to player-driven action first, not a backline commander, automatic attacker, hand-of-cards UI, or summon-first implementation.
+
+## 2026-06-12: Player Action Before Summon Implementation
+
+Decision: Implement the first playable action slice around player movement, short manual basic attacks, dodge, health/damage, and one basic sci-fi soldier before building actual summon behavior.
+
+Reason: Summons need a readable combat baseline to support. Building them before the player action loop is playable would hide unresolved movement, attack, dodge, camera, and hit-feedback problems.
