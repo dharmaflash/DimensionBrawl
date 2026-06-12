@@ -214,6 +214,7 @@ namespace DimensionBrawl.Editor
             CombatAiPatternProfile enemyPatternProfile = LoadProfile<CombatAiPatternProfile>(ActionFoundationProfileSetup.EnemyPatternProfilePath);
             CombatAiPatternProfile enemyLungePatternProfile = LoadProfile<CombatAiPatternProfile>(ActionFoundationProfileSetup.EnemyLungePatternProfilePath);
             CombatAiPatternProfile enemyHeavyWindupPatternProfile = LoadProfile<CombatAiPatternProfile>(ActionFoundationProfileSetup.EnemyHeavyWindupPatternProfilePath);
+            CombatAiPatternProfile enemyLinePressurePatternProfile = LoadProfile<CombatAiPatternProfile>(ActionFoundationProfileSetup.EnemyLinePressurePatternProfilePath);
             PlayerMovementController movement = RequireObject<PlayerMovementController>(roots, "player movement");
             PlayerActionController playerActions = RequireObject<PlayerActionController>(roots, "player actions");
             CombatHealth playerHealth = RequireComponent<CombatHealth>(playerActions.gameObject, "player health");
@@ -221,8 +222,10 @@ namespace DimensionBrawl.Editor
             BasicSoldierEnemy soldier = RequireRootComponent<BasicSoldierEnemy>(roots, ActionFoundationProfileSetup.ClosePunishEnemyRootName, "close punish basic soldier");
             BasicSoldierEnemy lungeSoldier = RequireRootComponent<BasicSoldierEnemy>(roots, ActionFoundationProfileSetup.LungeStrikeEnemyRootName, "lunge strike basic soldier");
             BasicSoldierEnemy heavySoldier = RequireRootComponent<BasicSoldierEnemy>(roots, ActionFoundationProfileSetup.HeavyWindupEnemyRootName, "heavy windup basic soldier");
+            BasicSoldierEnemy linePressureSoldier = RequireRootComponent<BasicSoldierEnemy>(roots, ActionFoundationProfileSetup.LinePressureEnemyRootName, "line pressure basic soldier");
             CombatHealth lungeHealth = RequireComponent<CombatHealth>(lungeSoldier.gameObject, "lunge strike soldier health");
             CombatHealth heavyHealth = RequireComponent<CombatHealth>(heavySoldier.gameObject, "heavy windup soldier health");
+            CombatHealth linePressureHealth = RequireComponent<CombatHealth>(linePressureSoldier.gameObject, "line pressure soldier health");
             CombatTargetSensor soldierTargetSensor = RequireComponent<CombatTargetSensor>(soldier.gameObject, "basic soldier target sensor");
             EnemyAttackTelegraphPresenter soldierTelegraphPresenter = RequireComponent<EnemyAttackTelegraphPresenter>(soldier.gameObject, "basic soldier telegraph presenter");
             CombatHitFeedback soldierHitFeedback = RequireComponent<CombatHitFeedback>(soldier.gameObject, "basic soldier hit feedback");
@@ -245,8 +248,8 @@ namespace DimensionBrawl.Editor
             CombatHealth soldierHealth = RequireComponent<CombatHealth>(soldier.gameObject, "basic soldier health");
 
             List<CombatHealth> healths = CollectObjects<CombatHealth>(roots);
-            RequireAtLeast(healths.Count, 4, "player and three enemy health components");
-            RequireAtLeast(hitFeedbacks.Count, 4, "player and three enemy hit feedback components");
+            RequireAtLeast(healths.Count, 5, "player and four enemy health components");
+            RequireAtLeast(hitFeedbacks.Count, 5, "player and four enemy hit feedback components");
             RequireAtLeast(soldierVisualRenderers.Length, 1, "basic soldier promoted visual renderers");
 
             ValidateReference(movement, "referenceCamera");
@@ -269,7 +272,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReferenceAssetPath(playerActions, "actionProfile", ActionFoundationProfileSetup.PlayerActionProfilePath);
             ValidatePlayerActionProfile(playerActionProfile);
 
-            ValidatePlayerTargetSelector(targetSelector, playerActions.transform, playerHealth, cameraController.transform, new UnityEngine.Object[] { soldierHealth, lungeHealth, heavyHealth });
+            ValidatePlayerTargetSelector(targetSelector, playerActions.transform, playerHealth, cameraController.transform, new UnityEngine.Object[] { soldierHealth, lungeHealth, heavyHealth, linePressureHealth });
             ValidateCameraTargetBridge(cameraTargetBridge, cameraController, targetSelector, playerActions.transform);
 
             ValidateObjectReferenceAssetPath(soldier, "patternProfile", ActionFoundationProfileSetup.EnemyPatternProfilePath);
@@ -283,6 +286,9 @@ namespace DimensionBrawl.Editor
                 -24f,
                 1.65f,
                 -0.15f,
+                CombatAiAttackShape.MeleeArc,
+                0.65f,
+                false,
                 0.65f,
                 0.14f,
                 0f,
@@ -317,6 +323,9 @@ namespace DimensionBrawl.Editor
                 -24f,
                 2.15f,
                 0f,
+                CombatAiAttackShape.ForwardLine,
+                0.42f,
+                true,
                 0.82f,
                 0.22f,
                 4.25f,
@@ -351,6 +360,9 @@ namespace DimensionBrawl.Editor
                 -24f,
                 1.9f,
                 0.1f,
+                CombatAiAttackShape.MeleeArc,
+                0.95f,
+                false,
                 1.05f,
                 0.18f,
                 1.25f,
@@ -376,6 +388,43 @@ namespace DimensionBrawl.Editor
                 new Color(1f, 0.72f, 0.08f, 1f),
                 new Color(1f, 0.02f, 0.02f, 1f),
                 new Color(1f, 0.9f, 0.35f, 1f));
+            ValidateCombatAiPatternProfile(
+                enemyLinePressurePatternProfile,
+                "SciFiSoldier.Basic",
+                "LinePressure",
+                2.25f,
+                520f,
+                -24f,
+                6.2f,
+                0.2f,
+                CombatAiAttackShape.ForwardLine,
+                0.38f,
+                true,
+                0.78f,
+                0.18f,
+                0f,
+                0.58f,
+                18f,
+                0.035f,
+                0.24f,
+                2.2f,
+                0.35f,
+                0.1f,
+                CombatAiCameraCueKind.LinePressure,
+                1.05f,
+                1.1f,
+                0.6f,
+                CreateCombatAiCameraCue(new Vector3(0.04f, 0.03f, -0.12f), 0.10f, 0.6f, -0.06f, 0.02f, 0.28f, 1f),
+                CreateCombatAiCameraCue(new Vector3(0f, 0.04f, 0.16f), 0.14f, 1.2f, -0.14f, 0.03f, 0.24f, 1f),
+                CreateCombatAiCameraCue(new Vector3(0f, 0.02f, 0.10f), 0.06f, -0.6f, 0.08f, -0.02f, 0.24f, 1f),
+                new Vector3(0.16f, 0.02f, 1.2f),
+                new Vector3(0.34f, 0.02f, 5.4f),
+                new Vector3(0.42f, 0.025f, 6.2f),
+                new Vector3(0f, 0f, -0.10f),
+                new Vector3(0f, 0f, 0.05f),
+                new Color(0.62f, 0.28f, 1f, 1f),
+                new Color(0.34f, 0.06f, 1f, 1f),
+                new Color(0.86f, 0.72f, 1f, 1f));
             ValidateReference(soldier, "targetSensor");
             ValidateReference(soldier, "target");
             ValidateReference(soldier, "targetHealth");
@@ -391,6 +440,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReferenceArray(soldierTargetSensor, "targetCandidates", new UnityEngine.Object[] { playerHealth });
             ValidatePatternSampleEnemy(lungeSoldier, ActionFoundationProfileSetup.EnemyLungePatternProfilePath, enemyLungePatternProfile, playerHealth, cameraController, "LungeStrike");
             ValidatePatternSampleEnemy(heavySoldier, ActionFoundationProfileSetup.EnemyHeavyWindupPatternProfilePath, enemyHeavyWindupPatternProfile, playerHealth, cameraController, "HeavyWindup");
+            ValidatePatternSampleEnemy(linePressureSoldier, ActionFoundationProfileSetup.EnemyLinePressurePatternProfilePath, enemyLinePressurePatternProfile, playerHealth, cameraController, "LinePressure");
             ValidateObjectReference(soldierTelegraphPresenter, "telegraphObject", telegraphObject);
             ValidateObjectReference(soldierTelegraphPresenter, "telegraphTransform", telegraphObject.transform);
             ValidateObjectReference(soldierTelegraphPresenter, "telegraphRenderer", RequireComponent<Renderer>(telegraphObject, "basic soldier attack telegraph renderer"));
@@ -1176,6 +1226,9 @@ namespace DimensionBrawl.Editor
             float gravity,
             float attackRange,
             float attackFacingDotThreshold,
+            CombatAiAttackShape attackShape,
+            float attackHalfWidth,
+            bool lockAttackDirectionOnWindup,
             float telegraphSeconds,
             float activeSeconds,
             float activeLungeSpeed,
@@ -1209,6 +1262,9 @@ namespace DimensionBrawl.Editor
             ValidateFloat(profile, "gravity", gravity);
             ValidateFloat(profile, "attackRange", attackRange);
             ValidateFloat(profile, "attackFacingDotThreshold", attackFacingDotThreshold);
+            ValidateEnum(profile, "attackShape", (int)attackShape);
+            ValidateFloat(profile, "attackHalfWidth", attackHalfWidth);
+            ValidateBool(profile, "lockAttackDirectionOnWindup", lockAttackDirectionOnWindup);
             ValidateFloat(profile, "telegraphSeconds", telegraphSeconds);
             ValidateFloat(profile, "activeSeconds", activeSeconds);
             ValidateFloat(profile, "activeLungeSpeed", activeLungeSpeed);

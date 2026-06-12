@@ -25,6 +25,9 @@ MonoBehaviour:
   recoverySeconds: 0.85
   damage: 30
   hitStopSeconds: 0.05
+  attackShape: 0
+  attackHalfWidth: 0.95
+  lockAttackDirectionOnWindup: 0
   hitReactionSeconds: 0.32
   knockbackSpeed: 2.8
   recoveryRetreatSpeed: 0.35

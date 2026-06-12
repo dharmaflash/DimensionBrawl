@@ -1,13 +1,13 @@
 ﻿# Action Foundation Testing
 
-Last updated: 2026-06-12 KST
+Last updated: 2026-06-13 KST
 
 This note records how to inspect the first direct-control ARPG action-feel foundation without expanding the scope into summons, bosses, progression, or full HUD work.
 
 ## Test Setup
 
 - Target scene: `Assets/_Game/Scenes/ActionFoundationTest.unity`.
-- The scene contains the existing player gameplay root, one curated CombatGirl SwordShield visual child, one promoted MaintenanceWorker sci-fi soldier visual, an inactive soldier placeholder fallback, a shared `CombatTargetSensor`, an `EnemyAttackTelegraphPresenter`, a camera, a readable telegraph marker, and win/fail markers.
+- The scene contains the existing player gameplay root, one curated CombatGirl SwordShield visual child, promoted MaintenanceWorker sci-fi soldier samples for `ClosePunish`, `LungeStrike`, `HeavyWindup`, and `LinePressure`, inactive soldier placeholder fallbacks, shared `CombatTargetSensor` wiring, `EnemyAttackTelegraphPresenter` markers, a camera, and win/fail markers.
 - This is an authored inspection scene, not production runtime generation.
 - The CombatGirl visual is promoted into `_Game` as game-owned model, sixteen selected animation clips, Animator Controller, primary textures, and Unity Toon Shader materials. It must not reference `_Imported/`.
 - The basic soldier visual is promoted into `_Game` as a minimal game-owned MaintenanceWorker model/avatar, five selected clips (`Idle`, `Run`, `Attack`, `Hit`, `Death`), and one Animator Controller. Gameplay timing remains owned by serialized `BasicSoldierEnemy` values; animation clips are presentation requests, not timing authority.
@@ -18,7 +18,7 @@ This note records how to inspect the first direct-control ARPG action-feel found
 - If StopStep responsiveness drifts after reimport, use `DimensionBrawl > Reapply Action Foundation StopStep Responsiveness` to restore the trimmed StopStep import range, fast StopStep Animator transitions, and scene movement tuning.
 - If the basic soldier visual or Animator wiring drifts after asset reimport, use `DimensionBrawl > Reapply Action Foundation MaintenanceWorker Enemy Visual` to rebuild the minimal promoted soldier visual, Animator Controller, scene references, and hit-feedback renderer list.
 - PlayMode smoke tests: `Assets/_Game/Tests/PlayMode/ActionFoundationPlayModeTests.cs`.
-- The smoke tests load the scene, move the player, verify promoted `StartRun`, fast-window `StopStep`, and 90-degree turn Animator routing, verify CombatGirl weapon sockets stay hand-pinned, trigger directional dodge, verify no-input backward dodge, verify dodge tint feedback, verify short action camera cue cleanup and FOV widening, verify that camera orbit is independent from instant player facing changes, verify the lower close-rear camera preset, verify a five-hit basic combo can reach `Attack5` from timed buffered input, verify attack damage without global slow motion, verify shared enemy/future-summon team targeting, verify promoted soldier visual/Animator wiring, verify enemy Attack/Hit/Death animation requests, verify enemy windup/active telegraph readability, and verify win/fail encounter states.
+- The smoke tests load the scene, move the player, verify promoted `StartRun`, fast-window `StopStep`, and 90-degree turn Animator routing, verify CombatGirl weapon sockets stay hand-pinned, trigger directional dodge, verify no-input backward dodge, verify dodge tint feedback, verify short action camera cue cleanup and FOV widening, verify that camera orbit is independent from instant player facing changes, verify the lower close-rear camera preset, verify a five-hit basic combo can reach `Attack5` from timed buffered input, verify attack damage without global slow motion, verify shared enemy/future-summon team targeting, verify promoted soldier visual/Animator wiring, verify enemy Attack/Hit/Death animation requests, verify enemy windup/active telegraph readability, verify `LinePressure` lane-lock side-dodge behavior, and verify win/fail encounter states.
 
 ## Controls
 
@@ -67,6 +67,7 @@ This note records how to inspect the first direct-control ARPG action-feel found
 - Basic soldier recovery: `0.45s`, from the collected enemy recovery range of `0.35-1.0s`.
 - Basic soldier hit reaction: `0.24s`, from the collected light stagger range of `0.18-0.35s`.
 - Basic soldier readable telegraph presentation: windup scale grows from `(0.35, 0.02, 0.65)` to `(1.05, 0.02, 1.55)`, active flash starts at `(1.25, 0.025, 1.8)`, and the promoted soldier visual briefly offsets back `0.08m` during windup then forward `0.12m` on release. This is a presentation bridge around the minimal promoted enemy clips, not a damage or AI authority.
+- Pattern sample profiles now own attack shape data as well as timing/camera/telegraph data: `ClosePunish` and `HeavyWindup` use `MeleeArc`, while `LungeStrike` and `LinePressure` use `ForwardLine`. `LinePressure` uses a `6.2m` forward strip, `0.38m` half width, `0.78s` telegraph, `0.18s` active window, and locks its attack direction when windup starts so sideways dodge timing remains readable instead of becoming auto-tracking damage.
 - Basic soldier promoted animation set: `Idle`, `Run`, `Attack`, `Hit`, and `Death` only. The selected clips are enough to read `ClosePunish` approach, melee burst, light stagger, and death without promoting the full source pack. Further strafes, ranged attacks, squads, or summon-specific calls need a separate reviewed slice.
 - Basic soldier `Death` clip uses feet-based Y import (`heightFromFeet = true`, `keepOriginalPositionY = false`) so the final pose settles on the ground instead of preserving the source root height in midair.
 - Basic soldier identity: `enemyTypeId = SciFiSoldier.Basic` and `patternId = ClosePunish`, matching the reference enemy-pattern deck shape `Track -> Windup -> MeleeBurst -> Recover`.
@@ -90,7 +91,7 @@ The collected references do not provide trustworthy numeric defaults for these v
 - The CombatGirl visual is visible under the existing player root; gameplay remains on the root components.
 - `CombatGirlWeaponSocketBinder` keeps the authored left/right weapon sockets aligned to the hand bones so generic humanoid stop clips cannot leave the sword or shield floating.
 - Movement writes `MoveSpeed`, `MoveX`, `MoveY`, and `IsStopping`; run start triggers `StartRun`, release from run triggers `StopStep`, large running direction changes can trigger `TurnLeft90` / `TurnRight90`, dodge triggers `DodgeForward` / `DodgeBack` / `DodgeLeft` / `DodgeRight`, and basic attacks trigger `Attack1` through `Attack5` on the minimal Animator Controller.
-- The soldier approaches, telegraphs, attacks, recovers, staggers when hit, and dies.
+- The soldier samples approach, telegraph, attack, recover, stagger when hit, and die. The `LinePressure` sample reuses the same soldier execution code but reads a forward-line attack shape and lane-lock windup from `CombatAiPatternProfile`.
 - The promoted MaintenanceWorker visual handles soldier `MoveSpeed`, `Attack`, `Hit`, and `Death` animation requests while root movement, damage timing, and state transitions remain on `BasicSoldierEnemy`.
 - The soldier uses `CombatTargetSensor` for hostile acquisition from authored candidates instead of owning private-only target lookup or scene-wide searches, while its model, Animator Controller, animation trigger names, and pattern id remain prefab-level data.
 - `EnemyAttackTelegraphPresenter` makes the soldier windup readable by growing the attack range marker, shifting color toward danger, and adding a small temporary promoted-visual windup/release offset.
@@ -106,7 +107,7 @@ The collected references do not provide trustworthy numeric defaults for these v
 
 - `dotnet build C:\Git\DimensionBrawl\DimensionBrawl.slnx` passes with zero warnings and zero errors.
 - Unity batchmode scene validation passes with `Action foundation test scene validation passed.` after closing the open Editor instance.
-- Unity PlayMode smoke tests pass with `17` tests run, `17` passed, `0` failed for movement, promoted locomotion routing, stop-settle release, fast-window `StopStep` Animator routing, CombatGirl weapon socket alignment, directional dodge motion, no-input backward dodge, five-hit timed-buffer combo routing, attack damage without global slow motion, shared target sensing/team rules, promoted MaintenanceWorker enemy visual/Animator wiring, enemy Attack/Hit/Death animation requests including fatal-damage direct death routing and grounded death bounds, enemy windup telegraph presentation, encounter win/fail, dodge tint feedback, short action-camera cue cleanup/FOV widening, independent camera orbit, and the lower close-rear camera preset.
+- Unity PlayMode smoke tests pass with `25` tests run, `25` passed, `0` failed for movement, promoted locomotion routing, stop-settle release, fast-window `StopStep` Animator routing, CombatGirl weapon socket alignment, directional dodge motion, no-input backward dodge, five-hit timed-buffer combo routing, attack damage without global slow motion, shared target sensing/team rules, promoted MaintenanceWorker enemy visual/Animator wiring, enemy Attack/Hit/Death animation requests including fatal-damage direct death routing and grounded death bounds, enemy windup telegraph presentation, `LinePressure` lane-lock side-dodge behavior, encounter win/fail, dodge tint feedback, short action-camera cue cleanup/FOV widening, independent camera orbit, and the lower close-rear camera preset.
 - Batchmode PlayMode test command should omit `-quit`; `-runTests` exits on completion, while `-quit` can terminate before the Test Runner writes results.
 - Manual Editor inspection confirmed `Left Shift` dodge makes the player placeholder flash/tint visibly.
 - Manual Editor inspection confirmed the CombatGirl visual is attached to the player root and its Unity Toon Shader material colors render correctly after reapplying scene renderer slots.

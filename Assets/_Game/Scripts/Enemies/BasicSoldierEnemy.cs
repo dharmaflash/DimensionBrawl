@@ -60,6 +60,9 @@ namespace DimensionBrawl.Enemies
         [SerializeField, Min(0f)] private float hitStopSeconds = 0.03f;
         [SerializeField, Range(-1f, 1f)] private float attackFacingDotThreshold = -0.15f;
         [SerializeField, Min(0f)] private float activeLungeSpeed = 0f;
+        [SerializeField] private CombatAiAttackShape attackShape = CombatAiAttackShape.MeleeArc;
+        [SerializeField, Min(0f)] private float attackHalfWidth = 0.65f;
+        [SerializeField] private bool lockAttackDirectionOnWindup;
 
         [Header("Hit Reaction")]
         [Tooltip("Uses the collected light enemy stagger range of 0.18-0.35 seconds.")]
@@ -87,6 +90,8 @@ namespace DimensionBrawl.Enemies
         private float stateTimer;
         private float verticalVelocity;
         private bool dealtDamageThisSwing;
+        private bool hasLockedAttackDirection;
+        private Vector3 lockedAttackDirection = Vector3.forward;
         private CombatAiPatternState currentPatternState = CombatAiPatternState.Tracking;
 
         public CombatAiPatternProfile PatternProfile => patternProfile;
@@ -113,6 +118,9 @@ namespace DimensionBrawl.Enemies
         private float ActiveRecoverySeconds => patternProfile != null ? patternProfile.RecoverySeconds : recoverySeconds;
         private float ActiveDamage => patternProfile != null ? patternProfile.Damage : damage;
         private float ActiveHitStopSeconds => patternProfile != null ? patternProfile.HitStopSeconds : hitStopSeconds;
+        private CombatAiAttackShape ActiveAttackShape => patternProfile != null ? patternProfile.AttackShape : attackShape;
+        private float ActiveAttackHalfWidth => patternProfile != null ? patternProfile.AttackHalfWidth : attackHalfWidth;
+        private bool ActiveLockAttackDirectionOnWindup => patternProfile != null ? patternProfile.LockAttackDirectionOnWindup : lockAttackDirectionOnWindup;
         private float ActiveHitReactionSeconds => patternProfile != null ? patternProfile.HitReactionSeconds : hitReactionSeconds;
         private float ActiveKnockbackSpeed => patternProfile != null ? patternProfile.KnockbackSpeed : knockbackSpeed;
         private float ActiveRecoveryRetreatSpeed => patternProfile != null ? patternProfile.RecoveryRetreatSpeed : 0f;
@@ -259,6 +267,13 @@ namespace DimensionBrawl.Enemies
             EnterState(SoldierState.Telegraph, CombatAiPatternState.Windup);
             stateTimer = 0f;
             dealtDamageThisSwing = false;
+            hasLockedAttackDirection = ActiveLockAttackDirectionOnWindup;
+            lockedAttackDirection = DirectionToTarget();
+            if (hasLockedAttackDirection)
+            {
+                FaceDirection(lockedAttackDirection, 0f);
+            }
+
             ApplyTelegraphStyle();
             ShowTelegraphWindup(0f);
             SetBodyColor(telegraphColor);
@@ -267,7 +282,7 @@ namespace DimensionBrawl.Enemies
         private void UpdateTelegraph(float deltaTime)
         {
             stateTimer += deltaTime;
-            FaceTarget(deltaTime);
+            FaceCurrentAttackDirection(deltaTime);
             Move(Vector3.zero, deltaTime);
             UpdateAnimation(0f);
             ShowTelegraphWindup(ActiveTelegraphSeconds > 0f ? stateTimer / ActiveTelegraphSeconds : 1f);
@@ -286,12 +301,12 @@ namespace DimensionBrawl.Enemies
         private void UpdateActive(float deltaTime)
         {
             stateTimer += deltaTime;
-            FaceTarget(deltaTime);
-            Vector3 lungeVelocity = ActiveActiveLungeSpeed > 0f ? DirectionToTarget() * ActiveActiveLungeSpeed : Vector3.zero;
+            FaceCurrentAttackDirection(deltaTime);
+            Vector3 lungeVelocity = ActiveActiveLungeSpeed > 0f ? CurrentAttackDirection() * ActiveActiveLungeSpeed : Vector3.zero;
             Move(lungeVelocity, deltaTime);
             ShowTelegraphActive(ActiveActiveSeconds > 0f ? stateTimer / ActiveActiveSeconds : 1f);
 
-            if (!dealtDamageThisSwing && IsTargetInAttackRange())
+            if (!dealtDamageThisSwing && IsTargetInsideActiveHitShape())
             {
                 dealtDamageThisSwing = true;
                 ApplyDamageToTarget();
@@ -304,6 +319,7 @@ namespace DimensionBrawl.Enemies
 
             EnterState(SoldierState.Recovery, CombatAiPatternState.Recovery);
             stateTimer = 0f;
+            hasLockedAttackDirection = false;
             HideTelegraph();
             SetBodyColor(normalColor);
         }
@@ -345,7 +361,7 @@ namespace DimensionBrawl.Enemies
 
         private void ApplyDamageToTarget()
         {
-            Vector3 direction = DirectionToTarget();
+            Vector3 direction = CurrentAttackDirection();
             DamageInfo damageInfo = new DamageInfo(
                 selfHealth,
                 selfHealth != null ? selfHealth.Team : DamageTeam.Enemy,
@@ -371,6 +387,7 @@ namespace DimensionBrawl.Enemies
 
             EnterState(SoldierState.Stagger, CombatAiPatternState.Stagger);
             stateTimer = 0f;
+            hasLockedAttackDirection = false;
             knockbackVelocity = Vector3.ProjectOnPlane(damageInfo.Direction, Vector3.up).normalized * ActiveKnockbackSpeed;
             HideTelegraph();
             SetBodyColor(staggerColor);
@@ -380,6 +397,7 @@ namespace DimensionBrawl.Enemies
         private void HandleDied()
         {
             EnterState(SoldierState.Dead, CombatAiPatternState.Death);
+            hasLockedAttackDirection = false;
             HideTelegraph();
             SetBodyColor(deadColor);
             ResetAnimatorTrigger(ActiveAttackTrigger);
@@ -421,6 +439,29 @@ namespace DimensionBrawl.Enemies
             return Vector3.Dot(transform.forward, toTarget.normalized) > ActiveAttackFacingDotThreshold;
         }
 
+        private bool IsTargetInsideActiveHitShape()
+        {
+            if (target == null)
+            {
+                return false;
+            }
+
+            if (ActiveAttackShape == CombatAiAttackShape.ForwardLine)
+            {
+                Vector3 localTarget = transform.InverseTransformPoint(target.position);
+                return localTarget.z >= 0f
+                    && localTarget.z <= ActiveAttackRange
+                    && Mathf.Abs(localTarget.x) <= ActiveAttackHalfWidth;
+            }
+
+            return IsTargetInAttackRange();
+        }
+
+        private Vector3 CurrentAttackDirection()
+        {
+            return hasLockedAttackDirection ? lockedAttackDirection : DirectionToTarget();
+        }
+
         private Vector3 DirectionToTarget()
         {
             if (target == null)
@@ -434,14 +475,25 @@ namespace DimensionBrawl.Enemies
 
         private void FaceTarget(float deltaTime)
         {
-            Vector3 direction = DirectionToTarget();
+            FaceDirection(DirectionToTarget(), deltaTime);
+        }
+
+        private void FaceCurrentAttackDirection(float deltaTime)
+        {
+            FaceDirection(CurrentAttackDirection(), deltaTime);
+        }
+
+        private void FaceDirection(Vector3 direction, float deltaTime)
+        {
             if (direction.sqrMagnitude <= 0f)
             {
                 return;
             }
 
             Quaternion targetRotation = Quaternion.LookRotation(direction, Vector3.up);
-            transform.rotation = Quaternion.RotateTowards(transform.rotation, targetRotation, ActiveTurnRateDegrees * deltaTime);
+            transform.rotation = deltaTime > 0f
+                ? Quaternion.RotateTowards(transform.rotation, targetRotation, ActiveTurnRateDegrees * deltaTime)
+                : targetRotation;
         }
 
         private void Move(Vector3 planarVelocity, float deltaTime)

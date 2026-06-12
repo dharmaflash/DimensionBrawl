@@ -2,6 +2,12 @@ using UnityEngine;
 
 namespace DimensionBrawl.AI
 {
+    public enum CombatAiAttackShape
+    {
+        MeleeArc,
+        ForwardLine
+    }
+
     public abstract class CombatAiPatternProfile : ScriptableObject
     {
         [Header("Identity")]
@@ -22,6 +28,11 @@ namespace DimensionBrawl.AI
         [SerializeField, Min(0f)] private float recoverySeconds = 0.45f;
         [SerializeField, Min(0f)] private float damage = 15f;
         [SerializeField, Min(0f)] private float hitStopSeconds = 0.03f;
+
+        [Header("Attack Shape")]
+        [SerializeField] private CombatAiAttackShape attackShape = CombatAiAttackShape.MeleeArc;
+        [SerializeField, Min(0f)] private float attackHalfWidth = 0.65f;
+        [SerializeField] private bool lockAttackDirectionOnWindup;
 
         [Header("Hit Reaction")]
         [SerializeField, Min(0f)] private float hitReactionSeconds = 0.24f;
@@ -99,6 +110,9 @@ namespace DimensionBrawl.AI
         public float RecoverySeconds => recoverySeconds;
         public float Damage => damage;
         public float HitStopSeconds => hitStopSeconds;
+        public CombatAiAttackShape AttackShape => attackShape;
+        public float AttackHalfWidth => attackHalfWidth;
+        public bool LockAttackDirectionOnWindup => lockAttackDirectionOnWindup;
         public float HitReactionSeconds => hitReactionSeconds;
         public float KnockbackSpeed => knockbackSpeed;
         public float RecoveryRetreatSpeed => recoveryRetreatSpeed;

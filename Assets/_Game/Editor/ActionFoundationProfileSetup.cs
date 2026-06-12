@@ -21,9 +21,11 @@ namespace DimensionBrawl.Editor
         public const string EnemyPatternProfilePath = ProfileRoot + "/DB_BasicSoldier_ClosePunish.asset";
         public const string EnemyLungePatternProfilePath = ProfileRoot + "/DB_BasicSoldier_LungeStrike.asset";
         public const string EnemyHeavyWindupPatternProfilePath = ProfileRoot + "/DB_BasicSoldier_HeavyWindup.asset";
+        public const string EnemyLinePressurePatternProfilePath = ProfileRoot + "/DB_BasicSoldier_LinePressure.asset";
         public const string ClosePunishEnemyRootName = "Enemy_SciFiSoldier_ClosePunish";
         public const string LungeStrikeEnemyRootName = "Enemy_SciFiSoldier_LungeStrike";
         public const string HeavyWindupEnemyRootName = "Enemy_SciFiSoldier_HeavyWindup";
+        public const string LinePressureEnemyRootName = "Enemy_SciFiSoldier_LinePressure";
         private const string LegacyEnemyRootName = "Enemy_SciFiSoldier_ActionFoundation";
         private const string EnemyVisualName = "MaintenanceWorker_BasicSoldierVisual";
         private const string EnemyPlaceholderBodyName = "SciFiSoldierPlaceholderBody";
@@ -37,7 +39,8 @@ namespace DimensionBrawl.Editor
                 out ActionCameraCueProfile cameraCueProfile,
                 out CombatAiPatternProfile enemyPatternProfile,
                 out CombatAiPatternProfile enemyLungePatternProfile,
-                out CombatAiPatternProfile enemyHeavyWindupPatternProfile);
+                out CombatAiPatternProfile enemyHeavyWindupPatternProfile,
+                out CombatAiPatternProfile enemyLinePressurePatternProfile);
 
             Scene scene = SceneManager.GetActiveScene();
             if (!scene.IsValid() || scene.path != ScenePath)
@@ -50,6 +53,7 @@ namespace DimensionBrawl.Editor
             enemyPatternProfile = LoadOrCreateEnemyPatternProfile(EnemyPatternProfilePath);
             enemyLungePatternProfile = LoadOrCreateEnemyPatternProfile(EnemyLungePatternProfilePath);
             enemyHeavyWindupPatternProfile = LoadOrCreateEnemyPatternProfile(EnemyHeavyWindupPatternProfilePath);
+            enemyLinePressurePatternProfile = LoadOrCreateEnemyPatternProfile(EnemyLinePressurePatternProfilePath);
 
             GameObject[] roots = scene.GetRootGameObjects();
             PlayerActionController playerActions = RequireObject<PlayerActionController>(roots, "player actions");
@@ -75,7 +79,8 @@ namespace DimensionBrawl.Editor
                 cameraController,
                 enemyPatternProfile,
                 enemyLungePatternProfile,
-                enemyHeavyWindupPatternProfile);
+                enemyHeavyWindupPatternProfile,
+                enemyLinePressurePatternProfile);
 
             ConfigurePlayerTargetSelector(targetSelector, playerActions.transform, playerHealth, cameraController.transform, enemyCandidates);
             ConfigureCameraTargetBridge(cameraTargetBridge, cameraController, targetSelector, playerActions.transform);
@@ -102,11 +107,13 @@ namespace DimensionBrawl.Editor
             ActionCameraController cameraController,
             CombatAiPatternProfile closePunishProfile,
             CombatAiPatternProfile lungeStrikeProfile,
-            CombatAiPatternProfile heavyWindupProfile)
+            CombatAiPatternProfile heavyWindupProfile,
+            CombatAiPatternProfile linePressureProfile)
         {
             BasicSoldierEnemy closePunish = EnsurePatternSampleEnemy(scene, template, ClosePunishEnemyRootName);
             BasicSoldierEnemy lungeStrike = EnsurePatternSampleEnemy(scene, template, LungeStrikeEnemyRootName);
             BasicSoldierEnemy heavyWindup = EnsurePatternSampleEnemy(scene, template, HeavyWindupEnemyRootName);
+            BasicSoldierEnemy linePressure = EnsurePatternSampleEnemy(scene, template, LinePressureEnemyRootName);
 
             ConfigurePatternSampleEnemy(
                 closePunish,
@@ -138,12 +145,23 @@ namespace DimensionBrawl.Editor
                 playerHealth,
                 cameraController,
                 "HeavyWindup");
+            ConfigurePatternSampleEnemy(
+                linePressure,
+                LinePressureEnemyRootName,
+                "LinePressure",
+                linePressureProfile,
+                new Vector3(0f, 0f, 8.0f),
+                player,
+                playerHealth,
+                cameraController,
+                "LinePressure");
 
             return new[]
             {
                 RequireComponent<CombatHealth>(closePunish.gameObject, $"{ClosePunishEnemyRootName} health"),
                 RequireComponent<CombatHealth>(lungeStrike.gameObject, $"{LungeStrikeEnemyRootName} health"),
-                RequireComponent<CombatHealth>(heavyWindup.gameObject, $"{HeavyWindupEnemyRootName} health")
+                RequireComponent<CombatHealth>(heavyWindup.gameObject, $"{HeavyWindupEnemyRootName} health"),
+                RequireComponent<CombatHealth>(linePressure.gameObject, $"{LinePressureEnemyRootName} health")
             };
         }
 
@@ -473,7 +491,8 @@ namespace DimensionBrawl.Editor
             out ActionCameraCueProfile cameraCueProfile,
             out CombatAiPatternProfile enemyPatternProfile,
             out CombatAiPatternProfile enemyLungePatternProfile,
-            out CombatAiPatternProfile enemyHeavyWindupPatternProfile)
+            out CombatAiPatternProfile enemyHeavyWindupPatternProfile,
+            out CombatAiPatternProfile enemyLinePressurePatternProfile)
         {
             EnsureFolder(ProfileRoot);
             playerActionProfile = LoadOrCreate<PlayerActionProfile>(PlayerActionProfilePath);
@@ -481,6 +500,7 @@ namespace DimensionBrawl.Editor
             enemyPatternProfile = LoadOrCreateEnemyPatternProfile(EnemyPatternProfilePath);
             enemyLungePatternProfile = LoadOrCreateEnemyPatternProfile(EnemyLungePatternProfilePath);
             enemyHeavyWindupPatternProfile = LoadOrCreateEnemyPatternProfile(EnemyHeavyWindupPatternProfilePath);
+            enemyLinePressurePatternProfile = LoadOrCreateEnemyPatternProfile(EnemyLinePressurePatternProfilePath);
 
             ConfigurePlayerActionProfile(playerActionProfile);
             ConfigureCameraCueProfile(cameraCueProfile);
@@ -493,6 +513,9 @@ namespace DimensionBrawl.Editor
                 -24f,
                 1.65f,
                 -0.15f,
+                CombatAiAttackShape.MeleeArc,
+                0.65f,
+                false,
                 0.65f,
                 0.14f,
                 0f,
@@ -531,6 +554,9 @@ namespace DimensionBrawl.Editor
                 -24f,
                 2.15f,
                 0f,
+                CombatAiAttackShape.ForwardLine,
+                0.42f,
+                true,
                 0.82f,
                 0.22f,
                 4.25f,
@@ -569,6 +595,9 @@ namespace DimensionBrawl.Editor
                 -24f,
                 1.9f,
                 0.1f,
+                CombatAiAttackShape.MeleeArc,
+                0.95f,
+                false,
                 1.05f,
                 0.18f,
                 1.25f,
@@ -594,6 +623,47 @@ namespace DimensionBrawl.Editor
                 new Color(1f, 0.72f, 0.08f, 1f),
                 new Color(1f, 0.02f, 0.02f, 1f),
                 new Color(1f, 0.9f, 0.35f, 1f),
+                "MoveSpeed",
+                "Attack",
+                "Hit",
+                "Death");
+            ConfigureEnemyPatternProfile(
+                enemyLinePressurePatternProfile,
+                "SciFiSoldier.Basic",
+                "LinePressure",
+                2.25f,
+                520f,
+                -24f,
+                6.2f,
+                0.2f,
+                CombatAiAttackShape.ForwardLine,
+                0.38f,
+                true,
+                0.78f,
+                0.18f,
+                0f,
+                0.58f,
+                18f,
+                0.035f,
+                0.24f,
+                2.2f,
+                0.35f,
+                0.1f,
+                CombatAiCameraCueKind.LinePressure,
+                1.05f,
+                1.1f,
+                0.6f,
+                CreateCombatAiCameraCue(new Vector3(0.04f, 0.03f, -0.12f), 0.10f, 0.6f, -0.06f, 0.02f, 0.28f, 1f),
+                CreateCombatAiCameraCue(new Vector3(0f, 0.04f, 0.16f), 0.14f, 1.2f, -0.14f, 0.03f, 0.24f, 1f),
+                CreateCombatAiCameraCue(new Vector3(0f, 0.02f, 0.10f), 0.06f, -0.6f, 0.08f, -0.02f, 0.24f, 1f),
+                new Vector3(0.16f, 0.02f, 1.2f),
+                new Vector3(0.34f, 0.02f, 5.4f),
+                new Vector3(0.42f, 0.025f, 6.2f),
+                new Vector3(0f, 0f, -0.10f),
+                new Vector3(0f, 0f, 0.05f),
+                new Color(0.62f, 0.28f, 1f, 1f),
+                new Color(0.34f, 0.06f, 1f, 1f),
+                new Color(0.86f, 0.72f, 1f, 1f),
                 "MoveSpeed",
                 "Attack",
                 "Hit",
@@ -652,6 +722,9 @@ namespace DimensionBrawl.Editor
             float gravity,
             float attackRange,
             float attackFacingDotThreshold,
+            CombatAiAttackShape attackShape,
+            float attackHalfWidth,
+            bool lockAttackDirectionOnWindup,
             float telegraphSeconds,
             float activeSeconds,
             float activeLungeSpeed,
@@ -690,6 +763,9 @@ namespace DimensionBrawl.Editor
             SetFloat(serializedObject, "gravity", gravity);
             SetFloat(serializedObject, "attackRange", attackRange);
             SetFloat(serializedObject, "attackFacingDotThreshold", attackFacingDotThreshold);
+            SetEnum(serializedObject, "attackShape", (int)attackShape);
+            SetFloat(serializedObject, "attackHalfWidth", attackHalfWidth);
+            SetBool(serializedObject, "lockAttackDirectionOnWindup", lockAttackDirectionOnWindup);
             SetFloat(serializedObject, "telegraphSeconds", telegraphSeconds);
             SetFloat(serializedObject, "activeSeconds", activeSeconds);
             SetFloat(serializedObject, "activeLungeSpeed", activeLungeSpeed);

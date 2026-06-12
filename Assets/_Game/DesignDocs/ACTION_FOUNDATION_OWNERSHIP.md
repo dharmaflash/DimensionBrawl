@@ -1,6 +1,6 @@
 ﻿# Action Foundation Ownership
 
-Last updated: 2026-06-12 KST
+Last updated: 2026-06-13 KST
 
 This note permits the first action-feel foundation to add more than three gameplay scripts because the goal spans player, combat, enemy, presentation, and test-scene completion responsibilities. Each script must remain narrow and inspectable.
 
@@ -10,7 +10,7 @@ This note permits the first action-feel foundation to add more than three gamepl
 - `PlayerActionController`: player basic attack timing, dodge timing, player-side input buffering, melee hit checks, and player animation requests for attack/dodge.
 - `CombatHealth`: health, damage validation, team filtering, temporary invulnerability, and death state.
 - `CombatTargetSensor`: shared enemy/future-summon target candidate evaluation, hostile team filtering, range checks, retarget cadence, and current target exposure. Candidate lists must be authored or provided by encounter code, not found through scene-wide searches.
-- `BasicSoldierEnemy`: basic soldier `ClosePunish` sample behavior, approach, telegraph, attack execution, hit reaction, and death reaction. Enemy identity, pattern id, visual model, Animator controller, and trigger names must stay serialized/prefab-level data so future soldier variants can swap assets without rewriting behavior.
+- `BasicSoldierEnemy`: basic soldier pattern sample execution, approach, telegraph, profile-driven attack shape, attack execution, hit reaction, and death reaction. Enemy identity, pattern id, visual model, Animator controller, animation trigger names, timing, attack shape, direction-lock behavior, telegraph, and camera cue data must stay serialized/prefab-level or `CombatAiPatternProfile` data so future soldier variants can swap assets and patterns without rewriting behavior.
 - `ActionCameraController`: camera follow, target/threat bias, damping, and short additive cue offsets.
 - `CombatHitFeedback`: presentation-only damage flash and death color from damage events. It must not change global time scale for normal hits.
 - `PlayerDodgeFeedback`: presentation-only dodge color cue driven by player action events.

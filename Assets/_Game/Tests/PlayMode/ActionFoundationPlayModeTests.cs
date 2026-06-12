@@ -21,12 +21,14 @@ namespace DimensionBrawl.Tests
         private const string ClosePunishPatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_ClosePunish.asset";
         private const string LungeStrikePatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_LungeStrike.asset";
         private const string HeavyWindupPatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_HeavyWindup.asset";
+        private const string LinePressurePatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_LinePressure.asset";
         private const string PlayerVisualName = "CombatGirlSwordShield_PlayerVisual";
         private const string EnemyVisualName = "MaintenanceWorker_BasicSoldierVisual";
         private const string EnemyPlaceholderBodyName = "SciFiSoldierPlaceholderBody";
         private const string ClosePunishEnemyRootName = "Enemy_SciFiSoldier_ClosePunish";
         private const string LungeStrikeEnemyRootName = "Enemy_SciFiSoldier_LungeStrike";
         private const string HeavyWindupEnemyRootName = "Enemy_SciFiSoldier_HeavyWindup";
+        private const string LinePressureEnemyRootName = "Enemy_SciFiSoldier_LinePressure";
 
         [UnitySetUp]
         public IEnumerator LoadActionFoundationScene()
@@ -274,11 +276,12 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator ActionFoundationSceneProvidesThreePatternSampleEnemiesAndPlayerTargetCandidates()
+        public IEnumerator ActionFoundationSceneProvidesFourPatternSampleEnemiesAndPlayerTargetCandidates()
         {
             BasicSoldierEnemy closePunish = RequireNamedRootComponent<BasicSoldierEnemy>(ClosePunishEnemyRootName);
             BasicSoldierEnemy lungeStrike = RequireNamedRootComponent<BasicSoldierEnemy>(LungeStrikeEnemyRootName);
             BasicSoldierEnemy heavyWindup = RequireNamedRootComponent<BasicSoldierEnemy>(HeavyWindupEnemyRootName);
+            BasicSoldierEnemy linePressure = RequireNamedRootComponent<BasicSoldierEnemy>(LinePressureEnemyRootName);
             PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
             CombatHealth playerHealth = RequirePlayerHealth();
 
@@ -287,13 +290,16 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("ClosePunish", closePunish.PatternId, "Primary soldier should remain the close punish sample.");
             Assert.AreEqual("LungeStrike", lungeStrike.PatternId, "Second soldier should be the lunge pattern sample.");
             Assert.AreEqual("HeavyWindup", heavyWindup.PatternId, "Third soldier should be the heavy windup pattern sample.");
-            Assert.AreEqual(3, targetSelector.TargetCandidateCount, "Player target selector should receive all authored sample enemies instead of scene-scanning.");
+            Assert.AreEqual("LinePressure", linePressure.PatternId, "Fourth soldier should be the line pressure pattern sample.");
+            Assert.AreEqual(4, targetSelector.TargetCandidateCount, "Player target selector should receive all authored sample enemies instead of scene-scanning.");
             AssertEnemyTargetsPlayer(closePunish, playerHealth);
             AssertEnemyTargetsPlayer(lungeStrike, playerHealth);
             AssertEnemyTargetsPlayer(heavyWindup, playerHealth);
+            AssertEnemyTargetsPlayer(linePressure, playerHealth);
             Assert.IsNotNull(closePunish.GetComponent<EnemyActionCameraCueDriver>(), "Close sample should own an enemy camera cue driver.");
             Assert.IsNotNull(lungeStrike.GetComponent<EnemyActionCameraCueDriver>(), "Lunge sample should own an enemy camera cue driver.");
             Assert.IsNotNull(heavyWindup.GetComponent<EnemyActionCameraCueDriver>(), "Heavy sample should own an enemy camera cue driver.");
+            Assert.IsNotNull(linePressure.GetComponent<EnemyActionCameraCueDriver>(), "Line pressure sample should own an enemy camera cue driver.");
         }
 
         [UnityTest]
@@ -306,10 +312,12 @@ namespace DimensionBrawl.Tests
             BasicSoldierEnemy closePunish = RequireNamedRootComponent<BasicSoldierEnemy>(ClosePunishEnemyRootName);
             BasicSoldierEnemy lungeStrike = RequireNamedRootComponent<BasicSoldierEnemy>(LungeStrikeEnemyRootName);
             BasicSoldierEnemy heavyWindup = RequireNamedRootComponent<BasicSoldierEnemy>(HeavyWindupEnemyRootName);
+            BasicSoldierEnemy linePressure = RequireNamedRootComponent<BasicSoldierEnemy>(LinePressureEnemyRootName);
 
             closePunish.enabled = false;
             lungeStrike.enabled = false;
             heavyWindup.enabled = false;
+            linePressure.enabled = false;
             movement.transform.position = Vector3.zero;
             movement.transform.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
             cameraController.transform.position = new Vector3(0f, 1.8f, -4f);
@@ -317,6 +325,7 @@ namespace DimensionBrawl.Tests
             closePunish.transform.position = Vector3.forward * 5f;
             lungeStrike.transform.position = Vector3.back * 1.2f;
             heavyWindup.transform.position = Vector3.right * 6f;
+            linePressure.transform.position = Vector3.left * 7f;
             Physics.SyncTransforms();
 
             targetSelector.RefreshTarget();
@@ -338,16 +347,19 @@ namespace DimensionBrawl.Tests
             BasicSoldierEnemy closePunish = RequireNamedRootComponent<BasicSoldierEnemy>(ClosePunishEnemyRootName);
             BasicSoldierEnemy lungeStrike = RequireNamedRootComponent<BasicSoldierEnemy>(LungeStrikeEnemyRootName);
             BasicSoldierEnemy heavyWindup = RequireNamedRootComponent<BasicSoldierEnemy>(HeavyWindupEnemyRootName);
+            BasicSoldierEnemy linePressure = RequireNamedRootComponent<BasicSoldierEnemy>(LinePressureEnemyRootName);
 
             closePunish.enabled = false;
             lungeStrike.enabled = false;
             heavyWindup.enabled = false;
+            linePressure.enabled = false;
             movement.SetMoveInput(Vector2.zero);
             movement.transform.position = Vector3.zero;
             movement.transform.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
             closePunish.transform.position = Vector3.right * 3f;
             lungeStrike.transform.position = Vector3.forward * 18f;
             heavyWindup.transform.position = Vector3.back * 18f;
+            linePressure.transform.position = Vector3.left * 18f;
             Physics.SyncTransforms();
             targetSelector.RefreshTarget();
             yield return null;
@@ -397,19 +409,24 @@ namespace DimensionBrawl.Tests
             CombatAiPatternProfile closePunish = LoadPatternProfile(ClosePunishPatternPath);
             CombatAiPatternProfile lungeStrike = LoadPatternProfile(LungeStrikePatternPath);
             CombatAiPatternProfile heavyWindup = LoadPatternProfile(HeavyWindupPatternPath);
+            CombatAiPatternProfile linePressure = LoadPatternProfile(LinePressurePatternPath);
 
             Assert.AreEqual("SciFiSoldier.Basic", closePunish.ActorTypeId, "ClosePunish should declare the actor type used by visual/Animator setup.");
             Assert.AreEqual("ClosePunish", closePunish.PatternId, "ClosePunish profile should keep the first readable melee pattern id.");
+            Assert.AreEqual(CombatAiAttackShape.MeleeArc, closePunish.AttackShape, "ClosePunish should keep a compact melee attack shape.");
             Assert.AreEqual(0f, closePunish.ActiveLungeSpeed, 0.001f, "ClosePunish should stay a stationary melee release.");
             Assert.AreEqual(CombatAiCameraCueKind.ClosePunish, closePunish.CameraCueKind, "ClosePunish should expose camera cue semantics as profile data.");
             Assert.AreEqual("SciFiSoldier.Basic", lungeStrike.ActorTypeId, "LungeStrike should use the same actor type so model/Animator setup remains swappable.");
             Assert.AreEqual("LungeStrike", lungeStrike.PatternId, "Second soldier pattern should be a distinct profile instead of a hardcoded mode flag.");
+            Assert.AreEqual(CombatAiAttackShape.ForwardLine, lungeStrike.AttackShape, "LungeStrike should use the same forward-line hit-shape contract that future line pressure patterns reuse.");
+            Assert.IsTrue(lungeStrike.LockAttackDirectionOnWindup, "LungeStrike should commit its lunge lane once the warning starts.");
             Assert.AreEqual(CombatAiCameraCueKind.LungeStrike, lungeStrike.CameraCueKind, "LungeStrike should expose lunge camera cue semantics through the shared profile.");
             Assert.Greater(lungeStrike.AttackRange, closePunish.AttackRange, "LungeStrike should advertise longer reach through data.");
             Assert.Greater(lungeStrike.ActiveLungeSpeed, closePunish.ActiveLungeSpeed, "LungeStrike should add forward active movement through data.");
             Assert.Greater(lungeStrike.Damage, closePunish.Damage, "LungeStrike should be distinguishable as a heavier pattern through profile data.");
             Assert.AreEqual("SciFiSoldier.Basic", heavyWindup.ActorTypeId, "HeavyWindup should share the same actor type so the same visual can test pattern variety.");
             Assert.AreEqual("HeavyWindup", heavyWindup.PatternId, "HeavyWindup should be a third profile, not a hardcoded branch inside the soldier.");
+            Assert.AreEqual(CombatAiAttackShape.MeleeArc, heavyWindup.AttackShape, "HeavyWindup should stay a wider melee warning rather than pretending to be a ranged line pattern.");
             Assert.AreEqual(CombatAiCameraCueKind.HeavyWindup, heavyWindup.CameraCueKind, "HeavyWindup should select its camera read cue through profile data.");
             Assert.Greater(heavyWindup.TelegraphSeconds, lungeStrike.TelegraphSeconds, "HeavyWindup should advertise a longer warning window through data.");
             Assert.Greater(heavyWindup.WindupThreatLevel, lungeStrike.WindupThreatLevel, "HeavyWindup should mark stronger camera/readability emphasis through data.");
@@ -421,6 +438,14 @@ namespace DimensionBrawl.Tests
             Assert.Greater(heavyWindup.WindupCameraCue.durationSeconds, closePunish.WindupCameraCue.durationSeconds, "HeavyWindup should own its longer warning camera cue timing through profile data.");
             Assert.IsTrue(closePunish.DeathCameraCue.enabled, "Shared death readability should still be profile-owned so future monster types can override it without driver code.");
             Assert.AreNotEqual(closePunish.WindupEndColor, lungeStrike.WindupEndColor, "Pattern samples should not share identical warning colors when they are meant to be visually distinguishable.");
+            Assert.AreEqual("SciFiSoldier.Basic", linePressure.ActorTypeId, "LinePressure should reuse the basic soldier actor until a dedicated ranged soldier visual is promoted.");
+            Assert.AreEqual("LinePressure", linePressure.PatternId, "LinePressure should be a profile asset, not an enum branch inside the soldier.");
+            Assert.AreEqual(CombatAiAttackShape.ForwardLine, linePressure.AttackShape, "LinePressure should advertise a forward-line attack shape through profile data.");
+            Assert.IsTrue(linePressure.LockAttackDirectionOnWindup, "LinePressure should lock its warning lane instead of tracking the player until the hit frame.");
+            Assert.AreEqual(CombatAiCameraCueKind.LinePressure, linePressure.CameraCueKind, "LinePressure should expose its camera read cue through profile data.");
+            Assert.Greater(linePressure.AttackRange, lungeStrike.AttackRange, "LinePressure should reach farther than the lunge sample.");
+            Assert.Less(linePressure.AttackHalfWidth, closePunish.AttackHalfWidth, "LinePressure should be dodgeable sideways through a narrow hit width.");
+            Assert.Greater(linePressure.TelegraphActiveScale.z, lungeStrike.TelegraphActiveScale.z, "LinePressure should expose a longer forward warning strip than the lunge sample.");
             Assert.AreEqual(closePunish.AttackTrigger, lungeStrike.AttackTrigger, "Both patterns should reuse the same current Animator request until a new animation is promoted.");
         }
 
@@ -453,6 +478,51 @@ namespace DimensionBrawl.Tests
 
             float forwardMovement = Vector3.Dot(soldier.transform.position - startPosition, Vector3.forward);
             Assert.Greater(forwardMovement, 0.1f, "LungeStrike should move the soldier forward during the active window using profile data.");
+        }
+
+        [UnityTest]
+        public IEnumerator LinePressureLocksReadableLaneAndAllowsSideDodge()
+        {
+            BasicSoldierEnemy closePunish = RequireNamedRootComponent<BasicSoldierEnemy>(ClosePunishEnemyRootName);
+            BasicSoldierEnemy lungeStrike = RequireNamedRootComponent<BasicSoldierEnemy>(LungeStrikeEnemyRootName);
+            BasicSoldierEnemy heavyWindup = RequireNamedRootComponent<BasicSoldierEnemy>(HeavyWindupEnemyRootName);
+            BasicSoldierEnemy linePressure = RequireNamedRootComponent<BasicSoldierEnemy>(LinePressureEnemyRootName);
+            CombatHealth playerHealth = RequirePlayerHealth();
+
+            closePunish.enabled = false;
+            lungeStrike.enabled = false;
+            heavyWindup.enabled = false;
+            linePressure.enabled = true;
+            linePressure.transform.position = Vector3.zero;
+            linePressure.transform.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
+            playerHealth.transform.position = Vector3.forward * 4f;
+            Physics.SyncTransforms();
+
+            float timeout = 0.5f;
+            while (timeout > 0f && linePressure.CurrentPatternState != CombatAiPatternState.Windup)
+            {
+                yield return null;
+                timeout -= Time.deltaTime;
+            }
+
+            Assert.AreEqual(CombatAiPatternState.Windup, linePressure.CurrentPatternState, "LinePressure should enter a readable warning state before firing.");
+
+            float playerHealthBeforeSideDodge = playerHealth.CurrentHealth;
+            playerHealth.transform.position = new Vector3(1.2f, 0f, 4f);
+            Physics.SyncTransforms();
+
+            timeout = 1.0f;
+            while (timeout > 0f && linePressure.CurrentPatternState != CombatAiPatternState.Recovery)
+            {
+                yield return null;
+                timeout -= Time.deltaTime;
+            }
+
+            Assert.AreEqual(
+                playerHealthBeforeSideDodge,
+                playerHealth.CurrentHealth,
+                0.001f,
+                "LinePressure should not keep tracking until impact; a sideways dodge outside the narrow lane should avoid damage.");
         }
 
         [UnityTest]
