@@ -17,7 +17,7 @@ namespace DimensionBrawl.Editor
         private const string VisualName = "MaintenanceWorker_BasicSoldierVisual";
         private const string PlaceholderBodyName = "SciFiSoldierPlaceholderBody";
         private const string TelegraphName = "ReadableAttackTelegraph";
-        private const string SourceVariantPrefabPath = "Assets/_Imported/AssetStore/Protofactor/Sci Fi/SciFiCharactersMegaPackVol3/SciFiShooterCharactersPackVol3/MaintenanceWorker/Prefabs/MaintenanceWorker@AllMeshes_Orange Variant.prefab";
+        private const string SourceVariantPrefabPath = "Assets/_Imported/AssetStore/Protofactor/Sci Fi/SciFiCharactersMegaPackVol3/SciFiShooterCharactersPackVol3/MaintenanceWorker/Prefabs/MaintenanceWorker@Gastarian_Orange Variant.prefab";
         private const string ModelPath = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/MaintenanceWorker/Models/SK_MaintenanceWorkerAllMeshes.fbx";
         private const string MaterialRoot = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/MaintenanceWorker/Materials";
         private const string TextureRoot = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/MaintenanceWorker/Textures";
@@ -44,7 +44,7 @@ namespace DimensionBrawl.Editor
             GameObject visual = RecreateVisual(soldier.transform);
             ReapplyPromotedMaterials(visual);
             Animator animator = EnsureAnimator(visual, controller);
-            Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(true);
+            Renderer[] renderers = CollectPresentableRenderers(visual);
             if (renderers.Length == 0)
             {
                 throw new InvalidOperationException($"{VisualName} has no renderers to present or receive hit feedback.");
@@ -228,24 +228,29 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"Missing source MaintenanceWorker material variant at {SourceVariantPrefabPath}.");
             }
 
-            Dictionary<string, Queue<Renderer>> sourceRenderersByName = sourcePrefab
-                .GetComponentsInChildren<Renderer>(true)
+            Dictionary<string, Queue<Renderer>> sourceRenderersByName = CollectPresentableRenderers(sourcePrefab)
                 .GroupBy(renderer => renderer.name)
                 .ToDictionary(group => group.Key, group => new Queue<Renderer>(group));
 
             Renderer[] targetRenderers = visual.GetComponentsInChildren<Renderer>(true);
             int reassignedCount = 0;
+            int disabledCount = 0;
             for (int i = 0; i < targetRenderers.Length; i++)
             {
                 Renderer targetRenderer = targetRenderers[i];
                 if (!sourceRenderersByName.TryGetValue(targetRenderer.name, out Queue<Renderer> sourceQueue)
                     || sourceQueue.Count == 0)
                 {
+                    DisableUnusedVariantRenderer(targetRenderer);
+                    disabledCount++;
                     continue;
                 }
 
                 Material[] promotedMaterials = PromoteMaterials(sourceQueue.Dequeue().sharedMaterials);
+                targetRenderer.gameObject.SetActive(true);
+                targetRenderer.enabled = true;
                 targetRenderer.sharedMaterials = promotedMaterials;
+                EditorUtility.SetDirty(targetRenderer.gameObject);
                 EditorUtility.SetDirty(targetRenderer);
                 reassignedCount += promotedMaterials.Length;
             }
@@ -254,6 +259,46 @@ namespace DimensionBrawl.Editor
             {
                 throw new InvalidOperationException($"{VisualName} did not match any source renderers for material promotion.");
             }
+
+            if (disabledCount > 0)
+            {
+                Debug.Log($"Disabled {disabledCount} unused MaintenanceWorker variant renderers while applying {SourceVariantPrefabPath}.");
+            }
+        }
+
+        private static Renderer[] CollectPresentableRenderers(GameObject root)
+        {
+            return root
+                .GetComponentsInChildren<Renderer>(true)
+                .Where(renderer => renderer.enabled && IsActiveInPrefabHierarchy(renderer.transform, root.transform))
+                .ToArray();
+        }
+
+        private static bool IsActiveInPrefabHierarchy(Transform candidate, Transform root)
+        {
+            for (Transform current = candidate; current != null; current = current.parent)
+            {
+                if (!current.gameObject.activeSelf)
+                {
+                    return false;
+                }
+
+                if (current == root)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void DisableUnusedVariantRenderer(Renderer renderer)
+        {
+            renderer.sharedMaterials = Array.Empty<Material>();
+            renderer.enabled = false;
+            renderer.gameObject.SetActive(false);
+            EditorUtility.SetDirty(renderer);
+            EditorUtility.SetDirty(renderer.gameObject);
         }
 
         private static Material[] PromoteMaterials(Material[] sourceMaterials)

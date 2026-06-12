@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Enemies;
@@ -226,7 +227,7 @@ namespace DimensionBrawl.Editor
             ActionFoundationTestEncounter encounter = RequireObject<ActionFoundationTestEncounter>(roots, "test encounter");
             GameObject soldierVisual = RequireNamedObject(roots, EnemyVisualName, "promoted basic soldier visual");
             Animator soldierVisualAnimator = RequireComponent<Animator>(soldierVisual, "basic soldier visual animator");
-            Renderer[] soldierVisualRenderers = soldierVisual.GetComponentsInChildren<Renderer>(true);
+            Renderer[] soldierVisualRenderers = CollectPresentableRenderers(soldierVisual);
             GameObject soldierBody = RequireNamedObject(roots, EnemyPlaceholderBodyName, "basic soldier placeholder body");
             GameObject telegraphObject = RequireNamedObject(roots, "ReadableAttackTelegraph", "basic soldier attack telegraph");
 
@@ -763,7 +764,7 @@ namespace DimensionBrawl.Editor
 
         private static void ValidateMaintenanceWorkerMaterials(GameObject soldierVisual)
         {
-            Renderer[] renderers = soldierVisual.GetComponentsInChildren<Renderer>(true);
+            Renderer[] renderers = CollectPresentableRenderers(soldierVisual);
             RequireAtLeast(renderers.Length, 1, "MaintenanceWorker visual renderers");
 
             int baseTextureCount = 0;
@@ -798,6 +799,32 @@ namespace DimensionBrawl.Editor
             }
 
             RequireAtLeast(baseTextureCount, 1, "MaintenanceWorker promoted base textures");
+        }
+
+        private static Renderer[] CollectPresentableRenderers(GameObject root)
+        {
+            return root
+                .GetComponentsInChildren<Renderer>(true)
+                .Where(renderer => renderer.enabled && IsActiveInPrefabHierarchy(renderer.transform, root.transform))
+                .ToArray();
+        }
+
+        private static bool IsActiveInPrefabHierarchy(Transform candidate, Transform root)
+        {
+            for (Transform current = candidate; current != null; current = current.parent)
+            {
+                if (!current.gameObject.activeSelf)
+                {
+                    return false;
+                }
+
+                if (current == root)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void RequireAtLeast(int actual, int expected, string label)
