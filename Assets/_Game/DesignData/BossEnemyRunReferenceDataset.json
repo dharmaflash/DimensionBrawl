@@ -1,0 +1,838 @@
+{
+  "version": 1,
+  "lastUpdatedKst": "2026-06-12",
+  "scopeGuard": {
+    "isScopeFence": false,
+    "summary": "Production seed catalog for boss pattern decks, enemy AI modules, telegraph timing, pressure-relief rhythm, 3-5 minute Story PvE run shape, and first-pass tuning envelopes.",
+    "activeIdentity": [
+      "landscape_horizontal_arpg_story_pve",
+      "position_direction_dodge_summon_timing",
+      "auto_basic_fire_sustained_pressure",
+      "summon_first_battlefield_swing",
+      "boss_pressure_readability"
+    ],
+    "activeSummonRoster": [
+      "Break",
+      "Tank",
+      "Arrow",
+      "Heal"
+    ],
+    "avoid": [
+      "pvp",
+      "hand_of_cards_ui",
+      "direct_target_selection",
+      "lane_first_input",
+      "static_boss_arena",
+      "unreadable_bullet_spam",
+      "hidden_stat_cheats_as_primary_balance"
+    ]
+  },
+  "sources": [
+    {
+      "id": "zzz_wiki_daze",
+      "game": "Zenless Zone Zero",
+      "type": "wiki",
+      "url": "https://zenless-zone-zero.fandom.com/wiki/Daze",
+      "confidence": "high",
+      "usefulFor": [
+        "enemy_break_model",
+        "stun_duration",
+        "chain_attack_trigger",
+        "enemy_strength_chain_count"
+      ]
+    },
+    {
+      "id": "zzz_data_enemy_pattern",
+      "game": "Zenless Zone Zero",
+      "type": "github_data_mirror",
+      "url": "https://github.com/360NENZ/Dimbreath-ZenlessData",
+      "confidence": "medium",
+      "observedPaths": [
+        "Data/Arlaune_Attack_01_BulletEmitter_01.json",
+        "Data/Bangboo_FightingCommon_EnemyCheck.json",
+        "Data/BossFullHealthLock.json",
+        "Data/BUFF_WitchTime_Dodge.json",
+        "Data/*EnemyCheck.json",
+        "Data/*BulletEmitter*.json",
+        "Data/*Attack*.json"
+      ],
+      "usefulFor": [
+        "bullet_emitter_schema",
+        "field_sensor_schema",
+        "boss_hp_gate",
+        "time_slow_cleanup",
+        "attack_pattern_files"
+      ]
+    },
+    {
+      "id": "pgr_data_affix",
+      "game": "Punishing: Gray Raven",
+      "type": "github_data_mirror",
+      "url": "https://github.com/Kengxxiao/Punishing_GrayRaven_Tab",
+      "confidence": "medium",
+      "observedPaths": [
+        "table/client/fight/npc/NpcAffix.tab",
+        "table/client/fight/npc/NpcAnimatorAction.tab",
+        "table/client/fight/RoleEffect.tab",
+        "table/client/fight/ScreenEffect.tab"
+      ],
+      "usefulFor": [
+        "enemy_affix_modules",
+        "enemy_action_taxonomy",
+        "screen_effect_tables"
+      ]
+    },
+    {
+      "id": "hi3_data_monster_stage",
+      "game": "Honkai Impact 3rd",
+      "type": "github_data_mirror",
+      "url": "https://github.com/nairieberry/HonkaiImpactData",
+      "confidence": "medium",
+      "observedPaths": [
+        "Global/ExcelOutputAsset/MonsterConfigData.json",
+        "Global/ExcelOutputAsset/StageDetail_Monster.json",
+        "Global/ExcelOutputAsset/StageDetail_Effect.json",
+        "Global/ExcelOutputAsset/AttackPunishData.json"
+      ],
+      "usefulFor": [
+        "monster_identity_stat_behavior_split",
+        "stage_monster_metadata",
+        "stage_effect_icons",
+        "threshold_difficulty_curve"
+      ]
+    },
+    {
+      "id": "pgr_wiki_combat_guide",
+      "game": "Punishing: Gray Raven",
+      "type": "wiki",
+      "url": "https://punishing-gray-raven.fandom.com/wiki/Combat_Guide",
+      "confidence": "medium",
+      "usefulFor": [
+        "matrix_dodge_reward",
+        "qte_timing",
+        "tank_support_role_answer"
+      ]
+    },
+    {
+      "id": "hi3_wiki_combat_time_fracture",
+      "game": "Honkai Impact 3rd",
+      "type": "wiki",
+      "url": "https://honkaiimpact3.fandom.com/wiki/Combat",
+      "confidence": "high",
+      "extraUrls": [
+        "https://honkaiimpact3.fandom.com/wiki/Time_Fracture"
+      ],
+      "usefulFor": [
+        "evasion_qte_ultimate_grammar",
+        "time_slow_reward",
+        "button_replace_context"
+      ]
+    },
+    {
+      "id": "wuwa_wiki_combat_vibration",
+      "game": "Wuthering Waves",
+      "type": "wiki",
+      "url": "https://wutheringwaves.fandom.com/wiki/Combat",
+      "confidence": "medium",
+      "extraUrls": [
+        "https://wutheringwaves.fandom.com/wiki/Vibration_Strength"
+      ],
+      "usefulFor": [
+        "perfect_dodge",
+        "dodge_counter",
+        "vibration_strength_break",
+        "intro_outro_echo_entry"
+      ]
+    },
+    {
+      "id": "local_code_story_pve",
+      "game": "IsekaiBrawl",
+      "type": "local_code",
+      "url": "local",
+      "confidence": "high",
+      "observedPaths": [
+        "Assets/_Game/Scripts/Enemy/EnemyAI.cs",
+        "Assets/_Game/Scripts/Battle/StoryPveEncounterRuntime.cs",
+        "Assets/_Game/Scripts/StoryPve/StoryPveObjectiveSystem.cs",
+        "Assets/_Game/Scripts/Battle/BattleEnergySystem.cs",
+        "Assets/_Game/Scripts/Battle/BattleManager.cs"
+      ],
+      "usefulFor": [
+        "current_phase_names",
+        "current_projectile_timing",
+        "current_summon_need_hints",
+        "current_pressure_relief_constants",
+        "current_energy_tuning"
+      ]
+    }
+  ],
+  "observedDataShapes": [
+    {
+      "id": "zzz_daze_break_model",
+      "source": "zzz_wiki_daze",
+      "shape": {
+        "enemyStrengthControlsChainCount": true,
+        "dazeGaugeLengthVariesByEnemy": true,
+        "stunnedEnemyCannotAct": true,
+        "stunIncreasesDamageTaken": true,
+        "heavyAttackOnStunnedStartsChainAttack": true
+      },
+      "samples": [
+        {
+          "enemyClass": "common_small",
+          "dazeGaugeApprox": 600,
+          "stunSecondsRange": [
+            2.0,
+            6.5
+          ],
+          "damageMultiplierPercentRange": [
+            125,
+            200
+          ]
+        },
+        {
+          "enemyClass": "elite",
+          "dazeGaugeApproxRange": [
+            2168,
+            4161
+          ],
+          "stunSecondsRange": [
+            7.0,
+            13.0
+          ],
+          "damageMultiplierPercentRange": [
+            150,
+            200
+          ]
+        },
+        {
+          "enemyClass": "boss",
+          "dazeGaugeApproxRange": [
+            5543,
+            10028
+          ],
+          "stunSecondsRange": [
+            7.0,
+            12.0
+          ],
+          "damageMultiplierPercentRange": [
+            150,
+            200
+          ]
+        }
+      ],
+      "isekaiUse": [
+        "PressureBreak",
+        "BossPatternBreak",
+        "SummonFollowUpWindow",
+        "FinalStandDamageWindow"
+      ]
+    },
+    {
+      "id": "zzz_bullet_emitter_schema",
+      "source": "zzz_data_enemy_pattern",
+      "samplePath": "Data/Arlaune_Attack_01_BulletEmitter_01.json",
+      "shape": {
+        "mixin": "BulletEmitterMixin",
+        "targetReference": "SelfAttackTarget",
+        "targetAttachPoint": "MiddlePoint",
+        "bulletAbilityName": "Arlaune_Attack_01_Bullet_01",
+        "originReference": "Self",
+        "originAttachPoint": "HeadPoint",
+        "effectPattern": "Eff_Monster_Arlaune_Attack_01_01_path",
+        "emitterLifetimeSeconds": 7
+      },
+      "isekaiUse": [
+        "BossPattern.targetingRule",
+        "BossPattern.projectileAbility",
+        "BossPattern.telegraphCue",
+        "PveProjectileEmitterProfile"
+      ]
+    },
+    {
+      "id": "zzz_enemy_check_sensor",
+      "source": "zzz_data_enemy_pattern",
+      "samplePath": "Data/Bangboo_FightingCommon_EnemyCheck.json",
+      "shape": {
+        "mixin": "FieldRangeMixin",
+        "colliderType": "FanCylinder",
+        "angleDegrees": 360,
+        "radius": 2.5,
+        "height": 2,
+        "customProperty": "EnemiesNum_InRange",
+        "aiParam": "Bool_NoEnermyInRange",
+        "duration": -1,
+        "isFollow": true
+      },
+      "isekaiUse": [
+        "BossSensor.PlayerInRange",
+        "BossSensor.SummonInRange",
+        "BossSensor.NoTargetInRange",
+        "PatternDeck.selectionInputs"
+      ]
+    },
+    {
+      "id": "zzz_boss_health_lock",
+      "source": "zzz_data_enemy_pattern",
+      "samplePath": "Data/BossFullHealthLock.json",
+      "shape": {
+        "mixin": "LockLifePropertyMixin",
+        "performBeHitEffect": true,
+        "lockType": "Total",
+        "lockValueRatio": 0.95
+      },
+      "isekaiUse": [
+        "PressureOnlyBossState",
+        "BreakOpenBossState",
+        "FinalStandBossState"
+      ]
+    },
+    {
+      "id": "hi3_monster_config_split",
+      "source": "hi3_data_monster_stage",
+      "samplePath": "Global/ExcelOutputAsset/MonsterConfigData.json",
+      "shape": {
+        "fields": [
+          "EliteType",
+          "nature",
+          "attack",
+          "defense",
+          "HP",
+          "AIName",
+          "categoryName",
+          "configFile",
+          "configType",
+          "DisplayTitle",
+          "monsterName",
+          "subTypeName",
+          "typeName"
+        ],
+        "variantExamples": [
+          "Default",
+          "MainLine",
+          "Mirror_1",
+          "Default_SP01",
+          "Easy",
+          "VeryEasy"
+        ]
+      },
+      "isekaiUse": [
+        "EnemyIdentity",
+        "EnemyStats",
+        "EnemyBehaviorPackage",
+        "DifficultyVariant",
+        "PresentationProfile"
+      ]
+    },
+    {
+      "id": "hi3_stage_monster_metadata",
+      "source": "hi3_data_monster_stage",
+      "samplePath": "Global/ExcelOutputAsset/StageDetail_Monster.json",
+      "shape": {
+        "fields": [
+          "BossType",
+          "Nature",
+          "ModelScale",
+          "ControllerPath",
+          "IconPath",
+          "PrefabPath",
+          "ModelPosition",
+          "ModelRotation",
+          "AbilitiesList",
+          "ResistList",
+          "RecommendTag",
+          "UnRecommendTag"
+        ]
+      },
+      "isekaiUse": [
+        "EncounterPressurePlan.spawnMetadata",
+        "recommendedSummonNeed",
+        "resistanceOrWeaknessTeaching",
+        "stageWarningIcon"
+      ]
+    },
+    {
+      "id": "hi3_attack_punish_curve",
+      "source": "hi3_data_monster_stage",
+      "samplePath": "Global/ExcelOutputAsset/AttackPunishData.json",
+      "shape": {
+        "levelDiffZeroToSixReduction": 0,
+        "levelDiffSevenReduction": 0.5,
+        "levelDiffEightReduction": 0.6,
+        "levelDiffNineReduction": 0.7,
+        "levelDiffTenReduction": 0.8
+      },
+      "isekaiUse": [
+        "visible_threshold_difficulty_curve",
+        "avoid_hidden_scaling_in_v1",
+        "hard_mode_future_reference"
+      ]
+    },
+    {
+      "id": "local_story_pve_runtime_timing",
+      "source": "local_code_story_pve",
+      "shape": {
+        "phases": [
+          "Opening",
+          "Pressure",
+          "Siege",
+          "FinalPush"
+        ],
+        "bossTactics": [
+          "RearGuard",
+          "EscortWave",
+          "ContestMid",
+          "SiegeStructure",
+          "PunishOverextend",
+          "CommitPush",
+          "FallBack"
+        ],
+        "openingMinimumDuration": 24,
+        "pressureMinimumDuration": 72,
+        "siegeMinimumDuration": 118,
+        "directProjectileLeadTime": 0.9,
+        "directProjectileGlobalRecovery": 3,
+        "lineProjectileInterval": 4.6,
+        "storyPveEnergyMax": 124,
+        "storyPveStartingEnergy": 28,
+        "storyPveBaseChargeRate": 1.75
+      },
+      "isekaiUse": [
+        "current_runtime_baseline",
+        "tuning_anchor",
+        "data_contract_names"
+      ]
+    },
+    {
+      "id": "local_pressure_relief_mismatch",
+      "source": "local_code_story_pve",
+      "shape": {
+        "documentedPocketShiftTargetSeconds": [
+          2,
+          3
+        ],
+        "tankSpawnReliefSeconds": 0.72,
+        "blockerBreakReliefSeconds": 0.9,
+        "rewardBreakReliefSeconds": 1.05,
+        "siegeBreakReliefSeconds": 1.2
+      },
+      "isekaiUse": [
+        "next_tuning_pass_should_test_1_6_to_3_0_second_relief",
+        "do_not_assume_current_relief_reads_as_pocket_shift"
+      ]
+    }
+  ],
+  "bossPatternDeck": [
+    {
+      "id": "NeedleLock",
+      "phaseFit": [
+        "Opening"
+      ],
+      "telegraph": "thin_lock_line",
+      "activeThreat": "single_aimed_projectile",
+      "bestAnswers": [
+        "dodge",
+        "Tank_if_chained"
+      ],
+      "reliefClass": "short"
+    },
+    {
+      "id": "LeftClamp",
+      "phaseFit": [
+        "Pressure"
+      ],
+      "telegraph": "side_warning_plus_center_shot",
+      "activeThreat": "narrows_safe_space",
+      "bestAnswers": [
+        "dodge_through",
+        "Tank"
+      ],
+      "reliefClass": "medium"
+    },
+    {
+      "id": "PunishNet",
+      "phaseFit": [
+        "Pressure",
+        "Siege"
+      ],
+      "telegraph": "player_centered_net",
+      "activeThreat": "overextend_punish",
+      "bestAnswers": [
+        "perfect_dodge",
+        "Heal_if_damaged"
+      ],
+      "reliefClass": "medium"
+    },
+    {
+      "id": "AnchorCurse",
+      "phaseFit": [
+        "Siege"
+      ],
+      "telegraph": "structure_lock_circle",
+      "activeThreat": "structure_or_core_pressure",
+      "bestAnswers": [
+        "Break",
+        "Tank"
+      ],
+      "reliefClass": "medium"
+    },
+    {
+      "id": "SummonPackage",
+      "phaseFit": [
+        "Pressure",
+        "Siege"
+      ],
+      "telegraph": "cast_tell_plus_spawn_circle",
+      "activeThreat": "support_enemy_spawn",
+      "bestAnswers": [
+        "Arrow",
+        "Tank"
+      ],
+      "reliefClass": "medium"
+    },
+    {
+      "id": "FinalCrush",
+      "phaseFit": [
+        "FinalPush"
+      ],
+      "telegraph": "multi_line_warning",
+      "activeThreat": "final_pressure_burst",
+      "bestAnswers": [
+        "ultimate",
+        "Tank",
+        "perfect_dodge"
+      ],
+      "reliefClass": "short_after_burst"
+    }
+  ],
+  "enemyRoleModules": [
+    {
+      "id": "ShieldCycle",
+      "threatPurpose": "blocks_progress",
+      "telegraph": "shield_aura_crack_stages",
+      "bestAnswer": "Break",
+      "notes": "Primary Break tutorial module."
+    },
+    {
+      "id": "AuraBuffer",
+      "threatPurpose": "amplifies_adds_or_boss",
+      "telegraph": "aura_ring_support_marker",
+      "bestAnswer": "Arrow",
+      "notes": "Priority target without direct target selection."
+    },
+    {
+      "id": "DistanceHaste",
+      "threatPurpose": "punishes_passive_kiting",
+      "telegraph": "speed_trail_when_far",
+      "bestAnswer": "move_forward_or_Tank",
+      "notes": "Use lightly in mobile readability pass."
+    },
+    {
+      "id": "DeathBomb",
+      "threatPurpose": "prevents_autopilot_cleanup",
+      "telegraph": "death_ring_delay",
+      "bestAnswer": "dodge",
+      "notes": "Good delayed dodge teaching tool."
+    },
+    {
+      "id": "SummonPackage",
+      "threatPurpose": "creates_pocket_overload",
+      "telegraph": "cast_circle_add_portal",
+      "bestAnswer": "Tank_or_Arrow",
+      "notes": "Do not stack with final crush early."
+    },
+    {
+      "id": "NoStaggerUntilBreak",
+      "threatPurpose": "guard_or_armor_tutorial",
+      "telegraph": "armor_shell",
+      "bestAnswer": "Break_or_ultimate",
+      "notes": "Do not overuse."
+    }
+  ],
+  "runTimeline": [
+    {
+      "id": "EntryRead",
+      "timeRangeSeconds": [
+        0,
+        20
+      ],
+      "goal": "teach camera move and first boss pressure",
+      "pressure": [
+        "one_aimed_projectile_or_line"
+      ],
+      "bestSummonRead": [
+        "none",
+        "Tank_hint_only"
+      ]
+    },
+    {
+      "id": "Pocket1BreakGate",
+      "timeRangeSeconds": [
+        20,
+        65
+      ],
+      "goal": "crack first structure or blocker",
+      "pressure": [
+        "structure",
+        "light_line_pressure"
+      ],
+      "bestSummonRead": [
+        "Break"
+      ]
+    },
+    {
+      "id": "Pocket2Backline",
+      "timeRangeSeconds": [
+        65,
+        115
+      ],
+      "goal": "clear support or ranged add",
+      "pressure": [
+        "backline_add",
+        "clamp_shots"
+      ],
+      "bestSummonRead": [
+        "Arrow",
+        "Tank"
+      ]
+    },
+    {
+      "id": "Pocket3PressureRescue",
+      "timeRangeSeconds": [
+        115,
+        170
+      ],
+      "goal": "survive boss and add pressure",
+      "pressure": [
+        "line_threat",
+        "direct_threat",
+        "chip_damage"
+      ],
+      "bestSummonRead": [
+        "Tank",
+        "Heal"
+      ]
+    },
+    {
+      "id": "BossBreakHandoff",
+      "timeRangeSeconds": [
+        170,
+        205
+      ],
+      "goal": "create final approach",
+      "pressure": [
+        "boss_break",
+        "retreat_window"
+      ],
+      "bestSummonRead": [
+        "Break",
+        "Arrow"
+      ]
+    },
+    {
+      "id": "FinalStand",
+      "timeRangeSeconds": [
+        205,
+        270
+      ],
+      "goal": "kill boss",
+      "pressure": [
+        "final_deck",
+        "no_endless_setup"
+      ],
+      "bestSummonRead": [
+        "ultimate",
+        "correct_current_role"
+      ]
+    }
+  ],
+  "tuningEnvelope": {
+    "runLengthSeconds": [
+      180,
+      300
+    ],
+    "majorPatternTelegraphSeconds": [
+      0.6,
+      1.2
+    ],
+    "minorProjectileTelegraphSeconds": [
+      0.45,
+      0.9
+    ],
+    "patternActiveBurstSeconds": [
+      0.35,
+      1.4
+    ],
+    "patternRecoverySeconds": [
+      0.35,
+      1.0
+    ],
+    "perfectDodgeCueSeconds": [
+      0.18,
+      0.4
+    ],
+    "perfectDodgeRewardSeconds": [
+      1.0,
+      4.0
+    ],
+    "basicFireBeatWindowSeconds": [
+      0.3,
+      0.8
+    ],
+    "summonOpportunityAfterDodgeSeconds": [
+      0.5,
+      1.2
+    ],
+    "bossBreakSummonWindowSeconds": [
+      1.5,
+      3.0
+    ],
+    "structureBreakTempoWindowSeconds": [
+      2.0,
+      4.0
+    ],
+    "successPressureReliefSeconds": [
+      1.6,
+      3.0
+    ],
+    "playerEnergyMax": [
+      120,
+      135
+    ],
+    "startingEnergy": [
+      25,
+      40
+    ],
+    "passiveEnergyPerSecond": [
+      1.6,
+      2.2
+    ],
+    "earlyBossPressureIntervalSeconds": [
+      4.5,
+      7.5
+    ],
+    "midBossPressureIntervalSeconds": [
+      3.5,
+      5.5
+    ],
+    "finalBossPressureIntervalSeconds": [
+      2.4,
+      4.2
+    ]
+  },
+  "summonAnswerMatrix": [
+    {
+      "threat": "shielded_structure",
+      "primaryAnswer": "Break",
+      "secondaryAnswer": "ultimate"
+    },
+    {
+      "threat": "direct_projectile_lock",
+      "primaryAnswer": "Tank",
+      "secondaryAnswer": "dodge",
+      "conditionalAnswer": "Heal_if_low_hp"
+    },
+    {
+      "threat": "backline_ranged_add",
+      "primaryAnswer": "Arrow",
+      "secondaryAnswer": "medium_aim_bias"
+    },
+    {
+      "threat": "aura_support_add",
+      "primaryAnswer": "Arrow",
+      "secondaryAnswer": "Break"
+    },
+    {
+      "threat": "boss_overextend_punish",
+      "primaryAnswer": "perfect_dodge",
+      "secondaryAnswer": "Tank_after_fail"
+    },
+    {
+      "threat": "boss_recovery_after_major_pattern",
+      "primaryAnswer": "auto_basic_fire_sustained_pressure",
+      "secondaryAnswer": "Arrow_if_priority_target_exposed"
+    },
+    {
+      "threat": "long_final_crush",
+      "primaryAnswer": "ultimate_or_Tank",
+      "secondaryAnswer": "perfect_dodge"
+    }
+  ],
+  "recommendedDataContracts": {
+    "BossRunDefinition": [
+      "id",
+      "targetDurationSeconds",
+      "encounterIds",
+      "finalStandEncounterId",
+      "globalPressureBudget",
+      "summonTeachingOrder",
+      "retryPolicy"
+    ],
+    "EncounterPressurePlan": [
+      "id",
+      "timeRange",
+      "primaryGoal",
+      "pressureModules",
+      "requiredSummonRead",
+      "bossPhase",
+      "reliefWindow",
+      "advanceGate",
+      "hudWarning"
+    ],
+    "BossPatternDeck": [
+      "id",
+      "phase",
+      "patterns",
+      "selectionInputs",
+      "repeatSuppression",
+      "minimumCommitSeconds",
+      "maximumCommitSeconds"
+    ],
+    "BossPattern": [
+      "id",
+      "threatShape",
+      "intentCue",
+      "telegraphCue",
+      "windupSeconds",
+      "activeSeconds",
+      "recoverySeconds",
+      "cooldownSeconds",
+      "targetingRule",
+      "bestAnswers",
+      "cameraCue",
+      "cleanupCue"
+    ],
+    "EnemyRoleModule": [
+      "id",
+      "role",
+      "affixStyle",
+      "sensorInputs",
+      "priorityScore",
+      "summonNeed",
+      "telegraph",
+      "failureRisk",
+      "spawnBudget"
+    ],
+    "PressureReliefRule": [
+      "trigger",
+      "minimumSeconds",
+      "maximumSeconds",
+      "suppressedPatternTypes",
+      "cameraCue",
+      "hudCue",
+      "cancelConditions"
+    ]
+  },
+  "firstAdoption": [
+    "Build BossPatternDeck rows from current phase names before adding new boss code.",
+    "Raise or test Tank and structure success relief toward 1.6-2.4 seconds to validate the documented pocket-shift target.",
+    "Make SummonNeedKind authorable on encounter plans in addition to runtime inference.",
+    "Draft one complete 3-5 minute run table before expanding enemy variety.",
+    "Keep early boss phases pressure-only and reserve real boss HP kill for final stand."
+  ],
+  "nextSmallTasks": [
+    "Draft BOSS_COMBAT_SPEC.md with concrete BossPatternDeck, EncounterPressurePlan, and PressureReliefRule schemas.",
+    "Convert current local EnemyAI phase/pattern names into a data table without changing behavior yet.",
+    "Tune and test Tank/structure relief windows against the documented 2-3s pocket shift target."
+  ]
+}
