@@ -30,6 +30,7 @@ namespace DimensionBrawl.Enemies
 
         [Header("Profile")]
         [SerializeField] private CombatAiPatternProfile patternProfile;
+        [SerializeField] private CombatAiPatternDeck patternDeck;
 
         [Header("References")]
         [SerializeField] private CombatTargetSensor targetSensor;
@@ -62,6 +63,7 @@ namespace DimensionBrawl.Enemies
         [SerializeField, Min(0f)] private float activeLungeSpeed = 0f;
         [SerializeField] private CombatAiAttackShape attackShape = CombatAiAttackShape.MeleeArc;
         [SerializeField, Min(0f)] private float attackHalfWidth = 0.65f;
+        [SerializeField, Range(0f, 90f)] private float attackHalfAngleDegrees = 28f;
         [SerializeField] private bool lockAttackDirectionOnWindup;
 
         [Header("Hit Reaction")]
@@ -92,9 +94,12 @@ namespace DimensionBrawl.Enemies
         private bool dealtDamageThisSwing;
         private bool hasLockedAttackDirection;
         private Vector3 lockedAttackDirection = Vector3.forward;
+        private float[] patternDeckLastUseTimes = Array.Empty<float>();
+        private int activePatternDeckIndex = -1;
         private CombatAiPatternState currentPatternState = CombatAiPatternState.Tracking;
 
         public CombatAiPatternProfile PatternProfile => patternProfile;
+        public CombatAiPatternDeck PatternDeck => patternDeck;
         public CombatHealth SelfHealth => selfHealth;
         public CombatAiPatternState CurrentPatternState => currentPatternState;
         public string ActorTypeId => patternProfile != null ? patternProfile.ActorTypeId : enemyTypeId;
@@ -120,6 +125,7 @@ namespace DimensionBrawl.Enemies
         private float ActiveHitStopSeconds => patternProfile != null ? patternProfile.HitStopSeconds : hitStopSeconds;
         private CombatAiAttackShape ActiveAttackShape => patternProfile != null ? patternProfile.AttackShape : attackShape;
         private float ActiveAttackHalfWidth => patternProfile != null ? patternProfile.AttackHalfWidth : attackHalfWidth;
+        private float ActiveAttackHalfAngleDegrees => patternProfile != null ? patternProfile.AttackHalfAngleDegrees : attackHalfAngleDegrees;
         private bool ActiveLockAttackDirectionOnWindup => patternProfile != null ? patternProfile.LockAttackDirectionOnWindup : lockAttackDirectionOnWindup;
         private float ActiveHitReactionSeconds => patternProfile != null ? patternProfile.HitReactionSeconds : hitReactionSeconds;
         private float ActiveKnockbackSpeed => patternProfile != null ? patternProfile.KnockbackSpeed : knockbackSpeed;
@@ -139,7 +145,15 @@ namespace DimensionBrawl.Enemies
         public void ConfigurePattern(CombatAiPatternProfile profile)
         {
             patternProfile = profile;
+            activePatternDeckIndex = -1;
             PatternStateChanged?.Invoke(currentPatternState, patternProfile);
+        }
+
+        public void ConfigurePatternDeck(CombatAiPatternDeck deck)
+        {
+            patternDeck = deck;
+            patternDeckLastUseTimes = Array.Empty<float>();
+            activePatternDeckIndex = -1;
         }
 
         private void Awake()
@@ -248,6 +262,7 @@ namespace DimensionBrawl.Enemies
 
         private void UpdateApproach(float deltaTime)
         {
+            SelectPatternFromDeck();
             FaceTarget(deltaTime);
 
             if (IsTargetInAttackRange())
@@ -275,6 +290,7 @@ namespace DimensionBrawl.Enemies
             }
 
             ApplyTelegraphStyle();
+            RecordActiveDeckPatternUse();
             ShowTelegraphWindup(0f);
             SetBodyColor(telegraphColor);
         }
@@ -454,7 +470,89 @@ namespace DimensionBrawl.Enemies
                     && Mathf.Abs(localTarget.x) <= ActiveAttackHalfWidth;
             }
 
+            if (ActiveAttackShape == CombatAiAttackShape.ForwardFan)
+            {
+                Vector3 localTarget = transform.InverseTransformPoint(target.position);
+                Vector2 planarTarget = new Vector2(localTarget.x, localTarget.z);
+                if (localTarget.z < 0f || planarTarget.magnitude > ActiveAttackRange)
+                {
+                    return false;
+                }
+
+                float angle = Mathf.Abs(Mathf.Atan2(localTarget.x, localTarget.z) * Mathf.Rad2Deg);
+                return angle <= ActiveAttackHalfAngleDegrees;
+            }
+
             return IsTargetInAttackRange();
+        }
+
+        private void SelectPatternFromDeck()
+        {
+            if (patternDeck == null || target == null)
+            {
+                return;
+            }
+
+            EnsurePatternDeckState();
+            if (!patternDeck.TrySelectPattern(
+                    HorizontalDistanceToTarget(),
+                    patternProfile,
+                    Time.time,
+                    patternDeckLastUseTimes,
+                    out CombatAiPatternProfile selectedProfile,
+                    out int selectedIndex))
+            {
+                return;
+            }
+
+            activePatternDeckIndex = selectedIndex;
+            if (selectedProfile == patternProfile)
+            {
+                return;
+            }
+
+            patternProfile = selectedProfile;
+            PatternStateChanged?.Invoke(currentPatternState, patternProfile);
+        }
+
+        private void EnsurePatternDeckState()
+        {
+            int entryCount = patternDeck != null ? patternDeck.EntryCount : 0;
+            if (entryCount <= 0)
+            {
+                patternDeckLastUseTimes = Array.Empty<float>();
+                activePatternDeckIndex = -1;
+                return;
+            }
+
+            if (patternDeckLastUseTimes != null && patternDeckLastUseTimes.Length == entryCount)
+            {
+                return;
+            }
+
+            patternDeckLastUseTimes = new float[entryCount];
+            for (int i = 0; i < patternDeckLastUseTimes.Length; i++)
+            {
+                patternDeckLastUseTimes[i] = -1f;
+            }
+
+            activePatternDeckIndex = -1;
+        }
+
+        private void RecordActiveDeckPatternUse()
+        {
+            if (patternDeck == null || activePatternDeckIndex < 0)
+            {
+                return;
+            }
+
+            EnsurePatternDeckState();
+            if (activePatternDeckIndex >= patternDeckLastUseTimes.Length)
+            {
+                return;
+            }
+
+            patternDeckLastUseTimes[activePatternDeckIndex] = Time.time;
         }
 
         private Vector3 CurrentAttackDirection()
@@ -471,6 +569,16 @@ namespace DimensionBrawl.Enemies
 
             Vector3 direction = Vector3.ProjectOnPlane(target.position - transform.position, Vector3.up);
             return direction.sqrMagnitude > 0f ? direction.normalized : transform.forward;
+        }
+
+        private float HorizontalDistanceToTarget()
+        {
+            if (target == null)
+            {
+                return float.PositiveInfinity;
+            }
+
+            return Vector3.ProjectOnPlane(target.position - transform.position, Vector3.up).magnitude;
         }
 
         private void FaceTarget(float deltaTime)

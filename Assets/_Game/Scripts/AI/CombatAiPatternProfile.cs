@@ -5,7 +5,8 @@ namespace DimensionBrawl.AI
     public enum CombatAiAttackShape
     {
         MeleeArc,
-        ForwardLine
+        ForwardLine,
+        ForwardFan
     }
 
     public abstract class CombatAiPatternProfile : ScriptableObject
@@ -32,6 +33,7 @@ namespace DimensionBrawl.AI
         [Header("Attack Shape")]
         [SerializeField] private CombatAiAttackShape attackShape = CombatAiAttackShape.MeleeArc;
         [SerializeField, Min(0f)] private float attackHalfWidth = 0.65f;
+        [SerializeField, Range(0f, 90f)] private float attackHalfAngleDegrees = 28f;
         [SerializeField] private bool lockAttackDirectionOnWindup;
 
         [Header("Hit Reaction")]
@@ -112,6 +114,7 @@ namespace DimensionBrawl.AI
         public float HitStopSeconds => hitStopSeconds;
         public CombatAiAttackShape AttackShape => attackShape;
         public float AttackHalfWidth => attackHalfWidth;
+        public float AttackHalfAngleDegrees => attackHalfAngleDegrees;
         public bool LockAttackDirectionOnWindup => lockAttackDirectionOnWindup;
         public float HitReactionSeconds => hitReactionSeconds;
         public float KnockbackSpeed => knockbackSpeed;

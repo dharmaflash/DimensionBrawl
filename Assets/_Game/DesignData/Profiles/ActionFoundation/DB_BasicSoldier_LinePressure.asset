@@ -27,6 +27,7 @@ MonoBehaviour:
   hitStopSeconds: 0.035
   attackShape: 1
   attackHalfWidth: 0.38
+  attackHalfAngleDegrees: 16
   lockAttackDirectionOnWindup: 1
   hitReactionSeconds: 0.24
   knockbackSpeed: 2.2

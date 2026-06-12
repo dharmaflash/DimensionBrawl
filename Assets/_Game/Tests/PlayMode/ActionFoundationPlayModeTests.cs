@@ -22,6 +22,8 @@ namespace DimensionBrawl.Tests
         private const string LungeStrikePatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_LungeStrike.asset";
         private const string HeavyWindupPatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_HeavyWindup.asset";
         private const string LinePressurePatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_LinePressure.asset";
+        private const string FanPressurePatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_FanPressure.asset";
+        private const string BasicSoldierTrainingDeckPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_TrainingDeck.asset";
         private const string PlayerVisualName = "CombatGirlSwordShield_PlayerVisual";
         private const string EnemyVisualName = "MaintenanceWorker_BasicSoldierVisual";
         private const string EnemyPlaceholderBodyName = "SciFiSoldierPlaceholderBody";
@@ -29,6 +31,7 @@ namespace DimensionBrawl.Tests
         private const string LungeStrikeEnemyRootName = "Enemy_SciFiSoldier_LungeStrike";
         private const string HeavyWindupEnemyRootName = "Enemy_SciFiSoldier_HeavyWindup";
         private const string LinePressureEnemyRootName = "Enemy_SciFiSoldier_LinePressure";
+        private const string FanPressureEnemyRootName = "Enemy_SciFiSoldier_FanPressure";
 
         [UnitySetUp]
         public IEnumerator LoadActionFoundationScene()
@@ -276,12 +279,13 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator ActionFoundationSceneProvidesFourPatternSampleEnemiesAndPlayerTargetCandidates()
+        public IEnumerator ActionFoundationSceneProvidesFivePatternSampleEnemiesAndPlayerTargetCandidates()
         {
             BasicSoldierEnemy closePunish = RequireNamedRootComponent<BasicSoldierEnemy>(ClosePunishEnemyRootName);
             BasicSoldierEnemy lungeStrike = RequireNamedRootComponent<BasicSoldierEnemy>(LungeStrikeEnemyRootName);
             BasicSoldierEnemy heavyWindup = RequireNamedRootComponent<BasicSoldierEnemy>(HeavyWindupEnemyRootName);
             BasicSoldierEnemy linePressure = RequireNamedRootComponent<BasicSoldierEnemy>(LinePressureEnemyRootName);
+            BasicSoldierEnemy fanPressure = RequireNamedRootComponent<BasicSoldierEnemy>(FanPressureEnemyRootName);
             PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
             CombatHealth playerHealth = RequirePlayerHealth();
 
@@ -291,15 +295,18 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("LungeStrike", lungeStrike.PatternId, "Second soldier should be the lunge pattern sample.");
             Assert.AreEqual("HeavyWindup", heavyWindup.PatternId, "Third soldier should be the heavy windup pattern sample.");
             Assert.AreEqual("LinePressure", linePressure.PatternId, "Fourth soldier should be the line pressure pattern sample.");
-            Assert.AreEqual(4, targetSelector.TargetCandidateCount, "Player target selector should receive all authored sample enemies instead of scene-scanning.");
+            Assert.AreEqual("FanPressure", fanPressure.PatternId, "Fifth soldier should be the fan pressure pattern sample.");
+            Assert.AreEqual(5, targetSelector.TargetCandidateCount, "Player target selector should receive all authored sample enemies instead of scene-scanning.");
             AssertEnemyTargetsPlayer(closePunish, playerHealth);
             AssertEnemyTargetsPlayer(lungeStrike, playerHealth);
             AssertEnemyTargetsPlayer(heavyWindup, playerHealth);
             AssertEnemyTargetsPlayer(linePressure, playerHealth);
+            AssertEnemyTargetsPlayer(fanPressure, playerHealth);
             Assert.IsNotNull(closePunish.GetComponent<EnemyActionCameraCueDriver>(), "Close sample should own an enemy camera cue driver.");
             Assert.IsNotNull(lungeStrike.GetComponent<EnemyActionCameraCueDriver>(), "Lunge sample should own an enemy camera cue driver.");
             Assert.IsNotNull(heavyWindup.GetComponent<EnemyActionCameraCueDriver>(), "Heavy sample should own an enemy camera cue driver.");
             Assert.IsNotNull(linePressure.GetComponent<EnemyActionCameraCueDriver>(), "Line pressure sample should own an enemy camera cue driver.");
+            Assert.IsNotNull(fanPressure.GetComponent<EnemyActionCameraCueDriver>(), "Fan pressure sample should own an enemy camera cue driver.");
         }
 
         [UnityTest]
@@ -313,11 +320,13 @@ namespace DimensionBrawl.Tests
             BasicSoldierEnemy lungeStrike = RequireNamedRootComponent<BasicSoldierEnemy>(LungeStrikeEnemyRootName);
             BasicSoldierEnemy heavyWindup = RequireNamedRootComponent<BasicSoldierEnemy>(HeavyWindupEnemyRootName);
             BasicSoldierEnemy linePressure = RequireNamedRootComponent<BasicSoldierEnemy>(LinePressureEnemyRootName);
+            BasicSoldierEnemy fanPressure = RequireNamedRootComponent<BasicSoldierEnemy>(FanPressureEnemyRootName);
 
             closePunish.enabled = false;
             lungeStrike.enabled = false;
             heavyWindup.enabled = false;
             linePressure.enabled = false;
+            fanPressure.enabled = false;
             movement.transform.position = Vector3.zero;
             movement.transform.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
             cameraController.transform.position = new Vector3(0f, 1.8f, -4f);
@@ -326,6 +335,7 @@ namespace DimensionBrawl.Tests
             lungeStrike.transform.position = Vector3.back * 1.2f;
             heavyWindup.transform.position = Vector3.right * 6f;
             linePressure.transform.position = Vector3.left * 7f;
+            fanPressure.transform.position = Vector3.left * 9f;
             Physics.SyncTransforms();
 
             targetSelector.RefreshTarget();
@@ -348,11 +358,13 @@ namespace DimensionBrawl.Tests
             BasicSoldierEnemy lungeStrike = RequireNamedRootComponent<BasicSoldierEnemy>(LungeStrikeEnemyRootName);
             BasicSoldierEnemy heavyWindup = RequireNamedRootComponent<BasicSoldierEnemy>(HeavyWindupEnemyRootName);
             BasicSoldierEnemy linePressure = RequireNamedRootComponent<BasicSoldierEnemy>(LinePressureEnemyRootName);
+            BasicSoldierEnemy fanPressure = RequireNamedRootComponent<BasicSoldierEnemy>(FanPressureEnemyRootName);
 
             closePunish.enabled = false;
             lungeStrike.enabled = false;
             heavyWindup.enabled = false;
             linePressure.enabled = false;
+            fanPressure.enabled = false;
             movement.SetMoveInput(Vector2.zero);
             movement.transform.position = Vector3.zero;
             movement.transform.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
@@ -360,6 +372,7 @@ namespace DimensionBrawl.Tests
             lungeStrike.transform.position = Vector3.forward * 18f;
             heavyWindup.transform.position = Vector3.back * 18f;
             linePressure.transform.position = Vector3.left * 18f;
+            fanPressure.transform.position = Vector3.left * 20f;
             Physics.SyncTransforms();
             targetSelector.RefreshTarget();
             yield return null;
@@ -410,6 +423,8 @@ namespace DimensionBrawl.Tests
             CombatAiPatternProfile lungeStrike = LoadPatternProfile(LungeStrikePatternPath);
             CombatAiPatternProfile heavyWindup = LoadPatternProfile(HeavyWindupPatternPath);
             CombatAiPatternProfile linePressure = LoadPatternProfile(LinePressurePatternPath);
+            CombatAiPatternProfile fanPressure = LoadPatternProfile(FanPressurePatternPath);
+            CombatAiPatternDeck trainingDeck = LoadPatternDeck(BasicSoldierTrainingDeckPath);
 
             Assert.AreEqual("SciFiSoldier.Basic", closePunish.ActorTypeId, "ClosePunish should declare the actor type used by visual/Animator setup.");
             Assert.AreEqual("ClosePunish", closePunish.PatternId, "ClosePunish profile should keep the first readable melee pattern id.");
@@ -446,6 +461,18 @@ namespace DimensionBrawl.Tests
             Assert.Greater(linePressure.AttackRange, lungeStrike.AttackRange, "LinePressure should reach farther than the lunge sample.");
             Assert.Less(linePressure.AttackHalfWidth, closePunish.AttackHalfWidth, "LinePressure should be dodgeable sideways through a narrow hit width.");
             Assert.Greater(linePressure.TelegraphActiveScale.z, lungeStrike.TelegraphActiveScale.z, "LinePressure should expose a longer forward warning strip than the lunge sample.");
+            Assert.AreEqual("SciFiSoldier.Basic", fanPressure.ActorTypeId, "FanPressure should reuse the basic soldier actor until a dedicated ranged soldier visual is promoted.");
+            Assert.AreEqual("FanPressure", fanPressure.PatternId, "FanPressure should be a profile asset, not a branch inside the soldier.");
+            Assert.AreEqual(CombatAiAttackShape.ForwardFan, fanPressure.AttackShape, "FanPressure should advertise a forward-fan attack shape through profile data.");
+            Assert.IsTrue(fanPressure.LockAttackDirectionOnWindup, "FanPressure should commit its cone once the warning starts.");
+            Assert.AreEqual(CombatAiCameraCueKind.FanPressure, fanPressure.CameraCueKind, "FanPressure should expose its camera read cue through profile data.");
+            Assert.Greater(fanPressure.AttackHalfAngleDegrees, linePressure.AttackHalfAngleDegrees, "FanPressure should be wider than the line pattern in angle space.");
+            Assert.Greater(fanPressure.TelegraphActiveScale.x, linePressure.TelegraphActiveScale.x, "FanPressure should expose a wider warning footprint than LinePressure.");
+            Assert.AreEqual(4, trainingDeck.EntryCount, "Training deck should show how one soldier can own several reusable pattern profiles.");
+            Assert.AreSame(closePunish, trainingDeck.GetEntry(0).Profile, "Training deck entry 0 should be the close-range punish pattern.");
+            Assert.AreSame(lungeStrike, trainingDeck.GetEntry(1).Profile, "Training deck entry 1 should be the mid-range lunge pattern.");
+            Assert.AreSame(fanPressure, trainingDeck.GetEntry(2).Profile, "Training deck entry 2 should be the fan pressure pattern.");
+            Assert.AreSame(linePressure, trainingDeck.GetEntry(3).Profile, "Training deck entry 3 should be the long line pressure pattern.");
             Assert.AreEqual(closePunish.AttackTrigger, lungeStrike.AttackTrigger, "Both patterns should reuse the same current Animator request until a new animation is promoted.");
         }
 
@@ -487,11 +514,13 @@ namespace DimensionBrawl.Tests
             BasicSoldierEnemy lungeStrike = RequireNamedRootComponent<BasicSoldierEnemy>(LungeStrikeEnemyRootName);
             BasicSoldierEnemy heavyWindup = RequireNamedRootComponent<BasicSoldierEnemy>(HeavyWindupEnemyRootName);
             BasicSoldierEnemy linePressure = RequireNamedRootComponent<BasicSoldierEnemy>(LinePressureEnemyRootName);
+            BasicSoldierEnemy fanPressure = RequireNamedRootComponent<BasicSoldierEnemy>(FanPressureEnemyRootName);
             CombatHealth playerHealth = RequirePlayerHealth();
 
             closePunish.enabled = false;
             lungeStrike.enabled = false;
             heavyWindup.enabled = false;
+            fanPressure.enabled = false;
             linePressure.enabled = true;
             linePressure.transform.position = Vector3.zero;
             linePressure.transform.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
@@ -523,6 +552,45 @@ namespace DimensionBrawl.Tests
                 playerHealth.CurrentHealth,
                 0.001f,
                 "LinePressure should not keep tracking until impact; a sideways dodge outside the narrow lane should avoid damage.");
+        }
+
+        [UnityTest]
+        public IEnumerator PatternDeckSelectsFanPressureForMidRangeThreat()
+        {
+            BasicSoldierEnemy soldier = RequirePrimarySoldier();
+            BasicSoldierEnemy lungeStrike = RequireNamedRootComponent<BasicSoldierEnemy>(LungeStrikeEnemyRootName);
+            BasicSoldierEnemy heavyWindup = RequireNamedRootComponent<BasicSoldierEnemy>(HeavyWindupEnemyRootName);
+            BasicSoldierEnemy linePressure = RequireNamedRootComponent<BasicSoldierEnemy>(LinePressureEnemyRootName);
+            BasicSoldierEnemy fanPressure = RequireNamedRootComponent<BasicSoldierEnemy>(FanPressureEnemyRootName);
+            CombatHealth playerHealth = RequirePlayerHealth();
+            CombatAiPatternDeck trainingDeck = LoadPatternDeck(BasicSoldierTrainingDeckPath);
+
+            lungeStrike.enabled = false;
+            heavyWindup.enabled = false;
+            linePressure.enabled = false;
+            fanPressure.enabled = false;
+            soldier.enabled = true;
+            soldier.ConfigurePattern(LoadPatternProfile(ClosePunishPatternPath));
+            soldier.ConfigurePatternDeck(trainingDeck);
+            soldier.transform.position = Vector3.zero;
+            soldier.transform.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
+            playerHealth.transform.position = new Vector3(0.9f, 0f, 4f);
+            Physics.SyncTransforms();
+
+            yield return null;
+
+            Assert.AreSame(trainingDeck, soldier.PatternDeck, "Soldier should accept a reusable pattern deck without prefab-specific manager routing.");
+            Assert.AreEqual("FanPressure", soldier.PatternId, "Training deck should choose FanPressure for a mid-range target inside the fan pressure band.");
+
+            float healthBeforeFan = playerHealth.CurrentHealth;
+            float timeout = 1.2f;
+            while (timeout > 0f && soldier.CurrentPatternState != CombatAiPatternState.Recovery)
+            {
+                yield return null;
+                timeout -= Time.deltaTime;
+            }
+
+            Assert.Less(playerHealth.CurrentHealth, healthBeforeFan, "FanPressure should damage a target inside the committed fan cone.");
         }
 
         [UnityTest]
@@ -1026,6 +1094,17 @@ namespace DimensionBrawl.Tests
             }
 
             return profile;
+        }
+
+        private static CombatAiPatternDeck LoadPatternDeck(string assetPath)
+        {
+            CombatAiPatternDeck deck = AssetDatabase.LoadAssetAtPath<CombatAiPatternDeck>(assetPath);
+            if (deck == null)
+            {
+                Assert.Fail($"Missing combat AI pattern deck at {assetPath}.");
+            }
+
+            return deck;
         }
 
         private static Bounds CollectRenderableBounds(GameObject root)

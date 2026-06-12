@@ -22,10 +22,13 @@ namespace DimensionBrawl.Editor
         public const string EnemyLungePatternProfilePath = ProfileRoot + "/DB_BasicSoldier_LungeStrike.asset";
         public const string EnemyHeavyWindupPatternProfilePath = ProfileRoot + "/DB_BasicSoldier_HeavyWindup.asset";
         public const string EnemyLinePressurePatternProfilePath = ProfileRoot + "/DB_BasicSoldier_LinePressure.asset";
+        public const string EnemyFanPressurePatternProfilePath = ProfileRoot + "/DB_BasicSoldier_FanPressure.asset";
+        public const string EnemyTrainingPatternDeckPath = ProfileRoot + "/DB_BasicSoldier_TrainingDeck.asset";
         public const string ClosePunishEnemyRootName = "Enemy_SciFiSoldier_ClosePunish";
         public const string LungeStrikeEnemyRootName = "Enemy_SciFiSoldier_LungeStrike";
         public const string HeavyWindupEnemyRootName = "Enemy_SciFiSoldier_HeavyWindup";
         public const string LinePressureEnemyRootName = "Enemy_SciFiSoldier_LinePressure";
+        public const string FanPressureEnemyRootName = "Enemy_SciFiSoldier_FanPressure";
         private const string LegacyEnemyRootName = "Enemy_SciFiSoldier_ActionFoundation";
         private const string EnemyVisualName = "MaintenanceWorker_BasicSoldierVisual";
         private const string EnemyPlaceholderBodyName = "SciFiSoldierPlaceholderBody";
@@ -40,7 +43,9 @@ namespace DimensionBrawl.Editor
                 out CombatAiPatternProfile enemyPatternProfile,
                 out CombatAiPatternProfile enemyLungePatternProfile,
                 out CombatAiPatternProfile enemyHeavyWindupPatternProfile,
-                out CombatAiPatternProfile enemyLinePressurePatternProfile);
+                out CombatAiPatternProfile enemyLinePressurePatternProfile,
+                out CombatAiPatternProfile enemyFanPressurePatternProfile,
+                out CombatAiPatternDeck enemyTrainingPatternDeck);
 
             Scene scene = SceneManager.GetActiveScene();
             if (!scene.IsValid() || scene.path != ScenePath)
@@ -54,6 +59,8 @@ namespace DimensionBrawl.Editor
             enemyLungePatternProfile = LoadOrCreateEnemyPatternProfile(EnemyLungePatternProfilePath);
             enemyHeavyWindupPatternProfile = LoadOrCreateEnemyPatternProfile(EnemyHeavyWindupPatternProfilePath);
             enemyLinePressurePatternProfile = LoadOrCreateEnemyPatternProfile(EnemyLinePressurePatternProfilePath);
+            enemyFanPressurePatternProfile = LoadOrCreateEnemyPatternProfile(EnemyFanPressurePatternProfilePath);
+            enemyTrainingPatternDeck = LoadOrCreate<CombatAiPatternDeck>(EnemyTrainingPatternDeckPath);
 
             GameObject[] roots = scene.GetRootGameObjects();
             PlayerActionController playerActions = RequireObject<PlayerActionController>(roots, "player actions");
@@ -80,7 +87,8 @@ namespace DimensionBrawl.Editor
                 enemyPatternProfile,
                 enemyLungePatternProfile,
                 enemyHeavyWindupPatternProfile,
-                enemyLinePressurePatternProfile);
+                enemyLinePressurePatternProfile,
+                enemyFanPressurePatternProfile);
 
             ConfigurePlayerTargetSelector(targetSelector, playerActions.transform, playerHealth, cameraController.transform, enemyCandidates);
             ConfigureCameraTargetBridge(cameraTargetBridge, cameraController, targetSelector, playerActions.transform);
@@ -108,12 +116,14 @@ namespace DimensionBrawl.Editor
             CombatAiPatternProfile closePunishProfile,
             CombatAiPatternProfile lungeStrikeProfile,
             CombatAiPatternProfile heavyWindupProfile,
-            CombatAiPatternProfile linePressureProfile)
+            CombatAiPatternProfile linePressureProfile,
+            CombatAiPatternProfile fanPressureProfile)
         {
             BasicSoldierEnemy closePunish = EnsurePatternSampleEnemy(scene, template, ClosePunishEnemyRootName);
             BasicSoldierEnemy lungeStrike = EnsurePatternSampleEnemy(scene, template, LungeStrikeEnemyRootName);
             BasicSoldierEnemy heavyWindup = EnsurePatternSampleEnemy(scene, template, HeavyWindupEnemyRootName);
             BasicSoldierEnemy linePressure = EnsurePatternSampleEnemy(scene, template, LinePressureEnemyRootName);
+            BasicSoldierEnemy fanPressure = EnsurePatternSampleEnemy(scene, template, FanPressureEnemyRootName);
 
             ConfigurePatternSampleEnemy(
                 closePunish,
@@ -155,13 +165,24 @@ namespace DimensionBrawl.Editor
                 playerHealth,
                 cameraController,
                 "LinePressure");
+            ConfigurePatternSampleEnemy(
+                fanPressure,
+                FanPressureEnemyRootName,
+                "FanPressure",
+                fanPressureProfile,
+                new Vector3(4.6f, 0f, 7.2f),
+                player,
+                playerHealth,
+                cameraController,
+                "FanPressure");
 
             return new[]
             {
                 RequireComponent<CombatHealth>(closePunish.gameObject, $"{ClosePunishEnemyRootName} health"),
                 RequireComponent<CombatHealth>(lungeStrike.gameObject, $"{LungeStrikeEnemyRootName} health"),
                 RequireComponent<CombatHealth>(heavyWindup.gameObject, $"{HeavyWindupEnemyRootName} health"),
-                RequireComponent<CombatHealth>(linePressure.gameObject, $"{LinePressureEnemyRootName} health")
+                RequireComponent<CombatHealth>(linePressure.gameObject, $"{LinePressureEnemyRootName} health"),
+                RequireComponent<CombatHealth>(fanPressure.gameObject, $"{FanPressureEnemyRootName} health")
             };
         }
 
@@ -279,6 +300,7 @@ namespace DimensionBrawl.Editor
             SerializedObject serializedObject = new SerializedObject(soldier);
             serializedObject.Update();
             SetObjectReference(serializedObject, "patternProfile", patternProfile);
+            SetObjectReference(serializedObject, "patternDeck", null);
             SetString(serializedObject, "patternId", patternId);
             SetObjectReference(serializedObject, "targetSensor", targetSensor);
             SetObjectReference(serializedObject, "target", player);
@@ -492,7 +514,9 @@ namespace DimensionBrawl.Editor
             out CombatAiPatternProfile enemyPatternProfile,
             out CombatAiPatternProfile enemyLungePatternProfile,
             out CombatAiPatternProfile enemyHeavyWindupPatternProfile,
-            out CombatAiPatternProfile enemyLinePressurePatternProfile)
+            out CombatAiPatternProfile enemyLinePressurePatternProfile,
+            out CombatAiPatternProfile enemyFanPressurePatternProfile,
+            out CombatAiPatternDeck enemyTrainingPatternDeck)
         {
             EnsureFolder(ProfileRoot);
             playerActionProfile = LoadOrCreate<PlayerActionProfile>(PlayerActionProfilePath);
@@ -501,6 +525,8 @@ namespace DimensionBrawl.Editor
             enemyLungePatternProfile = LoadOrCreateEnemyPatternProfile(EnemyLungePatternProfilePath);
             enemyHeavyWindupPatternProfile = LoadOrCreateEnemyPatternProfile(EnemyHeavyWindupPatternProfilePath);
             enemyLinePressurePatternProfile = LoadOrCreateEnemyPatternProfile(EnemyLinePressurePatternProfilePath);
+            enemyFanPressurePatternProfile = LoadOrCreateEnemyPatternProfile(EnemyFanPressurePatternProfilePath);
+            enemyTrainingPatternDeck = LoadOrCreate<CombatAiPatternDeck>(EnemyTrainingPatternDeckPath);
 
             ConfigurePlayerActionProfile(playerActionProfile);
             ConfigureCameraCueProfile(cameraCueProfile);
@@ -515,6 +541,7 @@ namespace DimensionBrawl.Editor
                 -0.15f,
                 CombatAiAttackShape.MeleeArc,
                 0.65f,
+                28f,
                 false,
                 0.65f,
                 0.14f,
@@ -556,6 +583,7 @@ namespace DimensionBrawl.Editor
                 0f,
                 CombatAiAttackShape.ForwardLine,
                 0.42f,
+                18f,
                 true,
                 0.82f,
                 0.22f,
@@ -597,6 +625,7 @@ namespace DimensionBrawl.Editor
                 0.1f,
                 CombatAiAttackShape.MeleeArc,
                 0.95f,
+                35f,
                 false,
                 1.05f,
                 0.18f,
@@ -638,6 +667,7 @@ namespace DimensionBrawl.Editor
                 0.2f,
                 CombatAiAttackShape.ForwardLine,
                 0.38f,
+                16f,
                 true,
                 0.78f,
                 0.18f,
@@ -668,6 +698,58 @@ namespace DimensionBrawl.Editor
                 "Attack",
                 "Hit",
                 "Death");
+            ConfigureEnemyPatternProfile(
+                enemyFanPressurePatternProfile,
+                "SciFiSoldier.Basic",
+                "FanPressure",
+                2.2f,
+                500f,
+                -24f,
+                4.8f,
+                0.1f,
+                CombatAiAttackShape.ForwardFan,
+                1.8f,
+                30f,
+                true,
+                0.72f,
+                0.20f,
+                0f,
+                0.62f,
+                16f,
+                0.035f,
+                0.24f,
+                2.1f,
+                0.25f,
+                0.08f,
+                CombatAiCameraCueKind.FanPressure,
+                1.0f,
+                1.05f,
+                0.6f,
+                CreateCombatAiCameraCue(new Vector3(0.03f, 0.03f, -0.10f), 0.08f, 0.7f, -0.08f, 0.02f, 0.26f, 1f),
+                CreateCombatAiCameraCue(new Vector3(0f, 0.04f, 0.12f), 0.12f, 1.1f, -0.12f, 0.03f, 0.24f, 1f),
+                CreateCombatAiCameraCue(new Vector3(0f, 0.02f, 0.10f), 0.06f, -0.6f, 0.08f, -0.02f, 0.24f, 1f),
+                new Vector3(0.9f, 0.02f, 1.1f),
+                new Vector3(3.2f, 0.02f, 4.2f),
+                new Vector3(4.0f, 0.025f, 4.8f),
+                new Vector3(0f, 0f, -0.08f),
+                new Vector3(0f, 0f, 0.06f),
+                new Color(0.28f, 0.9f, 0.72f, 1f),
+                new Color(0.04f, 0.68f, 0.45f, 1f),
+                new Color(0.74f, 1f, 0.88f, 1f),
+                "MoveSpeed",
+                "Attack",
+                "Hit",
+                "Death");
+            ConfigureCombatAiPatternDeck(
+                enemyTrainingPatternDeck,
+                "SciFiSoldier.BasicTraining",
+                new[]
+                {
+                    CreateCombatAiPatternDeckEntry(enemyPatternProfile, 0f, 1.9f, 0.55f, 4f),
+                    CreateCombatAiPatternDeckEntry(enemyLungePatternProfile, 1.2f, 3.1f, 0.85f, 3f),
+                    CreateCombatAiPatternDeckEntry(enemyFanPressurePatternProfile, 2.0f, 5.1f, 1.0f, 2.5f),
+                    CreateCombatAiPatternDeckEntry(enemyLinePressurePatternProfile, 3.2f, 6.8f, 1.1f, 2f)
+                });
             AssetDatabase.SaveAssets();
         }
 
@@ -724,6 +806,7 @@ namespace DimensionBrawl.Editor
             float attackFacingDotThreshold,
             CombatAiAttackShape attackShape,
             float attackHalfWidth,
+            float attackHalfAngleDegrees,
             bool lockAttackDirectionOnWindup,
             float telegraphSeconds,
             float activeSeconds,
@@ -765,6 +848,7 @@ namespace DimensionBrawl.Editor
             SetFloat(serializedObject, "attackFacingDotThreshold", attackFacingDotThreshold);
             SetEnum(serializedObject, "attackShape", (int)attackShape);
             SetFloat(serializedObject, "attackHalfWidth", attackHalfWidth);
+            SetFloat(serializedObject, "attackHalfAngleDegrees", attackHalfAngleDegrees);
             SetBool(serializedObject, "lockAttackDirectionOnWindup", lockAttackDirectionOnWindup);
             SetFloat(serializedObject, "telegraphSeconds", telegraphSeconds);
             SetFloat(serializedObject, "activeSeconds", activeSeconds);
@@ -797,6 +881,43 @@ namespace DimensionBrawl.Editor
             SetString(serializedObject, "deathTrigger", deathTrigger);
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(profile);
+        }
+
+        private static void ConfigureCombatAiPatternDeck(
+            CombatAiPatternDeck deck,
+            string deckId,
+            CombatAiPatternDeckEntry[] entries)
+        {
+            SerializedObject serializedObject = new SerializedObject(deck);
+            SetString(serializedObject, "deckId", deckId);
+            SerializedProperty entryArray = RequireProperty(serializedObject, "entries");
+            entryArray.arraySize = entries.Length;
+            for (int i = 0; i < entries.Length; i++)
+            {
+                SetCombatAiPatternDeckEntry(entryArray.GetArrayElementAtIndex(i), entries[i]);
+            }
+
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(deck);
+        }
+
+        private static CombatAiPatternDeckEntry CreateCombatAiPatternDeckEntry(
+            CombatAiPatternProfile profile,
+            float minimumDistance,
+            float maximumDistance,
+            float cooldownSeconds,
+            float priority)
+        {
+            return new CombatAiPatternDeckEntry(profile, minimumDistance, maximumDistance, cooldownSeconds, priority);
+        }
+
+        private static void SetCombatAiPatternDeckEntry(SerializedProperty entry, CombatAiPatternDeckEntry value)
+        {
+            SetObjectReference(entry, "profile", value.Profile);
+            SetRelativeFloat(entry, "minimumDistance", value.MinimumDistance);
+            SetRelativeFloat(entry, "maximumDistance", value.MaximumDistance);
+            SetRelativeFloat(entry, "cooldownSeconds", value.CooldownSeconds);
+            SetRelativeFloat(entry, "priority", value.Priority);
         }
 
         private static T LoadOrCreate<T>(string assetPath) where T : ScriptableObject
@@ -1097,6 +1218,12 @@ namespace DimensionBrawl.Editor
         {
             SerializedProperty property = owner.FindPropertyRelative(propertyName);
             property.stringValue = value;
+        }
+
+        private static void SetObjectReference(SerializedProperty owner, string propertyName, UnityEngine.Object value)
+        {
+            SerializedProperty property = owner.FindPropertyRelative(propertyName);
+            property.objectReferenceValue = value;
         }
 
         private static void SetRelativeBool(SerializedProperty owner, string propertyName, bool value)

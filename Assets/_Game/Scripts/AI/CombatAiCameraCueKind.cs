@@ -8,7 +8,8 @@ namespace DimensionBrawl.AI
         ClosePunish,
         LungeStrike,
         HeavyWindup,
-        LinePressure
+        LinePressure,
+        FanPressure
     }
 
     [Serializable]
