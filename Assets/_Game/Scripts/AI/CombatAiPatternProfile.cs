@@ -27,6 +27,26 @@ namespace DimensionBrawl.AI
         [SerializeField, Min(0f)] private float hitReactionSeconds = 0.24f;
         [SerializeField, Min(0f)] private float knockbackSpeed = 2f;
 
+        [Header("Recovery Movement")]
+        [SerializeField, Min(0f)] private float recoveryRetreatSpeed = 0f;
+        [SerializeField, Min(0f)] private float recoveryRetreatSeconds = 0f;
+
+        [Header("Readability")]
+        [SerializeField] private CombatAiCameraCueKind cameraCueKind = CombatAiCameraCueKind.ClosePunish;
+        [SerializeField, Min(0f)] private float windupThreatLevel = 1f;
+        [SerializeField, Min(0f)] private float activeCameraCueStrength = 1f;
+        [SerializeField, Min(0f)] private float deathCameraCueStrength = 0.6f;
+
+        [Header("Telegraph Presentation")]
+        [SerializeField] private Vector3 telegraphWindupStartScale = new Vector3(0.35f, 0.02f, 0.65f);
+        [SerializeField] private Vector3 telegraphWindupEndScale = new Vector3(1.05f, 0.02f, 1.55f);
+        [SerializeField] private Vector3 telegraphActiveScale = new Vector3(1.25f, 0.025f, 1.8f);
+        [SerializeField] private Vector3 windupPoseOffset = new Vector3(0f, 0f, -0.08f);
+        [SerializeField] private Vector3 activePoseOffset = new Vector3(0f, 0f, 0.12f);
+        [SerializeField] private Color windupStartColor = new Color(1f, 0.45f, 0.08f, 1f);
+        [SerializeField] private Color windupEndColor = new Color(1f, 0.08f, 0.02f, 1f);
+        [SerializeField] private Color activeColor = Color.white;
+
         [Header("Animation Requests")]
         [SerializeField] private string moveSpeedParameter = "MoveSpeed";
         [SerializeField] private string attackTrigger = "Attack";
@@ -48,6 +68,20 @@ namespace DimensionBrawl.AI
         public float HitStopSeconds => hitStopSeconds;
         public float HitReactionSeconds => hitReactionSeconds;
         public float KnockbackSpeed => knockbackSpeed;
+        public float RecoveryRetreatSpeed => recoveryRetreatSpeed;
+        public float RecoveryRetreatSeconds => recoveryRetreatSeconds;
+        public CombatAiCameraCueKind CameraCueKind => cameraCueKind;
+        public float WindupThreatLevel => windupThreatLevel;
+        public float ActiveCameraCueStrength => activeCameraCueStrength;
+        public float DeathCameraCueStrength => deathCameraCueStrength;
+        public Vector3 TelegraphWindupStartScale => telegraphWindupStartScale;
+        public Vector3 TelegraphWindupEndScale => telegraphWindupEndScale;
+        public Vector3 TelegraphActiveScale => telegraphActiveScale;
+        public Vector3 WindupPoseOffset => windupPoseOffset;
+        public Vector3 ActivePoseOffset => activePoseOffset;
+        public Color WindupStartColor => windupStartColor;
+        public Color WindupEndColor => windupEndColor;
+        public Color ActiveColor => activeColor;
         public string MoveSpeedParameter => moveSpeedParameter;
         public string AttackTrigger => attackTrigger;
         public string HitTrigger => hitTrigger;

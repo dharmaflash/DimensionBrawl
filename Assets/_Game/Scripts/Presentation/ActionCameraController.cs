@@ -64,6 +64,8 @@ namespace DimensionBrawl.Presentation
 
         public bool HasActiveCue => cueTimer > 0f;
         public float OrbitYawDegrees => orbitYawDegrees;
+        public Transform Target => target;
+        public Transform Threat => threat;
 
         public void SetOrbitInput(Vector2 input)
         {

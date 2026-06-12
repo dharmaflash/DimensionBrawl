@@ -23,6 +23,7 @@ namespace DimensionBrawl.Player
         [Header("Combat References")]
         [SerializeField] private PlayerMovementController movement;
         [SerializeField] private CombatHealth health;
+        [SerializeField] private PlayerCombatTargetSelector targetSelector;
         [SerializeField] private LayerMask hittableLayers = ~0;
         [SerializeField] private Animator animator;
 
@@ -184,6 +185,11 @@ namespace DimensionBrawl.Player
             {
                 health = GetComponent<CombatHealth>();
             }
+
+            if (targetSelector == null)
+            {
+                targetSelector = GetComponent<PlayerCombatTargetSelector>();
+            }
         }
 
         private void OnEnable()
@@ -333,9 +339,12 @@ namespace DimensionBrawl.Player
                     hitDirection.sqrMagnitude > 0f ? hitDirection : direction,
                     step.hitStopSeconds);
 
-                targetHealth.TryApplyDamage(damageInfo);
-                BasicAttackHit?.Invoke(comboIndex);
-                return;
+                if (targetHealth.TryApplyDamage(damageInfo))
+                {
+                    targetSelector?.NotifyTargetContact(targetHealth);
+                    BasicAttackHit?.Invoke(comboIndex);
+                    return;
+                }
             }
         }
 

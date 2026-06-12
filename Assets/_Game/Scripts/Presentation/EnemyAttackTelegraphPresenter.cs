@@ -33,6 +33,26 @@ namespace DimensionBrawl.Presentation
         public Renderer TelegraphRenderer => telegraphRenderer;
         public Transform PoseRoot => poseRoot;
 
+        public void ConfigureStyle(
+            Vector3 newWindupStartScale,
+            Vector3 newWindupEndScale,
+            Vector3 newActiveScale,
+            Vector3 newWindupPoseOffset,
+            Vector3 newActivePoseOffset,
+            Color newWindupStartColor,
+            Color newWindupEndColor,
+            Color newActiveColor)
+        {
+            windupStartScale = newWindupStartScale;
+            windupEndScale = newWindupEndScale;
+            activeScale = newActiveScale;
+            windupPoseOffset = newWindupPoseOffset;
+            activePoseOffset = newActivePoseOffset;
+            windupStartColor = newWindupStartColor;
+            windupEndColor = newWindupEndColor;
+            activeColor = newActiveColor;
+        }
+
         private void Awake()
         {
             if (telegraphObject == null)

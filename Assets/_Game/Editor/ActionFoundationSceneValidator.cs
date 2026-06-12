@@ -213,15 +213,23 @@ namespace DimensionBrawl.Editor
             ActionCameraCueProfile cameraCueProfile = LoadProfile<ActionCameraCueProfile>(ActionFoundationProfileSetup.CameraCueProfilePath);
             CombatAiPatternProfile enemyPatternProfile = LoadProfile<CombatAiPatternProfile>(ActionFoundationProfileSetup.EnemyPatternProfilePath);
             CombatAiPatternProfile enemyLungePatternProfile = LoadProfile<CombatAiPatternProfile>(ActionFoundationProfileSetup.EnemyLungePatternProfilePath);
+            CombatAiPatternProfile enemyHeavyWindupPatternProfile = LoadProfile<CombatAiPatternProfile>(ActionFoundationProfileSetup.EnemyHeavyWindupPatternProfilePath);
             PlayerMovementController movement = RequireObject<PlayerMovementController>(roots, "player movement");
             PlayerActionController playerActions = RequireObject<PlayerActionController>(roots, "player actions");
             CombatHealth playerHealth = RequireComponent<CombatHealth>(playerActions.gameObject, "player health");
-            BasicSoldierEnemy soldier = RequireObject<BasicSoldierEnemy>(roots, "basic soldier");
+            PlayerCombatTargetSelector targetSelector = RequireComponent<PlayerCombatTargetSelector>(playerActions.gameObject, "player target selector");
+            BasicSoldierEnemy soldier = RequireRootComponent<BasicSoldierEnemy>(roots, ActionFoundationProfileSetup.ClosePunishEnemyRootName, "close punish basic soldier");
+            BasicSoldierEnemy lungeSoldier = RequireRootComponent<BasicSoldierEnemy>(roots, ActionFoundationProfileSetup.LungeStrikeEnemyRootName, "lunge strike basic soldier");
+            BasicSoldierEnemy heavySoldier = RequireRootComponent<BasicSoldierEnemy>(roots, ActionFoundationProfileSetup.HeavyWindupEnemyRootName, "heavy windup basic soldier");
+            CombatHealth lungeHealth = RequireComponent<CombatHealth>(lungeSoldier.gameObject, "lunge strike soldier health");
+            CombatHealth heavyHealth = RequireComponent<CombatHealth>(heavySoldier.gameObject, "heavy windup soldier health");
             CombatTargetSensor soldierTargetSensor = RequireComponent<CombatTargetSensor>(soldier.gameObject, "basic soldier target sensor");
             EnemyAttackTelegraphPresenter soldierTelegraphPresenter = RequireComponent<EnemyAttackTelegraphPresenter>(soldier.gameObject, "basic soldier telegraph presenter");
             CombatHitFeedback soldierHitFeedback = RequireComponent<CombatHitFeedback>(soldier.gameObject, "basic soldier hit feedback");
             ActionCameraController cameraController = RequireObject<ActionCameraController>(roots, "action camera");
+            ActionCameraTargetBridge cameraTargetBridge = RequireComponent<ActionCameraTargetBridge>(cameraController.gameObject, "camera target bridge");
             ActionCameraCueDriver cameraCueDriver = RequireObject<ActionCameraCueDriver>(roots, "action camera cue driver");
+            EnemyActionCameraCueDriver enemyCameraCueDriver = RequireComponent<EnemyActionCameraCueDriver>(soldier.gameObject, "enemy action camera cue driver");
             Type dodgeFeedbackType = RequireType("DimensionBrawl.Presentation.PlayerDodgeFeedback, DimensionBrawl.Runtime");
             Component dodgeFeedback = RequireObject(roots, dodgeFeedbackType, "player dodge feedback");
             GameObject playerVisual = RequireNamedObject(roots, PlayerVisualName, "player visual");
@@ -234,10 +242,11 @@ namespace DimensionBrawl.Editor
             Renderer[] soldierVisualRenderers = CollectPresentableRenderers(soldierVisual);
             GameObject soldierBody = RequireNamedObject(roots, EnemyPlaceholderBodyName, "basic soldier placeholder body");
             GameObject telegraphObject = RequireNamedObject(roots, "ReadableAttackTelegraph", "basic soldier attack telegraph");
+            CombatHealth soldierHealth = RequireComponent<CombatHealth>(soldier.gameObject, "basic soldier health");
 
             List<CombatHealth> healths = CollectObjects<CombatHealth>(roots);
-            RequireAtLeast(healths.Count, 2, "player and enemy health components");
-            RequireAtLeast(hitFeedbacks.Count, 2, "player and enemy hit feedback components");
+            RequireAtLeast(healths.Count, 4, "player and three enemy health components");
+            RequireAtLeast(hitFeedbacks.Count, 4, "player and three enemy hit feedback components");
             RequireAtLeast(soldierVisualRenderers.Length, 1, "basic soldier promoted visual renderers");
 
             ValidateReference(movement, "referenceCamera");
@@ -255,9 +264,13 @@ namespace DimensionBrawl.Editor
             ValidateFloat(movement, "sharpTurnCooldownSeconds", 0.32f);
             ValidateReference(playerActions, "movement");
             ValidateReference(playerActions, "health");
+            ValidateObjectReference(playerActions, "targetSelector", targetSelector);
             ValidateReference(playerActions, "animator");
             ValidateObjectReferenceAssetPath(playerActions, "actionProfile", ActionFoundationProfileSetup.PlayerActionProfilePath);
             ValidatePlayerActionProfile(playerActionProfile);
+
+            ValidatePlayerTargetSelector(targetSelector, playerActions.transform, playerHealth, cameraController.transform, new UnityEngine.Object[] { soldierHealth, lungeHealth, heavyHealth });
+            ValidateCameraTargetBridge(cameraTargetBridge, cameraController, targetSelector, playerActions.transform);
 
             ValidateObjectReferenceAssetPath(soldier, "patternProfile", ActionFoundationProfileSetup.EnemyPatternProfilePath);
             ValidateCombatAiAgentContract(soldier);
@@ -277,7 +290,21 @@ namespace DimensionBrawl.Editor
                 15f,
                 0.03f,
                 0.24f,
-                2f);
+                2f,
+                1.4f,
+                0.18f,
+                CombatAiCameraCueKind.ClosePunish,
+                0.85f,
+                0.75f,
+                0.6f,
+                new Vector3(0.35f, 0.02f, 0.65f),
+                new Vector3(1.05f, 0.02f, 1.55f),
+                new Vector3(1.25f, 0.025f, 1.8f),
+                new Vector3(0f, 0f, -0.08f),
+                new Vector3(0f, 0f, 0.12f),
+                new Color(1f, 0.45f, 0.08f, 1f),
+                new Color(1f, 0.08f, 0.02f, 1f),
+                Color.white);
             ValidateCombatAiPatternProfile(
                 enemyLungePatternProfile,
                 "SciFiSoldier.Basic",
@@ -294,7 +321,52 @@ namespace DimensionBrawl.Editor
                 22f,
                 0.04f,
                 0.28f,
-                2.4f);
+                2.4f,
+                0.6f,
+                0.12f,
+                CombatAiCameraCueKind.LungeStrike,
+                1.1f,
+                1.2f,
+                0.6f,
+                new Vector3(0.22f, 0.02f, 1.1f),
+                new Vector3(0.46f, 0.02f, 3.0f),
+                new Vector3(0.58f, 0.025f, 3.7f),
+                new Vector3(0f, 0f, -0.16f),
+                new Vector3(0f, 0f, 0.34f),
+                new Color(0.35f, 0.75f, 1f, 1f),
+                new Color(0.05f, 0.38f, 1f, 1f),
+                new Color(0.85f, 0.95f, 1f, 1f));
+            ValidateCombatAiPatternProfile(
+                enemyHeavyWindupPatternProfile,
+                "SciFiSoldier.Basic",
+                "HeavyWindup",
+                2.1f,
+                420f,
+                -24f,
+                1.9f,
+                0.1f,
+                1.05f,
+                0.18f,
+                1.25f,
+                0.85f,
+                30f,
+                0.05f,
+                0.32f,
+                2.8f,
+                0.35f,
+                0.16f,
+                CombatAiCameraCueKind.HeavyWindup,
+                1.45f,
+                1.25f,
+                0.65f,
+                new Vector3(0.55f, 0.02f, 0.9f),
+                new Vector3(1.9f, 0.02f, 2.05f),
+                new Vector3(2.25f, 0.03f, 2.35f),
+                new Vector3(0f, 0f, -0.22f),
+                new Vector3(0f, 0f, 0.18f),
+                new Color(1f, 0.72f, 0.08f, 1f),
+                new Color(1f, 0.02f, 0.02f, 1f),
+                new Color(1f, 0.9f, 0.35f, 1f));
             ValidateReference(soldier, "targetSensor");
             ValidateReference(soldier, "target");
             ValidateReference(soldier, "targetHealth");
@@ -308,6 +380,8 @@ namespace DimensionBrawl.Editor
             ValidateFloat(soldierTargetSensor, "searchRadius", 12f);
             ValidateFloat(soldierTargetSensor, "retargetIntervalSeconds", 0.2f);
             ValidateObjectReferenceArray(soldierTargetSensor, "targetCandidates", new UnityEngine.Object[] { playerHealth });
+            ValidatePatternSampleEnemy(lungeSoldier, ActionFoundationProfileSetup.EnemyLungePatternProfilePath, enemyLungePatternProfile, playerHealth, cameraController, "LungeStrike");
+            ValidatePatternSampleEnemy(heavySoldier, ActionFoundationProfileSetup.EnemyHeavyWindupPatternProfilePath, enemyHeavyWindupPatternProfile, playerHealth, cameraController, "HeavyWindup");
             ValidateObjectReference(soldierTelegraphPresenter, "telegraphObject", telegraphObject);
             ValidateObjectReference(soldierTelegraphPresenter, "telegraphTransform", telegraphObject.transform);
             ValidateObjectReference(soldierTelegraphPresenter, "telegraphRenderer", RequireComponent<Renderer>(telegraphObject, "basic soldier attack telegraph renderer"));
@@ -325,8 +399,8 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"{EnemyPlaceholderBodyName} should stay inactive once the promoted MaintenanceWorker visual is wired.");
             }
 
-            ValidateReference(cameraController, "target");
-            ValidateReference(cameraController, "threat");
+            ValidateObjectReference(cameraController, "target", playerActions.transform);
+            ValidateObjectReference(cameraController, "threat", soldier.transform);
             ValidateVector3(cameraController, "cameraOffset", new Vector3(0f, 1.05f, -4.2f));
             ValidateVector3(cameraController, "lookOffset", new Vector3(0f, 1.2f, 0.55f));
             ValidateFloat(cameraController, "manualYawSpeedDegrees", 150f);
@@ -348,6 +422,7 @@ namespace DimensionBrawl.Editor
             ValidateReference(cameraCueDriver, "cueSpace");
             ValidateObjectReferenceAssetPath(cameraCueDriver, "cueProfile", ActionFoundationProfileSetup.CameraCueProfilePath);
             ValidateActionCameraCueProfile(cameraCueProfile);
+            ValidateEnemyActionCameraCueDriver(enemyCameraCueDriver, cameraController, soldier);
 
             ValidateReference(playerVisualAnimator, "m_Avatar");
             ValidateReference(playerVisualAnimator, "m_Controller");
@@ -539,6 +614,20 @@ namespace DimensionBrawl.Editor
             }
 
             return found[0];
+        }
+
+        private static T RequireRootComponent<T>(GameObject[] roots, string rootName, string label) where T : Component
+        {
+            for (int i = 0; i < roots.Length; i++)
+            {
+                GameObject root = roots[i];
+                if (root != null && root.name == rootName && root.TryGetComponent(out T component))
+                {
+                    return component;
+                }
+            }
+
+            throw new InvalidOperationException($"Missing required {label}: {rootName}.");
         }
 
         private static GameObject RequireNamedObject(GameObject[] roots, string objectName, string label)
@@ -947,6 +1036,99 @@ namespace DimensionBrawl.Editor
             ValidateCameraCueProfile(profile, "attackHitCue", new Vector3(0f, 0.03f, 0.12f), 0.06f, -1.8f, 0.16f, 0.01f, 0.18f, 1.3f);
         }
 
+        private static void ValidatePlayerTargetSelector(
+            PlayerCombatTargetSelector targetSelector,
+            Transform player,
+            CombatHealth playerHealth,
+            Transform cameraTransform,
+            UnityEngine.Object[] enemyCandidates)
+        {
+            ValidateObjectReference(targetSelector, "selfHealth", playerHealth);
+            ValidateObjectReference(targetSelector, "selectionOrigin", player);
+            ValidateObjectReference(targetSelector, "viewReference", cameraTransform);
+            ValidateObjectReferenceArray(targetSelector, "targetCandidates", enemyCandidates);
+            ValidateFloat(targetSelector, "selectionRadius", 12f);
+            ValidateFloat(targetSelector, "retargetIntervalSeconds", 0.12f);
+            ValidateFloat(targetSelector, "contactStickinessSeconds", 0.35f);
+            ValidateFloat(targetSelector, "distanceWeight", 0.35f);
+            ValidateFloat(targetSelector, "ownerForwardWeight", 0.3f);
+            ValidateFloat(targetSelector, "viewForwardWeight", 0.2f);
+            ValidateFloat(targetSelector, "threatStateWeight", 0.35f);
+            ValidateFloat(targetSelector, "currentTargetStickiness", 0.18f);
+            ValidateFloat(targetSelector, "minimumReadableForwardDot", -0.35f);
+        }
+
+        private static void ValidateCameraTargetBridge(
+            ActionCameraTargetBridge cameraTargetBridge,
+            ActionCameraController cameraController,
+            PlayerCombatTargetSelector targetSelector,
+            Transform player)
+        {
+            ValidateObjectReference(cameraTargetBridge, "cameraController", cameraController);
+            ValidateObjectReference(cameraTargetBridge, "targetSelector", targetSelector);
+            ValidateObjectReference(cameraTargetBridge, "followTarget", player);
+        }
+
+        private static void ValidatePatternSampleEnemy(
+            BasicSoldierEnemy soldier,
+            string expectedProfilePath,
+            CombatAiPatternProfile expectedProfile,
+            CombatHealth playerHealth,
+            ActionCameraController cameraController,
+            string expectedPatternId)
+        {
+            CombatHealth soldierHealth = RequireComponent<CombatHealth>(soldier.gameObject, $"{soldier.name} health");
+            CombatTargetSensor targetSensor = RequireComponent<CombatTargetSensor>(soldier.gameObject, $"{soldier.name} target sensor");
+            EnemyAttackTelegraphPresenter telegraphPresenter = RequireComponent<EnemyAttackTelegraphPresenter>(soldier.gameObject, $"{soldier.name} telegraph presenter");
+            CombatHitFeedback hitFeedback = RequireComponent<CombatHitFeedback>(soldier.gameObject, $"{soldier.name} hit feedback");
+            EnemyActionCameraCueDriver enemyCameraCueDriver = RequireComponent<EnemyActionCameraCueDriver>(soldier.gameObject, $"{soldier.name} enemy camera cue driver");
+
+            ValidateObjectReferenceAssetPath(soldier, "patternProfile", expectedProfilePath);
+            ValidateString(soldier, "patternId", expectedPatternId);
+            ValidateObjectReference(soldier, "targetSensor", targetSensor);
+            ValidateObjectReference(soldier, "target", playerHealth.transform);
+            ValidateObjectReference(soldier, "targetHealth", playerHealth);
+            ValidateObjectReference(soldier, "selfHealth", soldierHealth);
+            ValidateReference(soldier, "telegraphIndicator");
+            ValidateObjectReference(soldier, "telegraphPresenter", telegraphPresenter);
+            ValidateReference(soldier, "animator");
+            ValidateReference(soldier, "bodyRenderer");
+            ValidateBool(soldier, "usePrototypeBodyColors", false);
+            ValidateObjectReference(targetSensor, "selfHealth", soldierHealth);
+            ValidateFloat(targetSensor, "searchRadius", 12f);
+            ValidateFloat(targetSensor, "retargetIntervalSeconds", 0.2f);
+            ValidateObjectReferenceArray(targetSensor, "targetCandidates", new UnityEngine.Object[] { playerHealth });
+            ValidateReference(telegraphPresenter, "telegraphObject");
+            ValidateReference(telegraphPresenter, "telegraphTransform");
+            ValidateReference(telegraphPresenter, "telegraphRenderer");
+            ValidateReference(telegraphPresenter, "poseRoot");
+            ValidateBool(hitFeedback, "applyIdleColorOnEnable", false);
+            ValidateArrayMinSize(hitFeedback, "flashRenderers", 1);
+            ValidateEnemyActionCameraCueDriver(enemyCameraCueDriver, cameraController, soldier);
+
+            if (soldier.PatternProfile != expectedProfile)
+            {
+                throw new InvalidOperationException($"{soldier.name} should use profile {expectedProfile.name}.");
+            }
+        }
+
+        private static void ValidateEnemyActionCameraCueDriver(
+            EnemyActionCameraCueDriver enemyCameraCueDriver,
+            ActionCameraController cameraController,
+            BasicSoldierEnemy soldier)
+        {
+            ValidateObjectReference(enemyCameraCueDriver, "agentSource", soldier);
+            ValidateObjectReference(enemyCameraCueDriver, "cameraController", cameraController);
+            ValidateObjectReference(enemyCameraCueDriver, "cueSpace", soldier.transform);
+            ValidateCameraCueProfile(enemyCameraCueDriver, "closeWindupCue", new Vector3(0.06f, 0.02f, -0.06f), 0.06f, 0.4f, -0.04f, 0.01f, 0.18f, 1f);
+            ValidateCameraCueProfile(enemyCameraCueDriver, "closeActiveCue", new Vector3(0f, 0.03f, 0.08f), 0.08f, 0.7f, -0.08f, 0.02f, 0.16f, 1f);
+            ValidateCameraCueProfile(enemyCameraCueDriver, "lungeWindupCue", new Vector3(0.09f, 0.03f, -0.10f), 0.12f, 0.8f, -0.08f, 0.02f, 0.24f, 1f);
+            ValidateCameraCueProfile(enemyCameraCueDriver, "lungeActiveCue", new Vector3(0f, 0.04f, 0.14f), 0.18f, 1.4f, -0.16f, 0.03f, 0.24f, 1f);
+            ValidateCameraCueProfile(enemyCameraCueDriver, "heavyWindupCue", new Vector3(0.12f, 0.04f, -0.14f), 0.16f, 1.1f, -0.12f, 0.04f, 0.30f, 1f);
+            ValidateCameraCueProfile(enemyCameraCueDriver, "heavyActiveCue", new Vector3(0f, 0.05f, 0.18f), 0.14f, 1.8f, -0.18f, 0.04f, 0.26f, 1f);
+            ValidateCameraCueProfile(enemyCameraCueDriver, "deathCue", new Vector3(0f, 0.02f, 0.10f), 0.06f, -0.6f, 0.08f, -0.02f, 0.24f, 1f);
+        }
+
         private static void ValidateCombatAiAgentContract(BasicSoldierEnemy soldier)
         {
             ICombatAiAgent agent = soldier;
@@ -963,6 +1145,11 @@ namespace DimensionBrawl.Editor
             if (agent.PatternProfile == null)
             {
                 throw new InvalidOperationException($"{soldier.name} should expose pattern profile through the shared combat AI contract.");
+            }
+
+            if (agent.CurrentPatternState != CombatAiPatternState.Tracking)
+            {
+                throw new InvalidOperationException($"{soldier.name} should expose readable Tracking state before first pattern windup.");
             }
 
             if (string.IsNullOrWhiteSpace(agent.AttackAnimationTrigger)
@@ -989,7 +1176,21 @@ namespace DimensionBrawl.Editor
             float damage,
             float hitStopSeconds,
             float hitReactionSeconds,
-            float knockbackSpeed)
+            float knockbackSpeed,
+            float recoveryRetreatSpeed,
+            float recoveryRetreatSeconds,
+            CombatAiCameraCueKind cameraCueKind,
+            float windupThreatLevel,
+            float activeCameraCueStrength,
+            float deathCameraCueStrength,
+            Vector3 telegraphWindupStartScale,
+            Vector3 telegraphWindupEndScale,
+            Vector3 telegraphActiveScale,
+            Vector3 windupPoseOffset,
+            Vector3 activePoseOffset,
+            Color windupStartColor,
+            Color windupEndColor,
+            Color activeColor)
         {
             ValidateString(profile, "actorTypeId", actorTypeId);
             ValidateString(profile, "patternId", patternId);
@@ -1006,6 +1207,20 @@ namespace DimensionBrawl.Editor
             ValidateFloat(profile, "hitStopSeconds", hitStopSeconds);
             ValidateFloat(profile, "hitReactionSeconds", hitReactionSeconds);
             ValidateFloat(profile, "knockbackSpeed", knockbackSpeed);
+            ValidateFloat(profile, "recoveryRetreatSpeed", recoveryRetreatSpeed);
+            ValidateFloat(profile, "recoveryRetreatSeconds", recoveryRetreatSeconds);
+            ValidateEnum(profile, "cameraCueKind", (int)cameraCueKind);
+            ValidateFloat(profile, "windupThreatLevel", windupThreatLevel);
+            ValidateFloat(profile, "activeCameraCueStrength", activeCameraCueStrength);
+            ValidateFloat(profile, "deathCameraCueStrength", deathCameraCueStrength);
+            ValidateVector3(profile, "telegraphWindupStartScale", telegraphWindupStartScale);
+            ValidateVector3(profile, "telegraphWindupEndScale", telegraphWindupEndScale);
+            ValidateVector3(profile, "telegraphActiveScale", telegraphActiveScale);
+            ValidateVector3(profile, "windupPoseOffset", windupPoseOffset);
+            ValidateVector3(profile, "activePoseOffset", activePoseOffset);
+            ValidateColor(profile, "windupStartColor", windupStartColor);
+            ValidateColor(profile, "windupEndColor", windupEndColor);
+            ValidateColor(profile, "activeColor", activeColor);
             ValidateString(profile, "moveSpeedParameter", "MoveSpeed");
             ValidateString(profile, "attackTrigger", "Attack");
             ValidateString(profile, "hitTrigger", "Hit");
@@ -1070,6 +1285,15 @@ namespace DimensionBrawl.Editor
             if (!Mathf.Approximately(property.floatValue, expected))
             {
                 throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected}, found {property.floatValue}.");
+            }
+        }
+
+        private static void ValidateEnum(UnityEngine.Object target, string propertyName, int expected)
+        {
+            SerializedProperty property = FindProperty(target, propertyName);
+            if (property.enumValueIndex != expected)
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} expected enum index {expected}, found {property.enumValueIndex}.");
             }
         }
 
@@ -1503,6 +1727,19 @@ namespace DimensionBrawl.Editor
             if ((property.vector3Value - expected).sqrMagnitude > 0.0001f)
             {
                 throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected}, found {property.vector3Value}.");
+            }
+        }
+
+        private static void ValidateColor(UnityEngine.Object target, string propertyName, Color expected)
+        {
+            SerializedProperty property = FindProperty(target, propertyName);
+            Color actual = property.colorValue;
+            if (Mathf.Abs(actual.r - expected.r) > 0.001f
+                || Mathf.Abs(actual.g - expected.g) > 0.001f
+                || Mathf.Abs(actual.b - expected.b) > 0.001f
+                || Mathf.Abs(actual.a - expected.a) > 0.001f)
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected}, found {actual}.");
             }
         }
 

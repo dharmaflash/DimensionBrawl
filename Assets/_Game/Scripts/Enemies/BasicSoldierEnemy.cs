@@ -1,4 +1,5 @@
 ﻿using DimensionBrawl.Combat;
+using System;
 using DimensionBrawl.AI;
 using DimensionBrawl.Presentation;
 using UnityEngine;
@@ -86,9 +87,11 @@ namespace DimensionBrawl.Enemies
         private float stateTimer;
         private float verticalVelocity;
         private bool dealtDamageThisSwing;
+        private CombatAiPatternState currentPatternState = CombatAiPatternState.Tracking;
 
         public CombatAiPatternProfile PatternProfile => patternProfile;
         public CombatHealth SelfHealth => selfHealth;
+        public CombatAiPatternState CurrentPatternState => currentPatternState;
         public string ActorTypeId => patternProfile != null ? patternProfile.ActorTypeId : enemyTypeId;
         public string EnemyTypeId => ActorTypeId;
         public string PatternId => patternProfile != null ? patternProfile.PatternId : patternId;
@@ -96,6 +99,8 @@ namespace DimensionBrawl.Enemies
         public string AttackAnimationTrigger => ActiveAttackTrigger;
         public string HitAnimationTrigger => ActiveHitTrigger;
         public string DeathAnimationTrigger => ActiveDeathTrigger;
+
+        public event Action<CombatAiPatternState, CombatAiPatternProfile> PatternStateChanged;
 
         private float ActiveApproachSpeed => patternProfile != null ? patternProfile.ApproachSpeed : approachSpeed;
         private float ActiveTurnRateDegrees => patternProfile != null ? patternProfile.TurnRateDegrees : turnRateDegrees;
@@ -110,6 +115,8 @@ namespace DimensionBrawl.Enemies
         private float ActiveHitStopSeconds => patternProfile != null ? patternProfile.HitStopSeconds : hitStopSeconds;
         private float ActiveHitReactionSeconds => patternProfile != null ? patternProfile.HitReactionSeconds : hitReactionSeconds;
         private float ActiveKnockbackSpeed => patternProfile != null ? patternProfile.KnockbackSpeed : knockbackSpeed;
+        private float ActiveRecoveryRetreatSpeed => patternProfile != null ? patternProfile.RecoveryRetreatSpeed : 0f;
+        private float ActiveRecoveryRetreatSeconds => patternProfile != null ? patternProfile.RecoveryRetreatSeconds : 0f;
         private string ActiveMoveSpeedParameter => patternProfile != null ? patternProfile.MoveSpeedParameter : moveSpeedParameter;
         private string ActiveAttackTrigger => patternProfile != null ? patternProfile.AttackTrigger : attackTrigger;
         private string ActiveHitTrigger => patternProfile != null ? patternProfile.HitTrigger : hitTrigger;
@@ -124,6 +131,7 @@ namespace DimensionBrawl.Enemies
         public void ConfigurePattern(CombatAiPatternProfile profile)
         {
             patternProfile = profile;
+            PatternStateChanged?.Invoke(currentPatternState, patternProfile);
         }
 
         private void Awake()
@@ -178,6 +186,11 @@ namespace DimensionBrawl.Enemies
 
             if (state == SoldierState.Dead || target == null || targetHealth == null || !targetHealth.IsAlive)
             {
+                if (state != SoldierState.Dead)
+                {
+                    SetPatternState(CombatAiPatternState.Tracking);
+                }
+
                 UpdateAnimation(0f);
                 return;
             }
@@ -243,9 +256,10 @@ namespace DimensionBrawl.Enemies
 
         private void BeginTelegraph()
         {
-            state = SoldierState.Telegraph;
+            EnterState(SoldierState.Telegraph, CombatAiPatternState.Windup);
             stateTimer = 0f;
             dealtDamageThisSwing = false;
+            ApplyTelegraphStyle();
             ShowTelegraphWindup(0f);
             SetBodyColor(telegraphColor);
         }
@@ -263,7 +277,7 @@ namespace DimensionBrawl.Enemies
                 return;
             }
 
-            state = SoldierState.Active;
+            EnterState(SoldierState.Active, CombatAiPatternState.AttackActive);
             stateTimer = 0f;
             ShowTelegraphActive(0f);
             TriggerAnimator(ActiveAttackTrigger);
@@ -288,7 +302,7 @@ namespace DimensionBrawl.Enemies
                 return;
             }
 
-            state = SoldierState.Recovery;
+            EnterState(SoldierState.Recovery, CombatAiPatternState.Recovery);
             stateTimer = 0f;
             HideTelegraph();
             SetBodyColor(normalColor);
@@ -298,14 +312,17 @@ namespace DimensionBrawl.Enemies
         {
             stateTimer += deltaTime;
             FaceTarget(deltaTime);
-            Move(Vector3.zero, deltaTime);
+            Vector3 retreatVelocity = stateTimer < ActiveRecoveryRetreatSeconds
+                ? -DirectionToTarget() * ActiveRecoveryRetreatSpeed
+                : Vector3.zero;
+            Move(retreatVelocity, deltaTime);
 
             if (stateTimer < ActiveRecoverySeconds)
             {
                 return;
             }
 
-            state = SoldierState.Approach;
+            EnterState(SoldierState.Approach, CombatAiPatternState.Tracking);
             stateTimer = 0f;
         }
 
@@ -321,7 +338,7 @@ namespace DimensionBrawl.Enemies
                 return;
             }
 
-            state = SoldierState.Approach;
+            EnterState(SoldierState.Approach, CombatAiPatternState.Tracking);
             stateTimer = 0f;
             SetBodyColor(normalColor);
         }
@@ -352,7 +369,7 @@ namespace DimensionBrawl.Enemies
                 return;
             }
 
-            state = SoldierState.Stagger;
+            EnterState(SoldierState.Stagger, CombatAiPatternState.Stagger);
             stateTimer = 0f;
             knockbackVelocity = Vector3.ProjectOnPlane(damageInfo.Direction, Vector3.up).normalized * ActiveKnockbackSpeed;
             HideTelegraph();
@@ -362,13 +379,30 @@ namespace DimensionBrawl.Enemies
 
         private void HandleDied()
         {
-            state = SoldierState.Dead;
+            EnterState(SoldierState.Dead, CombatAiPatternState.Death);
             HideTelegraph();
             SetBodyColor(deadColor);
             ResetAnimatorTrigger(ActiveAttackTrigger);
             ResetAnimatorTrigger(ActiveHitTrigger);
             UpdateAnimation(0f);
             TriggerAnimator(ActiveDeathTrigger);
+        }
+
+        private void EnterState(SoldierState nextState, CombatAiPatternState nextPatternState)
+        {
+            state = nextState;
+            SetPatternState(nextPatternState);
+        }
+
+        private void SetPatternState(CombatAiPatternState nextPatternState)
+        {
+            if (currentPatternState == nextPatternState)
+            {
+                return;
+            }
+
+            currentPatternState = nextPatternState;
+            PatternStateChanged?.Invoke(currentPatternState, patternProfile);
         }
 
         private bool IsTargetInAttackRange()
@@ -441,6 +475,24 @@ namespace DimensionBrawl.Enemies
             {
                 telegraphIndicator.SetActive(visible);
             }
+        }
+
+        private void ApplyTelegraphStyle()
+        {
+            if (telegraphPresenter == null || patternProfile == null)
+            {
+                return;
+            }
+
+            telegraphPresenter.ConfigureStyle(
+                patternProfile.TelegraphWindupStartScale,
+                patternProfile.TelegraphWindupEndScale,
+                patternProfile.TelegraphActiveScale,
+                patternProfile.WindupPoseOffset,
+                patternProfile.ActivePoseOffset,
+                patternProfile.WindupStartColor,
+                patternProfile.WindupEndColor,
+                patternProfile.ActiveColor);
         }
 
         private void ShowTelegraphWindup(float normalizedProgress)

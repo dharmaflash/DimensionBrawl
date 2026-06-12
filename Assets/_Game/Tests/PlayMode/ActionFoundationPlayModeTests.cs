@@ -20,9 +20,13 @@ namespace DimensionBrawl.Tests
         private const string ScenePath = "Assets/_Game/Scenes/ActionFoundationTest.unity";
         private const string ClosePunishPatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_ClosePunish.asset";
         private const string LungeStrikePatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_LungeStrike.asset";
+        private const string HeavyWindupPatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_HeavyWindup.asset";
         private const string PlayerVisualName = "CombatGirlSwordShield_PlayerVisual";
         private const string EnemyVisualName = "MaintenanceWorker_BasicSoldierVisual";
         private const string EnemyPlaceholderBodyName = "SciFiSoldierPlaceholderBody";
+        private const string ClosePunishEnemyRootName = "Enemy_SciFiSoldier_ClosePunish";
+        private const string LungeStrikeEnemyRootName = "Enemy_SciFiSoldier_LungeStrike";
+        private const string HeavyWindupEnemyRootName = "Enemy_SciFiSoldier_HeavyWindup";
 
         [UnitySetUp]
         public IEnumerator LoadActionFoundationScene()
@@ -245,9 +249,9 @@ namespace DimensionBrawl.Tests
         [UnityTest]
         public IEnumerator BasicSoldierUsesSharedTargetSensorContract()
         {
-            BasicSoldierEnemy soldier = RequireObject<BasicSoldierEnemy>();
+            BasicSoldierEnemy soldier = RequirePrimarySoldier();
             ICombatAiAgent agent = soldier;
-            CombatTargetSensor targetSensor = RequireObject<CombatTargetSensor>();
+            CombatTargetSensor targetSensor = soldier.TargetSensor;
             CombatHealth playerHealth = RequirePlayerHealth();
 
             yield return null;
@@ -262,10 +266,67 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("Attack", agent.AttackAnimationTrigger, "Combat AI agent contract should expose attack animation requests.");
             Assert.AreEqual("Hit", agent.HitAnimationTrigger, "Combat AI agent contract should expose hit reaction animation requests.");
             Assert.AreEqual("Death", agent.DeathAnimationTrigger, "Combat AI agent contract should expose death animation requests.");
+            Assert.AreEqual(CombatAiPatternState.Tracking, agent.CurrentPatternState, "Combat AI agent contract should expose readable pattern state for camera/UI consumers.");
             Assert.AreEqual(1, targetSensor.TargetCandidateCount, "Shared target sensor should use authored candidates instead of scene-wide target searches.");
             Assert.IsTrue(targetSensor.TryGetCurrentTarget(out Transform sensedTarget, out CombatHealth sensedHealth), "Shared target sensor should find a hostile target in the action foundation scene.");
             Assert.AreSame(playerHealth, sensedHealth, "Enemy target sensing should resolve the current player as the hostile target.");
             Assert.AreSame(playerHealth.transform, sensedTarget, "Shared target sensor should expose both target Transform and CombatHealth.");
+        }
+
+        [UnityTest]
+        public IEnumerator ActionFoundationSceneProvidesThreePatternSampleEnemiesAndPlayerTargetCandidates()
+        {
+            BasicSoldierEnemy closePunish = RequireNamedRootComponent<BasicSoldierEnemy>(ClosePunishEnemyRootName);
+            BasicSoldierEnemy lungeStrike = RequireNamedRootComponent<BasicSoldierEnemy>(LungeStrikeEnemyRootName);
+            BasicSoldierEnemy heavyWindup = RequireNamedRootComponent<BasicSoldierEnemy>(HeavyWindupEnemyRootName);
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            CombatHealth playerHealth = RequirePlayerHealth();
+
+            yield return null;
+
+            Assert.AreEqual("ClosePunish", closePunish.PatternId, "Primary soldier should remain the close punish sample.");
+            Assert.AreEqual("LungeStrike", lungeStrike.PatternId, "Second soldier should be the lunge pattern sample.");
+            Assert.AreEqual("HeavyWindup", heavyWindup.PatternId, "Third soldier should be the heavy windup pattern sample.");
+            Assert.AreEqual(3, targetSelector.TargetCandidateCount, "Player target selector should receive all authored sample enemies instead of scene-scanning.");
+            AssertEnemyTargetsPlayer(closePunish, playerHealth);
+            AssertEnemyTargetsPlayer(lungeStrike, playerHealth);
+            AssertEnemyTargetsPlayer(heavyWindup, playerHealth);
+            Assert.IsNotNull(closePunish.GetComponent<EnemyActionCameraCueDriver>(), "Close sample should own an enemy camera cue driver.");
+            Assert.IsNotNull(lungeStrike.GetComponent<EnemyActionCameraCueDriver>(), "Lunge sample should own an enemy camera cue driver.");
+            Assert.IsNotNull(heavyWindup.GetComponent<EnemyActionCameraCueDriver>(), "Heavy sample should own an enemy camera cue driver.");
+        }
+
+        [UnityTest]
+        public IEnumerator PlayerTargetSelectorPrefersReadableForwardThreatAndFeedsCameraBridge()
+        {
+            PlayerMovementController movement = RequireObject<PlayerMovementController>();
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            ActionCameraTargetBridge cameraTargetBridge = RequireObject<ActionCameraTargetBridge>();
+            BasicSoldierEnemy closePunish = RequireNamedRootComponent<BasicSoldierEnemy>(ClosePunishEnemyRootName);
+            BasicSoldierEnemy lungeStrike = RequireNamedRootComponent<BasicSoldierEnemy>(LungeStrikeEnemyRootName);
+            BasicSoldierEnemy heavyWindup = RequireNamedRootComponent<BasicSoldierEnemy>(HeavyWindupEnemyRootName);
+
+            closePunish.enabled = false;
+            lungeStrike.enabled = false;
+            heavyWindup.enabled = false;
+            movement.transform.position = Vector3.zero;
+            movement.transform.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
+            cameraController.transform.position = new Vector3(0f, 1.8f, -4f);
+            cameraController.transform.rotation = Quaternion.LookRotation(new Vector3(0f, -0.25f, 1f), Vector3.up);
+            closePunish.transform.position = Vector3.forward * 5f;
+            lungeStrike.transform.position = Vector3.back * 1.2f;
+            heavyWindup.transform.position = Vector3.right * 6f;
+            Physics.SyncTransforms();
+
+            targetSelector.RefreshTarget();
+            yield return null;
+
+            Assert.AreSame(closePunish.SelfHealth, targetSelector.CurrentTargetHealth, "Selector should prefer the readable forward threat over a closer target behind the player.");
+            Assert.AreSame(cameraController, cameraTargetBridge.CameraController, "Camera bridge should be serialized to the action camera.");
+            Assert.AreSame(targetSelector, cameraTargetBridge.TargetSelector, "Camera bridge should read the player selector rather than doing its own target search.");
+            Assert.AreSame(movement.transform, cameraController.Target, "Camera should continue following the player root.");
+            Assert.AreSame(closePunish.transform, cameraController.Threat, "Camera bridge should feed the selected readable threat into the camera bias target.");
         }
 
         [Test]
@@ -273,22 +334,35 @@ namespace DimensionBrawl.Tests
         {
             CombatAiPatternProfile closePunish = LoadPatternProfile(ClosePunishPatternPath);
             CombatAiPatternProfile lungeStrike = LoadPatternProfile(LungeStrikePatternPath);
+            CombatAiPatternProfile heavyWindup = LoadPatternProfile(HeavyWindupPatternPath);
 
             Assert.AreEqual("SciFiSoldier.Basic", closePunish.ActorTypeId, "ClosePunish should declare the actor type used by visual/Animator setup.");
             Assert.AreEqual("ClosePunish", closePunish.PatternId, "ClosePunish profile should keep the first readable melee pattern id.");
             Assert.AreEqual(0f, closePunish.ActiveLungeSpeed, 0.001f, "ClosePunish should stay a stationary melee release.");
+            Assert.AreEqual(CombatAiCameraCueKind.ClosePunish, closePunish.CameraCueKind, "ClosePunish should expose camera cue semantics as profile data.");
             Assert.AreEqual("SciFiSoldier.Basic", lungeStrike.ActorTypeId, "LungeStrike should use the same actor type so model/Animator setup remains swappable.");
             Assert.AreEqual("LungeStrike", lungeStrike.PatternId, "Second soldier pattern should be a distinct profile instead of a hardcoded mode flag.");
+            Assert.AreEqual(CombatAiCameraCueKind.LungeStrike, lungeStrike.CameraCueKind, "LungeStrike should expose lunge camera cue semantics through the shared profile.");
             Assert.Greater(lungeStrike.AttackRange, closePunish.AttackRange, "LungeStrike should advertise longer reach through data.");
             Assert.Greater(lungeStrike.ActiveLungeSpeed, closePunish.ActiveLungeSpeed, "LungeStrike should add forward active movement through data.");
             Assert.Greater(lungeStrike.Damage, closePunish.Damage, "LungeStrike should be distinguishable as a heavier pattern through profile data.");
+            Assert.AreEqual("SciFiSoldier.Basic", heavyWindup.ActorTypeId, "HeavyWindup should share the same actor type so the same visual can test pattern variety.");
+            Assert.AreEqual("HeavyWindup", heavyWindup.PatternId, "HeavyWindup should be a third profile, not a hardcoded branch inside the soldier.");
+            Assert.AreEqual(CombatAiCameraCueKind.HeavyWindup, heavyWindup.CameraCueKind, "HeavyWindup should select its camera read cue through profile data.");
+            Assert.Greater(heavyWindup.TelegraphSeconds, lungeStrike.TelegraphSeconds, "HeavyWindup should advertise a longer warning window through data.");
+            Assert.Greater(heavyWindup.WindupThreatLevel, lungeStrike.WindupThreatLevel, "HeavyWindup should mark stronger camera/readability emphasis through data.");
+            Assert.Greater(closePunish.RecoveryRetreatSpeed, 0f, "ClosePunish should include a short reference-backed backstep after the melee burst.");
+            Assert.Greater(lungeStrike.TelegraphActiveScale.z, closePunish.TelegraphActiveScale.z, "LungeStrike should expose a longer forward telegraph than ClosePunish.");
+            Assert.Less(lungeStrike.TelegraphActiveScale.x, closePunish.TelegraphActiveScale.x, "LungeStrike should expose a narrow line-shaped telegraph instead of the same melee footprint.");
+            Assert.Greater(heavyWindup.TelegraphActiveScale.x, closePunish.TelegraphActiveScale.x, "HeavyWindup should expose a wider heavy-warning telegraph than ClosePunish.");
+            Assert.AreNotEqual(closePunish.WindupEndColor, lungeStrike.WindupEndColor, "Pattern samples should not share identical warning colors when they are meant to be visually distinguishable.");
             Assert.AreEqual(closePunish.AttackTrigger, lungeStrike.AttackTrigger, "Both patterns should reuse the same current Animator request until a new animation is promoted.");
         }
 
         [UnityTest]
         public IEnumerator BasicSoldierCanSwapToLungeStrikePattern()
         {
-            BasicSoldierEnemy soldier = RequireObject<BasicSoldierEnemy>();
+            BasicSoldierEnemy soldier = RequirePrimarySoldier();
             ICombatAiAgent agent = soldier;
             CombatHealth playerHealth = RequirePlayerHealth();
             CombatAiPatternProfile lungeStrike = LoadPatternProfile(LungeStrikePatternPath);
@@ -317,12 +391,108 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator BasicSoldierEmitsReadablePatternStateSignals()
+        {
+            BasicSoldierEnemy soldier = RequirePrimarySoldier();
+            ICombatAiAgent agent = soldier;
+            CombatHealth playerHealth = RequirePlayerHealth();
+            CombatAiPatternProfile heavyWindup = LoadPatternProfile(HeavyWindupPatternPath);
+            List<CombatAiPatternState> observedStates = new List<CombatAiPatternState>();
+
+            soldier.transform.position = Vector3.zero;
+            soldier.transform.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
+            playerHealth.transform.position = Vector3.forward * 8f;
+            Physics.SyncTransforms();
+            yield return new WaitForSeconds(1.2f);
+
+            agent.PatternStateChanged += HandlePatternStateChanged;
+            try
+            {
+                playerHealth.transform.position = Vector3.forward * 1.55f;
+                agent.ConfigurePattern(heavyWindup);
+                Physics.SyncTransforms();
+
+                float timeout = 1.8f;
+                while (timeout > 0f && !observedStates.Contains(CombatAiPatternState.Recovery))
+                {
+                    yield return null;
+                    timeout -= Time.deltaTime;
+                }
+            }
+            finally
+            {
+                agent.PatternStateChanged -= HandlePatternStateChanged;
+            }
+
+            Assert.Contains(CombatAiPatternState.Windup, observedStates, "Basic soldier should expose windup as a shared readable pattern state.");
+            Assert.Contains(CombatAiPatternState.AttackActive, observedStates, "Basic soldier should expose attack active as a shared readable pattern state.");
+            Assert.Contains(CombatAiPatternState.Recovery, observedStates, "Basic soldier should expose recovery as a shared readable pattern state.");
+
+            void HandlePatternStateChanged(CombatAiPatternState state, CombatAiPatternProfile _)
+            {
+                observedStates.Add(state);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator EnemyPatternStateCanDriveActionCameraCue()
+        {
+            BasicSoldierEnemy soldier = RequirePrimarySoldier();
+            ICombatAiAgent agent = soldier;
+            CombatHealth playerHealth = RequirePlayerHealth();
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            EnemyActionCameraCueDriver enemyCameraCueDriver = soldier.GetComponent<EnemyActionCameraCueDriver>();
+            CombatAiPatternProfile heavyWindup = LoadPatternProfile(HeavyWindupPatternPath);
+            bool sawWindup = false;
+
+            Assert.IsNotNull(enemyCameraCueDriver, "Primary soldier should own its enemy camera cue driver so multi-enemy cues do not depend on a camera-attached singleton.");
+            Assert.AreSame(soldier, enemyCameraCueDriver.AgentSource, "Enemy camera cue driver should read a serialized combat AI agent source, not search the scene.");
+            Assert.AreSame(cameraController, enemyCameraCueDriver.CameraController, "Enemy camera cue driver should request cues through the existing action camera controller.");
+
+            soldier.transform.position = Vector3.zero;
+            soldier.transform.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
+            playerHealth.transform.position = Vector3.forward * 8f;
+            Physics.SyncTransforms();
+            yield return new WaitForSeconds(1.2f);
+
+            agent.PatternStateChanged += HandlePatternStateChanged;
+            try
+            {
+                playerHealth.transform.position = Vector3.forward * 1.55f;
+                agent.ConfigurePattern(heavyWindup);
+                Physics.SyncTransforms();
+
+                float timeout = 1.2f;
+                while (timeout > 0f && !(sawWindup && cameraController.HasActiveCue))
+                {
+                    yield return null;
+                    timeout -= Time.deltaTime;
+                }
+            }
+            finally
+            {
+                agent.PatternStateChanged -= HandlePatternStateChanged;
+            }
+
+            Assert.IsTrue(sawWindup, "HeavyWindup should emit a Windup state that camera/UI consumers can observe.");
+            Assert.IsTrue(cameraController.HasActiveCue, "Enemy windup state should request a short action camera cue through the enemy camera cue driver.");
+
+            void HandlePatternStateChanged(CombatAiPatternState state, CombatAiPatternProfile _)
+            {
+                if (state == CombatAiPatternState.Windup)
+                {
+                    sawWindup = true;
+                }
+            }
+        }
+
+        [UnityTest]
         public IEnumerator BasicSoldierUsesPromotedMaintenanceWorkerVisualAndAnimator()
         {
             GameObject enemyVisual = RequireNamedGameObject(EnemyVisualName);
             GameObject placeholderBody = RequireNamedGameObject(EnemyPlaceholderBodyName);
             Animator enemyAnimator = enemyVisual.GetComponent<Animator>();
-            EnemyAttackTelegraphPresenter telegraphPresenter = RequireObject<EnemyAttackTelegraphPresenter>();
+            EnemyAttackTelegraphPresenter telegraphPresenter = RequirePrimarySoldier().GetComponent<EnemyAttackTelegraphPresenter>();
             Renderer[] renderers = enemyVisual.GetComponentsInChildren<Renderer>(true);
 
             yield return null;
@@ -421,7 +591,7 @@ namespace DimensionBrawl.Tests
             CombatHealth playerHealth = RequirePlayerHealth();
             CombatHealth enemyHealth = RequireEnemyHealth();
             Animator enemyAnimator = RequireNamedGameObject(EnemyVisualName).GetComponent<Animator>();
-            CharacterController enemyController = RequireObject<BasicSoldierEnemy>().GetComponent<CharacterController>();
+            CharacterController enemyController = RequirePrimarySoldier().GetComponent<CharacterController>();
             Assert.IsNotNull(enemyAnimator, "Promoted enemy visual should have an Animator before fatal-damage validation.");
             Assert.IsNotNull(enemyController, "Basic soldier should keep a controller for ground-height validation.");
 
@@ -479,7 +649,7 @@ namespace DimensionBrawl.Tests
         [UnityTest]
         public IEnumerator BasicSoldierTelegraphPresenterMakesWindupReadable()
         {
-            EnemyAttackTelegraphPresenter telegraphPresenter = RequireObject<EnemyAttackTelegraphPresenter>();
+            EnemyAttackTelegraphPresenter telegraphPresenter = RequirePrimarySoldier().GetComponent<EnemyAttackTelegraphPresenter>();
             Assert.IsNotNull(telegraphPresenter.TelegraphRenderer, "Basic soldier telegraph should have a renderer for visible attack warning.");
             Assert.IsNotNull(telegraphPresenter.PoseRoot, "Basic soldier telegraph should have a pose root so windup can read before real enemy animations are promoted.");
 
@@ -746,6 +916,15 @@ namespace DimensionBrawl.Tests
             player.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
         }
 
+        private static void AssertEnemyTargetsPlayer(BasicSoldierEnemy soldier, CombatHealth playerHealth)
+        {
+            Assert.IsNotNull(soldier.TargetSensor, $"{soldier.name} should expose a shared target sensor.");
+            Assert.AreEqual(1, soldier.TargetSensor.TargetCandidateCount, $"{soldier.name} should target authored player candidates instead of scene scanning.");
+            Assert.IsTrue(soldier.TargetSensor.TryGetCurrentTarget(out Transform target, out CombatHealth targetHealth), $"{soldier.name} should resolve the player target.");
+            Assert.AreSame(playerHealth, targetHealth, $"{soldier.name} should target the player health component.");
+            Assert.AreSame(playerHealth.transform, target, $"{soldier.name} should expose the player transform through target sensing.");
+        }
+
         private static CombatHealth RequirePlayerHealth()
         {
             return RequireHealth(DamageTeam.Player);
@@ -753,7 +932,12 @@ namespace DimensionBrawl.Tests
 
         private static CombatHealth RequireEnemyHealth()
         {
-            return RequireHealth(DamageTeam.Enemy);
+            return RequirePrimarySoldier().SelfHealth;
+        }
+
+        private static BasicSoldierEnemy RequirePrimarySoldier()
+        {
+            return RequireNamedRootComponent<BasicSoldierEnemy>(ClosePunishEnemyRootName);
         }
 
         private static Animator RequirePlayerAnimator()
@@ -783,6 +967,30 @@ namespace DimensionBrawl.Tests
             }
 
             Assert.Fail($"Missing required GameObject {objectName}.");
+            return null;
+        }
+
+        private static T RequireNamedRootComponent<T>(string rootName) where T : Component
+        {
+            GameObject[] roots = SceneManager.GetActiveScene().GetRootGameObjects();
+            for (int i = 0; i < roots.Length; i++)
+            {
+                GameObject root = roots[i];
+                if (root == null || root.name != rootName)
+                {
+                    continue;
+                }
+
+                T component = root.GetComponent<T>();
+                if (component == null)
+                {
+                    Assert.Fail($"{rootName} is missing required component {typeof(T).Name}.");
+                }
+
+                return component;
+            }
+
+            Assert.Fail($"Missing required root GameObject {rootName}.");
             return null;
         }
 
