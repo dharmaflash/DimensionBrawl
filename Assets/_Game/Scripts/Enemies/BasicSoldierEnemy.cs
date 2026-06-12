@@ -8,7 +8,7 @@ namespace DimensionBrawl.Enemies
     [RequireComponent(typeof(CharacterController))]
     [RequireComponent(typeof(CombatHealth))]
     [RequireComponent(typeof(CombatTargetSensor))]
-    public sealed class BasicSoldierEnemy : MonoBehaviour
+    public sealed class BasicSoldierEnemy : MonoBehaviour, ICombatAiAgent
     {
         private enum SoldierState
         {
@@ -28,7 +28,7 @@ namespace DimensionBrawl.Enemies
         [SerializeField] private string patternId = "ClosePunish";
 
         [Header("Profile")]
-        [SerializeField] private EnemyPatternProfile patternProfile;
+        [SerializeField] private CombatAiPatternProfile patternProfile;
 
         [Header("References")]
         [SerializeField] private CombatTargetSensor targetSensor;
@@ -57,6 +57,8 @@ namespace DimensionBrawl.Enemies
         [SerializeField, Min(0f)] private float recoverySeconds = 0.45f;
         [SerializeField, Min(0f)] private float damage = 15f;
         [SerializeField, Min(0f)] private float hitStopSeconds = 0.03f;
+        [SerializeField, Range(-1f, 1f)] private float attackFacingDotThreshold = -0.15f;
+        [SerializeField, Min(0f)] private float activeLungeSpeed = 0f;
 
         [Header("Hit Reaction")]
         [Tooltip("Uses the collected light enemy stagger range of 0.18-0.35 seconds.")]
@@ -85,17 +87,24 @@ namespace DimensionBrawl.Enemies
         private float verticalVelocity;
         private bool dealtDamageThisSwing;
 
-        public EnemyPatternProfile PatternProfile => patternProfile;
-        public string EnemyTypeId => patternProfile != null ? patternProfile.EnemyTypeId : enemyTypeId;
+        public CombatAiPatternProfile PatternProfile => patternProfile;
+        public CombatHealth SelfHealth => selfHealth;
+        public string ActorTypeId => patternProfile != null ? patternProfile.ActorTypeId : enemyTypeId;
+        public string EnemyTypeId => ActorTypeId;
         public string PatternId => patternProfile != null ? patternProfile.PatternId : patternId;
         public CombatTargetSensor TargetSensor => targetSensor;
+        public string AttackAnimationTrigger => ActiveAttackTrigger;
+        public string HitAnimationTrigger => ActiveHitTrigger;
+        public string DeathAnimationTrigger => ActiveDeathTrigger;
 
         private float ActiveApproachSpeed => patternProfile != null ? patternProfile.ApproachSpeed : approachSpeed;
         private float ActiveTurnRateDegrees => patternProfile != null ? patternProfile.TurnRateDegrees : turnRateDegrees;
         private float ActiveGravity => patternProfile != null ? patternProfile.Gravity : gravity;
         private float ActiveAttackRange => patternProfile != null ? patternProfile.AttackRange : attackRange;
+        private float ActiveAttackFacingDotThreshold => patternProfile != null ? patternProfile.AttackFacingDotThreshold : attackFacingDotThreshold;
         private float ActiveTelegraphSeconds => patternProfile != null ? patternProfile.TelegraphSeconds : telegraphSeconds;
         private float ActiveActiveSeconds => patternProfile != null ? patternProfile.ActiveSeconds : activeSeconds;
+        private float ActiveActiveLungeSpeed => patternProfile != null ? patternProfile.ActiveLungeSpeed : activeLungeSpeed;
         private float ActiveRecoverySeconds => patternProfile != null ? patternProfile.RecoverySeconds : recoverySeconds;
         private float ActiveDamage => patternProfile != null ? patternProfile.Damage : damage;
         private float ActiveHitStopSeconds => patternProfile != null ? patternProfile.HitStopSeconds : hitStopSeconds;
@@ -110,6 +119,11 @@ namespace DimensionBrawl.Enemies
         {
             target = newTarget;
             targetHealth = newTargetHealth;
+        }
+
+        public void ConfigurePattern(CombatAiPatternProfile profile)
+        {
+            patternProfile = profile;
         }
 
         private void Awake()
@@ -259,7 +273,8 @@ namespace DimensionBrawl.Enemies
         {
             stateTimer += deltaTime;
             FaceTarget(deltaTime);
-            Move(Vector3.zero, deltaTime);
+            Vector3 lungeVelocity = ActiveActiveLungeSpeed > 0f ? DirectionToTarget() * ActiveActiveLungeSpeed : Vector3.zero;
+            Move(lungeVelocity, deltaTime);
             ShowTelegraphActive(ActiveActiveSeconds > 0f ? stateTimer / ActiveActiveSeconds : 1f);
 
             if (!dealtDamageThisSwing && IsTargetInAttackRange())
@@ -369,7 +384,7 @@ namespace DimensionBrawl.Enemies
                 return false;
             }
 
-            return Vector3.Dot(transform.forward, toTarget.normalized) > -0.15f;
+            return Vector3.Dot(transform.forward, toTarget.normalized) > ActiveAttackFacingDotThreshold;
         }
 
         private Vector3 DirectionToTarget()

@@ -1,4 +1,5 @@
 using System;
+using DimensionBrawl.AI;
 using DimensionBrawl.Enemies;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
@@ -16,11 +17,16 @@ namespace DimensionBrawl.Editor
         public const string PlayerActionProfilePath = ProfileRoot + "/DB_PlayerAction_ActionFoundation.asset";
         public const string CameraCueProfilePath = ProfileRoot + "/DB_ActionCameraCues_ActionFoundation.asset";
         public const string EnemyPatternProfilePath = ProfileRoot + "/DB_BasicSoldier_ClosePunish.asset";
+        public const string EnemyLungePatternProfilePath = ProfileRoot + "/DB_BasicSoldier_LungeStrike.asset";
 
         [MenuItem("DimensionBrawl/Reapply Action Foundation Gameplay Profiles")]
         public static void ReapplyGameplayProfilesMenu()
         {
-            EnsureProfileAssets(out PlayerActionProfile playerActionProfile, out ActionCameraCueProfile cameraCueProfile, out EnemyPatternProfile enemyPatternProfile);
+            EnsureProfileAssets(
+                out PlayerActionProfile playerActionProfile,
+                out ActionCameraCueProfile cameraCueProfile,
+                out EnemyPatternProfile enemyPatternProfile,
+                out _);
 
             Scene scene = SceneManager.GetActiveScene();
             if (!scene.IsValid() || scene.path != ScenePath)
@@ -50,16 +56,59 @@ namespace DimensionBrawl.Editor
         public static void EnsureProfileAssets(
             out PlayerActionProfile playerActionProfile,
             out ActionCameraCueProfile cameraCueProfile,
-            out EnemyPatternProfile enemyPatternProfile)
+            out EnemyPatternProfile enemyPatternProfile,
+            out EnemyPatternProfile enemyLungePatternProfile)
         {
             EnsureFolder(ProfileRoot);
             playerActionProfile = LoadOrCreate<PlayerActionProfile>(PlayerActionProfilePath);
             cameraCueProfile = LoadOrCreate<ActionCameraCueProfile>(CameraCueProfilePath);
             enemyPatternProfile = LoadOrCreate<EnemyPatternProfile>(EnemyPatternProfilePath);
+            enemyLungePatternProfile = LoadOrCreate<EnemyPatternProfile>(EnemyLungePatternProfilePath);
 
             ConfigurePlayerActionProfile(playerActionProfile);
             ConfigureCameraCueProfile(cameraCueProfile);
-            ConfigureEnemyPatternProfile(enemyPatternProfile);
+            ConfigureEnemyPatternProfile(
+                enemyPatternProfile,
+                "SciFiSoldier.Basic",
+                "ClosePunish",
+                2.7f,
+                540f,
+                -24f,
+                1.65f,
+                -0.15f,
+                0.65f,
+                0.14f,
+                0f,
+                0.45f,
+                15f,
+                0.03f,
+                0.24f,
+                2f,
+                "MoveSpeed",
+                "Attack",
+                "Hit",
+                "Death");
+            ConfigureEnemyPatternProfile(
+                enemyLungePatternProfile,
+                "SciFiSoldier.Basic",
+                "LungeStrike",
+                2.45f,
+                500f,
+                -24f,
+                2.15f,
+                0f,
+                0.82f,
+                0.22f,
+                4.25f,
+                0.68f,
+                22f,
+                0.04f,
+                0.28f,
+                2.4f,
+                "MoveSpeed",
+                "Attack",
+                "Hit",
+                "Death");
             AssetDatabase.SaveAssets();
         }
 
@@ -103,26 +152,48 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(profile);
         }
 
-        private static void ConfigureEnemyPatternProfile(EnemyPatternProfile profile)
+        private static void ConfigureEnemyPatternProfile(
+            CombatAiPatternProfile profile,
+            string actorTypeId,
+            string patternId,
+            float approachSpeed,
+            float turnRateDegrees,
+            float gravity,
+            float attackRange,
+            float attackFacingDotThreshold,
+            float telegraphSeconds,
+            float activeSeconds,
+            float activeLungeSpeed,
+            float recoverySeconds,
+            float damage,
+            float hitStopSeconds,
+            float hitReactionSeconds,
+            float knockbackSpeed,
+            string moveSpeedParameter,
+            string attackTrigger,
+            string hitTrigger,
+            string deathTrigger)
         {
             SerializedObject serializedObject = new SerializedObject(profile);
-            SetString(serializedObject, "enemyTypeId", "SciFiSoldier.Basic");
-            SetString(serializedObject, "patternId", "ClosePunish");
-            SetFloat(serializedObject, "approachSpeed", 2.7f);
-            SetFloat(serializedObject, "turnRateDegrees", 540f);
-            SetFloat(serializedObject, "gravity", -24f);
-            SetFloat(serializedObject, "attackRange", 1.65f);
-            SetFloat(serializedObject, "telegraphSeconds", 0.65f);
-            SetFloat(serializedObject, "activeSeconds", 0.14f);
-            SetFloat(serializedObject, "recoverySeconds", 0.45f);
-            SetFloat(serializedObject, "damage", 15f);
-            SetFloat(serializedObject, "hitStopSeconds", 0.03f);
-            SetFloat(serializedObject, "hitReactionSeconds", 0.24f);
-            SetFloat(serializedObject, "knockbackSpeed", 2f);
-            SetString(serializedObject, "moveSpeedParameter", "MoveSpeed");
-            SetString(serializedObject, "attackTrigger", "Attack");
-            SetString(serializedObject, "hitTrigger", "Hit");
-            SetString(serializedObject, "deathTrigger", "Death");
+            SetString(serializedObject, "actorTypeId", actorTypeId);
+            SetString(serializedObject, "patternId", patternId);
+            SetFloat(serializedObject, "approachSpeed", approachSpeed);
+            SetFloat(serializedObject, "turnRateDegrees", turnRateDegrees);
+            SetFloat(serializedObject, "gravity", gravity);
+            SetFloat(serializedObject, "attackRange", attackRange);
+            SetFloat(serializedObject, "attackFacingDotThreshold", attackFacingDotThreshold);
+            SetFloat(serializedObject, "telegraphSeconds", telegraphSeconds);
+            SetFloat(serializedObject, "activeSeconds", activeSeconds);
+            SetFloat(serializedObject, "activeLungeSpeed", activeLungeSpeed);
+            SetFloat(serializedObject, "recoverySeconds", recoverySeconds);
+            SetFloat(serializedObject, "damage", damage);
+            SetFloat(serializedObject, "hitStopSeconds", hitStopSeconds);
+            SetFloat(serializedObject, "hitReactionSeconds", hitReactionSeconds);
+            SetFloat(serializedObject, "knockbackSpeed", knockbackSpeed);
+            SetString(serializedObject, "moveSpeedParameter", moveSpeedParameter);
+            SetString(serializedObject, "attackTrigger", attackTrigger);
+            SetString(serializedObject, "hitTrigger", hitTrigger);
+            SetString(serializedObject, "deathTrigger", deathTrigger);
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(profile);
         }

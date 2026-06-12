@@ -7,6 +7,7 @@ using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.Test;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -17,6 +18,8 @@ namespace DimensionBrawl.Tests
     public sealed class ActionFoundationPlayModeTests
     {
         private const string ScenePath = "Assets/_Game/Scenes/ActionFoundationTest.unity";
+        private const string ClosePunishPatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_ClosePunish.asset";
+        private const string LungeStrikePatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_LungeStrike.asset";
         private const string PlayerVisualName = "CombatGirlSwordShield_PlayerVisual";
         private const string EnemyVisualName = "MaintenanceWorker_BasicSoldierVisual";
         private const string EnemyPlaceholderBodyName = "SciFiSoldierPlaceholderBody";
@@ -243,6 +246,7 @@ namespace DimensionBrawl.Tests
         public IEnumerator BasicSoldierUsesSharedTargetSensorContract()
         {
             BasicSoldierEnemy soldier = RequireObject<BasicSoldierEnemy>();
+            ICombatAiAgent agent = soldier;
             CombatTargetSensor targetSensor = RequireObject<CombatTargetSensor>();
             CombatHealth playerHealth = RequirePlayerHealth();
 
@@ -250,12 +254,66 @@ namespace DimensionBrawl.Tests
 
             Assert.IsNotNull(soldier.PatternProfile, "Basic soldier should read behavior timing from a game-owned EnemyPatternProfile asset.");
             Assert.AreSame(targetSensor, soldier.TargetSensor, "Basic soldier should use the shared combat target sensor instead of private-only target lookup.");
+            Assert.AreSame(targetSensor, agent.TargetSensor, "Future enemy and summon logic should consume target sensing through the shared combat AI agent contract.");
+            Assert.AreSame(soldier.PatternProfile, agent.PatternProfile, "Combat AI agent contract should expose the active profile without type-specific casts.");
+            Assert.AreSame(soldier.SelfHealth, agent.SelfHealth, "Combat AI agent contract should expose self health for team and death handling.");
             Assert.AreEqual("SciFiSoldier.Basic", soldier.EnemyTypeId, "Enemy type should stay serialized so future models and Animator controllers can swap per prefab.");
             Assert.AreEqual("ClosePunish", soldier.PatternId, "The first soldier should declare the reference-backed ClosePunish pattern sample.");
+            Assert.AreEqual("Attack", agent.AttackAnimationTrigger, "Combat AI agent contract should expose attack animation requests.");
+            Assert.AreEqual("Hit", agent.HitAnimationTrigger, "Combat AI agent contract should expose hit reaction animation requests.");
+            Assert.AreEqual("Death", agent.DeathAnimationTrigger, "Combat AI agent contract should expose death animation requests.");
             Assert.AreEqual(1, targetSensor.TargetCandidateCount, "Shared target sensor should use authored candidates instead of scene-wide target searches.");
             Assert.IsTrue(targetSensor.TryGetCurrentTarget(out Transform sensedTarget, out CombatHealth sensedHealth), "Shared target sensor should find a hostile target in the action foundation scene.");
             Assert.AreSame(playerHealth, sensedHealth, "Enemy target sensing should resolve the current player as the hostile target.");
             Assert.AreSame(playerHealth.transform, sensedTarget, "Shared target sensor should expose both target Transform and CombatHealth.");
+        }
+
+        [Test]
+        public void BasicSoldierPatternProfilesUseSharedAiPatternContract()
+        {
+            CombatAiPatternProfile closePunish = LoadPatternProfile(ClosePunishPatternPath);
+            CombatAiPatternProfile lungeStrike = LoadPatternProfile(LungeStrikePatternPath);
+
+            Assert.AreEqual("SciFiSoldier.Basic", closePunish.ActorTypeId, "ClosePunish should declare the actor type used by visual/Animator setup.");
+            Assert.AreEqual("ClosePunish", closePunish.PatternId, "ClosePunish profile should keep the first readable melee pattern id.");
+            Assert.AreEqual(0f, closePunish.ActiveLungeSpeed, 0.001f, "ClosePunish should stay a stationary melee release.");
+            Assert.AreEqual("SciFiSoldier.Basic", lungeStrike.ActorTypeId, "LungeStrike should use the same actor type so model/Animator setup remains swappable.");
+            Assert.AreEqual("LungeStrike", lungeStrike.PatternId, "Second soldier pattern should be a distinct profile instead of a hardcoded mode flag.");
+            Assert.Greater(lungeStrike.AttackRange, closePunish.AttackRange, "LungeStrike should advertise longer reach through data.");
+            Assert.Greater(lungeStrike.ActiveLungeSpeed, closePunish.ActiveLungeSpeed, "LungeStrike should add forward active movement through data.");
+            Assert.Greater(lungeStrike.Damage, closePunish.Damage, "LungeStrike should be distinguishable as a heavier pattern through profile data.");
+            Assert.AreEqual(closePunish.AttackTrigger, lungeStrike.AttackTrigger, "Both patterns should reuse the same current Animator request until a new animation is promoted.");
+        }
+
+        [UnityTest]
+        public IEnumerator BasicSoldierCanSwapToLungeStrikePattern()
+        {
+            BasicSoldierEnemy soldier = RequireObject<BasicSoldierEnemy>();
+            ICombatAiAgent agent = soldier;
+            CombatHealth playerHealth = RequirePlayerHealth();
+            CombatAiPatternProfile lungeStrike = LoadPatternProfile(LungeStrikePatternPath);
+
+            soldier.transform.position = Vector3.zero;
+            soldier.transform.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
+            playerHealth.transform.position = Vector3.forward * 1.9f;
+            Physics.SyncTransforms();
+
+            Vector3 startPosition = soldier.transform.position;
+            agent.ConfigurePattern(lungeStrike);
+            yield return null;
+
+            Assert.AreSame(lungeStrike, agent.PatternProfile, "Combat AI agent should accept a profile swap without prefab-specific manager routing.");
+            Assert.AreEqual("LungeStrike", agent.PatternId, "Runtime pattern id should resolve from the active shared AI profile.");
+
+            float timeout = 1.2f;
+            while (timeout > 0f)
+            {
+                yield return null;
+                timeout -= Time.deltaTime;
+            }
+
+            float forwardMovement = Vector3.Dot(soldier.transform.position - startPosition, Vector3.forward);
+            Assert.Greater(forwardMovement, 0.1f, "LungeStrike should move the soldier forward during the active window using profile data.");
         }
 
         [UnityTest]
@@ -652,6 +710,17 @@ namespace DimensionBrawl.Tests
             }
 
             return renderers;
+        }
+
+        private static CombatAiPatternProfile LoadPatternProfile(string assetPath)
+        {
+            CombatAiPatternProfile profile = AssetDatabase.LoadAssetAtPath<CombatAiPatternProfile>(assetPath);
+            if (profile == null)
+            {
+                Assert.Fail($"Missing combat AI pattern profile at {assetPath}.");
+            }
+
+            return profile;
         }
 
         private static Bounds CollectRenderableBounds(GameObject root)

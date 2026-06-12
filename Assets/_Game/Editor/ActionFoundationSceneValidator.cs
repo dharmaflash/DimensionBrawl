@@ -211,7 +211,8 @@ namespace DimensionBrawl.Editor
             GameObject[] roots = scene.GetRootGameObjects();
             PlayerActionProfile playerActionProfile = LoadProfile<PlayerActionProfile>(ActionFoundationProfileSetup.PlayerActionProfilePath);
             ActionCameraCueProfile cameraCueProfile = LoadProfile<ActionCameraCueProfile>(ActionFoundationProfileSetup.CameraCueProfilePath);
-            EnemyPatternProfile enemyPatternProfile = LoadProfile<EnemyPatternProfile>(ActionFoundationProfileSetup.EnemyPatternProfilePath);
+            CombatAiPatternProfile enemyPatternProfile = LoadProfile<CombatAiPatternProfile>(ActionFoundationProfileSetup.EnemyPatternProfilePath);
+            CombatAiPatternProfile enemyLungePatternProfile = LoadProfile<CombatAiPatternProfile>(ActionFoundationProfileSetup.EnemyLungePatternProfilePath);
             PlayerMovementController movement = RequireObject<PlayerMovementController>(roots, "player movement");
             PlayerActionController playerActions = RequireObject<PlayerActionController>(roots, "player actions");
             CombatHealth playerHealth = RequireComponent<CombatHealth>(playerActions.gameObject, "player health");
@@ -259,7 +260,41 @@ namespace DimensionBrawl.Editor
             ValidatePlayerActionProfile(playerActionProfile);
 
             ValidateObjectReferenceAssetPath(soldier, "patternProfile", ActionFoundationProfileSetup.EnemyPatternProfilePath);
-            ValidateEnemyPatternProfile(enemyPatternProfile);
+            ValidateCombatAiAgentContract(soldier);
+            ValidateCombatAiPatternProfile(
+                enemyPatternProfile,
+                "SciFiSoldier.Basic",
+                "ClosePunish",
+                2.7f,
+                540f,
+                -24f,
+                1.65f,
+                -0.15f,
+                0.65f,
+                0.14f,
+                0f,
+                0.45f,
+                15f,
+                0.03f,
+                0.24f,
+                2f);
+            ValidateCombatAiPatternProfile(
+                enemyLungePatternProfile,
+                "SciFiSoldier.Basic",
+                "LungeStrike",
+                2.45f,
+                500f,
+                -24f,
+                2.15f,
+                0f,
+                0.82f,
+                0.22f,
+                4.25f,
+                0.68f,
+                22f,
+                0.04f,
+                0.28f,
+                2.4f);
             ValidateReference(soldier, "targetSensor");
             ValidateReference(soldier, "target");
             ValidateReference(soldier, "targetHealth");
@@ -912,21 +947,65 @@ namespace DimensionBrawl.Editor
             ValidateCameraCueProfile(profile, "attackHitCue", new Vector3(0f, 0.03f, 0.12f), 0.06f, -1.8f, 0.16f, 0.01f, 0.18f, 1.3f);
         }
 
-        private static void ValidateEnemyPatternProfile(EnemyPatternProfile profile)
+        private static void ValidateCombatAiAgentContract(BasicSoldierEnemy soldier)
         {
-            ValidateString(profile, "enemyTypeId", "SciFiSoldier.Basic");
-            ValidateString(profile, "patternId", "ClosePunish");
-            ValidateFloat(profile, "approachSpeed", 2.7f);
-            ValidateFloat(profile, "turnRateDegrees", 540f);
-            ValidateFloat(profile, "gravity", -24f);
-            ValidateFloat(profile, "attackRange", 1.65f);
-            ValidateFloat(profile, "telegraphSeconds", 0.65f);
-            ValidateFloat(profile, "activeSeconds", 0.14f);
-            ValidateFloat(profile, "recoverySeconds", 0.45f);
-            ValidateFloat(profile, "damage", 15f);
-            ValidateFloat(profile, "hitStopSeconds", 0.03f);
-            ValidateFloat(profile, "hitReactionSeconds", 0.24f);
-            ValidateFloat(profile, "knockbackSpeed", 2f);
+            ICombatAiAgent agent = soldier;
+            if (agent.SelfHealth == null)
+            {
+                throw new InvalidOperationException($"{soldier.name} should expose self health through the shared combat AI contract.");
+            }
+
+            if (agent.TargetSensor == null)
+            {
+                throw new InvalidOperationException($"{soldier.name} should expose target sensor through the shared combat AI contract.");
+            }
+
+            if (agent.PatternProfile == null)
+            {
+                throw new InvalidOperationException($"{soldier.name} should expose pattern profile through the shared combat AI contract.");
+            }
+
+            if (string.IsNullOrWhiteSpace(agent.AttackAnimationTrigger)
+                || string.IsNullOrWhiteSpace(agent.HitAnimationTrigger)
+                || string.IsNullOrWhiteSpace(agent.DeathAnimationTrigger))
+            {
+                throw new InvalidOperationException($"{soldier.name} should expose attack/hit/death animation requests through the shared combat AI contract.");
+            }
+        }
+
+        private static void ValidateCombatAiPatternProfile(
+            CombatAiPatternProfile profile,
+            string actorTypeId,
+            string patternId,
+            float approachSpeed,
+            float turnRateDegrees,
+            float gravity,
+            float attackRange,
+            float attackFacingDotThreshold,
+            float telegraphSeconds,
+            float activeSeconds,
+            float activeLungeSpeed,
+            float recoverySeconds,
+            float damage,
+            float hitStopSeconds,
+            float hitReactionSeconds,
+            float knockbackSpeed)
+        {
+            ValidateString(profile, "actorTypeId", actorTypeId);
+            ValidateString(profile, "patternId", patternId);
+            ValidateFloat(profile, "approachSpeed", approachSpeed);
+            ValidateFloat(profile, "turnRateDegrees", turnRateDegrees);
+            ValidateFloat(profile, "gravity", gravity);
+            ValidateFloat(profile, "attackRange", attackRange);
+            ValidateFloat(profile, "attackFacingDotThreshold", attackFacingDotThreshold);
+            ValidateFloat(profile, "telegraphSeconds", telegraphSeconds);
+            ValidateFloat(profile, "activeSeconds", activeSeconds);
+            ValidateFloat(profile, "activeLungeSpeed", activeLungeSpeed);
+            ValidateFloat(profile, "recoverySeconds", recoverySeconds);
+            ValidateFloat(profile, "damage", damage);
+            ValidateFloat(profile, "hitStopSeconds", hitStopSeconds);
+            ValidateFloat(profile, "hitReactionSeconds", hitReactionSeconds);
+            ValidateFloat(profile, "knockbackSpeed", knockbackSpeed);
             ValidateString(profile, "moveSpeedParameter", "MoveSpeed");
             ValidateString(profile, "attackTrigger", "Attack");
             ValidateString(profile, "hitTrigger", "Hit");

@@ -10,23 +10,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 118d3f551f8628d4aba19f9fc2b08b5a, type: 3}
-  m_Name: DB_BasicSoldier_ClosePunish
+  m_Name: DB_BasicSoldier_LungeStrike
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Enemies.EnemyPatternProfile
   actorTypeId: SciFiSoldier.Basic
-  patternId: ClosePunish
-  approachSpeed: 2.7
-  turnRateDegrees: 540
+  patternId: LungeStrike
+  approachSpeed: 2.45
+  turnRateDegrees: 500
   gravity: -24
-  attackRange: 1.65
-  attackFacingDotThreshold: -0.15
-  telegraphSeconds: 0.65
-  activeSeconds: 0.14
-  activeLungeSpeed: 0
-  recoverySeconds: 0.45
-  damage: 15
-  hitStopSeconds: 0.03
-  hitReactionSeconds: 0.24
-  knockbackSpeed: 2
+  attackRange: 2.15
+  attackFacingDotThreshold: 0
+  telegraphSeconds: 0.82
+  activeSeconds: 0.22
+  activeLungeSpeed: 4.25
+  recoverySeconds: 0.68
+  damage: 22
+  hitStopSeconds: 0.04
+  hitReactionSeconds: 0.28
+  knockbackSpeed: 2.4
   moveSpeedParameter: MoveSpeed
   attackTrigger: Attack
   hitTrigger: Hit
