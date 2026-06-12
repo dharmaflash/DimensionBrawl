@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using UnityEngine.InputSystem;
 
 namespace DimensionBrawl.Player
@@ -37,8 +38,11 @@ namespace DimensionBrawl.Player
 
         [SerializeField, Min(0f)] private float stopThreshold = 0.08f;
 
-        [Tooltip("Uses the reference docs' lower recovery range around 0.10s as the first stop-settle cue length.")]
-        [SerializeField, Min(0f)] private float stopSettleSeconds = 0.12f;
+        [Tooltip("Uses the reference docs' 0.18-0.35s light settle/stagger range as a first visible foot-settle cue length.")]
+        [SerializeField, Min(0f)] private float stopSettleSeconds = 0.26f;
+
+        [Tooltip("Keeps the final movement direction alive briefly so stop-settle reads like a foot plant instead of a hard idle snap.")]
+        [SerializeField, Min(0f)] private float stopSettleInputHoldSeconds = 0.16f;
 
         [SerializeField] private bool cameraRelativeMovement = true;
         [SerializeField] private Camera referenceCamera;
@@ -50,22 +54,47 @@ namespace DimensionBrawl.Player
         [SerializeField] private string moveXParameter = "MoveX";
         [SerializeField] private string moveYParameter = "MoveY";
         [SerializeField] private string stoppingParameter = "IsStopping";
+        [SerializeField] private string startRunTrigger = "StartRun";
+        [SerializeField] private string stopStepTrigger = "StopStep";
+        [SerializeField] private string turnLeft90Trigger = "TurnLeft90";
+        [SerializeField] private string turnRight90Trigger = "TurnRight90";
+        [Tooltip("Uses the reference 0.08-0.12s action feel range to soften visual run-to-idle without slowing input response.")]
+        [SerializeField, Min(0f)] private float animatorMoveDampSeconds = 0.06f;
+        [Tooltip("Keeps the run animation alive briefly during stop-settle so the CombatGirl visual reads a small foot-settle instead of an instant idle snap.")]
+        [SerializeField, Range(0f, 1f)] private float stopSettleAnimatorSpeedFloor = 0.24f;
+        [Tooltip("Large direction changes request imported 90-degree turn clips instead of relying only on code rotation.")]
+        [SerializeField, Range(0f, 180f)] private float sharpTurnTriggerAngle = 65f;
+        [SerializeField, Range(0f, 1f)] private float sharpTurnMinimumSpeedRatio = 0.35f;
+        [SerializeField, Min(0f)] private float sharpTurnCooldownSeconds = 0.32f;
 
         private CharacterController characterController;
         private Vector3 planarVelocity;
         private Vector3 moveIntentDirection;
+        private Vector3 currentMoveDirection;
+        private Vector2 currentMoveInput;
         private float verticalVelocity;
         private Vector3 externalPlanarVelocity;
+        private float externalPlanarDuration;
         private float externalPlanarTimer;
         private float stopSettleTimer;
+        private float stopSettleInputHoldTimer;
+        private float sharpTurnCooldownTimer;
+        private Vector2 lastMoveInput;
+        private Vector2 stopSettleHeldMoveInput;
         private bool inputWasMoving;
         private bool enabledMoveAction;
         private bool enabledLookAction;
 
         public Vector3 PlanarVelocity => planarVelocity;
         public Vector3 MoveIntentDirection => moveIntentDirection;
+        public Vector3 CurrentMoveDirection => currentMoveDirection;
+        public bool HasMoveInput => currentMoveInput.sqrMagnitude > 0f;
         public bool IsStopSettling => stopSettleTimer > 0f;
         public Vector3 FacingDirection => transform.forward;
+
+        public event Action RunStarted;
+        public event Action StopSettleStarted;
+        public event Action<float> SharpTurnStarted;
 
         public void SetMoveInput(Vector2 input)
         {
@@ -80,7 +109,17 @@ namespace DimensionBrawl.Player
         public void BeginExternalPlanarBurst(Vector3 velocity, float durationSeconds)
         {
             externalPlanarVelocity = Vector3.ProjectOnPlane(velocity, Vector3.up);
-            externalPlanarTimer = Mathf.Max(0f, durationSeconds);
+            externalPlanarDuration = Mathf.Max(0f, durationSeconds);
+            externalPlanarTimer = externalPlanarDuration;
+        }
+
+        public bool TryGetCurrentMoveDirection(out Vector3 direction)
+        {
+            Vector2 moveInput = ApplyDeadZone(ReadMoveInput());
+            Vector3 desiredMoveDirection = BuildWorldDirection(moveInput);
+            UpdateCurrentMoveInput(moveInput, desiredMoveDirection);
+            direction = currentMoveDirection;
+            return HasMoveInput;
         }
 
         private void Awake()
@@ -107,10 +146,12 @@ namespace DimensionBrawl.Player
             Vector2 lookInput = ApplyDeadZone(ReadLookInput());
 
             Vector3 desiredMoveDirection = BuildWorldDirection(moveInput);
+            UpdateCurrentMoveInput(moveInput, desiredMoveDirection);
             UpdateMoveIntent(desiredMoveDirection);
             UpdatePlanarVelocity(desiredMoveDirection, moveInput.magnitude, deltaTime);
             UpdateFacing(desiredMoveDirection, lookInput, deltaTime);
-            UpdateStopSettle(moveInput.sqrMagnitude > 0f, deltaTime);
+            UpdateStopSettle(moveInput, deltaTime);
+            UpdateSharpTurnCooldown(deltaTime);
             UpdateExternalPlanarBurst(deltaTime);
             MoveCharacter(deltaTime);
             UpdateAnimation(moveInput);
@@ -149,14 +190,7 @@ namespace DimensionBrawl.Player
 
         private Vector2 ReadLookInput()
         {
-            Vector2 input = ReadSharedInput(lookAction, mobileLookInput);
-
-            if (useDeviceFallbackWhenActionMissing && IsActionMissing(lookAction) && input.sqrMagnitude <= 0f)
-            {
-                input = ReadLookDeviceFallback();
-            }
-
-            return input;
+            return ReadSharedInput(lookAction, mobileLookInput);
         }
 
         private static Vector2 ReadSharedInput(InputActionReference actionReference, Vector2 mobileInput)
@@ -200,16 +234,6 @@ namespace DimensionBrawl.Player
             return Vector2.ClampMagnitude(input, 1f);
         }
 
-        private static Vector2 ReadLookDeviceFallback()
-        {
-            if (Gamepad.current == null)
-            {
-                return Vector2.zero;
-            }
-
-            return Vector2.ClampMagnitude(Gamepad.current.rightStick.ReadValue(), 1f);
-        }
-
         private Vector2 ApplyDeadZone(Vector2 input)
         {
             if (input.sqrMagnitude < inputDeadZone * inputDeadZone)
@@ -241,6 +265,12 @@ namespace DimensionBrawl.Player
             return direction.sqrMagnitude > 1f ? direction.normalized : direction;
         }
 
+        private void UpdateCurrentMoveInput(Vector2 moveInput, Vector3 desiredDirection)
+        {
+            currentMoveInput = moveInput;
+            currentMoveDirection = desiredDirection.sqrMagnitude > 0f ? desiredDirection.normalized : Vector3.zero;
+        }
+
         private void UpdatePlanarVelocity(Vector3 desiredDirection, float inputAmount, float deltaTime)
         {
             Vector3 desiredVelocity = desiredDirection * (moveSpeed * inputAmount);
@@ -265,6 +295,8 @@ namespace DimensionBrawl.Player
         {
             Vector3 facingDirection = BuildWorldDirection(lookInput);
 
+            TryRequestSharpTurn(desiredMoveDirection);
+
             if (facingDirection.sqrMagnitude <= 0f)
             {
                 facingDirection = desiredMoveDirection;
@@ -282,11 +314,33 @@ namespace DimensionBrawl.Player
                 turnRateDegrees * deltaTime);
         }
 
-        private void UpdateStopSettle(bool inputIsMoving, float deltaTime)
+        private void UpdateStopSettle(Vector2 moveInput, float deltaTime)
         {
+            bool inputIsMoving = moveInput.sqrMagnitude > 0f;
+            if (inputIsMoving)
+            {
+                lastMoveInput = moveInput;
+            }
+
+            if (!inputWasMoving && inputIsMoving)
+            {
+                stopSettleTimer = 0f;
+                stopSettleInputHoldTimer = 0f;
+                stopSettleHeldMoveInput = Vector2.zero;
+                SetAnimatorTriggerIfLocomotionState(startRunTrigger, "Idle", "StopStep");
+                RunStarted?.Invoke();
+            }
+
             if (inputWasMoving && !inputIsMoving)
             {
                 stopSettleTimer = stopSettleSeconds;
+                stopSettleInputHoldTimer = stopSettleInputHoldSeconds;
+                stopSettleHeldMoveInput = lastMoveInput.sqrMagnitude > 0f ? lastMoveInput.normalized : Vector2.up;
+                if (stopSettleSeconds > 0f)
+                {
+                    SetAnimatorTrigger(stopStepTrigger);
+                    StopSettleStarted?.Invoke();
+                }
             }
 
             if (stopSettleTimer > 0f)
@@ -294,7 +348,53 @@ namespace DimensionBrawl.Player
                 stopSettleTimer = Mathf.Max(0f, stopSettleTimer - deltaTime);
             }
 
+            if (stopSettleInputHoldTimer > 0f)
+            {
+                stopSettleInputHoldTimer = Mathf.Max(0f, stopSettleInputHoldTimer - deltaTime);
+                if (stopSettleInputHoldTimer <= 0f)
+                {
+                    stopSettleHeldMoveInput = Vector2.zero;
+                }
+            }
+
             inputWasMoving = inputIsMoving;
+        }
+
+        private void TryRequestSharpTurn(Vector3 desiredMoveDirection)
+        {
+            if (desiredMoveDirection.sqrMagnitude <= 0.0001f || sharpTurnCooldownTimer > 0f)
+            {
+                return;
+            }
+
+            float speedRatio = moveSpeed > 0f ? planarVelocity.magnitude / moveSpeed : 0f;
+            if (speedRatio < sharpTurnMinimumSpeedRatio)
+            {
+                return;
+            }
+
+            float signedAngle = Vector3.SignedAngle(transform.forward, desiredMoveDirection.normalized, Vector3.up);
+            if (Mathf.Abs(signedAngle) < sharpTurnTriggerAngle)
+            {
+                return;
+            }
+
+            if (!AnimatorIsInBaseState("Run"))
+            {
+                return;
+            }
+
+            SetAnimatorTrigger(signedAngle < 0f ? turnLeft90Trigger : turnRight90Trigger);
+            sharpTurnCooldownTimer = sharpTurnCooldownSeconds;
+            SharpTurnStarted?.Invoke(signedAngle);
+        }
+
+        private void UpdateSharpTurnCooldown(float deltaTime)
+        {
+            if (sharpTurnCooldownTimer > 0f)
+            {
+                sharpTurnCooldownTimer = Mathf.Max(0f, sharpTurnCooldownTimer - deltaTime);
+            }
         }
 
         private void MoveCharacter(float deltaTime)
@@ -305,8 +405,20 @@ namespace DimensionBrawl.Player
             }
 
             verticalVelocity += gravity * deltaTime;
-            Vector3 motion = (externalPlanarTimer > 0f ? externalPlanarVelocity : planarVelocity) + Vector3.up * verticalVelocity;
+            Vector3 motion = (externalPlanarTimer > 0f ? ResolveExternalPlanarVelocity() : planarVelocity) + Vector3.up * verticalVelocity;
             characterController.Move(motion * deltaTime);
+        }
+
+        private Vector3 ResolveExternalPlanarVelocity()
+        {
+            if (externalPlanarDuration <= 0f)
+            {
+                return Vector3.zero;
+            }
+
+            float remainingRatio = Mathf.Clamp01(externalPlanarTimer / externalPlanarDuration);
+            float speedWeight = Mathf.SmoothStep(0f, 1f, remainingRatio);
+            return externalPlanarVelocity * speedWeight;
         }
 
         private void UpdateExternalPlanarBurst(float deltaTime)
@@ -317,6 +429,11 @@ namespace DimensionBrawl.Player
             }
 
             externalPlanarTimer = Mathf.Max(0f, externalPlanarTimer - deltaTime);
+            if (externalPlanarTimer <= 0f)
+            {
+                externalPlanarVelocity = Vector3.zero;
+                externalPlanarDuration = 0f;
+            }
         }
 
         private void UpdateAnimation(Vector2 moveInput)
@@ -327,9 +444,18 @@ namespace DimensionBrawl.Player
             }
 
             float normalizedSpeed = moveSpeed > 0f ? planarVelocity.magnitude / moveSpeed : 0f;
-            SetAnimatorFloat(moveSpeedParameter, normalizedSpeed);
-            SetAnimatorFloat(moveXParameter, moveInput.x);
-            SetAnimatorFloat(moveYParameter, moveInput.y);
+            if (IsStopSettling)
+            {
+                normalizedSpeed = Mathf.Max(normalizedSpeed, stopSettleAnimatorSpeedFloor);
+            }
+
+            Vector2 animationMoveInput = stopSettleInputHoldTimer > 0f && moveInput.sqrMagnitude <= 0f
+                ? stopSettleHeldMoveInput
+                : moveInput;
+
+            SetAnimatorFloat(moveSpeedParameter, normalizedSpeed, animatorMoveDampSeconds);
+            SetAnimatorFloat(moveXParameter, animationMoveInput.x, animatorMoveDampSeconds);
+            SetAnimatorFloat(moveYParameter, animationMoveInput.y, animatorMoveDampSeconds);
             SetAnimatorBool(stoppingParameter, IsStopSettling);
         }
 
@@ -341,12 +467,59 @@ namespace DimensionBrawl.Player
             }
         }
 
+        private void SetAnimatorFloat(string parameterName, float value, float dampSeconds)
+        {
+            if (string.IsNullOrWhiteSpace(parameterName))
+            {
+                return;
+            }
+
+            if (dampSeconds <= 0f)
+            {
+                animator.SetFloat(parameterName, value);
+                return;
+            }
+
+            animator.SetFloat(parameterName, value, dampSeconds, Time.deltaTime);
+        }
+
         private void SetAnimatorBool(string parameterName, bool value)
         {
             if (!string.IsNullOrWhiteSpace(parameterName))
             {
                 animator.SetBool(parameterName, value);
             }
+        }
+
+        private void SetAnimatorTrigger(string parameterName)
+        {
+            if (!string.IsNullOrWhiteSpace(parameterName) && animator != null)
+            {
+                animator.SetTrigger(parameterName);
+            }
+        }
+
+        private void SetAnimatorTriggerIfLocomotionState(string parameterName, string stateNameA, string stateNameB)
+        {
+            if (AnimatorIsInBaseState(stateNameA) || AnimatorIsInBaseState(stateNameB))
+            {
+                SetAnimatorTrigger(parameterName);
+            }
+        }
+
+        private bool AnimatorIsInBaseState(string stateName)
+        {
+            if (animator == null || string.IsNullOrWhiteSpace(stateName))
+            {
+                return false;
+            }
+
+            if (animator.GetCurrentAnimatorStateInfo(0).IsName(stateName))
+            {
+                return true;
+            }
+
+            return animator.IsInTransition(0) && animator.GetNextAnimatorStateInfo(0).IsName(stateName);
         }
     }
 }

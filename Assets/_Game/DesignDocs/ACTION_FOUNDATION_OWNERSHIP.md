@@ -11,7 +11,7 @@ This note permits the first action-feel foundation to add more than three gamepl
 - `CombatHealth`: health, damage validation, team filtering, temporary invulnerability, and death state.
 - `BasicSoldierEnemy`: basic soldier approach, telegraph, attack execution, hit reaction, and death reaction.
 - `ActionCameraController`: camera follow, target/threat bias, damping, and short additive cue offsets.
-- `CombatHitFeedback`: presentation-only damage flash, death color, and short hit-stop response from damage events.
+- `CombatHitFeedback`: presentation-only damage flash and death color from damage events. It must not change global time scale for normal hits.
 - `PlayerDodgeFeedback`: presentation-only dodge color cue driven by player action events.
 - `ActionFoundationTestEncounter`: test setup win/fail state only.
 
@@ -22,3 +22,4 @@ This note permits the first action-feel foundation to add more than three gamepl
 - No script owns progression, rewards, currencies, or stage loops.
 - No script constructs the full scene or full UI at runtime.
 - No script depends on `Assets/_Imported/` paths or hardcoded asset GUIDs.
+- No normal-hit script owns global slow motion. Time-scale effects belong to a later explicit perfect-dodge, counter, ultimate, or authored cue bundle slice.

@@ -18,15 +18,6 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private Color hitColor = Color.white;
         [SerializeField] private Color deathColor = new Color(0.15f, 0.15f, 0.15f);
 
-        [Header("Hit Stop")]
-        [Tooltip("DamageInfo.HitStopSeconds is sourced from collected hit-stop ranges: neutral 0.02-0.04, empowered 0.04-0.07.")]
-        [SerializeField] private bool useDamageHitStop = true;
-        [SerializeField, Range(0f, 1f)] private float hitStopTimeScale = 0.04f;
-
-        private static float hitStopUntilRealtime;
-        private static Coroutine activeHitStop;
-        private static float originalFixedDeltaTime;
-
         private MaterialPropertyBlock propertyBlock;
         private Coroutine flashRoutine;
 
@@ -38,7 +29,6 @@ namespace DimensionBrawl.Presentation
             }
 
             propertyBlock = new MaterialPropertyBlock();
-            originalFixedDeltaTime = Time.fixedDeltaTime;
         }
 
         private void OnEnable()
@@ -72,7 +62,7 @@ namespace DimensionBrawl.Presentation
             }
         }
 
-        private void HandleDamaged(DamageInfo damageInfo)
+        private void HandleDamaged(DamageInfo _)
         {
             if (flashRoutine != null)
             {
@@ -80,11 +70,6 @@ namespace DimensionBrawl.Presentation
             }
 
             flashRoutine = StartCoroutine(Flash(hitColor, flashSeconds, clearAfter: true));
-
-            if (useDamageHitStop && damageInfo.HitStopSeconds > 0f)
-            {
-                RequestHitStop(damageInfo.HitStopSeconds);
-            }
         }
 
         private void HandleDied()
@@ -115,31 +100,6 @@ namespace DimensionBrawl.Presentation
             }
 
             flashRoutine = null;
-        }
-
-        private void RequestHitStop(float seconds)
-        {
-            hitStopUntilRealtime = Mathf.Max(hitStopUntilRealtime, Time.realtimeSinceStartup + seconds);
-
-            if (activeHitStop == null)
-            {
-                activeHitStop = StartCoroutine(HitStopRoutine());
-            }
-        }
-
-        private IEnumerator HitStopRoutine()
-        {
-            Time.timeScale = hitStopTimeScale;
-            Time.fixedDeltaTime = originalFixedDeltaTime * hitStopTimeScale;
-
-            while (Time.realtimeSinceStartup < hitStopUntilRealtime)
-            {
-                yield return null;
-            }
-
-            Time.timeScale = 1f;
-            Time.fixedDeltaTime = originalFixedDeltaTime;
-            activeHitStop = null;
         }
 
         private void ApplyColor(Color color)

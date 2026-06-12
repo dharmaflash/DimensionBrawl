@@ -56,7 +56,7 @@ The first attack loop is a short manual basic combo, not automatic combat.
 
 Targets:
 
-- V1 basic attack should be limited to 2-3 hits.
+- V1 basic attack can grow to 5-7 hits when curated animation clips support readable recovery, cancel timing, and a clear finisher read.
 - Each hit should have readable startup, active, hit-confirm, recovery, and cancel windows.
 - Input buffering should make the next hit feel intentional but not mashy.
 - Hit feedback should include at least damage, reaction, and a small presentation cue.
@@ -64,7 +64,7 @@ Targets:
 
 Do not accept:
 
-- Long combo strings.
+- Long combo strings that are not backed by curated clips, readable input windows, and explicit cancellation rules.
 - Extra attack buttons before the first chain feels good.
 - Damage applied with no readable hit timing.
 - All attack, animation, camera, and damage logic packed into one giant class.
@@ -127,7 +127,7 @@ Action feel work must stay inspectable and modular.
 - Player code owns input interpretation, movement, attack requests, dodge, and local animation requests.
 - Combat code owns damage, hit validation, health, and temporary combat state.
 - Enemy code owns enemy movement, attack execution, hit reaction, and death.
-- Presentation code owns animation, VFX, SFX, camera cues, hit-stop, and UI feedback.
+- Presentation code owns animation, VFX, SFX, camera cues, explicit authored cue bundles, and UI feedback. Normal attacks must not add global time-scale changes unless a later perfect-dodge, counter, ultimate, or authored cue slice explicitly owns that effect.
 - Data owns reusable tuning values and timing profiles.
 
 Do not combine all of this into a single manager.
@@ -140,7 +140,7 @@ Before summon behavior, boss phases, progression, or full HUD work, the project 
 
 1. Player movement feels responsive and does not hard-stop unnaturally.
 2. Camera keeps player and basic soldier readable.
-3. Basic attack chain has 2-3 readable hits.
+3. Basic attack chain has at least 3 readable hits and may extend to a reviewed 5-7 hit chain when animation support is strong.
 4. Dodge can avoid a simple enemy attack.
 5. Player and enemy can damage each other.
 6. Hit feedback is visible enough to review from a short recording.
@@ -162,7 +162,7 @@ Read these first:
 Implement only the next smallest action-feel step.
 Do not implement summon behavior, boss phases, progression, full HUD, or broad runtime generation.
 Use the collected design docs actively: name the timing/feel idea being implemented and the parts deliberately excluded.
-Use the collected reference numeric data actively: choose initial timing/tuning values from documented ranges for movement, stop feel, attack startup/active/recovery, dodge duration/avoidance/recovery, hit-stop, camera cue duration, and enemy telegraph timing; record any deliberate deviation.
+Use the collected reference numeric data actively: choose initial timing/tuning values from documented ranges for movement, stop feel, attack startup/active/recovery, dodge duration/avoidance/recovery, hit feedback, camera cue duration, and enemy telegraph timing; record any deliberate deviation. Do not add normal-hit global slow motion from hit-stop reference data without a separate explicit perfect-dodge/cue-system goal.
 Keep code ownership narrow and inspectable.
 Stop before adding more than three new gameplay scripts without an ownership review.
 ```
@@ -171,7 +171,7 @@ Good first goals:
 
 - Implement player movement with tunable acceleration, deceleration, turn rate, and stop threshold.
 - Add a camera follow/target-bias prototype that keeps player and one soldier readable.
-- Add a 2-3 hit basic attack chain with explicit timing windows.
+- Add a curated 3-5 hit basic attack chain with explicit timing windows; extend toward 6-7 only after visual review confirms the later clips still read like normal attacks.
 - Add dodge with a tunable avoidance window and recovery.
 - Add one basic soldier with readable attack, health, hit reaction, and death.
 

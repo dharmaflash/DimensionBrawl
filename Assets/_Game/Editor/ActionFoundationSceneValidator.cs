@@ -6,6 +6,7 @@ using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.Test;
 using UnityEditor;
+using UnityEditor.Animations;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -18,6 +19,20 @@ namespace DimensionBrawl.Editor
         private const string PlayerVisualName = "CombatGirlSwordShield_PlayerVisual";
         private const string LegacyPlayerVisualName = "CombatGirls_Sword_Shield";
         private const string CombatGirlMaterialRoot = "Assets/_Game/Art/Characters/Player/CombatGirlSwordShield/Materials";
+        private const string CombatGirlAnimatorControllerPath = "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/DB_CombatGirl_ActionFoundation.controller";
+        private const string StartRunClipPath = "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/SS_StartRun.fbx";
+        private const string StopStepClipPath = "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/SS_StopStep.fbx";
+        private const string TurnLeft90ClipPath = "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/SS_TurnLeft90.fbx";
+        private const string TurnRight90ClipPath = "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/SS_TurnRight90.fbx";
+        private const string Attack1ClipPath = "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/SS_Attack1.fbx";
+        private const string Attack2ClipPath = "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/SS_Attack2.fbx";
+        private const string Attack3ClipPath = "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/SS_Attack3.fbx";
+        private const string Attack4ClipPath = "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/SS_Attack4.fbx";
+        private const string Attack5ClipPath = "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/SS_Attack5.fbx";
+        private const string DodgeForwardClipPath = "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/SS_DodgeForward.fbx";
+        private const string DodgeBackClipPath = "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/SS_DodgeBack.fbx";
+        private const string DodgeLeftClipPath = "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/SS_DodgeLeft.fbx";
+        private const string DodgeRightClipPath = "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/SS_DodgeRight.fbx";
 
         [MenuItem("DimensionBrawl/Validate Action Foundation Test Scene")]
         public static void ValidateMenu()
@@ -48,6 +63,61 @@ namespace DimensionBrawl.Editor
             EditorSceneManager.SaveScene(scene);
             AssetDatabase.SaveAssets();
             Debug.Log($"Reapplied CombatGirl materials on {reassignedCount} renderer slots in {ScenePath}.");
+        }
+
+        [MenuItem("DimensionBrawl/Reapply Action Foundation CombatGirl Weapon Sockets")]
+        public static void ReapplyCombatGirlWeaponSocketsMenu()
+        {
+            Scene scene = SceneManager.GetActiveScene();
+            if (!scene.IsValid() || scene.path != ScenePath)
+            {
+                scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            }
+
+            GameObject[] roots = scene.GetRootGameObjects();
+            GameObject playerVisual = RequireNamedObject(roots, PlayerVisualName, "player visual");
+            CombatGirlWeaponSocketBinder weaponBinder = playerVisual.GetComponent<CombatGirlWeaponSocketBinder>();
+            if (weaponBinder == null)
+            {
+                weaponBinder = playerVisual.AddComponent<CombatGirlWeaponSocketBinder>();
+            }
+
+            Transform leftHand = RequireNamedObject(roots, "hand_l", "left hand").transform;
+            Transform rightHand = RequireNamedObject(roots, "hand_r", "right hand").transform;
+            Transform leftWeaponSocket = RequireNamedObject(roots, "add_weapon_l", "left weapon socket").transform;
+            Transform rightWeaponSocket = RequireNamedObject(roots, "add_weapon_r", "right weapon socket").transform;
+
+            weaponBinder.ConfigureWeaponSockets(leftHand, leftWeaponSocket, rightHand, rightWeaponSocket);
+            weaponBinder.ApplyBindings();
+            EditorUtility.SetDirty(weaponBinder);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            AssetDatabase.SaveAssets();
+            Debug.Log("Reapplied CombatGirl weapon socket bindings in ActionFoundationTest.");
+        }
+
+        [MenuItem("DimensionBrawl/Reapply Action Foundation StopStep Responsiveness")]
+        public static void ReapplyStopStepResponsivenessMenu()
+        {
+            Scene scene = SceneManager.GetActiveScene();
+            if (!scene.IsValid() || scene.path != ScenePath)
+            {
+                scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            }
+
+            GameObject[] roots = scene.GetRootGameObjects();
+            PlayerMovementController movement = RequireObject<PlayerMovementController>(roots, "player movement");
+            SetFloat(movement, "stopSettleInputHoldSeconds", 0.16f);
+            SetFloat(movement, "animatorMoveDampSeconds", 0.06f);
+            EditorUtility.SetDirty(movement);
+
+            ConfigureStopStepClip();
+            ConfigureStopStepAnimator();
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            AssetDatabase.SaveAssets();
+            Debug.Log("Reapplied StopStep responsiveness tuning in ActionFoundationTest.");
         }
 
         public static void ValidateSceneAsset()
@@ -81,10 +151,12 @@ namespace DimensionBrawl.Editor
             PlayerActionController playerActions = RequireObject<PlayerActionController>(roots, "player actions");
             BasicSoldierEnemy soldier = RequireObject<BasicSoldierEnemy>(roots, "basic soldier");
             ActionCameraController cameraController = RequireObject<ActionCameraController>(roots, "action camera");
+            ActionCameraCueDriver cameraCueDriver = RequireObject<ActionCameraCueDriver>(roots, "action camera cue driver");
             Type dodgeFeedbackType = RequireType("DimensionBrawl.Presentation.PlayerDodgeFeedback, DimensionBrawl.Runtime");
             Component dodgeFeedback = RequireObject(roots, dodgeFeedbackType, "player dodge feedback");
             GameObject playerVisual = RequireNamedObject(roots, PlayerVisualName, "player visual");
             Animator playerVisualAnimator = RequireComponent<Animator>(playerVisual, "player visual animator");
+            CombatGirlWeaponSocketBinder weaponBinder = RequireComponent<CombatGirlWeaponSocketBinder>(playerVisual, "weapon socket binder");
             List<CombatHitFeedback> hitFeedbacks = CollectObjects<CombatHitFeedback>(roots);
             ActionFoundationTestEncounter encounter = RequireObject<ActionFoundationTestEncounter>(roots, "test encounter");
 
@@ -94,14 +166,37 @@ namespace DimensionBrawl.Editor
 
             ValidateReference(movement, "referenceCamera");
             ValidateReference(movement, "animator");
+            ValidateFloat(movement, "stopSettleSeconds", 0.26f);
+            ValidateFloat(movement, "stopSettleInputHoldSeconds", 0.16f);
+            ValidateString(movement, "startRunTrigger", "StartRun");
+            ValidateString(movement, "stopStepTrigger", "StopStep");
+            ValidateString(movement, "turnLeft90Trigger", "TurnLeft90");
+            ValidateString(movement, "turnRight90Trigger", "TurnRight90");
+            ValidateFloat(movement, "animatorMoveDampSeconds", 0.06f);
+            ValidateFloat(movement, "stopSettleAnimatorSpeedFloor", 0.24f);
+            ValidateFloat(movement, "sharpTurnTriggerAngle", 65f);
+            ValidateFloat(movement, "sharpTurnMinimumSpeedRatio", 0.35f);
+            ValidateFloat(movement, "sharpTurnCooldownSeconds", 0.32f);
             ValidateReference(playerActions, "movement");
             ValidateReference(playerActions, "health");
             ValidateReference(playerActions, "animator");
-            ValidateArraySize(playerActions, "basicCombo", 3);
-            ValidateFloat(playerActions, "dodgeDurationSeconds", 0.62f);
+            ValidateArraySize(playerActions, "basicCombo", 5);
+            ValidateAttackStep(playerActions, "basicCombo", 0, "Attack1", 0.12f, 0.08f, 0.28f, 0.10f, 0.06f, 20f, 0.55f, 1.35f, 0.03f);
+            ValidateAttackStep(playerActions, "basicCombo", 1, "Attack2", 0.14f, 0.09f, 0.32f, 0.10f, 0.08f, 24f, 0.60f, 1.45f, 0.03f);
+            ValidateAttackStep(playerActions, "basicCombo", 2, "Attack3", 0.16f, 0.10f, 0.30f, 0.12f, 0.10f, 34f, 0.70f, 1.55f, 0.04f);
+            ValidateAttackStep(playerActions, "basicCombo", 3, "Attack4", 0.17f, 0.10f, 0.34f, 0.12f, 0.12f, 40f, 0.72f, 1.62f, 0.05f);
+            ValidateAttackStep(playerActions, "basicCombo", 4, "Attack5", 0.20f, 0.12f, 0.46f, 0.12f, 0.14f, 56f, 0.82f, 1.75f, 0.05f);
+            ValidateFloat(playerActions, "comboQueueOpenAfterSeconds", 0.10f);
+            ValidateFloat(playerActions, "comboChainRecoveryRatio", 0.45f);
+            ValidateFloat(playerActions, "dodgeDurationSeconds", 0.56f);
             ValidateFloat(playerActions, "dodgeInvulnerableFromSeconds", 0.05f);
-            ValidateFloat(playerActions, "dodgeInvulnerableToSeconds", 0.40f);
-            ValidateFloat(playerActions, "dodgeRecoverySeconds", 0.18f);
+            ValidateFloat(playerActions, "dodgeInvulnerableToSeconds", 0.32f);
+            ValidateFloat(playerActions, "dodgeRecoverySeconds", 0.14f);
+            ValidateFloat(playerActions, "dodgeSpeed", 10.2f);
+            ValidateString(playerActions, "dodgeTrigger", "DodgeForward");
+            ValidateString(playerActions, "dodgeBackTrigger", "DodgeBack");
+            ValidateString(playerActions, "dodgeLeftTrigger", "DodgeLeft");
+            ValidateString(playerActions, "dodgeRightTrigger", "DodgeRight");
 
             ValidateReference(soldier, "target");
             ValidateReference(soldier, "targetHealth");
@@ -114,11 +209,71 @@ namespace DimensionBrawl.Editor
 
             ValidateReference(cameraController, "target");
             ValidateReference(cameraController, "threat");
+            ValidateVector3(cameraController, "cameraOffset", new Vector3(0f, 1.05f, -4.2f));
+            ValidateVector3(cameraController, "lookOffset", new Vector3(0f, 1.2f, 0.55f));
+            ValidateFloat(cameraController, "manualYawSpeedDegrees", 150f);
+            ValidateFloat(cameraController, "mouseYawDegreesPerPixel", 0.12f);
+            ValidateFloat(cameraController, "targetYawAssist", 0.18f);
+            ValidateFloat(cameraController, "targetYawAssistSpeed", 2.2f);
+            ValidateFloat(cameraController, "orbitInputDeadZone", 0.08f);
+            ValidateFloat(cameraController, "threatBias", 0.25f);
+            ValidateFloat(cameraController, "maxLeadFromPlayerSpeed", 0.35f);
             ValidateFloat(cameraController, "defaultCueSeconds", 0.24f);
+            ValidateFloat(cameraController, "maxCueOffset", 0.55f);
+            ValidateFloat(cameraController, "maxCueFieldOfViewDelta", 4f);
+            ValidateFloat(cameraController, "maxCueCameraDistanceDelta", 0.45f);
+            ValidateFloat(cameraController, "maxCueFocusHeightDelta", 0.25f);
+            ValidateFloat(cameraController, "cueFieldOfViewSmooth", 18f);
+            ValidateReference(cameraCueDriver, "actionController");
+            ValidateReference(cameraCueDriver, "movement");
+            ValidateReference(cameraCueDriver, "cameraController");
+            ValidateReference(cameraCueDriver, "cueSpace");
+            ValidateCameraCueProfile(cameraCueDriver, "runStartCue", new Vector3(0f, 0.02f, -0.10f), 0.08f, 0.8f, -0.08f, 0.01f, 0.20f, 1f);
+            ValidateCameraCueProfile(cameraCueDriver, "stopSettleCue", new Vector3(0f, -0.02f, -0.06f), -0.02f, -0.8f, -0.12f, -0.02f, 0.22f, 1f);
+            ValidateCameraCueProfile(cameraCueDriver, "sharpTurnCue", new Vector3(0.08f, 0f, -0.10f), 0.06f, 0.6f, -0.06f, 0f, 0.24f, 1f);
+            ValidateCameraCueProfile(cameraCueDriver, "dodgeCue", new Vector3(0f, 0.04f, -0.2f), -0.18f, 2.2f, -0.2f, 0.03f, 0.28f, 1f);
+            ValidateCameraCueProfile(cameraCueDriver, "attackStartCue", new Vector3(0f, -0.03f, 0.14f), 0.08f, -1.2f, 0.12f, -0.02f, 0.22f, 1.2f);
+            ValidateCameraCueProfile(cameraCueDriver, "attackHitCue", new Vector3(0f, 0.03f, 0.12f), 0.06f, -1.8f, 0.16f, 0.01f, 0.18f, 1.3f);
 
             ValidateReference(playerVisualAnimator, "m_Avatar");
             ValidateReference(playerVisualAnimator, "m_Controller");
             ValidateBool(playerVisualAnimator, "m_ApplyRootMotion", false);
+            ValidateWeaponSocketBinder(weaponBinder);
+            ValidateAnimatorParameter(playerVisualAnimator, "StartRun", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(playerVisualAnimator, "StopStep", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(playerVisualAnimator, "TurnLeft90", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(playerVisualAnimator, "TurnRight90", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(playerVisualAnimator, "Attack1", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(playerVisualAnimator, "Attack2", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(playerVisualAnimator, "Attack3", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(playerVisualAnimator, "Attack4", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(playerVisualAnimator, "Attack5", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(playerVisualAnimator, "DodgeForward", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(playerVisualAnimator, "DodgeBack", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(playerVisualAnimator, "DodgeLeft", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(playerVisualAnimator, "DodgeRight", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorStateMotion(playerVisualAnimator, "StartRun", StartRunClipPath);
+            ValidateAnimatorStateMotion(playerVisualAnimator, "StopStep", StopStepClipPath);
+            ValidateAnimatorStateSpeed(playerVisualAnimator, "StopStep", 1.45f);
+            ValidateStopStepTransitionResponsiveness(playerVisualAnimator);
+            ValidateAnimatorStateMotion(playerVisualAnimator, "TurnLeft90", TurnLeft90ClipPath);
+            ValidateAnimatorStateMotion(playerVisualAnimator, "TurnRight90", TurnRight90ClipPath);
+            ValidateAnimatorStateMotion(playerVisualAnimator, "Attack1", Attack1ClipPath);
+            ValidateAnimatorStateMotion(playerVisualAnimator, "Attack2", Attack2ClipPath);
+            ValidateAnimatorStateMotion(playerVisualAnimator, "Attack3", Attack3ClipPath);
+            ValidateAnimatorStateMotion(playerVisualAnimator, "Attack4", Attack4ClipPath);
+            ValidateAnimatorStateMotion(playerVisualAnimator, "Attack5", Attack5ClipPath);
+            ValidateAnimatorStateMotion(playerVisualAnimator, "DodgeForward", DodgeForwardClipPath);
+            ValidateAnimatorStateMotion(playerVisualAnimator, "DodgeBack", DodgeBackClipPath);
+            ValidateAnimatorStateMotion(playerVisualAnimator, "DodgeLeft", DodgeLeftClipPath);
+            ValidateAnimatorStateMotion(playerVisualAnimator, "DodgeRight", DodgeRightClipPath);
+            ValidateAnimatorTriggerTransition(playerVisualAnimator, "StartRun", "StopStep", "StopStep");
+            ValidateAnimatorTriggerTransition(playerVisualAnimator, "TurnLeft90", "StopStep", "StopStep");
+            ValidateAnimatorTriggerTransition(playerVisualAnimator, "TurnRight90", "StopStep", "StopStep");
+            ValidateAnyStateTriggerTransition(playerVisualAnimator, "DodgeForward", "DodgeForward");
+            ValidateAnyStateTriggerTransition(playerVisualAnimator, "DodgeBack", "DodgeBack");
+            ValidateAnyStateTriggerTransition(playerVisualAnimator, "DodgeLeft", "DodgeLeft");
+            ValidateAnyStateTriggerTransition(playerVisualAnimator, "DodgeRight", "DodgeRight");
             ValidateCombatGirlMaterials(playerVisual);
 
             ValidateReference(dodgeFeedback, "actionController");
@@ -128,6 +283,118 @@ namespace DimensionBrawl.Editor
             ValidateReference(encounter, "enemyHealth");
             ValidateReference(encounter, "winMarker");
             ValidateReference(encounter, "failMarker");
+        }
+
+        private static void ValidateWeaponSocketBinder(CombatGirlWeaponSocketBinder weaponBinder)
+        {
+            if (weaponBinder.BindingCount != 2 || !weaponBinder.AllBindingsValid)
+            {
+                throw new InvalidOperationException($"{weaponBinder.name} must bind left and right CombatGirl weapon sockets to the hand bones.");
+            }
+
+            weaponBinder.ApplyBindings();
+            if (!weaponBinder.AreBindingsAligned(0.005f, 0.5f))
+            {
+                throw new InvalidOperationException($"{weaponBinder.name} weapon sockets are not aligned with their configured hand offsets.");
+            }
+        }
+
+        private static void ConfigureStopStepClip()
+        {
+            ModelImporter importer = AssetImporter.GetAtPath(StopStepClipPath) as ModelImporter;
+            if (importer == null)
+            {
+                throw new InvalidOperationException($"Missing StopStep ModelImporter: {StopStepClipPath}");
+            }
+
+            ModelImporterClipAnimation[] clips = importer.clipAnimations;
+            if (clips == null || clips.Length == 0)
+            {
+                clips = importer.defaultClipAnimations;
+            }
+
+            if (clips == null || clips.Length == 0)
+            {
+                throw new InvalidOperationException($"StopStep clip has no imported animation clips: {StopStepClipPath}");
+            }
+
+            clips[0].name = "SS_StopStep";
+            clips[0].firstFrame = 4f;
+            clips[0].lastFrame = 45f;
+            clips[0].loopTime = false;
+            importer.clipAnimations = clips;
+            importer.SaveAndReimport();
+        }
+
+        private static void ConfigureStopStepAnimator()
+        {
+            AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(CombatGirlAnimatorControllerPath);
+            if (controller == null)
+            {
+                throw new InvalidOperationException($"Missing Animator Controller: {CombatGirlAnimatorControllerPath}");
+            }
+
+            AnimatorState stopStepState = FindAnimatorState(controller, "StopStep");
+            if (stopStepState == null)
+            {
+                throw new InvalidOperationException($"{controller.name} is missing StopStep state.");
+            }
+
+            stopStepState.speed = 1.45f;
+
+            for (int i = 0; i < controller.layers.Length; i++)
+            {
+                AnimatorStateMachine stateMachine = controller.layers[i].stateMachine;
+                ConfigureStopStepTransitions(stateMachine.anyStateTransitions);
+
+                ChildAnimatorState[] states = stateMachine.states;
+                for (int j = 0; j < states.Length; j++)
+                {
+                    if (states[j].state != null)
+                    {
+                        ConfigureStopStepTransitions(states[j].state.transitions);
+                    }
+                }
+            }
+
+            EditorUtility.SetDirty(controller);
+        }
+
+        private static void ConfigureStopStepTransitions(AnimatorStateTransition[] transitions)
+        {
+            for (int i = 0; i < transitions.Length; i++)
+            {
+                AnimatorStateTransition transition = transitions[i];
+                if (!IsStopStepTransition(transition))
+                {
+                    continue;
+                }
+
+                transition.duration = 0.015f;
+                transition.hasExitTime = false;
+                transition.exitTime = 0f;
+                EditorUtility.SetDirty(transition);
+            }
+        }
+
+        private static bool IsStopStepTransition(AnimatorStateTransition transition)
+        {
+            if (transition == null || transition.destinationState == null || transition.destinationState.name != "StopStep")
+            {
+                return false;
+            }
+
+            AnimatorCondition[] conditions = transition.conditions;
+            for (int i = 0; i < conditions.Length; i++)
+            {
+                if (conditions[i].mode == AnimatorConditionMode.If
+                    && string.Equals(conditions[i].parameter, "StopStep", StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static T RequireObject<T>(GameObject[] roots, string label) where T : Component
@@ -402,12 +669,340 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static void ValidateAttackStep(
+            UnityEngine.Object target,
+            string propertyName,
+            int index,
+            string animationTrigger,
+            float startupSeconds,
+            float activeSeconds,
+            float recoverySeconds,
+            float inputBufferSeconds,
+            float dodgeCancelAfterSeconds,
+            float damage,
+            float hitRadius,
+            float hitDistance,
+            float hitStopSeconds)
+        {
+            SerializedProperty property = FindProperty(target, propertyName);
+            if (!property.isArray || property.arraySize <= index)
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} missing attack step {index}.");
+            }
+
+            SerializedProperty step = property.GetArrayElementAtIndex(index);
+            ValidateRelativeString(target, step, "animationTrigger", animationTrigger);
+            ValidateRelativeFloat(target, step, "startupSeconds", startupSeconds);
+            ValidateRelativeFloat(target, step, "activeSeconds", activeSeconds);
+            ValidateRelativeFloat(target, step, "recoverySeconds", recoverySeconds);
+            ValidateRelativeFloat(target, step, "inputBufferSeconds", inputBufferSeconds);
+            ValidateRelativeFloat(target, step, "dodgeCancelAfterSeconds", dodgeCancelAfterSeconds);
+            ValidateRelativeFloat(target, step, "damage", damage);
+            ValidateRelativeFloat(target, step, "hitRadius", hitRadius);
+            ValidateRelativeFloat(target, step, "hitDistance", hitDistance);
+            ValidateRelativeFloat(target, step, "hitStopSeconds", hitStopSeconds);
+        }
+
         private static void ValidateFloat(UnityEngine.Object target, string propertyName, float expected)
         {
             SerializedProperty property = FindProperty(target, propertyName);
             if (!Mathf.Approximately(property.floatValue, expected))
             {
                 throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected}, found {property.floatValue}.");
+            }
+        }
+
+        private static void SetFloat(UnityEngine.Object target, string propertyName, float value)
+        {
+            SerializedObject serializedObject = new SerializedObject(target);
+            SerializedProperty property = serializedObject.FindProperty(propertyName);
+            if (property == null)
+            {
+                throw new InvalidOperationException($"{target.name} is missing serialized property {propertyName}.");
+            }
+
+            property.floatValue = value;
+            serializedObject.ApplyModifiedProperties();
+        }
+
+        private static void ValidateString(UnityEngine.Object target, string propertyName, string expected)
+        {
+            SerializedProperty property = FindProperty(target, propertyName);
+            if (!string.Equals(property.stringValue, expected, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected}, found {property.stringValue}.");
+            }
+        }
+
+        private static void ValidateRelativeFloat(UnityEngine.Object target, SerializedProperty owner, string propertyName, float expected)
+        {
+            SerializedProperty property = owner.FindPropertyRelative(propertyName);
+            if (!Mathf.Approximately(property.floatValue, expected))
+            {
+                throw new InvalidOperationException($"{target.name}.{owner.propertyPath}.{propertyName} expected {expected}, found {property.floatValue}.");
+            }
+        }
+
+        private static void ValidateRelativeString(UnityEngine.Object target, SerializedProperty owner, string propertyName, string expected)
+        {
+            SerializedProperty property = owner.FindPropertyRelative(propertyName);
+            if (!string.Equals(property.stringValue, expected, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"{target.name}.{owner.propertyPath}.{propertyName} expected {expected}, found {property.stringValue}.");
+            }
+        }
+
+        private static void ValidateCameraCueProfile(
+            UnityEngine.Object target,
+            string profileName,
+            Vector3 localOffset,
+            float planarDirectionOffset,
+            float fieldOfViewDelta,
+            float cameraDistanceDelta,
+            float focusHeightDelta,
+            float durationSeconds,
+            float finisherScale)
+        {
+            ValidateBool(target, $"{profileName}.enabled", true);
+            ValidateVector3(target, $"{profileName}.localOffset", localOffset);
+            ValidateFloat(target, $"{profileName}.planarDirectionOffset", planarDirectionOffset);
+            ValidateFloat(target, $"{profileName}.fieldOfViewDelta", fieldOfViewDelta);
+            ValidateFloat(target, $"{profileName}.cameraDistanceDelta", cameraDistanceDelta);
+            ValidateFloat(target, $"{profileName}.focusHeightDelta", focusHeightDelta);
+            ValidateFloat(target, $"{profileName}.durationSeconds", durationSeconds);
+            ValidateFloat(target, $"{profileName}.finisherScale", finisherScale);
+        }
+
+        private static void ValidateAnimatorParameter(
+            Animator animator,
+            string parameterName,
+            AnimatorControllerParameterType expectedType)
+        {
+            AnimatorController controller = RequireAnimatorController(animator);
+            AnimatorControllerParameter[] parameters = controller.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                if (parameters[i].name == parameterName && parameters[i].type == expectedType)
+                {
+                    return;
+                }
+            }
+
+            throw new InvalidOperationException($"{controller.name} is missing {expectedType} parameter {parameterName}.");
+        }
+
+        private static void ValidateAnimatorStateMotion(Animator animator, string stateName, string expectedMotionPath)
+        {
+            AnimatorController controller = RequireAnimatorController(animator);
+            for (int i = 0; i < controller.layers.Length; i++)
+            {
+                ChildAnimatorState[] states = controller.layers[i].stateMachine.states;
+                for (int j = 0; j < states.Length; j++)
+                {
+                    AnimatorState state = states[j].state;
+                    if (state == null || state.name != stateName)
+                    {
+                        continue;
+                    }
+
+                    string motionPath = AssetDatabase.GetAssetPath(state.motion).Replace('\\', '/');
+                    if (!string.Equals(motionPath, expectedMotionPath, StringComparison.Ordinal))
+                    {
+                        throw new InvalidOperationException($"{controller.name}.{stateName} expected motion {expectedMotionPath}, found {motionPath}.");
+                    }
+
+                    return;
+                }
+            }
+
+            throw new InvalidOperationException($"{controller.name} is missing Animator state {stateName}.");
+        }
+
+        private static void ValidateAnimatorStateSpeed(Animator animator, string stateName, float expectedSpeed)
+        {
+            AnimatorController controller = RequireAnimatorController(animator);
+            AnimatorState state = FindAnimatorState(controller, stateName);
+            if (state == null)
+            {
+                throw new InvalidOperationException($"{controller.name} is missing Animator state {stateName}.");
+            }
+
+            if (!Mathf.Approximately(state.speed, expectedSpeed))
+            {
+                throw new InvalidOperationException($"{controller.name}.{stateName} expected speed {expectedSpeed}, found {state.speed}.");
+            }
+        }
+
+        private static void ValidateStopStepTransitionResponsiveness(Animator animator)
+        {
+            AnimatorController controller = RequireAnimatorController(animator);
+            int foundCount = 0;
+            for (int i = 0; i < controller.layers.Length; i++)
+            {
+                AnimatorStateMachine stateMachine = controller.layers[i].stateMachine;
+                foundCount += ValidateStopStepTransitions(controller, stateMachine.anyStateTransitions);
+
+                ChildAnimatorState[] states = stateMachine.states;
+                for (int j = 0; j < states.Length; j++)
+                {
+                    if (states[j].state != null)
+                    {
+                        foundCount += ValidateStopStepTransitions(controller, states[j].state.transitions);
+                    }
+                }
+            }
+
+            if (foundCount == 0)
+            {
+                throw new InvalidOperationException($"{controller.name} has no StopStep trigger transitions.");
+            }
+        }
+
+        private static int ValidateStopStepTransitions(AnimatorController controller, AnimatorStateTransition[] transitions)
+        {
+            int foundCount = 0;
+            for (int i = 0; i < transitions.Length; i++)
+            {
+                AnimatorStateTransition transition = transitions[i];
+                if (!IsStopStepTransition(transition))
+                {
+                    continue;
+                }
+
+                foundCount++;
+                if (transition.hasExitTime || transition.exitTime > 0f || transition.duration > 0.0151f)
+                {
+                    throw new InvalidOperationException($"{controller.name} StopStep transition must be immediate, found duration {transition.duration}, exitTime {transition.exitTime}, hasExitTime {transition.hasExitTime}.");
+                }
+            }
+
+            return foundCount;
+        }
+
+        private static void ValidateAnimatorTriggerTransition(
+            Animator animator,
+            string sourceStateName,
+            string destinationStateName,
+            string triggerName)
+        {
+            AnimatorController controller = RequireAnimatorController(animator);
+            for (int i = 0; i < controller.layers.Length; i++)
+            {
+                ChildAnimatorState[] states = controller.layers[i].stateMachine.states;
+                AnimatorState source = null;
+                AnimatorState destination = null;
+                for (int j = 0; j < states.Length; j++)
+                {
+                    AnimatorState state = states[j].state;
+                    if (state == null)
+                    {
+                        continue;
+                    }
+
+                    if (state.name == sourceStateName)
+                    {
+                        source = state;
+                    }
+                    else if (state.name == destinationStateName)
+                    {
+                        destination = state;
+                    }
+                }
+
+                if (source == null || destination == null)
+                {
+                    continue;
+                }
+
+                AnimatorStateTransition[] transitions = source.transitions;
+                for (int j = 0; j < transitions.Length; j++)
+                {
+                    AnimatorStateTransition transition = transitions[j];
+                    if (transition == null || transition.destinationState != destination)
+                    {
+                        continue;
+                    }
+
+                    AnimatorCondition[] conditions = transition.conditions;
+                    for (int k = 0; k < conditions.Length; k++)
+                    {
+                        if (conditions[k].mode == AnimatorConditionMode.If
+                            && string.Equals(conditions[k].parameter, triggerName, StringComparison.Ordinal))
+                        {
+                            return;
+                        }
+                    }
+                }
+            }
+
+            throw new InvalidOperationException($"{controller.name} is missing {sourceStateName} -> {destinationStateName} transition on trigger {triggerName}.");
+        }
+
+        private static void ValidateAnyStateTriggerTransition(Animator animator, string destinationStateName, string triggerName)
+        {
+            AnimatorController controller = RequireAnimatorController(animator);
+            for (int i = 0; i < controller.layers.Length; i++)
+            {
+                AnimatorStateTransition[] transitions = controller.layers[i].stateMachine.anyStateTransitions;
+                for (int j = 0; j < transitions.Length; j++)
+                {
+                    AnimatorStateTransition transition = transitions[j];
+                    if (transition == null
+                        || transition.destinationState == null
+                        || transition.destinationState.name != destinationStateName)
+                    {
+                        continue;
+                    }
+
+                    AnimatorCondition[] conditions = transition.conditions;
+                    for (int k = 0; k < conditions.Length; k++)
+                    {
+                        if (conditions[k].mode == AnimatorConditionMode.If
+                            && string.Equals(conditions[k].parameter, triggerName, StringComparison.Ordinal))
+                        {
+                            return;
+                        }
+                    }
+                }
+            }
+
+            throw new InvalidOperationException($"{controller.name} is missing Any State -> {destinationStateName} transition on trigger {triggerName}.");
+        }
+
+        private static AnimatorController RequireAnimatorController(Animator animator)
+        {
+            if (animator.runtimeAnimatorController is AnimatorController controller)
+            {
+                return controller;
+            }
+
+            throw new InvalidOperationException($"{animator.name} must use an AnimatorController for action-foundation validation.");
+        }
+
+        private static AnimatorState FindAnimatorState(AnimatorController controller, string stateName)
+        {
+            for (int i = 0; i < controller.layers.Length; i++)
+            {
+                ChildAnimatorState[] states = controller.layers[i].stateMachine.states;
+                for (int j = 0; j < states.Length; j++)
+                {
+                    AnimatorState state = states[j].state;
+                    if (state != null && state.name == stateName)
+                    {
+                        return state;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private static void ValidateVector3(UnityEngine.Object target, string propertyName, Vector3 expected)
+        {
+            SerializedProperty property = FindProperty(target, propertyName);
+            if ((property.vector3Value - expected).sqrMagnitude > 0.0001f)
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected}, found {property.vector3Value}.");
             }
         }
 

@@ -15,7 +15,7 @@ Build only a small combat validation slice:
 1. One playable sword character candidate.
 2. One basic sci-fi soldier enemy candidate.
 3. One inspectable test scene or combat area.
-4. Manual short basic attack chain, limited to 2-3 hits.
+4. Manual short basic attack chain, starting from 3 hits and allowed to grow to 5-7 curated hits when animation support stays readable.
 5. Dodge with short invulnerability or damage-avoidance timing.
 6. Health and hit feedback for player and enemy.
 7. Basic enemy pressure sufficient to test movement, attack, dodge, and damage.
@@ -71,7 +71,7 @@ V1 required behavior:
 
 V1 excluded behavior:
 
-- Long combo strings.
+- Long combo strings that are not supported by curated animation clips, readable timing, and cancellation rules.
 - Full character switching.
 - Parry as a baseline button.
 - Runtime-built player prefab composition.
@@ -141,7 +141,7 @@ Implement in this order:
 1. Promote or author the smallest player test prefab.
 2. Create a small game-owned combat test scene.
 3. Implement movement and facing.
-4. Implement manual basic attack 2-3 hit chain.
+4. Implement manual basic attack chain with explicit timing windows, starting from 3 hits and expanding toward 5-7 only when promoted clips support it.
 5. Implement dodge.
 6. Add health, damage, and hit feedback.
 7. Add one basic soldier enemy.
