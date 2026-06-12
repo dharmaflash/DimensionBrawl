@@ -29,6 +29,7 @@ namespace DimensionBrawl.Editor
         public const string HeavyWindupEnemyRootName = "Enemy_SciFiSoldier_HeavyWindup";
         public const string LinePressureEnemyRootName = "Enemy_SciFiSoldier_LinePressure";
         public const string FanPressureEnemyRootName = "Enemy_SciFiSoldier_FanPressure";
+        public const string TrainingDeckEnemyRootName = "Enemy_SciFiSoldier_TrainingDeck";
         private const string LegacyEnemyRootName = "Enemy_SciFiSoldier_ActionFoundation";
         private const string EnemyVisualName = "MaintenanceWorker_BasicSoldierVisual";
         private const string EnemyPlaceholderBodyName = "SciFiSoldierPlaceholderBody";
@@ -88,7 +89,8 @@ namespace DimensionBrawl.Editor
                 enemyLungePatternProfile,
                 enemyHeavyWindupPatternProfile,
                 enemyLinePressurePatternProfile,
-                enemyFanPressurePatternProfile);
+                enemyFanPressurePatternProfile,
+                enemyTrainingPatternDeck);
 
             ConfigurePlayerTargetSelector(targetSelector, playerActions.transform, playerHealth, cameraController.transform, enemyCandidates);
             ConfigureCameraTargetBridge(cameraTargetBridge, cameraController, targetSelector, playerActions.transform);
@@ -117,13 +119,15 @@ namespace DimensionBrawl.Editor
             CombatAiPatternProfile lungeStrikeProfile,
             CombatAiPatternProfile heavyWindupProfile,
             CombatAiPatternProfile linePressureProfile,
-            CombatAiPatternProfile fanPressureProfile)
+            CombatAiPatternProfile fanPressureProfile,
+            CombatAiPatternDeck trainingPatternDeck)
         {
             BasicSoldierEnemy closePunish = EnsurePatternSampleEnemy(scene, template, ClosePunishEnemyRootName);
             BasicSoldierEnemy lungeStrike = EnsurePatternSampleEnemy(scene, template, LungeStrikeEnemyRootName);
             BasicSoldierEnemy heavyWindup = EnsurePatternSampleEnemy(scene, template, HeavyWindupEnemyRootName);
             BasicSoldierEnemy linePressure = EnsurePatternSampleEnemy(scene, template, LinePressureEnemyRootName);
             BasicSoldierEnemy fanPressure = EnsurePatternSampleEnemy(scene, template, FanPressureEnemyRootName);
+            BasicSoldierEnemy trainingDeck = EnsurePatternSampleEnemy(scene, template, TrainingDeckEnemyRootName);
 
             ConfigurePatternSampleEnemy(
                 closePunish,
@@ -175,6 +179,17 @@ namespace DimensionBrawl.Editor
                 playerHealth,
                 cameraController,
                 "FanPressure");
+            ConfigurePatternSampleEnemy(
+                trainingDeck,
+                TrainingDeckEnemyRootName,
+                "TrainingDeck",
+                closePunishProfile,
+                trainingPatternDeck,
+                new Vector3(-4.6f, 0f, 7.2f),
+                player,
+                playerHealth,
+                cameraController,
+                "TrainingDeck");
 
             return new[]
             {
@@ -182,7 +197,8 @@ namespace DimensionBrawl.Editor
                 RequireComponent<CombatHealth>(lungeStrike.gameObject, $"{LungeStrikeEnemyRootName} health"),
                 RequireComponent<CombatHealth>(heavyWindup.gameObject, $"{HeavyWindupEnemyRootName} health"),
                 RequireComponent<CombatHealth>(linePressure.gameObject, $"{LinePressureEnemyRootName} health"),
-                RequireComponent<CombatHealth>(fanPressure.gameObject, $"{FanPressureEnemyRootName} health")
+                RequireComponent<CombatHealth>(fanPressure.gameObject, $"{FanPressureEnemyRootName} health"),
+                RequireComponent<CombatHealth>(trainingDeck.gameObject, $"{TrainingDeckEnemyRootName} health")
             };
         }
 
@@ -207,6 +223,31 @@ namespace DimensionBrawl.Editor
             string rootName,
             string patternId,
             CombatAiPatternProfile patternProfile,
+            Vector3 position,
+            Transform player,
+            CombatHealth playerHealth,
+            ActionCameraController cameraController,
+            string childNameSuffix)
+        {
+            ConfigurePatternSampleEnemy(
+                soldier,
+                rootName,
+                patternId,
+                patternProfile,
+                null,
+                position,
+                player,
+                playerHealth,
+                cameraController,
+                childNameSuffix);
+        }
+
+        private static void ConfigurePatternSampleEnemy(
+            BasicSoldierEnemy soldier,
+            string rootName,
+            string patternId,
+            CombatAiPatternProfile patternProfile,
+            CombatAiPatternDeck patternDeck,
             Vector3 position,
             Transform player,
             CombatHealth playerHealth,
@@ -259,6 +300,7 @@ namespace DimensionBrawl.Editor
                 soldier,
                 patternId,
                 patternProfile,
+                patternDeck,
                 targetSensor,
                 player,
                 playerHealth,
@@ -288,6 +330,7 @@ namespace DimensionBrawl.Editor
             BasicSoldierEnemy soldier,
             string patternId,
             CombatAiPatternProfile patternProfile,
+            CombatAiPatternDeck patternDeck,
             CombatTargetSensor targetSensor,
             Transform player,
             CombatHealth playerHealth,
@@ -300,7 +343,7 @@ namespace DimensionBrawl.Editor
             SerializedObject serializedObject = new SerializedObject(soldier);
             serializedObject.Update();
             SetObjectReference(serializedObject, "patternProfile", patternProfile);
-            SetObjectReference(serializedObject, "patternDeck", null);
+            SetObjectReference(serializedObject, "patternDeck", patternDeck);
             SetString(serializedObject, "patternId", patternId);
             SetObjectReference(serializedObject, "targetSensor", targetSensor);
             SetObjectReference(serializedObject, "target", player);

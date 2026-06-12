@@ -100,6 +100,8 @@ namespace DimensionBrawl.Enemies
 
         public CombatAiPatternProfile PatternProfile => patternProfile;
         public CombatAiPatternDeck PatternDeck => patternDeck;
+        public bool HasPatternDeck => patternDeck != null;
+        public int ActivePatternDeckIndex => activePatternDeckIndex;
         public CombatHealth SelfHealth => selfHealth;
         public CombatAiPatternState CurrentPatternState => currentPatternState;
         public string ActorTypeId => patternProfile != null ? patternProfile.ActorTypeId : enemyTypeId;
@@ -154,6 +156,18 @@ namespace DimensionBrawl.Enemies
             patternDeck = deck;
             patternDeckLastUseTimes = Array.Empty<float>();
             activePatternDeckIndex = -1;
+        }
+
+        public bool TryGetActivePatternDeckEntry(out CombatAiPatternDeckEntry entry)
+        {
+            if (patternDeck == null || activePatternDeckIndex < 0 || activePatternDeckIndex >= patternDeck.EntryCount)
+            {
+                entry = default;
+                return false;
+            }
+
+            entry = patternDeck.GetEntry(activePatternDeckIndex);
+            return true;
         }
 
         private void Awake()
