@@ -329,6 +329,68 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(closePunish.transform, cameraController.Threat, "Camera bridge should feed the selected readable threat into the camera bias target.");
         }
 
+        [UnityTest]
+        public IEnumerator BasicAttackSoftAimsTowardAuthoredTargetInsidePocket()
+        {
+            PlayerMovementController movement = RequireObject<PlayerMovementController>();
+            PlayerActionController actions = RequireObject<PlayerActionController>();
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            BasicSoldierEnemy closePunish = RequireNamedRootComponent<BasicSoldierEnemy>(ClosePunishEnemyRootName);
+            BasicSoldierEnemy lungeStrike = RequireNamedRootComponent<BasicSoldierEnemy>(LungeStrikeEnemyRootName);
+            BasicSoldierEnemy heavyWindup = RequireNamedRootComponent<BasicSoldierEnemy>(HeavyWindupEnemyRootName);
+
+            closePunish.enabled = false;
+            lungeStrike.enabled = false;
+            heavyWindup.enabled = false;
+            movement.SetMoveInput(Vector2.zero);
+            movement.transform.position = Vector3.zero;
+            movement.transform.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
+            closePunish.transform.position = Vector3.right * 3f;
+            lungeStrike.transform.position = Vector3.forward * 18f;
+            heavyWindup.transform.position = Vector3.back * 18f;
+            Physics.SyncTransforms();
+            targetSelector.RefreshTarget();
+            yield return null;
+
+            float enemyStartHealth = closePunish.SelfHealth.CurrentHealth;
+            actions.QueueBasicAttack();
+            yield return null;
+
+            Assert.Greater(
+                Vector3.Dot(actions.LastAttackDirection.normalized, Vector3.right),
+                0.95f,
+                "Basic attack should choose the authored soft-lock target direction even when it is outside melee reach.");
+            Assert.Greater(
+                Vector3.Dot(movement.FacingDirection.normalized, Vector3.right),
+                0.95f,
+                "Attack-facing requests should turn the player toward the soft target without camera-owned lock-on.");
+
+            yield return new WaitForSeconds(0.45f);
+
+            Assert.AreEqual(
+                enemyStartHealth,
+                closePunish.SelfHealth.CurrentHealth,
+                0.001f,
+                "Soft attack aim should not grant free damage when the target is outside the melee hit sphere.");
+
+            yield return new WaitForSeconds(0.3f);
+
+            movement.transform.position = Vector3.zero;
+            movement.transform.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
+            closePunish.transform.position = Vector3.right * 1.25f;
+            Physics.SyncTransforms();
+            targetSelector.RefreshTarget();
+            yield return null;
+
+            actions.QueueBasicAttack();
+            yield return new WaitForSeconds(0.4f);
+
+            Assert.Less(
+                closePunish.SelfHealth.CurrentHealth,
+                enemyStartHealth,
+                "The same soft attack direction should hit once the authored target is inside the melee pocket.");
+        }
+
         [Test]
         public void BasicSoldierPatternProfilesUseSharedAiPatternContract()
         {

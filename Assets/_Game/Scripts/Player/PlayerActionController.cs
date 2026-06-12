@@ -107,6 +107,11 @@ namespace DimensionBrawl.Player
         [Tooltip("Starts the next combo hit part-way through recovery when queued. Keeps beat spacing inside the collected 0.28-0.55s range.")]
         [SerializeField, Range(0f, 1f)] private float comboChainRecoveryRatio = 0.45f;
 
+        [Header("Attack Aim")]
+        [Tooltip("Holds soft target-facing through startup/active frames without turning basic attack into hard lock-on.")]
+        [SerializeField, Min(0f)] private float attackFacingHoldPaddingSeconds = 0.06f;
+        [SerializeField] private bool snapBasicAttackFacing = true;
+
         [Header("Dodge")]
         [Tooltip("Uses player_dodge_default totalDuration from collected combat feel data.")]
         [SerializeField] private float dodgeDurationSeconds = 0.56f;
@@ -134,10 +139,12 @@ namespace DimensionBrawl.Player
         private bool enabledDodgeAction;
         private bool dodgeFeedbackActive;
         private bool nextAttackQueued;
+        private Vector3 currentAttackDirection = Vector3.forward;
 
         public PlayerActionProfile ActionProfile => actionProfile;
         public bool IsDodging => state == PlayerActionState.Dodging && actionTimer < ActiveDodgeDurationSeconds;
         public Vector3 LastDodgeDirection { get; private set; } = Vector3.forward;
+        public Vector3 LastAttackDirection { get; private set; } = Vector3.forward;
 
         public event Action<int> BasicAttackStarted;
         public event Action<int> BasicAttackHit;
@@ -153,6 +160,8 @@ namespace DimensionBrawl.Player
         private float ActiveComboResetSeconds => actionProfile != null ? actionProfile.ComboResetSeconds : comboResetSeconds;
         private float ActiveComboQueueOpenAfterSeconds => actionProfile != null ? actionProfile.ComboQueueOpenAfterSeconds : comboQueueOpenAfterSeconds;
         private float ActiveComboChainRecoveryRatio => actionProfile != null ? actionProfile.ComboChainRecoveryRatio : comboChainRecoveryRatio;
+        private float ActiveAttackFacingHoldPaddingSeconds => actionProfile != null ? actionProfile.AttackFacingHoldPaddingSeconds : attackFacingHoldPaddingSeconds;
+        private bool ActiveSnapBasicAttackFacing => actionProfile != null ? actionProfile.SnapBasicAttackFacing : snapBasicAttackFacing;
         private float ActiveDodgeDurationSeconds => actionProfile != null ? actionProfile.DodgeDurationSeconds : dodgeDurationSeconds;
         private float ActiveDodgeInvulnerableFromSeconds => actionProfile != null ? actionProfile.DodgeInvulnerableFromSeconds : dodgeInvulnerableFromSeconds;
         private float ActiveDodgeInvulnerableToSeconds => actionProfile != null ? actionProfile.DodgeInvulnerableToSeconds : dodgeInvulnerableToSeconds;
@@ -262,7 +271,17 @@ namespace DimensionBrawl.Player
             attackHasHit = false;
             attackBufferTimer = 0f;
             nextAttackQueued = false;
-            TriggerAnimator(CurrentAttackStep().animationTrigger);
+            PlayerActionProfile.AttackStep step = CurrentAttackStep();
+            currentAttackDirection = ResolveAttackDirection(step);
+            LastAttackDirection = currentAttackDirection;
+
+            if (movement != null)
+            {
+                float facingHoldSeconds = step.startupSeconds + step.activeSeconds + ActiveAttackFacingHoldPaddingSeconds;
+                movement.RequestFacingDirection(currentAttackDirection, facingHoldSeconds, ActiveSnapBasicAttackFacing);
+            }
+
+            TriggerAnimator(step.animationTrigger);
             BasicAttackStarted?.Invoke(comboIndex);
         }
 
@@ -312,7 +331,7 @@ namespace DimensionBrawl.Player
 
         private void TryApplyAttackHit(PlayerActionProfile.AttackStep step)
         {
-            Vector3 direction = movement != null ? movement.FacingDirection : transform.forward;
+            Vector3 direction = ResolvePlanarDirection(currentAttackDirection, movement != null ? movement.FacingDirection : transform.forward);
             Vector3 hitCenter = transform.position + Vector3.up * 1f + direction.normalized * step.hitDistance;
             int hitCount = Physics.OverlapSphereNonAlloc(hitCenter, step.hitRadius, hitBuffer, hittableLayers, QueryTriggerInteraction.Ignore);
 
@@ -346,6 +365,34 @@ namespace DimensionBrawl.Player
                     return;
                 }
             }
+        }
+
+        private Vector3 ResolveAttackDirection(PlayerActionProfile.AttackStep step)
+        {
+            Vector3 fallbackDirection = movement != null ? movement.FacingDirection : transform.forward;
+            if (targetSelector != null
+                && targetSelector.TryGetAttackAimDirection(
+                    fallbackDirection,
+                    step.hitDistance + step.hitRadius,
+                    out Vector3 targetDirection,
+                    out _))
+            {
+                return targetDirection;
+            }
+
+            return ResolvePlanarDirection(fallbackDirection, transform.forward);
+        }
+
+        private static Vector3 ResolvePlanarDirection(Vector3 direction, Vector3 fallbackDirection)
+        {
+            Vector3 planarDirection = Vector3.ProjectOnPlane(direction, Vector3.up);
+            if (planarDirection.sqrMagnitude > 0.0001f)
+            {
+                return planarDirection.normalized;
+            }
+
+            Vector3 planarFallback = Vector3.ProjectOnPlane(fallbackDirection, Vector3.up);
+            return planarFallback.sqrMagnitude > 0.0001f ? planarFallback.normalized : Vector3.forward;
         }
 
         private bool CanStartDodge()

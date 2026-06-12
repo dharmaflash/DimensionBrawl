@@ -33,6 +33,14 @@ namespace DimensionBrawl.Player
         [SerializeField, Min(0f)] private float currentTargetStickiness = 0.18f;
         [SerializeField, Range(-1f, 1f)] private float minimumReadableForwardDot = -0.35f;
 
+        [Header("Attack Assist")]
+        [Tooltip("Soft-lock pocket used only for basic-attack facing. A target outside melee range still receives no damage.")]
+        [SerializeField, Min(0f)] private float attackAimRadius = 9f;
+        [Tooltip("Default allows any candidate inside the local pocket. Raise this only if behind-the-back attack turns become unreadable.")]
+        [SerializeField, Range(-1f, 1f)] private float minimumAttackAimDot = -1f;
+        [Tooltip("Keeps basic attacks from ignoring an enemy already inside the current melee reach.")]
+        [SerializeField, Min(0f)] private float attackReachPriorityWeight = 0.8f;
+
         private CombatHealth currentTargetHealth;
         private Transform currentTarget;
         private float nextRetargetTime;
@@ -43,6 +51,7 @@ namespace DimensionBrawl.Player
         public CombatHealth CurrentTargetHealth => currentTargetHealth;
         public Transform CurrentTarget => currentTarget;
         public float SelectionRadius => selectionRadius;
+        public float AttackAimRadius => attackAimRadius;
         public int TargetCandidateCount => targetCandidates != null ? targetCandidates.Length : 0;
 
         public event Action<CombatHealth> TargetChanged;
@@ -57,6 +66,40 @@ namespace DimensionBrawl.Player
             target = currentTarget;
             targetHealth = currentTargetHealth;
             return target != null && targetHealth != null && targetHealth.IsAlive;
+        }
+
+        public bool TryGetAttackAimDirection(
+            Vector3 fallbackDirection,
+            out Vector3 direction,
+            out CombatHealth targetHealth)
+        {
+            return TryGetAttackAimDirection(fallbackDirection, 0f, out direction, out targetHealth);
+        }
+
+        public bool TryGetAttackAimDirection(
+            Vector3 fallbackDirection,
+            float preferredContactDistance,
+            out Vector3 direction,
+            out CombatHealth targetHealth)
+        {
+            Vector3 fallbackPlanarDirection = ResolvePlanarDirection(fallbackDirection, ResolvePlanarForward(SelectionOrigin));
+
+            if (ShouldRefreshTarget())
+            {
+                RefreshTarget();
+            }
+
+            targetHealth = FindBestAttackAimTarget(fallbackPlanarDirection, preferredContactDistance);
+            if (targetHealth == null)
+            {
+                direction = fallbackPlanarDirection;
+                return false;
+            }
+
+            SetCurrentTarget(targetHealth);
+            Vector3 offset = Vector3.ProjectOnPlane(targetHealth.transform.position - SelectionOrigin.position, Vector3.up);
+            direction = offset.sqrMagnitude > 0.0001f ? offset.normalized : fallbackPlanarDirection;
+            return true;
         }
 
         public bool RefreshTarget()
@@ -136,6 +179,35 @@ namespace DimensionBrawl.Player
             return bestTarget;
         }
 
+        private CombatHealth FindBestAttackAimTarget(Vector3 fallbackDirection, float preferredContactDistance)
+        {
+            if (targetCandidates == null)
+            {
+                return null;
+            }
+
+            CombatHealth bestTarget = null;
+            float bestScore = float.NegativeInfinity;
+
+            for (int i = 0; i < targetCandidates.Length; i++)
+            {
+                CombatHealth candidate = targetCandidates[i];
+                if (!IsValidTarget(candidate))
+                {
+                    continue;
+                }
+
+                float score = ScoreAttackAimCandidate(candidate, fallbackDirection, preferredContactDistance);
+                if (score > bestScore)
+                {
+                    bestTarget = candidate;
+                    bestScore = score;
+                }
+            }
+
+            return bestTarget;
+        }
+
         private float ScoreCandidate(CombatHealth candidate)
         {
             Transform origin = SelectionOrigin;
@@ -168,6 +240,49 @@ namespace DimensionBrawl.Player
             return score;
         }
 
+        private float ScoreAttackAimCandidate(
+            CombatHealth candidate,
+            Vector3 fallbackDirection,
+            float preferredContactDistance)
+        {
+            Transform origin = SelectionOrigin;
+            Vector3 offset = Vector3.ProjectOnPlane(candidate.transform.position - origin.position, Vector3.up);
+            float distance = offset.magnitude;
+            if (attackAimRadius > 0f && distance > attackAimRadius)
+            {
+                return float.NegativeInfinity;
+            }
+
+            Vector3 direction = distance > 0.0001f ? offset / distance : fallbackDirection;
+            float fallbackDot = Vector3.Dot(fallbackDirection.normalized, direction.normalized);
+            if (fallbackDot < minimumAttackAimDot)
+            {
+                return float.NegativeInfinity;
+            }
+
+            float radius = attackAimRadius > 0f ? attackAimRadius : Mathf.Max(1f, distance);
+            float distanceScore = 1f - Mathf.Clamp01(distance / radius);
+            float contactScore = preferredContactDistance > 0f && distance <= preferredContactDistance ? 1f : 0f;
+            float ownerForwardScore = ResolveForwardScore(ResolvePlanarForward(origin), direction);
+            float viewForwardScore = viewReference != null
+                ? ResolveForwardScore(ResolvePlanarForward(viewReference), direction)
+                : 0f;
+            float threatScore = ResolveThreatScore(candidate);
+
+            float score = distanceScore * distanceWeight
+                + contactScore * attackReachPriorityWeight
+                + ownerForwardScore * ownerForwardWeight
+                + viewForwardScore * viewForwardWeight
+                + threatScore * threatStateWeight;
+
+            if (candidate == currentTargetHealth)
+            {
+                score += currentTargetStickiness;
+            }
+
+            return score;
+        }
+
         private float ResolveForwardScore(Vector3 forward, Vector3 direction)
         {
             if (forward.sqrMagnitude <= 0.0001f || direction.sqrMagnitude <= 0.0001f)
@@ -177,6 +292,18 @@ namespace DimensionBrawl.Player
 
             float dot = Vector3.Dot(forward.normalized, direction.normalized);
             return Mathf.Clamp01(Mathf.InverseLerp(minimumReadableForwardDot, 1f, dot));
+        }
+
+        private static Vector3 ResolvePlanarDirection(Vector3 direction, Vector3 fallbackDirection)
+        {
+            Vector3 planarDirection = Vector3.ProjectOnPlane(direction, Vector3.up);
+            if (planarDirection.sqrMagnitude > 0.0001f)
+            {
+                return planarDirection.normalized;
+            }
+
+            Vector3 planarFallback = Vector3.ProjectOnPlane(fallbackDirection, Vector3.up);
+            return planarFallback.sqrMagnitude > 0.0001f ? planarFallback.normalized : Vector3.forward;
         }
 
         private static Vector3 ResolvePlanarForward(Transform source)

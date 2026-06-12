@@ -66,6 +66,8 @@ MonoBehaviour:
   comboResetSeconds: 0.75
   comboQueueOpenAfterSeconds: 0.1
   comboChainRecoveryRatio: 0.45
+  attackFacingHoldPaddingSeconds: 0.06
+  snapBasicAttackFacing: 1
   dodgeDurationSeconds: 0.56
   dodgeInvulnerableFromSeconds: 0.05
   dodgeInvulnerableToSeconds: 0.32

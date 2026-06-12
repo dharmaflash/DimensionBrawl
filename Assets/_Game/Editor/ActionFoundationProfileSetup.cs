@@ -307,6 +307,9 @@ namespace DimensionBrawl.Editor
             SetFloat(targetSelector, "threatStateWeight", 0.35f);
             SetFloat(targetSelector, "currentTargetStickiness", 0.18f);
             SetFloat(targetSelector, "minimumReadableForwardDot", -0.35f);
+            SetFloat(targetSelector, "attackAimRadius", 9f);
+            SetFloat(targetSelector, "minimumAttackAimDot", -1f);
+            SetFloat(targetSelector, "attackReachPriorityWeight", 0.8f);
         }
 
         private static void ConfigureCameraTargetBridge(
@@ -602,6 +605,8 @@ namespace DimensionBrawl.Editor
             SetFloat(serializedObject, "comboResetSeconds", 0.75f);
             SetFloat(serializedObject, "comboQueueOpenAfterSeconds", 0.10f);
             SetFloat(serializedObject, "comboChainRecoveryRatio", 0.45f);
+            SetFloat(serializedObject, "attackFacingHoldPaddingSeconds", 0.06f);
+            SetBool(serializedObject, "snapBasicAttackFacing", true);
             SetFloat(serializedObject, "dodgeDurationSeconds", 0.56f);
             SetFloat(serializedObject, "dodgeInvulnerableFromSeconds", 0.05f);
             SetFloat(serializedObject, "dodgeInvulnerableToSeconds", 0.32f);
@@ -919,6 +924,12 @@ namespace DimensionBrawl.Editor
         {
             SerializedProperty property = RequireProperty(serializedObject, propertyName);
             property.floatValue = value;
+        }
+
+        private static void SetBool(SerializedObject serializedObject, string propertyName, bool value)
+        {
+            SerializedProperty property = RequireProperty(serializedObject, propertyName);
+            property.boolValue = value;
         }
 
         private static void SetVector3(SerializedObject serializedObject, string propertyName, Vector3 value)

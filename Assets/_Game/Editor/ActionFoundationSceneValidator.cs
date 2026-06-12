@@ -1014,6 +1014,8 @@ namespace DimensionBrawl.Editor
             ValidateFloat(profile, "comboResetSeconds", 0.75f);
             ValidateFloat(profile, "comboQueueOpenAfterSeconds", 0.10f);
             ValidateFloat(profile, "comboChainRecoveryRatio", 0.45f);
+            ValidateFloat(profile, "attackFacingHoldPaddingSeconds", 0.06f);
+            ValidateBool(profile, "snapBasicAttackFacing", true);
             ValidateFloat(profile, "dodgeDurationSeconds", 0.56f);
             ValidateFloat(profile, "dodgeInvulnerableFromSeconds", 0.05f);
             ValidateFloat(profile, "dodgeInvulnerableToSeconds", 0.32f);
@@ -1056,6 +1058,9 @@ namespace DimensionBrawl.Editor
             ValidateFloat(targetSelector, "threatStateWeight", 0.35f);
             ValidateFloat(targetSelector, "currentTargetStickiness", 0.18f);
             ValidateFloat(targetSelector, "minimumReadableForwardDot", -0.35f);
+            ValidateFloat(targetSelector, "attackAimRadius", 9f);
+            ValidateFloat(targetSelector, "minimumAttackAimDot", -1f);
+            ValidateFloat(targetSelector, "attackReachPriorityWeight", 0.8f);
         }
 
         private static void ValidateCameraTargetBridge(

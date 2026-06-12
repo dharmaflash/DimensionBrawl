@@ -81,6 +81,8 @@ namespace DimensionBrawl.Player
         private float sharpTurnCooldownTimer;
         private Vector2 lastMoveInput;
         private Vector2 stopSettleHeldMoveInput;
+        private Vector3 requestedFacingDirection;
+        private float requestedFacingTimer;
         private bool inputWasMoving;
         private bool enabledMoveAction;
         private bool enabledLookAction;
@@ -111,6 +113,23 @@ namespace DimensionBrawl.Player
             externalPlanarVelocity = Vector3.ProjectOnPlane(velocity, Vector3.up);
             externalPlanarDuration = Mathf.Max(0f, durationSeconds);
             externalPlanarTimer = externalPlanarDuration;
+        }
+
+        public void RequestFacingDirection(Vector3 direction, float holdSeconds, bool snapImmediately)
+        {
+            Vector3 planarDirection = Vector3.ProjectOnPlane(direction, Vector3.up);
+            if (planarDirection.sqrMagnitude <= 0.0001f)
+            {
+                return;
+            }
+
+            requestedFacingDirection = planarDirection.normalized;
+            requestedFacingTimer = Mathf.Max(requestedFacingTimer, holdSeconds);
+
+            if (snapImmediately)
+            {
+                transform.rotation = Quaternion.LookRotation(requestedFacingDirection, Vector3.up);
+            }
         }
 
         public bool TryGetCurrentMoveDirection(out Vector3 direction)
@@ -296,6 +315,12 @@ namespace DimensionBrawl.Player
             Vector3 facingDirection = BuildWorldDirection(lookInput);
 
             TryRequestSharpTurn(desiredMoveDirection);
+
+            if (requestedFacingTimer > 0f)
+            {
+                requestedFacingTimer = Mathf.Max(0f, requestedFacingTimer - deltaTime);
+                facingDirection = requestedFacingDirection;
+            }
 
             if (facingDirection.sqrMagnitude <= 0f)
             {

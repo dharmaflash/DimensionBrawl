@@ -95,6 +95,10 @@ namespace DimensionBrawl.Player
         [SerializeField, Min(0f)] private float comboQueueOpenAfterSeconds = 0.10f;
         [SerializeField, Range(0f, 1f)] private float comboChainRecoveryRatio = 0.45f;
 
+        [Header("Attack Aim")]
+        [SerializeField, Min(0f)] private float attackFacingHoldPaddingSeconds = 0.06f;
+        [SerializeField] private bool snapBasicAttackFacing = true;
+
         [Header("Dodge")]
         [SerializeField] private float dodgeDurationSeconds = 0.56f;
         [SerializeField] private float dodgeInvulnerableFromSeconds = 0.05f;
@@ -111,6 +115,8 @@ namespace DimensionBrawl.Player
         public float ComboResetSeconds => comboResetSeconds;
         public float ComboQueueOpenAfterSeconds => comboQueueOpenAfterSeconds;
         public float ComboChainRecoveryRatio => comboChainRecoveryRatio;
+        public float AttackFacingHoldPaddingSeconds => attackFacingHoldPaddingSeconds;
+        public bool SnapBasicAttackFacing => snapBasicAttackFacing;
         public float DodgeDurationSeconds => dodgeDurationSeconds;
         public float DodgeInvulnerableFromSeconds => dodgeInvulnerableFromSeconds;
         public float DodgeInvulnerableToSeconds => dodgeInvulnerableToSeconds;

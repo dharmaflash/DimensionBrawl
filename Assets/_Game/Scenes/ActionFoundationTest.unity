@@ -826,6 +826,8 @@ MonoBehaviour:
   comboResetSeconds: 0.75
   comboQueueOpenAfterSeconds: 0.1
   comboChainRecoveryRatio: 0.45
+  attackFacingHoldPaddingSeconds: 0.06
+  snapBasicAttackFacing: 1
   dodgeDurationSeconds: 0.56
   dodgeInvulnerableFromSeconds: 0.05
   dodgeInvulnerableToSeconds: 0.32
@@ -935,6 +937,9 @@ MonoBehaviour:
   threatStateWeight: 0.35
   currentTargetStickiness: 0.18
   minimumReadableForwardDot: -0.35
+  attackAimRadius: 9
+  minimumAttackAimDot: -1
+  attackReachPriorityWeight: 0.8
 --- !u!1 &4100
 GameObject:
   m_ObjectHideFlags: 0
