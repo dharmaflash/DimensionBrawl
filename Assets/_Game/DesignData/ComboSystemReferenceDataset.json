@@ -1,0 +1,393 @@
+{
+  "version": 1,
+  "lastUpdatedKst": "2026-06-11",
+  "scopeGuard": {
+    "isScopeFence": false,
+    "summary": "Seed catalog for ARPG combo-system patterns: basic attack sequences, hold/branch attacks, dodge counters, assist/QTE entry, break windows, animation-state hooks, VFX/SFX, camera cues, hit-stop, and reward timing.",
+    "activeIdentity": ["position", "direction", "dodge", "summon_timing"],
+    "preserveCurrentInputBudget": true,
+    "notAManualComboPivot": true,
+    "preferredApplication": [
+      "perfect_dodge_to_empowered_basic_fire",
+      "summon_call_to_assist_entry",
+      "boss_pattern_break_to_summon_followup",
+      "auto_basic_fire_to_readable_sequence_beats"
+    ],
+    "avoid": [
+      "manual_basic_attack_spam_as_main_skill_expression",
+      "many_active_attack_skills",
+      "hard_target_selection_ui",
+      "baseline_parry_button",
+      "full_character_switching"
+    ],
+    "assetReuseBoundary": "Do not import proprietary animation clips, meshes, textures, audio, source code, or full raw tables. Use patterns, timing ranges, schemas, and cue structure as reference."
+  },
+  "sources": [
+    {
+      "id": "zzz_wiki_basic_attack",
+      "game": "Zenless Zone Zero",
+      "type": "wiki",
+      "url": "https://zenless-zone-zero.fandom.com/wiki/Basic_Attack",
+      "usefulFor": ["basic_attack_type", "basic_attack_damage", "basic_attack_daze", "button_taxonomy"]
+    },
+    {
+      "id": "zzz_wiki_dodge",
+      "game": "Zenless Zone Zero",
+      "type": "wiki",
+      "url": "https://zenless-zone-zero.fandom.com/wiki/Dodge",
+      "usefulFor": ["perfect_dodge", "dodge_counter", "dash_attack", "invulnerability", "projectile_deflect"]
+    },
+    {
+      "id": "zzz_wiki_special_attack",
+      "game": "Zenless Zone Zero",
+      "type": "wiki",
+      "url": "https://zenless-zone-zero.fandom.com/wiki/Special_Attack",
+      "usefulFor": ["ex_special", "hold_variant", "energy_activation", "invulnerability", "buff_followup"]
+    },
+    {
+      "id": "zzz_wiki_assist",
+      "game": "Zenless Zone Zero",
+      "type": "wiki",
+      "url": "https://zenless-zone-zero.fandom.com/wiki/Assist",
+      "usefulFor": ["perfect_assist", "assist_followup", "quick_assist", "basic_after_assist"]
+    },
+    {
+      "id": "zzz_wiki_chain_attack",
+      "game": "Zenless Zone Zero",
+      "type": "wiki",
+      "url": "https://zenless-zone-zero.fandom.com/wiki/Chain_Attack",
+      "usefulFor": ["daze_trigger", "chain_attack", "bangboo_chain", "ultimate", "qte_flow"]
+    },
+    {
+      "id": "zzz_data_combo",
+      "game": "Zenless Zone Zero",
+      "type": "github_data_mirror",
+      "url": "https://github.com/360NENZ/Dimbreath-ZenlessData",
+      "usefulFor": ["perfect_combo_counter", "witch_time", "camera_event", "effect_hook", "sound_hook"],
+      "observedPaths": [
+        "Data/Anbi_PerfectCombo.json",
+        "Data/Ability_WitchTime.json",
+        "Data/Billy_CameraEvent.json",
+        "Data/Anton_Attack_Nomral_Enhance_Effects.json",
+        "Data/Anton_Attack_Nomral_Enhance_Sound.json",
+        "Data/Bangboo_*_QTE*.json",
+        "Data/*AidAttack.json",
+        "Data/*ExQTE.json"
+      ]
+    },
+    {
+      "id": "pgr_wiki_combat_guide",
+      "game": "Punishing: Gray Raven",
+      "type": "wiki",
+      "url": "https://punishing-gray-raven.fandom.com/wiki/Combat_Guide",
+      "usefulFor": ["3_ping", "qte", "matrix", "matrix_ping", "swap_in_as_3_ping", "shield_shred"]
+    },
+    {
+      "id": "pgr_data_fight",
+      "game": "Punishing: Gray Raven",
+      "type": "github_data_mirror",
+      "url": "https://github.com/Kengxxiao/Punishing_GrayRaven_Tab/tree/master/table/client/fight",
+      "usefulFor": ["animator_action_taxonomy", "role_effect", "screen_effect", "fight_button_style"],
+      "observedPaths": [
+        "table/client/fight/npc/NpcAnimatorAction.tab",
+        "table/client/fight/RoleEffect.tab",
+        "table/client/fight/ScreenEffect.tab",
+        "table/client/fight/UiFightButtonDefaultStyle.tab"
+      ]
+    },
+    {
+      "id": "hi3_wiki_combat",
+      "game": "Honkai Impact 3rd",
+      "type": "wiki",
+      "url": "https://honkaiimpact3.fandom.com/wiki/Combat",
+      "usefulFor": ["basic_sequence", "evasion_cancel", "branch_attack", "charge_attack", "qte", "burst_mode", "button_replace"]
+    },
+    {
+      "id": "hi3_data_skills",
+      "game": "Honkai Impact 3rd",
+      "type": "github_data_mirror",
+      "url": "https://github.com/nairieberry/HonkaiImpactData",
+      "usefulFor": ["skill_button_name", "attack_speed_param", "subskill_param", "attack_punish"],
+      "observedPaths": [
+        "Global/ExcelOutputAsset/AvatarSkillData.json",
+        "Global/ExcelOutputAsset/AvatarSubSkillData.json",
+        "Global/ExcelOutputAsset/AvatarAttackSpeedParam.json",
+        "Global/ExcelOutputAsset/AttackPunishData.json"
+      ]
+    },
+    {
+      "id": "wuwa_wiki_combat",
+      "game": "Wuthering Waves",
+      "type": "wiki",
+      "url": "https://wutheringwaves.fandom.com/wiki/Combat",
+      "usefulFor": ["basic_variants", "heavy_attack", "mid_air_attack", "dodge_counter", "intro_outro", "echo_skill"]
+    },
+    {
+      "id": "genshin_wiki_normal_attack",
+      "game": "Genshin Impact",
+      "type": "wiki",
+      "url": "https://genshin-impact.fandom.com/wiki/Normal_Attack",
+      "usefulFor": ["normal_attack_sequence", "charged_attack", "plunging_attack", "infusion_conversion"]
+    },
+    {
+      "id": "silver_palace_polygon",
+      "game": "Silver Palace",
+      "type": "news_preview",
+      "url": "https://www.polygon.com/gaming/598703/silver-palace-rpg-trailer",
+      "usefulFor": ["dynamic_melee", "third_person_shooting", "real_time_party_switching", "bold_ui_presentation"],
+      "confidence": "low"
+    }
+  ],
+  "observedDataShapes": [
+    {
+      "id": "zzz_attack_state_camera",
+      "sourceId": "zzz_data_combo",
+      "fields": ["AnimatorStateName", "NormalizedTimeLow", "NormalizedTimeHigh", "ModifierNameList", "CameraEventModifier"],
+      "insight": "Basic attack chains can be split into start, loop, directional, and end states, each with camera modifiers.",
+      "isekaiBrawlUse": "Split auto basic fire into visible beat states while keeping input simple."
+    },
+    {
+      "id": "zzz_perfect_combo_counter",
+      "sourceId": "zzz_data_combo",
+      "fields": ["AS_PerfectComboIndex", "PerfectComboModifier_Count", "PerfectComboModifier_Reset", "Bool_PerfectCombo", "Duration"],
+      "insight": "Perfect combo can be counted/reset through animation-state entry and a short modifier window.",
+      "isekaiBrawlUse": "Use a 0.6-1.2s grace window for perfect-dodge follow-up state."
+    },
+    {
+      "id": "zzz_witch_time_reward",
+      "sourceId": "zzz_data_combo",
+      "fields": ["OnDodgeSuccess", "DurationTime", "WitchSlowDownMixin", "OnRemoved", "TriggerSoundAction"],
+      "insight": "Perfect dodge reward can be a timed state with slow-down, team modifiers, cleanup, and sound hooks.",
+      "isekaiBrawlUse": "Author perfect dodge as brief slow plus empowered basic-fire pressure, with explicit cleanup."
+    },
+    {
+      "id": "zzz_attack_sfx_vfx_hooks",
+      "sourceId": "zzz_data_combo",
+      "fields": ["ByAnimEventIDs", "FireAudio", "AudioPattern", "AttachEffect", "EffectPattern", "AttachPoint"],
+      "insight": "SFX/VFX can be bound to animation and hit events, not only input events.",
+      "isekaiBrawlUse": "Use ComboCueBundle for hits, summon entries, and ultimate impacts."
+    },
+    {
+      "id": "pgr_animator_action_taxonomy",
+      "sourceId": "pgr_data_fight",
+      "fields": ["Id", "Name", "IsTrigger"],
+      "insight": "Combat action taxonomy separates trigger actions from continuous states and includes many attack slots plus hit/stagger states.",
+      "isekaiBrawlUse": "Define ComboActionState with trigger/state distinction."
+    },
+    {
+      "id": "pgr_screen_role_effect_split",
+      "sourceId": "pgr_data_fight",
+      "fields": ["RoleEffect", "ScreenEffect", "Type", "Intensity", "FadeIn", "FadeOut", "PlayAlone"],
+      "insight": "Actor and screen effects are separate data layers.",
+      "isekaiBrawlUse": "Keep ActorEffectCue and ScreenEffectCue separate in future combat polish data."
+    },
+    {
+      "id": "hi3_attack_speed_skill_split",
+      "sourceId": "hi3_data_skills",
+      "fields": ["AvatarID", "IsFixAttackSpeed", "K1-K12", "buttonName", "iconPath", "skillId", "avatarSubSkillId", "paramBase", "paramAdd"],
+      "insight": "Attack speed, button identity, skill data, and subskill data are separate.",
+      "isekaiBrawlUse": "Do not hardwire animation speed, button UI, and damage tuning into one class."
+    },
+    {
+      "id": "hi3_attack_punish_curve",
+      "sourceId": "hi3_data_skills",
+      "fields": ["LevelDifference", "DamageReduceRate"],
+      "insight": "Combat output can be clamped through separate punish curves.",
+      "isekaiBrawlUse": "Keep future combo reward scaling separate from action timing."
+    }
+  ],
+  "mechanicFindings": [
+    {
+      "id": "basic_sequence_cancel_hierarchy",
+      "sources": ["hi3_wiki_combat", "genshin_wiki_normal_attack", "zzz_wiki_basic_attack"],
+      "finding": "Basic attacks are often sequence-based but remain cancellable by survival or high-priority verbs.",
+      "isekaiBrawlUse": "Auto basic fire should never block dodge, summon, or ultimate."
+    },
+    {
+      "id": "hold_branch_as_optional_expression",
+      "sources": ["hi3_wiki_combat", "zzz_wiki_special_attack", "genshin_wiki_normal_attack"],
+      "finding": "Hold inputs create charge/branch/heavy routes but add input complexity.",
+      "isekaiBrawlUse": "Do not add a hold attack by default; consider only after core controls are stable."
+    },
+    {
+      "id": "dodge_counter_as_main_payoff",
+      "sources": ["zzz_wiki_dodge", "wuwa_wiki_combat", "zzz_data_combo"],
+      "finding": "Perfect dodge often opens a direct counter or empowered attack route with invulnerability/readability.",
+      "isekaiBrawlUse": "Primary combo payoff should be perfect dodge into empowered basic-fire pressure."
+    },
+    {
+      "id": "assist_qte_as_summon_model",
+      "sources": ["zzz_wiki_assist", "pgr_wiki_combat_guide", "wuwa_wiki_combat"],
+      "finding": "Assist/QTE/Intro systems can add a high-impact ally action without full control handoff.",
+      "isekaiBrawlUse": "Summon call should read like assist entry, not just spawned pet logic."
+    },
+    {
+      "id": "break_chain_state",
+      "sources": ["zzz_wiki_chain_attack", "wuwa_wiki_combat", "pgr_wiki_combat_guide"],
+      "finding": "Break/daze/shield states can open high-value follow-up windows.",
+      "isekaiBrawlUse": "BossPatternBreak should open a short summon-first follow-up window."
+    },
+    {
+      "id": "temporary_empowered_basic",
+      "sources": ["hi3_wiki_combat", "zzz_data_combo", "pgr_wiki_combat_guide"],
+      "finding": "Burst/Matrix/WitchTime-like states temporarily transform normal actions.",
+      "isekaiBrawlUse": "Use short empowered sword-wave after perfect dodge, not a permanent bigger projectile."
+    }
+  ],
+  "comboPatterns": [
+    {
+      "id": "basic_sequence_beats",
+      "inputShape": "repeated_basic_or_auto_loop",
+      "function": "create_readable_rhythm",
+      "presentationData": ["state_names", "hit_frames", "swing_trails", "sfx_tiers", "stable_camera"],
+      "isekaiBrawlUse": "Give auto basic fire visible beats without manual mashing."
+    },
+    {
+      "id": "hold_branch_attack",
+      "inputShape": "hold_then_release_or_hold_during_skill",
+      "function": "heavier_or_alternate_route",
+      "presentationData": ["charge_glow", "hold_sfx", "release_flash", "recovery_length"],
+      "isekaiBrawlUse": "Candidate only if current controls need one more expressive input."
+    },
+    {
+      "id": "dodge_counter_followup",
+      "inputShape": "perfect_dodge_then_basic_or_followup",
+      "function": "read_react_payoff",
+      "presentationData": ["dodge_flash", "slow_window", "counter_vfx", "camera_snap", "invulnerability_cue"],
+      "isekaiBrawlUse": "Main candidate for perfect dodge to empowered basic-fire pressure."
+    },
+    {
+      "id": "assist_qte_entry",
+      "inputShape": "condition_trigger_then_assist_or_summon",
+      "function": "helper_entry_hit_or_buff",
+      "presentationData": ["entry_angle", "call_sfx", "summon_motion", "cleanup"],
+      "isekaiBrawlUse": "Convert summon call into stronger assist-like entry."
+    },
+    {
+      "id": "break_chain_window",
+      "inputShape": "enemy_break_then_chain_prompt",
+      "function": "reward_window_after_pressure",
+      "presentationData": ["enemy_stagger_pose", "ui_prompt", "camera_pull_push", "sfx_sting"],
+      "isekaiBrawlUse": "BossPatternBreak to SummonFollowUpPrompt."
+    },
+    {
+      "id": "temporary_empowered_basic",
+      "inputShape": "timed_state_after_trigger",
+      "function": "transforms_basic_loop_briefly",
+      "presentationData": ["color_shift", "hit_vfx_upgrade", "button_glow", "end_cue"],
+      "isekaiBrawlUse": "Post-perfect-dodge empowered sword-wave window."
+    },
+    {
+      "id": "swap_in_as_attack",
+      "inputShape": "switch_or_call_acts_as_attack",
+      "function": "entry_damage_or_buff",
+      "presentationData": ["entry_camera", "landing_vfx", "invulnerability_readability"],
+      "isekaiBrawlUse": "Use summon entry; avoid full party switching."
+    },
+    {
+      "id": "resource_shape_combo",
+      "inputShape": "resource_threshold_plus_timing",
+      "function": "converts_setup_into_payoff",
+      "presentationData": ["resource_fill", "threshold_flash", "prompt", "result"],
+      "isekaiBrawlUse": "Summon energy and boss break create clear payoff windows."
+    },
+    {
+      "id": "dash_or_move_attack",
+      "inputShape": "move_or_dash_plus_basic",
+      "function": "mobility_based_strike",
+      "presentationData": ["speed_lines", "ground_dust", "camera_lead", "target_priority"],
+      "isekaiBrawlUse": "Direction-biased auto-fire can gain a move-intent beat."
+    },
+    {
+      "id": "ultimate_impact_finisher",
+      "inputShape": "one_ultimate_button",
+      "function": "high_impact_finisher_or_safety",
+      "presentationData": ["time_stop", "camera_hold", "screen_effect", "big_sfx", "recovery"],
+      "isekaiBrawlUse": "Keep one ultimate with strong but short presentation."
+    },
+    {
+      "id": "button_replace_context",
+      "inputShape": "existing_button_changes_meaning",
+      "function": "avoid_extra_buttons",
+      "presentationData": ["icon_swap", "label", "glow", "cooldown_clarity"],
+      "isekaiBrawlUse": "Use sparingly for SummonFollowUp during break windows."
+    },
+    {
+      "id": "enemy_followup_cancel",
+      "inputShape": "enemy_reaction_after_player_defense",
+      "function": "prevents_free_loop_exploit",
+      "presentationData": ["black_or_glitch_cue", "warning", "combo_cutoff"],
+      "isekaiBrawlUse": "Boss can occasionally deny repeated follow-up loops with clear telegraph."
+    }
+  ],
+  "timingRanges": [
+    {"id": "basic_beat_spacing", "minSeconds": 0.28, "maxSeconds": 0.55},
+    {"id": "basic_hit_flash", "minSeconds": 0.04, "maxSeconds": 0.10},
+    {"id": "light_hit_stop", "minSeconds": 0.03, "maxSeconds": 0.06},
+    {"id": "heavy_branch_hit_stop", "minSeconds": 0.08, "maxSeconds": 0.14},
+    {"id": "dodge_iframe_readable_cue", "minSeconds": 0.20, "maxSeconds": 0.45},
+    {"id": "perfect_dodge_flash", "minSeconds": 0.18, "maxSeconds": 0.40},
+    {"id": "perfect_dodge_empowered_state", "minSeconds": 1.00, "maxSeconds": 4.00},
+    {"id": "counter_snap_camera", "minSeconds": 0.18, "maxSeconds": 0.45},
+    {"id": "summon_assist_entry", "minSeconds": 0.35, "maxSeconds": 0.90},
+    {"id": "break_stagger_window", "minSeconds": 2.00, "maxSeconds": 6.00},
+    {"id": "ultimate_impact_hold", "minSeconds": 0.45, "maxSeconds": 1.20},
+    {"id": "combo_reset_grace", "minSeconds": 0.60, "maxSeconds": 1.20}
+  ],
+  "minimumActionStates": [
+    "Idle",
+    "Move",
+    "BasicStart",
+    "BasicLoopA",
+    "BasicLoopB",
+    "BasicEnd",
+    "EmpoweredBasicStart",
+    "EmpoweredBasicHit",
+    "DodgeStart",
+    "DodgeSuccess",
+    "CounterWindow",
+    "SummonCallStart",
+    "SummonEntryImpact",
+    "UltimateStart",
+    "UltimateImpact",
+    "HitReact",
+    "Stagger",
+    "Break",
+    "Recover",
+    "Death"
+  ],
+  "recommendedDataContracts": [
+    {
+      "id": "ComboAction",
+      "fields": ["id", "trigger", "inputShape", "animationState", "hitFrame", "cancelInto", "locksMovementSeconds"]
+    },
+    {
+      "id": "ComboCueBundle",
+      "fields": ["id", "actionId", "vfx", "sfx", "cameraCue", "uiCue", "cleanupPolicy"]
+    },
+    {
+      "id": "ComboWindow",
+      "fields": ["id", "opensOn", "durationSeconds", "preferredAction", "fallbackAction", "uiPrompt"]
+    },
+    {
+      "id": "ComboCancelRule",
+      "fields": ["fromState", "toState", "startFrame", "endFrame", "priority", "reason"]
+    },
+    {
+      "id": "HitReactionCue",
+      "fields": ["id", "hitType", "hitStopSeconds", "screenEffect", "actorEffect", "cameraShake", "sfx"]
+    }
+  ],
+  "isekaiBrawlFirstAdopt": [
+    "PerfectDodgeFollowUpWindow",
+    "SummonAssistEntry",
+    "BossPatternBreakWindow",
+    "BasicFireBeatStates"
+  ],
+  "practicalNextExtractionTasks": [
+    "Frame-tag 10 to 20 second clips for basic sequence, perfect dodge counter, assist/QTE, break/stun chain, and ultimate.",
+    "For each clip record input, animation state, hit frame, SFX, VFX, camera, UI pulse, cancel/branch, and cleanup.",
+    "Prototype three cue bundles first: PerfectDodgeCounterWave, SummonAssistEntry, BossPatternBreakSummonFollowUp.",
+    "Do not prototype hold-branch attack until the current v1 control shell proves it can absorb one more input distinction."
+  ]
+}

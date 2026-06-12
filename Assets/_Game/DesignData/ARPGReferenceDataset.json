@@ -1,0 +1,885 @@
+{
+  "schemaVersion": 1,
+  "updatedAtKst": "2026-06-11",
+  "purpose": "Reference index for converting ARPG camera, animation, enemy AI, and VFX observations into IsekaiBrawl Story PvE design tasks.",
+  "scopeGuard": {
+    "isScopeFence": false,
+    "summary": "This dataset is a seed catalog, not a limit. Main-PC follow-up may add more ARPG games, footage studies, frame tags, community databases, GitHub datasets, official guides, and extracted schema observations.",
+    "includesButNotLimitedTo": [
+      "Punishing: Gray Raven",
+      "Honkai Impact 3rd",
+      "Zenless Zone Zero",
+      "Silver Palace",
+      "Wuthering Waves",
+      "Aether Gazer"
+    ],
+    "expandWhenUsefulFor": [
+      "camera",
+      "animation",
+      "enemy_ai",
+      "vfx",
+      "soft_lock_on",
+      "dodge_counter",
+      "guard_break",
+      "boss_phase_patterns",
+      "summon_or_assist_entry"
+    ]
+  },
+  "baselineConstraints": [
+    "Story PvE only",
+    "latest user correction treats the game as landscape / horizontal ARPG-facing",
+    "horizontal combat camera may use soft lock-on, target-relative framing, and short impact shots",
+    "summon-first combat remains a differentiator but should not block stronger ARPG mechanics",
+    "dodge counter, assist entry, melee combo beats, boss pattern phases, and stronger VFX layers are valid research candidates",
+    "old lane-first and hand-of-cards prototype assumptions should not silently return",
+    "camera motion patterns, timing windows, state graphs, observed tuning ranges, and VFX layer recipes are valid reference data",
+    "do not import proprietary meshes, textures, animation clips, audio, source code, or full raw tables as project assets"
+  ],
+  "sourceRecords": [
+    {
+      "id": "pgr_wiki_combat_guide",
+      "game": "Punishing: Gray Raven",
+      "type": "wiki",
+      "url": "https://punishing-gray-raven.fandom.com/wiki/Combat_Guide",
+      "confidence": "medium",
+      "usableFor": ["combat_mechanics", "dodge_reward", "qte_translation"],
+      "notes": "Mechanic relationship source: 3-Ping, QTE, EX Dodge, Matrix, shields, roles, energy, signature move."
+    },
+    {
+      "id": "pgr_wiki_matrix",
+      "game": "Punishing: Gray Raven",
+      "type": "wiki",
+      "url": "https://punishing-gray-raven.fandom.com/wiki/Matrix",
+      "confidence": "medium",
+      "usableFor": ["dodge_reward", "time_slow"],
+      "notes": "Matrix confirms perfect-dodge time-slow counter window."
+    },
+    {
+      "id": "pgr_github_tab",
+      "game": "Punishing: Gray Raven",
+      "type": "github_data",
+      "url": "https://github.com/Kengxxiao/Punishing_GrayRaven_Tab",
+      "confidence": "medium",
+      "usableFor": ["camera_tables", "npc_animation_actions", "enemy_affix_modules"],
+      "notes": "Archived public repo. Use schemas, action names, timing patterns, and observed ranges as reference; do not import raw tables as assets."
+    },
+    {
+      "id": "hi3_wiki_combat",
+      "game": "Honkai Impact 3rd",
+      "type": "official_wiki",
+      "url": "https://honkaiimpact3.fandom.com/wiki/Combat",
+      "confidence": "medium",
+      "usableFor": ["input_grammar", "cancel_windows", "evade_block_parry_taxonomy"],
+      "notes": "Useful for skill categories and cancel/counter grammar."
+    },
+    {
+      "id": "hi3_wiki_time_fracture",
+      "game": "Honkai Impact 3rd",
+      "type": "official_wiki",
+      "url": "https://honkaiimpact3.fandom.com/wiki/Time_Fracture",
+      "confidence": "medium",
+      "usableFor": ["time_slow", "qte_gate"],
+      "notes": "Time Fracture slows time and round timers; for IsekaiBrawl use only presentation, not timer manipulation."
+    },
+    {
+      "id": "hi3_github_data",
+      "game": "Honkai Impact 3rd",
+      "type": "github_data",
+      "url": "https://github.com/nairieberry/HonkaiImpactData",
+      "confidence": "medium",
+      "usableFor": ["monster_config_structure", "boss_tables", "effect_tables", "attack_punish_curve"],
+      "notes": "Public extracted data. Use schemas, behavior separation, and observed ranges as reference; do not import raw tables as assets."
+    },
+    {
+      "id": "zzz_wiki_daze",
+      "game": "Zenless Zone Zero",
+      "type": "official_wiki",
+      "url": "https://zenless-zone-zero.fandom.com/wiki/Daze",
+      "confidence": "high",
+      "usableFor": ["enemy_stagger_model", "relief_window_tuning"],
+      "notes": "Best public source found for enemy daze gauge, stun duration, and stun damage multiplier examples."
+    },
+    {
+      "id": "zzz_wiki_dodge",
+      "game": "Zenless Zone Zero",
+      "type": "official_wiki",
+      "url": "https://zenless-zone-zero.fandom.com/wiki/Dodge",
+      "confidence": "high",
+      "usableFor": ["dodge_reward", "counter_window", "dash_projectile_deflect"],
+      "notes": "Dodge, Perfect Dodge, Dodge Counter, dash state, projectile deflect examples."
+    },
+    {
+      "id": "zzz_wiki_chain_attack",
+      "game": "Zenless Zone Zero",
+      "type": "official_wiki",
+      "url": "https://zenless-zone-zero.fandom.com/wiki/Chain_Attack",
+      "confidence": "high",
+      "usableFor": ["assist_timing", "ultimate_invulnerability", "qte_chain_model"],
+      "notes": "Chain Attack and Ultimate invulnerability/trigger grammar."
+    },
+    {
+      "id": "zzz_github_data",
+      "game": "Zenless Zone Zero",
+      "type": "github_data",
+      "url": "https://github.com/360NENZ/Dimbreath-ZenlessData",
+      "confidence": "medium",
+      "usableFor": ["animation_state_camera_cues", "witch_time_effects", "bullet_emitters", "buff_effect_cleanup"],
+      "notes": "Public extracted data. Use camera cue structure, effect layer order, and observed timing as reference; do not import raw tables as assets."
+    },
+    {
+      "id": "silver_palace_polygon",
+      "game": "Silver Palace",
+      "type": "preview_article",
+      "url": "https://www.polygon.com/gaming/598703/silver-palace-rpg-trailer",
+      "confidence": "low",
+      "usableFor": ["market_reference", "aesthetic_reference"],
+      "notes": "Unreleased preview-level data only; no raw combat data found."
+    },
+    {
+      "id": "wuwa_wikipedia_gameplay",
+      "game": "Wuthering Waves",
+      "type": "web_encyclopedia",
+      "url": "https://en.wikipedia.org/wiki/Wuthering_Waves",
+      "confidence": "medium",
+      "usableFor": ["horizontal_arpg_camera", "intro_outro_skill_timing", "echo_summon_transform", "parry_dodge_reference", "tune_break_reference"],
+      "notes": "Useful horizontal ARPG comparison from Kuro Games. Use combat grammar and timing concepts as reference."
+    },
+    {
+      "id": "aether_gazer_fandom_main",
+      "game": "Aether Gazer",
+      "type": "wiki",
+      "url": "https://aether-gazer.fandom.com/wiki/Aether_Gazer_Wiki",
+      "confidence": "low",
+      "usableFor": ["team_action_reference", "combo_squad_modifier_framing"],
+      "notes": "Thin source, but useful as a low-confidence team-action positioning reference."
+    }
+  ],
+  "concreteSamples": {
+    "zzzDazeSamples": [
+      {
+        "enemy": "Guard Jaeger",
+        "dazeGauge": 600,
+        "stunDurationSeconds": 6.5,
+        "stunDamageMultiplierPercent": 125,
+        "source": "zzz_wiki_daze"
+      },
+      {
+        "enemy": "Rookie Jaeger",
+        "dazeGauge": 600,
+        "stunDurationSeconds": 6.5,
+        "stunDamageMultiplierPercent": 150,
+        "source": "zzz_wiki_daze"
+      },
+      {
+        "enemy": "Dead End Butcher",
+        "dazeGauge": 5991,
+        "stunDurationSeconds": 12,
+        "stunDamageMultiplierPercent": 150,
+        "source": "zzz_wiki_daze"
+      },
+      {
+        "enemy": "Dullahan",
+        "dazeGauge": 3502,
+        "stunDurationSeconds": 10,
+        "stunDamageMultiplierPercent": 150,
+        "source": "zzz_wiki_daze"
+      },
+      {
+        "enemy": "Hati",
+        "dazeGauge": 2168,
+        "stunDurationSeconds": 10,
+        "stunDamageMultiplierPercent": 200,
+        "source": "zzz_wiki_daze"
+      },
+      {
+        "enemy": "Arlaune",
+        "dazeGauge": 2335,
+        "stunDurationSeconds": 7,
+        "stunDamageMultiplierPercent": 200,
+        "source": "zzz_wiki_daze"
+      }
+    ],
+    "zzzWitchTimeDodgeStructure": {
+      "source": "zzz_github_data",
+      "samplePath": "Data/BUFF_WitchTime_Dodge.json",
+      "observedFields": [
+        "AbilitySpecials.DurationTime",
+        "OnDodgeSuccess",
+        "WitchSlowDownMixin",
+        "InvincibleBuffModifier",
+        "ProcessScreenEffectAction",
+        "InterruptScreenEffectAction"
+      ],
+      "observedDurationSeconds": 4,
+      "screenEffectLayers": [
+        "Vignette",
+        "RadialBlur",
+        "VREffects",
+        "ScreenEffects",
+        "FXFog",
+        "ColorAdjustments"
+      ],
+      "observedModifierDurations": {
+        "AbilitySpecials.DurationTime": 4,
+        "TeamEntityModifier.Duration": 30,
+        "WitchModifier.Duration": -1,
+        "InvincibleBuffModifier.Duration": -1,
+        "WitchSlowDownMixin.TotalDuration": -1
+      },
+      "isekaiTranslation": "Use named start/end effect layers and explicit cleanup. The observed 4s duration is valid reference data, but IsekaiBrawl should retune it for its own combat tempo."
+    },
+    "zzzAnimationCameraStructure": {
+      "source": "zzz_github_data",
+      "samplePath": "Data/Anton_Camera.json",
+      "observedFields": [
+        "AnimatorStateName",
+        "FrameCountLow",
+        "FrameCountHigh",
+        "NormalizedTimeLow",
+        "NormalizedTimeHigh",
+        "CameraZoomAction",
+        "CameraStretchAction",
+        "CameraOverrideTrackEndAction"
+      ],
+      "observedWindows": [
+        {
+          "animatorState": "Attack_Counter_02",
+          "frameLow": 0,
+          "frameHigh": 41,
+          "modifier": "Counter02CameraModifier",
+          "actions": ["CameraZoomAction", "CameraStretchAction"]
+        },
+        {
+          "animatorState": "Attack_Counter_02_End",
+          "frameLow": 0,
+          "frameHigh": 3,
+          "modifier": "Counter02CameraModifier",
+          "actions": ["CameraZoomEndAction", "CameraStretchEndAction"]
+        },
+        {
+          "animatorState": "Attack_BeHitAid_Enhance",
+          "frameLow": 0,
+          "frameHigh": 41,
+          "modifier": "BeHitAidEnhanceCameraModifier",
+          "actions": ["CameraZoomAction", "CameraStretchAction"]
+        },
+        {
+          "animatorState": "Attack_BeHitAid_Enhance_End",
+          "frameLow": 0,
+          "frameHigh": 3,
+          "modifier": "BeHitAidEnhanceCameraModifier",
+          "actions": ["CameraZoomEndAction", "CameraStretchEndAction"]
+        },
+        {
+          "animatorState": "SwitchIn_Attack_03",
+          "frameLow": 0,
+          "frameHigh": 20,
+          "modifier": "QTECameraModifier",
+          "actions": ["CameraZoomEndAction", "CameraStretchEndAction", "CameraOverrideTrackEndAction"]
+        },
+        {
+          "animatorState": "SwitchIn_Attack_Ex_05",
+          "frameLow": 0,
+          "frameHigh": 18,
+          "modifier": "ExQTECameraModifier",
+          "actions": ["CameraZoomEndAction", "CameraStretchEndAction", "InterruptShaderCustomAction"]
+        }
+      ],
+      "isekaiTranslation": "Trigger short camera cues from combat or animation events as additive modifiers over authored BattleCamera values. 18-41 frames is a useful observed range for counter, assist, and heavy-hit emphasis before retuning."
+    },
+    "pgrCameraParamStructure": {
+      "source": "pgr_github_tab",
+      "samplePath": "table/client/camera/CameraParam.tab",
+      "observedFields": [
+        "IsDragOrRotate",
+        "IsTweenCamera",
+        "AllowZoom",
+        "Distance",
+        "MinDistance",
+        "MaxDistance",
+        "TargetAngleX",
+        "TargetAngleY",
+        "OffsetViewportX",
+        "OffsetViewportY"
+      ],
+      "observedRows": [
+        {
+          "id": "UIdomitory",
+          "distance": 16,
+          "minDistance": 0.2,
+          "maxDistance": 50,
+          "targetAngleX": 0,
+          "targetAngleY": 0,
+          "offsetViewportX": 8.99,
+          "offsetViewportY": 0.18
+        },
+        {
+          "id": "UiRoomCharacter",
+          "distance": 3.51,
+          "minDistance": 0,
+          "maxDistance": 6,
+          "targetAngleX": 0,
+          "targetAngleY": 0,
+          "offsetViewportX": -0.24,
+          "offsetViewportY": -0.73
+        },
+        {
+          "id": "DormTest",
+          "distance": 8,
+          "minDistance": 0.2,
+          "maxDistance": 75,
+          "targetAngleX": 0.04079235,
+          "targetAngleY": 27,
+          "offsetViewportX": 0,
+          "offsetViewportY": 0
+        },
+        {
+          "id": "sushe003",
+          "distance": 65.6,
+          "minDistance": 0.2,
+          "maxDistance": 130,
+          "targetAngleX": 294.3,
+          "targetAngleY": 38,
+          "offsetViewportX": 0,
+          "offsetViewportY": 1.62
+        },
+        {
+          "id": "Room",
+          "distance": 9.5,
+          "minDistance": 9,
+          "maxDistance": 11,
+          "targetAngleX": 269.8688,
+          "targetAngleY": 22.69049,
+          "offsetViewportX": 0,
+          "offsetViewportY": 0
+        }
+      ],
+      "isekaiTranslation": "Use bounded named camera contexts or cue presets; avoid runtime scene-name camera branching."
+    },
+    "pgrNpcAnimationActions": {
+      "source": "pgr_github_tab",
+      "samplePath": "table/client/fight/npc/NpcAnimatorAction.tab",
+      "observedActionFamilies": [
+        "Stand",
+        "Run",
+        "Walk",
+        "Born",
+        "Death",
+        "Hit",
+        "Behitfly",
+        "Falldown",
+        "Standup",
+        "TurnLeft",
+        "TurnRight",
+        "Attack01-59",
+        "Move1-3",
+        "AttackQte"
+      ],
+      "observedField": "IsTrigger",
+      "isekaiTranslation": "Keep enemy and summon animation actions as a small taxonomy with explicit trigger/state semantics."
+    },
+    "pgrAffixPatterns": [
+      {
+        "pattern": "distance_haste",
+        "behavior": "movement speed increases when farther from target",
+        "v1Fit": "medium",
+        "recommendedUse": "anti-camping support enemy or boss reinforcement"
+      },
+      {
+        "pattern": "shield_cycle",
+        "behavior": "periodic shield based on max HP",
+        "v1Fit": "high",
+        "recommendedUse": "creates Break summon reason"
+      },
+      {
+        "pattern": "death_bomb",
+        "behavior": "leaves damaging bomb on death",
+        "v1Fit": "medium",
+        "recommendedUse": "creates dodge/advance timing after clear"
+      },
+      {
+        "pattern": "ally_aura",
+        "behavior": "nearby allies gain damage",
+        "v1Fit": "medium",
+        "recommendedUse": "creates target-priority reason for Arrow or Break"
+      },
+      {
+        "pattern": "retreat_or_chase_blink",
+        "behavior": "teleport depending on distance to target",
+        "v1Fit": "medium",
+        "recommendedUse": "boss/support reposition grammar"
+      },
+      {
+        "pattern": "blackhole",
+        "behavior": "periodic pull field",
+        "v1Fit": "later",
+        "recommendedUse": "area denial after readability improves"
+      }
+    ],
+    "hi3MonsterConfigStructure": {
+      "source": "hi3_github_data",
+      "samplePath": "Global/ExcelOutputAsset/MonsterConfigData.json",
+      "observedFields": [
+        "AIName",
+        "categoryName",
+        "configFile",
+        "monsterName",
+        "subTypeName",
+        "HP",
+        "attack",
+        "defense"
+      ],
+      "isekaiTranslation": "Separate enemy identity, stats, behavior package, and presentation cue data."
+    },
+    "hi3AttackPunishCurve": {
+      "source": "hi3_github_data",
+      "samplePath": "Global/ExcelOutputAsset/AttackPunishData.json",
+      "samples": [
+        { "levelDifference": 0, "damageReduceRate": 0.0 },
+        { "levelDifference": 6, "damageReduceRate": 0.0 },
+        { "levelDifference": 7, "damageReduceRate": 0.5 },
+        { "levelDifference": 8, "damageReduceRate": 0.6 },
+        { "levelDifference": 9, "damageReduceRate": 0.7 },
+        { "levelDifference": 10, "damageReduceRate": 0.8 }
+      ],
+      "isekaiTranslation": "The threshold shape is valid tuning reference. Use it only if the updated ARPG scope needs difficulty clamps or RPG scaling."
+    },
+    "pgrMatrixMechanic": {
+      "source": "pgr_wiki_combat_guide",
+      "cooldownSeconds": 15,
+      "mechanic": "perfect dodge creates Matrix time-slow and a Matrix-Ping opportunity",
+      "isekaiTranslation": "Perfect dodge can grant micro time emphasis, energy pulse, or summon-read clarity without adding new input."
+    },
+    "silverPalacePreview": {
+      "source": "silver_palace_polygon",
+      "observedClaims": [
+        "dynamic melee combat",
+        "third-person shooting elements",
+        "real-time party switching",
+        "investigation",
+        "grappling traversal",
+        "no confirmed release date or platforms in the article"
+      ],
+      "isekaiTranslation": "Market/aesthetic reference only until real combat data becomes available."
+    },
+    "wutheringWavesGameplayGrammar": {
+      "source": "wuwa_wikipedia_gameplay",
+      "observedClaims": [
+        "Intro skills trigger on combat entry or character switch-in",
+        "Outro skills trigger on combat exit or character switch-out",
+        "Echoes can briefly summon or transform characters into monsters",
+        "Traversal/combat includes aerial movement, dodges, and parries",
+        "Tune Break is described as a later feature where repeated attacks can open a special enemy state for damage and attack cancel"
+      ],
+      "isekaiTranslation": "Treat summon entry like an Intro skill, summon exit/cooldown handoff like an Outro skill, and some summons like short Echo-style manifestations."
+    },
+    "aetherGazerTeamActionNote": {
+      "source": "aether_gazer_fandom_main",
+      "observedClaims": [
+        "futuristic team-fight role-playing game",
+        "character skillset knowledge, power-ups, combos, and squad customization are emphasized",
+        "Modifiers are the core combat actors"
+      ],
+      "isekaiTranslation": "Low-confidence support for team-action framing: keep summon and helper identity visible in combat rather than hiding allies as pure stats."
+    }
+  },
+  "rawSourcePathCatalog": [
+    {
+      "game": "Zenless Zone Zero",
+      "source": "zzz_github_data",
+      "paths": ["Data/*_Camera.json", "Data/*CameraEvent.json", "Data/*CameraOverrideTrack.json"],
+      "extractNext": ["animation_state_camera_windows", "zoom_stretch_override_keys", "cue_cleanup_events"]
+    },
+    {
+      "game": "Zenless Zone Zero",
+      "source": "zzz_github_data",
+      "paths": ["Data/BUFF_WitchTime*.json", "Data/Common_WitchTime.json"],
+      "extractNext": ["dodge_reward_duration", "slow_layers", "invulnerability", "screen_effect_cleanup"]
+    },
+    {
+      "game": "Zenless Zone Zero",
+      "source": "zzz_github_data",
+      "paths": ["Data/*Bullet*.json", "Data/*BulletEmitter*.json"],
+      "extractNext": ["projectile_speed", "projectile_count", "spawn_shape", "fan_or_line_pattern"]
+    },
+    {
+      "game": "Zenless Zone Zero",
+      "source": "zzz_github_data",
+      "paths": ["Data/*EnemyCheck.json", "Data/*HitTimesManager.json"],
+      "extractNext": ["target_checks", "hit_count_gates", "enemy_condition_logic"]
+    },
+    {
+      "game": "Punishing: Gray Raven",
+      "source": "pgr_github_tab",
+      "paths": ["table/client/camera/CameraParam.tab"],
+      "extractNext": ["distance_clamps", "angle_clamps", "viewport_offsets", "axis_permissions"]
+    },
+    {
+      "game": "Punishing: Gray Raven",
+      "source": "pgr_github_tab",
+      "paths": ["table/client/fight/npc/NpcAnimatorAction.tab"],
+      "extractNext": ["action_taxonomy", "trigger_state_split"]
+    },
+    {
+      "game": "Punishing: Gray Raven",
+      "source": "pgr_github_tab",
+      "paths": ["table/client/fight/npc/NpcAffix.tab"],
+      "extractNext": ["enemy_behavior_modules", "tuning_ranges"]
+    },
+    {
+      "game": "Punishing: Gray Raven",
+      "source": "pgr_github_tab",
+      "paths": ["table/client/fight/ScreenEffect.tab", "table/client/fight/RoleEffect.tab"],
+      "extractNext": ["screen_effect_names", "role_effect_names", "event_separation"]
+    },
+    {
+      "game": "Honkai Impact 3rd",
+      "source": "hi3_github_data",
+      "paths": ["Global/ExcelOutputAsset/MonsterConfigData.json"],
+      "extractNext": ["ai_name_config_split", "monster_category", "stats", "subtype_identity"]
+    },
+    {
+      "game": "Honkai Impact 3rd",
+      "source": "hi3_github_data",
+      "paths": ["Global/ExcelOutputAsset/ExBossMonsterData.json", "Global/ExcelOutputAsset/ExbossSkillTips.json"],
+      "extractNext": ["boss_config", "boss_skill_tip_taxonomy"]
+    },
+    {
+      "game": "Honkai Impact 3rd",
+      "source": "hi3_github_data",
+      "paths": ["Global/ExcelOutputAsset/StageDetail_Monster.json", "Global/ExcelOutputAsset/StageDetail_Effect.json"],
+      "extractNext": ["encounter_spawn_composition", "stage_effect_composition"]
+    },
+    {
+      "game": "Honkai Impact 3rd",
+      "source": "hi3_github_data",
+      "paths": ["Global/ExcelOutputAsset/AvatarAttackSpeedParam.json", "Global/ExcelOutputAsset/AvatarSkillData.json", "Global/ExcelOutputAsset/AvatarSubSkillData.json"],
+      "extractNext": ["animation_speed_assumptions", "skill_categories", "subskill_structure"]
+    },
+    {
+      "game": "Honkai Impact 3rd",
+      "source": "hi3_github_data",
+      "paths": ["Global/ExcelOutputAsset/AttackPunishData.json"],
+      "extractNext": ["threshold_based_difficulty_clamp_curve"]
+    }
+  ],
+  "recommendedIsekaiPatterns": [
+    {
+      "id": "combat_camera_cue",
+      "domain": "camera",
+      "inspiredBy": ["zzz_github_data", "pgr_github_tab"],
+      "priority": "high",
+      "summary": "Add short-lived camera cues driven by combat or animation events, including horizontal ARPG soft-lock and impact framing.",
+      "implementationNotes": [
+        "Base camera should remain authored on scene BattleCamera until root docs are synced.",
+        "Cue must preserve target and threat readability.",
+        "Landscape presets can include ExplorationFollow, CombatSoftLock, BossPressure, DodgeCounter, SummonEntry, and UltimateImpact.",
+        "Cue owns cleanup for zoom, shake, stretch, and screen effects.",
+        "Avoid only persistent uncontrolled orbit that hides threats or confuses input direction."
+      ]
+    },
+    {
+      "id": "camera_pattern_library",
+      "domain": "camera",
+      "inspiredBy": ["zzz_github_data", "pgr_github_tab", "wuwa_wikipedia_gameplay"],
+      "priority": "high",
+      "summary": "Reusable horizontal ARPG camera movement patterns extracted from reference games.",
+      "patterns": [
+        {
+          "id": "CombatSoftLockFollow",
+          "measure": ["yaw_lag", "target_recenter_speed", "player_screen_offset"],
+          "use": "default landscape ARPG combat camera"
+        },
+        {
+          "id": "AttackStateZoom",
+          "measure": ["zoom_start_frame", "zoom_end_frame", "return_blend_time"],
+          "use": "heavy attacks, summon impact, counter hit"
+        },
+        {
+          "id": "CounterSnap",
+          "measure": ["snap_duration", "target_screen_position", "hit_stop_overlap"],
+          "use": "perfect dodge counter and parry reward"
+        },
+        {
+          "id": "AssistEntryPush",
+          "measure": ["camera_target_swap_timing", "entry_angle", "exit_cleanup_time"],
+          "use": "summon entry or helper strike"
+        },
+        {
+          "id": "BossPhasePullback",
+          "measure": ["pullback_distance", "boss_silhouette_hold", "player_control_lock_time"],
+          "use": "boss phase shift or pattern deck change"
+        },
+        {
+          "id": "ProjectileThreatBias",
+          "measure": ["threat_source_priority", "offscreen_warning_angle", "recenter_delay"],
+          "use": "horizontal ranged threat readability"
+        },
+        {
+          "id": "UltimateImpactHold",
+          "measure": ["pause_length", "field_of_view_delta", "screen_effect_stack"],
+          "use": "one ultimate with strong presentation"
+        }
+      ]
+    },
+    {
+      "id": "pressure_break",
+      "domain": "enemy_ai",
+      "inspiredBy": ["zzz_wiki_daze"],
+      "priority": "high",
+      "summary": "Translate enemy daze/stun into relief and punish windows suitable for horizontal ARPG combat.",
+      "implementationNotes": [
+        "Small enemy: brief interrupt.",
+        "Elite/support pressure: 2-4 second pocket shift.",
+        "Early boss: pressure-only brief interrupt, not HP kill.",
+        "Final boss: real HP kill with summons allowed to contribute.",
+        "If input scope expands, stun can enable launch, back attack, counter chain, or summon assist follow-up."
+      ]
+    },
+    {
+      "id": "enemy_pattern_deck_library",
+      "domain": "enemy_ai",
+      "inspiredBy": ["pgr_github_tab", "zzz_wiki_daze", "hi3_github_data", "wuwa_wikipedia_gameplay"],
+      "priority": "high",
+      "summary": "Implementation-facing modules for horizontal ARPG boss and elite enemy pattern decks.",
+      "modules": [
+        {
+          "id": "LinePressure",
+          "stateFlow": ["Idle", "Windup", "FireLine", "Recover"],
+          "cameraVfx": ["line_telegraph", "mild_threat_bias"],
+          "answers": ["side_dodge", "tank_screen"]
+        },
+        {
+          "id": "FanPressure",
+          "stateFlow": ["Windup", "FanShot", "Recover"],
+          "cameraVfx": ["fan_warning", "projectile_readability"],
+          "answers": ["forward_back_reposition"]
+        },
+        {
+          "id": "ClosePunish",
+          "stateFlow": ["Track", "Windup", "MeleeBurst", "Backstep"],
+          "cameraVfx": ["target_snap_on_windup"],
+          "answers": ["dodge_out", "counter_after_burst"]
+        },
+        {
+          "id": "RetreatShot",
+          "stateFlow": ["Backstep", "Aim", "Shot", "Recenter"],
+          "cameraVfx": ["boss_projectile_two_point_read"],
+          "answers": ["careful_chase", "arrow_pressure"]
+        },
+        {
+          "id": "ShieldCycle",
+          "stateFlow": ["Normal", "Shielded", "BreakStagger", "Normal"],
+          "cameraVfx": ["shield_crack", "guard_break_camera_kick"],
+          "answers": ["break_summon", "heavy_hit"]
+        },
+        {
+          "id": "AuraBuffer",
+          "stateFlow": ["Anchor", "BuffPulse", "Reposition"],
+          "cameraVfx": ["aura_ring", "priority_marker"],
+          "answers": ["arrow_focus", "focused_summon"]
+        },
+        {
+          "id": "SummonPackage",
+          "stateFlow": ["CastTell", "SpawnAdds", "CommandAdds", "Recover"],
+          "cameraVfx": ["summon_circle", "top_band_warning"],
+          "answers": ["tank", "arrow", "clear_support"]
+        },
+        {
+          "id": "DeathBomb",
+          "stateFlow": ["Death", "BombTell", "Explosion"],
+          "cameraVfx": ["ground_ring", "post_kill_warning"],
+          "answers": ["dodge_after_kill"]
+        },
+        {
+          "id": "ParryBait",
+          "stateFlow": ["HoldPose", "DelayedStrike", "Vulnerable"],
+          "cameraVfx": ["long_windup", "hit_flash"],
+          "answers": ["perfect_dodge", "counter"]
+        },
+        {
+          "id": "ArmorBreak",
+          "stateFlow": ["Guarded", "Cracked", "Stagger", "Recover"],
+          "cameraVfx": ["crack_stack_stages"],
+          "answers": ["break", "heavy", "summon_impact"]
+        },
+        {
+          "id": "Launcher",
+          "stateFlow": ["Windup", "LaunchHit", "AirThreat", "Recover"],
+          "cameraVfx": ["launch_arc_cue", "recovery_cue"],
+          "answers": ["dodge", "air_recovery_later"]
+        },
+        {
+          "id": "PhaseSwap",
+          "stateFlow": ["EndPattern", "PhaseTell", "NewDeck"],
+          "cameraVfx": ["pullback", "color_shift", "boss_silhouette"],
+          "answers": ["reset_position", "choose_summon"]
+        }
+      ]
+    },
+    {
+      "id": "affix_module_subset",
+      "domain": "enemy_ai",
+      "inspiredBy": ["pgr_github_tab"],
+      "priority": "high",
+      "summary": "Use a first-pass horizontal ARPG subset of enemy behavior modules to create summon, dodge, and counter reasons.",
+      "implementationNotes": [
+        "Start with ShieldCycle, AuraBuffer, LinePressure, DeathBomb, SummonPackage.",
+        "Add ARPG candidates when readability supports them: ParryBait, ArmorBreak, Launcher, ClosePunish, RetreatShot, PhaseSwap.",
+        "Treat invisibility, clone split, rigid body, full cage, and laser spam as watchlist modules, not permanently banned modules.",
+        "Each module should map to a likely summon answer."
+      ]
+    },
+    {
+      "id": "perfect_dodge_reward",
+      "domain": "dodge_effects",
+      "inspiredBy": ["pgr_wiki_matrix", "hi3_wiki_time_fracture", "zzz_wiki_dodge", "zzz_github_data"],
+      "priority": "medium",
+      "summary": "Reward perfect dodge with clarity and tempo, not extra controls.",
+      "implementationNotes": [
+        "Use micro time emphasis and small energy pulse.",
+        "Optionally flicker a top-band oracle hint.",
+        "Do not slow the run timer unless the broader ARPG direction explicitly adopts timer manipulation.",
+        "If input scope expands, Perfect Dodge can enable a counter hit, assist entry, or short target lock-on snap.",
+        "Do not add Matrix/orb/hand UI by default."
+      ]
+    },
+    {
+      "id": "effect_layer_cleanup",
+      "domain": "vfx",
+      "inspiredBy": ["zzz_github_data"],
+      "priority": "medium",
+      "summary": "All screen effects must have named start/end cleanup.",
+      "implementationNotes": [
+        "Use small layers: vignette, radial blur, color adjustment, screen flash.",
+        "Avoid stacking persistent full-screen effects in mobile combat.",
+        "Summon/structure success should create a visible but brief relief cue."
+      ]
+    },
+    {
+      "id": "animation_action_taxonomy",
+      "domain": "animation",
+      "inspiredBy": ["pgr_github_tab", "hi3_wiki_combat"],
+      "priority": "medium",
+      "summary": "Normalize enemy/summon animation actions around readable state and trigger semantics, then expand for ARPG combat beats.",
+      "implementationNotes": [
+        "Minimum actions: Idle, Advance, Retreat, Windup, Attack, Recover, HitReact, Stagger, Death, SummonCall.",
+        "Record cancel windows for player basic fire, dodge, ultimate, and summon call.",
+        "Add PerfectCounter, Launch, SlamImpact, GuardBreak, AssistEntry, and BossPhaseShift when the horizontal ARPG scope needs them."
+      ]
+    },
+    {
+      "id": "horizontal_soft_lock_combat",
+      "domain": "camera_input_enemy_ai",
+      "inspiredBy": ["zzz_github_data", "hi3_wiki_combat", "pgr_github_tab"],
+      "priority": "high",
+      "summary": "Support horizontal ARPG readability with soft lock-on and target-priority camera logic.",
+      "implementationNotes": [
+        "Prefer soft target assist over hard manual target selection unless the UI is deliberately redesigned.",
+        "Camera priority can rank boss, active attacker, projectile source, and current player target.",
+        "Short target snaps are allowed for dodge counter, guard break, summon impact, and ultimate.",
+        "Input direction must remain predictable after camera pivots."
+      ]
+    },
+    {
+      "id": "boss_pattern_deck",
+      "domain": "enemy_ai",
+      "inspiredBy": ["hi3_github_data", "pgr_github_tab", "zzz_wiki_daze"],
+      "priority": "high",
+      "summary": "Author bosses as phase-based pattern decks instead of one monolithic behavior.",
+      "implementationNotes": [
+        "Separate identity, stats, behavior package, telegraph, VFX, and camera cue data.",
+        "Pattern deck examples: LinePressure, ClosePunish, RetreatShot, SummonPackage, GuardBreak, PhaseShift.",
+        "Use cooldowns and recovery windows so the fight does not collapse into nonstop dodge churn.",
+        "Each phase should create a clear summon or counter timing question."
+      ]
+    },
+    {
+      "id": "arpg_hit_presentation",
+      "domain": "animation_vfx_camera",
+      "inspiredBy": ["zzz_github_data", "pgr_github_tab", "hi3_wiki_combat"],
+      "priority": "medium",
+      "summary": "Create stronger ARPG hit feel through coordinated animation, hit-stop, VFX, and camera.",
+      "implementationNotes": [
+        "Use short hit-stop for perfect dodge counter, guard break, ultimate, and heavy summon impact.",
+        "Use named VFX layers with explicit cleanup.",
+        "Avoid persistent screen clutter during normal projectile pressure.",
+        "Pair impact with enemy pose change, not only particles."
+      ]
+    },
+    {
+      "id": "vfx_layer_recipe_library",
+      "domain": "vfx",
+      "inspiredBy": ["zzz_github_data", "pgr_github_tab"],
+      "priority": "medium",
+      "summary": "Named VFX layer recipes for ARPG-readable combat events.",
+      "recipes": [
+        {
+          "id": "PerfectDodge",
+          "layers": ["silhouette_smear", "short_radial_blur", "button_pulse", "optional_color_shift"],
+          "timing": "start on dodge success; 0.15-0.35s hit-stop; optional 0.6-1.2s clarity tail",
+          "cleanup": ["interrupt_blur", "interrupt_color_shift"]
+        },
+        {
+          "id": "PerfectCounter",
+          "layers": ["target_snap", "slash_arc", "hit_spark", "enemy_pose_snap"],
+          "timing": "starts immediately after dodge window; camera returns before next threat",
+          "cleanup": ["clear_target_snap", "clear_hit_stop_flag"]
+        },
+        {
+          "id": "SummonEntry",
+          "layers": ["card_pulse", "spawn_circle", "entry_streak", "landing_dust"],
+          "timing": "entry readable within 0.2-0.5s; impact before 1s",
+          "cleanup": ["remove_spawn_circle", "remove_entry_streak"]
+        },
+        {
+          "id": "GuardBreak",
+          "layers": ["shield_crack", "burst_ring", "stagger_flash", "camera_kick"],
+          "timing": "crack stacks build over hits; break impact gets stronger cue",
+          "cleanup": ["clear_shield_layer", "leave_short_stagger_state"]
+        },
+        {
+          "id": "BossPhaseShift",
+          "layers": ["screen_desaturation_or_color_grade", "boss_aura", "camera_pullback", "phase_title_pulse"],
+          "timing": "1-2s presentation can be acceptable if control state is clear",
+          "cleanup": ["restore_color_grade", "restore_camera_preset"]
+        },
+        {
+          "id": "UltimateImpact",
+          "layers": ["fov_push", "strong_bloom_flash", "silhouette_hold", "shockwave", "final_hit_spark"],
+          "timing": "strongest cue; avoid long clutter after damage",
+          "cleanup": ["explicit_end_event_for_every_screen_layer"]
+        }
+      ]
+    }
+  ],
+  "doNotAdopt": [
+    {
+      "item": "PGR orb ping and Matrix-Ping UI",
+      "reason": "It is too specific to PGR. Translate the reward into dodge counter, energy, assist, or summon-entry timing instead."
+    },
+    {
+      "item": "Honkai character swap/QTE as direct control model",
+      "reason": "IsekaiBrawl v1 uses summons, not active party swapping."
+    },
+    {
+      "item": "ZZZ full daze/chain attack system",
+      "reason": "Use the daze/relief grammar first. Chain-like assists can be considered later if the horizontal ARPG input model expands."
+    },
+    {
+      "item": "Persistent uncontrolled free orbit camera",
+      "reason": "Short target-relative ARPG camera cues are allowed; the risk is a persistent orbit that hides threats or breaks input readability."
+    },
+    {
+      "item": "Silver Palace speculative systems",
+      "reason": "Only preview-level data was found."
+    }
+  ],
+  "nextTasks": [
+    "Draft CombatCameraCue design contract.",
+    "Draft first-pass horizontal ARPG StoryPveEnemyPatternModule list.",
+    "Draft PerfectDodgeReward design note with micro time emphasis and energy pulse.",
+    "Capture 5-10 short gameplay clips per target game and tag camera events by frame.",
+    "Prototype one horizontal ARPG camera preset: CombatSoftLockFollow + CounterSnap + UltimateImpactHold."
+  ]
+}

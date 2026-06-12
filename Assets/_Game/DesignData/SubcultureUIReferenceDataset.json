@@ -1,0 +1,435 @@
+{
+  "version": 1,
+  "lastUpdatedKst": "2026-06-11",
+  "scopeGuard": {
+    "isScopeFence": false,
+    "summary": "Seed catalog for subculture/anime game UI production patterns across login, lobby, stage select, in-game HUD, result, transition, resource, SFX, animation, and VFX composition.",
+    "includedGames": [
+      "Punishing: Gray Raven",
+      "Honkai Impact 3rd",
+      "Zenless Zone Zero",
+      "Silver Palace",
+      "Wuthering Waves",
+      "Genshin Impact",
+      "Honkai: Star Rail",
+      "Blue Archive",
+      "Arknights",
+      "GODDESS OF VICTORY: NIKKE"
+    ],
+    "notLimitedToIncludedGames": true,
+    "assetReuseBoundary": "Do not import proprietary textures, meshes, audio, animation clips, fonts, source code, or full raw tables. Use patterns, timing ranges, schemas, and cue structure as reference."
+  },
+  "sources": [
+    {
+      "id": "zzz_app_store",
+      "game": "Zenless Zone Zero",
+      "type": "official_store",
+      "url": "https://apps.apple.com/us/app/zenless-zone-zero/id1606356401",
+      "usefulFor": ["title", "lobby", "combat_hud", "music_style", "official_screenshots"]
+    },
+    {
+      "id": "zzz_data_audio_effects",
+      "game": "Zenless Zone Zero",
+      "type": "github_data_mirror",
+      "url": "https://github.com/360NENZ/Dimbreath-ZenlessData",
+      "usefulFor": ["animation_event_sfx", "effect_attach", "camera_event", "audio_resource_schema"],
+      "observedPaths": [
+        "Data/Anton_Attack_Nomral_Enhance_Sound.json",
+        "Data/Anton_Attack_Nomral_Enhance_Effects.json",
+        "Data/Anton_Camera.json",
+        "Data/Billy_CameraEvent.json",
+        "Data/AudioResourceData.json",
+        "Data/*EffectManager.json",
+        "Data/*CameraOverrideTrack.json"
+      ]
+    },
+    {
+      "id": "pgr_app_store",
+      "game": "Punishing: Gray Raven",
+      "type": "official_store",
+      "url": "https://apps.apple.com/us/app/punishing-gray-raven/id1571685286",
+      "usefulFor": ["title", "lobby", "combat_hud", "dormitory", "official_screenshots"]
+    },
+    {
+      "id": "pgr_tab_ui",
+      "game": "Punishing: Gray Raven",
+      "type": "github_data_mirror",
+      "url": "https://github.com/Kengxxiao/Punishing_GrayRaven_Tab/tree/master/table/client/ui",
+      "usefulFor": ["ui_prefab_registry", "ui_component_registry", "3d_scene_prefab_link", "cache_policy"],
+      "observedPaths": [
+        "table/client/ui/Ui.tab",
+        "table/client/ui/UiComponent.tab",
+        "table/client/ui/UiModelTransform.tab",
+        "table/client/ui/UiSceneTransform.tab"
+      ]
+    },
+    {
+      "id": "pgr_tab_lobby_loading_sound",
+      "game": "Punishing: Gray Raven",
+      "type": "github_data_mirror",
+      "url": "https://github.com/Kengxxiao/Punishing_GrayRaven_Tab/tree/master/table/client",
+      "usefulFor": ["loading_card_schema", "bgm_loop_fade_schema", "conditional_lobby_feedback"],
+      "observedPaths": [
+        "table/client/loading/Loading.tab",
+        "table/client/sound/Sound.tab",
+        "table/client/signboard/SignBoardFeedback.tab"
+      ]
+    },
+    {
+      "id": "hi3_app_store",
+      "game": "Honkai Impact 3rd",
+      "type": "official_store",
+      "url": "https://apps.apple.com/us/app/honkai-impact-3rd/id1336342304",
+      "usefulFor": ["login_bridge", "in_stage_events", "combat_hud", "cinematics", "official_screenshots"]
+    },
+    {
+      "id": "hi3_data_files",
+      "game": "Honkai Impact 3rd",
+      "type": "github_data_mirror",
+      "url": "https://github.com/nairieberry/HonkaiImpactData",
+      "usefulFor": ["lobby_file_taxonomy", "activity_panels", "stage_detail", "loading_tip", "new_feature_guide", "audio_package"],
+      "observedPaths": [
+        "Global/ExcelOutputAsset/ChatLobby*.json",
+        "Global/ExcelOutputAsset/EntryTheme*.json",
+        "Global/ExcelOutputAsset/ActivityPanel*.json",
+        "Global/ExcelOutputAsset/LoadingTipData.json",
+        "Global/ExcelOutputAsset/NewFeatureGuide.json",
+        "Global/ExcelOutputAsset/StageDetail*.json",
+        "Global/ExcelOutputAsset/AudioPackageData.json"
+      ]
+    },
+    {
+      "id": "wuwa_app_store",
+      "game": "Wuthering Waves",
+      "type": "official_store",
+      "url": "https://apps.apple.com/us/app/wuthering-waves/id6475033368",
+      "usefulFor": ["title_loading", "combat_hud", "dodge_counter", "qte", "cinematic_story_audio"]
+    },
+    {
+      "id": "genshin_app_store",
+      "game": "Genshin Impact",
+      "type": "official_store",
+      "url": "https://apps.apple.com/us/app/genshin-impact/id1517783697",
+      "usefulFor": ["open_world_hud", "time_weather_mood", "seamless_bgm", "elemental_vfx", "official_screenshots"]
+    },
+    {
+      "id": "hsr_app_store",
+      "game": "Honkai: Star Rail",
+      "type": "official_store",
+      "url": "https://apps.apple.com/us/app/honkai-star-rail/id1599719154",
+      "usefulFor": ["world_menu_shell", "party_screen", "combat_status", "cinematic_facial_expression", "score_identity"]
+    },
+    {
+      "id": "blue_archive_app_store",
+      "game": "Blue Archive",
+      "type": "official_store",
+      "url": "https://apps.apple.com/us/app/blue-archive/id1571873795",
+      "usefulFor": ["relationship_lobby", "private_chat_fantasy", "2d_3d_animation_mix", "tactical_combat_ui"]
+    },
+    {
+      "id": "arknights_app_store",
+      "game": "Arknights",
+      "type": "official_store",
+      "url": "https://apps.apple.com/us/app/arknights/id1464872022",
+      "usefulFor": ["dense_operation_ui", "base_system_ui", "strategy_screen_hierarchy", "audio_voice_identity"]
+    },
+    {
+      "id": "nikke_app_store",
+      "game": "GODDESS OF VICTORY: NIKKE",
+      "type": "official_store",
+      "url": "https://apps.apple.com/us/app/goddess-of-victory-nikke/id1585915174",
+      "usefulFor": ["customizable_lobby", "music_background_selection", "interactive_character", "battle_vfx", "burst_skill_ui"]
+    },
+    {
+      "id": "silver_palace_polygon",
+      "game": "Silver Palace",
+      "type": "news_preview",
+      "url": "https://www.polygon.com/gaming/598703/silver-palace-rpg-trailer",
+      "usefulFor": ["bold_ui_style", "gothic_victorian_theme", "detective_scene", "real_time_party_switching"]
+    }
+  ],
+  "observedDataShapes": [
+    {
+      "id": "pgr_ui_registry",
+      "sourceId": "pgr_tab_ui",
+      "fields": ["UiName", "ParentUiName", "LoadWithParent", "UiType", "UiResType", "ClassType", "PrefabUrl", "SceneUrl", "IgnoreFailure", "CacheTime"],
+      "insight": "Top-level UI screens are registered as prefabs and may reference optional 3D scene prefabs plus cache policy.",
+      "isekaiBrawlUse": "Future screen data should support screenPrefab, presentationScenePrefab, and cachePolicy."
+    },
+    {
+      "id": "pgr_ui_component_registry",
+      "sourceId": "pgr_tab_ui",
+      "fields": ["Key", "PrefabUrl"],
+      "insight": "Reusable UI components are registered separately from top-level screens.",
+      "isekaiBrawlUse": "Create reusable widgets such as CurrencyChip, StageThreatTag, RewardCard, Toast, and SummonPreview."
+    },
+    {
+      "id": "pgr_loading_card",
+      "sourceId": "pgr_tab_lobby_loading_sound",
+      "fields": ["Id", "Type", "Title", "Desc", "ImageUrl", "Weight"],
+      "insight": "Loading screens behave like weighted content decks.",
+      "isekaiBrawlUse": "Use weighted loading cards for story PvE tips, summon role hints, boss threat hints, and world flavor."
+    },
+    {
+      "id": "pgr_sound_context",
+      "sourceId": "pgr_tab_lobby_loading_sound",
+      "fields": ["Id", "SoundType", "Desc", "Path", "Volume", "FadeCrossTime", "Loop", "LoopInterval"],
+      "insight": "BGM/SFX context has volume, fade, loop, and loop interval policy.",
+      "isekaiBrawlUse": "Author BGM contexts for Title, Lobby, StageSelect, Combat, ResultWin, and ResultFail."
+    },
+    {
+      "id": "pgr_lobby_signboard_feedback",
+      "sourceId": "pgr_tab_lobby_loading_sound",
+      "fields": ["RoleId", "ConditionId", "ConditionParam", "Content", "CvId", "FaceId", "ActionId", "Duration", "Weight", "CoolTime", "ShowButton", "ShowTime"],
+      "insight": "Lobby character feedback is conditional voice, face, action, duration, weight, cooldown, and visible-button data.",
+      "isekaiBrawlUse": "Create a small LobbyGuideFeedback table for return-from-combat, new reward, summon ready, and failed-run retry states."
+    },
+    {
+      "id": "zzz_animation_bound_sfx",
+      "sourceId": "zzz_data_audio_effects",
+      "fields": ["OnHitOther", "Predicates", "ByAnimEventIDs", "ApplyModifier", "Duration", "FireAudio", "AudioPattern"],
+      "insight": "SFX can be bound to animation/combat event IDs and gated by tiny data modifiers.",
+      "isekaiBrawlUse": "Use cue bundles for perfect dodge, summon call, ultimate ready, and result reveal instead of scattered one-off audio calls."
+    },
+    {
+      "id": "zzz_animation_bound_vfx",
+      "sourceId": "zzz_data_audio_effects",
+      "fields": ["AnimatorStateName", "FrameCountLow", "FrameCountHigh", "NormalizedTimeLow", "NormalizedTimeHigh", "AttachEffect", "EffectPattern", "AttachPoint"],
+      "insight": "VFX can be attached to animation windows and explicit attach points.",
+      "isekaiBrawlUse": "Bind UI/combat UI emphasis to named events and cleanup policies."
+    },
+    {
+      "id": "hi3_feature_file_taxonomy",
+      "sourceId": "hi3_data_files",
+      "fields": ["ChatLobby*", "EntryTheme*", "ActivityPanel*", "GeneralActivity*", "LoadingTipData", "NewFeatureGuide", "StageDetail*", "AudioPackageData"],
+      "insight": "Mature subculture UI separates lobby, entry theme, activity, guide, stage, loading, and audio package concerns.",
+      "isekaiBrawlUse": "Keep login, lobby, stage select, combat HUD, and result screen ownership separate while sharing transition/audio cue contracts."
+    }
+  ],
+  "scenePatterns": [
+    {
+      "id": "title_ambient_start",
+      "scene": "login",
+      "purpose": "Brand promise, account/server/status entry, first BGM and first interaction.",
+      "layers": ["full_bleed_background_or_3d_shot", "logo", "start_prompt", "server_account_version", "tiny_utility_buttons"],
+      "cueRecipe": {
+        "motion": "slow ambient background, prompt pulse",
+        "sfx": ["soft_start_prompt_loop_optional", "tap_confirm"],
+        "vfx": ["logo_glint_optional", "fade_overlay"],
+        "bgm": "Title context, crossfade to Lobby"
+      },
+      "isekaiBrawlUse": "Quiet full-bleed title selling horizontal ARPG plus summon-first fantasy."
+    },
+    {
+      "id": "login_patch_loading_deck",
+      "scene": "login_loading",
+      "purpose": "Mask resource loading while teaching world/combat/summon hints.",
+      "layers": ["loading_art", "title", "description", "progress_bar", "resource_status"],
+      "cueRecipe": {
+        "motion": "fade between weighted cards",
+        "sfx": ["subtle_progress_tick_optional"],
+        "vfx": ["light_noise", "card_fade"],
+        "bgm": "Title or neutral loading loop"
+      },
+      "isekaiBrawlUse": "Weighted loading cards for boss pressure, summon roles, and story PvE flavor."
+    },
+    {
+      "id": "lobby_character_signboard",
+      "scene": "lobby",
+      "purpose": "Daily emotional home and conditional character response.",
+      "layers": ["character_or_summon", "top_status", "main_cta", "feature_rail", "conditional_line"],
+      "cueRecipe": {
+        "motion": "idle, greet, tap, reward, warning",
+        "sfx": ["tiny_tap", "soft_panel_open", "voice_optional"],
+        "vfx": ["small_attention_glow", "reward_sparkle_optional"],
+        "bgm": "Lobby loop"
+      },
+      "isekaiBrawlUse": "One guide heroine or summon reacts to return, reward, summon ready, and failed retry."
+    },
+    {
+      "id": "lobby_primary_cta_anchor",
+      "scene": "lobby",
+      "purpose": "Keep the main play route visible above event clutter.",
+      "layers": ["main_story_button", "event_banner", "secondary_feature_rail", "currency_strip"],
+      "cueRecipe": {
+        "motion": "main CTA idle emphasis lower than event animation",
+        "sfx": ["confirm_start", "tab_switch"],
+        "vfx": ["main_cta_glint_on_return"],
+        "bgm": "Lobby loop"
+      },
+      "isekaiBrawlUse": "Story PvE remains the strongest route from lobby."
+    },
+    {
+      "id": "stage_card_expand",
+      "scene": "stage_select",
+      "purpose": "Turn intent into a clear run.",
+      "layers": ["map_or_stage_list", "stage_card", "threat_tags", "reward_preview", "start_button"],
+      "cueRecipe": {
+        "motion": "card expand, reward glint, map pan optional",
+        "sfx": ["stage_select", "start_confirm"],
+        "vfx": ["threat_tag_flash", "reward_sparkle"],
+        "bgm": "StageSelect context"
+      },
+      "isekaiBrawlUse": "Expose boss threat and recommended summon role without card-hand language."
+    },
+    {
+      "id": "stage_to_combat_mood_bridge",
+      "scene": "stage_select_to_combat",
+      "purpose": "Carry selected stage mood into combat start.",
+      "layers": ["fade_overlay", "loading_card_optional", "combat_intro_banner"],
+      "cueRecipe": {
+        "motion": "fade and push",
+        "sfx": ["confirm_start", "combat_ready"],
+        "vfx": ["stage_color_tint", "short_screen_flash"],
+        "bgm": "StageSelect to Combat crossfade"
+      },
+      "isekaiBrawlUse": "Selected boss/stage mood should not reset abruptly at combat load."
+    },
+    {
+      "id": "combat_start_banner",
+      "scene": "in_game",
+      "purpose": "Announce encounter without blocking control too long.",
+      "layers": ["top_banner", "objective", "camera_settle", "control_visibility"],
+      "cueRecipe": {
+        "motion": "banner in/out 0.40-0.90s",
+        "sfx": ["combat_start"],
+        "vfx": ["thin_scanline_or_slash_optional"],
+        "bgm": "Combat loop"
+      },
+      "isekaiBrawlUse": "Short encounter intro compatible with immediate movement."
+    },
+    {
+      "id": "perfect_dodge_feedback_bundle",
+      "scene": "in_game_hud",
+      "purpose": "Make perfect dodge readable and rewarding without adding parry complexity.",
+      "layers": ["edge_flash", "dodge_button_pulse", "time_slow_tint", "camera_cue"],
+      "cueRecipe": {
+        "motion": "0.18-0.40s flash and cleanup",
+        "sfx": ["dodge_success", "counter_window_open"],
+        "vfx": ["afterimage", "time_slow_edge"],
+        "bgm": "duck or sidechain optional, not mandatory"
+      },
+      "isekaiBrawlUse": "Primary read-react payoff cue for current player-feel baseline."
+    },
+    {
+      "id": "summon_call_primary_pulse",
+      "scene": "in_game_hud",
+      "purpose": "Make one-slot summon call feel like the identity action.",
+      "layers": ["summon_button", "summon_card_shine", "entry_vfx", "camera_cue"],
+      "cueRecipe": {
+        "motion": "0.25-0.60s button pulse",
+        "sfx": ["summon_call", "assist_entry"],
+        "vfx": ["card_aura", "spawn_flash", "impact_optional"],
+        "bgm": "no full BGM interruption"
+      },
+      "isekaiBrawlUse": "Highest-priority combat UI identity cue."
+    },
+    {
+      "id": "ultimate_ready_sting",
+      "scene": "in_game_hud",
+      "purpose": "Signal readiness strongly once, then stay calm.",
+      "layers": ["ultimate_button", "resource_bar", "edge_glow_optional"],
+      "cueRecipe": {
+        "motion": "0.35-0.70s flare",
+        "sfx": ["ultimate_ready_sting"],
+        "vfx": ["button_flare"],
+        "bgm": "none"
+      },
+      "isekaiBrawlUse": "Avoid noisy looping ultimate-ready effects."
+    },
+    {
+      "id": "objective_toast_compact",
+      "scene": "in_game_hud",
+      "purpose": "Communicate state changes without a verbose combat log.",
+      "layers": ["top_band", "icon", "one_line_text"],
+      "cueRecipe": {
+        "motion": "short slide/fade",
+        "sfx": ["objective_update"],
+        "vfx": ["thin_highlight"],
+        "bgm": "none"
+      },
+      "isekaiBrawlUse": "Top-band oracle hint stays compact."
+    },
+    {
+      "id": "result_rank_reward_sequence",
+      "scene": "result",
+      "purpose": "Close the run with outcome, rank, reward, progression, and next action.",
+      "layers": ["outcome_title", "rank", "reward_cards", "progression", "next_buttons"],
+      "cueRecipe": {
+        "motion": "layered reveal, skip allowed",
+        "sfx": ["result_title", "rank_stamp", "reward_tick"],
+        "vfx": ["rank_flash", "reward_sparkle"],
+        "bgm": "ResultWin or ResultFail"
+      },
+      "isekaiBrawlUse": "Victory can breathe; failure prioritizes instant retry."
+    },
+    {
+      "id": "denied_action_micro_toast",
+      "scene": "any",
+      "purpose": "Explain a blocked action without opening a panel.",
+      "layers": ["button_pulse", "short_text", "tiny_icon"],
+      "cueRecipe": {
+        "motion": "0.12-0.25s shake or pulse",
+        "sfx": ["denied_soft"],
+        "vfx": ["amber_or_red_flash"],
+        "bgm": "none"
+      },
+      "isekaiBrawlUse": "Use for cooldown, not enough energy, cannot summon."
+    }
+  ],
+  "timingRanges": [
+    {"id": "button_down", "minSeconds": 0.04, "maxSeconds": 0.10},
+    {"id": "button_confirm", "minSeconds": 0.08, "maxSeconds": 0.18},
+    {"id": "tab_switch", "minSeconds": 0.12, "maxSeconds": 0.25},
+    {"id": "panel_open", "minSeconds": 0.18, "maxSeconds": 0.35},
+    {"id": "panel_close", "minSeconds": 0.12, "maxSeconds": 0.25},
+    {"id": "scene_fade", "minSeconds": 0.35, "maxSeconds": 0.80},
+    {"id": "character_lobby_reaction", "minSeconds": 1.20, "maxSeconds": 4.00},
+    {"id": "stage_card_expand", "minSeconds": 0.20, "maxSeconds": 0.45},
+    {"id": "combat_start_banner", "minSeconds": 0.40, "maxSeconds": 0.90},
+    {"id": "perfect_dodge_ui_flash", "minSeconds": 0.18, "maxSeconds": 0.40},
+    {"id": "summon_call_ui_pulse", "minSeconds": 0.25, "maxSeconds": 0.60},
+    {"id": "ultimate_ready_cue", "minSeconds": 0.35, "maxSeconds": 0.70},
+    {"id": "result_rank_reveal", "minSeconds": 0.50, "maxSeconds": 1.20},
+    {"id": "reward_countup", "minSeconds": 0.60, "maxSeconds": 1.50}
+  ],
+  "resourceTaxonomy": {
+    "screenResources": ["UIScreenPrefab", "UIPresentationScenePrefab", "UIBackgroundTexture", "UICharacterPose", "UIIconAtlas", "UIFontStyle"],
+    "motionResources": ["PanelTransition", "ButtonMotion", "CharacterMotion", "RewardMotion", "CombatHudMotion"],
+    "audioResources": ["BgmContext", "UISfx", "VoiceCue", "CombatHudSfx"],
+    "effectResources": ["UIFlash", "ParticleOverlay", "ScreenOverlay", "AttachEffect"]
+  },
+  "recommendedDataContracts": [
+    {
+      "id": "UIScreen",
+      "fields": ["id", "screenPrefab", "presentationScenePrefab", "bgmContext", "cachePolicy"]
+    },
+    {
+      "id": "UITransitionCue",
+      "fields": ["id", "from", "to", "duration", "motion", "sfx", "bgmCrossfadeMs"]
+    },
+    {
+      "id": "UICueBundle",
+      "fields": ["id", "event", "uiMotion", "sfx", "vfx", "cameraCue", "cleanupPolicy"]
+    },
+    {
+      "id": "LobbyGuideFeedback",
+      "fields": ["condition", "lineKey", "voiceKey", "motionKey", "duration", "weight", "cooldown", "visibleButtons"]
+    },
+    {
+      "id": "LoadingCard",
+      "fields": ["id", "type", "titleKey", "descKey", "image", "weight"]
+    },
+    {
+      "id": "UISoundContext",
+      "fields": ["id", "soundType", "pathOrKey", "volume", "fadeCrossTimeMs", "loop", "loopIntervalMs"]
+    }
+  ],
+  "isekaiBrawlDirection": {
+    "title": "Full-screen world/hero/summon presentation, one clear start prompt, minimal utility, BGM fade into lobby.",
+    "lobby": "Emotional home with one guide heroine or summon signboard; Story PvE is the main CTA; secondary features stay compact.",
+    "stageSelect": "Expose current run target, boss/threat, reward, and recommended summon role; retry path should skip ceremony.",
+    "inGameHud": "Landscape ARPG HUD may explore new placement but must not revive 5-card hand, lane-first input, or direct target selection.",
+    "result": "Victory reveals outcome/rank/reward/progression; failure prioritizes cause and instant retry."
+  }
+}

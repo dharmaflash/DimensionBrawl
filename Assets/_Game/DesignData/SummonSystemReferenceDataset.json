@@ -1,0 +1,892 @@
+{
+  "version": 1,
+  "lastUpdatedKst": "2026-06-11",
+  "scopeGuard": {
+    "isScopeFence": false,
+    "summary": "Seed catalog for summon, assist, QTE, companion, and field-skill integration patterns across ARPG and subculture games.",
+    "activeIdentity": [
+      "position",
+      "direction",
+      "dodge",
+      "summon_timing"
+    ],
+    "activeSummonRoster": [
+      "Break",
+      "Tank",
+      "Arrow",
+      "Heal"
+    ],
+    "inactiveReserve": [
+      "Rush",
+      "Meteor"
+    ],
+    "preferredApplication": [
+      "perfect_dodge_to_summon_assist",
+      "boss_pattern_break_to_summon_followup",
+      "structure_break_to_summon_tempo_reward",
+      "pressure_danger_to_tank_or_heal",
+      "basic_fire_beat_to_arrow_or_break",
+      "ultimate_to_summon_setup"
+    ],
+    "avoid": [
+      "random_pet_auto_battle",
+      "full_party_switching",
+      "hand_of_cards_ui",
+      "manual_target_selection_ui",
+      "many_active_skill_buttons",
+      "drag_placement_as_default_v1"
+    ],
+    "assetReuseBoundary": "Do not import proprietary animation clips, meshes, textures, audio, source code, or full raw tables. Use patterns, timing ranges, schemas, and cue relationships as reference."
+  },
+  "sources": [
+    {
+      "id": "zzz_wiki_bangboo",
+      "game": "Zenless Zone Zero",
+      "type": "wiki",
+      "url": "https://zenless-zone-zero.fandom.com/wiki/Bangboo",
+      "usefulFor": [
+        "combat_companion",
+        "active_support_skill",
+        "bangboo_chain_attack",
+        "cooldown"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "zzz_wiki_assist",
+      "game": "Zenless Zone Zero",
+      "type": "wiki",
+      "url": "https://zenless-zone-zero.fandom.com/wiki/Assist",
+      "usefulFor": [
+        "quick_assist",
+        "defensive_assist",
+        "assist_followup",
+        "invulnerable_bridge"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "zzz_wiki_chain_attack",
+      "game": "Zenless Zone Zero",
+      "type": "wiki",
+      "url": "https://zenless-zone-zero.fandom.com/wiki/Chain_Attack",
+      "usefulFor": [
+        "daze_trigger",
+        "bangboo_chain_attack",
+        "ultimate_link",
+        "qte_flow"
+      ],
+      "confidence": "high"
+    },
+    {
+      "id": "zzz_data_summon_qte",
+      "game": "Zenless Zone Zero",
+      "type": "github_data_mirror",
+      "url": "https://github.com/360NENZ/Dimbreath-ZenlessData",
+      "confidence": "medium",
+      "observedPaths": [
+        "Data/Bangboo_FightingCommon_QTE.json",
+        "Data/Ability_PerfectAssist.json",
+        "Data/Anbi_AidAttack.json",
+        "Data/Bangboo_Bagboo_BangbooQTE_AnimEvent.json",
+        "Data/Bangboo_Avocaboo_QTE.json"
+      ],
+      "usefulFor": [
+        "target_relative_spawn",
+        "qte_enter_exit_range",
+        "assist_tags",
+        "camera_cleanup",
+        "screen_effect_cleanup",
+        "projectile_helper"
+      ]
+    },
+    {
+      "id": "pgr_wiki_combat_guide",
+      "game": "Punishing: Gray Raven",
+      "type": "wiki",
+      "url": "https://punishing-gray-raven.fandom.com/wiki/Combat_Guide",
+      "confidence": "medium",
+      "usefulFor": [
+        "3_ping_to_qte",
+        "teammate_jump_out_skill",
+        "tank_shield_shred",
+        "support_healing"
+      ]
+    },
+    {
+      "id": "pgr_data_fight",
+      "game": "Punishing: Gray Raven",
+      "type": "github_data_mirror",
+      "url": "https://github.com/Kengxxiao/Punishing_GrayRaven_Tab",
+      "confidence": "medium",
+      "observedPaths": [
+        "table/client/fight/npc/NpcAnimatorAction.tab",
+        "table/client/fight/RoleEffect.tab",
+        "table/client/fight/ScreenEffect.tab",
+        "table/client/fight/UiFightButtonDefaultStyle.tab",
+        "table/share/fuben/assist/AssistCommon.tab",
+        "table/share/fuben/assist/AssistRule.tab"
+      ],
+      "usefulFor": [
+        "attack_qte_taxonomy",
+        "role_effects",
+        "screen_effects",
+        "assist_rule_tables"
+      ]
+    },
+    {
+      "id": "hi3_wiki_combat",
+      "game": "Honkai Impact 3rd",
+      "type": "wiki",
+      "url": "https://honkaiimpact3.fandom.com/wiki/Combat",
+      "confidence": "high",
+      "usefulFor": [
+        "qte_tag_in",
+        "perfect_evasion",
+        "button_replace",
+        "ultimate_iframe",
+        "timed_buffs"
+      ]
+    },
+    {
+      "id": "hi3_wiki_qte",
+      "game": "Honkai Impact 3rd",
+      "type": "wiki",
+      "url": "https://honkaiimpact3.fandom.com/wiki/QTE",
+      "confidence": "medium",
+      "usefulFor": [
+        "condition_triggered_qte",
+        "stun_float_frozen_trigger_examples"
+      ]
+    },
+    {
+      "id": "hi3_data_elf",
+      "game": "Honkai Impact 3rd",
+      "type": "github_data_mirror",
+      "url": "https://github.com/nairieberry/HonkaiImpactData",
+      "confidence": "medium",
+      "observedPaths": [
+        "Global/ExcelOutputAsset/ElfData.json",
+        "Global/ExcelOutputAsset/ElfSkillData.json",
+        "Global/ExcelOutputAsset/AvatarSkillData.json",
+        "Global/ExcelOutputAsset/AvatarSubSkillData.json"
+      ],
+      "usefulFor": [
+        "companion_cooldown",
+        "companion_sp_cost",
+        "companion_ai_name",
+        "skill_type",
+        "ui_icon_audio_model_metadata"
+      ]
+    },
+    {
+      "id": "wuwa_wiki_combat_intro_outro_echo",
+      "game": "Wuthering Waves",
+      "type": "wiki",
+      "url": "https://wutheringwaves.fandom.com/wiki/Combat",
+      "confidence": "medium",
+      "usefulFor": [
+        "perfect_dodge",
+        "vibration_strength_break",
+        "intro_outro",
+        "echo_skill"
+      ]
+    },
+    {
+      "id": "genshin_field_companions",
+      "game": "Genshin Impact",
+      "type": "wiki",
+      "url": "https://genshin-impact.fandom.com/wiki/Nightrider",
+      "confidence": "medium",
+      "observedPages": [
+        "https://genshin-impact.fandom.com/wiki/Nightrider",
+        "https://genshin-impact.fandom.com/wiki/Raphanus_Sky_Cluster",
+        "https://genshin-impact.fandom.com/wiki/Jumpy_Dumpty"
+      ],
+      "usefulFor": [
+        "persistent_companion_duration",
+        "interval_attacks",
+        "hp_threshold_heal_targeting",
+        "field_projectile",
+        "trap_mines"
+      ]
+    },
+    {
+      "id": "silver_palace_preview",
+      "game": "Silver Palace",
+      "type": "news_preview",
+      "url": "https://www.polygon.com/gaming/598703/silver-palace-rpg-trailer",
+      "confidence": "low",
+      "usefulFor": [
+        "horizontal_anime_arpg_presentation",
+        "real_time_party_switching_preview",
+        "melee_plus_third_person_shooting_preview"
+      ]
+    }
+  ],
+  "observedDataShapes": [
+    {
+      "id": "zzz_buddy_qte_entry",
+      "source": "zzz_data_summon_qte",
+      "rawShape": {
+        "mixin": "BuddyQTEMixin",
+        "bangbooQTEIndex": 10,
+        "coordsOption": "Relative",
+        "offsetReferTarget": "Target",
+        "positionOffset": {
+          "x": -1.5,
+          "y": 0.0,
+          "z": -2.0
+        },
+        "needRaycastGround": true,
+        "needOverridePosRot": true,
+        "qteEnterRange": 7,
+        "qteExitRange": 10,
+        "qteLockTargetId": "QTE_Tick_LockTarget_01",
+        "openDuration": 1.0,
+        "closeDuration": 0.1
+      },
+      "productionRead": "Assist calls need explicit opportunity windows, target-relative entry, lock target, UI/camera/input state, and cleanup.",
+      "isekaiUse": [
+        "SummonAssistEntry",
+        "target_relative_break_tank_arrow_spawn",
+        "player_or_forward_fallback_when_no_valid_target"
+      ]
+    },
+    {
+      "id": "zzz_aid_attack_tags",
+      "source": "zzz_data_summon_qte",
+      "rawShape": {
+        "mixin": "AidAttackMixin",
+        "conditionList": "AidAttackConditionList",
+        "tags": [
+          "AidAttack_Common",
+          "AidAttack_Parry_L",
+          "AidAttack_Parry_H"
+        ],
+        "closeDelayTimeExamples": [
+          0,
+          1.5
+        ],
+        "priorityExamples": [
+          1,
+          3,
+          10
+        ],
+        "switchInFadeTime": 0.05,
+        "switchOutFadeTime": 0.1,
+        "targetRange": 20,
+        "checks": [
+          "CheckIsInView",
+          "CheckTargetRangeOnlyOpenWindow",
+          "DisableInWitchTime"
+        ]
+      },
+      "productionRead": "Assist windows can be tag-driven with priorities and short close delays.",
+      "isekaiUse": [
+        "SummonOpportunityWindow.priority",
+        "PressureDanger_Tank_priority",
+        "PerfectDodge_Break_or_Arrow_window"
+      ]
+    },
+    {
+      "id": "zzz_perfect_assist_modifier",
+      "source": "zzz_data_summon_qte",
+      "rawShape": {
+        "modifier": "PerfectAssistModifier",
+        "duration": 0.1,
+        "actions": [
+          "ModifyPerfectSwitchChargeValueAction",
+          "FireEffect",
+          "ModifyMaterialPropertyAction",
+          "RemoveAbilityAction"
+        ],
+        "chargeValueAmount": 720,
+        "effectPattern": "Buff_Common_Attack",
+        "materialTag": "CommonAttackMaterial"
+      },
+      "productionRead": "A tiny reward window can feel strong if resource change, glow, and effect are clear.",
+      "isekaiUse": [
+        "short_perfect_dodge_summon_spark",
+        "summonWindowCharge",
+        "cueBundle_on_window_open"
+      ]
+    },
+    {
+      "id": "zzz_bangboo_anim_cleanup",
+      "source": "zzz_data_summon_qte",
+      "rawShape": {
+        "mixin": "AttachStateWithModifierMixin",
+        "states": [
+          {
+            "name": "SwitchIn_Attack",
+            "frames": "0-25"
+          },
+          {
+            "name": "SwitchIn_Attack_Launch",
+            "frames": "0-45"
+          }
+        ],
+        "cleanupActions": [
+          "CameraZoomEndAction",
+          "CameraStretchEndAction",
+          "CameraOverrideTrackEndAction",
+          "BangbooQTEEndAction",
+          "HandleAnimatorZoneTagsAction"
+        ],
+        "postExitGrace": 0.1
+      },
+      "productionRead": "Assist camera and UI cleanup should be tied to animation-state lifetime.",
+      "isekaiUse": [
+        "SummonCueBundle.cleanupKeys",
+        "entryState_impactState_exitState",
+        "camera_end_on_animation_state_exit"
+      ]
+    },
+    {
+      "id": "zzz_avocaboo_projectile_helper",
+      "source": "zzz_data_summon_qte",
+      "rawShape": {
+        "mixin": "BulletMixin",
+        "aliveDuration": 10,
+        "colliderType": "Sphere",
+        "sphereRadius": 0.3,
+        "hitExplodeRadius": 3,
+        "initVelocityZ": 10,
+        "targeting": "Enemy",
+        "hitActions": [
+          "AttackCameraShakeAction",
+          "FireAudio",
+          "FireEffect",
+          "TriggerAbilityAction"
+        ]
+      },
+      "productionRead": "Support helpers can still be visible projectile/field combat objects with impact actions.",
+      "isekaiUse": [
+        "Heal_projectile_or_field",
+        "Arrow_projectile_contract",
+        "visible_support_hit_feedback"
+      ]
+    },
+    {
+      "id": "pgr_3ping_qte",
+      "source": "pgr_wiki_combat_guide",
+      "rawShape": {
+        "resourceShape": "3 same-color Signal Orbs",
+        "qteTrigger": "matching teammate color flashes",
+        "qteResolution": "teammate jumps out, uses skill, leaves",
+        "roles": [
+          "Tank shield shred",
+          "Support healing/buffs",
+          "Attacker burst"
+        ]
+      },
+      "productionRead": "QTE can be resource/timing shaped without full control handoff.",
+      "isekaiUse": [
+        "4_card_cycle_as_light_resource_shape",
+        "Break_as_shield_shred",
+        "Heal_as_timed_support_call"
+      ]
+    },
+    {
+      "id": "hi3_elf_companion_data",
+      "source": "hi3_data_elf",
+      "rawShape": {
+        "fields": [
+          "ultraSkillCD",
+          "ultraSkillSPCost",
+          "attackSkillCD",
+          "AIName",
+          "selectAudio",
+          "UISoundbankName",
+          "ElfUIModelPath",
+          "IconPath",
+          "SkillType",
+          "AbilityParamBase_1"
+        ],
+        "exampleCooldowns": {
+          "attackSkillCD": 3.3,
+          "ultraSkillCD": [
+            30,
+            40
+          ],
+          "ultraSkillSPCost": [
+            50,
+            75
+          ]
+        }
+      },
+      "productionRead": "Companion identity, UI/audio/model metadata, cooldown/cost, AI name, and skill params should be separate.",
+      "isekaiUse": [
+        "SummonDefinition",
+        "SummonRoleBehavior",
+        "SummonSkillCue"
+      ]
+    },
+    {
+      "id": "genshin_yuegui_targeting",
+      "source": "genshin_field_companions",
+      "rawShape": {
+        "cooldownSeconds": 15,
+        "projectileIntervalSeconds": 1,
+        "projectileCount": 10,
+        "targetZone": {
+          "radiusMeters": 8,
+          "heightMeters": 10
+        },
+        "hpThreshold": 0.7,
+        "maxInstances": 2,
+        "targeting": [
+          "if allies above threshold, attack nearby opponent",
+          "if nearby ally at or below threshold, heal lowest HP percentage",
+          "if no opponents, can heal characters"
+        ]
+      },
+      "productionRead": "A heal companion is stronger when it has visible target logic and dual damage/heal projectiles.",
+      "isekaiUse": [
+        "Heal_hp_threshold_targeting",
+        "Heal_field_projectile_dual_use",
+        "visible_heal_decision"
+      ]
+    },
+    {
+      "id": "genshin_oz_persistent_pressure",
+      "source": "genshin_field_companions",
+      "rawShape": {
+        "durationSeconds": 10,
+        "cooldownSeconds": 25,
+        "attackIntervalSeconds": 1,
+        "repositionAvailable": true,
+        "nearbyOpponentTargeting": true
+      },
+      "productionRead": "Persistent companions need duration, interval, cooldown, relocation, and target rules.",
+      "isekaiUse": [
+        "Arrow_persistent_off_angle_pressure",
+        "duration_interval_cleanup"
+      ]
+    },
+    {
+      "id": "genshin_jumpy_dumpty_area_denial",
+      "source": "genshin_field_companions",
+      "rawShape": {
+        "charges": 2,
+        "cooldownSeconds": 20,
+        "durationSeconds": 15,
+        "behavior": [
+          "bounces_three_times",
+          "splits_into_mines",
+          "mines_explode_on_contact_or_expire"
+        ]
+      },
+      "productionRead": "Delayed traps are useful for space-making and pressure redirection.",
+      "isekaiUse": [
+        "Tank_space_maker",
+        "Break_structure_mines",
+        "pocket_control_without_target_ui"
+      ]
+    }
+  ],
+  "summonPatterns": [
+    {
+      "id": "perfect_dodge_to_summon_assist",
+      "trigger": "perfect_dodge",
+      "windowSeconds": {
+        "min": 0.5,
+        "max": 1.2
+      },
+      "eligibleRoles": [
+        "Break",
+        "Arrow",
+        "Tank"
+      ],
+      "cue": [
+        "small_slow_flash",
+        "current_summon_card_pulse",
+        "short_input_leniency",
+        "CounterSnap_or_AssistEntryPush"
+      ],
+      "risk": "Too long a window makes perfect dodge overshadow summon timing."
+    },
+    {
+      "id": "boss_break_to_summon_followup",
+      "trigger": "boss_pattern_break_or_daze_or_shield_break",
+      "windowSeconds": {
+        "min": 1.5,
+        "max": 3.0
+      },
+      "eligibleRoles": [
+        "Break",
+        "Arrow",
+        "Heal"
+      ],
+      "cue": [
+        "boss_vulnerability_marker",
+        "target_centered_impact_shot",
+        "summon_entry_as_finisher_or_setup"
+      ],
+      "risk": "Do not become full character-switch chain attack."
+    },
+    {
+      "id": "structure_break_to_summon_tempo_reward",
+      "trigger": "structure_core_or_turret_anchor_destroyed",
+      "windowSeconds": {
+        "min": 2.0,
+        "max": 4.0
+      },
+      "eligibleRoles": [
+        "Break",
+        "Tank",
+        "Arrow",
+        "Heal"
+      ],
+      "cue": [
+        "energy_refund",
+        "summon_card_armed_cue",
+        "pocket_breathing_space",
+        "camera_pullback_to_opened_path"
+      ],
+      "risk": "Immediate pressure escalation erases the reward."
+    },
+    {
+      "id": "pressure_danger_to_tank_or_heal",
+      "trigger": "hp_low_or_projectile_density_or_boss_cone_or_overextend",
+      "windowSeconds": {
+        "min": 0.0,
+        "max": 0.8
+      },
+      "eligibleRoles": [
+        "Tank",
+        "Heal"
+      ],
+      "cue": [
+        "high_priority_card_pulse",
+        "threat_line_flash",
+        "minimal_camera",
+        "control_preserved"
+      ],
+      "risk": "Tank cannot become permanent invulnerability; Heal cannot become passive regen."
+    },
+    {
+      "id": "basic_fire_beat_to_summon_bridge",
+      "trigger": "auto_basic_fire_loop_beat_boundary",
+      "windowSeconds": {
+        "min": 0.3,
+        "max": 0.8
+      },
+      "eligibleRoles": [
+        "Arrow",
+        "Break"
+      ],
+      "cue": [
+        "beat_tick",
+        "thin_reticle_flash",
+        "small_card_edge_light"
+      ],
+      "risk": "Do not add manual basic combo spam."
+    },
+    {
+      "id": "summon_exit_cleanup",
+      "trigger": "entry_state_end_or_duration_end_or_window_cancel",
+      "eligibleRoles": [
+        "Break",
+        "Tank",
+        "Arrow",
+        "Heal"
+      ],
+      "cue": [
+        "camera_end",
+        "screen_effect_interrupt",
+        "input_unmute",
+        "ui_unhide",
+        "animator_tag_remove",
+        "lock_target_fallback",
+        "audio_stop"
+      ],
+      "risk": "Missing cleanup creates sticky camera or UI bugs."
+    }
+  ],
+  "roleApplications": [
+    {
+      "role": "Break",
+      "job": "Create breakthrough by damaging shields, interrupting guard states, cracking structures, or opening boss pattern breaks.",
+      "bestCallMoments": [
+        "boss_windup_punish",
+        "structure_core_exposed",
+        "elite_armor_active",
+        "perfect_dodge_followup"
+      ],
+      "targetPriority": [
+        "structure_core",
+        "shielded_elite",
+        "boss_breakable_part",
+        "dense_enemy_cluster"
+      ],
+      "preferredDistance": "near_target_or_side_back_of_target",
+      "anchorRule": "target_relative",
+      "entryPatterns": [
+        "slam",
+        "drill",
+        "mine_burst",
+        "shield_crack_hit"
+      ],
+      "cuePackage": [
+        "sharp_hit_stop",
+        "break_flash",
+        "low_camera_shake",
+        "debris_vfx",
+        "strong_one_shot_sfx"
+      ],
+      "pocketShiftGoalSeconds": 3
+    },
+    {
+      "role": "Tank",
+      "job": "Rescue, taunt, anchor, body-block, and redirect pressure.",
+      "bestCallMoments": [
+        "player_overextended",
+        "hp_danger",
+        "boss_cone_or_projectile_density",
+        "ranged_enemies_focus_player"
+      ],
+      "targetPriority": [
+        "nearest_threat_to_player",
+        "boss_projectile_source",
+        "enemy_cluster_in_player_path"
+      ],
+      "preferredDistance": "between_player_and_threat",
+      "anchorRule": "player_threat_line",
+      "entryPatterns": [
+        "intercept_dash",
+        "shield_plant",
+        "taunt_shout",
+        "guard_wall",
+        "shockwave_push"
+      ],
+      "cuePackage": [
+        "heavy_shield_sfx",
+        "blue_steel_flash",
+        "short_camera_bump",
+        "threat_line_redirect"
+      ],
+      "pocketShiftGoalSeconds": 3
+    },
+    {
+      "role": "Arrow",
+      "job": "Off-angle pressure, priority pickoff, weak-point poke, and ranged target control.",
+      "bestCallMoments": [
+        "support_enemy_appears",
+        "boss_weak_point_exposed",
+        "perfect_dodge_window",
+        "basic_fire_beat_end"
+      ],
+      "targetPriority": [
+        "support_or_ranged_enemy",
+        "boss_weak_point",
+        "low_hp_elite",
+        "closest_hostile_in_firing_cone"
+      ],
+      "preferredDistance": "flank_or_rear_side_of_target",
+      "anchorRule": "off_angle_target_relative",
+      "entryPatterns": [
+        "side_step_volley",
+        "pierce_shot",
+        "mark_and_fire",
+        "rain_arrow"
+      ],
+      "cuePackage": [
+        "aim_line",
+        "thin_projectile_trail",
+        "crisp_hit_tick",
+        "small_impact_shake"
+      ],
+      "pocketShiftGoalSeconds": 3
+    },
+    {
+      "role": "Heal",
+      "job": "Preserve tempo through visible recovery without becoming passive regen.",
+      "bestCallMoments": [
+        "hp_threshold",
+        "after_successful_dodge",
+        "after_structure_break",
+        "before_boss_phase_burst"
+      ],
+      "targetPriority": [
+        "player_below_threshold",
+        "active_summon_or_frontline_below_threshold",
+        "enemy_if_player_safe"
+      ],
+      "preferredDistance": "near_player_or_safe_advance_path",
+      "anchorRule": "player_relative_with_safe_path_bias",
+      "entryPatterns": [
+        "projectile_heal",
+        "field_pulse",
+        "cleanse_burst",
+        "heal_and_damage_aoe"
+      ],
+      "cuePackage": [
+        "green_white_field",
+        "distinct_soft_sfx",
+        "hp_rail_response",
+        "card_response"
+      ],
+      "pocketShiftGoalSeconds": 3
+    }
+  ],
+  "timingRanges": {
+    "buttonPressFeedbackSeconds": {
+      "min": 0.08,
+      "max": 0.18
+    },
+    "entryAnticipationSeconds": {
+      "min": 0.15,
+      "max": 0.35
+    },
+    "entryImpactSeconds": {
+      "min": 0.35,
+      "max": 0.9
+    },
+    "assistCameraOverrideSeconds": {
+      "min": 0.25,
+      "max": 0.75
+    },
+    "perfectDodgeSummonWindowSeconds": {
+      "min": 0.5,
+      "max": 1.2
+    },
+    "bossBreakSummonWindowSeconds": {
+      "min": 1.5,
+      "max": 3.0
+    },
+    "structureBreakTempoWindowSeconds": {
+      "min": 2.0,
+      "max": 4.0
+    },
+    "persistentHelperDurationSeconds": {
+      "min": 3.0,
+      "max": 10.0
+    },
+    "cleanupGraceSeconds": {
+      "min": 0.05,
+      "max": 0.2
+    },
+    "pocketShiftGoalSeconds": {
+      "min": 2.0,
+      "max": 3.0
+    }
+  },
+  "recommendedDataContracts": {
+    "SummonDefinition": [
+      "id",
+      "role",
+      "displayName",
+      "iconKey",
+      "modelKey",
+      "audioBankKey",
+      "baseCooldown",
+      "energyCost",
+      "maxInstances",
+      "canRepeatInCycle"
+    ],
+    "SummonRoleBehavior": [
+      "role",
+      "targetPriority",
+      "preferredDistance",
+      "anchorRule",
+      "fallbackWhenNoTarget",
+      "pocketShiftGoalSeconds",
+      "threatResponse"
+    ],
+    "SummonOpportunityWindow": [
+      "id",
+      "trigger",
+      "duration",
+      "priority",
+      "eligibleRoles",
+      "cardCue",
+      "cameraCue",
+      "consumesOnCall",
+      "cancelConditions"
+    ],
+    "SummonAssistEntry": [
+      "id",
+      "role",
+      "entryMode",
+      "entryPosRef",
+      "entryOffset",
+      "backupPosRef",
+      "backupOffset",
+      "raycastGround",
+      "enterRange",
+      "exitRange",
+      "lockTargetMode",
+      "switchInFade",
+      "switchOutFade"
+    ],
+    "SummonCueBundle": [
+      "id",
+      "animationStates",
+      "vfxKeys",
+      "sfxKeys",
+      "cameraKeys",
+      "screenEffectKeys",
+      "inputMuteTags",
+      "uiHideTags",
+      "cleanupKeys"
+    ],
+    "SummonProjectileOrField": [
+      "id",
+      "role",
+      "duration",
+      "tickInterval",
+      "collider",
+      "movement",
+      "targeting",
+      "hitActions",
+      "expireActions",
+      "maxHitCount"
+    ]
+  },
+  "isekaiBrawlFirstAdopt": [
+    {
+      "id": "build_opportunity_window_table",
+      "why": "Solves why this summon now before adding more summon content.",
+      "firstRows": [
+        "PerfectDodge",
+        "BossPatternBreak",
+        "StructureBreak",
+        "PressureDanger"
+      ]
+    },
+    {
+      "id": "role_target_anchor_rules",
+      "why": "Break/Tank/Arrow/Heal need different target priority and anchor behavior.",
+      "roles": {
+        "Break": "breakable target, structure, shield",
+        "Tank": "player-threat line",
+        "Arrow": "support or ranged priority",
+        "Heal": "hp-threshold target choice"
+      }
+    },
+    {
+      "id": "cue_complete_summon_call",
+      "why": "Button/card pulse, entry animation, VFX/SFX, camera, hit/field effect, and cleanup must be authored together."
+    },
+    {
+      "id": "short_cinematic_budget",
+      "why": "The game needs premium action feel without stealing control or becoming full party-switch action.",
+      "ranges": {
+        "anticipation": "0.15-0.35s",
+        "entryImpact": "0.35-0.90s",
+        "pocketShift": "2-3s"
+      }
+    },
+    {
+      "id": "cleanup_data_early",
+      "why": "Camera locks, input mutes, UI hides, and screen effects need explicit end paths."
+    }
+  ],
+  "nextSmallTasks": [
+    "Draft SUMMON_COMBAT_SPEC.md with v1 data contract and naming rules.",
+    "Implement a minimal SummonOpportunityWindow table for PerfectDodge, BossPatternBreak, StructureBreak, and PressureDanger.",
+    "Prototype one cue-complete summon call for Tank or Break, including camera cleanup and target-relative entry fallback."
+  ]
+}
