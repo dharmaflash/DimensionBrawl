@@ -1,0 +1,19 @@
+﻿{
+    "name": "DimensionBrawl.PlayModeTests",
+    "rootNamespace": "DimensionBrawl.Tests",
+    "references": [
+        "DimensionBrawl.Runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false,
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ]
+}
