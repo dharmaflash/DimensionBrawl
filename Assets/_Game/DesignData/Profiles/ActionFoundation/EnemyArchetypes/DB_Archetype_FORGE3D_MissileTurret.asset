@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ffe6dede91e046543a0080437caa9d4f, type: 3}
+  m_Name: DB_Archetype_FORGE3D_MissileTurret
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatEnemyArchetypeProfile
+  archetypeId: Forge3D.MissileTurret
+  displayName: FORGE3D Missile Turret Candidate
+  archetypeKind: 1
+  participatesInActionFoundationRoleMap: 1
+  compatibleRoles:
+  - {fileID: 11400000, guid: b7b03e1c520e0ff4896a99da9ba6b68b, type: 2}
+  - {fileID: 11400000, guid: f16ba69f98a507f4ca39bed31caaa125, type: 2}
+  - {fileID: 11400000, guid: efd21f97998aeed4b88ce9379b557596, type: 2}
+  gameplayPrefab: {fileID: 0}
+  visualPrefab: {fileID: 0}
+  requiresDedicatedPrefabPromotion: 1
+  candidateForFutureSummonAiReuse: 0
+  sourceCandidate: 'FORGE3D Sci-Fi Effects URP package: TURRET_BASE_Mobile_LOD0 +
+    TURRET_BARREL_HeavyMissle_Mobile_LOD0 + missile_02/missile_03/missile_04 prefabs.'
+  promotionPlan: Promote missile turret parts and one projectile/VFX chain only after
+    fixed-turret gameplay is accepted.
+  usageNotes: Pressure-rescue or priority-target candidate; it remains data-only
+    until a turret prefab is authored.

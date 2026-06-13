@@ -38,6 +38,7 @@ namespace DimensionBrawl.Tests
         private const string CombatVfxCueProfilePath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_CombatVfxCues_ActionFoundation.asset";
         private const string CombatVfxPrefabRootPath = "Assets/_Game/Art/VFX/CombatCues/Prefabs/";
         private const string EnemyRoleRootPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyRoles";
+        private const string EnemyArchetypeRootPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyArchetypes";
         private const string PlayerVisualName = "CombatGirlSwordShield_PlayerVisual";
         private const string EnemyVisualName = "MaintenanceWorker_BasicSoldierVisual";
         private const string EnemyPlaceholderBodyName = "SciFiSoldierPlaceholderBody";
@@ -67,6 +68,15 @@ namespace DimensionBrawl.Tests
             EnemyRoleRootPath + "/DB_Role_SummonCallerElite.asset",
             EnemyRoleRootPath + "/DB_Role_PhaseDuelistElite.asset",
             EnemyRoleRootPath + "/DB_Role_FinalStandCommanderElite.asset"
+        };
+        private static readonly string[] EnemyArchetypeProfilePaths =
+        {
+            EnemyArchetypeRootPath + "/DB_Archetype_SciFiSoldier_Melee.asset",
+            EnemyArchetypeRootPath + "/DB_Archetype_SciFiSoldier_Ranged.asset",
+            EnemyArchetypeRootPath + "/DB_Archetype_SciFiSoldier_Elite.asset",
+            EnemyArchetypeRootPath + "/DB_Archetype_FORGE3D_LineTurret.asset",
+            EnemyArchetypeRootPath + "/DB_Archetype_FORGE3D_MissileTurret.asset",
+            EnemyArchetypeRootPath + "/DB_Archetype_DragonBoss_Future.asset"
         };
 
         [UnitySetUp]
@@ -703,6 +713,56 @@ namespace DimensionBrawl.Tests
 
             Assert.GreaterOrEqual(generalCount, 7, "Role catalog should expose at least seven general monster roles.");
             Assert.GreaterOrEqual(eliteCount, 5, "Role catalog should expose at least five elite monster roles.");
+        }
+
+        [Test]
+        public void EnemyArchetypeProfilesMapRolesWithoutRawImportedPrefabRefs()
+        {
+            var coveredRoleIds = new HashSet<string>();
+            bool foundStaticTurretCandidate = false;
+            bool foundBossCandidate = false;
+
+            foreach (string path in EnemyArchetypeProfilePaths)
+            {
+                CombatEnemyArchetypeProfile archetype = AssetDatabase.LoadAssetAtPath<CombatEnemyArchetypeProfile>(path);
+                Assert.IsNotNull(archetype, $"Missing enemy archetype profile at {path}.");
+                Assert.IsFalse(string.IsNullOrWhiteSpace(archetype.ArchetypeId), $"{path} should have an archetype id.");
+                Assert.IsFalse(string.IsNullOrWhiteSpace(archetype.PromotionPlan), $"{archetype.ArchetypeId} should explain its promotion plan.");
+                foundStaticTurretCandidate |= archetype.ArchetypeKind == CombatEnemyArchetypeKind.StaticTurret;
+                foundBossCandidate |= archetype.ArchetypeKind == CombatEnemyArchetypeKind.BossCandidate;
+
+                if (archetype.ParticipatesInActionFoundationRoleMap)
+                {
+                    Assert.Greater(archetype.CompatibleRoleCount, 0, $"{archetype.ArchetypeId} should map to at least one role.");
+                }
+
+                for (int i = 0; i < archetype.CompatibleRoleCount; i++)
+                {
+                    CombatEnemyRoleProfile role = archetype.GetCompatibleRole(i);
+                    Assert.IsNotNull(role, $"{archetype.ArchetypeId} should not contain empty role refs.");
+                    coveredRoleIds.Add(role.RoleId);
+                }
+
+                AssertGameOwnedObjectReference(archetype.GameplayPrefab, $"{archetype.ArchetypeId} gameplay prefab");
+                AssertGameOwnedObjectReference(archetype.VisualPrefab, $"{archetype.ArchetypeId} visual prefab");
+
+                if (archetype.ArchetypeKind == CombatEnemyArchetypeKind.StaticTurret)
+                {
+                    Assert.IsTrue(archetype.RequiresDedicatedPrefabPromotion, $"{archetype.ArchetypeId} should stay marked for promotion until a `_Game` turret prefab exists.");
+                    Assert.IsTrue(archetype.SourceCandidate.Contains("FORGE3D"), $"{archetype.ArchetypeId} should record the FORGE3D source candidate text without referencing raw objects.");
+                }
+            }
+
+            Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.CloseGuard"), "Archetype catalog should cover CloseGuard.");
+            Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.LungeChaser"), "Archetype catalog should cover LungeChaser.");
+            Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.Skirmisher"), "Archetype catalog should cover Skirmisher.");
+            Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.LineCaster"), "Archetype catalog should cover LineCaster.");
+            Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.BacklineShooter"), "Archetype catalog should cover BacklineShooter.");
+            Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.Elite.ShieldBreaker"), "Archetype catalog should cover ShieldBreaker.");
+            Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.Elite.AuraCaptain"), "Archetype catalog should cover AuraCaptain.");
+            Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.Elite.FinalStandCommander"), "Archetype catalog should cover FinalStandCommander.");
+            Assert.IsTrue(foundStaticTurretCandidate, "Archetype catalog should include at least one fixed sci-fi turret candidate.");
+            Assert.IsTrue(foundBossCandidate, "Archetype catalog should track the dragon boss candidate outside soldier role decks.");
         }
 
         [Test]
@@ -1562,6 +1622,18 @@ namespace DimensionBrawl.Tests
             }
 
             return renderers;
+        }
+
+        private static void AssertGameOwnedObjectReference(GameObject asset, string label)
+        {
+            if (asset == null)
+            {
+                return;
+            }
+
+            string assetPath = AssetDatabase.GetAssetPath(asset).Replace('\\', '/');
+            Assert.IsTrue(assetPath.StartsWith("Assets/_Game/"), $"{label} should reference a promoted `_Game` asset, found {assetPath}.");
+            Assert.IsFalse(assetPath.Contains("/_Imported/"), $"{label} should not reference raw imported assets.");
         }
 
         private static CombatAiPatternProfile LoadPatternProfile(string assetPath)

@@ -84,6 +84,12 @@ Decision: General/elite monster variety for the first linear ARPG run should sta
 
 Reason: The collected run-design data points to roles such as entry probe, break gate, backline pressure, rescue pressure, boss handoff, and final stand. Capturing those as data keeps the future summon-AI reuse path open and lets designers review monster purpose before code or prefab sprawl.
 
+## 2026-06-13: Enemy Roles And Presentation Candidates Stay Separate
+
+Decision: `CombatEnemyRoleProfile` and pattern decks stay behavior/intent data, while `CombatEnemyArchetypeProfile` maps those roles to promoted or promotion-pending presentation candidates such as melee soldier, ranged soldier, elite soldier, FORGE3D turret, and future dragon boss. Role and archetype data must not directly reference raw `_Imported` asset-store prefabs.
+
+Reason: Enemy, summon, and later boss content need to share a small combat grammar without forcing art choices into behavior data. Keeping role decks separate from presentation candidates lets the team review purpose first, then promote only selected models, turret parts, animations, and VFX into `_Game` when they are ready.
+
 ## 2026-06-12: Cinemachine In-Game Cutscene Reference Baseline
 
 Decision: Use `Assets/_Game/DesignDocs/CINEMACHINE_INGAME_CUTSCENE_REFERENCE_RESEARCH.md` and `Assets/_Game/DesignData/CinemachineIngameCutsceneReferenceDataset.json` as the active Unity Cinemachine/Timeline reference baseline for boss intros, summon/ultimate cut-ins, dialogue staging, camera shot sequencing, input/AI/time locks, impulse, Timeline signals, and gameplay camera return.

@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ffe6dede91e046543a0080437caa9d4f, type: 3}
+  m_Name: DB_Archetype_SciFiSoldier_Elite
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatEnemyArchetypeProfile
+  archetypeId: SciFiSoldier.Elite
+  displayName: Sci-fi Elite Soldier
+  archetypeKind: 0
+  participatesInActionFoundationRoleMap: 1
+  compatibleRoles:
+  - {fileID: 11400000, guid: f3b20fc6d0aa8a944b2b096ce6fbc94c, type: 2}
+  - {fileID: 11400000, guid: 20dbe93285942bd43b2c176ec02e6127, type: 2}
+  - {fileID: 11400000, guid: fa80b2248f8e02a46b61c1e2b1004ca8, type: 2}
+  gameplayPrefab: {fileID: 0}
+  visualPrefab: {fileID: 919132149155446097, guid: d25064b620081b54682ad210e6f1a0de, type: 3}
+  requiresDedicatedPrefabPromotion: 1
+  candidateForFutureSummonAiReuse: 0
+  sourceCandidate: Temporary promoted MaintenanceWorker visual; later replace with
+    armored/commander elite prefab.
+  promotionPlan: Promote one stronger silhouette before tuning elite readability
+    in a real pocket.
+  usageNotes: Owns elite soldier roles only; boss and summon behavior remain out
+    of scope.

@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ffe6dede91e046543a0080437caa9d4f, type: 3}
+  m_Name: DB_Archetype_SciFiSoldier_Melee
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatEnemyArchetypeProfile
+  archetypeId: SciFiSoldier.Melee
+  displayName: Sci-fi Melee Soldier
+  archetypeKind: 0
+  participatesInActionFoundationRoleMap: 1
+  compatibleRoles:
+  - {fileID: 11400000, guid: ed74288575d9f054ca82196495025d33, type: 2}
+  - {fileID: 11400000, guid: 1aa0e99164797384992edbae1bd0c9d6, type: 2}
+  - {fileID: 11400000, guid: 598f95220ac9bf64ca9aa454b912e0b1, type: 2}
+  - {fileID: 11400000, guid: 86f255894f64fcb4685039c95d2037bb, type: 2}
+  gameplayPrefab: {fileID: 0}
+  visualPrefab: {fileID: 919132149155446097, guid: d25064b620081b54682ad210e6f1a0de, type: 3}
+  requiresDedicatedPrefabPromotion: 0
+  candidateForFutureSummonAiReuse: 1
+  sourceCandidate: Promoted game-owned MaintenanceWorker visual.
+  promotionPlan: Use current promoted soldier model/Animator as the first melee soldier
+    baseline.
+  usageNotes: Covers close guard, chase, skirmish, and entry-read roles without changing
+    role decks.

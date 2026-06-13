@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ffe6dede91e046543a0080437caa9d4f, type: 3}
+  m_Name: DB_Archetype_FORGE3D_LineTurret
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatEnemyArchetypeProfile
+  archetypeId: Forge3D.LineTurret
+  displayName: FORGE3D Line Turret Candidate
+  archetypeKind: 1
+  participatesInActionFoundationRoleMap: 1
+  compatibleRoles:
+  - {fileID: 11400000, guid: 5ffca634ab7e9714f8c2b5a8b7c0a081, type: 2}
+  - {fileID: 11400000, guid: f16ba69f98a507f4ca39bed31caaa125, type: 2}
+  gameplayPrefab: {fileID: 0}
+  visualPrefab: {fileID: 0}
+  requiresDedicatedPrefabPromotion: 1
+  candidateForFutureSummonAiReuse: 0
+  sourceCandidate: 'FORGE3D Sci-Fi Effects URP package: TURRET_BASE_Mobile_LOD0 +
+    TURRET_HEAD_Double_LOD0 + TURRET_BARREL_Electric/Gatling/Repeater + railgun/plasma/laser
+    beam effects.'
+  promotionPlan: Import/promote only the reviewed URP turret parts and beam VFX into
+    `_Game` before assigning prefab refs.
+  usageNotes: Good first fixed enemy for lane/line pressure; do not put raw package
+    prefabs into role assets.

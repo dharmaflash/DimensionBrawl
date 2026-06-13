@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ffe6dede91e046543a0080437caa9d4f, type: 3}
+  m_Name: DB_Archetype_DragonBoss_Future
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatEnemyArchetypeProfile
+  archetypeId: DragonBoss.Future
+  displayName: Dragon Boss Future Candidate
+  archetypeKind: 2
+  participatesInActionFoundationRoleMap: 0
+  compatibleRoles: []
+  gameplayPrefab: {fileID: 0}
+  visualPrefab: {fileID: 0}
+  requiresDedicatedPrefabPromotion: 1
+  candidateForFutureSummonAiReuse: 0
+  sourceCandidate: HEROIC FANTASY CREATURES FULL PACK VOL3 raw dragon prefabs remain
+    local-only; choose one dragon in a later boss-authoring slice.
+  promotionPlan: Keep dragon promotion for a separate boss slice with its own boss
+    pattern profiles.
+  usageNotes: Tracked here only to prevent forcing boss art into soldier role decks.
