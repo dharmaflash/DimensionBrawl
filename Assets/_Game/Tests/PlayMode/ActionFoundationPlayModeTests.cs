@@ -44,10 +44,14 @@ namespace DimensionBrawl.Tests
         private const string EnemyArchetypeRootPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyArchetypes";
         private const string MeleeSoldierPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Melee_ClosePunish.prefab";
         private const string GeneralDeckSoldierPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_GeneralDeck.prefab";
+        private const string EliteDeckSoldierPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_EliteDeck.prefab";
         private const string SciFiSoldier01VisualName = "SciFiSoldier01_GeneralDeckVisual";
         private const string SciFiSoldier01AssaultRifleName = "SciFiSoldier01_AssaultRifle";
         private const string SciFiSoldier01AssaultRiflePath = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/SciFiSoldier01/Weapons/SM_SciFiAssaultRifle_01.fbx";
         private const string SciFiSoldier01ControllerPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/SciFiSoldier01/DB_SciFiSoldier01_GeneralDeck.controller";
+        private const string SciFiHeavyBattleArmorVisualName = "SciFiHeavyBattleArmor_EliteDeckVisual";
+        private const string SciFiHeavyBattleArmorModelPath = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/SciFiHeavyBattleArmor/Models/SK_SciFiHeavyBattleArmor.fbx";
+        private const string SciFiHeavyBattleArmorControllerPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/SciFiHeavyBattleArmor/DB_SciFiHeavyBattleArmor_EliteDeck.controller";
         private const string PlayerVisualName = "CombatGirlSwordShield_PlayerVisual";
         private const string EnemyVisualName = "MaintenanceWorker_BasicSoldierVisual";
         private const string EnemyPlaceholderBodyName = "SciFiSoldierPlaceholderBody";
@@ -764,13 +768,17 @@ namespace DimensionBrawl.Tests
                 }
             }
 
+            Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.EntryProbe"), "Archetype catalog should cover EntryProbe.");
             Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.CloseGuard"), "Archetype catalog should cover CloseGuard.");
             Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.LungeChaser"), "Archetype catalog should cover LungeChaser.");
             Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.Skirmisher"), "Archetype catalog should cover Skirmisher.");
             Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.LineCaster"), "Archetype catalog should cover LineCaster.");
+            Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.FanSuppressor"), "Archetype catalog should cover FanSuppressor.");
             Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.BacklineShooter"), "Archetype catalog should cover BacklineShooter.");
             Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.Elite.ShieldBreaker"), "Archetype catalog should cover ShieldBreaker.");
             Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.Elite.AuraCaptain"), "Archetype catalog should cover AuraCaptain.");
+            Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.Elite.SummonCaller"), "Archetype catalog should cover SummonCaller.");
+            Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.Elite.PhaseDuelist"), "Archetype catalog should cover PhaseDuelist.");
             Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.Elite.FinalStandCommander"), "Archetype catalog should cover FinalStandCommander.");
             Assert.IsTrue(foundStaticTurretCandidate, "Archetype catalog should include at least one fixed sci-fi turret candidate.");
             Assert.IsTrue(foundBossCandidate, "Archetype catalog should track the dragon boss candidate outside soldier role decks.");
@@ -914,6 +922,94 @@ namespace DimensionBrawl.Tests
                 Assert.IsNotNull(rangedArchetype, "Missing sci-fi ranged soldier archetype profile.");
                 Assert.AreSame(prefabAsset, rangedArchetype.GameplayPrefab, "Ranged archetype should point at the distinct GeneralDeck prefab candidate.");
                 Assert.IsFalse(rangedArchetype.RequiresDedicatedPrefabPromotion, "Ranged soldier should no longer be marked as awaiting its first dedicated prefab promotion.");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+        }
+
+        [Test]
+        public void EliteDeckSoldierPrefabCandidateIsSceneFreeAndUsesHeavyArmorVisual()
+        {
+            GameObject prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(EliteDeckSoldierPrefabPath);
+            Assert.IsNotNull(prefabAsset, $"Missing elite-deck soldier prefab candidate at {EliteDeckSoldierPrefabPath}.");
+
+            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(EliteDeckSoldierPrefabPath);
+            try
+            {
+                BasicSoldierEnemy soldier = prefabRoot.GetComponent<BasicSoldierEnemy>();
+                CombatHealth health = prefabRoot.GetComponent<CombatHealth>();
+                CombatTargetSensor targetSensor = prefabRoot.GetComponent<CombatTargetSensor>();
+                EnemyAttackTelegraphPresenter telegraphPresenter = prefabRoot.GetComponent<EnemyAttackTelegraphPresenter>();
+                EnemyActionCameraCueDriver cameraCueDriver = prefabRoot.GetComponent<EnemyActionCameraCueDriver>();
+                CombatVfxCuePlayer cuePlayer = prefabRoot.GetComponent<CombatVfxCuePlayer>();
+                EnemyCombatVfxCueDriver vfxCueDriver = prefabRoot.GetComponent<EnemyCombatVfxCueDriver>();
+                EnemyElitePatternController eliteController = prefabRoot.GetComponent<EnemyElitePatternController>();
+                Transform heavyVisual = prefabRoot.transform.Find(SciFiHeavyBattleArmorVisualName);
+
+                Assert.IsNotNull(soldier, "Elite-deck soldier prefab should own BasicSoldierEnemy on the root.");
+                Assert.IsNotNull(health, "Elite-deck soldier prefab should own CombatHealth on the root.");
+                Assert.IsNotNull(targetSensor, "Elite-deck soldier prefab should own the shared target sensor on the root.");
+                Assert.IsNotNull(telegraphPresenter, "Elite-deck soldier prefab should own the telegraph presenter on the root.");
+                Assert.IsNotNull(cameraCueDriver, "Elite-deck soldier prefab should keep enemy camera cue emission available.");
+                Assert.IsNotNull(cuePlayer, "Elite-deck soldier prefab should own the combat VFX cue player on the root.");
+                Assert.IsNotNull(vfxCueDriver, "Elite-deck soldier prefab should own the combat VFX cue driver on the root.");
+                Assert.IsNotNull(eliteController, "Elite-deck soldier prefab should own the elite pattern controller on the root.");
+                Assert.IsNotNull(heavyVisual, "Elite-deck soldier should use the promoted SciFiHeavyBattleArmor visual.");
+                Assert.IsNull(prefabRoot.transform.Find(EnemyVisualName), "Elite-deck soldier should not keep the melee MaintenanceWorker visual.");
+                Assert.IsNull(prefabRoot.transform.Find(SciFiSoldier01VisualName), "Elite-deck soldier should not keep the general-deck rifle visual.");
+
+                Animator animator = heavyVisual.GetComponent<Animator>();
+                Assert.IsNotNull(animator, "Elite-deck soldier prefab should include the promoted HeavyBattleArmor Animator.");
+                string controllerPath = AssetDatabase.GetAssetPath(animator.runtimeAnimatorController).Replace('\\', '/');
+                Assert.AreEqual(SciFiHeavyBattleArmorControllerPath, controllerPath, "Elite-deck soldier should use the HeavyBattleArmor elite Animator Controller.");
+                GameObject visualSource = PrefabUtility.GetCorrespondingObjectFromSource(heavyVisual.gameObject);
+                string visualSourcePath = AssetDatabase.GetAssetPath(visualSource).Replace('\\', '/');
+                Assert.AreEqual(SciFiHeavyBattleArmorModelPath, visualSourcePath, "Elite-deck visual should be promoted under _Game, not linked to the raw imported pack.");
+                AssertPromotedRendererMaterials(heavyVisual.gameObject, "Elite-deck heavy armor visual");
+
+                Assert.AreSame(targetSensor, soldier.TargetSensor, "Prefab AI should use its local target sensor.");
+                Assert.AreSame(health, soldier.SelfHealth, "Prefab AI should use its local health.");
+                Assert.AreSame(LoadPatternProfile(GuardBreakPatternPath), soldier.PatternProfile, "Elite deck prefab should start from the GuardBreak row before distance selection runs.");
+                Assert.AreSame(LoadPatternDeck(ElitePatternDeckPath), soldier.PatternDeck, "Elite deck prefab should carry the expanded elite soldier pattern deck.");
+                Assert.IsTrue(soldier.HasPatternDeck, "Elite deck prefab should expose that pattern deck selection is active.");
+                Assert.AreEqual(0, targetSensor.TargetCandidateCount, "Prefab target candidates should be injected by scenes or encounters, not carried from ActionFoundationTest.");
+
+                SerializedObject eliteObject = new SerializedObject(eliteController);
+                Assert.AreSame(health, eliteObject.FindProperty("health").objectReferenceValue, "Elite controller should listen to the local health.");
+                Assert.AreSame(soldier, eliteObject.FindProperty("soldier").objectReferenceValue, "Elite controller should drive the local soldier.");
+                Assert.AreSame(animator, eliteObject.FindProperty("animator").objectReferenceValue, "Elite controller should drive the local HeavyBattleArmor animator.");
+                Assert.AreEqual(5, eliteObject.FindProperty("eliteProfiles").arraySize, "Elite deck prefab should wire all authored elite trait profiles.");
+                Assert.AreEqual(0, eliteObject.FindProperty("auraProtectedTargets").arraySize, "Prefab should not carry scene-specific aura targets.");
+                Assert.AreEqual(0, eliteObject.FindProperty("summonSignalObjects").arraySize, "Prefab should not carry scene-specific summon signal objects.");
+                Assert.AreEqual(5, eliteController.ProfileCount, "Elite deck prefab should expose all five elite trait profiles.");
+
+                SerializedObject cameraCueObject = new SerializedObject(cameraCueDriver);
+                Assert.AreSame(soldier, cameraCueObject.FindProperty("agentSource").objectReferenceValue, "Enemy camera cue driver should listen to the local soldier agent.");
+                Assert.IsNull(cameraCueObject.FindProperty("cameraController").objectReferenceValue, "Prefab should not serialize an ActionFoundationTest camera controller.");
+
+                SerializedObject telegraphObject = new SerializedObject(telegraphPresenter);
+                AssertLocalPrefabReference(prefabRoot, telegraphObject.FindProperty("telegraphObject").objectReferenceValue, "telegraph object");
+                AssertLocalPrefabReference(prefabRoot, telegraphObject.FindProperty("telegraphRenderer").objectReferenceValue, "telegraph renderer");
+                AssertLocalPrefabReference(prefabRoot, telegraphObject.FindProperty("poseRoot").objectReferenceValue, "telegraph pose root");
+
+                SerializedObject cuePlayerObject = new SerializedObject(cuePlayer);
+                UnityEngine.Object cueProfile = cuePlayerObject.FindProperty("profile").objectReferenceValue;
+                string cueProfilePath = AssetDatabase.GetAssetPath(cueProfile).Replace('\\', '/');
+                Assert.IsTrue(cueProfilePath.StartsWith("Assets/_Game/"), $"Prefab VFX profile should be game-owned, found {cueProfilePath}.");
+                Assert.IsFalse(cueProfilePath.Contains("/_Imported/"), "Prefab VFX profile should not reference raw imported assets.");
+                AssertLocalPrefabReference(prefabRoot, cuePlayerObject.FindProperty("pooledRoot").objectReferenceValue, "VFX pool root");
+                ValidateEnemyCombatVfxBinding(soldier, LoadCombatVfxCueProfile(), requireEliteController: true);
+
+                SerializedObject vfxDriverObject = new SerializedObject(vfxCueDriver);
+                Assert.AreSame(eliteController, vfxDriverObject.FindProperty("elitePatternController").objectReferenceValue, "Elite VFX cues should bind to the local elite pattern controller.");
+
+                CombatEnemyArchetypeProfile eliteArchetype =
+                    AssetDatabase.LoadAssetAtPath<CombatEnemyArchetypeProfile>(EnemyArchetypeRootPath + "/DB_Archetype_SciFiSoldier_Elite.asset");
+                Assert.IsNotNull(eliteArchetype, "Missing sci-fi elite soldier archetype profile.");
+                Assert.AreSame(prefabAsset, eliteArchetype.GameplayPrefab, "Elite archetype should point at the distinct EliteDeck prefab candidate.");
+                Assert.IsFalse(eliteArchetype.RequiresDedicatedPrefabPromotion, "Elite soldier should no longer be marked as awaiting its first dedicated prefab promotion.");
             }
             finally
             {

@@ -16,9 +16,11 @@ namespace DimensionBrawl.Editor
         public const string PrefabRoot = "Assets/_Game/Prefabs/Enemies/ActionFoundation";
         public const string MeleeSoldierPrefabPath = PrefabRoot + "/PF_Enemy_SciFiSoldier_Melee_ClosePunish.prefab";
         public const string GeneralDeckSoldierPrefabPath = PrefabRoot + "/PF_Enemy_SciFiSoldier_GeneralDeck.prefab";
+        public const string EliteDeckSoldierPrefabPath = PrefabRoot + "/PF_Enemy_SciFiSoldier_EliteDeck.prefab";
 
         private const string MeleeSoldierPrefabName = "PF_Enemy_SciFiSoldier_Melee_ClosePunish";
         private const string GeneralDeckSoldierPrefabName = "PF_Enemy_SciFiSoldier_GeneralDeck";
+        private const string EliteDeckSoldierPrefabName = "PF_Enemy_SciFiSoldier_EliteDeck";
         private const string VfxPoolChildName = "CombatVfxPool";
 
         [MenuItem("DimensionBrawl/Reapply Action Foundation Enemy Prefab Candidates")]
@@ -45,7 +47,13 @@ namespace DimensionBrawl.Editor
                 LoadAsset<CombatAiPatternProfile>(ActionFoundationProfileSetup.EnemyPatternProfilePath);
             CombatAiPatternDeck generalDeck =
                 LoadAsset<CombatAiPatternDeck>(ActionFoundationEnemyPatternExpansionSetup.GeneralPatternDeckPath);
+            CombatAiPatternProfile guardBreakProfile =
+                LoadAsset<CombatAiPatternProfile>(ActionFoundationEnemyPatternExpansionSetup.GuardBreakPatternPath);
+            CombatAiPatternDeck eliteDeck =
+                LoadAsset<CombatAiPatternDeck>(ActionFoundationEnemyPatternExpansionSetup.ElitePatternDeckPath);
+            CombatAiElitePatternProfile[] eliteProfiles = LoadEliteProfiles();
             ActionFoundationSciFiSoldier01VisualSetup.EnsureGeneralDeckVisualAssets();
+            ActionFoundationSciFiEliteSoldierVisualSetup.EnsureEliteDeckVisualAssets();
 
             EnsureSoldierPrefabCandidate(
                 scene,
@@ -54,7 +62,8 @@ namespace DimensionBrawl.Editor
                 MeleeSoldierPrefabPath,
                 closePunishProfile,
                 null,
-                useGeneralDeckVisual: false);
+                Array.Empty<CombatAiElitePatternProfile>(),
+                SoldierVisualCandidate.MaintenanceWorker);
             EnsureSoldierPrefabCandidate(
                 scene,
                 ActionFoundationEnemyPatternExpansionSetup.GeneralDeckEnemyRootName,
@@ -62,7 +71,17 @@ namespace DimensionBrawl.Editor
                 GeneralDeckSoldierPrefabPath,
                 closePunishProfile,
                 generalDeck,
-                useGeneralDeckVisual: true);
+                Array.Empty<CombatAiElitePatternProfile>(),
+                SoldierVisualCandidate.GeneralDeckRifle);
+            EnsureSoldierPrefabCandidate(
+                scene,
+                ActionFoundationEnemyPatternExpansionSetup.EliteDeckEnemyRootName,
+                EliteDeckSoldierPrefabName,
+                EliteDeckSoldierPrefabPath,
+                guardBreakProfile,
+                eliteDeck,
+                eliteProfiles,
+                SoldierVisualCandidate.EliteHeavyArmor);
 
             ActionFoundationEnemyArchetypeSetup.EnsureEnemyArchetypeAssets();
             AssetDatabase.SaveAssets();
@@ -82,21 +101,43 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"Missing general-deck soldier prefab candidate at {GeneralDeckSoldierPrefabPath}.");
             }
 
+            GameObject eliteDeckPrefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(EliteDeckSoldierPrefabPath);
+            if (eliteDeckPrefabAsset == null)
+            {
+                throw new InvalidOperationException($"Missing elite-deck soldier prefab candidate at {EliteDeckSoldierPrefabPath}.");
+            }
+
             CombatAiPatternProfile closePunishProfile =
                 LoadAsset<CombatAiPatternProfile>(ActionFoundationProfileSetup.EnemyPatternProfilePath);
             CombatAiPatternDeck generalDeck =
                 LoadAsset<CombatAiPatternDeck>(ActionFoundationEnemyPatternExpansionSetup.GeneralPatternDeckPath);
+            CombatAiPatternProfile guardBreakProfile =
+                LoadAsset<CombatAiPatternProfile>(ActionFoundationEnemyPatternExpansionSetup.GuardBreakPatternPath);
+            CombatAiPatternDeck eliteDeck =
+                LoadAsset<CombatAiPatternDeck>(ActionFoundationEnemyPatternExpansionSetup.ElitePatternDeckPath);
+            CombatAiElitePatternProfile[] eliteProfiles = LoadEliteProfiles();
 
             ValidateSoldierPrefabAsset(
                 MeleeSoldierPrefabPath,
                 MeleeSoldierPrefabName,
                 closePunishProfile,
-                null);
+                null,
+                Array.Empty<CombatAiElitePatternProfile>(),
+                SoldierVisualCandidate.MaintenanceWorker);
             ValidateSoldierPrefabAsset(
                 GeneralDeckSoldierPrefabPath,
                 GeneralDeckSoldierPrefabName,
                 closePunishProfile,
-                generalDeck);
+                generalDeck,
+                Array.Empty<CombatAiElitePatternProfile>(),
+                SoldierVisualCandidate.GeneralDeckRifle);
+            ValidateSoldierPrefabAsset(
+                EliteDeckSoldierPrefabPath,
+                EliteDeckSoldierPrefabName,
+                guardBreakProfile,
+                eliteDeck,
+                eliteProfiles,
+                SoldierVisualCandidate.EliteHeavyArmor);
 
             CombatEnemyArchetypeProfile meleeArchetype =
                 LoadAsset<CombatEnemyArchetypeProfile>(ActionFoundationEnemyArchetypeSetup.SciFiMeleeSoldierPath);
@@ -105,6 +146,24 @@ namespace DimensionBrawl.Editor
             {
                 throw new InvalidOperationException(
                     $"Sci-fi melee archetype should use {MeleeSoldierPrefabPath}, found {gameplayPrefabPath}.");
+            }
+
+            CombatEnemyArchetypeProfile rangedArchetype =
+                LoadAsset<CombatEnemyArchetypeProfile>(ActionFoundationEnemyArchetypeSetup.SciFiRangedSoldierPath);
+            gameplayPrefabPath = AssetDatabase.GetAssetPath(rangedArchetype.GameplayPrefab).Replace('\\', '/');
+            if (!string.Equals(gameplayPrefabPath, GeneralDeckSoldierPrefabPath, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"Sci-fi ranged archetype should use {GeneralDeckSoldierPrefabPath}, found {gameplayPrefabPath}.");
+            }
+
+            CombatEnemyArchetypeProfile eliteArchetype =
+                LoadAsset<CombatEnemyArchetypeProfile>(ActionFoundationEnemyArchetypeSetup.SciFiEliteSoldierPath);
+            gameplayPrefabPath = AssetDatabase.GetAssetPath(eliteArchetype.GameplayPrefab).Replace('\\', '/');
+            if (!string.Equals(gameplayPrefabPath, EliteDeckSoldierPrefabPath, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"Sci-fi elite archetype should use {EliteDeckSoldierPrefabPath}, found {gameplayPrefabPath}.");
             }
         }
 
@@ -115,7 +174,8 @@ namespace DimensionBrawl.Editor
             string prefabPath,
             CombatAiPatternProfile startingProfile,
             CombatAiPatternDeck patternDeck,
-            bool useGeneralDeckVisual)
+            CombatAiElitePatternProfile[] eliteProfiles,
+            SoldierVisualCandidate visualCandidate)
         {
             BasicSoldierEnemy source = RequireRootComponent<BasicSoldierEnemy>(scene, sourceRootName);
             GameObject candidate = UnityEngine.Object.Instantiate(source.gameObject);
@@ -127,9 +187,15 @@ namespace DimensionBrawl.Editor
             try
             {
                 SanitizeSoldierCandidate(candidate, source.transform, startingProfile, patternDeck);
-                if (useGeneralDeckVisual)
+                ConfigureEliteProfiles(candidate, eliteProfiles);
+
+                if (visualCandidate == SoldierVisualCandidate.GeneralDeckRifle)
                 {
                     ActionFoundationSciFiSoldier01VisualSetup.ApplyGeneralDeckVisual(candidate);
+                }
+                else if (visualCandidate == SoldierVisualCandidate.EliteHeavyArmor)
+                {
+                    ActionFoundationSciFiEliteSoldierVisualSetup.ApplyEliteDeckVisual(candidate);
                 }
 
                 GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(candidate, prefabPath);
@@ -148,12 +214,14 @@ namespace DimensionBrawl.Editor
             string prefabPath,
             string expectedName,
             CombatAiPatternProfile expectedProfile,
-            CombatAiPatternDeck expectedDeck)
+            CombatAiPatternDeck expectedDeck,
+            CombatAiElitePatternProfile[] expectedEliteProfiles,
+            SoldierVisualCandidate visualCandidate)
         {
             GameObject prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
             try
             {
-                ValidateSoldierPrefab(prefabRoot, expectedName, expectedProfile, expectedDeck);
+                ValidateSoldierPrefab(prefabRoot, expectedName, expectedProfile, expectedDeck, expectedEliteProfiles, visualCandidate);
             }
             finally
             {
@@ -246,11 +314,50 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static void ConfigureEliteProfiles(GameObject root, CombatAiElitePatternProfile[] eliteProfiles)
+        {
+            if (eliteProfiles.Length == 0)
+            {
+                return;
+            }
+
+            EnemyElitePatternController eliteController = root.GetComponent<EnemyElitePatternController>();
+            if (eliteController == null)
+            {
+                eliteController = root.AddComponent<EnemyElitePatternController>();
+            }
+
+            BasicSoldierEnemy soldier = RequireComponent<BasicSoldierEnemy>(root, root.name);
+            CombatHealth health = RequireComponent<CombatHealth>(root, root.name);
+            Animator animator = root.GetComponentInChildren<Animator>(includeInactive: true);
+            if (animator == null)
+            {
+                throw new InvalidOperationException($"{root.name} elite prefab candidate needs an Animator before elite profile binding.");
+            }
+
+            Renderer bodyRenderer = GetObjectReference<Renderer>(soldier, "bodyRenderer");
+            SetObjectReference(eliteController, "health", health);
+            SetObjectReference(eliteController, "soldier", soldier);
+            SetObjectReference(eliteController, "animator", animator);
+            SetObjectReference(eliteController, "cueRenderer", bodyRenderer);
+            SetObjectReferenceArray(eliteController, "eliteProfiles", eliteProfiles);
+            SetObjectReferenceArray(eliteController, "auraProtectedTargets", Array.Empty<UnityEngine.Object>());
+            SetObjectReferenceArray(eliteController, "summonSignalObjects", Array.Empty<UnityEngine.Object>());
+
+            EnemyCombatVfxCueDriver vfxCueDriver = root.GetComponent<EnemyCombatVfxCueDriver>();
+            if (vfxCueDriver != null)
+            {
+                SetObjectReference(vfxCueDriver, "elitePatternController", eliteController);
+            }
+        }
+
         private static void ValidateSoldierPrefab(
             GameObject root,
             string expectedName,
             CombatAiPatternProfile expectedProfile,
-            CombatAiPatternDeck expectedDeck)
+            CombatAiPatternDeck expectedDeck,
+            CombatAiElitePatternProfile[] expectedEliteProfiles,
+            SoldierVisualCandidate visualCandidate)
         {
             if (!string.Equals(root.name, expectedName, StringComparison.Ordinal))
             {
@@ -309,7 +416,26 @@ namespace DimensionBrawl.Editor
 
             if (expectedDeck != null)
             {
-                ActionFoundationSciFiSoldier01VisualSetup.ValidateGeneralDeckVisual(root);
+                if (visualCandidate == SoldierVisualCandidate.GeneralDeckRifle)
+                {
+                    ActionFoundationSciFiSoldier01VisualSetup.ValidateGeneralDeckVisual(root);
+                }
+                else if (visualCandidate == SoldierVisualCandidate.EliteHeavyArmor)
+                {
+                    ActionFoundationSciFiEliteSoldierVisualSetup.ValidateEliteDeckVisual(root);
+                }
+            }
+
+            if (expectedEliteProfiles.Length > 0)
+            {
+                EnemyElitePatternController eliteController = RequireComponent<EnemyElitePatternController>(root, root.name);
+                ValidateObjectReference(eliteController, "health", health);
+                ValidateObjectReference(eliteController, "soldier", soldier);
+                ValidateObjectReference(eliteController, "animator", animator);
+                ValidateObjectReferenceArray(eliteController, "eliteProfiles", expectedEliteProfiles);
+                ValidateObjectReferenceArray(eliteController, "auraProtectedTargets", Array.Empty<UnityEngine.Object>());
+                ValidateObjectReferenceArray(eliteController, "summonSignalObjects", Array.Empty<UnityEngine.Object>());
+                ValidateObjectReference(vfxCueDriver, "elitePatternController", eliteController);
             }
 
             ValidateNoRawImportedOrExternalSceneReferences(root);
@@ -519,6 +645,18 @@ namespace DimensionBrawl.Editor
             return asset;
         }
 
+        private static CombatAiElitePatternProfile[] LoadEliteProfiles()
+        {
+            return new[]
+            {
+                LoadAsset<CombatAiElitePatternProfile>(ActionFoundationEnemyPatternExpansionSetup.ShieldCycleEliteProfilePath),
+                LoadAsset<CombatAiElitePatternProfile>(ActionFoundationEnemyPatternExpansionSetup.ArmorBreakEliteProfilePath),
+                LoadAsset<CombatAiElitePatternProfile>(ActionFoundationEnemyPatternExpansionSetup.AuraBufferEliteProfilePath),
+                LoadAsset<CombatAiElitePatternProfile>(ActionFoundationEnemyPatternExpansionSetup.SummonPackageEliteProfilePath),
+                LoadAsset<CombatAiElitePatternProfile>(ActionFoundationEnemyPatternExpansionSetup.PhaseSwapEliteProfilePath)
+            };
+        }
+
         private static T GetObjectReference<T>(UnityEngine.Object target, string propertyName) where T : UnityEngine.Object
         {
             SerializedProperty property = RequireProperty(new SerializedObject(target), propertyName);
@@ -555,6 +693,26 @@ namespace DimensionBrawl.Editor
                 string expectedName = expected != null ? expected.name : "null";
                 string actualName = actual != null ? actual.name : "null";
                 throw new InvalidOperationException($"{target.name}.{propertyName} expected {expectedName}, found {actualName}.");
+            }
+        }
+
+        private static void ValidateObjectReferenceArray(UnityEngine.Object target, string propertyName, UnityEngine.Object[] expected)
+        {
+            SerializedProperty array = RequireProperty(new SerializedObject(target), propertyName);
+            if (array.arraySize != expected.Length)
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected.Length} entries, found {array.arraySize}.");
+            }
+
+            for (int i = 0; i < expected.Length; i++)
+            {
+                UnityEngine.Object actual = array.GetArrayElementAtIndex(i).objectReferenceValue;
+                if (actual != expected[i])
+                {
+                    string expectedName = expected[i] != null ? expected[i].name : "null";
+                    string actualName = actual != null ? actual.name : "null";
+                    throw new InvalidOperationException($"{target.name}.{propertyName}[{i}] expected {expectedName}, found {actualName}.");
+                }
             }
         }
 
@@ -606,6 +764,13 @@ namespace DimensionBrawl.Editor
             string name = folderPath.Substring(separatorIndex + 1);
             EnsureFolder(parent);
             AssetDatabase.CreateFolder(parent, name);
+        }
+
+        private enum SoldierVisualCandidate
+        {
+            MaintenanceWorker,
+            GeneralDeckRifle,
+            EliteHeavyArmor
         }
     }
 }

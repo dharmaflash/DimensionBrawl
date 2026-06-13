@@ -19,14 +19,16 @@ MonoBehaviour:
   compatibleRoles:
   - {fileID: 11400000, guid: f3b20fc6d0aa8a944b2b096ce6fbc94c, type: 2}
   - {fileID: 11400000, guid: 20dbe93285942bd43b2c176ec02e6127, type: 2}
+  - {fileID: 11400000, guid: efd21f97998aeed4b88ce9379b557596, type: 2}
+  - {fileID: 11400000, guid: ffa1f5043f625ac459fc50400813c633, type: 2}
   - {fileID: 11400000, guid: fa80b2248f8e02a46b61c1e2b1004ca8, type: 2}
-  gameplayPrefab: {fileID: 0}
-  visualPrefab: {fileID: 919132149155446097, guid: d25064b620081b54682ad210e6f1a0de, type: 3}
-  requiresDedicatedPrefabPromotion: 1
-  candidateForFutureSummonAiReuse: 0
-  sourceCandidate: Temporary promoted MaintenanceWorker visual; later replace with
-    armored/commander elite prefab.
-  promotionPlan: Promote one stronger silhouette before tuning elite readability
-    in a real pocket.
-  usageNotes: Owns elite soldier roles only; boss and summon behavior remain out
-    of scope.
+  gameplayPrefab: {fileID: 7383160327160230362, guid: 8cb229abfeb81b44e8b589dd62ca273a, type: 3}
+  visualPrefab: {fileID: 919132149155446097, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
+  requiresDedicatedPrefabPromotion: 0
+  candidateForFutureSummonAiReuse: 1
+  sourceCandidate: Promoted game-owned SciFiHeavyBattleArmor visual with elite animation
+    set.
+  promotionPlan: Use the authored EliteDeck prefab candidate for shield, aura, summon-signal,
+    phase, and final-stand role review.
+  usageNotes: Covers all five elite soldier roles with a stronger silhouette while
+    boss-only behavior remains out of scope.

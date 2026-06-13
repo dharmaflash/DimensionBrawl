@@ -1,0 +1,850 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &554918106737151405
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5740416301736004538}
+  - component: {fileID: 4882434970185589772}
+  - component: {fileID: 3107227690969289245}
+  m_Layer: 0
+  m_Name: SciFiSoldierPlaceholderBody_EliteDeck
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &5740416301736004538
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 554918106737151405}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.9, z: 0}
+  m_LocalScale: {x: 0.7, y: 0.9, z: 0.7}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5481267910237388593}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &4882434970185589772
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 554918106737151405}
+  m_Mesh: {fileID: 10208, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &3107227690969289245
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 554918106737151405}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: b6460d84b1604e20bbad69a4024a6138, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &636056663673488440
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3797379051107538705}
+  - component: {fileID: 4562615404541399007}
+  - component: {fileID: 5653409180515715506}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_EliteDeck
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &3797379051107538705
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 636056663673488440}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.03, z: 0.85}
+  m_LocalScale: {x: 0.75, y: 0.02, z: 0.75}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 4436496108348934253}
+  - {fileID: 2993240703974477179}
+  m_Father: {fileID: 5481267910237388593}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &4562615404541399007
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 636056663673488440}
+  m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &5653409180515715506
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 636056663673488440}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: ee8506dcd5dc89648aaed415c32fe7dd, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &4026609615078562250
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8766973688813626906}
+  m_Layer: 0
+  m_Name: Enemy_CombatVfx_CueAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8766973688813626906
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4026609615078562250}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.05, z: 0.35}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5481267910237388593}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &6923149868439997854
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6255258649132308012}
+  m_Layer: 0
+  m_Name: CombatVfxPool
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6255258649132308012
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6923149868439997854}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5481267910237388593}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7216354348639525863
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4436496108348934253}
+  - component: {fileID: 3478607036911228263}
+  - component: {fileID: 6713175318813597514}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_CenterLine
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4436496108348934253
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7216354348639525863}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.04, z: 0.18}
+  m_LocalScale: {x: 0.12, y: 0.02, z: 1.35}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3797379051107538705}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &3478607036911228263
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7216354348639525863}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &6713175318813597514
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7216354348639525863}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &7383160327160230362
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5481267910237388593}
+  - component: {fileID: 4636960860776749093}
+  - component: {fileID: 588362265856980382}
+  - component: {fileID: 120282569852819900}
+  - component: {fileID: 8254346421671138652}
+  - component: {fileID: 1723507719883532315}
+  - component: {fileID: 6591857808204465798}
+  - component: {fileID: 1532726775776455074}
+  - component: {fileID: 3696014270878751804}
+  - component: {fileID: 1967268277080564065}
+  - component: {fileID: 6191798458457565209}
+  m_Layer: 0
+  m_Name: PF_Enemy_SciFiSoldier_EliteDeck
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5481267910237388593
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7383160327160230362}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 5740416301736004538}
+  - {fileID: 3797379051107538705}
+  - {fileID: 8766973688813626906}
+  - {fileID: 6255258649132308012}
+  - {fileID: 5158421055807151075}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!143 &4636960860776749093
+CharacterController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7383160327160230362}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Height: 1.8
+  m_Radius: 0.38
+  m_SlopeLimit: 45
+  m_StepOffset: 0.3
+  m_SkinWidth: 0.08
+  m_MinMoveDistance: 0
+  m_Center: {x: 0, y: 0.9, z: 0}
+--- !u!114 &588362265856980382
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7383160327160230362}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  team: 2
+  maxHealth: 90
+  startAtFullHealth: 1
+  onDamaged:
+    m_PersistentCalls:
+      m_Calls: []
+  onDied:
+    m_PersistentCalls:
+      m_Calls: []
+--- !u!114 &120282569852819900
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7383160327160230362}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 019ce60f0346446b8a59511aa8025495, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  enemyTypeId: SciFiSoldier.Basic
+  patternId: EliteDeck
+  patternProfile: {fileID: 11400000, guid: 59d0e2bafcc940a4fb98337280392176, type: 2}
+  patternDeck: {fileID: 11400000, guid: 0224be9f6ef1ea64eac504ec614e4334, type: 2}
+  targetSensor: {fileID: 1723507719883532315}
+  target: {fileID: 0}
+  targetHealth: {fileID: 0}
+  selfHealth: {fileID: 588362265856980382}
+  characterController: {fileID: 4636960860776749093}
+  animator: {fileID: 1258272629303411097}
+  telegraphIndicator: {fileID: 636056663673488440}
+  telegraphPresenter: {fileID: 6591857808204465798}
+  bodyRenderer: {fileID: 4547807648821404836}
+  approachSpeed: 2.7
+  turnRateDegrees: 540
+  gravity: -24
+  prepareSeconds: 0
+  prepareRetreatSpeed: 0
+  lockAttackDirectionAfterPrepare: 1
+  attackRange: 1.65
+  telegraphSeconds: 0.65
+  activeSeconds: 0.14
+  recoverySeconds: 0.45
+  damage: 15
+  hitStopSeconds: 0.03
+  attackFacingDotThreshold: -0.15
+  activeLungeSpeed: 0
+  attackShape: 0
+  attackHalfWidth: 0.65
+  attackHalfAngleDegrees: 28
+  lockAttackDirectionOnWindup: 0
+  hitReactionSeconds: 0.24
+  knockbackSpeed: 2
+  moveSpeedParameter: MoveSpeed
+  prepareTrigger:
+  attackTrigger: Attack
+  hitTrigger: Hit
+  deathTrigger: Death
+  usePrototypeBodyColors: 0
+  colorProperty: _BaseColor
+  normalColor: {r: 0.55, g: 0.7, b: 0.9, a: 1}
+  telegraphColor: {r: 1, g: 0.65, b: 0.2, a: 1}
+  staggerColor: {r: 1, g: 0.25, b: 0.2, a: 1}
+  deadColor: {r: 0.2, g: 0.2, b: 0.2, a: 1}
+--- !u!114 &8254346421671138652
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7383160327160230362}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 288c9f48f54943e798cab8c17a6806dc, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  health: {fileID: 588362265856980382}
+  flashRenderers:
+  - {fileID: 4547807648821404836}
+  applyIdleColorOnEnable: 0
+  idleColor: {r: 0.55, g: 0.7, b: 0.9, a: 1}
+  flashSeconds: 0.08
+  hitColor: {r: 1, g: 1, b: 1, a: 1}
+  deathColor: {r: 0.15, g: 0.15, b: 0.15, a: 1}
+--- !u!114 &1723507719883532315
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7383160327160230362}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5f082b8634c7499bbb942b731f4fca96, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatTargetSensor
+  selfHealth: {fileID: 588362265856980382}
+  searchRadius: 12
+  retargetIntervalSeconds: 0.2
+  targetCandidates: []
+--- !u!114 &6591857808204465798
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7383160327160230362}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b01fc0f0a0af4c1184e0ab19307ced01, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyAttackTelegraphPresenter
+  telegraphObject: {fileID: 636056663673488440}
+  telegraphTransform: {fileID: 3797379051107538705}
+  telegraphRenderer: {fileID: 5653409180515715506}
+  poseRoot: {fileID: 5158421055807151075}
+  windupStartScale: {x: 0.28, y: 0.018, z: 0.56}
+  windupEndScale: {x: 1.08, y: 0.02, z: 1.65}
+  activeScale: {x: 1.32, y: 0.024, z: 1.95}
+  windupPoseOffset: {x: 0, y: 0, z: -0.08}
+  activePoseOffset: {x: 0, y: 0, z: 0.12}
+  windupStartColor: {r: 1, g: 0.48, b: 0.08, a: 0.62}
+  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 0.86}
+  activeColor: {r: 1, g: 0.92, b: 0.32, a: 0.95}
+--- !u!114 &1532726775776455074
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7383160327160230362}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0df587d95db6d9244b21fad306ee1f0a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyActionCameraCueDriver
+  agentSource: {fileID: 120282569852819900}
+  cameraController: {fileID: 0}
+  cueSpace: {fileID: 5481267910237388593}
+--- !u!114 &3696014270878751804
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7383160327160230362}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3f14f3a7faa43aeb87a640a05d34d09, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCuePlayer
+  profile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
+  pooledRoot: {fileID: 6255258649132308012}
+--- !u!114 &1967268277080564065
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7383160327160230362}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8d98497706446dfafb2b56e00bfa244, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyCombatVfxCueDriver
+  agentSource: {fileID: 120282569852819900}
+  health: {fileID: 588362265856980382}
+  cuePlayer: {fileID: 3696014270878751804}
+  cueAnchor: {fileID: 5481267910237388593}
+  elitePatternController: {fileID: 6191798458457565209}
+  patternCueOverrides:
+  - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
+    windupCueId: 8
+    attackActiveCueId: 9
+    windupIntensity: 1
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 91285237ee87aa948906f7f430ba6c9f, type: 2}
+    windupCueId: 10
+    attackActiveCueId: 11
+    windupIntensity: 1.05
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: 7f9d72f624e2fe6498b332d4a90e6b69, type: 2}
+    windupCueId: 12
+    attackActiveCueId: 13
+    windupIntensity: 1.18
+    attackActiveIntensity: 1.25
+  - patternProfile: {fileID: 11400000, guid: 37a6bb4ae0516a44ca02b48ca5541ec8, type: 2}
+    windupCueId: 14
+    attackActiveCueId: 15
+    windupIntensity: 1
+    attackActiveIntensity: 1.05
+  - patternProfile: {fileID: 11400000, guid: eed4a73345a921941ab70394924207e5, type: 2}
+    windupCueId: 16
+    attackActiveCueId: 17
+    windupIntensity: 1
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: c5a68364338220a47b368422a1f18003, type: 2}
+    windupCueId: 18
+    attackActiveCueId: 19
+    windupIntensity: 0.95
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 0139451477c313348aa7b78c36b82a04, type: 2}
+    windupCueId: 20
+    attackActiveCueId: 21
+    windupIntensity: 1
+    attackActiveIntensity: 1.15
+  - patternProfile: {fileID: 11400000, guid: 59d0e2bafcc940a4fb98337280392176, type: 2}
+    windupCueId: 22
+    attackActiveCueId: 23
+    windupIntensity: 1.2
+    attackActiveIntensity: 1.3
+  eliteCueOverrides:
+  - eliteProfile: {fileID: 11400000, guid: 72f8aa0e55d0f9947a9405170327c8de, type: 2}
+    signalCueId: 24
+    intensity: 1
+  - eliteProfile: {fileID: 11400000, guid: 1698d7c630ff67e4b9022732524961ad, type: 2}
+    signalCueId: 25
+    intensity: 1.05
+  - eliteProfile: {fileID: 11400000, guid: 74b2e4cbed265c948bc25c132171dfc7, type: 2}
+    signalCueId: 26
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: b065158e76b5acf4c8c21aadf3ff6679, type: 2}
+    signalCueId: 27
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: 5422278438bd5f145a40f5862ee4fe75, type: 2}
+    signalCueId: 28
+    intensity: 1.18
+--- !u!114 &6191798458457565209
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7383160327160230362}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 995d39aabf22ba64f9f87d4ddbccc2f1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Enemies.EnemyElitePatternController
+  health: {fileID: 588362265856980382}
+  soldier: {fileID: 120282569852819900}
+  animator: {fileID: 1258272629303411097}
+  cueRenderer: {fileID: 4547807648821404836}
+  auraProtectedTargets: []
+  summonSignalObjects: []
+  eliteProfiles:
+  - {fileID: 11400000, guid: 72f8aa0e55d0f9947a9405170327c8de, type: 2}
+  - {fileID: 11400000, guid: 1698d7c630ff67e4b9022732524961ad, type: 2}
+  - {fileID: 11400000, guid: 74b2e4cbed265c948bc25c132171dfc7, type: 2}
+  - {fileID: 11400000, guid: b065158e76b5acf4c8c21aadf3ff6679, type: 2}
+  - {fileID: 11400000, guid: 5422278438bd5f145a40f5862ee4fe75, type: 2}
+  colorProperty: _BaseColor
+--- !u!1 &8357912206886180971
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2993240703974477179}
+  - component: {fileID: 3342221666185066498}
+  - component: {fileID: 4460241930747800821}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_ReleaseEdge
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2993240703974477179
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8357912206886180971}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0.05, z: 0.72}
+  m_LocalScale: {x: 0.64, y: 0.02, z: 0.06}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3797379051107538705}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &3342221666185066498
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8357912206886180971}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!23 &4460241930747800821
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8357912206886180971}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1001 &4619811288426134536
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5481267910237388593}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -71544028671813460, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value:
+      objectReference: {fileID: 2100000, guid: 09036a480d6118e4cbecdbc900d4d2ec, type: 2}
+    - target: {fileID: 919132149155446097, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
+      propertyPath: m_Name
+      value: SciFiHeavyBattleArmor_EliteDeckVisual
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
+      propertyPath: m_Controller
+      value:
+      objectReference: {fileID: 9100000, guid: 70f4f82323de12d4191b7c47a3ba5125, type: 2}
+    - target: {fileID: 5866666021909216657, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
+      propertyPath: m_CullingMode
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
+      propertyPath: m_ApplyRootMotion
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
+--- !u!95 &1258272629303411097 stripped
+Animator:
+  m_CorrespondingSourceObject: {fileID: 5866666021909216657, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
+  m_PrefabInstance: {fileID: 4619811288426134536}
+  m_PrefabAsset: {fileID: 0}
+--- !u!137 &4547807648821404836 stripped
+SkinnedMeshRenderer:
+  m_CorrespondingSourceObject: {fileID: -71544028671813460, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
+  m_PrefabInstance: {fileID: 4619811288426134536}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &5158421055807151075 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
+  m_PrefabInstance: {fileID: 4619811288426134536}
+  m_PrefabAsset: {fileID: 0}

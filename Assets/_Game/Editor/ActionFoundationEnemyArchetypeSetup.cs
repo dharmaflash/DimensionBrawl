@@ -20,6 +20,7 @@ namespace DimensionBrawl.Editor
         private const string MaintenanceWorkerVisualPath = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/MaintenanceWorker/Models/SK_MaintenanceWorkerAllMeshes.fbx";
         private const string MeleeSoldierGameplayPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Melee_ClosePunish.prefab";
         private const string GeneralDeckSoldierGameplayPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_GeneralDeck.prefab";
+        private const string EliteDeckSoldierGameplayPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_EliteDeck.prefab";
         private const string Forge3DLineTurretCandidate = "FORGE3D Sci-Fi Effects URP package: TURRET_BASE_Mobile_LOD0 + TURRET_HEAD_Double_LOD0 + TURRET_BARREL_Electric/Gatling/Repeater + railgun/plasma/laser beam effects.";
         private const string Forge3DMissileTurretCandidate = "FORGE3D Sci-Fi Effects URP package: TURRET_BASE_Mobile_LOD0 + TURRET_BARREL_HeavyMissle_Mobile_LOD0 + missile_02/missile_03/missile_04 prefabs.";
         private const string DragonBossCandidate = "HEROIC FANTASY CREATURES FULL PACK VOL3 raw dragon prefabs remain local-only; choose one dragon in a later boss-authoring slice.";
@@ -52,13 +53,15 @@ namespace DimensionBrawl.Editor
         {
             ActionFoundationEnemyRoleDeckSetup.EnsureEnemyRoleAssets();
             ActionFoundationSciFiSoldier01VisualSetup.EnsureGeneralDeckVisualAssets();
+            ActionFoundationSciFiEliteSoldierVisualSetup.EnsureEliteDeckVisualAssets();
             EnsureFolder(ArchetypeRoot);
 
             GameObject maintenanceWorkerVisual = LoadGameObject(MaintenanceWorkerVisualPath);
             GameObject sciFiSoldier01Visual = LoadGameObject(ActionFoundationSciFiSoldier01VisualSetup.ModelPath);
+            GameObject heavyBattleArmorVisual = LoadGameObject(ActionFoundationSciFiEliteSoldierVisualSetup.ModelPath);
             RoleRefs roles = LoadRoleRefs();
 
-            ConfigureSoldierArchetypes(roles, maintenanceWorkerVisual, sciFiSoldier01Visual);
+            ConfigureSoldierArchetypes(roles, maintenanceWorkerVisual, sciFiSoldier01Visual, heavyBattleArmorVisual);
             ConfigureStaticTurretArchetypes(roles);
             ConfigureFutureBossArchetype();
 
@@ -84,13 +87,17 @@ namespace DimensionBrawl.Editor
                 hasBossCandidate |= archetype.ArchetypeKind == CombatEnemyArchetypeKind.BossCandidate;
             }
 
+            RequireCoveredRole(coveredRoleIds, "SciFiSoldier.EntryProbe");
             RequireCoveredRole(coveredRoleIds, "SciFiSoldier.CloseGuard");
             RequireCoveredRole(coveredRoleIds, "SciFiSoldier.LungeChaser");
             RequireCoveredRole(coveredRoleIds, "SciFiSoldier.Skirmisher");
             RequireCoveredRole(coveredRoleIds, "SciFiSoldier.LineCaster");
+            RequireCoveredRole(coveredRoleIds, "SciFiSoldier.FanSuppressor");
             RequireCoveredRole(coveredRoleIds, "SciFiSoldier.BacklineShooter");
             RequireCoveredRole(coveredRoleIds, "SciFiSoldier.Elite.ShieldBreaker");
             RequireCoveredRole(coveredRoleIds, "SciFiSoldier.Elite.AuraCaptain");
+            RequireCoveredRole(coveredRoleIds, "SciFiSoldier.Elite.SummonCaller");
+            RequireCoveredRole(coveredRoleIds, "SciFiSoldier.Elite.PhaseDuelist");
             RequireCoveredRole(coveredRoleIds, "SciFiSoldier.Elite.FinalStandCommander");
 
             if (!hasStaticTurretCandidate)
@@ -104,10 +111,15 @@ namespace DimensionBrawl.Editor
             }
         }
 
-        private static void ConfigureSoldierArchetypes(RoleRefs roles, GameObject maintenanceWorkerVisual, GameObject sciFiSoldier01Visual)
+        private static void ConfigureSoldierArchetypes(
+            RoleRefs roles,
+            GameObject maintenanceWorkerVisual,
+            GameObject sciFiSoldier01Visual,
+            GameObject heavyBattleArmorVisual)
         {
             GameObject meleeSoldierPrefab = LoadOptionalGameObject(MeleeSoldierGameplayPrefabPath);
             GameObject generalDeckSoldierPrefab = LoadOptionalGameObject(GeneralDeckSoldierGameplayPrefabPath);
+            GameObject eliteDeckSoldierPrefab = LoadOptionalGameObject(EliteDeckSoldierGameplayPrefabPath);
 
             ConfigureArchetype(
                 LoadOrCreate<CombatEnemyArchetypeProfile>(SciFiMeleeSoldierPath),
@@ -149,14 +161,23 @@ namespace DimensionBrawl.Editor
                 "Sci-fi Elite Soldier",
                 CombatEnemyArchetypeKind.MobileSoldier,
                 true,
-                new[] { roles.ShieldBreakerElite, roles.AuraCaptainElite, roles.FinalStandCommanderElite },
-                null,
-                maintenanceWorkerVisual,
+                new[]
+                {
+                    roles.ShieldBreakerElite,
+                    roles.AuraCaptainElite,
+                    roles.SummonCallerElite,
+                    roles.PhaseDuelistElite,
+                    roles.FinalStandCommanderElite
+                },
+                eliteDeckSoldierPrefab,
+                heavyBattleArmorVisual,
+                eliteDeckSoldierPrefab == null,
                 true,
-                false,
-                "Temporary promoted MaintenanceWorker visual; later replace with armored/commander elite prefab.",
-                "Promote one stronger silhouette before tuning elite readability in a real pocket.",
-                "Owns elite soldier roles only; boss and summon behavior remain out of scope.");
+                "Promoted game-owned SciFiHeavyBattleArmor visual with elite animation set.",
+                eliteDeckSoldierPrefab != null
+                    ? "Use the authored EliteDeck prefab candidate for shield, aura, summon-signal, phase, and final-stand role review."
+                    : "Generate the authored EliteDeck prefab candidate before assigning reusable elite gameplay prefab refs.",
+                "Covers all five elite soldier roles with a stronger silhouette while boss-only behavior remains out of scope.");
         }
 
         private static void ConfigureStaticTurretArchetypes(RoleRefs roles)
@@ -283,6 +304,7 @@ namespace DimensionBrawl.Editor
                 ShieldBreakerElite = LoadRole(ActionFoundationEnemyRoleDeckSetup.ShieldBreakerEliteRolePath),
                 AuraCaptainElite = LoadRole(ActionFoundationEnemyRoleDeckSetup.AuraCaptainEliteRolePath),
                 SummonCallerElite = LoadRole(ActionFoundationEnemyRoleDeckSetup.SummonCallerEliteRolePath),
+                PhaseDuelistElite = LoadRole(ActionFoundationEnemyRoleDeckSetup.PhaseDuelistEliteRolePath),
                 FinalStandCommanderElite = LoadRole(ActionFoundationEnemyRoleDeckSetup.FinalStandCommanderEliteRolePath)
             };
         }
@@ -426,6 +448,7 @@ namespace DimensionBrawl.Editor
             public CombatEnemyRoleProfile ShieldBreakerElite;
             public CombatEnemyRoleProfile AuraCaptainElite;
             public CombatEnemyRoleProfile SummonCallerElite;
+            public CombatEnemyRoleProfile PhaseDuelistElite;
             public CombatEnemyRoleProfile FinalStandCommanderElite;
         }
     }
