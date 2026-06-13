@@ -65,3 +65,9 @@ Reason: The same AI grammar needs to serve enemies, future ally summons, and lat
 Decision: Enemy prepare, attack, hit, death, and elite signal animation requests should live on `CombatAiPatternProfile` and `CombatAiElitePatternProfile` data, then route through a shared promoted Animator Controller. Runtime enemy scripts should not branch on pattern ids to pick clips.
 
 Reason: Enemy, future summon, and later boss actors need to share the same AI grammar while swapping model/animation sets. Keeping animation triggers in profile data lets designers replace placeholder MaintenanceWorker reads with better clips without rewriting behavior code.
+
+## 2026-06-13: Android Is The Mobile-First Build Baseline
+
+Decision: Android is the default product/build baseline, while PC/Standalone remains a convenient development and debug target. Shared UI and scene-flow work should inherit the Android Build Profile, landscape orientation, safe-area assumptions, and common input action names before branching into feature work.
+
+Reason: The target game is a mobile-first direct-control ARPG. Locking Android package/orientation/backend/architecture settings early reduces later merge churn and prevents UI work from accidentally hardening around PC window behavior.
