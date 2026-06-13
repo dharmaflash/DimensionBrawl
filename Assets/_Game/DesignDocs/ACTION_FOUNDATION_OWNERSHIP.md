@@ -1,6 +1,6 @@
 ﻿# Action Foundation Ownership
 
-Last updated: 2026-06-13 KST
+Last updated: 2026-06-14 KST
 
 This note permits the first action-feel foundation to add more than three gameplay scripts because the goal spans player, combat, enemy, presentation, and test-scene completion responsibilities. Each script must remain narrow and inspectable.
 
@@ -16,6 +16,7 @@ This note permits the first action-feel foundation to add more than three gamepl
 - `CombatEnemyArchetypeProfile`: data-only role-to-presentation candidate mapping. It may group compatible role profiles, identify a mobile soldier/static turret/boss-candidate archetype, reference already promoted `_Game` prefab/model assets, and record raw-pack promotion notes. It must not point object references at `_Imported`, import packages, build prefabs, spawn enemies, or alter pattern deck selection.
 - Enemy prefab candidates under `_Game/Prefabs/Enemies/ActionFoundation`: authored Unity prefabs for reviewed presentation/gameplay baselines. They may own local components and local child references, but scene target candidates, camera controller references, encounter membership, and wave ownership must be provided by the scene or future encounter authoring.
 - `PF_Enemy_SciFiSoldier_EliteDeck` is the current shared elite soldier presentation candidate for the five elite roles. Split it into role-specific prefabs only after encounter composition proves a real presentation or balance need.
+- FORGE3D static-turret visual candidates may be promoted as `_Game` presentation prefabs only through editor setup using already copied `_Game` model/texture sources. The editor setup may assign the visual prefab to `CombatEnemyArchetypeProfile.VisualPrefab`, but it must not assign a gameplay prefab, create turret AI, spawn projectiles, import source packages, or build a runtime hierarchy.
 - `CombatAiElitePatternProfile`: data-only elite trait profile for `ShieldCycle`, `ArmorBreak`, `AuraBuffer`, `SummonPackage`, and `PhaseSwap`. It may hold trigger ratios, guard meters, damage multipliers, signal durations, signal animation trigger names, colors, and replacement profile/deck references, but it must not execute combat or spawn units.
 - `EnemyElitePatternController`: enemy-local elite trait runtime layer. It may consume `CombatAiElitePatternProfile` assets, request the profile's signal animation trigger on an authored Animator reference, modify incoming damage through `CombatHealth.DamageModifying`, maintain shield/armor break state, protect explicitly authored aura receiver targets, expose readable signal state, activate pre-authored summon signal objects, and swap the attached soldier profile/deck for phase changes. It must not own base approach/attack execution, search the scene for allies, instantiate summons, or branch on concrete profile ids.
 - `ActionCameraController`: camera follow, target/threat bias, damping, and short additive cue offsets.

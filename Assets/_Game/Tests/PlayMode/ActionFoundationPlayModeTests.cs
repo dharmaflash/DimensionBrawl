@@ -45,6 +45,8 @@ namespace DimensionBrawl.Tests
         private const string MeleeSoldierPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Melee_ClosePunish.prefab";
         private const string GeneralDeckSoldierPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_GeneralDeck.prefab";
         private const string EliteDeckSoldierPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_EliteDeck.prefab";
+        private const string Forge3DLineTurretVisualPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_FORGE3D_LineTurret_Presentation.prefab";
+        private const string Forge3DLineTurretVisualName = "PF_Enemy_FORGE3D_LineTurret_Presentation";
         private const string SciFiSoldier01VisualName = "SciFiSoldier01_GeneralDeckVisual";
         private const string SciFiSoldier01AssaultRifleName = "SciFiSoldier01_AssaultRifle";
         private const string SciFiSoldier01AssaultRiflePath = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/SciFiSoldier01/Weapons/SM_SciFiAssaultRifle_01.fbx";
@@ -782,6 +784,49 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.Elite.FinalStandCommander"), "Archetype catalog should cover FinalStandCommander.");
             Assert.IsTrue(foundStaticTurretCandidate, "Archetype catalog should include at least one fixed sci-fi turret candidate.");
             Assert.IsTrue(foundBossCandidate, "Archetype catalog should track the dragon boss candidate outside soldier role decks.");
+        }
+
+        [Test]
+        public void Forge3DLineTurretVisualCandidateIsPromotedButGameplayPending()
+        {
+            GameObject prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(Forge3DLineTurretVisualPrefabPath);
+            Assert.IsNotNull(prefabAsset, $"Missing FORGE3D line turret visual candidate at {Forge3DLineTurretVisualPrefabPath}.");
+
+            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(Forge3DLineTurretVisualPrefabPath);
+            try
+            {
+                Assert.AreEqual(Forge3DLineTurretVisualName, prefabRoot.name, "Line turret visual prefab should use the reviewed candidate name.");
+                Assert.IsNotNull(prefabRoot.transform.Find("YawPivot"), "Line turret visual should expose a yaw pivot for later static-turret aiming.");
+                Assert.IsNotNull(prefabRoot.transform.Find("YawPivot/PitchPivot"), "Line turret visual should expose a pitch pivot for later beam aiming.");
+                Assert.IsNotNull(prefabRoot.transform.Find("YawPivot/PitchPivot/Muzzle_Left"), "Line turret visual should expose a left muzzle anchor.");
+                Assert.IsNotNull(prefabRoot.transform.Find("YawPivot/PitchPivot/Muzzle_Right"), "Line turret visual should expose a right muzzle anchor.");
+
+                Renderer[] renderers = prefabRoot.GetComponentsInChildren<Renderer>(true);
+                Assert.GreaterOrEqual(renderers.Length, 7, "Line turret visual should include the selected base, swivel, mount, head, breech, and barrel renderers.");
+                AssertPromotedRendererMaterials(prefabRoot, "FORGE3D line turret visual");
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    MeshFilter meshFilter = renderers[i].GetComponent<MeshFilter>();
+                    Assert.IsNotNull(meshFilter, $"{renderers[i].name} should keep its promoted turret mesh filter.");
+                    Assert.IsNotNull(meshFilter.sharedMesh, $"{renderers[i].name} should keep its promoted turret mesh.");
+                    string meshPath = AssetDatabase.GetAssetPath(meshFilter.sharedMesh).Replace('\\', '/');
+                    Assert.IsTrue(meshPath.StartsWith("Assets/_Game/"), $"Line turret mesh should be game-owned, found {meshPath}.");
+                    Assert.IsFalse(meshPath.Contains("/_Imported/"), "Line turret mesh should not reference raw imported assets.");
+                }
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+
+            CombatEnemyArchetypeProfile lineTurretArchetype =
+                AssetDatabase.LoadAssetAtPath<CombatEnemyArchetypeProfile>(EnemyArchetypeRootPath + "/DB_Archetype_FORGE3D_LineTurret.asset");
+            Assert.IsNotNull(lineTurretArchetype, "Missing FORGE3D line turret archetype profile.");
+            Assert.IsNull(lineTurretArchetype.GameplayPrefab, "Line turret should not pretend to have gameplay until a dedicated static-turret controller is authored.");
+            Assert.AreSame(prefabAsset, lineTurretArchetype.VisualPrefab, "Line turret archetype should point at the promoted game-owned visual candidate.");
+            Assert.IsTrue(lineTurretArchetype.RequiresDedicatedPrefabPromotion, "Line turret should remain gameplay-promotion pending after the visual candidate slice.");
+            Assert.IsFalse(lineTurretArchetype.CandidateForFutureSummonAiReuse, "Static turret presentation should not be treated as summon-AI reusable yet.");
+            Assert.IsTrue(lineTurretArchetype.PromotionPlan.Contains("gameplay prefab promotion pending"), "Line turret promotion plan should clearly separate visual review from gameplay prefab promotion.");
         }
 
         [Test]
