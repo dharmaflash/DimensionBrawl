@@ -58,6 +58,7 @@ Other-PC UI work may include a minimal scene-flow shell if it stays UI-owned:
 
 - Allowed route: `UI_LoginTest -> UI_LobbyTest -> UI_StageSelectTest -> UI_CombatHudTest -> UI_LobbyTest`.
 - The flow may use fade panels, loading-card placeholders, transition duration data, and local button events.
+- Loading cards are conditional presentation for routes with a real wait reason. Immediate UI-to-UI routes should use a short fade without a card/progress layer.
 - Scene route names or scene references must be serialized or data-driven in one small route asset/component, not duplicated as magic strings across button scripts.
 - Scene flow code must not own save data, account login, progression unlocks, combat result resolution, or gameplay state.
 - The combat HUD test scene may simulate `Start Combat`, `Win`, `Fail`, and `Return Lobby` with mock UI state only.

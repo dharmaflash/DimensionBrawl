@@ -22,6 +22,7 @@ namespace DimensionBrawl.UI
             public string ScenePath => scenePath;
             public string TransitionId => transitionId;
             public string LoadingCardId => loadingCardId;
+            public bool HasLoadingCard => !string.IsNullOrWhiteSpace(loadingCardId);
             public bool UseAsyncLoading => useAsyncLoading;
             public float MinimumLoadingSeconds => minimumLoadingSeconds;
         }

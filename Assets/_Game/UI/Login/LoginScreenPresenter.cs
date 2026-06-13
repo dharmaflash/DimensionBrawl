@@ -1,17 +1,19 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.Events;
 using UnityEngine.UI;
 
 namespace DimensionBrawl.UI
 {
     [DisallowMultipleComponent]
-    public sealed class LoginScreenPresenter : MonoBehaviour
+    public sealed class LoginScreenPresenter : MonoBehaviour, IPointerClickHandler
     {
         [SerializeField] private Text titleText;
         [SerializeField] private Text promptText;
         [SerializeField] private Text versionText;
         [SerializeField] private Text statusText;
         [SerializeField] private Button startButton;
+        [SerializeField] private bool startOnScreenTap = true;
         [SerializeField] private UISceneFlowRouter router;
         [SerializeField] private UIRouteId startRoute = UIRouteId.Lobby;
         [SerializeField] private string title = "Dimension Brawl";
@@ -38,6 +40,21 @@ namespace DimensionBrawl.UI
             }
         }
 
+        public void OnPointerClick(PointerEventData eventData)
+        {
+            if (!startOnScreenTap || !CanRequestStart())
+            {
+                return;
+            }
+
+            if (eventData != null && eventData.button != PointerEventData.InputButton.Left)
+            {
+                return;
+            }
+
+            HandleStartClicked();
+        }
+
         public void Apply()
         {
             SetText(titleText, title);
@@ -54,6 +71,11 @@ namespace DimensionBrawl.UI
             {
                 router.RequestRoute(startRoute);
             }
+        }
+
+        private bool CanRequestStart()
+        {
+            return startButton == null || startButton.IsInteractable();
         }
 
         private static void SetText(Text target, string value)

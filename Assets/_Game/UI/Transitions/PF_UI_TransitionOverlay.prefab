@@ -384,6 +384,12 @@ MonoBehaviour:
   progressFill: {fileID: 9034076755777174804}
   loadingCardDeck: {fileID: 11400000, guid: acf031cc5ab537e42b81d1e1f066234f, type: 2}
   loadingCardPresenter: {fileID: 7760167979795647334}
+  loadingDetailGraphics:
+  - {fileID: 5378830905319818522}
+  - {fileID: 1406786167507917520}
+  - {fileID: 5768394328536295216}
+  - {fileID: 8768113680510071143}
+  - {fileID: 9034076755777174804}
   defaultFadeSeconds: 0.45
 --- !u!1 &5321265046635908667
 GameObject:

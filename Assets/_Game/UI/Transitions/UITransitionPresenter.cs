@@ -14,7 +14,10 @@ namespace DimensionBrawl.UI
         [SerializeField] private Image progressFill;
         [SerializeField] private UILoadingCardDeck loadingCardDeck;
         [SerializeField] private UILoadingCardPresenter loadingCardPresenter;
+        [SerializeField] private Graphic[] loadingDetailGraphics;
         [SerializeField, Min(0f)] private float defaultFadeSeconds = 0.45f;
+
+        private bool showsLoadingDetails;
 
         private void Reset()
         {
@@ -28,54 +31,70 @@ namespace DimensionBrawl.UI
 
         public IEnumerator PlayOut(UIScreenRouteTable.Route route)
         {
-            SetLoadingCard(route.LoadingCardId);
-            SetProgress(0f, "Preparing");
+            PrepareLoadingDetails(route);
+            SetProgress(0f, route.HasLoadingCard ? "Preparing" : string.Empty);
             yield return FadeTo(1f, defaultFadeSeconds);
         }
 
         public IEnumerator PlayIn()
         {
             yield return FadeTo(0f, defaultFadeSeconds);
+            showsLoadingDetails = false;
+            SetLoadingDetailsVisible(false);
         }
 
         public void HideImmediate()
         {
+            showsLoadingDetails = false;
             SetProgress(0f, string.Empty);
+            SetLoadingDetailsVisible(false);
             SetAlpha(0f);
         }
 
         public void SetProgress(float normalizedProgress, string label)
         {
-            float clamped = Mathf.Clamp01(normalizedProgress);
-            if (progressFill != null)
+            if (!showsLoadingDetails)
             {
-                progressFill.fillAmount = clamped;
+                SetProgressText(string.Empty);
+                SetProgressFill(0f);
+                return;
             }
 
-            if (progressText != null)
-            {
-                string progressLabel = string.IsNullOrWhiteSpace(label) ? "Loading" : label;
-                progressText.text = clamped > 0f ? $"{progressLabel} {Mathf.RoundToInt(clamped * 100f)}%" : progressLabel;
-            }
+            float clamped = Mathf.Clamp01(normalizedProgress);
+            SetProgressFill(clamped);
+            string progressLabel = string.IsNullOrWhiteSpace(label) ? "Loading" : label;
+            SetProgressText(clamped > 0f ? $"{progressLabel} {Mathf.RoundToInt(clamped * 100f)}%" : progressLabel);
         }
 
-        private void SetLoadingCard(string loadingCardId)
+        private void PrepareLoadingDetails(UIScreenRouteTable.Route route)
         {
+            if (!route.HasLoadingCard)
+            {
+                showsLoadingDetails = false;
+                ClearLoadingText();
+                SetLoadingDetailsVisible(false);
+                return;
+            }
+
+            bool applied = false;
             if (loadingCardPresenter != null)
             {
-                loadingCardPresenter.ShowCard(loadingCardId);
-                return;
+                applied = loadingCardPresenter.TryShowCard(route.LoadingCardId);
             }
-
-            if (loadingCardDeck == null || !loadingCardDeck.TryGetCard(loadingCardId, out UILoadingCardDeck.LoadingCard card))
+            else if (loadingCardDeck != null && loadingCardDeck.TryGetCard(route.LoadingCardId, out UILoadingCardDeck.LoadingCard card))
             {
-                SetText(titleText, string.Empty);
-                SetText(descriptionText, string.Empty);
-                return;
+                SetText(titleText, card.Title);
+                SetText(descriptionText, card.Description);
+                applied = true;
             }
 
-            SetText(titleText, card.Title);
-            SetText(descriptionText, card.Description);
+            showsLoadingDetails = applied;
+            SetLoadingDetailsVisible(applied);
+            if (!applied)
+            {
+                ClearLoadingText();
+                Debug.LogWarning($"UI loading card '{route.LoadingCardId}' was not found for route {route.RouteId}.", this);
+            }
         }
 
         private IEnumerator FadeTo(float targetAlpha, float seconds)
@@ -112,6 +131,43 @@ namespace DimensionBrawl.UI
             fadeGroup.alpha = alpha;
             fadeGroup.interactable = alpha > 0.95f;
             fadeGroup.blocksRaycasts = alpha > 0.01f;
+        }
+
+        private void SetLoadingDetailsVisible(bool visible)
+        {
+            if (loadingDetailGraphics == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < loadingDetailGraphics.Length; i++)
+            {
+                if (loadingDetailGraphics[i] != null)
+                {
+                    loadingDetailGraphics[i].enabled = visible;
+                }
+            }
+        }
+
+        private void ClearLoadingText()
+        {
+            SetText(titleText, string.Empty);
+            SetText(descriptionText, string.Empty);
+            SetProgressText(string.Empty);
+            SetProgressFill(0f);
+        }
+
+        private void SetProgressText(string value)
+        {
+            SetText(progressText, value);
+        }
+
+        private void SetProgressFill(float value)
+        {
+            if (progressFill != null)
+            {
+                progressFill.fillAmount = value;
+            }
         }
 
         private static void SetText(Text target, string value)

@@ -24,22 +24,19 @@ namespace DimensionBrawl.UI
 
         public bool TryGetCard(string id, out LoadingCard card)
         {
-            if (!string.IsNullOrWhiteSpace(id))
+            if (string.IsNullOrWhiteSpace(id))
             {
-                for (int i = 0; i < cards.Length; i++)
-                {
-                    if (string.Equals(cards[i].Id, id, StringComparison.Ordinal))
-                    {
-                        card = cards[i];
-                        return true;
-                    }
-                }
+                card = default;
+                return false;
             }
 
-            if (cards.Length > 0)
+            for (int i = 0; i < cards.Length; i++)
             {
-                card = cards[0];
-                return true;
+                if (string.Equals(cards[i].Id, id, StringComparison.Ordinal))
+                {
+                    card = cards[i];
+                    return true;
+                }
             }
 
             card = default;

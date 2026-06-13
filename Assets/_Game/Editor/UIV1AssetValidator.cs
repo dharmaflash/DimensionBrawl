@@ -180,12 +180,15 @@ namespace DimensionBrawl.Editor
                 }
 
                 RequireNonEmpty(sceneName, $"{RouteTablePath}.routes[{i}].sceneName");
-                RequireNonEmpty(loadingCardId, $"{RouteTablePath}.routes[{i}].loadingCardId");
                 RequireScenePath(scenePath, $"{RouteTablePath}.routes[{i}].scenePath");
                 RequireSceneNameMatchesPath(sceneName, scenePath, $"{RouteTablePath}.routes[{i}]");
-                RequireKnownKey(loadingCardIds, loadingCardId, $"{RouteTablePath}.routes[{i}].loadingCardId");
-                RequireTrue(useAsyncLoading, $"{RouteTablePath}.routes[{i}].useAsyncLoading");
-                RequireSceneFadeDuration(minimumLoadingSeconds, $"{RouteTablePath}.routes[{i}].minimumLoadingSeconds");
+                ValidateRouteLoadingPolicy(
+                    routeId,
+                    loadingCardId,
+                    useAsyncLoading,
+                    minimumLoadingSeconds,
+                    loadingCardIds,
+                    $"{RouteTablePath}.routes[{i}]");
             }
 
             RequireRoute(foundRoutes, UIRouteId.Login);
@@ -193,6 +196,37 @@ namespace DimensionBrawl.Editor
             RequireRoute(foundRoutes, UIRouteId.StageSelect);
             RequireRoute(foundRoutes, UIRouteId.CombatHud);
             return foundRoutes;
+        }
+
+        private static void ValidateRouteLoadingPolicy(
+            UIRouteId routeId,
+            string loadingCardId,
+            bool useAsyncLoading,
+            float minimumLoadingSeconds,
+            HashSet<string> loadingCardIds,
+            string label)
+        {
+            bool isCombatHandoff = routeId == UIRouteId.CombatHud;
+            if (isCombatHandoff)
+            {
+                RequireNonEmpty(loadingCardId, $"{label}.loadingCardId");
+                RequireKnownKey(loadingCardIds, loadingCardId, $"{label}.loadingCardId");
+                RequireTrue(useAsyncLoading, $"{label}.useAsyncLoading");
+                RequireSceneFadeDuration(minimumLoadingSeconds, $"{label}.minimumLoadingSeconds");
+                return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(loadingCardId))
+            {
+                throw new InvalidOperationException($"{label}.loadingCardId must stay empty unless the route has a real loading reason.");
+            }
+
+            if (useAsyncLoading)
+            {
+                throw new InvalidOperationException($"{label}.useAsyncLoading must stay disabled for immediate UI-to-UI routes.");
+            }
+
+            RequireNoMinimumLoadingHold(minimumLoadingSeconds, $"{label}.minimumLoadingSeconds");
         }
 
         private static void ValidateLoadingCards()
@@ -1215,6 +1249,7 @@ namespace DimensionBrawl.Editor
                 ValidateScreenPresentationPresenters(path, prefab, routeIds);
                 ValidateToastPresenters(path, prefab);
                 ValidateDialogPresenters(path, prefab);
+                ValidateLoginTapStartSurface(path, prefab);
                 ValidateLoginAccountServerNotice(path, prefab);
                 ValidateLoadingCardPresenters(path, prefab, loadingCardIds);
                 ValidateThemePresenters(path, prefab, themeColorKeys, themeTextStyleKeys);
@@ -1479,6 +1514,31 @@ namespace DimensionBrawl.Editor
                 RequireObjectReference(serializedObject, "cancelButton", $"{prefabPath} dialog cancel button");
                 RequireObjectReference(serializedObject, "cancelText", $"{prefabPath} dialog cancel text");
             }
+        }
+
+        private static void ValidateLoginTapStartSurface(string prefabPath, GameObject prefab)
+        {
+            if (!string.Equals(prefabPath, LoginScreenPrefabPath, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            LoginScreenPresenter presenter = prefab.GetComponent<LoginScreenPresenter>();
+            if (presenter == null)
+            {
+                throw new InvalidOperationException($"{prefabPath} must include LoginScreenPresenter on the prefab root.");
+            }
+
+            SerializedObject serializedObject = new SerializedObject(presenter);
+            RequireTrue(serializedObject.FindProperty("startOnScreenTap").boolValue, $"{prefabPath}.LoginScreenPresenter.startOnScreenTap");
+
+            Image rootImage = prefab.GetComponent<Image>();
+            if (rootImage == null)
+            {
+                throw new InvalidOperationException($"{prefabPath} root must include an Image to receive full-screen start taps.");
+            }
+
+            RequireTrue(rootImage.raycastTarget, $"{prefabPath}.rootImage.raycastTarget");
         }
 
         private static void ValidateLoginAccountServerNotice(string prefabPath, GameObject prefab)
@@ -1766,6 +1826,14 @@ namespace DimensionBrawl.Editor
             if (seconds < 0.35f || seconds > 0.8f)
             {
                 throw new InvalidOperationException($"{label} must stay within UI V1 scene fade range 0.35-0.80 seconds.");
+            }
+        }
+
+        private static void RequireNoMinimumLoadingHold(float seconds, string label)
+        {
+            if (seconds > 0.001f)
+            {
+                throw new InvalidOperationException($"{label} must be 0 for immediate UI routes without a loading card.");
             }
         }
 

@@ -127,9 +127,8 @@ namespace DimensionBrawl.Editor
                 SerializedProperty route = routes.GetArrayElementAtIndex(i);
                 UIRouteId routeId = (UIRouteId)route.FindPropertyRelative("routeId").intValue;
                 string scenePath = route.FindPropertyRelative("scenePath").stringValue;
-                bool useAsyncLoading = route.FindPropertyRelative("useAsyncLoading").boolValue;
 
-                if (routeId != UIRouteId.None && useAsyncLoading && !string.IsNullOrWhiteSpace(scenePath))
+                if (routeId != UIRouteId.None && !string.IsNullOrWhiteSpace(scenePath))
                 {
                     routeScenes.Add(new RouteScene(routeId, scenePath.Replace('\\', '/')));
                 }

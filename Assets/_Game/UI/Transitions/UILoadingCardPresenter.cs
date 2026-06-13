@@ -20,22 +20,30 @@ namespace DimensionBrawl.UI
         {
             if (applyOnEnable)
             {
-                ShowCard(defaultCardId);
+                TryShowCard(defaultCardId);
             }
         }
 
         public void ShowCard(string cardId)
         {
+            TryShowCard(cardId);
+        }
+
+        public bool TryShowCard(string cardId)
+        {
             if (deck == null)
             {
-                return;
+                return false;
             }
 
             if (deck.TryGetCard(cardId, out UILoadingCardDeck.LoadingCard card)
-                || (useWeightedFallback && deck.TryGetWeightedCard(weightedSeed, out card)))
+                || (string.IsNullOrWhiteSpace(cardId) && useWeightedFallback && deck.TryGetWeightedCard(weightedSeed, out card)))
             {
                 Apply(card);
+                return true;
             }
+
+            return false;
         }
 
         public void ShowWeightedPreview()

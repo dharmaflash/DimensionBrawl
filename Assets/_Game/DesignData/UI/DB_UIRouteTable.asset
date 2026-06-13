@@ -17,23 +17,23 @@ MonoBehaviour:
     sceneName: UI_LoginTest
     scenePath: Assets/_Game/Scenes/UI/UI_LoginTest.unity
     transitionId: SceneFadeShort
-    loadingCardId: title_ambient_start
-    useAsyncLoading: 1
-    minimumLoadingSeconds: 0.35
+    loadingCardId:
+    useAsyncLoading: 0
+    minimumLoadingSeconds: 0
   - routeId: 20
     sceneName: UI_LobbyTest
     scenePath: Assets/_Game/Scenes/UI/UI_LobbyTest.unity
     transitionId: SceneFadeShort
-    loadingCardId: lobby_primary_cta_anchor
-    useAsyncLoading: 1
-    minimumLoadingSeconds: 0.45
+    loadingCardId:
+    useAsyncLoading: 0
+    minimumLoadingSeconds: 0
   - routeId: 30
     sceneName: UI_StageSelectTest
     scenePath: Assets/_Game/Scenes/UI/UI_StageSelectTest.unity
     transitionId: SceneFadeShort
-    loadingCardId: stage_card_expand
-    useAsyncLoading: 1
-    minimumLoadingSeconds: 0.45
+    loadingCardId:
+    useAsyncLoading: 0
+    minimumLoadingSeconds: 0
   - routeId: 40
     sceneName: UI_CombatHudTest
     scenePath: Assets/_Game/Scenes/UI/UI_CombatHudTest.unity
