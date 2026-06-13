@@ -1,0 +1,60 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2febf55914e21f14c8b3f26ea4bd1fbb, type: 3}
+  m_Name: DB_Segment_PressureRescue
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.LinearStageSegmentProfile
+  segmentId: S1.Segment.PressureRescue
+  displayName: Pressure Rescue
+  segmentKind: 4
+  recommendedDurationSeconds: 45
+  targetIntensity: 0.62
+  requiresReliefAfter: 1
+  combatLesson: Create an overload pocket where a future Tank or Heal answer would
+    visibly shift pressure.
+  cameraRead: Camera should bias active attacker and keep escape lanes legible.
+  excludedScope: No actual summon call, healing system, or support spawning in the
+    template.
+  pockets:
+  - pocketId: rescue_overload_mix
+    pocketKind: 2
+    targetDurationSeconds: 32
+    targetIntensity: 0.64
+    featuredSummonNeed: 3
+    objectiveCue: Survive the pressure pocket.
+    designNotes: FanSuppressor controls space, LungeChaser punishes retreat, Skirmisher
+      tests tracking.
+    enemyRoles:
+    - role: {fileID: 11400000, guid: b7b03e1c520e0ff4896a99da9ba6b68b, type: 2}
+      minimumCount: 1
+      maximumCount: 2
+      selectionWeight: 1
+      suggestedAnswer: 3
+      placementHint: Midline cone source with room to sidestep.
+    - role: {fileID: 11400000, guid: 598f95220ac9bf64ca9aa454b912e0b1, type: 2}
+      minimumCount: 1
+      maximumCount: 1
+      selectionWeight: 0.75
+      suggestedAnswer: 3
+      placementHint: Side pressure, not directly behind the player.
+    - role: {fileID: 11400000, guid: 86f255894f64fcb4685039c95d2037bb, type: 2}
+      minimumCount: 0
+      maximumCount: 1
+      selectionWeight: 0.6
+      suggestedAnswer: 4
+      placementHint: Optional mobile pressure after the basic mix is stable.
+    - role: {fileID: 11400000, guid: efd21f97998aeed4b88ce9379b557596, type: 2}
+      minimumCount: 0
+      maximumCount: 1
+      selectionWeight: 0.35
+      suggestedAnswer: 2
+      placementHint: Future support-call lesson, disabled by count range unless promoted
+        for a specific stage.

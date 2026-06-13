@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2febf55914e21f14c8b3f26ea4bd1fbb, type: 3}
+  m_Name: DB_Segment_FinalStand
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.LinearStageSegmentProfile
+  segmentId: S1.Segment.FinalStand
+  displayName: Final Stand
+  segmentKind: 7
+  recommendedDurationSeconds: 55
+  targetIntensity: 0.82
+  requiresReliefAfter: 0
+  combatLesson: Combine learned reads into a final clear condition without introducing
+    new rules.
+  cameraRead: Camera should preserve boss/commander readability, active projectile
+    source, and player escape space.
+  excludedScope: No real boss kill reward or score submission yet.
+  pockets:
+  - pocketId: final_stand_mix
+    pocketKind: 3
+    targetDurationSeconds: 40
+    targetIntensity: 0.84
+    featuredSummonNeed: 5
+    objectiveCue: Clear the final stand.
+    designNotes: FinalStandCommander anchors the pocket; backline and mobile roles
+      test the full lesson stack.
+    enemyRoles:
+    - role: {fileID: 11400000, guid: fa80b2248f8e02a46b61c1e2b1004ca8, type: 2}
+      minimumCount: 1
+      maximumCount: 1
+      selectionWeight: 1
+      suggestedAnswer: 5
+      placementHint: Center anchor, never hidden behind adds.
+    - role: {fileID: 11400000, guid: f16ba69f98a507f4ca39bed31caaa125, type: 2}
+      minimumCount: 1
+      maximumCount: 1
+      selectionWeight: 0.75
+      suggestedAnswer: 2
+      placementHint: Rear diagonal pressure.
+    - role: {fileID: 11400000, guid: b7b03e1c520e0ff4896a99da9ba6b68b, type: 2}
+      minimumCount: 1
+      maximumCount: 1
+      selectionWeight: 0.7
+      suggestedAnswer: 3
+      placementHint: Midline cone with visible gaps.
+    - role: {fileID: 11400000, guid: 86f255894f64fcb4685039c95d2037bb, type: 2}
+      minimumCount: 0
+      maximumCount: 1
+      selectionWeight: 0.45
+      suggestedAnswer: 4
+      placementHint: Optional movement stress for harder final variants.

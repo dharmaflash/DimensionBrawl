@@ -39,6 +39,7 @@ Create these folders only when real scripts exist:
 - `Scripts/Combat`
 - `Scripts/Animation`
 - `Scripts/Camera`
+- `Scripts/LevelDesign`
 - `Scripts/Spawning`
 - `Scripts/UI`
 - `Scripts/Data`
@@ -56,4 +57,3 @@ Create these folders only when real prefabs exist:
 ## Promotion Rule
 
 An imported asset becomes game-owned only when it is selected, renamed if needed, wrapped, or configured for actual project use. Until then, leave it in `Assets/_Imported/`.
-

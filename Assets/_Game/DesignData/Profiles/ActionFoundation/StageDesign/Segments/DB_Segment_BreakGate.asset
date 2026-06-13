@@ -1,0 +1,47 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2febf55914e21f14c8b3f26ea4bd1fbb, type: 3}
+  m_Name: DB_Segment_BreakGate
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.LinearStageSegmentProfile
+  segmentId: S1.Segment.BreakGate
+  displayName: Break Gate
+  segmentKind: 2
+  recommendedDurationSeconds: 42
+  targetIntensity: 0.48
+  requiresReliefAfter: 1
+  combatLesson: Teach that guarded pressure needs a Break answer before it becomes
+    a boss rule.
+  cameraRead: Favor the guard or heavy windup source without hiding nearby adds.
+  excludedScope: No reward payout or structure-break implementation in this data
+    layer.
+  pockets:
+  - pocketId: guard_gate_spike
+    pocketKind: 3
+    targetDurationSeconds: 30
+    targetIntensity: 0.52
+    featuredSummonNeed: 1
+    objectiveCue: Break the guarded threat.
+    designNotes: ShieldBreaker is a single elite anchor; CloseGuard keeps the lesson
+      grounded.
+    enemyRoles:
+    - role: {fileID: 11400000, guid: 1aa0e99164797384992edbae1bd0c9d6, type: 2}
+      minimumCount: 1
+      maximumCount: 2
+      selectionWeight: 0.8
+      suggestedAnswer: 1
+      placementHint: Front screen, not surrounding the player.
+    - role: {fileID: 11400000, guid: f3b20fc6d0aa8a944b2b096ce6fbc94c, type: 2}
+      minimumCount: 0
+      maximumCount: 1
+      selectionWeight: 1
+      suggestedAnswer: 1
+      placementHint: Anchor in the center as the readable lesson target.

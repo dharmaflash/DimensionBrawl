@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2febf55914e21f14c8b3f26ea4bd1fbb, type: 3}
+  m_Name: DB_Segment_ReliefReset
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.LinearStageSegmentProfile
+  segmentId: S1.Segment.ReliefReset
+  displayName: Relief Reset
+  segmentKind: 5
+  recommendedDurationSeconds: 14
+  targetIntensity: 0.05
+  requiresReliefAfter: 0
+  combatLesson: Give the player a readable reset beat after a spike, matching pressure-relief
+    reference data.
+  cameraRead: Camera recenters behind the player and shows the next lane without
+    adding new threats.
+  excludedScope: No reward claim, loot, or dialogue system.
+  pockets:
+  - pocketId: reset_breath
+    pocketKind: 4
+    targetDurationSeconds: 10
+    targetIntensity: 0.05
+    featuredSummonNeed: 0
+    objectiveCue: Recover position.
+    designNotes: No enemy roles by design; this is a pacing pocket, not a spawn request.
+    enemyRoles: []

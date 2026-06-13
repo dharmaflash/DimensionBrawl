@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2febf55914e21f14c8b3f26ea4bd1fbb, type: 3}
+  m_Name: DB_Segment_BasicPressure
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.LinearStageSegmentProfile
+  segmentId: S1.Segment.BasicPressure
+  displayName: Basic Pressure
+  segmentKind: 1
+  recommendedDurationSeconds: 35
+  targetIntensity: 0.35
+  requiresReliefAfter: 0
+  combatLesson: Reinforce normal dodge, punish, and target-facing basics with a small
+    role mix.
+  cameraRead: Camera should stay player-backed and prefer the active attacker.
+  excludedScope: No support elites or boss handoff states.
+  pockets:
+  - pocketId: close_guard_reinforce
+    pocketKind: 1
+    targetDurationSeconds: 24
+    targetIntensity: 0.34
+    featuredSummonNeed: 0
+    objectiveCue: Punish recovery after close pressure.
+    designNotes: CloseGuard holds the pocket; LungeChaser is optional pressure if
+      spacing is too passive.
+    enemyRoles:
+    - role: {fileID: 11400000, guid: 1aa0e99164797384992edbae1bd0c9d6, type: 2}
+      minimumCount: 1
+      maximumCount: 2
+      selectionWeight: 1
+      suggestedAnswer: 0
+      placementHint: Near lane, staggered front.
+    - role: {fileID: 11400000, guid: 598f95220ac9bf64ca9aa454b912e0b1, type: 2}
+      minimumCount: 0
+      maximumCount: 1
+      selectionWeight: 0.45
+      suggestedAnswer: 3
+      placementHint: Delayed side entry only after the close role is understood.

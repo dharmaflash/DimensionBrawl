@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2febf55914e21f14c8b3f26ea4bd1fbb, type: 3}
+  m_Name: DB_Segment_BossBreakHandoff
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.LinearStageSegmentProfile
+  segmentId: S1.Segment.BossBreakHandoff
+  displayName: Boss Break Handoff
+  segmentKind: 6
+  recommendedDurationSeconds: 48
+  targetIntensity: 0.7
+  requiresReliefAfter: 1
+  combatLesson: Teach phase/deck handoff grammar before a real dragon boss owns it.
+  cameraRead: Short pullback and threat silhouette later; data stays camera-readable
+    now.
+  excludedScope: No boss controller, phase manager, or dragon prefab reference.
+  pockets:
+  - pocketId: phase_duelist_handoff
+    pocketKind: 5
+    targetDurationSeconds: 34
+    targetIntensity: 0.72
+    featuredSummonNeed: 5
+    objectiveCue: Read the phase tell and reset spacing.
+    designNotes: PhaseDuelist is the pre-boss stand-in; ShieldBreaker and LineCaster
+      are optional support reads.
+    enemyRoles:
+    - role: {fileID: 11400000, guid: ffa1f5043f625ac459fc50400813c633, type: 2}
+      minimumCount: 1
+      maximumCount: 1
+      selectionWeight: 1
+      suggestedAnswer: 5
+      placementHint: Center anchor with enough space for phase tell.
+    - role: {fileID: 11400000, guid: f3b20fc6d0aa8a944b2b096ce6fbc94c, type: 2}
+      minimumCount: 0
+      maximumCount: 1
+      selectionWeight: 0.35
+      suggestedAnswer: 1
+      placementHint: Only for harder handoff variants.
+    - role: {fileID: 11400000, guid: 5ffca634ab7e9714f8c2b5a8b7c0a081, type: 2}
+      minimumCount: 0
+      maximumCount: 1
+      selectionWeight: 0.45
+      suggestedAnswer: 3
+      placementHint: Rear lane pressure if the phase read is too empty.

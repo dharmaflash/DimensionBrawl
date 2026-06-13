@@ -1,0 +1,52 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2febf55914e21f14c8b3f26ea4bd1fbb, type: 3}
+  m_Name: DB_Segment_BacklinePressure
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.LinearStageSegmentProfile
+  segmentId: S1.Segment.BacklinePressure
+  displayName: Backline Pressure
+  segmentKind: 3
+  recommendedDurationSeconds: 40
+  targetIntensity: 0.46
+  requiresReliefAfter: 1
+  combatLesson: Teach backline priority and lane/cone reading without requiring a
+    full target UI.
+  cameraRead: Keep projectile or line source visible, then allow player-forward chase.
+  excludedScope: No hidden scene-wide searches or forced lock-on changes.
+  pockets:
+  - pocketId: backline_signal_mix
+    pocketKind: 2
+    targetDurationSeconds: 28
+    targetIntensity: 0.47
+    featuredSummonNeed: 2
+    objectiveCue: Remove or dodge the backline threat.
+    designNotes: LineCaster exposes clean lane pressure; BacklineShooter creates
+      chase discipline; AuraCaptain is future elite spice.
+    enemyRoles:
+    - role: {fileID: 11400000, guid: 5ffca634ab7e9714f8c2b5a8b7c0a081, type: 2}
+      minimumCount: 1
+      maximumCount: 2
+      selectionWeight: 1
+      suggestedAnswer: 3
+      placementHint: Rear center or rear diagonal, readable lane.
+    - role: {fileID: 11400000, guid: f16ba69f98a507f4ca39bed31caaa125, type: 2}
+      minimumCount: 1
+      maximumCount: 1
+      selectionWeight: 0.8
+      suggestedAnswer: 2
+      placementHint: Rear off-center, enough gap to invite chase.
+    - role: {fileID: 11400000, guid: 20dbe93285942bd43b2c176ec02e6127, type: 2}
+      minimumCount: 0
+      maximumCount: 1
+      selectionWeight: 0.35
+      suggestedAnswer: 2
+      placementHint: Optional priority target after the normal read works.

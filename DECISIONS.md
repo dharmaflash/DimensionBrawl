@@ -90,6 +90,14 @@ Decision: `CombatEnemyRoleProfile` and pattern decks stay behavior/intent data, 
 
 Reason: Enemy, summon, and later boss content need to share a small combat grammar without forcing art choices into behavior data. Keeping role decks separate from presentation candidates lets the team review purpose first, then promote only selected models, turret parts, animations, and VFX into `_Game` when they are ready.
 
+## 2026-06-14: Linear Stage Design Starts As Data Templates
+
+Decision: The first linear stage structure should be authored as `LinearStageTemplateProfile`, `LinearStageSegmentProfile`, and pocket/role-slot data before adding runtime wave spawning, reward payout, stage-select UI, boss phases, or summon behavior.
+
+Reason: The collected run and reward research already defines a first stage lesson sequence, but turning that directly into runtime code would recreate the project risk of hidden generators and over-large systems. Data templates let designers review the intended route, pressure rhythm, relief beats, and future summon needs while reusing the existing enemy role catalog.
+
+Impact: Stage templates may reference promoted `_Game` segment and role profile assets only. Actual prefab placement, encounter runtime ownership, reward grants, and stage navigation remain separate reviewed slices.
+
 ## 2026-06-13: First Enemy Prefab Candidate Is Authored And Scene-Free
 
 Decision: The first reusable sci-fi melee soldier should be promoted as an authored `_Game/Prefabs/Enemies/ActionFoundation` prefab candidate before adding more enemy variants, waves, or spawners. The prefab may carry local health, AI, target sensor, Animator, telegraph, VFX, and cue-driver references, but it must not serialize scene target candidates or a scene camera controller.

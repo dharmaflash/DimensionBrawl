@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7d6d80fc65a6a454594964c025d3aa64, type: 3}
+  m_Name: DB_StageTemplate_S1_3_TankRescue
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.LinearStageTemplateProfile
+  stageTemplateId: S1-3.TankRescue
+  displayName: S1-3 Tank Rescue
+  templateKind: 1
+  recommendedPowerTier: 2
+  targetRunDurationSeconds: 190
+  featuredSummonNeed: 3
+  combatLesson: Tank creates a breathing window during overload.
+  masteryObjective: Survive a pressure pocket without losing the final clear.
+  rewardHook: 'SummonCore: Tank'
+  segments:
+  - {fileID: 11400000, guid: a2a34cc0492f18d429b08f0c0cd99c88, type: 2}
+  - {fileID: 11400000, guid: 17380a2777e7d7d4e980c3d499d82a33, type: 2}
+  - {fileID: 11400000, guid: 6cc8948b5192b344a91b0ae92524b103, type: 2}
+  - {fileID: 11400000, guid: 859b6b6cd6fddd441b1abd4ea6f19779, type: 2}
+  - {fileID: 11400000, guid: 441e4056fa42aa44296e6c9f28f4de75, type: 2}
+  excludedScope: No Tank call yet; pressure pocket is designed so the future Tank
+    answer has a reason.
