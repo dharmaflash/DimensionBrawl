@@ -12,15 +12,22 @@ namespace DimensionBrawl.Editor
     public static class ActionFoundationSciFiSoldier01VisualSetup
     {
         public const string VisualName = "SciFiSoldier01_GeneralDeckVisual";
+        public const string AssaultRifleName = "SciFiSoldier01_AssaultRifle";
         public const string ModelPath = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/SciFiSoldier01/Models/SK_SciFiSoldier01.fbx";
+        public const string AssaultRifleModelPath = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/SciFiSoldier01/Weapons/SM_SciFiAssaultRifle_01.fbx";
         public const string ControllerPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/SciFiSoldier01/DB_SciFiSoldier01_GeneralDeck.controller";
 
         private const string OldMaintenanceVisualName = "MaintenanceWorker_BasicSoldierVisual";
         private const string SourceModelPath = "Assets/_Imported/AssetStore/Protofactor/Sci Fi/SciFiCharactersMegaPackVol3/SciFiShooterCharactersPackVol3/SciFiSoldier_01/FBX Files/SK_SciFiSoldier_01.fbx";
         private const string SourceVariantPrefabPath = "Assets/_Imported/AssetStore/Protofactor/Sci Fi/SciFiCharactersMegaPackVol3/SciFiShooterCharactersPackVol3/SciFiSoldier_01/Prefabs/SciFiSoldier_01_Commando.prefab";
+        private const string SourceAssaultRifleModelPath = "Assets/_Imported/AssetStore/Protofactor/Sci Fi/Common/Weapons/FBX Files/SM_SciFiAssaultRifle_01.FBX";
+        private const string SourceAssaultRifleMaterialPath = "Assets/_Imported/AssetStore/Protofactor/Sci Fi/Common/Weapons/Materials/M_AssaultRifle.mat";
         private const string SourceAnimationRoot = "Assets/_Imported/AssetStore/Protofactor/Sci Fi/Common/Animations";
         private const string MaterialRoot = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/SciFiSoldier01/Materials";
         private const string TextureRoot = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/SciFiSoldier01/Textures";
+        private const string WeaponRoot = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/SciFiSoldier01/Weapons";
+        private const string WeaponMaterialRoot = WeaponRoot + "/Materials";
+        private const string WeaponTextureRoot = WeaponRoot + "/Textures";
         private const string AnimationRoot = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/SciFiSoldier01";
 
         private const string IdleClipPath = AnimationRoot + "/S01_IdleAimAssaultRifle.fbx";
@@ -45,6 +52,7 @@ namespace DimensionBrawl.Editor
         public static void EnsureGeneralDeckVisualAssets()
         {
             PromoteModel();
+            PromoteAssaultRifle();
             PromoteAnimationClip("Humanoid@IdleAimAssaultRifle.FBX", IdleClipPath);
             PromoteAnimationClip("Humanoid@RunForwardAssaultRifle.FBX", RunClipPath);
             PromoteAnimationClip("Humanoid@WalkForwardAssaultRifle.FBX", WalkClipPath);
@@ -58,6 +66,7 @@ namespace DimensionBrawl.Editor
             PromoteAnimationClip("Humanoid@DeathFrontUnarmed.FBX", DeathClipPath);
 
             ConfigureModelImporter(ModelPath);
+            ConfigureWeaponModelImporter(AssaultRifleModelPath);
             Avatar avatar = LoadAvatar(ModelPath);
             ConfigureAnimationImporter(IdleClipPath, "S01_IdleAimAssaultRifle", true, avatar);
             ConfigureAnimationImporter(RunClipPath, "S01_RunForwardAssaultRifle", true, avatar);
@@ -87,6 +96,7 @@ namespace DimensionBrawl.Editor
 
             GameObject visual = RecreateVisual(root.transform);
             ReapplyPromotedMaterials(visual);
+            GameObject assaultRifle = AttachAssaultRifle(visual);
             Animator animator = EnsureAnimator(visual, LoadController());
             Renderer[] renderers = CollectPresentableRenderers(visual);
             if (renderers.Length == 0)
@@ -94,8 +104,9 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"{VisualName} has no renderers for GeneralDeck hit feedback.");
             }
 
+            Renderer bodyRenderer = renderers.FirstOrDefault(renderer => !IsDescendantOf(renderer.transform, assaultRifle.transform)) ?? renderers[0];
             SetObjectReference(soldier, "animator", animator);
-            SetObjectReference(soldier, "bodyRenderer", renderers[0]);
+            SetObjectReference(soldier, "bodyRenderer", bodyRenderer);
             SetBool(soldier, "usePrototypeBodyColors", false);
             SetObjectReference(telegraphPresenter, "poseRoot", visual.transform);
             SetObjectReferenceArray(hitFeedback, "flashRenderers", renderers.Cast<UnityEngine.Object>().ToArray());
@@ -135,6 +146,13 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"{VisualName} should keep promoted presentable renderers.");
             }
 
+            Transform assaultRifle = FindDescendant(visual, AssaultRifleName);
+            if (assaultRifle == null)
+            {
+                throw new InvalidOperationException($"{VisualName} should carry a promoted {AssaultRifleName} child.");
+            }
+
+            ValidatePrefabSourcePath(assaultRifle.gameObject, AssaultRifleModelPath);
             ValidateRendererAssets(renderers);
 
             BasicSoldierEnemy soldier = RequireComponent<BasicSoldierEnemy>(root, root.name);
@@ -165,6 +183,25 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static void PromoteAssaultRifle()
+        {
+            EnsureFolder(WeaponRoot);
+
+            if (AssetDatabase.LoadAssetAtPath<GameObject>(AssaultRifleModelPath) == null &&
+                !AssetDatabase.CopyAsset(SourceAssaultRifleModelPath, AssaultRifleModelPath))
+            {
+                throw new InvalidOperationException($"Failed to promote assault rifle model from {SourceAssaultRifleModelPath} to {AssaultRifleModelPath}.");
+            }
+
+            Material sourceMaterial = AssetDatabase.LoadAssetAtPath<Material>(SourceAssaultRifleMaterialPath);
+            if (sourceMaterial == null)
+            {
+                throw new InvalidOperationException($"Missing source assault rifle material at {SourceAssaultRifleMaterialPath}.");
+            }
+
+            PromoteWeaponMaterial(sourceMaterial);
+        }
+
         private static void PromoteAnimationClip(string sourceFileName, string targetPath)
         {
             EnsureFolder(AnimationRoot);
@@ -190,6 +227,19 @@ namespace DimensionBrawl.Editor
 
             importer.animationType = ModelImporterAnimationType.Human;
             importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
+            importer.importAnimation = false;
+            importer.materialImportMode = ModelImporterMaterialImportMode.None;
+            importer.SaveAndReimport();
+        }
+
+        private static void ConfigureWeaponModelImporter(string path)
+        {
+            ModelImporter importer = AssetImporter.GetAtPath(path) as ModelImporter;
+            if (importer == null)
+            {
+                throw new InvalidOperationException($"Missing weapon model importer at {path}.");
+            }
+
             importer.importAnimation = false;
             importer.materialImportMode = ModelImporterMaterialImportMode.None;
             importer.SaveAndReimport();
@@ -383,6 +433,34 @@ namespace DimensionBrawl.Editor
             return visual;
         }
 
+        private static GameObject AttachAssaultRifle(GameObject visual)
+        {
+            Transform socket = FindDescendant(visual.transform, "RefPosAssaultRifle_Action");
+            if (socket == null)
+            {
+                throw new InvalidOperationException($"{VisualName} is missing RefPosAssaultRifle_Action for authored rifle placement.");
+            }
+
+            GameObject weaponAsset = AssetDatabase.LoadAssetAtPath<GameObject>(AssaultRifleModelPath);
+            if (weaponAsset == null)
+            {
+                throw new InvalidOperationException($"Missing promoted assault rifle model at {AssaultRifleModelPath}.");
+            }
+
+            GameObject weapon = PrefabUtility.InstantiatePrefab(weaponAsset, socket) as GameObject;
+            if (weapon == null)
+            {
+                throw new InvalidOperationException("Failed to instantiate promoted assault rifle visual.");
+            }
+
+            weapon.name = AssaultRifleName;
+            weapon.transform.localPosition = Vector3.zero;
+            weapon.transform.localRotation = Quaternion.identity;
+            weapon.transform.localScale = Vector3.one;
+            AssignAssaultRifleMaterial(weapon);
+            return weapon;
+        }
+
         private static void ReapplyPromotedMaterials(GameObject visual)
         {
             GameObject sourcePrefab = AssetDatabase.LoadAssetAtPath<GameObject>(SourceVariantPrefabPath);
@@ -421,6 +499,33 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static void AssignAssaultRifleMaterial(GameObject weapon)
+        {
+            Material material = PromoteWeaponMaterial(AssetDatabase.LoadAssetAtPath<Material>(SourceAssaultRifleMaterialPath));
+            Renderer[] renderers = weapon.GetComponentsInChildren<Renderer>(true);
+            if (renderers.Length == 0)
+            {
+                throw new InvalidOperationException($"{AssaultRifleName} should contain at least one renderer.");
+            }
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Material[] materials = renderers[i].sharedMaterials;
+                if (materials.Length == 0)
+                {
+                    materials = new Material[1];
+                }
+
+                for (int j = 0; j < materials.Length; j++)
+                {
+                    materials[j] = material;
+                }
+
+                renderers[i].sharedMaterials = materials;
+                EditorUtility.SetDirty(renderers[i]);
+            }
+        }
+
         private static Material[] PromoteMaterials(Material[] sourceMaterials)
         {
             Material[] promoted = new Material[sourceMaterials.Length];
@@ -434,15 +539,25 @@ namespace DimensionBrawl.Editor
 
         private static Material PromoteMaterial(Material sourceMaterial)
         {
+            return PromoteMaterial(sourceMaterial, MaterialRoot, TextureRoot);
+        }
+
+        private static Material PromoteWeaponMaterial(Material sourceMaterial)
+        {
+            return PromoteMaterial(sourceMaterial, WeaponMaterialRoot, WeaponTextureRoot);
+        }
+
+        private static Material PromoteMaterial(Material sourceMaterial, string materialRoot, string textureRoot)
+        {
             if (sourceMaterial == null)
             {
                 return null;
             }
 
-            EnsureFolder(MaterialRoot);
-            EnsureFolder(TextureRoot);
+            EnsureFolder(materialRoot);
+            EnsureFolder(textureRoot);
 
-            string targetPath = $"{MaterialRoot}/{SanitizeAssetName(sourceMaterial.name)}.mat";
+            string targetPath = $"{materialRoot}/{SanitizeAssetName(sourceMaterial.name)}.mat";
             Material targetMaterial = AssetDatabase.LoadAssetAtPath<Material>(targetPath);
             Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? sourceMaterial.shader;
             if (targetMaterial == null)
@@ -456,11 +571,12 @@ namespace DimensionBrawl.Editor
             }
 
             targetMaterial.CopyPropertiesFromMaterial(sourceMaterial);
-            CopyTextureProperty(sourceMaterial, targetMaterial, "_BaseMap", TextureUsage.Color);
-            CopyTextureProperty(sourceMaterial, targetMaterial, "_MainTex", TextureUsage.Color);
-            CopyTextureProperty(sourceMaterial, targetMaterial, "_BumpMap", TextureUsage.Normal);
-            CopyTextureProperty(sourceMaterial, targetMaterial, "_MetallicGlossMap", TextureUsage.Linear);
-            CopyTextureProperty(sourceMaterial, targetMaterial, "_OcclusionMap", TextureUsage.Linear);
+            CopyTextureProperty(sourceMaterial, targetMaterial, "_BaseMap", TextureUsage.Color, textureRoot);
+            CopyTextureProperty(sourceMaterial, targetMaterial, "_MainTex", TextureUsage.Color, textureRoot);
+            CopyTextureProperty(sourceMaterial, targetMaterial, "_BumpMap", TextureUsage.Normal, textureRoot);
+            CopyTextureProperty(sourceMaterial, targetMaterial, "_EmissionMap", TextureUsage.Color, textureRoot);
+            CopyTextureProperty(sourceMaterial, targetMaterial, "_MetallicGlossMap", TextureUsage.Linear, textureRoot);
+            CopyTextureProperty(sourceMaterial, targetMaterial, "_OcclusionMap", TextureUsage.Linear, textureRoot);
 
             if (targetMaterial.GetTexture("_BumpMap") != null)
             {
@@ -477,11 +593,16 @@ namespace DimensionBrawl.Editor
                 targetMaterial.EnableKeyword("_OCCLUSIONMAP");
             }
 
+            if (targetMaterial.GetTexture("_EmissionMap") != null)
+            {
+                targetMaterial.EnableKeyword("_EMISSION");
+            }
+
             EditorUtility.SetDirty(targetMaterial);
             return targetMaterial;
         }
 
-        private static void CopyTextureProperty(Material sourceMaterial, Material targetMaterial, string propertyName, TextureUsage usage)
+        private static void CopyTextureProperty(Material sourceMaterial, Material targetMaterial, string propertyName, TextureUsage usage, string textureRoot)
         {
             if (!sourceMaterial.HasProperty(propertyName) || !targetMaterial.HasProperty(propertyName))
             {
@@ -489,10 +610,10 @@ namespace DimensionBrawl.Editor
             }
 
             Texture sourceTexture = sourceMaterial.GetTexture(propertyName);
-            targetMaterial.SetTexture(propertyName, sourceTexture != null ? PromoteTexture(sourceTexture, usage) : null);
+            targetMaterial.SetTexture(propertyName, sourceTexture != null ? PromoteTexture(sourceTexture, usage, textureRoot) : null);
         }
 
-        private static Texture PromoteTexture(Texture sourceTexture, TextureUsage usage)
+        private static Texture PromoteTexture(Texture sourceTexture, TextureUsage usage, string textureRoot)
         {
             string sourcePath = AssetDatabase.GetAssetPath(sourceTexture).Replace('\\', '/');
             if (string.IsNullOrWhiteSpace(sourcePath) || !sourcePath.StartsWith("Assets/_Imported/", StringComparison.Ordinal))
@@ -501,7 +622,7 @@ namespace DimensionBrawl.Editor
             }
 
             string fileName = sourcePath.Substring(sourcePath.LastIndexOf('/') + 1);
-            string targetPath = $"{TextureRoot}/{fileName}";
+            string targetPath = $"{textureRoot}/{fileName}";
             if (AssetDatabase.LoadAssetAtPath<Texture>(targetPath) == null && !AssetDatabase.CopyAsset(sourcePath, targetPath))
             {
                 throw new InvalidOperationException($"Failed to promote SciFiSoldier01 texture from {sourcePath} to {targetPath}.");
@@ -572,6 +693,19 @@ namespace DimensionBrawl.Editor
             return false;
         }
 
+        private static bool IsDescendantOf(Transform candidate, Transform root)
+        {
+            for (Transform current = candidate; current != null; current = current.parent)
+            {
+                if (current == root)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private static void DisableUnusedVariantRenderer(Renderer renderer)
         {
             renderer.sharedMaterials = Array.Empty<Material>();
@@ -601,19 +735,27 @@ namespace DimensionBrawl.Editor
                         throw new InvalidOperationException($"{renderers[i].name} uses non-game-owned SciFiSoldier01 material: {materialPath}.");
                     }
 
-                    Texture baseTexture = material.HasProperty("_BaseMap") ? material.GetTexture("_BaseMap") : material.mainTexture;
-                    if (baseTexture == null)
+                    string[] texturePropertyNames = material.GetTexturePropertyNames();
+                    for (int textureIndex = 0; textureIndex < texturePropertyNames.Length; textureIndex++)
                     {
-                        continue;
-                    }
+                        string propertyName = texturePropertyNames[textureIndex];
+                        Texture texture = material.GetTexture(propertyName);
+                        if (texture == null)
+                        {
+                            continue;
+                        }
 
-                    string texturePath = AssetDatabase.GetAssetPath(baseTexture).Replace('\\', '/');
-                    if (!texturePath.StartsWith("Assets/_Game/", StringComparison.Ordinal) || texturePath.Contains("/_Imported/", StringComparison.Ordinal))
-                    {
-                        throw new InvalidOperationException($"{material.name} uses non-game-owned SciFiSoldier01 base texture: {texturePath}.");
-                    }
+                        string texturePath = AssetDatabase.GetAssetPath(texture).Replace('\\', '/');
+                        if (!texturePath.StartsWith("Assets/_Game/", StringComparison.Ordinal) || texturePath.Contains("/_Imported/", StringComparison.Ordinal))
+                        {
+                            throw new InvalidOperationException($"{material.name} uses non-game-owned SciFiSoldier01 texture on {propertyName}: {texturePath}.");
+                        }
 
-                    gameOwnedBaseTextures++;
+                        if (propertyName == "_BaseMap" || propertyName == "_MainTex")
+                        {
+                            gameOwnedBaseTextures++;
+                        }
+                    }
                 }
             }
 
@@ -639,6 +781,35 @@ namespace DimensionBrawl.Editor
                     throw new InvalidOperationException($"{root.name} hit feedback renderer {i} should reference {expectedRenderers[i].name}.");
                 }
             }
+        }
+
+        private static void ValidatePrefabSourcePath(GameObject instance, string expectedPath)
+        {
+            GameObject source = PrefabUtility.GetCorrespondingObjectFromSource(instance);
+            string sourcePath = AssetDatabase.GetAssetPath(source).Replace('\\', '/');
+            if (!string.Equals(sourcePath, expectedPath, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"{instance.name} should come from {expectedPath}, found {sourcePath}.");
+            }
+        }
+
+        private static Transform FindDescendant(Transform root, string childName)
+        {
+            if (root.name == childName)
+            {
+                return root;
+            }
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform match = FindDescendant(root.GetChild(i), childName);
+                if (match != null)
+                {
+                    return match;
+                }
+            }
+
+            return null;
         }
 
         private static AnimatorController LoadController()

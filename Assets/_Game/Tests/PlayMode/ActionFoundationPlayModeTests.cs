@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Enemies;
@@ -44,6 +45,8 @@ namespace DimensionBrawl.Tests
         private const string MeleeSoldierPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Melee_ClosePunish.prefab";
         private const string GeneralDeckSoldierPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_GeneralDeck.prefab";
         private const string SciFiSoldier01VisualName = "SciFiSoldier01_GeneralDeckVisual";
+        private const string SciFiSoldier01AssaultRifleName = "SciFiSoldier01_AssaultRifle";
+        private const string SciFiSoldier01AssaultRiflePath = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/SciFiSoldier01/Weapons/SM_SciFiAssaultRifle_01.fbx";
         private const string SciFiSoldier01ControllerPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/SciFiSoldier01/DB_SciFiSoldier01_GeneralDeck.controller";
         private const string PlayerVisualName = "CombatGirlSwordShield_PlayerVisual";
         private const string EnemyVisualName = "MaintenanceWorker_BasicSoldierVisual";
@@ -859,6 +862,8 @@ namespace DimensionBrawl.Tests
                 Assert.IsNotNull(rifleVisual, "General-deck soldier should use the promoted SciFiSoldier01 visual instead of duplicating the melee worker.");
                 Assert.IsNull(prefabRoot.transform.Find(EnemyVisualName), "General-deck soldier should not keep the melee MaintenanceWorker visual.");
                 Animator animator = rifleVisual.GetComponent<Animator>();
+                Transform assaultRifle = rifleVisual.GetComponentsInChildren<Transform>(true)
+                    .FirstOrDefault(child => child.name == SciFiSoldier01AssaultRifleName);
 
                 Assert.IsNotNull(soldier, "General-deck soldier prefab should own BasicSoldierEnemy on the root.");
                 Assert.IsNotNull(health, "General-deck soldier prefab should own CombatHealth on the root.");
@@ -868,8 +873,12 @@ namespace DimensionBrawl.Tests
                 Assert.IsNotNull(cuePlayer, "General-deck soldier prefab should own the combat VFX cue player on the root.");
                 Assert.IsNotNull(vfxCueDriver, "General-deck soldier prefab should own the combat VFX cue driver on the root.");
                 Assert.IsNotNull(animator, "General-deck soldier prefab should include the promoted SciFiSoldier01 Animator.");
+                Assert.IsNotNull(assaultRifle, "General-deck soldier should carry the promoted assault rifle mesh on its rifle visual.");
                 string controllerPath = AssetDatabase.GetAssetPath(animator.runtimeAnimatorController).Replace('\\', '/');
                 Assert.AreEqual(SciFiSoldier01ControllerPath, controllerPath, "General-deck soldier should use the rifle/general-deck Animator Controller.");
+                GameObject assaultRifleSource = PrefabUtility.GetCorrespondingObjectFromSource(assaultRifle.gameObject);
+                string assaultRifleSourcePath = AssetDatabase.GetAssetPath(assaultRifleSource).Replace('\\', '/');
+                Assert.AreEqual(SciFiSoldier01AssaultRiflePath, assaultRifleSourcePath, "General-deck assault rifle should be promoted under _Game, not linked to the raw imported pack.");
                 AssertPromotedRendererMaterials(rifleVisual.gameObject, "General-deck rifle visual");
 
                 Assert.AreSame(targetSensor, soldier.TargetSensor, "Prefab AI should use its local target sensor.");
