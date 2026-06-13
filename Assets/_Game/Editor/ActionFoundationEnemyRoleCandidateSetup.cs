@@ -5,6 +5,7 @@ using DimensionBrawl.Combat;
 using DimensionBrawl.Enemies;
 using DimensionBrawl.Presentation;
 using UnityEditor;
+using UnityEditor.Animations;
 using UnityEngine;
 
 namespace DimensionBrawl.Editor
@@ -478,6 +479,7 @@ namespace DimensionBrawl.Editor
                 CombatTargetSensor targetSensor = RequireComponent<CombatTargetSensor>(prefabRoot, candidate.Role.RoleId);
                 CombatVfxCuePlayer cuePlayer = RequireComponent<CombatVfxCuePlayer>(prefabRoot, candidate.Role.RoleId);
                 EnemyCombatVfxCueDriver vfxCueDriver = RequireComponent<EnemyCombatVfxCueDriver>(prefabRoot, candidate.Role.RoleId);
+                Animator animator = prefabRoot.GetComponentInChildren<Animator>(includeInactive: true);
 
                 if (soldier.PatternProfile != candidate.Role.StartingPattern)
                 {
@@ -506,6 +508,7 @@ namespace DimensionBrawl.Editor
 
                 ValidateObjectReference(cuePlayer, "profile", candidate.VfxCueProfile);
                 ValidateLocalReference(cuePlayer, "pooledRoot", prefabRoot);
+                ValidateRoleAnimationAssignment(candidate.Role, soldier, animator);
                 ValidateObjectReference(vfxCueDriver, "agentSource", soldier);
                 ValidateObjectReference(vfxCueDriver, "health", health);
                 ValidateObjectReference(vfxCueDriver, "cuePlayer", cuePlayer);
@@ -641,6 +644,149 @@ namespace DimensionBrawl.Editor
                     throw new InvalidOperationException($"{role.RoleId} elite profile {i} should be {role.GetEliteProfile(i).name}.");
                 }
             }
+        }
+
+        private static void ValidateRoleAnimationAssignment(
+            CombatEnemyRoleProfile role,
+            BasicSoldierEnemy soldier,
+            Animator animator)
+        {
+            if (animator == null)
+            {
+                throw new InvalidOperationException($"{role.RoleId} prefab should have a promoted local Animator.");
+            }
+
+            if (animator.runtimeAnimatorController == null)
+            {
+                throw new InvalidOperationException($"{role.RoleId} Animator should have a promoted controller assigned.");
+            }
+
+            if (animator.runtimeAnimatorController.animationClips == null ||
+                animator.runtimeAnimatorController.animationClips.Length == 0)
+            {
+                throw new InvalidOperationException($"{role.RoleId} Animator controller should carry promoted animation clips.");
+            }
+
+            if (animator.applyRootMotion)
+            {
+                throw new InvalidOperationException($"{role.RoleId} Animator should keep root motion disabled; BasicSoldierEnemy owns movement.");
+            }
+
+            ValidateObjectReference(soldier, "animator", animator);
+
+            AnimatorController controller = animator.runtimeAnimatorController as AnimatorController;
+            if (controller == null)
+            {
+                throw new InvalidOperationException($"{role.RoleId} Animator should use an inspectable AnimatorController.");
+            }
+
+            ValidateRolePatternAnimationParameters(role, controller);
+            ValidateRoleEliteSignalAnimationParameters(role, controller);
+        }
+
+        private static void ValidateRolePatternAnimationParameters(
+            CombatEnemyRoleProfile role,
+            AnimatorController controller)
+        {
+            var patterns = new List<CombatAiPatternProfile>();
+            AddPattern(patterns, role.StartingPattern);
+            AddDeckPatterns(patterns, role.PatternDeck);
+
+            for (int i = 0; i < role.EliteProfileCount; i++)
+            {
+                CombatAiElitePatternProfile eliteProfile = role.GetEliteProfile(i);
+                AddPattern(patterns, eliteProfile.ReplacementPatternProfile);
+                AddDeckPatterns(patterns, eliteProfile.ReplacementPatternDeck);
+            }
+
+            for (int i = 0; i < patterns.Count; i++)
+            {
+                CombatAiPatternProfile profile = patterns[i];
+                string label = $"{role.RoleId}/{profile.PatternId}";
+                ValidateAnimatorParameter(controller, profile.MoveSpeedParameter, AnimatorControllerParameterType.Float, label, true);
+                ValidateAnimatorParameter(controller, profile.PrepareTrigger, AnimatorControllerParameterType.Trigger, label, false);
+                ValidateAnimatorParameter(controller, profile.AttackTrigger, AnimatorControllerParameterType.Trigger, label, true);
+                ValidateAnimatorParameter(controller, profile.HitTrigger, AnimatorControllerParameterType.Trigger, label, true);
+                ValidateAnimatorParameter(controller, profile.DeathTrigger, AnimatorControllerParameterType.Trigger, label, true);
+            }
+        }
+
+        private static void ValidateRoleEliteSignalAnimationParameters(
+            CombatEnemyRoleProfile role,
+            AnimatorController controller)
+        {
+            for (int i = 0; i < role.EliteProfileCount; i++)
+            {
+                CombatAiElitePatternProfile profile = role.GetEliteProfile(i);
+                ValidateAnimatorParameter(
+                    controller,
+                    profile.SignalAnimationTrigger,
+                    AnimatorControllerParameterType.Trigger,
+                    $"{role.RoleId}/{profile.PatternId}",
+                    true);
+            }
+        }
+
+        private static void AddDeckPatterns(List<CombatAiPatternProfile> patterns, CombatAiPatternDeck deck)
+        {
+            if (deck == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < deck.EntryCount; i++)
+            {
+                AddPattern(patterns, deck.GetEntry(i).Profile);
+            }
+        }
+
+        private static void AddPattern(List<CombatAiPatternProfile> patterns, CombatAiPatternProfile pattern)
+        {
+            if (pattern == null || patterns.Contains(pattern))
+            {
+                return;
+            }
+
+            patterns.Add(pattern);
+        }
+
+        private static void ValidateAnimatorParameter(
+            AnimatorController controller,
+            string parameterName,
+            AnimatorControllerParameterType expectedType,
+            string label,
+            bool required)
+        {
+            if (string.IsNullOrWhiteSpace(parameterName))
+            {
+                if (required)
+                {
+                    throw new InvalidOperationException($"{label} should define a non-empty {expectedType} animation parameter.");
+                }
+
+                return;
+            }
+
+            AnimatorControllerParameter[] parameters = controller.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                AnimatorControllerParameter parameter = parameters[i];
+                if (!string.Equals(parameter.name, parameterName, StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                if (parameter.type != expectedType)
+                {
+                    throw new InvalidOperationException(
+                        $"{label} animation parameter {parameterName} should be {expectedType}, found {parameter.type}.");
+                }
+
+                return;
+            }
+
+            throw new InvalidOperationException(
+                $"{label} AnimatorController {controller.name} is missing {expectedType} parameter {parameterName}.");
         }
 
         private static CombatAiElitePatternProfile[] GetEliteProfiles(CombatEnemyRoleProfile role)

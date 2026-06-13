@@ -9,6 +9,7 @@ using DimensionBrawl.Presentation;
 using DimensionBrawl.Test;
 using NUnit.Framework;
 using UnityEditor;
+using UnityEditor.Animations;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -844,6 +845,7 @@ namespace DimensionBrawl.Tests
                     BasicSoldierEnemy soldier = prefabRoot.GetComponent<BasicSoldierEnemy>();
                     CombatHealth health = prefabRoot.GetComponent<CombatHealth>();
                     CombatTargetSensor targetSensor = prefabRoot.GetComponent<CombatTargetSensor>();
+                    Animator animator = prefabRoot.GetComponentInChildren<Animator>(includeInactive: true);
                     Assert.IsNotNull(soldier, $"{candidate.Role.RoleId} prefab should own BasicSoldierEnemy.");
                     Assert.IsNotNull(health, $"{candidate.Role.RoleId} prefab should own CombatHealth.");
                     Assert.IsNotNull(targetSensor, $"{candidate.Role.RoleId} prefab should own CombatTargetSensor.");
@@ -852,6 +854,7 @@ namespace DimensionBrawl.Tests
                     Assert.AreSame(health, soldier.SelfHealth, $"{candidate.Role.RoleId} should use local health.");
                     Assert.AreSame(targetSensor, soldier.TargetSensor, $"{candidate.Role.RoleId} should use local target sensor.");
                     Assert.AreEqual(0, targetSensor.TargetCandidateCount, $"{candidate.Role.RoleId} target candidates should be scene-injected.");
+                    AssertRoleCandidateAnimationBinding(candidate.Role, soldier, animator);
                     ValidateEnemyCombatVfxBinding(soldier, vfxCueProfile, candidate.Role.EliteRole);
 
                     SerializedObject vfxDriver = new SerializedObject(prefabRoot.GetComponent<EnemyCombatVfxCueDriver>());
@@ -2270,6 +2273,100 @@ namespace DimensionBrawl.Tests
             }
 
             Assert.IsTrue(foundGameOwnedMaterial, $"{label} should include at least one game-owned material.");
+        }
+
+        private static void AssertRoleCandidateAnimationBinding(
+            CombatEnemyRoleProfile role,
+            BasicSoldierEnemy soldier,
+            Animator animator)
+        {
+            Assert.IsNotNull(animator, $"{role.RoleId} prefab should have a promoted local Animator.");
+            Assert.IsNotNull(animator.runtimeAnimatorController, $"{role.RoleId} Animator should have a promoted controller assigned.");
+            Assert.IsNotEmpty(animator.runtimeAnimatorController.animationClips, $"{role.RoleId} Animator controller should carry promoted animation clips.");
+            Assert.IsFalse(animator.applyRootMotion, $"{role.RoleId} Animator root motion should stay disabled; BasicSoldierEnemy owns movement.");
+
+            SerializedObject soldierObject = new SerializedObject(soldier);
+            Assert.AreSame(
+                animator,
+                soldierObject.FindProperty("animator").objectReferenceValue,
+                $"{role.RoleId} BasicSoldierEnemy should target the local promoted Animator.");
+
+            AnimatorController controller = animator.runtimeAnimatorController as AnimatorController;
+            Assert.IsNotNull(controller, $"{role.RoleId} Animator should use an inspectable AnimatorController.");
+
+            var patterns = new List<CombatAiPatternProfile>();
+            AddPattern(patterns, role.StartingPattern);
+            AddDeckPatterns(patterns, role.PatternDeck);
+            for (int i = 0; i < role.EliteProfileCount; i++)
+            {
+                CombatAiElitePatternProfile eliteProfile = role.GetEliteProfile(i);
+                AddPattern(patterns, eliteProfile.ReplacementPatternProfile);
+                AddDeckPatterns(patterns, eliteProfile.ReplacementPatternDeck);
+            }
+
+            for (int i = 0; i < patterns.Count; i++)
+            {
+                CombatAiPatternProfile pattern = patterns[i];
+                string label = $"{role.RoleId}/{pattern.PatternId}";
+                AssertAnimatorParameter(controller, pattern.MoveSpeedParameter, AnimatorControllerParameterType.Float, label, required: true);
+                AssertAnimatorParameter(controller, pattern.PrepareTrigger, AnimatorControllerParameterType.Trigger, label, required: false);
+                AssertAnimatorParameter(controller, pattern.AttackTrigger, AnimatorControllerParameterType.Trigger, label, required: true);
+                AssertAnimatorParameter(controller, pattern.HitTrigger, AnimatorControllerParameterType.Trigger, label, required: true);
+                AssertAnimatorParameter(controller, pattern.DeathTrigger, AnimatorControllerParameterType.Trigger, label, required: true);
+            }
+
+            for (int i = 0; i < role.EliteProfileCount; i++)
+            {
+                CombatAiElitePatternProfile eliteProfile = role.GetEliteProfile(i);
+                AssertAnimatorParameter(
+                    controller,
+                    eliteProfile.SignalAnimationTrigger,
+                    AnimatorControllerParameterType.Trigger,
+                    $"{role.RoleId}/{eliteProfile.PatternId}",
+                    required: true);
+            }
+        }
+
+        private static void AddDeckPatterns(List<CombatAiPatternProfile> patterns, CombatAiPatternDeck deck)
+        {
+            if (deck == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < deck.EntryCount; i++)
+            {
+                AddPattern(patterns, deck.GetEntry(i).Profile);
+            }
+        }
+
+        private static void AddPattern(List<CombatAiPatternProfile> patterns, CombatAiPatternProfile pattern)
+        {
+            if (pattern == null || patterns.Contains(pattern))
+            {
+                return;
+            }
+
+            patterns.Add(pattern);
+        }
+
+        private static void AssertAnimatorParameter(
+            AnimatorController controller,
+            string parameterName,
+            AnimatorControllerParameterType expectedType,
+            string label,
+            bool required)
+        {
+            if (string.IsNullOrWhiteSpace(parameterName))
+            {
+                Assert.IsFalse(required, $"{label} should define a non-empty {expectedType} animation parameter.");
+                return;
+            }
+
+            AnimatorControllerParameter parameter = controller.parameters.FirstOrDefault(candidate =>
+                string.Equals(candidate.name, parameterName, System.StringComparison.Ordinal));
+            Assert.IsNotNull(parameter, $"{label} AnimatorController {controller.name} is missing {expectedType} parameter {parameterName}.");
+            Assert.AreEqual(expectedType, parameter.type, $"{label} animation parameter {parameterName} should be {expectedType}.");
         }
 
         private static Bounds CollectRenderableBounds(GameObject root)
