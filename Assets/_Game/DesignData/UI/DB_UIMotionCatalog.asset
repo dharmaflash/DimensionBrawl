@@ -1,0 +1,115 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30f0be1bde1905b42b3cdc9c220381b4, type: 3}
+  m_Name: DB_UIMotionCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIMotionCatalog
+  motions:
+  - id: SceneFadeShort
+    target: 50
+    durationSeconds: 0.45
+    delaySeconds: 0
+    fadeFrom: 0
+    fadeTo: 1
+    scaleFrom: 1
+    scaleTo: 1
+    easing: 20
+    blocksInputDuringMotion: 1
+  - id: title_ambient_start
+    target: 0
+    durationSeconds: 0.55
+    delaySeconds: 0
+    fadeFrom: 0
+    fadeTo: 1
+    scaleFrom: 0.98
+    scaleTo: 1
+    easing: 10
+    blocksInputDuringMotion: 0
+  - id: lobby_character_signboard
+    target: 0
+    durationSeconds: 1.2
+    delaySeconds: 0
+    fadeFrom: 0.6
+    fadeTo: 1
+    scaleFrom: 0.96
+    scaleTo: 1
+    easing: 30
+    blocksInputDuringMotion: 0
+  - id: stage_card_expand
+    target: 10
+    durationSeconds: 0.35
+    delaySeconds: 0
+    fadeFrom: 0.8
+    fadeTo: 1
+    scaleFrom: 0.94
+    scaleTo: 1
+    easing: 10
+    blocksInputDuringMotion: 0
+  - id: stage_to_combat_mood_bridge
+    target: 50
+    durationSeconds: 0.65
+    delaySeconds: 0
+    fadeFrom: 0
+    fadeTo: 1
+    scaleFrom: 1
+    scaleTo: 1
+    easing: 20
+    blocksInputDuringMotion: 1
+  - id: summon_call_primary_pulse
+    target: 40
+    durationSeconds: 0.45
+    delaySeconds: 0
+    fadeFrom: 0.75
+    fadeTo: 1
+    scaleFrom: 1
+    scaleTo: 1.05
+    easing: 30
+    blocksInputDuringMotion: 0
+  - id: ultimate_ready_sting
+    target: 40
+    durationSeconds: 0.55
+    delaySeconds: 0
+    fadeFrom: 0.7
+    fadeTo: 1
+    scaleFrom: 1
+    scaleTo: 1.08
+    easing: 30
+    blocksInputDuringMotion: 0
+  - id: denied_action_micro_toast
+    target: 30
+    durationSeconds: 0.8
+    delaySeconds: 0
+    fadeFrom: 0
+    fadeTo: 1
+    scaleFrom: 0.98
+    scaleTo: 1
+    easing: 10
+    blocksInputDuringMotion: 0
+  - id: result_rank_reward_sequence
+    target: 10
+    durationSeconds: 0.65
+    delaySeconds: 0
+    fadeFrom: 0
+    fadeTo: 1
+    scaleFrom: 0.96
+    scaleTo: 1
+    easing: 10
+    blocksInputDuringMotion: 1
+  - id: result_fail_fast_retry
+    target: 10
+    durationSeconds: 0.35
+    delaySeconds: 0
+    fadeFrom: 0
+    fadeTo: 1
+    scaleFrom: 0.98
+    scaleTo: 1
+    easing: 10
+    blocksInputDuringMotion: 1

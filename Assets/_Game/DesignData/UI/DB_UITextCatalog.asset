@@ -1,0 +1,319 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b7b26f5516fc51d489cad94176b18645, type: 3}
+  m_Name: DB_UITextCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UITextCatalog
+  entries:
+  - key: ui.login.title
+    domain: Login
+    value: Dimension Brawl
+    note: Temporary title text.
+  - key: ui.login.start
+    domain: Login
+    value: START
+    note: Single local entry action.
+  - key: ui.lobby.primary_cta
+    domain: Lobby
+    value: Story PvE
+    note: Primary route into mission prep.
+  - key: ui.lobby.guide_default
+    domain: Lobby
+    value: Choose a route when you are ready.
+    note: Default guide line.
+  - key: ui.stage.title
+    domain: StageSelect
+    value: Story V1 Training Route
+    note: UI-only stage display name.
+  - key: ui.stage.start
+    domain: StageSelect
+    value: Start
+    note: Starts HUD test route only.
+  - key: ui.combat.objective
+    domain: CombatHud
+    value: Reach the encounter marker
+    note: Objective placeholder.
+  - key: ui.common.loading
+    domain: Common
+    value: Loading
+    note: Transition overlay label.
+  - key: ui.common.denied
+    domain: Common
+    value: Unavailable in UI V1
+    note: Generic disabled feature toast.
+  - key: ui.panel.settings_placeholder
+    domain: Panel
+    value: Settings placeholder
+    note: No real settings persistence.
+  - key: ui.common.back
+    domain: Common
+    value: Back
+    note: Navigation label.
+  - key: ui.common.disabled
+    domain: Common
+    value: Unavailable
+    note: Disabled tooltip placeholder.
+  - key: ui.common.locked
+    domain: Common
+    value: Locked in UI V1
+    note: Locked tooltip placeholder.
+  - key: ui.common.focus_ring
+    domain: Common
+    value: Focus
+    note: Accessibility marker label.
+  - key: ui.common.focus_ring.narration
+    domain: Common
+    value: Current focus outline.
+    note: Accessibility narration placeholder.
+  - key: ui.login.start.narration
+    domain: Login
+    value: Enter the local UI test lobby.
+    note: Narration placeholder.
+  - key: ui.lobby.primary_cta.narration
+    domain: Lobby
+    value: Open the UI-only mission preparation screen.
+    note: Narration placeholder.
+  - key: ui.stage.start.narration
+    domain: StageSelect
+    value: Start the combat HUD test scene.
+    note: Narration placeholder.
+  - key: ui.stage.back.narration
+    domain: StageSelect
+    value: Return to the lobby UI test scene.
+    note: Narration placeholder.
+  - key: ui.combat.basic_attack
+    domain: CombatHud
+    value: Basic Attack
+    note: Canonical combat action label.
+  - key: ui.combat.basic_attack.narration
+    domain: CombatHud
+    value: Basic Attack UI input.
+    note: Narration placeholder.
+  - key: ui.combat.dodge
+    domain: CombatHud
+    value: Dodge
+    note: Canonical combat action label.
+  - key: ui.combat.dodge.narration
+    domain: CombatHud
+    value: Dodge UI input.
+    note: Narration placeholder.
+  - key: ui.combat.pause
+    domain: CombatHud
+    value: Pause
+    note: Canonical combat action label.
+  - key: ui.combat.pause.narration
+    domain: CombatHud
+    value: Pause UI input.
+    note: Narration placeholder.
+  - key: ui.common.button.normal
+    domain: Common
+    value: Normal
+    note: Button state label.
+  - key: ui.common.button.highlighted
+    domain: Common
+    value: Focused
+    note: Button state label.
+  - key: ui.common.button.disabled
+    domain: Common
+    value: Disabled
+    note: Button state label.
+  - key: ui.common.button.locked
+    domain: Common
+    value: Locked
+    note: Button state label.
+  - key: ui.common.button.ready
+    domain: Common
+    value: Ready
+    note: Button state label.
+  - key: ui.common.button.active
+    domain: Common
+    value: Active
+    note: Button state label.
+  - key: ui.state.empty.title
+    domain: Common
+    value: Nothing to show yet
+    note: Empty-state display title.
+  - key: ui.state.empty.body
+    domain: Common
+    value: This UI slot is reserved for a later feature slice.
+    note: Empty-state display body.
+  - key: ui.state.locked.title
+    domain: Common
+    value: Locked for UI V1
+    note: Locked-state display title.
+  - key: ui.state.locked.body
+    domain: Common
+    value: The anchor is visible for layout testing, but no real system is connected.
+    note: Locked-state display body.
+  - key: ui.state.loading.title
+    domain: Common
+    value: Preparing UI
+    note: Loading-state display title.
+  - key: ui.state.loading.body
+    domain: Common
+    value: Scene and presentation data are loading through the UI route shell.
+    note: Loading-state display body.
+  - key: ui.state.coming_soon.title
+    domain: Common
+    value: Coming later
+    note: Coming-soon-state display title.
+  - key: ui.state.coming_soon.body
+    domain: Common
+    value: This placeholder keeps the layout stable without implementing the feature.
+    note: Coming-soon-state display body.
+  - key: ui.state.dismiss
+    domain: Common
+    value: Close
+    note: Generic dismiss label.
+  - key: ui.toast.disabled
+    domain: Common
+    value: Unavailable in UI V1
+    note: Disabled toast message.
+  - key: ui.toast.route_ready
+    domain: Common
+    value: Opening UI test scene
+    note: Route toast message.
+  - key: ui.toast.placeholder_only
+    domain: Common
+    value: Display placeholder only
+    note: Placeholder toast message.
+  - key: ui.tooltip.story_pve.title
+    domain: Lobby
+    value: Story PvE
+    note: Lobby CTA tooltip title.
+  - key: ui.tooltip.story_pve.body
+    domain: Lobby
+    value: Opens the mission prep UI test route without progression, stamina, or
+      rewards.
+    note: Lobby CTA tooltip body.
+  - key: ui.tooltip.summon_anchor.title
+    domain: Lobby
+    value: Summon
+    note: Summon anchor tooltip title.
+  - key: ui.tooltip.summon_anchor.body
+    domain: Lobby
+    value: Visible as a future feature anchor only; no summon system is active.
+    note: Summon anchor tooltip body.
+  - key: ui.tooltip.combat_summon_slot.title
+    domain: CombatHud
+    value: Summon Slot
+    note: Combat summon slot tooltip title.
+  - key: ui.tooltip.combat_summon_slot.body
+    domain: CombatHud
+    value: Top-right summon slots are visual placeholders until a reviewed summon
+      slice exists.
+    note: Combat summon slot tooltip body.
+  - key: ui.tooltip.stage_start.title
+    domain: StageSelect
+    value: Start HUD Test
+    note: Stage start tooltip title.
+  - key: ui.tooltip.stage_start.body
+    domain: StageSelect
+    value: Loads the combat HUD test scene through the UI route table.
+    note: Stage start tooltip body.
+  - key: ui.result.mock_win.title
+    domain: Result
+    value: Mock Clear
+    note: UI-only win result title.
+  - key: ui.result.mock_win.summary
+    domain: Result
+    value: The HUD test overlay is showing a clear state. No rewards, rank, progression,
+      or combat resolution are active.
+    note: UI-only win result summary.
+  - key: ui.result.mock_fail.title
+    domain: Result
+    value: Mock Fail
+    note: UI-only fail result title.
+  - key: ui.result.mock_fail.summary
+    domain: Result
+    value: The HUD test overlay is showing a fail state. No retry cost, stamina,
+      or progression data is connected.
+    note: UI-only fail result summary.
+  - key: ui.result.retry
+    domain: Result
+    value: Retry HUD
+    note: UI-only retry action label.
+  - key: ui.result.lobby
+    domain: Result
+    value: Lobby
+    note: Return lobby action label.
+  - key: ui.combat.mock_win
+    domain: CombatHud
+    value: Mock Win
+    note: Debug UI result trigger.
+  - key: ui.combat.mock_fail
+    domain: CombatHud
+    value: Mock Fail
+    note: Debug UI result trigger.
+  - key: ui.dialog.feature_locked.title
+    domain: Dialog
+    value: Unavailable
+    note: Generic locked feature dialog title.
+  - key: ui.dialog.feature_locked.body
+    domain: Dialog
+    value: This entry is reserved for a later UI slice.
+    note: Generic locked feature dialog body.
+  - key: ui.dialog.route_change.title
+    domain: Dialog
+    value: Leave Screen?
+    note: Generic route confirmation title.
+  - key: ui.dialog.route_change.body
+    domain: Dialog
+    value: The current UI test state will close.
+    note: Generic route confirmation body.
+  - key: ui.dialog.confirm
+    domain: Dialog
+    value: Confirm
+    note: Dialog confirm label.
+  - key: ui.dialog.cancel
+    domain: Dialog
+    value: Cancel
+    note: Dialog cancel label.
+  - key: ui.combat.mock_start
+    domain: CombatHud
+    value: Start
+    note: UI-only combat mock start label.
+  - key: ui.combat.mock_reset
+    domain: CombatHud
+    value: Reset
+    note: UI-only combat mock reset label.
+  - key: ui.combat.mock_state.ready
+    domain: CombatHud
+    value: HUD mock ready
+    note: UI-only combat mock ready state.
+  - key: ui.combat.mock_state.running
+    domain: CombatHud
+    value: Mock combat running
+    note: UI-only combat mock running state.
+  - key: ui.toast.combat_mock_start
+    domain: CombatHud
+    value: UI-only combat mock started
+    note: Combat HUD mock start toast.
+  - key: ui.toast.combat_mock_win
+    domain: CombatHud
+    value: Mock clear preview
+    note: Combat HUD mock win toast.
+  - key: ui.toast.combat_mock_fail
+    domain: CombatHud
+    value: Mock fail preview
+    note: Combat HUD mock fail toast.
+  - key: ui.toast.combat_mock_reset
+    domain: CombatHud
+    value: HUD mock reset
+    note: Combat HUD mock reset toast.
+  - key: ui.toast.route_busy
+    domain: Common
+    value: Route request is already running
+    note: Route busy toast.
+  - key: ui.toast.route_failed
+    domain: Common
+    value: UI route is not available
+    note: Route failure toast.

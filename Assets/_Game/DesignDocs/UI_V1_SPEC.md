@@ -12,8 +12,19 @@ V1 UI should prove:
 
 - A title/login flow can enter the next screen without fake account/server complexity.
 - A lobby can present the project fantasy, one primary PvE entry, and a small set of secondary anchors.
+- A stage-select test screen can bridge lobby CTA and combat HUD without owning progression or rewards.
 - A combat HUD can display the direct-control ARPG action vocabulary without owning combat logic.
 - UI prefabs, scenes, data, and presentation cues are organized so another PC can work without touching the active combat scene.
+- Android/mobile-first landscape is the default layout assumption; PC is a debug surface, not the sizing baseline.
+
+## Android Mobile-First Baseline
+
+- Default product target is Android landscape.
+- UI test scenes should use `Scale With Screen Size` with a mobile landscape reference resolution.
+- Safe Area must be represented by an authored scene/prefab root, not left as a later runtime-only concern.
+- UI input prompts must use common action names across keyboard/mouse, gamepad, and mobile display rows.
+- Avoid hardcoded device-specific branches in UI presenters. Device differences belong in prompt/layout data.
+- For contest or local test builds that need to boot directly into the UI loop, Build Settings should register the UI route scenes in route-table order, starting with `UI_LoginTest`. This is a narrow scene-list setting, not a broader ProjectSettings ownership change.
 
 ## Parallel Work Rule
 
@@ -45,7 +56,7 @@ Do not create a single catch-all UI folder with unrelated prefabs, sprites, data
 
 Other-PC UI work may include a minimal scene-flow shell if it stays UI-owned:
 
-- Allowed route: `UI_LoginTest -> UI_LobbyTest -> UI_CombatHudTest -> UI_LobbyTest`.
+- Allowed route: `UI_LoginTest -> UI_LobbyTest -> UI_StageSelectTest -> UI_CombatHudTest -> UI_LobbyTest`.
 - The flow may use fade panels, loading-card placeholders, transition duration data, and local button events.
 - Scene route names or scene references must be serialized or data-driven in one small route asset/component, not duplicated as magic strings across button scripts.
 - Scene flow code must not own save data, account login, progression unlocks, combat result resolution, or gameplay state.
@@ -177,6 +188,7 @@ Before merging UI work from another PC:
 
 - The branch starts from the latest pushed `main`.
 - No changes to `ActionFoundationTest.unity` unless explicitly coordinated.
+- For UI-loop test builds, the first enabled Build Settings scene is `UI_LoginTest`, followed by the route-table UI scenes only.
 - No direct references to `_Imported/`.
 - No full runtime UI hierarchy construction.
 - Scene navigation is limited to the UI test route unless explicitly coordinated.

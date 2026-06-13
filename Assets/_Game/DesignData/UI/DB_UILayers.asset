@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ce16bd2d0537e5d44b26b72be09638d5, type: 3}
+  m_Name: DB_UILayers
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UILayerCatalog
+  layers:
+  - layerId: 0
+    sortingLayerName: Default
+    sortingOrder: 0
+    blocksRaycasts: 0
+    modal: 0
+  - layerId: 10
+    sortingLayerName: Default
+    sortingOrder: 10
+    blocksRaycasts: 1
+    modal: 0
+  - layerId: 20
+    sortingLayerName: Default
+    sortingOrder: 30
+    blocksRaycasts: 1
+    modal: 1
+  - layerId: 30
+    sortingLayerName: Default
+    sortingOrder: 50
+    blocksRaycasts: 1
+    modal: 1
+  - layerId: 40
+    sortingLayerName: Default
+    sortingOrder: 90
+    blocksRaycasts: 1
+    modal: 1
+  - layerId: 50
+    sortingLayerName: Default
+    sortingOrder: 100
+    blocksRaycasts: 0
+    modal: 0

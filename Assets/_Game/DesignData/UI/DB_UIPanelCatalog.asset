@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eec8601e41f7523409d4e323a4dc0710, type: 3}
+  m_Name: DB_UIPanelCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIPanelCatalog
+  panels:
+  - panelId: CharacterPlaceholder
+    panelKind: 10
+    prefab: {fileID: 1011280350925926436, guid: 7aef59ed035ce8d499fb65d2f6948eb1, type: 3}
+    openCueId: PanelOpen
+    closeCueId: PanelClose
+    cachePolicy: 20
+  - panelId: SummonPlaceholder
+    panelKind: 10
+    prefab: {fileID: 1011280350925926436, guid: 7aef59ed035ce8d499fb65d2f6948eb1, type: 3}
+    openCueId: PanelOpen
+    closeCueId: PanelClose
+    cachePolicy: 20
+  - panelId: InventoryPlaceholder
+    panelKind: 10
+    prefab: {fileID: 1011280350925926436, guid: 7aef59ed035ce8d499fb65d2f6948eb1, type: 3}
+    openCueId: PanelOpen
+    closeCueId: PanelClose
+    cachePolicy: 20
+  - panelId: MailPlaceholder
+    panelKind: 0
+    prefab: {fileID: 1011280350925926436, guid: 7aef59ed035ce8d499fb65d2f6948eb1, type: 3}
+    openCueId: PanelOpen
+    closeCueId: PanelClose
+    cachePolicy: 20
+  - panelId: SettingsPlaceholder
+    panelKind: 0
+    prefab: {fileID: 1011280350925926436, guid: 7aef59ed035ce8d499fb65d2f6948eb1, type: 3}
+    openCueId: PanelOpen
+    closeCueId: PanelClose
+    cachePolicy: 20
+  - panelId: ResultPreviewPlaceholder
+    panelKind: 20
+    prefab: {fileID: 1011280350925926436, guid: 7aef59ed035ce8d499fb65d2f6948eb1, type: 3}
+    openCueId: PanelOpen
+    closeCueId: PanelClose
+    cachePolicy: 10

@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d5ba9d1dda6edb8479af7951d24e1bd6, type: 3}
+  m_Name: DB_UILoadingCards
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UILoadingCardDeck
+  cards:
+  - id: title_ambient_start
+    title: Signal Wake
+    description: The test title fades into the lobby without account or server ownership.
+    weight: 5
+  - id: lobby_primary_cta_anchor
+    title: Story PvE Standby
+    description: Lobby focuses the primary combat route and keeps feature anchors
+      compact.
+    weight: 4
+  - id: stage_card_expand
+    title: Mission Prep
+    description: Stage select previews threat, role hints, and disabled reward copy
+      without owning progression.
+    weight: 4
+  - id: stage_to_combat_mood_bridge
+    title: Combat HUD Handoff
+    description: Async scene flow presents loading progress before the HUD test scene
+      activates.
+    weight: 4
+  - id: combat_start_banner
+    title: HUD Readiness
+    description: Summon slots are visual placeholders; action buttons use canonical
+      names.
+    weight: 4

@@ -1,0 +1,71 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1ae72418cdeb56645b13aee593290d54, type: 3}
+  m_Name: DB_UIAccessibility
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIAccessibilityCatalog
+  entries:
+  - key: login.start
+    readableLabelKey: ui.login.start
+    narrationKey: ui.login.start.narration
+    focusOrder: 10
+    minimumFontSize: 18
+    contrastClass: 20
+    requiresInputPrompt: 1
+  - key: lobby.story_pve
+    readableLabelKey: ui.lobby.primary_cta
+    narrationKey: ui.lobby.primary_cta.narration
+    focusOrder: 20
+    minimumFontSize: 18
+    contrastClass: 20
+    requiresInputPrompt: 1
+  - key: stage.start
+    readableLabelKey: ui.stage.start
+    narrationKey: ui.stage.start.narration
+    focusOrder: 30
+    minimumFontSize: 18
+    contrastClass: 20
+    requiresInputPrompt: 1
+  - key: stage.back
+    readableLabelKey: ui.common.back
+    narrationKey: ui.stage.back.narration
+    focusOrder: 40
+    minimumFontSize: 16
+    contrastClass: 10
+    requiresInputPrompt: 1
+  - key: combat.basic_attack
+    readableLabelKey: ui.combat.basic_attack
+    narrationKey: ui.combat.basic_attack.narration
+    focusOrder: 50
+    minimumFontSize: 16
+    contrastClass: 20
+    requiresInputPrompt: 1
+  - key: combat.dodge
+    readableLabelKey: ui.combat.dodge
+    narrationKey: ui.combat.dodge.narration
+    focusOrder: 60
+    minimumFontSize: 16
+    contrastClass: 20
+    requiresInputPrompt: 1
+  - key: combat.pause
+    readableLabelKey: ui.combat.pause
+    narrationKey: ui.combat.pause.narration
+    focusOrder: 70
+    minimumFontSize: 16
+    contrastClass: 20
+    requiresInputPrompt: 1
+  - key: common.focus_ring
+    readableLabelKey: ui.common.focus_ring
+    narrationKey: ui.common.focus_ring.narration
+    focusOrder: 0
+    minimumFontSize: 1
+    contrastClass: 0
+    requiresInputPrompt: 0

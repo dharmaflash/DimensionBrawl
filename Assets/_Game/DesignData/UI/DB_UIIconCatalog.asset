@@ -1,0 +1,231 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: efbd3b5bcc7fe7b4781338e3d0b432ca, type: 3}
+  m_Name: DB_UIIconCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIIconCatalog
+  icons:
+  - key: key_enter
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.18, g: 0.82, b: 0.88, a: 1}
+    textFallback: Enter
+    accessibilityKey: input.confirm
+  - key: key_escape
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.13, g: 0.15, b: 0.16, a: 0.82}
+    textFallback: Esc
+    accessibilityKey: input.back
+  - key: mouse_left
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.18, g: 0.82, b: 0.88, a: 1}
+    textFallback: LMB
+    accessibilityKey: input.basic_attack
+  - key: key_space
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 1, g: 0.68, b: 0.22, a: 1}
+    textFallback: Space
+    accessibilityKey: input.dodge
+  - key: pad_a
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.18, g: 0.82, b: 0.88, a: 1}
+    textFallback: A
+    accessibilityKey: input.confirm
+  - key: pad_b
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.13, g: 0.15, b: 0.16, a: 0.82}
+    textFallback: B
+    accessibilityKey: input.back
+  - key: touch_tap
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.18, g: 0.82, b: 0.88, a: 1}
+    textFallback: Tap
+    accessibilityKey: input.confirm
+  - key: status_ready
+    category: 40
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.18, g: 0.82, b: 0.88, a: 1}
+    textFallback: Ready
+    accessibilityKey: status.ready
+  - key: status_locked
+    category: 40
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.58, g: 0.66, b: 0.68, a: 1}
+    textFallback: Locked
+    accessibilityKey: status.locked
+  - key: action_basic_attack
+    category: 30
+    sprite: {fileID: 0}
+    fallbackColor: {r: 1, g: 0.34, b: 0.28, a: 1}
+    textFallback: Atk
+    accessibilityKey: combat.basic_attack
+  - key: action_dodge
+    category: 30
+    sprite: {fileID: 0}
+    fallbackColor: {r: 1, g: 0.68, b: 0.22, a: 1}
+    textFallback: Ddg
+    accessibilityKey: combat.dodge
+  - key: nav_back
+    category: 10
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.13, g: 0.15, b: 0.16, a: 0.82}
+    textFallback: Back
+    accessibilityKey: navigation.back
+  - key: touch_back
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.13, g: 0.15, b: 0.16, a: 0.82}
+    textFallback: Back
+    accessibilityKey: input.back
+  - key: key_wasd
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.18, g: 0.82, b: 0.88, a: 1}
+    textFallback: WASD
+    accessibilityKey: input.move
+  - key: mouse_move
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.18, g: 0.82, b: 0.88, a: 1}
+    textFallback: Mouse
+    accessibilityKey: input.look
+  - key: pad_left_stick
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.18, g: 0.82, b: 0.88, a: 1}
+    textFallback: LS
+    accessibilityKey: input.move
+  - key: pad_right_stick
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.18, g: 0.82, b: 0.88, a: 1}
+    textFallback: RS
+    accessibilityKey: input.look
+  - key: touch_joystick
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.18, g: 0.82, b: 0.88, a: 1}
+    textFallback: Stick
+    accessibilityKey: input.move
+  - key: touch_drag
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.18, g: 0.82, b: 0.88, a: 1}
+    textFallback: Drag
+    accessibilityKey: input.look
+  - key: touch_auto
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.13, g: 0.15, b: 0.16, a: 0.82}
+    textFallback: Auto
+    accessibilityKey: input.target_bias
+  - key: touch_pause
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.13, g: 0.15, b: 0.16, a: 0.82}
+    textFallback: Pause
+    accessibilityKey: input.pause
+  - key: key_q
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 1, g: 0.68, b: 0.22, a: 1}
+    textFallback: Q
+    accessibilityKey: input.skill
+  - key: key_r
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 1, g: 0.34, b: 0.28, a: 1}
+    textFallback: R
+    accessibilityKey: input.ultimate
+  - key: key_1
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.18, g: 0.82, b: 0.88, a: 1}
+    textFallback: 1
+    accessibilityKey: input.summon_slot
+  - key: key_2
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.18, g: 0.82, b: 0.88, a: 1}
+    textFallback: 2
+    accessibilityKey: input.summon_slot
+  - key: key_3
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.18, g: 0.82, b: 0.88, a: 1}
+    textFallback: 3
+    accessibilityKey: input.summon_slot
+  - key: pad_x
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 1, g: 0.34, b: 0.28, a: 1}
+    textFallback: X
+    accessibilityKey: input.basic_attack
+  - key: pad_rb
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 1, g: 0.68, b: 0.22, a: 1}
+    textFallback: R1
+    accessibilityKey: input.skill
+  - key: pad_lb_rb
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 1, g: 0.34, b: 0.28, a: 1}
+    textFallback: L1+R1
+    accessibilityKey: input.ultimate
+  - key: pad_dpad_up
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.18, g: 0.82, b: 0.88, a: 1}
+    textFallback: D-Up
+    accessibilityKey: input.summon_slot
+  - key: pad_dpad_right
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.18, g: 0.82, b: 0.88, a: 1}
+    textFallback: D-Right
+    accessibilityKey: input.summon_slot
+  - key: pad_dpad_down
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.18, g: 0.82, b: 0.88, a: 1}
+    textFallback: D-Down
+    accessibilityKey: input.summon_slot
+  - key: pad_menu
+    category: 20
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.13, g: 0.15, b: 0.16, a: 0.82}
+    textFallback: Menu
+    accessibilityKey: input.pause
+  - key: action_skill
+    category: 30
+    sprite: {fileID: 0}
+    fallbackColor: {r: 1, g: 0.68, b: 0.22, a: 1}
+    textFallback: Skill
+    accessibilityKey: combat.skill1
+  - key: action_ultimate
+    category: 30
+    sprite: {fileID: 0}
+    fallbackColor: {r: 1, g: 0.34, b: 0.28, a: 1}
+    textFallback: Ult
+    accessibilityKey: combat.ultimate
+  - key: action_summon
+    category: 30
+    sprite: {fileID: 0}
+    fallbackColor: {r: 0.18, g: 0.82, b: 0.88, a: 1}
+    textFallback: Sum
+    accessibilityKey: combat.summon_slot

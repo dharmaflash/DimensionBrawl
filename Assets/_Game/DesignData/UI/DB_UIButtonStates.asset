@@ -1,0 +1,57 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 99b9b68825fea314abc2c01f900be918, type: 3}
+  m_Name: DB_UIButtonStates
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIButtonStateCatalog
+  states:
+  - stateId: 0
+    labelKey: ui.common.button.normal
+    backgroundColor: {r: 0.13, g: 0.15, b: 0.16, a: 0.82}
+    textColor: {r: 0.88, g: 0.93, b: 0.94, a: 1}
+    interactable: 1
+    tooltipTextKey:
+    cueId:
+  - stateId: 10
+    labelKey: ui.common.button.highlighted
+    backgroundColor: {r: 0.18, g: 0.82, b: 0.88, a: 1}
+    textColor: {r: 0.03, g: 0.035, b: 0.04, a: 1}
+    interactable: 1
+    tooltipTextKey:
+    cueId: ui_focus
+  - stateId: 20
+    labelKey: ui.common.button.disabled
+    backgroundColor: {r: 0.12, g: 0.13, b: 0.14, a: 0.72}
+    textColor: {r: 0.58, g: 0.66, b: 0.68, a: 1}
+    interactable: 0
+    tooltipTextKey: ui.common.disabled
+    cueId: ui_denied
+  - stateId: 30
+    labelKey: ui.common.button.locked
+    backgroundColor: {r: 0.1, g: 0.1, b: 0.11, a: 0.85}
+    textColor: {r: 0.58, g: 0.66, b: 0.68, a: 1}
+    interactable: 0
+    tooltipTextKey: ui.common.locked
+    cueId: ui_denied
+  - stateId: 40
+    labelKey: ui.common.button.ready
+    backgroundColor: {r: 1, g: 0.34, b: 0.28, a: 1}
+    textColor: {r: 0.88, g: 0.93, b: 0.94, a: 1}
+    interactable: 1
+    tooltipTextKey:
+    cueId: ui_confirm_start
+  - stateId: 50
+    labelKey: ui.common.button.active
+    backgroundColor: {r: 1, g: 0.68, b: 0.22, a: 1}
+    textColor: {r: 0.03, g: 0.035, b: 0.04, a: 1}
+    interactable: 1
+    tooltipTextKey:
+    cueId: ui_active

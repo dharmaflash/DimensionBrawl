@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bfc1269385d29304aaa29c198f451ca5, type: 3}
+  m_Name: DB_UIRouteTable
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIScreenRouteTable
+  routes:
+  - routeId: 10
+    sceneName: UI_LoginTest
+    scenePath: Assets/_Game/Scenes/UI/UI_LoginTest.unity
+    transitionId: SceneFadeShort
+    loadingCardId: title_ambient_start
+    useAsyncLoading: 1
+    minimumLoadingSeconds: 0.35
+  - routeId: 20
+    sceneName: UI_LobbyTest
+    scenePath: Assets/_Game/Scenes/UI/UI_LobbyTest.unity
+    transitionId: SceneFadeShort
+    loadingCardId: lobby_primary_cta_anchor
+    useAsyncLoading: 1
+    minimumLoadingSeconds: 0.45
+  - routeId: 30
+    sceneName: UI_StageSelectTest
+    scenePath: Assets/_Game/Scenes/UI/UI_StageSelectTest.unity
+    transitionId: SceneFadeShort
+    loadingCardId: stage_card_expand
+    useAsyncLoading: 1
+    minimumLoadingSeconds: 0.45
+  - routeId: 40
+    sceneName: UI_CombatHudTest
+    scenePath: Assets/_Game/Scenes/UI/UI_CombatHudTest.unity
+    transitionId: SceneFadeShort
+    loadingCardId: stage_to_combat_mood_bridge
+    useAsyncLoading: 1
+    minimumLoadingSeconds: 0.65
