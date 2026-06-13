@@ -8,6 +8,7 @@ Last updated: 2026-06-12 KST
 - Main branch is `main`.
 - Raw imported asset packs are local-only under `Assets/_Imported/`.
 - Game-owned work should live under `Assets/_Game/`.
+- Android is the mobile-first build baseline. The shared Android Build Profile lives at `Assets/Settings/Build Profiles/Android.asset`, uses the Android target, and should be cherry-picked by UI branches before mobile HUD or scene-flow work.
 
 ## Committed Baseline
 
@@ -41,6 +42,7 @@ Last updated: 2026-06-12 KST
 - The promoted MaintenanceWorker `Death` clip uses feet-based Y import so the death pose settles near the controller base instead of floating at the source clip root height.
 - `PlayerMovementController` no longer consumes gamepad right-stick fallback for character facing; right-stick fallback now belongs to camera orbit unless an explicit look action/mobile look hook is wired later.
 - `ProjectSettings/EditorSettings.asset` intentionally has Enter Play Mode options enabled with option value `3` to reduce repeated Editor play-mode reload friction during action-feel testing.
+- Android PlayerSettings are the current cross-PC baseline: company `dharmaflash`, package `com.dharmaflash.dimensionbrawl`, landscape-left/right only, URP scripting define, IL2CPP scripting backend, and ARM64 architecture. PC/Standalone remains useful as a development target, but mobile layout, safe area, and touch actions are the default product assumptions.
 - `DimensionBrawl > Validate Action Foundation Test Scene` validates required scene objects, component ownership, key references, shared target sensor wiring, promoted MaintenanceWorker enemy visual/Animator wiring, and reference-backed timing values from inside the Unity Editor.
 - `DimensionBrawl > Validate Action Foundation Test Scene` also validates player Animator wiring, root-motion-off state, promoted locomotion states, fast StopStep transition tuning, CombatGirl weapon socket binding, directional Quickshift dodge states, promoted five-hit attack states, game-owned clip paths, and the serialized action/camera timing values for the curated visual child.
 - `DimensionBrawl > Reapply Action Foundation CombatGirl Materials` exists for the open-Editor stale-scene case: unpacked CombatGirl renderers can keep old material slots after `Assets > Refresh`, so this menu reassigns the open scene to `_Game` CombatGirl material assets and saves it.
