@@ -76,7 +76,7 @@ Reason: The target game is a mobile-first direct-control ARPG. Locking Android p
 
 Decision: Raw VFX store packs stay local under `Assets/_Imported/AssetStore/VFX/`. Combat code should use `CombatVfxCueProfile` data and presentation drivers that play selected `_Game/Art/VFX` prefabs through bounded pools, not direct references to raw asset-pack paths or unbounded runtime spawning.
 
-Reason: VFX must become part of action readability without polluting the repository or gameplay code. A cue-profile layer keeps player, enemy, future summon, and boss effects swappable while preserving the project rule that source packs are local-only.
+Reason: VFX must become part of action readability without polluting the repository or gameplay code. A cue-profile layer keeps player, enemy, future summon, and boss effects swappable while preserving the project rule that source packs are local-only. Ranged soldier shot motion can live as authored cue-local forward travel, but damage authority remains in pattern hit-shape data until a reviewed gameplay projectile system is explicitly needed.
 
 ## 2026-06-13: Enemy Variety Starts As Role Data
 

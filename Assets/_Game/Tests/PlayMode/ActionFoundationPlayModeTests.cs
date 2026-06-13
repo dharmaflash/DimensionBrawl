@@ -1010,6 +1010,15 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void RangedSoldierProjectileCuesUseVisualTravelOnly()
+        {
+            CombatVfxCueProfile profile = LoadCombatVfxCueProfile();
+
+            AssertProjectileCueTravel(profile, CombatVfxCueId.EnemyLinePressureActive, 3f);
+            AssertProjectileCueTravel(profile, CombatVfxCueId.EnemyRetreatShotActive, 2.8f);
+        }
+
+        [Test]
         public void ActionFoundationSceneBindsCombatVfxCueDrivers()
         {
             CombatVfxCueProfile profile = LoadCombatVfxCueProfile();
@@ -1919,6 +1928,20 @@ namespace DimensionBrawl.Tests
             }
 
             return profile;
+        }
+
+        private static void AssertProjectileCueTravel(CombatVfxCueProfile profile, CombatVfxCueId cueId, float minimumTravelDistance)
+        {
+            Assert.IsTrue(profile.TryGetCue(cueId, out CombatVfxCue cue), $"{cueId} should exist in the shared combat VFX profile.");
+            Assert.IsNotNull(cue.Prefab, $"{cueId} should reference a promoted projectile cue prefab.");
+
+            CombatVfxCueVisual visual = cue.Prefab.GetComponentInChildren<CombatVfxCueVisual>(true);
+            Assert.IsNotNull(visual, $"{cueId} should use CombatVfxCueVisual for presentation-only travel.");
+
+            SerializedObject visualObject = new SerializedObject(visual);
+            SerializedProperty travel = visualObject.FindProperty("forwardTravelDistance");
+            Assert.IsNotNull(travel, $"{cueId} visual should expose authored forward travel.");
+            Assert.GreaterOrEqual(travel.floatValue, minimumTravelDistance, $"{cueId} should travel forward as a shot cue while damage remains owned by pattern hit shapes.");
         }
 
         private static void ValidateEnemyCombatVfxBinding(

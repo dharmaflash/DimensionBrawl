@@ -16,6 +16,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private float lifetimeSeconds = 0.35f;
         [SerializeField] private float spinDegreesPerSecond;
         [SerializeField] private float verticalLift;
+        [SerializeField, Min(0f)] private float forwardTravelDistance;
 
         private MaterialPropertyBlock propertyBlock;
         private Vector3 authoredLocalScale;
@@ -85,7 +86,9 @@ namespace DimensionBrawl.Presentation
             propertyBlock ??= new MaterialPropertyBlock();
             float eased = Mathf.SmoothStep(0f, 1f, normalizedTime);
             transform.localScale = Vector3.Scale(authoredLocalScale, Vector3.Lerp(startScale, endScale, eased));
-            transform.localPosition = authoredLocalPosition + Vector3.up * verticalLift * eased;
+            transform.localPosition = authoredLocalPosition
+                + Vector3.up * verticalLift * eased
+                + Vector3.forward * forwardTravelDistance * eased;
 
             Color color = Color.Lerp(startColor, endColor, eased);
             for (int i = 0; i < renderers.Length; i++)

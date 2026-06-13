@@ -238,6 +238,7 @@ MonoBehaviour:
   lifetimeSeconds: 0.34
   spinDegreesPerSecond: 74.8
   verticalLift: 0
+  forwardTravelDistance: 0
 --- !u!1 &9191334056104615708
 GameObject:
   m_ObjectHideFlags: 0

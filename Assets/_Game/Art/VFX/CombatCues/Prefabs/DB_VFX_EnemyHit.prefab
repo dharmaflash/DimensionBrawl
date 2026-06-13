@@ -236,3 +236,4 @@ MonoBehaviour:
   lifetimeSeconds: 0.26
   spinDegreesPerSecond: 39.2
   verticalLift: 0.126
+  forwardTravelDistance: 0

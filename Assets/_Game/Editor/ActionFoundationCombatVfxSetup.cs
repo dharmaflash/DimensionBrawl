@@ -102,6 +102,9 @@ namespace DimensionBrawl.Editor
                 ValidateEnemyCombatVfx(soldiers[i], profile);
             }
 
+            ValidateProjectileCueVisual(profile, CombatVfxCueId.EnemyLinePressureActive, 3f);
+            ValidateProjectileCueVisual(profile, CombatVfxCueId.EnemyRetreatShotActive, 2.8f);
+
             Debug.Log("Action foundation combat VFX cue validation passed.");
         }
 
@@ -137,11 +140,11 @@ namespace DimensionBrawl.Editor
                 HeavyWindup = SaveBurstPrefab("DB_VFX_HeavyWindupCharge", gold, ParticleSystemShapeType.Sphere, 0.34f, 10f, 360f, 0.38f, 0.70f, 0.18f, 0.44f, 42, new Color(1f, 0.74f, 0.12f, 0.86f), new Color(1f, 0.18f, 0.02f, 0f)),
                 HeavyActive = SaveBurstPrefab("DB_VFX_HeavyWindupImpact", gold, ParticleSystemShapeType.Circle, 0.65f, 34f, 360f, 0.13f, 0.34f, 0.30f, 0.78f, 56, new Color(1f, 0.9f, 0.36f, 0.96f), new Color(1f, 0.28f, 0.04f, 0f)),
                 LineWindup = SaveBurstPrefab("DB_VFX_LinePressureWindup", cyan, ParticleSystemShapeType.Cone, 0.18f, 18f, 34f, 0.30f, 0.58f, 0.10f, 0.24f, 30, new Color(0.22f, 0.94f, 1f, 0.82f), new Color(0.02f, 0.28f, 1f, 0f)),
-                LineActive = SaveBurstPrefab("DB_VFX_LinePressureActive", cyan, ParticleSystemShapeType.Cone, 0.20f, 74f, 24f, 0.12f, 0.30f, 0.16f, 0.46f, 58, new Color(0.42f, 0.96f, 1f, 0.96f), new Color(0.04f, 0.3f, 1f, 0f)),
+                LineActive = SaveBurstPrefab("DB_VFX_LinePressureActive", cyan, ParticleSystemShapeType.Cone, 0.20f, 74f, 24f, 0.12f, 0.30f, 0.16f, 0.46f, 58, new Color(0.42f, 0.96f, 1f, 0.96f), new Color(0.04f, 0.3f, 1f, 0f), 3.4f),
                 FanWindup = SaveBurstPrefab("DB_VFX_FanPressureWindup", cyan, ParticleSystemShapeType.Cone, 0.24f, 14f, 95f, 0.30f, 0.56f, 0.12f, 0.32f, 34, new Color(0.18f, 0.94f, 0.88f, 0.8f), new Color(0.02f, 0.52f, 0.9f, 0f)),
                 FanActive = SaveBurstPrefab("DB_VFX_FanPressureActive", cyan, ParticleSystemShapeType.Cone, 0.36f, 48f, 120f, 0.13f, 0.34f, 0.20f, 0.54f, 64, new Color(0.36f, 1f, 0.86f, 0.94f), new Color(0.02f, 0.58f, 1f, 0f)),
                 RetreatShotWindup = SaveBurstPrefab("DB_VFX_RetreatShotWindup", blue, ParticleSystemShapeType.Cone, 0.20f, 18f, 45f, 0.24f, 0.48f, 0.10f, 0.28f, 22, new Color(0.24f, 0.72f, 1f, 0.84f), new Color(0.06f, 0.28f, 1f, 0f)),
-                RetreatShotActive = SaveBurstPrefab("DB_VFX_RetreatShotActive", blue, ParticleSystemShapeType.Cone, 0.18f, 70f, 22f, 0.08f, 0.22f, 0.14f, 0.40f, 44, new Color(0.48f, 0.92f, 1f, 0.96f), new Color(0.05f, 0.2f, 1f, 0f)),
+                RetreatShotActive = SaveBurstPrefab("DB_VFX_RetreatShotActive", blue, ParticleSystemShapeType.Cone, 0.18f, 70f, 22f, 0.08f, 0.22f, 0.14f, 0.40f, 44, new Color(0.48f, 0.92f, 1f, 0.96f), new Color(0.05f, 0.2f, 1f, 0f), 3.2f),
                 RetreatBlinkWindup = SaveBurstPrefab("DB_VFX_RetreatBlinkWindup", violet, ParticleSystemShapeType.Sphere, 0.36f, 12f, 360f, 0.22f, 0.46f, 0.12f, 0.36f, 32, new Color(0.64f, 0.26f, 1f, 0.82f), new Color(0.1f, 0.03f, 0.52f, 0f)),
                 RetreatBlinkActive = SaveBurstPrefab("DB_VFX_RetreatBlinkActive", violet, ParticleSystemShapeType.Circle, 0.52f, 38f, 360f, 0.10f, 0.28f, 0.18f, 0.56f, 50, new Color(0.78f, 0.48f, 1f, 0.95f), new Color(0.18f, 0.06f, 0.8f, 0f)),
                 GuardBreakWindup = SaveBurstPrefab("DB_VFX_GuardBreakWindup", gold, ParticleSystemShapeType.Sphere, 0.38f, 14f, 360f, 0.42f, 0.78f, 0.20f, 0.48f, 48, new Color(1f, 0.76f, 0.16f, 0.88f), new Color(1f, 0.22f, 0.02f, 0f)),
@@ -304,6 +307,27 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static void ValidateProjectileCueVisual(CombatVfxCueProfile profile, CombatVfxCueId cueId, float minimumTravelDistance)
+        {
+            if (!profile.TryGetCue(cueId, out CombatVfxCue cue) || cue.Prefab == null)
+            {
+                throw new InvalidOperationException($"{cueId} should reference a promoted projectile cue prefab.");
+            }
+
+            CombatVfxCueVisual visual = cue.Prefab.GetComponentInChildren<CombatVfxCueVisual>(includeInactive: true);
+            if (visual == null)
+            {
+                throw new InvalidOperationException($"{cueId} should include CombatVfxCueVisual.");
+            }
+
+            SerializedObject visualObject = new SerializedObject(visual);
+            float forwardTravelDistance = RequireProperty(visualObject, "forwardTravelDistance").floatValue;
+            if (forwardTravelDistance < minimumTravelDistance)
+            {
+                throw new InvalidOperationException($"{cueId} projectile cue should travel forward at least {minimumTravelDistance:0.0}m, found {forwardTravelDistance:0.0}m.");
+            }
+        }
+
         private static void ConfigureCombatVfxCueProfile(CombatVfxCueProfile profile, CombatCuePrefabs prefabs)
         {
             CueDefinition[] cues =
@@ -413,7 +437,8 @@ namespace DimensionBrawl.Editor
             float maxSize,
             int burstCount,
             Color startColor,
-            Color endColor)
+            Color endColor,
+            float forwardTravelDistance = 0f)
         {
             string prefabPath = $"{PrefabRoot}/{name}.prefab";
             GameObject root = new GameObject(name);
@@ -425,7 +450,7 @@ namespace DimensionBrawl.Editor
             Vector3 endVisualScale = Vector3.one * Mathf.Clamp(1f + maxSize * 1.35f, 1.12f, 1.9f);
             float visualSpin = ResolveVisualSpin(shapeType, speed);
             float verticalLift = shapeType == ParticleSystemShapeType.Sphere ? Mathf.Clamp(radius * 0.45f, 0.04f, 0.22f) : 0f;
-            ConfigureCueVisual(visual, renderers.ToArray(), Mathf.Max(0.12f, maxLifetime), startColor, endColor, startVisualScale, endVisualScale, visualSpin, verticalLift);
+            ConfigureCueVisual(visual, renderers.ToArray(), Mathf.Max(0.12f, maxLifetime), startColor, endColor, startVisualScale, endVisualScale, visualSpin, verticalLift, forwardTravelDistance);
 
             GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             UnityEngine.Object.DestroyImmediate(root);
@@ -484,7 +509,8 @@ namespace DimensionBrawl.Editor
             Vector3 startScale,
             Vector3 endScale,
             float spinDegreesPerSecond,
-            float verticalLift)
+            float verticalLift,
+            float forwardTravelDistance)
         {
             SerializedObject serializedObject = new SerializedObject(visual);
             SerializedProperty rendererArray = RequireProperty(serializedObject, "renderers");
@@ -501,6 +527,7 @@ namespace DimensionBrawl.Editor
             RequireProperty(serializedObject, "lifetimeSeconds").floatValue = lifetimeSeconds;
             RequireProperty(serializedObject, "spinDegreesPerSecond").floatValue = spinDegreesPerSecond;
             RequireProperty(serializedObject, "verticalLift").floatValue = verticalLift;
+            RequireProperty(serializedObject, "forwardTravelDistance").floatValue = forwardTravelDistance;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(visual);
         }

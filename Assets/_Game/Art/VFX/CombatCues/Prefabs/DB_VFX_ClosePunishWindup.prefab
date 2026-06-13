@@ -328,3 +328,4 @@ MonoBehaviour:
   lifetimeSeconds: 0.5
   spinDegreesPerSecond: 0
   verticalLift: 0
+  forwardTravelDistance: 0
