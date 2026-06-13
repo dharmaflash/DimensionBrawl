@@ -123,13 +123,14 @@ The collected references do not provide trustworthy numeric defaults for these v
 - The camera follows the player from a lower authored orbit, accepts manual orbit input, and biases focus toward the current threat without instantly rotating with player facing.
 - `ActionCameraCueDriver` listens to movement start, stop-settle, sharp turn, dodge, basic attack start, and successful hit events, then asks `ActionCameraController` for short additive offset/FOV/distance/focus cues from presentation code.
 - The player visibly changes tint during dodge movement, then returns to its authored material colors instead of staying in the old cyan placeholder tint.
+- VFX cue infrastructure exists but should stay empty until selected raw VFX pack prefabs are reviewed and promoted under `_Game/Art/VFX`; the first useful cue set should cover player attack hit, player dodge, enemy windup, enemy active, enemy hit, and enemy death.
 - Win marker appears when the soldier dies.
 - Fail marker appears when the player dies.
 - The inspection scene must not render with pink/missing-shader materials.
 
 ## Verification Evidence
 
-- `dotnet build C:\Git\DimensionBrawl\DimensionBrawl.slnx` passes with zero warnings and zero errors.
+- `dotnet build C:\Git\DimensionBrawl\DimensionBrawl.slnx -m:1` passes. If local raw VFX pack demo/editor warnings appear after Unity regenerates project files, treat them as third-party local-only noise until curated effects are promoted; project-owned action code should stay warning/error clean.
 - Unity batchmode extended pattern setup passes through `DimensionBrawl.Editor.ActionFoundationEnemyPatternExpansionSetup.ReapplyExtendedEnemyPatternsMenu` and creates the extended general/elite pattern profile assets, six extended scene samples, and twelve authored player target candidates.
 - Unity batchmode scene validation passes with `Action foundation test scene validation passed.` after closing the open Editor instance.
 - Unity PlayMode smoke tests pass with `31` tests run, `31` passed, `0` failed for movement, promoted locomotion routing, stop-settle release, fast-window `StopStep` Animator routing, CombatGirl weapon socket alignment, directional dodge motion, no-input backward dodge, five-hit timed-buffer combo routing, attack damage without global slow motion, shared target sensing/team rules, promoted MaintenanceWorker enemy visual/Animator wiring, pattern-specific enemy animation trigger data, enemy Attack/Hit/Death animation requests including fatal-damage direct death routing and grounded death bounds, enemy windup telegraph presentation, `LinePressure` lane-lock side-dodge behavior, authored `TrainingDeck` row commitment, selection, `FanPressure` cone hit behavior, extended general/elite pattern data, elite signal animation trigger data, shared elite damage-modification behavior, authored aura receiver protection, authored summon signal activation, encounter win/fail, dodge tint feedback, short action-camera cue cleanup/FOV widening, independent camera orbit, and the lower close-rear camera preset.

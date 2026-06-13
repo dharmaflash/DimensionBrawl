@@ -8,6 +8,7 @@ Last updated: 2026-06-13 KST
 - Main branch is `main`.
 - Raw imported asset packs are local-only under `Assets/_Imported/`.
 - Game-owned work should live under `Assets/_Game/`.
+- Raw VFX packs are local-only under `Assets/_Imported/AssetStore/VFX/`; commit only curated effect prefabs/profiles promoted under `Assets/_Game/Art/VFX/`.
 - Android is the mobile-first build baseline. The shared Android Build Profile lives at `Assets/Settings/Build Profiles/Android.asset`, uses the Android target, and should be cherry-picked by UI branches before mobile HUD or scene-flow work.
 
 ## Committed Baseline
@@ -35,6 +36,7 @@ Last updated: 2026-06-13 KST
 - `CombatHealth` now includes `AllySummon` as a future player-side team and routes friendly-fire/hostile checks through `CombatTeamUtility`, so the first enemy and later summon actors can share one small team contract.
 - `CombatHealth` now exposes a narrow `DamageModifying` hook with `DamageModificationContext`; elite shields, armor, aura protection, and future summon protection can modify incoming damage without making `CombatHealth` know concrete enemy pattern ids.
 - `CombatHitFeedback` no longer applies normal-hit global slow motion or hit-stop. It handles damage flash and death color only; time-scale effects are reserved for a later explicit perfect-dodge, counter, ultimate, or authored cue bundle slice.
+- `CombatVfxCueProfile`, `CombatVfxCuePlayer`, `PlayerCombatVfxCueDriver`, and `EnemyCombatVfxCueDriver` are the first presentation-only VFX hook. They listen to player action, enemy pattern, damage, and death events, then play authored cue-profile prefabs through a small per-prefab pool instead of hardcoding asset paths or spawning unbounded effects in gameplay code.
 - `ActionFoundationTest.unity` now gives `Enemy_SciFiSoldier_ActionFoundation` a `CombatTargetSensor` with one authored player-health candidate, serialized search radius `12m`, and retarget interval `0.2s`; the sensor evaluates supplied candidates instead of scene-wide searches and does not own summon spawning, slots, cooldowns, or UI.
 - `BasicSoldierEnemy` now declares serialized `enemyTypeId = SciFiSoldier.Basic` and `patternId = ClosePunish`, while model, Animator Controller, trigger names, and future pattern variants remain prefab-level data instead of hardcoded asset paths.
 - `BasicSoldierEnemy` now reads attack shape, windup direction lock, camera cue, telegraph sizing/color, and optional pre-attack reposition data from `CombatAiPatternProfile`; `RetreatShot` and `RetreatBlink` use the shared `Repositioning` state instead of pattern-id-specific runtime branches.
@@ -59,6 +61,7 @@ Last updated: 2026-06-13 KST
 - Manual open-Editor inspection confirmed the player placeholder visibly flashes/tints when dodging with `Left Shift`.
 - Raw imported asset packs are ignored.
 - `_Game/Art` folder structure exists for curated game-ready assets.
+- `_Game/Art/VFX` exists as the curated destination for selected combat-ready VFX promoted out of local raw packs.
 - Project governance docs now define AI limits, folder ownership, code style, architecture boundaries, session workflow, and review checks.
 
 ## Local Assets
@@ -69,12 +72,13 @@ Raw packs currently staged only as local files:
 - `Assets/_Imported/AssetStore/Animation`
 - `Assets/_Imported/AssetStore/Protofactor`
 - `Assets/_Imported/AssetStore/HEROIC FANTASY CREATURES FULL PACK VOL3`
+- `Assets/_Imported/AssetStore/VFX`
 
 These must not be committed directly.
 
 ## Next Safe Step
 
-Use `Assets/_Game/DesignDocs/COMBAT_V1_SPEC.md`, `Assets/_Game/DesignDocs/ACTION_FEEL_TARGETS.md`, `Assets/_Game/DesignDocs/ACTION_FOUNDATION_OWNERSHIP.md`, and `Assets/_Game/DesignDocs/ACTION_FOUNDATION_TESTING.md` as implementation guardrails. The next safe step is to manually inspect the authored general/elite soldier samples, confirm their telegraph/readability/camera cues against player targeting, and tune profile/deck data before adding summon behavior, waves, bosses, or progression.
+Use `Assets/_Game/DesignDocs/COMBAT_V1_SPEC.md`, `Assets/_Game/DesignDocs/ACTION_FEEL_TARGETS.md`, `Assets/_Game/DesignDocs/ACTION_FOUNDATION_OWNERSHIP.md`, and `Assets/_Game/DesignDocs/ACTION_FOUNDATION_TESTING.md` as implementation guardrails. The next safe step is to curate a small combat VFX set under `_Game/Art/VFX`, author one `CombatVfxCueProfile`, and attach it to the existing player/enemy presentation drivers for attack hit, dodge, windup, active, hit, and death reads before adding summon behavior, waves, bosses, or progression.
 
 ## Current Risk
 

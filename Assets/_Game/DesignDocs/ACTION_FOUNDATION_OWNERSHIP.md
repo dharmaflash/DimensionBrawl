@@ -18,6 +18,9 @@ This note permits the first action-feel foundation to add more than three gamepl
 - `CombatHitFeedback`: presentation-only damage flash and death color from damage events. It must not change global time scale for normal hits.
 - `PlayerDodgeFeedback`: presentation-only dodge color cue driven by player action events.
 - `EnemyAttackTelegraphPresenter`: presentation-only enemy windup/active readability, including telegraph scale/color and temporary visual pose offsets. It must not choose targets, apply damage, or own enemy pattern state.
+- `CombatVfxCueProfile`: data-only combat VFX cue table. It may reference selected game-owned VFX prefabs promoted under `_Game/Art/VFX`, cue offsets, lifetime, alignment, parent policy, and prewarm count. It must not reference raw `_Imported` assets directly.
+- `CombatVfxCuePlayer`: presentation-only VFX playback and bounded per-prefab pooling. It may instantiate from authored cue-profile prefabs into its local pool, play particle systems or VFX Graph components, and release them after cue lifetime. It must not decide combat outcomes, search the scene for targets, or load assets by path.
+- `PlayerCombatVfxCueDriver` and `EnemyCombatVfxCueDriver`: presentation-only event adapters from player action, enemy pattern state, damage, and death events into `CombatVfxCuePlayer`. They must not own action timing, enemy AI, hit validation, or asset selection beyond serialized cue anchors and profile references.
 - `ActionFoundationTestEncounter`: test setup win/fail state only.
 
 ## Explicit Non-Ownership
@@ -30,6 +33,7 @@ This note permits the first action-feel foundation to add more than three gamepl
 - No script owns progression, rewards, currencies, or stage loops.
 - No script constructs the full scene or full UI at runtime.
 - No script depends on `Assets/_Imported/` paths or hardcoded asset GUIDs.
+- No VFX driver may reference source asset-pack prefabs directly. Promote a reviewed effect to `_Game/Art/VFX` and connect it through cue-profile data.
 - No enemy script hardcodes a specific model, Animator Controller, animation clip path, or material path.
 - No enemy script hardcodes behavior by specific pattern id when the same outcome can be expressed through profile or deck data.
 - No normal-hit script owns global slow motion. Time-scale effects belong to a later explicit perfect-dodge, counter, ultimate, or authored cue bundle slice.
