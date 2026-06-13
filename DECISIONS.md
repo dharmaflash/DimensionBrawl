@@ -77,3 +77,17 @@ Reason: The target game is a mobile-first direct-control ARPG. Locking Android p
 Decision: Raw VFX store packs stay local under `Assets/_Imported/AssetStore/VFX/`. Combat code should use `CombatVfxCueProfile` data and presentation drivers that play selected `_Game/Art/VFX` prefabs through bounded pools, not direct references to raw asset-pack paths or unbounded runtime spawning.
 
 Reason: VFX must become part of action readability without polluting the repository or gameplay code. A cue-profile layer keeps player, enemy, future summon, and boss effects swappable while preserving the project rule that source packs are local-only.
+
+## 2026-06-12: Cinemachine In-Game Cutscene Reference Baseline
+
+Decision: Use `Assets/_Game/DesignDocs/CINEMACHINE_INGAME_CUTSCENE_REFERENCE_RESEARCH.md` and `Assets/_Game/DesignData/CinemachineIngameCutsceneReferenceDataset.json` as the active Unity Cinemachine/Timeline reference baseline for boss intros, summon/ultimate cut-ins, dialogue staging, camera shot sequencing, input/AI/time locks, impulse, Timeline signals, and gameplay camera return.
+
+Reason: The project needs a Unity-native production path for short character cutscenes and combat cut-ins that can sit on top of the existing ARPG camera and cue system without turning combat into uncontrolled scripted sequences.
+
+Rejected alternatives: `hand-author cutscene camera scripts per event`, `drive all cut-ins only through ad hoc BattleCamera offsets`, `block combat with long unskippable cinematics`, `ignore gameplay return state`, `use Timeline without explicit bindings and lock contracts`, `claim reference games provide public Cinemachine source assets`.
+
+Impact: `CutsceneCueProfile`, `CinemachineShotProfile`, `CameraModifierStackProfile`, `CameraTrackProfile`, `StoryCameraBindingProfile`, `TimelineBindingProfile`, `GameplayLockProfile`, `CameraReturnProfile`, `SignalEventProfile`, `ImpulseCueProfile`, boss intro/summon/ultimate/final-kill cut-in authoring.
+
+Evidence handling: Reference games did not yield public Cinemachine/Timeline source assets. ZZZ/PGR/HI3 public data mirrors are used only for field-shape and production-contract evidence such as camera modifiers, camera track LUTs, story/camera site tables, time-slow/screen-effect stacks, and cleanup/end-action patterns.
+
+Legacy handling: Existing `BattleCamera` cue types and optional Cinemachine impulse hooks remain useful seeds. New Cinemachine/Timeline work should wrap or bridge those hooks, not silently replace V2 combat authority or reintroduce lane/manual-target assumptions.

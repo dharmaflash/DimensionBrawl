@@ -1,0 +1,1737 @@
+{
+  "version": 1,
+  "lastUpdatedKst": "2026-06-12",
+  "installedPackages": {
+    "cinemachine": "3.1.5",
+    "timeline": "1.8.10",
+    "animationRigging": "1.4.0",
+    "inputSystem": "1.17.0"
+  },
+  "scopeGuard": {
+    "summary": "Unity-side seed dataset for Cinemachine and Timeline in-game character cutscenes, combat cut-ins, boss intros, summon entries, ultimates, breaks, final-kill bridges, dialogue staging, locks, signals, impulse, and return-to-gameplay contracts.",
+    "preserveIdentity": [
+      "landscape_horizontal_arpg_story_pve",
+      "position_direction_dodge_summon_timing",
+      "summon_first_battlefield_swing",
+      "one_dodge_button",
+      "one_ultimate",
+      "one_summon_assist_action_slot"
+    ],
+    "avoid": [
+      "long_unskippable_cutscenes_inside_run",
+      "manual_basic_attack_strings",
+      "extra_active_skill_buttons",
+      "hard_target_selection_ui",
+      "lane_first_camera_assumptions",
+      "timeline_without_explicit_bindings",
+      "dirty_input_ai_time_camera_or_ui_state_after_playback"
+    ],
+    "assetReuseBoundary": "Do not import proprietary animation clips, raw tables, meshes, textures, audio, camera files, or full source files from other games. Extract shot grammar, timing envelopes, schema shapes, production relationships, and Unity-authoring patterns."
+  },
+  "evidenceStatus": {
+    "actualReferenceGameCinemachineAssetsFound": false,
+    "cinemachineMeaningInThisDataset": "Unity implementation target for IsekaiBrawl, not evidence that the reference games use or expose Cinemachine assets.",
+    "searchedFor": [
+      "Cinemachine plus reference game names",
+      "public GitHub data mirror camera/cutscene/timeline/story filenames",
+      "public wiki and official-help combat mechanic pages"
+    ],
+    "referenceGameEvidenceTypes": [
+      "observable in-game camera/cut-in patterns",
+      "wiki or official-help mechanic values",
+      "public data-mirror filename and field-shape evidence"
+    ],
+    "mustNotClaim": [
+      "ZZZ/PGR/HI3/WuWa/Genshin/ToF Cinemachine source assets were found",
+      "reference-game raw assets can be imported",
+      "public data mirror rows are identical to lawful implementation assets"
+    ],
+    "usableClaim": "Public sources support a data-driven combat camera/cutscene contract that can be implemented with IsekaiBrawl's Unity Cinemachine/Timeline layer."
+  },
+  "sources": [
+    {
+      "id": "unity_cm_camera",
+      "source": "Cinemachine Camera component",
+      "type": "official_docs",
+      "url": "https://docs.unity3d.com/Packages/com.unity.cinemachine@3.1/manual/CinemachineCamera.html",
+      "usefulFor": [
+        "tracking_target",
+        "look_at_target",
+        "lens",
+        "body_components",
+        "aim_components",
+        "shot_profile_fields"
+      ]
+    },
+    {
+      "id": "unity_cm_brain",
+      "source": "Cinemachine Brain component",
+      "type": "official_docs",
+      "url": "https://docs.unity3d.com/Packages/com.unity.cinemachine@3.1/manual/CinemachineBrain.html",
+      "usefulFor": [
+        "live_camera_selection",
+        "cut_blend",
+        "custom_blends",
+        "event_dispatch",
+        "ignore_time_scale",
+        "camera_return"
+      ]
+    },
+    {
+      "id": "unity_cm_timeline",
+      "source": "Cinemachine and Timeline",
+      "type": "official_docs",
+      "url": "https://docs.unity3d.com/Packages/com.unity.cinemachine@3.1/manual/concept-timeline.html",
+      "usefulFor": [
+        "cinemachine_shot_clips",
+        "timeline_camera_override",
+        "adjacent_cuts",
+        "overlap_blends",
+        "track_override_order",
+        "return_to_brain"
+      ]
+    },
+    {
+      "id": "unity_cm_target_group",
+      "source": "Cinemachine Target Group",
+      "type": "official_docs",
+      "url": "https://docs.unity3d.com/Packages/com.unity.cinemachine@3.1/manual/CinemachineTargetGroup.html",
+      "usefulFor": [
+        "player_boss_summon_group_framing",
+        "target_weight",
+        "target_radius",
+        "group_center",
+        "group_average"
+      ]
+    },
+    {
+      "id": "unity_cm_third_person",
+      "source": "Cinemachine Third Person Follow",
+      "type": "official_docs",
+      "url": "https://docs.unity3d.com/Packages/com.unity.cinemachine@3.1/manual/CinemachineThirdPersonFollow.html",
+      "usefulFor": [
+        "gameplay_follow",
+        "shoulder_offset",
+        "camera_side",
+        "distance",
+        "collision_resolution"
+      ]
+    },
+    {
+      "id": "unity_cm_rotation_composer",
+      "source": "Cinemachine Rotation Composer",
+      "type": "official_docs",
+      "url": "https://docs.unity3d.com/Packages/com.unity.cinemachine@3.1/manual/CinemachineRotationComposer.html",
+      "usefulFor": [
+        "look_at_composition",
+        "screen_position",
+        "damping",
+        "dead_zone",
+        "soft_zone"
+      ]
+    },
+    {
+      "id": "unity_cm_spline_dolly",
+      "source": "Cinemachine Spline Dolly",
+      "type": "official_docs",
+      "url": "https://docs.unity3d.com/Packages/com.unity.cinemachine@3.1/manual/CinemachineSplineDolly.html",
+      "usefulFor": [
+        "stage_intro_flyin",
+        "boss_intro_path",
+        "authored_camera_path"
+      ]
+    },
+    {
+      "id": "unity_cm_impulse",
+      "source": "Cinemachine Impulse",
+      "type": "official_docs",
+      "url": "https://docs.unity3d.com/Packages/com.unity.cinemachine@3.1/manual/CinemachineImpulse.html",
+      "usefulFor": [
+        "event_camera_shake",
+        "impulse_source",
+        "impulse_listener",
+        "channels",
+        "impact_cue"
+      ]
+    },
+    {
+      "id": "unity_timeline_index",
+      "source": "Unity Timeline manual",
+      "type": "official_docs",
+      "url": "https://docs.unity3d.com/Packages/com.unity.timeline@1.8/manual/index.html",
+      "usefulFor": [
+        "cinematic_content",
+        "gameplay_sequences",
+        "audio_sequences",
+        "particle_sequences"
+      ]
+    },
+    {
+      "id": "unity_timeline_asset_instance",
+      "source": "Timeline assets and instances",
+      "type": "official_docs",
+      "url": "https://docs.unity3d.com/Packages/com.unity.timeline@1.8/manual/tl-overview.html",
+      "usefulFor": [
+        "reusable_timeline_asset",
+        "playable_director_instance",
+        "scene_bindings",
+        "binding_profile"
+      ]
+    },
+    {
+      "id": "unity_timeline_signals",
+      "source": "Timeline markers and signals",
+      "type": "official_docs",
+      "url": "https://docs.unity3d.com/Packages/com.unity.timeline@1.8/manual/wf-signals.html",
+      "usefulFor": [
+        "markers",
+        "signal_assets",
+        "signal_receiver",
+        "frame_events",
+        "vfx_sfx_dispatch"
+      ]
+    },
+    {
+      "id": "unity_timeline_humanoid",
+      "source": "Timeline humanoid animation workflow",
+      "type": "official_docs",
+      "url": "https://docs.unity3d.com/Packages/com.unity.timeline@1.8/manual/wf-anim-human.html",
+      "usefulFor": [
+        "humanoid_clip_blending",
+        "offset_matching",
+        "foot_slide_cleanup"
+      ]
+    },
+    {
+      "id": "unity_timeline_override",
+      "source": "Timeline Animation Override track",
+      "type": "official_docs",
+      "url": "https://docs.unity3d.com/Packages/com.unity.timeline@1.8/manual/wf-anim-override.html",
+      "usefulFor": [
+        "avatar_mask",
+        "upper_body_override",
+        "dialogue_gesture",
+        "combat_pose_overlay"
+      ]
+    },
+    {
+      "id": "unity_animation_rigging",
+      "source": "Unity Animation Rigging",
+      "type": "official_docs",
+      "url": "https://docs.unity3d.com/Packages/com.unity.animation.rigging@1.3/manual/index.html",
+      "usefulFor": [
+        "ik",
+        "aim_constraints",
+        "head_look",
+        "weapon_pose",
+        "runtime_cutscene_staging"
+      ]
+    },
+    {
+      "id": "zzz_dodge",
+      "source": "Zenless Zone Zero Dodge",
+      "type": "wiki",
+      "url": "https://zenless-zone-zero.fandom.com/wiki/Dodge",
+      "usefulFor": [
+        "perfect_dodge",
+        "dodge_counter",
+        "invulnerability",
+        "enemy_flash_read",
+        "counter_interrupt"
+      ]
+    },
+    {
+      "id": "zzz_daze_chain",
+      "source": "Zenless Zone Zero Daze and Chain Attack",
+      "type": "wiki",
+      "url": "https://zenless-zone-zero.fandom.com/wiki/Daze",
+      "relatedUrls": [
+        "https://zenless-zone-zero.fandom.com/wiki/Chain_Attack"
+      ],
+      "usefulFor": [
+        "daze_to_stun",
+        "heavy_hit_chain_trigger",
+        "normal_elite_boss_chain_count",
+        "bangboo_chain_slot",
+        "break_followup_ladder"
+      ]
+    },
+    {
+      "id": "zzz_assist",
+      "source": "Zenless Zone Zero Assist",
+      "type": "wiki",
+      "url": "https://zenless-zone-zero.fandom.com/wiki/Assist",
+      "usefulFor": [
+        "defensive_assist",
+        "assist_parry",
+        "massive_daze",
+        "entry_invulnerability",
+        "assist_point_pressure"
+      ]
+    },
+    {
+      "id": "zzz_decibels",
+      "source": "Zenless Zone Zero Decibels",
+      "type": "wiki",
+      "url": "https://zenless-zone-zero.fandom.com/wiki/Decibels",
+      "usefulFor": [
+        "individual_ultimate_meter",
+        "3000_default_cap_cost",
+        "perfect_dodge_reward",
+        "assist_reward",
+        "chain_reward",
+        "decibel_hud_text"
+      ]
+    },
+    {
+      "id": "pgr_matrix",
+      "source": "Punishing Gray Raven Matrix",
+      "type": "wiki",
+      "url": "https://punishing-gray-raven.fandom.com/wiki/Matrix",
+      "usefulFor": [
+        "ex_dodge",
+        "time_slow_pocket",
+        "countermeasure_window",
+        "matrix_ping"
+      ]
+    },
+    {
+      "id": "pgr_combat_guide",
+      "source": "Punishing Gray Raven Combat Guide",
+      "type": "wiki",
+      "url": "https://punishing-gray-raven.fandom.com/wiki/Combat_Guide",
+      "usefulFor": [
+        "3_ping",
+        "qte",
+        "15s_matrix_cooldown",
+        "swap_in_counts_as_3_ping",
+        "qte_invulnerability_heal_overlap"
+      ]
+    },
+    {
+      "id": "hi3_qte",
+      "source": "Honkai Impact 3rd QTE",
+      "type": "wiki",
+      "url": "https://honkaiimpact3.fandom.com/wiki/QTE",
+      "usefulFor": [
+        "condition_based_tag_in",
+        "ui_highlight",
+        "airborne_trigger",
+        "frozen_trigger",
+        "stun_trigger",
+        "shieldbreak_trigger",
+        "time_slow_trigger"
+      ]
+    },
+    {
+      "id": "hi3_time_fracture",
+      "source": "Honkai Impact 3rd Time Fracture",
+      "type": "wiki",
+      "url": "https://honkaiimpact3.fandom.com/wiki/Time_Fracture",
+      "usefulFor": [
+        "time_slow",
+        "evasion_trigger",
+        "qte_prerequisite",
+        "timer_slowdown"
+      ]
+    },
+    {
+      "id": "wuwa_concerto_intro_outro",
+      "source": "Wuthering Waves Concerto Intro Outro",
+      "type": "wiki",
+      "url": "https://wutheringwaves.fandom.com/wiki/Concerto_Energy",
+      "relatedUrls": [
+        "https://wutheringwaves.fandom.com/wiki/Intro_Skill",
+        "https://wutheringwaves.fandom.com/wiki/Outro_Skill"
+      ],
+      "usefulFor": [
+        "damage_dodge_energy_gain",
+        "full_gauge_icon_glow",
+        "outgoing_outro",
+        "incoming_intro",
+        "consume_all_concerto"
+      ]
+    },
+    {
+      "id": "wuwa_vibration",
+      "source": "Wuthering Waves Vibration Strength",
+      "type": "wiki",
+      "url": "https://wutheringwaves.fandom.com/wiki/Vibration_Strength",
+      "usefulFor": [
+        "break_gauge_depletion",
+        "immobilized_window",
+        "damage_increase",
+        "counterattack_reduction"
+      ]
+    },
+    {
+      "id": "wuwa_liberation",
+      "source": "Wuthering Waves Resonance Liberation",
+      "type": "wiki",
+      "url": "https://wutheringwaves.fandom.com/wiki/Resonance_Liberation",
+      "usefulFor": [
+        "character_specific_ultimate",
+        "liberation_state",
+        "ultimate_cutin_family"
+      ]
+    },
+    {
+      "id": "genshin_burst_iframe",
+      "source": "Genshin Impact Elemental Burst and Invincibility Frame",
+      "type": "wiki",
+      "url": "https://genshin-impact.fandom.com/wiki/Elemental_Burst",
+      "relatedUrls": [
+        "https://genshin-impact.fandom.com/wiki/Invincibility_Frame"
+      ],
+      "usefulFor": [
+        "energy_cooldown_ultimate_gate",
+        "hud_ready_glow",
+        "ready_audio_cue",
+        "burst_iframes",
+        "dash_iframe_timing_reference"
+      ]
+    },
+    {
+      "id": "tof_phantasia",
+      "source": "Tower of Fantasy Phantasia",
+      "type": "wiki",
+      "url": "https://toweroffantasy.fandom.com/wiki/Phantasia",
+      "usefulFor": [
+        "red_flash_dodge_cue",
+        "localized_time_slow_sphere",
+        "7m_radius",
+        "8s_duration",
+        "20s_cooldown",
+        "weapon_charge_reward"
+      ]
+    },
+    {
+      "id": "zzz_data_camera_actions",
+      "source": "Zenless Zone Zero public data mirror camera ability files",
+      "type": "public_data_mirror",
+      "url": "https://github.com/360NENZ/Dimbreath-ZenlessData",
+      "confidence": "medium",
+      "usefulFor": [
+        "CameraZoomAction",
+        "CameraStretchAction",
+        "CameraOverrideTrackAction",
+        "CameraOverrideTrackEndAction",
+        "QTECameraModifier",
+        "ExQTECameraModifier",
+        "assist_camera_modifier",
+        "boss_phase_cutscene_fields"
+      ],
+      "confirmedPaths": [
+        "Data/Anton_Camera.json",
+        "Data/Aokaku_AssaultAidCamera.json",
+        "Data/BoringMachine_CameraOverrideTrack.json",
+        "Data/ComplexCorrupted_SwitchPhase_Cutscene.json",
+        "Data/Hati_Boss_CameraLock.json"
+      ]
+    },
+    {
+      "id": "zzz_data_witch_time",
+      "source": "Zenless Zone Zero public data mirror Ability_WitchTime",
+      "type": "public_data_mirror",
+      "url": "https://raw.githubusercontent.com/360NENZ/Dimbreath-ZenlessData/master/Data/Ability_WitchTime.json",
+      "confidence": "medium",
+      "usefulFor": [
+        "dodge_triggered_time_slow",
+        "invincible_buff",
+        "screen_effect_stack",
+        "global_event_send_end",
+        "sound_start_end",
+        "duration_value"
+      ]
+    },
+    {
+      "id": "pgr_data_camera_tables",
+      "source": "Punishing Gray Raven public data mirror camera tables",
+      "type": "public_data_mirror",
+      "url": "https://github.com/Kengxxiao/Punishing_GrayRaven_Tab",
+      "confidence": "medium",
+      "usefulFor": [
+        "camera_param_table",
+        "vcamera_lut",
+        "scene_camera_lut",
+        "camera_track_lut",
+        "camera_noise_lut",
+        "screen_effect_table",
+        "story_movie_table_split"
+      ],
+      "confirmedPaths": [
+        "lua/xcommon/XCameraHelper.lua",
+        "table/client/camera/CameraParam.tab",
+        "table/client/resourcelut/camera/vcamera/VCameraLut.tab",
+        "table/client/resourcelut/camera/scenecamera/SceneCamera.tab",
+        "table/client/resourcelut/camera/track/CameraTrackLut.tab",
+        "table/client/resourcelut/camera/noise/CameraNoiseLut.tab",
+        "table/client/fight/ScreenEffect.tab",
+        "table/client/story/Movie.tab",
+        "table/share/story/Story.tab"
+      ]
+    },
+    {
+      "id": "hi3_data_story_camera_tables",
+      "source": "Honkai Impact 3rd public data mirror story and camera tables",
+      "type": "public_data_mirror",
+      "url": "https://github.com/nairieberry/HonkaiImpactData",
+      "confidence": "low_medium",
+      "usefulFor": [
+        "hybrid_site_camera_ids",
+        "plot_data",
+        "random_plot_data",
+        "story_stage_data",
+        "stage_effect_data",
+        "avatar_effect_info"
+      ],
+      "confirmedPaths": [
+        "Global/ExcelOutputAsset/HybridSiteCamera.json",
+        "Global/ExcelOutputAsset/PlotData.json",
+        "Global/ExcelOutputAsset/RandomPlotData.json",
+        "Global/ExcelOutputAsset/StageData_Story.json",
+        "Global/ExcelOutputAsset/StageDetail_Effect.json",
+        "Global/ExcelOutputAsset/AvatarEffectInfo.json"
+      ]
+    },
+    {
+      "id": "tales_arise_boost_strike",
+      "source": "Tales of Arise Boost Strike overview",
+      "type": "secondary_encyclopedia",
+      "url": "https://en.wikipedia.org/wiki/Tales_of_Arise",
+      "confidence": "low",
+      "usefulFor": [
+        "party_interaction_focus",
+        "evasion_counter_emphasis",
+        "multi_party_destructive_attack_under_conditions"
+      ]
+    },
+    {
+      "id": "granblue_relink_party_action",
+      "source": "Granblue Fantasy Relink party action overview",
+      "type": "secondary_encyclopedia",
+      "url": "https://en.wikipedia.org/wiki/Granblue_Fantasy:_Relink",
+      "confidence": "low",
+      "usefulFor": [
+        "four_person_party_action",
+        "ai_companion_context",
+        "party_cinematic_taste_reference"
+      ]
+    },
+    {
+      "id": "local_battle_camera",
+      "source": "IsekaiBrawl BattleCamera",
+      "type": "repo",
+      "path": "Assets/_Game/Scripts/Core/BattleCamera.cs",
+      "usefulFor": [
+        "battle_camera_cue_types",
+        "cue_priorities",
+        "follow_lookahead_shake_offset",
+        "optional_cinemachine_impulse_listener"
+      ]
+    },
+    {
+      "id": "local_camera_shake",
+      "source": "IsekaiBrawl CameraShake",
+      "type": "repo",
+      "path": "Assets/_Game/Scripts/Core/CameraShake.cs",
+      "usefulFor": [
+        "optional_cinemachine_impulse_source",
+        "reflection_bridge",
+        "impact_shake"
+      ]
+    }
+  ],
+  "publicDataMirrorFindings": [
+    {
+      "id": "zzz_camera_modifier_stack",
+      "game": "Zenless Zone Zero",
+      "sourceIds": [
+        "zzz_data_camera_actions",
+        "zzz_data_witch_time"
+      ],
+      "confirmedSurfaces": [
+        "CameraZoomAction",
+        "CameraStretchAction",
+        "CameraOverrideTrackAction",
+        "CameraOverrideTrackEndAction",
+        "CameraModifier",
+        "QTECameraModifier",
+        "ExQTECameraModifier",
+        "WitchSlowDownMixin",
+        "ProcessScreenEffectAction",
+        "InterruptScreenEffectAction"
+      ],
+      "observedContractShape": [
+        "animation_state_or_frame_gate",
+        "camera_modifier_key",
+        "zoom_key",
+        "stretch_key",
+        "override_track_key",
+        "end_action",
+        "screen_effect_type",
+        "time_slow_duration",
+        "invincibility_buff",
+        "ui_hide_or_phase_lock"
+      ],
+      "isekaiBrawlTranslation": [
+        "cameraModifierKeys",
+        "zoomProfile",
+        "stretchProfile",
+        "overrideTrackKey",
+        "overrideTrackEndSignal",
+        "screenEffectStack",
+        "timePocketProfile",
+        "protectTimeSeconds",
+        "hideUiDuringCutscene",
+        "cleanupSignals"
+      ]
+    },
+    {
+      "id": "pgr_camera_lut_split",
+      "game": "Punishing Gray Raven",
+      "sourceIds": [
+        "pgr_data_camera_tables"
+      ],
+      "confirmedSurfaces": [
+        "CameraParam.tab",
+        "VCameraLut.tab",
+        "SceneCamera.tab",
+        "CameraTrackLut.tab",
+        "CameraNoiseLut.tab",
+        "ScreenEffect.tab",
+        "Movie.tab",
+        "Story.tab",
+        "XCameraHelper.lua"
+      ],
+      "observedContractShape": [
+        "camera_param_id",
+        "virtual_camera_prefab_lut",
+        "scene_camera_prefab_lut",
+        "camera_track_prefab_lut",
+        "camera_noise_lut",
+        "story_movie_table_split"
+      ],
+      "isekaiBrawlTranslation": [
+        "CinemachineShotProfile",
+        "CameraTrackProfile",
+        "CameraNoiseProfile",
+        "StoryCameraBinding",
+        "CutsceneCueProfile",
+        "cameraResourceLut"
+      ]
+    },
+    {
+      "id": "hi3_story_camera_site_split",
+      "game": "Honkai Impact 3rd",
+      "sourceIds": [
+        "hi3_data_story_camera_tables"
+      ],
+      "confirmedSurfaces": [
+        "HybridSiteCamera.json",
+        "PlotData.json",
+        "RandomPlotData.json",
+        "StageData_Story.json",
+        "StageDetail_Effect.json",
+        "AvatarEffectInfo.json"
+      ],
+      "observedContractShape": [
+        "story_or_plot_id",
+        "camera_site_id",
+        "chapter_id",
+        "hybrid_site_id",
+        "offset",
+        "stage_effect_id"
+      ],
+      "isekaiBrawlTranslation": [
+        "storyBeatId",
+        "cameraSiteId",
+        "speakerAnchor",
+        "offset",
+        "stageEffectId",
+        "returnCameraPolicy"
+      ]
+    },
+    {
+      "id": "low_confidence_extra_party_finisher_refs",
+      "game": "Tales of Arise / Granblue Fantasy Relink / Aether Gazer search attempt",
+      "sourceIds": [
+        "tales_arise_boost_strike",
+        "granblue_relink_party_action"
+      ],
+      "confirmedSurfaces": [
+        "party_interaction_overview",
+        "multi_character_finisher_reference",
+        "Aether_Gazer_source_access_unreliable_this_pass"
+      ],
+      "observedContractShape": [
+        "eligibility_condition",
+        "party_or_assist_roster",
+        "shared_impact_frame",
+        "return_to_control"
+      ],
+      "isekaiBrawlTranslation": [
+        "eligibilityCue",
+        "assistRoster",
+        "sharedImpactFrame",
+        "resultReward",
+        "skipPolicy",
+        "returnRelief"
+      ]
+    }
+  ],
+  "referenceGamePatterns": [
+    {
+      "id": "break_to_chain_cinematic_ladder",
+      "referenceSources": [
+        "zzz_daze_chain",
+        "wuwa_vibration"
+      ],
+      "observedData": [
+        "break_or_stun_gauge_reaches_full",
+        "enemy_enters_stopped_or_vulnerable_state",
+        "limited_followup_ladder_opens",
+        "followup_count_or_budget_scales_by_enemy_class"
+      ],
+      "isekaiBrawlContract": [
+        "breakWindowSeconds",
+        "allowedFollowups",
+        "cameraTier",
+        "summonPreferredRoles",
+        "returnReliefSeconds"
+      ],
+      "useFor": [
+        "boss_pressure_break_reframe",
+        "summon_break_entry_cutin"
+      ],
+      "notes": "Use boss or elite break as a cinematic affordance, not only as a damage multiplier."
+    },
+    {
+      "id": "assist_as_defensive_cutin",
+      "referenceSources": [
+        "zzz_assist",
+        "pgr_combat_guide",
+        "hi3_qte"
+      ],
+      "observedData": [
+        "incoming_danger_or_condition_enables_off_field_entry",
+        "entry_skill_is_protected",
+        "entry_can_parry_heal_break_or_rescue",
+        "ui_prompt_or_icon_state_points_to_the_entry"
+      ],
+      "isekaiBrawlContract": [
+        "triggerCondition",
+        "entryAnchor",
+        "targetPriority",
+        "invulnerableDuringEntry",
+        "impactSignal",
+        "exitOrPersistPolicy"
+      ],
+      "useFor": [
+        "pressure_danger_summon",
+        "tank_rescue_entry",
+        "heal_support_entry",
+        "break_assist_entry"
+      ]
+    },
+    {
+      "id": "perfect_dodge_time_pocket",
+      "referenceSources": [
+        "pgr_matrix",
+        "hi3_time_fracture",
+        "tof_phantasia",
+        "zzz_dodge"
+      ],
+      "observedData": [
+        "enemy_read_cue_precedes_attack",
+        "tight_dodge_timing_triggers_time_control",
+        "reward_window_allows_counter_or_tag_in",
+        "meter_reward_may_be_granted"
+      ],
+      "isekaiBrawlContract": [
+        "readCue",
+        "dodgeWindow",
+        "timeScaleMode",
+        "opportunityDuration",
+        "allowedActions",
+        "cameraCue"
+      ],
+      "useFor": [
+        "perfect_dodge_summon_opportunity",
+        "counter_snap",
+        "pressure_relief_setup"
+      ],
+      "notes": "This should strengthen the one dodge button, not add a separate parry button."
+    },
+    {
+      "id": "resource_ready_cinematic_gate",
+      "referenceSources": [
+        "zzz_decibels",
+        "genshin_burst_iframe",
+        "wuwa_concerto_intro_outro"
+      ],
+      "observedData": [
+        "high_impact_action_requires_meter_or_cooldown",
+        "hud_icon_glow_and_audio_cue_signal_readiness",
+        "activation_often_grants_iframes_or_control_lock",
+        "resource_is_consumed_on_activation"
+      ],
+      "isekaiBrawlContract": [
+        "meterReadyCue",
+        "uiGlow",
+        "readySfx",
+        "inputLock",
+        "iFramePolicy",
+        "damageApplySignal",
+        "cooldownRestore"
+      ],
+      "useFor": [
+        "ultimate_short_cutin",
+        "summon_ready_flash",
+        "boss_break_followup_prompt"
+      ]
+    },
+    {
+      "id": "tag_in_entry_exit_pair",
+      "referenceSources": [
+        "wuwa_concerto_intro_outro",
+        "hi3_qte",
+        "pgr_combat_guide"
+      ],
+      "observedData": [
+        "outgoing_unit_can_leave_buff_or_effect",
+        "incoming_unit_enters_with_target_facing_action",
+        "condition_or_resource_decides_availability",
+        "entry_and_exit_are_readable_as_one package"
+      ],
+      "isekaiBrawlContract": [
+        "callerSetupSignal",
+        "summonEntryShot",
+        "summonActiveEffect",
+        "summonExitOrField",
+        "playerReturnShot"
+      ],
+      "useFor": [
+        "summon_break_entry_cutin",
+        "heal_field_entry",
+        "tank_guard_entry",
+        "arrow_cover_fire_entry"
+      ],
+      "notes": "Convert party tag-in grammar into summon entry grammar without adding full party switching."
+    },
+    {
+      "id": "localized_time_field",
+      "referenceSources": [
+        "tof_phantasia",
+        "hi3_time_fracture"
+      ],
+      "observedData": [
+        "time_slow_can_be_radius_or_state_scoped",
+        "some_timers_may_slow_with_the_effect",
+        "actors_outside_scope_can_remain_normal",
+        "cooldown_prevents_constant_retrigger"
+      ],
+      "isekaiBrawlContract": [
+        "fieldRadius",
+        "affectedActors",
+        "projectilePolicy",
+        "timerPolicy",
+        "bossExemptions",
+        "restoreSignal"
+      ],
+      "useFor": [
+        "perfect_dodge_field",
+        "boss_break_relief",
+        "summon_landing_slow"
+      ]
+    },
+    {
+      "id": "cinematic_invulnerability_contract",
+      "referenceSources": [
+        "zzz_dodge",
+        "zzz_assist",
+        "zzz_daze_chain",
+        "genshin_burst_iframe",
+        "pgr_combat_guide"
+      ],
+      "observedData": [
+        "invulnerability_scope_differs_by_action",
+        "some_actions_remove_or_ignore_hitboxes",
+        "some_actions_lock_hp_or damage intake",
+        "qte_or_assist_entry_can_be_protected"
+      ],
+      "isekaiBrawlContract": [
+        "invulnerabilityType",
+        "duration",
+        "affectedHitboxes",
+        "hpLock",
+        "statusEffectPolicy",
+        "restoreSignal"
+      ],
+      "allowedInvulnerabilityTypes": [
+        "none",
+        "hitbox_removed",
+        "hp_locked",
+        "entry_protected",
+        "target_only_pause",
+        "full_scene_pause"
+      ]
+    },
+    {
+      "id": "enemy_break_visibility",
+      "referenceSources": [
+        "zzz_daze_chain",
+        "wuwa_vibration",
+        "pgr_combat_guide"
+      ],
+      "observedData": [
+        "gauge_enemy_state_camera_emphasis_and_followup_prompt_align",
+        "break_window_is_visible_to_player",
+        "role_or_followup_choice_becomes_obvious"
+      ],
+      "isekaiBrawlContract": [
+        "breakGaugeRead",
+        "enemyOutlineOrVfx",
+        "targetGroupBreakPullback",
+        "topBandHint",
+        "summonRolePrompt",
+        "reliefMetric"
+      ],
+      "useFor": [
+        "boss_pressure_break_reframe",
+        "summon_role_teaching"
+      ]
+    },
+    {
+      "id": "companion_effect_persistence",
+      "referenceSources": [
+        "wuwa_concerto_intro_outro",
+        "pgr_combat_guide",
+        "zzz_daze_chain"
+      ],
+      "observedData": [
+        "off_field_or_companion_entry_can_leave_timed_buff_field_heal_projectile_or_chain_slot",
+        "entry_moment_and_persistent_effect_are_both_visible"
+      ],
+      "isekaiBrawlContract": [
+        "entryImpact",
+        "persistentEffect",
+        "duration",
+        "cleanupVfx",
+        "roleSuccessMetric"
+      ],
+      "useFor": [
+        "heal_field",
+        "tank_guard_zone",
+        "arrow_cover_fire",
+        "break_stagger_followup"
+      ]
+    },
+    {
+      "id": "boss_class_scales_cinematic_budget",
+      "referenceSources": [
+        "zzz_daze_chain",
+        "pgr_matrix",
+        "wuwa_vibration"
+      ],
+      "observedData": [
+        "normal_elite_boss_class_changes_followup_budget",
+        "bigger_enemy_state_change_justifies_longer_camera",
+        "minor_hits_stay_short"
+      ],
+      "isekaiBrawlContract": [
+        "enemyClass",
+        "maxCameraTier",
+        "maxDuration",
+        "followupBudget",
+        "skipPolicy"
+      ],
+      "tierBudgetRecommendation": {
+        "normal": "Tier0",
+        "elite": "Tier1",
+        "boss_intro_break_final": "Tier2",
+        "stage_boundary_result": "Tier3"
+      }
+    },
+    {
+      "id": "data_driven_camera_modifier_stack",
+      "referenceSources": [
+        "zzz_data_camera_actions",
+        "pgr_data_camera_tables"
+      ],
+      "observedData": [
+        "camera_polish_can_be_stack_of_zoom_stretch_override_track_noise_screen_effect_time_pocket_and_cleanup",
+        "camera_modifier_keys_can_be_animation_frame_or_combat_state_gated",
+        "end_actions_are_as_important_as_start_actions"
+      ],
+      "isekaiBrawlContract": [
+        "zoomProfile",
+        "lensPulse",
+        "targetOffset",
+        "screenStretch",
+        "impulse",
+        "postFx",
+        "overrideTrack",
+        "endActions",
+        "cleanupSignals"
+      ],
+      "useFor": [
+        "summon_entry_cutin",
+        "qte_like_assist",
+        "boss_attack_read",
+        "phase_switch_cinematic"
+      ]
+    },
+    {
+      "id": "story_camera_binding_split",
+      "referenceSources": [
+        "pgr_data_camera_tables",
+        "hi3_data_story_camera_tables"
+      ],
+      "observedData": [
+        "story_camera_ids_scene_camera_resources_plot_rows_and_stage_effects_are_separate_data_surfaces",
+        "camera_binding_can_reference_site_or_prefab_without_embedding_logic_in_scene"
+      ],
+      "isekaiBrawlContract": [
+        "storyBeatId",
+        "cameraBindingId",
+        "shotProfileId",
+        "speakerAnchor",
+        "stageEffectId",
+        "returnPolicy"
+      ],
+      "useFor": [
+        "short_in_run_dialogue",
+        "boss_intro_dialogue",
+        "result_bridge",
+        "chapter_micro_scene"
+      ]
+    },
+    {
+      "id": "party_finisher_cinematic_burst",
+      "referenceSources": [
+        "tales_arise_boost_strike",
+        "granblue_relink_party_action",
+        "zzz_daze_chain"
+      ],
+      "observedData": [
+        "multi_character_finishers_need_clear_eligibility_condition",
+        "brief_camera_authority_pull_can_make_party_action_readable",
+        "return_to_control_needs_result_or_resource_payoff"
+      ],
+      "isekaiBrawlContract": [
+        "eligibilityCue",
+        "assistRoster",
+        "sharedImpactFrame",
+        "resultReward",
+        "skipPolicy",
+        "returnRelief"
+      ],
+      "useFor": [
+        "summon_boss_break_finisher",
+        "final_kill_bridge",
+        "summon_plus_player_joint_impact"
+      ]
+    }
+  ],
+  "cutsceneTiers": [
+    {
+      "tier": 0,
+      "id": "CombatCue",
+      "durationSeconds": {
+        "min": 0.08,
+        "max": 0.6
+      },
+      "owner": "BattleCamera_plus_impulse",
+      "useFor": [
+        "hit",
+        "dodge",
+        "quick_summon_nudge",
+        "pressure_read"
+      ],
+      "lockPolicy": "no_hard_lock_optional_micro_hitstop"
+    },
+    {
+      "tier": 1,
+      "id": "MicroCinematic",
+      "durationSeconds": {
+        "min": 0.6,
+        "max": 1.6
+      },
+      "owner": "CinemachineCamera_or_SequencerCamera",
+      "useFor": [
+        "summon_landing",
+        "counter_snap",
+        "elite_break",
+        "boss_reframe"
+      ],
+      "lockPolicy": "short_input_lock_or_buffered_input_selective_ai_pause"
+    },
+    {
+      "tier": 2,
+      "id": "CombatCutIn",
+      "durationSeconds": {
+        "min": 1.6,
+        "max": 3.5
+      },
+      "owner": "Timeline_or_SequencerCamera",
+      "useFor": [
+        "ultimate",
+        "boss_intro",
+        "break_reward",
+        "final_kill_start"
+      ],
+      "lockPolicy": "explicit_input_ai_time_ui_locks"
+    },
+    {
+      "tier": 3,
+      "id": "SceneCutscene",
+      "durationSeconds": {
+        "min": 3.5,
+        "max": 12.0
+      },
+      "owner": "Timeline_plus_PlayableDirector",
+      "useFor": [
+        "stage_intro",
+        "dialogue",
+        "result_bridge",
+        "chapter_moment"
+      ],
+      "lockPolicy": "skippable_full_contract"
+    }
+  ],
+  "shotArchetypes": [
+    {
+      "id": "GameplaySoftLockFollow",
+      "use": "default_combat_camera_and_return_target",
+      "components": [
+        "ThirdPersonFollow",
+        "RotationComposer"
+      ],
+      "targets": [
+        "player_tracking",
+        "boss_or_target_lookat",
+        "optional_target_group"
+      ],
+      "durationSeconds": "persistent",
+      "notes": "Base return target for all combat cut-ins."
+    },
+    {
+      "id": "HeroCloseReaction",
+      "use": "dodge_ultimate_dialogue_reaction",
+      "components": [
+        "Follow",
+        "RotationComposer"
+      ],
+      "targets": [
+        "player_chest",
+        "player_head"
+      ],
+      "durationSeconds": {
+        "min": 0.25,
+        "max": 0.7
+      },
+      "notes": "Do not return control while urgent threats are off-screen."
+    },
+    {
+      "id": "BossIntroWide",
+      "use": "boss_reveal",
+      "components": [
+        "SplineDolly",
+        "RotationComposer"
+      ],
+      "targets": [
+        "boss_root",
+        "boss_head",
+        "stage_anchor"
+      ],
+      "durationSeconds": {
+        "min": 0.8,
+        "max": 1.4
+      },
+      "notes": "Establish direction and boss pressure without reverting to corridor camera logic."
+    },
+    {
+      "id": "BossTelegraphInsert",
+      "use": "dangerous_tell_readability",
+      "components": [
+        "Follow",
+        "HardLookAt_or_RotationComposer"
+      ],
+      "targets": [
+        "boss_weapon",
+        "boss_hand",
+        "weakpoint"
+      ],
+      "durationSeconds": {
+        "min": 0.25,
+        "max": 0.65
+      },
+      "notes": "End before player control becomes urgent."
+    },
+    {
+      "id": "SummonLandingClose",
+      "use": "assist_like_summon_arrival",
+      "components": [
+        "ThirdPersonFollow",
+        "RotationComposer"
+      ],
+      "targets": [
+        "summon_root",
+        "target"
+      ],
+      "durationSeconds": {
+        "min": 0.25,
+        "max": 0.45
+      },
+      "impulseChannels": [
+        "SummonLanding"
+      ]
+    },
+    {
+      "id": "TargetGroupBreakPullback",
+      "use": "pocket_shift_proof",
+      "components": [
+        "TargetGroup",
+        "RotationComposer"
+      ],
+      "targets": [
+        "player",
+        "summon",
+        "boss_or_elite"
+      ],
+      "durationSeconds": {
+        "min": 0.4,
+        "max": 0.9
+      },
+      "notes": "Show the safer pocket opened by summon or break."
+    },
+    {
+      "id": "UltimateChargeProfile",
+      "use": "ultimate_anticipation",
+      "components": [
+        "HeroCloseReaction",
+        "lens_optional",
+        "dutch_optional"
+      ],
+      "targets": [
+        "player_chest",
+        "weapon"
+      ],
+      "durationSeconds": {
+        "min": 0.35,
+        "max": 0.8
+      },
+      "notes": "Works best with local slow and strong SFX lead-in."
+    },
+    {
+      "id": "UltimateImpactHold",
+      "use": "ultimate_hit",
+      "components": [
+        "TargetGroup",
+        "ImpulseListener"
+      ],
+      "targets": [
+        "player",
+        "target",
+        "vfx_anchor"
+      ],
+      "durationSeconds": {
+        "min": 0.2,
+        "max": 0.55
+      },
+      "impulseChannels": [
+        "UltimateImpact"
+      ]
+    },
+    {
+      "id": "DialogueOTS",
+      "use": "character_conversation",
+      "components": [
+        "Follow",
+        "RotationComposer",
+        "AnimationRigging"
+      ],
+      "targets": [
+        "speaker_head",
+        "listener_head"
+      ],
+      "durationSeconds": {
+        "min": 1.0,
+        "max": 2.5
+      },
+      "notes": "Use Avatar Mask and upper-body override when possible."
+    }
+  ],
+  "dataContracts": {
+    "CutsceneCueProfile": [
+      "cueId",
+      "tier",
+      "trigger",
+      "priority",
+      "duration",
+      "owner",
+      "canSkip",
+      "canInterrupt",
+      "inputLockProfile",
+      "aiLockProfile",
+      "timeProfile",
+      "uiProfile",
+      "cameraSequence",
+      "timelineBindingProfile",
+      "signalEvents",
+      "returnProfile",
+      "cleanupRules"
+    ],
+    "CinemachineShotProfile": [
+      "shotId",
+      "cameraName",
+      "trackingTargetKey",
+      "lookAtTargetKey",
+      "targetGroupKeys",
+      "positionControl",
+      "rotationControl",
+      "lens",
+      "fov",
+      "dutch",
+      "followOffset",
+      "shoulderOffset",
+      "cameraSide",
+      "followDistance",
+      "screenPosition",
+      "deadZone",
+      "softZone",
+      "damping",
+      "blendIn",
+      "hold",
+      "blendOut",
+      "impulseChannels",
+      "modifierStackProfile",
+      "overrideTrackKey",
+      "screenEffectStack",
+      "cameraResourceKey",
+      "notes"
+    ],
+    "CameraModifierStackProfile": [
+      "modifierStackId",
+      "startFrame",
+      "endFrame",
+      "zoomProfile",
+      "stretchProfile",
+      "lensPulse",
+      "targetOffset",
+      "cameraNoise",
+      "impulse",
+      "postFx",
+      "overrideTrack",
+      "timePocket",
+      "startActions",
+      "endActions",
+      "cleanupSignals"
+    ],
+    "CameraTrackProfile": [
+      "trackId",
+      "trackResourceKey",
+      "shotProfileIds",
+      "blendPolicy",
+      "loopPolicy",
+      "authorityPolicy",
+      "endActionPolicy"
+    ],
+    "StoryCameraBindingProfile": [
+      "storyBeatId",
+      "cameraBindingId",
+      "cameraSiteId",
+      "speakerAnchor",
+      "listenerAnchor",
+      "offset",
+      "stageEffectId",
+      "returnCameraPolicy"
+    ],
+    "TimelineBindingProfile": [
+      "timelineAsset",
+      "playableDirectorKey",
+      "bindingKeys",
+      "signalReceiverKey",
+      "runtimeBindingPolicy",
+      "missingBindingPolicy",
+      "postPlaybackState"
+    ],
+    "GameplayLockProfile": [
+      "inputLock",
+      "movementLock",
+      "dodgeLock",
+      "summonLock",
+      "ultimateLock",
+      "inputBufferPolicy",
+      "playerAnimationAuthority",
+      "enemyAiPolicy",
+      "summonAiPolicy",
+      "projectilePolicy"
+    ],
+    "TimeControlProfile": [
+      "timelineUpdateMethod",
+      "brainIgnoreTimeScale",
+      "globalTimeScale",
+      "localHitStop",
+      "restoreTimeScale",
+      "affectedSystems",
+      "audioPolicy",
+      "particlePolicy"
+    ],
+    "SignalEventProfile": [
+      "eventId",
+      "time",
+      "frame60",
+      "signalAsset",
+      "receiver",
+      "payloadKey",
+      "mustFire",
+      "rollbackOrCleanup"
+    ],
+    "CameraReturnProfile": [
+      "returnTarget",
+      "returnCamera",
+      "returnBlend",
+      "returnDuration",
+      "restorePriority",
+      "restoreBattleCameraCue",
+      "clearImpulseChannels",
+      "restoreHud",
+      "restoreInput"
+    ],
+    "ImpulseCueProfile": [
+      "impulseId",
+      "channel",
+      "sourceKey",
+      "gain",
+      "duration",
+      "frequency",
+      "falloff",
+      "listenerPolicy"
+    ],
+    "CharacterStagingProfile": [
+      "characterKey",
+      "baseAnimation",
+      "overrideTracks",
+      "avatarMasks",
+      "rigConstraints",
+      "lookAtTargets",
+      "ikTargets",
+      "rootMotionPolicy",
+      "returnAnimatorState"
+    ]
+  },
+  "firstImplementationProfiles": [
+    {
+      "id": "summon_break_entry_cutin",
+      "priority": 1,
+      "tier": "MicroCinematic",
+      "durationSeconds": 1.05,
+      "owner": "SequencerCamera_first_Timeline_later",
+      "triggerWindows": [
+        "perfect_dodge",
+        "boss_pattern_break",
+        "structure_break",
+        "pressure_danger"
+      ],
+      "cameraSequence": [
+        {
+          "shot": "GameplaySoftLockFollow_align",
+          "durationSeconds": 0.12
+        },
+        {
+          "shot": "SummonLandingClose",
+          "durationSeconds": 0.34
+        },
+        {
+          "shot": "TargetGroupBreakPullback",
+          "durationSeconds": 0.42
+        },
+        {
+          "shot": "GameplayReturnBlend",
+          "durationSeconds": 0.17
+        }
+      ],
+      "lockProfile": {
+        "movement": "soft_lock_0_45s",
+        "dodge": "buffer_after_0_55s",
+        "summon": "locked_during_sequence",
+        "ultimate": "buffered_only",
+        "enemyAi": "pause_target_pocket_only"
+      },
+      "signals": [
+        "summon_spawn",
+        "landing_vfx",
+        "landing_sfx",
+        "summon_landing_impulse",
+        "apply_break_or_relief",
+        "return_to_gameplay"
+      ],
+      "returnProfile": {
+        "restoreBattleCameraCue": [
+          "SummonCall",
+          "BossBreak"
+        ],
+        "reliefCameraSeconds": {
+          "min": 1.6,
+          "max": 3.0
+        }
+      }
+    },
+    {
+      "id": "ultimate_short_cutin",
+      "priority": 2,
+      "tier": "CombatCutIn",
+      "durationSeconds": 1.8,
+      "owner": "Timeline",
+      "cameraSequence": [
+        {
+          "shot": "HeroCloseReaction",
+          "durationSeconds": 0.35
+        },
+        {
+          "shot": "UltimateChargeProfile",
+          "durationSeconds": 0.55
+        },
+        {
+          "shot": "UltimateImpactHold",
+          "durationSeconds": 0.45
+        },
+        {
+          "shot": "GameplayReturn",
+          "durationSeconds": 0.45
+        }
+      ],
+      "lockProfile": {
+        "input": "full_lock_until_impact",
+        "inputBuffer": "movement_dodge_near_end",
+        "enemyAi": "pause_dangerous_new_actions",
+        "projectiles": "freeze_or_slow_by_cue"
+      },
+      "timeProfile": {
+        "preferred": "local_hitstop_or_local_slow",
+        "globalSlowAllowed": true,
+        "restoreTimeScaleRequired": true
+      },
+      "signals": [
+        "hud_hide_soft",
+        "ultimate_charge_vfx",
+        "ultimate_voice_or_sfx",
+        "damage_apply",
+        "ultimate_impact_impulse",
+        "hud_show"
+      ]
+    },
+    {
+      "id": "boss_intro_pressure_read",
+      "priority": 3,
+      "tier": "CombatCutIn",
+      "durationSeconds": 2.4,
+      "owner": "Timeline",
+      "cameraSequence": [
+        {
+          "shot": "BossIntroWide",
+          "durationSeconds": 0.85
+        },
+        {
+          "shot": "BossTelegraphInsert",
+          "durationSeconds": 0.45
+        },
+        {
+          "shot": "HeroCloseReaction",
+          "durationSeconds": 0.35
+        },
+        {
+          "shot": "GameplayReturnWithBossTargetGroup",
+          "durationSeconds": 0.75
+        }
+      ],
+      "lockProfile": {
+        "input": "disabled_until_final_return_blend",
+        "enemyAi": "disabled_except_staged_telegraph",
+        "damage": "none_during_intro_by_default"
+      },
+      "signals": [
+        "boss_roar_sfx",
+        "telegraph_vfx_warmup",
+        "top_band_hint_show",
+        "enable_player_control"
+      ]
+    },
+    {
+      "id": "boss_pressure_break_reframe",
+      "priority": 4,
+      "tier": "MicroCinematic_or_CombatCutIn",
+      "durationSeconds": 1.2,
+      "owner": "SequencerCamera",
+      "cameraSequence": [
+        {
+          "shot": "boss_stagger_insert",
+          "durationSeconds": 0.35
+        },
+        {
+          "shot": "player_summon_advantage_frame",
+          "durationSeconds": 0.35
+        },
+        {
+          "shot": "widened_gameplay_return",
+          "durationSeconds": 0.5
+        }
+      ],
+      "lockProfile": {
+        "fullPause": "only_for_major_player_created_break",
+        "bossPressure": "disable_new_pressure_during_relief_proof"
+      },
+      "signals": [
+        "break_vfx",
+        "break_sfx",
+        "boss_break_impulse",
+        "relief_window_start",
+        "energy_reward_pulse"
+      ]
+    },
+    {
+      "id": "final_kill_result_bridge",
+      "priority": 5,
+      "tier": "CombatCutIn_or_SceneCutscene",
+      "durationSeconds": 2.6,
+      "owner": "Timeline",
+      "cameraSequence": [
+        {
+          "shot": "final_hit_hold",
+          "durationSeconds": 0.35
+        },
+        {
+          "shot": "boss_collapse",
+          "durationSeconds": 0.85
+        },
+        {
+          "shot": "FinalKillHero",
+          "durationSeconds": 0.8
+        },
+        {
+          "shot": "result_ui_bridge",
+          "durationSeconds": 0.6
+        }
+      ],
+      "lockProfile": {
+        "combatInput": "off",
+        "enemySummonCleanup": "required",
+        "projectiles": "remove_or_fade"
+      },
+      "signals": [
+        "final_kill_impulse",
+        "stop_combat_bgm",
+        "victory_stinger",
+        "result_ui_prepare",
+        "result_ui_show"
+      ],
+      "returnProfile": {
+        "target": "result_ui_camera_state",
+        "not": "normal_combat_control"
+      }
+    }
+  ],
+  "timelineBindingKeys": [
+    "player_root",
+    "player_head",
+    "player_chest",
+    "summon_root",
+    "summon_spawn_anchor",
+    "boss_root",
+    "boss_head",
+    "focus_target",
+    "combat_camera",
+    "cutscene_camera_root",
+    "vfx_spawn_root",
+    "sfx_bus",
+    "ui_overlay_root",
+    "signal_receiver"
+  ],
+  "signalVocabulary": [
+    "camera_cut",
+    "camera_blend_start",
+    "input_lock_start",
+    "input_lock_end",
+    "ai_pause_start",
+    "ai_pause_end",
+    "time_scale_set",
+    "spawn_vfx",
+    "spawn_afterimage",
+    "play_sfx",
+    "play_voice",
+    "damage_apply",
+    "summon_spawn",
+    "boss_guard_break",
+    "ui_flash",
+    "hud_hide",
+    "hud_show",
+    "return_to_gameplay",
+    "cleanup"
+  ],
+  "impulseChannels": [
+    "HitLight",
+    "HitHeavy",
+    "PerfectDodge",
+    "SummonLanding",
+    "BossBreak",
+    "UltimateImpact",
+    "FinalKill",
+    "EnvironmentCollapse"
+  ],
+  "authoringRules": [
+    "Author combat cutscenes as data before implementation.",
+    "Keep BattleCamera as gameplay authority and bridge Cinemachine/Timeline through explicit return profiles.",
+    "Use Timeline for sequences longer than roughly 1.2 seconds or when animation, VFX, SFX, UI, damage, and time need frame alignment.",
+    "Use CinemachineSequencerCamera for short three-shot action moments.",
+    "Use TargetGroup to keep player, summon, boss, and break target readable.",
+    "Use SplineDolly for stage fly-ins and boss intros, not every combat cue.",
+    "Use Timeline signals as cinematic frame tags.",
+    "Every Timeline asset needs explicit runtime binding keys.",
+    "Every cutscene must restore input, AI, HUD, time scale, camera priority, and live gameplay camera.",
+    "Prioritize summon_break_entry_cutin before player-only ultimate spectacle."
+  ],
+  "riskRegister": [
+    {
+      "risk": "Timeline_Brain_conflict",
+      "failureMode": "cutscene_camera_loses_control_or_never_returns",
+      "prevention": "one_owner_per_cue_explicit_CameraReturnProfile_stop_clear_Timeline_after_playback"
+    },
+    {
+      "risk": "missing_bindings",
+      "failureMode": "Timeline_plays_with_wrong_or_null_targets",
+      "prevention": "TimelineBindingProfile_required_keys_abort_policy"
+    },
+    {
+      "risk": "dirty_time_scale",
+      "failureMode": "gameplay_remains_slow_or_camera_damping_wrong",
+      "prevention": "mandatory_restore_event_runtime_guard"
+    },
+    {
+      "risk": "overlong_cutins",
+      "failureMode": "short_ARPG_run_feels_blocked",
+      "prevention": "tier_duration_caps_skip_policy"
+    },
+    {
+      "risk": "camera_hides_danger",
+      "failureMode": "player_regains_control_while_threat_offscreen",
+      "prevention": "lock_until_danger_readable_again"
+    },
+    {
+      "risk": "too_much_shake",
+      "failureMode": "patterns_become_unreadable",
+      "prevention": "impulse_channels_gain_caps_cue_cooldowns"
+    }
+  ],
+  "recommendedNextImplementationPath": [
+    "Create CutsceneCueProfile ScriptableObject or serializable data class.",
+    "Build CutsceneDirector bridge for PlayableDirector binding, locks, time restoration, and camera return.",
+    "Add gameplay Cinemachine setup that mirrors current BattleCamera values before replacing behavior.",
+    "Prototype summon_break_entry_cutin with three shot profiles and no new combat rules.",
+    "Add Timeline signals after the first Sequencer version proves shot duration and return feel.",
+    "Add ultimate_short_cutin second.",
+    "Add boss_intro_pressure_read third.",
+    "Add validation logs for missing bindings, dirty time scale, unreturned camera, and stuck input lock."
+  ]
+}

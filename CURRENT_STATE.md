@@ -15,6 +15,7 @@ Last updated: 2026-06-13 KST
 
 - Unity project baseline exists.
 - Combat reference docs and datasets are imported.
+- `Assets/_Game/DesignDocs/CINEMACHINE_INGAME_CUTSCENE_REFERENCE_RESEARCH.md` and `Assets/_Game/DesignData/CinemachineIngameCutsceneReferenceDataset.json` are imported as the active Unity Cinemachine/Timeline in-game cutscene reference baseline for boss intros, summon/ultimate cut-ins, dialogue staging, camera shot sequencing, input/AI/time locks, impulse, Timeline signals, and gameplay camera return.
 - `COMBAT_V1_SPEC.md` defines the first direct-control ARPG action slice before summon implementation.
 - `ACTION_FEEL_TARGETS.md` defines the movement, camera, attack, dodge, hit, and enemy feel quality targets that action work must improve.
 - `ACTION_FOUNDATION_OWNERSHIP.md` defines the narrow runtime ownership split for the first action-feel implementation.
@@ -63,6 +64,8 @@ Last updated: 2026-06-13 KST
 - `_Game/Art` folder structure exists for curated game-ready assets.
 - `_Game/Art/VFX` exists as the curated destination for selected combat-ready VFX promoted out of local raw packs.
 - Project governance docs now define AI limits, folder ownership, code style, architecture boundaries, session workflow, and review checks.
+- Current in-game cutscene rule: use Cinemachine/Timeline as a Unity-side production layer for short ARPG cut-ins and character scenes; every cutscene cue must declare shot type, duration, gameplay lock, time-scale behavior, signal events, camera handoff, and return-to-gameplay target before implementation.
+- Current cutscene reference evidence rule: reference games did not yield public Cinemachine/Timeline source assets; use their public mechanic data, observed camera grammar, and public data-mirror field shapes only as schema/pattern evidence for our own Unity implementation.
 
 ## Local Assets
 
@@ -78,7 +81,7 @@ These must not be committed directly.
 
 ## Next Safe Step
 
-Use `Assets/_Game/DesignDocs/COMBAT_V1_SPEC.md`, `Assets/_Game/DesignDocs/ACTION_FEEL_TARGETS.md`, `Assets/_Game/DesignDocs/ACTION_FOUNDATION_OWNERSHIP.md`, and `Assets/_Game/DesignDocs/ACTION_FOUNDATION_TESTING.md` as implementation guardrails. The next safe step is to curate a small combat VFX set under `_Game/Art/VFX`, author one `CombatVfxCueProfile`, and attach it to the existing player/enemy presentation drivers for attack hit, dodge, windup, active, hit, and death reads before adding summon behavior, waves, bosses, or progression.
+Use `Assets/_Game/DesignDocs/COMBAT_V1_SPEC.md`, `Assets/_Game/DesignDocs/ACTION_FEEL_TARGETS.md`, `Assets/_Game/DesignDocs/ACTION_FOUNDATION_OWNERSHIP.md`, `Assets/_Game/DesignDocs/ACTION_FOUNDATION_TESTING.md`, and `Assets/_Game/DesignDocs/CINEMACHINE_INGAME_CUTSCENE_REFERENCE_RESEARCH.md` as implementation guardrails. The next safe step is to curate a small combat VFX set under `_Game/Art/VFX`, author one `CombatVfxCueProfile`, and attach it to the existing player/enemy presentation drivers for attack hit, dodge, windup, active, hit, and death reads before adding summon behavior, waves, bosses, or progression.
 
 ## Current Risk
 
