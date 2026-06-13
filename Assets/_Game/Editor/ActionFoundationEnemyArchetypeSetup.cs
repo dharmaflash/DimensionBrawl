@@ -19,6 +19,7 @@ namespace DimensionBrawl.Editor
 
         private const string MaintenanceWorkerVisualPath = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/MaintenanceWorker/Models/SK_MaintenanceWorkerAllMeshes.fbx";
         private const string MeleeSoldierGameplayPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Melee_ClosePunish.prefab";
+        private const string GeneralDeckSoldierGameplayPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_GeneralDeck.prefab";
         private const string Forge3DLineTurretCandidate = "FORGE3D Sci-Fi Effects URP package: TURRET_BASE_Mobile_LOD0 + TURRET_HEAD_Double_LOD0 + TURRET_BARREL_Electric/Gatling/Repeater + railgun/plasma/laser beam effects.";
         private const string Forge3DMissileTurretCandidate = "FORGE3D Sci-Fi Effects URP package: TURRET_BASE_Mobile_LOD0 + TURRET_BARREL_HeavyMissle_Mobile_LOD0 + missile_02/missile_03/missile_04 prefabs.";
         private const string DragonBossCandidate = "HEROIC FANTASY CREATURES FULL PACK VOL3 raw dragon prefabs remain local-only; choose one dragon in a later boss-authoring slice.";
@@ -50,12 +51,14 @@ namespace DimensionBrawl.Editor
         public static void EnsureEnemyArchetypeAssets()
         {
             ActionFoundationEnemyRoleDeckSetup.EnsureEnemyRoleAssets();
+            ActionFoundationSciFiSoldier01VisualSetup.EnsureGeneralDeckVisualAssets();
             EnsureFolder(ArchetypeRoot);
 
             GameObject maintenanceWorkerVisual = LoadGameObject(MaintenanceWorkerVisualPath);
+            GameObject sciFiSoldier01Visual = LoadGameObject(ActionFoundationSciFiSoldier01VisualSetup.ModelPath);
             RoleRefs roles = LoadRoleRefs();
 
-            ConfigureSoldierArchetypes(roles, maintenanceWorkerVisual);
+            ConfigureSoldierArchetypes(roles, maintenanceWorkerVisual, sciFiSoldier01Visual);
             ConfigureStaticTurretArchetypes(roles);
             ConfigureFutureBossArchetype();
 
@@ -101,9 +104,10 @@ namespace DimensionBrawl.Editor
             }
         }
 
-        private static void ConfigureSoldierArchetypes(RoleRefs roles, GameObject maintenanceWorkerVisual)
+        private static void ConfigureSoldierArchetypes(RoleRefs roles, GameObject maintenanceWorkerVisual, GameObject sciFiSoldier01Visual)
         {
             GameObject meleeSoldierPrefab = LoadOptionalGameObject(MeleeSoldierGameplayPrefabPath);
+            GameObject generalDeckSoldierPrefab = LoadOptionalGameObject(GeneralDeckSoldierGameplayPrefabPath);
 
             ConfigureArchetype(
                 LoadOrCreate<CombatEnemyArchetypeProfile>(SciFiMeleeSoldierPath),
@@ -129,13 +133,15 @@ namespace DimensionBrawl.Editor
                 CombatEnemyArchetypeKind.MobileSoldier,
                 true,
                 new[] { roles.LineCaster, roles.FanSuppressor, roles.BacklineShooter },
-                null,
-                maintenanceWorkerVisual,
+                generalDeckSoldierPrefab,
+                sciFiSoldier01Visual,
+                generalDeckSoldierPrefab == null,
                 true,
-                true,
-                "Temporary promoted MaintenanceWorker visual; later replace with a dedicated ranged soldier prefab.",
-                "Promote a rifle/caster soldier visual only after line/fan/backline reads are accepted.",
-                "Keeps ranged behavior in profile/deck data while the art candidate is still temporary.");
+                "Promoted game-owned SciFiSoldier_01 Commando visual with assault-rifle animation set.",
+                generalDeckSoldierPrefab != null
+                    ? "Use the authored GeneralDeck prefab candidate for line, fan, and backline role review."
+                    : "Generate the authored GeneralDeck prefab candidate before assigning reusable ranged gameplay prefab refs.",
+                "Covers line, fan, and backline pressure with a distinct rifle soldier while behavior remains in pattern/deck data.");
 
             ConfigureArchetype(
                 LoadOrCreate<CombatEnemyArchetypeProfile>(SciFiEliteSoldierPath),

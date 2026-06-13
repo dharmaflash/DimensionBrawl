@@ -15,8 +15,10 @@ namespace DimensionBrawl.Editor
     {
         public const string PrefabRoot = "Assets/_Game/Prefabs/Enemies/ActionFoundation";
         public const string MeleeSoldierPrefabPath = PrefabRoot + "/PF_Enemy_SciFiSoldier_Melee_ClosePunish.prefab";
+        public const string GeneralDeckSoldierPrefabPath = PrefabRoot + "/PF_Enemy_SciFiSoldier_GeneralDeck.prefab";
 
         private const string MeleeSoldierPrefabName = "PF_Enemy_SciFiSoldier_Melee_ClosePunish";
+        private const string GeneralDeckSoldierPrefabName = "PF_Enemy_SciFiSoldier_GeneralDeck";
         private const string VfxPoolChildName = "CombatVfxPool";
 
         [MenuItem("DimensionBrawl/Reapply Action Foundation Enemy Prefab Candidates")]
@@ -36,28 +38,31 @@ namespace DimensionBrawl.Editor
         public static void EnsureEnemyPrefabCandidates()
         {
             EnsureFolder(PrefabRoot);
+            ActionFoundationEnemyPatternExpansionSetup.EnsureExtendedPatternAssets();
 
             Scene scene = EditorSceneManager.OpenScene(ActionFoundationProfileSetup.ScenePath, OpenSceneMode.Single);
-            BasicSoldierEnemy source = RequireRootComponent<BasicSoldierEnemy>(scene, ActionFoundationProfileSetup.ClosePunishEnemyRootName);
-            GameObject candidate = UnityEngine.Object.Instantiate(source.gameObject);
-            candidate.name = MeleeSoldierPrefabName;
-            candidate.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-            candidate.transform.localScale = Vector3.one;
-            candidate.SetActive(true);
+            CombatAiPatternProfile closePunishProfile =
+                LoadAsset<CombatAiPatternProfile>(ActionFoundationProfileSetup.EnemyPatternProfilePath);
+            CombatAiPatternDeck generalDeck =
+                LoadAsset<CombatAiPatternDeck>(ActionFoundationEnemyPatternExpansionSetup.GeneralPatternDeckPath);
+            ActionFoundationSciFiSoldier01VisualSetup.EnsureGeneralDeckVisualAssets();
 
-            try
-            {
-                SanitizeMeleeSoldierCandidate(candidate, source.transform);
-                GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(candidate, MeleeSoldierPrefabPath);
-                if (savedPrefab == null)
-                {
-                    throw new InvalidOperationException($"Failed to save enemy prefab candidate at {MeleeSoldierPrefabPath}.");
-                }
-            }
-            finally
-            {
-                UnityEngine.Object.DestroyImmediate(candidate);
-            }
+            EnsureSoldierPrefabCandidate(
+                scene,
+                ActionFoundationProfileSetup.ClosePunishEnemyRootName,
+                MeleeSoldierPrefabName,
+                MeleeSoldierPrefabPath,
+                closePunishProfile,
+                null,
+                useGeneralDeckVisual: false);
+            EnsureSoldierPrefabCandidate(
+                scene,
+                ActionFoundationEnemyPatternExpansionSetup.GeneralDeckEnemyRootName,
+                GeneralDeckSoldierPrefabName,
+                GeneralDeckSoldierPrefabPath,
+                closePunishProfile,
+                generalDeck,
+                useGeneralDeckVisual: true);
 
             ActionFoundationEnemyArchetypeSetup.EnsureEnemyArchetypeAssets();
             AssetDatabase.SaveAssets();
@@ -71,15 +76,27 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"Missing melee soldier prefab candidate at {MeleeSoldierPrefabPath}.");
             }
 
-            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(MeleeSoldierPrefabPath);
-            try
+            GameObject generalDeckPrefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(GeneralDeckSoldierPrefabPath);
+            if (generalDeckPrefabAsset == null)
             {
-                ValidateMeleeSoldierPrefab(prefabRoot);
+                throw new InvalidOperationException($"Missing general-deck soldier prefab candidate at {GeneralDeckSoldierPrefabPath}.");
             }
-            finally
-            {
-                PrefabUtility.UnloadPrefabContents(prefabRoot);
-            }
+
+            CombatAiPatternProfile closePunishProfile =
+                LoadAsset<CombatAiPatternProfile>(ActionFoundationProfileSetup.EnemyPatternProfilePath);
+            CombatAiPatternDeck generalDeck =
+                LoadAsset<CombatAiPatternDeck>(ActionFoundationEnemyPatternExpansionSetup.GeneralPatternDeckPath);
+
+            ValidateSoldierPrefabAsset(
+                MeleeSoldierPrefabPath,
+                MeleeSoldierPrefabName,
+                closePunishProfile,
+                null);
+            ValidateSoldierPrefabAsset(
+                GeneralDeckSoldierPrefabPath,
+                GeneralDeckSoldierPrefabName,
+                closePunishProfile,
+                generalDeck);
 
             CombatEnemyArchetypeProfile meleeArchetype =
                 LoadAsset<CombatEnemyArchetypeProfile>(ActionFoundationEnemyArchetypeSetup.SciFiMeleeSoldierPath);
@@ -91,17 +108,74 @@ namespace DimensionBrawl.Editor
             }
         }
 
-        private static void SanitizeMeleeSoldierCandidate(GameObject root, Transform sourceRoot)
+        private static void EnsureSoldierPrefabCandidate(
+            Scene scene,
+            string sourceRootName,
+            string prefabName,
+            string prefabPath,
+            CombatAiPatternProfile startingProfile,
+            CombatAiPatternDeck patternDeck,
+            bool useGeneralDeckVisual)
         {
-            BasicSoldierEnemy soldier = RequireComponent<BasicSoldierEnemy>(root, "melee soldier prefab candidate");
-            CombatHealth health = RequireComponent<CombatHealth>(root, "melee soldier prefab candidate");
-            CombatTargetSensor targetSensor = RequireComponent<CombatTargetSensor>(root, "melee soldier prefab candidate");
-            CharacterController controller = RequireComponent<CharacterController>(root, "melee soldier prefab candidate");
-            EnemyAttackTelegraphPresenter telegraphPresenter = RequireComponent<EnemyAttackTelegraphPresenter>(root, "melee soldier prefab candidate");
+            BasicSoldierEnemy source = RequireRootComponent<BasicSoldierEnemy>(scene, sourceRootName);
+            GameObject candidate = UnityEngine.Object.Instantiate(source.gameObject);
+            candidate.name = prefabName;
+            candidate.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+            candidate.transform.localScale = Vector3.one;
+            candidate.SetActive(true);
+
+            try
+            {
+                SanitizeSoldierCandidate(candidate, source.transform, startingProfile, patternDeck);
+                if (useGeneralDeckVisual)
+                {
+                    ActionFoundationSciFiSoldier01VisualSetup.ApplyGeneralDeckVisual(candidate);
+                }
+
+                GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(candidate, prefabPath);
+                if (savedPrefab == null)
+                {
+                    throw new InvalidOperationException($"Failed to save enemy prefab candidate at {prefabPath}.");
+                }
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(candidate);
+            }
+        }
+
+        private static void ValidateSoldierPrefabAsset(
+            string prefabPath,
+            string expectedName,
+            CombatAiPatternProfile expectedProfile,
+            CombatAiPatternDeck expectedDeck)
+        {
+            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
+            try
+            {
+                ValidateSoldierPrefab(prefabRoot, expectedName, expectedProfile, expectedDeck);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+        }
+
+        private static void SanitizeSoldierCandidate(
+            GameObject root,
+            Transform sourceRoot,
+            CombatAiPatternProfile startingProfile,
+            CombatAiPatternDeck patternDeck)
+        {
+            BasicSoldierEnemy soldier = RequireComponent<BasicSoldierEnemy>(root, $"{root.name} prefab candidate");
+            CombatHealth health = RequireComponent<CombatHealth>(root, $"{root.name} prefab candidate");
+            CombatTargetSensor targetSensor = RequireComponent<CombatTargetSensor>(root, $"{root.name} prefab candidate");
+            CharacterController controller = RequireComponent<CharacterController>(root, $"{root.name} prefab candidate");
+            EnemyAttackTelegraphPresenter telegraphPresenter = RequireComponent<EnemyAttackTelegraphPresenter>(root, $"{root.name} prefab candidate");
             Animator animator = root.GetComponentInChildren<Animator>(includeInactive: true);
             if (animator == null)
             {
-                throw new InvalidOperationException("Melee soldier prefab candidate needs the promoted enemy Animator.");
+                throw new InvalidOperationException($"{root.name} prefab candidate needs the promoted enemy Animator.");
             }
 
             GameObject telegraphObject = EnsureLocalTelegraphObject(root, sourceRoot, telegraphPresenter);
@@ -109,8 +183,8 @@ namespace DimensionBrawl.Editor
             Renderer bodyRenderer = FindPreferredBodyRenderer(root, telegraphObject);
             Renderer[] feedbackRenderers = CollectFeedbackRenderers(root, telegraphObject);
 
-            SetObjectReference(soldier, "patternProfile", LoadAsset<CombatAiPatternProfile>(ActionFoundationProfileSetup.EnemyPatternProfilePath));
-            SetObjectReference(soldier, "patternDeck", null);
+            SetObjectReference(soldier, "patternProfile", startingProfile);
+            SetObjectReference(soldier, "patternDeck", patternDeck);
             SetObjectReference(soldier, "targetSensor", targetSensor);
             SetObjectReference(soldier, "target", null);
             SetObjectReference(soldier, "targetHealth", null);
@@ -172,11 +246,15 @@ namespace DimensionBrawl.Editor
             }
         }
 
-        private static void ValidateMeleeSoldierPrefab(GameObject root)
+        private static void ValidateSoldierPrefab(
+            GameObject root,
+            string expectedName,
+            CombatAiPatternProfile expectedProfile,
+            CombatAiPatternDeck expectedDeck)
         {
-            if (!string.Equals(root.name, MeleeSoldierPrefabName, StringComparison.Ordinal))
+            if (!string.Equals(root.name, expectedName, StringComparison.Ordinal))
             {
-                throw new InvalidOperationException($"Melee soldier prefab root should be named {MeleeSoldierPrefabName}.");
+                throw new InvalidOperationException($"Soldier prefab root should be named {expectedName}.");
             }
 
             BasicSoldierEnemy soldier = RequireComponent<BasicSoldierEnemy>(root, root.name);
@@ -190,8 +268,8 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"{root.name} is missing the promoted enemy Animator.");
             }
 
-            ValidateObjectReference(soldier, "patternProfile", LoadAsset<CombatAiPatternProfile>(ActionFoundationProfileSetup.EnemyPatternProfilePath));
-            ValidateObjectReference(soldier, "patternDeck", null);
+            ValidateObjectReference(soldier, "patternProfile", expectedProfile);
+            ValidateObjectReference(soldier, "patternDeck", expectedDeck);
             ValidateObjectReference(soldier, "targetSensor", targetSensor);
             ValidateObjectReference(soldier, "target", null);
             ValidateObjectReference(soldier, "targetHealth", null);
@@ -228,6 +306,11 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(vfxCueDriver, "health", health);
             ValidateObjectReference(vfxCueDriver, "cuePlayer", cuePlayer);
             ValidateObjectReference(vfxCueDriver, "cueAnchor", root.transform);
+
+            if (expectedDeck != null)
+            {
+                ActionFoundationSciFiSoldier01VisualSetup.ValidateGeneralDeckVisual(root);
+            }
 
             ValidateNoRawImportedOrExternalSceneReferences(root);
         }

@@ -20,13 +20,13 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 5ffca634ab7e9714f8c2b5a8b7c0a081, type: 2}
   - {fileID: 11400000, guid: b7b03e1c520e0ff4896a99da9ba6b68b, type: 2}
   - {fileID: 11400000, guid: f16ba69f98a507f4ca39bed31caaa125, type: 2}
-  gameplayPrefab: {fileID: 0}
-  visualPrefab: {fileID: 919132149155446097, guid: d25064b620081b54682ad210e6f1a0de, type: 3}
-  requiresDedicatedPrefabPromotion: 1
+  gameplayPrefab: {fileID: 4947365042495544270, guid: 132dbc1dabee53a45866631596b224b0, type: 3}
+  visualPrefab: {fileID: 919132149155446097, guid: 63b3ecebef3250e428299643d7626153, type: 3}
+  requiresDedicatedPrefabPromotion: 0
   candidateForFutureSummonAiReuse: 1
-  sourceCandidate: Temporary promoted MaintenanceWorker visual; later replace with
-    a dedicated ranged soldier prefab.
-  promotionPlan: Promote a rifle/caster soldier visual only after line/fan/backline
-    reads are accepted.
-  usageNotes: Keeps ranged behavior in profile/deck data while the art candidate
-    is still temporary.
+  sourceCandidate: Promoted game-owned SciFiSoldier_01 Commando visual with assault-rifle
+    animation set.
+  promotionPlan: Use the authored GeneralDeck prefab candidate for line, fan, and
+    backline role review.
+  usageNotes: Covers line, fan, and backline pressure with a distinct rifle soldier
+    while behavior remains in pattern/deck data.

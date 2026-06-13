@@ -19,6 +19,7 @@ namespace DimensionBrawl.Tests
     {
         private const string ScenePath = "Assets/_Game/Scenes/ActionFoundationTest.unity";
         private const string EnemyPrefabReviewScenePath = "Assets/_Game/Scenes/ActionFoundationEnemyPrefabReview.unity";
+        private const string GeneralDeckPrefabReviewScenePath = "Assets/_Game/Scenes/ActionFoundationEnemyGeneralDeckReview.unity";
         private const string ClosePunishPatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_ClosePunish.asset";
         private const string LungeStrikePatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_LungeStrike.asset";
         private const string HeavyWindupPatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_HeavyWindup.asset";
@@ -41,6 +42,9 @@ namespace DimensionBrawl.Tests
         private const string EnemyRoleRootPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyRoles";
         private const string EnemyArchetypeRootPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyArchetypes";
         private const string MeleeSoldierPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Melee_ClosePunish.prefab";
+        private const string GeneralDeckSoldierPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_GeneralDeck.prefab";
+        private const string SciFiSoldier01VisualName = "SciFiSoldier01_GeneralDeckVisual";
+        private const string SciFiSoldier01ControllerPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/SciFiSoldier01/DB_SciFiSoldier01_GeneralDeck.controller";
         private const string PlayerVisualName = "CombatGirlSwordShield_PlayerVisual";
         private const string EnemyVisualName = "MaintenanceWorker_BasicSoldierVisual";
         private const string EnemyPlaceholderBodyName = "SciFiSoldierPlaceholderBody";
@@ -57,6 +61,7 @@ namespace DimensionBrawl.Tests
         private const string EliteDeckEnemyRootName = "Enemy_SciFiSoldier_EliteDeck";
         private const string EliteTraitsEnemyRootName = "Enemy_SciFiSoldier_EliteTraits";
         private const string ReviewMeleeSoldierRootName = "EnemyPrefabReview_SciFiSoldier_Melee";
+        private const string ReviewGeneralDeckSoldierRootName = "EnemyPrefabReview_SciFiSoldier_GeneralDeck";
         private static readonly string[] EnemyRoleProfilePaths =
         {
             EnemyRoleRootPath + "/DB_Role_EntryProbe.asset",
@@ -834,6 +839,79 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(meleeArchetype.RequiresDedicatedPrefabPromotion, "Melee soldier should no longer be marked as needing its first prefab promotion.");
         }
 
+        [Test]
+        public void GeneralDeckSoldierPrefabCandidateIsSceneFreeAndUsesDistinctRifleVisual()
+        {
+            GameObject prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(GeneralDeckSoldierPrefabPath);
+            Assert.IsNotNull(prefabAsset, $"Missing general-deck soldier prefab candidate at {GeneralDeckSoldierPrefabPath}.");
+
+            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(GeneralDeckSoldierPrefabPath);
+            try
+            {
+                BasicSoldierEnemy soldier = prefabRoot.GetComponent<BasicSoldierEnemy>();
+                CombatHealth health = prefabRoot.GetComponent<CombatHealth>();
+                CombatTargetSensor targetSensor = prefabRoot.GetComponent<CombatTargetSensor>();
+                EnemyAttackTelegraphPresenter telegraphPresenter = prefabRoot.GetComponent<EnemyAttackTelegraphPresenter>();
+                EnemyActionCameraCueDriver cameraCueDriver = prefabRoot.GetComponent<EnemyActionCameraCueDriver>();
+                CombatVfxCuePlayer cuePlayer = prefabRoot.GetComponent<CombatVfxCuePlayer>();
+                EnemyCombatVfxCueDriver vfxCueDriver = prefabRoot.GetComponent<EnemyCombatVfxCueDriver>();
+                Transform rifleVisual = prefabRoot.transform.Find(SciFiSoldier01VisualName);
+                Assert.IsNotNull(rifleVisual, "General-deck soldier should use the promoted SciFiSoldier01 visual instead of duplicating the melee worker.");
+                Assert.IsNull(prefabRoot.transform.Find(EnemyVisualName), "General-deck soldier should not keep the melee MaintenanceWorker visual.");
+                Animator animator = rifleVisual.GetComponent<Animator>();
+
+                Assert.IsNotNull(soldier, "General-deck soldier prefab should own BasicSoldierEnemy on the root.");
+                Assert.IsNotNull(health, "General-deck soldier prefab should own CombatHealth on the root.");
+                Assert.IsNotNull(targetSensor, "General-deck soldier prefab should own the shared target sensor on the root.");
+                Assert.IsNotNull(telegraphPresenter, "General-deck soldier prefab should own the telegraph presenter on the root.");
+                Assert.IsNotNull(cameraCueDriver, "General-deck soldier prefab should keep enemy camera cue emission available.");
+                Assert.IsNotNull(cuePlayer, "General-deck soldier prefab should own the combat VFX cue player on the root.");
+                Assert.IsNotNull(vfxCueDriver, "General-deck soldier prefab should own the combat VFX cue driver on the root.");
+                Assert.IsNotNull(animator, "General-deck soldier prefab should include the promoted SciFiSoldier01 Animator.");
+                string controllerPath = AssetDatabase.GetAssetPath(animator.runtimeAnimatorController).Replace('\\', '/');
+                Assert.AreEqual(SciFiSoldier01ControllerPath, controllerPath, "General-deck soldier should use the rifle/general-deck Animator Controller.");
+                AssertPromotedRendererMaterials(rifleVisual.gameObject, "General-deck rifle visual");
+
+                Assert.AreSame(targetSensor, soldier.TargetSensor, "Prefab AI should use its local target sensor.");
+                Assert.AreSame(health, soldier.SelfHealth, "Prefab AI should use its local health.");
+                Assert.AreSame(LoadPatternProfile(ClosePunishPatternPath), soldier.PatternProfile, "Deck prefab should start from the ClosePunish row before distance selection runs.");
+                Assert.AreSame(LoadPatternDeck(GeneralPatternDeckPath), soldier.PatternDeck, "Deck prefab should carry the expanded general soldier pattern deck.");
+                Assert.IsTrue(soldier.HasPatternDeck, "Deck prefab should expose that pattern deck selection is active.");
+                Assert.AreEqual(0, targetSensor.TargetCandidateCount, "Prefab target candidates should be injected by scenes or encounters, not carried from ActionFoundationTest.");
+
+                SerializedObject cameraCueObject = new SerializedObject(cameraCueDriver);
+                Assert.AreSame(soldier, cameraCueObject.FindProperty("agentSource").objectReferenceValue, "Enemy camera cue driver should listen to the local soldier agent.");
+                Assert.IsNull(cameraCueObject.FindProperty("cameraController").objectReferenceValue, "Prefab should not serialize an ActionFoundationTest camera controller.");
+
+                SerializedObject telegraphObject = new SerializedObject(telegraphPresenter);
+                AssertLocalPrefabReference(prefabRoot, telegraphObject.FindProperty("telegraphObject").objectReferenceValue, "telegraph object");
+                AssertLocalPrefabReference(prefabRoot, telegraphObject.FindProperty("telegraphRenderer").objectReferenceValue, "telegraph renderer");
+                AssertLocalPrefabReference(prefabRoot, telegraphObject.FindProperty("poseRoot").objectReferenceValue, "telegraph pose root");
+
+                SerializedObject cuePlayerObject = new SerializedObject(cuePlayer);
+                UnityEngine.Object cueProfile = cuePlayerObject.FindProperty("profile").objectReferenceValue;
+                string cueProfilePath = AssetDatabase.GetAssetPath(cueProfile).Replace('\\', '/');
+                Assert.IsTrue(cueProfilePath.StartsWith("Assets/_Game/"), $"Prefab VFX profile should be game-owned, found {cueProfilePath}.");
+                Assert.IsFalse(cueProfilePath.Contains("/_Imported/"), "Prefab VFX profile should not reference raw imported assets.");
+                AssertLocalPrefabReference(prefabRoot, cuePlayerObject.FindProperty("pooledRoot").objectReferenceValue, "VFX pool root");
+
+                SerializedObject vfxDriverObject = new SerializedObject(vfxCueDriver);
+                Assert.AreSame(soldier, vfxDriverObject.FindProperty("agentSource").objectReferenceValue, "VFX driver should listen to the local soldier.");
+                Assert.AreSame(health, vfxDriverObject.FindProperty("health").objectReferenceValue, "VFX driver should listen to the local health.");
+                Assert.AreSame(cuePlayer, vfxDriverObject.FindProperty("cuePlayer").objectReferenceValue, "VFX driver should play through the local cue player.");
+
+                CombatEnemyArchetypeProfile rangedArchetype =
+                    AssetDatabase.LoadAssetAtPath<CombatEnemyArchetypeProfile>(EnemyArchetypeRootPath + "/DB_Archetype_SciFiSoldier_Ranged.asset");
+                Assert.IsNotNull(rangedArchetype, "Missing sci-fi ranged soldier archetype profile.");
+                Assert.AreSame(prefabAsset, rangedArchetype.GameplayPrefab, "Ranged archetype should point at the distinct GeneralDeck prefab candidate.");
+                Assert.IsFalse(rangedArchetype.RequiresDedicatedPrefabPromotion, "Ranged soldier should no longer be marked as awaiting its first dedicated prefab promotion.");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+        }
+
         [UnityTest]
         public IEnumerator EnemyPrefabReviewSceneWiresPrefabCandidateForManualCombat()
         {
@@ -862,6 +940,38 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(enemyHealth.transform, cameraController.Threat, "Review camera should bias toward the reviewed prefab enemy.");
             Assert.IsNotNull(enemyCameraCueDriver, "Review prefab enemy should keep its enemy camera cue driver.");
             Assert.AreSame(cameraController, enemyCameraCueDriver.CameraController, "Review scene should provide the camera controller to the prefab instance.");
+        }
+
+        [UnityTest]
+        public IEnumerator EnemyGeneralDeckReviewSceneWiresPrefabCandidateForManualDeckCombat()
+        {
+            EditorSceneManager.LoadSceneInPlayMode(GeneralDeckPrefabReviewScenePath, new LoadSceneParameters(LoadSceneMode.Single));
+            yield return null;
+
+            BasicSoldierEnemy soldier = RequireNamedRootComponent<BasicSoldierEnemy>(ReviewGeneralDeckSoldierRootName);
+            CombatHealth playerHealth = RequirePlayerHealth();
+            CombatHealth enemyHealth = soldier.SelfHealth;
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            EnemyActionCameraCueDriver enemyCameraCueDriver = soldier.GetComponent<EnemyActionCameraCueDriver>();
+
+            Assert.IsNotNull(enemyHealth, "GeneralDeck review soldier should expose local health.");
+            Assert.AreSame(LoadPatternDeck(GeneralPatternDeckPath), soldier.PatternDeck, "GeneralDeck review soldier should retain the expanded pattern deck.");
+            Assert.IsTrue(soldier.HasPatternDeck, "GeneralDeck review soldier should keep deck selection active in the manual review scene.");
+            Assert.AreEqual(1, soldier.TargetSensor.TargetCandidateCount, "GeneralDeck review soldier should receive one scene-provided player target.");
+            Assert.IsTrue(soldier.TargetSensor.TryGetCurrentTarget(out Transform enemyTarget, out CombatHealth enemyTargetHealth), "GeneralDeck review soldier should resolve the player through scene-provided target candidates.");
+            Assert.AreSame(playerHealth, enemyTargetHealth, "GeneralDeck review soldier should target the player health.");
+            Assert.AreSame(playerHealth.transform, enemyTarget, "GeneralDeck review soldier should expose the player transform as current target.");
+
+            Assert.AreEqual(1, targetSelector.TargetCandidateCount, "Review player selector should target only the reviewed GeneralDeck prefab enemy.");
+            Assert.IsTrue(targetSelector.TryGetCurrentTarget(out Transform playerTarget, out CombatHealth playerTargetHealth), "Review player selector should resolve the GeneralDeck prefab enemy.");
+            Assert.AreSame(enemyHealth, playerTargetHealth, "Review player selector should target the GeneralDeck prefab enemy health.");
+            Assert.AreSame(enemyHealth.transform, playerTarget, "Review player selector should expose the GeneralDeck prefab enemy transform.");
+
+            Assert.AreSame(playerHealth.transform, cameraController.Target, "GeneralDeck review camera should follow the player.");
+            Assert.AreSame(enemyHealth.transform, cameraController.Threat, "GeneralDeck review camera should bias toward the reviewed prefab enemy.");
+            Assert.IsNotNull(enemyCameraCueDriver, "GeneralDeck review prefab enemy should keep its enemy camera cue driver.");
+            Assert.AreSame(cameraController, enemyCameraCueDriver.CameraController, "GeneralDeck review scene should provide the camera controller to the prefab instance.");
         }
 
         [Test]
@@ -1824,6 +1934,25 @@ namespace DimensionBrawl.Tests
             if (requireEliteController)
             {
                 Assert.IsNotNull(eliteController, $"{soldier.name} should bind the authored elite pattern controller for elite VFX signals.");
+            }
+        }
+
+        private static void AssertPromotedRendererMaterials(GameObject root, string label)
+        {
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+            Assert.IsNotEmpty(renderers, $"{label} should have promoted renderers.");
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Material[] materials = renderers[i].sharedMaterials;
+                Assert.IsNotEmpty(materials, $"{label} renderer {renderers[i].name} should keep material slots.");
+                for (int j = 0; j < materials.Length; j++)
+                {
+                    Material material = materials[j];
+                    Assert.IsNotNull(material, $"{label} renderer {renderers[i].name} has a missing material slot.");
+                    string materialPath = AssetDatabase.GetAssetPath(material).Replace('\\', '/');
+                    Assert.IsTrue(materialPath.StartsWith("Assets/_Game/"), $"{label} material should be game-owned, found {materialPath}.");
+                    Assert.IsFalse(materialPath.Contains("/_Imported/"), $"{label} material should not reference raw imported assets.");
+                }
             }
         }
 
