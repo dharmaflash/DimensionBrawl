@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d75a8143d8764f8aa10e4c91f7fe96e2, type: 3}
+  m_Name: DB_Role_AuraCaptainElite
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatEnemyRoleProfile
+  roleId: SciFiSoldier.Elite.AuraCaptain
+  displayName: Aura Captain Elite
+  eliteRole: 1
+  preferredSegment: 2
+  suggestedMinCount: 1
+  suggestedMaxCount: 1
+  pressurePurpose: Create a priority support target without scene-wide ally search.
+  intendedAnswer: Focus or future Arrow answer before clearing protected adds.
+  startingPattern: {fileID: 11400000, guid: eed4a73345a921941ab70394924207e5, type: 2}
+  patternDeck: {fileID: 11400000, guid: 825adcf54c21ca145a5d416092056f50, type: 2}
+  eliteProfiles:
+  - {fileID: 11400000, guid: 74b2e4cbed265c948bc25c132171dfc7, type: 2}
+  - {fileID: 11400000, guid: 72f8aa0e55d0f9947a9405170327c8de, type: 2}
+  candidateForFutureSummonAiReuse: 1

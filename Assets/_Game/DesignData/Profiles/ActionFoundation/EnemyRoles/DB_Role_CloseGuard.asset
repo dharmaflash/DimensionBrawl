@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d75a8143d8764f8aa10e4c91f7fe96e2, type: 3}
+  m_Name: DB_Role_CloseGuard
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatEnemyRoleProfile
+  roleId: SciFiSoldier.CloseGuard
+  displayName: Close Guard
+  eliteRole: 0
+  preferredSegment: 1
+  suggestedMinCount: 1
+  suggestedMaxCount: 3
+  pressurePurpose: Hold the near pocket so face-hugging has a readable cost.
+  intendedAnswer: Dodge out, punish recovery, or later call Break.
+  startingPattern: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
+  patternDeck: {fileID: 11400000, guid: da474ec9a4cd30d4595810f28ad333fd, type: 2}
+  eliteProfiles: []
+  candidateForFutureSummonAiReuse: 1

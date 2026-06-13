@@ -78,6 +78,12 @@ Decision: Raw VFX store packs stay local under `Assets/_Imported/AssetStore/VFX/
 
 Reason: VFX must become part of action readability without polluting the repository or gameplay code. A cue-profile layer keeps player, enemy, future summon, and boss effects swappable while preserving the project rule that source packs are local-only.
 
+## 2026-06-13: Enemy Variety Starts As Role Data
+
+Decision: General/elite monster variety for the first linear ARPG run should start with `CombatEnemyRoleProfile` role assets that combine existing `CombatAiPatternDeck` and `CombatAiElitePatternProfile` data before adding new enemy controllers, encounter spawners, or prefab/model variants.
+
+Reason: The collected run-design data points to roles such as entry probe, break gate, backline pressure, rescue pressure, boss handoff, and final stand. Capturing those as data keeps the future summon-AI reuse path open and lets designers review monster purpose before code or prefab sprawl.
+
 ## 2026-06-12: Cinemachine In-Game Cutscene Reference Baseline
 
 Decision: Use `Assets/_Game/DesignDocs/CINEMACHINE_INGAME_CUTSCENE_REFERENCE_RESEARCH.md` and `Assets/_Game/DesignData/CinemachineIngameCutsceneReferenceDataset.json` as the active Unity Cinemachine/Timeline reference baseline for boss intros, summon/ultimate cut-ins, dialogue staging, camera shot sequencing, input/AI/time locks, impulse, Timeline signals, and gameplay camera return.

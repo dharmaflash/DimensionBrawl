@@ -37,6 +37,7 @@ namespace DimensionBrawl.Tests
         private const string PhaseSwapEliteProfilePath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_ElitePattern_PhaseSwap.asset";
         private const string CombatVfxCueProfilePath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_CombatVfxCues_ActionFoundation.asset";
         private const string CombatVfxPrefabRootPath = "Assets/_Game/Art/VFX/CombatCues/Prefabs/";
+        private const string EnemyRoleRootPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyRoles";
         private const string PlayerVisualName = "CombatGirlSwordShield_PlayerVisual";
         private const string EnemyVisualName = "MaintenanceWorker_BasicSoldierVisual";
         private const string EnemyPlaceholderBodyName = "SciFiSoldierPlaceholderBody";
@@ -52,6 +53,21 @@ namespace DimensionBrawl.Tests
         private const string GeneralDeckEnemyRootName = "Enemy_SciFiSoldier_GeneralDeck";
         private const string EliteDeckEnemyRootName = "Enemy_SciFiSoldier_EliteDeck";
         private const string EliteTraitsEnemyRootName = "Enemy_SciFiSoldier_EliteTraits";
+        private static readonly string[] EnemyRoleProfilePaths =
+        {
+            EnemyRoleRootPath + "/DB_Role_EntryProbe.asset",
+            EnemyRoleRootPath + "/DB_Role_CloseGuard.asset",
+            EnemyRoleRootPath + "/DB_Role_LungeChaser.asset",
+            EnemyRoleRootPath + "/DB_Role_LineCaster.asset",
+            EnemyRoleRootPath + "/DB_Role_FanSuppressor.asset",
+            EnemyRoleRootPath + "/DB_Role_BacklineShooter.asset",
+            EnemyRoleRootPath + "/DB_Role_Skirmisher.asset",
+            EnemyRoleRootPath + "/DB_Role_ShieldBreakerElite.asset",
+            EnemyRoleRootPath + "/DB_Role_AuraCaptainElite.asset",
+            EnemyRoleRootPath + "/DB_Role_SummonCallerElite.asset",
+            EnemyRoleRootPath + "/DB_Role_PhaseDuelistElite.asset",
+            EnemyRoleRootPath + "/DB_Role_FinalStandCommanderElite.asset"
+        };
 
         [UnitySetUp]
         public IEnumerator LoadActionFoundationScene()
@@ -638,6 +654,55 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(CombatAiElitePatternKind.PhaseSwap, phaseSwap.PatternKind, "PhaseSwap should be a data profile for deck/profile swapping.");
             Assert.AreEqual("ElitePhaseSwap", phaseSwap.SignalAnimationTrigger, "PhaseSwap should request a clear turn/phase signal animation through data.");
             Assert.AreSame(phaseTwoDeck, phaseSwap.ReplacementPatternDeck, "PhaseSwap should point at the phase-two deck through data.");
+        }
+
+        [Test]
+        public void EnemyRoleProfilesCoverLinearRunSegments()
+        {
+            var coveredSegments = new HashSet<CombatEnemyRunSegment>();
+            int generalCount = 0;
+            int eliteCount = 0;
+
+            foreach (string path in EnemyRoleProfilePaths)
+            {
+                CombatEnemyRoleProfile role = AssetDatabase.LoadAssetAtPath<CombatEnemyRoleProfile>(path);
+                Assert.IsNotNull(role, $"Missing enemy role profile at {path}.");
+                Assert.IsFalse(string.IsNullOrWhiteSpace(role.RoleId), $"{path} should have a role id.");
+                Assert.IsNotNull(role.StartingPattern, $"{role.RoleId} should define a starting pattern.");
+                Assert.IsNotNull(role.PatternDeck, $"{role.RoleId} should define a role pattern deck.");
+                Assert.Greater(role.PatternDeck.EntryCount, 0, $"{role.RoleId} should have at least one deck row.");
+                Assert.GreaterOrEqual(role.SuggestedMaxCount, role.SuggestedMinCount, $"{role.RoleId} should have a valid count range.");
+                coveredSegments.Add(role.PreferredSegment);
+
+                for (int i = 0; i < role.PatternDeck.EntryCount; i++)
+                {
+                    CombatAiPatternDeckEntry entry = role.PatternDeck.GetEntry(i);
+                    Assert.IsNotNull(entry.Profile, $"{role.RoleId} deck row {i} should have a pattern profile.");
+                    if (entry.MaximumDistance > 0f)
+                    {
+                        Assert.GreaterOrEqual(entry.MaximumDistance, entry.MinimumDistance, $"{role.RoleId} deck row {i} should have a valid distance band.");
+                    }
+                }
+
+                if (role.EliteRole)
+                {
+                    eliteCount++;
+                    Assert.Greater(role.EliteProfileCount, 0, $"{role.RoleId} should declare elite trait profiles.");
+                }
+                else
+                {
+                    generalCount++;
+                    Assert.AreEqual(0, role.EliteProfileCount, $"{role.RoleId} should stay a general role without elite trait profiles.");
+                }
+            }
+
+            foreach (CombatEnemyRunSegment segment in System.Enum.GetValues(typeof(CombatEnemyRunSegment)))
+            {
+                Assert.IsTrue(coveredSegments.Contains(segment), $"Enemy role catalog should cover {segment}.");
+            }
+
+            Assert.GreaterOrEqual(generalCount, 7, "Role catalog should expose at least seven general monster roles.");
+            Assert.GreaterOrEqual(eliteCount, 5, "Role catalog should expose at least five elite monster roles.");
         }
 
         [Test]

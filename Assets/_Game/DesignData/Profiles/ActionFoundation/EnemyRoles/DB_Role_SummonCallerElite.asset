@@ -1,0 +1,29 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d75a8143d8764f8aa10e4c91f7fe96e2, type: 3}
+  m_Name: DB_Role_SummonCallerElite
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatEnemyRoleProfile
+  roleId: SciFiSoldier.Elite.SummonCaller
+  displayName: Summon Caller Elite
+  eliteRole: 1
+  preferredSegment: 3
+  suggestedMinCount: 1
+  suggestedMaxCount: 1
+  pressurePurpose: Reserve a summon-package read using signal objects, not runtime
+    spawning.
+  intendedAnswer: Interrupt, clear support, or future Tank/Arrow answer.
+  startingPattern: {fileID: 11400000, guid: c5a68364338220a47b368422a1f18003, type: 2}
+  patternDeck: {fileID: 11400000, guid: c90a797dd246ba047b618d9e4e455089, type: 2}
+  eliteProfiles:
+  - {fileID: 11400000, guid: b065158e76b5acf4c8c21aadf3ff6679, type: 2}
+  - {fileID: 11400000, guid: 74b2e4cbed265c948bc25c132171dfc7, type: 2}
+  candidateForFutureSummonAiReuse: 1

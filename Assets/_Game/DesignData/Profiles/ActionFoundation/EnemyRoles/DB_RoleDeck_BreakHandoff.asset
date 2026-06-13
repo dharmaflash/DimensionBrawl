@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7783a327edc48934bba9ef376a769545, type: 3}
+  m_Name: DB_RoleDeck_BreakHandoff
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatAiPatternDeck
+  deckId: SciFiSoldier.Role.BreakHandoff
+  entries:
+  - profile: {fileID: 11400000, guid: 59d0e2bafcc940a4fb98337280392176, type: 2}
+    minimumDistance: 0
+    maximumDistance: 2.7
+    cooldownSeconds: 1.05
+    priority: 4.8
+  - profile: {fileID: 11400000, guid: 7f9d72f624e2fe6498b332d4a90e6b69, type: 2}
+    minimumDistance: 0.9
+    maximumDistance: 3.1
+    cooldownSeconds: 1.1
+    priority: 4
+  - profile: {fileID: 11400000, guid: 0139451477c313348aa7b78c36b82a04, type: 2}
+    minimumDistance: 0
+    maximumDistance: 3.7
+    cooldownSeconds: 1.45
+    priority: 3.1
+  - profile: {fileID: 11400000, guid: 37a6bb4ae0516a44ca02b48ca5541ec8, type: 2}
+    minimumDistance: 3
+    maximumDistance: 7.5
+    cooldownSeconds: 1.05
+    priority: 2.7

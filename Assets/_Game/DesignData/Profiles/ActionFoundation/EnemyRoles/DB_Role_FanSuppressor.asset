@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d75a8143d8764f8aa10e4c91f7fe96e2, type: 3}
+  m_Name: DB_Role_FanSuppressor
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatEnemyRoleProfile
+  roleId: SciFiSoldier.FanSuppressor
+  displayName: Fan Suppressor
+  eliteRole: 0
+  preferredSegment: 3
+  suggestedMinCount: 1
+  suggestedMaxCount: 2
+  pressurePurpose: Fill mid-range space with a readable cone instead of invisible
+    pressure.
+  intendedAnswer: Reposition forward/back and punish recovery.
+  startingPattern: {fileID: 11400000, guid: eed4a73345a921941ab70394924207e5, type: 2}
+  patternDeck: {fileID: 11400000, guid: 825adcf54c21ca145a5d416092056f50, type: 2}
+  eliteProfiles: []
+  candidateForFutureSummonAiReuse: 1
