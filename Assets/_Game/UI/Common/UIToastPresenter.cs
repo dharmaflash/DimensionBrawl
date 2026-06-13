@@ -13,6 +13,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private Text messageText;
         [SerializeField] private Image accentImage;
         [SerializeField] private UIIconPresenter iconPresenter;
+        [SerializeField] private UIMotionPresenter motionPresenter;
         [SerializeField, Min(0f)] private float defaultDurationSeconds = 1.4f;
 
         private Coroutine hideRoutine;
@@ -67,6 +68,10 @@ namespace DimensionBrawl.UI
             }
 
             SetVisible(true);
+            if (motionPresenter != null)
+            {
+                motionPresenter.PlayDefault();
+            }
 
             if (hideRoutine != null)
             {

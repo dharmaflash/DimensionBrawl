@@ -37,6 +37,8 @@ namespace DimensionBrawl.Editor
         private const string TooltipCatalogPath = "Assets/_Game/DesignData/UI/DB_UITooltips.asset";
         private const string DialogCatalogPath = "Assets/_Game/DesignData/UI/DB_UIDialogs.asset";
         private const string ResultPreviewCatalogPath = "Assets/_Game/DesignData/UI/DB_UIResultPreviews.asset";
+        private const string LoginScreenPrefabPath = "Assets/_Game/UI/Login/PF_UI_LoginScreen.prefab";
+        private const string LoginAccountServerToastId = "Login.AccountServerNotice";
         private const string UiSceneRoot = "Assets/_Game/Scenes/UI/";
         private const string ImportedRoot = "Assets/_Imported/";
         private const string ActionFoundationScenePath = "Assets/_Game/Scenes/ActionFoundationTest.unity";
@@ -1213,10 +1215,12 @@ namespace DimensionBrawl.Editor
                 ValidateScreenPresentationPresenters(path, prefab, routeIds);
                 ValidateToastPresenters(path, prefab);
                 ValidateDialogPresenters(path, prefab);
+                ValidateLoginAccountServerNotice(path, prefab);
                 ValidateLoadingCardPresenters(path, prefab, loadingCardIds);
                 ValidateThemePresenters(path, prefab, themeColorKeys, themeTextStyleKeys);
                 ValidateMotionPresenters(path, prefab, motionIds);
                 ValidateCuePresenters(path, prefab, cueIds);
+                ValidateLoginStartPromptPresenters(path, prefab);
             }
         }
 
@@ -1477,6 +1481,96 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static void ValidateLoginAccountServerNotice(string prefabPath, GameObject prefab)
+        {
+            if (!string.Equals(prefabPath, LoginScreenPrefabPath, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            Transform accountServer = FindChildByName(prefab.transform, "AccountServer");
+            if (accountServer == null)
+            {
+                throw new InvalidOperationException($"{prefabPath} must include AccountServer.");
+            }
+
+            Button button = accountServer.GetComponent<Button>();
+            if (button == null)
+            {
+                throw new InvalidOperationException($"{prefabPath}.AccountServer must include a Button.");
+            }
+
+            RequireTrue(button.interactable, $"{prefabPath}.AccountServer.interactable");
+            if (button.targetGraphic == null)
+            {
+                throw new InvalidOperationException($"{prefabPath}.AccountServer.targetGraphic must be assigned.");
+            }
+
+            RequireTrue(button.targetGraphic.raycastTarget, $"{prefabPath}.AccountServer.targetGraphic.raycastTarget");
+
+            Transform toastRoot = FindChildByName(prefab.transform, "LoginAccountServerToast");
+            if (toastRoot == null)
+            {
+                throw new InvalidOperationException($"{prefabPath} must include LoginAccountServerToast.");
+            }
+
+            UIToastPresenter toastPresenter = toastRoot.GetComponent<UIToastPresenter>();
+            if (toastPresenter == null)
+            {
+                throw new InvalidOperationException($"{prefabPath}.LoginAccountServerToast must include a UIToastPresenter.");
+            }
+
+            RequireButtonPersistentStringCall(
+                button,
+                toastPresenter,
+                nameof(UIToastPresenter.ShowToast),
+                LoginAccountServerToastId,
+                $"{prefabPath}.AccountServer.onClick");
+        }
+
+        private static void RequireButtonPersistentStringCall(Button button, UnityEngine.Object target, string methodName, string argument, string label)
+        {
+            SerializedObject serializedButton = new SerializedObject(button);
+            SerializedProperty calls = serializedButton.FindProperty("m_OnClick.m_PersistentCalls.m_Calls");
+            if (calls == null || !calls.isArray)
+            {
+                throw new InvalidOperationException($"{label} must have persistent calls.");
+            }
+
+            for (int i = 0; i < calls.arraySize; i++)
+            {
+                SerializedProperty call = calls.GetArrayElementAtIndex(i);
+                UnityEngine.Object persistentTarget = call.FindPropertyRelative("m_Target").objectReferenceValue;
+                string persistentMethod = call.FindPropertyRelative("m_MethodName").stringValue;
+                int persistentMode = call.FindPropertyRelative("m_Mode").intValue;
+                string persistentString = call.FindPropertyRelative("m_Arguments.m_StringArgument").stringValue;
+
+                if (persistentTarget == target &&
+                    string.Equals(persistentMethod, methodName, StringComparison.Ordinal) &&
+                    persistentMode == 5 &&
+                    string.Equals(persistentString, argument, StringComparison.Ordinal))
+                {
+                    return;
+                }
+            }
+
+            throw new InvalidOperationException($"{label} must call {target.GetType().Name}.{methodName} with {argument}.");
+        }
+
+        private static Transform FindChildByName(Transform root, string name)
+        {
+            Transform[] transforms = root.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < transforms.Length; i++)
+            {
+                if (string.Equals(transforms[i].name, name, StringComparison.Ordinal))
+                {
+                    return transforms[i];
+                }
+            }
+
+            return null;
+        }
+
         private static void ValidateLoadingCardPresenters(
             string prefabPath,
             GameObject prefab,
@@ -1550,6 +1644,31 @@ namespace DimensionBrawl.Editor
                 RequireObjectReference(serializedObject, "detailText", $"{prefabPath} cue detail text");
                 string defaultCueId = serializedObject.FindProperty("defaultCueId").stringValue;
                 RequireKnownKey(cueIds, defaultCueId, $"{prefabPath}.UICuePresenter[{i}].defaultCueId");
+            }
+        }
+
+        private static void ValidateLoginStartPromptPresenters(string prefabPath, GameObject prefab)
+        {
+            LoginStartPromptPresenter[] presenters = prefab.GetComponentsInChildren<LoginStartPromptPresenter>(true);
+            for (int i = 0; i < presenters.Length; i++)
+            {
+                SerializedObject serializedObject = new SerializedObject(presenters[i]);
+                RequireObjectReference(serializedObject, "promptGraphic", $"{prefabPath} login start prompt graphic");
+                RequireObjectReference(serializedObject, "glowGraphic", $"{prefabPath} login start prompt glow");
+
+                SerializedProperty scaleTargets = serializedObject.FindProperty("scaleTargets");
+                if (scaleTargets == null || !scaleTargets.isArray || scaleTargets.arraySize == 0)
+                {
+                    throw new InvalidOperationException($"{prefabPath}.LoginStartPromptPresenter[{i}].scaleTargets must not be empty.");
+                }
+
+                for (int targetIndex = 0; targetIndex < scaleTargets.arraySize; targetIndex++)
+                {
+                    if (scaleTargets.GetArrayElementAtIndex(targetIndex).objectReferenceValue == null)
+                    {
+                        throw new InvalidOperationException($"{prefabPath}.LoginStartPromptPresenter[{i}].scaleTargets[{targetIndex}] must be assigned.");
+                    }
+                }
             }
         }
 

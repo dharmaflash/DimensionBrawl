@@ -34,6 +34,13 @@ MonoBehaviour:
     durationSeconds: 1.2
     priority: 8
     cueId: DeniedActionMicroToast
+  - id: Login.AccountServerNotice
+    messageTextKey: ui.toast.login_account_unavailable
+    iconKey: status_locked
+    accentColor: {r: 0.58, g: 0.66, b: 0.68, a: 1}
+    durationSeconds: 1.05
+    priority: 8
+    cueId: DeniedActionMicroToast
   - id: Combat.MockStart
     messageTextKey: ui.toast.combat_mock_start
     iconKey: status_ready

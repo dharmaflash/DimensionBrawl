@@ -309,6 +309,10 @@ MonoBehaviour:
     domain: CombatHud
     value: HUD mock reset
     note: Combat HUD mock reset toast.
+  - key: ui.toast.login_account_unavailable
+    domain: Login
+    value: 추후 지원 예정입니다.
+    note: Short unavailable notice for the login account and server button.
   - key: ui.toast.route_busy
     domain: Common
     value: Route request is already running

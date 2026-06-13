@@ -339,6 +339,7 @@ GameObject:
   - component: {fileID: 4928288525761806836}
   - component: {fileID: 4430122298840022267}
   - component: {fileID: 3423254338059916939}
+  - component: {fileID: 6415126281729407207}
   m_Layer: 0
   m_Name: PF_UI_Toast
   m_TagString: Untagged
@@ -436,4 +437,23 @@ MonoBehaviour:
   messageText: {fileID: 5802859457128576429}
   accentImage: {fileID: 1658945820475456785}
   iconPresenter: {fileID: 601075597043820437}
+  motionPresenter: {fileID: 6415126281729407207}
   defaultDurationSeconds: 1.4
+--- !u!114 &6415126281729407207
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5521383059174187600}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c9bf0e5a75305843a4a0ed6553889a5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIMotionPresenter
+  catalog: {fileID: 11400000, guid: bee7e47247f59bc4d85c4002288c6345, type: 2}
+  targetRect: {fileID: 899545796781870954}
+  canvasGroup: {fileID: 8027757292834046054}
+  defaultMotionId: denied_action_micro_toast
+  playOnEnable: 0
+  useUnscaledTime: 1
