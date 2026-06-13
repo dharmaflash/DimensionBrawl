@@ -28,6 +28,7 @@ namespace DimensionBrawl.Enemies
         public int ProfileCount => eliteProfiles != null ? eliteProfiles.Length : 0;
         public bool HasActiveSignal => TryGetActiveSignal(out _);
         public bool HasPhaseSwapped { get; private set; }
+        public event Action<CombatAiElitePatternProfile> SignalTriggered;
 
         private void Awake()
         {
@@ -256,6 +257,7 @@ namespace DimensionBrawl.Enemies
             state.NextRefreshTime = state.BrokenUntilTime + profile.RefreshSeconds;
             state.SignalUntilTime = Mathf.Max(state.SignalUntilTime, Time.time + profile.SignalSeconds);
             TriggerProfileAnimation(profile);
+            SignalTriggered?.Invoke(profile);
         }
 
         private void RefreshGuardMeter(CombatAiElitePatternProfile profile, ref ElitePatternRuntimeState state)
@@ -274,6 +276,7 @@ namespace DimensionBrawl.Enemies
             state.GuardMeter = profile.GuardMeter;
             state.SignalUntilTime = Mathf.Max(state.SignalUntilTime, Time.time + profile.SignalSeconds);
             TriggerProfileAnimation(profile);
+            SignalTriggered?.Invoke(profile);
         }
 
         private static void ClearBreakWhenExpired(ref ElitePatternRuntimeState state)
@@ -294,6 +297,7 @@ namespace DimensionBrawl.Enemies
             state.HasTriggered = true;
             state.SignalUntilTime = Time.time + profile.SignalSeconds;
             TriggerProfileAnimation(profile);
+            SignalTriggered?.Invoke(profile);
         }
 
         private void TryApplyPhaseSwap(CombatAiElitePatternProfile profile, ref ElitePatternRuntimeState state)
@@ -307,6 +311,7 @@ namespace DimensionBrawl.Enemies
             HasPhaseSwapped = true;
             state.SignalUntilTime = Time.time + profile.SignalSeconds;
             TriggerProfileAnimation(profile);
+            SignalTriggered?.Invoke(profile);
 
             if (soldier == null)
             {
@@ -334,6 +339,7 @@ namespace DimensionBrawl.Enemies
             state.HasTriggered = true;
             state.SignalUntilTime = Time.time + profile.SignalSeconds;
             TriggerProfileAnimation(profile);
+            SignalTriggered?.Invoke(profile);
         }
 
         private void TriggerProfileAnimation(CombatAiElitePatternProfile profile)

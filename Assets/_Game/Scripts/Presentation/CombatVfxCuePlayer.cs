@@ -151,6 +151,12 @@ namespace DimensionBrawl.Presentation
 
         private static void PlayEffects(GameObject instance)
         {
+            CombatVfxCueVisual[] cueVisuals = instance.GetComponentsInChildren<CombatVfxCueVisual>(includeInactive: true);
+            for (int i = 0; i < cueVisuals.Length; i++)
+            {
+                cueVisuals[i].Restart();
+            }
+
             ParticleSystem[] particles = instance.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
             for (int i = 0; i < particles.Length; i++)
             {
@@ -168,6 +174,12 @@ namespace DimensionBrawl.Presentation
 
         private static void StopEffects(GameObject instance)
         {
+            CombatVfxCueVisual[] cueVisuals = instance.GetComponentsInChildren<CombatVfxCueVisual>(includeInactive: true);
+            for (int i = 0; i < cueVisuals.Length; i++)
+            {
+                cueVisuals[i].StopNow();
+            }
+
             ParticleSystem[] particles = instance.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
             for (int i = 0; i < particles.Length; i++)
             {

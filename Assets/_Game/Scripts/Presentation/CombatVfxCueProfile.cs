@@ -1,4 +1,5 @@
 using System;
+using DimensionBrawl.AI;
 using UnityEngine;
 
 namespace DimensionBrawl.Presentation
@@ -12,7 +13,28 @@ namespace DimensionBrawl.Presentation
         EnemyAttackActive,
         EnemyHit,
         EnemyDeath,
-        EliteSignal
+        EliteSignal,
+        EnemyClosePunishWindup,
+        EnemyClosePunishActive,
+        EnemyLungeStrikeWindup,
+        EnemyLungeStrikeActive,
+        EnemyHeavyWindupWindup,
+        EnemyHeavyWindupActive,
+        EnemyLinePressureWindup,
+        EnemyLinePressureActive,
+        EnemyFanPressureWindup,
+        EnemyFanPressureActive,
+        EnemyRetreatShotWindup,
+        EnemyRetreatShotActive,
+        EnemyRetreatBlinkWindup,
+        EnemyRetreatBlinkActive,
+        EnemyGuardBreakWindup,
+        EnemyGuardBreakActive,
+        EliteShieldSignal,
+        EliteArmorBreakSignal,
+        EliteAuraSignal,
+        EliteSummonSignal,
+        ElitePhaseSwapSignal
     }
 
     [CreateAssetMenu(menuName = "DimensionBrawl/Presentation/Combat VFX Cue Profile", fileName = "DB_CombatVfxCueProfile")]
@@ -61,5 +83,57 @@ namespace DimensionBrawl.Presentation
         public int PrewarmCount => prewarmCount;
         public bool ParentToAnchor => parentToAnchor;
         public bool AlignForwardToDirection => alignForwardToDirection;
+    }
+
+    [Serializable]
+    public struct CombatPatternVfxCueOverride
+    {
+        [SerializeField] private CombatAiPatternProfile patternProfile;
+        [SerializeField] private CombatVfxCueId windupCueId;
+        [SerializeField] private CombatVfxCueId attackActiveCueId;
+        [SerializeField, Min(0f)] private float windupIntensity;
+        [SerializeField, Min(0f)] private float attackActiveIntensity;
+
+        public CombatPatternVfxCueOverride(
+            CombatAiPatternProfile patternProfile,
+            CombatVfxCueId windupCueId,
+            CombatVfxCueId attackActiveCueId,
+            float windupIntensity = 1f,
+            float attackActiveIntensity = 1f)
+        {
+            this.patternProfile = patternProfile;
+            this.windupCueId = windupCueId;
+            this.attackActiveCueId = attackActiveCueId;
+            this.windupIntensity = windupIntensity;
+            this.attackActiveIntensity = attackActiveIntensity;
+        }
+
+        public CombatAiPatternProfile PatternProfile => patternProfile;
+        public CombatVfxCueId WindupCueId => windupCueId;
+        public CombatVfxCueId AttackActiveCueId => attackActiveCueId;
+        public float WindupIntensity => windupIntensity > 0f ? windupIntensity : 1f;
+        public float AttackActiveIntensity => attackActiveIntensity > 0f ? attackActiveIntensity : 1f;
+    }
+
+    [Serializable]
+    public struct CombatEliteVfxCueOverride
+    {
+        [SerializeField] private CombatAiElitePatternProfile eliteProfile;
+        [SerializeField] private CombatVfxCueId signalCueId;
+        [SerializeField, Min(0f)] private float intensity;
+
+        public CombatEliteVfxCueOverride(
+            CombatAiElitePatternProfile eliteProfile,
+            CombatVfxCueId signalCueId,
+            float intensity = 1f)
+        {
+            this.eliteProfile = eliteProfile;
+            this.signalCueId = signalCueId;
+            this.intensity = intensity;
+        }
+
+        public CombatAiElitePatternProfile EliteProfile => eliteProfile;
+        public CombatVfxCueId SignalCueId => signalCueId;
+        public float Intensity => intensity > 0f ? intensity : 1f;
     }
 }

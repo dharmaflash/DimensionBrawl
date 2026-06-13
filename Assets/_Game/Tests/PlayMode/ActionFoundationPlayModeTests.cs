@@ -35,6 +35,8 @@ namespace DimensionBrawl.Tests
         private const string AuraBufferEliteProfilePath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_ElitePattern_AuraBuffer.asset";
         private const string SummonPackageEliteProfilePath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_ElitePattern_SummonPackage.asset";
         private const string PhaseSwapEliteProfilePath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_ElitePattern_PhaseSwap.asset";
+        private const string CombatVfxCueProfilePath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_CombatVfxCues_ActionFoundation.asset";
+        private const string CombatVfxPrefabRootPath = "Assets/_Game/Art/VFX/CombatCues/Prefabs/";
         private const string PlayerVisualName = "CombatGirlSwordShield_PlayerVisual";
         private const string EnemyVisualName = "MaintenanceWorker_BasicSoldierVisual";
         private const string EnemyPlaceholderBodyName = "SciFiSoldierPlaceholderBody";
@@ -638,6 +640,51 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(phaseTwoDeck, phaseSwap.ReplacementPatternDeck, "PhaseSwap should point at the phase-two deck through data.");
         }
 
+        [Test]
+        public void CombatVfxCueProfileUsesGameOwnedPatternCuePrefabs()
+        {
+            CombatVfxCueProfile profile = LoadCombatVfxCueProfile();
+
+            foreach (CombatVfxCueId cueId in System.Enum.GetValues(typeof(CombatVfxCueId)))
+            {
+                Assert.IsTrue(profile.TryGetCue(cueId, out CombatVfxCue cue), $"{cueId} should be authored in the ActionFoundation combat VFX profile.");
+                Assert.IsNotNull(cue.Prefab, $"{cueId} should reference a promoted game-owned VFX prefab.");
+
+                string prefabPath = AssetDatabase.GetAssetPath(cue.Prefab).Replace('\\', '/');
+                Assert.IsTrue(
+                    prefabPath.StartsWith(CombatVfxPrefabRootPath),
+                    $"{cueId} should reference a curated `_Game` VFX prefab, found {prefabPath}.");
+                Assert.IsFalse(
+                    prefabPath.Contains("/_Imported/"),
+                    $"{cueId} should not reference raw imported VFX pack assets directly.");
+                Assert.IsNotNull(
+                    cue.Prefab.GetComponentInChildren<CombatVfxCueVisual>(true),
+                    $"{cueId} should use a stable promoted mesh cue visual instead of raw particle shards.");
+                Assert.IsEmpty(
+                    cue.Prefab.GetComponentsInChildren<ParticleSystem>(true),
+                    $"{cueId} should not use first-pass particle shards in the ActionFoundation readability slice.");
+            }
+        }
+
+        [Test]
+        public void ActionFoundationSceneBindsCombatVfxCueDrivers()
+        {
+            CombatVfxCueProfile profile = LoadCombatVfxCueProfile();
+            PlayerActionController player = RequireObject<PlayerActionController>();
+            CombatVfxCuePlayer playerCuePlayer = player.GetComponent<CombatVfxCuePlayer>();
+            PlayerCombatVfxCueDriver playerDriver = player.GetComponent<PlayerCombatVfxCueDriver>();
+
+            Assert.IsNotNull(playerCuePlayer, "Player root should own a CombatVfxCuePlayer for action VFX playback.");
+            Assert.IsNotNull(playerDriver, "Player root should adapt player action events into VFX cues.");
+            Assert.AreSame(profile, playerCuePlayer.Profile, "Player VFX player should read from the shared game-owned ActionFoundation combat VFX profile.");
+
+            BasicSoldierEnemy closePunish = RequirePrimarySoldier();
+            ValidateEnemyCombatVfxBinding(closePunish, profile, requireEliteController: false);
+
+            BasicSoldierEnemy eliteTraits = RequireNamedRootComponent<BasicSoldierEnemy>(EliteTraitsEnemyRootName);
+            ValidateEnemyCombatVfxBinding(eliteTraits, profile, requireEliteController: true);
+        }
+
         [UnityTest]
         public IEnumerator EnemyElitePatternControllerReducesDamageThroughSharedHealthHook()
         {
@@ -646,6 +693,8 @@ namespace DimensionBrawl.Tests
             host.SetActive(false);
             CombatHealth health = host.AddComponent<CombatHealth>();
             EnemyElitePatternController controller = host.AddComponent<EnemyElitePatternController>();
+            CombatAiElitePatternProfile signaledProfile = null;
+            controller.SignalTriggered += profile => signaledProfile = profile;
             SerializedObject serializedObject = new SerializedObject(controller);
             SerializedProperty profiles = serializedObject.FindProperty("eliteProfiles");
             profiles.arraySize = 1;
@@ -654,6 +703,11 @@ namespace DimensionBrawl.Tests
 
             host.SetActive(true);
             yield return null;
+
+            Assert.AreSame(
+                shieldCycle,
+                signaledProfile,
+                "Elite signal events should notify presentation drivers without making combat VFX part of the damage hook.");
 
             float healthBefore = health.CurrentHealth;
             bool damaged = health.TryApplyDamage(new DamageInfo(
@@ -1476,6 +1530,42 @@ namespace DimensionBrawl.Tests
             }
 
             return profile;
+        }
+
+        private static CombatVfxCueProfile LoadCombatVfxCueProfile()
+        {
+            CombatVfxCueProfile profile = AssetDatabase.LoadAssetAtPath<CombatVfxCueProfile>(CombatVfxCueProfilePath);
+            if (profile == null)
+            {
+                Assert.Fail($"Missing combat VFX cue profile at {CombatVfxCueProfilePath}.");
+            }
+
+            return profile;
+        }
+
+        private static void ValidateEnemyCombatVfxBinding(
+            BasicSoldierEnemy soldier,
+            CombatVfxCueProfile expectedProfile,
+            bool requireEliteController)
+        {
+            CombatVfxCuePlayer cuePlayer = soldier.GetComponent<CombatVfxCuePlayer>();
+            EnemyCombatVfxCueDriver driver = soldier.GetComponent<EnemyCombatVfxCueDriver>();
+            Assert.IsNotNull(cuePlayer, $"{soldier.name} should own a CombatVfxCuePlayer.");
+            Assert.IsNotNull(driver, $"{soldier.name} should adapt pattern/damage/death events into VFX cues.");
+            Assert.AreSame(expectedProfile, cuePlayer.Profile, $"{soldier.name} should use the shared game-owned combat VFX profile.");
+
+            SerializedObject serializedObject = new SerializedObject(driver);
+            Assert.AreSame(soldier, serializedObject.FindProperty("agentSource").objectReferenceValue, $"{soldier.name} VFX driver should listen to its local AI agent.");
+            Assert.AreSame(soldier.SelfHealth, serializedObject.FindProperty("health").objectReferenceValue, $"{soldier.name} VFX driver should listen to its local health.");
+            Assert.AreSame(cuePlayer, serializedObject.FindProperty("cuePlayer").objectReferenceValue, $"{soldier.name} VFX driver should play through the local cue player.");
+            Assert.AreEqual(8, serializedObject.FindProperty("patternCueOverrides").arraySize, $"{soldier.name} should carry pattern-profile VFX cue mappings for all authored general/elite attack profiles.");
+            Assert.AreEqual(5, serializedObject.FindProperty("eliteCueOverrides").arraySize, $"{soldier.name} should carry elite-signal VFX cue mappings for future shared enemy/summon trait reads.");
+
+            UnityEngine.Object eliteController = serializedObject.FindProperty("elitePatternController").objectReferenceValue;
+            if (requireEliteController)
+            {
+                Assert.IsNotNull(eliteController, $"{soldier.name} should bind the authored elite pattern controller for elite VFX signals.");
+            }
         }
 
         private static Bounds CollectRenderableBounds(GameObject root)

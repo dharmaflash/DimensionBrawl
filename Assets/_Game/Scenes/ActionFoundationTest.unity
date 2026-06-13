@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!29 &1
 OcclusionCullingSettings:
@@ -225,7 +225,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 68a992b8d629437bb642aeb3ea4a3342, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   target: {fileID: 4001}
   threat: {fileID: 5001}
@@ -261,7 +261,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 95c5c904e05ee3d43ba6d3da070c39eb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionCameraCueDriver
   actionController: {fileID: 4005}
   movement: {fileID: 4004}
@@ -332,7 +332,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
@@ -376,7 +376,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 59f4125f170140fc8d135210e0d24d59, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionCameraTargetBridge
   cameraController: {fileID: 1004}
   targetSelector: {fileID: 4008}
@@ -489,7 +489,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -636,6 +636,8 @@ GameObject:
   - component: {fileID: 4006}
   - component: {fileID: 4007}
   - component: {fileID: 4008}
+  - component: {fileID: 4010}
+  - component: {fileID: 4009}
   m_Layer: 0
   m_Name: Player_CombatGirl_ActionFoundation
   m_TagString: Player
@@ -659,6 +661,8 @@ Transform:
   - {fileID: 4101}
   - {fileID: 4201}
   - {fileID: 736581117297395710}
+  - {fileID: 85052602}
+  - {fileID: 1228450371}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!143 &4002
@@ -696,7 +700,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   team: 1
   maxHealth: 120
@@ -717,7 +721,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6253f5fe88f04869b1dc4654feb51dd1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   moveAction: {fileID: 0}
   lookAction: {fileID: 0}
@@ -759,7 +763,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 418dc101151a481e99bf66c89a1a2c85, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   basicAttackAction: {fileID: 0}
   dodgeAction: {fileID: 0}
@@ -848,7 +852,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 288c9f48f54943e798cab8c17a6806dc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   health: {fileID: 4003}
   flashRenderers:
@@ -885,7 +889,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3e42d67d3a144d6991ac7b99f75b2e06, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   actionController: {fileID: 4005}
   targetRenderers:
@@ -919,7 +923,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 934852f257b94ad6a96b33999f3ab7f9, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerCombatTargetSelector
   selfHealth: {fileID: 4003}
   selectionOrigin: {fileID: 4001}
@@ -949,6 +953,36 @@ MonoBehaviour:
   attackAimRadius: 9
   minimumAttackAimDot: -1
   attackReachPriorityWeight: 0.8
+--- !u!114 &4009
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d051f987e9194992881a51929c4af0a5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.PlayerCombatVfxCueDriver
+  actionController: {fileID: 4005}
+  cuePlayer: {fileID: 4010}
+  attackAnchor: {fileID: 85052602}
+  dodgeAnchor: {fileID: 1228450371}
+--- !u!114 &4010
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3f14f3a7faa43aeb87a640a05d34d09, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCuePlayer
+  profile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
+  pooledRoot: {fileID: 1907862087}
 --- !u!1 &4100
 GameObject:
   m_ObjectHideFlags: 0
@@ -1145,6 +1179,8 @@ GameObject:
   - component: {fileID: 5006}
   - component: {fileID: 5007}
   - component: {fileID: 5008}
+  - component: {fileID: 5010}
+  - component: {fileID: 5009}
   m_Layer: 0
   m_Name: Enemy_SciFiSoldier_ClosePunish
   m_TagString: Untagged
@@ -1168,6 +1204,7 @@ Transform:
   - {fileID: 5101}
   - {fileID: 5201}
   - {fileID: 342490189}
+  - {fileID: 438186050}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
 --- !u!143 &5002
@@ -1205,7 +1242,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   team: 2
   maxHealth: 90
@@ -1226,7 +1263,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 019ce60f0346446b8a59511aa8025495, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   enemyTypeId: SciFiSoldier.Basic
   patternId: ClosePunish
@@ -1282,7 +1319,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 288c9f48f54943e798cab8c17a6806dc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   health: {fileID: 5003}
   flashRenderers:
@@ -1317,7 +1354,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f082b8634c7499bbb942b731f4fca96, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatTargetSensor
   selfHealth: {fileID: 5003}
   searchRadius: 12
@@ -1334,20 +1371,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b01fc0f0a0af4c1184e0ab19307ced01, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyAttackTelegraphPresenter
   telegraphObject: {fileID: 5200}
   telegraphTransform: {fileID: 5201}
   telegraphRenderer: {fileID: 5203}
   poseRoot: {fileID: 342490189}
-  windupStartScale: {x: 0.35, y: 0.02, z: 0.65}
-  windupEndScale: {x: 1.05, y: 0.02, z: 1.55}
-  activeScale: {x: 1.25, y: 0.025, z: 1.8}
+  windupStartScale: {x: 0.28, y: 0.018, z: 0.56}
+  windupEndScale: {x: 1.08, y: 0.02, z: 1.65}
+  activeScale: {x: 1.32, y: 0.024, z: 1.95}
   windupPoseOffset: {x: 0, y: 0, z: -0.08}
   activePoseOffset: {x: 0, y: 0, z: 0.12}
-  windupStartColor: {r: 1, g: 0.45, b: 0.08, a: 1}
-  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 1}
-  activeColor: {r: 1, g: 1, b: 1, a: 1}
+  windupStartColor: {r: 1, g: 0.48, b: 0.08, a: 0.62}
+  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 0.86}
+  activeColor: {r: 1, g: 0.92, b: 0.32, a: 0.95}
 --- !u!114 &5008
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1358,11 +1395,99 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0df587d95db6d9244b21fad306ee1f0a, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyActionCameraCueDriver
   agentSource: {fileID: 5004}
   cameraController: {fileID: 1004}
   cueSpace: {fileID: 5001}
+--- !u!114 &5009
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8d98497706446dfafb2b56e00bfa244, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyCombatVfxCueDriver
+  agentSource: {fileID: 5004}
+  health: {fileID: 5003}
+  cuePlayer: {fileID: 5010}
+  cueAnchor: {fileID: 438186050}
+  elitePatternController: {fileID: 0}
+  patternCueOverrides:
+  - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
+    windupCueId: 8
+    attackActiveCueId: 9
+    windupIntensity: 1
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 91285237ee87aa948906f7f430ba6c9f, type: 2}
+    windupCueId: 10
+    attackActiveCueId: 11
+    windupIntensity: 1.05
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: 7f9d72f624e2fe6498b332d4a90e6b69, type: 2}
+    windupCueId: 12
+    attackActiveCueId: 13
+    windupIntensity: 1.18
+    attackActiveIntensity: 1.25
+  - patternProfile: {fileID: 11400000, guid: 37a6bb4ae0516a44ca02b48ca5541ec8, type: 2}
+    windupCueId: 14
+    attackActiveCueId: 15
+    windupIntensity: 1
+    attackActiveIntensity: 1.05
+  - patternProfile: {fileID: 11400000, guid: eed4a73345a921941ab70394924207e5, type: 2}
+    windupCueId: 16
+    attackActiveCueId: 17
+    windupIntensity: 1
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: c5a68364338220a47b368422a1f18003, type: 2}
+    windupCueId: 18
+    attackActiveCueId: 19
+    windupIntensity: 0.95
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 0139451477c313348aa7b78c36b82a04, type: 2}
+    windupCueId: 20
+    attackActiveCueId: 21
+    windupIntensity: 1
+    attackActiveIntensity: 1.15
+  - patternProfile: {fileID: 11400000, guid: 59d0e2bafcc940a4fb98337280392176, type: 2}
+    windupCueId: 22
+    attackActiveCueId: 23
+    windupIntensity: 1.2
+    attackActiveIntensity: 1.3
+  eliteCueOverrides:
+  - eliteProfile: {fileID: 11400000, guid: 72f8aa0e55d0f9947a9405170327c8de, type: 2}
+    signalCueId: 24
+    intensity: 1
+  - eliteProfile: {fileID: 11400000, guid: 1698d7c630ff67e4b9022732524961ad, type: 2}
+    signalCueId: 25
+    intensity: 1.05
+  - eliteProfile: {fileID: 11400000, guid: 74b2e4cbed265c948bc25c132171dfc7, type: 2}
+    signalCueId: 26
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: b065158e76b5acf4c8c21aadf3ff6679, type: 2}
+    signalCueId: 27
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: 5422278438bd5f145a40f5862ee4fe75, type: 2}
+    signalCueId: 28
+    intensity: 1.18
+--- !u!114 &5010
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3f14f3a7faa43aeb87a640a05d34d09, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCuePlayer
+  profile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
+  pooledRoot: {fileID: 1907862087}
 --- !u!1 &5100
 GameObject:
   m_ObjectHideFlags: 0
@@ -1483,7 +1608,9 @@ Transform:
   m_LocalPosition: {x: 0, y: 0.03, z: 0.85}
   m_LocalScale: {x: 0.75, y: 0.02, z: 0.75}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1145784392}
+  - {fileID: 1301915710}
   m_Father: {fileID: 5001}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &5202
@@ -1504,7 +1631,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
@@ -1519,7 +1646,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 94b6d70c9c0b4cb6ab6f8b4e2fb4edc9, type: 2}
+  - {fileID: 2100000, guid: ee8506dcd5dc89648aaed415c32fe7dd, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1585,7 +1712,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3332ce2d0b3240ea95c5c66945f512a5, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   playerHealth: {fileID: 4003}
   enemyHealth: {fileID: 5003}
@@ -2003,6 +2130,96 @@ Transform:
   m_Children: []
   m_Father: {fileID: 411543653}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &5476137
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5476138}
+  - component: {fileID: 5476140}
+  - component: {fileID: 5476139}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_ReleaseEdge
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5476138
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5476137}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0.05, z: 0.72}
+  m_LocalScale: {x: 0.64, y: 0.02, z: 0.06}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1524340890}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &5476139
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5476137}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &5476140
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5476137}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &6055205
 GameObject:
   m_ObjectHideFlags: 0
@@ -2823,7 +3040,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 0, z: 0}
   bobAxis: {x: -0.55, y: 0.8, z: 0.25}
@@ -3193,7 +3410,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 30, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -4574,6 +4791,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1780081783}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &85052601
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 85052602}
+  m_Layer: 0
+  m_Name: Player_CombatVfx_AttackAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &85052602
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 85052601}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.05, z: 0.65}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4001}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &87542332
 GameObject:
   m_ObjectHideFlags: 0
@@ -4870,6 +5118,8 @@ GameObject:
   - component: {fileID: 102419981}
   - component: {fileID: 102419980}
   - component: {fileID: 102419979}
+  - component: {fileID: 102419988}
+  - component: {fileID: 102419987}
   m_Layer: 0
   m_Name: Enemy_SciFiSoldier_FanPressure
   m_TagString: Untagged
@@ -4887,7 +5137,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0df587d95db6d9244b21fad306ee1f0a, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyActionCameraCueDriver
   agentSource: {fileID: 102419983}
   cameraController: {fileID: 1004}
@@ -4902,20 +5152,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b01fc0f0a0af4c1184e0ab19307ced01, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyAttackTelegraphPresenter
   telegraphObject: {fileID: 1128004796}
   telegraphTransform: {fileID: 1128004798}
   telegraphRenderer: {fileID: 1128004797}
   poseRoot: {fileID: 1770457634}
-  windupStartScale: {x: 0.35, y: 0.02, z: 0.65}
-  windupEndScale: {x: 1.05, y: 0.02, z: 1.55}
-  activeScale: {x: 1.25, y: 0.025, z: 1.8}
+  windupStartScale: {x: 0.28, y: 0.018, z: 0.56}
+  windupEndScale: {x: 1.08, y: 0.02, z: 1.65}
+  activeScale: {x: 1.32, y: 0.024, z: 1.95}
   windupPoseOffset: {x: 0, y: 0, z: -0.08}
   activePoseOffset: {x: 0, y: 0, z: 0.12}
-  windupStartColor: {r: 1, g: 0.45, b: 0.08, a: 1}
-  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 1}
-  activeColor: {r: 1, g: 1, b: 1, a: 1}
+  windupStartColor: {r: 1, g: 0.48, b: 0.08, a: 0.62}
+  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 0.86}
+  activeColor: {r: 1, g: 0.92, b: 0.32, a: 0.95}
 --- !u!114 &102419981
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4926,7 +5176,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f082b8634c7499bbb942b731f4fca96, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatTargetSensor
   selfHealth: {fileID: 102419984}
   searchRadius: 12
@@ -4943,7 +5193,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 288c9f48f54943e798cab8c17a6806dc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   health: {fileID: 102419984}
   flashRenderers:
@@ -4978,7 +5228,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 019ce60f0346446b8a59511aa8025495, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   enemyTypeId: SciFiSoldier.Basic
   patternId: FanPressure
@@ -5034,7 +5284,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   team: 2
   maxHealth: 90
@@ -5086,8 +5336,97 @@ Transform:
   - {fileID: 693474850}
   - {fileID: 1128004798}
   - {fileID: 1770457634}
+  - {fileID: 723355191}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!114 &102419987
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 102419978}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8d98497706446dfafb2b56e00bfa244, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyCombatVfxCueDriver
+  agentSource: {fileID: 102419983}
+  health: {fileID: 102419984}
+  cuePlayer: {fileID: 102419988}
+  cueAnchor: {fileID: 723355191}
+  elitePatternController: {fileID: 0}
+  patternCueOverrides:
+  - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
+    windupCueId: 8
+    attackActiveCueId: 9
+    windupIntensity: 1
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 91285237ee87aa948906f7f430ba6c9f, type: 2}
+    windupCueId: 10
+    attackActiveCueId: 11
+    windupIntensity: 1.05
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: 7f9d72f624e2fe6498b332d4a90e6b69, type: 2}
+    windupCueId: 12
+    attackActiveCueId: 13
+    windupIntensity: 1.18
+    attackActiveIntensity: 1.25
+  - patternProfile: {fileID: 11400000, guid: 37a6bb4ae0516a44ca02b48ca5541ec8, type: 2}
+    windupCueId: 14
+    attackActiveCueId: 15
+    windupIntensity: 1
+    attackActiveIntensity: 1.05
+  - patternProfile: {fileID: 11400000, guid: eed4a73345a921941ab70394924207e5, type: 2}
+    windupCueId: 16
+    attackActiveCueId: 17
+    windupIntensity: 1
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: c5a68364338220a47b368422a1f18003, type: 2}
+    windupCueId: 18
+    attackActiveCueId: 19
+    windupIntensity: 0.95
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 0139451477c313348aa7b78c36b82a04, type: 2}
+    windupCueId: 20
+    attackActiveCueId: 21
+    windupIntensity: 1
+    attackActiveIntensity: 1.15
+  - patternProfile: {fileID: 11400000, guid: 59d0e2bafcc940a4fb98337280392176, type: 2}
+    windupCueId: 22
+    attackActiveCueId: 23
+    windupIntensity: 1.2
+    attackActiveIntensity: 1.3
+  eliteCueOverrides:
+  - eliteProfile: {fileID: 11400000, guid: 72f8aa0e55d0f9947a9405170327c8de, type: 2}
+    signalCueId: 24
+    intensity: 1
+  - eliteProfile: {fileID: 11400000, guid: 1698d7c630ff67e4b9022732524961ad, type: 2}
+    signalCueId: 25
+    intensity: 1.05
+  - eliteProfile: {fileID: 11400000, guid: 74b2e4cbed265c948bc25c132171dfc7, type: 2}
+    signalCueId: 26
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: b065158e76b5acf4c8c21aadf3ff6679, type: 2}
+    signalCueId: 27
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: 5422278438bd5f145a40f5862ee4fe75, type: 2}
+    signalCueId: 28
+    intensity: 1.18
+--- !u!114 &102419988
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 102419978}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3f14f3a7faa43aeb87a640a05d34d09, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCuePlayer
+  profile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
+  pooledRoot: {fileID: 1907862087}
 --- !u!1 &106991190
 GameObject:
   m_ObjectHideFlags: 0
@@ -8149,7 +8488,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
@@ -8164,7 +8503,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 94b6d70c9c0b4cb6ab6f8b4e2fb4edc9, type: 2}
+  - {fileID: 2100000, guid: ee8506dcd5dc89648aaed415c32fe7dd, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -8200,7 +8539,9 @@ Transform:
   m_LocalPosition: {x: 0, y: 0.03, z: 0.85}
   m_LocalScale: {x: 0.75, y: 0.02, z: 0.75}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1349067375}
+  - {fileID: 1451666729}
   m_Father: {fileID: 1468388281}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &195903296
@@ -10786,6 +11127,8 @@ GameObject:
   - component: {fileID: 272183510}
   - component: {fileID: 272183509}
   - component: {fileID: 272183508}
+  - component: {fileID: 272183517}
+  - component: {fileID: 272183516}
   m_Layer: 0
   m_Name: Enemy_SciFiSoldier_GeneralDeck
   m_TagString: Untagged
@@ -10803,7 +11146,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0df587d95db6d9244b21fad306ee1f0a, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyActionCameraCueDriver
   agentSource: {fileID: 272183512}
   cameraController: {fileID: 1004}
@@ -10818,20 +11161,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b01fc0f0a0af4c1184e0ab19307ced01, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyAttackTelegraphPresenter
   telegraphObject: {fileID: 2018212068}
   telegraphTransform: {fileID: 2018212070}
   telegraphRenderer: {fileID: 2018212069}
   poseRoot: {fileID: 391006758}
-  windupStartScale: {x: 0.35, y: 0.02, z: 0.65}
-  windupEndScale: {x: 1.05, y: 0.02, z: 1.55}
-  activeScale: {x: 1.25, y: 0.025, z: 1.8}
+  windupStartScale: {x: 0.28, y: 0.018, z: 0.56}
+  windupEndScale: {x: 1.08, y: 0.02, z: 1.65}
+  activeScale: {x: 1.32, y: 0.024, z: 1.95}
   windupPoseOffset: {x: 0, y: 0, z: -0.08}
   activePoseOffset: {x: 0, y: 0, z: 0.12}
-  windupStartColor: {r: 1, g: 0.45, b: 0.08, a: 1}
-  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 1}
-  activeColor: {r: 1, g: 1, b: 1, a: 1}
+  windupStartColor: {r: 1, g: 0.48, b: 0.08, a: 0.62}
+  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 0.86}
+  activeColor: {r: 1, g: 0.92, b: 0.32, a: 0.95}
 --- !u!114 &272183510
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -10842,7 +11185,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f082b8634c7499bbb942b731f4fca96, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatTargetSensor
   selfHealth: {fileID: 272183513}
   searchRadius: 12
@@ -10859,7 +11202,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 288c9f48f54943e798cab8c17a6806dc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   health: {fileID: 272183513}
   flashRenderers:
@@ -10894,7 +11237,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 019ce60f0346446b8a59511aa8025495, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   enemyTypeId: SciFiSoldier.Basic
   patternId: GeneralDeck
@@ -10950,7 +11293,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   team: 2
   maxHealth: 90
@@ -11002,8 +11345,97 @@ Transform:
   - {fileID: 765080477}
   - {fileID: 2018212070}
   - {fileID: 391006758}
+  - {fileID: 376970272}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!114 &272183516
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 272183507}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8d98497706446dfafb2b56e00bfa244, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyCombatVfxCueDriver
+  agentSource: {fileID: 272183512}
+  health: {fileID: 272183513}
+  cuePlayer: {fileID: 272183517}
+  cueAnchor: {fileID: 376970272}
+  elitePatternController: {fileID: 0}
+  patternCueOverrides:
+  - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
+    windupCueId: 8
+    attackActiveCueId: 9
+    windupIntensity: 1
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 91285237ee87aa948906f7f430ba6c9f, type: 2}
+    windupCueId: 10
+    attackActiveCueId: 11
+    windupIntensity: 1.05
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: 7f9d72f624e2fe6498b332d4a90e6b69, type: 2}
+    windupCueId: 12
+    attackActiveCueId: 13
+    windupIntensity: 1.18
+    attackActiveIntensity: 1.25
+  - patternProfile: {fileID: 11400000, guid: 37a6bb4ae0516a44ca02b48ca5541ec8, type: 2}
+    windupCueId: 14
+    attackActiveCueId: 15
+    windupIntensity: 1
+    attackActiveIntensity: 1.05
+  - patternProfile: {fileID: 11400000, guid: eed4a73345a921941ab70394924207e5, type: 2}
+    windupCueId: 16
+    attackActiveCueId: 17
+    windupIntensity: 1
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: c5a68364338220a47b368422a1f18003, type: 2}
+    windupCueId: 18
+    attackActiveCueId: 19
+    windupIntensity: 0.95
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 0139451477c313348aa7b78c36b82a04, type: 2}
+    windupCueId: 20
+    attackActiveCueId: 21
+    windupIntensity: 1
+    attackActiveIntensity: 1.15
+  - patternProfile: {fileID: 11400000, guid: 59d0e2bafcc940a4fb98337280392176, type: 2}
+    windupCueId: 22
+    attackActiveCueId: 23
+    windupIntensity: 1.2
+    attackActiveIntensity: 1.3
+  eliteCueOverrides:
+  - eliteProfile: {fileID: 11400000, guid: 72f8aa0e55d0f9947a9405170327c8de, type: 2}
+    signalCueId: 24
+    intensity: 1
+  - eliteProfile: {fileID: 11400000, guid: 1698d7c630ff67e4b9022732524961ad, type: 2}
+    signalCueId: 25
+    intensity: 1.05
+  - eliteProfile: {fileID: 11400000, guid: 74b2e4cbed265c948bc25c132171dfc7, type: 2}
+    signalCueId: 26
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: b065158e76b5acf4c8c21aadf3ff6679, type: 2}
+    signalCueId: 27
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: 5422278438bd5f145a40f5862ee4fe75, type: 2}
+    signalCueId: 28
+    intensity: 1.18
+--- !u!114 &272183517
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 272183507}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3f14f3a7faa43aeb87a640a05d34d09, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCuePlayer
+  profile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
+  pooledRoot: {fileID: 1907862087}
 --- !u!1 &273357083
 GameObject:
   m_ObjectHideFlags: 0
@@ -11534,6 +11966,37 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1498116641}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &290488738
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 290488739}
+  m_Layer: 0
+  m_Name: Enemy_CombatVfx_CueAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &290488739
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 290488738}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.05, z: 0.35}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 548236419}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &291209233
 GameObject:
@@ -12152,6 +12615,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1832181843}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &300006870
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 300006871}
+  m_Layer: 0
+  m_Name: Enemy_CombatVfx_CueAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &300006871
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 300006870}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.05, z: 0.35}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 771332237}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &301624217
 GameObject:
   m_ObjectHideFlags: 0
@@ -12214,6 +12708,37 @@ Transform:
   m_Children:
   - {fileID: 911382968}
   m_Father: {fileID: 396588378}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &303258896
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 303258897}
+  m_Layer: 0
+  m_Name: Enemy_CombatVfx_CueAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &303258897
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 303258896}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.05, z: 0.35}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1468388281}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &304307651
 GameObject:
@@ -13390,6 +13915,96 @@ Transform:
   - {fileID: 1893706515}
   m_Father: {fileID: 1809743569}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &340776117
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 340776118}
+  - component: {fileID: 340776120}
+  - component: {fileID: 340776119}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_ReleaseEdge
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &340776118
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 340776117}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0.05, z: 0.72}
+  m_LocalScale: {x: 0.64, y: 0.02, z: 0.06}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 858913518}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &340776119
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 340776117}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &340776120
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 340776117}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &341291138
 GameObject:
   m_ObjectHideFlags: 0
@@ -14359,6 +14974,96 @@ SkinnedMeshRenderer:
     m_Center: {x: -0.00075793266, y: -0.19809273, z: -0.43744934}
     m_Extent: {x: 0.67101204, y: 0.12760606, z: 0.19903915}
   m_DirtyAABB: 0
+--- !u!1 &350191442
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 350191443}
+  - component: {fileID: 350191445}
+  - component: {fileID: 350191444}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_CenterLine
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &350191443
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 350191442}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.04, z: 0.18}
+  m_LocalScale: {x: 0.12, y: 0.02, z: 1.35}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 858913518}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &350191444
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 350191442}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &350191445
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 350191442}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &350490594
 GameObject:
   m_ObjectHideFlags: 0
@@ -14739,6 +15444,96 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1832181843}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &360914549
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 360914550}
+  - component: {fileID: 360914552}
+  - component: {fileID: 360914551}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_ReleaseEdge
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &360914550
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 360914549}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0.05, z: 0.72}
+  m_LocalScale: {x: 0.64, y: 0.02, z: 0.06}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2002138283}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &360914551
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 360914549}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &360914552
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 360914549}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &363873698
 GameObject:
   m_ObjectHideFlags: 0
@@ -15063,6 +15858,37 @@ SkinnedMeshRenderer:
     m_Center: {x: -0.00034427643, y: -0.19937588, z: -0.43556336}
     m_Extent: {x: 0.67650497, y: 0.13210975, z: 0.20202509}
   m_DirtyAABB: 0
+--- !u!1 &376970271
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 376970272}
+  m_Layer: 0
+  m_Name: Enemy_CombatVfx_CueAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &376970272
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 376970271}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.05, z: 0.35}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 272183515}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &376998001
 GameObject:
   m_ObjectHideFlags: 0
@@ -15934,6 +16760,96 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1203152124}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &406889813
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 406889814}
+  - component: {fileID: 406889816}
+  - component: {fileID: 406889815}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_ReleaseEdge
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &406889814
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 406889813}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0.05, z: 0.72}
+  m_LocalScale: {x: 0.64, y: 0.02, z: 0.06}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1128004798}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &406889815
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 406889813}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &406889816
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 406889813}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &408449244
 GameObject:
   m_ObjectHideFlags: 0
@@ -15950,6 +16866,8 @@ GameObject:
   - component: {fileID: 408449248}
   - component: {fileID: 408449247}
   - component: {fileID: 408449246}
+  - component: {fileID: 408449254}
+  - component: {fileID: 408449253}
   m_Layer: 0
   m_Name: Enemy_SciFiSoldier_EliteDeck
   m_TagString: Untagged
@@ -15967,7 +16885,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   team: 2
   maxHealth: 90
@@ -15988,7 +16906,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0df587d95db6d9244b21fad306ee1f0a, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyActionCameraCueDriver
   agentSource: {fileID: 408449250}
   cameraController: {fileID: 1004}
@@ -16003,20 +16921,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b01fc0f0a0af4c1184e0ab19307ced01, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyAttackTelegraphPresenter
   telegraphObject: {fileID: 2050171166}
   telegraphTransform: {fileID: 2050171168}
   telegraphRenderer: {fileID: 2050171167}
   poseRoot: {fileID: 1447279611}
-  windupStartScale: {x: 0.35, y: 0.02, z: 0.65}
-  windupEndScale: {x: 1.05, y: 0.02, z: 1.55}
-  activeScale: {x: 1.25, y: 0.025, z: 1.8}
+  windupStartScale: {x: 0.28, y: 0.018, z: 0.56}
+  windupEndScale: {x: 1.08, y: 0.02, z: 1.65}
+  activeScale: {x: 1.32, y: 0.024, z: 1.95}
   windupPoseOffset: {x: 0, y: 0, z: -0.08}
   activePoseOffset: {x: 0, y: 0, z: 0.12}
-  windupStartColor: {r: 1, g: 0.45, b: 0.08, a: 1}
-  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 1}
-  activeColor: {r: 1, g: 1, b: 1, a: 1}
+  windupStartColor: {r: 1, g: 0.48, b: 0.08, a: 0.62}
+  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 0.86}
+  activeColor: {r: 1, g: 0.92, b: 0.32, a: 0.95}
 --- !u!114 &408449248
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -16027,7 +16945,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f082b8634c7499bbb942b731f4fca96, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatTargetSensor
   selfHealth: {fileID: 408449245}
   searchRadius: 12
@@ -16044,7 +16962,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 288c9f48f54943e798cab8c17a6806dc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   health: {fileID: 408449245}
   flashRenderers:
@@ -16079,7 +16997,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 019ce60f0346446b8a59511aa8025495, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   enemyTypeId: SciFiSoldier.Basic
   patternId: EliteDeck
@@ -16166,8 +17084,97 @@ Transform:
   - {fileID: 1809664323}
   - {fileID: 2050171168}
   - {fileID: 1447279611}
+  - {fileID: 2098182088}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!114 &408449253
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 408449244}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8d98497706446dfafb2b56e00bfa244, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyCombatVfxCueDriver
+  agentSource: {fileID: 408449250}
+  health: {fileID: 408449245}
+  cuePlayer: {fileID: 408449254}
+  cueAnchor: {fileID: 2098182088}
+  elitePatternController: {fileID: 0}
+  patternCueOverrides:
+  - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
+    windupCueId: 8
+    attackActiveCueId: 9
+    windupIntensity: 1
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 91285237ee87aa948906f7f430ba6c9f, type: 2}
+    windupCueId: 10
+    attackActiveCueId: 11
+    windupIntensity: 1.05
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: 7f9d72f624e2fe6498b332d4a90e6b69, type: 2}
+    windupCueId: 12
+    attackActiveCueId: 13
+    windupIntensity: 1.18
+    attackActiveIntensity: 1.25
+  - patternProfile: {fileID: 11400000, guid: 37a6bb4ae0516a44ca02b48ca5541ec8, type: 2}
+    windupCueId: 14
+    attackActiveCueId: 15
+    windupIntensity: 1
+    attackActiveIntensity: 1.05
+  - patternProfile: {fileID: 11400000, guid: eed4a73345a921941ab70394924207e5, type: 2}
+    windupCueId: 16
+    attackActiveCueId: 17
+    windupIntensity: 1
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: c5a68364338220a47b368422a1f18003, type: 2}
+    windupCueId: 18
+    attackActiveCueId: 19
+    windupIntensity: 0.95
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 0139451477c313348aa7b78c36b82a04, type: 2}
+    windupCueId: 20
+    attackActiveCueId: 21
+    windupIntensity: 1
+    attackActiveIntensity: 1.15
+  - patternProfile: {fileID: 11400000, guid: 59d0e2bafcc940a4fb98337280392176, type: 2}
+    windupCueId: 22
+    attackActiveCueId: 23
+    windupIntensity: 1.2
+    attackActiveIntensity: 1.3
+  eliteCueOverrides:
+  - eliteProfile: {fileID: 11400000, guid: 72f8aa0e55d0f9947a9405170327c8de, type: 2}
+    signalCueId: 24
+    intensity: 1
+  - eliteProfile: {fileID: 11400000, guid: 1698d7c630ff67e4b9022732524961ad, type: 2}
+    signalCueId: 25
+    intensity: 1.05
+  - eliteProfile: {fileID: 11400000, guid: 74b2e4cbed265c948bc25c132171dfc7, type: 2}
+    signalCueId: 26
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: b065158e76b5acf4c8c21aadf3ff6679, type: 2}
+    signalCueId: 27
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: 5422278438bd5f145a40f5862ee4fe75, type: 2}
+    signalCueId: 28
+    intensity: 1.18
+--- !u!114 &408449254
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 408449244}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3f14f3a7faa43aeb87a640a05d34d09, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCuePlayer
+  profile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
+  pooledRoot: {fileID: 1907862087}
 --- !u!1 &409239983
 GameObject:
   m_ObjectHideFlags: 0
@@ -17057,6 +18064,96 @@ Transform:
   - {fileID: 1609344321}
   m_Father: {fileID: 338928980}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &431096128
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 431096129}
+  - component: {fileID: 431096131}
+  - component: {fileID: 431096130}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_CenterLine
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &431096129
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 431096128}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.04, z: 0.18}
+  m_LocalScale: {x: 0.12, y: 0.02, z: 1.35}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1937866167}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &431096130
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 431096128}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &431096131
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 431096128}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &433714986
 GameObject:
   m_ObjectHideFlags: 0
@@ -17386,6 +18483,68 @@ Transform:
   - {fileID: 860000364}
   - {fileID: 1809743569}
   m_Father: {fileID: 1473220975}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &438186049
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 438186050}
+  m_Layer: 0
+  m_Name: Enemy_CombatVfx_CueAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &438186050
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 438186049}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.05, z: 0.35}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5001}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &438230568
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 438230569}
+  m_Layer: 0
+  m_Name: Enemy_CombatVfx_CueAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &438230569
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 438230568}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.05, z: 0.35}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1403009139}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &440565665
 GameObject:
@@ -21002,6 +22161,8 @@ GameObject:
   - component: {fileID: 548236414}
   - component: {fileID: 548236413}
   - component: {fileID: 548236412}
+  - component: {fileID: 548236421}
+  - component: {fileID: 548236420}
   m_Layer: 0
   m_Name: Enemy_SciFiSoldier_RetreatShot
   m_TagString: Untagged
@@ -21019,7 +22180,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0df587d95db6d9244b21fad306ee1f0a, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyActionCameraCueDriver
   agentSource: {fileID: 548236416}
   cameraController: {fileID: 1004}
@@ -21034,20 +22195,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b01fc0f0a0af4c1184e0ab19307ced01, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyAttackTelegraphPresenter
   telegraphObject: {fileID: 858913516}
   telegraphTransform: {fileID: 858913518}
   telegraphRenderer: {fileID: 858913517}
   poseRoot: {fileID: 2702949}
-  windupStartScale: {x: 0.35, y: 0.02, z: 0.65}
-  windupEndScale: {x: 1.05, y: 0.02, z: 1.55}
-  activeScale: {x: 1.25, y: 0.025, z: 1.8}
+  windupStartScale: {x: 0.28, y: 0.018, z: 0.56}
+  windupEndScale: {x: 1.08, y: 0.02, z: 1.65}
+  activeScale: {x: 1.32, y: 0.024, z: 1.95}
   windupPoseOffset: {x: 0, y: 0, z: -0.08}
   activePoseOffset: {x: 0, y: 0, z: 0.12}
-  windupStartColor: {r: 1, g: 0.45, b: 0.08, a: 1}
-  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 1}
-  activeColor: {r: 1, g: 1, b: 1, a: 1}
+  windupStartColor: {r: 1, g: 0.48, b: 0.08, a: 0.62}
+  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 0.86}
+  activeColor: {r: 1, g: 0.92, b: 0.32, a: 0.95}
 --- !u!114 &548236414
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21058,7 +22219,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f082b8634c7499bbb942b731f4fca96, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatTargetSensor
   selfHealth: {fileID: 548236417}
   searchRadius: 12
@@ -21075,7 +22236,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 288c9f48f54943e798cab8c17a6806dc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   health: {fileID: 548236417}
   flashRenderers:
@@ -21110,7 +22271,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 019ce60f0346446b8a59511aa8025495, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   enemyTypeId: SciFiSoldier.Basic
   patternId: RetreatShot
@@ -21166,7 +22327,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   team: 2
   maxHealth: 90
@@ -21218,8 +22379,97 @@ Transform:
   - {fileID: 1458974980}
   - {fileID: 858913518}
   - {fileID: 2702949}
+  - {fileID: 290488739}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!114 &548236420
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 548236411}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8d98497706446dfafb2b56e00bfa244, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyCombatVfxCueDriver
+  agentSource: {fileID: 548236416}
+  health: {fileID: 548236417}
+  cuePlayer: {fileID: 548236421}
+  cueAnchor: {fileID: 290488739}
+  elitePatternController: {fileID: 0}
+  patternCueOverrides:
+  - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
+    windupCueId: 8
+    attackActiveCueId: 9
+    windupIntensity: 1
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 91285237ee87aa948906f7f430ba6c9f, type: 2}
+    windupCueId: 10
+    attackActiveCueId: 11
+    windupIntensity: 1.05
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: 7f9d72f624e2fe6498b332d4a90e6b69, type: 2}
+    windupCueId: 12
+    attackActiveCueId: 13
+    windupIntensity: 1.18
+    attackActiveIntensity: 1.25
+  - patternProfile: {fileID: 11400000, guid: 37a6bb4ae0516a44ca02b48ca5541ec8, type: 2}
+    windupCueId: 14
+    attackActiveCueId: 15
+    windupIntensity: 1
+    attackActiveIntensity: 1.05
+  - patternProfile: {fileID: 11400000, guid: eed4a73345a921941ab70394924207e5, type: 2}
+    windupCueId: 16
+    attackActiveCueId: 17
+    windupIntensity: 1
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: c5a68364338220a47b368422a1f18003, type: 2}
+    windupCueId: 18
+    attackActiveCueId: 19
+    windupIntensity: 0.95
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 0139451477c313348aa7b78c36b82a04, type: 2}
+    windupCueId: 20
+    attackActiveCueId: 21
+    windupIntensity: 1
+    attackActiveIntensity: 1.15
+  - patternProfile: {fileID: 11400000, guid: 59d0e2bafcc940a4fb98337280392176, type: 2}
+    windupCueId: 22
+    attackActiveCueId: 23
+    windupIntensity: 1.2
+    attackActiveIntensity: 1.3
+  eliteCueOverrides:
+  - eliteProfile: {fileID: 11400000, guid: 72f8aa0e55d0f9947a9405170327c8de, type: 2}
+    signalCueId: 24
+    intensity: 1
+  - eliteProfile: {fileID: 11400000, guid: 1698d7c630ff67e4b9022732524961ad, type: 2}
+    signalCueId: 25
+    intensity: 1.05
+  - eliteProfile: {fileID: 11400000, guid: 74b2e4cbed265c948bc25c132171dfc7, type: 2}
+    signalCueId: 26
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: b065158e76b5acf4c8c21aadf3ff6679, type: 2}
+    signalCueId: 27
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: 5422278438bd5f145a40f5862ee4fe75, type: 2}
+    signalCueId: 28
+    intensity: 1.18
+--- !u!114 &548236421
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 548236411}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3f14f3a7faa43aeb87a640a05d34d09, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCuePlayer
+  profile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
+  pooledRoot: {fileID: 1907862087}
 --- !u!1 &550744763
 GameObject:
   m_ObjectHideFlags: 0
@@ -22617,6 +23867,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1832610595}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &583420764
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 583420765}
+  m_Layer: 0
+  m_Name: Enemy_CombatVfx_CueAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &583420765
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 583420764}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.05, z: 0.35}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2082642306}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &583480075
 GameObject:
   m_ObjectHideFlags: 0
@@ -22884,7 +24165,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ae03e3c86d3cb9f4dbf93f0f69f161c1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaTransformMotion
   localRotationDegreesPerSecond: {x: 0, y: 0, z: 0}
   bobAxis: {x: 0, y: 0, z: 1}
@@ -22980,6 +24261,96 @@ Transform:
   - {fileID: 471188579}
   m_Father: {fileID: 166300028}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &590978837
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 590978838}
+  - component: {fileID: 590978840}
+  - component: {fileID: 590978839}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_ReleaseEdge
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &590978838
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 590978837}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0.05, z: 0.72}
+  m_LocalScale: {x: 0.64, y: 0.02, z: 0.06}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1937866167}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &590978839
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 590978837}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &590978840
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 590978837}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &594020886
 GameObject:
   m_ObjectHideFlags: 0
@@ -24616,7 +25987,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 24, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -25663,7 +27034,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 18, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -26067,6 +27438,8 @@ GameObject:
   - component: {fileID: 682321473}
   - component: {fileID: 682321472}
   - component: {fileID: 682321471}
+  - component: {fileID: 682321481}
+  - component: {fileID: 682321480}
   m_Layer: 0
   m_Name: Enemy_SciFiSoldier_EliteTraits
   m_TagString: Untagged
@@ -26084,7 +27457,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 995d39aabf22ba64f9f87d4ddbccc2f1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Enemies.EnemyElitePatternController
   health: {fileID: 682321477}
   soldier: {fileID: 682321476}
@@ -26111,7 +27484,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0df587d95db6d9244b21fad306ee1f0a, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyActionCameraCueDriver
   agentSource: {fileID: 682321476}
   cameraController: {fileID: 1004}
@@ -26126,20 +27499,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b01fc0f0a0af4c1184e0ab19307ced01, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyAttackTelegraphPresenter
   telegraphObject: {fileID: 1951000009}
   telegraphTransform: {fileID: 1951000011}
   telegraphRenderer: {fileID: 1951000010}
   poseRoot: {fileID: 508095734}
-  windupStartScale: {x: 0.35, y: 0.02, z: 0.65}
-  windupEndScale: {x: 1.05, y: 0.02, z: 1.55}
-  activeScale: {x: 1.25, y: 0.025, z: 1.8}
+  windupStartScale: {x: 0.28, y: 0.018, z: 0.56}
+  windupEndScale: {x: 1.08, y: 0.02, z: 1.65}
+  activeScale: {x: 1.32, y: 0.024, z: 1.95}
   windupPoseOffset: {x: 0, y: 0, z: -0.08}
   activePoseOffset: {x: 0, y: 0, z: 0.12}
-  windupStartColor: {r: 1, g: 0.45, b: 0.08, a: 1}
-  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 1}
-  activeColor: {r: 1, g: 1, b: 1, a: 1}
+  windupStartColor: {r: 1, g: 0.48, b: 0.08, a: 0.62}
+  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 0.86}
+  activeColor: {r: 1, g: 0.92, b: 0.32, a: 0.95}
 --- !u!114 &682321474
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -26150,7 +27523,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f082b8634c7499bbb942b731f4fca96, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatTargetSensor
   selfHealth: {fileID: 682321477}
   searchRadius: 12
@@ -26167,7 +27540,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 288c9f48f54943e798cab8c17a6806dc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   health: {fileID: 682321477}
   flashRenderers:
@@ -26203,7 +27576,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 019ce60f0346446b8a59511aa8025495, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   enemyTypeId: SciFiSoldier.Basic
   patternId: EliteTraits
@@ -26259,7 +27632,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   team: 2
   maxHealth: 90
@@ -26312,8 +27685,97 @@ Transform:
   - {fileID: 1951000011}
   - {fileID: 508095734}
   - {fileID: 784491661}
+  - {fileID: 952636866}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!114 &682321480
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 682321470}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8d98497706446dfafb2b56e00bfa244, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyCombatVfxCueDriver
+  agentSource: {fileID: 682321476}
+  health: {fileID: 682321477}
+  cuePlayer: {fileID: 682321481}
+  cueAnchor: {fileID: 952636866}
+  elitePatternController: {fileID: 682321471}
+  patternCueOverrides:
+  - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
+    windupCueId: 8
+    attackActiveCueId: 9
+    windupIntensity: 1
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 91285237ee87aa948906f7f430ba6c9f, type: 2}
+    windupCueId: 10
+    attackActiveCueId: 11
+    windupIntensity: 1.05
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: 7f9d72f624e2fe6498b332d4a90e6b69, type: 2}
+    windupCueId: 12
+    attackActiveCueId: 13
+    windupIntensity: 1.18
+    attackActiveIntensity: 1.25
+  - patternProfile: {fileID: 11400000, guid: 37a6bb4ae0516a44ca02b48ca5541ec8, type: 2}
+    windupCueId: 14
+    attackActiveCueId: 15
+    windupIntensity: 1
+    attackActiveIntensity: 1.05
+  - patternProfile: {fileID: 11400000, guid: eed4a73345a921941ab70394924207e5, type: 2}
+    windupCueId: 16
+    attackActiveCueId: 17
+    windupIntensity: 1
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: c5a68364338220a47b368422a1f18003, type: 2}
+    windupCueId: 18
+    attackActiveCueId: 19
+    windupIntensity: 0.95
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 0139451477c313348aa7b78c36b82a04, type: 2}
+    windupCueId: 20
+    attackActiveCueId: 21
+    windupIntensity: 1
+    attackActiveIntensity: 1.15
+  - patternProfile: {fileID: 11400000, guid: 59d0e2bafcc940a4fb98337280392176, type: 2}
+    windupCueId: 22
+    attackActiveCueId: 23
+    windupIntensity: 1.2
+    attackActiveIntensity: 1.3
+  eliteCueOverrides:
+  - eliteProfile: {fileID: 11400000, guid: 72f8aa0e55d0f9947a9405170327c8de, type: 2}
+    signalCueId: 24
+    intensity: 1
+  - eliteProfile: {fileID: 11400000, guid: 1698d7c630ff67e4b9022732524961ad, type: 2}
+    signalCueId: 25
+    intensity: 1.05
+  - eliteProfile: {fileID: 11400000, guid: 74b2e4cbed265c948bc25c132171dfc7, type: 2}
+    signalCueId: 26
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: b065158e76b5acf4c8c21aadf3ff6679, type: 2}
+    signalCueId: 27
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: 5422278438bd5f145a40f5862ee4fe75, type: 2}
+    signalCueId: 28
+    intensity: 1.18
+--- !u!114 &682321481
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 682321470}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3f14f3a7faa43aeb87a640a05d34d09, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCuePlayer
+  profile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
+  pooledRoot: {fileID: 1907862087}
 --- !u!1 &682544201
 GameObject:
   m_ObjectHideFlags: 0
@@ -26579,7 +28041,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 19, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -26972,7 +28434,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -27355,7 +28817,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 040303e933874bc993e03b9a439cead1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaShapeInfluenceDriver
   renderers:
   - {fileID: 711388407}
@@ -27374,7 +28836,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: -3, y: -10, z: 4}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -28136,6 +29598,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 678335347}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &723355190
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 723355191}
+  m_Layer: 0
+  m_Name: Enemy_CombatVfx_CueAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &723355191
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 723355190}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.05, z: 0.35}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 102419986}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &724350443
 GameObject:
   m_ObjectHideFlags: 0
@@ -28438,7 +29931,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 22, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -29480,6 +30973,96 @@ Transform:
   - {fileID: 690041177}
   m_Father: {fileID: 214320547}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &752189070
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 752189071}
+  - component: {fileID: 752189073}
+  - component: {fileID: 752189072}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_ReleaseEdge
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &752189071
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 752189070}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0.05, z: 0.72}
+  m_LocalScale: {x: 0.64, y: 0.02, z: 0.06}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1951000011}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &752189072
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 752189070}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &752189073
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 752189070}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &756702014
 GameObject:
   m_ObjectHideFlags: 0
@@ -30148,6 +31731,8 @@ GameObject:
   - component: {fileID: 771332232}
   - component: {fileID: 771332231}
   - component: {fileID: 771332230}
+  - component: {fileID: 771332239}
+  - component: {fileID: 771332238}
   m_Layer: 0
   m_Name: Enemy_SciFiSoldier_RetreatBlink
   m_TagString: Untagged
@@ -30165,7 +31750,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0df587d95db6d9244b21fad306ee1f0a, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyActionCameraCueDriver
   agentSource: {fileID: 771332234}
   cameraController: {fileID: 1004}
@@ -30180,20 +31765,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b01fc0f0a0af4c1184e0ab19307ced01, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyAttackTelegraphPresenter
   telegraphObject: {fileID: 1937866165}
   telegraphTransform: {fileID: 1937866167}
   telegraphRenderer: {fileID: 1937866166}
   poseRoot: {fileID: 916111116}
-  windupStartScale: {x: 0.35, y: 0.02, z: 0.65}
-  windupEndScale: {x: 1.05, y: 0.02, z: 1.55}
-  activeScale: {x: 1.25, y: 0.025, z: 1.8}
+  windupStartScale: {x: 0.28, y: 0.018, z: 0.56}
+  windupEndScale: {x: 1.08, y: 0.02, z: 1.65}
+  activeScale: {x: 1.32, y: 0.024, z: 1.95}
   windupPoseOffset: {x: 0, y: 0, z: -0.08}
   activePoseOffset: {x: 0, y: 0, z: 0.12}
-  windupStartColor: {r: 1, g: 0.45, b: 0.08, a: 1}
-  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 1}
-  activeColor: {r: 1, g: 1, b: 1, a: 1}
+  windupStartColor: {r: 1, g: 0.48, b: 0.08, a: 0.62}
+  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 0.86}
+  activeColor: {r: 1, g: 0.92, b: 0.32, a: 0.95}
 --- !u!114 &771332232
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -30204,7 +31789,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f082b8634c7499bbb942b731f4fca96, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatTargetSensor
   selfHealth: {fileID: 771332235}
   searchRadius: 12
@@ -30221,7 +31806,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 288c9f48f54943e798cab8c17a6806dc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   health: {fileID: 771332235}
   flashRenderers:
@@ -30256,7 +31841,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 019ce60f0346446b8a59511aa8025495, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   enemyTypeId: SciFiSoldier.Basic
   patternId: RetreatBlink
@@ -30312,7 +31897,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   team: 2
   maxHealth: 90
@@ -30364,8 +31949,97 @@ Transform:
   - {fileID: 906899851}
   - {fileID: 1937866167}
   - {fileID: 916111116}
+  - {fileID: 300006871}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!114 &771332238
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 771332229}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8d98497706446dfafb2b56e00bfa244, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyCombatVfxCueDriver
+  agentSource: {fileID: 771332234}
+  health: {fileID: 771332235}
+  cuePlayer: {fileID: 771332239}
+  cueAnchor: {fileID: 300006871}
+  elitePatternController: {fileID: 0}
+  patternCueOverrides:
+  - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
+    windupCueId: 8
+    attackActiveCueId: 9
+    windupIntensity: 1
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 91285237ee87aa948906f7f430ba6c9f, type: 2}
+    windupCueId: 10
+    attackActiveCueId: 11
+    windupIntensity: 1.05
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: 7f9d72f624e2fe6498b332d4a90e6b69, type: 2}
+    windupCueId: 12
+    attackActiveCueId: 13
+    windupIntensity: 1.18
+    attackActiveIntensity: 1.25
+  - patternProfile: {fileID: 11400000, guid: 37a6bb4ae0516a44ca02b48ca5541ec8, type: 2}
+    windupCueId: 14
+    attackActiveCueId: 15
+    windupIntensity: 1
+    attackActiveIntensity: 1.05
+  - patternProfile: {fileID: 11400000, guid: eed4a73345a921941ab70394924207e5, type: 2}
+    windupCueId: 16
+    attackActiveCueId: 17
+    windupIntensity: 1
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: c5a68364338220a47b368422a1f18003, type: 2}
+    windupCueId: 18
+    attackActiveCueId: 19
+    windupIntensity: 0.95
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 0139451477c313348aa7b78c36b82a04, type: 2}
+    windupCueId: 20
+    attackActiveCueId: 21
+    windupIntensity: 1
+    attackActiveIntensity: 1.15
+  - patternProfile: {fileID: 11400000, guid: 59d0e2bafcc940a4fb98337280392176, type: 2}
+    windupCueId: 22
+    attackActiveCueId: 23
+    windupIntensity: 1.2
+    attackActiveIntensity: 1.3
+  eliteCueOverrides:
+  - eliteProfile: {fileID: 11400000, guid: 72f8aa0e55d0f9947a9405170327c8de, type: 2}
+    signalCueId: 24
+    intensity: 1
+  - eliteProfile: {fileID: 11400000, guid: 1698d7c630ff67e4b9022732524961ad, type: 2}
+    signalCueId: 25
+    intensity: 1.05
+  - eliteProfile: {fileID: 11400000, guid: 74b2e4cbed265c948bc25c132171dfc7, type: 2}
+    signalCueId: 26
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: b065158e76b5acf4c8c21aadf3ff6679, type: 2}
+    signalCueId: 27
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: 5422278438bd5f145a40f5862ee4fe75, type: 2}
+    signalCueId: 28
+    intensity: 1.18
+--- !u!114 &771332239
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 771332229}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3f14f3a7faa43aeb87a640a05d34d09, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCuePlayer
+  profile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
+  pooledRoot: {fileID: 1907862087}
 --- !u!1 &771973898
 GameObject:
   m_ObjectHideFlags: 0
@@ -31137,7 +32811,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 20, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -33782,7 +35456,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 33, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -34370,7 +36044,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
@@ -34385,7 +36059,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 94b6d70c9c0b4cb6ab6f8b4e2fb4edc9, type: 2}
+  - {fileID: 2100000, guid: ee8506dcd5dc89648aaed415c32fe7dd, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -34421,7 +36095,9 @@ Transform:
   m_LocalPosition: {x: 0, y: 0.03, z: 0.85}
   m_LocalScale: {x: 0.75, y: 0.02, z: 0.75}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 350191443}
+  - {fileID: 340776118}
   m_Father: {fileID: 548236419}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &858913519
@@ -35489,7 +37165,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 29, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -36881,6 +38557,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1267153708}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &923697550
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 923697551}
+  m_Layer: 0
+  m_Name: Enemy_CombatVfx_CueAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &923697551
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 923697550}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.05, z: 0.35}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1123467319}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &924320202
 GameObject:
   m_ObjectHideFlags: 0
@@ -38112,6 +39819,8 @@ GameObject:
   - component: {fileID: 946888082}
   - component: {fileID: 946888081}
   - component: {fileID: 946888080}
+  - component: {fileID: 946888089}
+  - component: {fileID: 946888088}
   m_Layer: 0
   m_Name: Enemy_SciFiSoldier_TrainingDeck
   m_TagString: Untagged
@@ -38129,7 +39838,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0df587d95db6d9244b21fad306ee1f0a, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyActionCameraCueDriver
   agentSource: {fileID: 946888084}
   cameraController: {fileID: 1004}
@@ -38144,20 +39853,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b01fc0f0a0af4c1184e0ab19307ced01, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyAttackTelegraphPresenter
   telegraphObject: {fileID: 1483298131}
   telegraphTransform: {fileID: 1483298133}
   telegraphRenderer: {fileID: 1483298132}
   poseRoot: {fileID: 938339968}
-  windupStartScale: {x: 0.35, y: 0.02, z: 0.65}
-  windupEndScale: {x: 1.05, y: 0.02, z: 1.55}
-  activeScale: {x: 1.25, y: 0.025, z: 1.8}
+  windupStartScale: {x: 0.28, y: 0.018, z: 0.56}
+  windupEndScale: {x: 1.08, y: 0.02, z: 1.65}
+  activeScale: {x: 1.32, y: 0.024, z: 1.95}
   windupPoseOffset: {x: 0, y: 0, z: -0.08}
   activePoseOffset: {x: 0, y: 0, z: 0.12}
-  windupStartColor: {r: 1, g: 0.45, b: 0.08, a: 1}
-  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 1}
-  activeColor: {r: 1, g: 1, b: 1, a: 1}
+  windupStartColor: {r: 1, g: 0.48, b: 0.08, a: 0.62}
+  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 0.86}
+  activeColor: {r: 1, g: 0.92, b: 0.32, a: 0.95}
 --- !u!114 &946888082
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -38168,7 +39877,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f082b8634c7499bbb942b731f4fca96, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatTargetSensor
   selfHealth: {fileID: 946888085}
   searchRadius: 12
@@ -38185,7 +39894,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 288c9f48f54943e798cab8c17a6806dc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   health: {fileID: 946888085}
   flashRenderers:
@@ -38220,7 +39929,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 019ce60f0346446b8a59511aa8025495, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   enemyTypeId: SciFiSoldier.Basic
   patternId: TrainingDeck
@@ -38276,7 +39985,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   team: 2
   maxHealth: 90
@@ -38328,8 +40037,97 @@ Transform:
   - {fileID: 608318415}
   - {fileID: 1483298133}
   - {fileID: 938339968}
+  - {fileID: 1201602420}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!114 &946888088
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 946888079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8d98497706446dfafb2b56e00bfa244, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyCombatVfxCueDriver
+  agentSource: {fileID: 946888084}
+  health: {fileID: 946888085}
+  cuePlayer: {fileID: 946888089}
+  cueAnchor: {fileID: 1201602420}
+  elitePatternController: {fileID: 0}
+  patternCueOverrides:
+  - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
+    windupCueId: 8
+    attackActiveCueId: 9
+    windupIntensity: 1
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 91285237ee87aa948906f7f430ba6c9f, type: 2}
+    windupCueId: 10
+    attackActiveCueId: 11
+    windupIntensity: 1.05
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: 7f9d72f624e2fe6498b332d4a90e6b69, type: 2}
+    windupCueId: 12
+    attackActiveCueId: 13
+    windupIntensity: 1.18
+    attackActiveIntensity: 1.25
+  - patternProfile: {fileID: 11400000, guid: 37a6bb4ae0516a44ca02b48ca5541ec8, type: 2}
+    windupCueId: 14
+    attackActiveCueId: 15
+    windupIntensity: 1
+    attackActiveIntensity: 1.05
+  - patternProfile: {fileID: 11400000, guid: eed4a73345a921941ab70394924207e5, type: 2}
+    windupCueId: 16
+    attackActiveCueId: 17
+    windupIntensity: 1
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: c5a68364338220a47b368422a1f18003, type: 2}
+    windupCueId: 18
+    attackActiveCueId: 19
+    windupIntensity: 0.95
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 0139451477c313348aa7b78c36b82a04, type: 2}
+    windupCueId: 20
+    attackActiveCueId: 21
+    windupIntensity: 1
+    attackActiveIntensity: 1.15
+  - patternProfile: {fileID: 11400000, guid: 59d0e2bafcc940a4fb98337280392176, type: 2}
+    windupCueId: 22
+    attackActiveCueId: 23
+    windupIntensity: 1.2
+    attackActiveIntensity: 1.3
+  eliteCueOverrides:
+  - eliteProfile: {fileID: 11400000, guid: 72f8aa0e55d0f9947a9405170327c8de, type: 2}
+    signalCueId: 24
+    intensity: 1
+  - eliteProfile: {fileID: 11400000, guid: 1698d7c630ff67e4b9022732524961ad, type: 2}
+    signalCueId: 25
+    intensity: 1.05
+  - eliteProfile: {fileID: 11400000, guid: 74b2e4cbed265c948bc25c132171dfc7, type: 2}
+    signalCueId: 26
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: b065158e76b5acf4c8c21aadf3ff6679, type: 2}
+    signalCueId: 27
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: 5422278438bd5f145a40f5862ee4fe75, type: 2}
+    signalCueId: 28
+    intensity: 1.18
+--- !u!114 &946888089
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 946888079}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3f14f3a7faa43aeb87a640a05d34d09, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCuePlayer
+  profile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
+  pooledRoot: {fileID: 1907862087}
 --- !u!1 &947183694
 GameObject:
   m_ObjectHideFlags: 0
@@ -38499,7 +40297,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 25, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -38700,6 +40498,37 @@ Transform:
   m_Children:
   - {fileID: 169179347}
   m_Father: {fileID: 2011455626}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &952636865
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 952636866}
+  m_Layer: 0
+  m_Name: Enemy_CombatVfx_CueAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &952636866
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 952636865}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.05, z: 0.35}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 682321479}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &954704558
 GameObject:
@@ -44165,7 +45994,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 21, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -44891,6 +46720,8 @@ GameObject:
   - component: {fileID: 1123467314}
   - component: {fileID: 1123467313}
   - component: {fileID: 1123467312}
+  - component: {fileID: 1123467321}
+  - component: {fileID: 1123467320}
   m_Layer: 0
   m_Name: Enemy_SciFiSoldier_LinePressure
   m_TagString: Untagged
@@ -44908,7 +46739,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0df587d95db6d9244b21fad306ee1f0a, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyActionCameraCueDriver
   agentSource: {fileID: 1123467316}
   cameraController: {fileID: 1004}
@@ -44923,20 +46754,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b01fc0f0a0af4c1184e0ab19307ced01, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyAttackTelegraphPresenter
   telegraphObject: {fileID: 1524340888}
   telegraphTransform: {fileID: 1524340890}
   telegraphRenderer: {fileID: 1524340889}
   poseRoot: {fileID: 835137390}
-  windupStartScale: {x: 0.35, y: 0.02, z: 0.65}
-  windupEndScale: {x: 1.05, y: 0.02, z: 1.55}
-  activeScale: {x: 1.25, y: 0.025, z: 1.8}
+  windupStartScale: {x: 0.28, y: 0.018, z: 0.56}
+  windupEndScale: {x: 1.08, y: 0.02, z: 1.65}
+  activeScale: {x: 1.32, y: 0.024, z: 1.95}
   windupPoseOffset: {x: 0, y: 0, z: -0.08}
   activePoseOffset: {x: 0, y: 0, z: 0.12}
-  windupStartColor: {r: 1, g: 0.45, b: 0.08, a: 1}
-  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 1}
-  activeColor: {r: 1, g: 1, b: 1, a: 1}
+  windupStartColor: {r: 1, g: 0.48, b: 0.08, a: 0.62}
+  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 0.86}
+  activeColor: {r: 1, g: 0.92, b: 0.32, a: 0.95}
 --- !u!114 &1123467314
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -44947,7 +46778,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f082b8634c7499bbb942b731f4fca96, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatTargetSensor
   selfHealth: {fileID: 1123467317}
   searchRadius: 12
@@ -44964,7 +46795,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 288c9f48f54943e798cab8c17a6806dc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   health: {fileID: 1123467317}
   flashRenderers:
@@ -44999,7 +46830,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 019ce60f0346446b8a59511aa8025495, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   enemyTypeId: SciFiSoldier.Basic
   patternId: LinePressure
@@ -45055,7 +46886,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   team: 2
   maxHealth: 90
@@ -45107,8 +46938,97 @@ Transform:
   - {fileID: 1660073968}
   - {fileID: 1524340890}
   - {fileID: 835137390}
+  - {fileID: 923697551}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!114 &1123467320
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1123467311}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8d98497706446dfafb2b56e00bfa244, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyCombatVfxCueDriver
+  agentSource: {fileID: 1123467316}
+  health: {fileID: 1123467317}
+  cuePlayer: {fileID: 1123467321}
+  cueAnchor: {fileID: 923697551}
+  elitePatternController: {fileID: 0}
+  patternCueOverrides:
+  - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
+    windupCueId: 8
+    attackActiveCueId: 9
+    windupIntensity: 1
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 91285237ee87aa948906f7f430ba6c9f, type: 2}
+    windupCueId: 10
+    attackActiveCueId: 11
+    windupIntensity: 1.05
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: 7f9d72f624e2fe6498b332d4a90e6b69, type: 2}
+    windupCueId: 12
+    attackActiveCueId: 13
+    windupIntensity: 1.18
+    attackActiveIntensity: 1.25
+  - patternProfile: {fileID: 11400000, guid: 37a6bb4ae0516a44ca02b48ca5541ec8, type: 2}
+    windupCueId: 14
+    attackActiveCueId: 15
+    windupIntensity: 1
+    attackActiveIntensity: 1.05
+  - patternProfile: {fileID: 11400000, guid: eed4a73345a921941ab70394924207e5, type: 2}
+    windupCueId: 16
+    attackActiveCueId: 17
+    windupIntensity: 1
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: c5a68364338220a47b368422a1f18003, type: 2}
+    windupCueId: 18
+    attackActiveCueId: 19
+    windupIntensity: 0.95
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 0139451477c313348aa7b78c36b82a04, type: 2}
+    windupCueId: 20
+    attackActiveCueId: 21
+    windupIntensity: 1
+    attackActiveIntensity: 1.15
+  - patternProfile: {fileID: 11400000, guid: 59d0e2bafcc940a4fb98337280392176, type: 2}
+    windupCueId: 22
+    attackActiveCueId: 23
+    windupIntensity: 1.2
+    attackActiveIntensity: 1.3
+  eliteCueOverrides:
+  - eliteProfile: {fileID: 11400000, guid: 72f8aa0e55d0f9947a9405170327c8de, type: 2}
+    signalCueId: 24
+    intensity: 1
+  - eliteProfile: {fileID: 11400000, guid: 1698d7c630ff67e4b9022732524961ad, type: 2}
+    signalCueId: 25
+    intensity: 1.05
+  - eliteProfile: {fileID: 11400000, guid: 74b2e4cbed265c948bc25c132171dfc7, type: 2}
+    signalCueId: 26
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: b065158e76b5acf4c8c21aadf3ff6679, type: 2}
+    signalCueId: 27
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: 5422278438bd5f145a40f5862ee4fe75, type: 2}
+    signalCueId: 28
+    intensity: 1.18
+--- !u!114 &1123467321
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1123467311}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3f14f3a7faa43aeb87a640a05d34d09, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCuePlayer
+  profile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
+  pooledRoot: {fileID: 1907862087}
 --- !u!1 &1123679424
 GameObject:
   m_ObjectHideFlags: 0
@@ -45264,7 +47184,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
@@ -45279,7 +47199,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 94b6d70c9c0b4cb6ab6f8b4e2fb4edc9, type: 2}
+  - {fileID: 2100000, guid: ee8506dcd5dc89648aaed415c32fe7dd, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -45315,7 +47235,9 @@ Transform:
   m_LocalPosition: {x: 0, y: 0.03, z: 0.85}
   m_LocalScale: {x: 0.75, y: 0.02, z: 0.75}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 2005560545}
+  - {fileID: 406889814}
   m_Father: {fileID: 102419986}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &1128004799
@@ -45370,7 +47292,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 27, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -46441,6 +48363,96 @@ Transform:
   - {fileID: 1676777064}
   m_Father: {fileID: 410560099}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1145784391
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1145784392}
+  - component: {fileID: 1145784394}
+  - component: {fileID: 1145784393}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_CenterLine
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1145784392
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1145784391}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.04, z: 0.18}
+  m_LocalScale: {x: 0.12, y: 0.02, z: 1.35}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5201}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1145784393
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1145784391}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1145784394
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1145784391}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1145890983
 GameObject:
   m_ObjectHideFlags: 0
@@ -47900,6 +49912,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2116049701}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1201602419
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1201602420}
+  m_Layer: 0
+  m_Name: Enemy_CombatVfx_CueAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1201602420
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1201602419}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.05, z: 0.35}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 946888087}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1201890037
 GameObject:
   m_ObjectHideFlags: 0
@@ -48585,6 +50628,96 @@ Transform:
   m_Children: []
   m_Father: {fileID: 944925020}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1210420596
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1210420597}
+  - component: {fileID: 1210420599}
+  - component: {fileID: 1210420598}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_ReleaseEdge
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1210420597
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1210420596}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0.05, z: 0.72}
+  m_LocalScale: {x: 0.64, y: 0.02, z: 0.06}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2050171168}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1210420598
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1210420596}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1210420599
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1210420596}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1211960869
 GameObject:
   m_ObjectHideFlags: 0
@@ -48647,6 +50780,96 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1638894178}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1216158726
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1216158727}
+  - component: {fileID: 1216158729}
+  - component: {fileID: 1216158728}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_CenterLine
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1216158727
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1216158726}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.04, z: 0.18}
+  m_LocalScale: {x: 0.12, y: 0.02, z: 1.35}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1951000011}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1216158728
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1216158726}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1216158729
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1216158726}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1216431162
 GameObject:
   m_ObjectHideFlags: 0
@@ -49210,6 +51433,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 945715739}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1228450370
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1228450371}
+  m_Layer: 0
+  m_Name: Player_CombatVfx_DodgeAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1228450371
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1228450370}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.18, z: -0.22}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4001}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1232559513
 GameObject:
   m_ObjectHideFlags: 0
@@ -49525,6 +51779,96 @@ Transform:
   m_Children: []
   m_Father: {fileID: 736761130}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1244682624
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1244682625}
+  - component: {fileID: 1244682627}
+  - component: {fileID: 1244682626}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_CenterLine
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1244682625
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1244682624}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.04, z: 0.18}
+  m_LocalScale: {x: 0.12, y: 0.02, z: 1.35}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2050567171}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1244682626
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1244682624}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1244682627
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1244682624}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1245249704
 GameObject:
   m_ObjectHideFlags: 0
@@ -51509,6 +53853,96 @@ Transform:
   m_Children: []
   m_Father: {fileID: 945715739}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1301915709
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1301915710}
+  - component: {fileID: 1301915712}
+  - component: {fileID: 1301915711}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_ReleaseEdge
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1301915710
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1301915709}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0.05, z: 0.72}
+  m_LocalScale: {x: 0.64, y: 0.02, z: 0.06}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 5201}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1301915711
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1301915709}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1301915712
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1301915709}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1302701389
 GameObject:
   m_ObjectHideFlags: 0
@@ -53385,6 +55819,96 @@ Transform:
   m_Children: []
   m_Father: {fileID: 736761130}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1349067374
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1349067375}
+  - component: {fileID: 1349067377}
+  - component: {fileID: 1349067376}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_CenterLine
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1349067375
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1349067374}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.04, z: 0.18}
+  m_LocalScale: {x: 0.12, y: 0.02, z: 1.35}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 195903295}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1349067376
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1349067374}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1349067377
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1349067374}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1350660403
 GameObject:
   m_ObjectHideFlags: 0
@@ -54074,6 +56598,96 @@ Transform:
   - {fileID: 1615251206}
   m_Father: {fileID: 166300028}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1360320513
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1360320514}
+  - component: {fileID: 1360320516}
+  - component: {fileID: 1360320515}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_ReleaseEdge
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1360320514
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1360320513}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0.05, z: 0.72}
+  m_LocalScale: {x: 0.64, y: 0.02, z: 0.06}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2018212070}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1360320515
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1360320513}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1360320516
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1360320513}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1361691800
 GameObject:
   m_ObjectHideFlags: 0
@@ -54802,7 +57416,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 040303e933874bc993e03b9a439cead1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaShapeInfluenceDriver
   renderers:
   - {fileID: 1376262359}
@@ -54821,7 +57435,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 8, y: 6, z: -3}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -55612,7 +58226,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.Volume
   m_IsGlobal: 1
   priority: 20
@@ -55944,6 +58558,8 @@ GameObject:
   - component: {fileID: 1403009134}
   - component: {fileID: 1403009133}
   - component: {fileID: 1403009132}
+  - component: {fileID: 1403009141}
+  - component: {fileID: 1403009140}
   m_Layer: 0
   m_Name: Enemy_SciFiSoldier_GuardBreak
   m_TagString: Untagged
@@ -55961,7 +58577,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0df587d95db6d9244b21fad306ee1f0a, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyActionCameraCueDriver
   agentSource: {fileID: 1403009136}
   cameraController: {fileID: 1004}
@@ -55976,20 +58592,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b01fc0f0a0af4c1184e0ab19307ced01, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyAttackTelegraphPresenter
   telegraphObject: {fileID: 2002138281}
   telegraphTransform: {fileID: 2002138283}
   telegraphRenderer: {fileID: 2002138282}
   poseRoot: {fileID: 1280517323}
-  windupStartScale: {x: 0.35, y: 0.02, z: 0.65}
-  windupEndScale: {x: 1.05, y: 0.02, z: 1.55}
-  activeScale: {x: 1.25, y: 0.025, z: 1.8}
+  windupStartScale: {x: 0.28, y: 0.018, z: 0.56}
+  windupEndScale: {x: 1.08, y: 0.02, z: 1.65}
+  activeScale: {x: 1.32, y: 0.024, z: 1.95}
   windupPoseOffset: {x: 0, y: 0, z: -0.08}
   activePoseOffset: {x: 0, y: 0, z: 0.12}
-  windupStartColor: {r: 1, g: 0.45, b: 0.08, a: 1}
-  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 1}
-  activeColor: {r: 1, g: 1, b: 1, a: 1}
+  windupStartColor: {r: 1, g: 0.48, b: 0.08, a: 0.62}
+  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 0.86}
+  activeColor: {r: 1, g: 0.92, b: 0.32, a: 0.95}
 --- !u!114 &1403009134
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -56000,7 +58616,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f082b8634c7499bbb942b731f4fca96, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatTargetSensor
   selfHealth: {fileID: 1403009137}
   searchRadius: 12
@@ -56017,7 +58633,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 288c9f48f54943e798cab8c17a6806dc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   health: {fileID: 1403009137}
   flashRenderers:
@@ -56052,7 +58668,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 019ce60f0346446b8a59511aa8025495, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   enemyTypeId: SciFiSoldier.Basic
   patternId: GuardBreak
@@ -56108,7 +58724,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   team: 2
   maxHealth: 90
@@ -56160,8 +58776,97 @@ Transform:
   - {fileID: 1405995210}
   - {fileID: 2002138283}
   - {fileID: 1280517323}
+  - {fileID: 438230569}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!114 &1403009140
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1403009131}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8d98497706446dfafb2b56e00bfa244, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyCombatVfxCueDriver
+  agentSource: {fileID: 1403009136}
+  health: {fileID: 1403009137}
+  cuePlayer: {fileID: 1403009141}
+  cueAnchor: {fileID: 438230569}
+  elitePatternController: {fileID: 0}
+  patternCueOverrides:
+  - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
+    windupCueId: 8
+    attackActiveCueId: 9
+    windupIntensity: 1
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 91285237ee87aa948906f7f430ba6c9f, type: 2}
+    windupCueId: 10
+    attackActiveCueId: 11
+    windupIntensity: 1.05
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: 7f9d72f624e2fe6498b332d4a90e6b69, type: 2}
+    windupCueId: 12
+    attackActiveCueId: 13
+    windupIntensity: 1.18
+    attackActiveIntensity: 1.25
+  - patternProfile: {fileID: 11400000, guid: 37a6bb4ae0516a44ca02b48ca5541ec8, type: 2}
+    windupCueId: 14
+    attackActiveCueId: 15
+    windupIntensity: 1
+    attackActiveIntensity: 1.05
+  - patternProfile: {fileID: 11400000, guid: eed4a73345a921941ab70394924207e5, type: 2}
+    windupCueId: 16
+    attackActiveCueId: 17
+    windupIntensity: 1
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: c5a68364338220a47b368422a1f18003, type: 2}
+    windupCueId: 18
+    attackActiveCueId: 19
+    windupIntensity: 0.95
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 0139451477c313348aa7b78c36b82a04, type: 2}
+    windupCueId: 20
+    attackActiveCueId: 21
+    windupIntensity: 1
+    attackActiveIntensity: 1.15
+  - patternProfile: {fileID: 11400000, guid: 59d0e2bafcc940a4fb98337280392176, type: 2}
+    windupCueId: 22
+    attackActiveCueId: 23
+    windupIntensity: 1.2
+    attackActiveIntensity: 1.3
+  eliteCueOverrides:
+  - eliteProfile: {fileID: 11400000, guid: 72f8aa0e55d0f9947a9405170327c8de, type: 2}
+    signalCueId: 24
+    intensity: 1
+  - eliteProfile: {fileID: 11400000, guid: 1698d7c630ff67e4b9022732524961ad, type: 2}
+    signalCueId: 25
+    intensity: 1.05
+  - eliteProfile: {fileID: 11400000, guid: 74b2e4cbed265c948bc25c132171dfc7, type: 2}
+    signalCueId: 26
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: b065158e76b5acf4c8c21aadf3ff6679, type: 2}
+    signalCueId: 27
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: 5422278438bd5f145a40f5862ee4fe75, type: 2}
+    signalCueId: 28
+    intensity: 1.18
+--- !u!114 &1403009141
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1403009131}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3f14f3a7faa43aeb87a640a05d34d09, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCuePlayer
+  profile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
+  pooledRoot: {fileID: 1907862087}
 --- !u!1 &1403449060
 GameObject:
   m_ObjectHideFlags: 0
@@ -56852,6 +59557,96 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1244155143}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1419411799
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1419411800}
+  - component: {fileID: 1419411802}
+  - component: {fileID: 1419411801}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_CenterLine
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1419411800
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1419411799}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.04, z: 0.18}
+  m_LocalScale: {x: 0.12, y: 0.02, z: 1.35}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2002138283}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1419411801
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1419411799}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1419411802
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1419411799}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1420249620
 GameObject:
   m_ObjectHideFlags: 0
@@ -57194,7 +59989,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 0, z: 0}
   bobAxis: {x: -0.8, y: 0.4, z: -0.35}
@@ -58086,6 +60881,96 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2142658626}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1446178119
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1446178120}
+  - component: {fileID: 1446178122}
+  - component: {fileID: 1446178121}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_CenterLine
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1446178120
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1446178119}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.04, z: 0.18}
+  m_LocalScale: {x: 0.12, y: 0.02, z: 1.35}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2050171168}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1446178121
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1446178119}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1446178122
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1446178119}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1446376873
 GameObject:
   m_ObjectHideFlags: 0
@@ -58369,6 +61254,96 @@ Transform:
   m_Children: []
   m_Father: {fileID: 11696172}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1451666728
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1451666729}
+  - component: {fileID: 1451666731}
+  - component: {fileID: 1451666730}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_ReleaseEdge
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1451666729
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1451666728}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0.05, z: 0.72}
+  m_LocalScale: {x: 0.64, y: 0.02, z: 0.06}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 195903295}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1451666730
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1451666728}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1451666731
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1451666728}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1452269718
 GameObject:
   m_ObjectHideFlags: 0
@@ -59162,6 +62137,8 @@ GameObject:
   - component: {fileID: 1468388276}
   - component: {fileID: 1468388275}
   - component: {fileID: 1468388274}
+  - component: {fileID: 1468388283}
+  - component: {fileID: 1468388282}
   m_Layer: 0
   m_Name: Enemy_SciFiSoldier_LungeStrike
   m_TagString: Untagged
@@ -59179,7 +62156,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0df587d95db6d9244b21fad306ee1f0a, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyActionCameraCueDriver
   agentSource: {fileID: 1468388278}
   cameraController: {fileID: 1004}
@@ -59194,20 +62171,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b01fc0f0a0af4c1184e0ab19307ced01, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyAttackTelegraphPresenter
   telegraphObject: {fileID: 195903293}
   telegraphTransform: {fileID: 195903295}
   telegraphRenderer: {fileID: 195903294}
   poseRoot: {fileID: 499716154}
-  windupStartScale: {x: 0.35, y: 0.02, z: 0.65}
-  windupEndScale: {x: 1.05, y: 0.02, z: 1.55}
-  activeScale: {x: 1.25, y: 0.025, z: 1.8}
+  windupStartScale: {x: 0.28, y: 0.018, z: 0.56}
+  windupEndScale: {x: 1.08, y: 0.02, z: 1.65}
+  activeScale: {x: 1.32, y: 0.024, z: 1.95}
   windupPoseOffset: {x: 0, y: 0, z: -0.08}
   activePoseOffset: {x: 0, y: 0, z: 0.12}
-  windupStartColor: {r: 1, g: 0.45, b: 0.08, a: 1}
-  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 1}
-  activeColor: {r: 1, g: 1, b: 1, a: 1}
+  windupStartColor: {r: 1, g: 0.48, b: 0.08, a: 0.62}
+  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 0.86}
+  activeColor: {r: 1, g: 0.92, b: 0.32, a: 0.95}
 --- !u!114 &1468388276
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -59218,7 +62195,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f082b8634c7499bbb942b731f4fca96, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatTargetSensor
   selfHealth: {fileID: 1468388279}
   searchRadius: 12
@@ -59235,7 +62212,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 288c9f48f54943e798cab8c17a6806dc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   health: {fileID: 1468388279}
   flashRenderers:
@@ -59270,7 +62247,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 019ce60f0346446b8a59511aa8025495, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   enemyTypeId: SciFiSoldier.Basic
   patternId: LungeStrike
@@ -59326,7 +62303,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   team: 2
   maxHealth: 90
@@ -59378,8 +62355,97 @@ Transform:
   - {fileID: 1207093177}
   - {fileID: 195903295}
   - {fileID: 499716154}
+  - {fileID: 303258897}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!114 &1468388282
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1468388273}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8d98497706446dfafb2b56e00bfa244, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyCombatVfxCueDriver
+  agentSource: {fileID: 1468388278}
+  health: {fileID: 1468388279}
+  cuePlayer: {fileID: 1468388283}
+  cueAnchor: {fileID: 303258897}
+  elitePatternController: {fileID: 0}
+  patternCueOverrides:
+  - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
+    windupCueId: 8
+    attackActiveCueId: 9
+    windupIntensity: 1
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 91285237ee87aa948906f7f430ba6c9f, type: 2}
+    windupCueId: 10
+    attackActiveCueId: 11
+    windupIntensity: 1.05
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: 7f9d72f624e2fe6498b332d4a90e6b69, type: 2}
+    windupCueId: 12
+    attackActiveCueId: 13
+    windupIntensity: 1.18
+    attackActiveIntensity: 1.25
+  - patternProfile: {fileID: 11400000, guid: 37a6bb4ae0516a44ca02b48ca5541ec8, type: 2}
+    windupCueId: 14
+    attackActiveCueId: 15
+    windupIntensity: 1
+    attackActiveIntensity: 1.05
+  - patternProfile: {fileID: 11400000, guid: eed4a73345a921941ab70394924207e5, type: 2}
+    windupCueId: 16
+    attackActiveCueId: 17
+    windupIntensity: 1
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: c5a68364338220a47b368422a1f18003, type: 2}
+    windupCueId: 18
+    attackActiveCueId: 19
+    windupIntensity: 0.95
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 0139451477c313348aa7b78c36b82a04, type: 2}
+    windupCueId: 20
+    attackActiveCueId: 21
+    windupIntensity: 1
+    attackActiveIntensity: 1.15
+  - patternProfile: {fileID: 11400000, guid: 59d0e2bafcc940a4fb98337280392176, type: 2}
+    windupCueId: 22
+    attackActiveCueId: 23
+    windupIntensity: 1.2
+    attackActiveIntensity: 1.3
+  eliteCueOverrides:
+  - eliteProfile: {fileID: 11400000, guid: 72f8aa0e55d0f9947a9405170327c8de, type: 2}
+    signalCueId: 24
+    intensity: 1
+  - eliteProfile: {fileID: 11400000, guid: 1698d7c630ff67e4b9022732524961ad, type: 2}
+    signalCueId: 25
+    intensity: 1.05
+  - eliteProfile: {fileID: 11400000, guid: 74b2e4cbed265c948bc25c132171dfc7, type: 2}
+    signalCueId: 26
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: b065158e76b5acf4c8c21aadf3ff6679, type: 2}
+    signalCueId: 27
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: 5422278438bd5f145a40f5862ee4fe75, type: 2}
+    signalCueId: 28
+    intensity: 1.18
+--- !u!114 &1468388283
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1468388273}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3f14f3a7faa43aeb87a640a05d34d09, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCuePlayer
+  profile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
+  pooledRoot: {fileID: 1907862087}
 --- !u!1 &1468643810
 GameObject:
   m_ObjectHideFlags: 0
@@ -59938,7 +63004,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
@@ -59953,7 +63019,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 94b6d70c9c0b4cb6ab6f8b4e2fb4edc9, type: 2}
+  - {fileID: 2100000, guid: ee8506dcd5dc89648aaed415c32fe7dd, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -59989,7 +63055,9 @@ Transform:
   m_LocalPosition: {x: 0, y: 0.03, z: 0.85}
   m_LocalScale: {x: 0.75, y: 0.02, z: 0.75}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1925201349}
+  - {fileID: 2071038956}
   m_Father: {fileID: 946888087}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &1483298134
@@ -61592,7 +64660,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
@@ -61607,7 +64675,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 94b6d70c9c0b4cb6ab6f8b4e2fb4edc9, type: 2}
+  - {fileID: 2100000, guid: ee8506dcd5dc89648aaed415c32fe7dd, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -61643,7 +64711,9 @@ Transform:
   m_LocalPosition: {x: 0, y: 0.03, z: 0.85}
   m_LocalScale: {x: 0.75, y: 0.02, z: 0.75}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1930345723}
+  - {fileID: 5476138}
   m_Father: {fileID: 1123467319}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &1524340891
@@ -66490,7 +69560,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 26, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -68100,7 +71170,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -69809,7 +72879,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 040303e933874bc993e03b9a439cead1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaShapeInfluenceDriver
   renderers:
   - {fileID: 1723322382}
@@ -69828,7 +72898,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 3, y: 11, z: -4}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -71584,7 +74654,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 040303e933874bc993e03b9a439cead1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaShapeInfluenceDriver
   renderers:
   - {fileID: 1777501759}
@@ -71603,7 +74673,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 0, z: 7}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -72309,7 +75379,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 0, z: 0}
   bobAxis: {x: 1.2, y: 0.5, z: 0.15}
@@ -73808,7 +76878,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 0, z: 0}
   bobAxis: {x: 0.4, y: -0.2, z: 1}
@@ -74346,7 +77416,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -74536,7 +77606,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 31, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -75477,6 +78547,96 @@ Transform:
   - {fileID: 1028768936}
   m_Father: {fileID: 1570331615}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1853478339
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1853478340}
+  - component: {fileID: 1853478342}
+  - component: {fileID: 1853478341}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_ReleaseEdge
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1853478340
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1853478339}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0.05, z: 0.72}
+  m_LocalScale: {x: 0.64, y: 0.02, z: 0.06}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2050567171}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1853478341
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1853478339}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1853478342
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1853478339}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1853913533
 GameObject:
   m_ObjectHideFlags: 0
@@ -76774,6 +79934,96 @@ Transform:
   m_Children: []
   m_Father: {fileID: 166300028}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1898541833
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1898541834}
+  - component: {fileID: 1898541836}
+  - component: {fileID: 1898541835}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_CenterLine
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1898541834
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1898541833}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.04, z: 0.18}
+  m_LocalScale: {x: 0.12, y: 0.02, z: 1.35}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2018212070}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1898541835
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1898541833}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1898541836
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1898541833}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1901343942
 GameObject:
   m_ObjectHideFlags: 0
@@ -76932,6 +80182,37 @@ Transform:
   m_Children:
   - {fileID: 1698769140}
   m_Father: {fileID: 1992368605}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1907862086
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1907862087}
+  m_Layer: 0
+  m_Name: ActionFoundation_CombatVfxPool
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1907862087
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1907862086}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1907873628
 GameObject:
@@ -77804,6 +81085,96 @@ Transform:
   - {fileID: 2074348154}
   m_Father: {fileID: 1884184771}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1925201348
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1925201349}
+  - component: {fileID: 1925201351}
+  - component: {fileID: 1925201350}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_CenterLine
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1925201349
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1925201348}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.04, z: 0.18}
+  m_LocalScale: {x: 0.12, y: 0.02, z: 1.35}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1483298133}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1925201350
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1925201348}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1925201351
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1925201348}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1925203292
 GameObject:
   m_ObjectHideFlags: 0
@@ -78176,6 +81547,96 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1203152124}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1930345722
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1930345723}
+  - component: {fileID: 1930345725}
+  - component: {fileID: 1930345724}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_CenterLine
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1930345723
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1930345722}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.04, z: 0.18}
+  m_LocalScale: {x: 0.12, y: 0.02, z: 1.35}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1524340890}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &1930345724
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1930345722}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &1930345725
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1930345722}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &1931463341
 GameObject:
   m_ObjectHideFlags: 0
@@ -78586,7 +82047,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
@@ -78601,7 +82062,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 94b6d70c9c0b4cb6ab6f8b4e2fb4edc9, type: 2}
+  - {fileID: 2100000, guid: ee8506dcd5dc89648aaed415c32fe7dd, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -78637,7 +82098,9 @@ Transform:
   m_LocalPosition: {x: 0, y: 0.03, z: 0.85}
   m_LocalScale: {x: 0.75, y: 0.02, z: 0.75}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 431096129}
+  - {fileID: 590978838}
   m_Father: {fileID: 771332237}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &1937866168
@@ -79170,7 +82633,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
@@ -79185,7 +82648,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 94b6d70c9c0b4cb6ab6f8b4e2fb4edc9, type: 2}
+  - {fileID: 2100000, guid: ee8506dcd5dc89648aaed415c32fe7dd, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -79221,7 +82684,9 @@ Transform:
   m_LocalPosition: {x: 0, y: 0.03, z: 0.85}
   m_LocalScale: {x: 0.75, y: 0.02, z: 0.75}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1216158727}
+  - {fileID: 752189071}
   m_Father: {fileID: 682321479}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &1951000012
@@ -79647,7 +83112,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 040303e933874bc993e03b9a439cead1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaShapeInfluenceDriver
   renderers:
   - {fileID: 1961815686}
@@ -79666,7 +83131,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 9, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -80437,7 +83902,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 28, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -81216,7 +84681,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
@@ -81231,7 +84696,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 94b6d70c9c0b4cb6ab6f8b4e2fb4edc9, type: 2}
+  - {fileID: 2100000, guid: ee8506dcd5dc89648aaed415c32fe7dd, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -81267,7 +84732,9 @@ Transform:
   m_LocalPosition: {x: 0, y: 0.03, z: 0.85}
   m_LocalScale: {x: 0.75, y: 0.02, z: 0.75}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1419411800}
+  - {fileID: 360914550}
   m_Father: {fileID: 1403009139}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &2002138284
@@ -81404,6 +84871,96 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2006879783}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2005560544
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2005560545}
+  - component: {fileID: 2005560547}
+  - component: {fileID: 2005560546}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_CenterLine
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2005560545
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2005560544}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.04, z: 0.18}
+  m_LocalScale: {x: 0.12, y: 0.02, z: 1.35}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1128004798}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &2005560546
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2005560544}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &2005560547
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2005560544}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &2006879782
 GameObject:
   m_ObjectHideFlags: 0
@@ -81653,7 +85210,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
@@ -81668,7 +85225,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 94b6d70c9c0b4cb6ab6f8b4e2fb4edc9, type: 2}
+  - {fileID: 2100000, guid: ee8506dcd5dc89648aaed415c32fe7dd, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -81704,7 +85261,9 @@ Transform:
   m_LocalPosition: {x: 0, y: 0.03, z: 0.85}
   m_LocalScale: {x: 0.75, y: 0.02, z: 0.75}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1898541834}
+  - {fileID: 1360320514}
   m_Father: {fileID: 272183515}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &2018212071
@@ -82979,7 +86538,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
@@ -82994,7 +86553,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 94b6d70c9c0b4cb6ab6f8b4e2fb4edc9, type: 2}
+  - {fileID: 2100000, guid: ee8506dcd5dc89648aaed415c32fe7dd, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -83030,7 +86589,9 @@ Transform:
   m_LocalPosition: {x: 0, y: 0.03, z: 0.85}
   m_LocalScale: {x: 0.75, y: 0.02, z: 0.75}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1446178120}
+  - {fileID: 1210420597}
   m_Father: {fileID: 408449252}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &2050171169
@@ -83069,7 +86630,7 @@ MeshRenderer:
   m_Enabled: 1
   m_CastShadows: 0
   m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
+  m_DynamicOccludee: 0
   m_StaticShadowCaster: 0
   m_MotionVectors: 1
   m_LightProbeUsage: 1
@@ -83084,7 +86645,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: 94b6d70c9c0b4cb6ab6f8b4e2fb4edc9, type: 2}
+  - {fileID: 2100000, guid: ee8506dcd5dc89648aaed415c32fe7dd, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -83120,7 +86681,9 @@ Transform:
   m_LocalPosition: {x: 0, y: 0.03, z: 0.85}
   m_LocalScale: {x: 0.75, y: 0.02, z: 0.75}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 1244682625}
+  - {fileID: 1853478340}
   m_Father: {fileID: 2082642306}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &2050567172
@@ -83521,7 +87084,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 32, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -83950,7 +87513,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 040303e933874bc993e03b9a439cead1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaShapeInfluenceDriver
   renderers:
   - {fileID: 2066667281}
@@ -83969,7 +87532,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 0, z: -10}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -84197,6 +87760,96 @@ Transform:
   - {fileID: 1823755877}
   m_Father: {fileID: 1805750386}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2071038955
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2071038956}
+  - component: {fileID: 2071038958}
+  - component: {fileID: 2071038957}
+  m_Layer: 0
+  m_Name: ReadableAttackTelegraph_ReleaseEdge
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2071038956
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2071038955}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0.05, z: 0.72}
+  m_LocalScale: {x: 0.64, y: 0.02, z: 0.06}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1483298133}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!23 &2071038957
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2071038955}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 9f2f8dcc67e8f554493a810145df818d, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 1
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!33 &2071038958
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2071038955}
+  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
 --- !u!1 &2071104071
 GameObject:
   m_ObjectHideFlags: 0
@@ -85125,6 +88778,8 @@ GameObject:
   - component: {fileID: 2082642301}
   - component: {fileID: 2082642300}
   - component: {fileID: 2082642299}
+  - component: {fileID: 2082642308}
+  - component: {fileID: 2082642307}
   m_Layer: 0
   m_Name: Enemy_SciFiSoldier_HeavyWindup
   m_TagString: Untagged
@@ -85142,7 +88797,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0df587d95db6d9244b21fad306ee1f0a, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyActionCameraCueDriver
   agentSource: {fileID: 2082642303}
   cameraController: {fileID: 1004}
@@ -85157,20 +88812,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b01fc0f0a0af4c1184e0ab19307ced01, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyAttackTelegraphPresenter
   telegraphObject: {fileID: 2050567169}
   telegraphTransform: {fileID: 2050567171}
   telegraphRenderer: {fileID: 2050567170}
   poseRoot: {fileID: 1420324588}
-  windupStartScale: {x: 0.35, y: 0.02, z: 0.65}
-  windupEndScale: {x: 1.05, y: 0.02, z: 1.55}
-  activeScale: {x: 1.25, y: 0.025, z: 1.8}
+  windupStartScale: {x: 0.28, y: 0.018, z: 0.56}
+  windupEndScale: {x: 1.08, y: 0.02, z: 1.65}
+  activeScale: {x: 1.32, y: 0.024, z: 1.95}
   windupPoseOffset: {x: 0, y: 0, z: -0.08}
   activePoseOffset: {x: 0, y: 0, z: 0.12}
-  windupStartColor: {r: 1, g: 0.45, b: 0.08, a: 1}
-  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 1}
-  activeColor: {r: 1, g: 1, b: 1, a: 1}
+  windupStartColor: {r: 1, g: 0.48, b: 0.08, a: 0.62}
+  windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 0.86}
+  activeColor: {r: 1, g: 0.92, b: 0.32, a: 0.95}
 --- !u!114 &2082642301
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -85181,7 +88836,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f082b8634c7499bbb942b731f4fca96, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatTargetSensor
   selfHealth: {fileID: 2082642304}
   searchRadius: 12
@@ -85198,7 +88853,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 288c9f48f54943e798cab8c17a6806dc, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   health: {fileID: 2082642304}
   flashRenderers:
@@ -85233,7 +88888,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 019ce60f0346446b8a59511aa8025495, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   enemyTypeId: SciFiSoldier.Basic
   patternId: HeavyWindup
@@ -85289,7 +88944,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   team: 2
   maxHealth: 90
@@ -85341,8 +88996,97 @@ Transform:
   - {fileID: 1959882964}
   - {fileID: 2050567171}
   - {fileID: 1420324588}
+  - {fileID: 583420765}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!114 &2082642307
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2082642298}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f8d98497706446dfafb2b56e00bfa244, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyCombatVfxCueDriver
+  agentSource: {fileID: 2082642303}
+  health: {fileID: 2082642304}
+  cuePlayer: {fileID: 2082642308}
+  cueAnchor: {fileID: 583420765}
+  elitePatternController: {fileID: 0}
+  patternCueOverrides:
+  - patternProfile: {fileID: 11400000, guid: c9a34281ffdafbe4ca1570b066b15737, type: 2}
+    windupCueId: 8
+    attackActiveCueId: 9
+    windupIntensity: 1
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 91285237ee87aa948906f7f430ba6c9f, type: 2}
+    windupCueId: 10
+    attackActiveCueId: 11
+    windupIntensity: 1.05
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: 7f9d72f624e2fe6498b332d4a90e6b69, type: 2}
+    windupCueId: 12
+    attackActiveCueId: 13
+    windupIntensity: 1.18
+    attackActiveIntensity: 1.25
+  - patternProfile: {fileID: 11400000, guid: 37a6bb4ae0516a44ca02b48ca5541ec8, type: 2}
+    windupCueId: 14
+    attackActiveCueId: 15
+    windupIntensity: 1
+    attackActiveIntensity: 1.05
+  - patternProfile: {fileID: 11400000, guid: eed4a73345a921941ab70394924207e5, type: 2}
+    windupCueId: 16
+    attackActiveCueId: 17
+    windupIntensity: 1
+    attackActiveIntensity: 1.08
+  - patternProfile: {fileID: 11400000, guid: c5a68364338220a47b368422a1f18003, type: 2}
+    windupCueId: 18
+    attackActiveCueId: 19
+    windupIntensity: 0.95
+    attackActiveIntensity: 1
+  - patternProfile: {fileID: 11400000, guid: 0139451477c313348aa7b78c36b82a04, type: 2}
+    windupCueId: 20
+    attackActiveCueId: 21
+    windupIntensity: 1
+    attackActiveIntensity: 1.15
+  - patternProfile: {fileID: 11400000, guid: 59d0e2bafcc940a4fb98337280392176, type: 2}
+    windupCueId: 22
+    attackActiveCueId: 23
+    windupIntensity: 1.2
+    attackActiveIntensity: 1.3
+  eliteCueOverrides:
+  - eliteProfile: {fileID: 11400000, guid: 72f8aa0e55d0f9947a9405170327c8de, type: 2}
+    signalCueId: 24
+    intensity: 1
+  - eliteProfile: {fileID: 11400000, guid: 1698d7c630ff67e4b9022732524961ad, type: 2}
+    signalCueId: 25
+    intensity: 1.05
+  - eliteProfile: {fileID: 11400000, guid: 74b2e4cbed265c948bc25c132171dfc7, type: 2}
+    signalCueId: 26
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: b065158e76b5acf4c8c21aadf3ff6679, type: 2}
+    signalCueId: 27
+    intensity: 1.1
+  - eliteProfile: {fileID: 11400000, guid: 5422278438bd5f145a40f5862ee4fe75, type: 2}
+    signalCueId: 28
+    intensity: 1.18
+--- !u!114 &2082642308
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2082642298}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3f14f3a7faa43aeb87a640a05d34d09, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCuePlayer
+  profile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
+  pooledRoot: {fileID: 1907862087}
 --- !u!1 &2082999505
 GameObject:
   m_ObjectHideFlags: 0
@@ -85781,6 +89525,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2142658626}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2098182087
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2098182088}
+  m_Layer: 0
+  m_Name: Enemy_CombatVfx_CueAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2098182088
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2098182087}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 1.05, z: 0.35}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 408449252}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &2098305284
 GameObject:
   m_ObjectHideFlags: 0
@@ -86107,7 +89882,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 040303e933874bc993e03b9a439cead1, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaShapeInfluenceDriver
   renderers:
   - {fileID: 2110969827}
@@ -86126,7 +89901,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: -7, y: 5, z: 4}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -87118,7 +90893,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 23, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -88449,7 +92224,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a5cd14630dd9148478d1b89b204b74ff, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatGirlWeaponSocketBinder
   bindings:
   - label: Left weapon socket
@@ -93084,3 +96859,4 @@ SceneRoots:
   - {fileID: 682321479}
   - {fileID: 42275784}
   - {fileID: 725440397}
+  - {fileID: 1907862087}
