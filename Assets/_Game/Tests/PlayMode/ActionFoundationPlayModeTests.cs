@@ -23,7 +23,18 @@ namespace DimensionBrawl.Tests
         private const string HeavyWindupPatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_HeavyWindup.asset";
         private const string LinePressurePatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_LinePressure.asset";
         private const string FanPressurePatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_FanPressure.asset";
+        private const string RetreatShotPatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_RetreatShot.asset";
+        private const string RetreatBlinkPatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_RetreatBlink.asset";
+        private const string GuardBreakPatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_EliteSoldier_GuardBreak.asset";
         private const string BasicSoldierTrainingDeckPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_TrainingDeck.asset";
+        private const string GeneralPatternDeckPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_GeneralPatternDeck.asset";
+        private const string ElitePatternDeckPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_EliteSoldier_PatternDeck.asset";
+        private const string ElitePhaseTwoPatternDeckPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_EliteSoldier_PhaseTwoPatternDeck.asset";
+        private const string ShieldCycleEliteProfilePath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_ElitePattern_ShieldCycle.asset";
+        private const string ArmorBreakEliteProfilePath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_ElitePattern_ArmorBreak.asset";
+        private const string AuraBufferEliteProfilePath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_ElitePattern_AuraBuffer.asset";
+        private const string SummonPackageEliteProfilePath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_ElitePattern_SummonPackage.asset";
+        private const string PhaseSwapEliteProfilePath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_ElitePattern_PhaseSwap.asset";
         private const string PlayerVisualName = "CombatGirlSwordShield_PlayerVisual";
         private const string EnemyVisualName = "MaintenanceWorker_BasicSoldierVisual";
         private const string EnemyPlaceholderBodyName = "SciFiSoldierPlaceholderBody";
@@ -33,6 +44,12 @@ namespace DimensionBrawl.Tests
         private const string LinePressureEnemyRootName = "Enemy_SciFiSoldier_LinePressure";
         private const string FanPressureEnemyRootName = "Enemy_SciFiSoldier_FanPressure";
         private const string TrainingDeckEnemyRootName = "Enemy_SciFiSoldier_TrainingDeck";
+        private const string RetreatShotEnemyRootName = "Enemy_SciFiSoldier_RetreatShot";
+        private const string RetreatBlinkEnemyRootName = "Enemy_SciFiSoldier_RetreatBlink";
+        private const string GuardBreakEnemyRootName = "Enemy_SciFiSoldier_GuardBreak";
+        private const string GeneralDeckEnemyRootName = "Enemy_SciFiSoldier_GeneralDeck";
+        private const string EliteDeckEnemyRootName = "Enemy_SciFiSoldier_EliteDeck";
+        private const string EliteTraitsEnemyRootName = "Enemy_SciFiSoldier_EliteTraits";
 
         [UnitySetUp]
         public IEnumerator LoadActionFoundationScene()
@@ -280,7 +297,7 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator ActionFoundationSceneProvidesSixPatternSampleEnemiesAndPlayerTargetCandidates()
+        public IEnumerator ActionFoundationSceneProvidesPatternSampleEnemiesAndPlayerTargetCandidates()
         {
             BasicSoldierEnemy closePunish = RequireNamedRootComponent<BasicSoldierEnemy>(ClosePunishEnemyRootName);
             BasicSoldierEnemy lungeStrike = RequireNamedRootComponent<BasicSoldierEnemy>(LungeStrikeEnemyRootName);
@@ -288,9 +305,17 @@ namespace DimensionBrawl.Tests
             BasicSoldierEnemy linePressure = RequireNamedRootComponent<BasicSoldierEnemy>(LinePressureEnemyRootName);
             BasicSoldierEnemy fanPressure = RequireNamedRootComponent<BasicSoldierEnemy>(FanPressureEnemyRootName);
             BasicSoldierEnemy trainingDeck = RequireNamedRootComponent<BasicSoldierEnemy>(TrainingDeckEnemyRootName);
+            BasicSoldierEnemy retreatShot = RequireNamedRootComponent<BasicSoldierEnemy>(RetreatShotEnemyRootName);
+            BasicSoldierEnemy retreatBlink = RequireNamedRootComponent<BasicSoldierEnemy>(RetreatBlinkEnemyRootName);
+            BasicSoldierEnemy guardBreak = RequireNamedRootComponent<BasicSoldierEnemy>(GuardBreakEnemyRootName);
+            BasicSoldierEnemy generalDeck = RequireNamedRootComponent<BasicSoldierEnemy>(GeneralDeckEnemyRootName);
+            BasicSoldierEnemy eliteDeck = RequireNamedRootComponent<BasicSoldierEnemy>(EliteDeckEnemyRootName);
+            BasicSoldierEnemy eliteTraits = RequireNamedRootComponent<BasicSoldierEnemy>(EliteTraitsEnemyRootName);
             PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
             CombatHealth playerHealth = RequirePlayerHealth();
             CombatAiPatternDeck trainingDeckAsset = LoadPatternDeck(BasicSoldierTrainingDeckPath);
+            CombatAiPatternDeck generalDeckAsset = LoadPatternDeck(GeneralPatternDeckPath);
+            CombatAiPatternDeck eliteDeckAsset = LoadPatternDeck(ElitePatternDeckPath);
 
             yield return null;
 
@@ -302,19 +327,45 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("ClosePunish", trainingDeck.PatternId, "Training deck sample should start from the close punish profile before distance selection runs.");
             Assert.AreSame(trainingDeckAsset, trainingDeck.PatternDeck, "Training deck sample should be authored with the reusable pattern deck asset.");
             Assert.IsTrue(trainingDeck.HasPatternDeck, "Training deck sample should expose that deck selection is active.");
-            Assert.AreEqual(6, targetSelector.TargetCandidateCount, "Player target selector should receive all authored sample enemies instead of scene-scanning.");
+            Assert.AreEqual("RetreatShot", retreatShot.PatternId, "Extended scene should include a retreat shot sample.");
+            Assert.AreEqual("RetreatBlink", retreatBlink.PatternId, "Extended scene should include a retreat blink sample.");
+            Assert.AreEqual("GuardBreak", guardBreak.PatternId, "Extended scene should include an elite guard-break attack sample.");
+            Assert.AreEqual("ClosePunish", generalDeck.PatternId, "General deck sample should start from the close punish row before distance selection runs.");
+            Assert.AreSame(generalDeckAsset, generalDeck.PatternDeck, "General deck sample should use the expanded general deck asset.");
+            Assert.IsTrue(generalDeck.HasPatternDeck, "General deck sample should expose that deck selection is active.");
+            Assert.AreEqual("GuardBreak", eliteDeck.PatternId, "Elite deck sample should start from the guard-break row.");
+            Assert.AreSame(eliteDeckAsset, eliteDeck.PatternDeck, "Elite deck sample should use the elite pattern deck asset.");
+            Assert.IsTrue(eliteDeck.HasPatternDeck, "Elite deck sample should expose that deck selection is active.");
+            Assert.AreEqual("GuardBreak", eliteTraits.PatternId, "Elite trait sample should use an elite attack profile as its starting row.");
+            Assert.AreSame(eliteDeckAsset, eliteTraits.PatternDeck, "Elite trait sample should share the elite deck before phase swap.");
+            EnemyElitePatternController eliteController = eliteTraits.GetComponent<EnemyElitePatternController>();
+            Assert.IsNotNull(eliteController, "Elite trait sample should own the elite pattern controller.");
+            Assert.AreEqual(5, eliteController.ProfileCount, "Elite trait sample should wire ShieldCycle, ArmorBreak, AuraBuffer, SummonPackage, and PhaseSwap profiles.");
+            Assert.AreEqual(12, targetSelector.TargetCandidateCount, "Player target selector should receive all authored sample enemies instead of scene-scanning.");
             AssertEnemyTargetsPlayer(closePunish, playerHealth);
             AssertEnemyTargetsPlayer(lungeStrike, playerHealth);
             AssertEnemyTargetsPlayer(heavyWindup, playerHealth);
             AssertEnemyTargetsPlayer(linePressure, playerHealth);
             AssertEnemyTargetsPlayer(fanPressure, playerHealth);
             AssertEnemyTargetsPlayer(trainingDeck, playerHealth);
+            AssertEnemyTargetsPlayer(retreatShot, playerHealth);
+            AssertEnemyTargetsPlayer(retreatBlink, playerHealth);
+            AssertEnemyTargetsPlayer(guardBreak, playerHealth);
+            AssertEnemyTargetsPlayer(generalDeck, playerHealth);
+            AssertEnemyTargetsPlayer(eliteDeck, playerHealth);
+            AssertEnemyTargetsPlayer(eliteTraits, playerHealth);
             Assert.IsNotNull(closePunish.GetComponent<EnemyActionCameraCueDriver>(), "Close sample should own an enemy camera cue driver.");
             Assert.IsNotNull(lungeStrike.GetComponent<EnemyActionCameraCueDriver>(), "Lunge sample should own an enemy camera cue driver.");
             Assert.IsNotNull(heavyWindup.GetComponent<EnemyActionCameraCueDriver>(), "Heavy sample should own an enemy camera cue driver.");
             Assert.IsNotNull(linePressure.GetComponent<EnemyActionCameraCueDriver>(), "Line pressure sample should own an enemy camera cue driver.");
             Assert.IsNotNull(fanPressure.GetComponent<EnemyActionCameraCueDriver>(), "Fan pressure sample should own an enemy camera cue driver.");
             Assert.IsNotNull(trainingDeck.GetComponent<EnemyActionCameraCueDriver>(), "Training deck sample should own an enemy camera cue driver.");
+            Assert.IsNotNull(retreatShot.GetComponent<EnemyActionCameraCueDriver>(), "Retreat shot sample should own an enemy camera cue driver.");
+            Assert.IsNotNull(retreatBlink.GetComponent<EnemyActionCameraCueDriver>(), "Retreat blink sample should own an enemy camera cue driver.");
+            Assert.IsNotNull(guardBreak.GetComponent<EnemyActionCameraCueDriver>(), "Guard-break sample should own an enemy camera cue driver.");
+            Assert.IsNotNull(generalDeck.GetComponent<EnemyActionCameraCueDriver>(), "General deck sample should own an enemy camera cue driver.");
+            Assert.IsNotNull(eliteDeck.GetComponent<EnemyActionCameraCueDriver>(), "Elite deck sample should own an enemy camera cue driver.");
+            Assert.IsNotNull(eliteTraits.GetComponent<EnemyActionCameraCueDriver>(), "Elite trait sample should own an enemy camera cue driver.");
         }
 
         [UnityTest]
@@ -330,6 +381,12 @@ namespace DimensionBrawl.Tests
             BasicSoldierEnemy linePressure = RequireNamedRootComponent<BasicSoldierEnemy>(LinePressureEnemyRootName);
             BasicSoldierEnemy fanPressure = RequireNamedRootComponent<BasicSoldierEnemy>(FanPressureEnemyRootName);
             BasicSoldierEnemy trainingDeck = RequireNamedRootComponent<BasicSoldierEnemy>(TrainingDeckEnemyRootName);
+            BasicSoldierEnemy retreatShot = RequireNamedRootComponent<BasicSoldierEnemy>(RetreatShotEnemyRootName);
+            BasicSoldierEnemy retreatBlink = RequireNamedRootComponent<BasicSoldierEnemy>(RetreatBlinkEnemyRootName);
+            BasicSoldierEnemy guardBreak = RequireNamedRootComponent<BasicSoldierEnemy>(GuardBreakEnemyRootName);
+            BasicSoldierEnemy generalDeck = RequireNamedRootComponent<BasicSoldierEnemy>(GeneralDeckEnemyRootName);
+            BasicSoldierEnemy eliteDeck = RequireNamedRootComponent<BasicSoldierEnemy>(EliteDeckEnemyRootName);
+            BasicSoldierEnemy eliteTraits = RequireNamedRootComponent<BasicSoldierEnemy>(EliteTraitsEnemyRootName);
 
             closePunish.enabled = false;
             lungeStrike.enabled = false;
@@ -337,6 +394,12 @@ namespace DimensionBrawl.Tests
             linePressure.enabled = false;
             fanPressure.enabled = false;
             trainingDeck.enabled = false;
+            retreatShot.enabled = false;
+            retreatBlink.enabled = false;
+            guardBreak.enabled = false;
+            generalDeck.enabled = false;
+            eliteDeck.enabled = false;
+            eliteTraits.enabled = false;
             movement.transform.position = Vector3.zero;
             movement.transform.rotation = Quaternion.LookRotation(Vector3.forward, Vector3.up);
             cameraController.transform.position = new Vector3(0f, 1.8f, -4f);
@@ -347,6 +410,12 @@ namespace DimensionBrawl.Tests
             linePressure.transform.position = Vector3.left * 7f;
             fanPressure.transform.position = Vector3.left * 9f;
             trainingDeck.transform.position = Vector3.left * 11f;
+            retreatShot.transform.position = Vector3.back * 8f;
+            retreatBlink.transform.position = Vector3.back * 9f;
+            guardBreak.transform.position = Vector3.back * 10f;
+            generalDeck.transform.position = Vector3.back * 11f;
+            eliteDeck.transform.position = Vector3.back * 12f;
+            eliteTraits.transform.position = Vector3.back * 13f;
             Physics.SyncTransforms();
 
             targetSelector.RefreshTarget();
@@ -472,6 +541,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(CombatAiAttackShape.ForwardLine, linePressure.AttackShape, "LinePressure should advertise a forward-line attack shape through profile data.");
             Assert.IsTrue(linePressure.LockAttackDirectionOnWindup, "LinePressure should lock its warning lane instead of tracking the player until the hit frame.");
             Assert.AreEqual(CombatAiCameraCueKind.LinePressure, linePressure.CameraCueKind, "LinePressure should expose its camera read cue through profile data.");
+            Assert.AreEqual("AttackLinePressure", linePressure.AttackTrigger, "LinePressure should request an authored line/aim animation instead of falling back to the close melee swing.");
             Assert.Greater(linePressure.AttackRange, lungeStrike.AttackRange, "LinePressure should reach farther than the lunge sample.");
             Assert.Less(linePressure.AttackHalfWidth, closePunish.AttackHalfWidth, "LinePressure should be dodgeable sideways through a narrow hit width.");
             Assert.Greater(linePressure.TelegraphActiveScale.z, lungeStrike.TelegraphActiveScale.z, "LinePressure should expose a longer forward warning strip than the lunge sample.");
@@ -480,6 +550,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(CombatAiAttackShape.ForwardFan, fanPressure.AttackShape, "FanPressure should advertise a forward-fan attack shape through profile data.");
             Assert.IsTrue(fanPressure.LockAttackDirectionOnWindup, "FanPressure should commit its cone once the warning starts.");
             Assert.AreEqual(CombatAiCameraCueKind.FanPressure, fanPressure.CameraCueKind, "FanPressure should expose its camera read cue through profile data.");
+            Assert.AreEqual("AttackFanPressure", fanPressure.AttackTrigger, "FanPressure should request an authored wide-pressure animation through profile data.");
             Assert.Greater(fanPressure.AttackHalfAngleDegrees, linePressure.AttackHalfAngleDegrees, "FanPressure should be wider than the line pattern in angle space.");
             Assert.Greater(fanPressure.TelegraphActiveScale.x, linePressure.TelegraphActiveScale.x, "FanPressure should expose a wider warning footprint than LinePressure.");
             Assert.AreEqual(4, trainingDeck.EntryCount, "Training deck should show how one soldier can own several reusable pattern profiles.");
@@ -487,7 +558,199 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(lungeStrike, trainingDeck.GetEntry(1).Profile, "Training deck entry 1 should be the mid-range lunge pattern.");
             Assert.AreSame(fanPressure, trainingDeck.GetEntry(2).Profile, "Training deck entry 2 should be the fan pressure pattern.");
             Assert.AreSame(linePressure, trainingDeck.GetEntry(3).Profile, "Training deck entry 3 should be the long line pressure pattern.");
-            Assert.AreEqual(closePunish.AttackTrigger, lungeStrike.AttackTrigger, "Both patterns should reuse the same current Animator request until a new animation is promoted.");
+            Assert.AreEqual("Attack", closePunish.AttackTrigger, "ClosePunish should keep the compact melee attack animation as the baseline soldier read.");
+            Assert.AreEqual("AttackCombo2", lungeStrike.AttackTrigger, "LungeStrike should now use a promoted two-hit combat clip instead of sharing ClosePunish animation.");
+            Assert.AreEqual("AttackHeavy", heavyWindup.AttackTrigger, "HeavyWindup should request a heavier promoted combo clip through data.");
+            Assert.AreEqual("HitHeavy", heavyWindup.HitTrigger, "HeavyWindup should use the heavier reaction tag when interrupted.");
+        }
+
+        [Test]
+        public void ExtendedEnemyPatternProfilesUseReferenceBackedData()
+        {
+            CombatAiPatternProfile closePunish = LoadPatternProfile(ClosePunishPatternPath);
+            CombatAiPatternProfile lungeStrike = LoadPatternProfile(LungeStrikePatternPath);
+            CombatAiPatternProfile heavyWindup = LoadPatternProfile(HeavyWindupPatternPath);
+            CombatAiPatternProfile linePressure = LoadPatternProfile(LinePressurePatternPath);
+            CombatAiPatternProfile fanPressure = LoadPatternProfile(FanPressurePatternPath);
+            CombatAiPatternProfile retreatShot = LoadPatternProfile(RetreatShotPatternPath);
+            CombatAiPatternProfile retreatBlink = LoadPatternProfile(RetreatBlinkPatternPath);
+            CombatAiPatternProfile guardBreak = LoadPatternProfile(GuardBreakPatternPath);
+            CombatAiPatternDeck generalDeck = LoadPatternDeck(GeneralPatternDeckPath);
+            CombatAiPatternDeck eliteDeck = LoadPatternDeck(ElitePatternDeckPath);
+            CombatAiPatternDeck phaseTwoDeck = LoadPatternDeck(ElitePhaseTwoPatternDeckPath);
+            CombatAiElitePatternProfile shieldCycle = LoadElitePatternProfile(ShieldCycleEliteProfilePath);
+            CombatAiElitePatternProfile armorBreak = LoadElitePatternProfile(ArmorBreakEliteProfilePath);
+            CombatAiElitePatternProfile auraBuffer = LoadElitePatternProfile(AuraBufferEliteProfilePath);
+            CombatAiElitePatternProfile summonPackage = LoadElitePatternProfile(SummonPackageEliteProfilePath);
+            CombatAiElitePatternProfile phaseSwap = LoadElitePatternProfile(PhaseSwapEliteProfilePath);
+
+            Assert.AreEqual("RetreatShot", retreatShot.PatternId, "RetreatShot should be authored as a profile asset, not a soldier branch.");
+            Assert.AreEqual(CombatAiCameraCueKind.RetreatShot, retreatShot.CameraCueKind, "RetreatShot should expose its camera/readability cue through profile data.");
+            Assert.Greater(retreatShot.PrepareSeconds, 0f, "RetreatShot should own a pre-attack backstep window from data.");
+            Assert.Greater(retreatShot.PrepareRetreatSpeed, 0f, "RetreatShot should move away before aim/shot instead of using an instant teleport.");
+            Assert.AreEqual("RetreatBackstep", retreatShot.PrepareTrigger, "RetreatShot should request a readable retreat setup animation before the shot.");
+            Assert.AreEqual("AttackRetreatShot", retreatShot.AttackTrigger, "RetreatShot should request a distinct aim/shot animation trigger through profile data.");
+            Assert.AreEqual(CombatAiAttackShape.ForwardLine, retreatShot.AttackShape, "RetreatShot should reuse the shared forward-line hit shape.");
+            Assert.IsTrue(retreatShot.LockAttackDirectionAfterPrepare, "RetreatShot should commit its shot direction after the retreat/aim setup.");
+
+            Assert.AreEqual("RetreatBlink", retreatBlink.PatternId, "RetreatBlink should be a reusable reposition profile.");
+            Assert.Greater(retreatBlink.PrepareRetreatSpeed, retreatShot.PrepareRetreatSpeed, "RetreatBlink should read as a faster evasive reposition than RetreatShot.");
+            Assert.AreEqual(CombatAiCameraCueKind.RetreatBlink, retreatBlink.CameraCueKind, "RetreatBlink should keep its cue semantics in profile data.");
+            Assert.AreEqual("RetreatBlink", retreatBlink.PrepareTrigger, "RetreatBlink should request a faster crouch-forward reposition trigger during prepare.");
+            Assert.AreEqual("AttackRetreatBlink", retreatBlink.AttackTrigger, "RetreatBlink should separate its follow-up attack read from RetreatShot.");
+
+            Assert.AreEqual("GuardBreak", guardBreak.PatternId, "GuardBreak should be a profile consumed by elite decks, not a hardcoded state.");
+            Assert.AreEqual("SciFiSoldier.Elite", guardBreak.ActorTypeId, "GuardBreak should declare the elite actor type for future model/Animator swaps.");
+            Assert.Greater(guardBreak.TelegraphSeconds, heavyWindup.TelegraphSeconds, "GuardBreak should be a slower readable elite punish than HeavyWindup.");
+            Assert.AreEqual("AttackGuardBreak", guardBreak.AttackTrigger, "GuardBreak should request a distinct elite-heavy attack animation through profile data.");
+            Assert.AreEqual("HitHeavy", guardBreak.HitTrigger, "GuardBreak should share the heavier reaction tag so elite interruptions read clearly.");
+
+            Assert.AreEqual(6, generalDeck.EntryCount, "General deck should expand the basic soldier vocabulary without replacing the training deck.");
+            Assert.AreSame(closePunish, generalDeck.GetEntry(0).Profile, "General deck should keep close punish as the close-range anchor.");
+            Assert.AreSame(lungeStrike, generalDeck.GetEntry(1).Profile, "General deck should keep lunge as the mid-range commitment.");
+            Assert.AreSame(retreatShot, generalDeck.GetEntry(2).Profile, "General deck should add retreat shot as the first spacing-reset row.");
+            Assert.AreSame(fanPressure, generalDeck.GetEntry(3).Profile, "General deck should preserve fan pressure as a mid-long spacing check.");
+            Assert.AreSame(linePressure, generalDeck.GetEntry(4).Profile, "General deck should preserve line pressure as long straight pressure.");
+            Assert.AreSame(retreatBlink, generalDeck.GetEntry(5).Profile, "General deck should keep fast retreat as a lower-priority escape row.");
+
+            Assert.AreEqual(6, eliteDeck.EntryCount, "Elite deck should combine guard, heavy, pressure, and retreat rows without boss-only logic.");
+            Assert.AreSame(guardBreak, eliteDeck.GetEntry(1).Profile, "Elite deck should promote GuardBreak as a guarded punish row.");
+            Assert.AreSame(heavyWindup, eliteDeck.GetEntry(2).Profile, "Elite deck should reuse HeavyWindup instead of duplicating a second heavy attack script.");
+            Assert.AreEqual(5, phaseTwoDeck.EntryCount, "Phase two deck should be a data swap target for PhaseSwap.");
+
+            Assert.AreEqual(CombatAiElitePatternKind.ShieldCycle, shieldCycle.PatternKind, "ShieldCycle should be an elite trait profile.");
+            Assert.AreEqual("EliteShieldCycle", shieldCycle.SignalAnimationTrigger, "ShieldCycle should own an authored signal animation trigger.");
+            Assert.Greater(shieldCycle.GuardMeter, 0f, "ShieldCycle should own a breakable guard meter.");
+            Assert.Less(shieldCycle.DamageTakenMultiplier, 1f, "ShieldCycle should mitigate damage while the shield is up.");
+            Assert.AreEqual(CombatAiElitePatternKind.ArmorBreak, armorBreak.PatternKind, "ArmorBreak should be an elite trait profile.");
+            Assert.AreEqual("EliteArmorBreak", armorBreak.SignalAnimationTrigger, "ArmorBreak should own a heavier break/stagger animation trigger.");
+            Assert.Greater(armorBreak.GuardMeter, shieldCycle.GuardMeter, "ArmorBreak should require more commitment than the cycling shield.");
+            Assert.AreEqual(0f, armorBreak.RefreshSeconds, 0.001f, "ArmorBreak should stay broken after the first armor break in this foundation slice.");
+            Assert.AreEqual(CombatAiElitePatternKind.AuraBuffer, auraBuffer.PatternKind, "AuraBuffer should be represented as a reusable elite signal.");
+            Assert.AreEqual("EliteAuraBuffer", auraBuffer.SignalAnimationTrigger, "AuraBuffer should use a maintenance/action clip as a readable buff signal.");
+            Assert.Greater(auraBuffer.SignalSeconds, 100f, "AuraBuffer should stay readable as a persistent priority marker.");
+            Assert.Less(auraBuffer.DamageTakenMultiplier, 1f, "AuraBuffer should protect authored receiver targets through damage-modification data.");
+            Assert.AreEqual(CombatAiElitePatternKind.SummonPackage, summonPackage.PatternKind, "SummonPackage should exist as a signal profile before runtime spawning is introduced.");
+            Assert.AreEqual("EliteSummonPackage", summonPackage.SignalAnimationTrigger, "SummonPackage should use a distinct command/call animation trigger.");
+            Assert.Less(summonPackage.TriggerHealthRatio, 1f, "SummonPackage should not fire immediately at full health.");
+            Assert.AreEqual(CombatAiElitePatternKind.PhaseSwap, phaseSwap.PatternKind, "PhaseSwap should be a data profile for deck/profile swapping.");
+            Assert.AreEqual("ElitePhaseSwap", phaseSwap.SignalAnimationTrigger, "PhaseSwap should request a clear turn/phase signal animation through data.");
+            Assert.AreSame(phaseTwoDeck, phaseSwap.ReplacementPatternDeck, "PhaseSwap should point at the phase-two deck through data.");
+        }
+
+        [UnityTest]
+        public IEnumerator EnemyElitePatternControllerReducesDamageThroughSharedHealthHook()
+        {
+            CombatAiElitePatternProfile shieldCycle = LoadElitePatternProfile(ShieldCycleEliteProfilePath);
+            GameObject host = new GameObject("ElitePatternHook_TestHost");
+            host.SetActive(false);
+            CombatHealth health = host.AddComponent<CombatHealth>();
+            EnemyElitePatternController controller = host.AddComponent<EnemyElitePatternController>();
+            SerializedObject serializedObject = new SerializedObject(controller);
+            SerializedProperty profiles = serializedObject.FindProperty("eliteProfiles");
+            profiles.arraySize = 1;
+            profiles.GetArrayElementAtIndex(0).objectReferenceValue = shieldCycle;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+
+            host.SetActive(true);
+            yield return null;
+
+            float healthBefore = health.CurrentHealth;
+            bool damaged = health.TryApplyDamage(new DamageInfo(
+                null,
+                DamageTeam.Player,
+                20f,
+                host.transform.position,
+                Vector3.forward,
+                0f));
+
+            Assert.IsTrue(damaged, "Elite health should still accept hostile damage through the shared health contract.");
+            Assert.AreEqual(
+                healthBefore - 20f * shieldCycle.DamageTakenMultiplier,
+                health.CurrentHealth,
+                0.01f,
+                "ShieldCycle should reduce damage through CombatHealth.DamageModifying instead of hardcoded health branches.");
+            Assert.IsTrue(
+                controller.TryGetProfileState("ShieldCycle", out float guardMeter, out bool isBroken, out bool _),
+                "Controller should expose the runtime guard state for tests and debug UI.");
+            Assert.Less(guardMeter, shieldCycle.GuardMeter, "ShieldCycle guard meter should be consumed by incoming damage.");
+            Assert.IsFalse(isBroken, "A single light hit should not break the authored ShieldCycle meter.");
+
+            host.SetActive(false);
+            host.SetActive(true);
+            yield return null;
+
+            Assert.IsTrue(
+                controller.TryGetProfileState("ShieldCycle", out float resetGuardMeter, out _, out _),
+                "Controller should rebuild profile state when an authored enemy is re-enabled.");
+            Assert.AreEqual(
+                shieldCycle.GuardMeter,
+                resetGuardMeter,
+                0.01f,
+                "Elite profile runtime state should not leak stale guard values across disable/enable reuse.");
+
+            UnityEngine.Object.Destroy(host);
+        }
+
+        [UnityTest]
+        public IEnumerator EnemyElitePatternControllerAppliesAuthoredAuraAndSummonSignals()
+        {
+            CombatAiElitePatternProfile auraBuffer = LoadElitePatternProfile(AuraBufferEliteProfilePath);
+            CombatAiElitePatternProfile summonPackage = LoadElitePatternProfile(SummonPackageEliteProfilePath);
+            GameObject host = new GameObject("ElitePatternSignal_TestHost");
+            GameObject protectedTarget = new GameObject("AuraProtected_TestTarget");
+            GameObject summonSignal = new GameObject("SummonSignal_TestMarker");
+            host.SetActive(false);
+            summonSignal.SetActive(false);
+
+            CombatHealth hostHealth = host.AddComponent<CombatHealth>();
+            CombatHealth protectedHealth = protectedTarget.AddComponent<CombatHealth>();
+            EnemyElitePatternController controller = host.AddComponent<EnemyElitePatternController>();
+            SerializedObject serializedObject = new SerializedObject(controller);
+            SerializedProperty profiles = serializedObject.FindProperty("eliteProfiles");
+            profiles.arraySize = 2;
+            profiles.GetArrayElementAtIndex(0).objectReferenceValue = auraBuffer;
+            profiles.GetArrayElementAtIndex(1).objectReferenceValue = summonPackage;
+            SerializedProperty auraTargets = serializedObject.FindProperty("auraProtectedTargets");
+            auraTargets.arraySize = 1;
+            auraTargets.GetArrayElementAtIndex(0).objectReferenceValue = protectedHealth;
+            SerializedProperty summonSignals = serializedObject.FindProperty("summonSignalObjects");
+            summonSignals.arraySize = 1;
+            summonSignals.GetArrayElementAtIndex(0).objectReferenceValue = summonSignal;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+
+            host.SetActive(true);
+            yield return null;
+
+            float protectedHealthBefore = protectedHealth.CurrentHealth;
+            protectedHealth.TryApplyDamage(new DamageInfo(
+                null,
+                DamageTeam.Player,
+                20f,
+                protectedTarget.transform.position,
+                Vector3.forward,
+                0f));
+
+            Assert.AreEqual(
+                protectedHealthBefore - 20f * auraBuffer.DamageTakenMultiplier,
+                protectedHealth.CurrentHealth,
+                0.01f,
+                "AuraBuffer should protect explicitly authored targets through the shared health hook without scene searches.");
+
+            hostHealth.TryApplyDamage(new DamageInfo(
+                null,
+                DamageTeam.Player,
+                30f,
+                host.transform.position,
+                Vector3.forward,
+                0f));
+            yield return null;
+
+            Assert.IsTrue(summonSignal.activeSelf, "SummonPackage should activate authored signal objects without runtime Instantiate.");
+
+            UnityEngine.Object.Destroy(host);
+            UnityEngine.Object.Destroy(protectedTarget);
+            UnityEngine.Object.Destroy(summonSignal);
         }
 
         [Test]
@@ -1202,6 +1465,17 @@ namespace DimensionBrawl.Tests
             }
 
             return deck;
+        }
+
+        private static CombatAiElitePatternProfile LoadElitePatternProfile(string assetPath)
+        {
+            CombatAiElitePatternProfile profile = AssetDatabase.LoadAssetAtPath<CombatAiElitePatternProfile>(assetPath);
+            if (profile == null)
+            {
+                Assert.Fail($"Missing combat AI elite pattern profile at {assetPath}.");
+            }
+
+            return profile;
         }
 
         private static Bounds CollectRenderableBounds(GameObject root)

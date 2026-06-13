@@ -14,6 +14,7 @@ namespace DimensionBrawl.Enemies
         private enum SoldierState
         {
             Approach,
+            Prepare,
             Telegraph,
             Active,
             Recovery,
@@ -50,6 +51,9 @@ namespace DimensionBrawl.Enemies
         [SerializeField] private float gravity = -24f;
 
         [Header("Attack")]
+        [SerializeField, Min(0f)] private float prepareSeconds;
+        [SerializeField, Min(0f)] private float prepareRetreatSpeed;
+        [SerializeField] private bool lockAttackDirectionAfterPrepare = true;
         [SerializeField, Min(0f)] private float attackRange = 1.65f;
         [Tooltip("Uses the collected minor projectile/readable enemy telegraph range of 0.45-0.9 seconds.")]
         [SerializeField, Min(0f)] private float telegraphSeconds = 0.65f;
@@ -74,6 +78,7 @@ namespace DimensionBrawl.Enemies
 
         [Header("Animation Requests")]
         [SerializeField] private string moveSpeedParameter = "MoveSpeed";
+        [SerializeField] private string prepareTrigger = string.Empty;
         [SerializeField] private string attackTrigger = "Attack";
         [SerializeField] private string hitTrigger = "Hit";
         [SerializeField] private string deathTrigger = "Death";
@@ -117,6 +122,9 @@ namespace DimensionBrawl.Enemies
         private float ActiveApproachSpeed => patternProfile != null ? patternProfile.ApproachSpeed : approachSpeed;
         private float ActiveTurnRateDegrees => patternProfile != null ? patternProfile.TurnRateDegrees : turnRateDegrees;
         private float ActiveGravity => patternProfile != null ? patternProfile.Gravity : gravity;
+        private float ActivePrepareSeconds => patternProfile != null ? patternProfile.PrepareSeconds : prepareSeconds;
+        private float ActivePrepareRetreatSpeed => patternProfile != null ? patternProfile.PrepareRetreatSpeed : prepareRetreatSpeed;
+        private bool ActiveLockAttackDirectionAfterPrepare => patternProfile != null ? patternProfile.LockAttackDirectionAfterPrepare : lockAttackDirectionAfterPrepare;
         private float ActiveAttackRange => patternProfile != null ? patternProfile.AttackRange : attackRange;
         private float ActiveAttackFacingDotThreshold => patternProfile != null ? patternProfile.AttackFacingDotThreshold : attackFacingDotThreshold;
         private float ActiveTelegraphSeconds => patternProfile != null ? patternProfile.TelegraphSeconds : telegraphSeconds;
@@ -134,6 +142,7 @@ namespace DimensionBrawl.Enemies
         private float ActiveRecoveryRetreatSpeed => patternProfile != null ? patternProfile.RecoveryRetreatSpeed : 0f;
         private float ActiveRecoveryRetreatSeconds => patternProfile != null ? patternProfile.RecoveryRetreatSeconds : 0f;
         private string ActiveMoveSpeedParameter => patternProfile != null ? patternProfile.MoveSpeedParameter : moveSpeedParameter;
+        private string ActivePrepareTrigger => patternProfile != null ? patternProfile.PrepareTrigger : prepareTrigger;
         private string ActiveAttackTrigger => patternProfile != null ? patternProfile.AttackTrigger : attackTrigger;
         private string ActiveHitTrigger => patternProfile != null ? patternProfile.HitTrigger : hitTrigger;
         private string ActiveDeathTrigger => patternProfile != null ? patternProfile.DeathTrigger : deathTrigger;
@@ -238,6 +247,9 @@ namespace DimensionBrawl.Enemies
                 case SoldierState.Approach:
                     UpdateApproach(deltaTime);
                     break;
+                case SoldierState.Prepare:
+                    UpdatePrepare(deltaTime);
+                    break;
                 case SoldierState.Telegraph:
                     UpdateTelegraph(deltaTime);
                     break;
@@ -281,7 +293,15 @@ namespace DimensionBrawl.Enemies
 
             if (hasReadyPattern && IsTargetInAttackRange())
             {
-                BeginTelegraph();
+                if (ActivePrepareSeconds > 0f)
+                {
+                    BeginPrepare();
+                }
+                else
+                {
+                    BeginTelegraph();
+                }
+
                 return;
             }
 
@@ -291,13 +311,45 @@ namespace DimensionBrawl.Enemies
             SetBodyColor(normalColor);
         }
 
+        private void BeginPrepare()
+        {
+            EnterState(SoldierState.Prepare, CombatAiPatternState.Repositioning);
+            stateTimer = 0f;
+            dealtDamageThisSwing = false;
+            hasLockedAttackDirection = ActiveLockAttackDirectionAfterPrepare;
+            lockedAttackDirection = DirectionToTarget();
+            HideTelegraph();
+            SetBodyColor(normalColor);
+            TriggerAnimator(ActivePrepareTrigger);
+        }
+
+        private void UpdatePrepare(float deltaTime)
+        {
+            stateTimer += deltaTime;
+            FaceTarget(deltaTime);
+            Vector3 retreatVelocity = -DirectionToTarget() * ActivePrepareRetreatSpeed;
+            Move(retreatVelocity, deltaTime);
+            UpdateAnimation(ActivePrepareRetreatSpeed);
+
+            if (stateTimer < ActivePrepareSeconds)
+            {
+                return;
+            }
+
+            BeginTelegraph();
+        }
+
         private void BeginTelegraph()
         {
             EnterState(SoldierState.Telegraph, CombatAiPatternState.Windup);
             stateTimer = 0f;
             dealtDamageThisSwing = false;
-            hasLockedAttackDirection = ActiveLockAttackDirectionOnWindup;
-            lockedAttackDirection = DirectionToTarget();
+            if (!hasLockedAttackDirection)
+            {
+                hasLockedAttackDirection = ActiveLockAttackDirectionOnWindup;
+                lockedAttackDirection = DirectionToTarget();
+            }
+
             if (hasLockedAttackDirection)
             {
                 FaceDirection(lockedAttackDirection, 0f);
@@ -432,6 +484,7 @@ namespace DimensionBrawl.Enemies
             hasLockedAttackDirection = false;
             HideTelegraph();
             SetBodyColor(deadColor);
+            ResetAnimatorTrigger(ActivePrepareTrigger);
             ResetAnimatorTrigger(ActiveAttackTrigger);
             ResetAnimatorTrigger(ActiveHitTrigger);
             UpdateAnimation(0f);

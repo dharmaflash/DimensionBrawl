@@ -44,6 +44,15 @@ namespace DimensionBrawl.Editor
         private const string EnemyIdleClipPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/MW_IdleCombat.fbx";
         private const string EnemyRunClipPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/MW_RunCombat.fbx";
         private const string EnemyAttackClipPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/MW_AttackCombat.fbx";
+        private const string EnemyAttackCombo2ClipPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/MW_AttackCombo2.fbx";
+        private const string EnemyAttackCombo3ClipPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/MW_AttackCombo3.fbx";
+        private const string EnemyCrouchForwardClipPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/MW_CrouchForward.fbx";
+        private const string EnemyCrouchIdleCombatClipPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/MW_CrouchIdleCombat.fbx";
+        private const string EnemyRepairHighClipPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/MW_RepairHigh.fbx";
+        private const string EnemyRepairLowClipPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/MW_RepairLow.fbx";
+        private const string EnemyTypeOnConsoleClipPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/MW_TypeOnConsole.fbx";
+        private const string EnemyTurn90RightClipPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/MW_Turn90Right.fbx";
+        private const string EnemyHitHeavyClipPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/MW_GetHitFrontHeavy.fbx";
         private const string EnemyHitClipPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/MW_GetHitFrontLight.fbx";
         private const string EnemyDeathClipPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/MW_DeathFront.fbx";
 
@@ -217,6 +226,16 @@ namespace DimensionBrawl.Editor
             CombatAiPatternProfile enemyLinePressurePatternProfile = LoadProfile<CombatAiPatternProfile>(ActionFoundationProfileSetup.EnemyLinePressurePatternProfilePath);
             CombatAiPatternProfile enemyFanPressurePatternProfile = LoadProfile<CombatAiPatternProfile>(ActionFoundationProfileSetup.EnemyFanPressurePatternProfilePath);
             CombatAiPatternDeck enemyTrainingPatternDeck = LoadProfile<CombatAiPatternDeck>(ActionFoundationProfileSetup.EnemyTrainingPatternDeckPath);
+            CombatAiPatternProfile enemyRetreatShotPatternProfile = LoadProfile<CombatAiPatternProfile>(ActionFoundationEnemyPatternExpansionSetup.RetreatShotPatternPath);
+            CombatAiPatternProfile enemyRetreatBlinkPatternProfile = LoadProfile<CombatAiPatternProfile>(ActionFoundationEnemyPatternExpansionSetup.RetreatBlinkPatternPath);
+            CombatAiPatternProfile enemyGuardBreakPatternProfile = LoadProfile<CombatAiPatternProfile>(ActionFoundationEnemyPatternExpansionSetup.GuardBreakPatternPath);
+            CombatAiPatternDeck enemyGeneralPatternDeck = LoadProfile<CombatAiPatternDeck>(ActionFoundationEnemyPatternExpansionSetup.GeneralPatternDeckPath);
+            CombatAiPatternDeck enemyElitePatternDeck = LoadProfile<CombatAiPatternDeck>(ActionFoundationEnemyPatternExpansionSetup.ElitePatternDeckPath);
+            CombatAiElitePatternProfile shieldCycleProfile = LoadProfile<CombatAiElitePatternProfile>(ActionFoundationEnemyPatternExpansionSetup.ShieldCycleEliteProfilePath);
+            CombatAiElitePatternProfile armorBreakProfile = LoadProfile<CombatAiElitePatternProfile>(ActionFoundationEnemyPatternExpansionSetup.ArmorBreakEliteProfilePath);
+            CombatAiElitePatternProfile auraBufferProfile = LoadProfile<CombatAiElitePatternProfile>(ActionFoundationEnemyPatternExpansionSetup.AuraBufferEliteProfilePath);
+            CombatAiElitePatternProfile summonPackageProfile = LoadProfile<CombatAiElitePatternProfile>(ActionFoundationEnemyPatternExpansionSetup.SummonPackageEliteProfilePath);
+            CombatAiElitePatternProfile phaseSwapProfile = LoadProfile<CombatAiElitePatternProfile>(ActionFoundationEnemyPatternExpansionSetup.PhaseSwapEliteProfilePath);
             PlayerMovementController movement = RequireObject<PlayerMovementController>(roots, "player movement");
             PlayerActionController playerActions = RequireObject<PlayerActionController>(roots, "player actions");
             CombatHealth playerHealth = RequireComponent<CombatHealth>(playerActions.gameObject, "player health");
@@ -227,11 +246,23 @@ namespace DimensionBrawl.Editor
             BasicSoldierEnemy linePressureSoldier = RequireRootComponent<BasicSoldierEnemy>(roots, ActionFoundationProfileSetup.LinePressureEnemyRootName, "line pressure basic soldier");
             BasicSoldierEnemy fanPressureSoldier = RequireRootComponent<BasicSoldierEnemy>(roots, ActionFoundationProfileSetup.FanPressureEnemyRootName, "fan pressure basic soldier");
             BasicSoldierEnemy trainingDeckSoldier = RequireRootComponent<BasicSoldierEnemy>(roots, ActionFoundationProfileSetup.TrainingDeckEnemyRootName, "training deck basic soldier");
+            BasicSoldierEnemy retreatShotSoldier = RequireRootComponent<BasicSoldierEnemy>(roots, ActionFoundationEnemyPatternExpansionSetup.RetreatShotEnemyRootName, "retreat shot basic soldier");
+            BasicSoldierEnemy retreatBlinkSoldier = RequireRootComponent<BasicSoldierEnemy>(roots, ActionFoundationEnemyPatternExpansionSetup.RetreatBlinkEnemyRootName, "retreat blink basic soldier");
+            BasicSoldierEnemy guardBreakSoldier = RequireRootComponent<BasicSoldierEnemy>(roots, ActionFoundationEnemyPatternExpansionSetup.GuardBreakEnemyRootName, "guard-break elite soldier");
+            BasicSoldierEnemy generalDeckSoldier = RequireRootComponent<BasicSoldierEnemy>(roots, ActionFoundationEnemyPatternExpansionSetup.GeneralDeckEnemyRootName, "general pattern deck soldier");
+            BasicSoldierEnemy eliteDeckSoldier = RequireRootComponent<BasicSoldierEnemy>(roots, ActionFoundationEnemyPatternExpansionSetup.EliteDeckEnemyRootName, "elite pattern deck soldier");
+            BasicSoldierEnemy eliteTraitsSoldier = RequireRootComponent<BasicSoldierEnemy>(roots, ActionFoundationEnemyPatternExpansionSetup.EliteTraitsEnemyRootName, "elite traits soldier");
             CombatHealth lungeHealth = RequireComponent<CombatHealth>(lungeSoldier.gameObject, "lunge strike soldier health");
             CombatHealth heavyHealth = RequireComponent<CombatHealth>(heavySoldier.gameObject, "heavy windup soldier health");
             CombatHealth linePressureHealth = RequireComponent<CombatHealth>(linePressureSoldier.gameObject, "line pressure soldier health");
             CombatHealth fanPressureHealth = RequireComponent<CombatHealth>(fanPressureSoldier.gameObject, "fan pressure soldier health");
             CombatHealth trainingDeckHealth = RequireComponent<CombatHealth>(trainingDeckSoldier.gameObject, "training deck soldier health");
+            CombatHealth retreatShotHealth = RequireComponent<CombatHealth>(retreatShotSoldier.gameObject, "retreat shot soldier health");
+            CombatHealth retreatBlinkHealth = RequireComponent<CombatHealth>(retreatBlinkSoldier.gameObject, "retreat blink soldier health");
+            CombatHealth guardBreakHealth = RequireComponent<CombatHealth>(guardBreakSoldier.gameObject, "guard-break soldier health");
+            CombatHealth generalDeckHealth = RequireComponent<CombatHealth>(generalDeckSoldier.gameObject, "general deck soldier health");
+            CombatHealth eliteDeckHealth = RequireComponent<CombatHealth>(eliteDeckSoldier.gameObject, "elite deck soldier health");
+            CombatHealth eliteTraitsHealth = RequireComponent<CombatHealth>(eliteTraitsSoldier.gameObject, "elite traits soldier health");
             CombatTargetSensor soldierTargetSensor = RequireComponent<CombatTargetSensor>(soldier.gameObject, "basic soldier target sensor");
             EnemyAttackTelegraphPresenter soldierTelegraphPresenter = RequireComponent<EnemyAttackTelegraphPresenter>(soldier.gameObject, "basic soldier telegraph presenter");
             CombatHitFeedback soldierHitFeedback = RequireComponent<CombatHitFeedback>(soldier.gameObject, "basic soldier hit feedback");
@@ -254,8 +285,8 @@ namespace DimensionBrawl.Editor
             CombatHealth soldierHealth = RequireComponent<CombatHealth>(soldier.gameObject, "basic soldier health");
 
             List<CombatHealth> healths = CollectObjects<CombatHealth>(roots);
-            RequireAtLeast(healths.Count, 7, "player and six enemy health components");
-            RequireAtLeast(hitFeedbacks.Count, 7, "player and six enemy hit feedback components");
+            RequireAtLeast(healths.Count, 13, "player and twelve enemy health components");
+            RequireAtLeast(hitFeedbacks.Count, 13, "player and twelve enemy hit feedback components");
             RequireAtLeast(soldierVisualRenderers.Length, 1, "basic soldier promoted visual renderers");
 
             ValidateReference(movement, "referenceCamera");
@@ -278,7 +309,26 @@ namespace DimensionBrawl.Editor
             ValidateObjectReferenceAssetPath(playerActions, "actionProfile", ActionFoundationProfileSetup.PlayerActionProfilePath);
             ValidatePlayerActionProfile(playerActionProfile);
 
-            ValidatePlayerTargetSelector(targetSelector, playerActions.transform, playerHealth, cameraController.transform, new UnityEngine.Object[] { soldierHealth, lungeHealth, heavyHealth, linePressureHealth, fanPressureHealth, trainingDeckHealth });
+            ValidatePlayerTargetSelector(
+                targetSelector,
+                playerActions.transform,
+                playerHealth,
+                cameraController.transform,
+                new UnityEngine.Object[]
+                {
+                    soldierHealth,
+                    lungeHealth,
+                    heavyHealth,
+                    linePressureHealth,
+                    fanPressureHealth,
+                    trainingDeckHealth,
+                    retreatShotHealth,
+                    retreatBlinkHealth,
+                    guardBreakHealth,
+                    generalDeckHealth,
+                    eliteDeckHealth,
+                    eliteTraitsHealth
+                });
             ValidateCameraTargetBridge(cameraTargetBridge, cameraController, targetSelector, playerActions.transform);
 
             ValidateObjectReferenceAssetPath(soldier, "patternProfile", ActionFoundationProfileSetup.EnemyPatternProfilePath);
@@ -358,7 +408,11 @@ namespace DimensionBrawl.Editor
                 new Vector3(0f, 0f, 0.34f),
                 new Color(0.35f, 0.75f, 1f, 1f),
                 new Color(0.05f, 0.38f, 1f, 1f),
-                new Color(0.85f, 0.95f, 1f, 1f));
+                new Color(0.85f, 0.95f, 1f, 1f),
+                string.Empty,
+                "AttackCombo2",
+                "Hit",
+                "Death");
             ValidateCombatAiPatternProfile(
                 enemyHeavyWindupPatternProfile,
                 "SciFiSoldier.Basic",
@@ -396,7 +450,11 @@ namespace DimensionBrawl.Editor
                 new Vector3(0f, 0f, 0.18f),
                 new Color(1f, 0.72f, 0.08f, 1f),
                 new Color(1f, 0.02f, 0.02f, 1f),
-                new Color(1f, 0.9f, 0.35f, 1f));
+                new Color(1f, 0.9f, 0.35f, 1f),
+                string.Empty,
+                "AttackHeavy",
+                "HitHeavy",
+                "Death");
             ValidateCombatAiPatternProfile(
                 enemyLinePressurePatternProfile,
                 "SciFiSoldier.Basic",
@@ -434,7 +492,11 @@ namespace DimensionBrawl.Editor
                 new Vector3(0f, 0f, 0.05f),
                 new Color(0.62f, 0.28f, 1f, 1f),
                 new Color(0.34f, 0.06f, 1f, 1f),
-                new Color(0.86f, 0.72f, 1f, 1f));
+                new Color(0.86f, 0.72f, 1f, 1f),
+                string.Empty,
+                "AttackLinePressure",
+                "Hit",
+                "Death");
             ValidateCombatAiPatternProfile(
                 enemyFanPressurePatternProfile,
                 "SciFiSoldier.Basic",
@@ -472,7 +534,11 @@ namespace DimensionBrawl.Editor
                 new Vector3(0f, 0f, 0.06f),
                 new Color(0.28f, 0.9f, 0.72f, 1f),
                 new Color(0.04f, 0.68f, 0.45f, 1f),
-                new Color(0.74f, 1f, 0.88f, 1f));
+                new Color(0.74f, 1f, 0.88f, 1f),
+                string.Empty,
+                "AttackFanPressure",
+                "Hit",
+                "Death");
             ValidateCombatAiPatternDeck(
                 enemyTrainingPatternDeck,
                 "SciFiSoldier.BasicTraining",
@@ -501,6 +567,45 @@ namespace DimensionBrawl.Editor
             ValidatePatternSampleEnemy(linePressureSoldier, ActionFoundationProfileSetup.EnemyLinePressurePatternProfilePath, enemyLinePressurePatternProfile, playerHealth, cameraController, "LinePressure");
             ValidatePatternSampleEnemy(fanPressureSoldier, ActionFoundationProfileSetup.EnemyFanPressurePatternProfilePath, enemyFanPressurePatternProfile, playerHealth, cameraController, "FanPressure");
             ValidatePatternDeckSampleEnemy(trainingDeckSoldier, enemyPatternProfile, enemyTrainingPatternDeck, playerHealth, cameraController);
+            ValidatePatternSampleEnemy(retreatShotSoldier, ActionFoundationEnemyPatternExpansionSetup.RetreatShotPatternPath, enemyRetreatShotPatternProfile, playerHealth, cameraController, "RetreatShot");
+            ValidatePatternSampleEnemy(retreatBlinkSoldier, ActionFoundationEnemyPatternExpansionSetup.RetreatBlinkPatternPath, enemyRetreatBlinkPatternProfile, playerHealth, cameraController, "RetreatBlink");
+            ValidatePatternSampleEnemy(guardBreakSoldier, ActionFoundationEnemyPatternExpansionSetup.GuardBreakPatternPath, enemyGuardBreakPatternProfile, playerHealth, cameraController, "GuardBreak");
+            ValidateExtendedPatternDeckSampleEnemy(
+                generalDeckSoldier,
+                ActionFoundationProfileSetup.EnemyPatternProfilePath,
+                enemyPatternProfile,
+                ActionFoundationEnemyPatternExpansionSetup.GeneralPatternDeckPath,
+                enemyGeneralPatternDeck,
+                playerHealth,
+                cameraController,
+                "GeneralDeck");
+            ValidateExtendedPatternDeckSampleEnemy(
+                eliteDeckSoldier,
+                ActionFoundationEnemyPatternExpansionSetup.GuardBreakPatternPath,
+                enemyGuardBreakPatternProfile,
+                ActionFoundationEnemyPatternExpansionSetup.ElitePatternDeckPath,
+                enemyElitePatternDeck,
+                playerHealth,
+                cameraController,
+                "EliteDeck");
+            ValidateExtendedPatternDeckSampleEnemy(
+                eliteTraitsSoldier,
+                ActionFoundationEnemyPatternExpansionSetup.GuardBreakPatternPath,
+                enemyGuardBreakPatternProfile,
+                ActionFoundationEnemyPatternExpansionSetup.ElitePatternDeckPath,
+                enemyElitePatternDeck,
+                playerHealth,
+                cameraController,
+                "EliteTraits");
+            ValidateElitePatternController(
+                eliteTraitsSoldier,
+                eliteTraitsHealth,
+                eliteDeckHealth,
+                shieldCycleProfile,
+                armorBreakProfile,
+                auraBufferProfile,
+                summonPackageProfile,
+                phaseSwapProfile);
             ValidateObjectReference(soldierTelegraphPresenter, "telegraphObject", telegraphObject);
             ValidateObjectReference(soldierTelegraphPresenter, "telegraphTransform", telegraphObject.transform);
             ValidateObjectReference(soldierTelegraphPresenter, "telegraphRenderer", RequireComponent<Renderer>(telegraphObject, "basic soldier attack telegraph renderer"));
@@ -589,16 +694,64 @@ namespace DimensionBrawl.Editor
             ValidateBool(soldierVisualAnimator, "m_ApplyRootMotion", false);
             ValidateAnimatorParameter(soldierVisualAnimator, "MoveSpeed", AnimatorControllerParameterType.Float);
             ValidateAnimatorParameter(soldierVisualAnimator, "Attack", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(soldierVisualAnimator, "AttackCombo2", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(soldierVisualAnimator, "AttackCombo3", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(soldierVisualAnimator, "AttackHeavy", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(soldierVisualAnimator, "AttackLinePressure", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(soldierVisualAnimator, "AttackFanPressure", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(soldierVisualAnimator, "AttackRetreatShot", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(soldierVisualAnimator, "AttackRetreatBlink", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(soldierVisualAnimator, "AttackGuardBreak", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(soldierVisualAnimator, "RetreatBackstep", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(soldierVisualAnimator, "RetreatBlink", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(soldierVisualAnimator, "EliteShieldCycle", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(soldierVisualAnimator, "EliteArmorBreak", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(soldierVisualAnimator, "EliteAuraBuffer", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(soldierVisualAnimator, "EliteSummonPackage", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(soldierVisualAnimator, "ElitePhaseSwap", AnimatorControllerParameterType.Trigger);
             ValidateAnimatorParameter(soldierVisualAnimator, "Hit", AnimatorControllerParameterType.Trigger);
+            ValidateAnimatorParameter(soldierVisualAnimator, "HitHeavy", AnimatorControllerParameterType.Trigger);
             ValidateAnimatorParameter(soldierVisualAnimator, "Death", AnimatorControllerParameterType.Trigger);
             ValidateAnimatorStateMotion(soldierVisualAnimator, "Idle", EnemyIdleClipPath);
             ValidateAnimatorStateMotion(soldierVisualAnimator, "Run", EnemyRunClipPath);
             ValidateAnimatorStateMotion(soldierVisualAnimator, "Attack", EnemyAttackClipPath);
+            ValidateAnimatorStateMotion(soldierVisualAnimator, "AttackCombo2", EnemyAttackCombo2ClipPath);
+            ValidateAnimatorStateMotion(soldierVisualAnimator, "AttackCombo3", EnemyAttackCombo3ClipPath);
+            ValidateAnimatorStateMotion(soldierVisualAnimator, "AttackHeavy", EnemyAttackCombo3ClipPath);
+            ValidateAnimatorStateMotion(soldierVisualAnimator, "AttackLinePressure", EnemyRepairHighClipPath);
+            ValidateAnimatorStateMotion(soldierVisualAnimator, "AttackFanPressure", EnemyRepairLowClipPath);
+            ValidateAnimatorStateMotion(soldierVisualAnimator, "AttackRetreatShot", EnemyRepairHighClipPath);
+            ValidateAnimatorStateMotion(soldierVisualAnimator, "AttackRetreatBlink", EnemyRepairLowClipPath);
+            ValidateAnimatorStateMotion(soldierVisualAnimator, "AttackGuardBreak", EnemyAttackCombo3ClipPath);
+            ValidateAnimatorStateMotion(soldierVisualAnimator, "RetreatBackstep", EnemyCrouchForwardClipPath);
+            ValidateAnimatorStateMotion(soldierVisualAnimator, "RetreatBlink", EnemyCrouchForwardClipPath);
+            ValidateAnimatorStateMotion(soldierVisualAnimator, "EliteShieldCycle", EnemyCrouchIdleCombatClipPath);
+            ValidateAnimatorStateMotion(soldierVisualAnimator, "EliteArmorBreak", EnemyHitHeavyClipPath);
+            ValidateAnimatorStateMotion(soldierVisualAnimator, "EliteAuraBuffer", EnemyRepairLowClipPath);
+            ValidateAnimatorStateMotion(soldierVisualAnimator, "EliteSummonPackage", EnemyTypeOnConsoleClipPath);
+            ValidateAnimatorStateMotion(soldierVisualAnimator, "ElitePhaseSwap", EnemyTurn90RightClipPath);
             ValidateAnimatorStateMotion(soldierVisualAnimator, "Hit", EnemyHitClipPath);
+            ValidateAnimatorStateMotion(soldierVisualAnimator, "HitHeavy", EnemyHitHeavyClipPath);
             ValidateAnimatorStateMotion(soldierVisualAnimator, "Death", EnemyDeathClipPath);
             ValidateAnimationClipHeightFromFeet(EnemyDeathClipPath, "MW_DeathFront");
             ValidateAnyStateTriggerTransition(soldierVisualAnimator, "Attack", "Attack");
+            ValidateAnyStateTriggerTransition(soldierVisualAnimator, "AttackCombo2", "AttackCombo2");
+            ValidateAnyStateTriggerTransition(soldierVisualAnimator, "AttackCombo3", "AttackCombo3");
+            ValidateAnyStateTriggerTransition(soldierVisualAnimator, "AttackHeavy", "AttackHeavy");
+            ValidateAnyStateTriggerTransition(soldierVisualAnimator, "AttackLinePressure", "AttackLinePressure");
+            ValidateAnyStateTriggerTransition(soldierVisualAnimator, "AttackFanPressure", "AttackFanPressure");
+            ValidateAnyStateTriggerTransition(soldierVisualAnimator, "AttackRetreatShot", "AttackRetreatShot");
+            ValidateAnyStateTriggerTransition(soldierVisualAnimator, "AttackRetreatBlink", "AttackRetreatBlink");
+            ValidateAnyStateTriggerTransition(soldierVisualAnimator, "AttackGuardBreak", "AttackGuardBreak");
+            ValidateAnyStateTriggerTransition(soldierVisualAnimator, "RetreatBackstep", "RetreatBackstep");
+            ValidateAnyStateTriggerTransition(soldierVisualAnimator, "RetreatBlink", "RetreatBlink");
+            ValidateAnyStateTriggerTransition(soldierVisualAnimator, "EliteShieldCycle", "EliteShieldCycle");
+            ValidateAnyStateTriggerTransition(soldierVisualAnimator, "EliteArmorBreak", "EliteArmorBreak");
+            ValidateAnyStateTriggerTransition(soldierVisualAnimator, "EliteAuraBuffer", "EliteAuraBuffer");
+            ValidateAnyStateTriggerTransition(soldierVisualAnimator, "EliteSummonPackage", "EliteSummonPackage");
+            ValidateAnyStateTriggerTransition(soldierVisualAnimator, "ElitePhaseSwap", "ElitePhaseSwap");
             ValidateAnyStateTriggerTransition(soldierVisualAnimator, "Hit", "Hit");
+            ValidateAnyStateTriggerTransition(soldierVisualAnimator, "HitHeavy", "HitHeavy");
             ValidateAnyStateTriggerTransition(soldierVisualAnimator, "Death", "Death");
             ValidateAnyStateTriggerPriority(soldierVisualAnimator, "Death", "Hit", "Attack");
             ValidateMaintenanceWorkerMaterials(soldierVisual);
@@ -1294,6 +1447,93 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static void ValidateExtendedPatternDeckSampleEnemy(
+            BasicSoldierEnemy soldier,
+            string initialProfilePath,
+            CombatAiPatternProfile initialProfile,
+            string expectedDeckPath,
+            CombatAiPatternDeck expectedDeck,
+            CombatHealth playerHealth,
+            ActionCameraController cameraController,
+            string expectedPatternId)
+        {
+            CombatHealth soldierHealth = RequireComponent<CombatHealth>(soldier.gameObject, $"{soldier.name} health");
+            CombatTargetSensor targetSensor = RequireComponent<CombatTargetSensor>(soldier.gameObject, $"{soldier.name} target sensor");
+            EnemyAttackTelegraphPresenter telegraphPresenter = RequireComponent<EnemyAttackTelegraphPresenter>(soldier.gameObject, $"{soldier.name} telegraph presenter");
+            CombatHitFeedback hitFeedback = RequireComponent<CombatHitFeedback>(soldier.gameObject, $"{soldier.name} hit feedback");
+            EnemyActionCameraCueDriver enemyCameraCueDriver = RequireComponent<EnemyActionCameraCueDriver>(soldier.gameObject, $"{soldier.name} enemy camera cue driver");
+
+            ValidateObjectReferenceAssetPath(soldier, "patternProfile", initialProfilePath);
+            ValidateObjectReferenceAssetPath(soldier, "patternDeck", expectedDeckPath);
+            ValidateString(soldier, "patternId", expectedPatternId);
+            ValidateObjectReference(soldier, "targetSensor", targetSensor);
+            ValidateObjectReference(soldier, "target", playerHealth.transform);
+            ValidateObjectReference(soldier, "targetHealth", playerHealth);
+            ValidateObjectReference(soldier, "selfHealth", soldierHealth);
+            ValidateReference(soldier, "telegraphIndicator");
+            ValidateObjectReference(soldier, "telegraphPresenter", telegraphPresenter);
+            ValidateReference(soldier, "animator");
+            ValidateReference(soldier, "bodyRenderer");
+            ValidateBool(soldier, "usePrototypeBodyColors", false);
+            ValidateObjectReference(targetSensor, "selfHealth", soldierHealth);
+            ValidateFloat(targetSensor, "searchRadius", 12f);
+            ValidateFloat(targetSensor, "retargetIntervalSeconds", 0.2f);
+            ValidateObjectReferenceArray(targetSensor, "targetCandidates", new UnityEngine.Object[] { playerHealth });
+            ValidateReference(telegraphPresenter, "telegraphObject");
+            ValidateReference(telegraphPresenter, "telegraphTransform");
+            ValidateReference(telegraphPresenter, "telegraphRenderer");
+            ValidateReference(telegraphPresenter, "poseRoot");
+            ValidateBool(hitFeedback, "applyIdleColorOnEnable", false);
+            ValidateArrayMinSize(hitFeedback, "flashRenderers", 1);
+            ValidateEnemyActionCameraCueDriver(enemyCameraCueDriver, cameraController, soldier);
+
+            if (soldier.PatternProfile != initialProfile)
+            {
+                throw new InvalidOperationException($"{soldier.name} should start from profile {initialProfile.name} before deck selection.");
+            }
+
+            if (soldier.PatternDeck != expectedDeck)
+            {
+                throw new InvalidOperationException($"{soldier.name} should use pattern deck {expectedDeck.name}.");
+            }
+        }
+
+        private static void ValidateElitePatternController(
+            BasicSoldierEnemy soldier,
+            CombatHealth soldierHealth,
+            CombatHealth auraProtectedTarget,
+            CombatAiElitePatternProfile shieldCycleProfile,
+            CombatAiElitePatternProfile armorBreakProfile,
+            CombatAiElitePatternProfile auraBufferProfile,
+            CombatAiElitePatternProfile summonPackageProfile,
+            CombatAiElitePatternProfile phaseSwapProfile)
+        {
+            EnemyElitePatternController controller = RequireComponent<EnemyElitePatternController>(soldier.gameObject, $"{soldier.name} elite pattern controller");
+
+            ValidateObjectReference(controller, "health", soldierHealth);
+            ValidateObjectReference(controller, "soldier", soldier);
+            ValidateReference(controller, "animator");
+            ValidateReference(controller, "cueRenderer");
+            ValidateObjectReferenceArray(
+                controller,
+                "eliteProfiles",
+                new UnityEngine.Object[]
+                {
+                    shieldCycleProfile,
+                    armorBreakProfile,
+                    auraBufferProfile,
+                    summonPackageProfile,
+                    phaseSwapProfile
+                });
+            ValidateObjectReferenceArray(controller, "auraProtectedTargets", new UnityEngine.Object[] { auraProtectedTarget });
+            ValidateArrayMinSize(controller, "summonSignalObjects", 1);
+
+            if (controller.ProfileCount != 5)
+            {
+                throw new InvalidOperationException($"{soldier.name} should expose five elite pattern profiles.");
+            }
+        }
+
         private static void ValidateEnemyActionCameraCueDriver(
             EnemyActionCameraCueDriver enemyCameraCueDriver,
             ActionCameraController cameraController,
@@ -1372,7 +1612,11 @@ namespace DimensionBrawl.Editor
             Vector3 activePoseOffset,
             Color windupStartColor,
             Color windupEndColor,
-            Color activeColor)
+            Color activeColor,
+            string prepareTrigger = "",
+            string attackTrigger = "Attack",
+            string hitTrigger = "Hit",
+            string deathTrigger = "Death")
         {
             ValidateString(profile, "actorTypeId", actorTypeId);
             ValidateString(profile, "patternId", patternId);
@@ -1411,9 +1655,10 @@ namespace DimensionBrawl.Editor
             ValidateColor(profile, "windupEndColor", windupEndColor);
             ValidateColor(profile, "activeColor", activeColor);
             ValidateString(profile, "moveSpeedParameter", "MoveSpeed");
-            ValidateString(profile, "attackTrigger", "Attack");
-            ValidateString(profile, "hitTrigger", "Hit");
-            ValidateString(profile, "deathTrigger", "Death");
+            ValidateString(profile, "prepareTrigger", prepareTrigger);
+            ValidateString(profile, "attackTrigger", attackTrigger);
+            ValidateString(profile, "hitTrigger", hitTrigger);
+            ValidateString(profile, "deathTrigger", deathTrigger);
         }
 
         private static void ValidateCombatAiPatternDeck(

@@ -202,7 +202,7 @@ namespace DimensionBrawl.Editor
             };
         }
 
-        private static BasicSoldierEnemy EnsurePatternSampleEnemy(Scene scene, BasicSoldierEnemy template, string rootName)
+        public static BasicSoldierEnemy EnsurePatternSampleEnemy(Scene scene, BasicSoldierEnemy template, string rootName)
         {
             GameObject[] roots = scene.GetRootGameObjects();
             BasicSoldierEnemy existing = FindRootComponent<BasicSoldierEnemy>(roots, rootName);
@@ -218,7 +218,7 @@ namespace DimensionBrawl.Editor
             return soldier;
         }
 
-        private static void ConfigurePatternSampleEnemy(
+        public static void ConfigurePatternSampleEnemy(
             BasicSoldierEnemy soldier,
             string rootName,
             string patternId,
@@ -242,7 +242,7 @@ namespace DimensionBrawl.Editor
                 childNameSuffix);
         }
 
-        private static void ConfigurePatternSampleEnemy(
+        public static void ConfigurePatternSampleEnemy(
             BasicSoldierEnemy soldier,
             string rootName,
             string patternId,
@@ -370,7 +370,7 @@ namespace DimensionBrawl.Editor
             EditorSceneManager.MarkSceneDirty(soldier.gameObject.scene);
         }
 
-        private static void ConfigurePlayerTargetSelector(
+        public static void ConfigurePlayerTargetSelector(
             PlayerCombatTargetSelector targetSelector,
             Transform player,
             CombatHealth playerHealth,
@@ -654,7 +654,7 @@ namespace DimensionBrawl.Editor
                 new Color(0.05f, 0.38f, 1f, 1f),
                 new Color(0.85f, 0.95f, 1f, 1f),
                 "MoveSpeed",
-                "Attack",
+                "AttackCombo2",
                 "Hit",
                 "Death");
             ConfigureEnemyPatternProfile(
@@ -696,8 +696,8 @@ namespace DimensionBrawl.Editor
                 new Color(1f, 0.02f, 0.02f, 1f),
                 new Color(1f, 0.9f, 0.35f, 1f),
                 "MoveSpeed",
-                "Attack",
-                "Hit",
+                "AttackHeavy",
+                "HitHeavy",
                 "Death");
             ConfigureEnemyPatternProfile(
                 enemyLinePressurePatternProfile,
@@ -738,7 +738,7 @@ namespace DimensionBrawl.Editor
                 new Color(0.34f, 0.06f, 1f, 1f),
                 new Color(0.86f, 0.72f, 1f, 1f),
                 "MoveSpeed",
-                "Attack",
+                "AttackLinePressure",
                 "Hit",
                 "Death");
             ConfigureEnemyPatternProfile(
@@ -780,7 +780,7 @@ namespace DimensionBrawl.Editor
                 new Color(0.04f, 0.68f, 0.45f, 1f),
                 new Color(0.74f, 1f, 0.88f, 1f),
                 "MoveSpeed",
-                "Attack",
+                "AttackFanPressure",
                 "Hit",
                 "Death");
             ConfigureCombatAiPatternDeck(
@@ -879,7 +879,8 @@ namespace DimensionBrawl.Editor
             string moveSpeedParameter,
             string attackTrigger,
             string hitTrigger,
-            string deathTrigger)
+            string deathTrigger,
+            string prepareTrigger = "")
         {
             SerializedObject serializedObject = new SerializedObject(profile);
             SetString(serializedObject, "actorTypeId", actorTypeId);
@@ -919,6 +920,7 @@ namespace DimensionBrawl.Editor
             SetColor(serializedObject, "windupEndColor", windupEndColor);
             SetColor(serializedObject, "activeColor", activeColor);
             SetString(serializedObject, "moveSpeedParameter", moveSpeedParameter);
+            SetString(serializedObject, "prepareTrigger", prepareTrigger);
             SetString(serializedObject, "attackTrigger", attackTrigger);
             SetString(serializedObject, "hitTrigger", hitTrigger);
             SetString(serializedObject, "deathTrigger", deathTrigger);

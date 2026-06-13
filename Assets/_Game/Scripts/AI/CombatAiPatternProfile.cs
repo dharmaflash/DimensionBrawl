@@ -20,6 +20,11 @@ namespace DimensionBrawl.AI
         [SerializeField, Min(0f)] private float turnRateDegrees = 540f;
         [SerializeField] private float gravity = -24f;
 
+        [Header("Pre-Attack Reposition")]
+        [SerializeField, Min(0f)] private float prepareSeconds;
+        [SerializeField, Min(0f)] private float prepareRetreatSpeed;
+        [SerializeField] private bool lockAttackDirectionAfterPrepare = true;
+
         [Header("Attack")]
         [SerializeField, Min(0f)] private float attackRange = 1.65f;
         [SerializeField, Range(-1f, 1f)] private float attackFacingDotThreshold = -0.15f;
@@ -95,6 +100,7 @@ namespace DimensionBrawl.AI
 
         [Header("Animation Requests")]
         [SerializeField] private string moveSpeedParameter = "MoveSpeed";
+        [SerializeField] private string prepareTrigger = string.Empty;
         [SerializeField] private string attackTrigger = "Attack";
         [SerializeField] private string hitTrigger = "Hit";
         [SerializeField] private string deathTrigger = "Death";
@@ -104,6 +110,9 @@ namespace DimensionBrawl.AI
         public float ApproachSpeed => approachSpeed;
         public float TurnRateDegrees => turnRateDegrees;
         public float Gravity => gravity;
+        public float PrepareSeconds => prepareSeconds;
+        public float PrepareRetreatSpeed => prepareRetreatSpeed;
+        public bool LockAttackDirectionAfterPrepare => lockAttackDirectionAfterPrepare;
         public float AttackRange => attackRange;
         public float AttackFacingDotThreshold => attackFacingDotThreshold;
         public float TelegraphSeconds => telegraphSeconds;
@@ -136,6 +145,7 @@ namespace DimensionBrawl.AI
         public Color WindupEndColor => windupEndColor;
         public Color ActiveColor => activeColor;
         public string MoveSpeedParameter => moveSpeedParameter;
+        public string PrepareTrigger => prepareTrigger;
         public string AttackTrigger => attackTrigger;
         public string HitTrigger => hitTrigger;
         public string DeathTrigger => deathTrigger;

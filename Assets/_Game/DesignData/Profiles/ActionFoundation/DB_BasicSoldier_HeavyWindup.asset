@@ -17,6 +17,9 @@ MonoBehaviour:
   approachSpeed: 2.1
   turnRateDegrees: 420
   gravity: -24
+  prepareSeconds: 0
+  prepareRetreatSpeed: 0
+  lockAttackDirectionAfterPrepare: 1
   attackRange: 1.9
   attackFacingDotThreshold: 0.1
   telegraphSeconds: 1.05
@@ -73,6 +76,7 @@ MonoBehaviour:
   windupEndColor: {r: 1, g: 0.02, b: 0.02, a: 1}
   activeColor: {r: 1, g: 0.9, b: 0.35, a: 1}
   moveSpeedParameter: MoveSpeed
-  attackTrigger: Attack
-  hitTrigger: Hit
+  prepareTrigger: 
+  attackTrigger: AttackHeavy
+  hitTrigger: HitHeavy
   deathTrigger: Death

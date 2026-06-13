@@ -68,6 +68,39 @@ namespace DimensionBrawl.Combat
         public float HitStopSeconds { get; }
     }
 
+    public sealed class DamageModificationContext
+    {
+        public DamageModificationContext(DamageInfo damageInfo)
+        {
+            DamageInfo = damageInfo;
+            ModifiedAmount = damageInfo.Amount;
+        }
+
+        public DamageInfo DamageInfo { get; }
+        public float ModifiedAmount { get; private set; }
+
+        public void ScaleAmount(float multiplier)
+        {
+            ModifiedAmount = Mathf.Max(0f, ModifiedAmount * Mathf.Max(0f, multiplier));
+        }
+
+        public void SetAmount(float amount)
+        {
+            ModifiedAmount = Mathf.Max(0f, amount);
+        }
+
+        public DamageInfo ToResolvedDamageInfo()
+        {
+            return new DamageInfo(
+                DamageInfo.Source,
+                DamageInfo.SourceTeam,
+                ModifiedAmount,
+                DamageInfo.Point,
+                DamageInfo.Direction,
+                DamageInfo.HitStopSeconds);
+        }
+    }
+
     public sealed class CombatHealth : MonoBehaviour
     {
         [SerializeField] private DamageTeam team = DamageTeam.Neutral;
@@ -81,6 +114,7 @@ namespace DimensionBrawl.Combat
         private bool isDead;
 
         public event Action<DamageInfo> Damaged;
+        public event Action<DamageModificationContext> DamageModifying;
         public event Action Died;
 
         public DamageTeam Team => team;
@@ -122,8 +156,16 @@ namespace DimensionBrawl.Combat
                 return false;
             }
 
-            currentHealth = Mathf.Max(0f, currentHealth - damageInfo.Amount);
-            Damaged?.Invoke(damageInfo);
+            DamageModificationContext modificationContext = new DamageModificationContext(damageInfo);
+            DamageModifying?.Invoke(modificationContext);
+            if (modificationContext.ModifiedAmount <= 0f)
+            {
+                return false;
+            }
+
+            DamageInfo resolvedDamageInfo = modificationContext.ToResolvedDamageInfo();
+            currentHealth = Mathf.Max(0f, currentHealth - resolvedDamageInfo.Amount);
+            Damaged?.Invoke(resolvedDamageInfo);
             onDamaged.Invoke();
 
             if (currentHealth <= 0f)

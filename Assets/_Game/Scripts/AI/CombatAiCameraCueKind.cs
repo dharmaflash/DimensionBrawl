@@ -9,7 +9,15 @@ namespace DimensionBrawl.AI
         LungeStrike,
         HeavyWindup,
         LinePressure,
-        FanPressure
+        FanPressure,
+        RetreatShot,
+        RetreatBlink,
+        GuardBreak,
+        ShieldCycle,
+        ArmorBreak,
+        AuraBuffer,
+        SummonPackage,
+        PhaseSwap
     }
 
     [Serializable]

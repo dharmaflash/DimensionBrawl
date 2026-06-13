@@ -22,9 +22,20 @@ namespace DimensionBrawl.Editor
         private const string MaterialRoot = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/MaintenanceWorker/Materials";
         private const string TextureRoot = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/MaintenanceWorker/Textures";
         private const string ControllerPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/DB_MaintenanceWorker_BasicSoldier.controller";
+        private const string SourceAnimationRoot = "Assets/_Imported/AssetStore/Protofactor/Sci Fi/SciFiCharactersMegaPackVol3/SciFiShooterCharactersPackVol3/MaintenanceWorker/FBX Files";
+        private const string AnimationRoot = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker";
         private const string IdleClipPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/MW_IdleCombat.fbx";
         private const string RunClipPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/MW_RunCombat.fbx";
         private const string AttackClipPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/MW_AttackCombat.fbx";
+        public const string AttackCombo2ClipPath = AnimationRoot + "/MW_AttackCombo2.fbx";
+        public const string AttackCombo3ClipPath = AnimationRoot + "/MW_AttackCombo3.fbx";
+        public const string CrouchForwardClipPath = AnimationRoot + "/MW_CrouchForward.fbx";
+        public const string CrouchIdleCombatClipPath = AnimationRoot + "/MW_CrouchIdleCombat.fbx";
+        public const string RepairHighClipPath = AnimationRoot + "/MW_RepairHigh.fbx";
+        public const string RepairLowClipPath = AnimationRoot + "/MW_RepairLow.fbx";
+        public const string TypeOnConsoleClipPath = AnimationRoot + "/MW_TypeOnConsole.fbx";
+        public const string Turn90RightClipPath = AnimationRoot + "/MW_Turn90Right.fbx";
+        public const string HitHeavyClipPath = AnimationRoot + "/MW_GetHitFrontHeavy.fbx";
         private const string HitClipPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/MW_GetHitFrontLight.fbx";
         private const string DeathClipPath = "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/MaintenanceWorker/MW_DeathFront.fbx";
 
@@ -80,13 +91,47 @@ namespace DimensionBrawl.Editor
 
         private static void ConfigureImportedAssets()
         {
+            PromoteAnimationClip("MaintenanceWorker@2HitComboCombat.fbx", AttackCombo2ClipPath);
+            PromoteAnimationClip("MaintenanceWorker@3HitComboCombat.fbx", AttackCombo3ClipPath);
+            PromoteAnimationClip("MaintenanceWorker@CrouchForward.fbx", CrouchForwardClipPath);
+            PromoteAnimationClip("MaintenanceWorker@CrouchIdleCombat.fbx", CrouchIdleCombatClipPath);
+            PromoteAnimationClip("MaintenanceWorker@RepairHigh.fbx", RepairHighClipPath);
+            PromoteAnimationClip("MaintenanceWorker@RepairLow.fbx", RepairLowClipPath);
+            PromoteAnimationClip("MaintenanceWorker@TypeOnConsole.fbx", TypeOnConsoleClipPath);
+            PromoteAnimationClip("MaintenanceWorker@Turn90Right.fbx", Turn90RightClipPath);
+            PromoteAnimationClip("MaintenanceWorker@GetHitFrontHeavy.fbx", HitHeavyClipPath);
+
             ConfigureModelImporter(ModelPath);
             Avatar avatar = LoadAvatar(ModelPath);
             ConfigureAnimationImporter(IdleClipPath, "MW_IdleCombat", true, avatar);
             ConfigureAnimationImporter(RunClipPath, "MW_RunCombat", true, avatar);
             ConfigureAnimationImporter(AttackClipPath, "MW_AttackCombat", false, avatar);
+            ConfigureAnimationImporter(AttackCombo2ClipPath, "MW_AttackCombo2", false, avatar);
+            ConfigureAnimationImporter(AttackCombo3ClipPath, "MW_AttackCombo3", false, avatar);
+            ConfigureAnimationImporter(CrouchForwardClipPath, "MW_CrouchForward", false, avatar);
+            ConfigureAnimationImporter(CrouchIdleCombatClipPath, "MW_CrouchIdleCombat", true, avatar);
+            ConfigureAnimationImporter(RepairHighClipPath, "MW_RepairHigh", false, avatar);
+            ConfigureAnimationImporter(RepairLowClipPath, "MW_RepairLow", false, avatar);
+            ConfigureAnimationImporter(TypeOnConsoleClipPath, "MW_TypeOnConsole", false, avatar);
+            ConfigureAnimationImporter(Turn90RightClipPath, "MW_Turn90Right", false, avatar);
+            ConfigureAnimationImporter(HitHeavyClipPath, "MW_GetHitFrontHeavy", false, avatar);
             ConfigureAnimationImporter(HitClipPath, "MW_GetHitFrontLight", false, avatar);
             ConfigureAnimationImporter(DeathClipPath, "MW_DeathFront", false, avatar, true);
+        }
+
+        private static void PromoteAnimationClip(string sourceFileName, string targetPath)
+        {
+            EnsureFolder(AnimationRoot);
+            if (AssetDatabase.LoadAssetAtPath<AnimationClip>(targetPath) != null)
+            {
+                return;
+            }
+
+            string sourcePath = $"{SourceAnimationRoot}/{sourceFileName}";
+            if (!AssetDatabase.CopyAsset(sourcePath, targetPath))
+            {
+                throw new InvalidOperationException($"Failed to promote MaintenanceWorker animation from {sourcePath} to {targetPath}.");
+            }
         }
 
         private static void ConfigureModelImporter(string path)
@@ -159,7 +204,23 @@ namespace DimensionBrawl.Editor
             ClearParameters(controller);
             controller.AddParameter("MoveSpeed", AnimatorControllerParameterType.Float);
             controller.AddParameter("Attack", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("AttackCombo2", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("AttackCombo3", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("AttackHeavy", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("AttackLinePressure", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("AttackFanPressure", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("AttackRetreatShot", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("AttackRetreatBlink", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("AttackGuardBreak", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("RetreatBackstep", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("RetreatBlink", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("EliteShieldCycle", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("EliteArmorBreak", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("EliteAuraBuffer", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("EliteSummonPackage", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("ElitePhaseSwap", AnimatorControllerParameterType.Trigger);
             controller.AddParameter("Hit", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("HitHeavy", AnimatorControllerParameterType.Trigger);
             controller.AddParameter("Death", AnimatorControllerParameterType.Trigger);
 
             AnimatorStateMachine stateMachine = controller.layers[0].stateMachine;
@@ -176,17 +237,65 @@ namespace DimensionBrawl.Editor
             AnimatorState idle = AddState(stateMachine, "Idle", IdleClipPath, new Vector3(250f, 80f, 0f));
             AnimatorState run = AddState(stateMachine, "Run", RunClipPath, new Vector3(250f, 170f, 0f));
             AnimatorState attack = AddState(stateMachine, "Attack", AttackClipPath, new Vector3(520f, 80f, 0f));
-            AnimatorState hit = AddState(stateMachine, "Hit", HitClipPath, new Vector3(520f, 170f, 0f));
-            AnimatorState death = AddState(stateMachine, "Death", DeathClipPath, new Vector3(520f, 260f, 0f));
+            AnimatorState attackCombo2 = AddState(stateMachine, "AttackCombo2", AttackCombo2ClipPath, new Vector3(520f, 170f, 0f));
+            AnimatorState attackCombo3 = AddState(stateMachine, "AttackCombo3", AttackCombo3ClipPath, new Vector3(520f, 260f, 0f));
+            AnimatorState attackHeavy = AddState(stateMachine, "AttackHeavy", AttackCombo3ClipPath, new Vector3(520f, 350f, 0f), 0.82f);
+            AnimatorState attackLinePressure = AddState(stateMachine, "AttackLinePressure", RepairHighClipPath, new Vector3(800f, 80f, 0f));
+            AnimatorState attackFanPressure = AddState(stateMachine, "AttackFanPressure", RepairLowClipPath, new Vector3(800f, 170f, 0f));
+            AnimatorState attackRetreatShot = AddState(stateMachine, "AttackRetreatShot", RepairHighClipPath, new Vector3(800f, 260f, 0f), 1.18f);
+            AnimatorState attackRetreatBlink = AddState(stateMachine, "AttackRetreatBlink", RepairLowClipPath, new Vector3(800f, 350f, 0f), 1.22f);
+            AnimatorState attackGuardBreak = AddState(stateMachine, "AttackGuardBreak", AttackCombo3ClipPath, new Vector3(800f, 440f, 0f), 0.72f);
+            AnimatorState retreatBackstep = AddState(stateMachine, "RetreatBackstep", CrouchForwardClipPath, new Vector3(1080f, 80f, 0f), 1.15f);
+            AnimatorState retreatBlink = AddState(stateMachine, "RetreatBlink", CrouchForwardClipPath, new Vector3(1080f, 170f, 0f), 1.55f);
+            AnimatorState eliteShieldCycle = AddState(stateMachine, "EliteShieldCycle", CrouchIdleCombatClipPath, new Vector3(1080f, 260f, 0f));
+            AnimatorState eliteArmorBreak = AddState(stateMachine, "EliteArmorBreak", HitHeavyClipPath, new Vector3(1080f, 350f, 0f));
+            AnimatorState eliteAuraBuffer = AddState(stateMachine, "EliteAuraBuffer", RepairLowClipPath, new Vector3(1080f, 440f, 0f));
+            AnimatorState eliteSummonPackage = AddState(stateMachine, "EliteSummonPackage", TypeOnConsoleClipPath, new Vector3(1360f, 80f, 0f));
+            AnimatorState elitePhaseSwap = AddState(stateMachine, "ElitePhaseSwap", Turn90RightClipPath, new Vector3(1360f, 170f, 0f));
+            AnimatorState hit = AddState(stateMachine, "Hit", HitClipPath, new Vector3(1360f, 260f, 0f));
+            AnimatorState hitHeavy = AddState(stateMachine, "HitHeavy", HitHeavyClipPath, new Vector3(1360f, 350f, 0f));
+            AnimatorState death = AddState(stateMachine, "Death", DeathClipPath, new Vector3(1360f, 440f, 0f));
             stateMachine.defaultState = idle;
 
             AddMoveTransition(idle, run, AnimatorConditionMode.Greater, 0.1f);
             AddMoveTransition(run, idle, AnimatorConditionMode.Less, 0.1f);
             AddAnyTriggerTransition(stateMachine, death, "Death", 0.05f);
             AddAnyTriggerTransition(stateMachine, hit, "Hit", 0.03f);
+            AddAnyTriggerTransition(stateMachine, hitHeavy, "HitHeavy", 0.03f);
             AddAnyTriggerTransition(stateMachine, attack, "Attack", 0.04f);
+            AddAnyTriggerTransition(stateMachine, attackCombo2, "AttackCombo2", 0.04f);
+            AddAnyTriggerTransition(stateMachine, attackCombo3, "AttackCombo3", 0.04f);
+            AddAnyTriggerTransition(stateMachine, attackHeavy, "AttackHeavy", 0.06f);
+            AddAnyTriggerTransition(stateMachine, attackLinePressure, "AttackLinePressure", 0.04f);
+            AddAnyTriggerTransition(stateMachine, attackFanPressure, "AttackFanPressure", 0.04f);
+            AddAnyTriggerTransition(stateMachine, attackRetreatShot, "AttackRetreatShot", 0.04f);
+            AddAnyTriggerTransition(stateMachine, attackRetreatBlink, "AttackRetreatBlink", 0.04f);
+            AddAnyTriggerTransition(stateMachine, attackGuardBreak, "AttackGuardBreak", 0.06f);
+            AddAnyTriggerTransition(stateMachine, retreatBackstep, "RetreatBackstep", 0.04f);
+            AddAnyTriggerTransition(stateMachine, retreatBlink, "RetreatBlink", 0.04f);
+            AddAnyTriggerTransition(stateMachine, eliteShieldCycle, "EliteShieldCycle", 0.05f);
+            AddAnyTriggerTransition(stateMachine, eliteArmorBreak, "EliteArmorBreak", 0.03f);
+            AddAnyTriggerTransition(stateMachine, eliteAuraBuffer, "EliteAuraBuffer", 0.05f);
+            AddAnyTriggerTransition(stateMachine, eliteSummonPackage, "EliteSummonPackage", 0.05f);
+            AddAnyTriggerTransition(stateMachine, elitePhaseSwap, "ElitePhaseSwap", 0.05f);
             AddExitTransition(attack, idle, 0.82f, 0.08f);
+            AddExitTransition(attackCombo2, idle, 0.86f, 0.08f);
+            AddExitTransition(attackCombo3, idle, 0.9f, 0.08f);
+            AddExitTransition(attackHeavy, idle, 0.92f, 0.08f);
+            AddExitTransition(attackLinePressure, idle, 0.72f, 0.08f);
+            AddExitTransition(attackFanPressure, idle, 0.72f, 0.08f);
+            AddExitTransition(attackRetreatShot, idle, 0.68f, 0.08f);
+            AddExitTransition(attackRetreatBlink, idle, 0.64f, 0.08f);
+            AddExitTransition(attackGuardBreak, idle, 0.92f, 0.08f);
+            AddExitTransition(retreatBackstep, idle, 0.8f, 0.06f);
+            AddExitTransition(retreatBlink, idle, 0.74f, 0.05f);
+            AddExitTransition(eliteShieldCycle, idle, 0.82f, 0.06f);
+            AddExitTransition(eliteArmorBreak, idle, 0.88f, 0.06f);
+            AddExitTransition(eliteAuraBuffer, idle, 0.72f, 0.06f);
+            AddExitTransition(eliteSummonPackage, idle, 0.88f, 0.06f);
+            AddExitTransition(elitePhaseSwap, idle, 0.82f, 0.06f);
             AddExitTransition(hit, idle, 0.88f, 0.06f);
+            AddExitTransition(hitHeavy, idle, 0.9f, 0.06f);
 
             EditorUtility.SetDirty(controller);
             AssetDatabase.SaveAssets();
@@ -465,10 +574,11 @@ namespace DimensionBrawl.Editor
             }
         }
 
-        private static AnimatorState AddState(AnimatorStateMachine stateMachine, string stateName, string clipPath, Vector3 position)
+        private static AnimatorState AddState(AnimatorStateMachine stateMachine, string stateName, string clipPath, Vector3 position, float speed = 1f)
         {
             AnimatorState state = stateMachine.AddState(stateName, position);
             state.motion = LoadClip(clipPath);
+            state.speed = speed;
             state.writeDefaultValues = true;
             return state;
         }
