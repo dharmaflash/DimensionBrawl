@@ -21,6 +21,7 @@ namespace DimensionBrawl.Presentation
         private MaterialPropertyBlock propertyBlock;
         private Vector3 authoredLocalScale;
         private Vector3 authoredLocalPosition;
+        private Quaternion authoredLocalRotation;
         private float elapsedSeconds;
         private bool isPlaying;
 
@@ -79,6 +80,7 @@ namespace DimensionBrawl.Presentation
         {
             authoredLocalScale = transform.localScale;
             authoredLocalPosition = transform.localPosition;
+            authoredLocalRotation = transform.localRotation;
         }
 
         private void ApplyVisualState(float normalizedTime)
@@ -88,7 +90,7 @@ namespace DimensionBrawl.Presentation
             transform.localScale = Vector3.Scale(authoredLocalScale, Vector3.Lerp(startScale, endScale, eased));
             transform.localPosition = authoredLocalPosition
                 + Vector3.up * verticalLift * eased
-                + Vector3.forward * forwardTravelDistance * eased;
+                + authoredLocalRotation * Vector3.forward * forwardTravelDistance * eased;
 
             Color color = Color.Lerp(startColor, endColor, eased);
             for (int i = 0; i < renderers.Length; i++)

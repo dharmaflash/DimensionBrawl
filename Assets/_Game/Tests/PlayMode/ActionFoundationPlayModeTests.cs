@@ -1938,6 +1938,13 @@ namespace DimensionBrawl.Tests
             CombatVfxCueVisual visual = cue.Prefab.GetComponentInChildren<CombatVfxCueVisual>(true);
             Assert.IsNotNull(visual, $"{cueId} should use CombatVfxCueVisual for presentation-only travel.");
 
+            Transform core = cue.Prefab.transform.Find("ProjectileCore");
+            Transform trail = cue.Prefab.transform.Find("ProjectileTrail");
+            Assert.IsNotNull(core, $"{cueId} should include an elevated projectile core so the shot reads in the gameplay camera.");
+            Assert.IsNotNull(trail, $"{cueId} should include an elevated projectile trail so the shot reads in the gameplay camera.");
+            Assert.GreaterOrEqual(core.localPosition.y, 0.9f, $"{cueId} projectile core should sit above the ground telegraph layer.");
+            Assert.GreaterOrEqual(trail.localPosition.y, 0.9f, $"{cueId} projectile trail should sit above the ground telegraph layer.");
+
             SerializedObject visualObject = new SerializedObject(visual);
             SerializedProperty travel = visualObject.FindProperty("forwardTravelDistance");
             Assert.IsNotNull(travel, $"{cueId} visual should expose authored forward travel.");

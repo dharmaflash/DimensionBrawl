@@ -140,11 +140,11 @@ namespace DimensionBrawl.Editor
                 HeavyWindup = SaveBurstPrefab("DB_VFX_HeavyWindupCharge", gold, ParticleSystemShapeType.Sphere, 0.34f, 10f, 360f, 0.38f, 0.70f, 0.18f, 0.44f, 42, new Color(1f, 0.74f, 0.12f, 0.86f), new Color(1f, 0.18f, 0.02f, 0f)),
                 HeavyActive = SaveBurstPrefab("DB_VFX_HeavyWindupImpact", gold, ParticleSystemShapeType.Circle, 0.65f, 34f, 360f, 0.13f, 0.34f, 0.30f, 0.78f, 56, new Color(1f, 0.9f, 0.36f, 0.96f), new Color(1f, 0.28f, 0.04f, 0f)),
                 LineWindup = SaveBurstPrefab("DB_VFX_LinePressureWindup", cyan, ParticleSystemShapeType.Cone, 0.18f, 18f, 34f, 0.30f, 0.58f, 0.10f, 0.24f, 30, new Color(0.22f, 0.94f, 1f, 0.82f), new Color(0.02f, 0.28f, 1f, 0f)),
-                LineActive = SaveBurstPrefab("DB_VFX_LinePressureActive", cyan, ParticleSystemShapeType.Cone, 0.20f, 74f, 24f, 0.12f, 0.30f, 0.16f, 0.46f, 58, new Color(0.42f, 0.96f, 1f, 0.96f), new Color(0.04f, 0.3f, 1f, 0f), 3.4f),
+                LineActive = SaveBurstPrefab("DB_VFX_LinePressureActive", cyan, ParticleSystemShapeType.Cone, 0.20f, 74f, 24f, 0.12f, 0.36f, 0.16f, 0.46f, 58, new Color(0.42f, 0.96f, 1f, 0.96f), new Color(0.04f, 0.3f, 1f, 0f), 3.4f),
                 FanWindup = SaveBurstPrefab("DB_VFX_FanPressureWindup", cyan, ParticleSystemShapeType.Cone, 0.24f, 14f, 95f, 0.30f, 0.56f, 0.12f, 0.32f, 34, new Color(0.18f, 0.94f, 0.88f, 0.8f), new Color(0.02f, 0.52f, 0.9f, 0f)),
                 FanActive = SaveBurstPrefab("DB_VFX_FanPressureActive", cyan, ParticleSystemShapeType.Cone, 0.36f, 48f, 120f, 0.13f, 0.34f, 0.20f, 0.54f, 64, new Color(0.36f, 1f, 0.86f, 0.94f), new Color(0.02f, 0.58f, 1f, 0f)),
                 RetreatShotWindup = SaveBurstPrefab("DB_VFX_RetreatShotWindup", blue, ParticleSystemShapeType.Cone, 0.20f, 18f, 45f, 0.24f, 0.48f, 0.10f, 0.28f, 22, new Color(0.24f, 0.72f, 1f, 0.84f), new Color(0.06f, 0.28f, 1f, 0f)),
-                RetreatShotActive = SaveBurstPrefab("DB_VFX_RetreatShotActive", blue, ParticleSystemShapeType.Cone, 0.18f, 70f, 22f, 0.08f, 0.22f, 0.14f, 0.40f, 44, new Color(0.48f, 0.92f, 1f, 0.96f), new Color(0.05f, 0.2f, 1f, 0f), 3.2f),
+                RetreatShotActive = SaveBurstPrefab("DB_VFX_RetreatShotActive", blue, ParticleSystemShapeType.Cone, 0.18f, 70f, 22f, 0.08f, 0.32f, 0.14f, 0.40f, 44, new Color(0.48f, 0.92f, 1f, 0.96f), new Color(0.05f, 0.2f, 1f, 0f), 3.2f),
                 RetreatBlinkWindup = SaveBurstPrefab("DB_VFX_RetreatBlinkWindup", violet, ParticleSystemShapeType.Sphere, 0.36f, 12f, 360f, 0.22f, 0.46f, 0.12f, 0.36f, 32, new Color(0.64f, 0.26f, 1f, 0.82f), new Color(0.1f, 0.03f, 0.52f, 0f)),
                 RetreatBlinkActive = SaveBurstPrefab("DB_VFX_RetreatBlinkActive", violet, ParticleSystemShapeType.Circle, 0.52f, 38f, 360f, 0.10f, 0.28f, 0.18f, 0.56f, 50, new Color(0.78f, 0.48f, 1f, 0.95f), new Color(0.18f, 0.06f, 0.8f, 0f)),
                 GuardBreakWindup = SaveBurstPrefab("DB_VFX_GuardBreakWindup", gold, ParticleSystemShapeType.Sphere, 0.38f, 14f, 360f, 0.42f, 0.78f, 0.20f, 0.48f, 48, new Color(1f, 0.76f, 0.16f, 0.88f), new Color(1f, 0.22f, 0.02f, 0f)),
@@ -347,11 +347,11 @@ namespace DimensionBrawl.Editor
                 new CueDefinition(CombatVfxCueId.EnemyHeavyWindupWindup, prefabs.HeavyWindup, new Vector3(0f, 0.12f, 0f), Vector3.zero, new Vector3(1.35f, 1.2f, 1.35f), 0.72f, true, false),
                 new CueDefinition(CombatVfxCueId.EnemyHeavyWindupActive, prefabs.HeavyActive, new Vector3(0f, -0.15f, 0.85f), Vector3.zero, new Vector3(1.55f, 0.6f, 1.55f), 0.40f, false, true),
                 new CueDefinition(CombatVfxCueId.EnemyLinePressureWindup, prefabs.LineWindup, new Vector3(0f, 0f, 0.45f), Vector3.zero, new Vector3(0.8f, 1f, 2.1f), 0.58f, true, true),
-                new CueDefinition(CombatVfxCueId.EnemyLinePressureActive, prefabs.LineActive, new Vector3(0f, 0f, 2.6f), Vector3.zero, new Vector3(0.7f, 1f, 3.2f), 0.32f, false, true),
+                new CueDefinition(CombatVfxCueId.EnemyLinePressureActive, prefabs.LineActive, new Vector3(0f, 0f, 0.85f), Vector3.zero, new Vector3(1.15f, 1.15f, 1.15f), 0.38f, false, true),
                 new CueDefinition(CombatVfxCueId.EnemyFanPressureWindup, prefabs.FanWindup, new Vector3(0f, 0f, 0.45f), Vector3.zero, new Vector3(1.25f, 1f, 1.65f), 0.58f, true, true),
                 new CueDefinition(CombatVfxCueId.EnemyFanPressureActive, prefabs.FanActive, new Vector3(0f, 0f, 1.35f), Vector3.zero, new Vector3(1.6f, 1f, 2.25f), 0.36f, false, true),
                 new CueDefinition(CombatVfxCueId.EnemyRetreatShotWindup, prefabs.RetreatShotWindup, new Vector3(0f, 0f, 0.35f), Vector3.zero, Vector3.one, 0.48f, true, true),
-                new CueDefinition(CombatVfxCueId.EnemyRetreatShotActive, prefabs.RetreatShotActive, new Vector3(0f, 0f, 1.65f), Vector3.zero, new Vector3(0.8f, 1f, 2.6f), 0.26f, false, true),
+                new CueDefinition(CombatVfxCueId.EnemyRetreatShotActive, prefabs.RetreatShotActive, new Vector3(0f, 0f, 0.75f), Vector3.zero, Vector3.one, 0.34f, false, true),
                 new CueDefinition(CombatVfxCueId.EnemyRetreatBlinkWindup, prefabs.RetreatBlinkWindup, Vector3.zero, Vector3.zero, new Vector3(1.1f, 1.1f, 1.1f), 0.48f, true, false),
                 new CueDefinition(CombatVfxCueId.EnemyRetreatBlinkActive, prefabs.RetreatBlinkActive, new Vector3(0f, -0.05f, 0f), Vector3.zero, new Vector3(1.35f, 0.65f, 1.35f), 0.34f, false, false),
                 new CueDefinition(CombatVfxCueId.EnemyGuardBreakWindup, prefabs.GuardBreakWindup, new Vector3(0f, 0.1f, 0f), Vector3.zero, new Vector3(1.25f, 1.1f, 1.25f), 0.82f, true, false),
@@ -443,7 +443,14 @@ namespace DimensionBrawl.Editor
             string prefabPath = $"{PrefabRoot}/{name}.prefab";
             GameObject root = new GameObject(name);
             var renderers = new System.Collections.Generic.List<Renderer>();
-            AddCueGeometry(root, material, shapeType, radius, speed, arcDegrees, minSize, maxSize, renderers);
+            if (forwardTravelDistance > 0f)
+            {
+                AddProjectileCueGeometry(root, material, radius, speed, minSize, maxSize, renderers);
+            }
+            else
+            {
+                AddCueGeometry(root, material, shapeType, radius, speed, arcDegrees, minSize, maxSize, renderers);
+            }
 
             CombatVfxCueVisual visual = root.AddComponent<CombatVfxCueVisual>();
             Vector3 startVisualScale = Vector3.one * Mathf.Clamp(1f - minSize, 0.72f, 1f);
@@ -455,6 +462,29 @@ namespace DimensionBrawl.Editor
             GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             UnityEngine.Object.DestroyImmediate(root);
             return savedPrefab;
+        }
+
+        private static void AddProjectileCueGeometry(
+            GameObject root,
+            Material material,
+            float radius,
+            float speed,
+            float minSize,
+            float maxSize,
+            System.Collections.Generic.List<Renderer> renderers)
+        {
+            float speedFactor = Mathf.InverseLerp(45f, 80f, speed);
+            float sizeFactor = Mathf.Clamp01((minSize + maxSize) * 1.35f);
+            float coreWidth = Mathf.Lerp(0.18f, 0.28f, sizeFactor);
+            float coreLength = Mathf.Lerp(0.44f, 0.66f, speedFactor);
+            float trailLength = Mathf.Lerp(0.95f, 1.45f, speedFactor);
+            float sideSparkLength = Mathf.Lerp(0.42f, 0.68f, speedFactor);
+            float height = Mathf.Lerp(0.95f, 1.18f, Mathf.Clamp01(radius * 3.2f));
+
+            renderers.Add(AddPrimitive(root.transform, "ProjectileCore", PrimitiveType.Sphere, material, new Vector3(0f, height, 0.36f), Vector3.zero, new Vector3(coreWidth, coreWidth, coreLength)));
+            renderers.Add(AddPrimitive(root.transform, "ProjectileTrail", PrimitiveType.Cube, material, new Vector3(0f, height, -0.28f), Vector3.zero, new Vector3(coreWidth * 0.54f, coreWidth * 0.34f, trailLength)));
+            renderers.Add(AddPrimitive(root.transform, "ProjectileLeftSpark", PrimitiveType.Cube, material, new Vector3(-coreWidth * 0.62f, height + 0.02f, -0.05f), new Vector3(0f, -18f, 0f), new Vector3(coreWidth * 0.25f, coreWidth * 0.24f, sideSparkLength)));
+            renderers.Add(AddPrimitive(root.transform, "ProjectileRightSpark", PrimitiveType.Cube, material, new Vector3(coreWidth * 0.62f, height - 0.02f, -0.05f), new Vector3(0f, 18f, 0f), new Vector3(coreWidth * 0.25f, coreWidth * 0.24f, sideSparkLength)));
         }
 
         private static void AddCueGeometry(

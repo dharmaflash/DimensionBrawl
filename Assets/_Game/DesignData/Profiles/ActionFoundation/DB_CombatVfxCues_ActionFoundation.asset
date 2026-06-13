@@ -150,10 +150,10 @@ MonoBehaviour:
     alignForwardToDirection: 1
   - cueId: 15
     prefab: {fileID: 6244074342710107144, guid: 64f8795fc99852b48b2ba209c65d9a03, type: 3}
-    localPositionOffset: {x: 0, y: 0, z: 2.6}
+    localPositionOffset: {x: 0, y: 0, z: 0.85}
     localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 0.7, y: 1, z: 3.2}
-    lifetimeSeconds: 0.32
+    localScale: {x: 1.15, y: 1.15, z: 1.15}
+    lifetimeSeconds: 0.38
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1
@@ -186,10 +186,10 @@ MonoBehaviour:
     alignForwardToDirection: 1
   - cueId: 19
     prefab: {fileID: 4098616489179289316, guid: d0dbd3c9fa3c3564ab88f52b39fe0908, type: 3}
-    localPositionOffset: {x: 0, y: 0, z: 1.65}
+    localPositionOffset: {x: 0, y: 0, z: 0.75}
     localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 0.8, y: 1, z: 2.6}
-    lifetimeSeconds: 0.26
+    localScale: {x: 1, y: 1, z: 1}
+    lifetimeSeconds: 0.34
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1
