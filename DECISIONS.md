@@ -90,6 +90,12 @@ Decision: `CombatEnemyRoleProfile` and pattern decks stay behavior/intent data, 
 
 Reason: Enemy, summon, and later boss content need to share a small combat grammar without forcing art choices into behavior data. Keeping role decks separate from presentation candidates lets the team review purpose first, then promote only selected models, turret parts, animations, and VFX into `_Game` when they are ready.
 
+## 2026-06-13: First Enemy Prefab Candidate Is Authored And Scene-Free
+
+Decision: The first reusable sci-fi melee soldier should be promoted as an authored `_Game/Prefabs/Enemies/ActionFoundation` prefab candidate before adding more enemy variants, waves, or spawners. The prefab may carry local health, AI, target sensor, Animator, telegraph, VFX, and cue-driver references, but it must not serialize scene target candidates or a scene camera controller.
+
+Reason: Enemy/summon reuse needs a prefab-level baseline that can be reviewed in Unity. Keeping player targets, camera controllers, and encounter membership outside the prefab prevents a scene sample from quietly becoming a hidden global dependency.
+
 ## 2026-06-12: Cinemachine In-Game Cutscene Reference Baseline
 
 Decision: Use `Assets/_Game/DesignDocs/CINEMACHINE_INGAME_CUTSCENE_REFERENCE_RESEARCH.md` and `Assets/_Game/DesignData/CinemachineIngameCutsceneReferenceDataset.json` as the active Unity Cinemachine/Timeline reference baseline for boss intros, summon/ultimate cut-ins, dialogue staging, camera shot sequencing, input/AI/time locks, impulse, Timeline signals, and gameplay camera return.

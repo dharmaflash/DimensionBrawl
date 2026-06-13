@@ -18,6 +18,7 @@ namespace DimensionBrawl.Editor
         public const string DragonBossFuturePath = ArchetypeRoot + "/DB_Archetype_DragonBoss_Future.asset";
 
         private const string MaintenanceWorkerVisualPath = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/MaintenanceWorker/Models/SK_MaintenanceWorkerAllMeshes.fbx";
+        private const string MeleeSoldierGameplayPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Melee_ClosePunish.prefab";
         private const string Forge3DLineTurretCandidate = "FORGE3D Sci-Fi Effects URP package: TURRET_BASE_Mobile_LOD0 + TURRET_HEAD_Double_LOD0 + TURRET_BARREL_Electric/Gatling/Repeater + railgun/plasma/laser beam effects.";
         private const string Forge3DMissileTurretCandidate = "FORGE3D Sci-Fi Effects URP package: TURRET_BASE_Mobile_LOD0 + TURRET_BARREL_HeavyMissle_Mobile_LOD0 + missile_02/missile_03/missile_04 prefabs.";
         private const string DragonBossCandidate = "HEROIC FANTASY CREATURES FULL PACK VOL3 raw dragon prefabs remain local-only; choose one dragon in a later boss-authoring slice.";
@@ -102,6 +103,8 @@ namespace DimensionBrawl.Editor
 
         private static void ConfigureSoldierArchetypes(RoleRefs roles, GameObject maintenanceWorkerVisual)
         {
+            GameObject meleeSoldierPrefab = LoadOptionalGameObject(MeleeSoldierGameplayPrefabPath);
+
             ConfigureArchetype(
                 LoadOrCreate<CombatEnemyArchetypeProfile>(SciFiMeleeSoldierPath),
                 "SciFiSoldier.Melee",
@@ -109,12 +112,14 @@ namespace DimensionBrawl.Editor
                 CombatEnemyArchetypeKind.MobileSoldier,
                 true,
                 new[] { roles.EntryProbe, roles.CloseGuard, roles.LungeChaser, roles.Skirmisher },
-                null,
+                meleeSoldierPrefab,
                 maintenanceWorkerVisual,
-                false,
+                meleeSoldierPrefab == null,
                 true,
                 "Promoted game-owned MaintenanceWorker visual.",
-                "Use current promoted soldier model/Animator as the first melee soldier baseline.",
+                meleeSoldierPrefab != null
+                    ? "Use the authored `_Game` melee soldier prefab candidate as the first reusable close-combat baseline."
+                    : "Generate the authored melee soldier prefab candidate before assigning reusable gameplay prefab refs.",
                 "Covers close guard, chase, skirmish, and entry-read roles without changing role decks.");
 
             ConfigureArchetype(
@@ -328,6 +333,11 @@ namespace DimensionBrawl.Editor
             }
 
             return asset;
+        }
+
+        private static GameObject LoadOptionalGameObject(string assetPath)
+        {
+            return AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
         }
 
         private static T LoadOrCreate<T>(string assetPath) where T : ScriptableObject

@@ -18,6 +18,7 @@ namespace DimensionBrawl.Tests
     public sealed class ActionFoundationPlayModeTests
     {
         private const string ScenePath = "Assets/_Game/Scenes/ActionFoundationTest.unity";
+        private const string EnemyPrefabReviewScenePath = "Assets/_Game/Scenes/ActionFoundationEnemyPrefabReview.unity";
         private const string ClosePunishPatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_ClosePunish.asset";
         private const string LungeStrikePatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_LungeStrike.asset";
         private const string HeavyWindupPatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_HeavyWindup.asset";
@@ -39,6 +40,7 @@ namespace DimensionBrawl.Tests
         private const string CombatVfxPrefabRootPath = "Assets/_Game/Art/VFX/CombatCues/Prefabs/";
         private const string EnemyRoleRootPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyRoles";
         private const string EnemyArchetypeRootPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyArchetypes";
+        private const string MeleeSoldierPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Melee_ClosePunish.prefab";
         private const string PlayerVisualName = "CombatGirlSwordShield_PlayerVisual";
         private const string EnemyVisualName = "MaintenanceWorker_BasicSoldierVisual";
         private const string EnemyPlaceholderBodyName = "SciFiSoldierPlaceholderBody";
@@ -54,6 +56,7 @@ namespace DimensionBrawl.Tests
         private const string GeneralDeckEnemyRootName = "Enemy_SciFiSoldier_GeneralDeck";
         private const string EliteDeckEnemyRootName = "Enemy_SciFiSoldier_EliteDeck";
         private const string EliteTraitsEnemyRootName = "Enemy_SciFiSoldier_EliteTraits";
+        private const string ReviewMeleeSoldierRootName = "EnemyPrefabReview_SciFiSoldier_Melee";
         private static readonly string[] EnemyRoleProfilePaths =
         {
             EnemyRoleRootPath + "/DB_Role_EntryProbe.asset",
@@ -763,6 +766,102 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.Elite.FinalStandCommander"), "Archetype catalog should cover FinalStandCommander.");
             Assert.IsTrue(foundStaticTurretCandidate, "Archetype catalog should include at least one fixed sci-fi turret candidate.");
             Assert.IsTrue(foundBossCandidate, "Archetype catalog should track the dragon boss candidate outside soldier role decks.");
+        }
+
+        [Test]
+        public void MeleeSoldierPrefabCandidateIsSceneFreeAndMappedToArchetype()
+        {
+            GameObject prefabAsset = AssetDatabase.LoadAssetAtPath<GameObject>(MeleeSoldierPrefabPath);
+            Assert.IsNotNull(prefabAsset, $"Missing melee soldier prefab candidate at {MeleeSoldierPrefabPath}.");
+
+            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(MeleeSoldierPrefabPath);
+            try
+            {
+                BasicSoldierEnemy soldier = prefabRoot.GetComponent<BasicSoldierEnemy>();
+                CombatHealth health = prefabRoot.GetComponent<CombatHealth>();
+                CombatTargetSensor targetSensor = prefabRoot.GetComponent<CombatTargetSensor>();
+                EnemyAttackTelegraphPresenter telegraphPresenter = prefabRoot.GetComponent<EnemyAttackTelegraphPresenter>();
+                EnemyActionCameraCueDriver cameraCueDriver = prefabRoot.GetComponent<EnemyActionCameraCueDriver>();
+                CombatVfxCuePlayer cuePlayer = prefabRoot.GetComponent<CombatVfxCuePlayer>();
+                EnemyCombatVfxCueDriver vfxCueDriver = prefabRoot.GetComponent<EnemyCombatVfxCueDriver>();
+                Animator animator = prefabRoot.GetComponentInChildren<Animator>(true);
+
+                Assert.IsNotNull(soldier, "Melee soldier prefab should own BasicSoldierEnemy on the root.");
+                Assert.IsNotNull(health, "Melee soldier prefab should own CombatHealth on the root.");
+                Assert.IsNotNull(targetSensor, "Melee soldier prefab should own the shared target sensor on the root.");
+                Assert.IsNotNull(telegraphPresenter, "Melee soldier prefab should own the telegraph presenter on the root.");
+                Assert.IsNotNull(cameraCueDriver, "Melee soldier prefab should keep enemy camera cue emission available.");
+                Assert.IsNotNull(cuePlayer, "Melee soldier prefab should own the combat VFX cue player on the root.");
+                Assert.IsNotNull(vfxCueDriver, "Melee soldier prefab should own the combat VFX cue driver on the root.");
+                Assert.IsNotNull(animator, "Melee soldier prefab should include the promoted MaintenanceWorker Animator.");
+
+                Assert.AreSame(targetSensor, soldier.TargetSensor, "Prefab AI should use its local target sensor.");
+                Assert.AreSame(health, soldier.SelfHealth, "Prefab AI should use its local health.");
+                Assert.AreSame(LoadPatternProfile(ClosePunishPatternPath), soldier.PatternProfile, "Prefab should start from the ClosePunish reference profile.");
+                Assert.IsNull(soldier.PatternDeck, "Single baseline prefab should not hide pattern-deck behavior behind its first candidate.");
+                Assert.AreEqual(0, targetSensor.TargetCandidateCount, "Prefab target candidates should be injected by scenes or encounters, not carried from ActionFoundationTest.");
+
+                SerializedObject cameraCueObject = new SerializedObject(cameraCueDriver);
+                Assert.AreSame(soldier, cameraCueObject.FindProperty("agentSource").objectReferenceValue, "Enemy camera cue driver should listen to the local soldier agent.");
+                Assert.IsNull(cameraCueObject.FindProperty("cameraController").objectReferenceValue, "Prefab should not serialize an ActionFoundationTest camera controller.");
+
+                SerializedObject telegraphObject = new SerializedObject(telegraphPresenter);
+                AssertLocalPrefabReference(prefabRoot, telegraphObject.FindProperty("telegraphObject").objectReferenceValue, "telegraph object");
+                AssertLocalPrefabReference(prefabRoot, telegraphObject.FindProperty("telegraphRenderer").objectReferenceValue, "telegraph renderer");
+                AssertLocalPrefabReference(prefabRoot, telegraphObject.FindProperty("poseRoot").objectReferenceValue, "telegraph pose root");
+
+                SerializedObject cuePlayerObject = new SerializedObject(cuePlayer);
+                UnityEngine.Object cueProfile = cuePlayerObject.FindProperty("profile").objectReferenceValue;
+                string cueProfilePath = AssetDatabase.GetAssetPath(cueProfile).Replace('\\', '/');
+                Assert.IsTrue(cueProfilePath.StartsWith("Assets/_Game/"), $"Prefab VFX profile should be game-owned, found {cueProfilePath}.");
+                Assert.IsFalse(cueProfilePath.Contains("/_Imported/"), "Prefab VFX profile should not reference raw imported assets.");
+                AssertLocalPrefabReference(prefabRoot, cuePlayerObject.FindProperty("pooledRoot").objectReferenceValue, "VFX pool root");
+
+                SerializedObject vfxDriverObject = new SerializedObject(vfxCueDriver);
+                Assert.AreSame(soldier, vfxDriverObject.FindProperty("agentSource").objectReferenceValue, "VFX driver should listen to the local soldier.");
+                Assert.AreSame(health, vfxDriverObject.FindProperty("health").objectReferenceValue, "VFX driver should listen to the local health.");
+                Assert.AreSame(cuePlayer, vfxDriverObject.FindProperty("cuePlayer").objectReferenceValue, "VFX driver should play through the local cue player.");
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+
+            CombatEnemyArchetypeProfile meleeArchetype =
+                AssetDatabase.LoadAssetAtPath<CombatEnemyArchetypeProfile>(EnemyArchetypeRootPath + "/DB_Archetype_SciFiSoldier_Melee.asset");
+            Assert.IsNotNull(meleeArchetype, "Missing sci-fi melee soldier archetype profile.");
+            Assert.AreSame(prefabAsset, meleeArchetype.GameplayPrefab, "Melee archetype should point at the reusable game-owned prefab candidate.");
+            Assert.IsFalse(meleeArchetype.RequiresDedicatedPrefabPromotion, "Melee soldier should no longer be marked as needing its first prefab promotion.");
+        }
+
+        [UnityTest]
+        public IEnumerator EnemyPrefabReviewSceneWiresPrefabCandidateForManualCombat()
+        {
+            EditorSceneManager.LoadSceneInPlayMode(EnemyPrefabReviewScenePath, new LoadSceneParameters(LoadSceneMode.Single));
+            yield return null;
+
+            BasicSoldierEnemy soldier = RequireNamedRootComponent<BasicSoldierEnemy>(ReviewMeleeSoldierRootName);
+            CombatHealth playerHealth = RequirePlayerHealth();
+            CombatHealth enemyHealth = soldier.SelfHealth;
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            EnemyActionCameraCueDriver enemyCameraCueDriver = soldier.GetComponent<EnemyActionCameraCueDriver>();
+
+            Assert.IsNotNull(enemyHealth, "Review soldier should expose local health.");
+            Assert.AreEqual(1, soldier.TargetSensor.TargetCandidateCount, "Review soldier should receive one scene-provided player target.");
+            Assert.IsTrue(soldier.TargetSensor.TryGetCurrentTarget(out Transform enemyTarget, out CombatHealth enemyTargetHealth), "Review soldier should resolve the player through scene-provided target candidates.");
+            Assert.AreSame(playerHealth, enemyTargetHealth, "Review soldier should target the player health.");
+            Assert.AreSame(playerHealth.transform, enemyTarget, "Review soldier should expose the player transform as current target.");
+
+            Assert.AreEqual(1, targetSelector.TargetCandidateCount, "Review player selector should target only the reviewed prefab enemy.");
+            Assert.IsTrue(targetSelector.TryGetCurrentTarget(out Transform playerTarget, out CombatHealth playerTargetHealth), "Review player selector should resolve the prefab enemy.");
+            Assert.AreSame(enemyHealth, playerTargetHealth, "Review player selector should target the prefab enemy health.");
+            Assert.AreSame(enemyHealth.transform, playerTarget, "Review player selector should expose the prefab enemy transform.");
+
+            Assert.AreSame(playerHealth.transform, cameraController.Target, "Review camera should follow the player.");
+            Assert.AreSame(enemyHealth.transform, cameraController.Threat, "Review camera should bias toward the reviewed prefab enemy.");
+            Assert.IsNotNull(enemyCameraCueDriver, "Review prefab enemy should keep its enemy camera cue driver.");
+            Assert.AreSame(cameraController, enemyCameraCueDriver.CameraController, "Review scene should provide the camera controller to the prefab instance.");
         }
 
         [Test]
@@ -1634,6 +1733,29 @@ namespace DimensionBrawl.Tests
             string assetPath = AssetDatabase.GetAssetPath(asset).Replace('\\', '/');
             Assert.IsTrue(assetPath.StartsWith("Assets/_Game/"), $"{label} should reference a promoted `_Game` asset, found {assetPath}.");
             Assert.IsFalse(assetPath.Contains("/_Imported/"), $"{label} should not reference raw imported assets.");
+        }
+
+        private static void AssertLocalPrefabReference(GameObject prefabRoot, UnityEngine.Object reference, string label)
+        {
+            Assert.IsNotNull(reference, $"{label} should be assigned.");
+
+            if (reference is GameObject gameObject)
+            {
+                Assert.IsTrue(
+                    gameObject == prefabRoot || gameObject.transform.IsChildOf(prefabRoot.transform),
+                    $"{label} should reference a local prefab GameObject.");
+                return;
+            }
+
+            if (reference is Component component)
+            {
+                Assert.IsTrue(
+                    component.gameObject == prefabRoot || component.transform.IsChildOf(prefabRoot.transform),
+                    $"{label} should reference a local prefab component.");
+                return;
+            }
+
+            Assert.Fail($"{label} should reference a local GameObject or Component.");
         }
 
         private static CombatAiPatternProfile LoadPatternProfile(string assetPath)

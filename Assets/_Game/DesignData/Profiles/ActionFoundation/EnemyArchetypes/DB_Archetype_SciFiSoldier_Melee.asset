@@ -21,12 +21,12 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 1aa0e99164797384992edbae1bd0c9d6, type: 2}
   - {fileID: 11400000, guid: 598f95220ac9bf64ca9aa454b912e0b1, type: 2}
   - {fileID: 11400000, guid: 86f255894f64fcb4685039c95d2037bb, type: 2}
-  gameplayPrefab: {fileID: 0}
+  gameplayPrefab: {fileID: 1086411759956909423, guid: 3d5bd31d160d2064a9c8ff54e04d2d65, type: 3}
   visualPrefab: {fileID: 919132149155446097, guid: d25064b620081b54682ad210e6f1a0de, type: 3}
   requiresDedicatedPrefabPromotion: 0
   candidateForFutureSummonAiReuse: 1
   sourceCandidate: Promoted game-owned MaintenanceWorker visual.
-  promotionPlan: Use current promoted soldier model/Animator as the first melee soldier
-    baseline.
+  promotionPlan: Use the authored `_Game` melee soldier prefab candidate as the first
+    reusable close-combat baseline.
   usageNotes: Covers close guard, chase, skirmish, and entry-read roles without changing
     role decks.
