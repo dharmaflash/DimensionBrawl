@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e065af9eb299f5b4e9288bc9573975b2, type: 3}
+  m_Name: DB_RoleCandidate_LineCaster
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatEnemyRoleCandidateProfile
+  role: {fileID: 11400000, guid: 5ffca634ab7e9714f8c2b5a8b7c0a081, type: 2}
+  primaryArchetype: {fileID: 11400000, guid: c420a63d83b9fd04c90d9b8d0acd03b9, type: 2}
+  rolePrefab: {fileID: 265289936863158558, guid: e09a5d8c588534f48ade9f96e532823f, type: 3}
+  promotedVisualSource: {fileID: 919132149155446097, guid: 63b3ecebef3250e428299643d7626153, type: 3}
+  optionalStaticTurretVisualPrefab: {fileID: 504528105189332300, guid: e36eac5444060c64d99bdfee8daa707c, type: 3}
+  vfxCueProfile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
+  prefabStrategy: Dedicated ranged role prefab variant; FORGE3D line turret remains
+    the static visual alternative.
+  animationRead: Uses promoted rifle-soldier animation clips while the line turret
+    visual is tracked for fixed-lane promotion.
+  vfxRead: LinePressure projectile cue overrides and optional turret visual candidate
+    keep lane reads explicit.
+  reuseJustification: Candidate keeps role behavior in data so the same pattern/deck
+    contract can be reused by future summon AI.

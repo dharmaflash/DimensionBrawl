@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e065af9eb299f5b4e9288bc9573975b2, type: 3}
+  m_Name: DB_RoleCandidate_EntryProbe
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatEnemyRoleCandidateProfile
+  role: {fileID: 11400000, guid: ed74288575d9f054ca82196495025d33, type: 2}
+  primaryArchetype: {fileID: 11400000, guid: ad456405b5d69084ab246733cff11619, type: 2}
+  rolePrefab: {fileID: 5140179499422161178, guid: 925c26e0ed7c1d142a88b5bc1d509fa7, type: 3}
+  promotedVisualSource: {fileID: 919132149155446097, guid: d25064b620081b54682ad210e6f1a0de, type: 3}
+  optionalStaticTurretVisualPrefab: {fileID: 0}
+  vfxCueProfile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
+  prefabStrategy: Dedicated melee role prefab variant for first-read close pressure.
+  animationRead: Uses the promoted MaintenanceWorker Animator with ClosePunish/Lunge/Line
+    deck triggers for entry teaching.
+  vfxRead: ClosePunish windup/active plus EntryProbe deck cue overrides stay on the
+    shared combat VFX profile.
+  reuseJustification: Candidate keeps role behavior in data so the same pattern/deck
+    contract can be reused by future summon AI.

@@ -42,6 +42,8 @@ namespace DimensionBrawl.Tests
         private const string CombatVfxPrefabRootPath = "Assets/_Game/Art/VFX/CombatCues/Prefabs/";
         private const string EnemyRoleRootPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyRoles";
         private const string EnemyArchetypeRootPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyArchetypes";
+        private const string EnemyRoleCandidateRootPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyRoleCandidates";
+        private const string EnemyRoleCandidatePrefabRootPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/RoleCandidates";
         private const string MeleeSoldierPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Melee_ClosePunish.prefab";
         private const string GeneralDeckSoldierPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_GeneralDeck.prefab";
         private const string EliteDeckSoldierPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_EliteDeck.prefab";
@@ -94,6 +96,21 @@ namespace DimensionBrawl.Tests
             EnemyArchetypeRootPath + "/DB_Archetype_FORGE3D_LineTurret.asset",
             EnemyArchetypeRootPath + "/DB_Archetype_FORGE3D_MissileTurret.asset",
             EnemyArchetypeRootPath + "/DB_Archetype_DragonBoss_Future.asset"
+        };
+        private static readonly string[] EnemyRoleCandidateProfilePaths =
+        {
+            EnemyRoleCandidateRootPath + "/DB_RoleCandidate_EntryProbe.asset",
+            EnemyRoleCandidateRootPath + "/DB_RoleCandidate_CloseGuard.asset",
+            EnemyRoleCandidateRootPath + "/DB_RoleCandidate_LungeChaser.asset",
+            EnemyRoleCandidateRootPath + "/DB_RoleCandidate_LineCaster.asset",
+            EnemyRoleCandidateRootPath + "/DB_RoleCandidate_FanSuppressor.asset",
+            EnemyRoleCandidateRootPath + "/DB_RoleCandidate_BacklineShooter.asset",
+            EnemyRoleCandidateRootPath + "/DB_RoleCandidate_Skirmisher.asset",
+            EnemyRoleCandidateRootPath + "/DB_RoleCandidate_ShieldBreakerElite.asset",
+            EnemyRoleCandidateRootPath + "/DB_RoleCandidate_AuraCaptainElite.asset",
+            EnemyRoleCandidateRootPath + "/DB_RoleCandidate_SummonCallerElite.asset",
+            EnemyRoleCandidateRootPath + "/DB_RoleCandidate_PhaseDuelistElite.asset",
+            EnemyRoleCandidateRootPath + "/DB_RoleCandidate_FinalStandCommanderElite.asset"
         };
 
         [UnitySetUp]
@@ -784,6 +801,103 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.Elite.FinalStandCommander"), "Archetype catalog should cover FinalStandCommander.");
             Assert.IsTrue(foundStaticTurretCandidate, "Archetype catalog should include at least one fixed sci-fi turret candidate.");
             Assert.IsTrue(foundBossCandidate, "Archetype catalog should track the dragon boss candidate outside soldier role decks.");
+        }
+
+        [Test]
+        public void EnemyRoleCandidateProfilesMapEveryRoleToPrefabPatternDeckAndVfx()
+        {
+            CombatVfxCueProfile vfxCueProfile = LoadCombatVfxCueProfile();
+            var coveredRoleIds = new HashSet<string>();
+
+            foreach (string path in EnemyRoleCandidateProfilePaths)
+            {
+                CombatEnemyRoleCandidateProfile candidate = AssetDatabase.LoadAssetAtPath<CombatEnemyRoleCandidateProfile>(path);
+                Assert.IsNotNull(candidate, $"Missing enemy role candidate profile at {path}.");
+                Assert.IsNotNull(candidate.Role, $"{path} should reference its role profile.");
+                Assert.IsNotNull(candidate.PrimaryArchetype, $"{candidate.Role.RoleId} should reference the primary archetype.");
+                Assert.IsNotNull(candidate.RolePrefab, $"{candidate.Role.RoleId} should reference an authored role prefab.");
+                Assert.IsNotNull(candidate.PromotedVisualSource, $"{candidate.Role.RoleId} should record its promoted visual source.");
+                Assert.AreSame(vfxCueProfile, candidate.VfxCueProfile, $"{candidate.Role.RoleId} should use the shared ActionFoundation combat VFX profile.");
+                Assert.IsFalse(string.IsNullOrWhiteSpace(candidate.PrefabStrategy), $"{candidate.Role.RoleId} should explain prefab strategy.");
+                Assert.IsFalse(string.IsNullOrWhiteSpace(candidate.AnimationRead), $"{candidate.Role.RoleId} should explain animation readability.");
+                Assert.IsFalse(string.IsNullOrWhiteSpace(candidate.VfxRead), $"{candidate.Role.RoleId} should explain VFX readability.");
+                Assert.IsFalse(string.IsNullOrWhiteSpace(candidate.ReuseJustification), $"{candidate.Role.RoleId} should explain future summon-AI reuse.");
+                AssertGameOwnedObjectReference(candidate.PromotedVisualSource, $"{candidate.Role.RoleId} promoted visual source");
+
+                string rolePrefabPath = AssetDatabase.GetAssetPath(candidate.RolePrefab).Replace('\\', '/');
+                Assert.IsTrue(
+                    rolePrefabPath.StartsWith(EnemyRoleCandidatePrefabRootPath + "/"),
+                    $"{candidate.Role.RoleId} role prefab should live under {EnemyRoleCandidatePrefabRootPath}, found {rolePrefabPath}.");
+
+                if (candidate.Role.RoleId == "SciFiSoldier.LineCaster" || candidate.Role.RoleId == "SciFiSoldier.BacklineShooter")
+                {
+                    Assert.IsNotNull(candidate.OptionalStaticTurretVisualPrefab, $"{candidate.Role.RoleId} should track the FORGE3D line turret visual alternative.");
+                    Assert.AreEqual(
+                        Forge3DLineTurretVisualPrefabPath,
+                        AssetDatabase.GetAssetPath(candidate.OptionalStaticTurretVisualPrefab).Replace('\\', '/'),
+                        $"{candidate.Role.RoleId} should use the promoted FORGE3D line turret visual as the static candidate.");
+                }
+
+                GameObject prefabRoot = PrefabUtility.LoadPrefabContents(rolePrefabPath);
+                try
+                {
+                    BasicSoldierEnemy soldier = prefabRoot.GetComponent<BasicSoldierEnemy>();
+                    CombatHealth health = prefabRoot.GetComponent<CombatHealth>();
+                    CombatTargetSensor targetSensor = prefabRoot.GetComponent<CombatTargetSensor>();
+                    Assert.IsNotNull(soldier, $"{candidate.Role.RoleId} prefab should own BasicSoldierEnemy.");
+                    Assert.IsNotNull(health, $"{candidate.Role.RoleId} prefab should own CombatHealth.");
+                    Assert.IsNotNull(targetSensor, $"{candidate.Role.RoleId} prefab should own CombatTargetSensor.");
+                    Assert.AreSame(candidate.Role.StartingPattern, soldier.PatternProfile, $"{candidate.Role.RoleId} should start from its role profile pattern.");
+                    Assert.AreSame(candidate.Role.PatternDeck, soldier.PatternDeck, $"{candidate.Role.RoleId} should carry its role profile deck.");
+                    Assert.AreSame(health, soldier.SelfHealth, $"{candidate.Role.RoleId} should use local health.");
+                    Assert.AreSame(targetSensor, soldier.TargetSensor, $"{candidate.Role.RoleId} should use local target sensor.");
+                    Assert.AreEqual(0, targetSensor.TargetCandidateCount, $"{candidate.Role.RoleId} target candidates should be scene-injected.");
+                    ValidateEnemyCombatVfxBinding(soldier, vfxCueProfile, candidate.Role.EliteRole);
+
+                    SerializedObject vfxDriver = new SerializedObject(prefabRoot.GetComponent<EnemyCombatVfxCueDriver>());
+                    UnityEngine.Object eliteControllerRef = vfxDriver.FindProperty("elitePatternController").objectReferenceValue;
+                    if (candidate.Role.EliteRole)
+                    {
+                        EnemyElitePatternController eliteController = eliteControllerRef as EnemyElitePatternController;
+                        Assert.IsNotNull(eliteController, $"{candidate.Role.RoleId} should bind a local elite controller.");
+                        SerializedProperty eliteProfiles = new SerializedObject(eliteController).FindProperty("eliteProfiles");
+                        Assert.AreEqual(candidate.Role.EliteProfileCount, eliteProfiles.arraySize, $"{candidate.Role.RoleId} should carry only its role-specific elite traits.");
+                        for (int i = 0; i < candidate.Role.EliteProfileCount; i++)
+                        {
+                            Assert.AreSame(
+                                candidate.Role.GetEliteProfile(i),
+                                eliteProfiles.GetArrayElementAtIndex(i).objectReferenceValue,
+                                $"{candidate.Role.RoleId} elite trait {i} should match the role profile.");
+                        }
+                    }
+                    else
+                    {
+                        Assert.IsNull(eliteControllerRef, $"{candidate.Role.RoleId} should not serialize an elite controller binding.");
+                    }
+
+                    AssertRoleCandidateRendererMaterials(prefabRoot, $"{candidate.Role.RoleId} role prefab");
+                }
+                finally
+                {
+                    PrefabUtility.UnloadPrefabContents(prefabRoot);
+                }
+
+                coveredRoleIds.Add(candidate.Role.RoleId);
+            }
+
+            Assert.AreEqual(12, coveredRoleIds.Count, "Role candidate catalog should cover all seven general and five elite roles once.");
+            Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.EntryProbe"), "Role candidate catalog should cover EntryProbe.");
+            Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.CloseGuard"), "Role candidate catalog should cover CloseGuard.");
+            Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.LungeChaser"), "Role candidate catalog should cover LungeChaser.");
+            Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.LineCaster"), "Role candidate catalog should cover LineCaster.");
+            Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.FanSuppressor"), "Role candidate catalog should cover FanSuppressor.");
+            Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.BacklineShooter"), "Role candidate catalog should cover BacklineShooter.");
+            Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.Skirmisher"), "Role candidate catalog should cover Skirmisher.");
+            Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.Elite.ShieldBreaker"), "Role candidate catalog should cover ShieldBreaker.");
+            Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.Elite.AuraCaptain"), "Role candidate catalog should cover AuraCaptain.");
+            Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.Elite.SummonCaller"), "Role candidate catalog should cover SummonCaller.");
+            Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.Elite.PhaseDuelist"), "Role candidate catalog should cover PhaseDuelist.");
+            Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.Elite.FinalStandCommander"), "Role candidate catalog should cover FinalStandCommander.");
         }
 
         [Test]
@@ -2134,6 +2248,28 @@ namespace DimensionBrawl.Tests
                     Assert.IsFalse(materialPath.Contains("/_Imported/"), $"{label} material should not reference raw imported assets.");
                 }
             }
+        }
+
+        private static void AssertRoleCandidateRendererMaterials(GameObject root, string label)
+        {
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+            Assert.IsNotEmpty(renderers, $"{label} should have renderers.");
+
+            bool foundGameOwnedMaterial = false;
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Material[] materials = renderers[i].sharedMaterials;
+                for (int j = 0; j < materials.Length; j++)
+                {
+                    Material material = materials[j];
+                    Assert.IsNotNull(material, $"{label} renderer {renderers[i].name} has a missing material slot.");
+                    string materialPath = AssetDatabase.GetAssetPath(material).Replace('\\', '/');
+                    Assert.IsFalse(materialPath.Contains("/_Imported/"), $"{label} material should not reference raw imported assets.");
+                    foundGameOwnedMaterial |= materialPath.StartsWith("Assets/_Game/");
+                }
+            }
+
+            Assert.IsTrue(foundGameOwnedMaterial, $"{label} should include at least one game-owned material.");
         }
 
         private static Bounds CollectRenderableBounds(GameObject root)

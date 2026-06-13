@@ -1,0 +1,28 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e065af9eb299f5b4e9288bc9573975b2, type: 3}
+  m_Name: DB_RoleCandidate_ShieldBreakerElite
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatEnemyRoleCandidateProfile
+  role: {fileID: 11400000, guid: f3b20fc6d0aa8a944b2b096ce6fbc94c, type: 2}
+  primaryArchetype: {fileID: 11400000, guid: ea66c8b8028965e44b1db2fb18ab9119, type: 2}
+  rolePrefab: {fileID: 960547977032286356, guid: d1d470319a3029d4c844831afd63639a, type: 3}
+  promotedVisualSource: {fileID: 919132149155446097, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
+  optionalStaticTurretVisualPrefab: {fileID: 0}
+  vfxCueProfile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
+  prefabStrategy: Dedicated elite role prefab variant with only ShieldCycle and ArmorBreak
+    traits.
+  animationRead: Uses HeavyBattleArmor elite Animator clips for guard break, stagger,
+    and death readability.
+  vfxRead: GuardBreak, EliteShield, and EliteArmorBreak cues bind through data instead
+    of role branches.
+  reuseJustification: Candidate keeps role behavior in data so the same pattern/deck
+    contract can be reused by future summon AI.
