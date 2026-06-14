@@ -22,6 +22,8 @@ namespace DimensionBrawl.Editor
             ActionFoundationStageDesignSetup.TemplateRoot + "/DB_StageTemplate_S1_1_BreakGate.asset";
         private const string StageReviewRootPrefix = "StageBreakGateReview_";
         private const string EncounterOwnerRootName = StageReviewRootPrefix + "EncounterOwner";
+        private static readonly Vector3 StageReviewCameraStartOffset = new Vector3(0f, 2.6f, -5.8f);
+        private static readonly Vector3 StageReviewCameraLookOffset = new Vector3(0f, 1.35f, 1.2f);
 
         [MenuItem("DimensionBrawl/Reapply Action Foundation Stage BreakGate Review Scene")]
         public static void ReapplyStageBreakGateReviewSceneMenu()
@@ -61,6 +63,7 @@ namespace DimensionBrawl.Editor
             player.transform.SetPositionAndRotation(
                 new Vector3(0f, 0f, -10f),
                 Quaternion.LookRotation(Vector3.forward, Vector3.up));
+            ConfigureStageReviewCameraStart(cameraController, player.transform);
 
             for (int i = 0; i < specs.Length; i++)
             {
@@ -170,12 +173,39 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(cameraController, "target", player.transform);
             ValidateObjectReference(cameraController, "threat", RequireRoot(scene, specs[0].RootName).transform);
             ValidateBool(cameraController, "useDeviceFallbackWhenActionMissing", false);
+            ValidateStageReviewCameraStart(cameraController, player.transform);
             ValidateObjectReference(encounter, "playerHealth", playerHealth);
             ValidateObjectReference(
                 encounter,
                 "enemyHealth",
                 RequireComponent<CombatHealth>(RequireRoot(scene, specs[specs.Length - 1].RootName), "final review enemy health"));
             ValidateStageEncounterOwner(scene, player.transform, enemyHealths);
+        }
+
+        private static void ConfigureStageReviewCameraStart(ActionCameraController cameraController, Transform player)
+        {
+            Vector3 position = player.position + player.TransformDirection(StageReviewCameraStartOffset);
+            Vector3 lookTarget = player.position + player.TransformDirection(StageReviewCameraLookOffset);
+            Vector3 lookDirection = lookTarget - position;
+            if (lookDirection.sqrMagnitude <= 0.0001f)
+            {
+                lookDirection = player.forward;
+            }
+
+            cameraController.transform.SetPositionAndRotation(
+                position,
+                Quaternion.LookRotation(lookDirection.normalized, Vector3.up));
+            EditorUtility.SetDirty(cameraController.transform);
+        }
+
+        private static void ValidateStageReviewCameraStart(ActionCameraController cameraController, Transform player)
+        {
+            Vector3 planarCameraOffset =
+                Vector3.ProjectOnPlane(cameraController.transform.position - player.position, Vector3.up);
+            if (Vector3.Dot(player.forward, planarCameraOffset) >= -0.1f)
+            {
+                throw new InvalidOperationException("Stage review camera should start behind the player, not in front of the route.");
+            }
         }
 
         private static GameObject InstantiateReviewEnemy(Scene scene, StageReviewEnemySpec spec, Vector3 playerPosition)

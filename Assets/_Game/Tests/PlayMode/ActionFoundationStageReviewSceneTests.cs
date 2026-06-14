@@ -84,6 +84,16 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(playerHealth.transform, firstTarget);
             Assert.AreSame(player.transform, cameraController.Target, "Stage review camera should follow the player.");
             Assert.AreSame(firstEnemy.transform, cameraController.Threat, "Stage review camera should bias toward the first route enemy.");
+            Assert.Less(
+                Vector3.Dot(
+                    player.transform.forward,
+                    Vector3.ProjectOnPlane(cameraController.transform.position - player.transform.position, Vector3.up)),
+                0f,
+                "Stage review camera should start behind the player instead of in front of the route.");
+            Assert.Less(
+                Mathf.Abs(Mathf.DeltaAngle(player.transform.eulerAngles.y, cameraController.OrbitYawDegrees)),
+                1f,
+                "Stage review camera orbit yaw should initialize from the authored rear camera position.");
             Assert.AreSame(
                 finalEnemy.SelfHealth,
                 new SerializedObject(encounter).FindProperty("enemyHealth").objectReferenceValue,
