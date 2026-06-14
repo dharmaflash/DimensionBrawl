@@ -19,6 +19,8 @@ MonoBehaviour:
     recoverySeconds: 0.28
     inputBufferSeconds: 0.1
     dodgeCancelAfterSeconds: 0.06
+    forwardAdvanceDistance: 0.36
+    forwardAdvanceDurationSeconds: 0.14
     damage: 20
     hitRadius: 0.55
     hitDistance: 1.35
@@ -29,6 +31,8 @@ MonoBehaviour:
     recoverySeconds: 0.32
     inputBufferSeconds: 0.1
     dodgeCancelAfterSeconds: 0.08
+    forwardAdvanceDistance: 0.44
+    forwardAdvanceDurationSeconds: 0.15
     damage: 24
     hitRadius: 0.6
     hitDistance: 1.45
@@ -39,6 +43,8 @@ MonoBehaviour:
     recoverySeconds: 0.3
     inputBufferSeconds: 0.12
     dodgeCancelAfterSeconds: 0.1
+    forwardAdvanceDistance: 0.52
+    forwardAdvanceDurationSeconds: 0.16
     damage: 34
     hitRadius: 0.7
     hitDistance: 1.55
@@ -49,6 +55,8 @@ MonoBehaviour:
     recoverySeconds: 0.34
     inputBufferSeconds: 0.12
     dodgeCancelAfterSeconds: 0.12
+    forwardAdvanceDistance: 0.6
+    forwardAdvanceDurationSeconds: 0.17
     damage: 40
     hitRadius: 0.72
     hitDistance: 1.62
@@ -59,6 +67,8 @@ MonoBehaviour:
     recoverySeconds: 0.46
     inputBufferSeconds: 0.12
     dodgeCancelAfterSeconds: 0.14
+    forwardAdvanceDistance: 0.74
+    forwardAdvanceDurationSeconds: 0.2
     damage: 56
     hitRadius: 0.82
     hitDistance: 1.75
@@ -68,6 +78,7 @@ MonoBehaviour:
   comboChainRecoveryRatio: 0.45
   attackFacingHoldPaddingSeconds: 0.06
   snapBasicAttackFacing: 1
+  basicAttackMoveInputSpeedScale: 0
   dodgeDurationSeconds: 0.56
   dodgeInvulnerableFromSeconds: 0.05
   dodgeInvulnerableToSeconds: 0.32

@@ -111,6 +111,8 @@ namespace DimensionBrawl.Player
         [Tooltip("Holds soft target-facing through startup/active frames without turning basic attack into hard lock-on.")]
         [SerializeField, Min(0f)] private float attackFacingHoldPaddingSeconds = 0.06f;
         [SerializeField] private bool snapBasicAttackFacing = true;
+        [Tooltip("Normal attacks keep stick intent for dodge/facing decisions, but should not let free locomotion slide the combo.")]
+        [SerializeField, Range(0f, 1f)] private float basicAttackMoveInputSpeedScale = 0f;
 
         [Header("Dodge")]
         [Tooltip("Uses player_dodge_default totalDuration from collected combat feel data.")]
@@ -162,6 +164,7 @@ namespace DimensionBrawl.Player
         private float ActiveComboChainRecoveryRatio => actionProfile != null ? actionProfile.ComboChainRecoveryRatio : comboChainRecoveryRatio;
         private float ActiveAttackFacingHoldPaddingSeconds => actionProfile != null ? actionProfile.AttackFacingHoldPaddingSeconds : attackFacingHoldPaddingSeconds;
         private bool ActiveSnapBasicAttackFacing => actionProfile != null ? actionProfile.SnapBasicAttackFacing : snapBasicAttackFacing;
+        private float ActiveBasicAttackMoveInputSpeedScale => actionProfile != null ? actionProfile.BasicAttackMoveInputSpeedScale : basicAttackMoveInputSpeedScale;
         private float ActiveDodgeDurationSeconds => actionProfile != null ? actionProfile.DodgeDurationSeconds : dodgeDurationSeconds;
         private float ActiveDodgeInvulnerableFromSeconds => actionProfile != null ? actionProfile.DodgeInvulnerableFromSeconds : dodgeInvulnerableFromSeconds;
         private float ActiveDodgeInvulnerableToSeconds => actionProfile != null ? actionProfile.DodgeInvulnerableToSeconds : dodgeInvulnerableToSeconds;
@@ -210,6 +213,7 @@ namespace DimensionBrawl.Player
         private void OnDisable()
         {
             EndDodgeFeedbackIfNeeded();
+            movement?.ClearActionMoveInputSpeedScale();
             DisableActionIfOwned(basicAttackAction, enabledAttackAction);
             DisableActionIfOwned(dodgeAction, enabledDodgeAction);
         }
@@ -277,6 +281,8 @@ namespace DimensionBrawl.Player
 
             if (movement != null)
             {
+                movement.SetActionMoveInputSpeedScale(ActiveBasicAttackMoveInputSpeedScale);
+                movement.BeginAuthoredPlanarStep(currentAttackDirection, step.forwardAdvanceDistance, step.forwardAdvanceDurationSeconds);
                 float facingHoldSeconds = step.startupSeconds + step.activeSeconds + ActiveAttackFacingHoldPaddingSeconds;
                 movement.RequestFacingDirection(currentAttackDirection, facingHoldSeconds, ActiveSnapBasicAttackFacing);
             }
@@ -326,6 +332,7 @@ namespace DimensionBrawl.Player
             }
 
             comboResetTimer = ActiveComboResetSeconds;
+            movement?.ClearActionMoveInputSpeedScale();
             state = PlayerActionState.Free;
         }
 
@@ -418,6 +425,7 @@ namespace DimensionBrawl.Player
             comboResetTimer = 0f;
             comboIndex = 0;
             nextAttackQueued = false;
+            movement?.ClearActionMoveInputSpeedScale();
 
             Vector3 dodgeDirection = ResolveDodgeDirection();
             LastDodgeDirection = dodgeDirection.sqrMagnitude > 0f ? dodgeDirection.normalized : ResolvePlanarBack(transform.forward);

@@ -15,6 +15,8 @@ namespace DimensionBrawl.Player
             public float recoverySeconds;
             public float inputBufferSeconds;
             public float dodgeCancelAfterSeconds;
+            public float forwardAdvanceDistance;
+            public float forwardAdvanceDurationSeconds;
             public float damage;
             public float hitRadius;
             public float hitDistance;
@@ -32,6 +34,8 @@ namespace DimensionBrawl.Player
                 recoverySeconds = 0.28f,
                 inputBufferSeconds = 0.10f,
                 dodgeCancelAfterSeconds = 0.06f,
+                forwardAdvanceDistance = 0.36f,
+                forwardAdvanceDurationSeconds = 0.14f,
                 damage = 20f,
                 hitRadius = 0.55f,
                 hitDistance = 1.35f,
@@ -45,6 +49,8 @@ namespace DimensionBrawl.Player
                 recoverySeconds = 0.32f,
                 inputBufferSeconds = 0.10f,
                 dodgeCancelAfterSeconds = 0.08f,
+                forwardAdvanceDistance = 0.44f,
+                forwardAdvanceDurationSeconds = 0.15f,
                 damage = 24f,
                 hitRadius = 0.6f,
                 hitDistance = 1.45f,
@@ -58,6 +64,8 @@ namespace DimensionBrawl.Player
                 recoverySeconds = 0.30f,
                 inputBufferSeconds = 0.12f,
                 dodgeCancelAfterSeconds = 0.10f,
+                forwardAdvanceDistance = 0.52f,
+                forwardAdvanceDurationSeconds = 0.16f,
                 damage = 34f,
                 hitRadius = 0.7f,
                 hitDistance = 1.55f,
@@ -71,6 +79,8 @@ namespace DimensionBrawl.Player
                 recoverySeconds = 0.34f,
                 inputBufferSeconds = 0.12f,
                 dodgeCancelAfterSeconds = 0.12f,
+                forwardAdvanceDistance = 0.60f,
+                forwardAdvanceDurationSeconds = 0.17f,
                 damage = 40f,
                 hitRadius = 0.72f,
                 hitDistance = 1.62f,
@@ -84,6 +94,8 @@ namespace DimensionBrawl.Player
                 recoverySeconds = 0.46f,
                 inputBufferSeconds = 0.12f,
                 dodgeCancelAfterSeconds = 0.14f,
+                forwardAdvanceDistance = 0.74f,
+                forwardAdvanceDurationSeconds = 0.20f,
                 damage = 56f,
                 hitRadius = 0.82f,
                 hitDistance = 1.75f,
@@ -98,6 +110,8 @@ namespace DimensionBrawl.Player
         [Header("Attack Aim")]
         [SerializeField, Min(0f)] private float attackFacingHoldPaddingSeconds = 0.06f;
         [SerializeField] private bool snapBasicAttackFacing = true;
+        [Tooltip("Normal attacks keep stick intent for dodge/facing decisions, but should not let free locomotion slide the combo.")]
+        [SerializeField, Range(0f, 1f)] private float basicAttackMoveInputSpeedScale = 0f;
 
         [Header("Dodge")]
         [SerializeField] private float dodgeDurationSeconds = 0.56f;
@@ -117,6 +131,7 @@ namespace DimensionBrawl.Player
         public float ComboChainRecoveryRatio => comboChainRecoveryRatio;
         public float AttackFacingHoldPaddingSeconds => attackFacingHoldPaddingSeconds;
         public bool SnapBasicAttackFacing => snapBasicAttackFacing;
+        public float BasicAttackMoveInputSpeedScale => basicAttackMoveInputSpeedScale;
         public float DodgeDurationSeconds => dodgeDurationSeconds;
         public float DodgeInvulnerableFromSeconds => dodgeInvulnerableFromSeconds;
         public float DodgeInvulnerableToSeconds => dodgeInvulnerableToSeconds;

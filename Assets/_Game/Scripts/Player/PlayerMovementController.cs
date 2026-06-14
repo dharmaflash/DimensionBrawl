@@ -83,6 +83,8 @@ namespace DimensionBrawl.Player
         private Vector2 stopSettleHeldMoveInput;
         private Vector3 requestedFacingDirection;
         private float requestedFacingTimer;
+        private float actionMoveInputSpeedScale = 1f;
+        private bool actionMoveInputScaleActive;
         private bool inputWasMoving;
         private bool enabledMoveAction;
         private bool enabledLookAction;
@@ -113,6 +115,34 @@ namespace DimensionBrawl.Player
             externalPlanarVelocity = Vector3.ProjectOnPlane(velocity, Vector3.up);
             externalPlanarDuration = Mathf.Max(0f, durationSeconds);
             externalPlanarTimer = externalPlanarDuration;
+        }
+
+        public void BeginAuthoredPlanarStep(Vector3 direction, float distance, float durationSeconds)
+        {
+            Vector3 planarDirection = Vector3.ProjectOnPlane(direction, Vector3.up);
+            float clampedDistance = Mathf.Max(0f, distance);
+            float clampedDuration = Mathf.Max(0f, durationSeconds);
+            if (planarDirection.sqrMagnitude <= 0.0001f || clampedDistance <= 0f || clampedDuration <= 0f)
+            {
+                return;
+            }
+
+            // The external burst eases down with SmoothStep, so a 2x start speed lands close to the authored total distance.
+            float initialSpeed = clampedDistance * 2f / clampedDuration;
+            BeginExternalPlanarBurst(planarDirection.normalized * initialSpeed, clampedDuration);
+        }
+
+        public void SetActionMoveInputSpeedScale(float speedScale)
+        {
+            actionMoveInputSpeedScale = Mathf.Clamp01(speedScale);
+            actionMoveInputScaleActive = true;
+            ClampPlanarVelocityToActionMoveScale();
+        }
+
+        public void ClearActionMoveInputSpeedScale()
+        {
+            actionMoveInputSpeedScale = 1f;
+            actionMoveInputScaleActive = false;
         }
 
         public void RequestFacingDirection(Vector3 direction, float holdSeconds, bool snapImmediately)
@@ -165,15 +195,18 @@ namespace DimensionBrawl.Player
             Vector2 lookInput = ApplyDeadZone(ReadLookInput());
 
             Vector3 desiredMoveDirection = BuildWorldDirection(moveInput);
+            float locomotionSpeedScale = actionMoveInputScaleActive ? actionMoveInputSpeedScale : 1f;
+            Vector2 locomotionMoveInput = moveInput * locomotionSpeedScale;
+            Vector3 locomotionMoveDirection = locomotionMoveInput.sqrMagnitude > 0f ? desiredMoveDirection : Vector3.zero;
             UpdateCurrentMoveInput(moveInput, desiredMoveDirection);
             UpdateMoveIntent(desiredMoveDirection);
-            UpdatePlanarVelocity(desiredMoveDirection, moveInput.magnitude, deltaTime);
-            UpdateFacing(desiredMoveDirection, lookInput, deltaTime);
-            UpdateStopSettle(moveInput, deltaTime);
+            UpdatePlanarVelocity(locomotionMoveDirection, locomotionMoveInput.magnitude, deltaTime);
+            UpdateFacing(locomotionMoveDirection, lookInput, deltaTime);
+            UpdateStopSettle(locomotionMoveInput, deltaTime, actionMoveInputScaleActive);
             UpdateSharpTurnCooldown(deltaTime);
             UpdateExternalPlanarBurst(deltaTime);
             MoveCharacter(deltaTime);
-            UpdateAnimation(moveInput);
+            UpdateAnimation(locomotionMoveInput);
         }
 
         private static bool EnableActionIfNeeded(InputActionReference actionReference)
@@ -302,6 +335,18 @@ namespace DimensionBrawl.Player
             }
         }
 
+        private void ClampPlanarVelocityToActionMoveScale()
+        {
+            float currentSpeed = planarVelocity.magnitude;
+            float maxActionSpeed = moveSpeed * actionMoveInputSpeedScale;
+            if (currentSpeed <= maxActionSpeed)
+            {
+                return;
+            }
+
+            planarVelocity = maxActionSpeed > 0f ? planarVelocity.normalized * maxActionSpeed : Vector3.zero;
+        }
+
         private void UpdateMoveIntent(Vector3 desiredDirection)
         {
             if (desiredDirection.sqrMagnitude > 0f)
@@ -339,8 +384,17 @@ namespace DimensionBrawl.Player
                 turnRateDegrees * deltaTime);
         }
 
-        private void UpdateStopSettle(Vector2 moveInput, float deltaTime)
+        private void UpdateStopSettle(Vector2 moveInput, float deltaTime, bool suppressLocomotionStateChanges)
         {
+            if (suppressLocomotionStateChanges)
+            {
+                stopSettleTimer = 0f;
+                stopSettleInputHoldTimer = 0f;
+                stopSettleHeldMoveInput = Vector2.zero;
+                inputWasMoving = false;
+                return;
+            }
+
             bool inputIsMoving = moveInput.sqrMagnitude > 0f;
             if (inputIsMoving)
             {

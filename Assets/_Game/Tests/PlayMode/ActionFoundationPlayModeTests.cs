@@ -330,6 +330,61 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator BasicAttackUsesAuthoredForwardAdvanceWithoutHeldMoveSlide()
+        {
+            PlayerMovementController movement = RequireObject<PlayerMovementController>();
+            PlayerActionController actions = RequireObject<PlayerActionController>();
+            CombatHealth enemyHealth = RequireEnemyHealth();
+
+            PositionPlayerForAttack(movement.transform, enemyHealth.transform);
+            movement.SetMoveInput(Vector2.right);
+            Physics.SyncTransforms();
+            yield return new WaitForSeconds(0.18f);
+
+            Assert.Greater(
+                movement.PlanarVelocity.magnitude,
+                0.5f,
+                "The setup should start from real locomotion so the attack test catches carried free-move velocity.");
+
+            actions.QueueBasicAttack();
+            yield return null;
+
+            Assert.IsTrue(
+                movement.TryGetCurrentMoveDirection(out Vector3 heldMoveDirection),
+                "Basic attack should keep raw held move intent readable for dodge direction and later cancel decisions.");
+            Assert.Greater(
+                heldMoveDirection.sqrMagnitude,
+                0.5f,
+                "Held stick direction should remain available even while free locomotion is suppressed.");
+
+            Vector3 attackDirection = Vector3.ProjectOnPlane(actions.LastAttackDirection, Vector3.up).normalized;
+            Vector3 attackStartPosition = movement.transform.position;
+            yield return new WaitForSeconds(0.22f);
+
+            Vector3 attackDelta = Vector3.ProjectOnPlane(movement.transform.position - attackStartPosition, Vector3.up);
+            float authoredAdvance = Vector3.Dot(attackDelta, attackDirection);
+            float offAxisDrift = (attackDelta - attackDirection * authoredAdvance).magnitude;
+            Assert.Greater(
+                authoredAdvance,
+                0.22f,
+                "Basic attack should advance a short authored distance toward the locked attack direction instead of feeling fully rooted in place.");
+            Assert.Less(
+                authoredAdvance,
+                0.58f,
+                "The first-hit authored step-in should stay small and readable instead of becoming a lunge.");
+            Assert.Less(
+                offAxisDrift,
+                0.05f,
+                "Held movement during a basic attack should not overpower the authored attack direction with free-locomotion drift.");
+            Assert.Less(
+                movement.PlanarVelocity.magnitude,
+                0.08f,
+                "Basic attack should still clamp carried locomotion velocity so only authored attack advance remains.");
+
+            movement.SetMoveInput(Vector2.zero);
+        }
+
+        [UnityTest]
         public IEnumerator BasicAttackHitDoesNotTriggerGlobalSlowMotion()
         {
             PlayerMovementController movement = RequireObject<PlayerMovementController>();
