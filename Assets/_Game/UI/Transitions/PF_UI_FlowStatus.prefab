@@ -496,7 +496,7 @@ MonoBehaviour:
   phaseText: {fileID: 6575653243083909733}
   progressText: {fileID: 5748333088630808918}
   progressFill: {fileID: 3062414552925588741}
-  hideWhenIdle: 0
+  hideWhenIdle: 1
 --- !u!1 &6354555633060656093
 GameObject:
   m_ObjectHideFlags: 0

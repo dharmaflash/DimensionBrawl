@@ -681,7 +681,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &8697736080401996081
 RectTransform:
   m_ObjectHideFlags: 0
@@ -775,7 +775,7 @@ MonoBehaviour:
   phaseText: {fileID: 5060611690068066697}
   progressText: {fileID: 3886665353220142708}
   progressFill: {fileID: 3981896565319204655}
-  hideWhenIdle: 0
+  hideWhenIdle: 1
 --- !u!1 &3646599360886192368
 GameObject:
   m_ObjectHideFlags: 0

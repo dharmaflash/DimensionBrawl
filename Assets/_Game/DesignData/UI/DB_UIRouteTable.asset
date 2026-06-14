@@ -37,7 +37,7 @@ MonoBehaviour:
   - routeId: 40
     sceneName: UI_CombatHudTest
     scenePath: Assets/_Game/Scenes/UI/UI_CombatHudTest.unity
-    transitionId: SceneFadeShort
+    transitionId: stage_to_combat_mood_bridge
     loadingCardId: stage_to_combat_mood_bridge
     useAsyncLoading: 1
     minimumLoadingSeconds: 0.65

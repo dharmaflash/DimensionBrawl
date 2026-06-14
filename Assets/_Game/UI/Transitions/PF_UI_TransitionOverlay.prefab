@@ -382,6 +382,7 @@ MonoBehaviour:
   descriptionText: {fileID: 1406786167507917520}
   progressText: {fileID: 8768113680510071143}
   progressFill: {fileID: 9034076755777174804}
+  motionCatalog: {fileID: 11400000, guid: bee7e47247f59bc4d85c4002288c6345, type: 2}
   loadingCardDeck: {fileID: 11400000, guid: acf031cc5ab537e42b81d1e1f066234f, type: 2}
   loadingCardPresenter: {fileID: 7760167979795647334}
   loadingDetailGraphics:

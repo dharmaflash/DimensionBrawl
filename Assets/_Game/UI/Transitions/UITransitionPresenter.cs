@@ -12,6 +12,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private Text descriptionText;
         [SerializeField] private Text progressText;
         [SerializeField] private Image progressFill;
+        [SerializeField] private UIMotionCatalog motionCatalog;
         [SerializeField] private UILoadingCardDeck loadingCardDeck;
         [SerializeField] private UILoadingCardPresenter loadingCardPresenter;
         [SerializeField] private Graphic[] loadingDetailGraphics;
@@ -31,14 +32,15 @@ namespace DimensionBrawl.UI
 
         public IEnumerator PlayOut(UIScreenRouteTable.Route route)
         {
+            UIMotionEasing easing = ResolveTransition(route, out float durationSeconds);
             PrepareLoadingDetails(route);
             SetProgress(0f, route.HasLoadingCard ? "Preparing" : string.Empty);
-            yield return FadeTo(1f, defaultFadeSeconds);
+            yield return FadeTo(1f, durationSeconds, easing);
         }
 
         public IEnumerator PlayIn()
         {
-            yield return FadeTo(0f, defaultFadeSeconds);
+            yield return FadeTo(0f, defaultFadeSeconds, UIMotionEasing.EaseInOut);
             showsLoadingDetails = false;
             SetLoadingDetailsVisible(false);
         }
@@ -97,7 +99,21 @@ namespace DimensionBrawl.UI
             }
         }
 
-        private IEnumerator FadeTo(float targetAlpha, float seconds)
+        private UIMotionEasing ResolveTransition(UIScreenRouteTable.Route route, out float durationSeconds)
+        {
+            if (motionCatalog != null
+                && !string.IsNullOrWhiteSpace(route.TransitionId)
+                && motionCatalog.TryGetMotion(route.TransitionId, out UIMotionCatalog.MotionEntry motion))
+            {
+                durationSeconds = motion.DurationSeconds;
+                return motion.Easing;
+            }
+
+            durationSeconds = defaultFadeSeconds;
+            return UIMotionEasing.EaseInOut;
+        }
+
+        private IEnumerator FadeTo(float targetAlpha, float seconds, UIMotionEasing easing)
         {
             if (fadeGroup == null)
             {
@@ -114,7 +130,8 @@ namespace DimensionBrawl.UI
 
             for (float elapsed = 0f; elapsed < seconds; elapsed += Time.unscaledDeltaTime)
             {
-                SetAlpha(Mathf.Lerp(startAlpha, targetAlpha, elapsed / seconds));
+                float t = Mathf.Clamp01(elapsed / seconds);
+                SetAlpha(Mathf.Lerp(startAlpha, targetAlpha, Ease(t, easing)));
                 yield return null;
             }
 
@@ -175,6 +192,21 @@ namespace DimensionBrawl.UI
             if (target != null)
             {
                 target.text = value;
+            }
+        }
+
+        private static float Ease(float t, UIMotionEasing easing)
+        {
+            switch (easing)
+            {
+                case UIMotionEasing.EaseOut:
+                    return 1f - Mathf.Pow(1f - t, 3f);
+                case UIMotionEasing.EaseInOut:
+                    return t < 0.5f ? 4f * t * t * t : 1f - Mathf.Pow(-2f * t + 2f, 3f) * 0.5f;
+                case UIMotionEasing.DisplaySpring:
+                    return Mathf.Clamp01(1f - Mathf.Cos(t * Mathf.PI * 3f) * Mathf.Exp(-t * 5f));
+                default:
+                    return t;
             }
         }
     }

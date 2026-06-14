@@ -53,7 +53,7 @@ namespace DimensionBrawl.UI
             RouteLoadFailureHandler failureHandler)
         {
 #if UNITY_EDITOR
-            if (!string.IsNullOrWhiteSpace(route.ScenePath))
+            if (!route.UseAsyncLoading && !string.IsNullOrWhiteSpace(route.ScenePath))
             {
                 yield return SimulateMinimumLoading(route, stateHandler);
                 stateHandler?.Invoke(route, UISceneFlowPhase.Activating, 1f, "Activating", true);
