@@ -8,6 +8,7 @@ namespace DimensionBrawl.LevelDesign
     {
         [SerializeField] private string pocketId;
         [SerializeField] private EncounterPocketKind pocketKind;
+        [SerializeField] private LinearStageObjectiveKind objectiveKind;
         [SerializeField, Min(0f)] private float targetDurationSeconds;
         [SerializeField, Range(0f, 1f)] private float targetIntensity;
         [SerializeField] private StageSummonNeed featuredSummonNeed;
@@ -17,6 +18,7 @@ namespace DimensionBrawl.LevelDesign
 
         public string PocketId => pocketId;
         public EncounterPocketKind PocketKind => pocketKind;
+        public LinearStageObjectiveKind ObjectiveKind => objectiveKind;
         public float TargetDurationSeconds => targetDurationSeconds;
         public float TargetIntensity => targetIntensity;
         public StageSummonNeed FeaturedSummonNeed => featuredSummonNeed;
@@ -24,6 +26,7 @@ namespace DimensionBrawl.LevelDesign
         public string DesignNotes => designNotes;
         public int EnemyRoleCount => enemyRoles != null ? enemyRoles.Length : 0;
         public bool AllowsNoEnemies => pocketKind == EncounterPocketKind.Relief;
+        public bool HasObjective => objectiveKind != LinearStageObjectiveKind.None && !string.IsNullOrWhiteSpace(objectiveCue);
 
         public StageEnemyRoleSlot GetEnemyRole(int index)
         {

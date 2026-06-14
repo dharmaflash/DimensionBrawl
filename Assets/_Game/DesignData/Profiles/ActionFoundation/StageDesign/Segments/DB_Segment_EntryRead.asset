@@ -24,6 +24,7 @@ MonoBehaviour:
   pockets:
   - pocketId: entry_probe_teach
     pocketKind: 0
+    objectiveKind: 1
     targetDurationSeconds: 18
     targetIntensity: 0.18
     featuredSummonNeed: 0

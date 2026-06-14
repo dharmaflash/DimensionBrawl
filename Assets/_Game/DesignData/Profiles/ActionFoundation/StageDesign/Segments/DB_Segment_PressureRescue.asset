@@ -26,6 +26,7 @@ MonoBehaviour:
   pockets:
   - pocketId: rescue_overload_mix
     pocketKind: 2
+    objectiveKind: 5
     targetDurationSeconds: 32
     targetIntensity: 0.64
     featuredSummonNeed: 3

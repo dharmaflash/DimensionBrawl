@@ -26,6 +26,7 @@ MonoBehaviour:
   pockets:
   - pocketId: guard_gate_spike
     pocketKind: 3
+    objectiveKind: 3
     targetDurationSeconds: 30
     targetIntensity: 0.52
     featuredSummonNeed: 1

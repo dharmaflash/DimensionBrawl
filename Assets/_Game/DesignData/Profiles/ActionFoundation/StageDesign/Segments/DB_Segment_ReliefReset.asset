@@ -26,6 +26,7 @@ MonoBehaviour:
   pockets:
   - pocketId: reset_breath
     pocketKind: 4
+    objectiveKind: 6
     targetDurationSeconds: 10
     targetIntensity: 0.05
     featuredSummonNeed: 0

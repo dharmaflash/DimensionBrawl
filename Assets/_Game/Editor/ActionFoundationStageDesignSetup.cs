@@ -120,6 +120,11 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"{segment.SegmentId}/{pocket.PocketId} has no usable duration.");
             }
 
+            if (!pocket.HasObjective)
+            {
+                throw new InvalidOperationException($"{segment.SegmentId}/{pocket.PocketId} has no objective kind or objective cue.");
+            }
+
             if (!pocket.AllowsNoEnemies && pocket.EnemyRoleCount == 0)
             {
                 throw new InvalidOperationException($"{segment.SegmentId}/{pocket.PocketId} is not relief but has no enemy roles.");

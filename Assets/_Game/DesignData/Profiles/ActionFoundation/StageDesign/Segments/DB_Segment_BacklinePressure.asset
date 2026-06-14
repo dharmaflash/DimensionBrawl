@@ -25,6 +25,7 @@ MonoBehaviour:
   pockets:
   - pocketId: backline_signal_mix
     pocketKind: 2
+    objectiveKind: 4
     targetDurationSeconds: 28
     targetIntensity: 0.47
     featuredSummonNeed: 2

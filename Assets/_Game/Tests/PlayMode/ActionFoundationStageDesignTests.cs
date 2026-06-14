@@ -70,6 +70,7 @@ namespace DimensionBrawl.Tests
                 for (int pocketIndex = 0; pocketIndex < segment.PocketCount; pocketIndex++)
                 {
                     LinearStagePocket pocket = segment.GetPocket(pocketIndex);
+                    Assert.IsTrue(pocket.HasObjective, $"{segment.SegmentId}/{pocket.PocketId} should declare an objective kind and cue.");
                     if (!pocket.AllowsNoEnemies)
                     {
                         Assert.Greater(pocket.EnemyRoleCount, 0, $"{segment.SegmentId}/{pocket.PocketId} should reference at least one role.");

@@ -25,6 +25,7 @@ MonoBehaviour:
   pockets:
   - pocketId: phase_duelist_handoff
     pocketKind: 5
+    objectiveKind: 7
     targetDurationSeconds: 34
     targetIntensity: 0.72
     featuredSummonNeed: 5

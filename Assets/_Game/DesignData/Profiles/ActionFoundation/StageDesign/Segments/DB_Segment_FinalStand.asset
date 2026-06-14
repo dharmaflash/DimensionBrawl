@@ -26,6 +26,7 @@ MonoBehaviour:
   pockets:
   - pocketId: final_stand_mix
     pocketKind: 3
+    objectiveKind: 8
     targetDurationSeconds: 40
     targetIntensity: 0.84
     featuredSummonNeed: 5

@@ -31,6 +31,19 @@ namespace DimensionBrawl.LevelDesign
         Handoff
     }
 
+    public enum LinearStageObjectiveKind
+    {
+        None,
+        ReadThreat,
+        PunishRecovery,
+        BreakGuard,
+        PrioritizeBackline,
+        SurvivePressure,
+        RecoverPosition,
+        ReadPhaseHandoff,
+        FinalClear
+    }
+
     public enum StageSummonNeed
     {
         None,

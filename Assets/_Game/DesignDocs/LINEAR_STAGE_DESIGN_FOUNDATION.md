@@ -13,6 +13,32 @@ The foundation is intentionally data-first:
 
 This is not a wave spawner, scene generator, summon system, reward system, or boss controller.
 
+## V1 Authoring Contract
+
+Use these terms when discussing the first linear stage skeleton:
+
+| Design Term | Unity Data | Responsibility |
+|---|---|---|
+| `StageRoute` | `LinearStageTemplateProfile` | Names one stage template, route order, target run duration, featured future summon need, mastery text, and exclusions. |
+| `CombatSegment` | `LinearStageSegmentProfile` | Names one route beat, pacing envelope, camera readability intent, relief requirement, and its encounter pockets. |
+| `EncounterSlot` | `LinearStagePocket` | Names one authored encounter pocket inside a segment, including intensity, duration, future summon need, objective, and enemy role slots. |
+| `Objective` | `LinearStageObjectiveKind` plus `objectiveCue` | Classifies what the pocket asks the player to do, while the cue gives the human-readable instruction. |
+
+The first implementation route should consume data in that order: `StageRoute -> CombatSegment -> EncounterSlot -> Objective/RoleSlot`. Do not invert it by starting from prefabs, runtime spawns, rewards, or summon units.
+
+The current objective kinds are:
+
+| Objective | Use |
+|---|---|
+| `ReadThreat` | Teach a first tell or safe enemy read. |
+| `PunishRecovery` | Reinforce dodge, counter, and close-pressure recovery punish. |
+| `BreakGuard` | Teach guarded/armored pressure and the future Break answer. |
+| `PrioritizeBackline` | Teach chasing or answering rear line/projectile pressure. |
+| `SurvivePressure` | Create overload where future Tank/Heal answers would matter. |
+| `RecoverPosition` | Provide relief, camera recenter, and spacing reset. |
+| `ReadPhaseHandoff` | Rehearse pre-boss phase/deck handoff grammar without a real boss. |
+| `FinalClear` | Combine learned reads into the stage clear condition. |
+
 ## Reference Basis
 
 The current data and research support the following authoring rules:
@@ -70,6 +96,20 @@ Use before a real dragon boss exists. It validates phase/deck handoff language w
 
 These names are stage-design promises only. They do not unlock summons, pay rewards, spawn waves, or create boss phases.
 
+## First Review Route Skeleton
+
+Use `S1-1 Break Gate` as the first encounter-composition review target. It is short enough to inspect manually and still exercises the whole route chain.
+
+| Order | Segment | EncounterSlot | Objective | Intended Roles | Review Question |
+|---|---|---|---|---|---|
+| 1 | `EntryRead` | `entry_probe_teach` | `ReadThreat` | `EntryProbe` | Can the player read one enemy tell with the current camera and movement? |
+| 2 | `BasicPressure` | `close_guard_reinforce` | `PunishRecovery` | `CloseGuard`, optional `LungeChaser` | Does close pressure invite dodge, punish, and target-facing basics without clutter? |
+| 3 | `BreakGate` | `guard_gate_spike` | `BreakGuard` | `CloseGuard`, optional `ShieldBreakerElite` | Is the guarded threat obvious enough to justify a future Break answer? |
+| 4 | `Relief` | `reset_breath` | `RecoverPosition` | none | Does the route breathe before the final stand? |
+| 5 | `FinalStand` | `final_stand_mix` | `FinalClear` | `FinalStandCommanderElite`, `BacklineShooter`, `FanSuppressor`, optional `Skirmisher` | Does the final pocket combine prior reads without adding a new rule? |
+
+The review scene for this route should place already-authored role candidate prefabs by hand or through a dedicated editor setup slice. It should not add a runtime wave spawner, hidden prefab selector, reward payout, summon behavior, or boss phase logic.
+
 ## Authoring Boundaries
 
 - Stage templates may reference `LinearStageSegmentProfile` assets.
@@ -90,6 +130,7 @@ Validation checks:
 - All core segment types exist.
 - Stage templates start with `EntryRead` and end with `FinalStand`.
 - Each stage has enough route beats and at least one relief segment.
+- Every pocket declares a `LinearStageObjectiveKind` and a readable `objectiveCue`.
 - Non-relief pockets have at least one enemy role slot.
 - Role slots use game-owned role profiles and valid count/weight data.
 

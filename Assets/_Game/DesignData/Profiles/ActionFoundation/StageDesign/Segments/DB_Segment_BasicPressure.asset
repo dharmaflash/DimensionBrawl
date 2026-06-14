@@ -25,6 +25,7 @@ MonoBehaviour:
   pockets:
   - pocketId: close_guard_reinforce
     pocketKind: 1
+    objectiveKind: 2
     targetDurationSeconds: 24
     targetIntensity: 0.34
     featuredSummonNeed: 0
