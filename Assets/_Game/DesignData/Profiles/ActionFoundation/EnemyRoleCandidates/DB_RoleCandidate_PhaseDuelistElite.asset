@@ -15,13 +15,14 @@ MonoBehaviour:
   role: {fileID: 11400000, guid: ffa1f5043f625ac459fc50400813c633, type: 2}
   primaryArchetype: {fileID: 11400000, guid: ea66c8b8028965e44b1db2fb18ab9119, type: 2}
   rolePrefab: {fileID: 3468516888666475818, guid: 98ea0c736b15f8b47a3c61eef090bb71, type: 3}
-  promotedVisualSource: {fileID: 919132149155446097, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
+  promotedVisualSource: {fileID: 919132149155446097, guid: febd0951f63939e40929dabb5a046a9b, type: 3}
   optionalStaticTurretVisualPrefab: {fileID: 0}
   vfxCueProfile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
-  prefabStrategy: Dedicated elite duel role prefab variant with PhaseSwap and ArmorBreak
-    traits.
-  animationRead: Uses HeavyBattleArmor elite Animator clips for phase handoff and
-    guard-break review.
+  prefabStrategy: Dedicated elite duel prefab using Spikarian plus two-handed laser
+    gun for phase pressure.
+  animationRead: Two-handed laser-gun clips are promoted for aim, shot, crouch reposition,
+    phase signal, hit, and death reads. Two-handed laser-gun common humanoid set
+    with crouch/retreat and elite phase signal states.
   vfxRead: GuardBreak, ElitePhaseSwap, and EliteArmorBreak cues separate phase tells
     from damage windows.
   reuseJustification: Candidate keeps role behavior in data so the same pattern/deck

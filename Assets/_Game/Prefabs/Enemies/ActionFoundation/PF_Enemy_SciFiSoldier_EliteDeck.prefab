@@ -415,8 +415,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   team: 2
   maxHealth: 90
   startAtFullHealth: 1
@@ -436,8 +436,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 019ce60f0346446b8a59511aa8025495, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   enemyTypeId: SciFiSoldier.Basic
   patternId: EliteDeck
   patternProfile: {fileID: 11400000, guid: 59d0e2bafcc940a4fb98337280392176, type: 2}
@@ -472,7 +472,7 @@ MonoBehaviour:
   hitReactionSeconds: 0.24
   knockbackSpeed: 2
   moveSpeedParameter: MoveSpeed
-  prepareTrigger:
+  prepareTrigger: 
   attackTrigger: Attack
   hitTrigger: Hit
   deathTrigger: Death
@@ -492,8 +492,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 288c9f48f54943e798cab8c17a6806dc, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   health: {fileID: 588362265856980382}
   flashRenderers:
   - {fileID: 4547807648821404836}
@@ -512,7 +512,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f082b8634c7499bbb942b731f4fca96, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.AI.CombatTargetSensor
   selfHealth: {fileID: 588362265856980382}
   searchRadius: 12
@@ -528,7 +528,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b01fc0f0a0af4c1184e0ab19307ced01, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyAttackTelegraphPresenter
   telegraphObject: {fileID: 636056663673488440}
   telegraphTransform: {fileID: 3797379051107538705}
@@ -552,7 +552,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0df587d95db6d9244b21fad306ee1f0a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyActionCameraCueDriver
   agentSource: {fileID: 120282569852819900}
   cameraController: {fileID: 0}
@@ -567,7 +567,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c3f14f3a7faa43aeb87a640a05d34d09, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCuePlayer
   profile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
   pooledRoot: {fileID: 6255258649132308012}
@@ -581,7 +581,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f8d98497706446dfafb2b56e00bfa244, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.EnemyCombatVfxCueDriver
   agentSource: {fileID: 120282569852819900}
   health: {fileID: 588362265856980382}
@@ -655,7 +655,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 995d39aabf22ba64f9f87d4ddbccc2f1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Enemies.EnemyElitePatternController
   health: {fileID: 588362265856980382}
   soldier: {fileID: 120282569852819900}
@@ -810,7 +810,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -71544028671813460, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 2100000, guid: 09036a480d6118e4cbecdbc900d4d2ec, type: 2}
     - target: {fileID: 919132149155446097, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
       propertyPath: m_Name
@@ -818,7 +818,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5866666021909216657, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
       propertyPath: m_Controller
-      value:
+      value: 
       objectReference: {fileID: 9100000, guid: 70f4f82323de12d4191b7c47a3ba5125, type: 2}
     - target: {fileID: 5866666021909216657, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
       propertyPath: m_CullingMode

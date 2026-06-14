@@ -22,6 +22,7 @@ namespace DimensionBrawl.Tests
         private const string ScenePath = "Assets/_Game/Scenes/ActionFoundationTest.unity";
         private const string EnemyPrefabReviewScenePath = "Assets/_Game/Scenes/ActionFoundationEnemyPrefabReview.unity";
         private const string GeneralDeckPrefabReviewScenePath = "Assets/_Game/Scenes/ActionFoundationEnemyGeneralDeckReview.unity";
+        private const string RoleCandidateReviewScenePath = "Assets/_Game/Scenes/ActionFoundationEnemyRoleCandidateReview.unity";
         private const string ClosePunishPatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_ClosePunish.asset";
         private const string LungeStrikePatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_LungeStrike.asset";
         private const string HeavyWindupPatternPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BasicSoldier_HeavyWindup.asset";
@@ -45,6 +46,12 @@ namespace DimensionBrawl.Tests
         private const string EnemyArchetypeRootPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyArchetypes";
         private const string EnemyRoleCandidateRootPath = "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyRoleCandidates";
         private const string EnemyRoleCandidatePrefabRootPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/RoleCandidates";
+        private const string EnemyRoleVariantMaterialRootPath = "Assets/_Game/Art/Materials/Enemies/ActionFoundationRoleVariants";
+        private const string RoleVisualPrefix = "RoleVisual_";
+        private const string RejectedRolePresentationMarkerName = "RolePresentationMarker";
+        private const string RejectedRoleStaticVisualName = "RoleStaticVisual";
+        private const string RejectedRoleSummonSignalName = "RoleSummonSignal";
+        private const string SummonIntentAnchorName = "SummonIntentAnchor";
         private const string MeleeSoldierPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Melee_ClosePunish.prefab";
         private const string GeneralDeckSoldierPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_GeneralDeck.prefab";
         private const string EliteDeckSoldierPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_EliteDeck.prefab";
@@ -74,6 +81,7 @@ namespace DimensionBrawl.Tests
         private const string EliteTraitsEnemyRootName = "Enemy_SciFiSoldier_EliteTraits";
         private const string ReviewMeleeSoldierRootName = "EnemyPrefabReview_SciFiSoldier_Melee";
         private const string ReviewGeneralDeckSoldierRootName = "EnemyPrefabReview_SciFiSoldier_GeneralDeck";
+        private const string RoleCandidateReviewRootPrefix = "EnemyRoleReview_";
         private static readonly string[] EnemyRoleProfilePaths =
         {
             EnemyRoleRootPath + "/DB_Role_EntryProbe.asset",
@@ -112,6 +120,21 @@ namespace DimensionBrawl.Tests
             EnemyRoleCandidateRootPath + "/DB_RoleCandidate_SummonCallerElite.asset",
             EnemyRoleCandidateRootPath + "/DB_RoleCandidate_PhaseDuelistElite.asset",
             EnemyRoleCandidateRootPath + "/DB_RoleCandidate_FinalStandCommanderElite.asset"
+        };
+        private static readonly string[] EnemyRoleCandidateReviewRootNames =
+        {
+            RoleCandidateReviewRootPrefix + "EntryProbe",
+            RoleCandidateReviewRootPrefix + "CloseGuard",
+            RoleCandidateReviewRootPrefix + "LungeChaser",
+            RoleCandidateReviewRootPrefix + "LineCaster",
+            RoleCandidateReviewRootPrefix + "FanSuppressor",
+            RoleCandidateReviewRootPrefix + "BacklineShooter",
+            RoleCandidateReviewRootPrefix + "Skirmisher",
+            RoleCandidateReviewRootPrefix + "ShieldBreakerElite",
+            RoleCandidateReviewRootPrefix + "AuraCaptainElite",
+            RoleCandidateReviewRootPrefix + "SummonCallerElite",
+            RoleCandidateReviewRootPrefix + "PhaseDuelistElite",
+            RoleCandidateReviewRootPrefix + "FinalStandCommanderElite"
         };
 
         [UnitySetUp]
@@ -830,14 +853,9 @@ namespace DimensionBrawl.Tests
                     rolePrefabPath.StartsWith(EnemyRoleCandidatePrefabRootPath + "/"),
                     $"{candidate.Role.RoleId} role prefab should live under {EnemyRoleCandidatePrefabRootPath}, found {rolePrefabPath}.");
 
-                if (candidate.Role.RoleId == "SciFiSoldier.LineCaster" || candidate.Role.RoleId == "SciFiSoldier.BacklineShooter")
-                {
-                    Assert.IsNotNull(candidate.OptionalStaticTurretVisualPrefab, $"{candidate.Role.RoleId} should track the FORGE3D line turret visual alternative.");
-                    Assert.AreEqual(
-                        Forge3DLineTurretVisualPrefabPath,
-                        AssetDatabase.GetAssetPath(candidate.OptionalStaticTurretVisualPrefab).Replace('\\', '/'),
-                        $"{candidate.Role.RoleId} should use the promoted FORGE3D line turret visual as the static candidate.");
-                }
+                Assert.IsNull(
+                    candidate.OptionalStaticTurretVisualPrefab,
+                    $"{candidate.Role.RoleId} should not layer a turret visual into a soldier role candidate; turrets stay as separate archetype prefabs.");
 
                 GameObject prefabRoot = PrefabUtility.LoadPrefabContents(rolePrefabPath);
                 try
@@ -879,6 +897,7 @@ namespace DimensionBrawl.Tests
                     }
 
                     AssertRoleCandidateRendererMaterials(prefabRoot, $"{candidate.Role.RoleId} role prefab");
+                    AssertRoleCandidatePresentation(prefabRoot, candidate);
                 }
                 finally
                 {
@@ -1239,6 +1258,63 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(enemyHealth.transform, cameraController.Threat, "GeneralDeck review camera should bias toward the reviewed prefab enemy.");
             Assert.IsNotNull(enemyCameraCueDriver, "GeneralDeck review prefab enemy should keep its enemy camera cue driver.");
             Assert.AreSame(cameraController, enemyCameraCueDriver.CameraController, "GeneralDeck review scene should provide the camera controller to the prefab instance.");
+        }
+
+        [UnityTest]
+        public IEnumerator EnemyRoleCandidateReviewSceneWiresAllCandidatePrefabsForManualReview()
+        {
+            EditorSceneManager.LoadSceneInPlayMode(RoleCandidateReviewScenePath, new LoadSceneParameters(LoadSceneMode.Single));
+            yield return null;
+
+            CombatHealth playerHealth = RequirePlayerHealth();
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            var targetSelectorObject = new SerializedObject(targetSelector);
+            SerializedProperty targetCandidates = targetSelectorObject.FindProperty("targetCandidates");
+
+            Assert.AreEqual(
+                EnemyRoleCandidateReviewRootNames.Length,
+                targetSelector.TargetCandidateCount,
+                "Role review scene should give the player every role candidate as an authored target candidate.");
+            Assert.AreEqual(
+                EnemyRoleCandidateReviewRootNames.Length,
+                targetCandidates.arraySize,
+                "Role review scene should serialize every role candidate into the player target selector.");
+            Assert.IsFalse(
+                new SerializedObject(cameraController).FindProperty("useDeviceFallbackWhenActionMissing").boolValue,
+                "Role review camera should not read fallback gamepad right-stick input while idle; stick drift makes the manual review scene auto-orbit.");
+
+            for (int i = 0; i < EnemyRoleCandidateReviewRootNames.Length; i++)
+            {
+                string rootName = EnemyRoleCandidateReviewRootNames[i];
+                BasicSoldierEnemy soldier = RequireNamedRootComponent<BasicSoldierEnemy>(rootName);
+                CombatHealth enemyHealth = soldier.SelfHealth;
+                EnemyActionCameraCueDriver enemyCameraCueDriver = soldier.GetComponent<EnemyActionCameraCueDriver>();
+
+                Assert.IsNotNull(enemyHealth, $"{rootName} should expose local health.");
+                Assert.AreEqual(1, soldier.TargetSensor.TargetCandidateCount, $"{rootName} should receive the player as its only scene-provided target candidate.");
+
+                SerializedObject sensorObject = new SerializedObject(soldier.TargetSensor);
+                Assert.AreSame(
+                    playerHealth,
+                    sensorObject.FindProperty("targetCandidates").GetArrayElementAtIndex(0).objectReferenceValue,
+                    $"{rootName} target sensor should serialize the player health candidate.");
+
+                Assert.AreSame(
+                    enemyHealth,
+                    targetCandidates.GetArrayElementAtIndex(i).objectReferenceValue,
+                    $"{rootName} should be present in the player target selector at its review index.");
+                Assert.IsNotNull(enemyCameraCueDriver, $"{rootName} should keep its enemy camera cue driver.");
+                Assert.AreSame(soldier, enemyCameraCueDriver.AgentSource, $"{rootName} camera cue driver should use the local soldier source.");
+                Assert.AreSame(cameraController, enemyCameraCueDriver.CameraController, $"{rootName} should receive the scene camera controller.");
+                Assert.IsNotNull(
+                    soldier.GetComponentsInChildren<Animator>(true).FirstOrDefault(animator => animator.transform.name.StartsWith(RoleVisualPrefix)),
+                    $"{rootName} should expose an actual role visual Animator in the review scene.");
+            }
+
+            BasicSoldierEnemy firstSoldier = RequireNamedRootComponent<BasicSoldierEnemy>(EnemyRoleCandidateReviewRootNames[0]);
+            Assert.AreSame(playerHealth.transform, cameraController.Target, "Role review camera should follow the player.");
+            Assert.AreSame(firstSoldier.transform, cameraController.Threat, "Role review camera should bias toward the first nearby review enemy.");
         }
 
         [Test]
@@ -2273,6 +2349,67 @@ namespace DimensionBrawl.Tests
             }
 
             Assert.IsTrue(foundGameOwnedMaterial, $"{label} should include at least one game-owned material.");
+        }
+
+        private static void AssertRoleCandidatePresentation(GameObject root, CombatEnemyRoleCandidateProfile candidate)
+        {
+            Assert.IsNull(root.transform.Find(RejectedRolePresentationMarkerName), $"{candidate.Role.RoleId} should not use the rejected role color marker.");
+            Assert.IsNull(root.transform.Find(RejectedRoleStaticVisualName), $"{candidate.Role.RoleId} should not layer a static turret visual onto a soldier prefab.");
+            Assert.IsNull(root.transform.Find(RejectedRoleSummonSignalName), $"{candidate.Role.RoleId} should not use the rejected color-only summon marker.");
+
+            Animator roleAnimator = root
+                .GetComponentsInChildren<Animator>(true)
+                .FirstOrDefault(animator => animator.transform.name.StartsWith(RoleVisualPrefix));
+            Assert.IsNotNull(roleAnimator, $"{candidate.Role.RoleId} should have a role-specific visual Animator child.");
+            Assert.IsNotNull(candidate.PromotedVisualSource, $"{candidate.Role.RoleId} should record its promoted visual source.");
+
+            string promotedVisualPath = AssetDatabase.GetAssetPath(candidate.PromotedVisualSource).Replace('\\', '/');
+            Assert.IsTrue(promotedVisualPath.StartsWith("Assets/_Game/"), $"{candidate.Role.RoleId} promoted visual source should be game-owned, found {promotedVisualPath}.");
+            Assert.IsFalse(promotedVisualPath.Contains("/_Imported/"), $"{candidate.Role.RoleId} promoted visual source should not point at raw imports.");
+
+            GameObject visualSource = PrefabUtility.GetCorrespondingObjectFromSource(roleAnimator.gameObject);
+            string visualSourcePath = AssetDatabase.GetAssetPath(visualSource).Replace('\\', '/');
+            Assert.AreEqual(promotedVisualPath, visualSourcePath, $"{candidate.Role.RoleId} role visual should instantiate the promoted model source.");
+            AssertRoleCandidateUsesNoRoleVariantMaterials(root, candidate.Role.RoleId);
+
+            CombatHitFeedback hitFeedback = root.GetComponent<CombatHitFeedback>();
+            if (hitFeedback != null)
+            {
+                Assert.IsFalse(
+                    new SerializedObject(hitFeedback).FindProperty("applyIdleColorOnEnable").boolValue,
+                    $"{candidate.Role.RoleId} hit feedback should not overwrite promoted material colors on enable.");
+            }
+
+            EnemyElitePatternController eliteController = root.GetComponent<EnemyElitePatternController>();
+            if (candidate.Role.RoleId == "SciFiSoldier.Elite.SummonCaller")
+            {
+                Assert.IsNotNull(root.transform.Find(SummonIntentAnchorName), $"{candidate.Role.RoleId} should include one local inactive summon intent anchor.");
+                Assert.IsNotNull(eliteController, $"{candidate.Role.RoleId} should have an elite controller.");
+                SerializedProperty signals = new SerializedObject(eliteController).FindProperty("summonSignalObjects");
+                Assert.AreEqual(1, signals.arraySize, $"{candidate.Role.RoleId} should bind one local summon intent anchor.");
+            }
+        }
+
+        private static void AssertRoleCandidateUsesNoRoleVariantMaterials(GameObject root, string roleId)
+        {
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Material[] materials = renderers[i].sharedMaterials;
+                for (int j = 0; j < materials.Length; j++)
+                {
+                    Material material = materials[j];
+                    if (material == null)
+                    {
+                        continue;
+                    }
+
+                    string materialPath = AssetDatabase.GetAssetPath(material).Replace('\\', '/');
+                    Assert.IsFalse(
+                        materialPath.StartsWith(EnemyRoleVariantMaterialRootPath + "/"),
+                        $"{roleId} should not use rejected role color variant material {materialPath}.");
+                }
+            }
         }
 
         private static void AssertRoleCandidateAnimationBinding(

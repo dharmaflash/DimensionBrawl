@@ -15,14 +15,15 @@ MonoBehaviour:
   role: {fileID: 11400000, guid: f16ba69f98a507f4ca39bed31caaa125, type: 2}
   primaryArchetype: {fileID: 11400000, guid: c420a63d83b9fd04c90d9b8d0acd03b9, type: 2}
   rolePrefab: {fileID: 8345855280306995539, guid: 20539f7facfdcd54aa43764ae55d7469, type: 3}
-  promotedVisualSource: {fileID: 919132149155446097, guid: 63b3ecebef3250e428299643d7626153, type: 3}
-  optionalStaticTurretVisualPrefab: {fileID: 504528105189332300, guid: e36eac5444060c64d99bdfee8daa707c, type: 3}
+  promotedVisualSource: {fileID: 919132149155446097, guid: 288ce495396851242b86f72c9653cb47, type: 3}
+  optionalStaticTurretVisualPrefab: {fileID: 0}
   vfxCueProfile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
-  prefabStrategy: Dedicated ranged role prefab variant; FORGE3D line turret remains
-    the static backline alternative.
-  animationRead: Uses promoted rifle-soldier animation clips for retreat shot and
-    line-fire review.
-  vfxRead: RetreatShot/LinePressure cue overrides plus optional turret visual candidate
-    preserve backline readability.
+  prefabStrategy: Dedicated backline prefab using Spikarian plus missile launcher;
+    turret presentation is not mixed into this soldier.
+  animationRead: Missile-launcher humanoid clips are promoted for long hold, shot,
+    crouch retreat, hit, and death reads. Missile-launcher common humanoid set for
+    long windup, retreat shot, and line pressure.
+  vfxRead: RetreatShot and LinePressure cues sell a slower backline threat without
+    pretending it is a fixed turret.
   reuseJustification: Candidate keeps role behavior in data so the same pattern/deck
     contract can be reused by future summon AI.

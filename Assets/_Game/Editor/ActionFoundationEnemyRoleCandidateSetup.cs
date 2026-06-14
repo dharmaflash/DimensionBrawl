@@ -41,7 +41,6 @@ namespace DimensionBrawl.Editor
         public const string PhaseDuelistElitePrefabPath = RoleCandidatePrefabRoot + "/PF_Enemy_Role_PhaseDuelistElite.prefab";
         public const string FinalStandCommanderElitePrefabPath = RoleCandidatePrefabRoot + "/PF_Enemy_Role_FinalStandCommanderElite.prefab";
 
-        private const string MaintenanceWorkerVisualPath = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/MaintenanceWorker/Models/SK_MaintenanceWorkerAllMeshes.fbx";
         private const string VfxPoolChildName = "CombatVfxPool";
 
         private static readonly string[] CandidateProfilePaths =
@@ -126,7 +125,7 @@ namespace DimensionBrawl.Editor
             try
             {
                 prefabRoot.name = spec.PrefabName;
-                ConfigureRolePrefab(prefabRoot, spec.Role, vfxCueProfile);
+                ConfigureRolePrefab(prefabRoot, spec, vfxCueProfile);
 
                 GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(prefabRoot, spec.PrefabPath);
                 if (savedPrefab == null)
@@ -147,9 +146,10 @@ namespace DimensionBrawl.Editor
 
         private static void ConfigureRolePrefab(
             GameObject root,
-            CombatEnemyRoleProfile role,
+            RoleCandidateSpec spec,
             CombatVfxCueProfile vfxCueProfile)
         {
+            CombatEnemyRoleProfile role = spec.Role;
             BasicSoldierEnemy soldier = RequireComponent<BasicSoldierEnemy>(root, root.name);
             CombatHealth health = RequireComponent<CombatHealth>(root, root.name);
             CombatTargetSensor targetSensor = RequireComponent<CombatTargetSensor>(root, root.name);
@@ -207,6 +207,7 @@ namespace DimensionBrawl.Editor
                 SetObjectReference(vfxCueDriver, "elitePatternController", null);
             }
 
+            ActionFoundationEnemyRoleVisualSetup.Apply(root, spec.Visual);
             ValidateNoRawImportedOrExternalSceneReferences(root);
         }
 
@@ -220,8 +221,8 @@ namespace DimensionBrawl.Editor
             SetObjectReference(serializedObject, "role", spec.Role);
             SetObjectReference(serializedObject, "primaryArchetype", spec.PrimaryArchetype);
             SetObjectReference(serializedObject, "rolePrefab", rolePrefab);
-            SetObjectReference(serializedObject, "promotedVisualSource", spec.PromotedVisualSource);
-            SetObjectReference(serializedObject, "optionalStaticTurretVisualPrefab", spec.OptionalStaticTurretVisualPrefab);
+            SetObjectReference(serializedObject, "promotedVisualSource", ActionFoundationEnemyRoleVisualSetup.LoadPromotedVisualSource(spec.Visual));
+            SetObjectReference(serializedObject, "optionalStaticTurretVisualPrefab", null);
             SetObjectReference(serializedObject, "vfxCueProfile", vfxCueProfile);
             SetString(serializedObject, "prefabStrategy", spec.PrefabStrategy);
             SetString(serializedObject, "animationRead", spec.AnimationRead);
@@ -242,11 +243,9 @@ namespace DimensionBrawl.Editor
                     "PF_Enemy_Role_EntryProbe",
                     EntryProbePrefabPath,
                     EntryProbeCandidateProfilePath,
-                    refs.MaintenanceWorkerVisual,
-                    null,
-                    "Dedicated melee role prefab variant for first-read close pressure.",
-                    "Uses the promoted MaintenanceWorker Animator with ClosePunish/Lunge/Line deck triggers for entry teaching.",
-                    "ClosePunish windup/active plus EntryProbe deck cue overrides stay on the shared combat VFX profile."),
+                    "Dedicated first-read scout prefab using a male combat suit and dual-pistol visual set.",
+                    "Dual-pistol common humanoid clips are promoted for quick aim, run, two-shot, crouch retreat, hit, and death reads.",
+                    "ClosePunish windup/active cues stay modest so this enemy teaches timing without reading like an elite."),
                 CreateSpec(
                     refs.CloseGuard,
                     refs.MeleeArchetype,
@@ -254,11 +253,9 @@ namespace DimensionBrawl.Editor
                     "PF_Enemy_Role_CloseGuard",
                     CloseGuardPrefabPath,
                     CloseGuardCandidateProfilePath,
-                    refs.MaintenanceWorkerVisual,
-                    null,
-                    "Dedicated melee guard role prefab variant with BreakGateBruiser deck data.",
-                    "Uses the promoted MaintenanceWorker Animator for close guard, heavy windup, and lunge reads.",
-                    "ClosePunish/HeavyWindup/Lunge/Line cue overrides make guard pressure readable."),
+                    "Dedicated break-gate guard prefab using the Aranian sword-and-shield model and props.",
+                    "Aranian shield idle/run, blocked, combo, spinning, hit, and death clips are promoted for close-guard pressure.",
+                    "Guard and heavy-windup cues are sized for a front-facing shield threat rather than a recolored soldier."),
                 CreateSpec(
                     refs.LungeChaser,
                     refs.MeleeArchetype,
@@ -266,11 +263,9 @@ namespace DimensionBrawl.Editor
                     "PF_Enemy_Role_LungeChaser",
                     LungeChaserPrefabPath,
                     LungeChaserCandidateProfilePath,
-                    refs.MaintenanceWorkerVisual,
-                    null,
-                    "Dedicated melee chase role prefab variant with Skirmisher deck data.",
-                    "Uses the promoted MaintenanceWorker Animator for committed lunge and counter windows.",
-                    "LungeStrike and RetreatBlink cue overrides separate chase pressure from idle approach."),
+                    "Dedicated chase prefab using the Therionide melee alien silhouette.",
+                    "Therionide melee idle/run, forward attack chain, heavy attack, hit, and death clips are promoted.",
+                    "LungeStrike and RetreatBlink cues read as creature rush pressure instead of soldier footwork."),
                 CreateSpec(
                     refs.LineCaster,
                     refs.RangedArchetype,
@@ -278,11 +273,9 @@ namespace DimensionBrawl.Editor
                     "PF_Enemy_Role_LineCaster",
                     LineCasterPrefabPath,
                     LineCasterCandidateProfilePath,
-                    refs.SciFiSoldier01Visual,
-                    refs.LineTurretVisualPrefab,
-                    "Dedicated ranged role prefab variant; FORGE3D line turret remains the static visual alternative.",
-                    "Uses promoted rifle-soldier animation clips while the line turret visual is tracked for fixed-lane promotion.",
-                    "LinePressure projectile cue overrides and optional turret visual candidate keep lane reads explicit."),
+                    "Dedicated line-caster prefab using the SciFiSoldier_01 rifleman only; no turret is layered onto the soldier.",
+                    "Assault-rifle humanoid clips are promoted for aim idle, run, line shot, retreat shot, hit, and death reads.",
+                    "LinePressure projectile cues remain explicit and are not hidden behind a static turret overlay."),
                 CreateSpec(
                     refs.FanSuppressor,
                     refs.RangedArchetype,
@@ -290,11 +283,9 @@ namespace DimensionBrawl.Editor
                     "PF_Enemy_Role_FanSuppressor",
                     FanSuppressorPrefabPath,
                     FanSuppressorCandidateProfilePath,
-                    refs.SciFiSoldier01Visual,
-                    null,
-                    "Dedicated ranged role prefab variant for cone-space pressure.",
-                    "Uses promoted rifle-soldier animation clips for fan, line, and lunge blend review.",
-                    "FanPressure cue overrides carry the mid-range cone read without adding controller branches."),
+                    "Dedicated cone-pressure prefab using the female combat-suit shotgunner.",
+                    "Shotgun humanoid clips are promoted for wide blasts, crouch aim, retreat, hit, and death reads.",
+                    "FanPressure cues are kept wider and softer than line shots so the role is readable in groups."),
                 CreateSpec(
                     refs.BacklineShooter,
                     refs.RangedArchetype,
@@ -302,11 +293,9 @@ namespace DimensionBrawl.Editor
                     "PF_Enemy_Role_BacklineShooter",
                     BacklineShooterPrefabPath,
                     BacklineShooterCandidateProfilePath,
-                    refs.SciFiSoldier01Visual,
-                    refs.LineTurretVisualPrefab,
-                    "Dedicated ranged role prefab variant; FORGE3D line turret remains the static backline alternative.",
-                    "Uses promoted rifle-soldier animation clips for retreat shot and line-fire review.",
-                    "RetreatShot/LinePressure cue overrides plus optional turret visual candidate preserve backline readability."),
+                    "Dedicated backline prefab using Spikarian plus missile launcher; turret presentation is not mixed into this soldier.",
+                    "Missile-launcher humanoid clips are promoted for long hold, shot, crouch retreat, hit, and death reads.",
+                    "RetreatShot and LinePressure cues sell a slower backline threat without pretending it is a fixed turret."),
                 CreateSpec(
                     refs.Skirmisher,
                     refs.MeleeArchetype,
@@ -314,11 +303,9 @@ namespace DimensionBrawl.Editor
                     "PF_Enemy_Role_Skirmisher",
                     SkirmisherPrefabPath,
                     SkirmisherCandidateProfilePath,
-                    refs.MaintenanceWorkerVisual,
-                    null,
-                    "Dedicated mobile melee role prefab variant for blink-and-lunge pressure.",
-                    "Uses the promoted MaintenanceWorker Animator with RetreatBlink/LungeStrike deck data.",
-                    "RetreatBlink and LungeStrike cue overrides distinguish reposition from committed attack."),
+                    "Dedicated mobile skirmisher prefab using Aranian pistol-blade instead of the shield-guard setup.",
+                    "Aranian pistol/dash/combat clips are promoted for blink, lunge, light combo, hit, and death reads.",
+                    "RetreatBlink and LungeStrike cues distinguish evasive movement from committed strike windows."),
                 CreateSpec(
                     refs.ShieldBreakerElite,
                     refs.EliteArchetype,
@@ -326,10 +313,8 @@ namespace DimensionBrawl.Editor
                     "PF_Enemy_Role_ShieldBreakerElite",
                     ShieldBreakerElitePrefabPath,
                     ShieldBreakerEliteCandidateProfilePath,
-                    refs.HeavyBattleArmorVisual,
-                    null,
                     "Dedicated elite role prefab variant with only ShieldCycle and ArmorBreak traits.",
-                    "Uses HeavyBattleArmor elite Animator clips for guard break, stagger, and death readability.",
+                    "HeavyBattleArmor weapon clips are promoted for melee-forward, guard break, stagger, elite shield, armor break, and death.",
                     "GuardBreak, EliteShield, and EliteArmorBreak cues bind through data instead of role branches."),
                 CreateSpec(
                     refs.AuraCaptainElite,
@@ -338,11 +323,9 @@ namespace DimensionBrawl.Editor
                     "PF_Enemy_Role_AuraCaptainElite",
                     AuraCaptainElitePrefabPath,
                     AuraCaptainEliteCandidateProfilePath,
-                    refs.HeavyBattleArmorVisual,
-                    null,
-                    "Dedicated elite support role prefab variant with AuraBuffer and ShieldCycle traits.",
-                    "Uses HeavyBattleArmor elite Animator clips while aura targets remain scene-injected, not prefab-stored.",
-                    "FanPressure, EliteAura, and EliteShield cues make support priority readable."),
+                    "Dedicated elite support prefab using female combat suit plus beam gun, not a recolored heavy armor.",
+                    "Beam-gun clips and elite signal states are promoted for aura, shield, fan, line, hit, and death reads.",
+                    "FanPressure, EliteAura, and EliteShield cues make the support priority readable without scene searches."),
                 CreateSpec(
                     refs.SummonCallerElite,
                     refs.EliteArchetype,
@@ -350,11 +333,9 @@ namespace DimensionBrawl.Editor
                     "PF_Enemy_Role_SummonCallerElite",
                     SummonCallerElitePrefabPath,
                     SummonCallerEliteCandidateProfilePath,
-                    refs.HeavyBattleArmorVisual,
-                    null,
-                    "Dedicated elite role prefab variant with summon-signal data but no runtime spawning.",
-                    "Uses HeavyBattleArmor elite Animator clips; summon markers remain explicit scene-provided signals.",
-                    "RetreatShot, EliteSummon, and EliteAura cues communicate the caller role without adding spawners."),
+                    "Dedicated tech-caller prefab using MaintenanceWorker utility gestures and one local inactive intent anchor.",
+                    "RepairHigh, RepairLow, TypeOnConsole, crouch, hit, death, and elite signal clips are promoted for summon-call readability.",
+                    "EliteSummon and EliteAura cues communicate intent; this prefab still does not spawn enemies or summons."),
                 CreateSpec(
                     refs.PhaseDuelistElite,
                     refs.EliteArchetype,
@@ -362,10 +343,8 @@ namespace DimensionBrawl.Editor
                     "PF_Enemy_Role_PhaseDuelistElite",
                     PhaseDuelistElitePrefabPath,
                     PhaseDuelistEliteCandidateProfilePath,
-                    refs.HeavyBattleArmorVisual,
-                    null,
-                    "Dedicated elite duel role prefab variant with PhaseSwap and ArmorBreak traits.",
-                    "Uses HeavyBattleArmor elite Animator clips for phase handoff and guard-break review.",
+                    "Dedicated elite duel prefab using Spikarian plus two-handed laser gun for phase pressure.",
+                    "Two-handed laser-gun clips are promoted for aim, shot, crouch reposition, phase signal, hit, and death reads.",
                     "GuardBreak, ElitePhaseSwap, and EliteArmorBreak cues separate phase tells from damage windows."),
                 CreateSpec(
                     refs.FinalStandCommanderElite,
@@ -374,10 +353,8 @@ namespace DimensionBrawl.Editor
                     "PF_Enemy_Role_FinalStandCommanderElite",
                     FinalStandCommanderElitePrefabPath,
                     FinalStandCommanderEliteCandidateProfilePath,
-                    refs.HeavyBattleArmorVisual,
-                    null,
                     "Dedicated elite final-stand role prefab variant with shield, armor, and phase traits.",
-                    "Uses HeavyBattleArmor elite Animator clips across GuardBreak, HeavyWindup, line, fan, and phase pressure.",
+                    "Larger HeavyBattleArmor commander clips are promoted for melee, shoot, guard break, phase, hit, and death reads.",
                     "FinalStand deck pattern cues plus three elite signal cues make the commander readable.")
             };
         }
@@ -389,12 +366,11 @@ namespace DimensionBrawl.Editor
             string prefabName,
             string prefabPath,
             string profilePath,
-            GameObject promotedVisualSource,
-            GameObject optionalStaticTurretVisualPrefab,
             string prefabStrategy,
             string animationRead,
             string vfxRead)
         {
+            EnemyRoleVisualSpec visual = ActionFoundationEnemyRoleVisualSetup.CreateForRole(role.RoleId);
             return new RoleCandidateSpec
             {
                 Role = role,
@@ -403,10 +379,9 @@ namespace DimensionBrawl.Editor
                 PrefabName = prefabName,
                 PrefabPath = prefabPath,
                 ProfilePath = profilePath,
-                PromotedVisualSource = promotedVisualSource,
-                OptionalStaticTurretVisualPrefab = optionalStaticTurretVisualPrefab,
+                Visual = visual,
                 PrefabStrategy = prefabStrategy,
-                AnimationRead = animationRead,
+                AnimationRead = $"{animationRead} {visual.AnimationRead}",
                 VfxRead = vfxRead,
                 ReuseJustification = "Candidate keeps role behavior in data so the same pattern/deck contract can be reused by future summon AI."
             };
@@ -459,12 +434,13 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"{candidate.Role.RoleId} role prefab should be under {RoleCandidatePrefabRoot}, found {rolePrefabPath}.");
             }
 
-            ValidateGameOwnedAsset(candidate.PromotedVisualSource, $"{candidate.Role.RoleId} promoted visual source");
             if (candidate.OptionalStaticTurretVisualPrefab != null)
             {
-                ValidateGameOwnedAsset(candidate.OptionalStaticTurretVisualPrefab, $"{candidate.Role.RoleId} optional static turret visual");
+                throw new InvalidOperationException(
+                    $"{candidate.Role.RoleId} should not layer a static turret visual onto a soldier role prefab. Keep turrets as separate archetypes.");
             }
 
+            ValidateGameOwnedAsset(candidate.PromotedVisualSource, $"{candidate.Role.RoleId} promoted visual source");
             ValidateRolePrefab(candidate, rolePrefabPath);
             coveredRoleIds.Add(candidate.Role.RoleId);
         }
@@ -514,6 +490,10 @@ namespace DimensionBrawl.Editor
                 ValidateObjectReference(vfxCueDriver, "cuePlayer", cuePlayer);
                 ValidateObjectReference(vfxCueDriver, "cueAnchor", prefabRoot.transform);
                 ValidatePatternCueOverrides(vfxCueDriver);
+                ActionFoundationEnemyRoleVisualSetup.Validate(
+                    prefabRoot,
+                    candidate.Role.RoleId,
+                    ActionFoundationEnemyRoleVisualSetup.CreateForRole(candidate.Role.RoleId));
 
                 if (candidate.Role.EliteRole)
                 {
@@ -553,11 +533,7 @@ namespace DimensionBrawl.Editor
                 FinalStandCommanderElite = LoadAsset<CombatEnemyRoleProfile>(ActionFoundationEnemyRoleDeckSetup.FinalStandCommanderEliteRolePath),
                 MeleeArchetype = LoadAsset<CombatEnemyArchetypeProfile>(ActionFoundationEnemyArchetypeSetup.SciFiMeleeSoldierPath),
                 RangedArchetype = LoadAsset<CombatEnemyArchetypeProfile>(ActionFoundationEnemyArchetypeSetup.SciFiRangedSoldierPath),
-                EliteArchetype = LoadAsset<CombatEnemyArchetypeProfile>(ActionFoundationEnemyArchetypeSetup.SciFiEliteSoldierPath),
-                MaintenanceWorkerVisual = LoadAsset<GameObject>(MaintenanceWorkerVisualPath),
-                SciFiSoldier01Visual = LoadAsset<GameObject>(ActionFoundationSciFiSoldier01VisualSetup.ModelPath),
-                HeavyBattleArmorVisual = LoadAsset<GameObject>(ActionFoundationSciFiEliteSoldierVisualSetup.ModelPath),
-                LineTurretVisualPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(ActionFoundationForge3DLineTurretSetup.PrefabPath)
+                EliteArchetype = LoadAsset<CombatEnemyArchetypeProfile>(ActionFoundationEnemyArchetypeSetup.SciFiEliteSoldierPath)
             };
         }
 
@@ -1100,10 +1076,6 @@ namespace DimensionBrawl.Editor
             public CombatEnemyArchetypeProfile MeleeArchetype;
             public CombatEnemyArchetypeProfile RangedArchetype;
             public CombatEnemyArchetypeProfile EliteArchetype;
-            public GameObject MaintenanceWorkerVisual;
-            public GameObject SciFiSoldier01Visual;
-            public GameObject HeavyBattleArmorVisual;
-            public GameObject LineTurretVisualPrefab;
         }
 
         private sealed class RoleCandidateSpec
@@ -1114,8 +1086,7 @@ namespace DimensionBrawl.Editor
             public string PrefabName;
             public string PrefabPath;
             public string ProfilePath;
-            public GameObject PromotedVisualSource;
-            public GameObject OptionalStaticTurretVisualPrefab;
+            public EnemyRoleVisualSpec Visual;
             public string PrefabStrategy;
             public string AnimationRead;
             public string VfxRead;

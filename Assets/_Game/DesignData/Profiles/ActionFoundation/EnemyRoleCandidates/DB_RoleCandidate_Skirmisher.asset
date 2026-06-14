@@ -15,14 +15,15 @@ MonoBehaviour:
   role: {fileID: 11400000, guid: 86f255894f64fcb4685039c95d2037bb, type: 2}
   primaryArchetype: {fileID: 11400000, guid: ad456405b5d69084ab246733cff11619, type: 2}
   rolePrefab: {fileID: 883304912678786552, guid: 5c38301ba0bb6a346af3a5957b7f919b, type: 3}
-  promotedVisualSource: {fileID: 919132149155446097, guid: d25064b620081b54682ad210e6f1a0de, type: 3}
+  promotedVisualSource: {fileID: 919132149155446097, guid: 11264540a834c54488830296574f0b5d, type: 3}
   optionalStaticTurretVisualPrefab: {fileID: 0}
   vfxCueProfile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
-  prefabStrategy: Dedicated mobile melee role prefab variant for blink-and-lunge
-    pressure.
-  animationRead: Uses the promoted MaintenanceWorker Animator with RetreatBlink/LungeStrike
-    deck data.
-  vfxRead: RetreatBlink and LungeStrike cue overrides distinguish reposition from
-    committed attack.
+  prefabStrategy: Dedicated mobile skirmisher prefab using Aranian pistol-blade instead
+    of the shield-guard setup.
+  animationRead: 'Aranian pistol/dash/combat clips are promoted for blink, lunge,
+    light combo, hit, and death reads. Aranian pistol/dash set: pistol idle/run,
+    dash forward, pistol hit reactions, death.'
+  vfxRead: RetreatBlink and LungeStrike cues distinguish evasive movement from committed
+    strike windows.
   reuseJustification: Candidate keeps role behavior in data so the same pattern/deck
     contract can be reused by future summon AI.

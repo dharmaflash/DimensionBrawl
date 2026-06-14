@@ -15,13 +15,15 @@ MonoBehaviour:
   role: {fileID: 11400000, guid: 20dbe93285942bd43b2c176ec02e6127, type: 2}
   primaryArchetype: {fileID: 11400000, guid: ea66c8b8028965e44b1db2fb18ab9119, type: 2}
   rolePrefab: {fileID: 8621559004477292851, guid: cbde1a7148c576b42afda31678c94b6d, type: 3}
-  promotedVisualSource: {fileID: 919132149155446097, guid: 63ea8bf0ece7f194aa93b61913b80d33, type: 3}
+  promotedVisualSource: {fileID: 919132149155446097, guid: 628ecde632c178c48b9df20d1e5c6517, type: 3}
   optionalStaticTurretVisualPrefab: {fileID: 0}
   vfxCueProfile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
-  prefabStrategy: Dedicated elite support role prefab variant with AuraBuffer and
-    ShieldCycle traits.
-  animationRead: Uses HeavyBattleArmor elite Animator clips while aura targets remain
-    scene-injected, not prefab-stored.
-  vfxRead: FanPressure, EliteAura, and EliteShield cues make support priority readable.
+  prefabStrategy: Dedicated elite support prefab using female combat suit plus beam
+    gun, not a recolored heavy armor.
+  animationRead: Beam-gun clips and elite signal states are promoted for aura, shield,
+    fan, line, hit, and death reads. Beam-gun common humanoid set plus elite signal
+    states for aura and shield support.
+  vfxRead: FanPressure, EliteAura, and EliteShield cues make the support priority
+    readable without scene searches.
   reuseJustification: Candidate keeps role behavior in data so the same pattern/deck
     contract can be reused by future summon AI.
