@@ -21,6 +21,7 @@ namespace DimensionBrawl.Editor
         private const string BreakGateTemplatePath =
             ActionFoundationStageDesignSetup.TemplateRoot + "/DB_StageTemplate_S1_1_BreakGate.asset";
         private const string StageReviewRootPrefix = "StageBreakGateReview_";
+        private const string EncounterOwnerRootName = StageReviewRootPrefix + "EncounterOwner";
 
         [MenuItem("DimensionBrawl/Reapply Action Foundation Stage BreakGate Review Scene")]
         public static void ReapplyStageBreakGateReviewSceneMenu()
@@ -41,6 +42,7 @@ namespace DimensionBrawl.Editor
             ActionFoundationStageDesignSetup.ValidateStageDesignAssets();
             ActionFoundationEnemyRoleCandidateSetup.ValidateEnemyRoleCandidates();
             ValidateBreakGateRouteTemplate();
+            LinearStageTemplateProfile template = LoadAsset<LinearStageTemplateProfile>(BreakGateTemplatePath);
 
             Scene scene = EditorSceneManager.OpenScene(ActionFoundationProfileSetup.ScenePath, OpenSceneMode.Single);
             RemoveEnemySampleRoots(scene);
@@ -100,6 +102,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(encounter, "playerHealth", playerHealth);
             SetObjectReference(encounter, "enemyHealth", enemyHealths[enemyHealths.Length - 1]);
             ConfigureArenaInfluenceTargets(scene, player.transform, enemyTransforms);
+            ConfigureStageEncounterOwner(scene, template, player.transform, enemyHealths);
 
             if (!EditorSceneManager.SaveScene(scene, BreakGateReviewScenePath))
             {
@@ -122,6 +125,7 @@ namespace DimensionBrawl.Editor
             ActionCameraController cameraController = RequireObject<ActionCameraController>(scene, "action camera");
             ActionFoundationTestEncounter encounter = RequireObject<ActionFoundationTestEncounter>(scene, "test encounter");
             StageReviewEnemySpec[] specs = GetBreakGateRouteSpecs();
+            var enemyHealths = new CombatHealth[specs.Length];
 
             if (CollectComponents<BasicSoldierEnemy>(scene).Length != specs.Length)
             {
@@ -154,6 +158,7 @@ namespace DimensionBrawl.Editor
                 ValidateObjectReference(enemyCameraCueDriver, "cameraController", cameraController);
                 ValidateObjectReference(enemyCameraCueDriver, "cueSpace", enemy.transform);
                 ValidateArrayReference(playerTargetSelector, "targetCandidates", i, enemyHealth);
+                enemyHealths[i] = enemyHealth;
 
                 if (Vector3.Distance(enemy.transform.position, spec.Position) > 0.01f)
                 {
@@ -170,6 +175,7 @@ namespace DimensionBrawl.Editor
                 encounter,
                 "enemyHealth",
                 RequireComponent<CombatHealth>(RequireRoot(scene, specs[specs.Length - 1].RootName), "final review enemy health"));
+            ValidateStageEncounterOwner(scene, player.transform, enemyHealths);
         }
 
         private static GameObject InstantiateReviewEnemy(Scene scene, StageReviewEnemySpec spec, Vector3 playerPosition)
@@ -276,6 +282,107 @@ namespace DimensionBrawl.Editor
             for (int i = 0; i < drivers.Length; i++)
             {
                 SetObjectReferenceArray(drivers[i], "influenceTargets", targets);
+            }
+        }
+
+        private static void ConfigureStageEncounterOwner(
+            Scene scene,
+            LinearStageTemplateProfile template,
+            Transform player,
+            CombatHealth[] enemyHealths)
+        {
+            GameObject ownerRoot = new GameObject(EncounterOwnerRootName);
+            SceneManager.MoveGameObjectToScene(ownerRoot, scene);
+            StageEncounterReviewOwner owner = ownerRoot.AddComponent<StageEncounterReviewOwner>();
+            owner.Configure(template, player, CreateBreakGatePocketBindings(ownerRoot.transform, enemyHealths));
+            EditorUtility.SetDirty(owner);
+        }
+
+        private static StageEncounterPocketBinding[] CreateBreakGatePocketBindings(Transform parent, CombatHealth[] enemies)
+        {
+            return new[]
+            {
+                CreatePocketBinding(parent, "01_EntryRead_entry_probe_teach", 0, 0, new Vector3(0f, 0f, 1.6f), 5.5f, enemies, 0, 1),
+                CreatePocketBinding(parent, "02_BasicPressure_close_guard_reinforce", 1, 0, new Vector3(0f, 0f, 13.5f), 7f, enemies, 1, 2),
+                CreatePocketBinding(parent, "03_BreakGate_guard_gate_spike", 2, 0, new Vector3(0f, 0f, 26.5f), 7.5f, enemies, 3, 2),
+                CreatePocketBinding(parent, "04_Relief_reset_breath", 3, 0, new Vector3(0f, 0f, 36f), 6f, enemies, 5, 0),
+                CreatePocketBinding(parent, "05_FinalStand_final_stand_mix", 4, 0, new Vector3(0f, 0f, 48.5f), 12f, enemies, 5, 4)
+            };
+        }
+
+        private static StageEncounterPocketBinding CreatePocketBinding(
+            Transform parent,
+            string label,
+            int segmentIndex,
+            int pocketIndex,
+            Vector3 position,
+            float enterRadius,
+            CombatHealth[] enemies,
+            int enemyStartIndex,
+            int enemyCount)
+        {
+            Transform center = new GameObject(StageReviewRootPrefix + "Pocket_" + label).transform;
+            center.SetParent(parent, worldPositionStays: false);
+            center.position = position;
+
+            var pocketEnemies = new CombatHealth[enemyCount];
+            for (int i = 0; i < enemyCount; i++)
+            {
+                int enemyIndex = enemyStartIndex + i;
+                if (enemyIndex < 0 || enemyIndex >= enemies.Length)
+                {
+                    throw new InvalidOperationException($"{label} references enemy index {enemyIndex}, but only {enemies.Length} enemies exist.");
+                }
+
+                pocketEnemies[i] = enemies[enemyIndex];
+            }
+
+            return new StageEncounterPocketBinding(label, segmentIndex, pocketIndex, center, enterRadius, pocketEnemies);
+        }
+
+        private static void ValidateStageEncounterOwner(Scene scene, Transform player, CombatHealth[] enemyHealths)
+        {
+            StageEncounterReviewOwner owner = RequireObject<StageEncounterReviewOwner>(scene, "stage encounter review owner");
+            ValidateObjectReference(owner, "stageTemplate", LoadAsset<LinearStageTemplateProfile>(BreakGateTemplatePath));
+            ValidateObjectReference(owner, "player", player);
+
+            if (owner.PocketCount != 5)
+            {
+                throw new InvalidOperationException($"Stage encounter review owner should track five S1-1 pockets, found {owner.PocketCount}.");
+            }
+
+            var expectedObjectives = new[]
+            {
+                LinearStageObjectiveKind.ReadThreat,
+                LinearStageObjectiveKind.PunishRecovery,
+                LinearStageObjectiveKind.BreakGuard,
+                LinearStageObjectiveKind.RecoverPosition,
+                LinearStageObjectiveKind.FinalClear
+            };
+            var expectedEnemyCounts = new[] { 1, 2, 2, 0, 4 };
+
+            for (int i = 0; i < owner.PocketCount; i++)
+            {
+                StageEncounterPocketBinding binding = owner.GetPocketBinding(i);
+                if (!binding.TryResolvePocket(owner.StageTemplate, out _, out LinearStagePocket pocket))
+                {
+                    throw new InvalidOperationException($"{binding.Label} does not resolve against the S1-1 template.");
+                }
+
+                if (pocket.ObjectiveKind != expectedObjectives[i])
+                {
+                    throw new InvalidOperationException($"{binding.Label} expected {expectedObjectives[i]}, found {pocket.ObjectiveKind}.");
+                }
+
+                if (binding.EnterCenter == null || binding.EnemyCount != expectedEnemyCounts[i])
+                {
+                    throw new InvalidOperationException($"{binding.Label} has an invalid anchor or enemy count.");
+                }
+            }
+
+            if (enemyHealths.Length != GetBreakGateRouteSpecs().Length)
+            {
+                throw new InvalidOperationException("Stage encounter owner validation received an unexpected enemy list.");
             }
         }
 

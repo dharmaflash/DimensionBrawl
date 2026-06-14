@@ -2,6 +2,7 @@ using System.Collections;
 using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Enemies;
+using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.Test;
@@ -44,6 +45,7 @@ namespace DimensionBrawl.Tests
             PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
             ActionFoundationTestEncounter encounter = RequireObject<ActionFoundationTestEncounter>();
+            StageEncounterReviewOwner encounterOwner = RequireObject<StageEncounterReviewOwner>();
             SerializedProperty targetCandidates = new SerializedObject(targetSelector).FindProperty("targetCandidates");
 
             Assert.IsNotNull(playerHealth, "Stage review scene should keep player health on the player root.");
@@ -89,6 +91,51 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(
                 new SerializedObject(cameraController).FindProperty("useDeviceFallbackWhenActionMissing").boolValue,
                 "Stage review camera should not auto-orbit from fallback device input while idle.");
+
+            Assert.AreSame(player.transform, encounterOwner.Player);
+            Assert.IsNotNull(encounterOwner.StageTemplate, "S1-1 review owner should reference the authored stage template.");
+            Assert.AreEqual(5, encounterOwner.PocketCount, "S1-1 review owner should track the five authored route pockets.");
+            AssertStagePocket(encounterOwner.StageTemplate, encounterOwner.GetPocketBinding(0), LinearStageObjectiveKind.ReadThreat, 1);
+            AssertStagePocket(encounterOwner.StageTemplate, encounterOwner.GetPocketBinding(1), LinearStageObjectiveKind.PunishRecovery, 2);
+            AssertStagePocket(encounterOwner.StageTemplate, encounterOwner.GetPocketBinding(2), LinearStageObjectiveKind.BreakGuard, 2);
+            AssertStagePocket(encounterOwner.StageTemplate, encounterOwner.GetPocketBinding(3), LinearStageObjectiveKind.RecoverPosition, 0);
+            AssertStagePocket(encounterOwner.StageTemplate, encounterOwner.GetPocketBinding(4), LinearStageObjectiveKind.FinalClear, 4);
+
+            encounterOwner.ResetProgress();
+            player.transform.position = encounterOwner.GetPocketBinding(0).EnterCenter.position;
+            encounterOwner.RefreshProgress();
+            Assert.AreEqual(0, encounterOwner.CurrentPocketIndex);
+            Assert.AreEqual(LinearStageObjectiveKind.ReadThreat, encounterOwner.CurrentObjectiveKind);
+            Assert.AreEqual(1, encounterOwner.RemainingEnemyCount);
+
+            firstEnemy.SelfHealth.TryApplyDamage(new DamageInfo(
+                playerHealth,
+                DamageTeam.Player,
+                firstEnemy.SelfHealth.MaxHealth,
+                firstEnemy.transform.position,
+                Vector3.forward,
+                0f));
+            yield return null;
+
+            encounterOwner.RefreshProgress();
+            Assert.AreEqual(1, encounterOwner.CompletedPocketCount);
+            player.transform.position = encounterOwner.GetPocketBinding(1).EnterCenter.position;
+            encounterOwner.RefreshProgress();
+            Assert.AreEqual(1, encounterOwner.CurrentPocketIndex);
+            Assert.AreEqual(LinearStageObjectiveKind.PunishRecovery, encounterOwner.CurrentObjectiveKind);
+            Assert.AreEqual(2, encounterOwner.RemainingEnemyCount);
+        }
+
+        private static void AssertStagePocket(
+            LinearStageTemplateProfile template,
+            StageEncounterPocketBinding binding,
+            LinearStageObjectiveKind expectedObjective,
+            int expectedEnemyCount)
+        {
+            Assert.IsNotNull(binding.EnterCenter, $"{binding.Label} should have an authored entry anchor.");
+            Assert.AreEqual(expectedEnemyCount, binding.EnemyCount, $"{binding.Label} should bind the authored review enemies.");
+            Assert.IsTrue(binding.TryResolvePocket(template, out _, out LinearStagePocket pocket));
+            Assert.AreEqual(expectedObjective, pocket.ObjectiveKind, $"{binding.Label} should mirror the S1-1 objective data.");
         }
 
         private static T RequireObject<T>() where T : Component

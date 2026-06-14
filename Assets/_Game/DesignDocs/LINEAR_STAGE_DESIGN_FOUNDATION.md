@@ -108,7 +108,7 @@ Use `S1-1 Break Gate` as the first encounter-composition review target. It is sh
 | 4 | `Relief` | `reset_breath` | `RecoverPosition` | none | Does the route breathe before the final stand? |
 | 5 | `FinalStand` | `final_stand_mix` | `FinalClear` | `FinalStandCommanderElite`, `BacklineShooter`, `FanSuppressor`, optional `Skirmisher` | Does the final pocket combine prior reads without adding a new rule? |
 
-The review scene for this route is `Assets/_Game/Scenes/ActionFoundationStageBreakGateReview.unity`. It places already-authored role candidate prefab instances through a dedicated editor setup slice. It does not add a runtime wave spawner, hidden prefab selector, reward payout, summon behavior, or boss phase logic.
+The review scene for this route is `Assets/_Game/Scenes/ActionFoundationStageBreakGateReview.unity`. It places already-authored role candidate prefab instances through a dedicated editor setup slice. `StageEncounterReviewOwner` is the narrow runtime reader for this scene only: it maps the authored pocket anchors and placed enemy health references back to the `S1-1 Break Gate` template, then exposes current pocket, objective cue, remaining enemies, and route completion for manual review/tests. It does not add a runtime wave spawner, hidden prefab selector, reward payout, summon behavior, or boss phase logic.
 
 ## Authoring Boundaries
 
@@ -138,5 +138,5 @@ Validation checks:
 
 1. Review the authored stage templates in Unity's Inspector.
 2. Review `ActionFoundationStageBreakGateReview.unity` in Play Mode and tune only authored positions/counts if the route reads poorly.
-3. Only after review, add a narrow runtime encounter owner that consumes authored stage/segment data.
+3. Use the review-only `StageEncounterReviewOwner` to verify current pocket/objective/enemy-clear readability before building production encounter progression.
 4. Keep summon implementation, reward payout, boss phases, and stage-select UI separate until this foundation is accepted.
