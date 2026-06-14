@@ -50,7 +50,7 @@ namespace DimensionBrawl.UI
 
         public void PlayMotion(string motionId)
         {
-            if (catalog == null || string.IsNullOrWhiteSpace(motionId) || !catalog.TryGetMotion(motionId, out UIMotionCatalog.MotionEntry motion))
+            if (!TryGetMotion(motionId, out UIMotionCatalog.MotionEntry motion))
             {
                 return;
             }
@@ -64,9 +64,26 @@ namespace DimensionBrawl.UI
             motionRoutine = StartCoroutine(PlayRoutine(motion));
         }
 
+        public void ApplyStartState(string motionId)
+        {
+            if (!TryGetMotion(motionId, out UIMotionCatalog.MotionEntry motion))
+            {
+                return;
+            }
+
+            if (motionRoutine != null)
+            {
+                StopCoroutine(motionRoutine);
+                motionRoutine = null;
+            }
+
+            RestoreCanvasGroupState();
+            Apply(motion.FadeFrom, motion.ScaleFrom);
+        }
+
         public void ApplyEndState(string motionId)
         {
-            if (catalog == null || string.IsNullOrWhiteSpace(motionId) || !catalog.TryGetMotion(motionId, out UIMotionCatalog.MotionEntry motion))
+            if (!TryGetMotion(motionId, out UIMotionCatalog.MotionEntry motion))
             {
                 return;
             }
@@ -134,6 +151,17 @@ namespace DimensionBrawl.UI
             {
                 targetRect.localScale = new Vector3(scale, scale, 1f);
             }
+        }
+
+        private bool TryGetMotion(string motionId, out UIMotionCatalog.MotionEntry motion)
+        {
+            if (catalog == null || string.IsNullOrWhiteSpace(motionId) || !catalog.TryGetMotion(motionId, out motion))
+            {
+                motion = default;
+                return false;
+            }
+
+            return true;
         }
 
         private void CacheCanvasGroupState()

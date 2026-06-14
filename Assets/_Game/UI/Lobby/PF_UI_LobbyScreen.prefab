@@ -1207,6 +1207,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6060225756363739487}
   - component: {fileID: 1795297271859418788}
+  - component: {fileID: 8675220812813989888}
   m_Layer: 0
   m_Name: LobbyArtRoot
   m_TagString: Untagged
@@ -1247,6 +1248,24 @@ CanvasGroup:
   m_Interactable: 0
   m_BlocksRaycasts: 0
   m_IgnoreParentGroups: 0
+--- !u!114 &8675220812813989888
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1508924116127555995}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c9bf0e5a75305843a4a0ed6553889a5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIMotionPresenter
+  catalog: {fileID: 11400000, guid: bee7e47247f59bc4d85c4002288c6345, type: 2}
+  targetRect: {fileID: 2280352913705012816}
+  canvasGroup: {fileID: 2788943511888177664}
+  defaultMotionId: lobby_background_enter
+  playOnEnable: 0
+  useUnscaledTime: 1
 --- !u!1 &1518087634161269124
 GameObject:
   m_ObjectHideFlags: 0
@@ -5543,6 +5562,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2280352913705012816}
+  - component: {fileID: 2788943511888177664}
   m_Layer: 0
   m_Name: LobbyBackgroundRoot
   m_TagString: Untagged
@@ -5570,6 +5590,18 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!225 &2788943511888177664
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5504418688539919184}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
 --- !u!1 &5534476318697110522
 GameObject:
   m_ObjectHideFlags: 0
@@ -6271,6 +6303,7 @@ GameObject:
   - component: {fileID: 6976803788826905305}
   - component: {fileID: 980025528286375798}
   - component: {fileID: 3327224663905723587}
+  - component: {fileID: 6013037518096975872}
   m_Layer: 0
   m_Name: PF_UI_LobbyScreen
   m_TagString: Untagged
@@ -6482,6 +6515,33 @@ MonoBehaviour:
   disableWhileRouting: 1
   routingAlpha: 0.68
   idleAlpha: 1
+--- !u!114 &6013037518096975872
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5849050130512686628}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e7347f4a4ddf4ad88c58fad8313ee8c3, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.LobbyEntranceSequencePresenter
+  entries:
+  - motionPresenter: {fileID: 8675220812813989888}
+    motionId: lobby_background_enter
+    startDelaySeconds: 0
+  - motionPresenter: {fileID: 4636501738839152640}
+    motionId: lobby_frame_enter
+    startDelaySeconds: 0.14
+  - motionPresenter: {fileID: 5979985741642675200}
+    motionId: lobby_text_enter
+    startDelaySeconds: 0.28
+  initialDelaySeconds: 0.12
+  playOnEnable: 1
+  replayOnEnable: 0
+  snapToEndOnDisable: 1
+  useUnscaledTime: 1
 --- !u!1 &5864705266422240850
 GameObject:
   m_ObjectHideFlags: 0
@@ -6725,6 +6785,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1098137691905674013}
   - component: {fileID: 5086995218507909071}
+  - component: {fileID: 5979985741642675200}
   m_Layer: 0
   m_Name: LobbyTextRoot
   m_TagString: Untagged
@@ -6784,6 +6845,24 @@ CanvasGroup:
   m_Interactable: 0
   m_BlocksRaycasts: 0
   m_IgnoreParentGroups: 0
+--- !u!114 &5979985741642675200
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5901654212829819303}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c9bf0e5a75305843a4a0ed6553889a5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIMotionPresenter
+  catalog: {fileID: 11400000, guid: bee7e47247f59bc4d85c4002288c6345, type: 2}
+  targetRect: {fileID: 1098137691905674013}
+  canvasGroup: {fileID: 5086995218507909071}
+  defaultMotionId: lobby_text_enter
+  playOnEnable: 0
+  useUnscaledTime: 1
 --- !u!1 &5931572043242961581
 GameObject:
   m_ObjectHideFlags: 0
@@ -8282,6 +8361,8 @@ GameObject:
   m_Component:
   - component: {fileID: 4873631666576354635}
   - component: {fileID: 8434119018052598634}
+  - component: {fileID: 5368002212399608832}
+  - component: {fileID: 4636501738839152640}
   m_Layer: 0
   m_Name: LobbyDesignFrame
   m_TagString: Untagged
@@ -8373,6 +8454,36 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.AspectRatioFitter
   m_AspectMode: 3
   m_AspectRatio: 1.7777778
+--- !u!225 &5368002212399608832
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6777628789647866574}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 0
+  m_BlocksRaycasts: 0
+  m_IgnoreParentGroups: 0
+--- !u!114 &4636501738839152640
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6777628789647866574}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c9bf0e5a75305843a4a0ed6553889a5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIMotionPresenter
+  catalog: {fileID: 11400000, guid: bee7e47247f59bc4d85c4002288c6345, type: 2}
+  targetRect: {fileID: 4873631666576354635}
+  canvasGroup: {fileID: 5368002212399608832}
+  defaultMotionId: lobby_frame_enter
+  playOnEnable: 0
+  useUnscaledTime: 1
 --- !u!1 &6799672653100664954
 GameObject:
   m_ObjectHideFlags: 0

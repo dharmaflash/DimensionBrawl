@@ -43,6 +43,36 @@ MonoBehaviour:
     scaleTo: 1
     easing: 30
     blocksInputDuringMotion: 0
+  - id: lobby_background_enter
+    target: 10
+    durationSeconds: 0.42
+    delaySeconds: 0
+    fadeFrom: 0
+    fadeTo: 1
+    scaleFrom: 1.02
+    scaleTo: 1
+    easing: 10
+    blocksInputDuringMotion: 0
+  - id: lobby_frame_enter
+    target: 10
+    durationSeconds: 0.3
+    delaySeconds: 0
+    fadeFrom: 0
+    fadeTo: 1
+    scaleFrom: 0.965
+    scaleTo: 1
+    easing: 10
+    blocksInputDuringMotion: 0
+  - id: lobby_text_enter
+    target: 10
+    durationSeconds: 0.22
+    delaySeconds: 0
+    fadeFrom: 0
+    fadeTo: 1
+    scaleFrom: 0.96
+    scaleTo: 1
+    easing: 10
+    blocksInputDuringMotion: 0
   - id: stage_card_expand
     target: 10
     durationSeconds: 0.35
