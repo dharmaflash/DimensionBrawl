@@ -552,6 +552,11 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 2815577920395924133, guid: d8088cb97419c034ca4029890cf4d239, type: 3}
   m_PrefabInstance: {fileID: 1739398698}
   m_PrefabAsset: {fileID: 0}
+--- !u!224 &1739398702 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 612345760100000002, guid: d8088cb97419c034ca4029890cf4d239, type: 3}
+  m_PrefabInstance: {fileID: 1739398698}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1870961790
 GameObject:
   m_ObjectHideFlags: 0
@@ -641,7 +646,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 1739398700}
+    m_TransformParent: {fileID: 1739398702}
     m_Modifications:
     - target: {fileID: 5157552738576287145, guid: da1e49b9eebea39498057f06cb8ea61a, type: 3}
       propertyPath: m_Pivot.x

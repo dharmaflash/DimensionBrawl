@@ -311,7 +311,7 @@ MonoBehaviour:
     note: Combat HUD mock reset toast.
   - key: ui.toast.login_account_unavailable
     domain: Login
-    value: 추후 지원 예정입니다.
+    value: "\uCD94\uD6C4 \uC9C0\uC6D0 \uC608\uC815\uC785\uB2C8\uB2E4."
     note: Short unavailable notice for the login account and server button.
   - key: ui.toast.route_busy
     domain: Common
@@ -321,3 +321,87 @@ MonoBehaviour:
     domain: Common
     value: UI route is not available
     note: Route failure toast.
+  - key: ui.lobby.profile.level_number
+    domain: Lobby
+    value: 110
+    note: Mock lobby profile level for UI layout only.
+  - key: ui.lobby.profile.level_label
+    domain: Lobby
+    value: LV
+    note: Mock lobby profile level label.
+  - key: ui.lobby.profile.name
+    domain: Lobby
+    value: Otiple
+    note: Mock lobby profile name for UI layout only.
+  - key: ui.lobby.profile.id
+    domain: Lobby
+    value: 'ID: 10760681'
+    note: Mock lobby profile id for UI layout only.
+  - key: ui.lobby.mock_currency.crystal
+    domain: Lobby
+    value: 12,450
+    note: Mock currency display; no economy is connected.
+  - key: ui.lobby.mock_currency.coin
+    domain: Lobby
+    value: 2,840
+    note: Mock currency display; no economy is connected.
+  - key: ui.lobby.mock_currency.gem
+    domain: Lobby
+    value: 628
+    note: Mock currency display; no economy is connected.
+  - key: ui.lobby.notice.category
+    domain: Lobby
+    value: "\uACF5\uC9C0"
+    note: Mock notice category label.
+  - key: ui.lobby.notice.title
+    domain: Lobby
+    value: "5/16(\uAE08) \uC5C5\uB370\uC774\uD2B8 \uC548\uB0B4"
+    note: Mock notice title for lobby layout only.
+  - key: ui.lobby.notice.body
+    domain: Lobby
+    value: "\uC790\uC138\uD55C \uB0B4\uC6A9\uC740 \uACF5\uC9C0\uC5D0\uC11C \uD655\uC778\uD558\uC138\uC694."
+    note: Mock notice body for lobby layout only.
+  - key: ui.lobby.mail
+    domain: Lobby
+    value: "\uC6B0\uD3B8"
+    note: Mail anchor label; no mail system is connected.
+  - key: ui.lobby.mission
+    domain: Lobby
+    value: "\uBBF8\uC158"
+    note: Mission anchor label; no mission system is connected.
+  - key: ui.lobby.event
+    domain: Lobby
+    value: "\uC774\uBCA4\uD2B8"
+    note: Event anchor label; no event system is connected.
+  - key: ui.lobby.pve.title
+    domain: Lobby
+    value: PVE
+    note: Primary PvE card title.
+  - key: ui.lobby.pve.subtitle
+    domain: Lobby
+    value: "\uCC28\uC6D0 \uC548\uC815\uD654 >"
+    note: Primary PvE card subtitle; routes to UI-only stage select.
+  - key: ui.lobby.pvp.title
+    domain: Lobby
+    value: PVP
+    note: Secondary PvP card title; placeholder only.
+  - key: ui.lobby.pvp.subtitle
+    domain: Lobby
+    value: "\uC804\uC7C1\uC790 \uC2EC\uD310 >"
+    note: Secondary PvP card subtitle; no PvP system is connected.
+  - key: ui.lobby.nav.character
+    domain: Lobby
+    value: "\uCE90\uB9AD\uD130"
+    note: Character anchor label; placeholder only.
+  - key: ui.lobby.nav.shop
+    domain: Lobby
+    value: "\uC0C1\uC810"
+    note: Shop anchor label; placeholder only.
+  - key: ui.lobby.nav.storage
+    domain: Lobby
+    value: "\uCC3D\uACE0"
+    note: Storage anchor label; placeholder only.
+  - key: ui.lobby.nav.settings
+    domain: Lobby
+    value: "\uC124\uC815"
+    note: Settings anchor label; placeholder only.
