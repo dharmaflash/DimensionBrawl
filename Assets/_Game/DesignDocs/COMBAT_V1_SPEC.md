@@ -228,6 +228,7 @@ Initial candidate interpretation:
 - Enemy: Protofactor sci-fi soldiers remain useful first threats.
 - Summon: first slot can reuse a promoted enemy/creature/placeholder actor if the role and presentation are clear.
 - Boss visuals: prefer a humanoid or elite-caster style first if the available prefab/animation set can sell readable windup, firing, hit, and down states. Dragon assets remain future candidates for a dedicated large/flying boss slice, not the first boss requirement.
+- Current boss candidate catalog: `HumanoidBoss.SummonCallerElite` is the preferred first humanoid/caster review candidate because it already has utility-caster animation, summon-intent anchor, and elite summon/aura cue reads; `HumanoidBoss.FinalStandCommanderElite` is the heavier humanoid alternative for later commander-style boss pressure. `DragonBoss.Future` stays tracked separately and should not be forced into the first boss-barrage slice.
 
 ## Implementation Order
 
@@ -265,6 +266,7 @@ The first boss-barrage lane review slice now has these authored pieces:
 - `ActionFoundationBossBarrageLaneReview.unity` is the manual review scene for the fixed rear camera, player boundary, close-threat local defense, EN gain, boss barrage, Skill1, SummonSlot1, and one pocket clear/fail read.
 - `BossBarragePocketReviewOwner` is the review-only pocket result owner for the first lane slice: defeat the close threat and spend `SummonSlot1` while surviving boss pressure.
 - `BossBarrageLaneReviewHud` is the temporary readable review display for HP, close-threat HP, EN fill/readiness, forward-risk gain, current boss-barrage pattern/windup/projectile count, Skill1/SummonSlot1 readiness, active summon proxy/projectile/shield block state, and pocket result state.
+- `DB_Archetype_HumanoidBoss_SummonCallerElite` and `DB_Archetype_HumanoidBoss_FinalStandCommanderElite` track promoted humanoid boss candidates outside the soldier role map. They are review candidates for future boss-prefab authoring, not production boss phase controllers.
 
 The next implementation should not add a roster or boss phase yet. It should tune the current close-threat answer, EN pacing, projectile pressure, proxy summon readability, and `SummonSlot1` impact until the one-pocket loop reads as a small game instead of disconnected mechanics.
 

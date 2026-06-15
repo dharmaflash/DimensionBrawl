@@ -16,12 +16,16 @@ namespace DimensionBrawl.Editor
         public const string SciFiEliteSoldierPath = ArchetypeRoot + "/DB_Archetype_SciFiSoldier_Elite.asset";
         public const string Forge3DLineTurretPath = ArchetypeRoot + "/DB_Archetype_FORGE3D_LineTurret.asset";
         public const string Forge3DMissileTurretPath = ArchetypeRoot + "/DB_Archetype_FORGE3D_MissileTurret.asset";
+        public const string HumanoidSummonCallerBossCandidatePath = ArchetypeRoot + "/DB_Archetype_HumanoidBoss_SummonCallerElite.asset";
+        public const string HumanoidFinalStandCommanderBossCandidatePath = ArchetypeRoot + "/DB_Archetype_HumanoidBoss_FinalStandCommanderElite.asset";
         public const string DragonBossFuturePath = ArchetypeRoot + "/DB_Archetype_DragonBoss_Future.asset";
 
         private const string MaintenanceWorkerVisualPath = "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/MaintenanceWorker/Models/SK_MaintenanceWorkerAllMeshes.fbx";
         private const string MeleeSoldierGameplayPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_Melee_ClosePunish.prefab";
         private const string GeneralDeckSoldierGameplayPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_GeneralDeck.prefab";
         private const string EliteDeckSoldierGameplayPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_EliteDeck.prefab";
+        private const string SummonCallerBossCandidatePrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/RoleCandidates/PF_Enemy_Role_SummonCallerElite.prefab";
+        private const string FinalStandCommanderBossCandidatePrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/RoleCandidates/PF_Enemy_Role_FinalStandCommanderElite.prefab";
         private const string Forge3DMissileTurretCandidate = "FORGE3D Sci-Fi Effects URP package: TURRET_BASE_Mobile_LOD0 + TURRET_BARREL_HeavyMissle_Mobile_LOD0 + missile_02/missile_03/missile_04 prefabs.";
         private const string DragonBossCandidate = "HEROIC FANTASY CREATURES FULL PACK VOL3 raw dragon prefabs remain local-only; choose one dragon in a later boss-authoring slice.";
 
@@ -32,6 +36,8 @@ namespace DimensionBrawl.Editor
             SciFiEliteSoldierPath,
             Forge3DLineTurretPath,
             Forge3DMissileTurretPath,
+            HumanoidSummonCallerBossCandidatePath,
+            HumanoidFinalStandCommanderBossCandidatePath,
             DragonBossFuturePath
         };
 
@@ -64,6 +70,7 @@ namespace DimensionBrawl.Editor
 
             ConfigureSoldierArchetypes(roles, maintenanceWorkerVisual, sciFiSoldier01Visual, heavyBattleArmorVisual);
             ConfigureStaticTurretArchetypes(roles);
+            ConfigureHumanoidBossCandidateArchetypes();
             ConfigureFutureBossArchetype();
 
             AssetDatabase.SaveAssets();
@@ -216,6 +223,46 @@ namespace DimensionBrawl.Editor
                 Forge3DMissileTurretCandidate,
                 "Promote missile turret parts and one projectile/VFX chain only after fixed-turret gameplay is accepted.",
                 "Pressure-rescue or priority-target candidate; it remains data-only until a turret prefab is authored.");
+        }
+
+        private static void ConfigureHumanoidBossCandidateArchetypes()
+        {
+            GameObject summonCallerPrefab = LoadOptionalGameObject(SummonCallerBossCandidatePrefabPath);
+            GameObject finalStandCommanderPrefab = LoadOptionalGameObject(FinalStandCommanderBossCandidatePrefabPath);
+
+            ConfigureArchetype(
+                LoadOrCreate<CombatEnemyArchetypeProfile>(HumanoidSummonCallerBossCandidatePath),
+                "HumanoidBoss.SummonCallerElite",
+                "Humanoid Summon Caller Boss Candidate",
+                CombatEnemyArchetypeKind.BossCandidate,
+                false,
+                Array.Empty<CombatEnemyRoleProfile>(),
+                summonCallerPrefab,
+                null,
+                true,
+                false,
+                "Promoted `_Game` SummonCallerElite role prefab with utility-caster animation, local summon intent anchor, and elite summon/aura cues.",
+                summonCallerPrefab != null
+                    ? "Use as the first fixed-rear boss-barrage humanoid placeholder, then promote a dedicated boss prefab once the summon-energy duel reads correctly."
+                    : "Generate the SummonCallerElite role candidate before using it as the first humanoid boss placeholder.",
+                "Matches the current humanoid-boss direction better than the dragon for the first vertical slice. Keep outside soldier role decks and do not treat it as final boss production art.");
+
+            ConfigureArchetype(
+                LoadOrCreate<CombatEnemyArchetypeProfile>(HumanoidFinalStandCommanderBossCandidatePath),
+                "HumanoidBoss.FinalStandCommanderElite",
+                "Humanoid Final Stand Commander Boss Candidate",
+                CombatEnemyArchetypeKind.BossCandidate,
+                false,
+                Array.Empty<CombatEnemyRoleProfile>(),
+                finalStandCommanderPrefab,
+                null,
+                true,
+                false,
+                "Promoted `_Game` FinalStandCommanderElite role prefab with heavy armor silhouette, guard-break/phase clips, and final-stand cue coverage.",
+                finalStandCommanderPrefab != null
+                    ? "Use as a heavier humanoid boss alternative after the caster-style boss loop is readable."
+                    : "Generate the FinalStandCommanderElite role candidate before using it as a heavier humanoid boss placeholder.",
+                "Good candidate for a later multi-pattern commander boss, but the first boss-barrage slice should prefer the clearer summon-caster read.");
         }
 
         private static void ConfigureFutureBossArchetype()

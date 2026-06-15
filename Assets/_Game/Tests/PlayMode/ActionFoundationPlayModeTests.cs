@@ -104,6 +104,8 @@ namespace DimensionBrawl.Tests
             EnemyArchetypeRootPath + "/DB_Archetype_SciFiSoldier_Elite.asset",
             EnemyArchetypeRootPath + "/DB_Archetype_FORGE3D_LineTurret.asset",
             EnemyArchetypeRootPath + "/DB_Archetype_FORGE3D_MissileTurret.asset",
+            EnemyArchetypeRootPath + "/DB_Archetype_HumanoidBoss_SummonCallerElite.asset",
+            EnemyArchetypeRootPath + "/DB_Archetype_HumanoidBoss_FinalStandCommanderElite.asset",
             EnemyArchetypeRootPath + "/DB_Archetype_DragonBoss_Future.asset"
         };
         private static readonly string[] EnemyRoleCandidateProfilePaths =
@@ -834,6 +836,8 @@ namespace DimensionBrawl.Tests
             var coveredRoleIds = new HashSet<string>();
             bool foundStaticTurretCandidate = false;
             bool foundBossCandidate = false;
+            bool foundHumanoidBossCandidate = false;
+            bool foundDragonBossCandidate = false;
 
             foreach (string path in EnemyArchetypeProfilePaths)
             {
@@ -843,6 +847,8 @@ namespace DimensionBrawl.Tests
                 Assert.IsFalse(string.IsNullOrWhiteSpace(archetype.PromotionPlan), $"{archetype.ArchetypeId} should explain its promotion plan.");
                 foundStaticTurretCandidate |= archetype.ArchetypeKind == CombatEnemyArchetypeKind.StaticTurret;
                 foundBossCandidate |= archetype.ArchetypeKind == CombatEnemyArchetypeKind.BossCandidate;
+                foundHumanoidBossCandidate |= archetype.ArchetypeId.StartsWith("HumanoidBoss.", System.StringComparison.Ordinal);
+                foundDragonBossCandidate |= archetype.ArchetypeId == "DragonBoss.Future";
 
                 if (archetype.ParticipatesInActionFoundationRoleMap)
                 {
@@ -864,6 +870,13 @@ namespace DimensionBrawl.Tests
                     Assert.IsTrue(archetype.RequiresDedicatedPrefabPromotion, $"{archetype.ArchetypeId} should stay marked for promotion until a `_Game` turret prefab exists.");
                     Assert.IsTrue(archetype.SourceCandidate.Contains("FORGE3D"), $"{archetype.ArchetypeId} should record the FORGE3D source candidate text without referencing raw objects.");
                 }
+
+                if (archetype.ArchetypeId.StartsWith("HumanoidBoss.", System.StringComparison.Ordinal))
+                {
+                    Assert.IsFalse(archetype.ParticipatesInActionFoundationRoleMap, $"{archetype.ArchetypeId} should not pollute reusable soldier role maps.");
+                    Assert.IsTrue(archetype.RequiresDedicatedPrefabPromotion, $"{archetype.ArchetypeId} should remain marked for a dedicated boss prefab before production use.");
+                    Assert.IsNotNull(archetype.GameplayPrefab, $"{archetype.ArchetypeId} should reference a promoted humanoid role prefab for review.");
+                }
             }
 
             Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.EntryProbe"), "Archetype catalog should cover EntryProbe.");
@@ -879,7 +892,9 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.Elite.PhaseDuelist"), "Archetype catalog should cover PhaseDuelist.");
             Assert.IsTrue(coveredRoleIds.Contains("SciFiSoldier.Elite.FinalStandCommander"), "Archetype catalog should cover FinalStandCommander.");
             Assert.IsTrue(foundStaticTurretCandidate, "Archetype catalog should include at least one fixed sci-fi turret candidate.");
-            Assert.IsTrue(foundBossCandidate, "Archetype catalog should track the dragon boss candidate outside soldier role decks.");
+            Assert.IsTrue(foundBossCandidate, "Archetype catalog should track boss candidates outside soldier role decks.");
+            Assert.IsTrue(foundHumanoidBossCandidate, "Archetype catalog should include at least one promoted humanoid boss candidate for the fixed-rear boss-barrage slice.");
+            Assert.IsTrue(foundDragonBossCandidate, "Archetype catalog should still track the future dragon boss candidate separately.");
         }
 
         [Test]
