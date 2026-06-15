@@ -119,6 +119,7 @@ Targets:
 
 - `SummonSlot1` should be easy to understand and quick to test.
 - The summon should enter or act with clear target context.
+- The summon should prefer the far/frontline boss exchange over the player's temporary close-threat target unless a specific summon role says otherwise.
 - The summon should visibly change the boss-barrage exchange through damage, projectile blocking, pressure break, tanking, field control, heal/field, or another explicit role.
 - LV1/LV2/LV3 summon versions should read as the same summon concept at stronger tiers, not three unrelated features.
 - Summon use should read from the player side first, such as a magic circle in front of the player before the summon launches/enters.

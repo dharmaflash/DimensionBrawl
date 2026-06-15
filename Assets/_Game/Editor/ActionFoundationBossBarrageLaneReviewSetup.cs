@@ -178,6 +178,7 @@ namespace DimensionBrawl.Editor
                 player.gameObject,
                 playerHealth,
                 targetSelector,
+                bossHealth,
                 energyLadder,
                 laneSpace,
                 skill1ProjectilePrefab,
@@ -253,7 +254,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(playerActionController, "actionProfile", LoadAsset<PlayerActionProfile>(LocalDefenseProfilePath));
             ValidateObjectReference(energyLadder, "laneSpace", laneSpace);
             ValidateObjectReference(energyLadder, "trackedPlayer", player.transform);
-            ValidatePlayerEnergyActions(skill1Action, summonSlot1Action, energyLadder, playerHealth, targetSelector, laneSpace);
+            ValidatePlayerEnergyActions(skill1Action, summonSlot1Action, energyLadder, playerHealth, targetSelector, bossHealth, laneSpace);
             ValidateObjectReference(emitter, "laneSpace", laneSpace);
             ValidateObjectReference(emitter, "trackedPlayer", player.transform);
             ValidateObjectReference(emitter, "sourceHealth", bossHealth);
@@ -1261,6 +1262,7 @@ namespace DimensionBrawl.Editor
             GameObject playerRoot,
             CombatHealth playerHealth,
             PlayerCombatTargetSelector targetSelector,
+            CombatHealth frontlineTargetHealth,
             SummonEnergyLadder energyLadder,
             SummonLaneSpace laneSpace,
             LaneActionProjectile skill1ProjectilePrefab,
@@ -1285,6 +1287,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(summonSlot1Action, "energyLadder", energyLadder);
             SetObjectReference(summonSlot1Action, "sourceHealth", playerHealth);
             SetObjectReference(summonSlot1Action, "targetSelector", targetSelector);
+            SetObjectReference(summonSlot1Action, "frontlineTargetHealth", frontlineTargetHealth);
             SetObjectReference(summonSlot1Action, "laneSpace", laneSpace);
             SetObjectReference(summonSlot1Action, "projectilePrefab", summonSlot1ProjectilePrefab);
             SetObjectReference(summonSlot1Action, "projectilePrefabObject", LoadAsset<GameObject>(SummonSlot1ProjectilePrefabPath));
@@ -1372,6 +1375,7 @@ namespace DimensionBrawl.Editor
             SummonEnergyLadder energyLadder,
             CombatHealth playerHealth,
             PlayerCombatTargetSelector targetSelector,
+            CombatHealth frontlineTargetHealth,
             SummonLaneSpace laneSpace)
         {
             GameObject projectileRoot = RequireRoot(SceneManager.GetActiveScene(), ProjectilePoolRootName);
@@ -1388,6 +1392,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(summonSlot1Action, "energyLadder", energyLadder);
             ValidateObjectReference(summonSlot1Action, "sourceHealth", playerHealth);
             ValidateObjectReference(summonSlot1Action, "targetSelector", targetSelector);
+            ValidateObjectReference(summonSlot1Action, "frontlineTargetHealth", frontlineTargetHealth);
             ValidateObjectReference(summonSlot1Action, "laneSpace", laneSpace);
             ValidateObjectReference(summonSlot1Action, "projectilePrefabObject", LoadAsset<GameObject>(SummonSlot1ProjectilePrefabPath));
             ValidateObjectReference(summonSlot1Action, "entryCuePrefab", LoadAsset<GameObject>(SummonSlot1EntryCuePrefabPath));

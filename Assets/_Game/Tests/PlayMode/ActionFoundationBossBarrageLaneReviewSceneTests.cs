@@ -111,6 +111,7 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(summonSlot1Action, "energyLadder"));
             Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(summonSlot1Action, "sourceHealth"));
             Assert.AreSame(targetSelector, GetObjectReference<PlayerCombatTargetSelector>(summonSlot1Action, "targetSelector"));
+            Assert.AreSame(bossHealth, GetObjectReference<CombatHealth>(summonSlot1Action, "frontlineTargetHealth"));
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(summonSlot1Action, "laneSpace"));
             Assert.AreSame(LoadAsset<GameObject>(SummonSlot1ProjectilePrefabPath), GetObjectReference<GameObject>(summonSlot1Action, "projectilePrefabObject"));
             Assert.AreSame(LoadAsset<GameObject>(SummonSlot1EntryCuePrefabPath), GetObjectReference<GameObject>(summonSlot1Action, "entryCuePrefab"));
@@ -389,6 +390,54 @@ namespace DimensionBrawl.Tests
                 foundOffLaneSummonProjectile,
                 "SummonSlot1 LV3 should be able to project attacks beyond player lane rails.");
             yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator SummonSlot1PrefersFrontlineTargetWhenCloseThreatIsSelected()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            PlayerSummonSlot1Action summonSlot1Action =
+                RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            CombatHealth closeThreatHealth =
+                RequireComponent<CombatHealth>(RequireRoot(CloseThreatRootName), "close threat health");
+
+            player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
+            closeThreatHealth.transform.position = laneSpace.GetLaneWorldPoint(
+                0f,
+                laneSpace.BackLimitZ + 0.75f,
+                closeThreatHealth.transform.position.y);
+            targetSelector.NotifyTargetContact(closeThreatHealth);
+            targetSelector.RefreshTarget();
+            Physics.SyncTransforms();
+            yield return null;
+
+            FillEnergyToTier(energyLadder, 1);
+            Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
+            Assert.Less(
+                laneSpace.GetLaneCoordinates(closeThreatHealth.transform.position).y,
+                laneSpace.SummonEntryZ,
+                "The selected close threat is intentionally behind the summon entry so fallback targeting would fire backward.");
+
+            LaneActionProjectile[] projectiles = Object.FindObjectsByType<LaneActionProjectile>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            bool foundFrontlineSummonProjectile = false;
+            for (int i = 0; i < projectiles.Length; i++)
+            {
+                if (projectiles[i].SourceTeam == DamageTeam.AllySummon
+                    && Vector3.Dot(projectiles[i].TravelDirection, Vector3.forward) > 0.5f)
+                {
+                    foundFrontlineSummonProjectile = true;
+                    break;
+                }
+            }
+
+            Assert.IsTrue(
+                foundFrontlineSummonProjectile,
+                "SummonSlot1 should keep firing into the boss/frontline exchange even when local defense selected a close threat.");
         }
 
         [UnityTest]

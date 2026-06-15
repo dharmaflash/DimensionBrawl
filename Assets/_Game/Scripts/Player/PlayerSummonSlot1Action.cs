@@ -40,6 +40,8 @@ namespace DimensionBrawl.Player
         [SerializeField] private SummonEnergyLadder energyLadder;
         [SerializeField] private CombatHealth sourceHealth;
         [SerializeField] private PlayerCombatTargetSelector targetSelector;
+        [Tooltip("Preferred far/frontline target for summon exchanges. Local target selection is reserved for close defense and is only a fallback here.")]
+        [SerializeField] private CombatHealth frontlineTargetHealth;
         [Tooltip("Summon actions use battlefield coordinates, not player clamping, because summons may cross lane rails and the player forward boundary.")]
         [SerializeField] private SummonLaneSpace laneSpace;
 
@@ -180,6 +182,7 @@ namespace DimensionBrawl.Player
             SummonEnergyLadder newEnergyLadder,
             CombatHealth newSourceHealth,
             PlayerCombatTargetSelector newTargetSelector,
+            CombatHealth newFrontlineTargetHealth,
             SummonLaneSpace newLaneSpace,
             LaneActionProjectile newProjectilePrefab,
             GameObject newEntryCuePrefab,
@@ -189,6 +192,7 @@ namespace DimensionBrawl.Player
             energyLadder = newEnergyLadder;
             sourceHealth = newSourceHealth;
             targetSelector = newTargetSelector;
+            frontlineTargetHealth = newFrontlineTargetHealth;
             laneSpace = newLaneSpace;
             projectilePrefab = newProjectilePrefab;
             projectilePrefabObject = newProjectilePrefab != null ? newProjectilePrefab.gameObject : null;
@@ -287,6 +291,11 @@ namespace DimensionBrawl.Player
             if (laneSpace == null)
             {
                 return 8f;
+            }
+
+            if (frontlineTargetHealth != null && frontlineTargetHealth.IsAlive)
+            {
+                return laneSpace.GetLaneCoordinates(frontlineTargetHealth.transform.position).y;
             }
 
             if (targetSelector != null

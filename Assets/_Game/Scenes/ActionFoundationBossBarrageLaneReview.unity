@@ -1006,6 +1006,7 @@ MonoBehaviour:
   energyLadder: {fileID: 4013}
   sourceHealth: {fileID: 4003}
   targetSelector: {fileID: 4008}
+  frontlineTargetHealth: {fileID: 886505509}
   laneSpace: {fileID: 230933437}
   projectilePrefab: {fileID: 0}
   projectilePrefabObject: {fileID: 4270044204124784780, guid: 6624318c29b2b834296a9b4bc69214df, type: 3}

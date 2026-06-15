@@ -227,7 +227,7 @@ Initial candidate interpretation:
 - Player: local-defense placeholder first; CombatGirl melee visual is reference/checkpoint, not the final control fantasy unless a short slash proves best for close-threat handling.
 - Enemy: Protofactor sci-fi soldiers remain useful first threats.
 - Summon: first slot can reuse a promoted enemy/creature/placeholder actor if the role and presentation are clear.
-- Boss/large summon visuals: dragon assets are future candidates, not the first slot requirement.
+- Boss visuals: prefer a humanoid or elite-caster style first if the available prefab/animation set can sell readable windup, firing, hit, and down states. Dragon assets remain future candidates for a dedicated large/flying boss slice, not the first boss requirement.
 
 ## Implementation Order
 
@@ -256,7 +256,7 @@ The first boss-barrage lane review slice now has these authored pieces:
 - `SummonEnergyLadder` owns the shared `EN LV1~LV3` fill/spend/reset loop for `Skill1` and `SummonSlot1`.
 - `BossBarrageEmitter` and `BossBarrageProjectile` provide the far boss/proxy projectile pressure. The emitter may cycle a small authored `BossBarragePatternProfile` sequence, currently `NeedleLock`, `CoverFire`, `EscortScreen`, `LayeredSalvo`, `StaggeredCrossfire`, `TwinSweep`, `LeftClamp`, `RightClamp`, `PunishNet`, and `LinePressure`, but it must not become a broad boss phase owner.
 - `PlayerSkill1Action` spends the current available EN tier and fires an immediate player-side lane projectile toward the current boss/target direction.
-- `PlayerSummonSlot1Action` spends the current available EN tier, shows a magic-circle entry cue beyond the player boundary, activates a visible `SummonFrontlineProxy`, and launches same-concept stronger LV1/LV2/LV3 summon-assist projectiles from that proxy into the frontline battlefield.
+- `PlayerSummonSlot1Action` spends the current available EN tier, shows a magic-circle entry cue beyond the player boundary, activates a visible `SummonFrontlineProxy`, and launches same-concept stronger LV1/LV2/LV3 summon-assist projectiles from that proxy into the frontline battlefield. It prefers an authored frontline/boss target over local-defense target selection so close-threat attacks do not steal the summon exchange away from the far boss lane.
 - `SummonFrontlineProxy` is the current first visible summon actor placeholder. It owns only activation, facing, projectile-origin presentation, lifetime, and cleanup; later model/animation-backed summons should replace or extend this through reviewed summon actor slices, not a hidden roster manager.
 - `SummonPressureScreen` is the first narrow summon-side answer to boss projectile pressure. `SummonSlot1` opens a short-lived ally-owned screen from its frontline proxy, and higher EN tiers increase the same screen concept's intercept budget/radius/lifetime without introducing a full summon roster or boss phase manager. The screen uses trigger contact plus a small bounded overlap scan so already-overlapping hostile boss projectiles are absorbed reliably during the exchange.
 - `SummonPressureScreenPresenter` is the current screen readability layer. It owns only the proxy-local shield visual, activation pulse, intercept flash, and final-hit linger so players can see the summon answering boss pressure.
@@ -268,7 +268,7 @@ The first boss-barrage lane review slice now has these authored pieces:
 
 The next implementation should not add a roster or boss phase yet. It should tune the current close-threat answer, EN pacing, projectile pressure, proxy summon readability, and `SummonSlot1` impact until the one-pocket loop reads as a small game instead of disconnected mechanics.
 
-Future boss-pattern variety belongs after this tuning pass. Treat each boss pattern as a complete reviewed unit with reference/data note, timing/readability intent, `BossBarragePatternProfile` data, VFX/prefab presentation, camera response if needed, review-scene wiring, and tests before adding the next pattern.
+Future boss-pattern variety belongs after this tuning pass. Treat each boss pattern as a complete reviewed unit with reference/data note, timing/readability intent, boss prefab/animation candidate check, `BossBarragePatternProfile` data, VFX/prefab presentation, camera response if needed, review-scene wiring, and tests before adding the next pattern.
 
 ## Detailed Implementation Notes
 
