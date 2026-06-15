@@ -106,6 +106,14 @@ Reason: The first Spring Isles dressing pass showed that raw environment texture
 
 Impact: Raw environment packs stay under local `_Imported`. A promoted stage slice should avoid direct `_Imported` references, avoid raw source texture duplication, and document any future large-asset exception before it is committed. If the project later needs full-fidelity source art syncing across machines, use a deliberate asset-depot choice such as paid LFS capacity, Unity Version Control, Perforce, or a separate artifact pipeline instead of silently growing the gameplay repository.
 
+## 2026-06-15: Art Source Depot Is Separate From Gameplay Git
+
+Decision: Keep the gameplay Git repository focused on code, docs, authored scenes, gameplay data, and reviewed game-ready assets. Full raw packs, source textures, vendor demo scenes, and demo-scene-scale art sources should move to a deliberate art source depot such as Unity Version Control or Perforce before the project commits more full-fidelity stage art. Until that depot exists, raw art remains local-only under `Assets/_Imported/`.
+
+Reason: The repository has already become heavy with binary assets, and the account has hit the Git LFS budget. Demo-scene-level stages still need coherent terrain, water, lighting, postprocess, particles, wind, and dense authored placement, but using the gameplay Git repository as the raw asset archive would make collaboration and pushing fragile.
+
+Impact: Use `Assets/_Game/DesignDocs/ART_ASSET_STORAGE_WORKFLOW.md` and `Assets/_Game/DesignDocs/SPRING_ISLES_DEMO_ADAPTATION_PLAN.md` before the next Spring Isles stage art pass. Do not treat "promote only what is needed" as "promote a tiny sample"; promote coherent reviewed composition layers while keeping raw source packs out of Git.
+
 ## 2026-06-13: First Enemy Prefab Candidate Is Authored And Scene-Free
 
 Decision: The first reusable sci-fi melee soldier should be promoted as an authored `_Game/Prefabs/Enemies/ActionFoundation` prefab candidate before adding more enemy variants, waves, or spawners. The prefab may carry local health, AI, target sensor, Animator, telegraph, VFX, and cue-driver references, but it must not serialize scene target candidates or a scene camera controller.
