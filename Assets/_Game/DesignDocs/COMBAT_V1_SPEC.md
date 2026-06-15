@@ -124,6 +124,7 @@ The first product shape is closer to a boss-barrage standoff than a free chase a
 - Summon energy gain should increase as the player occupies riskier forward space.
 - Backline play is allowed as a safety choice, but it should not charge the summon fast enough to be the dominant strategy.
 - The first slice may use a boss proxy and simple projectile primitives. It should not start with a full boss phase controller.
+- Later boss-pattern work must follow the same data-first path as this slice: collected reference notes including `C:\Ark` when relevant, then `BossBarragePatternProfile`-style data, then authored projectile/VFX/camera cue prefabs, then review-scene and PlayMode validation. Add one readable pattern at a time; do not hide a broad boss phase manager behind the first barrage slice.
 
 ## Energy Tier Rules
 
@@ -256,9 +257,14 @@ The first boss-barrage lane review slice now has these authored pieces:
 - `PlayerSkill1Action` spends the current available EN tier and fires an immediate player-side lane projectile toward the current boss/target direction.
 - `PlayerSummonSlot1Action` spends the current available EN tier, shows a magic-circle entry cue beyond the player boundary, and launches same-concept stronger LV1/LV2/LV3 summon-assist projectiles into the frontline battlefield.
 - `LaneActionProjectile` is the shared narrow projectile for Skill1 and SummonSlot1 assist shots. It carries damage authority through `CombatHealth` team checks; VFX/visual polish can be swapped through authored prefabs later.
-- `ActionFoundationBossBarrageLaneReview.unity` is the manual review scene for the fixed rear camera, player boundary, EN gain, boss barrage, Skill1, and SummonSlot1 test loop.
+- `DB_PlayerAction_BossBarrageLocalDefense` is the scene-specific one-hit `BasicDefenseAttack` profile for close threats. It reuses the existing player action owner without reviving the melee-combo-first direction.
+- `ActionFoundationBossBarrageLaneReview.unity` is the manual review scene for the fixed rear camera, player boundary, close-threat local defense, EN gain, boss barrage, Skill1, SummonSlot1, and one pocket clear/fail read.
+- `BossBarragePocketReviewOwner` is the review-only pocket result owner for the first lane slice: defeat the close threat and spend `SummonSlot1` while surviving boss pressure.
+- `BossBarrageLaneReviewHud` is the temporary readable review display for HP, close-threat HP, EN fill/readiness, forward-risk gain, Skill1/SummonSlot1 readiness, and pocket result state.
 
-The next implementation should not add a roster or boss phase yet. It should make the existing loop more playable by adding the minimal `BasicDefenseAttack`/close-threat answer, clearer EN/slot HUD feedback, and a short review pocket result.
+The next implementation should not add a roster or boss phase yet. It should tune the current close-threat answer, EN pacing, projectile pressure, and `SummonSlot1` impact until the one-pocket loop reads as a small game instead of disconnected mechanics.
+
+Future boss-pattern variety belongs after this tuning pass. Treat each boss pattern as a complete reviewed unit with data, timing/readability intent, VFX/prefab presentation, camera response if needed, and tests before adding the next pattern.
 
 ## Detailed Implementation Notes
 

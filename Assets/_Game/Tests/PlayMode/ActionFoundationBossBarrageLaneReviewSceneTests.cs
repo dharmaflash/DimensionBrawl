@@ -3,6 +3,7 @@ using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
+using DimensionBrawl.Test;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -19,6 +20,8 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_NeedleLock.asset";
         private const string ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossBarrageProjectile_NeedleLock.prefab";
+        private const string LocalDefenseProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_PlayerAction_BossBarrageLocalDefense.asset";
         private const string Skill1ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_PlayerSkill1Projectile_LaneBolt.prefab";
         private const string SummonSlot1ProjectilePrefabPath =
@@ -27,8 +30,11 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1EntryCue_MagicCircle.prefab";
         private const string LaneRootName = "BossBarrageLaneReview_SummonLaneSpace";
         private const string BossRootName = "BossBarrageLaneReview_BossProxy_NeedleLock";
+        private const string CloseThreatRootName = "BossBarrageLaneReview_CloseThreat_ClosePunish";
         private const string ProjectilePoolRootName = "BossBarrageLaneReview_ProjectilePool";
         private const string ActionCuePoolRootName = "BossBarrageLaneReview_ActionCuePool";
+        private const string PocketOwnerRootName = "BossBarrageLaneReview_PocketOwner";
+        private const string HudRootName = "BossBarrageLaneReview_DebugHud";
 
         [UnitySetUp]
         public IEnumerator LoadBossBarrageLaneReviewScene()
@@ -50,20 +56,29 @@ namespace DimensionBrawl.Tests
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
+            PlayerActionController playerActionController =
+                RequireComponent<PlayerActionController>(player.gameObject, "player action controller");
             PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
             SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
             SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
             GameObject bossRoot = RequireRoot(BossRootName);
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
+            GameObject closeThreatRoot = RequireRoot(CloseThreatRootName);
+            CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreatRoot, "close threat health");
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
             GameObject projectileRoot = RequireRoot(ProjectilePoolRootName);
             GameObject actionCueRoot = RequireRoot(ActionCuePoolRootName);
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            BossBarrageLaneReviewHud reviewHud =
+                RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "boss barrage HUD");
 
             Assert.AreSame(laneSpace, player.LaneSpace, "Player movement must clamp through the authored lane space.");
+            Assert.AreSame(LoadAsset<PlayerActionProfile>(LocalDefenseProfilePath), playerActionController.ActionProfile);
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(energyLadder, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(energyLadder, "trackedPlayer"));
             Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(skill1Action, "energyLadder"));
@@ -85,11 +100,61 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(LoadAsset<BossBarragePatternProfile>(PatternProfilePath), GetObjectReference<BossBarragePatternProfile>(emitter, "patternProfile"));
             Assert.AreSame(LoadAsset<GameObject>(ProjectilePrefabPath), GetObjectReference<GameObject>(emitter, "projectilePrefabObject"));
             Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(targetSelector, "selfHealth"));
-            Assert.AreSame(bossHealth, GetArrayObjectReference<CombatHealth>(targetSelector, "targetCandidates", 0));
+            Assert.AreSame(closeThreatHealth, GetArrayObjectReference<CombatHealth>(targetSelector, "targetCandidates", 0));
+            Assert.AreSame(bossHealth, GetArrayObjectReference<CombatHealth>(targetSelector, "targetCandidates", 1));
             Assert.AreSame(player.transform, cameraController.Target);
-            Assert.AreSame(bossRoot.transform, cameraController.Threat);
+            Assert.IsTrue(
+                cameraController.Threat == bossRoot.transform || cameraController.Threat == closeThreatRoot.transform,
+                "Play mode target bridge may focus either the far boss proxy or the current close threat.");
+            Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(pocketOwner, "playerHealth"));
+            Assert.AreSame(closeThreatHealth, GetObjectReference<CombatHealth>(pocketOwner, "closeThreatHealth"));
+            Assert.AreSame(skill1Action, GetObjectReference<PlayerSkill1Action>(pocketOwner, "skill1Action"));
+            Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(pocketOwner, "summonSlot1Action"));
+            Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(pocketOwner, "bossBarrageEmitter"));
+            Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(reviewHud, "playerHealth"));
+            Assert.AreSame(closeThreatHealth, GetObjectReference<CombatHealth>(reviewHud, "closeThreatHealth"));
+            Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(reviewHud, "energyLadder"));
+            Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(reviewHud, "laneSpace"));
+            Assert.AreSame(player.transform, GetObjectReference<Transform>(reviewHud, "player"));
+            Assert.AreSame(skill1Action, GetObjectReference<PlayerSkill1Action>(reviewHud, "skill1Action"));
+            Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(reviewHud, "summonSlot1Action"));
+            Assert.AreSame(pocketOwner, GetObjectReference<BossBarragePocketReviewOwner>(reviewHud, "pocketReviewOwner"));
 
             yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator LocalDefenseAttackDamagesCloseThreatWithoutSolvingBoss()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            PlayerActionController playerActionController =
+                RequireComponent<PlayerActionController>(player.gameObject, "player action controller");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            CombatHealth closeThreatHealth =
+                RequireComponent<CombatHealth>(RequireRoot(CloseThreatRootName), "close threat health");
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(RequireRoot(BossRootName), "boss health");
+
+            player.transform.SetPositionAndRotation(
+                closeThreatHealth.transform.position + Vector3.back * 1.25f,
+                Quaternion.LookRotation(Vector3.forward, Vector3.up));
+            targetSelector.NotifyTargetContact(closeThreatHealth);
+            targetSelector.RefreshTarget();
+            Physics.SyncTransforms();
+            yield return null;
+
+            float closeThreatBefore = closeThreatHealth.CurrentHealth;
+            float bossBefore = bossHealth.CurrentHealth;
+
+            playerActionController.QueueBasicAttack();
+            float timeout = 0.8f;
+            while (timeout > 0f && Mathf.Approximately(closeThreatHealth.CurrentHealth, closeThreatBefore))
+            {
+                yield return null;
+                timeout -= Time.deltaTime;
+            }
+
+            Assert.Less(closeThreatHealth.CurrentHealth, closeThreatBefore);
+            Assert.AreEqual(bossBefore, bossHealth.CurrentHealth, 0.001f);
         }
 
         [UnityTest]
@@ -98,9 +163,12 @@ namespace DimensionBrawl.Tests
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
             SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(RequireRoot(BossRootName), "boss health");
 
             player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
+            targetSelector.NotifyTargetContact(bossHealth);
             FillEnergyToTier(energyLadder, 1);
 
             Assert.IsTrue(skill1Action.TryUseSkill1());
@@ -203,6 +271,36 @@ namespace DimensionBrawl.Tests
                 "Summon/frontline actors must be able to act beyond the player's uncrossable forward boundary.");
 
             yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator PocketClearsAfterCloseThreatDefeatedAndSummonSpent()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
+            SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            PlayerSummonSlot1Action summonSlot1Action =
+                RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            CombatHealth closeThreatHealth =
+                RequireComponent<CombatHealth>(RequireRoot(CloseThreatRootName), "close threat health");
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+
+            FillEnergyToTier(energyLadder, 1);
+            Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
+            closeThreatHealth.TryApplyDamage(new DamageInfo(
+                playerHealth,
+                DamageTeam.Player,
+                closeThreatHealth.MaxHealth + 10f,
+                closeThreatHealth.transform.position,
+                Vector3.forward,
+                0f));
+
+            yield return null;
+
+            Assert.IsTrue(pocketOwner.IsCleared);
+            Assert.IsTrue(pocketOwner.UsedSummonSlot1);
+            Assert.AreEqual(1, pocketOwner.HighestSummonTier);
         }
 
         [UnityTest]

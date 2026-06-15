@@ -1,0 +1,43 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fdd6bf7af3617e04cb74e4ec000dd610, type: 3}
+  m_Name: DB_PlayerAction_BossBarrageLocalDefense
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerActionProfile
+  basicCombo:
+  - animationTrigger: Attack1
+    startupSeconds: 0.1
+    activeSeconds: 0.08
+    recoverySeconds: 0.26
+    inputBufferSeconds: 0.08
+    dodgeCancelAfterSeconds: 0.05
+    forwardAdvanceDistance: 0.12
+    forwardAdvanceDurationSeconds: 0.08
+    damage: 42
+    hitRadius: 0.78
+    hitDistance: 1.65
+    hitStopSeconds: 0
+  comboResetSeconds: 0.32
+  comboQueueOpenAfterSeconds: 0.12
+  comboChainRecoveryRatio: 1
+  attackFacingHoldPaddingSeconds: 0.04
+  snapBasicAttackFacing: 1
+  basicAttackMoveInputSpeedScale: 0
+  dodgeDurationSeconds: 0.56
+  dodgeInvulnerableFromSeconds: 0.05
+  dodgeInvulnerableToSeconds: 0.32
+  dodgeRecoverySeconds: 0.14
+  dodgeSpeed: 10.2
+  dodgeTrigger: DodgeForward
+  dodgeBackTrigger: DodgeBack
+  dodgeLeftTrigger: DodgeLeft
+  dodgeRightTrigger: DodgeRight
+  dodgingParameter: IsDodging
