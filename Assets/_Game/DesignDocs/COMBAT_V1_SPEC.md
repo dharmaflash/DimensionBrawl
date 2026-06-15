@@ -245,6 +245,292 @@ Implement in this order:
 
 Stop before adding more than three new gameplay scripts without reviewing ownership.
 
+## Detailed Implementation Notes
+
+Use this section as the practical order for the next implementation pass. The goal is to make one playable pocket where the player can immediately understand the new game shape: stay behind the line, dodge boss pressure, take forward risk for faster EN, then spend that EN on `Skill1` or `SummonSlot1`.
+
+### 0. Freeze The Slice Scope
+
+Output:
+
+- One review scene or one duplicated review scene dedicated to the fixed-rear lane slice.
+- One player-side lane with visible authored boundary markers.
+- One boss proxy, not a full boss.
+- One skill button path and one summon slot path.
+
+Do not include:
+
+- Full chapter art.
+- Full boss phase data.
+- Summon roster, summon inventory, rarity, or permanent upgrades.
+- New melee combo expansion.
+- Runtime scene or prefab construction.
+
+Validation:
+
+- A reviewer can open the scene and point to the player zone, forward boundary, backline zone, boss side, boss projectile source, EN display/debug readout, and summon entry point.
+
+### 1. Lane Space First
+
+Output:
+
+- An authored lane object or lane config that defines `BackLimit`, `ForwardBoundary`, lateral width, player spawn, boss proxy anchor, and summon entry anchor.
+- Player movement clamped to this authored space.
+- Camera fixed behind the player side and aimed down the lane.
+
+Gameplay rules:
+
+- The player may move forward/back and left/right inside the player zone.
+- The player must never cross `ForwardBoundary`, including during dodge, knockback, attack movement, or future skill movement.
+- Space beyond `ForwardBoundary` is for boss pressure, summon action, and enemy/frontline exchange.
+
+Implementation guardrails:
+
+- Prefer serialized `Transform` anchors or a small lane-config asset over hardcoded coordinates.
+- Do not search the scene for boundary objects by name at runtime.
+- Keep camera orbit/free-look disabled for this first slice unless it is only a debug toggle.
+
+Validation:
+
+- Hold forward and dodge forward repeatedly; the player still stops at the forward boundary.
+- Hold backward; the player does not leave the playable backline.
+- Move laterally; the player stays inside lane width.
+- Starting the scene frames player, boss proxy, and incoming lane clearly.
+
+### 2. Forward-Risk EN Gain
+
+Output:
+
+- A small combat-resource owner for the shared EN ladder.
+- A lane-position sampler that converts player forward position into gain-rate multiplier.
+- Debug text or simple UI showing current charging level, available level, current fill, and gain multiplier.
+
+Gameplay rules:
+
+- Backline play is safer but charges slowly.
+- Mid-lane charges at baseline speed.
+- Near the forward boundary charges clearly faster.
+- The difference must be large enough to feel in manual testing.
+
+Suggested first tuning:
+
+- Backline gain: about `0.55x`.
+- Middle gain: about `1.0x`.
+- Forward-risk gain: about `1.45x` to `1.75x`.
+- Time from empty to LV1 at middle: short enough for repeated tests, about `6s` to `9s`.
+- LV2 and LV3 may take longer, but should still be testable in one pocket.
+
+Implementation guardrails:
+
+- Store thresholds and multipliers in serialized fields or ScriptableObject data.
+- Do not mutate shared ScriptableObjects at runtime.
+- Do not tie EN directly to UI code.
+
+Validation:
+
+- Stand in the backline and record approximate LV1 fill time.
+- Stand near the forward boundary and record approximate LV1 fill time.
+- Forward fill must be obviously faster.
+- EN does not increase while paused/failure/death state is active.
+
+### 3. EN LV1-LV3 Ladder And Spend Reset
+
+Output:
+
+- `EN LV1`, `EN LV2`, and `EN LV3` as the only supported tiers.
+- One available-tier state exposed to skill/summon input.
+- One spend API that consumes the currently available tier and resets to empty LV1 charging.
+
+Gameplay rules:
+
+- Before LV1 fills, no skill or summon spend is available.
+- Once LV1 fills, LV1 skill/summon remains available while the meter charges toward LV2.
+- Once LV2 fills, available tier upgrades from LV1 to LV2.
+- Once LV3 fills, available tier upgrades from LV2 to LV3 and caps there.
+- Spending at any available tier resets to empty LV1 charging.
+
+Implementation guardrails:
+
+- Keep this as combat resource state, not player progression.
+- Do not create inventory, rarity, card, or account-level upgrade data.
+- Do not duplicate separate energy systems for skill and summon in this slice.
+
+Validation:
+
+- Fill to LV1, spend `Skill1`, meter resets.
+- Fill to LV1, wait for LV2, spend `SummonSlot1`, meter resets.
+- Fill to LV3, available tier remains LV3 until spent.
+- Skill and summon read the same available tier.
+
+### 4. Boss Proxy Projectile Pattern
+
+Output:
+
+- One boss proxy object with one authored projectile pattern.
+- One projectile prefab or pooled projectile actor with damage, travel, lifetime, hit response, and cleanup.
+- Pattern data that can express tighter pressure near the forward boundary and looser pressure near the backline.
+
+Gameplay rules:
+
+- Projectiles travel from boss side toward player side.
+- The pattern must be readable from fixed rear view.
+- Near the forward boundary, safe gaps should feel tighter.
+- Near the backline, safe gaps should feel wider.
+- Projectile collision must punish careless forward-risk play without becoming random.
+
+Implementation guardrails:
+
+- Projectiles may be instantiated or pooled, but only from authored prefabs and with clear cleanup.
+- Do not instantiate from `Update`.
+- Do not make VFX own damage.
+- Do not build a full boss phase controller yet.
+
+Validation:
+
+- Player can avoid at least one repeated pattern by moving laterally/back.
+- Standing still in the forward-risk zone is dangerous.
+- Standing still in the backline is safer but not always free.
+- Projectiles despawn or pool-return cleanly.
+
+### 5. Local-Defense Attack
+
+Output:
+
+- One `BasicDefenseAttack` route for close/approaching threats.
+- One authored hit shape or short projectile with serialized range, radius, damage, active time, and cue references.
+- One simple close-threat test enemy or reused soldier role that can enter the player side.
+
+Gameplay rules:
+
+- This action is for local defense, not boss DPS.
+- It can be slash, magic shot, or gun-like fire depending on readability.
+- It should bias toward a close threat if one is inside the authored local-defense region.
+
+Implementation guardrails:
+
+- Do not revive the melee-combo-first direction.
+- Do not install rifle animation dependency just to prove this timing.
+- Do not add manual lock-on UI for this slice.
+
+Validation:
+
+- A close threat can be hit and defeated or interrupted.
+- The attack does not meaningfully solve the far boss by itself.
+- Attack movement, if any, still respects `ForwardBoundary`.
+
+### 6. Skill1 Tier Action
+
+Output:
+
+- One immediate `Skill1` action with LV1, LV2, and LV3 variants of the same concept.
+- Tier data controlling damage, radius/count, duration, projectile count, or presentation intensity.
+
+Gameplay rules:
+
+- `Skill1` fires immediately when pressed and a tier is available.
+- Higher tier should feel stronger but not become a different unrelated system.
+- Spending `Skill1` resets EN.
+
+Implementation guardrails:
+
+- Keep skill ownership separate from EN ownership.
+- Do not add full skill trees, cooldown economy, or character progression.
+- Reuse combat hit/VFX cue paths where possible.
+
+Validation:
+
+- Skill unavailable before LV1.
+- LV1/LV2/LV3 each spend correctly and reset EN.
+- Higher tier is visibly or numerically stronger.
+
+### 7. SummonSlot1 Tier Action
+
+Output:
+
+- One `SummonSlot1` action with LV1, LV2, and LV3 versions.
+- One magic-circle entry cue in front of the player.
+- One summon actor or assist effect that creates a visible exchange toward the boss/frontline.
+
+Gameplay rules:
+
+- Summon appears from the player-side entry point, then acts toward the frontline.
+- Higher tiers improve the same summon concept through strength, duration, count, projectile pressure, or impact.
+- Spending `SummonSlot1` resets EN.
+- Summon result should matter more than `BasicDefenseAttack`.
+
+Implementation guardrails:
+
+- Do not build the full summon roster.
+- Do not add summon inventory, rarity, permanent upgrades, or hand-of-cards UI.
+- Summon actor ownership must be separate from player input and EN resource ownership.
+- Spawned summon actors need a cleanup path.
+
+Validation:
+
+- LV1 summon creates a visible answer.
+- LV2/LV3 are stronger versions, not unrelated actions.
+- Summon does not require the player to cross the forward boundary.
+- Summon cleans up after duration, death, or pocket end.
+
+### 8. One Pocket Review Scene
+
+Output:
+
+- A single authored review scene that demonstrates the loop in one pocket.
+- Lane anchors, player, boss proxy, projectile pattern, optional close threat, EN debug/UI, `Skill1`, and `SummonSlot1`.
+
+Review script:
+
+1. Start at backline and observe slow EN gain.
+2. Move forward and observe faster EN gain.
+3. Dodge boss projectiles near the forward boundary.
+4. Spend LV1 early and confirm reset.
+5. Wait for LV2 or LV3 and confirm stronger skill/summon.
+6. Use local-defense attack only against close threat.
+7. Clear, pause, or meaningfully answer the pocket through summon action.
+
+Implementation guardrails:
+
+- The scene must be inspectable and authored.
+- It must not hide setup in a runtime scene builder.
+- It must not require raw `_Imported` asset references.
+
+### 9. Minimal UI Hook
+
+Output:
+
+- Temporary but readable UI or debug readout for EN charging tier, available tier, skill readiness, and summon readiness.
+- Existing canonical action names reused by PC/gamepad/mobile HUD plans.
+
+Gameplay rules:
+
+- The player should know whether spending now gives LV1/LV2/LV3.
+- The player should understand that moving forward charges faster.
+
+Implementation guardrails:
+
+- UI displays combat state; it does not own EN rules.
+- Do not build lobby, card UI, full mobile shell, or summon roster UI in this slice.
+
+Validation:
+
+- UI updates when EN fills, upgrades, caps, and spends.
+- Skill and summon buttons show the same available tier.
+
+### 10. Review Before Expansion
+
+Only expand after the review scene proves the core loop. The next expansion choices should be made in this order:
+
+1. Tune lane/camera/projectile readability.
+2. Tune EN gain and spend timing.
+3. Improve `SummonSlot1` impact and identity.
+4. Add a second boss projectile pattern.
+5. Add one close-threat variant.
+6. Add `SummonSlot2` only after slot 1 is fun.
+7. Revisit chapter art/corridor environment after the loop is accepted.
+
+Do not use art, more enemies, or more buttons to hide a weak EN/summon loop.
+
 ## Acceptance Checklist
 
 The first boss-barrage summon-first slice is acceptable when:
