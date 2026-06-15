@@ -30,6 +30,7 @@ MonoBehaviour:
   sideClampDirection: 1
   sideClampCrossReachRatio: 0.24
   punishNetInnerSpreadRatio: 0.34
+  escortScreenInnerGapRatio: 0.28
   linePressureDirection: 1
   linePressureCenterRatio: 0.72
   linePressureHalfSpreadRatio: 0.08

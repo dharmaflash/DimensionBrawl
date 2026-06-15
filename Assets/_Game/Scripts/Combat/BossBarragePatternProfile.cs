@@ -9,6 +9,7 @@ namespace DimensionBrawl.Combat
         SideClamp = 2,
         PunishNet = 3,
         LinePressure = 4,
+        EscortScreen = 5,
     }
 
     public enum BossBarrageTargetingRule
@@ -56,6 +57,8 @@ namespace DimensionBrawl.Combat
         [SerializeField, Range(0f, 0.65f)] private float sideClampCrossReachRatio = 0.28f;
         [Tooltip("Player-centered net patterns place inner shots near center before the outer ring.")]
         [SerializeField, Range(0.05f, 0.75f)] private float punishNetInnerSpreadRatio = 0.34f;
+        [Tooltip("Escort-screen patterns alternate left/right curtain shots and preserve this inner gap around the escorted path.")]
+        [SerializeField, Range(0.08f, 0.85f)] private float escortScreenInnerGapRatio = 0.28f;
         [Tooltip("Negative values commit the line to the left of the sampled target, positive values commit it to the right.")]
         [SerializeField, Range(-1f, 1f)] private float linePressureDirection = 1f;
         [Tooltip("How far from the sampled target the pressure line sits, expressed against the current spread.")]
@@ -84,6 +87,7 @@ namespace DimensionBrawl.Combat
         public float SideClampDirection => sideClampDirection;
         public float SideClampCrossReachRatio => sideClampCrossReachRatio;
         public float PunishNetInnerSpreadRatio => punishNetInnerSpreadRatio;
+        public float EscortScreenInnerGapRatio => escortScreenInnerGapRatio;
         public float LinePressureDirection => linePressureDirection;
         public float LinePressureCenterRatio => linePressureCenterRatio;
         public float LinePressureHalfSpreadRatio => linePressureHalfSpreadRatio;
@@ -127,6 +131,11 @@ namespace DimensionBrawl.Combat
                 return GetLinePressureOffset(projectileIndex, count, forwardRisk01);
             }
 
+            if (lateralShape == BossBarrageLateralShape.EscortScreen)
+            {
+                return GetEscortScreenOffset(projectileIndex, count, forwardRisk01);
+            }
+
             int safeCount = Mathf.Max(1, count);
             if (safeCount <= 1)
             {
@@ -140,7 +149,8 @@ namespace DimensionBrawl.Combat
 
         public float GetTargetDepthOffset(int projectileIndex, int count, float forwardRisk01)
         {
-            if (lateralShape != BossBarrageLateralShape.LinePressure)
+            if (lateralShape != BossBarrageLateralShape.LinePressure
+                && lateralShape != BossBarrageLateralShape.EscortScreen)
             {
                 return 0f;
             }
@@ -240,6 +250,24 @@ namespace DimensionBrawl.Combat
             float localHalfSpread = halfSpread * Mathf.Clamp01(linePressureHalfSpreadRatio);
             float normalizedIndex = Mathf.Clamp01((float)Mathf.Clamp(projectileIndex, 0, safeCount - 1) / (safeCount - 1));
             return center + Mathf.Lerp(-localHalfSpread, localHalfSpread, normalizedIndex);
+        }
+
+        private float GetEscortScreenOffset(int projectileIndex, int count, float forwardRisk01)
+        {
+            int safeCount = Mathf.Max(1, count);
+            if (safeCount <= 1)
+            {
+                return 0f;
+            }
+
+            float halfSpread = EvaluateHalfSpread(forwardRisk01);
+            float innerGap = halfSpread * Mathf.Clamp(escortScreenInnerGapRatio, 0.08f, 0.85f);
+            int safeIndex = Mathf.Clamp(projectileIndex, 0, safeCount - 1);
+            int pairIndex = safeIndex / 2;
+            int pairCount = Mathf.Max(1, (safeCount + 1) / 2);
+            float pair01 = pairCount <= 1 ? 0f : Mathf.Clamp01((float)pairIndex / (pairCount - 1));
+            float magnitude = Mathf.Lerp(halfSpread, innerGap, pair01);
+            return safeIndex % 2 == 0 ? -magnitude : magnitude;
         }
     }
 }

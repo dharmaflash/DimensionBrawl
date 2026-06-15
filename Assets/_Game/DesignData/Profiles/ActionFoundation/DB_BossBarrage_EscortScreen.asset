@@ -10,31 +10,31 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6471890abcdeffedcba12, type: 3}
-  m_Name: DB_BossBarrage_LinePressure
+  m_Name: DB_BossBarrage_EscortScreen
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBarragePatternProfile
-  patternId: LinePressure
+  patternId: EscortScreen
   initialDelaySeconds: 0.2
   windupSeconds: 1
-  waveIntervalSeconds: 5.6
-  projectilesPerWave: 4
-  damage: 15
-  projectileSpeed: 13
+  waveIntervalSeconds: 5.7
+  projectilesPerWave: 6
+  damage: 13
+  projectileSpeed: 12.6
   projectileLifetimeSeconds: 5.1
-  projectileRadius: 0.3
-  targetingRule: 0
+  projectileRadius: 0.28
+  targetingRule: 1
   laneCenterLateralRatio: 0
-  lateralShape: 4
+  lateralShape: 5
   backlineHalfSpread: 4
-  forwardHalfSpread: 3
+  forwardHalfSpread: 1.6
   twinColumnInnerSpreadRatio: 0.38
   sideClampDirection: -1
   sideClampCrossReachRatio: 0.28
   punishNetInnerSpreadRatio: 0.34
-  escortScreenInnerGapRatio: 0.28
+  escortScreenInnerGapRatio: 0.35
   linePressureDirection: 1
   linePressureCenterRatio: 0.72
   linePressureHalfSpreadRatio: 0.08
-  backlineDepthSpread: 2.2
-  forwardDepthSpread: 0.85
-  spawnHeight: 1.5
+  backlineDepthSpread: 2.4
+  forwardDepthSpread: 0.9
+  spawnHeight: 1.45
   targetHeight: 1.05

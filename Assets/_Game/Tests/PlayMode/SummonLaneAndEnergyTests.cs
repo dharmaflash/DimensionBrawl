@@ -224,6 +224,35 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void BossBarrageEscortScreenAlternatesCurtainSidesAndTightensForwardRisk()
+        {
+            BossBarragePatternProfile pattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            var serializedObject = new SerializedObject(pattern);
+            serializedObject.FindProperty("lateralShape").enumValueIndex = (int)BossBarrageLateralShape.EscortScreen;
+            serializedObject.FindProperty("backlineHalfSpread").floatValue = 4f;
+            serializedObject.FindProperty("forwardHalfSpread").floatValue = 1.6f;
+            serializedObject.FindProperty("escortScreenInnerGapRatio").floatValue = 0.35f;
+            serializedObject.FindProperty("backlineDepthSpread").floatValue = 2.4f;
+            serializedObject.FindProperty("forwardDepthSpread").floatValue = 0.9f;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+
+            float outerLeft = pattern.GetLateralOffset(0, 6, 0f);
+            float outerRight = pattern.GetLateralOffset(1, 6, 0f);
+            float innerLeftBackline = pattern.GetLateralOffset(4, 6, 0f);
+            float innerLeftForward = pattern.GetLateralOffset(4, 6, 1f);
+            float backlineDepth = pattern.GetTargetDepthOffset(5, 6, 0f);
+            float forwardDepth = pattern.GetTargetDepthOffset(5, 6, 1f);
+
+            Assert.Less(outerLeft, 0f);
+            Assert.Greater(outerRight, 0f);
+            Assert.Less(Mathf.Abs(innerLeftBackline), Mathf.Abs(outerLeft));
+            Assert.Less(Mathf.Abs(innerLeftForward), Mathf.Abs(innerLeftBackline));
+            Assert.Less(forwardDepth, backlineDepth);
+
+            Object.DestroyImmediate(pattern);
+        }
+
+        [Test]
         public void BossBarrageProjectileDamagesHostileTargetsOnly()
         {
             GameObject projectileObject = new GameObject("Projectile");
