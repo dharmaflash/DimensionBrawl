@@ -6,6 +6,7 @@ namespace DimensionBrawl.Combat
     {
         CenterSpread = 0,
         TwinColumns = 1,
+        SideClamp = 2,
     }
 
     [CreateAssetMenu(
@@ -36,6 +37,10 @@ namespace DimensionBrawl.Combat
         [SerializeField, Min(0f)] private float forwardHalfSpread = 1.05f;
         [Tooltip("Twin-column patterns leave a readable middle gap while still tightening near the forward boundary.")]
         [SerializeField, Range(0f, 0.8f)] private float twinColumnInnerSpreadRatio = 0.38f;
+        [Tooltip("Negative values clamp from the left, positive values clamp from the right.")]
+        [SerializeField, Range(-1f, 1f)] private float sideClampDirection = -1f;
+        [Tooltip("How far the clamped side reaches across center. Higher values leave a smaller opposite-side gap.")]
+        [SerializeField, Range(0f, 0.65f)] private float sideClampCrossReachRatio = 0.28f;
         [SerializeField, Min(0f)] private float spawnHeight = 1.25f;
         [SerializeField, Min(0f)] private float targetHeight = 1f;
 
@@ -49,6 +54,8 @@ namespace DimensionBrawl.Combat
         public float ProjectileSpeed => projectileSpeed;
         public float ProjectileLifetimeSeconds => projectileLifetimeSeconds;
         public float ProjectileRadius => projectileRadius;
+        public float SideClampDirection => sideClampDirection;
+        public float SideClampCrossReachRatio => sideClampCrossReachRatio;
         public float SpawnHeight => spawnHeight;
         public float TargetHeight => targetHeight;
 
@@ -62,6 +69,11 @@ namespace DimensionBrawl.Combat
             if (lateralShape == BossBarrageLateralShape.TwinColumns)
             {
                 return GetTwinColumnOffset(projectileIndex, count, forwardRisk01);
+            }
+
+            if (lateralShape == BossBarrageLateralShape.SideClamp)
+            {
+                return GetSideClampOffset(projectileIndex, count, forwardRisk01);
             }
 
             int safeCount = Mathf.Max(1, count);
@@ -101,6 +113,22 @@ namespace DimensionBrawl.Combat
                 : Mathf.Lerp(innerSpread, halfSpread, side01);
 
             return isLeft ? -magnitude : magnitude;
+        }
+
+        private float GetSideClampOffset(int projectileIndex, int count, float forwardRisk01)
+        {
+            int safeCount = Mathf.Max(1, count);
+            if (safeCount <= 1)
+            {
+                return 0f;
+            }
+
+            float halfSpread = EvaluateHalfSpread(forwardRisk01);
+            float direction = sideClampDirection < 0f ? -1f : 1f;
+            float outerEdge = direction * halfSpread;
+            float crossReach = -direction * halfSpread * Mathf.Clamp01(sideClampCrossReachRatio);
+            float normalizedIndex = Mathf.Clamp01((float)Mathf.Clamp(projectileIndex, 0, safeCount - 1) / (safeCount - 1));
+            return Mathf.Lerp(outerEdge, crossReach, normalizedIndex);
         }
     }
 }

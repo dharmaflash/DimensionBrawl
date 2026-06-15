@@ -125,7 +125,7 @@ The first product shape is closer to a boss-barrage standoff than a free chase a
 - Backline play is allowed as a safety choice, but it should not charge the summon fast enough to be the dominant strategy.
 - The first slice may use a boss proxy and simple projectile primitives. It should not start with a full boss phase controller.
 - Later boss-pattern work must follow the same data-first path as this slice: collected reference notes including `C:\Ark` when relevant, then `BossBarragePatternProfile`-style data, then authored projectile/VFX/camera cue prefabs, then review-scene and PlayMode validation. Add one readable pattern at a time; do not hide a broad boss phase manager behind the first barrage slice.
-- The first boss-pattern variety step is `NeedleLock -> TwinSweep`: `NeedleLock` teaches targeted center pressure, while `TwinSweep` uses a twin-column shape so the player reads a different dodge problem without adding full phases.
+- The first boss-pattern variety step is `NeedleLock -> TwinSweep -> LeftClamp`: `NeedleLock` teaches targeted center pressure, `TwinSweep` uses a twin-column shape, and `LeftClamp` introduces side-pressure that asks the player to recognize which side is being closed without adding full phases.
 
 ## Energy Tier Rules
 
@@ -254,7 +254,7 @@ The first boss-barrage lane review slice now has these authored pieces:
 
 - `SummonLaneSpace` clamps only the player zone. Summon/frontline actions must use battlefield coordinates and may cross the player forward boundary and lateral player rails when their role requires it.
 - `SummonEnergyLadder` owns the shared `EN LV1~LV3` fill/spend/reset loop for `Skill1` and `SummonSlot1`.
-- `BossBarrageEmitter` and `BossBarrageProjectile` provide the far boss/proxy projectile pressure. The emitter may cycle a small authored `BossBarragePatternProfile` sequence, currently `NeedleLock` and `TwinSweep`, but it must not become a broad boss phase owner.
+- `BossBarrageEmitter` and `BossBarrageProjectile` provide the far boss/proxy projectile pressure. The emitter may cycle a small authored `BossBarragePatternProfile` sequence, currently `NeedleLock`, `TwinSweep`, and `LeftClamp`, but it must not become a broad boss phase owner.
 - `PlayerSkill1Action` spends the current available EN tier and fires an immediate player-side lane projectile toward the current boss/target direction.
 - `PlayerSummonSlot1Action` spends the current available EN tier, shows a magic-circle entry cue beyond the player boundary, activates a visible `SummonFrontlineProxy`, and launches same-concept stronger LV1/LV2/LV3 summon-assist projectiles from that proxy into the frontline battlefield.
 - `SummonFrontlineProxy` is the current first visible summon actor placeholder. It owns only activation, facing, projectile-origin presentation, lifetime, and cleanup; later model/animation-backed summons should replace or extend this through reviewed summon actor slices, not a hidden roster manager.
@@ -266,7 +266,7 @@ The first boss-barrage lane review slice now has these authored pieces:
 
 The next implementation should not add a roster or boss phase yet. It should tune the current close-threat answer, EN pacing, projectile pressure, proxy summon readability, and `SummonSlot1` impact until the one-pocket loop reads as a small game instead of disconnected mechanics.
 
-Future boss-pattern variety belongs after this tuning pass. Treat each boss pattern as a complete reviewed unit with data, timing/readability intent, VFX/prefab presentation, camera response if needed, and tests before adding the next pattern.
+Future boss-pattern variety belongs after this tuning pass. Treat each boss pattern as a complete reviewed unit with reference/data note, timing/readability intent, `BossBarragePatternProfile` data, VFX/prefab presentation, camera response if needed, review-scene wiring, and tests before adding the next pattern.
 
 ## Detailed Implementation Notes
 

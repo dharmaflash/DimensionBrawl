@@ -1,6 +1,7 @@
 using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 
 namespace DimensionBrawl.Tests
@@ -85,6 +86,29 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(-backlineSpread, pattern.GetLateralOffset(0, 3, 0f), 0.001f);
             Assert.AreEqual(0f, pattern.GetLateralOffset(1, 3, 0f), 0.001f);
             Assert.AreEqual(backlineSpread, pattern.GetLateralOffset(2, 3, 0f), 0.001f);
+
+            Object.DestroyImmediate(pattern);
+        }
+
+        [Test]
+        public void BossBarrageSideClampLeavesReadableOppositeSideGap()
+        {
+            BossBarragePatternProfile pattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            var serializedObject = new SerializedObject(pattern);
+            serializedObject.FindProperty("lateralShape").enumValueIndex = (int)BossBarrageLateralShape.SideClamp;
+            serializedObject.FindProperty("sideClampDirection").floatValue = -1f;
+            serializedObject.FindProperty("sideClampCrossReachRatio").floatValue = 0.25f;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+
+            float firstOffset = pattern.GetLateralOffset(0, 5, 0f);
+            float lastOffset = pattern.GetLateralOffset(4, 5, 0f);
+
+            Assert.Less(firstOffset, 0f, "Left clamp should start pressure from the left side.");
+            Assert.Greater(lastOffset, 0f, "Left clamp should reach across center to narrow the right-side safe gap.");
+            Assert.Less(
+                Mathf.Abs(lastOffset),
+                Mathf.Abs(firstOffset),
+                "Side clamp should leave the opposite-side gap larger than the pressured side width.");
 
             Object.DestroyImmediate(pattern);
         }

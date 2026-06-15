@@ -20,6 +20,8 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_NeedleLock.asset";
         private const string TwinSweepPatternProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_TwinSweep.asset";
+        private const string LeftClampPatternProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_LeftClamp.asset";
         private const string ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossBarrageProjectile_NeedleLock.prefab";
         private const string LocalDefenseProfilePath =
@@ -114,6 +116,12 @@ namespace DimensionBrawl.Tests
                 twinSweepPattern,
                 GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 1));
             Assert.AreEqual(BossBarrageLateralShape.TwinColumns, twinSweepPattern.LateralShape);
+            BossBarragePatternProfile leftClampPattern = LoadAsset<BossBarragePatternProfile>(LeftClampPatternProfilePath);
+            Assert.AreSame(
+                leftClampPattern,
+                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 2));
+            Assert.AreEqual(BossBarrageLateralShape.SideClamp, leftClampPattern.LateralShape);
+            Assert.Less(leftClampPattern.SideClampDirection, 0f);
             Assert.AreSame(LoadAsset<GameObject>(ProjectilePrefabPath), GetObjectReference<GameObject>(emitter, "projectilePrefabObject"));
             Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(targetSelector, "selfHealth"));
             Assert.AreSame(closeThreatHealth, GetArrayObjectReference<CombatHealth>(targetSelector, "targetCandidates", 0));
@@ -339,6 +347,13 @@ namespace DimensionBrawl.Tests
                 LoadAsset<BossBarragePatternProfile>(TwinSweepPatternProfilePath),
                 emitter.CurrentPattern,
                 "Review boss should move from NeedleLock into the second authored barrage pattern after one wave.");
+
+            Assert.IsTrue(emitter.BeginWindup());
+            emitter.FirePendingWave();
+            Assert.AreSame(
+                LoadAsset<BossBarragePatternProfile>(LeftClampPatternProfilePath),
+                emitter.CurrentPattern,
+                "Review boss should move from TwinSweep into the first side-clamp barrage pattern after the second wave.");
 
             BossBarrageProjectile[] projectiles = Object.FindObjectsByType<BossBarrageProjectile>(
                 FindObjectsInactive.Exclude,

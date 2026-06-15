@@ -25,5 +25,7 @@ MonoBehaviour:
   backlineHalfSpread: 3.65
   forwardHalfSpread: 1.45
   twinColumnInnerSpreadRatio: 0.42
+  sideClampDirection: -1
+  sideClampCrossReachRatio: 0.28
   spawnHeight: 1.42
   targetHeight: 1.05
