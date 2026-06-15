@@ -3,6 +3,7 @@ using UnityEngine;
 
 namespace DimensionBrawl.UI
 {
+    [ExecuteAlways]
     [DefaultExecutionOrder(-100)]
     [DisallowMultipleComponent]
     public sealed class LobbyCharacterStageObjectVisibility : MonoBehaviour
@@ -27,6 +28,16 @@ namespace DimensionBrawl.UI
 
         private void OnEnable()
         {
+            ApplyVisibility();
+        }
+
+        private void OnValidate()
+        {
+            if (!isActiveAndEnabled)
+            {
+                return;
+            }
+
             ApplyVisibility();
         }
 
@@ -62,7 +73,10 @@ namespace DimensionBrawl.UI
                     continue;
                 }
 
-                child.gameObject.SetActive(visibilityOverride.IsVisible);
+                if (child.gameObject.activeSelf != visibilityOverride.IsVisible)
+                {
+                    child.gameObject.SetActive(visibilityOverride.IsVisible);
+                }
             }
         }
     }
