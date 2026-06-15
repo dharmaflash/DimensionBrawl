@@ -23,6 +23,14 @@ namespace DimensionBrawl.Tests
                 lane.IsPastForwardBoundary(summonEntry),
                 "Summon entry/frontline coordinates must remain valid beyond the player forward boundary.");
 
+            Vector3 offLaneSummonPoint = lane.GetBattlefieldWorldPoint(9f, lane.SummonEntryZ);
+            Vector2 offLaneCoordinates = lane.GetLaneCoordinates(offLaneSummonPoint);
+            Assert.AreEqual(
+                9f,
+                offLaneCoordinates.x,
+                0.001f,
+                "Summon/frontline battlefield coordinates must be able to cross authored lateral rails when a summon pattern needs it.");
+
             Object.DestroyImmediate(laneObject);
         }
 

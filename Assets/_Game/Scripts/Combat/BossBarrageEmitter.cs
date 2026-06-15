@@ -14,6 +14,7 @@ namespace DimensionBrawl.Combat
         [Header("Pattern")]
         [SerializeField] private BossBarragePatternProfile patternProfile;
         [SerializeField] private BossBarrageProjectile projectilePrefab;
+        [SerializeField] private GameObject projectilePrefabObject;
         [SerializeField] private DamageTeam sourceTeam = DamageTeam.Enemy;
         [SerializeField] private bool firingEnabled = true;
 
@@ -48,6 +49,12 @@ namespace DimensionBrawl.Combat
         }
 
         private BossBarragePatternProfile ActivePattern => patternProfile;
+        private BossBarrageProjectile ActiveProjectilePrefab =>
+            projectilePrefab != null
+                ? projectilePrefab
+                : projectilePrefabObject != null
+                    ? projectilePrefabObject.GetComponent<BossBarrageProjectile>()
+                    : null;
 
         public void ConfigureReferences(
             SummonLaneSpace newLaneSpace,
@@ -66,6 +73,7 @@ namespace DimensionBrawl.Combat
         {
             patternProfile = newPatternProfile;
             projectilePrefab = newProjectilePrefab;
+            projectilePrefabObject = newProjectilePrefab != null ? newProjectilePrefab.gameObject : null;
             prewarmCount = Mathf.Max(0, newPrewarmCount);
             PrewarmPool();
             cooldownTimer = ActivePattern != null ? ActivePattern.InitialDelaySeconds : 0f;
@@ -193,7 +201,8 @@ namespace DimensionBrawl.Combat
 
         private void PrewarmPool()
         {
-            if (projectilePrefab == null || prewarmCount <= pool.Count)
+            BossBarrageProjectile activeProjectilePrefab = ActiveProjectilePrefab;
+            if (activeProjectilePrefab == null || prewarmCount <= pool.Count)
             {
                 return;
             }
@@ -201,8 +210,8 @@ namespace DimensionBrawl.Combat
             Transform root = projectileRoot != null ? projectileRoot : transform;
             while (pool.Count < prewarmCount)
             {
-                BossBarrageProjectile projectile = Instantiate(projectilePrefab, root);
-                projectile.name = $"{projectilePrefab.name}_Pooled_{pool.Count:00}";
+                BossBarrageProjectile projectile = Instantiate(activeProjectilePrefab, root);
+                projectile.name = $"{activeProjectilePrefab.name}_Pooled_{pool.Count:00}";
                 projectile.Deactivate();
                 pool.Add(projectile);
             }

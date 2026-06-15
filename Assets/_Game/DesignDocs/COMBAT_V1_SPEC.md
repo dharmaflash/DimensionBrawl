@@ -156,6 +156,7 @@ For this V1 spec:
 - The first summon may be a short assist, a short persistent helper, or a role actor, but it must create a visible battlefield exchange with the far boss/proxy or its pressure.
 - `SummonSlot1` should have LV1, LV2, and LV3 versions of the same summon concept. Higher levels may improve power, duration, count, projectile strength, or impact, but should stay inspectable as tier data.
 - Spending any summon level resets EN back to empty LV1 charging.
+- Summon/frontline actors are not clamped by the player forward boundary or player lane rails by default. If a summon needs side limits, those limits must be authored by the summon role or pattern, not inherited from player movement.
 - The summon must use shared team, hostile-target, and authored candidate rules with enemies.
 - The summon must not be a random auto-pet that plays invisibly in the background.
 - The summon must not use a hand-of-cards UI, manual target-selection UI, or broad placement-drag UI as the default V1 verb.

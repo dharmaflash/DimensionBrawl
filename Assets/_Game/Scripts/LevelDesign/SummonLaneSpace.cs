@@ -55,5 +55,13 @@ namespace DimensionBrawl.LevelDesign
             worldPoint.y = worldY;
             return worldPoint;
         }
+
+        public Vector3 GetBattlefieldWorldPoint(float lateralX, float laneZ, float worldY = 0f)
+        {
+            Vector3 localPoint = new Vector3(lateralX, 0f, laneZ);
+            Vector3 worldPoint = transform.TransformPoint(localPoint);
+            worldPoint.y = worldY;
+            return worldPoint;
+        }
     }
 }
