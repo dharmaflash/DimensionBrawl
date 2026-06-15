@@ -1,4 +1,4 @@
-﻿# Decisions
+# Decisions
 
 ## 2026-06-12: Restart From Clean Baseline
 
@@ -173,6 +173,14 @@ Decision: Use a shared `EN LV1 -> EN LV2 -> EN LV3` ladder for the first active 
 Reason: The desired strategy is not only "fill gauge, press summon." The player should choose between using a lower-level answer immediately or taking forward-position risk long enough to unlock a stronger version of the same skill/summon.
 
 Impact: Implement only LV1-LV3 first. `Skill1` fires immediately at the available tier. `SummonSlot1` should summon the same concept at LV1/LV2/LV3, with stronger presentation/effect by tier, appearing from a magic circle in front of the player before entering the frontline exchange. Do not expand this into a roster, rarity, inventory, or upgrade economy until the tiered combat loop is accepted.
+
+## 2026-06-15: Summon Frontline Coordinates Are Not Player Movement Coordinates
+
+Decision: Player movement must remain clamped to the player-side lane and forward boundary, but summon/frontline actions may cross that boundary and the lateral player rails when authored role or tier data requires it. Player actions use player-zone safety constraints; summon actions use battlefield coordinates.
+
+Reason: The current boss-barrage/summon-first direction depends on the player being unable to cross the midline while summons still enter and act in the contested space. If summons inherit the player clamp, they cannot create the intended front-line exchange.
+
+Impact: `PlayerSummonSlot1Action` uses `SummonLaneSpace.GetBattlefieldWorldPoint` for entry and assist shots. Tests must continue to cover player clamp versus summon crossing behavior before expanding summon actors, summon AI, or boss/frontline exchange systems.
 
 ## 2026-06-15: Boss Skill And Summon-Like Pressure Are Later Pressure Modules
 

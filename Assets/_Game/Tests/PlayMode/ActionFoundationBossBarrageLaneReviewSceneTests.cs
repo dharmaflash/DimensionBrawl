@@ -19,8 +19,16 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_NeedleLock.asset";
         private const string ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossBarrageProjectile_NeedleLock.prefab";
+        private const string Skill1ProjectilePrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_PlayerSkill1Projectile_LaneBolt.prefab";
+        private const string SummonSlot1ProjectilePrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Projectile_AssistBolt.prefab";
+        private const string SummonSlot1EntryCuePrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot1EntryCue_MagicCircle.prefab";
         private const string LaneRootName = "BossBarrageLaneReview_SummonLaneSpace";
         private const string BossRootName = "BossBarrageLaneReview_BossProxy_NeedleLock";
+        private const string ProjectilePoolRootName = "BossBarrageLaneReview_ProjectilePool";
+        private const string ActionCuePoolRootName = "BossBarrageLaneReview_ActionCuePool";
 
         [UnitySetUp]
         public IEnumerator LoadBossBarrageLaneReviewScene()
@@ -49,10 +57,28 @@ namespace DimensionBrawl.Tests
             GameObject bossRoot = RequireRoot(BossRootName);
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
+            PlayerSummonSlot1Action summonSlot1Action =
+                RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            GameObject projectileRoot = RequireRoot(ProjectilePoolRootName);
+            GameObject actionCueRoot = RequireRoot(ActionCuePoolRootName);
 
             Assert.AreSame(laneSpace, player.LaneSpace, "Player movement must clamp through the authored lane space.");
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(energyLadder, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(energyLadder, "trackedPlayer"));
+            Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(skill1Action, "energyLadder"));
+            Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(skill1Action, "sourceHealth"));
+            Assert.AreSame(targetSelector, GetObjectReference<PlayerCombatTargetSelector>(skill1Action, "targetSelector"));
+            Assert.AreSame(LoadAsset<GameObject>(Skill1ProjectilePrefabPath), GetObjectReference<GameObject>(skill1Action, "projectilePrefabObject"));
+            Assert.AreSame(projectileRoot.transform, GetObjectReference<Transform>(skill1Action, "projectileRoot"));
+            Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(summonSlot1Action, "energyLadder"));
+            Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(summonSlot1Action, "sourceHealth"));
+            Assert.AreSame(targetSelector, GetObjectReference<PlayerCombatTargetSelector>(summonSlot1Action, "targetSelector"));
+            Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(summonSlot1Action, "laneSpace"));
+            Assert.AreSame(LoadAsset<GameObject>(SummonSlot1ProjectilePrefabPath), GetObjectReference<GameObject>(summonSlot1Action, "projectilePrefabObject"));
+            Assert.AreSame(LoadAsset<GameObject>(SummonSlot1EntryCuePrefabPath), GetObjectReference<GameObject>(summonSlot1Action, "entryCuePrefab"));
+            Assert.AreSame(projectileRoot.transform, GetObjectReference<Transform>(summonSlot1Action, "projectileRoot"));
+            Assert.AreSame(actionCueRoot.transform, GetObjectReference<Transform>(summonSlot1Action, "cueRoot"));
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(emitter, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(emitter, "trackedPlayer"));
             Assert.AreSame(bossHealth, GetObjectReference<CombatHealth>(emitter, "sourceHealth"));
@@ -63,6 +89,94 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(player.transform, cameraController.Target);
             Assert.AreSame(bossRoot.transform, cameraController.Threat);
 
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator Skill1SpendsAvailableEnergyAndFiresFromPlayerSide()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
+
+            player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
+            FillEnergyToTier(energyLadder, 1);
+
+            Assert.IsTrue(skill1Action.TryUseSkill1());
+            Assert.AreEqual(1, skill1Action.LastSpentTier);
+            Assert.AreEqual(0, energyLadder.AvailableTier);
+            Assert.Greater(skill1Action.ActiveProjectileCount, 0, "Skill1 should create an immediate readable projectile.");
+
+            LaneActionProjectile[] projectiles = Object.FindObjectsByType<LaneActionProjectile>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            bool foundPlayerProjectile = false;
+            for (int i = 0; i < projectiles.Length; i++)
+            {
+                if (projectiles[i].SourceTeam == DamageTeam.Player
+                    && Vector3.Dot(projectiles[i].TravelDirection, Vector3.forward) > 0.5f)
+                {
+                    foundPlayerProjectile = true;
+                    break;
+                }
+            }
+
+            Assert.IsTrue(foundPlayerProjectile, "Skill1 should fire forward toward the boss lane.");
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator SummonSlot1SpendsEnergyAndCanCrossPlayerLaneRails()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            PlayerSummonSlot1Action summonSlot1Action =
+                RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+
+            player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
+            FillEnergyToTier(energyLadder, 3);
+
+            Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
+            Assert.AreEqual(3, summonSlot1Action.LastSpentTier);
+            Assert.AreEqual(0, energyLadder.AvailableTier);
+            Assert.Greater(summonSlot1Action.ActiveCueCount, 0, "SummonSlot1 should show a magic-circle entry cue.");
+            Assert.GreaterOrEqual(summonSlot1Action.ActiveProjectileCount, 3);
+            Assert.IsTrue(
+                laneSpace.IsPastForwardBoundary(summonSlot1Action.LastEntryPosition),
+                "Summon entry belongs to the forward battlefield, not the clamped player zone.");
+
+            LaneActionProjectile[] projectiles = Object.FindObjectsByType<LaneActionProjectile>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < projectiles.Length; i++)
+            {
+                if (projectiles[i].SourceTeam == DamageTeam.AllySummon)
+                {
+                    projectiles[i].Tick(0.9f);
+                }
+            }
+
+            bool foundOffLaneSummonProjectile = false;
+            for (int i = 0; i < projectiles.Length; i++)
+            {
+                if (projectiles[i].SourceTeam != DamageTeam.AllySummon)
+                {
+                    continue;
+                }
+
+                Vector2 laneCoordinates = laneSpace.GetLaneCoordinates(projectiles[i].transform.position);
+                if (Mathf.Abs(laneCoordinates.x) > laneSpace.HalfWidth)
+                {
+                    foundOffLaneSummonProjectile = true;
+                    break;
+                }
+            }
+
+            Assert.IsTrue(
+                foundOffLaneSummonProjectile,
+                "SummonSlot1 LV3 should be able to project attacks beyond player lane rails.");
             yield return null;
         }
 
@@ -158,6 +272,19 @@ namespace DimensionBrawl.Tests
             T asset = AssetDatabase.LoadAssetAtPath<T>(assetPath);
             Assert.IsNotNull(asset, $"Missing required asset {assetPath}.");
             return asset;
+        }
+
+        private static void FillEnergyToTier(SummonEnergyLadder energyLadder, int targetTier)
+        {
+            for (int i = 0; i < 120 && energyLadder.AvailableTier < targetTier; i++)
+            {
+                energyLadder.Tick(1f);
+            }
+
+            Assert.GreaterOrEqual(
+                energyLadder.AvailableTier,
+                targetTier,
+                $"Energy ladder should reach tier {targetTier} during the review test.");
         }
 
         private static T GetObjectReference<T>(Object target, string propertyName) where T : Object

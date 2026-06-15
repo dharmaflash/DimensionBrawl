@@ -246,6 +246,20 @@ Implement in this order:
 
 Stop before adding more than three new gameplay scripts without reviewing ownership.
 
+## Current Implementation Checkpoint
+
+The first boss-barrage lane review slice now has these authored pieces:
+
+- `SummonLaneSpace` clamps only the player zone. Summon/frontline actions must use battlefield coordinates and may cross the player forward boundary and lateral player rails when their role requires it.
+- `SummonEnergyLadder` owns the shared `EN LV1~LV3` fill/spend/reset loop for `Skill1` and `SummonSlot1`.
+- `BossBarrageEmitter` and `BossBarrageProjectile` provide the far boss/proxy projectile pressure.
+- `PlayerSkill1Action` spends the current available EN tier and fires an immediate player-side lane projectile toward the current boss/target direction.
+- `PlayerSummonSlot1Action` spends the current available EN tier, shows a magic-circle entry cue beyond the player boundary, and launches same-concept stronger LV1/LV2/LV3 summon-assist projectiles into the frontline battlefield.
+- `LaneActionProjectile` is the shared narrow projectile for Skill1 and SummonSlot1 assist shots. It carries damage authority through `CombatHealth` team checks; VFX/visual polish can be swapped through authored prefabs later.
+- `ActionFoundationBossBarrageLaneReview.unity` is the manual review scene for the fixed rear camera, player boundary, EN gain, boss barrage, Skill1, and SummonSlot1 test loop.
+
+The next implementation should not add a roster or boss phase yet. It should make the existing loop more playable by adding the minimal `BasicDefenseAttack`/close-threat answer, clearer EN/slot HUD feedback, and a short review pocket result.
+
 ## Detailed Implementation Notes
 
 Use this section as the practical order for the next implementation pass. The goal is to make one playable pocket where the player can immediately understand the new game shape: stay behind the line, dodge boss pressure, take forward risk for faster EN, then spend that EN on `Skill1` or `SummonSlot1`.

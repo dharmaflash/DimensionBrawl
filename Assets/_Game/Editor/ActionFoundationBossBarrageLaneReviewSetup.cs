@@ -21,11 +21,24 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Prefabs/Combat/PF_BossBarrageProjectile_NeedleLock.prefab";
         public const string ProjectileMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageProjectile.mat";
+        public const string Skill1ProjectilePrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_PlayerSkill1Projectile_LaneBolt.prefab";
+        public const string SummonSlot1ProjectilePrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Projectile_AssistBolt.prefab";
+        public const string SummonSlot1EntryCuePrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot1EntryCue_MagicCircle.prefab";
+        private const string Skill1ProjectileMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_PlayerSkill1Projectile.mat";
+        private const string SummonSlot1ProjectileMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot1Projectile.mat";
+        private const string SummonSlot1EntryCueMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot1EntryCue.mat";
 
         private const string ReviewRootPrefix = "BossBarrageLaneReview_";
         private const string LaneRootName = ReviewRootPrefix + "SummonLaneSpace";
         private const string BossProxyRootName = ReviewRootPrefix + "BossProxy_NeedleLock";
         private const string ProjectilePoolRootName = ReviewRootPrefix + "ProjectilePool";
+        private const string ActionCuePoolRootName = ReviewRootPrefix + "ActionCuePool";
         private const string MarkerRootName = ReviewRootPrefix + "Markers";
         private const string SummonEntryMarkerName = ReviewRootPrefix + "SummonEntryMarker";
         private const string BossProxyMarkerName = ReviewRootPrefix + "BossProxyMarker";
@@ -60,6 +73,19 @@ namespace DimensionBrawl.Editor
         {
             BossBarragePatternProfile patternProfile = EnsurePatternProfile();
             BossBarrageProjectile projectilePrefab = EnsureProjectilePrefab();
+            LaneActionProjectile skill1ProjectilePrefab = EnsureLaneActionProjectilePrefab(
+                Skill1ProjectilePrefabPath,
+                "PF_PlayerSkill1Projectile_LaneBolt",
+                Skill1ProjectileMaterialPath,
+                new Color(0.45f, 0.9f, 1f, 1f),
+                0.42f);
+            LaneActionProjectile summonSlot1ProjectilePrefab = EnsureLaneActionProjectilePrefab(
+                SummonSlot1ProjectilePrefabPath,
+                "PF_SummonSlot1Projectile_AssistBolt",
+                SummonSlot1ProjectileMaterialPath,
+                new Color(0.55f, 1f, 0.72f, 1f),
+                0.58f);
+            GameObject summonEntryCuePrefab = EnsureSummonEntryCuePrefab();
             Scene scene = EditorSceneManager.OpenScene(ActionFoundationProfileSetup.ScenePath, OpenSceneMode.Single);
             RemoveReviewAndEnemyRoots(scene);
 
@@ -79,8 +105,20 @@ namespace DimensionBrawl.Editor
             SetObjectReference(energyLadder, "trackedPlayer", player.transform);
 
             GameObject projectileRoot = CreateRoot(scene, ProjectilePoolRootName);
+            GameObject actionCueRoot = CreateRoot(scene, ActionCuePoolRootName);
             GameObject bossProxy = CreateBossProxy(scene, laneSpace, patternProfile, projectilePrefab, projectileRoot.transform);
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossProxy, "boss proxy health");
+            ConfigurePlayerEnergyActions(
+                player.gameObject,
+                playerHealth,
+                targetSelector,
+                energyLadder,
+                laneSpace,
+                skill1ProjectilePrefab,
+                summonSlot1ProjectilePrefab,
+                summonEntryCuePrefab,
+                projectileRoot.transform,
+                actionCueRoot.transform);
             ConfigureTargetReferences(targetSelector, cameraTargetBridge, cameraController, player, playerHealth, bossHealth);
             ConfigureEncounter(encounter, playerHealth, bossHealth);
             ConfigureFixedRearCamera(cameraController, player.transform, bossProxy.transform);
@@ -108,10 +146,14 @@ namespace DimensionBrawl.Editor
             GameObject bossProxy = RequireRoot(scene, BossProxyRootName);
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossProxy, "boss barrage emitter");
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossProxy, "boss proxy health");
+            PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "player Skill1 action");
+            PlayerSummonSlot1Action summonSlot1Action =
+                RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "player SummonSlot1 action");
 
             ValidateObjectReference(player, "laneSpace", laneSpace);
             ValidateObjectReference(energyLadder, "laneSpace", laneSpace);
             ValidateObjectReference(energyLadder, "trackedPlayer", player.transform);
+            ValidatePlayerEnergyActions(skill1Action, summonSlot1Action, energyLadder, playerHealth, targetSelector, laneSpace);
             ValidateObjectReference(emitter, "laneSpace", laneSpace);
             ValidateObjectReference(emitter, "trackedPlayer", player.transform);
             ValidateObjectReference(emitter, "sourceHealth", bossHealth);
@@ -129,6 +171,9 @@ namespace DimensionBrawl.Editor
             ValidateSummonForwardSpace(laneSpace);
             ValidateNoImportedAssetReference(ProjectilePrefabPath);
             ValidateNoImportedAssetReference(PatternProfilePath);
+            ValidateNoImportedAssetReference(Skill1ProjectilePrefabPath);
+            ValidateNoImportedAssetReference(SummonSlot1ProjectilePrefabPath);
+            ValidateNoImportedAssetReference(SummonSlot1EntryCuePrefabPath);
         }
 
         private static BossBarragePatternProfile EnsurePatternProfile()
@@ -203,6 +248,98 @@ namespace DimensionBrawl.Editor
             }
 
             return LoadPrefabComponent<BossBarrageProjectile>(ProjectilePrefabPath);
+        }
+
+        private static LaneActionProjectile EnsureLaneActionProjectilePrefab(
+            string prefabPath,
+            string prefabName,
+            string materialPath,
+            Color color,
+            float scale)
+        {
+            EnsureFolderForAsset(prefabPath);
+            Material material = LoadOrCreateMaterial(materialPath, color);
+            bool prefabExists = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath) != null;
+            GameObject editableRoot = prefabExists
+                ? PrefabUtility.LoadPrefabContents(prefabPath)
+                : GameObject.CreatePrimitive(PrimitiveType.Sphere);
+
+            try
+            {
+                editableRoot.name = prefabName;
+                editableRoot.transform.localPosition = Vector3.zero;
+                editableRoot.transform.localRotation = Quaternion.identity;
+                editableRoot.transform.localScale = Vector3.one * Mathf.Max(0.01f, scale);
+
+                MeshRenderer renderer = EnsureComponent<MeshRenderer>(editableRoot);
+                renderer.sharedMaterial = material;
+
+                SphereCollider collider = EnsureComponent<SphereCollider>(editableRoot);
+                collider.isTrigger = true;
+                collider.radius = 0.5f;
+
+                Rigidbody rigidbody = EnsureComponent<Rigidbody>(editableRoot);
+                rigidbody.useGravity = false;
+                rigidbody.isKinematic = true;
+
+                EnsureComponent<LaneActionProjectile>(editableRoot);
+                PrefabUtility.SaveAsPrefabAsset(editableRoot, prefabPath);
+            }
+            finally
+            {
+                if (prefabExists)
+                {
+                    PrefabUtility.UnloadPrefabContents(editableRoot);
+                }
+                else
+                {
+                    UnityEngine.Object.DestroyImmediate(editableRoot);
+                }
+            }
+
+            return LoadPrefabComponent<LaneActionProjectile>(prefabPath);
+        }
+
+        private static GameObject EnsureSummonEntryCuePrefab()
+        {
+            EnsureFolderForAsset(SummonSlot1EntryCuePrefabPath);
+            Material material = LoadOrCreateMaterial(SummonSlot1EntryCueMaterialPath, new Color(0.25f, 1f, 0.68f, 1f));
+            bool prefabExists = AssetDatabase.LoadAssetAtPath<GameObject>(SummonSlot1EntryCuePrefabPath) != null;
+            GameObject editableRoot = prefabExists
+                ? PrefabUtility.LoadPrefabContents(SummonSlot1EntryCuePrefabPath)
+                : GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+
+            try
+            {
+                editableRoot.name = "PF_SummonSlot1EntryCue_MagicCircle";
+                editableRoot.transform.localPosition = Vector3.zero;
+                editableRoot.transform.localRotation = Quaternion.identity;
+                editableRoot.transform.localScale = new Vector3(1f, 0.04f, 1f);
+
+                MeshRenderer renderer = EnsureComponent<MeshRenderer>(editableRoot);
+                renderer.sharedMaterial = material;
+
+                Collider collider = editableRoot.GetComponent<Collider>();
+                if (collider != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(collider);
+                }
+
+                PrefabUtility.SaveAsPrefabAsset(editableRoot, SummonSlot1EntryCuePrefabPath);
+            }
+            finally
+            {
+                if (prefabExists)
+                {
+                    PrefabUtility.UnloadPrefabContents(editableRoot);
+                }
+                else
+                {
+                    UnityEngine.Object.DestroyImmediate(editableRoot);
+                }
+            }
+
+            return LoadAsset<GameObject>(SummonSlot1EntryCuePrefabPath);
         }
 
         private static SummonLaneSpace CreateLaneSpace(Scene scene)
@@ -357,6 +494,42 @@ namespace DimensionBrawl.Editor
             SetObjectReference(encounter, "enemyHealth", bossHealth);
         }
 
+        private static void ConfigurePlayerEnergyActions(
+            GameObject playerRoot,
+            CombatHealth playerHealth,
+            PlayerCombatTargetSelector targetSelector,
+            SummonEnergyLadder energyLadder,
+            SummonLaneSpace laneSpace,
+            LaneActionProjectile skill1ProjectilePrefab,
+            LaneActionProjectile summonSlot1ProjectilePrefab,
+            GameObject summonEntryCuePrefab,
+            Transform projectileRoot,
+            Transform actionCueRoot)
+        {
+            PlayerSkill1Action skill1Action = EnsureComponent<PlayerSkill1Action>(playerRoot);
+            SetObjectReference(skill1Action, "energyLadder", energyLadder);
+            SetObjectReference(skill1Action, "sourceHealth", playerHealth);
+            SetObjectReference(skill1Action, "targetSelector", targetSelector);
+            SetObjectReference(skill1Action, "projectilePrefab", skill1ProjectilePrefab);
+            SetObjectReference(skill1Action, "projectilePrefabObject", LoadAsset<GameObject>(Skill1ProjectilePrefabPath));
+            SetObjectReference(skill1Action, "projectileRoot", projectileRoot);
+            SetEnum(skill1Action, "sourceTeam", (int)DamageTeam.Player);
+            SetInt(skill1Action, "prewarmCount", 6);
+
+            PlayerSummonSlot1Action summonSlot1Action = EnsureComponent<PlayerSummonSlot1Action>(playerRoot);
+            SetObjectReference(summonSlot1Action, "energyLadder", energyLadder);
+            SetObjectReference(summonSlot1Action, "sourceHealth", playerHealth);
+            SetObjectReference(summonSlot1Action, "targetSelector", targetSelector);
+            SetObjectReference(summonSlot1Action, "laneSpace", laneSpace);
+            SetObjectReference(summonSlot1Action, "projectilePrefab", summonSlot1ProjectilePrefab);
+            SetObjectReference(summonSlot1Action, "projectilePrefabObject", LoadAsset<GameObject>(SummonSlot1ProjectilePrefabPath));
+            SetObjectReference(summonSlot1Action, "entryCuePrefab", summonEntryCuePrefab);
+            SetObjectReference(summonSlot1Action, "projectileRoot", projectileRoot);
+            SetObjectReference(summonSlot1Action, "cueRoot", actionCueRoot);
+            SetEnum(summonSlot1Action, "sourceTeam", (int)DamageTeam.AllySummon);
+            SetInt(summonSlot1Action, "prewarmCount", 8);
+        }
+
         private static void ConfigureFixedRearCamera(
             ActionCameraController cameraController,
             Transform player,
@@ -422,6 +595,35 @@ namespace DimensionBrawl.Editor
             {
                 throw new InvalidOperationException("Summon battlefield coordinates must be able to cross lateral lane rails.");
             }
+        }
+
+        private static void ValidatePlayerEnergyActions(
+            PlayerSkill1Action skill1Action,
+            PlayerSummonSlot1Action summonSlot1Action,
+            SummonEnergyLadder energyLadder,
+            CombatHealth playerHealth,
+            PlayerCombatTargetSelector targetSelector,
+            SummonLaneSpace laneSpace)
+        {
+            GameObject projectileRoot = RequireRoot(SceneManager.GetActiveScene(), ProjectilePoolRootName);
+            GameObject actionCueRoot = RequireRoot(SceneManager.GetActiveScene(), ActionCuePoolRootName);
+
+            ValidateObjectReference(skill1Action, "energyLadder", energyLadder);
+            ValidateObjectReference(skill1Action, "sourceHealth", playerHealth);
+            ValidateObjectReference(skill1Action, "targetSelector", targetSelector);
+            ValidateObjectReference(skill1Action, "projectilePrefabObject", LoadAsset<GameObject>(Skill1ProjectilePrefabPath));
+            ValidateObjectReference(skill1Action, "projectileRoot", projectileRoot.transform);
+            ValidateEnum(skill1Action, "sourceTeam", (int)DamageTeam.Player);
+
+            ValidateObjectReference(summonSlot1Action, "energyLadder", energyLadder);
+            ValidateObjectReference(summonSlot1Action, "sourceHealth", playerHealth);
+            ValidateObjectReference(summonSlot1Action, "targetSelector", targetSelector);
+            ValidateObjectReference(summonSlot1Action, "laneSpace", laneSpace);
+            ValidateObjectReference(summonSlot1Action, "projectilePrefabObject", LoadAsset<GameObject>(SummonSlot1ProjectilePrefabPath));
+            ValidateObjectReference(summonSlot1Action, "entryCuePrefab", LoadAsset<GameObject>(SummonSlot1EntryCuePrefabPath));
+            ValidateObjectReference(summonSlot1Action, "projectileRoot", projectileRoot.transform);
+            ValidateObjectReference(summonSlot1Action, "cueRoot", actionCueRoot.transform);
+            ValidateEnum(summonSlot1Action, "sourceTeam", (int)DamageTeam.AllySummon);
         }
 
         private static void ConfigureArenaInfluenceTargets(Scene scene, Transform player, Transform bossProxy)
@@ -668,6 +870,14 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(target);
         }
 
+        private static void SetEnum(UnityEngine.Object target, string propertyName, int value)
+        {
+            var serializedObject = new SerializedObject(target);
+            RequireProperty(serializedObject, propertyName).enumValueIndex = value;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(target);
+        }
+
         private static void SetVector3(UnityEngine.Object target, string propertyName, Vector3 value)
         {
             var serializedObject = new SerializedObject(target);
@@ -719,6 +929,24 @@ namespace DimensionBrawl.Editor
             if (!Mathf.Approximately(actual, expected))
             {
                 throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected}, found {actual}.");
+            }
+        }
+
+        private static void ValidateInt(UnityEngine.Object target, string propertyName, int expected)
+        {
+            int actual = RequireProperty(new SerializedObject(target), propertyName).intValue;
+            if (actual != expected)
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected}, found {actual}.");
+            }
+        }
+
+        private static void ValidateEnum(UnityEngine.Object target, string propertyName, int expected)
+        {
+            int actual = RequireProperty(new SerializedObject(target), propertyName).enumValueIndex;
+            if (actual != expected)
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} expected enum index {expected}, found {actual}.");
             }
         }
 

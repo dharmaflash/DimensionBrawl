@@ -1,4 +1,4 @@
-﻿# Current State
+# Current State
 
 Last updated: 2026-06-15 KST
 
@@ -24,7 +24,9 @@ Last updated: 2026-06-15 KST
 - `SummonLaneAndEnergyTests` now also covers boss-barrage spread shaping, projectile hostile-only damage, and pooled boss-side projectile emission. This remains boss-barrage foundation; it is not a full boss phase system, Skill1, or SummonSlot1 implementation.
 - `Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity` is the first authored fixed-rear boss-barrage lane review scene. It binds the existing player movement, `SummonLaneSpace`, `SummonEnergyLadder`, a far boss proxy, `BossBarrageEmitter`, a visible `NeedleLock` projectile prefab/pattern, fixed rear camera settings, explicit boss target candidate wiring, and player/summon boundary markers.
 - `PF_BossBarrageProjectile_NeedleLock`, `DB_BossBarrage_NeedleLock`, and the boss-barrage lane marker materials are game-owned `_Game` assets for the review slice. `BossBarrageEmitter` keeps both component and prefab-root serialized projectile references so Unity scene serialization persists the authored prefab reference without falling back to raw paths.
-- `ActionFoundationBossBarrageLaneReviewSceneTests` covers review-scene wiring, player-bounded versus summon-crossing battlefield behavior, and visible pooled boss-side projectile emission from the authored scene.
+- `PlayerSkill1Action`, `PlayerSummonSlot1Action`, and `LaneActionProjectile` are the first narrow Skill1/SummonSlot1 runtime slice. `Skill1` spends the current available EN tier and fires an immediate player-side lane projectile. `SummonSlot1` spends the current available EN tier, shows a magic-circle entry cue beyond the player boundary, and launches same-concept stronger LV1/LV2/LV3 summon-assist projectiles into the frontline battlefield using summon battlefield coordinates, not player movement clamps.
+- `PF_PlayerSkill1Projectile_LaneBolt`, `PF_SummonSlot1Projectile_AssistBolt`, `PF_SummonSlot1EntryCue_MagicCircle`, and their game-owned action-foundation materials are authored `_Game` prefabs/materials for the current review slice. They are placeholders for readability and ownership, not final summon art.
+- `ActionFoundationBossBarrageLaneReviewSceneTests` covers review-scene wiring, player-bounded versus summon-crossing battlefield behavior, visible pooled boss-side projectile emission, immediate tiered Skill1 spend/fire, and SummonSlot1 LV3 projectile travel beyond player lane rails.
 - `ACTION_FEEL_TARGETS.md` defines the movement, fixed rear camera, forward-risk `EN LV1~LV3` energy, local-defense attack, tiered skill/summon call, dodge, projectile/hit, and enemy/boss-proxy feel quality targets that action work must improve.
 - `ACTION_FOUNDATION_OWNERSHIP.md` defines the narrow runtime ownership split for the first action-feel implementation.
 - `ACTION_FOUNDATION_TESTING.md` records the first test setup, control map, reference-backed values, first-pass deviations, and deliberate exclusions.
@@ -129,7 +131,7 @@ These must not be committed directly.
 
 ## Next Safe Step
 
-Use `Assets/_Game/DesignDocs/COMBAT_V1_SPEC.md`, `Assets/_Game/DesignDocs/ACTION_FEEL_TARGETS.md`, `Assets/_Game/DesignDocs/ACTION_FOUNDATION_OWNERSHIP.md`, `Assets/_Game/DesignDocs/SUMMON_SYSTEM_REFERENCE_RESEARCH.md`, `Assets/_Game/DesignDocs/CINEMACHINE_INGAME_CUTSCENE_REFERENCE_RESEARCH.md`, and `Assets/_Game/DesignDocs/LINEAR_STAGE_DESIGN_FOUNDATION.md` as implementation guardrails. The next safe step is to work inside `ActionFoundationBossBarrageLaneReview.unity`: define the minimal `BasicDefenseAttack` for close threats, add immediate tiered `Skill1`, then add tiered `SummonSlot1` whose summon/assist can act beyond the player boundary and outside player lane rails when its role requires it. Keep full summon roster/economy, full boss phases, rewards, progression, stage-select UI, and production chapter art out until this first boss-barrage/summon loop is playable.
+Use `Assets/_Game/DesignDocs/COMBAT_V1_SPEC.md`, `Assets/_Game/DesignDocs/ACTION_FEEL_TARGETS.md`, `Assets/_Game/DesignDocs/ACTION_FOUNDATION_OWNERSHIP.md`, `Assets/_Game/DesignDocs/SUMMON_SYSTEM_REFERENCE_RESEARCH.md`, `Assets/_Game/DesignDocs/CINEMACHINE_INGAME_CUTSCENE_REFERENCE_RESEARCH.md`, and `Assets/_Game/DesignDocs/LINEAR_STAGE_DESIGN_FOUNDATION.md` as implementation guardrails. The next safe step is to keep working inside `ActionFoundationBossBarrageLaneReview.unity`: add the minimal `BasicDefenseAttack` for close threats, add readable EN/Skill1/SummonSlot1 review feedback, and define one pocket result condition. Keep full summon roster/economy, full boss phases, rewards, progression, stage-select UI, and production chapter art out until this first boss-barrage/summon loop is playable.
 
 ## Current Risk
 - Unity may recreate project setting folders while packages are inspected. Do not commit package/project setting changes unless they are intentionally reviewed.
