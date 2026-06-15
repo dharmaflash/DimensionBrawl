@@ -14,37 +14,44 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.LobbyGuideFeedbackCatalog
   entries:
   - condition: 0
-    lineKey: lobby_line_default
+    lineKey: ui.lobby.guide_default
     voiceKey: voice_lobby_default
     motionKey: idle
     durationSeconds: 2.4
     weight: 5
     cooldownSeconds: 4
   - condition: 10
-    lineKey: lobby_line_return_combat
+    lineKey: ui.lobby.guide_return_combat
     voiceKey: voice_lobby_return
     motionKey: greet
     durationSeconds: 2.8
     weight: 4
     cooldownSeconds: 8
   - condition: 20
-    lineKey: lobby_line_reward_mock
+    lineKey: ui.lobby.guide_reward_mock
     voiceKey: voice_lobby_reward
     motionKey: notice
     durationSeconds: 2.6
     weight: 3
     cooldownSeconds: 10
   - condition: 30
-    lineKey: lobby_line_summon_ready_mock
+    lineKey: ui.lobby.guide_summon_ready_mock
     voiceKey: voice_lobby_summon
     motionKey: point
     durationSeconds: 2.6
     weight: 3
     cooldownSeconds: 10
   - condition: 40
-    lineKey: lobby_line_retry_prompt
+    lineKey: ui.lobby.guide_retry_prompt
     voiceKey: voice_lobby_retry
     motionKey: encourage
     durationSeconds: 2.2
     weight: 3
     cooldownSeconds: 6
+  - condition: 50
+    lineKey: ui.lobby.guide_character_tapped
+    voiceKey: voice_lobby_tap
+    motionKey: quick_tap
+    durationSeconds: 1.2
+    weight: 4
+    cooldownSeconds: 1.6

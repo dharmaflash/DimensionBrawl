@@ -206,3 +206,17 @@ Before merging UI work from another PC:
 2. Create `UI_LobbyTest` with a guide slot, primary PvE CTA, and compact secondary anchors.
 3. Create `UI_CombatHudTest` with static HUD layout and mock state updates.
 4. Only after the three screens are inspectable, add shared transition/audio/cue data.
+
+## Implementation Notes
+
+### 2026-06-15 Lobby Character Presentation
+
+- `UI_LobbyTest` may contain a separate authored presentation prefab beside the Canvas for a RenderTexture-based lobby character stage.
+- The current lobby character presentation is display-only: `PF_UI_LobbyCharacterStage` frames the game-owned CombatGirl visual with a UI-only camera and renders it into `RT_LobbyCharacterStage`, while `PF_UI_LobbyScreen` displays that texture as a transparent full-screen lobby art layer behind authored UI panels.
+- Lobby character skeletal motion should stay display-only. The lobby stage uses a lobby-only signboard Animator Controller through `LobbyCharacterAnimatorPresenter`, while root/tap/drag reactions stay in `LobbyCharacterStagePresenter`. This follows the PGR-style signboard/action split without binding the lobby UI to the combat/action animator state machine.
+- Lobby character framing uses a PGR-style low-FOV presentation camera plus explicit viewport-fill and composition settings, so size tweaks happen in the prefab instead of through scene transforms.
+- The character RenderTexture should use a landscape-safe presentation ratio and the stage camera should frame against that target texture aspect. The framer should refit after Play-mode presenters have updated once and should keep humanoid foot/toe bones anchored above the lower viewport margin when available, falling back to renderer bounds only for non-humanoid presentation props. This keeps the Game view from clipping the model differently than the Scene view camera preview without hardcoding weapon or mesh names.
+- Lobby character idle/tap reactions should read from `LobbyGuideFeedbackCatalog` rows shaped after the PGR signboard pattern: condition, line key, voice key placeholder, motion key, duration, weight, and cooldown.
+- Lobby screen input should reach the character presentation through a narrow `LobbyCharacterStageInputChannel` asset so the UI prefab and presentation prefab stay inspectable without scene-wide object searches.
+- Unused imported model variants in the lobby character stage, such as extra weapon meshes, may be hidden by `LobbyCharacterStageObjectVisibility`. This is a display-only prefab override list and must not become equipment, inventory, progression, or combat weapon ownership.
+- This slice must not connect the lobby character to player control, combat controllers, summon behavior, progression, account state, rewards, or gacha/economy systems.

@@ -29,6 +29,26 @@ MonoBehaviour:
     domain: Lobby
     value: Choose a route when you are ready.
     note: Default guide line.
+  - key: ui.lobby.guide_return_combat
+    domain: Lobby
+    value: Combat readback complete. Ready for another route.
+    note: Mock return-from-combat signboard line.
+  - key: ui.lobby.guide_reward_mock
+    domain: Lobby
+    value: Reward review placeholder is waiting.
+    note: Mock reward signboard line.
+  - key: ui.lobby.guide_summon_ready_mock
+    domain: Lobby
+    value: Summon slot presentation is ready, behavior is locked.
+    note: Mock summon-ready signboard line.
+  - key: ui.lobby.guide_retry_prompt
+    domain: Lobby
+    value: Recheck the route and try again.
+    note: Mock retry signboard line.
+  - key: ui.lobby.guide_character_tapped
+    domain: Lobby
+    value: Awaiting your next command.
+    note: Character tap signboard line.
   - key: ui.stage.title
     domain: StageSelect
     value: Story V1 Training Route

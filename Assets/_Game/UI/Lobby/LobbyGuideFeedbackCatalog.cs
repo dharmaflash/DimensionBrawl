@@ -9,7 +9,8 @@ namespace DimensionBrawl.UI
         ReturnFromCombat = 10,
         NewRewardDisplay = 20,
         SummonReadyDisplay = 30,
-        RetryPrompt = 40
+        RetryPrompt = 40,
+        CharacterTapped = 50
     }
 
     [CreateAssetMenu(menuName = "DimensionBrawl/UI/Lobby Guide Feedback Catalog")]
