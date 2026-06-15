@@ -61,5 +61,90 @@ namespace DimensionBrawl.Tests
             Object.DestroyImmediate(playerObject);
             Object.DestroyImmediate(laneObject);
         }
+
+        [Test]
+        public void BossBarragePatternTightensProjectileSpreadNearForwardBoundary()
+        {
+            BossBarragePatternProfile pattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+
+            float backlineSpread = pattern.EvaluateHalfSpread(0f);
+            float forwardSpread = pattern.EvaluateHalfSpread(1f);
+
+            Assert.Less(
+                forwardSpread,
+                backlineSpread,
+                "Forward-risk projectile gaps should be tighter than backline gaps.");
+            Assert.AreEqual(-backlineSpread, pattern.GetLateralOffset(0, 3, 0f), 0.001f);
+            Assert.AreEqual(0f, pattern.GetLateralOffset(1, 3, 0f), 0.001f);
+            Assert.AreEqual(backlineSpread, pattern.GetLateralOffset(2, 3, 0f), 0.001f);
+
+            Object.DestroyImmediate(pattern);
+        }
+
+        [Test]
+        public void BossBarrageProjectileDamagesHostileTargetsOnly()
+        {
+            GameObject projectileObject = new GameObject("Projectile");
+            projectileObject.AddComponent<SphereCollider>();
+            projectileObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile projectile = projectileObject.AddComponent<BossBarrageProjectile>();
+
+            GameObject targetObject = new GameObject("Target");
+            SphereCollider targetCollider = targetObject.AddComponent<SphereCollider>();
+            CombatHealth targetHealth = targetObject.AddComponent<CombatHealth>();
+            targetHealth.ConfigureTeam(DamageTeam.Player);
+
+            projectile.Configure(null, DamageTeam.Enemy, 10f, Vector3.back, 0f, 1f, 0.3f);
+            Assert.IsTrue(projectile.TryApplyImpact(targetCollider, Vector3.zero));
+            Assert.AreEqual(90f, targetHealth.CurrentHealth, 0.001f);
+
+            GameObject neutralObject = new GameObject("Neutral");
+            SphereCollider neutralCollider = neutralObject.AddComponent<SphereCollider>();
+            CombatHealth neutralHealth = neutralObject.AddComponent<CombatHealth>();
+            neutralHealth.ConfigureTeam(DamageTeam.Neutral);
+
+            projectile.Configure(null, DamageTeam.Enemy, 10f, Vector3.back, 0f, 1f, 0.3f);
+            Assert.IsFalse(projectile.TryApplyImpact(neutralCollider, Vector3.zero));
+            Assert.AreEqual(100f, neutralHealth.CurrentHealth, 0.001f);
+
+            Object.DestroyImmediate(neutralObject);
+            Object.DestroyImmediate(targetObject);
+            Object.DestroyImmediate(projectileObject);
+        }
+
+        [Test]
+        public void BossBarrageEmitterFiresPooledProjectilesFromBossSide()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.ForwardBoundaryZ);
+            GameObject bossObject = new GameObject("BossProxy");
+            CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+            bossHealth.ConfigureTeam(DamageTeam.Enemy);
+
+            BossBarragePatternProfile pattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            GameObject projectilePrefabObject = new GameObject("BossProjectilePrefab");
+            projectilePrefabObject.AddComponent<SphereCollider>();
+            projectilePrefabObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile projectilePrefab = projectilePrefabObject.AddComponent<BossBarrageProjectile>();
+            projectilePrefabObject.SetActive(false);
+
+            BossBarrageEmitter emitter = bossObject.AddComponent<BossBarrageEmitter>();
+            emitter.ConfigureReferences(lane, playerObject.transform, bossHealth);
+            emitter.ConfigurePattern(pattern, projectilePrefab, pattern.ProjectilesPerWave);
+
+            Assert.IsTrue(emitter.BeginWindup());
+            int spawned = emitter.FirePendingWave();
+
+            Assert.AreEqual(pattern.ProjectilesPerWave, spawned);
+            Assert.AreEqual(pattern.ProjectilesPerWave, emitter.ActiveProjectileCount);
+
+            Object.DestroyImmediate(projectilePrefabObject);
+            Object.DestroyImmediate(pattern);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(laneObject);
+        }
     }
 }

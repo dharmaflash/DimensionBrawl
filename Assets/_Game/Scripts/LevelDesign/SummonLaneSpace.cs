@@ -19,6 +19,12 @@ namespace DimensionBrawl.LevelDesign
         public float BossProxyZ => Mathf.Max(ForwardBoundaryZ, bossProxyZ);
         public float SummonEntryZ => Mathf.Max(ForwardBoundaryZ, summonEntryZ);
 
+        public Vector2 GetLaneCoordinates(Vector3 worldPosition)
+        {
+            Vector3 localPosition = transform.InverseTransformPoint(worldPosition);
+            return new Vector2(localPosition.x, localPosition.z);
+        }
+
         public Vector3 ClampPlayerPosition(Vector3 worldPosition)
         {
             Vector3 localPosition = transform.InverseTransformPoint(worldPosition);
