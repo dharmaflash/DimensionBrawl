@@ -38,6 +38,12 @@ Current review scene gap:
 - limited background depth,
 - route-combat layout exists but art composition is not yet demo-grade.
 
+## Reference Data Boundary
+
+`C:\Ark\SubcultureGameData\games\aether-gazer\enemies-stages` is useful for stage family, difficulty bucket, cost, level, monster catalogue, affix, and stage-reference context. The 2026-06-15 readable join notes explicitly state that direct per-map spawn or wave placement files were not found in that public Lua config snapshot.
+
+For `S1-1 Break Gate`, treat `Assets/_Game/DesignDocs/LINEAR_STAGE_DESIGN_FOUNDATION.md` as the route-placement authority: `EntryRead -> BasicPressure -> BreakGate -> Relief -> FinalStand`. Use `C:\Ark` data as pacing and metadata evidence, not as a direct placement source. The Spring Isles dressing should support those authored pockets with readable terrain, water, background depth, progression gates, and collision-safe walkable surfaces.
+
 ## Adaptation Passes
 
 ### Pass 1: Visual Baseline

@@ -30,6 +30,44 @@ namespace DimensionBrawl.Editor
 
         private static readonly Dictionary<string, string> PromotedAssetPaths = new();
 
+        private static readonly RouteSupportSection[] RouteSupportSections =
+        {
+            new("StartEntry", "SupportDeck_StartEntry", new Vector3(0f, -0.055f, -4.8f), new Vector3(22f, 0.045f, 16f), new Vector3(22f, 0.16f, 16f)),
+            new("EntryToBasic", "SupportDeck_EntryToBasic", new Vector3(0f, -0.055f, 8.0f), new Vector3(24f, 0.045f, 18f), new Vector3(24f, 0.16f, 18f)),
+            new("BasicToBreak", "SupportDeck_BasicToBreak", new Vector3(0f, -0.055f, 21.0f), new Vector3(25f, 0.045f, 20f), new Vector3(25f, 0.16f, 20f)),
+            new("BreakToRelief", "SupportDeck_BreakToRelief", new Vector3(0f, -0.055f, 35.2f), new Vector3(23f, 0.045f, 17f), new Vector3(23f, 0.16f, 17f)),
+            new("FinalStand", "SupportDeck_FinalStand", new Vector3(0f, -0.055f, 49.8f), new Vector3(30f, 0.045f, 23f), new Vector3(30f, 0.16f, 23f)),
+            new("ExitRunout", "SupportDeck_ExitRunout", new Vector3(0f, -0.055f, 63.2f), new Vector3(25f, 0.045f, 13f), new Vector3(25f, 0.16f, 13f)),
+            new("LeftShoulder", "SupportDeck_LeftContinuousShoulder", new Vector3(-13.4f, -0.07f, 28.5f), new Vector3(5.2f, 0.035f, 82f), new Vector3(5.2f, 0.16f, 82f)),
+            new("RightShoulder", "SupportDeck_RightContinuousShoulder", new Vector3(13.4f, -0.07f, 28.5f), new Vector3(5.2f, 0.035f, 82f), new Vector3(5.2f, 0.16f, 82f))
+        };
+
+        private static readonly Vector3[] AuthoredRouteSupportSamples =
+        {
+            new(0f, -0.08f, -10f),
+            new(0f, -0.08f, 1.6f),
+            new(-8f, -0.08f, 1.6f),
+            new(8f, -0.08f, 1.6f),
+            new(-2.6f, -0.08f, 13f),
+            new(2.8f, -0.08f, 14f),
+            new(-9.5f, -0.08f, 13.5f),
+            new(9.5f, -0.08f, 13.5f),
+            new(-3.2f, -0.08f, 26f),
+            new(2.9f, -0.08f, 27f),
+            new(-10f, -0.08f, 26.5f),
+            new(10f, -0.08f, 26.5f),
+            new(0f, -0.08f, 36f),
+            new(-8.5f, -0.08f, 36f),
+            new(8.5f, -0.08f, 36f),
+            new(0f, -0.08f, 45f),
+            new(-6.5f, -0.08f, 49f),
+            new(6f, -0.08f, 47f),
+            new(2.5f, -0.08f, 52f),
+            new(-11.5f, -0.08f, 48.5f),
+            new(11.5f, -0.08f, 48.5f),
+            new(0f, -0.08f, 62.5f)
+        };
+
         [MenuItem("DimensionBrawl/Reapply Action Foundation Spring Isles Stage Dressing")]
         public static void ReapplySpringIslesStageDressingMenu()
         {
@@ -60,9 +98,12 @@ namespace DimensionBrawl.Editor
             SceneManager.MoveGameObjectToScene(root, scene);
 
             StageMaterials materials = EnsureStageMaterials();
-            CreateRouteStones(root.transform);
+            ConfigurePostProcessVolume(root.transform);
+            CreateEnvironmentalMotion(root.transform);
+            CreateRouteStones(root.transform, materials);
             CreateSideSilhouette(root.transform);
             CreateInvasionReadability(root.transform, materials);
+            CreateAtmosphereParticles(root.transform);
             CreateExitRift(root.transform, materials);
             CreateLighting(root.transform);
             CreateProgressionGates(scene, materials);
@@ -80,10 +121,43 @@ namespace DimensionBrawl.Editor
         public static void ValidateOpenScene(Scene scene)
         {
             GameObject root = RequireRoot(scene, SceneDressingRootName);
-            RequireChild(root.transform, "Route");
-            RequireChild(root.transform, "SideSilhouette");
+            Transform routeRoot = RequireChild(root.transform, "Route");
+            RequireChild(routeRoot, "IslandGroundMass");
+            Transform supportDeckRoot = RequireChild(routeRoot, "RouteSupportDeck");
+            for (int i = 0; i < RouteSupportSections.Length; i++)
+            {
+                RequireChild(supportDeckRoot, RouteSupportSections[i].VisibleName);
+            }
+
+            Transform foundationRoot = RequireChild(routeRoot, "StoneRouteFoundation");
+            RequireChild(foundationRoot, "CombatApron_EntryRead_WideFoundation");
+            RequireChild(foundationRoot, "CombatApron_BasicPressure_WideFoundation");
+            RequireChild(foundationRoot, "CombatApron_BreakGate_WideFoundation");
+            RequireChild(foundationRoot, "CombatApron_Relief_WideFoundation");
+            RequireChild(foundationRoot, "CombatApron_FinalStand_WideFoundation");
+            Transform pocketFrames = RequireChild(routeRoot, "PocketCompositionFrames");
+            RequireChild(pocketFrames, "01_EntryRead_Frame");
+            RequireChild(pocketFrames, "02_BasicPressure_Frame");
+            RequireChild(pocketFrames, "03_BreakGate_Frame");
+            RequireChild(pocketFrames, "04_Relief_Frame");
+            RequireChild(pocketFrames, "05_FinalStand_Frame");
+            Transform sideRoot = RequireChild(root.transform, "SideSilhouette");
+            Transform waterRoot = RequireChild(sideRoot, "WaterAndRavineBackdrop");
+            RequireChild(waterRoot, "RouteWaterFoundation");
+            RequireChild(waterRoot, "WaterRippleCues");
+            RequireChild(waterRoot, "WaterVegetationClusters");
+            RequireChild(sideRoot, "BackgroundDepthLayers");
             RequireChild(root.transform, "InvasionReadability");
+            Transform atmosphereRoot = RequireChild(root.transform, "AtmosphereParticles");
+            RequireChild(atmosphereRoot, "SunShaftLayers");
+            RequireChild(atmosphereRoot, "RouteBreezeLayers");
+            RequireChild(atmosphereRoot, "LowFogLayers");
+            RequireChild(atmosphereRoot, "WaterSprayLayers");
             RequireChild(root.transform, "ExitRift");
+            Transform lightingRoot = RequireChild(root.transform, "Lighting");
+            RequireChild(lightingRoot, "ReflectionProbes");
+            RequireChild(root.transform, "SpringIsles_GlobalPostProcess");
+            RequireChild(root.transform, "EnvironmentalMotion");
 
             GameObject progressionRoot = RequireRoot(scene, StageProgressionRootName);
             RequireChild(progressionRoot.transform, "PocketGates");
@@ -91,6 +165,10 @@ namespace DimensionBrawl.Editor
             RequireChild(progressionRoot.transform, "LaneBoundaryBlockers");
             RequireChild(progressionRoot.transform, "RouteFlowCues");
             Transform collisionRoot = RequireChild(progressionRoot.transform, "RouteCollision");
+            for (int i = 0; i < RouteSupportSections.Length; i++)
+            {
+                RequireChild(collisionRoot, RouteSupportSections[i].ColliderName);
+            }
 
             StagePocketProgressionGatePresenter presenter = progressionRoot.GetComponent<StagePocketProgressionGatePresenter>();
             if (presenter == null || presenter.GateCount != 4)
@@ -111,9 +189,21 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException("S1-1 route collision should cover start, route pockets, and exit approach.");
             }
 
+            ValidateRouteSupportCoverage(collisionRoot);
+
             if (root.GetComponentsInChildren<Collider>(includeInactive: true).Length > 0)
             {
                 throw new InvalidOperationException("Spring Isles dressing should stay presentation-only and must not add colliders.");
+            }
+
+            RequireRendererCount(routeRoot, 80, "Spring Isles route/pocket composition");
+            RequireRendererCount(sideRoot, 95, "Spring Isles side silhouette and water composition");
+            RequireRendererCount(atmosphereRoot, 8, "Spring Isles ambient particle composition");
+            ValidateCameraSightlineClearance(root.transform);
+
+            if (lightingRoot.GetComponentsInChildren<ReflectionProbe>(includeInactive: true).Length < 3)
+            {
+                throw new InvalidOperationException("Spring Isles stage review should include near, relief, and final reflection probes.");
             }
 
             if (RenderSettings.skybox == null || !AssetDatabase.GetAssetPath(RenderSettings.skybox).StartsWith(PromotedRoot, StringComparison.Ordinal))
@@ -125,6 +215,8 @@ namespace DimensionBrawl.Editor
             ValidateRendererAssetDependencies(progressionRoot, StageProgressionRootName);
             ValidateFolderAssetDependencies(PrefabRoot);
             ValidateFolderAssetDependencies(MaterialRoot);
+            ValidateFolderAssetDependencies(ProfileRoot);
+            ValidatePromotedTextureDimensions(TextureRoot);
         }
 
         private static void EnsurePromotedAssets()
@@ -152,6 +244,7 @@ namespace DimensionBrawl.Editor
             PromotePresentationPrefab("TSI_Stone_Floor_02A", SpringIslesRoot + "/Prefabs/Building Props/Stone Kit/TSI_Stone_Floor_02A.prefab");
             PromotePresentationPrefab("TSI_Stone_Platform_01A", SpringIslesRoot + "/Prefabs/Building Props/Stone Kit/TSI_Stone_Platform_01A.prefab");
             PromotePresentationPrefab("TSI_Stone_Bridge_01A", SpringIslesRoot + "/Prefabs/Building Props/Stone Kit/TSI_Stone_Bridge_01A.prefab");
+            PromotePresentationPrefab("TSI_Stone_Bridge_01B", SpringIslesRoot + "/Prefabs/Building Props/Stone Kit/TSI_Stone_Bridge_01B.prefab");
             PromotePresentationPrefab("TSI_Stone_Arch_01A", SpringIslesRoot + "/Prefabs/Building Props/Stone Kit/TSI_Stone_Arch_01A.prefab");
             PromotePresentationPrefab("TSI_Stone_Stairs_02B", SpringIslesRoot + "/Prefabs/Building Props/Stone Kit/TSI_Stone_Stairs_02B.prefab");
             PromotePresentationPrefab("TSI_Stone_Step_06A_Module_3", SpringIslesRoot + "/Prefabs/Building Props/Stone Kit/TSI_Stone_Step_06A_Module_3.prefab");
@@ -163,11 +256,20 @@ namespace DimensionBrawl.Editor
             PromotePresentationPrefab("TSI_Stone_Lantern_02A", SpringIslesRoot + "/Prefabs/Building Props/Stone Kit/TSI_Stone_Lantern_02A.prefab");
             PromotePresentationPrefab("TSI_Stone_Lantern_01B", SpringIslesRoot + "/Prefabs/Building Props/Stone Kit/TSI_Stone_Lantern_01B.prefab");
             PromotePresentationPrefab("TSI_Torii_Gate_01A", SpringIslesRoot + "/Prefabs/Building Props/Torii Gate/TSI_Torii_Gate_01A.prefab");
+            PromotePresentationPrefab("TSI_Lamp_Arch_01A", SpringIslesRoot + "/Prefabs/Props/Wood Props/TSI_Lamp_Arch_01A.prefab");
+            PromotePresentationPrefab("TSI_Wood_Bridge_01A", SpringIslesRoot + "/Prefabs/Props/Wood Props/TSI_Wood_Bridge_01A.prefab");
+            PromotePresentationPrefab("TSI_Wood_Platform_01A", SpringIslesRoot + "/Prefabs/Props/Wood Props/TSI_Wood_Platform_01A.prefab");
             PromotePresentationPrefab("TSI_Raked_Sand_02A", SpringIslesRoot + "/Prefabs/Props/Zen Garden Props/TSI_Raked_Sand_02A.prefab");
             PromotePresentationPrefab("TSI_Raked_Sand_03A", SpringIslesRoot + "/Prefabs/Props/Zen Garden Props/TSI_Raked_Sand_03A.prefab");
             PromotePresentationPrefab("TSI_River_Rock_01A", SpringIslesRoot + "/Prefabs/Props/Zen Garden Props/TSI_River_Rock_01A.prefab");
             PromotePresentationPrefab("TSI_River_Rock_02A", SpringIslesRoot + "/Prefabs/Props/Zen Garden Props/TSI_River_Rock_02A.prefab");
+            PromotePresentationPrefab("TSI_River_Rock_03A", SpringIslesRoot + "/Prefabs/Props/Zen Garden Props/TSI_River_Rock_03A.prefab");
+            PromotePresentationPrefab("TSI_Water_Disk_01A", SpringIslesRoot + "/Prefabs/Water/TSI_Water_Disk_01A.prefab");
+            PromotePresentationPrefab("TSI_Water_Ripples_01A", SpringIslesRoot + "/Prefabs/Water/TSI_Water_Ripples_01A.prefab");
+            PromotePresentationPrefab("TSI_Water_Ripples_02A", SpringIslesRoot + "/Prefabs/Water/TSI_Water_Ripples_02A.prefab");
             PromotePresentationPrefab("TSI_Waterfall_02A", SpringIslesRoot + "/Prefabs/Water/TSI_Waterfall_02A.prefab");
+            PromotePresentationPrefab("TSI_Waterfall_03A", SpringIslesRoot + "/Prefabs/Water/TSI_Waterfall_03A.prefab");
+            PromotePresentationPrefab("TSI_Waterfall_04A", SpringIslesRoot + "/Prefabs/Water/TSI_Waterfall_04A.prefab");
             PromotePresentationPrefab("TSI_Gazebo_Board_01A", SpringIslesRoot + "/Prefabs/Building Props/Gazebo Kit/TSI_Gazebo_Board_01A.prefab");
             PromotePresentationPrefab("TSI_Gazebo_Railing_02A", SpringIslesRoot + "/Prefabs/Building Props/Gazebo Kit/TSI_Gazebo_Railing_02A.prefab");
             PromotePresentationPrefab("TSI_Gazebo_Roof_01A", SpringIslesRoot + "/Prefabs/Building Props/Gazebo Kit/TSI_Gazebo_Roof_01A.prefab");
@@ -178,23 +280,57 @@ namespace DimensionBrawl.Editor
             PromotePresentationPrefab("TSI_BG_Mountain_01A", SpringIslesRoot + "/Prefabs/Background/TSI_BG_Mountain_01A.prefab");
             PromotePresentationPrefab("TSI_BG_Mountain_02A", SpringIslesRoot + "/Prefabs/Background/TSI_BG_Mountain_02A.prefab");
             PromotePresentationPrefab("TSI_BG_Mountain_03A", SpringIslesRoot + "/Prefabs/Background/TSI_BG_Mountain_03A.prefab");
+            PromotePresentationPrefab("TSI_Background_Cliff_03A", SpringIslesRoot + "/Prefabs/Rocks/TSI_Background_Cliff_03A.prefab");
+            PromotePresentationPrefab("TSI_Background_Cliff_05A", SpringIslesRoot + "/Prefabs/Rocks/TSI_Background_Cliff_05A.prefab");
+            PromotePresentationPrefab("TSI_Cliff_03B", SpringIslesRoot + "/Prefabs/Rocks/TSI_Cliff_03B.prefab");
             PromotePresentationPrefab("TSI_Rock_Large_03A", SpringIslesRoot + "/Prefabs/Rocks/TSI_Rock_Large_03A.prefab");
+            PromotePresentationPrefab("TSI_Rock_Large_01A", SpringIslesRoot + "/Prefabs/Rocks/TSI_Rock_Large_01A.prefab");
+            PromotePresentationPrefab("TSI_Rock_Large_02B", SpringIslesRoot + "/Prefabs/Rocks/TSI_Rock_Large_02B.prefab");
+            PromotePresentationPrefab("TSI_Rock_Large_04A", SpringIslesRoot + "/Prefabs/Rocks/TSI_Rock_Large_04A.prefab");
+            PromotePresentationPrefab("TSI_Rock_Medium_01A", SpringIslesRoot + "/Prefabs/Rocks/TSI_Rock_Medium_01A.prefab");
             PromotePresentationPrefab("TSI_Rock_Medium_02A", SpringIslesRoot + "/Prefabs/Rocks/TSI_Rock_Medium_02A.prefab");
+            PromotePresentationPrefab("TSI_Rock_Medium_03B", SpringIslesRoot + "/Prefabs/Rocks/TSI_Rock_Medium_03B.prefab");
+            PromotePresentationPrefab("TSI_Rock_Small_03A", SpringIslesRoot + "/Prefabs/Rocks/TSI_Rock_Small_03A.prefab");
             PromotePresentationPrefab("TSI_Amberleaf_Tree_01A", SpringIslesRoot + "/Prefabs/Vegetation/Trees/TSI_Amberleaf_Tree_01A.prefab");
             PromotePresentationPrefab("TSI_Broadleaf_Tree_03A", SpringIslesRoot + "/Prefabs/Vegetation/Trees/TSI_Broadleaf_Tree_03A.prefab");
             PromotePresentationPrefab("TSI_Bamboo_03A", SpringIslesRoot + "/Prefabs/Vegetation/Bamboo/TSI_Bamboo_03A.prefab");
             PromotePresentationPrefab("TSI_Bamboo_04A", SpringIslesRoot + "/Prefabs/Vegetation/Bamboo/TSI_Bamboo_04A.prefab");
             PromotePresentationPrefab("TSI_Bamboo_06A", SpringIslesRoot + "/Prefabs/Vegetation/Bamboo/TSI_Bamboo_06A.prefab");
+            PromotePresentationPrefab("TSI_Amberleaf_Bush_01A", SpringIslesRoot + "/Prefabs/Vegetation/Plants & Flowers/TSI_Amberleaf_Bush_01A.prefab");
+            PromotePresentationPrefab("TSI_Blossom_Bush_01A", SpringIslesRoot + "/Prefabs/Vegetation/Plants & Flowers/TSI_Blossom_Bush_01A.prefab");
+            PromotePresentationPrefab("TSI_Bush_01A", SpringIslesRoot + "/Prefabs/Vegetation/Plants & Flowers/TSI_Bush_01A.prefab");
             PromotePresentationPrefab("TSI_Bush_02A", SpringIslesRoot + "/Prefabs/Vegetation/Plants & Flowers/TSI_Bush_02A.prefab");
             PromotePresentationPrefab("TSI_Bush_02B", SpringIslesRoot + "/Prefabs/Vegetation/Plants & Flowers/TSI_Bush_02B.prefab");
+            PromotePresentationPrefab("TSI_Grass_Patch_01A", SpringIslesRoot + "/Prefabs/Vegetation/Plants & Flowers/TSI_Grass_Patch_01A.prefab");
+            PromotePresentationPrefab("TSI_Grass_Patch_02A", SpringIslesRoot + "/Prefabs/Vegetation/Plants & Flowers/TSI_Grass_Patch_02A.prefab");
             PromotePresentationPrefab("TSI_Grass_Patch_03A", SpringIslesRoot + "/Prefabs/Vegetation/Plants & Flowers/TSI_Grass_Patch_03A.prefab");
             PromotePresentationPrefab("TSI_Grass_Patch_04A", SpringIslesRoot + "/Prefabs/Vegetation/Plants & Flowers/TSI_Grass_Patch_04A.prefab");
+            PromotePresentationPrefab("TSI_Flower_Patch_01A", SpringIslesRoot + "/Prefabs/Vegetation/Plants & Flowers/TSI_Flower_Patch_01A.prefab");
             PromotePresentationPrefab("TSI_Flower_Patch_02A", SpringIslesRoot + "/Prefabs/Vegetation/Plants & Flowers/TSI_Flower_Patch_02A.prefab");
+            PromotePresentationPrefab("TSI_Flower_Patch_03A", SpringIslesRoot + "/Prefabs/Vegetation/Plants & Flowers/TSI_Flower_Patch_03A.prefab");
             PromotePresentationPrefab("TSI_Flower_Bush_01A", SpringIslesRoot + "/Prefabs/Vegetation/Plants & Flowers/TSI_Flower_Bush_01A.prefab");
+            PromotePresentationPrefab("TSI_Leaf_Patch_01A", SpringIslesRoot + "/Prefabs/Vegetation/Plants & Flowers/TSI_Leaf_Patch_01A.prefab");
             PromotePresentationPrefab("TSI_Plant_21C", SpringIslesRoot + "/Prefabs/Vegetation/Plants & Flowers/TSI_Plant_21C.prefab");
             PromotePresentationPrefab("TSI_Wheat_Patch_01A", SpringIslesRoot + "/Prefabs/Vegetation/Plants & Flowers/TSI_Wheat_Patch_01A.prefab");
             PromotePresentationPrefab("TSI_Petals_01A", SpringIslesRoot + "/Prefabs/Vegetation/Plants & Flowers/TSI_Petals_01A.prefab");
+            PromotePresentationPrefab("TSI_Petals_02A", SpringIslesRoot + "/Prefabs/Vegetation/Plants & Flowers/TSI_Petals_02A.prefab");
+            PromotePresentationPrefab("TSI_Petals_03A", SpringIslesRoot + "/Prefabs/Vegetation/Plants & Flowers/TSI_Petals_03A.prefab");
+            PromotePresentationPrefab("TSI_Water_Lily_01A", SpringIslesRoot + "/Prefabs/Vegetation/Water Vegetation/TSI_Water_Lily_01A.prefab");
+            PromotePresentationPrefab("TSI_Water_Lily_04A", SpringIslesRoot + "/Prefabs/Vegetation/Water Vegetation/TSI_Water_Lily_04A.prefab");
+            PromotePresentationPrefab("TSI_Water_Lily_05A", SpringIslesRoot + "/Prefabs/Vegetation/Water Vegetation/TSI_Water_Lily_05A.prefab");
+            PromotePresentationPrefab("TSI_Water_Lily_Flower_01A", SpringIslesRoot + "/Prefabs/Vegetation/Water Vegetation/TSI_Water_Lily_Flower_01A.prefab");
+            PromotePresentationPrefab("TSI_Water_Lily_Flower_02A", SpringIslesRoot + "/Prefabs/Vegetation/Water Vegetation/TSI_Water_Lily_Flower_02A.prefab");
+            PromotePresentationPrefab("TSI_Water_Lily_Stem_01A", SpringIslesRoot + "/Prefabs/Vegetation/Water Vegetation/TSI_Water_Lily_Stem_01A.prefab");
+            PromotePresentationPrefab("TSI_Water_Plant_01A", SpringIslesRoot + "/Prefabs/Vegetation/Water Vegetation/TSI_Water_Plant_01A.prefab");
+            PromotePresentationPrefab("TSI_Water_Plant_03A", SpringIslesRoot + "/Prefabs/Vegetation/Water Vegetation/TSI_Water_Plant_03A.prefab");
+            PromotePresentationPrefab("TSI_Water_Plant_04A", SpringIslesRoot + "/Prefabs/Vegetation/Water Vegetation/TSI_Water_Plant_04A.prefab");
+            PromotePresentationPrefab("TSI_Blowing_Leaves_01A", SpringIslesRoot + "/Particles/TSI_Blowing_Leaves_01A.prefab");
+            PromotePresentationPrefab("TSI_Blowing_Leaves_02A", SpringIslesRoot + "/Particles/TSI_Blowing_Leaves_02A.prefab");
             PromotePresentationPrefab("TSI_Blowing_Petals_01A", SpringIslesRoot + "/Particles/TSI_Blowing_Petals_01A.prefab");
+            PromotePresentationPrefab("TSI_Fog_01A", SpringIslesRoot + "/Particles/TSI_Fog_01A.prefab");
+            PromotePresentationPrefab("TSI_Sun_Shaft_01A", SpringIslesRoot + "/Particles/TSI_Sun_Shaft_01A.prefab");
+            PromotePresentationPrefab("TSI_Water_Particles_01A", SpringIslesRoot + "/Particles/TSI_Water_Particles_01A.prefab");
+            PromotePresentationPrefab("TSI_Water_Particles_02A", SpringIslesRoot + "/Particles/TSI_Water_Particles_02A.prefab");
 
             AssetDatabase.SaveAssets();
         }
@@ -203,12 +339,14 @@ namespace DimensionBrawl.Editor
         {
             Material skybox = PromoteMaterial(SpringIslesRoot + "/Skybox/Materials/TSI_Skybox_02A.mat");
             RenderSettings.skybox = skybox;
-            RenderSettings.ambientMode = AmbientMode.Flat;
-            RenderSettings.ambientLight = new Color(0.46f, 0.48f, 0.43f, 1f);
+            RenderSettings.ambientMode = AmbientMode.Skybox;
+            RenderSettings.ambientIntensity = 1.05f;
+            RenderSettings.ambientLight = new Color(0.54f, 0.58f, 0.52f, 1f);
             RenderSettings.fog = true;
-            RenderSettings.fogMode = FogMode.ExponentialSquared;
-            RenderSettings.fogColor = new Color(0.47f, 0.52f, 0.47f, 1f);
-            RenderSettings.fogDensity = 0.009f;
+            RenderSettings.fogMode = FogMode.Linear;
+            RenderSettings.fogColor = new Color(0.25f, 0.62f, 0.86f, 1f);
+            RenderSettings.fogStartDistance = 18f;
+            RenderSettings.fogEndDistance = 118f;
 
             GameObject cameraObject = FindByName(scene.GetRootGameObjects(), "Main Camera");
             if (cameraObject != null && cameraObject.TryGetComponent(out Camera camera))
@@ -241,9 +379,9 @@ namespace DimensionBrawl.Editor
                         continue;
                     }
 
-                    light.transform.rotation = Quaternion.Euler(46f, -28f, 0f);
-                    light.color = new Color(1f, 0.86f, 0.66f, 1f);
-                    light.intensity = 1.05f;
+                    light.transform.rotation = Quaternion.Euler(43f, -31f, 0f);
+                    light.color = new Color(1f, 0.92f, 0.78f, 1f);
+                    light.intensity = 1.35f;
                     light.shadows = LightShadows.Soft;
                     light.shadowStrength = 0.26f;
                     light.bounceIntensity = 0.15f;
@@ -271,13 +409,41 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(ground.transform);
         }
 
-        private static void CreateRouteStones(Transform root)
+        private static void ConfigurePostProcessVolume(Transform root)
+        {
+            VolumeProfile profile = EnsureSpringIslesPostProcessProfile();
+            GameObject volumeObject = CreateChild(root, "SpringIsles_GlobalPostProcess", Vector3.zero, Quaternion.identity, Vector3.one);
+            Volume volume = volumeObject.AddComponent<Volume>();
+            volume.isGlobal = true;
+            volume.priority = 18f;
+            volume.weight = 1f;
+            volume.sharedProfile = profile;
+            EditorUtility.SetDirty(volume);
+        }
+
+        private static void CreateEnvironmentalMotion(Transform root)
+        {
+            Transform motionRoot = CreateChild(root, "EnvironmentalMotion", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+            GameObject windObject = CreateChild(motionRoot, "SpringIsles_ToonScapesGlobalWind", Vector3.zero, Quaternion.identity, Vector3.one);
+            ShaderGlobalWindDriver wind = windObject.AddComponent<ShaderGlobalWindDriver>();
+            wind.Configure(new Vector3(0.16f, 0f, 0.1f), 12.1f, 2f, 5.5f, 2.8f);
+            EditorUtility.SetDirty(wind);
+        }
+
+        private static void CreateRouteStones(Transform root, StageMaterials materials)
         {
             Transform route = CreateChild(root, "Route", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+            Transform terrain = CreateChild(route, "IslandGroundMass", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+            Transform supportDeck = CreateChild(route, "RouteSupportDeck", Vector3.zero, Quaternion.identity, Vector3.one).transform;
             Transform foundation = CreateChild(route, "StoneRouteFoundation", Vector3.zero, Quaternion.identity, Vector3.one).transform;
             Transform pockets = CreateChild(route, "PocketLandmarks", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+            Transform pocketFrames = CreateChild(route, "PocketCompositionFrames", Vector3.zero, Quaternion.identity, Vector3.one).transform;
             Transform setPieces = CreateChild(route, "RouteSetPieces", Vector3.zero, Quaternion.identity, Vector3.one).transform;
             Transform ornaments = CreateChild(route, "RouteOrnaments", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+
+            CreateIslandGroundMass(terrain);
+            CreateContinuousRouteSupportDeck(supportDeck, materials);
+            CreatePocketCompositionFrames(pocketFrames);
 
             string[] pavementKeys =
             {
@@ -301,6 +467,8 @@ namespace DimensionBrawl.Editor
                 }
             }
 
+            CreateCombatPocketFloorAprons(foundation);
+
             PlacePrefab(pockets, "TSI_Stone_Platform_01A", "Pocket_EntryRead_Platform", new Vector3(0f, 0.055f, 1.6f), Quaternion.identity, new Vector3(1.65f, 1f, 1.65f));
             PlacePrefab(pockets, "TSI_Stone_Platform_01A", "Pocket_BasicPressure_Platform", new Vector3(0f, 0.055f, 13.5f), Quaternion.Euler(0f, 25f, 0f), new Vector3(1.95f, 1f, 1.75f));
             PlacePrefab(pockets, "TSI_Stone_Platform_01A", "Pocket_BreakGate_Platform", new Vector3(0f, 0.055f, 26.5f), Quaternion.Euler(0f, -18f, 0f), new Vector3(2.15f, 1f, 1.9f));
@@ -312,6 +480,11 @@ namespace DimensionBrawl.Editor
             PlacePrefab(setPieces, "TSI_Torii_Gate_01A", "Route_CorruptedTorii_FinalGate", new Vector3(0f, 0.0f, 41.0f), Quaternion.Euler(0f, 180f, 0f), new Vector3(1.35f, 1.35f, 1.35f));
             PlacePrefab(setPieces, "TSI_Stone_Stairs_02B", "Route_ReliefBrokenStairs_Left", new Vector3(-4.6f, 0.0f, 34.4f), Quaternion.Euler(0f, 18f, 0f), new Vector3(0.95f, 0.95f, 0.95f));
             PlacePrefab(setPieces, "TSI_Stone_Step_06A_Module_3", "Route_ReliefBrokenStep_Right", new Vector3(4.8f, 0.0f, 37.4f), Quaternion.Euler(0f, -22f, 0f), new Vector3(1.05f, 1.05f, 1.05f));
+            PlacePrefab(setPieces, "TSI_Stone_Bridge_01B", "Route_BreakPocket_BridgeSlice_Left", new Vector3(-4.9f, 0.02f, 24.4f), Quaternion.Euler(0f, 104f, 0f), new Vector3(0.9f, 0.9f, 0.9f));
+            PlacePrefab(setPieces, "TSI_Wood_Bridge_01A", "Route_Relief_WoodBridgeTrace", new Vector3(0f, 0.04f, 38.6f), Quaternion.Euler(0f, 90f, 0f), new Vector3(1.12f, 1.12f, 1.12f));
+            PlacePrefab(setPieces, "TSI_Wood_Platform_01A", "Route_LeftOverlook_Platform", new Vector3(-8.4f, 0.05f, 31.4f), Quaternion.Euler(0f, 18f, 0f), new Vector3(1.0f, 1.0f, 1.0f));
+            PlacePrefab(setPieces, "TSI_Wood_Platform_01A", "Route_RightOverlook_Platform", new Vector3(8.2f, 0.05f, 43.0f), Quaternion.Euler(0f, -24f, 0f), new Vector3(1.05f, 1.05f, 1.05f));
+            PlacePrefab(setPieces, "TSI_Lamp_Arch_01A", "Route_FinalApproach_LampArch", new Vector3(0f, 0f, 55.4f), Quaternion.Euler(0f, 180f, 0f), new Vector3(1.25f, 1.25f, 1.25f));
 
             PlaceRouteLampPair(ornaments, "EntryLamp", -1.2f, 0.85f);
             PlaceRouteLampPair(ornaments, "BasicLamp", 12.8f, 0.9f);
@@ -323,12 +496,178 @@ namespace DimensionBrawl.Editor
             PlacePrefab(ornaments, "TSI_Paper_Lamp_03A", "Route_HangingLamp_FinalRight", new Vector3(5.6f, 2.2f, 43.8f), Quaternion.Euler(0f, -22f, 0f), new Vector3(0.75f, 0.75f, 0.75f));
         }
 
+        private static void CreateContinuousRouteSupportDeck(Transform parent, StageMaterials materials)
+        {
+            for (int i = 0; i < RouteSupportSections.Length; i++)
+            {
+                RouteSupportSection section = RouteSupportSections[i];
+                CreateSupportDeckPanel(parent, section.VisibleName, section.VisualCenter, section.VisualScale, materials.Ground);
+            }
+        }
+
+        private static void CreateSupportDeckPanel(Transform parent, string name, Vector3 localPosition, Vector3 localScale, Material material)
+        {
+            GameObject panel = CreatePrimitive(parent, name, PrimitiveType.Cube, localPosition, Quaternion.identity, localScale, material);
+            Renderer renderer = panel.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.receiveShadows = true;
+            }
+        }
+
+        private static void CreateCombatPocketFloorAprons(Transform parent)
+        {
+            CreateCombatFloorApron(parent, "EntryRead", 1.6f, 0f, 2.1f, 1.65f, 4.8f, 1.05f);
+            CreateCombatFloorApron(parent, "BasicPressure", 13.5f, 18f, 2.65f, 2.05f, 5.7f, 1.18f);
+            CreateCombatFloorApron(parent, "BreakGate", 26.5f, -16f, 2.95f, 2.25f, 6.2f, 1.22f);
+            CreateCombatFloorApron(parent, "Relief", 36.0f, 6f, 2.2f, 1.55f, 5.2f, 1.02f);
+            CreateCombatFloorApron(parent, "FinalStand", 48.5f, 24f, 3.45f, 2.55f, 7.2f, 1.34f);
+        }
+
+        private static void CreateCombatFloorApron(
+            Transform parent,
+            string label,
+            float z,
+            float yaw,
+            float centerScaleX,
+            float centerScaleZ,
+            float sideX,
+            float sideScale)
+        {
+            PlacePrefab(
+                parent,
+                "TSI_Stone_Platform_01A",
+                $"CombatApron_{label}_WideFoundation",
+                new Vector3(0f, 0.028f, z),
+                Quaternion.Euler(0f, yaw, 0f),
+                new Vector3(centerScaleX, 1f, centerScaleZ));
+
+            PlacePrefab(
+                parent,
+                "TSI_Stone_Floor_01A",
+                $"CombatApron_{label}_LeftWing",
+                new Vector3(-sideX, 0.018f, z + 0.9f),
+                Quaternion.Euler(0f, yaw + 11f, 0f),
+                new Vector3(sideScale * 1.18f, 1f, sideScale));
+
+            PlacePrefab(
+                parent,
+                "TSI_Stone_Floor_02A",
+                $"CombatApron_{label}_RightWing",
+                new Vector3(sideX, 0.018f, z - 0.8f),
+                Quaternion.Euler(0f, yaw - 13f, 0f),
+                new Vector3(sideScale * 1.15f, 1f, sideScale));
+
+            PlacePrefab(
+                parent,
+                "TSI_Stone_Pavement_03A",
+                $"CombatApron_{label}_LeftEdgePaving",
+                new Vector3(-sideX * 0.62f, 0.04f, z - 1.65f),
+                Quaternion.Euler(0f, yaw - 24f, 0f),
+                new Vector3(sideScale * 0.95f, 1f, sideScale * 0.88f));
+
+            PlacePrefab(
+                parent,
+                "TSI_Stone_Pavement_04A",
+                $"CombatApron_{label}_RightEdgePaving",
+                new Vector3(sideX * 0.62f, 0.04f, z + 1.55f),
+                Quaternion.Euler(0f, yaw + 27f, 0f),
+                new Vector3(sideScale * 0.92f, 1f, sideScale * 0.86f));
+        }
+
+        private static void CreatePocketCompositionFrames(Transform parent)
+        {
+            Transform entry = CreateChild(parent, "01_EntryRead_Frame", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+            PlacePrefab(entry, "TSI_Torii_Gate_01A", "EntryRead_HalfGate_BackSilhouette", new Vector3(0f, 0f, -0.6f), Quaternion.Euler(0f, 0f, 0f), Vector3.one * 0.95f);
+            PlacePrefab(entry, "TSI_Bamboo_03A", "EntryRead_BambooScreen_Left", new Vector3(-7.8f, 0f, 3.2f), Quaternion.Euler(0f, 22f, 0f), Vector3.one * 0.92f);
+            PlacePrefab(entry, "TSI_Bamboo_04A", "EntryRead_BambooScreen_Right", new Vector3(7.9f, 0f, 3.7f), Quaternion.Euler(0f, -24f, 0f), Vector3.one * 0.92f);
+            PlacePrefab(entry, "TSI_Petals_01A", "EntryRead_PetalCarpet", new Vector3(0f, 0.045f, 2.5f), Quaternion.Euler(0f, 10f, 0f), Vector3.one * 1.35f);
+
+            Transform basic = CreateChild(parent, "02_BasicPressure_Frame", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+            PlacePrefab(basic, "TSI_Stone_Wall_Curved_01A", "BasicPressure_CloseWall_Left", new Vector3(-6.9f, 0f, 12.1f), Quaternion.Euler(0f, 18f, 0f), Vector3.one * 1.0f);
+            PlacePrefab(basic, "TSI_Stone_Wall_Curved_01A", "BasicPressure_CloseWall_Right", new Vector3(7.0f, 0f, 14.8f), Quaternion.Euler(0f, 162f, 0f), Vector3.one * 1.0f);
+            PlacePrefab(basic, "TSI_Stone_Block_16B", "BasicPressure_LowBlock_Left", new Vector3(-5.4f, 0f, 16.2f), Quaternion.Euler(0f, -14f, 0f), Vector3.one * 1.08f);
+            PlacePrefab(basic, "TSI_Gazebo_Board_01A", "BasicPressure_ReadBoard_Right", new Vector3(6.2f, 0f, 11.4f), Quaternion.Euler(0f, -28f, 0f), Vector3.one * 0.92f);
+
+            Transform breakGate = CreateChild(parent, "03_BreakGate_Frame", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+            PlacePrefab(breakGate, "TSI_Stone_Arch_01A", "BreakGate_DominantArch_Back", new Vector3(0f, 0f, 28.6f), Quaternion.Euler(0f, 180f, 0f), Vector3.one * 1.58f);
+            PlacePrefab(breakGate, "TSI_Stone_Block_19A", "BreakGate_FallenBlock_Left", new Vector3(-5.7f, 0f, 24.3f), Quaternion.Euler(0f, 37f, 0f), Vector3.one * 1.22f);
+            PlacePrefab(breakGate, "TSI_Stone_Block_20B", "BreakGate_FallenBlock_Right", new Vector3(5.9f, 0f, 27.9f), Quaternion.Euler(0f, -34f, 0f), Vector3.one * 1.22f);
+            PlacePrefab(breakGate, "TSI_Rock_Large_04A", "BreakGate_CrackedRock_Left", new Vector3(-9.4f, -0.32f, 29.7f), Quaternion.Euler(0f, 52f, 0f), Vector3.one * 0.92f);
+            PlacePrefab(breakGate, "TSI_Rock_Large_02B", "BreakGate_CrackedRock_Right", new Vector3(9.5f, -0.34f, 25.1f), Quaternion.Euler(0f, -49f, 0f), Vector3.one * 0.9f);
+
+            Transform relief = CreateChild(parent, "04_Relief_Frame", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+            PlacePrefab(relief, "TSI_Wood_Bridge_01A", "Relief_OpenBridge_Center", new Vector3(0f, 0.035f, 36.8f), Quaternion.Euler(0f, 90f, 0f), Vector3.one * 1.28f);
+            PlacePrefab(relief, "TSI_Water_Lily_01A", "Relief_Lily_Left", new Vector3(-6.5f, -0.05f, 35.1f), Quaternion.Euler(0f, 22f, 0f), Vector3.one * 0.92f);
+            PlacePrefab(relief, "TSI_Water_Lily_04A", "Relief_Lily_Right", new Vector3(6.7f, -0.05f, 37.4f), Quaternion.Euler(0f, -18f, 0f), Vector3.one * 0.92f);
+            PlacePrefab(relief, "TSI_Flower_Patch_02A", "Relief_FlowerRestCue_Left", new Vector3(-5.1f, 0.035f, 38.5f), Quaternion.Euler(0f, 33f, 0f), Vector3.one * 0.95f);
+
+            Transform final = CreateChild(parent, "05_FinalStand_Frame", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+            PlacePrefab(final, "TSI_Torii_Gate_01A", "FinalStand_ReversedGate_Back", new Vector3(0f, 0f, 54.3f), Quaternion.Euler(0f, 180f, 0f), Vector3.one * 1.42f);
+            PlacePrefab(final, "TSI_Stone_Platform_01A", "FinalStand_WideAnchor_Center", new Vector3(0f, 0.045f, 48.7f), Quaternion.Euler(0f, 12f, 0f), new Vector3(2.55f, 1f, 2.15f));
+            PlacePrefab(final, "TSI_Stone_Lantern_02A", "FinalStand_Lantern_LeftRear", new Vector3(-7.4f, 0f, 51.0f), Quaternion.Euler(0f, 66f, 0f), Vector3.one * 1.12f);
+            PlacePrefab(final, "TSI_Stone_Lantern_02A", "FinalStand_Lantern_RightRear", new Vector3(7.2f, 0f, 51.6f), Quaternion.Euler(0f, -62f, 0f), Vector3.one * 1.12f);
+            PlacePrefab(final, "TSI_Blossom_Bush_01A", "FinalStand_Blossom_Left", new Vector3(-8.4f, 0f, 47.2f), Quaternion.Euler(0f, 26f, 0f), Vector3.one * 0.92f);
+            PlacePrefab(final, "TSI_Amberleaf_Bush_01A", "FinalStand_AmberBush_Right", new Vector3(8.1f, 0f, 46.8f), Quaternion.Euler(0f, -33f, 0f), Vector3.one * 0.95f);
+        }
+
+        private static void CreateIslandGroundMass(Transform parent)
+        {
+            Transform routeBed = CreateChild(parent, "RouteBedShelves", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+            Transform sideCliffs = CreateChild(parent, "SideCliffShelves", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+            Transform reliefCuts = CreateChild(parent, "ReliefAndBreakCuts", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+
+            for (int i = 0; i < 8; i++)
+            {
+                float z = -8.5f + i * 9.4f;
+                float yaw = i % 2 == 0 ? 4f + i * 3f : -8f - i * 2f;
+                PlacePrefab(
+                    routeBed,
+                    i % 2 == 0 ? "TSI_Stone_Floor_01A" : "TSI_Stone_Floor_02A",
+                    $"RouteBed_FloorMass_{i + 1:00}",
+                    new Vector3(0f, -0.045f, z),
+                    Quaternion.Euler(0f, yaw, 0f),
+                    new Vector3(3.35f + (i % 3) * 0.18f, 1f, 2.25f));
+            }
+
+            PlacePrefab(routeBed, "TSI_Raked_Sand_02A", "RouteBed_EntrySandWash", new Vector3(-2.4f, -0.02f, -1.8f), Quaternion.Euler(0f, 13f, 0f), new Vector3(1.9f, 1f, 1.6f));
+            PlacePrefab(routeBed, "TSI_Raked_Sand_03A", "RouteBed_ReliefSandWash", new Vector3(2.8f, -0.02f, 36.8f), Quaternion.Euler(0f, -16f, 0f), new Vector3(2.15f, 1f, 1.7f));
+            PlacePrefab(routeBed, "TSI_Stone_Platform_01A", "RouteBed_FinalStoneMass", new Vector3(0f, -0.035f, 48.6f), Quaternion.Euler(0f, 20f, 0f), new Vector3(3.05f, 1f, 2.5f));
+
+            for (int i = 0; i < 10; i++)
+            {
+                float z = 4.2f + i * 7.2f;
+                float side = i % 2 == 0 ? -1f : 1f;
+                string rockKey = i < 4
+                    ? (i % 2 == 0 ? "TSI_Rock_Medium_01A" : "TSI_Rock_Small_03A")
+                    : i % 3 == 0 ? "TSI_Rock_Large_01A" : i % 3 == 1 ? "TSI_Rock_Medium_03B" : "TSI_Rock_Large_04A";
+                PlacePrefab(
+                    sideCliffs,
+                    rockKey,
+                    $"IslandEdge_RockShelf_{i + 1:00}",
+                    new Vector3(side * (18.4f + (i % 4) * 1.2f), -1.35f - (i % 3) * 0.16f, z),
+                    Quaternion.Euler(0f, side * (38f + i * 9f), side * (2f + i % 3)),
+                    Vector3.one * (0.48f + (i % 4) * 0.07f));
+            }
+
+            PlacePrefab(sideCliffs, "TSI_Cliff_03B", "IslandEdge_LeftBreakCliff", new Vector3(-40.5f, -8.2f, 48.8f), Quaternion.Euler(0f, 50f, 0f), Vector3.one * 0.78f);
+            PlacePrefab(sideCliffs, "TSI_Cliff_03B", "IslandEdge_RightFinalCliff", new Vector3(41.0f, -8.35f, 72.2f), Quaternion.Euler(0f, -54f, 0f), Vector3.one * 0.82f);
+            PlacePrefab(sideCliffs, "TSI_Background_Cliff_03A", "IslandEdge_LeftDistantUndercut", new Vector3(-49.5f, -9.4f, 64.0f), Quaternion.Euler(0f, 34f, 0f), Vector3.one * 0.95f);
+            PlacePrefab(sideCliffs, "TSI_Background_Cliff_05A", "IslandEdge_RightDistantUndercut", new Vector3(49.0f, -9.55f, 62.4f), Quaternion.Euler(0f, -30f, 0f), Vector3.one * 0.98f);
+
+            PlacePrefab(reliefCuts, "TSI_Stone_Bridge_01B", "BreakGate_BrokenBridgeVisualLeft", new Vector3(-3.8f, -0.03f, 27.6f), Quaternion.Euler(0f, 96f, 0f), new Vector3(1.05f, 1f, 0.92f));
+            PlacePrefab(reliefCuts, "TSI_Wood_Bridge_01A", "Relief_WoodSpanRead", new Vector3(0f, -0.01f, 36.2f), Quaternion.Euler(0f, 90f, 0f), new Vector3(1.25f, 1f, 1.2f));
+            PlacePrefab(reliefCuts, "TSI_Stone_Stairs_02B", "FinalApproach_LiftedStepLeft", new Vector3(-4.7f, -0.02f, 43.5f), Quaternion.Euler(0f, 24f, 0f), Vector3.one * 1.08f);
+            PlacePrefab(reliefCuts, "TSI_Stone_Step_06A_Module_3", "FinalApproach_LiftedStepRight", new Vector3(4.9f, -0.02f, 45.1f), Quaternion.Euler(0f, -28f, 0f), Vector3.one * 1.18f);
+        }
+
         private static void CreateSideSilhouette(Transform root)
         {
             Transform side = CreateChild(root, "SideSilhouette", Vector3.zero, Quaternion.identity, Vector3.one).transform;
             Transform vegetation = CreateChild(side, "VegetationDensity", Vector3.zero, Quaternion.identity, Vector3.one).transform;
             Transform water = CreateChild(side, "WaterAndRavineBackdrop", Vector3.zero, Quaternion.identity, Vector3.one).transform;
             Transform ruins = CreateChild(side, "RuinedShrineSilhouette", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+            Transform depth = CreateChild(side, "BackgroundDepthLayers", Vector3.zero, Quaternion.identity, Vector3.one).transform;
 
             PlaceSidePair(side, "TSI_Stone_Wall_Straight_01A", "SideWall_Entry", 8.8f, 3.0f, 1.1f, 0f);
             PlaceSidePair(side, "TSI_Stone_Wall_Curved_01A", "SideWall_BasicPressure", 9.5f, 15.5f, 1.2f, 12f);
@@ -336,8 +675,8 @@ namespace DimensionBrawl.Editor
             PlaceSidePair(side, "TSI_Stone_Block_16B", "ChunkyBoundary_Basic", 10.6f, 12.0f, 1.1f, 19f);
             PlaceSidePair(side, "TSI_Stone_Block_19A", "ChunkyBoundary_Break", 10.8f, 25.2f, 1.25f, -12f);
             PlaceSidePair(side, "TSI_Stone_Block_20B", "ChunkyBoundary_Final", 11.0f, 47.8f, 1.3f, 28f);
-            PlaceSidePair(side, "TSI_Rock_Large_03A", "LargeRock_Final", 11.2f, 49.0f, 1.7f, 24f);
-            PlaceSidePair(side, "TSI_Rock_Medium_02A", "MediumRock_Relief", 7.4f, 36.2f, 1.2f, -18f);
+            PlaceSidePair(side, "TSI_Rock_Large_03A", "LargeRock_Final", 23.5f, 53.0f, 0.52f, 24f, -1.25f);
+            PlaceSidePair(side, "TSI_Rock_Medium_02A", "MediumRock_Relief", 12.4f, 36.2f, 0.82f, -18f, -0.35f);
 
             PlacePrefab(vegetation, "TSI_Amberleaf_Tree_01A", "Canopy_Left_Entry", new Vector3(-12.4f, 0f, 0.5f), Quaternion.Euler(0f, 26f, 0f), new Vector3(1.25f, 1.25f, 1.25f));
             PlacePrefab(vegetation, "TSI_Broadleaf_Tree_03A", "Canopy_Right_Basic", new Vector3(12.6f, 0f, 14.2f), Quaternion.Euler(0f, -31f, 0f), new Vector3(1.2f, 1.2f, 1.2f));
@@ -345,22 +684,26 @@ namespace DimensionBrawl.Editor
             PlacePrefab(vegetation, "TSI_Broadleaf_Tree_03A", "Canopy_Right_Final", new Vector3(13.8f, 0f, 50.5f), Quaternion.Euler(0f, 40f, 0f), new Vector3(1.45f, 1.45f, 1.45f));
             CreateVegetationClusters(vegetation);
 
+            CreateWaterFoundation(water);
+
             PlacePrefab(water, "TSI_Raked_Sand_02A", "ZenSand_LeftReliefBed", new Vector3(-9.4f, 0.02f, 35.4f), Quaternion.Euler(0f, 12f, 0f), new Vector3(1.4f, 1f, 1.4f));
             PlacePrefab(water, "TSI_Raked_Sand_03A", "ZenSand_RightFinalBed", new Vector3(9.3f, 0.02f, 45.8f), Quaternion.Euler(0f, -18f, 0f), new Vector3(1.55f, 1f, 1.55f));
             PlacePrefab(water, "TSI_Waterfall_02A", "DistantWaterfall_LeftBreak", new Vector3(-17.5f, -0.4f, 31.0f), Quaternion.Euler(0f, 72f, 0f), new Vector3(1.4f, 1.4f, 1.4f));
+            PlacePrefab(water, "TSI_Waterfall_03A", "DistantWaterfall_RightRelief", new Vector3(18.5f, -0.35f, 39.2f), Quaternion.Euler(0f, -78f, 0f), new Vector3(1.35f, 1.35f, 1.35f));
+            PlacePrefab(water, "TSI_Waterfall_04A", "DistantWaterfall_ExitLayer", new Vector3(-18.8f, -0.55f, 58.4f), Quaternion.Euler(0f, 63f, 0f), new Vector3(1.55f, 1.55f, 1.55f));
             PlacePrefab(water, "TSI_River_Rock_01A", "RiverRock_LeftReliefA", new Vector3(-8.0f, 0f, 33.8f), Quaternion.Euler(0f, 21f, 0f), new Vector3(1.1f, 1.1f, 1.1f));
             PlacePrefab(water, "TSI_River_Rock_02A", "RiverRock_RightReliefB", new Vector3(8.4f, 0f, 37.8f), Quaternion.Euler(0f, -16f, 0f), new Vector3(1.25f, 1.25f, 1.25f));
+            PlacePrefab(water, "TSI_River_Rock_03A", "RiverRock_FinalPoolC", new Vector3(-9.2f, 0f, 50.8f), Quaternion.Euler(0f, 38f, 0f), new Vector3(1.18f, 1.18f, 1.18f));
 
             PlacePrefab(ruins, "TSI_Gazebo_Roof_01A", "BrokenGazeboRoof_BackLeft", new Vector3(-13.6f, 1.15f, 20.4f), Quaternion.Euler(0f, 28f, -8f), new Vector3(0.92f, 0.92f, 0.92f));
             PlacePrefab(ruins, "TSI_Gazebo_Railing_02A", "BrokenGazeboRailing_BackRight", new Vector3(11.6f, 0f, 22.6f), Quaternion.Euler(0f, -42f, 0f), new Vector3(1.15f, 1.15f, 1.15f));
             PlacePrefab(ruins, "TSI_Gazebo_Board_01A", "BrokenGazeboBoard_Final", new Vector3(-10.5f, 0f, 53.0f), Quaternion.Euler(0f, 14f, 0f), new Vector3(1.1f, 1.1f, 1.1f));
 
-            PlacePrefab(side, "TSI_BG_Hill_01A", "Background_Hill_Left", new Vector3(-23f, -0.6f, 62f), Quaternion.Euler(0f, 22f, 0f), new Vector3(5.4f, 5.4f, 5.4f));
-            PlacePrefab(side, "TSI_BG_Hill_02A", "Background_Hill_RightLayer", new Vector3(21f, -0.8f, 58f), Quaternion.Euler(0f, -32f, 0f), new Vector3(5.2f, 5.2f, 5.2f));
-            PlacePrefab(side, "TSI_BG_Cliff_01A", "Background_Cliff_Right", new Vector3(24f, -0.7f, 66f), Quaternion.Euler(0f, -24f, 0f), new Vector3(5.8f, 5.8f, 5.8f));
-            PlacePrefab(side, "TSI_BG_Mountain_01A", "Background_Mountain_Center", new Vector3(0f, -1.2f, 84f), Quaternion.identity, new Vector3(8.5f, 8.5f, 8.5f));
-            PlacePrefab(side, "TSI_BG_Mountain_02A", "Background_Mountain_LeftLayer", new Vector3(-18f, -1.1f, 80f), Quaternion.Euler(0f, 16f, 0f), new Vector3(7.2f, 7.2f, 7.2f));
-            PlacePrefab(side, "TSI_BG_Mountain_03A", "Background_Mountain_RightLayer", new Vector3(18f, -1.4f, 88f), Quaternion.Euler(0f, -19f, 0f), new Vector3(7.8f, 7.8f, 7.8f));
+            PlacePrefab(depth, "TSI_BG_Hill_01A", "Background_Hill_Left", new Vector3(-42f, -6.4f, 112f), Quaternion.Euler(0f, 22f, 0f), new Vector3(2.45f, 2.45f, 2.45f));
+            PlacePrefab(depth, "TSI_BG_Hill_02A", "Background_Hill_RightLayer", new Vector3(44f, -6.8f, 114f), Quaternion.Euler(0f, -32f, 0f), new Vector3(2.35f, 2.35f, 2.35f));
+            PlacePrefab(depth, "TSI_BG_Mountain_01A", "Background_Mountain_Center", new Vector3(0f, -13.8f, 168f), Quaternion.identity, new Vector3(2.65f, 2.65f, 2.65f));
+            PlacePrefab(depth, "TSI_BG_Mountain_02A", "Background_Mountain_LeftLayer", new Vector3(-48f, -13.2f, 158f), Quaternion.Euler(0f, 16f, 0f), new Vector3(2.35f, 2.35f, 2.35f));
+            PlacePrefab(depth, "TSI_BG_Mountain_03A", "Background_Mountain_RightLayer", new Vector3(48f, -13.6f, 164f), Quaternion.Euler(0f, -19f, 0f), new Vector3(2.45f, 2.45f, 2.45f));
         }
 
         private static void CreateInvasionReadability(Transform root, StageMaterials materials)
@@ -386,6 +729,30 @@ namespace DimensionBrawl.Editor
                 motion.Configure(new Vector3(0f, 38f + i * 3f, 12f), new Vector3(0.15f, 1f, 0.2f), 0.34f, 0.16f + i * 0.05f, i * 0.31f);
                 EditorUtility.SetDirty(motion);
             }
+        }
+
+        private static void CreateAtmosphereParticles(Transform root)
+        {
+            Transform atmosphere = CreateChild(root, "AtmosphereParticles", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+            Transform shafts = CreateChild(atmosphere, "SunShaftLayers", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+            Transform breeze = CreateChild(atmosphere, "RouteBreezeLayers", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+            Transform fog = CreateChild(atmosphere, "LowFogLayers", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+            Transform spray = CreateChild(atmosphere, "WaterSprayLayers", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+
+            PlacePrefab(shafts, "TSI_Sun_Shaft_01A", "SunShaft_EntryCanopy", new Vector3(-7.2f, 4.8f, 5.8f), Quaternion.Euler(0f, 26f, 0f), Vector3.one * 2.2f);
+            PlacePrefab(shafts, "TSI_Sun_Shaft_01A", "SunShaft_BreakGate", new Vector3(6.4f, 5.2f, 27.4f), Quaternion.Euler(0f, -18f, 0f), Vector3.one * 2.6f);
+            PlacePrefab(shafts, "TSI_Sun_Shaft_01A", "SunShaft_FinalRift", new Vector3(-5.8f, 5.7f, 49.6f), Quaternion.Euler(0f, 34f, 0f), Vector3.one * 2.9f);
+
+            PlacePrefab(breeze, "TSI_Blowing_Leaves_01A", "BreezeLeaves_LeftRoute", new Vector3(-4.8f, 1.6f, 10.5f), Quaternion.Euler(0f, 18f, 0f), Vector3.one * 1.35f);
+            PlacePrefab(breeze, "TSI_Blowing_Leaves_02A", "BreezeLeaves_RightBreak", new Vector3(5.2f, 1.8f, 29.5f), Quaternion.Euler(0f, -26f, 0f), Vector3.one * 1.45f);
+            PlacePrefab(breeze, "TSI_Blowing_Petals_01A", "BreezePetals_FinalStand", new Vector3(1.4f, 1.9f, 46.8f), Quaternion.Euler(0f, 12f, 0f), Vector3.one * 1.55f);
+
+            PlacePrefab(fog, "TSI_Fog_01A", "LowFog_EntryPocket", new Vector3(0f, 0.14f, 2.2f), Quaternion.identity, new Vector3(2.1f, 1f, 2.1f));
+            PlacePrefab(fog, "TSI_Fog_01A", "LowFog_BreakGate", new Vector3(0f, 0.14f, 26.5f), Quaternion.Euler(0f, 12f, 0f), new Vector3(2.4f, 1f, 2.4f));
+            PlacePrefab(fog, "TSI_Fog_01A", "LowFog_FinalStand", new Vector3(0f, 0.14f, 49.5f), Quaternion.Euler(0f, -16f, 0f), new Vector3(2.7f, 1f, 2.7f));
+
+            PlacePrefab(spray, "TSI_Water_Particles_01A", "WaterMist_LeftRelief", new Vector3(-10.4f, 0.8f, 33.8f), Quaternion.Euler(0f, 32f, 0f), Vector3.one * 1.2f);
+            PlacePrefab(spray, "TSI_Water_Particles_02A", "WaterMist_RightRavine", new Vector3(9.8f, 0.85f, 38.6f), Quaternion.Euler(0f, -24f, 0f), Vector3.one * 1.15f);
         }
 
         private static void CreateExitRift(Transform root, StageMaterials materials)
@@ -418,6 +785,7 @@ namespace DimensionBrawl.Editor
             CreatePointLight(lighting, "RiftCoolBackLight", new Vector3(0f, 5.2f, 56f), new Color(0.24f, 0.62f, 1f, 1f), 2.3f, 30f);
             CreatePointLight(lighting, "FireSideLight_Left", new Vector3(-6.2f, 2.2f, 25.5f), new Color(1f, 0.34f, 0.11f, 1f), 0.9f, 12f);
             CreatePointLight(lighting, "FireSideLight_Right", new Vector3(6.4f, 2.1f, 48.5f), new Color(1f, 0.42f, 0.14f, 1f), 0.8f, 13f);
+            CreateReflectionProbes(lighting);
         }
 
         private static void CreateProgressionGates(Scene scene, StageMaterials materials)
@@ -645,9 +1013,9 @@ namespace DimensionBrawl.Editor
             GameObject mainRoute = CreateBlockingPanel(
                 parent,
                 "RouteFloorCollider_MainPath",
-                new Vector3(0f, -0.08f, 26f),
+                new Vector3(0f, -0.08f, 28f),
                 Quaternion.identity,
-                new Vector3(15.5f, 0.16f, 78f),
+                new Vector3(25f, 0.16f, 86f),
                 materials.CollisionPreview,
                 out _);
             HideRenderer(mainRoute);
@@ -657,7 +1025,7 @@ namespace DimensionBrawl.Editor
                 "RouteFloorCollider_StartApron",
                 new Vector3(0f, -0.08f, -10.2f),
                 Quaternion.identity,
-                new Vector3(13.5f, 0.16f, 9.5f),
+                new Vector3(22f, 0.16f, 12f),
                 materials.CollisionPreview,
                 out _);
             HideRenderer(startApron);
@@ -667,10 +1035,47 @@ namespace DimensionBrawl.Editor
                 "RouteFloorCollider_FinalExit",
                 new Vector3(0f, -0.08f, 62.5f),
                 Quaternion.identity,
-                new Vector3(18f, 0.16f, 12f),
+                new Vector3(27f, 0.16f, 15f),
                 materials.CollisionPreview,
                 out _);
             HideRenderer(finalApron);
+
+            for (int i = 0; i < RouteSupportSections.Length; i++)
+            {
+                CreateRouteSupportCollider(parent, RouteSupportSections[i], materials);
+            }
+
+            CreatePocketFloorCollider(parent, "EntryRead", new Vector3(0f, -0.08f, 1.6f), new Vector3(21f, 0.16f, 13f), materials);
+            CreatePocketFloorCollider(parent, "BasicPressure", new Vector3(0f, -0.08f, 13.5f), new Vector3(24.5f, 0.16f, 17f), materials);
+            CreatePocketFloorCollider(parent, "BreakGate", new Vector3(0f, -0.08f, 26.5f), new Vector3(25.5f, 0.16f, 18f), materials);
+            CreatePocketFloorCollider(parent, "Relief", new Vector3(0f, -0.08f, 36f), new Vector3(22f, 0.16f, 12f), materials);
+            CreatePocketFloorCollider(parent, "FinalStand", new Vector3(0f, -0.08f, 48.5f), new Vector3(30f, 0.16f, 20f), materials);
+        }
+
+        private static void CreateRouteSupportCollider(Transform parent, RouteSupportSection section, StageMaterials materials)
+        {
+            GameObject floor = CreateBlockingPanel(
+                parent,
+                section.ColliderName,
+                section.ColliderCenter,
+                Quaternion.identity,
+                section.ColliderScale,
+                materials.CollisionPreview,
+                out _);
+            HideRenderer(floor);
+        }
+
+        private static void CreatePocketFloorCollider(Transform parent, string label, Vector3 localPosition, Vector3 localScale, StageMaterials materials)
+        {
+            GameObject floor = CreateBlockingPanel(
+                parent,
+                $"RouteFloorCollider_{label}_CombatApron",
+                localPosition,
+                Quaternion.identity,
+                localScale,
+                materials.CollisionPreview,
+                out _);
+            HideRenderer(floor);
         }
 
         private static void HideRenderer(GameObject target)
@@ -692,19 +1097,27 @@ namespace DimensionBrawl.Editor
         {
             string[] denseKeys =
             {
+                "TSI_Amberleaf_Bush_01A",
+                "TSI_Blossom_Bush_01A",
+                "TSI_Bush_01A",
                 "TSI_Grass_Patch_03A",
                 "TSI_Grass_Patch_04A",
+                "TSI_Grass_Patch_01A",
+                "TSI_Grass_Patch_02A",
+                "TSI_Flower_Patch_01A",
+                "TSI_Flower_Patch_03A",
+                "TSI_Leaf_Patch_01A",
                 "TSI_Bush_02A",
                 "TSI_Bush_02B",
                 "TSI_Plant_21C",
                 "TSI_Wheat_Patch_01A"
             };
 
-            for (int i = 0; i < 24; i++)
+            for (int i = 0; i < 44; i++)
             {
                 float side = i % 2 == 0 ? -1f : 1f;
-                float z = -4f + i * 2.7f;
-                float x = side * (6.8f + (i % 4) * 1.15f);
+                float z = -4f + i * 1.75f;
+                float x = side * (6.5f + (i % 5) * 0.82f);
                 string key = denseKeys[i % denseKeys.Length];
                 PlacePrefab(
                     parent,
@@ -712,10 +1125,10 @@ namespace DimensionBrawl.Editor
                     $"RouteVegetation_{i + 1:00}_{key}",
                     new Vector3(x, 0.02f, z),
                     Quaternion.Euler(0f, i * 31f, 0f),
-                    Vector3.one * (0.72f + (i % 5) * 0.08f));
+                    Vector3.one * (0.62f + (i % 6) * 0.075f));
             }
 
-            for (int i = 0; i < 10; i++)
+            for (int i = 0; i < 16; i++)
             {
                 float side = i % 2 == 0 ? -1f : 1f;
                 string bambooKey = i % 3 == 0 ? "TSI_Bamboo_03A" : i % 3 == 1 ? "TSI_Bamboo_04A" : "TSI_Bamboo_06A";
@@ -723,21 +1136,73 @@ namespace DimensionBrawl.Editor
                     parent,
                     bambooKey,
                     $"BambooScreen_{i + 1:00}",
-                    new Vector3(side * (10.5f + (i % 2) * 1.3f), 0f, 4f + i * 5.1f),
+                    new Vector3(side * (10.2f + (i % 3) * 0.9f), 0f, 1.5f + i * 3.6f),
                     Quaternion.Euler(0f, side * (18f + i * 7f), 0f),
-                    Vector3.one * (0.95f + (i % 4) * 0.1f));
+                    Vector3.one * (0.86f + (i % 4) * 0.09f));
             }
 
             PlacePrefab(parent, "TSI_Flower_Patch_02A", "FlowerPatch_Relief_Left", new Vector3(-6.4f, 0.02f, 35.8f), Quaternion.Euler(0f, 28f, 0f), Vector3.one);
             PlacePrefab(parent, "TSI_Flower_Bush_01A", "FlowerBush_Final_Right", new Vector3(7.4f, 0f, 49.6f), Quaternion.Euler(0f, -42f, 0f), Vector3.one * 0.95f);
             PlacePrefab(parent, "TSI_Petals_01A", "PetalLayer_Entry", new Vector3(-4.2f, 0.035f, 2.2f), Quaternion.Euler(0f, 12f, 0f), Vector3.one * 1.2f);
+            PlacePrefab(parent, "TSI_Petals_02A", "PetalLayer_BreakLeft", new Vector3(-5.5f, 0.035f, 25.8f), Quaternion.Euler(0f, 24f, 0f), Vector3.one * 1.1f);
+            PlacePrefab(parent, "TSI_Petals_03A", "PetalLayer_FinalRight", new Vector3(5.8f, 0.035f, 49.2f), Quaternion.Euler(0f, -32f, 0f), Vector3.one * 1.25f);
             PlacePrefab(parent, "TSI_Blowing_Petals_01A", "BlowingPetals_FinalBreeze", new Vector3(4.8f, 1.8f, 46.5f), Quaternion.Euler(0f, -35f, 0f), Vector3.one);
         }
 
-        private static void PlaceSidePair(Transform parent, string prefabKey, string baseName, float x, float z, float scale, float yaw)
+        private static void CreateWaterFoundation(Transform parent)
         {
-            PlacePrefab(parent, prefabKey, baseName + "_Left", new Vector3(-x, 0f, z), Quaternion.Euler(0f, yaw, 0f), new Vector3(scale, scale, scale));
-            PlacePrefab(parent, prefabKey, baseName + "_Right", new Vector3(x, 0f, z), Quaternion.Euler(0f, 180f - yaw, 0f), new Vector3(scale, scale, scale));
+            Transform surfaces = CreateChild(parent, "RouteWaterFoundation", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+            Transform ripples = CreateChild(parent, "WaterRippleCues", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+            Transform plants = CreateChild(parent, "WaterVegetationClusters", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+
+            PlacePrefab(surfaces, "TSI_Water_Disk_01A", "WaterPlane_LeftEntry", new Vector3(-12.2f, -0.18f, 5.8f), Quaternion.Euler(0f, 14f, 0f), new Vector3(4.2f, 1f, 3.1f));
+            PlacePrefab(surfaces, "TSI_Water_Disk_01A", "WaterPlane_RightBreak", new Vector3(13.1f, -0.2f, 27.6f), Quaternion.Euler(0f, -21f, 0f), new Vector3(4.7f, 1f, 3.5f));
+            PlacePrefab(surfaces, "TSI_Water_Disk_01A", "WaterPlane_LeftFinal", new Vector3(-13.8f, -0.22f, 51.2f), Quaternion.Euler(0f, 25f, 0f), new Vector3(5.4f, 1f, 4.0f));
+
+            PlacePrefab(ripples, "TSI_Water_Ripples_01A", "Ripple_EntryA", new Vector3(-10.8f, -0.12f, 4.9f), Quaternion.Euler(0f, 28f, 0f), Vector3.one * 1.2f);
+            PlacePrefab(ripples, "TSI_Water_Ripples_02A", "Ripple_EntryB", new Vector3(-13.6f, -0.11f, 7.3f), Quaternion.Euler(0f, -16f, 0f), Vector3.one * 1.05f);
+            PlacePrefab(ripples, "TSI_Water_Ripples_01A", "Ripple_BreakA", new Vector3(11.6f, -0.11f, 26.1f), Quaternion.Euler(0f, 42f, 0f), Vector3.one * 1.25f);
+            PlacePrefab(ripples, "TSI_Water_Ripples_02A", "Ripple_BreakB", new Vector3(14.7f, -0.1f, 29.4f), Quaternion.Euler(0f, -31f, 0f), Vector3.one * 1.35f);
+            PlacePrefab(ripples, "TSI_Water_Ripples_01A", "Ripple_FinalA", new Vector3(-15.7f, -0.1f, 49.4f), Quaternion.Euler(0f, 19f, 0f), Vector3.one * 1.35f);
+            PlacePrefab(ripples, "TSI_Water_Ripples_02A", "Ripple_FinalB", new Vector3(-11.2f, -0.11f, 53.0f), Quaternion.Euler(0f, -26f, 0f), Vector3.one * 1.15f);
+
+            string[] plantKeys =
+            {
+                "TSI_Water_Lily_01A",
+                "TSI_Water_Lily_04A",
+                "TSI_Water_Lily_05A",
+                "TSI_Water_Lily_Stem_01A",
+                "TSI_Water_Lily_Flower_01A",
+                "TSI_Water_Lily_Flower_02A",
+                "TSI_Water_Plant_01A",
+                "TSI_Water_Plant_03A",
+                "TSI_Water_Plant_04A"
+            };
+
+            Vector3[] clusterCenters =
+            {
+                new Vector3(-12.2f, -0.05f, 5.9f),
+                new Vector3(13.1f, -0.05f, 27.6f),
+                new Vector3(-13.8f, -0.05f, 51.2f)
+            };
+
+            for (int i = 0; i < 27; i++)
+            {
+                Vector3 center = clusterCenters[i % clusterCenters.Length];
+                float radius = 1.15f + (i % 4) * 0.38f;
+                float angle = i * 137.5f * Mathf.Deg2Rad;
+                string prefabKey = plantKeys[i % plantKeys.Length];
+                Vector3 position = center + new Vector3(Mathf.Cos(angle) * radius, 0f, Mathf.Sin(angle) * radius * 0.68f);
+                Quaternion rotation = Quaternion.Euler(0f, i * 31f, 0f);
+                float scale = 0.72f + (i % 5) * 0.08f;
+                PlacePrefab(plants, prefabKey, $"WaterPlant_{i + 1:00}_{prefabKey}", position, rotation, Vector3.one * scale);
+            }
+        }
+
+        private static void PlaceSidePair(Transform parent, string prefabKey, string baseName, float x, float z, float scale, float yaw, float y = 0f)
+        {
+            PlacePrefab(parent, prefabKey, baseName + "_Left", new Vector3(-x, y, z), Quaternion.Euler(0f, yaw, 0f), new Vector3(scale, scale, scale));
+            PlacePrefab(parent, prefabKey, baseName + "_Right", new Vector3(x, y, z), Quaternion.Euler(0f, 180f - yaw, 0f), new Vector3(scale, scale, scale));
         }
 
         private static GameObject PlacePrefab(Transform parent, string prefabKey, string name, Vector3 localPosition, Quaternion localRotation, Vector3 localScale)
@@ -866,6 +1331,28 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(light);
         }
 
+        private static void CreateReflectionProbes(Transform parent)
+        {
+            Transform probes = CreateChild(parent, "ReflectionProbes", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+            CreateReflectionProbe(probes, "ReflectionProbe_EntryWater", new Vector3(0f, 3.1f, 5.8f), new Vector3(24f, 9f, 24f));
+            CreateReflectionProbe(probes, "ReflectionProbe_BreakRavine", new Vector3(0f, 3.4f, 30f), new Vector3(28f, 10f, 26f));
+            CreateReflectionProbe(probes, "ReflectionProbe_FinalRift", new Vector3(0f, 4f, 52f), new Vector3(32f, 12f, 30f));
+        }
+
+        private static void CreateReflectionProbe(Transform parent, string name, Vector3 localPosition, Vector3 size)
+        {
+            GameObject target = CreateChild(parent, name, localPosition, Quaternion.identity, Vector3.one);
+            ReflectionProbe probe = target.AddComponent<ReflectionProbe>();
+            probe.mode = ReflectionProbeMode.Realtime;
+            probe.refreshMode = ReflectionProbeRefreshMode.OnAwake;
+            probe.timeSlicingMode = ReflectionProbeTimeSlicingMode.IndividualFaces;
+            probe.resolution = 64;
+            probe.size = size;
+            probe.intensity = 0.65f;
+            probe.importance = 1;
+            EditorUtility.SetDirty(probe);
+        }
+
         private static GameObject CreateChild(Transform parent, string name, Vector3 localPosition, Quaternion localRotation, Vector3 localScale)
         {
             GameObject child = new GameObject(name);
@@ -874,6 +1361,86 @@ namespace DimensionBrawl.Editor
             child.transform.localRotation = localRotation;
             child.transform.localScale = localScale;
             return child;
+        }
+
+        private static VolumeProfile EnsureSpringIslesPostProcessProfile()
+        {
+            VolumeProfile profile = AssetDatabase.LoadAssetAtPath<VolumeProfile>(PostProcessProfilePath);
+            if (profile == null)
+            {
+                profile = ScriptableObject.CreateInstance<VolumeProfile>();
+                AssetDatabase.CreateAsset(profile, PostProcessProfilePath);
+            }
+
+            Bloom bloom = GetOrAddVolumeComponent<Bloom>(profile);
+            bloom.active = true;
+            SetParameter(bloom.threshold, 0.62f);
+            SetParameter(bloom.intensity, 0.58f);
+            SetParameter(bloom.scatter, 0.58f);
+            SetParameter(bloom.clamp, 3.4f);
+            SetParameter(bloom.tint, new Color(0.82f, 0.94f, 1f, 1f));
+
+            Tonemapping tonemapping = GetOrAddVolumeComponent<Tonemapping>(profile);
+            tonemapping.active = true;
+            SetParameter(tonemapping.mode, TonemappingMode.Neutral);
+
+            ColorAdjustments colorAdjustments = GetOrAddVolumeComponent<ColorAdjustments>(profile);
+            colorAdjustments.active = true;
+            SetParameter(colorAdjustments.postExposure, 0.18f);
+            SetParameter(colorAdjustments.contrast, 8f);
+            SetParameter(colorAdjustments.saturation, 7f);
+            SetParameter(colorAdjustments.colorFilter, new Color(0.94f, 0.98f, 1f, 1f));
+
+            WhiteBalance whiteBalance = GetOrAddVolumeComponent<WhiteBalance>(profile);
+            whiteBalance.active = true;
+            SetParameter(whiteBalance.temperature, 8f);
+            SetParameter(whiteBalance.tint, 2f);
+
+            Vignette vignette = GetOrAddVolumeComponent<Vignette>(profile);
+            vignette.active = true;
+            SetParameter(vignette.color, new Color(0.04f, 0.06f, 0.08f, 1f));
+            SetParameter(vignette.intensity, 0.11f);
+            SetParameter(vignette.smoothness, 0.52f);
+            SetParameter(vignette.rounded, false);
+
+            EditorUtility.SetDirty(profile);
+            return profile;
+        }
+
+        private static T GetOrAddVolumeComponent<T>(VolumeProfile profile) where T : VolumeComponent
+        {
+            RemoveNullVolumeComponents(profile);
+            if (!profile.TryGet(out T component))
+            {
+                component = profile.Add<T>(overrides: true);
+            }
+
+            component.name = typeof(T).Name;
+            component.hideFlags = HideFlags.HideInInspector | HideFlags.HideInHierarchy;
+            if (string.IsNullOrEmpty(AssetDatabase.GetAssetPath(component)))
+            {
+                AssetDatabase.AddObjectToAsset(component, profile);
+            }
+
+            EditorUtility.SetDirty(component);
+            return component;
+        }
+
+        private static void RemoveNullVolumeComponents(VolumeProfile profile)
+        {
+            for (int i = profile.components.Count - 1; i >= 0; i--)
+            {
+                if (profile.components[i] == null)
+                {
+                    profile.components.RemoveAt(i);
+                }
+            }
+        }
+
+        private static void SetParameter<T>(VolumeParameter<T> parameter, T value)
+        {
+            parameter.overrideState = true;
+            parameter.value = value;
         }
 
         private static StageMaterials EnsureStageMaterials()
@@ -1566,6 +2133,157 @@ namespace DimensionBrawl.Editor
             return child;
         }
 
+        private static void RequireRendererCount(Transform root, int minimumCount, string label)
+        {
+            int count = root.GetComponentsInChildren<Renderer>(includeInactive: true).Length;
+            if (count < minimumCount)
+            {
+                throw new InvalidOperationException($"{label} should keep at least {minimumCount} renderers, found {count}.");
+            }
+        }
+
+        private static void ValidateCameraSightlineClearance(Transform dressingRoot)
+        {
+            Bounds routeSightline = new(new Vector3(0f, 1.9f, 24f), new Vector3(14.5f, 6.2f, 76f));
+            Transform[] transforms = dressingRoot.GetComponentsInChildren<Transform>(includeInactive: true);
+            for (int i = 0; i < transforms.Length; i++)
+            {
+                Transform candidate = transforms[i];
+                if (!IsSightlineHazardCandidate(candidate.name))
+                {
+                    continue;
+                }
+
+                if (candidate.name.StartsWith("Background_", StringComparison.OrdinalIgnoreCase)
+                    && candidate.position.z > 90f)
+                {
+                    continue;
+                }
+
+                if (!TryGetCompositeRendererBounds(candidate, out Bounds bounds))
+                {
+                    continue;
+                }
+
+                bool tallEnoughToBlockView = bounds.size.y > 3.2f || bounds.max.y > 3.8f;
+                if (tallEnoughToBlockView && bounds.Intersects(routeSightline))
+                {
+                    throw new InvalidOperationException(
+                        $"{candidate.name} intrudes into the S1-1 camera sightline corridor. Move tall cliffs/rocks outside the route corridor or lower them.");
+                }
+            }
+        }
+
+        private static bool IsSightlineHazardCandidate(string objectName)
+        {
+            if (objectName.EndsWith("Shelves", StringComparison.OrdinalIgnoreCase)
+                || objectName.EndsWith("Layers", StringComparison.OrdinalIgnoreCase)
+                || objectName.EndsWith("Silhouette", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            return objectName.IndexOf("Cliff", StringComparison.OrdinalIgnoreCase) >= 0
+                || objectName.IndexOf("RockShelf", StringComparison.OrdinalIgnoreCase) >= 0
+                || objectName.IndexOf("LargeRock", StringComparison.OrdinalIgnoreCase) >= 0
+                || objectName.IndexOf("Background_Mountain", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static bool TryGetCompositeRendererBounds(Transform root, out Bounds bounds)
+        {
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(includeInactive: true);
+            bool hasBounds = false;
+            bounds = default;
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null || !renderer.enabled)
+                {
+                    continue;
+                }
+
+                if (!hasBounds)
+                {
+                    bounds = renderer.bounds;
+                    hasBounds = true;
+                    continue;
+                }
+
+                bounds.Encapsulate(renderer.bounds);
+            }
+
+            return hasBounds;
+        }
+
+        private static void ValidateRouteSupportCoverage(Transform collisionRoot)
+        {
+            List<Vector3> requiredSupportPoints = new(AuthoredRouteSupportSamples);
+            for (int i = 0; i < RouteSupportSections.Length; i++)
+            {
+                AddRouteSupportSectionSamples(requiredSupportPoints, RouteSupportSections[i]);
+            }
+
+            for (int i = 0; i < requiredSupportPoints.Count; i++)
+            {
+                if (!HasColliderSupport(collisionRoot, requiredSupportPoints[i]))
+                {
+                    throw new InvalidOperationException(
+                        $"S1-1 route collision is missing floor support at {requiredSupportPoints[i]}. Add authored apron floor/collider coverage before reviewing enemies there.");
+                }
+            }
+        }
+
+        private static void AddRouteSupportSectionSamples(List<Vector3> samples, RouteSupportSection section)
+        {
+            Vector3 center = section.ColliderCenter;
+            float halfWidth = section.ColliderScale.x * 0.5f;
+            float halfDepth = section.ColliderScale.z * 0.5f;
+            float edgeInsetX = Mathf.Min(0.9f, Mathf.Max(0.25f, halfWidth * 0.18f));
+            float edgeInsetZ = Mathf.Min(1.2f, Mathf.Max(0.4f, halfDepth * 0.12f));
+            float y = center.y;
+
+            samples.Add(center);
+            samples.Add(new Vector3(center.x - halfWidth + edgeInsetX, y, center.z));
+            samples.Add(new Vector3(center.x + halfWidth - edgeInsetX, y, center.z));
+            samples.Add(new Vector3(center.x, y, center.z - halfDepth + edgeInsetZ));
+            samples.Add(new Vector3(center.x, y, center.z + halfDepth - edgeInsetZ));
+        }
+
+        private static bool HasColliderSupport(Transform collisionRoot, Vector3 point)
+        {
+            Collider[] colliders = collisionRoot.GetComponentsInChildren<Collider>(includeInactive: true);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider collider = colliders[i];
+                if (collider != null && collider.bounds.Contains(point))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void ValidatePromotedTextureDimensions(string folderPath)
+        {
+            string[] guids = AssetDatabase.FindAssets("t:Texture2D", new[] { folderPath });
+            for (int i = 0; i < guids.Length; i++)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guids[i]);
+                Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(path);
+                if (texture == null)
+                {
+                    continue;
+                }
+
+                if (texture.width > MaxPromotedTextureDimension || texture.height > MaxPromotedTextureDimension)
+                {
+                    throw new InvalidOperationException(
+                        $"{path} is {texture.width}x{texture.height}; promoted Spring Isles textures should stay at or below {MaxPromotedTextureDimension}px.");
+                }
+            }
+        }
+
         private static GameObject FindByName(GameObject[] roots, string name)
         {
             for (int i = 0; i < roots.Length; i++)
@@ -1607,6 +2325,27 @@ namespace DimensionBrawl.Editor
 
             EnsureFolder(parent);
             AssetDatabase.CreateFolder(parent, name);
+        }
+
+        private readonly struct RouteSupportSection
+        {
+            public RouteSupportSection(string label, string visibleName, Vector3 visualCenter, Vector3 visualScale, Vector3 colliderScale)
+            {
+                Label = label;
+                VisibleName = visibleName;
+                VisualCenter = visualCenter;
+                VisualScale = visualScale;
+                ColliderCenter = new Vector3(visualCenter.x, -0.08f, visualCenter.z);
+                ColliderScale = colliderScale;
+            }
+
+            public string Label { get; }
+            public string VisibleName { get; }
+            public string ColliderName => $"RouteFloorCollider_SupportDeck_{Label}";
+            public Vector3 VisualCenter { get; }
+            public Vector3 VisualScale { get; }
+            public Vector3 ColliderCenter { get; }
+            public Vector3 ColliderScale { get; }
         }
 
         private readonly struct StageMaterials
