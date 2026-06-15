@@ -1,8 +1,10 @@
 ﻿# Action Foundation Testing
 
-Last updated: 2026-06-14 KST
+Last updated: 2026-06-15 KST
 
-This note records how to inspect the first direct-control ARPG action-feel foundation without expanding the scope into summons, bosses, progression, or full HUD work.
+This note records how to inspect the preserved pre-pivot action-feel foundation. It is still useful for movement, camera, enemy, damage, VFX, and authored-scene checks, but it is no longer the product north star.
+
+Current V1 direction is defined by `COMBAT_V1_SPEC.md`: fixed-rear boss-barrage + summon-first lane combat. Do not use this testing note as a reason to rebuild melee combo work before the first boss-barrage lane, `BasicDefenseAttack`, and `SummonSlot1` slice.
 
 ## Test Setup
 
@@ -43,7 +45,7 @@ This note records how to inspect the first direct-control ARPG action-feel found
 - Basic attack: left mouse, Enter, or gamepad west button.
 - Dodge: Space, Left Shift, or gamepad south button.
 - Player facing follows movement by default; right-stick fallback belongs to camera orbit, not character facing, unless an explicit look action is wired later.
-- Mobile hooks exist as `SetMoveInput`, `SetLookInput`, `QueueBasicAttack`, and `QueueDodge`; full mobile HUD is intentionally not included yet.
+- Preserved melee mobile hooks exist as `SetMoveInput`, `SetLookInput`, `QueueBasicAttack`, and `QueueDodge`; the new pivot should add or rename input hooks through a reviewed `BasicDefenseAttack` / `SummonSlot1` slice instead of silently repurposing this testing note. Full mobile HUD is intentionally not included here.
 
 ## Reference Values Used
 

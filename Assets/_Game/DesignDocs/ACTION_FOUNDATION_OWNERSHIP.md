@@ -1,13 +1,17 @@
 ﻿# Action Foundation Ownership
 
-Last updated: 2026-06-14 KST
+Last updated: 2026-06-15 KST
 
-This note permits the first action-feel foundation to add more than three gameplay scripts because the goal spans player, combat, enemy, presentation, and test-scene completion responsibilities. Each script must remain narrow and inspectable.
+This note records the current action-feel foundation and the ownership boundaries for the fixed-rear boss-barrage + summon-first pivot. The existing melee player foundation is a preserved checkpoint. New local-defense, lane, boss-proxy, and summon work must add narrow owners instead of expanding existing player, enemy, camera, or encounter scripts into broad managers.
 
 ## Runtime Ownership
 
 - `PlayerMovementController`: player locomotion, facing, camera-relative movement, stop-settle animation requests, and external planar movement bursts requested by player actions.
-- `PlayerActionController`: player basic attack timing, dodge timing, player-side input buffering, melee hit checks, and player animation requests for attack/dodge.
+- `PlayerActionController`: preserved melee-checkpoint basic attack timing, dodge timing, player-side input buffering, melee hit checks, and player animation requests for attack/dodge. It must not become the owner of summon calls, projectile gameplay, summon targeting, summon cooldowns, or corridor encounter progression.
+- Future local-defense player action owner: a reviewed narrow component may own `BasicDefenseAttack` input timing, short slash/projectile/hitscan request timing, local-defense animation requests, and local attack recovery/cancel rules. It must not own summon AI, enemy AI, boss-proxy projectile schedules, encounter progression, UI hierarchy construction, or scene-wide target discovery.
+- Future energy tier owner: a reviewed narrow component may own `EN LV1~LV3` fill, forward-position gain modifiers, current charging tier, current available tier, and spend/reset events for `Skill1` and `SummonSlot1`. It must not own UI layout, summon actor behavior, skill projectile damage, boss projectile schedules, inventory, rarity, upgrade economy, or stage progression.
+- Future summon action owner: a reviewed narrow component may own `SummonSlot1` input handling, one summon/assist request, summon opportunity checks, and summon entry/action/exit timing. It must route damage through combat health/team rules and must not become a full roster, economy, inventory, boss, or encounter manager.
+- Future summon actor owner: a reviewed narrow component may own one summon actor's movement, target use, role action, animation requests, and cleanup. It may reuse shared target/team contracts, but it must not search the entire scene, spawn waves, decide stage progression, or mutate role/stage ScriptableObjects at runtime.
 - `CombatHealth`: health, damage validation, team filtering, temporary invulnerability, damage-modification hook dispatch, and death state. It may expose a generic damage-modification context for shields, armor, future summon protection, or buffs, but it must not know specific enemy pattern ids.
 - `CombatTargetSensor`: shared enemy/future-summon target candidate evaluation, hostile team filtering, range checks, retarget cadence, and current target exposure. Candidate lists must be authored or provided by encounter code, not found through scene-wide searches.
 - `BasicSoldierEnemy`: basic soldier pattern sample execution, approach, optional pre-attack reposition, telegraph, optional deck-based profile selection, profile-driven attack shape, attack execution, hit reaction, and death reaction. Enemy identity, pattern id, visual model, Animator controller, prepare/attack/hit/death animation trigger names, timing, attack shape, direction-lock behavior, telegraph, and camera cue data must stay serialized/prefab-level, `CombatAiPatternProfile`, or `CombatAiPatternDeck` data so future soldier variants can swap assets and patterns without rewriting behavior.
@@ -34,8 +38,11 @@ This note permits the first action-feel foundation to add more than three gamepl
 
 ## Explicit Non-Ownership
 
-- No script owns summon behavior.
-- No script owns summon spawning, summon slots, summon cooldowns, or summon UI.
+- Existing player, enemy, camera, VFX, and stage-review scripts do not own production summon behavior.
+- Production summon behavior must be introduced only through a reviewed narrow summon owner. Do not hide it inside `PlayerActionController`, `BasicSoldierEnemy`, `StageEncounterReviewOwner`, camera scripts, VFX cue drivers, or elite enemy traits.
+- No script owns the full summon roster, summon inventory, summon upgrade economy, or complete summon UI.
+- `SummonSlot1` may become functional before the full summon system exists, but it must remain one reviewed slice with explicit target/team/cue cleanup boundaries.
+- `EN LV1~LV3` is combat energy for the first skill/summon slice, not a progression upgrade system. Do not mix it with account progression, currency, gacha, inventory, or permanent summon growth.
 - `SummonPackage` may activate pre-authored signal objects only; no script may add unreviewed runtime add spawning under that name.
 - `AuraBuffer` may protect explicitly authored receiver targets only; scene-search-based squad aura wiring needs an explicit reviewed slice.
 - No script owns boss phases.

@@ -4,21 +4,27 @@
 
 ### Player
 
-Owns player movement, facing, dodge, attack input interpretation, and player animation requests.
+Owns player movement, facing, dodge, local-defense attack input interpretation, target-bias intent, and player animation requests.
 
-Must not own enemy spawning, encounter pacing, global UI, or boss phase logic.
+Must not own enemy spawning, summon AI, summon roster/economy, encounter pacing, global UI, or boss phase logic.
+
+### Summon
+
+Owns one summon actor or assist action's entry, target use, role action, animation requests, impact, exit, and cleanup.
+
+Must not own player input beyond a narrow summon-slot request, enemy spawning, stage progression, full summon inventory/economy, global UI layout, or boss phase logic.
 
 ### Enemy
 
 Owns enemy movement, target choice, attack execution, hit reaction, and death.
 
-Must not own player input, camera control, scene setup, or global progression.
+Must not own player input, summon-slot input, camera control, scene setup, or global progression.
 
 ### Combat
 
-Owns damage events, hit validation, health, team/faction rules, and temporary combat effects.
+Owns damage events, hit validation, health, team/faction rules, temporary combat effects, and reviewed combat resources such as the first `EN LV1~LV3` skill/summon energy ladder.
 
-Must not own authored asset import, prefab construction, or UI layout.
+Must not own authored asset import, prefab construction, UI layout, account progression, rarity, inventory, or permanent summon upgrades.
 
 ### Presentation
 

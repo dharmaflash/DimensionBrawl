@@ -1,6 +1,6 @@
 # UI V1 Spec
 
-Last updated: 2026-06-13 KST
+Last updated: 2026-06-15 KST
 
 This document defines the first safe UI work split for parallel development on another PC. It turns the existing UI research into implementation boundaries for login, lobby, and combat HUD work without reopening old card/lane UI assumptions or mixing UI with gameplay systems.
 
@@ -12,7 +12,7 @@ V1 UI should prove:
 
 - A title/login flow can enter the next screen without fake account/server complexity.
 - A lobby can present the project fantasy, one primary PvE entry, and a small set of secondary anchors.
-- A combat HUD can display the direct-control ARPG action vocabulary without owning combat logic.
+- A combat HUD can display the fixed-rear boss-barrage + summon-first action vocabulary without owning combat logic.
 - UI prefabs, scenes, data, and presentation cues are organized so another PC can work without touching the active combat scene.
 
 ## Parallel Work Rule
@@ -113,16 +113,17 @@ Allowed:
 
 - Top-left pause/timer/objective placeholders.
 - Bottom-left movement joystick visual placeholder for mobile.
-- Bottom-center HP/resource placeholder.
+- Bottom-center HP and `EN LV1~LV3` resource placeholder.
 - Bottom-right basic attack, dodge, skill, and ultimate button visuals.
 - Top-right three summon slot visuals as UI placeholders.
 - Top-right utility/settings placeholder.
-- Event hooks or small presenter methods for `SetHealth`, `SetObjective`, `SetTimer`, `SetSummonSlotState`, `SetSkillCooldown`, and `SetInputMode`.
+- Event hooks or small presenter methods for `SetHealth`, `SetObjective`, `SetTimer`, `SetEnergyTierState`, `SetSummonSlotState`, `SetSkillTierState`, and `SetInputMode`.
 
 Not allowed:
 
 - Actual summon behavior.
-- Summon spawning, summon AI, cooldown economy, or target selection.
+- Summon spawning, summon AI, cooldown economy, or target selection. UI may expose `SummonSlot1` input only after the gameplay slice owns the action.
+- Energy gain, tier advancement, or spend/reset rules. UI displays EN state from gameplay, not the other way around.
 - Hand-of-cards UI.
 - Lane-first input UI.
 - Direct target-selection UI as the default control.
@@ -131,9 +132,10 @@ Not allowed:
 
 Reference direction:
 
-- Follow `COMBAT_V1_SPEC.md` canonical actions: `Move`, `Look` / `TargetBias`, `BasicAttack`, `Dodge`, `Skill1`, `Ultimate`, `SummonSlot1`, `SummonSlot2`, `SummonSlot3`, and `Pause`.
+- Follow `COMBAT_V1_SPEC.md` canonical actions: `Move`, `Look` / `TargetBias`, `BasicDefenseAttack`, `Dodge`, `SummonSlot1`, `SummonSlot2`, `SummonSlot3`, `Skill1`, `Ultimate`, and `Pause`.
 - Combat HUD should support fast action without stealing focus from the combat field.
-- Summon slots are visual direction only until a reviewed summon slice exists.
+- `SummonSlot1` may become a functional input bridge after a reviewed gameplay slice exists. `SummonSlot2` and `SummonSlot3` stay placeholder-only until later.
+- `Skill1` and `SummonSlot1` should display the current available tier (`LV1`, `LV2`, or `LV3`) once gameplay exposes EN state.
 
 ## Ownership
 
@@ -155,6 +157,7 @@ Prefer small ScriptableObject or serialized data rows for:
 - Screen id, prefab reference, optional presentation prefab, BGM context, and cache policy.
 - Transition id, duration, easing, SFX key, and cleanup behavior.
 - HUD slot id, icon, cooldown display mode, enabled state, and placeholder text.
+- EN tier display data: charging tier, available tier, fill ratio, spend-ready state, and reset feedback id.
 - Lobby feedback condition, line key, motion key, duration, weight, and cooldown.
 
 Data can be placeholder-only in V1, but it should be shaped so real content can replace it later.
@@ -181,6 +184,7 @@ Before merging UI work from another PC:
 - No full runtime UI hierarchy construction.
 - Scene navigation is limited to the UI test route unless explicitly coordinated.
 - No summon gameplay or economy implementation.
+- No EN gameplay ownership. Combat HUD may show `EN LV1~LV3`, but gameplay owns charge, tier upgrade, and spend reset.
 - No hand-of-cards, lane-first, or direct target-selection default UI.
 - Login, lobby, and combat HUD can be inspected separately.
 - Combat HUD uses canonical action names from `COMBAT_V1_SPEC.md`.

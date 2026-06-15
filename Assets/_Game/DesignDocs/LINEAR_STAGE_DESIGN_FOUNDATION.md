@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document fixes the first scalable level-design shape for DimensionBrawl's direct-control ARPG route. It turns the collected ARPG, boss/enemy-run, and stage/reward research into authoring data before runtime spawning, progression, rewards, or summon behavior is implemented.
+This document fixes the first scalable level-design shape for DimensionBrawl's fixed-rear boss-barrage lane route. It turns the collected ARPG, summon, boss/enemy-run, and stage/reward research into authoring data before runtime spawning, progression, rewards, boss phases, or full summon economy is implemented.
 
 The foundation is intentionally data-first:
 
@@ -10,8 +10,9 @@ The foundation is intentionally data-first:
 - `LinearStageSegmentProfile` defines a linear route beat such as entry read, break gate, backline pressure, relief, boss handoff, or final stand.
 - `LinearStagePocket` defines a smaller encounter pocket inside a segment.
 - `StageEnemyRoleSlot` references existing `CombatEnemyRoleProfile` assets only.
+- The first playable lane must additionally define player-side bounds, a forward boundary, boss/proxy side, projectile pressure lanes, and summon-energy risk zones before it becomes a runtime system.
 
-This is not a wave spawner, scene generator, summon system, reward system, or boss controller.
+This is not a wave spawner, scene generator, full summon system, reward system, or boss controller.
 
 ## V1 Authoring Contract
 
@@ -24,7 +25,7 @@ Use these terms when discussing the first linear stage skeleton:
 | `EncounterSlot` | `LinearStagePocket` | Names one authored encounter pocket inside a segment, including intensity, duration, future summon need, objective, and enemy role slots. |
 | `Objective` | `LinearStageObjectiveKind` plus `objectiveCue` | Classifies what the pocket asks the player to do, while the cue gives the human-readable instruction. |
 
-The first implementation route should consume data in that order: `StageRoute -> CombatSegment -> EncounterSlot -> Objective/RoleSlot`. Do not invert it by starting from prefabs, runtime spawns, rewards, or summon units.
+The first implementation route should consume data in that order: `StageRoute -> CombatSegment -> EncounterSlot -> Objective/RoleSlot`. Do not invert it by starting from prefabs, runtime spawns, rewards, or a full summon roster.
 
 The current objective kinds are:
 
@@ -32,9 +33,9 @@ The current objective kinds are:
 |---|---|
 | `ReadThreat` | Teach a first tell or safe enemy read. |
 | `PunishRecovery` | Reinforce dodge, counter, and close-pressure recovery punish. |
-| `BreakGuard` | Teach guarded/armored pressure and the future Break answer. |
+| `BreakGuard` | Teach guarded/armored pressure and the Break summon answer. |
 | `PrioritizeBackline` | Teach chasing or answering rear line/projectile pressure. |
-| `SurvivePressure` | Create overload where future Tank/Heal answers would matter. |
+| `SurvivePressure` | Create overload where Tank/Heal-style summon answers would matter. |
 | `RecoverPosition` | Provide relief, camera recenter, and spacing reset. |
 | `ReadPhaseHandoff` | Rehearse pre-boss phase/deck handoff grammar without a real boss. |
 | `FinalClear` | Combine learned reads into the stage clear condition. |
@@ -43,7 +44,7 @@ The current objective kinds are:
 
 The current data and research support the following authoring rules:
 
-- `COMBAT_V1_SPEC.md` defines the game as a direct-control ARPG that clears linear combat sections before the summon system is implemented.
+- `COMBAT_V1_SPEC.md` defines the current game direction as fixed-rear boss-barrage + summon-first lane combat. Stage pockets should create readable reasons to take forward risk, charge summon energy, and use summon roles instead of treating summons as late decoration.
 - `BOSS_ENEMY_RUN_REFERENCE_RESEARCH.md` identifies pressure modules, telegraph stages, relief windows, boss handoff states, and the need for encounter definitions to name pressure rhythm and intended answers.
 - `STAGE_REWARD_GROWTH_REFERENCE_RESEARCH.md` proposes the first stage set: `S1-1 Break Gate`, `S1-2 Backline Signal`, `S1-3 Tank Rescue`, `S1-4 Heal Pocket`, and `S1-5 Boss Stand`.
 - `ARPG_REFERENCE_RESEARCH.md` supports small named camera/pressure presets, readable target priority, 3-5 minute run rhythm, pressure relief, and boss-phase handoff grammar.
@@ -61,11 +62,11 @@ Use for a normal 3-5 minute ARPG route. It should mix basic pressure, a featured
 
 ### `BacklineLesson`
 
-Use when the lesson is priority targeting, projectile/line pressure, or future Arrow-style answer. The stage can use `LineCaster`, `BacklineShooter`, and optional `AuraCaptainElite`, but it must remain readable without a finished lock-on UI.
+Use when the lesson is priority targeting, projectile/line pressure, or Arrow-style summon answer. The stage can use `LineCaster`, `BacklineShooter`, and optional `AuraCaptainElite`, but it must remain readable without a finished lock-on UI.
 
 ### `ElitePressureRun`
 
-Use when the route needs sustained pressure and future Tank/Heal answer windows. It can mix general roles with one elite role, but should still name the intended answer and relief beat.
+Use when the route needs sustained pressure and Tank/Heal-style summon answer windows. It can mix general roles with one elite role, but should still name the intended answer and relief beat.
 
 ### `BossHandoffDrill`
 
@@ -77,9 +78,9 @@ Use before a real dragon boss exists. It validates phase/deck handoff language w
 |---|---|---|
 | `EntryRead` | First safe read for camera, movement, and one tell. | `EntryProbe` |
 | `BasicPressure` | Reinforce dodge, punish, and target-facing basics. | `CloseGuard`, optional `LungeChaser` |
-| `BreakGate` | Teach guarded pressure and future Break answer. | `CloseGuard`, optional `ShieldBreakerElite` |
+| `BreakGate` | Teach guarded pressure and Break summon answer. | `CloseGuard`, optional `ShieldBreakerElite` |
 | `BacklinePressure` | Teach backline priority and line/projectile reads. | `LineCaster`, `BacklineShooter`, optional `AuraCaptainElite` |
-| `PressureRescue` | Build overload where future Tank/Heal answers matter. | `FanSuppressor`, `LungeChaser`, `Skirmisher`, optional `SummonCallerElite` |
+| `PressureRescue` | Build overload where Tank/Heal-style summon answers matter. | `FanSuppressor`, `LungeChaser`, `Skirmisher`, optional `SummonCallerElite` |
 | `Relief` | Give a reset beat after a spike. | no required enemies |
 | `BossBreakHandoff` | Teach phase/deck handoff before real boss work. | `PhaseDuelistElite`, optional `ShieldBreakerElite`, `LineCaster` |
 | `FinalStand` | Combine prior reads into the clear condition. | `FinalStandCommanderElite`, `BacklineShooter`, `FanSuppressor`, optional `Skirmisher` |
@@ -94,11 +95,23 @@ Use before a real dragon boss exists. It validates phase/deck handoff language w
 | `S1-4 Heal Pocket` | `Heal` | EntryRead -> BasicPressure -> BacklinePressure -> PressureRescue -> Relief -> FinalStand |
 | `S1-5 Boss Stand` | `Any` | EntryRead -> BasicPressure -> BreakGate -> BacklinePressure -> Relief -> PressureRescue -> BossBreakHandoff -> FinalStand |
 
-These names are stage-design promises only. They do not unlock summons, pay rewards, spawn waves, or create boss phases.
+These names are stage-design promises only. They do not pay rewards, spawn waves, create boss phases, or imply the full summon economy exists. A narrow `SummonSlot1` review slice may consume one lane pocket later when the boss-barrage/summon-first loop is ready.
 
 ## First Review Route Skeleton
 
-Use `S1-1 Break Gate` as the first encounter-composition review target. It is short enough to inspect manually and still exercises the whole route chain.
+Use `S1-1 Break Gate` as the preserved first encounter-composition review target. It is short enough to inspect manually and still exercises the whole route chain. For the new pivot, treat it as a data/progression reference until a fixed-rear boss-barrage + `SummonSlot1` lane pocket is authored.
+
+The first new pivot review pocket should prove:
+
+- fixed rear camera readability,
+- a player-side movement zone with an uncrossable forward boundary,
+- a back safety zone and forward risk zone,
+- `EN LV1~LV3` charge pressure tied to forward risk,
+- faster summon-energy gain near the forward boundary,
+- skill/summon buttons upgrading by available EN tier and resetting after spend,
+- boss/proxy projectiles with tighter front-position risk and looser back-position risk,
+- close or approaching monsters that can be answered by `BasicDefenseAttack`,
+- one `SummonSlot1` action that changes the boss-barrage exchange.
 
 | Order | Segment | EncounterSlot | Objective | Intended Roles | Review Question |
 |---|---|---|---|---|---|
@@ -112,7 +125,7 @@ The review scene for this route is `Assets/_Game/Scenes/ActionFoundationStageBre
 
 The same review scene may include authored presentation and progression roots for manual readability:
 
-- `StageBreakGateReview_SpringIslesDressing` is presentation-only Spring Isles/移⑥떇 dressing. It must not add combat colliders.
+- `StageBreakGateReview_SpringIslesDressing` is presentation-only Spring Isles dressing. It must not add combat colliders. It is an art adaptation checkpoint, not the new core product direction by itself.
 - `StageBreakGateReview_ProgressionGates` owns review-only pocket clear walls, side lane blockers, pocket objective markers, and route flow cues. Its runtime presenter only reads `StageEncounterReviewOwner` completion state and toggles authored blocker/visual objects; it must not spawn enemies, select prefabs, pay rewards, or become the production stage manager.
 
 ## Authoring Boundaries
@@ -144,4 +157,5 @@ Validation checks:
 1. Review the authored stage templates in Unity's Inspector.
 2. Review `ActionFoundationStageBreakGateReview.unity` in Play Mode and tune only authored positions/counts if the route reads poorly.
 3. Use the review-only `StageEncounterReviewOwner` to verify current pocket/objective/enemy-clear readability before building production encounter progression.
-4. Keep summon implementation, reward payout, boss phases, and stage-select UI separate until this foundation is accepted.
+4. Keep full summon economy, reward payout, boss phases, and stage-select UI separate until this foundation is accepted.
+5. For the current pivot, author the next review pocket around fixed-rear boss projectile pressure, forward-risk `EN LV1~LV3` charge, tiered skill/summon spend reset, `BasicDefenseAttack` close-threat handling, and one `SummonSlot1` answer before expanding a whole chapter.

@@ -133,3 +133,51 @@ Impact: `CutsceneCueProfile`, `CinemachineShotProfile`, `CameraModifierStackProf
 Evidence handling: Reference games did not yield public Cinemachine/Timeline source assets. ZZZ/PGR/HI3 public data mirrors are used only for field-shape and production-contract evidence such as camera modifiers, camera track LUTs, story/camera site tables, time-slow/screen-effect stacks, and cleanup/end-action patterns.
 
 Legacy handling: Existing `BattleCamera` cue types and optional Cinemachine impulse hooks remain useful seeds. New Cinemachine/Timeline work should wrap or bridge those hooks, not silently replace V2 combat authority or reintroduce lane/manual-target assumptions.
+
+## 2026-06-15: Fixed-Rear Boss-Barrage And Summon-First Pivot
+
+Decision: Pivot the V1 combat target from melee direct-control ARPG first to fixed-rear boss-barrage + summon-first lane combat. The player controls movement, dodge, lane position, forward-risk summon-energy gain, and close-threat local defense, while `SummonSlot1` provides the main battlefield swing against the far boss/proxy pressure.
+
+Reason: Direction review found the current melee/action-route focus too close to a generic RPG/action game. The latest direction clarifies the intended core tension: the far boss keeps firing projectiles, the player cannot cross the midline/forward boundary, forward position charges summon energy faster but is riskier, and summons are the main exchange tool.
+
+Impact: `COMBAT_V1_SPEC.md`, `ACTION_FEEL_TARGETS.md`, `ACTION_FOUNDATION_OWNERSHIP.md`, and `LINEAR_STAGE_DESIGN_FOUNDATION.md` now supersede the earlier "player melee action before summon implementation" direction. Existing CombatGirl movement, camera, enemy, VFX, and stage work is preserved as reusable foundation/checkpoint work, but it should not keep expanding as the product center until the boss-barrage lane + summon-first loop is playable.
+
+## 2026-06-15: Local-Defense Attack Before Rifle Animation Dependency
+
+Decision: Validate the player-side defense slice with one simple authored local-defense attack before installing or depending on a rifle animation pack. The expression can be a short slash, short magic projectile, or gun-like fire.
+
+Reason: The immediate product question is whether boss-barrage risk positioning plus a meaningful summon call works. A rifle locomotion/weapon animation dependency can add import and tuning cost before the core loop is proven.
+
+Impact: The next implementation should define `BasicDefenseAttack`, one hit/projectile cue with clear damage authority, and one `SummonSlot1` action. Rifle/gun assets remain optional later candidates if the local-defense loop needs them.
+
+## 2026-06-15: Fixed-Rear Boss Barrage With Forward-Risk Summon Energy
+
+Decision: The next V1 combat target is a fixed rear camera lane where a far boss or boss proxy continuously fires projectile patterns. The player can move forward and backward on the player side, but can never cross the authored midline/forward boundary. Moving closer to that boundary charges summon energy faster, while staying farther back is safer because projectile spacing/risk is looser.
+
+Reason: The latest direction clarifies that the game is not a free-chase ARPG. Its core tension is boss projectile pressure, risk-positioning, summon-energy gain, and summon-vs-boss exchange.
+
+Impact: The next implementation should define lane bounds, an uncrossable midline/forward boundary, back safety zone, summon-energy gain by forward position, and one readable boss/proxy projectile pattern before full boss phases or chapter art. Camera should stay fixed rear for the first slice.
+
+## 2026-06-15: Player Basic Attack Is Local Defense, Not Boss Main DPS
+
+Decision: The player may directly attack monsters that approach the player side. This action is named `BasicDefenseAttack` in planning docs and may be expressed as a short slash, short magic projectile, or gun-like fire after asset/readability review.
+
+Reason: Close monsters need a local answer, but the player's basic attack should not become the main boss damage route or revive the melee-combo-first direction.
+
+Impact: `BasicRangedAttack` is superseded as a planning term by `BasicDefenseAttack`. Keep player attack ownership narrow and tune it for close/approaching threats. Summon action remains the main battlefield swing.
+
+## 2026-06-15: EN Tier Ladder Drives Skill And Summon Strategy
+
+Decision: Use a shared `EN LV1 -> EN LV2 -> EN LV3` ladder for the first active skill and first summon slot. When a level fills, the corresponding skill/summon tier becomes available. The player may spend early or keep charging toward a stronger tier. Spending skill or summon energy resets the ladder to empty `EN LV1` charging.
+
+Reason: The desired strategy is not only "fill gauge, press summon." The player should choose between using a lower-level answer immediately or taking forward-position risk long enough to unlock a stronger version of the same skill/summon.
+
+Impact: Implement only LV1-LV3 first. `Skill1` fires immediately at the available tier. `SummonSlot1` should summon the same concept at LV1/LV2/LV3, with stronger presentation/effect by tier, appearing from a magic circle in front of the player before entering the frontline exchange. Do not expand this into a roster, rarity, inventory, or upgrade economy until the tiered combat loop is accepted.
+
+## 2026-06-15: Boss Skill And Summon-Like Pressure Are Later Pressure Modules
+
+Decision: Enemy bosses may eventually use skill or summon-like pressure, but V1 should treat this as future boss pressure-module design, not as a symmetric full summon system.
+
+Reason: The first loop needs the player EN ladder, projectile read, and `SummonSlot1` exchange to work before the boss gains comparable complexity.
+
+Impact: The first boss/proxy may fire projectiles and expose simple pressure windows. Boss skills, adds, or summon-like calls should be authored later through explicit pattern/module data, not hidden in the first EN/summon implementation.

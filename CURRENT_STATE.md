@@ -1,6 +1,6 @@
 ﻿# Current State
 
-Last updated: 2026-06-14 KST
+Last updated: 2026-06-15 KST
 
 ## Repository
 
@@ -16,8 +16,8 @@ Last updated: 2026-06-14 KST
 - Unity project baseline exists.
 - Combat reference docs and datasets are imported.
 - `Assets/_Game/DesignDocs/CINEMACHINE_INGAME_CUTSCENE_REFERENCE_RESEARCH.md` and `Assets/_Game/DesignData/CinemachineIngameCutsceneReferenceDataset.json` are imported as the active Unity Cinemachine/Timeline in-game cutscene reference baseline for boss intros, summon/ultimate cut-ins, dialogue staging, camera shot sequencing, input/AI/time locks, impulse, Timeline signals, and gameplay camera return.
-- `COMBAT_V1_SPEC.md` defines the first direct-control ARPG action slice before summon implementation.
-- `ACTION_FEEL_TARGETS.md` defines the movement, camera, attack, dodge, hit, and enemy feel quality targets that action work must improve.
+- `COMBAT_V1_SPEC.md` now defines the first fixed-rear boss-barrage lane + summon-first combat slice. The previous direct melee action foundation is preserved as a movement/camera/enemy authoring checkpoint, not the new product north star.
+- `ACTION_FEEL_TARGETS.md` defines the movement, fixed rear camera, forward-risk `EN LV1~LV3` energy, local-defense attack, tiered skill/summon call, dodge, projectile/hit, and enemy/boss-proxy feel quality targets that action work must improve.
 - `ACTION_FOUNDATION_OWNERSHIP.md` defines the narrow runtime ownership split for the first action-feel implementation.
 - `ACTION_FOUNDATION_TESTING.md` records the first test setup, control map, reference-backed values, first-pass deviations, and deliberate exclusions.
 - `Assets/_Game/Scenes/ActionFoundationTest.unity` exists as the first authored action-feel inspection scene.
@@ -121,7 +121,7 @@ These must not be committed directly.
 
 ## Next Safe Step
 
-Use `Assets/_Game/DesignDocs/COMBAT_V1_SPEC.md`, `Assets/_Game/DesignDocs/ACTION_FEEL_TARGETS.md`, `Assets/_Game/DesignDocs/ACTION_FOUNDATION_OWNERSHIP.md`, `Assets/_Game/DesignDocs/ACTION_FOUNDATION_TESTING.md`, `Assets/_Game/DesignDocs/CINEMACHINE_INGAME_CUTSCENE_REFERENCE_RESEARCH.md`, and `Assets/_Game/DesignDocs/LINEAR_STAGE_DESIGN_FOUNDATION.md` as implementation guardrails. The next safe step is to use `StageEncounterReviewOwner` in `ActionFoundationStageBreakGateReview.unity` to review pocket entry, objective readability, enemy-clear progression, and relief/final-stand pacing before building production encounter progression. Keep runtime waves, summons, bosses, rewards, progression, stage-select UI, and missile turret gameplay out until this authored review foundation is accepted.
+Use `Assets/_Game/DesignDocs/COMBAT_V1_SPEC.md`, `Assets/_Game/DesignDocs/ACTION_FEEL_TARGETS.md`, `Assets/_Game/DesignDocs/ACTION_FOUNDATION_OWNERSHIP.md`, `Assets/_Game/DesignDocs/SUMMON_SYSTEM_REFERENCE_RESEARCH.md`, `Assets/_Game/DesignDocs/CINEMACHINE_INGAME_CUTSCENE_REFERENCE_RESEARCH.md`, and `Assets/_Game/DesignDocs/LINEAR_STAGE_DESIGN_FOUNDATION.md` as implementation guardrails. The next safe step is to implement the smallest fixed-rear boss-barrage + `SummonSlot1` lane slice: define lane bounds and the uncrossable player midline/forward boundary, define a forward-position `EN LV1~LV3` gain curve, define tier upgrade and spend-reset rules, define one boss/proxy projectile pattern with front/back risk difference, define `BasicDefenseAttack` for close or approaching monsters, add one immediate tiered `Skill1`, add one tiered summon/assist action, and review it in an authored lane pocket. Keep full summon roster/economy, full boss phases, rewards, progression, stage-select UI, and production chapter art out until this first boss-barrage/summon loop is playable.
 
 ## Current Risk
 
@@ -129,8 +129,8 @@ Use `Assets/_Game/DesignDocs/COMBAT_V1_SPEC.md`, `Assets/_Game/DesignDocs/ACTION
 - Unity may briefly report stale or malformed `.meta` data while files are being promoted. Verify the final `.meta` GUIDs and refresh/reimport in the open Editor before assuming the asset files themselves are broken.
 - If the already-open `ActionFoundationTest` scene shows a pink CombatGirl after material promotion, run `DimensionBrawl > Reapply Action Foundation CombatGirl Materials`; refresh alone does not always update unpacked scene renderer material slots.
 - Unity batchmode reruns may be blocked by the Unity Licensing Client/headless editor state while Editor instances are open; use the open Editor validation menu for quick checks, or close Unity before a full batchmode rerun.
-- The project direction is direct-control ARPG first, summon system second. Do not start by building summon behavior, boss phases, progression, or a full mobile UI shell before the player action loop is playable.
-- Action feel is the first quality gate. Do not add larger systems to hide weak movement, camera, attack, dodge, or hit feedback.
+- The project direction has pivoted to fixed-rear boss-barrage + summon-first lane combat. Do not continue expanding melee combo, free-chase ARPG routes, or Spring Isles route dressing as the core product direction before the first boss-barrage lane, forward-risk summon-energy, local-defense attack, and `SummonSlot1` slice is playable.
+- Action feel is still a quality gate, but the first gate is now movement, fixed rear camera, projectile readability, forward-risk `EN LV1~LV3` energy, local-defense attack, dodge, tiered skill/summon spend, hit feedback, and one clear pocket result. Do not add larger systems to hide weakness in that loop.
 - The current CombatGirl material pass is primary-color recovery only. Do not mass-promote original matcaps, masks, or the full asset-pack material stack without a separate reviewed slice.
 - Current action camera cues are intentionally small normal-action cues. Do not expand them into boss, summon, ultimate, or full lock-on camera systems without a separate reviewed slice.
 - Current elite behavior is a data-backed trait foundation, not a production encounter system. Do not turn `SummonPackage` into runtime spawning, make `AuraBuffer` search the scene for allies, or add boss phases without a separate reviewed slice.
