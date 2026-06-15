@@ -77,6 +77,7 @@ namespace DimensionBrawl.Editor
         private const string PocketFailMarkerName = ReviewRootPrefix + "PocketFailMarker";
         private const string SummonEntryMarkerName = ReviewRootPrefix + "SummonEntryMarker";
         private const string BossProxyMarkerName = ReviewRootPrefix + "BossProxyMarker";
+        private const string BossProxyHumanoidVisualName = ReviewRootPrefix + "HumanoidBossVisual_SummonCallerElite";
         private const string BossProxyVisualMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossProxy.mat";
         private const string LaneRailMaterialPath =
@@ -240,6 +241,7 @@ namespace DimensionBrawl.Editor
             GameObject bossProxy = RequireRoot(scene, BossProxyRootName);
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossProxy, "boss barrage emitter");
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossProxy, "boss proxy health");
+            ValidateBossProxyVisual(bossProxy);
             GameObject closeThreat = RequireRoot(scene, CloseThreatRootName);
             CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreat, "close threat health");
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "player Skill1 action");
@@ -1076,12 +1078,53 @@ namespace DimensionBrawl.Editor
 
         private static void CreateBossProxyVisual(Transform parent)
         {
+            CreateHumanoidBossProxyVisual(parent);
+            CreateBossProjectileCore(parent);
+        }
+
+        private static void CreateHumanoidBossProxyVisual(Transform parent)
+        {
+            CombatEnemyRoleCandidateProfile candidate = LoadAsset<CombatEnemyRoleCandidateProfile>(
+                ActionFoundationEnemyRoleCandidateSetup.SummonCallerEliteCandidateProfilePath);
+            string rolePrefabPath = AssetDatabase.GetAssetPath(candidate.RolePrefab).Replace('\\', '/');
+            if (string.IsNullOrWhiteSpace(rolePrefabPath))
+            {
+                throw new InvalidOperationException("SummonCallerElite boss candidate is missing its role prefab asset path.");
+            }
+
+            EnemyRoleVisualSpec visualSpec =
+                ActionFoundationEnemyRoleVisualSetup.CreateForRole("SciFiSoldier.Elite.SummonCaller");
+            GameObject prefabContents = PrefabUtility.LoadPrefabContents(rolePrefabPath);
+            try
+            {
+                Transform sourceVisual = prefabContents.transform.Find(visualSpec.VisualName);
+                if (sourceVisual == null)
+                {
+                    throw new InvalidOperationException($"{rolePrefabPath} is missing {visualSpec.VisualName}.");
+                }
+
+                GameObject visual = UnityEngine.Object.Instantiate(sourceVisual.gameObject);
+                visual.name = BossProxyHumanoidVisualName;
+                SceneManager.MoveGameObjectToScene(visual, parent.gameObject.scene);
+                visual.transform.SetParent(parent, worldPositionStays: false);
+                visual.transform.localPosition = new Vector3(0f, -1.58f, 0f);
+                visual.transform.localRotation = Quaternion.identity;
+                visual.transform.localScale *= 1.18f;
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabContents);
+            }
+        }
+
+        private static void CreateBossProjectileCore(Transform parent)
+        {
             Material material = LoadOrCreateMaterial(BossProxyVisualMaterialPath, new Color(1f, 0.55f, 0.05f, 1f));
             GameObject visual = GameObject.CreatePrimitive(PrimitiveType.Sphere);
             visual.name = BossProxyMarkerName;
             visual.transform.SetParent(parent, worldPositionStays: false);
-            visual.transform.localPosition = Vector3.zero;
-            visual.transform.localScale = new Vector3(1.35f, 1.35f, 1.35f);
+            visual.transform.localPosition = new Vector3(0f, 0.15f, -0.25f);
+            visual.transform.localScale = new Vector3(0.46f, 0.46f, 0.46f);
             MeshRenderer renderer = visual.GetComponent<MeshRenderer>();
             renderer.sharedMaterial = material;
         }
@@ -1447,6 +1490,95 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(cameraCueDriver, "cameraController", cameraController);
             ValidateObjectReference(cameraCueDriver, "cueSpace", closeThreat.transform);
             ValidateFloat(closeThreatHealth, "maxHealth", 72f);
+        }
+
+        private static void ValidateBossProxyVisual(GameObject bossProxy)
+        {
+            Transform visual = bossProxy.transform.Find(BossProxyHumanoidVisualName);
+            if (visual == null)
+            {
+                throw new InvalidOperationException($"Boss proxy should include {BossProxyHumanoidVisualName}.");
+            }
+
+            Animator animator = visual.GetComponent<Animator>();
+            if (animator == null || animator.runtimeAnimatorController == null)
+            {
+                throw new InvalidOperationException($"{BossProxyHumanoidVisualName} should keep the promoted SummonCaller Animator.");
+            }
+
+            ValidateGameOwnedAsset(animator.runtimeAnimatorController, $"{BossProxyHumanoidVisualName} Animator Controller");
+
+            if (visual.GetComponentInChildren<CombatHealth>(true) != null
+                || visual.GetComponentInChildren<BasicSoldierEnemy>(true) != null
+                || visual.GetComponentInChildren<CombatTargetSensor>(true) != null
+                || visual.GetComponentInChildren<EnemyElitePatternController>(true) != null)
+            {
+                throw new InvalidOperationException($"{BossProxyHumanoidVisualName} must be visual-only and must not duplicate enemy gameplay components.");
+            }
+
+            Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(includeInactive: true);
+            if (renderers.Length == 0)
+            {
+                throw new InvalidOperationException($"{BossProxyHumanoidVisualName} should expose promoted renderers.");
+            }
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                ValidateRendererAssets(renderers[i], $"{BossProxyHumanoidVisualName}.{renderers[i].name}");
+            }
+
+            Transform projectileCore = bossProxy.transform.Find(BossProxyMarkerName);
+            if (projectileCore == null)
+            {
+                throw new InvalidOperationException($"Boss proxy should include {BossProxyMarkerName} as the readable projectile source core.");
+            }
+
+            MeshRenderer projectileCoreRenderer = projectileCore.GetComponent<MeshRenderer>();
+            if (projectileCoreRenderer == null || projectileCoreRenderer.sharedMaterial == null)
+            {
+                throw new InvalidOperationException($"{BossProxyMarkerName} should keep a game-owned material.");
+            }
+
+            ValidateGameOwnedAsset(projectileCoreRenderer.sharedMaterial, $"{BossProxyMarkerName} material");
+        }
+
+        private static void ValidateRendererAssets(Renderer renderer, string label)
+        {
+            MeshFilter meshFilter = renderer.GetComponent<MeshFilter>();
+            if (meshFilter != null && meshFilter.sharedMesh != null)
+            {
+                ValidateGameOwnedAsset(meshFilter.sharedMesh, $"{label} mesh");
+            }
+
+            SkinnedMeshRenderer skinnedMeshRenderer = renderer as SkinnedMeshRenderer;
+            if (skinnedMeshRenderer != null && skinnedMeshRenderer.sharedMesh != null)
+            {
+                ValidateGameOwnedAsset(skinnedMeshRenderer.sharedMesh, $"{label} mesh");
+            }
+
+            Material[] materials = renderer.sharedMaterials;
+            for (int i = 0; i < materials.Length; i++)
+            {
+                if (materials[i] != null)
+                {
+                    ValidateGameOwnedAsset(materials[i], $"{label} material");
+                }
+            }
+        }
+
+        private static void ValidateGameOwnedAsset(UnityEngine.Object asset, string label)
+        {
+            if (asset == null)
+            {
+                throw new InvalidOperationException($"{label} must be assigned.");
+            }
+
+            string assetPath = AssetDatabase.GetAssetPath(asset).Replace('\\', '/');
+            if (!assetPath.StartsWith("Assets/_Game/", StringComparison.Ordinal)
+                || assetPath.Contains("/_Imported/", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"{label} should reference a promoted `_Game` asset, found {assetPath}.");
+            }
         }
 
         private static void ValidatePocketOwner(

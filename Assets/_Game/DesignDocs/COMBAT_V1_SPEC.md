@@ -267,6 +267,7 @@ The first boss-barrage lane review slice now has these authored pieces:
 - `BossBarragePocketReviewOwner` is the review-only pocket result owner for the first lane slice: defeat the close threat and spend `SummonSlot1` while surviving boss pressure.
 - `BossBarrageLaneReviewHud` is the temporary readable review display for HP, close-threat HP, EN fill/readiness, forward-risk gain, current boss-barrage pattern/windup/projectile count, Skill1/SummonSlot1 readiness, active summon proxy/projectile/shield block state, and pocket result state.
 - `DB_Archetype_HumanoidBoss_SummonCallerElite` and `DB_Archetype_HumanoidBoss_FinalStandCommanderElite` track promoted humanoid boss candidates outside the soldier role map. They are review candidates for future boss-prefab authoring, not production boss phase controllers.
+- The current boss-barrage review scene uses a visual-only copy of the promoted `SummonCallerElite` humanoid visual plus a small projectile-source core for the far boss proxy. This improves boss readability without instantiating the full role AI prefab or adding a hidden boss phase system.
 
 The next implementation should not add a roster or boss phase yet. It should tune the current close-threat answer, EN pacing, projectile pressure, proxy summon readability, and `SummonSlot1` impact until the one-pocket loop reads as a small game instead of disconnected mechanics.
 

@@ -1,5 +1,7 @@
 using System.Collections;
+using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
+using DimensionBrawl.Enemies;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
@@ -50,6 +52,8 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Actor_Proxy.prefab";
         private const string LaneRootName = "BossBarrageLaneReview_SummonLaneSpace";
         private const string BossRootName = "BossBarrageLaneReview_BossProxy_NeedleLock";
+        private const string BossHumanoidVisualName = "BossBarrageLaneReview_HumanoidBossVisual_SummonCallerElite";
+        private const string BossProjectileCoreName = "BossBarrageLaneReview_BossProxyMarker";
         private const string CloseThreatRootName = "BossBarrageLaneReview_CloseThreat_ClosePunish";
         private const string ProjectilePoolRootName = "BossBarrageLaneReview_ProjectilePool";
         private const string ActionCuePoolRootName = "BossBarrageLaneReview_ActionCuePool";
@@ -85,6 +89,7 @@ namespace DimensionBrawl.Tests
             SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
             GameObject bossRoot = RequireRoot(BossRootName);
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
+            AssertBossHumanoidVisual(bossRoot);
             GameObject closeThreatRoot = RequireRoot(CloseThreatRootName);
             CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreatRoot, "close threat health");
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
@@ -622,6 +627,74 @@ namespace DimensionBrawl.Tests
             T asset = AssetDatabase.LoadAssetAtPath<T>(assetPath);
             Assert.IsNotNull(asset, $"Missing required asset {assetPath}.");
             return asset;
+        }
+
+        private static void AssertBossHumanoidVisual(GameObject bossRoot)
+        {
+            Transform visual = bossRoot.transform.Find(BossHumanoidVisualName);
+            Assert.IsNotNull(visual, $"Boss proxy should include {BossHumanoidVisualName}.");
+            Animator animator = visual.GetComponent<Animator>();
+            Assert.IsNotNull(animator, "Boss humanoid visual should use a promoted Animator.");
+            Assert.IsNotNull(animator.runtimeAnimatorController, "Boss humanoid visual should keep its promoted Animator Controller.");
+            AssertGameOwnedAsset(animator.runtimeAnimatorController, "boss humanoid Animator Controller");
+
+            Assert.IsNull(
+                visual.GetComponentInChildren<CombatHealth>(true),
+                "Boss humanoid visual should not duplicate CombatHealth; the boss root owns health.");
+            Assert.IsNull(
+                visual.GetComponentInChildren<BasicSoldierEnemy>(true),
+                "Boss humanoid visual should not run enemy AI as a nested visual.");
+            Assert.IsNull(
+                visual.GetComponentInChildren<CombatTargetSensor>(true),
+                "Boss humanoid visual should not carry scene target sensing.");
+            Assert.IsNull(
+                visual.GetComponentInChildren<EnemyElitePatternController>(true),
+                "Boss humanoid visual should not carry elite gameplay traits.");
+
+            Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(true);
+            Assert.Greater(renderers.Length, 0, "Boss humanoid visual should expose promoted renderers.");
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                AssertRendererUsesGameOwnedAssets(renderers[i], renderers[i].name);
+            }
+
+            Transform projectileCore = bossRoot.transform.Find(BossProjectileCoreName);
+            Assert.IsNotNull(projectileCore, "Boss proxy should keep a readable projectile source core.");
+            MeshRenderer coreRenderer = projectileCore.GetComponent<MeshRenderer>();
+            Assert.IsNotNull(coreRenderer, "Boss projectile source core should be visible.");
+            AssertGameOwnedAsset(coreRenderer.sharedMaterial, "boss projectile source material");
+        }
+
+        private static void AssertRendererUsesGameOwnedAssets(Renderer renderer, string label)
+        {
+            MeshFilter meshFilter = renderer.GetComponent<MeshFilter>();
+            if (meshFilter != null && meshFilter.sharedMesh != null)
+            {
+                AssertGameOwnedAsset(meshFilter.sharedMesh, $"{label} mesh");
+            }
+
+            SkinnedMeshRenderer skinnedMeshRenderer = renderer as SkinnedMeshRenderer;
+            if (skinnedMeshRenderer != null && skinnedMeshRenderer.sharedMesh != null)
+            {
+                AssertGameOwnedAsset(skinnedMeshRenderer.sharedMesh, $"{label} mesh");
+            }
+
+            Material[] materials = renderer.sharedMaterials;
+            for (int i = 0; i < materials.Length; i++)
+            {
+                if (materials[i] != null)
+                {
+                    AssertGameOwnedAsset(materials[i], $"{label} material");
+                }
+            }
+        }
+
+        private static void AssertGameOwnedAsset(Object asset, string label)
+        {
+            Assert.IsNotNull(asset, $"{label} should be assigned.");
+            string assetPath = AssetDatabase.GetAssetPath(asset).Replace('\\', '/');
+            Assert.IsTrue(assetPath.StartsWith("Assets/_Game/"), $"{label} should be game-owned, found {assetPath}.");
+            Assert.IsFalse(assetPath.Contains("/_Imported/"), $"{label} should not point at raw imports.");
         }
 
         private static void FillEnergyToTier(SummonEnergyLadder energyLadder, int targetTier)
