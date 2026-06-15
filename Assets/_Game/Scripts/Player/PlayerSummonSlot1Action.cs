@@ -133,6 +133,8 @@ namespace DimensionBrawl.Player
         public int ActiveProjectileCount => CountActiveProjectiles();
         public int ActiveCueCount => CountActiveCues();
         public int ActiveSummonActorCount => CountActiveSummonActors();
+        public int ActivePressureScreenCount => CountActivePressureScreens();
+        public int ActivePressureScreenRemainingIntercepts => CountActivePressureScreenRemainingIntercepts();
 
         private void Awake()
         {
@@ -574,6 +576,40 @@ namespace DimensionBrawl.Player
                 if (summonActors[i] != null && summonActors[i].IsActive)
                 {
                     count++;
+                }
+            }
+
+            return count;
+        }
+
+        private int CountActivePressureScreens()
+        {
+            int count = 0;
+            for (int i = 0; i < summonActors.Count; i++)
+            {
+                SummonFrontlineProxy actor = summonActors[i];
+                if (actor != null
+                    && actor.PressureScreen != null
+                    && actor.PressureScreen.IsActive)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private int CountActivePressureScreenRemainingIntercepts()
+        {
+            int count = 0;
+            for (int i = 0; i < summonActors.Count; i++)
+            {
+                SummonFrontlineProxy actor = summonActors[i];
+                if (actor != null
+                    && actor.PressureScreen != null
+                    && actor.PressureScreen.IsActive)
+                {
+                    count += actor.PressureScreen.RemainingIntercepts;
                 }
             }
 

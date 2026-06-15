@@ -304,6 +304,14 @@ namespace DimensionBrawl.Tests
             Assert.Greater(summonSlot1Action.ActiveCueCount, 0, "SummonSlot1 should show a magic-circle entry cue.");
             Assert.Greater(summonSlot1Action.ActiveSummonActorCount, 0, "SummonSlot1 should show a visible frontline summon actor.");
             Assert.GreaterOrEqual(summonSlot1Action.ActiveProjectileCount, 3);
+            Assert.GreaterOrEqual(
+                summonSlot1Action.ActivePressureScreenCount,
+                1,
+                "SummonSlot1 should expose active pressure-screen state for the review HUD.");
+            Assert.GreaterOrEqual(
+                summonSlot1Action.ActivePressureScreenRemainingIntercepts,
+                7,
+                "SummonSlot1 LV3 should expose the strongest pressure-screen intercept budget to the review HUD.");
             SummonPressureScreen[] pressureScreens = Object.FindObjectsByType<SummonPressureScreen>(
                 FindObjectsInactive.Exclude,
                 FindObjectsSortMode.None);

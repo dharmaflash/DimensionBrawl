@@ -264,7 +264,7 @@ The first boss-barrage lane review slice now has these authored pieces:
 - `DB_PlayerAction_BossBarrageLocalDefense` is the scene-specific one-hit `BasicDefenseAttack` profile for close threats. It reuses the existing player action owner without reviving the melee-combo-first direction.
 - `ActionFoundationBossBarrageLaneReview.unity` is the manual review scene for the fixed rear camera, player boundary, close-threat local defense, EN gain, boss barrage, Skill1, SummonSlot1, and one pocket clear/fail read.
 - `BossBarragePocketReviewOwner` is the review-only pocket result owner for the first lane slice: defeat the close threat and spend `SummonSlot1` while surviving boss pressure.
-- `BossBarrageLaneReviewHud` is the temporary readable review display for HP, close-threat HP, EN fill/readiness, forward-risk gain, current boss-barrage pattern/windup/projectile count, Skill1/SummonSlot1 readiness, and pocket result state.
+- `BossBarrageLaneReviewHud` is the temporary readable review display for HP, close-threat HP, EN fill/readiness, forward-risk gain, current boss-barrage pattern/windup/projectile count, Skill1/SummonSlot1 readiness, active summon proxy/projectile/shield block state, and pocket result state.
 
 The next implementation should not add a roster or boss phase yet. It should tune the current close-threat answer, EN pacing, projectile pressure, proxy summon readability, and `SummonSlot1` impact until the one-pocket loop reads as a small game instead of disconnected mechanics.
 

@@ -22,7 +22,7 @@ namespace DimensionBrawl.Presentation
         [Header("Display")]
         [SerializeField] private bool showHud = true;
         [SerializeField, Min(1f)] private float width = 430f;
-        [SerializeField, Min(1f)] private float height = 205f;
+        [SerializeField, Min(1f)] private float height = 230f;
         [SerializeField, Min(0f)] private float margin = 18f;
 
         private GUIStyle labelStyle;
@@ -65,6 +65,7 @@ namespace DimensionBrawl.Presentation
             GUILayout.Label(ResolveRiskLine(), labelStyle);
             GUILayout.Label(ResolveBossBarrageLine(), labelStyle);
             GUILayout.Label(ResolveActionLine(), labelStyle);
+            GUILayout.Label(ResolveSummonExchangeLine(), labelStyle);
             GUILayout.Label(ResolveObjectiveLine(), labelStyle);
             GUILayout.EndArea();
         }
@@ -126,6 +127,24 @@ namespace DimensionBrawl.Presentation
                 ? $"SummonSlot1 LV{energyLadder.AvailableTier}"
                 : "SummonSlot1 not ready";
             return $"{skill}   {summon}";
+        }
+
+        private string ResolveSummonExchangeLine()
+        {
+            string skillShots = skill1Action != null
+                ? $"Skill bolts {skill1Action.ActiveProjectileCount}"
+                : "Skill bolts -";
+            if (summonSlot1Action == null)
+            {
+                return $"{skillShots}   Summon -";
+            }
+
+            string tier = summonSlot1Action.LastSpentTier > 0
+                ? $"LV{summonSlot1Action.LastSpentTier}"
+                : "LV-";
+            return $"{skillShots}   Summon {tier} proxy {summonSlot1Action.ActiveSummonActorCount} "
+                + $"bolts {summonSlot1Action.ActiveProjectileCount} shield {summonSlot1Action.ActivePressureScreenCount} "
+                + $"blocks {summonSlot1Action.ActivePressureScreenRemainingIntercepts}";
         }
 
         private string ResolveObjectiveLine()
