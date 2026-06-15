@@ -664,6 +664,21 @@ namespace DimensionBrawl.Editor
                 projectileOrigin.localScale = Vector3.one;
                 SetObjectReference(proxy, "projectileOrigin", projectileOrigin);
 
+                SummonPressureScreen pressureScreen = EnsureComponent<SummonPressureScreen>(editableRoot);
+                SphereCollider screenCollider = EnsureComponent<SphereCollider>(editableRoot);
+                screenCollider.isTrigger = true;
+                screenCollider.radius = 1.35f;
+
+                Rigidbody screenRigidbody = EnsureComponent<Rigidbody>(editableRoot);
+                screenRigidbody.useGravity = false;
+                screenRigidbody.isKinematic = true;
+
+                SetEnum(pressureScreen, "ownerTeam", (int)DamageTeam.AllySummon);
+                SetInt(pressureScreen, "defaultMaxIntercepts", 2);
+                SetFloat(pressureScreen, "defaultLifetimeSeconds", 1.2f);
+                SetFloat(pressureScreen, "defaultRadius", 1.35f);
+                SetObjectReference(proxy, "pressureScreen", pressureScreen);
+
                 PrefabUtility.SaveAsPrefabAsset(editableRoot, SummonSlot1ActorPrefabPath);
             }
             finally
@@ -1110,6 +1125,14 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(summonSlot1Action, "cueRoot", actionCueRoot.transform);
             ValidateObjectReference(summonSlot1Action, "summonActorRoot", summonActorRoot.transform);
             ValidateEnum(summonSlot1Action, "sourceTeam", (int)DamageTeam.AllySummon);
+
+            SummonFrontlineProxy summonActorPrefab = LoadPrefabComponent<SummonFrontlineProxy>(SummonSlot1ActorPrefabPath);
+            SummonPressureScreen pressureScreen = LoadPrefabComponent<SummonPressureScreen>(SummonSlot1ActorPrefabPath);
+            ValidateObjectReference(summonActorPrefab, "pressureScreen", pressureScreen);
+            ValidateEnum(pressureScreen, "ownerTeam", (int)DamageTeam.AllySummon);
+            ValidateInt(pressureScreen, "defaultMaxIntercepts", 2);
+            ValidateFloat(pressureScreen, "defaultLifetimeSeconds", 1.2f);
+            ValidateFloat(pressureScreen, "defaultRadius", 1.35f);
         }
 
         private static void ValidateCloseThreat(

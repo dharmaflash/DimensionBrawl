@@ -104,7 +104,14 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(summonSlot1Action, "laneSpace"));
             Assert.AreSame(LoadAsset<GameObject>(SummonSlot1ProjectilePrefabPath), GetObjectReference<GameObject>(summonSlot1Action, "projectilePrefabObject"));
             Assert.AreSame(LoadAsset<GameObject>(SummonSlot1EntryCuePrefabPath), GetObjectReference<GameObject>(summonSlot1Action, "entryCuePrefab"));
-            Assert.AreSame(LoadAsset<GameObject>(SummonSlot1ActorPrefabPath), GetObjectReference<GameObject>(summonSlot1Action, "summonActorPrefabObject"));
+            GameObject summonActorPrefabObject = LoadAsset<GameObject>(SummonSlot1ActorPrefabPath);
+            Assert.AreSame(summonActorPrefabObject, GetObjectReference<GameObject>(summonSlot1Action, "summonActorPrefabObject"));
+            SummonFrontlineProxy summonActorPrefab =
+                RequireComponent<SummonFrontlineProxy>(summonActorPrefabObject, "SummonSlot1 actor prefab");
+            SummonPressureScreen summonPressureScreen =
+                RequireComponent<SummonPressureScreen>(summonActorPrefabObject, "SummonSlot1 pressure screen");
+            Assert.AreSame(summonPressureScreen, summonActorPrefab.PressureScreen);
+            Assert.AreEqual(DamageTeam.AllySummon, summonPressureScreen.OwnerTeam);
             Assert.AreSame(projectileRoot.transform, GetObjectReference<Transform>(summonSlot1Action, "projectileRoot"));
             Assert.AreSame(actionCueRoot.transform, GetObjectReference<Transform>(summonSlot1Action, "cueRoot"));
             Assert.AreSame(summonActorRoot.transform, GetObjectReference<Transform>(summonSlot1Action, "summonActorRoot"));
@@ -252,6 +259,26 @@ namespace DimensionBrawl.Tests
             Assert.Greater(summonSlot1Action.ActiveCueCount, 0, "SummonSlot1 should show a magic-circle entry cue.");
             Assert.Greater(summonSlot1Action.ActiveSummonActorCount, 0, "SummonSlot1 should show a visible frontline summon actor.");
             Assert.GreaterOrEqual(summonSlot1Action.ActiveProjectileCount, 3);
+            SummonPressureScreen[] pressureScreens = Object.FindObjectsByType<SummonPressureScreen>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            bool foundActiveScreen = false;
+            for (int i = 0; i < pressureScreens.Length; i++)
+            {
+                if (pressureScreens[i].IsActive && pressureScreens[i].OwnerTeam == DamageTeam.AllySummon)
+                {
+                    foundActiveScreen = true;
+                    Assert.GreaterOrEqual(
+                        pressureScreens[i].RemainingIntercepts,
+                        7,
+                        "SummonSlot1 LV3 should open with the strongest pressure-screen intercept budget.");
+                    break;
+                }
+            }
+
+            Assert.IsTrue(
+                foundActiveScreen,
+                "SummonSlot1 should create a short-lived summon pressure screen for boss projectile exchanges.");
             Assert.IsTrue(
                 laneSpace.IsPastForwardBoundary(summonSlot1Action.LastEntryPosition),
                 "Summon entry belongs to the forward battlefield, not the clamped player zone.");

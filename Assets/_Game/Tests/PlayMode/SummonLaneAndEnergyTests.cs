@@ -211,6 +211,56 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void SummonPressureScreenInterceptsHostileBossProjectilesWithTierLimit()
+        {
+            GameObject screenObject = new GameObject("SummonPressureScreen");
+            screenObject.AddComponent<SphereCollider>();
+            screenObject.AddComponent<Rigidbody>();
+            SummonPressureScreen screen = screenObject.AddComponent<SummonPressureScreen>();
+
+            GameObject alliedProjectileObject = new GameObject("AlliedProjectile");
+            alliedProjectileObject.AddComponent<SphereCollider>();
+            alliedProjectileObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile alliedProjectile = alliedProjectileObject.AddComponent<BossBarrageProjectile>();
+            alliedProjectile.Configure(null, DamageTeam.Player, 10f, Vector3.back, 0f, 1f, 0.3f);
+
+            screen.Activate(DamageTeam.AllySummon, 1, 1.25f, 1f);
+            Assert.IsFalse(
+                screen.TryIntercept(alliedProjectile),
+                "Summon pressure screens should ignore player-side projectiles.");
+            Assert.IsTrue(alliedProjectile.IsActive);
+
+            GameObject enemyProjectileObject = new GameObject("EnemyProjectile");
+            enemyProjectileObject.AddComponent<SphereCollider>();
+            enemyProjectileObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile enemyProjectile = enemyProjectileObject.AddComponent<BossBarrageProjectile>();
+            enemyProjectile.Configure(null, DamageTeam.Enemy, 10f, Vector3.back, 0f, 1f, 0.3f);
+
+            Assert.IsTrue(screen.TryIntercept(enemyProjectile));
+            Assert.IsFalse(enemyProjectile.IsActive);
+            Assert.AreEqual(1, screen.InterceptedProjectiles);
+            Assert.AreEqual(0, screen.RemainingIntercepts);
+            Assert.IsFalse(screen.IsActive);
+
+            GameObject secondEnemyProjectileObject = new GameObject("SecondEnemyProjectile");
+            secondEnemyProjectileObject.AddComponent<SphereCollider>();
+            secondEnemyProjectileObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile secondEnemyProjectile =
+                secondEnemyProjectileObject.AddComponent<BossBarrageProjectile>();
+            secondEnemyProjectile.Configure(null, DamageTeam.Enemy, 10f, Vector3.back, 0f, 1f, 0.3f);
+
+            Assert.IsFalse(
+                screen.TryIntercept(secondEnemyProjectile),
+                "A spent pressure screen should not keep deleting boss projectiles.");
+            Assert.IsTrue(secondEnemyProjectile.IsActive);
+
+            Object.DestroyImmediate(secondEnemyProjectileObject);
+            Object.DestroyImmediate(enemyProjectileObject);
+            Object.DestroyImmediate(alliedProjectileObject);
+            Object.DestroyImmediate(screenObject);
+        }
+
+        [Test]
         public void BossBarrageEmitterFiresPooledProjectilesFromBossSide()
         {
             GameObject laneObject = new GameObject("Lane");

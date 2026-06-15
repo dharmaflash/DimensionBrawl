@@ -1031,6 +1031,9 @@ MonoBehaviour:
     CueLifetimeSeconds: 0.85
     ActorLifetimeSeconds: 1.25
     ActorScale: 0.9
+    ScreenIntercepts: 2
+    ScreenRadius: 1.25
+    ScreenLifetimeSeconds: 1.15
   - Damage: 66
     ProjectileSpeed: 18.5
     LifetimeSeconds: 2.65
@@ -1043,6 +1046,9 @@ MonoBehaviour:
     CueLifetimeSeconds: 1
     ActorLifetimeSeconds: 1.55
     ActorScale: 1.08
+    ScreenIntercepts: 4
+    ScreenRadius: 1.55
+    ScreenLifetimeSeconds: 1.4
   - Damage: 78
     ProjectileSpeed: 20
     LifetimeSeconds: 2.9
@@ -1055,6 +1061,9 @@ MonoBehaviour:
     CueLifetimeSeconds: 1.15
     ActorLifetimeSeconds: 1.85
     ActorScale: 1.28
+    ScreenIntercepts: 7
+    ScreenRadius: 1.9
+    ScreenLifetimeSeconds: 1.7
 --- !u!114 &4012
 MonoBehaviour:
   m_ObjectHideFlags: 0

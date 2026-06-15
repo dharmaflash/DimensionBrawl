@@ -6,6 +6,7 @@ namespace DimensionBrawl.Combat
     public sealed class SummonFrontlineProxy : MonoBehaviour
     {
         [SerializeField] private Transform projectileOrigin;
+        [SerializeField] private SummonPressureScreen pressureScreen;
         [SerializeField] private bool faceTargetOnActivate = true;
 
         private Vector3 baseScale = Vector3.one;
@@ -16,15 +17,21 @@ namespace DimensionBrawl.Combat
         public bool IsActive => active && gameObject.activeInHierarchy;
         public int ActiveTier => activeTier;
         public Transform ProjectileOrigin => projectileOrigin != null ? projectileOrigin : transform;
+        public SummonPressureScreen PressureScreen => pressureScreen;
 
         private void Awake()
         {
             baseScale = transform.localScale;
+            if (pressureScreen == null)
+            {
+                pressureScreen = GetComponentInChildren<SummonPressureScreen>(includeInactive: true);
+            }
         }
 
-        public void ConfigurePresentation(Transform newProjectileOrigin)
+        public void ConfigurePresentation(Transform newProjectileOrigin, SummonPressureScreen newPressureScreen)
         {
             projectileOrigin = newProjectileOrigin;
+            pressureScreen = newPressureScreen;
         }
 
         public void Activate(
@@ -65,6 +72,11 @@ namespace DimensionBrawl.Combat
 
         public void Deactivate()
         {
+            if (pressureScreen != null)
+            {
+                pressureScreen.Deactivate();
+            }
+
             active = false;
             remainingLifetime = 0f;
             gameObject.SetActive(false);

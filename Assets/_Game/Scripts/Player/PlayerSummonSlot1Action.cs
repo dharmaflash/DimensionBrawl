@@ -26,6 +26,9 @@ namespace DimensionBrawl.Player
             [Min(0f)] public float CueLifetimeSeconds;
             [Min(0.05f)] public float ActorLifetimeSeconds;
             [Min(0.01f)] public float ActorScale;
+            [Min(0)] public int ScreenIntercepts;
+            [Min(0.05f)] public float ScreenRadius;
+            [Min(0.05f)] public float ScreenLifetimeSeconds;
         }
 
         [Header("Input")]
@@ -69,7 +72,10 @@ namespace DimensionBrawl.Player
                 CueScale = 1.45f,
                 CueLifetimeSeconds = 0.85f,
                 ActorLifetimeSeconds = 1.25f,
-                ActorScale = 0.9f
+                ActorScale = 0.9f,
+                ScreenIntercepts = 2,
+                ScreenRadius = 1.25f,
+                ScreenLifetimeSeconds = 1.15f
             },
             new SummonTierSettings
             {
@@ -84,7 +90,10 @@ namespace DimensionBrawl.Player
                 CueScale = 1.85f,
                 CueLifetimeSeconds = 1f,
                 ActorLifetimeSeconds = 1.55f,
-                ActorScale = 1.08f
+                ActorScale = 1.08f,
+                ScreenIntercepts = 4,
+                ScreenRadius = 1.55f,
+                ScreenLifetimeSeconds = 1.4f
             },
             new SummonTierSettings
             {
@@ -99,7 +108,10 @@ namespace DimensionBrawl.Player
                 CueScale = 2.25f,
                 CueLifetimeSeconds = 1.15f,
                 ActorLifetimeSeconds = 1.85f,
-                ActorScale = 1.28f
+                ActorScale = 1.28f,
+                ScreenIntercepts = 7,
+                ScreenRadius = 1.9f,
+                ScreenLifetimeSeconds = 1.7f
             }
         };
 
@@ -255,6 +267,15 @@ namespace DimensionBrawl.Player
 
             actor.transform.SetParent(summonActorRoot != null ? summonActorRoot : transform, worldPositionStays: true);
             actor.Activate(position, facingDirection, tier, settings.ActorLifetimeSeconds, settings.ActorScale);
+            if (actor.PressureScreen != null)
+            {
+                actor.PressureScreen.Activate(
+                    sourceTeam,
+                    settings.ScreenIntercepts,
+                    settings.ScreenRadius,
+                    settings.ScreenLifetimeSeconds);
+            }
+
             lastSummonActorPosition = actor.transform.position;
             return actor;
         }
@@ -521,7 +542,10 @@ namespace DimensionBrawl.Player
                     CueScale = 1.5f,
                     CueLifetimeSeconds = 0.85f,
                     ActorLifetimeSeconds = 1.25f,
-                    ActorScale = 1f
+                    ActorScale = 1f,
+                    ScreenIntercepts = 2,
+                    ScreenRadius = 1.25f,
+                    ScreenLifetimeSeconds = 1.15f
                 };
             }
 

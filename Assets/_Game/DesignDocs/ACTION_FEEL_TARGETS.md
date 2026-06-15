@@ -216,7 +216,7 @@ Before boss phases, progression, reward loops, full HUD, or chapter production a
 7. `BasicDefenseAttack` can answer close or approaching monsters with clear startup, active/release, impact, and recovery when included.
 8. Dodge can avoid a simple boss projectile or enemy attack.
 9. `Skill1` can fire immediately at the current available EN level.
-10. `SummonSlot1` can call one LV1/LV2/LV3 summon/assist that visibly changes the boss-barrage exchange.
+10. `SummonSlot1` can call one LV1/LV2/LV3 summon/assist that visibly changes the boss-barrage exchange, including a short ally screen that can intercept hostile boss projectiles.
 11. Player, summon, boss/proxy, and enemy can damage valid hostile targets through shared team rules.
 12. Hit feedback, energy feedback, skill feedback, and summon feedback are visible enough to review from a short recording.
 13. The pocket can be won, paused, or failed.
