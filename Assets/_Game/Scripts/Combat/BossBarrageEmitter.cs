@@ -158,7 +158,11 @@ namespace DimensionBrawl.Combat
             for (int i = 0; i < projectileCount; i++)
             {
                 float offset = activePattern.GetLateralOffset(i, projectileCount, pendingForwardRisk01);
-                if (TryFireProjectile(activePattern, pendingTargetLanePoint.x + offset))
+                float depthOffset = activePattern.GetTargetDepthOffset(i, projectileCount, pendingForwardRisk01);
+                if (TryFireProjectile(
+                    activePattern,
+                    pendingTargetLanePoint.x + offset,
+                    pendingTargetLanePoint.y + depthOffset))
                 {
                     spawnedCount++;
                 }
@@ -186,7 +190,7 @@ namespace DimensionBrawl.Combat
             Tick(Time.deltaTime);
         }
 
-        private bool TryFireProjectile(BossBarragePatternProfile activePattern, float targetLateralX)
+        private bool TryFireProjectile(BossBarragePatternProfile activePattern, float targetLateralX, float targetLaneZ)
         {
             BossBarrageProjectile projectile = GetInactiveProjectile();
             if (projectile == null)
@@ -196,7 +200,7 @@ namespace DimensionBrawl.Combat
 
             Vector3 targetPoint = laneSpace.GetLaneWorldPoint(
                 targetLateralX,
-                pendingTargetLanePoint.y,
+                Mathf.Clamp(targetLaneZ, laneSpace.BackLimitZ, laneSpace.ForwardBoundaryZ),
                 activePattern.TargetHeight);
             Vector3 spawnPoint = laneSpace.GetLaneWorldPoint(
                 Mathf.Lerp(pendingTargetLanePoint.x, targetLateralX, 0.35f),

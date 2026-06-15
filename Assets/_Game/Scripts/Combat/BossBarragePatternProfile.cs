@@ -8,6 +8,7 @@ namespace DimensionBrawl.Combat
         TwinColumns = 1,
         SideClamp = 2,
         PunishNet = 3,
+        LinePressure = 4,
     }
 
     [CreateAssetMenu(
@@ -44,6 +45,16 @@ namespace DimensionBrawl.Combat
         [SerializeField, Range(0f, 0.65f)] private float sideClampCrossReachRatio = 0.28f;
         [Tooltip("Player-centered net patterns place inner shots near center before the outer ring.")]
         [SerializeField, Range(0.05f, 0.75f)] private float punishNetInnerSpreadRatio = 0.34f;
+        [Tooltip("Negative values commit the line to the left of the sampled target, positive values commit it to the right.")]
+        [SerializeField, Range(-1f, 1f)] private float linePressureDirection = 1f;
+        [Tooltip("How far from the sampled target the pressure line sits, expressed against the current spread.")]
+        [SerializeField, Range(0.2f, 1f)] private float linePressureCenterRatio = 0.72f;
+        [Tooltip("Small local scatter around the committed line so projectiles read as a lane, not one stacked shot.")]
+        [SerializeField, Range(0f, 0.35f)] private float linePressureHalfSpreadRatio = 0.08f;
+        [Tooltip("Backline line-pressure depth spacing. Wider spacing makes the safe back zone more readable.")]
+        [SerializeField, Min(0f)] private float backlineDepthSpread = 2.2f;
+        [Tooltip("Forward-risk line-pressure depth spacing. Tighter spacing increases risk near the boundary.")]
+        [SerializeField, Min(0f)] private float forwardDepthSpread = 0.85f;
         [SerializeField, Min(0f)] private float spawnHeight = 1.25f;
         [SerializeField, Min(0f)] private float targetHeight = 1f;
 
@@ -60,6 +71,9 @@ namespace DimensionBrawl.Combat
         public float SideClampDirection => sideClampDirection;
         public float SideClampCrossReachRatio => sideClampCrossReachRatio;
         public float PunishNetInnerSpreadRatio => punishNetInnerSpreadRatio;
+        public float LinePressureDirection => linePressureDirection;
+        public float LinePressureCenterRatio => linePressureCenterRatio;
+        public float LinePressureHalfSpreadRatio => linePressureHalfSpreadRatio;
         public float SpawnHeight => spawnHeight;
         public float TargetHeight => targetHeight;
 
@@ -85,6 +99,11 @@ namespace DimensionBrawl.Combat
                 return GetPunishNetOffset(projectileIndex, count, forwardRisk01);
             }
 
+            if (lateralShape == BossBarrageLateralShape.LinePressure)
+            {
+                return GetLinePressureOffset(projectileIndex, count, forwardRisk01);
+            }
+
             int safeCount = Mathf.Max(1, count);
             if (safeCount <= 1)
             {
@@ -94,6 +113,27 @@ namespace DimensionBrawl.Combat
             float halfSpread = EvaluateHalfSpread(forwardRisk01);
             float normalizedIndex = Mathf.Clamp01((float)projectileIndex / (safeCount - 1));
             return Mathf.Lerp(-halfSpread, halfSpread, normalizedIndex);
+        }
+
+        public float GetTargetDepthOffset(int projectileIndex, int count, float forwardRisk01)
+        {
+            if (lateralShape != BossBarrageLateralShape.LinePressure)
+            {
+                return 0f;
+            }
+
+            int safeCount = Mathf.Max(1, count);
+            if (safeCount <= 1)
+            {
+                return 0f;
+            }
+
+            float depthSpread = Mathf.Lerp(
+                backlineDepthSpread,
+                forwardDepthSpread,
+                Mathf.Clamp01(forwardRisk01));
+            float normalizedIndex = Mathf.Clamp01((float)Mathf.Clamp(projectileIndex, 0, safeCount - 1) / (safeCount - 1));
+            return Mathf.Lerp(-depthSpread, depthSpread, normalizedIndex);
         }
 
         private float GetTwinColumnOffset(int projectileIndex, int count, float forwardRisk01)
@@ -161,6 +201,22 @@ namespace DimensionBrawl.Combat
             float pair01 = pairCount <= 1 ? 0f : Mathf.Clamp01((float)pairIndex / (pairCount - 1));
             float magnitude = Mathf.Lerp(innerSpread, halfSpread, pair01);
             return safeIndex % 2 == 1 ? -magnitude : magnitude;
+        }
+
+        private float GetLinePressureOffset(int projectileIndex, int count, float forwardRisk01)
+        {
+            float halfSpread = EvaluateHalfSpread(forwardRisk01);
+            float direction = linePressureDirection < 0f ? -1f : 1f;
+            float center = direction * halfSpread * Mathf.Clamp(linePressureCenterRatio, 0.2f, 1f);
+            int safeCount = Mathf.Max(1, count);
+            if (safeCount <= 1)
+            {
+                return center;
+            }
+
+            float localHalfSpread = halfSpread * Mathf.Clamp01(linePressureHalfSpreadRatio);
+            float normalizedIndex = Mathf.Clamp01((float)Mathf.Clamp(projectileIndex, 0, safeCount - 1) / (safeCount - 1));
+            return center + Mathf.Lerp(-localHalfSpread, localHalfSpread, normalizedIndex);
         }
     }
 }

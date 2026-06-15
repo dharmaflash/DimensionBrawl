@@ -146,6 +146,40 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void BossBarrageLinePressureCommitsToOneRailAndTightensDepthNearForwardRisk()
+        {
+            BossBarragePatternProfile pattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            var serializedObject = new SerializedObject(pattern);
+            serializedObject.FindProperty("lateralShape").enumValueIndex = (int)BossBarrageLateralShape.LinePressure;
+            serializedObject.FindProperty("backlineHalfSpread").floatValue = 4f;
+            serializedObject.FindProperty("forwardHalfSpread").floatValue = 3f;
+            serializedObject.FindProperty("linePressureDirection").floatValue = 1f;
+            serializedObject.FindProperty("linePressureCenterRatio").floatValue = 0.72f;
+            serializedObject.FindProperty("linePressureHalfSpreadRatio").floatValue = 0.08f;
+            serializedObject.FindProperty("backlineDepthSpread").floatValue = 2.2f;
+            serializedObject.FindProperty("forwardDepthSpread").floatValue = 0.85f;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+
+            float firstOffset = pattern.GetLateralOffset(0, 4, 0f);
+            float lastOffset = pattern.GetLateralOffset(3, 4, 0f);
+            float backlineDepth = pattern.GetTargetDepthOffset(3, 4, 0f);
+            float forwardDepth = pattern.GetTargetDepthOffset(3, 4, 1f);
+
+            Assert.Greater(firstOffset, 0f, "Right-side LinePressure should commit pressure to one rail.");
+            Assert.Greater(lastOffset, 0f, "LinePressure scatter should stay on the committed rail.");
+            Assert.Less(
+                Mathf.Abs(lastOffset - firstOffset),
+                pattern.EvaluateHalfSpread(0f),
+                "LinePressure should read as a narrow lane instead of a full spread.");
+            Assert.Greater(
+                Mathf.Abs(backlineDepth),
+                Mathf.Abs(forwardDepth),
+                "Forward-risk LinePressure depth spacing should tighten compared with the backline.");
+
+            Object.DestroyImmediate(pattern);
+        }
+
+        [Test]
         public void BossBarrageProjectileDamagesHostileTargetsOnly()
         {
             GameObject projectileObject = new GameObject("Projectile");

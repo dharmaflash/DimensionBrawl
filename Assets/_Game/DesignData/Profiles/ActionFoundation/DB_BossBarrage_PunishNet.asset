@@ -28,5 +28,10 @@ MonoBehaviour:
   sideClampDirection: -1
   sideClampCrossReachRatio: 0.28
   punishNetInnerSpreadRatio: 0.34
+  linePressureDirection: 1
+  linePressureCenterRatio: 0.72
+  linePressureHalfSpreadRatio: 0.08
+  backlineDepthSpread: 2.2
+  forwardDepthSpread: 0.85
   spawnHeight: 1.52
   targetHeight: 1.05
