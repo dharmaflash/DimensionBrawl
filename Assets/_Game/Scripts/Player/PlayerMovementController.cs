@@ -1,4 +1,5 @@
 ﻿using System;
+using DimensionBrawl.LevelDesign;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -48,6 +49,10 @@ namespace DimensionBrawl.Player
         [SerializeField] private Camera referenceCamera;
         [SerializeField] private float gravity = -24f;
 
+        [Header("Lane Constraints")]
+        [Tooltip("Optional fixed-rear summon lane. When assigned, movement, dodge bursts, and attack steps cannot cross the authored player zone.")]
+        [SerializeField] private SummonLaneSpace laneSpace;
+
         [Header("Animation Requests")]
         [SerializeField] private Animator animator;
         [SerializeField] private string moveSpeedParameter = "MoveSpeed";
@@ -95,6 +100,7 @@ namespace DimensionBrawl.Player
         public bool HasMoveInput => currentMoveInput.sqrMagnitude > 0f;
         public bool IsStopSettling => stopSettleTimer > 0f;
         public Vector3 FacingDirection => transform.forward;
+        public SummonLaneSpace LaneSpace => laneSpace;
 
         public event Action RunStarted;
         public event Action StopSettleStarted;
@@ -486,6 +492,27 @@ namespace DimensionBrawl.Player
             verticalVelocity += gravity * deltaTime;
             Vector3 motion = (externalPlanarTimer > 0f ? ResolveExternalPlanarVelocity() : planarVelocity) + Vector3.up * verticalVelocity;
             characterController.Move(motion * deltaTime);
+            ClampToLaneSpace();
+        }
+
+        private void ClampToLaneSpace()
+        {
+            if (laneSpace == null)
+            {
+                return;
+            }
+
+            Vector3 clampedPosition = laneSpace.ClampPlayerPosition(transform.position);
+            if ((clampedPosition - transform.position).sqrMagnitude <= 0.000001f)
+            {
+                return;
+            }
+
+            transform.position = clampedPosition;
+            planarVelocity = Vector3.zero;
+            externalPlanarVelocity = Vector3.zero;
+            externalPlanarDuration = 0f;
+            externalPlanarTimer = 0f;
         }
 
         private Vector3 ResolveExternalPlanarVelocity()
