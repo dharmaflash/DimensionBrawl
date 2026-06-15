@@ -16,12 +16,13 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private Transform player;
         [SerializeField] private PlayerSkill1Action skill1Action;
         [SerializeField] private PlayerSummonSlot1Action summonSlot1Action;
+        [SerializeField] private BossBarrageEmitter bossBarrageEmitter;
         [SerializeField] private BossBarragePocketReviewOwner pocketReviewOwner;
 
         [Header("Display")]
         [SerializeField] private bool showHud = true;
         [SerializeField, Min(1f)] private float width = 430f;
-        [SerializeField, Min(1f)] private float height = 180f;
+        [SerializeField, Min(1f)] private float height = 205f;
         [SerializeField, Min(0f)] private float margin = 18f;
 
         private GUIStyle labelStyle;
@@ -35,6 +36,7 @@ namespace DimensionBrawl.Presentation
             Transform newPlayer,
             PlayerSkill1Action newSkill1Action,
             PlayerSummonSlot1Action newSummonSlot1Action,
+            BossBarrageEmitter newBossBarrageEmitter,
             BossBarragePocketReviewOwner newPocketReviewOwner)
         {
             playerHealth = newPlayerHealth;
@@ -44,6 +46,7 @@ namespace DimensionBrawl.Presentation
             player = newPlayer;
             skill1Action = newSkill1Action;
             summonSlot1Action = newSummonSlot1Action;
+            bossBarrageEmitter = newBossBarrageEmitter;
             pocketReviewOwner = newPocketReviewOwner;
         }
 
@@ -60,6 +63,7 @@ namespace DimensionBrawl.Presentation
             GUILayout.Label(ResolveHealthLine(), labelStyle);
             GUILayout.Label(ResolveEnergyLine(), labelStyle);
             GUILayout.Label(ResolveRiskLine(), labelStyle);
+            GUILayout.Label(ResolveBossBarrageLine(), labelStyle);
             GUILayout.Label(ResolveActionLine(), labelStyle);
             GUILayout.Label(ResolveObjectiveLine(), labelStyle);
             GUILayout.EndArea();
@@ -92,6 +96,25 @@ namespace DimensionBrawl.Presentation
             float risk = laneSpace != null && player != null ? laneSpace.EvaluateForwardRisk01(player.position) : 0f;
             float gain = energyLadder != null ? energyLadder.CurrentGainMultiplier : 0f;
             return $"Forward Risk {risk * 100f:0}%   EN Gain x{gain:0.00}";
+        }
+
+        private string ResolveBossBarrageLine()
+        {
+            if (bossBarrageEmitter == null)
+            {
+                return "Boss Pattern -";
+            }
+
+            BossBarragePatternProfile pattern = bossBarrageEmitter.CurrentPattern;
+            if (pattern == null)
+            {
+                return "Boss Pattern -";
+            }
+
+            string pressureState = bossBarrageEmitter.IsWindupActive
+                ? $"windup risk {bossBarrageEmitter.PendingForwardRisk01 * 100f:0}%"
+                : $"shots {bossBarrageEmitter.ActiveProjectileCount}";
+            return $"Boss P{bossBarrageEmitter.CurrentPatternSequenceIndex + 1}: {pattern.PatternId} [{pattern.LateralShape}]   {pressureState}";
         }
 
         private string ResolveActionLine()

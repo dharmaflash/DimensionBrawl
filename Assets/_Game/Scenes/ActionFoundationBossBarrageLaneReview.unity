@@ -4678,10 +4678,11 @@ MonoBehaviour:
   player: {fileID: 4001}
   skill1Action: {fileID: 4012}
   summonSlot1Action: {fileID: 4011}
+  bossBarrageEmitter: {fileID: 237992088}
   pocketReviewOwner: {fileID: 43347445}
   showHud: 1
   width: 430
-  height: 180
+  height: 205
   margin: 18
 --- !u!4 &711728110
 Transform:

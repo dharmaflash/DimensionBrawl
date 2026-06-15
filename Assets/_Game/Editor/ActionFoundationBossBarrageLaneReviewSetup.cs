@@ -165,15 +165,26 @@ namespace DimensionBrawl.Editor
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "player SummonSlot1 action");
             ConfigureTargetReferences(targetSelector, cameraTargetBridge, cameraController, player, playerHealth, closeThreatHealth, bossHealth);
             ConfigureEncounter(encounter, playerHealth, closeThreatHealth);
+            BossBarrageEmitter bossBarrageEmitter = RequireComponent<BossBarrageEmitter>(bossProxy, "boss barrage emitter");
             BossBarragePocketReviewOwner pocketOwner = CreatePocketOwner(
                 scene,
                 playerHealth,
                 closeThreatHealth,
                 skill1Action,
                 summonSlot1Action,
-                RequireComponent<BossBarrageEmitter>(bossProxy, "boss barrage emitter"),
+                bossBarrageEmitter,
                 laneSpace);
-            CreateReviewHud(scene, playerHealth, closeThreatHealth, energyLadder, laneSpace, player.transform, skill1Action, summonSlot1Action, pocketOwner);
+            CreateReviewHud(
+                scene,
+                playerHealth,
+                closeThreatHealth,
+                energyLadder,
+                laneSpace,
+                player.transform,
+                skill1Action,
+                summonSlot1Action,
+                bossBarrageEmitter,
+                pocketOwner);
             ConfigureFixedRearCamera(cameraController, player.transform, bossProxy.transform);
             ConfigureArenaInfluenceTargets(scene, player.transform, bossProxy.transform, closeThreat.transform);
             CreateLaneMarkers(scene, laneSpace);
@@ -249,7 +260,17 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(encounter, "playerHealth", playerHealth);
             ValidateObjectReference(encounter, "enemyHealth", closeThreatHealth);
             ValidatePocketOwner(pocketOwner, playerHealth, closeThreatHealth, skill1Action, summonSlot1Action, emitter);
-            ValidateReviewHud(reviewHud, playerHealth, closeThreatHealth, energyLadder, laneSpace, player.transform, skill1Action, summonSlot1Action, pocketOwner);
+            ValidateReviewHud(
+                reviewHud,
+                playerHealth,
+                closeThreatHealth,
+                energyLadder,
+                laneSpace,
+                player.transform,
+                skill1Action,
+                summonSlot1Action,
+                emitter,
+                pocketOwner);
             ValidateFixedRearCamera(cameraController, player.transform);
             ValidateSummonForwardSpace(laneSpace);
             ValidateNoImportedAssetReference(ProjectilePrefabPath);
@@ -884,6 +905,7 @@ namespace DimensionBrawl.Editor
             Transform player,
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
+            BossBarrageEmitter bossBarrageEmitter,
             BossBarragePocketReviewOwner pocketOwner)
         {
             GameObject hudRoot = CreateRoot(scene, HudRootName);
@@ -896,6 +918,7 @@ namespace DimensionBrawl.Editor
                 player,
                 skill1Action,
                 summonSlot1Action,
+                bossBarrageEmitter,
                 pocketOwner);
             EditorUtility.SetDirty(hud);
         }
@@ -1088,6 +1111,7 @@ namespace DimensionBrawl.Editor
             Transform player,
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
+            BossBarrageEmitter bossBarrageEmitter,
             BossBarragePocketReviewOwner pocketOwner)
         {
             ValidateObjectReference(hud, "playerHealth", playerHealth);
@@ -1097,6 +1121,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(hud, "player", player);
             ValidateObjectReference(hud, "skill1Action", skill1Action);
             ValidateObjectReference(hud, "summonSlot1Action", summonSlot1Action);
+            ValidateObjectReference(hud, "bossBarrageEmitter", bossBarrageEmitter);
             ValidateObjectReference(hud, "pocketReviewOwner", pocketOwner);
         }
 
