@@ -33,12 +33,16 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Projectile_AssistBolt.prefab";
         public const string SummonSlot1EntryCuePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1EntryCue_MagicCircle.prefab";
+        public const string SummonSlot1ActorPrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Actor_Proxy.prefab";
         private const string Skill1ProjectileMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_PlayerSkill1Projectile.mat";
         private const string SummonSlot1ProjectileMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot1Projectile.mat";
         private const string SummonSlot1EntryCueMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot1EntryCue.mat";
+        private const string SummonSlot1ActorMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot1Actor.mat";
 
         private const string ReviewRootPrefix = "BossBarrageLaneReview_";
         private const string LaneRootName = ReviewRootPrefix + "SummonLaneSpace";
@@ -46,6 +50,7 @@ namespace DimensionBrawl.Editor
         private const string CloseThreatRootName = ReviewRootPrefix + "CloseThreat_ClosePunish";
         private const string ProjectilePoolRootName = ReviewRootPrefix + "ProjectilePool";
         private const string ActionCuePoolRootName = ReviewRootPrefix + "ActionCuePool";
+        private const string SummonActorPoolRootName = ReviewRootPrefix + "SummonActorPool";
         private const string PocketOwnerRootName = ReviewRootPrefix + "PocketOwner";
         private const string HudRootName = ReviewRootPrefix + "DebugHud";
         private const string MarkerRootName = ReviewRootPrefix + "Markers";
@@ -99,6 +104,7 @@ namespace DimensionBrawl.Editor
                 new Color(0.55f, 1f, 0.72f, 1f),
                 0.58f);
             GameObject summonEntryCuePrefab = EnsureSummonEntryCuePrefab();
+            SummonFrontlineProxy summonActorPrefab = EnsureSummonActorPrefab();
             Scene scene = EditorSceneManager.OpenScene(ActionFoundationProfileSetup.ScenePath, OpenSceneMode.Single);
             RemoveReviewAndEnemyRoots(scene);
 
@@ -121,6 +127,7 @@ namespace DimensionBrawl.Editor
 
             GameObject projectileRoot = CreateRoot(scene, ProjectilePoolRootName);
             GameObject actionCueRoot = CreateRoot(scene, ActionCuePoolRootName);
+            GameObject summonActorRoot = CreateRoot(scene, SummonActorPoolRootName);
             GameObject bossProxy = CreateBossProxy(
                 scene,
                 laneSpace,
@@ -141,8 +148,10 @@ namespace DimensionBrawl.Editor
                 skill1ProjectilePrefab,
                 summonSlot1ProjectilePrefab,
                 summonEntryCuePrefab,
+                summonActorPrefab,
                 projectileRoot.transform,
-                actionCueRoot.transform);
+                actionCueRoot.transform,
+                summonActorRoot.transform);
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "player Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "player SummonSlot1 action");
@@ -470,6 +479,55 @@ namespace DimensionBrawl.Editor
             return LoadAsset<GameObject>(SummonSlot1EntryCuePrefabPath);
         }
 
+        private static SummonFrontlineProxy EnsureSummonActorPrefab()
+        {
+            EnsureFolderForAsset(SummonSlot1ActorPrefabPath);
+            Material material = LoadOrCreateMaterial(SummonSlot1ActorMaterialPath, new Color(0.2f, 1f, 0.78f, 1f));
+            bool prefabExists = AssetDatabase.LoadAssetAtPath<GameObject>(SummonSlot1ActorPrefabPath) != null;
+            GameObject editableRoot = prefabExists
+                ? PrefabUtility.LoadPrefabContents(SummonSlot1ActorPrefabPath)
+                : GameObject.CreatePrimitive(PrimitiveType.Capsule);
+
+            try
+            {
+                editableRoot.name = "PF_SummonSlot1Actor_Proxy";
+                editableRoot.transform.localPosition = Vector3.zero;
+                editableRoot.transform.localRotation = Quaternion.identity;
+                editableRoot.transform.localScale = Vector3.one;
+
+                MeshRenderer renderer = EnsureComponent<MeshRenderer>(editableRoot);
+                renderer.sharedMaterial = material;
+
+                Collider collider = editableRoot.GetComponent<Collider>();
+                if (collider != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(collider);
+                }
+
+                SummonFrontlineProxy proxy = EnsureComponent<SummonFrontlineProxy>(editableRoot);
+                Transform projectileOrigin = EnsureChild(editableRoot.transform, "ProjectileOrigin");
+                projectileOrigin.localPosition = new Vector3(0f, 0.85f, 0.35f);
+                projectileOrigin.localRotation = Quaternion.identity;
+                projectileOrigin.localScale = Vector3.one;
+                SetObjectReference(proxy, "projectileOrigin", projectileOrigin);
+
+                PrefabUtility.SaveAsPrefabAsset(editableRoot, SummonSlot1ActorPrefabPath);
+            }
+            finally
+            {
+                if (prefabExists)
+                {
+                    PrefabUtility.UnloadPrefabContents(editableRoot);
+                }
+                else
+                {
+                    UnityEngine.Object.DestroyImmediate(editableRoot);
+                }
+            }
+
+            return LoadPrefabComponent<SummonFrontlineProxy>(SummonSlot1ActorPrefabPath);
+        }
+
         private static SummonLaneSpace CreateLaneSpace(Scene scene)
         {
             GameObject laneRoot = CreateRoot(scene, LaneRootName);
@@ -754,8 +812,10 @@ namespace DimensionBrawl.Editor
             LaneActionProjectile skill1ProjectilePrefab,
             LaneActionProjectile summonSlot1ProjectilePrefab,
             GameObject summonEntryCuePrefab,
+            SummonFrontlineProxy summonActorPrefab,
             Transform projectileRoot,
-            Transform actionCueRoot)
+            Transform actionCueRoot,
+            Transform summonActorRoot)
         {
             PlayerSkill1Action skill1Action = EnsureComponent<PlayerSkill1Action>(playerRoot);
             SetObjectReference(skill1Action, "energyLadder", energyLadder);
@@ -775,10 +835,14 @@ namespace DimensionBrawl.Editor
             SetObjectReference(summonSlot1Action, "projectilePrefab", summonSlot1ProjectilePrefab);
             SetObjectReference(summonSlot1Action, "projectilePrefabObject", LoadAsset<GameObject>(SummonSlot1ProjectilePrefabPath));
             SetObjectReference(summonSlot1Action, "entryCuePrefab", summonEntryCuePrefab);
+            SetObjectReference(summonSlot1Action, "summonActorPrefab", summonActorPrefab);
+            SetObjectReference(summonSlot1Action, "summonActorPrefabObject", LoadAsset<GameObject>(SummonSlot1ActorPrefabPath));
             SetObjectReference(summonSlot1Action, "projectileRoot", projectileRoot);
             SetObjectReference(summonSlot1Action, "cueRoot", actionCueRoot);
+            SetObjectReference(summonSlot1Action, "summonActorRoot", summonActorRoot);
             SetEnum(summonSlot1Action, "sourceTeam", (int)DamageTeam.AllySummon);
             SetInt(summonSlot1Action, "prewarmCount", 8);
+            SetInt(summonSlot1Action, "actorPrewarmCount", 2);
         }
 
         private static void ConfigureFixedRearCamera(
@@ -858,6 +922,7 @@ namespace DimensionBrawl.Editor
         {
             GameObject projectileRoot = RequireRoot(SceneManager.GetActiveScene(), ProjectilePoolRootName);
             GameObject actionCueRoot = RequireRoot(SceneManager.GetActiveScene(), ActionCuePoolRootName);
+            GameObject summonActorRoot = RequireRoot(SceneManager.GetActiveScene(), SummonActorPoolRootName);
 
             ValidateObjectReference(skill1Action, "energyLadder", energyLadder);
             ValidateObjectReference(skill1Action, "sourceHealth", playerHealth);
@@ -872,8 +937,10 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(summonSlot1Action, "laneSpace", laneSpace);
             ValidateObjectReference(summonSlot1Action, "projectilePrefabObject", LoadAsset<GameObject>(SummonSlot1ProjectilePrefabPath));
             ValidateObjectReference(summonSlot1Action, "entryCuePrefab", LoadAsset<GameObject>(SummonSlot1EntryCuePrefabPath));
+            ValidateObjectReference(summonSlot1Action, "summonActorPrefabObject", LoadAsset<GameObject>(SummonSlot1ActorPrefabPath));
             ValidateObjectReference(summonSlot1Action, "projectileRoot", projectileRoot.transform);
             ValidateObjectReference(summonSlot1Action, "cueRoot", actionCueRoot.transform);
+            ValidateObjectReference(summonSlot1Action, "summonActorRoot", summonActorRoot.transform);
             ValidateEnum(summonSlot1Action, "sourceTeam", (int)DamageTeam.AllySummon);
         }
 
@@ -1067,6 +1134,19 @@ namespace DimensionBrawl.Editor
         {
             T component = root.GetComponent<T>();
             return component != null ? component : root.AddComponent<T>();
+        }
+
+        private static Transform EnsureChild(Transform parent, string childName)
+        {
+            Transform child = parent.Find(childName);
+            if (child != null)
+            {
+                return child;
+            }
+
+            var childObject = new GameObject(childName);
+            childObject.transform.SetParent(parent, worldPositionStays: false);
+            return childObject.transform;
         }
 
         private static T[] CollectComponents<T>(Scene scene) where T : Component

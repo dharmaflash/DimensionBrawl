@@ -24,6 +24,8 @@ namespace DimensionBrawl.Player
             [Min(0f)] public float TargetHeight;
             [Min(0f)] public float CueScale;
             [Min(0f)] public float CueLifetimeSeconds;
+            [Min(0.05f)] public float ActorLifetimeSeconds;
+            [Min(0.01f)] public float ActorScale;
         }
 
         [Header("Input")]
@@ -42,10 +44,14 @@ namespace DimensionBrawl.Player
         [SerializeField] private LaneActionProjectile projectilePrefab;
         [SerializeField] private GameObject projectilePrefabObject;
         [SerializeField] private GameObject entryCuePrefab;
+        [SerializeField] private SummonFrontlineProxy summonActorPrefab;
+        [SerializeField] private GameObject summonActorPrefabObject;
         [SerializeField] private Transform projectileRoot;
         [SerializeField] private Transform cueRoot;
+        [SerializeField] private Transform summonActorRoot;
         [SerializeField] private DamageTeam sourceTeam = DamageTeam.AllySummon;
         [SerializeField, Min(0)] private int prewarmCount = 6;
+        [SerializeField, Min(0)] private int actorPrewarmCount = 2;
 
         [Header("Tier Tuning")]
         [SerializeField] private SummonTierSettings[] tierSettings =
@@ -61,7 +67,9 @@ namespace DimensionBrawl.Player
                 EntryHeight = 0.18f,
                 TargetHeight = 1.35f,
                 CueScale = 1.45f,
-                CueLifetimeSeconds = 0.85f
+                CueLifetimeSeconds = 0.85f,
+                ActorLifetimeSeconds = 1.25f,
+                ActorScale = 0.9f
             },
             new SummonTierSettings
             {
@@ -74,7 +82,9 @@ namespace DimensionBrawl.Player
                 EntryHeight = 0.18f,
                 TargetHeight = 1.35f,
                 CueScale = 1.85f,
-                CueLifetimeSeconds = 1f
+                CueLifetimeSeconds = 1f,
+                ActorLifetimeSeconds = 1.55f,
+                ActorScale = 1.08f
             },
             new SummonTierSettings
             {
@@ -87,7 +97,9 @@ namespace DimensionBrawl.Player
                 EntryHeight = 0.18f,
                 TargetHeight = 1.45f,
                 CueScale = 2.25f,
-                CueLifetimeSeconds = 1.15f
+                CueLifetimeSeconds = 1.15f,
+                ActorLifetimeSeconds = 1.85f,
+                ActorScale = 1.28f
             }
         };
 
@@ -95,15 +107,20 @@ namespace DimensionBrawl.Player
         private readonly Queue<LaneActionProjectile> projectilePool = new Queue<LaneActionProjectile>();
         private readonly List<GameObject> entryCues = new List<GameObject>();
         private readonly Queue<GameObject> entryCuePool = new Queue<GameObject>();
+        private readonly List<SummonFrontlineProxy> summonActors = new List<SummonFrontlineProxy>();
+        private readonly Queue<SummonFrontlineProxy> summonActorPool = new Queue<SummonFrontlineProxy>();
         private bool actionEnabledHere;
         private bool queued;
         private int lastSpentTier;
         private Vector3 lastEntryPosition;
+        private Vector3 lastSummonActorPosition;
 
         public int LastSpentTier => lastSpentTier;
         public Vector3 LastEntryPosition => lastEntryPosition;
+        public Vector3 LastSummonActorPosition => lastSummonActorPosition;
         public int ActiveProjectileCount => CountActiveProjectiles();
         public int ActiveCueCount => CountActiveCues();
+        public int ActiveSummonActorCount => CountActiveSummonActors();
 
         private void Awake()
         {
@@ -128,6 +145,7 @@ namespace DimensionBrawl.Player
             actionEnabledHere = EnableActionIfNeeded(summonAction);
             PrewarmProjectiles();
             PrewarmEntryCues();
+            PrewarmSummonActors();
         }
 
         private void OnDisable()
@@ -193,13 +211,19 @@ namespace DimensionBrawl.Player
             Vector3 entryPosition = ResolveBattlefieldPoint(playerLane.x, entryZ, settings.EntryHeight);
             lastEntryPosition = entryPosition;
             SpawnEntryCue(entryPosition, settings);
+            Vector3 firstTargetPosition = ResolveBattlefieldPoint(playerLane.x, targetZ, settings.TargetHeight);
+            Vector3 actorFacing = ResolvePlanarDirection(firstTargetPosition - entryPosition);
+            SummonFrontlineProxy actor = SpawnSummonActor(entryPosition, actorFacing, tier, settings);
+            Vector3 projectileSpawnBase = actor != null
+                ? actor.ProjectileOrigin.position
+                : ResolveBattlefieldPoint(playerLane.x, entryZ, settings.EntryHeight + 0.7f);
+            Vector3 right = ResolveRight(actorFacing);
 
             for (int i = 0; i < count; i++)
             {
                 float targetOffset = ResolveOffset(i, count, settings.LateralReach);
-                float spawnX = playerLane.x + targetOffset * 0.22f;
                 float targetX = playerLane.x + targetOffset;
-                Vector3 spawnPosition = ResolveBattlefieldPoint(spawnX, entryZ, settings.EntryHeight + 0.7f);
+                Vector3 spawnPosition = projectileSpawnBase + right * (targetOffset * 0.22f);
                 Vector3 targetPosition = ResolveBattlefieldPoint(targetX, targetZ, settings.TargetHeight);
                 Vector3 direction = ResolvePlanarDirection(targetPosition - spawnPosition);
 
@@ -214,6 +238,25 @@ namespace DimensionBrawl.Player
                     settings.LifetimeSeconds,
                     settings.Radius);
             }
+        }
+
+        private SummonFrontlineProxy SpawnSummonActor(
+            Vector3 position,
+            Vector3 facingDirection,
+            int tier,
+            SummonTierSettings settings)
+        {
+            SummonFrontlineProxy actor = GetSummonActor();
+            if (actor == null)
+            {
+                lastSummonActorPosition = position;
+                return null;
+            }
+
+            actor.transform.SetParent(summonActorRoot != null ? summonActorRoot : transform, worldPositionStays: true);
+            actor.Activate(position, facingDirection, tier, settings.ActorLifetimeSeconds, settings.ActorScale);
+            lastSummonActorPosition = actor.transform.position;
+            return actor;
         }
 
         private float ResolveTargetLaneZ()
@@ -332,6 +375,41 @@ namespace DimensionBrawl.Player
             return instance;
         }
 
+        private SummonFrontlineProxy GetSummonActor()
+        {
+            SummonFrontlineProxy prefab = ResolveSummonActorPrefab();
+            if (prefab == null)
+            {
+                return null;
+            }
+
+            while (summonActorPool.Count > 0)
+            {
+                SummonFrontlineProxy pooled = summonActorPool.Dequeue();
+                if (pooled != null)
+                {
+                    pooled.gameObject.SetActive(true);
+                    return pooled;
+                }
+            }
+
+            for (int i = 0; i < summonActors.Count; i++)
+            {
+                SummonFrontlineProxy reusable = summonActors[i];
+                if (reusable != null && !reusable.IsActive)
+                {
+                    reusable.gameObject.SetActive(true);
+                    return reusable;
+                }
+            }
+
+            Transform parent = summonActorRoot != null ? summonActorRoot : transform;
+            SummonFrontlineProxy instance = Instantiate(prefab, parent);
+            instance.name = prefab.name;
+            summonActors.Add(instance);
+            return instance;
+        }
+
         private IEnumerator ReleaseCueAfterSeconds(GameObject cue, float seconds)
         {
             yield return new WaitForSeconds(seconds);
@@ -356,6 +434,21 @@ namespace DimensionBrawl.Player
             }
 
             return projectilePrefab;
+        }
+
+        private SummonFrontlineProxy ResolveSummonActorPrefab()
+        {
+            if (summonActorPrefab != null)
+            {
+                return summonActorPrefab;
+            }
+
+            if (summonActorPrefabObject != null)
+            {
+                summonActorPrefab = summonActorPrefabObject.GetComponent<SummonFrontlineProxy>();
+            }
+
+            return summonActorPrefab;
         }
 
         private void PrewarmProjectiles()
@@ -393,6 +486,24 @@ namespace DimensionBrawl.Player
             }
         }
 
+        private void PrewarmSummonActors()
+        {
+            SummonFrontlineProxy prefab = ResolveSummonActorPrefab();
+            if (prefab == null || actorPrewarmCount <= 0)
+            {
+                return;
+            }
+
+            for (int i = summonActors.Count; i < actorPrewarmCount; i++)
+            {
+                SummonFrontlineProxy actor = Instantiate(prefab, summonActorRoot != null ? summonActorRoot : transform);
+                actor.name = prefab.name;
+                actor.Deactivate();
+                summonActors.Add(actor);
+                summonActorPool.Enqueue(actor);
+            }
+        }
+
         private SummonTierSettings ResolveTierSettings(int tier)
         {
             if (tierSettings == null || tierSettings.Length == 0)
@@ -408,7 +519,9 @@ namespace DimensionBrawl.Player
                     EntryHeight = 0.18f,
                     TargetHeight = 1.3f,
                     CueScale = 1.5f,
-                    CueLifetimeSeconds = 0.85f
+                    CueLifetimeSeconds = 0.85f,
+                    ActorLifetimeSeconds = 1.25f,
+                    ActorScale = 1f
                 };
             }
 
@@ -421,6 +534,20 @@ namespace DimensionBrawl.Player
             for (int i = 0; i < projectiles.Count; i++)
             {
                 if (projectiles[i] != null && projectiles[i].IsActive)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private int CountActiveSummonActors()
+        {
+            int count = 0;
+            for (int i = 0; i < summonActors.Count; i++)
+            {
+                if (summonActors[i] != null && summonActors[i].IsActive)
                 {
                     count++;
                 }
@@ -483,6 +610,17 @@ namespace DimensionBrawl.Player
 
             float t = count > 1 ? index / (float)(count - 1) : 0.5f;
             return Mathf.Lerp(-spread, spread, t);
+        }
+
+        private static Vector3 ResolveRight(Vector3 direction)
+        {
+            Vector3 right = Vector3.Cross(Vector3.up, ResolvePlanarDirection(direction));
+            if (right.sqrMagnitude > 0.0001f)
+            {
+                return right.normalized;
+            }
+
+            return Vector3.right;
         }
 
         private static bool EnableActionIfNeeded(InputActionReference actionReference)

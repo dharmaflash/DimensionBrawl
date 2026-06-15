@@ -30,11 +30,14 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Projectile_AssistBolt.prefab";
         private const string SummonSlot1EntryCuePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1EntryCue_MagicCircle.prefab";
+        private const string SummonSlot1ActorPrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Actor_Proxy.prefab";
         private const string LaneRootName = "BossBarrageLaneReview_SummonLaneSpace";
         private const string BossRootName = "BossBarrageLaneReview_BossProxy_NeedleLock";
         private const string CloseThreatRootName = "BossBarrageLaneReview_CloseThreat_ClosePunish";
         private const string ProjectilePoolRootName = "BossBarrageLaneReview_ProjectilePool";
         private const string ActionCuePoolRootName = "BossBarrageLaneReview_ActionCuePool";
+        private const string SummonActorPoolRootName = "BossBarrageLaneReview_SummonActorPool";
         private const string PocketOwnerRootName = "BossBarrageLaneReview_PocketOwner";
         private const string HudRootName = "BossBarrageLaneReview_DebugHud";
 
@@ -74,6 +77,7 @@ namespace DimensionBrawl.Tests
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
             GameObject projectileRoot = RequireRoot(ProjectilePoolRootName);
             GameObject actionCueRoot = RequireRoot(ActionCuePoolRootName);
+            GameObject summonActorRoot = RequireRoot(SummonActorPoolRootName);
             BossBarragePocketReviewOwner pocketOwner =
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
             BossBarrageLaneReviewHud reviewHud =
@@ -94,8 +98,10 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(summonSlot1Action, "laneSpace"));
             Assert.AreSame(LoadAsset<GameObject>(SummonSlot1ProjectilePrefabPath), GetObjectReference<GameObject>(summonSlot1Action, "projectilePrefabObject"));
             Assert.AreSame(LoadAsset<GameObject>(SummonSlot1EntryCuePrefabPath), GetObjectReference<GameObject>(summonSlot1Action, "entryCuePrefab"));
+            Assert.AreSame(LoadAsset<GameObject>(SummonSlot1ActorPrefabPath), GetObjectReference<GameObject>(summonSlot1Action, "summonActorPrefabObject"));
             Assert.AreSame(projectileRoot.transform, GetObjectReference<Transform>(summonSlot1Action, "projectileRoot"));
             Assert.AreSame(actionCueRoot.transform, GetObjectReference<Transform>(summonSlot1Action, "cueRoot"));
+            Assert.AreSame(summonActorRoot.transform, GetObjectReference<Transform>(summonSlot1Action, "summonActorRoot"));
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(emitter, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(emitter, "trackedPlayer"));
             Assert.AreSame(bossHealth, GetObjectReference<CombatHealth>(emitter, "sourceHealth"));
@@ -220,10 +226,14 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(3, summonSlot1Action.LastSpentTier);
             Assert.AreEqual(0, energyLadder.AvailableTier);
             Assert.Greater(summonSlot1Action.ActiveCueCount, 0, "SummonSlot1 should show a magic-circle entry cue.");
+            Assert.Greater(summonSlot1Action.ActiveSummonActorCount, 0, "SummonSlot1 should show a visible frontline summon actor.");
             Assert.GreaterOrEqual(summonSlot1Action.ActiveProjectileCount, 3);
             Assert.IsTrue(
                 laneSpace.IsPastForwardBoundary(summonSlot1Action.LastEntryPosition),
                 "Summon entry belongs to the forward battlefield, not the clamped player zone.");
+            Assert.IsTrue(
+                laneSpace.IsPastForwardBoundary(summonSlot1Action.LastSummonActorPosition),
+                "Summon actor belongs to the frontline battlefield, not the clamped player zone.");
 
             LaneActionProjectile[] projectiles = Object.FindObjectsByType<LaneActionProjectile>(
                 FindObjectsInactive.Exclude,

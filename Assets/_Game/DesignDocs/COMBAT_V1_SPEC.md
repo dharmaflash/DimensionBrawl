@@ -256,14 +256,15 @@ The first boss-barrage lane review slice now has these authored pieces:
 - `SummonEnergyLadder` owns the shared `EN LV1~LV3` fill/spend/reset loop for `Skill1` and `SummonSlot1`.
 - `BossBarrageEmitter` and `BossBarrageProjectile` provide the far boss/proxy projectile pressure. The emitter may cycle a small authored `BossBarragePatternProfile` sequence, currently `NeedleLock` and `TwinSweep`, but it must not become a broad boss phase owner.
 - `PlayerSkill1Action` spends the current available EN tier and fires an immediate player-side lane projectile toward the current boss/target direction.
-- `PlayerSummonSlot1Action` spends the current available EN tier, shows a magic-circle entry cue beyond the player boundary, and launches same-concept stronger LV1/LV2/LV3 summon-assist projectiles into the frontline battlefield.
+- `PlayerSummonSlot1Action` spends the current available EN tier, shows a magic-circle entry cue beyond the player boundary, activates a visible `SummonFrontlineProxy`, and launches same-concept stronger LV1/LV2/LV3 summon-assist projectiles from that proxy into the frontline battlefield.
+- `SummonFrontlineProxy` is the current first visible summon actor placeholder. It owns only activation, facing, projectile-origin presentation, lifetime, and cleanup; later model/animation-backed summons should replace or extend this through reviewed summon actor slices, not a hidden roster manager.
 - `LaneActionProjectile` is the shared narrow projectile for Skill1 and SummonSlot1 assist shots. It carries damage authority through `CombatHealth` team checks; VFX/visual polish can be swapped through authored prefabs later.
 - `DB_PlayerAction_BossBarrageLocalDefense` is the scene-specific one-hit `BasicDefenseAttack` profile for close threats. It reuses the existing player action owner without reviving the melee-combo-first direction.
 - `ActionFoundationBossBarrageLaneReview.unity` is the manual review scene for the fixed rear camera, player boundary, close-threat local defense, EN gain, boss barrage, Skill1, SummonSlot1, and one pocket clear/fail read.
 - `BossBarragePocketReviewOwner` is the review-only pocket result owner for the first lane slice: defeat the close threat and spend `SummonSlot1` while surviving boss pressure.
 - `BossBarrageLaneReviewHud` is the temporary readable review display for HP, close-threat HP, EN fill/readiness, forward-risk gain, Skill1/SummonSlot1 readiness, and pocket result state.
 
-The next implementation should not add a roster or boss phase yet. It should tune the current close-threat answer, EN pacing, projectile pressure, and `SummonSlot1` impact until the one-pocket loop reads as a small game instead of disconnected mechanics.
+The next implementation should not add a roster or boss phase yet. It should tune the current close-threat answer, EN pacing, projectile pressure, proxy summon readability, and `SummonSlot1` impact until the one-pocket loop reads as a small game instead of disconnected mechanics.
 
 Future boss-pattern variety belongs after this tuning pass. Treat each boss pattern as a complete reviewed unit with data, timing/readability intent, VFX/prefab presentation, camera response if needed, and tests before adding the next pattern.
 
