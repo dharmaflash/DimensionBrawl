@@ -22,6 +22,8 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_TwinSweep.asset";
         private const string LeftClampPatternProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_LeftClamp.asset";
+        private const string RightClampPatternProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_RightClamp.asset";
         private const string PunishNetPatternProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_PunishNet.asset";
         private const string LinePressurePatternProfilePath =
@@ -137,15 +139,21 @@ namespace DimensionBrawl.Tests
                 GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 2));
             Assert.AreEqual(BossBarrageLateralShape.SideClamp, leftClampPattern.LateralShape);
             Assert.Less(leftClampPattern.SideClampDirection, 0f);
+            BossBarragePatternProfile rightClampPattern = LoadAsset<BossBarragePatternProfile>(RightClampPatternProfilePath);
+            Assert.AreSame(
+                rightClampPattern,
+                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 3));
+            Assert.AreEqual(BossBarrageLateralShape.SideClamp, rightClampPattern.LateralShape);
+            Assert.Greater(rightClampPattern.SideClampDirection, 0f);
             BossBarragePatternProfile punishNetPattern = LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath);
             Assert.AreSame(
                 punishNetPattern,
-                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 3));
+                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 4));
             Assert.AreEqual(BossBarrageLateralShape.PunishNet, punishNetPattern.LateralShape);
             BossBarragePatternProfile linePressurePattern = LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath);
             Assert.AreSame(
                 linePressurePattern,
-                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 4));
+                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 5));
             Assert.AreEqual(BossBarrageLateralShape.LinePressure, linePressurePattern.LateralShape);
             Assert.Greater(linePressurePattern.LinePressureDirection, 0f);
             Assert.AreSame(LoadAsset<GameObject>(ProjectilePrefabPath), GetObjectReference<GameObject>(emitter, "projectilePrefabObject"));
@@ -424,16 +432,23 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(emitter.BeginWindup());
             emitter.FirePendingWave();
             Assert.AreSame(
+                LoadAsset<BossBarragePatternProfile>(RightClampPatternProfilePath),
+                emitter.CurrentPattern,
+                "Review boss should mirror side-clamp pressure after the third wave.");
+
+            Assert.IsTrue(emitter.BeginWindup());
+            emitter.FirePendingWave();
+            Assert.AreSame(
                 LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath),
                 emitter.CurrentPattern,
-                "Review boss should move from LeftClamp into the player-centered PunishNet pattern after the third wave.");
+                "Review boss should move from mirrored side clamp into the player-centered PunishNet pattern after the fourth wave.");
 
             Assert.IsTrue(emitter.BeginWindup());
             emitter.FirePendingWave();
             Assert.AreSame(
                 LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath),
                 emitter.CurrentPattern,
-                "Review boss should move from PunishNet into the reference-backed LinePressure rail pattern after the fourth wave.");
+                "Review boss should move from PunishNet into the reference-backed LinePressure rail pattern after the fifth wave.");
 
             BossBarrageProjectile[] projectiles = Object.FindObjectsByType<BossBarrageProjectile>(
                 FindObjectsInactive.Exclude,

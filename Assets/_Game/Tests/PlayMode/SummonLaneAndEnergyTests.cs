@@ -115,6 +115,29 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void BossBarrageSideClampCanMirrorPressureDirection()
+        {
+            BossBarragePatternProfile pattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            var serializedObject = new SerializedObject(pattern);
+            serializedObject.FindProperty("lateralShape").enumValueIndex = (int)BossBarrageLateralShape.SideClamp;
+            serializedObject.FindProperty("sideClampDirection").floatValue = 1f;
+            serializedObject.FindProperty("sideClampCrossReachRatio").floatValue = 0.25f;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+
+            float firstOffset = pattern.GetLateralOffset(0, 5, 0f);
+            float lastOffset = pattern.GetLateralOffset(4, 5, 0f);
+
+            Assert.Greater(firstOffset, 0f, "Right clamp should start pressure from the right side.");
+            Assert.Less(lastOffset, 0f, "Right clamp should reach across center to narrow the left-side safe gap.");
+            Assert.Less(
+                Mathf.Abs(lastOffset),
+                Mathf.Abs(firstOffset),
+                "Mirrored side clamp should keep the opposite-side escape gap readable.");
+
+            Object.DestroyImmediate(pattern);
+        }
+
+        [Test]
         public void BossBarragePunishNetCentersOnPlayerAndTightensForwardRisk()
         {
             BossBarragePatternProfile pattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();

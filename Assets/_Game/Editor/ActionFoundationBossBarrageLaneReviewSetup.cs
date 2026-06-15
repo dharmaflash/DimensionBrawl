@@ -24,6 +24,8 @@ namespace DimensionBrawl.Editor
             ActionFoundationProfileSetup.ProfileRoot + "/DB_BossBarrage_TwinSweep.asset";
         public const string LeftClampPatternProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_BossBarrage_LeftClamp.asset";
+        public const string RightClampPatternProfilePath =
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_BossBarrage_RightClamp.asset";
         public const string PunishNetPatternProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_BossBarrage_PunishNet.asset";
         public const string LinePressurePatternProfilePath =
@@ -99,6 +101,7 @@ namespace DimensionBrawl.Editor
             BossBarragePatternProfile patternProfile = EnsurePatternProfile();
             BossBarragePatternProfile twinSweepPatternProfile = EnsureTwinSweepPatternProfile();
             BossBarragePatternProfile leftClampPatternProfile = EnsureLeftClampPatternProfile();
+            BossBarragePatternProfile rightClampPatternProfile = EnsureRightClampPatternProfile();
             BossBarragePatternProfile punishNetPatternProfile = EnsurePunishNetPatternProfile();
             BossBarragePatternProfile linePressurePatternProfile = EnsureLinePressurePatternProfile();
             BossBarrageProjectile projectilePrefab = EnsureProjectilePrefab();
@@ -146,6 +149,7 @@ namespace DimensionBrawl.Editor
                 patternProfile,
                 twinSweepPatternProfile,
                 leftClampPatternProfile,
+                rightClampPatternProfile,
                 punishNetPatternProfile,
                 linePressurePatternProfile,
                 projectilePrefab,
@@ -253,11 +257,16 @@ namespace DimensionBrawl.Editor
                 emitter,
                 "patternSequence",
                 3,
-                LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath));
+                LoadAsset<BossBarragePatternProfile>(RightClampPatternProfilePath));
             ValidateArrayReference(
                 emitter,
                 "patternSequence",
                 4,
+                LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath));
+            ValidateArrayReference(
+                emitter,
+                "patternSequence",
+                5,
                 LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath));
             ValidateInt(emitter, "wavesPerPattern", 1);
             ValidateObjectReference(emitter, "projectilePrefabObject", LoadAsset<GameObject>(ProjectilePrefabPath));
@@ -289,6 +298,7 @@ namespace DimensionBrawl.Editor
             ValidateNoImportedAssetReference(PatternProfilePath);
             ValidateNoImportedAssetReference(TwinSweepPatternProfilePath);
             ValidateNoImportedAssetReference(LeftClampPatternProfilePath);
+            ValidateNoImportedAssetReference(RightClampPatternProfilePath);
             ValidateNoImportedAssetReference(PunishNetPatternProfilePath);
             ValidateNoImportedAssetReference(LinePressurePatternProfilePath);
             ValidateNoImportedAssetReference(LocalDefenseProfilePath);
@@ -454,6 +464,39 @@ namespace DimensionBrawl.Editor
             RequireProperty(serializedObject, "backlineHalfSpread").floatValue = 3.85f;
             RequireProperty(serializedObject, "forwardHalfSpread").floatValue = 1.7f;
             RequireProperty(serializedObject, "sideClampDirection").floatValue = -1f;
+            RequireProperty(serializedObject, "sideClampCrossReachRatio").floatValue = 0.24f;
+            RequireProperty(serializedObject, "spawnHeight").floatValue = 1.48f;
+            RequireProperty(serializedObject, "targetHeight").floatValue = 1.05f;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(profile);
+            return profile;
+        }
+
+        private static BossBarragePatternProfile EnsureRightClampPatternProfile()
+        {
+            EnsureFolderForAsset(RightClampPatternProfilePath);
+            BossBarragePatternProfile profile =
+                AssetDatabase.LoadAssetAtPath<BossBarragePatternProfile>(RightClampPatternProfilePath);
+            if (profile == null)
+            {
+                profile = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+                AssetDatabase.CreateAsset(profile, RightClampPatternProfilePath);
+            }
+
+            var serializedObject = new SerializedObject(profile);
+            RequireProperty(serializedObject, "patternId").stringValue = "RightClamp";
+            RequireProperty(serializedObject, "lateralShape").enumValueIndex = (int)BossBarrageLateralShape.SideClamp;
+            RequireProperty(serializedObject, "initialDelaySeconds").floatValue = 0.2f;
+            RequireProperty(serializedObject, "windupSeconds").floatValue = 1.05f;
+            RequireProperty(serializedObject, "waveIntervalSeconds").floatValue = 5.4f;
+            RequireProperty(serializedObject, "projectilesPerWave").intValue = 5;
+            RequireProperty(serializedObject, "damage").floatValue = 16f;
+            RequireProperty(serializedObject, "projectileSpeed").floatValue = 12.8f;
+            RequireProperty(serializedObject, "projectileLifetimeSeconds").floatValue = 5.0f;
+            RequireProperty(serializedObject, "projectileRadius").floatValue = 0.3f;
+            RequireProperty(serializedObject, "backlineHalfSpread").floatValue = 3.85f;
+            RequireProperty(serializedObject, "forwardHalfSpread").floatValue = 1.7f;
+            RequireProperty(serializedObject, "sideClampDirection").floatValue = 1f;
             RequireProperty(serializedObject, "sideClampCrossReachRatio").floatValue = 0.24f;
             RequireProperty(serializedObject, "spawnHeight").floatValue = 1.48f;
             RequireProperty(serializedObject, "targetHeight").floatValue = 1.05f;
@@ -752,6 +795,7 @@ namespace DimensionBrawl.Editor
             BossBarragePatternProfile patternProfile,
             BossBarragePatternProfile twinSweepPatternProfile,
             BossBarragePatternProfile leftClampPatternProfile,
+            BossBarragePatternProfile rightClampPatternProfile,
             BossBarragePatternProfile punishNetPatternProfile,
             BossBarragePatternProfile linePressurePatternProfile,
             BossBarrageProjectile projectilePrefab,
@@ -779,6 +823,7 @@ namespace DimensionBrawl.Editor
                     patternProfile,
                     twinSweepPatternProfile,
                     leftClampPatternProfile,
+                    rightClampPatternProfile,
                     punishNetPatternProfile,
                     linePressurePatternProfile
                 });
