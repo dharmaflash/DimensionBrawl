@@ -259,6 +259,7 @@ The first boss-barrage lane review slice now has these authored pieces:
 - `PlayerSummonSlot1Action` spends the current available EN tier, shows a magic-circle entry cue beyond the player boundary, activates a visible `SummonFrontlineProxy`, and launches same-concept stronger LV1/LV2/LV3 summon-assist projectiles from that proxy into the frontline battlefield.
 - `SummonFrontlineProxy` is the current first visible summon actor placeholder. It owns only activation, facing, projectile-origin presentation, lifetime, and cleanup; later model/animation-backed summons should replace or extend this through reviewed summon actor slices, not a hidden roster manager.
 - `SummonPressureScreen` is the first narrow summon-side answer to boss projectile pressure. `SummonSlot1` opens a short-lived ally-owned screen from its frontline proxy, and higher EN tiers increase the same screen concept's intercept budget/radius/lifetime without introducing a full summon roster or boss phase manager.
+- `SummonPressureScreenPresenter` is the current screen readability layer. It owns only the proxy-local shield visual, activation pulse, intercept flash, and final-hit linger so players can see the summon answering boss pressure.
 - `LaneActionProjectile` is the shared narrow projectile for Skill1 and SummonSlot1 assist shots. It carries damage authority through `CombatHealth` team checks; VFX/visual polish can be swapped through authored prefabs later.
 - `DB_PlayerAction_BossBarrageLocalDefense` is the scene-specific one-hit `BasicDefenseAttack` profile for close threats. It reuses the existing player action owner without reviving the melee-combo-first direction.
 - `ActionFoundationBossBarrageLaneReview.unity` is the manual review scene for the fixed rear camera, player boundary, close-threat local defense, EN gain, boss barrage, Skill1, SummonSlot1, and one pocket clear/fail read.
@@ -480,6 +481,7 @@ Gameplay rules:
 - Summon appears from the player-side entry point, then acts toward the frontline.
 - Higher tiers improve the same summon concept through strength, duration, count, projectile pressure, or impact.
 - Higher tiers may also improve a short frontline pressure screen that intercepts a limited number of hostile boss projectiles.
+- The screen must be visible as a shield/flash on the summon proxy; invisible collision-only answers are not acceptable for the review slice.
 - Spending `SummonSlot1` resets EN.
 - Summon result should matter more than `BasicDefenseAttack`.
 

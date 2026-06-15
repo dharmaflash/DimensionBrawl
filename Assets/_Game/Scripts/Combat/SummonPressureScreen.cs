@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace DimensionBrawl.Combat
@@ -15,6 +16,7 @@ namespace DimensionBrawl.Combat
         private SphereCollider screenCollider;
         private Rigidbody screenRigidbody;
         private float remainingLifetime;
+        private float activeRadius;
         private int maxIntercepts;
         private int interceptedProjectiles;
         private bool active;
@@ -22,7 +24,14 @@ namespace DimensionBrawl.Combat
         public bool IsActive => active && gameObject.activeInHierarchy;
         public int InterceptedProjectiles => interceptedProjectiles;
         public int RemainingIntercepts => Mathf.Max(0, maxIntercepts - interceptedProjectiles);
+        public int MaxIntercepts => maxIntercepts;
+        public float RemainingLifetimeSeconds => remainingLifetime;
+        public float ActiveRadius => activeRadius > 0f ? activeRadius : defaultRadius;
         public DamageTeam OwnerTeam => ownerTeam;
+
+        public event Action<SummonPressureScreen> Activated;
+        public event Action<SummonPressureScreen, BossBarrageProjectile> Intercepted;
+        public event Action<SummonPressureScreen> Deactivated;
 
         private void Awake()
         {
@@ -41,10 +50,15 @@ namespace DimensionBrawl.Combat
             maxIntercepts = Mathf.Max(0, newMaxIntercepts);
             interceptedProjectiles = 0;
             remainingLifetime = Mathf.Max(0.05f, lifetimeSeconds);
+            activeRadius = Mathf.Max(0.05f, radius);
             active = maxIntercepts > 0;
 
-            screenCollider.radius = Mathf.Max(0.05f, radius);
+            screenCollider.radius = activeRadius;
             screenCollider.enabled = active;
+            if (active)
+            {
+                Activated?.Invoke(this);
+            }
         }
 
         public void ActivateDefault()
@@ -78,6 +92,7 @@ namespace DimensionBrawl.Combat
 
             projectile.Deactivate();
             interceptedProjectiles++;
+            Intercepted?.Invoke(this, projectile);
             if (interceptedProjectiles >= maxIntercepts)
             {
                 Deactivate();
@@ -88,11 +103,17 @@ namespace DimensionBrawl.Combat
 
         public void Deactivate()
         {
+            bool wasActive = active;
             active = false;
             remainingLifetime = 0f;
             if (screenCollider != null)
             {
                 screenCollider.enabled = false;
+            }
+
+            if (wasActive)
+            {
+                Deactivated?.Invoke(this);
             }
         }
 

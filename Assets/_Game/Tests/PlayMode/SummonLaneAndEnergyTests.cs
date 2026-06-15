@@ -1,5 +1,6 @@
 using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
+using DimensionBrawl.Presentation;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -257,6 +258,48 @@ namespace DimensionBrawl.Tests
             Object.DestroyImmediate(secondEnemyProjectileObject);
             Object.DestroyImmediate(enemyProjectileObject);
             Object.DestroyImmediate(alliedProjectileObject);
+            Object.DestroyImmediate(screenObject);
+        }
+
+        [Test]
+        public void SummonPressureScreenPresenterShowsActivationAndFinalHitFlash()
+        {
+            GameObject screenObject = new GameObject("SummonPressureScreen");
+            screenObject.AddComponent<SphereCollider>();
+            screenObject.AddComponent<Rigidbody>();
+            SummonPressureScreen screen = screenObject.AddComponent<SummonPressureScreen>();
+
+            GameObject visualObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            visualObject.name = "PressureScreenVisual";
+            visualObject.transform.SetParent(screenObject.transform, worldPositionStays: false);
+            Collider visualCollider = visualObject.GetComponent<Collider>();
+            Object.DestroyImmediate(visualCollider);
+            Renderer visualRenderer = visualObject.GetComponent<Renderer>();
+            SummonPressureScreenPresenter presenter = screenObject.AddComponent<SummonPressureScreenPresenter>();
+            presenter.ConfigurePresentation(screen, visualObject.transform, new[] { visualRenderer });
+
+            screen.Activate(DamageTeam.AllySummon, 1, 1.25f, 1f);
+            Assert.IsTrue(presenter.IsShowing);
+            Assert.IsTrue(visualObject.activeSelf);
+
+            GameObject enemyProjectileObject = new GameObject("EnemyProjectile");
+            enemyProjectileObject.AddComponent<SphereCollider>();
+            enemyProjectileObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile enemyProjectile = enemyProjectileObject.AddComponent<BossBarrageProjectile>();
+            enemyProjectile.Configure(null, DamageTeam.Enemy, 10f, Vector3.back, 0f, 1f, 0.3f);
+
+            Assert.IsTrue(screen.TryIntercept(enemyProjectile));
+            Assert.IsTrue(
+                presenter.IsShowing,
+                "The final intercept should linger briefly instead of disappearing on the same frame.");
+
+            screen.Activate(DamageTeam.AllySummon, 1, 1.25f, 1f);
+            screen.Deactivate();
+            Assert.IsFalse(
+                presenter.IsShowing,
+                "A pressure screen with no intercept flash should hide when it deactivates.");
+
+            Object.DestroyImmediate(enemyProjectileObject);
             Object.DestroyImmediate(screenObject);
         }
 

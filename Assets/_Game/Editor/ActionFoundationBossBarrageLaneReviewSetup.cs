@@ -10,6 +10,7 @@ using DimensionBrawl.Test;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 
 namespace DimensionBrawl.Editor
@@ -49,6 +50,8 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot1EntryCue.mat";
         private const string SummonSlot1ActorMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot1Actor.mat";
+        private const string SummonPressureScreenMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonPressureScreen.mat";
 
         private const string ReviewRootPrefix = "BossBarrageLaneReview_";
         private const string LaneRootName = ReviewRootPrefix + "SummonLaneSpace";
@@ -292,6 +295,8 @@ namespace DimensionBrawl.Editor
             ValidateNoImportedAssetReference(Skill1ProjectilePrefabPath);
             ValidateNoImportedAssetReference(SummonSlot1ProjectilePrefabPath);
             ValidateNoImportedAssetReference(SummonSlot1EntryCuePrefabPath);
+            ValidateNoImportedAssetReference(SummonSlot1ActorPrefabPath);
+            ValidateNoImportedAssetReference(SummonPressureScreenMaterialPath);
         }
 
         private static BossBarragePatternProfile EnsurePatternProfile()
@@ -636,6 +641,9 @@ namespace DimensionBrawl.Editor
         {
             EnsureFolderForAsset(SummonSlot1ActorPrefabPath);
             Material material = LoadOrCreateMaterial(SummonSlot1ActorMaterialPath, new Color(0.2f, 1f, 0.78f, 1f));
+            Material pressureScreenMaterial = LoadOrCreateTransparentMaterial(
+                SummonPressureScreenMaterialPath,
+                new Color(0.18f, 1f, 0.78f, 0.38f));
             bool prefabExists = AssetDatabase.LoadAssetAtPath<GameObject>(SummonSlot1ActorPrefabPath) != null;
             GameObject editableRoot = prefabExists
                 ? PrefabUtility.LoadPrefabContents(SummonSlot1ActorPrefabPath)
@@ -678,6 +686,35 @@ namespace DimensionBrawl.Editor
                 SetFloat(pressureScreen, "defaultLifetimeSeconds", 1.2f);
                 SetFloat(pressureScreen, "defaultRadius", 1.35f);
                 SetObjectReference(proxy, "pressureScreen", pressureScreen);
+
+                Transform pressureScreenVisual = EnsureChild(editableRoot.transform, "PressureScreenVisual");
+                pressureScreenVisual.localPosition = new Vector3(0f, 0.72f, 0.2f);
+                pressureScreenVisual.localRotation = Quaternion.identity;
+                pressureScreenVisual.localScale = Vector3.one;
+                MeshFilter visualFilter = EnsureComponent<MeshFilter>(pressureScreenVisual.gameObject);
+                visualFilter.sharedMesh = LoadPrimitiveMesh(PrimitiveType.Sphere);
+                MeshRenderer visualRenderer = EnsureComponent<MeshRenderer>(pressureScreenVisual.gameObject);
+                visualRenderer.sharedMaterial = pressureScreenMaterial;
+                visualRenderer.shadowCastingMode = ShadowCastingMode.Off;
+                visualRenderer.receiveShadows = false;
+                visualRenderer.allowOcclusionWhenDynamic = false;
+                Collider visualCollider = pressureScreenVisual.GetComponent<Collider>();
+                if (visualCollider != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(visualCollider);
+                }
+
+                SummonPressureScreenPresenter presenter = EnsureComponent<SummonPressureScreenPresenter>(editableRoot);
+                SetObjectReference(presenter, "pressureScreen", pressureScreen);
+                SetObjectReference(presenter, "visualRoot", pressureScreenVisual);
+                SetObjectReferenceArray(presenter, "screenRenderers", new UnityEngine.Object[] { visualRenderer });
+                SetColor(presenter, "activeColor", new Color(0.22f, 1f, 0.82f, 0.42f));
+                SetColor(presenter, "interceptColor", new Color(0.92f, 1f, 1f, 0.88f));
+                SetFloat(presenter, "activationFlashSeconds", 0.12f);
+                SetFloat(presenter, "interceptFlashSeconds", 0.18f);
+                SetFloat(presenter, "finalHitLingerSeconds", 0.16f);
+                SetFloat(presenter, "pulseSpeed", 9f);
+                SetFloat(presenter, "pulseScale", 0.04f);
 
                 PrefabUtility.SaveAsPrefabAsset(editableRoot, SummonSlot1ActorPrefabPath);
             }
@@ -1128,11 +1165,28 @@ namespace DimensionBrawl.Editor
 
             SummonFrontlineProxy summonActorPrefab = LoadPrefabComponent<SummonFrontlineProxy>(SummonSlot1ActorPrefabPath);
             SummonPressureScreen pressureScreen = LoadPrefabComponent<SummonPressureScreen>(SummonSlot1ActorPrefabPath);
+            SummonPressureScreenPresenter presenter =
+                LoadPrefabComponent<SummonPressureScreenPresenter>(SummonSlot1ActorPrefabPath);
+            Transform pressureScreenVisual = summonActorPrefab.transform.Find("PressureScreenVisual");
+            if (pressureScreenVisual == null)
+            {
+                throw new InvalidOperationException("SummonSlot1 actor prefab is missing PressureScreenVisual.");
+            }
+
+            MeshRenderer pressureScreenRenderer = pressureScreenVisual.GetComponent<MeshRenderer>();
+            if (pressureScreenRenderer == null)
+            {
+                throw new InvalidOperationException("PressureScreenVisual is missing a MeshRenderer.");
+            }
+
             ValidateObjectReference(summonActorPrefab, "pressureScreen", pressureScreen);
             ValidateEnum(pressureScreen, "ownerTeam", (int)DamageTeam.AllySummon);
             ValidateInt(pressureScreen, "defaultMaxIntercepts", 2);
             ValidateFloat(pressureScreen, "defaultLifetimeSeconds", 1.2f);
             ValidateFloat(pressureScreen, "defaultRadius", 1.35f);
+            ValidateObjectReference(presenter, "pressureScreen", pressureScreen);
+            ValidateObjectReference(presenter, "visualRoot", pressureScreenVisual);
+            ValidateArrayReference(presenter, "screenRenderers", 0, pressureScreenRenderer);
         }
 
         private static void ValidateCloseThreat(
@@ -1247,6 +1301,37 @@ namespace DimensionBrawl.Editor
 
             EditorUtility.SetDirty(material);
             return material;
+        }
+
+        private static Material LoadOrCreateTransparentMaterial(string assetPath, Color color)
+        {
+            Material material = LoadOrCreateMaterial(assetPath, color);
+            SetMaterialFloatIfPresent(material, "_Surface", 1f);
+            SetMaterialFloatIfPresent(material, "_Blend", 0f);
+            SetMaterialFloatIfPresent(material, "_SrcBlend", (float)BlendMode.SrcAlpha);
+            SetMaterialFloatIfPresent(material, "_DstBlend", (float)BlendMode.OneMinusSrcAlpha);
+            SetMaterialFloatIfPresent(material, "_ZWrite", 0f);
+            material.renderQueue = (int)RenderQueue.Transparent;
+            material.SetOverrideTag("RenderType", "Transparent");
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        private static void SetMaterialFloatIfPresent(Material material, string propertyName, float value)
+        {
+            if (material != null && material.HasProperty(propertyName))
+            {
+                material.SetFloat(propertyName, value);
+            }
+        }
+
+        private static Mesh LoadPrimitiveMesh(PrimitiveType primitiveType)
+        {
+            GameObject primitive = GameObject.CreatePrimitive(primitiveType);
+            Mesh mesh = primitive.GetComponent<MeshFilter>().sharedMesh;
+            UnityEngine.Object.DestroyImmediate(primitive);
+            return mesh;
         }
 
         private static Shader ResolveUnlitShader()
@@ -1474,6 +1559,14 @@ namespace DimensionBrawl.Editor
         {
             var serializedObject = new SerializedObject(target);
             RequireProperty(serializedObject, propertyName).vector3Value = value;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(target);
+        }
+
+        private static void SetColor(UnityEngine.Object target, string propertyName, Color value)
+        {
+            var serializedObject = new SerializedObject(target);
+            RequireProperty(serializedObject, propertyName).colorValue = value;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(target);
         }

@@ -110,7 +110,11 @@ namespace DimensionBrawl.Tests
                 RequireComponent<SummonFrontlineProxy>(summonActorPrefabObject, "SummonSlot1 actor prefab");
             SummonPressureScreen summonPressureScreen =
                 RequireComponent<SummonPressureScreen>(summonActorPrefabObject, "SummonSlot1 pressure screen");
+            SummonPressureScreenPresenter summonPressureScreenPresenter =
+                RequireComponent<SummonPressureScreenPresenter>(summonActorPrefabObject, "SummonSlot1 pressure screen presenter");
             Assert.AreSame(summonPressureScreen, summonActorPrefab.PressureScreen);
+            Assert.AreSame(summonPressureScreen, summonPressureScreenPresenter.PressureScreen);
+            Assert.Greater(summonPressureScreenPresenter.RendererCount, 0);
             Assert.AreEqual(DamageTeam.AllySummon, summonPressureScreen.OwnerTeam);
             Assert.AreSame(projectileRoot.transform, GetObjectReference<Transform>(summonSlot1Action, "projectileRoot"));
             Assert.AreSame(actionCueRoot.transform, GetObjectReference<Transform>(summonSlot1Action, "cueRoot"));
@@ -279,6 +283,25 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(
                 foundActiveScreen,
                 "SummonSlot1 should create a short-lived summon pressure screen for boss projectile exchanges.");
+            SummonPressureScreenPresenter[] pressureScreenPresenters =
+                Object.FindObjectsByType<SummonPressureScreenPresenter>(
+                    FindObjectsInactive.Exclude,
+                    FindObjectsSortMode.None);
+            bool foundVisibleScreenPresenter = false;
+            for (int i = 0; i < pressureScreenPresenters.Length; i++)
+            {
+                if (pressureScreenPresenters[i].PressureScreen != null
+                    && pressureScreenPresenters[i].PressureScreen.IsActive
+                    && pressureScreenPresenters[i].IsShowing)
+                {
+                    foundVisibleScreenPresenter = true;
+                    break;
+                }
+            }
+
+            Assert.IsTrue(
+                foundVisibleScreenPresenter,
+                "SummonSlot1 pressure screen should be visible immediately when the frontline proxy appears.");
             Assert.IsTrue(
                 laneSpace.IsPastForwardBoundary(summonSlot1Action.LastEntryPosition),
                 "Summon entry belongs to the forward battlefield, not the clamped player zone.");
