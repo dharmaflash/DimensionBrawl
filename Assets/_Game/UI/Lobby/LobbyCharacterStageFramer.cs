@@ -8,6 +8,7 @@ namespace DimensionBrawl.UI
     {
         [SerializeField] private Camera stageCamera;
         [SerializeField] private Transform targetRoot;
+        [SerializeField] private bool useSkinnedRenderersOnlyForFraming = true;
         [SerializeField, Range(10f, 60f)] private float fieldOfView = 34f;
         [SerializeField, Range(0.45f, 1.5f)] private float boundsPadding = 0.72f;
         [SerializeField, Range(0.35f, 1.1f)] private float viewportHeightFill = 0.82f;
@@ -106,13 +107,28 @@ namespace DimensionBrawl.UI
         {
             Transform root = targetRoot != null ? targetRoot : transform;
             Renderer[] renderers = root.GetComponentsInChildren<Renderer>(true);
-            renderBounds = default;
+            if (useSkinnedRenderersOnlyForFraming && TryCalculateRenderBounds(renderers, true, out renderBounds))
+            {
+                return true;
+            }
 
+            return TryCalculateRenderBounds(renderers, false, out renderBounds);
+        }
+
+        private static bool TryCalculateRenderBounds(Renderer[] renderers, bool skinnedOnly, out Bounds renderBounds)
+        {
+            renderBounds = default;
             bool hasBounds = false;
+
             for (int i = 0; i < renderers.Length; i++)
             {
                 Renderer renderer = renderers[i];
-                if (renderer == null || !renderer.enabled)
+                if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                if (skinnedOnly && renderer is not SkinnedMeshRenderer)
                 {
                     continue;
                 }

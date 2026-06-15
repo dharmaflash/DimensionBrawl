@@ -43,8 +43,8 @@ Light:
   m_Enabled: 1
   serializedVersion: 12
   m_Type: 1
-  m_Color: {r: 0.93, g: 0.96, b: 1, a: 1}
-  m_Intensity: 0.95
+  m_Color: {r: 0.72, g: 0.82, b: 1, a: 1}
+  m_Intensity: 0.55
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -170,8 +170,8 @@ Light:
   m_Enabled: 1
   serializedVersion: 12
   m_Type: 1
-  m_Color: {r: 0.73, g: 0.84, b: 1, a: 1}
-  m_Intensity: 0.75
+  m_Color: {r: 0.62, g: 0.74, b: 0.95, a: 1}
+  m_Intensity: 0.42
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -264,6 +264,7 @@ GameObject:
   m_Component:
   - component: {fileID: 6026381943541070288}
   - component: {fileID: 2546218692820935181}
+  - component: {fileID: 9134051139054374894}
   m_Layer: 0
   m_Name: StageCamera
   m_TagString: Untagged
@@ -330,13 +331,57 @@ Camera:
   m_TargetTexture: {fileID: 8400000, guid: df653417666a5df4ea5636c87c5d5d49, type: 2}
   m_TargetDisplay: 0
   m_TargetEye: 3
-  m_HDR: 1
-  m_AllowMSAA: 0
+  m_HDR: 0
+  m_AllowMSAA: 1
   m_AllowDynamicResolution: 0
   m_ForceIntoRT: 0
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
+--- !u!114 &9134051139054374894
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1895188216014039949}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
+  m_RenderShadows: 0
+  m_RequiresDepthTextureOption: 2
+  m_RequiresOpaqueTextureOption: 2
+  m_CameraType: 0
+  m_Cameras: []
+  m_RendererIndex: -1
+  m_VolumeLayerMask:
+    serializedVersion: 2
+    m_Bits: 1
+  m_VolumeTrigger: {fileID: 0}
+  m_VolumeFrameworkUpdateModeOption: 2
+  m_RenderPostProcessing: 0
+  m_Antialiasing: 0
+  m_AntialiasingQuality: 2
+  m_StopNaN: 0
+  m_Dithering: 0
+  m_ClearDepth: 1
+  m_AllowXRRendering: 1
+  m_AllowHDROutput: 1
+  m_UseScreenCoordOverride: 0
+  m_ScreenSizeOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_ScreenCoordScaleBias: {x: 0, y: 0, z: 0, w: 0}
+  m_RequiresDepthTexture: 0
+  m_RequiresColorTexture: 0
+  m_TaaSettings:
+    m_Quality: 3
+    m_FrameInfluence: 0.1
+    m_JitterScale: 1
+    m_MipBias: 0
+    m_VarianceClampScale: 0.9
+    m_ContrastAdaptiveSharpening: 0
+  m_Version: 2
 --- !u!1 &6652554627171692583
 GameObject:
   m_ObjectHideFlags: 0
@@ -350,6 +395,7 @@ GameObject:
   - component: {fileID: 9134051139054374889}
   - component: {fileID: 9134051139054374890}
   - component: {fileID: 9134051139054374891}
+  - component: {fileID: 9134051139054374893}
   m_Layer: 0
   m_Name: PF_UI_LobbyCharacterStage
   m_TagString: Untagged
@@ -391,17 +437,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.LobbyCharacterStageFramer
   stageCamera: {fileID: 2546218692820935181}
   targetRoot: {fileID: 4246937929788135273}
-  fieldOfView: 27
-  boundsPadding: 1.08
-  viewportHeightFill: 0.94
-  horizontalFitWeight: 0.35
-  distanceScale: 0.92
+  useSkinnedRenderersOnlyForFraming: 1
+  fieldOfView: 31
+  boundsPadding: 1.04
+  viewportHeightFill: 0.88
+  horizontalFitWeight: 0.22
+  distanceScale: 0.98
   minimumDistance: 0.1
-  feetViewportY: 0.075
+  feetViewportY: 0.07
   runtimeRefitFrameCount: 2
-  focusOffset: {x: 0, y: 0.16, z: 0}
-  compositionOffset: {x: -0.1, y: 0}
-  cameraEulerAngles: {x: 0, y: 0, z: 0}
+  focusOffset: {x: 0, y: 0.12, z: 0}
+  compositionOffset: {x: -0.14, y: 0}
+  cameraEulerAngles: {x: 0, y: -5, z: 0}
 --- !u!114 &9134051139054374890
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -438,7 +485,7 @@ MonoBehaviour:
   - motionKey: quick_tap
     peakEulerAngles: {x: 5, y: 8, z: -2}
     peakPositionOffset: {x: 0, y: 0, z: 0}
-  idleYawAmplitude: 0.35
+  idleYawAmplitude: 1.1
   idleYawFrequency: 0.12
   idleBobAmplitude: 0
   idleBobFrequency: 0.32
@@ -464,7 +511,6 @@ MonoBehaviour:
   defaultStateName: Idle
   normalizedStartTime: 0
   useUnscaledTime: 1
-  createAnimatorIfMissing: 1
 --- !u!114 &9134051139054374892
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -483,6 +529,30 @@ MonoBehaviour:
     isVisible: 0
   - objectName: Weapon_Axe
     isVisible: 0
+  - objectName: Body_Full
+    isVisible: 0
+  - objectName: Body_Cloth
+    isVisible: 0
+--- !u!114 &9134051139054374893
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6652554627171692583}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27d5f0dfb7054dcfb767ebf6e84c60fd, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.LobbyCharacterToonRenderTuner
+  targetRoot: {fileID: 4246937929788135273}
+  unlitIntensity: 1.16
+  rimLightPower: 0.22
+  outlineWidth: 0.65
+  outlineDepthOffset: 0.16
+  baseColorStep: 0.78
+  baseShadeFeather: 0.12
+  clearOnDisable: 1
 --- !u!1 &7061368977297516858
 GameObject:
   m_ObjectHideFlags: 0
@@ -526,8 +596,8 @@ Light:
   m_Enabled: 1
   serializedVersion: 12
   m_Type: 1
-  m_Color: {r: 1, g: 0.97, b: 0.92, a: 1}
-  m_Intensity: 1.35
+  m_Color: {r: 1, g: 0.94, b: 0.84, a: 1}
+  m_Intensity: 0.95
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.80208
@@ -677,8 +747,38 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 803283bee21a421fb8a39a5dbe3f7d5f, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 9134051139054374896}
   m_SourcePrefab: {fileID: 100100000, guid: 803283bee21a421fb8a39a5dbe3f7d5f, type: 3}
+--- !u!1 &9134051139054374895 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 803283bee21a421fb8a39a5dbe3f7d5f, type: 3}
+  m_PrefabInstance: {fileID: 4430027966069272706}
+  m_PrefabAsset: {fileID: 0}
+--- !u!95 &9134051139054374896
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 4430027966069272706}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9134051139054374895}
+  m_Enabled: 1
+  m_Avatar: {fileID: 9000000, guid: ea11e3aa93c240e2a73f88c8b2cb4c17, type: 3}
+  m_Controller: {fileID: 9100000, guid: 8e7b7ed1e61f4e0f9e03c737cfcb7d0a, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 2
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage:
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
 --- !u!4 &4246937929788135273 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 803283bee21a421fb8a39a5dbe3f7d5f, type: 3}

@@ -11,7 +11,6 @@ namespace DimensionBrawl.UI
         [SerializeField] private string defaultStateName = "Idle";
         [SerializeField, Range(0f, 1f)] private float normalizedStartTime;
         [SerializeField] private bool useUnscaledTime = true;
-        [SerializeField] private bool createAnimatorIfMissing = true;
 
         private Animator animator;
 
@@ -45,12 +44,7 @@ namespace DimensionBrawl.UI
                 return;
             }
 
-            animator = resolvedRoot.GetComponent<Animator>();
-            if (animator == null && createAnimatorIfMissing)
-            {
-                animator = resolvedRoot.gameObject.AddComponent<Animator>();
-            }
-
+            animator = resolvedRoot.GetComponentInChildren<Animator>(true);
             if (animator == null)
             {
                 return;
