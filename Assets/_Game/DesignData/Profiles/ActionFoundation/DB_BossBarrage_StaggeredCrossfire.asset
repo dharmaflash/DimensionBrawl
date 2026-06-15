@@ -10,33 +10,33 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6471890abcdeffedcba12, type: 3}
-  m_Name: DB_BossBarrage_LinePressure
+  m_Name: DB_BossBarrage_StaggeredCrossfire
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBarragePatternProfile
-  patternId: LinePressure
-  initialDelaySeconds: 0.2
-  windupSeconds: 1
-  waveIntervalSeconds: 5.6
-  projectilesPerWave: 4
-  damage: 15
-  projectileSpeed: 13
-  projectileLifetimeSeconds: 5.1
-  projectileRadius: 0.3
-  targetingRule: 0
+  patternId: StaggeredCrossfire
+  initialDelaySeconds: 0.3
+  windupSeconds: 1.15
+  waveIntervalSeconds: 6.2
+  projectilesPerWave: 6
+  damage: 17
+  projectileSpeed: 10.6
+  projectileLifetimeSeconds: 5.8
+  projectileRadius: 0.38
+  targetingRule: 1
   laneCenterLateralRatio: 0
-  lateralShape: 4
-  backlineHalfSpread: 4
-  forwardHalfSpread: 3
+  lateralShape: 7
+  backlineHalfSpread: 4.35
+  forwardHalfSpread: 1.95
   twinColumnInnerSpreadRatio: 0.38
   sideClampDirection: -1
   sideClampCrossReachRatio: 0.28
   punishNetInnerSpreadRatio: 0.34
   escortScreenInnerGapRatio: 0.28
   layeredSalvoRowCount: 3
-  crossfireInnerGapRatio: 0.32
+  crossfireInnerGapRatio: 0.3
   linePressureDirection: 1
   linePressureCenterRatio: 0.72
   linePressureHalfSpreadRatio: 0.08
-  backlineDepthSpread: 2.2
-  forwardDepthSpread: 0.85
-  spawnHeight: 1.5
+  backlineDepthSpread: 2.8
+  forwardDepthSpread: 0.95
+  spawnHeight: 1.65
   targetHeight: 1.05

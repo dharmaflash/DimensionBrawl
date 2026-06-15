@@ -26,6 +26,8 @@ namespace DimensionBrawl.Editor
             ActionFoundationProfileSetup.ProfileRoot + "/DB_BossBarrage_EscortScreen.asset";
         public const string LayeredSalvoPatternProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_BossBarrage_LayeredSalvo.asset";
+        public const string StaggeredCrossfirePatternProfilePath =
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_BossBarrage_StaggeredCrossfire.asset";
         public const string TwinSweepPatternProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_BossBarrage_TwinSweep.asset";
         public const string LeftClampPatternProfilePath =
@@ -108,6 +110,7 @@ namespace DimensionBrawl.Editor
             BossBarragePatternProfile coverFirePatternProfile = EnsureCoverFirePatternProfile();
             BossBarragePatternProfile escortScreenPatternProfile = EnsureEscortScreenPatternProfile();
             BossBarragePatternProfile layeredSalvoPatternProfile = EnsureLayeredSalvoPatternProfile();
+            BossBarragePatternProfile staggeredCrossfirePatternProfile = EnsureStaggeredCrossfirePatternProfile();
             BossBarragePatternProfile twinSweepPatternProfile = EnsureTwinSweepPatternProfile();
             BossBarragePatternProfile leftClampPatternProfile = EnsureLeftClampPatternProfile();
             BossBarragePatternProfile rightClampPatternProfile = EnsureRightClampPatternProfile();
@@ -159,6 +162,7 @@ namespace DimensionBrawl.Editor
                 coverFirePatternProfile,
                 escortScreenPatternProfile,
                 layeredSalvoPatternProfile,
+                staggeredCrossfirePatternProfile,
                 twinSweepPatternProfile,
                 leftClampPatternProfile,
                 rightClampPatternProfile,
@@ -274,26 +278,31 @@ namespace DimensionBrawl.Editor
                 emitter,
                 "patternSequence",
                 4,
-                LoadAsset<BossBarragePatternProfile>(TwinSweepPatternProfilePath));
+                LoadAsset<BossBarragePatternProfile>(StaggeredCrossfirePatternProfilePath));
             ValidateArrayReference(
                 emitter,
                 "patternSequence",
                 5,
-                LoadAsset<BossBarragePatternProfile>(LeftClampPatternProfilePath));
+                LoadAsset<BossBarragePatternProfile>(TwinSweepPatternProfilePath));
             ValidateArrayReference(
                 emitter,
                 "patternSequence",
                 6,
-                LoadAsset<BossBarragePatternProfile>(RightClampPatternProfilePath));
+                LoadAsset<BossBarragePatternProfile>(LeftClampPatternProfilePath));
             ValidateArrayReference(
                 emitter,
                 "patternSequence",
                 7,
-                LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath));
+                LoadAsset<BossBarragePatternProfile>(RightClampPatternProfilePath));
             ValidateArrayReference(
                 emitter,
                 "patternSequence",
                 8,
+                LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath));
+            ValidateArrayReference(
+                emitter,
+                "patternSequence",
+                9,
                 LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath));
             ValidateInt(emitter, "wavesPerPattern", 1);
             ValidateObjectReference(emitter, "projectilePrefabObject", LoadAsset<GameObject>(ProjectilePrefabPath));
@@ -326,6 +335,7 @@ namespace DimensionBrawl.Editor
             ValidateNoImportedAssetReference(CoverFirePatternProfilePath);
             ValidateNoImportedAssetReference(EscortScreenPatternProfilePath);
             ValidateNoImportedAssetReference(LayeredSalvoPatternProfilePath);
+            ValidateNoImportedAssetReference(StaggeredCrossfirePatternProfilePath);
             ValidateNoImportedAssetReference(TwinSweepPatternProfilePath);
             ValidateNoImportedAssetReference(LeftClampPatternProfilePath);
             ValidateNoImportedAssetReference(RightClampPatternProfilePath);
@@ -536,6 +546,42 @@ namespace DimensionBrawl.Editor
             RequireProperty(serializedObject, "backlineDepthSpread").floatValue = 2.2f;
             RequireProperty(serializedObject, "forwardDepthSpread").floatValue = 0.85f;
             RequireProperty(serializedObject, "spawnHeight").floatValue = 1.5f;
+            RequireProperty(serializedObject, "targetHeight").floatValue = 1.05f;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(profile);
+            return profile;
+        }
+
+        private static BossBarragePatternProfile EnsureStaggeredCrossfirePatternProfile()
+        {
+            EnsureFolderForAsset(StaggeredCrossfirePatternProfilePath);
+            BossBarragePatternProfile profile =
+                AssetDatabase.LoadAssetAtPath<BossBarragePatternProfile>(StaggeredCrossfirePatternProfilePath);
+            if (profile == null)
+            {
+                profile = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+                AssetDatabase.CreateAsset(profile, StaggeredCrossfirePatternProfilePath);
+            }
+
+            var serializedObject = new SerializedObject(profile);
+            RequireProperty(serializedObject, "patternId").stringValue = "StaggeredCrossfire";
+            RequireProperty(serializedObject, "targetingRule").enumValueIndex = (int)BossBarrageTargetingRule.LaneCenter;
+            RequireProperty(serializedObject, "laneCenterLateralRatio").floatValue = 0f;
+            RequireProperty(serializedObject, "lateralShape").enumValueIndex = (int)BossBarrageLateralShape.StaggeredCrossfire;
+            RequireProperty(serializedObject, "initialDelaySeconds").floatValue = 0.3f;
+            RequireProperty(serializedObject, "windupSeconds").floatValue = 1.15f;
+            RequireProperty(serializedObject, "waveIntervalSeconds").floatValue = 6.2f;
+            RequireProperty(serializedObject, "projectilesPerWave").intValue = 6;
+            RequireProperty(serializedObject, "damage").floatValue = 17f;
+            RequireProperty(serializedObject, "projectileSpeed").floatValue = 10.6f;
+            RequireProperty(serializedObject, "projectileLifetimeSeconds").floatValue = 5.8f;
+            RequireProperty(serializedObject, "projectileRadius").floatValue = 0.38f;
+            RequireProperty(serializedObject, "backlineHalfSpread").floatValue = 4.35f;
+            RequireProperty(serializedObject, "forwardHalfSpread").floatValue = 1.95f;
+            RequireProperty(serializedObject, "crossfireInnerGapRatio").floatValue = 0.30f;
+            RequireProperty(serializedObject, "backlineDepthSpread").floatValue = 2.8f;
+            RequireProperty(serializedObject, "forwardDepthSpread").floatValue = 0.95f;
+            RequireProperty(serializedObject, "spawnHeight").floatValue = 1.65f;
             RequireProperty(serializedObject, "targetHeight").floatValue = 1.05f;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(profile);
@@ -931,6 +977,7 @@ namespace DimensionBrawl.Editor
             BossBarragePatternProfile coverFirePatternProfile,
             BossBarragePatternProfile escortScreenPatternProfile,
             BossBarragePatternProfile layeredSalvoPatternProfile,
+            BossBarragePatternProfile staggeredCrossfirePatternProfile,
             BossBarragePatternProfile twinSweepPatternProfile,
             BossBarragePatternProfile leftClampPatternProfile,
             BossBarragePatternProfile rightClampPatternProfile,
@@ -962,6 +1009,7 @@ namespace DimensionBrawl.Editor
                     coverFirePatternProfile,
                     escortScreenPatternProfile,
                     layeredSalvoPatternProfile,
+                    staggeredCrossfirePatternProfile,
                     twinSweepPatternProfile,
                     leftClampPatternProfile,
                     rightClampPatternProfile,

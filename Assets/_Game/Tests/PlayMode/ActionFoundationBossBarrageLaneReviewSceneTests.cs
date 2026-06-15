@@ -24,6 +24,8 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_EscortScreen.asset";
         private const string LayeredSalvoPatternProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_LayeredSalvo.asset";
+        private const string StaggeredCrossfirePatternProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_StaggeredCrossfire.asset";
         private const string TwinSweepPatternProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_TwinSweep.asset";
         private const string LeftClampPatternProfilePath =
@@ -153,31 +155,38 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(BossBarrageTargetingRule.LaneCenter, layeredSalvoPattern.TargetingRule);
             Assert.AreEqual(BossBarrageLateralShape.LayeredSalvo, layeredSalvoPattern.LateralShape);
             BossBarragePatternProfile twinSweepPattern = LoadAsset<BossBarragePatternProfile>(TwinSweepPatternProfilePath);
+            BossBarragePatternProfile staggeredCrossfirePattern =
+                LoadAsset<BossBarragePatternProfile>(StaggeredCrossfirePatternProfilePath);
+            Assert.AreSame(
+                staggeredCrossfirePattern,
+                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 4));
+            Assert.AreEqual(BossBarrageTargetingRule.LaneCenter, staggeredCrossfirePattern.TargetingRule);
+            Assert.AreEqual(BossBarrageLateralShape.StaggeredCrossfire, staggeredCrossfirePattern.LateralShape);
             Assert.AreSame(
                 twinSweepPattern,
-                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 4));
+                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 5));
             Assert.AreEqual(BossBarrageLateralShape.TwinColumns, twinSweepPattern.LateralShape);
             BossBarragePatternProfile leftClampPattern = LoadAsset<BossBarragePatternProfile>(LeftClampPatternProfilePath);
             Assert.AreSame(
                 leftClampPattern,
-                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 5));
+                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 6));
             Assert.AreEqual(BossBarrageLateralShape.SideClamp, leftClampPattern.LateralShape);
             Assert.Less(leftClampPattern.SideClampDirection, 0f);
             BossBarragePatternProfile rightClampPattern = LoadAsset<BossBarragePatternProfile>(RightClampPatternProfilePath);
             Assert.AreSame(
                 rightClampPattern,
-                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 6));
+                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 7));
             Assert.AreEqual(BossBarrageLateralShape.SideClamp, rightClampPattern.LateralShape);
             Assert.Greater(rightClampPattern.SideClampDirection, 0f);
             BossBarragePatternProfile punishNetPattern = LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath);
             Assert.AreSame(
                 punishNetPattern,
-                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 7));
+                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 8));
             Assert.AreEqual(BossBarrageLateralShape.PunishNet, punishNetPattern.LateralShape);
             BossBarragePatternProfile linePressurePattern = LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath);
             Assert.AreSame(
                 linePressurePattern,
-                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 8));
+                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 9));
             Assert.AreEqual(BossBarrageLateralShape.LinePressure, linePressurePattern.LateralShape);
             Assert.Greater(linePressurePattern.LinePressureDirection, 0f);
             Assert.AreSame(LoadAsset<GameObject>(ProjectilePrefabPath), GetObjectReference<GameObject>(emitter, "projectilePrefabObject"));
@@ -463,37 +472,44 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(emitter.BeginWindup());
             emitter.FirePendingWave();
             Assert.AreSame(
+                LoadAsset<BossBarragePatternProfile>(StaggeredCrossfirePatternProfilePath),
+                emitter.CurrentPattern,
+                "Review boss should move from LayeredSalvo into the staggered crossfire barrage after the fourth wave.");
+
+            Assert.IsTrue(emitter.BeginWindup());
+            emitter.FirePendingWave();
+            Assert.AreSame(
                 LoadAsset<BossBarragePatternProfile>(TwinSweepPatternProfilePath),
                 emitter.CurrentPattern,
-                "Review boss should move from LayeredSalvo into the twin-column barrage pattern after the fourth wave.");
+                "Review boss should move from StaggeredCrossfire into the twin-column barrage pattern after the fifth wave.");
 
             Assert.IsTrue(emitter.BeginWindup());
             emitter.FirePendingWave();
             Assert.AreSame(
                 LoadAsset<BossBarragePatternProfile>(LeftClampPatternProfilePath),
                 emitter.CurrentPattern,
-                "Review boss should move from TwinSweep into the first side-clamp barrage pattern after the fifth wave.");
+                "Review boss should move from TwinSweep into the first side-clamp barrage pattern after the sixth wave.");
 
             Assert.IsTrue(emitter.BeginWindup());
             emitter.FirePendingWave();
             Assert.AreSame(
                 LoadAsset<BossBarragePatternProfile>(RightClampPatternProfilePath),
                 emitter.CurrentPattern,
-                "Review boss should mirror side-clamp pressure after the sixth wave.");
+                "Review boss should mirror side-clamp pressure after the seventh wave.");
 
             Assert.IsTrue(emitter.BeginWindup());
             emitter.FirePendingWave();
             Assert.AreSame(
                 LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath),
                 emitter.CurrentPattern,
-                "Review boss should move from mirrored side clamp into the player-centered PunishNet pattern after the seventh wave.");
+                "Review boss should move from mirrored side clamp into the player-centered PunishNet pattern after the eighth wave.");
 
             Assert.IsTrue(emitter.BeginWindup());
             emitter.FirePendingWave();
             Assert.AreSame(
                 LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath),
                 emitter.CurrentPattern,
-                "Review boss should move from PunishNet into the reference-backed LinePressure rail pattern after the eighth wave.");
+                "Review boss should move from PunishNet into the reference-backed LinePressure rail pattern after the ninth wave.");
 
             BossBarrageProjectile[] projectiles = Object.FindObjectsByType<BossBarrageProjectile>(
                 FindObjectsInactive.Exclude,

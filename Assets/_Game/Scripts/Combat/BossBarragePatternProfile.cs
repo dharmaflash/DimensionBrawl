@@ -11,6 +11,7 @@ namespace DimensionBrawl.Combat
         LinePressure = 4,
         EscortScreen = 5,
         LayeredSalvo = 6,
+        StaggeredCrossfire = 7,
     }
 
     public enum BossBarrageTargetingRule
@@ -62,6 +63,8 @@ namespace DimensionBrawl.Combat
         [SerializeField, Range(0.08f, 0.85f)] private float escortScreenInnerGapRatio = 0.28f;
         [Tooltip("Layered salvo patterns compress multi-round barrage reads into this many target-depth rows.")]
         [SerializeField, Range(2, 5)] private int layeredSalvoRowCount = 3;
+        [Tooltip("Staggered crossfire patterns leave a late inner gap after the first wide crossing row.")]
+        [SerializeField, Range(0.08f, 0.8f)] private float crossfireInnerGapRatio = 0.32f;
         [Tooltip("Negative values commit the line to the left of the sampled target, positive values commit it to the right.")]
         [SerializeField, Range(-1f, 1f)] private float linePressureDirection = 1f;
         [Tooltip("How far from the sampled target the pressure line sits, expressed against the current spread.")]
@@ -92,6 +95,7 @@ namespace DimensionBrawl.Combat
         public float PunishNetInnerSpreadRatio => punishNetInnerSpreadRatio;
         public float EscortScreenInnerGapRatio => escortScreenInnerGapRatio;
         public int LayeredSalvoRowCount => layeredSalvoRowCount;
+        public float CrossfireInnerGapRatio => crossfireInnerGapRatio;
         public float LinePressureDirection => linePressureDirection;
         public float LinePressureCenterRatio => linePressureCenterRatio;
         public float LinePressureHalfSpreadRatio => linePressureHalfSpreadRatio;
@@ -145,6 +149,11 @@ namespace DimensionBrawl.Combat
                 return GetLayeredSalvoOffset(projectileIndex, count, forwardRisk01);
             }
 
+            if (lateralShape == BossBarrageLateralShape.StaggeredCrossfire)
+            {
+                return GetStaggeredCrossfireOffset(projectileIndex, count, forwardRisk01);
+            }
+
             int safeCount = Mathf.Max(1, count);
             if (safeCount <= 1)
             {
@@ -160,7 +169,8 @@ namespace DimensionBrawl.Combat
         {
             if (lateralShape != BossBarrageLateralShape.LinePressure
                 && lateralShape != BossBarrageLateralShape.EscortScreen
-                && lateralShape != BossBarrageLateralShape.LayeredSalvo)
+                && lateralShape != BossBarrageLateralShape.LayeredSalvo
+                && lateralShape != BossBarrageLateralShape.StaggeredCrossfire)
             {
                 return 0f;
             }
@@ -174,6 +184,11 @@ namespace DimensionBrawl.Combat
             if (lateralShape == BossBarrageLateralShape.LayeredSalvo)
             {
                 return GetLayeredSalvoDepthOffset(projectileIndex, count, forwardRisk01);
+            }
+
+            if (lateralShape == BossBarrageLateralShape.StaggeredCrossfire)
+            {
+                return GetStaggeredCrossfireDepthOffset(projectileIndex, count, forwardRisk01);
             }
 
             float depthSpread = EvaluateDepthSpread(forwardRisk01);
@@ -317,6 +332,41 @@ namespace DimensionBrawl.Combat
             float row01 = rowCount <= 1 ? 0.5f : Mathf.Clamp01((float)rowIndex / (rowCount - 1));
             float depthSpread = EvaluateDepthSpread(forwardRisk01);
             return Mathf.Lerp(-depthSpread, depthSpread, row01);
+        }
+
+        private float GetStaggeredCrossfireOffset(int projectileIndex, int count, float forwardRisk01)
+        {
+            int safeCount = Mathf.Max(1, count);
+            if (safeCount <= 1)
+            {
+                return 0f;
+            }
+
+            int safeIndex = Mathf.Clamp(projectileIndex, 0, safeCount - 1);
+            int pairIndex = safeIndex / 2;
+            int pairCount = Mathf.Max(1, Mathf.CeilToInt(safeCount / 2f));
+            float pair01 = pairCount <= 1 ? 0f : Mathf.Clamp01((float)pairIndex / (pairCount - 1));
+            float halfSpread = EvaluateHalfSpread(forwardRisk01);
+            float innerGap = halfSpread * Mathf.Clamp(crossfireInnerGapRatio, 0.08f, 0.8f);
+            float magnitude = Mathf.Lerp(halfSpread, innerGap, pair01);
+            bool startsLeft = pairIndex % 2 == 0;
+            bool isFirstInPair = safeIndex % 2 == 0;
+            return startsLeft == isFirstInPair ? -magnitude : magnitude;
+        }
+
+        private float GetStaggeredCrossfireDepthOffset(int projectileIndex, int count, float forwardRisk01)
+        {
+            int safeCount = Mathf.Max(1, count);
+            if (safeCount <= 1)
+            {
+                return 0f;
+            }
+
+            int pairIndex = Mathf.Clamp(projectileIndex, 0, safeCount - 1) / 2;
+            int pairCount = Mathf.Max(1, Mathf.CeilToInt(safeCount / 2f));
+            float pair01 = pairCount <= 1 ? 0.5f : Mathf.Clamp01((float)pairIndex / (pairCount - 1));
+            float depthSpread = EvaluateDepthSpread(forwardRisk01);
+            return Mathf.Lerp(-depthSpread, depthSpread, pair01);
         }
 
         private int ResolveLayeredSalvoRowCount(int count)

@@ -32,6 +32,7 @@ MonoBehaviour:
   punishNetInnerSpreadRatio: 0.34
   escortScreenInnerGapRatio: 0.35
   layeredSalvoRowCount: 3
+  crossfireInnerGapRatio: 0.32
   linePressureDirection: 1
   linePressureCenterRatio: 0.72
   linePressureHalfSpreadRatio: 0.08
