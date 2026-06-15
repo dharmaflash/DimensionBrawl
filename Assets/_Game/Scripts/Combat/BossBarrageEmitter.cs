@@ -135,8 +135,9 @@ namespace DimensionBrawl.Combat
             }
 
             Vector2 lanePoint = laneSpace.GetLaneCoordinates(trackedPlayer.position);
+            float targetLateralX = activePattern.ResolveTargetLateralX(lanePoint.x, laneSpace.HalfWidth);
             pendingTargetLanePoint = new Vector2(
-                Mathf.Clamp(lanePoint.x, -laneSpace.HalfWidth, laneSpace.HalfWidth),
+                Mathf.Clamp(targetLateralX, -laneSpace.HalfWidth, laneSpace.HalfWidth),
                 Mathf.Clamp(lanePoint.y, laneSpace.BackLimitZ, laneSpace.ForwardBoundaryZ));
             pendingForwardRisk01 = laneSpace.EvaluateForwardRisk01(trackedPlayer.position);
             windupTimer = activePattern.WindupSeconds;

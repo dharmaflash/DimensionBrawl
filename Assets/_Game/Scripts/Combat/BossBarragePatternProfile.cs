@@ -11,6 +11,12 @@ namespace DimensionBrawl.Combat
         LinePressure = 4,
     }
 
+    public enum BossBarrageTargetingRule
+    {
+        TrackedPlayer = 0,
+        LaneCenter = 1,
+    }
+
     [CreateAssetMenu(
         fileName = "DB_BossBarragePattern",
         menuName = "DimensionBrawl/Combat/Boss Barrage Pattern")]
@@ -30,6 +36,11 @@ namespace DimensionBrawl.Combat
         [SerializeField, Min(0.1f)] private float projectileSpeed = 13f;
         [SerializeField, Min(0.1f)] private float projectileLifetimeSeconds = 4.5f;
         [SerializeField, Min(0f)] private float projectileRadius = 0.32f;
+
+        [Header("Targeting")]
+        [SerializeField] private BossBarrageTargetingRule targetingRule = BossBarrageTargetingRule.TrackedPlayer;
+        [Tooltip("LaneCenter targeting uses this authored lateral position instead of tracking the player's current side.")]
+        [SerializeField, Range(-1f, 1f)] private float laneCenterLateralRatio;
 
         [Header("Forward Risk Shape")]
         [SerializeField] private BossBarrageLateralShape lateralShape = BossBarrageLateralShape.CenterSpread;
@@ -68,6 +79,8 @@ namespace DimensionBrawl.Combat
         public float ProjectileSpeed => projectileSpeed;
         public float ProjectileLifetimeSeconds => projectileLifetimeSeconds;
         public float ProjectileRadius => projectileRadius;
+        public BossBarrageTargetingRule TargetingRule => targetingRule;
+        public float LaneCenterLateralRatio => laneCenterLateralRatio;
         public float SideClampDirection => sideClampDirection;
         public float SideClampCrossReachRatio => sideClampCrossReachRatio;
         public float PunishNetInnerSpreadRatio => punishNetInnerSpreadRatio;
@@ -80,6 +93,16 @@ namespace DimensionBrawl.Combat
         public float EvaluateHalfSpread(float forwardRisk01)
         {
             return Mathf.Lerp(backlineHalfSpread, forwardHalfSpread, Mathf.Clamp01(forwardRisk01));
+        }
+
+        public float ResolveTargetLateralX(float trackedLateralX, float laneHalfWidth)
+        {
+            if (targetingRule == BossBarrageTargetingRule.LaneCenter)
+            {
+                return Mathf.Clamp(laneCenterLateralRatio, -1f, 1f) * Mathf.Max(0f, laneHalfWidth);
+            }
+
+            return trackedLateralX;
         }
 
         public float GetLateralOffset(int projectileIndex, int count, float forwardRisk01)

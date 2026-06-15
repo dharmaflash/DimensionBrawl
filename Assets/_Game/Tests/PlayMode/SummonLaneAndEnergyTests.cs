@@ -92,6 +92,26 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void BossBarrageCoverFireCanTargetLaneCenterInsteadOfTrackingPlayerSide()
+        {
+            BossBarragePatternProfile pattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            var serializedObject = new SerializedObject(pattern);
+            serializedObject.FindProperty("targetingRule").enumValueIndex = (int)BossBarrageTargetingRule.LaneCenter;
+            serializedObject.FindProperty("laneCenterLateralRatio").floatValue = 0f;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+
+            float targetLateralX = pattern.ResolveTargetLateralX(3.5f, 5f);
+
+            Assert.AreEqual(
+                0f,
+                targetLateralX,
+                0.001f,
+                "CoverFire-style lane pressure should be able to suppress the authored center path instead of following the player's current side.");
+
+            Object.DestroyImmediate(pattern);
+        }
+
+        [Test]
         public void BossBarrageSideClampLeavesReadableOppositeSideGap()
         {
             BossBarragePatternProfile pattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();

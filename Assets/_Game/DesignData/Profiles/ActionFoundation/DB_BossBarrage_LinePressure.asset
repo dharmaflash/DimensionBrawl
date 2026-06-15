@@ -21,6 +21,8 @@ MonoBehaviour:
   projectileSpeed: 13
   projectileLifetimeSeconds: 5.1
   projectileRadius: 0.3
+  targetingRule: 0
+  laneCenterLateralRatio: 0
   lateralShape: 4
   backlineHalfSpread: 4
   forwardHalfSpread: 3

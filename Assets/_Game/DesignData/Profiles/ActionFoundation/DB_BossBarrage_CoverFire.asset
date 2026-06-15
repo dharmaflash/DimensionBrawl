@@ -10,22 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6471890abcdeffedcba12, type: 3}
-  m_Name: DB_BossBarrage_PunishNet
+  m_Name: DB_BossBarrage_CoverFire
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBarragePatternProfile
-  patternId: PunishNet
-  initialDelaySeconds: 0.2
-  windupSeconds: 1.1
-  waveIntervalSeconds: 5.8
+  patternId: CoverFire
+  initialDelaySeconds: 0.25
+  windupSeconds: 0.85
+  waveIntervalSeconds: 5.2
   projectilesPerWave: 5
-  damage: 14
-  projectileSpeed: 12.4
-  projectileLifetimeSeconds: 5.2
-  projectileRadius: 0.29
-  targetingRule: 0
+  damage: 15
+  projectileSpeed: 13.5
+  projectileLifetimeSeconds: 4.8
+  projectileRadius: 0.3
+  targetingRule: 1
   laneCenterLateralRatio: 0
-  lateralShape: 3
-  backlineHalfSpread: 3.45
-  forwardHalfSpread: 0.92
+  lateralShape: 0
+  backlineHalfSpread: 3.2
+  forwardHalfSpread: 1.25
   twinColumnInnerSpreadRatio: 0.38
   sideClampDirection: -1
   sideClampCrossReachRatio: 0.28
@@ -35,5 +35,5 @@ MonoBehaviour:
   linePressureHalfSpreadRatio: 0.08
   backlineDepthSpread: 2.2
   forwardDepthSpread: 0.85
-  spawnHeight: 1.52
+  spawnHeight: 1.38
   targetHeight: 1.05
