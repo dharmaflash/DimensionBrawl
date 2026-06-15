@@ -408,6 +408,36 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void SummonPressureScreenScansOverlappingHostileProjectilesDuringTick()
+        {
+            GameObject screenObject = new GameObject("SummonPressureScreen");
+            screenObject.AddComponent<SphereCollider>();
+            screenObject.AddComponent<Rigidbody>();
+            SummonPressureScreen screen = screenObject.AddComponent<SummonPressureScreen>();
+            screen.Activate(DamageTeam.AllySummon, 1, 1.25f, 1f);
+
+            GameObject enemyProjectileObject = new GameObject("EnemyProjectile");
+            enemyProjectileObject.transform.position = screenObject.transform.position + Vector3.right * 0.25f;
+            enemyProjectileObject.AddComponent<SphereCollider>();
+            enemyProjectileObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile enemyProjectile = enemyProjectileObject.AddComponent<BossBarrageProjectile>();
+            enemyProjectile.Configure(null, DamageTeam.Enemy, 10f, Vector3.back, 0f, 1f, 0.3f);
+
+            Physics.SyncTransforms();
+            Assert.IsTrue(enemyProjectile.IsActive);
+
+            screen.Tick(0.01f);
+
+            Assert.IsFalse(
+                enemyProjectile.IsActive,
+                "Summon pressure screens should actively absorb overlapping hostile boss projectiles, not only rely on trigger-enter timing.");
+            Assert.AreEqual(1, screen.InterceptedProjectiles);
+
+            Object.DestroyImmediate(enemyProjectileObject);
+            Object.DestroyImmediate(screenObject);
+        }
+
+        [Test]
         public void SummonPressureScreenPresenterShowsActivationAndFinalHitFlash()
         {
             GameObject screenObject = new GameObject("SummonPressureScreen");
