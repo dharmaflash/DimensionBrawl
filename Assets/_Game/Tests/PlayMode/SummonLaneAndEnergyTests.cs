@@ -154,5 +154,54 @@ namespace DimensionBrawl.Tests
             Object.DestroyImmediate(playerObject);
             Object.DestroyImmediate(laneObject);
         }
+
+        [Test]
+        public void BossBarrageEmitterAdvancesAuthoredPatternSequenceAfterWave()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.ForwardBoundaryZ);
+            GameObject bossObject = new GameObject("BossProxy");
+            CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+            bossHealth.ConfigureTeam(DamageTeam.Enemy);
+
+            BossBarragePatternProfile firstPattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            BossBarragePatternProfile secondPattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            GameObject projectilePrefabObject = new GameObject("BossProjectilePrefab");
+            projectilePrefabObject.AddComponent<SphereCollider>();
+            projectilePrefabObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile projectilePrefab = projectilePrefabObject.AddComponent<BossBarrageProjectile>();
+            projectilePrefabObject.SetActive(false);
+
+            BossBarrageEmitter emitter = bossObject.AddComponent<BossBarrageEmitter>();
+            emitter.ConfigureReferences(lane, playerObject.transform, bossHealth);
+            emitter.ConfigurePattern(firstPattern, projectilePrefab, firstPattern.ProjectilesPerWave * 2);
+            emitter.ConfigurePatternSequence(
+                new[] { firstPattern, secondPattern },
+                1);
+
+            Assert.AreSame(firstPattern, emitter.CurrentPattern);
+            Assert.AreEqual(0, emitter.CurrentPatternSequenceIndex);
+
+            Assert.IsTrue(emitter.BeginWindup());
+            emitter.FirePendingWave();
+
+            Assert.AreSame(secondPattern, emitter.CurrentPattern);
+            Assert.AreEqual(1, emitter.CurrentPatternSequenceIndex);
+
+            Assert.IsTrue(emitter.BeginWindup());
+            emitter.FirePendingWave();
+
+            Assert.AreSame(firstPattern, emitter.CurrentPattern);
+            Assert.AreEqual(0, emitter.CurrentPatternSequenceIndex);
+
+            Object.DestroyImmediate(projectilePrefabObject);
+            Object.DestroyImmediate(firstPattern);
+            Object.DestroyImmediate(secondPattern);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(laneObject);
+        }
     }
 }

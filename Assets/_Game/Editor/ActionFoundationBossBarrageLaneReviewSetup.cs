@@ -19,6 +19,8 @@ namespace DimensionBrawl.Editor
         public const string ReviewScenePath = "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity";
         public const string PatternProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_BossBarrage_NeedleLock.asset";
+        public const string TwinSweepPatternProfilePath =
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_BossBarrage_TwinSweep.asset";
         public const string ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossBarrageProjectile_NeedleLock.prefab";
         public const string LocalDefenseProfilePath =
@@ -81,6 +83,7 @@ namespace DimensionBrawl.Editor
         public static void EnsureBossBarrageLaneReviewScene()
         {
             BossBarragePatternProfile patternProfile = EnsurePatternProfile();
+            BossBarragePatternProfile twinSweepPatternProfile = EnsureTwinSweepPatternProfile();
             BossBarrageProjectile projectilePrefab = EnsureProjectilePrefab();
             PlayerActionProfile localDefenseProfile = EnsureLocalDefenseProfile();
             LaneActionProjectile skill1ProjectilePrefab = EnsureLaneActionProjectilePrefab(
@@ -118,7 +121,13 @@ namespace DimensionBrawl.Editor
 
             GameObject projectileRoot = CreateRoot(scene, ProjectilePoolRootName);
             GameObject actionCueRoot = CreateRoot(scene, ActionCuePoolRootName);
-            GameObject bossProxy = CreateBossProxy(scene, laneSpace, patternProfile, projectilePrefab, projectileRoot.transform);
+            GameObject bossProxy = CreateBossProxy(
+                scene,
+                laneSpace,
+                patternProfile,
+                twinSweepPatternProfile,
+                projectilePrefab,
+                projectileRoot.transform);
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossProxy, "boss proxy health");
             GameObject closeThreat = CreateCloseThreat(scene, laneSpace, player.transform, playerHealth, cameraController);
             CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreat, "close threat health");
@@ -194,6 +203,13 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(emitter, "trackedPlayer", player.transform);
             ValidateObjectReference(emitter, "sourceHealth", bossHealth);
             ValidateObjectReference(emitter, "patternProfile", LoadAsset<BossBarragePatternProfile>(PatternProfilePath));
+            ValidateArrayReference(emitter, "patternSequence", 0, LoadAsset<BossBarragePatternProfile>(PatternProfilePath));
+            ValidateArrayReference(
+                emitter,
+                "patternSequence",
+                1,
+                LoadAsset<BossBarragePatternProfile>(TwinSweepPatternProfilePath));
+            ValidateInt(emitter, "wavesPerPattern", 1);
             ValidateObjectReference(emitter, "projectilePrefabObject", LoadAsset<GameObject>(ProjectilePrefabPath));
             ValidateObjectReference(targetSelector, "selfHealth", playerHealth);
             ValidateArrayReference(targetSelector, "targetCandidates", 0, closeThreatHealth);
@@ -211,6 +227,7 @@ namespace DimensionBrawl.Editor
             ValidateSummonForwardSpace(laneSpace);
             ValidateNoImportedAssetReference(ProjectilePrefabPath);
             ValidateNoImportedAssetReference(PatternProfilePath);
+            ValidateNoImportedAssetReference(TwinSweepPatternProfilePath);
             ValidateNoImportedAssetReference(LocalDefenseProfilePath);
             ValidateNoImportedAssetReference(Skill1ProjectilePrefabPath);
             ValidateNoImportedAssetReference(SummonSlot1ProjectilePrefabPath);
@@ -240,6 +257,38 @@ namespace DimensionBrawl.Editor
             RequireProperty(serializedObject, "backlineHalfSpread").floatValue = 3.2f;
             RequireProperty(serializedObject, "forwardHalfSpread").floatValue = 1.05f;
             RequireProperty(serializedObject, "spawnHeight").floatValue = 1.35f;
+            RequireProperty(serializedObject, "targetHeight").floatValue = 1.05f;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(profile);
+            return profile;
+        }
+
+        private static BossBarragePatternProfile EnsureTwinSweepPatternProfile()
+        {
+            EnsureFolderForAsset(TwinSweepPatternProfilePath);
+            BossBarragePatternProfile profile =
+                AssetDatabase.LoadAssetAtPath<BossBarragePatternProfile>(TwinSweepPatternProfilePath);
+            if (profile == null)
+            {
+                profile = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+                AssetDatabase.CreateAsset(profile, TwinSweepPatternProfilePath);
+            }
+
+            var serializedObject = new SerializedObject(profile);
+            RequireProperty(serializedObject, "patternId").stringValue = "TwinSweep";
+            RequireProperty(serializedObject, "lateralShape").enumValueIndex = (int)BossBarrageLateralShape.TwinColumns;
+            RequireProperty(serializedObject, "initialDelaySeconds").floatValue = 0.2f;
+            RequireProperty(serializedObject, "windupSeconds").floatValue = 0.95f;
+            RequireProperty(serializedObject, "waveIntervalSeconds").floatValue = 5.2f;
+            RequireProperty(serializedObject, "projectilesPerWave").intValue = 4;
+            RequireProperty(serializedObject, "damage").floatValue = 15f;
+            RequireProperty(serializedObject, "projectileSpeed").floatValue = 12.2f;
+            RequireProperty(serializedObject, "projectileLifetimeSeconds").floatValue = 4.9f;
+            RequireProperty(serializedObject, "projectileRadius").floatValue = 0.31f;
+            RequireProperty(serializedObject, "backlineHalfSpread").floatValue = 3.65f;
+            RequireProperty(serializedObject, "forwardHalfSpread").floatValue = 1.45f;
+            RequireProperty(serializedObject, "twinColumnInnerSpreadRatio").floatValue = 0.42f;
+            RequireProperty(serializedObject, "spawnHeight").floatValue = 1.42f;
             RequireProperty(serializedObject, "targetHeight").floatValue = 1.05f;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(profile);
@@ -438,6 +487,7 @@ namespace DimensionBrawl.Editor
             Scene scene,
             SummonLaneSpace laneSpace,
             BossBarragePatternProfile patternProfile,
+            BossBarragePatternProfile twinSweepPatternProfile,
             BossBarrageProjectile projectilePrefab,
             Transform projectileRoot)
         {
@@ -455,12 +505,14 @@ namespace DimensionBrawl.Editor
             SetObjectReference(emitter, "trackedPlayer", RequireObject<PlayerMovementController>(scene, "player movement").transform);
             SetObjectReference(emitter, "sourceHealth", bossHealth);
             SetObjectReference(emitter, "patternProfile", patternProfile);
+            SetObjectReferenceArray(emitter, "patternSequence", new UnityEngine.Object[] { patternProfile, twinSweepPatternProfile });
+            SetInt(emitter, "wavesPerPattern", 1);
             SetObjectReference(emitter, "projectilePrefab", projectilePrefab);
             SetObjectReference(emitter, "projectilePrefabObject", LoadAsset<GameObject>(ProjectilePrefabPath));
             SetObjectReference(emitter, "projectileRoot", projectileRoot);
             SetInt(emitter, "sourceTeam", (int)DamageTeam.Enemy);
             SetBool(emitter, "firingEnabled", true);
-            SetInt(emitter, "prewarmCount", 18);
+            SetInt(emitter, "prewarmCount", 24);
 
             CreateBossProxyVisual(bossProxy.transform);
             return bossProxy;

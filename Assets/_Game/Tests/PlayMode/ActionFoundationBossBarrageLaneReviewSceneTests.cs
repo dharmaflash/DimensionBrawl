@@ -18,6 +18,8 @@ namespace DimensionBrawl.Tests
         private const string ScenePath = "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity";
         private const string PatternProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_NeedleLock.asset";
+        private const string TwinSweepPatternProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_TwinSweep.asset";
         private const string ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossBarrageProjectile_NeedleLock.prefab";
         private const string LocalDefenseProfilePath =
@@ -98,6 +100,14 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(player.transform, GetObjectReference<Transform>(emitter, "trackedPlayer"));
             Assert.AreSame(bossHealth, GetObjectReference<CombatHealth>(emitter, "sourceHealth"));
             Assert.AreSame(LoadAsset<BossBarragePatternProfile>(PatternProfilePath), GetObjectReference<BossBarragePatternProfile>(emitter, "patternProfile"));
+            Assert.AreSame(
+                LoadAsset<BossBarragePatternProfile>(PatternProfilePath),
+                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 0));
+            BossBarragePatternProfile twinSweepPattern = LoadAsset<BossBarragePatternProfile>(TwinSweepPatternProfilePath);
+            Assert.AreSame(
+                twinSweepPattern,
+                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 1));
+            Assert.AreEqual(BossBarrageLateralShape.TwinColumns, twinSweepPattern.LateralShape);
             Assert.AreSame(LoadAsset<GameObject>(ProjectilePrefabPath), GetObjectReference<GameObject>(emitter, "projectilePrefabObject"));
             Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(targetSelector, "selfHealth"));
             Assert.AreSame(closeThreatHealth, GetArrayObjectReference<CombatHealth>(targetSelector, "targetCandidates", 0));
@@ -315,6 +325,10 @@ namespace DimensionBrawl.Tests
 
             Assert.AreEqual(pattern.ProjectilesPerWave, firedCount);
             Assert.AreEqual(pattern.ProjectilesPerWave, emitter.ActiveProjectileCount);
+            Assert.AreSame(
+                LoadAsset<BossBarragePatternProfile>(TwinSweepPatternProfilePath),
+                emitter.CurrentPattern,
+                "Review boss should move from NeedleLock into the second authored barrage pattern after one wave.");
 
             BossBarrageProjectile[] projectiles = Object.FindObjectsByType<BossBarrageProjectile>(
                 FindObjectsInactive.Exclude,

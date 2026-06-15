@@ -125,6 +125,7 @@ The first product shape is closer to a boss-barrage standoff than a free chase a
 - Backline play is allowed as a safety choice, but it should not charge the summon fast enough to be the dominant strategy.
 - The first slice may use a boss proxy and simple projectile primitives. It should not start with a full boss phase controller.
 - Later boss-pattern work must follow the same data-first path as this slice: collected reference notes including `C:\Ark` when relevant, then `BossBarragePatternProfile`-style data, then authored projectile/VFX/camera cue prefabs, then review-scene and PlayMode validation. Add one readable pattern at a time; do not hide a broad boss phase manager behind the first barrage slice.
+- The first boss-pattern variety step is `NeedleLock -> TwinSweep`: `NeedleLock` teaches targeted center pressure, while `TwinSweep` uses a twin-column shape so the player reads a different dodge problem without adding full phases.
 
 ## Energy Tier Rules
 
@@ -253,7 +254,7 @@ The first boss-barrage lane review slice now has these authored pieces:
 
 - `SummonLaneSpace` clamps only the player zone. Summon/frontline actions must use battlefield coordinates and may cross the player forward boundary and lateral player rails when their role requires it.
 - `SummonEnergyLadder` owns the shared `EN LV1~LV3` fill/spend/reset loop for `Skill1` and `SummonSlot1`.
-- `BossBarrageEmitter` and `BossBarrageProjectile` provide the far boss/proxy projectile pressure.
+- `BossBarrageEmitter` and `BossBarrageProjectile` provide the far boss/proxy projectile pressure. The emitter may cycle a small authored `BossBarragePatternProfile` sequence, currently `NeedleLock` and `TwinSweep`, but it must not become a broad boss phase owner.
 - `PlayerSkill1Action` spends the current available EN tier and fires an immediate player-side lane projectile toward the current boss/target direction.
 - `PlayerSummonSlot1Action` spends the current available EN tier, shows a magic-circle entry cue beyond the player boundary, and launches same-concept stronger LV1/LV2/LV3 summon-assist projectiles into the frontline battlefield.
 - `LaneActionProjectile` is the shared narrow projectile for Skill1 and SummonSlot1 assist shots. It carries damage authority through `CombatHealth` team checks; VFX/visual polish can be swapped through authored prefabs later.

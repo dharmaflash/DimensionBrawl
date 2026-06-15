@@ -13,6 +13,8 @@ namespace DimensionBrawl.Combat
 
         [Header("Pattern")]
         [SerializeField] private BossBarragePatternProfile patternProfile;
+        [SerializeField] private BossBarragePatternProfile[] patternSequence = new BossBarragePatternProfile[0];
+        [SerializeField, Min(1)] private int wavesPerPattern = 1;
         [SerializeField] private BossBarrageProjectile projectilePrefab;
         [SerializeField] private GameObject projectilePrefabObject;
         [SerializeField] private DamageTeam sourceTeam = DamageTeam.Enemy;
@@ -28,9 +30,13 @@ namespace DimensionBrawl.Combat
         private bool windupActive;
         private Vector2 pendingTargetLanePoint;
         private float pendingForwardRisk01;
+        private int patternSequenceIndex;
+        private int wavesFiredInCurrentPattern;
 
         public bool IsWindupActive => windupActive;
         public float PendingForwardRisk01 => pendingForwardRisk01;
+        public BossBarragePatternProfile CurrentPattern => ActivePattern;
+        public int CurrentPatternSequenceIndex => patternSequenceIndex;
         public int ActiveProjectileCount
         {
             get
@@ -48,7 +54,7 @@ namespace DimensionBrawl.Combat
             }
         }
 
-        private BossBarragePatternProfile ActivePattern => patternProfile;
+        private BossBarragePatternProfile ActivePattern => ResolveActivePattern();
         private BossBarrageProjectile ActiveProjectilePrefab =>
             projectilePrefab != null
                 ? projectilePrefab
@@ -76,6 +82,17 @@ namespace DimensionBrawl.Combat
             projectilePrefabObject = newProjectilePrefab != null ? newProjectilePrefab.gameObject : null;
             prewarmCount = Mathf.Max(0, newPrewarmCount);
             PrewarmPool();
+            ResetPatternSequence();
+            cooldownTimer = ActivePattern != null ? ActivePattern.InitialDelaySeconds : 0f;
+        }
+
+        public void ConfigurePatternSequence(BossBarragePatternProfile[] newPatternSequence, int newWavesPerPattern)
+        {
+            patternSequence = newPatternSequence != null
+                ? (BossBarragePatternProfile[])newPatternSequence.Clone()
+                : new BossBarragePatternProfile[0];
+            wavesPerPattern = Mathf.Max(1, newWavesPerPattern);
+            ResetPatternSequence();
             cooldownTimer = ActivePattern != null ? ActivePattern.InitialDelaySeconds : 0f;
         }
 
@@ -111,7 +128,8 @@ namespace DimensionBrawl.Combat
 
         public bool BeginWindup()
         {
-            if (ActivePattern == null || laneSpace == null || trackedPlayer == null)
+            BossBarragePatternProfile activePattern = ActivePattern;
+            if (activePattern == null || laneSpace == null || trackedPlayer == null)
             {
                 return false;
             }
@@ -121,31 +139,33 @@ namespace DimensionBrawl.Combat
                 Mathf.Clamp(lanePoint.x, -laneSpace.HalfWidth, laneSpace.HalfWidth),
                 Mathf.Clamp(lanePoint.y, laneSpace.BackLimitZ, laneSpace.ForwardBoundaryZ));
             pendingForwardRisk01 = laneSpace.EvaluateForwardRisk01(trackedPlayer.position);
-            windupTimer = ActivePattern.WindupSeconds;
+            windupTimer = activePattern.WindupSeconds;
             windupActive = true;
             return true;
         }
 
         public int FirePendingWave()
         {
-            if (!windupActive || ActivePattern == null || laneSpace == null)
+            BossBarragePatternProfile activePattern = ActivePattern;
+            if (!windupActive || activePattern == null || laneSpace == null)
             {
                 return 0;
             }
 
             windupActive = false;
             int spawnedCount = 0;
-            int projectileCount = ActivePattern.ProjectilesPerWave;
+            int projectileCount = activePattern.ProjectilesPerWave;
             for (int i = 0; i < projectileCount; i++)
             {
-                float offset = ActivePattern.GetLateralOffset(i, projectileCount, pendingForwardRisk01);
-                if (TryFireProjectile(pendingTargetLanePoint.x + offset))
+                float offset = activePattern.GetLateralOffset(i, projectileCount, pendingForwardRisk01);
+                if (TryFireProjectile(activePattern, pendingTargetLanePoint.x + offset))
                 {
                     spawnedCount++;
                 }
             }
 
-            cooldownTimer = ActivePattern.WaveIntervalSeconds;
+            cooldownTimer = activePattern.WaveIntervalSeconds;
+            AdvancePatternSequenceAfterWave();
             return spawnedCount;
         }
 
@@ -157,6 +177,7 @@ namespace DimensionBrawl.Combat
             }
 
             PrewarmPool();
+            ResetPatternSequence();
             cooldownTimer = ActivePattern != null ? ActivePattern.InitialDelaySeconds : 0f;
         }
 
@@ -165,7 +186,7 @@ namespace DimensionBrawl.Combat
             Tick(Time.deltaTime);
         }
 
-        private bool TryFireProjectile(float targetLateralX)
+        private bool TryFireProjectile(BossBarragePatternProfile activePattern, float targetLateralX)
         {
             BossBarrageProjectile projectile = GetInactiveProjectile();
             if (projectile == null)
@@ -176,11 +197,11 @@ namespace DimensionBrawl.Combat
             Vector3 targetPoint = laneSpace.GetLaneWorldPoint(
                 targetLateralX,
                 pendingTargetLanePoint.y,
-                ActivePattern.TargetHeight);
+                activePattern.TargetHeight);
             Vector3 spawnPoint = laneSpace.GetLaneWorldPoint(
                 Mathf.Lerp(pendingTargetLanePoint.x, targetLateralX, 0.35f),
                 laneSpace.BossProxyZ,
-                ActivePattern.SpawnHeight);
+                activePattern.SpawnHeight);
             Vector3 direction = targetPoint - spawnPoint;
             projectile.transform.SetPositionAndRotation(
                 spawnPoint,
@@ -191,12 +212,85 @@ namespace DimensionBrawl.Combat
             projectile.Configure(
                 sourceHealth,
                 resolvedSourceTeam,
-                ActivePattern.Damage,
+                activePattern.Damage,
                 direction,
-                ActivePattern.ProjectileSpeed,
-                ActivePattern.ProjectileLifetimeSeconds,
-                ActivePattern.ProjectileRadius);
+                activePattern.ProjectileSpeed,
+                activePattern.ProjectileLifetimeSeconds,
+                activePattern.ProjectileRadius);
             return true;
+        }
+
+        private BossBarragePatternProfile ResolveActivePattern()
+        {
+            if (patternSequence != null && patternSequence.Length > 0)
+            {
+                int safeIndex = Mathf.Clamp(patternSequenceIndex, 0, patternSequence.Length - 1);
+                BossBarragePatternProfile sequencedPattern = patternSequence[safeIndex];
+                if (sequencedPattern != null)
+                {
+                    return sequencedPattern;
+                }
+
+                for (int i = 0; i < patternSequence.Length; i++)
+                {
+                    if (patternSequence[i] != null)
+                    {
+                        return patternSequence[i];
+                    }
+                }
+            }
+
+            return patternProfile;
+        }
+
+        private void ResetPatternSequence()
+        {
+            patternSequenceIndex = FindFirstValidPatternIndex();
+            wavesFiredInCurrentPattern = 0;
+        }
+
+        private int FindFirstValidPatternIndex()
+        {
+            if (patternSequence == null || patternSequence.Length == 0)
+            {
+                return 0;
+            }
+
+            for (int i = 0; i < patternSequence.Length; i++)
+            {
+                if (patternSequence[i] != null)
+                {
+                    return i;
+                }
+            }
+
+            return 0;
+        }
+
+        private void AdvancePatternSequenceAfterWave()
+        {
+            if (patternSequence == null || patternSequence.Length <= 1)
+            {
+                return;
+            }
+
+            wavesFiredInCurrentPattern++;
+            if (wavesFiredInCurrentPattern < Mathf.Max(1, wavesPerPattern))
+            {
+                return;
+            }
+
+            wavesFiredInCurrentPattern = 0;
+            int startIndex = Mathf.Clamp(patternSequenceIndex, 0, patternSequence.Length - 1);
+            for (int step = 1; step <= patternSequence.Length; step++)
+            {
+                int candidateIndex = (startIndex + step) % patternSequence.Length;
+                if (patternSequence[candidateIndex] != null)
+                {
+                    patternSequenceIndex = candidateIndex;
+                    return;
+                }
+            }
         }
 
         private void PrewarmPool()
