@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using DimensionBrawl.Combat;
 using UnityEngine;
 
@@ -52,6 +52,17 @@ namespace DimensionBrawl.LevelDesign
             }
 
             return pockets[index];
+        }
+
+        public bool IsPocketCompleted(int index)
+        {
+            if (index < 0 || index >= PocketCount)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            EnsureCompletionBuffer();
+            return completedPockets[index];
         }
 
         public bool TryGetCurrentPocket(out StageEncounterPocketBinding pocket)

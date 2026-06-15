@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
@@ -106,6 +106,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(encounter, "enemyHealth", enemyHealths[enemyHealths.Length - 1]);
             ConfigureArenaInfluenceTargets(scene, player.transform, enemyTransforms);
             ConfigureStageEncounterOwner(scene, template, player.transform, enemyHealths);
+            ActionFoundationSpringIslesStageDressingSetup.ApplyToOpenStageScene(scene);
 
             if (!EditorSceneManager.SaveScene(scene, BreakGateReviewScenePath))
             {
@@ -180,6 +181,7 @@ namespace DimensionBrawl.Editor
                 "enemyHealth",
                 RequireComponent<CombatHealth>(RequireRoot(scene, specs[specs.Length - 1].RootName), "final review enemy health"));
             ValidateStageEncounterOwner(scene, player.transform, enemyHealths);
+            ActionFoundationSpringIslesStageDressingSetup.ValidateOpenScene(scene);
         }
 
         private static void ConfigureStageReviewCameraStart(ActionCameraController cameraController, Transform player)

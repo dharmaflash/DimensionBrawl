@@ -1,4 +1,4 @@
-# Decisions
+﻿# Decisions
 
 ## 2026-06-12: Restart From Clean Baseline
 
@@ -97,6 +97,14 @@ Decision: The first linear stage structure should be authored as `LinearStageTem
 Reason: The collected run and reward research already defines a first stage lesson sequence, but turning that directly into runtime code would recreate the project risk of hidden generators and over-large systems. Data templates let designers review the intended route, pressure rhythm, relief beats, and future summon needs while reusing the existing enemy role catalog.
 
 Impact: Stage templates may reference promoted `_Game` segment and role profile assets only. Actual prefab placement, encounter runtime ownership, reward grants, and stage navigation remain separate reviewed slices.
+
+## 2026-06-15: Stage Environment Assets Use Game-Ready Copies
+
+Decision: Authored stage environments may promote selected Asset Store meshes, shaders, materials, prefabs, and texture copies into `_Game`, but they must not copy raw high-resolution source textures such as original `.tga` files into the repository or Git LFS by default. If a stage needs demo-scene-level presentation, preserve that quality through curated placement, shader/post-process setup, and game-ready texture copies with explicit import limits instead of committing source-pack texture originals.
+
+Reason: The first Spring Isles dressing pass showed that raw environment texture sources can exceed GitHub LFS budget quickly without improving the actual authored scene contract. The project needs reviewable, cross-PC stage content, but the repository should contain selected game-ready assets rather than full source-pack payloads.
+
+Impact: Raw environment packs stay under local `_Imported`. A promoted stage slice should avoid direct `_Imported` references, avoid raw source texture duplication, and document any future large-asset exception before it is committed. If the project later needs full-fidelity source art syncing across machines, use a deliberate asset-depot choice such as paid LFS capacity, Unity Version Control, Perforce, or a separate artifact pipeline instead of silently growing the gameplay repository.
 
 ## 2026-06-13: First Enemy Prefab Candidate Is Authored And Scene-Free
 

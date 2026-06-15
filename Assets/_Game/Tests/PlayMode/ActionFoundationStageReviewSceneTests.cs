@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Enemies;
@@ -46,9 +46,44 @@ namespace DimensionBrawl.Tests
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
             ActionFoundationTestEncounter encounter = RequireObject<ActionFoundationTestEncounter>();
             StageEncounterReviewOwner encounterOwner = RequireObject<StageEncounterReviewOwner>();
+            StagePocketProgressionGatePresenter gatePresenter = RequireObject<StagePocketProgressionGatePresenter>();
+            GameObject springIslesDressing = RequireNamedRoot("StageBreakGateReview_SpringIslesDressing");
+            GameObject progressionGates = RequireNamedRoot("StageBreakGateReview_ProgressionGates");
             SerializedProperty targetCandidates = new SerializedObject(targetSelector).FindProperty("targetCandidates");
 
             Assert.IsNotNull(playerHealth, "Stage review scene should keep player health on the player root.");
+            Assert.IsNotNull(springIslesDressing.transform.Find("Route"), "Spring Isles dressing should keep route readability grouped.");
+            Assert.IsNotNull(springIslesDressing.transform.Find("SideSilhouette"), "Spring Isles dressing should keep side silhouettes grouped.");
+            Assert.IsNotNull(springIslesDressing.transform.Find("InvasionReadability"), "Spring Isles dressing should keep invasion readability grouped.");
+            Assert.IsNotNull(springIslesDressing.transform.Find("ExitRift"), "Spring Isles dressing should keep the stage exit rift grouped.");
+            Assert.AreEqual(
+                0,
+                springIslesDressing.GetComponentsInChildren<Collider>(includeInactive: true).Length,
+                "Spring Isles dressing should stay presentation-only and not alter combat collision.");
+            Assert.IsNotNull(progressionGates.transform.Find("PocketGates"), "Stage progression should keep pocket blockers grouped.");
+            Assert.IsNotNull(progressionGates.transform.Find("PocketObjectiveMarkers"), "Stage progression should expose pocket objective markers.");
+            Assert.IsNotNull(progressionGates.transform.Find("LaneBoundaryBlockers"), "Stage progression should keep authored side blockers grouped.");
+            Assert.IsNotNull(progressionGates.transform.Find("RouteFlowCues"), "Stage progression should keep forward route cues grouped.");
+            Transform routeCollision = progressionGates.transform.Find("RouteCollision");
+            Assert.IsNotNull(routeCollision, "Stage progression should include route floor collision so the player cannot fall at pocket starts.");
+            Assert.GreaterOrEqual(
+                routeCollision.GetComponentsInChildren<Collider>(includeInactive: true).Length,
+                3,
+                "S1-1 route collision should cover start, route pockets, and exit approach.");
+            AssertStageFloor(routeCollision, -10f, "player start");
+            AssertStageFloor(routeCollision, 1.6f, "EntryRead pocket");
+            AssertStageFloor(routeCollision, 13.5f, "BasicPressure pocket");
+            AssertStageFloor(routeCollision, 26.5f, "BreakGate pocket");
+            AssertStageFloor(routeCollision, 36f, "Relief pocket");
+            AssertStageFloor(routeCollision, 48.5f, "FinalStand pocket");
+            AssertStageFloor(routeCollision, 62.5f, "exit approach");
+            Assert.AreSame(encounterOwner, gatePresenter.Owner, "Progression gates should read the scene review owner.");
+            Assert.AreEqual(4, gatePresenter.GateCount, "S1-1 should have one clear wall between each forward pocket transition.");
+            for (int i = 0; i < gatePresenter.GateCount; i++)
+            {
+                Assert.Greater(gatePresenter.GetGateColliderCount(i), 0, $"Progression gate {i} should include a blocking collider.");
+            }
+
             Assert.AreEqual(
                 StageBreakGateRootNames.Length,
                 targetSelector.TargetCandidateCount,
@@ -101,6 +136,16 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(
                 new SerializedObject(cameraController).FindProperty("useDeviceFallbackWhenActionMissing").boolValue,
                 "Stage review camera should not auto-orbit from fallback device input while idle.");
+            float startY = player.transform.position.y;
+            for (int i = 0; i < 20; i++)
+            {
+                yield return null;
+            }
+
+            Assert.Greater(
+                player.transform.position.y,
+                startY - 0.25f,
+                "The player should not fall through the S1-1 stage floor after the review scene starts.");
 
             Assert.AreSame(player.transform, encounterOwner.Player);
             Assert.IsNotNull(encounterOwner.StageTemplate, "S1-1 review owner should reference the authored stage template.");
@@ -112,8 +157,11 @@ namespace DimensionBrawl.Tests
             AssertStagePocket(encounterOwner.StageTemplate, encounterOwner.GetPocketBinding(4), LinearStageObjectiveKind.FinalClear, 4);
 
             encounterOwner.ResetProgress();
+            gatePresenter.RefreshNow();
+            Assert.IsTrue(gatePresenter.IsGateLocked(0), "The first forward gate should block until EntryRead is cleared.");
             player.transform.position = encounterOwner.GetPocketBinding(0).EnterCenter.position;
             encounterOwner.RefreshProgress();
+            gatePresenter.RefreshNow();
             Assert.AreEqual(0, encounterOwner.CurrentPocketIndex);
             Assert.AreEqual(LinearStageObjectiveKind.ReadThreat, encounterOwner.CurrentObjectiveKind);
             Assert.AreEqual(1, encounterOwner.RemainingEnemyCount);
@@ -128,12 +176,41 @@ namespace DimensionBrawl.Tests
             yield return null;
 
             encounterOwner.RefreshProgress();
+            gatePresenter.RefreshNow();
             Assert.AreEqual(1, encounterOwner.CompletedPocketCount);
+            Assert.IsTrue(encounterOwner.IsPocketCompleted(0));
+            Assert.IsFalse(gatePresenter.IsGateLocked(0), "The EntryRead clear wall should unlock after the first pocket is cleared.");
+            Assert.IsTrue(gatePresenter.IsGateLocked(1), "The BasicPressure clear wall should stay locked before the second pocket is cleared.");
             player.transform.position = encounterOwner.GetPocketBinding(1).EnterCenter.position;
             encounterOwner.RefreshProgress();
+            gatePresenter.RefreshNow();
             Assert.AreEqual(1, encounterOwner.CurrentPocketIndex);
             Assert.AreEqual(LinearStageObjectiveKind.PunishRecovery, encounterOwner.CurrentObjectiveKind);
             Assert.AreEqual(2, encounterOwner.RemainingEnemyCount);
+        }
+
+        private static void AssertStageFloor(Transform routeCollision, float z, string label)
+        {
+            Vector3 origin = new Vector3(0f, 2f, z);
+            RaycastHit[] hits = Physics.RaycastAll(origin, Vector3.down, 4f);
+            for (int i = 0; i < hits.Length; i++)
+            {
+                RaycastHit hit = hits[i];
+                if (!hit.collider.transform.IsChildOf(routeCollision))
+                {
+                    continue;
+                }
+
+                Assert.Less(
+                    Mathf.Abs(hit.point.y),
+                    0.15f,
+                    $"S1-1 floor collision under {label} should stay near gameplay ground height.");
+                return;
+            }
+
+            Assert.IsTrue(
+                false,
+                $"S1-1 should have floor collision under {label}.");
         }
 
         private static void AssertStagePocket(
@@ -169,6 +246,22 @@ namespace DimensionBrawl.Tests
                 T component = roots[i].GetComponent<T>();
                 Assert.IsNotNull(component, $"{rootName} should expose {typeof(T).Name} on its root.");
                 return component;
+            }
+
+            Assert.Fail($"Missing root {rootName} in {scene.path}.");
+            return null;
+        }
+
+        private static GameObject RequireNamedRoot(string rootName)
+        {
+            Scene scene = SceneManager.GetActiveScene();
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int i = 0; i < roots.Length; i++)
+            {
+                if (string.Equals(roots[i].name, rootName, System.StringComparison.Ordinal))
+                {
+                    return roots[i];
+                }
             }
 
             Assert.Fail($"Missing root {rootName} in {scene.path}.");

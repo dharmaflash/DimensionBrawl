@@ -1,4 +1,4 @@
-# Linear Stage Design Foundation
+﻿# Linear Stage Design Foundation
 
 ## Purpose
 
@@ -109,6 +109,11 @@ Use `S1-1 Break Gate` as the first encounter-composition review target. It is sh
 | 5 | `FinalStand` | `final_stand_mix` | `FinalClear` | `FinalStandCommanderElite`, `BacklineShooter`, `FanSuppressor`, optional `Skirmisher` | Does the final pocket combine prior reads without adding a new rule? |
 
 The review scene for this route is `Assets/_Game/Scenes/ActionFoundationStageBreakGateReview.unity`. It places already-authored role candidate prefab instances through a dedicated editor setup slice. `StageEncounterReviewOwner` is the narrow runtime reader for this scene only: it maps the authored pocket anchors and placed enemy health references back to the `S1-1 Break Gate` template, then exposes current pocket, objective cue, remaining enemies, and route completion for manual review/tests. It does not add a runtime wave spawner, hidden prefab selector, reward payout, summon behavior, or boss phase logic.
+
+The same review scene may include authored presentation and progression roots for manual readability:
+
+- `StageBreakGateReview_SpringIslesDressing` is presentation-only Spring Isles/移⑥떇 dressing. It must not add combat colliders.
+- `StageBreakGateReview_ProgressionGates` owns review-only pocket clear walls, side lane blockers, pocket objective markers, and route flow cues. Its runtime presenter only reads `StageEncounterReviewOwner` completion state and toggles authored blocker/visual objects; it must not spawn enemies, select prefabs, pay rewards, or become the production stage manager.
 
 ## Authoring Boundaries
 
