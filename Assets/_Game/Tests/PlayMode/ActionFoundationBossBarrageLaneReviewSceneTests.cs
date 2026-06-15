@@ -22,6 +22,8 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_TwinSweep.asset";
         private const string LeftClampPatternProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_LeftClamp.asset";
+        private const string PunishNetPatternProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_PunishNet.asset";
         private const string ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossBarrageProjectile_NeedleLock.prefab";
         private const string LocalDefenseProfilePath =
@@ -122,6 +124,11 @@ namespace DimensionBrawl.Tests
                 GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 2));
             Assert.AreEqual(BossBarrageLateralShape.SideClamp, leftClampPattern.LateralShape);
             Assert.Less(leftClampPattern.SideClampDirection, 0f);
+            BossBarragePatternProfile punishNetPattern = LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath);
+            Assert.AreSame(
+                punishNetPattern,
+                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 3));
+            Assert.AreEqual(BossBarrageLateralShape.PunishNet, punishNetPattern.LateralShape);
             Assert.AreSame(LoadAsset<GameObject>(ProjectilePrefabPath), GetObjectReference<GameObject>(emitter, "projectilePrefabObject"));
             Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(targetSelector, "selfHealth"));
             Assert.AreSame(closeThreatHealth, GetArrayObjectReference<CombatHealth>(targetSelector, "targetCandidates", 0));
@@ -354,6 +361,13 @@ namespace DimensionBrawl.Tests
                 LoadAsset<BossBarragePatternProfile>(LeftClampPatternProfilePath),
                 emitter.CurrentPattern,
                 "Review boss should move from TwinSweep into the first side-clamp barrage pattern after the second wave.");
+
+            Assert.IsTrue(emitter.BeginWindup());
+            emitter.FirePendingWave();
+            Assert.AreSame(
+                LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath),
+                emitter.CurrentPattern,
+                "Review boss should move from LeftClamp into the player-centered PunishNet pattern after the third wave.");
 
             BossBarrageProjectile[] projectiles = Object.FindObjectsByType<BossBarrageProjectile>(
                 FindObjectsInactive.Exclude,

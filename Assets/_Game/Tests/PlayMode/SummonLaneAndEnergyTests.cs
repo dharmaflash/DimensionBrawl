@@ -114,6 +114,38 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void BossBarragePunishNetCentersOnPlayerAndTightensForwardRisk()
+        {
+            BossBarragePatternProfile pattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            var serializedObject = new SerializedObject(pattern);
+            serializedObject.FindProperty("lateralShape").enumValueIndex = (int)BossBarrageLateralShape.PunishNet;
+            serializedObject.FindProperty("backlineHalfSpread").floatValue = 3.4f;
+            serializedObject.FindProperty("forwardHalfSpread").floatValue = 0.9f;
+            serializedObject.FindProperty("punishNetInnerSpreadRatio").floatValue = 0.34f;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+
+            float centerOffset = pattern.GetLateralOffset(0, 5, 0f);
+            float innerLeftOffset = pattern.GetLateralOffset(1, 5, 0f);
+            float innerRightOffset = pattern.GetLateralOffset(2, 5, 0f);
+            float outerLeftBacklineOffset = pattern.GetLateralOffset(3, 5, 0f);
+            float outerLeftForwardOffset = pattern.GetLateralOffset(3, 5, 1f);
+
+            Assert.AreEqual(0f, centerOffset, 0.001f, "PunishNet should include a center-lock projectile.");
+            Assert.Less(innerLeftOffset, 0f);
+            Assert.Greater(innerRightOffset, 0f);
+            Assert.Less(
+                Mathf.Abs(innerLeftOffset),
+                Mathf.Abs(outerLeftBacklineOffset),
+                "PunishNet should place inner shots near center before the outer ring.");
+            Assert.Less(
+                Mathf.Abs(outerLeftForwardOffset),
+                Mathf.Abs(outerLeftBacklineOffset),
+                "Forward-risk PunishNet gaps should tighten compared with the backline.");
+
+            Object.DestroyImmediate(pattern);
+        }
+
+        [Test]
         public void BossBarrageProjectileDamagesHostileTargetsOnly()
         {
             GameObject projectileObject = new GameObject("Projectile");

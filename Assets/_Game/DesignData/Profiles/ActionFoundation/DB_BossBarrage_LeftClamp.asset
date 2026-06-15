@@ -27,5 +27,6 @@ MonoBehaviour:
   twinColumnInnerSpreadRatio: 0.38
   sideClampDirection: -1
   sideClampCrossReachRatio: 0.24
+  punishNetInnerSpreadRatio: 0.34
   spawnHeight: 1.48
   targetHeight: 1.05

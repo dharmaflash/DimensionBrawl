@@ -7,6 +7,7 @@ namespace DimensionBrawl.Combat
         CenterSpread = 0,
         TwinColumns = 1,
         SideClamp = 2,
+        PunishNet = 3,
     }
 
     [CreateAssetMenu(
@@ -41,6 +42,8 @@ namespace DimensionBrawl.Combat
         [SerializeField, Range(-1f, 1f)] private float sideClampDirection = -1f;
         [Tooltip("How far the clamped side reaches across center. Higher values leave a smaller opposite-side gap.")]
         [SerializeField, Range(0f, 0.65f)] private float sideClampCrossReachRatio = 0.28f;
+        [Tooltip("Player-centered net patterns place inner shots near center before the outer ring.")]
+        [SerializeField, Range(0.05f, 0.75f)] private float punishNetInnerSpreadRatio = 0.34f;
         [SerializeField, Min(0f)] private float spawnHeight = 1.25f;
         [SerializeField, Min(0f)] private float targetHeight = 1f;
 
@@ -56,6 +59,7 @@ namespace DimensionBrawl.Combat
         public float ProjectileRadius => projectileRadius;
         public float SideClampDirection => sideClampDirection;
         public float SideClampCrossReachRatio => sideClampCrossReachRatio;
+        public float PunishNetInnerSpreadRatio => punishNetInnerSpreadRatio;
         public float SpawnHeight => spawnHeight;
         public float TargetHeight => targetHeight;
 
@@ -74,6 +78,11 @@ namespace DimensionBrawl.Combat
             if (lateralShape == BossBarrageLateralShape.SideClamp)
             {
                 return GetSideClampOffset(projectileIndex, count, forwardRisk01);
+            }
+
+            if (lateralShape == BossBarrageLateralShape.PunishNet)
+            {
+                return GetPunishNetOffset(projectileIndex, count, forwardRisk01);
             }
 
             int safeCount = Mathf.Max(1, count);
@@ -129,6 +138,29 @@ namespace DimensionBrawl.Combat
             float crossReach = -direction * halfSpread * Mathf.Clamp01(sideClampCrossReachRatio);
             float normalizedIndex = Mathf.Clamp01((float)Mathf.Clamp(projectileIndex, 0, safeCount - 1) / (safeCount - 1));
             return Mathf.Lerp(outerEdge, crossReach, normalizedIndex);
+        }
+
+        private float GetPunishNetOffset(int projectileIndex, int count, float forwardRisk01)
+        {
+            int safeCount = Mathf.Max(1, count);
+            if (safeCount <= 1)
+            {
+                return 0f;
+            }
+
+            int safeIndex = Mathf.Clamp(projectileIndex, 0, safeCount - 1);
+            if (safeIndex == 0)
+            {
+                return 0f;
+            }
+
+            float halfSpread = EvaluateHalfSpread(forwardRisk01);
+            float innerSpread = halfSpread * Mathf.Clamp01(punishNetInnerSpreadRatio);
+            int pairIndex = (safeIndex - 1) / 2;
+            int pairCount = Mathf.Max(1, safeCount / 2);
+            float pair01 = pairCount <= 1 ? 0f : Mathf.Clamp01((float)pairIndex / (pairCount - 1));
+            float magnitude = Mathf.Lerp(innerSpread, halfSpread, pair01);
+            return safeIndex % 2 == 1 ? -magnitude : magnitude;
         }
     }
 }
