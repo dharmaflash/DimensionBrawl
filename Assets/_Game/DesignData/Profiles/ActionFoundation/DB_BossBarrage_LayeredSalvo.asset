@@ -10,32 +10,32 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a1b2c3d4e5f6471890abcdeffedcba12, type: 3}
-  m_Name: DB_BossBarrage_RightClamp
+  m_Name: DB_BossBarrage_LayeredSalvo
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBarragePatternProfile
-  patternId: RightClamp
-  initialDelaySeconds: 0.2
-  windupSeconds: 1.05
-  waveIntervalSeconds: 5.4
-  projectilesPerWave: 5
-  damage: 16
-  projectileSpeed: 12.8
-  projectileLifetimeSeconds: 5
+  patternId: LayeredSalvo
+  initialDelaySeconds: 0.35
+  windupSeconds: 1.1
+  waveIntervalSeconds: 6.4
+  projectilesPerWave: 9
+  damage: 14
+  projectileSpeed: 11.8
+  projectileLifetimeSeconds: 5.6
   projectileRadius: 0.3
-  targetingRule: 0
+  targetingRule: 1
   laneCenterLateralRatio: 0
-  lateralShape: 2
-  backlineHalfSpread: 3.85
-  forwardHalfSpread: 1.7
+  lateralShape: 6
+  backlineHalfSpread: 4.2
+  forwardHalfSpread: 1.75
   twinColumnInnerSpreadRatio: 0.38
-  sideClampDirection: 1
-  sideClampCrossReachRatio: 0.24
+  sideClampDirection: -1
+  sideClampCrossReachRatio: 0.28
   punishNetInnerSpreadRatio: 0.34
   escortScreenInnerGapRatio: 0.28
   layeredSalvoRowCount: 3
   linePressureDirection: 1
   linePressureCenterRatio: 0.72
   linePressureHalfSpreadRatio: 0.08
-  backlineDepthSpread: 2.2
-  forwardDepthSpread: 0.85
-  spawnHeight: 1.48
+  backlineDepthSpread: 3.2
+  forwardDepthSpread: 1.1
+  spawnHeight: 1.5
   targetHeight: 1.05

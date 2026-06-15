@@ -10,6 +10,7 @@ namespace DimensionBrawl.Combat
         PunishNet = 3,
         LinePressure = 4,
         EscortScreen = 5,
+        LayeredSalvo = 6,
     }
 
     public enum BossBarrageTargetingRule
@@ -59,6 +60,8 @@ namespace DimensionBrawl.Combat
         [SerializeField, Range(0.05f, 0.75f)] private float punishNetInnerSpreadRatio = 0.34f;
         [Tooltip("Escort-screen patterns alternate left/right curtain shots and preserve this inner gap around the escorted path.")]
         [SerializeField, Range(0.08f, 0.85f)] private float escortScreenInnerGapRatio = 0.28f;
+        [Tooltip("Layered salvo patterns compress multi-round barrage reads into this many target-depth rows.")]
+        [SerializeField, Range(2, 5)] private int layeredSalvoRowCount = 3;
         [Tooltip("Negative values commit the line to the left of the sampled target, positive values commit it to the right.")]
         [SerializeField, Range(-1f, 1f)] private float linePressureDirection = 1f;
         [Tooltip("How far from the sampled target the pressure line sits, expressed against the current spread.")]
@@ -88,6 +91,7 @@ namespace DimensionBrawl.Combat
         public float SideClampCrossReachRatio => sideClampCrossReachRatio;
         public float PunishNetInnerSpreadRatio => punishNetInnerSpreadRatio;
         public float EscortScreenInnerGapRatio => escortScreenInnerGapRatio;
+        public int LayeredSalvoRowCount => layeredSalvoRowCount;
         public float LinePressureDirection => linePressureDirection;
         public float LinePressureCenterRatio => linePressureCenterRatio;
         public float LinePressureHalfSpreadRatio => linePressureHalfSpreadRatio;
@@ -136,6 +140,11 @@ namespace DimensionBrawl.Combat
                 return GetEscortScreenOffset(projectileIndex, count, forwardRisk01);
             }
 
+            if (lateralShape == BossBarrageLateralShape.LayeredSalvo)
+            {
+                return GetLayeredSalvoOffset(projectileIndex, count, forwardRisk01);
+            }
+
             int safeCount = Mathf.Max(1, count);
             if (safeCount <= 1)
             {
@@ -150,7 +159,8 @@ namespace DimensionBrawl.Combat
         public float GetTargetDepthOffset(int projectileIndex, int count, float forwardRisk01)
         {
             if (lateralShape != BossBarrageLateralShape.LinePressure
-                && lateralShape != BossBarrageLateralShape.EscortScreen)
+                && lateralShape != BossBarrageLateralShape.EscortScreen
+                && lateralShape != BossBarrageLateralShape.LayeredSalvo)
             {
                 return 0f;
             }
@@ -161,10 +171,12 @@ namespace DimensionBrawl.Combat
                 return 0f;
             }
 
-            float depthSpread = Mathf.Lerp(
-                backlineDepthSpread,
-                forwardDepthSpread,
-                Mathf.Clamp01(forwardRisk01));
+            if (lateralShape == BossBarrageLateralShape.LayeredSalvo)
+            {
+                return GetLayeredSalvoDepthOffset(projectileIndex, count, forwardRisk01);
+            }
+
+            float depthSpread = EvaluateDepthSpread(forwardRisk01);
             float normalizedIndex = Mathf.Clamp01((float)Mathf.Clamp(projectileIndex, 0, safeCount - 1) / (safeCount - 1));
             return Mathf.Lerp(-depthSpread, depthSpread, normalizedIndex);
         }
@@ -268,6 +280,53 @@ namespace DimensionBrawl.Combat
             float pair01 = pairCount <= 1 ? 0f : Mathf.Clamp01((float)pairIndex / (pairCount - 1));
             float magnitude = Mathf.Lerp(halfSpread, innerGap, pair01);
             return safeIndex % 2 == 0 ? -magnitude : magnitude;
+        }
+
+        private float GetLayeredSalvoOffset(int projectileIndex, int count, float forwardRisk01)
+        {
+            int safeCount = Mathf.Max(1, count);
+            if (safeCount <= 1)
+            {
+                return 0f;
+            }
+
+            int rowCount = ResolveLayeredSalvoRowCount(safeCount);
+            int columnCount = Mathf.Max(1, Mathf.CeilToInt((float)safeCount / rowCount));
+            int safeIndex = Mathf.Clamp(projectileIndex, 0, safeCount - 1);
+            int rowIndex = Mathf.Clamp(safeIndex / columnCount, 0, rowCount - 1);
+            int columnIndex = safeIndex % columnCount;
+            float row01 = rowCount <= 1 ? 0f : Mathf.Clamp01((float)rowIndex / (rowCount - 1));
+            float column01 = columnCount <= 1 ? 0.5f : Mathf.Clamp01((float)columnIndex / (columnCount - 1));
+            float rowHalfSpread = EvaluateHalfSpread(forwardRisk01) * Mathf.Lerp(1f, 0.55f, row01);
+            float offset = Mathf.Lerp(-rowHalfSpread, rowHalfSpread, column01);
+            return rowIndex % 2 == 0 ? offset : -offset * 0.85f;
+        }
+
+        private float GetLayeredSalvoDepthOffset(int projectileIndex, int count, float forwardRisk01)
+        {
+            int safeCount = Mathf.Max(1, count);
+            if (safeCount <= 1)
+            {
+                return 0f;
+            }
+
+            int rowCount = ResolveLayeredSalvoRowCount(safeCount);
+            int columnCount = Mathf.Max(1, Mathf.CeilToInt((float)safeCount / rowCount));
+            int safeIndex = Mathf.Clamp(projectileIndex, 0, safeCount - 1);
+            int rowIndex = Mathf.Clamp(safeIndex / columnCount, 0, rowCount - 1);
+            float row01 = rowCount <= 1 ? 0.5f : Mathf.Clamp01((float)rowIndex / (rowCount - 1));
+            float depthSpread = EvaluateDepthSpread(forwardRisk01);
+            return Mathf.Lerp(-depthSpread, depthSpread, row01);
+        }
+
+        private int ResolveLayeredSalvoRowCount(int count)
+        {
+            return Mathf.Clamp(layeredSalvoRowCount, 2, Mathf.Max(2, Mathf.Min(5, count)));
+        }
+
+        private float EvaluateDepthSpread(float forwardRisk01)
+        {
+            return Mathf.Lerp(backlineDepthSpread, forwardDepthSpread, Mathf.Clamp01(forwardRisk01));
         }
     }
 }

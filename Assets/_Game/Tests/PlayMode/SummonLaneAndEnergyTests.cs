@@ -253,6 +253,44 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void BossBarrageLayeredSalvoUsesDepthRowsAndTightensForwardRisk()
+        {
+            BossBarragePatternProfile pattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            var serializedObject = new SerializedObject(pattern);
+            serializedObject.FindProperty("lateralShape").enumValueIndex = (int)BossBarrageLateralShape.LayeredSalvo;
+            serializedObject.FindProperty("backlineHalfSpread").floatValue = 4.2f;
+            serializedObject.FindProperty("forwardHalfSpread").floatValue = 1.75f;
+            serializedObject.FindProperty("layeredSalvoRowCount").intValue = 3;
+            serializedObject.FindProperty("backlineDepthSpread").floatValue = 3.2f;
+            serializedObject.FindProperty("forwardDepthSpread").floatValue = 1.1f;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+
+            float firstRowLeft = pattern.GetLateralOffset(0, 9, 0f);
+            float firstRowRight = pattern.GetLateralOffset(2, 9, 0f);
+            float secondRowLeft = pattern.GetLateralOffset(3, 9, 0f);
+            float secondRowRight = pattern.GetLateralOffset(5, 9, 0f);
+            float thirdRowLeft = pattern.GetLateralOffset(6, 9, 0f);
+            float thirdRowRight = pattern.GetLateralOffset(8, 9, 0f);
+            float backDepthA = pattern.GetTargetDepthOffset(0, 9, 0f);
+            float backDepthB = pattern.GetTargetDepthOffset(3, 9, 0f);
+            float backDepthC = pattern.GetTargetDepthOffset(6, 9, 0f);
+            float forwardDepthA = pattern.GetTargetDepthOffset(0, 9, 1f);
+            float forwardDepthC = pattern.GetTargetDepthOffset(6, 9, 1f);
+
+            Assert.Less(firstRowLeft, 0f);
+            Assert.Greater(firstRowRight, 0f);
+            Assert.Greater(secondRowLeft, 0f);
+            Assert.Less(secondRowRight, 0f);
+            Assert.Less(Mathf.Abs(thirdRowLeft), Mathf.Abs(firstRowLeft));
+            Assert.Less(Mathf.Abs(thirdRowRight), Mathf.Abs(firstRowRight));
+            Assert.Less(backDepthA, backDepthB);
+            Assert.Less(backDepthB, backDepthC);
+            Assert.Less(Mathf.Abs(forwardDepthC - forwardDepthA), Mathf.Abs(backDepthC - backDepthA));
+
+            Object.DestroyImmediate(pattern);
+        }
+
+        [Test]
         public void BossBarrageProjectileDamagesHostileTargetsOnly()
         {
             GameObject projectileObject = new GameObject("Projectile");

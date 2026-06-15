@@ -31,6 +31,7 @@ MonoBehaviour:
   sideClampCrossReachRatio: 0.28
   punishNetInnerSpreadRatio: 0.34
   escortScreenInnerGapRatio: 0.28
+  layeredSalvoRowCount: 3
   linePressureDirection: 1
   linePressureCenterRatio: 0.72
   linePressureHalfSpreadRatio: 0.08
