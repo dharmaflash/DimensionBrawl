@@ -599,6 +599,9 @@ namespace DimensionBrawl.Tests
             SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            ActionCameraCueDriver cameraCueDriver =
+                RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
             GameObject bossRoot = RequireRoot(BossRootName);
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
             Collider bossHitCollider = RequireCombatHitCollider(bossRoot, bossHealth, "boss proxy");
@@ -625,6 +628,7 @@ namespace DimensionBrawl.Tests
             int summonProjectileCountBeforeIntercept = summonSlot1Action.ActiveProjectileCount;
             HashSet<LaneActionProjectile> activeSummonProjectilesBeforeIntercept = CollectActiveSummonProjectiles();
             float bossHealthBeforeCounter = bossHealth.CurrentHealth;
+            int pressureBlockCueCountBeforeIntercept = cameraCueDriver.SummonPressureBlockCueRequestCount;
 
             Assert.IsTrue(emitter.BeginWindup());
             Assert.Greater(emitter.FirePendingWave(), 0);
@@ -647,6 +651,12 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(1, summonSlot1Action.LastPressureScreenInterceptCount);
             Assert.AreEqual(1, summonSlot1Action.TotalPressureScreenInterceptCount);
             Assert.AreEqual(3, summonSlot1Action.LastPressureScreenInterceptTier);
+            Assert.AreEqual(
+                pressureBlockCueCountBeforeIntercept + 1,
+                cameraCueDriver.SummonPressureBlockCueRequestCount,
+                "A summon pressure-screen intercept should request its own short camera read instead of relying on HUD text.");
+            Assert.AreEqual(3, cameraCueDriver.LastSummonPressureBlockTier);
+            Assert.IsTrue(cameraController.HasActiveCue);
             Assert.Greater(
                 summonSlot1Action.ActiveProjectileCount,
                 summonProjectileCountBeforeIntercept,

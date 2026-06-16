@@ -116,6 +116,18 @@ namespace DimensionBrawl.Presentation
             finisherScale = 1.35f
         };
 
+        [SerializeField] private CameraCue summonPressureBlockCue = new CameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, 0.06f, -0.10f),
+            planarDirectionOffset = 0.06f,
+            fieldOfViewDelta = 1.4f,
+            cameraDistanceDelta = -0.14f,
+            focusHeightDelta = 0.04f,
+            durationSeconds = 0.18f,
+            finisherScale = 1.25f
+        };
+
         public CameraCue RunStartCue => runStartCue;
         public CameraCue StopSettleCue => stopSettleCue;
         public CameraCue SharpTurnCue => sharpTurnCue;
@@ -124,5 +136,6 @@ namespace DimensionBrawl.Presentation
         public CameraCue AttackHitCue => attackHitCue;
         public CameraCue Skill1Cue => skill1Cue;
         public CameraCue SummonSlot1Cue => summonSlot1Cue;
+        public CameraCue SummonPressureBlockCue => summonPressureBlockCue;
     }
 }

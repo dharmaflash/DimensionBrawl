@@ -121,7 +121,25 @@ namespace DimensionBrawl.Presentation
             finisherScale = 1.35f
         };
 
+        [Tooltip("Summon pressure-screen block cue. Short additive read for boss fire being absorbed by the summon side.")]
+        [SerializeField] private ActionCameraCueProfile.CameraCue summonPressureBlockCue = new ActionCameraCueProfile.CameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, 0.06f, -0.10f),
+            planarDirectionOffset = 0.06f,
+            fieldOfViewDelta = 1.4f,
+            cameraDistanceDelta = -0.14f,
+            focusHeightDelta = 0.04f,
+            durationSeconds = 0.18f,
+            finisherScale = 1.25f
+        };
+
+        private int summonPressureBlockCueRequestCount;
+        private int lastSummonPressureBlockTier;
+
         public ActionCameraCueProfile CueProfile => cueProfile;
+        public int SummonPressureBlockCueRequestCount => summonPressureBlockCueRequestCount;
+        public int LastSummonPressureBlockTier => lastSummonPressureBlockTier;
 
         private ActionCameraCueProfile.CameraCue ActiveRunStartCue => cueProfile != null ? cueProfile.RunStartCue : runStartCue;
         private ActionCameraCueProfile.CameraCue ActiveStopSettleCue => cueProfile != null ? cueProfile.StopSettleCue : stopSettleCue;
@@ -131,6 +149,8 @@ namespace DimensionBrawl.Presentation
         private ActionCameraCueProfile.CameraCue ActiveAttackHitCue => cueProfile != null ? cueProfile.AttackHitCue : attackHitCue;
         private ActionCameraCueProfile.CameraCue ActiveSkill1Cue => cueProfile != null ? cueProfile.Skill1Cue : skill1Cue;
         private ActionCameraCueProfile.CameraCue ActiveSummonSlot1Cue => cueProfile != null ? cueProfile.SummonSlot1Cue : summonSlot1Cue;
+        private ActionCameraCueProfile.CameraCue ActiveSummonPressureBlockCue =>
+            cueProfile != null ? cueProfile.SummonPressureBlockCue : summonPressureBlockCue;
 
         private void Awake()
         {
@@ -164,6 +184,7 @@ namespace DimensionBrawl.Presentation
             if (summonSlot1Action != null)
             {
                 summonSlot1Action.SummonSlot1Used += HandleSummonSlot1Used;
+                summonSlot1Action.SummonPressureBlocked += HandleSummonPressureBlocked;
             }
         }
 
@@ -191,6 +212,7 @@ namespace DimensionBrawl.Presentation
             if (summonSlot1Action != null)
             {
                 summonSlot1Action.SummonSlot1Used -= HandleSummonSlot1Used;
+                summonSlot1Action.SummonPressureBlocked -= HandleSummonPressureBlocked;
             }
         }
 
@@ -241,11 +263,21 @@ namespace DimensionBrawl.Presentation
             RequestCue(cue, ResolvePlanarDirection(), ResolveTierScale(tier, cue));
         }
 
-        private void RequestCue(ActionCameraCueProfile.CameraCue cue, Vector3 planarDirection, float scale)
+        private void HandleSummonPressureBlocked(int tier)
+        {
+            ActionCameraCueProfile.CameraCue cue = ActiveSummonPressureBlockCue;
+            if (RequestCue(cue, ResolvePlanarDirection(), ResolveTierScale(tier, cue)))
+            {
+                summonPressureBlockCueRequestCount++;
+                lastSummonPressureBlockTier = tier;
+            }
+        }
+
+        private bool RequestCue(ActionCameraCueProfile.CameraCue cue, Vector3 planarDirection, float scale)
         {
             if (!cue.enabled || cameraController == null)
             {
-                return;
+                return false;
             }
 
             Transform space = cueSpace != null ? cueSpace : (movement != null ? movement.transform : transform);
@@ -263,6 +295,7 @@ namespace DimensionBrawl.Presentation
                 cue.fieldOfViewDelta * clampedScale,
                 cue.cameraDistanceDelta * clampedScale,
                 cue.focusHeightDelta * clampedScale);
+            return true;
         }
 
         private Vector3 ResolvePlanarDirection()

@@ -100,6 +100,7 @@ namespace DimensionBrawl.Player
         public int ActivePressureScreenRemainingIntercepts => CountActivePressureScreenRemainingIntercepts();
 
         public event Action<int> SummonSlot1Used;
+        public event Action<int> SummonPressureBlocked;
 
         private void Awake()
         {
@@ -281,6 +282,7 @@ namespace DimensionBrawl.Player
             lastPressureScreenInterceptCount++;
             totalPressureScreenInterceptCount++;
             lastPressureScreenInterceptTier = actor.ActiveTier;
+            SummonPressureBlocked?.Invoke(lastPressureScreenInterceptTier);
             FireCounterProjectile(actor, ResolveTierSettings(actor.ActiveTier));
         }
 

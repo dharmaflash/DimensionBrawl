@@ -84,3 +84,12 @@ MonoBehaviour:
     focusHeightDelta: 0.08
     durationSeconds: 0.34
     finisherScale: 1.35
+  summonPressureBlockCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.06, z: -0.1}
+    planarDirectionOffset: 0.06
+    fieldOfViewDelta: 1.4
+    cameraDistanceDelta: -0.14
+    focusHeightDelta: 0.04
+    durationSeconds: 0.18
+    finisherScale: 1.25
