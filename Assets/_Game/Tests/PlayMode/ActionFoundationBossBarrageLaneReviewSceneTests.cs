@@ -284,6 +284,7 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(reviewHud, "playerHealth"));
             Assert.AreSame(closeThreatHealth, GetObjectReference<CombatHealth>(reviewHud, "closeThreatHealth"));
             Assert.AreSame(bossHealth, GetObjectReference<CombatHealth>(reviewHud, "bossHealth"));
+            Assert.AreSame(bossHealth, GetObjectReference<CombatHealth>(pocketOwner, "bossHealth"));
             Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(reviewHud, "energyLadder"));
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(reviewHud, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(reviewHud, "player"));
@@ -818,7 +819,10 @@ namespace DimensionBrawl.Tests
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
-            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(RequireRoot(BossRootName), "boss barrage emitter");
+            GameObject bossRoot = RequireRoot(BossRootName);
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
+            Collider bossHitCollider = RequireCombatHitCollider(bossRoot, bossHealth, "boss proxy");
             CombatHealth closeThreatHealth =
                 RequireComponent<CombatHealth>(RequireRoot(CloseThreatRootName), "close threat health");
             BossBarragePocketReviewOwner pocketOwner =
@@ -895,7 +899,10 @@ namespace DimensionBrawl.Tests
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
-            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(RequireRoot(BossRootName), "boss barrage emitter");
+            GameObject bossRoot = RequireRoot(BossRootName);
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
+            Collider bossHitCollider = RequireCombatHitCollider(bossRoot, bossHealth, "boss proxy");
             CombatHealth closeThreatHealth =
                 RequireComponent<CombatHealth>(RequireRoot(CloseThreatRootName), "close threat health");
             BossBarragePocketReviewOwner pocketOwner =
@@ -956,15 +963,27 @@ namespace DimensionBrawl.Tests
                 "After a correct summon block, the EN reward pulse should reopen at least LV1 for a follow-up choice.");
             Assert.AreEqual(1, energyLadder.AvailableTier);
 
+            float bossHealthBeforeFollowup = bossHealth.CurrentHealth;
             Assert.IsTrue(skill1Action.TryUseSkill1());
+            Assert.Greater(
+                skill1Action.ActiveProjectileCount,
+                0,
+                "The follow-up Skill1 should create a real lane projectile before the hit is confirmed.");
+            LaneActionProjectile followupProjectile = RequireActivePlayerSkillProjectile();
+            Assert.IsTrue(
+                followupProjectile.TryApplyImpact(bossHitCollider, followupProjectile.transform.position),
+                "The follow-up Skill1 should resolve against the authored boss hit receiver during the break window.");
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.UsedSkill1DuringSummonFollowup);
             Assert.AreEqual(1, pocketOwner.HighestSummonFollowupSkillTier);
+            Assert.IsTrue(pocketOwner.Skill1FollowupHitConfirmed);
+            Assert.AreEqual(1, pocketOwner.HighestSkill1FollowupHitTier);
             Assert.Greater(
-                skill1Action.ActiveProjectileCount,
-                0,
-                "The follow-up Skill1 should be a real lane projectile, not only a HUD state.");
+                pocketOwner.Skill1FollowupDamage,
+                0f,
+                "The follow-up response should be confirmed by boss damage, not only by pressing the button.");
+            Assert.Less(bossHealth.CurrentHealth, bossHealthBeforeFollowup);
 
             pocketOwner.Tick(1.39f);
             Assert.IsTrue(pocketOwner.IsRunning);
@@ -1235,6 +1254,23 @@ namespace DimensionBrawl.Tests
             }
 
             Assert.Fail("Expected a newly active AllySummon projectile after the pressure-screen intercept.");
+            return null;
+        }
+
+        private static LaneActionProjectile RequireActivePlayerSkillProjectile()
+        {
+            LaneActionProjectile[] projectiles = Object.FindObjectsByType<LaneActionProjectile>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < projectiles.Length; i++)
+            {
+                if (projectiles[i].IsActive && projectiles[i].SourceTeam == DamageTeam.Player)
+                {
+                    return projectiles[i];
+                }
+            }
+
+            Assert.Fail("Expected an active Player Skill1 projectile.");
             return null;
         }
 

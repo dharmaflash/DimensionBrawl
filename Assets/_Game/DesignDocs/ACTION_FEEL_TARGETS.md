@@ -121,7 +121,7 @@ Targets:
 - The summon should enter or act with clear target context.
 - The summon should prefer the far/frontline boss exchange over the player's temporary close-threat target unless a specific summon role says otherwise.
 - The summon should visibly change the boss-barrage exchange through damage, projectile blocking, pressure break, tanking, field control, heal/field, or another explicit role.
-- A successful summon pressure answer should be able to open a short readable follow-up choice, such as a small EN pulse that lets the player immediately answer with `Skill1`.
+- A successful summon pressure answer should be able to open a short readable follow-up choice, such as a small EN pulse that lets the player immediately answer with `Skill1` and confirm the boss/proxy hit.
 - LV1/LV2/LV3 summon versions should read as the same summon concept at stronger tiers, not three unrelated features.
 - Summon use should read from the player side first, such as a magic circle in front of the player before the summon launches/enters.
 - Entry, impact, exit, UI, camera, and cleanup cues should be explicit data or narrow components.
@@ -219,7 +219,7 @@ Before boss phases, progression, reward loops, full HUD, or chapter production a
 8. Dodge can avoid a simple boss projectile or enemy attack.
 9. `Skill1` can fire immediately at the current available EN level.
 10. `SummonSlot1` can call one LV1/LV2/LV3 summon/assist that visibly changes the boss-barrage exchange, including a short ally screen that visibly pulses/flashes while intercepting hostile boss projectiles.
-11. A correct summon pressure block can open a brief follow-up window where a small EN pulse enables an immediate `Skill1` response.
+11. A correct summon pressure block can open a brief follow-up window where a small EN pulse enables an immediate `Skill1` response, and the review state can distinguish firing from actually hitting the boss/proxy.
 12. Player, summon, boss/proxy, and enemy can damage valid hostile targets through shared team rules.
 13. Hit feedback, energy feedback, skill feedback, and summon feedback are visible enough to review from a short recording.
 14. The pocket can be won, paused, or failed.

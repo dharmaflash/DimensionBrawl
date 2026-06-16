@@ -12036,6 +12036,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Test.BossBarragePocketReviewOwner
   playerHealth: {fileID: 4003}
   closeThreatHealth: {fileID: 258571038}
+  bossHealth: {fileID: 1885687350}
   energyLadder: {fileID: 4013}
   skill1Action: {fileID: 4012}
   summonSlot1Action: {fileID: 4011}

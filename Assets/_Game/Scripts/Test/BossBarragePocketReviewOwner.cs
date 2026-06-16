@@ -16,6 +16,7 @@ namespace DimensionBrawl.Test
         [Header("Combatants")]
         [SerializeField] private CombatHealth playerHealth;
         [SerializeField] private CombatHealth closeThreatHealth;
+        [SerializeField] private CombatHealth bossHealth;
         [SerializeField] private SummonEnergyLadder energyLadder;
 
         [Header("Player Actions")]
@@ -46,6 +47,8 @@ namespace DimensionBrawl.Test
         private bool blockedBossPressureWithSummon;
         private bool grantedSummonFollowupEnergy;
         private bool usedSkill1DuringSummonFollowup;
+        private bool skill1FollowupHitConfirmed;
+        private float skill1FollowupDamage;
         private int pressureBlocksAtCloseThreatDefeat;
         private int observedSkillUseCount;
         private int observedSummonUseCount;
@@ -54,6 +57,8 @@ namespace DimensionBrawl.Test
         private int highestSummonTier;
         private int highestSummonPressureTier;
         private int highestSummonFollowupSkillTier;
+        private int highestSkill1FollowupHitTier;
+        private CombatHealth subscribedBossHealth;
 
         public bool IsRunning => state == PocketState.Running;
         public bool IsCleared => state == PocketState.Cleared;
@@ -64,6 +69,7 @@ namespace DimensionBrawl.Test
         public bool BlockedBossPressureWithSummon => blockedBossPressureWithSummon;
         public bool GrantedSummonFollowupEnergy => grantedSummonFollowupEnergy;
         public bool UsedSkill1DuringSummonFollowup => usedSkill1DuringSummonFollowup;
+        public bool Skill1FollowupHitConfirmed => skill1FollowupHitConfirmed;
         public bool IsPressureReliefActive => pressurePacing.IsCloseThreatReliefActive;
         public bool IsSummonPressureBreakActive => pressurePacing.IsSummonPressureBreakActive;
         public bool IsSummonFollowupWindowActive => pressurePacing.IsSummonFollowupWindowActive;
@@ -76,15 +82,22 @@ namespace DimensionBrawl.Test
         public int HighestSummonTier => highestSummonTier;
         public int HighestSummonPressureTier => highestSummonPressureTier;
         public int HighestSummonFollowupSkillTier => highestSummonFollowupSkillTier;
+        public int HighestSkill1FollowupHitTier => highestSkill1FollowupHitTier;
+        public float Skill1FollowupDamage => skill1FollowupDamage;
         public string ObjectiveCue
         {
             get
             {
                 if (pressurePacing.IsSummonPressureBreakActive)
                 {
+                    if (skill1FollowupHitConfirmed)
+                    {
+                        return "Follow-up Skill1 hit confirmed";
+                    }
+
                     if (usedSkill1DuringSummonFollowup)
                     {
-                        return "Follow-up Skill1 answered the break";
+                        return "Follow-up Skill1 fired";
                     }
 
                     return pressurePacing.IsSummonFollowupWindowActive
@@ -128,6 +141,8 @@ namespace DimensionBrawl.Test
             blockedBossPressureWithSummon = false;
             grantedSummonFollowupEnergy = false;
             usedSkill1DuringSummonFollowup = false;
+            skill1FollowupHitConfirmed = false;
+            skill1FollowupDamage = 0f;
             pressureBlocksAtCloseThreatDefeat = 0;
             observedSkillUseCount = GetSkillUseCount();
             observedSummonUseCount = GetSummonUseCount();
@@ -137,6 +152,7 @@ namespace DimensionBrawl.Test
             highestSummonTier = 0;
             highestSummonPressureTier = 0;
             highestSummonFollowupSkillTier = 0;
+            highestSkill1FollowupHitTier = 0;
             SetBarrageEnabled(true);
             SetEnergyGainEnabled(true);
             SetMarkers();
@@ -145,6 +161,12 @@ namespace DimensionBrawl.Test
         private void OnEnable()
         {
             ResetPocket();
+            SubscribeBossHealth();
+        }
+
+        private void OnDisable()
+        {
+            UnsubscribeBossHealth();
         }
 
         private void Update()
@@ -219,6 +241,24 @@ namespace DimensionBrawl.Test
                     highestSummonPressureTier,
                     summonSlot1Action.LastPressureScreenInterceptTier);
             }
+        }
+
+        private void OnBossDamaged(DamageInfo damageInfo)
+        {
+            if (state != PocketState.Running
+                || !pressurePacing.IsSummonFollowupWindowActive
+                || damageInfo.SourceTeam != DamageTeam.Player
+                || GetSkillUseCount() <= skillUsesAtSummonBreakStart)
+            {
+                return;
+            }
+
+            usedSkill1DuringSummonFollowup = true;
+            skill1FollowupHitConfirmed = true;
+            skill1FollowupDamage += damageInfo.Amount;
+            int spentTier = skill1Action != null ? skill1Action.LastSpentTier : 0;
+            highestSummonFollowupSkillTier = Mathf.Max(highestSummonFollowupSkillTier, spentTier);
+            highestSkill1FollowupHitTier = Mathf.Max(highestSkill1FollowupHitTier, spentTier);
         }
 
         private void CaptureCloseThreatDefeat()
@@ -323,6 +363,34 @@ namespace DimensionBrawl.Test
         private int GetSummonUseCount()
         {
             return summonSlot1Action != null ? summonSlot1Action.TotalUseCount : 0;
+        }
+
+        private void SubscribeBossHealth()
+        {
+            if (subscribedBossHealth == bossHealth)
+            {
+                return;
+            }
+
+            UnsubscribeBossHealth();
+            if (bossHealth == null)
+            {
+                return;
+            }
+
+            subscribedBossHealth = bossHealth;
+            subscribedBossHealth.Damaged += OnBossDamaged;
+        }
+
+        private void UnsubscribeBossHealth()
+        {
+            if (subscribedBossHealth == null)
+            {
+                return;
+            }
+
+            subscribedBossHealth.Damaged -= OnBossDamaged;
+            subscribedBossHealth = null;
         }
 
         private void SetBarrageEnabled(bool enabled)

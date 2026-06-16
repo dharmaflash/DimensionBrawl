@@ -164,8 +164,13 @@ namespace DimensionBrawl.Presentation
             string followup = pocketReviewOwner.IsSummonFollowupWindowActive
                 ? $" follow-up {pocketReviewOwner.SummonFollowupWindowRemainingSeconds:0.0}s"
                 : " relief";
+            if (pocketReviewOwner.Skill1FollowupHitConfirmed)
+            {
+                return $"{followup} Skill1 hit {pocketReviewOwner.Skill1FollowupDamage:0}";
+            }
+
             return pocketReviewOwner.UsedSkill1DuringSummonFollowup
-                ? $"{followup} Skill1 used"
+                ? $"{followup} Skill1 fired"
                 : $"{followup} EN pulse";
         }
 
