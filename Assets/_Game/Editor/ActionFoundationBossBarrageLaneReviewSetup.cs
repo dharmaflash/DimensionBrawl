@@ -220,6 +220,7 @@ namespace DimensionBrawl.Editor
                 scene,
                 playerHealth,
                 closeThreatHealth,
+                bossHealth,
                 energyLadder,
                 laneSpace,
                 player.transform,
@@ -337,6 +338,7 @@ namespace DimensionBrawl.Editor
                 reviewHud,
                 playerHealth,
                 closeThreatHealth,
+                bossHealth,
                 energyLadder,
                 laneSpace,
                 player.transform,
@@ -1322,6 +1324,7 @@ namespace DimensionBrawl.Editor
             Scene scene,
             CombatHealth playerHealth,
             CombatHealth closeThreatHealth,
+            CombatHealth bossHealth,
             SummonEnergyLadder energyLadder,
             SummonLaneSpace laneSpace,
             Transform player,
@@ -1335,6 +1338,7 @@ namespace DimensionBrawl.Editor
             hud.Configure(
                 playerHealth,
                 closeThreatHealth,
+                bossHealth,
                 energyLadder,
                 laneSpace,
                 player,
@@ -1729,6 +1733,7 @@ namespace DimensionBrawl.Editor
             BossBarrageLaneReviewHud hud,
             CombatHealth playerHealth,
             CombatHealth closeThreatHealth,
+            CombatHealth bossHealth,
             SummonEnergyLadder energyLadder,
             SummonLaneSpace laneSpace,
             Transform player,
@@ -1739,6 +1744,7 @@ namespace DimensionBrawl.Editor
         {
             ValidateObjectReference(hud, "playerHealth", playerHealth);
             ValidateObjectReference(hud, "closeThreatHealth", closeThreatHealth);
+            ValidateObjectReference(hud, "bossHealth", bossHealth);
             ValidateObjectReference(hud, "energyLadder", energyLadder);
             ValidateObjectReference(hud, "laneSpace", laneSpace);
             ValidateObjectReference(hud, "player", player);

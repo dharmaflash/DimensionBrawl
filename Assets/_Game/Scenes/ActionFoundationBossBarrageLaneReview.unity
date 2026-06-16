@@ -9324,6 +9324,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.BossBarrageLaneReviewHud
   playerHealth: {fileID: 4003}
   closeThreatHealth: {fileID: 270381014}
+  bossHealth: {fileID: 133486773}
   energyLadder: {fileID: 4013}
   laneSpace: {fileID: 1795726281}
   player: {fileID: 4001}

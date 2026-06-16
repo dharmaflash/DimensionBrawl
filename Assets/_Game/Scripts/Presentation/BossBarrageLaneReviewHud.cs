@@ -11,6 +11,7 @@ namespace DimensionBrawl.Presentation
         [Header("References")]
         [SerializeField] private CombatHealth playerHealth;
         [SerializeField] private CombatHealth closeThreatHealth;
+        [SerializeField] private CombatHealth bossHealth;
         [SerializeField] private SummonEnergyLadder energyLadder;
         [SerializeField] private SummonLaneSpace laneSpace;
         [SerializeField] private Transform player;
@@ -31,6 +32,7 @@ namespace DimensionBrawl.Presentation
         public void Configure(
             CombatHealth newPlayerHealth,
             CombatHealth newCloseThreatHealth,
+            CombatHealth newBossHealth,
             SummonEnergyLadder newEnergyLadder,
             SummonLaneSpace newLaneSpace,
             Transform newPlayer,
@@ -41,6 +43,7 @@ namespace DimensionBrawl.Presentation
         {
             playerHealth = newPlayerHealth;
             closeThreatHealth = newCloseThreatHealth;
+            bossHealth = newBossHealth;
             energyLadder = newEnergyLadder;
             laneSpace = newLaneSpace;
             player = newPlayer;
@@ -76,9 +79,12 @@ namespace DimensionBrawl.Presentation
                 ? $"HP {playerHealth.CurrentHealth:0}/{playerHealth.MaxHealth:0}"
                 : "HP -";
             string threatLine = closeThreatHealth != null
-                ? $"Close Threat {closeThreatHealth.CurrentHealth:0}/{closeThreatHealth.MaxHealth:0}"
-                : "Close Threat -";
-            return $"{playerLine}   {threatLine}";
+                ? $"Threat {closeThreatHealth.CurrentHealth:0}/{closeThreatHealth.MaxHealth:0}"
+                : "Threat -";
+            string bossLine = bossHealth != null
+                ? $"Boss {bossHealth.CurrentHealth:0}/{bossHealth.MaxHealth:0}"
+                : "Boss -";
+            return $"{playerLine}   {threatLine}   {bossLine}";
         }
 
         private string ResolveEnergyLine()
