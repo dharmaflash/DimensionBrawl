@@ -112,6 +112,8 @@ namespace DimensionBrawl.Tests
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
             ActionCameraCueDriver cameraCueDriver =
                 RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
+            BossBarrageCameraCueDriver bossCameraCueDriver =
+                RequireComponent<BossBarrageCameraCueDriver>(cameraController.gameObject, "boss barrage camera cue driver");
             GameObject projectileRoot = RequireRoot(ProjectilePoolRootName);
             GameObject actionCueRoot = RequireRoot(ActionCuePoolRootName);
             GameObject summonActorRoot = RequireRoot(SummonActorPoolRootName);
@@ -225,6 +227,9 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(cameraCueDriver, "summonSlot1Action"));
             Assert.AreSame(cameraController, GetObjectReference<ActionCameraController>(cameraCueDriver, "cameraController"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(cameraCueDriver, "cueSpace"));
+            Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(bossCameraCueDriver, "bossBarrageEmitter"));
+            Assert.AreSame(cameraController, GetObjectReference<ActionCameraController>(bossCameraCueDriver, "cameraController"));
+            Assert.AreSame(player.transform, GetObjectReference<Transform>(bossCameraCueDriver, "cueSpace"));
             Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(pocketOwner, "playerHealth"));
             Assert.AreSame(closeThreatHealth, GetObjectReference<CombatHealth>(pocketOwner, "closeThreatHealth"));
             Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(pocketOwner, "energyLadder"));
@@ -685,16 +690,31 @@ namespace DimensionBrawl.Tests
             SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(RequireRoot(BossRootName), "boss barrage emitter");
             BossBarragePatternProfile pattern = LoadAsset<BossBarragePatternProfile>(PatternProfilePath);
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            BossBarrageCameraCueDriver bossCameraCueDriver =
+                RequireComponent<BossBarrageCameraCueDriver>(cameraController.gameObject, "boss barrage camera cue driver");
 
+            int windupCueCountBefore = bossCameraCueDriver.WindupCueRequestCount;
             Assert.IsTrue(emitter.BeginWindup());
+            Assert.AreEqual(
+                windupCueCountBefore + 1,
+                bossCameraCueDriver.WindupCueRequestCount,
+                "Boss barrage windup should request a short camera cue through the dedicated presentation driver.");
+            Assert.IsTrue(cameraController.HasActiveCue);
             BossBarrageVisualCueDriver cueDriver =
                 RequireComponent<BossBarrageVisualCueDriver>(RequireRoot(BossRootName), "boss visual cue driver");
             Assert.IsTrue(cueDriver.IsCueActive, "Boss visual cue driver should react when barrage windup starts.");
             Assert.IsFalse(string.IsNullOrEmpty(cueDriver.LastWindupTrigger));
+            int fireCueCountBefore = bossCameraCueDriver.FireCueRequestCount;
             int firedCount = emitter.FirePendingWave();
 
             Assert.AreEqual(pattern.ProjectilesPerWave, firedCount);
             Assert.AreEqual(pattern.ProjectilesPerWave, emitter.ActiveProjectileCount);
+            Assert.AreEqual(
+                fireCueCountBefore + 1,
+                bossCameraCueDriver.FireCueRequestCount,
+                "Boss barrage release should request a short camera cue without owning boss pattern logic.");
+            Assert.IsTrue(cameraController.HasActiveCue);
             Assert.IsFalse(string.IsNullOrEmpty(cueDriver.LastReleaseTrigger));
             Assert.AreSame(
                 LoadAsset<BossBarragePatternProfile>(CoverFirePatternProfilePath),

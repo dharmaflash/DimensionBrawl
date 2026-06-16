@@ -236,6 +236,7 @@ namespace DimensionBrawl.Editor
                 player,
                 skill1Action,
                 summonSlot1Action);
+            ConfigureBossBarrageCameraCueDriver(cameraController, bossBarrageEmitter, player.transform);
             ConfigureArenaInfluenceTargets(scene, player.transform, bossProxy.transform, closeThreat.transform);
             CreateLaneMarkers(scene, laneSpace);
 
@@ -345,6 +346,11 @@ namespace DimensionBrawl.Editor
                 cameraController,
                 skill1Action,
                 summonSlot1Action);
+            ValidateBossBarrageCameraCueDriver(
+                RequireComponent<BossBarrageCameraCueDriver>(cameraController.gameObject, "boss barrage camera cue driver"),
+                cameraController,
+                emitter,
+                player.transform);
             ValidateObjectReference(encounter, "playerHealth", playerHealth);
             ValidateObjectReference(encounter, "enemyHealth", closeThreatHealth);
             ValidatePocketOwner(pocketOwner, playerHealth, closeThreatHealth, energyLadder, skill1Action, summonSlot1Action, emitter);
@@ -1465,6 +1471,16 @@ namespace DimensionBrawl.Editor
             SetObjectReference(cueDriver, "cueSpace", movement.transform);
         }
 
+        private static void ConfigureBossBarrageCameraCueDriver(
+            ActionCameraController cameraController,
+            BossBarrageEmitter bossBarrageEmitter,
+            Transform cueSpace)
+        {
+            BossBarrageCameraCueDriver cueDriver = EnsureComponent<BossBarrageCameraCueDriver>(cameraController.gameObject);
+            cueDriver.Configure(bossBarrageEmitter, cameraController, cueSpace);
+            EditorUtility.SetDirty(cueDriver);
+        }
+
         private static void ValidateFixedRearCamera(ActionCameraController cameraController, Transform player)
         {
             Vector3 planarOffset = Vector3.ProjectOnPlane(cameraController.transform.position - player.position, Vector3.up);
@@ -1493,6 +1509,17 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(cueDriver, "summonSlot1Action", summonSlot1Action);
             ValidateObjectReference(cueDriver, "cameraController", cameraController);
             ValidateObjectReference(cueDriver, "cueSpace", movement.transform);
+        }
+
+        private static void ValidateBossBarrageCameraCueDriver(
+            BossBarrageCameraCueDriver cueDriver,
+            ActionCameraController cameraController,
+            BossBarrageEmitter bossBarrageEmitter,
+            Transform cueSpace)
+        {
+            ValidateObjectReference(cueDriver, "bossBarrageEmitter", bossBarrageEmitter);
+            ValidateObjectReference(cueDriver, "cameraController", cameraController);
+            ValidateObjectReference(cueDriver, "cueSpace", cueSpace);
         }
 
         private static void ValidateSummonForwardSpace(SummonLaneSpace laneSpace)
