@@ -363,7 +363,8 @@ namespace DimensionBrawl.Editor
                 new CueDefinition(CombatVfxCueId.ElitePhaseSwapSignal, prefabs.ElitePhaseSwap, Vector3.zero, Vector3.zero, new Vector3(1.85f, 0.8f, 1.85f), 0.68f, true, false),
                 new CueDefinition(CombatVfxCueId.SummonFollowupWindow, prefabs.EliteSummon, new Vector3(0f, 0.55f, 0.25f), Vector3.zero, new Vector3(1.1f, 0.9f, 1.1f), 0.72f, true, false),
                 new CueDefinition(CombatVfxCueId.SummonFollowupHit, prefabs.PlayerAttackHit, new Vector3(0f, 1.05f, -0.35f), Vector3.zero, new Vector3(1.35f, 1.1f, 1.35f), 0.34f, false, true),
-                new CueDefinition(CombatVfxCueId.SummonFollowupMissed, prefabs.RetreatBlinkActive, new Vector3(0f, 0.08f, -0.25f), Vector3.zero, new Vector3(1.1f, 0.6f, 1.1f), 0.36f, false, false)
+                new CueDefinition(CombatVfxCueId.SummonFollowupMissed, prefabs.RetreatBlinkActive, new Vector3(0f, 0.08f, -0.25f), Vector3.zero, new Vector3(1.1f, 0.6f, 1.1f), 0.36f, false, false),
+                new CueDefinition(CombatVfxCueId.SummonBlockOpportunity, prefabs.EliteSummon, new Vector3(0f, 0.34f, 0.48f), Vector3.zero, new Vector3(0.95f, 0.75f, 0.95f), 0.58f, true, false)
             };
 
             SerializedObject serializedObject = new SerializedObject(profile);

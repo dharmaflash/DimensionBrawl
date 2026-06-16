@@ -799,8 +799,13 @@ namespace DimensionBrawl.Tests
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(RequireRoot(BossRootName), "boss barrage emitter");
             BossBarragePocketReviewOwner pocketOwner =
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            BossBarragePocketVfxCueBridge pocketVfxCueBridge =
+                RequireComponent<BossBarragePocketVfxCueBridge>(
+                    RequireRoot(PocketOwnerRootName),
+                    "pocket VFX cue bridge");
 
             Assert.IsTrue(emitter.IsFiringEnabled);
+            int summonBlockOpportunityCueCountBefore = pocketVfxCueBridge.SummonBlockOpportunityCueRequestCount;
 
             closeThreatHealth.TryApplyDamage(new DamageInfo(
                 playerHealth,
@@ -813,6 +818,10 @@ namespace DimensionBrawl.Tests
 
             Assert.IsTrue(pocketOwner.CloseThreatDefeated);
             Assert.IsTrue(pocketOwner.IsPressureReliefActive);
+            Assert.AreEqual(
+                summonBlockOpportunityCueCountBefore + 1,
+                pocketVfxCueBridge.SummonBlockOpportunityCueRequestCount,
+                "Defeating the close threat should create an in-world summon-block opportunity read before HUD-only follow-up text.");
             Assert.That(
                 pocketOwner.PressureReliefRemainingSeconds,
                 Is.EqualTo(0.9f).Within(0.001f),
@@ -824,6 +833,10 @@ namespace DimensionBrawl.Tests
             pocketOwner.Tick(0.89f);
             Assert.IsTrue(pocketOwner.IsPressureReliefActive);
             Assert.IsFalse(emitter.IsFiringEnabled);
+            Assert.AreEqual(
+                summonBlockOpportunityCueCountBefore + 1,
+                pocketVfxCueBridge.SummonBlockOpportunityCueRequestCount,
+                "The summon-block opportunity cue should fire once for the close-threat defeat beat.");
 
             pocketOwner.Tick(0.02f);
             Assert.IsFalse(pocketOwner.IsPressureReliefActive);

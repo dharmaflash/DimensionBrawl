@@ -301,3 +301,12 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 0
+  - cueId: 32
+    prefab: {fileID: 464807569203744432, guid: 53d43299e6d21114790ecfb628981f4f, type: 3}
+    localPositionOffset: {x: 0, y: 0.34, z: 0.48}
+    localEulerOffset: {x: 0, y: 0, z: 0}
+    localScale: {x: 0.95, y: 0.75, z: 0.95}
+    lifetimeSeconds: 0.58
+    prewarmCount: 0
+    parentToAnchor: 1
+    alignForwardToDirection: 0

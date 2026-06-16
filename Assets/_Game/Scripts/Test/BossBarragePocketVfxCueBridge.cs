@@ -14,11 +14,13 @@ namespace DimensionBrawl.Test
         [SerializeField] private Transform directionTarget;
 
         [Header("Cue Intensity")]
+        [SerializeField, Min(0f)] private float blockOpportunityIntensity = 1.05f;
         [SerializeField, Min(0f)] private float windowIntensity = 1.15f;
         [SerializeField, Min(0f)] private float hitIntensity = 1.3f;
         [SerializeField, Min(0f)] private float missedIntensity = 0.85f;
         [SerializeField, Min(0f)] private float tierIntensityStep = 0.12f;
 
+        private int summonBlockOpportunityCueRequestCount;
         private int followupWindowCueRequestCount;
         private int followupHitCueRequestCount;
         private int followupMissedCueRequestCount;
@@ -32,6 +34,7 @@ namespace DimensionBrawl.Test
         public Transform FollowupHitAnchor => followupHitAnchor;
         public Transform FollowupMissedAnchor => followupMissedAnchor;
         public Transform DirectionTarget => directionTarget;
+        public int SummonBlockOpportunityCueRequestCount => summonBlockOpportunityCueRequestCount;
         public int FollowupWindowCueRequestCount => followupWindowCueRequestCount;
         public int FollowupHitCueRequestCount => followupHitCueRequestCount;
         public int FollowupMissedCueRequestCount => followupMissedCueRequestCount;
@@ -57,6 +60,7 @@ namespace DimensionBrawl.Test
             pocketReviewOwner.SummonFollowupWindowOpened += HandleSummonFollowupWindowOpened;
             pocketReviewOwner.SummonFollowupHitConfirmed += HandleSummonFollowupHitConfirmed;
             pocketReviewOwner.SummonFollowupMissed += HandleSummonFollowupMissed;
+            pocketReviewOwner.SummonBlockOpportunityOpened += HandleSummonBlockOpportunityOpened;
         }
 
         private void OnDisable()
@@ -69,6 +73,15 @@ namespace DimensionBrawl.Test
             pocketReviewOwner.SummonFollowupWindowOpened -= HandleSummonFollowupWindowOpened;
             pocketReviewOwner.SummonFollowupHitConfirmed -= HandleSummonFollowupHitConfirmed;
             pocketReviewOwner.SummonFollowupMissed -= HandleSummonFollowupMissed;
+            pocketReviewOwner.SummonBlockOpportunityOpened -= HandleSummonBlockOpportunityOpened;
+        }
+
+        private void HandleSummonBlockOpportunityOpened()
+        {
+            if (Play(CombatVfxCueId.SummonBlockOpportunity, followupWindowAnchor, 1, blockOpportunityIntensity))
+            {
+                summonBlockOpportunityCueRequestCount++;
+            }
         }
 
         private void HandleSummonFollowupWindowOpened(int tier)

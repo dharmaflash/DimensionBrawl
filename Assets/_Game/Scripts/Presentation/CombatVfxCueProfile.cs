@@ -37,7 +37,8 @@ namespace DimensionBrawl.Presentation
         ElitePhaseSwapSignal,
         SummonFollowupWindow,
         SummonFollowupHit,
-        SummonFollowupMissed
+        SummonFollowupMissed,
+        SummonBlockOpportunity
     }
 
     [CreateAssetMenu(menuName = "DimensionBrawl/Presentation/Combat VFX Cue Profile", fileName = "DB_CombatVfxCueProfile")]

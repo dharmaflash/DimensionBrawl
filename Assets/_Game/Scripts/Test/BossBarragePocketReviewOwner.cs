@@ -69,6 +69,7 @@ namespace DimensionBrawl.Test
         public event Action<int> SummonFollowupWindowOpened;
         public event Action<int, float> SummonFollowupHitConfirmed;
         public event Action SummonFollowupMissed;
+        public event Action SummonBlockOpportunityOpened;
 
         public bool IsRunning => state == PocketState.Running;
         public bool IsCleared => state == PocketState.Cleared;
@@ -313,6 +314,7 @@ namespace DimensionBrawl.Test
                 ? summonSlot1Action.TotalPressureScreenInterceptCount
                 : 0;
             StartPressureRelief();
+            SummonBlockOpportunityOpened?.Invoke();
         }
 
         private int CountPressureBlocksAfterCloseThreatDefeated()
