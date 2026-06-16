@@ -1,3 +1,4 @@
+using System;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
 using UnityEngine;
@@ -63,6 +64,11 @@ namespace DimensionBrawl.Test
         private int highestSummonFollowupSkillTier;
         private int highestSkill1FollowupHitTier;
         private CombatHealth subscribedBossHealth;
+        private bool followupMissedNotified;
+
+        public event Action<int> SummonFollowupWindowOpened;
+        public event Action<int, float> SummonFollowupHitConfirmed;
+        public event Action SummonFollowupMissed;
 
         public bool IsRunning => state == PocketState.Running;
         public bool IsCleared => state == PocketState.Cleared;
@@ -164,6 +170,7 @@ namespace DimensionBrawl.Test
             observedSummonUseCount = GetSummonUseCount();
             skillUsesAtSummonBreakStart = observedSkillUseCount;
             pressurePacing.Reset();
+            followupMissedNotified = false;
             highestSkillTier = 0;
             highestSummonTier = 0;
             highestSummonPressureTier = 0;
@@ -246,7 +253,7 @@ namespace DimensionBrawl.Test
                 pressureBlocksConsumedBySummonBreak = pressureBlocksAfterCloseThreatDefeated;
                 if (!pressurePacing.IsSummonPressureBreakActive)
                 {
-                    StartSummonPressureBreak();
+                    StartSummonPressureBreak(summonSlot1Action.LastPressureScreenInterceptTier);
                 }
 
                 blockedBossPressureWithSummon = true;
@@ -280,11 +287,16 @@ namespace DimensionBrawl.Test
             }
 
             usedSkill1DuringSummonFollowup = true;
+            bool wasHitConfirmed = skill1FollowupHitConfirmed;
             skill1FollowupHitConfirmed = true;
             skill1FollowupDamage += damageInfo.Amount;
             int spentTier = skill1Action != null ? skill1Action.LastSpentTier : 0;
             highestSummonFollowupSkillTier = Mathf.Max(highestSummonFollowupSkillTier, spentTier);
             highestSkill1FollowupHitTier = Mathf.Max(highestSkill1FollowupHitTier, spentTier);
+            if (!wasHitConfirmed)
+            {
+                SummonFollowupHitConfirmed?.Invoke(spentTier, damageInfo.Amount);
+            }
         }
 
         private void CaptureCloseThreatDefeat()
@@ -319,24 +331,43 @@ namespace DimensionBrawl.Test
             ApplyRunningBarragePacing();
         }
 
-        private void StartSummonPressureBreak()
+        private void StartSummonPressureBreak(int pressureTier)
         {
             skillUsesAtSummonBreakStart = GetSkillUseCount();
             grantedSummonFollowupEnergy = false;
             usedSkill1DuringSummonFollowup = false;
             skill1FollowupHitConfirmed = false;
             skill1FollowupDamage = 0f;
+            followupMissedNotified = false;
             pressurePacing.StartSummonPressureBreak(
                 summonPressureBreakReliefSeconds,
                 summonFollowupWindowSeconds);
             GrantSummonFollowupEnergyPulse();
             ApplyRunningBarragePacing();
+            SummonFollowupWindowOpened?.Invoke(Mathf.Max(1, pressureTier));
         }
 
         private void UpdatePressurePacing(float deltaTime)
         {
+            bool wasFollowupWindowActive = pressurePacing.IsSummonFollowupWindowActive;
             pressurePacing.Tick(deltaTime);
+            CaptureFollowupMiss(wasFollowupWindowActive);
             ApplyRunningBarragePacing();
+        }
+
+        private void CaptureFollowupMiss(bool wasFollowupWindowActive)
+        {
+            if (!wasFollowupWindowActive
+                || pressurePacing.IsSummonFollowupWindowActive
+                || !requireSkill1FollowupHitToClear
+                || skill1FollowupHitConfirmed
+                || followupMissedNotified)
+            {
+                return;
+            }
+
+            followupMissedNotified = true;
+            SummonFollowupMissed?.Invoke();
         }
 
         private void ClearPocket()

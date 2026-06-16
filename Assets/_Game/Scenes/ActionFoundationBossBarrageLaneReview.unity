@@ -12015,6 +12015,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1232551716}
   - component: {fileID: 1232551715}
+  - component: {fileID: 1232551717}
   m_Layer: 0
   m_Name: BossBarrageLaneReview_PocketOwner
   m_TagString: Untagged
@@ -12046,6 +12047,20 @@ MonoBehaviour:
   stopEnergyGainOnEnd: 1
   clearMarker: {fileID: 2136608856}
   failMarker: {fileID: 1535554755}
+--- !u!114 &1232551717
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1232551714}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3f0d5ee2af4340f7b9e6f2f12b2e4a45, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Test.BossBarragePocketCameraCueBridge
+  pocketReviewOwner: {fileID: 1232551715}
+  cameraCueDriver: {fileID: 1005}
 --- !u!4 &1232551716
 Transform:
   m_ObjectHideFlags: 0

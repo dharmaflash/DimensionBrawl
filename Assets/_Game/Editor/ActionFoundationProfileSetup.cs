@@ -834,6 +834,12 @@ namespace DimensionBrawl.Editor
             SetCameraCue(serializedObject.FindProperty("dodgeCue"), new Vector3(0f, 0.04f, -0.20f), -0.18f, 2.2f, -0.20f, 0.03f, 0.28f, 1f);
             SetCameraCue(serializedObject.FindProperty("attackStartCue"), new Vector3(0f, -0.03f, 0.14f), 0.08f, -1.2f, 0.12f, -0.02f, 0.22f, 1.2f);
             SetCameraCue(serializedObject.FindProperty("attackHitCue"), new Vector3(0f, 0.03f, 0.12f), 0.06f, -1.8f, 0.16f, 0.01f, 0.18f, 1.3f);
+            SetCameraCue(serializedObject.FindProperty("skill1Cue"), new Vector3(0f, 0.02f, 0.12f), 0.10f, -1.2f, 0.10f, 0.01f, 0.24f, 1.2f);
+            SetCameraCue(serializedObject.FindProperty("summonSlot1Cue"), new Vector3(0f, 0.08f, -0.18f), 0.16f, 2.4f, -0.26f, 0.08f, 0.34f, 1.35f);
+            SetCameraCue(serializedObject.FindProperty("summonPressureBlockCue"), new Vector3(0f, 0.06f, -0.10f), 0.06f, 1.4f, -0.14f, 0.04f, 0.18f, 1.25f);
+            SetCameraCue(serializedObject.FindProperty("summonFollowupWindowCue"), new Vector3(0f, 0.05f, -0.14f), 0.04f, 1.6f, -0.16f, 0.03f, 0.22f, 1.2f);
+            SetCameraCue(serializedObject.FindProperty("summonFollowupHitCue"), new Vector3(0f, 0.04f, 0.16f), 0.08f, -2.4f, 0.18f, 0.02f, 0.20f, 1.3f);
+            SetCameraCue(serializedObject.FindProperty("summonFollowupMissedCue"), new Vector3(0f, -0.02f, -0.08f), -0.02f, 0.8f, -0.08f, -0.02f, 0.18f, 1f);
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(profile);
         }

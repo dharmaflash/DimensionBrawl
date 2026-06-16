@@ -134,12 +134,63 @@ namespace DimensionBrawl.Presentation
             finisherScale = 1.25f
         };
 
+        [Tooltip("Readable opening after a correct summon pressure block. Briefly widens so the Skill1 follow-up choice reads.")]
+        [SerializeField] private ActionCameraCueProfile.CameraCue summonFollowupWindowCue = new ActionCameraCueProfile.CameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, 0.05f, -0.14f),
+            planarDirectionOffset = 0.04f,
+            fieldOfViewDelta = 1.6f,
+            cameraDistanceDelta = -0.16f,
+            focusHeightDelta = 0.03f,
+            durationSeconds = 0.22f,
+            finisherScale = 1.2f
+        };
+
+        [Tooltip("Confirmed follow-up Skill1 boss hit. Short punch-in, not a global slow-motion effect.")]
+        [SerializeField] private ActionCameraCueProfile.CameraCue summonFollowupHitCue = new ActionCameraCueProfile.CameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, 0.04f, 0.16f),
+            planarDirectionOffset = 0.08f,
+            fieldOfViewDelta = -2.4f,
+            cameraDistanceDelta = 0.18f,
+            focusHeightDelta = 0.02f,
+            durationSeconds = 0.20f,
+            finisherScale = 1.3f
+        };
+
+        [Tooltip("Missed follow-up window. Small release cue as boss pressure returns.")]
+        [SerializeField] private ActionCameraCueProfile.CameraCue summonFollowupMissedCue = new ActionCameraCueProfile.CameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, -0.02f, -0.08f),
+            planarDirectionOffset = -0.02f,
+            fieldOfViewDelta = 0.8f,
+            cameraDistanceDelta = -0.08f,
+            focusHeightDelta = -0.02f,
+            durationSeconds = 0.18f,
+            finisherScale = 1f
+        };
+
         private int summonPressureBlockCueRequestCount;
         private int lastSummonPressureBlockTier;
+        private int summonFollowupWindowCueRequestCount;
+        private int summonFollowupHitCueRequestCount;
+        private int summonFollowupMissedCueRequestCount;
+        private int lastSummonFollowupWindowTier;
+        private int lastSummonFollowupHitTier;
+        private float lastSummonFollowupHitDamage;
 
         public ActionCameraCueProfile CueProfile => cueProfile;
         public int SummonPressureBlockCueRequestCount => summonPressureBlockCueRequestCount;
         public int LastSummonPressureBlockTier => lastSummonPressureBlockTier;
+        public int SummonFollowupWindowCueRequestCount => summonFollowupWindowCueRequestCount;
+        public int SummonFollowupHitCueRequestCount => summonFollowupHitCueRequestCount;
+        public int SummonFollowupMissedCueRequestCount => summonFollowupMissedCueRequestCount;
+        public int LastSummonFollowupWindowTier => lastSummonFollowupWindowTier;
+        public int LastSummonFollowupHitTier => lastSummonFollowupHitTier;
+        public float LastSummonFollowupHitDamage => lastSummonFollowupHitDamage;
 
         private ActionCameraCueProfile.CameraCue ActiveRunStartCue => cueProfile != null ? cueProfile.RunStartCue : runStartCue;
         private ActionCameraCueProfile.CameraCue ActiveStopSettleCue => cueProfile != null ? cueProfile.StopSettleCue : stopSettleCue;
@@ -151,6 +202,12 @@ namespace DimensionBrawl.Presentation
         private ActionCameraCueProfile.CameraCue ActiveSummonSlot1Cue => cueProfile != null ? cueProfile.SummonSlot1Cue : summonSlot1Cue;
         private ActionCameraCueProfile.CameraCue ActiveSummonPressureBlockCue =>
             cueProfile != null ? cueProfile.SummonPressureBlockCue : summonPressureBlockCue;
+        private ActionCameraCueProfile.CameraCue ActiveSummonFollowupWindowCue =>
+            cueProfile != null ? cueProfile.SummonFollowupWindowCue : summonFollowupWindowCue;
+        private ActionCameraCueProfile.CameraCue ActiveSummonFollowupHitCue =>
+            cueProfile != null ? cueProfile.SummonFollowupHitCue : summonFollowupHitCue;
+        private ActionCameraCueProfile.CameraCue ActiveSummonFollowupMissedCue =>
+            cueProfile != null ? cueProfile.SummonFollowupMissedCue : summonFollowupMissedCue;
 
         private void Awake()
         {
@@ -270,6 +327,35 @@ namespace DimensionBrawl.Presentation
             {
                 summonPressureBlockCueRequestCount++;
                 lastSummonPressureBlockTier = tier;
+            }
+        }
+
+        public void RequestSummonFollowupWindowCue(int tier)
+        {
+            ActionCameraCueProfile.CameraCue cue = ActiveSummonFollowupWindowCue;
+            if (RequestCue(cue, ResolvePlanarDirection(), ResolveTierScale(tier, cue)))
+            {
+                summonFollowupWindowCueRequestCount++;
+                lastSummonFollowupWindowTier = tier;
+            }
+        }
+
+        public void RequestSummonFollowupHitCue(int tier, float damage)
+        {
+            ActionCameraCueProfile.CameraCue cue = ActiveSummonFollowupHitCue;
+            if (RequestCue(cue, ResolvePlanarDirection(), ResolveTierScale(tier, cue)))
+            {
+                summonFollowupHitCueRequestCount++;
+                lastSummonFollowupHitTier = tier;
+                lastSummonFollowupHitDamage = damage;
+            }
+        }
+
+        public void RequestSummonFollowupMissedCue()
+        {
+            if (RequestCue(ActiveSummonFollowupMissedCue, -ResolvePlanarDirection(), 1f))
+            {
+                summonFollowupMissedCueRequestCount++;
             }
         }
 

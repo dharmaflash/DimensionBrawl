@@ -127,6 +127,10 @@ namespace DimensionBrawl.Tests
             GameObject summonActorRoot = RequireRoot(SummonActorPoolRootName);
             BossBarragePocketReviewOwner pocketOwner =
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            BossBarragePocketCameraCueBridge pocketCameraCueBridge =
+                RequireComponent<BossBarragePocketCameraCueBridge>(
+                    RequireRoot(PocketOwnerRootName),
+                    "pocket camera cue bridge");
             BossBarrageLaneReviewHud reviewHud =
                 RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "boss barrage HUD");
             BossBarrageLaneTelegraphPresenter telegraphPresenter =
@@ -281,6 +285,8 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(skill1Action, GetObjectReference<PlayerSkill1Action>(pocketOwner, "skill1Action"));
             Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(pocketOwner, "summonSlot1Action"));
             Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(pocketOwner, "bossBarrageEmitter"));
+            Assert.AreSame(pocketOwner, pocketCameraCueBridge.PocketReviewOwner);
+            Assert.AreSame(cameraCueDriver, pocketCameraCueBridge.CameraCueDriver);
             Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(reviewHud, "playerHealth"));
             Assert.AreSame(closeThreatHealth, GetObjectReference<CombatHealth>(reviewHud, "closeThreatHealth"));
             Assert.AreSame(bossHealth, GetObjectReference<CombatHealth>(reviewHud, "bossHealth"));
@@ -819,6 +825,9 @@ namespace DimensionBrawl.Tests
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            ActionCameraCueDriver cameraCueDriver =
+                RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
             GameObject bossRoot = RequireRoot(BossRootName);
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
@@ -867,6 +876,8 @@ namespace DimensionBrawl.Tests
             BossBarrageProjectile lateBossProjectile = RequireActiveBossProjectile();
             Assert.IsTrue(activeScreen.TryIntercept(lateBossProjectile));
 
+            int followupWindowCueCountBefore = cameraCueDriver.SummonFollowupWindowCueRequestCount;
+            int followupMissedCueCountBefore = cameraCueDriver.SummonFollowupMissedCueRequestCount;
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.IsRunning);
@@ -875,6 +886,11 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(pocketOwner.IsSummonFollowupWindowActive);
             Assert.AreEqual(1, pocketOwner.PressureBlocksAfterCloseThreatDefeated);
             Assert.AreEqual(1, pocketOwner.HighestSummonPressureTier);
+            Assert.AreEqual(
+                followupWindowCueCountBefore + 1,
+                cameraCueDriver.SummonFollowupWindowCueRequestCount,
+                "A correct SummonSlot1 block should open a readable follow-up camera cue.");
+            Assert.AreEqual(1, cameraCueDriver.LastSummonFollowupWindowTier);
 
             pocketOwner.Tick(1.39f);
             Assert.IsTrue(pocketOwner.IsRunning);
@@ -885,6 +901,10 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(pocketOwner.IsRunning);
             Assert.IsTrue(pocketOwner.IsSummonPressureBreakActive);
             Assert.IsFalse(pocketOwner.IsSummonFollowupWindowActive);
+            Assert.AreEqual(
+                followupMissedCueCountBefore + 1,
+                cameraCueDriver.SummonFollowupMissedCueRequestCount,
+                "Letting the follow-up window expire should leave a short missed-response camera read.");
 
             pocketOwner.Tick(1f);
             Assert.IsTrue(pocketOwner.IsRunning);
@@ -910,6 +930,9 @@ namespace DimensionBrawl.Tests
                 pocketOwner.IsSummonFollowupWindowActive,
                 "Missing the follow-up should return the player to boss pressure and allow a later SummonSlot1 block to reopen the Skill1 window.");
             Assert.AreEqual(2, pocketOwner.PressureBlocksAfterCloseThreatDefeated);
+            Assert.AreEqual(
+                followupWindowCueCountBefore + 2,
+                cameraCueDriver.SummonFollowupWindowCueRequestCount);
         }
 
         [UnityTest]
@@ -921,6 +944,9 @@ namespace DimensionBrawl.Tests
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            ActionCameraCueDriver cameraCueDriver =
+                RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
             GameObject bossRoot = RequireRoot(BossRootName);
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
@@ -953,6 +979,8 @@ namespace DimensionBrawl.Tests
             BossBarrageProjectile bossProjectile = RequireActiveBossProjectile();
             Assert.IsTrue(activeScreen.TryIntercept(bossProjectile));
 
+            int followupWindowCueCountBefore = cameraCueDriver.SummonFollowupWindowCueRequestCount;
+            int followupHitCueCountBefore = cameraCueDriver.SummonFollowupHitCueRequestCount;
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.IsRunning);
@@ -973,6 +1001,11 @@ namespace DimensionBrawl.Tests
                 "Boss barrage should pause while the summon pressure-break relief is active.");
             Assert.AreEqual(1, pocketOwner.HighestSummonTier);
             Assert.AreEqual(1, pocketOwner.HighestSummonPressureTier);
+            Assert.AreEqual(
+                followupWindowCueCountBefore + 1,
+                cameraCueDriver.SummonFollowupWindowCueRequestCount,
+                "A correct SummonSlot1 block should make the follow-up opportunity readable without relying on HUD text only.");
+            Assert.AreEqual(1, cameraCueDriver.LastSummonFollowupWindowTier);
             Assert.IsTrue(
                 pocketOwner.GrantedSummonFollowupEnergy,
                 "The summon pressure break should pulse enough EN to make the short follow-up window actionable.");
@@ -1005,6 +1038,12 @@ namespace DimensionBrawl.Tests
                 pocketOwner.Skill1FollowupDamage,
                 0f,
                 "The follow-up response should be confirmed by boss damage, not only by pressing the button.");
+            Assert.AreEqual(
+                followupHitCueCountBefore + 1,
+                cameraCueDriver.SummonFollowupHitCueRequestCount,
+                "A confirmed Skill1 boss hit should produce the follow-up hit camera cue.");
+            Assert.AreEqual(1, cameraCueDriver.LastSummonFollowupHitTier);
+            Assert.Greater(cameraCueDriver.LastSummonFollowupHitDamage, 0f);
             Assert.Less(bossHealth.CurrentHealth, bossHealthBeforeFollowup);
 
             pocketOwner.Tick(1.39f);

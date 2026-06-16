@@ -93,3 +93,30 @@ MonoBehaviour:
     focusHeightDelta: 0.04
     durationSeconds: 0.18
     finisherScale: 1.25
+  summonFollowupWindowCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.05, z: -0.14}
+    planarDirectionOffset: 0.04
+    fieldOfViewDelta: 1.6
+    cameraDistanceDelta: -0.16
+    focusHeightDelta: 0.03
+    durationSeconds: 0.22
+    finisherScale: 1.2
+  summonFollowupHitCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.04, z: 0.16}
+    planarDirectionOffset: 0.08
+    fieldOfViewDelta: -2.4
+    cameraDistanceDelta: 0.18
+    focusHeightDelta: 0.02
+    durationSeconds: 0.2
+    finisherScale: 1.3
+  summonFollowupMissedCue:
+    enabled: 1
+    localOffset: {x: 0, y: -0.02, z: -0.08}
+    planarDirectionOffset: -0.02
+    fieldOfViewDelta: 0.8
+    cameraDistanceDelta: -0.08
+    focusHeightDelta: -0.02
+    durationSeconds: 0.18
+    finisherScale: 1

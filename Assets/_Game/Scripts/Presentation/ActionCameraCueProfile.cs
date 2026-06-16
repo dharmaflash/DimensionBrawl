@@ -128,6 +128,42 @@ namespace DimensionBrawl.Presentation
             finisherScale = 1.25f
         };
 
+        [SerializeField] private CameraCue summonFollowupWindowCue = new CameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, 0.05f, -0.14f),
+            planarDirectionOffset = 0.04f,
+            fieldOfViewDelta = 1.6f,
+            cameraDistanceDelta = -0.16f,
+            focusHeightDelta = 0.03f,
+            durationSeconds = 0.22f,
+            finisherScale = 1.2f
+        };
+
+        [SerializeField] private CameraCue summonFollowupHitCue = new CameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, 0.04f, 0.16f),
+            planarDirectionOffset = 0.08f,
+            fieldOfViewDelta = -2.4f,
+            cameraDistanceDelta = 0.18f,
+            focusHeightDelta = 0.02f,
+            durationSeconds = 0.20f,
+            finisherScale = 1.3f
+        };
+
+        [SerializeField] private CameraCue summonFollowupMissedCue = new CameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, -0.02f, -0.08f),
+            planarDirectionOffset = -0.02f,
+            fieldOfViewDelta = 0.8f,
+            cameraDistanceDelta = -0.08f,
+            focusHeightDelta = -0.02f,
+            durationSeconds = 0.18f,
+            finisherScale = 1f
+        };
+
         public CameraCue RunStartCue => runStartCue;
         public CameraCue StopSettleCue => stopSettleCue;
         public CameraCue SharpTurnCue => sharpTurnCue;
@@ -137,5 +173,8 @@ namespace DimensionBrawl.Presentation
         public CameraCue Skill1Cue => skill1Cue;
         public CameraCue SummonSlot1Cue => summonSlot1Cue;
         public CameraCue SummonPressureBlockCue => summonPressureBlockCue;
+        public CameraCue SummonFollowupWindowCue => summonFollowupWindowCue;
+        public CameraCue SummonFollowupHitCue => summonFollowupHitCue;
+        public CameraCue SummonFollowupMissedCue => summonFollowupMissedCue;
     }
 }
