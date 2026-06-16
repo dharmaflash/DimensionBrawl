@@ -277,11 +277,14 @@ namespace DimensionBrawl.Tests
             SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
             PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
-            CombatHealth bossHealth = RequireComponent<CombatHealth>(RequireRoot(BossRootName), "boss health");
+            GameObject bossRoot = RequireRoot(BossRootName);
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
+            Collider bossHitCollider = RequireCombatHitCollider(bossRoot, bossHealth, "boss proxy");
 
             player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
             targetSelector.NotifyTargetContact(bossHealth);
             FillEnergyToTier(energyLadder, 1);
+            float bossHealthBeforeSkill = bossHealth.CurrentHealth;
 
             Assert.IsTrue(skill1Action.TryUseSkill1());
             Assert.AreEqual(1, skill1Action.LastSpentTier);
@@ -291,18 +294,25 @@ namespace DimensionBrawl.Tests
             LaneActionProjectile[] projectiles = Object.FindObjectsByType<LaneActionProjectile>(
                 FindObjectsInactive.Exclude,
                 FindObjectsSortMode.None);
-            bool foundPlayerProjectile = false;
+            LaneActionProjectile playerProjectile = null;
             for (int i = 0; i < projectiles.Length; i++)
             {
                 if (projectiles[i].SourceTeam == DamageTeam.Player
                     && Vector3.Dot(projectiles[i].TravelDirection, Vector3.forward) > 0.5f)
                 {
-                    foundPlayerProjectile = true;
+                    playerProjectile = projectiles[i];
                     break;
                 }
             }
 
-            Assert.IsTrue(foundPlayerProjectile, "Skill1 should fire forward toward the boss lane.");
+            Assert.IsNotNull(playerProjectile, "Skill1 should fire forward toward the boss lane.");
+            Assert.IsTrue(
+                playerProjectile.TryApplyImpact(bossHitCollider, playerProjectile.transform.position),
+                "Skill1 should be able to resolve damage against the authored boss hit receiver.");
+            Assert.Less(
+                bossHealth.CurrentHealth,
+                bossHealthBeforeSkill,
+                "Skill1 should spend EN into a real boss/proxy health result, not only a visible projectile.");
             yield return null;
         }
 
@@ -445,7 +455,10 @@ namespace DimensionBrawl.Tests
             SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
-            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(RequireRoot(BossRootName), "boss barrage emitter");
+            GameObject bossRoot = RequireRoot(BossRootName);
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
+            Collider bossHitCollider = RequireCombatHitCollider(bossRoot, bossHealth, "boss proxy");
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
 
             player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
             FillEnergyToTier(energyLadder, 3);
@@ -466,6 +479,8 @@ namespace DimensionBrawl.Tests
 
             Assert.IsNotNull(activeScreen, "SummonSlot1 should open a pressure screen before it can counter boss fire.");
             int summonProjectileCountBeforeIntercept = summonSlot1Action.ActiveProjectileCount;
+            HashSet<LaneActionProjectile> activeSummonProjectilesBeforeIntercept = CollectActiveSummonProjectiles();
+            float bossHealthBeforeCounter = bossHealth.CurrentHealth;
 
             Assert.IsTrue(emitter.BeginWindup());
             Assert.Greater(emitter.FirePendingWave(), 0);
@@ -489,6 +504,14 @@ namespace DimensionBrawl.Tests
                 summonSlot1Action.ActiveProjectileCount,
                 summonProjectileCountBeforeIntercept,
                 "A summon pressure-screen intercept should fire a short counter bolt back into the boss lane.");
+            LaneActionProjectile counterProjectile = RequireNewActiveSummonProjectile(activeSummonProjectilesBeforeIntercept);
+            Assert.IsTrue(
+                counterProjectile.TryApplyImpact(bossHitCollider, counterProjectile.transform.position),
+                "The counter bolt should be able to resolve damage against the authored boss hit receiver.");
+            Assert.Less(
+                bossHealth.CurrentHealth,
+                bossHealthBeforeCounter,
+                "A summon screen counter should move the boss/proxy health state, not only delete incoming pressure.");
             yield return null;
         }
 
@@ -719,6 +742,58 @@ namespace DimensionBrawl.Tests
             T component = root.GetComponent<T>();
             Assert.IsNotNull(component, $"{label} is missing {typeof(T).Name}.");
             return component;
+        }
+
+        private static Collider RequireCombatHitCollider(GameObject root, CombatHealth expectedHealth, string label)
+        {
+            Collider[] colliders = root.GetComponentsInChildren<Collider>(includeInactive: true);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                if (colliders[i] != null && colliders[i].GetComponentInParent<CombatHealth>() == expectedHealth)
+                {
+                    return colliders[i];
+                }
+            }
+
+            Assert.Fail($"{label} should expose at least one child collider under its CombatHealth root.");
+            return null;
+        }
+
+        private static HashSet<LaneActionProjectile> CollectActiveSummonProjectiles()
+        {
+            var activeProjectiles = new HashSet<LaneActionProjectile>();
+            LaneActionProjectile[] projectiles = Object.FindObjectsByType<LaneActionProjectile>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < projectiles.Length; i++)
+            {
+                if (projectiles[i].IsActive && projectiles[i].SourceTeam == DamageTeam.AllySummon)
+                {
+                    activeProjectiles.Add(projectiles[i]);
+                }
+            }
+
+            return activeProjectiles;
+        }
+
+        private static LaneActionProjectile RequireNewActiveSummonProjectile(
+            HashSet<LaneActionProjectile> activeProjectilesBefore)
+        {
+            LaneActionProjectile[] projectiles = Object.FindObjectsByType<LaneActionProjectile>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < projectiles.Length; i++)
+            {
+                if (projectiles[i].IsActive
+                    && projectiles[i].SourceTeam == DamageTeam.AllySummon
+                    && !activeProjectilesBefore.Contains(projectiles[i]))
+                {
+                    return projectiles[i];
+                }
+            }
+
+            Assert.Fail("Expected a newly active AllySummon projectile after the pressure-screen intercept.");
+            return null;
         }
 
         private static T LoadAsset<T>(string assetPath) where T : Object
