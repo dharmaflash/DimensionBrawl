@@ -77,10 +77,14 @@ namespace DimensionBrawl.Player
         private bool actionEnabledHere;
         private bool queued;
         private int lastSpentTier;
+        private int lastFiredProjectileCount;
+        private int lastPressureScreenMaxIntercepts;
         private Vector3 lastEntryPosition;
         private Vector3 lastSummonActorPosition;
 
         public int LastSpentTier => lastSpentTier;
+        public int LastFiredProjectileCount => lastFiredProjectileCount;
+        public int LastPressureScreenMaxIntercepts => lastPressureScreenMaxIntercepts;
         public Vector3 LastEntryPosition => lastEntryPosition;
         public Vector3 LastSummonActorPosition => lastSummonActorPosition;
         public int ActiveProjectileCount => CountActiveProjectiles();
@@ -181,10 +185,12 @@ namespace DimensionBrawl.Player
         private void FireTier(int tier)
         {
             SummonTierSettings settings = ResolveTierSettings(tier);
+            lastPressureScreenMaxIntercepts = 0;
             Vector2 playerLane = laneSpace != null ? laneSpace.GetLaneCoordinates(transform.position) : Vector2.zero;
             float entryZ = laneSpace != null ? laneSpace.SummonEntryZ : playerLane.y + 2f;
             float targetZ = ResolveTargetLaneZ();
             int count = Mathf.Max(1, settings.ProjectileCount);
+            lastFiredProjectileCount = count;
 
             Vector3 entryPosition = ResolveBattlefieldPoint(playerLane.x, entryZ, settings.EntryHeight);
             lastEntryPosition = entryPosition;
@@ -244,6 +250,7 @@ namespace DimensionBrawl.Player
             {
                 actor.PressureScreen.Intercepted -= OnPressureScreenIntercepted;
                 actor.PressureScreen.Intercepted += OnPressureScreenIntercepted;
+                lastPressureScreenMaxIntercepts = Mathf.Max(0, settings.ScreenIntercepts);
                 actor.PressureScreen.Activate(
                     sourceTeam,
                     settings.ScreenIntercepts,

@@ -86,8 +86,10 @@ namespace DimensionBrawl.Player
         private bool actionEnabledHere;
         private bool queued;
         private int lastSpentTier;
+        private int lastFiredProjectileCount;
 
         public int LastSpentTier => lastSpentTier;
+        public int LastFiredProjectileCount => lastFiredProjectileCount;
         public int ActiveProjectileCount => CountActiveProjectiles();
 
         public event Action<int> Skill1Used;
@@ -170,6 +172,7 @@ namespace DimensionBrawl.Player
             Vector3 direction = ResolveAimDirection(spawnBase + Vector3.up * settings.SpawnHeight, settings.TargetHeight);
             Vector3 right = ResolveRight(direction);
             int count = Mathf.Max(1, settings.ProjectileCount);
+            lastFiredProjectileCount = count;
 
             for (int i = 0; i < count; i++)
             {

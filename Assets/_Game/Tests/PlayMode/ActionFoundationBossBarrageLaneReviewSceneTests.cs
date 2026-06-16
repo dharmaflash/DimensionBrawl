@@ -349,6 +349,7 @@ namespace DimensionBrawl.Tests
 
             Assert.IsTrue(skill1Action.TryUseSkill1());
             Assert.AreEqual(1, skill1Action.LastSpentTier);
+            Assert.AreEqual(1, skill1Action.LastFiredProjectileCount);
             Assert.AreEqual(0, energyLadder.AvailableTier);
             Assert.IsTrue(
                 cameraController.HasActiveCue,
@@ -381,6 +382,33 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator Skill1CanSpendLv2AsIntermediateChoice()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(RequireRoot(BossRootName), "boss health");
+
+            player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
+            targetSelector.NotifyTargetContact(bossHealth);
+            FillEnergyToTier(energyLadder, 2);
+
+            Assert.IsTrue(skill1Action.TryUseSkill1());
+            Assert.AreEqual(2, skill1Action.LastSpentTier);
+            Assert.AreEqual(2, skill1Action.LastFiredProjectileCount);
+            Assert.AreEqual(0, energyLadder.AvailableTier);
+            Assert.AreEqual(1, energyLadder.ChargingTier);
+            Assert.AreEqual(0f, energyLadder.CurrentTierEnergy, 0.001f);
+            Assert.GreaterOrEqual(
+                skill1Action.ActiveProjectileCount,
+                2,
+                "Skill1 LV2 should be a visible intermediate spend, not only a numeric damage bump.");
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator SummonSlot1SpendsEnergyAndCanCrossPlayerLaneRails()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
@@ -395,6 +423,8 @@ namespace DimensionBrawl.Tests
 
             Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
             Assert.AreEqual(3, summonSlot1Action.LastSpentTier);
+            Assert.AreEqual(3, summonSlot1Action.LastFiredProjectileCount);
+            Assert.AreEqual(7, summonSlot1Action.LastPressureScreenMaxIntercepts);
             Assert.AreEqual(0, energyLadder.AvailableTier);
             Assert.IsTrue(
                 cameraController.HasActiveCue,
@@ -525,6 +555,38 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(
                 foundOffLaneSummonProjectile,
                 "SummonSlot1 LV3 should be able to project attacks beyond player lane rails.");
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator SummonSlot1CanSpendLv2AsIntermediateFrontlineChoice()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            PlayerSummonSlot1Action summonSlot1Action =
+                RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+
+            player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
+            FillEnergyToTier(energyLadder, 2);
+
+            Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
+            Assert.AreEqual(2, summonSlot1Action.LastSpentTier);
+            Assert.AreEqual(2, summonSlot1Action.LastFiredProjectileCount);
+            Assert.AreEqual(4, summonSlot1Action.LastPressureScreenMaxIntercepts);
+            Assert.AreEqual(0, energyLadder.AvailableTier);
+            Assert.AreEqual(1, energyLadder.ChargingTier);
+            Assert.AreEqual(0f, energyLadder.CurrentTierEnergy, 0.001f);
+            Assert.Greater(summonSlot1Action.ActiveCueCount, 0);
+            Assert.Greater(summonSlot1Action.ActiveSummonActorCount, 0);
+            Assert.GreaterOrEqual(summonSlot1Action.ActiveProjectileCount, 2);
+            Assert.AreEqual(
+                4,
+                summonSlot1Action.ActivePressureScreenRemainingIntercepts,
+                "SummonSlot1 LV2 should open a real mid-tier projectile screen before the player waits for LV3.");
+            Assert.IsTrue(
+                laneSpace.IsPastForwardBoundary(summonSlot1Action.LastSummonActorPosition),
+                "SummonSlot1 LV2 still belongs to the frontline exchange beyond the player boundary.");
             yield return null;
         }
 
