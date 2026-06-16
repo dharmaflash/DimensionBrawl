@@ -23,7 +23,7 @@ namespace DimensionBrawl.Presentation
         [Header("Display")]
         [SerializeField] private bool showHud = true;
         [SerializeField, Min(1f)] private float width = 430f;
-        [SerializeField, Min(1f)] private float height = 230f;
+        [SerializeField, Min(1f)] private float height = 280f;
         [SerializeField, Min(0f)] private float margin = 18f;
 
         private GUIStyle labelStyle;
@@ -64,10 +64,12 @@ namespace DimensionBrawl.Presentation
             GUILayout.BeginArea(new Rect(margin, margin, width, height), boxStyle);
             GUILayout.Label("Boss Barrage Lane Review", labelStyle);
             GUILayout.Label(ResolveHealthLine(), labelStyle);
+            GUILayout.Label(ResolvePhaseLine(), labelStyle);
             GUILayout.Label(ResolveEnergyLine(), labelStyle);
             GUILayout.Label(ResolveRiskLine(), labelStyle);
             GUILayout.Label(ResolveBossBarrageLine(), labelStyle);
             GUILayout.Label(ResolveActionLine(), labelStyle);
+            GUILayout.Label(ResolveActionHintLine(), labelStyle);
             GUILayout.Label(ResolveSummonExchangeLine(), labelStyle);
             GUILayout.Label(ResolveObjectiveLine(), labelStyle);
             GUILayout.EndArea();
@@ -87,6 +89,16 @@ namespace DimensionBrawl.Presentation
             return $"{playerLine}   {threatLine}   {bossLine}";
         }
 
+        private string ResolvePhaseLine()
+        {
+            if (pocketReviewOwner == null)
+            {
+                return "Phase -";
+            }
+
+            return $"Phase {pocketReviewOwner.CurrentPhase}";
+        }
+
         private string ResolveEnergyLine()
         {
             if (energyLadder == null)
@@ -94,15 +106,22 @@ namespace DimensionBrawl.Presentation
                 return "EN -";
             }
 
-            string ready = energyLadder.CanSpend ? $"READY LV{energyLadder.AvailableTier}" : "charging";
-            return $"EN LV{energyLadder.ChargingTier} {energyLadder.CurrentTierFillRatio * 100f:0}%   {ready}";
+            string ready = energyLadder.CanSpend
+                ? $"READY LV{energyLadder.AvailableTier}"
+                : "not ready";
+            return $"EN next LV{energyLadder.ChargingTier} {energyLadder.CurrentTierFillRatio * 100f:0}%   {ready}";
         }
 
         private string ResolveRiskLine()
         {
-            float risk = laneSpace != null && player != null ? laneSpace.EvaluateForwardRisk01(player.position) : 0f;
+            float risk = energyLadder != null
+                ? energyLadder.CurrentForwardRisk01
+                : laneSpace != null && player != null
+                    ? laneSpace.EvaluateForwardRisk01(player.position)
+                    : 0f;
             float gain = energyLadder != null ? energyLadder.CurrentGainMultiplier : 0f;
-            return $"Forward Risk {risk * 100f:0}%   EN Gain x{gain:0.00}";
+            string band = energyLadder != null ? ResolveRiskBandLabel(energyLadder.CurrentRiskBand) : "BackSafety";
+            return $"Risk {band} {risk * 100f:0}%   EN Gain x{gain:0.00}";
         }
 
         private string ResolveBossBarrageLine()
@@ -154,11 +173,26 @@ namespace DimensionBrawl.Presentation
                 + ResolveFollowupLine();
         }
 
+        private string ResolveActionHintLine()
+        {
+            if (skill1Action != null && skill1Action.ShowUseBlockedHint && !string.IsNullOrWhiteSpace(skill1Action.LastUseBlockedReason))
+            {
+                return $"Hint: {skill1Action.LastUseBlockedReason}";
+            }
+
+            if (summonSlot1Action != null && summonSlot1Action.ShowUseBlockedHint && !string.IsNullOrWhiteSpace(summonSlot1Action.LastUseBlockedReason))
+            {
+                return $"Hint: {summonSlot1Action.LastUseBlockedReason}";
+            }
+
+            return "Hint: -";
+        }
+
         private string ResolveFollowupLine()
         {
             if (pocketReviewOwner == null || !pocketReviewOwner.IsSummonPressureBreakActive)
             {
-                return string.Empty;
+                return ResolveLastPressureRewardLine();
             }
 
             string followup = pocketReviewOwner.IsSummonFollowupWindowActive
@@ -172,6 +206,18 @@ namespace DimensionBrawl.Presentation
             return pocketReviewOwner.UsedSkill1DuringSummonFollowup
                 ? $"{followup} Skill1 fired"
                 : $"{followup} EN pulse";
+        }
+
+        private string ResolveLastPressureRewardLine()
+        {
+            if (pocketReviewOwner == null || pocketReviewOwner.LastSummonPressureBreakTier <= 0)
+            {
+                return string.Empty;
+            }
+
+            return $" last break LV{pocketReviewOwner.LastSummonPressureBreakTier}"
+                + $" {pocketReviewOwner.LastSummonPressureBreakDuration:0.0}s"
+                + $" pulse {pocketReviewOwner.SummonFollowupEnergyPulse:0}";
         }
 
         private string ResolveObjectiveLine()
@@ -205,6 +251,16 @@ namespace DimensionBrawl.Presentation
             {
                 padding = new RectOffset(14, 14, 12, 12),
                 normal = { textColor = Color.white }
+            };
+        }
+
+        private static string ResolveRiskBandLabel(SummonEnergyRiskBand riskBand)
+        {
+            return riskBand switch
+            {
+                SummonEnergyRiskBand.ForwardRisk => "ForwardRisk",
+                SummonEnergyRiskBand.MidCharge => "MidCharge",
+                _ => "BackSafety"
             };
         }
     }

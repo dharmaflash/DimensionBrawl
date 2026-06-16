@@ -49,6 +49,32 @@ The current data and research support the following authoring rules:
 - `STAGE_REWARD_GROWTH_REFERENCE_RESEARCH.md` proposes the first stage set: `S1-1 Break Gate`, `S1-2 Backline Signal`, `S1-3 Tank Rescue`, `S1-4 Heal Pocket`, and `S1-5 Boss Stand`.
 - `ARPG_REFERENCE_RESEARCH.md` supports small named camera/pressure presets, readable target priority, 3-5 minute run rhythm, pressure relief, and boss-phase handoff grammar.
 - Existing `CombatEnemyRoleProfile` assets already cover the run segments needed for first-pass stage composition.
+- `C:/Ark/SubcultureGameData/games/arknights/notes/route-topology-pressure-2026-06-14.md` and `pressure-curves-2026-06-14.md` provide usable pressure-shape references for burst/readability sequencing.
+
+Quantitative guidance for lane shaping:
+
+- route weighted pressure median/p90/max: `22 / 58 / 600.85`
+- stage weighted pressure median/p90/max: `654.4 / 1437.5 / 5209.9`
+- 15-second peak pressure share median/p90: `28.98 / 45.49`
+- 15-second top-3 pressure share median/p90: `66.36 / 85.9`
+- dominant endpoint pair pressure share median/p90: `39.05 / 63.8`
+- endpoint pair weighted pressure median/p90/max: `71 / 370.9 / 2547.05`
+
+Design translation for this project:
+
+- Keep runs readable if they contain one designed burst then relief by default; avoid flat pressure for the first two review routes.
+- Avoid 2+ consecutive dominant-lane pockets by default; if one route pocket is intentionally dominant, separate with relief or role-switch pocket.
+- When forward-risk zones are the key decision point, annotate those pockets with stronger lane differentiation and stronger follow-up timing risk.
+- For backline pockets, intentionally lower immediate threat density but preserve a clear read of how fast enemies can re-enter pressure.
+
+## Arknights-Style Pressure Gates (Design-only)
+
+These are design-side checks only for review routes and are not runtime formulas:
+
+- `PressureBurstIndex`: at least one high-intensity pocket per stage route before end-state.
+- `ReliefSpacingTarget`: relief within 1–2 active pressure pockets in early routes.
+- `RouteBurdenConcentration`: dominant lane share should be high enough to read, but not so high that only one path is viable.
+- `ForwardBackRiskDifferential`: forward pocket reads should feel sharper/shorter than backline pockets to keep summon timing meaningful.
 
 ## Stage Template Types
 

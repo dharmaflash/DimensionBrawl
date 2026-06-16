@@ -7,6 +7,16 @@ namespace DimensionBrawl.Test
 {
     public sealed class BossBarragePocketReviewOwner : MonoBehaviour
     {
+        public enum ReviewPhase
+        {
+            ThreatDefense,
+            SummonBlock,
+            SummonFollowup,
+            PressureBreak,
+            Cleared,
+            Failed
+        }
+
         private enum PocketState
         {
             Running,
@@ -32,6 +42,12 @@ namespace DimensionBrawl.Test
         [SerializeField, Min(0f)] private float summonPressureBreakReliefSeconds = 2.4f;
         [SerializeField, Min(0f)] private float summonFollowupWindowSeconds = 1.4f;
         [SerializeField, Min(0f)] private float summonFollowupEnergyPulse = 100f;
+        [SerializeField, Min(0f)] private float summonPressureBreakTierTwoBonusSeconds = 0.35f;
+        [SerializeField, Min(0f)] private float summonPressureBreakTierThreeBonusSeconds = 0.7f;
+        [SerializeField, Min(0f)] private float summonFollowupWindowTierTwoBonusSeconds = 0.2f;
+        [SerializeField, Min(0f)] private float summonFollowupWindowTierThreeBonusSeconds = 0.45f;
+        [SerializeField, Min(0f)] private float summonFollowupEnergyPulseTierTwo = 155f;
+        [SerializeField, Min(0f)] private float summonFollowupEnergyPulseTierThree = 200f;
 
         [Header("Follow-up Result")]
         [SerializeField] private bool requireSkill1FollowupHitToClear = true;
@@ -63,6 +79,10 @@ namespace DimensionBrawl.Test
         private int highestSummonPressureTier;
         private int highestSummonFollowupSkillTier;
         private int highestSkill1FollowupHitTier;
+        private int lastSummonPressureBreakTier;
+        private float lastSummonPressureBreakDuration;
+        private float lastSummonFollowupWindowDuration;
+        private float lastGrantedSummonFollowupEnergyPulse;
         private CombatHealth subscribedBossHealth;
         private bool followupMissedNotified;
 
@@ -87,7 +107,9 @@ namespace DimensionBrawl.Test
         public float PressureReliefRemainingSeconds => pressurePacing.CloseThreatReliefRemainingSeconds;
         public float SummonPressureBreakRemainingSeconds => pressurePacing.SummonPressureBreakRemainingSeconds;
         public float SummonFollowupWindowRemainingSeconds => pressurePacing.SummonFollowupWindowRemainingSeconds;
-        public float SummonFollowupEnergyPulse => summonFollowupEnergyPulse;
+        public float SummonFollowupEnergyPulse => lastGrantedSummonFollowupEnergyPulse > 0f
+            ? lastGrantedSummonFollowupEnergyPulse
+            : summonFollowupEnergyPulse;
         public bool RequireSkill1FollowupHitToClear => requireSkill1FollowupHitToClear;
         public int PressureBlocksAfterCloseThreatDefeated => CountPressureBlocksAfterCloseThreatDefeated();
         public int HighestSkillTier => highestSkillTier;
@@ -96,6 +118,24 @@ namespace DimensionBrawl.Test
         public int HighestSummonFollowupSkillTier => highestSummonFollowupSkillTier;
         public int HighestSkill1FollowupHitTier => highestSkill1FollowupHitTier;
         public float Skill1FollowupDamage => skill1FollowupDamage;
+        public int LastSummonPressureBreakTier => lastSummonPressureBreakTier;
+        public float LastSummonPressureBreakDuration => lastSummonPressureBreakDuration;
+        public float LastSummonFollowupWindowDuration => lastSummonFollowupWindowDuration;
+        public ReviewPhase CurrentPhase
+        {
+            get
+            {
+                return state switch
+                {
+                    PocketState.Cleared => ReviewPhase.Cleared,
+                    PocketState.Failed => ReviewPhase.Failed,
+                    _ when pressurePacing.IsSummonPressureBreakActive && pressurePacing.IsSummonFollowupWindowActive => ReviewPhase.SummonFollowup,
+                    _ when pressurePacing.IsSummonPressureBreakActive => ReviewPhase.PressureBreak,
+                    _ when closeThreatDefeated => ReviewPhase.SummonBlock,
+                    _ => ReviewPhase.ThreatDefense
+                };
+            }
+        }
         public string ObjectiveCue
         {
             get
@@ -113,7 +153,7 @@ namespace DimensionBrawl.Test
                     }
 
                     return pressurePacing.IsSummonFollowupWindowActive
-                        ? "Use Skill1 during summon follow-up"
+                        ? ResolveFollowupReadyCue()
                         : requireSkill1FollowupHitToClear
                             ? "Follow-up missed; boss pressure returning"
                             : "Boss pressure is broken briefly";
@@ -124,11 +164,20 @@ namespace DimensionBrawl.Test
                     && requireSkill1FollowupHitToClear
                     && !skill1FollowupHitConfirmed)
                 {
-                    return "Follow-up missed; block boss fire again";
+                    return energyLadder != null && !energyLadder.CanSpend
+                        ? "Regain EN, then block boss fire again"
+                        : "Follow-up missed; block boss fire again";
                 }
 
-                return closeThreatDefeated
-                    ? "Block boss fire with SummonSlot1"
+                if (closeThreatDefeated)
+                {
+                    return energyLadder != null && !energyLadder.CanSpend
+                        ? "Advance for EN and block boss fire with SummonSlot1"
+                        : "Block boss fire with SummonSlot1";
+                }
+
+                return energyLadder != null && !energyLadder.CanSpend
+                    ? "Advance for EN, then defeat close threat"
                     : "Defeat close threat and prepare SummonSlot1";
             }
         }
@@ -177,6 +226,10 @@ namespace DimensionBrawl.Test
             highestSummonPressureTier = 0;
             highestSummonFollowupSkillTier = 0;
             highestSkill1FollowupHitTier = 0;
+            lastSummonPressureBreakTier = 0;
+            lastSummonPressureBreakDuration = 0f;
+            lastSummonFollowupWindowDuration = 0f;
+            lastGrantedSummonFollowupEnergyPulse = 0f;
             SetBarrageEnabled(true);
             SetEnergyGainEnabled(true);
             SetMarkers();
@@ -335,18 +388,25 @@ namespace DimensionBrawl.Test
 
         private void StartSummonPressureBreak(int pressureTier)
         {
+            int resolvedTier = Mathf.Clamp(pressureTier, 1, 3);
+            float pressureBreakSeconds = ResolveSummonPressureBreakSeconds(resolvedTier);
+            float followupWindowSeconds = ResolveSummonFollowupWindowSeconds(resolvedTier);
+            float followupEnergyPulse = ResolveSummonFollowupEnergyPulse(resolvedTier);
             skillUsesAtSummonBreakStart = GetSkillUseCount();
             grantedSummonFollowupEnergy = false;
             usedSkill1DuringSummonFollowup = false;
             skill1FollowupHitConfirmed = false;
             skill1FollowupDamage = 0f;
             followupMissedNotified = false;
+            lastSummonPressureBreakTier = resolvedTier;
+            lastSummonPressureBreakDuration = pressureBreakSeconds;
+            lastSummonFollowupWindowDuration = followupWindowSeconds;
             pressurePacing.StartSummonPressureBreak(
-                summonPressureBreakReliefSeconds,
-                summonFollowupWindowSeconds);
-            GrantSummonFollowupEnergyPulse();
+                pressureBreakSeconds,
+                followupWindowSeconds);
+            GrantSummonFollowupEnergyPulse(followupEnergyPulse);
             ApplyRunningBarragePacing();
-            SummonFollowupWindowOpened?.Invoke(Mathf.Max(1, pressureTier));
+            SummonFollowupWindowOpened?.Invoke(resolvedTier);
         }
 
         private void UpdatePressurePacing(float deltaTime)
@@ -405,17 +465,18 @@ namespace DimensionBrawl.Test
             SetBarrageEnabled(!pressurePacing.ShouldPauseBarrage);
         }
 
-        private void GrantSummonFollowupEnergyPulse()
+        private void GrantSummonFollowupEnergyPulse(float energyAmount)
         {
             if (grantedSummonFollowupEnergy
                 || energyLadder == null
-                || summonFollowupEnergyPulse <= 0f)
+                || energyAmount <= 0f)
             {
                 return;
             }
 
-            energyLadder.GrantCurrentTierEnergy(summonFollowupEnergyPulse);
+            energyLadder.GrantCurrentTierEnergy(energyAmount);
             grantedSummonFollowupEnergy = true;
+            lastGrantedSummonFollowupEnergyPulse = energyAmount;
         }
 
         private int GetSkillUseCount()
@@ -426,6 +487,46 @@ namespace DimensionBrawl.Test
         private int GetSummonUseCount()
         {
             return summonSlot1Action != null ? summonSlot1Action.TotalUseCount : 0;
+        }
+
+        private string ResolveFollowupReadyCue()
+        {
+            if (energyLadder == null || !energyLadder.CanSpend)
+            {
+                return "Hold lane and take EN for the follow-up";
+            }
+
+            return $"Use Skill1 LV{energyLadder.AvailableTier} during summon follow-up";
+        }
+
+        private float ResolveSummonPressureBreakSeconds(int tier)
+        {
+            return tier switch
+            {
+                3 => summonPressureBreakReliefSeconds + summonPressureBreakTierThreeBonusSeconds,
+                2 => summonPressureBreakReliefSeconds + summonPressureBreakTierTwoBonusSeconds,
+                _ => summonPressureBreakReliefSeconds
+            };
+        }
+
+        private float ResolveSummonFollowupWindowSeconds(int tier)
+        {
+            return tier switch
+            {
+                3 => summonFollowupWindowSeconds + summonFollowupWindowTierThreeBonusSeconds,
+                2 => summonFollowupWindowSeconds + summonFollowupWindowTierTwoBonusSeconds,
+                _ => summonFollowupWindowSeconds
+            };
+        }
+
+        private float ResolveSummonFollowupEnergyPulse(int tier)
+        {
+            return tier switch
+            {
+                3 => summonFollowupEnergyPulseTierThree,
+                2 => summonFollowupEnergyPulseTierTwo,
+                _ => summonFollowupEnergyPulse
+            };
         }
 
         private void SubscribeBossHealth()

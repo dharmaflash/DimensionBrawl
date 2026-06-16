@@ -39,6 +39,8 @@ namespace DimensionBrawl.Player
         [SerializeField] private Transform projectileRoot;
         [SerializeField] private DamageTeam sourceTeam = DamageTeam.Player;
         [SerializeField, Min(0)] private int prewarmCount = 4;
+        [Header("Failure Feedback")]
+        [SerializeField, Min(0f)] private float useBlockedHintSeconds = 0.75f;
 
         [Header("Tier Tuning")]
         [SerializeField] private SkillTierSettings[] tierSettings =
@@ -88,13 +90,18 @@ namespace DimensionBrawl.Player
         private int lastSpentTier;
         private int lastFiredProjectileCount;
         private int totalUseCount;
+        private float blockedHintTimer;
+        private string lastBlockedReason;
 
         public int LastSpentTier => lastSpentTier;
         public int LastFiredProjectileCount => lastFiredProjectileCount;
         public int TotalUseCount => totalUseCount;
         public int ActiveProjectileCount => CountActiveProjectiles();
+        public bool ShowUseBlockedHint => blockedHintTimer > 0f;
+        public string LastUseBlockedReason => lastBlockedReason;
 
         public event Action<int> Skill1Used;
+        public event Action Skill1UseBlocked;
 
         private void Awake()
         {
@@ -128,6 +135,7 @@ namespace DimensionBrawl.Player
 
         private void Update()
         {
+            TickFeedback(Time.deltaTime);
             if (ReadSkillPressed())
             {
                 TryUseSkill1();
@@ -156,16 +164,46 @@ namespace DimensionBrawl.Player
 
         public bool TryUseSkill1()
         {
-            if (energyLadder == null || !energyLadder.TrySpend(out int spentTier))
+            if (energyLadder == null)
             {
+                SetUseBlocked("Energy system missing");
+                return false;
+            }
+
+            if (!energyLadder.TrySpend(out int spentTier))
+            {
+                SetUseBlocked("EN not ready");
                 return false;
             }
 
             lastSpentTier = Mathf.Clamp(spentTier, 1, 3);
             totalUseCount++;
+            blockedHintTimer = 0f;
+            lastBlockedReason = null;
             FireTier(lastSpentTier);
             Skill1Used?.Invoke(lastSpentTier);
             return true;
+        }
+
+        private void SetUseBlocked(string reason)
+        {
+            lastBlockedReason = string.IsNullOrWhiteSpace(reason) ? "Unavailable" : reason;
+            blockedHintTimer = useBlockedHintSeconds;
+            Skill1UseBlocked?.Invoke();
+        }
+
+        private void TickFeedback(float deltaTime)
+        {
+            if (blockedHintTimer <= 0f)
+            {
+                return;
+            }
+
+            blockedHintTimer = Mathf.Max(0f, blockedHintTimer - deltaTime);
+            if (blockedHintTimer <= 0f)
+            {
+                lastBlockedReason = null;
+            }
         }
 
         private void FireTier(int tier)

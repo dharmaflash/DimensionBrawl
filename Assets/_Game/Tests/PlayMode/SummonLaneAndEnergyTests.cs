@@ -98,6 +98,22 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void EnergyRewardPulseCarriesOverflowIntoHigherTierReadiness()
+        {
+            GameObject playerObject = new GameObject("Player");
+            SummonEnergyLadder energy = playerObject.AddComponent<SummonEnergyLadder>();
+
+            energy.GrantCurrentTierEnergy(200f);
+
+            Assert.IsTrue(energy.CanSpend, "A large EN pulse should still leave a spendable tier available.");
+            Assert.AreEqual(2, energy.AvailableTier, "Overflow EN should carry through LV1 and open LV2 readiness.");
+            Assert.AreEqual(3, energy.ChargingTier, "After opening LV2, the ladder should keep charging toward LV3.");
+            Assert.AreEqual(0f, energy.CurrentTierEnergy, 0.001f);
+
+            Object.DestroyImmediate(playerObject);
+        }
+
+        [Test]
         public void BossBarragePatternTightensProjectileSpreadNearForwardBoundary()
         {
             BossBarragePatternProfile pattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();

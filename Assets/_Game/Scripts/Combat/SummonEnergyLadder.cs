@@ -4,6 +4,13 @@ using UnityEngine;
 
 namespace DimensionBrawl.Combat
 {
+    public enum SummonEnergyRiskBand
+    {
+        BackSafety,
+        MidCharge,
+        ForwardRisk
+    }
+
     public sealed class SummonEnergyLadder : MonoBehaviour
     {
         private const int MaxTier = 3;
@@ -17,6 +24,12 @@ namespace DimensionBrawl.Combat
         [SerializeField, Min(1f)] private float levelTwoEnergy = 100f;
         [SerializeField, Min(1f)] private float levelThreeEnergy = 100f;
 
+        [Header("Risk Bands")]
+        [Tooltip("Forward-risk normalized boundary where MidCharge transitions into ForwardRisk. Higher = less likely to reach ForwardRisk.")]
+        [SerializeField, Range(0f, 1f)] private float forwardRiskStartForwardRisk01 = 2f / 3f;
+        [Tooltip("Forward-risk normalized boundary where BackSafety transitions into MidCharge.")]
+        [SerializeField, Range(0f, 1f)] private float backSafetyMaxForwardRisk01 = 1f / 3f;
+
         [Header("Gain")]
         [Tooltip("At the middle risk band this fills LV1 in about eight seconds with the default 100 energy target.")]
         [SerializeField, Min(0f)] private float baseEnergyPerSecond = 12.5f;
@@ -27,6 +40,7 @@ namespace DimensionBrawl.Combat
         private int chargingTier = 1;
         private int availableTier;
         private float currentTierEnergy;
+        private float currentForwardRisk01 = 0.5f;
         private float currentGainMultiplier = 1f;
 
         public event Action EnergyChanged;
@@ -38,9 +52,21 @@ namespace DimensionBrawl.Combat
         public float CurrentTierEnergy => currentTierEnergy;
         public float CurrentTierTarget => GetTierTarget(chargingTier);
         public float CurrentTierFillRatio => CurrentTierTarget > 0f ? Mathf.Clamp01(currentTierEnergy / CurrentTierTarget) : 0f;
+        public float CurrentForwardRisk01 => currentForwardRisk01;
         public float CurrentGainMultiplier => currentGainMultiplier;
+        public SummonEnergyRiskBand CurrentRiskBand => EvaluateRiskBand(currentForwardRisk01);
         public bool CanSpend => availableTier > 0;
         public bool IsCapped => availableTier >= MaxTier && chargingTier >= MaxTier && CurrentTierFillRatio >= 1f;
+
+        private void OnValidate()
+        {
+            backSafetyMaxForwardRisk01 = Mathf.Clamp01(backSafetyMaxForwardRisk01);
+            forwardRiskStartForwardRisk01 = Mathf.Clamp(forwardRiskStartForwardRisk01, 0f, 1f);
+            if (forwardRiskStartForwardRisk01 < backSafetyMaxForwardRisk01)
+            {
+                forwardRiskStartForwardRisk01 = backSafetyMaxForwardRisk01;
+            }
+        }
 
         public void ConfigureReferences(SummonLaneSpace newLaneSpace, Transform newTrackedPlayer)
         {
@@ -76,6 +102,8 @@ namespace DimensionBrawl.Combat
             chargingTier = 1;
             availableTier = 0;
             currentTierEnergy = 0f;
+            currentForwardRisk01 = Mathf.Clamp01(fallbackForwardRisk01);
+            currentGainMultiplier = Mathf.Max(0f, forwardRiskGainCurve.Evaluate(currentForwardRisk01));
             EnergyChanged?.Invoke();
         }
 
@@ -102,20 +130,30 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
-            currentTierEnergy += energyAmount;
-            float target = CurrentTierTarget;
-
-            if (currentTierEnergy >= target)
+            float remainingEnergy = energyAmount;
+            while (remainingEnergy > 0f && !IsCapped)
             {
+                float target = CurrentTierTarget;
+                float missingEnergy = Mathf.Max(0f, target - currentTierEnergy);
+                if (remainingEnergy < missingEnergy)
+                {
+                    currentTierEnergy += remainingEnergy;
+                    remainingEnergy = 0f;
+                    break;
+                }
+
                 currentTierEnergy = target;
+                remainingEnergy -= missingEnergy;
                 availableTier = chargingTier;
                 TierAvailable?.Invoke(availableTier);
 
-                if (chargingTier < MaxTier)
+                if (chargingTier >= MaxTier)
                 {
-                    chargingTier++;
-                    currentTierEnergy = 0f;
+                    break;
                 }
+
+                chargingTier++;
+                currentTierEnergy = 0f;
             }
 
             EnergyChanged?.Invoke();
@@ -128,13 +166,28 @@ namespace DimensionBrawl.Combat
 
         private float EvaluateGainMultiplier()
         {
-            float forwardRisk = fallbackForwardRisk01;
+            currentForwardRisk01 = Mathf.Clamp01(fallbackForwardRisk01);
             if (laneSpace != null && trackedPlayer != null)
             {
-                forwardRisk = laneSpace.EvaluateForwardRisk01(trackedPlayer.position);
+                currentForwardRisk01 = laneSpace.EvaluateForwardRisk01(trackedPlayer.position);
             }
 
-            return Mathf.Max(0f, forwardRiskGainCurve.Evaluate(Mathf.Clamp01(forwardRisk)));
+            return Mathf.Max(0f, forwardRiskGainCurve.Evaluate(currentForwardRisk01));
+        }
+
+        private SummonEnergyRiskBand EvaluateRiskBand(float forwardRisk01)
+        {
+            if (forwardRisk01 >= forwardRiskStartForwardRisk01)
+            {
+                return SummonEnergyRiskBand.ForwardRisk;
+            }
+
+            if (forwardRisk01 >= backSafetyMaxForwardRisk01)
+            {
+                return SummonEnergyRiskBand.MidCharge;
+            }
+
+            return SummonEnergyRiskBand.BackSafety;
         }
 
         private float GetTierTarget(int tier)

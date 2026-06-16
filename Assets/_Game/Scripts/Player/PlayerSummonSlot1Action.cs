@@ -64,6 +64,8 @@ namespace DimensionBrawl.Player
         [SerializeField] private DamageTeam sourceTeam = DamageTeam.AllySummon;
         [SerializeField, Min(0)] private int prewarmCount = 6;
         [SerializeField, Min(0)] private int actorPrewarmCount = 2;
+        [Header("Failure Feedback")]
+        [SerializeField, Min(0f)] private float useBlockedHintSeconds = 0.75f;
 
         [Header("Tier Tuning")]
         [SerializeField] private SummonTierSettings[] tierSettings = CreateDefaultTierSettings();
@@ -85,6 +87,8 @@ namespace DimensionBrawl.Player
         private int totalUseCount;
         private Vector3 lastEntryPosition;
         private Vector3 lastSummonActorPosition;
+        private float blockedHintTimer;
+        private string lastBlockedReason;
 
         public int LastSpentTier => lastSpentTier;
         public int LastFiredProjectileCount => lastFiredProjectileCount;
@@ -100,9 +104,12 @@ namespace DimensionBrawl.Player
         public int ActiveSummonActorCount => CountActiveSummonActors();
         public int ActivePressureScreenCount => CountActivePressureScreens();
         public int ActivePressureScreenRemainingIntercepts => CountActivePressureScreenRemainingIntercepts();
+        public bool ShowUseBlockedHint => blockedHintTimer > 0f;
+        public string LastUseBlockedReason => lastBlockedReason;
 
         public event Action<int> SummonSlot1Used;
         public event Action<int> SummonPressureBlocked;
+        public event Action SummonSlot1UseBlocked;
 
         private void Awake()
         {
@@ -139,6 +146,7 @@ namespace DimensionBrawl.Player
 
         private void Update()
         {
+            TickFeedback(Time.deltaTime);
             if (ReadSummonPressed())
             {
                 TryUseSummonSlot1();
@@ -180,16 +188,46 @@ namespace DimensionBrawl.Player
 
         public bool TryUseSummonSlot1()
         {
-            if (energyLadder == null || !energyLadder.TrySpend(out int spentTier))
+            if (energyLadder == null)
             {
+                SetUseBlocked("Energy system missing");
+                return false;
+            }
+
+            if (!energyLadder.TrySpend(out int spentTier))
+            {
+                SetUseBlocked("EN not ready");
                 return false;
             }
 
             lastSpentTier = Mathf.Clamp(spentTier, 1, 3);
             totalUseCount++;
+            blockedHintTimer = 0f;
+            lastBlockedReason = null;
             FireTier(lastSpentTier);
             SummonSlot1Used?.Invoke(lastSpentTier);
             return true;
+        }
+
+        private void SetUseBlocked(string reason)
+        {
+            lastBlockedReason = string.IsNullOrWhiteSpace(reason) ? "Unavailable" : reason;
+            blockedHintTimer = useBlockedHintSeconds;
+            SummonSlot1UseBlocked?.Invoke();
+        }
+
+        private void TickFeedback(float deltaTime)
+        {
+            if (blockedHintTimer <= 0f)
+            {
+                return;
+            }
+
+            blockedHintTimer = Mathf.Max(0f, blockedHintTimer - deltaTime);
+            if (blockedHintTimer <= 0f)
+            {
+                lastBlockedReason = null;
+            }
         }
 
         private void FireTier(int tier)

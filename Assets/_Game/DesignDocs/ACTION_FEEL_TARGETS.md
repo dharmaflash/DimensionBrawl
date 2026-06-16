@@ -98,7 +98,7 @@ Targets:
 - Using skill or summon energy should clearly reset the climb back to empty LV1 charging.
 - Boss projectile spacing should feel tighter near the forward boundary and looser near the backline.
 - Close monsters can punish passive backline play or force local-defense decisions, but they must not replace the far boss/summon standoff as the main structure.
-- Tuning should be data-driven through lane-space curves, zone profiles, or serialized pattern values.
+- Tuning should be data-driven through lane-space curves, zone profiles, or serialized pattern values. `SummonEnergyLadder` risk-band boundaries are now serialized and should be tuned here before changing code defaults.
 
 Do not accept:
 
@@ -121,7 +121,7 @@ Targets:
 - The summon should enter or act with clear target context.
 - The summon should prefer the far/frontline boss exchange over the player's temporary close-threat target unless a specific summon role says otherwise.
 - The summon should visibly change the boss-barrage exchange through damage, projectile blocking, pressure break, tanking, field control, heal/field, or another explicit role.
-- A successful summon pressure answer should open a short readable follow-up choice in the review pocket, such as a small EN pulse that lets the player immediately answer with `Skill1` and confirm the boss/proxy hit before the pocket can clear.
+- A successful summon pressure answer should open a short readable follow-up choice in the review pocket, such as a tier-aware EN pulse that lets the player immediately answer with `Skill1` and confirm the boss/proxy hit before the pocket can clear.
 - Defeating the local close threat should produce an in-world summon-block opportunity read and a short additive camera cue before the player solves boss pressure, so the loop does not depend only on HUD text.
 - The follow-up window, confirmed hit, and missed response should each have a small presentation read through authored camera/VFX cues, not only a HUD text change.
 - LV1/LV2/LV3 summon versions should read as the same summon concept at stronger tiers, not three unrelated features.
@@ -173,6 +173,37 @@ Do not accept:
 - Enemy pressure with no telegraph.
 - Damage numbers without physical or animation response.
 - Complex squads, boss phases, affixes, or reward loops before the first summon pocket works.
+
+## Quantitative Design Inputs (arknights / Ark Analysis)
+
+Use `/C:/Ark/SubcultureGameData/games/arknights/notes/` as a hard design reference for pressure pacing before making lane/route edits.
+
+Reference values are observational and should guide relative balancing, not be copied as hardcoded formulas:
+
+- Route pressure density (normalized):
+  - route weighted pressure median / p90 / max = `22 / 58 / 600.85`
+  - stage weighted pressure median / p90 / max = `654.4 / 1437.5 / 5209.9`
+- 15-second pressure distribution:
+  - all window weighted pressure median / p90 / max = `64.3 / 202.7 / 2328`
+  - peak 15-second pressure share median / p90 / max = `28.98 / 45.49 / 95.54`
+  - top-3 window pressure share median / p90 / max = `66.36 / 85.9 / 100`
+- Route-pressure concentration:
+  - dominant route share in top windows is common and should read as intentional burst points, not random spam.
+- Endpoint concentration:
+  - median dominant endpoint pair share = `39.05%`, p90 = `63.8%` (one entrance/goal pair can carry most pressure).
+  - endpoint pair pressure concentration median / p90 / max pressure = `71 / 370.9 / 2547.05`.
+
+When building the next pocket/segment pass, record and keep:
+
+1. `targetPeakWindowSharePct` (how much pressure is packed into each burst window),
+2. `targetTop3WindowSharePct` (how concentrated or spread the pressure is),
+3. `routeDominanceShare` (whether one lane repeatedly owns pressure in a pocket),
+4. `entryExitLaneBias` (whether forward-risk and backline lanes stay asymmetric in a readable way),
+5. `timeToNextReliefWindow` (distance between high-pressure spikes),
+6. `riskDifferential` (forward risk spacing vs backline risk spacing remains clearly visible).
+
+The first review pocket does not need full parity with Arknights scale. It should just preserve the *shape*:
+clear burst + readable recovery spacing + explicit overpressure lane burden.
 
 ## Data Documents To Use Actively
 

@@ -1149,6 +1149,126 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator PocketLv3SummonBlockCarriesOverflowIntoLv2FollowupChoice()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
+            SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
+            PlayerSummonSlot1Action summonSlot1Action =
+                RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            ActionCameraCueDriver cameraCueDriver =
+                RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
+            BossBarragePocketVfxCueBridge pocketVfxCueBridge =
+                RequireComponent<BossBarragePocketVfxCueBridge>(
+                    RequireRoot(PocketOwnerRootName),
+                    "pocket VFX cue bridge");
+            GameObject bossRoot = RequireRoot(BossRootName);
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
+            Collider bossHitCollider = RequireCombatHitCollider(bossRoot, bossHealth, "boss proxy");
+            CombatHealth closeThreatHealth =
+                RequireComponent<CombatHealth>(RequireRoot(CloseThreatRootName), "close threat health");
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+
+            FillEnergyToTier(energyLadder, 3);
+            Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
+            closeThreatHealth.TryApplyDamage(new DamageInfo(
+                playerHealth,
+                DamageTeam.Player,
+                closeThreatHealth.MaxHealth + 10f,
+                closeThreatHealth.transform.position,
+                Vector3.forward,
+                0f));
+
+            yield return null;
+
+            SummonPressureScreen activeScreen = RequireActiveAllyPressureScreen();
+            Assert.IsTrue(emitter.BeginWindup());
+            Assert.Greater(emitter.FirePendingWave(), 0);
+            BossBarrageProjectile bossProjectile = RequireActiveBossProjectile();
+            Assert.IsTrue(activeScreen.TryIntercept(bossProjectile));
+
+            int followupWindowCueCountBefore = cameraCueDriver.SummonFollowupWindowCueRequestCount;
+            int followupHitCueCountBefore = cameraCueDriver.SummonFollowupHitCueRequestCount;
+            int followupWindowVfxCueCountBefore = pocketVfxCueBridge.FollowupWindowCueRequestCount;
+            int followupHitVfxCueCountBefore = pocketVfxCueBridge.FollowupHitCueRequestCount;
+            pocketOwner.Tick(0f);
+
+            Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.SummonFollowup, pocketOwner.CurrentPhase);
+            Assert.IsTrue(pocketOwner.IsRunning);
+            Assert.IsTrue(pocketOwner.BlockedBossPressureWithSummon);
+            Assert.AreEqual(3, pocketOwner.HighestSummonTier);
+            Assert.AreEqual(3, pocketOwner.HighestSummonPressureTier);
+            Assert.AreEqual(3, pocketOwner.LastSummonPressureBreakTier);
+            Assert.That(pocketOwner.LastSummonPressureBreakDuration, Is.EqualTo(3.1f).Within(0.001f));
+            Assert.That(pocketOwner.LastSummonFollowupWindowDuration, Is.EqualTo(1.85f).Within(0.001f));
+            Assert.That(pocketOwner.SummonFollowupEnergyPulse, Is.EqualTo(200f).Within(0.001f));
+            Assert.AreEqual(
+                followupWindowCueCountBefore + 1,
+                cameraCueDriver.SummonFollowupWindowCueRequestCount,
+                "A LV3 summon block should still open a readable follow-up camera cue.");
+            Assert.AreEqual(3, cameraCueDriver.LastSummonFollowupWindowTier);
+            Assert.AreEqual(
+                followupWindowVfxCueCountBefore + 1,
+                pocketVfxCueBridge.FollowupWindowCueRequestCount,
+                "A LV3 summon block should also open the matching in-world follow-up VFX cue.");
+            Assert.AreEqual(3, pocketVfxCueBridge.LastFollowupWindowTier);
+            Assert.IsTrue(energyLadder.CanSpend);
+            Assert.AreEqual(
+                2,
+                energyLadder.AvailableTier,
+                "A LV3 summon block should carry overflow EN far enough to reopen a LV2 follow-up choice.");
+            Assert.AreEqual(
+                3,
+                energyLadder.ChargingTier,
+                "After reopening LV2, the EN ladder should keep charging toward LV3 instead of discarding the overflow.");
+            Assert.That(
+                energyLadder.CurrentTierEnergy,
+                Is.InRange(0f, 5f),
+                "After reopening LV2, only a tiny amount of fresh recharge should appear before the player spends the follow-up.");
+
+            float bossHealthBeforeFollowup = bossHealth.CurrentHealth;
+            Assert.IsTrue(skill1Action.TryUseSkill1());
+            LaneActionProjectile followupProjectile = RequireActivePlayerSkillProjectile();
+            Assert.IsTrue(
+                followupProjectile.TryApplyImpact(bossHitCollider, followupProjectile.transform.position),
+                "The reopened LV2 Skill1 follow-up should still land on the authored boss receiver.");
+            pocketOwner.Tick(0f);
+
+            Assert.IsTrue(pocketOwner.UsedSkill1DuringSummonFollowup);
+            Assert.AreEqual(2, pocketOwner.HighestSummonFollowupSkillTier);
+            Assert.AreEqual(2, pocketOwner.HighestSkill1FollowupHitTier);
+            Assert.AreEqual(
+                followupHitCueCountBefore + 1,
+                cameraCueDriver.SummonFollowupHitCueRequestCount,
+                "The upgraded follow-up should still trigger the hit-confirm camera cue.");
+            Assert.AreEqual(2, cameraCueDriver.LastSummonFollowupHitTier);
+            Assert.AreEqual(
+                followupHitVfxCueCountBefore + 1,
+                pocketVfxCueBridge.FollowupHitCueRequestCount,
+                "The upgraded follow-up should still trigger the hit-confirm VFX cue.");
+            Assert.AreEqual(2, pocketVfxCueBridge.LastFollowupHitTier);
+            Assert.Less(bossHealth.CurrentHealth, bossHealthBeforeFollowup);
+
+            pocketOwner.Tick(1.84f);
+            Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.SummonFollowup, pocketOwner.CurrentPhase);
+            Assert.IsTrue(pocketOwner.IsSummonFollowupWindowActive);
+
+            pocketOwner.Tick(0.02f);
+            Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.PressureBreak, pocketOwner.CurrentPhase);
+            Assert.IsFalse(pocketOwner.IsSummonFollowupWindowActive);
+            Assert.IsTrue(pocketOwner.IsSummonPressureBreakActive);
+
+            pocketOwner.Tick(1.25f);
+            Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.Cleared, pocketOwner.CurrentPhase);
+            Assert.IsTrue(pocketOwner.IsCleared);
+            Assert.IsFalse(pocketOwner.IsSummonPressureBreakActive);
+        }
+
+        [UnityTest]
         public IEnumerator PocketFailureStopsEnergyGainAndBossPressure()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
