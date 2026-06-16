@@ -24,12 +24,14 @@ namespace DimensionBrawl.Combat
         private float activeRadius;
         private int maxIntercepts;
         private int interceptedProjectiles;
+        private int activeTier = 1;
         private bool active;
 
         public bool IsActive => active && gameObject.activeInHierarchy;
         public int InterceptedProjectiles => interceptedProjectiles;
         public int RemainingIntercepts => Mathf.Max(0, maxIntercepts - interceptedProjectiles);
         public int MaxIntercepts => maxIntercepts;
+        public int ActiveTier => activeTier;
         public float RemainingLifetimeSeconds => remainingLifetime;
         public float ActiveRadius => activeRadius > 0f ? activeRadius : defaultRadius;
         public DamageTeam OwnerTeam => ownerTeam;
@@ -51,6 +53,16 @@ namespace DimensionBrawl.Combat
             float radius,
             float lifetimeSeconds)
         {
+            Activate(newOwnerTeam, newMaxIntercepts, radius, lifetimeSeconds, 1);
+        }
+
+        public void Activate(
+            DamageTeam newOwnerTeam,
+            int newMaxIntercepts,
+            float radius,
+            float lifetimeSeconds,
+            int tier)
+        {
             EnsurePhysicsComponents();
             ownerTeam = newOwnerTeam;
             maxIntercepts = Mathf.Max(0, newMaxIntercepts);
@@ -58,6 +70,7 @@ namespace DimensionBrawl.Combat
             remainingLifetime = Mathf.Max(0.05f, lifetimeSeconds);
             overlapScanTimer = 0f;
             activeRadius = Mathf.Max(0.05f, radius);
+            activeTier = Mathf.Clamp(tier, 1, 3);
             active = maxIntercepts > 0;
 
             screenCollider.radius = activeRadius;

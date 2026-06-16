@@ -267,7 +267,8 @@ namespace DimensionBrawl.Player
                     sourceTeam,
                     settings.ScreenIntercepts,
                     settings.ScreenRadius,
-                    settings.ScreenLifetimeSeconds);
+                    settings.ScreenLifetimeSeconds,
+                    actor.ActiveTier);
             }
 
             lastSummonActorPosition = actor.transform.position;

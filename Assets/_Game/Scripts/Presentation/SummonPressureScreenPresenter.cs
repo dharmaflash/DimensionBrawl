@@ -13,6 +13,8 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private Transform visualRoot;
         [SerializeField] private Renderer[] screenRenderers = System.Array.Empty<Renderer>();
         [SerializeField] private Color activeColor = new Color(0.22f, 1f, 0.82f, 0.42f);
+        [SerializeField] private Color tierTwoColor = new Color(0.38f, 0.74f, 1f, 0.5f);
+        [SerializeField] private Color tierThreeColor = new Color(1f, 0.76f, 0.24f, 0.62f);
         [SerializeField] private Color interceptColor = new Color(0.92f, 1f, 1f, 0.88f);
         [SerializeField, Min(0f)] private float activationFlashSeconds = 0.12f;
         [SerializeField, Min(0f)] private float interceptFlashSeconds = 0.18f;
@@ -32,6 +34,7 @@ namespace DimensionBrawl.Presentation
         private float interceptPunchTimer;
         private float lastKnownRadius = 1.35f;
         private int interceptFlashCount;
+        private int lastObservedTier = 1;
         private bool showing;
         private bool subscribed;
 
@@ -39,6 +42,7 @@ namespace DimensionBrawl.Presentation
         public bool IsShowing => showing;
         public int RendererCount => screenRenderers != null ? screenRenderers.Length : 0;
         public int InterceptFlashCount => interceptFlashCount;
+        public int LastObservedTier => lastObservedTier;
 
         private void Awake()
         {
@@ -111,6 +115,7 @@ namespace DimensionBrawl.Presentation
             if (pressureScreen != null && pressureScreen.IsActive)
             {
                 lastKnownRadius = pressureScreen.ActiveRadius;
+                lastObservedTier = pressureScreen.ActiveTier;
                 SetShowing(true);
             }
             else if (lingerTimer <= 0f)
@@ -124,6 +129,7 @@ namespace DimensionBrawl.Presentation
         private void OnScreenActivated(SummonPressureScreen screen)
         {
             lastKnownRadius = screen.ActiveRadius;
+            lastObservedTier = screen.ActiveTier;
             flashTimer = Mathf.Max(flashTimer, activationFlashSeconds);
             lingerTimer = 0f;
             interceptPunchTimer = 0f;
@@ -134,6 +140,7 @@ namespace DimensionBrawl.Presentation
         private void OnScreenIntercepted(SummonPressureScreen screen, BossBarrageProjectile projectile)
         {
             lastKnownRadius = screen.ActiveRadius;
+            lastObservedTier = screen.ActiveTier;
             flashTimer = Mathf.Max(flashTimer, interceptFlashSeconds);
             lingerTimer = Mathf.Max(lingerTimer, finalHitLingerSeconds);
             interceptPunchTimer = Mathf.Max(interceptPunchTimer, interceptPunchSeconds);
@@ -172,7 +179,7 @@ namespace DimensionBrawl.Presentation
                     + interceptPunchLocalDirection * (interceptPunchDistance * punch);
             }
 
-            Color color = Color.Lerp(activeColor, interceptColor, flash);
+            Color color = Color.Lerp(ResolveTierColor(lastObservedTier), interceptColor, flash);
             if (pressureScreen == null || !pressureScreen.IsActive)
             {
                 float lingerAlpha = finalHitLingerSeconds > 0f ? Mathf.Clamp01(lingerTimer / finalHitLingerSeconds) : 0f;
@@ -180,6 +187,16 @@ namespace DimensionBrawl.Presentation
             }
 
             ApplyColor(color);
+        }
+
+        private Color ResolveTierColor(int tier)
+        {
+            return Mathf.Clamp(tier, 1, 3) switch
+            {
+                2 => tierTwoColor,
+                3 => tierThreeColor,
+                _ => activeColor
+            };
         }
 
         private float ResolveFlashWeight()

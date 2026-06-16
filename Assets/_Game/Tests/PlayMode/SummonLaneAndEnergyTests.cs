@@ -397,6 +397,7 @@ namespace DimensionBrawl.Tests
             alliedProjectile.Configure(null, DamageTeam.Player, 10f, Vector3.back, 0f, 1f, 0.3f);
 
             screen.Activate(DamageTeam.AllySummon, 1, 1.25f, 1f);
+            Assert.AreEqual(1, screen.ActiveTier);
             Assert.IsFalse(
                 screen.TryIntercept(alliedProjectile),
                 "Summon pressure screens should ignore player-side projectiles.");
@@ -479,9 +480,14 @@ namespace DimensionBrawl.Tests
             SummonPressureScreenPresenter presenter = screenObject.AddComponent<SummonPressureScreenPresenter>();
             presenter.ConfigurePresentation(screen, visualObject.transform, new[] { visualRenderer });
 
-            screen.Activate(DamageTeam.AllySummon, 1, 1.25f, 1f);
+            screen.Activate(DamageTeam.AllySummon, 1, 1.25f, 1f, 3);
             Assert.IsTrue(presenter.IsShowing);
             Assert.IsTrue(visualObject.activeSelf);
+            Assert.AreEqual(3, screen.ActiveTier);
+            Assert.AreEqual(
+                3,
+                presenter.LastObservedTier,
+                "The pressure-screen presenter should read the active summon tier so LV1-LV3 blocks are not HUD-only.");
             Vector3 visualLocalPositionBeforeIntercept = visualObject.transform.localPosition;
 
             GameObject enemyProjectileObject = new GameObject("EnemyProjectile");
