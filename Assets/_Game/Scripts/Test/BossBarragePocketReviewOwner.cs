@@ -16,6 +16,7 @@ namespace DimensionBrawl.Test
         [Header("Combatants")]
         [SerializeField] private CombatHealth playerHealth;
         [SerializeField] private CombatHealth closeThreatHealth;
+        [SerializeField] private SummonEnergyLadder energyLadder;
 
         [Header("Player Actions")]
         [SerializeField] private PlayerSkill1Action skill1Action;
@@ -24,6 +25,10 @@ namespace DimensionBrawl.Test
         [Header("Pressure")]
         [SerializeField] private BossBarrageEmitter bossBarrageEmitter;
         [SerializeField] private bool stopBarrageOnClear = true;
+        [SerializeField] private bool stopBarrageOnFail = true;
+
+        [Header("Resource")]
+        [SerializeField] private bool stopEnergyGainOnEnd = true;
 
         [Header("Inspectable Result Markers")]
         [SerializeField] private GameObject clearMarker;
@@ -47,6 +52,7 @@ namespace DimensionBrawl.Test
         public void Configure(
             CombatHealth newPlayerHealth,
             CombatHealth newCloseThreatHealth,
+            SummonEnergyLadder newEnergyLadder,
             PlayerSkill1Action newSkill1Action,
             PlayerSummonSlot1Action newSummonSlot1Action,
             BossBarrageEmitter newBossBarrageEmitter,
@@ -55,6 +61,7 @@ namespace DimensionBrawl.Test
         {
             playerHealth = newPlayerHealth;
             closeThreatHealth = newCloseThreatHealth;
+            energyLadder = newEnergyLadder;
             skill1Action = newSkill1Action;
             summonSlot1Action = newSummonSlot1Action;
             bossBarrageEmitter = newBossBarrageEmitter;
@@ -70,6 +77,8 @@ namespace DimensionBrawl.Test
             usedSummonSlot1 = false;
             highestSkillTier = 0;
             highestSummonTier = 0;
+            SetBarrageEnabled(true);
+            SetEnergyGainEnabled(true);
             SetMarkers();
         }
 
@@ -117,18 +126,33 @@ namespace DimensionBrawl.Test
         private void ClearPocket()
         {
             state = PocketState.Cleared;
-            if (stopBarrageOnClear && bossBarrageEmitter != null)
-            {
-                bossBarrageEmitter.SetFiringEnabled(false);
-            }
-
+            SetBarrageEnabled(!stopBarrageOnClear);
+            SetEnergyGainEnabled(!stopEnergyGainOnEnd);
             SetMarkers();
         }
 
         private void FailPocket()
         {
             state = PocketState.Failed;
+            SetBarrageEnabled(!stopBarrageOnFail);
+            SetEnergyGainEnabled(!stopEnergyGainOnEnd);
             SetMarkers();
+        }
+
+        private void SetBarrageEnabled(bool enabled)
+        {
+            if (bossBarrageEmitter != null)
+            {
+                bossBarrageEmitter.SetFiringEnabled(enabled);
+            }
+        }
+
+        private void SetEnergyGainEnabled(bool enabled)
+        {
+            if (energyLadder != null)
+            {
+                energyLadder.SetGainEnabled(enabled);
+            }
         }
 
         private void SetMarkers()

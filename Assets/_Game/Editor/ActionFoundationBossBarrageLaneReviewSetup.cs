@@ -212,6 +212,7 @@ namespace DimensionBrawl.Editor
                 scene,
                 playerHealth,
                 closeThreatHealth,
+                energyLadder,
                 skill1Action,
                 summonSlot1Action,
                 bossBarrageEmitter,
@@ -333,7 +334,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(cameraController, "threat", bossProxy.transform);
             ValidateObjectReference(encounter, "playerHealth", playerHealth);
             ValidateObjectReference(encounter, "enemyHealth", closeThreatHealth);
-            ValidatePocketOwner(pocketOwner, playerHealth, closeThreatHealth, skill1Action, summonSlot1Action, emitter);
+            ValidatePocketOwner(pocketOwner, playerHealth, closeThreatHealth, energyLadder, skill1Action, summonSlot1Action, emitter);
             ValidateReviewHud(
                 reviewHud,
                 playerHealth,
@@ -1282,6 +1283,7 @@ namespace DimensionBrawl.Editor
             Scene scene,
             CombatHealth playerHealth,
             CombatHealth closeThreatHealth,
+            SummonEnergyLadder energyLadder,
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
             BossBarrageEmitter bossBarrageEmitter,
@@ -1299,7 +1301,15 @@ namespace DimensionBrawl.Editor
                 PocketFailMarkerName,
                 laneSpace.GetBattlefieldWorldPoint(laneSpace.HalfWidth + 1.35f, laneSpace.ForwardBoundaryZ - 0.5f, 0.75f),
                 new Color(1f, 0.16f, 0.18f, 1f));
-            owner.Configure(playerHealth, closeThreatHealth, skill1Action, summonSlot1Action, bossBarrageEmitter, clearMarker, failMarker);
+            owner.Configure(
+                playerHealth,
+                closeThreatHealth,
+                energyLadder,
+                skill1Action,
+                summonSlot1Action,
+                bossBarrageEmitter,
+                clearMarker,
+                failMarker);
             EditorUtility.SetDirty(owner);
             return owner;
         }
@@ -1716,15 +1726,20 @@ namespace DimensionBrawl.Editor
             BossBarragePocketReviewOwner owner,
             CombatHealth playerHealth,
             CombatHealth closeThreatHealth,
+            SummonEnergyLadder energyLadder,
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
             BossBarrageEmitter bossBarrageEmitter)
         {
             ValidateObjectReference(owner, "playerHealth", playerHealth);
             ValidateObjectReference(owner, "closeThreatHealth", closeThreatHealth);
+            ValidateObjectReference(owner, "energyLadder", energyLadder);
             ValidateObjectReference(owner, "skill1Action", skill1Action);
             ValidateObjectReference(owner, "summonSlot1Action", summonSlot1Action);
             ValidateObjectReference(owner, "bossBarrageEmitter", bossBarrageEmitter);
+            ValidateBool(owner, "stopBarrageOnClear", true);
+            ValidateBool(owner, "stopBarrageOnFail", true);
+            ValidateBool(owner, "stopEnergyGainOnEnd", true);
             ValidateAssignedObjectReference(owner, "clearMarker");
             ValidateAssignedObjectReference(owner, "failMarker");
         }

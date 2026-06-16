@@ -219,6 +219,7 @@ namespace DimensionBrawl.Tests
                 "Play mode target bridge may focus either the far boss proxy or the current close threat.");
             Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(pocketOwner, "playerHealth"));
             Assert.AreSame(closeThreatHealth, GetObjectReference<CombatHealth>(pocketOwner, "closeThreatHealth"));
+            Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(pocketOwner, "energyLadder"));
             Assert.AreSame(skill1Action, GetObjectReference<PlayerSkill1Action>(pocketOwner, "skill1Action"));
             Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(pocketOwner, "summonSlot1Action"));
             Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(pocketOwner, "bossBarrageEmitter"));
@@ -617,6 +618,49 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(pocketOwner.IsCleared);
             Assert.IsTrue(pocketOwner.UsedSummonSlot1);
             Assert.AreEqual(1, pocketOwner.HighestSummonTier);
+            float energyAfterClear = energyLadder.CurrentTierEnergy;
+            energyLadder.Tick(1f);
+            Assert.AreEqual(
+                energyAfterClear,
+                energyLadder.CurrentTierEnergy,
+                0.001f,
+                "Pocket clear should stop EN gain so the completed review state does not keep charging behind the result.");
+        }
+
+        [UnityTest]
+        public IEnumerator PocketFailureStopsEnergyGainAndBossPressure()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
+            SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(RequireRoot(BossRootName), "boss barrage emitter");
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+
+            playerHealth.TryApplyDamage(new DamageInfo(
+                null,
+                DamageTeam.Enemy,
+                playerHealth.MaxHealth + 10f,
+                player.transform.position,
+                Vector3.back,
+                0f));
+
+            yield return null;
+
+            Assert.IsTrue(pocketOwner.IsFailed);
+            float energyAfterFail = energyLadder.CurrentTierEnergy;
+            energyLadder.Tick(1f);
+            Assert.AreEqual(
+                energyAfterFail,
+                energyLadder.CurrentTierEnergy,
+                0.001f,
+                "Pocket failure should stop EN gain so the failed review state does not keep charging behind the result.");
+
+            emitter.Tick(20f);
+            Assert.IsFalse(
+                emitter.IsWindupActive,
+                "Pocket failure should stop boss barrage progression for a readable fail state.");
+            Assert.AreEqual(0, emitter.ActiveProjectileCount);
         }
 
         [UnityTest]

@@ -10930,10 +10930,13 @@ MonoBehaviour:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Test.BossBarragePocketReviewOwner
   playerHealth: {fileID: 4003}
   closeThreatHealth: {fileID: 270381014}
+  energyLadder: {fileID: 4013}
   skill1Action: {fileID: 4012}
   summonSlot1Action: {fileID: 4011}
   bossBarrageEmitter: {fileID: 133486772}
   stopBarrageOnClear: 1
+  stopBarrageOnFail: 1
+  stopEnergyGainOnEnd: 1
   clearMarker: {fileID: 1296511278}
   failMarker: {fileID: 1472280315}
 --- !u!4 &1269503152
