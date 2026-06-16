@@ -37,7 +37,9 @@ namespace DimensionBrawl.Test
         private PocketState state;
         private bool usedSkill1;
         private bool usedSummonSlot1;
+        private bool closeThreatDefeated;
         private bool blockedBossPressureWithSummon;
+        private int pressureBlocksAtCloseThreatDefeat;
         private int highestSkillTier;
         private int highestSummonTier;
         private int highestSummonPressureTier;
@@ -47,7 +49,9 @@ namespace DimensionBrawl.Test
         public bool IsFailed => state == PocketState.Failed;
         public bool UsedSkill1 => usedSkill1;
         public bool UsedSummonSlot1 => usedSummonSlot1;
+        public bool CloseThreatDefeated => closeThreatDefeated;
         public bool BlockedBossPressureWithSummon => blockedBossPressureWithSummon;
+        public int PressureBlocksAfterCloseThreatDefeated => CountPressureBlocksAfterCloseThreatDefeated();
         public int HighestSkillTier => highestSkillTier;
         public int HighestSummonTier => highestSummonTier;
         public int HighestSummonPressureTier => highestSummonPressureTier;
@@ -79,7 +83,9 @@ namespace DimensionBrawl.Test
             state = PocketState.Running;
             usedSkill1 = false;
             usedSummonSlot1 = false;
+            closeThreatDefeated = false;
             blockedBossPressureWithSummon = false;
+            pressureBlocksAtCloseThreatDefeat = 0;
             highestSkillTier = 0;
             highestSummonTier = 0;
             highestSummonPressureTier = 0;
@@ -101,6 +107,7 @@ namespace DimensionBrawl.Test
             }
 
             CaptureActionUse();
+            CaptureCloseThreatDefeat();
 
             if (playerHealth != null && !playerHealth.IsAlive)
             {
@@ -108,8 +115,7 @@ namespace DimensionBrawl.Test
                 return;
             }
 
-            if (closeThreatHealth != null
-                && !closeThreatHealth.IsAlive
+            if (closeThreatDefeated
                 && usedSummonSlot1
                 && blockedBossPressureWithSummon)
             {
@@ -131,13 +137,40 @@ namespace DimensionBrawl.Test
                 highestSummonTier = Mathf.Max(highestSummonTier, summonSlot1Action.LastSpentTier);
             }
 
-            if (summonSlot1Action != null && summonSlot1Action.LastPressureScreenInterceptCount > 0)
+            if (summonSlot1Action != null
+                && closeThreatDefeated
+                && summonSlot1Action.TotalPressureScreenInterceptCount > pressureBlocksAtCloseThreatDefeat)
             {
                 blockedBossPressureWithSummon = true;
                 highestSummonPressureTier = Mathf.Max(
                     highestSummonPressureTier,
                     summonSlot1Action.LastPressureScreenInterceptTier);
             }
+        }
+
+        private void CaptureCloseThreatDefeat()
+        {
+            if (closeThreatDefeated
+                || closeThreatHealth == null
+                || closeThreatHealth.IsAlive)
+            {
+                return;
+            }
+
+            closeThreatDefeated = true;
+            pressureBlocksAtCloseThreatDefeat = summonSlot1Action != null
+                ? summonSlot1Action.TotalPressureScreenInterceptCount
+                : 0;
+        }
+
+        private int CountPressureBlocksAfterCloseThreatDefeated()
+        {
+            if (!closeThreatDefeated || summonSlot1Action == null)
+            {
+                return 0;
+            }
+
+            return Mathf.Max(0, summonSlot1Action.TotalPressureScreenInterceptCount - pressureBlocksAtCloseThreatDefeat);
         }
 
         private void ClearPocket()

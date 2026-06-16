@@ -765,6 +765,67 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator PocketIgnoresSummonBlocksBeforeCloseThreatDefeat()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
+            SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            PlayerSummonSlot1Action summonSlot1Action =
+                RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(RequireRoot(BossRootName), "boss barrage emitter");
+            CombatHealth closeThreatHealth =
+                RequireComponent<CombatHealth>(RequireRoot(CloseThreatRootName), "close threat health");
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+
+            FillEnergyToTier(energyLadder, 1);
+            Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
+            SummonPressureScreen activeScreen = RequireActiveAllyPressureScreen();
+            Assert.IsTrue(emitter.BeginWindup());
+            Assert.Greater(emitter.FirePendingWave(), 0);
+            BossBarrageProjectile earlyBossProjectile = RequireActiveBossProjectile();
+            Assert.IsTrue(activeScreen.TryIntercept(earlyBossProjectile));
+
+            yield return null;
+
+            Assert.IsTrue(pocketOwner.IsRunning);
+            Assert.IsTrue(pocketOwner.UsedSummonSlot1);
+            Assert.IsFalse(pocketOwner.CloseThreatDefeated);
+            Assert.IsFalse(
+                pocketOwner.BlockedBossPressureWithSummon,
+                "Boss-pressure blocks before the local close threat is defeated should not solve the pocket.");
+            Assert.AreEqual(0, pocketOwner.PressureBlocksAfterCloseThreatDefeated);
+            Assert.AreEqual(0, pocketOwner.HighestSummonPressureTier);
+
+            closeThreatHealth.TryApplyDamage(new DamageInfo(
+                playerHealth,
+                DamageTeam.Player,
+                closeThreatHealth.MaxHealth + 10f,
+                closeThreatHealth.transform.position,
+                Vector3.forward,
+                0f));
+
+            yield return null;
+
+            Assert.IsTrue(pocketOwner.IsRunning);
+            Assert.IsTrue(pocketOwner.CloseThreatDefeated);
+            Assert.IsFalse(pocketOwner.BlockedBossPressureWithSummon);
+            Assert.AreEqual(0, pocketOwner.PressureBlocksAfterCloseThreatDefeated);
+
+            Assert.IsTrue(emitter.BeginWindup());
+            Assert.Greater(emitter.FirePendingWave(), 0);
+            BossBarrageProjectile lateBossProjectile = RequireActiveBossProjectile();
+            Assert.IsTrue(activeScreen.TryIntercept(lateBossProjectile));
+
+            yield return null;
+
+            Assert.IsTrue(pocketOwner.IsCleared);
+            Assert.IsTrue(pocketOwner.BlockedBossPressureWithSummon);
+            Assert.AreEqual(1, pocketOwner.PressureBlocksAfterCloseThreatDefeated);
+            Assert.AreEqual(1, pocketOwner.HighestSummonPressureTier);
+        }
+
+        [UnityTest]
         public IEnumerator PocketClearsAfterCloseThreatDefeatedAndSummonBlocksBossFire()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
