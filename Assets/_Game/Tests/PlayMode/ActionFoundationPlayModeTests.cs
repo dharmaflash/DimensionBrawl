@@ -105,6 +105,7 @@ namespace DimensionBrawl.Tests
             EnemyArchetypeRootPath + "/DB_Archetype_FORGE3D_LineTurret.asset",
             EnemyArchetypeRootPath + "/DB_Archetype_FORGE3D_MissileTurret.asset",
             EnemyArchetypeRootPath + "/DB_Archetype_HumanoidBoss_SummonCallerElite.asset",
+            EnemyArchetypeRootPath + "/DB_Archetype_HumanoidBoss_AuraCaptainElite.asset",
             EnemyArchetypeRootPath + "/DB_Archetype_HumanoidBoss_FinalStandCommanderElite.asset",
             EnemyArchetypeRootPath + "/DB_Archetype_DragonBoss_Future.asset"
         };
@@ -838,6 +839,9 @@ namespace DimensionBrawl.Tests
             bool foundBossCandidate = false;
             bool foundHumanoidBossCandidate = false;
             bool foundDragonBossCandidate = false;
+            bool foundSummonCallerBossCandidate = false;
+            bool foundAuraCaptainBossCandidate = false;
+            bool foundFinalStandCommanderBossCandidate = false;
 
             foreach (string path in EnemyArchetypeProfilePaths)
             {
@@ -849,6 +853,9 @@ namespace DimensionBrawl.Tests
                 foundBossCandidate |= archetype.ArchetypeKind == CombatEnemyArchetypeKind.BossCandidate;
                 foundHumanoidBossCandidate |= archetype.ArchetypeId.StartsWith("HumanoidBoss.", System.StringComparison.Ordinal);
                 foundDragonBossCandidate |= archetype.ArchetypeId == "DragonBoss.Future";
+                foundSummonCallerBossCandidate |= archetype.ArchetypeId == "HumanoidBoss.SummonCallerElite";
+                foundAuraCaptainBossCandidate |= archetype.ArchetypeId == "HumanoidBoss.AuraCaptainElite";
+                foundFinalStandCommanderBossCandidate |= archetype.ArchetypeId == "HumanoidBoss.FinalStandCommanderElite";
 
                 if (archetype.ParticipatesInActionFoundationRoleMap)
                 {
@@ -894,6 +901,9 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(foundStaticTurretCandidate, "Archetype catalog should include at least one fixed sci-fi turret candidate.");
             Assert.IsTrue(foundBossCandidate, "Archetype catalog should track boss candidates outside soldier role decks.");
             Assert.IsTrue(foundHumanoidBossCandidate, "Archetype catalog should include at least one promoted humanoid boss candidate for the fixed-rear boss-barrage slice.");
+            Assert.IsTrue(foundSummonCallerBossCandidate, "Archetype catalog should include the SummonCaller humanoid boss candidate.");
+            Assert.IsTrue(foundAuraCaptainBossCandidate, "Archetype catalog should include the AuraCaptain humanoid boss candidate.");
+            Assert.IsTrue(foundFinalStandCommanderBossCandidate, "Archetype catalog should include the FinalStandCommander humanoid boss candidate.");
             Assert.IsTrue(foundDragonBossCandidate, "Archetype catalog should still track the future dragon boss candidate separately.");
         }
 

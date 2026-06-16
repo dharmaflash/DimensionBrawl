@@ -17,6 +17,7 @@ namespace DimensionBrawl.Editor
         public const string Forge3DLineTurretPath = ArchetypeRoot + "/DB_Archetype_FORGE3D_LineTurret.asset";
         public const string Forge3DMissileTurretPath = ArchetypeRoot + "/DB_Archetype_FORGE3D_MissileTurret.asset";
         public const string HumanoidSummonCallerBossCandidatePath = ArchetypeRoot + "/DB_Archetype_HumanoidBoss_SummonCallerElite.asset";
+        public const string HumanoidAuraCaptainBossCandidatePath = ArchetypeRoot + "/DB_Archetype_HumanoidBoss_AuraCaptainElite.asset";
         public const string HumanoidFinalStandCommanderBossCandidatePath = ArchetypeRoot + "/DB_Archetype_HumanoidBoss_FinalStandCommanderElite.asset";
         public const string DragonBossFuturePath = ArchetypeRoot + "/DB_Archetype_DragonBoss_Future.asset";
 
@@ -25,6 +26,7 @@ namespace DimensionBrawl.Editor
         private const string GeneralDeckSoldierGameplayPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_GeneralDeck.prefab";
         private const string EliteDeckSoldierGameplayPrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/PF_Enemy_SciFiSoldier_EliteDeck.prefab";
         private const string SummonCallerBossCandidatePrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/RoleCandidates/PF_Enemy_Role_SummonCallerElite.prefab";
+        private const string AuraCaptainBossCandidatePrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/RoleCandidates/PF_Enemy_Role_AuraCaptainElite.prefab";
         private const string FinalStandCommanderBossCandidatePrefabPath = "Assets/_Game/Prefabs/Enemies/ActionFoundation/RoleCandidates/PF_Enemy_Role_FinalStandCommanderElite.prefab";
         private const string Forge3DMissileTurretCandidate = "FORGE3D Sci-Fi Effects URP package: TURRET_BASE_Mobile_LOD0 + TURRET_BARREL_HeavyMissle_Mobile_LOD0 + missile_02/missile_03/missile_04 prefabs.";
         private const string DragonBossCandidate = "HEROIC FANTASY CREATURES FULL PACK VOL3 raw dragon prefabs remain local-only; choose one dragon in a later boss-authoring slice.";
@@ -37,6 +39,7 @@ namespace DimensionBrawl.Editor
             Forge3DLineTurretPath,
             Forge3DMissileTurretPath,
             HumanoidSummonCallerBossCandidatePath,
+            HumanoidAuraCaptainBossCandidatePath,
             HumanoidFinalStandCommanderBossCandidatePath,
             DragonBossFuturePath
         };
@@ -81,6 +84,7 @@ namespace DimensionBrawl.Editor
             var coveredRoleIds = new HashSet<string>();
             bool hasStaticTurretCandidate = false;
             bool hasBossCandidate = false;
+            int humanoidBossCandidateCount = 0;
 
             for (int i = 0; i < ArchetypeProfilePaths.Length; i++)
             {
@@ -93,6 +97,10 @@ namespace DimensionBrawl.Editor
                 ValidateArchetype(archetype, coveredRoleIds);
                 hasStaticTurretCandidate |= archetype.ArchetypeKind == CombatEnemyArchetypeKind.StaticTurret;
                 hasBossCandidate |= archetype.ArchetypeKind == CombatEnemyArchetypeKind.BossCandidate;
+                if (archetype.ArchetypeId.StartsWith("HumanoidBoss.", StringComparison.Ordinal))
+                {
+                    humanoidBossCandidateCount++;
+                }
             }
 
             RequireCoveredRole(coveredRoleIds, "SciFiSoldier.EntryProbe");
@@ -115,7 +123,12 @@ namespace DimensionBrawl.Editor
 
             if (!hasBossCandidate)
             {
-                throw new InvalidOperationException("Enemy archetype catalog should track the future dragon boss candidate outside soldier role decks.");
+                throw new InvalidOperationException("Enemy archetype catalog should track boss candidates outside soldier role decks.");
+            }
+
+            if (humanoidBossCandidateCount < 3)
+            {
+                throw new InvalidOperationException("Enemy archetype catalog should track the three promoted humanoid boss candidates: SummonCaller, AuraCaptain, and FinalStandCommander.");
             }
         }
 
@@ -228,6 +241,7 @@ namespace DimensionBrawl.Editor
         private static void ConfigureHumanoidBossCandidateArchetypes()
         {
             GameObject summonCallerPrefab = LoadOptionalGameObject(SummonCallerBossCandidatePrefabPath);
+            GameObject auraCaptainPrefab = LoadOptionalGameObject(AuraCaptainBossCandidatePrefabPath);
             GameObject finalStandCommanderPrefab = LoadOptionalGameObject(FinalStandCommanderBossCandidatePrefabPath);
 
             ConfigureArchetype(
@@ -246,6 +260,23 @@ namespace DimensionBrawl.Editor
                     ? "Use as the first fixed-rear boss-barrage humanoid placeholder, then promote a dedicated boss prefab once the summon-energy duel reads correctly."
                     : "Generate the SummonCallerElite role candidate before using it as the first humanoid boss placeholder.",
                 "Matches the current humanoid-boss direction better than the dragon for the first vertical slice. Keep outside soldier role decks and do not treat it as final boss production art.");
+
+            ConfigureArchetype(
+                LoadOrCreate<CombatEnemyArchetypeProfile>(HumanoidAuraCaptainBossCandidatePath),
+                "HumanoidBoss.AuraCaptainElite",
+                "Humanoid Aura Captain Boss Candidate",
+                CombatEnemyArchetypeKind.BossCandidate,
+                false,
+                Array.Empty<CombatEnemyRoleProfile>(),
+                auraCaptainPrefab,
+                null,
+                true,
+                false,
+                "Promoted `_Game` AuraCaptainElite role prefab with beam-gun, aura-command, fan/line pressure, hit, and death animation coverage.",
+                auraCaptainPrefab != null
+                    ? "Use as a readable humanoid support-caster boss alternative if the first boss needs cleaner ranged release and command poses than the utility-worker summon caller."
+                    : "Generate the AuraCaptainElite role candidate before using it as a ranged commander boss placeholder.",
+                "Good candidate for a boss that must stay humanoid, fire repeated projectiles, and visibly command field pressure without relying on dragon-scale animation.");
 
             ConfigureArchetype(
                 LoadOrCreate<CombatEnemyArchetypeProfile>(HumanoidFinalStandCommanderBossCandidatePath),
@@ -308,6 +339,11 @@ namespace DimensionBrawl.Editor
 
             ValidateGameOwnedObjectReference(archetype, archetype.GameplayPrefab, "gameplay prefab");
             ValidateGameOwnedObjectReference(archetype, archetype.VisualPrefab, "visual prefab");
+
+            if (archetype.ArchetypeId.StartsWith("HumanoidBoss.", StringComparison.Ordinal) && archetype.GameplayPrefab == null)
+            {
+                throw new InvalidOperationException($"{archetype.ArchetypeId} should reference a promoted humanoid role prefab for review.");
+            }
 
             if (archetype.ArchetypeKind == CombatEnemyArchetypeKind.StaticTurret && !archetype.RequiresDedicatedPrefabPromotion)
             {
