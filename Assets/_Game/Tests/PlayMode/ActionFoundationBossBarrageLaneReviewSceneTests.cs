@@ -131,6 +131,14 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossBarragePocketCameraCueBridge>(
                     RequireRoot(PocketOwnerRootName),
                     "pocket camera cue bridge");
+            BossBarragePocketVfxCueBridge pocketVfxCueBridge =
+                RequireComponent<BossBarragePocketVfxCueBridge>(
+                    RequireRoot(PocketOwnerRootName),
+                    "pocket VFX cue bridge");
+            CombatVfxCuePlayer playerCuePlayer =
+                RequireComponent<CombatVfxCuePlayer>(player.gameObject, "player combat VFX cue player");
+            PlayerCombatVfxCueDriver playerVfxCueDriver =
+                RequireComponent<PlayerCombatVfxCueDriver>(player.gameObject, "player combat VFX cue driver");
             BossBarrageLaneReviewHud reviewHud =
                 RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "boss barrage HUD");
             BossBarrageLaneTelegraphPresenter telegraphPresenter =
@@ -287,6 +295,16 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(pocketOwner, "bossBarrageEmitter"));
             Assert.AreSame(pocketOwner, pocketCameraCueBridge.PocketReviewOwner);
             Assert.AreSame(cameraCueDriver, pocketCameraCueBridge.CameraCueDriver);
+            Assert.AreSame(pocketOwner, pocketVfxCueBridge.PocketReviewOwner);
+            Assert.AreSame(playerCuePlayer, pocketVfxCueBridge.CuePlayer);
+            Assert.AreSame(
+                GetObjectReference<Transform>(playerVfxCueDriver, "attackAnchor"),
+                pocketVfxCueBridge.FollowupWindowAnchor);
+            Assert.AreSame(bossRoot.transform, pocketVfxCueBridge.FollowupHitAnchor);
+            Assert.AreSame(
+                GetObjectReference<Transform>(playerVfxCueDriver, "dodgeAnchor"),
+                pocketVfxCueBridge.FollowupMissedAnchor);
+            Assert.AreSame(bossRoot.transform, pocketVfxCueBridge.DirectionTarget);
             Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(reviewHud, "playerHealth"));
             Assert.AreSame(closeThreatHealth, GetObjectReference<CombatHealth>(reviewHud, "closeThreatHealth"));
             Assert.AreSame(bossHealth, GetObjectReference<CombatHealth>(reviewHud, "bossHealth"));
@@ -828,6 +846,10 @@ namespace DimensionBrawl.Tests
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
             ActionCameraCueDriver cameraCueDriver =
                 RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
+            BossBarragePocketVfxCueBridge pocketVfxCueBridge =
+                RequireComponent<BossBarragePocketVfxCueBridge>(
+                    RequireRoot(PocketOwnerRootName),
+                    "pocket VFX cue bridge");
             GameObject bossRoot = RequireRoot(BossRootName);
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
@@ -878,6 +900,8 @@ namespace DimensionBrawl.Tests
 
             int followupWindowCueCountBefore = cameraCueDriver.SummonFollowupWindowCueRequestCount;
             int followupMissedCueCountBefore = cameraCueDriver.SummonFollowupMissedCueRequestCount;
+            int followupWindowVfxCueCountBefore = pocketVfxCueBridge.FollowupWindowCueRequestCount;
+            int followupMissedVfxCueCountBefore = pocketVfxCueBridge.FollowupMissedCueRequestCount;
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.IsRunning);
@@ -891,6 +915,11 @@ namespace DimensionBrawl.Tests
                 cameraCueDriver.SummonFollowupWindowCueRequestCount,
                 "A correct SummonSlot1 block should open a readable follow-up camera cue.");
             Assert.AreEqual(1, cameraCueDriver.LastSummonFollowupWindowTier);
+            Assert.AreEqual(
+                followupWindowVfxCueCountBefore + 1,
+                pocketVfxCueBridge.FollowupWindowCueRequestCount,
+                "A correct SummonSlot1 block should also open an in-world follow-up VFX read, not HUD text only.");
+            Assert.AreEqual(1, pocketVfxCueBridge.LastFollowupWindowTier);
 
             pocketOwner.Tick(1.39f);
             Assert.IsTrue(pocketOwner.IsRunning);
@@ -905,6 +934,10 @@ namespace DimensionBrawl.Tests
                 followupMissedCueCountBefore + 1,
                 cameraCueDriver.SummonFollowupMissedCueRequestCount,
                 "Letting the follow-up window expire should leave a short missed-response camera read.");
+            Assert.AreEqual(
+                followupMissedVfxCueCountBefore + 1,
+                pocketVfxCueBridge.FollowupMissedCueRequestCount,
+                "Letting the follow-up window expire should leave a short missed-response VFX read.");
 
             pocketOwner.Tick(1f);
             Assert.IsTrue(pocketOwner.IsRunning);
@@ -933,6 +966,9 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(
                 followupWindowCueCountBefore + 2,
                 cameraCueDriver.SummonFollowupWindowCueRequestCount);
+            Assert.AreEqual(
+                followupWindowVfxCueCountBefore + 2,
+                pocketVfxCueBridge.FollowupWindowCueRequestCount);
         }
 
         [UnityTest]
@@ -947,6 +983,10 @@ namespace DimensionBrawl.Tests
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
             ActionCameraCueDriver cameraCueDriver =
                 RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
+            BossBarragePocketVfxCueBridge pocketVfxCueBridge =
+                RequireComponent<BossBarragePocketVfxCueBridge>(
+                    RequireRoot(PocketOwnerRootName),
+                    "pocket VFX cue bridge");
             GameObject bossRoot = RequireRoot(BossRootName);
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
@@ -981,6 +1021,8 @@ namespace DimensionBrawl.Tests
 
             int followupWindowCueCountBefore = cameraCueDriver.SummonFollowupWindowCueRequestCount;
             int followupHitCueCountBefore = cameraCueDriver.SummonFollowupHitCueRequestCount;
+            int followupWindowVfxCueCountBefore = pocketVfxCueBridge.FollowupWindowCueRequestCount;
+            int followupHitVfxCueCountBefore = pocketVfxCueBridge.FollowupHitCueRequestCount;
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.IsRunning);
@@ -1006,6 +1048,11 @@ namespace DimensionBrawl.Tests
                 cameraCueDriver.SummonFollowupWindowCueRequestCount,
                 "A correct SummonSlot1 block should make the follow-up opportunity readable without relying on HUD text only.");
             Assert.AreEqual(1, cameraCueDriver.LastSummonFollowupWindowTier);
+            Assert.AreEqual(
+                followupWindowVfxCueCountBefore + 1,
+                pocketVfxCueBridge.FollowupWindowCueRequestCount,
+                "A correct SummonSlot1 block should also create an in-world follow-up VFX read.");
+            Assert.AreEqual(1, pocketVfxCueBridge.LastFollowupWindowTier);
             Assert.IsTrue(
                 pocketOwner.GrantedSummonFollowupEnergy,
                 "The summon pressure break should pulse enough EN to make the short follow-up window actionable.");
@@ -1044,6 +1091,12 @@ namespace DimensionBrawl.Tests
                 "A confirmed Skill1 boss hit should produce the follow-up hit camera cue.");
             Assert.AreEqual(1, cameraCueDriver.LastSummonFollowupHitTier);
             Assert.Greater(cameraCueDriver.LastSummonFollowupHitDamage, 0f);
+            Assert.AreEqual(
+                followupHitVfxCueCountBefore + 1,
+                pocketVfxCueBridge.FollowupHitCueRequestCount,
+                "A confirmed Skill1 boss hit should also produce a follow-up hit VFX cue.");
+            Assert.AreEqual(1, pocketVfxCueBridge.LastFollowupHitTier);
+            Assert.Greater(pocketVfxCueBridge.LastFollowupHitDamage, 0f);
             Assert.Less(bossHealth.CurrentHealth, bossHealthBeforeFollowup);
 
             pocketOwner.Tick(1.39f);

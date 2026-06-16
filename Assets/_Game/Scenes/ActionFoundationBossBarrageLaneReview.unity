@@ -12016,6 +12016,7 @@ GameObject:
   - component: {fileID: 1232551716}
   - component: {fileID: 1232551715}
   - component: {fileID: 1232551717}
+  - component: {fileID: 1232551718}
   m_Layer: 0
   m_Name: BossBarrageLaneReview_PocketOwner
   m_TagString: Untagged
@@ -12061,6 +12062,28 @@ MonoBehaviour:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Test.BossBarragePocketCameraCueBridge
   pocketReviewOwner: {fileID: 1232551715}
   cameraCueDriver: {fileID: 1005}
+--- !u!114 &1232551718
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1232551714}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a7c6d2f4db64e0f94566f910abbcd1a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Test.BossBarragePocketVfxCueBridge
+  pocketReviewOwner: {fileID: 1232551715}
+  cuePlayer: {fileID: 4010}
+  followupWindowAnchor: {fileID: 85052602}
+  followupHitAnchor: {fileID: 1885687351}
+  followupMissedAnchor: {fileID: 1228450371}
+  directionTarget: {fileID: 1885687351}
+  windowIntensity: 1.15
+  hitIntensity: 1.3
+  missedIntensity: 0.85
+  tierIntensityStep: 0.12
 --- !u!4 &1232551716
 Transform:
   m_ObjectHideFlags: 0
