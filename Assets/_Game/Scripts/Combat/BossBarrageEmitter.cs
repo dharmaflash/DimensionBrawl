@@ -111,6 +111,7 @@ namespace DimensionBrawl.Combat
             if (sourceHealth != null && sourceHealth.IsAlive == false)
             {
                 windupActive = false;
+                DeactivateActiveProjectiles();
                 return;
             }
 
@@ -361,6 +362,18 @@ namespace DimensionBrawl.Combat
             }
 
             return null;
+        }
+
+        private void DeactivateActiveProjectiles()
+        {
+            for (int i = 0; i < pool.Count; i++)
+            {
+                BossBarrageProjectile projectile = pool[i];
+                if (projectile != null && projectile.IsActive)
+                {
+                    projectile.Deactivate();
+                }
+            }
         }
     }
 }

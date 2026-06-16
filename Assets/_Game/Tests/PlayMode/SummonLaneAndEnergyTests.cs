@@ -368,6 +368,39 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void BossBarrageProjectileDeactivatesWhenSourceHealthDies()
+        {
+            GameObject bossObject = new GameObject("Boss");
+            CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+            bossHealth.ConfigureTeam(DamageTeam.Enemy);
+
+            GameObject projectileObject = new GameObject("BossProjectile");
+            projectileObject.AddComponent<SphereCollider>();
+            projectileObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile projectile = projectileObject.AddComponent<BossBarrageProjectile>();
+            projectile.Configure(
+                bossHealth,
+                DamageTeam.Enemy,
+                10f,
+                Vector3.back,
+                3f,
+                4f,
+                0.3f);
+
+            Assert.IsTrue(projectile.IsActive);
+            Assert.IsTrue(bossHealth.IsAlive);
+
+            bossHealth.TryApplyDamage(new DamageInfo(null, DamageTeam.Player, 9999f, Vector3.zero, Vector3.zero, 0f));
+            Assert.IsFalse(bossHealth.IsAlive);
+            projectile.Tick(0.02f);
+
+            Assert.IsFalse(projectile.IsActive);
+
+            Object.DestroyImmediate(projectileObject);
+            Object.DestroyImmediate(bossObject);
+        }
+
+        [Test]
         public void BossBarrageProjectileDamagesHostileTargetsOnly()
         {
             GameObject projectileObject = new GameObject("Projectile");
@@ -655,7 +688,7 @@ namespace DimensionBrawl.Tests
                 emitter.Tick(0.25f);
             }
 
-            Assert.AreEqual(activeBeforeDeath, emitter.ActiveProjectileCount);
+            Assert.AreEqual(0, emitter.ActiveProjectileCount);
 
             Object.DestroyImmediate(projectilePrefabObject);
             Object.DestroyImmediate(pattern);

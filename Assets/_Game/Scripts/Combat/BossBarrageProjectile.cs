@@ -60,6 +60,12 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
+            if (sourceHealth != null && sourceHealth.IsAlive == false)
+            {
+                Deactivate();
+                return;
+            }
+
             transform.position += travelDirection * speed * deltaTime;
             remainingLifetime -= deltaTime;
             if (remainingLifetime <= 0f)
