@@ -625,10 +625,25 @@ namespace DimensionBrawl.Tests
             }
 
             Assert.IsNotNull(activeScreen, "SummonSlot1 should open a pressure screen before it can counter boss fire.");
+            SummonPressureScreenPresenter activePresenter = null;
+            SummonPressureScreenPresenter[] presenters = Object.FindObjectsByType<SummonPressureScreenPresenter>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < presenters.Length; i++)
+            {
+                if (presenters[i].PressureScreen == activeScreen)
+                {
+                    activePresenter = presenters[i];
+                    break;
+                }
+            }
+
+            Assert.IsNotNull(activePresenter, "The active summon pressure screen should keep a visible presenter.");
             int summonProjectileCountBeforeIntercept = summonSlot1Action.ActiveProjectileCount;
             HashSet<LaneActionProjectile> activeSummonProjectilesBeforeIntercept = CollectActiveSummonProjectiles();
             float bossHealthBeforeCounter = bossHealth.CurrentHealth;
             int pressureBlockCueCountBeforeIntercept = cameraCueDriver.SummonPressureBlockCueRequestCount;
+            int presenterFlashCountBeforeIntercept = activePresenter.InterceptFlashCount;
 
             Assert.IsTrue(emitter.BeginWindup());
             Assert.Greater(emitter.FirePendingWave(), 0);
@@ -657,6 +672,10 @@ namespace DimensionBrawl.Tests
                 "A summon pressure-screen intercept should request its own short camera read instead of relying on HUD text.");
             Assert.AreEqual(3, cameraCueDriver.LastSummonPressureBlockTier);
             Assert.IsTrue(cameraController.HasActiveCue);
+            Assert.AreEqual(
+                presenterFlashCountBeforeIntercept + 1,
+                activePresenter.InterceptFlashCount,
+                "The summon pressure-screen presenter should flash on the same block that triggers the counter exchange.");
             Assert.Greater(
                 summonSlot1Action.ActiveProjectileCount,
                 summonProjectileCountBeforeIntercept,

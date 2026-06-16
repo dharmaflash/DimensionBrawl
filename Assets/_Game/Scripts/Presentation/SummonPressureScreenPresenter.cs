@@ -19,18 +19,26 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0f)] private float finalHitLingerSeconds = 0.16f;
         [SerializeField, Min(0.01f)] private float pulseSpeed = 9f;
         [SerializeField, Min(0f)] private float pulseScale = 0.04f;
+        [SerializeField, Min(0f)] private float interceptPunchSeconds = 0.14f;
+        [SerializeField, Min(0f)] private float interceptPunchDistance = 0.18f;
+        [SerializeField, Min(0f)] private float interceptPunchScale = 0.16f;
 
         private MaterialPropertyBlock propertyBlock;
         private Vector3 visualBaseScale = Vector3.one;
+        private Vector3 visualBaseLocalPosition;
+        private Vector3 interceptPunchLocalDirection = Vector3.back;
         private float flashTimer;
         private float lingerTimer;
+        private float interceptPunchTimer;
         private float lastKnownRadius = 1.35f;
+        private int interceptFlashCount;
         private bool showing;
         private bool subscribed;
 
         public SummonPressureScreen PressureScreen => pressureScreen;
         public bool IsShowing => showing;
         public int RendererCount => screenRenderers != null ? screenRenderers.Length : 0;
+        public int InterceptFlashCount => interceptFlashCount;
 
         private void Awake()
         {
@@ -42,6 +50,7 @@ namespace DimensionBrawl.Presentation
                 visualRoot = transform;
 
             visualBaseScale = visualRoot.localScale;
+            visualBaseLocalPosition = visualRoot.localPosition;
             if (screenRenderers == null || screenRenderers.Length == 0)
                 screenRenderers = GetComponentsInChildren<Renderer>(includeInactive: true);
 
@@ -64,6 +73,9 @@ namespace DimensionBrawl.Presentation
             float deltaTime = Time.deltaTime;
             if (flashTimer > 0f)
                 flashTimer = Mathf.Max(0f, flashTimer - deltaTime);
+
+            if (interceptPunchTimer > 0f)
+                interceptPunchTimer = Mathf.Max(0f, interceptPunchTimer - deltaTime);
 
             if (pressureScreen == null || !pressureScreen.IsActive)
             {
@@ -88,6 +100,7 @@ namespace DimensionBrawl.Presentation
             pressureScreen = newPressureScreen;
             visualRoot = newVisualRoot != null ? newVisualRoot : transform;
             visualBaseScale = visualRoot.localScale;
+            visualBaseLocalPosition = visualRoot.localPosition;
             screenRenderers = newScreenRenderers ?? System.Array.Empty<Renderer>();
             Subscribe();
             RefreshNow();
@@ -113,6 +126,7 @@ namespace DimensionBrawl.Presentation
             lastKnownRadius = screen.ActiveRadius;
             flashTimer = Mathf.Max(flashTimer, activationFlashSeconds);
             lingerTimer = 0f;
+            interceptPunchTimer = 0f;
             SetShowing(true);
             RefreshVisual();
         }
@@ -122,6 +136,9 @@ namespace DimensionBrawl.Presentation
             lastKnownRadius = screen.ActiveRadius;
             flashTimer = Mathf.Max(flashTimer, interceptFlashSeconds);
             lingerTimer = Mathf.Max(lingerTimer, finalHitLingerSeconds);
+            interceptPunchTimer = Mathf.Max(interceptPunchTimer, interceptPunchSeconds);
+            interceptPunchLocalDirection = ResolveInterceptPunchLocalDirection(projectile);
+            interceptFlashCount++;
             SetShowing(true);
             RefreshVisual();
         }
@@ -146,8 +163,14 @@ namespace DimensionBrawl.Presentation
 
             float pulse = 1f + Mathf.Sin(Time.time * pulseSpeed) * pulseScale;
             float flash = ResolveFlashWeight();
-            float scale = Mathf.Max(0.05f, lastKnownRadius) * 2f * (pulse + flash * 0.12f);
+            float punch = ResolvePunchWeight();
+            float scale = Mathf.Max(0.05f, lastKnownRadius) * 2f * (pulse + flash * 0.12f + punch * interceptPunchScale);
             visualRoot.localScale = Vector3.Scale(visualBaseScale, new Vector3(scale, scale, scale));
+            if (visualRoot != transform)
+            {
+                visualRoot.localPosition = visualBaseLocalPosition
+                    + interceptPunchLocalDirection * (interceptPunchDistance * punch);
+            }
 
             Color color = Color.Lerp(activeColor, interceptColor, flash);
             if (pressureScreen == null || !pressureScreen.IsActive)
@@ -163,6 +186,44 @@ namespace DimensionBrawl.Presentation
         {
             float longestFlash = Mathf.Max(activationFlashSeconds, interceptFlashSeconds);
             return longestFlash > 0f ? Mathf.Clamp01(flashTimer / longestFlash) : 0f;
+        }
+
+        private float ResolvePunchWeight()
+        {
+            if (interceptPunchSeconds <= 0f)
+            {
+                return 0f;
+            }
+
+            return Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(interceptPunchTimer / interceptPunchSeconds));
+        }
+
+        private Vector3 ResolveInterceptPunchLocalDirection(BossBarrageProjectile projectile)
+        {
+            Vector3 worldDirection = Vector3.zero;
+            if (pressureScreen != null && projectile != null)
+            {
+                worldDirection = Vector3.ProjectOnPlane(
+                    pressureScreen.transform.position - projectile.transform.position,
+                    Vector3.up);
+            }
+
+            if (worldDirection.sqrMagnitude <= 0.0001f)
+            {
+                Transform directionSource = pressureScreen != null ? pressureScreen.transform : transform;
+                worldDirection = -Vector3.ProjectOnPlane(directionSource.forward, Vector3.up);
+            }
+
+            if (worldDirection.sqrMagnitude <= 0.0001f)
+            {
+                worldDirection = Vector3.back;
+            }
+
+            Transform parent = visualRoot != null ? visualRoot.parent : null;
+            Vector3 localDirection = parent != null
+                ? parent.InverseTransformDirection(worldDirection.normalized)
+                : worldDirection.normalized;
+            return localDirection.sqrMagnitude > 0.0001f ? localDirection.normalized : Vector3.back;
         }
 
         private void ApplyColor(Color color)

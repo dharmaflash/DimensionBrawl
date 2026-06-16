@@ -457,17 +457,24 @@ namespace DimensionBrawl.Tests
             screen.Activate(DamageTeam.AllySummon, 1, 1.25f, 1f);
             Assert.IsTrue(presenter.IsShowing);
             Assert.IsTrue(visualObject.activeSelf);
+            Vector3 visualLocalPositionBeforeIntercept = visualObject.transform.localPosition;
 
             GameObject enemyProjectileObject = new GameObject("EnemyProjectile");
             enemyProjectileObject.AddComponent<SphereCollider>();
             enemyProjectileObject.AddComponent<Rigidbody>();
             BossBarrageProjectile enemyProjectile = enemyProjectileObject.AddComponent<BossBarrageProjectile>();
+            enemyProjectileObject.transform.position = new Vector3(0f, 0f, 0.75f);
             enemyProjectile.Configure(null, DamageTeam.Enemy, 10f, Vector3.back, 0f, 1f, 0.3f);
 
             Assert.IsTrue(screen.TryIntercept(enemyProjectile));
             Assert.IsTrue(
                 presenter.IsShowing,
                 "The final intercept should linger briefly instead of disappearing on the same frame.");
+            Assert.AreEqual(1, presenter.InterceptFlashCount);
+            Assert.Greater(
+                (visualObject.transform.localPosition - visualLocalPositionBeforeIntercept).sqrMagnitude,
+                0.0001f,
+                "The pressure screen visual should briefly punch on intercept so the boss-fire block reads in world space.");
 
             screen.Activate(DamageTeam.AllySummon, 1, 1.25f, 1f);
             screen.Deactivate();
