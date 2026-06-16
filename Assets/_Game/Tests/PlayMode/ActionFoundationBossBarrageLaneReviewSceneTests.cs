@@ -146,9 +146,14 @@ namespace DimensionBrawl.Tests
                 RequireComponent<SummonPressureScreen>(summonActorPrefabObject, "SummonSlot1 pressure screen");
             SummonPressureScreenPresenter summonPressureScreenPresenter =
                 RequireComponent<SummonPressureScreenPresenter>(summonActorPrefabObject, "SummonSlot1 pressure screen presenter");
+            SummonFrontlineProxyPresenter summonActorPresenter =
+                RequireComponent<SummonFrontlineProxyPresenter>(summonActorPrefabObject, "SummonSlot1 actor presenter");
             Assert.AreSame(summonPressureScreen, summonActorPrefab.PressureScreen);
             Assert.AreSame(summonPressureScreen, summonPressureScreenPresenter.PressureScreen);
             Assert.Greater(summonPressureScreenPresenter.RendererCount, 0);
+            Assert.AreSame(summonActorPrefab, summonActorPresenter.Proxy);
+            Assert.IsNotNull(summonActorPresenter.PulseRoot);
+            Assert.GreaterOrEqual(summonActorPresenter.RendererCount, 2);
             Assert.AreEqual(DamageTeam.AllySummon, summonPressureScreen.OwnerTeam);
             Assert.AreSame(projectileRoot.transform, GetObjectReference<Transform>(summonSlot1Action, "projectileRoot"));
             Assert.AreSame(actionCueRoot.transform, GetObjectReference<Transform>(summonSlot1Action, "cueRoot"));
@@ -425,9 +430,22 @@ namespace DimensionBrawl.Tests
             }
 
             Assert.IsNotNull(activeSummonActor, "SummonSlot1 should keep an active frontline actor.");
+            SummonFrontlineProxyPresenter activeActorPresenter =
+                RequireComponent<SummonFrontlineProxyPresenter>(activeSummonActor.gameObject, "active SummonSlot1 actor presenter");
+            activeActorPresenter.RefreshNow();
+            Assert.IsTrue(activeActorPresenter.IsShowing);
+            Assert.AreEqual(3, activeActorPresenter.LastObservedTier);
+            Assert.Greater(activeActorPresenter.EntryFlashCount, 0);
+            Assert.IsNotNull(activeActorPresenter.PulseRoot);
             float actorStartLaneZ = laneSpace.GetLaneCoordinates(activeSummonActor.transform.position).y;
             Assert.IsTrue(activeSummonActor.IsAdvancing, "SummonSlot1 actor should surge into the frontline after entry.");
             activeSummonActor.Tick(0.24f);
+            activeSummonActor.Tick(0.18f);
+            activeActorPresenter.RefreshNow();
+            Assert.Greater(
+                activeActorPresenter.ImpactFlashCount,
+                0,
+                "SummonSlot1 actor presenter should flash when the frontline proxy reaches impact range.");
             float actorAdvancedLaneZ = laneSpace.GetLaneCoordinates(activeSummonActor.transform.position).y;
             Assert.Greater(
                 actorAdvancedLaneZ,

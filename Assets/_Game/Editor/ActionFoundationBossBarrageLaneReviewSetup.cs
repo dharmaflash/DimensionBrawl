@@ -62,6 +62,8 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot1Actor.mat";
         private const string SummonPressureScreenMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonPressureScreen.mat";
+        private const string SummonSlot1ActorPulseMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot1ActorPulse.mat";
 
         private const string ReviewRootPrefix = "BossBarrageLaneReview_";
         private const string LaneRootName = ReviewRootPrefix + "SummonLaneSpace";
@@ -385,6 +387,7 @@ namespace DimensionBrawl.Editor
             ValidateNoImportedAssetReference(SummonSlot1EntryCuePrefabPath);
             ValidateNoImportedAssetReference(SummonSlot1ActorPrefabPath);
             ValidateNoImportedAssetReference(SummonPressureScreenMaterialPath);
+            ValidateNoImportedAssetReference(SummonSlot1ActorPulseMaterialPath);
         }
 
         private static BossBarragePatternProfile EnsurePatternProfile()
@@ -906,6 +909,9 @@ namespace DimensionBrawl.Editor
             Material pressureScreenMaterial = LoadOrCreateTransparentMaterial(
                 SummonPressureScreenMaterialPath,
                 new Color(0.18f, 1f, 0.78f, 0.38f));
+            Material pulseMaterial = LoadOrCreateTransparentMaterial(
+                SummonSlot1ActorPulseMaterialPath,
+                new Color(0.45f, 0.95f, 1f, 0.72f));
             bool prefabExists = AssetDatabase.LoadAssetAtPath<GameObject>(SummonSlot1ActorPrefabPath) != null;
             GameObject editableRoot = prefabExists
                 ? PrefabUtility.LoadPrefabContents(SummonSlot1ActorPrefabPath)
@@ -977,6 +983,43 @@ namespace DimensionBrawl.Editor
                 SetFloat(presenter, "finalHitLingerSeconds", 0.16f);
                 SetFloat(presenter, "pulseSpeed", 9f);
                 SetFloat(presenter, "pulseScale", 0.04f);
+
+                Transform tierPulseCore = EnsureChild(editableRoot.transform, "TierPulseCore");
+                tierPulseCore.localPosition = new Vector3(0f, 1.08f, 0.08f);
+                tierPulseCore.localRotation = Quaternion.identity;
+                tierPulseCore.localScale = Vector3.one * 0.32f;
+                MeshFilter pulseFilter = EnsureComponent<MeshFilter>(tierPulseCore.gameObject);
+                pulseFilter.sharedMesh = LoadPrimitiveMesh(PrimitiveType.Sphere);
+                MeshRenderer pulseRenderer = EnsureComponent<MeshRenderer>(tierPulseCore.gameObject);
+                pulseRenderer.sharedMaterial = pulseMaterial;
+                pulseRenderer.shadowCastingMode = ShadowCastingMode.Off;
+                pulseRenderer.receiveShadows = false;
+                pulseRenderer.allowOcclusionWhenDynamic = false;
+                Collider pulseCollider = tierPulseCore.GetComponent<Collider>();
+                if (pulseCollider != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(pulseCollider);
+                }
+
+                SummonFrontlineProxyPresenter actorPresenter =
+                    EnsureComponent<SummonFrontlineProxyPresenter>(editableRoot);
+                SetObjectReference(actorPresenter, "proxy", proxy);
+                SetObjectReference(actorPresenter, "pulseRoot", tierPulseCore);
+                SetObjectReferenceArray(
+                    actorPresenter,
+                    "actorRenderers",
+                    new UnityEngine.Object[] { renderer, pulseRenderer });
+                SetColor(actorPresenter, "tierOneColor", new Color(0.24f, 1f, 0.78f, 0.78f));
+                SetColor(actorPresenter, "tierTwoColor", new Color(0.38f, 0.74f, 1f, 0.9f));
+                SetColor(actorPresenter, "tierThreeColor", new Color(1f, 0.76f, 0.24f, 1f));
+                SetColor(actorPresenter, "flashColor", Color.white);
+                SetFloat(actorPresenter, "entryFlashSeconds", 0.22f);
+                SetFloat(actorPresenter, "impactFlashSeconds", 0.18f);
+                SetFloat(actorPresenter, "impactFlashProgress", 0.86f);
+                SetFloat(actorPresenter, "pulseSpeed", 8f);
+                SetFloat(actorPresenter, "pulseScale", 0.08f);
+                SetFloat(actorPresenter, "tierScaleStep", 0.18f);
+                SetFloat(actorPresenter, "flashScale", 0.22f);
 
                 PrefabUtility.SaveAsPrefabAsset(editableRoot, SummonSlot1ActorPrefabPath);
             }
@@ -1581,6 +1624,8 @@ namespace DimensionBrawl.Editor
             SummonPressureScreen pressureScreen = LoadPrefabComponent<SummonPressureScreen>(SummonSlot1ActorPrefabPath);
             SummonPressureScreenPresenter presenter =
                 LoadPrefabComponent<SummonPressureScreenPresenter>(SummonSlot1ActorPrefabPath);
+            SummonFrontlineProxyPresenter actorPresenter =
+                LoadPrefabComponent<SummonFrontlineProxyPresenter>(SummonSlot1ActorPrefabPath);
             Transform pressureScreenVisual = summonActorPrefab.transform.Find("PressureScreenVisual");
             if (pressureScreenVisual == null)
             {
@@ -1593,6 +1638,18 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException("PressureScreenVisual is missing a MeshRenderer.");
             }
 
+            Transform tierPulseCore = summonActorPrefab.transform.Find("TierPulseCore");
+            if (tierPulseCore == null)
+            {
+                throw new InvalidOperationException("SummonSlot1 actor prefab is missing TierPulseCore.");
+            }
+
+            MeshRenderer pulseRenderer = tierPulseCore.GetComponent<MeshRenderer>();
+            if (pulseRenderer == null)
+            {
+                throw new InvalidOperationException("TierPulseCore is missing a MeshRenderer.");
+            }
+
             ValidateObjectReference(summonActorPrefab, "pressureScreen", pressureScreen);
             ValidateEnum(pressureScreen, "ownerTeam", (int)DamageTeam.AllySummon);
             ValidateInt(pressureScreen, "defaultMaxIntercepts", 2);
@@ -1601,6 +1658,17 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(presenter, "pressureScreen", pressureScreen);
             ValidateObjectReference(presenter, "visualRoot", pressureScreenVisual);
             ValidateArrayReference(presenter, "screenRenderers", 0, pressureScreenRenderer);
+            ValidateObjectReference(actorPresenter, "proxy", summonActorPrefab);
+            ValidateObjectReference(actorPresenter, "pulseRoot", tierPulseCore);
+            ValidateArrayReference(actorPresenter, "actorRenderers", 0, summonActorPrefab.GetComponent<MeshRenderer>());
+            ValidateArrayReference(actorPresenter, "actorRenderers", 1, pulseRenderer);
+            ValidateFloat(actorPresenter, "entryFlashSeconds", 0.22f);
+            ValidateFloat(actorPresenter, "impactFlashSeconds", 0.18f);
+            ValidateFloat(actorPresenter, "impactFlashProgress", 0.86f);
+            ValidateFloat(actorPresenter, "pulseSpeed", 8f);
+            ValidateFloat(actorPresenter, "pulseScale", 0.08f);
+            ValidateFloat(actorPresenter, "tierScaleStep", 0.18f);
+            ValidateFloat(actorPresenter, "flashScale", 0.22f);
         }
 
         private static void ValidateCloseThreat(
