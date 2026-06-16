@@ -61,6 +61,16 @@ namespace DimensionBrawl.Combat
             return true;
         }
 
+        public void GrantCurrentTierEnergy(float energyAmount)
+        {
+            if (energyAmount <= 0f || IsCapped)
+            {
+                return;
+            }
+
+            ApplyEnergyAmount(energyAmount);
+        }
+
         public void ResetLadder()
         {
             chargingTier = 1;
@@ -82,7 +92,17 @@ namespace DimensionBrawl.Combat
             }
 
             currentGainMultiplier = EvaluateGainMultiplier();
-            currentTierEnergy += baseEnergyPerSecond * currentGainMultiplier * deltaTime;
+            ApplyEnergyAmount(baseEnergyPerSecond * currentGainMultiplier * deltaTime);
+        }
+
+        private void ApplyEnergyAmount(float energyAmount)
+        {
+            if (energyAmount <= 0f || IsCapped)
+            {
+                return;
+            }
+
+            currentTierEnergy += energyAmount;
             float target = CurrentTierTarget;
 
             if (currentTierEnergy >= target)

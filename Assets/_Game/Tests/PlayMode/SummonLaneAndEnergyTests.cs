@@ -73,6 +73,31 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void EnergyRewardPulseCanOpenCurrentTierSpend()
+        {
+            GameObject playerObject = new GameObject("Player");
+            SummonEnergyLadder energy = playerObject.AddComponent<SummonEnergyLadder>();
+
+            energy.GrantCurrentTierEnergy(99f);
+            Assert.IsFalse(energy.CanSpend);
+            Assert.AreEqual(1, energy.ChargingTier);
+            Assert.AreEqual(99f, energy.CurrentTierEnergy, 0.001f);
+
+            energy.GrantCurrentTierEnergy(1f);
+            Assert.IsTrue(energy.CanSpend);
+            Assert.AreEqual(1, energy.AvailableTier);
+            Assert.AreEqual(2, energy.ChargingTier);
+            Assert.AreEqual(0f, energy.CurrentTierEnergy, 0.001f);
+
+            Assert.IsTrue(energy.TrySpend(out int spentTier));
+            Assert.AreEqual(1, spentTier);
+            Assert.AreEqual(0, energy.AvailableTier);
+            Assert.AreEqual(1, energy.ChargingTier);
+
+            Object.DestroyImmediate(playerObject);
+        }
+
+        [Test]
         public void BossBarragePatternTightensProjectileSpreadNearForwardBoundary()
         {
             BossBarragePatternProfile pattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();

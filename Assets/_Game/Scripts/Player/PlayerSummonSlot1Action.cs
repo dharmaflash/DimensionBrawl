@@ -82,6 +82,7 @@ namespace DimensionBrawl.Player
         private int lastPressureScreenInterceptCount;
         private int lastPressureScreenInterceptTier;
         private int totalPressureScreenInterceptCount;
+        private int totalUseCount;
         private Vector3 lastEntryPosition;
         private Vector3 lastSummonActorPosition;
 
@@ -91,6 +92,7 @@ namespace DimensionBrawl.Player
         public int LastPressureScreenInterceptCount => lastPressureScreenInterceptCount;
         public int LastPressureScreenInterceptTier => lastPressureScreenInterceptTier;
         public int TotalPressureScreenInterceptCount => totalPressureScreenInterceptCount;
+        public int TotalUseCount => totalUseCount;
         public Vector3 LastEntryPosition => lastEntryPosition;
         public Vector3 LastSummonActorPosition => lastSummonActorPosition;
         public int ActiveProjectileCount => CountActiveProjectiles();
@@ -184,6 +186,7 @@ namespace DimensionBrawl.Player
             }
 
             lastSpentTier = Mathf.Clamp(spentTier, 1, 3);
+            totalUseCount++;
             FireTier(lastSpentTier);
             SummonSlot1Used?.Invoke(lastSpentTier);
             return true;

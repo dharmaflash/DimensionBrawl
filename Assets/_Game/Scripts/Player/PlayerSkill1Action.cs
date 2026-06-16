@@ -87,9 +87,11 @@ namespace DimensionBrawl.Player
         private bool queued;
         private int lastSpentTier;
         private int lastFiredProjectileCount;
+        private int totalUseCount;
 
         public int LastSpentTier => lastSpentTier;
         public int LastFiredProjectileCount => lastFiredProjectileCount;
+        public int TotalUseCount => totalUseCount;
         public int ActiveProjectileCount => CountActiveProjectiles();
 
         public event Action<int> Skill1Used;
@@ -160,6 +162,7 @@ namespace DimensionBrawl.Player
             }
 
             lastSpentTier = Mathf.Clamp(spentTier, 1, 3);
+            totalUseCount++;
             FireTier(lastSpentTier);
             Skill1Used?.Invoke(lastSpentTier);
             return true;

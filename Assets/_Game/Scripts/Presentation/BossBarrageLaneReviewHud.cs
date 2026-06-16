@@ -150,7 +150,23 @@ namespace DimensionBrawl.Presentation
                 : "LV-";
             return $"{skillShots}   Summon {tier} proxy {summonSlot1Action.ActiveSummonActorCount} "
                 + $"bolts {summonSlot1Action.ActiveProjectileCount} shield {summonSlot1Action.ActivePressureScreenCount} "
-                + $"blocks {summonSlot1Action.ActivePressureScreenRemainingIntercepts}";
+                + $"blocks {summonSlot1Action.ActivePressureScreenRemainingIntercepts}"
+                + ResolveFollowupLine();
+        }
+
+        private string ResolveFollowupLine()
+        {
+            if (pocketReviewOwner == null || !pocketReviewOwner.IsSummonPressureBreakActive)
+            {
+                return string.Empty;
+            }
+
+            string followup = pocketReviewOwner.IsSummonFollowupWindowActive
+                ? $" follow-up {pocketReviewOwner.SummonFollowupWindowRemainingSeconds:0.0}s"
+                : " relief";
+            return pocketReviewOwner.UsedSkill1DuringSummonFollowup
+                ? $"{followup} Skill1 used"
+                : $"{followup} EN pulse";
         }
 
         private string ResolveObjectiveLine()

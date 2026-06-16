@@ -29,6 +29,7 @@ namespace DimensionBrawl.Test
         [SerializeField, Min(0f)] private float closeThreatDefeatPressureReliefSeconds = 0.9f;
         [SerializeField, Min(0f)] private float summonPressureBreakReliefSeconds = 2.4f;
         [SerializeField, Min(0f)] private float summonFollowupWindowSeconds = 1.4f;
+        [SerializeField, Min(0f)] private float summonFollowupEnergyPulse = 100f;
 
         [Header("Resource")]
         [SerializeField] private bool stopEnergyGainOnEnd = true;
@@ -43,10 +44,16 @@ namespace DimensionBrawl.Test
         private bool usedSummonSlot1;
         private bool closeThreatDefeated;
         private bool blockedBossPressureWithSummon;
+        private bool grantedSummonFollowupEnergy;
+        private bool usedSkill1DuringSummonFollowup;
         private int pressureBlocksAtCloseThreatDefeat;
+        private int observedSkillUseCount;
+        private int observedSummonUseCount;
+        private int skillUsesAtSummonBreakStart;
         private int highestSkillTier;
         private int highestSummonTier;
         private int highestSummonPressureTier;
+        private int highestSummonFollowupSkillTier;
 
         public bool IsRunning => state == PocketState.Running;
         public bool IsCleared => state == PocketState.Cleared;
@@ -55,24 +62,33 @@ namespace DimensionBrawl.Test
         public bool UsedSummonSlot1 => usedSummonSlot1;
         public bool CloseThreatDefeated => closeThreatDefeated;
         public bool BlockedBossPressureWithSummon => blockedBossPressureWithSummon;
+        public bool GrantedSummonFollowupEnergy => grantedSummonFollowupEnergy;
+        public bool UsedSkill1DuringSummonFollowup => usedSkill1DuringSummonFollowup;
         public bool IsPressureReliefActive => pressurePacing.IsCloseThreatReliefActive;
         public bool IsSummonPressureBreakActive => pressurePacing.IsSummonPressureBreakActive;
         public bool IsSummonFollowupWindowActive => pressurePacing.IsSummonFollowupWindowActive;
         public float PressureReliefRemainingSeconds => pressurePacing.CloseThreatReliefRemainingSeconds;
         public float SummonPressureBreakRemainingSeconds => pressurePacing.SummonPressureBreakRemainingSeconds;
         public float SummonFollowupWindowRemainingSeconds => pressurePacing.SummonFollowupWindowRemainingSeconds;
+        public float SummonFollowupEnergyPulse => summonFollowupEnergyPulse;
         public int PressureBlocksAfterCloseThreatDefeated => CountPressureBlocksAfterCloseThreatDefeated();
         public int HighestSkillTier => highestSkillTier;
         public int HighestSummonTier => highestSummonTier;
         public int HighestSummonPressureTier => highestSummonPressureTier;
+        public int HighestSummonFollowupSkillTier => highestSummonFollowupSkillTier;
         public string ObjectiveCue
         {
             get
             {
                 if (pressurePacing.IsSummonPressureBreakActive)
                 {
+                    if (usedSkill1DuringSummonFollowup)
+                    {
+                        return "Follow-up Skill1 answered the break";
+                    }
+
                     return pressurePacing.IsSummonFollowupWindowActive
-                        ? "Summon block opened a follow-up window"
+                        ? "Use Skill1 during summon follow-up"
                         : "Boss pressure is broken briefly";
                 }
 
@@ -110,11 +126,17 @@ namespace DimensionBrawl.Test
             usedSummonSlot1 = false;
             closeThreatDefeated = false;
             blockedBossPressureWithSummon = false;
+            grantedSummonFollowupEnergy = false;
+            usedSkill1DuringSummonFollowup = false;
             pressureBlocksAtCloseThreatDefeat = 0;
+            observedSkillUseCount = GetSkillUseCount();
+            observedSummonUseCount = GetSummonUseCount();
+            skillUsesAtSummonBreakStart = observedSkillUseCount;
             pressurePacing.Reset();
             highestSkillTier = 0;
             highestSummonTier = 0;
             highestSummonPressureTier = 0;
+            highestSummonFollowupSkillTier = 0;
             SetBarrageEnabled(true);
             SetEnergyGainEnabled(true);
             SetMarkers();
@@ -158,16 +180,29 @@ namespace DimensionBrawl.Test
 
         private void CaptureActionUse()
         {
-            if (skill1Action != null && skill1Action.LastSpentTier > 0)
+            int currentSkillUseCount = GetSkillUseCount();
+            if (skill1Action != null && currentSkillUseCount > observedSkillUseCount)
             {
                 usedSkill1 = true;
                 highestSkillTier = Mathf.Max(highestSkillTier, skill1Action.LastSpentTier);
+                if (pressurePacing.IsSummonFollowupWindowActive
+                    && currentSkillUseCount > skillUsesAtSummonBreakStart)
+                {
+                    usedSkill1DuringSummonFollowup = true;
+                    highestSummonFollowupSkillTier = Mathf.Max(
+                        highestSummonFollowupSkillTier,
+                        skill1Action.LastSpentTier);
+                }
+
+                observedSkillUseCount = currentSkillUseCount;
             }
 
-            if (summonSlot1Action != null && summonSlot1Action.LastSpentTier > 0)
+            int currentSummonUseCount = GetSummonUseCount();
+            if (summonSlot1Action != null && currentSummonUseCount > observedSummonUseCount)
             {
                 usedSummonSlot1 = true;
                 highestSummonTier = Mathf.Max(highestSummonTier, summonSlot1Action.LastSpentTier);
+                observedSummonUseCount = currentSummonUseCount;
             }
 
             if (summonSlot1Action != null
@@ -220,9 +255,11 @@ namespace DimensionBrawl.Test
 
         private void StartSummonPressureBreak()
         {
+            skillUsesAtSummonBreakStart = GetSkillUseCount();
             pressurePacing.StartSummonPressureBreak(
                 summonPressureBreakReliefSeconds,
                 summonFollowupWindowSeconds);
+            GrantSummonFollowupEnergyPulse();
             ApplyRunningBarragePacing();
         }
 
@@ -263,6 +300,29 @@ namespace DimensionBrawl.Test
             }
 
             SetBarrageEnabled(!pressurePacing.ShouldPauseBarrage);
+        }
+
+        private void GrantSummonFollowupEnergyPulse()
+        {
+            if (grantedSummonFollowupEnergy
+                || energyLadder == null
+                || summonFollowupEnergyPulse <= 0f)
+            {
+                return;
+            }
+
+            energyLadder.GrantCurrentTierEnergy(summonFollowupEnergyPulse);
+            grantedSummonFollowupEnergy = true;
+        }
+
+        private int GetSkillUseCount()
+        {
+            return skill1Action != null ? skill1Action.TotalUseCount : 0;
+        }
+
+        private int GetSummonUseCount()
+        {
+            return summonSlot1Action != null ? summonSlot1Action.TotalUseCount : 0;
         }
 
         private void SetBarrageEnabled(bool enabled)

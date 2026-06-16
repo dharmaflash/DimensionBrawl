@@ -815,6 +815,7 @@ namespace DimensionBrawl.Tests
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
             SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(RequireRoot(BossRootName), "boss barrage emitter");
@@ -891,6 +892,7 @@ namespace DimensionBrawl.Tests
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
             SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(RequireRoot(BossRootName), "boss barrage emitter");
@@ -942,6 +944,27 @@ namespace DimensionBrawl.Tests
                 "Boss barrage should pause while the summon pressure-break relief is active.");
             Assert.AreEqual(1, pocketOwner.HighestSummonTier);
             Assert.AreEqual(1, pocketOwner.HighestSummonPressureTier);
+            Assert.IsTrue(
+                pocketOwner.GrantedSummonFollowupEnergy,
+                "The summon pressure break should pulse enough EN to make the short follow-up window actionable.");
+            Assert.That(
+                pocketOwner.SummonFollowupEnergyPulse,
+                Is.EqualTo(100f).Within(0.001f),
+                "The first follow-up reward should match the documented LV1 review-pulse tuning.");
+            Assert.IsTrue(
+                energyLadder.CanSpend,
+                "After a correct summon block, the EN reward pulse should reopen at least LV1 for a follow-up choice.");
+            Assert.AreEqual(1, energyLadder.AvailableTier);
+
+            Assert.IsTrue(skill1Action.TryUseSkill1());
+            pocketOwner.Tick(0f);
+
+            Assert.IsTrue(pocketOwner.UsedSkill1DuringSummonFollowup);
+            Assert.AreEqual(1, pocketOwner.HighestSummonFollowupSkillTier);
+            Assert.Greater(
+                skill1Action.ActiveProjectileCount,
+                0,
+                "The follow-up Skill1 should be a real lane projectile, not only a HUD state.");
 
             pocketOwner.Tick(1.39f);
             Assert.IsTrue(pocketOwner.IsRunning);
