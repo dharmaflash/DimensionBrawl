@@ -887,7 +887,29 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(pocketOwner.IsSummonFollowupWindowActive);
 
             pocketOwner.Tick(1f);
-            Assert.IsTrue(pocketOwner.IsCleared);
+            Assert.IsTrue(pocketOwner.IsRunning);
+            Assert.IsFalse(
+                pocketOwner.IsCleared,
+                "A summon pressure block should create the follow-up opening, but the pocket should not clear until Skill1 actually hits the boss/proxy.");
+            Assert.IsFalse(pocketOwner.IsSummonPressureBreakActive);
+            Assert.IsTrue(emitter.IsFiringEnabled);
+            Assert.That(pocketOwner.ObjectiveCue, Does.Contain("Follow-up missed"));
+
+            Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
+            SummonPressureScreen retryScreen = RequireActiveAllyPressureScreen();
+            Assert.IsTrue(emitter.BeginWindup());
+            Assert.Greater(emitter.FirePendingWave(), 0);
+            BossBarrageProjectile retryBossProjectile = RequireActiveBossProjectile();
+            Assert.IsTrue(retryScreen.TryIntercept(retryBossProjectile));
+
+            pocketOwner.Tick(0f);
+
+            Assert.IsTrue(pocketOwner.IsRunning);
+            Assert.IsTrue(pocketOwner.IsSummonPressureBreakActive);
+            Assert.IsTrue(
+                pocketOwner.IsSummonFollowupWindowActive,
+                "Missing the follow-up should return the player to boss pressure and allow a later SummonSlot1 block to reopen the Skill1 window.");
+            Assert.AreEqual(2, pocketOwner.PressureBlocksAfterCloseThreatDefeated);
         }
 
         [UnityTest]

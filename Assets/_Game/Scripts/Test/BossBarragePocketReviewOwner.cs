@@ -32,6 +32,9 @@ namespace DimensionBrawl.Test
         [SerializeField, Min(0f)] private float summonFollowupWindowSeconds = 1.4f;
         [SerializeField, Min(0f)] private float summonFollowupEnergyPulse = 100f;
 
+        [Header("Follow-up Result")]
+        [SerializeField] private bool requireSkill1FollowupHitToClear = true;
+
         [Header("Resource")]
         [SerializeField] private bool stopEnergyGainOnEnd = true;
 
@@ -50,6 +53,7 @@ namespace DimensionBrawl.Test
         private bool skill1FollowupHitConfirmed;
         private float skill1FollowupDamage;
         private int pressureBlocksAtCloseThreatDefeat;
+        private int pressureBlocksConsumedBySummonBreak;
         private int observedSkillUseCount;
         private int observedSummonUseCount;
         private int skillUsesAtSummonBreakStart;
@@ -77,6 +81,7 @@ namespace DimensionBrawl.Test
         public float SummonPressureBreakRemainingSeconds => pressurePacing.SummonPressureBreakRemainingSeconds;
         public float SummonFollowupWindowRemainingSeconds => pressurePacing.SummonFollowupWindowRemainingSeconds;
         public float SummonFollowupEnergyPulse => summonFollowupEnergyPulse;
+        public bool RequireSkill1FollowupHitToClear => requireSkill1FollowupHitToClear;
         public int PressureBlocksAfterCloseThreatDefeated => CountPressureBlocksAfterCloseThreatDefeated();
         public int HighestSkillTier => highestSkillTier;
         public int HighestSummonTier => highestSummonTier;
@@ -102,7 +107,17 @@ namespace DimensionBrawl.Test
 
                     return pressurePacing.IsSummonFollowupWindowActive
                         ? "Use Skill1 during summon follow-up"
-                        : "Boss pressure is broken briefly";
+                        : requireSkill1FollowupHitToClear
+                            ? "Follow-up missed; boss pressure returning"
+                            : "Boss pressure is broken briefly";
+                }
+
+                if (closeThreatDefeated
+                    && blockedBossPressureWithSummon
+                    && requireSkill1FollowupHitToClear
+                    && !skill1FollowupHitConfirmed)
+                {
+                    return "Follow-up missed; block boss fire again";
                 }
 
                 return closeThreatDefeated
@@ -144,6 +159,7 @@ namespace DimensionBrawl.Test
             skill1FollowupHitConfirmed = false;
             skill1FollowupDamage = 0f;
             pressureBlocksAtCloseThreatDefeat = 0;
+            pressureBlocksConsumedBySummonBreak = 0;
             observedSkillUseCount = GetSkillUseCount();
             observedSummonUseCount = GetSummonUseCount();
             skillUsesAtSummonBreakStart = observedSkillUseCount;
@@ -191,10 +207,7 @@ namespace DimensionBrawl.Test
             CaptureCloseThreatDefeat();
             UpdatePressurePacing(deltaTime);
 
-            if (closeThreatDefeated
-                && usedSummonSlot1
-                && blockedBossPressureWithSummon
-                && !pressurePacing.IsSummonPressureBreakActive)
+            if (CanClearPocket())
             {
                 ClearPocket();
             }
@@ -227,11 +240,11 @@ namespace DimensionBrawl.Test
                 observedSummonUseCount = currentSummonUseCount;
             }
 
-            if (summonSlot1Action != null
-                && closeThreatDefeated
-                && summonSlot1Action.TotalPressureScreenInterceptCount > pressureBlocksAtCloseThreatDefeat)
+            int pressureBlocksAfterCloseThreatDefeated = CountPressureBlocksAfterCloseThreatDefeated();
+            if (pressureBlocksAfterCloseThreatDefeated > pressureBlocksConsumedBySummonBreak)
             {
-                if (!blockedBossPressureWithSummon)
+                pressureBlocksConsumedBySummonBreak = pressureBlocksAfterCloseThreatDefeated;
+                if (!pressurePacing.IsSummonPressureBreakActive)
                 {
                     StartSummonPressureBreak();
                 }
@@ -241,6 +254,19 @@ namespace DimensionBrawl.Test
                     highestSummonPressureTier,
                     summonSlot1Action.LastPressureScreenInterceptTier);
             }
+        }
+
+        private bool CanClearPocket()
+        {
+            if (!closeThreatDefeated
+                || !usedSummonSlot1
+                || !blockedBossPressureWithSummon
+                || pressurePacing.IsSummonPressureBreakActive)
+            {
+                return false;
+            }
+
+            return !requireSkill1FollowupHitToClear || skill1FollowupHitConfirmed;
         }
 
         private void OnBossDamaged(DamageInfo damageInfo)
@@ -296,6 +322,10 @@ namespace DimensionBrawl.Test
         private void StartSummonPressureBreak()
         {
             skillUsesAtSummonBreakStart = GetSkillUseCount();
+            grantedSummonFollowupEnergy = false;
+            usedSkill1DuringSummonFollowup = false;
+            skill1FollowupHitConfirmed = false;
+            skill1FollowupDamage = 0f;
             pressurePacing.StartSummonPressureBreak(
                 summonPressureBreakReliefSeconds,
                 summonFollowupWindowSeconds);
