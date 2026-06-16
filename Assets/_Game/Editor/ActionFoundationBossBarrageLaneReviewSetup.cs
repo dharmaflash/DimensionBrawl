@@ -75,6 +75,7 @@ namespace DimensionBrawl.Editor
         private const string PocketOwnerRootName = ReviewRootPrefix + "PocketOwner";
         private const string HudRootName = ReviewRootPrefix + "DebugHud";
         private const string MarkerRootName = ReviewRootPrefix + "Markers";
+        private const string EnergyZoneRootName = ReviewRootPrefix + "EnergyRiskZones";
         private const string PocketClearMarkerName = ReviewRootPrefix + "PocketClearMarker";
         private const string PocketFailMarkerName = ReviewRootPrefix + "PocketFailMarker";
         private const string SummonEntryMarkerName = ReviewRootPrefix + "SummonEntryMarker";
@@ -91,6 +92,12 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarragePlayerBoundary.mat";
         private const string SummonBoundaryMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageSummonBoundary.mat";
+        private const string BacklineEnergyZoneMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageBacklineEnergyZone.mat";
+        private const string MidEnergyZoneMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageMidEnergyZone.mat";
+        private const string ForwardEnergyZoneMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageForwardEnergyZone.mat";
 
         private static readonly Vector3 PlayerStartPosition = new Vector3(0f, 0f, -8.5f);
         private static readonly Vector3 CameraStartOffset = new Vector3(0f, 2.6f, -8.2f);
@@ -244,6 +251,7 @@ namespace DimensionBrawl.Editor
             ConfigureBossBarrageCameraCueDriver(cameraController, bossBarrageEmitter, player.transform);
             ConfigureArenaInfluenceTargets(scene, player.transform, bossProxy.transform, closeThreat.transform);
             CreateLaneMarkers(scene, laneSpace);
+            CreateEnergyRiskZoneMarkers(scene, laneSpace);
             CreateBossBarrageTelegraphMarkers(scene, laneSpace, bossBarrageEmitter);
 
             if (!EditorSceneManager.SaveScene(scene, ReviewScenePath))
@@ -363,6 +371,7 @@ namespace DimensionBrawl.Editor
                     "boss barrage lane telegraph presenter"),
                 emitter,
                 laneSpace);
+            ValidateEnergyRiskZoneMarkers(scene, laneSpace);
             ValidateObjectReference(encounter, "playerHealth", playerHealth);
             ValidateObjectReference(encounter, "enemyHealth", closeThreatHealth);
             ValidatePocketOwner(pocketOwner, playerHealth, closeThreatHealth, energyLadder, skill1Action, summonSlot1Action, emitter);
@@ -399,6 +408,9 @@ namespace DimensionBrawl.Editor
             ValidateNoImportedAssetReference(SummonPressureScreenMaterialPath);
             ValidateNoImportedAssetReference(SummonSlot1ActorPulseMaterialPath);
             ValidateNoImportedAssetReference(BossTelegraphMaterialPath);
+            ValidateNoImportedAssetReference(BacklineEnergyZoneMaterialPath);
+            ValidateNoImportedAssetReference(MidEnergyZoneMaterialPath);
+            ValidateNoImportedAssetReference(ForwardEnergyZoneMaterialPath);
         }
 
         private static BossBarragePatternProfile EnsurePatternProfile()
@@ -1327,12 +1339,73 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(presenter);
         }
 
+        private static void CreateEnergyRiskZoneMarkers(Scene scene, SummonLaneSpace laneSpace)
+        {
+            GameObject root = CreateRoot(scene, EnergyZoneRootName);
+            Material backlineMaterial = LoadOrCreateTransparentMaterial(
+                BacklineEnergyZoneMaterialPath,
+                new Color(0.18f, 0.64f, 1f, 0.2f));
+            Material midMaterial = LoadOrCreateTransparentMaterial(
+                MidEnergyZoneMaterialPath,
+                new Color(0.35f, 1f, 0.72f, 0.22f));
+            Material forwardMaterial = LoadOrCreateTransparentMaterial(
+                ForwardEnergyZoneMaterialPath,
+                new Color(1f, 0.6f, 0.18f, 0.25f));
+
+            float backZ = laneSpace.BackLimitZ;
+            float forwardZ = laneSpace.ForwardBoundaryZ;
+            float backEndZ = Mathf.Lerp(backZ, forwardZ, 1f / 3f);
+            float midEndZ = Mathf.Lerp(backZ, forwardZ, 2f / 3f);
+
+            CreateEnergyZoneMarker(
+                root.transform,
+                laneSpace,
+                "BackSafety_ENSlow_0_33",
+                backZ,
+                backEndZ,
+                backlineMaterial);
+            CreateEnergyZoneMarker(
+                root.transform,
+                laneSpace,
+                "MidCharge_ENBase_33_66",
+                backEndZ,
+                midEndZ,
+                midMaterial);
+            CreateEnergyZoneMarker(
+                root.transform,
+                laneSpace,
+                "ForwardRisk_ENFast_66_100",
+                midEndZ,
+                forwardZ,
+                forwardMaterial);
+        }
+
+        private static void CreateEnergyZoneMarker(
+            Transform root,
+            SummonLaneSpace laneSpace,
+            string markerName,
+            float startZ,
+            float endZ,
+            Material material)
+        {
+            float centerZ = (startZ + endZ) * 0.5f;
+            float depth = Mathf.Abs(endZ - startZ);
+            CreateMarker(
+                root,
+                markerName,
+                laneSpace.GetLaneWorldPoint(0f, centerZ, 0.026f),
+                new Vector3(laneSpace.HalfWidth * 2f, 0.025f, depth),
+                material,
+                removeCollider: true);
+        }
+
         private static GameObject CreateMarker(
             Transform parent,
             string name,
             Vector3 position,
             Vector3 scale,
-            Material material)
+            Material material,
+            bool removeCollider = false)
         {
             GameObject marker = GameObject.CreatePrimitive(PrimitiveType.Cube);
             marker.name = name;
@@ -1341,6 +1414,15 @@ namespace DimensionBrawl.Editor
             marker.transform.rotation = Quaternion.identity;
             marker.transform.localScale = scale;
             marker.GetComponent<MeshRenderer>().sharedMaterial = material;
+            if (removeCollider)
+            {
+                Collider collider = marker.GetComponent<Collider>();
+                if (collider != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(collider);
+                }
+            }
+
             return marker;
         }
 
@@ -1628,6 +1710,76 @@ namespace DimensionBrawl.Editor
                 Renderer renderer = ValidateArrayAssignedReference<Renderer>(presenter, "markerRenderers", i);
                 ValidateGameOwnedAsset(renderer.sharedMaterial, $"boss barrage telegraph marker {i} material");
             }
+        }
+
+        private static void ValidateEnergyRiskZoneMarkers(Scene scene, SummonLaneSpace laneSpace)
+        {
+            Transform root = RequireRoot(scene, EnergyZoneRootName).transform;
+            ValidateEnergyRiskZoneMarker(
+                root,
+                "BackSafety_ENSlow_0_33",
+                laneSpace,
+                0f,
+                1f / 3f,
+                BacklineEnergyZoneMaterialPath);
+            ValidateEnergyRiskZoneMarker(
+                root,
+                "MidCharge_ENBase_33_66",
+                laneSpace,
+                1f / 3f,
+                2f / 3f,
+                MidEnergyZoneMaterialPath);
+            ValidateEnergyRiskZoneMarker(
+                root,
+                "ForwardRisk_ENFast_66_100",
+                laneSpace,
+                2f / 3f,
+                1f,
+                ForwardEnergyZoneMaterialPath);
+        }
+
+        private static void ValidateEnergyRiskZoneMarker(
+            Transform root,
+            string markerName,
+            SummonLaneSpace laneSpace,
+            float startRisk01,
+            float endRisk01,
+            string materialPath)
+        {
+            Transform marker = root.Find(markerName);
+            if (marker == null)
+            {
+                throw new InvalidOperationException($"Missing energy risk zone marker {markerName}.");
+            }
+
+            float startZ = Mathf.Lerp(laneSpace.BackLimitZ, laneSpace.ForwardBoundaryZ, startRisk01);
+            float endZ = Mathf.Lerp(laneSpace.BackLimitZ, laneSpace.ForwardBoundaryZ, endRisk01);
+            float expectedCenterZ = (startZ + endZ) * 0.5f;
+            float expectedDepth = Mathf.Abs(endZ - startZ);
+            Vector2 coordinates = laneSpace.GetLaneCoordinates(marker.position);
+            if (Mathf.Abs(coordinates.y - expectedCenterZ) > 0.05f)
+            {
+                throw new InvalidOperationException($"{markerName} is not centered in the expected lane zone.");
+            }
+
+            if (Mathf.Abs(marker.localScale.z - expectedDepth) > 0.05f)
+            {
+                throw new InvalidOperationException($"{markerName} does not cover the expected lane depth.");
+            }
+
+            if (Mathf.Abs(marker.localScale.x - laneSpace.HalfWidth * 2f) > 0.05f)
+            {
+                throw new InvalidOperationException($"{markerName} does not cover the player lane width.");
+            }
+
+            if (marker.GetComponent<Collider>() != null)
+            {
+                throw new InvalidOperationException($"{markerName} must remain visual-only and not block movement.");
+            }
+
+            Renderer renderer = RequireComponent<Renderer>(marker.gameObject, markerName);
+            ValidateObjectReference(renderer, "m_Materials.Array.data[0]", LoadAsset<Material>(materialPath));
+            ValidateGameOwnedAsset(renderer.sharedMaterial, $"{markerName} material");
         }
 
         private static void ValidateSummonForwardSpace(SummonLaneSpace laneSpace)

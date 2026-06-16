@@ -61,7 +61,14 @@ namespace DimensionBrawl.Tests
         private const string SummonActorPoolRootName = "BossBarrageLaneReview_SummonActorPool";
         private const string PocketOwnerRootName = "BossBarrageLaneReview_PocketOwner";
         private const string BossTelegraphRootName = "BossBarrageLaneReview_BossBarrageTelegraphMarkers";
+        private const string EnergyZoneRootName = "BossBarrageLaneReview_EnergyRiskZones";
         private const string HudRootName = "BossBarrageLaneReview_DebugHud";
+        private const string BacklineEnergyZoneMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageBacklineEnergyZone.mat";
+        private const string MidEnergyZoneMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageMidEnergyZone.mat";
+        private const string ForwardEnergyZoneMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageForwardEnergyZone.mat";
         private static readonly string[] RequiredBossPatternCueIds =
         {
             "NeedleLock",
@@ -126,6 +133,7 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossBarrageLaneTelegraphPresenter>(
                     RequireRoot(BossTelegraphRootName),
                     "boss barrage lane telegraph presenter");
+            GameObject energyZoneRoot = RequireRoot(EnergyZoneRootName);
 
             Assert.AreSame(laneSpace, player.LaneSpace, "Player movement must clamp through the authored lane space.");
             Assert.AreSame(emitter, telegraphPresenter.BossBarrageEmitter);
@@ -134,6 +142,27 @@ namespace DimensionBrawl.Tests
                 telegraphPresenter.MarkerCount,
                 9,
                 "Boss barrage lane telegraphs must be authored world markers, not HUD-only warning text.");
+            AssertEnergyZoneMarker(
+                energyZoneRoot.transform,
+                "BackSafety_ENSlow_0_33",
+                laneSpace,
+                0f,
+                1f / 3f,
+                BacklineEnergyZoneMaterialPath);
+            AssertEnergyZoneMarker(
+                energyZoneRoot.transform,
+                "MidCharge_ENBase_33_66",
+                laneSpace,
+                1f / 3f,
+                2f / 3f,
+                MidEnergyZoneMaterialPath);
+            AssertEnergyZoneMarker(
+                energyZoneRoot.transform,
+                "ForwardRisk_ENFast_66_100",
+                laneSpace,
+                2f / 3f,
+                1f,
+                ForwardEnergyZoneMaterialPath);
             Assert.AreSame(LoadAsset<PlayerActionProfile>(LocalDefenseProfilePath), playerActionController.ActionProfile);
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(energyLadder, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(energyLadder, "trackedPlayer"));
@@ -1038,6 +1067,42 @@ namespace DimensionBrawl.Tests
                     AssertGameOwnedAsset(materials[i], $"{label} material");
                 }
             }
+        }
+
+        private static void AssertEnergyZoneMarker(
+            Transform root,
+            string markerName,
+            SummonLaneSpace laneSpace,
+            float startRisk01,
+            float endRisk01,
+            string materialPath)
+        {
+            Transform marker = root.Find(markerName);
+            Assert.IsNotNull(marker, $"{markerName} should be authored in the review scene.");
+            Assert.IsNull(marker.GetComponent<Collider>(), $"{markerName} should be visual-only and not block movement.");
+
+            float startZ = Mathf.Lerp(laneSpace.BackLimitZ, laneSpace.ForwardBoundaryZ, startRisk01);
+            float endZ = Mathf.Lerp(laneSpace.BackLimitZ, laneSpace.ForwardBoundaryZ, endRisk01);
+            float expectedCenterZ = (startZ + endZ) * 0.5f;
+            float expectedDepth = Mathf.Abs(endZ - startZ);
+            Vector2 laneCoordinates = laneSpace.GetLaneCoordinates(marker.position);
+            Assert.That(
+                laneCoordinates.y,
+                Is.EqualTo(expectedCenterZ).Within(0.05f),
+                $"{markerName} should sit in the intended EN risk band.");
+            Assert.That(
+                marker.localScale.z,
+                Is.EqualTo(expectedDepth).Within(0.05f),
+                $"{markerName} should cover its EN risk band depth.");
+            Assert.That(
+                marker.localScale.x,
+                Is.EqualTo(laneSpace.HalfWidth * 2f).Within(0.05f),
+                $"{markerName} should cover the player lane width.");
+
+            Renderer renderer = RequireComponent<Renderer>(marker.gameObject, markerName);
+            Material expectedMaterial = LoadAsset<Material>(materialPath);
+            Assert.AreSame(expectedMaterial, renderer.sharedMaterial, $"{markerName} should use its authored zone material.");
+            AssertGameOwnedAsset(renderer.sharedMaterial, $"{markerName} material");
         }
 
         private static void AssertGameOwnedAsset(Object asset, string label)
