@@ -93,6 +93,15 @@ MonoBehaviour:
     focusHeightDelta: 0.04
     durationSeconds: 0.18
     finisherScale: 1.25
+  summonBlockOpportunityCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.07, z: -0.16}
+    planarDirectionOffset: 0.04
+    fieldOfViewDelta: 1.2
+    cameraDistanceDelta: -0.18
+    focusHeightDelta: 0.05
+    durationSeconds: 0.22
+    finisherScale: 1.1
   summonFollowupWindowCue:
     enabled: 1
     localOffset: {x: 0, y: 0.05, z: -0.14}

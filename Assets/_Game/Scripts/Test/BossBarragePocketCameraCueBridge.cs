@@ -26,6 +26,7 @@ namespace DimensionBrawl.Test
                 return;
             }
 
+            pocketReviewOwner.SummonBlockOpportunityOpened += HandleSummonBlockOpportunityOpened;
             pocketReviewOwner.SummonFollowupWindowOpened += HandleSummonFollowupWindowOpened;
             pocketReviewOwner.SummonFollowupHitConfirmed += HandleSummonFollowupHitConfirmed;
             pocketReviewOwner.SummonFollowupMissed += HandleSummonFollowupMissed;
@@ -38,9 +39,18 @@ namespace DimensionBrawl.Test
                 return;
             }
 
+            pocketReviewOwner.SummonBlockOpportunityOpened -= HandleSummonBlockOpportunityOpened;
             pocketReviewOwner.SummonFollowupWindowOpened -= HandleSummonFollowupWindowOpened;
             pocketReviewOwner.SummonFollowupHitConfirmed -= HandleSummonFollowupHitConfirmed;
             pocketReviewOwner.SummonFollowupMissed -= HandleSummonFollowupMissed;
+        }
+
+        private void HandleSummonBlockOpportunityOpened()
+        {
+            if (cameraCueDriver != null)
+            {
+                cameraCueDriver.RequestSummonBlockOpportunityCue();
+            }
         }
 
         private void HandleSummonFollowupWindowOpened(int tier)

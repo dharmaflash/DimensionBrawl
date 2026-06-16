@@ -134,6 +134,19 @@ namespace DimensionBrawl.Presentation
             finisherScale = 1.25f
         };
 
+        [Tooltip("Close-threat defeat cue. Briefly widens before the player answers boss pressure with a summon block.")]
+        [SerializeField] private ActionCameraCueProfile.CameraCue summonBlockOpportunityCue = new ActionCameraCueProfile.CameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, 0.07f, -0.16f),
+            planarDirectionOffset = 0.04f,
+            fieldOfViewDelta = 1.2f,
+            cameraDistanceDelta = -0.18f,
+            focusHeightDelta = 0.05f,
+            durationSeconds = 0.22f,
+            finisherScale = 1.1f
+        };
+
         [Tooltip("Readable opening after a correct summon pressure block. Briefly widens so the Skill1 follow-up choice reads.")]
         [SerializeField] private ActionCameraCueProfile.CameraCue summonFollowupWindowCue = new ActionCameraCueProfile.CameraCue
         {
@@ -175,6 +188,7 @@ namespace DimensionBrawl.Presentation
 
         private int summonPressureBlockCueRequestCount;
         private int lastSummonPressureBlockTier;
+        private int summonBlockOpportunityCueRequestCount;
         private int summonFollowupWindowCueRequestCount;
         private int summonFollowupHitCueRequestCount;
         private int summonFollowupMissedCueRequestCount;
@@ -185,6 +199,7 @@ namespace DimensionBrawl.Presentation
         public ActionCameraCueProfile CueProfile => cueProfile;
         public int SummonPressureBlockCueRequestCount => summonPressureBlockCueRequestCount;
         public int LastSummonPressureBlockTier => lastSummonPressureBlockTier;
+        public int SummonBlockOpportunityCueRequestCount => summonBlockOpportunityCueRequestCount;
         public int SummonFollowupWindowCueRequestCount => summonFollowupWindowCueRequestCount;
         public int SummonFollowupHitCueRequestCount => summonFollowupHitCueRequestCount;
         public int SummonFollowupMissedCueRequestCount => summonFollowupMissedCueRequestCount;
@@ -202,6 +217,8 @@ namespace DimensionBrawl.Presentation
         private ActionCameraCueProfile.CameraCue ActiveSummonSlot1Cue => cueProfile != null ? cueProfile.SummonSlot1Cue : summonSlot1Cue;
         private ActionCameraCueProfile.CameraCue ActiveSummonPressureBlockCue =>
             cueProfile != null ? cueProfile.SummonPressureBlockCue : summonPressureBlockCue;
+        private ActionCameraCueProfile.CameraCue ActiveSummonBlockOpportunityCue =>
+            cueProfile != null ? cueProfile.SummonBlockOpportunityCue : summonBlockOpportunityCue;
         private ActionCameraCueProfile.CameraCue ActiveSummonFollowupWindowCue =>
             cueProfile != null ? cueProfile.SummonFollowupWindowCue : summonFollowupWindowCue;
         private ActionCameraCueProfile.CameraCue ActiveSummonFollowupHitCue =>
@@ -327,6 +344,14 @@ namespace DimensionBrawl.Presentation
             {
                 summonPressureBlockCueRequestCount++;
                 lastSummonPressureBlockTier = tier;
+            }
+        }
+
+        public void RequestSummonBlockOpportunityCue()
+        {
+            if (RequestCue(ActiveSummonBlockOpportunityCue, ResolvePlanarDirection(), 1f))
+            {
+                summonBlockOpportunityCueRequestCount++;
             }
         }
 

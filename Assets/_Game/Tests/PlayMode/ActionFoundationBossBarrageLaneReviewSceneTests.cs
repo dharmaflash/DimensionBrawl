@@ -797,6 +797,9 @@ namespace DimensionBrawl.Tests
             CombatHealth closeThreatHealth =
                 RequireComponent<CombatHealth>(RequireRoot(CloseThreatRootName), "close threat health");
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(RequireRoot(BossRootName), "boss barrage emitter");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            ActionCameraCueDriver cameraCueDriver =
+                RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
             BossBarragePocketReviewOwner pocketOwner =
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
             BossBarragePocketVfxCueBridge pocketVfxCueBridge =
@@ -806,6 +809,7 @@ namespace DimensionBrawl.Tests
 
             Assert.IsTrue(emitter.IsFiringEnabled);
             int summonBlockOpportunityCueCountBefore = pocketVfxCueBridge.SummonBlockOpportunityCueRequestCount;
+            int summonBlockOpportunityCameraCueCountBefore = cameraCueDriver.SummonBlockOpportunityCueRequestCount;
 
             closeThreatHealth.TryApplyDamage(new DamageInfo(
                 playerHealth,
@@ -822,6 +826,10 @@ namespace DimensionBrawl.Tests
                 summonBlockOpportunityCueCountBefore + 1,
                 pocketVfxCueBridge.SummonBlockOpportunityCueRequestCount,
                 "Defeating the close threat should create an in-world summon-block opportunity read before HUD-only follow-up text.");
+            Assert.AreEqual(
+                summonBlockOpportunityCameraCueCountBefore + 1,
+                cameraCueDriver.SummonBlockOpportunityCueRequestCount,
+                "Defeating the close threat should also create a short camera read for the summon-block opportunity.");
             Assert.That(
                 pocketOwner.PressureReliefRemainingSeconds,
                 Is.EqualTo(0.9f).Within(0.001f),
@@ -837,6 +845,10 @@ namespace DimensionBrawl.Tests
                 summonBlockOpportunityCueCountBefore + 1,
                 pocketVfxCueBridge.SummonBlockOpportunityCueRequestCount,
                 "The summon-block opportunity cue should fire once for the close-threat defeat beat.");
+            Assert.AreEqual(
+                summonBlockOpportunityCameraCueCountBefore + 1,
+                cameraCueDriver.SummonBlockOpportunityCueRequestCount,
+                "The summon-block opportunity camera cue should fire once for the close-threat defeat beat.");
 
             pocketOwner.Tick(0.02f);
             Assert.IsFalse(pocketOwner.IsPressureReliefActive);
