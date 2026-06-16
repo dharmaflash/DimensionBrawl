@@ -862,12 +862,27 @@ namespace DimensionBrawl.Tests
             BossBarrageProjectile lateBossProjectile = RequireActiveBossProjectile();
             Assert.IsTrue(activeScreen.TryIntercept(lateBossProjectile));
 
-            yield return null;
+            pocketOwner.Tick(0f);
 
-            Assert.IsTrue(pocketOwner.IsCleared);
+            Assert.IsTrue(pocketOwner.IsRunning);
             Assert.IsTrue(pocketOwner.BlockedBossPressureWithSummon);
+            Assert.IsTrue(pocketOwner.IsSummonPressureBreakActive);
+            Assert.IsTrue(pocketOwner.IsSummonFollowupWindowActive);
             Assert.AreEqual(1, pocketOwner.PressureBlocksAfterCloseThreatDefeated);
             Assert.AreEqual(1, pocketOwner.HighestSummonPressureTier);
+
+            pocketOwner.Tick(1.39f);
+            Assert.IsTrue(pocketOwner.IsRunning);
+            Assert.IsTrue(pocketOwner.IsSummonPressureBreakActive);
+            Assert.IsTrue(pocketOwner.IsSummonFollowupWindowActive);
+
+            pocketOwner.Tick(0.02f);
+            Assert.IsTrue(pocketOwner.IsRunning);
+            Assert.IsTrue(pocketOwner.IsSummonPressureBreakActive);
+            Assert.IsFalse(pocketOwner.IsSummonFollowupWindowActive);
+
+            pocketOwner.Tick(1f);
+            Assert.IsTrue(pocketOwner.IsCleared);
         }
 
         [UnityTest]
@@ -907,13 +922,42 @@ namespace DimensionBrawl.Tests
             BossBarrageProjectile bossProjectile = RequireActiveBossProjectile();
             Assert.IsTrue(activeScreen.TryIntercept(bossProjectile));
 
-            yield return null;
+            pocketOwner.Tick(0f);
 
-            Assert.IsTrue(pocketOwner.IsCleared);
+            Assert.IsTrue(pocketOwner.IsRunning);
             Assert.IsTrue(pocketOwner.UsedSummonSlot1);
             Assert.IsTrue(pocketOwner.BlockedBossPressureWithSummon);
+            Assert.IsTrue(pocketOwner.IsSummonPressureBreakActive);
+            Assert.IsTrue(pocketOwner.IsSummonFollowupWindowActive);
+            Assert.That(
+                pocketOwner.SummonPressureBreakRemainingSeconds,
+                Is.EqualTo(2.4f).Within(0.001f),
+                "A correct SummonSlot1 block should open the documented boss-pressure break relief.");
+            Assert.That(
+                pocketOwner.SummonFollowupWindowRemainingSeconds,
+                Is.EqualTo(1.4f).Within(0.001f),
+                "The correct block should also expose a short summon follow-up window.");
+            Assert.IsFalse(
+                emitter.IsFiringEnabled,
+                "Boss barrage should pause while the summon pressure-break relief is active.");
             Assert.AreEqual(1, pocketOwner.HighestSummonTier);
             Assert.AreEqual(1, pocketOwner.HighestSummonPressureTier);
+
+            pocketOwner.Tick(1.39f);
+            Assert.IsTrue(pocketOwner.IsRunning);
+            Assert.IsTrue(pocketOwner.IsSummonPressureBreakActive);
+            Assert.IsTrue(pocketOwner.IsSummonFollowupWindowActive);
+
+            pocketOwner.Tick(0.02f);
+            Assert.IsTrue(pocketOwner.IsRunning);
+            Assert.IsTrue(pocketOwner.IsSummonPressureBreakActive);
+            Assert.IsFalse(
+                pocketOwner.IsSummonFollowupWindowActive,
+                "The follow-up opportunity should end before the longer pressure relief finishes.");
+
+            pocketOwner.Tick(1f);
+            Assert.IsTrue(pocketOwner.IsCleared);
+            Assert.IsFalse(pocketOwner.IsSummonPressureBreakActive);
             float energyAfterClear = energyLadder.CurrentTierEnergy;
             energyLadder.Tick(1f);
             Assert.AreEqual(

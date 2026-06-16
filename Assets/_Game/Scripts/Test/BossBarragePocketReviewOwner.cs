@@ -27,6 +27,8 @@ namespace DimensionBrawl.Test
         [SerializeField] private bool stopBarrageOnClear = true;
         [SerializeField] private bool stopBarrageOnFail = true;
         [SerializeField, Min(0f)] private float closeThreatDefeatPressureReliefSeconds = 0.9f;
+        [SerializeField, Min(0f)] private float summonPressureBreakReliefSeconds = 2.4f;
+        [SerializeField, Min(0f)] private float summonFollowupWindowSeconds = 1.4f;
 
         [Header("Resource")]
         [SerializeField] private bool stopEnergyGainOnEnd = true;
@@ -35,14 +37,13 @@ namespace DimensionBrawl.Test
         [SerializeField] private GameObject clearMarker;
         [SerializeField] private GameObject failMarker;
 
+        private readonly BossBarragePocketPressurePacing pressurePacing = new BossBarragePocketPressurePacing();
         private PocketState state;
         private bool usedSkill1;
         private bool usedSummonSlot1;
         private bool closeThreatDefeated;
         private bool blockedBossPressureWithSummon;
         private int pressureBlocksAtCloseThreatDefeat;
-        private float pressureReliefTimer;
-        private bool pressureReliefActive;
         private int highestSkillTier;
         private int highestSummonTier;
         private int highestSummonPressureTier;
@@ -54,13 +55,32 @@ namespace DimensionBrawl.Test
         public bool UsedSummonSlot1 => usedSummonSlot1;
         public bool CloseThreatDefeated => closeThreatDefeated;
         public bool BlockedBossPressureWithSummon => blockedBossPressureWithSummon;
-        public bool IsPressureReliefActive => pressureReliefActive;
-        public float PressureReliefRemainingSeconds => pressureReliefTimer;
+        public bool IsPressureReliefActive => pressurePacing.IsCloseThreatReliefActive;
+        public bool IsSummonPressureBreakActive => pressurePacing.IsSummonPressureBreakActive;
+        public bool IsSummonFollowupWindowActive => pressurePacing.IsSummonFollowupWindowActive;
+        public float PressureReliefRemainingSeconds => pressurePacing.CloseThreatReliefRemainingSeconds;
+        public float SummonPressureBreakRemainingSeconds => pressurePacing.SummonPressureBreakRemainingSeconds;
+        public float SummonFollowupWindowRemainingSeconds => pressurePacing.SummonFollowupWindowRemainingSeconds;
         public int PressureBlocksAfterCloseThreatDefeated => CountPressureBlocksAfterCloseThreatDefeated();
         public int HighestSkillTier => highestSkillTier;
         public int HighestSummonTier => highestSummonTier;
         public int HighestSummonPressureTier => highestSummonPressureTier;
-        public string ObjectiveCue => "Defeat close threat and block boss fire with SummonSlot1";
+        public string ObjectiveCue
+        {
+            get
+            {
+                if (pressurePacing.IsSummonPressureBreakActive)
+                {
+                    return pressurePacing.IsSummonFollowupWindowActive
+                        ? "Summon block opened a follow-up window"
+                        : "Boss pressure is broken briefly";
+                }
+
+                return closeThreatDefeated
+                    ? "Block boss fire with SummonSlot1"
+                    : "Defeat close threat and prepare SummonSlot1";
+            }
+        }
 
         public void Configure(
             CombatHealth newPlayerHealth,
@@ -91,8 +111,7 @@ namespace DimensionBrawl.Test
             closeThreatDefeated = false;
             blockedBossPressureWithSummon = false;
             pressureBlocksAtCloseThreatDefeat = 0;
-            pressureReliefTimer = 0f;
-            pressureReliefActive = false;
+            pressurePacing.Reset();
             highestSkillTier = 0;
             highestSummonTier = 0;
             highestSummonPressureTier = 0;
@@ -126,11 +145,12 @@ namespace DimensionBrawl.Test
             }
 
             CaptureCloseThreatDefeat();
-            UpdatePressureRelief(deltaTime);
+            UpdatePressurePacing(deltaTime);
 
             if (closeThreatDefeated
                 && usedSummonSlot1
-                && blockedBossPressureWithSummon)
+                && blockedBossPressureWithSummon
+                && !pressurePacing.IsSummonPressureBreakActive)
             {
                 ClearPocket();
             }
@@ -154,6 +174,11 @@ namespace DimensionBrawl.Test
                 && closeThreatDefeated
                 && summonSlot1Action.TotalPressureScreenInterceptCount > pressureBlocksAtCloseThreatDefeat)
             {
+                if (!blockedBossPressureWithSummon)
+                {
+                    StartSummonPressureBreak();
+                }
+
                 blockedBossPressureWithSummon = true;
                 highestSummonPressureTier = Mathf.Max(
                     highestSummonPressureTier,
@@ -189,36 +214,28 @@ namespace DimensionBrawl.Test
 
         private void StartPressureRelief()
         {
-            pressureReliefTimer = Mathf.Max(0f, closeThreatDefeatPressureReliefSeconds);
-            pressureReliefActive = pressureReliefTimer > 0f;
-            if (pressureReliefActive)
-            {
-                SetBarrageEnabled(false);
-            }
+            pressurePacing.StartCloseThreatRelief(closeThreatDefeatPressureReliefSeconds);
+            ApplyRunningBarragePacing();
         }
 
-        private void UpdatePressureRelief(float deltaTime)
+        private void StartSummonPressureBreak()
         {
-            if (!pressureReliefActive)
-            {
-                return;
-            }
+            pressurePacing.StartSummonPressureBreak(
+                summonPressureBreakReliefSeconds,
+                summonFollowupWindowSeconds);
+            ApplyRunningBarragePacing();
+        }
 
-            pressureReliefTimer = Mathf.Max(0f, pressureReliefTimer - Mathf.Max(0f, deltaTime));
-            if (pressureReliefTimer > 0f)
-            {
-                return;
-            }
-
-            pressureReliefActive = false;
-            SetBarrageEnabled(true);
+        private void UpdatePressurePacing(float deltaTime)
+        {
+            pressurePacing.Tick(deltaTime);
+            ApplyRunningBarragePacing();
         }
 
         private void ClearPocket()
         {
             state = PocketState.Cleared;
-            pressureReliefActive = false;
-            pressureReliefTimer = 0f;
+            ClearPressurePacing();
             SetBarrageEnabled(!stopBarrageOnClear);
             SetEnergyGainEnabled(!stopEnergyGainOnEnd);
             SetMarkers();
@@ -227,11 +244,25 @@ namespace DimensionBrawl.Test
         private void FailPocket()
         {
             state = PocketState.Failed;
-            pressureReliefActive = false;
-            pressureReliefTimer = 0f;
+            ClearPressurePacing();
             SetBarrageEnabled(!stopBarrageOnFail);
             SetEnergyGainEnabled(!stopEnergyGainOnEnd);
             SetMarkers();
+        }
+
+        private void ClearPressurePacing()
+        {
+            pressurePacing.Reset();
+        }
+
+        private void ApplyRunningBarragePacing()
+        {
+            if (state != PocketState.Running)
+            {
+                return;
+            }
+
+            SetBarrageEnabled(!pressurePacing.ShouldPauseBarrage);
         }
 
         private void SetBarrageEnabled(bool enabled)
@@ -260,6 +291,98 @@ namespace DimensionBrawl.Test
             if (failMarker != null)
             {
                 failMarker.SetActive(state == PocketState.Failed);
+            }
+        }
+
+        private sealed class BossBarragePocketPressurePacing
+        {
+            private float closeThreatReliefTimer;
+            private float summonPressureBreakTimer;
+            private float summonFollowupWindowTimer;
+            private bool closeThreatReliefActive;
+            private bool summonPressureBreakActive;
+            private bool summonFollowupWindowActive;
+
+            public bool IsCloseThreatReliefActive => closeThreatReliefActive;
+            public bool IsSummonPressureBreakActive => summonPressureBreakActive;
+            public bool IsSummonFollowupWindowActive => summonFollowupWindowActive;
+            public float CloseThreatReliefRemainingSeconds => closeThreatReliefTimer;
+            public float SummonPressureBreakRemainingSeconds => summonPressureBreakTimer;
+            public float SummonFollowupWindowRemainingSeconds => summonFollowupWindowTimer;
+            public bool ShouldPauseBarrage => closeThreatReliefActive || summonPressureBreakActive;
+
+            public void Reset()
+            {
+                closeThreatReliefTimer = 0f;
+                summonPressureBreakTimer = 0f;
+                summonFollowupWindowTimer = 0f;
+                closeThreatReliefActive = false;
+                summonPressureBreakActive = false;
+                summonFollowupWindowActive = false;
+            }
+
+            public void StartCloseThreatRelief(float seconds)
+            {
+                closeThreatReliefTimer = Mathf.Max(0f, seconds);
+                closeThreatReliefActive = closeThreatReliefTimer > 0f;
+            }
+
+            public void StartSummonPressureBreak(float reliefSeconds, float followupWindowSeconds)
+            {
+                summonPressureBreakTimer = Mathf.Max(0f, reliefSeconds);
+                summonFollowupWindowTimer = Mathf.Max(0f, followupWindowSeconds);
+                summonPressureBreakActive = summonPressureBreakTimer > 0f;
+                summonFollowupWindowActive = summonFollowupWindowTimer > 0f;
+            }
+
+            public void Tick(float deltaTime)
+            {
+                float safeDeltaTime = Mathf.Max(0f, deltaTime);
+                TickCloseThreatRelief(safeDeltaTime);
+                TickSummonPressureBreak(safeDeltaTime);
+                TickSummonFollowupWindow(safeDeltaTime);
+            }
+
+            private void TickCloseThreatRelief(float deltaTime)
+            {
+                if (!closeThreatReliefActive)
+                {
+                    return;
+                }
+
+                closeThreatReliefTimer = Mathf.Max(0f, closeThreatReliefTimer - deltaTime);
+                if (closeThreatReliefTimer <= 0f)
+                {
+                    closeThreatReliefActive = false;
+                }
+            }
+
+            private void TickSummonPressureBreak(float deltaTime)
+            {
+                if (!summonPressureBreakActive)
+                {
+                    return;
+                }
+
+                summonPressureBreakTimer = Mathf.Max(0f, summonPressureBreakTimer - deltaTime);
+                if (summonPressureBreakTimer <= 0f)
+                {
+                    summonPressureBreakActive = false;
+                }
+            }
+
+            private void TickSummonFollowupWindow(float deltaTime)
+            {
+                if (!summonFollowupWindowActive)
+                {
+                    return;
+                }
+
+                summonFollowupWindowTimer = Mathf.Max(0f, summonFollowupWindowTimer - deltaTime);
+                if (summonFollowupWindowTimer <= 0f)
+                {
+                    summonFollowupWindowActive = false;
+                }
             }
         }
     }
