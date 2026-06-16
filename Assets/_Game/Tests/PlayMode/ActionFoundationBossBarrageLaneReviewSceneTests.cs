@@ -574,6 +574,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(2, summonSlot1Action.LastSpentTier);
             Assert.AreEqual(2, summonSlot1Action.LastFiredProjectileCount);
             Assert.AreEqual(4, summonSlot1Action.LastPressureScreenMaxIntercepts);
+            Assert.AreEqual(0, summonSlot1Action.LastPressureScreenInterceptCount);
             Assert.AreEqual(0, energyLadder.AvailableTier);
             Assert.AreEqual(1, energyLadder.ChargingTier);
             Assert.AreEqual(0f, energyLadder.CurrentTierEnergy, 0.001f);
@@ -643,6 +644,9 @@ namespace DimensionBrawl.Tests
             Assert.IsNotNull(bossProjectile, "The boss barrage emitter should provide a projectile for the summon screen to intercept.");
             Assert.IsTrue(activeScreen.TryIntercept(bossProjectile));
             Assert.IsFalse(bossProjectile.IsActive, "Intercepted boss projectiles should be removed from the lane.");
+            Assert.AreEqual(1, summonSlot1Action.LastPressureScreenInterceptCount);
+            Assert.AreEqual(1, summonSlot1Action.TotalPressureScreenInterceptCount);
+            Assert.AreEqual(3, summonSlot1Action.LastPressureScreenInterceptTier);
             Assert.Greater(
                 summonSlot1Action.ActiveProjectileCount,
                 summonProjectileCountBeforeIntercept,
@@ -732,13 +736,14 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator PocketClearsAfterCloseThreatDefeatedAndSummonSpent()
+        public IEnumerator PocketClearsAfterCloseThreatDefeatedAndSummonBlocksBossFire()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
             SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(RequireRoot(BossRootName), "boss barrage emitter");
             CombatHealth closeThreatHealth =
                 RequireComponent<CombatHealth>(RequireRoot(CloseThreatRootName), "close threat health");
             BossBarragePocketReviewOwner pocketOwner =
@@ -756,9 +761,24 @@ namespace DimensionBrawl.Tests
 
             yield return null;
 
+            Assert.IsTrue(
+                pocketOwner.IsRunning,
+                "The review pocket should not clear just because SummonSlot1 was spent; the summon must answer boss fire.");
+            Assert.IsFalse(pocketOwner.BlockedBossPressureWithSummon);
+
+            SummonPressureScreen activeScreen = RequireActiveAllyPressureScreen();
+            Assert.IsTrue(emitter.BeginWindup());
+            Assert.Greater(emitter.FirePendingWave(), 0);
+            BossBarrageProjectile bossProjectile = RequireActiveBossProjectile();
+            Assert.IsTrue(activeScreen.TryIntercept(bossProjectile));
+
+            yield return null;
+
             Assert.IsTrue(pocketOwner.IsCleared);
             Assert.IsTrue(pocketOwner.UsedSummonSlot1);
+            Assert.IsTrue(pocketOwner.BlockedBossPressureWithSummon);
             Assert.AreEqual(1, pocketOwner.HighestSummonTier);
+            Assert.AreEqual(1, pocketOwner.HighestSummonPressureTier);
             float energyAfterClear = energyLadder.CurrentTierEnergy;
             energyLadder.Tick(1f);
             Assert.AreEqual(
@@ -1013,6 +1033,40 @@ namespace DimensionBrawl.Tests
             }
 
             Assert.Fail("Expected a newly active AllySummon projectile after the pressure-screen intercept.");
+            return null;
+        }
+
+        private static SummonPressureScreen RequireActiveAllyPressureScreen()
+        {
+            SummonPressureScreen[] pressureScreens = Object.FindObjectsByType<SummonPressureScreen>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < pressureScreens.Length; i++)
+            {
+                if (pressureScreens[i].IsActive && pressureScreens[i].OwnerTeam == DamageTeam.AllySummon)
+                {
+                    return pressureScreens[i];
+                }
+            }
+
+            Assert.Fail("Expected an active AllySummon pressure screen.");
+            return null;
+        }
+
+        private static BossBarrageProjectile RequireActiveBossProjectile()
+        {
+            BossBarrageProjectile[] bossProjectiles = Object.FindObjectsByType<BossBarrageProjectile>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < bossProjectiles.Length; i++)
+            {
+                if (bossProjectiles[i].IsActive && bossProjectiles[i].SourceTeam == DamageTeam.Enemy)
+                {
+                    return bossProjectiles[i];
+                }
+            }
+
+            Assert.Fail("Expected an active enemy boss barrage projectile.");
             return null;
         }
 

@@ -79,12 +79,18 @@ namespace DimensionBrawl.Player
         private int lastSpentTier;
         private int lastFiredProjectileCount;
         private int lastPressureScreenMaxIntercepts;
+        private int lastPressureScreenInterceptCount;
+        private int lastPressureScreenInterceptTier;
+        private int totalPressureScreenInterceptCount;
         private Vector3 lastEntryPosition;
         private Vector3 lastSummonActorPosition;
 
         public int LastSpentTier => lastSpentTier;
         public int LastFiredProjectileCount => lastFiredProjectileCount;
         public int LastPressureScreenMaxIntercepts => lastPressureScreenMaxIntercepts;
+        public int LastPressureScreenInterceptCount => lastPressureScreenInterceptCount;
+        public int LastPressureScreenInterceptTier => lastPressureScreenInterceptTier;
+        public int TotalPressureScreenInterceptCount => totalPressureScreenInterceptCount;
         public Vector3 LastEntryPosition => lastEntryPosition;
         public Vector3 LastSummonActorPosition => lastSummonActorPosition;
         public int ActiveProjectileCount => CountActiveProjectiles();
@@ -186,6 +192,8 @@ namespace DimensionBrawl.Player
         {
             SummonTierSettings settings = ResolveTierSettings(tier);
             lastPressureScreenMaxIntercepts = 0;
+            lastPressureScreenInterceptCount = 0;
+            lastPressureScreenInterceptTier = 0;
             Vector2 playerLane = laneSpace != null ? laneSpace.GetLaneCoordinates(transform.position) : Vector2.zero;
             float entryZ = laneSpace != null ? laneSpace.SummonEntryZ : playerLane.y + 2f;
             float targetZ = ResolveTargetLaneZ();
@@ -270,6 +278,9 @@ namespace DimensionBrawl.Player
                 return;
             }
 
+            lastPressureScreenInterceptCount++;
+            totalPressureScreenInterceptCount++;
+            lastPressureScreenInterceptTier = actor.ActiveTier;
             FireCounterProjectile(actor, ResolveTierSettings(actor.ActiveTier));
         }
 

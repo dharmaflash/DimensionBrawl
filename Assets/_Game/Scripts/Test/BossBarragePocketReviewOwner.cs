@@ -37,17 +37,21 @@ namespace DimensionBrawl.Test
         private PocketState state;
         private bool usedSkill1;
         private bool usedSummonSlot1;
+        private bool blockedBossPressureWithSummon;
         private int highestSkillTier;
         private int highestSummonTier;
+        private int highestSummonPressureTier;
 
         public bool IsRunning => state == PocketState.Running;
         public bool IsCleared => state == PocketState.Cleared;
         public bool IsFailed => state == PocketState.Failed;
         public bool UsedSkill1 => usedSkill1;
         public bool UsedSummonSlot1 => usedSummonSlot1;
+        public bool BlockedBossPressureWithSummon => blockedBossPressureWithSummon;
         public int HighestSkillTier => highestSkillTier;
         public int HighestSummonTier => highestSummonTier;
-        public string ObjectiveCue => "Defeat close threat and spend SummonSlot1";
+        public int HighestSummonPressureTier => highestSummonPressureTier;
+        public string ObjectiveCue => "Defeat close threat and block boss fire with SummonSlot1";
 
         public void Configure(
             CombatHealth newPlayerHealth,
@@ -75,8 +79,10 @@ namespace DimensionBrawl.Test
             state = PocketState.Running;
             usedSkill1 = false;
             usedSummonSlot1 = false;
+            blockedBossPressureWithSummon = false;
             highestSkillTier = 0;
             highestSummonTier = 0;
+            highestSummonPressureTier = 0;
             SetBarrageEnabled(true);
             SetEnergyGainEnabled(true);
             SetMarkers();
@@ -102,7 +108,10 @@ namespace DimensionBrawl.Test
                 return;
             }
 
-            if (closeThreatHealth != null && !closeThreatHealth.IsAlive && usedSummonSlot1)
+            if (closeThreatHealth != null
+                && !closeThreatHealth.IsAlive
+                && usedSummonSlot1
+                && blockedBossPressureWithSummon)
             {
                 ClearPocket();
             }
@@ -120,6 +129,14 @@ namespace DimensionBrawl.Test
             {
                 usedSummonSlot1 = true;
                 highestSummonTier = Mathf.Max(highestSummonTier, summonSlot1Action.LastSpentTier);
+            }
+
+            if (summonSlot1Action != null && summonSlot1Action.LastPressureScreenInterceptCount > 0)
+            {
+                blockedBossPressureWithSummon = true;
+                highestSummonPressureTier = Mathf.Max(
+                    highestSummonPressureTier,
+                    summonSlot1Action.LastPressureScreenInterceptTier);
             }
         }
 
