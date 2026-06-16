@@ -150,6 +150,27 @@ namespace DimensionBrawl.Combat
             return true;
         }
 
+        public int BuildPendingLaneTargetPreview(Vector2[] results)
+        {
+            BossBarragePatternProfile activePattern = ActivePattern;
+            if (!windupActive || activePattern == null || laneSpace == null || results == null || results.Length == 0)
+            {
+                return 0;
+            }
+
+            int projectileCount = Mathf.Min(activePattern.ProjectilesPerWave, results.Length);
+            for (int i = 0; i < projectileCount; i++)
+            {
+                float offset = activePattern.GetLateralOffset(i, activePattern.ProjectilesPerWave, pendingForwardRisk01);
+                float depthOffset = activePattern.GetTargetDepthOffset(i, activePattern.ProjectilesPerWave, pendingForwardRisk01);
+                results[i] = new Vector2(
+                    Mathf.Clamp(pendingTargetLanePoint.x + offset, -laneSpace.HalfWidth, laneSpace.HalfWidth),
+                    Mathf.Clamp(pendingTargetLanePoint.y + depthOffset, laneSpace.BackLimitZ, laneSpace.ForwardBoundaryZ));
+            }
+
+            return projectileCount;
+        }
+
         public int FirePendingWave()
         {
             BossBarragePatternProfile activePattern = ActivePattern;

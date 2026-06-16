@@ -60,6 +60,7 @@ namespace DimensionBrawl.Tests
         private const string ActionCuePoolRootName = "BossBarrageLaneReview_ActionCuePool";
         private const string SummonActorPoolRootName = "BossBarrageLaneReview_SummonActorPool";
         private const string PocketOwnerRootName = "BossBarrageLaneReview_PocketOwner";
+        private const string BossTelegraphRootName = "BossBarrageLaneReview_BossBarrageTelegraphMarkers";
         private const string HudRootName = "BossBarrageLaneReview_DebugHud";
         private static readonly string[] RequiredBossPatternCueIds =
         {
@@ -121,8 +122,18 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
             BossBarrageLaneReviewHud reviewHud =
                 RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "boss barrage HUD");
+            BossBarrageLaneTelegraphPresenter telegraphPresenter =
+                RequireComponent<BossBarrageLaneTelegraphPresenter>(
+                    RequireRoot(BossTelegraphRootName),
+                    "boss barrage lane telegraph presenter");
 
             Assert.AreSame(laneSpace, player.LaneSpace, "Player movement must clamp through the authored lane space.");
+            Assert.AreSame(emitter, telegraphPresenter.BossBarrageEmitter);
+            Assert.AreSame(laneSpace, telegraphPresenter.LaneSpace);
+            Assert.GreaterOrEqual(
+                telegraphPresenter.MarkerCount,
+                9,
+                "Boss barrage lane telegraphs must be authored world markers, not HUD-only warning text.");
             Assert.AreSame(LoadAsset<PlayerActionProfile>(LocalDefenseProfilePath), playerActionController.ActionProfile);
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(energyLadder, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(energyLadder, "trackedPlayer"));
@@ -711,13 +722,25 @@ namespace DimensionBrawl.Tests
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
             BossBarrageCameraCueDriver bossCameraCueDriver =
                 RequireComponent<BossBarrageCameraCueDriver>(cameraController.gameObject, "boss barrage camera cue driver");
+            BossBarrageLaneTelegraphPresenter telegraphPresenter =
+                RequireComponent<BossBarrageLaneTelegraphPresenter>(
+                    RequireRoot(BossTelegraphRootName),
+                    "boss barrage lane telegraph presenter");
 
             int windupCueCountBefore = bossCameraCueDriver.WindupCueRequestCount;
             Assert.IsTrue(emitter.BeginWindup());
+            telegraphPresenter.RefreshNow();
             Assert.AreEqual(
                 windupCueCountBefore + 1,
                 bossCameraCueDriver.WindupCueRequestCount,
                 "Boss barrage windup should request a short camera cue through the dedicated presentation driver.");
+            Assert.AreEqual(pattern.PatternId, telegraphPresenter.LastPatternId);
+            Assert.AreEqual(pattern.ProjectilesPerWave, telegraphPresenter.LastPreviewCount);
+            Assert.AreEqual(pattern.ProjectilesPerWave, telegraphPresenter.VisibleMarkerCount);
+            Assert.GreaterOrEqual(
+                telegraphPresenter.WindupRefreshCount,
+                1,
+                "Boss barrage windup should reveal lane-space target markers before the projectiles fire.");
             Assert.IsTrue(cameraController.HasActiveCue);
             BossBarrageVisualCueDriver cueDriver =
                 RequireComponent<BossBarrageVisualCueDriver>(RequireRoot(BossRootName), "boss visual cue driver");
@@ -725,9 +748,16 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(string.IsNullOrEmpty(cueDriver.LastWindupTrigger));
             int fireCueCountBefore = bossCameraCueDriver.FireCueRequestCount;
             int firedCount = emitter.FirePendingWave();
+            telegraphPresenter.RefreshNow();
 
             Assert.AreEqual(pattern.ProjectilesPerWave, firedCount);
             Assert.AreEqual(pattern.ProjectilesPerWave, emitter.ActiveProjectileCount);
+            Assert.AreEqual(pattern.PatternId, telegraphPresenter.LastPatternId);
+            Assert.AreEqual(pattern.ProjectilesPerWave, telegraphPresenter.VisibleMarkerCount);
+            Assert.GreaterOrEqual(
+                telegraphPresenter.ReleaseFlashCount,
+                1,
+                "Boss barrage release should briefly flash the authored lane markers.");
             Assert.AreEqual(
                 fireCueCountBefore + 1,
                 bossCameraCueDriver.FireCueRequestCount,

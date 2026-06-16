@@ -79,9 +79,12 @@ namespace DimensionBrawl.Editor
         private const string PocketFailMarkerName = ReviewRootPrefix + "PocketFailMarker";
         private const string SummonEntryMarkerName = ReviewRootPrefix + "SummonEntryMarker";
         private const string BossProxyMarkerName = ReviewRootPrefix + "BossProxyMarker";
+        private const string BossTelegraphRootName = ReviewRootPrefix + "BossBarrageTelegraphMarkers";
         private const string BossProxyHumanoidVisualName = ReviewRootPrefix + "HumanoidBossVisual_SummonCallerElite";
         private const string BossProxyVisualMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossProxy.mat";
+        private const string BossTelegraphMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageIncomingTelegraph.mat";
         private const string LaneRailMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageLaneRail.mat";
         private const string PlayerBoundaryMaterialPath =
@@ -241,6 +244,7 @@ namespace DimensionBrawl.Editor
             ConfigureBossBarrageCameraCueDriver(cameraController, bossBarrageEmitter, player.transform);
             ConfigureArenaInfluenceTargets(scene, player.transform, bossProxy.transform, closeThreat.transform);
             CreateLaneMarkers(scene, laneSpace);
+            CreateBossBarrageTelegraphMarkers(scene, laneSpace, bossBarrageEmitter);
 
             if (!EditorSceneManager.SaveScene(scene, ReviewScenePath))
             {
@@ -353,6 +357,12 @@ namespace DimensionBrawl.Editor
                 cameraController,
                 emitter,
                 player.transform);
+            ValidateBossBarrageLaneTelegraphPresenter(
+                RequireComponent<BossBarrageLaneTelegraphPresenter>(
+                    RequireRoot(scene, BossTelegraphRootName),
+                    "boss barrage lane telegraph presenter"),
+                emitter,
+                laneSpace);
             ValidateObjectReference(encounter, "playerHealth", playerHealth);
             ValidateObjectReference(encounter, "enemyHealth", closeThreatHealth);
             ValidatePocketOwner(pocketOwner, playerHealth, closeThreatHealth, energyLadder, skill1Action, summonSlot1Action, emitter);
@@ -388,6 +398,7 @@ namespace DimensionBrawl.Editor
             ValidateNoImportedAssetReference(SummonSlot1ActorPrefabPath);
             ValidateNoImportedAssetReference(SummonPressureScreenMaterialPath);
             ValidateNoImportedAssetReference(SummonSlot1ActorPulseMaterialPath);
+            ValidateNoImportedAssetReference(BossTelegraphMaterialPath);
         }
 
         private static BossBarragePatternProfile EnsurePatternProfile()
@@ -1285,7 +1296,38 @@ namespace DimensionBrawl.Editor
                 summonMaterial);
         }
 
-        private static void CreateMarker(
+        private static void CreateBossBarrageTelegraphMarkers(
+            Scene scene,
+            SummonLaneSpace laneSpace,
+            BossBarrageEmitter bossBarrageEmitter)
+        {
+            GameObject root = CreateRoot(scene, BossTelegraphRootName);
+            Material material = LoadOrCreateTransparentMaterial(
+                BossTelegraphMaterialPath,
+                new Color(1f, 0.62f, 0.18f, 0.56f));
+            var markerTransforms = new Transform[9];
+            var markerRenderers = new Renderer[markerTransforms.Length];
+            for (int i = 0; i < markerTransforms.Length; i++)
+            {
+                float lateral01 = markerTransforms.Length <= 1 ? 0.5f : (float)i / (markerTransforms.Length - 1);
+                float lateralX = Mathf.Lerp(-laneSpace.HalfWidth, laneSpace.HalfWidth, lateral01);
+                GameObject marker = CreateMarker(
+                    root.transform,
+                    $"IncomingLaneTelegraph_{i:00}",
+                    laneSpace.GetLaneWorldPoint(lateralX, laneSpace.ForwardBoundaryZ - 1.4f, 0.075f),
+                    new Vector3(0.85f, 0.035f, 0.9f),
+                    material);
+                marker.SetActive(false);
+                markerTransforms[i] = marker.transform;
+                markerRenderers[i] = marker.GetComponent<MeshRenderer>();
+            }
+
+            BossBarrageLaneTelegraphPresenter presenter = root.AddComponent<BossBarrageLaneTelegraphPresenter>();
+            presenter.Configure(bossBarrageEmitter, laneSpace, root.transform, markerTransforms, markerRenderers);
+            EditorUtility.SetDirty(presenter);
+        }
+
+        private static GameObject CreateMarker(
             Transform parent,
             string name,
             Vector3 position,
@@ -1299,6 +1341,7 @@ namespace DimensionBrawl.Editor
             marker.transform.rotation = Quaternion.identity;
             marker.transform.localScale = scale;
             marker.GetComponent<MeshRenderer>().sharedMaterial = material;
+            return marker;
         }
 
         private static void ConfigureTargetReferences(
@@ -1563,6 +1606,28 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(cueDriver, "bossBarrageEmitter", bossBarrageEmitter);
             ValidateObjectReference(cueDriver, "cameraController", cameraController);
             ValidateObjectReference(cueDriver, "cueSpace", cueSpace);
+        }
+
+        private static void ValidateBossBarrageLaneTelegraphPresenter(
+            BossBarrageLaneTelegraphPresenter presenter,
+            BossBarrageEmitter bossBarrageEmitter,
+            SummonLaneSpace laneSpace)
+        {
+            ValidateObjectReference(presenter, "bossBarrageEmitter", bossBarrageEmitter);
+            ValidateObjectReference(presenter, "laneSpace", laneSpace);
+            ValidateAssignedObjectReference(presenter, "markerRoot");
+
+            if (presenter.MarkerCount < 9)
+            {
+                throw new InvalidOperationException("Boss barrage lane telegraph presenter should own nine authored marker slots.");
+            }
+
+            for (int i = 0; i < 9; i++)
+            {
+                ValidateArrayAssignedReference(presenter, "markerTransforms", i);
+                Renderer renderer = ValidateArrayAssignedReference<Renderer>(presenter, "markerRenderers", i);
+                ValidateGameOwnedAsset(renderer.sharedMaterial, $"boss barrage telegraph marker {i} material");
+            }
         }
 
         private static void ValidateSummonForwardSpace(SummonLaneSpace laneSpace)
@@ -2265,6 +2330,34 @@ namespace DimensionBrawl.Editor
                 string actualName = actual != null ? actual.name : "null";
                 throw new InvalidOperationException($"{target.name}.{propertyName}[{index}] expected {expectedName}, found {actualName}.");
             }
+        }
+
+        private static UnityEngine.Object ValidateArrayAssignedReference(
+            UnityEngine.Object target,
+            string propertyName,
+            int index)
+        {
+            return ValidateArrayAssignedReference<UnityEngine.Object>(target, propertyName, index);
+        }
+
+        private static T ValidateArrayAssignedReference<T>(
+            UnityEngine.Object target,
+            string propertyName,
+            int index) where T : UnityEngine.Object
+        {
+            SerializedProperty array = RequireProperty(new SerializedObject(target), propertyName);
+            if (!array.isArray || array.arraySize <= index)
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} should contain index {index}.");
+            }
+
+            var actual = array.GetArrayElementAtIndex(index).objectReferenceValue as T;
+            if (actual == null)
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName}[{index}] must be assigned.");
+            }
+
+            return actual;
         }
 
         private static void ValidateBool(UnityEngine.Object target, string propertyName, bool expected)
