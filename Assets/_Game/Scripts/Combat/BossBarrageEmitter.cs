@@ -108,6 +108,12 @@ namespace DimensionBrawl.Combat
 
         public void Tick(float deltaTime)
         {
+            if (sourceHealth != null && sourceHealth.IsAlive == false)
+            {
+                windupActive = false;
+                return;
+            }
+
             if (!firingEnabled || deltaTime <= 0f || ActivePattern == null || laneSpace == null || trackedPlayer == null)
             {
                 return;

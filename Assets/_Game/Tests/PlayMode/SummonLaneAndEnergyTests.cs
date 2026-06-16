@@ -616,5 +616,52 @@ namespace DimensionBrawl.Tests
             Object.DestroyImmediate(playerObject);
             Object.DestroyImmediate(laneObject);
         }
+
+        [Test]
+        public void BossBarrageEmitterStopsFiringAfterSourceHealthDeath()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.ForwardBoundaryZ);
+            GameObject bossObject = new GameObject("BossProxy");
+            CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+            bossHealth.ConfigureTeam(DamageTeam.Enemy);
+
+            BossBarragePatternProfile pattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            GameObject projectilePrefabObject = new GameObject("BossProjectilePrefab");
+            projectilePrefabObject.AddComponent<SphereCollider>();
+            projectilePrefabObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile projectilePrefab = projectilePrefabObject.AddComponent<BossBarrageProjectile>();
+            projectilePrefabObject.SetActive(false);
+
+            BossBarrageEmitter emitter = bossObject.AddComponent<BossBarrageEmitter>();
+            emitter.ConfigureReferences(lane, playerObject.transform, bossHealth);
+            emitter.ConfigurePattern(pattern, projectilePrefab, pattern.ProjectilesPerWave * 2);
+
+            Assert.IsTrue(emitter.BeginWindup());
+            int spawnedBeforeDeath = emitter.FirePendingWave();
+            Assert.AreEqual(pattern.ProjectilesPerWave, spawnedBeforeDeath);
+
+            int activeBeforeDeath = emitter.ActiveProjectileCount;
+            Assert.Greater(activeBeforeDeath, 0);
+
+            bool died = bossHealth.TryApplyDamage(new DamageInfo(null, DamageTeam.Player, 9999f, Vector3.zero, Vector3.zero, 0f));
+            Assert.IsTrue(died);
+            Assert.IsFalse(bossHealth.IsAlive);
+
+            for (int i = 0; i < 20; i++)
+            {
+                emitter.Tick(0.25f);
+            }
+
+            Assert.AreEqual(activeBeforeDeath, emitter.ActiveProjectileCount);
+
+            Object.DestroyImmediate(projectilePrefabObject);
+            Object.DestroyImmediate(pattern);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(laneObject);
+        }
     }
 }
