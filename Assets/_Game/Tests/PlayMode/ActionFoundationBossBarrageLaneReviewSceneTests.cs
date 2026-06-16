@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Enemies;
@@ -60,6 +61,19 @@ namespace DimensionBrawl.Tests
         private const string SummonActorPoolRootName = "BossBarrageLaneReview_SummonActorPool";
         private const string PocketOwnerRootName = "BossBarrageLaneReview_PocketOwner";
         private const string HudRootName = "BossBarrageLaneReview_DebugHud";
+        private static readonly string[] RequiredBossPatternCueIds =
+        {
+            "NeedleLock",
+            "CoverFire",
+            "EscortScreen",
+            "LayeredSalvo",
+            "StaggeredCrossfire",
+            "TwinSweep",
+            "LeftClamp",
+            "RightClamp",
+            "PunishNet",
+            "LinePressure"
+        };
 
         [UnitySetUp]
         public IEnumerator LoadBossBarrageLaneReviewScene()
@@ -702,7 +716,45 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(animator, cueDriver.Animator);
             Assert.AreSame(projectileCore, cueDriver.PulseRoot);
             Assert.GreaterOrEqual(cueDriver.PatternCueCount, 10);
+            AssertBossVisualCueBindings(cueDriver, animator);
             Assert.Greater(cueDriver.PulseRendererCount, 0);
+        }
+
+        private static void AssertBossVisualCueBindings(BossBarrageVisualCueDriver cueDriver, Animator animator)
+        {
+            var foundPatternIds = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < cueDriver.PatternCueCount; i++)
+            {
+                Assert.IsTrue(cueDriver.TryGetPatternCue(i, out BossBarrageVisualCueDriver.PatternAnimationCue cue));
+                Assert.IsFalse(string.IsNullOrWhiteSpace(cue.PatternId), $"Boss pattern cue {i} should have a pattern id.");
+                foundPatternIds.Add(cue.PatternId);
+                AssertAnimatorTrigger(animator, cue.WindupTrigger, $"{cue.PatternId} windup trigger");
+                AssertAnimatorTrigger(animator, cue.ReleaseTrigger, $"{cue.PatternId} release trigger");
+            }
+
+            for (int i = 0; i < RequiredBossPatternCueIds.Length; i++)
+            {
+                Assert.IsTrue(
+                    foundPatternIds.Contains(RequiredBossPatternCueIds[i]),
+                    $"Boss visual cue driver should map {RequiredBossPatternCueIds[i]}.");
+            }
+        }
+
+        private static void AssertAnimatorTrigger(Animator animator, string triggerName, string label)
+        {
+            Assert.IsFalse(string.IsNullOrWhiteSpace(triggerName), $"Boss visual cue {label} should not be empty.");
+            AnimatorControllerParameter[] parameters = animator.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                AnimatorControllerParameter parameter = parameters[i];
+                if (parameter.type == AnimatorControllerParameterType.Trigger
+                    && string.Equals(parameter.name, triggerName, System.StringComparison.Ordinal))
+                {
+                    return;
+                }
+            }
+
+            Assert.Fail($"Boss visual cue {label} references missing Animator trigger {triggerName}.");
         }
 
         private static void AssertRendererUsesGameOwnedAssets(Renderer renderer, string label)

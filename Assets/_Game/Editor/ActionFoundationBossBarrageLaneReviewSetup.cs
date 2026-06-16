@@ -90,6 +90,19 @@ namespace DimensionBrawl.Editor
         private static readonly Vector3 PlayerStartPosition = new Vector3(0f, 0f, -8.5f);
         private static readonly Vector3 CameraStartOffset = new Vector3(0f, 2.6f, -8.2f);
         private static readonly Vector3 CameraLookOffset = new Vector3(0f, 1.4f, 5.5f);
+        private static readonly string[] RequiredBossPatternCueIds =
+        {
+            "NeedleLock",
+            "CoverFire",
+            "EscortScreen",
+            "LayeredSalvo",
+            "StaggeredCrossfire",
+            "TwinSweep",
+            "LeftClamp",
+            "RightClamp",
+            "PunishNet",
+            "LinePressure"
+        };
 
         [MenuItem("DimensionBrawl/Reapply Action Foundation Boss Barrage Lane Review Scene")]
         public static void ReapplyBossBarrageLaneReviewSceneMenu()
@@ -1598,10 +1611,62 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException("Boss visual cue driver should map every current boss barrage pattern.");
             }
 
+            ValidateBossVisualCueBindings(cueDriver, animator);
+
             if (cueDriver.PulseRendererCount <= 0)
             {
                 throw new InvalidOperationException("Boss visual cue driver should have at least one pulse renderer.");
             }
+        }
+
+        private static void ValidateBossVisualCueBindings(BossBarrageVisualCueDriver cueDriver, Animator animator)
+        {
+            var foundPatternIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < cueDriver.PatternCueCount; i++)
+            {
+                if (!cueDriver.TryGetPatternCue(i, out BossBarrageVisualCueDriver.PatternAnimationCue cue))
+                {
+                    throw new InvalidOperationException($"Boss visual cue driver could not read pattern cue at index {i}.");
+                }
+
+                if (string.IsNullOrWhiteSpace(cue.PatternId))
+                {
+                    throw new InvalidOperationException($"Boss visual cue at index {i} has no pattern id.");
+                }
+
+                foundPatternIds.Add(cue.PatternId);
+                ValidateAnimatorTrigger(animator, cue.WindupTrigger, $"{cue.PatternId} windup trigger");
+                ValidateAnimatorTrigger(animator, cue.ReleaseTrigger, $"{cue.PatternId} release trigger");
+            }
+
+            for (int i = 0; i < RequiredBossPatternCueIds.Length; i++)
+            {
+                if (!foundPatternIds.Contains(RequiredBossPatternCueIds[i]))
+                {
+                    throw new InvalidOperationException($"Boss visual cue driver is missing pattern cue {RequiredBossPatternCueIds[i]}.");
+                }
+            }
+        }
+
+        private static void ValidateAnimatorTrigger(Animator animator, string triggerName, string label)
+        {
+            if (string.IsNullOrWhiteSpace(triggerName))
+            {
+                throw new InvalidOperationException($"Boss visual cue {label} is empty.");
+            }
+
+            AnimatorControllerParameter[] parameters = animator.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                AnimatorControllerParameter parameter = parameters[i];
+                if (parameter.type == AnimatorControllerParameterType.Trigger
+                    && string.Equals(parameter.name, triggerName, StringComparison.Ordinal))
+                {
+                    return;
+                }
+            }
+
+            throw new InvalidOperationException($"Boss visual cue {label} references missing Animator trigger {triggerName}.");
         }
 
         private static void ValidateRendererAssets(Renderer renderer, string label)

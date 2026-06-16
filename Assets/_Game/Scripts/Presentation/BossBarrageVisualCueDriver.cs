@@ -92,6 +92,18 @@ namespace DimensionBrawl.Presentation
         public string LastWindupTrigger => lastWindupTrigger;
         public string LastReleaseTrigger => lastReleaseTrigger;
 
+        public bool TryGetPatternCue(int index, out PatternAnimationCue cue)
+        {
+            if (patternCues == null || index < 0 || index >= patternCues.Length)
+            {
+                cue = default;
+                return false;
+            }
+
+            cue = patternCues[index];
+            return true;
+        }
+
         public void ConfigurePresentation(
             BossBarrageEmitter newEmitter,
             Animator newAnimator,
