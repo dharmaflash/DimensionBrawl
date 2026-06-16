@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using DimensionBrawl.LevelDesign;
 using UnityEngine;
@@ -32,6 +33,9 @@ namespace DimensionBrawl.Combat
         private float pendingForwardRisk01;
         private int patternSequenceIndex;
         private int wavesFiredInCurrentPattern;
+
+        public event Action<BossBarrageEmitter, BossBarragePatternProfile> WindupStarted;
+        public event Action<BossBarrageEmitter, BossBarragePatternProfile, int> WaveFired;
 
         public bool IsWindupActive => windupActive;
         public float PendingForwardRisk01 => pendingForwardRisk01;
@@ -142,6 +146,7 @@ namespace DimensionBrawl.Combat
             pendingForwardRisk01 = laneSpace.EvaluateForwardRisk01(trackedPlayer.position);
             windupTimer = activePattern.WindupSeconds;
             windupActive = true;
+            WindupStarted?.Invoke(this, activePattern);
             return true;
         }
 
@@ -170,6 +175,7 @@ namespace DimensionBrawl.Combat
             }
 
             cooldownTimer = activePattern.WaveIntervalSeconds;
+            WaveFired?.Invoke(this, activePattern, spawnedCount);
             AdvancePatternSequenceAfterWave();
             return spawnedCount;
         }

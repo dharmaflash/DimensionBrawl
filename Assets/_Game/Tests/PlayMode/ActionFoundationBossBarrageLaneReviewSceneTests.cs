@@ -508,10 +508,15 @@ namespace DimensionBrawl.Tests
             BossBarragePatternProfile pattern = LoadAsset<BossBarragePatternProfile>(PatternProfilePath);
 
             Assert.IsTrue(emitter.BeginWindup());
+            BossBarrageVisualCueDriver cueDriver =
+                RequireComponent<BossBarrageVisualCueDriver>(RequireRoot(BossRootName), "boss visual cue driver");
+            Assert.IsTrue(cueDriver.IsCueActive, "Boss visual cue driver should react when barrage windup starts.");
+            Assert.IsFalse(string.IsNullOrEmpty(cueDriver.LastWindupTrigger));
             int firedCount = emitter.FirePendingWave();
 
             Assert.AreEqual(pattern.ProjectilesPerWave, firedCount);
             Assert.AreEqual(pattern.ProjectilesPerWave, emitter.ActiveProjectileCount);
+            Assert.IsFalse(string.IsNullOrEmpty(cueDriver.LastReleaseTrigger));
             Assert.AreSame(
                 LoadAsset<BossBarragePatternProfile>(CoverFirePatternProfilePath),
                 emitter.CurrentPattern,
@@ -663,6 +668,15 @@ namespace DimensionBrawl.Tests
             MeshRenderer coreRenderer = projectileCore.GetComponent<MeshRenderer>();
             Assert.IsNotNull(coreRenderer, "Boss projectile source core should be visible.");
             AssertGameOwnedAsset(coreRenderer.sharedMaterial, "boss projectile source material");
+
+            BossBarrageVisualCueDriver cueDriver =
+                RequireComponent<BossBarrageVisualCueDriver>(bossRoot, "boss visual cue driver");
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            Assert.AreSame(emitter, cueDriver.BossBarrageEmitter);
+            Assert.AreSame(animator, cueDriver.Animator);
+            Assert.AreSame(projectileCore, cueDriver.PulseRoot);
+            Assert.GreaterOrEqual(cueDriver.PatternCueCount, 10);
+            Assert.Greater(cueDriver.PulseRendererCount, 0);
         }
 
         private static void AssertRendererUsesGameOwnedAssets(Renderer renderer, string label)

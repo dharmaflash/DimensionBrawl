@@ -1028,6 +1028,7 @@ namespace DimensionBrawl.Editor
             SetInt(emitter, "prewarmCount", 24);
 
             CreateBossProxyVisual(bossProxy.transform);
+            ConfigureBossProxyVisualCueDriver(bossProxy, emitter);
             return bossProxy;
         }
 
@@ -1127,6 +1128,36 @@ namespace DimensionBrawl.Editor
             visual.transform.localScale = new Vector3(0.46f, 0.46f, 0.46f);
             MeshRenderer renderer = visual.GetComponent<MeshRenderer>();
             renderer.sharedMaterial = material;
+        }
+
+        private static void ConfigureBossProxyVisualCueDriver(GameObject bossProxy, BossBarrageEmitter emitter)
+        {
+            Transform visual = bossProxy.transform.Find(BossProxyHumanoidVisualName);
+            if (visual == null)
+            {
+                throw new InvalidOperationException($"Boss proxy should include {BossProxyHumanoidVisualName} before cue binding.");
+            }
+
+            Animator animator = visual.GetComponent<Animator>();
+            if (animator == null)
+            {
+                throw new InvalidOperationException($"{BossProxyHumanoidVisualName} is missing Animator for boss barrage cues.");
+            }
+
+            Transform projectileCore = bossProxy.transform.Find(BossProxyMarkerName);
+            if (projectileCore == null)
+            {
+                throw new InvalidOperationException($"Boss proxy should include {BossProxyMarkerName} before cue binding.");
+            }
+
+            BossBarrageVisualCueDriver cueDriver = EnsureComponent<BossBarrageVisualCueDriver>(bossProxy);
+            cueDriver.ConfigurePresentation(
+                emitter,
+                animator,
+                projectileCore,
+                projectileCore.GetComponentsInChildren<Renderer>(includeInactive: true));
+            cueDriver.ResetToDefaultPatternCues();
+            EditorUtility.SetDirty(cueDriver);
         }
 
         private static void CreateLaneMarkers(Scene scene, SummonLaneSpace laneSpace)
@@ -1540,6 +1571,35 @@ namespace DimensionBrawl.Editor
             }
 
             ValidateGameOwnedAsset(projectileCoreRenderer.sharedMaterial, $"{BossProxyMarkerName} material");
+
+            BossBarrageVisualCueDriver cueDriver = RequireComponent<BossBarrageVisualCueDriver>(
+                bossProxy,
+                "boss barrage visual cue driver");
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossProxy, "boss barrage emitter");
+            if (cueDriver.BossBarrageEmitter != emitter)
+            {
+                throw new InvalidOperationException("Boss visual cue driver should read from the boss barrage emitter.");
+            }
+
+            if (cueDriver.Animator != animator)
+            {
+                throw new InvalidOperationException("Boss visual cue driver should drive the promoted humanoid Animator.");
+            }
+
+            if (cueDriver.PulseRoot != projectileCore)
+            {
+                throw new InvalidOperationException("Boss visual cue driver should pulse the authored projectile source core.");
+            }
+
+            if (cueDriver.PatternCueCount < 10)
+            {
+                throw new InvalidOperationException("Boss visual cue driver should map every current boss barrage pattern.");
+            }
+
+            if (cueDriver.PulseRendererCount <= 0)
+            {
+                throw new InvalidOperationException("Boss visual cue driver should have at least one pulse renderer.");
+            }
         }
 
         private static void ValidateRendererAssets(Renderer renderer, string label)
