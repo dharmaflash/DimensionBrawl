@@ -189,3 +189,11 @@ Decision: Enemy bosses may eventually use skill or summon-like pressure, but V1 
 Reason: The first loop needs the player EN ladder, projectile read, and `SummonSlot1` exchange to work before the boss gains comparable complexity.
 
 Impact: The first boss/proxy may fire projectiles and expose simple pressure windows. Boss skills, adds, or summon-like calls should be authored later through explicit pattern/module data, not hidden in the first EN/summon implementation.
+
+## 2026-06-16: First Boss Candidate Prefers Humanoid Barrage Caster
+
+Decision: The first boss/proxy presentation candidate should prefer a promoted humanoid caster, commander, or summon-caller style prefab over a dragon-scale body. Existing `SummonCallerElite`, `FinalStandCommanderElite`, and `AuraCaptainElite` role visuals are the near-term boss-presentation candidates; dragons remain later candidates for a large chapter boss, set-piece boss, or high-cost summon.
+
+Reason: The current fixed-rear lane camera needs readable windup, release, hit, and summon-like command animations at a stable screen size. A humanoid boss is easier to frame, retarget, and animate for repeated projectile exchanges, while a dragon can consume camera space and animation budget before the core boss-barrage/summon loop is proven.
+
+Impact: Boss candidate promotion should check prefab ownership, animation controller coverage, projectile-origin readability, VFX cue hooks, and visual-only separation before adding boss phases. Do not force the first boss into the dragon asset just because the dragon pack exists.

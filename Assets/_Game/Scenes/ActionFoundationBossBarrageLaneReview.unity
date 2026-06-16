@@ -1032,6 +1032,8 @@ MonoBehaviour:
     CueLifetimeSeconds: 0.85
     ActorLifetimeSeconds: 1.25
     ActorScale: 0.9
+    ActorAdvanceDistance: 1.05
+    ActorAdvanceSeconds: 0.24
     ScreenIntercepts: 2
     ScreenRadius: 1.25
     ScreenLifetimeSeconds: 1.15
@@ -1047,6 +1049,8 @@ MonoBehaviour:
     CueLifetimeSeconds: 1
     ActorLifetimeSeconds: 1.55
     ActorScale: 1.08
+    ActorAdvanceDistance: 1.65
+    ActorAdvanceSeconds: 0.3
     ScreenIntercepts: 4
     ScreenRadius: 1.55
     ScreenLifetimeSeconds: 1.4
@@ -1062,6 +1066,8 @@ MonoBehaviour:
     CueLifetimeSeconds: 1.15
     ActorLifetimeSeconds: 1.85
     ActorScale: 1.28
+    ActorAdvanceDistance: 2.35
+    ActorAdvanceSeconds: 0.36
     ScreenIntercepts: 7
     ScreenRadius: 1.9
     ScreenLifetimeSeconds: 1.7

@@ -1374,6 +1374,8 @@ namespace DimensionBrawl.Editor
             SetEnum(summonSlot1Action, "sourceTeam", (int)DamageTeam.AllySummon);
             SetInt(summonSlot1Action, "prewarmCount", 8);
             SetInt(summonSlot1Action, "actorPrewarmCount", 2);
+            summonSlot1Action.ResetToDefaultTierSettings();
+            EditorUtility.SetDirty(summonSlot1Action);
         }
 
         private static void ConfigureFixedRearCamera(

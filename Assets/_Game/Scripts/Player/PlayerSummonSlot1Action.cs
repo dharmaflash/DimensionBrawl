@@ -26,6 +26,8 @@ namespace DimensionBrawl.Player
             [Min(0f)] public float CueLifetimeSeconds;
             [Min(0.05f)] public float ActorLifetimeSeconds;
             [Min(0.01f)] public float ActorScale;
+            [Min(0f)] public float ActorAdvanceDistance;
+            [Min(0.01f)] public float ActorAdvanceSeconds;
             [Min(0)] public int ScreenIntercepts;
             [Min(0.05f)] public float ScreenRadius;
             [Min(0.05f)] public float ScreenLifetimeSeconds;
@@ -59,63 +61,7 @@ namespace DimensionBrawl.Player
         [SerializeField, Min(0)] private int actorPrewarmCount = 2;
 
         [Header("Tier Tuning")]
-        [SerializeField] private SummonTierSettings[] tierSettings =
-        {
-            new SummonTierSettings
-            {
-                Damage = 58f,
-                ProjectileSpeed = 17f,
-                LifetimeSeconds = 2.4f,
-                Radius = 0.34f,
-                ProjectileCount = 1,
-                LateralReach = 1.2f,
-                EntryHeight = 0.18f,
-                TargetHeight = 1.35f,
-                CueScale = 1.45f,
-                CueLifetimeSeconds = 0.85f,
-                ActorLifetimeSeconds = 1.25f,
-                ActorScale = 0.9f,
-                ScreenIntercepts = 2,
-                ScreenRadius = 1.25f,
-                ScreenLifetimeSeconds = 1.15f
-            },
-            new SummonTierSettings
-            {
-                Damage = 66f,
-                ProjectileSpeed = 18.5f,
-                LifetimeSeconds = 2.65f,
-                Radius = 0.38f,
-                ProjectileCount = 2,
-                LateralReach = 4.2f,
-                EntryHeight = 0.18f,
-                TargetHeight = 1.35f,
-                CueScale = 1.85f,
-                CueLifetimeSeconds = 1f,
-                ActorLifetimeSeconds = 1.55f,
-                ActorScale = 1.08f,
-                ScreenIntercepts = 4,
-                ScreenRadius = 1.55f,
-                ScreenLifetimeSeconds = 1.4f
-            },
-            new SummonTierSettings
-            {
-                Damage = 78f,
-                ProjectileSpeed = 20f,
-                LifetimeSeconds = 2.9f,
-                Radius = 0.42f,
-                ProjectileCount = 3,
-                LateralReach = 6.8f,
-                EntryHeight = 0.18f,
-                TargetHeight = 1.45f,
-                CueScale = 2.25f,
-                CueLifetimeSeconds = 1.15f,
-                ActorLifetimeSeconds = 1.85f,
-                ActorScale = 1.28f,
-                ScreenIntercepts = 7,
-                ScreenRadius = 1.9f,
-                ScreenLifetimeSeconds = 1.7f
-            }
-        };
+        [SerializeField] private SummonTierSettings[] tierSettings = CreateDefaultTierSettings();
 
         private readonly List<LaneActionProjectile> projectiles = new List<LaneActionProjectile>();
         private readonly Queue<LaneActionProjectile> projectilePool = new Queue<LaneActionProjectile>();
@@ -201,6 +147,11 @@ namespace DimensionBrawl.Player
             cueRoot = newCueRoot;
         }
 
+        public void ResetToDefaultTierSettings()
+        {
+            tierSettings = CreateDefaultTierSettings();
+        }
+
         public void QueueSummonSlot1()
         {
             queued = true;
@@ -272,7 +223,14 @@ namespace DimensionBrawl.Player
             }
 
             actor.transform.SetParent(summonActorRoot != null ? summonActorRoot : transform, worldPositionStays: true);
-            actor.Activate(position, facingDirection, tier, settings.ActorLifetimeSeconds, settings.ActorScale);
+            actor.Activate(
+                position,
+                facingDirection,
+                tier,
+                settings.ActorLifetimeSeconds,
+                settings.ActorScale,
+                settings.ActorAdvanceDistance,
+                settings.ActorAdvanceSeconds);
             if (actor.PressureScreen != null)
             {
                 actor.PressureScreen.Activate(
@@ -554,6 +512,8 @@ namespace DimensionBrawl.Player
                     CueLifetimeSeconds = 0.85f,
                     ActorLifetimeSeconds = 1.25f,
                     ActorScale = 1f,
+                    ActorAdvanceDistance = 1f,
+                    ActorAdvanceSeconds = 0.24f,
                     ScreenIntercepts = 2,
                     ScreenRadius = 1.25f,
                     ScreenLifetimeSeconds = 1.15f
@@ -561,6 +521,73 @@ namespace DimensionBrawl.Player
             }
 
             return tierSettings[Mathf.Clamp(tier - 1, 0, tierSettings.Length - 1)];
+        }
+
+        private static SummonTierSettings[] CreateDefaultTierSettings()
+        {
+            return new[]
+            {
+                new SummonTierSettings
+                {
+                    Damage = 58f,
+                    ProjectileSpeed = 17f,
+                    LifetimeSeconds = 2.4f,
+                    Radius = 0.34f,
+                    ProjectileCount = 1,
+                    LateralReach = 1.2f,
+                    EntryHeight = 0.18f,
+                    TargetHeight = 1.35f,
+                    CueScale = 1.45f,
+                    CueLifetimeSeconds = 0.85f,
+                    ActorLifetimeSeconds = 1.25f,
+                    ActorScale = 0.9f,
+                    ActorAdvanceDistance = 1.05f,
+                    ActorAdvanceSeconds = 0.24f,
+                    ScreenIntercepts = 2,
+                    ScreenRadius = 1.25f,
+                    ScreenLifetimeSeconds = 1.15f
+                },
+                new SummonTierSettings
+                {
+                    Damage = 66f,
+                    ProjectileSpeed = 18.5f,
+                    LifetimeSeconds = 2.65f,
+                    Radius = 0.38f,
+                    ProjectileCount = 2,
+                    LateralReach = 4.2f,
+                    EntryHeight = 0.18f,
+                    TargetHeight = 1.35f,
+                    CueScale = 1.85f,
+                    CueLifetimeSeconds = 1f,
+                    ActorLifetimeSeconds = 1.55f,
+                    ActorScale = 1.08f,
+                    ActorAdvanceDistance = 1.65f,
+                    ActorAdvanceSeconds = 0.3f,
+                    ScreenIntercepts = 4,
+                    ScreenRadius = 1.55f,
+                    ScreenLifetimeSeconds = 1.4f
+                },
+                new SummonTierSettings
+                {
+                    Damage = 78f,
+                    ProjectileSpeed = 20f,
+                    LifetimeSeconds = 2.9f,
+                    Radius = 0.42f,
+                    ProjectileCount = 3,
+                    LateralReach = 6.8f,
+                    EntryHeight = 0.18f,
+                    TargetHeight = 1.45f,
+                    CueScale = 2.25f,
+                    CueLifetimeSeconds = 1.15f,
+                    ActorLifetimeSeconds = 1.85f,
+                    ActorScale = 1.28f,
+                    ActorAdvanceDistance = 2.35f,
+                    ActorAdvanceSeconds = 0.36f,
+                    ScreenIntercepts = 7,
+                    ScreenRadius = 1.9f,
+                    ScreenLifetimeSeconds = 1.7f
+                }
+            };
         }
 
         private int CountActiveProjectiles()

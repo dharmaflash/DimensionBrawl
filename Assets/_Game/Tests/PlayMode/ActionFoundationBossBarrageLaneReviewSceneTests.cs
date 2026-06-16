@@ -364,6 +364,32 @@ namespace DimensionBrawl.Tests
                 laneSpace.IsPastForwardBoundary(summonSlot1Action.LastSummonActorPosition),
                 "Summon actor belongs to the frontline battlefield, not the clamped player zone.");
 
+            SummonFrontlineProxy[] summonActors = Object.FindObjectsByType<SummonFrontlineProxy>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            SummonFrontlineProxy activeSummonActor = null;
+            for (int i = 0; i < summonActors.Length; i++)
+            {
+                if (summonActors[i].IsActive)
+                {
+                    activeSummonActor = summonActors[i];
+                    break;
+                }
+            }
+
+            Assert.IsNotNull(activeSummonActor, "SummonSlot1 should keep an active frontline actor.");
+            float actorStartLaneZ = laneSpace.GetLaneCoordinates(activeSummonActor.transform.position).y;
+            Assert.IsTrue(activeSummonActor.IsAdvancing, "SummonSlot1 actor should surge into the frontline after entry.");
+            activeSummonActor.Tick(0.24f);
+            float actorAdvancedLaneZ = laneSpace.GetLaneCoordinates(activeSummonActor.transform.position).y;
+            Assert.Greater(
+                actorAdvancedLaneZ,
+                actorStartLaneZ + 0.5f,
+                "SummonSlot1 LV3 actor should visibly advance into the boss/frontline exchange.");
+            Assert.IsTrue(
+                laneSpace.IsPastForwardBoundary(activeSummonActor.transform.position),
+                "Summon actor advance must stay in frontline battlefield coordinates, not player-clamped movement.");
+
             LaneActionProjectile[] projectiles = Object.FindObjectsByType<LaneActionProjectile>(
                 FindObjectsInactive.Exclude,
                 FindObjectsSortMode.None);
