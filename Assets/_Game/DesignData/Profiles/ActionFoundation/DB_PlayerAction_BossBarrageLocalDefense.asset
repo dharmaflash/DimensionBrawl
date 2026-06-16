@@ -19,8 +19,8 @@ MonoBehaviour:
     recoverySeconds: 0.26
     inputBufferSeconds: 0.08
     dodgeCancelAfterSeconds: 0.05
-    forwardAdvanceDistance: 0.12
-    forwardAdvanceDurationSeconds: 0.08
+    forwardAdvanceDistance: 0.22
+    forwardAdvanceDurationSeconds: 0.1
     damage: 42
     hitRadius: 0.78
     hitDistance: 1.65

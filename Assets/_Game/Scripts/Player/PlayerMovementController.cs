@@ -121,6 +121,7 @@ namespace DimensionBrawl.Player
             externalPlanarVelocity = Vector3.ProjectOnPlane(velocity, Vector3.up);
             externalPlanarDuration = Mathf.Max(0f, durationSeconds);
             externalPlanarTimer = externalPlanarDuration;
+            planarVelocity = Vector3.zero;
         }
 
         public void BeginAuthoredPlanarStep(Vector3 direction, float distance, float durationSeconds)
@@ -142,7 +143,17 @@ namespace DimensionBrawl.Player
         {
             actionMoveInputSpeedScale = Mathf.Clamp01(speedScale);
             actionMoveInputScaleActive = true;
-            ClampPlanarVelocityToActionMoveScale();
+            if (actionMoveInputSpeedScale <= 0f)
+            {
+                planarVelocity = Vector3.zero;
+                externalPlanarVelocity = Vector3.zero;
+                externalPlanarDuration = 0f;
+                externalPlanarTimer = 0f;
+            }
+            else
+            {
+                ClampPlanarVelocityToActionMoveScale();
+            }
         }
 
         public void ClearActionMoveInputSpeedScale()

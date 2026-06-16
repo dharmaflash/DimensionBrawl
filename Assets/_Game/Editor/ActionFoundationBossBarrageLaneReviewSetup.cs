@@ -770,8 +770,8 @@ namespace DimensionBrawl.Editor
             RequireRelativeProperty(step, "recoverySeconds").floatValue = 0.26f;
             RequireRelativeProperty(step, "inputBufferSeconds").floatValue = 0.08f;
             RequireRelativeProperty(step, "dodgeCancelAfterSeconds").floatValue = 0.05f;
-            RequireRelativeProperty(step, "forwardAdvanceDistance").floatValue = 0.12f;
-            RequireRelativeProperty(step, "forwardAdvanceDurationSeconds").floatValue = 0.08f;
+            RequireRelativeProperty(step, "forwardAdvanceDistance").floatValue = 0.22f;
+            RequireRelativeProperty(step, "forwardAdvanceDurationSeconds").floatValue = 0.10f;
             RequireRelativeProperty(step, "damage").floatValue = 42f;
             RequireRelativeProperty(step, "hitRadius").floatValue = 0.78f;
             RequireRelativeProperty(step, "hitDistance").floatValue = 1.65f;
