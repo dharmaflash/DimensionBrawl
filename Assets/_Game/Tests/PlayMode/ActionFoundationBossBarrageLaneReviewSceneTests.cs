@@ -438,6 +438,61 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator SummonPressureScreenCountersInterceptedBossProjectiles()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            PlayerSummonSlot1Action summonSlot1Action =
+                RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(RequireRoot(BossRootName), "boss barrage emitter");
+
+            player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
+            FillEnergyToTier(energyLadder, 3);
+
+            Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
+            SummonPressureScreen activeScreen = null;
+            SummonPressureScreen[] pressureScreens = Object.FindObjectsByType<SummonPressureScreen>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < pressureScreens.Length; i++)
+            {
+                if (pressureScreens[i].IsActive && pressureScreens[i].OwnerTeam == DamageTeam.AllySummon)
+                {
+                    activeScreen = pressureScreens[i];
+                    break;
+                }
+            }
+
+            Assert.IsNotNull(activeScreen, "SummonSlot1 should open a pressure screen before it can counter boss fire.");
+            int summonProjectileCountBeforeIntercept = summonSlot1Action.ActiveProjectileCount;
+
+            Assert.IsTrue(emitter.BeginWindup());
+            Assert.Greater(emitter.FirePendingWave(), 0);
+            BossBarrageProjectile bossProjectile = null;
+            BossBarrageProjectile[] bossProjectiles = Object.FindObjectsByType<BossBarrageProjectile>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < bossProjectiles.Length; i++)
+            {
+                if (bossProjectiles[i].IsActive && bossProjectiles[i].SourceTeam == DamageTeam.Enemy)
+                {
+                    bossProjectile = bossProjectiles[i];
+                    break;
+                }
+            }
+
+            Assert.IsNotNull(bossProjectile, "The boss barrage emitter should provide a projectile for the summon screen to intercept.");
+            Assert.IsTrue(activeScreen.TryIntercept(bossProjectile));
+            Assert.IsFalse(bossProjectile.IsActive, "Intercepted boss projectiles should be removed from the lane.");
+            Assert.Greater(
+                summonSlot1Action.ActiveProjectileCount,
+                summonProjectileCountBeforeIntercept,
+                "A summon pressure-screen intercept should fire a short counter bolt back into the boss lane.");
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator SummonSlot1PrefersFrontlineTargetWhenCloseThreatIsSelected()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();

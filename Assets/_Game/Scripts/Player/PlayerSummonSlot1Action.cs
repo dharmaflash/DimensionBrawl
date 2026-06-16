@@ -31,6 +31,11 @@ namespace DimensionBrawl.Player
             [Min(0)] public int ScreenIntercepts;
             [Min(0.05f)] public float ScreenRadius;
             [Min(0.05f)] public float ScreenLifetimeSeconds;
+            [Min(0f)] public float CounterDamage;
+            [Min(0f)] public float CounterProjectileSpeed;
+            [Min(0.01f)] public float CounterLifetimeSeconds;
+            [Min(0.01f)] public float CounterRadius;
+            [Min(0f)] public float CounterTargetHeight;
         }
 
         [Header("Input")]
@@ -112,6 +117,7 @@ namespace DimensionBrawl.Player
 
         private void OnDisable()
         {
+            UnsubscribePressureScreens();
             DisableActionIfOwned(summonAction, actionEnabledHere);
             actionEnabledHere = false;
         }
@@ -233,6 +239,8 @@ namespace DimensionBrawl.Player
                 settings.ActorAdvanceSeconds);
             if (actor.PressureScreen != null)
             {
+                actor.PressureScreen.Intercepted -= OnPressureScreenIntercepted;
+                actor.PressureScreen.Intercepted += OnPressureScreenIntercepted;
                 actor.PressureScreen.Activate(
                     sourceTeam,
                     settings.ScreenIntercepts,
@@ -242,6 +250,92 @@ namespace DimensionBrawl.Player
 
             lastSummonActorPosition = actor.transform.position;
             return actor;
+        }
+
+        private void OnPressureScreenIntercepted(SummonPressureScreen screen, BossBarrageProjectile projectile)
+        {
+            SummonFrontlineProxy actor = FindActorForPressureScreen(screen);
+            if (actor == null || !actor.IsActive)
+            {
+                return;
+            }
+
+            FireCounterProjectile(actor, ResolveTierSettings(actor.ActiveTier));
+        }
+
+        private void FireCounterProjectile(SummonFrontlineProxy actor, SummonTierSettings settings)
+        {
+            Vector3 spawnPosition = actor.ProjectileOrigin.position;
+            Vector3 targetPosition = ResolveCounterTargetPosition(settings.CounterTargetHeight);
+            Vector3 direction = ResolvePlanarDirection(targetPosition - spawnPosition);
+            float counterDamage = settings.CounterDamage > 0f ? settings.CounterDamage : settings.Damage * 0.35f;
+            float counterSpeed = settings.CounterProjectileSpeed > 0f
+                ? settings.CounterProjectileSpeed
+                : Mathf.Max(12f, settings.ProjectileSpeed);
+            float counterLifetime = settings.CounterLifetimeSeconds > 0f
+                ? settings.CounterLifetimeSeconds
+                : Mathf.Max(0.8f, settings.LifetimeSeconds * 0.65f);
+            float counterRadius = settings.CounterRadius > 0f
+                ? settings.CounterRadius
+                : Mathf.Max(0.18f, settings.Radius * 0.7f);
+
+            LaneActionProjectile projectile = GetProjectile();
+            projectile.transform.position = spawnPosition;
+            projectile.Configure(
+                sourceHealth,
+                sourceTeam,
+                counterDamage,
+                direction,
+                counterSpeed,
+                counterLifetime,
+                counterRadius);
+        }
+
+        private Vector3 ResolveCounterTargetPosition(float targetHeight)
+        {
+            if (laneSpace != null)
+            {
+                if (frontlineTargetHealth != null && frontlineTargetHealth.IsAlive)
+                {
+                    Vector2 targetLane = laneSpace.GetLaneCoordinates(frontlineTargetHealth.transform.position);
+                    return laneSpace.GetBattlefieldWorldPoint(targetLane.x, targetLane.y, targetHeight);
+                }
+
+                return laneSpace.GetBattlefieldWorldPoint(0f, laneSpace.BossProxyZ, targetHeight);
+            }
+
+            return transform.position + ResolvePlanarDirection(transform.forward) * 10f + Vector3.up * targetHeight;
+        }
+
+        private SummonFrontlineProxy FindActorForPressureScreen(SummonPressureScreen screen)
+        {
+            if (screen == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < summonActors.Count; i++)
+            {
+                SummonFrontlineProxy actor = summonActors[i];
+                if (actor != null && actor.PressureScreen == screen)
+                {
+                    return actor;
+                }
+            }
+
+            return null;
+        }
+
+        private void UnsubscribePressureScreens()
+        {
+            for (int i = 0; i < summonActors.Count; i++)
+            {
+                SummonFrontlineProxy actor = summonActors[i];
+                if (actor != null && actor.PressureScreen != null)
+                {
+                    actor.PressureScreen.Intercepted -= OnPressureScreenIntercepted;
+                }
+            }
         }
 
         private float ResolveTargetLaneZ()
@@ -516,7 +610,12 @@ namespace DimensionBrawl.Player
                     ActorAdvanceSeconds = 0.24f,
                     ScreenIntercepts = 2,
                     ScreenRadius = 1.25f,
-                    ScreenLifetimeSeconds = 1.15f
+                    ScreenLifetimeSeconds = 1.15f,
+                    CounterDamage = 16f,
+                    CounterProjectileSpeed = 20f,
+                    CounterLifetimeSeconds = 1.65f,
+                    CounterRadius = 0.24f,
+                    CounterTargetHeight = 1.35f
                 };
             }
 
@@ -545,7 +644,12 @@ namespace DimensionBrawl.Player
                     ActorAdvanceSeconds = 0.24f,
                     ScreenIntercepts = 2,
                     ScreenRadius = 1.25f,
-                    ScreenLifetimeSeconds = 1.15f
+                    ScreenLifetimeSeconds = 1.15f,
+                    CounterDamage = 16f,
+                    CounterProjectileSpeed = 20f,
+                    CounterLifetimeSeconds = 1.65f,
+                    CounterRadius = 0.24f,
+                    CounterTargetHeight = 1.35f
                 },
                 new SummonTierSettings
                 {
@@ -565,7 +669,12 @@ namespace DimensionBrawl.Player
                     ActorAdvanceSeconds = 0.3f,
                     ScreenIntercepts = 4,
                     ScreenRadius = 1.55f,
-                    ScreenLifetimeSeconds = 1.4f
+                    ScreenLifetimeSeconds = 1.4f,
+                    CounterDamage = 22f,
+                    CounterProjectileSpeed = 21.5f,
+                    CounterLifetimeSeconds = 1.8f,
+                    CounterRadius = 0.27f,
+                    CounterTargetHeight = 1.4f
                 },
                 new SummonTierSettings
                 {
@@ -585,7 +694,12 @@ namespace DimensionBrawl.Player
                     ActorAdvanceSeconds = 0.36f,
                     ScreenIntercepts = 7,
                     ScreenRadius = 1.9f,
-                    ScreenLifetimeSeconds = 1.7f
+                    ScreenLifetimeSeconds = 1.7f,
+                    CounterDamage = 30f,
+                    CounterProjectileSpeed = 23f,
+                    CounterLifetimeSeconds = 2f,
+                    CounterRadius = 0.3f,
+                    CounterTargetHeight = 1.45f
                 }
             };
         }
