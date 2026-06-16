@@ -26,6 +26,7 @@ namespace DimensionBrawl.Test
         [SerializeField] private BossBarrageEmitter bossBarrageEmitter;
         [SerializeField] private bool stopBarrageOnClear = true;
         [SerializeField] private bool stopBarrageOnFail = true;
+        [SerializeField, Min(0f)] private float closeThreatDefeatPressureReliefSeconds = 0.9f;
 
         [Header("Resource")]
         [SerializeField] private bool stopEnergyGainOnEnd = true;
@@ -40,6 +41,8 @@ namespace DimensionBrawl.Test
         private bool closeThreatDefeated;
         private bool blockedBossPressureWithSummon;
         private int pressureBlocksAtCloseThreatDefeat;
+        private float pressureReliefTimer;
+        private bool pressureReliefActive;
         private int highestSkillTier;
         private int highestSummonTier;
         private int highestSummonPressureTier;
@@ -51,6 +54,8 @@ namespace DimensionBrawl.Test
         public bool UsedSummonSlot1 => usedSummonSlot1;
         public bool CloseThreatDefeated => closeThreatDefeated;
         public bool BlockedBossPressureWithSummon => blockedBossPressureWithSummon;
+        public bool IsPressureReliefActive => pressureReliefActive;
+        public float PressureReliefRemainingSeconds => pressureReliefTimer;
         public int PressureBlocksAfterCloseThreatDefeated => CountPressureBlocksAfterCloseThreatDefeated();
         public int HighestSkillTier => highestSkillTier;
         public int HighestSummonTier => highestSummonTier;
@@ -86,6 +91,8 @@ namespace DimensionBrawl.Test
             closeThreatDefeated = false;
             blockedBossPressureWithSummon = false;
             pressureBlocksAtCloseThreatDefeat = 0;
+            pressureReliefTimer = 0f;
+            pressureReliefActive = false;
             highestSkillTier = 0;
             highestSummonTier = 0;
             highestSummonPressureTier = 0;
@@ -101,19 +108,25 @@ namespace DimensionBrawl.Test
 
         private void Update()
         {
+            Tick(Time.deltaTime);
+        }
+
+        public void Tick(float deltaTime)
+        {
             if (state != PocketState.Running)
             {
                 return;
             }
 
             CaptureActionUse();
-            CaptureCloseThreatDefeat();
-
             if (playerHealth != null && !playerHealth.IsAlive)
             {
                 FailPocket();
                 return;
             }
+
+            CaptureCloseThreatDefeat();
+            UpdatePressureRelief(deltaTime);
 
             if (closeThreatDefeated
                 && usedSummonSlot1
@@ -161,6 +174,7 @@ namespace DimensionBrawl.Test
             pressureBlocksAtCloseThreatDefeat = summonSlot1Action != null
                 ? summonSlot1Action.TotalPressureScreenInterceptCount
                 : 0;
+            StartPressureRelief();
         }
 
         private int CountPressureBlocksAfterCloseThreatDefeated()
@@ -173,9 +187,38 @@ namespace DimensionBrawl.Test
             return Mathf.Max(0, summonSlot1Action.TotalPressureScreenInterceptCount - pressureBlocksAtCloseThreatDefeat);
         }
 
+        private void StartPressureRelief()
+        {
+            pressureReliefTimer = Mathf.Max(0f, closeThreatDefeatPressureReliefSeconds);
+            pressureReliefActive = pressureReliefTimer > 0f;
+            if (pressureReliefActive)
+            {
+                SetBarrageEnabled(false);
+            }
+        }
+
+        private void UpdatePressureRelief(float deltaTime)
+        {
+            if (!pressureReliefActive)
+            {
+                return;
+            }
+
+            pressureReliefTimer = Mathf.Max(0f, pressureReliefTimer - Mathf.Max(0f, deltaTime));
+            if (pressureReliefTimer > 0f)
+            {
+                return;
+            }
+
+            pressureReliefActive = false;
+            SetBarrageEnabled(true);
+        }
+
         private void ClearPocket()
         {
             state = PocketState.Cleared;
+            pressureReliefActive = false;
+            pressureReliefTimer = 0f;
             SetBarrageEnabled(!stopBarrageOnClear);
             SetEnergyGainEnabled(!stopEnergyGainOnEnd);
             SetMarkers();
@@ -184,6 +227,8 @@ namespace DimensionBrawl.Test
         private void FailPocket()
         {
             state = PocketState.Failed;
+            pressureReliefActive = false;
+            pressureReliefTimer = 0f;
             SetBarrageEnabled(!stopBarrageOnFail);
             SetEnergyGainEnabled(!stopEnergyGainOnEnd);
             SetMarkers();

@@ -38,6 +38,7 @@ namespace DimensionBrawl.Combat
         public event Action<BossBarrageEmitter, BossBarragePatternProfile, int> WaveFired;
 
         public bool IsWindupActive => windupActive;
+        public bool IsFiringEnabled => firingEnabled;
         public float PendingForwardRisk01 => pendingForwardRisk01;
         public BossBarragePatternProfile CurrentPattern => ActivePattern;
         public int CurrentPatternSequenceIndex => patternSequenceIndex;

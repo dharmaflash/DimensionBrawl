@@ -765,6 +765,51 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator CloseThreatDefeatCreatesShortBossPressureRelief()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
+            CombatHealth closeThreatHealth =
+                RequireComponent<CombatHealth>(RequireRoot(CloseThreatRootName), "close threat health");
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(RequireRoot(BossRootName), "boss barrage emitter");
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+
+            Assert.IsTrue(emitter.IsFiringEnabled);
+
+            closeThreatHealth.TryApplyDamage(new DamageInfo(
+                playerHealth,
+                DamageTeam.Player,
+                closeThreatHealth.MaxHealth + 10f,
+                closeThreatHealth.transform.position,
+                Vector3.forward,
+                0f));
+            pocketOwner.Tick(0f);
+
+            Assert.IsTrue(pocketOwner.CloseThreatDefeated);
+            Assert.IsTrue(pocketOwner.IsPressureReliefActive);
+            Assert.That(
+                pocketOwner.PressureReliefRemainingSeconds,
+                Is.EqualTo(0.9f).Within(0.001f),
+                "The first close-threat relief window should start from the documented 0.9s blocker-break value.");
+            Assert.IsFalse(
+                emitter.IsFiringEnabled,
+                "The review pocket should pause automatic boss barrage briefly after the close threat is defeated.");
+
+            pocketOwner.Tick(0.89f);
+            Assert.IsTrue(pocketOwner.IsPressureReliefActive);
+            Assert.IsFalse(emitter.IsFiringEnabled);
+
+            pocketOwner.Tick(0.02f);
+            Assert.IsFalse(pocketOwner.IsPressureReliefActive);
+            Assert.IsTrue(
+                emitter.IsFiringEnabled,
+                "Boss barrage should resume after the short relief beat if the pocket is still running.");
+
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator PocketIgnoresSummonBlocksBeforeCloseThreatDefeat()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
