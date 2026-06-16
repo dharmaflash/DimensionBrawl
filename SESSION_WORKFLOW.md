@@ -31,6 +31,8 @@ Use this when starting a new AI-assisted work session.
 - Do not commit `Assets/_Imported/`.
 - Do not commit Unity-generated solution/project files.
 - Do not commit package or project setting changes unless they were intentional.
+- Use milestone-based commits only: commit when a coherent feature slice is finished or a rollback point is useful.
+- Do not push by default; push only after explicit user confirmation.
 
 ## If The Project Feels Messy
 
@@ -40,4 +42,3 @@ Do not refactor immediately. First write:
 - what behavior must remain unchanged,
 - which files are affected,
 - the smallest reversible cleanup step.
-
