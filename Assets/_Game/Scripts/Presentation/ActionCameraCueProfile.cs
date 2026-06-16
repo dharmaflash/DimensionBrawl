@@ -92,11 +92,37 @@ namespace DimensionBrawl.Presentation
             finisherScale = 1.3f
         };
 
+        [SerializeField] private CameraCue skill1Cue = new CameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, 0.02f, 0.12f),
+            planarDirectionOffset = 0.10f,
+            fieldOfViewDelta = -1.2f,
+            cameraDistanceDelta = 0.10f,
+            focusHeightDelta = 0.01f,
+            durationSeconds = 0.24f,
+            finisherScale = 1.2f
+        };
+
+        [SerializeField] private CameraCue summonSlot1Cue = new CameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, 0.08f, -0.18f),
+            planarDirectionOffset = 0.16f,
+            fieldOfViewDelta = 2.4f,
+            cameraDistanceDelta = -0.26f,
+            focusHeightDelta = 0.08f,
+            durationSeconds = 0.34f,
+            finisherScale = 1.35f
+        };
+
         public CameraCue RunStartCue => runStartCue;
         public CameraCue StopSettleCue => stopSettleCue;
         public CameraCue SharpTurnCue => sharpTurnCue;
         public CameraCue DodgeCue => dodgeCue;
         public CameraCue AttackStartCue => attackStartCue;
         public CameraCue AttackHitCue => attackHitCue;
+        public CameraCue Skill1Cue => skill1Cue;
+        public CameraCue SummonSlot1Cue => summonSlot1Cue;
     }
 }

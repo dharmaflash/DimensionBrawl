@@ -90,6 +90,8 @@ namespace DimensionBrawl.Player
         public int LastSpentTier => lastSpentTier;
         public int ActiveProjectileCount => CountActiveProjectiles();
 
+        public event Action<int> Skill1Used;
+
         private void Awake()
         {
             if (energyLadder == null)
@@ -157,6 +159,7 @@ namespace DimensionBrawl.Player
 
             lastSpentTier = Mathf.Clamp(spentTier, 1, 3);
             FireTier(lastSpentTier);
+            Skill1Used?.Invoke(lastSpentTier);
             return true;
         }
 

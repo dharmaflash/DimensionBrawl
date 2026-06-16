@@ -8,6 +8,8 @@ namespace DimensionBrawl.Presentation
         [Header("References")]
         [SerializeField] private PlayerActionController actionController;
         [SerializeField] private PlayerMovementController movement;
+        [SerializeField] private PlayerSkill1Action skill1Action;
+        [SerializeField] private PlayerSummonSlot1Action summonSlot1Action;
         [SerializeField] private ActionCameraController cameraController;
         [SerializeField] private Transform cueSpace;
 
@@ -93,6 +95,32 @@ namespace DimensionBrawl.Presentation
             finisherScale = 1.3f
         };
 
+        [Tooltip("Immediate Skill1 cue. Stays small so the player still reads incoming boss fire.")]
+        [SerializeField] private ActionCameraCueProfile.CameraCue skill1Cue = new ActionCameraCueProfile.CameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, 0.02f, 0.12f),
+            planarDirectionOffset = 0.10f,
+            fieldOfViewDelta = -1.2f,
+            cameraDistanceDelta = 0.10f,
+            focusHeightDelta = 0.01f,
+            durationSeconds = 0.24f,
+            finisherScale = 1.2f
+        };
+
+        [Tooltip("SummonSlot1 entry cue. Uses a short pullback/widen so the proxy and pressure screen read as the main exchange.")]
+        [SerializeField] private ActionCameraCueProfile.CameraCue summonSlot1Cue = new ActionCameraCueProfile.CameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, 0.08f, -0.18f),
+            planarDirectionOffset = 0.16f,
+            fieldOfViewDelta = 2.4f,
+            cameraDistanceDelta = -0.26f,
+            focusHeightDelta = 0.08f,
+            durationSeconds = 0.34f,
+            finisherScale = 1.35f
+        };
+
         public ActionCameraCueProfile CueProfile => cueProfile;
 
         private ActionCameraCueProfile.CameraCue ActiveRunStartCue => cueProfile != null ? cueProfile.RunStartCue : runStartCue;
@@ -101,6 +129,8 @@ namespace DimensionBrawl.Presentation
         private ActionCameraCueProfile.CameraCue ActiveDodgeCue => cueProfile != null ? cueProfile.DodgeCue : dodgeCue;
         private ActionCameraCueProfile.CameraCue ActiveAttackStartCue => cueProfile != null ? cueProfile.AttackStartCue : attackStartCue;
         private ActionCameraCueProfile.CameraCue ActiveAttackHitCue => cueProfile != null ? cueProfile.AttackHitCue : attackHitCue;
+        private ActionCameraCueProfile.CameraCue ActiveSkill1Cue => cueProfile != null ? cueProfile.Skill1Cue : skill1Cue;
+        private ActionCameraCueProfile.CameraCue ActiveSummonSlot1Cue => cueProfile != null ? cueProfile.SummonSlot1Cue : summonSlot1Cue;
 
         private void Awake()
         {
@@ -125,6 +155,16 @@ namespace DimensionBrawl.Presentation
                 actionController.BasicAttackStarted += HandleBasicAttackStarted;
                 actionController.BasicAttackHit += HandleBasicAttackHit;
             }
+
+            if (skill1Action != null)
+            {
+                skill1Action.Skill1Used += HandleSkill1Used;
+            }
+
+            if (summonSlot1Action != null)
+            {
+                summonSlot1Action.SummonSlot1Used += HandleSummonSlot1Used;
+            }
         }
 
         private void OnDisable()
@@ -141,6 +181,16 @@ namespace DimensionBrawl.Presentation
                 actionController.DodgeStarted -= HandleDodgeStarted;
                 actionController.BasicAttackStarted -= HandleBasicAttackStarted;
                 actionController.BasicAttackHit -= HandleBasicAttackHit;
+            }
+
+            if (skill1Action != null)
+            {
+                skill1Action.Skill1Used -= HandleSkill1Used;
+            }
+
+            if (summonSlot1Action != null)
+            {
+                summonSlot1Action.SummonSlot1Used -= HandleSummonSlot1Used;
             }
         }
 
@@ -177,6 +227,18 @@ namespace DimensionBrawl.Presentation
         {
             ActionCameraCueProfile.CameraCue cue = ActiveAttackHitCue;
             RequestCue(cue, ResolvePlanarDirection(), ResolveComboScale(comboIndex, cue));
+        }
+
+        private void HandleSkill1Used(int tier)
+        {
+            ActionCameraCueProfile.CameraCue cue = ActiveSkill1Cue;
+            RequestCue(cue, ResolvePlanarDirection(), ResolveTierScale(tier, cue));
+        }
+
+        private void HandleSummonSlot1Used(int tier)
+        {
+            ActionCameraCueProfile.CameraCue cue = ActiveSummonSlot1Cue;
+            RequestCue(cue, ResolvePlanarDirection(), ResolveTierScale(tier, cue));
         }
 
         private void RequestCue(ActionCameraCueProfile.CameraCue cue, Vector3 planarDirection, float scale)
@@ -234,6 +296,12 @@ namespace DimensionBrawl.Presentation
 
             float comboWeight = Mathf.Clamp01(comboIndex / 4f);
             return Mathf.Lerp(1f, cue.finisherScale, comboWeight);
+        }
+
+        private static float ResolveTierScale(int tier, ActionCameraCueProfile.CameraCue cue)
+        {
+            float tierWeight = Mathf.Clamp01((Mathf.Max(1, tier) - 1) / 2f);
+            return Mathf.Lerp(1f, cue.finisherScale, tierWeight);
         }
     }
 }

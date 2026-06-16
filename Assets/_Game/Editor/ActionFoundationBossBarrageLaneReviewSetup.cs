@@ -230,6 +230,12 @@ namespace DimensionBrawl.Editor
                 bossBarrageEmitter,
                 pocketOwner);
             ConfigureFixedRearCamera(cameraController, player.transform, bossProxy.transform);
+            ConfigureActionCameraCueDriver(
+                cameraController,
+                playerActionController,
+                player,
+                skill1Action,
+                summonSlot1Action);
             ConfigureArenaInfluenceTargets(scene, player.transform, bossProxy.transform, closeThreat.transform);
             CreateLaneMarkers(scene, laneSpace);
 
@@ -332,6 +338,13 @@ namespace DimensionBrawl.Editor
             ValidateCloseThreat(closeThreat, closeThreatHealth, playerHealth, cameraController);
             ValidateObjectReference(cameraController, "target", player.transform);
             ValidateObjectReference(cameraController, "threat", bossProxy.transform);
+            ValidateActionCameraCueDriver(
+                RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver"),
+                playerActionController,
+                player,
+                cameraController,
+                skill1Action,
+                summonSlot1Action);
             ValidateObjectReference(encounter, "playerHealth", playerHealth);
             ValidateObjectReference(encounter, "enemyHealth", closeThreatHealth);
             ValidatePocketOwner(pocketOwner, playerHealth, closeThreatHealth, energyLadder, skill1Action, summonSlot1Action, emitter);
@@ -1436,6 +1449,22 @@ namespace DimensionBrawl.Editor
             SetFloat(cameraController, "maxThreatFocusOffset", 2f);
         }
 
+        private static void ConfigureActionCameraCueDriver(
+            ActionCameraController cameraController,
+            PlayerActionController actionController,
+            PlayerMovementController movement,
+            PlayerSkill1Action skill1Action,
+            PlayerSummonSlot1Action summonSlot1Action)
+        {
+            ActionCameraCueDriver cueDriver = EnsureComponent<ActionCameraCueDriver>(cameraController.gameObject);
+            SetObjectReference(cueDriver, "actionController", actionController);
+            SetObjectReference(cueDriver, "movement", movement);
+            SetObjectReference(cueDriver, "skill1Action", skill1Action);
+            SetObjectReference(cueDriver, "summonSlot1Action", summonSlot1Action);
+            SetObjectReference(cueDriver, "cameraController", cameraController);
+            SetObjectReference(cueDriver, "cueSpace", movement.transform);
+        }
+
         private static void ValidateFixedRearCamera(ActionCameraController cameraController, Transform player)
         {
             Vector3 planarOffset = Vector3.ProjectOnPlane(cameraController.transform.position - player.position, Vector3.up);
@@ -1448,6 +1477,22 @@ namespace DimensionBrawl.Editor
             ValidateFloat(cameraController, "manualYawSpeedDegrees", 0f);
             ValidateFloat(cameraController, "mouseYawDegreesPerPixel", 0f);
             ValidateFloat(cameraController, "targetYawAssist", 0f);
+        }
+
+        private static void ValidateActionCameraCueDriver(
+            ActionCameraCueDriver cueDriver,
+            PlayerActionController actionController,
+            PlayerMovementController movement,
+            ActionCameraController cameraController,
+            PlayerSkill1Action skill1Action,
+            PlayerSummonSlot1Action summonSlot1Action)
+        {
+            ValidateObjectReference(cueDriver, "actionController", actionController);
+            ValidateObjectReference(cueDriver, "movement", movement);
+            ValidateObjectReference(cueDriver, "skill1Action", skill1Action);
+            ValidateObjectReference(cueDriver, "summonSlot1Action", summonSlot1Action);
+            ValidateObjectReference(cueDriver, "cameraController", cameraController);
+            ValidateObjectReference(cueDriver, "cueSpace", movement.transform);
         }
 
         private static void ValidateSummonForwardSpace(SummonLaneSpace laneSpace)

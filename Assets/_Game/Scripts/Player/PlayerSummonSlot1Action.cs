@@ -89,6 +89,8 @@ namespace DimensionBrawl.Player
         public int ActivePressureScreenCount => CountActivePressureScreens();
         public int ActivePressureScreenRemainingIntercepts => CountActivePressureScreenRemainingIntercepts();
 
+        public event Action<int> SummonSlot1Used;
+
         private void Awake()
         {
             if (energyLadder == null)
@@ -172,6 +174,7 @@ namespace DimensionBrawl.Player
 
             lastSpentTier = Mathf.Clamp(spentTier, 1, 3);
             FireTier(lastSpentTier);
+            SummonSlot1Used?.Invoke(lastSpentTier);
             return true;
         }
 

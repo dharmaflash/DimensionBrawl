@@ -110,6 +110,8 @@ namespace DimensionBrawl.Tests
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            ActionCameraCueDriver cameraCueDriver =
+                RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
             GameObject projectileRoot = RequireRoot(ProjectilePoolRootName);
             GameObject actionCueRoot = RequireRoot(ActionCuePoolRootName);
             GameObject summonActorRoot = RequireRoot(SummonActorPoolRootName);
@@ -217,6 +219,12 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(
                 cameraController.Threat == bossRoot.transform || cameraController.Threat == closeThreatRoot.transform,
                 "Play mode target bridge may focus either the far boss proxy or the current close threat.");
+            Assert.AreSame(playerActionController, GetObjectReference<PlayerActionController>(cameraCueDriver, "actionController"));
+            Assert.AreSame(player, GetObjectReference<PlayerMovementController>(cameraCueDriver, "movement"));
+            Assert.AreSame(skill1Action, GetObjectReference<PlayerSkill1Action>(cameraCueDriver, "skill1Action"));
+            Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(cameraCueDriver, "summonSlot1Action"));
+            Assert.AreSame(cameraController, GetObjectReference<ActionCameraController>(cameraCueDriver, "cameraController"));
+            Assert.AreSame(player.transform, GetObjectReference<Transform>(cameraCueDriver, "cueSpace"));
             Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(pocketOwner, "playerHealth"));
             Assert.AreSame(closeThreatHealth, GetObjectReference<CombatHealth>(pocketOwner, "closeThreatHealth"));
             Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(pocketOwner, "energyLadder"));
@@ -279,6 +287,7 @@ namespace DimensionBrawl.Tests
             SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
             PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
             GameObject bossRoot = RequireRoot(BossRootName);
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
             Collider bossHitCollider = RequireCombatHitCollider(bossRoot, bossHealth, "boss proxy");
@@ -291,6 +300,9 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(skill1Action.TryUseSkill1());
             Assert.AreEqual(1, skill1Action.LastSpentTier);
             Assert.AreEqual(0, energyLadder.AvailableTier);
+            Assert.IsTrue(
+                cameraController.HasActiveCue,
+                "Skill1 should request a short camera cue through the existing action camera driver.");
             Assert.Greater(skill1Action.ActiveProjectileCount, 0, "Skill1 should create an immediate readable projectile.");
 
             LaneActionProjectile[] projectiles = Object.FindObjectsByType<LaneActionProjectile>(
@@ -326,6 +338,7 @@ namespace DimensionBrawl.Tests
             SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
 
             player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
             FillEnergyToTier(energyLadder, 3);
@@ -333,6 +346,9 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
             Assert.AreEqual(3, summonSlot1Action.LastSpentTier);
             Assert.AreEqual(0, energyLadder.AvailableTier);
+            Assert.IsTrue(
+                cameraController.HasActiveCue,
+                "SummonSlot1 should request a short camera cue without needing production HUD/UI ownership.");
             Assert.Greater(summonSlot1Action.ActiveCueCount, 0, "SummonSlot1 should show a magic-circle entry cue.");
             Assert.Greater(summonSlot1Action.ActiveSummonActorCount, 0, "SummonSlot1 should show a visible frontline summon actor.");
             Assert.GreaterOrEqual(summonSlot1Action.ActiveProjectileCount, 3);
