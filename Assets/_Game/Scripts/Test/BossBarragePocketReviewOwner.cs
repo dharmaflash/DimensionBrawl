@@ -185,6 +185,7 @@ namespace DimensionBrawl.Test
         public void Configure(
             CombatHealth newPlayerHealth,
             CombatHealth newCloseThreatHealth,
+            CombatHealth newBossHealth,
             SummonEnergyLadder newEnergyLadder,
             PlayerSkill1Action newSkill1Action,
             PlayerSummonSlot1Action newSummonSlot1Action,
@@ -194,6 +195,7 @@ namespace DimensionBrawl.Test
         {
             playerHealth = newPlayerHealth;
             closeThreatHealth = newCloseThreatHealth;
+            bossHealth = newBossHealth;
             energyLadder = newEnergyLadder;
             skill1Action = newSkill1Action;
             summonSlot1Action = newSummonSlot1Action;
@@ -201,6 +203,7 @@ namespace DimensionBrawl.Test
             clearMarker = newClearMarker;
             failMarker = newFailMarker;
             ResetPocket();
+            SubscribeBossHealth();
         }
 
         public void ResetPocket()

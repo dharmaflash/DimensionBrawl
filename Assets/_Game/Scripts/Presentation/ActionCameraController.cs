@@ -56,6 +56,14 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0f)] private float maxCueFocusHeightDelta = 0.25f;
         [SerializeField, Min(0f)] private float cueFieldOfViewSmooth = 18f;
 
+        [Header("Aim Mode")]
+        [Tooltip("Persistent ranged-aim shoulder offset. This is a mode modifier, not a short combat cue.")]
+        [SerializeField] private Vector3 aimCameraOffset = new Vector3(-0.32f, 0.05f, 0.52f);
+        [SerializeField] private Vector3 aimFocusOffset = new Vector3(-0.12f, 0.04f, 0.32f);
+        [SerializeField] private float aimFieldOfViewDelta = -4f;
+        [SerializeField, Min(0f)] private float aimBlendInSpeed = 14f;
+        [SerializeField, Min(0f)] private float aimBlendOutSpeed = 18f;
+
         private Camera controlledCamera;
         private Vector3 followVelocity;
         private Vector3 cueOffset;
@@ -67,8 +75,12 @@ namespace DimensionBrawl.Presentation
         private float baseFieldOfView;
         private bool orbitInitialized;
         private bool enabledOrbitAction;
+        private float aimTargetWeight;
+        private float aimWeight;
 
         public bool HasActiveCue => cueTimer > 0f;
+        public bool IsAimModifierActive => aimTargetWeight > 0.5f;
+        public float AimWeight => aimWeight;
         public float OrbitYawDegrees => orbitYawDegrees;
         public Transform Target => target;
         public Transform Threat => threat;
@@ -109,6 +121,11 @@ namespace DimensionBrawl.Presentation
             cueTimer = cueDuration;
         }
 
+        public void SetAimModifierActive(bool active)
+        {
+            aimTargetWeight = active ? 1f : 0f;
+        }
+
         private void LateUpdate()
         {
             if (target == null)
@@ -129,9 +146,14 @@ namespace DimensionBrawl.Presentation
 
             Quaternion orbitRotation = Quaternion.Euler(0f, orbitYawDegrees, 0f);
             float cueWeight = UpdateCueWeight(deltaTime);
-            Vector3 focus = BuildFocusPoint() + Vector3.up * (cueFocusHeightDelta * cueWeight);
+            UpdateAimWeight(deltaTime);
+            Vector3 focus = BuildFocusPoint()
+                + Vector3.up * (cueFocusHeightDelta * cueWeight)
+                + orbitRotation * (aimFocusOffset * aimWeight);
             Vector3 cueCameraOffset = Vector3.forward * (cueCameraDistanceDelta * cueWeight);
-            Vector3 desiredPosition = focus + orbitRotation * (cameraOffset + cueCameraOffset) + cueOffset * cueWeight;
+            Vector3 desiredPosition = focus
+                + orbitRotation * (cameraOffset + cueCameraOffset + aimCameraOffset * aimWeight)
+                + cueOffset * cueWeight;
             UpdateFieldOfView(deltaTime, cueWeight);
 
             transform.position = Vector3.SmoothDamp(
@@ -328,6 +350,19 @@ namespace DimensionBrawl.Presentation
             return Mathf.SmoothStep(0f, 1f, normalizedTime);
         }
 
+        private void UpdateAimWeight(float deltaTime)
+        {
+            float speed = aimTargetWeight > aimWeight ? aimBlendInSpeed : aimBlendOutSpeed;
+            if (speed <= 0f)
+            {
+                aimWeight = aimTargetWeight;
+                return;
+            }
+
+            float step = 1f - Mathf.Exp(-speed * deltaTime);
+            aimWeight = Mathf.Lerp(aimWeight, aimTargetWeight, step);
+        }
+
         private void UpdateFieldOfView(float deltaTime, float cueWeight)
         {
             if (controlledCamera == null)
@@ -335,7 +370,9 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
-            float targetFieldOfView = baseFieldOfView + cueFieldOfViewDelta * cueWeight;
+            float targetFieldOfView = baseFieldOfView
+                + cueFieldOfViewDelta * cueWeight
+                + aimFieldOfViewDelta * aimWeight;
             float fovStep = 1f - Mathf.Exp(-cueFieldOfViewSmooth * deltaTime);
             controlledCamera.fieldOfView = Mathf.Lerp(controlledCamera.fieldOfView, targetFieldOfView, fovStep);
         }

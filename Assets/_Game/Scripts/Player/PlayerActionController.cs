@@ -24,6 +24,7 @@ namespace DimensionBrawl.Player
         [SerializeField] private PlayerMovementController movement;
         [SerializeField] private CombatHealth health;
         [SerializeField] private PlayerCombatTargetSelector targetSelector;
+        [SerializeField] private PlayerCombatModeController combatModeController;
         [SerializeField] private LayerMask hittableLayers = ~0;
         [SerializeField] private Animator animator;
 
@@ -31,6 +32,9 @@ namespace DimensionBrawl.Player
         [SerializeField] private PlayerActionProfile actionProfile;
 
         [Header("Basic Attack")]
+        [Tooltip("Boss-barrage ranged mode owns the shared BasicDefenseAttack input through PlayerRangedBasicAttackAction.")]
+        [SerializeField] private bool blockBasicAttackInRangedMode;
+
         [Tooltip("Defaults use documented startup/active/recovery/hit-stop ranges from Combat Feel Frame Reference.")]
         [SerializeField] private PlayerActionProfile.AttackStep[] basicCombo =
         {
@@ -137,6 +141,7 @@ namespace DimensionBrawl.Player
         private bool attackHasHit;
         private bool mobileAttackQueued;
         private bool mobileDodgeQueued;
+        private bool suppressBasicAttackDeviceFallback;
         private bool enabledAttackAction;
         private bool enabledDodgeAction;
         private bool dodgeFeedbackActive;
@@ -186,6 +191,23 @@ namespace DimensionBrawl.Player
             mobileDodgeQueued = true;
         }
 
+        public void SuppressBasicAttackDeviceFallbackThisFrame()
+        {
+            suppressBasicAttackDeviceFallback = true;
+        }
+
+        public void SetActionProfile(PlayerActionProfile newActionProfile)
+        {
+            if (actionProfile == newActionProfile)
+            {
+                return;
+            }
+
+            string previousDodgingParameter = ActiveDodgingParameter;
+            ResetActionStateForProfileSwap(previousDodgingParameter);
+            actionProfile = newActionProfile;
+        }
+
         private void Awake()
         {
             if (movement == null)
@@ -202,6 +224,11 @@ namespace DimensionBrawl.Player
             {
                 targetSelector = GetComponent<PlayerCombatTargetSelector>();
             }
+
+            if (combatModeController == null)
+            {
+                combatModeController = GetComponent<PlayerCombatModeController>();
+            }
         }
 
         private void OnEnable()
@@ -214,6 +241,7 @@ namespace DimensionBrawl.Player
         {
             EndDodgeFeedbackIfNeeded();
             movement?.ClearActionMoveInputSpeedScale();
+            suppressBasicAttackDeviceFallback = false;
             DisableActionIfOwned(basicAttackAction, enabledAttackAction);
             DisableActionIfOwned(dodgeAction, enabledDodgeAction);
         }
@@ -238,7 +266,7 @@ namespace DimensionBrawl.Player
                 comboIndex = 0;
             }
 
-            if (attackPressed)
+            if (attackPressed && CanUseBasicAttack())
             {
                 attackBufferTimer = CurrentAttackStep().inputBufferSeconds;
                 TryQueueNextAttack();
@@ -417,6 +445,13 @@ namespace DimensionBrawl.Player
             return actionTimer >= CurrentAttackStep().dodgeCancelAfterSeconds;
         }
 
+        private bool CanUseBasicAttack()
+        {
+            return !blockBasicAttackInRangedMode
+                || combatModeController == null
+                || !combatModeController.IsRangedMode;
+        }
+
         private void StartDodge()
         {
             state = PlayerActionState.Dodging;
@@ -539,6 +574,20 @@ namespace DimensionBrawl.Player
             DodgeEnded?.Invoke();
         }
 
+        private void ResetActionStateForProfileSwap(string previousDodgingParameter)
+        {
+            EndDodgeFeedbackIfNeeded();
+            movement?.ClearActionMoveInputSpeedScale();
+            SetAnimatorBool(previousDodgingParameter, false);
+            state = PlayerActionState.Free;
+            comboIndex = 0;
+            actionTimer = 0f;
+            attackBufferTimer = 0f;
+            comboResetTimer = 0f;
+            attackHasHit = false;
+            nextAttackQueued = false;
+        }
+
         private PlayerActionProfile.AttackStep CurrentAttackStep()
         {
             PlayerActionProfile.AttackStep[] combo = ActiveBasicCombo;
@@ -598,7 +647,14 @@ namespace DimensionBrawl.Player
             bool pressed = ReadButtonDown(basicAttackAction, ref mobileAttackQueued);
             if (pressed || !useDeviceFallbackWhenActionMissing || !IsActionMissing(basicAttackAction))
             {
+                suppressBasicAttackDeviceFallback = false;
                 return pressed;
+            }
+
+            if (suppressBasicAttackDeviceFallback)
+            {
+                suppressBasicAttackDeviceFallback = false;
+                return false;
             }
 
             return (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)

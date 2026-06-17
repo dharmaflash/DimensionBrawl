@@ -15,6 +15,9 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private SummonEnergyLadder energyLadder;
         [SerializeField] private SummonLaneSpace laneSpace;
         [SerializeField] private Transform player;
+        [SerializeField] private PlayerCombatModeController combatModeController;
+        [SerializeField] private PlayerRangedAimController rangedAimController;
+        [SerializeField] private PlayerRangedBasicAttackAction rangedBasicAttackAction;
         [SerializeField] private PlayerSkill1Action skill1Action;
         [SerializeField] private PlayerSummonSlot1Action summonSlot1Action;
         [SerializeField] private BossBarrageEmitter bossBarrageEmitter;
@@ -37,6 +40,9 @@ namespace DimensionBrawl.Presentation
             SummonEnergyLadder newEnergyLadder,
             SummonLaneSpace newLaneSpace,
             Transform newPlayer,
+            PlayerCombatModeController newCombatModeController,
+            PlayerRangedAimController newRangedAimController,
+            PlayerRangedBasicAttackAction newRangedBasicAttackAction,
             PlayerSkill1Action newSkill1Action,
             PlayerSummonSlot1Action newSummonSlot1Action,
             BossBarrageEmitter newBossBarrageEmitter,
@@ -48,6 +54,9 @@ namespace DimensionBrawl.Presentation
             energyLadder = newEnergyLadder;
             laneSpace = newLaneSpace;
             player = newPlayer;
+            combatModeController = newCombatModeController;
+            rangedAimController = newRangedAimController;
+            rangedBasicAttackAction = newRangedBasicAttackAction;
             skill1Action = newSkill1Action;
             summonSlot1Action = newSummonSlot1Action;
             bossBarrageEmitter = newBossBarrageEmitter;
@@ -74,12 +83,15 @@ namespace DimensionBrawl.Presentation
             GUILayout.Label(ResolveEnergyLine(), labelStyle);
             GUILayout.Label(ResolveRiskLine(), labelStyle);
             GUILayout.Label(ResolveBossBarrageLine(), labelStyle);
+            GUILayout.Label(ResolveWeaponModeLine(), labelStyle);
+            GUILayout.Label(ResolveRangedFireLine(), labelStyle);
             GUILayout.Label(ResolveActionLine(), labelStyle);
             GUILayout.Label(ResolveActionHintLine(), labelStyle);
             GUILayout.Label(ResolveSummonExchangeLine(), labelStyle);
             GUILayout.Label(ResolveObjectiveLine(), labelStyle);
             GUILayout.EndArea();
             GUI.matrix = previousMatrix;
+            DrawReticleIfNeeded();
         }
 
         private string ResolveHealthLine()
@@ -161,6 +173,26 @@ namespace DimensionBrawl.Presentation
             return $"{skill}   {summon}";
         }
 
+        private string ResolveWeaponModeLine()
+        {
+            string mode = combatModeController != null ? combatModeController.CurrentMode.ToString() : "-";
+            string aim = rangedAimController != null && rangedAimController.IsAiming ? "AIM" : "hip";
+            return $"Weapon {mode}   Aim {aim}";
+        }
+
+        private string ResolveRangedFireLine()
+        {
+            if (rangedBasicAttackAction == null)
+            {
+                return "Ranged Fire -";
+            }
+
+            string ready = rangedBasicAttackAction.IsFireReady
+                ? "READY"
+                : $"{rangedBasicAttackAction.FireCooldownRemaining:0.00}s";
+            return $"Ranged Fire {ready}   bolts {rangedBasicAttackAction.ActiveProjectileCount}";
+        }
+
         private string ResolveSummonExchangeLine()
         {
             string skillShots = skill1Action != null
@@ -190,6 +222,13 @@ namespace DimensionBrawl.Presentation
             if (summonSlot1Action != null && summonSlot1Action.ShowUseBlockedHint && !string.IsNullOrWhiteSpace(summonSlot1Action.LastUseBlockedReason))
             {
                 return $"Hint: {summonSlot1Action.LastUseBlockedReason}";
+            }
+
+            if (rangedBasicAttackAction != null
+                && rangedBasicAttackAction.ShowUseBlockedHint
+                && !string.IsNullOrWhiteSpace(rangedBasicAttackAction.LastUseBlockedReason))
+            {
+                return $"Hint: {rangedBasicAttackAction.LastUseBlockedReason}";
             }
 
             return "Hint: -";
@@ -270,6 +309,37 @@ namespace DimensionBrawl.Presentation
         private static float ResolveUiScale()
         {
             return Mathf.Clamp(Screen.height / 1440f, 1f, 2f);
+        }
+
+        private void DrawReticleIfNeeded()
+        {
+            if (combatModeController != null && !combatModeController.IsRangedMode)
+            {
+                return;
+            }
+
+            if (rangedBasicAttackAction == null)
+            {
+                return;
+            }
+
+            bool aiming = rangedAimController != null && rangedAimController.IsAiming;
+            float centerX = Screen.width * 0.5f;
+            float centerY = Screen.height * 0.5f;
+            float gap = aiming ? 9f : 6f;
+            float length = aiming ? 18f : 10f;
+            float thickness = aiming ? 3f : 2f;
+            Color previousColor = GUI.color;
+            GUI.color = aiming
+                ? new Color(0.42f, 0.95f, 1f, 0.92f)
+                : new Color(1f, 1f, 1f, 0.42f);
+
+            GUI.DrawTexture(new Rect(centerX - gap - length, centerY - thickness * 0.5f, length, thickness), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(centerX + gap, centerY - thickness * 0.5f, length, thickness), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(centerX - thickness * 0.5f, centerY - gap - length, thickness, length), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(centerX - thickness * 0.5f, centerY + gap, thickness, length), Texture2D.whiteTexture);
+            GUI.DrawTexture(new Rect(centerX - thickness * 0.5f, centerY - thickness * 0.5f, thickness, thickness), Texture2D.whiteTexture);
+            GUI.color = previousColor;
         }
 
         private static string ResolveRiskBandLabel(SummonEnergyRiskBand riskBand)

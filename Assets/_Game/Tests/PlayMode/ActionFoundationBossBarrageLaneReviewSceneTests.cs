@@ -7,6 +7,7 @@ using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.Test;
+using DimensionBrawl.UI;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -45,6 +46,8 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_PlayerAction_BossBarrageLocalDefense.asset";
         private const string Skill1ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_PlayerSkill1Projectile_LaneBolt.prefab";
+        private const string RangedBasicProjectilePrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_PlayerRangedBasicProjectile_AimBolt.prefab";
         private const string SummonSlot1ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Projectile_AssistBolt.prefab";
         private const string SummonSlot1EntryCuePrefabPath =
@@ -105,6 +108,12 @@ namespace DimensionBrawl.Tests
             CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
             PlayerActionController playerActionController =
                 RequireComponent<PlayerActionController>(player.gameObject, "player action controller");
+            PlayerCombatModeController combatModeController =
+                RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
+            PlayerRangedAimController rangedAimController =
+                RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
+            PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
             PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
             SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
@@ -141,6 +150,8 @@ namespace DimensionBrawl.Tests
                 RequireComponent<PlayerCombatVfxCueDriver>(player.gameObject, "player combat VFX cue driver");
             BossBarrageLaneReviewHud reviewHud =
                 RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "boss barrage HUD");
+            BossBarrageLaneReviewMobileHud mobileHud =
+                RequireComponent<BossBarrageLaneReviewMobileHud>(RequireRoot(HudRootName), "boss barrage mobile HUD");
             BossBarrageLaneTelegraphPresenter telegraphPresenter =
                 RequireComponent<BossBarrageLaneTelegraphPresenter>(
                     RequireRoot(BossTelegraphRootName),
@@ -176,6 +187,20 @@ namespace DimensionBrawl.Tests
                 1f,
                 ForwardEnergyZoneMaterialPath);
             Assert.AreSame(LoadAsset<PlayerActionProfile>(LocalDefenseProfilePath), playerActionController.ActionProfile);
+            Assert.IsTrue(combatModeController.IsRangedMode, "Review scene should start in the ranged channel.");
+            Assert.AreSame(playerActionController, GetObjectReference<PlayerActionController>(combatModeController, "actionController"));
+            Assert.AreSame(combatModeController, GetObjectReference<PlayerCombatModeController>(playerActionController, "combatModeController"));
+            Assert.IsTrue(GetBool(playerActionController, "blockBasicAttackInRangedMode"));
+            Assert.AreSame(combatModeController, GetObjectReference<PlayerCombatModeController>(rangedAimController, "combatModeController"));
+            Assert.AreSame(cameraController, GetObjectReference<ActionCameraController>(rangedAimController, "cameraController"));
+            Assert.AreSame(combatModeController, GetObjectReference<PlayerCombatModeController>(rangedBasicAttackAction, "combatModeController"));
+            Assert.AreSame(rangedAimController, GetObjectReference<PlayerRangedAimController>(rangedBasicAttackAction, "aimController"));
+            Assert.AreSame(player, GetObjectReference<PlayerMovementController>(rangedBasicAttackAction, "movement"));
+            Assert.AreSame(targetSelector, GetObjectReference<PlayerCombatTargetSelector>(rangedBasicAttackAction, "targetSelector"));
+            Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(rangedBasicAttackAction, "sourceHealth"));
+            Assert.AreSame(cameraController, GetObjectReference<ActionCameraController>(rangedBasicAttackAction, "cameraController"));
+            Assert.AreSame(LoadAsset<GameObject>(RangedBasicProjectilePrefabPath), GetObjectReference<GameObject>(rangedBasicAttackAction, "projectilePrefabObject"));
+            Assert.AreSame(projectileRoot.transform, GetObjectReference<Transform>(rangedBasicAttackAction, "projectileRoot"));
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(energyLadder, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(energyLadder, "trackedPlayer"));
             Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(skill1Action, "energyLadder"));
@@ -312,10 +337,27 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(reviewHud, "energyLadder"));
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(reviewHud, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(reviewHud, "player"));
+            Assert.AreSame(combatModeController, GetObjectReference<PlayerCombatModeController>(reviewHud, "combatModeController"));
+            Assert.AreSame(rangedAimController, GetObjectReference<PlayerRangedAimController>(reviewHud, "rangedAimController"));
+            Assert.AreSame(rangedBasicAttackAction, GetObjectReference<PlayerRangedBasicAttackAction>(reviewHud, "rangedBasicAttackAction"));
             Assert.AreSame(skill1Action, GetObjectReference<PlayerSkill1Action>(reviewHud, "skill1Action"));
             Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(reviewHud, "summonSlot1Action"));
             Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(reviewHud, "bossBarrageEmitter"));
             Assert.AreSame(pocketOwner, GetObjectReference<BossBarragePocketReviewOwner>(reviewHud, "pocketReviewOwner"));
+            Assert.AreSame(player, GetObjectReference<PlayerMovementController>(mobileHud, "movement"));
+            Assert.AreSame(playerActionController, GetObjectReference<PlayerActionController>(mobileHud, "actionController"));
+            Assert.AreSame(combatModeController, GetObjectReference<PlayerCombatModeController>(mobileHud, "combatModeController"));
+            Assert.AreSame(rangedAimController, GetObjectReference<PlayerRangedAimController>(mobileHud, "aimController"));
+            Assert.AreSame(rangedBasicAttackAction, GetObjectReference<PlayerRangedBasicAttackAction>(mobileHud, "rangedBasicAttackAction"));
+            Assert.AreSame(skill1Action, GetObjectReference<PlayerSkill1Action>(mobileHud, "skill1Action"));
+            Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(mobileHud, "summonSlot1Action"));
+            Assert.AreEqual("Move", GetString(mobileHud, "moveActionName"));
+            Assert.AreEqual("BasicDefenseAttack", GetString(mobileHud, "basicDefenseActionName"));
+            Assert.AreEqual("Dodge", GetString(mobileHud, "dodgeActionName"));
+            Assert.AreEqual("Skill1", GetString(mobileHud, "skill1ActionName"));
+            Assert.AreEqual("SummonSlot1", GetString(mobileHud, "summonSlot1ActionName"));
+            Assert.AreEqual("RangedAim", GetString(mobileHud, "rangedAimActionName"));
+            Assert.AreEqual("WeaponSwap", GetString(mobileHud, "weaponSwapActionName"));
 
             yield return null;
         }
@@ -326,11 +368,15 @@ namespace DimensionBrawl.Tests
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             PlayerActionController playerActionController =
                 RequireComponent<PlayerActionController>(player.gameObject, "player action controller");
+            PlayerCombatModeController combatModeController =
+                RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
             PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
             CombatHealth closeThreatHealth =
                 RequireComponent<CombatHealth>(RequireRoot(CloseThreatRootName), "close threat health");
             CombatHealth bossHealth = RequireComponent<CombatHealth>(RequireRoot(BossRootName), "boss health");
 
+            combatModeController.SetMeleeMode();
+            Assert.IsTrue(combatModeController.IsMeleeMode, "Local defense melee combo should be tested through the melee channel.");
             player.transform.SetPositionAndRotation(
                 closeThreatHealth.transform.position + Vector3.back * 1.25f,
                 Quaternion.LookRotation(Vector3.forward, Vector3.up));
@@ -352,6 +398,51 @@ namespace DimensionBrawl.Tests
 
             Assert.Less(closeThreatHealth.CurrentHealth, closeThreatBefore);
             Assert.AreEqual(bossBefore, bossHealth.CurrentHealth, 0.001f);
+        }
+
+        [UnityTest]
+        public IEnumerator RangedBasicFireUsesRangedChannelAndAimCue()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            PlayerCombatModeController combatModeController =
+                RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
+            PlayerRangedAimController aimController =
+                RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
+            PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            GameObject bossRoot = RequireRoot(BossRootName);
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
+            Collider bossHitCollider = RequireCombatHitCollider(bossRoot, bossHealth, "boss proxy");
+
+            combatModeController.SetRangedMode();
+            aimController.SetAimHeld(true);
+            player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
+            targetSelector.NotifyTargetContact(bossHealth);
+            targetSelector.RefreshTarget();
+            Physics.SyncTransforms();
+            yield return null;
+
+            float bossHealthBefore = bossHealth.CurrentHealth;
+            Assert.IsTrue(aimController.IsAiming);
+            Assert.IsTrue(rangedBasicAttackAction.TryFire());
+            Assert.IsTrue(
+                cameraController.HasActiveCue,
+                "Ranged basic fire should request a short shoulder-shot camera cue.");
+            Assert.Greater(rangedBasicAttackAction.ActiveProjectileCount, 0);
+
+            LaneActionProjectile playerProjectile = RequireActivePlayerRangedProjectile();
+            Assert.Greater(
+                Vector3.Dot(playerProjectile.TravelDirection, Vector3.forward),
+                0.5f,
+                "Ranged basic fire should travel toward the boss/frontline side.");
+            Assert.IsTrue(
+                playerProjectile.TryApplyImpact(bossHitCollider, playerProjectile.transform.position),
+                "Ranged basic projectile should resolve damage against the authored boss hit receiver.");
+            Assert.Less(bossHealth.CurrentHealth, bossHealthBefore);
+            yield return null;
         }
 
         [UnityTest]
@@ -1533,6 +1624,28 @@ namespace DimensionBrawl.Tests
             return null;
         }
 
+        private static LaneActionProjectile RequireActivePlayerRangedProjectile()
+        {
+            LaneActionProjectile[] projectiles = Object.FindObjectsByType<LaneActionProjectile>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            GameObject expectedPrefab = LoadAsset<GameObject>(RangedBasicProjectilePrefabPath);
+            float expectedRadius = expectedPrefab.transform.localScale.x;
+
+            for (int i = 0; i < projectiles.Length; i++)
+            {
+                if (projectiles[i].IsActive
+                    && projectiles[i].SourceTeam == DamageTeam.Player
+                    && Mathf.Abs(projectiles[i].transform.localScale.x - expectedRadius) < 0.001f)
+                {
+                    return projectiles[i];
+                }
+            }
+
+            Assert.Fail("Expected an active Player ranged basic projectile.");
+            return null;
+        }
+
         private static SummonPressureScreen RequireActiveAllyPressureScreen()
         {
             SummonPressureScreen[] pressureScreens = Object.FindObjectsByType<SummonPressureScreen>(
@@ -1754,6 +1867,16 @@ namespace DimensionBrawl.Tests
             Object value = array.GetArrayElementAtIndex(index).objectReferenceValue;
             Assert.IsInstanceOf<T>(value);
             return (T)value;
+        }
+
+        private static bool GetBool(Object target, string propertyName)
+        {
+            return RequireProperty(new SerializedObject(target), propertyName).boolValue;
+        }
+
+        private static string GetString(Object target, string propertyName)
+        {
+            return RequireProperty(new SerializedObject(target), propertyName).stringValue;
         }
 
         private static SerializedProperty RequireProperty(SerializedObject serializedObject, string propertyName)

@@ -7,6 +7,7 @@ using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.Test;
+using DimensionBrawl.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -42,10 +43,14 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Prefabs/Combat/PF_BossBarrageProjectile_NeedleLock.prefab";
         public const string LocalDefenseProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_PlayerAction_BossBarrageLocalDefense.asset";
+        public const string MeleeActionProfilePath =
+            ActionFoundationProfileSetup.PlayerActionProfilePath;
         public const string ProjectileMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageProjectile.mat";
         public const string Skill1ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_PlayerSkill1Projectile_LaneBolt.prefab";
+        public const string RangedBasicProjectilePrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_PlayerRangedBasicProjectile_AimBolt.prefab";
         public const string SummonSlot1ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Projectile_AssistBolt.prefab";
         public const string SummonSlot1EntryCuePrefabPath =
@@ -54,6 +59,8 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Actor_Proxy.prefab";
         private const string Skill1ProjectileMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_PlayerSkill1Projectile.mat";
+        private const string RangedBasicProjectileMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_PlayerRangedBasicProjectile.mat";
         private const string SummonSlot1ProjectileMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot1Projectile.mat";
         private const string SummonSlot1EntryCueMaterialPath =
@@ -150,6 +157,12 @@ namespace DimensionBrawl.Editor
                 Skill1ProjectileMaterialPath,
                 new Color(0.45f, 0.9f, 1f, 1f),
                 0.42f);
+            LaneActionProjectile rangedBasicProjectilePrefab = EnsureLaneActionProjectilePrefab(
+                RangedBasicProjectilePrefabPath,
+                "PF_PlayerRangedBasicProjectile_AimBolt",
+                RangedBasicProjectileMaterialPath,
+                new Color(0.75f, 0.98f, 1f, 1f),
+                0.28f);
             LaneActionProjectile summonSlot1ProjectilePrefab = EnsureLaneActionProjectilePrefab(
                 SummonSlot1ProjectilePrefabPath,
                 "PF_SummonSlot1Projectile_AssistBolt",
@@ -200,6 +213,7 @@ namespace DimensionBrawl.Editor
             GameObject closeThreat = CreateCloseThreat(scene, laneSpace, player.transform, playerHealth, cameraController);
             CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreat, "close threat health");
             ConfigureLocalDefenseProfile(playerActionController, localDefenseProfile);
+            ConfigureCombatModeController(player.gameObject, playerActionController, localDefenseProfile);
             ConfigurePlayerEnergyActions(
                 player.gameObject,
                 playerHealth,
@@ -224,11 +238,28 @@ namespace DimensionBrawl.Editor
                 scene,
                 playerHealth,
                 closeThreatHealth,
+                bossHealth,
                 energyLadder,
                 skill1Action,
                 summonSlot1Action,
                 bossBarrageEmitter,
                 laneSpace);
+            ConfigureFixedRearCamera(cameraController, player.transform, bossProxy.transform, laneSpace.transform);
+            ConfigureRangedAimController(player.gameObject, cameraController);
+            PlayerCombatModeController combatModeController =
+                RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
+            PlayerRangedAimController rangedAimController =
+                RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
+            PlayerRangedBasicAttackAction rangedBasicAttackAction = ConfigurePlayerRangedBasicAttack(
+                player.gameObject,
+                combatModeController,
+                rangedAimController,
+                player,
+                targetSelector,
+                playerHealth,
+                cameraController,
+                rangedBasicProjectilePrefab,
+                projectileRoot.transform);
             CreateReviewHud(
                 scene,
                 playerHealth,
@@ -237,17 +268,25 @@ namespace DimensionBrawl.Editor
                 energyLadder,
                 laneSpace,
                 player.transform,
+                combatModeController,
+                rangedAimController,
+                rangedBasicAttackAction,
                 skill1Action,
                 summonSlot1Action,
                 bossBarrageEmitter,
                 pocketOwner);
-            ConfigureFixedRearCamera(cameraController, player.transform, bossProxy.transform, laneSpace.transform);
             ConfigureActionCameraCueDriver(
                 cameraController,
                 playerActionController,
                 player,
                 skill1Action,
                 summonSlot1Action);
+            ConfigurePocketCueBridges(
+                pocketOwner,
+                RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver"),
+                RequireComponent<PlayerCombatVfxCueDriver>(player.gameObject, "player combat VFX cue driver"),
+                RequireComponent<CombatVfxCuePlayer>(player.gameObject, "player combat VFX cue player"),
+                bossProxy.transform);
             ConfigureBossBarrageCameraCueDriver(cameraController, bossBarrageEmitter, player.transform);
             ConfigureArenaInfluenceTargets(scene, player.transform, bossProxy.transform, closeThreat.transform);
             CreateLaneMarkers(scene, laneSpace);
@@ -280,6 +319,12 @@ namespace DimensionBrawl.Editor
             ValidateBossProxyVisual(bossProxy);
             GameObject closeThreat = RequireRoot(scene, CloseThreatRootName);
             CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreat, "close threat health");
+            PlayerCombatModeController combatModeController =
+                RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
+            PlayerRangedAimController rangedAimController =
+                RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
+            PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "player Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "player SummonSlot1 action");
@@ -287,9 +332,28 @@ namespace DimensionBrawl.Editor
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(scene, PocketOwnerRootName), "boss barrage pocket owner");
             BossBarrageLaneReviewHud reviewHud =
                 RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(scene, HudRootName), "boss barrage review HUD");
+            BossBarrageLaneReviewMobileHud mobileHud =
+                RequireComponent<BossBarrageLaneReviewMobileHud>(RequireRoot(scene, HudRootName), "boss barrage mobile review HUD");
+            ActionCameraCueDriver actionCameraCueDriver =
+                RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
+            PlayerCombatVfxCueDriver playerVfxCueDriver =
+                RequireComponent<PlayerCombatVfxCueDriver>(player.gameObject, "player combat VFX cue driver");
+            CombatVfxCuePlayer playerCuePlayer =
+                RequireComponent<CombatVfxCuePlayer>(player.gameObject, "player combat VFX cue player");
 
             ValidateObjectReference(player, "laneSpace", laneSpace);
             ValidateObjectReference(playerActionController, "actionProfile", LoadAsset<PlayerActionProfile>(LocalDefenseProfilePath));
+            ValidateCombatModeController(combatModeController, playerActionController);
+            ValidateRangedAimController(rangedAimController, combatModeController, cameraController);
+            ValidatePlayerRangedBasicAttack(
+                rangedBasicAttackAction,
+                combatModeController,
+                rangedAimController,
+                player,
+                targetSelector,
+                playerHealth,
+                cameraController,
+                RequireRoot(scene, ProjectilePoolRootName).transform);
             ValidateObjectReference(energyLadder, "laneSpace", laneSpace);
             ValidateObjectReference(energyLadder, "trackedPlayer", player.transform);
             ValidatePlayerEnergyActions(skill1Action, summonSlot1Action, energyLadder, playerHealth, targetSelector, bossHealth, laneSpace);
@@ -354,7 +418,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(cameraController, "target", player.transform);
             ValidateObjectReference(cameraController, "threat", bossProxy.transform);
             ValidateActionCameraCueDriver(
-                RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver"),
+                actionCameraCueDriver,
                 playerActionController,
                 player,
                 cameraController,
@@ -374,7 +438,21 @@ namespace DimensionBrawl.Editor
             ValidateEnergyRiskZoneMarkers(scene, laneSpace);
             ValidateObjectReference(encounter, "playerHealth", playerHealth);
             ValidateObjectReference(encounter, "enemyHealth", closeThreatHealth);
-            ValidatePocketOwner(pocketOwner, playerHealth, closeThreatHealth, energyLadder, skill1Action, summonSlot1Action, emitter);
+            ValidatePocketOwner(
+                pocketOwner,
+                playerHealth,
+                closeThreatHealth,
+                bossHealth,
+                energyLadder,
+                skill1Action,
+                summonSlot1Action,
+                emitter);
+            ValidatePocketCueBridges(
+                pocketOwner,
+                actionCameraCueDriver,
+                playerVfxCueDriver,
+                playerCuePlayer,
+                bossProxy.transform);
             ValidateReviewHud(
                 reviewHud,
                 playerHealth,
@@ -383,10 +461,22 @@ namespace DimensionBrawl.Editor
                 energyLadder,
                 laneSpace,
                 player.transform,
+                combatModeController,
+                rangedAimController,
+                rangedBasicAttackAction,
                 skill1Action,
                 summonSlot1Action,
                 emitter,
                 pocketOwner);
+            ValidateMobileReviewHud(
+                mobileHud,
+                player,
+                playerActionController,
+                combatModeController,
+                rangedAimController,
+                rangedBasicAttackAction,
+                skill1Action,
+                summonSlot1Action);
             ValidateFixedRearCamera(cameraController, player.transform, laneSpace.transform);
             ValidateSummonForwardSpace(laneSpace);
             ValidateNoImportedAssetReference(ProjectilePrefabPath);
@@ -402,6 +492,7 @@ namespace DimensionBrawl.Editor
             ValidateNoImportedAssetReference(LinePressurePatternProfilePath);
             ValidateNoImportedAssetReference(LocalDefenseProfilePath);
             ValidateNoImportedAssetReference(Skill1ProjectilePrefabPath);
+            ValidateNoImportedAssetReference(RangedBasicProjectilePrefabPath);
             ValidateNoImportedAssetReference(SummonSlot1ProjectilePrefabPath);
             ValidateNoImportedAssetReference(SummonSlot1EntryCuePrefabPath);
             ValidateNoImportedAssetReference(SummonSlot1ActorPrefabPath);
@@ -1466,10 +1557,45 @@ namespace DimensionBrawl.Editor
             SetObjectReference(playerActionController, "actionProfile", localDefenseProfile);
         }
 
+        private static void ConfigureCombatModeController(
+            GameObject player,
+            PlayerActionController playerActionController,
+            PlayerActionProfile localDefenseProfile)
+        {
+            PlayerCombatModeController combatModeController = EnsureComponent<PlayerCombatModeController>(player);
+            SetObjectReference(combatModeController, "actionController", playerActionController);
+            SetObjectReference(combatModeController, "rangedActionProfile", localDefenseProfile);
+            SetObjectReference(combatModeController, "meleeActionProfile", LoadAsset<PlayerActionProfile>(MeleeActionProfilePath));
+            SetObjectReference(combatModeController, "rangedVisualRoot", null);
+            SetObjectReference(combatModeController, "meleeVisualRoot", null);
+            SetEnum(combatModeController, "startingMode", (int)PlayerCombatMode.Ranged);
+            SetObjectReference(playerActionController, "combatModeController", combatModeController);
+            SetBool(playerActionController, "blockBasicAttackInRangedMode", true);
+        }
+
+        private static void ValidateCombatModeController(
+            PlayerCombatModeController combatModeController,
+            PlayerActionController playerActionController)
+        {
+            ValidateObjectReference(combatModeController, "actionController", playerActionController);
+            ValidateObjectReference(
+                combatModeController,
+                "rangedActionProfile",
+                LoadAsset<PlayerActionProfile>(LocalDefenseProfilePath));
+            ValidateObjectReference(
+                combatModeController,
+                "meleeActionProfile",
+                LoadAsset<PlayerActionProfile>(MeleeActionProfilePath));
+            ValidateEnum(combatModeController, "startingMode", (int)PlayerCombatMode.Ranged);
+            ValidateObjectReference(playerActionController, "combatModeController", combatModeController);
+            ValidateBool(playerActionController, "blockBasicAttackInRangedMode", true);
+        }
+
         private static BossBarragePocketReviewOwner CreatePocketOwner(
             Scene scene,
             CombatHealth playerHealth,
             CombatHealth closeThreatHealth,
+            CombatHealth bossHealth,
             SummonEnergyLadder energyLadder,
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
@@ -1491,6 +1617,7 @@ namespace DimensionBrawl.Editor
             owner.Configure(
                 playerHealth,
                 closeThreatHealth,
+                bossHealth,
                 energyLadder,
                 skill1Action,
                 summonSlot1Action,
@@ -1517,6 +1644,30 @@ namespace DimensionBrawl.Editor
             return marker;
         }
 
+        private static void ConfigurePocketCueBridges(
+            BossBarragePocketReviewOwner pocketOwner,
+            ActionCameraCueDriver cameraCueDriver,
+            PlayerCombatVfxCueDriver playerVfxCueDriver,
+            CombatVfxCuePlayer cuePlayer,
+            Transform directionTarget)
+        {
+            BossBarragePocketCameraCueBridge cameraBridge =
+                EnsureComponent<BossBarragePocketCameraCueBridge>(pocketOwner.gameObject);
+            SetObjectReference(cameraBridge, "pocketReviewOwner", pocketOwner);
+            SetObjectReference(cameraBridge, "cameraCueDriver", cameraCueDriver);
+
+            BossBarragePocketVfxCueBridge vfxBridge =
+                EnsureComponent<BossBarragePocketVfxCueBridge>(pocketOwner.gameObject);
+            SetObjectReference(vfxBridge, "pocketReviewOwner", pocketOwner);
+            SetObjectReference(vfxBridge, "cuePlayer", cuePlayer);
+            SetObjectReference(vfxBridge, "followupWindowAnchor", ReadObjectReference<Transform>(playerVfxCueDriver, "attackAnchor"));
+            SetObjectReference(vfxBridge, "followupHitAnchor", directionTarget);
+            SetObjectReference(vfxBridge, "followupMissedAnchor", ReadObjectReference<Transform>(playerVfxCueDriver, "dodgeAnchor"));
+            SetObjectReference(vfxBridge, "directionTarget", directionTarget);
+            EditorUtility.SetDirty(cameraBridge);
+            EditorUtility.SetDirty(vfxBridge);
+        }
+
         private static void CreateReviewHud(
             Scene scene,
             CombatHealth playerHealth,
@@ -1525,6 +1676,9 @@ namespace DimensionBrawl.Editor
             SummonEnergyLadder energyLadder,
             SummonLaneSpace laneSpace,
             Transform player,
+            PlayerCombatModeController combatModeController,
+            PlayerRangedAimController rangedAimController,
+            PlayerRangedBasicAttackAction rangedBasicAttackAction,
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
             BossBarrageEmitter bossBarrageEmitter,
@@ -1539,11 +1693,24 @@ namespace DimensionBrawl.Editor
                 energyLadder,
                 laneSpace,
                 player,
+                combatModeController,
+                rangedAimController,
+                rangedBasicAttackAction,
                 skill1Action,
                 summonSlot1Action,
                 bossBarrageEmitter,
                 pocketOwner);
+            BossBarrageLaneReviewMobileHud mobileHud = hudRoot.AddComponent<BossBarrageLaneReviewMobileHud>();
+            mobileHud.Configure(
+                player.GetComponent<PlayerMovementController>(),
+                player.GetComponent<PlayerActionController>(),
+                combatModeController,
+                rangedAimController,
+                rangedBasicAttackAction,
+                skill1Action,
+                summonSlot1Action);
             EditorUtility.SetDirty(hud);
+            EditorUtility.SetDirty(mobileHud);
         }
 
         private static void ConfigurePlayerEnergyActions(
@@ -1629,6 +1796,78 @@ namespace DimensionBrawl.Editor
             SetFloat(cameraController, "threatBias", 0f);
             SetFloat(cameraController, "maxThreatFocusOffset", 0.75f);
             SetFloat(cameraController, "maxLeadFromPlayerSpeed", 0f);
+            SetVector3(cameraController, "aimCameraOffset", new Vector3(-0.32f, 0.05f, 0.52f));
+            SetVector3(cameraController, "aimFocusOffset", new Vector3(-0.12f, 0.04f, 0.32f));
+            SetFloat(cameraController, "aimFieldOfViewDelta", -4f);
+            SetFloat(cameraController, "aimBlendInSpeed", 14f);
+            SetFloat(cameraController, "aimBlendOutSpeed", 18f);
+        }
+
+        private static void ConfigureRangedAimController(
+            GameObject player,
+            ActionCameraController cameraController)
+        {
+            PlayerCombatModeController combatModeController =
+                RequireComponent<PlayerCombatModeController>(player, "player combat mode controller");
+            PlayerRangedAimController aimController = EnsureComponent<PlayerRangedAimController>(player);
+            aimController.ConfigureReferences(combatModeController, cameraController, null);
+            SetBool(aimController, "holdToAim", true);
+            SetBool(aimController, "useDeviceFallbackWhenActionMissing", true);
+            SetString(aimController, "aimingParameter", "IsAiming");
+        }
+
+        private static PlayerRangedBasicAttackAction ConfigurePlayerRangedBasicAttack(
+            GameObject player,
+            PlayerCombatModeController combatModeController,
+            PlayerRangedAimController rangedAimController,
+            PlayerMovementController movement,
+            PlayerCombatTargetSelector targetSelector,
+            CombatHealth playerHealth,
+            ActionCameraController cameraController,
+            LaneActionProjectile projectilePrefab,
+            Transform projectileRoot)
+        {
+            PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                EnsureComponent<PlayerRangedBasicAttackAction>(player);
+            rangedBasicAttackAction.ConfigureReferences(
+                combatModeController,
+                rangedAimController,
+                movement,
+                targetSelector,
+                playerHealth,
+                cameraController,
+                null);
+            SetObjectReference(rangedBasicAttackAction, "combatModeController", combatModeController);
+            SetObjectReference(rangedBasicAttackAction, "aimController", rangedAimController);
+            SetObjectReference(rangedBasicAttackAction, "movement", movement);
+            SetObjectReference(rangedBasicAttackAction, "targetSelector", targetSelector);
+            SetObjectReference(rangedBasicAttackAction, "sourceHealth", playerHealth);
+            SetObjectReference(rangedBasicAttackAction, "cameraController", cameraController);
+            SetObjectReference(rangedBasicAttackAction, "animator", null);
+            SetObjectReference(rangedBasicAttackAction, "projectilePrefab", projectilePrefab);
+            SetObjectReference(rangedBasicAttackAction, "projectilePrefabObject", LoadAsset<GameObject>(RangedBasicProjectilePrefabPath));
+            SetObjectReference(rangedBasicAttackAction, "projectileRoot", projectileRoot);
+            SetEnum(rangedBasicAttackAction, "sourceTeam", (int)DamageTeam.Player);
+            SetFloat(rangedBasicAttackAction, "damage", 12f);
+            SetFloat(rangedBasicAttackAction, "projectileSpeed", 19f);
+            SetFloat(rangedBasicAttackAction, "projectileLifetimeSeconds", 1.4f);
+            SetFloat(rangedBasicAttackAction, "projectileRadius", 0.22f);
+            SetInt(rangedBasicAttackAction, "prewarmCount", 8);
+            SetFloat(rangedBasicAttackAction, "fireIntervalSeconds", 0.22f);
+            SetFloat(rangedBasicAttackAction, "spawnForwardOffset", 0.85f);
+            SetFloat(rangedBasicAttackAction, "spawnHeight", 1.12f);
+            SetFloat(rangedBasicAttackAction, "targetHeight", 1f);
+            SetFloat(rangedBasicAttackAction, "facingHoldSeconds", 0.16f);
+            SetBool(rangedBasicAttackAction, "snapFacingOnFire", true);
+            SetBool(rangedBasicAttackAction, "requireAimToFire", false);
+            SetString(rangedBasicAttackAction, "fireTrigger", string.Empty);
+            SetVector3(rangedBasicAttackAction, "fireCameraCueOffset", new Vector3(0.025f, 0.01f, -0.045f));
+            SetFloat(rangedBasicAttackAction, "fireCameraCueSeconds", 0.10f);
+            SetFloat(rangedBasicAttackAction, "fireFieldOfViewDelta", -0.8f);
+            SetFloat(rangedBasicAttackAction, "fireCameraDistanceDelta", -0.04f);
+            SetFloat(rangedBasicAttackAction, "fireFocusHeightDelta", 0f);
+            EditorUtility.SetDirty(rangedBasicAttackAction);
+            return rangedBasicAttackAction;
         }
 
         private static void ConfigureActionCameraCueDriver(
@@ -1677,6 +1916,65 @@ namespace DimensionBrawl.Editor
             ValidateFloat(cameraController, "targetYawAssist", 0f);
             ValidateFloat(cameraController, "threatBias", 0f);
             ValidateFloat(cameraController, "maxLeadFromPlayerSpeed", 0f);
+            ValidateVector3(cameraController, "aimCameraOffset", new Vector3(-0.32f, 0.05f, 0.52f));
+            ValidateVector3(cameraController, "aimFocusOffset", new Vector3(-0.12f, 0.04f, 0.32f));
+            ValidateFloat(cameraController, "aimFieldOfViewDelta", -4f);
+            ValidateFloat(cameraController, "aimBlendInSpeed", 14f);
+            ValidateFloat(cameraController, "aimBlendOutSpeed", 18f);
+        }
+
+        private static void ValidateRangedAimController(
+            PlayerRangedAimController aimController,
+            PlayerCombatModeController combatModeController,
+            ActionCameraController cameraController)
+        {
+            ValidateObjectReference(aimController, "combatModeController", combatModeController);
+            ValidateObjectReference(aimController, "cameraController", cameraController);
+            ValidateBool(aimController, "holdToAim", true);
+            ValidateBool(aimController, "useDeviceFallbackWhenActionMissing", true);
+            ValidateString(aimController, "aimingParameter", "IsAiming");
+        }
+
+        private static void ValidatePlayerRangedBasicAttack(
+            PlayerRangedBasicAttackAction rangedBasicAttackAction,
+            PlayerCombatModeController combatModeController,
+            PlayerRangedAimController rangedAimController,
+            PlayerMovementController movement,
+            PlayerCombatTargetSelector targetSelector,
+            CombatHealth playerHealth,
+            ActionCameraController cameraController,
+            Transform projectileRoot)
+        {
+            ValidateObjectReference(rangedBasicAttackAction, "combatModeController", combatModeController);
+            ValidateObjectReference(rangedBasicAttackAction, "aimController", rangedAimController);
+            ValidateObjectReference(rangedBasicAttackAction, "movement", movement);
+            ValidateObjectReference(rangedBasicAttackAction, "targetSelector", targetSelector);
+            ValidateObjectReference(rangedBasicAttackAction, "sourceHealth", playerHealth);
+            ValidateObjectReference(rangedBasicAttackAction, "cameraController", cameraController);
+            ValidateObjectReference(
+                rangedBasicAttackAction,
+                "projectilePrefabObject",
+                LoadAsset<GameObject>(RangedBasicProjectilePrefabPath));
+            ValidateObjectReference(rangedBasicAttackAction, "projectileRoot", projectileRoot);
+            ValidateEnum(rangedBasicAttackAction, "sourceTeam", (int)DamageTeam.Player);
+            ValidateFloat(rangedBasicAttackAction, "damage", 12f);
+            ValidateFloat(rangedBasicAttackAction, "projectileSpeed", 19f);
+            ValidateFloat(rangedBasicAttackAction, "projectileLifetimeSeconds", 1.4f);
+            ValidateFloat(rangedBasicAttackAction, "projectileRadius", 0.22f);
+            ValidateInt(rangedBasicAttackAction, "prewarmCount", 8);
+            ValidateFloat(rangedBasicAttackAction, "fireIntervalSeconds", 0.22f);
+            ValidateFloat(rangedBasicAttackAction, "spawnForwardOffset", 0.85f);
+            ValidateFloat(rangedBasicAttackAction, "spawnHeight", 1.12f);
+            ValidateFloat(rangedBasicAttackAction, "targetHeight", 1f);
+            ValidateFloat(rangedBasicAttackAction, "facingHoldSeconds", 0.16f);
+            ValidateBool(rangedBasicAttackAction, "snapFacingOnFire", true);
+            ValidateBool(rangedBasicAttackAction, "requireAimToFire", false);
+            ValidateString(rangedBasicAttackAction, "fireTrigger", string.Empty);
+            ValidateVector3(rangedBasicAttackAction, "fireCameraCueOffset", new Vector3(0.025f, 0.01f, -0.045f));
+            ValidateFloat(rangedBasicAttackAction, "fireCameraCueSeconds", 0.10f);
+            ValidateFloat(rangedBasicAttackAction, "fireFieldOfViewDelta", -0.8f);
+            ValidateFloat(rangedBasicAttackAction, "fireCameraDistanceDelta", -0.04f);
+            ValidateFloat(rangedBasicAttackAction, "fireFocusHeightDelta", 0f);
         }
 
         private static void ValidateActionCameraCueDriver(
@@ -2099,6 +2397,7 @@ namespace DimensionBrawl.Editor
             BossBarragePocketReviewOwner owner,
             CombatHealth playerHealth,
             CombatHealth closeThreatHealth,
+            CombatHealth bossHealth,
             SummonEnergyLadder energyLadder,
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
@@ -2106,6 +2405,7 @@ namespace DimensionBrawl.Editor
         {
             ValidateObjectReference(owner, "playerHealth", playerHealth);
             ValidateObjectReference(owner, "closeThreatHealth", closeThreatHealth);
+            ValidateObjectReference(owner, "bossHealth", bossHealth);
             ValidateObjectReference(owner, "energyLadder", energyLadder);
             ValidateObjectReference(owner, "skill1Action", skill1Action);
             ValidateObjectReference(owner, "summonSlot1Action", summonSlot1Action);
@@ -2117,6 +2417,34 @@ namespace DimensionBrawl.Editor
             ValidateAssignedObjectReference(owner, "failMarker");
         }
 
+        private static void ValidatePocketCueBridges(
+            BossBarragePocketReviewOwner owner,
+            ActionCameraCueDriver cameraCueDriver,
+            PlayerCombatVfxCueDriver playerVfxCueDriver,
+            CombatVfxCuePlayer cuePlayer,
+            Transform directionTarget)
+        {
+            BossBarragePocketCameraCueBridge cameraBridge =
+                RequireComponent<BossBarragePocketCameraCueBridge>(owner.gameObject, "pocket camera cue bridge");
+            ValidateObjectReference(cameraBridge, "pocketReviewOwner", owner);
+            ValidateObjectReference(cameraBridge, "cameraCueDriver", cameraCueDriver);
+
+            BossBarragePocketVfxCueBridge vfxBridge =
+                RequireComponent<BossBarragePocketVfxCueBridge>(owner.gameObject, "pocket VFX cue bridge");
+            ValidateObjectReference(vfxBridge, "pocketReviewOwner", owner);
+            ValidateObjectReference(vfxBridge, "cuePlayer", cuePlayer);
+            ValidateObjectReference(
+                vfxBridge,
+                "followupWindowAnchor",
+                ReadObjectReference<Transform>(playerVfxCueDriver, "attackAnchor"));
+            ValidateObjectReference(vfxBridge, "followupHitAnchor", directionTarget);
+            ValidateObjectReference(
+                vfxBridge,
+                "followupMissedAnchor",
+                ReadObjectReference<Transform>(playerVfxCueDriver, "dodgeAnchor"));
+            ValidateObjectReference(vfxBridge, "directionTarget", directionTarget);
+        }
+
         private static void ValidateReviewHud(
             BossBarrageLaneReviewHud hud,
             CombatHealth playerHealth,
@@ -2125,6 +2453,9 @@ namespace DimensionBrawl.Editor
             SummonEnergyLadder energyLadder,
             SummonLaneSpace laneSpace,
             Transform player,
+            PlayerCombatModeController combatModeController,
+            PlayerRangedAimController rangedAimController,
+            PlayerRangedBasicAttackAction rangedBasicAttackAction,
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
             BossBarrageEmitter bossBarrageEmitter,
@@ -2136,10 +2467,39 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(hud, "energyLadder", energyLadder);
             ValidateObjectReference(hud, "laneSpace", laneSpace);
             ValidateObjectReference(hud, "player", player);
+            ValidateObjectReference(hud, "combatModeController", combatModeController);
+            ValidateObjectReference(hud, "rangedAimController", rangedAimController);
+            ValidateObjectReference(hud, "rangedBasicAttackAction", rangedBasicAttackAction);
             ValidateObjectReference(hud, "skill1Action", skill1Action);
             ValidateObjectReference(hud, "summonSlot1Action", summonSlot1Action);
             ValidateObjectReference(hud, "bossBarrageEmitter", bossBarrageEmitter);
             ValidateObjectReference(hud, "pocketReviewOwner", pocketOwner);
+        }
+
+        private static void ValidateMobileReviewHud(
+            BossBarrageLaneReviewMobileHud hud,
+            PlayerMovementController movement,
+            PlayerActionController actionController,
+            PlayerCombatModeController combatModeController,
+            PlayerRangedAimController rangedAimController,
+            PlayerRangedBasicAttackAction rangedBasicAttackAction,
+            PlayerSkill1Action skill1Action,
+            PlayerSummonSlot1Action summonSlot1Action)
+        {
+            ValidateObjectReference(hud, "movement", movement);
+            ValidateObjectReference(hud, "actionController", actionController);
+            ValidateObjectReference(hud, "combatModeController", combatModeController);
+            ValidateObjectReference(hud, "aimController", rangedAimController);
+            ValidateObjectReference(hud, "rangedBasicAttackAction", rangedBasicAttackAction);
+            ValidateObjectReference(hud, "skill1Action", skill1Action);
+            ValidateObjectReference(hud, "summonSlot1Action", summonSlot1Action);
+            ValidateString(hud, "moveActionName", "Move");
+            ValidateString(hud, "basicDefenseActionName", "BasicDefenseAttack");
+            ValidateString(hud, "dodgeActionName", "Dodge");
+            ValidateString(hud, "skill1ActionName", "Skill1");
+            ValidateString(hud, "summonSlot1ActionName", "SummonSlot1");
+            ValidateString(hud, "rangedAimActionName", "RangedAim");
+            ValidateString(hud, "weaponSwapActionName", "WeaponSwap");
         }
 
         private static void ConfigureArenaInfluenceTargets(Scene scene, Transform player, params Transform[] influenceTargets)
@@ -2423,6 +2783,14 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(target);
         }
 
+        private static void SetString(UnityEngine.Object target, string propertyName, string value)
+        {
+            var serializedObject = new SerializedObject(target);
+            RequireProperty(serializedObject, propertyName).stringValue = value;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(target);
+        }
+
         private static void SetFloat(UnityEngine.Object target, string propertyName, float value)
         {
             var serializedObject = new SerializedObject(target);
@@ -2461,6 +2829,12 @@ namespace DimensionBrawl.Editor
             RequireProperty(serializedObject, propertyName).colorValue = value;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(target);
+        }
+
+        private static T ReadObjectReference<T>(UnityEngine.Object target, string propertyName) where T : UnityEngine.Object
+        {
+            UnityEngine.Object value = RequireProperty(new SerializedObject(target), propertyName).objectReferenceValue;
+            return value as T;
         }
 
         private static void ValidateObjectReference(UnityEngine.Object target, string propertyName, UnityEngine.Object expected)
@@ -2537,6 +2911,15 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static void ValidateString(UnityEngine.Object target, string propertyName, string expected)
+        {
+            string actual = RequireProperty(new SerializedObject(target), propertyName).stringValue;
+            if (!string.Equals(actual, expected, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected}, found {actual}.");
+            }
+        }
+
         private static void ValidateFloat(UnityEngine.Object target, string propertyName, float expected)
         {
             float actual = RequireProperty(new SerializedObject(target), propertyName).floatValue;
@@ -2561,6 +2944,15 @@ namespace DimensionBrawl.Editor
             if (actual != expected)
             {
                 throw new InvalidOperationException($"{target.name}.{propertyName} expected enum index {expected}, found {actual}.");
+            }
+        }
+
+        private static void ValidateVector3(UnityEngine.Object target, string propertyName, Vector3 expected)
+        {
+            Vector3 actual = RequireProperty(new SerializedObject(target), propertyName).vector3Value;
+            if ((actual - expected).sqrMagnitude > 0.000001f)
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected}, found {actual}.");
             }
         }
 
