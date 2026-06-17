@@ -22,6 +22,8 @@ namespace DimensionBrawl.Editor
         private const string MaterialRoot = "Assets/_Game/Art/Characters/Player/RifleGirl/Materials";
         private const string TextureRoot = "Assets/_Game/Art/Characters/Player/RifleGirl/Textures";
         private const string AnimationRoot = "Assets/_Game/Art/Animations/Player/RifleGirl";
+        private const string ReferenceToonMaterialPath =
+            "Assets/_Game/Art/Characters/Player/CombatGirlSwordShield/Materials/DB_CombatGirl_Body.mat";
 
         private static readonly MaterialSpec[] MaterialSpecs =
         {
@@ -132,14 +134,31 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"Promoted player candidate material missing at {spec.TargetPath}.");
             }
 
-            targetMaterial.shader = sourceMaterial.shader;
+            targetMaterial.shader = ResolvePlayerToonShader() ?? sourceMaterial.shader;
             string[] textureProperties = sourceMaterial.GetTexturePropertyNames();
             for (int i = 0; i < textureProperties.Length; i++)
             {
                 CopyTextureProperty(sourceMaterial, targetMaterial, textureProperties[i]);
             }
 
+            CopyMainTextureToCommonBaseSlots(sourceMaterial, targetMaterial);
             EditorUtility.SetDirty(targetMaterial);
+        }
+
+        private static Shader ResolvePlayerToonShader()
+        {
+            Material referenceMaterial = AssetDatabase.LoadAssetAtPath<Material>(ReferenceToonMaterialPath);
+            if (referenceMaterial != null &&
+                referenceMaterial.shader != null &&
+                !string.Equals(referenceMaterial.shader.name, "Hidden/InternalErrorShader", StringComparison.Ordinal))
+            {
+                return referenceMaterial.shader;
+            }
+
+            return Shader.Find("UnityChanToonShader/Toon_DoubleShadeWithFeather")
+                ?? Shader.Find("UnityChanToonShader/Toon_DoubleShadeWithFeather_Clipping")
+                ?? Shader.Find("Universal Render Pipeline/Lit")
+                ?? Shader.Find("Standard");
         }
 
         private static void CopyTextureProperty(Material sourceMaterial, Material targetMaterial, string propertyName)
@@ -153,6 +172,32 @@ namespace DimensionBrawl.Editor
             targetMaterial.SetTexture(
                 propertyName,
                 sourceTexture != null ? PromoteTexture(sourceTexture, ClassifyTextureUsage(propertyName)) : null);
+        }
+
+        private static void CopyMainTextureToCommonBaseSlots(Material sourceMaterial, Material targetMaterial)
+        {
+            if (!sourceMaterial.HasProperty("_MainTex"))
+            {
+                return;
+            }
+
+            Texture sourceTexture = sourceMaterial.GetTexture("_MainTex");
+            if (sourceTexture == null)
+            {
+                return;
+            }
+
+            Texture promotedTexture = PromoteTexture(sourceTexture, TextureUsage.Color);
+            SetTextureIfPresent(targetMaterial, "_BaseMap", promotedTexture);
+            SetTextureIfPresent(targetMaterial, "_1st_ShadeMap", promotedTexture);
+        }
+
+        private static void SetTextureIfPresent(Material material, string propertyName, Texture texture)
+        {
+            if (material.HasProperty(propertyName))
+            {
+                material.SetTexture(propertyName, texture);
+            }
         }
 
         private static Texture PromoteTexture(Texture sourceTexture, TextureUsage usage)
@@ -233,9 +278,21 @@ namespace DimensionBrawl.Editor
 
             ClearParameters(controller);
             controller.AddParameter("MoveSpeed", AnimatorControllerParameterType.Float);
+            controller.AddParameter("MoveX", AnimatorControllerParameterType.Float);
+            controller.AddParameter("MoveY", AnimatorControllerParameterType.Float);
+            controller.AddParameter("IsStopping", AnimatorControllerParameterType.Bool);
+            controller.AddParameter("IsAiming", AnimatorControllerParameterType.Bool);
+            controller.AddParameter("IsDodging", AnimatorControllerParameterType.Bool);
+            controller.AddParameter("StartRun", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("StopStep", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("TurnLeft90", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("TurnRight90", AnimatorControllerParameterType.Trigger);
             controller.AddParameter("Attack1", AnimatorControllerParameterType.Trigger);
             controller.AddParameter("Reload", AnimatorControllerParameterType.Trigger);
             controller.AddParameter("DodgeForward", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("DodgeBack", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("DodgeLeft", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("DodgeRight", AnimatorControllerParameterType.Trigger);
             controller.AddParameter("Hit", AnimatorControllerParameterType.Trigger);
             controller.AddParameter("Death", AnimatorControllerParameterType.Trigger);
 
@@ -248,10 +305,10 @@ namespace DimensionBrawl.Editor
             ClearStateMachine(stateMachine);
             AnimatorState idle = AddState(stateMachine, "AimIdle", "RG_AimIdle", new Vector3(250f, 80f, 0f));
             AnimatorState move = AddState(stateMachine, "AimMove", "RG_AimWalkForward", new Vector3(250f, 190f, 0f));
-            AddState(stateMachine, "Shoot", "RG_Shoot", new Vector3(520f, 80f, 0f));
-            AddState(stateMachine, "Reload", "RG_Reload", new Vector3(520f, 190f, 0f));
-            AddState(stateMachine, "Evade", "RG_Evade", new Vector3(780f, 80f, 0f));
-            AddState(stateMachine, "Hit", "RG_HitUpper", new Vector3(780f, 190f, 0f));
+            AnimatorState shoot = AddState(stateMachine, "Shoot", "RG_Shoot", new Vector3(520f, 80f, 0f));
+            AnimatorState reload = AddState(stateMachine, "Reload", "RG_Reload", new Vector3(520f, 190f, 0f));
+            AnimatorState evade = AddState(stateMachine, "Evade", "RG_Evade", new Vector3(780f, 80f, 0f));
+            AnimatorState hit = AddState(stateMachine, "Hit", "RG_HitUpper", new Vector3(780f, 190f, 0f));
             AddState(stateMachine, "Death", "RG_DieFront", new Vector3(1040f, 80f, 0f));
             stateMachine.defaultState = idle;
 
@@ -264,13 +321,33 @@ namespace DimensionBrawl.Editor
             toIdle.duration = 0.12f;
             toIdle.AddCondition(AnimatorConditionMode.Less, 0.08f, "MoveSpeed");
 
+            AddExitTransition(shoot, idle, 0.82f, 0.05f);
+            AddExitTransition(reload, idle, 0.92f, 0.06f);
+            AddExitTransition(evade, idle, 0.88f, 0.06f);
+            AddExitTransition(hit, idle, 0.85f, 0.06f);
+
             AddAnyStateTrigger(stateMachine, "Shoot", "Attack1");
             AddAnyStateTrigger(stateMachine, "Reload", "Reload");
             AddAnyStateTrigger(stateMachine, "Evade", "DodgeForward");
+            AddAnyStateTrigger(stateMachine, "Evade", "DodgeBack");
+            AddAnyStateTrigger(stateMachine, "Evade", "DodgeLeft");
+            AddAnyStateTrigger(stateMachine, "Evade", "DodgeRight");
             AddAnyStateTrigger(stateMachine, "Hit", "Hit");
             AddAnyStateTrigger(stateMachine, "Death", "Death");
             EditorUtility.SetDirty(controller);
             return controller;
+        }
+
+        private static void AddExitTransition(
+            AnimatorState fromState,
+            AnimatorState toState,
+            float exitTime,
+            float duration)
+        {
+            AnimatorStateTransition transition = fromState.AddTransition(toState);
+            transition.hasExitTime = true;
+            transition.exitTime = exitTime;
+            transition.duration = duration;
         }
 
         private static AnimatorState AddState(AnimatorStateMachine stateMachine, string stateName, string clipName, Vector3 position)

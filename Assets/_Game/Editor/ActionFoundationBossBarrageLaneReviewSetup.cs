@@ -89,6 +89,12 @@ namespace DimensionBrawl.Editor
         private const string BossProxyMarkerName = ReviewRootPrefix + "BossProxyMarker";
         private const string BossTelegraphRootName = ReviewRootPrefix + "BossBarrageTelegraphMarkers";
         private const string BossProxyHumanoidVisualName = ReviewRootPrefix + "HumanoidBossVisual_SummonCallerElite";
+        private const string RangedPlayerVisualRootName = ReviewRootPrefix + "RangedVisual_RifleGirl";
+        private const string RangedPlayerModelName = ReviewRootPrefix + "RangedModel_RifleGirl";
+        private const string RangedPlayerWeaponName = ReviewRootPrefix + "RangedWeapon_Rifle";
+        private const string MeleePlayerWeaponRootName = ReviewRootPrefix + "MeleeWeapons_CombatGirlSwordShield";
+        private const string CombatGirlAnimatorControllerPath =
+            "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/DB_CombatGirl_ActionFoundation.controller";
         private const string BossProxyVisualMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossProxy.mat";
         private const string BossTelegraphMaterialPath =
@@ -213,7 +219,6 @@ namespace DimensionBrawl.Editor
             GameObject closeThreat = CreateCloseThreat(scene, laneSpace, player.transform, playerHealth, cameraController);
             CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreat, "close threat health");
             ConfigureLocalDefenseProfile(playerActionController, localDefenseProfile);
-            ConfigureCombatModeController(player.gameObject, playerActionController, localDefenseProfile);
             ConfigurePlayerEnergyActions(
                 player.gameObject,
                 playerHealth,
@@ -245,7 +250,9 @@ namespace DimensionBrawl.Editor
                 bossBarrageEmitter,
                 laneSpace);
             ConfigureFixedRearCamera(cameraController, player.transform, bossProxy.transform, laneSpace.transform);
-            ConfigureRangedAimController(player.gameObject, cameraController);
+            PlayerCombatModeVisualBinding combatModeVisuals = CreatePlayerCombatModeVisuals(scene, player.gameObject);
+            ConfigureCombatModeController(player.gameObject, playerActionController, player, localDefenseProfile, combatModeVisuals);
+            ConfigureRangedAimController(player.gameObject, cameraController, combatModeVisuals.RangedAnimator);
             PlayerCombatModeController combatModeController =
                 RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
             PlayerRangedAimController rangedAimController =
@@ -258,8 +265,10 @@ namespace DimensionBrawl.Editor
                 targetSelector,
                 playerHealth,
                 cameraController,
+                combatModeVisuals.RangedAnimator,
                 rangedBasicProjectilePrefab,
                 projectileRoot.transform);
+            ConfigureCombatModeActionLinks(combatModeController, rangedAimController, rangedBasicAttackAction);
             CreateReviewHud(
                 scene,
                 playerHealth,
@@ -343,8 +352,14 @@ namespace DimensionBrawl.Editor
 
             ValidateObjectReference(player, "laneSpace", laneSpace);
             ValidateObjectReference(playerActionController, "actionProfile", LoadAsset<PlayerActionProfile>(LocalDefenseProfilePath));
-            ValidateCombatModeController(combatModeController, playerActionController);
-            ValidateRangedAimController(rangedAimController, combatModeController, cameraController);
+            ValidateCombatModeController(
+                combatModeController,
+                playerActionController,
+                player,
+                rangedAimController,
+                rangedBasicAttackAction);
+            Animator rangedAnimator = RequireReferencedObject<Animator>(combatModeController, "rangedAnimator");
+            ValidateRangedAimController(rangedAimController, combatModeController, cameraController, rangedAnimator);
             ValidatePlayerRangedBasicAttack(
                 rangedBasicAttackAction,
                 combatModeController,
@@ -353,6 +368,7 @@ namespace DimensionBrawl.Editor
                 targetSelector,
                 playerHealth,
                 cameraController,
+                rangedAnimator,
                 RequireRoot(scene, ProjectilePoolRootName).transform);
             ValidateObjectReference(energyLadder, "laneSpace", laneSpace);
             ValidateObjectReference(energyLadder, "trackedPlayer", player.transform);
@@ -1557,27 +1573,206 @@ namespace DimensionBrawl.Editor
             SetObjectReference(playerActionController, "actionProfile", localDefenseProfile);
         }
 
+        private static PlayerCombatModeVisualBinding CreatePlayerCombatModeVisuals(Scene scene, GameObject player)
+        {
+            Transform playerTransform = player.transform;
+            DestroyChildIfPresent(playerTransform, RangedPlayerVisualRootName);
+
+            GameObject rangedRoot = new GameObject(RangedPlayerVisualRootName);
+            rangedRoot.transform.SetParent(playerTransform, worldPositionStays: false);
+            rangedRoot.transform.localPosition = Vector3.zero;
+            rangedRoot.transform.localRotation = Quaternion.identity;
+            rangedRoot.transform.localScale = Vector3.one;
+
+            GameObject modelAsset =
+                LoadAsset<GameObject>(ActionFoundationPlayerCombatModeAssetSetup.RangedCandidateModelPath);
+            GameObject modelInstance = PrefabUtility.InstantiatePrefab(modelAsset, scene) as GameObject;
+            if (modelInstance == null)
+            {
+                throw new InvalidOperationException("Failed to instantiate promoted RifleGirl ranged candidate model.");
+            }
+
+            modelInstance.name = RangedPlayerModelName;
+            modelInstance.transform.SetParent(rangedRoot.transform, worldPositionStays: false);
+            modelInstance.transform.localPosition = Vector3.zero;
+            modelInstance.transform.localRotation = Quaternion.identity;
+            modelInstance.transform.localScale = Vector3.one;
+            AssignRangedCandidateMaterials(modelInstance);
+
+            Animator rangedAnimator = modelInstance.GetComponentInChildren<Animator>(includeInactive: true)
+                ?? modelInstance.AddComponent<Animator>();
+            rangedAnimator.runtimeAnimatorController =
+                LoadAsset<RuntimeAnimatorController>(ActionFoundationPlayerCombatModeAssetSetup.RangedCandidateControllerPath);
+            rangedAnimator.applyRootMotion = false;
+
+            GameObject weaponAsset =
+                LoadAsset<GameObject>(ActionFoundationPlayerCombatModeAssetSetup.RangedCandidateWeaponModelPath);
+            GameObject weaponInstance = PrefabUtility.InstantiatePrefab(weaponAsset, scene) as GameObject;
+            if (weaponInstance == null)
+            {
+                throw new InvalidOperationException("Failed to instantiate promoted RifleGirl ranged focus weapon.");
+            }
+
+            weaponInstance.name = RangedPlayerWeaponName;
+            Transform weaponSocket = FindLikelyRightHandSocket(modelInstance.transform);
+            if (weaponSocket == null)
+            {
+                throw new InvalidOperationException("RifleGirl ranged model must expose a right-hand socket for the rifle.");
+            }
+
+            weaponInstance.transform.SetParent(weaponSocket, worldPositionStays: false);
+            weaponInstance.transform.localPosition = Vector3.zero;
+            weaponInstance.transform.localRotation = Quaternion.identity;
+            weaponInstance.transform.localScale = Vector3.one;
+            AssignMaterialToAllRenderers(
+                weaponInstance,
+                LoadAsset<Material>("Assets/_Game/Art/Characters/Player/RifleGirl/Materials/DB_RifleGirl_RangedFocus.mat"));
+
+            GameObject meleeRoot = FindPlayerMeleeVisualRoot(playerTransform);
+            GameObject meleeWeaponRoot = CreateMeleeWeaponRoot(scene, rangedRoot.transform, modelInstance.transform, meleeRoot);
+            Animator meleeAnimator = rangedAnimator;
+
+            rangedRoot.SetActive(true);
+            if (meleeRoot != null)
+            {
+                meleeRoot.SetActive(false);
+            }
+
+            if (meleeWeaponRoot != null)
+            {
+                meleeWeaponRoot.SetActive(false);
+            }
+
+            EditorUtility.SetDirty(rangedRoot);
+            EditorUtility.SetDirty(modelInstance);
+            EditorUtility.SetDirty(weaponInstance);
+            if (meleeWeaponRoot != null)
+            {
+                EditorUtility.SetDirty(meleeWeaponRoot);
+            }
+
+            return new PlayerCombatModeVisualBinding(
+                rangedRoot,
+                meleeRoot,
+                weaponInstance,
+                meleeWeaponRoot,
+                rangedAnimator,
+                meleeAnimator);
+        }
+
+        private static GameObject CreateMeleeWeaponRoot(
+            Scene scene,
+            Transform parent,
+            Transform rangedModelRoot,
+            GameObject meleeRoot)
+        {
+            DestroyChildIfPresent(parent, MeleePlayerWeaponRootName);
+
+            if (meleeRoot == null)
+            {
+                return null;
+            }
+
+            Transform rightHand = FindLikelyRightHandSocket(rangedModelRoot);
+            Transform leftHand = FindLikelyLeftHandSocket(rangedModelRoot);
+            if (rightHand == null || leftHand == null)
+            {
+                throw new InvalidOperationException("RifleGirl model must expose both hand sockets before melee weapons can be attached.");
+            }
+
+            Transform sourceRightWeapon = FindDescendant(meleeRoot.transform, "add_weapon_r");
+            Transform sourceLeftWeapon = FindDescendant(meleeRoot.transform, "add_weapon_l");
+            if (sourceRightWeapon == null || sourceLeftWeapon == null)
+            {
+                throw new InvalidOperationException("CombatGirl melee visual must expose add_weapon_r and add_weapon_l weapon objects.");
+            }
+
+            GameObject root = new GameObject(MeleePlayerWeaponRootName);
+            root.transform.SetParent(parent, worldPositionStays: false);
+            root.transform.localPosition = Vector3.zero;
+            root.transform.localRotation = Quaternion.identity;
+            root.transform.localScale = Vector3.one;
+
+            Transform rightWeapon = CloneWeaponObject(sourceRightWeapon, rightHand, "MeleeWeapon_RightHand");
+            Transform leftWeapon = CloneWeaponObject(sourceLeftWeapon, leftHand, "MeleeWeapon_LeftHand");
+            CombatGirlWeaponSocketBinder binder = root.AddComponent<CombatGirlWeaponSocketBinder>();
+            binder.ConfigureWeaponSockets(leftHand, leftWeapon, rightHand, rightWeapon);
+            binder.ApplyBindings();
+            EditorUtility.SetDirty(binder);
+            return root;
+
+            Transform CloneWeaponObject(Transform sourceWeapon, Transform socket, string cloneName)
+            {
+                GameObject clone = UnityEngine.Object.Instantiate(sourceWeapon.gameObject, root.transform);
+                clone.name = cloneName;
+                clone.transform.SetPositionAndRotation(socket.position, socket.rotation);
+                clone.transform.localScale = Vector3.one;
+                EditorUtility.SetDirty(clone);
+                return clone.transform;
+            }
+        }
+
         private static void ConfigureCombatModeController(
             GameObject player,
             PlayerActionController playerActionController,
-            PlayerActionProfile localDefenseProfile)
+            PlayerMovementController playerMovementController,
+            PlayerActionProfile localDefenseProfile,
+            PlayerCombatModeVisualBinding visualBinding)
         {
             PlayerCombatModeController combatModeController = EnsureComponent<PlayerCombatModeController>(player);
             SetObjectReference(combatModeController, "actionController", playerActionController);
+            SetObjectReference(combatModeController, "movementController", playerMovementController);
             SetObjectReference(combatModeController, "rangedActionProfile", localDefenseProfile);
             SetObjectReference(combatModeController, "meleeActionProfile", LoadAsset<PlayerActionProfile>(MeleeActionProfilePath));
-            SetObjectReference(combatModeController, "rangedVisualRoot", null);
-            SetObjectReference(combatModeController, "meleeVisualRoot", null);
+            SetObjectReference(combatModeController, "rangedVisualRoot", visualBinding.RangedRoot);
+            SetObjectReference(combatModeController, "meleeVisualRoot", visualBinding.MeleeRoot);
+            SetObjectReference(combatModeController, "rangedWeaponRoot", visualBinding.RangedWeaponRoot);
+            SetObjectReference(combatModeController, "meleeWeaponRoot", visualBinding.MeleeWeaponRoot);
+            SetObjectReference(combatModeController, "rangedAnimator", visualBinding.RangedAnimator);
+            SetObjectReference(combatModeController, "meleeAnimator", visualBinding.MeleeAnimator);
+            SetObjectReference(
+                combatModeController,
+                "rangedAnimatorController",
+                LoadAsset<RuntimeAnimatorController>(ActionFoundationPlayerCombatModeAssetSetup.RangedCandidateControllerPath));
+            SetObjectReference(
+                combatModeController,
+                "meleeAnimatorController",
+                LoadAsset<RuntimeAnimatorController>(CombatGirlAnimatorControllerPath));
+            SetBool(combatModeController, "routeAnimatorsByMode", true);
+            SetBool(combatModeController, "useSingleCharacterVisual", true);
             SetEnum(combatModeController, "startingMode", (int)PlayerCombatMode.Ranged);
             SetObjectReference(playerActionController, "combatModeController", combatModeController);
+            SetObjectReference(playerActionController, "animator", visualBinding.RangedAnimator);
+            SetObjectReference(playerMovementController, "animator", visualBinding.RangedAnimator);
             SetBool(playerActionController, "blockBasicAttackInRangedMode", true);
+        }
+
+        private static void ConfigureCombatModeActionLinks(
+            PlayerCombatModeController combatModeController,
+            PlayerRangedAimController rangedAimController,
+            PlayerRangedBasicAttackAction rangedBasicAttackAction)
+        {
+            SetObjectReference(combatModeController, "rangedAimController", rangedAimController);
+            SetObjectReference(combatModeController, "rangedBasicAttackAction", rangedBasicAttackAction);
         }
 
         private static void ValidateCombatModeController(
             PlayerCombatModeController combatModeController,
-            PlayerActionController playerActionController)
+            PlayerActionController playerActionController,
+            PlayerMovementController playerMovementController,
+            PlayerRangedAimController rangedAimController,
+            PlayerRangedBasicAttackAction rangedBasicAttackAction)
         {
+            GameObject rangedRoot = RequireReferencedObject<GameObject>(combatModeController, "rangedVisualRoot");
+            Animator rangedAnimator = RequireReferencedObject<Animator>(combatModeController, "rangedAnimator");
+            GameObject meleeRoot = RequireReferencedObject<GameObject>(combatModeController, "meleeVisualRoot");
+            Animator meleeAnimator = RequireReferencedObject<Animator>(combatModeController, "meleeAnimator");
+            GameObject rangedWeaponRoot = RequireReferencedObject<GameObject>(combatModeController, "rangedWeaponRoot");
+            GameObject meleeWeaponRoot = RequireReferencedObject<GameObject>(combatModeController, "meleeWeaponRoot");
             ValidateObjectReference(combatModeController, "actionController", playerActionController);
+            ValidateObjectReference(combatModeController, "movementController", playerMovementController);
+            ValidateObjectReference(combatModeController, "rangedAimController", rangedAimController);
+            ValidateObjectReference(combatModeController, "rangedBasicAttackAction", rangedBasicAttackAction);
             ValidateObjectReference(
                 combatModeController,
                 "rangedActionProfile",
@@ -1586,8 +1781,35 @@ namespace DimensionBrawl.Editor
                 combatModeController,
                 "meleeActionProfile",
                 LoadAsset<PlayerActionProfile>(MeleeActionProfilePath));
+            ValidateObjectReference(
+                rangedAnimator,
+                "m_Controller",
+                LoadAsset<RuntimeAnimatorController>(ActionFoundationPlayerCombatModeAssetSetup.RangedCandidateControllerPath));
+            ValidateObjectReference(
+                combatModeController,
+                "rangedAnimatorController",
+                LoadAsset<RuntimeAnimatorController>(ActionFoundationPlayerCombatModeAssetSetup.RangedCandidateControllerPath));
+            ValidateObjectReference(
+                combatModeController,
+                "meleeAnimatorController",
+                LoadAsset<RuntimeAnimatorController>(CombatGirlAnimatorControllerPath));
+            ValidateBool(combatModeController, "routeAnimatorsByMode", true);
+            ValidateBool(combatModeController, "useSingleCharacterVisual", true);
             ValidateEnum(combatModeController, "startingMode", (int)PlayerCombatMode.Ranged);
+            ValidatePlayerCombatModeVisual(rangedRoot, rangedAnimator, rangedWeaponRoot, meleeWeaponRoot);
+            if (meleeRoot.activeSelf)
+            {
+                throw new InvalidOperationException("Melee source visual root must stay inactive; mode swaps should keep one player body.");
+            }
+
+            if (meleeAnimator != rangedAnimator)
+            {
+                throw new InvalidOperationException("Melee mode must route through the same visible player Animator, not a second character body.");
+            }
+
             ValidateObjectReference(playerActionController, "combatModeController", combatModeController);
+            ValidateObjectReference(playerActionController, "animator", rangedAnimator);
+            ValidateObjectReference(playerMovementController, "animator", rangedAnimator);
             ValidateBool(playerActionController, "blockBasicAttackInRangedMode", true);
         }
 
@@ -1805,12 +2027,16 @@ namespace DimensionBrawl.Editor
 
         private static void ConfigureRangedAimController(
             GameObject player,
-            ActionCameraController cameraController)
+            ActionCameraController cameraController,
+            Animator rangedAnimator)
         {
             PlayerCombatModeController combatModeController =
                 RequireComponent<PlayerCombatModeController>(player, "player combat mode controller");
             PlayerRangedAimController aimController = EnsureComponent<PlayerRangedAimController>(player);
-            aimController.ConfigureReferences(combatModeController, cameraController, null);
+            aimController.ConfigureReferences(combatModeController, cameraController, rangedAnimator);
+            SetObjectReference(aimController, "combatModeController", combatModeController);
+            SetObjectReference(aimController, "cameraController", cameraController);
+            SetObjectReference(aimController, "animator", rangedAnimator);
             SetBool(aimController, "holdToAim", true);
             SetBool(aimController, "useDeviceFallbackWhenActionMissing", true);
             SetString(aimController, "aimingParameter", "IsAiming");
@@ -1824,6 +2050,7 @@ namespace DimensionBrawl.Editor
             PlayerCombatTargetSelector targetSelector,
             CombatHealth playerHealth,
             ActionCameraController cameraController,
+            Animator rangedAnimator,
             LaneActionProjectile projectilePrefab,
             Transform projectileRoot)
         {
@@ -1836,14 +2063,14 @@ namespace DimensionBrawl.Editor
                 targetSelector,
                 playerHealth,
                 cameraController,
-                null);
+                rangedAnimator);
             SetObjectReference(rangedBasicAttackAction, "combatModeController", combatModeController);
             SetObjectReference(rangedBasicAttackAction, "aimController", rangedAimController);
             SetObjectReference(rangedBasicAttackAction, "movement", movement);
             SetObjectReference(rangedBasicAttackAction, "targetSelector", targetSelector);
             SetObjectReference(rangedBasicAttackAction, "sourceHealth", playerHealth);
             SetObjectReference(rangedBasicAttackAction, "cameraController", cameraController);
-            SetObjectReference(rangedBasicAttackAction, "animator", null);
+            SetObjectReference(rangedBasicAttackAction, "animator", rangedAnimator);
             SetObjectReference(rangedBasicAttackAction, "projectilePrefab", projectilePrefab);
             SetObjectReference(rangedBasicAttackAction, "projectilePrefabObject", LoadAsset<GameObject>(RangedBasicProjectilePrefabPath));
             SetObjectReference(rangedBasicAttackAction, "projectileRoot", projectileRoot);
@@ -1860,7 +2087,7 @@ namespace DimensionBrawl.Editor
             SetFloat(rangedBasicAttackAction, "facingHoldSeconds", 0.16f);
             SetBool(rangedBasicAttackAction, "snapFacingOnFire", true);
             SetBool(rangedBasicAttackAction, "requireAimToFire", false);
-            SetString(rangedBasicAttackAction, "fireTrigger", string.Empty);
+            SetString(rangedBasicAttackAction, "fireTrigger", "Attack1");
             SetVector3(rangedBasicAttackAction, "fireCameraCueOffset", new Vector3(0.025f, 0.01f, -0.045f));
             SetFloat(rangedBasicAttackAction, "fireCameraCueSeconds", 0.10f);
             SetFloat(rangedBasicAttackAction, "fireFieldOfViewDelta", -0.8f);
@@ -1926,10 +2153,12 @@ namespace DimensionBrawl.Editor
         private static void ValidateRangedAimController(
             PlayerRangedAimController aimController,
             PlayerCombatModeController combatModeController,
-            ActionCameraController cameraController)
+            ActionCameraController cameraController,
+            Animator rangedAnimator)
         {
             ValidateObjectReference(aimController, "combatModeController", combatModeController);
             ValidateObjectReference(aimController, "cameraController", cameraController);
+            ValidateObjectReference(aimController, "animator", rangedAnimator);
             ValidateBool(aimController, "holdToAim", true);
             ValidateBool(aimController, "useDeviceFallbackWhenActionMissing", true);
             ValidateString(aimController, "aimingParameter", "IsAiming");
@@ -1943,6 +2172,7 @@ namespace DimensionBrawl.Editor
             PlayerCombatTargetSelector targetSelector,
             CombatHealth playerHealth,
             ActionCameraController cameraController,
+            Animator rangedAnimator,
             Transform projectileRoot)
         {
             ValidateObjectReference(rangedBasicAttackAction, "combatModeController", combatModeController);
@@ -1951,6 +2181,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(rangedBasicAttackAction, "targetSelector", targetSelector);
             ValidateObjectReference(rangedBasicAttackAction, "sourceHealth", playerHealth);
             ValidateObjectReference(rangedBasicAttackAction, "cameraController", cameraController);
+            ValidateObjectReference(rangedBasicAttackAction, "animator", rangedAnimator);
             ValidateObjectReference(
                 rangedBasicAttackAction,
                 "projectilePrefabObject",
@@ -1969,7 +2200,7 @@ namespace DimensionBrawl.Editor
             ValidateFloat(rangedBasicAttackAction, "facingHoldSeconds", 0.16f);
             ValidateBool(rangedBasicAttackAction, "snapFacingOnFire", true);
             ValidateBool(rangedBasicAttackAction, "requireAimToFire", false);
-            ValidateString(rangedBasicAttackAction, "fireTrigger", string.Empty);
+            ValidateString(rangedBasicAttackAction, "fireTrigger", "Attack1");
             ValidateVector3(rangedBasicAttackAction, "fireCameraCueOffset", new Vector3(0.025f, 0.01f, -0.045f));
             ValidateFloat(rangedBasicAttackAction, "fireCameraCueSeconds", 0.10f);
             ValidateFloat(rangedBasicAttackAction, "fireFieldOfViewDelta", -0.8f);
@@ -2521,6 +2752,281 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static void DestroyChildIfPresent(Transform parent, string childName)
+        {
+            Transform existing = parent.Find(childName);
+            if (existing != null)
+            {
+                UnityEngine.Object.DestroyImmediate(existing.gameObject);
+            }
+        }
+
+        private static GameObject FindPlayerMeleeVisualRoot(Transform player)
+        {
+            Transform swordShieldVisual = FindDescendant(player, "CombatGirlSwordShield_PlayerVisual");
+            if (swordShieldVisual != null)
+            {
+                return swordShieldVisual.gameObject;
+            }
+
+            Transform placeholderBody = FindDescendant(player, "CombatGirlPlaceholderBody");
+            return placeholderBody != null ? placeholderBody.gameObject : null;
+        }
+
+        private static Transform FindLikelyRightHandSocket(Transform root)
+        {
+            Transform[] candidates = root.GetComponentsInChildren<Transform>(includeInactive: true);
+            for (int i = 0; i < candidates.Length; i++)
+            {
+                string normalized = NormalizeTransformName(candidates[i].name);
+                if (normalized.Contains("righthand", StringComparison.Ordinal)
+                    || normalized.Contains("rhand", StringComparison.Ordinal)
+                    || normalized.Contains("handr", StringComparison.Ordinal)
+                    || (normalized.Contains("right", StringComparison.Ordinal)
+                        && normalized.Contains("hand", StringComparison.Ordinal)))
+                {
+                    return candidates[i];
+                }
+            }
+
+            return null;
+        }
+
+        private static Transform FindLikelyLeftHandSocket(Transform root)
+        {
+            Transform[] candidates = root.GetComponentsInChildren<Transform>(includeInactive: true);
+            for (int i = 0; i < candidates.Length; i++)
+            {
+                string normalized = NormalizeTransformName(candidates[i].name);
+                if (normalized.Contains("lefthand", StringComparison.Ordinal)
+                    || normalized.Contains("lhand", StringComparison.Ordinal)
+                    || normalized.Contains("handl", StringComparison.Ordinal)
+                    || (normalized.Contains("left", StringComparison.Ordinal)
+                        && normalized.Contains("hand", StringComparison.Ordinal)))
+                {
+                    return candidates[i];
+                }
+            }
+
+            return null;
+        }
+
+        private static Transform FindDescendant(Transform root, string childName)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            Transform[] children = root.GetComponentsInChildren<Transform>(includeInactive: true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                if (string.Equals(children[i].name, childName, StringComparison.Ordinal))
+                {
+                    return children[i];
+                }
+            }
+
+            return null;
+        }
+
+        private static string NormalizeTransformName(string value)
+        {
+            return value
+                .Replace(" ", string.Empty)
+                .Replace("_", string.Empty)
+                .Replace("-", string.Empty)
+                .Replace(":", string.Empty)
+                .ToLowerInvariant();
+        }
+
+        private static void AssignRangedCandidateMaterials(GameObject visualRoot)
+        {
+            Renderer[] renderers = visualRoot.GetComponentsInChildren<Renderer>(includeInactive: true);
+            for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
+            {
+                Renderer renderer = renderers[rendererIndex];
+                Material[] materials = renderer.sharedMaterials;
+                for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                {
+                    string hint = $"{renderer.name} {materials[materialIndex]?.name ?? string.Empty}";
+                    materials[materialIndex] = ResolveRangedCandidateMaterial(hint, materialIndex);
+                }
+
+                renderer.sharedMaterials = materials;
+                EditorUtility.SetDirty(renderer);
+            }
+        }
+
+        private static Material ResolveRangedCandidateMaterial(string hint, int slotIndex)
+        {
+            string lower = hint.ToLowerInvariant();
+            if (lower.Contains("eye"))
+            {
+                return LoadAsset<Material>("Assets/_Game/Art/Characters/Player/RifleGirl/Materials/DB_RifleGirl_Eye.mat");
+            }
+
+            if (lower.Contains("face"))
+            {
+                return LoadAsset<Material>("Assets/_Game/Art/Characters/Player/RifleGirl/Materials/DB_RifleGirl_Face.mat");
+            }
+
+            if (lower.Contains("hair"))
+            {
+                return LoadAsset<Material>("Assets/_Game/Art/Characters/Player/RifleGirl/Materials/DB_RifleGirl_Hair01.mat");
+            }
+
+            if (lower.Contains("cloth"))
+            {
+                return LoadAsset<Material>("Assets/_Game/Art/Characters/Player/RifleGirl/Materials/DB_RifleGirl_Cloth01.mat");
+            }
+
+            if (lower.Contains("sport"))
+            {
+                return LoadAsset<Material>("Assets/_Game/Art/Characters/Player/RifleGirl/Materials/DB_RifleGirl_Sportswear.mat");
+            }
+
+            if (lower.Contains("weapon") || lower.Contains("rifle"))
+            {
+                return LoadAsset<Material>("Assets/_Game/Art/Characters/Player/RifleGirl/Materials/DB_RifleGirl_RangedFocus.mat");
+            }
+
+            return slotIndex switch
+            {
+                1 => LoadAsset<Material>("Assets/_Game/Art/Characters/Player/RifleGirl/Materials/DB_RifleGirl_Face.mat"),
+                2 => LoadAsset<Material>("Assets/_Game/Art/Characters/Player/RifleGirl/Materials/DB_RifleGirl_Eye.mat"),
+                3 => LoadAsset<Material>("Assets/_Game/Art/Characters/Player/RifleGirl/Materials/DB_RifleGirl_Hair01.mat"),
+                _ => LoadAsset<Material>("Assets/_Game/Art/Characters/Player/RifleGirl/Materials/DB_RifleGirl_Body.mat")
+            };
+        }
+
+        private static void AssignMaterialToAllRenderers(GameObject visualRoot, Material material)
+        {
+            Renderer[] renderers = visualRoot.GetComponentsInChildren<Renderer>(includeInactive: true);
+            for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
+            {
+                Material[] materials = renderers[rendererIndex].sharedMaterials;
+                for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                {
+                    materials[materialIndex] = material;
+                }
+
+                renderers[rendererIndex].sharedMaterials = materials;
+                EditorUtility.SetDirty(renderers[rendererIndex]);
+            }
+        }
+
+        private static void ValidatePlayerCombatModeVisual(
+            GameObject rangedRoot,
+            Animator rangedAnimator,
+            GameObject rangedWeaponRoot,
+            GameObject meleeWeaponRoot)
+        {
+            if (!rangedRoot.activeSelf)
+            {
+                throw new InvalidOperationException("Ranged player visual root should be active for the review scene starting mode.");
+            }
+
+            if (rangedAnimator.runtimeAnimatorController
+                != LoadAsset<RuntimeAnimatorController>(ActionFoundationPlayerCombatModeAssetSetup.RangedCandidateControllerPath))
+            {
+                throw new InvalidOperationException("Ranged player visual must use the promoted RifleGirl Animator Controller.");
+            }
+
+            Renderer[] renderers = rangedRoot.GetComponentsInChildren<Renderer>(includeInactive: true);
+            if (renderers.Length == 0)
+            {
+                throw new InvalidOperationException("Ranged player visual must contain renderers.");
+            }
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                ValidateRendererUsesGameOwnedAssets(renderers[i], renderers[i].name);
+            }
+
+            Transform weapon = FindDescendant(rangedRoot.transform, RangedPlayerWeaponName);
+            if (weapon == null)
+            {
+                throw new InvalidOperationException($"Ranged player visual is missing {RangedPlayerWeaponName}.");
+            }
+
+            if (weapon.parent == rangedRoot.transform)
+            {
+                throw new InvalidOperationException("Ranged weapon must be attached to a hand socket, not dropped under the visual root.");
+            }
+
+            if (weapon.GetComponentsInChildren<Renderer>(includeInactive: true).Length == 0)
+            {
+                throw new InvalidOperationException($"{RangedPlayerWeaponName} must include visible renderers.");
+            }
+
+            if (rangedWeaponRoot != weapon.gameObject)
+            {
+                throw new InvalidOperationException("Combat mode controller must reference the actual ranged weapon root.");
+            }
+
+            if (!rangedWeaponRoot.activeSelf)
+            {
+                throw new InvalidOperationException("Ranged weapon should start active with the ranged channel.");
+            }
+
+            if (meleeWeaponRoot.name != MeleePlayerWeaponRootName)
+            {
+                throw new InvalidOperationException("Melee weapon root should be authored under the single player visual.");
+            }
+
+            if (meleeWeaponRoot.activeSelf)
+            {
+                throw new InvalidOperationException("Melee weapons should start inactive until melee mode is selected.");
+            }
+
+            if (meleeWeaponRoot.GetComponentsInChildren<Renderer>(includeInactive: true).Length == 0)
+            {
+                throw new InvalidOperationException("Melee weapon root must include visible weapon renderers.");
+            }
+
+            CombatGirlWeaponSocketBinder meleeWeaponBinder =
+                meleeWeaponRoot.GetComponent<CombatGirlWeaponSocketBinder>();
+            if (meleeWeaponBinder == null || !meleeWeaponBinder.AllBindingsValid)
+            {
+                throw new InvalidOperationException("Melee weapon root must bind cloned sword/shield weapons to the visible player hands.");
+            }
+        }
+
+        private static void ValidateRendererUsesGameOwnedAssets(Renderer renderer, string label)
+        {
+            MeshFilter meshFilter = renderer.GetComponent<MeshFilter>();
+            if (meshFilter != null && meshFilter.sharedMesh != null)
+            {
+                ValidateGameOwnedAsset(meshFilter.sharedMesh, $"{label} mesh");
+            }
+
+            SkinnedMeshRenderer skinnedMeshRenderer = renderer as SkinnedMeshRenderer;
+            if (skinnedMeshRenderer != null && skinnedMeshRenderer.sharedMesh != null)
+            {
+                ValidateGameOwnedAsset(skinnedMeshRenderer.sharedMesh, $"{label} skinned mesh");
+            }
+
+            Material[] materials = renderer.sharedMaterials;
+            for (int i = 0; i < materials.Length; i++)
+            {
+                if (materials[i] != null)
+                {
+                    ValidateGameOwnedAsset(materials[i], $"{label} material");
+                    ValidateRenderableMaterialShader(materials[i], $"{label} material shader");
+                }
+            }
+        }
+
+        private static void ValidateRenderableMaterialShader(Material material, string label)
+        {
+            if (material.shader == null ||
+                string.Equals(material.shader.name, "Hidden/InternalErrorShader", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"{label} must not use Unity's missing/error shader.");
+            }
+        }
+
         private static Material LoadOrCreateMaterial(string assetPath, Color color)
         {
             EnsureFolderForAsset(assetPath);
@@ -2837,6 +3343,17 @@ namespace DimensionBrawl.Editor
             return value as T;
         }
 
+        private static T RequireReferencedObject<T>(UnityEngine.Object target, string propertyName) where T : UnityEngine.Object
+        {
+            T value = ReadObjectReference<T>(target, propertyName);
+            if (value == null)
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} must be assigned.");
+            }
+
+            return value;
+        }
+
         private static void ValidateObjectReference(UnityEngine.Object target, string propertyName, UnityEngine.Object expected)
         {
             UnityEngine.Object actual = RequireProperty(new SerializedObject(target), propertyName).objectReferenceValue;
@@ -2976,6 +3493,32 @@ namespace DimensionBrawl.Editor
             }
 
             return relative;
+        }
+
+        private readonly struct PlayerCombatModeVisualBinding
+        {
+            public PlayerCombatModeVisualBinding(
+                GameObject rangedRoot,
+                GameObject meleeRoot,
+                GameObject rangedWeaponRoot,
+                GameObject meleeWeaponRoot,
+                Animator rangedAnimator,
+                Animator meleeAnimator)
+            {
+                RangedRoot = rangedRoot;
+                MeleeRoot = meleeRoot;
+                RangedWeaponRoot = rangedWeaponRoot;
+                MeleeWeaponRoot = meleeWeaponRoot;
+                RangedAnimator = rangedAnimator;
+                MeleeAnimator = meleeAnimator;
+            }
+
+            public GameObject RangedRoot { get; }
+            public GameObject MeleeRoot { get; }
+            public GameObject RangedWeaponRoot { get; }
+            public GameObject MeleeWeaponRoot { get; }
+            public Animator RangedAnimator { get; }
+            public Animator MeleeAnimator { get; }
         }
     }
 }

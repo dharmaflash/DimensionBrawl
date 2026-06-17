@@ -54,9 +54,16 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1EntryCue_MagicCircle.prefab";
         private const string SummonSlot1ActorPrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Actor_Proxy.prefab";
+        private const string RifleGirlRangedControllerPath =
+            "Assets/_Game/Art/Animations/Player/RifleGirl/DB_RifleGirl_RangedCandidate.controller";
+        private const string CombatGirlMeleeControllerPath =
+            "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/DB_CombatGirl_ActionFoundation.controller";
         private const string LaneRootName = "BossBarrageLaneReview_SummonLaneSpace";
         private const string BossRootName = "BossBarrageLaneReview_BossProxy_NeedleLock";
         private const string BossHumanoidVisualName = "BossBarrageLaneReview_HumanoidBossVisual_SummonCallerElite";
+        private const string RangedPlayerVisualRootName = "BossBarrageLaneReview_RangedVisual_RifleGirl";
+        private const string RangedPlayerWeaponName = "BossBarrageLaneReview_RangedWeapon_Rifle";
+        private const string MeleePlayerWeaponRootName = "BossBarrageLaneReview_MeleeWeapons_CombatGirlSwordShield";
         private const string BossProjectileCoreName = "BossBarrageLaneReview_BossProxyMarker";
         private const string CloseThreatRootName = "BossBarrageLaneReview_CloseThreat_ClosePunish";
         private const string ProjectilePoolRootName = "BossBarrageLaneReview_ProjectilePool";
@@ -189,18 +196,70 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(LoadAsset<PlayerActionProfile>(LocalDefenseProfilePath), playerActionController.ActionProfile);
             Assert.IsTrue(combatModeController.IsRangedMode, "Review scene should start in the ranged channel.");
             Assert.AreSame(playerActionController, GetObjectReference<PlayerActionController>(combatModeController, "actionController"));
+            Assert.AreSame(player, GetObjectReference<PlayerMovementController>(combatModeController, "movementController"));
             Assert.AreSame(combatModeController, GetObjectReference<PlayerCombatModeController>(playerActionController, "combatModeController"));
             Assert.IsTrue(GetBool(playerActionController, "blockBasicAttackInRangedMode"));
+            GameObject rangedVisualRoot = GetObjectReference<GameObject>(combatModeController, "rangedVisualRoot");
+            GameObject meleeVisualRoot = GetObjectReference<GameObject>(combatModeController, "meleeVisualRoot");
+            GameObject rangedWeaponRoot = GetObjectReference<GameObject>(combatModeController, "rangedWeaponRoot");
+            GameObject meleeWeaponRoot = GetObjectReference<GameObject>(combatModeController, "meleeWeaponRoot");
+            Animator rangedAnimator = GetObjectReference<Animator>(combatModeController, "rangedAnimator");
+            Animator meleeAnimator = GetObjectReference<Animator>(combatModeController, "meleeAnimator");
+            Assert.IsNotNull(rangedVisualRoot, "Review scene must bind a ranged visual root for RifleGirl.");
+            Assert.IsNotNull(meleeVisualRoot, "Review scene may keep the old melee source visual inactive for weapon/clip reuse.");
+            Assert.IsNotNull(rangedWeaponRoot, "Review scene must bind a ranged weapon root.");
+            Assert.IsNotNull(meleeWeaponRoot, "Review scene must bind a melee weapon root.");
+            Assert.IsNotNull(rangedAnimator, "Review scene must bind the RifleGirl ranged Animator.");
+            Assert.AreSame(rangedAnimator, meleeAnimator, "Weapon swap should reuse one visible player Animator instead of swapping character bodies.");
+            Assert.AreEqual(RangedPlayerVisualRootName, rangedVisualRoot.name);
+            Assert.IsTrue(rangedVisualRoot.activeSelf, "The single visible player body should stay active for the review starting mode.");
+            Assert.IsFalse(meleeVisualRoot.activeSelf, "The old melee source visual should stay inactive; weapon swap must not swap character bodies.");
+            Assert.IsTrue(rangedWeaponRoot.activeSelf, "Rifle should start visible in ranged mode.");
+            Assert.IsFalse(meleeWeaponRoot.activeSelf, "Melee weapons should start hidden in ranged mode.");
+            Assert.AreSame(LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath), rangedAnimator.runtimeAnimatorController);
+            Assert.AreSame(
+                LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath),
+                GetObjectReference<RuntimeAnimatorController>(combatModeController, "rangedAnimatorController"));
+            Assert.AreSame(
+                LoadAsset<RuntimeAnimatorController>(CombatGirlMeleeControllerPath),
+                GetObjectReference<RuntimeAnimatorController>(combatModeController, "meleeAnimatorController"));
+            Assert.IsTrue(GetBool(combatModeController, "useSingleCharacterVisual"));
+            Assert.AreSame(rangedAnimator, GetObjectReference<Animator>(player, "animator"));
+            Assert.AreSame(rangedAnimator, GetObjectReference<Animator>(playerActionController, "animator"));
+            AssertSingleCharacterWeaponVisual(rangedVisualRoot, rangedAnimator, rangedWeaponRoot, meleeWeaponRoot);
             Assert.AreSame(combatModeController, GetObjectReference<PlayerCombatModeController>(rangedAimController, "combatModeController"));
             Assert.AreSame(cameraController, GetObjectReference<ActionCameraController>(rangedAimController, "cameraController"));
+            Assert.AreSame(rangedAnimator, GetObjectReference<Animator>(rangedAimController, "animator"));
             Assert.AreSame(combatModeController, GetObjectReference<PlayerCombatModeController>(rangedBasicAttackAction, "combatModeController"));
             Assert.AreSame(rangedAimController, GetObjectReference<PlayerRangedAimController>(rangedBasicAttackAction, "aimController"));
             Assert.AreSame(player, GetObjectReference<PlayerMovementController>(rangedBasicAttackAction, "movement"));
             Assert.AreSame(targetSelector, GetObjectReference<PlayerCombatTargetSelector>(rangedBasicAttackAction, "targetSelector"));
             Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(rangedBasicAttackAction, "sourceHealth"));
             Assert.AreSame(cameraController, GetObjectReference<ActionCameraController>(rangedBasicAttackAction, "cameraController"));
+            Assert.AreSame(rangedAnimator, GetObjectReference<Animator>(rangedBasicAttackAction, "animator"));
+            Assert.AreEqual("Attack1", GetString(rangedBasicAttackAction, "fireTrigger"));
             Assert.AreSame(LoadAsset<GameObject>(RangedBasicProjectilePrefabPath), GetObjectReference<GameObject>(rangedBasicAttackAction, "projectilePrefabObject"));
             Assert.AreSame(projectileRoot.transform, GetObjectReference<Transform>(rangedBasicAttackAction, "projectileRoot"));
+            combatModeController.SetMeleeMode();
+            yield return null;
+            Assert.IsTrue(combatModeController.IsMeleeMode);
+            Assert.IsTrue(rangedVisualRoot.activeSelf, "Melee mode should keep the same character body visible.");
+            Assert.IsFalse(meleeVisualRoot.activeSelf, "Melee mode should not reveal the old second character body.");
+            Assert.IsFalse(rangedWeaponRoot.activeSelf, "Rifle should hide in melee mode.");
+            Assert.IsTrue(meleeWeaponRoot.activeSelf, "Melee weapons should show in melee mode.");
+            Assert.AreSame(rangedAnimator, GetObjectReference<Animator>(player, "animator"));
+            Assert.AreSame(rangedAnimator, GetObjectReference<Animator>(playerActionController, "animator"));
+            Assert.AreSame(LoadAsset<RuntimeAnimatorController>(CombatGirlMeleeControllerPath), rangedAnimator.runtimeAnimatorController);
+            combatModeController.SetRangedMode();
+            yield return null;
+            Assert.IsTrue(combatModeController.IsRangedMode);
+            Assert.IsTrue(rangedVisualRoot.activeSelf);
+            Assert.IsFalse(meleeVisualRoot.activeSelf);
+            Assert.IsTrue(rangedWeaponRoot.activeSelf, "Rifle should show again after returning to ranged mode.");
+            Assert.IsFalse(meleeWeaponRoot.activeSelf, "Melee weapons should hide again after returning to ranged mode.");
+            Assert.AreSame(rangedAnimator, GetObjectReference<Animator>(player, "animator"));
+            Assert.AreSame(rangedAnimator, GetObjectReference<Animator>(playerActionController, "animator"));
+            Assert.AreSame(LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath), rangedAnimator.runtimeAnimatorController);
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(energyLadder, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(energyLadder, "trackedPlayer"));
             Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(skill1Action, "energyLadder"));
@@ -1734,6 +1793,65 @@ namespace DimensionBrawl.Tests
             Assert.Greater(cueDriver.PulseRendererCount, 0);
         }
 
+        private static void AssertSingleCharacterWeaponVisual(
+            GameObject rangedRoot,
+            Animator rangedAnimator,
+            GameObject rangedWeaponRoot,
+            GameObject meleeWeaponRoot)
+        {
+            Assert.AreEqual(RangedPlayerVisualRootName, rangedRoot.name);
+            Assert.AreSame(
+                LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath),
+                rangedAnimator.runtimeAnimatorController);
+            AssertGameOwnedAsset(rangedAnimator.runtimeAnimatorController, "RifleGirl ranged Animator Controller");
+
+            Assert.IsNull(
+                rangedRoot.GetComponentInChildren<CombatHealth>(true),
+                "Ranged player visual should not duplicate CombatHealth; the player root owns health.");
+            Assert.IsNull(
+                rangedRoot.GetComponentInChildren<PlayerMovementController>(true),
+                "Ranged player visual should not duplicate movement; the player root owns movement.");
+            Assert.IsNull(
+                rangedRoot.GetComponentInChildren<PlayerActionController>(true),
+                "Ranged player visual should not duplicate local defense actions.");
+
+            Renderer[] renderers = rangedRoot.GetComponentsInChildren<Renderer>(true);
+            Assert.Greater(renderers.Length, 0, "RifleGirl ranged visual should expose promoted renderers.");
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                AssertRendererUsesGameOwnedAssets(renderers[i], renderers[i].name);
+            }
+
+            Transform weapon = FindDescendant(rangedRoot.transform, RangedPlayerWeaponName);
+            Assert.IsNotNull(weapon, $"RifleGirl ranged visual should include {RangedPlayerWeaponName}.");
+            Assert.AreSame(rangedWeaponRoot.transform, weapon, "Ranged weapon reference should point at the actual rifle object.");
+            Assert.AreNotSame(rangedRoot.transform, weapon.parent, "Ranged weapon should be attached below a hand socket, not left at the character root.");
+            Assert.Greater(
+                weapon.GetComponentsInChildren<Renderer>(true).Length,
+                0,
+                "Ranged weapon should be a visible promoted model, not a hidden data marker.");
+            Assert.AreEqual(MeleePlayerWeaponRootName, meleeWeaponRoot.name);
+            Assert.Greater(
+                meleeWeaponRoot.GetComponentsInChildren<Renderer>(true).Length,
+                0,
+                "Melee weapon root should contain visible sword/shield renderers.");
+            CombatGirlWeaponSocketBinder meleeWeaponBinder =
+                meleeWeaponRoot.GetComponent<CombatGirlWeaponSocketBinder>();
+            Assert.IsNotNull(meleeWeaponBinder, "Melee weapon root should keep cloned sword/shield objects bound to the same visible hands.");
+            Assert.IsTrue(meleeWeaponBinder.AllBindingsValid, "Melee weapon bindings should be valid.");
+            AssertAnimatorParameter(rangedAnimator, "MoveSpeed", AnimatorControllerParameterType.Float);
+            AssertAnimatorParameter(rangedAnimator, "MoveX", AnimatorControllerParameterType.Float);
+            AssertAnimatorParameter(rangedAnimator, "MoveY", AnimatorControllerParameterType.Float);
+            AssertAnimatorParameter(rangedAnimator, "IsStopping", AnimatorControllerParameterType.Bool);
+            AssertAnimatorParameter(rangedAnimator, "IsAiming", AnimatorControllerParameterType.Bool);
+            AssertAnimatorParameter(rangedAnimator, "IsDodging", AnimatorControllerParameterType.Bool);
+            AssertAnimatorParameter(rangedAnimator, "Attack1", AnimatorControllerParameterType.Trigger);
+            AssertAnimatorParameter(rangedAnimator, "DodgeForward", AnimatorControllerParameterType.Trigger);
+            AssertAnimatorParameter(rangedAnimator, "DodgeBack", AnimatorControllerParameterType.Trigger);
+            AssertAnimatorParameter(rangedAnimator, "DodgeLeft", AnimatorControllerParameterType.Trigger);
+            AssertAnimatorParameter(rangedAnimator, "DodgeRight", AnimatorControllerParameterType.Trigger);
+        }
+
         private static void AssertBossVisualCueBindings(BossBarrageVisualCueDriver cueDriver, Animator animator)
         {
             var foundPatternIds = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
@@ -1771,6 +1889,38 @@ namespace DimensionBrawl.Tests
             Assert.Fail($"Boss visual cue {label} references missing Animator trigger {triggerName}.");
         }
 
+        private static void AssertAnimatorParameter(
+            Animator animator,
+            string parameterName,
+            AnimatorControllerParameterType expectedType)
+        {
+            AnimatorControllerParameter[] parameters = animator.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                if (parameters[i].type == expectedType
+                    && string.Equals(parameters[i].name, parameterName, System.StringComparison.Ordinal))
+                {
+                    return;
+                }
+            }
+
+            Assert.Fail($"Animator {animator.name} is missing {expectedType} parameter {parameterName}.");
+        }
+
+        private static Transform FindDescendant(Transform root, string childName)
+        {
+            Transform[] children = root.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                if (string.Equals(children[i].name, childName, System.StringComparison.Ordinal))
+                {
+                    return children[i];
+                }
+            }
+
+            return null;
+        }
+
         private static void AssertRendererUsesGameOwnedAssets(Renderer renderer, string label)
         {
             MeshFilter meshFilter = renderer.GetComponent<MeshFilter>();
@@ -1791,8 +1941,18 @@ namespace DimensionBrawl.Tests
                 if (materials[i] != null)
                 {
                     AssertGameOwnedAsset(materials[i], $"{label} material");
+                    AssertRenderableMaterialShader(materials[i], $"{label} material shader");
                 }
             }
+        }
+
+        private static void AssertRenderableMaterialShader(Material material, string label)
+        {
+            Assert.IsNotNull(material.shader, $"{label} should be assigned.");
+            Assert.AreNotEqual(
+                "Hidden/InternalErrorShader",
+                material.shader.name,
+                $"{label} should not use Unity's missing/error shader.");
         }
 
         private static void AssertEnergyZoneMarker(

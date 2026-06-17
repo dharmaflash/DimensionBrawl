@@ -157,6 +157,11 @@ namespace DimensionBrawl.Player
             animator = newAnimator;
         }
 
+        public void SetAnimator(Animator newAnimator)
+        {
+            animator = newAnimator;
+        }
+
         private void Awake()
         {
             if (combatModeController == null)

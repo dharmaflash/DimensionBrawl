@@ -208,6 +208,11 @@ namespace DimensionBrawl.Player
             actionProfile = newActionProfile;
         }
 
+        public void SetAnimator(Animator newAnimator)
+        {
+            animator = newAnimator;
+        }
+
         private void Awake()
         {
             if (movement == null)

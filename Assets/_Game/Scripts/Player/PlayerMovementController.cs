@@ -106,6 +106,11 @@ namespace DimensionBrawl.Player
         public event Action StopSettleStarted;
         public event Action<float> SharpTurnStarted;
 
+        public void SetAnimator(Animator newAnimator)
+        {
+            animator = newAnimator;
+        }
+
         public void SetMoveInput(Vector2 input)
         {
             mobileMoveInput = Vector2.ClampMagnitude(input, 1f);

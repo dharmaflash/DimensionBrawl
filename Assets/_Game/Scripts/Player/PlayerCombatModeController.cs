@@ -20,8 +20,20 @@ namespace DimensionBrawl.Player
 
         [Header("References")]
         [SerializeField] private PlayerActionController actionController;
+        [SerializeField] private PlayerMovementController movementController;
+        [SerializeField] private PlayerRangedAimController rangedAimController;
+        [SerializeField] private PlayerRangedBasicAttackAction rangedBasicAttackAction;
         [SerializeField] private GameObject rangedVisualRoot;
         [SerializeField] private GameObject meleeVisualRoot;
+        [SerializeField] private GameObject rangedWeaponRoot;
+        [SerializeField] private GameObject meleeWeaponRoot;
+        [SerializeField] private Animator rangedAnimator;
+        [SerializeField] private Animator meleeAnimator;
+        [SerializeField] private RuntimeAnimatorController rangedAnimatorController;
+        [SerializeField] private RuntimeAnimatorController meleeAnimatorController;
+        [SerializeField] private bool routeAnimatorsByMode = true;
+        [Tooltip("Use one character body and swap only weapons/Animator Controller for combat mode changes.")]
+        [SerializeField] private bool useSingleCharacterVisual;
 
         [Header("Profiles")]
         [SerializeField] private PlayerActionProfile rangedActionProfile;
@@ -45,6 +57,21 @@ namespace DimensionBrawl.Player
             if (actionController == null)
             {
                 actionController = GetComponent<PlayerActionController>();
+            }
+
+            if (movementController == null)
+            {
+                movementController = GetComponent<PlayerMovementController>();
+            }
+
+            if (rangedAimController == null)
+            {
+                rangedAimController = GetComponent<PlayerRangedAimController>();
+            }
+
+            if (rangedBasicAttackAction == null)
+            {
+                rangedBasicAttackAction = GetComponent<PlayerRangedBasicAttackAction>();
             }
         }
 
@@ -105,9 +132,71 @@ namespace DimensionBrawl.Player
 
             CurrentMode = combatMode;
             actionController?.SetActionProfile(CurrentActionProfile);
+            ApplyVisualMode(combatMode);
+            Animator activeAnimator = ResolveActiveAnimator(combatMode);
+            ApplyAnimatorController(activeAnimator, combatMode);
+            RoutePresentationAnimator(activeAnimator);
+            CombatModeChanged?.Invoke(CurrentMode);
+        }
+
+        private void ApplyVisualMode(PlayerCombatMode combatMode)
+        {
+            if (useSingleCharacterVisual)
+            {
+                SetVisualRootActive(rangedVisualRoot, true);
+                SetVisualRootActive(meleeVisualRoot, false);
+                SetVisualRootActive(rangedWeaponRoot, combatMode == PlayerCombatMode.Ranged);
+                SetVisualRootActive(meleeWeaponRoot, combatMode == PlayerCombatMode.Melee);
+                return;
+            }
+
             SetVisualRootActive(rangedVisualRoot, combatMode == PlayerCombatMode.Ranged);
             SetVisualRootActive(meleeVisualRoot, combatMode == PlayerCombatMode.Melee);
-            CombatModeChanged?.Invoke(CurrentMode);
+        }
+
+        private Animator ResolveActiveAnimator(PlayerCombatMode combatMode)
+        {
+            if (useSingleCharacterVisual)
+            {
+                return rangedAnimator != null ? rangedAnimator : meleeAnimator;
+            }
+
+            return combatMode == PlayerCombatMode.Ranged ? rangedAnimator : meleeAnimator;
+        }
+
+        private void ApplyAnimatorController(Animator activeAnimator, PlayerCombatMode combatMode)
+        {
+            if (!useSingleCharacterVisual || activeAnimator == null)
+            {
+                return;
+            }
+
+            RuntimeAnimatorController targetController = combatMode == PlayerCombatMode.Ranged
+                ? rangedAnimatorController
+                : meleeAnimatorController;
+            if (targetController == null || activeAnimator.runtimeAnimatorController == targetController)
+            {
+                return;
+            }
+
+            activeAnimator.runtimeAnimatorController = targetController;
+            activeAnimator.Rebind();
+            activeAnimator.Update(0f);
+        }
+
+        private void RoutePresentationAnimator(Animator activeAnimator)
+        {
+            if (routeAnimatorsByMode && activeAnimator != null)
+            {
+                movementController?.SetAnimator(activeAnimator);
+                actionController?.SetAnimator(activeAnimator);
+            }
+
+            if (activeAnimator != null)
+            {
+                rangedAimController?.SetAnimator(activeAnimator);
+                rangedBasicAttackAction?.SetAnimator(activeAnimator);
+            }
         }
 
         private bool ReadSwapPressed()

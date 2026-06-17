@@ -120,6 +120,12 @@ namespace DimensionBrawl.Player
             animator = newAnimator;
         }
 
+        public void SetAnimator(Animator newAnimator)
+        {
+            animator = newAnimator;
+            SetAnimatorBool(aimingParameter, isAiming);
+        }
+
         private void HandleCombatModeChanged(PlayerCombatMode combatMode)
         {
             if (combatMode != PlayerCombatMode.Ranged)
