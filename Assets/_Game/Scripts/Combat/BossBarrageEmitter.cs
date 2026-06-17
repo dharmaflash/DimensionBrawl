@@ -103,7 +103,26 @@ namespace DimensionBrawl.Combat
 
         public void SetFiringEnabled(bool enabled)
         {
+            if (firingEnabled == enabled)
+            {
+                if (!enabled)
+                {
+                    DeactivateActiveProjectiles();
+                }
+
+                return;
+            }
+
             firingEnabled = enabled;
+            if (!enabled)
+            {
+                windupActive = false;
+                cooldownTimer = ActivePattern != null ? ActivePattern.InitialDelaySeconds : 0f;
+                DeactivateActiveProjectiles();
+                return;
+            }
+
+            cooldownTimer = ActivePattern != null ? ActivePattern.InitialDelaySeconds : cooldownTimer;
         }
 
         public void Tick(float deltaTime)

@@ -100,8 +100,8 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageForwardEnergyZone.mat";
 
         private static readonly Vector3 PlayerStartPosition = new Vector3(0f, 0f, -8.5f);
-        private static readonly Vector3 CameraStartOffset = new Vector3(0f, 2.6f, -8.2f);
-        private static readonly Vector3 CameraLookOffset = new Vector3(0f, 1.4f, 5.5f);
+        private static readonly Vector3 CameraStartOffset = new Vector3(0.14f, 0.68f, -4.25f);
+        private static readonly Vector3 CameraLookOffset = new Vector3(0f, 1.18f, 1.5f);
         private static readonly string[] RequiredBossPatternCueIds =
         {
             "NeedleLock",
@@ -241,7 +241,7 @@ namespace DimensionBrawl.Editor
                 summonSlot1Action,
                 bossBarrageEmitter,
                 pocketOwner);
-            ConfigureFixedRearCamera(cameraController, player.transform, bossProxy.transform);
+            ConfigureFixedRearCamera(cameraController, player.transform, bossProxy.transform, laneSpace.transform);
             ConfigureActionCameraCueDriver(
                 cameraController,
                 playerActionController,
@@ -387,7 +387,7 @@ namespace DimensionBrawl.Editor
                 summonSlot1Action,
                 emitter,
                 pocketOwner);
-            ValidateFixedRearCamera(cameraController, player.transform);
+            ValidateFixedRearCamera(cameraController, player.transform, laneSpace.transform);
             ValidateSummonForwardSpace(laneSpace);
             ValidateNoImportedAssetReference(ProjectilePrefabPath);
             ValidateNoImportedAssetReference(PatternProfilePath);
@@ -1595,10 +1595,13 @@ namespace DimensionBrawl.Editor
         private static void ConfigureFixedRearCamera(
             ActionCameraController cameraController,
             Transform player,
-            Transform bossProxy)
+            Transform bossProxy,
+            Transform rearYawReference)
         {
-            Vector3 position = player.position + CameraStartOffset;
             Vector3 lookTarget = player.position + CameraLookOffset;
+            float orbitYaw = rearYawReference != null ? rearYawReference.eulerAngles.y : player.eulerAngles.y;
+            Quaternion orbitRotation = Quaternion.Euler(0f, orbitYaw, 0f);
+            Vector3 position = lookTarget + orbitRotation * CameraStartOffset;
             Vector3 lookDirection = lookTarget - position;
             cameraController.transform.SetPositionAndRotation(
                 position,
@@ -1607,7 +1610,7 @@ namespace DimensionBrawl.Editor
             Camera camera = cameraController.GetComponent<Camera>();
             if (camera != null)
             {
-                camera.fieldOfView = 48f;
+                camera.fieldOfView = 54f;
                 EditorUtility.SetDirty(camera);
             }
 
@@ -1615,12 +1618,17 @@ namespace DimensionBrawl.Editor
             SetObjectReference(cameraController, "threat", bossProxy);
             SetVector3(cameraController, "cameraOffset", CameraStartOffset);
             SetVector3(cameraController, "lookOffset", CameraLookOffset);
+            SetBool(cameraController, "useFixedRearYaw", true);
+            SetObjectReference(cameraController, "fixedRearYawReference", rearYawReference);
+            SetFloat(cameraController, "fixedRearYawOffsetDegrees", 0f);
+            SetFloat(cameraController, "orbitYawDegrees", orbitYaw);
             SetBool(cameraController, "useDeviceFallbackWhenActionMissing", false);
             SetFloat(cameraController, "manualYawSpeedDegrees", 0f);
             SetFloat(cameraController, "mouseYawDegreesPerPixel", 0f);
             SetFloat(cameraController, "targetYawAssist", 0f);
-            SetFloat(cameraController, "threatBias", 0.12f);
-            SetFloat(cameraController, "maxThreatFocusOffset", 2f);
+            SetFloat(cameraController, "threatBias", 0f);
+            SetFloat(cameraController, "maxThreatFocusOffset", 0.75f);
+            SetFloat(cameraController, "maxLeadFromPlayerSpeed", 0f);
         }
 
         private static void ConfigureActionCameraCueDriver(
@@ -1649,7 +1657,10 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(cueDriver);
         }
 
-        private static void ValidateFixedRearCamera(ActionCameraController cameraController, Transform player)
+        private static void ValidateFixedRearCamera(
+            ActionCameraController cameraController,
+            Transform player,
+            Transform rearYawReference)
         {
             Vector3 planarOffset = Vector3.ProjectOnPlane(cameraController.transform.position - player.position, Vector3.up);
             if (Vector3.Dot(player.forward, planarOffset) >= -0.1f)
@@ -1657,10 +1668,15 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException("Boss barrage lane camera should start behind the player.");
             }
 
+            ValidateBool(cameraController, "useFixedRearYaw", true);
+            ValidateObjectReference(cameraController, "fixedRearYawReference", rearYawReference);
+            ValidateFloat(cameraController, "fixedRearYawOffsetDegrees", 0f);
             ValidateBool(cameraController, "useDeviceFallbackWhenActionMissing", false);
             ValidateFloat(cameraController, "manualYawSpeedDegrees", 0f);
             ValidateFloat(cameraController, "mouseYawDegreesPerPixel", 0f);
             ValidateFloat(cameraController, "targetYawAssist", 0f);
+            ValidateFloat(cameraController, "threatBias", 0f);
+            ValidateFloat(cameraController, "maxLeadFromPlayerSpeed", 0f);
         }
 
         private static void ValidateActionCameraCueDriver(

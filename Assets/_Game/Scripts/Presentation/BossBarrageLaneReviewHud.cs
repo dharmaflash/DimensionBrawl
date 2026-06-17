@@ -27,6 +27,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0f)] private float margin = 18f;
 
         private GUIStyle labelStyle;
+        private GUIStyle titleStyle;
         private GUIStyle boxStyle;
 
         public void Configure(
@@ -60,9 +61,14 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
+            GUI.depth = -1000;
+            Matrix4x4 previousMatrix = GUI.matrix;
+            float uiScale = ResolveUiScale();
+            GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(uiScale, uiScale, 1f));
             EnsureStyles();
-            GUILayout.BeginArea(new Rect(margin, margin, width, height), boxStyle);
-            GUILayout.Label("Boss Barrage Lane Review", labelStyle);
+            float areaHeight = Mathf.Max(height, (Screen.height / uiScale) - (margin * 2f));
+            GUILayout.BeginArea(new Rect(margin, margin, width, areaHeight), boxStyle);
+            GUILayout.Label("Boss Barrage Lane Review", titleStyle);
             GUILayout.Label(ResolveHealthLine(), labelStyle);
             GUILayout.Label(ResolvePhaseLine(), labelStyle);
             GUILayout.Label(ResolveEnergyLine(), labelStyle);
@@ -73,6 +79,7 @@ namespace DimensionBrawl.Presentation
             GUILayout.Label(ResolveSummonExchangeLine(), labelStyle);
             GUILayout.Label(ResolveObjectiveLine(), labelStyle);
             GUILayout.EndArea();
+            GUI.matrix = previousMatrix;
         }
 
         private string ResolveHealthLine()
@@ -237,21 +244,32 @@ namespace DimensionBrawl.Presentation
 
         private void EnsureStyles()
         {
-            if (labelStyle != null && boxStyle != null)
+            if (labelStyle != null && titleStyle != null && boxStyle != null)
             {
                 return;
             }
 
+            titleStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 24,
+                fontStyle = FontStyle.Bold,
+                normal = { textColor = Color.white }
+            };
             labelStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 18,
+                fontSize = 20,
                 normal = { textColor = Color.white }
             };
             boxStyle = new GUIStyle(GUI.skin.box)
             {
-                padding = new RectOffset(14, 14, 12, 12),
+                padding = new RectOffset(18, 18, 16, 16),
                 normal = { textColor = Color.white }
             };
+        }
+
+        private static float ResolveUiScale()
+        {
+            return Mathf.Clamp(Screen.height / 1440f, 1f, 2f);
         }
 
         private static string ResolveRiskBandLabel(SummonEnergyRiskBand riskBand)

@@ -696,5 +696,55 @@ namespace DimensionBrawl.Tests
             Object.DestroyImmediate(playerObject);
             Object.DestroyImmediate(laneObject);
         }
+
+        [Test]
+        public void BossBarrageEmitterDisablesWindupAndClearsActiveProjectiles()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.ForwardBoundaryZ);
+            GameObject bossObject = new GameObject("BossProxy");
+
+            BossBarragePatternProfile pattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            SerializedObject serializedPattern = new SerializedObject(pattern);
+            serializedPattern.FindProperty("windupSeconds").floatValue = 0.01f;
+            serializedPattern.FindProperty("waveIntervalSeconds").floatValue = 0f;
+            serializedPattern.FindProperty("initialDelaySeconds").floatValue = 0.2f;
+            serializedPattern.ApplyModifiedPropertiesWithoutUndo();
+
+            GameObject projectilePrefabObject = new GameObject("BossProjectilePrefab");
+            projectilePrefabObject.AddComponent<SphereCollider>();
+            projectilePrefabObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile projectilePrefab = projectilePrefabObject.AddComponent<BossBarrageProjectile>();
+            projectilePrefabObject.SetActive(false);
+
+            BossBarrageEmitter emitter = bossObject.AddComponent<BossBarrageEmitter>();
+            emitter.ConfigureReferences(lane, playerObject.transform, null);
+            emitter.ConfigurePattern(pattern, projectilePrefab, pattern.ProjectilesPerWave * 2);
+
+            Assert.IsTrue(emitter.BeginWindup());
+            Assert.Greater(emitter.FirePendingWave(), 0);
+            Assert.Greater(emitter.ActiveProjectileCount, 0);
+
+            emitter.SetFiringEnabled(false);
+            Assert.IsFalse(emitter.IsFiringEnabled);
+            Assert.IsFalse(emitter.IsWindupActive);
+            Assert.AreEqual(0, emitter.ActiveProjectileCount, "Disable should clear all currently active boss projectiles.");
+
+            emitter.SetFiringEnabled(true);
+            for (int i = 0; i < 15; i++)
+            {
+                emitter.Tick(0.01f);
+            }
+
+            Assert.AreEqual(0, emitter.ActiveProjectileCount, "Re-enable should respect pattern delay before re-arming barrage.");
+
+            Object.DestroyImmediate(projectilePrefabObject);
+            Object.DestroyImmediate(pattern);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(laneObject);
+        }
     }
 }

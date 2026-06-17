@@ -18,6 +18,12 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0f)] private float followSmoothTime = 0.12f;
         [SerializeField, Min(0f)] private float rotationSmooth = 16f;
 
+        [Header("Fixed Rear")]
+        [Tooltip("Pins yaw to a stable authored rear reference for fixed-rear review scenes instead of deriving orbit from the current camera pose.")]
+        [SerializeField] private bool useFixedRearYaw;
+        [SerializeField] private Transform fixedRearYawReference;
+        [SerializeField] private float fixedRearYawOffsetDegrees;
+
         [Header("Orbit")]
         [SerializeField] private InputActionReference orbitAction;
         [Tooltip("Shared mobile HUD drag hook for camera orbit. Mouse/right-stick fallback still works when no action is assigned.")]
@@ -111,8 +117,15 @@ namespace DimensionBrawl.Presentation
             }
 
             float deltaTime = Time.deltaTime;
-            InitializeOrbitIfNeeded();
-            UpdateOrbit(deltaTime);
+            if (useFixedRearYaw)
+            {
+                orbitYawDegrees = ResolveFixedRearYaw();
+            }
+            else
+            {
+                InitializeOrbitIfNeeded();
+                UpdateOrbit(deltaTime);
+            }
 
             Quaternion orbitRotation = Quaternion.Euler(0f, orbitYawDegrees, 0f);
             float cueWeight = UpdateCueWeight(deltaTime);
@@ -166,6 +179,13 @@ namespace DimensionBrawl.Presentation
 
             Vector3 lead = Vector3.ProjectOnPlane(target.forward, Vector3.up) * maxLeadFromPlayerSpeed;
             return focus + lead;
+        }
+
+        private float ResolveFixedRearYaw()
+        {
+            Transform yawReference = fixedRearYawReference != null ? fixedRearYawReference : target;
+            float baseYaw = yawReference != null ? yawReference.eulerAngles.y : orbitYawDegrees;
+            return NormalizeYaw(baseYaw + fixedRearYawOffsetDegrees);
         }
 
         private void InitializeOrbitIfNeeded()
