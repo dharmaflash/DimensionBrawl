@@ -289,6 +289,10 @@ namespace DimensionBrawl.Tests
                 LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath),
                 BossPressureActionKind.SkillPattern,
                 1,
+                "DodgeLineOrUseSkill1",
+                "LV1 skill pressure that asks the player to read a committed rail before spending summon resources.",
+                "Strafe or dodge out of the rail, then use ranged fire or Skill1 when the lane is clear.",
+                "No summon is required; save SummonSlot1 for screen pressure.",
                 false,
                 0f,
                 1f);
@@ -298,6 +302,10 @@ namespace DimensionBrawl.Tests
                 LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath),
                 BossPressureActionKind.SummonPressure,
                 2,
+                "SummonSlot1PressureBlock",
+                "LV2 summon-pressure exchange that tests whether the player can answer boss fire with a frontline summon screen.",
+                "Hold forward-risk only long enough to charge EN, then create space for the summon block.",
+                "Spend SummonSlot1 to place a pressure screen and intercept the boss curtain.",
                 true,
                 0.32f,
                 1f);
@@ -307,6 +315,10 @@ namespace DimensionBrawl.Tests
                 LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath),
                 BossPressureActionKind.PunishOverextend,
                 3,
+                "RetreatOrSpendHighTierAnswer",
+                "LV3 overextend punish that closes gaps when the player stays near the forward boundary too long.",
+                "Retreat from forward-risk space or dodge through the shrinking net before firing back.",
+                "A prepared high-tier summon screen can buy the follow-up window, but it should cost the player's stored EN.",
                 true,
                 0.66f,
                 1f);
@@ -2409,6 +2421,10 @@ namespace DimensionBrawl.Tests
             BossBarragePatternProfile expectedPattern,
             BossPressureActionKind expectedKind,
             int expectedMinimumTier,
+            string expectedResponseId,
+            string expectedStageLoopRole,
+            string expectedPlayerAnswer,
+            string expectedSummonAnswer,
             bool expectedUsePlayerForwardRiskGate = false,
             float expectedMinimumPlayerForwardRisk01 = 0f,
             float expectedMaximumPlayerForwardRisk01 = 1f)
@@ -2417,6 +2433,11 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(expectedPattern, slot.Pattern);
             Assert.AreEqual(expectedKind, slot.ActionKind);
             Assert.AreEqual(expectedMinimumTier, slot.MinimumTier);
+            Assert.IsTrue(slot.HasResponsePlan, $"Boss pressure action slot {index} should declare its response plan.");
+            Assert.AreEqual(expectedResponseId, slot.ResponseId);
+            Assert.AreEqual(expectedStageLoopRole, slot.StageLoopRole);
+            Assert.AreEqual(expectedPlayerAnswer, slot.PlayerAnswer);
+            Assert.AreEqual(expectedSummonAnswer, slot.SummonAnswer);
             Assert.AreEqual(expectedUsePlayerForwardRiskGate, slot.UsePlayerForwardRiskGate);
             Assert.AreEqual(expectedMinimumPlayerForwardRisk01, slot.MinimumPlayerForwardRisk01, 0.001f);
             Assert.AreEqual(expectedMaximumPlayerForwardRisk01, slot.MaximumPlayerForwardRisk01, 0.001f);

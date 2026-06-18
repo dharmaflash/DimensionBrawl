@@ -22,9 +22,18 @@ namespace DimensionBrawl.Combat
             [Range(1, 3)] public int MinimumTier;
             [Min(1)] public int QueuedWaves;
             [Min(0f)] public float MinimumIntervalSeconds;
+            public string ResponseId;
+            [TextArea] public string StageLoopRole;
+            [TextArea] public string PlayerAnswer;
+            [TextArea] public string SummonAnswer;
             public bool UsePlayerForwardRiskGate;
             [Range(0f, 1f)] public float MinimumPlayerForwardRisk01;
             [Range(0f, 1f)] public float MaximumPlayerForwardRisk01;
+
+            public bool HasResponsePlan =>
+                !string.IsNullOrWhiteSpace(ResponseId)
+                && !string.IsNullOrWhiteSpace(StageLoopRole)
+                && (!string.IsNullOrWhiteSpace(PlayerAnswer) || !string.IsNullOrWhiteSpace(SummonAnswer));
 
             public BossPressureActionSlot(
                 BossBarragePatternProfile pattern,
@@ -34,13 +43,21 @@ namespace DimensionBrawl.Combat
                 float minimumIntervalSeconds,
                 bool usePlayerForwardRiskGate = false,
                 float minimumPlayerForwardRisk01 = 0f,
-                float maximumPlayerForwardRisk01 = 1f)
+                float maximumPlayerForwardRisk01 = 1f,
+                string responseId = "",
+                string stageLoopRole = "",
+                string playerAnswer = "",
+                string summonAnswer = "")
             {
                 Pattern = pattern;
                 ActionKind = actionKind;
                 MinimumTier = Mathf.Clamp(minimumTier, 1, 3);
                 QueuedWaves = Mathf.Max(1, queuedWaves);
                 MinimumIntervalSeconds = Mathf.Max(0f, minimumIntervalSeconds);
+                ResponseId = responseId ?? string.Empty;
+                StageLoopRole = stageLoopRole ?? string.Empty;
+                PlayerAnswer = playerAnswer ?? string.Empty;
+                SummonAnswer = summonAnswer ?? string.Empty;
                 UsePlayerForwardRiskGate = usePlayerForwardRiskGate;
                 MinimumPlayerForwardRisk01 = Mathf.Clamp01(minimumPlayerForwardRisk01);
                 MaximumPlayerForwardRisk01 = Mathf.Clamp01(maximumPlayerForwardRisk01);

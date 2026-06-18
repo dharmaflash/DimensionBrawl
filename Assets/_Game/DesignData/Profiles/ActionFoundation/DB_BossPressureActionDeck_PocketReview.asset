@@ -20,6 +20,10 @@ MonoBehaviour:
     MinimumTier: 1
     QueuedWaves: 1
     MinimumIntervalSeconds: 4.6
+    ResponseId: DodgeLineOrUseSkill1
+    StageLoopRole: LV1 skill pressure that asks the player to read a committed rail before spending summon resources.
+    PlayerAnswer: Strafe or dodge out of the rail, then use ranged fire or Skill1 when the lane is clear.
+    SummonAnswer: No summon is required; save SummonSlot1 for screen pressure.
     UsePlayerForwardRiskGate: 0
     MinimumPlayerForwardRisk01: 0
     MaximumPlayerForwardRisk01: 1
@@ -28,6 +32,10 @@ MonoBehaviour:
     MinimumTier: 2
     QueuedWaves: 1
     MinimumIntervalSeconds: 5.2
+    ResponseId: SummonSlot1PressureBlock
+    StageLoopRole: LV2 summon-pressure exchange that tests whether the player can answer boss fire with a frontline summon screen.
+    PlayerAnswer: Hold forward-risk only long enough to charge EN, then create space for the summon block.
+    SummonAnswer: Spend SummonSlot1 to place a pressure screen and intercept the boss curtain.
     UsePlayerForwardRiskGate: 1
     MinimumPlayerForwardRisk01: 0.32
     MaximumPlayerForwardRisk01: 1
@@ -36,6 +44,10 @@ MonoBehaviour:
     MinimumTier: 3
     QueuedWaves: 1
     MinimumIntervalSeconds: 6
+    ResponseId: RetreatOrSpendHighTierAnswer
+    StageLoopRole: LV3 overextend punish that closes gaps when the player stays near the forward boundary too long.
+    PlayerAnswer: Retreat from forward-risk space or dodge through the shrinking net before firing back.
+    SummonAnswer: A prepared high-tier summon screen can buy the follow-up window, but it should cost the player's stored EN.
     UsePlayerForwardRiskGate: 1
     MinimumPlayerForwardRisk01: 0.66
     MaximumPlayerForwardRisk01: 1

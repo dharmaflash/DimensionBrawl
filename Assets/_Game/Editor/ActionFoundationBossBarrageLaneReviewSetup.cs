@@ -3172,6 +3172,10 @@ namespace DimensionBrawl.Editor
                 LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath),
                 BossPressureActionKind.SkillPattern,
                 1,
+                "DodgeLineOrUseSkill1",
+                "LV1 skill pressure that asks the player to read a committed rail before spending summon resources.",
+                "Strafe or dodge out of the rail, then use ranged fire or Skill1 when the lane is clear.",
+                "No summon is required; save SummonSlot1 for screen pressure.",
                 false,
                 0f,
                 1f);
@@ -3181,6 +3185,10 @@ namespace DimensionBrawl.Editor
                 LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath),
                 BossPressureActionKind.SummonPressure,
                 2,
+                "SummonSlot1PressureBlock",
+                "LV2 summon-pressure exchange that tests whether the player can answer boss fire with a frontline summon screen.",
+                "Hold forward-risk only long enough to charge EN, then create space for the summon block.",
+                "Spend SummonSlot1 to place a pressure screen and intercept the boss curtain.",
                 true,
                 0.32f,
                 1f);
@@ -3190,6 +3198,10 @@ namespace DimensionBrawl.Editor
                 LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath),
                 BossPressureActionKind.PunishOverextend,
                 3,
+                "RetreatOrSpendHighTierAnswer",
+                "LV3 overextend punish that closes gaps when the player stays near the forward boundary too long.",
+                "Retreat from forward-risk space or dodge through the shrinking net before firing back.",
+                "A prepared high-tier summon screen can buy the follow-up window, but it should cost the player's stored EN.",
                 true,
                 0.66f,
                 1f);
@@ -3201,6 +3213,10 @@ namespace DimensionBrawl.Editor
             BossBarragePatternProfile expectedPattern,
             BossPressureActionKind expectedKind,
             int expectedMinimumTier,
+            string expectedResponseId,
+            string expectedStageLoopRole,
+            string expectedPlayerAnswer,
+            string expectedSummonAnswer,
             bool expectedUsePlayerForwardRiskGate,
             float expectedMinimumPlayerForwardRisk01,
             float expectedMaximumPlayerForwardRisk01)
@@ -3226,6 +3242,16 @@ namespace DimensionBrawl.Editor
             {
                 throw new InvalidOperationException($"Boss pressure action slot {index} has the wrong minimum tier.");
             }
+
+            if (!slot.HasResponsePlan)
+            {
+                throw new InvalidOperationException($"Boss pressure action slot {index} is missing its response plan.");
+            }
+
+            ValidateString(slot.ResponseId, expectedResponseId, $"Boss pressure action slot {index} has the wrong response id.");
+            ValidateString(slot.StageLoopRole, expectedStageLoopRole, $"Boss pressure action slot {index} has the wrong stage-loop role.");
+            ValidateString(slot.PlayerAnswer, expectedPlayerAnswer, $"Boss pressure action slot {index} has the wrong player answer.");
+            ValidateString(slot.SummonAnswer, expectedSummonAnswer, $"Boss pressure action slot {index} has the wrong summon answer.");
 
             if (slot.UsePlayerForwardRiskGate != expectedUsePlayerForwardRiskGate)
             {
@@ -4752,6 +4778,14 @@ namespace DimensionBrawl.Editor
             if (!string.Equals(actual, expected, StringComparison.Ordinal))
             {
                 throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected}, found {actual}.");
+            }
+        }
+
+        private static void ValidateString(string actual, string expected, string errorMessage)
+        {
+            if (!string.Equals(actual, expected, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(errorMessage);
             }
         }
 
