@@ -88,6 +88,7 @@ namespace DimensionBrawl.Combat
         private int lastSpentTier;
         private BossPressureActionKind lastActionKind;
         private BossBarragePatternProfile lastQueuedPattern;
+        private BossPressureActionSlot lastQueuedActionSlot;
 
         public event Action<BossPressureActionDirector, BossPressureActionKind, BossBarragePatternProfile, int> ActionQueued;
 
@@ -96,6 +97,8 @@ namespace DimensionBrawl.Combat
         public int LastSpentTier => lastSpentTier;
         public BossPressureActionKind LastActionKind => lastActionKind;
         public BossBarragePatternProfile LastQueuedPattern => lastQueuedPattern;
+        public BossPressureActionSlot LastQueuedActionSlot => lastQueuedActionSlot;
+        public bool HasLastQueuedActionSlot => totalActionCount > 0 && lastQueuedActionSlot.Pattern != null;
         public BossSummonPressureAction SummonPressureAction => summonPressureAction;
         public BossPressureActionDeckProfile ActionDeckProfile => actionDeckProfile;
         public bool HasActionDeckProfile => actionDeckProfile != null;
@@ -232,6 +235,7 @@ namespace DimensionBrawl.Combat
             lastSpentTier = Mathf.Clamp(spentTier, 1, 3);
             lastActionKind = slot.ActionKind;
             lastQueuedPattern = slot.Pattern;
+            lastQueuedActionSlot = slot;
             selectionCursor = (slotIndex + 1) % Mathf.Max(1, actionSlots.Length);
             globalRecoveryTimer = Mathf.Max(globalRecoveryTimer, globalRecoverySeconds);
             EnsurePerSlotTimers();

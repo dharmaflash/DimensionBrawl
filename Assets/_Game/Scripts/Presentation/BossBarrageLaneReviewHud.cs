@@ -97,6 +97,7 @@ namespace DimensionBrawl.Presentation
             GUILayout.Label(ResolveRiskLine(), labelStyle);
             GUILayout.Label(ResolveBossBarrageLine(), labelStyle);
             GUILayout.Label(ResolveBossPressureLine(), labelStyle);
+            GUILayout.Label(ResolveBossPressureResponseLine(), labelStyle);
             GUILayout.Label(ResolveBossSummonLine(), labelStyle);
             GUILayout.Label(ResolveWeaponModeLine(), labelStyle);
             GUILayout.Label(ResolveRangedFireLine(), labelStyle);
@@ -205,6 +206,25 @@ namespace DimensionBrawl.Presentation
                 + $"{bossPressureCostLadder.CurrentTierFillRatio * 100f:0}%   {ready}   "
                 + $"Risk {bossPressureCostLadder.CurrentRiskBand} x{bossPressureCostLadder.CurrentGainMultiplier:0.00}{position}   "
                 + $"Last {action}/{pattern}";
+        }
+
+        private string ResolveBossPressureResponseLine()
+        {
+            if (bossPressureActionDirector == null || !bossPressureActionDirector.HasLastQueuedActionSlot)
+            {
+                return "Boss Answer -";
+            }
+
+            BossPressureActionDirector.BossPressureActionSlot slot = bossPressureActionDirector.LastQueuedActionSlot;
+            if (!slot.HasResponsePlan)
+            {
+                return "Boss Answer missing response plan";
+            }
+
+            string answer = slot.ActionKind == BossPressureActionKind.SummonPressure
+                ? slot.SummonAnswer
+                : slot.PlayerAnswer;
+            return $"Boss Answer {slot.ResponseId}: {answer}";
         }
 
         private string ResolveBossSummonLine()
@@ -381,6 +401,7 @@ namespace DimensionBrawl.Presentation
             labelStyle = new GUIStyle(GUI.skin.label)
             {
                 fontSize = 20,
+                wordWrap = true,
                 normal = { textColor = Color.white }
             };
             boxStyle = new GUIStyle(GUI.skin.box)

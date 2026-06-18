@@ -2038,11 +2038,19 @@ namespace DimensionBrawl.Tests
                 bossPressureActionDirector.TryQueueBestAvailableAction(),
                 "Boss pressure director should be able to spend cost into an authored pressure action during the review.");
             BossBarragePatternProfile queuedPattern = bossPressureActionDirector.LastQueuedPattern;
+            BossPressureActionDirector.BossPressureActionSlot queuedSlot =
+                bossPressureActionDirector.LastQueuedActionSlot;
             int sequenceIndexBeforePriority = emitter.CurrentPatternSequenceIndex;
 
             Assert.AreEqual(cueCountBefore + 1, cueDriver.PressureActionCueRequestCount);
             Assert.AreEqual(bossPressureActionDirector.LastActionKind, cueDriver.LastPressureActionKind);
             Assert.AreEqual(bossPressureActionDirector.LastSpentTier, cueDriver.LastPressureActionTier);
+            Assert.IsTrue(bossPressureActionDirector.HasLastQueuedActionSlot);
+            Assert.AreSame(queuedPattern, queuedSlot.Pattern);
+            Assert.IsTrue(queuedSlot.HasResponsePlan);
+            Assert.AreEqual(bossPressureActionDirector.LastActionKind, queuedSlot.ActionKind);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(queuedSlot.ResponseId));
+            Assert.IsFalse(string.IsNullOrWhiteSpace(queuedSlot.StageLoopRole));
             Assert.IsTrue(emitter.CurrentPatternIsPriority);
             Assert.AreSame(queuedPattern, emitter.QueuedPriorityPattern);
             Assert.AreSame(queuedPattern, emitter.CurrentPattern);
