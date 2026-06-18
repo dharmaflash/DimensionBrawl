@@ -1953,6 +1953,65 @@ namespace DimensionBrawl.Tests
             yield return null;
         }
 
+        [UnityTest]
+        public IEnumerator BossSummonPressureBlocksPlayerSkillProjectile()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
+            GameObject bossRoot = RequireRoot(BossRootName);
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
+            BossPressureCostLadder bossPressureCost =
+                RequireComponent<BossPressureCostLadder>(bossRoot, "boss pressure cost ladder");
+            BossPressureActionDirector bossPressureActionDirector =
+                RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
+            BossSummonPressureAction bossSummonPressureAction =
+                RequireComponent<BossSummonPressureAction>(bossRoot, "boss summon pressure action");
+
+            player.transform.position = laneSpace.GetLaneWorldPoint(
+                0f,
+                laneSpace.ForwardBoundaryZ,
+                player.transform.position.y);
+            targetSelector.NotifyTargetContact(bossHealth);
+            targetSelector.RefreshTarget();
+            Physics.SyncTransforms();
+            yield return null;
+
+            bossPressureCost.GrantCurrentTierCost(200f);
+            Assert.IsTrue(
+                bossPressureActionDirector.TryQueueBestAvailableAction(),
+                "Boss pressure director should spend LV2 cost into the authored summon-pressure action when the player is forward.");
+            Assert.AreEqual(BossPressureActionKind.SummonPressure, bossPressureActionDirector.LastActionKind);
+            Assert.AreEqual(2, bossPressureActionDirector.LastSpentTier);
+            Assert.AreEqual(2, bossSummonPressureAction.LastReleasedTier);
+
+            SummonPressureScreen enemyPressureScreen = RequireActiveEnemyPressureScreen();
+            SummonPressureScreenPresenter presenter = RequirePresenterForPressureScreen(enemyPressureScreen);
+            int bossPressureInterceptCountBefore = bossSummonPressureAction.LastPressureScreenInterceptCount;
+            int presenterFlashCountBefore = presenter.InterceptFlashCount;
+
+            FillEnergyToTier(energyLadder, 1);
+            Assert.IsTrue(skill1Action.TryUseSkill1());
+            LaneActionProjectile skillProjectile = RequireActivePlayerSkillProjectile();
+            Assert.IsTrue(skillProjectile.IsActive);
+            Assert.IsTrue(
+                enemyPressureScreen.TryIntercept(skillProjectile),
+                "Enemy-team boss summon pressure should be able to block hostile player Skill1 projectiles.");
+
+            Assert.IsFalse(skillProjectile.IsActive);
+            Assert.AreEqual(
+                bossPressureInterceptCountBefore + 1,
+                bossSummonPressureAction.LastPressureScreenInterceptCount,
+                "Boss summon pressure HUD/test state should count intercepted player/summon lane projectiles.");
+            Assert.AreEqual(
+                presenterFlashCountBefore + 1,
+                presenter.InterceptFlashCount,
+                "Boss summon pressure screen should use the same visible intercept flash path as ally summon screens.");
+            yield return null;
+        }
+
         private static GameObject RequireRoot(string rootName)
         {
             GameObject[] roots = SceneManager.GetActiveScene().GetRootGameObjects();
@@ -2087,6 +2146,40 @@ namespace DimensionBrawl.Tests
             }
 
             Assert.Fail("Expected an active AllySummon pressure screen.");
+            return null;
+        }
+
+        private static SummonPressureScreen RequireActiveEnemyPressureScreen()
+        {
+            SummonPressureScreen[] pressureScreens = Object.FindObjectsByType<SummonPressureScreen>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < pressureScreens.Length; i++)
+            {
+                if (pressureScreens[i].IsActive && pressureScreens[i].OwnerTeam == DamageTeam.Enemy)
+                {
+                    return pressureScreens[i];
+                }
+            }
+
+            Assert.Fail("Expected an active Enemy pressure screen.");
+            return null;
+        }
+
+        private static SummonPressureScreenPresenter RequirePresenterForPressureScreen(SummonPressureScreen pressureScreen)
+        {
+            SummonPressureScreenPresenter[] presenters = Object.FindObjectsByType<SummonPressureScreenPresenter>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < presenters.Length; i++)
+            {
+                if (presenters[i].PressureScreen == pressureScreen)
+                {
+                    return presenters[i];
+                }
+            }
+
+            Assert.Fail("Expected an active presenter for the pressure screen.");
             return null;
         }
 

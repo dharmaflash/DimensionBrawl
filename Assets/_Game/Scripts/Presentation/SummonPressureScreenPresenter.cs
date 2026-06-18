@@ -139,12 +139,22 @@ namespace DimensionBrawl.Presentation
 
         private void OnScreenIntercepted(SummonPressureScreen screen, BossBarrageProjectile projectile)
         {
+            HandleInterceptedProjectile(screen, projectile != null ? projectile.transform : null);
+        }
+
+        private void OnActionProjectileIntercepted(SummonPressureScreen screen, LaneActionProjectile projectile)
+        {
+            HandleInterceptedProjectile(screen, projectile != null ? projectile.transform : null);
+        }
+
+        private void HandleInterceptedProjectile(SummonPressureScreen screen, Transform projectileTransform)
+        {
             lastKnownRadius = screen.ActiveRadius;
             lastObservedTier = screen.ActiveTier;
             flashTimer = Mathf.Max(flashTimer, interceptFlashSeconds);
             lingerTimer = Mathf.Max(lingerTimer, finalHitLingerSeconds);
             interceptPunchTimer = Mathf.Max(interceptPunchTimer, interceptPunchSeconds);
-            interceptPunchLocalDirection = ResolveInterceptPunchLocalDirection(projectile);
+            interceptPunchLocalDirection = ResolveInterceptPunchLocalDirection(projectileTransform);
             interceptFlashCount++;
             SetShowing(true);
             RefreshVisual();
@@ -215,13 +225,13 @@ namespace DimensionBrawl.Presentation
             return Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(interceptPunchTimer / interceptPunchSeconds));
         }
 
-        private Vector3 ResolveInterceptPunchLocalDirection(BossBarrageProjectile projectile)
+        private Vector3 ResolveInterceptPunchLocalDirection(Transform projectileTransform)
         {
             Vector3 worldDirection = Vector3.zero;
-            if (pressureScreen != null && projectile != null)
+            if (pressureScreen != null && projectileTransform != null)
             {
                 worldDirection = Vector3.ProjectOnPlane(
-                    pressureScreen.transform.position - projectile.transform.position,
+                    pressureScreen.transform.position - projectileTransform.position,
                     Vector3.up);
             }
 
@@ -280,6 +290,7 @@ namespace DimensionBrawl.Presentation
 
             pressureScreen.Activated += OnScreenActivated;
             pressureScreen.Intercepted += OnScreenIntercepted;
+            pressureScreen.ActionProjectileIntercepted += OnActionProjectileIntercepted;
             pressureScreen.Deactivated += OnScreenDeactivated;
             subscribed = true;
         }
@@ -293,8 +304,10 @@ namespace DimensionBrawl.Presentation
 
             pressureScreen.Activated -= OnScreenActivated;
             pressureScreen.Intercepted -= OnScreenIntercepted;
+            pressureScreen.ActionProjectileIntercepted -= OnActionProjectileIntercepted;
             pressureScreen.Deactivated -= OnScreenDeactivated;
             subscribed = false;
         }
+
     }
 }

@@ -135,7 +135,9 @@ namespace DimensionBrawl.Combat
             if (actor.PressureScreen != null)
             {
                 actor.PressureScreen.Intercepted -= HandlePressureScreenIntercepted;
+                actor.PressureScreen.ActionProjectileIntercepted -= HandlePressureScreenActionProjectileIntercepted;
                 actor.PressureScreen.Intercepted += HandlePressureScreenIntercepted;
+                actor.PressureScreen.ActionProjectileIntercepted += HandlePressureScreenActionProjectileIntercepted;
                 lastPressureScreenMaxIntercepts = Mathf.Max(0, settings.ScreenIntercepts);
                 actor.PressureScreen.Activate(
                     ownerTeam,
@@ -192,6 +194,18 @@ namespace DimensionBrawl.Combat
             PressureSummonIntercepted?.Invoke(this, actor.ActiveTier);
         }
 
+        private void HandlePressureScreenActionProjectileIntercepted(SummonPressureScreen screen, LaneActionProjectile projectile)
+        {
+            SummonFrontlineProxy actor = FindActorForPressureScreen(screen);
+            if (actor == null || !actor.IsActive)
+            {
+                return;
+            }
+
+            lastPressureScreenInterceptCount++;
+            PressureSummonIntercepted?.Invoke(this, actor.ActiveTier);
+        }
+
         private SummonFrontlineProxy FindActorForPressureScreen(SummonPressureScreen screen)
         {
             if (screen == null)
@@ -219,6 +233,7 @@ namespace DimensionBrawl.Combat
                 if (actor != null && actor.PressureScreen != null)
                 {
                     actor.PressureScreen.Intercepted -= HandlePressureScreenIntercepted;
+                    actor.PressureScreen.ActionProjectileIntercepted -= HandlePressureScreenActionProjectileIntercepted;
                 }
             }
         }

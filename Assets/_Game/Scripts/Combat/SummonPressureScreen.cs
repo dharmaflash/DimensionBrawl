@@ -38,6 +38,7 @@ namespace DimensionBrawl.Combat
 
         public event Action<SummonPressureScreen> Activated;
         public event Action<SummonPressureScreen, BossBarrageProjectile> Intercepted;
+        public event Action<SummonPressureScreen, LaneActionProjectile> ActionProjectileIntercepted;
         public event Action<SummonPressureScreen> Deactivated;
 
         private void Awake()
@@ -130,6 +131,27 @@ namespace DimensionBrawl.Combat
             return true;
         }
 
+        public bool TryIntercept(LaneActionProjectile projectile)
+        {
+            if (!active
+                || projectile == null
+                || !projectile.IsActive
+                || !CombatTeamUtility.AreHostile(ownerTeam, projectile.SourceTeam))
+            {
+                return false;
+            }
+
+            projectile.Deactivate();
+            interceptedProjectiles++;
+            ActionProjectileIntercepted?.Invoke(this, projectile);
+            if (interceptedProjectiles >= maxIntercepts)
+            {
+                Deactivate();
+            }
+
+            return true;
+        }
+
         public void Deactivate()
         {
             bool wasActive = active;
@@ -158,7 +180,12 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
-            TryIntercept(other.GetComponentInParent<BossBarrageProjectile>());
+            if (TryIntercept(other.GetComponentInParent<BossBarrageProjectile>()))
+            {
+                return;
+            }
+
+            TryIntercept(other.GetComponentInParent<LaneActionProjectile>());
         }
 
         private void OnTriggerStay(Collider other)
@@ -168,7 +195,12 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
-            TryIntercept(other.GetComponentInParent<BossBarrageProjectile>());
+            if (TryIntercept(other.GetComponentInParent<BossBarrageProjectile>()))
+            {
+                return;
+            }
+
+            TryIntercept(other.GetComponentInParent<LaneActionProjectile>());
         }
 
         private void ScanForOverlappingProjectiles()
@@ -194,7 +226,12 @@ namespace DimensionBrawl.Combat
                     continue;
                 }
 
-                TryIntercept(candidate.GetComponentInParent<BossBarrageProjectile>());
+                if (TryIntercept(candidate.GetComponentInParent<BossBarrageProjectile>()))
+                {
+                    continue;
+                }
+
+                TryIntercept(candidate.GetComponentInParent<LaneActionProjectile>());
             }
         }
 
