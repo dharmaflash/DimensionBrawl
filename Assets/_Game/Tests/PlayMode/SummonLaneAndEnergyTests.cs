@@ -148,6 +148,44 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void BossPressurePositionControllerCommitsForwardAsBossCostBuilds()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject bossObject = new GameObject("BossProxy");
+            BossPressureCostLadder bossCost = bossObject.AddComponent<BossPressureCostLadder>();
+            bossCost.ConfigureReferences(lane, bossObject.transform);
+            BossPressureActionDirector director = bossObject.AddComponent<BossPressureActionDirector>();
+            BossPressurePositionController positionController =
+                bossObject.AddComponent<BossPressurePositionController>();
+            positionController.ConfigureReferences(lane, bossCost, director, bossObject.transform);
+            bossObject.transform.position = lane.GetBattlefieldWorldPoint(0f, lane.BossProxyZ, 1.6f);
+
+            positionController.Tick(1f);
+            float restRisk = bossCost.EvaluateBossForwardRisk01(bossObject.transform.position);
+
+            bossCost.GrantCurrentTierCost(50f);
+            positionController.Tick(1f);
+            float buildingRisk = bossCost.EvaluateBossForwardRisk01(bossObject.transform.position);
+
+            bossCost.GrantCurrentTierCost(50f);
+            positionController.Tick(1f);
+            float readyRisk = bossCost.EvaluateBossForwardRisk01(bossObject.transform.position);
+
+            director.SetActionsEnabled(false);
+            positionController.Tick(1f);
+            float disabledRisk = bossCost.EvaluateBossForwardRisk01(bossObject.transform.position);
+
+            Assert.AreEqual(0.08f, restRisk, 0.001f);
+            Assert.Greater(buildingRisk, restRisk);
+            Assert.Greater(readyRisk, buildingRisk);
+            Assert.Less(disabledRisk, readyRisk);
+
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(laneObject);
+        }
+
+        [Test]
         public void BossPressureActionDirectorQueuesCostedPriorityPattern()
         {
             GameObject laneObject = new GameObject("Lane");

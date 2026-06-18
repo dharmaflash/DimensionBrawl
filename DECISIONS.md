@@ -190,6 +190,14 @@ Reason: The first loop needs the player EN ladder, projectile read, and `SummonS
 
 Impact: The first boss/proxy may fire projectiles and expose simple pressure windows. Boss skills, adds, or summon-like calls should be authored later through explicit pattern/module data, not hidden in the first EN/summon implementation.
 
+## 2026-06-19: Boss Pressure Mirrors Player Risk Through Position And Cost
+
+Decision: The fixed-rear boss-barrage slice should let the boss participate in the same risk/reward grammar as the player: moving closer to the contested frontline increases boss cost gain and enables stronger costed pressure, while staying back is safer but slower. This is implemented as separate cost, position, and action owners instead of a broad boss AI manager.
+
+Reason: The new product direction needs the boss exchange to foreshadow future PvP-like pressure without turning V1 into a full symmetric summon system. Keeping boss cost fill, boss proxy position, and costed pattern selection separate preserves readability and allows later boss/presentation swaps.
+
+Impact: `BossPressureCostLadder` owns boss cost, `BossPressurePositionController` owns only the bound boss proxy's lane position, and `BossPressureActionDirector` spends cost on authored pressure slots. Future boss skills, normal fire, summon-like calls, and PvP conversions should extend this module split rather than hiding behavior inside barrage, HUD, or encounter owners.
+
 ## 2026-06-16: First Boss Candidate Prefers Humanoid Barrage Caster
 
 Decision: The first boss/proxy presentation candidate should prefer a promoted humanoid caster, commander, or summon-caller style prefab over a dragon-scale body. Existing `SummonCallerElite`, `FinalStandCommanderElite`, and `AuraCaptainElite` role visuals are the near-term boss-presentation candidates; dragons remain later candidates for a large chapter boss, set-piece boss, or high-cost summon.

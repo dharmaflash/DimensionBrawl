@@ -372,6 +372,8 @@ namespace DimensionBrawl.Editor
                 RequireComponent<BossPressureActionDirector>(bossProxy, "boss pressure action director");
             BossSummonPressureAction bossSummonPressureAction =
                 RequireComponent<BossSummonPressureAction>(bossProxy, "boss summon pressure action");
+            BossPressurePositionController bossPressurePosition =
+                RequireComponent<BossPressurePositionController>(bossProxy, "boss pressure position controller");
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossProxy, "boss proxy health");
             ValidateBossProxyVisual(bossProxy);
             GameObject closeThreat = RequireRoot(scene, CloseThreatRootName);
@@ -488,6 +490,7 @@ namespace DimensionBrawl.Editor
                 bossPressureCost,
                 bossPressureActionDirector,
                 bossSummonPressureAction,
+                bossPressurePosition,
                 laneSpace,
                 bossProxy.transform,
                 emitter,
@@ -1496,9 +1499,25 @@ namespace DimensionBrawl.Editor
             });
             SetFloat(bossPressureActionDirector, "globalRecoverySeconds", 0.35f);
             SetBool(bossPressureActionDirector, "actionsEnabled", true);
+
+            BossPressurePositionController bossPressurePosition =
+                EnsureComponent<BossPressurePositionController>(bossProxy);
+            bossPressurePosition.ConfigureReferences(
+                laneSpace,
+                bossPressureCost,
+                bossPressureActionDirector,
+                bossProxy.transform);
+            SetObjectReference(bossPressurePosition, "movedTransform", bossProxy.transform);
+            SetFloat(bossPressurePosition, "restRisk01", 0.08f);
+            SetFloat(bossPressurePosition, "maxCommitRisk01", 0.62f);
+            SetFloat(bossPressurePosition, "advanceRiskPerSecond", 0.25f);
+            SetFloat(bossPressurePosition, "retreatRiskPerSecond", 0.42f);
+            SetBool(bossPressurePosition, "returnToRestWhenActionsDisabled", true);
+            SetBool(bossPressurePosition, "movementEnabled", true);
             EditorUtility.SetDirty(bossPressureCost);
             EditorUtility.SetDirty(bossSummonPressureAction);
             EditorUtility.SetDirty(bossPressureActionDirector);
+            EditorUtility.SetDirty(bossPressurePosition);
 
             CreateBossProxyVisual(bossProxy.transform);
             ConfigureBossProxyVisualCueDriver(bossProxy, emitter);
@@ -2860,6 +2879,7 @@ namespace DimensionBrawl.Editor
             BossPressureCostLadder bossPressureCost,
             BossPressureActionDirector bossPressureActionDirector,
             BossSummonPressureAction bossSummonPressureAction,
+            BossPressurePositionController bossPressurePosition,
             SummonLaneSpace laneSpace,
             Transform bossTransform,
             BossBarrageEmitter bossBarrageEmitter,
@@ -2869,6 +2889,17 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(bossPressureCost, "trackedBoss", bossTransform);
             ValidateFloat(bossPressureCost, "baseCostPerSecond", 18f);
             ValidateFloat(bossPressureCost, "fallbackBossForwardRisk01", 0.25f);
+
+            ValidateObjectReference(bossPressurePosition, "laneSpace", laneSpace);
+            ValidateObjectReference(bossPressurePosition, "costLadder", bossPressureCost);
+            ValidateObjectReference(bossPressurePosition, "actionDirector", bossPressureActionDirector);
+            ValidateObjectReference(bossPressurePosition, "movedTransform", bossTransform);
+            ValidateFloat(bossPressurePosition, "restRisk01", 0.08f);
+            ValidateFloat(bossPressurePosition, "maxCommitRisk01", 0.62f);
+            ValidateFloat(bossPressurePosition, "advanceRiskPerSecond", 0.25f);
+            ValidateFloat(bossPressurePosition, "retreatRiskPerSecond", 0.42f);
+            ValidateBool(bossPressurePosition, "returnToRestWhenActionsDisabled", true);
+            ValidateBool(bossPressurePosition, "movementEnabled", true);
 
             ValidateObjectReference(bossSummonPressureAction, "laneSpace", laneSpace);
             ValidateObjectReference(bossSummonPressureAction, "trackedPlayer", playerTransform);

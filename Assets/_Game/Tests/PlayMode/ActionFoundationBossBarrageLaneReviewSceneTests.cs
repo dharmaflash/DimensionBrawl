@@ -153,6 +153,8 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
             BossSummonPressureAction bossSummonPressureAction =
                 RequireComponent<BossSummonPressureAction>(bossRoot, "boss summon pressure action");
+            BossPressurePositionController bossPressurePosition =
+                RequireComponent<BossPressurePositionController>(bossRoot, "boss pressure position controller");
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
@@ -192,6 +194,20 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(laneSpace, telegraphPresenter.LaneSpace);
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(bossPressureCost, "laneSpace"));
             Assert.AreSame(bossRoot.transform, GetObjectReference<Transform>(bossPressureCost, "trackedBoss"));
+            Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(bossPressurePosition, "laneSpace"));
+            Assert.AreSame(
+                bossPressureCost,
+                GetObjectReference<BossPressureCostLadder>(bossPressurePosition, "costLadder"));
+            Assert.AreSame(
+                bossPressureActionDirector,
+                GetObjectReference<BossPressureActionDirector>(bossPressurePosition, "actionDirector"));
+            Assert.AreSame(bossRoot.transform, GetObjectReference<Transform>(bossPressurePosition, "movedTransform"));
+            Assert.AreEqual(0.08f, GetFloat(bossPressurePosition, "restRisk01"), 0.001f);
+            Assert.AreEqual(0.62f, GetFloat(bossPressurePosition, "maxCommitRisk01"), 0.001f);
+            Assert.AreEqual(0.25f, GetFloat(bossPressurePosition, "advanceRiskPerSecond"), 0.001f);
+            Assert.AreEqual(0.42f, GetFloat(bossPressurePosition, "retreatRiskPerSecond"), 0.001f);
+            Assert.IsTrue(GetBool(bossPressurePosition, "returnToRestWhenActionsDisabled"));
+            Assert.IsTrue(GetBool(bossPressurePosition, "movementEnabled"));
             Assert.AreSame(
                 bossPressureCost,
                 GetObjectReference<BossPressureCostLadder>(bossPressureActionDirector, "costLadder"));
