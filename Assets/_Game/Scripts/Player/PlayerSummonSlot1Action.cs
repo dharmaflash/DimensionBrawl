@@ -234,6 +234,17 @@ namespace DimensionBrawl.Player
             ApplySummonActionProfile();
         }
 
+        public bool TryGetTierReadout(int tier, out SummonSlotActionProfile.SummonTierReadout readout)
+        {
+            if (summonActionProfile == null)
+            {
+                readout = default;
+                return false;
+            }
+
+            return summonActionProfile.TryGetTierReadout(tier, out readout);
+        }
+
         public void QueueSummonSlot1()
         {
             queued = true;

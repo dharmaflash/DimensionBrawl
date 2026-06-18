@@ -619,6 +619,27 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(summonSlot1Action.HasSummonActionProfile);
             Assert.AreEqual("SummonSlot1.ShieldBreaker", summonSlot1Profile.ActionId);
             Assert.AreEqual(3, summonSlot1Profile.TierCount);
+            AssertSummonSlotReadout(
+                summonSlot1Profile,
+                1,
+                "LV1 Guard Entry",
+                "Emergency pressure screen for urgent boss fire after close-threat relief.",
+                "Spend early when the pocket needs an immediate boss-fire block.",
+                "Small ShieldBreaker entry, two-shot screen, one assist bolt.");
+            AssertSummonSlotReadout(
+                summonSlot1Profile,
+                2,
+                "LV2 Frontline Push",
+                "Mid-tier exchange that starts converting a successful block into forward damage.",
+                "Hold forward-risk long enough for LV2 when the barrage is readable.",
+                "Wider screen, four-shot block budget, two assist bolts.");
+            AssertSummonSlotReadout(
+                summonSlot1Profile,
+                3,
+                "LV3 Break Window",
+                "High-risk payoff that should visibly win the pressure exchange and open the Skill1 follow-up.",
+                "Save for hard boss pressure when retreat alone will not stabilize the pocket.",
+                "Large ShieldBreaker screen, seven-shot block budget, three assist bolts.");
             Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(reviewHud, "bossBarrageEmitter"));
             Assert.AreSame(
                 bossPressureCost,
@@ -2449,6 +2470,21 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(expectedUsePlayerForwardRiskGate, slot.UsePlayerForwardRiskGate);
             Assert.AreEqual(expectedMinimumPlayerForwardRisk01, slot.MinimumPlayerForwardRisk01, 0.001f);
             Assert.AreEqual(expectedMaximumPlayerForwardRisk01, slot.MaximumPlayerForwardRisk01, 0.001f);
+        }
+
+        private static void AssertSummonSlotReadout(
+            SummonSlotActionProfile profile,
+            int tier,
+            string expectedTierLabel,
+            string expectedStageRole,
+            string expectedPlayerUse,
+            string expectedSummonRead)
+        {
+            Assert.IsTrue(profile.TryGetTierReadout(tier, out SummonSlotActionProfile.SummonTierReadout readout));
+            Assert.AreEqual(expectedTierLabel, readout.TierLabel);
+            Assert.AreEqual(expectedStageRole, readout.StageRole);
+            Assert.AreEqual(expectedPlayerUse, readout.PlayerUse);
+            Assert.AreEqual(expectedSummonRead, readout.SummonRead);
         }
 
         private static BossBarrageProjectile RequireActiveBossProjectile()

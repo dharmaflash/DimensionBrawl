@@ -80,3 +80,16 @@ MonoBehaviour:
     CounterLifetimeSeconds: 2
     CounterRadius: 0.3
     CounterTargetHeight: 1.45
+  tierReadouts:
+  - TierLabel: LV1 Guard Entry
+    StageRole: Emergency pressure screen for urgent boss fire after close-threat relief.
+    PlayerUse: Spend early when the pocket needs an immediate boss-fire block.
+    SummonRead: Small ShieldBreaker entry, two-shot screen, one assist bolt.
+  - TierLabel: LV2 Frontline Push
+    StageRole: Mid-tier exchange that starts converting a successful block into forward damage.
+    PlayerUse: Hold forward-risk long enough for LV2 when the barrage is readable.
+    SummonRead: Wider screen, four-shot block budget, two assist bolts.
+  - TierLabel: LV3 Break Window
+    StageRole: High-risk payoff that should visibly win the pressure exchange and open the Skill1 follow-up.
+    PlayerUse: Save for hard boss pressure when retreat alone will not stabilize the pocket.
+    SummonRead: Large ShieldBreaker screen, seven-shot block budget, three assist bolts.

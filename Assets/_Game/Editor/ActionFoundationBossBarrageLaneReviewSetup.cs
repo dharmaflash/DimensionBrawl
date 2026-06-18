@@ -3011,10 +3011,32 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(summonSlot1Action, "cueRoot", actionCueRoot.transform);
             ValidateObjectReference(summonSlot1Action, "summonActorRoot", summonActorRoot.transform);
             ValidateEnum(summonSlot1Action, "sourceTeam", (int)DamageTeam.AllySummon);
+            SummonSlotActionProfile summonSlot1Profile = LoadAsset<SummonSlotActionProfile>(SummonSlot1ActionProfilePath);
             ValidateObjectReference(
                 summonSlot1Action,
                 "summonActionProfile",
-                LoadAsset<SummonSlotActionProfile>(SummonSlot1ActionProfilePath));
+                summonSlot1Profile);
+            ValidateSummonSlotReadout(
+                summonSlot1Profile,
+                1,
+                "LV1 Guard Entry",
+                "Emergency pressure screen for urgent boss fire after close-threat relief.",
+                "Spend early when the pocket needs an immediate boss-fire block.",
+                "Small ShieldBreaker entry, two-shot screen, one assist bolt.");
+            ValidateSummonSlotReadout(
+                summonSlot1Profile,
+                2,
+                "LV2 Frontline Push",
+                "Mid-tier exchange that starts converting a successful block into forward damage.",
+                "Hold forward-risk long enough for LV2 when the barrage is readable.",
+                "Wider screen, four-shot block budget, two assist bolts.");
+            ValidateSummonSlotReadout(
+                summonSlot1Profile,
+                3,
+                "LV3 Break Window",
+                "High-risk payoff that should visibly win the pressure exchange and open the Skill1 follow-up.",
+                "Save for hard boss pressure when retreat alone will not stabilize the pocket.",
+                "Large ShieldBreaker screen, seven-shot block budget, three assist bolts.");
 
             SummonFrontlineProxy summonActorPrefab = LoadPrefabComponent<SummonFrontlineProxy>(SummonSlot1ActorPrefabPath);
             SummonPressureScreen pressureScreen = LoadPrefabComponent<SummonPressureScreen>(SummonSlot1ActorPrefabPath);
@@ -3263,6 +3285,30 @@ namespace DimensionBrawl.Editor
             {
                 throw new InvalidOperationException($"Boss pressure action slot {index} has the wrong player risk gate range.");
             }
+        }
+
+        private static void ValidateSummonSlotReadout(
+            SummonSlotActionProfile profile,
+            int tier,
+            string expectedTierLabel,
+            string expectedStageRole,
+            string expectedPlayerUse,
+            string expectedSummonRead)
+        {
+            if (profile == null)
+            {
+                throw new InvalidOperationException("SummonSlot1 action profile is missing.");
+            }
+
+            if (!profile.TryGetTierReadout(tier, out SummonSlotActionProfile.SummonTierReadout readout))
+            {
+                throw new InvalidOperationException($"SummonSlot1 profile is missing tier {tier} readout.");
+            }
+
+            ValidateString(readout.TierLabel, expectedTierLabel, $"SummonSlot1 tier {tier} has the wrong label.");
+            ValidateString(readout.StageRole, expectedStageRole, $"SummonSlot1 tier {tier} has the wrong stage role.");
+            ValidateString(readout.PlayerUse, expectedPlayerUse, $"SummonSlot1 tier {tier} has the wrong player-use note.");
+            ValidateString(readout.SummonRead, expectedSummonRead, $"SummonSlot1 tier {tier} has the wrong summon-read note.");
         }
 
         private static void ValidateCloseThreat(

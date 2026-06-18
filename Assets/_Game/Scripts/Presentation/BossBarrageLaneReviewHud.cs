@@ -249,7 +249,7 @@ namespace DimensionBrawl.Presentation
                 ? $"Skill1 LV{energyLadder.AvailableTier}"
                 : "Skill1 not ready";
             string summon = summonSlot1Action != null && energyLadder != null && energyLadder.CanSpend
-                ? $"SummonSlot1 LV{energyLadder.AvailableTier}"
+                ? $"SummonSlot1 {ResolveSummonTierLabel(energyLadder.AvailableTier)}"
                 : "SummonSlot1 not ready";
             return $"{skill}   {summon}";
         }
@@ -285,13 +285,24 @@ namespace DimensionBrawl.Presentation
             }
 
             string tier = summonSlot1Action.LastSpentTier > 0
-                ? $"LV{summonSlot1Action.LastSpentTier}"
+                ? ResolveSummonTierLabel(summonSlot1Action.LastSpentTier)
                 : "LV-";
             return $"{skillShots}   Summon {tier} proxy {summonSlot1Action.ActiveSummonActorCount} "
                 + $"bolts {summonSlot1Action.ActiveProjectileCount} shield {summonSlot1Action.ActivePressureScreenCount} "
                 + $"blocks {summonSlot1Action.ActivePressureScreenRemainingIntercepts}"
                 + ResolveSummonBlockWindowLine()
                 + ResolveFollowupLine();
+        }
+
+        private string ResolveSummonTierLabel(int tier)
+        {
+            if (summonSlot1Action != null
+                && summonSlot1Action.TryGetTierReadout(tier, out SummonSlotActionProfile.SummonTierReadout readout))
+            {
+                return readout.TierLabel;
+            }
+
+            return $"LV{Mathf.Clamp(tier, 1, 3)}";
         }
 
         private string ResolveActionHintLine()
