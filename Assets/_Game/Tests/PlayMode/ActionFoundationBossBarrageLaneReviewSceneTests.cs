@@ -1990,6 +1990,7 @@ namespace DimensionBrawl.Tests
             SummonPressureScreen enemyPressureScreen = RequireActiveEnemyPressureScreen();
             SummonPressureScreenPresenter presenter = RequirePresenterForPressureScreen(enemyPressureScreen);
             int bossPressureInterceptCountBefore = bossSummonPressureAction.LastPressureScreenInterceptCount;
+            int bossPressureTotalInterceptCountBefore = bossSummonPressureAction.TotalPressureScreenInterceptCount;
             int presenterFlashCountBefore = presenter.InterceptFlashCount;
 
             FillEnergyToTier(energyLadder, 1);
@@ -2006,10 +2007,92 @@ namespace DimensionBrawl.Tests
                 bossSummonPressureAction.LastPressureScreenInterceptCount,
                 "Boss summon pressure HUD/test state should count intercepted player/summon lane projectiles.");
             Assert.AreEqual(
+                bossPressureTotalInterceptCountBefore + 1,
+                bossSummonPressureAction.TotalPressureScreenInterceptCount,
+                "Boss summon pressure should expose cumulative intercepts for pocket-state reads.");
+            Assert.AreEqual(2, bossSummonPressureAction.LastPressureScreenInterceptTier);
+            Assert.AreEqual(
                 presenterFlashCountBefore + 1,
                 presenter.InterceptFlashCount,
                 "Boss summon pressure screen should use the same visible intercept flash path as ally summon screens.");
             yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator PocketReadsBossSummonBlockAsFollowupFailure()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
+            SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
+            PlayerSummonSlot1Action summonSlot1Action =
+                RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            GameObject bossRoot = RequireRoot(BossRootName);
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            BossPressureActionDirector bossPressureActionDirector =
+                RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
+            BossSummonPressureAction bossSummonPressureAction =
+                RequireComponent<BossSummonPressureAction>(bossRoot, "boss summon pressure action");
+            CombatHealth closeThreatHealth =
+                RequireComponent<CombatHealth>(RequireRoot(CloseThreatRootName), "close threat health");
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+
+            Assert.AreSame(
+                bossSummonPressureAction,
+                bossPressureActionDirector.SummonPressureAction,
+                "Pocket review state should be able to read boss summon pressure through the authored boss pressure director.");
+
+            FillEnergyToTier(energyLadder, 1);
+            Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
+            closeThreatHealth.TryApplyDamage(new DamageInfo(
+                playerHealth,
+                DamageTeam.Player,
+                closeThreatHealth.MaxHealth + 10f,
+                closeThreatHealth.transform.position,
+                Vector3.forward,
+                0f));
+
+            yield return null;
+
+            SummonPressureScreen allyScreen = RequireActiveAllyPressureScreen();
+            Assert.IsTrue(emitter.BeginWindup());
+            Assert.Greater(emitter.FirePendingWave(), 0);
+            BossBarrageProjectile bossProjectile = RequireActiveBossProjectile();
+            Assert.IsTrue(allyScreen.TryIntercept(bossProjectile));
+            pocketOwner.Tick(0f);
+
+            Assert.IsTrue(pocketOwner.IsSummonFollowupWindowActive);
+            Assert.IsTrue(energyLadder.CanSpend);
+
+            int bossBlockCountBefore = bossSummonPressureAction.TotalPressureScreenInterceptCount;
+            Assert.IsTrue(
+                bossSummonPressureAction.TryReleasePressureSummon(2),
+                "The boss pressure summon actor should be directly releasable as the review's enemy-side guard answer.");
+            SummonPressureScreen enemyScreen = RequireActiveEnemyPressureScreen();
+            Assert.IsTrue(skill1Action.TryUseSkill1());
+            LaneActionProjectile followupProjectile = RequireActivePlayerSkillProjectile();
+            Assert.IsTrue(enemyScreen.TryIntercept(followupProjectile));
+            pocketOwner.Tick(0f);
+
+            Assert.AreEqual(
+                bossBlockCountBefore + 1,
+                bossSummonPressureAction.TotalPressureScreenInterceptCount);
+            Assert.IsTrue(pocketOwner.UsedSkill1DuringSummonFollowup);
+            Assert.IsTrue(
+                pocketOwner.BossBlockedSkill1Followup,
+                "A boss summon pressure screen blocking the follow-up shot should be a readable pocket state, not a silent generic miss.");
+            Assert.AreEqual(1, pocketOwner.BossPressureBlocksDuringSummonFollowup);
+            Assert.IsFalse(pocketOwner.Skill1FollowupHitConfirmed);
+            Assert.IsFalse(pocketOwner.IsCleared);
+            Assert.That(pocketOwner.ObjectiveCue, Does.Contain("Boss screen blocked"));
+
+            pocketOwner.Tick(pocketOwner.SummonFollowupWindowRemainingSeconds + 0.02f);
+            Assert.IsFalse(pocketOwner.IsSummonFollowupWindowActive);
+            Assert.IsTrue(pocketOwner.IsRunning);
+            Assert.IsFalse(
+                pocketOwner.IsCleared,
+                "A blocked follow-up Skill1 should force another summon-pressure answer instead of clearing the review pocket.");
         }
 
         private static GameObject RequireRoot(string rootName)

@@ -78,6 +78,7 @@ namespace DimensionBrawl.Combat
         public int LastSpentTier => lastSpentTier;
         public BossPressureActionKind LastActionKind => lastActionKind;
         public BossBarragePatternProfile LastQueuedPattern => lastQueuedPattern;
+        public BossSummonPressureAction SummonPressureAction => summonPressureAction;
         public float GlobalRecoveryRemainingSeconds => globalRecoveryTimer;
         public int ActionSlotCount => actionSlots != null ? actionSlots.Length : 0;
         public float CurrentPlayerForwardRisk01 => ResolvePlayerForwardRisk01();

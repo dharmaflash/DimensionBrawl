@@ -42,6 +42,8 @@ namespace DimensionBrawl.Combat
         private int totalReleaseCount;
         private int lastPressureScreenMaxIntercepts;
         private int lastPressureScreenInterceptCount;
+        private int lastPressureScreenInterceptTier;
+        private int totalPressureScreenInterceptCount;
         private Vector3 lastSummonActorPosition;
 
         public event Action<BossSummonPressureAction, int> PressureSummonReleased;
@@ -51,6 +53,8 @@ namespace DimensionBrawl.Combat
         public int TotalReleaseCount => totalReleaseCount;
         public int LastPressureScreenMaxIntercepts => lastPressureScreenMaxIntercepts;
         public int LastPressureScreenInterceptCount => lastPressureScreenInterceptCount;
+        public int LastPressureScreenInterceptTier => lastPressureScreenInterceptTier;
+        public int TotalPressureScreenInterceptCount => totalPressureScreenInterceptCount;
         public Vector3 LastSummonActorPosition => lastSummonActorPosition;
         public int ActiveSummonActorCount => CountActiveSummonActors();
         public int ActivePressureScreenCount => CountActivePressureScreens();
@@ -132,6 +136,7 @@ namespace DimensionBrawl.Combat
 
             lastPressureScreenMaxIntercepts = 0;
             lastPressureScreenInterceptCount = 0;
+            lastPressureScreenInterceptTier = 0;
             if (actor.PressureScreen != null)
             {
                 actor.PressureScreen.Intercepted -= HandlePressureScreenIntercepted;
@@ -191,6 +196,8 @@ namespace DimensionBrawl.Combat
             }
 
             lastPressureScreenInterceptCount++;
+            lastPressureScreenInterceptTier = actor.ActiveTier;
+            totalPressureScreenInterceptCount++;
             PressureSummonIntercepted?.Invoke(this, actor.ActiveTier);
         }
 
@@ -203,6 +210,8 @@ namespace DimensionBrawl.Combat
             }
 
             lastPressureScreenInterceptCount++;
+            lastPressureScreenInterceptTier = actor.ActiveTier;
+            totalPressureScreenInterceptCount++;
             PressureSummonIntercepted?.Invoke(this, actor.ActiveTier);
         }
 

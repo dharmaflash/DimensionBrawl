@@ -305,6 +305,11 @@ namespace DimensionBrawl.Presentation
                 return $"{followup} Skill1 hit {pocketReviewOwner.Skill1FollowupDamage:0}";
             }
 
+            if (pocketReviewOwner.BossBlockedSkill1Followup)
+            {
+                return $"{followup} boss shield blocked Skill1";
+            }
+
             return pocketReviewOwner.UsedSkill1DuringSummonFollowup
                 ? $"{followup} Skill1 fired"
                 : $"{followup} EN pulse";
