@@ -45,12 +45,19 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Range(0f, 1f)] private float diagonalThreshold = 0.35f;
         [SerializeField, Min(0f)] private float autoFireWindowSeconds = 0.38f;
         [SerializeField, Min(0f)] private float fireAimPoseLingerSeconds = 0.22f;
+        [SerializeField] private bool useNativeAutoShootLoop = true;
+        [SerializeField] private bool triggerAutoShootOncePerHold = true;
+        [SerializeField, Min(0f)] private float stationaryFirePoseHoldSeconds = 0.36f;
+        [SerializeField] private bool keepMovingLocomotionDuringFire = true;
+        [SerializeField, Min(0f)] private float locomotionTriggerHoldSeconds = 0.18f;
         [SerializeField, Min(0f)] private float dodgePoseSuppressSeconds = 0.42f;
 
         private float lastFireTime = -100f;
         private float aimPoseUntil;
         private float moveTriggerSuppressedUntil;
         private string lastLocomotionTrigger = string.Empty;
+        private float lastLocomotionTriggerTime = -100f;
+        private bool autoShootLoopTriggered;
         private readonly HashSet<string> cachedParameters = new HashSet<string>();
         private RuntimeAnimatorController cachedController;
 
@@ -129,6 +136,8 @@ namespace DimensionBrawl.Presentation
 
         private void Update()
         {
+            UpdateContinuousFireState();
+
             if (animator == null || movement == null || (combatModeController != null && !combatModeController.IsRangedMode))
             {
                 return;
@@ -175,13 +184,28 @@ namespace DimensionBrawl.Presentation
             }
 
             float now = Time.time;
-            string trigger = now - lastFireTime <= autoFireWindowSeconds ? autoShootTrigger : shootTrigger;
+            bool isAutoFire = now - lastFireTime <= autoFireWindowSeconds;
             lastFireTime = now;
-            aimPoseUntil = now + fireAimPoseLingerSeconds;
+            bool keepLocomotion = keepMovingLocomotionDuringFire && IsMovingForNativeLocomotion();
+            float poseHoldSeconds = keepLocomotion
+                ? fireAimPoseLingerSeconds
+                : Mathf.Max(fireAimPoseLingerSeconds, stationaryFirePoseHoldSeconds);
+            aimPoseUntil = now + poseHoldSeconds;
+            ApplyMovementParameters(!keepLocomotion);
+
+            if (keepLocomotion)
+            {
+                autoShootLoopTriggered = false;
+                moveTriggerSuppressedUntil = 0f;
+                ApplyNativeLocomotion(false);
+                return;
+            }
+
             moveTriggerSuppressedUntil = aimPoseUntil;
-            lastLocomotionTrigger = string.Empty;
-            ApplyMovementParameters(true);
-            Trigger(trigger);
+            if (TriggerStationaryFire(isAutoFire))
+            {
+                ResetLastLocomotionTrigger();
+            }
         }
 
         private void HandleAimModeChanged(bool isAiming)
@@ -199,7 +223,8 @@ namespace DimensionBrawl.Presentation
         {
             aimPoseUntil = 0f;
             moveTriggerSuppressedUntil = 0f;
-            lastLocomotionTrigger = string.Empty;
+            autoShootLoopTriggered = false;
+            ResetLastLocomotionTrigger();
             if (combatMode == PlayerCombatMode.Ranged)
             {
                 ApplyMovementParameters(true);
@@ -215,7 +240,8 @@ namespace DimensionBrawl.Presentation
             }
 
             moveTriggerSuppressedUntil = Time.time + dodgePoseSuppressSeconds;
-            lastLocomotionTrigger = string.Empty;
+            autoShootLoopTriggered = false;
+            ResetLastLocomotionTrigger();
             Trigger(dodgeTrigger);
         }
 
@@ -223,6 +249,55 @@ namespace DimensionBrawl.Presentation
 
         private bool IsAimPoseActive => (rangedAimController != null && rangedAimController.IsAiming)
             || Time.time < aimPoseUntil;
+
+        private bool IsMovingForNativeLocomotion()
+        {
+            if (movement == null)
+            {
+                return false;
+            }
+
+            Vector3 planarVelocity = Vector3.ProjectOnPlane(movement.PlanarVelocity, Vector3.up);
+            float threshold = movingSpeedThreshold * movingSpeedThreshold;
+            return planarVelocity.sqrMagnitude > threshold;
+        }
+
+        private void UpdateContinuousFireState()
+        {
+            if (rangedBasicAttackAction != null
+                && rangedBasicAttackAction.IsFireHeld)
+            {
+                return;
+            }
+
+            if (Time.time - lastFireTime > autoFireWindowSeconds)
+            {
+                autoShootLoopTriggered = false;
+            }
+        }
+
+        private bool TriggerStationaryFire(bool isAutoFire)
+        {
+            if (triggerAutoShootOncePerHold && isAutoFire)
+            {
+                if (!useNativeAutoShootLoop)
+                {
+                    return false;
+                }
+
+                if (autoShootLoopTriggered)
+                {
+                    return false;
+                }
+
+                autoShootLoopTriggered = Trigger(autoShootTrigger);
+                return autoShootLoopTriggered;
+            }
+
+            autoShootLoopTriggered = false;
+            string trigger = isAutoFire ? autoShootTrigger : shootTrigger;
+            return Trigger(trigger);
+        }
 
         private void ApplyNativeLocomotion(bool force)
         {
@@ -232,7 +307,16 @@ namespace DimensionBrawl.Presentation
             }
 
             string trigger = ResolveLocomotionTrigger();
-            if (!force && string.Equals(trigger, lastLocomotionTrigger, System.StringComparison.Ordinal))
+            bool triggerChanged = !string.Equals(trigger, lastLocomotionTrigger, System.StringComparison.Ordinal);
+            if (!force && !triggerChanged)
+            {
+                return;
+            }
+
+            if (!force
+                && triggerChanged
+                && !string.IsNullOrEmpty(lastLocomotionTrigger)
+                && Time.time - lastLocomotionTriggerTime < locomotionTriggerHoldSeconds)
             {
                 return;
             }
@@ -240,6 +324,7 @@ namespace DimensionBrawl.Presentation
             if (Trigger(trigger))
             {
                 lastLocomotionTrigger = trigger;
+                lastLocomotionTriggerTime = Time.time;
             }
         }
 
@@ -348,6 +433,12 @@ namespace DimensionBrawl.Presentation
             }
 
             return false;
+        }
+
+        private void ResetLastLocomotionTrigger()
+        {
+            lastLocomotionTrigger = string.Empty;
+            lastLocomotionTriggerTime = -100f;
         }
     }
 }

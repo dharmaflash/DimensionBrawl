@@ -40,6 +40,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private bool screenDragControlsAim = true;
         [SerializeField] private bool rightMouseDragControlsAim = true;
         [SerializeField] private bool leftMouseDragControlsAim;
+        [SerializeField] private bool fireDragControlsAim = true;
         [SerializeField, Range(0f, 1f)] private float lookAimDragDeadZone = 0.08f;
         [SerializeField, Min(8f)] private float lookAimDragRadius = 230f;
         [SerializeField, Min(8f)] private float lookAimKnobSize = 30f;
@@ -79,6 +80,7 @@ namespace DimensionBrawl.UI
         private Vector2 lookPointerStartGuiPoint;
         private Vector2 lookPointerCurrentGuiPoint;
         private Vector2 lookAimInput;
+        private Vector2 fireAimInput;
         private bool hudLookAimActive;
 
         public string MoveActionName => moveActionName;
@@ -541,6 +543,7 @@ namespace DimensionBrawl.UI
         private void UpdateFirePointer(Vector2 point)
         {
             firePointerCurrentGuiPoint = point;
+            fireAimInput = ResolveDragAimInput(firePointerStartGuiPoint, firePointerCurrentGuiPoint);
         }
 
         private void ClearFirePointerState()
@@ -551,6 +554,7 @@ namespace DimensionBrawl.UI
             firePointerTouchId = -1;
             firePointerStartGuiPoint = Vector2.zero;
             firePointerCurrentGuiPoint = Vector2.zero;
+            fireAimInput = Vector2.zero;
         }
 
         private void BeginLookPointer(Vector2 point, bool usesMouse, bool usesRightMouse, int touchId)
@@ -566,7 +570,7 @@ namespace DimensionBrawl.UI
         private void UpdateLookPointer(Vector2 point)
         {
             lookPointerCurrentGuiPoint = point;
-            lookAimInput = ResolveLookAimInput();
+            lookAimInput = ResolveDragAimInput(lookPointerStartGuiPoint, lookPointerCurrentGuiPoint);
         }
 
         private void ClearLookPointerState()
@@ -582,17 +586,21 @@ namespace DimensionBrawl.UI
 
         private void UpdateHudLookAim()
         {
+            bool shouldHoldFireAim = fireDragControlsAim
+                && firePointerHeld
+                && (combatModeController == null || combatModeController.IsRangedMode);
             bool shouldHoldLookAim = screenDragControlsAim && lookPointerHeld;
-            if (!shouldHoldLookAim && !hudLookAimActive)
+            bool shouldHoldAnyAim = shouldHoldFireAim || shouldHoldLookAim;
+            if (!shouldHoldAnyAim && !hudLookAimActive)
             {
                 return;
             }
 
-            Vector2 aimInput = shouldHoldLookAim ? lookAimInput : Vector2.zero;
+            Vector2 aimInput = ResolveHudAimInput(shouldHoldFireAim, shouldHoldLookAim);
             movement?.SetLookInput(aimInput);
             rangedBasicAttackAction?.SetAimInput(aimInput);
-            aimController?.SetAimHeld(shouldHoldLookAim);
-            hudLookAimActive = shouldHoldLookAim;
+            aimController?.SetAimHeld(shouldHoldAnyAim);
+            hudLookAimActive = shouldHoldAnyAim;
         }
 
         private void ReleaseHudLookAim()
@@ -608,12 +616,27 @@ namespace DimensionBrawl.UI
             hudLookAimActive = false;
         }
 
-        private Vector2 ResolveLookAimInput()
+        private Vector2 ResolveDragAimInput(Vector2 startGuiPoint, Vector2 currentGuiPoint)
         {
             float radius = Mathf.Max(1f, lookAimDragRadius * ResolveScale());
-            Vector2 delta = lookPointerCurrentGuiPoint - lookPointerStartGuiPoint;
+            Vector2 delta = currentGuiPoint - startGuiPoint;
             Vector2 input = Vector2.ClampMagnitude(new Vector2(delta.x, -delta.y) / radius, 1f);
             return input.sqrMagnitude >= lookAimDragDeadZone * lookAimDragDeadZone ? input : Vector2.zero;
+        }
+
+        private Vector2 ResolveHudAimInput(bool shouldHoldFireAim, bool shouldHoldLookAim)
+        {
+            if (shouldHoldFireAim && shouldHoldLookAim)
+            {
+                return fireAimInput.sqrMagnitude >= lookAimInput.sqrMagnitude ? fireAimInput : lookAimInput;
+            }
+
+            if (shouldHoldFireAim)
+            {
+                return fireAimInput;
+            }
+
+            return shouldHoldLookAim ? lookAimInput : Vector2.zero;
         }
 
         private bool IsLookAimStartPoint(Vector2 point)
@@ -683,7 +706,7 @@ namespace DimensionBrawl.UI
 
         private void DrawLookAimGuide()
         {
-            if (!lookPointerHeld || lookAimInput.sqrMagnitude <= 0.0001f)
+            if (!TryGetAimGuide(out Vector2 startGuiPoint, out Vector2 input))
             {
                 return;
             }
@@ -691,13 +714,36 @@ namespace DimensionBrawl.UI
             float resolvedScale = ResolveScale();
             float radius = lookAimDragRadius * resolvedScale;
             float knobSize = lookAimKnobSize * resolvedScale;
-            Vector2 knobCenter = lookPointerStartGuiPoint + new Vector2(lookAimInput.x, -lookAimInput.y) * radius;
+            Vector2 knobCenter = startGuiPoint + new Vector2(input.x, -input.y) * radius;
             Rect knobRect = new Rect(
                 knobCenter.x - knobSize * 0.5f,
                 knobCenter.y - knobSize * 0.5f,
                 knobSize,
                 knobSize);
             GUI.Box(knobRect, string.Empty, heldButtonStyle);
+        }
+
+        private bool TryGetAimGuide(out Vector2 startGuiPoint, out Vector2 input)
+        {
+            bool hasFireAim = fireDragControlsAim && firePointerHeld && fireAimInput.sqrMagnitude > 0.0001f;
+            bool hasLookAim = lookPointerHeld && lookAimInput.sqrMagnitude > 0.0001f;
+            if (hasFireAim && (!hasLookAim || fireAimInput.sqrMagnitude >= lookAimInput.sqrMagnitude))
+            {
+                startGuiPoint = firePointerStartGuiPoint;
+                input = fireAimInput;
+                return true;
+            }
+
+            if (hasLookAim)
+            {
+                startGuiPoint = lookPointerStartGuiPoint;
+                input = lookAimInput;
+                return true;
+            }
+
+            startGuiPoint = Vector2.zero;
+            input = Vector2.zero;
+            return false;
         }
 
         private void DrawFireAimReticle()

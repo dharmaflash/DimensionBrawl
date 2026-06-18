@@ -12,6 +12,7 @@ namespace DimensionBrawl.Player
         [SerializeField] private InputActionReference aimAction;
         [SerializeField] private bool holdToAim = true;
         [SerializeField] private bool useDeviceFallbackWhenActionMissing = true;
+        [SerializeField] private bool allowMouseAimFallback;
         [SerializeField] private Key keyboardTestKey = Key.Q;
 
         [Header("References")]
@@ -159,7 +160,9 @@ namespace DimensionBrawl.Player
             }
 
             return IsKeyboardHeld()
-                || (Mouse.current != null && Mouse.current.rightButton.isPressed)
+                || (allowMouseAimFallback
+                    && Mouse.current != null
+                    && Mouse.current.rightButton.isPressed)
                 || (Gamepad.current != null && Gamepad.current.leftTrigger.ReadValue() > 0.5f);
         }
 
@@ -184,7 +187,9 @@ namespace DimensionBrawl.Player
             }
 
             return IsKeyboardPressed()
-                || (Mouse.current != null && Mouse.current.rightButton.wasPressedThisFrame)
+                || (allowMouseAimFallback
+                    && Mouse.current != null
+                    && Mouse.current.rightButton.wasPressedThisFrame)
                 || (Gamepad.current != null && Gamepad.current.leftTrigger.wasPressedThisFrame);
         }
 

@@ -197,3 +197,11 @@ Decision: The first boss/proxy presentation candidate should prefer a promoted h
 Reason: The current fixed-rear lane camera needs readable windup, release, hit, and summon-like command animations at a stable screen size. A humanoid boss is easier to frame, retarget, and animate for repeated projectile exchanges, while a dragon can consume camera space and animation budget before the core boss-barrage/summon loop is proven.
 
 Impact: Boss candidate promotion should check prefab ownership, animation controller coverage, projectile-origin readability, VFX cue hooks, and visual-only separation before adding boss phases. Do not force the first boss into the dragon asset just because the dragon pack exists.
+
+## 2026-06-18: Ranged Fire Uses One Cross-Platform Aim Contract
+
+Decision: Player ranged local-defense fire should use one cross-platform `Fire` plus `Look` / `TargetBias` contract instead of a PC-only left-click fire plus right-click aim split. In the review scene, `Fire` comes from the HUD fire button, `F`, gamepad trigger/button, or bound Input Actions; non-button screen drag and held-fire drag both feed the same aim-bias input.
+
+Reason: The game is mobile-first and will later support guns, magic, and other projectile verbs. Requiring simultaneous left and right mouse buttons during PC review does not match the mobile control shape and risks splitting tuning across platform-only paths.
+
+Impact: Raw mouse fallbacks for ranged fire/aim are disabled by serialized fields unless a reviewed scene explicitly opts in. Basic fire remains input-led with weak aim assist only; future skills or magic shots should reuse the same action names instead of adding separate PC/mobile code paths.

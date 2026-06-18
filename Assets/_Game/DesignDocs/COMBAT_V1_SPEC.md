@@ -59,7 +59,7 @@ Use these action names as the shared vocabulary across PC, gamepad, and mobile H
 | Action | PC / Keyboard Mouse | Gamepad | Mobile HUD | V1 implementation |
 |---|---|---|---|---|
 | `Move` | WASD / left stick equivalent | Left stick | Left joystick | Required |
-| `Look` / `TargetBias` | Mouse / camera stick equivalent | Right stick | Drag on non-button screen space or auto-bias | Aim/target bias only; first slice camera stays fixed rear and `Fire` remains the trigger |
+| `Look` / `TargetBias` | Mouse drag / camera stick equivalent | Right stick | Drag on non-button screen space, or drag while holding `Fire` | Aim/target bias only; first slice camera stays fixed rear and `Fire` remains the trigger |
 | `BasicDefenseAttack` | Left click or attack key | Face button | Large attack button | Required |
 | `Dodge` | Shift / space / dodge key | Face button | Dodge button | Required |
 | `Skill1` | Key/button | Face/shoulder button | Skill button | Required first tiered skill action |
@@ -73,9 +73,9 @@ Existing Unity sample actions may be renamed or wrapped later, but gameplay code
 
 Current review-scene control split:
 
-- Mobile: touch the HUD buttons for movement/fire/dodge/skill/summon, and drag non-button screen space for `Look` / `TargetBias`.
-- PC test: use WASD for movement, left mouse or `F` for `BasicDefenseAttack` / fire, and right-mouse drag for `Look` / `TargetBias`.
-- The fire button is a trigger, not the reticle joystick. Holding fire may request the ranged aim/zoom camera, but reticle movement should come from the shared `Look` / `TargetBias` input.
+- Mobile: touch the HUD buttons for movement/fire/dodge/skill/summon, drag non-button screen space for `Look` / `TargetBias`, or hold and drag the `Fire` button for a compact aim-fire gesture.
+- PC test: use WASD for movement, `F` or the on-screen `Fire` button for `BasicDefenseAttack` / fire, and left-mouse drag on non-button screen space for `Look` / `TargetBias`. The review scene must not require simultaneous left-click fire plus right-click aim.
+- The fire action is the trigger. Holding fire may request the ranged aim/zoom camera, and dragging the held fire button may provide the same `Look` / `TargetBias` value as screen drag. Do not make player basic fire a hard lock-on route.
 - Snowbreak data in `C:\Ark` is currently strongest for weapon/model/material reference, not direct camera tuning. Use it as 3D shooter presentation context while keeping camera/input tuning on the shared action contracts and cross-game camera transition guardrails.
 - Ranged aim camera composition is scene-authored Inspector tuning on `ActionCameraController > Aim Mode`. Editor setup may provide structural camera wiring, but it must not force exact aim offset/FOV values after the scene is authored.
 - Editor setup/validation for review scenes may verify required references, promoted asset ownership, prefab links, team ownership, animation trigger existence, and required scene anchors.

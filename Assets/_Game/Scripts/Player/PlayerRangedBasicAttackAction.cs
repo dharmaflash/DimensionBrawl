@@ -15,6 +15,7 @@ namespace DimensionBrawl.Player
         [SerializeField] private bool fireContinuouslyWhileHeld = true;
         [SerializeField] private bool holdFireActivatesAim = true;
         [SerializeField] private bool useDeviceFallbackWhenActionMissing = true;
+        [SerializeField] private bool allowMouseFireFallback;
         [SerializeField] private Key keyboardTestKey = Key.F;
 
         [Header("References")]
@@ -45,6 +46,8 @@ namespace DimensionBrawl.Player
         [SerializeField, Min(0f)] private float targetHeight = 1.0f;
         [SerializeField, Min(0f)] private float facingHoldSeconds = 0.16f;
         [SerializeField] private bool snapFacingOnFire = true;
+        [SerializeField] private bool suppressFacingOnFireWhileMoving = true;
+        [SerializeField, Min(0f)] private float movingFacingSuppressSpeed = 0.08f;
         [SerializeField] private bool requireAimToFire;
         [SerializeField] private string fireTrigger;
 
@@ -163,7 +166,7 @@ namespace DimensionBrawl.Player
                 projectileLifetimeSeconds,
                 projectileRadius);
 
-            movement?.RequestFacingDirection(direction, facingHoldSeconds, snapFacingOnFire);
+            RequestFacingOnFire(direction);
             TriggerAnimator(fireTrigger);
             RequestCameraFireCue();
             nextFireTime = Time.time + fireIntervalSeconds;
@@ -438,6 +441,33 @@ namespace DimensionBrawl.Player
             return ResolveFireTravelDirection(assistedDirection, rawAimDirection);
         }
 
+        private void RequestFacingOnFire(Vector3 direction)
+        {
+            if (movement == null)
+            {
+                return;
+            }
+
+            if (suppressFacingOnFireWhileMoving && IsMovingForFacingSuppression())
+            {
+                return;
+            }
+
+            movement.RequestFacingDirection(direction, facingHoldSeconds, snapFacingOnFire);
+        }
+
+        private bool IsMovingForFacingSuppression()
+        {
+            if (movement == null)
+            {
+                return false;
+            }
+
+            float threshold = movingFacingSuppressSpeed * movingFacingSuppressSpeed;
+            Vector3 planarVelocity = Vector3.ProjectOnPlane(movement.PlanarVelocity, Vector3.up);
+            return planarVelocity.sqrMagnitude > threshold;
+        }
+
         private LaneActionProjectile GetProjectile()
         {
             for (int i = 0; i < projectiles.Count; i++)
@@ -546,7 +576,9 @@ namespace DimensionBrawl.Player
 
             return !suppressDeviceFallbackThisFrame
                 && (IsKeyboardPressed()
-                || (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
+                || (allowMouseFireFallback
+                    && Mouse.current != null
+                    && Mouse.current.leftButton.wasPressedThisFrame)
                 || (Gamepad.current != null
                     && (Gamepad.current.rightTrigger.wasPressedThisFrame
                         || Gamepad.current.buttonWest.wasPressedThisFrame)));
@@ -567,7 +599,9 @@ namespace DimensionBrawl.Player
 
             return !suppressDeviceFallbackThisFrame
                 && (IsKeyboardHeld()
-                || (Mouse.current != null && Mouse.current.leftButton.isPressed)
+                || (allowMouseFireFallback
+                    && Mouse.current != null
+                    && Mouse.current.leftButton.isPressed)
                 || (Gamepad.current != null && Gamepad.current.rightTrigger.ReadValue() > 0.5f));
         }
 

@@ -1913,6 +1913,11 @@ namespace DimensionBrawl.Editor
             SetString(nativeBridge, "walkBackLeftTrigger", "WALK BL");
             SetString(nativeBridge, "walkBackRightTrigger", "WALK BR");
             SetString(nativeBridge, "dodgeTrigger", "EVADE");
+            SetBool(nativeBridge, "useNativeAutoShootLoop", false);
+            SetBool(nativeBridge, "triggerAutoShootOncePerHold", true);
+            SetFloat(nativeBridge, "stationaryFirePoseHoldSeconds", 0.36f);
+            SetBool(nativeBridge, "keepMovingLocomotionDuringFire", true);
+            SetFloat(nativeBridge, "locomotionTriggerHoldSeconds", 0.18f);
             EditorUtility.SetDirty(nativeBridge);
         }
 
@@ -2003,6 +2008,11 @@ namespace DimensionBrawl.Editor
             ValidateString(nativeBridge, "walkBackLeftTrigger", "WALK BL");
             ValidateString(nativeBridge, "walkBackRightTrigger", "WALK BR");
             ValidateString(nativeBridge, "dodgeTrigger", "EVADE");
+            ValidateBool(nativeBridge, "useNativeAutoShootLoop", false);
+            ValidateBool(nativeBridge, "triggerAutoShootOncePerHold", true);
+            ValidateFloat(nativeBridge, "stationaryFirePoseHoldSeconds", 0.36f);
+            ValidateBool(nativeBridge, "keepMovingLocomotionDuringFire", true);
+            ValidateFloat(nativeBridge, "locomotionTriggerHoldSeconds", 0.18f);
         }
 
         private static BossBarragePocketReviewOwner CreatePocketOwner(
@@ -2125,8 +2135,9 @@ namespace DimensionBrawl.Editor
                 skill1Action,
                 summonSlot1Action);
             SetBool(mobileHud, "screenDragControlsAim", true);
-            SetBool(mobileHud, "rightMouseDragControlsAim", true);
-            SetBool(mobileHud, "leftMouseDragControlsAim", false);
+            SetBool(mobileHud, "rightMouseDragControlsAim", false);
+            SetBool(mobileHud, "leftMouseDragControlsAim", true);
+            SetBool(mobileHud, "fireDragControlsAim", true);
             // Touch/reticle composition is review-scene HUD tuning. Keep it Inspector-authored.
             EditorUtility.SetDirty(hud);
             EditorUtility.SetDirty(mobileHud);
@@ -2233,6 +2244,7 @@ namespace DimensionBrawl.Editor
             SetBool(aimController, "holdToAim", true);
             // Review-only PC fallback. Production scenes should bind explicit Input Actions instead.
             SetBool(aimController, "useDeviceFallbackWhenActionMissing", true);
+            SetBool(aimController, "allowMouseAimFallback", false);
             SetString(aimController, "aimingParameter", string.Empty);
         }
 
@@ -2273,6 +2285,10 @@ namespace DimensionBrawl.Editor
             SetObjectReference(rangedBasicAttackAction, "fireOrigin", fireOrigin);
             SetEnum(rangedBasicAttackAction, "sourceTeam", (int)DamageTeam.Player);
             SetInt(rangedBasicAttackAction, "prewarmCount", 8);
+            SetBool(rangedBasicAttackAction, "allowMouseFireFallback", false);
+            SetBool(rangedBasicAttackAction, "snapFacingOnFire", false);
+            SetBool(rangedBasicAttackAction, "suppressFacingOnFireWhileMoving", true);
+            SetFloat(rangedBasicAttackAction, "movingFacingSuppressSpeed", 0.08f);
             SetString(rangedBasicAttackAction, "fireTrigger", string.Empty);
             // Damage, shot cadence, aim assist, muzzle framing, and fire camera feedback are authored tuning.
             EditorUtility.SetDirty(rangedBasicAttackAction);
@@ -2331,6 +2347,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(aimController, "cameraController", cameraController);
             ValidateObjectReference(aimController, "animator", rangedAnimator);
             ValidateBool(aimController, "holdToAim", true);
+            ValidateBool(aimController, "allowMouseAimFallback", false);
             ValidateString(aimController, "aimingParameter", string.Empty);
         }
 
@@ -2361,6 +2378,10 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(rangedBasicAttackAction, "fireOrigin", fireOrigin);
             ValidateEnum(rangedBasicAttackAction, "sourceTeam", (int)DamageTeam.Player);
             ValidateInt(rangedBasicAttackAction, "prewarmCount", 8);
+            ValidateBool(rangedBasicAttackAction, "allowMouseFireFallback", false);
+            ValidateBool(rangedBasicAttackAction, "snapFacingOnFire", false);
+            ValidateBool(rangedBasicAttackAction, "suppressFacingOnFireWhileMoving", true);
+            ValidateFloat(rangedBasicAttackAction, "movingFacingSuppressSpeed", 0.08f);
             ValidateString(rangedBasicAttackAction, "fireTrigger", string.Empty);
         }
 
@@ -2888,6 +2909,10 @@ namespace DimensionBrawl.Editor
             ValidateString(hud, "summonSlot1ActionName", "SummonSlot1");
             ValidateString(hud, "rangedAimActionName", "RangedAim");
             ValidateString(hud, "weaponSwapActionName", "WeaponSwap");
+            ValidateBool(hud, "screenDragControlsAim", true);
+            ValidateBool(hud, "rightMouseDragControlsAim", false);
+            ValidateBool(hud, "leftMouseDragControlsAim", true);
+            ValidateBool(hud, "fireDragControlsAim", true);
         }
 
         private static void ConfigureArenaInfluenceTargets(Scene scene, Transform player, params Transform[] influenceTargets)
