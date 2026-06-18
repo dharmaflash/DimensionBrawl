@@ -26,6 +26,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private BossPressureActionDirector bossPressureActionDirector;
         [SerializeField] private BossSummonPressureAction bossSummonPressureAction;
         [SerializeField] private BossBarragePocketReviewOwner pocketReviewOwner;
+        [SerializeField] private BossSummonDuelReviewOwner duelReviewOwner;
 
         [Header("Display")]
         [SerializeField] private bool showHud = true;
@@ -74,6 +75,7 @@ namespace DimensionBrawl.Presentation
             bossPressureActionDirector = newBossPressureActionDirector;
             bossSummonPressureAction = newBossSummonPressureAction;
             pocketReviewOwner = newPocketReviewOwner;
+            duelReviewOwner = null;
         }
 
         private void OnGUI()
@@ -104,6 +106,12 @@ namespace DimensionBrawl.Presentation
             GUILayout.Label(ResolveActionLine(), labelStyle);
             GUILayout.Label(ResolveActionHintLine(), labelStyle);
             GUILayout.Label(ResolveSummonExchangeLine(), labelStyle);
+            string duelLine = ResolveDuelProgressLine();
+            if (!string.IsNullOrEmpty(duelLine))
+            {
+                GUILayout.Label(duelLine, labelStyle);
+            }
+
             GUILayout.Label(ResolveObjectiveLine(), labelStyle);
             GUILayout.EndArea();
             GUI.matrix = previousMatrix;
@@ -126,6 +134,11 @@ namespace DimensionBrawl.Presentation
 
         private string ResolvePhaseLine()
         {
+            if (duelReviewOwner != null)
+            {
+                return $"Phase Duel {duelReviewOwner.CurrentPhase}";
+            }
+
             if (pocketReviewOwner == null)
             {
                 return "Phase -";
@@ -294,6 +307,11 @@ namespace DimensionBrawl.Presentation
                 + ResolveFollowupLine();
         }
 
+        private string ResolveDuelProgressLine()
+        {
+            return duelReviewOwner != null ? duelReviewOwner.ProgressLine : string.Empty;
+        }
+
         private string ResolveSummonTierLabel(int tier)
         {
             if (summonSlot1Action != null
@@ -394,6 +412,16 @@ namespace DimensionBrawl.Presentation
 
         private string ResolveObjectiveLine()
         {
+            if (duelReviewOwner != null)
+            {
+                string duelState = duelReviewOwner.IsCleared
+                    ? "CLEARED"
+                    : duelReviewOwner.IsFailed
+                        ? "FAILED"
+                        : "RUNNING";
+                return $"{duelState}: {duelReviewOwner.ObjectiveCue}";
+            }
+
             if (pocketReviewOwner == null)
             {
                 return "Objective -";

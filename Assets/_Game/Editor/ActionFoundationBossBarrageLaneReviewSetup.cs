@@ -20,6 +20,7 @@ namespace DimensionBrawl.Editor
     public static class ActionFoundationBossBarrageLaneReviewSetup
     {
         public const string ReviewScenePath = "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity";
+        public const string DuelReviewScenePath = "Assets/_Game/Scenes/ActionFoundationBossSummonDuelReview.unity";
         public const string PatternProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_BossBarrage_NeedleLock.asset";
         public const string CoverFirePatternProfilePath =
@@ -106,6 +107,7 @@ namespace DimensionBrawl.Editor
         private const string SummonActorPoolRootName = ReviewRootPrefix + "SummonActorPool";
         private const string BossSummonActorPoolRootName = ReviewRootPrefix + "BossSummonActorPool";
         private const string PocketOwnerRootName = ReviewRootPrefix + "PocketOwner";
+        private const string DuelOwnerRootName = ReviewRootPrefix + "DuelOwner";
         private const string HudRootName = ReviewRootPrefix + "DebugHud";
         private const string MarkerRootName = ReviewRootPrefix + "Markers";
         private const string EnergyZoneRootName = ReviewRootPrefix + "EnergyRiskZones";
@@ -177,6 +179,20 @@ namespace DimensionBrawl.Editor
         {
             ValidateBossBarrageLaneReviewScene();
             Debug.Log("ActionFoundation boss barrage lane review scene validation passed.");
+        }
+
+        [MenuItem("DimensionBrawl/Reapply Action Foundation Boss Summon Duel Review Scene")]
+        public static void ReapplyBossSummonDuelReviewSceneMenu()
+        {
+            EnsureBossSummonDuelReviewScene();
+            Debug.Log("Reapplied ActionFoundation boss summon duel review scene.");
+        }
+
+        [MenuItem("DimensionBrawl/Validate Action Foundation Boss Summon Duel Review Scene")]
+        public static void ValidateBossSummonDuelReviewSceneMenu()
+        {
+            ValidateBossSummonDuelReviewScene();
+            Debug.Log("ActionFoundation boss summon duel review scene validation passed.");
         }
 
         public static void EnsureBossBarrageLaneReviewScene()
@@ -647,6 +663,124 @@ namespace DimensionBrawl.Editor
             ValidateNoImportedAssetReference(BacklineEnergyZoneMaterialPath);
             ValidateNoImportedAssetReference(MidEnergyZoneMaterialPath);
             ValidateNoImportedAssetReference(ForwardEnergyZoneMaterialPath);
+        }
+
+        public static void EnsureBossSummonDuelReviewScene()
+        {
+            EnsureBossBarrageLaneReviewScene();
+            Scene scene = EditorSceneManager.OpenScene(ReviewScenePath, OpenSceneMode.Single);
+
+            PlayerMovementController player = RequireObject<PlayerMovementController>(scene, "player movement");
+            CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>(scene, "player target selector");
+            ActionFoundationTestEncounter encounter = RequireObject<ActionFoundationTestEncounter>(scene, "test encounter");
+            SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "player Skill1 action");
+            PlayerSummonSlot1Action summonSlot1Action =
+                RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "player SummonSlot1 action");
+            GameObject bossProxy = RequireRoot(scene, BossProxyRootName);
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossProxy, "boss proxy health");
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossProxy, "boss barrage emitter");
+            BossPressureCostLadder bossPressureCost =
+                RequireComponent<BossPressureCostLadder>(bossProxy, "boss pressure cost ladder");
+            BossPressureActionDirector bossPressureActionDirector =
+                RequireComponent<BossPressureActionDirector>(bossProxy, "boss pressure action director");
+            BossSummonPressureAction bossSummonPressureAction =
+                RequireComponent<BossSummonPressureAction>(bossProxy, "boss summon pressure action");
+            GameObject closeThreat = RequireRoot(scene, CloseThreatRootName);
+            GameObject pocketOwner = RequireRoot(scene, PocketOwnerRootName);
+            BossBarrageLaneReviewHud reviewHud =
+                RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(scene, HudRootName), "boss barrage review HUD");
+
+            closeThreat.SetActive(false);
+            pocketOwner.SetActive(false);
+            SetObjectReferenceArray(targetSelector, "targetCandidates", new UnityEngine.Object[] { bossHealth });
+            SetObjectReference(encounter, "enemyHealth", bossHealth);
+
+            GameObject duelOwnerRoot = CreateRoot(scene, DuelOwnerRootName);
+            BossSummonDuelReviewOwner duelOwner = EnsureComponent<BossSummonDuelReviewOwner>(duelOwnerRoot);
+            ConfigureBossSummonDuelOwner(
+                duelOwner,
+                playerHealth,
+                bossHealth,
+                energyLadder,
+                skill1Action,
+                summonSlot1Action,
+                emitter,
+                bossPressureCost,
+                bossPressureActionDirector,
+                bossSummonPressureAction);
+
+            SetObjectReference(reviewHud, "closeThreatHealth", null);
+            SetObjectReference(reviewHud, "pocketReviewOwner", null);
+            SetObjectReference(reviewHud, "duelReviewOwner", duelOwner);
+
+            if (!EditorSceneManager.SaveScene(scene, DuelReviewScenePath))
+            {
+                throw new InvalidOperationException($"Failed to save boss summon duel review scene at {DuelReviewScenePath}.");
+            }
+
+            AssetDatabase.SaveAssets();
+        }
+
+        public static void ValidateBossSummonDuelReviewScene()
+        {
+            Scene scene = EditorSceneManager.OpenScene(DuelReviewScenePath, OpenSceneMode.Single);
+            PlayerMovementController player = RequireObject<PlayerMovementController>(scene, "player movement");
+            CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>(scene, "player target selector");
+            ActionFoundationTestEncounter encounter = RequireObject<ActionFoundationTestEncounter>(scene, "test encounter");
+            SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "player Skill1 action");
+            PlayerSummonSlot1Action summonSlot1Action =
+                RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "player SummonSlot1 action");
+            GameObject bossProxy = RequireRoot(scene, BossProxyRootName);
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossProxy, "boss proxy health");
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossProxy, "boss barrage emitter");
+            BossPressureCostLadder bossPressureCost =
+                RequireComponent<BossPressureCostLadder>(bossProxy, "boss pressure cost ladder");
+            BossPressureActionDirector bossPressureActionDirector =
+                RequireComponent<BossPressureActionDirector>(bossProxy, "boss pressure action director");
+            BossSummonPressureAction bossSummonPressureAction =
+                RequireComponent<BossSummonPressureAction>(bossProxy, "boss summon pressure action");
+            GameObject closeThreat = RequireRoot(scene, CloseThreatRootName);
+            GameObject pocketOwner = RequireRoot(scene, PocketOwnerRootName);
+            BossSummonDuelReviewOwner duelOwner =
+                RequireComponent<BossSummonDuelReviewOwner>(RequireRoot(scene, DuelOwnerRootName), "boss summon duel owner");
+            BossBarrageLaneReviewHud reviewHud =
+                RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(scene, HudRootName), "boss barrage review HUD");
+
+            if (closeThreat.activeSelf)
+            {
+                throw new InvalidOperationException("Boss summon duel scene should disable the close-threat pocket sample.");
+            }
+
+            if (pocketOwner.activeSelf)
+            {
+                throw new InvalidOperationException("Boss summon duel scene should disable the one-pocket review owner.");
+            }
+
+            SerializedProperty targetCandidates = RequireProperty(new SerializedObject(targetSelector), "targetCandidates");
+            if (targetCandidates.arraySize != 1)
+            {
+                throw new InvalidOperationException("Boss summon duel target selector should keep only the far boss candidate.");
+            }
+
+            ValidateArrayReference(targetSelector, "targetCandidates", 0, bossHealth);
+            ValidateObjectReference(encounter, "enemyHealth", bossHealth);
+            ValidateBossSummonDuelOwner(
+                duelOwner,
+                playerHealth,
+                bossHealth,
+                energyLadder,
+                skill1Action,
+                summonSlot1Action,
+                emitter,
+                bossPressureCost,
+                bossPressureActionDirector,
+                bossSummonPressureAction);
+            ValidateObjectReference(reviewHud, "pocketReviewOwner", null);
+            ValidateObjectReference(reviewHud, "duelReviewOwner", duelOwner);
         }
 
         private static BossBarragePatternProfile EnsurePatternProfile()
@@ -2567,6 +2701,7 @@ namespace DimensionBrawl.Editor
                 bossPressurePosition,
                 bossPressureActionDirector,
                 bossSummonPressureAction);
+            SetObjectReference(hud, "duelReviewOwner", null);
             SetBool(hud, "showCenterReticle", false);
             BossBarrageLaneReviewMobileHud mobileHud = hudRoot.AddComponent<BossBarrageLaneReviewMobileHud>();
             mobileHud.Configure(
@@ -3835,6 +3970,73 @@ namespace DimensionBrawl.Editor
             ValidateAssignedObjectReference(owner, "failMarker");
         }
 
+        private static void ConfigureBossSummonDuelOwner(
+            BossSummonDuelReviewOwner owner,
+            CombatHealth playerHealth,
+            CombatHealth bossHealth,
+            SummonEnergyLadder energyLadder,
+            PlayerSkill1Action skill1Action,
+            PlayerSummonSlot1Action summonSlot1Action,
+            BossBarrageEmitter bossBarrageEmitter,
+            BossPressureCostLadder bossPressureCost,
+            BossPressureActionDirector bossPressureActionDirector,
+            BossSummonPressureAction bossSummonPressureAction)
+        {
+            SetObjectReference(owner, "playerHealth", playerHealth);
+            SetObjectReference(owner, "bossHealth", bossHealth);
+            SetObjectReference(owner, "energyLadder", energyLadder);
+            SetObjectReference(owner, "skill1Action", skill1Action);
+            SetObjectReference(owner, "summonSlot1Action", summonSlot1Action);
+            SetObjectReference(owner, "bossBarrageEmitter", bossBarrageEmitter);
+            SetObjectReference(owner, "bossPressureCostLadder", bossPressureCost);
+            SetObjectReference(owner, "bossPressureActionDirector", bossPressureActionDirector);
+            SetObjectReference(owner, "bossSummonPressureAction", bossSummonPressureAction);
+            SetBool(owner, "grantPlayerEnergyOnStart", true);
+            SetFloat(owner, "startingPlayerEnergy", 115f);
+            SetBool(owner, "grantBossCostOnStart", true);
+            SetFloat(owner, "startingBossCost", 130f);
+            SetInt(owner, "requiredBossPressureActions", 2);
+            SetInt(owner, "requiredBossSummonReleases", 1);
+            SetInt(owner, "requiredPlayerSummonUses", 2);
+            SetInt(owner, "requiredAllyPressureBlocks", 1);
+            SetFloat(owner, "requiredBossDamage", 260f);
+            SetBool(owner, "failWhenPlayerDies", true);
+            EditorUtility.SetDirty(owner);
+        }
+
+        private static void ValidateBossSummonDuelOwner(
+            BossSummonDuelReviewOwner owner,
+            CombatHealth playerHealth,
+            CombatHealth bossHealth,
+            SummonEnergyLadder energyLadder,
+            PlayerSkill1Action skill1Action,
+            PlayerSummonSlot1Action summonSlot1Action,
+            BossBarrageEmitter bossBarrageEmitter,
+            BossPressureCostLadder bossPressureCost,
+            BossPressureActionDirector bossPressureActionDirector,
+            BossSummonPressureAction bossSummonPressureAction)
+        {
+            ValidateObjectReference(owner, "playerHealth", playerHealth);
+            ValidateObjectReference(owner, "bossHealth", bossHealth);
+            ValidateObjectReference(owner, "energyLadder", energyLadder);
+            ValidateObjectReference(owner, "skill1Action", skill1Action);
+            ValidateObjectReference(owner, "summonSlot1Action", summonSlot1Action);
+            ValidateObjectReference(owner, "bossBarrageEmitter", bossBarrageEmitter);
+            ValidateObjectReference(owner, "bossPressureCostLadder", bossPressureCost);
+            ValidateObjectReference(owner, "bossPressureActionDirector", bossPressureActionDirector);
+            ValidateObjectReference(owner, "bossSummonPressureAction", bossSummonPressureAction);
+            ValidateBool(owner, "grantPlayerEnergyOnStart", true);
+            ValidateFloat(owner, "startingPlayerEnergy", 115f);
+            ValidateBool(owner, "grantBossCostOnStart", true);
+            ValidateFloat(owner, "startingBossCost", 130f);
+            ValidateInt(owner, "requiredBossPressureActions", 2);
+            ValidateInt(owner, "requiredBossSummonReleases", 1);
+            ValidateInt(owner, "requiredPlayerSummonUses", 2);
+            ValidateInt(owner, "requiredAllyPressureBlocks", 1);
+            ValidateFloat(owner, "requiredBossDamage", 260f);
+            ValidateBool(owner, "failWhenPlayerDies", true);
+        }
+
         private static void ValidatePocketCueBridges(
             BossBarragePocketReviewOwner owner,
             ActionCameraCueDriver cameraCueDriver,
@@ -3900,6 +4102,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(hud, "bossPressureActionDirector", bossPressureActionDirector);
             ValidateObjectReference(hud, "bossSummonPressureAction", bossSummonPressureAction);
             ValidateObjectReference(hud, "pocketReviewOwner", pocketOwner);
+            ValidateObjectReference(hud, "duelReviewOwner", null);
             ValidateBool(hud, "showCenterReticle", false);
         }
 
