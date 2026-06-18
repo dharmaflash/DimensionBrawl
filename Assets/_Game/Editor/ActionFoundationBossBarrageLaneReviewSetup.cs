@@ -1501,7 +1501,12 @@ namespace DimensionBrawl.Editor
 
             BossPressureActionDirector bossPressureActionDirector =
                 EnsureComponent<BossPressureActionDirector>(bossProxy);
-            bossPressureActionDirector.ConfigureReferences(bossPressureCost, emitter, bossSummonPressureAction);
+            bossPressureActionDirector.ConfigureReferences(
+                bossPressureCost,
+                emitter,
+                bossSummonPressureAction,
+                laneSpace,
+                playerTransform);
             bossPressureActionDirector.ConfigureActionSlots(new[]
             {
                 new BossPressureActionDirector.BossPressureActionSlot(
@@ -1515,13 +1520,19 @@ namespace DimensionBrawl.Editor
                     BossPressureActionKind.SummonPressure,
                     2,
                     1,
-                    5.2f),
+                    5.2f,
+                    usePlayerForwardRiskGate: true,
+                    minimumPlayerForwardRisk01: 0.32f,
+                    maximumPlayerForwardRisk01: 1f),
                 new BossPressureActionDirector.BossPressureActionSlot(
                     punishNetPatternProfile,
                     BossPressureActionKind.PunishOverextend,
                     3,
                     1,
-                    6.0f)
+                    6.0f,
+                    usePlayerForwardRiskGate: true,
+                    minimumPlayerForwardRisk01: 0.66f,
+                    maximumPlayerForwardRisk01: 1f)
             });
             SetFloat(bossPressureActionDirector, "globalRecoverySeconds", 0.35f);
             SetBool(bossPressureActionDirector, "actionsEnabled", true);
@@ -2990,6 +3001,8 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(bossPressureActionDirector, "costLadder", bossPressureCost);
             ValidateObjectReference(bossPressureActionDirector, "bossBarrageEmitter", bossBarrageEmitter);
             ValidateObjectReference(bossPressureActionDirector, "summonPressureAction", bossSummonPressureAction);
+            ValidateObjectReference(bossPressureActionDirector, "laneSpace", laneSpace);
+            ValidateObjectReference(bossPressureActionDirector, "trackedPlayer", playerTransform);
             ValidateBool(bossPressureActionDirector, "actionsEnabled", true);
             ValidateFloat(bossPressureActionDirector, "globalRecoverySeconds", 0.35f);
             ValidateBossPressureActionSlot(
@@ -2997,19 +3010,28 @@ namespace DimensionBrawl.Editor
                 0,
                 LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath),
                 BossPressureActionKind.SkillPattern,
-                1);
+                1,
+                false,
+                0f,
+                1f);
             ValidateBossPressureActionSlot(
                 bossPressureActionDirector,
                 1,
                 LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath),
                 BossPressureActionKind.SummonPressure,
-                2);
+                2,
+                true,
+                0.32f,
+                1f);
             ValidateBossPressureActionSlot(
                 bossPressureActionDirector,
                 2,
                 LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath),
                 BossPressureActionKind.PunishOverextend,
-                3);
+                3,
+                true,
+                0.66f,
+                1f);
         }
 
         private static void ValidateBossPressureActionSlot(
@@ -3017,7 +3039,10 @@ namespace DimensionBrawl.Editor
             int index,
             BossBarragePatternProfile expectedPattern,
             BossPressureActionKind expectedKind,
-            int expectedMinimumTier)
+            int expectedMinimumTier,
+            bool expectedUsePlayerForwardRiskGate,
+            float expectedMinimumPlayerForwardRisk01,
+            float expectedMaximumPlayerForwardRisk01)
         {
             if (!bossPressureActionDirector.TryGetActionSlot(
                     index,
@@ -3039,6 +3064,17 @@ namespace DimensionBrawl.Editor
             if (slot.MinimumTier != expectedMinimumTier)
             {
                 throw new InvalidOperationException($"Boss pressure action slot {index} has the wrong minimum tier.");
+            }
+
+            if (slot.UsePlayerForwardRiskGate != expectedUsePlayerForwardRiskGate)
+            {
+                throw new InvalidOperationException($"Boss pressure action slot {index} has the wrong player risk gate setting.");
+            }
+
+            if (!Mathf.Approximately(slot.MinimumPlayerForwardRisk01, expectedMinimumPlayerForwardRisk01)
+                || !Mathf.Approximately(slot.MaximumPlayerForwardRisk01, expectedMaximumPlayerForwardRisk01))
+            {
+                throw new InvalidOperationException($"Boss pressure action slot {index} has the wrong player risk gate range.");
             }
         }
 

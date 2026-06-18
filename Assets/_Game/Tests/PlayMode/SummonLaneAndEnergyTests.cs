@@ -214,7 +214,7 @@ namespace DimensionBrawl.Tests
             bossCost.GrantCurrentTierCost(300f);
 
             BossPressureActionDirector director = bossObject.AddComponent<BossPressureActionDirector>();
-            director.ConfigureReferences(bossCost, emitter);
+            director.ConfigureReferences(bossCost, emitter, null, lane, playerObject.transform);
             director.ConfigureActionSlots(new[]
             {
                 new BossPressureActionDirector.BossPressureActionSlot(
@@ -228,7 +228,10 @@ namespace DimensionBrawl.Tests
                     BossPressureActionKind.PunishOverextend,
                     3,
                     1,
-                    0f)
+                    0f,
+                    usePlayerForwardRiskGate: true,
+                    minimumPlayerForwardRisk01: 0.66f,
+                    maximumPlayerForwardRisk01: 1f)
             });
 
             Assert.IsTrue(director.TryQueueBestAvailableAction());
@@ -241,6 +244,72 @@ namespace DimensionBrawl.Tests
             Object.DestroyImmediate(projectilePrefabObject);
             Object.DestroyImmediate(levelThreePattern);
             Object.DestroyImmediate(levelOnePattern);
+            Object.DestroyImmediate(basePattern);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(laneObject);
+        }
+
+        [Test]
+        public void BossPressureActionDirectorHoldsOverextendPunishUntilPlayerIsForward()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.BackLimitZ);
+            GameObject bossObject = new GameObject("BossProxy");
+            CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+            bossHealth.ConfigureTeam(DamageTeam.Enemy);
+
+            BossBarragePatternProfile basePattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            BossBarragePatternProfile linePressurePattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            BossBarragePatternProfile punishPattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            GameObject projectilePrefabObject = new GameObject("BossProjectilePrefab");
+            projectilePrefabObject.AddComponent<SphereCollider>();
+            projectilePrefabObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile projectilePrefab = projectilePrefabObject.AddComponent<BossBarrageProjectile>();
+            projectilePrefabObject.SetActive(false);
+
+            BossBarrageEmitter emitter = bossObject.AddComponent<BossBarrageEmitter>();
+            emitter.ConfigureReferences(lane, playerObject.transform, bossHealth);
+            emitter.ConfigurePattern(basePattern, projectilePrefab, basePattern.ProjectilesPerWave * 2);
+
+            BossPressureCostLadder bossCost = bossObject.AddComponent<BossPressureCostLadder>();
+            bossCost.ConfigureReferences(lane, bossObject.transform);
+            bossCost.GrantCurrentTierCost(300f);
+
+            BossPressureActionDirector director = bossObject.AddComponent<BossPressureActionDirector>();
+            director.ConfigureReferences(bossCost, emitter, null, lane, playerObject.transform);
+            director.ConfigureActionSlots(new[]
+            {
+                new BossPressureActionDirector.BossPressureActionSlot(
+                    linePressurePattern,
+                    BossPressureActionKind.SkillPattern,
+                    1,
+                    1,
+                    0f),
+                new BossPressureActionDirector.BossPressureActionSlot(
+                    punishPattern,
+                    BossPressureActionKind.PunishOverextend,
+                    3,
+                    1,
+                    0f,
+                    usePlayerForwardRiskGate: true,
+                    minimumPlayerForwardRisk01: 0.66f,
+                    maximumPlayerForwardRisk01: 1f)
+            });
+
+            Assert.AreEqual(0f, director.CurrentPlayerForwardRisk01, 0.001f);
+            Assert.IsTrue(director.TryQueueBestAvailableAction());
+            Assert.AreSame(
+                linePressurePattern,
+                emitter.QueuedPriorityPattern,
+                "A backline player should not receive the overextend punish even when the boss has LV3 cost.");
+            Assert.AreEqual(BossPressureActionKind.SkillPattern, director.LastActionKind);
+
+            Object.DestroyImmediate(projectilePrefabObject);
+            Object.DestroyImmediate(punishPattern);
+            Object.DestroyImmediate(linePressurePattern);
             Object.DestroyImmediate(basePattern);
             Object.DestroyImmediate(bossObject);
             Object.DestroyImmediate(playerObject);

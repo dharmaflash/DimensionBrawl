@@ -8542,22 +8542,33 @@ MonoBehaviour:
   costLadder: {fileID: 822171421}
   bossBarrageEmitter: {fileID: 822171416}
   summonPressureAction: {fileID: 822171419}
+  laneSpace: {fileID: 454563736}
+  trackedPlayer: {fileID: 4001}
   actionSlots:
   - Pattern: {fileID: 11400000, guid: 25cd6927b39e10048ab562c4e150cb3a, type: 2}
     ActionKind: 0
     MinimumTier: 1
     QueuedWaves: 1
     MinimumIntervalSeconds: 4.6
+    UsePlayerForwardRiskGate: 0
+    MinimumPlayerForwardRisk01: 0
+    MaximumPlayerForwardRisk01: 1
   - Pattern: {fileID: 11400000, guid: 732ffa1eae726f14386a4a02115611c9, type: 2}
     ActionKind: 1
     MinimumTier: 2
     QueuedWaves: 1
     MinimumIntervalSeconds: 5.2
+    UsePlayerForwardRiskGate: 1
+    MinimumPlayerForwardRisk01: 0.32
+    MaximumPlayerForwardRisk01: 1
   - Pattern: {fileID: 11400000, guid: b0b5e71e44209f74394f56e232db8d78, type: 2}
     ActionKind: 2
     MinimumTier: 3
     QueuedWaves: 1
     MinimumIntervalSeconds: 6
+    UsePlayerForwardRiskGate: 1
+    MinimumPlayerForwardRisk01: 0.66
+    MaximumPlayerForwardRisk01: 1
   globalRecoverySeconds: 0.35
   actionsEnabled: 1
 --- !u!114 &822171423

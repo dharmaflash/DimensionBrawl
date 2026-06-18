@@ -219,6 +219,8 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(
                 bossSummonPressureAction,
                 GetObjectReference<BossSummonPressureAction>(bossPressureActionDirector, "summonPressureAction"));
+            Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(bossPressureActionDirector, "laneSpace"));
+            Assert.AreSame(player.transform, GetObjectReference<Transform>(bossPressureActionDirector, "trackedPlayer"));
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(bossSummonPressureAction, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(bossSummonPressureAction, "trackedPlayer"));
             Assert.AreSame(
@@ -233,19 +235,28 @@ namespace DimensionBrawl.Tests
                 0,
                 LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath),
                 BossPressureActionKind.SkillPattern,
-                1);
+                1,
+                false,
+                0f,
+                1f);
             AssertBossPressureActionSlot(
                 bossPressureActionDirector,
                 1,
                 LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath),
                 BossPressureActionKind.SummonPressure,
-                2);
+                2,
+                true,
+                0.32f,
+                1f);
             AssertBossPressureActionSlot(
                 bossPressureActionDirector,
                 2,
                 LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath),
                 BossPressureActionKind.PunishOverextend,
-                3);
+                3,
+                true,
+                0.66f,
+                1f);
             Assert.GreaterOrEqual(
                 telegraphPresenter.MarkerCount,
                 9,
@@ -2033,12 +2044,18 @@ namespace DimensionBrawl.Tests
             int index,
             BossBarragePatternProfile expectedPattern,
             BossPressureActionKind expectedKind,
-            int expectedMinimumTier)
+            int expectedMinimumTier,
+            bool expectedUsePlayerForwardRiskGate = false,
+            float expectedMinimumPlayerForwardRisk01 = 0f,
+            float expectedMaximumPlayerForwardRisk01 = 1f)
         {
             Assert.IsTrue(director.TryGetActionSlot(index, out BossPressureActionDirector.BossPressureActionSlot slot));
             Assert.AreSame(expectedPattern, slot.Pattern);
             Assert.AreEqual(expectedKind, slot.ActionKind);
             Assert.AreEqual(expectedMinimumTier, slot.MinimumTier);
+            Assert.AreEqual(expectedUsePlayerForwardRiskGate, slot.UsePlayerForwardRiskGate);
+            Assert.AreEqual(expectedMinimumPlayerForwardRisk01, slot.MinimumPlayerForwardRisk01, 0.001f);
+            Assert.AreEqual(expectedMaximumPlayerForwardRisk01, slot.MaximumPlayerForwardRisk01, 0.001f);
         }
 
         private static BossBarrageProjectile RequireActiveBossProjectile()
