@@ -512,6 +512,9 @@ namespace DimensionBrawl.Tests
                 bossPressureCost,
                 GetObjectReference<BossPressureCostLadder>(reviewHud, "bossPressureCostLadder"));
             Assert.AreSame(
+                bossPressurePosition,
+                GetObjectReference<BossPressurePositionController>(reviewHud, "bossPressurePositionController"));
+            Assert.AreSame(
                 bossPressureActionDirector,
                 GetObjectReference<BossPressureActionDirector>(reviewHud, "bossPressureActionDirector"));
             Assert.AreSame(

@@ -22,6 +22,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private PlayerSummonSlot1Action summonSlot1Action;
         [SerializeField] private BossBarrageEmitter bossBarrageEmitter;
         [SerializeField] private BossPressureCostLadder bossPressureCostLadder;
+        [SerializeField] private BossPressurePositionController bossPressurePositionController;
         [SerializeField] private BossPressureActionDirector bossPressureActionDirector;
         [SerializeField] private BossSummonPressureAction bossSummonPressureAction;
         [SerializeField] private BossBarragePocketReviewOwner pocketReviewOwner;
@@ -52,6 +53,7 @@ namespace DimensionBrawl.Presentation
             BossBarrageEmitter newBossBarrageEmitter,
             BossBarragePocketReviewOwner newPocketReviewOwner,
             BossPressureCostLadder newBossPressureCostLadder = null,
+            BossPressurePositionController newBossPressurePositionController = null,
             BossPressureActionDirector newBossPressureActionDirector = null,
             BossSummonPressureAction newBossSummonPressureAction = null)
         {
@@ -68,6 +70,7 @@ namespace DimensionBrawl.Presentation
             summonSlot1Action = newSummonSlot1Action;
             bossBarrageEmitter = newBossBarrageEmitter;
             bossPressureCostLadder = newBossPressureCostLadder;
+            bossPressurePositionController = newBossPressurePositionController;
             bossPressureActionDirector = newBossPressureActionDirector;
             bossSummonPressureAction = newBossSummonPressureAction;
             pocketReviewOwner = newPocketReviewOwner;
@@ -190,9 +193,12 @@ namespace DimensionBrawl.Presentation
             string pattern = bossPressureActionDirector != null && bossPressureActionDirector.LastQueuedPattern != null
                 ? bossPressureActionDirector.LastQueuedPattern.PatternId
                 : "-";
+            string position = bossPressurePositionController != null
+                ? $" Pos {bossPressurePositionController.CurrentRisk01 * 100f:0}->{bossPressurePositionController.CurrentTargetRisk01 * 100f:0}%"
+                : string.Empty;
             return $"Boss Cost next LV{bossPressureCostLadder.ChargingTier} "
                 + $"{bossPressureCostLadder.CurrentTierFillRatio * 100f:0}%   {ready}   "
-                + $"Risk {bossPressureCostLadder.CurrentRiskBand} x{bossPressureCostLadder.CurrentGainMultiplier:0.00}   "
+                + $"Risk {bossPressureCostLadder.CurrentRiskBand} x{bossPressureCostLadder.CurrentGainMultiplier:0.00}{position}   "
                 + $"Last {action}/{pattern}";
         }
 

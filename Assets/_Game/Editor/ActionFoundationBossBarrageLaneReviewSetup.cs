@@ -324,6 +324,7 @@ namespace DimensionBrawl.Editor
                 bossBarrageEmitter,
                 pocketOwner,
                 bossPressureCost,
+                RequireComponent<BossPressurePositionController>(bossBarrageEmitter.gameObject, "boss pressure position controller"),
                 bossPressureActionDirector,
                 bossSummonPressureAction);
             ConfigureActionCameraCueDriver(
@@ -555,6 +556,7 @@ namespace DimensionBrawl.Editor
                 emitter,
                 pocketOwner,
                 bossPressureCost,
+                bossPressurePosition,
                 bossPressureActionDirector,
                 bossSummonPressureAction);
             ValidateMobileReviewHud(
@@ -2367,6 +2369,7 @@ namespace DimensionBrawl.Editor
             BossBarrageEmitter bossBarrageEmitter,
             BossBarragePocketReviewOwner pocketOwner,
             BossPressureCostLadder bossPressureCost,
+            BossPressurePositionController bossPressurePosition,
             BossPressureActionDirector bossPressureActionDirector,
             BossSummonPressureAction bossSummonPressureAction)
         {
@@ -2387,6 +2390,7 @@ namespace DimensionBrawl.Editor
                 bossBarrageEmitter,
                 pocketOwner,
                 bossPressureCost,
+                bossPressurePosition,
                 bossPressureActionDirector,
                 bossSummonPressureAction);
             SetBool(hud, "showCenterReticle", false);
@@ -3234,6 +3238,7 @@ namespace DimensionBrawl.Editor
             BossBarrageEmitter bossBarrageEmitter,
             BossBarragePocketReviewOwner pocketOwner,
             BossPressureCostLadder bossPressureCost,
+            BossPressurePositionController bossPressurePosition,
             BossPressureActionDirector bossPressureActionDirector,
             BossSummonPressureAction bossSummonPressureAction)
         {
@@ -3250,6 +3255,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(hud, "summonSlot1Action", summonSlot1Action);
             ValidateObjectReference(hud, "bossBarrageEmitter", bossBarrageEmitter);
             ValidateObjectReference(hud, "bossPressureCostLadder", bossPressureCost);
+            ValidateObjectReference(hud, "bossPressurePositionController", bossPressurePosition);
             ValidateObjectReference(hud, "bossPressureActionDirector", bossPressureActionDirector);
             ValidateObjectReference(hud, "bossSummonPressureAction", bossSummonPressureAction);
             ValidateObjectReference(hud, "pocketReviewOwner", pocketOwner);

@@ -6189,6 +6189,7 @@ MonoBehaviour:
   summonSlot1Action: {fileID: 4014}
   bossBarrageEmitter: {fileID: 822171416}
   bossPressureCostLadder: {fileID: 822171421}
+  bossPressurePositionController: {fileID: 822171423}
   bossPressureActionDirector: {fileID: 822171420}
   bossSummonPressureAction: {fileID: 822171419}
   pocketReviewOwner: {fileID: 1191037696}
