@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 74239a1a1d687a249b10f3a4b4f8a84a, type: 3}
+  m_Name: DB_SummonPresentation_BossAuraCaptain
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.SummonPresentationCandidateProfile
+  candidateId: BossPressure.AuraCaptain
+  displayName: Boss Pressure Summon - Aura Captain Elite
+  side: 1
+  actorPrefab: {fileID: 8807085752215127905, guid: df59e94e3bf79d64f9342ff278ecc377, type: 3}
+  visualSourceAsset: {fileID: 919132149155446097, guid: 628ecde632c178c48b9df20d1e5c6517, type: 3}
+  visualChildName: BossSummonPressureVisual_AuraCaptainElite
+  sourceRoleId: SciFiSoldier.Elite.AuraCaptain
+  animatorController: {fileID: 9100000, guid: 7ccef2de313e82144b0cf3c04a01fd0f, type: 2}
+  vfxCueProfile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
+  animationRead: Promoted AuraCaptainElite role Animator stands in for boss-side
+    summon-pressure command reads.
+  vfxRead: Enemy pressure screen, pressure pulse, and boss-side intercept colors
+    distinguish it from the player summon.
+  replacementPlan: Replace with a dedicated boss pressure summon after boss roster
+    art is reviewed, without changing boss cost data.
+  ownershipNotes: Presentation candidate only; runtime cost, tier, projectile, and
+    screen values remain in gameplay profiles.

@@ -66,6 +66,14 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossPressureActionDeck_PocketReview.asset";
         private const string SummonOpportunityProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonOpportunity_BossPressureBlock.asset";
+        private const string SummonSlot1PresentationCandidateProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonPresentation_PlayerShieldBreaker.asset";
+        private const string BossSummonPressurePresentationCandidateProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonPresentation_BossAuraCaptain.asset";
+        private const string ShieldBreakerEliteRoleCandidateProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyRoleCandidates/DB_RoleCandidate_ShieldBreakerElite.asset";
+        private const string AuraCaptainEliteRoleCandidateProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyRoleCandidates/DB_RoleCandidate_AuraCaptainElite.asset";
         private const string SummonSlot1ActorVisualName = "SummonSlot1Visual_ShieldBreakerElite";
         private const string BossSummonPressureActorVisualName = "BossSummonPressureVisual_AuraCaptainElite";
         private const string RifleGirlRangedControllerPath =
@@ -173,6 +181,8 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossSummonPressureAction>(bossRoot, "boss summon pressure action");
             BossSummonPressureProfile bossSummonPressureProfile =
                 LoadAsset<BossSummonPressureProfile>(BossSummonPressureProfilePath);
+            SummonPresentationCandidateProfile bossSummonPresentationCandidate =
+                LoadAsset<SummonPresentationCandidateProfile>(BossSummonPressurePresentationCandidateProfilePath);
             BossPressurePositionController bossPressurePosition =
                 RequireComponent<BossPressurePositionController>(bossRoot, "boss pressure position controller");
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
@@ -180,6 +190,8 @@ namespace DimensionBrawl.Tests
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
             SummonSlotActionProfile summonSlot1Profile =
                 LoadAsset<SummonSlotActionProfile>(SummonSlot1ActionProfilePath);
+            SummonPresentationCandidateProfile summonSlot1PresentationCandidate =
+                LoadAsset<SummonPresentationCandidateProfile>(SummonSlot1PresentationCandidateProfilePath);
             ActionCameraCueDriver cameraCueDriver =
                 RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
             BossBarrageCameraCueDriver bossCameraCueDriver =
@@ -260,6 +272,16 @@ namespace DimensionBrawl.Tests
             AssertSummonActorRoleVisual(
                 LoadAsset<GameObject>(BossSummonPressureActorPrefabPath),
                 BossSummonPressureActorVisualName);
+            AssertSummonPresentationCandidateProfile(
+                bossSummonPresentationCandidate,
+                "BossPressure.AuraCaptain",
+                SummonPresentationSide.BossPressure,
+                LoadAsset<GameObject>(BossSummonPressureActorPrefabPath),
+                AuraCaptainEliteRoleCandidateProfilePath,
+                BossSummonPressureActorVisualName,
+                "SciFiSoldier.Elite.AuraCaptain",
+                LoadAsset<CombatVfxCueProfile>(
+                    "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_CombatVfxCues_ActionFoundation.asset"));
             Assert.AreEqual(DamageTeam.Enemy, GetEnum<DamageTeam>(bossSummonPressureAction, "ownerTeam"));
             AssertBossPressureActionSlot(
                 bossPressureActionDirector,
@@ -440,6 +462,16 @@ namespace DimensionBrawl.Tests
             Assert.IsNotNull(summonActorPresenter.PulseRoot);
             Assert.GreaterOrEqual(summonActorPresenter.RendererCount, 2);
             AssertSummonActorRoleVisual(summonActorPrefabObject, SummonSlot1ActorVisualName);
+            AssertSummonPresentationCandidateProfile(
+                summonSlot1PresentationCandidate,
+                "PlayerSummon.ShieldBreaker",
+                SummonPresentationSide.PlayerSummon,
+                summonActorPrefabObject,
+                ShieldBreakerEliteRoleCandidateProfilePath,
+                SummonSlot1ActorVisualName,
+                "SciFiSoldier.Elite.ShieldBreaker",
+                LoadAsset<CombatVfxCueProfile>(
+                    "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_CombatVfxCues_ActionFoundation.asset"));
             Assert.AreEqual(DamageTeam.AllySummon, summonPressureScreen.OwnerTeam);
             Assert.AreSame(projectileRoot.transform, GetObjectReference<Transform>(summonSlot1Action, "projectileRoot"));
             Assert.AreSame(actionCueRoot.transform, GetObjectReference<Transform>(summonSlot1Action, "cueRoot"));
@@ -2800,6 +2832,43 @@ namespace DimensionBrawl.Tests
             {
                 AssertRendererUsesGameOwnedAssets(renderers[i], $"{visualName}.{renderers[i].name}");
             }
+        }
+
+        private static void AssertSummonPresentationCandidateProfile(
+            SummonPresentationCandidateProfile profile,
+            string expectedCandidateId,
+            SummonPresentationSide expectedSide,
+            GameObject expectedActorPrefab,
+            string roleCandidateProfilePath,
+            string expectedVisualName,
+            string expectedSourceRoleId,
+            CombatVfxCueProfile expectedVfxCueProfile)
+        {
+            CombatEnemyRoleCandidateProfile roleCandidate =
+                LoadAsset<CombatEnemyRoleCandidateProfile>(roleCandidateProfilePath);
+            Transform visual = expectedActorPrefab.transform.Find(expectedVisualName);
+            Assert.IsNotNull(visual, $"{expectedActorPrefab.name} should include {expectedVisualName}.");
+            Animator animator = visual.GetComponent<Animator>();
+            Assert.IsNotNull(animator, $"{expectedVisualName} should keep an Animator.");
+
+            Assert.AreEqual(expectedCandidateId, profile.CandidateId);
+            Assert.AreEqual(expectedSide, profile.Side);
+            Assert.AreSame(expectedActorPrefab, profile.ActorPrefab);
+            Assert.AreSame(roleCandidate.PromotedVisualSource, profile.VisualSourceAsset);
+            Assert.AreEqual(expectedVisualName, profile.VisualChildName);
+            Assert.AreEqual(expectedSourceRoleId, profile.SourceRoleId);
+            Assert.AreSame(animator.runtimeAnimatorController, profile.AnimatorController);
+            Assert.AreSame(expectedVfxCueProfile, profile.VfxCueProfile);
+            Assert.IsNotEmpty(profile.DisplayName);
+            Assert.IsNotEmpty(profile.AnimationRead);
+            Assert.IsNotEmpty(profile.VfxRead);
+            Assert.IsNotEmpty(profile.ReplacementPlan);
+            Assert.IsNotEmpty(profile.OwnershipNotes);
+            AssertGameOwnedAsset(profile, $"{profile.name} asset");
+            AssertGameOwnedAsset(profile.ActorPrefab, $"{profile.name} actor prefab");
+            AssertGameOwnedAsset(profile.VisualSourceAsset, $"{profile.name} visual source");
+            AssertGameOwnedAsset(profile.AnimatorController, $"{profile.name} Animator controller");
+            AssertGameOwnedAsset(profile.VfxCueProfile, $"{profile.name} VFX cue profile");
         }
 
         private static Transform FindDescendant(Transform root, string childName)

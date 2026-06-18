@@ -68,6 +68,10 @@ namespace DimensionBrawl.Editor
             ActionFoundationProfileSetup.ProfileRoot + "/DB_BossPressureActionDeck_PocketReview.asset";
         public const string SummonOpportunityProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonOpportunity_BossPressureBlock.asset";
+        public const string SummonSlot1PresentationCandidateProfilePath =
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonPresentation_PlayerShieldBreaker.asset";
+        public const string BossSummonPressurePresentationCandidateProfilePath =
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonPresentation_BossAuraCaptain.asset";
         private const string SummonSlot1ActorVisualName = "SummonSlot1Visual_ShieldBreakerElite";
         private const string BossSummonPressureActorVisualName = "BossSummonPressureVisual_AuraCaptainElite";
         private const string SummonSlot1ActorVisualRoleId = "SciFiSoldier.Elite.ShieldBreaker";
@@ -214,7 +218,26 @@ namespace DimensionBrawl.Editor
             GameObject summonEntryCuePrefab = EnsureSummonEntryCuePrefab();
             SummonFrontlineProxy summonActorPrefab = EnsureSummonActorPrefab();
             SummonFrontlineProxy bossSummonActorPrefab = EnsureBossSummonPressureActorPrefab();
+            EnsureSummonPresentationCandidateProfiles();
             Scene scene = EditorSceneManager.OpenScene(ActionFoundationProfileSetup.ScenePath, OpenSceneMode.Single);
+            patternProfile = LoadAsset<BossBarragePatternProfile>(PatternProfilePath);
+            coverFirePatternProfile = LoadAsset<BossBarragePatternProfile>(CoverFirePatternProfilePath);
+            escortScreenPatternProfile = LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath);
+            layeredSalvoPatternProfile = LoadAsset<BossBarragePatternProfile>(LayeredSalvoPatternProfilePath);
+            staggeredCrossfirePatternProfile = LoadAsset<BossBarragePatternProfile>(StaggeredCrossfirePatternProfilePath);
+            twinSweepPatternProfile = LoadAsset<BossBarragePatternProfile>(TwinSweepPatternProfilePath);
+            leftClampPatternProfile = LoadAsset<BossBarragePatternProfile>(LeftClampPatternProfilePath);
+            rightClampPatternProfile = LoadAsset<BossBarragePatternProfile>(RightClampPatternProfilePath);
+            punishNetPatternProfile = LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath);
+            linePressurePatternProfile = LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath);
+            projectilePrefab = LoadPrefabComponent<BossBarrageProjectile>(ProjectilePrefabPath);
+            localDefenseProfile = LoadAsset<PlayerActionProfile>(LocalDefenseProfilePath);
+            skill1ProjectilePrefab = LoadPrefabComponent<LaneActionProjectile>(Skill1ProjectilePrefabPath);
+            rangedBasicProjectilePrefab = LoadPrefabComponent<LaneActionProjectile>(RangedBasicProjectilePrefabPath);
+            summonSlot1ProjectilePrefab = LoadPrefabComponent<LaneActionProjectile>(SummonSlot1ProjectilePrefabPath);
+            summonEntryCuePrefab = LoadAsset<GameObject>(SummonSlot1EntryCuePrefabPath);
+            summonActorPrefab = LoadPrefabComponent<SummonFrontlineProxy>(SummonSlot1ActorPrefabPath);
+            bossSummonActorPrefab = LoadPrefabComponent<SummonFrontlineProxy>(BossSummonPressureActorPrefabPath);
             RemoveReviewAndEnemyRoots(scene);
 
             PlayerMovementController player = RequireObject<PlayerMovementController>(scene, "player movement");
@@ -366,6 +389,8 @@ namespace DimensionBrawl.Editor
             CreateLaneMarkers(scene, laneSpace);
             CreateEnergyRiskZoneMarkers(scene, laneSpace);
             CreateBossBarrageTelegraphMarkers(scene, laneSpace, bossBarrageEmitter);
+            // Keep the serialized default aligned with the ranged starting mode after all visual swaps are rebuilt.
+            ConfigureLocalDefenseProfile(playerActionController, localDefenseProfile);
 
             if (!EditorSceneManager.SaveScene(scene, ReviewScenePath))
             {
@@ -592,6 +617,7 @@ namespace DimensionBrawl.Editor
                 summonSlot1Action);
             ValidateFixedRearCamera(cameraController, player.transform, laneSpace.transform);
             ValidateSummonForwardSpace(laneSpace);
+            ValidateSummonPresentationCandidateProfiles();
             ValidateNoImportedAssetReference(ProjectilePrefabPath);
             ValidateNoImportedAssetReference(PatternProfilePath);
             ValidateNoImportedAssetReference(CoverFirePatternProfilePath);
@@ -610,6 +636,8 @@ namespace DimensionBrawl.Editor
             ValidateNoImportedAssetReference(SummonSlot1EntryCuePrefabPath);
             ValidateNoImportedAssetReference(SummonSlot1ActorPrefabPath);
             ValidateNoImportedAssetReference(BossSummonPressureActorPrefabPath);
+            ValidateNoImportedAssetReference(SummonSlot1PresentationCandidateProfilePath);
+            ValidateNoImportedAssetReference(BossSummonPressurePresentationCandidateProfilePath);
             ValidateNoImportedAssetReference(SummonPressureScreenMaterialPath);
             ValidateNoImportedAssetReference(SummonSlot1ActorPulseMaterialPath);
             ValidateNoImportedAssetReference(BossSummonPressureActorMaterialPath);
@@ -1425,6 +1453,114 @@ namespace DimensionBrawl.Editor
             }
 
             return LoadPrefabComponent<SummonFrontlineProxy>(BossSummonPressureActorPrefabPath);
+        }
+
+        private static void EnsureSummonPresentationCandidateProfiles()
+        {
+            CombatVfxCueProfile vfxCueProfile =
+                LoadAsset<CombatVfxCueProfile>(ActionFoundationCombatVfxSetup.CombatVfxCueProfilePath);
+
+            ConfigureSummonPresentationCandidateProfile(
+                LoadOrCreateSummonPresentationCandidateProfile(SummonSlot1PresentationCandidateProfilePath),
+                "PlayerSummon.ShieldBreaker",
+                "Player Summon - Shield Breaker Elite",
+                SummonPresentationSide.PlayerSummon,
+                SummonSlot1ActorPrefabPath,
+                ActionFoundationEnemyRoleCandidateSetup.ShieldBreakerEliteCandidateProfilePath,
+                SummonSlot1ActorVisualName,
+                SummonSlot1ActorVisualRoleId,
+                vfxCueProfile,
+                "Promoted ShieldBreakerElite role Animator stands in for the first ally summon block-and-break read.",
+                "Magic-circle entry, ally pressure screen, tier pulse, assist bolt, and counter bolt carry the current read.",
+                "Replace the actor prefab or promoted visual source after a dedicated ally summon model and animation set are reviewed.");
+
+            ConfigureSummonPresentationCandidateProfile(
+                LoadOrCreateSummonPresentationCandidateProfile(BossSummonPressurePresentationCandidateProfilePath),
+                "BossPressure.AuraCaptain",
+                "Boss Pressure Summon - Aura Captain Elite",
+                SummonPresentationSide.BossPressure,
+                BossSummonPressureActorPrefabPath,
+                ActionFoundationEnemyRoleCandidateSetup.AuraCaptainEliteCandidateProfilePath,
+                BossSummonPressureActorVisualName,
+                BossSummonPressureActorVisualRoleId,
+                vfxCueProfile,
+                "Promoted AuraCaptainElite role Animator stands in for boss-side summon-pressure command reads.",
+                "Enemy pressure screen, pressure pulse, and boss-side intercept colors distinguish it from the player summon.",
+                "Replace with a dedicated boss pressure summon after boss roster art is reviewed, without changing boss cost data.");
+
+            AssetDatabase.SaveAssets();
+        }
+
+        private static SummonPresentationCandidateProfile LoadOrCreateSummonPresentationCandidateProfile(string assetPath)
+        {
+            EnsureFolderForAsset(assetPath);
+            SummonPresentationCandidateProfile profile =
+                AssetDatabase.LoadAssetAtPath<SummonPresentationCandidateProfile>(assetPath);
+            if (profile != null)
+            {
+                return profile;
+            }
+
+            profile = ScriptableObject.CreateInstance<SummonPresentationCandidateProfile>();
+            AssetDatabase.CreateAsset(profile, assetPath);
+            return profile;
+        }
+
+        private static void ConfigureSummonPresentationCandidateProfile(
+            SummonPresentationCandidateProfile profile,
+            string candidateId,
+            string displayName,
+            SummonPresentationSide side,
+            string actorPrefabPath,
+            string roleCandidateProfilePath,
+            string visualChildName,
+            string sourceRoleId,
+            CombatVfxCueProfile vfxCueProfile,
+            string animationRead,
+            string vfxRead,
+            string replacementPlan)
+        {
+            GameObject actorPrefab = LoadAsset<GameObject>(actorPrefabPath);
+            CombatEnemyRoleCandidateProfile roleCandidate =
+                LoadAsset<CombatEnemyRoleCandidateProfile>(roleCandidateProfilePath);
+            RuntimeAnimatorController animatorController =
+                ResolveActorVisualAnimatorController(actorPrefab, visualChildName);
+
+            SetString(profile, "candidateId", candidateId);
+            SetString(profile, "displayName", displayName);
+            SetEnum(profile, "side", (int)side);
+            SetObjectReference(profile, "actorPrefab", actorPrefab);
+            SetObjectReference(profile, "visualSourceAsset", roleCandidate.PromotedVisualSource);
+            SetString(profile, "visualChildName", visualChildName);
+            SetString(profile, "sourceRoleId", sourceRoleId);
+            SetObjectReference(profile, "animatorController", animatorController);
+            SetObjectReference(profile, "vfxCueProfile", vfxCueProfile);
+            SetString(profile, "animationRead", animationRead);
+            SetString(profile, "vfxRead", vfxRead);
+            SetString(profile, "replacementPlan", replacementPlan);
+            SetString(
+                profile,
+                "ownershipNotes",
+                "Presentation candidate only; runtime cost, tier, projectile, and screen values remain in gameplay profiles.");
+        }
+
+        private static RuntimeAnimatorController ResolveActorVisualAnimatorController(
+            GameObject actorPrefab,
+            string visualChildName)
+        {
+            Transform visual = actorPrefab.transform.Find(visualChildName);
+            if (visual == null)
+            {
+                throw new InvalidOperationException($"{actorPrefab.name} is missing visual child {visualChildName}.");
+            }
+
+            Animator animator = visual.GetComponent<Animator>();
+            if (animator == null || animator.runtimeAnimatorController == null)
+            {
+                throw new InvalidOperationException($"{visualChildName} is missing an Animator controller.");
+            }
+
+            return animator.runtimeAnimatorController;
         }
 
         private static SummonLaneSpace CreateLaneSpace(Scene scene)
@@ -3287,6 +3423,106 @@ namespace DimensionBrawl.Editor
 
             ValidateSummonActorRoleVisualContents(visual.gameObject, visualName);
             return visual;
+        }
+
+        private static void ValidateSummonPresentationCandidateProfiles()
+        {
+            CombatVfxCueProfile vfxCueProfile =
+                LoadAsset<CombatVfxCueProfile>(ActionFoundationCombatVfxSetup.CombatVfxCueProfilePath);
+
+            ValidateSummonPresentationCandidateProfile(
+                LoadAsset<SummonPresentationCandidateProfile>(SummonSlot1PresentationCandidateProfilePath),
+                "PlayerSummon.ShieldBreaker",
+                SummonPresentationSide.PlayerSummon,
+                SummonSlot1ActorPrefabPath,
+                ActionFoundationEnemyRoleCandidateSetup.ShieldBreakerEliteCandidateProfilePath,
+                SummonSlot1ActorVisualName,
+                SummonSlot1ActorVisualRoleId,
+                vfxCueProfile);
+
+            ValidateSummonPresentationCandidateProfile(
+                LoadAsset<SummonPresentationCandidateProfile>(BossSummonPressurePresentationCandidateProfilePath),
+                "BossPressure.AuraCaptain",
+                SummonPresentationSide.BossPressure,
+                BossSummonPressureActorPrefabPath,
+                ActionFoundationEnemyRoleCandidateSetup.AuraCaptainEliteCandidateProfilePath,
+                BossSummonPressureActorVisualName,
+                BossSummonPressureActorVisualRoleId,
+                vfxCueProfile);
+        }
+
+        private static void ValidateSummonPresentationCandidateProfile(
+            SummonPresentationCandidateProfile profile,
+            string expectedCandidateId,
+            SummonPresentationSide expectedSide,
+            string actorPrefabPath,
+            string roleCandidateProfilePath,
+            string visualChildName,
+            string sourceRoleId,
+            CombatVfxCueProfile vfxCueProfile)
+        {
+            GameObject actorPrefab = LoadAsset<GameObject>(actorPrefabPath);
+            CombatEnemyRoleCandidateProfile roleCandidate =
+                LoadAsset<CombatEnemyRoleCandidateProfile>(roleCandidateProfilePath);
+            RuntimeAnimatorController animatorController =
+                ResolveActorVisualAnimatorController(actorPrefab, visualChildName);
+
+            if (!string.Equals(profile.CandidateId, expectedCandidateId, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"{profile.name} has the wrong summon presentation candidate id.");
+            }
+
+            if (profile.Side != expectedSide)
+            {
+                throw new InvalidOperationException($"{profile.name} has the wrong summon presentation side.");
+            }
+
+            if (profile.ActorPrefab != actorPrefab)
+            {
+                throw new InvalidOperationException($"{profile.name} points to the wrong actor prefab.");
+            }
+
+            if (profile.VisualSourceAsset != roleCandidate.PromotedVisualSource)
+            {
+                throw new InvalidOperationException($"{profile.name} points to the wrong promoted visual source.");
+            }
+
+            if (!string.Equals(profile.VisualChildName, visualChildName, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"{profile.name} has the wrong visual child name.");
+            }
+
+            if (!string.Equals(profile.SourceRoleId, sourceRoleId, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"{profile.name} has the wrong source role id.");
+            }
+
+            if (profile.AnimatorController != animatorController)
+            {
+                throw new InvalidOperationException($"{profile.name} points to the wrong Animator controller.");
+            }
+
+            if (profile.VfxCueProfile != vfxCueProfile)
+            {
+                throw new InvalidOperationException($"{profile.name} points to the wrong VFX cue profile.");
+            }
+
+            if (string.IsNullOrWhiteSpace(profile.DisplayName)
+                || string.IsNullOrWhiteSpace(profile.AnimationRead)
+                || string.IsNullOrWhiteSpace(profile.VfxRead)
+                || string.IsNullOrWhiteSpace(profile.ReplacementPlan)
+                || string.IsNullOrWhiteSpace(profile.OwnershipNotes))
+            {
+                throw new InvalidOperationException($"{profile.name} should document display, animation, VFX, replacement, and ownership notes.");
+            }
+
+            ValidateGameOwnedAsset(profile, $"{profile.name} asset");
+            ValidateGameOwnedAsset(profile.ActorPrefab, $"{profile.name} actor prefab");
+            ValidateGameOwnedAsset(profile.VisualSourceAsset, $"{profile.name} visual source");
+            ValidateGameOwnedAsset(profile.AnimatorController, $"{profile.name} Animator controller");
+            ValidateGameOwnedAsset(profile.VfxCueProfile, $"{profile.name} VFX cue profile");
+            Transform visual = ValidateSummonActorRoleVisual(actorPrefab, visualChildName);
+            ValidateSummonActorRoleVisualContents(visual.gameObject, profile.name);
         }
 
         private static void ValidateSummonActorRoleVisualContents(GameObject visual, string label)

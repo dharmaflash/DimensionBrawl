@@ -198,6 +198,14 @@ Reason: The new product direction needs the boss exchange to foreshadow future P
 
 Impact: `BossPressureCostLadder` owns boss cost, `BossPressurePositionController` owns only the bound boss proxy's lane position, and `BossPressureActionDirector` spends cost on authored pressure slots. Future boss skills, normal fire, summon-like calls, and PvP conversions should extend this module split rather than hiding behavior inside barrage, HUD, or encounter owners.
 
+## 2026-06-19: Summon Presentation Candidates Stay Separate From Gameplay Data
+
+Decision: First-pass player summon and boss pressure proxy art/animation candidates should be recorded in `SummonPresentationCandidateProfile` assets instead of being hidden in summon EN, boss cost, projectile, or encounter logic.
+
+Reason: Summon and boss-pressure visuals will change as better models and animations are reviewed. Keeping candidate prefab, promoted visual source, Animator, VFX read, and replacement notes in presentation data lets the team swap art without rewriting the gameplay loop or turning editor setup code into a runtime prefab generator.
+
+Impact: `DB_SummonPresentation_PlayerShieldBreaker` and `DB_SummonPresentation_BossAuraCaptain` document the current reviewed proxy choices. Runtime cost, tier, projectile, target, and pocket-result behavior remain in their existing gameplay owners.
+
 ## 2026-06-16: First Boss Candidate Prefers Humanoid Barrage Caster
 
 Decision: The first boss/proxy presentation candidate should prefer a promoted humanoid caster, commander, or summon-caller style prefab over a dragon-scale body. Existing `SummonCallerElite`, `FinalStandCommanderElite`, and `AuraCaptainElite` role visuals are the near-term boss-presentation candidates; dragons remain later candidates for a large chapter boss, set-piece boss, or high-cost summon.

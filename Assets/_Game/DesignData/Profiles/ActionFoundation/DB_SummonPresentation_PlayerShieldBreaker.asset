@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 74239a1a1d687a249b10f3a4b4f8a84a, type: 3}
+  m_Name: DB_SummonPresentation_PlayerShieldBreaker
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.SummonPresentationCandidateProfile
+  candidateId: PlayerSummon.ShieldBreaker
+  displayName: Player Summon - Shield Breaker Elite
+  side: 0
+  actorPrefab: {fileID: 78232937113701473, guid: 89b4fd244a67b614d96b87c855f7b102, type: 3}
+  visualSourceAsset: {fileID: 919132149155446097, guid: ec34f7926b6d82f488661bbad190e30d, type: 3}
+  visualChildName: SummonSlot1Visual_ShieldBreakerElite
+  sourceRoleId: SciFiSoldier.Elite.ShieldBreaker
+  animatorController: {fileID: 9100000, guid: 6c9d6cd483a475b4995cfdb17101ea5b, type: 2}
+  vfxCueProfile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
+  animationRead: Promoted ShieldBreakerElite role Animator stands in for the first
+    ally summon block-and-break read.
+  vfxRead: Magic-circle entry, ally pressure screen, tier pulse, assist bolt, and
+    counter bolt carry the current read.
+  replacementPlan: Replace the actor prefab or promoted visual source after a dedicated
+    ally summon model and animation set are reviewed.
+  ownershipNotes: Presentation candidate only; runtime cost, tier, projectile, and
+    screen values remain in gameplay profiles.
