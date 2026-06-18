@@ -8652,6 +8652,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.BossBarrageVisualCueDriver
   bossBarrageEmitter: {fileID: 822171416}
+  bossPressureActionDirector: {fileID: 822171420}
   animator: {fileID: 49433022}
   pulseRoot: {fileID: 102198268}
   pulseRenderers:
@@ -8736,6 +8737,25 @@ MonoBehaviour:
     releaseColor: {r: 1, g: 0.98, b: 0.58, a: 1}
     windupPulseScale: 0.2
     releasePulseScale: 0.38
+  pressureActionCues:
+  - actionKind: 0
+    trigger: AttackLinePressure
+    color: {r: 1, g: 0.88, b: 0.34, a: 1}
+    durationSeconds: 0.28
+    pulseScale: 0.28
+    tierPulseBonus: 0.06
+  - actionKind: 1
+    trigger: EliteSummonPackage
+    color: {r: 0.35, g: 1, b: 0.78, a: 1}
+    durationSeconds: 0.36
+    pulseScale: 0.34
+    tierPulseBonus: 0.08
+  - actionKind: 2
+    trigger: AttackHeavy
+    color: {r: 1, g: 0.24, b: 0.18, a: 1}
+    durationSeconds: 0.4
+    pulseScale: 0.42
+    tierPulseBonus: 0.1
 --- !u!1 &835092155
 GameObject:
   m_ObjectHideFlags: 0

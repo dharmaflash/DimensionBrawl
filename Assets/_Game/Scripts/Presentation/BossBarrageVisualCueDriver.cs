@@ -53,8 +53,53 @@ namespace DimensionBrawl.Presentation
             }
         }
 
+        [Serializable]
+        public struct PressureActionCue
+        {
+            [SerializeField] private BossPressureActionKind actionKind;
+            [SerializeField] private string trigger;
+            [SerializeField] private Color color;
+            [SerializeField, Min(0.01f)] private float durationSeconds;
+            [SerializeField, Min(0f)] private float pulseScale;
+            [SerializeField, Min(0f)] private float tierPulseBonus;
+
+            public PressureActionCue(
+                BossPressureActionKind actionKind,
+                string trigger,
+                Color color,
+                float durationSeconds,
+                float pulseScale,
+                float tierPulseBonus)
+            {
+                this.actionKind = actionKind;
+                this.trigger = trigger;
+                this.color = color;
+                this.durationSeconds = Mathf.Max(0.01f, durationSeconds);
+                this.pulseScale = Mathf.Max(0f, pulseScale);
+                this.tierPulseBonus = Mathf.Max(0f, tierPulseBonus);
+            }
+
+            public BossPressureActionKind ActionKind => actionKind;
+            public string Trigger => trigger;
+            public Color Color => color;
+            public float DurationSeconds => durationSeconds;
+            public float PulseScale => pulseScale;
+            public float TierPulseBonus => tierPulseBonus;
+
+            public bool Matches(BossPressureActionKind candidateKind)
+            {
+                return actionKind == candidateKind;
+            }
+
+            public float ResolvePulseScale(int tier)
+            {
+                return pulseScale + tierPulseBonus * Mathf.Max(0, tier - 1);
+            }
+        }
+
         [Header("References")]
         [SerializeField] private BossBarrageEmitter bossBarrageEmitter;
+        [SerializeField] private BossPressureActionDirector bossPressureActionDirector;
         [SerializeField] private Animator animator;
         [SerializeField] private Transform pulseRoot;
         [SerializeField] private Renderer[] pulseRenderers = Array.Empty<Renderer>();
@@ -73,6 +118,9 @@ namespace DimensionBrawl.Presentation
         [Header("Pattern Cues")]
         [SerializeField] private PatternAnimationCue[] patternCues = Array.Empty<PatternAnimationCue>();
 
+        [Header("Pressure Action Cues")]
+        [SerializeField] private PressureActionCue[] pressureActionCues = Array.Empty<PressureActionCue>();
+
         private MaterialPropertyBlock propertyBlock;
         private Vector3 baseScale = Vector3.one;
         private Color activeColor;
@@ -80,17 +128,28 @@ namespace DimensionBrawl.Presentation
         private float cueTimer;
         private float cueDuration = 0.01f;
         private bool subscribed;
+        private bool pressureActionSubscribed;
         private string lastWindupTrigger = string.Empty;
         private string lastReleaseTrigger = string.Empty;
+        private string lastPressureActionTrigger = string.Empty;
+        private BossPressureActionKind lastPressureActionKind;
+        private int lastPressureActionTier;
+        private int pressureActionCueRequestCount;
 
         public BossBarrageEmitter BossBarrageEmitter => bossBarrageEmitter;
+        public BossPressureActionDirector BossPressureActionDirector => bossPressureActionDirector;
         public Animator Animator => animator;
         public Transform PulseRoot => pulseRoot;
         public int PulseRendererCount => pulseRenderers != null ? pulseRenderers.Length : 0;
         public int PatternCueCount => patternCues != null ? patternCues.Length : 0;
+        public int PressureActionCueCount => pressureActionCues != null ? pressureActionCues.Length : 0;
         public bool IsCueActive => cueTimer > 0f;
         public string LastWindupTrigger => lastWindupTrigger;
         public string LastReleaseTrigger => lastReleaseTrigger;
+        public string LastPressureActionTrigger => lastPressureActionTrigger;
+        public BossPressureActionKind LastPressureActionKind => lastPressureActionKind;
+        public int LastPressureActionTier => lastPressureActionTier;
+        public int PressureActionCueRequestCount => pressureActionCueRequestCount;
 
         public bool TryGetPatternCue(int index, out PatternAnimationCue cue)
         {
@@ -101,6 +160,18 @@ namespace DimensionBrawl.Presentation
             }
 
             cue = patternCues[index];
+            return true;
+        }
+
+        public bool TryGetPressureActionCue(int index, out PressureActionCue cue)
+        {
+            if (pressureActionCues == null || index < 0 || index >= pressureActionCues.Length)
+            {
+                cue = default;
+                return false;
+            }
+
+            cue = pressureActionCues[index];
             return true;
         }
 
@@ -118,6 +189,13 @@ namespace DimensionBrawl.Presentation
             CaptureBaseScale();
             ApplyColor(baseColor);
             Subscribe();
+        }
+
+        public void ConfigurePressureActionSource(BossPressureActionDirector newBossPressureActionDirector)
+        {
+            UnsubscribePressureActionSource();
+            bossPressureActionDirector = newBossPressureActionDirector;
+            SubscribePressureActionSource();
         }
 
         public void ResetToDefaultPatternCues()
@@ -207,11 +285,44 @@ namespace DimensionBrawl.Presentation
             };
         }
 
+        public void ResetToDefaultPressureActionCues()
+        {
+            pressureActionCues = new[]
+            {
+                new PressureActionCue(
+                    BossPressureActionKind.SkillPattern,
+                    "AttackLinePressure",
+                    new Color(1f, 0.88f, 0.34f, 1f),
+                    0.28f,
+                    0.28f,
+                    0.06f),
+                new PressureActionCue(
+                    BossPressureActionKind.SummonPressure,
+                    "EliteSummonPackage",
+                    new Color(0.35f, 1f, 0.78f, 1f),
+                    0.36f,
+                    0.34f,
+                    0.08f),
+                new PressureActionCue(
+                    BossPressureActionKind.PunishOverextend,
+                    "AttackHeavy",
+                    new Color(1f, 0.24f, 0.18f, 1f),
+                    0.40f,
+                    0.42f,
+                    0.10f)
+            };
+        }
+
         private void Awake()
         {
             if (bossBarrageEmitter == null)
             {
                 bossBarrageEmitter = GetComponentInParent<BossBarrageEmitter>();
+            }
+
+            if (bossPressureActionDirector == null)
+            {
+                bossPressureActionDirector = GetComponentInParent<BossPressureActionDirector>();
             }
 
             if (animator == null)
@@ -275,7 +386,29 @@ namespace DimensionBrawl.Presentation
             StartCue(cue.ReleaseColor, releaseFlashSeconds, cue.ReleasePulseScale);
         }
 
+        private void OnPressureActionQueued(
+            BossPressureActionDirector director,
+            BossPressureActionKind actionKind,
+            BossBarragePatternProfile pattern,
+            int spentTier)
+        {
+            PressureActionCue cue = ResolvePressureActionCue(actionKind);
+            string trigger = string.IsNullOrWhiteSpace(cue.Trigger) ? defaultReleaseTrigger : cue.Trigger;
+            lastPressureActionKind = actionKind;
+            lastPressureActionTrigger = trigger;
+            lastPressureActionTier = Mathf.Clamp(spentTier, 1, 3);
+            pressureActionCueRequestCount++;
+            TriggerAnimator(trigger);
+            StartCue(cue.Color, cue.DurationSeconds, cue.ResolvePulseScale(lastPressureActionTier));
+        }
+
         private void Subscribe()
+        {
+            SubscribeBarrageEmitter();
+            SubscribePressureActionSource();
+        }
+
+        private void SubscribeBarrageEmitter()
         {
             if (subscribed || bossBarrageEmitter == null)
             {
@@ -287,7 +420,24 @@ namespace DimensionBrawl.Presentation
             subscribed = true;
         }
 
+        private void SubscribePressureActionSource()
+        {
+            if (pressureActionSubscribed || bossPressureActionDirector == null)
+            {
+                return;
+            }
+
+            bossPressureActionDirector.ActionQueued += OnPressureActionQueued;
+            pressureActionSubscribed = true;
+        }
+
         private void Unsubscribe()
+        {
+            UnsubscribeBarrageEmitter();
+            UnsubscribePressureActionSource();
+        }
+
+        private void UnsubscribeBarrageEmitter()
         {
             if (!subscribed || bossBarrageEmitter == null)
             {
@@ -298,6 +448,18 @@ namespace DimensionBrawl.Presentation
             bossBarrageEmitter.WindupStarted -= OnWindupStarted;
             bossBarrageEmitter.WaveFired -= OnWaveFired;
             subscribed = false;
+        }
+
+        private void UnsubscribePressureActionSource()
+        {
+            if (!pressureActionSubscribed || bossPressureActionDirector == null)
+            {
+                pressureActionSubscribed = false;
+                return;
+            }
+
+            bossPressureActionDirector.ActionQueued -= OnPressureActionQueued;
+            pressureActionSubscribed = false;
         }
 
         private PatternAnimationCue ResolveCue(BossBarragePatternProfile pattern)
@@ -321,6 +483,28 @@ namespace DimensionBrawl.Presentation
                 defaultReleaseColor,
                 defaultWindupPulseScale,
                 defaultReleasePulseScale);
+        }
+
+        private PressureActionCue ResolvePressureActionCue(BossPressureActionKind actionKind)
+        {
+            if (pressureActionCues != null)
+            {
+                for (int i = 0; i < pressureActionCues.Length; i++)
+                {
+                    if (pressureActionCues[i].Matches(actionKind))
+                    {
+                        return pressureActionCues[i];
+                    }
+                }
+            }
+
+            return new PressureActionCue(
+                actionKind,
+                defaultReleaseTrigger,
+                defaultReleaseColor,
+                releaseFlashSeconds,
+                defaultReleasePulseScale,
+                0f);
         }
 
         private void StartCue(Color cueColor, float duration, float pulseScale)

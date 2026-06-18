@@ -110,6 +110,12 @@ namespace DimensionBrawl.Tests
             "PunishNet",
             "LinePressure"
         };
+        private static readonly BossPressureActionKind[] RequiredBossPressureActionCueKinds =
+        {
+            BossPressureActionKind.SkillPattern,
+            BossPressureActionKind.SummonPressure,
+            BossPressureActionKind.PunishOverextend
+        };
 
         [UnitySetUp]
         public IEnumerator LoadBossBarrageLaneReviewScene()
@@ -554,8 +560,8 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("RangedAim", GetString(mobileHud, "rangedAimActionName"));
             Assert.AreEqual("WeaponSwap", GetString(mobileHud, "weaponSwapActionName"));
             Assert.IsTrue(GetBool(mobileHud, "screenDragControlsAim"));
-            Assert.IsTrue(GetBool(mobileHud, "rightMouseDragControlsAim"));
-            Assert.IsFalse(GetBool(mobileHud, "leftMouseDragControlsAim"));
+            Assert.IsFalse(GetBool(mobileHud, "rightMouseDragControlsAim"));
+            Assert.IsTrue(GetBool(mobileHud, "leftMouseDragControlsAim"));
             Assert.AreEqual(0.08f, GetFloat(mobileHud, "lookAimDragDeadZone"), 0.001f);
             Assert.AreEqual(230f, GetFloat(mobileHud, "lookAimDragRadius"), 0.001f);
             Assert.AreEqual(30f, GetFloat(mobileHud, "lookAimKnobSize"), 0.001f);
@@ -1902,6 +1908,37 @@ namespace DimensionBrawl.Tests
             yield return null;
         }
 
+        [UnityTest]
+        public IEnumerator BossPressureCostActionTriggersBossVisualCue()
+        {
+            GameObject bossRoot = RequireRoot(BossRootName);
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            BossPressureCostLadder bossPressureCost =
+                RequireComponent<BossPressureCostLadder>(bossRoot, "boss pressure cost ladder");
+            BossPressureActionDirector bossPressureActionDirector =
+                RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
+            BossBarrageVisualCueDriver cueDriver =
+                RequireComponent<BossBarrageVisualCueDriver>(bossRoot, "boss visual cue driver");
+
+            Assert.AreSame(emitter, cueDriver.BossBarrageEmitter);
+            Assert.AreSame(bossPressureActionDirector, cueDriver.BossPressureActionDirector);
+            int cueCountBefore = cueDriver.PressureActionCueRequestCount;
+
+            bossPressureCost.GrantCurrentTierCost(300f);
+            Assert.IsTrue(
+                bossPressureActionDirector.TryQueueBestAvailableAction(),
+                "Boss pressure director should be able to spend cost into an authored pressure action during the review.");
+
+            Assert.AreEqual(cueCountBefore + 1, cueDriver.PressureActionCueRequestCount);
+            Assert.AreEqual(bossPressureActionDirector.LastActionKind, cueDriver.LastPressureActionKind);
+            Assert.AreEqual(bossPressureActionDirector.LastSpentTier, cueDriver.LastPressureActionTier);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(cueDriver.LastPressureActionTrigger));
+            Assert.IsTrue(
+                cueDriver.IsCueActive,
+                "Boss costed skill/summon choices should create an in-world visual read, not only HUD text.");
+            yield return null;
+        }
+
         private static GameObject RequireRoot(string rootName)
         {
             GameObject[] roots = SceneManager.GetActiveScene().GetRootGameObjects();
@@ -2243,11 +2280,16 @@ namespace DimensionBrawl.Tests
             BossBarrageVisualCueDriver cueDriver =
                 RequireComponent<BossBarrageVisualCueDriver>(bossRoot, "boss visual cue driver");
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            BossPressureActionDirector bossPressureActionDirector =
+                RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
             Assert.AreSame(emitter, cueDriver.BossBarrageEmitter);
+            Assert.AreSame(bossPressureActionDirector, cueDriver.BossPressureActionDirector);
             Assert.AreSame(animator, cueDriver.Animator);
             Assert.AreSame(projectileCore, cueDriver.PulseRoot);
             Assert.GreaterOrEqual(cueDriver.PatternCueCount, 10);
             AssertBossVisualCueBindings(cueDriver, animator);
+            Assert.GreaterOrEqual(cueDriver.PressureActionCueCount, RequiredBossPressureActionCueKinds.Length);
+            AssertBossPressureActionCueBindings(cueDriver, animator);
             Assert.Greater(cueDriver.PulseRendererCount, 0);
         }
 
@@ -2379,6 +2421,24 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(
                     foundPatternIds.Contains(RequiredBossPatternCueIds[i]),
                     $"Boss visual cue driver should map {RequiredBossPatternCueIds[i]}.");
+            }
+        }
+
+        private static void AssertBossPressureActionCueBindings(BossBarrageVisualCueDriver cueDriver, Animator animator)
+        {
+            var foundActionKinds = new HashSet<BossPressureActionKind>();
+            for (int i = 0; i < cueDriver.PressureActionCueCount; i++)
+            {
+                Assert.IsTrue(cueDriver.TryGetPressureActionCue(i, out BossBarrageVisualCueDriver.PressureActionCue cue));
+                foundActionKinds.Add(cue.ActionKind);
+                AssertAnimatorTrigger(animator, cue.Trigger, $"{cue.ActionKind} pressure action trigger");
+            }
+
+            for (int i = 0; i < RequiredBossPressureActionCueKinds.Length; i++)
+            {
+                Assert.IsTrue(
+                    foundActionKinds.Contains(RequiredBossPressureActionCueKinds[i]),
+                    $"Boss visual cue driver should map pressure action {RequiredBossPressureActionCueKinds[i]}.");
             }
         }
 

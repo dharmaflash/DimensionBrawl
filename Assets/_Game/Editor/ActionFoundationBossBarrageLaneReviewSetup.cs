@@ -146,6 +146,12 @@ namespace DimensionBrawl.Editor
             "PunishNet",
             "LinePressure"
         };
+        private static readonly BossPressureActionKind[] RequiredBossPressureActionCueKinds =
+        {
+            BossPressureActionKind.SkillPattern,
+            BossPressureActionKind.SummonPressure,
+            BossPressureActionKind.PunishOverextend
+        };
 
         [MenuItem("DimensionBrawl/Reapply Action Foundation Boss Barrage Lane Review Scene")]
         public static void ReapplyBossBarrageLaneReviewSceneMenu()
@@ -1557,7 +1563,7 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(bossPressurePosition);
 
             CreateBossProxyVisual(bossProxy.transform);
-            ConfigureBossProxyVisualCueDriver(bossProxy, emitter);
+            ConfigureBossProxyVisualCueDriver(bossProxy, emitter, bossPressureActionDirector);
             return bossProxy;
         }
 
@@ -1659,7 +1665,10 @@ namespace DimensionBrawl.Editor
             renderer.sharedMaterial = material;
         }
 
-        private static void ConfigureBossProxyVisualCueDriver(GameObject bossProxy, BossBarrageEmitter emitter)
+        private static void ConfigureBossProxyVisualCueDriver(
+            GameObject bossProxy,
+            BossBarrageEmitter emitter,
+            BossPressureActionDirector bossPressureActionDirector)
         {
             Transform visual = bossProxy.transform.Find(BossProxyHumanoidVisualName);
             if (visual == null)
@@ -1685,7 +1694,9 @@ namespace DimensionBrawl.Editor
                 animator,
                 projectileCore,
                 projectileCore.GetComponentsInChildren<Renderer>(includeInactive: true));
+            cueDriver.ConfigurePressureActionSource(bossPressureActionDirector);
             cueDriver.ResetToDefaultPatternCues();
+            cueDriver.ResetToDefaultPressureActionCues();
             EditorUtility.SetDirty(cueDriver);
         }
 
@@ -3152,9 +3163,16 @@ namespace DimensionBrawl.Editor
                 bossProxy,
                 "boss barrage visual cue driver");
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossProxy, "boss barrage emitter");
+            BossPressureActionDirector bossPressureActionDirector =
+                RequireComponent<BossPressureActionDirector>(bossProxy, "boss pressure action director");
             if (cueDriver.BossBarrageEmitter != emitter)
             {
                 throw new InvalidOperationException("Boss visual cue driver should read from the boss barrage emitter.");
+            }
+
+            if (cueDriver.BossPressureActionDirector != bossPressureActionDirector)
+            {
+                throw new InvalidOperationException("Boss visual cue driver should read boss pressure action selections.");
             }
 
             if (cueDriver.Animator != animator)
@@ -3173,6 +3191,7 @@ namespace DimensionBrawl.Editor
             }
 
             ValidateBossVisualCueBindings(cueDriver, animator);
+            ValidateBossPressureActionCueBindings(cueDriver, animator);
 
             if (cueDriver.PulseRendererCount <= 0)
             {
@@ -3326,6 +3345,30 @@ namespace DimensionBrawl.Editor
                 if (!foundPatternIds.Contains(RequiredBossPatternCueIds[i]))
                 {
                     throw new InvalidOperationException($"Boss visual cue driver is missing pattern cue {RequiredBossPatternCueIds[i]}.");
+                }
+            }
+        }
+
+        private static void ValidateBossPressureActionCueBindings(BossBarrageVisualCueDriver cueDriver, Animator animator)
+        {
+            var foundActionKinds = new HashSet<BossPressureActionKind>();
+            for (int i = 0; i < cueDriver.PressureActionCueCount; i++)
+            {
+                if (!cueDriver.TryGetPressureActionCue(i, out BossBarrageVisualCueDriver.PressureActionCue cue))
+                {
+                    throw new InvalidOperationException($"Boss visual cue driver could not read pressure action cue at index {i}.");
+                }
+
+                foundActionKinds.Add(cue.ActionKind);
+                ValidateAnimatorTrigger(animator, cue.Trigger, $"{cue.ActionKind} pressure action trigger");
+            }
+
+            for (int i = 0; i < RequiredBossPressureActionCueKinds.Length; i++)
+            {
+                if (!foundActionKinds.Contains(RequiredBossPressureActionCueKinds[i]))
+                {
+                    throw new InvalidOperationException(
+                        $"Boss visual cue driver is missing pressure action cue {RequiredBossPressureActionCueKinds[i]}.");
                 }
             }
         }
