@@ -60,6 +60,10 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Actor_Proxy.prefab";
         public const string BossSummonPressureActorPrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossSummonPressureActor_Proxy.prefab";
+        public const string SummonSlot1ActionProfilePath =
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonSlot1_ShieldBreaker.asset";
+        public const string BossSummonPressureProfilePath =
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_BossSummonPressure_SummonCaller.asset";
         public const string BossPressureActionDeckProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_BossPressureActionDeck_PocketReview.asset";
         public const string SummonOpportunityProfilePath =
@@ -1512,6 +1516,8 @@ namespace DimensionBrawl.Editor
             SetObjectReference(bossSummonPressureAction, "summonActorRoot", bossSummonActorRoot);
             SetEnum(bossSummonPressureAction, "ownerTeam", (int)DamageTeam.Enemy);
             SetInt(bossSummonPressureAction, "actorPrewarmCount", 2);
+            bossSummonPressureAction.ConfigurePressureProfile(
+                LoadAsset<BossSummonPressureProfile>(BossSummonPressureProfilePath));
 
             BossPressureActionDirector bossPressureActionDirector =
                 EnsureComponent<BossPressureActionDirector>(bossProxy);
@@ -2486,7 +2492,8 @@ namespace DimensionBrawl.Editor
             SetEnum(summonSlot1Action, "sourceTeam", (int)DamageTeam.AllySummon);
             SetInt(summonSlot1Action, "prewarmCount", 8);
             SetInt(summonSlot1Action, "actorPrewarmCount", 2);
-            summonSlot1Action.ResetToDefaultTierSettings();
+            summonSlot1Action.ConfigureSummonActionProfile(
+                LoadAsset<SummonSlotActionProfile>(SummonSlot1ActionProfilePath));
             EditorUtility.SetDirty(summonSlot1Action);
         }
 
@@ -2868,6 +2875,10 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(summonSlot1Action, "cueRoot", actionCueRoot.transform);
             ValidateObjectReference(summonSlot1Action, "summonActorRoot", summonActorRoot.transform);
             ValidateEnum(summonSlot1Action, "sourceTeam", (int)DamageTeam.AllySummon);
+            ValidateObjectReference(
+                summonSlot1Action,
+                "summonActionProfile",
+                LoadAsset<SummonSlotActionProfile>(SummonSlot1ActionProfilePath));
 
             SummonFrontlineProxy summonActorPrefab = LoadPrefabComponent<SummonFrontlineProxy>(SummonSlot1ActorPrefabPath);
             SummonPressureScreen pressureScreen = LoadPrefabComponent<SummonPressureScreen>(SummonSlot1ActorPrefabPath);
@@ -2970,6 +2981,10 @@ namespace DimensionBrawl.Editor
                 RequireRoot(SceneManager.GetActiveScene(), BossSummonActorPoolRootName).transform);
             ValidateEnum(bossSummonPressureAction, "ownerTeam", (int)DamageTeam.Enemy);
             ValidateInt(bossSummonPressureAction, "actorPrewarmCount", 2);
+            ValidateObjectReference(
+                bossSummonPressureAction,
+                "pressureProfile",
+                LoadAsset<BossSummonPressureProfile>(BossSummonPressureProfilePath));
 
             SummonFrontlineProxy bossSummonActorPrefab =
                 LoadPrefabComponent<SummonFrontlineProxy>(BossSummonPressureActorPrefabPath);

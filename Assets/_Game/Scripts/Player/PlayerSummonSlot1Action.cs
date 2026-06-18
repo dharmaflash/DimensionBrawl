@@ -10,7 +10,7 @@ namespace DimensionBrawl.Player
     public sealed partial class PlayerSummonSlot1Action : MonoBehaviour
     {
         [Serializable]
-        private struct SummonTierSettings
+        public struct SummonTierSettings
         {
             [Min(0f)] public float Damage;
             [Min(0f)] public float ProjectileSpeed;
@@ -34,6 +34,32 @@ namespace DimensionBrawl.Player
             [Min(0.01f)] public float CounterLifetimeSeconds;
             [Min(0.01f)] public float CounterRadius;
             [Min(0f)] public float CounterTargetHeight;
+
+            public void Normalize()
+            {
+                Damage = Mathf.Max(0f, Damage);
+                ProjectileSpeed = Mathf.Max(0f, ProjectileSpeed);
+                LifetimeSeconds = Mathf.Max(0.01f, LifetimeSeconds);
+                Radius = Mathf.Max(0.01f, Radius);
+                ProjectileCount = Mathf.Max(1, ProjectileCount);
+                LateralReach = Mathf.Max(0f, LateralReach);
+                EntryHeight = Mathf.Max(0f, EntryHeight);
+                TargetHeight = Mathf.Max(0f, TargetHeight);
+                CueScale = Mathf.Max(0f, CueScale);
+                CueLifetimeSeconds = Mathf.Max(0f, CueLifetimeSeconds);
+                ActorLifetimeSeconds = Mathf.Max(0.05f, ActorLifetimeSeconds);
+                ActorScale = Mathf.Max(0.01f, ActorScale);
+                ActorAdvanceDistance = Mathf.Max(0f, ActorAdvanceDistance);
+                ActorAdvanceSeconds = Mathf.Max(0.01f, ActorAdvanceSeconds);
+                ScreenIntercepts = Mathf.Max(0, ScreenIntercepts);
+                ScreenRadius = Mathf.Max(0.05f, ScreenRadius);
+                ScreenLifetimeSeconds = Mathf.Max(0.05f, ScreenLifetimeSeconds);
+                CounterDamage = Mathf.Max(0f, CounterDamage);
+                CounterProjectileSpeed = Mathf.Max(0f, CounterProjectileSpeed);
+                CounterLifetimeSeconds = Mathf.Max(0.01f, CounterLifetimeSeconds);
+                CounterRadius = Mathf.Max(0.01f, CounterRadius);
+                CounterTargetHeight = Mathf.Max(0f, CounterTargetHeight);
+            }
         }
 
         [Header("Input")]
@@ -66,6 +92,7 @@ namespace DimensionBrawl.Player
         [SerializeField, Min(0f)] private float useBlockedHintSeconds = 0.75f;
 
         [Header("Tier Tuning")]
+        [SerializeField] private SummonSlotActionProfile summonActionProfile;
         [SerializeField] private SummonTierSettings[] tierSettings = CreateDefaultTierSettings();
 
         private SummonExecutionRuntime executionRuntime;
@@ -92,6 +119,8 @@ namespace DimensionBrawl.Player
         public int ActivePressureScreenRemainingIntercepts => executionRuntime != null
             ? executionRuntime.ActivePressureScreenRemainingIntercepts
             : 0;
+        public SummonSlotActionProfile SummonActionProfile => summonActionProfile;
+        public bool HasSummonActionProfile => summonActionProfile != null;
         public bool ShowUseBlockedHint => blockedHintTimer > 0f;
         public string LastUseBlockedReason => lastBlockedReason;
 
@@ -117,8 +146,25 @@ namespace DimensionBrawl.Player
             }
         }
 
+        private void OnValidate()
+        {
+            ApplySummonActionProfile();
+            if (tierSettings == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < tierSettings.Length; i++)
+            {
+                SummonTierSettings settings = tierSettings[i];
+                settings.Normalize();
+                tierSettings[i] = settings;
+            }
+        }
+
         private void OnEnable()
         {
+            ApplySummonActionProfile();
             actionEnabledHere = EnableActionIfNeeded(summonAction);
             EnsureExecutionRuntime();
             executionRuntime.Prewarm();
@@ -178,7 +224,14 @@ namespace DimensionBrawl.Player
 
         public void ResetToDefaultTierSettings()
         {
+            summonActionProfile = null;
             tierSettings = CreateDefaultTierSettings();
+        }
+
+        public void ConfigureSummonActionProfile(SummonSlotActionProfile newSummonActionProfile)
+        {
+            summonActionProfile = newSummonActionProfile;
+            ApplySummonActionProfile();
         }
 
         public void QueueSummonSlot1()
@@ -216,6 +269,16 @@ namespace DimensionBrawl.Player
             {
                 executionRuntime = new SummonExecutionRuntime(this);
             }
+        }
+
+        private void ApplySummonActionProfile()
+        {
+            if (summonActionProfile == null)
+            {
+                return;
+            }
+
+            tierSettings = summonActionProfile.CopyTierSettings();
         }
 
         private void NotifySummonPressureBlocked(int tier)

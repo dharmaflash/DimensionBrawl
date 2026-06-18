@@ -58,6 +58,10 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Actor_Proxy.prefab";
         private const string BossSummonPressureActorPrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossSummonPressureActor_Proxy.prefab";
+        private const string SummonSlot1ActionProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonSlot1_ShieldBreaker.asset";
+        private const string BossSummonPressureProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossSummonPressure_SummonCaller.asset";
         private const string BossPressureActionDeckProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossPressureActionDeck_PocketReview.asset";
         private const string SummonOpportunityProfilePath =
@@ -167,11 +171,15 @@ namespace DimensionBrawl.Tests
                 LoadAsset<BossPressureActionDeckProfile>(BossPressureActionDeckProfilePath);
             BossSummonPressureAction bossSummonPressureAction =
                 RequireComponent<BossSummonPressureAction>(bossRoot, "boss summon pressure action");
+            BossSummonPressureProfile bossSummonPressureProfile =
+                LoadAsset<BossSummonPressureProfile>(BossSummonPressureProfilePath);
             BossPressurePositionController bossPressurePosition =
                 RequireComponent<BossPressurePositionController>(bossRoot, "boss pressure position controller");
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            SummonSlotActionProfile summonSlot1Profile =
+                LoadAsset<SummonSlotActionProfile>(SummonSlot1ActionProfilePath);
             ActionCameraCueDriver cameraCueDriver =
                 RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
             BossBarrageCameraCueDriver bossCameraCueDriver =
@@ -245,6 +253,10 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(
                 LoadAsset<GameObject>(BossSummonPressureActorPrefabPath),
                 GetObjectReference<GameObject>(bossSummonPressureAction, "summonActorPrefabObject"));
+            Assert.AreSame(bossSummonPressureProfile, bossSummonPressureAction.PressureProfile);
+            Assert.IsTrue(bossSummonPressureAction.HasPressureProfile);
+            Assert.AreEqual("BossSummonPressure.SummonCaller", bossSummonPressureProfile.PressureId);
+            Assert.AreEqual(3, bossSummonPressureProfile.TierCount);
             AssertSummonActorRoleVisual(
                 LoadAsset<GameObject>(BossSummonPressureActorPrefabPath),
                 BossSummonPressureActorVisualName);
@@ -559,6 +571,10 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(rangedBasicAttackAction, GetObjectReference<PlayerRangedBasicAttackAction>(reviewHud, "rangedBasicAttackAction"));
             Assert.AreSame(skill1Action, GetObjectReference<PlayerSkill1Action>(reviewHud, "skill1Action"));
             Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(reviewHud, "summonSlot1Action"));
+            Assert.AreSame(summonSlot1Profile, summonSlot1Action.SummonActionProfile);
+            Assert.IsTrue(summonSlot1Action.HasSummonActionProfile);
+            Assert.AreEqual("SummonSlot1.ShieldBreaker", summonSlot1Profile.ActionId);
+            Assert.AreEqual(3, summonSlot1Profile.TierCount);
             Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(reviewHud, "bossBarrageEmitter"));
             Assert.AreSame(
                 bossPressureCost,

@@ -1,0 +1,46 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4c138f2a83854b7e8441642a028a8d09, type: 3}
+  m_Name: DB_BossSummonPressure_SummonCaller
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossSummonPressureProfile
+  pressureId: BossSummonPressure.SummonCaller
+  tierSettings:
+  - EntryForwardBlend01: 0.24
+    LateralOffset: 0.9
+    EntryHeight: 0.2
+    ActorLifetimeSeconds: 1.35
+    ActorScale: 0.92
+    ActorAdvanceDistance: 1.15
+    ActorAdvanceSeconds: 0.28
+    ScreenIntercepts: 2
+    ScreenRadius: 1.2
+    ScreenLifetimeSeconds: 1.2
+  - EntryForwardBlend01: 0.34
+    LateralOffset: 1.4
+    EntryHeight: 0.2
+    ActorLifetimeSeconds: 1.65
+    ActorScale: 1.12
+    ActorAdvanceDistance: 1.9
+    ActorAdvanceSeconds: 0.34
+    ScreenIntercepts: 4
+    ScreenRadius: 1.55
+    ScreenLifetimeSeconds: 1.45
+  - EntryForwardBlend01: 0.45
+    LateralOffset: 2
+    EntryHeight: 0.2
+    ActorLifetimeSeconds: 2
+    ActorScale: 1.36
+    ActorAdvanceDistance: 2.7
+    ActorAdvanceSeconds: 0.42
+    ScreenIntercepts: 7
+    ScreenRadius: 1.95
+    ScreenLifetimeSeconds: 1.8

@@ -9,7 +9,7 @@ namespace DimensionBrawl.Combat
     public sealed class BossSummonPressureAction : MonoBehaviour
     {
         [Serializable]
-        private struct BossSummonTierSettings
+        public struct BossSummonTierSettings
         {
             [Range(0f, 1f)] public float EntryForwardBlend01;
             public float LateralOffset;
@@ -21,6 +21,19 @@ namespace DimensionBrawl.Combat
             [Min(0)] public int ScreenIntercepts;
             [Min(0.05f)] public float ScreenRadius;
             [Min(0.05f)] public float ScreenLifetimeSeconds;
+
+            public void Normalize()
+            {
+                EntryForwardBlend01 = Mathf.Clamp01(EntryForwardBlend01);
+                EntryHeight = Mathf.Max(0f, EntryHeight);
+                ActorLifetimeSeconds = Mathf.Max(0.05f, ActorLifetimeSeconds);
+                ActorScale = Mathf.Max(0.01f, ActorScale);
+                ActorAdvanceDistance = Mathf.Max(0f, ActorAdvanceDistance);
+                ActorAdvanceSeconds = Mathf.Max(0.01f, ActorAdvanceSeconds);
+                ScreenIntercepts = Mathf.Max(0, ScreenIntercepts);
+                ScreenRadius = Mathf.Max(0.05f, ScreenRadius);
+                ScreenLifetimeSeconds = Mathf.Max(0.05f, ScreenLifetimeSeconds);
+            }
         }
 
         [Header("References")]
@@ -33,6 +46,7 @@ namespace DimensionBrawl.Combat
         [Header("Boss Summon")]
         [SerializeField] private DamageTeam ownerTeam = DamageTeam.Enemy;
         [SerializeField, Min(0)] private int actorPrewarmCount = 2;
+        [SerializeField] private BossSummonPressureProfile pressureProfile;
         [SerializeField] private BossSummonTierSettings[] tierSettings = CreateDefaultTierSettings();
 
         private readonly List<SummonFrontlineProxy> summonActors = new List<SummonFrontlineProxy>(4);
@@ -60,9 +74,12 @@ namespace DimensionBrawl.Combat
         public int ActivePressureScreenCount => CountActivePressureScreens();
         public int ActivePressureScreenRemainingIntercepts => CountActivePressureScreenRemainingIntercepts();
         public bool CanRelease => laneSpace != null && ResolveSummonActorPrefab() != null;
+        public BossSummonPressureProfile PressureProfile => pressureProfile;
+        public bool HasPressureProfile => pressureProfile != null;
 
         private void OnEnable()
         {
+            ApplyPressureProfile();
             PrewarmSummonActors();
         }
 
@@ -73,6 +90,7 @@ namespace DimensionBrawl.Combat
 
         private void OnValidate()
         {
+            ApplyPressureProfile();
             if (tierSettings == null || tierSettings.Length == 0)
             {
                 tierSettings = CreateDefaultTierSettings();
@@ -81,15 +99,7 @@ namespace DimensionBrawl.Combat
             for (int i = 0; i < tierSettings.Length; i++)
             {
                 BossSummonTierSettings settings = tierSettings[i];
-                settings.EntryForwardBlend01 = Mathf.Clamp01(settings.EntryForwardBlend01);
-                settings.EntryHeight = Mathf.Max(0f, settings.EntryHeight);
-                settings.ActorLifetimeSeconds = Mathf.Max(0.05f, settings.ActorLifetimeSeconds);
-                settings.ActorScale = Mathf.Max(0.01f, settings.ActorScale);
-                settings.ActorAdvanceDistance = Mathf.Max(0f, settings.ActorAdvanceDistance);
-                settings.ActorAdvanceSeconds = Mathf.Max(0.01f, settings.ActorAdvanceSeconds);
-                settings.ScreenIntercepts = Mathf.Max(0, settings.ScreenIntercepts);
-                settings.ScreenRadius = Mathf.Max(0.05f, settings.ScreenRadius);
-                settings.ScreenLifetimeSeconds = Mathf.Max(0.05f, settings.ScreenLifetimeSeconds);
+                settings.Normalize();
                 tierSettings[i] = settings;
             }
         }
@@ -105,6 +115,12 @@ namespace DimensionBrawl.Combat
             summonActorPrefab = newSummonActorPrefab;
             summonActorPrefabObject = newSummonActorPrefab != null ? newSummonActorPrefab.gameObject : null;
             summonActorRoot = newSummonActorRoot;
+        }
+
+        public void ConfigurePressureProfile(BossSummonPressureProfile newPressureProfile)
+        {
+            pressureProfile = newPressureProfile;
+            ApplyPressureProfile();
         }
 
         public bool TryReleasePressureSummon(int tier)
@@ -295,6 +311,16 @@ namespace DimensionBrawl.Combat
             }
 
             return summonActorPrefab;
+        }
+
+        private void ApplyPressureProfile()
+        {
+            if (pressureProfile == null)
+            {
+                return;
+            }
+
+            tierSettings = pressureProfile.CopyTierSettings();
         }
 
         private void PrewarmSummonActors()

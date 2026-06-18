@@ -1277,6 +1277,7 @@ MonoBehaviour:
   prewarmCount: 8
   actorPrewarmCount: 2
   useBlockedHintSeconds: 0.75
+  summonActionProfile: {fileID: 11400000, guid: ea0ac980cb10498e92d7f0dcf1ddf9e7, type: 2}
   tierSettings:
   - Damage: 58
     ProjectileSpeed: 17
@@ -8524,6 +8525,7 @@ MonoBehaviour:
   summonActorRoot: {fileID: 2107917662}
   ownerTeam: 2
   actorPrewarmCount: 2
+  pressureProfile: {fileID: 11400000, guid: b72d92c8a256467ab8d18f0e340b3cf3, type: 2}
   tierSettings:
   - EntryForwardBlend01: 0.24
     LateralOffset: 0.9
