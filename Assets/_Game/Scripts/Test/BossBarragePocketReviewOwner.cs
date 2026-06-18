@@ -482,6 +482,7 @@ namespace DimensionBrawl.Test
 
             bossPressureBlocksConsumedDuringFollowup = blocksAfterWindowStart;
             bossBlockedSkill1Followup = true;
+            pressurePacing.EndSummonFollowupWindow();
             NotifySummonFollowupMissedOnce();
         }
 
@@ -717,6 +718,12 @@ namespace DimensionBrawl.Test
                 summonFollowupWindowTimer = Mathf.Max(0f, followupWindowSeconds);
                 summonPressureBreakActive = summonPressureBreakTimer > 0f;
                 summonFollowupWindowActive = summonFollowupWindowTimer > 0f;
+            }
+
+            public void EndSummonFollowupWindow()
+            {
+                summonFollowupWindowTimer = 0f;
+                summonFollowupWindowActive = false;
             }
 
             public void Tick(float deltaTime)

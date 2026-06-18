@@ -2092,6 +2092,12 @@ namespace DimensionBrawl.Tests
                 pocketOwner.BossBlockedSkill1Followup,
                 "A boss summon pressure screen blocking the follow-up shot should be a readable pocket state, not a silent generic miss.");
             Assert.AreEqual(1, pocketOwner.BossPressureBlocksDuringSummonFollowup);
+            Assert.IsFalse(
+                pocketOwner.IsSummonFollowupWindowActive,
+                "A blocked follow-up shot should close the current follow-up window immediately.");
+            Assert.IsTrue(
+                pocketOwner.IsSummonPressureBreakActive,
+                "A blocked follow-up shot should close only the response window, not erase the remaining pressure-break pacing.");
             Assert.IsFalse(pocketOwner.Skill1FollowupHitConfirmed);
             Assert.IsFalse(pocketOwner.IsCleared);
             Assert.That(pocketOwner.ObjectiveCue, Does.Contain("Boss screen blocked"));
@@ -2104,7 +2110,7 @@ namespace DimensionBrawl.Tests
                 pocketVfxCueBridge.FollowupMissedCueRequestCount,
                 "A boss screen block should immediately use the existing missed follow-up VFX read.");
 
-            pocketOwner.Tick(pocketOwner.SummonFollowupWindowRemainingSeconds + 0.02f);
+            pocketOwner.Tick(1.45f);
             Assert.IsFalse(pocketOwner.IsSummonFollowupWindowActive);
             Assert.IsTrue(pocketOwner.IsRunning);
             Assert.IsFalse(
