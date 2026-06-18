@@ -102,6 +102,27 @@ namespace DimensionBrawl.Player
             return true;
         }
 
+        public bool TryGetAimAssistDirection(
+            Vector3 originPosition,
+            Vector3 rawAimDirection,
+            float maxDistance,
+            float maxAngleDegrees,
+            out Vector3 direction,
+            out CombatHealth targetHealth)
+        {
+            Vector3 rawPlanarDirection = ResolvePlanarDirection(rawAimDirection, ResolvePlanarForward(SelectionOrigin));
+            targetHealth = FindBestAimAssistTarget(originPosition, rawPlanarDirection, maxDistance, maxAngleDegrees);
+            if (targetHealth == null)
+            {
+                direction = rawPlanarDirection;
+                return false;
+            }
+
+            Vector3 offset = Vector3.ProjectOnPlane(targetHealth.transform.position - originPosition, Vector3.up);
+            direction = offset.sqrMagnitude > 0.0001f ? offset.normalized : rawPlanarDirection;
+            return true;
+        }
+
         public bool RefreshTarget()
         {
             CombatHealth bestTarget = FindBestTarget();
@@ -208,6 +229,38 @@ namespace DimensionBrawl.Player
             return bestTarget;
         }
 
+        private CombatHealth FindBestAimAssistTarget(
+            Vector3 originPosition,
+            Vector3 rawAimDirection,
+            float maxDistance,
+            float maxAngleDegrees)
+        {
+            if (targetCandidates == null || maxDistance <= 0f || maxAngleDegrees <= 0f)
+            {
+                return null;
+            }
+
+            CombatHealth bestTarget = null;
+            float bestScore = float.NegativeInfinity;
+            for (int i = 0; i < targetCandidates.Length; i++)
+            {
+                CombatHealth candidate = targetCandidates[i];
+                if (!IsValidTarget(candidate))
+                {
+                    continue;
+                }
+
+                float score = ScoreAimAssistCandidate(candidate, originPosition, rawAimDirection, maxDistance, maxAngleDegrees);
+                if (score > bestScore)
+                {
+                    bestTarget = candidate;
+                    bestScore = score;
+                }
+            }
+
+            return bestTarget;
+        }
+
         private float ScoreCandidate(CombatHealth candidate)
         {
             Transform origin = SelectionOrigin;
@@ -278,6 +331,39 @@ namespace DimensionBrawl.Player
             if (candidate == currentTargetHealth)
             {
                 score += currentTargetStickiness;
+            }
+
+            return score;
+        }
+
+        private float ScoreAimAssistCandidate(
+            CombatHealth candidate,
+            Vector3 originPosition,
+            Vector3 rawAimDirection,
+            float maxDistance,
+            float maxAngleDegrees)
+        {
+            Vector3 offset = Vector3.ProjectOnPlane(candidate.transform.position - originPosition, Vector3.up);
+            float distance = offset.magnitude;
+            if (distance > maxDistance)
+            {
+                return float.NegativeInfinity;
+            }
+
+            Vector3 direction = distance > 0.0001f ? offset / distance : rawAimDirection;
+            float angle = Vector3.Angle(rawAimDirection.normalized, direction.normalized);
+            if (angle > maxAngleDegrees)
+            {
+                return float.NegativeInfinity;
+            }
+
+            float angleScore = 1f - Mathf.Clamp01(angle / maxAngleDegrees);
+            float distanceScore = 1f - Mathf.Clamp01(distance / maxDistance);
+            float threatScore = ResolveThreatScore(candidate);
+            float score = angleScore + distanceScore * 0.25f + threatScore * 0.2f;
+            if (candidate == currentTargetHealth)
+            {
+                score += currentTargetStickiness * 0.5f;
             }
 
             return score;

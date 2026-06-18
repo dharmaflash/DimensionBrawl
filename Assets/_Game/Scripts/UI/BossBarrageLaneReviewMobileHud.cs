@@ -36,6 +36,12 @@ namespace DimensionBrawl.UI
         [SerializeField] private Color heldButtonColor = new Color(0.18f, 0.84f, 1f, 0.72f);
         [SerializeField] private Color actionTextColor = Color.white;
 
+        [Header("Fire Aim")]
+        [SerializeField] private bool fireButtonHoldsAim = true;
+        [SerializeField, Range(0f, 1f)] private float fireAimDragDeadZone = 0.18f;
+        [SerializeField, Min(8f)] private float fireAimDragRadius = 110f;
+        [SerializeField, Min(8f)] private float fireAimKnobSize = 34f;
+
         private Rect moveUpRect;
         private Rect moveDownRect;
         private Rect moveLeftRect;
@@ -48,8 +54,14 @@ namespace DimensionBrawl.UI
         private Rect summonRect;
         private GUIStyle buttonStyle;
         private GUIStyle heldButtonStyle;
-        private bool previousAimHeld;
         private bool previousBasicHeld;
+        private bool firePointerHeld;
+        private bool firePointerPressed;
+        private bool firePointerUsesMouse;
+        private int firePointerTouchId = -1;
+        private Vector2 firePointerStartGuiPoint;
+        private Vector2 firePointerCurrentGuiPoint;
+        private Vector2 fireAimInput;
 
         public string MoveActionName => moveActionName;
         public string BasicDefenseActionName => basicDefenseActionName;
@@ -120,20 +132,21 @@ namespace DimensionBrawl.UI
             movement?.SetMoveInput(Vector2.zero);
             aimController?.SetAimHeld(false);
             rangedBasicAttackAction?.SetFireHeld(false);
-            previousAimHeld = false;
+            rangedBasicAttackAction?.ClearAimInput();
+            ClearFirePointerState();
             previousBasicHeld = false;
         }
 
         private void Update()
         {
             BuildLayout();
+            UpdateFirePointerState();
 
             bool anyHudHeld = IsHeld(moveUpRect)
                 || IsHeld(moveDownRect)
                 || IsHeld(moveLeftRect)
                 || IsHeld(moveRightRect)
-                || IsHeld(basicRect)
-                || IsHeld(aimRect)
+                || firePointerHeld
                 || IsHeld(dodgeRect)
                 || IsHeld(swapRect)
                 || IsHeld(skillRect)
@@ -148,20 +161,18 @@ namespace DimensionBrawl.UI
             Vector2 moveInput = ResolveMoveInput();
             movement?.SetMoveInput(moveInput);
 
-            bool aimHeld = IsHeld(aimRect);
-            if (aimHeld || previousAimHeld)
-            {
-                aimController?.SetAimHeld(aimHeld);
-            }
-            previousAimHeld = aimHeld;
-
-            bool basicHeld = IsHeld(basicRect);
-            bool basicPressed = IsPressed(basicRect);
+            bool basicHeld = firePointerHeld;
+            bool basicPressed = firePointerPressed;
             if (combatModeController == null || combatModeController.IsRangedMode)
             {
                 if (basicHeld || previousBasicHeld)
                 {
                     rangedBasicAttackAction?.SetFireHeld(basicHeld);
+                    rangedBasicAttackAction?.SetAimInput(basicHeld ? fireAimInput : Vector2.zero);
+                    if (fireButtonHoldsAim)
+                    {
+                        aimController?.SetAimHeld(basicHeld);
+                    }
                 }
 
                 if (basicPressed)
@@ -174,6 +185,11 @@ namespace DimensionBrawl.UI
                 if (previousBasicHeld)
                 {
                     rangedBasicAttackAction?.SetFireHeld(false);
+                    rangedBasicAttackAction?.ClearAimInput();
+                    if (fireButtonHoldsAim)
+                    {
+                        aimController?.SetAimHeld(false);
+                    }
                 }
 
                 if (basicPressed)
@@ -217,8 +233,8 @@ namespace DimensionBrawl.UI
             DrawButton(moveDownRect, "DN", IsHeld(moveDownRect));
             DrawButton(moveLeftRect, "L", IsHeld(moveLeftRect));
             DrawButton(moveRightRect, "R", IsHeld(moveRightRect));
-            DrawButton(aimRect, "AIM", IsHeld(aimRect));
-            DrawButton(basicRect, combatModeController != null && combatModeController.IsMeleeMode ? "SLASH" : "FIRE", IsHeld(basicRect));
+            DrawButton(basicRect, combatModeController != null && combatModeController.IsMeleeMode ? "SLASH" : "FIRE", firePointerHeld);
+            DrawFireAimGuide();
             DrawButton(dodgeRect, "DODGE", IsHeld(dodgeRect));
             DrawButton(swapRect, "SWAP", false);
             DrawButton(skillRect, "SKILL", false);
@@ -268,10 +284,10 @@ namespace DimensionBrawl.UI
             float rightX = Screen.width - edge - size;
             float bottomY = Screen.height - edge - size;
             basicRect = new Rect(rightX, bottomY, size, size);
-            aimRect = new Rect(rightX - size - gap, bottomY, size, size);
+            aimRect = Rect.zero;
             dodgeRect = new Rect(rightX, bottomY - size - gap, size, size);
             swapRect = new Rect(rightX - size - gap, bottomY - size - gap, size, size);
-            skillRect = new Rect(rightX - (size + gap) * 2f, bottomY - size * 0.5f, size, size);
+            skillRect = new Rect(rightX - size - gap, bottomY, size, size);
             summonRect = new Rect(Screen.width - edge - size, edge, size * 1.35f, size * 0.82f);
         }
 
@@ -279,6 +295,143 @@ namespace DimensionBrawl.UI
         {
             float screenScale = Mathf.Clamp(Screen.height / 1440f, 0.72f, 1.35f);
             return screenScale * Mathf.Max(0.5f, scale);
+        }
+
+        private void UpdateFirePointerState()
+        {
+            firePointerPressed = false;
+            if (TryUpdateFireTouchPointer())
+            {
+                return;
+            }
+
+            UpdateFireMousePointer();
+        }
+
+        private bool TryUpdateFireTouchPointer()
+        {
+            if (Touchscreen.current == null)
+            {
+                if (!firePointerUsesMouse)
+                {
+                    ClearFirePointerState();
+                }
+
+                return false;
+            }
+
+            if (firePointerHeld && !firePointerUsesMouse)
+            {
+                return UpdateActiveFireTouchPointer();
+            }
+
+            foreach (var touch in Touchscreen.current.touches)
+            {
+                if (touch.phase.ReadValue() != UnityEngine.InputSystem.TouchPhase.Began)
+                {
+                    continue;
+                }
+
+                Vector2 point = ToGuiPoint(touch.position.ReadValue());
+                if (basicRect.Contains(point))
+                {
+                    BeginFirePointer(point, usesMouse: false, touch.touchId.ReadValue());
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool UpdateActiveFireTouchPointer()
+        {
+            foreach (var touch in Touchscreen.current.touches)
+            {
+                if (touch.touchId.ReadValue() != firePointerTouchId)
+                {
+                    continue;
+                }
+
+                if (!touch.press.isPressed)
+                {
+                    ClearFirePointerState();
+                    return true;
+                }
+
+                UpdateFirePointer(ToGuiPoint(touch.position.ReadValue()));
+                return true;
+            }
+
+            ClearFirePointerState();
+            return true;
+        }
+
+        private void UpdateFireMousePointer()
+        {
+            if (Mouse.current == null)
+            {
+                if (firePointerUsesMouse)
+                {
+                    ClearFirePointerState();
+                }
+
+                return;
+            }
+
+            Vector2 point = ToGuiPoint(Mouse.current.position.ReadValue());
+            if (firePointerHeld && firePointerUsesMouse)
+            {
+                if (Mouse.current.leftButton.isPressed)
+                {
+                    UpdateFirePointer(point);
+                }
+                else
+                {
+                    ClearFirePointerState();
+                }
+
+                return;
+            }
+
+            if (Mouse.current.leftButton.wasPressedThisFrame && basicRect.Contains(point))
+            {
+                BeginFirePointer(point, usesMouse: true, touchId: -1);
+            }
+        }
+
+        private void BeginFirePointer(Vector2 point, bool usesMouse, int touchId)
+        {
+            firePointerHeld = true;
+            firePointerPressed = true;
+            firePointerUsesMouse = usesMouse;
+            firePointerTouchId = touchId;
+            firePointerStartGuiPoint = point;
+            UpdateFirePointer(point);
+        }
+
+        private void UpdateFirePointer(Vector2 point)
+        {
+            firePointerCurrentGuiPoint = point;
+            fireAimInput = ResolveFireAimInput();
+        }
+
+        private void ClearFirePointerState()
+        {
+            firePointerHeld = false;
+            firePointerPressed = false;
+            firePointerUsesMouse = false;
+            firePointerTouchId = -1;
+            firePointerStartGuiPoint = Vector2.zero;
+            firePointerCurrentGuiPoint = Vector2.zero;
+            fireAimInput = Vector2.zero;
+        }
+
+        private Vector2 ResolveFireAimInput()
+        {
+            float radius = Mathf.Max(1f, fireAimDragRadius * ResolveScale());
+            Vector2 delta = firePointerCurrentGuiPoint - firePointerStartGuiPoint;
+            Vector2 input = Vector2.ClampMagnitude(new Vector2(delta.x, -delta.y) / radius, 1f);
+            return input.sqrMagnitude >= fireAimDragDeadZone * fireAimDragDeadZone ? input : Vector2.zero;
         }
 
         private bool IsHeld(Rect rect)
@@ -326,6 +479,26 @@ namespace DimensionBrawl.UI
         private void DrawButton(Rect rect, string label, bool held)
         {
             GUI.Box(rect, label, held ? heldButtonStyle : buttonStyle);
+        }
+
+        private void DrawFireAimGuide()
+        {
+            if (!firePointerHeld || fireAimInput.sqrMagnitude <= 0.0001f)
+            {
+                return;
+            }
+
+            float resolvedScale = ResolveScale();
+            float radius = fireAimDragRadius * resolvedScale;
+            float knobSize = fireAimKnobSize * resolvedScale;
+            Vector2 center = basicRect.center;
+            Vector2 knobCenter = center + new Vector2(fireAimInput.x, -fireAimInput.y) * radius;
+            Rect knobRect = new Rect(
+                knobCenter.x - knobSize * 0.5f,
+                knobCenter.y - knobSize * 0.5f,
+                knobSize,
+                knobSize);
+            GUI.Box(knobRect, string.Empty, heldButtonStyle);
         }
 
         private void EnsureStyles()

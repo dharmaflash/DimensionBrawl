@@ -1,6 +1,6 @@
 # Action Feel Targets
 
-Last updated: 2026-06-16 KST
+Last updated: 2026-06-18 KST
 
 ## North Star
 
@@ -160,16 +160,24 @@ The first far boss/proxy and enemies exist to test why the summon is useful.
 
 Targets:
 
-- The boss/proxy should fire readable projectile patterns from the far side.
+- The boss/proxy should fire readable regular projectiles and committed skill patterns from the far side.
+- Regular boss fire should maintain rhythm and pressure without making every shot feel like a major pattern.
+- Boss skill patterns should have visible windup, telegraph, sequence/cooldown data, and clear dodge or summon answers.
 - Projectile patterns should make forward space riskier and back space safer without becoming unreadable.
 - Close or approaching monsters may test the player's local-defense attack.
 - Basic sci-fi enemies may still support the test as pressure pieces, but they are not the main V1 fantasy by themselves.
 - Player shots and summon hits should produce reaction, damage, and a visible state change.
+- Player basic fire should remain input-led with weak aim assist only. It should not hard-lock or inherit boss-pattern tracking.
+- Player skill projectiles may later borrow boss-pattern shapes, but only as costed/cooldown skill actions with readable commitment and counterplay.
+- Summon projectiles should read as frontline intervention and may share projectile mechanics, but should not become invisible bonus player shots.
 - Enemy attacks should have a telegraph if they can damage the player.
 - Death, hit stun, invulnerability, and pocket clear rules should be simple and visible.
 
 Do not accept:
 
+- A single projectile implementation that hides different gameplay verbs behind one uninspectable branch pile.
+- Boss pattern fire copied directly into player basic fire.
+- Player/PvP-facing shots that auto-track without readable startup or counterplay.
 - Enemy pressure with no telegraph.
 - Damage numbers without physical or animation response.
 - Complex squads, boss phases, affixes, or reward loops before the first summon pocket works.

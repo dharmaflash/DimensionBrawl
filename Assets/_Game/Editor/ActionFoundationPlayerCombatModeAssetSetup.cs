@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEditor.Animations;
@@ -19,6 +20,7 @@ namespace DimensionBrawl.Editor
             "Assets/_Imported/AssetStore/CombatGirlsCharacterPack_RifleGirl/RifleGirl";
         private const string SourceModelPath = SourceRoot + "/Models/Rifle_Full_Body.FBX";
         private const string SourceWeaponModelPath = SourceRoot + "/Models/Parts/Weapon_Rifle.fbx";
+        private const string SourceControllerPath = SourceRoot + "/Animations/Rifle_Controller.controller";
         private const string MaterialRoot = "Assets/_Game/Art/Characters/Player/RifleGirl/Materials";
         private const string TextureRoot = "Assets/_Game/Art/Characters/Player/RifleGirl/Textures";
         private const string AnimationRoot = "Assets/_Game/Art/Animations/Player/RifleGirl";
@@ -51,14 +53,32 @@ namespace DimensionBrawl.Editor
             new AnimationSpec("Aiming/R_AimTurn_R90.fbx", "RG_AimTurnRight90", false),
             new AnimationSpec("Aiming/R_Shoot.fbx", "RG_Shoot", false),
             new AnimationSpec("Aiming/R_Reload.fbx", "RG_Reload", false),
+            new AnimationSpec("Aiming/R_Crouch_AimIdle.fbx", "RG_CrouchAimIdle", true),
+            new AnimationSpec("Aiming/R_Crouch_AimWalk_F.fbx", "RG_CrouchAimWalkForward", true),
+            new AnimationSpec("Aiming/R_Crouch_AimWalk_B.fbx", "RG_CrouchAimWalkBack", true),
+            new AnimationSpec("Aiming/R_Crouch_AimWalk_FL.fbx", "RG_CrouchAimWalkForwardLeft", true),
+            new AnimationSpec("Aiming/R_Crouch_AimWalk_FR.fbx", "RG_CrouchAimWalkForwardRight", true),
+            new AnimationSpec("Aiming/R_Crouch_AimWalk_BL.fbx", "RG_CrouchAimWalkBackLeft", true),
+            new AnimationSpec("Aiming/R_Crouch_AimWalk_BR.fbx", "RG_CrouchAimWalkBackRight", true),
+            new AnimationSpec("Aiming/R_Crouch_AimTurn_L90.fbx", "RG_CrouchAimTurnLeft90", false),
+            new AnimationSpec("Aiming/R_Crouch_AimTurn_R90.fbx", "RG_CrouchAimTurnRight90", false),
+            new AnimationSpec("Aiming/R_Crouch_Shoot.fbx", "RG_CrouchShoot", false),
+            new AnimationSpec("Aiming/R_Crouch_AutoShoot.fbx", "RG_CrouchAutoShoot", true),
+            new AnimationSpec("Aiming/R_Crouch_Reload.fbx", "RG_CrouchReload", false),
             new AnimationSpec("Normal/R_Idle.fbx", "RG_Idle", true),
             new AnimationSpec("Normal/R_Walk.fbx", "RG_Walk", true),
             new AnimationSpec("Normal/R_Run.fbx", "RG_Run", true),
+            new AnimationSpec("Normal/R_Crouch_Idle.fbx", "RG_CrouchIdle", true),
+            new AnimationSpec("Normal/R_Crouch_Walk.fbx", "RG_CrouchWalk", true),
+            new AnimationSpec("Normal/R_Crouch_Jog.fbx", "RG_CrouchJog", true),
             new AnimationSpec("Normal/R_TakeGun.fbx", "RG_DrawRangedFocus", false),
             new AnimationSpec("Normal/R_PutGun.fbx", "RG_HolsterRangedFocus", false),
             new AnimationSpec("Normal/R_Evade.fbx", "RG_Evade", false),
             new AnimationSpec("Normal/R_Hit_Upper.fbx", "RG_HitUpper", false),
-            new AnimationSpec("Normal/R_Die_F.fbx", "RG_DieFront", false, true)
+            new AnimationSpec("Normal/R_Hit_Low.fbx", "RG_HitLow", false),
+            new AnimationSpec("Normal/R_Stun.fbx", "RG_Stun", false),
+            new AnimationSpec("Normal/R_Die_F.fbx", "RG_DieFront", false, true),
+            new AnimationSpec("Normal/R_Die_B.fbx", "RG_DieBack", false, true)
         };
 
         [MenuItem("DimensionBrawl/Reapply Action Foundation Player Combat Mode Assets")]
@@ -97,8 +117,10 @@ namespace DimensionBrawl.Editor
             importer.materialImportMode = ModelImporterMaterialImportMode.None;
             if (humanoid)
             {
+                ModelImporter sourceImporter = RequireModelImporter(sourcePath);
                 importer.animationType = ModelImporterAnimationType.Human;
                 importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
+                importer.humanDescription = sourceImporter.humanDescription;
             }
 
             importer.SaveAndReimport();
@@ -238,8 +260,8 @@ namespace DimensionBrawl.Editor
 
             ModelImporter importer = RequireModelImporter(targetPath);
             importer.animationType = ModelImporterAnimationType.Human;
-            importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
-            importer.sourceAvatar = null;
+            importer.avatarSetup = ModelImporterAvatarSetup.CopyFromOther;
+            importer.sourceAvatar = LoadRangedCandidateAvatar();
             importer.importAnimation = true;
 
             ModelImporterClipAnimation[] clips = importer.defaultClipAnimations;
@@ -255,87 +277,263 @@ namespace DimensionBrawl.Editor
 
             for (int i = 0; i < clips.Length; i++)
             {
-                clips[i].name = spec.TargetClipName;
-                clips[i].loopTime = spec.LoopTime;
-                clips[i].keepOriginalOrientation = true;
-                clips[i].keepOriginalPositionY = !spec.HeightFromFeet;
-                clips[i].keepOriginalPositionXZ = true;
-                clips[i].heightFromFeet = spec.HeightFromFeet;
+                ApplySourceAnimationClipSettings(clips[i], sourcePath, i, spec);
             }
 
             importer.clipAnimations = clips;
             importer.SaveAndReimport();
         }
 
+        private static void ApplySourceAnimationClipSettings(
+            ModelImporterClipAnimation targetClip,
+            string sourcePath,
+            int clipIndex,
+            AnimationSpec spec)
+        {
+            ModelImporterClipAnimation sourceClip = ResolveSourceAnimationClip(sourcePath, clipIndex);
+            targetClip.name = spec.TargetClipName;
+            targetClip.keepOriginalOrientation = sourceClip.keepOriginalOrientation;
+            targetClip.keepOriginalPositionY = sourceClip.keepOriginalPositionY;
+            targetClip.keepOriginalPositionXZ = sourceClip.keepOriginalPositionXZ;
+            targetClip.heightFromFeet = sourceClip.heightFromFeet;
+            targetClip.loopTime = spec.LoopTime;
+            targetClip.loopPose = sourceClip.loopPose;
+            targetClip.maskType = sourceClip.maskType;
+            targetClip.maskSource = sourceClip.maskSource;
+            targetClip.events = CopyAnimationEvents(sourceClip.events);
+        }
+
+        private static AnimationEvent[] CopyAnimationEvents(AnimationEvent[] sourceEvents)
+        {
+            if (sourceEvents == null || sourceEvents.Length == 0)
+            {
+                return Array.Empty<AnimationEvent>();
+            }
+
+            AnimationEvent[] copiedEvents = new AnimationEvent[sourceEvents.Length];
+            for (int i = 0; i < sourceEvents.Length; i++)
+            {
+                AnimationEvent sourceEvent = sourceEvents[i];
+                copiedEvents[i] = new AnimationEvent
+                {
+                    time = sourceEvent.time,
+                    functionName = sourceEvent.functionName,
+                    stringParameter = sourceEvent.stringParameter,
+                    floatParameter = sourceEvent.floatParameter,
+                    intParameter = sourceEvent.intParameter,
+                    objectReferenceParameter = sourceEvent.objectReferenceParameter,
+                    messageOptions = sourceEvent.messageOptions
+                };
+            }
+
+            return copiedEvents;
+        }
+
+        private static Avatar LoadRangedCandidateAvatar()
+        {
+            UnityEngine.Object[] assets = AssetDatabase.LoadAllAssetsAtPath(RangedCandidateModelPath);
+            for (int i = 0; i < assets.Length; i++)
+            {
+                if (assets[i] is Avatar avatar && avatar.isHuman && avatar.isValid)
+                {
+                    return avatar;
+                }
+            }
+
+            throw new InvalidOperationException($"Missing valid promoted RifleGirl humanoid Avatar at {RangedCandidateModelPath}.");
+        }
+
+        private static ModelImporterClipAnimation ResolveSourceAnimationClip(string sourcePath, int clipIndex)
+        {
+            ModelImporter sourceImporter = RequireModelImporter(sourcePath);
+            ModelImporterClipAnimation[] sourceClips = sourceImporter.clipAnimations;
+            if (sourceClips.Length == 0)
+            {
+                sourceClips = sourceImporter.defaultClipAnimations;
+            }
+
+            if (sourceClips.Length == 0)
+            {
+                throw new InvalidOperationException($"{sourcePath} has no source clips to promote.");
+            }
+
+            int sourceIndex = Mathf.Clamp(clipIndex, 0, sourceClips.Length - 1);
+            return sourceClips[sourceIndex];
+        }
+
         private static AnimatorController BuildAnimatorController()
         {
             EnsureFolder(AnimationRoot);
             AnimatorController controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(RangedCandidateControllerPath);
+            if (ShouldReplaceControllerWithNativeSource(controller))
+            {
+                if (controller != null && !AssetDatabase.DeleteAsset(RangedCandidateControllerPath))
+                {
+                    throw new InvalidOperationException($"Failed to replace RifleGirl candidate controller at {RangedCandidateControllerPath}.");
+                }
+
+                if (!AssetDatabase.CopyAsset(SourceControllerPath, RangedCandidateControllerPath))
+                {
+                    throw new InvalidOperationException($"Failed to promote RifleGirl native controller from {SourceControllerPath}.");
+                }
+
+                controller = AssetDatabase.LoadAssetAtPath<AnimatorController>(RangedCandidateControllerPath);
+            }
+
             if (controller == null)
             {
-                controller = AnimatorController.CreateAnimatorControllerAtPath(RangedCandidateControllerPath);
+                throw new InvalidOperationException($"Missing promoted RifleGirl candidate controller at {RangedCandidateControllerPath}.");
             }
 
-            ClearParameters(controller);
-            controller.AddParameter("MoveSpeed", AnimatorControllerParameterType.Float);
-            controller.AddParameter("MoveX", AnimatorControllerParameterType.Float);
-            controller.AddParameter("MoveY", AnimatorControllerParameterType.Float);
-            controller.AddParameter("IsStopping", AnimatorControllerParameterType.Bool);
-            controller.AddParameter("IsAiming", AnimatorControllerParameterType.Bool);
-            controller.AddParameter("IsDodging", AnimatorControllerParameterType.Bool);
-            controller.AddParameter("StartRun", AnimatorControllerParameterType.Trigger);
-            controller.AddParameter("StopStep", AnimatorControllerParameterType.Trigger);
-            controller.AddParameter("TurnLeft90", AnimatorControllerParameterType.Trigger);
-            controller.AddParameter("TurnRight90", AnimatorControllerParameterType.Trigger);
-            controller.AddParameter("Attack1", AnimatorControllerParameterType.Trigger);
-            controller.AddParameter("Reload", AnimatorControllerParameterType.Trigger);
-            controller.AddParameter("DodgeForward", AnimatorControllerParameterType.Trigger);
-            controller.AddParameter("DodgeBack", AnimatorControllerParameterType.Trigger);
-            controller.AddParameter("DodgeLeft", AnimatorControllerParameterType.Trigger);
-            controller.AddParameter("DodgeRight", AnimatorControllerParameterType.Trigger);
-            controller.AddParameter("Hit", AnimatorControllerParameterType.Trigger);
-            controller.AddParameter("Death", AnimatorControllerParameterType.Trigger);
+            controller.name = Path.GetFileNameWithoutExtension(RangedCandidateControllerPath);
+            RemapControllerMotions(controller);
 
-            if (controller.layers.Length == 0)
+            AnimatorControllerLayer[] layers = controller.layers;
+            if (layers.Length > 0)
             {
-                controller.AddLayer("Base Layer");
+                layers[0].iKPass = true;
             }
 
-            AnimatorStateMachine stateMachine = controller.layers[0].stateMachine;
-            ClearStateMachine(stateMachine);
-            AnimatorState idle = AddState(stateMachine, "AimIdle", "RG_AimIdle", new Vector3(250f, 80f, 0f));
-            AnimatorState move = AddState(stateMachine, "AimMove", "RG_AimWalkForward", new Vector3(250f, 190f, 0f));
-            AnimatorState shoot = AddState(stateMachine, "Shoot", "RG_Shoot", new Vector3(520f, 80f, 0f));
-            AnimatorState reload = AddState(stateMachine, "Reload", "RG_Reload", new Vector3(520f, 190f, 0f));
-            AnimatorState evade = AddState(stateMachine, "Evade", "RG_Evade", new Vector3(780f, 80f, 0f));
-            AnimatorState hit = AddState(stateMachine, "Hit", "RG_HitUpper", new Vector3(780f, 190f, 0f));
-            AddState(stateMachine, "Death", "RG_DieFront", new Vector3(1040f, 80f, 0f));
-            stateMachine.defaultState = idle;
-
-            AnimatorStateTransition toMove = idle.AddTransition(move);
-            toMove.hasExitTime = false;
-            toMove.duration = 0.08f;
-            toMove.AddCondition(AnimatorConditionMode.Greater, 0.08f, "MoveSpeed");
-            AnimatorStateTransition toIdle = move.AddTransition(idle);
-            toIdle.hasExitTime = false;
-            toIdle.duration = 0.12f;
-            toIdle.AddCondition(AnimatorConditionMode.Less, 0.08f, "MoveSpeed");
-
-            AddExitTransition(shoot, idle, 0.82f, 0.05f);
-            AddExitTransition(reload, idle, 0.92f, 0.06f);
-            AddExitTransition(evade, idle, 0.88f, 0.06f);
-            AddExitTransition(hit, idle, 0.85f, 0.06f);
-
-            AddAnyStateTrigger(stateMachine, "Shoot", "Attack1");
-            AddAnyStateTrigger(stateMachine, "Reload", "Reload");
-            AddAnyStateTrigger(stateMachine, "Evade", "DodgeForward");
-            AddAnyStateTrigger(stateMachine, "Evade", "DodgeBack");
-            AddAnyStateTrigger(stateMachine, "Evade", "DodgeLeft");
-            AddAnyStateTrigger(stateMachine, "Evade", "DodgeRight");
-            AddAnyStateTrigger(stateMachine, "Hit", "Hit");
-            AddAnyStateTrigger(stateMachine, "Death", "Death");
+            controller.layers = layers;
             EditorUtility.SetDirty(controller);
             return controller;
+        }
+
+        private static bool ShouldReplaceControllerWithNativeSource(AnimatorController controller)
+        {
+            if (controller == null)
+            {
+                return true;
+            }
+
+            return !HasParameter(controller, "IDLE 0")
+                || !HasParameter(controller, "SHOOT")
+                || !HasParameter(controller, "WALK F");
+        }
+
+        private static bool HasParameter(AnimatorController controller, string parameterName)
+        {
+            AnimatorControllerParameter[] parameters = controller.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                if (string.Equals(parameters[i].name, parameterName, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void RemapControllerMotions(AnimatorController controller)
+        {
+            Dictionary<string, AnimationClip> promotedClipsBySourcePath = BuildPromotedClipMap();
+            AnimatorControllerLayer[] layers = controller.layers;
+            for (int i = 0; i < layers.Length; i++)
+            {
+                RemapStateMachineMotions(layers[i].stateMachine, promotedClipsBySourcePath);
+            }
+        }
+
+        private static Dictionary<string, AnimationClip> BuildPromotedClipMap()
+        {
+            var clips = new Dictionary<string, AnimationClip>(StringComparer.OrdinalIgnoreCase);
+            for (int i = 0; i < AnimationSpecs.Length; i++)
+            {
+                AnimationSpec spec = AnimationSpecs[i];
+                clips[NormalizeAssetPath(SourceAnimationPath(spec))] = LoadClip(spec.TargetClipName);
+            }
+
+            return clips;
+        }
+
+        private static void RemapStateMachineMotions(
+            AnimatorStateMachine stateMachine,
+            Dictionary<string, AnimationClip> promotedClipsBySourcePath)
+        {
+            ChildAnimatorState[] states = stateMachine.states;
+            for (int i = 0; i < states.Length; i++)
+            {
+                AnimatorState state = states[i].state;
+                state.motion = RemapMotion(state.motion, promotedClipsBySourcePath, state.name);
+                EditorUtility.SetDirty(state);
+            }
+
+            ChildAnimatorStateMachine[] machines = stateMachine.stateMachines;
+            for (int i = 0; i < machines.Length; i++)
+            {
+                RemapStateMachineMotions(machines[i].stateMachine, promotedClipsBySourcePath);
+            }
+        }
+
+        private static Motion RemapMotion(
+            Motion motion,
+            Dictionary<string, AnimationClip> promotedClipsBySourcePath,
+            string ownerName)
+        {
+            if (motion == null)
+            {
+                return null;
+            }
+
+            if (motion is BlendTree blendTree)
+            {
+                RemapBlendTree(blendTree, promotedClipsBySourcePath, ownerName);
+                return blendTree;
+            }
+
+            if (motion is AnimationClip clip)
+            {
+                string clipPath = NormalizeAssetPath(AssetDatabase.GetAssetPath(clip));
+                if (string.IsNullOrWhiteSpace(clipPath) || !clipPath.StartsWith("Assets/_Imported/", StringComparison.OrdinalIgnoreCase))
+                {
+                    return clip;
+                }
+
+                if (promotedClipsBySourcePath.TryGetValue(clipPath, out AnimationClip promotedClip))
+                {
+                    return promotedClip;
+                }
+
+                throw new InvalidOperationException(
+                    $"RifleGirl native controller state {ownerName} references unpromoted raw clip {clipPath}.");
+            }
+
+            return motion;
+        }
+
+        private static void RemapBlendTree(
+            BlendTree blendTree,
+            Dictionary<string, AnimationClip> promotedClipsBySourcePath,
+            string ownerName)
+        {
+            ChildMotion[] children = blendTree.children;
+            bool changed = false;
+            for (int i = 0; i < children.Length; i++)
+            {
+                Motion remappedMotion = RemapMotion(children[i].motion, promotedClipsBySourcePath, ownerName);
+                if (remappedMotion != children[i].motion)
+                {
+                    children[i].motion = remappedMotion;
+                    changed = true;
+                }
+            }
+
+            if (changed)
+            {
+                blendTree.children = children;
+                EditorUtility.SetDirty(blendTree);
+            }
+        }
+
+        private static string SourceAnimationPath(AnimationSpec spec)
+        {
+            return $"{SourceRoot}/Animations/{spec.SourceRelativePath}";
+        }
+
+        private static string NormalizeAssetPath(string path)
+        {
+            return string.IsNullOrWhiteSpace(path) ? string.Empty : path.Replace('\\', '/');
         }
 
         private static void AddExitTransition(
@@ -348,6 +546,22 @@ namespace DimensionBrawl.Editor
             transition.hasExitTime = true;
             transition.exitTime = exitTime;
             transition.duration = duration;
+        }
+
+        private static void AddBoolTransition(
+            AnimatorState fromState,
+            AnimatorState toState,
+            string parameterName,
+            bool expectedValue,
+            float duration)
+        {
+            AnimatorStateTransition transition = fromState.AddTransition(toState);
+            transition.hasExitTime = false;
+            transition.duration = duration;
+            transition.AddCondition(
+                expectedValue ? AnimatorConditionMode.If : AnimatorConditionMode.IfNot,
+                0f,
+                parameterName);
         }
 
         private static AnimatorState AddState(AnimatorStateMachine stateMachine, string stateName, string clipName, Vector3 position)

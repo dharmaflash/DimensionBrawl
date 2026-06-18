@@ -32,6 +32,8 @@ namespace DimensionBrawl.Player
         [SerializeField] private RuntimeAnimatorController rangedAnimatorController;
         [SerializeField] private RuntimeAnimatorController meleeAnimatorController;
         [SerializeField] private bool routeAnimatorsByMode = true;
+        [Tooltip("Ranged visual uses a native animator bridge, so generic movement/action Animator parameters are not routed to it.")]
+        [SerializeField] private bool rangedAnimatorUsesExternalPresentationBridge;
         [Tooltip("Use one character body and swap only weapons/Animator Controller for combat mode changes.")]
         [SerializeField] private bool useSingleCharacterVisual;
 
@@ -135,7 +137,7 @@ namespace DimensionBrawl.Player
             ApplyVisualMode(combatMode);
             Animator activeAnimator = ResolveActiveAnimator(combatMode);
             ApplyAnimatorController(activeAnimator, combatMode);
-            RoutePresentationAnimator(activeAnimator);
+            RoutePresentationAnimator(activeAnimator, combatMode);
             CombatModeChanged?.Invoke(CurrentMode);
         }
 
@@ -184,12 +186,15 @@ namespace DimensionBrawl.Player
             activeAnimator.Update(0f);
         }
 
-        private void RoutePresentationAnimator(Animator activeAnimator)
+        private void RoutePresentationAnimator(Animator activeAnimator, PlayerCombatMode combatMode)
         {
             if (routeAnimatorsByMode && activeAnimator != null)
             {
-                movementController?.SetAnimator(activeAnimator);
-                actionController?.SetAnimator(activeAnimator);
+                bool externalBridge = combatMode == PlayerCombatMode.Ranged
+                    && rangedAnimatorUsesExternalPresentationBridge;
+                Animator movementActionAnimator = externalBridge ? null : activeAnimator;
+                movementController?.SetAnimator(movementActionAnimator);
+                actionController?.SetAnimator(movementActionAnimator);
             }
 
             if (activeAnimator != null)

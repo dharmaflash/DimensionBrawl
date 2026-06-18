@@ -1,6 +1,6 @@
 # Combat V1 Spec
 
-Last updated: 2026-06-16 KST
+Last updated: 2026-06-18 KST
 
 ## Goal
 
@@ -110,6 +110,30 @@ The first player attack is a validation tool for local defense, not the main bos
 - Do not expand this into a melee combo tree, full shooter controller, or boss primary-DPS route before the summon loop proves itself.
 - If the visual starts as magic or slash, do not install or wire rifle animation packs just to prove the local-defense timing.
 
+## Projectile And Skill Grammar
+
+The current PvE lane slice must be authored with future PvP readability in mind. PvE boss pressure, player fire, and summon fire should share combat contracts where they truly overlap, but they must not collapse into one identical projectile verb.
+
+Shared projectile contract:
+
+- Use shared team/hostility rules, hit validation, damage authority, travel, radius, lifetime, cleanup, and intercept rules.
+- Keep projectile prefabs, damage values, speed, radius, lifetime, cue references, and pool sizes inspectable through authored prefabs, serialized fields, or data assets.
+- Do not hardcode asset paths, target GUIDs, hidden scene names, or special-case faction checks for one actor.
+
+Separate firing grammar:
+
+- `BasicDefenseFire`: player-owned local-defense fire. It is quick, input-led, and only weakly aim-assisted. It must not become hard lock-on, screen-wide tracking, or a boss-DPS route.
+- `BossBasicFire`: boss-owned regular pressure fire. It maintains rhythm and lane threat between major patterns, with lower commitment than a skill pattern.
+- `BossSkillPattern`: boss-owned committed pattern fire. It has windup, telegraph, cooldown/sequence data, VFX/camera reads, and authored dodge/summon answers.
+- `PlayerSkillProjectile`: player-owned skill fire. It may reuse boss-pattern concepts such as line pressure, fan pressure, charge shots, or area denial only when expressed as a readable skill with cost/cooldown/commitment.
+- `SummonAssistProjectile`: summon-owned frontline exchange fire. It should read as the summon changing the fight, not as a hidden extra player bullet.
+
+Future PvP rule:
+
+- Any boss pattern that later becomes a player/PvP action should be converted into a skill, not copied into basic fire.
+- PvP-facing skill projectiles must preserve readable startup, travel, counterplay, and cleanup. The opponent should be able to read the action class before being hit.
+- The V1 PvE implementation should therefore keep shared projectile mechanics small and reusable while keeping actor-specific input, skill timing, telegraph, and pattern selection separate.
+
 ## Boss Barrage Lane Rules
 
 The first product shape is closer to a boss-barrage standoff than a free chase arena.
@@ -117,7 +141,7 @@ The first product shape is closer to a boss-barrage standoff than a free chase a
 - The boss or boss proxy stays far beyond the player's forward boundary.
 - The camera stays behind the player and looks forward along the lane.
 - The player cannot cross the lane midpoint/frontline. The forward boundary is a designed risk line, not a door to the boss. The space beyond that line belongs to summons, boss pressure, and enemy/frontline exchange.
-- The boss repeatedly fires projectile patterns toward the player side.
+- The boss uses regular pressure fire plus committed skill patterns. Do not treat every boss shot as a full pattern, and do not treat every pattern as a basic shot.
 - Close or approaching monsters may enter the player side and should be answerable through the player's local-defense attack.
 - Projectile readability should use perspective and authored pattern spacing: closer to the forward boundary, gaps between incoming projectiles feel tighter; farther back, gaps feel wider and safer.
 - This risk difference must be expressed through authored pattern data or lane-space sampling, not only through a camera illusion.
