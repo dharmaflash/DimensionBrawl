@@ -270,6 +270,7 @@ namespace DimensionBrawl.Presentation
             return $"{skillShots}   Summon {tier} proxy {summonSlot1Action.ActiveSummonActorCount} "
                 + $"bolts {summonSlot1Action.ActiveProjectileCount} shield {summonSlot1Action.ActivePressureScreenCount} "
                 + $"blocks {summonSlot1Action.ActivePressureScreenRemainingIntercepts}"
+                + ResolveSummonBlockWindowLine()
                 + ResolveFollowupLine();
         }
 
@@ -293,6 +294,23 @@ namespace DimensionBrawl.Presentation
             }
 
             return "Hint: -";
+        }
+
+        private string ResolveSummonBlockWindowLine()
+        {
+            if (pocketReviewOwner == null)
+            {
+                return string.Empty;
+            }
+
+            if (pocketReviewOwner.IsSummonBlockOpportunityCueActive)
+            {
+                return $" cue {pocketReviewOwner.SummonBlockOpportunityRemainingSeconds:0.0}s";
+            }
+
+            return pocketReviewOwner.IsAwaitingSummonPressureBlock
+                ? " block NOW"
+                : string.Empty;
         }
 
         private string ResolveFollowupLine()

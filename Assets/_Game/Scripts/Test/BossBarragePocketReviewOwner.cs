@@ -111,9 +111,21 @@ namespace DimensionBrawl.Test
         public bool BossBlockedSkill1Followup => bossBlockedSkill1Followup;
         public int BossPressureBlocksDuringSummonFollowup => bossPressureBlocksConsumedDuringFollowup;
         public bool IsPressureReliefActive => pressurePacing.IsCloseThreatReliefActive;
+        public bool IsSummonBlockOpportunityCueActive => state == PocketState.Running
+            && closeThreatDefeated
+            && !blockedBossPressureWithSummon
+            && pressurePacing.IsCloseThreatReliefActive;
+        public bool IsAwaitingSummonPressureBlock => state == PocketState.Running
+            && closeThreatDefeated
+            && !blockedBossPressureWithSummon
+            && !pressurePacing.IsCloseThreatReliefActive
+            && !pressurePacing.IsSummonPressureBreakActive;
         public bool IsSummonPressureBreakActive => pressurePacing.IsSummonPressureBreakActive;
         public bool IsSummonFollowupWindowActive => pressurePacing.IsSummonFollowupWindowActive;
         public float PressureReliefRemainingSeconds => pressurePacing.CloseThreatReliefRemainingSeconds;
+        public float SummonBlockOpportunityRemainingSeconds => IsSummonBlockOpportunityCueActive
+            ? pressurePacing.CloseThreatReliefRemainingSeconds
+            : 0f;
         public float SummonPressureBreakRemainingSeconds => pressurePacing.SummonPressureBreakRemainingSeconds;
         public float SummonFollowupWindowRemainingSeconds => pressurePacing.SummonFollowupWindowRemainingSeconds;
         public float SummonFollowupEnergyPulse => lastGrantedSummonFollowupEnergyPulse > 0f
@@ -187,6 +199,13 @@ namespace DimensionBrawl.Test
 
                 if (closeThreatDefeated)
                 {
+                    if (IsSummonBlockOpportunityCueActive)
+                    {
+                        return energyLadder != null && !energyLadder.CanSpend
+                            ? $"Forward EN now; boss fire returns in {SummonBlockOpportunityRemainingSeconds:0.0}s"
+                            : $"Prepare SummonSlot1 block; boss fire returns in {SummonBlockOpportunityRemainingSeconds:0.0}s";
+                    }
+
                     return energyLadder != null && !energyLadder.CanSpend
                         ? "Advance for EN and block boss fire with SummonSlot1"
                         : "Block boss fire with SummonSlot1";

@@ -1255,6 +1255,12 @@ namespace DimensionBrawl.Tests
 
             Assert.IsTrue(pocketOwner.CloseThreatDefeated);
             Assert.IsTrue(pocketOwner.IsPressureReliefActive);
+            Assert.IsTrue(
+                pocketOwner.IsSummonBlockOpportunityCueActive,
+                "The close-threat relief beat should be an explicit summon-block opportunity cue state.");
+            Assert.IsFalse(
+                pocketOwner.IsAwaitingSummonPressureBlock,
+                "The pocket should not ask for an actual projectile block while boss barrage is paused for the cue beat.");
             Assert.AreEqual(
                 summonBlockOpportunityCueCountBefore + 1,
                 pocketVfxCueBridge.SummonBlockOpportunityCueRequestCount,
@@ -1267,6 +1273,10 @@ namespace DimensionBrawl.Tests
                 pocketOwner.PressureReliefRemainingSeconds,
                 Is.EqualTo(0.9f).Within(0.001f),
                 "The first close-threat relief window should start from the documented 0.9s blocker-break value.");
+            Assert.That(
+                pocketOwner.SummonBlockOpportunityRemainingSeconds,
+                Is.EqualTo(0.9f).Within(0.001f),
+                "The summon-block cue timer should expose the same authored relief beat for HUD/readability.");
             Assert.IsFalse(
                 emitter.IsFiringEnabled,
                 "The review pocket should pause automatic boss barrage briefly after the close threat is defeated.");
@@ -1285,6 +1295,11 @@ namespace DimensionBrawl.Tests
 
             pocketOwner.Tick(0.02f);
             Assert.IsFalse(pocketOwner.IsPressureReliefActive);
+            Assert.IsFalse(pocketOwner.IsSummonBlockOpportunityCueActive);
+            Assert.IsTrue(
+                pocketOwner.IsAwaitingSummonPressureBlock,
+                "After the cue beat ends, the pocket should explicitly wait for SummonSlot1 to block returning boss fire.");
+            Assert.AreEqual(0f, pocketOwner.SummonBlockOpportunityRemainingSeconds, 0.001f);
             Assert.IsTrue(
                 emitter.IsFiringEnabled,
                 "Boss barrage should resume after the short relief beat if the pocket is still running.");
