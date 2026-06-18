@@ -231,8 +231,7 @@ namespace DimensionBrawl.Combat
         private bool CanRunActionKind(BossPressureActionKind actionKind)
         {
             return actionKind != BossPressureActionKind.SummonPressure
-                || summonPressureAction == null
-                || summonPressureAction.CanRelease;
+                || (summonPressureAction != null && summonPressureAction.CanRelease);
         }
 
         private void TickTimers(float deltaTime)

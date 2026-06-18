@@ -248,6 +248,58 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void BossPressureActionDirectorDoesNotSpendSummonPressureWithoutSummonOwner()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.ForwardBoundaryZ);
+            GameObject bossObject = new GameObject("BossProxy");
+            CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+            bossHealth.ConfigureTeam(DamageTeam.Enemy);
+
+            BossBarragePatternProfile basePattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            BossBarragePatternProfile summonPattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            GameObject projectilePrefabObject = new GameObject("BossProjectilePrefab");
+            projectilePrefabObject.AddComponent<SphereCollider>();
+            projectilePrefabObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile projectilePrefab = projectilePrefabObject.AddComponent<BossBarrageProjectile>();
+            projectilePrefabObject.SetActive(false);
+
+            BossBarrageEmitter emitter = bossObject.AddComponent<BossBarrageEmitter>();
+            emitter.ConfigureReferences(lane, playerObject.transform, bossHealth);
+            emitter.ConfigurePattern(basePattern, projectilePrefab, basePattern.ProjectilesPerWave * 2);
+
+            BossPressureCostLadder bossCost = bossObject.AddComponent<BossPressureCostLadder>();
+            bossCost.ConfigureReferences(lane, bossObject.transform);
+            bossCost.GrantCurrentTierCost(200f);
+
+            BossPressureActionDirector director = bossObject.AddComponent<BossPressureActionDirector>();
+            director.ConfigureReferences(bossCost, emitter);
+            director.ConfigureActionSlots(new[]
+            {
+                new BossPressureActionDirector.BossPressureActionSlot(
+                    summonPattern,
+                    BossPressureActionKind.SummonPressure,
+                    2,
+                    1,
+                    0f)
+            });
+
+            Assert.IsFalse(director.TryQueueBestAvailableAction());
+            Assert.AreEqual(2, bossCost.AvailableTier);
+            Assert.AreEqual(0, director.TotalActionCount);
+            Assert.IsFalse(emitter.HasQueuedPriorityPattern);
+
+            Object.DestroyImmediate(projectilePrefabObject);
+            Object.DestroyImmediate(summonPattern);
+            Object.DestroyImmediate(basePattern);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(laneObject);
+        }
+
+        [Test]
         public void BossPressureActionDirectorReleasesCostedSummonPressure()
         {
             GameObject laneObject = new GameObject("Lane");
