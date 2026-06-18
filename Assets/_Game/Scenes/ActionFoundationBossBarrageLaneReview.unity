@@ -8572,6 +8572,7 @@ MonoBehaviour:
   summonPressureAction: {fileID: 822171419}
   laneSpace: {fileID: 454563736}
   trackedPlayer: {fileID: 4001}
+  actionDeckProfile: {fileID: 11400000, guid: d3bfab58be344471b4b4b2f953ae6f10, type: 2}
   actionSlots:
   - Pattern: {fileID: 11400000, guid: 25cd6927b39e10048ab562c4e150cb3a, type: 2}
     ActionKind: 0

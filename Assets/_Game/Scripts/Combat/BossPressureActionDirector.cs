@@ -59,6 +59,7 @@ namespace DimensionBrawl.Combat
         [SerializeField] private Transform trackedPlayer;
 
         [Header("Action Selection")]
+        [SerializeField] private BossPressureActionDeckProfile actionDeckProfile;
         [SerializeField] private BossPressureActionSlot[] actionSlots = Array.Empty<BossPressureActionSlot>();
         [SerializeField, Min(0f)] private float globalRecoverySeconds = 0.35f;
         [SerializeField] private bool actionsEnabled = true;
@@ -79,12 +80,20 @@ namespace DimensionBrawl.Combat
         public BossPressureActionKind LastActionKind => lastActionKind;
         public BossBarragePatternProfile LastQueuedPattern => lastQueuedPattern;
         public BossSummonPressureAction SummonPressureAction => summonPressureAction;
+        public BossPressureActionDeckProfile ActionDeckProfile => actionDeckProfile;
+        public bool HasActionDeckProfile => actionDeckProfile != null;
         public float GlobalRecoveryRemainingSeconds => globalRecoveryTimer;
         public int ActionSlotCount => actionSlots != null ? actionSlots.Length : 0;
         public float CurrentPlayerForwardRisk01 => ResolvePlayerForwardRisk01();
 
+        private void Awake()
+        {
+            ApplyActionDeckProfile();
+        }
+
         private void OnValidate()
         {
+            ApplyActionDeckProfile();
             EnsurePerSlotTimers();
             if (actionSlots == null)
             {
@@ -120,14 +129,22 @@ namespace DimensionBrawl.Combat
             summonPressureAction = newSummonPressureAction;
             laneSpace = newLaneSpace;
             trackedPlayer = newTrackedPlayer;
+            ApplyActionDeckProfile();
         }
 
         public void ConfigureActionSlots(BossPressureActionSlot[] newActionSlots)
         {
+            actionDeckProfile = null;
             actionSlots = newActionSlots != null
                 ? (BossPressureActionSlot[])newActionSlots.Clone()
                 : Array.Empty<BossPressureActionSlot>();
             EnsurePerSlotTimers(reset: true);
+        }
+
+        public void ConfigureActionDeck(BossPressureActionDeckProfile newActionDeckProfile)
+        {
+            actionDeckProfile = newActionDeckProfile;
+            ApplyActionDeckProfile();
         }
 
         public bool TryGetActionSlot(int index, out BossPressureActionSlot slot)
@@ -209,6 +226,18 @@ namespace DimensionBrawl.Combat
         private void Update()
         {
             Tick(Time.deltaTime);
+        }
+
+        private void ApplyActionDeckProfile()
+        {
+            if (actionDeckProfile == null)
+            {
+                return;
+            }
+
+            actionSlots = actionDeckProfile.CopyActionSlots();
+            globalRecoverySeconds = actionDeckProfile.GlobalRecoverySeconds;
+            EnsurePerSlotTimers(reset: true);
         }
 
         private bool CanAttemptAction()

@@ -58,6 +58,8 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Actor_Proxy.prefab";
         private const string BossSummonPressureActorPrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossSummonPressureActor_Proxy.prefab";
+        private const string BossPressureActionDeckProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossPressureActionDeck_PocketReview.asset";
         private const string SummonOpportunityProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonOpportunity_BossPressureBlock.asset";
         private const string SummonSlot1ActorVisualName = "SummonSlot1Visual_ShieldBreakerElite";
@@ -161,6 +163,8 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossPressureCostLadder>(bossRoot, "boss pressure cost ladder");
             BossPressureActionDirector bossPressureActionDirector =
                 RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
+            BossPressureActionDeckProfile bossPressureActionDeck =
+                LoadAsset<BossPressureActionDeckProfile>(BossPressureActionDeckProfilePath);
             BossSummonPressureAction bossSummonPressureAction =
                 RequireComponent<BossSummonPressureAction>(bossRoot, "boss summon pressure action");
             BossPressurePositionController bossPressurePosition =
@@ -231,6 +235,11 @@ namespace DimensionBrawl.Tests
                 GetObjectReference<BossSummonPressureAction>(bossPressureActionDirector, "summonPressureAction"));
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(bossPressureActionDirector, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(bossPressureActionDirector, "trackedPlayer"));
+            Assert.AreSame(bossPressureActionDeck, bossPressureActionDirector.ActionDeckProfile);
+            Assert.IsTrue(bossPressureActionDirector.HasActionDeckProfile);
+            Assert.AreEqual("PocketReviewBoss", bossPressureActionDeck.DeckId);
+            Assert.AreEqual(3, bossPressureActionDeck.ActionSlotCount);
+            Assert.AreEqual(0.35f, bossPressureActionDeck.GlobalRecoverySeconds, 0.001f);
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(bossSummonPressureAction, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(bossSummonPressureAction, "trackedPlayer"));
             Assert.AreSame(

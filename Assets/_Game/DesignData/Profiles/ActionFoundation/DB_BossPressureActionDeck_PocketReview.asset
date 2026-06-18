@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a80e6e9179c47d3a80512a3e5cfe5a4, type: 3}
+  m_Name: DB_BossPressureActionDeck_PocketReview
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossPressureActionDeckProfile
+  deckId: PocketReviewBoss
+  globalRecoverySeconds: 0.35
+  actionSlots:
+  - Pattern: {fileID: 11400000, guid: 25cd6927b39e10048ab562c4e150cb3a, type: 2}
+    ActionKind: 0
+    MinimumTier: 1
+    QueuedWaves: 1
+    MinimumIntervalSeconds: 4.6
+    UsePlayerForwardRiskGate: 0
+    MinimumPlayerForwardRisk01: 0
+    MaximumPlayerForwardRisk01: 1
+  - Pattern: {fileID: 11400000, guid: 732ffa1eae726f14386a4a02115611c9, type: 2}
+    ActionKind: 1
+    MinimumTier: 2
+    QueuedWaves: 1
+    MinimumIntervalSeconds: 5.2
+    UsePlayerForwardRiskGate: 1
+    MinimumPlayerForwardRisk01: 0.32
+    MaximumPlayerForwardRisk01: 1
+  - Pattern: {fileID: 11400000, guid: b0b5e71e44209f74394f56e232db8d78, type: 2}
+    ActionKind: 2
+    MinimumTier: 3
+    QueuedWaves: 1
+    MinimumIntervalSeconds: 6
+    UsePlayerForwardRiskGate: 1
+    MinimumPlayerForwardRisk01: 0.66
+    MaximumPlayerForwardRisk01: 1

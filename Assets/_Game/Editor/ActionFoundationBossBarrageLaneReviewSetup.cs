@@ -60,6 +60,8 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Actor_Proxy.prefab";
         public const string BossSummonPressureActorPrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossSummonPressureActor_Proxy.prefab";
+        public const string BossPressureActionDeckProfilePath =
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_BossPressureActionDeck_PocketReview.asset";
         public const string SummonOpportunityProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonOpportunity_BossPressureBlock.asset";
         private const string SummonSlot1ActorVisualName = "SummonSlot1Visual_ShieldBreakerElite";
@@ -1519,34 +1521,8 @@ namespace DimensionBrawl.Editor
                 bossSummonPressureAction,
                 laneSpace,
                 playerTransform);
-            bossPressureActionDirector.ConfigureActionSlots(new[]
-            {
-                new BossPressureActionDirector.BossPressureActionSlot(
-                    linePressurePatternProfile,
-                    BossPressureActionKind.SkillPattern,
-                    1,
-                    1,
-                    4.6f),
-                new BossPressureActionDirector.BossPressureActionSlot(
-                    escortScreenPatternProfile,
-                    BossPressureActionKind.SummonPressure,
-                    2,
-                    1,
-                    5.2f,
-                    usePlayerForwardRiskGate: true,
-                    minimumPlayerForwardRisk01: 0.32f,
-                    maximumPlayerForwardRisk01: 1f),
-                new BossPressureActionDirector.BossPressureActionSlot(
-                    punishNetPatternProfile,
-                    BossPressureActionKind.PunishOverextend,
-                    3,
-                    1,
-                    6.0f,
-                    usePlayerForwardRiskGate: true,
-                    minimumPlayerForwardRisk01: 0.66f,
-                    maximumPlayerForwardRisk01: 1f)
-            });
-            SetFloat(bossPressureActionDirector, "globalRecoverySeconds", 0.35f);
+            bossPressureActionDirector.ConfigureActionDeck(
+                LoadAsset<BossPressureActionDeckProfile>(BossPressureActionDeckProfilePath));
             SetBool(bossPressureActionDirector, "actionsEnabled", true);
 
             BossPressurePositionController bossPressurePosition =
@@ -3033,6 +3009,10 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(bossPressureActionDirector, "summonPressureAction", bossSummonPressureAction);
             ValidateObjectReference(bossPressureActionDirector, "laneSpace", laneSpace);
             ValidateObjectReference(bossPressureActionDirector, "trackedPlayer", playerTransform);
+            ValidateObjectReference(
+                bossPressureActionDirector,
+                "actionDeckProfile",
+                LoadAsset<BossPressureActionDeckProfile>(BossPressureActionDeckProfilePath));
             ValidateBool(bossPressureActionDirector, "actionsEnabled", true);
             ValidateFloat(bossPressureActionDirector, "globalRecoverySeconds", 0.35f);
             ValidateBossPressureActionSlot(
