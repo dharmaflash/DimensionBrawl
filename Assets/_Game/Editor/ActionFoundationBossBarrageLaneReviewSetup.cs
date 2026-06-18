@@ -276,6 +276,8 @@ namespace DimensionBrawl.Editor
                 skill1Action,
                 summonSlot1Action,
                 bossBarrageEmitter,
+                bossPressureCost,
+                bossPressureActionDirector,
                 laneSpace);
             ConfigureFixedRearCamera(cameraController, player.transform, bossProxy.transform, laneSpace.transform);
             PlayerCombatModeVisualBinding combatModeVisuals = CreatePlayerCombatModeVisuals(scene, player.gameObject);
@@ -525,7 +527,9 @@ namespace DimensionBrawl.Editor
                 energyLadder,
                 skill1Action,
                 summonSlot1Action,
-                emitter);
+                emitter,
+                bossPressureCost,
+                bossPressureActionDirector);
             ValidatePocketCueBridges(
                 pocketOwner,
                 actionCameraCueDriver,
@@ -2256,6 +2260,8 @@ namespace DimensionBrawl.Editor
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
             BossBarrageEmitter bossBarrageEmitter,
+            BossPressureCostLadder bossPressureCost,
+            BossPressureActionDirector bossPressureActionDirector,
             SummonLaneSpace laneSpace)
         {
             GameObject root = CreateRoot(scene, PocketOwnerRootName);
@@ -2279,7 +2285,9 @@ namespace DimensionBrawl.Editor
                 summonSlot1Action,
                 bossBarrageEmitter,
                 clearMarker,
-                failMarker);
+                failMarker,
+                bossPressureCost,
+                bossPressureActionDirector);
             EditorUtility.SetDirty(owner);
             return owner;
         }
@@ -3129,7 +3137,9 @@ namespace DimensionBrawl.Editor
             SummonEnergyLadder energyLadder,
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
-            BossBarrageEmitter bossBarrageEmitter)
+            BossBarrageEmitter bossBarrageEmitter,
+            BossPressureCostLadder bossPressureCost,
+            BossPressureActionDirector bossPressureActionDirector)
         {
             ValidateObjectReference(owner, "playerHealth", playerHealth);
             ValidateObjectReference(owner, "closeThreatHealth", closeThreatHealth);
@@ -3138,8 +3148,12 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(owner, "skill1Action", skill1Action);
             ValidateObjectReference(owner, "summonSlot1Action", summonSlot1Action);
             ValidateObjectReference(owner, "bossBarrageEmitter", bossBarrageEmitter);
+            ValidateObjectReference(owner, "bossPressureCostLadder", bossPressureCost);
+            ValidateObjectReference(owner, "bossPressureActionDirector", bossPressureActionDirector);
             ValidateBool(owner, "stopBarrageOnClear", true);
             ValidateBool(owner, "stopBarrageOnFail", true);
+            ValidateBool(owner, "stopBossPressureCostOnEnd", true);
+            ValidateBool(owner, "stopBossPressureActionsOnEnd", true);
             ValidateBool(owner, "stopEnergyGainOnEnd", true);
             ValidateAssignedObjectReference(owner, "clearMarker");
             ValidateAssignedObjectReference(owner, "failMarker");

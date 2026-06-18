@@ -36,8 +36,12 @@ namespace DimensionBrawl.Test
 
         [Header("Pressure")]
         [SerializeField] private BossBarrageEmitter bossBarrageEmitter;
+        [SerializeField] private BossPressureCostLadder bossPressureCostLadder;
+        [SerializeField] private BossPressureActionDirector bossPressureActionDirector;
         [SerializeField] private bool stopBarrageOnClear = true;
         [SerializeField] private bool stopBarrageOnFail = true;
+        [SerializeField] private bool stopBossPressureCostOnEnd = true;
+        [SerializeField] private bool stopBossPressureActionsOnEnd = true;
         [SerializeField, Min(0f)] private float closeThreatDefeatPressureReliefSeconds = 0.9f;
         [SerializeField, Min(0f)] private float summonPressureBreakReliefSeconds = 2.4f;
         [SerializeField, Min(0f)] private float summonFollowupWindowSeconds = 1.4f;
@@ -191,7 +195,9 @@ namespace DimensionBrawl.Test
             PlayerSummonSlot1Action newSummonSlot1Action,
             BossBarrageEmitter newBossBarrageEmitter,
             GameObject newClearMarker,
-            GameObject newFailMarker)
+            GameObject newFailMarker,
+            BossPressureCostLadder newBossPressureCostLadder = null,
+            BossPressureActionDirector newBossPressureActionDirector = null)
         {
             playerHealth = newPlayerHealth;
             closeThreatHealth = newCloseThreatHealth;
@@ -200,6 +206,8 @@ namespace DimensionBrawl.Test
             skill1Action = newSkill1Action;
             summonSlot1Action = newSummonSlot1Action;
             bossBarrageEmitter = newBossBarrageEmitter;
+            bossPressureCostLadder = newBossPressureCostLadder;
+            bossPressureActionDirector = newBossPressureActionDirector;
             clearMarker = newClearMarker;
             failMarker = newFailMarker;
             ResetPocket();
@@ -235,6 +243,8 @@ namespace DimensionBrawl.Test
             lastGrantedSummonFollowupEnergyPulse = 0f;
             SetBarrageEnabled(true);
             SetEnergyGainEnabled(true);
+            SetBossPressureCostGainEnabled(true);
+            SetBossPressureActionsEnabled(true);
             SetMarkers();
         }
 
@@ -441,6 +451,8 @@ namespace DimensionBrawl.Test
             ClearPressurePacing();
             SetBarrageEnabled(!stopBarrageOnClear);
             SetEnergyGainEnabled(!stopEnergyGainOnEnd);
+            SetBossPressureCostGainEnabled(!stopBossPressureCostOnEnd);
+            SetBossPressureActionsEnabled(!stopBossPressureActionsOnEnd);
             SetMarkers();
         }
 
@@ -450,6 +462,8 @@ namespace DimensionBrawl.Test
             ClearPressurePacing();
             SetBarrageEnabled(!stopBarrageOnFail);
             SetEnergyGainEnabled(!stopEnergyGainOnEnd);
+            SetBossPressureCostGainEnabled(!stopBossPressureCostOnEnd);
+            SetBossPressureActionsEnabled(!stopBossPressureActionsOnEnd);
             SetMarkers();
         }
 
@@ -573,6 +587,22 @@ namespace DimensionBrawl.Test
             if (energyLadder != null)
             {
                 energyLadder.SetGainEnabled(enabled);
+            }
+        }
+
+        private void SetBossPressureCostGainEnabled(bool enabled)
+        {
+            if (bossPressureCostLadder != null)
+            {
+                bossPressureCostLadder.SetGainEnabled(enabled);
+            }
+        }
+
+        private void SetBossPressureActionsEnabled(bool enabled)
+        {
+            if (bossPressureActionDirector != null)
+            {
+                bossPressureActionDirector.SetActionsEnabled(enabled);
             }
         }
 

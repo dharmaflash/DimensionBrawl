@@ -12449,8 +12449,12 @@ MonoBehaviour:
   skill1Action: {fileID: 4016}
   summonSlot1Action: {fileID: 4014}
   bossBarrageEmitter: {fileID: 822171416}
+  bossPressureCostLadder: {fileID: 822171421}
+  bossPressureActionDirector: {fileID: 822171420}
   stopBarrageOnClear: 1
   stopBarrageOnFail: 1
+  stopBossPressureCostOnEnd: 1
+  stopBossPressureActionsOnEnd: 1
   closeThreatDefeatPressureReliefSeconds: 0.9
   summonPressureBreakReliefSeconds: 2.4
   summonFollowupWindowSeconds: 1.4

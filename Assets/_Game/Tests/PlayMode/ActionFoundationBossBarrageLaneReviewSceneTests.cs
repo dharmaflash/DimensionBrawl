@@ -463,6 +463,10 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(skill1Action, GetObjectReference<PlayerSkill1Action>(pocketOwner, "skill1Action"));
             Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(pocketOwner, "summonSlot1Action"));
             Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(pocketOwner, "bossBarrageEmitter"));
+            Assert.AreSame(bossPressureCost, GetObjectReference<BossPressureCostLadder>(pocketOwner, "bossPressureCostLadder"));
+            Assert.AreSame(
+                bossPressureActionDirector,
+                GetObjectReference<BossPressureActionDirector>(pocketOwner, "bossPressureActionDirector"));
             Assert.AreSame(pocketOwner, pocketCameraCueBridge.PocketReviewOwner);
             Assert.AreSame(cameraCueDriver, pocketCameraCueBridge.CameraCueDriver);
             Assert.AreSame(pocketOwner, pocketVfxCueBridge.PocketReviewOwner);
@@ -1398,6 +1402,10 @@ namespace DimensionBrawl.Tests
                     "pocket VFX cue bridge");
             GameObject bossRoot = RequireRoot(BossRootName);
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            BossPressureCostLadder bossPressureCost =
+                RequireComponent<BossPressureCostLadder>(bossRoot, "boss pressure cost ladder");
+            BossPressureActionDirector bossPressureActionDirector =
+                RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
             Collider bossHitCollider = RequireCombatHitCollider(bossRoot, bossHealth, "boss proxy");
             CombatHealth closeThreatHealth =
@@ -1530,6 +1538,23 @@ namespace DimensionBrawl.Tests
                 energyLadder.CurrentTierEnergy,
                 0.001f,
                 "Pocket clear should stop EN gain so the completed review state does not keep charging behind the result.");
+            float bossCostAfterClear = bossPressureCost.CurrentTierCost;
+            bossPressureCost.Tick(1f);
+            Assert.AreEqual(
+                bossCostAfterClear,
+                bossPressureCost.CurrentTierCost,
+                0.001f,
+                "Pocket clear should stop boss cost gain so the completed review state does not keep charging boss skills.");
+            Assert.IsFalse(
+                bossPressureActionDirector.ActionsEnabled,
+                "Pocket clear should disable boss costed actions so the boss does not queue skills behind the result.");
+            int bossActionCountAfterClear = bossPressureActionDirector.TotalActionCount;
+            bossPressureCost.GrantCurrentTierCost(300f);
+            bossPressureActionDirector.Tick(1f);
+            Assert.AreEqual(
+                bossActionCountAfterClear,
+                bossPressureActionDirector.TotalActionCount,
+                "Pocket clear should keep boss costed actions disabled even if boss cost is later granted by a test or designer tool.");
         }
 
         [UnityTest]
@@ -1658,7 +1683,12 @@ namespace DimensionBrawl.Tests
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
             SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
-            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(RequireRoot(BossRootName), "boss barrage emitter");
+            GameObject bossRoot = RequireRoot(BossRootName);
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            BossPressureCostLadder bossPressureCost =
+                RequireComponent<BossPressureCostLadder>(bossRoot, "boss pressure cost ladder");
+            BossPressureActionDirector bossPressureActionDirector =
+                RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
             BossBarragePocketReviewOwner pocketOwner =
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
 
@@ -1686,6 +1716,23 @@ namespace DimensionBrawl.Tests
                 emitter.IsWindupActive,
                 "Pocket failure should stop boss barrage progression for a readable fail state.");
             Assert.AreEqual(0, emitter.ActiveProjectileCount);
+            float bossCostAfterFail = bossPressureCost.CurrentTierCost;
+            bossPressureCost.Tick(1f);
+            Assert.AreEqual(
+                bossCostAfterFail,
+                bossPressureCost.CurrentTierCost,
+                0.001f,
+                "Pocket failure should stop boss cost gain so the failed review state does not keep charging boss skills.");
+            Assert.IsFalse(
+                bossPressureActionDirector.ActionsEnabled,
+                "Pocket failure should disable boss costed actions so the boss does not queue skills behind the result.");
+            int bossActionCountAfterFail = bossPressureActionDirector.TotalActionCount;
+            bossPressureCost.GrantCurrentTierCost(300f);
+            bossPressureActionDirector.Tick(1f);
+            Assert.AreEqual(
+                bossActionCountAfterFail,
+                bossPressureActionDirector.TotalActionCount,
+                "Pocket failure should keep boss costed actions disabled even if boss cost is later granted by a test or designer tool.");
         }
 
         [UnityTest]
