@@ -1936,10 +1936,15 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(
                 bossPressureActionDirector.TryQueueBestAvailableAction(),
                 "Boss pressure director should be able to spend cost into an authored pressure action during the review.");
+            BossBarragePatternProfile queuedPattern = bossPressureActionDirector.LastQueuedPattern;
+            int sequenceIndexBeforePriority = emitter.CurrentPatternSequenceIndex;
 
             Assert.AreEqual(cueCountBefore + 1, cueDriver.PressureActionCueRequestCount);
             Assert.AreEqual(bossPressureActionDirector.LastActionKind, cueDriver.LastPressureActionKind);
             Assert.AreEqual(bossPressureActionDirector.LastSpentTier, cueDriver.LastPressureActionTier);
+            Assert.IsTrue(emitter.CurrentPatternIsPriority);
+            Assert.AreSame(queuedPattern, emitter.QueuedPriorityPattern);
+            Assert.AreSame(queuedPattern, emitter.CurrentPattern);
             Assert.IsFalse(string.IsNullOrWhiteSpace(cueDriver.LastPressureActionTrigger));
             Assert.IsTrue(
                 cueDriver.IsCueActive,
@@ -1950,6 +1955,18 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(
                 cameraController.HasActiveCue,
                 "Boss costed skill/summon choices should request a short camera read through the presentation driver.");
+
+            Assert.IsTrue(emitter.BeginWindup());
+            Assert.IsTrue(emitter.CurrentPatternIsPriority);
+            Assert.Greater(emitter.FirePendingWave(), 0);
+            Assert.IsTrue(
+                emitter.LastFiredWaveWasPriority,
+                "Costed boss actions should fire as a priority pattern instead of being indistinguishable from the regular basic sequence.");
+            Assert.IsFalse(emitter.CurrentPatternIsPriority);
+            Assert.AreEqual(
+                sequenceIndexBeforePriority,
+                emitter.CurrentPatternSequenceIndex,
+                "A costed priority pattern should not advance the regular boss-pressure pattern sequence.");
             yield return null;
         }
 

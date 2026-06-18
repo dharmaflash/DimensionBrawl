@@ -174,7 +174,12 @@ namespace DimensionBrawl.Presentation
             string pressureState = bossBarrageEmitter.IsWindupActive
                 ? $"windup risk {bossBarrageEmitter.PendingForwardRisk01 * 100f:0}%"
                 : $"shots {bossBarrageEmitter.ActiveProjectileCount}";
-            return $"Boss P{bossBarrageEmitter.CurrentPatternSequenceIndex + 1}: {pattern.PatternId} [{pattern.LateralShape}]   {pressureState}";
+            string source = bossBarrageEmitter.CurrentPatternIsPriority ? "Costed" : "Basic";
+            string priorityWaves = bossBarrageEmitter.CurrentPatternIsPriority
+                ? $" q{bossBarrageEmitter.QueuedPriorityWavesRemaining}"
+                : string.Empty;
+            return $"Boss {source} P{bossBarrageEmitter.CurrentPatternSequenceIndex + 1}{priorityWaves}: "
+                + $"{pattern.PatternId} [{pattern.LateralShape}]   {pressureState}";
         }
 
         private string ResolveBossPressureLine()

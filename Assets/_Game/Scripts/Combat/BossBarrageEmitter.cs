@@ -35,6 +35,7 @@ namespace DimensionBrawl.Combat
         private int wavesFiredInCurrentPattern;
         private BossBarragePatternProfile queuedPriorityPattern;
         private int queuedPriorityWavesRemaining;
+        private bool lastFiredWaveWasPriority;
 
         public event Action<BossBarrageEmitter, BossBarragePatternProfile> WindupStarted;
         public event Action<BossBarrageEmitter, BossBarragePatternProfile, int> WaveFired;
@@ -43,6 +44,9 @@ namespace DimensionBrawl.Combat
         public bool IsFiringEnabled => firingEnabled;
         public bool HasQueuedPriorityPattern => queuedPriorityPattern != null;
         public BossBarragePatternProfile QueuedPriorityPattern => queuedPriorityPattern;
+        public bool CurrentPatternIsPriority => queuedPriorityPattern != null;
+        public bool LastFiredWaveWasPriority => lastFiredWaveWasPriority;
+        public int QueuedPriorityWavesRemaining => queuedPriorityWavesRemaining;
         public float PendingForwardRisk01 => pendingForwardRisk01;
         public BossBarragePatternProfile CurrentPattern => ActivePattern;
         public int CurrentPatternSequenceIndex => patternSequenceIndex;
@@ -248,6 +252,7 @@ namespace DimensionBrawl.Combat
             }
 
             windupActive = false;
+            lastFiredWaveWasPriority = queuedPriorityPattern != null;
             int spawnedCount = 0;
             int projectileCount = activePattern.ProjectilesPerWave;
             for (int i = 0; i < projectileCount; i++)
