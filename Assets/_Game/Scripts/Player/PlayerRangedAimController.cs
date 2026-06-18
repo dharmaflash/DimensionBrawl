@@ -24,6 +24,7 @@ namespace DimensionBrawl.Player
 
         private bool actionEnabledHere;
         private bool mobileAimHeld;
+        private bool fireAimHeld;
         private bool queuedAimToggle;
         private bool isAiming;
 
@@ -51,6 +52,7 @@ namespace DimensionBrawl.Player
 
         private void OnDisable()
         {
+            fireAimHeld = false;
             SetAimMode(false);
             if (combatModeController != null)
             {
@@ -86,7 +88,16 @@ namespace DimensionBrawl.Player
             mobileAimHeld = active;
             if (holdToAim)
             {
-                SetAimMode(active && CanAim);
+                SetAimMode(HasHeldAimInput() && CanAim);
+            }
+        }
+
+        public void SetFireAimHeld(bool active)
+        {
+            fireAimHeld = active;
+            if (holdToAim)
+            {
+                SetAimMode(HasHeldAimInput() && CanAim);
             }
         }
 
@@ -136,7 +147,7 @@ namespace DimensionBrawl.Player
 
         private bool ReadAimHeld()
         {
-            bool held = mobileAimHeld;
+            bool held = HasHeldAimInput();
             if (aimAction != null && aimAction.action != null)
             {
                 held |= aimAction.action.IsPressed();
@@ -150,6 +161,11 @@ namespace DimensionBrawl.Player
             return IsKeyboardHeld()
                 || (Mouse.current != null && Mouse.current.rightButton.isPressed)
                 || (Gamepad.current != null && Gamepad.current.leftTrigger.ReadValue() > 0.5f);
+        }
+
+        private bool HasHeldAimInput()
+        {
+            return mobileAimHeld || fireAimHeld;
         }
 
         private bool ReadAimPressed()

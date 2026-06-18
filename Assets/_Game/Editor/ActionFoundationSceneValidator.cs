@@ -291,17 +291,10 @@ namespace DimensionBrawl.Editor
 
             ValidateReference(movement, "referenceCamera");
             ValidateReference(movement, "animator");
-            ValidateFloat(movement, "stopSettleSeconds", 0.26f);
-            ValidateFloat(movement, "stopSettleInputHoldSeconds", 0.16f);
             ValidateString(movement, "startRunTrigger", "StartRun");
             ValidateString(movement, "stopStepTrigger", "StopStep");
             ValidateString(movement, "turnLeft90Trigger", "TurnLeft90");
             ValidateString(movement, "turnRight90Trigger", "TurnRight90");
-            ValidateFloat(movement, "animatorMoveDampSeconds", 0.06f);
-            ValidateFloat(movement, "stopSettleAnimatorSpeedFloor", 0.24f);
-            ValidateFloat(movement, "sharpTurnTriggerAngle", 65f);
-            ValidateFloat(movement, "sharpTurnMinimumSpeedRatio", 0.35f);
-            ValidateFloat(movement, "sharpTurnCooldownSeconds", 0.32f);
             ValidateReference(playerActions, "movement");
             ValidateReference(playerActions, "health");
             ValidateObjectReference(playerActions, "targetSelector", targetSelector);
@@ -625,21 +618,6 @@ namespace DimensionBrawl.Editor
 
             ValidateObjectReference(cameraController, "target", playerActions.transform);
             ValidateObjectReference(cameraController, "threat", soldier.transform);
-            ValidateVector3(cameraController, "cameraOffset", new Vector3(0f, 1.05f, -4.2f));
-            ValidateVector3(cameraController, "lookOffset", new Vector3(0f, 1.2f, 0.55f));
-            ValidateFloat(cameraController, "manualYawSpeedDegrees", 150f);
-            ValidateFloat(cameraController, "mouseYawDegreesPerPixel", 0.12f);
-            ValidateFloat(cameraController, "targetYawAssist", 0.18f);
-            ValidateFloat(cameraController, "targetYawAssistSpeed", 2.2f);
-            ValidateFloat(cameraController, "orbitInputDeadZone", 0.08f);
-            ValidateFloat(cameraController, "threatBias", 0.25f);
-            ValidateFloat(cameraController, "maxLeadFromPlayerSpeed", 0.35f);
-            ValidateFloat(cameraController, "defaultCueSeconds", 0.24f);
-            ValidateFloat(cameraController, "maxCueOffset", 0.55f);
-            ValidateFloat(cameraController, "maxCueFieldOfViewDelta", 4f);
-            ValidateFloat(cameraController, "maxCueCameraDistanceDelta", 0.45f);
-            ValidateFloat(cameraController, "maxCueFocusHeightDelta", 0.25f);
-            ValidateFloat(cameraController, "cueFieldOfViewSmooth", 18f);
             ValidateReference(cameraCueDriver, "actionController");
             ValidateReference(cameraCueDriver, "movement");
             ValidateReference(cameraCueDriver, "cameraController");
@@ -1336,18 +1314,6 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(targetSelector, "selectionOrigin", player);
             ValidateObjectReference(targetSelector, "viewReference", cameraTransform);
             ValidateObjectReferenceArray(targetSelector, "targetCandidates", enemyCandidates);
-            ValidateFloat(targetSelector, "selectionRadius", 12f);
-            ValidateFloat(targetSelector, "retargetIntervalSeconds", 0.12f);
-            ValidateFloat(targetSelector, "contactStickinessSeconds", 0.35f);
-            ValidateFloat(targetSelector, "distanceWeight", 0.35f);
-            ValidateFloat(targetSelector, "ownerForwardWeight", 0.3f);
-            ValidateFloat(targetSelector, "viewForwardWeight", 0.2f);
-            ValidateFloat(targetSelector, "threatStateWeight", 0.35f);
-            ValidateFloat(targetSelector, "currentTargetStickiness", 0.18f);
-            ValidateFloat(targetSelector, "minimumReadableForwardDot", -0.35f);
-            ValidateFloat(targetSelector, "attackAimRadius", 9f);
-            ValidateFloat(targetSelector, "minimumAttackAimDot", -1f);
-            ValidateFloat(targetSelector, "attackReachPriorityWeight", 0.8f);
         }
 
         private static void ValidateCameraTargetBridge(

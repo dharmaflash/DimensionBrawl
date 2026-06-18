@@ -9,6 +9,7 @@ namespace DimensionBrawl.Combat
     {
         [SerializeField] private bool deactivateOnHit = true;
         [SerializeField] private bool alignVisualToDirection = true;
+        [SerializeField] private bool allowVerticalTravel;
 
         private Collider triggerCollider;
         private Rigidbody projectileRigidbody;
@@ -23,6 +24,7 @@ namespace DimensionBrawl.Combat
         public bool IsActive => active && gameObject.activeInHierarchy;
         public DamageTeam SourceTeam => sourceTeam;
         public Vector3 TravelDirection => travelDirection;
+        public bool AllowsVerticalTravel => allowVerticalTravel;
 
         private void Awake()
         {
@@ -148,8 +150,13 @@ namespace DimensionBrawl.Combat
             }
         }
 
-        private static Vector3 ResolveDirection(Vector3 direction)
+        private Vector3 ResolveDirection(Vector3 direction)
         {
+            if (allowVerticalTravel && direction.sqrMagnitude > 0.0001f)
+            {
+                return direction.normalized;
+            }
+
             Vector3 planarDirection = Vector3.ProjectOnPlane(direction, Vector3.up);
             if (planarDirection.sqrMagnitude > 0.0001f)
             {

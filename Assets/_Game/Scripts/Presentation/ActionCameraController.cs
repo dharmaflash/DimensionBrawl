@@ -58,9 +58,9 @@ namespace DimensionBrawl.Presentation
 
         [Header("Aim Mode")]
         [Tooltip("Persistent ranged-aim shoulder offset. This is a mode modifier, not a short combat cue.")]
-        [SerializeField] private Vector3 aimCameraOffset = new Vector3(-0.32f, 0.05f, 0.52f);
-        [SerializeField] private Vector3 aimFocusOffset = new Vector3(-0.12f, 0.04f, 0.32f);
-        [SerializeField] private float aimFieldOfViewDelta = -4f;
+        [SerializeField] private Vector3 aimCameraOffset = new Vector3(0.5f, 0.18f, 0.12f);
+        [SerializeField] private Vector3 aimFocusOffset = new Vector3(0.08f, 0.06f, 1.05f);
+        [SerializeField] private float aimFieldOfViewDelta = -5.5f;
         [SerializeField, Min(0f)] private float aimBlendInSpeed = 14f;
         [SerializeField, Min(0f)] private float aimBlendOutSpeed = 18f;
 
@@ -84,6 +84,22 @@ namespace DimensionBrawl.Presentation
         public float OrbitYawDegrees => orbitYawDegrees;
         public Transform Target => target;
         public Transform Threat => threat;
+
+        public bool TryGetViewportAimRay(Vector2 viewportPoint, out Ray ray)
+        {
+            Camera camera = ResolveControlledCamera();
+            if (camera == null)
+            {
+                ray = default;
+                return false;
+            }
+
+            Vector2 clampedPoint = new Vector2(
+                Mathf.Clamp01(viewportPoint.x),
+                Mathf.Clamp01(viewportPoint.y));
+            ray = camera.ViewportPointToRay(new Vector3(clampedPoint.x, clampedPoint.y, 0f));
+            return true;
+        }
 
         public void SetOrbitInput(Vector2 input)
         {
@@ -175,8 +191,18 @@ namespace DimensionBrawl.Presentation
 
         private void Awake()
         {
-            controlledCamera = GetComponent<Camera>();
+            controlledCamera = ResolveControlledCamera();
             baseFieldOfView = controlledCamera != null ? controlledCamera.fieldOfView : 50f;
+        }
+
+        private Camera ResolveControlledCamera()
+        {
+            if (controlledCamera == null)
+            {
+                controlledCamera = GetComponent<Camera>();
+            }
+
+            return controlledCamera;
         }
 
         private void OnEnable()

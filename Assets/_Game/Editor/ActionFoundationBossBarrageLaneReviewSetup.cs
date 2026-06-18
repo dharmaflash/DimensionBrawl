@@ -168,19 +168,22 @@ namespace DimensionBrawl.Editor
                 "PF_PlayerSkill1Projectile_LaneBolt",
                 Skill1ProjectileMaterialPath,
                 new Color(0.45f, 0.9f, 1f, 1f),
-                0.42f);
+                0.42f,
+                allowVerticalTravel: false);
             LaneActionProjectile rangedBasicProjectilePrefab = EnsureLaneActionProjectilePrefab(
                 RangedBasicProjectilePrefabPath,
                 "PF_PlayerRangedBasicProjectile_AimBolt",
                 RangedBasicProjectileMaterialPath,
                 new Color(0.75f, 0.98f, 1f, 1f),
-                0.28f);
+                0.28f,
+                allowVerticalTravel: true);
             LaneActionProjectile summonSlot1ProjectilePrefab = EnsureLaneActionProjectilePrefab(
                 SummonSlot1ProjectilePrefabPath,
                 "PF_SummonSlot1Projectile_AssistBolt",
                 SummonSlot1ProjectileMaterialPath,
                 new Color(0.55f, 1f, 0.72f, 1f),
-                0.58f);
+                0.58f,
+                allowVerticalTravel: false);
             GameObject summonEntryCuePrefab = EnsureSummonEntryCuePrefab();
             SummonFrontlineProxy summonActorPrefab = EnsureSummonActorPrefab();
             Scene scene = EditorSceneManager.OpenScene(ActionFoundationProfileSetup.ScenePath, OpenSceneMode.Single);
@@ -454,8 +457,6 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(targetSelector, "selfHealth", playerHealth);
             ValidateArrayReference(targetSelector, "targetCandidates", 0, closeThreatHealth);
             ValidateArrayReference(targetSelector, "targetCandidates", 1, bossHealth);
-            ValidateFloat(targetSelector, "selectionRadius", 35f);
-            ValidateFloat(targetSelector, "attackAimRadius", 9f);
             ValidateCloseThreat(closeThreat, closeThreatHealth, playerHealth, cameraController);
             ValidateObjectReference(cameraController, "target", player.transform);
             ValidateObjectReference(cameraController, "threat", bossProxy.transform);
@@ -971,7 +972,8 @@ namespace DimensionBrawl.Editor
             string prefabName,
             string materialPath,
             Color color,
-            float scale)
+            float scale,
+            bool allowVerticalTravel)
         {
             EnsureFolderForAsset(prefabPath);
             Material material = LoadOrCreateMaterial(materialPath, color);
@@ -998,7 +1000,8 @@ namespace DimensionBrawl.Editor
                 rigidbody.useGravity = false;
                 rigidbody.isKinematic = true;
 
-                EnsureComponent<LaneActionProjectile>(editableRoot);
+                LaneActionProjectile projectile = EnsureComponent<LaneActionProjectile>(editableRoot);
+                SetBool(projectile, "allowVerticalTravel", allowVerticalTravel);
                 PrefabUtility.SaveAsPrefabAsset(editableRoot, prefabPath);
             }
             finally
@@ -1574,6 +1577,8 @@ namespace DimensionBrawl.Editor
                 playerHealth,
                 cameraController.transform,
                 new[] { closeThreatHealth, bossHealth });
+            // Seed the boss-lane review radius so a rebuilt scene can see the far proxy.
+            // Designers may tune these values in the scene; validation does not exact-lock them.
             SetFloat(targetSelector, "selectionRadius", 35f);
             SetFloat(targetSelector, "attackAimRadius", 9f);
             SetObjectReference(cameraTargetBridge, "cameraController", cameraController);
@@ -2109,6 +2114,7 @@ namespace DimensionBrawl.Editor
                 summonSlot1Action,
                 bossBarrageEmitter,
                 pocketOwner);
+            SetBool(hud, "showCenterReticle", false);
             BossBarrageLaneReviewMobileHud mobileHud = hudRoot.AddComponent<BossBarrageLaneReviewMobileHud>();
             mobileHud.Configure(
                 player.GetComponent<PlayerMovementController>(),
@@ -2118,10 +2124,10 @@ namespace DimensionBrawl.Editor
                 rangedBasicAttackAction,
                 skill1Action,
                 summonSlot1Action);
-            SetBool(mobileHud, "fireButtonHoldsAim", true);
-            SetFloat(mobileHud, "fireAimDragDeadZone", 0.18f);
-            SetFloat(mobileHud, "fireAimDragRadius", 110f);
-            SetFloat(mobileHud, "fireAimKnobSize", 34f);
+            SetBool(mobileHud, "screenDragControlsAim", true);
+            SetBool(mobileHud, "rightMouseDragControlsAim", true);
+            SetBool(mobileHud, "leftMouseDragControlsAim", false);
+            // Touch/reticle composition is review-scene HUD tuning. Keep it Inspector-authored.
             EditorUtility.SetDirty(hud);
             EditorUtility.SetDirty(mobileHud);
         }
@@ -2209,11 +2215,7 @@ namespace DimensionBrawl.Editor
             SetFloat(cameraController, "threatBias", 0f);
             SetFloat(cameraController, "maxThreatFocusOffset", 0.75f);
             SetFloat(cameraController, "maxLeadFromPlayerSpeed", 0f);
-            SetVector3(cameraController, "aimCameraOffset", new Vector3(-0.32f, 0.05f, 0.52f));
-            SetVector3(cameraController, "aimFocusOffset", new Vector3(-0.12f, 0.04f, 0.32f));
-            SetFloat(cameraController, "aimFieldOfViewDelta", -4f);
-            SetFloat(cameraController, "aimBlendInSpeed", 14f);
-            SetFloat(cameraController, "aimBlendOutSpeed", 18f);
+            // Aim framing and blend speed are scene-authored tuning.
         }
 
         private static void ConfigureRangedAimController(
@@ -2229,6 +2231,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(aimController, "cameraController", cameraController);
             SetObjectReference(aimController, "animator", rangedAnimator);
             SetBool(aimController, "holdToAim", true);
+            // Review-only PC fallback. Production scenes should bind explicit Input Actions instead.
             SetBool(aimController, "useDeviceFallbackWhenActionMissing", true);
             SetString(aimController, "aimingParameter", string.Empty);
         }
@@ -2269,31 +2272,9 @@ namespace DimensionBrawl.Editor
             SetObjectReference(rangedBasicAttackAction, "projectileRoot", projectileRoot);
             SetObjectReference(rangedBasicAttackAction, "fireOrigin", fireOrigin);
             SetEnum(rangedBasicAttackAction, "sourceTeam", (int)DamageTeam.Player);
-            SetFloat(rangedBasicAttackAction, "damage", 12f);
-            SetFloat(rangedBasicAttackAction, "projectileSpeed", 19f);
-            SetFloat(rangedBasicAttackAction, "projectileLifetimeSeconds", 1.4f);
-            SetFloat(rangedBasicAttackAction, "projectileRadius", 0.22f);
             SetInt(rangedBasicAttackAction, "prewarmCount", 8);
-            SetFloat(rangedBasicAttackAction, "fireIntervalSeconds", 0.22f);
-            SetFloat(rangedBasicAttackAction, "spawnForwardOffset", 0.85f);
-            SetFloat(rangedBasicAttackAction, "spawnHeight", 1.12f);
-            SetFloat(rangedBasicAttackAction, "targetHeight", 1f);
-            SetFloat(rangedBasicAttackAction, "facingHoldSeconds", 0.16f);
-            SetBool(rangedBasicAttackAction, "snapFacingOnFire", true);
-            SetBool(rangedBasicAttackAction, "requireAimToFire", false);
             SetString(rangedBasicAttackAction, "fireTrigger", string.Empty);
-            SetFloat(rangedBasicAttackAction, "aimInputDeadZone", 0.18f);
-            SetFloat(rangedBasicAttackAction, "aimInputYawDegrees", 34f);
-            SetBool(rangedBasicAttackAction, "useAimAssist", true);
-            SetFloat(rangedBasicAttackAction, "aimAssistDistance", 18f);
-            SetFloat(rangedBasicAttackAction, "hipAimAssistAngleDegrees", 12f);
-            SetFloat(rangedBasicAttackAction, "aimedAimAssistAngleDegrees", 7f);
-            SetFloat(rangedBasicAttackAction, "aimAssistMaxTurnDegrees", 8f);
-            SetVector3(rangedBasicAttackAction, "fireCameraCueOffset", new Vector3(0.025f, 0.01f, -0.045f));
-            SetFloat(rangedBasicAttackAction, "fireCameraCueSeconds", 0.10f);
-            SetFloat(rangedBasicAttackAction, "fireFieldOfViewDelta", -0.8f);
-            SetFloat(rangedBasicAttackAction, "fireCameraDistanceDelta", -0.04f);
-            SetFloat(rangedBasicAttackAction, "fireFocusHeightDelta", 0f);
+            // Damage, shot cadence, aim assist, muzzle framing, and fire camera feedback are authored tuning.
             EditorUtility.SetDirty(rangedBasicAttackAction);
             return rangedBasicAttackAction;
         }
@@ -2337,18 +2318,7 @@ namespace DimensionBrawl.Editor
 
             ValidateBool(cameraController, "useFixedRearYaw", true);
             ValidateObjectReference(cameraController, "fixedRearYawReference", rearYawReference);
-            ValidateFloat(cameraController, "fixedRearYawOffsetDegrees", 0f);
             ValidateBool(cameraController, "useDeviceFallbackWhenActionMissing", false);
-            ValidateFloat(cameraController, "manualYawSpeedDegrees", 0f);
-            ValidateFloat(cameraController, "mouseYawDegreesPerPixel", 0f);
-            ValidateFloat(cameraController, "targetYawAssist", 0f);
-            ValidateFloat(cameraController, "threatBias", 0f);
-            ValidateFloat(cameraController, "maxLeadFromPlayerSpeed", 0f);
-            ValidateVector3(cameraController, "aimCameraOffset", new Vector3(-0.32f, 0.05f, 0.52f));
-            ValidateVector3(cameraController, "aimFocusOffset", new Vector3(-0.12f, 0.04f, 0.32f));
-            ValidateFloat(cameraController, "aimFieldOfViewDelta", -4f);
-            ValidateFloat(cameraController, "aimBlendInSpeed", 14f);
-            ValidateFloat(cameraController, "aimBlendOutSpeed", 18f);
         }
 
         private static void ValidateRangedAimController(
@@ -2361,7 +2331,6 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(aimController, "cameraController", cameraController);
             ValidateObjectReference(aimController, "animator", rangedAnimator);
             ValidateBool(aimController, "holdToAim", true);
-            ValidateBool(aimController, "useDeviceFallbackWhenActionMissing", true);
             ValidateString(aimController, "aimingParameter", string.Empty);
         }
 
@@ -2391,31 +2360,8 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(rangedBasicAttackAction, "projectileRoot", projectileRoot);
             ValidateObjectReference(rangedBasicAttackAction, "fireOrigin", fireOrigin);
             ValidateEnum(rangedBasicAttackAction, "sourceTeam", (int)DamageTeam.Player);
-            ValidateFloat(rangedBasicAttackAction, "damage", 12f);
-            ValidateFloat(rangedBasicAttackAction, "projectileSpeed", 19f);
-            ValidateFloat(rangedBasicAttackAction, "projectileLifetimeSeconds", 1.4f);
-            ValidateFloat(rangedBasicAttackAction, "projectileRadius", 0.22f);
             ValidateInt(rangedBasicAttackAction, "prewarmCount", 8);
-            ValidateFloat(rangedBasicAttackAction, "fireIntervalSeconds", 0.22f);
-            ValidateFloat(rangedBasicAttackAction, "spawnForwardOffset", 0.85f);
-            ValidateFloat(rangedBasicAttackAction, "spawnHeight", 1.12f);
-            ValidateFloat(rangedBasicAttackAction, "targetHeight", 1f);
-            ValidateFloat(rangedBasicAttackAction, "facingHoldSeconds", 0.16f);
-            ValidateBool(rangedBasicAttackAction, "snapFacingOnFire", true);
-            ValidateBool(rangedBasicAttackAction, "requireAimToFire", false);
             ValidateString(rangedBasicAttackAction, "fireTrigger", string.Empty);
-            ValidateFloat(rangedBasicAttackAction, "aimInputDeadZone", 0.18f);
-            ValidateFloat(rangedBasicAttackAction, "aimInputYawDegrees", 34f);
-            ValidateBool(rangedBasicAttackAction, "useAimAssist", true);
-            ValidateFloat(rangedBasicAttackAction, "aimAssistDistance", 18f);
-            ValidateFloat(rangedBasicAttackAction, "hipAimAssistAngleDegrees", 12f);
-            ValidateFloat(rangedBasicAttackAction, "aimedAimAssistAngleDegrees", 7f);
-            ValidateFloat(rangedBasicAttackAction, "aimAssistMaxTurnDegrees", 8f);
-            ValidateVector3(rangedBasicAttackAction, "fireCameraCueOffset", new Vector3(0.025f, 0.01f, -0.045f));
-            ValidateFloat(rangedBasicAttackAction, "fireCameraCueSeconds", 0.10f);
-            ValidateFloat(rangedBasicAttackAction, "fireFieldOfViewDelta", -0.8f);
-            ValidateFloat(rangedBasicAttackAction, "fireCameraDistanceDelta", -0.04f);
-            ValidateFloat(rangedBasicAttackAction, "fireFocusHeightDelta", 0f);
         }
 
         private static void ValidateActionCameraCueDriver(
@@ -2915,6 +2861,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(hud, "summonSlot1Action", summonSlot1Action);
             ValidateObjectReference(hud, "bossBarrageEmitter", bossBarrageEmitter);
             ValidateObjectReference(hud, "pocketReviewOwner", pocketOwner);
+            ValidateBool(hud, "showCenterReticle", false);
         }
 
         private static void ValidateMobileReviewHud(
@@ -2941,10 +2888,6 @@ namespace DimensionBrawl.Editor
             ValidateString(hud, "summonSlot1ActionName", "SummonSlot1");
             ValidateString(hud, "rangedAimActionName", "RangedAim");
             ValidateString(hud, "weaponSwapActionName", "WeaponSwap");
-            ValidateBool(hud, "fireButtonHoldsAim", true);
-            ValidateFloat(hud, "fireAimDragDeadZone", 0.18f);
-            ValidateFloat(hud, "fireAimDragRadius", 110f);
-            ValidateFloat(hud, "fireAimKnobSize", 34f);
         }
 
         private static void ConfigureArenaInfluenceTargets(Scene scene, Transform player, params Transform[] influenceTargets)
@@ -3893,6 +3836,20 @@ namespace DimensionBrawl.Editor
         {
             Vector3 actual = RequireProperty(new SerializedObject(target), propertyName).vector3Value;
             if ((actual - expected).sqrMagnitude > 0.000001f)
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected}, found {actual}.");
+            }
+        }
+
+        private static void ValidateColor(UnityEngine.Object target, string propertyName, Color expected)
+        {
+            Color actual = RequireProperty(new SerializedObject(target), propertyName).colorValue;
+            float maxDelta = Mathf.Max(
+                Mathf.Abs(actual.r - expected.r),
+                Mathf.Abs(actual.g - expected.g),
+                Mathf.Abs(actual.b - expected.b),
+                Mathf.Abs(actual.a - expected.a));
+            if (maxDelta > 0.000001f)
             {
                 throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected}, found {actual}.");
             }

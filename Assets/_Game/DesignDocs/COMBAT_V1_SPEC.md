@@ -59,7 +59,7 @@ Use these action names as the shared vocabulary across PC, gamepad, and mobile H
 | Action | PC / Keyboard Mouse | Gamepad | Mobile HUD | V1 implementation |
 |---|---|---|---|---|
 | `Move` | WASD / left stick equivalent | Left stick | Left joystick | Required |
-| `Look` / `TargetBias` | Mouse / camera stick equivalent | Right stick | Optional drag or auto-bias | Optional aim/target bias only; first slice camera stays fixed rear |
+| `Look` / `TargetBias` | Mouse / camera stick equivalent | Right stick | Drag on non-button screen space or auto-bias | Aim/target bias only; first slice camera stays fixed rear and `Fire` remains the trigger |
 | `BasicDefenseAttack` | Left click or attack key | Face button | Large attack button | Required |
 | `Dodge` | Shift / space / dodge key | Face button | Dodge button | Required |
 | `Skill1` | Key/button | Face/shoulder button | Skill button | Required first tiered skill action |
@@ -70,6 +70,24 @@ Use these action names as the shared vocabulary across PC, gamepad, and mobile H
 | `Pause` | Esc | Start/Menu | Pause button | Optional |
 
 Existing Unity sample actions may be renamed or wrapped later, but gameplay code must not invent separate PC-only and mobile-only action paths.
+
+Current review-scene control split:
+
+- Mobile: touch the HUD buttons for movement/fire/dodge/skill/summon, and drag non-button screen space for `Look` / `TargetBias`.
+- PC test: use WASD for movement, left mouse or `F` for `BasicDefenseAttack` / fire, and right-mouse drag for `Look` / `TargetBias`.
+- The fire button is a trigger, not the reticle joystick. Holding fire may request the ranged aim/zoom camera, but reticle movement should come from the shared `Look` / `TargetBias` input.
+- Snowbreak data in `C:\Ark` is currently strongest for weapon/model/material reference, not direct camera tuning. Use it as 3D shooter presentation context while keeping camera/input tuning on the shared action contracts and cross-game camera transition guardrails.
+- Ranged aim camera composition is scene-authored Inspector tuning on `ActionCameraController > Aim Mode`. Editor setup may provide structural camera wiring, but it must not force exact aim offset/FOV values after the scene is authored.
+- Editor setup/validation for review scenes may verify required references, promoted asset ownership, prefab links, team ownership, animation trigger existence, and required scene anchors.
+- Editor setup/validation must not exact-lock movement feel, camera composition, aim assist, fire cadence, projectile feel, reticle placement, HUD joystick sizes, or other values that a designer should tune in Inspector or profile assets.
+- Reapply tools may seed a scene when rebuilding from scratch, but after a review scene exists, authored Inspector values are the source of truth for action feel and camera feel.
+- Device fallback input is allowed only as an explicit review-scene convenience. It must stay serialized and visible, and production scenes should use assigned Input Actions instead of relying on missing-action fallbacks.
+
+Current stabilization debt:
+
+- `ActionFoundationBossBarrageLaneReviewSetup` is an editor-only review scene seeding/validation tool. It must not become a runtime scene builder or production content generator.
+- `BossBarrageLaneReviewMobileHud` is a temporary review HUD built for fast control verification. Production mobile UI should be authored with the UI stack, not extended through the review IMGUI surface.
+- `PlayerRangedBasicAttackAction` may keep the first local-defense ranged slice, but new weapon/magic variants should split aim resolving, fire input, projectile emission, and presentation feedback before the class grows further.
 
 ## Player Requirements
 

@@ -155,3 +155,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.LaneActionProjectile
   deactivateOnHit: 1
   alignVisualToDirection: 1
+  allowVerticalTravel: 0

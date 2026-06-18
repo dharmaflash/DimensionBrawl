@@ -28,6 +28,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(1f)] private float width = 430f;
         [SerializeField, Min(1f)] private float height = 280f;
         [SerializeField, Min(0f)] private float margin = 18f;
+        [SerializeField] private bool showCenterReticle;
 
         private GUIStyle labelStyle;
         private GUIStyle titleStyle;
@@ -313,6 +314,11 @@ namespace DimensionBrawl.Presentation
 
         private void DrawReticleIfNeeded()
         {
+            if (!showCenterReticle)
+            {
+                return;
+            }
+
             if (combatModeController != null && !combatModeController.IsRangedMode)
             {
                 return;
