@@ -349,7 +349,11 @@ namespace DimensionBrawl.Editor
                 RequireComponent<PlayerCombatVfxCueDriver>(player.gameObject, "player combat VFX cue driver"),
                 RequireComponent<CombatVfxCuePlayer>(player.gameObject, "player combat VFX cue player"),
                 bossProxy.transform);
-            ConfigureBossBarrageCameraCueDriver(cameraController, bossBarrageEmitter, player.transform);
+            ConfigureBossBarrageCameraCueDriver(
+                cameraController,
+                bossBarrageEmitter,
+                bossPressureActionDirector,
+                player.transform);
             ConfigureArenaInfluenceTargets(scene, player.transform, bossProxy.transform, closeThreat.transform);
             CreateLaneMarkers(scene, laneSpace);
             CreateEnergyRiskZoneMarkers(scene, laneSpace);
@@ -2629,10 +2633,15 @@ namespace DimensionBrawl.Editor
         private static void ConfigureBossBarrageCameraCueDriver(
             ActionCameraController cameraController,
             BossBarrageEmitter bossBarrageEmitter,
+            BossPressureActionDirector bossPressureActionDirector,
             Transform cueSpace)
         {
             BossBarrageCameraCueDriver cueDriver = EnsureComponent<BossBarrageCameraCueDriver>(cameraController.gameObject);
-            cueDriver.Configure(bossBarrageEmitter, cameraController, cueSpace);
+            cueDriver.Configure(bossBarrageEmitter, cameraController, cueSpace, bossPressureActionDirector);
+            SetObjectReference(cueDriver, "bossBarrageEmitter", bossBarrageEmitter);
+            SetObjectReference(cueDriver, "bossPressureActionDirector", bossPressureActionDirector);
+            SetObjectReference(cueDriver, "cameraController", cameraController);
+            SetObjectReference(cueDriver, "cueSpace", cueSpace);
             EditorUtility.SetDirty(cueDriver);
         }
 
@@ -2723,6 +2732,10 @@ namespace DimensionBrawl.Editor
             Transform cueSpace)
         {
             ValidateObjectReference(cueDriver, "bossBarrageEmitter", bossBarrageEmitter);
+            ValidateObjectReference(
+                cueDriver,
+                "bossPressureActionDirector",
+                RequireComponent<BossPressureActionDirector>(bossBarrageEmitter.gameObject, "boss pressure action director"));
             ValidateObjectReference(cueDriver, "cameraController", cameraController);
             ValidateObjectReference(cueDriver, "cueSpace", cueSpace);
         }

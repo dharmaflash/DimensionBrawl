@@ -468,6 +468,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.BossBarrageCameraCueDriver
   bossBarrageEmitter: {fileID: 822171416}
+  bossPressureActionDirector: {fileID: 822171420}
   cameraController: {fileID: 1004}
   cueSpace: {fileID: 4001}
   windupCue:
@@ -488,6 +489,33 @@ MonoBehaviour:
     focusHeightDelta: 0.02
     durationSeconds: 0.2
     finisherScale: 1.25
+  pressureSkillCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.03, z: -0.12}
+    planarDirectionOffset: 0.07
+    fieldOfViewDelta: 1.1
+    cameraDistanceDelta: -0.12
+    focusHeightDelta: 0.02
+    durationSeconds: 0.2
+    finisherScale: 1.18
+  pressureSummonCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.04, z: -0.06}
+    planarDirectionOffset: 0.04
+    fieldOfViewDelta: 1.4
+    cameraDistanceDelta: 0.1
+    focusHeightDelta: 0.04
+    durationSeconds: 0.28
+    finisherScale: 1.25
+  pressurePunishCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.05, z: -0.2}
+    planarDirectionOffset: 0.11
+    fieldOfViewDelta: 2
+    cameraDistanceDelta: -0.22
+    focusHeightDelta: 0.03
+    durationSeconds: 0.26
+    finisherScale: 1.35
 --- !u!1 &2000
 GameObject:
   m_ObjectHideFlags: 0

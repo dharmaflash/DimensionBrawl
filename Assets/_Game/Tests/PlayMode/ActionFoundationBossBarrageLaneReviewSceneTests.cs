@@ -494,6 +494,9 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(cameraController, GetObjectReference<ActionCameraController>(cameraCueDriver, "cameraController"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(cameraCueDriver, "cueSpace"));
             Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(bossCameraCueDriver, "bossBarrageEmitter"));
+            Assert.AreSame(
+                bossPressureActionDirector,
+                GetObjectReference<BossPressureActionDirector>(bossCameraCueDriver, "bossPressureActionDirector"));
             Assert.AreSame(cameraController, GetObjectReference<ActionCameraController>(bossCameraCueDriver, "cameraController"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(bossCameraCueDriver, "cueSpace"));
             Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(pocketOwner, "playerHealth"));
@@ -1919,10 +1922,15 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
             BossBarrageVisualCueDriver cueDriver =
                 RequireComponent<BossBarrageVisualCueDriver>(bossRoot, "boss visual cue driver");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            BossBarrageCameraCueDriver cameraCueDriver =
+                RequireComponent<BossBarrageCameraCueDriver>(cameraController.gameObject, "boss barrage camera cue driver");
 
             Assert.AreSame(emitter, cueDriver.BossBarrageEmitter);
             Assert.AreSame(bossPressureActionDirector, cueDriver.BossPressureActionDirector);
+            Assert.AreSame(bossPressureActionDirector, cameraCueDriver.BossPressureActionDirector);
             int cueCountBefore = cueDriver.PressureActionCueRequestCount;
+            int cameraCueCountBefore = cameraCueDriver.PressureActionCueRequestCount;
 
             bossPressureCost.GrantCurrentTierCost(300f);
             Assert.IsTrue(
@@ -1936,6 +1944,12 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(
                 cueDriver.IsCueActive,
                 "Boss costed skill/summon choices should create an in-world visual read, not only HUD text.");
+            Assert.AreEqual(cameraCueCountBefore + 1, cameraCueDriver.PressureActionCueRequestCount);
+            Assert.AreEqual(bossPressureActionDirector.LastActionKind, cameraCueDriver.LastPressureActionKind);
+            Assert.AreEqual(bossPressureActionDirector.LastSpentTier, cameraCueDriver.LastPressureActionTier);
+            Assert.IsTrue(
+                cameraController.HasActiveCue,
+                "Boss costed skill/summon choices should request a short camera read through the presentation driver.");
             yield return null;
         }
 
