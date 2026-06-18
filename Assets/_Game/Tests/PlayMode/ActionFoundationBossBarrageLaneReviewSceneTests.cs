@@ -58,6 +58,8 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Actor_Proxy.prefab";
         private const string BossSummonPressureActorPrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossSummonPressureActor_Proxy.prefab";
+        private const string SummonOpportunityProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonOpportunity_BossPressureBlock.asset";
         private const string SummonSlot1ActorVisualName = "SummonSlot1Visual_ShieldBreakerElite";
         private const string BossSummonPressureActorVisualName = "BossSummonPressureVisual_AuraCaptainElite";
         private const string RifleGirlRangedControllerPath =
@@ -175,6 +177,8 @@ namespace DimensionBrawl.Tests
             GameObject summonActorRoot = RequireRoot(SummonActorPoolRootName);
             BossBarragePocketReviewOwner pocketOwner =
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            SummonOpportunityWindowProfile summonOpportunity =
+                LoadAsset<SummonOpportunityWindowProfile>(SummonOpportunityProfilePath);
             BossBarragePocketCameraCueBridge pocketCameraCueBridge =
                 RequireComponent<BossBarragePocketCameraCueBridge>(
                     RequireRoot(PocketOwnerRootName),
@@ -509,6 +513,19 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(
                 bossPressureActionDirector,
                 GetObjectReference<BossPressureActionDirector>(pocketOwner, "bossPressureActionDirector"));
+            Assert.AreSame(summonOpportunity, pocketOwner.SummonPressureBlockOpportunity);
+            Assert.IsTrue(pocketOwner.HasSummonPressureBlockOpportunity);
+            Assert.AreEqual("BossPressureBlock", summonOpportunity.WindowId);
+            Assert.AreEqual(SummonOpportunityTrigger.CloseThreatCleared, summonOpportunity.Trigger);
+            Assert.AreEqual("SummonSlot1", summonOpportunity.PrimaryAnswerAction);
+            Assert.AreEqual("Skill1", summonOpportunity.FollowupAction);
+            Assert.AreEqual(0.9f, summonOpportunity.OpportunityCueSeconds, 0.001f);
+            Assert.AreEqual(2.4f, summonOpportunity.ResolvePressureBreakSeconds(1), 0.001f);
+            Assert.AreEqual(3.1f, summonOpportunity.ResolvePressureBreakSeconds(3), 0.001f);
+            Assert.AreEqual(1.4f, summonOpportunity.ResolveFollowupWindowSeconds(1), 0.001f);
+            Assert.AreEqual(1.85f, summonOpportunity.ResolveFollowupWindowSeconds(3), 0.001f);
+            Assert.AreEqual(100f, summonOpportunity.ResolveFollowupEnergyPulse(1), 0.001f);
+            Assert.AreEqual(200f, summonOpportunity.ResolveFollowupEnergyPulse(3), 0.001f);
             Assert.AreSame(pocketOwner, pocketCameraCueBridge.PocketReviewOwner);
             Assert.AreSame(cameraCueDriver, pocketCameraCueBridge.CameraCueDriver);
             Assert.AreSame(pocketOwner, pocketVfxCueBridge.PocketReviewOwner);

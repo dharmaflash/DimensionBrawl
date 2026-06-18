@@ -12538,6 +12538,7 @@ MonoBehaviour:
   stopBarrageOnFail: 1
   stopBossPressureCostOnEnd: 1
   stopBossPressureActionsOnEnd: 1
+  summonPressureBlockOpportunity: {fileID: 11400000, guid: d935fc23df2e49cebe1044fad23882f6, type: 2}
   closeThreatDefeatPressureReliefSeconds: 0.9
   summonPressureBreakReliefSeconds: 2.4
   summonFollowupWindowSeconds: 1.4

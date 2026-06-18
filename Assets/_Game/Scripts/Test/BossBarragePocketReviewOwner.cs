@@ -42,6 +42,11 @@ namespace DimensionBrawl.Test
         [SerializeField] private bool stopBarrageOnFail = true;
         [SerializeField] private bool stopBossPressureCostOnEnd = true;
         [SerializeField] private bool stopBossPressureActionsOnEnd = true;
+
+        [Header("Summon Opportunity")]
+        [SerializeField] private SummonOpportunityWindowProfile summonPressureBlockOpportunity;
+
+        [Header("Inline Opportunity Defaults")]
         [SerializeField, Min(0f)] private float closeThreatDefeatPressureReliefSeconds = 0.9f;
         [SerializeField, Min(0f)] private float summonPressureBreakReliefSeconds = 2.4f;
         [SerializeField, Min(0f)] private float summonFollowupWindowSeconds = 1.4f;
@@ -110,6 +115,8 @@ namespace DimensionBrawl.Test
         public bool Skill1FollowupHitConfirmed => skill1FollowupHitConfirmed;
         public bool BossBlockedSkill1Followup => bossBlockedSkill1Followup;
         public int BossPressureBlocksDuringSummonFollowup => bossPressureBlocksConsumedDuringFollowup;
+        public SummonOpportunityWindowProfile SummonPressureBlockOpportunity => summonPressureBlockOpportunity;
+        public bool HasSummonPressureBlockOpportunity => summonPressureBlockOpportunity != null;
         public bool IsPressureReliefActive => pressurePacing.IsCloseThreatReliefActive;
         public bool IsSummonBlockOpportunityCueActive => state == PocketState.Running
             && closeThreatDefeated
@@ -130,7 +137,7 @@ namespace DimensionBrawl.Test
         public float SummonFollowupWindowRemainingSeconds => pressurePacing.SummonFollowupWindowRemainingSeconds;
         public float SummonFollowupEnergyPulse => lastGrantedSummonFollowupEnergyPulse > 0f
             ? lastGrantedSummonFollowupEnergyPulse
-            : summonFollowupEnergyPulse;
+            : ResolveSummonFollowupEnergyPulse(1);
         public bool RequireSkill1FollowupHitToClear => requireSkill1FollowupHitToClear;
         public int PressureBlocksAfterCloseThreatDefeated => CountPressureBlocksAfterCloseThreatDefeated();
         public int HighestSkillTier => highestSkillTier;
@@ -201,9 +208,7 @@ namespace DimensionBrawl.Test
                 {
                     if (IsSummonBlockOpportunityCueActive)
                     {
-                        return energyLadder != null && !energyLadder.CanSpend
-                            ? $"Forward EN now; boss fire returns in {SummonBlockOpportunityRemainingSeconds:0.0}s"
-                            : $"Prepare SummonSlot1 block; boss fire returns in {SummonBlockOpportunityRemainingSeconds:0.0}s";
+                        return ResolveSummonBlockOpportunityCue();
                     }
 
                     return energyLadder != null && !energyLadder.CanSpend
@@ -430,7 +435,7 @@ namespace DimensionBrawl.Test
 
         private void StartPressureRelief()
         {
-            pressurePacing.StartCloseThreatRelief(closeThreatDefeatPressureReliefSeconds);
+            pressurePacing.StartCloseThreatRelief(ResolveCloseThreatReliefSeconds());
             ApplyRunningBarragePacing();
         }
 
@@ -595,8 +600,33 @@ namespace DimensionBrawl.Test
             return $"Use Skill1 LV{energyLadder.AvailableTier} during summon follow-up";
         }
 
+        private string ResolveSummonBlockOpportunityCue()
+        {
+            bool shouldCharge = energyLadder != null && !energyLadder.CanSpend;
+            string cue = shouldCharge
+                ? summonPressureBlockOpportunity != null
+                    ? summonPressureBlockOpportunity.ChargeCue
+                    : "Forward EN now"
+                : summonPressureBlockOpportunity != null
+                    ? summonPressureBlockOpportunity.ReadyCue
+                    : "Prepare SummonSlot1 block";
+            return $"{cue}; boss fire returns in {SummonBlockOpportunityRemainingSeconds:0.0}s";
+        }
+
+        private float ResolveCloseThreatReliefSeconds()
+        {
+            return summonPressureBlockOpportunity != null
+                ? summonPressureBlockOpportunity.OpportunityCueSeconds
+                : closeThreatDefeatPressureReliefSeconds;
+        }
+
         private float ResolveSummonPressureBreakSeconds(int tier)
         {
+            if (summonPressureBlockOpportunity != null)
+            {
+                return summonPressureBlockOpportunity.ResolvePressureBreakSeconds(tier);
+            }
+
             return tier switch
             {
                 3 => summonPressureBreakReliefSeconds + summonPressureBreakTierThreeBonusSeconds,
@@ -607,6 +637,11 @@ namespace DimensionBrawl.Test
 
         private float ResolveSummonFollowupWindowSeconds(int tier)
         {
+            if (summonPressureBlockOpportunity != null)
+            {
+                return summonPressureBlockOpportunity.ResolveFollowupWindowSeconds(tier);
+            }
+
             return tier switch
             {
                 3 => summonFollowupWindowSeconds + summonFollowupWindowTierThreeBonusSeconds,
@@ -617,6 +652,11 @@ namespace DimensionBrawl.Test
 
         private float ResolveSummonFollowupEnergyPulse(int tier)
         {
+            if (summonPressureBlockOpportunity != null)
+            {
+                return summonPressureBlockOpportunity.ResolveFollowupEnergyPulse(tier);
+            }
+
             return tier switch
             {
                 3 => summonFollowupEnergyPulseTierThree,

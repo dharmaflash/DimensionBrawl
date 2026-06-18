@@ -60,6 +60,8 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Actor_Proxy.prefab";
         public const string BossSummonPressureActorPrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossSummonPressureActor_Proxy.prefab";
+        public const string SummonOpportunityProfilePath =
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonOpportunity_BossPressureBlock.asset";
         private const string SummonSlot1ActorVisualName = "SummonSlot1Visual_ShieldBreakerElite";
         private const string BossSummonPressureActorVisualName = "BossSummonPressureVisual_AuraCaptainElite";
         private const string SummonSlot1ActorVisualRoleId = "SciFiSoldier.Elite.ShieldBreaker";
@@ -2359,6 +2361,10 @@ namespace DimensionBrawl.Editor
                 failMarker,
                 bossPressureCost,
                 bossPressureActionDirector);
+            SetObjectReference(
+                owner,
+                "summonPressureBlockOpportunity",
+                LoadAsset<SummonOpportunityWindowProfile>(SummonOpportunityProfilePath));
             EditorUtility.SetDirty(owner);
             return owner;
         }
@@ -3467,6 +3473,10 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(owner, "bossBarrageEmitter", bossBarrageEmitter);
             ValidateObjectReference(owner, "bossPressureCostLadder", bossPressureCost);
             ValidateObjectReference(owner, "bossPressureActionDirector", bossPressureActionDirector);
+            ValidateObjectReference(
+                owner,
+                "summonPressureBlockOpportunity",
+                LoadAsset<SummonOpportunityWindowProfile>(SummonOpportunityProfilePath));
             ValidateBool(owner, "stopBarrageOnClear", true);
             ValidateBool(owner, "stopBarrageOnFail", true);
             ValidateBool(owner, "stopBossPressureCostOnEnd", true);
