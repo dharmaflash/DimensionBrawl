@@ -60,6 +60,10 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Actor_Proxy.prefab";
         public const string BossSummonPressureActorPrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossSummonPressureActor_Proxy.prefab";
+        private const string SummonSlot1ActorVisualName = "SummonSlot1Visual_ShieldBreakerElite";
+        private const string BossSummonPressureActorVisualName = "BossSummonPressureVisual_AuraCaptainElite";
+        private const string SummonSlot1ActorVisualRoleId = "SciFiSoldier.Elite.ShieldBreaker";
+        private const string BossSummonPressureActorVisualRoleId = "SciFiSoldier.Elite.AuraCaptain";
         private const string Skill1ProjectileMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_PlayerSkill1Projectile.mat";
         private const string RangedBasicProjectileMaterialPath =
@@ -992,6 +996,7 @@ namespace DimensionBrawl.Editor
 
                 MeshRenderer renderer = EnsureComponent<MeshRenderer>(editableRoot);
                 renderer.sharedMaterial = material;
+                renderer.enabled = false;
 
                 SphereCollider collider = EnsureComponent<SphereCollider>(editableRoot);
                 collider.isTrigger = true;
@@ -1212,6 +1217,15 @@ namespace DimensionBrawl.Editor
                     UnityEngine.Object.DestroyImmediate(pulseCollider);
                 }
 
+                Transform summonVisual = AttachRoleVisualOnly(
+                    editableRoot.transform,
+                    SummonSlot1ActorVisualRoleId,
+                    ActionFoundationEnemyRoleCandidateSetup.ShieldBreakerElitePrefabPath,
+                    SummonSlot1ActorVisualName,
+                    new Vector3(0f, -0.04f, -0.08f),
+                    Vector3.zero,
+                    new Vector3(0.62f, 0.62f, 0.62f));
+
                 SummonFrontlineProxyPresenter actorPresenter =
                     EnsureComponent<SummonFrontlineProxyPresenter>(editableRoot);
                 SetObjectReference(actorPresenter, "proxy", proxy);
@@ -1219,7 +1233,7 @@ namespace DimensionBrawl.Editor
                 SetObjectReferenceArray(
                     actorPresenter,
                     "actorRenderers",
-                    new UnityEngine.Object[] { renderer, pulseRenderer });
+                    BuildRendererReferenceArray(summonVisual.gameObject, pulseRenderer));
                 SetColor(actorPresenter, "tierOneColor", new Color(0.24f, 1f, 0.78f, 0.78f));
                 SetColor(actorPresenter, "tierTwoColor", new Color(0.38f, 0.74f, 1f, 0.9f));
                 SetColor(actorPresenter, "tierThreeColor", new Color(1f, 0.76f, 0.24f, 1f));
@@ -1273,6 +1287,7 @@ namespace DimensionBrawl.Editor
 
                 MeshRenderer renderer = EnsureComponent<MeshRenderer>(editableRoot);
                 renderer.sharedMaterial = material;
+                renderer.enabled = false;
 
                 Collider collider = editableRoot.GetComponent<Collider>();
                 if (collider != null)
@@ -1348,6 +1363,15 @@ namespace DimensionBrawl.Editor
                     UnityEngine.Object.DestroyImmediate(pulseCollider);
                 }
 
+                Transform summonVisual = AttachRoleVisualOnly(
+                    editableRoot.transform,
+                    BossSummonPressureActorVisualRoleId,
+                    ActionFoundationEnemyRoleCandidateSetup.AuraCaptainElitePrefabPath,
+                    BossSummonPressureActorVisualName,
+                    new Vector3(0f, -0.04f, 0.1f),
+                    Vector3.zero,
+                    new Vector3(0.66f, 0.66f, 0.66f));
+
                 SummonFrontlineProxyPresenter actorPresenter =
                     EnsureComponent<SummonFrontlineProxyPresenter>(editableRoot);
                 SetObjectReference(actorPresenter, "proxy", proxy);
@@ -1355,7 +1379,7 @@ namespace DimensionBrawl.Editor
                 SetObjectReferenceArray(
                     actorPresenter,
                     "actorRenderers",
-                    new UnityEngine.Object[] { renderer, pulseRenderer });
+                    BuildRendererReferenceArray(summonVisual.gameObject, pulseRenderer));
                 SetColor(actorPresenter, "tierOneColor", new Color(1f, 0.32f, 0.55f, 0.82f));
                 SetColor(actorPresenter, "tierTwoColor", new Color(1f, 0.62f, 0.24f, 0.92f));
                 SetColor(actorPresenter, "tierThreeColor", new Color(1f, 0.22f, 0.9f, 1f));
@@ -2868,8 +2892,20 @@ namespace DimensionBrawl.Editor
             ValidateArrayReference(presenter, "screenRenderers", 0, pressureScreenRenderer);
             ValidateObjectReference(actorPresenter, "proxy", summonActorPrefab);
             ValidateObjectReference(actorPresenter, "pulseRoot", tierPulseCore);
-            ValidateArrayReference(actorPresenter, "actorRenderers", 0, summonActorPrefab.GetComponent<MeshRenderer>());
-            ValidateArrayReference(actorPresenter, "actorRenderers", 1, pulseRenderer);
+            Transform summonActorVisual = ValidateSummonActorRoleVisual(
+                summonActorPrefab.gameObject,
+                SummonSlot1ActorVisualName);
+            Renderer[] summonActorVisualRenderers = CollectEnabledRenderers(summonActorVisual.gameObject);
+            ValidateArrayContainsReference(
+                actorPresenter,
+                "actorRenderers",
+                summonActorVisualRenderers[0],
+                $"{SummonSlot1ActorVisualName} renderer");
+            ValidateArrayContainsReference(
+                actorPresenter,
+                "actorRenderers",
+                pulseRenderer,
+                "TierPulseCore renderer");
             ValidateFloat(actorPresenter, "entryFlashSeconds", 0.22f);
             ValidateFloat(actorPresenter, "impactFlashSeconds", 0.18f);
             ValidateFloat(actorPresenter, "impactFlashProgress", 0.86f);
@@ -2917,6 +2953,39 @@ namespace DimensionBrawl.Editor
                 RequireRoot(SceneManager.GetActiveScene(), BossSummonActorPoolRootName).transform);
             ValidateEnum(bossSummonPressureAction, "ownerTeam", (int)DamageTeam.Enemy);
             ValidateInt(bossSummonPressureAction, "actorPrewarmCount", 2);
+
+            SummonFrontlineProxy bossSummonActorPrefab =
+                LoadPrefabComponent<SummonFrontlineProxy>(BossSummonPressureActorPrefabPath);
+            SummonFrontlineProxyPresenter bossSummonActorPresenter =
+                LoadPrefabComponent<SummonFrontlineProxyPresenter>(BossSummonPressureActorPrefabPath);
+            Transform bossSummonVisual = ValidateSummonActorRoleVisual(
+                bossSummonActorPrefab.gameObject,
+                BossSummonPressureActorVisualName);
+            Renderer[] bossSummonVisualRenderers = CollectEnabledRenderers(bossSummonVisual.gameObject);
+            Transform tierPressureCore = bossSummonActorPrefab.transform.Find("TierPressureCore");
+            if (tierPressureCore == null)
+            {
+                throw new InvalidOperationException("Boss summon pressure actor prefab is missing TierPressureCore.");
+            }
+
+            MeshRenderer tierPressureRenderer = tierPressureCore.GetComponent<MeshRenderer>();
+            if (tierPressureRenderer == null)
+            {
+                throw new InvalidOperationException("TierPressureCore is missing a MeshRenderer.");
+            }
+
+            ValidateObjectReference(bossSummonActorPresenter, "proxy", bossSummonActorPrefab);
+            ValidateObjectReference(bossSummonActorPresenter, "pulseRoot", tierPressureCore);
+            ValidateArrayContainsReference(
+                bossSummonActorPresenter,
+                "actorRenderers",
+                bossSummonVisualRenderers[0],
+                $"{BossSummonPressureActorVisualName} renderer");
+            ValidateArrayContainsReference(
+                bossSummonActorPresenter,
+                "actorRenderers",
+                tierPressureRenderer,
+                "TierPressureCore renderer");
 
             ValidateObjectReference(bossPressureActionDirector, "costLadder", bossPressureCost);
             ValidateObjectReference(bossPressureActionDirector, "bossBarrageEmitter", bossBarrageEmitter);
@@ -3073,6 +3142,127 @@ namespace DimensionBrawl.Editor
             {
                 throw new InvalidOperationException("Boss visual cue driver should have at least one pulse renderer.");
             }
+        }
+
+        private static Transform AttachRoleVisualOnly(
+            Transform parent,
+            string roleId,
+            string rolePrefabPath,
+            string targetVisualName,
+            Vector3 localPosition,
+            Vector3 localEulerAngles,
+            Vector3 localScale)
+        {
+            string visualPrefix = targetVisualName.Contains("_", StringComparison.Ordinal)
+                ? targetVisualName.Substring(0, targetVisualName.LastIndexOf('_') + 1)
+                : targetVisualName;
+            RemoveChildrenWithPrefix(parent, visualPrefix);
+
+            EnemyRoleVisualSpec visualSpec = ActionFoundationEnemyRoleVisualSetup.CreateForRole(roleId);
+            GameObject prefabContents = PrefabUtility.LoadPrefabContents(rolePrefabPath);
+            try
+            {
+                Transform sourceVisual = prefabContents.transform.Find(visualSpec.VisualName);
+                if (sourceVisual == null)
+                {
+                    throw new InvalidOperationException($"{rolePrefabPath} is missing {visualSpec.VisualName}.");
+                }
+
+                GameObject visual = UnityEngine.Object.Instantiate(sourceVisual.gameObject);
+                visual.name = targetVisualName;
+                visual.transform.SetParent(parent, worldPositionStays: false);
+                visual.transform.localPosition = localPosition;
+                visual.transform.localRotation = Quaternion.Euler(localEulerAngles);
+                visual.transform.localScale = localScale;
+                ValidateSummonActorRoleVisualContents(visual, targetVisualName);
+                return visual.transform;
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabContents);
+            }
+        }
+
+        private static void RemoveChildrenWithPrefix(Transform parent, string prefix)
+        {
+            for (int i = parent.childCount - 1; i >= 0; i--)
+            {
+                Transform child = parent.GetChild(i);
+                if (child.name.StartsWith(prefix, StringComparison.Ordinal))
+                {
+                    UnityEngine.Object.DestroyImmediate(child.gameObject);
+                }
+            }
+        }
+
+        private static UnityEngine.Object[] BuildRendererReferenceArray(GameObject visualRoot, Renderer pulseRenderer)
+        {
+            Renderer[] renderers = CollectEnabledRenderers(visualRoot);
+            var references = new UnityEngine.Object[renderers.Length + 1];
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                references[i] = renderers[i];
+            }
+
+            references[references.Length - 1] = pulseRenderer;
+            return references;
+        }
+
+        private static Transform ValidateSummonActorRoleVisual(GameObject prefabRoot, string visualName)
+        {
+            Transform visual = prefabRoot.transform.Find(visualName);
+            if (visual == null)
+            {
+                throw new InvalidOperationException($"{prefabRoot.name} should include {visualName}.");
+            }
+
+            ValidateSummonActorRoleVisualContents(visual.gameObject, visualName);
+            return visual;
+        }
+
+        private static void ValidateSummonActorRoleVisualContents(GameObject visual, string label)
+        {
+            if (visual.GetComponentInChildren<CombatHealth>(true) != null
+                || visual.GetComponentInChildren<BasicSoldierEnemy>(true) != null
+                || visual.GetComponentInChildren<CombatTargetSensor>(true) != null
+                || visual.GetComponentInChildren<EnemyElitePatternController>(true) != null)
+            {
+                throw new InvalidOperationException($"{label} must be visual-only and must not duplicate enemy gameplay components.");
+            }
+
+            Animator animator = visual.GetComponent<Animator>();
+            if (animator == null || animator.runtimeAnimatorController == null)
+            {
+                throw new InvalidOperationException($"{label} should keep a promoted role Animator.");
+            }
+
+            ValidateGameOwnedAsset(animator.runtimeAnimatorController, $"{label} Animator Controller");
+
+            Renderer[] renderers = CollectEnabledRenderers(visual);
+            if (renderers.Length == 0)
+            {
+                throw new InvalidOperationException($"{label} should expose promoted enabled renderers.");
+            }
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                ValidateRendererAssets(renderers[i], $"{label}.{renderers[i].name}");
+            }
+        }
+
+        private static Renderer[] CollectEnabledRenderers(GameObject root)
+        {
+            Renderer[] allRenderers = root.GetComponentsInChildren<Renderer>(includeInactive: true);
+            var renderers = new List<Renderer>();
+            for (int i = 0; i < allRenderers.Length; i++)
+            {
+                if (allRenderers[i].enabled)
+                {
+                    renderers.Add(allRenderers[i]);
+                }
+            }
+
+            return renderers.ToArray();
         }
 
         private static void ValidateBossVisualCueBindings(BossBarrageVisualCueDriver cueDriver, Animator animator)
@@ -4159,6 +4349,31 @@ namespace DimensionBrawl.Editor
                 string actualName = actual != null ? actual.name : "null";
                 throw new InvalidOperationException($"{target.name}.{propertyName}[{index}] expected {expectedName}, found {actualName}.");
             }
+        }
+
+        private static void ValidateArrayContainsReference(
+            UnityEngine.Object target,
+            string propertyName,
+            UnityEngine.Object expected,
+            string label)
+        {
+            SerializedProperty array = RequireProperty(new SerializedObject(target), propertyName);
+            if (!array.isArray)
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} should be an array.");
+            }
+
+            for (int i = 0; i < array.arraySize; i++)
+            {
+                if (array.GetArrayElementAtIndex(i).objectReferenceValue == expected)
+                {
+                    return;
+                }
+            }
+
+            string expectedName = expected != null ? expected.name : "null";
+            throw new InvalidOperationException(
+                $"{target.name}.{propertyName} should contain {label} ({expectedName}).");
         }
 
         private static UnityEngine.Object ValidateArrayAssignedReference(

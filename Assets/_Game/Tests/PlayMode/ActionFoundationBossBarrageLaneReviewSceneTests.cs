@@ -58,6 +58,8 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Actor_Proxy.prefab";
         private const string BossSummonPressureActorPrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossSummonPressureActor_Proxy.prefab";
+        private const string SummonSlot1ActorVisualName = "SummonSlot1Visual_ShieldBreakerElite";
+        private const string BossSummonPressureActorVisualName = "BossSummonPressureVisual_AuraCaptainElite";
         private const string RifleGirlRangedControllerPath =
             "Assets/_Game/Art/Animations/Player/RifleGirl/DB_RifleGirl_RangedCandidate.controller";
         private const string RifleGirlModelPath =
@@ -222,6 +224,9 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(
                 LoadAsset<GameObject>(BossSummonPressureActorPrefabPath),
                 GetObjectReference<GameObject>(bossSummonPressureAction, "summonActorPrefabObject"));
+            AssertSummonActorRoleVisual(
+                LoadAsset<GameObject>(BossSummonPressureActorPrefabPath),
+                BossSummonPressureActorVisualName);
             Assert.AreEqual(DamageTeam.Enemy, GetEnum<DamageTeam>(bossSummonPressureAction, "ownerTeam"));
             AssertBossPressureActionSlot(
                 bossPressureActionDirector,
@@ -392,6 +397,7 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(summonActorPrefab, summonActorPresenter.Proxy);
             Assert.IsNotNull(summonActorPresenter.PulseRoot);
             Assert.GreaterOrEqual(summonActorPresenter.RendererCount, 2);
+            AssertSummonActorRoleVisual(summonActorPrefabObject, SummonSlot1ActorVisualName);
             Assert.AreEqual(DamageTeam.AllySummon, summonPressureScreen.OwnerTeam);
             Assert.AreSame(projectileRoot.transform, GetObjectReference<Transform>(summonSlot1Action, "projectileRoot"));
             Assert.AreSame(actionCueRoot.transform, GetObjectReference<Transform>(summonSlot1Action, "cueRoot"));
@@ -2392,6 +2398,36 @@ namespace DimensionBrawl.Tests
             }
 
             Assert.Fail($"Animator {animator.name} is missing {expectedType} parameter {parameterName}.");
+        }
+
+        private static void AssertSummonActorRoleVisual(GameObject prefab, string visualName)
+        {
+            Transform visual = prefab.transform.Find(visualName);
+            Assert.IsNotNull(visual, $"{prefab.name} should include {visualName}.");
+            Assert.IsNull(
+                visual.GetComponentInChildren<CombatHealth>(true),
+                $"{visualName} must be visual-only and must not duplicate CombatHealth.");
+            Assert.IsNull(
+                visual.GetComponentInChildren<BasicSoldierEnemy>(true),
+                $"{visualName} must be visual-only and must not duplicate BasicSoldierEnemy.");
+            Assert.IsNull(
+                visual.GetComponentInChildren<CombatTargetSensor>(true),
+                $"{visualName} must be visual-only and must not duplicate CombatTargetSensor.");
+            Assert.IsNull(
+                visual.GetComponentInChildren<EnemyElitePatternController>(true),
+                $"{visualName} must be visual-only and must not duplicate EnemyElitePatternController.");
+
+            Animator animator = visual.GetComponent<Animator>();
+            Assert.IsNotNull(animator, $"{visualName} should keep its promoted role Animator.");
+            Assert.IsNotNull(animator.runtimeAnimatorController, $"{visualName} should keep an Animator Controller.");
+            AssertGameOwnedAsset(animator.runtimeAnimatorController, $"{visualName} Animator Controller");
+
+            Renderer[] renderers = visual.GetComponentsInChildren<Renderer>(true);
+            Assert.Greater(renderers.Length, 0, $"{visualName} should expose promoted renderers.");
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                AssertRendererUsesGameOwnedAssets(renderers[i], $"{visualName}.{renderers[i].name}");
+            }
         }
 
         private static Transform FindDescendant(Transform root, string childName)
