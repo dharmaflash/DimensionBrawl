@@ -198,10 +198,10 @@ namespace DimensionBrawl.Test
                     && !skill1FollowupHitConfirmed)
                 {
                     return energyLadder != null && !energyLadder.CanSpend
-                        ? "Regain EN, then block boss fire again"
+                        ? $"Regain EN, then block boss fire again with {ResolveObjectiveSummonAnswerLabel()}"
                         : bossBlockedSkill1Followup
-                            ? "Boss screen blocked Skill1; block boss fire again"
-                            : "Follow-up missed; block boss fire again";
+                            ? $"Boss screen blocked Skill1; block boss fire again with {ResolveObjectiveSummonAnswerLabel()}"
+                            : $"Follow-up missed; block boss fire again with {ResolveObjectiveSummonAnswerLabel()}";
                 }
 
                 if (closeThreatDefeated)
@@ -212,13 +212,13 @@ namespace DimensionBrawl.Test
                     }
 
                     return energyLadder != null && !energyLadder.CanSpend
-                        ? "Advance for EN and block boss fire with SummonSlot1"
-                        : "Block boss fire with SummonSlot1";
+                        ? $"Advance for EN and block boss fire with {ResolveObjectiveSummonAnswerLabel()}"
+                        : $"Block boss fire with {ResolveObjectiveSummonAnswerLabel()}";
                 }
 
                 return energyLadder != null && !energyLadder.CanSpend
                     ? "Advance for EN, then defeat close threat"
-                    : "Defeat close threat and prepare SummonSlot1";
+                    : $"Defeat close threat and prepare {ResolveObjectiveSummonAnswerLabel()}";
             }
         }
 
@@ -592,12 +592,13 @@ namespace DimensionBrawl.Test
 
         private string ResolveFollowupReadyCue()
         {
+            string summonTierLabel = ResolveSummonTierLabel(lastSummonPressureBreakTier);
             if (energyLadder == null || !energyLadder.CanSpend)
             {
-                return "Hold lane and take EN for the follow-up";
+                return $"Hold lane and take EN for the {summonTierLabel} follow-up";
             }
 
-            return $"Use Skill1 LV{energyLadder.AvailableTier} during summon follow-up";
+            return $"Use Skill1 LV{energyLadder.AvailableTier} during {summonTierLabel} follow-up";
         }
 
         private string ResolveSummonBlockOpportunityCue()
@@ -610,7 +611,56 @@ namespace DimensionBrawl.Test
                 : summonPressureBlockOpportunity != null
                     ? summonPressureBlockOpportunity.ReadyCue
                     : "Prepare SummonSlot1 block";
-            return $"{cue}; boss fire returns in {SummonBlockOpportunityRemainingSeconds:0.0}s";
+            return $"{cue}: {ResolveObjectiveSummonTierLabel()}; boss fire returns in {SummonBlockOpportunityRemainingSeconds:0.0}s";
+        }
+
+        private string ResolveObjectiveSummonTierLabel()
+        {
+            return ResolveSummonTierLabel(ResolveObjectiveSummonTier());
+        }
+
+        private string ResolveObjectiveSummonAnswerLabel()
+        {
+            return $"SummonSlot1 {ResolveObjectiveSummonTierLabel()}";
+        }
+
+        private int ResolveObjectiveSummonTier()
+        {
+            if (pressurePacing.IsSummonPressureBreakActive && lastSummonPressureBreakTier > 0)
+            {
+                return lastSummonPressureBreakTier;
+            }
+
+            if (blockedBossPressureWithSummon && highestSummonPressureTier > 0)
+            {
+                return highestSummonPressureTier;
+            }
+
+            if (summonSlot1Action != null && summonSlot1Action.LastSpentTier > 0 && usedSummonSlot1)
+            {
+                return summonSlot1Action.LastSpentTier;
+            }
+
+            if (energyLadder != null)
+            {
+                return energyLadder.CanSpend
+                    ? energyLadder.AvailableTier
+                    : energyLadder.ChargingTier;
+            }
+
+            return 1;
+        }
+
+        private string ResolveSummonTierLabel(int tier)
+        {
+            int resolvedTier = Mathf.Clamp(tier, 1, 3);
+            if (summonSlot1Action != null
+                && summonSlot1Action.TryGetTierReadout(resolvedTier, out SummonSlotActionProfile.SummonTierReadout readout))
+            {
+                return readout.TierLabel;
+            }
+
+            return $"LV{resolvedTier}";
         }
 
         private float ResolveCloseThreatReliefSeconds()

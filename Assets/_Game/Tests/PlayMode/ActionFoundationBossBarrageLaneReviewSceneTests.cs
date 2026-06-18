@@ -1387,6 +1387,10 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(
                 emitter.IsFiringEnabled,
                 "The review pocket should pause automatic boss barrage briefly after the close threat is defeated.");
+            Assert.That(
+                pocketOwner.ObjectiveCue,
+                Does.Contain("LV1 Guard Entry"),
+                "The summon-block opportunity should name the current SummonSlot1 tier readout instead of only saying SummonSlot1.");
 
             pocketOwner.Tick(0.89f);
             Assert.IsTrue(pocketOwner.IsPressureReliefActive);
@@ -1410,6 +1414,10 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(
                 emitter.IsFiringEnabled,
                 "Boss barrage should resume after the short relief beat if the pocket is still running.");
+            Assert.That(
+                pocketOwner.ObjectiveCue,
+                Does.Contain("LV1 Guard Entry"),
+                "After the cue beat ends, the pocket objective should still identify the current summon tier answer.");
 
             yield return null;
         }
@@ -1614,6 +1622,10 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(pocketOwner.BlockedBossPressureWithSummon);
             Assert.IsTrue(pocketOwner.IsSummonPressureBreakActive);
             Assert.IsTrue(pocketOwner.IsSummonFollowupWindowActive);
+            Assert.That(
+                pocketOwner.ObjectiveCue,
+                Does.Contain("LV1 Guard Entry"),
+                "The summon follow-up objective should preserve which tier of SummonSlot1 created the opening.");
             Assert.That(
                 pocketOwner.SummonPressureBreakRemainingSeconds,
                 Is.EqualTo(2.4f).Within(0.001f),
