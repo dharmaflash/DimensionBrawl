@@ -56,6 +56,8 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1EntryCue_MagicCircle.prefab";
         private const string SummonSlot1ActorPrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Actor_Proxy.prefab";
+        private const string BossSummonPressureActorPrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_BossSummonPressureActor_Proxy.prefab";
         private const string RifleGirlRangedControllerPath =
             "Assets/_Game/Art/Animations/Player/RifleGirl/DB_RifleGirl_RangedCandidate.controller";
         private const string RifleGirlModelPath =
@@ -145,6 +147,12 @@ namespace DimensionBrawl.Tests
             GameObject closeThreatRoot = RequireRoot(CloseThreatRootName);
             CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreatRoot, "close threat health");
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            BossPressureCostLadder bossPressureCost =
+                RequireComponent<BossPressureCostLadder>(bossRoot, "boss pressure cost ladder");
+            BossPressureActionDirector bossPressureActionDirector =
+                RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
+            BossSummonPressureAction bossSummonPressureAction =
+                RequireComponent<BossSummonPressureAction>(bossRoot, "boss summon pressure action");
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
@@ -182,6 +190,41 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(laneSpace, player.LaneSpace, "Player movement must clamp through the authored lane space.");
             Assert.AreSame(emitter, telegraphPresenter.BossBarrageEmitter);
             Assert.AreSame(laneSpace, telegraphPresenter.LaneSpace);
+            Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(bossPressureCost, "laneSpace"));
+            Assert.AreSame(bossRoot.transform, GetObjectReference<Transform>(bossPressureCost, "trackedBoss"));
+            Assert.AreSame(
+                bossPressureCost,
+                GetObjectReference<BossPressureCostLadder>(bossPressureActionDirector, "costLadder"));
+            Assert.AreSame(
+                emitter,
+                GetObjectReference<BossBarrageEmitter>(bossPressureActionDirector, "bossBarrageEmitter"));
+            Assert.AreSame(
+                bossSummonPressureAction,
+                GetObjectReference<BossSummonPressureAction>(bossPressureActionDirector, "summonPressureAction"));
+            Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(bossSummonPressureAction, "laneSpace"));
+            Assert.AreSame(player.transform, GetObjectReference<Transform>(bossSummonPressureAction, "trackedPlayer"));
+            Assert.AreSame(
+                LoadAsset<GameObject>(BossSummonPressureActorPrefabPath),
+                GetObjectReference<GameObject>(bossSummonPressureAction, "summonActorPrefabObject"));
+            Assert.AreEqual(DamageTeam.Enemy, GetEnum<DamageTeam>(bossSummonPressureAction, "ownerTeam"));
+            AssertBossPressureActionSlot(
+                bossPressureActionDirector,
+                0,
+                LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath),
+                BossPressureActionKind.SkillPattern,
+                1);
+            AssertBossPressureActionSlot(
+                bossPressureActionDirector,
+                1,
+                LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath),
+                BossPressureActionKind.SummonPressure,
+                2);
+            AssertBossPressureActionSlot(
+                bossPressureActionDirector,
+                2,
+                LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath),
+                BossPressureActionKind.PunishOverextend,
+                3);
             Assert.GreaterOrEqual(
                 telegraphPresenter.MarkerCount,
                 9,
@@ -445,6 +488,15 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(skill1Action, GetObjectReference<PlayerSkill1Action>(reviewHud, "skill1Action"));
             Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(reviewHud, "summonSlot1Action"));
             Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(reviewHud, "bossBarrageEmitter"));
+            Assert.AreSame(
+                bossPressureCost,
+                GetObjectReference<BossPressureCostLadder>(reviewHud, "bossPressureCostLadder"));
+            Assert.AreSame(
+                bossPressureActionDirector,
+                GetObjectReference<BossPressureActionDirector>(reviewHud, "bossPressureActionDirector"));
+            Assert.AreSame(
+                bossSummonPressureAction,
+                GetObjectReference<BossSummonPressureAction>(reviewHud, "bossSummonPressureAction"));
             Assert.AreSame(pocketOwner, GetObjectReference<BossBarragePocketReviewOwner>(reviewHud, "pocketReviewOwner"));
             Assert.IsFalse(GetBool(reviewHud, "showCenterReticle"), "Review text HUD should not draw a second center reticle.");
             Assert.AreSame(player, GetObjectReference<PlayerMovementController>(mobileHud, "movement"));
@@ -1904,6 +1956,19 @@ namespace DimensionBrawl.Tests
             return null;
         }
 
+        private static void AssertBossPressureActionSlot(
+            BossPressureActionDirector director,
+            int index,
+            BossBarragePatternProfile expectedPattern,
+            BossPressureActionKind expectedKind,
+            int expectedMinimumTier)
+        {
+            Assert.IsTrue(director.TryGetActionSlot(index, out BossPressureActionDirector.BossPressureActionSlot slot));
+            Assert.AreSame(expectedPattern, slot.Pattern);
+            Assert.AreEqual(expectedKind, slot.ActionKind);
+            Assert.AreEqual(expectedMinimumTier, slot.MinimumTier);
+        }
+
         private static BossBarrageProjectile RequireActiveBossProjectile()
         {
             BossBarrageProjectile[] bossProjectiles = Object.FindObjectsByType<BossBarrageProjectile>(
@@ -2405,6 +2470,12 @@ namespace DimensionBrawl.Tests
         private static float GetFloat(Object target, string propertyName)
         {
             return RequireProperty(new SerializedObject(target), propertyName).floatValue;
+        }
+
+        private static T GetEnum<T>(Object target, string propertyName) where T : System.Enum
+        {
+            int value = RequireProperty(new SerializedObject(target), propertyName).enumValueIndex;
+            return (T)System.Enum.ToObject(typeof(T), value);
         }
 
         private static string GetString(Object target, string propertyName)

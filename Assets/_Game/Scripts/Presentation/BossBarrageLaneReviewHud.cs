@@ -21,6 +21,9 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private PlayerSkill1Action skill1Action;
         [SerializeField] private PlayerSummonSlot1Action summonSlot1Action;
         [SerializeField] private BossBarrageEmitter bossBarrageEmitter;
+        [SerializeField] private BossPressureCostLadder bossPressureCostLadder;
+        [SerializeField] private BossPressureActionDirector bossPressureActionDirector;
+        [SerializeField] private BossSummonPressureAction bossSummonPressureAction;
         [SerializeField] private BossBarragePocketReviewOwner pocketReviewOwner;
 
         [Header("Display")]
@@ -47,7 +50,10 @@ namespace DimensionBrawl.Presentation
             PlayerSkill1Action newSkill1Action,
             PlayerSummonSlot1Action newSummonSlot1Action,
             BossBarrageEmitter newBossBarrageEmitter,
-            BossBarragePocketReviewOwner newPocketReviewOwner)
+            BossBarragePocketReviewOwner newPocketReviewOwner,
+            BossPressureCostLadder newBossPressureCostLadder = null,
+            BossPressureActionDirector newBossPressureActionDirector = null,
+            BossSummonPressureAction newBossSummonPressureAction = null)
         {
             playerHealth = newPlayerHealth;
             closeThreatHealth = newCloseThreatHealth;
@@ -61,6 +67,9 @@ namespace DimensionBrawl.Presentation
             skill1Action = newSkill1Action;
             summonSlot1Action = newSummonSlot1Action;
             bossBarrageEmitter = newBossBarrageEmitter;
+            bossPressureCostLadder = newBossPressureCostLadder;
+            bossPressureActionDirector = newBossPressureActionDirector;
+            bossSummonPressureAction = newBossSummonPressureAction;
             pocketReviewOwner = newPocketReviewOwner;
         }
 
@@ -84,6 +93,8 @@ namespace DimensionBrawl.Presentation
             GUILayout.Label(ResolveEnergyLine(), labelStyle);
             GUILayout.Label(ResolveRiskLine(), labelStyle);
             GUILayout.Label(ResolveBossBarrageLine(), labelStyle);
+            GUILayout.Label(ResolveBossPressureLine(), labelStyle);
+            GUILayout.Label(ResolveBossSummonLine(), labelStyle);
             GUILayout.Label(ResolveWeaponModeLine(), labelStyle);
             GUILayout.Label(ResolveRangedFireLine(), labelStyle);
             GUILayout.Label(ResolveActionLine(), labelStyle);
@@ -161,6 +172,44 @@ namespace DimensionBrawl.Presentation
                 ? $"windup risk {bossBarrageEmitter.PendingForwardRisk01 * 100f:0}%"
                 : $"shots {bossBarrageEmitter.ActiveProjectileCount}";
             return $"Boss P{bossBarrageEmitter.CurrentPatternSequenceIndex + 1}: {pattern.PatternId} [{pattern.LateralShape}]   {pressureState}";
+        }
+
+        private string ResolveBossPressureLine()
+        {
+            if (bossPressureCostLadder == null)
+            {
+                return "Boss Cost -";
+            }
+
+            string ready = bossPressureCostLadder.CanSpend
+                ? $"READY LV{bossPressureCostLadder.AvailableTier}"
+                : "not ready";
+            string action = bossPressureActionDirector != null && bossPressureActionDirector.TotalActionCount > 0
+                ? $"{bossPressureActionDirector.LastActionKind}"
+                : "-";
+            string pattern = bossPressureActionDirector != null && bossPressureActionDirector.LastQueuedPattern != null
+                ? bossPressureActionDirector.LastQueuedPattern.PatternId
+                : "-";
+            return $"Boss Cost next LV{bossPressureCostLadder.ChargingTier} "
+                + $"{bossPressureCostLadder.CurrentTierFillRatio * 100f:0}%   {ready}   "
+                + $"Risk {bossPressureCostLadder.CurrentRiskBand} x{bossPressureCostLadder.CurrentGainMultiplier:0.00}   "
+                + $"Last {action}/{pattern}";
+        }
+
+        private string ResolveBossSummonLine()
+        {
+            if (bossSummonPressureAction == null)
+            {
+                return "Boss Summon -";
+            }
+
+            string tier = bossSummonPressureAction.LastReleasedTier > 0
+                ? $"LV{bossSummonPressureAction.LastReleasedTier}"
+                : "LV-";
+            return $"Boss Summon {tier} proxy {bossSummonPressureAction.ActiveSummonActorCount} "
+                + $"shield {bossSummonPressureAction.ActivePressureScreenCount} "
+                + $"blocks {bossSummonPressureAction.ActivePressureScreenRemainingIntercepts} "
+                + $"used {bossSummonPressureAction.TotalReleaseCount}";
         }
 
         private string ResolveActionLine()

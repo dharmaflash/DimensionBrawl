@@ -33,12 +33,16 @@ namespace DimensionBrawl.Combat
         private float pendingForwardRisk01;
         private int patternSequenceIndex;
         private int wavesFiredInCurrentPattern;
+        private BossBarragePatternProfile queuedPriorityPattern;
+        private int queuedPriorityWavesRemaining;
 
         public event Action<BossBarrageEmitter, BossBarragePatternProfile> WindupStarted;
         public event Action<BossBarrageEmitter, BossBarragePatternProfile, int> WaveFired;
 
         public bool IsWindupActive => windupActive;
         public bool IsFiringEnabled => firingEnabled;
+        public bool HasQueuedPriorityPattern => queuedPriorityPattern != null;
+        public BossBarragePatternProfile QueuedPriorityPattern => queuedPriorityPattern;
         public float PendingForwardRisk01 => pendingForwardRisk01;
         public BossBarragePatternProfile CurrentPattern => ActivePattern;
         public int CurrentPatternSequenceIndex => patternSequenceIndex;
@@ -86,6 +90,7 @@ namespace DimensionBrawl.Combat
             projectilePrefab = newProjectilePrefab;
             projectilePrefabObject = newProjectilePrefab != null ? newProjectilePrefab.gameObject : null;
             prewarmCount = Mathf.Max(0, newPrewarmCount);
+            ClearQueuedPriorityPattern();
             PrewarmPool();
             ResetPatternSequence();
             cooldownTimer = ActivePattern != null ? ActivePattern.InitialDelaySeconds : 0f;
@@ -97,6 +102,7 @@ namespace DimensionBrawl.Combat
                 ? (BossBarragePatternProfile[])newPatternSequence.Clone()
                 : new BossBarragePatternProfile[0];
             wavesPerPattern = Mathf.Max(1, newWavesPerPattern);
+            ClearQueuedPriorityPattern();
             ResetPatternSequence();
             cooldownTimer = ActivePattern != null ? ActivePattern.InitialDelaySeconds : 0f;
         }
@@ -117,12 +123,47 @@ namespace DimensionBrawl.Combat
             if (!enabled)
             {
                 windupActive = false;
+                ClearQueuedPriorityPattern();
                 cooldownTimer = ActivePattern != null ? ActivePattern.InitialDelaySeconds : 0f;
                 DeactivateActiveProjectiles();
                 return;
             }
 
             cooldownTimer = ActivePattern != null ? ActivePattern.InitialDelaySeconds : cooldownTimer;
+        }
+
+        public bool QueuePriorityPattern(BossBarragePatternProfile priorityPattern, int waveCount = 1)
+        {
+            if (!CanQueuePriorityPattern(priorityPattern))
+            {
+                return false;
+            }
+
+            queuedPriorityPattern = priorityPattern;
+            queuedPriorityWavesRemaining = Mathf.Max(1, waveCount);
+            cooldownTimer = Mathf.Min(cooldownTimer, priorityPattern.InitialDelaySeconds);
+            return true;
+        }
+
+        public bool CancelQueuedPriorityPattern(BossBarragePatternProfile priorityPattern)
+        {
+            if (queuedPriorityPattern == null
+                || queuedPriorityPattern != priorityPattern
+                || windupActive)
+            {
+                return false;
+            }
+
+            ClearQueuedPriorityPattern();
+            return true;
+        }
+
+        public bool CanQueuePriorityPattern(BossBarragePatternProfile priorityPattern)
+        {
+            return priorityPattern != null
+                && firingEnabled
+                && !windupActive
+                && queuedPriorityPattern == null;
         }
 
         public void Tick(float deltaTime)
@@ -281,6 +322,11 @@ namespace DimensionBrawl.Combat
 
         private BossBarragePatternProfile ResolveActivePattern()
         {
+            if (queuedPriorityPattern != null)
+            {
+                return queuedPriorityPattern;
+            }
+
             if (patternSequence != null && patternSequence.Length > 0)
             {
                 int safeIndex = Mathf.Clamp(patternSequenceIndex, 0, patternSequence.Length - 1);
@@ -328,6 +374,17 @@ namespace DimensionBrawl.Combat
 
         private void AdvancePatternSequenceAfterWave()
         {
+            if (queuedPriorityPattern != null)
+            {
+                queuedPriorityWavesRemaining--;
+                if (queuedPriorityWavesRemaining <= 0)
+                {
+                    ClearQueuedPriorityPattern();
+                }
+
+                return;
+            }
+
             if (patternSequence == null || patternSequence.Length <= 1)
             {
                 return;
@@ -350,6 +407,12 @@ namespace DimensionBrawl.Combat
                     return;
                 }
             }
+        }
+
+        private void ClearQueuedPriorityPattern()
+        {
+            queuedPriorityPattern = null;
+            queuedPriorityWavesRemaining = 0;
         }
 
         private void PrewarmPool()
