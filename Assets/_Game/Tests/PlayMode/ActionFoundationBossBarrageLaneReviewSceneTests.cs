@@ -269,6 +269,27 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(bossSummonPressureAction.HasPressureProfile);
             Assert.AreEqual("BossSummonPressure.SummonCaller", bossSummonPressureProfile.PressureId);
             Assert.AreEqual(3, bossSummonPressureProfile.TierCount);
+            AssertBossSummonPressureReadout(
+                bossSummonPressureProfile,
+                1,
+                "LV1 Escort Probe",
+                "Low-cost boss proxy that tests whether the player can keep firing lanes clear.",
+                "Strafe or use basic fire; do not spend summon unless pressure stacks.",
+                "Usually save SummonSlot1 for the next boss screen.");
+            AssertBossSummonPressureReadout(
+                bossSummonPressureProfile,
+                2,
+                "LV2 Pressure Screen",
+                "Boss-side summon pressure that contests the frontline and can block player follow-up shots.",
+                "Take EN only long enough to prepare a clean response.",
+                "Use SummonSlot1 screen to absorb the boss curtain and reopen Skill1.");
+            AssertBossSummonPressureReadout(
+                bossSummonPressureProfile,
+                3,
+                "LV3 Clamp Guard",
+                "High-cost boss proxy that punishes overextension and forces a high-tier answer or retreat.",
+                "Retreat from forward-risk lanes before firing back.",
+                "A saved LV2/LV3 SummonSlot1 answer should create the relief window.");
             AssertSummonActorRoleVisual(
                 LoadAsset<GameObject>(BossSummonPressureActorPrefabPath),
                 BossSummonPressureActorVisualName);
@@ -2496,6 +2517,21 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(expectedTierLabel, readout.TierLabel);
             Assert.AreEqual(expectedStageRole, readout.StageRole);
             Assert.AreEqual(expectedPlayerUse, readout.PlayerUse);
+            Assert.AreEqual(expectedSummonRead, readout.SummonRead);
+        }
+
+        private static void AssertBossSummonPressureReadout(
+            BossSummonPressureProfile profile,
+            int tier,
+            string expectedTierLabel,
+            string expectedStageRole,
+            string expectedPlayerRead,
+            string expectedSummonRead)
+        {
+            Assert.IsTrue(profile.TryGetTierReadout(tier, out BossSummonPressureProfile.BossSummonTierReadout readout));
+            Assert.AreEqual(expectedTierLabel, readout.TierLabel);
+            Assert.AreEqual(expectedStageRole, readout.StageRole);
+            Assert.AreEqual(expectedPlayerRead, readout.PlayerRead);
             Assert.AreEqual(expectedSummonRead, readout.SummonRead);
         }
 

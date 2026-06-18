@@ -235,7 +235,7 @@ namespace DimensionBrawl.Presentation
             }
 
             string tier = bossSummonPressureAction.LastReleasedTier > 0
-                ? $"LV{bossSummonPressureAction.LastReleasedTier}"
+                ? ResolveBossSummonTierLabel(bossSummonPressureAction.LastReleasedTier)
                 : "LV-";
             return $"Boss Summon {tier} proxy {bossSummonPressureAction.ActiveSummonActorCount} "
                 + $"shield {bossSummonPressureAction.ActivePressureScreenCount} "
@@ -298,6 +298,17 @@ namespace DimensionBrawl.Presentation
         {
             if (summonSlot1Action != null
                 && summonSlot1Action.TryGetTierReadout(tier, out SummonSlotActionProfile.SummonTierReadout readout))
+            {
+                return readout.TierLabel;
+            }
+
+            return $"LV{Mathf.Clamp(tier, 1, 3)}";
+        }
+
+        private string ResolveBossSummonTierLabel(int tier)
+        {
+            if (bossSummonPressureAction != null
+                && bossSummonPressureAction.TryGetTierReadout(tier, out BossSummonPressureProfile.BossSummonTierReadout readout))
             {
                 return readout.TierLabel;
             }

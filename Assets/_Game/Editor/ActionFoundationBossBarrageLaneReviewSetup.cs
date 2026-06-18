@@ -3139,10 +3139,32 @@ namespace DimensionBrawl.Editor
                 RequireRoot(SceneManager.GetActiveScene(), BossSummonActorPoolRootName).transform);
             ValidateEnum(bossSummonPressureAction, "ownerTeam", (int)DamageTeam.Enemy);
             ValidateInt(bossSummonPressureAction, "actorPrewarmCount", 2);
+            BossSummonPressureProfile bossSummonPressureProfile = LoadAsset<BossSummonPressureProfile>(BossSummonPressureProfilePath);
             ValidateObjectReference(
                 bossSummonPressureAction,
                 "pressureProfile",
-                LoadAsset<BossSummonPressureProfile>(BossSummonPressureProfilePath));
+                bossSummonPressureProfile);
+            ValidateBossSummonPressureReadout(
+                bossSummonPressureProfile,
+                1,
+                "LV1 Escort Probe",
+                "Low-cost boss proxy that tests whether the player can keep firing lanes clear.",
+                "Strafe or use basic fire; do not spend summon unless pressure stacks.",
+                "Usually save SummonSlot1 for the next boss screen.");
+            ValidateBossSummonPressureReadout(
+                bossSummonPressureProfile,
+                2,
+                "LV2 Pressure Screen",
+                "Boss-side summon pressure that contests the frontline and can block player follow-up shots.",
+                "Take EN only long enough to prepare a clean response.",
+                "Use SummonSlot1 screen to absorb the boss curtain and reopen Skill1.");
+            ValidateBossSummonPressureReadout(
+                bossSummonPressureProfile,
+                3,
+                "LV3 Clamp Guard",
+                "High-cost boss proxy that punishes overextension and forces a high-tier answer or retreat.",
+                "Retreat from forward-risk lanes before firing back.",
+                "A saved LV2/LV3 SummonSlot1 answer should create the relief window.");
 
             SummonFrontlineProxy bossSummonActorPrefab =
                 LoadPrefabComponent<SummonFrontlineProxy>(BossSummonPressureActorPrefabPath);
@@ -3309,6 +3331,30 @@ namespace DimensionBrawl.Editor
             ValidateString(readout.StageRole, expectedStageRole, $"SummonSlot1 tier {tier} has the wrong stage role.");
             ValidateString(readout.PlayerUse, expectedPlayerUse, $"SummonSlot1 tier {tier} has the wrong player-use note.");
             ValidateString(readout.SummonRead, expectedSummonRead, $"SummonSlot1 tier {tier} has the wrong summon-read note.");
+        }
+
+        private static void ValidateBossSummonPressureReadout(
+            BossSummonPressureProfile profile,
+            int tier,
+            string expectedTierLabel,
+            string expectedStageRole,
+            string expectedPlayerRead,
+            string expectedSummonRead)
+        {
+            if (profile == null)
+            {
+                throw new InvalidOperationException("Boss summon pressure profile is missing.");
+            }
+
+            if (!profile.TryGetTierReadout(tier, out BossSummonPressureProfile.BossSummonTierReadout readout))
+            {
+                throw new InvalidOperationException($"Boss summon pressure profile is missing tier {tier} readout.");
+            }
+
+            ValidateString(readout.TierLabel, expectedTierLabel, $"Boss summon pressure tier {tier} has the wrong label.");
+            ValidateString(readout.StageRole, expectedStageRole, $"Boss summon pressure tier {tier} has the wrong stage role.");
+            ValidateString(readout.PlayerRead, expectedPlayerRead, $"Boss summon pressure tier {tier} has the wrong player-read note.");
+            ValidateString(readout.SummonRead, expectedSummonRead, $"Boss summon pressure tier {tier} has the wrong summon-read note.");
         }
 
         private static void ValidateCloseThreat(

@@ -44,3 +44,16 @@ MonoBehaviour:
     ScreenIntercepts: 7
     ScreenRadius: 1.95
     ScreenLifetimeSeconds: 1.8
+  tierReadouts:
+  - TierLabel: LV1 Escort Probe
+    StageRole: Low-cost boss proxy that tests whether the player can keep firing lanes clear.
+    PlayerRead: Strafe or use basic fire; do not spend summon unless pressure stacks.
+    SummonRead: Usually save SummonSlot1 for the next boss screen.
+  - TierLabel: LV2 Pressure Screen
+    StageRole: Boss-side summon pressure that contests the frontline and can block player follow-up shots.
+    PlayerRead: Take EN only long enough to prepare a clean response.
+    SummonRead: Use SummonSlot1 screen to absorb the boss curtain and reopen Skill1.
+  - TierLabel: LV3 Clamp Guard
+    StageRole: High-cost boss proxy that punishes overextension and forces a high-tier answer or retreat.
+    PlayerRead: Retreat from forward-risk lanes before firing back.
+    SummonRead: A saved LV2/LV3 SummonSlot1 answer should create the relief window.

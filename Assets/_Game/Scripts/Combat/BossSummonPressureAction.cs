@@ -123,6 +123,17 @@ namespace DimensionBrawl.Combat
             ApplyPressureProfile();
         }
 
+        public bool TryGetTierReadout(int tier, out BossSummonPressureProfile.BossSummonTierReadout readout)
+        {
+            if (pressureProfile == null)
+            {
+                readout = default;
+                return false;
+            }
+
+            return pressureProfile.TryGetTierReadout(tier, out readout);
+        }
+
         public bool TryReleasePressureSummon(int tier)
         {
             if (!CanRelease)
