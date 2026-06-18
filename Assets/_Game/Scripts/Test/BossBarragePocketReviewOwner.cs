@@ -460,8 +460,7 @@ namespace DimensionBrawl.Test
                 return;
             }
 
-            followupMissedNotified = true;
-            SummonFollowupMissed?.Invoke();
+            NotifySummonFollowupMissedOnce();
         }
 
         private void CaptureBossBlockedFollowup()
@@ -483,6 +482,18 @@ namespace DimensionBrawl.Test
 
             bossPressureBlocksConsumedDuringFollowup = blocksAfterWindowStart;
             bossBlockedSkill1Followup = true;
+            NotifySummonFollowupMissedOnce();
+        }
+
+        private void NotifySummonFollowupMissedOnce()
+        {
+            if (followupMissedNotified)
+            {
+                return;
+            }
+
+            followupMissedNotified = true;
+            SummonFollowupMissed?.Invoke();
         }
 
         private void ClearPocket()

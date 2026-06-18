@@ -2033,6 +2033,13 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
             BossSummonPressureAction bossSummonPressureAction =
                 RequireComponent<BossSummonPressureAction>(bossRoot, "boss summon pressure action");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            ActionCameraCueDriver cameraCueDriver =
+                RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
+            BossBarragePocketVfxCueBridge pocketVfxCueBridge =
+                RequireComponent<BossBarragePocketVfxCueBridge>(
+                    RequireRoot(PocketOwnerRootName),
+                    "pocket VFX cue bridge");
             CombatHealth closeThreatHealth =
                 RequireComponent<CombatHealth>(RequireRoot(CloseThreatRootName), "close threat health");
             BossBarragePocketReviewOwner pocketOwner =
@@ -2066,6 +2073,8 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(energyLadder.CanSpend);
 
             int bossBlockCountBefore = bossSummonPressureAction.TotalPressureScreenInterceptCount;
+            int followupMissedCueCountBefore = cameraCueDriver.SummonFollowupMissedCueRequestCount;
+            int followupMissedVfxCueCountBefore = pocketVfxCueBridge.FollowupMissedCueRequestCount;
             Assert.IsTrue(
                 bossSummonPressureAction.TryReleasePressureSummon(2),
                 "The boss pressure summon actor should be directly releasable as the review's enemy-side guard answer.");
@@ -2086,6 +2095,14 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(pocketOwner.Skill1FollowupHitConfirmed);
             Assert.IsFalse(pocketOwner.IsCleared);
             Assert.That(pocketOwner.ObjectiveCue, Does.Contain("Boss screen blocked"));
+            Assert.AreEqual(
+                followupMissedCueCountBefore + 1,
+                cameraCueDriver.SummonFollowupMissedCueRequestCount,
+                "A boss screen block should immediately use the existing missed follow-up camera read.");
+            Assert.AreEqual(
+                followupMissedVfxCueCountBefore + 1,
+                pocketVfxCueBridge.FollowupMissedCueRequestCount,
+                "A boss screen block should immediately use the existing missed follow-up VFX read.");
 
             pocketOwner.Tick(pocketOwner.SummonFollowupWindowRemainingSeconds + 0.02f);
             Assert.IsFalse(pocketOwner.IsSummonFollowupWindowActive);
@@ -2093,6 +2110,14 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(
                 pocketOwner.IsCleared,
                 "A blocked follow-up Skill1 should force another summon-pressure answer instead of clearing the review pocket.");
+            Assert.AreEqual(
+                followupMissedCueCountBefore + 1,
+                cameraCueDriver.SummonFollowupMissedCueRequestCount,
+                "The later follow-up timeout should not duplicate the already-read boss-screen block cue.");
+            Assert.AreEqual(
+                followupMissedVfxCueCountBefore + 1,
+                pocketVfxCueBridge.FollowupMissedCueRequestCount,
+                "The later follow-up timeout should not duplicate the already-read boss-screen block VFX cue.");
         }
 
         private static GameObject RequireRoot(string rootName)
