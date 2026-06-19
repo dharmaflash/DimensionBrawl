@@ -4113,6 +4113,9 @@ namespace DimensionBrawl.Editor
             SetInt(owner, "requiredBossSummonReleases", 1);
             SetInt(owner, "requiredPlayerSummonUses", 2);
             SetInt(owner, "requiredAllyPressureBlocks", 1);
+            SetInt(owner, "requiredSkill1ResponseUses", 1);
+            SetFloat(owner, "requiredSkill1ResponseDamage", 60f);
+            SetFloat(owner, "skill1ResponseDamageWindowSeconds", 2.5f);
             SetFloat(owner, "requiredBossDamage", 260f);
             SetBool(owner, "failWhenPlayerDies", true);
             EditorUtility.SetDirty(owner);
@@ -4155,6 +4158,9 @@ namespace DimensionBrawl.Editor
             ValidateInt(owner, "requiredBossSummonReleases", 1);
             ValidateInt(owner, "requiredPlayerSummonUses", 2);
             ValidateInt(owner, "requiredAllyPressureBlocks", 1);
+            ValidateInt(owner, "requiredSkill1ResponseUses", 1);
+            ValidateFloat(owner, "requiredSkill1ResponseDamage", 60f);
+            ValidateFloat(owner, "skill1ResponseDamageWindowSeconds", 2.5f);
             ValidateFloat(owner, "requiredBossDamage", 260f);
             ValidateBool(owner, "failWhenPlayerDies", true);
         }

@@ -13543,6 +13543,9 @@ MonoBehaviour:
   requiredBossSummonReleases: 1
   requiredPlayerSummonUses: 2
   requiredAllyPressureBlocks: 1
+  requiredSkill1ResponseUses: 1
+  requiredSkill1ResponseDamage: 60
+  skill1ResponseDamageWindowSeconds: 2.5
   requiredBossDamage: 260
   failWhenPlayerDies: 1
   stopBarrageOnEnd: 1

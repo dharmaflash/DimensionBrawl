@@ -12,6 +12,7 @@ namespace DimensionBrawl.Test
             BuildPressure,
             BossPressureAction,
             SummonExchange,
+            SkillResponse,
             CounterDamage,
             Cleared,
             Failed
@@ -43,6 +44,9 @@ namespace DimensionBrawl.Test
         [SerializeField, Min(0)] private int requiredBossSummonReleases = 1;
         [SerializeField, Min(0)] private int requiredPlayerSummonUses = 2;
         [SerializeField, Min(0)] private int requiredAllyPressureBlocks = 1;
+        [SerializeField, Min(0)] private int requiredSkill1ResponseUses = 1;
+        [SerializeField, Min(0f)] private float requiredSkill1ResponseDamage = 60f;
+        [SerializeField, Min(0.05f)] private float skill1ResponseDamageWindowSeconds = 2.5f;
         [SerializeField, Min(0f)] private float requiredBossDamage = 260f;
         [SerializeField] private bool failWhenPlayerDies = true;
 
@@ -64,10 +68,13 @@ namespace DimensionBrawl.Test
         private int observedBossPressureActions;
         private int observedBossSummonReleases;
         private int observedBossPressureBlocks;
+        private int observedSkill1ResponseUses;
         private int highestPlayerSummonTier;
         private int highestBossPressureTier;
         private int highestBossSummonTier;
         private float bossDamageFromPlayerSide;
+        private float skill1ResponseDamageFromPlayerSide;
+        private float skill1ResponseDamageUntilTime;
 
         public bool IsCleared => cleared;
         public bool IsFailed => failed;
@@ -77,14 +84,18 @@ namespace DimensionBrawl.Test
         public int ObservedBossPressureActions => observedBossPressureActions;
         public int ObservedBossSummonReleases => observedBossSummonReleases;
         public int ObservedBossPressureBlocks => observedBossPressureBlocks;
+        public int ObservedSkill1ResponseUses => observedSkill1ResponseUses;
         public int HighestPlayerSummonTier => highestPlayerSummonTier;
         public int HighestBossPressureTier => highestBossPressureTier;
         public int HighestBossSummonTier => highestBossSummonTier;
         public float BossDamageFromPlayerSide => bossDamageFromPlayerSide;
+        public float Skill1ResponseDamageFromPlayerSide => skill1ResponseDamageFromPlayerSide;
         public int RequiredBossPressureActions => requiredBossPressureActions;
         public int RequiredBossSummonReleases => requiredBossSummonReleases;
         public int RequiredPlayerSummonUses => requiredPlayerSummonUses;
         public int RequiredAllyPressureBlocks => requiredAllyPressureBlocks;
+        public int RequiredSkill1ResponseUses => requiredSkill1ResponseUses;
+        public float RequiredSkill1ResponseDamage => requiredSkill1ResponseDamage;
         public float RequiredBossDamage => requiredBossDamage;
 
         public DuelPhase CurrentPhase
@@ -111,10 +122,14 @@ namespace DimensionBrawl.Test
                     return DuelPhase.BossPressureAction;
                 }
 
-                if (observedPlayerSummonUses < requiredPlayerSummonUses
-                    || observedAllyPressureBlocks < requiredAllyPressureBlocks)
+                if (!HasMetSummonExchangeGoal())
                 {
                     return DuelPhase.SummonExchange;
+                }
+
+                if (!HasMetSkillResponseGoal())
+                {
+                    return DuelPhase.SkillResponse;
                 }
 
                 return DuelPhase.CounterDamage;
@@ -155,6 +170,16 @@ namespace DimensionBrawl.Test
                     return "Use SummonSlot1 where its screen can block boss fire";
                 }
 
+                if (observedSkill1ResponseUses < requiredSkill1ResponseUses)
+                {
+                    return "Answer the summon block with Skill1 before going back to basic pressure";
+                }
+
+                if (skill1ResponseDamageFromPlayerSide < requiredSkill1ResponseDamage)
+                {
+                    return $"Confirm Skill1 response damage on boss ({skill1ResponseDamageFromPlayerSide:0}/{requiredSkill1ResponseDamage:0})";
+                }
+
                 return $"Damage boss with Skill1, ranged fire, or summon counters ({bossDamageFromPlayerSide:0}/{requiredBossDamage:0})";
             }
         }
@@ -164,6 +189,8 @@ namespace DimensionBrawl.Test
             + $"bossSummon {observedBossSummonReleases}/{requiredBossSummonReleases} "
             + $"summon {observedPlayerSummonUses}/{requiredPlayerSummonUses} "
             + $"block {observedAllyPressureBlocks}/{requiredAllyPressureBlocks} "
+            + $"skill {observedSkill1ResponseUses}/{requiredSkill1ResponseUses} "
+            + $"skillDmg {skill1ResponseDamageFromPlayerSide:0}/{requiredSkill1ResponseDamage:0} "
             + $"dmg {bossDamageFromPlayerSide:0}/{requiredBossDamage:0}";
 
         private void OnEnable()
@@ -240,10 +267,13 @@ namespace DimensionBrawl.Test
             observedBossPressureActions = 0;
             observedBossSummonReleases = 0;
             observedBossPressureBlocks = 0;
+            observedSkill1ResponseUses = 0;
             highestPlayerSummonTier = 0;
             highestBossPressureTier = 0;
             highestBossSummonTier = 0;
             bossDamageFromPlayerSide = 0f;
+            skill1ResponseDamageFromPlayerSide = 0f;
+            skill1ResponseDamageUntilTime = 0f;
             warmStartApplied = false;
             SetReviewSystemsEnabled(true);
             SetMarkers();
@@ -276,9 +306,21 @@ namespace DimensionBrawl.Test
         {
             return observedBossPressureActions >= requiredBossPressureActions
                 && observedBossSummonReleases >= requiredBossSummonReleases
-                && observedPlayerSummonUses >= requiredPlayerSummonUses
-                && observedAllyPressureBlocks >= requiredAllyPressureBlocks
+                && HasMetSummonExchangeGoal()
+                && HasMetSkillResponseGoal()
                 && bossDamageFromPlayerSide >= requiredBossDamage;
+        }
+
+        private bool HasMetSummonExchangeGoal()
+        {
+            return observedPlayerSummonUses >= requiredPlayerSummonUses
+                && observedAllyPressureBlocks >= requiredAllyPressureBlocks;
+        }
+
+        private bool HasMetSkillResponseGoal()
+        {
+            return observedSkill1ResponseUses >= requiredSkill1ResponseUses
+                && skill1ResponseDamageFromPlayerSide >= requiredSkill1ResponseDamage;
         }
 
         private void EnterCleared()
@@ -426,6 +468,15 @@ namespace DimensionBrawl.Test
         private void HandleSkill1Used(int tier)
         {
             observedSkill1Uses++;
+            if (!HasMetSummonExchangeGoal())
+            {
+                return;
+            }
+
+            observedSkill1ResponseUses++;
+            skill1ResponseDamageUntilTime = Mathf.Max(
+                skill1ResponseDamageUntilTime,
+                Time.time + skill1ResponseDamageWindowSeconds);
         }
 
         private void HandlePlayerSummonUsed(int tier)
@@ -467,6 +518,10 @@ namespace DimensionBrawl.Test
             if (CombatTeamUtility.IsPlayerSide(damageInfo.SourceTeam))
             {
                 bossDamageFromPlayerSide += damageInfo.Amount;
+                if (Time.time <= skill1ResponseDamageUntilTime)
+                {
+                    skill1ResponseDamageFromPlayerSide += damageInfo.Amount;
+                }
             }
         }
     }
