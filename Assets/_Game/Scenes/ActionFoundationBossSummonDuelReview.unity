@@ -18016,6 +18016,7 @@ MonoBehaviour:
   rangedBasicAttackAction: {fileID: 4011}
   skill1Action: {fileID: 4016}
   summonSlot1Action: {fileID: 4014}
+  energyLadder: {fileID: 4015}
   moveActionName: Move
   basicDefenseActionName: BasicDefenseAttack
   dodgeActionName: Dodge
@@ -18030,7 +18031,12 @@ MonoBehaviour:
   scale: 1
   buttonColor: {r: 0.04, g: 0.11, b: 0.16, a: 0.58}
   heldButtonColor: {r: 0.18, g: 0.84, b: 1, a: 0.72}
+  pendingButtonColor: {r: 0.04, g: 0.08, b: 0.11, a: 0.44}
   actionTextColor: {r: 1, g: 1, b: 1, a: 1}
+  summonSlot1Label: S1 SHIELD
+  summonSlot2Label: S2 ARROW
+  summonSlot3Label: S3 TANK
+  lockedSummonLabel: NEXT
   screenDragControlsAim: 1
   rightMouseDragControlsAim: 0
   leftMouseDragControlsAim: 1

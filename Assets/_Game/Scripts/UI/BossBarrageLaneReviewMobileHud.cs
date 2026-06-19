@@ -1,3 +1,4 @@
+using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -16,6 +17,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private PlayerRangedBasicAttackAction rangedBasicAttackAction;
         [SerializeField] private PlayerSkill1Action skill1Action;
         [SerializeField] private PlayerSummonSlot1Action summonSlot1Action;
+        [SerializeField] private SummonEnergyLadder energyLadder;
 
         [Header("Canonical Actions")]
         [SerializeField] private string moveActionName = "Move";
@@ -34,7 +36,12 @@ namespace DimensionBrawl.UI
         [SerializeField, Range(0.5f, 2f)] private float scale = 1f;
         [SerializeField] private Color buttonColor = new Color(0.04f, 0.11f, 0.16f, 0.58f);
         [SerializeField] private Color heldButtonColor = new Color(0.18f, 0.84f, 1f, 0.72f);
+        [SerializeField] private Color pendingButtonColor = new Color(0.04f, 0.08f, 0.11f, 0.44f);
         [SerializeField] private Color actionTextColor = Color.white;
+        [SerializeField] private string summonSlot1Label = "S1 SHIELD";
+        [SerializeField] private string summonSlot2Label = "S2 ARROW";
+        [SerializeField] private string summonSlot3Label = "S3 TANK";
+        [SerializeField] private string lockedSummonLabel = "NEXT";
 
         [Header("Look Aim")]
         [SerializeField] private bool screenDragControlsAim = true;
@@ -62,9 +69,12 @@ namespace DimensionBrawl.UI
         private Rect dodgeRect;
         private Rect swapRect;
         private Rect skillRect;
-        private Rect summonRect;
+        private Rect summonSlot1Rect;
+        private Rect summonSlot2Rect;
+        private Rect summonSlot3Rect;
         private GUIStyle buttonStyle;
         private GUIStyle heldButtonStyle;
+        private GUIStyle pendingButtonStyle;
         private Texture2D reticleTexture;
         private bool previousBasicHeld;
         private bool firePointerHeld;
@@ -98,7 +108,8 @@ namespace DimensionBrawl.UI
             PlayerRangedAimController newAimController,
             PlayerRangedBasicAttackAction newRangedBasicAttackAction,
             PlayerSkill1Action newSkill1Action,
-            PlayerSummonSlot1Action newSummonSlot1Action)
+            PlayerSummonSlot1Action newSummonSlot1Action,
+            SummonEnergyLadder newEnergyLadder = null)
         {
             movement = newMovement;
             actionController = newActionController;
@@ -107,6 +118,7 @@ namespace DimensionBrawl.UI
             rangedBasicAttackAction = newRangedBasicAttackAction;
             skill1Action = newSkill1Action;
             summonSlot1Action = newSummonSlot1Action;
+            energyLadder = newEnergyLadder;
         }
 
         private void Awake()
@@ -145,6 +157,11 @@ namespace DimensionBrawl.UI
             {
                 summonSlot1Action = movement.GetComponent<PlayerSummonSlot1Action>();
             }
+
+            if (energyLadder == null && movement != null)
+            {
+                energyLadder = movement.GetComponent<SummonEnergyLadder>();
+            }
         }
 
         private void OnDisable()
@@ -173,7 +190,9 @@ namespace DimensionBrawl.UI
                 || IsHeld(dodgeRect)
                 || IsHeld(swapRect)
                 || IsHeld(skillRect)
-                || IsHeld(summonRect);
+                || IsHeld(summonSlot1Rect)
+                || IsHeld(summonSlot2Rect)
+                || IsHeld(summonSlot3Rect);
 
             if (anyHudHeld)
             {
@@ -228,7 +247,7 @@ namespace DimensionBrawl.UI
                 skill1Action?.QueueSkill1();
             }
 
-            if (IsPressed(summonRect))
+            if (IsPressed(summonSlot1Rect))
             {
                 summonSlot1Action?.QueueSummonSlot1();
             }
@@ -253,7 +272,7 @@ namespace DimensionBrawl.UI
             DrawButton(dodgeRect, "DODGE", IsHeld(dodgeRect));
             DrawButton(swapRect, "SWAP", false);
             DrawButton(skillRect, "SKILL", false);
-            DrawButton(summonRect, "SUMMON", false);
+            DrawSummonButtons();
         }
 
         private Vector2 ResolveMoveInput()
@@ -303,7 +322,14 @@ namespace DimensionBrawl.UI
             dodgeRect = new Rect(rightX, bottomY - size - gap, size, size);
             swapRect = new Rect(rightX - size - gap, bottomY - size - gap, size, size);
             skillRect = new Rect(rightX - size - gap, bottomY, size, size);
-            summonRect = new Rect(Screen.width - edge - size, edge, size * 1.35f, size * 0.82f);
+
+            float summonWidth = size * 1.55f;
+            float summonHeight = size * 0.72f;
+            float summonGap = gap * 0.48f;
+            float summonX = Screen.width - edge - summonWidth;
+            summonSlot1Rect = new Rect(summonX, edge, summonWidth, summonHeight);
+            summonSlot2Rect = new Rect(summonX, edge + summonHeight + summonGap, summonWidth, summonHeight);
+            summonSlot3Rect = new Rect(summonX, edge + (summonHeight + summonGap) * 2f, summonWidth, summonHeight);
         }
 
         private float ResolveScale()
@@ -654,7 +680,9 @@ namespace DimensionBrawl.UI
                 || dodgeRect.Contains(point)
                 || swapRect.Contains(point)
                 || skillRect.Contains(point)
-                || summonRect.Contains(point);
+                || summonSlot1Rect.Contains(point)
+                || summonSlot2Rect.Contains(point)
+                || summonSlot3Rect.Contains(point);
         }
 
         private bool IsHeld(Rect rect)
@@ -699,9 +727,62 @@ namespace DimensionBrawl.UI
                 && rect.Contains(ToGuiPoint(Mouse.current.position.ReadValue()));
         }
 
-        private void DrawButton(Rect rect, string label, bool held)
+        private void DrawButton(Rect rect, string label, bool held, bool pending = false)
         {
-            GUI.Box(rect, label, held ? heldButtonStyle : buttonStyle);
+            GUI.Box(rect, label, held ? heldButtonStyle : pending ? pendingButtonStyle : buttonStyle);
+        }
+
+        private void DrawSummonButtons()
+        {
+            DrawButton(summonSlot1Rect, BuildSummonSlot1Label(), IsHeld(summonSlot1Rect));
+            DrawButton(summonSlot2Rect, BuildPendingSummonLabel(summonSlot2Label), false, pending: true);
+            DrawButton(summonSlot3Rect, BuildPendingSummonLabel(summonSlot3Label), false, pending: true);
+        }
+
+        private string BuildSummonSlot1Label()
+        {
+            int availableTier = energyLadder != null ? energyLadder.AvailableTier : 0;
+            if (availableTier > 0)
+            {
+                string tierName = TryGetSummonTierShortName(availableTier);
+                return $"{summonSlot1Label}\nREADY LV{availableTier} {tierName}".TrimEnd();
+            }
+
+            if (energyLadder == null)
+            {
+                return $"{summonSlot1Label}\nREADY?";
+            }
+
+            int chargingTier = Mathf.Clamp(energyLadder.ChargingTier, 1, 3);
+            int fillPercent = Mathf.RoundToInt(energyLadder.CurrentTierFillRatio * 100f);
+            return $"{summonSlot1Label}\nLV{chargingTier} {fillPercent}%";
+        }
+
+        private string TryGetSummonTierShortName(int tier)
+        {
+            if (summonSlot1Action == null
+                || !summonSlot1Action.TryGetTierReadout(
+                    tier,
+                    out SummonSlotActionProfile.SummonTierReadout readout)
+                || string.IsNullOrWhiteSpace(readout.TierLabel))
+            {
+                return string.Empty;
+            }
+
+            string displayName = readout.TierLabel.Trim();
+            int firstSpaceIndex = displayName.IndexOf(' ');
+            if (firstSpaceIndex <= 0 || firstSpaceIndex >= displayName.Length - 1)
+            {
+                return displayName.Length <= 10 ? displayName : string.Empty;
+            }
+
+            string trailingName = displayName.Substring(firstSpaceIndex + 1).Trim();
+            return trailingName.Length <= 10 ? trailingName : string.Empty;
+        }
+
+        private string BuildPendingSummonLabel(string slotLabel)
+        {
+            return $"{slotLabel}\n{lockedSummonLabel}";
         }
 
         private void DrawLookAimGuide()
@@ -813,13 +894,14 @@ namespace DimensionBrawl.UI
 
         private void EnsureStyles()
         {
-            if (buttonStyle != null && heldButtonStyle != null)
+            if (buttonStyle != null && heldButtonStyle != null && pendingButtonStyle != null)
             {
                 return;
             }
 
             buttonStyle = CreateButtonStyle(buttonColor);
             heldButtonStyle = CreateButtonStyle(heldButtonColor);
+            pendingButtonStyle = CreateButtonStyle(pendingButtonColor);
         }
 
         private GUIStyle CreateButtonStyle(Color color)
@@ -830,7 +912,8 @@ namespace DimensionBrawl.UI
                 fontStyle = FontStyle.Bold,
                 fontSize = Mathf.RoundToInt(Mathf.Clamp(Screen.height / 48f, 18f, 34f)),
                 normal = { textColor = actionTextColor },
-                padding = new RectOffset(4, 4, 4, 4)
+                padding = new RectOffset(4, 4, 4, 4),
+                wordWrap = true
             };
             style.normal.background = MakeTexture(color);
             return style;

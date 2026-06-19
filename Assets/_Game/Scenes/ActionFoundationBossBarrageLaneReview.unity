@@ -14385,6 +14385,7 @@ MonoBehaviour:
   rangedBasicAttackAction: {fileID: 4011}
   skill1Action: {fileID: 4016}
   summonSlot1Action: {fileID: 4014}
+  energyLadder: {fileID: 4015}
   moveActionName: Move
   basicDefenseActionName: BasicDefenseAttack
   dodgeActionName: Dodge
@@ -14399,7 +14400,12 @@ MonoBehaviour:
   scale: 1
   buttonColor: {r: 0.04, g: 0.11, b: 0.16, a: 0.58}
   heldButtonColor: {r: 0.18, g: 0.84, b: 1, a: 0.72}
+  pendingButtonColor: {r: 0.04, g: 0.08, b: 0.11, a: 0.44}
   actionTextColor: {r: 1, g: 1, b: 1, a: 1}
+  summonSlot1Label: S1 SHIELD
+  summonSlot2Label: S2 ARROW
+  summonSlot3Label: S3 TANK
+  lockedSummonLabel: NEXT
   screenDragControlsAim: 1
   rightMouseDragControlsAim: 0
   leftMouseDragControlsAim: 1
@@ -14442,6 +14448,7 @@ MonoBehaviour:
   bossPressureActionDirector: {fileID: 1550289924}
   bossSummonPressureAction: {fileID: 1550289923}
   pocketReviewOwner: {fileID: 2068725995}
+  duelReviewOwner: {fileID: 0}
   showHud: 1
   width: 430
   height: 280
@@ -15052,6 +15059,12 @@ MonoBehaviour:
     MinimumTier: 1
     QueuedWaves: 1
     MinimumIntervalSeconds: 4.6
+    ResponseId: DodgeLineOrUseSkill1
+    StageLoopRole: LV1 skill pressure that asks the player to read a committed rail
+      before spending summon resources.
+    PlayerAnswer: Strafe or dodge out of the rail, then use ranged fire or Skill1
+      when the lane is clear.
+    SummonAnswer: No summon is required; save SummonSlot1 for screen pressure.
     UsePlayerForwardRiskGate: 0
     MinimumPlayerForwardRisk01: 0
     MaximumPlayerForwardRisk01: 1
@@ -15060,6 +15073,13 @@ MonoBehaviour:
     MinimumTier: 2
     QueuedWaves: 1
     MinimumIntervalSeconds: 5.2
+    ResponseId: SummonSlot1PressureBlock
+    StageLoopRole: LV2 summon-pressure exchange that tests whether the player can
+      answer boss fire with a frontline summon screen.
+    PlayerAnswer: Hold forward-risk only long enough to charge EN, then create space
+      for the summon block.
+    SummonAnswer: Spend SummonSlot1 to place a pressure screen and intercept the
+      boss curtain.
     UsePlayerForwardRiskGate: 1
     MinimumPlayerForwardRisk01: 0.32
     MaximumPlayerForwardRisk01: 1
@@ -15068,6 +15088,13 @@ MonoBehaviour:
     MinimumTier: 3
     QueuedWaves: 1
     MinimumIntervalSeconds: 6
+    ResponseId: RetreatOrSpendHighTierAnswer
+    StageLoopRole: LV3 overextend punish that closes gaps when the player stays near
+      the forward boundary too long.
+    PlayerAnswer: Retreat from forward-risk space or dodge through the shrinking
+      net before firing back.
+    SummonAnswer: A prepared high-tier summon screen can buy the follow-up window,
+      but it should cost the player's stored EN.
     UsePlayerForwardRiskGate: 1
     MinimumPlayerForwardRisk01: 0.66
     MaximumPlayerForwardRisk01: 1

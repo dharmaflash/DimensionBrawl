@@ -204,6 +204,24 @@ namespace DimensionBrawl.Editor
             Debug.Log("Reapplied ActionFoundation boss summon duel review end-state bindings.");
         }
 
+        [MenuItem("DimensionBrawl/Reapply Action Foundation Player Summon Presentation")]
+        public static void ReapplyPlayerSummonPresentationMenu()
+        {
+            EnsureSummonActorPrefab();
+            EnsureSummonPresentationCandidateProfiles();
+            EnsurePlayerSummonReviewHudBindings(ReviewScenePath);
+            EnsurePlayerSummonReviewHudBindings(DuelReviewScenePath);
+            Debug.Log("Reapplied ActionFoundation player summon presentation assets.");
+        }
+
+        [MenuItem("DimensionBrawl/Reapply Action Foundation Boss Summon Presentation")]
+        public static void ReapplyBossSummonPresentationMenu()
+        {
+            EnsureBossSummonPressureActorPrefab();
+            EnsureSummonPresentationCandidateProfiles();
+            Debug.Log("Reapplied ActionFoundation boss summon presentation assets.");
+        }
+
         public static void EnsureBossBarrageLaneReviewScene()
         {
             ActionFoundationPlayerCombatModeAssetSetup.EnsureRangedCandidateAssets();
@@ -639,7 +657,8 @@ namespace DimensionBrawl.Editor
                 rangedAimController,
                 rangedBasicAttackAction,
                 skill1Action,
-                summonSlot1Action);
+                summonSlot1Action,
+                energyLadder);
             ValidateFixedRearCamera(cameraController, player.transform, laneSpace.transform);
             ValidateSummonForwardSpace(laneSpace);
             ValidateSummonPresentationCandidateProfiles();
@@ -799,6 +818,35 @@ namespace DimensionBrawl.Editor
             }
 
             AssetDatabase.SaveAssets();
+        }
+
+        private static void EnsurePlayerSummonReviewHudBindings(string scenePath)
+        {
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(scenePath) == null)
+            {
+                return;
+            }
+
+            Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
+            PlayerMovementController player = RequireObject<PlayerMovementController>(scene, "player movement");
+            SummonEnergyLadder energyLadder =
+                RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            BossBarrageLaneReviewMobileHud mobileHud =
+                RequireComponent<BossBarrageLaneReviewMobileHud>(
+                    RequireRoot(scene, HudRootName),
+                    "boss barrage mobile review HUD");
+
+            SetObjectReference(mobileHud, "energyLadder", energyLadder);
+            SetString(mobileHud, "summonSlot1Label", "S1 SHIELD");
+            SetString(mobileHud, "summonSlot2Label", "S2 ARROW");
+            SetString(mobileHud, "summonSlot3Label", "S3 TANK");
+            SetString(mobileHud, "lockedSummonLabel", "NEXT");
+            EditorUtility.SetDirty(mobileHud);
+
+            if (!EditorSceneManager.SaveScene(scene, scenePath))
+            {
+                throw new InvalidOperationException($"Failed to save player summon review HUD bindings at {scenePath}.");
+            }
         }
 
         public static void ValidateBossSummonDuelReviewScene()
@@ -1358,7 +1406,7 @@ namespace DimensionBrawl.Editor
                 renderer.sharedMaterial = material;
 
                 Collider collider = editableRoot.GetComponent<Collider>();
-                if (collider != null)
+                if (collider != null && !(collider is SphereCollider))
                 {
                     UnityEngine.Object.DestroyImmediate(collider);
                 }
@@ -1404,9 +1452,10 @@ namespace DimensionBrawl.Editor
 
                 MeshRenderer renderer = EnsureComponent<MeshRenderer>(editableRoot);
                 renderer.sharedMaterial = material;
+                renderer.enabled = false;
 
                 Collider collider = editableRoot.GetComponent<Collider>();
-                if (collider != null)
+                if (collider != null && !(collider is SphereCollider))
                 {
                     UnityEngine.Object.DestroyImmediate(collider);
                 }
@@ -1495,7 +1544,7 @@ namespace DimensionBrawl.Editor
                 SetObjectReferenceArray(
                     actorPresenter,
                     "actorRenderers",
-                    BuildRendererReferenceArray(summonVisual.gameObject, pulseRenderer));
+                    BuildPulseRendererReferenceArray(pulseRenderer));
                 SetColor(actorPresenter, "tierOneColor", new Color(0.24f, 1f, 0.78f, 0.78f));
                 SetColor(actorPresenter, "tierTwoColor", new Color(0.38f, 0.74f, 1f, 0.9f));
                 SetColor(actorPresenter, "tierThreeColor", new Color(1f, 0.76f, 0.24f, 1f));
@@ -1552,7 +1601,7 @@ namespace DimensionBrawl.Editor
                 renderer.enabled = false;
 
                 Collider collider = editableRoot.GetComponent<Collider>();
-                if (collider != null)
+                if (collider != null && !(collider is SphereCollider))
                 {
                     UnityEngine.Object.DestroyImmediate(collider);
                 }
@@ -1641,7 +1690,7 @@ namespace DimensionBrawl.Editor
                 SetObjectReferenceArray(
                     actorPresenter,
                     "actorRenderers",
-                    BuildRendererReferenceArray(summonVisual.gameObject, pulseRenderer));
+                    BuildPulseRendererReferenceArray(pulseRenderer));
                 SetColor(actorPresenter, "tierOneColor", new Color(1f, 0.32f, 0.55f, 0.82f));
                 SetColor(actorPresenter, "tierTwoColor", new Color(1f, 0.62f, 0.24f, 0.92f));
                 SetColor(actorPresenter, "tierThreeColor", new Color(1f, 0.22f, 0.9f, 1f));
@@ -3309,6 +3358,13 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException("TierPulseCore is missing a MeshRenderer.");
             }
 
+            MeshRenderer rootRenderer = summonActorPrefab.GetComponent<MeshRenderer>();
+            if (rootRenderer != null && rootRenderer.enabled)
+            {
+                throw new InvalidOperationException(
+                    "SummonSlot1 actor root mesh renderer must stay disabled so the promoted model reads first.");
+            }
+
             ValidateObjectReference(summonActorPrefab, "pressureScreen", pressureScreen);
             ValidateEnum(pressureScreen, "ownerTeam", (int)DamageTeam.AllySummon);
             ValidateInt(pressureScreen, "defaultMaxIntercepts", 2);
@@ -3323,16 +3379,13 @@ namespace DimensionBrawl.Editor
                 summonActorPrefab.gameObject,
                 SummonSlot1ActorVisualName);
             Renderer[] summonActorVisualRenderers = CollectEnabledRenderers(summonActorVisual.gameObject);
-            ValidateArrayContainsReference(
-                actorPresenter,
-                "actorRenderers",
-                summonActorVisualRenderers[0],
-                $"{SummonSlot1ActorVisualName} renderer");
-            ValidateArrayContainsReference(
-                actorPresenter,
-                "actorRenderers",
-                pulseRenderer,
-                "TierPulseCore renderer");
+            if (summonActorVisualRenderers.Length == 0)
+            {
+                throw new InvalidOperationException(
+                    $"{SummonSlot1ActorVisualName} should expose at least one enabled renderer.");
+            }
+
+            ValidatePulseOnlyActorRenderers(actorPresenter, pulseRenderer, "TierPulseCore");
             ValidateFloat(actorPresenter, "entryFlashSeconds", 0.22f);
             ValidateFloat(actorPresenter, "impactFlashSeconds", 0.18f);
             ValidateFloat(actorPresenter, "impactFlashProgress", 0.86f);
@@ -3427,18 +3480,22 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException("TierPressureCore is missing a MeshRenderer.");
             }
 
+            MeshRenderer bossRootRenderer = bossSummonActorPrefab.GetComponent<MeshRenderer>();
+            if (bossRootRenderer != null && bossRootRenderer.enabled)
+            {
+                throw new InvalidOperationException(
+                    "Boss summon pressure actor root mesh renderer must stay disabled so the promoted model reads first.");
+            }
+
             ValidateObjectReference(bossSummonActorPresenter, "proxy", bossSummonActorPrefab);
             ValidateObjectReference(bossSummonActorPresenter, "pulseRoot", tierPressureCore);
-            ValidateArrayContainsReference(
-                bossSummonActorPresenter,
-                "actorRenderers",
-                bossSummonVisualRenderers[0],
-                $"{BossSummonPressureActorVisualName} renderer");
-            ValidateArrayContainsReference(
-                bossSummonActorPresenter,
-                "actorRenderers",
-                tierPressureRenderer,
-                "TierPressureCore renderer");
+            if (bossSummonVisualRenderers.Length == 0)
+            {
+                throw new InvalidOperationException(
+                    $"{BossSummonPressureActorVisualName} should expose at least one enabled renderer.");
+            }
+
+            ValidatePulseOnlyActorRenderers(bossSummonActorPresenter, tierPressureRenderer, "TierPressureCore");
 
             ValidateObjectReference(bossPressureActionDirector, "costLadder", bossPressureCost);
             ValidateObjectReference(bossPressureActionDirector, "bossBarrageEmitter", bossBarrageEmitter);
@@ -3759,17 +3816,25 @@ namespace DimensionBrawl.Editor
             }
         }
 
-        private static UnityEngine.Object[] BuildRendererReferenceArray(GameObject visualRoot, Renderer pulseRenderer)
+        private static UnityEngine.Object[] BuildPulseRendererReferenceArray(Renderer pulseRenderer)
         {
-            Renderer[] renderers = CollectEnabledRenderers(visualRoot);
-            var references = new UnityEngine.Object[renderers.Length + 1];
-            for (int i = 0; i < renderers.Length; i++)
+            return new UnityEngine.Object[] { pulseRenderer };
+        }
+
+        private static void ValidatePulseOnlyActorRenderers(
+            SummonFrontlineProxyPresenter actorPresenter,
+            Renderer pulseRenderer,
+            string pulseLabel)
+        {
+            SerializedObject serializedPresenter = new SerializedObject(actorPresenter);
+            SerializedProperty actorRenderers = RequireProperty(serializedPresenter, "actorRenderers");
+            if (!actorRenderers.isArray || actorRenderers.arraySize != 1)
             {
-                references[i] = renderers[i];
+                throw new InvalidOperationException(
+                    $"{actorPresenter.name}.actorRenderers should tint only {pulseLabel}, not the promoted summon model.");
             }
 
-            references[references.Length - 1] = pulseRenderer;
-            return references;
+            ValidateArrayReference(actorPresenter, "actorRenderers", 0, pulseRenderer);
         }
 
         private static Transform ValidateSummonActorRoleVisual(GameObject prefabRoot, string visualName)
@@ -4242,7 +4307,8 @@ namespace DimensionBrawl.Editor
             PlayerRangedAimController rangedAimController,
             PlayerRangedBasicAttackAction rangedBasicAttackAction,
             PlayerSkill1Action skill1Action,
-            PlayerSummonSlot1Action summonSlot1Action)
+            PlayerSummonSlot1Action summonSlot1Action,
+            SummonEnergyLadder energyLadder)
         {
             ValidateObjectReference(hud, "movement", movement);
             ValidateObjectReference(hud, "actionController", actionController);
@@ -4251,6 +4317,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(hud, "rangedBasicAttackAction", rangedBasicAttackAction);
             ValidateObjectReference(hud, "skill1Action", skill1Action);
             ValidateObjectReference(hud, "summonSlot1Action", summonSlot1Action);
+            ValidateObjectReference(hud, "energyLadder", energyLadder);
             ValidateString(hud, "moveActionName", "Move");
             ValidateString(hud, "basicDefenseActionName", "BasicDefenseAttack");
             ValidateString(hud, "dodgeActionName", "Dodge");
@@ -4258,6 +4325,10 @@ namespace DimensionBrawl.Editor
             ValidateString(hud, "summonSlot1ActionName", "SummonSlot1");
             ValidateString(hud, "rangedAimActionName", "RangedAim");
             ValidateString(hud, "weaponSwapActionName", "WeaponSwap");
+            ValidateString(hud, "summonSlot1Label", "S1 SHIELD");
+            ValidateString(hud, "summonSlot2Label", "S2 ARROW");
+            ValidateString(hud, "summonSlot3Label", "S3 TANK");
+            ValidateString(hud, "lockedSummonLabel", "NEXT");
             ValidateBool(hud, "screenDragControlsAim", true);
             ValidateBool(hud, "rightMouseDragControlsAim", false);
             ValidateBool(hud, "leftMouseDragControlsAim", true);

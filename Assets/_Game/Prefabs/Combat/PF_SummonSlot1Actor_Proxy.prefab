@@ -1,5 +1,36 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
+--- !u!1 &58855598902634376
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6315087013027906961}
+  m_Layer: 0
+  m_Name: HeavyBattleArmor_ R Finger02
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6315087013027906961
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 58855598902634376}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.000000014860238, y: -0.0000000011035869, z: -0.07406046, w: 0.9972538}
+  m_LocalPosition: {x: -0.059269693, y: 0, z: 0.00000030517577}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2918550213546079950}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &78232937113701473
 GameObject:
   m_ObjectHideFlags: 0
@@ -40,7 +71,7 @@ Transform:
   - {fileID: 5404801265229619131}
   - {fileID: 2543636273977711382}
   - {fileID: 505624062231468394}
-  - {fileID: 9090907951522422750}
+  - {fileID: 8193674375942326155}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &7899913059057069571
@@ -58,7 +89,7 @@ MeshRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 78232937113701473}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
@@ -229,7 +260,6 @@ MonoBehaviour:
   proxy: {fileID: 2545721826767157788}
   pulseRoot: {fileID: 505624062231468394}
   actorRenderers:
-  - {fileID: 3681650287536920052}
   - {fileID: 671226193858547171}
   tierOneColor: {r: 0.24, g: 1, b: 0.78, a: 0.78}
   tierTwoColor: {r: 0.38, g: 0.74, b: 1, a: 0.9}
@@ -242,7 +272,7 @@ MonoBehaviour:
   pulseScale: 0.08
   tierScaleStep: 0.18
   flashScale: 0.22
---- !u!1 &212468656529312523
+--- !u!1 &219766533449515181
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -250,73 +280,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1437707339987578348}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ R Hand
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1437707339987578348
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 212468656529312523}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.7239527, y: -0.07516665, z: 0.02048442, w: 0.68543625}
-  m_LocalPosition: {x: -0.33630037, y: 0.000000019073486, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 7059463178850193541}
-  - {fileID: 6387322613648377111}
-  - {fileID: 1295703163692721028}
-  m_Father: {fileID: 4876204356767449183}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &222457234332995135
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 8275378112817456733}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ L Thigh
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &8275378112817456733
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 222457234332995135}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.015117804, y: 0.9968577, z: -0.008935806, w: 0.07724221}
-  m_LocalPosition: {x: 0.00000022888183, y: 0.00000031487707, z: 0.19341783}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 7169009033620408711}
-  m_Father: {fileID: 193607720336970926}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &246140078262722448
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 8385313024277950385}
+  - component: {fileID: 7211738834201815641}
   m_Layer: 0
   m_Name: HeavyBattleArmor_ Spine1
   m_TagString: Untagged
@@ -324,23 +288,23 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &8385313024277950385
+--- !u!4 &7211738834201815641
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 246140078262722448}
+  m_GameObject: {fileID: 219766533449515181}
   serializedVersion: 2
   m_LocalRotation: {x: 0.0000000037401864, y: -4.626859e-10, z: 1.7305314e-18, w: 1}
   m_LocalPosition: {x: -0.12867896, y: -0.000102533624, z: -2.8515387e-10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1691922522288404840}
-  m_Father: {fileID: 1209124496730082269}
+  - {fileID: 6775740881139896852}
+  m_Father: {fileID: 8921071201326257452}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &423994373254662505
+--- !u!1 &416176422286762796
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -348,92 +312,29 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 6580688837476582218}
+  - component: {fileID: 6451517085705458653}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ L Finger11
+  m_Name: HeavyBattleArmor_ L Foot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &6580688837476582218
+--- !u!4 &6451517085705458653
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 423994373254662505}
+  m_GameObject: {fileID: 416176422286762796}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.000000013433783, y: -0.000000009853388, z: -0.16838938, w: 0.9857206}
-  m_LocalPosition: {x: -0.05416767, y: 0, z: 0.000000019073486}
+  m_LocalRotation: {x: -0.009409093, y: 0.006374021, z: -0.1141866, w: 0.9933943}
+  m_LocalPosition: {x: -0.4000257, y: 0, z: -0.000000038146972}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 7772857943435002620}
-  m_Father: {fileID: 8471069699631661376}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &427955971628565677
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 691052612723881933}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ R Finger12
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &691052612723881933
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 427955971628565677}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.0000000221998, y: -0.0000000026017921, z: -0.11640221, w: 0.9932022}
-  m_LocalPosition: {x: -0.054167632, y: 0, z: -0.000000019073486}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 3012517984394054006}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &464695722094852456
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4017801479193113517}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ R Finger01
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &4017801479193113517
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 464695722094852456}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0.000000044590237, y: 0.0000000031799845, z: -0.071135044, w: 0.9974667}
-  m_LocalPosition: {x: -0.059269637, y: 0.000000038146972, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 34358120105352830}
-  m_Father: {fileID: 7059463178850193541}
+  - {fileID: 3111134980521922251}
+  m_Father: {fileID: 2596179418591926487}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &511689653121912716
 GameObject:
@@ -466,7 +367,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 6794172203611637624}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &566093791288585822
+--- !u!1 &555348051321768675
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -474,31 +375,34 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 4848054885624047397}
+  - component: {fileID: 581989616383439234}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ L Foot
+  m_Name: HeavyBattleArmor_ Pelvis
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &4848054885624047397
+--- !u!4 &581989616383439234
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 566093791288585822}
+  m_GameObject: {fileID: 555348051321768675}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.009409093, y: 0.006374021, z: -0.1141866, w: 0.9933943}
-  m_LocalPosition: {x: -0.4000257, y: 0, z: -0.000000038146972}
+  m_LocalRotation: {x: -0.5, y: 0.5, z: 0.4999993, w: 0.5000007}
+  m_LocalPosition: {x: -0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 7989035543093710158}
-  m_Father: {fileID: 7169009033620408711}
+  - {fileID: 1836486485105884214}
+  - {fileID: 1824116979552878093}
+  - {fileID: 8921071201326257452}
+  - {fileID: 3468639195234134504}
+  m_Father: {fileID: 6705018574203028636}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &695888170987444239
+--- !u!1 &1529752032448657261
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -506,70 +410,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 6114811443033317387}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ L Finger02
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6114811443033317387
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 695888170987444239}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.000000015963826, y: 0.00000001375665, z: -0.07406049, w: 0.9972538}
-  m_LocalPosition: {x: -0.0592696, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 7926148211176069734}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &728706546775230629
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1050156262536114735}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ R Foot
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1050156262536114735
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 728706546775230629}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.009409116, y: -0.0063740974, z: -0.1141842, w: 0.9933946}
-  m_LocalPosition: {x: -0.40002555, y: -0.000000009536743, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 9044264021920560928}
-  m_Father: {fileID: 831751735482345213}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &941876335390552986
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4751386378149508950}
+  - component: {fileID: 1054641683996751421}
   m_Layer: 0
   m_Name: root
   m_TagString: Untagged
@@ -577,23 +418,23 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &4751386378149508950
+--- !u!4 &1054641683996751421
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 941876335390552986}
+  m_GameObject: {fileID: 1529752032448657261}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
   m_LocalPosition: {x: -0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 9070746942448192804}
-  m_Father: {fileID: 9090907951522422750}
+  - {fileID: 6705018574203028636}
+  m_Father: {fileID: 8193674375942326155}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &991754968717215121
+--- !u!1 &1669417778584721499
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -601,31 +442,31 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 4992029874981602721}
+  - component: {fileID: 3688195450588580871}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ R UpperArm
+  m_Name: HeavyBattleArmor_ L UpperArm
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &4992029874981602721
+--- !u!4 &3688195450588580871
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 991754968717215121}
+  m_GameObject: {fileID: 1669417778584721499}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.038810212, y: 0.32646272, z: 0.081562445, w: 0.9408844}
-  m_LocalPosition: {x: -0.17359741, y: 0.0000000047683715, z: 0.00000015258789}
+  m_LocalRotation: {x: 0.038180433, y: -0.32617444, z: 0.083085395, w: 0.9408769}
+  m_LocalPosition: {x: -0.17359741, y: 0.000000011920928, z: -0.00000015258789}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 4876204356767449183}
-  m_Father: {fileID: 8548009405228878698}
+  - {fileID: 6023338486059804529}
+  m_Father: {fileID: 8116931291543302451}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1151552225339789196
+--- !u!1 &1959496036209871783
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -633,7 +474,71 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 3012517984394054006}
+  - component: {fileID: 2596179418591926487}
+  m_Layer: 0
+  m_Name: HeavyBattleArmor_ L Calf
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2596179418591926487
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1959496036209871783}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.0000000011094808, y: 0.0000000075993185, z: 0.09983888, w: 0.99500364}
+  m_LocalPosition: {x: -0.50105995, y: 0, z: -0.000000038146972}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 6451517085705458653}
+  m_Father: {fileID: 1836486485105884214}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2398481540035102581
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6870041997212264125}
+  m_Layer: 0
+  m_Name: HeavyBattleArmor_ R Calf
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6870041997212264125
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2398481540035102581}
+  serializedVersion: 2
+  m_LocalRotation: {x: 7.4384543e-10, y: -0.0000000074133557, z: 0.09983725, w: 0.9950038}
+  m_LocalPosition: {x: -0.5010598, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1438021465422812138}
+  m_Father: {fileID: 1824116979552878093}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2832059163233856657
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3054654257914332374}
   m_Layer: 0
   m_Name: HeavyBattleArmor_ R Finger11
   m_TagString: Untagged
@@ -641,23 +546,23 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &3012517984394054006
+--- !u!4 &3054654257914332374
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1151552225339789196}
+  m_GameObject: {fileID: 2832059163233856657}
   serializedVersion: 2
   m_LocalRotation: {x: -0.000000007344191, y: 0.0000000012545988, z: -0.16838938, w: 0.9857206}
   m_LocalPosition: {x: -0.054167707, y: 0, z: -0.000000038146972}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 691052612723881933}
-  m_Father: {fileID: 6387322613648377111}
+  - {fileID: 2068400004690358636}
+  m_Father: {fileID: 5883259892687832219}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1358969814072968758
+--- !u!1 &3085944761901313756
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -665,133 +570,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 5740945535320095629}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ Head
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &5740945535320095629
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1358969814072968758}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.000000007152921, y: -0.000000083595985, z: 0.031938672, w: 0.99948984}
-  m_LocalPosition: {x: -0.09264648, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 3445980431848620181}
-  m_Father: {fileID: 5044495193843174456}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1785692963791743250
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1295703163692721028}
-  m_Layer: 0
-  m_Name: RefPos_GatllinGun_Action
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1295703163692721028
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1785692963791743250}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0.37196878, y: 0.5902832, z: 0.5572685, w: -0.45017418}
-  m_LocalPosition: {x: -0.21415126, y: 0.06080078, z: 0.040414065}
-  m_LocalScale: {x: 1, y: 0.999999, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1437707339987578348}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2159986916408853437
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6387322613648377111}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ R Finger1
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6387322613648377111
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2159986916408853437}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.0003977858, y: 0.000017447574, z: -0.043818705, w: 0.9990395}
-  m_LocalPosition: {x: -0.1711304, y: -0.0066969297, z: -0.0000053215026}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 3012517984394054006}
-  m_Father: {fileID: 1437707339987578348}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2340629674488615854
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 7772857943435002620}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ L Finger12
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &7772857943435002620
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2340629674488615854}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0.0000000193671, y: -0.0000000052317755, z: -0.116402164, w: 0.9932022}
-  m_LocalPosition: {x: -0.05416767, y: 0.00000015258789, z: -0.000000019073486}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 6580688837476582218}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2587364773476011312
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 7989035543093710158}
+  - component: {fileID: 3111134980521922251}
   m_Layer: 0
   m_Name: HeavyBattleArmor_ L Toe0
   m_TagString: Untagged
@@ -799,22 +578,22 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &7989035543093710158
+--- !u!4 &3111134980521922251
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2587364773476011312}
+  m_GameObject: {fileID: 3085944761901313756}
   serializedVersion: 2
   m_LocalRotation: {x: -0.000000015798134, y: 0.000000015812006, z: -0.7071068, w: 0.7071068}
   m_LocalPosition: {x: -0.16884467, y: 0.22783393, z: 0.014674453}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 4848054885624047397}
+  m_Father: {fileID: 6451517085705458653}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &3424064756657687467
+--- !u!1 &3170678257688695258
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -822,8 +601,170 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 3119777080571542564}
-  - component: {fileID: 3681650287536920052}
+  - component: {fileID: 1242736399631188584}
+  m_Layer: 0
+  m_Name: HeavyBattleArmor_ R Finger0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1242736399631188584
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3170678257688695258}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.63554406, y: 0.4408557, z: 0.13977917, w: 0.6182167}
+  m_LocalPosition: {x: -0.05044571, y: 0.030020751, z: 0.04979204}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2918550213546079950}
+  m_Father: {fileID: 4356238971332419178}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3679629624136774442
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4356238971332419178}
+  m_Layer: 0
+  m_Name: HeavyBattleArmor_ R Hand
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4356238971332419178
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3679629624136774442}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.7239527, y: -0.07516665, z: 0.02048442, w: 0.68543625}
+  m_LocalPosition: {x: -0.33630037, y: 0.000000019073486, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1242736399631188584}
+  - {fileID: 5883259892687832219}
+  - {fileID: 8083434411620829436}
+  m_Father: {fileID: 4056050980132249663}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3745935894213216372
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1824116979552878093}
+  m_Layer: 0
+  m_Name: HeavyBattleArmor_ R Thigh
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1824116979552878093
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3745935894213216372}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.015117142, y: 0.9968576, z: 0.0089344615, w: -0.07724366}
+  m_LocalPosition: {x: -0.00000022888183, y: -0.00000022158689, z: -0.19341783}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 6870041997212264125}
+  m_Father: {fileID: 581989616383439234}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &4175695560086569358
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8603436854527121683}
+  m_Layer: 0
+  m_Name: HeavyBattleArmor_ L Finger1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8603436854527121683
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4175695560086569358}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.00039777832, y: -0.000017447903, z: -0.04381871, w: 0.9990395}
+  m_LocalPosition: {x: -0.17113037, y: -0.0066969297, z: 0.000005302429}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 6931115863142061939}
+  m_Father: {fileID: 414262823794662718}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &4219189061433102628
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2712788032434957424}
+  m_Layer: 0
+  m_Name: HeavyBattleArmor_ L Finger0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2712788032434957424
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4219189061433102628}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.63554406, y: -0.44085568, z: 0.13977915, w: 0.6182167}
+  m_LocalPosition: {x: -0.05044571, y: 0.030020751, z: -0.04979204}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 5440554906666605104}
+  m_Father: {fileID: 414262823794662718}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &4598156510121816525
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8636138338098425653}
+  - component: {fileID: 3532440413980777379}
   m_Layer: 0
   m_Name: SK_SciFiHeavyBattleArmor
   m_TagString: Untagged
@@ -831,28 +772,28 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &3119777080571542564
+--- !u!4 &8636138338098425653
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3424064756657687467}
+  m_GameObject: {fileID: 4598156510121816525}
   serializedVersion: 2
   m_LocalRotation: {x: 0.000000021855694, y: 0, z: -0, w: 1}
   m_LocalPosition: {x: -0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 9090907951522422750}
+  m_Father: {fileID: 8193674375942326155}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!137 &3681650287536920052
+--- !u!137 &3532440413980777379
 SkinnedMeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3424064756657687467}
+  m_GameObject: {fileID: 4598156510121816525}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -900,47 +841,47 @@ SkinnedMeshRenderer:
   m_SkinnedMotionVectors: 1
   m_Mesh: {fileID: 6121310422266669006, guid: ec34f7926b6d82f488661bbad190e30d, type: 3}
   m_Bones:
-  - {fileID: 1691922522288404840}
-  - {fileID: 8385313024277950385}
-  - {fileID: 1209124496730082269}
-  - {fileID: 4992029874981602721}
-  - {fileID: 9044264021920560928}
-  - {fileID: 7580152522610181275}
-  - {fileID: 1437707339987578348}
-  - {fileID: 4876204356767449183}
-  - {fileID: 1050156262536114735}
-  - {fileID: 691052612723881933}
-  - {fileID: 3012517984394054006}
-  - {fileID: 34358120105352830}
-  - {fileID: 6387322613648377111}
-  - {fileID: 4017801479193113517}
-  - {fileID: 7059463178850193541}
-  - {fileID: 8548009405228878698}
-  - {fileID: 831751735482345213}
-  - {fileID: 3445980431848620181}
-  - {fileID: 193607720336970926}
-  - {fileID: 5044495193843174456}
-  - {fileID: 6085557253882608907}
-  - {fileID: 8275378112817456733}
-  - {fileID: 5247013469720547271}
-  - {fileID: 7169009033620408711}
-  - {fileID: 4848054885624047397}
-  - {fileID: 7989035543093710158}
-  - {fileID: 2177945874882078220}
-  - {fileID: 1883877992301747075}
-  - {fileID: 7926148211176069734}
-  - {fileID: 8471069699631661376}
-  - {fileID: 4872532768954868495}
-  - {fileID: 6114811443033317387}
-  - {fileID: 6580688837476582218}
-  - {fileID: 7772857943435002620}
+  - {fileID: 6775740881139896852}
+  - {fileID: 7211738834201815641}
+  - {fileID: 8921071201326257452}
+  - {fileID: 118318821013696497}
+  - {fileID: 3159972437354060322}
+  - {fileID: 1824116979552878093}
+  - {fileID: 4356238971332419178}
+  - {fileID: 4056050980132249663}
+  - {fileID: 1438021465422812138}
+  - {fileID: 2068400004690358636}
+  - {fileID: 3054654257914332374}
+  - {fileID: 6315087013027906961}
+  - {fileID: 5883259892687832219}
+  - {fileID: 2918550213546079950}
+  - {fileID: 1242736399631188584}
+  - {fileID: 7037716874124909377}
+  - {fileID: 6870041997212264125}
+  - {fileID: 9000559747432151544}
+  - {fileID: 581989616383439234}
+  - {fileID: 5609062955952427140}
+  - {fileID: 8116931291543302451}
+  - {fileID: 1836486485105884214}
+  - {fileID: 3688195450588580871}
+  - {fileID: 2596179418591926487}
+  - {fileID: 6451517085705458653}
+  - {fileID: 3111134980521922251}
+  - {fileID: 6023338486059804529}
+  - {fileID: 414262823794662718}
+  - {fileID: 5440554906666605104}
+  - {fileID: 8603436854527121683}
+  - {fileID: 2712788032434957424}
+  - {fileID: 3095404510605187060}
+  - {fileID: 6931115863142061939}
+  - {fileID: 5381836688333396510}
   m_BlendShapeWeights: []
-  m_RootBone: {fileID: 193607720336970926}
+  m_RootBone: {fileID: 581989616383439234}
   m_AABB:
     m_Center: {x: 0.042421043, y: 0.01110667, z: -0.0000020861626}
     m_Extent: {x: 1.0221417, y: 0.42192674, z: 1.1462216}
   m_DirtyAABB: 0
---- !u!1 &3497593937652553359
+--- !u!1 &4918046318551582137
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -948,190 +889,30 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 9070746942448192804}
+  - component: {fileID: 9000559747432151544}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_
+  m_Name: HeavyBattleArmor_ Ponytail1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &9070746942448192804
+--- !u!4 &9000559747432151544
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3497593937652553359}
+  m_GameObject: {fileID: 4918046318551582137}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.00000002239052, y: -0.000000001317053, z: 0.70710564, w: 0.7071079}
-  m_LocalPosition: {x: -0, y: 0, z: 1.0671154}
+  m_LocalRotation: {x: 1.3225928e-12, y: 0.0000023413422, z: -0.84415317, w: 0.5361021}
+  m_LocalPosition: {x: -0.05376053, y: 0.018964844, z: 0.00000009542789}
   m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 193607720336970926}
-  m_Father: {fileID: 4751386378149508950}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &3529944791814325883
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1209124496730082269}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ Spine
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1209124496730082269
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3529944791814325883}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0.000002088401, y: 0.00000069739724, z: -0.0003981595, w: 0.99999994}
-  m_LocalPosition: {x: -0.1344905, y: -0.00010241124, z: 0.0000001876567}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 8385313024277950385}
-  m_Father: {fileID: 193607720336970926}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &4988114233017179385
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4872532768954868495}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ L Finger0
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &4872532768954868495
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4988114233017179385}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.63554406, y: -0.44085568, z: 0.13977915, w: 0.6182167}
-  m_LocalPosition: {x: -0.05044571, y: 0.030020751, z: -0.04979204}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 7926148211176069734}
-  m_Father: {fileID: 1883877992301747075}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &5601450287441356133
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 7169009033620408711}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ L Calf
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &7169009033620408711
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5601450287441356133}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.0000000011094808, y: 0.0000000075993185, z: 0.09983888, w: 0.99500364}
-  m_LocalPosition: {x: -0.50105995, y: 0, z: -0.000000038146972}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 4848054885624047397}
-  m_Father: {fileID: 8275378112817456733}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &5634015814406360214
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 7059463178850193541}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ R Finger0
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &7059463178850193541
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5634015814406360214}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0.63554406, y: 0.4408557, z: 0.13977917, w: 0.6182167}
-  m_LocalPosition: {x: -0.05044571, y: 0.030020751, z: 0.04979204}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 4017801479193113517}
-  m_Father: {fileID: 1437707339987578348}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &5666607330829403559
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6962540780961246055}
-  m_Layer: 0
-  m_Name: RefPos_GatllinGun_Idle
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6962540780961246055
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5666607330829403559}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0.2652764, y: 0.25091535, z: -0.6766662, w: 0.6393691}
-  m_LocalPosition: {x: -0.18537566, y: -0.38884833, z: -0.37266907}
-  m_LocalScale: {x: 1.000001, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 193607720336970926}
+  m_Father: {fileID: 4482096242989310331}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &5678166132670856935
+--- !u!1 &4951476021294698342
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1139,31 +920,33 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7580152522610181275}
+  - component: {fileID: 6775740881139896852}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ R Thigh
+  m_Name: HeavyBattleArmor_ Spine2
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &7580152522610181275
+--- !u!4 &6775740881139896852
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5678166132670856935}
+  m_GameObject: {fileID: 4951476021294698342}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.015117142, y: 0.9968576, z: 0.0089344615, w: -0.07724366}
-  m_LocalPosition: {x: -0.00000022888183, y: -0.00000022158689, z: -0.19341783}
+  m_LocalRotation: {x: 0.000000003728248, y: -0.000000003722323, z: -1.1641531e-10, w: 1}
+  m_LocalPosition: {x: -0.12876678, y: -0.00021316923, z: -5.928291e-10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 831751735482345213}
-  m_Father: {fileID: 193607720336970926}
+  - {fileID: 8116931291543302451}
+  - {fileID: 5609062955952427140}
+  - {fileID: 7037716874124909377}
+  m_Father: {fileID: 7211738834201815641}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &5857429689450243394
+--- !u!1 &5119892122809736971
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1171,31 +954,30 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 8471069699631661376}
+  - component: {fileID: 3095404510605187060}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ L Finger1
+  m_Name: HeavyBattleArmor_ L Finger02
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &8471069699631661376
+--- !u!4 &3095404510605187060
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5857429689450243394}
+  m_GameObject: {fileID: 5119892122809736971}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.00039777832, y: -0.000017447903, z: -0.04381871, w: 0.9990395}
-  m_LocalPosition: {x: -0.17113037, y: -0.0066969297, z: 0.000005302429}
+  m_LocalRotation: {x: 0.000000015963826, y: 0.00000001375665, z: -0.07406049, w: 0.9972538}
+  m_LocalPosition: {x: -0.0592696, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 6580688837476582218}
-  m_Father: {fileID: 1883877992301747075}
+  m_Children: []
+  m_Father: {fileID: 5440554906666605104}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &6068870494904017012
+--- !u!1 &5334662847505941955
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1203,29 +985,60 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 6085557253882608907}
+  - component: {fileID: 1438021465422812138}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ L Clavicle
+  m_Name: HeavyBattleArmor_ R Foot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &6085557253882608907
+--- !u!4 &1438021465422812138
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6068870494904017012}
+  m_GameObject: {fileID: 5334662847505941955}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.6941136, y: -0.031649075, z: 0.7185426, w: 0.030021094}
-  m_LocalPosition: {x: -0.20474608, y: -0.030367378, z: 0.103690974}
+  m_LocalRotation: {x: 0.009409116, y: -0.0063740974, z: -0.1141842, w: 0.9933946}
+  m_LocalPosition: {x: -0.40002555, y: -0.000000009536743, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 5247013469720547271}
-  m_Father: {fileID: 1691922522288404840}
+  - {fileID: 3159972437354060322}
+  m_Father: {fileID: 6870041997212264125}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &5686332596962115894
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2068400004690358636}
+  m_Layer: 0
+  m_Name: HeavyBattleArmor_ R Finger12
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2068400004690358636
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5686332596962115894}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.0000000221998, y: -0.0000000026017921, z: -0.11640221, w: 0.9932022}
+  m_LocalPosition: {x: -0.054167632, y: 0, z: -0.000000019073486}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3054654257914332374}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6170882508299509705
 GameObject:
@@ -1317,7 +1130,7 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &6453196339052661520
+--- !u!1 &6350829953175468554
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1325,28 +1138,93 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 3445980431848620181}
+  - component: {fileID: 6931115863142061939}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ Ponytail1
+  m_Name: HeavyBattleArmor_ L Finger11
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &3445980431848620181
+--- !u!4 &6931115863142061939
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6453196339052661520}
+  m_GameObject: {fileID: 6350829953175468554}
   serializedVersion: 2
-  m_LocalRotation: {x: 1.3225928e-12, y: 0.0000023413422, z: -0.84415317, w: 0.5361021}
-  m_LocalPosition: {x: -0.05376053, y: 0.018964844, z: 0.00000009542789}
+  m_LocalRotation: {x: 0.000000013433783, y: -0.000000009853388, z: -0.16838938, w: 0.9857206}
+  m_LocalPosition: {x: -0.05416767, y: 0, z: 0.000000019073486}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 5740945535320095629}
+  m_Children:
+  - {fileID: 5381836688333396510}
+  m_Father: {fileID: 8603436854527121683}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &6386403511739873166
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6705018574203028636}
+  m_Layer: 0
+  m_Name: HeavyBattleArmor_
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6705018574203028636
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6386403511739873166}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.00000002239052, y: -0.000000001317053, z: 0.70710564, w: 0.7071079}
+  m_LocalPosition: {x: -0, y: 0, z: 1.0671154}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 581989616383439234}
+  m_Father: {fileID: 1054641683996751421}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &6462645202556899789
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 118318821013696497}
+  m_Layer: 0
+  m_Name: HeavyBattleArmor_ R UpperArm
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &118318821013696497
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6462645202556899789}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.038810212, y: 0.32646272, z: 0.081562445, w: 0.9408844}
+  m_LocalPosition: {x: -0.17359741, y: 0.0000000047683715, z: 0.00000015258789}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 4056050980132249663}
+  m_Father: {fileID: 7037716874124909377}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6495497791770437091
 GameObject:
@@ -1438,7 +1316,7 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &6679643978111832323
+--- !u!1 &6585517131618174765
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1446,31 +1324,31 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 8548009405228878698}
+  - component: {fileID: 1836486485105884214}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ R Clavicle
+  m_Name: HeavyBattleArmor_ L Thigh
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &8548009405228878698
+--- !u!4 &1836486485105884214
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6679643978111832323}
+  m_GameObject: {fileID: 6585517131618174765}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.6941137, y: 0.03164709, z: 0.71854264, w: 0.030019158}
-  m_LocalPosition: {x: -0.20474608, y: -0.0303668, z: -0.103691146}
+  m_LocalRotation: {x: 0.015117804, y: 0.9968577, z: -0.008935806, w: 0.07724221}
+  m_LocalPosition: {x: 0.00000022888183, y: 0.00000031487707, z: 0.19341783}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 4992029874981602721}
-  m_Father: {fileID: 1691922522288404840}
+  - {fileID: 2596179418591926487}
+  m_Father: {fileID: 581989616383439234}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &6704756860439896923
+--- !u!1 &6617600385852529137
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1478,7 +1356,102 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7926148211176069734}
+  - component: {fileID: 4482096242989310331}
+  m_Layer: 0
+  m_Name: HeavyBattleArmor_ Head
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4482096242989310331
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6617600385852529137}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.000000007152921, y: -0.000000083595985, z: 0.031938672, w: 0.99948984}
+  m_LocalPosition: {x: -0.09264648, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 9000559747432151544}
+  m_Father: {fileID: 5609062955952427140}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7216696057798474269
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3468639195234134504}
+  m_Layer: 0
+  m_Name: RefPos_GatllinGun_Idle
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3468639195234134504
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7216696057798474269}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.2652764, y: 0.25091535, z: -0.6766662, w: 0.6393691}
+  m_LocalPosition: {x: -0.18537566, y: -0.38884833, z: -0.37266907}
+  m_LocalScale: {x: 1.000001, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 581989616383439234}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7360598154998999862
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4056050980132249663}
+  m_Layer: 0
+  m_Name: HeavyBattleArmor_ R Forearm
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4056050980132249663
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7360598154998999862}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.000000023910177, y: -0.00000004060479, z: 0.20888135, w: 0.977941}
+  m_LocalPosition: {x: -0.44053176, y: 0.000000009536743, z: 0.00000015258789}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 4356238971332419178}
+  m_Father: {fileID: 118318821013696497}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7420864821039230710
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5440554906666605104}
   m_Layer: 0
   m_Name: HeavyBattleArmor_ L Finger01
   m_TagString: Untagged
@@ -1486,23 +1459,23 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &7926148211176069734
+--- !u!4 &5440554906666605104
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6704756860439896923}
+  m_GameObject: {fileID: 7420864821039230710}
   serializedVersion: 2
   m_LocalRotation: {x: 0.000000028666829, y: -0.000000016983403, z: -0.07113506, w: 0.9974667}
   m_LocalPosition: {x: -0.059269655, y: -0.000000076293944, z: -0.00000015258789}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 6114811443033317387}
-  m_Father: {fileID: 4872532768954868495}
+  - {fileID: 3095404510605187060}
+  m_Father: {fileID: 2712788032434957424}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &6981926529399682663
+--- !u!1 &7482551796424076031
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1510,7 +1483,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1883877992301747075}
+  - component: {fileID: 414262823794662718}
   m_Layer: 0
   m_Name: HeavyBattleArmor_ L Hand
   m_TagString: Untagged
@@ -1518,24 +1491,24 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &1883877992301747075
+--- !u!4 &414262823794662718
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6981926529399682663}
+  m_GameObject: {fileID: 7482551796424076031}
   serializedVersion: 2
   m_LocalRotation: {x: -0.7239527, y: 0.07516661, z: 0.020484393, w: 0.6854363}
   m_LocalPosition: {x: -0.33630037, y: -0.000000019073486, z: -0.00000015258789}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 4872532768954868495}
-  - {fileID: 8471069699631661376}
-  m_Father: {fileID: 2177945874882078220}
+  - {fileID: 2712788032434957424}
+  - {fileID: 8603436854527121683}
+  m_Father: {fileID: 6023338486059804529}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &7195886222625929605
+--- !u!1 &7689393410855894695
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1543,7 +1516,101 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 2177945874882078220}
+  - component: {fileID: 5381836688333396510}
+  m_Layer: 0
+  m_Name: HeavyBattleArmor_ L Finger12
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5381836688333396510
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7689393410855894695}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.0000000193671, y: -0.0000000052317755, z: -0.116402164, w: 0.9932022}
+  m_LocalPosition: {x: -0.05416767, y: 0.00000015258789, z: -0.000000019073486}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6931115863142061939}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7731795906119479513
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8116931291543302451}
+  m_Layer: 0
+  m_Name: HeavyBattleArmor_ L Clavicle
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8116931291543302451
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7731795906119479513}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.6941136, y: -0.031649075, z: 0.7185426, w: 0.030021094}
+  m_LocalPosition: {x: -0.20474608, y: -0.030367378, z: 0.103690974}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 3688195450588580871}
+  m_Father: {fileID: 6775740881139896852}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7916913303955391816
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8083434411620829436}
+  m_Layer: 0
+  m_Name: RefPos_GatllinGun_Action
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8083434411620829436
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7916913303955391816}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.37196878, y: 0.5902832, z: 0.5572685, w: -0.45017418}
+  m_LocalPosition: {x: -0.21415126, y: 0.06080078, z: 0.040414065}
+  m_LocalScale: {x: 1, y: 0.999999, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4356238971332419178}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7950482024377226646
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6023338486059804529}
   m_Layer: 0
   m_Name: HeavyBattleArmor_ L Forearm
   m_TagString: Untagged
@@ -1551,23 +1618,23 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &2177945874882078220
+--- !u!4 &6023338486059804529
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7195886222625929605}
+  m_GameObject: {fileID: 7950482024377226646}
   serializedVersion: 2
   m_LocalRotation: {x: -0.000000010541777, y: 0.000000012900647, z: 0.2196583, w: 0.9755769}
   m_LocalPosition: {x: -0.4405316, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1883877992301747075}
-  m_Father: {fileID: 5247013469720547271}
+  - {fileID: 414262823794662718}
+  m_Father: {fileID: 3688195450588580871}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &7384206708835650474
+--- !u!1 &8057973311325160172
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1575,7 +1642,7 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 9044264021920560928}
+  - component: {fileID: 3159972437354060322}
   m_Layer: 0
   m_Name: HeavyBattleArmor_ R Toe0
   m_TagString: Untagged
@@ -1583,22 +1650,22 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &9044264021920560928
+--- !u!4 &3159972437354060322
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7384206708835650474}
+  m_GameObject: {fileID: 8057973311325160172}
   serializedVersion: 2
   m_LocalRotation: {x: 0.000000015805508, y: -0.000000015804632, z: -0.7071068, w: 0.7071068}
   m_LocalPosition: {x: -0.16884467, y: 0.22783393, z: -0.014674415}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1050156262536114735}
+  m_Father: {fileID: 1438021465422812138}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &7514733461179356700
+--- !u!1 &8190294712425214527
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1606,30 +1673,31 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 34358120105352830}
+  - component: {fileID: 5883259892687832219}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ R Finger02
+  m_Name: HeavyBattleArmor_ R Finger1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &34358120105352830
+--- !u!4 &5883259892687832219
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7514733461179356700}
+  m_GameObject: {fileID: 8190294712425214527}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.000000014860238, y: -0.0000000011035869, z: -0.07406046, w: 0.9972538}
-  m_LocalPosition: {x: -0.059269693, y: 0, z: 0.00000030517577}
+  m_LocalRotation: {x: 0.0003977858, y: 0.000017447574, z: -0.043818705, w: 0.9990395}
+  m_LocalPosition: {x: -0.1711304, y: -0.0066969297, z: -0.0000053215026}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4017801479193113517}
+  m_Children:
+  - {fileID: 3054654257914332374}
+  m_Father: {fileID: 4356238971332419178}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &8414422243862896776
+--- !u!1 &8367516416467965371
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1637,8 +1705,40 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 9090907951522422750}
-  - component: {fileID: 289798510455988637}
+  - component: {fileID: 5609062955952427140}
+  m_Layer: 0
+  m_Name: HeavyBattleArmor_ Neck
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5609062955952427140
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8367516416467965371}
+  serializedVersion: 2
+  m_LocalRotation: {x: -1.01970705e-13, y: 0.00000020671361, z: -0.074528985, w: 0.99721885}
+  m_LocalPosition: {x: -0.26668212, y: -0.037445597, z: -4.1737167e-10}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 4482096242989310331}
+  m_Father: {fileID: 6775740881139896852}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &8448027714567016703
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8193674375942326155}
+  - component: {fileID: 5261330186475660762}
   m_Layer: 0
   m_Name: SummonSlot1Visual_ShieldBreakerElite
   m_TagString: Untagged
@@ -1646,31 +1746,31 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &9090907951522422750
+--- !u!4 &8193674375942326155
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8414422243862896776}
+  m_GameObject: {fileID: 8448027714567016703}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -0.04, z: -0.08}
   m_LocalScale: {x: 0.62, y: 0.62, z: 0.62}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 4751386378149508950}
-  - {fileID: 3119777080571542564}
+  - {fileID: 1054641683996751421}
+  - {fileID: 8636138338098425653}
   m_Father: {fileID: 6794172203611637624}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!95 &289798510455988637
+--- !u!95 &5261330186475660762
 Animator:
   serializedVersion: 7
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8414422243862896776}
+  m_GameObject: {fileID: 8448027714567016703}
   m_Enabled: 1
   m_Avatar: {fileID: 9000000, guid: ec34f7926b6d82f488661bbad190e30d, type: 3}
   m_Controller: {fileID: 9100000, guid: 6c9d6cd483a475b4995cfdb17101ea5b, type: 2}
@@ -1680,12 +1780,12 @@ Animator:
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
-  m_WarningMessage: 
+  m_WarningMessage:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
---- !u!1 &8645248595087295700
+--- !u!1 &8557636807364047680
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1693,34 +1793,31 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 193607720336970926}
+  - component: {fileID: 8921071201326257452}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ Pelvis
+  m_Name: HeavyBattleArmor_ Spine
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &193607720336970926
+--- !u!4 &8921071201326257452
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8645248595087295700}
+  m_GameObject: {fileID: 8557636807364047680}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.5, y: 0.5, z: 0.4999993, w: 0.5000007}
-  m_LocalPosition: {x: -0, y: 0, z: 0}
+  m_LocalRotation: {x: -0.000002088401, y: 0.00000069739724, z: -0.0003981595, w: 0.99999994}
+  m_LocalPosition: {x: -0.1344905, y: -0.00010241124, z: 0.0000001876567}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 8275378112817456733}
-  - {fileID: 7580152522610181275}
-  - {fileID: 1209124496730082269}
-  - {fileID: 6962540780961246055}
-  m_Father: {fileID: 9070746942448192804}
+  - {fileID: 7211738834201815641}
+  m_Father: {fileID: 581989616383439234}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &8710093606705567676
+--- !u!1 &8738983627001896381
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1728,31 +1825,31 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 4876204356767449183}
+  - component: {fileID: 2918550213546079950}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ R Forearm
+  m_Name: HeavyBattleArmor_ R Finger01
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &4876204356767449183
+--- !u!4 &2918550213546079950
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8710093606705567676}
+  m_GameObject: {fileID: 8738983627001896381}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.000000023910177, y: -0.00000004060479, z: 0.20888135, w: 0.977941}
-  m_LocalPosition: {x: -0.44053176, y: 0.000000009536743, z: 0.00000015258789}
+  m_LocalRotation: {x: -0.000000044590237, y: 0.0000000031799845, z: -0.071135044, w: 0.9974667}
+  m_LocalPosition: {x: -0.059269637, y: 0.000000038146972, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1437707339987578348}
-  m_Father: {fileID: 4992029874981602721}
+  - {fileID: 6315087013027906961}
+  m_Father: {fileID: 1242736399631188584}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &8826608001375813581
+--- !u!1 &8795696802326517717
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1760,125 +1857,27 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 5247013469720547271}
+  - component: {fileID: 7037716874124909377}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ L UpperArm
+  m_Name: HeavyBattleArmor_ R Clavicle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &5247013469720547271
+--- !u!4 &7037716874124909377
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8826608001375813581}
+  m_GameObject: {fileID: 8795696802326517717}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.038180433, y: -0.32617444, z: 0.083085395, w: 0.9408769}
-  m_LocalPosition: {x: -0.17359741, y: 0.000000011920928, z: -0.00000015258789}
+  m_LocalRotation: {x: 0.6941137, y: 0.03164709, z: 0.71854264, w: 0.030019158}
+  m_LocalPosition: {x: -0.20474608, y: -0.0303668, z: -0.103691146}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 2177945874882078220}
-  m_Father: {fileID: 6085557253882608907}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &8945024934269508973
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 831751735482345213}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ R Calf
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &831751735482345213
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8945024934269508973}
-  serializedVersion: 2
-  m_LocalRotation: {x: 7.4384543e-10, y: -0.0000000074133557, z: 0.09983725, w: 0.9950038}
-  m_LocalPosition: {x: -0.5010598, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1050156262536114735}
-  m_Father: {fileID: 7580152522610181275}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &8985056653257328112
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 5044495193843174456}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ Neck
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &5044495193843174456
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8985056653257328112}
-  serializedVersion: 2
-  m_LocalRotation: {x: -1.01970705e-13, y: 0.00000020671361, z: -0.074528985, w: 0.99721885}
-  m_LocalPosition: {x: -0.26668212, y: -0.037445597, z: -4.1737167e-10}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 5740945535320095629}
-  m_Father: {fileID: 1691922522288404840}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &9117924263650321681
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1691922522288404840}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ Spine2
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1691922522288404840
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 9117924263650321681}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.000000003728248, y: -0.000000003722323, z: -1.1641531e-10, w: 1}
-  m_LocalPosition: {x: -0.12876678, y: -0.00021316923, z: -5.928291e-10}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 6085557253882608907}
-  - {fileID: 5044495193843174456}
-  - {fileID: 8548009405228878698}
-  m_Father: {fileID: 8385313024277950385}
+  - {fileID: 118318821013696497}
+  m_Father: {fileID: 6775740881139896852}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
