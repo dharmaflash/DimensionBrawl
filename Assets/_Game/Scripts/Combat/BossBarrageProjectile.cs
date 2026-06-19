@@ -18,9 +18,15 @@ namespace DimensionBrawl.Combat
         private float speed;
         private float remainingLifetime;
         private bool active;
+        private ProjectileImpactResult lastImpactResult = ProjectileImpactResult.None;
+        private CombatHealth lastImpactTargetHealth;
+        private SummonFrontlineProxy lastImpactTargetProxy;
 
         public bool IsActive => active && gameObject.activeInHierarchy;
         public DamageTeam SourceTeam => sourceTeam;
+        public ProjectileImpactResult LastImpactResult => lastImpactResult;
+        public CombatHealth LastImpactTargetHealth => lastImpactTargetHealth;
+        public SummonFrontlineProxy LastImpactTargetProxy => lastImpactTargetProxy;
 
         private void Awake()
         {
@@ -44,6 +50,7 @@ namespace DimensionBrawl.Combat
             speed = Mathf.Max(0f, newSpeed);
             remainingLifetime = Mathf.Max(0.01f, lifetimeSeconds);
             active = true;
+            SetLastImpact(ProjectileImpactResult.None, null, null);
 
             if (triggerCollider is SphereCollider sphereCollider && radius > 0f)
             {
@@ -78,19 +85,47 @@ namespace DimensionBrawl.Combat
         {
             if (!active || hitCollider == null)
             {
+                SetLastImpact(ProjectileImpactResult.IgnoredInactive, null, null);
                 return false;
             }
 
             if (hitCollider.GetComponentInParent<SummonPressureScreen>() != null)
             {
+                SetLastImpact(ProjectileImpactResult.IgnoredPressureScreen, null, null);
                 return false;
             }
 
-            CombatHealth targetHealth = hitCollider.GetComponentInParent<CombatHealth>();
-            if (targetHealth == null
-                || targetHealth == sourceHealth
-                || !CombatTeamUtility.AreHostile(sourceTeam, targetHealth.Team))
+            SummonFrontlineProxy targetProxy = hitCollider.GetComponentInParent<SummonFrontlineProxy>();
+            if (targetProxy != null && !targetProxy.IsActive)
             {
+                SetLastImpact(ProjectileImpactResult.IgnoredInactiveSummon, null, targetProxy);
+                return false;
+            }
+
+            CombatHealth targetHealth = targetProxy != null
+                ? targetProxy.Health ?? hitCollider.GetComponentInParent<CombatHealth>()
+                : hitCollider.GetComponentInParent<CombatHealth>();
+            if (targetHealth == null)
+            {
+                SetLastImpact(ProjectileImpactResult.IgnoredMissingHealth, null, targetProxy);
+                return false;
+            }
+
+            if (targetHealth == sourceHealth)
+            {
+                SetLastImpact(ProjectileImpactResult.IgnoredSelf, targetHealth, targetProxy);
+                return false;
+            }
+
+            if (!targetHealth.IsAlive)
+            {
+                SetLastImpact(ProjectileImpactResult.IgnoredDeadTarget, targetHealth, targetProxy);
+                return false;
+            }
+
+            if (!CombatTeamUtility.AreHostile(sourceTeam, targetHealth.Team))
+            {
+                SetLastImpact(ProjectileImpactResult.IgnoredNonHostile, targetHealth, targetProxy);
                 return false;
             }
 
@@ -108,6 +143,10 @@ namespace DimensionBrawl.Combat
                 Deactivate();
             }
 
+            SetLastImpact(
+                applied ? ProjectileImpactResult.AppliedDamage : ProjectileImpactResult.IgnoredDamageRejected,
+                targetHealth,
+                targetProxy);
             return applied;
         }
 
@@ -116,6 +155,16 @@ namespace DimensionBrawl.Combat
             active = false;
             remainingLifetime = 0f;
             gameObject.SetActive(false);
+        }
+
+        private void SetLastImpact(
+            ProjectileImpactResult result,
+            CombatHealth targetHealth,
+            SummonFrontlineProxy targetProxy)
+        {
+            lastImpactResult = result;
+            lastImpactTargetHealth = targetHealth;
+            lastImpactTargetProxy = targetProxy;
         }
 
         private void Update()

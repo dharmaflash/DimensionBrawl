@@ -14,6 +14,9 @@ namespace DimensionBrawl.Player
         private readonly Queue<GameObject> entryCuePool = new Queue<GameObject>();
         private readonly SummonFrontlineProxyPool summonActorPool = new SummonFrontlineProxyPool();
         private SummonFrontlineProxy lastSummonActor;
+        private string lastSummonActorRoleId;
+        private int lastVolleyWaveCount;
+        private int totalVolleyWaveCount;
 
         public SupportSummonSlotExecutor(PlayerSupportSummonSlotAction owner)
         {
@@ -22,6 +25,9 @@ namespace DimensionBrawl.Player
 
         public int ActiveProjectileCount => CountActiveProjectiles();
         public int ActiveSummonActorCount => summonActorPool.CountActive();
+        public string LastSummonActorRoleId => lastSummonActorRoleId;
+        public int LastVolleyWaveCount => lastVolleyWaveCount;
+        public int TotalVolleyWaveCount => totalVolleyWaveCount;
         public bool LastSummonActorHasHealth => lastSummonActor != null && lastSummonActor.HasHealth;
         public float LastSummonActorHealthRatio => lastSummonActor != null ? lastSummonActor.HealthRatio : 0f;
         public float LastSummonActorRemainingLifetimeSeconds => lastSummonActor != null
@@ -99,6 +105,8 @@ namespace DimensionBrawl.Player
                 actorAdvanceSeconds);
             if (actor != null)
             {
+                lastSummonActorRoleId = settings.ActorRoleId;
+                lastVolleyWaveCount = 0;
                 owner.RunRoutine(RunPersistentVolley(actor, projectileTargetPosition, settings));
             }
         }
@@ -335,6 +343,8 @@ namespace DimensionBrawl.Player
                 Vector3 facingDirection = ResolvePlanarDirection(targetPosition - spawnBase);
                 FireProjectiles(spawnBase, targetLane.x, targetLane.y, facingDirection, settings);
                 firedCount++;
+                lastVolleyWaveCount = firedCount;
+                totalVolleyWaveCount++;
 
                 if (firedCount >= owner.MaxVolleyCount)
                 {

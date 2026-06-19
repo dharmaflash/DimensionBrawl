@@ -40,6 +40,7 @@ namespace DimensionBrawl.Tests
 
             BossSummonDuelReviewOwner duelOwner = RequireObject<BossSummonDuelReviewOwner>();
             PlayerSkill1Action skill1Action = RequireObject<PlayerSkill1Action>();
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
             PlayerSummonSlot1Action summonSlot1Action = RequireObject<PlayerSummonSlot1Action>();
             PlayerSupportSummonSlotAction summonSlot2Action = RequireSupportSummonAction("SummonSlot2");
             PlayerSupportSummonSlotAction summonSlot3Action = RequireSupportSummonAction("SummonSlot3");
@@ -135,6 +136,7 @@ namespace DimensionBrawl.Tests
                 DamageTeam.AllySummon,
                 "SummonSlot3 actor prefab",
                 expectPressureScreen: true);
+            AssertSupportSummonRoleProfiles(summonSlot2Action, summonSlot3Action);
             Assert.Less(
                 summonSlot2ActorPrefab.GetComponent<CombatHealth>().MaxHealth,
                 summonSlot3ActorPrefab.GetComponent<CombatHealth>().MaxHealth,
@@ -146,6 +148,9 @@ namespace DimensionBrawl.Tests
                 expectPressureScreen: true);
 
             Assert.AreSame(duelOwner, GetObjectReference<BossSummonDuelReviewOwner>(reviewHud, "duelReviewOwner"));
+            Assert.IsTrue(
+                targetSelector.IncludesActiveHostileSummons,
+                "Player response targeting should include active hostile summon bodies without expanding authored scene candidates.");
             Assert.AreSame(summonSlot2Action, GetObjectReference<PlayerSupportSummonSlotAction>(reviewHud, "summonSlot2Action"));
             Assert.AreSame(summonSlot3Action, GetObjectReference<PlayerSupportSummonSlotAction>(reviewHud, "summonSlot3Action"));
             Assert.AreSame(summonSlot2Action, GetObjectReference<PlayerSupportSummonSlotAction>(mobileHud, "summonSlot2Action"));
@@ -160,6 +165,7 @@ namespace DimensionBrawl.Tests
             yield return null;
 
             SummonEnergyLadder energyLadder = RequireObject<SummonEnergyLadder>();
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
             PlayerSupportSummonSlotAction summonSlot2Action = RequireSupportSummonAction("SummonSlot2");
             PlayerSupportSummonSlotAction summonSlot3Action = RequireSupportSummonAction("SummonSlot3");
             BossSummonPressureAction bossSummonPressureAction = RequireObject<BossSummonPressureAction>();
@@ -169,6 +175,7 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(summonSlot2Action.TryUseSummon());
             Assert.AreEqual(1, summonSlot2Action.LastSpentTier);
             Assert.AreEqual(1, summonSlot2Action.TotalUseCount);
+            Assert.AreEqual("BacklineMarksman", summonSlot2Action.LastSummonActorRoleId);
             Assert.Greater(summonSlot2Action.ActiveSummonActorCount, 0);
             Assert.IsTrue(
                 summonSlot2Action.LastSummonActorHasHealth,
@@ -183,11 +190,16 @@ namespace DimensionBrawl.Tests
                 summonSlot2Action.ActiveProjectileCount,
                 0,
                 "S2 should read as a ranged support summon by firing visible lane projectiles after entry.");
+            Assert.GreaterOrEqual(
+                summonSlot2Action.LastVolleyWaveCount,
+                1,
+                "S2 should expose its repeated support-volley behavior for HUD and review tests.");
 
             GrantEnergyToTier(energyLadder, 3);
             Assert.IsTrue(summonSlot3Action.TryUseSummon());
             Assert.AreEqual(3, summonSlot3Action.LastSpentTier);
             Assert.AreEqual(1, summonSlot3Action.TotalUseCount);
+            Assert.AreEqual("VanguardCommander", summonSlot3Action.LastSummonActorRoleId);
             Assert.Greater(summonSlot3Action.ActiveSummonActorCount, 0);
             Assert.IsTrue(
                 summonSlot3Action.LastSummonActorHasHealth,
@@ -202,6 +214,10 @@ namespace DimensionBrawl.Tests
                 summonSlot3Action.ActiveProjectileCount,
                 0,
                 "S3 should read as a vanguard support summon with a visible projectile response, not only a button state.");
+            Assert.GreaterOrEqual(
+                summonSlot3Action.LastVolleyWaveCount,
+                1,
+                "S3 should expose its slower vanguard counter-volley behavior for HUD and review tests.");
 
             Assert.IsTrue(bossSummonPressureAction.TryReleasePressureSummon(2));
             Assert.Greater(bossSummonPressureAction.ActiveSummonActorCount, 0);
@@ -213,6 +229,12 @@ namespace DimensionBrawl.Tests
                 float.IsPositiveInfinity(bossSummonPressureAction.LastSummonActorRemainingLifetimeSeconds),
                 "Boss summon pressure should create a persistent opposing actor until the player answers it.");
             Assert.AreEqual(SummonFrontlineProxyExitReason.None, bossSummonPressureAction.LastSummonActorExitReason);
+            CombatHealth enemySummonHealth = RequireActiveEnemySummonHealth();
+            targetSelector.NotifyTargetContact(enemySummonHealth);
+            Assert.AreSame(
+                enemySummonHealth,
+                targetSelector.CurrentTargetHealth,
+                "The review loop should let player Skill1/ranged fire respond to the active boss summon body.");
         }
 
         private static void AssertBossPressureSlot(
@@ -256,6 +278,57 @@ namespace DimensionBrawl.Tests
                     $"{expectedActionName} should expose a reviewed tier {tier} readout.");
                 Assert.IsTrue(readout.HasReadout);
             }
+        }
+
+        private static void AssertSupportSummonRoleProfiles(
+            PlayerSupportSummonSlotAction summonSlot2Action,
+            PlayerSupportSummonSlotAction summonSlot3Action)
+        {
+            SummonSlotActionProfile slot2Profile =
+                GetObjectReference<SummonSlotActionProfile>(summonSlot2Action, "summonActionProfile");
+            SummonSlotActionProfile slot3Profile =
+                GetObjectReference<SummonSlotActionProfile>(summonSlot3Action, "summonActionProfile");
+            PlayerSummonSlot1Action.SummonTierSettings[] slot2Tiers = slot2Profile.CopyTierSettings();
+            PlayerSummonSlot1Action.SummonTierSettings[] slot3Tiers = slot3Profile.CopyTierSettings();
+
+            Assert.AreEqual("SummonSlot2.BacklineMarksman", slot2Profile.ActionId);
+            Assert.AreEqual("SummonSlot3.VanguardCommander", slot3Profile.ActionId);
+            Assert.AreEqual(3, slot2Tiers.Length);
+            Assert.AreEqual(3, slot3Tiers.Length);
+            for (int i = 0; i < slot2Tiers.Length; i++)
+            {
+                Assert.AreEqual("BacklineMarksman", slot2Tiers[i].ActorRoleId);
+                Assert.AreEqual(0, slot2Tiers[i].ScreenIntercepts);
+                Assert.AreEqual("VanguardCommander", slot3Tiers[i].ActorRoleId);
+                Assert.Greater(slot3Tiers[i].ScreenIntercepts, 0);
+                Assert.Greater(slot3Tiers[i].ActorMaxHealth, slot2Tiers[i].ActorMaxHealth);
+                Assert.GreaterOrEqual(
+                    slot2Tiers[i].ProjectileCount,
+                    slot3Tiers[i].ProjectileCount,
+                    "S2 should keep the frequent marksman volley identity while S3 spends more budget on body/screen.");
+            }
+
+            Assert.Less(
+                GetFloat(summonSlot2Action, "volleyIntervalSeconds"),
+                GetFloat(summonSlot3Action, "volleyIntervalSeconds"),
+                "S2 should cycle its support shots faster than the slower vanguard counter-volley.");
+        }
+
+        private static CombatHealth RequireActiveEnemySummonHealth()
+        {
+            for (int i = 0; i < SummonFrontlineProxy.ActiveRegisteredProxyCount; i++)
+            {
+                Assert.IsTrue(SummonFrontlineProxy.TryGetActiveRegisteredProxy(i, out SummonFrontlineProxy proxy));
+                if (proxy != null
+                    && proxy.Health != null
+                    && proxy.Health.Team == DamageTeam.Enemy)
+                {
+                    return proxy.Health;
+                }
+            }
+
+            Assert.Fail("Boss summon pressure should register an active enemy summon body for player response targeting.");
+            return null;
         }
 
         private static void AssertSummonActorPrefabContract(

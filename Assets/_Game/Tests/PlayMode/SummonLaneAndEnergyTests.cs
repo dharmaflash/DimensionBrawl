@@ -162,6 +162,71 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void PlayerTargetSelectorPrioritizesActiveHostileSummonFrontline()
+        {
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = Vector3.zero;
+            CombatHealth playerHealth = playerObject.AddComponent<CombatHealth>();
+            playerHealth.ConfigureTeam(DamageTeam.Player);
+            PlayerCombatTargetSelector targetSelector = playerObject.AddComponent<PlayerCombatTargetSelector>();
+
+            GameObject bossObject = new GameObject("Boss");
+            bossObject.transform.position = new Vector3(0f, 0f, 8f);
+            CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+            bossHealth.ConfigureTeam(DamageTeam.Enemy);
+
+            GameObject summonObject = new GameObject("BossSummon");
+            summonObject.transform.position = new Vector3(0f, 0f, 3f);
+            CombatHealth summonHealth = summonObject.AddComponent<CombatHealth>();
+            summonHealth.ConfigureTeam(DamageTeam.Enemy);
+            SummonFrontlineProxy summonProxy = summonObject.AddComponent<SummonFrontlineProxy>();
+            summonProxy.ConfigureHealth(summonHealth);
+            summonProxy.Activate(
+                summonObject.transform.position,
+                Vector3.back,
+                2,
+                0f,
+                1f,
+                summonObject.transform.position,
+                0.2f,
+                180f,
+                0.8f);
+
+            var serializedSelector = new SerializedObject(targetSelector);
+            SerializedProperty candidates = serializedSelector.FindProperty("targetCandidates");
+            candidates.arraySize = 1;
+            candidates.GetArrayElementAtIndex(0).objectReferenceValue = bossHealth;
+            serializedSelector.ApplyModifiedPropertiesWithoutUndo();
+
+            Assert.IsTrue(targetSelector.IncludesActiveHostileSummons);
+            Assert.GreaterOrEqual(SummonFrontlineProxy.ActiveRegisteredProxyCount, 1);
+            Assert.IsTrue(targetSelector.RefreshTarget());
+            Assert.AreSame(
+                summonHealth,
+                targetSelector.CurrentTargetHealth,
+                "Player targeting should answer an active boss-side summon body before shooting through to the boss proxy.");
+
+            summonHealth.TryApplyDamage(new DamageInfo(
+                playerHealth,
+                DamageTeam.Player,
+                9999f,
+                summonObject.transform.position,
+                Vector3.forward,
+                0f));
+
+            Assert.IsFalse(summonProxy.IsActive);
+            Assert.IsTrue(targetSelector.RefreshTarget());
+            Assert.AreSame(
+                bossHealth,
+                targetSelector.CurrentTargetHealth,
+                "After the frontline summon is defeated, player targeting should return to the authored boss candidate.");
+
+            Object.DestroyImmediate(summonObject);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+        }
+
+        [Test]
         public void SummonHealthBarPresenterShowsAfterActivationAndTracksDamage()
         {
             GameObject proxyObject = new GameObject("SummonProxy");
@@ -264,6 +329,12 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(SummonFrontlineProxyState.Attacking, proxy.CurrentState);
             proxy.Tick(0.3f);
             Assert.AreEqual(SummonFrontlineProxyState.Advancing, proxy.CurrentState);
+            proxy.Tick(1f);
+            Assert.AreEqual(
+                3f,
+                proxy.transform.position.z,
+                0.001f,
+                "Speed-based summon advance should continue until the target distance is reached, not stop after the old duration value.");
 
             Object.DestroyImmediate(proxyObject);
         }
@@ -293,6 +364,7 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(
                 projectile.TryApplyImpact(screenCollider, Vector3.zero),
                 "Pressure-screen contact should be handled by the screen, not by summon body health.");
+            Assert.AreEqual(ProjectileImpactResult.IgnoredPressureScreen, projectile.LastImpactResult);
             Assert.AreEqual(1f, actorHealth.HealthRatio, 0.001f);
 
             Assert.IsTrue(pressureScreen.TryIntercept(projectile));
@@ -301,10 +373,55 @@ namespace DimensionBrawl.Tests
             projectileObject.SetActive(true);
             projectile.Configure(null, DamageTeam.Player, 30f, Vector3.forward, 0f, 1f, 0.2f);
             Assert.IsTrue(projectile.TryApplyImpact(bodyCollider, Vector3.zero));
+            Assert.AreEqual(ProjectileImpactResult.AppliedDamage, projectile.LastImpactResult);
+            Assert.AreSame(actorHealth, projectile.LastImpactTargetHealth);
             Assert.Less(actorHealth.HealthRatio, 1f);
 
             Object.DestroyImmediate(projectileObject);
             Object.DestroyImmediate(actorObject);
+        }
+
+        [Test]
+        public void LaneActionProjectileReportsInactiveSummonAndDeadBodyContacts()
+        {
+            GameObject inactiveSummonObject = new GameObject("InactiveSummonActor");
+            SphereCollider inactiveSummonCollider = inactiveSummonObject.AddComponent<SphereCollider>();
+            CombatHealth inactiveSummonHealth = inactiveSummonObject.AddComponent<CombatHealth>();
+            inactiveSummonHealth.ConfigureTeam(DamageTeam.Enemy);
+            SummonFrontlineProxy inactiveProxy = inactiveSummonObject.AddComponent<SummonFrontlineProxy>();
+            inactiveProxy.ConfigureHealth(inactiveSummonHealth);
+
+            GameObject projectileObject = new GameObject("PlayerProjectile");
+            projectileObject.AddComponent<SphereCollider>();
+            projectileObject.AddComponent<Rigidbody>();
+            LaneActionProjectile projectile = projectileObject.AddComponent<LaneActionProjectile>();
+            projectile.Configure(null, DamageTeam.Player, 30f, Vector3.forward, 0f, 1f, 0.2f);
+
+            Assert.IsFalse(projectile.TryApplyImpact(inactiveSummonCollider, Vector3.zero));
+            Assert.AreEqual(ProjectileImpactResult.IgnoredInactiveSummon, projectile.LastImpactResult);
+            Assert.AreSame(inactiveProxy, projectile.LastImpactTargetProxy);
+
+            GameObject deadBodyObject = new GameObject("DeadBodyTarget");
+            SphereCollider deadBodyCollider = deadBodyObject.AddComponent<SphereCollider>();
+            CombatHealth deadBodyHealth = deadBodyObject.AddComponent<CombatHealth>();
+            deadBodyHealth.ConfigureTeam(DamageTeam.Enemy);
+            deadBodyHealth.ResetHealthToFull();
+            Assert.IsTrue(deadBodyHealth.TryApplyDamage(new DamageInfo(
+                null,
+                DamageTeam.Player,
+                999f,
+                Vector3.zero,
+                Vector3.forward,
+                0f)));
+
+            projectile.Configure(null, DamageTeam.Player, 30f, Vector3.forward, 0f, 1f, 0.2f);
+            Assert.IsFalse(projectile.TryApplyImpact(deadBodyCollider, Vector3.zero));
+            Assert.AreEqual(ProjectileImpactResult.IgnoredDeadTarget, projectile.LastImpactResult);
+            Assert.AreSame(deadBodyHealth, projectile.LastImpactTargetHealth);
+
+            Object.DestroyImmediate(deadBodyObject);
+            Object.DestroyImmediate(projectileObject);
+            Object.DestroyImmediate(inactiveSummonObject);
         }
 
         [Test]
@@ -326,6 +443,8 @@ namespace DimensionBrawl.Tests
             projectile.Configure(null, DamageTeam.Enemy, 999f, Vector3.back, 0f, 1f, 0.2f);
 
             Assert.IsTrue(projectile.TryApplyImpact(bodyCollider, Vector3.zero));
+            Assert.AreEqual(ProjectileImpactResult.AppliedDamage, projectile.LastImpactResult);
+            Assert.AreSame(proxy, projectile.LastImpactTargetProxy);
             Assert.IsFalse(proxy.IsActive);
             Assert.AreEqual(SummonFrontlineProxyExitReason.Defeated, proxy.LastExitReason);
 
@@ -379,6 +498,7 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(allyClash.IsClashing);
             Assert.AreEqual(1, allyClash.TotalClashCount);
             Assert.AreEqual(DamageTeam.Enemy, allyClash.LastOpponentTeam);
+            Assert.AreEqual(SummonFrontlineClashTargetKind.HostileSummon, allyClash.LastTargetKind);
             allyPresenter.RefreshNow();
             Assert.IsTrue(allyPresenter.IsShowing);
             Assert.AreEqual(1, allyPresenter.LastObservedClashCount);
@@ -389,6 +509,67 @@ namespace DimensionBrawl.Tests
 
             Object.DestroyImmediate(enemyObject);
             Object.DestroyImmediate(allyObject);
+        }
+
+        [Test]
+        public void SummonFrontlineProxyPresenterShowsAttackDamageAndDeathFeedback()
+        {
+            GameObject proxyObject = new GameObject("SummonProxy");
+            CombatHealth health = proxyObject.AddComponent<CombatHealth>();
+            health.ConfigureTeam(DamageTeam.AllySummon);
+            health.ResetHealthToFull();
+            SummonFrontlineProxy proxy = proxyObject.AddComponent<SummonFrontlineProxy>();
+            proxy.ConfigureHealth(health);
+
+            GameObject pulseObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            pulseObject.name = "TierPulseCore";
+            pulseObject.transform.SetParent(proxyObject.transform, worldPositionStays: false);
+            Collider pulseCollider = pulseObject.GetComponent<Collider>();
+            Object.DestroyImmediate(pulseCollider);
+            Renderer pulseRenderer = pulseObject.GetComponent<Renderer>();
+            SummonFrontlineProxyPresenter presenter = proxyObject.AddComponent<SummonFrontlineProxyPresenter>();
+            presenter.ConfigurePresentation(proxy, pulseObject.transform, new[] { pulseRenderer });
+
+            proxy.Activate(Vector3.zero, Vector3.forward, 1, 0f, 1f, 2f, 2f, 120f, 1f);
+            presenter.RefreshNow();
+            Assert.IsTrue(presenter.IsShowing);
+
+            proxy.NotifyAttackPerformed(0.2f);
+            presenter.RefreshNow();
+            Assert.AreEqual(
+                1,
+                presenter.AttackFlashCount,
+                "Summon attack state should produce an in-world attack flash instead of only HUD state.");
+
+            Assert.IsTrue(health.TryApplyDamage(new DamageInfo(
+                null,
+                DamageTeam.Enemy,
+                30f,
+                Vector3.zero,
+                Vector3.back,
+                0f)));
+            Assert.AreEqual(1, presenter.DamageFlashCount);
+
+            Assert.IsTrue(health.TryApplyDamage(new DamageInfo(
+                null,
+                DamageTeam.Enemy,
+                999f,
+                Vector3.zero,
+                Vector3.back,
+                0f)));
+            Assert.IsFalse(proxy.IsActive);
+            Assert.IsTrue(proxy.IsPresentationVisible);
+            presenter.RefreshNow();
+            Assert.IsTrue(presenter.IsShowing);
+            Assert.AreEqual(
+                1,
+                presenter.DeathFlashCount,
+                "Defeated summons should linger briefly for death feedback before the pooled actor hides.");
+
+            proxy.Tick(1f);
+            Assert.IsFalse(proxy.IsPresentationVisible);
+
+            Object.DestroyImmediate(proxyObject);
         }
 
         [Test]
@@ -432,6 +613,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(SummonFrontlineProxyState.Attacking, enemyProxy.CurrentState);
             Assert.AreEqual(1, allyClash.TotalClashCount);
             Assert.AreEqual(DamageTeam.Enemy, allyClash.LastOpponentTeam);
+            Assert.AreEqual(SummonFrontlineClashTargetKind.HostileSummon, allyClash.LastTargetKind);
 
             Object.DestroyImmediate(enemyObject);
             Object.DestroyImmediate(allyObject);
@@ -470,7 +652,72 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(1, allyClash.TotalClashCount);
             Assert.AreEqual(0, allyClash.LastOpponentTier);
             Assert.AreEqual(DamageTeam.Enemy, allyClash.LastOpponentTeam);
+            Assert.AreEqual(SummonFrontlineClashTargetKind.HostileBody, allyClash.LastTargetKind);
 
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(allyObject);
+        }
+
+        [Test]
+        public void SummonFrontlineClashPrioritizesHostileSummonBeforeBodyTarget()
+        {
+            GameObject allyObject = new GameObject("AllySummonActor");
+            SphereCollider allyCollider = allyObject.AddComponent<SphereCollider>();
+            allyCollider.isTrigger = true;
+            allyCollider.center = new Vector3(0f, 0.9f, 0f);
+            allyObject.AddComponent<Rigidbody>().isKinematic = true;
+            CombatHealth allyHealth = allyObject.AddComponent<CombatHealth>();
+            allyHealth.ConfigureTeam(DamageTeam.AllySummon);
+            allyHealth.ResetHealthToFull();
+            SummonFrontlineProxy allyProxy = allyObject.AddComponent<SummonFrontlineProxy>();
+            allyProxy.ConfigureHealth(allyHealth);
+            SummonFrontlineClash allyClash = allyObject.AddComponent<SummonFrontlineClash>();
+            allyClash.ConfigureReferences(allyProxy, allyHealth);
+            allyClash.ConfigureTuning(100f, 0.2f, 0f, 0.3f, 1.2f);
+
+            GameObject bossObject = new GameObject("BossBodyTarget");
+            bossObject.transform.position = Vector3.forward * 0.35f;
+            SphereCollider bossCollider = bossObject.AddComponent<SphereCollider>();
+            bossCollider.center = new Vector3(0f, 0.9f, 0f);
+            bossObject.AddComponent<Rigidbody>().isKinematic = true;
+            CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+            bossHealth.ConfigureTeam(DamageTeam.Enemy);
+            bossHealth.ResetHealthToFull();
+
+            GameObject enemySummonObject = new GameObject("EnemySummonActor");
+            enemySummonObject.transform.position = Vector3.forward * 0.75f;
+            SphereCollider enemyCollider = enemySummonObject.AddComponent<SphereCollider>();
+            enemyCollider.isTrigger = true;
+            enemyCollider.center = new Vector3(0f, 0.9f, 0f);
+            enemySummonObject.AddComponent<Rigidbody>().isKinematic = true;
+            CombatHealth enemyHealth = enemySummonObject.AddComponent<CombatHealth>();
+            enemyHealth.ConfigureTeam(DamageTeam.Enemy);
+            enemyHealth.ResetHealthToFull();
+            SummonFrontlineProxy enemyProxy = enemySummonObject.AddComponent<SummonFrontlineProxy>();
+            enemyProxy.ConfigureHealth(enemyHealth);
+
+            allyProxy.Activate(Vector3.zero, Vector3.forward, 1, 0f, 1f, 4f, 4f, 140f, 1f);
+            enemyProxy.Activate(enemySummonObject.transform.position, Vector3.back, 1, 0f, 1f, 4f, 4f, 120f, 1f);
+            Physics.SyncTransforms();
+
+            allyClash.Tick(0.1f);
+
+            Assert.Less(enemyHealth.CurrentHealth, enemyHealth.MaxHealth);
+            Assert.AreEqual(
+                bossHealth.MaxHealth,
+                bossHealth.CurrentHealth,
+                0.001f,
+                "A hostile summon inside engage range should block body/boss damage priority.");
+            Assert.AreEqual(SummonFrontlineClashTargetKind.HostileSummon, allyClash.LastTargetKind);
+            Assert.IsTrue(allyProxy.IsAdvanceHeld);
+            Assert.IsTrue(enemyProxy.IsAdvanceHeld);
+            Assert.AreEqual(
+                Quaternion.LookRotation(Vector3.forward, Vector3.up).eulerAngles.y,
+                allyObject.transform.rotation.eulerAngles.y,
+                0.001f,
+                "The clashing ally summon should face the hostile summon instead of staying visually detached.");
+
+            Object.DestroyImmediate(enemySummonObject);
             Object.DestroyImmediate(bossObject);
             Object.DestroyImmediate(allyObject);
         }
@@ -1390,6 +1637,7 @@ namespace DimensionBrawl.Tests
 
             projectile.Configure(null, DamageTeam.Enemy, 10f, Vector3.back, 0f, 1f, 0.3f);
             Assert.IsTrue(projectile.TryApplyImpact(targetCollider, Vector3.zero));
+            Assert.AreEqual(ProjectileImpactResult.AppliedDamage, projectile.LastImpactResult);
             Assert.AreEqual(90f, targetHealth.CurrentHealth, 0.001f);
 
             GameObject neutralObject = new GameObject("Neutral");
@@ -1399,6 +1647,7 @@ namespace DimensionBrawl.Tests
 
             projectile.Configure(null, DamageTeam.Enemy, 10f, Vector3.back, 0f, 1f, 0.3f);
             Assert.IsFalse(projectile.TryApplyImpact(neutralCollider, Vector3.zero));
+            Assert.AreEqual(ProjectileImpactResult.IgnoredNonHostile, projectile.LastImpactResult);
             Assert.AreEqual(100f, neutralHealth.CurrentHealth, 0.001f);
 
             Object.DestroyImmediate(neutralObject);

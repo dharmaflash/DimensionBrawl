@@ -16,6 +16,8 @@ namespace DimensionBrawl.Player
         [Header("Candidate Search")]
         [Tooltip("Authored or encounter-provided hostile candidates. Do not scene-scan for default ARPG targeting.")]
         [SerializeField] private CombatHealth[] targetCandidates = new CombatHealth[0];
+        [Tooltip("Active summon proxies register themselves; this lets player fire answer the frontline without scene-scanning.")]
+        [SerializeField] private bool includeActiveHostileSummons = true;
         [SerializeField, Min(0f)] private float selectionRadius = 12f;
         [SerializeField, Min(0f)] private float retargetIntervalSeconds = 0.12f;
         [SerializeField, Min(0f)] private float contactStickinessSeconds = 0.35f;
@@ -29,6 +31,8 @@ namespace DimensionBrawl.Player
         [SerializeField, Min(0f)] private float viewForwardWeight = 0.2f;
         [Tooltip("Windup/active enemy states can beat pure distance, matching collected threat-priority notes.")]
         [SerializeField, Min(0f)] private float threatStateWeight = 0.35f;
+        [Tooltip("Keeps an enemy summon body in front of the boss from being ignored while it owns the frontline.")]
+        [SerializeField, Min(0f)] private float activeSummonTargetBonus = 0.55f;
         [Tooltip("Prevents jitter when two readable enemies have similar scores.")]
         [SerializeField, Min(0f)] private float currentTargetStickiness = 0.18f;
         [SerializeField, Range(-1f, 1f)] private float minimumReadableForwardDot = -0.35f;
@@ -53,6 +57,7 @@ namespace DimensionBrawl.Player
         public float SelectionRadius => selectionRadius;
         public float AttackAimRadius => attackAimRadius;
         public int TargetCandidateCount => targetCandidates != null ? targetCandidates.Length : 0;
+        public bool IncludesActiveHostileSummons => includeActiveHostileSummons;
 
         public event Action<CombatHealth> TargetChanged;
 
@@ -173,59 +178,44 @@ namespace DimensionBrawl.Player
 
         private CombatHealth FindBestTarget()
         {
-            if (targetCandidates == null)
-            {
-                return null;
-            }
-
             CombatHealth bestTarget = null;
             float bestScore = float.NegativeInfinity;
 
-            for (int i = 0; i < targetCandidates.Length; i++)
+            if (targetCandidates != null)
             {
-                CombatHealth candidate = targetCandidates[i];
-                if (!IsValidTarget(candidate))
+                for (int i = 0; i < targetCandidates.Length; i++)
                 {
-                    continue;
-                }
-
-                float score = ScoreCandidate(candidate);
-                if (score > bestScore)
-                {
-                    bestTarget = candidate;
-                    bestScore = score;
+                    ConsiderTargetCandidate(targetCandidates[i], ScoreCandidate, 0f, ref bestTarget, ref bestScore);
                 }
             }
 
+            ConsiderActiveSummonTargets(ScoreCandidate, activeSummonTargetBonus, ref bestTarget, ref bestScore);
             return bestTarget;
         }
 
         private CombatHealth FindBestAttackAimTarget(Vector3 fallbackDirection, float preferredContactDistance)
         {
-            if (targetCandidates == null)
-            {
-                return null;
-            }
-
             CombatHealth bestTarget = null;
             float bestScore = float.NegativeInfinity;
 
-            for (int i = 0; i < targetCandidates.Length; i++)
+            if (targetCandidates != null)
             {
-                CombatHealth candidate = targetCandidates[i];
-                if (!IsValidTarget(candidate))
+                for (int i = 0; i < targetCandidates.Length; i++)
                 {
-                    continue;
-                }
-
-                float score = ScoreAttackAimCandidate(candidate, fallbackDirection, preferredContactDistance);
-                if (score > bestScore)
-                {
-                    bestTarget = candidate;
-                    bestScore = score;
+                    ConsiderTargetCandidate(
+                        targetCandidates[i],
+                        candidate => ScoreAttackAimCandidate(candidate, fallbackDirection, preferredContactDistance),
+                        0f,
+                        ref bestTarget,
+                        ref bestScore);
                 }
             }
 
+            ConsiderActiveSummonTargets(
+                candidate => ScoreAttackAimCandidate(candidate, fallbackDirection, preferredContactDistance),
+                activeSummonTargetBonus,
+                ref bestTarget,
+                ref bestScore);
             return bestTarget;
         }
 
@@ -235,30 +225,86 @@ namespace DimensionBrawl.Player
             float maxDistance,
             float maxAngleDegrees)
         {
-            if (targetCandidates == null || maxDistance <= 0f || maxAngleDegrees <= 0f)
+            if (maxDistance <= 0f || maxAngleDegrees <= 0f)
             {
                 return null;
             }
 
             CombatHealth bestTarget = null;
             float bestScore = float.NegativeInfinity;
-            for (int i = 0; i < targetCandidates.Length; i++)
+            if (targetCandidates != null)
             {
-                CombatHealth candidate = targetCandidates[i];
-                if (!IsValidTarget(candidate))
+                for (int i = 0; i < targetCandidates.Length; i++)
+                {
+                    ConsiderTargetCandidate(
+                        targetCandidates[i],
+                        candidate => ScoreAimAssistCandidate(
+                            candidate,
+                            originPosition,
+                            rawAimDirection,
+                            maxDistance,
+                            maxAngleDegrees),
+                        0f,
+                        ref bestTarget,
+                        ref bestScore);
+                }
+            }
+
+            ConsiderActiveSummonTargets(
+                candidate => ScoreAimAssistCandidate(candidate, originPosition, rawAimDirection, maxDistance, maxAngleDegrees),
+                activeSummonTargetBonus,
+                ref bestTarget,
+                ref bestScore);
+            return bestTarget;
+        }
+
+        private void ConsiderActiveSummonTargets(
+            Func<CombatHealth, float> scorer,
+            float scoreBonus,
+            ref CombatHealth bestTarget,
+            ref float bestScore)
+        {
+            if (!includeActiveHostileSummons)
+            {
+                return;
+            }
+
+            int count = SummonFrontlineProxy.ActiveRegisteredProxyCount;
+            for (int i = 0; i < count; i++)
+            {
+                if (!SummonFrontlineProxy.TryGetActiveRegisteredProxy(i, out SummonFrontlineProxy proxy))
                 {
                     continue;
                 }
 
-                float score = ScoreAimAssistCandidate(candidate, originPosition, rawAimDirection, maxDistance, maxAngleDegrees);
-                if (score > bestScore)
-                {
-                    bestTarget = candidate;
-                    bestScore = score;
-                }
+                ConsiderTargetCandidate(proxy.Health, scorer, scoreBonus, ref bestTarget, ref bestScore);
+            }
+        }
+
+        private void ConsiderTargetCandidate(
+            CombatHealth candidate,
+            Func<CombatHealth, float> scorer,
+            float scoreBonus,
+            ref CombatHealth bestTarget,
+            ref float bestScore)
+        {
+            if (!IsValidTarget(candidate))
+            {
+                return;
             }
 
-            return bestTarget;
+            float score = scorer(candidate);
+            if (float.IsNegativeInfinity(score))
+            {
+                return;
+            }
+
+            score += scoreBonus;
+            if (score > bestScore)
+            {
+                bestTarget = candidate;
+                bestScore = score;
+            }
         }
 
         private float ScoreCandidate(CombatHealth candidate)

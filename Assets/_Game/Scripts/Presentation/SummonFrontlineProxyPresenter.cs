@@ -12,6 +12,7 @@ namespace DimensionBrawl.Presentation
 
         [SerializeField] private SummonFrontlineProxy proxy;
         [SerializeField] private SummonFrontlineClash clash;
+        [SerializeField] private CombatHealth health;
         [SerializeField] private Transform pulseRoot;
         [SerializeField] private Renderer[] actorRenderers = System.Array.Empty<Renderer>();
         [SerializeField] private Color tierOneColor = new Color(0.24f, 1f, 0.78f, 0.78f);
@@ -19,52 +20,65 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private Color tierThreeColor = new Color(1f, 0.76f, 0.24f, 1f);
         [SerializeField] private Color flashColor = new Color(1f, 1f, 1f, 1f);
         [SerializeField] private Color clashFlashColor = new Color(1f, 0.9f, 0.38f, 1f);
+        [SerializeField] private Color attackFlashColor = new Color(1f, 0.74f, 0.24f, 1f);
+        [SerializeField] private Color damageFlashColor = new Color(1f, 0.24f, 0.18f, 1f);
+        [SerializeField] private Color deathFlashColor = new Color(0.08f, 0.08f, 0.08f, 1f);
         [SerializeField, Min(0f)] private float entryFlashSeconds = 0.22f;
         [SerializeField, Min(0f)] private float impactFlashSeconds = 0.18f;
         [SerializeField, Min(0f)] private float clashFlashSeconds = 0.14f;
+        [SerializeField, Min(0f)] private float attackFlashSeconds = 0.12f;
+        [SerializeField, Min(0f)] private float damageFlashSeconds = 0.16f;
+        [SerializeField, Min(0f)] private float deathFlashSeconds = 0.22f;
         [SerializeField, Range(0.2f, 1f)] private float impactFlashProgress = 0.86f;
         [SerializeField, Min(0.01f)] private float pulseSpeed = 8f;
         [SerializeField, Min(0f)] private float pulseScale = 0.08f;
         [SerializeField, Min(0f)] private float tierScaleStep = 0.18f;
         [SerializeField, Min(0f)] private float flashScale = 0.22f;
         [SerializeField, Min(0f)] private float clashFlashScale = 0.16f;
+        [SerializeField, Min(0f)] private float attackFlashScale = 0.14f;
+        [SerializeField, Min(0f)] private float damageFlashScale = 0.18f;
+        [SerializeField, Min(0f)] private float deathFlashScale = 0.28f;
 
         private MaterialPropertyBlock propertyBlock;
         private Vector3 pulseBaseScale = Vector3.one;
         private float entryFlashTimer;
         private float impactFlashTimer;
         private float clashFlashTimer;
+        private float attackFlashTimer;
+        private float damageFlashTimer;
+        private float deathFlashTimer;
         private bool wasActive;
+        private bool wasAttacking;
+        private bool subscribedToHealth;
         private bool impactFlashedThisActivation;
         private int lastObservedTier;
         private int lastObservedClashCount;
         private int entryFlashCount;
         private int impactFlashCount;
         private int clashFlashCount;
+        private int attackFlashCount;
+        private int damageFlashCount;
+        private int deathFlashCount;
 
         public SummonFrontlineProxy Proxy => proxy;
         public SummonFrontlineClash Clash => clash;
+        public CombatHealth Health => health;
         public Transform PulseRoot => pulseRoot;
         public int RendererCount => actorRenderers != null ? actorRenderers.Length : 0;
-        public bool IsShowing => proxy != null && proxy.IsActive;
+        public bool IsShowing => proxy != null && proxy.IsPresentationVisible;
         public int LastObservedTier => lastObservedTier;
         public int LastObservedClashCount => lastObservedClashCount;
         public int EntryFlashCount => entryFlashCount;
         public int ImpactFlashCount => impactFlashCount;
         public int ClashFlashCount => clashFlashCount;
+        public int AttackFlashCount => attackFlashCount;
+        public int DamageFlashCount => damageFlashCount;
+        public int DeathFlashCount => deathFlashCount;
 
         private void Awake()
         {
             propertyBlock ??= new MaterialPropertyBlock();
-            if (proxy == null)
-            {
-                proxy = GetComponent<SummonFrontlineProxy>();
-            }
-
-            if (clash == null)
-            {
-                clash = GetComponent<SummonFrontlineClash>();
-            }
+            ResolveReferences();
 
             if (pulseRoot != null)
             {
@@ -79,12 +93,15 @@ namespace DimensionBrawl.Presentation
 
         private void OnEnable()
         {
+            SubscribeHealth();
             RefreshNow();
         }
 
         private void OnDisable()
         {
+            UnsubscribeHealth();
             wasActive = false;
+            wasAttacking = false;
             SetPulseVisible(false);
         }
 
@@ -106,6 +123,21 @@ namespace DimensionBrawl.Presentation
                 clashFlashTimer = Mathf.Max(0f, clashFlashTimer - deltaTime);
             }
 
+            if (attackFlashTimer > 0f)
+            {
+                attackFlashTimer = Mathf.Max(0f, attackFlashTimer - deltaTime);
+            }
+
+            if (damageFlashTimer > 0f)
+            {
+                damageFlashTimer = Mathf.Max(0f, damageFlashTimer - deltaTime);
+            }
+
+            if (deathFlashTimer > 0f)
+            {
+                deathFlashTimer = Mathf.Max(0f, deathFlashTimer - deltaTime);
+            }
+
             RefreshNow();
         }
 
@@ -114,10 +146,13 @@ namespace DimensionBrawl.Presentation
             Transform newPulseRoot,
             Renderer[] newActorRenderers)
         {
+            UnsubscribeHealth();
             proxy = newProxy;
+            health = proxy != null ? proxy.Health : null;
             pulseRoot = newPulseRoot;
             pulseBaseScale = pulseRoot != null ? pulseRoot.localScale : Vector3.one;
             actorRenderers = newActorRenderers ?? System.Array.Empty<Renderer>();
+            SubscribeHealth();
             RefreshNow();
         }
 
@@ -130,10 +165,14 @@ namespace DimensionBrawl.Presentation
 
         public void RefreshNow()
         {
+            ResolveReferences();
+            bool visible = proxy != null && proxy.IsPresentationVisible;
             bool active = proxy != null && proxy.IsActive;
-            if (active)
+            if (visible)
             {
-                int tier = Mathf.Clamp(proxy.ActiveTier, 1, 3);
+                int tier = active
+                    ? Mathf.Clamp(proxy.ActiveTier, 1, 3)
+                    : Mathf.Clamp(lastObservedTier > 0 ? lastObservedTier : proxy.ActiveTier, 1, 3);
                 if (!wasActive)
                 {
                     entryFlashTimer = Mathf.Max(entryFlashTimer, entryFlashSeconds);
@@ -143,7 +182,8 @@ namespace DimensionBrawl.Presentation
 
                 lastObservedTier = tier;
                 ObserveClashCount();
-                if (!impactFlashedThisActivation && proxy.AdvanceProgress01 >= impactFlashProgress)
+                ObserveAttackState(active);
+                if (active && !impactFlashedThisActivation && proxy.AdvanceProgress01 >= impactFlashProgress)
                 {
                     impactFlashTimer = Mathf.Max(impactFlashTimer, impactFlashSeconds);
                     impactFlashedThisActivation = true;
@@ -159,6 +199,7 @@ namespace DimensionBrawl.Presentation
             }
 
             wasActive = active;
+            wasAttacking = active && proxy.CurrentState == SummonFrontlineProxyState.Attacking;
         }
 
         private void RefreshVisual(int tier)
@@ -166,8 +207,14 @@ namespace DimensionBrawl.Presentation
             Color tierColor = ResolveTierColor(tier);
             float flash = ResolveEntryImpactFlashWeight();
             float clashFlash = ResolveClashFlashWeight();
+            float attackFlash = ResolveFlashWeight(attackFlashTimer, attackFlashSeconds);
+            float damageFlash = ResolveFlashWeight(damageFlashTimer, damageFlashSeconds);
+            float deathFlash = ResolveFlashWeight(deathFlashTimer, deathFlashSeconds);
             Color color = Color.Lerp(tierColor, flashColor, flash);
             color = Color.Lerp(color, clashFlashColor, clashFlash);
+            color = Color.Lerp(color, attackFlashColor, attackFlash);
+            color = Color.Lerp(color, damageFlashColor, damageFlash);
+            color = Color.Lerp(color, deathFlashColor, deathFlash);
             ApplyColor(color);
 
             if (pulseRoot == null)
@@ -177,7 +224,12 @@ namespace DimensionBrawl.Presentation
 
             float tierScale = 1f + (Mathf.Clamp(tier, 1, 3) - 1) * tierScaleStep;
             float pulse = 1f + Mathf.Sin(Time.time * pulseSpeed) * pulseScale;
-            float scale = tierScale * (pulse + flash * flashScale + clashFlash * clashFlashScale);
+            float scale = tierScale * (pulse
+                + flash * flashScale
+                + clashFlash * clashFlashScale
+                + attackFlash * attackFlashScale
+                + damageFlash * damageFlashScale
+                + deathFlash * deathFlashScale);
             pulseRoot.localScale = pulseBaseScale * Mathf.Max(0.01f, scale);
         }
 
@@ -196,6 +248,16 @@ namespace DimensionBrawl.Presentation
             }
 
             lastObservedClashCount = currentClashCount;
+        }
+
+        private void ObserveAttackState(bool active)
+        {
+            bool attacking = active && proxy.CurrentState == SummonFrontlineProxyState.Attacking;
+            if (attacking && !wasAttacking)
+            {
+                attackFlashTimer = Mathf.Max(attackFlashTimer, attackFlashSeconds);
+                attackFlashCount++;
+            }
         }
 
         private Color ResolveTierColor(int tier)
@@ -218,6 +280,11 @@ namespace DimensionBrawl.Presentation
         private float ResolveClashFlashWeight()
         {
             return clashFlashSeconds > 0f ? Mathf.Clamp01(clashFlashTimer / clashFlashSeconds) : 0f;
+        }
+
+        private static float ResolveFlashWeight(float timer, float seconds)
+        {
+            return seconds > 0f ? Mathf.Clamp01(timer / seconds) : 0f;
         }
 
         private void ApplyColor(Color color)
@@ -250,6 +317,63 @@ namespace DimensionBrawl.Presentation
             {
                 pulseRoot.gameObject.SetActive(value);
             }
+        }
+
+        private void HandleDamaged(DamageInfo _)
+        {
+            damageFlashTimer = Mathf.Max(damageFlashTimer, damageFlashSeconds);
+            damageFlashCount++;
+            RefreshNow();
+        }
+
+        private void HandleDied()
+        {
+            deathFlashTimer = Mathf.Max(deathFlashTimer, deathFlashSeconds);
+            deathFlashCount++;
+            RefreshNow();
+        }
+
+        private void ResolveReferences()
+        {
+            if (proxy == null)
+            {
+                proxy = GetComponent<SummonFrontlineProxy>();
+            }
+
+            if (clash == null)
+            {
+                clash = GetComponent<SummonFrontlineClash>();
+            }
+
+            if (health == null && proxy != null)
+            {
+                health = proxy.Health;
+            }
+        }
+
+        private void SubscribeHealth()
+        {
+            ResolveReferences();
+            if (health == null || subscribedToHealth)
+            {
+                return;
+            }
+
+            health.Damaged += HandleDamaged;
+            health.Died += HandleDied;
+            subscribedToHealth = true;
+        }
+
+        private void UnsubscribeHealth()
+        {
+            if (health == null || !subscribedToHealth)
+            {
+                return;
+            }
+
+            health.Damaged -= HandleDamaged;
+            health.Died -= HandleDied;
+            subscribedToHealth = false;
         }
     }
 }

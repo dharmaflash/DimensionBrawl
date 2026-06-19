@@ -2,6 +2,13 @@ using UnityEngine;
 
 namespace DimensionBrawl.Combat
 {
+    public enum SummonFrontlineClashTargetKind
+    {
+        None = 0,
+        HostileSummon = 1,
+        HostileBody = 2
+    }
+
     [DisallowMultipleComponent]
     [RequireComponent(typeof(SummonFrontlineProxy))]
     public sealed class SummonFrontlineClash : MonoBehaviour
@@ -16,6 +23,7 @@ namespace DimensionBrawl.Combat
         [SerializeField, Min(0.05f)] private float engageRadius = 0.95f;
         [SerializeField, Min(0f)] private float engageCenterHeight = 0.9f;
         [SerializeField] private LayerMask contactLayers = Physics.DefaultRaycastLayers;
+        [SerializeField] private bool prioritizeHostileSummons = true;
 
         private readonly Collider[] contactBuffer = new Collider[12];
         private float nextDamageTime;
@@ -24,12 +32,14 @@ namespace DimensionBrawl.Combat
         private int lastOpponentTier;
         private DamageTeam lastOpponentTeam = DamageTeam.Neutral;
         private float lastDamageAmount;
+        private SummonFrontlineClashTargetKind lastTargetKind = SummonFrontlineClashTargetKind.None;
 
         public bool IsClashing => proxy != null && proxy.IsActive && clashFeedbackTimer > 0f;
         public int TotalClashCount => totalClashCount;
         public int LastOpponentTier => lastOpponentTier;
         public DamageTeam LastOpponentTeam => lastOpponentTeam;
         public float LastDamageAmount => lastDamageAmount;
+        public SummonFrontlineClashTargetKind LastTargetKind => lastTargetKind;
         public float EngageRadius => engageRadius;
 
         private void Awake()
@@ -110,32 +120,21 @@ namespace DimensionBrawl.Combat
                 return false;
             }
 
-            if (other.GetComponentInParent<SummonPressureScreen>() != null)
-            {
-                return false;
-            }
-
-            SummonFrontlineProxy otherProxy = other.GetComponentInParent<SummonFrontlineProxy>();
-            if (otherProxy == proxy || (otherProxy != null && !otherProxy.IsActive))
-            {
-                return false;
-            }
-
-            CombatHealth otherHealth = otherProxy != null
-                ? otherProxy.Health ?? other.GetComponentInParent<CombatHealth>()
-                : other.GetComponentInParent<CombatHealth>();
-            if (otherHealth == null
-                || otherHealth == health
-                || !otherHealth.IsAlive
-                || !CombatTeamUtility.AreHostile(health.Team, otherHealth.Team))
+            if (!TryResolveClashTarget(
+                    other,
+                    out SummonFrontlineProxy otherProxy,
+                    out CombatHealth otherHealth,
+                    out SummonFrontlineClashTargetKind targetKind))
             {
                 return false;
             }
 
             proxy.RequestAdvanceHold(clashHoldSeconds);
+            proxy.FaceTowards(otherHealth.transform.position);
             if (otherProxy != null)
             {
                 otherProxy.RequestAdvanceHold(clashHoldSeconds);
+                otherProxy.FaceTowards(transform.position);
             }
 
             clashFeedbackTimer = Mathf.Max(clashFeedbackTimer, clashFeedbackSeconds);
@@ -161,6 +160,7 @@ namespace DimensionBrawl.Combat
                 lastOpponentTier = otherProxy != null ? otherProxy.ActiveTier : 0;
                 lastOpponentTeam = otherHealth.Team;
                 lastDamageAmount = damageAmount;
+                lastTargetKind = targetKind;
                 proxy.NotifyAttackPerformed(clashFeedbackSeconds);
                 otherProxy?.NotifyAttackPerformed(clashFeedbackSeconds);
             }
@@ -184,14 +184,37 @@ namespace DimensionBrawl.Combat
                 contactBuffer,
                 contactLayers,
                 QueryTriggerInteraction.Collide);
+
+            Collider bestCandidate = null;
+            int bestPriority = int.MaxValue;
+            float bestDistanceSqr = float.PositiveInfinity;
             for (int i = 0; i < count; i++)
             {
                 Collider candidate = contactBuffer[i];
-                if (candidate != null)
+                if (candidate != null
+                    && TryResolveClashTarget(
+                        candidate,
+                        out _,
+                        out _,
+                        out SummonFrontlineClashTargetKind targetKind))
                 {
-                    TryProcessClash(candidate);
-                    contactBuffer[i] = null;
+                    int priority = ResolveTargetPriority(targetKind);
+                    float distanceSqr = (candidate.transform.position - transform.position).sqrMagnitude;
+                    if (priority < bestPriority
+                        || (priority == bestPriority && distanceSqr < bestDistanceSqr))
+                    {
+                        bestCandidate = candidate;
+                        bestPriority = priority;
+                        bestDistanceSqr = distanceSqr;
+                    }
                 }
+
+                contactBuffer[i] = null;
+            }
+
+            if (bestCandidate != null)
+            {
+                TryProcessClash(bestCandidate);
             }
         }
 
@@ -222,6 +245,59 @@ namespace DimensionBrawl.Combat
             return targetTransform != null
                 ? targetTransform.position - transform.position
                 : transform.forward;
+        }
+
+        private bool TryResolveClashTarget(
+            Collider other,
+            out SummonFrontlineProxy otherProxy,
+            out CombatHealth otherHealth,
+            out SummonFrontlineClashTargetKind targetKind)
+        {
+            otherProxy = null;
+            otherHealth = null;
+            targetKind = SummonFrontlineClashTargetKind.None;
+
+            if (other == null || other.GetComponentInParent<SummonPressureScreen>() != null)
+            {
+                return false;
+            }
+
+            otherProxy = other.GetComponentInParent<SummonFrontlineProxy>();
+            if (otherProxy == proxy || (otherProxy != null && !otherProxy.IsActive))
+            {
+                return false;
+            }
+
+            otherHealth = otherProxy != null
+                ? otherProxy.Health ?? other.GetComponentInParent<CombatHealth>()
+                : other.GetComponentInParent<CombatHealth>();
+            if (otherHealth == null
+                || otherHealth == health
+                || !otherHealth.IsAlive
+                || !CombatTeamUtility.AreHostile(health.Team, otherHealth.Team))
+            {
+                return false;
+            }
+
+            targetKind = otherProxy != null
+                ? SummonFrontlineClashTargetKind.HostileSummon
+                : SummonFrontlineClashTargetKind.HostileBody;
+            return true;
+        }
+
+        private int ResolveTargetPriority(SummonFrontlineClashTargetKind targetKind)
+        {
+            if (!prioritizeHostileSummons)
+            {
+                return targetKind == SummonFrontlineClashTargetKind.None ? 99 : 0;
+            }
+
+            return targetKind switch
+            {
+                SummonFrontlineClashTargetKind.HostileSummon => 0,
+                SummonFrontlineClashTargetKind.HostileBody => 1,
+                _ => 99
+            };
         }
 
         private void ResolveReferences()

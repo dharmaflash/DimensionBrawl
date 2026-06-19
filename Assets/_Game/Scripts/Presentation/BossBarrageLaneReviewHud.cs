@@ -355,8 +355,12 @@ namespace DimensionBrawl.Presentation
             }
 
             string tier = action.LastSpentTier > 0 ? $"LV{action.LastSpentTier}" : "LV-";
-            return $"{label} {tier} proxy {action.ActiveSummonActorCount} "
-                + $"bolts {action.ActiveProjectileCount} blocks {action.TotalPressureScreenInterceptCount}"
+            string role = string.IsNullOrWhiteSpace(action.LastSummonActorRoleId)
+                ? "-"
+                : action.LastSummonActorRoleId;
+            return $"{label} {tier} {role} proxy {action.ActiveSummonActorCount} "
+                + $"volley {action.LastVolleyWaveCount} bolts {action.ActiveProjectileCount} "
+                + $"blocks {action.TotalPressureScreenInterceptCount}"
                 + ResolveSummonLifecycleLine(
                     action.ActiveSummonActorCount,
                     action.LastSummonActorRemainingLifetimeSeconds,

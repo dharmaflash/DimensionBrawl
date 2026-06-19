@@ -69,6 +69,9 @@ namespace DimensionBrawl.Player
         public int TotalPressureScreenInterceptCount => totalPressureScreenInterceptCount;
         public int ActiveProjectileCount => Executor.ActiveProjectileCount;
         public int ActiveSummonActorCount => Executor.ActiveSummonActorCount;
+        public string LastSummonActorRoleId => Executor.LastSummonActorRoleId;
+        public int LastVolleyWaveCount => Executor.LastVolleyWaveCount;
+        public int TotalVolleyWaveCount => Executor.TotalVolleyWaveCount;
         public bool LastSummonActorHasHealth => Executor.LastSummonActorHasHealth;
         public float LastSummonActorHealthRatio => Executor.LastSummonActorHealthRatio;
         public float LastSummonActorRemainingLifetimeSeconds => Executor.LastSummonActorRemainingLifetimeSeconds;

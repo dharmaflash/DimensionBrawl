@@ -25,6 +25,8 @@ namespace DimensionBrawl.Combat
     [DisallowMultipleComponent]
     public sealed class SummonFrontlineProxy : MonoBehaviour
     {
+        private static readonly List<SummonFrontlineProxy> ActiveRegistry = new List<SummonFrontlineProxy>(16);
+
         [SerializeField] private Transform projectileOrigin;
         [SerializeField] private SummonPressureScreen pressureScreen;
         [SerializeField] private CombatHealth health;
@@ -32,6 +34,7 @@ namespace DimensionBrawl.Combat
         [SerializeField] private bool faceTargetOnActivate = true;
         [SerializeField, Min(0f)] private float defaultAdvanceDistance = 0f;
         [SerializeField, Min(0.01f)] private float defaultAdvanceSeconds = 0.25f;
+        [SerializeField, Min(0f)] private float defeatedLingerSeconds = 0.22f;
 
         private Vector3 baseScale = Vector3.one;
         private float remainingLifetime;
@@ -44,6 +47,7 @@ namespace DimensionBrawl.Combat
         private float advanceSpeed;
         private float advanceHoldTimer;
         private float attackStateTimer;
+        private float defeatedLingerTimer;
         private bool active;
         private int activeTier;
         private bool subscribedToHealth;
@@ -51,6 +55,7 @@ namespace DimensionBrawl.Combat
         private SummonFrontlineProxyExitReason lastExitReason = SummonFrontlineProxyExitReason.None;
 
         public bool IsActive => active && gameObject.activeInHierarchy;
+        public bool IsPresentationVisible => IsActive || defeatedLingerTimer > 0f;
         public int ActiveTier => activeTier;
         public Transform ProjectileOrigin => projectileOrigin != null ? projectileOrigin : transform;
         public SummonPressureScreen PressureScreen => pressureScreen;
@@ -70,12 +75,21 @@ namespace DimensionBrawl.Combat
         public Vector3 AdvanceTargetPosition => advanceTargetPosition;
         public float AdvanceDistance => advanceDistance;
         public float ActiveMoveSpeed => advanceSpeed;
+        public float DefeatedLingerRemainingSeconds => defeatedLingerTimer;
         public float AdvanceProgress01 => advanceDistance > 0f ? Mathf.Clamp01(advanceElapsed / advanceDistance) : 1f;
         public bool IsAdvanceHeld => IsActive && advanceHoldTimer > 0f;
         public bool IsAdvancing => IsActive
             && AdvanceProgress01 < 1f
             && !IsAdvanceHeld
             && (advanceTargetPosition - advanceStartPosition).sqrMagnitude > 0.0001f;
+        public static int ActiveRegisteredProxyCount
+        {
+            get
+            {
+                CompactActiveRegistry();
+                return ActiveRegistry.Count;
+            }
+        }
 
         private void Awake()
         {
@@ -94,11 +108,21 @@ namespace DimensionBrawl.Combat
         private void OnEnable()
         {
             SubscribeHealth();
+            if (active)
+            {
+                RegisterActiveProxy();
+            }
         }
 
         private void OnDisable()
         {
+            UnregisterActiveProxy();
             UnsubscribeHealth();
+        }
+
+        private void OnDestroy()
+        {
+            UnregisterActiveProxy();
         }
 
         public void ConfigurePresentation(Transform newProjectileOrigin, SummonPressureScreen newPressureScreen)
@@ -217,13 +241,21 @@ namespace DimensionBrawl.Combat
             ApplyFacing(planarDirection);
 
             active = true;
+            defeatedLingerTimer = 0f;
             currentState = advanceDistance > 0f ? SummonFrontlineProxyState.Advancing : SummonFrontlineProxyState.Spawned;
             gameObject.SetActive(true);
+            RegisterActiveProxy();
         }
 
         public void Tick(float deltaTime)
         {
-            if (!active || deltaTime <= 0f)
+            if (deltaTime <= 0f)
+            {
+                return;
+            }
+
+            TickDefeatedLinger(deltaTime);
+            if (!active)
             {
                 return;
             }
@@ -284,6 +316,16 @@ namespace DimensionBrawl.Combat
             currentState = SummonFrontlineProxyState.Attacking;
         }
 
+        public void FaceTowards(Vector3 worldPosition)
+        {
+            if (!active)
+            {
+                return;
+            }
+
+            ApplyFacing(ResolvePlanarDirection(worldPosition - transform.position));
+        }
+
         public void Deactivate()
         {
             Deactivate(SummonFrontlineProxyExitReason.Recalled);
@@ -296,6 +338,7 @@ namespace DimensionBrawl.Combat
                 pressureScreen.Deactivate();
             }
 
+            UnregisterActiveProxy();
             if (active || reason != SummonFrontlineProxyExitReason.None)
             {
                 lastExitReason = reason;
@@ -309,7 +352,27 @@ namespace DimensionBrawl.Combat
             currentState = reason == SummonFrontlineProxyExitReason.Defeated
                 ? SummonFrontlineProxyState.Defeated
                 : SummonFrontlineProxyState.Inactive;
-            gameObject.SetActive(false);
+            defeatedLingerTimer = reason == SummonFrontlineProxyExitReason.Defeated
+                ? Mathf.Max(0f, defeatedLingerSeconds)
+                : 0f;
+
+            if (defeatedLingerTimer <= 0f)
+            {
+                gameObject.SetActive(false);
+            }
+        }
+
+        public static bool TryGetActiveRegisteredProxy(int index, out SummonFrontlineProxy proxy)
+        {
+            CompactActiveRegistry();
+            if (index < 0 || index >= ActiveRegistry.Count)
+            {
+                proxy = null;
+                return false;
+            }
+
+            proxy = ActiveRegistry[index];
+            return proxy != null && proxy.IsActive;
         }
 
         private void Update()
@@ -320,7 +383,7 @@ namespace DimensionBrawl.Combat
         private void Advance(float deltaTime)
         {
             if (advanceHoldTimer > 0f
-                || advanceElapsed >= advanceSeconds
+                || advanceElapsed >= advanceDistance
                 || advanceStartPosition == advanceTargetPosition)
             {
                 return;
@@ -331,6 +394,20 @@ namespace DimensionBrawl.Combat
                 advanceStartPosition,
                 advanceTargetPosition,
                 AdvanceProgress01);
+        }
+
+        private void TickDefeatedLinger(float deltaTime)
+        {
+            if (defeatedLingerTimer <= 0f)
+            {
+                return;
+            }
+
+            defeatedLingerTimer = Mathf.Max(0f, defeatedLingerTimer - deltaTime);
+            if (defeatedLingerTimer <= 0f && !active)
+            {
+                gameObject.SetActive(false);
+            }
         }
 
         private void RefreshState()
@@ -417,6 +494,33 @@ namespace DimensionBrawl.Combat
             if (faceTargetOnActivate && planarDirection.sqrMagnitude > 0.0001f)
             {
                 transform.rotation = Quaternion.LookRotation(planarDirection, Vector3.up);
+            }
+        }
+
+        private void RegisterActiveProxy()
+        {
+            if (!active || ActiveRegistry.Contains(this))
+            {
+                return;
+            }
+
+            ActiveRegistry.Add(this);
+        }
+
+        private void UnregisterActiveProxy()
+        {
+            ActiveRegistry.Remove(this);
+        }
+
+        private static void CompactActiveRegistry()
+        {
+            for (int i = ActiveRegistry.Count - 1; i >= 0; i--)
+            {
+                SummonFrontlineProxy proxy = ActiveRegistry[i];
+                if (proxy == null || !proxy.IsActive)
+                {
+                    ActiveRegistry.RemoveAt(i);
+                }
             }
         }
 
