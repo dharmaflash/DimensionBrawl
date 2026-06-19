@@ -2202,6 +2202,22 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(2, bossSummonPressureAction.LastReleasedTier);
 
             SummonPressureScreen enemyPressureScreen = RequireActiveEnemyPressureScreen();
+            SummonFrontlineProxy enemySummonActor = RequireActiveSummonActorForPressureScreen(enemyPressureScreen);
+            Vector2 enemySummonStartLane = laneSpace.GetLaneCoordinates(enemySummonActor.AdvanceStartPosition);
+            Vector2 enemySummonTargetLane = laneSpace.GetLaneCoordinates(enemySummonActor.AdvanceTargetPosition);
+            Assert.Greater(
+                enemySummonStartLane.y,
+                laneSpace.ForwardBoundaryZ,
+                "Boss summon pressure should enter from the boss/frontline side.");
+            Assert.AreEqual(
+                summonPressureLaneZ,
+                enemySummonTargetLane.y,
+                0.001f,
+                "Boss summon pressure should target the player's lane depth instead of stopping at the forward boundary.");
+            Assert.Less(
+                enemySummonTargetLane.y,
+                laneSpace.ForwardBoundaryZ - 0.5f,
+                "Boss summon pressure should be allowed to cross the player forward boundary.");
             SummonPressureScreenPresenter presenter = RequirePresenterForPressureScreen(enemyPressureScreen);
             int bossPressureInterceptCountBefore = bossSummonPressureAction.LastPressureScreenInterceptCount;
             int bossPressureTotalInterceptCountBefore = bossSummonPressureAction.TotalPressureScreenInterceptCount;
@@ -2491,6 +2507,25 @@ namespace DimensionBrawl.Tests
             }
 
             Assert.Fail("Expected an active Enemy pressure screen.");
+            return null;
+        }
+
+        private static SummonFrontlineProxy RequireActiveSummonActorForPressureScreen(SummonPressureScreen pressureScreen)
+        {
+            SummonFrontlineProxy[] proxies = Object.FindObjectsByType<SummonFrontlineProxy>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < proxies.Length; i++)
+            {
+                if (proxies[i] != null
+                    && proxies[i].IsActive
+                    && proxies[i].PressureScreen == pressureScreen)
+                {
+                    return proxies[i];
+                }
+            }
+
+            Assert.Fail("Expected an active summon actor for the pressure screen.");
             return null;
         }
 

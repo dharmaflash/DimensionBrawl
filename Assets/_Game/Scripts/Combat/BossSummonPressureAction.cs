@@ -60,6 +60,8 @@ namespace DimensionBrawl.Combat
         [SerializeField, Min(1)] private int maxActiveSummonActors = 1;
         [Tooltip("Extra travel time per meter after the authored advance distance. Keep this high enough that summons march instead of snapping to the target.")]
         [SerializeField, Min(0f)] private float actorEntryCatchupSecondsPerMeter = 0.55f;
+        [Tooltip("Minimum distance boss pressure summons push past the player forward boundary, even when the player stands on that boundary.")]
+        [SerializeField, Min(0f)] private float minimumPlayerSideTargetDepth = 1.2f;
         [SerializeField] private BossSummonPressureProfile pressureProfile;
         [SerializeField] private BossSummonTierSettings[] tierSettings = CreateDefaultTierSettings();
 
@@ -147,6 +149,7 @@ namespace DimensionBrawl.Combat
             }
 
             actorEntryCatchupSecondsPerMeter = Mathf.Max(0f, actorEntryCatchupSecondsPerMeter);
+            minimumPlayerSideTargetDepth = Mathf.Max(0f, minimumPlayerSideTargetDepth);
             maxActiveSummonActors = Mathf.Max(1, maxActiveSummonActors);
             for (int i = 0; i < tierSettings.Length; i++)
             {
@@ -275,12 +278,15 @@ namespace DimensionBrawl.Combat
             }
 
             float targetX = 0f;
+            float targetZ = laneSpace.ForwardBoundaryZ - minimumPlayerSideTargetDepth;
             if (trackedPlayer != null)
             {
-                targetX = laneSpace.GetLaneCoordinates(trackedPlayer.position).x;
+                Vector2 playerLane = laneSpace.GetLaneCoordinates(trackedPlayer.position);
+                targetX = Mathf.Clamp(playerLane.x, -laneSpace.HalfWidth, laneSpace.HalfWidth);
+                targetZ = Mathf.Min(playerLane.y, targetZ);
             }
 
-            float targetZ = laneSpace.SummonEntryZ;
+            targetZ = Mathf.Clamp(targetZ, laneSpace.BackLimitZ, laneSpace.ForwardBoundaryZ);
             return laneSpace.GetBattlefieldWorldPoint(targetX, targetZ, settings.EntryHeight);
         }
 

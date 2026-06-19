@@ -1290,6 +1290,74 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void BossSummonPressureActorAdvancesIntoPlayerSideOfBoundary()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.ForwardBoundaryZ);
+            GameObject bossObject = new GameObject("BossProxy");
+
+            GameObject actorPrefabObject = new GameObject("BossSummonPressurePrefab");
+            actorPrefabObject.AddComponent<SphereCollider>();
+            actorPrefabObject.AddComponent<Rigidbody>();
+            CombatHealth actorHealth = actorPrefabObject.AddComponent<CombatHealth>();
+            actorHealth.ConfigureTeam(DamageTeam.Enemy);
+            SummonFrontlineProxy actorPrefab = actorPrefabObject.AddComponent<SummonFrontlineProxy>();
+            actorPrefab.ConfigureHealth(actorHealth);
+            actorPrefabObject.SetActive(false);
+
+            GameObject actorRoot = new GameObject("BossSummonActorRoot");
+            BossSummonPressureAction summonAction = bossObject.AddComponent<BossSummonPressureAction>();
+            summonAction.ConfigureReferences(lane, playerObject.transform, actorPrefab, actorRoot.transform);
+
+            Assert.IsTrue(summonAction.TryReleasePressureSummon(2));
+
+            SummonFrontlineProxy activeProxy = null;
+            SummonFrontlineProxy[] proxies = Object.FindObjectsByType<SummonFrontlineProxy>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < proxies.Length; i++)
+            {
+                if (proxies[i] != null && proxies[i].IsActive)
+                {
+                    activeProxy = proxies[i];
+                    break;
+                }
+            }
+
+            Assert.IsNotNull(activeProxy);
+            Vector2 startLane = lane.GetLaneCoordinates(activeProxy.AdvanceStartPosition);
+            Vector2 targetLane = lane.GetLaneCoordinates(activeProxy.AdvanceTargetPosition);
+            Assert.Greater(
+                startLane.y,
+                lane.ForwardBoundaryZ,
+                "Boss pressure summons should still enter from the boss/frontline side.");
+            Assert.Less(
+                targetLane.y,
+                lane.ForwardBoundaryZ - 0.5f,
+                "Boss pressure summons should cross into the player side instead of stopping at the boundary entry line.");
+
+            float actorLaneBeforeTick = lane.GetLaneCoordinates(activeProxy.transform.position).y;
+            activeProxy.Tick(1f);
+            float actorLaneAfterTick = lane.GetLaneCoordinates(activeProxy.transform.position).y;
+            Assert.Less(
+                actorLaneAfterTick,
+                actorLaneBeforeTick - 0.5f,
+                "Boss pressure summons should visibly march toward the player side after spawning.");
+            Assert.Less(
+                activeProxy.AdvanceProgress01,
+                0.3f,
+                "Boss pressure summons should cross the corridor by walking, not by snapping to the player side.");
+
+            Object.DestroyImmediate(actorRoot);
+            Object.DestroyImmediate(actorPrefabObject);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(laneObject);
+        }
+
+        [Test]
         public void BossPressureActionDirectorCanHoldLevelOneForNextTierSummonPressure()
         {
             GameObject laneObject = new GameObject("Lane");
