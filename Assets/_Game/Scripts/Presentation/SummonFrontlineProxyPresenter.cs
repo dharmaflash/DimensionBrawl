@@ -11,37 +11,47 @@ namespace DimensionBrawl.Presentation
         private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
 
         [SerializeField] private SummonFrontlineProxy proxy;
+        [SerializeField] private SummonFrontlineClash clash;
         [SerializeField] private Transform pulseRoot;
         [SerializeField] private Renderer[] actorRenderers = System.Array.Empty<Renderer>();
         [SerializeField] private Color tierOneColor = new Color(0.24f, 1f, 0.78f, 0.78f);
         [SerializeField] private Color tierTwoColor = new Color(0.38f, 0.74f, 1f, 0.9f);
         [SerializeField] private Color tierThreeColor = new Color(1f, 0.76f, 0.24f, 1f);
         [SerializeField] private Color flashColor = new Color(1f, 1f, 1f, 1f);
+        [SerializeField] private Color clashFlashColor = new Color(1f, 0.9f, 0.38f, 1f);
         [SerializeField, Min(0f)] private float entryFlashSeconds = 0.22f;
         [SerializeField, Min(0f)] private float impactFlashSeconds = 0.18f;
+        [SerializeField, Min(0f)] private float clashFlashSeconds = 0.14f;
         [SerializeField, Range(0.2f, 1f)] private float impactFlashProgress = 0.86f;
         [SerializeField, Min(0.01f)] private float pulseSpeed = 8f;
         [SerializeField, Min(0f)] private float pulseScale = 0.08f;
         [SerializeField, Min(0f)] private float tierScaleStep = 0.18f;
         [SerializeField, Min(0f)] private float flashScale = 0.22f;
+        [SerializeField, Min(0f)] private float clashFlashScale = 0.16f;
 
         private MaterialPropertyBlock propertyBlock;
         private Vector3 pulseBaseScale = Vector3.one;
         private float entryFlashTimer;
         private float impactFlashTimer;
+        private float clashFlashTimer;
         private bool wasActive;
         private bool impactFlashedThisActivation;
         private int lastObservedTier;
+        private int lastObservedClashCount;
         private int entryFlashCount;
         private int impactFlashCount;
+        private int clashFlashCount;
 
         public SummonFrontlineProxy Proxy => proxy;
+        public SummonFrontlineClash Clash => clash;
         public Transform PulseRoot => pulseRoot;
         public int RendererCount => actorRenderers != null ? actorRenderers.Length : 0;
         public bool IsShowing => proxy != null && proxy.IsActive;
         public int LastObservedTier => lastObservedTier;
+        public int LastObservedClashCount => lastObservedClashCount;
         public int EntryFlashCount => entryFlashCount;
         public int ImpactFlashCount => impactFlashCount;
+        public int ClashFlashCount => clashFlashCount;
 
         private void Awake()
         {
@@ -49,6 +59,11 @@ namespace DimensionBrawl.Presentation
             if (proxy == null)
             {
                 proxy = GetComponent<SummonFrontlineProxy>();
+            }
+
+            if (clash == null)
+            {
+                clash = GetComponent<SummonFrontlineClash>();
             }
 
             if (pulseRoot != null)
@@ -86,6 +101,11 @@ namespace DimensionBrawl.Presentation
                 impactFlashTimer = Mathf.Max(0f, impactFlashTimer - deltaTime);
             }
 
+            if (clashFlashTimer > 0f)
+            {
+                clashFlashTimer = Mathf.Max(0f, clashFlashTimer - deltaTime);
+            }
+
             RefreshNow();
         }
 
@@ -98,6 +118,13 @@ namespace DimensionBrawl.Presentation
             pulseRoot = newPulseRoot;
             pulseBaseScale = pulseRoot != null ? pulseRoot.localScale : Vector3.one;
             actorRenderers = newActorRenderers ?? System.Array.Empty<Renderer>();
+            RefreshNow();
+        }
+
+        public void ConfigureClashReference(SummonFrontlineClash newClash)
+        {
+            clash = newClash;
+            lastObservedClashCount = clash != null ? clash.TotalClashCount : 0;
             RefreshNow();
         }
 
@@ -115,6 +142,7 @@ namespace DimensionBrawl.Presentation
                 }
 
                 lastObservedTier = tier;
+                ObserveClashCount();
                 if (!impactFlashedThisActivation && proxy.AdvanceProgress01 >= impactFlashProgress)
                 {
                     impactFlashTimer = Mathf.Max(impactFlashTimer, impactFlashSeconds);
@@ -136,8 +164,10 @@ namespace DimensionBrawl.Presentation
         private void RefreshVisual(int tier)
         {
             Color tierColor = ResolveTierColor(tier);
-            float flash = ResolveFlashWeight();
+            float flash = ResolveEntryImpactFlashWeight();
+            float clashFlash = ResolveClashFlashWeight();
             Color color = Color.Lerp(tierColor, flashColor, flash);
+            color = Color.Lerp(color, clashFlashColor, clashFlash);
             ApplyColor(color);
 
             if (pulseRoot == null)
@@ -147,8 +177,25 @@ namespace DimensionBrawl.Presentation
 
             float tierScale = 1f + (Mathf.Clamp(tier, 1, 3) - 1) * tierScaleStep;
             float pulse = 1f + Mathf.Sin(Time.time * pulseSpeed) * pulseScale;
-            float scale = tierScale * (pulse + flash * flashScale);
+            float scale = tierScale * (pulse + flash * flashScale + clashFlash * clashFlashScale);
             pulseRoot.localScale = pulseBaseScale * Mathf.Max(0.01f, scale);
+        }
+
+        private void ObserveClashCount()
+        {
+            if (clash == null)
+            {
+                return;
+            }
+
+            int currentClashCount = clash.TotalClashCount;
+            if (currentClashCount > lastObservedClashCount)
+            {
+                clashFlashTimer = Mathf.Max(clashFlashTimer, clashFlashSeconds);
+                clashFlashCount += currentClashCount - lastObservedClashCount;
+            }
+
+            lastObservedClashCount = currentClashCount;
         }
 
         private Color ResolveTierColor(int tier)
@@ -161,11 +208,16 @@ namespace DimensionBrawl.Presentation
             };
         }
 
-        private float ResolveFlashWeight()
+        private float ResolveEntryImpactFlashWeight()
         {
             float entry = entryFlashSeconds > 0f ? Mathf.Clamp01(entryFlashTimer / entryFlashSeconds) : 0f;
             float impact = impactFlashSeconds > 0f ? Mathf.Clamp01(impactFlashTimer / impactFlashSeconds) : 0f;
             return Mathf.Max(entry, impact);
+        }
+
+        private float ResolveClashFlashWeight()
+        {
+            return clashFlashSeconds > 0f ? Mathf.Clamp01(clashFlashTimer / clashFlashSeconds) : 0f;
         }
 
         private void ApplyColor(Color color)

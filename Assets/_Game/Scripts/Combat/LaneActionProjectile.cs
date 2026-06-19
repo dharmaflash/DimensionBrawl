@@ -84,6 +84,11 @@ namespace DimensionBrawl.Combat
                 return false;
             }
 
+            if (hitCollider.GetComponentInParent<SummonPressureScreen>() != null)
+            {
+                return false;
+            }
+
             CombatHealth targetHealth = hitCollider.GetComponentInParent<CombatHealth>();
             if (targetHealth == null
                 || targetHealth == sourceHealth

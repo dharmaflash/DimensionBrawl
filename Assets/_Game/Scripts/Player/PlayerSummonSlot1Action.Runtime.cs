@@ -15,8 +15,8 @@ namespace DimensionBrawl.Player
             private readonly Queue<LaneActionProjectile> projectilePool = new Queue<LaneActionProjectile>();
             private readonly List<GameObject> entryCues = new List<GameObject>();
             private readonly Queue<GameObject> entryCuePool = new Queue<GameObject>();
-            private readonly List<SummonFrontlineProxy> summonActors = new List<SummonFrontlineProxy>();
-            private readonly Queue<SummonFrontlineProxy> summonActorPool = new Queue<SummonFrontlineProxy>();
+            private readonly SummonFrontlineProxyPool summonActorPool = new SummonFrontlineProxyPool();
+            private SummonFrontlineProxy lastSummonActor;
 
             public SummonExecutionRuntime(PlayerSummonSlot1Action owner)
             {
@@ -35,6 +35,38 @@ namespace DimensionBrawl.Player
             public int ActiveSummonActorCount => CountActiveSummonActors();
             public int ActivePressureScreenCount => CountActivePressureScreens();
             public int ActivePressureScreenRemainingIntercepts => CountActivePressureScreenRemainingIntercepts();
+            public bool LastSummonActorHasHealth => lastSummonActor != null && lastSummonActor.HasHealth;
+            public float LastSummonActorHealthRatio => lastSummonActor != null ? lastSummonActor.HealthRatio : 0f;
+            public float LastSummonActorRemainingLifetimeSeconds => lastSummonActor != null
+                ? lastSummonActor.RemainingLifetimeSeconds
+                : 0f;
+            public float ActiveSummonActorAdvanceProgress01
+            {
+                get
+                {
+                    SummonFrontlineProxy actor = ResolveActiveSummonActor();
+                    return actor != null ? actor.AdvanceProgress01 : 0f;
+                }
+            }
+            public bool LastSummonActorIsClashing
+            {
+                get
+                {
+                    SummonFrontlineClash clash = ResolveLastSummonActorClash();
+                    return clash != null && clash.IsClashing;
+                }
+            }
+            public int LastSummonActorClashCount
+            {
+                get
+                {
+                    SummonFrontlineClash clash = ResolveLastSummonActorClash();
+                    return clash != null ? clash.TotalClashCount : 0;
+                }
+            }
+            public SummonFrontlineProxyExitReason LastSummonActorExitReason => lastSummonActor != null
+                ? lastSummonActor.LastExitReason
+                : SummonFrontlineProxyExitReason.None;
 
             public void Prewarm()
             {
@@ -58,8 +90,9 @@ namespace DimensionBrawl.Player
                 Vector2 playerLane = owner.laneSpace != null
                     ? owner.laneSpace.GetLaneCoordinates(owner.transform.position)
                     : Vector2.zero;
-                float entryZ = owner.laneSpace != null ? owner.laneSpace.SummonEntryZ : playerLane.y + 2f;
-                float targetZ = ResolveTargetLaneZ();
+                float entryZ = owner.ResolveEntryLaneZ(playerLane.y);
+                Vector2 targetLane = ResolveTargetLaneCoordinates(new Vector2(playerLane.x, ResolveFallbackTargetLaneZ()));
+                float targetZ = targetLane.y;
                 int projectileCount = Mathf.Max(1, settings.ProjectileCount);
                 LastFiredProjectileCount = projectileCount;
 
@@ -67,9 +100,19 @@ namespace DimensionBrawl.Player
                 LastEntryPosition = entryPosition;
                 SpawnEntryCue(entryPosition, settings);
 
-                Vector3 firstTargetPosition = ResolveBattlefieldPoint(playerLane.x, targetZ, settings.TargetHeight);
-                Vector3 actorFacing = ResolvePlanarDirection(firstTargetPosition - entryPosition);
-                SummonFrontlineProxy actor = SpawnSummonActor(entryPosition, actorFacing, tier, settings);
+                Vector3 actorTargetPosition = ResolveBattlefieldPoint(targetLane.x, targetZ, settings.EntryHeight);
+                Vector3 actorFacing = ResolvePlanarDirection(actorTargetPosition - entryPosition);
+                float actorAdvanceDistance = Vector3.Distance(
+                    Vector3.ProjectOnPlane(actorTargetPosition - entryPosition, Vector3.up),
+                    Vector3.zero);
+                float actorAdvanceSeconds = owner.ResolveActorAdvanceSeconds(actorAdvanceDistance, settings);
+                SummonFrontlineProxy actor = SpawnSummonActor(
+                    entryPosition,
+                    actorFacing,
+                    actorTargetPosition,
+                    tier,
+                    settings,
+                    actorAdvanceSeconds);
                 Vector3 projectileSpawnBase = actor != null
                     ? actor.ProjectileOrigin.position
                     : ResolveBattlefieldPoint(playerLane.x, entryZ, settings.EntryHeight + 0.7f);
@@ -78,7 +121,7 @@ namespace DimensionBrawl.Player
                 for (int i = 0; i < projectileCount; i++)
                 {
                     float targetOffset = ResolveOffset(i, projectileCount, settings.LateralReach);
-                    float targetX = playerLane.x + targetOffset;
+                    float targetX = targetLane.x + targetOffset;
                     Vector3 spawnPosition = projectileSpawnBase + right * (targetOffset * 0.22f);
                     Vector3 targetPosition = ResolveBattlefieldPoint(targetX, targetZ, settings.TargetHeight);
                     Vector3 direction = ResolvePlanarDirection(targetPosition - spawnPosition);
@@ -99,9 +142,12 @@ namespace DimensionBrawl.Player
             private SummonFrontlineProxy SpawnSummonActor(
                 Vector3 position,
                 Vector3 facingDirection,
+                Vector3 targetPosition,
                 int tier,
-                SummonTierSettings settings)
+                SummonTierSettings settings,
+                float actorAdvanceSeconds)
             {
+                summonActorPool.TrimActiveCountBeforeSpawn(owner.MaxActiveSummonActors);
                 SummonFrontlineProxy actor = GetSummonActor();
                 if (actor == null)
                 {
@@ -116,9 +162,10 @@ namespace DimensionBrawl.Player
                     tier,
                     settings.ActorLifetimeSeconds,
                     settings.ActorScale,
-                    settings.ActorAdvanceDistance,
-                    settings.ActorAdvanceSeconds);
+                    targetPosition,
+                    actorAdvanceSeconds);
 
+                lastSummonActor = actor;
                 if (actor.PressureScreen != null)
                 {
                     actor.PressureScreen.Intercepted -= OnPressureScreenIntercepted;
@@ -197,45 +244,30 @@ namespace DimensionBrawl.Player
 
             private SummonFrontlineProxy FindActorForPressureScreen(SummonPressureScreen screen)
             {
-                if (screen == null)
-                {
-                    return null;
-                }
-
-                for (int i = 0; i < summonActors.Count; i++)
-                {
-                    SummonFrontlineProxy actor = summonActors[i];
-                    if (actor != null && actor.PressureScreen == screen)
-                    {
-                        return actor;
-                    }
-                }
-
-                return null;
+                return summonActorPool.FindForPressureScreen(screen);
             }
 
             private void UnsubscribePressureScreens()
             {
-                for (int i = 0; i < summonActors.Count; i++)
+                summonActorPool.ForEach(actor =>
                 {
-                    SummonFrontlineProxy actor = summonActors[i];
-                    if (actor != null && actor.PressureScreen != null)
+                    if (actor.PressureScreen != null)
                     {
                         actor.PressureScreen.Intercepted -= OnPressureScreenIntercepted;
                     }
-                }
+                });
             }
 
-            private float ResolveTargetLaneZ()
+            private Vector2 ResolveTargetLaneCoordinates(Vector2 fallback)
             {
                 if (owner.laneSpace == null)
                 {
-                    return 8f;
+                    return fallback;
                 }
 
                 if (owner.frontlineTargetHealth != null && owner.frontlineTargetHealth.IsAlive)
                 {
-                    return owner.laneSpace.GetLaneCoordinates(owner.frontlineTargetHealth.transform.position).y;
+                    return owner.laneSpace.GetLaneCoordinates(owner.frontlineTargetHealth.transform.position);
                 }
 
                 if (owner.targetSelector != null
@@ -244,10 +276,15 @@ namespace DimensionBrawl.Player
                     && targetHealth != null
                     && targetHealth.IsAlive)
                 {
-                    return owner.laneSpace.GetLaneCoordinates(target.position).y;
+                    return owner.laneSpace.GetLaneCoordinates(target.position);
                 }
 
-                return owner.laneSpace.BossProxyZ;
+                return fallback;
+            }
+
+            private float ResolveFallbackTargetLaneZ()
+            {
+                return owner.laneSpace != null ? owner.laneSpace.BossProxyZ : 8f;
             }
 
             private Vector3 ResolveBattlefieldPoint(float lateralX, float laneZ, float worldY)
@@ -360,31 +397,8 @@ namespace DimensionBrawl.Player
                     return null;
                 }
 
-                while (summonActorPool.Count > 0)
-                {
-                    SummonFrontlineProxy pooled = summonActorPool.Dequeue();
-                    if (pooled != null)
-                    {
-                        pooled.gameObject.SetActive(true);
-                        return pooled;
-                    }
-                }
-
-                for (int i = 0; i < summonActors.Count; i++)
-                {
-                    SummonFrontlineProxy reusable = summonActors[i];
-                    if (reusable != null && !reusable.IsActive)
-                    {
-                        reusable.gameObject.SetActive(true);
-                        return reusable;
-                    }
-                }
-
                 Transform parent = owner.summonActorRoot != null ? owner.summonActorRoot : owner.transform;
-                SummonFrontlineProxy instance = UnityEngine.Object.Instantiate(prefab, parent);
-                instance.name = prefab.name;
-                summonActors.Add(instance);
-                return instance;
+                return summonActorPool.Get(prefab, parent);
             }
 
             private IEnumerator ReleaseCueAfterSeconds(GameObject cue, float seconds)
@@ -475,16 +489,8 @@ namespace DimensionBrawl.Player
                     return;
                 }
 
-                for (int i = summonActors.Count; i < owner.actorPrewarmCount; i++)
-                {
-                    SummonFrontlineProxy actor = UnityEngine.Object.Instantiate(
-                        prefab,
-                        owner.summonActorRoot != null ? owner.summonActorRoot : owner.transform);
-                    actor.name = prefab.name;
-                    actor.Deactivate();
-                    summonActors.Add(actor);
-                    summonActorPool.Enqueue(actor);
-                }
+                Transform parent = owner.summonActorRoot != null ? owner.summonActorRoot : owner.transform;
+                summonActorPool.Prewarm(prefab, parent, owner.actorPrewarmCount);
             }
 
             private int CountActiveProjectiles()
@@ -503,50 +509,28 @@ namespace DimensionBrawl.Player
 
             private int CountActiveSummonActors()
             {
-                int count = 0;
-                for (int i = 0; i < summonActors.Count; i++)
-                {
-                    if (summonActors[i] != null && summonActors[i].IsActive)
-                    {
-                        count++;
-                    }
-                }
-
-                return count;
+                return summonActorPool.CountActive();
             }
 
             private int CountActivePressureScreens()
             {
-                int count = 0;
-                for (int i = 0; i < summonActors.Count; i++)
-                {
-                    SummonFrontlineProxy actor = summonActors[i];
-                    if (actor != null
-                        && actor.PressureScreen != null
-                        && actor.PressureScreen.IsActive)
-                    {
-                        count++;
-                    }
-                }
-
-                return count;
+                return summonActorPool.CountActivePressureScreens();
             }
 
             private int CountActivePressureScreenRemainingIntercepts()
             {
-                int count = 0;
-                for (int i = 0; i < summonActors.Count; i++)
-                {
-                    SummonFrontlineProxy actor = summonActors[i];
-                    if (actor != null
-                        && actor.PressureScreen != null
-                        && actor.PressureScreen.IsActive)
-                    {
-                        count += actor.PressureScreen.RemainingIntercepts;
-                    }
-                }
+                return summonActorPool.CountActivePressureScreenRemainingIntercepts();
+            }
 
-                return count;
+            private SummonFrontlineProxy ResolveActiveSummonActor()
+            {
+                return summonActorPool.ResolveActive(lastSummonActor);
+            }
+
+            private SummonFrontlineClash ResolveLastSummonActorClash()
+            {
+                SummonFrontlineProxy actor = ResolveActiveSummonActor() ?? lastSummonActor;
+                return actor != null ? actor.GetComponent<SummonFrontlineClash>() : null;
             }
 
             private int CountActiveCues()

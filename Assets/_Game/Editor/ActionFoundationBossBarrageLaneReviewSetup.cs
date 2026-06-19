@@ -12,12 +12,13 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Animations;
+using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
 using UnityEngine.SceneManagement;
 
 namespace DimensionBrawl.Editor
 {
-    public static class ActionFoundationBossBarrageLaneReviewSetup
+    public static partial class ActionFoundationBossBarrageLaneReviewSetup
     {
         public const string ReviewScenePath = "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity";
         public const string DuelReviewScenePath = "Assets/_Game/Scenes/ActionFoundationBossSummonDuelReview.unity";
@@ -55,14 +56,26 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Prefabs/Combat/PF_PlayerRangedBasicProjectile_AimBolt.prefab";
         public const string SummonSlot1ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Projectile_AssistBolt.prefab";
+        public const string SummonSlot2ProjectilePrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot2Projectile_MarksmanBolt.prefab";
+        public const string SummonSlot3ProjectilePrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot3Projectile_VanguardBolt.prefab";
         public const string SummonSlot1EntryCuePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1EntryCue_MagicCircle.prefab";
         public const string SummonSlot1ActorPrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Actor_Proxy.prefab";
+        public const string SummonSlot2ActorPrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot2Actor_MarksmanProxy.prefab";
+        public const string SummonSlot3ActorPrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot3Actor_VanguardProxy.prefab";
         public const string BossSummonPressureActorPrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossSummonPressureActor_Proxy.prefab";
         public const string SummonSlot1ActionProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonSlot1_ShieldBreaker.asset";
+        public const string SummonSlot2ActionProfilePath =
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonSlot2_BacklineMarksman.asset";
+        public const string SummonSlot3ActionProfilePath =
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonSlot3_VanguardCommander.asset";
         public const string BossSummonPressureProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_BossSummonPressure_SummonCaller.asset";
         public const string BossPressureActionDeckProfilePath =
@@ -71,11 +84,19 @@ namespace DimensionBrawl.Editor
             ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonOpportunity_BossPressureBlock.asset";
         public const string SummonSlot1PresentationCandidateProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonPresentation_PlayerShieldBreaker.asset";
+        public const string SummonSlot2PresentationCandidateProfilePath =
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonPresentation_PlayerBacklineMarksman.asset";
+        public const string SummonSlot3PresentationCandidateProfilePath =
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonPresentation_PlayerVanguardCommander.asset";
         public const string BossSummonPressurePresentationCandidateProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonPresentation_BossAuraCaptain.asset";
         private const string SummonSlot1ActorVisualName = "SummonSlot1Visual_ShieldBreakerElite";
+        private const string SummonSlot2ActorVisualName = "SummonSlot2Visual_BacklineShooter";
+        private const string SummonSlot3ActorVisualName = "SummonSlot3Visual_FinalStandCommanderElite";
         private const string BossSummonPressureActorVisualName = "BossSummonPressureVisual_AuraCaptainElite";
         private const string SummonSlot1ActorVisualRoleId = "SciFiSoldier.Elite.ShieldBreaker";
+        private const string SummonSlot2ActorVisualRoleId = "SciFiSoldier.BacklineShooter";
+        private const string SummonSlot3ActorVisualRoleId = "SciFiSoldier.Elite.FinalStandCommander";
         private const string BossSummonPressureActorVisualRoleId = "SciFiSoldier.Elite.AuraCaptain";
         private const string Skill1ProjectileMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_PlayerSkill1Projectile.mat";
@@ -83,14 +104,28 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Art/Materials/ActionFoundation/AF_PlayerRangedBasicProjectile.mat";
         private const string SummonSlot1ProjectileMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot1Projectile.mat";
+        private const string SummonSlot2ProjectileMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot2Projectile.mat";
+        private const string SummonSlot3ProjectileMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot3Projectile.mat";
         private const string SummonSlot1EntryCueMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot1EntryCue.mat";
         private const string SummonSlot1ActorMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot1Actor.mat";
+        private const string SummonSlot2ActorMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot2Actor.mat";
+        private const string SummonSlot3ActorMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot3Actor.mat";
         private const string SummonPressureScreenMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonPressureScreen.mat";
         private const string SummonSlot1ActorPulseMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot1ActorPulse.mat";
+        private const string SummonSlot2ActorPulseMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot2ActorPulse.mat";
+        private const string SummonSlot3ActorPulseMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot3ActorPulse.mat";
+        private const string SummonSlot3PressureScreenMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot3PressureScreen.mat";
         private const string BossSummonPressureActorMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossSummonPressureActor.mat";
         private const string BossSummonPressureScreenMaterialPath =
@@ -208,6 +243,9 @@ namespace DimensionBrawl.Editor
         public static void ReapplyPlayerSummonPresentationMenu()
         {
             EnsureSummonActorPrefab();
+            EnsureSummonSlot2ActorPrefab();
+            EnsureSummonSlot3ActorPrefab();
+            EnsureSupportSummonActionProfiles();
             EnsureSummonPresentationCandidateProfiles();
             EnsurePlayerSummonReviewHudBindings(ReviewScenePath);
             EnsurePlayerSummonReviewHudBindings(DuelReviewScenePath);
@@ -218,6 +256,7 @@ namespace DimensionBrawl.Editor
         public static void ReapplyBossSummonPresentationMenu()
         {
             EnsureBossSummonPressureActorPrefab();
+            EnsureBossSummonPressureProfile();
             EnsureSummonPresentationCandidateProfiles();
             Debug.Log("Reapplied ActionFoundation boss summon presentation assets.");
         }
@@ -258,9 +297,27 @@ namespace DimensionBrawl.Editor
                 new Color(0.55f, 1f, 0.72f, 1f),
                 0.58f,
                 allowVerticalTravel: false);
+            LaneActionProjectile summonSlot2ProjectilePrefab = EnsureLaneActionProjectilePrefab(
+                SummonSlot2ProjectilePrefabPath,
+                "PF_SummonSlot2Projectile_MarksmanBolt",
+                SummonSlot2ProjectileMaterialPath,
+                new Color(0.86f, 0.94f, 1f, 1f),
+                0.36f,
+                allowVerticalTravel: false);
+            LaneActionProjectile summonSlot3ProjectilePrefab = EnsureLaneActionProjectilePrefab(
+                SummonSlot3ProjectilePrefabPath,
+                "PF_SummonSlot3Projectile_VanguardBolt",
+                SummonSlot3ProjectileMaterialPath,
+                new Color(1f, 0.82f, 0.38f, 1f),
+                0.64f,
+                allowVerticalTravel: false);
             GameObject summonEntryCuePrefab = EnsureSummonEntryCuePrefab();
             SummonFrontlineProxy summonActorPrefab = EnsureSummonActorPrefab();
+            SummonFrontlineProxy summonSlot2ActorPrefab = EnsureSummonSlot2ActorPrefab();
+            SummonFrontlineProxy summonSlot3ActorPrefab = EnsureSummonSlot3ActorPrefab();
             SummonFrontlineProxy bossSummonActorPrefab = EnsureBossSummonPressureActorPrefab();
+            EnsureSupportSummonActionProfiles();
+            EnsureBossSummonPressureProfile();
             EnsureSummonPresentationCandidateProfiles();
             Scene scene = EditorSceneManager.OpenScene(ActionFoundationProfileSetup.ScenePath, OpenSceneMode.Single);
             patternProfile = LoadAsset<BossBarragePatternProfile>(PatternProfilePath);
@@ -278,8 +335,12 @@ namespace DimensionBrawl.Editor
             skill1ProjectilePrefab = LoadPrefabComponent<LaneActionProjectile>(Skill1ProjectilePrefabPath);
             rangedBasicProjectilePrefab = LoadPrefabComponent<LaneActionProjectile>(RangedBasicProjectilePrefabPath);
             summonSlot1ProjectilePrefab = LoadPrefabComponent<LaneActionProjectile>(SummonSlot1ProjectilePrefabPath);
+            summonSlot2ProjectilePrefab = LoadPrefabComponent<LaneActionProjectile>(SummonSlot2ProjectilePrefabPath);
+            summonSlot3ProjectilePrefab = LoadPrefabComponent<LaneActionProjectile>(SummonSlot3ProjectilePrefabPath);
             summonEntryCuePrefab = LoadAsset<GameObject>(SummonSlot1EntryCuePrefabPath);
             summonActorPrefab = LoadPrefabComponent<SummonFrontlineProxy>(SummonSlot1ActorPrefabPath);
+            summonSlot2ActorPrefab = LoadPrefabComponent<SummonFrontlineProxy>(SummonSlot2ActorPrefabPath);
+            summonSlot3ActorPrefab = LoadPrefabComponent<SummonFrontlineProxy>(SummonSlot3ActorPrefabPath);
             bossSummonActorPrefab = LoadPrefabComponent<SummonFrontlineProxy>(BossSummonPressureActorPrefabPath);
             RemoveReviewAndEnemyRoots(scene);
 
@@ -334,14 +395,22 @@ namespace DimensionBrawl.Editor
                 laneSpace,
                 skill1ProjectilePrefab,
                 summonSlot1ProjectilePrefab,
+                summonSlot2ProjectilePrefab,
+                summonSlot3ProjectilePrefab,
                 summonEntryCuePrefab,
                 summonActorPrefab,
+                summonSlot2ActorPrefab,
+                summonSlot3ActorPrefab,
                 projectileRoot.transform,
                 actionCueRoot.transform,
                 summonActorRoot.transform);
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "player Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "player SummonSlot1 action");
+            PlayerSupportSummonSlotAction summonSlot2Action =
+                RequireSupportSummonSlotAction(player.gameObject, "SummonSlot2");
+            PlayerSupportSummonSlotAction summonSlot3Action =
+                RequireSupportSummonSlotAction(player.gameObject, "SummonSlot3");
             ConfigureTargetReferences(targetSelector, cameraTargetBridge, cameraController, player, playerHealth, closeThreatHealth, bossHealth);
             ConfigureEncounter(encounter, playerHealth, closeThreatHealth);
             BossBarrageEmitter bossBarrageEmitter = RequireComponent<BossBarrageEmitter>(bossProxy, "boss barrage emitter");
@@ -405,6 +474,8 @@ namespace DimensionBrawl.Editor
                 rangedBasicAttackAction,
                 skill1Action,
                 summonSlot1Action,
+                summonSlot2Action,
+                summonSlot3Action,
                 bossBarrageEmitter,
                 pocketOwner,
                 bossPressureCost,
@@ -478,6 +549,10 @@ namespace DimensionBrawl.Editor
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "player Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "player SummonSlot1 action");
+            PlayerSupportSummonSlotAction summonSlot2Action =
+                RequireSupportSummonSlotAction(player.gameObject, "SummonSlot2");
+            PlayerSupportSummonSlotAction summonSlot3Action =
+                RequireSupportSummonSlotAction(player.gameObject, "SummonSlot3");
             BossBarragePocketReviewOwner pocketOwner =
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(scene, PocketOwnerRootName), "boss barrage pocket owner");
             BossBarrageLaneReviewHud reviewHud =
@@ -525,6 +600,38 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(energyLadder, "laneSpace", laneSpace);
             ValidateObjectReference(energyLadder, "trackedPlayer", player.transform);
             ValidatePlayerEnergyActions(skill1Action, summonSlot1Action, energyLadder, playerHealth, targetSelector, bossHealth, laneSpace);
+            ValidateSupportSummonSlotAction(
+                summonSlot2Action,
+                "SummonSlot2",
+                energyLadder,
+                playerHealth,
+                targetSelector,
+                bossHealth,
+                laneSpace,
+                SummonSlot2ProjectilePrefabPath,
+                SummonSlot2ActorPrefabPath,
+                SummonSlot2ActionProfilePath,
+                160f,
+                false,
+                0.1f,
+                0.78f,
+                3);
+            ValidateSupportSummonSlotAction(
+                summonSlot3Action,
+                "SummonSlot3",
+                energyLadder,
+                playerHealth,
+                targetSelector,
+                bossHealth,
+                laneSpace,
+                SummonSlot3ProjectilePrefabPath,
+                SummonSlot3ActorPrefabPath,
+                SummonSlot3ActionProfilePath,
+                360f,
+                true,
+                0.15f,
+                1.05f,
+                3);
             ValidateObjectReference(emitter, "laneSpace", laneSpace);
             ValidateObjectReference(emitter, "trackedPlayer", player.transform);
             ValidateObjectReference(emitter, "sourceHealth", bossHealth);
@@ -648,7 +755,9 @@ namespace DimensionBrawl.Editor
                 bossPressureCost,
                 bossPressurePosition,
                 bossPressureActionDirector,
-                bossSummonPressureAction);
+                bossSummonPressureAction,
+                summonSlot2Action,
+                summonSlot3Action);
             ValidateMobileReviewHud(
                 mobileHud,
                 player,
@@ -658,6 +767,8 @@ namespace DimensionBrawl.Editor
                 rangedBasicAttackAction,
                 skill1Action,
                 summonSlot1Action,
+                summonSlot2Action,
+                summonSlot3Action,
                 energyLadder);
             ValidateFixedRearCamera(cameraController, player.transform, laneSpace.transform);
             ValidateSummonForwardSpace(laneSpace);
@@ -706,6 +817,10 @@ namespace DimensionBrawl.Editor
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "player Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "player SummonSlot1 action");
+            PlayerSupportSummonSlotAction summonSlot2Action =
+                RequireSupportSummonSlotAction(player.gameObject, "SummonSlot2");
+            PlayerSupportSummonSlotAction summonSlot3Action =
+                RequireSupportSummonSlotAction(player.gameObject, "SummonSlot3");
             SummonLaneSpace laneSpace = RequireObject<SummonLaneSpace>(scene, "summon lane space");
             GameObject bossProxy = RequireRoot(scene, BossProxyRootName);
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossProxy, "boss proxy health");
@@ -745,6 +860,8 @@ namespace DimensionBrawl.Editor
                 energyLadder,
                 skill1Action,
                 summonSlot1Action,
+                summonSlot2Action,
+                summonSlot3Action,
                 emitter,
                 bossPressureCost,
                 bossPressureActionDirector,
@@ -773,6 +890,10 @@ namespace DimensionBrawl.Editor
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "player Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "player SummonSlot1 action");
+            PlayerSupportSummonSlotAction summonSlot2Action =
+                RequireSupportSummonSlotAction(player.gameObject, "SummonSlot2");
+            PlayerSupportSummonSlotAction summonSlot3Action =
+                RequireSupportSummonSlotAction(player.gameObject, "SummonSlot3");
             SummonLaneSpace laneSpace = RequireObject<SummonLaneSpace>(scene, "summon lane space");
             GameObject bossProxy = RequireRoot(scene, BossProxyRootName);
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossProxy, "boss proxy health");
@@ -805,6 +926,8 @@ namespace DimensionBrawl.Editor
                 energyLadder,
                 skill1Action,
                 summonSlot1Action,
+                summonSlot2Action,
+                summonSlot3Action,
                 emitter,
                 bossPressureCost,
                 bossPressureActionDirector,
@@ -860,6 +983,10 @@ namespace DimensionBrawl.Editor
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "player Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "player SummonSlot1 action");
+            PlayerSupportSummonSlotAction summonSlot2Action =
+                RequireSupportSummonSlotAction(player.gameObject, "SummonSlot2");
+            PlayerSupportSummonSlotAction summonSlot3Action =
+                RequireSupportSummonSlotAction(player.gameObject, "SummonSlot3");
             GameObject bossProxy = RequireRoot(scene, BossProxyRootName);
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossProxy, "boss proxy health");
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossProxy, "boss barrage emitter");
@@ -903,12 +1030,16 @@ namespace DimensionBrawl.Editor
                 energyLadder,
                 skill1Action,
                 summonSlot1Action,
+                summonSlot2Action,
+                summonSlot3Action,
                 emitter,
                 bossPressureCost,
                 bossPressureActionDirector,
                 bossSummonPressureAction,
                 clearMarker,
                 failMarker);
+            ValidateObjectReference(reviewHud, "summonSlot2Action", summonSlot2Action);
+            ValidateObjectReference(reviewHud, "summonSlot3Action", summonSlot3Action);
             ValidateObjectReference(reviewHud, "pocketReviewOwner", null);
             ValidateObjectReference(reviewHud, "duelReviewOwner", duelOwner);
         }
@@ -1386,340 +1517,6 @@ namespace DimensionBrawl.Editor
             return LoadPrefabComponent<LaneActionProjectile>(prefabPath);
         }
 
-        private static GameObject EnsureSummonEntryCuePrefab()
-        {
-            EnsureFolderForAsset(SummonSlot1EntryCuePrefabPath);
-            Material material = LoadOrCreateMaterial(SummonSlot1EntryCueMaterialPath, new Color(0.25f, 1f, 0.68f, 1f));
-            bool prefabExists = AssetDatabase.LoadAssetAtPath<GameObject>(SummonSlot1EntryCuePrefabPath) != null;
-            GameObject editableRoot = prefabExists
-                ? PrefabUtility.LoadPrefabContents(SummonSlot1EntryCuePrefabPath)
-                : GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-
-            try
-            {
-                editableRoot.name = "PF_SummonSlot1EntryCue_MagicCircle";
-                editableRoot.transform.localPosition = Vector3.zero;
-                editableRoot.transform.localRotation = Quaternion.identity;
-                editableRoot.transform.localScale = new Vector3(1f, 0.04f, 1f);
-
-                MeshRenderer renderer = EnsureComponent<MeshRenderer>(editableRoot);
-                renderer.sharedMaterial = material;
-
-                Collider collider = editableRoot.GetComponent<Collider>();
-                if (collider != null && !(collider is SphereCollider))
-                {
-                    UnityEngine.Object.DestroyImmediate(collider);
-                }
-
-                PrefabUtility.SaveAsPrefabAsset(editableRoot, SummonSlot1EntryCuePrefabPath);
-            }
-            finally
-            {
-                if (prefabExists)
-                {
-                    PrefabUtility.UnloadPrefabContents(editableRoot);
-                }
-                else
-                {
-                    UnityEngine.Object.DestroyImmediate(editableRoot);
-                }
-            }
-
-            return LoadAsset<GameObject>(SummonSlot1EntryCuePrefabPath);
-        }
-
-        private static SummonFrontlineProxy EnsureSummonActorPrefab()
-        {
-            EnsureFolderForAsset(SummonSlot1ActorPrefabPath);
-            Material material = LoadOrCreateMaterial(SummonSlot1ActorMaterialPath, new Color(0.2f, 1f, 0.78f, 1f));
-            Material pressureScreenMaterial = LoadOrCreateTransparentMaterial(
-                SummonPressureScreenMaterialPath,
-                new Color(0.18f, 1f, 0.78f, 0.38f));
-            Material pulseMaterial = LoadOrCreateTransparentMaterial(
-                SummonSlot1ActorPulseMaterialPath,
-                new Color(0.45f, 0.95f, 1f, 0.72f));
-            bool prefabExists = AssetDatabase.LoadAssetAtPath<GameObject>(SummonSlot1ActorPrefabPath) != null;
-            GameObject editableRoot = prefabExists
-                ? PrefabUtility.LoadPrefabContents(SummonSlot1ActorPrefabPath)
-                : GameObject.CreatePrimitive(PrimitiveType.Capsule);
-
-            try
-            {
-                editableRoot.name = "PF_SummonSlot1Actor_Proxy";
-                editableRoot.transform.localPosition = Vector3.zero;
-                editableRoot.transform.localRotation = Quaternion.identity;
-                editableRoot.transform.localScale = Vector3.one;
-
-                MeshRenderer renderer = EnsureComponent<MeshRenderer>(editableRoot);
-                renderer.sharedMaterial = material;
-                renderer.enabled = false;
-
-                Collider collider = editableRoot.GetComponent<Collider>();
-                if (collider != null && !(collider is SphereCollider))
-                {
-                    UnityEngine.Object.DestroyImmediate(collider);
-                }
-
-                SummonFrontlineProxy proxy = EnsureComponent<SummonFrontlineProxy>(editableRoot);
-                Transform projectileOrigin = EnsureChild(editableRoot.transform, "ProjectileOrigin");
-                projectileOrigin.localPosition = new Vector3(0f, 0.85f, 0.35f);
-                projectileOrigin.localRotation = Quaternion.identity;
-                projectileOrigin.localScale = Vector3.one;
-                SetObjectReference(proxy, "projectileOrigin", projectileOrigin);
-
-                SummonPressureScreen pressureScreen = EnsureComponent<SummonPressureScreen>(editableRoot);
-                SphereCollider screenCollider = EnsureComponent<SphereCollider>(editableRoot);
-                screenCollider.isTrigger = true;
-                screenCollider.radius = 1.35f;
-
-                Rigidbody screenRigidbody = EnsureComponent<Rigidbody>(editableRoot);
-                screenRigidbody.useGravity = false;
-                screenRigidbody.isKinematic = true;
-
-                SetEnum(pressureScreen, "ownerTeam", (int)DamageTeam.AllySummon);
-                SetInt(pressureScreen, "defaultMaxIntercepts", 2);
-                SetFloat(pressureScreen, "defaultLifetimeSeconds", 1.2f);
-                SetFloat(pressureScreen, "defaultRadius", 1.35f);
-                SetObjectReference(proxy, "pressureScreen", pressureScreen);
-
-                Transform pressureScreenVisual = EnsureChild(editableRoot.transform, "PressureScreenVisual");
-                pressureScreenVisual.localPosition = new Vector3(0f, 0.72f, 0.2f);
-                pressureScreenVisual.localRotation = Quaternion.identity;
-                pressureScreenVisual.localScale = Vector3.one;
-                MeshFilter visualFilter = EnsureComponent<MeshFilter>(pressureScreenVisual.gameObject);
-                visualFilter.sharedMesh = LoadPrimitiveMesh(PrimitiveType.Sphere);
-                MeshRenderer visualRenderer = EnsureComponent<MeshRenderer>(pressureScreenVisual.gameObject);
-                visualRenderer.sharedMaterial = pressureScreenMaterial;
-                visualRenderer.shadowCastingMode = ShadowCastingMode.Off;
-                visualRenderer.receiveShadows = false;
-                visualRenderer.allowOcclusionWhenDynamic = false;
-                Collider visualCollider = pressureScreenVisual.GetComponent<Collider>();
-                if (visualCollider != null)
-                {
-                    UnityEngine.Object.DestroyImmediate(visualCollider);
-                }
-
-                SummonPressureScreenPresenter presenter = EnsureComponent<SummonPressureScreenPresenter>(editableRoot);
-                SetObjectReference(presenter, "pressureScreen", pressureScreen);
-                SetObjectReference(presenter, "visualRoot", pressureScreenVisual);
-                SetObjectReferenceArray(presenter, "screenRenderers", new UnityEngine.Object[] { visualRenderer });
-                SetColor(presenter, "activeColor", new Color(0.22f, 1f, 0.82f, 0.42f));
-                SetColor(presenter, "interceptColor", new Color(0.92f, 1f, 1f, 0.88f));
-                SetFloat(presenter, "activationFlashSeconds", 0.12f);
-                SetFloat(presenter, "interceptFlashSeconds", 0.18f);
-                SetFloat(presenter, "finalHitLingerSeconds", 0.16f);
-                SetFloat(presenter, "pulseSpeed", 9f);
-                SetFloat(presenter, "pulseScale", 0.04f);
-
-                Transform tierPulseCore = EnsureChild(editableRoot.transform, "TierPulseCore");
-                tierPulseCore.localPosition = new Vector3(0f, 1.08f, 0.08f);
-                tierPulseCore.localRotation = Quaternion.identity;
-                tierPulseCore.localScale = Vector3.one * 0.32f;
-                MeshFilter pulseFilter = EnsureComponent<MeshFilter>(tierPulseCore.gameObject);
-                pulseFilter.sharedMesh = LoadPrimitiveMesh(PrimitiveType.Sphere);
-                MeshRenderer pulseRenderer = EnsureComponent<MeshRenderer>(tierPulseCore.gameObject);
-                pulseRenderer.sharedMaterial = pulseMaterial;
-                pulseRenderer.shadowCastingMode = ShadowCastingMode.Off;
-                pulseRenderer.receiveShadows = false;
-                pulseRenderer.allowOcclusionWhenDynamic = false;
-                Collider pulseCollider = tierPulseCore.GetComponent<Collider>();
-                if (pulseCollider != null)
-                {
-                    UnityEngine.Object.DestroyImmediate(pulseCollider);
-                }
-
-                Transform summonVisual = AttachRoleVisualOnly(
-                    editableRoot.transform,
-                    SummonSlot1ActorVisualRoleId,
-                    ActionFoundationEnemyRoleCandidateSetup.ShieldBreakerElitePrefabPath,
-                    SummonSlot1ActorVisualName,
-                    new Vector3(0f, -0.04f, -0.08f),
-                    Vector3.zero,
-                    new Vector3(0.62f, 0.62f, 0.62f));
-
-                SummonFrontlineProxyPresenter actorPresenter =
-                    EnsureComponent<SummonFrontlineProxyPresenter>(editableRoot);
-                SetObjectReference(actorPresenter, "proxy", proxy);
-                SetObjectReference(actorPresenter, "pulseRoot", tierPulseCore);
-                SetObjectReferenceArray(
-                    actorPresenter,
-                    "actorRenderers",
-                    BuildPulseRendererReferenceArray(pulseRenderer));
-                SetColor(actorPresenter, "tierOneColor", new Color(0.24f, 1f, 0.78f, 0.78f));
-                SetColor(actorPresenter, "tierTwoColor", new Color(0.38f, 0.74f, 1f, 0.9f));
-                SetColor(actorPresenter, "tierThreeColor", new Color(1f, 0.76f, 0.24f, 1f));
-                SetColor(actorPresenter, "flashColor", Color.white);
-                SetFloat(actorPresenter, "entryFlashSeconds", 0.22f);
-                SetFloat(actorPresenter, "impactFlashSeconds", 0.18f);
-                SetFloat(actorPresenter, "impactFlashProgress", 0.86f);
-                SetFloat(actorPresenter, "pulseSpeed", 8f);
-                SetFloat(actorPresenter, "pulseScale", 0.08f);
-                SetFloat(actorPresenter, "tierScaleStep", 0.18f);
-                SetFloat(actorPresenter, "flashScale", 0.22f);
-
-                PrefabUtility.SaveAsPrefabAsset(editableRoot, SummonSlot1ActorPrefabPath);
-            }
-            finally
-            {
-                if (prefabExists)
-                {
-                    PrefabUtility.UnloadPrefabContents(editableRoot);
-                }
-                else
-                {
-                    UnityEngine.Object.DestroyImmediate(editableRoot);
-                }
-            }
-
-            return LoadPrefabComponent<SummonFrontlineProxy>(SummonSlot1ActorPrefabPath);
-        }
-
-        private static SummonFrontlineProxy EnsureBossSummonPressureActorPrefab()
-        {
-            EnsureFolderForAsset(BossSummonPressureActorPrefabPath);
-            Material material = LoadOrCreateMaterial(BossSummonPressureActorMaterialPath, new Color(1f, 0.36f, 0.64f, 1f));
-            Material pressureScreenMaterial = LoadOrCreateTransparentMaterial(
-                BossSummonPressureScreenMaterialPath,
-                new Color(1f, 0.22f, 0.55f, 0.38f));
-            Material pulseMaterial = LoadOrCreateTransparentMaterial(
-                BossSummonPressureActorPulseMaterialPath,
-                new Color(1f, 0.62f, 0.28f, 0.74f));
-            bool prefabExists = AssetDatabase.LoadAssetAtPath<GameObject>(BossSummonPressureActorPrefabPath) != null;
-            GameObject editableRoot = prefabExists
-                ? PrefabUtility.LoadPrefabContents(BossSummonPressureActorPrefabPath)
-                : GameObject.CreatePrimitive(PrimitiveType.Capsule);
-
-            try
-            {
-                editableRoot.name = "PF_BossSummonPressureActor_Proxy";
-                editableRoot.transform.localPosition = Vector3.zero;
-                editableRoot.transform.localRotation = Quaternion.identity;
-                editableRoot.transform.localScale = Vector3.one;
-
-                MeshRenderer renderer = EnsureComponent<MeshRenderer>(editableRoot);
-                renderer.sharedMaterial = material;
-                renderer.enabled = false;
-
-                Collider collider = editableRoot.GetComponent<Collider>();
-                if (collider != null && !(collider is SphereCollider))
-                {
-                    UnityEngine.Object.DestroyImmediate(collider);
-                }
-
-                SummonFrontlineProxy proxy = EnsureComponent<SummonFrontlineProxy>(editableRoot);
-                Transform projectileOrigin = EnsureChild(editableRoot.transform, "PressureOrigin");
-                projectileOrigin.localPosition = new Vector3(0f, 0.92f, -0.28f);
-                projectileOrigin.localRotation = Quaternion.identity;
-                projectileOrigin.localScale = Vector3.one;
-                SetObjectReference(proxy, "projectileOrigin", projectileOrigin);
-
-                SummonPressureScreen pressureScreen = EnsureComponent<SummonPressureScreen>(editableRoot);
-                SphereCollider screenCollider = EnsureComponent<SphereCollider>(editableRoot);
-                screenCollider.isTrigger = true;
-                screenCollider.radius = 1.45f;
-
-                Rigidbody screenRigidbody = EnsureComponent<Rigidbody>(editableRoot);
-                screenRigidbody.useGravity = false;
-                screenRigidbody.isKinematic = true;
-
-                SetEnum(pressureScreen, "ownerTeam", (int)DamageTeam.Enemy);
-                SetInt(pressureScreen, "defaultMaxIntercepts", 3);
-                SetFloat(pressureScreen, "defaultLifetimeSeconds", 1.45f);
-                SetFloat(pressureScreen, "defaultRadius", 1.45f);
-                SetObjectReference(proxy, "pressureScreen", pressureScreen);
-
-                Transform pressureScreenVisual = EnsureChild(editableRoot.transform, "PressureScreenVisual");
-                pressureScreenVisual.localPosition = new Vector3(0f, 0.72f, -0.12f);
-                pressureScreenVisual.localRotation = Quaternion.identity;
-                pressureScreenVisual.localScale = Vector3.one;
-                MeshFilter visualFilter = EnsureComponent<MeshFilter>(pressureScreenVisual.gameObject);
-                visualFilter.sharedMesh = LoadPrimitiveMesh(PrimitiveType.Sphere);
-                MeshRenderer visualRenderer = EnsureComponent<MeshRenderer>(pressureScreenVisual.gameObject);
-                visualRenderer.sharedMaterial = pressureScreenMaterial;
-                visualRenderer.shadowCastingMode = ShadowCastingMode.Off;
-                visualRenderer.receiveShadows = false;
-                visualRenderer.allowOcclusionWhenDynamic = false;
-                Collider visualCollider = pressureScreenVisual.GetComponent<Collider>();
-                if (visualCollider != null)
-                {
-                    UnityEngine.Object.DestroyImmediate(visualCollider);
-                }
-
-                SummonPressureScreenPresenter presenter = EnsureComponent<SummonPressureScreenPresenter>(editableRoot);
-                SetObjectReference(presenter, "pressureScreen", pressureScreen);
-                SetObjectReference(presenter, "visualRoot", pressureScreenVisual);
-                SetObjectReferenceArray(presenter, "screenRenderers", new UnityEngine.Object[] { visualRenderer });
-                SetColor(presenter, "activeColor", new Color(1f, 0.22f, 0.55f, 0.42f));
-                SetColor(presenter, "interceptColor", new Color(1f, 0.86f, 0.64f, 0.9f));
-                SetFloat(presenter, "activationFlashSeconds", 0.14f);
-                SetFloat(presenter, "interceptFlashSeconds", 0.2f);
-                SetFloat(presenter, "finalHitLingerSeconds", 0.16f);
-                SetFloat(presenter, "pulseSpeed", 8.2f);
-                SetFloat(presenter, "pulseScale", 0.055f);
-
-                Transform tierPulseCore = EnsureChild(editableRoot.transform, "TierPressureCore");
-                tierPulseCore.localPosition = new Vector3(0f, 1.08f, -0.08f);
-                tierPulseCore.localRotation = Quaternion.identity;
-                tierPulseCore.localScale = Vector3.one * 0.34f;
-                MeshFilter pulseFilter = EnsureComponent<MeshFilter>(tierPulseCore.gameObject);
-                pulseFilter.sharedMesh = LoadPrimitiveMesh(PrimitiveType.Sphere);
-                MeshRenderer pulseRenderer = EnsureComponent<MeshRenderer>(tierPulseCore.gameObject);
-                pulseRenderer.sharedMaterial = pulseMaterial;
-                pulseRenderer.shadowCastingMode = ShadowCastingMode.Off;
-                pulseRenderer.receiveShadows = false;
-                pulseRenderer.allowOcclusionWhenDynamic = false;
-                Collider pulseCollider = tierPulseCore.GetComponent<Collider>();
-                if (pulseCollider != null)
-                {
-                    UnityEngine.Object.DestroyImmediate(pulseCollider);
-                }
-
-                Transform summonVisual = AttachRoleVisualOnly(
-                    editableRoot.transform,
-                    BossSummonPressureActorVisualRoleId,
-                    ActionFoundationEnemyRoleCandidateSetup.AuraCaptainElitePrefabPath,
-                    BossSummonPressureActorVisualName,
-                    new Vector3(0f, -0.04f, 0.1f),
-                    Vector3.zero,
-                    new Vector3(0.66f, 0.66f, 0.66f));
-
-                SummonFrontlineProxyPresenter actorPresenter =
-                    EnsureComponent<SummonFrontlineProxyPresenter>(editableRoot);
-                SetObjectReference(actorPresenter, "proxy", proxy);
-                SetObjectReference(actorPresenter, "pulseRoot", tierPulseCore);
-                SetObjectReferenceArray(
-                    actorPresenter,
-                    "actorRenderers",
-                    BuildPulseRendererReferenceArray(pulseRenderer));
-                SetColor(actorPresenter, "tierOneColor", new Color(1f, 0.32f, 0.55f, 0.82f));
-                SetColor(actorPresenter, "tierTwoColor", new Color(1f, 0.62f, 0.24f, 0.92f));
-                SetColor(actorPresenter, "tierThreeColor", new Color(1f, 0.22f, 0.9f, 1f));
-                SetColor(actorPresenter, "flashColor", new Color(1f, 0.95f, 0.84f, 1f));
-                SetFloat(actorPresenter, "entryFlashSeconds", 0.24f);
-                SetFloat(actorPresenter, "impactFlashSeconds", 0.2f);
-                SetFloat(actorPresenter, "impactFlashProgress", 0.82f);
-                SetFloat(actorPresenter, "pulseSpeed", 7.4f);
-                SetFloat(actorPresenter, "pulseScale", 0.1f);
-                SetFloat(actorPresenter, "tierScaleStep", 0.2f);
-                SetFloat(actorPresenter, "flashScale", 0.24f);
-
-                PrefabUtility.SaveAsPrefabAsset(editableRoot, BossSummonPressureActorPrefabPath);
-            }
-            finally
-            {
-                if (prefabExists)
-                {
-                    PrefabUtility.UnloadPrefabContents(editableRoot);
-                }
-                else
-                {
-                    UnityEngine.Object.DestroyImmediate(editableRoot);
-                }
-            }
-
-            return LoadPrefabComponent<SummonFrontlineProxy>(BossSummonPressureActorPrefabPath);
-        }
-
         private static void EnsureSummonPresentationCandidateProfiles()
         {
             CombatVfxCueProfile vfxCueProfile =
@@ -1738,6 +1535,34 @@ namespace DimensionBrawl.Editor
                 "Promoted ShieldBreakerElite role Animator stands in for the first ally summon block-and-break read.",
                 "Magic-circle entry, ally pressure screen, tier pulse, assist bolt, and counter bolt carry the current read.",
                 "Replace the actor prefab or promoted visual source after a dedicated ally summon model and animation set are reviewed.");
+
+            ConfigureSummonPresentationCandidateProfile(
+                LoadOrCreateSummonPresentationCandidateProfile(SummonSlot2PresentationCandidateProfilePath),
+                "PlayerSummon.BacklineMarksman",
+                "Player Summon - Backline Marksman",
+                SummonPresentationSide.PlayerSummon,
+                SummonSlot2ActorPrefabPath,
+                ActionFoundationEnemyRoleCandidateSetup.BacklineShooterCandidateProfilePath,
+                SummonSlot2ActorVisualName,
+                SummonSlot2ActorVisualRoleId,
+                vfxCueProfile,
+                "Promoted BacklineShooter role Animator stands in for the second ally summon ranged-support read.",
+                "Magic-circle entry, marksman proxy, narrow assist volleys, and light pulse distinguish it from the shield slot.",
+                "Replace the actor prefab or promoted visual source after a dedicated ranged ally summon model is reviewed.");
+
+            ConfigureSummonPresentationCandidateProfile(
+                LoadOrCreateSummonPresentationCandidateProfile(SummonSlot3PresentationCandidateProfilePath),
+                "PlayerSummon.VanguardCommander",
+                "Player Summon - Vanguard Commander",
+                SummonPresentationSide.PlayerSummon,
+                SummonSlot3ActorPrefabPath,
+                ActionFoundationEnemyRoleCandidateSetup.FinalStandCommanderEliteCandidateProfilePath,
+                SummonSlot3ActorVisualName,
+                SummonSlot3ActorVisualRoleId,
+                vfxCueProfile,
+                "Promoted FinalStandCommanderElite role Animator stands in for the third ally summon vanguard read.",
+                "Magic-circle entry, heavier proxy scale, short advance, and high-impact volley distinguish it from S1/S2.",
+                "Replace the actor prefab or promoted visual source after a dedicated tank/vanguard ally summon model is reviewed.");
 
             ConfigureSummonPresentationCandidateProfile(
                 LoadOrCreateSummonPresentationCandidateProfile(BossSummonPressurePresentationCandidateProfilePath),
@@ -1917,6 +1742,8 @@ namespace DimensionBrawl.Editor
             SetObjectReference(bossSummonPressureAction, "summonActorRoot", bossSummonActorRoot);
             SetEnum(bossSummonPressureAction, "ownerTeam", (int)DamageTeam.Enemy);
             SetInt(bossSummonPressureAction, "actorPrewarmCount", 2);
+            SetInt(bossSummonPressureAction, "maxActiveSummonActors", 1);
+            SetFloat(bossSummonPressureAction, "actorEntryCatchupSecondsPerMeter", 0.55f);
             bossSummonPressureAction.ConfigurePressureProfile(
                 LoadAsset<BossSummonPressureProfile>(BossSummonPressureProfilePath));
 
@@ -1930,6 +1757,7 @@ namespace DimensionBrawl.Editor
                 playerTransform);
             bossPressureActionDirector.ConfigureActionDeck(
                 LoadAsset<BossPressureActionDeckProfile>(BossPressureActionDeckProfilePath));
+            bossPressureActionDirector.SetHoldForNextTierActionWhenGateAllows(true);
             SetBool(bossPressureActionDirector, "actionsEnabled", true);
 
             BossPressurePositionController bossPressurePosition =
@@ -2829,6 +2657,8 @@ namespace DimensionBrawl.Editor
             PlayerRangedBasicAttackAction rangedBasicAttackAction,
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
+            PlayerSupportSummonSlotAction summonSlot2Action,
+            PlayerSupportSummonSlotAction summonSlot3Action,
             BossBarrageEmitter bossBarrageEmitter,
             BossBarragePocketReviewOwner pocketOwner,
             BossPressureCostLadder bossPressureCost,
@@ -2855,7 +2685,9 @@ namespace DimensionBrawl.Editor
                 bossPressureCost,
                 bossPressurePosition,
                 bossPressureActionDirector,
-                bossSummonPressureAction);
+                bossSummonPressureAction,
+                summonSlot2Action,
+                summonSlot3Action);
             SetObjectReference(hud, "duelReviewOwner", null);
             SetBool(hud, "showCenterReticle", false);
             BossBarrageLaneReviewMobileHud mobileHud = hudRoot.AddComponent<BossBarrageLaneReviewMobileHud>();
@@ -2866,7 +2698,14 @@ namespace DimensionBrawl.Editor
                 rangedAimController,
                 rangedBasicAttackAction,
                 skill1Action,
-                summonSlot1Action);
+                summonSlot1Action,
+                energyLadder,
+                summonSlot2Action,
+                summonSlot3Action);
+            SetObjectReference(mobileHud, "summonSlot2Action", summonSlot2Action);
+            SetObjectReference(mobileHud, "summonSlot3Action", summonSlot3Action);
+            SetString(mobileHud, "summonSlot2ActionName", "SummonSlot2");
+            SetString(mobileHud, "summonSlot3ActionName", "SummonSlot3");
             SetBool(mobileHud, "screenDragControlsAim", true);
             SetBool(mobileHud, "rightMouseDragControlsAim", false);
             SetBool(mobileHud, "leftMouseDragControlsAim", true);
@@ -2885,8 +2724,12 @@ namespace DimensionBrawl.Editor
             SummonLaneSpace laneSpace,
             LaneActionProjectile skill1ProjectilePrefab,
             LaneActionProjectile summonSlot1ProjectilePrefab,
+            LaneActionProjectile summonSlot2ProjectilePrefab,
+            LaneActionProjectile summonSlot3ProjectilePrefab,
             GameObject summonEntryCuePrefab,
             SummonFrontlineProxy summonActorPrefab,
+            SummonFrontlineProxy summonSlot2ActorPrefab,
+            SummonFrontlineProxy summonSlot3ActorPrefab,
             Transform projectileRoot,
             Transform actionCueRoot,
             Transform summonActorRoot)
@@ -2918,9 +2761,92 @@ namespace DimensionBrawl.Editor
             SetEnum(summonSlot1Action, "sourceTeam", (int)DamageTeam.AllySummon);
             SetInt(summonSlot1Action, "prewarmCount", 8);
             SetInt(summonSlot1Action, "actorPrewarmCount", 2);
+            SetInt(summonSlot1Action, "maxActiveSummonActors", 1);
+            SetFloat(summonSlot1Action, "entryForwardOffset", 1.35f);
+            SetFloat(summonSlot1Action, "actorEntryCatchupSecondsPerMeter", 0.55f);
             summonSlot1Action.ConfigureSummonActionProfile(
                 LoadAsset<SummonSlotActionProfile>(SummonSlot1ActionProfilePath));
             EditorUtility.SetDirty(summonSlot1Action);
+
+            PlayerSupportSummonSlotAction summonSlot2Action = EnsureSupportSummonSlotAction(playerRoot, "SummonSlot2");
+            summonSlot2Action.ConfigureSlot("SummonSlot2", Key.Digit2, new Vector2(-1.55f, 0.35f));
+            SetInt(summonSlot2Action, "maxActiveSummonActors", 1);
+            SetFloat(summonSlot2Action, "entryForwardOffset", 1.35f);
+            SetFloat(summonSlot2Action, "actorEntryCatchupSecondsPerMeter", 0.55f);
+            summonSlot2Action.ConfigureSupportCadence(0.1f, 0.78f, 3);
+            summonSlot2Action.ConfigureReferences(
+                energyLadder,
+                playerHealth,
+                targetSelector,
+                frontlineTargetHealth,
+                laneSpace,
+                summonSlot2ProjectilePrefab,
+                summonEntryCuePrefab,
+                summonSlot2ActorPrefab,
+                projectileRoot,
+                actionCueRoot,
+                summonActorRoot);
+            summonSlot2Action.ConfigureSummonActionProfile(
+                LoadAsset<SummonSlotActionProfile>(SummonSlot2ActionProfilePath));
+            EditorUtility.SetDirty(summonSlot2Action);
+
+            PlayerSupportSummonSlotAction summonSlot3Action = EnsureSupportSummonSlotAction(playerRoot, "SummonSlot3");
+            summonSlot3Action.ConfigureSlot("SummonSlot3", Key.Digit3, new Vector2(1.55f, 0.55f));
+            SetInt(summonSlot3Action, "maxActiveSummonActors", 1);
+            SetFloat(summonSlot3Action, "entryForwardOffset", 1.35f);
+            SetFloat(summonSlot3Action, "actorEntryCatchupSecondsPerMeter", 0.55f);
+            summonSlot3Action.ConfigureSupportCadence(0.15f, 1.05f, 3);
+            summonSlot3Action.ConfigureReferences(
+                energyLadder,
+                playerHealth,
+                targetSelector,
+                frontlineTargetHealth,
+                laneSpace,
+                summonSlot3ProjectilePrefab,
+                summonEntryCuePrefab,
+                summonSlot3ActorPrefab,
+                projectileRoot,
+                actionCueRoot,
+                summonActorRoot);
+            summonSlot3Action.ConfigureSummonActionProfile(
+                LoadAsset<SummonSlotActionProfile>(SummonSlot3ActionProfilePath));
+            EditorUtility.SetDirty(summonSlot3Action);
+        }
+
+        private static PlayerSupportSummonSlotAction EnsureSupportSummonSlotAction(
+            GameObject owner,
+            string slotActionName)
+        {
+            PlayerSupportSummonSlotAction[] actions =
+                owner.GetComponents<PlayerSupportSummonSlotAction>();
+            for (int i = 0; i < actions.Length; i++)
+            {
+                if (actions[i] != null && actions[i].SlotActionName == slotActionName)
+                {
+                    return actions[i];
+                }
+            }
+
+            PlayerSupportSummonSlotAction action = owner.AddComponent<PlayerSupportSummonSlotAction>();
+            action.ConfigureSlot(slotActionName, slotActionName == "SummonSlot3" ? Key.Digit3 : Key.Digit2, Vector2.zero);
+            return action;
+        }
+
+        private static PlayerSupportSummonSlotAction RequireSupportSummonSlotAction(
+            GameObject owner,
+            string slotActionName)
+        {
+            PlayerSupportSummonSlotAction[] actions =
+                owner.GetComponents<PlayerSupportSummonSlotAction>();
+            for (int i = 0; i < actions.Length; i++)
+            {
+                if (actions[i] != null && actions[i].SlotActionName == slotActionName)
+                {
+                    return actions[i];
+                }
+            }
+
+            throw new InvalidOperationException($"{owner.name} is missing support summon action {slotActionName}.");
         }
 
         private static void ConfigureFixedRearCamera(
@@ -3301,6 +3227,9 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(summonSlot1Action, "cueRoot", actionCueRoot.transform);
             ValidateObjectReference(summonSlot1Action, "summonActorRoot", summonActorRoot.transform);
             ValidateEnum(summonSlot1Action, "sourceTeam", (int)DamageTeam.AllySummon);
+            ValidateInt(summonSlot1Action, "maxActiveSummonActors", 1);
+            ValidateFloat(summonSlot1Action, "entryForwardOffset", 1.35f);
+            ValidateFloatAtLeast(summonSlot1Action, "actorEntryCatchupSecondsPerMeter", 0.3f);
             SummonSlotActionProfile summonSlot1Profile = LoadAsset<SummonSlotActionProfile>(SummonSlot1ActionProfilePath);
             ValidateObjectReference(
                 summonSlot1Action,
@@ -3312,21 +3241,21 @@ namespace DimensionBrawl.Editor
                 "LV1 Guard Entry",
                 "Emergency pressure screen for urgent boss fire after close-threat relief.",
                 "Spend early when the pocket needs an immediate boss-fire block.",
-                "Small ShieldBreaker entry, two-shot screen, one assist bolt.");
+                "Small ShieldBreaker enters from the player front, advances toward the boss lane, and fires one assist bolt.");
             ValidateSummonSlotReadout(
                 summonSlot1Profile,
                 2,
                 "LV2 Frontline Push",
                 "Mid-tier exchange that starts converting a successful block into forward damage.",
                 "Hold forward-risk long enough for LV2 when the barrage is readable.",
-                "Wider screen, four-shot block budget, two assist bolts.");
+                "Wider screen, four-shot block budget, two assist bolts, and a persistent frontline push.");
             ValidateSummonSlotReadout(
                 summonSlot1Profile,
                 3,
                 "LV3 Break Window",
                 "High-risk payoff that should visibly win the pressure exchange and open the Skill1 follow-up.",
                 "Save for hard boss pressure when retreat alone will not stabilize the pocket.",
-                "Large ShieldBreaker screen, seven-shot block budget, three assist bolts.");
+                "Large ShieldBreaker screen, seven-shot block budget, three assist bolts, and a committed boss-lane push.");
 
             SummonFrontlineProxy summonActorPrefab = LoadPrefabComponent<SummonFrontlineProxy>(SummonSlot1ActorPrefabPath);
             SummonPressureScreen pressureScreen = LoadPrefabComponent<SummonPressureScreen>(SummonSlot1ActorPrefabPath);
@@ -3334,6 +3263,8 @@ namespace DimensionBrawl.Editor
                 LoadPrefabComponent<SummonPressureScreenPresenter>(SummonSlot1ActorPrefabPath);
             SummonFrontlineProxyPresenter actorPresenter =
                 LoadPrefabComponent<SummonFrontlineProxyPresenter>(SummonSlot1ActorPrefabPath);
+            SummonFrontlineClash summonClash = LoadPrefabComponent<SummonFrontlineClash>(SummonSlot1ActorPrefabPath);
+            CombatHealth summonHealth = LoadPrefabComponent<CombatHealth>(SummonSlot1ActorPrefabPath);
             Transform pressureScreenVisual = summonActorPrefab.transform.Find("PressureScreenVisual");
             if (pressureScreenVisual == null)
             {
@@ -3366,6 +3297,16 @@ namespace DimensionBrawl.Editor
             }
 
             ValidateObjectReference(summonActorPrefab, "pressureScreen", pressureScreen);
+            ValidateObjectReference(summonActorPrefab, "health", summonHealth);
+            ValidateObjectReference(summonClash, "proxy", summonActorPrefab);
+            ValidateObjectReference(summonClash, "health", summonHealth);
+            ValidateSummonActorBodyContract(
+                summonActorPrefab.gameObject,
+                summonActorPrefab,
+                summonClash,
+                summonHealth,
+                DamageTeam.AllySummon,
+                "SummonSlot1 actor prefab");
             ValidateEnum(pressureScreen, "ownerTeam", (int)DamageTeam.AllySummon);
             ValidateInt(pressureScreen, "defaultMaxIntercepts", 2);
             ValidateFloat(pressureScreen, "defaultLifetimeSeconds", 1.2f);
@@ -3374,6 +3315,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(presenter, "visualRoot", pressureScreenVisual);
             ValidateArrayReference(presenter, "screenRenderers", 0, pressureScreenRenderer);
             ValidateObjectReference(actorPresenter, "proxy", summonActorPrefab);
+            ValidateObjectReference(actorPresenter, "clash", summonClash);
             ValidateObjectReference(actorPresenter, "pulseRoot", tierPulseCore);
             Transform summonActorVisual = ValidateSummonActorRoleVisual(
                 summonActorPrefab.gameObject,
@@ -3388,11 +3330,161 @@ namespace DimensionBrawl.Editor
             ValidatePulseOnlyActorRenderers(actorPresenter, pulseRenderer, "TierPulseCore");
             ValidateFloat(actorPresenter, "entryFlashSeconds", 0.22f);
             ValidateFloat(actorPresenter, "impactFlashSeconds", 0.18f);
+            ValidateFloat(actorPresenter, "clashFlashSeconds", 0.14f);
             ValidateFloat(actorPresenter, "impactFlashProgress", 0.86f);
             ValidateFloat(actorPresenter, "pulseSpeed", 8f);
             ValidateFloat(actorPresenter, "pulseScale", 0.08f);
             ValidateFloat(actorPresenter, "tierScaleStep", 0.18f);
             ValidateFloat(actorPresenter, "flashScale", 0.22f);
+            ValidateFloat(actorPresenter, "clashFlashScale", 0.16f);
+        }
+
+        private static void ValidateSupportSummonSlotAction(
+            PlayerSupportSummonSlotAction action,
+            string slotActionName,
+            SummonEnergyLadder energyLadder,
+            CombatHealth playerHealth,
+            PlayerCombatTargetSelector targetSelector,
+            CombatHealth frontlineTargetHealth,
+            SummonLaneSpace laneSpace,
+            string projectilePrefabPath,
+            string actorPrefabPath,
+            string actionProfilePath,
+            float expectedMaxHealth,
+            bool expectPressureScreen,
+            float firstVolleyDelaySeconds,
+            float volleyIntervalSeconds,
+            int maxVolleyCount)
+        {
+            GameObject projectileRoot = RequireRoot(SceneManager.GetActiveScene(), ProjectilePoolRootName);
+            GameObject actionCueRoot = RequireRoot(SceneManager.GetActiveScene(), ActionCuePoolRootName);
+            GameObject summonActorRoot = RequireRoot(SceneManager.GetActiveScene(), SummonActorPoolRootName);
+
+            ValidateString(action, "slotActionName", slotActionName);
+            ValidateObjectReference(action, "energyLadder", energyLadder);
+            ValidateObjectReference(action, "sourceHealth", playerHealth);
+            ValidateObjectReference(action, "targetSelector", targetSelector);
+            ValidateObjectReference(action, "frontlineTargetHealth", frontlineTargetHealth);
+            ValidateObjectReference(action, "laneSpace", laneSpace);
+            ValidateObjectReference(action, "projectilePrefabObject", LoadAsset<GameObject>(projectilePrefabPath));
+            ValidateObjectReference(action, "entryCuePrefab", LoadAsset<GameObject>(SummonSlot1EntryCuePrefabPath));
+            ValidateObjectReference(action, "summonActorPrefabObject", LoadAsset<GameObject>(actorPrefabPath));
+            ValidateObjectReference(action, "projectileRoot", projectileRoot.transform);
+            ValidateObjectReference(action, "cueRoot", actionCueRoot.transform);
+            ValidateObjectReference(action, "summonActorRoot", summonActorRoot.transform);
+            ValidateEnum(action, "sourceTeam", (int)DamageTeam.AllySummon);
+            ValidateInt(action, "maxActiveSummonActors", 1);
+            ValidateFloat(action, "entryForwardOffset", 1.35f);
+            ValidateFloatAtLeast(action, "actorEntryCatchupSecondsPerMeter", 0.3f);
+            ValidateObjectReference(
+                action,
+                "summonActionProfile",
+                LoadAsset<SummonSlotActionProfile>(actionProfilePath));
+            ValidateFloat(action, "firstVolleyDelaySeconds", firstVolleyDelaySeconds);
+            ValidateFloat(action, "volleyIntervalSeconds", volleyIntervalSeconds);
+            ValidateInt(action, "maxVolleyCount", maxVolleyCount);
+
+            SummonFrontlineProxy actorPrefab = LoadPrefabComponent<SummonFrontlineProxy>(actorPrefabPath);
+            SummonFrontlineProxyPresenter actorPresenter =
+                LoadPrefabComponent<SummonFrontlineProxyPresenter>(actorPrefabPath);
+            SummonFrontlineClash actorClash = LoadPrefabComponent<SummonFrontlineClash>(actorPrefabPath);
+            CombatHealth actorHealth = LoadPrefabComponent<CombatHealth>(actorPrefabPath);
+            Transform pulseCore = actorPrefab.transform.Find("TierPulseCore");
+            if (pulseCore == null)
+            {
+                throw new InvalidOperationException($"{slotActionName} actor prefab is missing TierPulseCore.");
+            }
+
+            MeshRenderer pulseRenderer = pulseCore.GetComponent<MeshRenderer>();
+            if (pulseRenderer == null)
+            {
+                throw new InvalidOperationException($"{slotActionName} TierPulseCore is missing a MeshRenderer.");
+            }
+
+            ValidateObjectReference(actorPresenter, "proxy", actorPrefab);
+            ValidateObjectReference(actorPresenter, "pulseRoot", pulseCore);
+            ValidateObjectReference(actorPrefab, "health", actorHealth);
+            ValidateObjectReference(actorClash, "proxy", actorPrefab);
+            ValidateObjectReference(actorClash, "health", actorHealth);
+            ValidateObjectReference(actorPresenter, "clash", actorClash);
+            ValidateFloat(actorHealth, "maxHealth", expectedMaxHealth);
+            ValidateSummonActorBodyContract(
+                actorPrefab.gameObject,
+                actorPrefab,
+                actorClash,
+                actorHealth,
+                DamageTeam.AllySummon,
+                $"{slotActionName} actor prefab");
+            ValidateSupportSummonPressureScreen(actorPrefab, expectPressureScreen, slotActionName);
+            ValidatePulseOnlyActorRenderers(actorPresenter, pulseRenderer, "TierPulseCore");
+            ValidateFloat(actorPresenter, "clashFlashSeconds", 0.14f);
+            ValidateFloat(actorPresenter, "clashFlashScale", 0.14f);
+            ValidateNoImportedAssetReference(projectilePrefabPath);
+            ValidateNoImportedAssetReference(actorPrefabPath);
+            ValidateNoImportedAssetReference(actionProfilePath);
+        }
+
+        private static void ValidateSupportSummonPressureScreen(
+            SummonFrontlineProxy actorPrefab,
+            bool expectPressureScreen,
+            string slotActionName)
+        {
+            if (!expectPressureScreen)
+            {
+                if (actorPrefab.PressureScreen != null)
+                {
+                    throw new InvalidOperationException($"{slotActionName} should stay a ranged support actor without a pressure screen.");
+                }
+
+                return;
+            }
+
+            SummonPressureScreen pressureScreen = actorPrefab.PressureScreen;
+            if (pressureScreen == null)
+            {
+                throw new InvalidOperationException($"{slotActionName} must carry a proxy-local pressure screen.");
+            }
+
+            if (pressureScreen.transform == actorPrefab.transform)
+            {
+                throw new InvalidOperationException($"{slotActionName} pressure screen must stay separate from the body hitbox.");
+            }
+
+            SphereCollider screenCollider = pressureScreen.GetComponent<SphereCollider>();
+            if (screenCollider == null || !screenCollider.isTrigger || screenCollider.radius <= 0f)
+            {
+                throw new InvalidOperationException($"{slotActionName} pressure screen needs a positive trigger SphereCollider.");
+            }
+
+            Rigidbody screenRigidbody = pressureScreen.GetComponent<Rigidbody>();
+            if (screenRigidbody == null || !screenRigidbody.isKinematic || screenRigidbody.useGravity)
+            {
+                throw new InvalidOperationException($"{slotActionName} pressure screen Rigidbody must be kinematic and gravity-free.");
+            }
+
+            SummonPressureScreenPresenter screenPresenter =
+                actorPrefab.GetComponent<SummonPressureScreenPresenter>();
+            if (screenPresenter == null)
+            {
+                throw new InvalidOperationException($"{slotActionName} pressure screen must have a presenter.");
+            }
+
+            Transform pressureScreenVisual = actorPrefab.transform.Find("PressureScreenVisual");
+            if (pressureScreenVisual == null)
+            {
+                throw new InvalidOperationException($"{slotActionName} pressure screen is missing PressureScreenVisual.");
+            }
+
+            MeshRenderer pressureScreenRenderer = pressureScreenVisual.GetComponent<MeshRenderer>();
+            if (pressureScreenRenderer == null)
+            {
+                throw new InvalidOperationException($"{slotActionName} PressureScreenVisual is missing a MeshRenderer.");
+            }
+
+            ValidateObjectReference(actorPrefab, "pressureScreen", pressureScreen);
+            ValidateObjectReference(screenPresenter, "pressureScreen", pressureScreen);
+            ValidateObjectReference(screenPresenter, "visualRoot", pressureScreenVisual);
+            ValidateArrayReference(screenPresenter, "screenRenderers", 0, pressureScreenRenderer);
         }
 
         private static void ValidateBossPressureLoop(
@@ -3433,6 +3525,8 @@ namespace DimensionBrawl.Editor
                 RequireRoot(SceneManager.GetActiveScene(), BossSummonActorPoolRootName).transform);
             ValidateEnum(bossSummonPressureAction, "ownerTeam", (int)DamageTeam.Enemy);
             ValidateInt(bossSummonPressureAction, "actorPrewarmCount", 2);
+            ValidateInt(bossSummonPressureAction, "maxActiveSummonActors", 1);
+            ValidateFloatAtLeast(bossSummonPressureAction, "actorEntryCatchupSecondsPerMeter", 0.3f);
             BossSummonPressureProfile bossSummonPressureProfile = LoadAsset<BossSummonPressureProfile>(BossSummonPressureProfilePath);
             ValidateObjectReference(
                 bossSummonPressureAction,
@@ -3442,28 +3536,55 @@ namespace DimensionBrawl.Editor
                 bossSummonPressureProfile,
                 1,
                 "LV1 Escort Probe",
-                "Low-cost boss proxy that tests whether the player can keep firing lanes clear.",
-                "Strafe or use basic fire; do not spend summon unless pressure stacks.",
-                "Usually save SummonSlot1 for the next boss screen.");
+                "Low-cost boss proxy that holds the lane long enough for the player to answer with fire or a saved summon.",
+                "Strafe and keep firing; spend SummonSlot1 only if the next barrage overlaps this proxy.",
+                "A short relief answer should remove the screen and keep the lane from being locked.");
+            ValidateBossSummonPressureTier(
+                bossSummonPressureProfile,
+                1,
+                expectedEntryForwardBlend01: 0.28f,
+                expectedActorLifetimeSeconds: 0f,
+                expectedActorAdvanceDistance: 2.4f,
+                expectedScreenIntercepts: 2,
+                expectedScreenLifetimeSeconds: 2.6f);
             ValidateBossSummonPressureReadout(
                 bossSummonPressureProfile,
                 2,
                 "LV2 Pressure Screen",
-                "Boss-side summon pressure that contests the frontline and can block player follow-up shots.",
-                "Take EN only long enough to prepare a clean response.",
-                "Use SummonSlot1 screen to absorb the boss curtain and reopen Skill1.");
+                "Boss-side summon pressure that contests the frontline for several seconds and blocks player follow-up shots.",
+                "Take EN only long enough to prepare a clean response, then break the screen before the next boss pattern layers on top.",
+                "Use SummonSlot1 or Vanguard support to absorb the curtain and reopen ranged punish time.");
+            ValidateBossSummonPressureTier(
+                bossSummonPressureProfile,
+                2,
+                expectedEntryForwardBlend01: 0.38f,
+                expectedActorLifetimeSeconds: 0f,
+                expectedActorAdvanceDistance: 3.8f,
+                expectedScreenIntercepts: 4,
+                expectedScreenLifetimeSeconds: 3.4f);
             ValidateBossSummonPressureReadout(
                 bossSummonPressureProfile,
                 3,
                 "LV3 Clamp Guard",
-                "High-cost boss proxy that punishes overextension and forces a high-tier answer or retreat.",
-                "Retreat from forward-risk lanes before firing back.",
-                "A saved LV2/LV3 SummonSlot1 answer should create the relief window.");
+                "High-cost boss proxy that punishes overextension and demands a committed high-tier answer or retreat.",
+                "Back off from forward-risk lanes unless a summon answer is already charged.",
+                "A saved LV2/LV3 summon should create a visible pressure-break window before counterfire.");
+            ValidateBossSummonPressureTier(
+                bossSummonPressureProfile,
+                3,
+                expectedEntryForwardBlend01: 0.5f,
+                expectedActorLifetimeSeconds: 0f,
+                expectedActorAdvanceDistance: 5.2f,
+                expectedScreenIntercepts: 7,
+                expectedScreenLifetimeSeconds: 4.2f);
 
             SummonFrontlineProxy bossSummonActorPrefab =
                 LoadPrefabComponent<SummonFrontlineProxy>(BossSummonPressureActorPrefabPath);
             SummonFrontlineProxyPresenter bossSummonActorPresenter =
                 LoadPrefabComponent<SummonFrontlineProxyPresenter>(BossSummonPressureActorPrefabPath);
+            SummonFrontlineClash bossSummonClash =
+                LoadPrefabComponent<SummonFrontlineClash>(BossSummonPressureActorPrefabPath);
+            CombatHealth bossSummonHealth = LoadPrefabComponent<CombatHealth>(BossSummonPressureActorPrefabPath);
             Transform bossSummonVisual = ValidateSummonActorRoleVisual(
                 bossSummonActorPrefab.gameObject,
                 BossSummonPressureActorVisualName);
@@ -3488,7 +3609,18 @@ namespace DimensionBrawl.Editor
             }
 
             ValidateObjectReference(bossSummonActorPresenter, "proxy", bossSummonActorPrefab);
+            ValidateObjectReference(bossSummonActorPresenter, "clash", bossSummonClash);
             ValidateObjectReference(bossSummonActorPresenter, "pulseRoot", tierPressureCore);
+            ValidateObjectReference(bossSummonActorPrefab, "health", bossSummonHealth);
+            ValidateObjectReference(bossSummonClash, "proxy", bossSummonActorPrefab);
+            ValidateObjectReference(bossSummonClash, "health", bossSummonHealth);
+            ValidateSummonActorBodyContract(
+                bossSummonActorPrefab.gameObject,
+                bossSummonActorPrefab,
+                bossSummonClash,
+                bossSummonHealth,
+                DamageTeam.Enemy,
+                "Boss summon pressure actor prefab");
             if (bossSummonVisualRenderers.Length == 0)
             {
                 throw new InvalidOperationException(
@@ -3496,6 +3628,8 @@ namespace DimensionBrawl.Editor
             }
 
             ValidatePulseOnlyActorRenderers(bossSummonActorPresenter, tierPressureRenderer, "TierPressureCore");
+            ValidateFloat(bossSummonActorPresenter, "clashFlashSeconds", 0.14f);
+            ValidateFloat(bossSummonActorPresenter, "clashFlashScale", 0.18f);
 
             ValidateObjectReference(bossPressureActionDirector, "costLadder", bossPressureCost);
             ValidateObjectReference(bossPressureActionDirector, "bossBarrageEmitter", bossBarrageEmitter);
@@ -3507,6 +3641,7 @@ namespace DimensionBrawl.Editor
                 "actionDeckProfile",
                 LoadAsset<BossPressureActionDeckProfile>(BossPressureActionDeckProfilePath));
             ValidateBool(bossPressureActionDirector, "actionsEnabled", true);
+            ValidateBool(bossPressureActionDirector, "holdForNextTierActionWhenGateAllows", true);
             ValidateFloat(bossPressureActionDirector, "globalRecoverySeconds", 0.35f);
             ValidateBossPressureActionSlot(
                 bossPressureActionDirector,
@@ -3653,6 +3788,52 @@ namespace DimensionBrawl.Editor
             ValidateString(readout.StageRole, expectedStageRole, $"Boss summon pressure tier {tier} has the wrong stage role.");
             ValidateString(readout.PlayerRead, expectedPlayerRead, $"Boss summon pressure tier {tier} has the wrong player-read note.");
             ValidateString(readout.SummonRead, expectedSummonRead, $"Boss summon pressure tier {tier} has the wrong summon-read note.");
+        }
+
+        private static void ValidateBossSummonPressureTier(
+            BossSummonPressureProfile profile,
+            int tier,
+            float expectedEntryForwardBlend01,
+            float expectedActorLifetimeSeconds,
+            float expectedActorAdvanceDistance,
+            int expectedScreenIntercepts,
+            float expectedScreenLifetimeSeconds)
+        {
+            if (profile == null)
+            {
+                throw new InvalidOperationException("Boss summon pressure profile is missing.");
+            }
+
+            BossSummonPressureAction.BossSummonTierSettings[] tierSettings = profile.CopyTierSettings();
+            int index = tier - 1;
+            if (index < 0 || index >= tierSettings.Length)
+            {
+                throw new InvalidOperationException($"Boss summon pressure profile is missing tier {tier} settings.");
+            }
+
+            BossSummonPressureAction.BossSummonTierSettings settings = tierSettings[index];
+            ValidateFloatValue(
+                settings.EntryForwardBlend01,
+                expectedEntryForwardBlend01,
+                $"Boss summon pressure tier {tier} has the wrong entry forward blend.");
+            ValidateFloatValue(
+                settings.ActorLifetimeSeconds,
+                expectedActorLifetimeSeconds,
+                $"Boss summon pressure tier {tier} has the wrong actor lifetime.");
+            ValidateFloatValue(
+                settings.ActorAdvanceDistance,
+                expectedActorAdvanceDistance,
+                $"Boss summon pressure tier {tier} has the wrong actor advance distance.");
+            if (settings.ScreenIntercepts != expectedScreenIntercepts)
+            {
+                throw new InvalidOperationException(
+                    $"Boss summon pressure tier {tier} has the wrong screen intercept count.");
+            }
+
+            ValidateFloatValue(
+                settings.ScreenLifetimeSeconds,
+                expectedScreenLifetimeSeconds,
+                $"Boss summon pressure tier {tier} has the wrong screen lifetime.");
         }
 
         private static void ValidateCloseThreat(
@@ -3835,6 +4016,62 @@ namespace DimensionBrawl.Editor
             }
 
             ValidateArrayReference(actorPresenter, "actorRenderers", 0, pulseRenderer);
+        }
+
+        private static void ValidateSummonActorBodyContract(
+            GameObject prefabRoot,
+            SummonFrontlineProxy proxy,
+            SummonFrontlineClash clash,
+            CombatHealth health,
+            DamageTeam expectedTeam,
+            string label)
+        {
+            if (prefabRoot == null || proxy == null || clash == null || health == null)
+            {
+                throw new InvalidOperationException($"{label} must keep proxy, clash, and health components together.");
+            }
+
+            if (prefabRoot.GetComponent<SummonFrontlineProxy>() != proxy
+                || prefabRoot.GetComponent<SummonFrontlineClash>() != clash
+                || prefabRoot.GetComponent<CombatHealth>() != health)
+            {
+                throw new InvalidOperationException(
+                    $"{label} must keep proxy, clash, and health on the prefab root body.");
+            }
+
+            SphereCollider bodyCollider = prefabRoot.GetComponent<SphereCollider>();
+            if (bodyCollider == null)
+            {
+                throw new InvalidOperationException($"{label} must keep a root SphereCollider body hitbox.");
+            }
+
+            if (!bodyCollider.isTrigger)
+            {
+                throw new InvalidOperationException($"{label} body collider must be a trigger for summon clash contacts.");
+            }
+
+            if (bodyCollider.radius <= 0f)
+            {
+                throw new InvalidOperationException($"{label} body collider radius must be positive.");
+            }
+
+            Rigidbody bodyRigidbody = prefabRoot.GetComponent<Rigidbody>();
+            if (bodyRigidbody == null)
+            {
+                throw new InvalidOperationException($"{label} must keep a root Rigidbody for trigger contact dispatch.");
+            }
+
+            if (!bodyRigidbody.isKinematic || bodyRigidbody.useGravity)
+            {
+                throw new InvalidOperationException($"{label} Rigidbody must be kinematic and gravity-free.");
+            }
+
+            ValidateEnum(health, "team", (int)expectedTeam);
+            ValidateBool(health, "startAtFullHealth", true);
+            if (health.MaxHealth <= 0f)
+            {
+                throw new InvalidOperationException($"{label} must have positive max health.");
+            }
         }
 
         private static Transform ValidateSummonActorRoleVisual(GameObject prefabRoot, string visualName)
@@ -4148,6 +4385,8 @@ namespace DimensionBrawl.Editor
             SummonEnergyLadder energyLadder,
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
+            PlayerSupportSummonSlotAction summonSlot2Action,
+            PlayerSupportSummonSlotAction summonSlot3Action,
             BossBarrageEmitter bossBarrageEmitter,
             BossPressureCostLadder bossPressureCost,
             BossPressureActionDirector bossPressureActionDirector,
@@ -4160,6 +4399,8 @@ namespace DimensionBrawl.Editor
             SetObjectReference(owner, "energyLadder", energyLadder);
             SetObjectReference(owner, "skill1Action", skill1Action);
             SetObjectReference(owner, "summonSlot1Action", summonSlot1Action);
+            SetObjectReference(owner, "summonSlot2Action", summonSlot2Action);
+            SetObjectReference(owner, "summonSlot3Action", summonSlot3Action);
             SetObjectReference(owner, "bossBarrageEmitter", bossBarrageEmitter);
             SetObjectReference(owner, "bossPressureCostLadder", bossPressureCost);
             SetObjectReference(owner, "bossPressureActionDirector", bossPressureActionDirector);
@@ -4175,9 +4416,15 @@ namespace DimensionBrawl.Editor
             SetBool(owner, "stopBossPressureActionsOnEnd", true);
             SetBool(owner, "stopEnergyGainOnEnd", true);
             SetInt(owner, "requiredBossPressureActions", 2);
+            SetInt(owner, "requiredBossSkillPatterns", 1);
+            SetInt(owner, "requiredBossSummonPressureActions", 1);
+            SetInt(owner, "requiredBossPunishPatterns", 0);
             SetInt(owner, "requiredBossSummonReleases", 1);
+            SetInt(owner, "requiredBossPressureBlocks", 1);
             SetInt(owner, "requiredPlayerSummonUses", 2);
+            SetInt(owner, "requiredSupportSummonUses", 1);
             SetInt(owner, "requiredAllyPressureBlocks", 1);
+            SetInt(owner, "requiredSummonClashes", 1);
             SetInt(owner, "requiredSkill1ResponseUses", 1);
             SetFloat(owner, "requiredSkill1ResponseDamage", 60f);
             SetFloat(owner, "skill1ResponseDamageWindowSeconds", 2.5f);
@@ -4193,6 +4440,8 @@ namespace DimensionBrawl.Editor
             SummonEnergyLadder energyLadder,
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
+            PlayerSupportSummonSlotAction summonSlot2Action,
+            PlayerSupportSummonSlotAction summonSlot3Action,
             BossBarrageEmitter bossBarrageEmitter,
             BossPressureCostLadder bossPressureCost,
             BossPressureActionDirector bossPressureActionDirector,
@@ -4205,6 +4454,8 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(owner, "energyLadder", energyLadder);
             ValidateObjectReference(owner, "skill1Action", skill1Action);
             ValidateObjectReference(owner, "summonSlot1Action", summonSlot1Action);
+            ValidateObjectReference(owner, "summonSlot2Action", summonSlot2Action);
+            ValidateObjectReference(owner, "summonSlot3Action", summonSlot3Action);
             ValidateObjectReference(owner, "bossBarrageEmitter", bossBarrageEmitter);
             ValidateObjectReference(owner, "bossPressureCostLadder", bossPressureCost);
             ValidateObjectReference(owner, "bossPressureActionDirector", bossPressureActionDirector);
@@ -4220,9 +4471,15 @@ namespace DimensionBrawl.Editor
             ValidateBool(owner, "stopBossPressureActionsOnEnd", true);
             ValidateBool(owner, "stopEnergyGainOnEnd", true);
             ValidateInt(owner, "requiredBossPressureActions", 2);
+            ValidateInt(owner, "requiredBossSkillPatterns", 1);
+            ValidateInt(owner, "requiredBossSummonPressureActions", 1);
+            ValidateInt(owner, "requiredBossPunishPatterns", 0);
             ValidateInt(owner, "requiredBossSummonReleases", 1);
+            ValidateInt(owner, "requiredBossPressureBlocks", 1);
             ValidateInt(owner, "requiredPlayerSummonUses", 2);
+            ValidateInt(owner, "requiredSupportSummonUses", 1);
             ValidateInt(owner, "requiredAllyPressureBlocks", 1);
+            ValidateInt(owner, "requiredSummonClashes", 1);
             ValidateInt(owner, "requiredSkill1ResponseUses", 1);
             ValidateFloat(owner, "requiredSkill1ResponseDamage", 60f);
             ValidateFloat(owner, "skill1ResponseDamageWindowSeconds", 2.5f);
@@ -4276,7 +4533,9 @@ namespace DimensionBrawl.Editor
             BossPressureCostLadder bossPressureCost,
             BossPressurePositionController bossPressurePosition,
             BossPressureActionDirector bossPressureActionDirector,
-            BossSummonPressureAction bossSummonPressureAction)
+            BossSummonPressureAction bossSummonPressureAction,
+            PlayerSupportSummonSlotAction summonSlot2Action,
+            PlayerSupportSummonSlotAction summonSlot3Action)
         {
             ValidateObjectReference(hud, "playerHealth", playerHealth);
             ValidateObjectReference(hud, "closeThreatHealth", closeThreatHealth);
@@ -4289,6 +4548,8 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(hud, "rangedBasicAttackAction", rangedBasicAttackAction);
             ValidateObjectReference(hud, "skill1Action", skill1Action);
             ValidateObjectReference(hud, "summonSlot1Action", summonSlot1Action);
+            ValidateObjectReference(hud, "summonSlot2Action", summonSlot2Action);
+            ValidateObjectReference(hud, "summonSlot3Action", summonSlot3Action);
             ValidateObjectReference(hud, "bossBarrageEmitter", bossBarrageEmitter);
             ValidateObjectReference(hud, "bossPressureCostLadder", bossPressureCost);
             ValidateObjectReference(hud, "bossPressurePositionController", bossPressurePosition);
@@ -4308,6 +4569,8 @@ namespace DimensionBrawl.Editor
             PlayerRangedBasicAttackAction rangedBasicAttackAction,
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
+            PlayerSupportSummonSlotAction summonSlot2Action,
+            PlayerSupportSummonSlotAction summonSlot3Action,
             SummonEnergyLadder energyLadder)
         {
             ValidateObjectReference(hud, "movement", movement);
@@ -4317,12 +4580,16 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(hud, "rangedBasicAttackAction", rangedBasicAttackAction);
             ValidateObjectReference(hud, "skill1Action", skill1Action);
             ValidateObjectReference(hud, "summonSlot1Action", summonSlot1Action);
+            ValidateObjectReference(hud, "summonSlot2Action", summonSlot2Action);
+            ValidateObjectReference(hud, "summonSlot3Action", summonSlot3Action);
             ValidateObjectReference(hud, "energyLadder", energyLadder);
             ValidateString(hud, "moveActionName", "Move");
             ValidateString(hud, "basicDefenseActionName", "BasicDefenseAttack");
             ValidateString(hud, "dodgeActionName", "Dodge");
             ValidateString(hud, "skill1ActionName", "Skill1");
             ValidateString(hud, "summonSlot1ActionName", "SummonSlot1");
+            ValidateString(hud, "summonSlot2ActionName", "SummonSlot2");
+            ValidateString(hud, "summonSlot3ActionName", "SummonSlot3");
             ValidateString(hud, "rangedAimActionName", "RangedAim");
             ValidateString(hud, "weaponSwapActionName", "WeaponSwap");
             ValidateString(hud, "summonSlot1Label", "S1 SHIELD");
@@ -5297,10 +5564,32 @@ namespace DimensionBrawl.Editor
         private static void ValidateFloat(UnityEngine.Object target, string propertyName, float expected)
         {
             float actual = RequireProperty(new SerializedObject(target), propertyName).floatValue;
-            if (!Mathf.Approximately(actual, expected))
+            if (!ApproximatelyEqual(actual, expected))
             {
                 throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected}, found {actual}.");
             }
+        }
+
+        private static void ValidateFloatAtLeast(UnityEngine.Object target, string propertyName, float minimum)
+        {
+            float actual = RequireProperty(new SerializedObject(target), propertyName).floatValue;
+            if (actual < minimum)
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} expected at least {minimum}, found {actual}.");
+            }
+        }
+
+        private static void ValidateFloatValue(float actual, float expected, string errorMessage)
+        {
+            if (!ApproximatelyEqual(actual, expected))
+            {
+                throw new InvalidOperationException($"{errorMessage} Expected {expected}, found {actual}.");
+            }
+        }
+
+        private static bool ApproximatelyEqual(float actual, float expected)
+        {
+            return Mathf.Abs(actual - expected) <= 0.0001f;
         }
 
         private static void ValidateInt(UnityEngine.Object target, string propertyName, int expected)

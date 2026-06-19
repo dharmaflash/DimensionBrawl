@@ -64,8 +64,8 @@ Use these action names as the shared vocabulary across PC, gamepad, and mobile H
 | `Dodge` | Shift / space / dodge key | Face button | Dodge button | Required |
 | `Skill1` | Key/button | Face/shoulder button | Skill button | Required first tiered skill action |
 | `SummonSlot1` | Number/key | D-pad/shoulder combo | Top-right summon slot 1 | Required first tiered summon action |
-| `SummonSlot2` | Number/key | D-pad/shoulder combo | Top-right summon slot 2 | Placeholder only |
-| `SummonSlot3` | Number/key | D-pad/shoulder combo | Top-right summon slot 3 | Placeholder only |
+| `SummonSlot2` | Number/key | D-pad/shoulder combo | Top-right summon slot 2 | Review support prototype only |
+| `SummonSlot3` | Number/key | D-pad/shoulder combo | Top-right summon slot 3 | Review support prototype only |
 | `Ultimate` | Key/button | Shoulder/face button | Ultimate button | Placeholder only |
 | `Pause` | Esc | Start/Menu | Pause button | Optional |
 
@@ -196,7 +196,7 @@ For this V1 spec:
 
 - Implement only `SummonSlot1` first.
 - Use one reviewed summon actor or assist action.
-- Treat `SummonSlot2` and `SummonSlot3` as visible future slots only.
+- Treat `SummonSlot2` and `SummonSlot3` as review-only support prototypes after `SummonSlot1`: they may share the same EN ladder and use promoted role-prefab presentation to test Arrow/Tank reads, but they are not a production roster, inventory, rarity, or upgrade economy.
 - The first summon may be a short assist, a short persistent helper, or a role actor, but it must create a visible battlefield exchange with the far boss/proxy or its pressure.
 - `SummonSlot1` should have LV1, LV2, and LV3 versions of the same summon concept. Higher levels may improve power, duration, count, projectile strength, or impact, but should stay inspectable as tier data.
 - Spending any summon level resets EN back to empty LV1 charging.
@@ -204,6 +204,18 @@ For this V1 spec:
 - The summon must use shared team, hostile-target, and authored candidate rules with enemies.
 - The summon must not be a random auto-pet that plays invisibly in the background.
 - The summon must not use a hand-of-cards UI, manual target-selection UI, or broad placement-drag UI as the default V1 verb.
+
+### Summon Actor Contract
+
+The current summon rule is actor-first, even when a slot's role reads as support:
+
+- A summon slot creates a combat actor that is trying to reach or pressure the opponent. A projectile, shield, field, or VFX cue may be part of that actor's role, but it should not replace the actor unless a later reviewed role explicitly calls for a non-body summon.
+- The actor appears from a player-relative entry cue directly in front of the player body, then uses summon/frontline battlefield coordinates to cross the player's forward boundary.
+- If no hostile summon is blocking the lane, the actor continues toward its role goal: boss/proxy pressure, assist fire, screen/intercept, field control, or another explicit summon role.
+- If a hostile summon actor blocks the lane, both actors should first fight that obstruction. The current V1 behavior is simple body contact: hold advance briefly and trade `CombatHealth` damage until one actor dies, expires, or another action changes the exchange.
+- Cost and role can combine. A cheap summon may be small, frequent, and problem-solving; an expensive summon may be larger, longer-lived, or stronger. Ranged support, vanguard/tank, breaker, healer, and later roles should still follow the same entry, body, health, lifetime, target, and cleanup contract unless a reviewed exception is documented.
+- `SummonSlot2` and `SummonSlot3` may demonstrate role contrast as review prototypes, but they do not authorize a roster manager, inventory, rarity, permanent upgrade economy, or production summon catalog yet.
+- The player and boss may both respond while summons are fighting. The summon clash is an obstruction/exchange layer, not a complete auto-battle system.
 
 Use `SUMMON_SYSTEM_REFERENCE_RESEARCH.md` actively. The first data contracts should be shaped by:
 
@@ -300,11 +312,12 @@ The first boss-barrage lane review slice now has these authored pieces:
 - `BossBarrageEmitter` and `BossBarrageProjectile` provide the far boss/proxy projectile pressure. The emitter may cycle a small authored `BossBarragePatternProfile` sequence, currently `NeedleLock`, `CoverFire`, `EscortScreen`, `LayeredSalvo`, `StaggeredCrossfire`, `TwinSweep`, `LeftClamp`, `RightClamp`, `PunishNet`, and `LinePressure`, but it must not become a broad boss phase owner.
 - `BossPressureCostLadder` is the current boss-side cost mirror for the fixed-rear lane review. Like player EN, it charges faster when the boss commits toward the contested frontline and slower when the boss remains safely back, then exposes `Cost LV1~LV3` readiness for boss pressure actions.
 - `BossPressurePositionController` makes that boss-side risk visible by moving the authored boss proxy forward as boss cost/readiness builds and easing it back toward rest when boss pressure actions are disabled by the pocket result. It owns only the boss proxy's lane position, not boss action selection, projectile firing, summons, or encounter state.
-- `BossPressureActionDirector` is the current narrow boss-side cost spender. It reads a `BossPressureActionDeckProfile` (`DB_BossPressureActionDeck_PocketReview`) to spend boss cost and queue `BossBarragePatternProfile` priority patterns through `BossBarrageEmitter`: first review slots are LV1 `LinePressure` as a skill-pattern pressure, LV2 `EscortScreen` as summon-pressure, and LV3 `PunishNet` as overextend punishment. It is not a boss phase manager and must not spawn waves, own summons, or rewards.
+- `BossPressureActionDirector` is the current narrow boss-side cost spender. It reads a `BossPressureActionDeckProfile` (`DB_BossPressureActionDeck_PocketReview`) to spend boss cost and queue `BossBarragePatternProfile` priority patterns through `BossBarrageEmitter`: first review slots are LV1 `LinePressure` as a skill-pattern pressure, LV2 `EscortScreen` as summon-pressure, and LV3 `PunishNet` as overextend punishment. Review scenes may enable a visible hold policy that banks LV1 cost when a gated next-tier action is open, so boss cost can create a summon-pressure exchange instead of always firing the first available low-tier pattern. It is not a boss phase manager and must not spawn waves, own summons, or rewards.
 - `BossSummonPressureAction` is the current boss-side summon-pressure owner. It reads a `BossSummonPressureProfile` (`DB_BossSummonPressure_SummonCaller`) for LV1~LV3 placement, lifetime, scale, advance, and intercept-screen settings, then releases one authored enemy-team pressure proxy so LV2+ boss cost can create a visible summon exchange without hiding a boss phase or full roster inside the action director.
 - `PlayerSkill1Action` spends the current available EN tier and fires an immediate player-side lane projectile toward the current boss/target direction.
-- `PlayerSummonSlot1Action` spends the current available EN tier, shows a magic-circle entry cue beyond the player boundary, activates a visible `SummonFrontlineProxy`, and launches same-concept stronger LV1/LV2/LV3 summon-assist projectiles from that proxy into the frontline battlefield. Its current tier values are owned by `SummonSlotActionProfile` (`DB_SummonSlot1_ShieldBreaker`) so damage, proxy, screen, counter, and assist-shot tuning remain inspectable data. It prefers an authored frontline/boss target over local-defense target selection so close-threat attacks do not steal the summon exchange away from the far boss lane.
-- `SummonFrontlineProxy` is the current first visible summon actor placeholder. It owns only activation, facing, projectile-origin presentation, lifetime, and cleanup; later model/animation-backed summons should replace or extend this through reviewed summon actor slices, not a hidden roster manager.
+- `PlayerSummonSlot1Action` spends the current available EN tier, shows a magic-circle entry cue directly in front of the player body, activates a visible `SummonFrontlineProxy`, then lets that actor advance into the frontline battlefield beyond the player's forward boundary. It launches same-concept stronger LV1/LV2/LV3 summon-assist projectiles from that proxy into the frontline battlefield. Its current tier values are owned by `SummonSlotActionProfile` (`DB_SummonSlot1_ShieldBreaker`) so damage, proxy, screen, counter, and assist-shot tuning remain inspectable data. It prefers an authored frontline/boss target over local-defense target selection so close-threat attacks do not steal the summon exchange away from the far boss lane.
+- `SummonFrontlineProxy` is the current first visible summon actor placeholder. It owns only activation, facing, projectile-origin presentation, advance/lifetime state, and cleanup; later model/animation-backed summons should replace or extend this through reviewed summon actor slices, not a hidden roster manager.
+- `SummonFrontlineClash` is the current narrow body-contact feedback layer between hostile summon proxies. It briefly holds both actors' advance, applies periodic body damage through `CombatHealth`, and exposes clash state/count for review HUD and tests without becoming summon AI or a roster manager.
 - `SummonPressureScreen` is the first narrow summon-side answer to boss projectile pressure. `SummonSlot1` opens a short-lived ally-owned screen from its frontline proxy, and higher EN tiers increase the same screen concept's intercept budget/radius/lifetime without introducing a full summon roster or boss phase manager. The screen carries the active summon tier, uses trigger contact plus a small bounded overlap scan so already-overlapping hostile boss projectiles are absorbed reliably, then `PlayerSummonSlot1Action` answers with a short summon-owned counter bolt so the exchange reads as block-then-return-fire.
 - `SummonPressureScreenPresenter` is the current screen readability layer. It owns only the proxy-local shield visual, tier-aware activation color, intercept flash, short intercept punch, and final-hit linger so players can see the summon answering boss pressure without leaning on HUD text.
 - `ActionCameraCueDriver` listens to `SummonSlot1` spend, pressure-screen block, and review-owned summon-block opportunity events as presentation-only reads. A successful summon block or close-threat defeat opening should request a short additive camera cue instead of depending on HUD text or moving camera ownership into summon gameplay code.
@@ -604,7 +617,7 @@ Only expand after the review scene proves the core loop. The next expansion choi
 3. Improve `SummonSlot1` impact and identity.
 4. Add a second boss projectile pattern.
 5. Add one close-threat variant.
-6. Add `SummonSlot2` only after slot 1 is fun.
+6. Promote `SummonSlot2`/`SummonSlot3` beyond review prototypes only after the one-pocket loop is fun.
 7. Revisit chapter art/corridor environment after the loop is accepted.
 
 Do not use art, more enemies, or more buttons to hide a weak EN/summon loop.

@@ -257,6 +257,9 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(player.transform, GetObjectReference<Transform>(bossPressureActionDirector, "trackedPlayer"));
             Assert.AreSame(bossPressureActionDeck, bossPressureActionDirector.ActionDeckProfile);
             Assert.IsTrue(bossPressureActionDirector.HasActionDeckProfile);
+            Assert.IsTrue(
+                bossPressureActionDirector.HoldForNextTierActionWhenGateAllows,
+                "Boss pressure should be allowed to bank LV1 cost when the next-tier exchange is gated open.");
             Assert.AreEqual("PocketReviewBoss", bossPressureActionDeck.DeckId);
             Assert.AreEqual(3, bossPressureActionDeck.ActionSlotCount);
             Assert.AreEqual(0.35f, bossPressureActionDeck.GlobalRecoverySeconds, 0.001f);
@@ -646,21 +649,21 @@ namespace DimensionBrawl.Tests
                 "LV1 Guard Entry",
                 "Emergency pressure screen for urgent boss fire after close-threat relief.",
                 "Spend early when the pocket needs an immediate boss-fire block.",
-                "Small ShieldBreaker entry, two-shot screen, one assist bolt.");
+                "Small ShieldBreaker enters from the player front, advances toward the boss lane, and fires one assist bolt.");
             AssertSummonSlotReadout(
                 summonSlot1Profile,
                 2,
                 "LV2 Frontline Push",
                 "Mid-tier exchange that starts converting a successful block into forward damage.",
                 "Hold forward-risk long enough for LV2 when the barrage is readable.",
-                "Wider screen, four-shot block budget, two assist bolts.");
+                "Wider screen, four-shot block budget, two assist bolts, and a persistent frontline push.");
             AssertSummonSlotReadout(
                 summonSlot1Profile,
                 3,
                 "LV3 Break Window",
                 "High-risk payoff that should visibly win the pressure exchange and open the Skill1 follow-up.",
                 "Save for hard boss pressure when retreat alone will not stabilize the pocket.",
-                "Large ShieldBreaker screen, seven-shot block budget, three assist bolts.");
+                "Large ShieldBreaker screen, seven-shot block budget, three assist bolts, and a committed boss-lane push.");
             Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(reviewHud, "bossBarrageEmitter"));
             Assert.AreSame(
                 bossPressureCost,
@@ -1094,19 +1097,23 @@ namespace DimensionBrawl.Tests
             Assert.Greater(activeActorPresenter.EntryFlashCount, 0);
             Assert.IsNotNull(activeActorPresenter.PulseRoot);
             float actorStartLaneZ = laneSpace.GetLaneCoordinates(activeSummonActor.transform.position).y;
-            Assert.IsTrue(activeSummonActor.IsAdvancing, "SummonSlot1 actor should surge into the frontline after entry.");
+            Assert.IsTrue(activeSummonActor.IsAdvancing, "SummonSlot1 actor should march into the frontline after entry.");
             activeSummonActor.Tick(0.24f);
             activeSummonActor.Tick(0.18f);
             activeActorPresenter.RefreshNow();
-            Assert.Greater(
-                activeActorPresenter.ImpactFlashCount,
-                0,
-                "SummonSlot1 actor presenter should flash when the frontline proxy reaches impact range.");
             float actorAdvancedLaneZ = laneSpace.GetLaneCoordinates(activeSummonActor.transform.position).y;
             Assert.Greater(
                 actorAdvancedLaneZ,
-                actorStartLaneZ + 0.5f,
-                "SummonSlot1 LV3 actor should visibly advance into the boss/frontline exchange.");
+                actorStartLaneZ + 0.25f,
+                "SummonSlot1 LV3 actor should visibly advance into the boss/frontline exchange without snapping.");
+            Assert.Less(
+                activeSummonActor.AdvanceProgress01,
+                0.25f,
+                "SummonSlot1 actor should still be marching after the first short review beat, not already at impact range.");
+            Assert.AreEqual(
+                0,
+                activeActorPresenter.ImpactFlashCount,
+                "SummonSlot1 actor impact flash should wait until the slow march reaches impact range.");
             Assert.IsTrue(
                 laneSpace.IsPastForwardBoundary(activeSummonActor.transform.position),
                 "Summon actor advance must stay in frontline battlefield coordinates, not player-clamped movement.");

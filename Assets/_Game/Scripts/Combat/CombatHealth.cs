@@ -129,6 +129,13 @@ namespace DimensionBrawl.Combat
             team = newTeam;
         }
 
+        public void ResetHealthToFull()
+        {
+            currentHealth = maxHealth;
+            invulnerableUntilTime = 0f;
+            isDead = false;
+        }
+
         private void Awake()
         {
             currentHealth = startAtFullHealth ? maxHealth : Mathf.Clamp(currentHealth, 0f, maxHealth);

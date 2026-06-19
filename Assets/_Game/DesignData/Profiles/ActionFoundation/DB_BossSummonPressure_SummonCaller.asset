@@ -14,46 +14,55 @@ MonoBehaviour:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossSummonPressureProfile
   pressureId: BossSummonPressure.SummonCaller
   tierSettings:
-  - EntryForwardBlend01: 0.24
+  - EntryForwardBlend01: 0.28
     LateralOffset: 0.9
     EntryHeight: 0.2
-    ActorLifetimeSeconds: 1.35
+    ActorLifetimeSeconds: 0
     ActorScale: 0.92
-    ActorAdvanceDistance: 1.15
-    ActorAdvanceSeconds: 0.28
+    ActorAdvanceDistance: 2.4
+    ActorAdvanceSeconds: 1.4
     ScreenIntercepts: 2
     ScreenRadius: 1.2
-    ScreenLifetimeSeconds: 1.2
-  - EntryForwardBlend01: 0.34
+    ScreenLifetimeSeconds: 2.6
+  - EntryForwardBlend01: 0.38
     LateralOffset: 1.4
     EntryHeight: 0.2
-    ActorLifetimeSeconds: 1.65
+    ActorLifetimeSeconds: 0
     ActorScale: 1.12
-    ActorAdvanceDistance: 1.9
-    ActorAdvanceSeconds: 0.34
+    ActorAdvanceDistance: 3.8
+    ActorAdvanceSeconds: 1.85
     ScreenIntercepts: 4
     ScreenRadius: 1.55
-    ScreenLifetimeSeconds: 1.45
-  - EntryForwardBlend01: 0.45
+    ScreenLifetimeSeconds: 3.4
+  - EntryForwardBlend01: 0.5
     LateralOffset: 2
     EntryHeight: 0.2
-    ActorLifetimeSeconds: 2
+    ActorLifetimeSeconds: 0
     ActorScale: 1.36
-    ActorAdvanceDistance: 2.7
-    ActorAdvanceSeconds: 0.42
+    ActorAdvanceDistance: 5.2
+    ActorAdvanceSeconds: 2.35
     ScreenIntercepts: 7
     ScreenRadius: 1.95
-    ScreenLifetimeSeconds: 1.8
+    ScreenLifetimeSeconds: 4.2
   tierReadouts:
   - TierLabel: LV1 Escort Probe
-    StageRole: Low-cost boss proxy that tests whether the player can keep firing lanes clear.
-    PlayerRead: Strafe or use basic fire; do not spend summon unless pressure stacks.
-    SummonRead: Usually save SummonSlot1 for the next boss screen.
+    StageRole: Low-cost boss proxy that holds the lane long enough for the player
+      to answer with fire or a saved summon.
+    PlayerRead: Strafe and keep firing; spend SummonSlot1 only if the next barrage
+      overlaps this proxy.
+    SummonRead: A short relief answer should remove the screen and keep the lane
+      from being locked.
   - TierLabel: LV2 Pressure Screen
-    StageRole: Boss-side summon pressure that contests the frontline and can block player follow-up shots.
-    PlayerRead: Take EN only long enough to prepare a clean response.
-    SummonRead: Use SummonSlot1 screen to absorb the boss curtain and reopen Skill1.
+    StageRole: Boss-side summon pressure that contests the frontline for several
+      seconds and blocks player follow-up shots.
+    PlayerRead: Take EN only long enough to prepare a clean response, then break
+      the screen before the next boss pattern layers on top.
+    SummonRead: Use SummonSlot1 or Vanguard support to absorb the curtain and reopen
+      ranged punish time.
   - TierLabel: LV3 Clamp Guard
-    StageRole: High-cost boss proxy that punishes overextension and forces a high-tier answer or retreat.
-    PlayerRead: Retreat from forward-risk lanes before firing back.
-    SummonRead: A saved LV2/LV3 SummonSlot1 answer should create the relief window.
+    StageRole: High-cost boss proxy that punishes overextension and demands a committed
+      high-tier answer or retreat.
+    PlayerRead: Back off from forward-risk lanes unless a summon answer is already
+      charged.
+    SummonRead: A saved LV2/LV3 summon should create a visible pressure-break window
+      before counterfire.

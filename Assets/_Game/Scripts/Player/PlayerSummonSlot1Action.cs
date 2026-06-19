@@ -22,7 +22,7 @@ namespace DimensionBrawl.Player
             [Min(0f)] public float TargetHeight;
             [Min(0f)] public float CueScale;
             [Min(0f)] public float CueLifetimeSeconds;
-            [Min(0.05f)] public float ActorLifetimeSeconds;
+            [Min(0f)] public float ActorLifetimeSeconds;
             [Min(0.01f)] public float ActorScale;
             [Min(0f)] public float ActorAdvanceDistance;
             [Min(0.01f)] public float ActorAdvanceSeconds;
@@ -47,7 +47,7 @@ namespace DimensionBrawl.Player
                 TargetHeight = Mathf.Max(0f, TargetHeight);
                 CueScale = Mathf.Max(0f, CueScale);
                 CueLifetimeSeconds = Mathf.Max(0f, CueLifetimeSeconds);
-                ActorLifetimeSeconds = Mathf.Max(0.05f, ActorLifetimeSeconds);
+                ActorLifetimeSeconds = Mathf.Max(0f, ActorLifetimeSeconds);
                 ActorScale = Mathf.Max(0.01f, ActorScale);
                 ActorAdvanceDistance = Mathf.Max(0f, ActorAdvanceDistance);
                 ActorAdvanceSeconds = Mathf.Max(0.01f, ActorAdvanceSeconds);
@@ -88,6 +88,14 @@ namespace DimensionBrawl.Player
         [SerializeField] private DamageTeam sourceTeam = DamageTeam.AllySummon;
         [SerializeField, Min(0)] private int prewarmCount = 6;
         [SerializeField, Min(0)] private int actorPrewarmCount = 2;
+        [SerializeField, Min(1)] private int maxActiveSummonActors = 1;
+
+        [Header("Entry")]
+        [Tooltip("The summon appears in front of the player body, then advances as a frontline actor beyond the player boundary.")]
+        [SerializeField, Min(0f)] private float entryForwardOffset = 1.35f;
+        [Tooltip("Extra travel time per meter after the authored advance distance. Keep this high enough that summons march instead of snapping to the target.")]
+        [SerializeField, Min(0f)] private float actorEntryCatchupSecondsPerMeter = 0.55f;
+
         [Header("Failure Feedback")]
         [SerializeField, Min(0f)] private float useBlockedHintSeconds = 0.75f;
 
@@ -119,10 +127,29 @@ namespace DimensionBrawl.Player
         public int ActivePressureScreenRemainingIntercepts => executionRuntime != null
             ? executionRuntime.ActivePressureScreenRemainingIntercepts
             : 0;
+        public bool LastSummonActorHasHealth => executionRuntime != null && executionRuntime.LastSummonActorHasHealth;
+        public float LastSummonActorHealthRatio => executionRuntime != null
+            ? executionRuntime.LastSummonActorHealthRatio
+            : 0f;
+        public float LastSummonActorRemainingLifetimeSeconds => executionRuntime != null
+            ? executionRuntime.LastSummonActorRemainingLifetimeSeconds
+            : 0f;
+        public float ActiveSummonActorAdvanceProgress01 => executionRuntime != null
+            ? executionRuntime.ActiveSummonActorAdvanceProgress01
+            : 0f;
+        public bool LastSummonActorIsClashing => executionRuntime != null
+            && executionRuntime.LastSummonActorIsClashing;
+        public int LastSummonActorClashCount => executionRuntime != null
+            ? executionRuntime.LastSummonActorClashCount
+            : 0;
+        public SummonFrontlineProxyExitReason LastSummonActorExitReason => executionRuntime != null
+            ? executionRuntime.LastSummonActorExitReason
+            : SummonFrontlineProxyExitReason.None;
         public SummonSlotActionProfile SummonActionProfile => summonActionProfile;
         public bool HasSummonActionProfile => summonActionProfile != null;
         public bool ShowUseBlockedHint => blockedHintTimer > 0f;
         public string LastUseBlockedReason => lastBlockedReason;
+        internal int MaxActiveSummonActors => Mathf.Max(1, maxActiveSummonActors);
 
         public event Action<int> SummonSlot1Used;
         public event Action<int> SummonPressureBlocked;
@@ -160,6 +187,10 @@ namespace DimensionBrawl.Player
                 settings.Normalize();
                 tierSettings[i] = settings;
             }
+
+            entryForwardOffset = Mathf.Max(0f, entryForwardOffset);
+            actorEntryCatchupSecondsPerMeter = Mathf.Max(0f, actorEntryCatchupSecondsPerMeter);
+            maxActiveSummonActors = Mathf.Max(1, maxActiveSummonActors);
         }
 
         private void OnEnable()
@@ -334,13 +365,13 @@ namespace DimensionBrawl.Player
                     TargetHeight = 1.3f,
                     CueScale = 1.5f,
                     CueLifetimeSeconds = 0.85f,
-                    ActorLifetimeSeconds = 1.25f,
+                    ActorLifetimeSeconds = 0f,
                     ActorScale = 1f,
-                    ActorAdvanceDistance = 1f,
-                    ActorAdvanceSeconds = 0.24f,
+                    ActorAdvanceDistance = 2.2f,
+                    ActorAdvanceSeconds = 1.62f,
                     ScreenIntercepts = 2,
                     ScreenRadius = 1.25f,
-                    ScreenLifetimeSeconds = 1.15f,
+                    ScreenLifetimeSeconds = 2.4f,
                     CounterDamage = 16f,
                     CounterProjectileSpeed = 20f,
                     CounterLifetimeSeconds = 1.65f,
@@ -350,6 +381,17 @@ namespace DimensionBrawl.Player
             }
 
             return tierSettings[Mathf.Clamp(tier - 1, 0, tierSettings.Length - 1)];
+        }
+
+        private float ResolveEntryLaneZ(float playerLaneZ)
+        {
+            return playerLaneZ + entryForwardOffset;
+        }
+
+        private float ResolveActorAdvanceSeconds(float resolvedAdvanceDistance, SummonTierSettings settings)
+        {
+            float extraDistance = Mathf.Max(0f, resolvedAdvanceDistance - settings.ActorAdvanceDistance);
+            return settings.ActorAdvanceSeconds + extraDistance * actorEntryCatchupSecondsPerMeter;
         }
 
         private static SummonTierSettings[] CreateDefaultTierSettings()
@@ -368,13 +410,13 @@ namespace DimensionBrawl.Player
                     TargetHeight = 1.35f,
                     CueScale = 1.45f,
                     CueLifetimeSeconds = 0.85f,
-                    ActorLifetimeSeconds = 1.25f,
+                    ActorLifetimeSeconds = 0f,
                     ActorScale = 0.9f,
-                    ActorAdvanceDistance = 1.05f,
-                    ActorAdvanceSeconds = 0.24f,
+                    ActorAdvanceDistance = 2.2f,
+                    ActorAdvanceSeconds = 1.62f,
                     ScreenIntercepts = 2,
                     ScreenRadius = 1.25f,
-                    ScreenLifetimeSeconds = 1.15f,
+                    ScreenLifetimeSeconds = 2.4f,
                     CounterDamage = 16f,
                     CounterProjectileSpeed = 20f,
                     CounterLifetimeSeconds = 1.65f,
@@ -393,13 +435,13 @@ namespace DimensionBrawl.Player
                     TargetHeight = 1.35f,
                     CueScale = 1.85f,
                     CueLifetimeSeconds = 1f,
-                    ActorLifetimeSeconds = 1.55f,
+                    ActorLifetimeSeconds = 0f,
                     ActorScale = 1.08f,
-                    ActorAdvanceDistance = 1.65f,
-                    ActorAdvanceSeconds = 0.3f,
+                    ActorAdvanceDistance = 3.0f,
+                    ActorAdvanceSeconds = 1.9f,
                     ScreenIntercepts = 4,
                     ScreenRadius = 1.55f,
-                    ScreenLifetimeSeconds = 1.4f,
+                    ScreenLifetimeSeconds = 3.2f,
                     CounterDamage = 22f,
                     CounterProjectileSpeed = 21.5f,
                     CounterLifetimeSeconds = 1.8f,
@@ -418,13 +460,13 @@ namespace DimensionBrawl.Player
                     TargetHeight = 1.45f,
                     CueScale = 2.25f,
                     CueLifetimeSeconds = 1.15f,
-                    ActorLifetimeSeconds = 1.85f,
+                    ActorLifetimeSeconds = 0f,
                     ActorScale = 1.28f,
-                    ActorAdvanceDistance = 2.35f,
-                    ActorAdvanceSeconds = 0.36f,
+                    ActorAdvanceDistance = 4.0f,
+                    ActorAdvanceSeconds = 2.25f,
                     ScreenIntercepts = 7,
                     ScreenRadius = 1.9f,
-                    ScreenLifetimeSeconds = 1.7f,
+                    ScreenLifetimeSeconds = 4.0f,
                     CounterDamage = 30f,
                     CounterProjectileSpeed = 23f,
                     CounterLifetimeSeconds = 2f,

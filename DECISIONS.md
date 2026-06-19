@@ -180,7 +180,15 @@ Decision: Player movement must remain clamped to the player-side lane and forwar
 
 Reason: The current boss-barrage/summon-first direction depends on the player being unable to cross the midline while summons still enter and act in the contested space. If summons inherit the player clamp, they cannot create the intended front-line exchange.
 
-Impact: `PlayerSummonSlot1Action` uses `SummonLaneSpace.GetBattlefieldWorldPoint` for entry and assist shots. Tests must continue to cover player clamp versus summon crossing behavior before expanding summon actors, summon AI, or boss/frontline exchange systems.
+Impact: `PlayerSummonSlot1Action` keeps the summon entry cue directly in front of the player body, then uses summon battlefield coordinates for actor advance and assist shots. Tests must continue to cover player clamp versus summon crossing behavior before expanding summon actors, summon AI, or boss/frontline exchange systems.
+
+## 2026-06-19: Summon Slots Produce Frontline Actors Before Roster Systems
+
+Decision: A normal summon slot should produce a body-bearing frontline actor first, even when its role is cheap support, ranged pressure, tanking, breaking, or later healing. The actor appears in front of the player, advances through summon battlefield space, fights hostile summon actors that block its path by trading health damage, and pressures the opposing boss/proxy when unblocked.
+
+Reason: The intended game loop is not a temporary effect button or a hidden pet damage tick. The player and boss are constrained by the corridor/midline, while summons are the units that cross into the contested space. Different costs and roles should create different actor scale, durability, timing, frequency, projectile/screen/field behavior, and pressure value.
+
+Impact: `SummonSlot1`, `SummonSlot2`, `SummonSlot3`, and boss summon-pressure review actors should keep health, lifetime, body hitbox, advance state, exit reason, and clash behavior inspectable. Do not introduce a production roster, inventory, rarity, permanent upgrade economy, manual placement UI, or broad summon AI manager before this actor-first exchange is accepted.
 
 ## 2026-06-15: Boss Skill And Summon-Like Pressure Are Later Pressure Modules
 
@@ -205,6 +213,14 @@ Decision: First-pass player summon and boss pressure proxy art/animation candida
 Reason: Summon and boss-pressure visuals will change as better models and animations are reviewed. Keeping candidate prefab, promoted visual source, Animator, VFX read, and replacement notes in presentation data lets the team swap art without rewriting the gameplay loop or turning editor setup code into a runtime prefab generator.
 
 Impact: `DB_SummonPresentation_PlayerShieldBreaker` and `DB_SummonPresentation_BossAuraCaptain` document the current reviewed proxy choices. Runtime cost, tier, projectile, target, and pocket-result behavior remain in their existing gameplay owners.
+
+## 2026-06-19: Summon Slot 2 And 3 Are Review Support Prototypes
+
+Decision: `SummonSlot2` and `SummonSlot3` may become functional in the boss-barrage review scene as narrow support prototypes that share the existing EN ladder and use promoted `_Game` actor/projectile prefabs. They are not the start of a production summon roster, summon inventory, rarity ladder, or upgrade economy.
+
+Reason: The summon-first pivot needs visible role contrast before the full stage loop can be judged. A marksman-style Arrow slot and a vanguard-style Tank slot make the player/boss exchange easier to review than placeholder buttons, while still preserving the existing small-slice guardrails.
+
+Impact: Additional slots must use `SummonSlotActionProfile` data, authored `_Game` prefabs, explicit HUD/action references, and validation. Do not hide slot behavior inside the HUD, player movement, boss pressure director, or a broad roster manager.
 
 ## 2026-06-16: First Boss Candidate Prefers Humanoid Barrage Caster
 

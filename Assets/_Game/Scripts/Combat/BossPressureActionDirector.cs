@@ -79,6 +79,7 @@ namespace DimensionBrawl.Combat
         [SerializeField] private BossPressureActionDeckProfile actionDeckProfile;
         [SerializeField] private BossPressureActionSlot[] actionSlots = Array.Empty<BossPressureActionSlot>();
         [SerializeField, Min(0f)] private float globalRecoverySeconds = 0.35f;
+        [SerializeField] private bool holdForNextTierActionWhenGateAllows;
         [SerializeField] private bool actionsEnabled = true;
 
         private float globalRecoveryTimer;
@@ -102,6 +103,7 @@ namespace DimensionBrawl.Combat
         public BossSummonPressureAction SummonPressureAction => summonPressureAction;
         public BossPressureActionDeckProfile ActionDeckProfile => actionDeckProfile;
         public bool HasActionDeckProfile => actionDeckProfile != null;
+        public bool HoldForNextTierActionWhenGateAllows => holdForNextTierActionWhenGateAllows;
         public float GlobalRecoveryRemainingSeconds => globalRecoveryTimer;
         public int ActionSlotCount => actionSlots != null ? actionSlots.Length : 0;
         public float CurrentPlayerForwardRisk01 => ResolvePlayerForwardRisk01();
@@ -184,6 +186,23 @@ namespace DimensionBrawl.Combat
             actionsEnabled = enabled;
         }
 
+        public void SetHoldForNextTierActionWhenGateAllows(bool enabled)
+        {
+            holdForNextTierActionWhenGateAllows = enabled;
+        }
+
+        public bool TryGetHeldNextTierAction(out BossPressureActionSlot slot, out int nextTier)
+        {
+            slot = default;
+            nextTier = 0;
+            if (!CanAttemptAction())
+            {
+                return false;
+            }
+
+            return TryGetNextTierHoldCandidate(costLadder.AvailableTier, out slot, out nextTier);
+        }
+
         public void Tick(float deltaTime)
         {
             float safeDeltaTime = Mathf.Max(0f, deltaTime);
@@ -203,7 +222,13 @@ namespace DimensionBrawl.Combat
                 return false;
             }
 
-            int slotIndex = ResolveBestSlotIndex(costLadder.AvailableTier);
+            int availableTier = costLadder.AvailableTier;
+            if (ShouldHoldForNextTierAction(availableTier))
+            {
+                return false;
+            }
+
+            int slotIndex = ResolveBestSlotIndex(availableTier);
             if (slotIndex < 0)
             {
                 return false;
@@ -312,6 +337,54 @@ namespace DimensionBrawl.Combat
         {
             return actionKind != BossPressureActionKind.SummonPressure
                 || (summonPressureAction != null && summonPressureAction.CanRelease);
+        }
+
+        private bool ShouldHoldForNextTierAction(int availableTier)
+        {
+            return TryGetNextTierHoldCandidate(availableTier, out _, out _);
+        }
+
+        private bool TryGetNextTierHoldCandidate(
+            int availableTier,
+            out BossPressureActionSlot holdSlot,
+            out int nextTier)
+        {
+            holdSlot = default;
+            nextTier = 0;
+            if (!holdForNextTierActionWhenGateAllows || availableTier <= 0 || availableTier >= 3)
+            {
+                return false;
+            }
+
+            nextTier = availableTier + 1;
+            int slotCount = actionSlots != null ? actionSlots.Length : 0;
+            if (slotCount <= 0)
+            {
+                nextTier = 0;
+                return false;
+            }
+
+            EnsurePerSlotTimers();
+            for (int i = 0; i < slotCount; i++)
+            {
+                BossPressureActionSlot slot = actionSlots[i];
+                if (slot.Pattern == null
+                    || slot.MinimumTier != nextTier
+                    || perSlotTimers[i] > 0f
+                    || !CanRunActionKind(slot.ActionKind)
+                    || !IsPlayerRiskAllowed(slot)
+                    || bossBarrageEmitter == null
+                    || !bossBarrageEmitter.CanQueuePriorityPattern(slot.Pattern))
+                {
+                    continue;
+                }
+
+                holdSlot = slot;
+                return true;
+            }
+
+            nextTier = 0;
+            return false;
         }
 
         private bool IsPlayerRiskAllowed(BossPressureActionSlot slot)

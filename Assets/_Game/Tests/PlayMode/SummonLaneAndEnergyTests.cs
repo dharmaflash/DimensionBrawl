@@ -1,5 +1,6 @@
 using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
+using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using NUnit.Framework;
 using UnityEditor;
@@ -111,6 +112,372 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(0f, energy.CurrentTierEnergy, 0.001f);
 
             Object.DestroyImmediate(playerObject);
+        }
+
+        [Test]
+        public void SummonFrontlineProxyReportsLifetimeAndDefeatExitReasons()
+        {
+            GameObject proxyObject = new GameObject("SummonProxy");
+            CombatHealth health = proxyObject.AddComponent<CombatHealth>();
+            health.ConfigureTeam(DamageTeam.AllySummon);
+            health.ResetHealthToFull();
+            SummonFrontlineProxy proxy = proxyObject.AddComponent<SummonFrontlineProxy>();
+            proxy.ConfigureHealth(health);
+
+            proxy.Activate(Vector3.zero, Vector3.forward, 1, 0.2f, 1f, 1f, 0.1f);
+            Assert.IsTrue(proxy.IsActive);
+            proxy.Tick(0.25f);
+            Assert.IsFalse(proxy.IsActive);
+            Assert.AreEqual(SummonFrontlineProxyExitReason.LifetimeExpired, proxy.LastExitReason);
+
+            proxyObject.SetActive(true);
+            Vector3 targetPosition = new Vector3(2f, 0f, 5f);
+            proxy.Activate(Vector3.zero, Vector3.forward, 1, 0f, 1f, targetPosition, 0.5f);
+            Assert.IsTrue(proxy.IsActive);
+            Assert.IsFalse(proxy.HasLifetimeLimit);
+            Assert.IsTrue(float.IsPositiveInfinity(proxy.RemainingLifetimeSeconds));
+            Assert.AreEqual(targetPosition, proxy.AdvanceTargetPosition);
+            proxy.Tick(10f);
+            Assert.IsTrue(
+                proxy.IsActive,
+                "A zero actor lifetime should mean a normal summon actor persists until defeated or recalled.");
+            Assert.AreEqual(SummonFrontlineProxyExitReason.None, proxy.LastExitReason);
+
+            proxyObject.SetActive(true);
+            proxy.Activate(Vector3.zero, Vector3.forward, 1, 2f, 1f, 1f, 0.1f);
+            Assert.IsTrue(proxy.IsActive);
+            Assert.AreEqual(1f, proxy.HealthRatio, 0.001f);
+
+            Assert.IsTrue(health.TryApplyDamage(new DamageInfo(
+                null,
+                DamageTeam.Enemy,
+                999f,
+                Vector3.zero,
+                Vector3.back,
+                0f)));
+            Assert.IsFalse(proxy.IsActive);
+            Assert.AreEqual(SummonFrontlineProxyExitReason.Defeated, proxy.LastExitReason);
+
+            Object.DestroyImmediate(proxyObject);
+        }
+
+        [Test]
+        public void SummonBodyAndPressureScreenResolveDifferentCombatContacts()
+        {
+            GameObject actorObject = new GameObject("EnemySummonActor");
+            SphereCollider bodyCollider = actorObject.AddComponent<SphereCollider>();
+            CombatHealth actorHealth = actorObject.AddComponent<CombatHealth>();
+            actorHealth.ConfigureTeam(DamageTeam.Enemy);
+            actorHealth.ResetHealthToFull();
+
+            GameObject screenObject = new GameObject("PressureScreen");
+            screenObject.transform.SetParent(actorObject.transform, worldPositionStays: false);
+            SphereCollider screenCollider = screenObject.AddComponent<SphereCollider>();
+            screenObject.AddComponent<Rigidbody>();
+            SummonPressureScreen pressureScreen = screenObject.AddComponent<SummonPressureScreen>();
+            pressureScreen.Activate(DamageTeam.Enemy, 1, 1f, 1f);
+
+            GameObject projectileObject = new GameObject("PlayerProjectile");
+            projectileObject.AddComponent<SphereCollider>();
+            projectileObject.AddComponent<Rigidbody>();
+            LaneActionProjectile projectile = projectileObject.AddComponent<LaneActionProjectile>();
+            projectile.Configure(null, DamageTeam.Player, 30f, Vector3.forward, 0f, 1f, 0.2f);
+
+            Assert.IsFalse(
+                projectile.TryApplyImpact(screenCollider, Vector3.zero),
+                "Pressure-screen contact should be handled by the screen, not by summon body health.");
+            Assert.AreEqual(1f, actorHealth.HealthRatio, 0.001f);
+
+            Assert.IsTrue(pressureScreen.TryIntercept(projectile));
+            Assert.IsFalse(projectile.IsActive);
+
+            projectileObject.SetActive(true);
+            projectile.Configure(null, DamageTeam.Player, 30f, Vector3.forward, 0f, 1f, 0.2f);
+            Assert.IsTrue(projectile.TryApplyImpact(bodyCollider, Vector3.zero));
+            Assert.Less(actorHealth.HealthRatio, 1f);
+
+            Object.DestroyImmediate(projectileObject);
+            Object.DestroyImmediate(actorObject);
+        }
+
+        [Test]
+        public void BossBarrageProjectileCanDefeatAllySummonBody()
+        {
+            GameObject actorObject = new GameObject("AllySummonActor");
+            SphereCollider bodyCollider = actorObject.AddComponent<SphereCollider>();
+            CombatHealth actorHealth = actorObject.AddComponent<CombatHealth>();
+            actorHealth.ConfigureTeam(DamageTeam.AllySummon);
+            actorHealth.ResetHealthToFull();
+            SummonFrontlineProxy proxy = actorObject.AddComponent<SummonFrontlineProxy>();
+            proxy.ConfigureHealth(actorHealth);
+            proxy.Activate(Vector3.zero, Vector3.forward, 1, 2f, 1f, 1f, 0.1f);
+
+            GameObject projectileObject = new GameObject("BossProjectile");
+            projectileObject.AddComponent<SphereCollider>();
+            projectileObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile projectile = projectileObject.AddComponent<BossBarrageProjectile>();
+            projectile.Configure(null, DamageTeam.Enemy, 999f, Vector3.back, 0f, 1f, 0.2f);
+
+            Assert.IsTrue(projectile.TryApplyImpact(bodyCollider, Vector3.zero));
+            Assert.IsFalse(proxy.IsActive);
+            Assert.AreEqual(SummonFrontlineProxyExitReason.Defeated, proxy.LastExitReason);
+
+            Object.DestroyImmediate(projectileObject);
+            Object.DestroyImmediate(actorObject);
+        }
+
+        [Test]
+        public void SummonFrontlineClashDamagesHostileSummonsAndHoldsAdvance()
+        {
+            GameObject allyObject = new GameObject("AllySummonActor");
+            SphereCollider allyCollider = allyObject.AddComponent<SphereCollider>();
+            allyCollider.isTrigger = true;
+            allyObject.AddComponent<Rigidbody>().isKinematic = true;
+            CombatHealth allyHealth = allyObject.AddComponent<CombatHealth>();
+            allyHealth.ConfigureTeam(DamageTeam.AllySummon);
+            allyHealth.ResetHealthToFull();
+            SummonFrontlineProxy allyProxy = allyObject.AddComponent<SummonFrontlineProxy>();
+            allyProxy.ConfigureHealth(allyHealth);
+            SummonFrontlineClash allyClash = allyObject.AddComponent<SummonFrontlineClash>();
+            allyClash.ConfigureReferences(allyProxy, allyHealth);
+            allyClash.ConfigureTuning(100f, 0.2f, 0f, 0.3f);
+            GameObject pulseObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            pulseObject.name = "TierPulseCore";
+            pulseObject.transform.SetParent(allyObject.transform, worldPositionStays: false);
+            Collider pulseCollider = pulseObject.GetComponent<Collider>();
+            Object.DestroyImmediate(pulseCollider);
+            Renderer pulseRenderer = pulseObject.GetComponent<Renderer>();
+            SummonFrontlineProxyPresenter allyPresenter = allyObject.AddComponent<SummonFrontlineProxyPresenter>();
+            allyPresenter.ConfigurePresentation(allyProxy, pulseObject.transform, new[] { pulseRenderer });
+            allyPresenter.ConfigureClashReference(allyClash);
+
+            GameObject enemyObject = new GameObject("EnemySummonActor");
+            SphereCollider enemyCollider = enemyObject.AddComponent<SphereCollider>();
+            enemyCollider.isTrigger = true;
+            enemyObject.AddComponent<Rigidbody>().isKinematic = true;
+            CombatHealth enemyHealth = enemyObject.AddComponent<CombatHealth>();
+            enemyHealth.ConfigureTeam(DamageTeam.Enemy);
+            enemyHealth.ResetHealthToFull();
+            SummonFrontlineProxy enemyProxy = enemyObject.AddComponent<SummonFrontlineProxy>();
+            enemyProxy.ConfigureHealth(enemyHealth);
+
+            allyProxy.Activate(Vector3.zero, Vector3.forward, 1, 2f, 1f, 3f, 1f);
+            enemyProxy.Activate(Vector3.forward * 0.6f, Vector3.back, 1, 2f, 1f, 3f, 1f);
+
+            Assert.IsTrue(allyClash.TryProcessClash(enemyCollider));
+            Assert.Less(enemyHealth.CurrentHealth, enemyHealth.MaxHealth);
+            Assert.IsTrue(allyProxy.IsAdvanceHeld);
+            Assert.IsTrue(enemyProxy.IsAdvanceHeld);
+            Assert.IsTrue(allyClash.IsClashing);
+            Assert.AreEqual(1, allyClash.TotalClashCount);
+            Assert.AreEqual(DamageTeam.Enemy, allyClash.LastOpponentTeam);
+            allyPresenter.RefreshNow();
+            Assert.IsTrue(allyPresenter.IsShowing);
+            Assert.AreEqual(1, allyPresenter.LastObservedClashCount);
+            Assert.AreEqual(
+                1,
+                allyPresenter.ClashFlashCount,
+                "The summon proxy presenter should pulse when body clash damage occurs so the duel is readable in world space.");
+
+            Object.DestroyImmediate(enemyObject);
+            Object.DestroyImmediate(allyObject);
+        }
+
+        [Test]
+        public void SummonSlot1EntryStartsInFrontOfPlayerBodyAndAdvancesPastFrontline()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = lane.GetLaneWorldPoint(2.25f, -2f);
+            CombatHealth playerHealth = playerObject.AddComponent<CombatHealth>();
+            playerHealth.ConfigureTeam(DamageTeam.Player);
+            SummonEnergyLadder energy = playerObject.AddComponent<SummonEnergyLadder>();
+            energy.ConfigureReferences(lane, playerObject.transform);
+            energy.GrantCurrentTierEnergy(energy.CurrentTierTarget);
+
+            GameObject bossObject = new GameObject("BossProxy");
+            bossObject.transform.position = lane.GetBattlefieldWorldPoint(0f, lane.BossProxyZ, 1.4f);
+            CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+            bossHealth.ConfigureTeam(DamageTeam.Enemy);
+
+            GameObject projectilePrefabObject = new GameObject("SummonProjectilePrefab");
+            projectilePrefabObject.AddComponent<SphereCollider>();
+            projectilePrefabObject.AddComponent<Rigidbody>();
+            LaneActionProjectile projectilePrefab = projectilePrefabObject.AddComponent<LaneActionProjectile>();
+            projectilePrefabObject.SetActive(false);
+
+            GameObject actorPrefabObject = new GameObject("SummonActorPrefab");
+            actorPrefabObject.AddComponent<SphereCollider>();
+            actorPrefabObject.AddComponent<Rigidbody>();
+            CombatHealth actorHealth = actorPrefabObject.AddComponent<CombatHealth>();
+            actorHealth.ConfigureTeam(DamageTeam.AllySummon);
+            SummonFrontlineProxy actorPrefab = actorPrefabObject.AddComponent<SummonFrontlineProxy>();
+            actorPrefab.ConfigureHealth(actorHealth);
+            actorPrefabObject.SetActive(false);
+
+            PlayerSummonSlot1Action summonAction = playerObject.AddComponent<PlayerSummonSlot1Action>();
+            summonAction.ConfigureReferences(
+                energy,
+                playerHealth,
+                null,
+                bossHealth,
+                lane,
+                projectilePrefab,
+                null,
+                null,
+                null,
+                actorPrefab,
+                null);
+
+            Assert.IsTrue(summonAction.TryUseSummonSlot1());
+            Vector2 entryLane = lane.GetLaneCoordinates(summonAction.LastEntryPosition);
+            Vector2 playerLane = lane.GetLaneCoordinates(playerObject.transform.position);
+            Assert.AreEqual(playerLane.x, entryLane.x, 0.001f);
+            Assert.AreEqual(playerLane.y + 1.35f, entryLane.y, 0.001f);
+
+            SummonFrontlineProxy activeProxy = null;
+            SummonFrontlineProxy[] proxies = Object.FindObjectsByType<SummonFrontlineProxy>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < proxies.Length; i++)
+            {
+                if (proxies[i] != null && proxies[i].IsActive)
+                {
+                    activeProxy = proxies[i];
+                    break;
+                }
+            }
+
+            Assert.IsNotNull(activeProxy);
+            Assert.IsTrue(
+                lane.IsPastForwardBoundary(activeProxy.AdvanceTargetPosition),
+                "The summon starts at the player's body front, but its frontline advance is allowed to cross the player boundary.");
+            Vector2 advanceTargetLane = lane.GetLaneCoordinates(activeProxy.AdvanceTargetPosition);
+            Assert.AreEqual(
+                lane.BossProxyZ,
+                advanceTargetLane.y,
+                0.001f,
+                "A normal summon actor should advance toward the far/frontline target instead of stopping after a short fixed distance.");
+            Assert.AreEqual(
+                0f,
+                advanceTargetLane.x,
+                0.001f,
+                "SummonSlot1 should pressure the boss/frontline target lane, not remain locked to the player's lateral entry line.");
+            Assert.IsFalse(activeProxy.HasLifetimeLimit);
+            Assert.IsTrue(
+                float.IsPositiveInfinity(activeProxy.RemainingLifetimeSeconds),
+                "Default normal summon actors should not disappear from a generic actor timer.");
+            Vector3 actorPositionBeforeTick = activeProxy.transform.position;
+            activeProxy.Tick(1f);
+            Vector2 actorLaneBeforeTick = lane.GetLaneCoordinates(actorPositionBeforeTick);
+            Vector2 actorLaneAfterOneSecond = lane.GetLaneCoordinates(activeProxy.transform.position);
+            Assert.Greater(
+                actorLaneAfterOneSecond.y,
+                actorLaneBeforeTick.y + 0.5f,
+                "A summon actor should visibly march forward after appearing in front of the player.");
+            Assert.Less(
+                activeProxy.AdvanceProgress01,
+                0.25f,
+                "A normal summon actor should not snap to the far target during the first second of travel.");
+            Assert.Less(
+                actorLaneAfterOneSecond.y,
+                advanceTargetLane.y - 2f,
+                "A normal summon should still be crossing the corridor after one second, not already parked at the boss lane.");
+
+            energy.GrantCurrentTierEnergy(energy.CurrentTierTarget);
+            Assert.IsTrue(summonAction.TryUseSummonSlot1());
+            int activeProxyCount = 0;
+            proxies = Object.FindObjectsByType<SummonFrontlineProxy>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < proxies.Length; i++)
+            {
+                if (proxies[i] != null && proxies[i].IsActive)
+                {
+                    activeProxyCount++;
+                }
+            }
+
+            Assert.AreEqual(
+                1,
+                activeProxyCount,
+                "The first review slice should keep one active actor per summon slot instead of accumulating unlimited persistent actors.");
+
+            Object.DestroyImmediate(actorPrefabObject);
+            Object.DestroyImmediate(projectilePrefabObject);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(laneObject);
+        }
+
+        [Test]
+        public void SummonSlot1MaxActiveActorPolicyAllowsAuthoredMultiSummon()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = lane.GetLaneWorldPoint(0f, -2f);
+            CombatHealth playerHealth = playerObject.AddComponent<CombatHealth>();
+            playerHealth.ConfigureTeam(DamageTeam.Player);
+            SummonEnergyLadder energy = playerObject.AddComponent<SummonEnergyLadder>();
+            energy.ConfigureReferences(lane, playerObject.transform);
+
+            GameObject bossObject = new GameObject("BossProxy");
+            bossObject.transform.position = lane.GetBattlefieldWorldPoint(0f, lane.BossProxyZ, 1.4f);
+            CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+            bossHealth.ConfigureTeam(DamageTeam.Enemy);
+
+            GameObject projectilePrefabObject = new GameObject("SummonProjectilePrefab");
+            projectilePrefabObject.AddComponent<SphereCollider>();
+            projectilePrefabObject.AddComponent<Rigidbody>();
+            LaneActionProjectile projectilePrefab = projectilePrefabObject.AddComponent<LaneActionProjectile>();
+            projectilePrefabObject.SetActive(false);
+
+            GameObject actorPrefabObject = new GameObject("SummonActorPrefab");
+            actorPrefabObject.AddComponent<SphereCollider>();
+            actorPrefabObject.AddComponent<Rigidbody>();
+            CombatHealth actorHealth = actorPrefabObject.AddComponent<CombatHealth>();
+            actorHealth.ConfigureTeam(DamageTeam.AllySummon);
+            SummonFrontlineProxy actorPrefab = actorPrefabObject.AddComponent<SummonFrontlineProxy>();
+            actorPrefab.ConfigureHealth(actorHealth);
+            actorPrefabObject.SetActive(false);
+
+            PlayerSummonSlot1Action summonAction = playerObject.AddComponent<PlayerSummonSlot1Action>();
+            summonAction.ConfigureReferences(
+                energy,
+                playerHealth,
+                null,
+                bossHealth,
+                lane,
+                projectilePrefab,
+                null,
+                null,
+                null,
+                actorPrefab,
+                null);
+
+            SerializedObject serializedAction = new SerializedObject(summonAction);
+            SerializedProperty maxActiveActors = serializedAction.FindProperty("maxActiveSummonActors");
+            Assert.IsNotNull(maxActiveActors);
+            maxActiveActors.intValue = 2;
+            serializedAction.ApplyModifiedPropertiesWithoutUndo();
+
+            energy.GrantCurrentTierEnergy(energy.CurrentTierTarget);
+            Assert.IsTrue(summonAction.TryUseSummonSlot1());
+            energy.GrantCurrentTierEnergy(energy.CurrentTierTarget);
+            Assert.IsTrue(summonAction.TryUseSummonSlot1());
+
+            Assert.AreEqual(
+                2,
+                summonAction.ActiveSummonActorCount,
+                "Raising the authored active actor cap should allow multiple persistent summon actors before recall logic trims them.");
+
+            Object.DestroyImmediate(actorPrefabObject);
+            Object.DestroyImmediate(projectilePrefabObject);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(laneObject);
         }
 
         [Test]
@@ -434,6 +801,92 @@ namespace DimensionBrawl.Tests
             Object.DestroyImmediate(actorPrefabObject);
             Object.DestroyImmediate(projectilePrefabObject);
             Object.DestroyImmediate(summonPattern);
+            Object.DestroyImmediate(basePattern);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(laneObject);
+        }
+
+        [Test]
+        public void BossPressureActionDirectorCanHoldLevelOneForNextTierSummonPressure()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.ForwardBoundaryZ);
+            GameObject bossObject = new GameObject("BossProxy");
+            CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+            bossHealth.ConfigureTeam(DamageTeam.Enemy);
+
+            BossBarragePatternProfile basePattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            BossBarragePatternProfile linePattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            BossBarragePatternProfile summonPattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            GameObject projectilePrefabObject = new GameObject("BossProjectilePrefab");
+            projectilePrefabObject.AddComponent<SphereCollider>();
+            projectilePrefabObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile projectilePrefab = projectilePrefabObject.AddComponent<BossBarrageProjectile>();
+            projectilePrefabObject.SetActive(false);
+
+            GameObject actorPrefabObject = new GameObject("BossSummonPressurePrefab");
+            actorPrefabObject.AddComponent<SphereCollider>();
+            actorPrefabObject.AddComponent<Rigidbody>();
+            SummonPressureScreen pressureScreen = actorPrefabObject.AddComponent<SummonPressureScreen>();
+            SummonFrontlineProxy actorPrefab = actorPrefabObject.AddComponent<SummonFrontlineProxy>();
+            actorPrefab.ConfigurePresentation(actorPrefabObject.transform, pressureScreen);
+            actorPrefabObject.SetActive(false);
+
+            GameObject actorRoot = new GameObject("BossSummonActorRoot");
+            BossSummonPressureAction summonAction = bossObject.AddComponent<BossSummonPressureAction>();
+            summonAction.ConfigureReferences(lane, playerObject.transform, actorPrefab, actorRoot.transform);
+
+            BossBarrageEmitter emitter = bossObject.AddComponent<BossBarrageEmitter>();
+            emitter.ConfigureReferences(lane, playerObject.transform, bossHealth);
+            emitter.ConfigurePattern(basePattern, projectilePrefab, basePattern.ProjectilesPerWave * 2);
+
+            BossPressureCostLadder bossCost = bossObject.AddComponent<BossPressureCostLadder>();
+            bossCost.ConfigureReferences(lane, bossObject.transform);
+            bossCost.GrantCurrentTierCost(100f);
+
+            BossPressureActionDirector director = bossObject.AddComponent<BossPressureActionDirector>();
+            director.ConfigureReferences(bossCost, emitter, summonAction, lane, playerObject.transform);
+            director.ConfigureActionSlots(new[]
+            {
+                new BossPressureActionDirector.BossPressureActionSlot(
+                    linePattern,
+                    BossPressureActionKind.SkillPattern,
+                    1,
+                    1,
+                    0f),
+                new BossPressureActionDirector.BossPressureActionSlot(
+                    summonPattern,
+                    BossPressureActionKind.SummonPressure,
+                    2,
+                    1,
+                    0f,
+                    usePlayerForwardRiskGate: true,
+                    minimumPlayerForwardRisk01: 0.32f,
+                    maximumPlayerForwardRisk01: 1f)
+            });
+            director.SetHoldForNextTierActionWhenGateAllows(true);
+
+            Assert.IsFalse(
+                director.TryQueueBestAvailableAction(),
+                "With the hold policy enabled, LV1 should wait when an authored LV2 summon-pressure action is gated open.");
+            Assert.AreEqual(1, bossCost.AvailableTier);
+            Assert.IsFalse(emitter.HasQueuedPriorityPattern);
+
+            bossCost.GrantCurrentTierCost(100f);
+
+            Assert.IsTrue(director.TryQueueBestAvailableAction());
+            Assert.AreSame(summonPattern, emitter.QueuedPriorityPattern);
+            Assert.AreEqual(BossPressureActionKind.SummonPressure, director.LastActionKind);
+            Assert.AreEqual(2, summonAction.LastReleasedTier);
+
+            Object.DestroyImmediate(actorRoot);
+            Object.DestroyImmediate(actorPrefabObject);
+            Object.DestroyImmediate(projectilePrefabObject);
+            Object.DestroyImmediate(summonPattern);
+            Object.DestroyImmediate(linePattern);
             Object.DestroyImmediate(basePattern);
             Object.DestroyImmediate(bossObject);
             Object.DestroyImmediate(playerObject);

@@ -5,6 +5,7 @@ using UnityEngine.InputSystem;
 
 namespace DimensionBrawl.UI
 {
+    // Review-only mobile controls for the boss barrage lane slice; production HUD should be authored separately.
     [DefaultExecutionOrder(-50)]
     [DisallowMultipleComponent]
     public sealed class BossBarrageLaneReviewMobileHud : MonoBehaviour
@@ -17,6 +18,8 @@ namespace DimensionBrawl.UI
         [SerializeField] private PlayerRangedBasicAttackAction rangedBasicAttackAction;
         [SerializeField] private PlayerSkill1Action skill1Action;
         [SerializeField] private PlayerSummonSlot1Action summonSlot1Action;
+        [SerializeField] private PlayerSupportSummonSlotAction summonSlot2Action;
+        [SerializeField] private PlayerSupportSummonSlotAction summonSlot3Action;
         [SerializeField] private SummonEnergyLadder energyLadder;
 
         [Header("Canonical Actions")]
@@ -25,6 +28,8 @@ namespace DimensionBrawl.UI
         [SerializeField] private string dodgeActionName = "Dodge";
         [SerializeField] private string skill1ActionName = "Skill1";
         [SerializeField] private string summonSlot1ActionName = "SummonSlot1";
+        [SerializeField] private string summonSlot2ActionName = "SummonSlot2";
+        [SerializeField] private string summonSlot3ActionName = "SummonSlot3";
         [SerializeField] private string rangedAimActionName = "RangedAim";
         [SerializeField] private string weaponSwapActionName = "WeaponSwap";
 
@@ -98,6 +103,8 @@ namespace DimensionBrawl.UI
         public string DodgeActionName => dodgeActionName;
         public string Skill1ActionName => skill1ActionName;
         public string SummonSlot1ActionName => summonSlot1ActionName;
+        public string SummonSlot2ActionName => summonSlot2ActionName;
+        public string SummonSlot3ActionName => summonSlot3ActionName;
         public string RangedAimActionName => rangedAimActionName;
         public string WeaponSwapActionName => weaponSwapActionName;
 
@@ -109,7 +116,9 @@ namespace DimensionBrawl.UI
             PlayerRangedBasicAttackAction newRangedBasicAttackAction,
             PlayerSkill1Action newSkill1Action,
             PlayerSummonSlot1Action newSummonSlot1Action,
-            SummonEnergyLadder newEnergyLadder = null)
+            SummonEnergyLadder newEnergyLadder = null,
+            PlayerSupportSummonSlotAction newSummonSlot2Action = null,
+            PlayerSupportSummonSlotAction newSummonSlot3Action = null)
         {
             movement = newMovement;
             actionController = newActionController;
@@ -119,6 +128,8 @@ namespace DimensionBrawl.UI
             skill1Action = newSkill1Action;
             summonSlot1Action = newSummonSlot1Action;
             energyLadder = newEnergyLadder;
+            summonSlot2Action = newSummonSlot2Action;
+            summonSlot3Action = newSummonSlot3Action;
         }
 
         private void Awake()
@@ -156,6 +167,16 @@ namespace DimensionBrawl.UI
             if (summonSlot1Action == null && movement != null)
             {
                 summonSlot1Action = movement.GetComponent<PlayerSummonSlot1Action>();
+            }
+
+            if (summonSlot2Action == null && movement != null)
+            {
+                summonSlot2Action = FindSupportSummonAction(summonSlot2ActionName);
+            }
+
+            if (summonSlot3Action == null && movement != null)
+            {
+                summonSlot3Action = FindSupportSummonAction(summonSlot3ActionName);
             }
 
             if (energyLadder == null && movement != null)
@@ -250,6 +271,16 @@ namespace DimensionBrawl.UI
             if (IsPressed(summonSlot1Rect))
             {
                 summonSlot1Action?.QueueSummonSlot1();
+            }
+
+            if (IsPressed(summonSlot2Rect))
+            {
+                summonSlot2Action?.QueueSummon();
+            }
+
+            if (IsPressed(summonSlot3Rect))
+            {
+                summonSlot3Action?.QueueSummon();
             }
         }
 
@@ -735,8 +766,16 @@ namespace DimensionBrawl.UI
         private void DrawSummonButtons()
         {
             DrawButton(summonSlot1Rect, BuildSummonSlot1Label(), IsHeld(summonSlot1Rect));
-            DrawButton(summonSlot2Rect, BuildPendingSummonLabel(summonSlot2Label), false, pending: true);
-            DrawButton(summonSlot3Rect, BuildPendingSummonLabel(summonSlot3Label), false, pending: true);
+            DrawButton(
+                summonSlot2Rect,
+                BuildSupportSummonLabel(summonSlot2Action, summonSlot2Label),
+                IsHeld(summonSlot2Rect),
+                pending: summonSlot2Action == null);
+            DrawButton(
+                summonSlot3Rect,
+                BuildSupportSummonLabel(summonSlot3Action, summonSlot3Label),
+                IsHeld(summonSlot3Rect),
+                pending: summonSlot3Action == null);
         }
 
         private string BuildSummonSlot1Label()
@@ -783,6 +822,54 @@ namespace DimensionBrawl.UI
         private string BuildPendingSummonLabel(string slotLabel)
         {
             return $"{slotLabel}\n{lockedSummonLabel}";
+        }
+
+        private string BuildSupportSummonLabel(PlayerSupportSummonSlotAction supportAction, string slotLabel)
+        {
+            if (supportAction == null)
+            {
+                return BuildPendingSummonLabel(slotLabel);
+            }
+
+            int availableTier = energyLadder != null ? energyLadder.AvailableTier : 0;
+            if (availableTier > 0)
+            {
+                string tierName = TryGetSupportSummonTierShortName(supportAction, availableTier);
+                return $"{slotLabel}\nREADY LV{availableTier} {tierName}".TrimEnd();
+            }
+
+            if (energyLadder == null)
+            {
+                return $"{slotLabel}\nREADY?";
+            }
+
+            int chargingTier = Mathf.Clamp(energyLadder.ChargingTier, 1, 3);
+            int fillPercent = Mathf.RoundToInt(energyLadder.CurrentTierFillRatio * 100f);
+            return $"{slotLabel}\nLV{chargingTier} {fillPercent}%";
+        }
+
+        private static string TryGetSupportSummonTierShortName(
+            PlayerSupportSummonSlotAction supportAction,
+            int tier)
+        {
+            if (supportAction == null
+                || !supportAction.TryGetTierReadout(
+                    tier,
+                    out SummonSlotActionProfile.SummonTierReadout readout)
+                || string.IsNullOrWhiteSpace(readout.TierLabel))
+            {
+                return string.Empty;
+            }
+
+            string displayName = readout.TierLabel.Trim();
+            int firstSpaceIndex = displayName.IndexOf(' ');
+            if (firstSpaceIndex <= 0 || firstSpaceIndex >= displayName.Length - 1)
+            {
+                return displayName.Length <= 10 ? displayName : string.Empty;
+            }
+
+            string trailingName = displayName.Substring(firstSpaceIndex + 1).Trim();
+            return trailingName.Length <= 10 ? trailingName : string.Empty;
         }
 
         private void DrawLookAimGuide()
@@ -938,6 +1025,26 @@ namespace DimensionBrawl.UI
         private T FindFirstComponentOnSelfOrParent<T>() where T : Component
         {
             return GetComponent<T>() ?? GetComponentInParent<T>();
+        }
+
+        private PlayerSupportSummonSlotAction FindSupportSummonAction(string actionName)
+        {
+            if (movement == null)
+            {
+                return null;
+            }
+
+            PlayerSupportSummonSlotAction[] actions =
+                movement.GetComponents<PlayerSupportSummonSlotAction>();
+            for (int i = 0; i < actions.Length; i++)
+            {
+                if (actions[i] != null && actions[i].SlotActionName == actionName)
+                {
+                    return actions[i];
+                }
+            }
+
+            return null;
         }
     }
 }

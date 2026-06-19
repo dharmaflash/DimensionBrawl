@@ -5,6 +5,7 @@ using UnityEngine;
 
 namespace DimensionBrawl.Test
 {
+    // Review-only orchestration for the boss barrage lane slice; production encounter flow should use a separate owner.
     public sealed class BossBarragePocketReviewOwner : MonoBehaviour
     {
         public enum ReviewPhase

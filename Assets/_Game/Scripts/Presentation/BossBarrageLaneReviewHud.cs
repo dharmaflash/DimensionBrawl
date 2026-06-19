@@ -6,6 +6,7 @@ using UnityEngine;
 
 namespace DimensionBrawl.Presentation
 {
+    // Review-only readout for the boss barrage lane slice; production HUD should be authored separately.
     public sealed class BossBarrageLaneReviewHud : MonoBehaviour
     {
         [Header("References")]
@@ -20,6 +21,8 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private PlayerRangedBasicAttackAction rangedBasicAttackAction;
         [SerializeField] private PlayerSkill1Action skill1Action;
         [SerializeField] private PlayerSummonSlot1Action summonSlot1Action;
+        [SerializeField] private PlayerSupportSummonSlotAction summonSlot2Action;
+        [SerializeField] private PlayerSupportSummonSlotAction summonSlot3Action;
         [SerializeField] private BossBarrageEmitter bossBarrageEmitter;
         [SerializeField] private BossPressureCostLadder bossPressureCostLadder;
         [SerializeField] private BossPressurePositionController bossPressurePositionController;
@@ -56,7 +59,9 @@ namespace DimensionBrawl.Presentation
             BossPressureCostLadder newBossPressureCostLadder = null,
             BossPressurePositionController newBossPressurePositionController = null,
             BossPressureActionDirector newBossPressureActionDirector = null,
-            BossSummonPressureAction newBossSummonPressureAction = null)
+            BossSummonPressureAction newBossSummonPressureAction = null,
+            PlayerSupportSummonSlotAction newSummonSlot2Action = null,
+            PlayerSupportSummonSlotAction newSummonSlot3Action = null)
         {
             playerHealth = newPlayerHealth;
             closeThreatHealth = newCloseThreatHealth;
@@ -69,6 +74,8 @@ namespace DimensionBrawl.Presentation
             rangedBasicAttackAction = newRangedBasicAttackAction;
             skill1Action = newSkill1Action;
             summonSlot1Action = newSummonSlot1Action;
+            summonSlot2Action = newSummonSlot2Action;
+            summonSlot3Action = newSummonSlot3Action;
             bossBarrageEmitter = newBossBarrageEmitter;
             bossPressureCostLadder = newBossPressureCostLadder;
             bossPressurePositionController = newBossPressurePositionController;
@@ -212,13 +219,26 @@ namespace DimensionBrawl.Presentation
             string pattern = bossPressureActionDirector != null && bossPressureActionDirector.LastQueuedPattern != null
                 ? bossPressureActionDirector.LastQueuedPattern.PatternId
                 : "-";
+            string hold = ResolveBossPressureHoldText();
             string position = bossPressurePositionController != null
                 ? $" Pos {bossPressurePositionController.CurrentRisk01 * 100f:0}->{bossPressurePositionController.CurrentTargetRisk01 * 100f:0}%"
                 : string.Empty;
             return $"Boss Cost next LV{bossPressureCostLadder.ChargingTier} "
                 + $"{bossPressureCostLadder.CurrentTierFillRatio * 100f:0}%   {ready}   "
-                + $"Risk {bossPressureCostLadder.CurrentRiskBand} x{bossPressureCostLadder.CurrentGainMultiplier:0.00}{position}   "
+                + $"Risk {bossPressureCostLadder.CurrentRiskBand} x{bossPressureCostLadder.CurrentGainMultiplier:0.00}{position}{hold}   "
                 + $"Last {action}/{pattern}";
+        }
+
+        private string ResolveBossPressureHoldText()
+        {
+            if (bossPressureActionDirector == null
+                || !bossPressureActionDirector.TryGetHeldNextTierAction(out BossPressureActionDirector.BossPressureActionSlot slot, out int nextTier))
+            {
+                return string.Empty;
+            }
+
+            string patternId = slot.Pattern != null ? slot.Pattern.PatternId : "-";
+            return $" Hold->LV{nextTier} {slot.ActionKind}/{patternId}";
         }
 
         private string ResolveBossPressureResponseLine()
@@ -253,7 +273,16 @@ namespace DimensionBrawl.Presentation
             return $"Boss Summon {tier} proxy {bossSummonPressureAction.ActiveSummonActorCount} "
                 + $"shield {bossSummonPressureAction.ActivePressureScreenCount} "
                 + $"blocks {bossSummonPressureAction.ActivePressureScreenRemainingIntercepts} "
-                + $"used {bossSummonPressureAction.TotalReleaseCount}";
+                + ResolveSummonLifecycleLine(
+                    bossSummonPressureAction.ActiveSummonActorCount,
+                    bossSummonPressureAction.LastSummonActorRemainingLifetimeSeconds,
+                    bossSummonPressureAction.ActiveSummonActorAdvanceProgress01,
+                    bossSummonPressureAction.LastSummonActorHasHealth,
+                    bossSummonPressureAction.LastSummonActorHealthRatio,
+                    bossSummonPressureAction.LastSummonActorIsClashing,
+                    bossSummonPressureAction.LastSummonActorClashCount,
+                    bossSummonPressureAction.LastSummonActorExitReason)
+                + $" used {bossSummonPressureAction.TotalReleaseCount}";
         }
 
         private string ResolveActionLine()
@@ -303,8 +332,40 @@ namespace DimensionBrawl.Presentation
             return $"{skillShots}   Summon {tier} proxy {summonSlot1Action.ActiveSummonActorCount} "
                 + $"bolts {summonSlot1Action.ActiveProjectileCount} shield {summonSlot1Action.ActivePressureScreenCount} "
                 + $"blocks {summonSlot1Action.ActivePressureScreenRemainingIntercepts}"
+                + ResolveSummonLifecycleLine(
+                    summonSlot1Action.ActiveSummonActorCount,
+                    summonSlot1Action.LastSummonActorRemainingLifetimeSeconds,
+                    summonSlot1Action.ActiveSummonActorAdvanceProgress01,
+                    summonSlot1Action.LastSummonActorHasHealth,
+                    summonSlot1Action.LastSummonActorHealthRatio,
+                    summonSlot1Action.LastSummonActorIsClashing,
+                    summonSlot1Action.LastSummonActorClashCount,
+                    summonSlot1Action.LastSummonActorExitReason)
+                + $"   {ResolveSupportSummonLine("S2", summonSlot2Action)}"
+                + $"   {ResolveSupportSummonLine("S3", summonSlot3Action)}"
                 + ResolveSummonBlockWindowLine()
                 + ResolveFollowupLine();
+        }
+
+        private static string ResolveSupportSummonLine(string label, PlayerSupportSummonSlotAction action)
+        {
+            if (action == null)
+            {
+                return $"{label} -";
+            }
+
+            string tier = action.LastSpentTier > 0 ? $"LV{action.LastSpentTier}" : "LV-";
+            return $"{label} {tier} proxy {action.ActiveSummonActorCount} "
+                + $"bolts {action.ActiveProjectileCount} blocks {action.TotalPressureScreenInterceptCount}"
+                + ResolveSummonLifecycleLine(
+                    action.ActiveSummonActorCount,
+                    action.LastSummonActorRemainingLifetimeSeconds,
+                    action.ActiveSummonActorAdvanceProgress01,
+                    action.LastSummonActorHasHealth,
+                    action.LastSummonActorHealthRatio,
+                    action.LastSummonActorIsClashing,
+                    action.LastSummonActorClashCount,
+                    action.LastSummonActorExitReason);
         }
 
         private string ResolveDuelProgressLine()
@@ -509,6 +570,44 @@ namespace DimensionBrawl.Presentation
                 SummonEnergyRiskBand.ForwardRisk => "ForwardRisk",
                 SummonEnergyRiskBand.MidCharge => "MidCharge",
                 _ => "BackSafety"
+            };
+        }
+
+        private static string ResolveSummonLifecycleLine(
+            int activeActorCount,
+            float remainingLifetimeSeconds,
+            float advanceProgress01,
+            bool hasHealth,
+            float healthRatio,
+            bool isClashing,
+            int clashCount,
+            SummonFrontlineProxyExitReason exitReason)
+        {
+            if (activeActorCount > 0)
+            {
+                string health = hasHealth ? $" hp {healthRatio * 100f:0}%" : " hp --";
+                string clash = clashCount > 0 || isClashing
+                    ? $" clash {clashCount}{(isClashing ? "*" : string.Empty)}"
+                    : string.Empty;
+                string lifetime = float.IsPositiveInfinity(remainingLifetimeSeconds)
+                    ? " life hold"
+                    : $" life {remainingLifetimeSeconds:0.0}s";
+                return $"{lifetime} adv {advanceProgress01 * 100f:0}%{health}{clash}";
+            }
+
+            return exitReason == SummonFrontlineProxyExitReason.None
+                ? " idle"
+                : $" exit {ResolveSummonExitReasonLabel(exitReason)}";
+        }
+
+        private static string ResolveSummonExitReasonLabel(SummonFrontlineProxyExitReason exitReason)
+        {
+            return exitReason switch
+            {
+                SummonFrontlineProxyExitReason.LifetimeExpired => "time",
+                SummonFrontlineProxyExitReason.Defeated => "defeated",
+                SummonFrontlineProxyExitReason.Recalled => "recalled",
+                _ => "-"
             };
         }
     }

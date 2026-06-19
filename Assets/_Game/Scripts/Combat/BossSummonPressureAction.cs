@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using DimensionBrawl.LevelDesign;
 using UnityEngine;
 
@@ -14,7 +13,7 @@ namespace DimensionBrawl.Combat
             [Range(0f, 1f)] public float EntryForwardBlend01;
             public float LateralOffset;
             [Min(0f)] public float EntryHeight;
-            [Min(0.05f)] public float ActorLifetimeSeconds;
+            [Min(0f)] public float ActorLifetimeSeconds;
             [Min(0.01f)] public float ActorScale;
             [Min(0f)] public float ActorAdvanceDistance;
             [Min(0.01f)] public float ActorAdvanceSeconds;
@@ -26,7 +25,7 @@ namespace DimensionBrawl.Combat
             {
                 EntryForwardBlend01 = Mathf.Clamp01(EntryForwardBlend01);
                 EntryHeight = Mathf.Max(0f, EntryHeight);
-                ActorLifetimeSeconds = Mathf.Max(0.05f, ActorLifetimeSeconds);
+                ActorLifetimeSeconds = Mathf.Max(0f, ActorLifetimeSeconds);
                 ActorScale = Mathf.Max(0.01f, ActorScale);
                 ActorAdvanceDistance = Mathf.Max(0f, ActorAdvanceDistance);
                 ActorAdvanceSeconds = Mathf.Max(0.01f, ActorAdvanceSeconds);
@@ -46,11 +45,13 @@ namespace DimensionBrawl.Combat
         [Header("Boss Summon")]
         [SerializeField] private DamageTeam ownerTeam = DamageTeam.Enemy;
         [SerializeField, Min(0)] private int actorPrewarmCount = 2;
+        [SerializeField, Min(1)] private int maxActiveSummonActors = 1;
+        [Tooltip("Extra travel time per meter after the authored advance distance. Keep this high enough that summons march instead of snapping to the target.")]
+        [SerializeField, Min(0f)] private float actorEntryCatchupSecondsPerMeter = 0.55f;
         [SerializeField] private BossSummonPressureProfile pressureProfile;
         [SerializeField] private BossSummonTierSettings[] tierSettings = CreateDefaultTierSettings();
 
-        private readonly List<SummonFrontlineProxy> summonActors = new List<SummonFrontlineProxy>(4);
-        private readonly Queue<SummonFrontlineProxy> summonActorPool = new Queue<SummonFrontlineProxy>(4);
+        private readonly SummonFrontlineProxyPool summonActorPool = new SummonFrontlineProxyPool();
 
         private int lastReleasedTier;
         private int totalReleaseCount;
@@ -59,6 +60,7 @@ namespace DimensionBrawl.Combat
         private int lastPressureScreenInterceptTier;
         private int totalPressureScreenInterceptCount;
         private Vector3 lastSummonActorPosition;
+        private SummonFrontlineProxy lastSummonActor;
 
         public event Action<BossSummonPressureAction, int> PressureSummonReleased;
         public event Action<BossSummonPressureAction, int> PressureSummonIntercepted;
@@ -70,12 +72,48 @@ namespace DimensionBrawl.Combat
         public int LastPressureScreenInterceptTier => lastPressureScreenInterceptTier;
         public int TotalPressureScreenInterceptCount => totalPressureScreenInterceptCount;
         public Vector3 LastSummonActorPosition => lastSummonActorPosition;
-        public int ActiveSummonActorCount => CountActiveSummonActors();
-        public int ActivePressureScreenCount => CountActivePressureScreens();
-        public int ActivePressureScreenRemainingIntercepts => CountActivePressureScreenRemainingIntercepts();
+        public int ActiveSummonActorCount => summonActorPool.CountActive();
+        public int ActivePressureScreenCount => summonActorPool.CountActivePressureScreens();
+        public int ActivePressureScreenRemainingIntercepts => summonActorPool.CountActivePressureScreenRemainingIntercepts();
+        public bool LastSummonActorHasHealth => lastSummonActor != null && lastSummonActor.HasHealth;
+        public float LastSummonActorHealthRatio => lastSummonActor != null ? lastSummonActor.HealthRatio : 0f;
+        public float LastSummonActorRemainingLifetimeSeconds => lastSummonActor != null
+            ? lastSummonActor.RemainingLifetimeSeconds
+            : 0f;
+        public float ActiveSummonActorAdvanceProgress01
+        {
+            get
+            {
+                SummonFrontlineProxy actor = ResolveActiveSummonActor();
+                return actor != null ? actor.AdvanceProgress01 : 0f;
+            }
+        }
+
+        public bool LastSummonActorIsClashing
+        {
+            get
+            {
+                SummonFrontlineClash clash = ResolveLastSummonActorClash();
+                return clash != null && clash.IsClashing;
+            }
+        }
+
+        public int LastSummonActorClashCount
+        {
+            get
+            {
+                SummonFrontlineClash clash = ResolveLastSummonActorClash();
+                return clash != null ? clash.TotalClashCount : 0;
+            }
+        }
+
+        public SummonFrontlineProxyExitReason LastSummonActorExitReason => lastSummonActor != null
+            ? lastSummonActor.LastExitReason
+            : SummonFrontlineProxyExitReason.None;
         public bool CanRelease => laneSpace != null && ResolveSummonActorPrefab() != null;
         public BossSummonPressureProfile PressureProfile => pressureProfile;
         public bool HasPressureProfile => pressureProfile != null;
+        private int MaxActiveSummonActors => Mathf.Max(1, maxActiveSummonActors);
 
         private void OnEnable()
         {
@@ -96,6 +134,8 @@ namespace DimensionBrawl.Combat
                 tierSettings = CreateDefaultTierSettings();
             }
 
+            actorEntryCatchupSecondsPerMeter = Mathf.Max(0f, actorEntryCatchupSecondsPerMeter);
+            maxActiveSummonActors = Mathf.Max(1, maxActiveSummonActors);
             for (int i = 0; i < tierSettings.Length; i++)
             {
                 BossSummonTierSettings settings = tierSettings[i];
@@ -143,6 +183,7 @@ namespace DimensionBrawl.Combat
 
             int resolvedTier = Mathf.Clamp(tier, 1, 3);
             BossSummonTierSettings settings = ResolveTierSettings(resolvedTier);
+            summonActorPool.TrimActiveCountBeforeSpawn(MaxActiveSummonActors);
             SummonFrontlineProxy actor = GetSummonActor();
             if (actor == null)
             {
@@ -150,7 +191,12 @@ namespace DimensionBrawl.Combat
             }
 
             Vector3 entryPosition = ResolveEntryPosition(settings);
-            Vector3 facingDirection = ResolveFacingDirection(entryPosition);
+            Vector3 targetPosition = ResolvePressureTargetPosition(entryPosition, settings);
+            Vector3 facingDirection = ResolveFacingDirection(entryPosition, targetPosition);
+            float actorAdvanceDistance = Vector3.Distance(
+                Vector3.ProjectOnPlane(targetPosition - entryPosition, Vector3.up),
+                Vector3.zero);
+            float actorAdvanceSeconds = ResolveActorAdvanceSeconds(actorAdvanceDistance, settings);
             actor.transform.SetParent(summonActorRoot != null ? summonActorRoot : transform, worldPositionStays: true);
             actor.Activate(
                 entryPosition,
@@ -158,8 +204,8 @@ namespace DimensionBrawl.Combat
                 resolvedTier,
                 settings.ActorLifetimeSeconds,
                 settings.ActorScale,
-                settings.ActorAdvanceDistance,
-                settings.ActorAdvanceSeconds);
+                targetPosition,
+                actorAdvanceSeconds);
 
             lastPressureScreenMaxIntercepts = 0;
             lastPressureScreenInterceptCount = 0;
@@ -182,6 +228,7 @@ namespace DimensionBrawl.Combat
             lastReleasedTier = resolvedTier;
             totalReleaseCount++;
             lastSummonActorPosition = actor.transform.position;
+            lastSummonActor = actor;
             PressureSummonReleased?.Invoke(this, resolvedTier);
             return true;
         }
@@ -205,11 +252,32 @@ namespace DimensionBrawl.Combat
             return laneSpace.GetBattlefieldWorldPoint(targetX, entryZ, settings.EntryHeight);
         }
 
-        private Vector3 ResolveFacingDirection(Vector3 entryPosition)
+        private Vector3 ResolvePressureTargetPosition(Vector3 entryPosition, BossSummonTierSettings settings)
         {
-            Vector3 facingDirection = trackedPlayer != null
-                ? trackedPlayer.position - entryPosition
-                : Vector3.back;
+            if (laneSpace == null)
+            {
+                return entryPosition + Vector3.back * Mathf.Max(0f, settings.ActorAdvanceDistance);
+            }
+
+            float targetX = 0f;
+            if (trackedPlayer != null)
+            {
+                targetX = laneSpace.GetLaneCoordinates(trackedPlayer.position).x;
+            }
+
+            float targetZ = laneSpace.SummonEntryZ;
+            return laneSpace.GetBattlefieldWorldPoint(targetX, targetZ, settings.EntryHeight);
+        }
+
+        private float ResolveActorAdvanceSeconds(float resolvedAdvanceDistance, BossSummonTierSettings settings)
+        {
+            float extraDistance = Mathf.Max(0f, resolvedAdvanceDistance - settings.ActorAdvanceDistance);
+            return settings.ActorAdvanceSeconds + extraDistance * actorEntryCatchupSecondsPerMeter;
+        }
+
+        private Vector3 ResolveFacingDirection(Vector3 entryPosition, Vector3 targetPosition)
+        {
+            Vector3 facingDirection = targetPosition - entryPosition;
             Vector3 planarDirection = Vector3.ProjectOnPlane(facingDirection, Vector3.up);
             return planarDirection.sqrMagnitude > 0.0001f ? planarDirection.normalized : Vector3.back;
         }
@@ -244,34 +312,19 @@ namespace DimensionBrawl.Combat
 
         private SummonFrontlineProxy FindActorForPressureScreen(SummonPressureScreen screen)
         {
-            if (screen == null)
-            {
-                return null;
-            }
-
-            for (int i = 0; i < summonActors.Count; i++)
-            {
-                SummonFrontlineProxy actor = summonActors[i];
-                if (actor != null && actor.PressureScreen == screen)
-                {
-                    return actor;
-                }
-            }
-
-            return null;
+            return summonActorPool.FindForPressureScreen(screen);
         }
 
         private void UnsubscribePressureScreens()
         {
-            for (int i = 0; i < summonActors.Count; i++)
+            summonActorPool.ForEach(actor =>
             {
-                SummonFrontlineProxy actor = summonActors[i];
-                if (actor != null && actor.PressureScreen != null)
+                if (actor.PressureScreen != null)
                 {
                     actor.PressureScreen.Intercepted -= HandlePressureScreenIntercepted;
                     actor.PressureScreen.ActionProjectileIntercepted -= HandlePressureScreenActionProjectileIntercepted;
                 }
-            }
+            });
         }
 
         private SummonFrontlineProxy GetSummonActor()
@@ -282,31 +335,8 @@ namespace DimensionBrawl.Combat
                 return null;
             }
 
-            while (summonActorPool.Count > 0)
-            {
-                SummonFrontlineProxy pooled = summonActorPool.Dequeue();
-                if (pooled != null)
-                {
-                    pooled.gameObject.SetActive(true);
-                    return pooled;
-                }
-            }
-
-            for (int i = 0; i < summonActors.Count; i++)
-            {
-                SummonFrontlineProxy reusable = summonActors[i];
-                if (reusable != null && !reusable.IsActive)
-                {
-                    reusable.gameObject.SetActive(true);
-                    return reusable;
-                }
-            }
-
             Transform parent = summonActorRoot != null ? summonActorRoot : transform;
-            SummonFrontlineProxy instance = Instantiate(prefab, parent);
-            instance.name = prefab.name;
-            summonActors.Add(instance);
-            return instance;
+            return summonActorPool.Get(prefab, parent);
         }
 
         private SummonFrontlineProxy ResolveSummonActorPrefab()
@@ -342,16 +372,8 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
-            for (int i = summonActors.Count; i < actorPrewarmCount; i++)
-            {
-                SummonFrontlineProxy actor = Instantiate(
-                    prefab,
-                    summonActorRoot != null ? summonActorRoot : transform);
-                actor.name = prefab.name;
-                actor.Deactivate();
-                summonActors.Add(actor);
-                summonActorPool.Enqueue(actor);
-            }
+            Transform parent = summonActorRoot != null ? summonActorRoot : transform;
+            summonActorPool.Prewarm(prefab, parent, actorPrewarmCount);
         }
 
         private BossSummonTierSettings ResolveTierSettings(int tier)
@@ -364,52 +386,15 @@ namespace DimensionBrawl.Combat
             return tierSettings[Mathf.Clamp(tier - 1, 0, tierSettings.Length - 1)];
         }
 
-        private int CountActiveSummonActors()
+        private SummonFrontlineProxy ResolveActiveSummonActor()
         {
-            int count = 0;
-            for (int i = 0; i < summonActors.Count; i++)
-            {
-                if (summonActors[i] != null && summonActors[i].IsActive)
-                {
-                    count++;
-                }
-            }
-
-            return count;
+            return summonActorPool.ResolveActive(lastSummonActor);
         }
 
-        private int CountActivePressureScreens()
+        private SummonFrontlineClash ResolveLastSummonActorClash()
         {
-            int count = 0;
-            for (int i = 0; i < summonActors.Count; i++)
-            {
-                SummonFrontlineProxy actor = summonActors[i];
-                if (actor != null
-                    && actor.PressureScreen != null
-                    && actor.PressureScreen.IsActive)
-                {
-                    count++;
-                }
-            }
-
-            return count;
-        }
-
-        private int CountActivePressureScreenRemainingIntercepts()
-        {
-            int count = 0;
-            for (int i = 0; i < summonActors.Count; i++)
-            {
-                SummonFrontlineProxy actor = summonActors[i];
-                if (actor != null
-                    && actor.PressureScreen != null
-                    && actor.PressureScreen.IsActive)
-                {
-                    count += actor.PressureScreen.RemainingIntercepts;
-                }
-            }
-
-            return count;
+            SummonFrontlineProxy actor = ResolveActiveSummonActor() ?? lastSummonActor;
+            return actor != null ? actor.GetComponent<SummonFrontlineClash>() : null;
         }
 
         private static BossSummonTierSettings[] CreateDefaultTierSettings()
@@ -418,42 +403,42 @@ namespace DimensionBrawl.Combat
             {
                 new BossSummonTierSettings
                 {
-                    EntryForwardBlend01 = 0.24f,
+                    EntryForwardBlend01 = 0.28f,
                     LateralOffset = 0.9f,
                     EntryHeight = 0.2f,
-                    ActorLifetimeSeconds = 1.35f,
+                    ActorLifetimeSeconds = 0f,
                     ActorScale = 0.92f,
-                    ActorAdvanceDistance = 1.15f,
-                    ActorAdvanceSeconds = 0.28f,
+                    ActorAdvanceDistance = 2.4f,
+                    ActorAdvanceSeconds = 1.4f,
                     ScreenIntercepts = 2,
                     ScreenRadius = 1.2f,
-                    ScreenLifetimeSeconds = 1.2f
+                    ScreenLifetimeSeconds = 2.6f
                 },
                 new BossSummonTierSettings
                 {
-                    EntryForwardBlend01 = 0.34f,
+                    EntryForwardBlend01 = 0.38f,
                     LateralOffset = 1.4f,
                     EntryHeight = 0.2f,
-                    ActorLifetimeSeconds = 1.65f,
+                    ActorLifetimeSeconds = 0f,
                     ActorScale = 1.12f,
-                    ActorAdvanceDistance = 1.9f,
-                    ActorAdvanceSeconds = 0.34f,
+                    ActorAdvanceDistance = 3.8f,
+                    ActorAdvanceSeconds = 1.85f,
                     ScreenIntercepts = 4,
                     ScreenRadius = 1.55f,
-                    ScreenLifetimeSeconds = 1.45f
+                    ScreenLifetimeSeconds = 3.4f
                 },
                 new BossSummonTierSettings
                 {
-                    EntryForwardBlend01 = 0.45f,
+                    EntryForwardBlend01 = 0.5f,
                     LateralOffset = 2.0f,
                     EntryHeight = 0.2f,
-                    ActorLifetimeSeconds = 2.0f,
+                    ActorLifetimeSeconds = 0f,
                     ActorScale = 1.36f,
-                    ActorAdvanceDistance = 2.7f,
-                    ActorAdvanceSeconds = 0.42f,
+                    ActorAdvanceDistance = 5.2f,
+                    ActorAdvanceSeconds = 2.35f,
                     ScreenIntercepts = 7,
                     ScreenRadius = 1.95f,
-                    ScreenLifetimeSeconds = 1.8f
+                    ScreenLifetimeSeconds = 4.2f
                 }
             };
         }
