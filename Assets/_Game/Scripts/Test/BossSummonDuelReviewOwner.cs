@@ -46,6 +46,14 @@ namespace DimensionBrawl.Test
         [SerializeField, Min(0f)] private float requiredBossDamage = 260f;
         [SerializeField] private bool failWhenPlayerDies = true;
 
+        [Header("Review Result")]
+        [SerializeField] private bool stopBarrageOnEnd = true;
+        [SerializeField] private bool stopBossPressureCostOnEnd = true;
+        [SerializeField] private bool stopBossPressureActionsOnEnd = true;
+        [SerializeField] private bool stopEnergyGainOnEnd = true;
+        [SerializeField] private GameObject clearMarker;
+        [SerializeField] private GameObject failMarker;
+
         private CombatHealth subscribedBossHealth;
         private bool warmStartApplied;
         private bool failed;
@@ -166,6 +174,7 @@ namespace DimensionBrawl.Test
         private void Start()
         {
             ApplyWarmStartOnce();
+            SetMarkers();
         }
 
         private void OnDisable()
@@ -182,13 +191,13 @@ namespace DimensionBrawl.Test
 
             if (failWhenPlayerDies && playerHealth != null && !playerHealth.IsAlive)
             {
-                failed = true;
+                EnterFailed();
                 return;
             }
 
             if (HasMetReviewGoals())
             {
-                cleared = true;
+                EnterCleared();
             }
         }
 
@@ -201,7 +210,9 @@ namespace DimensionBrawl.Test
             BossBarrageEmitter newBossBarrageEmitter,
             BossPressureCostLadder newBossPressureCostLadder,
             BossPressureActionDirector newBossPressureActionDirector,
-            BossSummonPressureAction newBossSummonPressureAction)
+            BossSummonPressureAction newBossSummonPressureAction,
+            GameObject newClearMarker,
+            GameObject newFailMarker)
         {
             Unsubscribe();
             playerHealth = newPlayerHealth;
@@ -213,7 +224,10 @@ namespace DimensionBrawl.Test
             bossPressureCostLadder = newBossPressureCostLadder;
             bossPressureActionDirector = newBossPressureActionDirector;
             bossSummonPressureAction = newBossSummonPressureAction;
+            clearMarker = newClearMarker;
+            failMarker = newFailMarker;
             Subscribe();
+            SetMarkers();
         }
 
         public void ResetReviewState()
@@ -231,6 +245,8 @@ namespace DimensionBrawl.Test
             highestBossSummonTier = 0;
             bossDamageFromPlayerSide = 0f;
             warmStartApplied = false;
+            SetReviewSystemsEnabled(true);
+            SetMarkers();
         }
 
         private void ApplyWarmStartOnce()
@@ -263,6 +279,66 @@ namespace DimensionBrawl.Test
                 && observedPlayerSummonUses >= requiredPlayerSummonUses
                 && observedAllyPressureBlocks >= requiredAllyPressureBlocks
                 && bossDamageFromPlayerSide >= requiredBossDamage;
+        }
+
+        private void EnterCleared()
+        {
+            if (cleared || failed)
+            {
+                return;
+            }
+
+            cleared = true;
+            SetReviewSystemsEnabled(false);
+            SetMarkers();
+        }
+
+        private void EnterFailed()
+        {
+            if (cleared || failed)
+            {
+                return;
+            }
+
+            failed = true;
+            SetReviewSystemsEnabled(false);
+            SetMarkers();
+        }
+
+        private void SetReviewSystemsEnabled(bool enabled)
+        {
+            if (stopBarrageOnEnd && bossBarrageEmitter != null)
+            {
+                bossBarrageEmitter.SetFiringEnabled(enabled);
+            }
+
+            if (stopEnergyGainOnEnd && energyLadder != null)
+            {
+                energyLadder.SetGainEnabled(enabled);
+            }
+
+            if (stopBossPressureCostOnEnd && bossPressureCostLadder != null)
+            {
+                bossPressureCostLadder.SetGainEnabled(enabled);
+            }
+
+            if (stopBossPressureActionsOnEnd && bossPressureActionDirector != null)
+            {
+                bossPressureActionDirector.SetActionsEnabled(enabled);
+            }
+        }
+
+        private void SetMarkers()
+        {
+            if (clearMarker != null)
+            {
+                clearMarker.SetActive(cleared);
+            }
+
+            if (failMarker != null)
+            {
+                failMarker.SetActive(failed);
+            }
         }
 
         private void Subscribe()
