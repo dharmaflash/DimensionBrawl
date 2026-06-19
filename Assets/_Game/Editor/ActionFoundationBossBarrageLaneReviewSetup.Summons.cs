@@ -1,3 +1,5 @@
+using System;
+using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
@@ -18,6 +20,142 @@ namespace DimensionBrawl.Editor
             EnsureBossSummonPressureActorPrefab();
             AssetDatabase.SaveAssets();
             Debug.Log("Reapplied ActionFoundation summon actor health bars.");
+        }
+
+        private static void EnsureSummonPresentationCandidateProfiles()
+        {
+            CombatVfxCueProfile vfxCueProfile =
+                LoadAsset<CombatVfxCueProfile>(ActionFoundationCombatVfxSetup.CombatVfxCueProfilePath);
+
+            ConfigureSummonPresentationCandidateProfile(
+                LoadOrCreateSummonPresentationCandidateProfile(SummonSlot1PresentationCandidateProfilePath),
+                "PlayerSummon.ShieldBreaker",
+                "Player Summon - Shield Breaker Elite",
+                SummonPresentationSide.PlayerSummon,
+                SummonSlot1ActorPrefabPath,
+                ActionFoundationEnemyRoleCandidateSetup.ShieldBreakerEliteCandidateProfilePath,
+                SummonSlot1ActorVisualName,
+                SummonSlot1ActorVisualRoleId,
+                vfxCueProfile,
+                "Promoted ShieldBreakerElite role Animator stands in for the first ally summon block-and-break read.",
+                "Magic-circle entry, ally pressure screen, tier pulse, assist bolt, and counter bolt carry the current read.",
+                "Replace the actor prefab or promoted visual source after a dedicated ally summon model and animation set are reviewed.");
+
+            ConfigureSummonPresentationCandidateProfile(
+                LoadOrCreateSummonPresentationCandidateProfile(SummonSlot2PresentationCandidateProfilePath),
+                "PlayerSummon.BacklineMarksman",
+                "Player Summon - Backline Marksman",
+                SummonPresentationSide.PlayerSummon,
+                SummonSlot2ActorPrefabPath,
+                ActionFoundationEnemyRoleCandidateSetup.BacklineShooterCandidateProfilePath,
+                SummonSlot2ActorVisualName,
+                SummonSlot2ActorVisualRoleId,
+                vfxCueProfile,
+                "Promoted BacklineShooter role Animator stands in for the second ally summon ranged-support read.",
+                "Magic-circle entry, marksman proxy, narrow assist volleys, and light pulse distinguish it from the shield slot.",
+                "Replace the actor prefab or promoted visual source after a dedicated ranged ally summon model is reviewed.");
+
+            ConfigureSummonPresentationCandidateProfile(
+                LoadOrCreateSummonPresentationCandidateProfile(SummonSlot3PresentationCandidateProfilePath),
+                "PlayerSummon.VanguardCommander",
+                "Player Summon - Vanguard Commander",
+                SummonPresentationSide.PlayerSummon,
+                SummonSlot3ActorPrefabPath,
+                ActionFoundationEnemyRoleCandidateSetup.FinalStandCommanderEliteCandidateProfilePath,
+                SummonSlot3ActorVisualName,
+                SummonSlot3ActorVisualRoleId,
+                vfxCueProfile,
+                "Promoted FinalStandCommanderElite role Animator stands in for the third ally summon vanguard read.",
+                "Magic-circle entry, heavier proxy scale, short advance, and high-impact volley distinguish it from S1/S2.",
+                "Replace the actor prefab or promoted visual source after a dedicated tank/vanguard ally summon model is reviewed.");
+
+            ConfigureSummonPresentationCandidateProfile(
+                LoadOrCreateSummonPresentationCandidateProfile(BossSummonPressurePresentationCandidateProfilePath),
+                "BossPressure.AuraCaptain",
+                "Boss Pressure Summon - Aura Captain Elite",
+                SummonPresentationSide.BossPressure,
+                BossSummonPressureActorPrefabPath,
+                ActionFoundationEnemyRoleCandidateSetup.AuraCaptainEliteCandidateProfilePath,
+                BossSummonPressureActorVisualName,
+                BossSummonPressureActorVisualRoleId,
+                vfxCueProfile,
+                "Promoted AuraCaptainElite role Animator stands in for boss-side summon-pressure command reads.",
+                "Enemy pressure screen, pressure pulse, and boss-side intercept colors distinguish it from the player summon.",
+                "Replace with a dedicated boss pressure summon after boss roster art is reviewed, without changing boss cost data.");
+
+            AssetDatabase.SaveAssets();
+        }
+
+        private static SummonPresentationCandidateProfile LoadOrCreateSummonPresentationCandidateProfile(string assetPath)
+        {
+            EnsureFolderForAsset(assetPath);
+            SummonPresentationCandidateProfile profile =
+                AssetDatabase.LoadAssetAtPath<SummonPresentationCandidateProfile>(assetPath);
+            if (profile != null)
+            {
+                return profile;
+            }
+
+            profile = ScriptableObject.CreateInstance<SummonPresentationCandidateProfile>();
+            AssetDatabase.CreateAsset(profile, assetPath);
+            return profile;
+        }
+
+        private static void ConfigureSummonPresentationCandidateProfile(
+            SummonPresentationCandidateProfile profile,
+            string candidateId,
+            string displayName,
+            SummonPresentationSide side,
+            string actorPrefabPath,
+            string roleCandidateProfilePath,
+            string visualChildName,
+            string sourceRoleId,
+            CombatVfxCueProfile vfxCueProfile,
+            string animationRead,
+            string vfxRead,
+            string replacementPlan)
+        {
+            GameObject actorPrefab = LoadAsset<GameObject>(actorPrefabPath);
+            CombatEnemyRoleCandidateProfile roleCandidate =
+                LoadAsset<CombatEnemyRoleCandidateProfile>(roleCandidateProfilePath);
+            RuntimeAnimatorController animatorController =
+                ResolveActorVisualAnimatorController(actorPrefab, visualChildName);
+
+            SetString(profile, "candidateId", candidateId);
+            SetString(profile, "displayName", displayName);
+            SetEnum(profile, "side", (int)side);
+            SetObjectReference(profile, "actorPrefab", actorPrefab);
+            SetObjectReference(profile, "visualSourceAsset", roleCandidate.PromotedVisualSource);
+            SetString(profile, "visualChildName", visualChildName);
+            SetString(profile, "sourceRoleId", sourceRoleId);
+            SetObjectReference(profile, "animatorController", animatorController);
+            SetObjectReference(profile, "vfxCueProfile", vfxCueProfile);
+            SetString(profile, "animationRead", animationRead);
+            SetString(profile, "vfxRead", vfxRead);
+            SetString(profile, "replacementPlan", replacementPlan);
+            SetString(
+                profile,
+                "ownershipNotes",
+                "Presentation candidate only; runtime cost, tier, projectile, and screen values remain in gameplay profiles.");
+        }
+
+        private static RuntimeAnimatorController ResolveActorVisualAnimatorController(
+            GameObject actorPrefab,
+            string visualChildName)
+        {
+            Transform visual = actorPrefab.transform.Find(visualChildName);
+            if (visual == null)
+            {
+                throw new InvalidOperationException($"{actorPrefab.name} is missing visual child {visualChildName}.");
+            }
+
+            Animator animator = visual.GetComponent<Animator>();
+            if (animator == null || animator.runtimeAnimatorController == null)
+            {
+                throw new InvalidOperationException($"{visualChildName} is missing an Animator controller.");
+            }
+
+            return animator.runtimeAnimatorController;
         }
 
         private static GameObject EnsureSummonEntryCuePrefab()
