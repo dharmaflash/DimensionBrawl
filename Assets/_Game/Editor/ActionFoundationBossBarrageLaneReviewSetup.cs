@@ -3312,6 +3312,42 @@ namespace DimensionBrawl.Editor
                 "High-risk payoff that should visibly win the pressure exchange and open the Skill1 follow-up.",
                 "Save for hard boss pressure when retreat alone will not stabilize the pocket.",
                 "Large ShieldBreaker screen, seven-shot block budget, three assist bolts, and a committed boss-lane push.");
+            ValidateSummonSlotTier(
+                summonSlot1Profile,
+                1,
+                "ShieldBreaker",
+                expectedActorMaxHealth: 230f,
+                expectedActorMoveSpeed: 1.45f,
+                expectedActorEngageRadius: 0.95f,
+                expectedActorAttackDamagePerSecond: 34f,
+                expectedActorAttackIntervalSeconds: 0.35f,
+                expectedActorLifetimeSeconds: 0f,
+                expectedActorAdvanceDistance: 2.2f,
+                expectedScreenIntercepts: 2);
+            ValidateSummonSlotTier(
+                summonSlot1Profile,
+                2,
+                "ShieldBreaker",
+                expectedActorMaxHealth: 300f,
+                expectedActorMoveSpeed: 1.6f,
+                expectedActorEngageRadius: 1.05f,
+                expectedActorAttackDamagePerSecond: 42f,
+                expectedActorAttackIntervalSeconds: 0.35f,
+                expectedActorLifetimeSeconds: 0f,
+                expectedActorAdvanceDistance: 3.0f,
+                expectedScreenIntercepts: 4);
+            ValidateSummonSlotTier(
+                summonSlot1Profile,
+                3,
+                "ShieldBreaker",
+                expectedActorMaxHealth: 380f,
+                expectedActorMoveSpeed: 1.7f,
+                expectedActorEngageRadius: 1.15f,
+                expectedActorAttackDamagePerSecond: 54f,
+                expectedActorAttackIntervalSeconds: 0.35f,
+                expectedActorLifetimeSeconds: 0f,
+                expectedActorAdvanceDistance: 4.0f,
+                expectedScreenIntercepts: 7);
 
             SummonFrontlineProxy summonActorPrefab = LoadPrefabComponent<SummonFrontlineProxy>(SummonSlot1ActorPrefabPath);
             SummonPressureScreen pressureScreen = LoadPrefabComponent<SummonPressureScreen>(SummonSlot1ActorPrefabPath);
@@ -3611,6 +3647,12 @@ namespace DimensionBrawl.Editor
                 expectedEntryForwardBlend01: 0.28f,
                 expectedActorLifetimeSeconds: 0f,
                 expectedActorAdvanceDistance: 2.4f,
+                expectedActorRoleId: "EscortProbe",
+                expectedActorMaxHealth: 220f,
+                expectedActorMoveSpeed: 1.35f,
+                expectedActorEngageRadius: 0.95f,
+                expectedActorAttackDamagePerSecond: 32f,
+                expectedActorAttackIntervalSeconds: 0.35f,
                 expectedScreenIntercepts: 2,
                 expectedScreenLifetimeSeconds: 2.6f);
             ValidateBossSummonPressureReadout(
@@ -3626,6 +3668,12 @@ namespace DimensionBrawl.Editor
                 expectedEntryForwardBlend01: 0.38f,
                 expectedActorLifetimeSeconds: 0f,
                 expectedActorAdvanceDistance: 3.8f,
+                expectedActorRoleId: "PressureScreen",
+                expectedActorMaxHealth: 320f,
+                expectedActorMoveSpeed: 1.42f,
+                expectedActorEngageRadius: 1.05f,
+                expectedActorAttackDamagePerSecond: 44f,
+                expectedActorAttackIntervalSeconds: 0.35f,
                 expectedScreenIntercepts: 4,
                 expectedScreenLifetimeSeconds: 3.4f);
             ValidateBossSummonPressureReadout(
@@ -3641,6 +3689,12 @@ namespace DimensionBrawl.Editor
                 expectedEntryForwardBlend01: 0.5f,
                 expectedActorLifetimeSeconds: 0f,
                 expectedActorAdvanceDistance: 5.2f,
+                expectedActorRoleId: "ClampGuard",
+                expectedActorMaxHealth: 460f,
+                expectedActorMoveSpeed: 1.48f,
+                expectedActorEngageRadius: 1.18f,
+                expectedActorAttackDamagePerSecond: 58f,
+                expectedActorAttackIntervalSeconds: 0.35f,
                 expectedScreenIntercepts: 7,
                 expectedScreenLifetimeSeconds: 4.2f);
 
@@ -3867,6 +3921,12 @@ namespace DimensionBrawl.Editor
             float expectedEntryForwardBlend01,
             float expectedActorLifetimeSeconds,
             float expectedActorAdvanceDistance,
+            string expectedActorRoleId,
+            float expectedActorMaxHealth,
+            float expectedActorMoveSpeed,
+            float expectedActorEngageRadius,
+            float expectedActorAttackDamagePerSecond,
+            float expectedActorAttackIntervalSeconds,
             int expectedScreenIntercepts,
             float expectedScreenLifetimeSeconds)
         {
@@ -3883,6 +3943,12 @@ namespace DimensionBrawl.Editor
             }
 
             BossSummonPressureAction.BossSummonTierSettings settings = tierSettings[index];
+            if (!string.Equals(settings.ActorRoleId, expectedActorRoleId, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"Boss summon pressure tier {tier} has the wrong actor role id.");
+            }
+
             ValidateFloatValue(
                 settings.EntryForwardBlend01,
                 expectedEntryForwardBlend01,
@@ -3895,6 +3961,26 @@ namespace DimensionBrawl.Editor
                 settings.ActorAdvanceDistance,
                 expectedActorAdvanceDistance,
                 $"Boss summon pressure tier {tier} has the wrong actor advance distance.");
+            ValidateFloatValue(
+                settings.ActorMaxHealth,
+                expectedActorMaxHealth,
+                $"Boss summon pressure tier {tier} has the wrong actor max health.");
+            ValidateFloatValue(
+                settings.ActorMoveSpeed,
+                expectedActorMoveSpeed,
+                $"Boss summon pressure tier {tier} has the wrong actor move speed.");
+            ValidateFloatValue(
+                settings.ActorEngageRadius,
+                expectedActorEngageRadius,
+                $"Boss summon pressure tier {tier} has the wrong actor engage radius.");
+            ValidateFloatValue(
+                settings.ActorAttackDamagePerSecond,
+                expectedActorAttackDamagePerSecond,
+                $"Boss summon pressure tier {tier} has the wrong actor attack damage.");
+            ValidateFloatValue(
+                settings.ActorAttackIntervalSeconds,
+                expectedActorAttackIntervalSeconds,
+                $"Boss summon pressure tier {tier} has the wrong actor attack interval.");
             if (settings.ScreenIntercepts != expectedScreenIntercepts)
             {
                 throw new InvalidOperationException(
@@ -3905,6 +3991,71 @@ namespace DimensionBrawl.Editor
                 settings.ScreenLifetimeSeconds,
                 expectedScreenLifetimeSeconds,
                 $"Boss summon pressure tier {tier} has the wrong screen lifetime.");
+        }
+
+        private static void ValidateSummonSlotTier(
+            SummonSlotActionProfile profile,
+            int tier,
+            string expectedActorRoleId,
+            float expectedActorMaxHealth,
+            float expectedActorMoveSpeed,
+            float expectedActorEngageRadius,
+            float expectedActorAttackDamagePerSecond,
+            float expectedActorAttackIntervalSeconds,
+            float expectedActorLifetimeSeconds,
+            float expectedActorAdvanceDistance,
+            int expectedScreenIntercepts)
+        {
+            if (profile == null)
+            {
+                throw new InvalidOperationException("Summon slot action profile is missing.");
+            }
+
+            PlayerSummonSlot1Action.SummonTierSettings[] tierSettings = profile.CopyTierSettings();
+            int index = tier - 1;
+            if (index < 0 || index >= tierSettings.Length)
+            {
+                throw new InvalidOperationException($"Summon slot action profile is missing tier {tier} settings.");
+            }
+
+            PlayerSummonSlot1Action.SummonTierSettings settings = tierSettings[index];
+            if (!string.Equals(settings.ActorRoleId, expectedActorRoleId, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"Summon slot tier {tier} has the wrong actor role id.");
+            }
+
+            ValidateFloatValue(
+                settings.ActorMaxHealth,
+                expectedActorMaxHealth,
+                $"Summon slot tier {tier} has the wrong actor max health.");
+            ValidateFloatValue(
+                settings.ActorMoveSpeed,
+                expectedActorMoveSpeed,
+                $"Summon slot tier {tier} has the wrong actor move speed.");
+            ValidateFloatValue(
+                settings.ActorEngageRadius,
+                expectedActorEngageRadius,
+                $"Summon slot tier {tier} has the wrong actor engage radius.");
+            ValidateFloatValue(
+                settings.ActorAttackDamagePerSecond,
+                expectedActorAttackDamagePerSecond,
+                $"Summon slot tier {tier} has the wrong actor attack damage.");
+            ValidateFloatValue(
+                settings.ActorAttackIntervalSeconds,
+                expectedActorAttackIntervalSeconds,
+                $"Summon slot tier {tier} has the wrong actor attack interval.");
+            ValidateFloatValue(
+                settings.ActorLifetimeSeconds,
+                expectedActorLifetimeSeconds,
+                $"Summon slot tier {tier} has the wrong actor lifetime.");
+            ValidateFloatValue(
+                settings.ActorAdvanceDistance,
+                expectedActorAdvanceDistance,
+                $"Summon slot tier {tier} has the wrong actor advance distance.");
+            if (settings.ScreenIntercepts != expectedScreenIntercepts)
+            {
+                throw new InvalidOperationException($"Summon slot tier {tier} has the wrong screen intercept count.");
+            }
         }
 
         private static void ValidateCloseThreat(

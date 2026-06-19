@@ -24,8 +24,14 @@ namespace DimensionBrawl.Player
             [Min(0f)] public float CueLifetimeSeconds;
             [Min(0f)] public float ActorLifetimeSeconds;
             [Min(0.01f)] public float ActorScale;
+            public string ActorRoleId;
+            [Min(0f)] public float ActorMaxHealth;
+            [Min(0f)] public float ActorMoveSpeed;
             [Min(0f)] public float ActorAdvanceDistance;
             [Min(0.01f)] public float ActorAdvanceSeconds;
+            [Min(0.05f)] public float ActorEngageRadius;
+            [Min(0f)] public float ActorAttackDamagePerSecond;
+            [Min(0.05f)] public float ActorAttackIntervalSeconds;
             [Min(0)] public int ScreenIntercepts;
             [Min(0.05f)] public float ScreenRadius;
             [Min(0.05f)] public float ScreenLifetimeSeconds;
@@ -49,8 +55,14 @@ namespace DimensionBrawl.Player
                 CueLifetimeSeconds = Mathf.Max(0f, CueLifetimeSeconds);
                 ActorLifetimeSeconds = Mathf.Max(0f, ActorLifetimeSeconds);
                 ActorScale = Mathf.Max(0.01f, ActorScale);
+                ActorRoleId = string.IsNullOrWhiteSpace(ActorRoleId) ? "Frontline" : ActorRoleId.Trim();
+                ActorMaxHealth = Mathf.Max(0f, ActorMaxHealth);
+                ActorMoveSpeed = Mathf.Max(0f, ActorMoveSpeed);
                 ActorAdvanceDistance = Mathf.Max(0f, ActorAdvanceDistance);
                 ActorAdvanceSeconds = Mathf.Max(0.01f, ActorAdvanceSeconds);
+                ActorEngageRadius = Mathf.Max(0.05f, ActorEngageRadius);
+                ActorAttackDamagePerSecond = Mathf.Max(0f, ActorAttackDamagePerSecond);
+                ActorAttackIntervalSeconds = Mathf.Max(0.05f, ActorAttackIntervalSeconds);
                 ScreenIntercepts = Mathf.Max(0, ScreenIntercepts);
                 ScreenRadius = Mathf.Max(0.05f, ScreenRadius);
                 ScreenLifetimeSeconds = Mathf.Max(0.05f, ScreenLifetimeSeconds);
@@ -367,8 +379,14 @@ namespace DimensionBrawl.Player
                     CueLifetimeSeconds = 0.85f,
                     ActorLifetimeSeconds = 0f,
                     ActorScale = 1f,
+                    ActorRoleId = "ShieldBreaker",
+                    ActorMaxHealth = 260f,
+                    ActorMoveSpeed = 1.55f,
                     ActorAdvanceDistance = 2.2f,
                     ActorAdvanceSeconds = 1.62f,
+                    ActorEngageRadius = 0.95f,
+                    ActorAttackDamagePerSecond = 34f,
+                    ActorAttackIntervalSeconds = 0.35f,
                     ScreenIntercepts = 2,
                     ScreenRadius = 1.25f,
                     ScreenLifetimeSeconds = 2.4f,
@@ -380,7 +398,9 @@ namespace DimensionBrawl.Player
                 };
             }
 
-            return tierSettings[Mathf.Clamp(tier - 1, 0, tierSettings.Length - 1)];
+            SummonTierSettings settings = tierSettings[Mathf.Clamp(tier - 1, 0, tierSettings.Length - 1)];
+            settings.Normalize();
+            return settings;
         }
 
         private float ResolveEntryLaneZ(float playerLaneZ)
@@ -412,8 +432,14 @@ namespace DimensionBrawl.Player
                     CueLifetimeSeconds = 0.85f,
                     ActorLifetimeSeconds = 0f,
                     ActorScale = 0.9f,
+                    ActorRoleId = "ShieldBreaker",
+                    ActorMaxHealth = 230f,
+                    ActorMoveSpeed = 1.45f,
                     ActorAdvanceDistance = 2.2f,
                     ActorAdvanceSeconds = 1.62f,
+                    ActorEngageRadius = 0.95f,
+                    ActorAttackDamagePerSecond = 34f,
+                    ActorAttackIntervalSeconds = 0.35f,
                     ScreenIntercepts = 2,
                     ScreenRadius = 1.25f,
                     ScreenLifetimeSeconds = 2.4f,
@@ -437,8 +463,14 @@ namespace DimensionBrawl.Player
                     CueLifetimeSeconds = 1f,
                     ActorLifetimeSeconds = 0f,
                     ActorScale = 1.08f,
+                    ActorRoleId = "ShieldBreaker",
+                    ActorMaxHealth = 300f,
+                    ActorMoveSpeed = 1.6f,
                     ActorAdvanceDistance = 3.0f,
                     ActorAdvanceSeconds = 1.9f,
+                    ActorEngageRadius = 1.05f,
+                    ActorAttackDamagePerSecond = 42f,
+                    ActorAttackIntervalSeconds = 0.35f,
                     ScreenIntercepts = 4,
                     ScreenRadius = 1.55f,
                     ScreenLifetimeSeconds = 3.2f,
@@ -462,8 +494,14 @@ namespace DimensionBrawl.Player
                     CueLifetimeSeconds = 1.15f,
                     ActorLifetimeSeconds = 0f,
                     ActorScale = 1.28f,
+                    ActorRoleId = "ShieldBreaker",
+                    ActorMaxHealth = 380f,
+                    ActorMoveSpeed = 1.7f,
                     ActorAdvanceDistance = 4.0f,
                     ActorAdvanceSeconds = 2.25f,
+                    ActorEngageRadius = 1.15f,
+                    ActorAttackDamagePerSecond = 54f,
+                    ActorAttackIntervalSeconds = 0.35f,
                     ScreenIntercepts = 7,
                     ScreenRadius = 1.9f,
                     ScreenLifetimeSeconds = 4.0f,

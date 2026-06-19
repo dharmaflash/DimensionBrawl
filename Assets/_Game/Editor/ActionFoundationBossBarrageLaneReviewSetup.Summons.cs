@@ -794,13 +794,92 @@ namespace DimensionBrawl.Editor
         private static void EnsureSupportSummonActionProfiles()
         {
             ConfigureSummonSlotActionProfile(
+                LoadOrCreateSummonSlotActionProfile(SummonSlot1ActionProfilePath),
+                "SummonSlot1.ShieldBreaker",
+                new[]
+                {
+                    CreateSummonTierSettings(
+                        58f,
+                        17f,
+                        2.4f,
+                        0.34f,
+                        1,
+                        1.2f,
+                        2.2f,
+                        0.9f,
+                        2,
+                        0f,
+                        2.4f,
+                        "ShieldBreaker",
+                        230f,
+                        1.45f,
+                        0.95f,
+                        34f,
+                        0.35f),
+                    CreateSummonTierSettings(
+                        66f,
+                        18.5f,
+                        2.65f,
+                        0.38f,
+                        2,
+                        4.2f,
+                        3.0f,
+                        1.08f,
+                        4,
+                        0f,
+                        3.2f,
+                        "ShieldBreaker",
+                        300f,
+                        1.6f,
+                        1.05f,
+                        42f,
+                        0.35f),
+                    CreateSummonTierSettings(
+                        78f,
+                        20f,
+                        2.9f,
+                        0.42f,
+                        3,
+                        6.8f,
+                        4.0f,
+                        1.28f,
+                        7,
+                        0f,
+                        4.0f,
+                        "ShieldBreaker",
+                        380f,
+                        1.7f,
+                        1.15f,
+                        54f,
+                        0.35f)
+                },
+                new[]
+                {
+                    CreateSummonReadout(
+                        "LV1 Guard Entry",
+                        "Emergency pressure screen for urgent boss fire after close-threat relief.",
+                        "Spend early when the pocket needs an immediate boss-fire block.",
+                        "Small ShieldBreaker enters from the player front, advances toward the boss lane, and fires one assist bolt."),
+                    CreateSummonReadout(
+                        "LV2 Frontline Push",
+                        "Mid-tier exchange that starts converting a successful block into forward damage.",
+                        "Hold forward-risk long enough for LV2 when the barrage is readable.",
+                        "Wider screen, four-shot block budget, two assist bolts, and a persistent frontline push."),
+                    CreateSummonReadout(
+                        "LV3 Break Window",
+                        "High-risk payoff that should visibly win the pressure exchange and open the Skill1 follow-up.",
+                        "Save for hard boss pressure when retreat alone will not stabilize the pocket.",
+                        "Large ShieldBreaker screen, seven-shot block budget, three assist bolts, and a committed boss-lane push.")
+                });
+
+            ConfigureSummonSlotActionProfile(
                 LoadOrCreateSummonSlotActionProfile(SummonSlot2ActionProfilePath),
                 "SummonSlot2.BacklineMarksman",
                 new[]
                 {
-                    CreateSummonTierSettings(38f, 19f, 2.1f, 0.28f, 2, 1.4f, 1.2f, 0.95f, 0, 0f, 0.2f),
-                    CreateSummonTierSettings(44f, 20.5f, 2.35f, 0.3f, 3, 2.8f, 1.45f, 1.05f, 0, 0f, 0.2f),
-                    CreateSummonTierSettings(52f, 22f, 2.6f, 0.32f, 4, 4.2f, 1.75f, 1.16f, 0, 0f, 0.2f)
+                    CreateSummonTierSettings(38f, 19f, 2.1f, 0.28f, 2, 1.4f, 1.2f, 0.95f, 0, 0f, 0.2f, "BacklineMarksman", 160f, 1.35f, 0.82f, 20f, 0.35f),
+                    CreateSummonTierSettings(44f, 20.5f, 2.35f, 0.3f, 3, 2.8f, 1.45f, 1.05f, 0, 0f, 0.2f, "BacklineMarksman", 190f, 1.42f, 0.86f, 24f, 0.35f),
+                    CreateSummonTierSettings(52f, 22f, 2.6f, 0.32f, 4, 4.2f, 1.75f, 1.16f, 0, 0f, 0.2f, "BacklineMarksman", 225f, 1.5f, 0.9f, 28f, 0.35f)
                 },
                 new[]
                 {
@@ -826,9 +905,9 @@ namespace DimensionBrawl.Editor
                 "SummonSlot3.VanguardCommander",
                 new[]
                 {
-                    CreateSummonTierSettings(34f, 16f, 2.2f, 0.36f, 1, 0.8f, 1.35f, 1.05f, 2, 0f, 2.2f),
-                    CreateSummonTierSettings(42f, 17.5f, 2.55f, 0.4f, 2, 2.2f, 1.7f, 1.18f, 4, 0f, 3.0f),
-                    CreateSummonTierSettings(50f, 19f, 2.9f, 0.45f, 3, 3.4f, 2.1f, 1.34f, 7, 0f, 3.8f)
+                    CreateSummonTierSettings(34f, 16f, 2.2f, 0.36f, 1, 0.8f, 1.35f, 1.05f, 2, 0f, 2.2f, "VanguardCommander", 360f, 1.15f, 1.18f, 24f, 0.35f),
+                    CreateSummonTierSettings(42f, 17.5f, 2.55f, 0.4f, 2, 2.2f, 1.7f, 1.18f, 4, 0f, 3.0f, "VanguardCommander", 430f, 1.2f, 1.25f, 32f, 0.35f),
+                    CreateSummonTierSettings(50f, 19f, 2.9f, 0.45f, 3, 3.4f, 2.1f, 1.34f, 7, 0f, 3.8f, "VanguardCommander", 520f, 1.25f, 1.34f, 42f, 0.35f)
                 },
                 new[]
                 {
@@ -866,6 +945,12 @@ namespace DimensionBrawl.Editor
                         actorScale: 0.92f,
                         actorAdvanceDistance: 2.4f,
                         actorAdvanceSeconds: 1.4f,
+                        actorRoleId: "EscortProbe",
+                        actorMaxHealth: 220f,
+                        actorMoveSpeed: 1.35f,
+                        actorEngageRadius: 0.95f,
+                        actorAttackDamagePerSecond: 32f,
+                        actorAttackIntervalSeconds: 0.35f,
                         screenIntercepts: 2,
                         screenRadius: 1.2f,
                         screenLifetimeSeconds: 2.6f),
@@ -876,6 +961,12 @@ namespace DimensionBrawl.Editor
                         actorScale: 1.12f,
                         actorAdvanceDistance: 3.8f,
                         actorAdvanceSeconds: 1.85f,
+                        actorRoleId: "PressureScreen",
+                        actorMaxHealth: 320f,
+                        actorMoveSpeed: 1.42f,
+                        actorEngageRadius: 1.05f,
+                        actorAttackDamagePerSecond: 44f,
+                        actorAttackIntervalSeconds: 0.35f,
                         screenIntercepts: 4,
                         screenRadius: 1.55f,
                         screenLifetimeSeconds: 3.4f),
@@ -886,6 +977,12 @@ namespace DimensionBrawl.Editor
                         actorScale: 1.36f,
                         actorAdvanceDistance: 5.2f,
                         actorAdvanceSeconds: 2.35f,
+                        actorRoleId: "ClampGuard",
+                        actorMaxHealth: 460f,
+                        actorMoveSpeed: 1.48f,
+                        actorEngageRadius: 1.18f,
+                        actorAttackDamagePerSecond: 58f,
+                        actorAttackIntervalSeconds: 0.35f,
                         screenIntercepts: 7,
                         screenRadius: 1.95f,
                         screenLifetimeSeconds: 4.2f)
@@ -961,6 +1058,12 @@ namespace DimensionBrawl.Editor
             float actorScale,
             float actorAdvanceDistance,
             float actorAdvanceSeconds,
+            string actorRoleId,
+            float actorMaxHealth,
+            float actorMoveSpeed,
+            float actorEngageRadius,
+            float actorAttackDamagePerSecond,
+            float actorAttackIntervalSeconds,
             int screenIntercepts,
             float screenRadius,
             float screenLifetimeSeconds)
@@ -972,8 +1075,14 @@ namespace DimensionBrawl.Editor
                 EntryHeight = 0.2f,
                 ActorLifetimeSeconds = actorLifetimeSeconds,
                 ActorScale = actorScale,
+                ActorRoleId = actorRoleId,
+                ActorMaxHealth = actorMaxHealth,
+                ActorMoveSpeed = actorMoveSpeed,
                 ActorAdvanceDistance = actorAdvanceDistance,
                 ActorAdvanceSeconds = actorAdvanceSeconds,
+                ActorEngageRadius = actorEngageRadius,
+                ActorAttackDamagePerSecond = actorAttackDamagePerSecond,
+                ActorAttackIntervalSeconds = actorAttackIntervalSeconds,
                 ScreenIntercepts = screenIntercepts,
                 ScreenRadius = screenRadius,
                 ScreenLifetimeSeconds = screenLifetimeSeconds
@@ -1006,8 +1115,14 @@ namespace DimensionBrawl.Editor
             property.FindPropertyRelative("EntryHeight").floatValue = settings.EntryHeight;
             property.FindPropertyRelative("ActorLifetimeSeconds").floatValue = settings.ActorLifetimeSeconds;
             property.FindPropertyRelative("ActorScale").floatValue = settings.ActorScale;
+            property.FindPropertyRelative("ActorRoleId").stringValue = settings.ActorRoleId;
+            property.FindPropertyRelative("ActorMaxHealth").floatValue = settings.ActorMaxHealth;
+            property.FindPropertyRelative("ActorMoveSpeed").floatValue = settings.ActorMoveSpeed;
             property.FindPropertyRelative("ActorAdvanceDistance").floatValue = settings.ActorAdvanceDistance;
             property.FindPropertyRelative("ActorAdvanceSeconds").floatValue = settings.ActorAdvanceSeconds;
+            property.FindPropertyRelative("ActorEngageRadius").floatValue = settings.ActorEngageRadius;
+            property.FindPropertyRelative("ActorAttackDamagePerSecond").floatValue = settings.ActorAttackDamagePerSecond;
+            property.FindPropertyRelative("ActorAttackIntervalSeconds").floatValue = settings.ActorAttackIntervalSeconds;
             property.FindPropertyRelative("ScreenIntercepts").intValue = settings.ScreenIntercepts;
             property.FindPropertyRelative("ScreenRadius").floatValue = settings.ScreenRadius;
             property.FindPropertyRelative("ScreenLifetimeSeconds").floatValue = settings.ScreenLifetimeSeconds;
@@ -1074,7 +1189,13 @@ namespace DimensionBrawl.Editor
             float actorScale,
             int screenIntercepts,
             float actorLifetimeSeconds,
-            float screenLifetimeSeconds)
+            float screenLifetimeSeconds,
+            string actorRoleId,
+            float actorMaxHealth,
+            float actorMoveSpeed,
+            float actorEngageRadius,
+            float actorAttackDamagePerSecond,
+            float actorAttackIntervalSeconds)
         {
             var settings = new PlayerSummonSlot1Action.SummonTierSettings
             {
@@ -1090,8 +1211,14 @@ namespace DimensionBrawl.Editor
                 CueLifetimeSeconds = 0.82f,
                 ActorLifetimeSeconds = actorLifetimeSeconds,
                 ActorScale = actorScale,
+                ActorRoleId = actorRoleId,
+                ActorMaxHealth = actorMaxHealth,
+                ActorMoveSpeed = actorMoveSpeed,
                 ActorAdvanceDistance = actorAdvanceDistance,
                 ActorAdvanceSeconds = 0.85f + actorAdvanceDistance * 0.35f,
+                ActorEngageRadius = actorEngageRadius,
+                ActorAttackDamagePerSecond = actorAttackDamagePerSecond,
+                ActorAttackIntervalSeconds = actorAttackIntervalSeconds,
                 ScreenIntercepts = screenIntercepts,
                 ScreenRadius = 1.15f + screenIntercepts * 0.16f,
                 ScreenLifetimeSeconds = screenLifetimeSeconds,
@@ -1136,8 +1263,14 @@ namespace DimensionBrawl.Editor
             property.FindPropertyRelative("CueLifetimeSeconds").floatValue = settings.CueLifetimeSeconds;
             property.FindPropertyRelative("ActorLifetimeSeconds").floatValue = settings.ActorLifetimeSeconds;
             property.FindPropertyRelative("ActorScale").floatValue = settings.ActorScale;
+            property.FindPropertyRelative("ActorRoleId").stringValue = settings.ActorRoleId;
+            property.FindPropertyRelative("ActorMaxHealth").floatValue = settings.ActorMaxHealth;
+            property.FindPropertyRelative("ActorMoveSpeed").floatValue = settings.ActorMoveSpeed;
             property.FindPropertyRelative("ActorAdvanceDistance").floatValue = settings.ActorAdvanceDistance;
             property.FindPropertyRelative("ActorAdvanceSeconds").floatValue = settings.ActorAdvanceSeconds;
+            property.FindPropertyRelative("ActorEngageRadius").floatValue = settings.ActorEngageRadius;
+            property.FindPropertyRelative("ActorAttackDamagePerSecond").floatValue = settings.ActorAttackDamagePerSecond;
+            property.FindPropertyRelative("ActorAttackIntervalSeconds").floatValue = settings.ActorAttackIntervalSeconds;
             property.FindPropertyRelative("ScreenIntercepts").intValue = settings.ScreenIntercepts;
             property.FindPropertyRelative("ScreenRadius").floatValue = settings.ScreenRadius;
             property.FindPropertyRelative("ScreenLifetimeSeconds").floatValue = settings.ScreenLifetimeSeconds;

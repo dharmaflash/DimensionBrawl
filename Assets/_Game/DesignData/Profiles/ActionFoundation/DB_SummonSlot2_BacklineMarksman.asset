@@ -26,8 +26,14 @@ MonoBehaviour:
     CueLifetimeSeconds: 0.82
     ActorLifetimeSeconds: 0
     ActorScale: 0.95
+    ActorRoleId: BacklineMarksman
+    ActorMaxHealth: 160
+    ActorMoveSpeed: 1.35
     ActorAdvanceDistance: 1.2
     ActorAdvanceSeconds: 1.27
+    ActorEngageRadius: 0.82
+    ActorAttackDamagePerSecond: 20
+    ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 0
     ScreenRadius: 1.15
     ScreenLifetimeSeconds: 0.2
@@ -48,8 +54,14 @@ MonoBehaviour:
     CueLifetimeSeconds: 0.82
     ActorLifetimeSeconds: 0
     ActorScale: 1.05
+    ActorRoleId: BacklineMarksman
+    ActorMaxHealth: 190
+    ActorMoveSpeed: 1.42
     ActorAdvanceDistance: 1.45
-    ActorAdvanceSeconds: 1.3575
+    ActorAdvanceSeconds: 1.3575001
+    ActorEngageRadius: 0.86
+    ActorAttackDamagePerSecond: 24
+    ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 0
     ScreenRadius: 1.15
     ScreenLifetimeSeconds: 0.2
@@ -70,8 +82,14 @@ MonoBehaviour:
     CueLifetimeSeconds: 0.82
     ActorLifetimeSeconds: 0
     ActorScale: 1.16
+    ActorRoleId: BacklineMarksman
+    ActorMaxHealth: 225
+    ActorMoveSpeed: 1.5
     ActorAdvanceDistance: 1.75
     ActorAdvanceSeconds: 1.4625
+    ActorEngageRadius: 0.9
+    ActorAttackDamagePerSecond: 28
+    ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 0
     ScreenRadius: 1.15
     ScreenLifetimeSeconds: 0.2

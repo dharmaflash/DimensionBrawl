@@ -19,8 +19,14 @@ MonoBehaviour:
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
     ActorScale: 0.92
+    ActorRoleId: EscortProbe
+    ActorMaxHealth: 220
+    ActorMoveSpeed: 1.35
     ActorAdvanceDistance: 2.4
     ActorAdvanceSeconds: 1.4
+    ActorEngageRadius: 0.95
+    ActorAttackDamagePerSecond: 32
+    ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 2
     ScreenRadius: 1.2
     ScreenLifetimeSeconds: 2.6
@@ -29,8 +35,14 @@ MonoBehaviour:
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
     ActorScale: 1.12
+    ActorRoleId: PressureScreen
+    ActorMaxHealth: 320
+    ActorMoveSpeed: 1.42
     ActorAdvanceDistance: 3.8
     ActorAdvanceSeconds: 1.85
+    ActorEngageRadius: 1.05
+    ActorAttackDamagePerSecond: 44
+    ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 4
     ScreenRadius: 1.55
     ScreenLifetimeSeconds: 3.4
@@ -39,8 +51,14 @@ MonoBehaviour:
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
     ActorScale: 1.36
+    ActorRoleId: ClampGuard
+    ActorMaxHealth: 460
+    ActorMoveSpeed: 1.48
     ActorAdvanceDistance: 5.2
     ActorAdvanceSeconds: 2.35
+    ActorEngageRadius: 1.18
+    ActorAttackDamagePerSecond: 58
+    ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 7
     ScreenRadius: 1.95
     ScreenLifetimeSeconds: 4.2

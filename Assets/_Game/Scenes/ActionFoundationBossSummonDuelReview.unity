@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!29 &1
 OcclusionCullingSettings:
@@ -1416,18 +1416,24 @@ MonoBehaviour:
     EntryHeight: 0.18
     TargetHeight: 1.35
     CueScale: 1.45
-    CueLifetimeSeconds: 0.85
+    CueLifetimeSeconds: 0.82
     ActorLifetimeSeconds: 0
     ActorScale: 0.9
+    ActorRoleId: ShieldBreaker
+    ActorMaxHealth: 230
+    ActorMoveSpeed: 1.45
     ActorAdvanceDistance: 2.2
     ActorAdvanceSeconds: 1.62
+    ActorEngageRadius: 0.95
+    ActorAttackDamagePerSecond: 34
+    ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 2
-    ScreenRadius: 1.25
+    ScreenRadius: 1.47
     ScreenLifetimeSeconds: 2.4
-    CounterDamage: 16
-    CounterProjectileSpeed: 20
-    CounterLifetimeSeconds: 1.65
-    CounterRadius: 0.24
+    CounterDamage: 18.56
+    CounterProjectileSpeed: 19
+    CounterLifetimeSeconds: 1.45
+    CounterRadius: 0.238
     CounterTargetHeight: 1.35
   - Damage: 66
     ProjectileSpeed: 18.5
@@ -1437,20 +1443,26 @@ MonoBehaviour:
     LateralReach: 4.2
     EntryHeight: 0.18
     TargetHeight: 1.35
-    CueScale: 1.85
-    CueLifetimeSeconds: 1
+    CueScale: 1.57
+    CueLifetimeSeconds: 0.82
     ActorLifetimeSeconds: 0
     ActorScale: 1.08
+    ActorRoleId: ShieldBreaker
+    ActorMaxHealth: 300
+    ActorMoveSpeed: 1.6
     ActorAdvanceDistance: 3
     ActorAdvanceSeconds: 1.9
+    ActorEngageRadius: 1.05
+    ActorAttackDamagePerSecond: 42
+    ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 4
-    ScreenRadius: 1.55
+    ScreenRadius: 1.79
     ScreenLifetimeSeconds: 3.2
-    CounterDamage: 22
-    CounterProjectileSpeed: 21.5
-    CounterLifetimeSeconds: 1.8
-    CounterRadius: 0.27
-    CounterTargetHeight: 1.4
+    CounterDamage: 21.119999
+    CounterProjectileSpeed: 20.5
+    CounterLifetimeSeconds: 1.45
+    CounterRadius: 0.266
+    CounterTargetHeight: 1.35
   - Damage: 78
     ProjectileSpeed: 20
     LifetimeSeconds: 2.9
@@ -1458,21 +1470,27 @@ MonoBehaviour:
     ProjectileCount: 3
     LateralReach: 6.8
     EntryHeight: 0.18
-    TargetHeight: 1.45
-    CueScale: 2.25
-    CueLifetimeSeconds: 1.15
+    TargetHeight: 1.35
+    CueScale: 1.69
+    CueLifetimeSeconds: 0.82
     ActorLifetimeSeconds: 0
     ActorScale: 1.28
+    ActorRoleId: ShieldBreaker
+    ActorMaxHealth: 380
+    ActorMoveSpeed: 1.7
     ActorAdvanceDistance: 4
     ActorAdvanceSeconds: 2.25
+    ActorEngageRadius: 1.15
+    ActorAttackDamagePerSecond: 54
+    ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 7
-    ScreenRadius: 1.9
+    ScreenRadius: 2.27
     ScreenLifetimeSeconds: 4
-    CounterDamage: 30
-    CounterProjectileSpeed: 23
-    CounterLifetimeSeconds: 2
-    CounterRadius: 0.3
-    CounterTargetHeight: 1.45
+    CounterDamage: 24.96
+    CounterProjectileSpeed: 22
+    CounterLifetimeSeconds: 1.45
+    CounterRadius: 0.294
+    CounterTargetHeight: 1.35
 --- !u!114 &4018
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8257,8 +8275,14 @@ MonoBehaviour:
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
     ActorScale: 0.92
+    ActorRoleId: BossPressure
+    ActorMaxHealth: 0
+    ActorMoveSpeed: 0
     ActorAdvanceDistance: 2.4
     ActorAdvanceSeconds: 1.4
+    ActorEngageRadius: 0.05
+    ActorAttackDamagePerSecond: 0
+    ActorAttackIntervalSeconds: 0.05
     ScreenIntercepts: 2
     ScreenRadius: 1.2
     ScreenLifetimeSeconds: 2.6
@@ -8267,8 +8291,14 @@ MonoBehaviour:
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
     ActorScale: 1.12
+    ActorRoleId: BossPressure
+    ActorMaxHealth: 0
+    ActorMoveSpeed: 0
     ActorAdvanceDistance: 3.8
     ActorAdvanceSeconds: 1.85
+    ActorEngageRadius: 0.05
+    ActorAttackDamagePerSecond: 0
+    ActorAttackIntervalSeconds: 0.05
     ScreenIntercepts: 4
     ScreenRadius: 1.55
     ScreenLifetimeSeconds: 3.4
@@ -8277,8 +8307,14 @@ MonoBehaviour:
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
     ActorScale: 1.36
+    ActorRoleId: BossPressure
+    ActorMaxHealth: 0
+    ActorMoveSpeed: 0
     ActorAdvanceDistance: 5.2
     ActorAdvanceSeconds: 2.35
+    ActorEngageRadius: 0.05
+    ActorAttackDamagePerSecond: 0
+    ActorAttackIntervalSeconds: 0.05
     ScreenIntercepts: 7
     ScreenRadius: 1.95
     ScreenLifetimeSeconds: 4.2

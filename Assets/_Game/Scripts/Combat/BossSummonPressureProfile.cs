@@ -52,9 +52,19 @@ namespace DimensionBrawl.Combat
 
         public BossSummonPressureAction.BossSummonTierSettings[] CopyTierSettings()
         {
-            return tierSettings != null
-                ? (BossSummonPressureAction.BossSummonTierSettings[])tierSettings.Clone()
-                : Array.Empty<BossSummonPressureAction.BossSummonTierSettings>();
+            if (tierSettings == null)
+            {
+                return Array.Empty<BossSummonPressureAction.BossSummonTierSettings>();
+            }
+
+            BossSummonPressureAction.BossSummonTierSettings[] copy =
+                (BossSummonPressureAction.BossSummonTierSettings[])tierSettings.Clone();
+            for (int i = 0; i < copy.Length; i++)
+            {
+                copy[i].Normalize();
+            }
+
+            return copy;
         }
 
         public bool TryGetTierReadout(int tier, out BossSummonTierReadout readout)

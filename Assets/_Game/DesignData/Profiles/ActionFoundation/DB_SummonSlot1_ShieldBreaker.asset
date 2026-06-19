@@ -23,18 +23,24 @@ MonoBehaviour:
     EntryHeight: 0.18
     TargetHeight: 1.35
     CueScale: 1.45
-    CueLifetimeSeconds: 0.85
+    CueLifetimeSeconds: 0.82
     ActorLifetimeSeconds: 0
     ActorScale: 0.9
+    ActorRoleId: ShieldBreaker
+    ActorMaxHealth: 230
+    ActorMoveSpeed: 1.45
     ActorAdvanceDistance: 2.2
     ActorAdvanceSeconds: 1.62
+    ActorEngageRadius: 0.95
+    ActorAttackDamagePerSecond: 34
+    ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 2
-    ScreenRadius: 1.25
+    ScreenRadius: 1.47
     ScreenLifetimeSeconds: 2.4
-    CounterDamage: 16
-    CounterProjectileSpeed: 20
-    CounterLifetimeSeconds: 1.65
-    CounterRadius: 0.24
+    CounterDamage: 18.56
+    CounterProjectileSpeed: 19
+    CounterLifetimeSeconds: 1.45
+    CounterRadius: 0.238
     CounterTargetHeight: 1.35
   - Damage: 66
     ProjectileSpeed: 18.5
@@ -44,20 +50,26 @@ MonoBehaviour:
     LateralReach: 4.2
     EntryHeight: 0.18
     TargetHeight: 1.35
-    CueScale: 1.85
-    CueLifetimeSeconds: 1
+    CueScale: 1.57
+    CueLifetimeSeconds: 0.82
     ActorLifetimeSeconds: 0
     ActorScale: 1.08
+    ActorRoleId: ShieldBreaker
+    ActorMaxHealth: 300
+    ActorMoveSpeed: 1.6
     ActorAdvanceDistance: 3
     ActorAdvanceSeconds: 1.9
+    ActorEngageRadius: 1.05
+    ActorAttackDamagePerSecond: 42
+    ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 4
-    ScreenRadius: 1.55
+    ScreenRadius: 1.79
     ScreenLifetimeSeconds: 3.2
-    CounterDamage: 22
-    CounterProjectileSpeed: 21.5
-    CounterLifetimeSeconds: 1.8
-    CounterRadius: 0.27
-    CounterTargetHeight: 1.4
+    CounterDamage: 21.119999
+    CounterProjectileSpeed: 20.5
+    CounterLifetimeSeconds: 1.45
+    CounterRadius: 0.266
+    CounterTargetHeight: 1.35
   - Damage: 78
     ProjectileSpeed: 20
     LifetimeSeconds: 2.9
@@ -65,31 +77,44 @@ MonoBehaviour:
     ProjectileCount: 3
     LateralReach: 6.8
     EntryHeight: 0.18
-    TargetHeight: 1.45
-    CueScale: 2.25
-    CueLifetimeSeconds: 1.15
+    TargetHeight: 1.35
+    CueScale: 1.69
+    CueLifetimeSeconds: 0.82
     ActorLifetimeSeconds: 0
     ActorScale: 1.28
+    ActorRoleId: ShieldBreaker
+    ActorMaxHealth: 380
+    ActorMoveSpeed: 1.7
     ActorAdvanceDistance: 4
     ActorAdvanceSeconds: 2.25
+    ActorEngageRadius: 1.15
+    ActorAttackDamagePerSecond: 54
+    ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 7
-    ScreenRadius: 1.9
+    ScreenRadius: 2.27
     ScreenLifetimeSeconds: 4
-    CounterDamage: 30
-    CounterProjectileSpeed: 23
-    CounterLifetimeSeconds: 2
-    CounterRadius: 0.3
-    CounterTargetHeight: 1.45
+    CounterDamage: 24.96
+    CounterProjectileSpeed: 22
+    CounterLifetimeSeconds: 1.45
+    CounterRadius: 0.294
+    CounterTargetHeight: 1.35
   tierReadouts:
   - TierLabel: LV1 Guard Entry
-    StageRole: Emergency pressure screen for urgent boss fire after close-threat relief.
+    StageRole: Emergency pressure screen for urgent boss fire after close-threat
+      relief.
     PlayerUse: Spend early when the pocket needs an immediate boss-fire block.
-    SummonRead: Small ShieldBreaker enters from the player front, advances toward the boss lane, and fires one assist bolt.
+    SummonRead: Small ShieldBreaker enters from the player front, advances toward
+      the boss lane, and fires one assist bolt.
   - TierLabel: LV2 Frontline Push
-    StageRole: Mid-tier exchange that starts converting a successful block into forward damage.
+    StageRole: Mid-tier exchange that starts converting a successful block into forward
+      damage.
     PlayerUse: Hold forward-risk long enough for LV2 when the barrage is readable.
-    SummonRead: Wider screen, four-shot block budget, two assist bolts, and a persistent frontline push.
+    SummonRead: Wider screen, four-shot block budget, two assist bolts, and a persistent
+      frontline push.
   - TierLabel: LV3 Break Window
-    StageRole: High-risk payoff that should visibly win the pressure exchange and open the Skill1 follow-up.
-    PlayerUse: Save for hard boss pressure when retreat alone will not stabilize the pocket.
-    SummonRead: Large ShieldBreaker screen, seven-shot block budget, three assist bolts, and a committed boss-lane push.
+    StageRole: High-risk payoff that should visibly win the pressure exchange and
+      open the Skill1 follow-up.
+    PlayerUse: Save for hard boss pressure when retreat alone will not stabilize
+      the pocket.
+    SummonRead: Large ShieldBreaker screen, seven-shot block budget, three assist
+      bolts, and a committed boss-lane push.

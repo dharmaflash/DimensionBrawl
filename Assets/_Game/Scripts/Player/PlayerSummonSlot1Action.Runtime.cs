@@ -156,6 +156,7 @@ namespace DimensionBrawl.Player
                 }
 
                 actor.transform.SetParent(owner.summonActorRoot != null ? owner.summonActorRoot : owner.transform, worldPositionStays: true);
+                ConfigureActorCombat(actor, settings);
                 actor.Activate(
                     position,
                     facingDirection,
@@ -163,7 +164,9 @@ namespace DimensionBrawl.Player
                     settings.ActorLifetimeSeconds,
                     settings.ActorScale,
                     targetPosition,
-                    actorAdvanceSeconds);
+                    actorAdvanceSeconds,
+                    settings.ActorMaxHealth,
+                    settings.ActorMoveSpeed);
 
                 lastSummonActor = actor;
                 if (actor.PressureScreen != null)
@@ -181,6 +184,25 @@ namespace DimensionBrawl.Player
 
                 LastSummonActorPosition = actor.transform.position;
                 return actor;
+            }
+
+            private static void ConfigureActorCombat(SummonFrontlineProxy actor, SummonTierSettings settings)
+            {
+                SummonFrontlineClash clash = actor != null ? actor.GetComponent<SummonFrontlineClash>() : null;
+                if (clash == null)
+                {
+                    return;
+                }
+
+                float damagePerSecond = settings.ActorAttackDamagePerSecond > 0f
+                    ? settings.ActorAttackDamagePerSecond
+                    : settings.Damage * 0.55f;
+                clash.ConfigureTuning(
+                    damagePerSecond,
+                    settings.ActorAttackIntervalSeconds,
+                    0.16f,
+                    0.24f,
+                    settings.ActorEngageRadius);
             }
 
             private void OnPressureScreenIntercepted(SummonPressureScreen screen, BossBarrageProjectile projectile)

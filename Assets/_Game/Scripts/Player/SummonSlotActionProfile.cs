@@ -54,9 +54,19 @@ namespace DimensionBrawl.Player
 
         public PlayerSummonSlot1Action.SummonTierSettings[] CopyTierSettings()
         {
-            return tierSettings != null
-                ? (PlayerSummonSlot1Action.SummonTierSettings[])tierSettings.Clone()
-                : Array.Empty<PlayerSummonSlot1Action.SummonTierSettings>();
+            if (tierSettings == null)
+            {
+                return Array.Empty<PlayerSummonSlot1Action.SummonTierSettings>();
+            }
+
+            PlayerSummonSlot1Action.SummonTierSettings[] copy =
+                (PlayerSummonSlot1Action.SummonTierSettings[])tierSettings.Clone();
+            for (int i = 0; i < copy.Length; i++)
+            {
+                copy[i].Normalize();
+            }
+
+            return copy;
         }
 
         public bool TryGetTierReadout(int tier, out SummonTierReadout readout)

@@ -226,6 +226,49 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void SummonFrontlineProxyUsesMoveSpeedAndReportsCombatState()
+        {
+            GameObject proxyObject = new GameObject("SummonProxy");
+            CombatHealth health = proxyObject.AddComponent<CombatHealth>();
+            health.ConfigureTeam(DamageTeam.AllySummon);
+            SummonFrontlineProxy proxy = proxyObject.AddComponent<SummonFrontlineProxy>();
+            proxy.ConfigureHealth(health);
+
+            proxy.Activate(
+                Vector3.zero,
+                Vector3.forward,
+                1,
+                0f,
+                1f,
+                new Vector3(0f, 0f, 6f),
+                0.1f,
+                180f,
+                1.5f);
+
+            Assert.AreEqual(180f, proxy.MaxHealth, 0.001f);
+            Assert.AreEqual(1f, proxy.HealthRatio, 0.001f);
+            Assert.AreEqual(SummonFrontlineProxyState.Advancing, proxy.CurrentState);
+            Assert.AreEqual(1.5f, proxy.ActiveMoveSpeed, 0.001f);
+
+            proxy.Tick(1f);
+            Assert.AreEqual(1.5f, proxy.transform.position.z, 0.001f);
+            Assert.AreEqual(0.25f, proxy.AdvanceProgress01, 0.001f);
+
+            proxy.RequestAdvanceHold(0.25f);
+            Assert.AreEqual(SummonFrontlineProxyState.Engaging, proxy.CurrentState);
+            Vector3 heldPosition = proxy.transform.position;
+            proxy.Tick(0.1f);
+            Assert.AreEqual(heldPosition.z, proxy.transform.position.z, 0.001f);
+
+            proxy.NotifyAttackPerformed(0.2f);
+            Assert.AreEqual(SummonFrontlineProxyState.Attacking, proxy.CurrentState);
+            proxy.Tick(0.3f);
+            Assert.AreEqual(SummonFrontlineProxyState.Advancing, proxy.CurrentState);
+
+            Object.DestroyImmediate(proxyObject);
+        }
+
+        [Test]
         public void SummonBodyAndPressureScreenResolveDifferentCombatContacts()
         {
             GameObject actorObject = new GameObject("EnemySummonActor");
@@ -296,6 +339,7 @@ namespace DimensionBrawl.Tests
             GameObject allyObject = new GameObject("AllySummonActor");
             SphereCollider allyCollider = allyObject.AddComponent<SphereCollider>();
             allyCollider.isTrigger = true;
+            allyCollider.center = new Vector3(0f, 0.9f, 0f);
             allyObject.AddComponent<Rigidbody>().isKinematic = true;
             CombatHealth allyHealth = allyObject.AddComponent<CombatHealth>();
             allyHealth.ConfigureTeam(DamageTeam.AllySummon);
@@ -342,6 +386,52 @@ namespace DimensionBrawl.Tests
                 1,
                 allyPresenter.ClashFlashCount,
                 "The summon proxy presenter should pulse when body clash damage occurs so the duel is readable in world space.");
+
+            Object.DestroyImmediate(enemyObject);
+            Object.DestroyImmediate(allyObject);
+        }
+
+        [Test]
+        public void SummonFrontlineClashAutoScansNearbyHostileAndHoldsBothActors()
+        {
+            GameObject allyObject = new GameObject("AllySummonActor");
+            SphereCollider allyCollider = allyObject.AddComponent<SphereCollider>();
+            allyCollider.isTrigger = true;
+            allyObject.AddComponent<Rigidbody>().isKinematic = true;
+            CombatHealth allyHealth = allyObject.AddComponent<CombatHealth>();
+            allyHealth.ConfigureTeam(DamageTeam.AllySummon);
+            allyHealth.ResetHealthToFull();
+            SummonFrontlineProxy allyProxy = allyObject.AddComponent<SummonFrontlineProxy>();
+            allyProxy.ConfigureHealth(allyHealth);
+            SummonFrontlineClash allyClash = allyObject.AddComponent<SummonFrontlineClash>();
+            allyClash.ConfigureReferences(allyProxy, allyHealth);
+            allyClash.ConfigureTuning(100f, 0.2f, 0f, 0.3f, 1.1f);
+
+            GameObject enemyObject = new GameObject("EnemySummonActor");
+            enemyObject.transform.position = Vector3.forward * 0.7f;
+            SphereCollider enemyCollider = enemyObject.AddComponent<SphereCollider>();
+            enemyCollider.isTrigger = true;
+            enemyCollider.center = new Vector3(0f, 0.9f, 0f);
+            enemyObject.AddComponent<Rigidbody>().isKinematic = true;
+            CombatHealth enemyHealth = enemyObject.AddComponent<CombatHealth>();
+            enemyHealth.ConfigureTeam(DamageTeam.Enemy);
+            enemyHealth.ResetHealthToFull();
+            SummonFrontlineProxy enemyProxy = enemyObject.AddComponent<SummonFrontlineProxy>();
+            enemyProxy.ConfigureHealth(enemyHealth);
+
+            allyProxy.Activate(Vector3.zero, Vector3.forward, 1, 0f, 1f, 4f, 4f, 140f, 1f);
+            enemyProxy.Activate(enemyObject.transform.position, Vector3.back, 1, 0f, 1f, 4f, 4f, 120f, 1f);
+            Physics.SyncTransforms();
+
+            allyClash.Tick(0.1f);
+
+            Assert.Less(enemyHealth.CurrentHealth, enemyHealth.MaxHealth);
+            Assert.IsTrue(allyProxy.IsAdvanceHeld);
+            Assert.IsTrue(enemyProxy.IsAdvanceHeld);
+            Assert.AreEqual(SummonFrontlineProxyState.Attacking, allyProxy.CurrentState);
+            Assert.AreEqual(SummonFrontlineProxyState.Attacking, enemyProxy.CurrentState);
+            Assert.AreEqual(1, allyClash.TotalClashCount);
+            Assert.AreEqual(DamageTeam.Enemy, allyClash.LastOpponentTeam);
 
             Object.DestroyImmediate(enemyObject);
             Object.DestroyImmediate(allyObject);
@@ -466,6 +556,9 @@ namespace DimensionBrawl.Tests
                 advanceTargetLane.x,
                 0.001f,
                 "SummonSlot1 should pressure the boss/frontline target lane, not remain locked to the player's lateral entry line.");
+            Assert.AreEqual(230f, activeProxy.MaxHealth, 0.001f);
+            Assert.AreEqual(1.45f, activeProxy.ActiveMoveSpeed, 0.001f);
+            Assert.AreEqual(SummonFrontlineProxyState.Advancing, activeProxy.CurrentState);
             Assert.IsFalse(activeProxy.HasLifetimeLimit);
             Assert.IsTrue(
                 float.IsPositiveInfinity(activeProxy.RemainingLifetimeSeconds),

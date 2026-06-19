@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -127,6 +127,19 @@ namespace DimensionBrawl.Combat
         public void ConfigureTeam(DamageTeam newTeam)
         {
             team = newTeam;
+        }
+
+        public void ConfigureMaxHealth(float newMaxHealth, bool resetToFull = true)
+        {
+            maxHealth = Mathf.Max(1f, newMaxHealth);
+            if (resetToFull)
+            {
+                ResetHealthToFull();
+                return;
+            }
+
+            currentHealth = Mathf.Clamp(currentHealth, 0f, maxHealth);
+            isDead = currentHealth <= 0f;
         }
 
         public void ResetHealthToFull()

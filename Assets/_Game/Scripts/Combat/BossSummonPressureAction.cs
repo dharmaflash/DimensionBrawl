@@ -15,8 +15,14 @@ namespace DimensionBrawl.Combat
             [Min(0f)] public float EntryHeight;
             [Min(0f)] public float ActorLifetimeSeconds;
             [Min(0.01f)] public float ActorScale;
+            public string ActorRoleId;
+            [Min(0f)] public float ActorMaxHealth;
+            [Min(0f)] public float ActorMoveSpeed;
             [Min(0f)] public float ActorAdvanceDistance;
             [Min(0.01f)] public float ActorAdvanceSeconds;
+            [Min(0.05f)] public float ActorEngageRadius;
+            [Min(0f)] public float ActorAttackDamagePerSecond;
+            [Min(0.05f)] public float ActorAttackIntervalSeconds;
             [Min(0)] public int ScreenIntercepts;
             [Min(0.05f)] public float ScreenRadius;
             [Min(0.05f)] public float ScreenLifetimeSeconds;
@@ -27,8 +33,14 @@ namespace DimensionBrawl.Combat
                 EntryHeight = Mathf.Max(0f, EntryHeight);
                 ActorLifetimeSeconds = Mathf.Max(0f, ActorLifetimeSeconds);
                 ActorScale = Mathf.Max(0.01f, ActorScale);
+                ActorRoleId = string.IsNullOrWhiteSpace(ActorRoleId) ? "BossPressure" : ActorRoleId.Trim();
+                ActorMaxHealth = Mathf.Max(0f, ActorMaxHealth);
+                ActorMoveSpeed = Mathf.Max(0f, ActorMoveSpeed);
                 ActorAdvanceDistance = Mathf.Max(0f, ActorAdvanceDistance);
                 ActorAdvanceSeconds = Mathf.Max(0.01f, ActorAdvanceSeconds);
+                ActorEngageRadius = Mathf.Max(0.05f, ActorEngageRadius);
+                ActorAttackDamagePerSecond = Mathf.Max(0f, ActorAttackDamagePerSecond);
+                ActorAttackIntervalSeconds = Mathf.Max(0.05f, ActorAttackIntervalSeconds);
                 ScreenIntercepts = Mathf.Max(0, ScreenIntercepts);
                 ScreenRadius = Mathf.Max(0.05f, ScreenRadius);
                 ScreenLifetimeSeconds = Mathf.Max(0.05f, ScreenLifetimeSeconds);
@@ -198,6 +210,7 @@ namespace DimensionBrawl.Combat
                 Vector3.zero);
             float actorAdvanceSeconds = ResolveActorAdvanceSeconds(actorAdvanceDistance, settings);
             actor.transform.SetParent(summonActorRoot != null ? summonActorRoot : transform, worldPositionStays: true);
+            ConfigureActorCombat(actor, settings);
             actor.Activate(
                 entryPosition,
                 facingDirection,
@@ -205,7 +218,9 @@ namespace DimensionBrawl.Combat
                 settings.ActorLifetimeSeconds,
                 settings.ActorScale,
                 targetPosition,
-                actorAdvanceSeconds);
+                actorAdvanceSeconds,
+                settings.ActorMaxHealth,
+                settings.ActorMoveSpeed);
 
             lastPressureScreenMaxIntercepts = 0;
             lastPressureScreenInterceptCount = 0;
@@ -273,6 +288,25 @@ namespace DimensionBrawl.Combat
         {
             float extraDistance = Mathf.Max(0f, resolvedAdvanceDistance - settings.ActorAdvanceDistance);
             return settings.ActorAdvanceSeconds + extraDistance * actorEntryCatchupSecondsPerMeter;
+        }
+
+        private static void ConfigureActorCombat(SummonFrontlineProxy actor, BossSummonTierSettings settings)
+        {
+            SummonFrontlineClash clash = actor != null ? actor.GetComponent<SummonFrontlineClash>() : null;
+            if (clash == null)
+            {
+                return;
+            }
+
+            float damagePerSecond = settings.ActorAttackDamagePerSecond > 0f
+                ? settings.ActorAttackDamagePerSecond
+                : 34f;
+            clash.ConfigureTuning(
+                damagePerSecond,
+                settings.ActorAttackIntervalSeconds,
+                0.16f,
+                0.24f,
+                settings.ActorEngageRadius);
         }
 
         private Vector3 ResolveFacingDirection(Vector3 entryPosition, Vector3 targetPosition)
@@ -383,7 +417,9 @@ namespace DimensionBrawl.Combat
                 tierSettings = CreateDefaultTierSettings();
             }
 
-            return tierSettings[Mathf.Clamp(tier - 1, 0, tierSettings.Length - 1)];
+            BossSummonTierSettings settings = tierSettings[Mathf.Clamp(tier - 1, 0, tierSettings.Length - 1)];
+            settings.Normalize();
+            return settings;
         }
 
         private SummonFrontlineProxy ResolveActiveSummonActor()
@@ -408,8 +444,14 @@ namespace DimensionBrawl.Combat
                     EntryHeight = 0.2f,
                     ActorLifetimeSeconds = 0f,
                     ActorScale = 0.92f,
+                    ActorRoleId = "EscortProbe",
+                    ActorMaxHealth = 220f,
+                    ActorMoveSpeed = 1.35f,
                     ActorAdvanceDistance = 2.4f,
                     ActorAdvanceSeconds = 1.4f,
+                    ActorEngageRadius = 0.95f,
+                    ActorAttackDamagePerSecond = 32f,
+                    ActorAttackIntervalSeconds = 0.35f,
                     ScreenIntercepts = 2,
                     ScreenRadius = 1.2f,
                     ScreenLifetimeSeconds = 2.6f
@@ -421,8 +463,14 @@ namespace DimensionBrawl.Combat
                     EntryHeight = 0.2f,
                     ActorLifetimeSeconds = 0f,
                     ActorScale = 1.12f,
+                    ActorRoleId = "PressureScreen",
+                    ActorMaxHealth = 320f,
+                    ActorMoveSpeed = 1.42f,
                     ActorAdvanceDistance = 3.8f,
                     ActorAdvanceSeconds = 1.85f,
+                    ActorEngageRadius = 1.05f,
+                    ActorAttackDamagePerSecond = 44f,
+                    ActorAttackIntervalSeconds = 0.35f,
                     ScreenIntercepts = 4,
                     ScreenRadius = 1.55f,
                     ScreenLifetimeSeconds = 3.4f
@@ -434,8 +482,14 @@ namespace DimensionBrawl.Combat
                     EntryHeight = 0.2f,
                     ActorLifetimeSeconds = 0f,
                     ActorScale = 1.36f,
+                    ActorRoleId = "ClampGuard",
+                    ActorMaxHealth = 460f,
+                    ActorMoveSpeed = 1.48f,
                     ActorAdvanceDistance = 5.2f,
                     ActorAdvanceSeconds = 2.35f,
+                    ActorEngageRadius = 1.18f,
+                    ActorAttackDamagePerSecond = 58f,
+                    ActorAttackIntervalSeconds = 0.35f,
                     ScreenIntercepts = 7,
                     ScreenRadius = 1.95f,
                     ScreenLifetimeSeconds = 4.2f

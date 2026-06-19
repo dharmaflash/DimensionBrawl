@@ -307,6 +307,7 @@ namespace DimensionBrawl.Player
             }
 
             tierSettings = settings[Mathf.Clamp(tier - 1, 0, settings.Length - 1)];
+            tierSettings.Normalize();
             return true;
         }
 

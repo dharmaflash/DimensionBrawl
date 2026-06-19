@@ -26,8 +26,14 @@ MonoBehaviour:
     CueLifetimeSeconds: 0.82
     ActorLifetimeSeconds: 0
     ActorScale: 1.05
+    ActorRoleId: VanguardCommander
+    ActorMaxHealth: 360
+    ActorMoveSpeed: 1.15
     ActorAdvanceDistance: 1.35
     ActorAdvanceSeconds: 1.3225
+    ActorEngageRadius: 1.18
+    ActorAttackDamagePerSecond: 24
+    ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 2
     ScreenRadius: 1.47
     ScreenLifetimeSeconds: 2.2
@@ -48,8 +54,14 @@ MonoBehaviour:
     CueLifetimeSeconds: 0.82
     ActorLifetimeSeconds: 0
     ActorScale: 1.18
+    ActorRoleId: VanguardCommander
+    ActorMaxHealth: 430
+    ActorMoveSpeed: 1.2
     ActorAdvanceDistance: 1.7
     ActorAdvanceSeconds: 1.445
+    ActorEngageRadius: 1.25
+    ActorAttackDamagePerSecond: 32
+    ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 4
     ScreenRadius: 1.79
     ScreenLifetimeSeconds: 3
@@ -70,8 +82,14 @@ MonoBehaviour:
     CueLifetimeSeconds: 0.82
     ActorLifetimeSeconds: 0
     ActorScale: 1.34
+    ActorRoleId: VanguardCommander
+    ActorMaxHealth: 520
+    ActorMoveSpeed: 1.25
     ActorAdvanceDistance: 2.1
-    ActorAdvanceSeconds: 1.585
+    ActorAdvanceSeconds: 1.5849999
+    ActorEngageRadius: 1.34
+    ActorAttackDamagePerSecond: 42
+    ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 7
     ScreenRadius: 2.27
     ScreenLifetimeSeconds: 3.8

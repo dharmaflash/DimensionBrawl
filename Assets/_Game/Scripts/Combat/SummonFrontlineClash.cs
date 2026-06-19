@@ -13,7 +13,11 @@ namespace DimensionBrawl.Combat
         [SerializeField, Min(0f)] private float tierDamageBonus = 0.16f;
         [SerializeField, Min(0f)] private float clashHoldSeconds = 0.24f;
         [SerializeField, Min(0f)] private float clashFeedbackSeconds = 0.28f;
+        [SerializeField, Min(0.05f)] private float engageRadius = 0.95f;
+        [SerializeField, Min(0f)] private float engageCenterHeight = 0.9f;
+        [SerializeField] private LayerMask contactLayers = Physics.DefaultRaycastLayers;
 
+        private readonly Collider[] contactBuffer = new Collider[12];
         private float nextDamageTime;
         private float clashFeedbackTimer;
         private int totalClashCount;
@@ -26,6 +30,7 @@ namespace DimensionBrawl.Combat
         public int LastOpponentTier => lastOpponentTier;
         public DamageTeam LastOpponentTeam => lastOpponentTeam;
         public float LastDamageAmount => lastDamageAmount;
+        public float EngageRadius => engageRadius;
 
         private void Awake()
         {
@@ -55,15 +60,37 @@ namespace DimensionBrawl.Combat
             float damageTierBonus,
             float holdSeconds)
         {
+            ConfigureTuning(
+                damagePerSecond,
+                damageIntervalSeconds,
+                damageTierBonus,
+                holdSeconds,
+                engageRadius);
+        }
+
+        public void ConfigureTuning(
+            float damagePerSecond,
+            float damageIntervalSeconds,
+            float damageTierBonus,
+            float holdSeconds,
+            float newEngageRadius)
+        {
             contactDamagePerSecond = Mathf.Max(0f, damagePerSecond);
             contactDamageIntervalSeconds = Mathf.Max(0.05f, damageIntervalSeconds);
             tierDamageBonus = Mathf.Max(0f, damageTierBonus);
             clashHoldSeconds = Mathf.Max(0f, holdSeconds);
+            engageRadius = Mathf.Max(0.05f, newEngageRadius);
         }
 
         public void Tick(float deltaTime)
         {
-            if (clashFeedbackTimer <= 0f || deltaTime <= 0f)
+            if (deltaTime <= 0f)
+            {
+                return;
+            }
+
+            ScanNearbyContacts();
+            if (clashFeedbackTimer <= 0f)
             {
                 return;
             }
@@ -134,10 +161,38 @@ namespace DimensionBrawl.Combat
                 lastOpponentTier = otherProxy != null ? otherProxy.ActiveTier : 0;
                 lastOpponentTeam = otherHealth.Team;
                 lastDamageAmount = damageAmount;
+                proxy.NotifyAttackPerformed(clashFeedbackSeconds);
+                otherProxy?.NotifyAttackPerformed(clashFeedbackSeconds);
             }
 
             nextDamageTime = Time.time + interval;
             return true;
+        }
+
+        private void ScanNearbyContacts()
+        {
+            ResolveReferences();
+            if (proxy == null || health == null || !proxy.IsActive || !health.IsAlive)
+            {
+                return;
+            }
+
+            Vector3 center = transform.position + Vector3.up * engageCenterHeight;
+            int count = Physics.OverlapSphereNonAlloc(
+                center,
+                engageRadius,
+                contactBuffer,
+                contactLayers,
+                QueryTriggerInteraction.Collide);
+            for (int i = 0; i < count; i++)
+            {
+                Collider candidate = contactBuffer[i];
+                if (candidate != null)
+                {
+                    TryProcessClash(candidate);
+                    contactBuffer[i] = null;
+                }
+            }
         }
 
         private void OnTriggerEnter(Collider other)

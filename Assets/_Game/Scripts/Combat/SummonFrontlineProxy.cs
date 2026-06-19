@@ -12,6 +12,16 @@ namespace DimensionBrawl.Combat
         Recalled = 3
     }
 
+    public enum SummonFrontlineProxyState
+    {
+        Inactive = 0,
+        Spawned = 1,
+        Advancing = 2,
+        Engaging = 3,
+        Attacking = 4,
+        Defeated = 5
+    }
+
     [DisallowMultipleComponent]
     public sealed class SummonFrontlineProxy : MonoBehaviour
     {
@@ -30,10 +40,14 @@ namespace DimensionBrawl.Combat
         private Vector3 advanceTargetPosition;
         private float advanceSeconds = 0.25f;
         private float advanceElapsed;
+        private float advanceDistance;
+        private float advanceSpeed;
         private float advanceHoldTimer;
+        private float attackStateTimer;
         private bool active;
         private int activeTier;
         private bool subscribedToHealth;
+        private SummonFrontlineProxyState currentState = SummonFrontlineProxyState.Inactive;
         private SummonFrontlineProxyExitReason lastExitReason = SummonFrontlineProxyExitReason.None;
 
         public bool IsActive => active && gameObject.activeInHierarchy;
@@ -50,10 +64,13 @@ namespace DimensionBrawl.Combat
         public float LifetimeProgress01 => lifetimeSeconds > 0f
             ? 1f - Mathf.Clamp01(remainingLifetime / lifetimeSeconds)
             : 0f;
+        public SummonFrontlineProxyState CurrentState => currentState;
         public SummonFrontlineProxyExitReason LastExitReason => lastExitReason;
         public Vector3 AdvanceStartPosition => advanceStartPosition;
         public Vector3 AdvanceTargetPosition => advanceTargetPosition;
-        public float AdvanceProgress01 => advanceSeconds > 0f ? Mathf.Clamp01(advanceElapsed / advanceSeconds) : 1f;
+        public float AdvanceDistance => advanceDistance;
+        public float ActiveMoveSpeed => advanceSpeed;
+        public float AdvanceProgress01 => advanceDistance > 0f ? Mathf.Clamp01(advanceElapsed / advanceDistance) : 1f;
         public bool IsAdvanceHeld => IsActive && advanceHoldTimer > 0f;
         public bool IsAdvancing => IsActive
             && AdvanceProgress01 < 1f
@@ -140,19 +157,67 @@ namespace DimensionBrawl.Combat
             int tier,
             float lifetimeSeconds,
             float scaleMultiplier,
+            float advanceDistance,
+            float advanceDurationSeconds,
+            float actorMaxHealth,
+            float moveSpeed)
+        {
+            Vector3 planarDirection = ResolvePlanarDirection(facingDirection);
+            Activate(
+                position,
+                planarDirection,
+                tier,
+                lifetimeSeconds,
+                scaleMultiplier,
+                position + planarDirection * Mathf.Max(0f, advanceDistance),
+                advanceDurationSeconds,
+                actorMaxHealth,
+                moveSpeed);
+        }
+
+        public void Activate(
+            Vector3 position,
+            Vector3 facingDirection,
+            int tier,
+            float lifetimeSeconds,
+            float scaleMultiplier,
             Vector3 targetPosition,
             float advanceDurationSeconds)
+        {
+            Activate(
+                position,
+                facingDirection,
+                tier,
+                lifetimeSeconds,
+                scaleMultiplier,
+                targetPosition,
+                advanceDurationSeconds,
+                0f,
+                0f);
+        }
+
+        public void Activate(
+            Vector3 position,
+            Vector3 facingDirection,
+            int tier,
+            float lifetimeSeconds,
+            float scaleMultiplier,
+            Vector3 targetPosition,
+            float advanceDurationSeconds,
+            float actorMaxHealth,
+            float moveSpeed)
         {
             activeTier = Mathf.Clamp(tier, 1, 3);
             ResetLifecycle(lifetimeSeconds);
             transform.position = position;
             transform.localScale = baseScale * Mathf.Max(0.01f, scaleMultiplier);
-            ResetHealthIfNeeded();
+            ResetHealthIfNeeded(actorMaxHealth);
 
-            Vector3 planarDirection = ResetAdvance(position, facingDirection, targetPosition, advanceDurationSeconds);
+            Vector3 planarDirection = ResetAdvance(position, facingDirection, targetPosition, advanceDurationSeconds, moveSpeed);
             ApplyFacing(planarDirection);
 
             active = true;
+            currentState = advanceDistance > 0f ? SummonFrontlineProxyState.Advancing : SummonFrontlineProxyState.Spawned;
             gameObject.SetActive(true);
         }
 
@@ -169,11 +234,18 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
+            if (attackStateTimer > 0f)
+            {
+                attackStateTimer = Mathf.Max(0f, attackStateTimer - deltaTime);
+            }
+
             Advance(deltaTime);
             if (advanceHoldTimer > 0f)
             {
                 advanceHoldTimer = Mathf.Max(0f, advanceHoldTimer - deltaTime);
             }
+
+            RefreshState();
 
             if (lifetimeSeconds <= 0f)
             {
@@ -195,6 +267,21 @@ namespace DimensionBrawl.Combat
             }
 
             advanceHoldTimer = Mathf.Max(advanceHoldTimer, seconds);
+            if (attackStateTimer <= 0f)
+            {
+                currentState = SummonFrontlineProxyState.Engaging;
+            }
+        }
+
+        public void NotifyAttackPerformed(float feedbackSeconds)
+        {
+            if (!active)
+            {
+                return;
+            }
+
+            attackStateTimer = Mathf.Max(attackStateTimer, Mathf.Max(0.01f, feedbackSeconds));
+            currentState = SummonFrontlineProxyState.Attacking;
         }
 
         public void Deactivate()
@@ -217,7 +304,11 @@ namespace DimensionBrawl.Combat
             active = false;
             remainingLifetime = 0f;
             advanceHoldTimer = 0f;
-            advanceElapsed = advanceSeconds;
+            attackStateTimer = 0f;
+            advanceElapsed = advanceDistance;
+            currentState = reason == SummonFrontlineProxyExitReason.Defeated
+                ? SummonFrontlineProxyState.Defeated
+                : SummonFrontlineProxyState.Inactive;
             gameObject.SetActive(false);
         }
 
@@ -235,11 +326,36 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
-            advanceElapsed = Mathf.Min(advanceSeconds, advanceElapsed + deltaTime);
+            advanceElapsed = Mathf.Min(advanceDistance, advanceElapsed + advanceSpeed * deltaTime);
             transform.position = Vector3.LerpUnclamped(
                 advanceStartPosition,
                 advanceTargetPosition,
                 AdvanceProgress01);
+        }
+
+        private void RefreshState()
+        {
+            if (!active)
+            {
+                return;
+            }
+
+            if (attackStateTimer > 0f)
+            {
+                currentState = SummonFrontlineProxyState.Attacking;
+            }
+            else if (advanceHoldTimer > 0f)
+            {
+                currentState = SummonFrontlineProxyState.Engaging;
+            }
+            else if (AdvanceProgress01 < 1f)
+            {
+                currentState = SummonFrontlineProxyState.Advancing;
+            }
+            else
+            {
+                currentState = SummonFrontlineProxyState.Spawned;
+            }
         }
 
         private void ResetLifecycle(float requestedLifetimeSeconds)
@@ -252,9 +368,18 @@ namespace DimensionBrawl.Combat
             lastExitReason = SummonFrontlineProxyExitReason.None;
         }
 
-        private void ResetHealthIfNeeded()
+        private void ResetHealthIfNeeded(float actorMaxHealth)
         {
-            if (health != null && resetHealthOnActivate)
+            if (health == null)
+            {
+                return;
+            }
+
+            if (actorMaxHealth > 0f)
+            {
+                health.ConfigureMaxHealth(actorMaxHealth, resetHealthOnActivate);
+            }
+            else if (resetHealthOnActivate)
             {
                 health.ResetHealthToFull();
             }
@@ -264,7 +389,8 @@ namespace DimensionBrawl.Combat
             Vector3 position,
             Vector3 facingDirection,
             Vector3 targetPosition,
-            float advanceDurationSeconds)
+            float advanceDurationSeconds,
+            float moveSpeed)
         {
             targetPosition.y = position.y;
             Vector3 planarDirection = ResolvePlanarDirection(targetPosition - position);
@@ -275,7 +401,12 @@ namespace DimensionBrawl.Combat
 
             advanceSeconds = Mathf.Max(0.01f, advanceDurationSeconds);
             advanceElapsed = 0f;
+            advanceDistance = Vector3.Distance(position, targetPosition);
+            advanceSpeed = moveSpeed > 0f
+                ? moveSpeed
+                : advanceDistance / advanceSeconds;
             advanceHoldTimer = 0f;
+            attackStateTimer = 0f;
             advanceStartPosition = position;
             advanceTargetPosition = targetPosition;
             return planarDirection;
