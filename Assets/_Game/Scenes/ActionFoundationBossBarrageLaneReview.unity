@@ -1329,6 +1329,7 @@ MonoBehaviour:
   firstVolleyDelaySeconds: 0.15
   volleyIntervalSeconds: 1.05
   maxVolleyCount: 3
+  maxActiveSummonActors: 1
   summonActionProfile: {fileID: 11400000, guid: b10e45f1e903b6442bad3d929ca0bf33, type: 2}
   useBlockedHintSeconds: 0.75
 --- !u!114 &4016
@@ -1367,6 +1368,7 @@ MonoBehaviour:
   firstVolleyDelaySeconds: 0.1
   volleyIntervalSeconds: 0.78
   maxVolleyCount: 3
+  maxActiveSummonActors: 1
   summonActionProfile: {fileID: 11400000, guid: 5784354a50ccc314eab97b19cdb7aeb9, type: 2}
   useBlockedHintSeconds: 0.75
 --- !u!114 &4017
@@ -1400,6 +1402,7 @@ MonoBehaviour:
   sourceTeam: 3
   prewarmCount: 8
   actorPrewarmCount: 2
+  maxActiveSummonActors: 1
   entryForwardOffset: 1.35
   actorEntryCatchupSecondsPerMeter: 0.55
   useBlockedHintSeconds: 0.75
@@ -11195,6 +11198,8 @@ GameObject:
   - component: {fileID: 1079508250}
   - component: {fileID: 1079508251}
   - component: {fileID: 1079508253}
+  - component: {fileID: 1079508255}
+  - component: {fileID: 1079508254}
   m_Layer: 0
   m_Name: BossBarrageLaneReview_BossProxy_NeedleLock
   m_TagString: Untagged
@@ -11293,6 +11298,7 @@ MonoBehaviour:
   summonActorRoot: {fileID: 231838019}
   ownerTeam: 2
   actorPrewarmCount: 2
+  maxActiveSummonActors: 1
   actorEntryCatchupSecondsPerMeter: 0.55
   pressureProfile: {fileID: 11400000, guid: b72d92c8a256467ab8d18f0e340b3cf3, type: 2}
   tierSettings:
@@ -11577,6 +11583,54 @@ MonoBehaviour:
     durationSeconds: 0.4
     pulseScale: 0.42
     tierPulseBonus: 0.1
+--- !u!54 &1079508254
+Rigidbody:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1079508245}
+  serializedVersion: 5
+  m_Mass: 1
+  m_LinearDamping: 0
+  m_AngularDamping: 0.05
+  m_CenterOfMass: {x: 0, y: 0, z: 0}
+  m_InertiaTensor: {x: 1, y: 1, z: 1}
+  m_InertiaRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ImplicitCom: 1
+  m_ImplicitTensor: 1
+  m_UseGravity: 0
+  m_IsKinematic: 1
+  m_Interpolate: 0
+  m_Constraints: 0
+  m_CollisionDetection: 0
+--- !u!135 &1079508255
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1079508245}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 1.05
+  m_Center: {x: 0, y: -0.35, z: -0.05}
 --- !u!1 &1081131842
 GameObject:
   m_ObjectHideFlags: 0

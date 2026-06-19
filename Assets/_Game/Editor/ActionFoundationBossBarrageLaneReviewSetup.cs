@@ -152,6 +152,8 @@ namespace DimensionBrawl.Editor
         private const string PocketFailMarkerName = ReviewRootPrefix + "PocketFailMarker";
         private const string SummonEntryMarkerName = ReviewRootPrefix + "SummonEntryMarker";
         private const string BossProxyMarkerName = ReviewRootPrefix + "BossProxyMarker";
+        private const float BossProxyBodyHitboxRadius = 1.05f;
+        private static readonly Vector3 BossProxyBodyHitboxCenter = new Vector3(0f, -0.35f, -0.05f);
         private const string BossTelegraphRootName = ReviewRootPrefix + "BossBarrageTelegraphMarkers";
         private const string BossProxyHumanoidVisualName = ReviewRootPrefix + "HumanoidBossVisual_SummonCallerElite";
         private const string RangedPlayerVisualRootName = ReviewRootPrefix + "RangedVisual_RifleGirl";
@@ -232,6 +234,13 @@ namespace DimensionBrawl.Editor
             Debug.Log("ActionFoundation boss summon duel review scene validation passed.");
         }
 
+        [MenuItem("DimensionBrawl/Reapply Action Foundation Boss Proxy Body Hitboxes")]
+        public static void ReapplyBossProxyBodyHitboxesMenu()
+        {
+            EnsureBossProxyBodyHitboxes();
+            Debug.Log("Reapplied ActionFoundation boss proxy body hitboxes.");
+        }
+
         [MenuItem("DimensionBrawl/Reapply Action Foundation Boss Summon Duel Review End State")]
         public static void ReapplyBossSummonDuelReviewEndStateMenu()
         {
@@ -259,6 +268,26 @@ namespace DimensionBrawl.Editor
             EnsureBossSummonPressureProfile();
             EnsureSummonPresentationCandidateProfiles();
             Debug.Log("Reapplied ActionFoundation boss summon presentation assets.");
+        }
+
+        public static void EnsureBossProxyBodyHitboxes()
+        {
+            EnsureBossProxyBodyHitbox(ReviewScenePath);
+            EnsureBossProxyBodyHitbox(DuelReviewScenePath);
+        }
+
+        private static void EnsureBossProxyBodyHitbox(string scenePath)
+        {
+            Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
+            GameObject bossProxy = RequireRoot(scene, BossProxyRootName);
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossProxy, "boss proxy health");
+            ConfigureBossProxyBodyHitbox(bossProxy);
+            ValidateBossProxyBodyContract(bossProxy, bossHealth);
+
+            if (!EditorSceneManager.SaveScene(scene, scenePath))
+            {
+                throw new InvalidOperationException($"Failed to save boss proxy body hitbox in {scenePath}.");
+            }
         }
 
         public static void EnsureBossBarrageLaneReviewScene()
@@ -537,6 +566,7 @@ namespace DimensionBrawl.Editor
             BossPressurePositionController bossPressurePosition =
                 RequireComponent<BossPressurePositionController>(bossProxy, "boss pressure position controller");
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossProxy, "boss proxy health");
+            ValidateBossProxyBodyContract(bossProxy, bossHealth);
             ValidateBossProxyVisual(bossProxy);
             GameObject closeThreat = RequireRoot(scene, CloseThreatRootName);
             CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreat, "close threat health");
@@ -824,6 +854,7 @@ namespace DimensionBrawl.Editor
             SummonLaneSpace laneSpace = RequireObject<SummonLaneSpace>(scene, "summon lane space");
             GameObject bossProxy = RequireRoot(scene, BossProxyRootName);
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossProxy, "boss proxy health");
+            ValidateBossProxyBodyContract(bossProxy, bossHealth);
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossProxy, "boss barrage emitter");
             BossPressureCostLadder bossPressureCost =
                 RequireComponent<BossPressureCostLadder>(bossProxy, "boss pressure cost ladder");
@@ -1693,6 +1724,7 @@ namespace DimensionBrawl.Editor
             CombatHealth bossHealth = EnsureComponent<CombatHealth>(bossProxy);
             bossHealth.ConfigureTeam(DamageTeam.Enemy);
             SetFloat(bossHealth, "maxHealth", 5000f);
+            ConfigureBossProxyBodyHitbox(bossProxy);
 
             BossBarrageEmitter emitter = EnsureComponent<BossBarrageEmitter>(bossProxy);
             SetObjectReference(emitter, "laneSpace", laneSpace);
@@ -1827,6 +1859,21 @@ namespace DimensionBrawl.Editor
             SetObjectReference(cameraCueDriver, "cueSpace", closeThreat.transform);
             SetFloat(closeThreatHealth, "maxHealth", 72f);
             return closeThreat;
+        }
+
+        private static void ConfigureBossProxyBodyHitbox(GameObject bossProxy)
+        {
+            SphereCollider bodyCollider = EnsureComponent<SphereCollider>(bossProxy);
+            bodyCollider.isTrigger = false;
+            bodyCollider.radius = BossProxyBodyHitboxRadius;
+            bodyCollider.center = BossProxyBodyHitboxCenter;
+
+            Rigidbody bodyRigidbody = EnsureComponent<Rigidbody>(bossProxy);
+            bodyRigidbody.isKinematic = true;
+            bodyRigidbody.useGravity = false;
+
+            EditorUtility.SetDirty(bodyCollider);
+            EditorUtility.SetDirty(bodyRigidbody);
         }
 
         private static void CreateBossProxyVisual(Transform parent)
@@ -3943,6 +3990,36 @@ namespace DimensionBrawl.Editor
             if (cueDriver.PulseRendererCount <= 0)
             {
                 throw new InvalidOperationException("Boss visual cue driver should have at least one pulse renderer.");
+            }
+        }
+
+        private static void ValidateBossProxyBodyContract(GameObject bossProxy, CombatHealth bossHealth)
+        {
+            if (bossProxy.GetComponent<CombatHealth>() != bossHealth)
+            {
+                throw new InvalidOperationException("Boss proxy health must stay on the root body object.");
+            }
+
+            SphereCollider bodyCollider = RequireComponent<SphereCollider>(bossProxy, "boss proxy body collider");
+            if (bodyCollider.isTrigger)
+            {
+                throw new InvalidOperationException("Boss proxy body collider must be a solid root collider for summon body contacts.");
+            }
+
+            if (bodyCollider.radius < BossProxyBodyHitboxRadius - 0.001f)
+            {
+                throw new InvalidOperationException("Boss proxy body collider radius is too small for frontline summon contact.");
+            }
+
+            if ((bodyCollider.center - BossProxyBodyHitboxCenter).sqrMagnitude > 0.0001f)
+            {
+                throw new InvalidOperationException("Boss proxy body collider center must stay aligned to the readable humanoid body.");
+            }
+
+            Rigidbody bodyRigidbody = RequireComponent<Rigidbody>(bossProxy, "boss proxy body Rigidbody");
+            if (!bodyRigidbody.isKinematic || bodyRigidbody.useGravity)
+            {
+                throw new InvalidOperationException("Boss proxy body Rigidbody must be kinematic and gravity-free for moving trigger contacts.");
             }
         }
 

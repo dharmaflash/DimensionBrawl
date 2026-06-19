@@ -89,13 +89,16 @@ namespace DimensionBrawl.Combat
             }
 
             SummonFrontlineProxy otherProxy = other.GetComponentInParent<SummonFrontlineProxy>();
-            if (otherProxy == null || otherProxy == proxy || !otherProxy.IsActive)
+            if (otherProxy == proxy || (otherProxy != null && !otherProxy.IsActive))
             {
                 return false;
             }
 
-            CombatHealth otherHealth = otherProxy.Health ?? other.GetComponentInParent<CombatHealth>();
+            CombatHealth otherHealth = otherProxy != null
+                ? otherProxy.Health ?? other.GetComponentInParent<CombatHealth>()
+                : other.GetComponentInParent<CombatHealth>();
             if (otherHealth == null
+                || otherHealth == health
                 || !otherHealth.IsAlive
                 || !CombatTeamUtility.AreHostile(health.Team, otherHealth.Team))
             {
@@ -103,7 +106,11 @@ namespace DimensionBrawl.Combat
             }
 
             proxy.RequestAdvanceHold(clashHoldSeconds);
-            otherProxy.RequestAdvanceHold(clashHoldSeconds);
+            if (otherProxy != null)
+            {
+                otherProxy.RequestAdvanceHold(clashHoldSeconds);
+            }
+
             clashFeedbackTimer = Mathf.Max(clashFeedbackTimer, clashFeedbackSeconds);
 
             if (Time.time < nextDamageTime)
@@ -118,13 +125,13 @@ namespace DimensionBrawl.Combat
                 health.Team,
                 damageAmount,
                 other.ClosestPoint(transform.position),
-                otherProxy.transform.position - transform.position,
+                ResolveHitDirection(otherHealth, otherProxy),
                 0f);
 
             if (otherHealth.TryApplyDamage(damageInfo))
             {
                 totalClashCount++;
-                lastOpponentTier = otherProxy.ActiveTier;
+                lastOpponentTier = otherProxy != null ? otherProxy.ActiveTier : 0;
                 lastOpponentTeam = otherHealth.Team;
                 lastDamageAmount = damageAmount;
             }
@@ -148,6 +155,18 @@ namespace DimensionBrawl.Combat
             int tier = proxy != null ? Mathf.Clamp(proxy.ActiveTier, 1, 3) : 1;
             float tierScale = 1f + (tier - 1) * tierDamageBonus;
             return contactDamagePerSecond * interval * tierScale;
+        }
+
+        private Vector3 ResolveHitDirection(CombatHealth otherHealth, SummonFrontlineProxy otherProxy)
+        {
+            Transform targetTransform = otherProxy != null
+                ? otherProxy.transform
+                : otherHealth != null
+                    ? otherHealth.transform
+                    : null;
+            return targetTransform != null
+                ? targetTransform.position - transform.position
+                : transform.forward;
         }
 
         private void ResolveReferences()

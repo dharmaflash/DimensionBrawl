@@ -112,6 +112,7 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(bossSummonPressureAction.HasPressureProfile);
             Assert.AreEqual(3, bossSummonPressureAction.PressureProfile.TierCount);
             Assert.IsTrue(bossSummonPressureAction.CanRelease);
+            AssertBossProxyBodyContract(bossSummonPressureAction.gameObject);
 
             AssertSummonActorPrefabContract(
                 GetObjectReference<GameObject>(summonSlot1Action, "summonActorPrefabObject"),
@@ -310,6 +311,22 @@ namespace DimensionBrawl.Tests
             Assert.Greater(bodyCollider.radius, 0f, $"{label} body collider should have a positive radius.");
             Assert.IsTrue(bodyRigidbody.isKinematic, $"{label} body Rigidbody should be kinematic.");
             Assert.IsFalse(bodyRigidbody.useGravity, $"{label} body Rigidbody should not use gravity.");
+        }
+
+        private static void AssertBossProxyBodyContract(GameObject bossProxy)
+        {
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossProxy, "boss proxy");
+            SphereCollider bodyCollider = RequireComponent<SphereCollider>(bossProxy, "boss proxy");
+            Rigidbody bodyRigidbody = RequireComponent<Rigidbody>(bossProxy, "boss proxy");
+
+            Assert.AreEqual(DamageTeam.Enemy, bossHealth.Team, "Boss proxy body should carry enemy health on its root.");
+            Assert.IsFalse(bodyCollider.isTrigger, "Boss proxy body should be a solid collider so summon trigger bodies can stop against it.");
+            Assert.GreaterOrEqual(
+                bodyCollider.radius,
+                1f,
+                "Boss proxy body collider should be wide enough for frontline summons to meet the readable humanoid body.");
+            Assert.IsTrue(bodyRigidbody.isKinematic, "Boss proxy body Rigidbody should be kinematic.");
+            Assert.IsFalse(bodyRigidbody.useGravity, "Boss proxy body Rigidbody should not use gravity.");
         }
 
         private static PlayerSupportSummonSlotAction RequireSupportSummonAction(string actionName)

@@ -284,6 +284,44 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void SummonFrontlineClashDamagesHostileBodyTargetAndHoldsAdvance()
+        {
+            GameObject allyObject = new GameObject("AllySummonActor");
+            SphereCollider allyCollider = allyObject.AddComponent<SphereCollider>();
+            allyCollider.isTrigger = true;
+            allyObject.AddComponent<Rigidbody>().isKinematic = true;
+            CombatHealth allyHealth = allyObject.AddComponent<CombatHealth>();
+            allyHealth.ConfigureTeam(DamageTeam.AllySummon);
+            allyHealth.ResetHealthToFull();
+            SummonFrontlineProxy allyProxy = allyObject.AddComponent<SummonFrontlineProxy>();
+            allyProxy.ConfigureHealth(allyHealth);
+            SummonFrontlineClash allyClash = allyObject.AddComponent<SummonFrontlineClash>();
+            allyClash.ConfigureReferences(allyProxy, allyHealth);
+            allyClash.ConfigureTuning(90f, 0.2f, 0f, 0.3f);
+
+            GameObject bossObject = new GameObject("BossBodyTarget");
+            bossObject.transform.position = Vector3.forward * 0.7f;
+            SphereCollider bossCollider = bossObject.AddComponent<SphereCollider>();
+            bossObject.AddComponent<Rigidbody>().isKinematic = true;
+            CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+            bossHealth.ConfigureTeam(DamageTeam.Enemy);
+            bossHealth.ResetHealthToFull();
+
+            allyProxy.Activate(Vector3.zero, Vector3.forward, 1, 0f, 1f, Vector3.forward * 4f, 3f);
+
+            Assert.IsTrue(allyClash.TryProcessClash(bossCollider));
+            Assert.Less(bossHealth.CurrentHealth, bossHealth.MaxHealth);
+            Assert.IsTrue(allyProxy.IsAdvanceHeld);
+            Assert.IsTrue(allyClash.IsClashing);
+            Assert.AreEqual(1, allyClash.TotalClashCount);
+            Assert.AreEqual(0, allyClash.LastOpponentTier);
+            Assert.AreEqual(DamageTeam.Enemy, allyClash.LastOpponentTeam);
+
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(allyObject);
+        }
+
+        [Test]
         public void SummonSlot1EntryStartsInFrontOfPlayerBodyAndAdvancesPastFrontline()
         {
             GameObject laneObject = new GameObject("Lane");
