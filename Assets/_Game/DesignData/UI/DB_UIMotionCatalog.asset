@@ -21,6 +21,20 @@ MonoBehaviour:
     fadeTo: 1
     scaleFrom: 1
     scaleTo: 1
+    anchoredOffsetFrom: {x: 0, y: 0}
+    anchoredOffsetTo: {x: 0, y: 0}
+    easing: 20
+    blocksInputDuringMotion: 1
+  - id: lobby_to_stage_select_bridge
+    target: 50
+    durationSeconds: 0.5
+    delaySeconds: 0
+    fadeFrom: 0
+    fadeTo: 1
+    scaleFrom: 1
+    scaleTo: 1
+    anchoredOffsetFrom: {x: 0, y: 0}
+    anchoredOffsetTo: {x: 0, y: 0}
     easing: 20
     blocksInputDuringMotion: 1
   - id: title_ambient_start
@@ -31,6 +45,8 @@ MonoBehaviour:
     fadeTo: 1
     scaleFrom: 0.98
     scaleTo: 1
+    anchoredOffsetFrom: {x: 0, y: 0}
+    anchoredOffsetTo: {x: 0, y: 0}
     easing: 10
     blocksInputDuringMotion: 0
   - id: lobby_character_signboard
@@ -41,6 +57,8 @@ MonoBehaviour:
     fadeTo: 1
     scaleFrom: 0.96
     scaleTo: 1
+    anchoredOffsetFrom: {x: 0, y: 0}
+    anchoredOffsetTo: {x: 0, y: 0}
     easing: 30
     blocksInputDuringMotion: 0
   - id: lobby_background_enter
@@ -51,6 +69,8 @@ MonoBehaviour:
     fadeTo: 1
     scaleFrom: 1.02
     scaleTo: 1
+    anchoredOffsetFrom: {x: 0, y: 0}
+    anchoredOffsetTo: {x: 0, y: 0}
     easing: 10
     blocksInputDuringMotion: 0
   - id: lobby_frame_enter
@@ -61,6 +81,8 @@ MonoBehaviour:
     fadeTo: 1
     scaleFrom: 0.965
     scaleTo: 1
+    anchoredOffsetFrom: {x: 0, y: 0}
+    anchoredOffsetTo: {x: 0, y: 0}
     easing: 10
     blocksInputDuringMotion: 0
   - id: lobby_text_enter
@@ -71,7 +93,105 @@ MonoBehaviour:
     fadeTo: 1
     scaleFrom: 0.96
     scaleTo: 1
+    anchoredOffsetFrom: {x: 0, y: 0}
+    anchoredOffsetTo: {x: 0, y: 0}
     easing: 10
+    blocksInputDuringMotion: 0
+  - id: stage_screen_enter
+    target: 0
+    durationSeconds: 0.38
+    delaySeconds: 0
+    fadeFrom: 0
+    fadeTo: 1
+    scaleFrom: 1.015
+    scaleTo: 1
+    anchoredOffsetFrom: {x: 0, y: -10}
+    anchoredOffsetTo: {x: 0, y: 0}
+    easing: 10
+    blocksInputDuringMotion: 0
+  - id: stage_back_button_enter
+    target: 20
+    durationSeconds: 0.22
+    delaySeconds: 0
+    fadeFrom: 0
+    fadeTo: 1
+    scaleFrom: 0.97
+    scaleTo: 1
+    anchoredOffsetFrom: {x: -20, y: 0}
+    anchoredOffsetTo: {x: 0, y: 0}
+    easing: 10
+    blocksInputDuringMotion: 0
+  - id: stage_chapter_list_enter
+    target: 10
+    durationSeconds: 0.32
+    delaySeconds: 0
+    fadeFrom: 0
+    fadeTo: 1
+    scaleFrom: 0.985
+    scaleTo: 1
+    anchoredOffsetFrom: {x: -48, y: 0}
+    anchoredOffsetTo: {x: 0, y: 0}
+    easing: 10
+    blocksInputDuringMotion: 0
+  - id: stage_feature_panel_enter
+    target: 10
+    durationSeconds: 0.38
+    delaySeconds: 0
+    fadeFrom: 0
+    fadeTo: 1
+    scaleFrom: 0.975
+    scaleTo: 1
+    anchoredOffsetFrom: {x: 36, y: -8}
+    anchoredOffsetTo: {x: 0, y: 0}
+    easing: 10
+    blocksInputDuringMotion: 0
+  - id: stage_stage_grid_enter
+    target: 10
+    durationSeconds: 0.3
+    delaySeconds: 0
+    fadeFrom: 0
+    fadeTo: 1
+    scaleFrom: 0.99
+    scaleTo: 1
+    anchoredOffsetFrom: {x: 0, y: -24}
+    anchoredOffsetTo: {x: 0, y: 0}
+    easing: 10
+    blocksInputDuringMotion: 0
+  - id: stage_card_enter
+    target: 10
+    durationSeconds: 0.28
+    delaySeconds: 0
+    fadeFrom: 0
+    fadeTo: 1
+    scaleFrom: 0.94
+    scaleTo: 1
+    anchoredOffsetFrom: {x: 0, y: -18}
+    anchoredOffsetTo: {x: 0, y: 0}
+    easing: 30
+    blocksInputDuringMotion: 0
+  - id: stage_bottom_nav_enter
+    target: 20
+    durationSeconds: 0.32
+    delaySeconds: 0
+    fadeFrom: 0
+    fadeTo: 1
+    scaleFrom: 0.98
+    scaleTo: 1
+    anchoredOffsetFrom: {x: 0, y: -36}
+    anchoredOffsetTo: {x: 0, y: 0}
+    easing: 10
+    blocksInputDuringMotion: 0
+  - id: stage_start_button_enter
+    target: 20
+    durationSeconds: 0.3
+    delaySeconds: 0
+    fadeFrom: 0
+    fadeTo: 1
+    scaleFrom: 0.92
+    scaleTo: 1
+    anchoredOffsetFrom: {x: 0, y: -10}
+    anchoredOffsetTo: {x: 0, y: 0}
+    easing: 30
     blocksInputDuringMotion: 0
   - id: stage_card_expand
     target: 10
@@ -81,6 +201,8 @@ MonoBehaviour:
     fadeTo: 1
     scaleFrom: 0.94
     scaleTo: 1
+    anchoredOffsetFrom: {x: 0, y: 0}
+    anchoredOffsetTo: {x: 0, y: 0}
     easing: 10
     blocksInputDuringMotion: 0
   - id: stage_to_combat_mood_bridge
@@ -91,6 +213,8 @@ MonoBehaviour:
     fadeTo: 1
     scaleFrom: 1
     scaleTo: 1
+    anchoredOffsetFrom: {x: 0, y: 0}
+    anchoredOffsetTo: {x: 0, y: 0}
     easing: 20
     blocksInputDuringMotion: 1
   - id: summon_call_primary_pulse
@@ -101,6 +225,8 @@ MonoBehaviour:
     fadeTo: 1
     scaleFrom: 1
     scaleTo: 1.05
+    anchoredOffsetFrom: {x: 0, y: 0}
+    anchoredOffsetTo: {x: 0, y: 0}
     easing: 30
     blocksInputDuringMotion: 0
   - id: ultimate_ready_sting
@@ -111,6 +237,8 @@ MonoBehaviour:
     fadeTo: 1
     scaleFrom: 1
     scaleTo: 1.08
+    anchoredOffsetFrom: {x: 0, y: 0}
+    anchoredOffsetTo: {x: 0, y: 0}
     easing: 30
     blocksInputDuringMotion: 0
   - id: denied_action_micro_toast
@@ -121,6 +249,8 @@ MonoBehaviour:
     fadeTo: 1
     scaleFrom: 0.98
     scaleTo: 1
+    anchoredOffsetFrom: {x: 0, y: 0}
+    anchoredOffsetTo: {x: 0, y: 0}
     easing: 10
     blocksInputDuringMotion: 0
   - id: result_rank_reward_sequence
@@ -131,6 +261,8 @@ MonoBehaviour:
     fadeTo: 1
     scaleFrom: 0.96
     scaleTo: 1
+    anchoredOffsetFrom: {x: 0, y: 0}
+    anchoredOffsetTo: {x: 0, y: 0}
     easing: 10
     blocksInputDuringMotion: 1
   - id: result_fail_fast_retry
@@ -141,5 +273,7 @@ MonoBehaviour:
     fadeTo: 1
     scaleFrom: 0.98
     scaleTo: 1
+    anchoredOffsetFrom: {x: 0, y: 0}
+    anchoredOffsetTo: {x: 0, y: 0}
     easing: 10
     blocksInputDuringMotion: 1

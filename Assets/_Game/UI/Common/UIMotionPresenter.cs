@@ -17,6 +17,9 @@ namespace DimensionBrawl.UI
         private bool cachedCanvasGroupState;
         private bool cachedInteractable;
         private bool cachedBlocksRaycasts;
+        private Vector2 motionBaseAnchoredPosition;
+        private bool hasMotionBaseAnchoredPosition;
+        private string preparedMotionId;
 
         private void Reset()
         {
@@ -61,6 +64,21 @@ namespace DimensionBrawl.UI
                 RestoreCanvasGroupState();
             }
 
+            if (!string.Equals(preparedMotionId, motionId, System.StringComparison.Ordinal))
+            {
+                ClearPreparedMotion();
+            }
+
+            if (!isActiveAndEnabled)
+            {
+                RestoreCanvasGroupState();
+                PrepareMotionBase(motionId);
+                Apply(motion.FadeTo, motion.ScaleTo, motion.AnchoredOffsetTo);
+                ClearPreparedMotion();
+                motionRoutine = null;
+                return;
+            }
+
             motionRoutine = StartCoroutine(PlayRoutine(motion));
         }
 
@@ -78,7 +96,13 @@ namespace DimensionBrawl.UI
             }
 
             RestoreCanvasGroupState();
-            Apply(motion.FadeFrom, motion.ScaleFrom);
+            if (!string.Equals(preparedMotionId, motionId, System.StringComparison.Ordinal))
+            {
+                ClearPreparedMotion();
+            }
+
+            PrepareMotionBase(motionId);
+            Apply(motion.FadeFrom, motion.ScaleFrom, motion.AnchoredOffsetFrom);
         }
 
         public void ApplyEndState(string motionId)
@@ -89,11 +113,21 @@ namespace DimensionBrawl.UI
             }
 
             RestoreCanvasGroupState();
-            Apply(motion.FadeTo, motion.ScaleTo);
+            if (!string.Equals(preparedMotionId, motionId, System.StringComparison.Ordinal))
+            {
+                ClearPreparedMotion();
+            }
+
+            PrepareMotionBase(motionId);
+            Apply(motion.FadeTo, motion.ScaleTo, motion.AnchoredOffsetTo);
+            ClearPreparedMotion();
         }
 
         private IEnumerator PlayRoutine(UIMotionCatalog.MotionEntry motion)
         {
+            PrepareMotionBase(motion.Id);
+            Apply(motion.FadeFrom, motion.ScaleFrom, motion.AnchoredOffsetFrom);
+
             if (motion.DelaySeconds > 0f)
             {
                 yield return WaitSeconds(motion.DelaySeconds);
@@ -108,8 +142,9 @@ namespace DimensionBrawl.UI
             float duration = Mathf.Max(0f, motion.DurationSeconds);
             if (duration <= 0f)
             {
-                Apply(motion.FadeTo, motion.ScaleTo);
+                Apply(motion.FadeTo, motion.ScaleTo, motion.AnchoredOffsetTo);
                 RestoreCanvasGroupState();
+                ClearPreparedMotion();
                 motionRoutine = null;
                 yield break;
             }
@@ -120,12 +155,14 @@ namespace DimensionBrawl.UI
                 float eased = Ease(t, motion.Easing);
                 float fade = Mathf.LerpUnclamped(motion.FadeFrom, motion.FadeTo, eased);
                 float scale = Mathf.LerpUnclamped(motion.ScaleFrom, motion.ScaleTo, eased);
-                Apply(fade, scale);
+                Vector2 offset = Vector2.LerpUnclamped(motion.AnchoredOffsetFrom, motion.AnchoredOffsetTo, eased);
+                Apply(fade, scale, offset);
                 yield return null;
             }
 
-            Apply(motion.FadeTo, motion.ScaleTo);
+            Apply(motion.FadeTo, motion.ScaleTo, motion.AnchoredOffsetTo);
             RestoreCanvasGroupState();
+            ClearPreparedMotion();
             motionRoutine = null;
         }
 
@@ -140,7 +177,7 @@ namespace DimensionBrawl.UI
             yield return new WaitForSeconds(seconds);
         }
 
-        private void Apply(float alpha, float scale)
+        private void Apply(float alpha, float scale, Vector2 anchoredOffset)
         {
             if (canvasGroup != null)
             {
@@ -150,6 +187,7 @@ namespace DimensionBrawl.UI
             if (targetRect != null)
             {
                 targetRect.localScale = new Vector3(scale, scale, 1f);
+                targetRect.anchoredPosition = motionBaseAnchoredPosition + anchoredOffset;
             }
         }
 
@@ -186,6 +224,23 @@ namespace DimensionBrawl.UI
             canvasGroup.interactable = cachedInteractable;
             canvasGroup.blocksRaycasts = cachedBlocksRaycasts;
             cachedCanvasGroupState = false;
+        }
+
+        private void PrepareMotionBase(string motionId)
+        {
+            if (targetRect != null && !hasMotionBaseAnchoredPosition)
+            {
+                motionBaseAnchoredPosition = targetRect.anchoredPosition;
+                hasMotionBaseAnchoredPosition = true;
+            }
+
+            preparedMotionId = motionId;
+        }
+
+        private void ClearPreparedMotion()
+        {
+            hasMotionBaseAnchoredPosition = false;
+            preparedMotionId = null;
         }
 
         private float DeltaTime => useUnscaledTime ? Time.unscaledDeltaTime : Time.deltaTime;

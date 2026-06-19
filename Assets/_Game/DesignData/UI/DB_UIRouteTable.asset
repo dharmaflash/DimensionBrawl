@@ -30,7 +30,7 @@ MonoBehaviour:
   - routeId: 30
     sceneName: UI_StageSelectTest
     scenePath: Assets/_Game/Scenes/UI/UI_StageSelectTest.unity
-    transitionId: SceneFadeShort
+    transitionId: lobby_to_stage_select_bridge
     loadingCardId:
     useAsyncLoading: 0
     minimumLoadingSeconds: 0

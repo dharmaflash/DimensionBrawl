@@ -35,6 +35,8 @@ namespace DimensionBrawl.UI
             [SerializeField] private float fadeTo;
             [SerializeField] private float scaleFrom;
             [SerializeField] private float scaleTo;
+            [SerializeField] private Vector2 anchoredOffsetFrom;
+            [SerializeField] private Vector2 anchoredOffsetTo;
             [SerializeField] private UIMotionEasing easing;
             [SerializeField] private bool blocksInputDuringMotion;
 
@@ -46,6 +48,8 @@ namespace DimensionBrawl.UI
             public float FadeTo => fadeTo;
             public float ScaleFrom => scaleFrom;
             public float ScaleTo => scaleTo;
+            public Vector2 AnchoredOffsetFrom => anchoredOffsetFrom;
+            public Vector2 AnchoredOffsetTo => anchoredOffsetTo;
             public UIMotionEasing Easing => easing;
             public bool BlocksInputDuringMotion => blocksInputDuringMotion;
         }

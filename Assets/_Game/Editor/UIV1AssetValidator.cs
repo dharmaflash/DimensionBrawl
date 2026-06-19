@@ -1259,6 +1259,8 @@ namespace DimensionBrawl.Editor
                 ValidateLoadingCardPresenters(path, prefab, loadingCardIds);
                 ValidateThemePresenters(path, prefab, themeColorKeys, themeTextStyleKeys);
                 ValidateMotionPresenters(path, prefab, motionIds);
+                ValidateMotionSequencePresenters(path, prefab, motionIds);
+                ValidateScrollRectMotionPresenters(path, prefab);
                 ValidateCuePresenters(path, prefab, cueIds);
                 ValidateLoginStartPromptPresenters(path, prefab);
             }
@@ -1775,6 +1777,56 @@ namespace DimensionBrawl.Editor
                 RequireObjectReference(serializedObject, "canvasGroup", $"{prefabPath} motion canvas group");
                 string defaultMotionId = serializedObject.FindProperty("defaultMotionId").stringValue;
                 RequireKnownKey(motionIds, defaultMotionId, $"{prefabPath}.UIMotionPresenter[{i}].defaultMotionId");
+            }
+        }
+
+        private static void ValidateMotionSequencePresenters(string prefabPath, GameObject prefab, HashSet<string> motionIds)
+        {
+            UIMotionSequencePresenter[] presenters = prefab.GetComponentsInChildren<UIMotionSequencePresenter>(true);
+            for (int i = 0; i < presenters.Length; i++)
+            {
+                SerializedObject serializedObject = new SerializedObject(presenters[i]);
+                SerializedProperty entries = serializedObject.FindProperty("entries");
+                if (entries == null || !entries.isArray || entries.arraySize == 0)
+                {
+                    throw new InvalidOperationException($"{prefabPath}.UIMotionSequencePresenter[{i}].entries must not be empty.");
+                }
+
+                for (int entryIndex = 0; entryIndex < entries.arraySize; entryIndex++)
+                {
+                    SerializedProperty entry = entries.GetArrayElementAtIndex(entryIndex);
+                    SerializedProperty motionPresenter = entry.FindPropertyRelative("motionPresenter");
+                    if (motionPresenter == null || motionPresenter.objectReferenceValue == null)
+                    {
+                        throw new InvalidOperationException($"{prefabPath}.UIMotionSequencePresenter[{i}].entries[{entryIndex}].motionPresenter must be assigned.");
+                    }
+
+                    string motionId = entry.FindPropertyRelative("motionId").stringValue;
+                    RequireKnownKey(motionIds, motionId, $"{prefabPath}.UIMotionSequencePresenter[{i}].entries[{entryIndex}].motionId");
+                }
+            }
+        }
+
+        private static void ValidateScrollRectMotionPresenters(string prefabPath, GameObject prefab)
+        {
+            UIScrollRectMotionPresenter[] presenters = prefab.GetComponentsInChildren<UIScrollRectMotionPresenter>(true);
+            for (int i = 0; i < presenters.Length; i++)
+            {
+                SerializedObject serializedObject = new SerializedObject(presenters[i]);
+                RequireObjectReference(serializedObject, "scrollRect", $"{prefabPath}.UIScrollRectMotionPresenter[{i}].scrollRect");
+                RequireObjectReference(serializedObject, "content", $"{prefabPath}.UIScrollRectMotionPresenter[{i}].content");
+                RequireObjectReference(serializedObject, "viewport", $"{prefabPath}.UIScrollRectMotionPresenter[{i}].viewport");
+
+                if (serializedObject.FindProperty("elasticity").floatValue < 0f)
+                {
+                    throw new InvalidOperationException($"{prefabPath}.UIScrollRectMotionPresenter[{i}].elasticity must not be negative.");
+                }
+
+                if (serializedObject.FindProperty("decelerationRate").floatValue <= 0f)
+                {
+                    throw new InvalidOperationException($"{prefabPath}.UIScrollRectMotionPresenter[{i}].decelerationRate must be positive.");
+                }
+
             }
         }
 

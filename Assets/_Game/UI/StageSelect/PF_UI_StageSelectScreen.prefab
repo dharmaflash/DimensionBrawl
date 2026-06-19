@@ -32,8 +32,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 3270446934943518692}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.10549451, y: 0.25581396}
-  m_AnchorMax: {x: 0.6769231, y: 0.54651165}
+  m_AnchorMin: {x: 0.13626373, y: 0.23353294}
+  m_AnchorMax: {x: 0.70769227, y: 0.5329341}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -241,6 +241,8 @@ GameObject:
   - component: {fileID: 2291602837693093674}
   - component: {fileID: 1139319573997517818}
   - component: {fileID: 5276411791902100123}
+  - component: {fileID: 192720377067967471}
+  - component: {fileID: 7179113970341377945}
   m_Layer: 0
   m_Name: BottomRightButton
   m_TagString: Untagged
@@ -302,6 +304,36 @@ MonoBehaviour:
     y: 0.0013888889
     width: 0.35429686
     height: 0.10763889
+--- !u!225 &192720377067967471
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 141757350041614305}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &7179113970341377945
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 141757350041614305}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c9bf0e5a75305843a4a0ed6553889a5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIMotionPresenter
+  catalog: {fileID: 11400000, guid: bee7e47247f59bc4d85c4002288c6345, type: 2}
+  targetRect: {fileID: 2291602837693093674}
+  canvasGroup: {fileID: 192720377067967471}
+  defaultMotionId: stage_bottom_nav_enter
+  playOnEnable: 0
+  useUnscaledTime: 1
 --- !u!1 &371273597462739050
 GameObject:
   m_ObjectHideFlags: 0
@@ -2600,6 +2632,8 @@ GameObject:
   - component: {fileID: 6327393251886657812}
   - component: {fileID: 5044342844137705948}
   - component: {fileID: 1885459919523929422}
+  - component: {fileID: 503550967993854616}
+  - component: {fileID: 7684069088716466838}
   m_Layer: 0
   m_Name: EP 03_SelectedChapterCard
   m_TagString: Untagged
@@ -2714,6 +2748,36 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!225 &503550967993854616
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2829058608478721475}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &7684069088716466838
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2829058608478721475}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c9bf0e5a75305843a4a0ed6553889a5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIMotionPresenter
+  catalog: {fileID: 11400000, guid: bee7e47247f59bc4d85c4002288c6345, type: 2}
+  targetRect: {fileID: 3270446934943518692}
+  canvasGroup: {fileID: 503550967993854616}
+  defaultMotionId: stage_card_enter
+  playOnEnable: 0
+  useUnscaledTime: 1
 --- !u!1 &2830219843522895503
 GameObject:
   m_ObjectHideFlags: 0
@@ -2883,6 +2947,8 @@ GameObject:
   - component: {fileID: 9174568796868989583}
   - component: {fileID: 2780980847111489906}
   - component: {fileID: 8388596482476227110}
+  - component: {fileID: 6874472200699064197}
+  - component: {fileID: 6210713934996820298}
   m_Layer: 0
   m_Name: CurrentChapterFrame
   m_TagString: Untagged
@@ -2944,6 +3010,36 @@ MonoBehaviour:
     y: 0.38055557
     width: 0.7480469
     height: 0.49791667
+--- !u!225 &6874472200699064197
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3185837525653693884}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &6210713934996820298
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3185837525653693884}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c9bf0e5a75305843a4a0ed6553889a5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIMotionPresenter
+  catalog: {fileID: 11400000, guid: bee7e47247f59bc4d85c4002288c6345, type: 2}
+  targetRect: {fileID: 9174568796868989583}
+  canvasGroup: {fileID: 6874472200699064197}
+  defaultMotionId: stage_feature_panel_enter
+  playOnEnable: 0
+  useUnscaledTime: 1
 --- !u!1 &3252865403094095707
 GameObject:
   m_ObjectHideFlags: 0
@@ -3257,6 +3353,8 @@ GameObject:
   - component: {fileID: 1859334729470694738}
   - component: {fileID: 5980706246186227841}
   - component: {fileID: 4116979656208887324}
+  - component: {fileID: 8288838632439658933}
+  - component: {fileID: 459670554146487684}
   m_Layer: 0
   m_Name: BottomCenterSelectedButton
   m_TagString: Untagged
@@ -3318,6 +3416,36 @@ MonoBehaviour:
     y: 0
     width: 0.3359375
     height: 0.17638889
+--- !u!225 &8288838632439658933
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3775783734795257095}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &459670554146487684
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3775783734795257095}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c9bf0e5a75305843a4a0ed6553889a5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIMotionPresenter
+  catalog: {fileID: 11400000, guid: bee7e47247f59bc4d85c4002288c6345, type: 2}
+  targetRect: {fileID: 1859334729470694738}
+  canvasGroup: {fileID: 8288838632439658933}
+  defaultMotionId: stage_bottom_nav_enter
+  playOnEnable: 0
+  useUnscaledTime: 1
 --- !u!1 &3850445002889118272
 GameObject:
   m_ObjectHideFlags: 0
@@ -3383,13 +3511,13 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Texture: {fileID: 2800000, guid: a81fd712ac4227842b7bc86e278aacb3, type: 3}
+  m_Texture: {fileID: 2800000, guid: 91194c9f0eee9724592dee5489c5b7db, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 0.16210938
-    y: 0.78125
-    width: 0.026171874
-    height: 0.048611112
+    x: 0.16054687
+    y: 0.77916664
+    width: 0.02890625
+    height: 0.05347222
 --- !u!1 &4094427899863400266
 GameObject:
   m_ObjectHideFlags: 0
@@ -3552,6 +3680,8 @@ GameObject:
   - component: {fileID: 8288080526993473356}
   - component: {fileID: 626813751971566365}
   - component: {fileID: 625300684893872302}
+  - component: {fileID: 3635122104442324733}
+  - component: {fileID: 5551764706980163125}
   m_Layer: 0
   m_Name: BottomLeftButton
   m_TagString: Untagged
@@ -3613,6 +3743,36 @@ MonoBehaviour:
     y: 0
     width: 0.32539064
     height: 0.10902778
+--- !u!225 &3635122104442324733
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4304966622444574979}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &5551764706980163125
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4304966622444574979}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c9bf0e5a75305843a4a0ed6553889a5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIMotionPresenter
+  catalog: {fileID: 11400000, guid: bee7e47247f59bc4d85c4002288c6345, type: 2}
+  targetRect: {fileID: 8288080526993473356}
+  canvasGroup: {fileID: 3635122104442324733}
+  defaultMotionId: stage_bottom_nav_enter
+  playOnEnable: 0
+  useUnscaledTime: 1
 --- !u!1 &4360034787885507132
 GameObject:
   m_ObjectHideFlags: 0
@@ -3997,6 +4157,9 @@ GameObject:
   m_Component:
   - component: {fileID: 3873087450966241537}
   - component: {fileID: 6540561901391395839}
+  - component: {fileID: 2762674613305741219}
+  - component: {fileID: 2574969547126146131}
+  - component: {fileID: 3368762760979914702}
   m_Layer: 0
   m_Name: StageScrollArea
   m_TagString: Untagged
@@ -4039,11 +4202,11 @@ MonoBehaviour:
   m_Content: {fileID: 2068631234831908665}
   m_Horizontal: 1
   m_Vertical: 0
-  m_MovementType: 2
-  m_Elasticity: 0.1
-  m_Inertia: 0
-  m_DecelerationRate: 0.135
-  m_ScrollSensitivity: 24
+  m_MovementType: 1
+  m_Elasticity: 0.14
+  m_Inertia: 1
+  m_DecelerationRate: 0.18
+  m_ScrollSensitivity: 32
   m_Viewport: {fileID: 8665546445405160120}
   m_HorizontalScrollbar: {fileID: 0}
   m_VerticalScrollbar: {fileID: 0}
@@ -4054,6 +4217,61 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!225 &2762674613305741219
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4825399010743412986}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &2574969547126146131
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4825399010743412986}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c9bf0e5a75305843a4a0ed6553889a5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIMotionPresenter
+  catalog: {fileID: 11400000, guid: bee7e47247f59bc4d85c4002288c6345, type: 2}
+  targetRect: {fileID: 3873087450966241537}
+  canvasGroup: {fileID: 2762674613305741219}
+  defaultMotionId: stage_stage_grid_enter
+  playOnEnable: 0
+  useUnscaledTime: 1
+--- !u!114 &3368762760979914702
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4825399010743412986}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a9e7c13eee12b6e439db05143eb8a44a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIScrollRectMotionPresenter
+  scrollRect: {fileID: 6540561901391395839}
+  content: {fileID: 2068631234831908665}
+  viewport: {fileID: 8665546445405160120}
+  configurePhysics: 1
+  useUnscaledTime: 1
+  elasticity: 0.14
+  decelerationRate: 0.18
+  scrollSensitivity: 32
+  snapOnEndDrag: 0
+  viewportFocus: 0.5
+  focusDurationSeconds: 0.3
+  snapDelaySeconds: 0.08
+  snapVelocityThreshold: 80
 --- !u!1 &4851571846851102680
 GameObject:
   m_ObjectHideFlags: 0
@@ -4138,6 +4356,8 @@ GameObject:
   - component: {fileID: 7766190881966643021}
   - component: {fileID: 1259543771040109259}
   - component: {fileID: 4078509083503344518}
+  - component: {fileID: 6972125628943752854}
+  - component: {fileID: 2071924768124601289}
   m_Layer: 0
   m_Name: 03-4_StageCard
   m_TagString: Untagged
@@ -4256,6 +4476,36 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!225 &6972125628943752854
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4944734815178110237}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &2071924768124601289
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4944734815178110237}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c9bf0e5a75305843a4a0ed6553889a5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIMotionPresenter
+  catalog: {fileID: 11400000, guid: bee7e47247f59bc4d85c4002288c6345, type: 2}
+  targetRect: {fileID: 7306992950497872492}
+  canvasGroup: {fileID: 6972125628943752854}
+  defaultMotionId: stage_card_enter
+  playOnEnable: 0
+  useUnscaledTime: 1
 --- !u!1 &4945119442541050965
 GameObject:
   m_ObjectHideFlags: 0
@@ -4321,13 +4571,13 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Texture: {fileID: 2800000, guid: 91194c9f0eee9724592dee5489c5b7db, type: 3}
+  m_Texture: {fileID: 2800000, guid: a81fd712ac4227842b7bc86e278aacb3, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 0.16054687
-    y: 0.77916664
-    width: 0.02890625
-    height: 0.05347222
+    x: 0.16210938
+    y: 0.78125
+    width: 0.026171874
+    height: 0.048611112
 --- !u!1 &4959930324430112553
 GameObject:
   m_ObjectHideFlags: 0
@@ -4412,6 +4662,8 @@ GameObject:
   - component: {fileID: 6293998360350181529}
   - component: {fileID: 8518005517523402123}
   - component: {fileID: 6571969519223774218}
+  - component: {fileID: 1326719550232065582}
+  - component: {fileID: 2708429380164480304}
   m_Layer: 0
   m_Name: EP 02_ChapterCard
   m_TagString: Untagged
@@ -4525,6 +4777,36 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!225 &1326719550232065582
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4962131398498145829}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &2708429380164480304
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4962131398498145829}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c9bf0e5a75305843a4a0ed6553889a5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIMotionPresenter
+  catalog: {fileID: 11400000, guid: bee7e47247f59bc4d85c4002288c6345, type: 2}
+  targetRect: {fileID: 8087463488196765139}
+  canvasGroup: {fileID: 1326719550232065582}
+  defaultMotionId: stage_card_enter
+  playOnEnable: 0
+  useUnscaledTime: 1
 --- !u!1 &5045808788731227821
 GameObject:
   m_ObjectHideFlags: 0
@@ -4715,8 +4997,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 3270446934943518692}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.7626374, y: 0.13953489}
-  m_AnchorMax: {x: 0.94285715, y: 0.3488372}
+  m_AnchorMin: {x: 0.7142857, y: 0.11377245}
+  m_AnchorMax: {x: 0.8945055, y: 0.32934132}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -4899,13 +5181,13 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Texture: {fileID: 2800000, guid: a81fd712ac4227842b7bc86e278aacb3, type: 3}
+  m_Texture: {fileID: 2800000, guid: 91194c9f0eee9724592dee5489c5b7db, type: 3}
   m_UVRect:
     serializedVersion: 2
-    x: 0.16210938
-    y: 0.78125
-    width: 0.026171874
-    height: 0.048611112
+    x: 0.16054687
+    y: 0.77916664
+    width: 0.02890625
+    height: 0.05347222
 --- !u!1 &5395647417919434108
 GameObject:
   m_ObjectHideFlags: 0
@@ -4988,6 +5270,9 @@ GameObject:
   m_Component:
   - component: {fileID: 480529000839236463}
   - component: {fileID: 6900505732265787207}
+  - component: {fileID: 6678514475453008501}
+  - component: {fileID: 6539924398208580391}
+  - component: {fileID: 5440831399748620385}
   m_Layer: 0
   m_Name: ChapterScrollArea
   m_TagString: Untagged
@@ -5030,11 +5315,11 @@ MonoBehaviour:
   m_Content: {fileID: 1277742899559277292}
   m_Horizontal: 0
   m_Vertical: 1
-  m_MovementType: 2
-  m_Elasticity: 0.1
-  m_Inertia: 0
-  m_DecelerationRate: 0.135
-  m_ScrollSensitivity: 24
+  m_MovementType: 1
+  m_Elasticity: 0.14
+  m_Inertia: 1
+  m_DecelerationRate: 0.18
+  m_ScrollSensitivity: 32
   m_Viewport: {fileID: 2414148647143750763}
   m_HorizontalScrollbar: {fileID: 0}
   m_VerticalScrollbar: {fileID: 0}
@@ -5045,6 +5330,61 @@ MonoBehaviour:
   m_OnValueChanged:
     m_PersistentCalls:
       m_Calls: []
+--- !u!225 &6678514475453008501
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5576502415104576756}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &6539924398208580391
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5576502415104576756}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c9bf0e5a75305843a4a0ed6553889a5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIMotionPresenter
+  catalog: {fileID: 11400000, guid: bee7e47247f59bc4d85c4002288c6345, type: 2}
+  targetRect: {fileID: 480529000839236463}
+  canvasGroup: {fileID: 6678514475453008501}
+  defaultMotionId: stage_chapter_list_enter
+  playOnEnable: 0
+  useUnscaledTime: 1
+--- !u!114 &5440831399748620385
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5576502415104576756}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a9e7c13eee12b6e439db05143eb8a44a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIScrollRectMotionPresenter
+  scrollRect: {fileID: 6900505732265787207}
+  content: {fileID: 1277742899559277292}
+  viewport: {fileID: 2414148647143750763}
+  configurePhysics: 1
+  useUnscaledTime: 1
+  elasticity: 0.14
+  decelerationRate: 0.18
+  scrollSensitivity: 32
+  snapOnEndDrag: 0
+  viewportFocus: 0.5
+  focusDurationSeconds: 0.28
+  snapDelaySeconds: 0.08
+  snapVelocityThreshold: 80
 --- !u!1 &5632904457906061760
 GameObject:
   m_ObjectHideFlags: 0
@@ -5278,6 +5618,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2881994713969647259}
   - component: {fileID: 7033411682440871048}
+  - component: {fileID: 1054313288759108756}
   m_Layer: 0
   m_Name: StageSelectArtRoot
   m_TagString: Untagged
@@ -5344,6 +5685,24 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
+--- !u!114 &1054313288759108756
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6043296397674846920}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c9bf0e5a75305843a4a0ed6553889a5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIMotionPresenter
+  catalog: {fileID: 11400000, guid: bee7e47247f59bc4d85c4002288c6345, type: 2}
+  targetRect: {fileID: 2881994713969647259}
+  canvasGroup: {fileID: 7033411682440871048}
+  defaultMotionId: stage_screen_enter
+  playOnEnable: 0
+  useUnscaledTime: 1
 --- !u!1 &6129843620681999956
 GameObject:
   m_ObjectHideFlags: 0
@@ -6005,7 +6364,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: "\uC7A0\uAE40"
+  m_Text:
 --- !u!1 &6900431079746484653
 GameObject:
   m_ObjectHideFlags: 0
@@ -6018,6 +6377,8 @@ GameObject:
   - component: {fileID: 7780894555098841436}
   - component: {fileID: 9011064838538272451}
   - component: {fileID: 7786176800689981616}
+  - component: {fileID: 1931799454225681587}
+  - component: {fileID: 1449484248979067250}
   m_Layer: 0
   m_Name: 03-1_StageCard
   m_TagString: Untagged
@@ -6135,6 +6496,36 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!225 &1931799454225681587
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6900431079746484653}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &1449484248979067250
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6900431079746484653}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c9bf0e5a75305843a4a0ed6553889a5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIMotionPresenter
+  catalog: {fileID: 11400000, guid: bee7e47247f59bc4d85c4002288c6345, type: 2}
+  targetRect: {fileID: 5091772152834808137}
+  canvasGroup: {fileID: 1931799454225681587}
+  defaultMotionId: stage_card_enter
+  playOnEnable: 0
+  useUnscaledTime: 1
 --- !u!1 &6918929253220527788
 GameObject:
   m_ObjectHideFlags: 0
@@ -6393,8 +6784,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 3270446934943518692}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.10549451, y: 0.6744186}
-  m_AnchorMax: {x: 0.42417583, y: 0.89534885}
+  m_AnchorMin: {x: 0.13626373, y: 0.66467065}
+  m_AnchorMax: {x: 0.45494506, y: 0.89221555}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -6598,6 +6989,7 @@ GameObject:
   - component: {fileID: 7007097248679840577}
   - component: {fileID: 2984583990236368029}
   - component: {fileID: 7544699301051515754}
+  - component: {fileID: 6569315740052381265}
   m_Layer: 0
   m_Name: PF_UI_StageSelectScreen
   m_TagString: Untagged
@@ -6682,6 +7074,19 @@ MonoBehaviour:
   backRequested:
     m_PersistentCalls:
       m_Calls: []
+  stageScrollMotion: {fileID: 3368762760979914702}
+  chapterScrollMotion: {fileID: 5440831399748620385}
+  stageFocusEntries:
+  - stageId: story_v1_training_route
+    stageTarget: {fileID: 2396196069236968625}
+    chapterTarget: {fileID: 3270446934943518692}
+  - stageId: story_v1_retry_route
+    stageTarget: {fileID: 3429909270802771737}
+    chapterTarget: {fileID: 3270446934943518692}
+  focusSelectedStageOnEnable: 1
+  focusDelaySeconds: 0.02
+  initialFocusDurationSeconds: 0.18
+  selectedFocusDurationSeconds: 0.3
 --- !u!114 &2984583990236368029
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6728,6 +7133,78 @@ MonoBehaviour:
   disableWhileRouting: 1
   routingAlpha: 0.68
   idleAlpha: 1
+--- !u!114 &6569315740052381265
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7637927707150198054}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 217576ca217d02a45944626f9cd8bacc, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIMotionSequencePresenter
+  entries:
+  - motionPresenter: {fileID: 1054313288759108756}
+    motionId: stage_screen_enter
+    startDelaySeconds: 0
+  - motionPresenter: {fileID: 1172713910543472334}
+    motionId: stage_back_button_enter
+    startDelaySeconds: 0.04
+  - motionPresenter: {fileID: 6539924398208580391}
+    motionId: stage_chapter_list_enter
+    startDelaySeconds: 0.08
+  - motionPresenter: {fileID: 8953613910890742789}
+    motionId: stage_card_enter
+    startDelaySeconds: 0.12
+  - motionPresenter: {fileID: 2708429380164480304}
+    motionId: stage_card_enter
+    startDelaySeconds: 0.15
+  - motionPresenter: {fileID: 7684069088716466838}
+    motionId: stage_card_enter
+    startDelaySeconds: 0.18
+  - motionPresenter: {fileID: 7070116373228663485}
+    motionId: stage_card_enter
+    startDelaySeconds: 0.21
+  - motionPresenter: {fileID: 4417220228566439617}
+    motionId: stage_feature_panel_enter
+    startDelaySeconds: 0.12
+  - motionPresenter: {fileID: 6210713934996820298}
+    motionId: stage_feature_panel_enter
+    startDelaySeconds: 0.16
+  - motionPresenter: {fileID: 2574969547126146131}
+    motionId: stage_stage_grid_enter
+    startDelaySeconds: 0.22
+  - motionPresenter: {fileID: 1449484248979067250}
+    motionId: stage_card_enter
+    startDelaySeconds: 0.27
+  - motionPresenter: {fileID: 4067503297226574479}
+    motionId: stage_card_enter
+    startDelaySeconds: 0.31
+  - motionPresenter: {fileID: 3935865654493399899}
+    motionId: stage_card_enter
+    startDelaySeconds: 0.35
+  - motionPresenter: {fileID: 2071924768124601289}
+    motionId: stage_card_enter
+    startDelaySeconds: 0.39
+  - motionPresenter: {fileID: 5551764706980163125}
+    motionId: stage_bottom_nav_enter
+    startDelaySeconds: 0.42
+  - motionPresenter: {fileID: 459670554146487684}
+    motionId: stage_bottom_nav_enter
+    startDelaySeconds: 0.46
+  - motionPresenter: {fileID: 7179113970341377945}
+    motionId: stage_bottom_nav_enter
+    startDelaySeconds: 0.5
+  - motionPresenter: {fileID: 4810307073711647327}
+    motionId: stage_start_button_enter
+    startDelaySeconds: 0.48
+  initialDelaySeconds: 0.06
+  playOnEnable: 1
+  replayOnEnable: 0
+  snapToEndOnDisable: 1
+  useUnscaledTime: 1
 --- !u!1 &7773973081120460165
 GameObject:
   m_ObjectHideFlags: 0
@@ -6739,6 +7216,8 @@ GameObject:
   - component: {fileID: 8124372167235976580}
   - component: {fileID: 409204856738833139}
   - component: {fileID: 2481556355506314252}
+  - component: {fileID: 3412470853646835824}
+  - component: {fileID: 4417220228566439617}
   m_Layer: 0
   m_Name: SelectedPanel
   m_TagString: Untagged
@@ -6800,6 +7279,36 @@ MonoBehaviour:
     y: 0.7375
     width: 0.17773438
     height: 0.119444445
+--- !u!225 &3412470853646835824
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7773973081120460165}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &4417220228566439617
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7773973081120460165}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c9bf0e5a75305843a4a0ed6553889a5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIMotionPresenter
+  catalog: {fileID: 11400000, guid: bee7e47247f59bc4d85c4002288c6345, type: 2}
+  targetRect: {fileID: 8124372167235976580}
+  canvasGroup: {fileID: 3412470853646835824}
+  defaultMotionId: stage_feature_panel_enter
+  playOnEnable: 0
+  useUnscaledTime: 1
 --- !u!1 &7793162834058615141
 GameObject:
   m_ObjectHideFlags: 0
@@ -6812,6 +7321,8 @@ GameObject:
   - component: {fileID: 8810223196212035917}
   - component: {fileID: 2463270237432457732}
   - component: {fileID: 356158275489175466}
+  - component: {fileID: 4569318423948845727}
+  - component: {fileID: 8953613910890742789}
   m_Layer: 0
   m_Name: EP 01_ChapterCard
   m_TagString: Untagged
@@ -6925,6 +7436,36 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!225 &4569318423948845727
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7793162834058615141}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &8953613910890742789
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7793162834058615141}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c9bf0e5a75305843a4a0ed6553889a5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIMotionPresenter
+  catalog: {fileID: 11400000, guid: bee7e47247f59bc4d85c4002288c6345, type: 2}
+  targetRect: {fileID: 722059484917896104}
+  canvasGroup: {fileID: 4569318423948845727}
+  defaultMotionId: stage_card_enter
+  playOnEnable: 0
+  useUnscaledTime: 1
 --- !u!1 &7809728734756088689
 GameObject:
   m_ObjectHideFlags: 0
@@ -7081,6 +7622,8 @@ GameObject:
   - component: {fileID: 2280660415828762213}
   - component: {fileID: 8564706808293291731}
   - component: {fileID: 5402349769114290417}
+  - component: {fileID: 4957848563821708030}
+  - component: {fileID: 4067503297226574479}
   m_Layer: 0
   m_Name: 03-2_StageCard
   m_TagString: Untagged
@@ -7198,6 +7741,36 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!225 &4957848563821708030
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7906094331218113131}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &4067503297226574479
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7906094331218113131}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c9bf0e5a75305843a4a0ed6553889a5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIMotionPresenter
+  catalog: {fileID: 11400000, guid: bee7e47247f59bc4d85c4002288c6345, type: 2}
+  targetRect: {fileID: 3429909270802771737}
+  canvasGroup: {fileID: 4957848563821708030}
+  defaultMotionId: stage_card_enter
+  playOnEnable: 0
+  useUnscaledTime: 1
 --- !u!1 &7955129320550482022
 GameObject:
   m_ObjectHideFlags: 0
@@ -7361,6 +7934,8 @@ GameObject:
   - component: {fileID: 932823614383100309}
   - component: {fileID: 3133883494891888821}
   - component: {fileID: 6656942050546679206}
+  - component: {fileID: 7747324283858532383}
+  - component: {fileID: 3935865654493399899}
   m_Layer: 0
   m_Name: 03-3_StageCard
   m_TagString: Untagged
@@ -7479,6 +8054,36 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!225 &7747324283858532383
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8043303713735482274}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &3935865654493399899
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8043303713735482274}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c9bf0e5a75305843a4a0ed6553889a5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIMotionPresenter
+  catalog: {fileID: 11400000, guid: bee7e47247f59bc4d85c4002288c6345, type: 2}
+  targetRect: {fileID: 2396196069236968625}
+  canvasGroup: {fileID: 7747324283858532383}
+  defaultMotionId: stage_card_enter
+  playOnEnable: 0
+  useUnscaledTime: 1
 --- !u!1 &8060169900947918732
 GameObject:
   m_ObjectHideFlags: 0
@@ -7714,6 +8319,8 @@ GameObject:
   - component: {fileID: 4214470959261614385}
   - component: {fileID: 8663225608205131853}
   - component: {fileID: 2808756141670849971}
+  - component: {fileID: 699908848600059845}
+  - component: {fileID: 7070116373228663485}
   m_Layer: 0
   m_Name: EP 04_ChapterCard
   m_TagString: Untagged
@@ -7828,6 +8435,36 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!225 &699908848600059845
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8254205541948180500}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &7070116373228663485
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8254205541948180500}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c9bf0e5a75305843a4a0ed6553889a5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIMotionPresenter
+  catalog: {fileID: 11400000, guid: bee7e47247f59bc4d85c4002288c6345, type: 2}
+  targetRect: {fileID: 715361462172093331}
+  canvasGroup: {fileID: 699908848600059845}
+  defaultMotionId: stage_card_enter
+  playOnEnable: 0
+  useUnscaledTime: 1
 --- !u!1 &8318711728522014268
 GameObject:
   m_ObjectHideFlags: 0
@@ -7919,6 +8556,8 @@ GameObject:
   - component: {fileID: 4457424228639161819}
   - component: {fileID: 1790489837072216168}
   - component: {fileID: 6487016314510856969}
+  - component: {fileID: 3386127492514767963}
+  - component: {fileID: 1172713910543472334}
   m_Layer: 0
   m_Name: BackButton
   m_TagString: Untagged
@@ -8030,6 +8669,36 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!225 &3386127492514767963
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8329509668693927687}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &1172713910543472334
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8329509668693927687}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c9bf0e5a75305843a4a0ed6553889a5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIMotionPresenter
+  catalog: {fileID: 11400000, guid: bee7e47247f59bc4d85c4002288c6345, type: 2}
+  targetRect: {fileID: 6372096379859601863}
+  canvasGroup: {fileID: 3386127492514767963}
+  defaultMotionId: stage_back_button_enter
+  playOnEnable: 0
+  useUnscaledTime: 1
 --- !u!1 &8437762059070308772
 GameObject:
   m_ObjectHideFlags: 0
@@ -8297,6 +8966,8 @@ GameObject:
   - component: {fileID: 2325532563768729153}
   - component: {fileID: 565571561412497355}
   - component: {fileID: 2474842665586540950}
+  - component: {fileID: 7948192744449189499}
+  - component: {fileID: 4810307073711647327}
   m_Layer: 0
   m_Name: StartButton
   m_TagString: Untagged
@@ -8407,6 +9078,36 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
+--- !u!225 &7948192744449189499
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8899459420520484030}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
+--- !u!114 &4810307073711647327
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8899459420520484030}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7c9bf0e5a75305843a4a0ed6553889a5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIMotionPresenter
+  catalog: {fileID: 11400000, guid: bee7e47247f59bc4d85c4002288c6345, type: 2}
+  targetRect: {fileID: 3283262477075153476}
+  canvasGroup: {fileID: 7948192744449189499}
+  defaultMotionId: stage_start_button_enter
+  playOnEnable: 0
+  useUnscaledTime: 1
 --- !u!1 &8927940316296693347
 GameObject:
   m_ObjectHideFlags: 0
