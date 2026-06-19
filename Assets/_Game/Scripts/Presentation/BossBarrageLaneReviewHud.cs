@@ -6,6 +6,91 @@ using UnityEngine;
 
 namespace DimensionBrawl.Presentation
 {
+    public readonly struct CombatResourceReadout
+    {
+        public CombatResourceReadout(
+            string label,
+            string valueText,
+            string stateText,
+            float fill01,
+            Color fillColor,
+            bool isReady)
+        {
+            Label = string.IsNullOrWhiteSpace(label) ? "-" : label;
+            ValueText = string.IsNullOrWhiteSpace(valueText) ? "-" : valueText;
+            StateText = string.IsNullOrWhiteSpace(stateText) ? "-" : stateText;
+            Fill01 = Mathf.Clamp01(fill01);
+            FillColor = fillColor;
+            IsReady = isReady;
+        }
+
+        public string Label { get; }
+        public string ValueText { get; }
+        public string StateText { get; }
+        public float Fill01 { get; }
+        public Color FillColor { get; }
+        public bool IsReady { get; }
+        public string Line => $"{Label} {ValueText} {StateText}";
+
+        public static CombatResourceReadout Missing(string label)
+        {
+            return new CombatResourceReadout(label, "-", "missing", 0f, new Color(0.28f, 0.28f, 0.28f, 1f), false);
+        }
+
+        public static CombatResourceReadout FromHealth(string label, CombatHealth health, Color fillColor)
+        {
+            if (health == null)
+            {
+                return Missing(label);
+            }
+
+            string state = health.IsAlive ? "alive" : "down";
+            return new CombatResourceReadout(
+                label,
+                $"{health.CurrentHealth:0}/{health.MaxHealth:0}",
+                state,
+                health.HealthRatio,
+                fillColor,
+                false);
+        }
+
+        public static CombatResourceReadout FromEnergy(string label, SummonEnergyLadder energy)
+        {
+            if (energy == null)
+            {
+                return Missing(label);
+            }
+
+            string ready = energy.CanSpend ? $"READY LV{energy.AvailableTier}" : "charging";
+            string capped = energy.IsCapped ? " capped" : string.Empty;
+            return new CombatResourceReadout(
+                label,
+                $"LV{energy.ChargingTier} {energy.CurrentTierFillRatio * 100f:0}%",
+                $"{ready}{capped}",
+                energy.CurrentTierFillRatio,
+                new Color(0.18f, 0.92f, 1f, 1f),
+                energy.CanSpend);
+        }
+
+        public static CombatResourceReadout FromBossCost(string label, BossPressureCostLadder cost)
+        {
+            if (cost == null)
+            {
+                return Missing(label);
+            }
+
+            string ready = cost.CanSpend ? $"READY LV{cost.AvailableTier}" : "charging";
+            string capped = cost.IsCapped ? " capped" : string.Empty;
+            return new CombatResourceReadout(
+                label,
+                $"LV{cost.ChargingTier} {cost.CurrentTierFillRatio * 100f:0}%",
+                $"{ready}{capped}",
+                cost.CurrentTierFillRatio,
+                new Color(1f, 0.58f, 0.18f, 1f),
+                cost.CanSpend);
+        }
+    }
+
     // Review-only readout for the boss barrage lane slice; production HUD should be authored separately.
     public sealed class BossBarrageLaneReviewHud : MonoBehaviour
     {
@@ -38,9 +123,21 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0f)] private float margin = 18f;
         [SerializeField] private bool showCenterReticle;
 
+        [Header("Resource Bars")]
+        [SerializeField] private bool showResourceBars = true;
+        [SerializeField, Min(8f)] private float resourceBarHeight = 22f;
+        [SerializeField, Min(0f)] private float resourceBarGap = 5f;
+        [SerializeField] private Color resourceBarBackColor = new Color(0.02f, 0.025f, 0.035f, 0.82f);
+        [SerializeField] private Color playerHealthColor = new Color(0.25f, 1f, 0.46f, 1f);
+        [SerializeField] private Color bossHealthColor = new Color(1f, 0.22f, 0.32f, 1f);
+        [SerializeField] private Color threatHealthColor = new Color(1f, 0.76f, 0.24f, 1f);
+        [SerializeField] private Color resourceTextColor = Color.white;
+        [SerializeField] private Color resourceReadyTextColor = new Color(0.84f, 1f, 0.42f, 1f);
+
         private GUIStyle labelStyle;
         private GUIStyle titleStyle;
         private GUIStyle boxStyle;
+        private GUIStyle resourceBarStyle;
 
         public void Configure(
             CombatHealth newPlayerHealth,
@@ -100,6 +197,7 @@ namespace DimensionBrawl.Presentation
             float areaHeight = Mathf.Max(height, (Screen.height / uiScale) - (margin * 2f));
             GUILayout.BeginArea(new Rect(margin, margin, width, areaHeight), boxStyle);
             GUILayout.Label("Boss Barrage Lane Review", titleStyle);
+            DrawCombatResourceBars();
             GUILayout.Label(ResolveHealthLine(), labelStyle);
             GUILayout.Label(ResolvePhaseLine(), labelStyle);
             GUILayout.Label(ResolveEnergyLine(), labelStyle);
@@ -127,15 +225,9 @@ namespace DimensionBrawl.Presentation
 
         private string ResolveHealthLine()
         {
-            string playerLine = playerHealth != null
-                ? $"HP {playerHealth.CurrentHealth:0}/{playerHealth.MaxHealth:0}"
-                : "HP -";
-            string threatLine = closeThreatHealth != null
-                ? $"Threat {closeThreatHealth.CurrentHealth:0}/{closeThreatHealth.MaxHealth:0}"
-                : "Threat -";
-            string bossLine = bossHealth != null
-                ? $"Boss {bossHealth.CurrentHealth:0}/{bossHealth.MaxHealth:0}"
-                : "Boss -";
+            string playerLine = CombatResourceReadout.FromHealth("HP", playerHealth, playerHealthColor).Line;
+            string threatLine = CombatResourceReadout.FromHealth("Threat", closeThreatHealth, threatHealthColor).Line;
+            string bossLine = CombatResourceReadout.FromHealth("Boss", bossHealth, bossHealthColor).Line;
             return $"{playerLine}   {threatLine}   {bossLine}";
         }
 
@@ -161,10 +253,7 @@ namespace DimensionBrawl.Presentation
                 return "EN -";
             }
 
-            string ready = energyLadder.CanSpend
-                ? $"READY LV{energyLadder.AvailableTier}"
-                : "not ready";
-            return $"EN next LV{energyLadder.ChargingTier} {energyLadder.CurrentTierFillRatio * 100f:0}%   {ready}";
+            return CombatResourceReadout.FromEnergy("EN next", energyLadder).Line;
         }
 
         private string ResolveRiskLine()
@@ -210,9 +299,8 @@ namespace DimensionBrawl.Presentation
                 return "Boss Cost -";
             }
 
-            string ready = bossPressureCostLadder.CanSpend
-                ? $"READY LV{bossPressureCostLadder.AvailableTier}"
-                : "not ready";
+            CombatResourceReadout costReadout =
+                CombatResourceReadout.FromBossCost("Boss Cost next", bossPressureCostLadder);
             string action = bossPressureActionDirector != null && bossPressureActionDirector.TotalActionCount > 0
                 ? $"{bossPressureActionDirector.LastActionKind}"
                 : "-";
@@ -223,8 +311,7 @@ namespace DimensionBrawl.Presentation
             string position = bossPressurePositionController != null
                 ? $" Pos {bossPressurePositionController.CurrentRisk01 * 100f:0}->{bossPressurePositionController.CurrentTargetRisk01 * 100f:0}%"
                 : string.Empty;
-            return $"Boss Cost next LV{bossPressureCostLadder.ChargingTier} "
-                + $"{bossPressureCostLadder.CurrentTierFillRatio * 100f:0}%   {ready}   "
+            return $"{costReadout.Line}   "
                 + $"Risk {bossPressureCostLadder.CurrentRiskBand} x{bossPressureCostLadder.CurrentGainMultiplier:0.00}{position}{hold}   "
                 + $"Last {action}/{pattern}";
         }
@@ -502,7 +589,7 @@ namespace DimensionBrawl.Presentation
 
         private void EnsureStyles()
         {
-            if (labelStyle != null && titleStyle != null && boxStyle != null)
+            if (labelStyle != null && titleStyle != null && boxStyle != null && resourceBarStyle != null)
             {
                 return;
             }
@@ -524,6 +611,54 @@ namespace DimensionBrawl.Presentation
                 padding = new RectOffset(18, 18, 16, 16),
                 normal = { textColor = Color.white }
             };
+            resourceBarStyle = new GUIStyle(GUI.skin.label)
+            {
+                alignment = TextAnchor.MiddleLeft,
+                fontSize = 16,
+                fontStyle = FontStyle.Bold,
+                padding = new RectOffset(8, 8, 0, 0),
+                normal = { textColor = resourceTextColor }
+            };
+        }
+
+        private void DrawCombatResourceBars()
+        {
+            if (!showResourceBars)
+            {
+                return;
+            }
+
+            DrawResourceBar(CombatResourceReadout.FromHealth("Player HP", playerHealth, playerHealthColor));
+            DrawResourceBar(CombatResourceReadout.FromEnergy("Player EN", energyLadder));
+            DrawResourceBar(CombatResourceReadout.FromHealth("Boss HP", bossHealth, bossHealthColor));
+            DrawResourceBar(CombatResourceReadout.FromBossCost("Boss Cost", bossPressureCostLadder));
+            if (closeThreatHealth != null && closeThreatHealth.IsAlive)
+            {
+                DrawResourceBar(CombatResourceReadout.FromHealth("Threat HP", closeThreatHealth, threatHealthColor));
+            }
+        }
+
+        private void DrawResourceBar(CombatResourceReadout readout)
+        {
+            Rect rect = GUILayoutUtility.GetRect(1f, resourceBarHeight, GUILayout.ExpandWidth(true));
+            Color previousColor = GUI.color;
+            GUI.color = resourceBarBackColor;
+            GUI.DrawTexture(rect, Texture2D.whiteTexture);
+
+            Rect fillRect = rect;
+            fillRect.width *= readout.Fill01;
+            GUI.color = readout.FillColor;
+            GUI.DrawTexture(fillRect, Texture2D.whiteTexture);
+
+            resourceBarStyle.normal.textColor = readout.IsReady ? resourceReadyTextColor : resourceTextColor;
+            GUI.color = Color.white;
+            GUI.Label(rect, readout.Line, resourceBarStyle);
+            GUI.color = previousColor;
+
+            if (resourceBarGap > 0f)
+            {
+                GUILayout.Space(resourceBarGap);
+            }
         }
 
         private static float ResolveUiScale()

@@ -115,6 +115,46 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void CombatResourceReadoutReportsHealthEnergyAndBossCostForHud()
+        {
+            GameObject playerObject = new GameObject("Player");
+            CombatHealth playerHealth = playerObject.AddComponent<CombatHealth>();
+            playerHealth.ConfigureTeam(DamageTeam.Player);
+            playerHealth.ConfigureMaxHealth(200f);
+            playerHealth.TryApplyDamage(new DamageInfo(null, DamageTeam.Enemy, 50f, Vector3.zero, Vector3.back, 0f));
+
+            CombatResourceReadout healthReadout =
+                CombatResourceReadout.FromHealth("Player HP", playerHealth, Color.green);
+            Assert.AreEqual("Player HP", healthReadout.Label);
+            Assert.AreEqual("150/200", healthReadout.ValueText);
+            Assert.AreEqual("alive", healthReadout.StateText);
+            Assert.AreEqual(0.75f, healthReadout.Fill01, 0.001f);
+            StringAssert.Contains("Player HP", healthReadout.Line);
+
+            SummonEnergyLadder energy = playerObject.AddComponent<SummonEnergyLadder>();
+            energy.GrantCurrentTierEnergy(100f);
+            CombatResourceReadout energyReadout = CombatResourceReadout.FromEnergy("Player EN", energy);
+            Assert.AreEqual("Player EN", energyReadout.Label);
+            Assert.AreEqual("LV2 0%", energyReadout.ValueText);
+            Assert.AreEqual("READY LV1", energyReadout.StateText);
+            Assert.AreEqual(0f, energyReadout.Fill01, 0.001f);
+            Assert.IsTrue(energyReadout.IsReady);
+
+            GameObject bossObject = new GameObject("Boss");
+            BossPressureCostLadder bossCost = bossObject.AddComponent<BossPressureCostLadder>();
+            bossCost.GrantCurrentTierCost(200f);
+            CombatResourceReadout costReadout = CombatResourceReadout.FromBossCost("Boss Cost", bossCost);
+            Assert.AreEqual("Boss Cost", costReadout.Label);
+            Assert.AreEqual("LV3 0%", costReadout.ValueText);
+            Assert.AreEqual("READY LV2", costReadout.StateText);
+            Assert.AreEqual(0f, costReadout.Fill01, 0.001f);
+            Assert.IsTrue(costReadout.IsReady);
+
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+        }
+
+        [Test]
         public void SummonFrontlineProxyReportsLifetimeAndDefeatExitReasons()
         {
             GameObject proxyObject = new GameObject("SummonProxy");
