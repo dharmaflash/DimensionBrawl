@@ -82,14 +82,23 @@ namespace DimensionBrawl.Combat
         [SerializeField] private bool holdForNextTierActionWhenGateAllows;
         [SerializeField] private bool actionsEnabled = true;
 
+        [Header("Player Summon Response")]
+        [SerializeField, Min(0f)] private float playerSummonResponseWindowSeconds = 4f;
+
         private float globalRecoveryTimer;
+        private float playerSummonResponseTimer;
         private float[] perSlotTimers = Array.Empty<float>();
         private int selectionCursor;
         private int totalActionCount;
+        private int totalPlayerSummonResponseCount;
         private int lastSpentTier;
+        private int lastObservedPlayerSummonTier;
+        private int lastPlayerSummonResponseTier;
         private BossPressureActionKind lastActionKind;
+        private BossPressureActionKind lastPlayerSummonResponseKind;
         private BossBarragePatternProfile lastQueuedPattern;
         private BossPressureActionSlot lastQueuedActionSlot;
+        private bool lastActionRespondedToPlayerSummon;
 
         public event Action<BossPressureActionDirector, BossPressureActionKind, BossBarragePatternProfile, int> ActionQueued;
 
@@ -107,6 +116,13 @@ namespace DimensionBrawl.Combat
         public float GlobalRecoveryRemainingSeconds => globalRecoveryTimer;
         public int ActionSlotCount => actionSlots != null ? actionSlots.Length : 0;
         public float CurrentPlayerForwardRisk01 => ResolvePlayerForwardRisk01();
+        public bool IsPlayerSummonResponseWindowActive => playerSummonResponseTimer > 0f;
+        public float PlayerSummonResponseRemainingSeconds => playerSummonResponseTimer;
+        public int LastObservedPlayerSummonTier => lastObservedPlayerSummonTier;
+        public bool LastActionRespondedToPlayerSummon => lastActionRespondedToPlayerSummon;
+        public int TotalPlayerSummonResponseCount => totalPlayerSummonResponseCount;
+        public BossPressureActionKind LastPlayerSummonResponseKind => lastPlayerSummonResponseKind;
+        public int LastPlayerSummonResponseTier => lastPlayerSummonResponseTier;
 
         private void Awake()
         {
@@ -137,6 +153,8 @@ namespace DimensionBrawl.Combat
 
                 actionSlots[i] = slot;
             }
+
+            playerSummonResponseWindowSeconds = Mathf.Max(0f, playerSummonResponseWindowSeconds);
         }
 
         public void ConfigureReferences(
@@ -191,6 +209,19 @@ namespace DimensionBrawl.Combat
             holdForNextTierActionWhenGateAllows = enabled;
         }
 
+        public void NotifyPlayerSummonFrontlineCreated(int summonTier)
+        {
+            if (playerSummonResponseWindowSeconds <= 0f)
+            {
+                return;
+            }
+
+            lastObservedPlayerSummonTier = Mathf.Clamp(summonTier, 0, 3);
+            playerSummonResponseTimer = Mathf.Max(
+                playerSummonResponseTimer,
+                playerSummonResponseWindowSeconds);
+        }
+
         public bool TryGetHeldNextTierAction(out BossPressureActionSlot slot, out int nextTier)
         {
             slot = default;
@@ -217,6 +248,7 @@ namespace DimensionBrawl.Combat
 
         public bool TryQueueBestAvailableAction()
         {
+            lastActionRespondedToPlayerSummon = false;
             if (!CanAttemptAction())
             {
                 return false;
@@ -235,6 +267,7 @@ namespace DimensionBrawl.Combat
             }
 
             BossPressureActionSlot slot = actionSlots[slotIndex];
+            bool respondsToPlayerSummon = IsPlayerSummonResponseWindowActive;
             if (!bossBarrageEmitter.CanQueuePriorityPattern(slot.Pattern))
             {
                 return false;
@@ -261,6 +294,15 @@ namespace DimensionBrawl.Combat
             lastActionKind = slot.ActionKind;
             lastQueuedPattern = slot.Pattern;
             lastQueuedActionSlot = slot;
+            lastActionRespondedToPlayerSummon = respondsToPlayerSummon;
+            if (respondsToPlayerSummon)
+            {
+                totalPlayerSummonResponseCount++;
+                lastPlayerSummonResponseKind = slot.ActionKind;
+                lastPlayerSummonResponseTier = lastSpentTier;
+                playerSummonResponseTimer = 0f;
+            }
+
             selectionCursor = (slotIndex + 1) % Mathf.Max(1, actionSlots.Length);
             globalRecoveryTimer = Mathf.Max(globalRecoveryTimer, globalRecoverySeconds);
             EnsurePerSlotTimers();
@@ -303,7 +345,7 @@ namespace DimensionBrawl.Combat
         private int ResolveBestSlotIndex(int availableTier)
         {
             int bestIndex = -1;
-            int bestTier = 0;
+            int bestScore = int.MinValue;
             int slotCount = actionSlots != null ? actionSlots.Length : 0;
             if (slotCount <= 0)
             {
@@ -320,17 +362,43 @@ namespace DimensionBrawl.Combat
                     || slot.MinimumTier > availableTier
                     || perSlotTimers[index] > 0f
                     || !CanRunActionKind(slot.ActionKind)
-                    || !IsPlayerRiskAllowed(slot)
-                    || slot.MinimumTier < bestTier)
+                    || !IsPlayerRiskAllowed(slot))
+                {
+                    continue;
+                }
+
+                int score = ResolveSlotSelectionScore(slot);
+                if (score < bestScore)
                 {
                     continue;
                 }
 
                 bestIndex = index;
-                bestTier = slot.MinimumTier;
+                bestScore = score;
             }
 
             return bestIndex;
+        }
+
+        private int ResolveSlotSelectionScore(BossPressureActionSlot slot)
+        {
+            int score = slot.MinimumTier * 100;
+            if (!IsPlayerSummonResponseWindowActive)
+            {
+                return score;
+            }
+
+            switch (slot.ActionKind)
+            {
+                case BossPressureActionKind.SummonPressure:
+                    return score + 160;
+                case BossPressureActionKind.SkillPattern:
+                    return score + 40;
+                case BossPressureActionKind.PunishOverextend:
+                    return score + 20;
+                default:
+                    return score;
+            }
         }
 
         private bool CanRunActionKind(BossPressureActionKind actionKind)
@@ -411,6 +479,11 @@ namespace DimensionBrawl.Combat
             if (globalRecoveryTimer > 0f)
             {
                 globalRecoveryTimer = Mathf.Max(0f, globalRecoveryTimer - deltaTime);
+            }
+
+            if (playerSummonResponseTimer > 0f)
+            {
+                playerSummonResponseTimer = Mathf.Max(0f, playerSummonResponseTimer - deltaTime);
             }
 
             EnsurePerSlotTimers();

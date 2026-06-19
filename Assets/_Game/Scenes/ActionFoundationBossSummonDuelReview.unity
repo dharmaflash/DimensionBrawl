@@ -255,7 +255,7 @@ MonoBehaviour:
   maxCueCameraDistanceDelta: 0.45
   maxCueFocusHeightDelta: 0.25
   cueFieldOfViewSmooth: 18
-  aimCameraOffset: {x: 0.5, y: 0.18, z: 0.12}
+  aimCameraOffset: {x: 0.45, y: -0.38, z: 0.12}
   aimFocusOffset: {x: 0.08, y: 0.06, z: 1.05}
   aimFieldOfViewDelta: -5.5
   aimBlendInSpeed: 14
@@ -1088,6 +1088,7 @@ MonoBehaviour:
   viewReference: {fileID: 1001}
   targetCandidates:
   - {fileID: 755058625}
+  includeActiveHostileSummons: 1
   selectionRadius: 35
   retargetIntervalSeconds: 0.12
   contactStickinessSeconds: 0.35
@@ -1095,6 +1096,7 @@ MonoBehaviour:
   ownerForwardWeight: 0.3
   viewForwardWeight: 0.2
   threatStateWeight: 0.35
+  activeSummonTargetBonus: 0.55
   currentTargetStickiness: 0.18
   minimumReadableForwardDot: -0.35
   attackAimRadius: 9
@@ -5303,6 +5305,7 @@ MonoBehaviour:
   requiredBossPressureBlocks: 1
   requiredPlayerSummonUses: 2
   requiredSupportSummonUses: 1
+  requiredBossResponsesToPlayerSummons: 1
   requiredAllyPressureBlocks: 1
   requiredSummonClashes: 1
   requiredSkill1ResponseUses: 1
@@ -8265,9 +8268,10 @@ MonoBehaviour:
   summonActorPrefabObject: {fileID: 8807085752215127905, guid: df59e94e3bf79d64f9342ff278ecc377, type: 3}
   summonActorRoot: {fileID: 99920999}
   ownerTeam: 2
-  actorPrewarmCount: 2
-  maxActiveSummonActors: 1
+  actorPrewarmCount: 3
+  maxActiveSummonActors: 2
   actorEntryCatchupSecondsPerMeter: 0.55
+  minimumPlayerSideTargetDepth: 1.2
   pressureProfile: {fileID: 11400000, guid: b72d92c8a256467ab8d18f0e340b3cf3, type: 2}
   tierSettings:
   - EntryForwardBlend01: 0.28
@@ -8275,14 +8279,14 @@ MonoBehaviour:
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
     ActorScale: 0.92
-    ActorRoleId: BossPressure
-    ActorMaxHealth: 0
-    ActorMoveSpeed: 0
+    ActorRoleId: EscortProbe
+    ActorMaxHealth: 220
+    ActorMoveSpeed: 1.35
     ActorAdvanceDistance: 2.4
     ActorAdvanceSeconds: 1.4
-    ActorEngageRadius: 0.05
-    ActorAttackDamagePerSecond: 0
-    ActorAttackIntervalSeconds: 0.05
+    ActorEngageRadius: 0.95
+    ActorAttackDamagePerSecond: 32
+    ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 2
     ScreenRadius: 1.2
     ScreenLifetimeSeconds: 2.6
@@ -8291,14 +8295,14 @@ MonoBehaviour:
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
     ActorScale: 1.12
-    ActorRoleId: BossPressure
-    ActorMaxHealth: 0
-    ActorMoveSpeed: 0
+    ActorRoleId: PressureScreen
+    ActorMaxHealth: 320
+    ActorMoveSpeed: 1.42
     ActorAdvanceDistance: 3.8
     ActorAdvanceSeconds: 1.85
-    ActorEngageRadius: 0.05
-    ActorAttackDamagePerSecond: 0
-    ActorAttackIntervalSeconds: 0.05
+    ActorEngageRadius: 1.05
+    ActorAttackDamagePerSecond: 44
+    ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 4
     ScreenRadius: 1.55
     ScreenLifetimeSeconds: 3.4
@@ -8307,14 +8311,14 @@ MonoBehaviour:
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
     ActorScale: 1.36
-    ActorRoleId: BossPressure
-    ActorMaxHealth: 0
-    ActorMoveSpeed: 0
+    ActorRoleId: ClampGuard
+    ActorMaxHealth: 460
+    ActorMoveSpeed: 1.48
     ActorAdvanceDistance: 5.2
     ActorAdvanceSeconds: 2.35
-    ActorEngageRadius: 0.05
-    ActorAttackDamagePerSecond: 0
-    ActorAttackIntervalSeconds: 0.05
+    ActorEngageRadius: 1.18
+    ActorAttackDamagePerSecond: 58
+    ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 7
     ScreenRadius: 1.95
     ScreenLifetimeSeconds: 4.2
@@ -8341,7 +8345,7 @@ MonoBehaviour:
     ActionKind: 0
     MinimumTier: 1
     QueuedWaves: 1
-    MinimumIntervalSeconds: 4.6
+    MinimumIntervalSeconds: 4.2
     ResponseId: DodgeLineOrUseSkill1
     StageLoopRole: LV1 skill pressure that asks the player to read a committed rail
       before spending summon resources.
@@ -8353,9 +8357,24 @@ MonoBehaviour:
     MaximumPlayerForwardRisk01: 1
   - Pattern: {fileID: 11400000, guid: 732ffa1eae726f14386a4a02115611c9, type: 2}
     ActionKind: 1
+    MinimumTier: 1
+    QueuedWaves: 1
+    MinimumIntervalSeconds: 3.8
+    ResponseId: EscortProbeFrontlineCheck
+    StageLoopRole: LV1 escort-probe summon pressure that lets the boss contest the
+      frontline before the player reaches a full support stack.
+    PlayerAnswer: Use ranged fire or a cheap summon answer before the probe turns
+      the lane into a screen trade.
+    SummonAnswer: A low-tier summon can body-clash or absorb the probe without waiting
+      for a perfect LV2 answer.
+    UsePlayerForwardRiskGate: 0
+    MinimumPlayerForwardRisk01: 0
+    MaximumPlayerForwardRisk01: 1
+  - Pattern: {fileID: 11400000, guid: 732ffa1eae726f14386a4a02115611c9, type: 2}
+    ActionKind: 1
     MinimumTier: 2
     QueuedWaves: 1
-    MinimumIntervalSeconds: 5.2
+    MinimumIntervalSeconds: 4.2
     ResponseId: SummonSlot1PressureBlock
     StageLoopRole: LV2 summon-pressure exchange that tests whether the player can
       answer boss fire with a frontline summon screen.
@@ -8364,7 +8383,7 @@ MonoBehaviour:
     SummonAnswer: Spend SummonSlot1 to place a pressure screen and intercept the
       boss curtain.
     UsePlayerForwardRiskGate: 1
-    MinimumPlayerForwardRisk01: 0.32
+    MinimumPlayerForwardRisk01: 0.22
     MaximumPlayerForwardRisk01: 1
   - Pattern: {fileID: 11400000, guid: b0b5e71e44209f74394f56e232db8d78, type: 2}
     ActionKind: 2
@@ -8384,6 +8403,7 @@ MonoBehaviour:
   globalRecoverySeconds: 0.35
   holdForNextTierActionWhenGateAllows: 1
   actionsEnabled: 1
+  playerSummonResponseWindowSeconds: 4
 --- !u!114 &755058629
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -8400,10 +8420,10 @@ MonoBehaviour:
   costLadder: {fileID: 755058630}
   actionDirector: {fileID: 755058628}
   movedTransform: {fileID: 755058626}
-  restRisk01: 0.08
-  maxCommitRisk01: 0.62
-  advanceRiskPerSecond: 0.25
-  retreatRiskPerSecond: 0.42
+  restRisk01: 0.12
+  maxCommitRisk01: 0.74
+  advanceRiskPerSecond: 0.38
+  retreatRiskPerSecond: 0.32
   returnToRestWhenActionsDisabled: 1
   movementEnabled: 1
 --- !u!114 &755058630
@@ -8425,7 +8445,7 @@ MonoBehaviour:
   levelThreeCost: 100
   backSafetyMaxBossForwardRisk01: 0.33333334
   forwardCommitStartBossForwardRisk01: 0.6666667
-  baseCostPerSecond: 18
+  baseCostPerSecond: 23
   fallbackBossForwardRisk01: 0.25
   bossForwardGainCurve:
     serializedVersion: 2
@@ -19482,6 +19502,15 @@ MonoBehaviour:
   height: 280
   margin: 18
   showCenterReticle: 0
+  showResourceBars: 1
+  resourceBarHeight: 22
+  resourceBarGap: 5
+  resourceBarBackColor: {r: 0.02, g: 0.025, b: 0.035, a: 0.82}
+  playerHealthColor: {r: 0.25, g: 1, b: 0.46, a: 1}
+  bossHealthColor: {r: 1, g: 0.22, b: 0.32, a: 1}
+  threatHealthColor: {r: 1, g: 0.76, b: 0.24, a: 1}
+  resourceTextColor: {r: 1, g: 1, b: 1, a: 1}
+  resourceReadyTextColor: {r: 0.84, g: 1, b: 0.42, a: 1}
 --- !u!4 &2020706047
 Transform:
   m_ObjectHideFlags: 0
@@ -26226,7 +26255,7 @@ Transform:
   m_GameObject: {fileID: 4143495958606366559}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: 0.00000009362675, w: 1}
-  m_LocalPosition: {x: -0.000000018231399, y: 0.000000029129033, z: -0.000000016591883}
+  m_LocalPosition: {x: -0.00000010172714, y: -0.00000006382457, z: -0.00000046169862}
   m_LocalScale: {x: 1, y: 1.0000001, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:

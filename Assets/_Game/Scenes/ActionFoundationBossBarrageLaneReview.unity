@@ -11315,8 +11315,8 @@ MonoBehaviour:
   summonActorPrefabObject: {fileID: 8807085752215127905, guid: df59e94e3bf79d64f9342ff278ecc377, type: 3}
   summonActorRoot: {fileID: 231838019}
   ownerTeam: 2
-  actorPrewarmCount: 2
-  maxActiveSummonActors: 1
+  actorPrewarmCount: 3
+  maxActiveSummonActors: 2
   actorEntryCatchupSecondsPerMeter: 0.55
   pressureProfile: {fileID: 11400000, guid: b72d92c8a256467ab8d18f0e340b3cf3, type: 2}
   tierSettings:
@@ -11391,7 +11391,7 @@ MonoBehaviour:
     ActionKind: 0
     MinimumTier: 1
     QueuedWaves: 1
-    MinimumIntervalSeconds: 4.6
+    MinimumIntervalSeconds: 4.2
     ResponseId: DodgeLineOrUseSkill1
     StageLoopRole: LV1 skill pressure that asks the player to read a committed rail
       before spending summon resources.
@@ -11403,9 +11403,24 @@ MonoBehaviour:
     MaximumPlayerForwardRisk01: 1
   - Pattern: {fileID: 11400000, guid: 732ffa1eae726f14386a4a02115611c9, type: 2}
     ActionKind: 1
+    MinimumTier: 1
+    QueuedWaves: 1
+    MinimumIntervalSeconds: 3.8
+    ResponseId: EscortProbeFrontlineCheck
+    StageLoopRole: LV1 escort-probe summon pressure that lets the boss contest the
+      frontline before the player reaches a full support stack.
+    PlayerAnswer: Use ranged fire or a cheap summon answer before the probe turns
+      the lane into a screen trade.
+    SummonAnswer: A low-tier summon can body-clash or absorb the probe without waiting
+      for a perfect LV2 answer.
+    UsePlayerForwardRiskGate: 0
+    MinimumPlayerForwardRisk01: 0
+    MaximumPlayerForwardRisk01: 1
+  - Pattern: {fileID: 11400000, guid: 732ffa1eae726f14386a4a02115611c9, type: 2}
+    ActionKind: 1
     MinimumTier: 2
     QueuedWaves: 1
-    MinimumIntervalSeconds: 5.2
+    MinimumIntervalSeconds: 4.2
     ResponseId: SummonSlot1PressureBlock
     StageLoopRole: LV2 summon-pressure exchange that tests whether the player can
       answer boss fire with a frontline summon screen.
@@ -11414,7 +11429,7 @@ MonoBehaviour:
     SummonAnswer: Spend SummonSlot1 to place a pressure screen and intercept the
       boss curtain.
     UsePlayerForwardRiskGate: 1
-    MinimumPlayerForwardRisk01: 0.32
+    MinimumPlayerForwardRisk01: 0.22
     MaximumPlayerForwardRisk01: 1
   - Pattern: {fileID: 11400000, guid: b0b5e71e44209f74394f56e232db8d78, type: 2}
     ActionKind: 2
@@ -11450,10 +11465,10 @@ MonoBehaviour:
   costLadder: {fileID: 1079508252}
   actionDirector: {fileID: 1079508250}
   movedTransform: {fileID: 1079508248}
-  restRisk01: 0.08
-  maxCommitRisk01: 0.62
-  advanceRiskPerSecond: 0.25
-  retreatRiskPerSecond: 0.42
+  restRisk01: 0.12
+  maxCommitRisk01: 0.74
+  advanceRiskPerSecond: 0.38
+  retreatRiskPerSecond: 0.32
   returnToRestWhenActionsDisabled: 1
   movementEnabled: 1
 --- !u!114 &1079508252
@@ -11475,7 +11490,7 @@ MonoBehaviour:
   levelThreeCost: 100
   backSafetyMaxBossForwardRisk01: 0.33333334
   forwardCommitStartBossForwardRisk01: 0.6666667
-  baseCostPerSecond: 18
+  baseCostPerSecond: 23
   fallbackBossForwardRisk01: 0.25
   bossForwardGainCurve:
     serializedVersion: 2

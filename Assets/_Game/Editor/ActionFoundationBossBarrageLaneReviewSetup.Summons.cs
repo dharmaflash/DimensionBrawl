@@ -369,6 +369,7 @@ namespace DimensionBrawl.Editor
                 SetFloat(actorPresenter, "tierScaleStep", 0.18f);
                 SetFloat(actorPresenter, "flashScale", 0.22f);
                 SetFloat(actorPresenter, "clashFlashScale", 0.16f);
+                ConfigureSummonActorAnimatorPresentation(actorPresenter, summonVisual);
 
                 PrefabUtility.SaveAsPrefabAsset(editableRoot, SummonSlot1ActorPrefabPath);
             }
@@ -540,7 +541,7 @@ namespace DimensionBrawl.Editor
                     UnityEngine.Object.DestroyImmediate(pulseCollider);
                 }
 
-                AttachRoleVisualOnly(
+                Transform summonVisual = AttachRoleVisualOnly(
                     editableRoot.transform,
                     roleId,
                     rolePrefabPath,
@@ -579,6 +580,7 @@ namespace DimensionBrawl.Editor
                 SetFloat(actorPresenter, "tierScaleStep", 0.16f);
                 SetFloat(actorPresenter, "flashScale", 0.18f);
                 SetFloat(actorPresenter, "clashFlashScale", 0.14f);
+                ConfigureSummonActorAnimatorPresentation(actorPresenter, summonVisual);
 
                 PrefabUtility.SaveAsPrefabAsset(editableRoot, prefabPath);
             }
@@ -836,6 +838,7 @@ namespace DimensionBrawl.Editor
                 SetFloat(actorPresenter, "tierScaleStep", 0.2f);
                 SetFloat(actorPresenter, "flashScale", 0.24f);
                 SetFloat(actorPresenter, "clashFlashScale", 0.18f);
+                ConfigureSummonActorAnimatorPresentation(actorPresenter, summonVisual);
 
                 PrefabUtility.SaveAsPrefabAsset(editableRoot, BossSummonPressureActorPrefabPath);
             }

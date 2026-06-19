@@ -19,7 +19,7 @@ MonoBehaviour:
     ActionKind: 0
     MinimumTier: 1
     QueuedWaves: 1
-    MinimumIntervalSeconds: 4.6
+    MinimumIntervalSeconds: 4.2
     ResponseId: DodgeLineOrUseSkill1
     StageLoopRole: LV1 skill pressure that asks the player to read a committed rail before spending summon resources.
     PlayerAnswer: Strafe or dodge out of the rail, then use ranged fire or Skill1 when the lane is clear.
@@ -29,15 +29,27 @@ MonoBehaviour:
     MaximumPlayerForwardRisk01: 1
   - Pattern: {fileID: 11400000, guid: 732ffa1eae726f14386a4a02115611c9, type: 2}
     ActionKind: 1
+    MinimumTier: 1
+    QueuedWaves: 1
+    MinimumIntervalSeconds: 3.8
+    ResponseId: EscortProbeFrontlineCheck
+    StageLoopRole: LV1 escort-probe summon pressure that lets the boss contest the frontline before the player reaches a full support stack.
+    PlayerAnswer: Use ranged fire or a cheap summon answer before the probe turns the lane into a screen trade.
+    SummonAnswer: A low-tier summon can body-clash or absorb the probe without waiting for a perfect LV2 answer.
+    UsePlayerForwardRiskGate: 0
+    MinimumPlayerForwardRisk01: 0
+    MaximumPlayerForwardRisk01: 1
+  - Pattern: {fileID: 11400000, guid: 732ffa1eae726f14386a4a02115611c9, type: 2}
+    ActionKind: 1
     MinimumTier: 2
     QueuedWaves: 1
-    MinimumIntervalSeconds: 5.2
+    MinimumIntervalSeconds: 4.2
     ResponseId: SummonSlot1PressureBlock
     StageLoopRole: LV2 summon-pressure exchange that tests whether the player can answer boss fire with a frontline summon screen.
     PlayerAnswer: Hold forward-risk only long enough to charge EN, then create space for the summon block.
     SummonAnswer: Spend SummonSlot1 to place a pressure screen and intercept the boss curtain.
     UsePlayerForwardRiskGate: 1
-    MinimumPlayerForwardRisk01: 0.32
+    MinimumPlayerForwardRisk01: 0.22
     MaximumPlayerForwardRisk01: 1
   - Pattern: {fileID: 11400000, guid: b0b5e71e44209f74394f56e232db8d78, type: 2}
     ActionKind: 2

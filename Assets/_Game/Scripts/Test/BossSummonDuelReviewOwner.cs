@@ -13,6 +13,7 @@ namespace DimensionBrawl.Test
             BuildPressure,
             BossPressureAction,
             SummonExchange,
+            BossResponse,
             SkillResponse,
             CounterDamage,
             Cleared,
@@ -51,6 +52,7 @@ namespace DimensionBrawl.Test
         [SerializeField, Min(0)] private int requiredBossPressureBlocks = 1;
         [SerializeField, Min(0)] private int requiredPlayerSummonUses = 2;
         [SerializeField, Min(0)] private int requiredSupportSummonUses = 1;
+        [SerializeField, Min(0)] private int requiredBossResponsesToPlayerSummons = 1;
         [SerializeField, Min(0)] private int requiredAllyPressureBlocks = 1;
         [SerializeField, Min(0)] private int requiredSummonClashes = 1;
         [SerializeField, Min(0)] private int requiredSkill1ResponseUses = 1;
@@ -83,6 +85,10 @@ namespace DimensionBrawl.Test
         private int observedBossPunishPatterns;
         private int observedBossSummonReleases;
         private int observedBossPressureBlocks;
+        private int observedBossResponsesToPlayerSummons;
+        private int observedBossSkillResponsesToPlayerSummons;
+        private int observedBossSummonResponsesToPlayerSummons;
+        private int observedBossPunishResponsesToPlayerSummons;
         private int observedSkill1ResponseUses;
         private int highestPlayerSummonTier;
         private int highestBossPressureTier;
@@ -109,6 +115,10 @@ namespace DimensionBrawl.Test
         public int ObservedBossPunishPatterns => observedBossPunishPatterns;
         public int ObservedBossSummonReleases => observedBossSummonReleases;
         public int ObservedBossPressureBlocks => observedBossPressureBlocks;
+        public int ObservedBossResponsesToPlayerSummons => observedBossResponsesToPlayerSummons;
+        public int ObservedBossSkillResponsesToPlayerSummons => observedBossSkillResponsesToPlayerSummons;
+        public int ObservedBossSummonResponsesToPlayerSummons => observedBossSummonResponsesToPlayerSummons;
+        public int ObservedBossPunishResponsesToPlayerSummons => observedBossPunishResponsesToPlayerSummons;
         public int ObservedSkill1ResponseUses => observedSkill1ResponseUses;
         public int HighestPlayerSummonTier => highestPlayerSummonTier;
         public int HighestBossPressureTier => highestBossPressureTier;
@@ -123,6 +133,7 @@ namespace DimensionBrawl.Test
         public int RequiredBossPressureBlocks => requiredBossPressureBlocks;
         public int RequiredPlayerSummonUses => requiredPlayerSummonUses;
         public int RequiredSupportSummonUses => requiredSupportSummonUses;
+        public int RequiredBossResponsesToPlayerSummons => requiredBossResponsesToPlayerSummons;
         public int RequiredAllyPressureBlocks => requiredAllyPressureBlocks;
         public int RequiredSummonClashes => requiredSummonClashes;
         public int RequiredSkill1ResponseUses => requiredSkill1ResponseUses;
@@ -165,6 +176,11 @@ namespace DimensionBrawl.Test
                     return DuelPhase.SummonExchange;
                 }
 
+                if (!HasMetBossResponseToPlayerSummonGoal())
+                {
+                    return DuelPhase.BossResponse;
+                }
+
                 if (!HasMetSkillResponseGoal())
                 {
                     return DuelPhase.SkillResponse;
@@ -180,7 +196,7 @@ namespace DimensionBrawl.Test
             {
                 if (cleared)
                 {
-                    return "Duel loop verified: boss cost, boss summon pressure, ally summons, block, and counter damage";
+                    return "Duel loop verified: boss cost, boss summon pressure, ally summons, boss answer, block, and counter damage";
                 }
 
                 if (failed)
@@ -228,6 +244,11 @@ namespace DimensionBrawl.Test
                     return "Use S2 Arrow or S3 Tank so the loop is not only the S1 shield";
                 }
 
+                if (observedBossResponsesToPlayerSummons < requiredBossResponsesToPlayerSummons)
+                {
+                    return "Hold a player summon frontline long enough for the boss to answer with barrage, summon, or punish pressure";
+                }
+
                 if (observedAllyPressureBlocks < requiredAllyPressureBlocks)
                 {
                     return "Use S1 Shield or S3 Tank where its screen can block boss fire";
@@ -261,6 +282,7 @@ namespace DimensionBrawl.Test
             + $"bossBlock {observedBossPressureBlocks}/{requiredBossPressureBlocks} "
             + $"summon {observedPlayerSummonUses}/{requiredPlayerSummonUses} "
             + $"support {observedSupportSummonUses}/{requiredSupportSummonUses} "
+            + $"bossReply {observedBossResponsesToPlayerSummons}/{requiredBossResponsesToPlayerSummons} "
             + $"block {observedAllyPressureBlocks}/{requiredAllyPressureBlocks} "
             + $"sBlock {observedSupportPressureBlocks} "
             + $"clash {observedSummonClashes}/{requiredSummonClashes} "
@@ -353,6 +375,10 @@ namespace DimensionBrawl.Test
             observedBossPunishPatterns = 0;
             observedBossSummonReleases = 0;
             observedBossPressureBlocks = 0;
+            observedBossResponsesToPlayerSummons = 0;
+            observedBossSkillResponsesToPlayerSummons = 0;
+            observedBossSummonResponsesToPlayerSummons = 0;
+            observedBossPunishResponsesToPlayerSummons = 0;
             observedSkill1ResponseUses = 0;
             highestPlayerSummonTier = 0;
             highestBossPressureTier = 0;
@@ -400,6 +426,7 @@ namespace DimensionBrawl.Test
                 && observedBossPunishPatterns >= requiredBossPunishPatterns
                 && observedBossSummonReleases >= requiredBossSummonReleases
                 && HasMetSummonExchangeGoal()
+                && HasMetBossResponseToPlayerSummonGoal()
                 && HasMetSkillResponseGoal()
                 && bossDamageFromPlayerSide >= requiredBossDamage;
         }
@@ -411,6 +438,11 @@ namespace DimensionBrawl.Test
                 && observedBossPressureBlocks >= requiredBossPressureBlocks
                 && observedAllyPressureBlocks >= requiredAllyPressureBlocks
                 && observedSummonClashes >= requiredSummonClashes;
+        }
+
+        private bool HasMetBossResponseToPlayerSummonGoal()
+        {
+            return observedBossResponsesToPlayerSummons >= requiredBossResponsesToPlayerSummons;
         }
 
         private void ObserveSummonClashes()
@@ -611,7 +643,7 @@ namespace DimensionBrawl.Test
         private void HandleSkill1Used(int tier)
         {
             observedSkill1Uses++;
-            if (!HasMetSummonExchangeGoal())
+            if (!HasMetSummonExchangeGoal() || !HasMetBossResponseToPlayerSummonGoal())
             {
                 return;
             }
@@ -626,6 +658,7 @@ namespace DimensionBrawl.Test
         {
             observedPlayerSummonUses++;
             highestPlayerSummonTier = Mathf.Max(highestPlayerSummonTier, tier);
+            bossPressureActionDirector?.NotifyPlayerSummonFrontlineCreated(tier);
         }
 
         private void HandleSupportSummonUsed(PlayerSupportSummonSlotAction action, int tier)
@@ -665,6 +698,23 @@ namespace DimensionBrawl.Test
                 case BossPressureActionKind.PunishOverextend:
                     observedBossPunishPatterns++;
                     break;
+            }
+
+            if (director != null && director.LastActionRespondedToPlayerSummon)
+            {
+                observedBossResponsesToPlayerSummons++;
+                switch (actionKind)
+                {
+                    case BossPressureActionKind.SkillPattern:
+                        observedBossSkillResponsesToPlayerSummons++;
+                        break;
+                    case BossPressureActionKind.SummonPressure:
+                        observedBossSummonResponsesToPlayerSummons++;
+                        break;
+                    case BossPressureActionKind.PunishOverextend:
+                        observedBossPunishResponsesToPlayerSummons++;
+                        break;
+                }
             }
         }
 

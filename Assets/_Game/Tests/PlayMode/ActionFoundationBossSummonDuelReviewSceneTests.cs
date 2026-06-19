@@ -17,6 +17,11 @@ namespace DimensionBrawl.Tests
     public sealed class ActionFoundationBossSummonDuelReviewSceneTests
     {
         private const string ScenePath = "Assets/_Game/Scenes/ActionFoundationBossSummonDuelReview.unity";
+        private const string SummonActorMoveSpeedParameter = "MoveSpeed";
+        private const string SummonActorSpawnTrigger = "EliteSummonPackage";
+        private const string SummonActorAttackTrigger = "Attack";
+        private const string SummonActorHitTrigger = "Hit";
+        private const string SummonActorDeathTrigger = "Death";
 
         [UnitySetUp]
         public IEnumerator LoadBossSummonDuelReviewScene()
@@ -50,6 +55,7 @@ namespace DimensionBrawl.Tests
             BossPressureCostLadder bossPressureCostLadder = RequireObject<BossPressureCostLadder>();
             SummonEnergyLadder energyLadder = RequireObject<SummonEnergyLadder>();
             SummonLaneSpace laneSpace = RequireObject<SummonLaneSpace>();
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
             BossBarrageLaneReviewHud reviewHud = RequireObject<BossBarrageLaneReviewHud>();
             BossBarrageLaneReviewMobileHud mobileHud = RequireObject<BossBarrageLaneReviewMobileHud>();
 
@@ -61,6 +67,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(1, duelOwner.RequiredBossPressureBlocks);
             Assert.AreEqual(2, duelOwner.RequiredPlayerSummonUses);
             Assert.AreEqual(1, duelOwner.RequiredSupportSummonUses);
+            Assert.AreEqual(1, duelOwner.RequiredBossResponsesToPlayerSummons);
             Assert.AreEqual(1, duelOwner.RequiredAllyPressureBlocks);
             Assert.AreEqual(1, duelOwner.RequiredSummonClashes);
             Assert.AreEqual(1, duelOwner.RequiredSkill1ResponseUses);
@@ -68,6 +75,7 @@ namespace DimensionBrawl.Tests
             Assert.Greater(duelOwner.RequiredBossDamage, duelOwner.RequiredSkill1ResponseDamage);
             StringAssert.Contains("bossSP", duelOwner.ProgressLine);
             StringAssert.Contains("support", duelOwner.ProgressLine);
+            StringAssert.Contains("bossReply", duelOwner.ProgressLine);
             StringAssert.Contains("clash", duelOwner.ProgressLine);
 
             Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(duelOwner, "energyLadder"));
@@ -89,7 +97,11 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(
                 bossPressureActionDirector.HoldForNextTierActionWhenGateAllows,
                 "Duel review should let the boss bank LV1 pressure into a visible LV2 summon-pressure exchange.");
-            Assert.AreEqual(3, bossPressureActionDirector.ActionSlotCount);
+            AssertVector3(
+                new Vector3(0.45f, -0.38f, 0.12f),
+                GetVector3(cameraController, "aimCameraOffset"),
+                "Boss summon duel aim camera offset should keep the reviewed inspector framing.");
+            Assert.AreEqual(4, bossPressureActionDirector.ActionSlotCount);
             AssertBossPressureSlot(
                 bossPressureActionDirector,
                 0,
@@ -100,11 +112,17 @@ namespace DimensionBrawl.Tests
                 bossPressureActionDirector,
                 1,
                 BossPressureActionKind.SummonPressure,
+                1,
+                "EscortProbeFrontlineCheck");
+            AssertBossPressureSlot(
+                bossPressureActionDirector,
+                2,
+                BossPressureActionKind.SummonPressure,
                 2,
                 "SummonSlot1PressureBlock");
             AssertBossPressureSlot(
                 bossPressureActionDirector,
-                2,
+                3,
                 BossPressureActionKind.PunishOverextend,
                 3,
                 "RetreatOrSpendHighTierAnswer");
@@ -113,6 +131,10 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(bossSummonPressureAction.HasPressureProfile);
             Assert.AreEqual(3, bossSummonPressureAction.PressureProfile.TierCount);
             Assert.IsTrue(bossSummonPressureAction.CanRelease);
+            Assert.AreEqual(
+                2,
+                GetInt(bossSummonPressureAction, "maxActiveSummonActors"),
+                "Boss pressure should be allowed to keep a small frontline pair so it does not feel passive next to player support summons.");
             AssertBossProxyBodyContract(bossSummonPressureAction.gameObject);
 
             AssertSummonActorPrefabContract(
@@ -169,12 +191,20 @@ namespace DimensionBrawl.Tests
             PlayerSupportSummonSlotAction summonSlot2Action = RequireSupportSummonAction("SummonSlot2");
             PlayerSupportSummonSlotAction summonSlot3Action = RequireSupportSummonAction("SummonSlot3");
             BossSummonPressureAction bossSummonPressureAction = RequireObject<BossSummonPressureAction>();
+            BossPressureActionDirector bossPressureActionDirector = RequireObject<BossPressureActionDirector>();
+            BossSummonDuelReviewOwner duelOwner = RequireObject<BossSummonDuelReviewOwner>();
 
             energyLadder.SetGainEnabled(false);
             GrantEnergyToTier(energyLadder, 1);
             Assert.IsTrue(summonSlot2Action.TryUseSummon());
             Assert.AreEqual(1, summonSlot2Action.LastSpentTier);
             Assert.AreEqual(1, summonSlot2Action.TotalUseCount);
+            Assert.AreEqual(1, duelOwner.ObservedPlayerSummonUses);
+            Assert.AreEqual(1, duelOwner.ObservedSupportSummonUses);
+            Assert.IsTrue(
+                bossPressureActionDirector.IsPlayerSummonResponseWindowActive,
+                "Support summon use should open a narrow boss response window for barrage/summon-pressure answers.");
+            Assert.AreEqual(1, bossPressureActionDirector.LastObservedPlayerSummonTier);
             Assert.AreEqual("BacklineMarksman", summonSlot2Action.LastSummonActorRoleId);
             Assert.Greater(summonSlot2Action.ActiveSummonActorCount, 0);
             Assert.IsTrue(
@@ -353,6 +383,7 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(health, GetObjectReference<CombatHealth>(clash, "health"));
             Assert.AreSame(proxy, GetObjectReference<SummonFrontlineProxy>(presenter, "proxy"));
             Assert.AreSame(clash, GetObjectReference<SummonFrontlineClash>(presenter, "clash"));
+            AssertSummonProxyAnimatorPresentation(prefabRoot, presenter, label);
             Assert.AreSame(proxy, healthBarPresenter.Proxy);
             Assert.AreSame(health, healthBarPresenter.Health);
             Assert.IsNotNull(healthBarPresenter.BarRoot, $"{label} should carry an in-world HP bar root.");
@@ -394,6 +425,47 @@ namespace DimensionBrawl.Tests
             Assert.Greater(bodyCollider.radius, 0f, $"{label} body collider should have a positive radius.");
             Assert.IsTrue(bodyRigidbody.isKinematic, $"{label} body Rigidbody should be kinematic.");
             Assert.IsFalse(bodyRigidbody.useGravity, $"{label} body Rigidbody should not use gravity.");
+        }
+
+        private static void AssertSummonProxyAnimatorPresentation(
+            GameObject prefabRoot,
+            SummonFrontlineProxyPresenter presenter,
+            string label)
+        {
+            Animator[] animators = prefabRoot.GetComponentsInChildren<Animator>(true);
+            Assert.AreEqual(1, animators.Length, $"{label} should keep one promoted visual Animator.");
+            Animator animator = animators[0];
+            Assert.IsNotNull(animator.runtimeAnimatorController, $"{label} Animator should keep its controller.");
+            Assert.AreSame(animator, presenter.Animator, $"{label} presenter should target the promoted visual Animator.");
+            Assert.AreEqual(SummonActorMoveSpeedParameter, presenter.MoveSpeedParameter);
+            Assert.AreEqual(SummonActorSpawnTrigger, presenter.SpawnTrigger);
+            Assert.AreEqual(SummonActorAttackTrigger, presenter.AttackTrigger);
+            Assert.AreEqual(SummonActorHitTrigger, presenter.HitTrigger);
+            Assert.AreEqual(SummonActorDeathTrigger, presenter.DeathTrigger);
+            AssertAnimatorParameter(animator, presenter.MoveSpeedParameter, AnimatorControllerParameterType.Float);
+            AssertAnimatorParameter(animator, presenter.SpawnTrigger, AnimatorControllerParameterType.Trigger);
+            AssertAnimatorParameter(animator, presenter.AttackTrigger, AnimatorControllerParameterType.Trigger);
+            AssertAnimatorParameter(animator, presenter.HitTrigger, AnimatorControllerParameterType.Trigger);
+            AssertAnimatorParameter(animator, presenter.DeathTrigger, AnimatorControllerParameterType.Trigger);
+        }
+
+        private static void AssertAnimatorParameter(
+            Animator animator,
+            string parameterName,
+            AnimatorControllerParameterType expectedType)
+        {
+            AnimatorControllerParameter[] parameters = animator.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                AnimatorControllerParameter parameter = parameters[i];
+                if (parameter.type == expectedType
+                    && string.Equals(parameter.name, parameterName, System.StringComparison.Ordinal))
+                {
+                    return;
+                }
+            }
+
+            Assert.Fail($"{animator.name} is missing {expectedType} parameter {parameterName}.");
         }
 
         private static void AssertBossProxyBodyContract(GameObject bossProxy)
@@ -470,12 +542,27 @@ namespace DimensionBrawl.Tests
             return property.floatValue;
         }
 
+        private static Vector3 GetVector3(Object target, string propertyName)
+        {
+            SerializedObject serializedObject = new SerializedObject(target);
+            SerializedProperty property = serializedObject.FindProperty(propertyName);
+            Assert.IsNotNull(property, $"{target.name} is missing serialized property {propertyName}.");
+            return property.vector3Value;
+        }
+
         private static int GetInt(Object target, string propertyName)
         {
             SerializedObject serializedObject = new SerializedObject(target);
             SerializedProperty property = serializedObject.FindProperty(propertyName);
             Assert.IsNotNull(property, $"{target.name} is missing serialized property {propertyName}.");
             return property.intValue;
+        }
+
+        private static void AssertVector3(Vector3 expected, Vector3 actual, string message)
+        {
+            Assert.AreEqual(expected.x, actual.x, 0.001f, message);
+            Assert.AreEqual(expected.y, actual.y, 0.001f, message);
+            Assert.AreEqual(expected.z, actual.z, 0.001f, message);
         }
     }
 }

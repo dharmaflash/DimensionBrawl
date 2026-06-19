@@ -13,6 +13,13 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private SummonFrontlineProxy proxy;
         [SerializeField] private SummonFrontlineClash clash;
         [SerializeField] private CombatHealth health;
+        [SerializeField] private Animator animator;
+        [SerializeField] private string moveSpeedParameter = "MoveSpeed";
+        [SerializeField] private string spawnTrigger = "EliteSummonPackage";
+        [SerializeField] private string attackTrigger = "Attack";
+        [SerializeField] private string hitTrigger = "Hit";
+        [SerializeField] private string deathTrigger = "Death";
+        [SerializeField, Min(0f)] private float animatorMoveSpeedScale = 1f;
         [SerializeField] private Transform pulseRoot;
         [SerializeField] private Renderer[] actorRenderers = System.Array.Empty<Renderer>();
         [SerializeField] private Color tierOneColor = new Color(0.24f, 1f, 0.78f, 0.78f);
@@ -59,10 +66,21 @@ namespace DimensionBrawl.Presentation
         private int attackFlashCount;
         private int damageFlashCount;
         private int deathFlashCount;
+        private int animatorSpawnTriggerCount;
+        private int animatorAttackTriggerCount;
+        private int animatorHitTriggerCount;
+        private int animatorDeathTriggerCount;
+        private int animatorMoveSpeedSetCount;
 
         public SummonFrontlineProxy Proxy => proxy;
         public SummonFrontlineClash Clash => clash;
         public CombatHealth Health => health;
+        public Animator Animator => animator;
+        public string MoveSpeedParameter => moveSpeedParameter;
+        public string SpawnTrigger => spawnTrigger;
+        public string AttackTrigger => attackTrigger;
+        public string HitTrigger => hitTrigger;
+        public string DeathTrigger => deathTrigger;
         public Transform PulseRoot => pulseRoot;
         public int RendererCount => actorRenderers != null ? actorRenderers.Length : 0;
         public bool IsShowing => proxy != null && proxy.IsPresentationVisible;
@@ -74,6 +92,11 @@ namespace DimensionBrawl.Presentation
         public int AttackFlashCount => attackFlashCount;
         public int DamageFlashCount => damageFlashCount;
         public int DeathFlashCount => deathFlashCount;
+        public int AnimatorSpawnTriggerCount => animatorSpawnTriggerCount;
+        public int AnimatorAttackTriggerCount => animatorAttackTriggerCount;
+        public int AnimatorHitTriggerCount => animatorHitTriggerCount;
+        public int AnimatorDeathTriggerCount => animatorDeathTriggerCount;
+        public int AnimatorMoveSpeedSetCount => animatorMoveSpeedSetCount;
 
         private void Awake()
         {
@@ -102,6 +125,7 @@ namespace DimensionBrawl.Presentation
             UnsubscribeHealth();
             wasActive = false;
             wasAttacking = false;
+            SetAnimatorMoveSpeed(0f);
             SetPulseVisible(false);
         }
 
@@ -156,6 +180,12 @@ namespace DimensionBrawl.Presentation
             RefreshNow();
         }
 
+        public void ConfigureAnimator(Animator newAnimator)
+        {
+            animator = newAnimator;
+            RefreshNow();
+        }
+
         public void ConfigureClashReference(SummonFrontlineClash newClash)
         {
             clash = newClash;
@@ -178,6 +208,10 @@ namespace DimensionBrawl.Presentation
                     entryFlashTimer = Mathf.Max(entryFlashTimer, entryFlashSeconds);
                     impactFlashedThisActivation = false;
                     entryFlashCount++;
+                    if (active && TriggerAnimator(spawnTrigger))
+                    {
+                        animatorSpawnTriggerCount++;
+                    }
                 }
 
                 lastObservedTier = tier;
@@ -191,10 +225,12 @@ namespace DimensionBrawl.Presentation
                 }
 
                 SetPulseVisible(true);
+                RefreshAnimator(active);
                 RefreshVisual(tier);
             }
             else
             {
+                SetAnimatorMoveSpeed(0f);
                 SetPulseVisible(false);
             }
 
@@ -257,6 +293,10 @@ namespace DimensionBrawl.Presentation
             {
                 attackFlashTimer = Mathf.Max(attackFlashTimer, attackFlashSeconds);
                 attackFlashCount++;
+                if (TriggerAnimator(attackTrigger))
+                {
+                    animatorAttackTriggerCount++;
+                }
             }
         }
 
@@ -319,10 +359,70 @@ namespace DimensionBrawl.Presentation
             }
         }
 
+        private void RefreshAnimator(bool active)
+        {
+            float moveSpeed = active
+                && proxy != null
+                && proxy.CurrentState == SummonFrontlineProxyState.Advancing
+                    ? proxy.ActiveMoveSpeed * animatorMoveSpeedScale
+                    : 0f;
+            SetAnimatorMoveSpeed(moveSpeed);
+        }
+
+        private void SetAnimatorMoveSpeed(float value)
+        {
+            if (!HasAnimatorParameter(moveSpeedParameter, AnimatorControllerParameterType.Float))
+            {
+                return;
+            }
+
+            animator.SetFloat(moveSpeedParameter, Mathf.Max(0f, value));
+            animatorMoveSpeedSetCount++;
+        }
+
+        private bool TriggerAnimator(string triggerName)
+        {
+            if (!HasAnimatorParameter(triggerName, AnimatorControllerParameterType.Trigger))
+            {
+                return false;
+            }
+
+            animator.SetTrigger(triggerName);
+            return true;
+        }
+
+        private bool HasAnimatorParameter(string parameterName, AnimatorControllerParameterType expectedType)
+        {
+            if (animator == null
+                || animator.runtimeAnimatorController == null
+                || string.IsNullOrWhiteSpace(parameterName))
+            {
+                return false;
+            }
+
+            AnimatorControllerParameter[] parameters = animator.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                AnimatorControllerParameter parameter = parameters[i];
+                if (parameter.type == expectedType
+                    && string.Equals(parameter.name, parameterName, System.StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private void HandleDamaged(DamageInfo _)
         {
             damageFlashTimer = Mathf.Max(damageFlashTimer, damageFlashSeconds);
             damageFlashCount++;
+            if (TriggerAnimator(hitTrigger))
+            {
+                animatorHitTriggerCount++;
+            }
+
             RefreshNow();
         }
 
@@ -330,6 +430,12 @@ namespace DimensionBrawl.Presentation
         {
             deathFlashTimer = Mathf.Max(deathFlashTimer, deathFlashSeconds);
             deathFlashCount++;
+            if (TriggerAnimator(deathTrigger))
+            {
+                animatorDeathTriggerCount++;
+            }
+
+            SetAnimatorMoveSpeed(0f);
             RefreshNow();
         }
 
@@ -348,6 +454,11 @@ namespace DimensionBrawl.Presentation
             if (health == null && proxy != null)
             {
                 health = proxy.Health;
+            }
+
+            if (animator == null)
+            {
+                animator = GetComponentInChildren<Animator>(includeInactive: true);
             }
         }
 

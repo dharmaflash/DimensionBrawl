@@ -10,6 +10,9 @@ namespace DimensionBrawl.Tests
 {
     public sealed class SummonLaneAndEnergyTests
     {
+        private const string ShieldBreakerEliteAnimatorControllerPath =
+            "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/RoleVariants/ShieldBreakerElite/DB_ShieldBreakerElite_Role.controller";
+
         [Test]
         public void LaneSpaceClampsPlayerZoneButKeepsForwardBattlefieldAvailable()
         {
@@ -567,12 +570,26 @@ namespace DimensionBrawl.Tests
             Collider pulseCollider = pulseObject.GetComponent<Collider>();
             Object.DestroyImmediate(pulseCollider);
             Renderer pulseRenderer = pulseObject.GetComponent<Renderer>();
+            GameObject visualObject = new GameObject("SummonSlot1Visual_ShieldBreakerElite");
+            visualObject.transform.SetParent(proxyObject.transform, worldPositionStays: false);
+            Animator animator = visualObject.AddComponent<Animator>();
+            animator.runtimeAnimatorController =
+                AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(ShieldBreakerEliteAnimatorControllerPath);
+            Assert.IsNotNull(animator.runtimeAnimatorController);
+
             SummonFrontlineProxyPresenter presenter = proxyObject.AddComponent<SummonFrontlineProxyPresenter>();
             presenter.ConfigurePresentation(proxy, pulseObject.transform, new[] { pulseRenderer });
+            presenter.ConfigureAnimator(animator);
 
             proxy.Activate(Vector3.zero, Vector3.forward, 1, 0f, 1f, 2f, 2f, 120f, 1f);
             presenter.RefreshNow();
             Assert.IsTrue(presenter.IsShowing);
+            Assert.AreEqual(1, presenter.AnimatorSpawnTriggerCount);
+            Assert.Greater(presenter.AnimatorMoveSpeedSetCount, 0);
+            Assert.Greater(
+                animator.GetFloat(presenter.MoveSpeedParameter),
+                0f,
+                "Advancing summon proxies should drive the promoted visual walk read.");
 
             proxy.NotifyAttackPerformed(0.2f);
             presenter.RefreshNow();
@@ -580,6 +597,12 @@ namespace DimensionBrawl.Tests
                 1,
                 presenter.AttackFlashCount,
                 "Summon attack state should produce an in-world attack flash instead of only HUD state.");
+            Assert.AreEqual(1, presenter.AnimatorAttackTriggerCount);
+            Assert.AreEqual(
+                0f,
+                animator.GetFloat(presenter.MoveSpeedParameter),
+                0.001f,
+                "Attack state should stop the promoted visual walk read.");
 
             Assert.IsTrue(health.TryApplyDamage(new DamageInfo(
                 null,
@@ -589,6 +612,7 @@ namespace DimensionBrawl.Tests
                 Vector3.back,
                 0f)));
             Assert.AreEqual(1, presenter.DamageFlashCount);
+            Assert.AreEqual(1, presenter.AnimatorHitTriggerCount);
 
             Assert.IsTrue(health.TryApplyDamage(new DamageInfo(
                 null,
@@ -605,6 +629,8 @@ namespace DimensionBrawl.Tests
                 1,
                 presenter.DeathFlashCount,
                 "Defeated summons should linger briefly for death feedback before the pooled actor hides.");
+            Assert.AreEqual(1, presenter.AnimatorDeathTriggerCount);
+            Assert.AreEqual(0f, animator.GetFloat(presenter.MoveSpeedParameter), 0.001f);
 
             proxy.Tick(1f);
             Assert.IsFalse(proxy.IsPresentationVisible);
@@ -1283,6 +1309,175 @@ namespace DimensionBrawl.Tests
             Object.DestroyImmediate(actorPrefabObject);
             Object.DestroyImmediate(projectilePrefabObject);
             Object.DestroyImmediate(summonPattern);
+            Object.DestroyImmediate(basePattern);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(laneObject);
+        }
+
+        [Test]
+        public void BossPressureActionDirectorMarksPlayerSummonResponseAction()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.ForwardBoundaryZ);
+            GameObject bossObject = new GameObject("BossProxy");
+            CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+            bossHealth.ConfigureTeam(DamageTeam.Enemy);
+
+            BossBarragePatternProfile basePattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            BossBarragePatternProfile skillPattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            BossBarragePatternProfile summonPattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            GameObject projectilePrefabObject = new GameObject("BossProjectilePrefab");
+            projectilePrefabObject.AddComponent<SphereCollider>();
+            projectilePrefabObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile projectilePrefab = projectilePrefabObject.AddComponent<BossBarrageProjectile>();
+            projectilePrefabObject.SetActive(false);
+
+            GameObject actorPrefabObject = new GameObject("BossSummonPressurePrefab");
+            actorPrefabObject.AddComponent<SphereCollider>();
+            actorPrefabObject.AddComponent<Rigidbody>();
+            SummonPressureScreen pressureScreen = actorPrefabObject.AddComponent<SummonPressureScreen>();
+            SummonFrontlineProxy actorPrefab = actorPrefabObject.AddComponent<SummonFrontlineProxy>();
+            actorPrefab.ConfigurePresentation(actorPrefabObject.transform, pressureScreen);
+            actorPrefabObject.SetActive(false);
+
+            GameObject actorRoot = new GameObject("BossSummonActorRoot");
+            BossSummonPressureAction summonAction = bossObject.AddComponent<BossSummonPressureAction>();
+            summonAction.ConfigureReferences(lane, playerObject.transform, actorPrefab, actorRoot.transform);
+
+            BossBarrageEmitter emitter = bossObject.AddComponent<BossBarrageEmitter>();
+            emitter.ConfigureReferences(lane, playerObject.transform, bossHealth);
+            emitter.ConfigurePattern(basePattern, projectilePrefab, basePattern.ProjectilesPerWave * 2);
+
+            BossPressureCostLadder bossCost = bossObject.AddComponent<BossPressureCostLadder>();
+            bossCost.ConfigureReferences(lane, bossObject.transform);
+            bossCost.GrantCurrentTierCost(200f);
+
+            BossPressureActionDirector director = bossObject.AddComponent<BossPressureActionDirector>();
+            director.ConfigureReferences(bossCost, emitter, summonAction, lane, playerObject.transform);
+            director.ConfigureActionSlots(new[]
+            {
+                new BossPressureActionDirector.BossPressureActionSlot(
+                    skillPattern,
+                    BossPressureActionKind.SkillPattern,
+                    2,
+                    1,
+                    0f),
+                new BossPressureActionDirector.BossPressureActionSlot(
+                    summonPattern,
+                    BossPressureActionKind.SummonPressure,
+                    2,
+                    1,
+                    0f)
+            });
+
+            director.NotifyPlayerSummonFrontlineCreated(2);
+
+            Assert.IsTrue(director.IsPlayerSummonResponseWindowActive);
+            Assert.AreEqual(2, director.LastObservedPlayerSummonTier);
+            Assert.IsTrue(director.TryQueueBestAvailableAction());
+            Assert.AreSame(
+                summonPattern,
+                emitter.QueuedPriorityPattern,
+                "A boss answer inside the player-summon response window should prefer the authored summon-pressure slot at the same tier.");
+            Assert.AreEqual(BossPressureActionKind.SummonPressure, director.LastActionKind);
+            Assert.IsTrue(director.LastActionRespondedToPlayerSummon);
+            Assert.AreEqual(1, director.TotalPlayerSummonResponseCount);
+            Assert.AreEqual(BossPressureActionKind.SummonPressure, director.LastPlayerSummonResponseKind);
+            Assert.AreEqual(2, director.LastPlayerSummonResponseTier);
+            Assert.AreEqual(0f, director.PlayerSummonResponseRemainingSeconds, 0.001f);
+
+            Object.DestroyImmediate(actorRoot);
+            Object.DestroyImmediate(actorPrefabObject);
+            Object.DestroyImmediate(projectilePrefabObject);
+            Object.DestroyImmediate(summonPattern);
+            Object.DestroyImmediate(skillPattern);
+            Object.DestroyImmediate(basePattern);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(laneObject);
+        }
+
+        [Test]
+        public void BossPressureActionDirectorPrefersSummonResponseOverHigherTierPunish()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.ForwardBoundaryZ);
+            GameObject bossObject = new GameObject("BossProxy");
+            CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+            bossHealth.ConfigureTeam(DamageTeam.Enemy);
+
+            BossBarragePatternProfile basePattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            BossBarragePatternProfile punishPattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            BossBarragePatternProfile summonPattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            GameObject projectilePrefabObject = new GameObject("BossProjectilePrefab");
+            projectilePrefabObject.AddComponent<SphereCollider>();
+            projectilePrefabObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile projectilePrefab = projectilePrefabObject.AddComponent<BossBarrageProjectile>();
+            projectilePrefabObject.SetActive(false);
+
+            GameObject actorPrefabObject = new GameObject("BossSummonPressurePrefab");
+            actorPrefabObject.AddComponent<SphereCollider>();
+            actorPrefabObject.AddComponent<Rigidbody>();
+            SummonPressureScreen pressureScreen = actorPrefabObject.AddComponent<SummonPressureScreen>();
+            SummonFrontlineProxy actorPrefab = actorPrefabObject.AddComponent<SummonFrontlineProxy>();
+            actorPrefab.ConfigurePresentation(actorPrefabObject.transform, pressureScreen);
+            actorPrefabObject.SetActive(false);
+
+            GameObject actorRoot = new GameObject("BossSummonActorRoot");
+            BossSummonPressureAction summonAction = bossObject.AddComponent<BossSummonPressureAction>();
+            summonAction.ConfigureReferences(lane, playerObject.transform, actorPrefab, actorRoot.transform);
+
+            BossBarrageEmitter emitter = bossObject.AddComponent<BossBarrageEmitter>();
+            emitter.ConfigureReferences(lane, playerObject.transform, bossHealth);
+            emitter.ConfigurePattern(basePattern, projectilePrefab, basePattern.ProjectilesPerWave * 2);
+
+            BossPressureCostLadder bossCost = bossObject.AddComponent<BossPressureCostLadder>();
+            bossCost.ConfigureReferences(lane, bossObject.transform);
+            bossCost.GrantCurrentTierCost(300f);
+
+            BossPressureActionDirector director = bossObject.AddComponent<BossPressureActionDirector>();
+            director.ConfigureReferences(bossCost, emitter, summonAction, lane, playerObject.transform);
+            director.ConfigureActionSlots(new[]
+            {
+                new BossPressureActionDirector.BossPressureActionSlot(
+                    punishPattern,
+                    BossPressureActionKind.PunishOverextend,
+                    3,
+                    1,
+                    0f,
+                    usePlayerForwardRiskGate: true,
+                    minimumPlayerForwardRisk01: 0.66f,
+                    maximumPlayerForwardRisk01: 1f),
+                new BossPressureActionDirector.BossPressureActionSlot(
+                    summonPattern,
+                    BossPressureActionKind.SummonPressure,
+                    2,
+                    1,
+                    0f)
+            });
+
+            director.NotifyPlayerSummonFrontlineCreated(2);
+
+            Assert.IsTrue(director.TryQueueBestAvailableAction());
+            Assert.AreSame(
+                summonPattern,
+                emitter.QueuedPriorityPattern,
+                "A player-summon response window should make boss summon pressure beat a higher-tier overextend punish.");
+            Assert.AreEqual(BossPressureActionKind.SummonPressure, director.LastActionKind);
+            Assert.AreEqual(3, director.LastSpentTier);
+            Assert.IsTrue(director.LastActionRespondedToPlayerSummon);
+            Assert.AreEqual(BossPressureActionKind.SummonPressure, director.LastPlayerSummonResponseKind);
+
+            Object.DestroyImmediate(actorRoot);
+            Object.DestroyImmediate(actorPrefabObject);
+            Object.DestroyImmediate(projectilePrefabObject);
+            Object.DestroyImmediate(summonPattern);
+            Object.DestroyImmediate(punishPattern);
             Object.DestroyImmediate(basePattern);
             Object.DestroyImmediate(bossObject);
             Object.DestroyImmediate(playerObject);

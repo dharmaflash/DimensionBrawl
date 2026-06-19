@@ -76,6 +76,11 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyRoleCandidates/DB_RoleCandidate_AuraCaptainElite.asset";
         private const string SummonSlot1ActorVisualName = "SummonSlot1Visual_ShieldBreakerElite";
         private const string BossSummonPressureActorVisualName = "BossSummonPressureVisual_AuraCaptainElite";
+        private const string SummonActorMoveSpeedParameter = "MoveSpeed";
+        private const string SummonActorSpawnTrigger = "EliteSummonPackage";
+        private const string SummonActorAttackTrigger = "Attack";
+        private const string SummonActorHitTrigger = "Hit";
+        private const string SummonActorDeathTrigger = "Death";
         private const string RifleGirlRangedControllerPath =
             "Assets/_Game/Art/Animations/Player/RifleGirl/DB_RifleGirl_RangedCandidate.controller";
         private const string RifleGirlModelPath =
@@ -238,10 +243,10 @@ namespace DimensionBrawl.Tests
                 bossPressureActionDirector,
                 GetObjectReference<BossPressureActionDirector>(bossPressurePosition, "actionDirector"));
             Assert.AreSame(bossRoot.transform, GetObjectReference<Transform>(bossPressurePosition, "movedTransform"));
-            Assert.AreEqual(0.08f, GetFloat(bossPressurePosition, "restRisk01"), 0.001f);
-            Assert.AreEqual(0.62f, GetFloat(bossPressurePosition, "maxCommitRisk01"), 0.001f);
-            Assert.AreEqual(0.25f, GetFloat(bossPressurePosition, "advanceRiskPerSecond"), 0.001f);
-            Assert.AreEqual(0.42f, GetFloat(bossPressurePosition, "retreatRiskPerSecond"), 0.001f);
+            Assert.AreEqual(0.12f, GetFloat(bossPressurePosition, "restRisk01"), 0.001f);
+            Assert.AreEqual(0.74f, GetFloat(bossPressurePosition, "maxCommitRisk01"), 0.001f);
+            Assert.AreEqual(0.38f, GetFloat(bossPressurePosition, "advanceRiskPerSecond"), 0.001f);
+            Assert.AreEqual(0.32f, GetFloat(bossPressurePosition, "retreatRiskPerSecond"), 0.001f);
             Assert.IsTrue(GetBool(bossPressurePosition, "returnToRestWhenActionsDisabled"));
             Assert.IsTrue(GetBool(bossPressurePosition, "movementEnabled"));
             Assert.AreSame(
@@ -261,7 +266,7 @@ namespace DimensionBrawl.Tests
                 bossPressureActionDirector.HoldForNextTierActionWhenGateAllows,
                 "Boss pressure should be allowed to bank LV1 cost when the next-tier exchange is gated open.");
             Assert.AreEqual("PocketReviewBoss", bossPressureActionDeck.DeckId);
-            Assert.AreEqual(3, bossPressureActionDeck.ActionSlotCount);
+            Assert.AreEqual(4, bossPressureActionDeck.ActionSlotCount);
             Assert.AreEqual(0.35f, bossPressureActionDeck.GlobalRecoverySeconds, 0.001f);
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(bossSummonPressureAction, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(bossSummonPressureAction, "trackedPlayer"));
@@ -293,14 +298,23 @@ namespace DimensionBrawl.Tests
                 "High-cost boss proxy that punishes overextension and demands a committed high-tier answer or retreat.",
                 "Back off from forward-risk lanes unless a summon answer is already charged.",
                 "A saved LV2/LV3 summon should create a visible pressure-break window before counterfire.");
-            AssertSummonActorRoleVisual(
-                LoadAsset<GameObject>(BossSummonPressureActorPrefabPath),
+            GameObject bossSummonActorPrefabObject = LoadAsset<GameObject>(BossSummonPressureActorPrefabPath);
+            SummonFrontlineProxyPresenter bossSummonActorPresenter =
+                RequireComponent<SummonFrontlineProxyPresenter>(
+                    bossSummonActorPrefabObject,
+                    "Boss summon pressure actor presenter");
+            Animator bossSummonAnimator = AssertSummonActorRoleVisual(
+                bossSummonActorPrefabObject,
                 BossSummonPressureActorVisualName);
+            AssertSummonProxyAnimatorPresentation(
+                bossSummonActorPresenter,
+                bossSummonAnimator,
+                "Boss summon pressure actor prefab");
             AssertSummonPresentationCandidateProfile(
                 bossSummonPresentationCandidate,
                 "BossPressure.AuraCaptain",
                 SummonPresentationSide.BossPressure,
-                LoadAsset<GameObject>(BossSummonPressureActorPrefabPath),
+                bossSummonActorPrefabObject,
                 AuraCaptainEliteRoleCandidateProfilePath,
                 BossSummonPressureActorVisualName,
                 "SciFiSoldier.Elite.AuraCaptain",
@@ -325,17 +339,30 @@ namespace DimensionBrawl.Tests
                 1,
                 LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath),
                 BossPressureActionKind.SummonPressure,
+                1,
+                "EscortProbeFrontlineCheck",
+                "LV1 escort-probe summon pressure that lets the boss contest the frontline before the player reaches a full support stack.",
+                "Use ranged fire or a cheap summon answer before the probe turns the lane into a screen trade.",
+                "A low-tier summon can body-clash or absorb the probe without waiting for a perfect LV2 answer.",
+                false,
+                0f,
+                1f);
+            AssertBossPressureActionSlot(
+                bossPressureActionDirector,
+                2,
+                LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath),
+                BossPressureActionKind.SummonPressure,
                 2,
                 "SummonSlot1PressureBlock",
                 "LV2 summon-pressure exchange that tests whether the player can answer boss fire with a frontline summon screen.",
                 "Hold forward-risk only long enough to charge EN, then create space for the summon block.",
                 "Spend SummonSlot1 to place a pressure screen and intercept the boss curtain.",
                 true,
-                0.32f,
+                0.22f,
                 1f);
             AssertBossPressureActionSlot(
                 bossPressureActionDirector,
-                2,
+                3,
                 LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath),
                 BossPressureActionKind.PunishOverextend,
                 3,
@@ -510,7 +537,11 @@ namespace DimensionBrawl.Tests
             Assert.IsNotNull(summonHealthBarPresenter.BarRoot);
             Assert.IsNotNull(summonHealthBarPresenter.FillRoot);
             Assert.GreaterOrEqual(summonHealthBarPresenter.RendererCount, 2);
-            AssertSummonActorRoleVisual(summonActorPrefabObject, SummonSlot1ActorVisualName);
+            Animator summonActorAnimator = AssertSummonActorRoleVisual(summonActorPrefabObject, SummonSlot1ActorVisualName);
+            AssertSummonProxyAnimatorPresentation(
+                summonActorPresenter,
+                summonActorAnimator,
+                "SummonSlot1 actor prefab");
             AssertSummonPresentationCandidateProfile(
                 summonSlot1PresentationCandidate,
                 "PlayerSummon.ShieldBreaker",
@@ -2986,7 +3017,7 @@ namespace DimensionBrawl.Tests
             Assert.Fail($"Animator {animator.name} is missing {expectedType} parameter {parameterName}.");
         }
 
-        private static void AssertSummonActorRoleVisual(GameObject prefab, string visualName)
+        private static Animator AssertSummonActorRoleVisual(GameObject prefab, string visualName)
         {
             Transform visual = prefab.transform.Find(visualName);
             Assert.IsNotNull(visual, $"{prefab.name} should include {visualName}.");
@@ -3014,6 +3045,28 @@ namespace DimensionBrawl.Tests
             {
                 AssertRendererUsesGameOwnedAssets(renderers[i], $"{visualName}.{renderers[i].name}");
             }
+
+            return animator;
+        }
+
+        private static void AssertSummonProxyAnimatorPresentation(
+            SummonFrontlineProxyPresenter presenter,
+            Animator animator,
+            string label)
+        {
+            Assert.IsNotNull(presenter, $"{label} should have a summon proxy presenter.");
+            Assert.IsNotNull(animator, $"{label} should have a promoted visual Animator.");
+            Assert.AreSame(animator, presenter.Animator, $"{label} presenter should target the promoted visual Animator.");
+            Assert.AreEqual(SummonActorMoveSpeedParameter, presenter.MoveSpeedParameter);
+            Assert.AreEqual(SummonActorSpawnTrigger, presenter.SpawnTrigger);
+            Assert.AreEqual(SummonActorAttackTrigger, presenter.AttackTrigger);
+            Assert.AreEqual(SummonActorHitTrigger, presenter.HitTrigger);
+            Assert.AreEqual(SummonActorDeathTrigger, presenter.DeathTrigger);
+            AssertAnimatorParameter(animator, presenter.MoveSpeedParameter, AnimatorControllerParameterType.Float);
+            AssertAnimatorParameter(animator, presenter.SpawnTrigger, AnimatorControllerParameterType.Trigger);
+            AssertAnimatorParameter(animator, presenter.AttackTrigger, AnimatorControllerParameterType.Trigger);
+            AssertAnimatorParameter(animator, presenter.HitTrigger, AnimatorControllerParameterType.Trigger);
+            AssertAnimatorParameter(animator, presenter.DeathTrigger, AnimatorControllerParameterType.Trigger);
         }
 
         private static void AssertSummonPresentationCandidateProfile(
