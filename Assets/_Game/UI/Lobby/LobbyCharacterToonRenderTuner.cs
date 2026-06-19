@@ -22,7 +22,7 @@ namespace DimensionBrawl.UI
         [SerializeField, Range(0f, 0.5f)] private float baseShadeFeather = 0.12f;
         [SerializeField] private bool clearOnDisable = true;
 
-        private readonly MaterialPropertyBlock propertyBlock = new MaterialPropertyBlock();
+        private MaterialPropertyBlock propertyBlock;
 
         private void OnEnable()
         {
@@ -74,8 +74,9 @@ namespace DimensionBrawl.UI
                 int materialCount = targetRenderer.sharedMaterials.Length;
                 for (int materialIndex = 0; materialIndex < materialCount; materialIndex++)
                 {
-                    propertyBlock.Clear();
-                    targetRenderer.SetPropertyBlock(propertyBlock, materialIndex);
+                    MaterialPropertyBlock block = PropertyBlock;
+                    block.Clear();
+                    targetRenderer.SetPropertyBlock(block, materialIndex);
                 }
             }
         }
@@ -112,39 +113,53 @@ namespace DimensionBrawl.UI
                     continue;
                 }
 
-                targetRenderer.GetPropertyBlock(propertyBlock, materialIndex);
+                MaterialPropertyBlock block = PropertyBlock;
+                targetRenderer.GetPropertyBlock(block, materialIndex);
                 if (hasUnlitIntensity)
                 {
-                    propertyBlock.SetFloat(UnlitIntensityId, unlitIntensity);
+                    block.SetFloat(UnlitIntensityId, unlitIntensity);
                 }
 
                 if (hasRimLightPower)
                 {
-                    propertyBlock.SetFloat(RimLightPowerId, rimLightPower);
+                    block.SetFloat(RimLightPowerId, rimLightPower);
                 }
 
                 if (hasOutlineWidth)
                 {
-                    propertyBlock.SetFloat(OutlineWidthId, outlineWidth);
+                    block.SetFloat(OutlineWidthId, outlineWidth);
                 }
 
                 if (hasOutlineDepthOffset)
                 {
-                    propertyBlock.SetFloat(OutlineDepthOffsetId, outlineDepthOffset);
+                    block.SetFloat(OutlineDepthOffsetId, outlineDepthOffset);
                 }
 
                 if (hasBaseColorStep)
                 {
-                    propertyBlock.SetFloat(BaseColorStepId, baseColorStep);
+                    block.SetFloat(BaseColorStepId, baseColorStep);
                 }
 
                 if (hasBaseShadeFeather)
                 {
-                    propertyBlock.SetFloat(BaseShadeFeatherId, baseShadeFeather);
+                    block.SetFloat(BaseShadeFeatherId, baseShadeFeather);
                 }
 
-                targetRenderer.SetPropertyBlock(propertyBlock, materialIndex);
-                propertyBlock.Clear();
+                targetRenderer.SetPropertyBlock(block, materialIndex);
+                block.Clear();
+            }
+        }
+
+        private MaterialPropertyBlock PropertyBlock
+        {
+            get
+            {
+                if (propertyBlock == null)
+                {
+                    propertyBlock = new MaterialPropertyBlock();
+                }
+
+                return propertyBlock;
             }
         }
     }

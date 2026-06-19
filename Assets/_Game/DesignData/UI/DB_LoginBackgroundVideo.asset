@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eaf8a04201e84efd96f0b596fca6f109, type: 3}
+  m_Name: DB_LoginBackgroundVideo
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.LoginVideoBackgroundProfile
+  backgroundClip: {fileID: 32900000, guid: 9be3b96482a918f42a30c83a7920daf2, type: 3}
+  loop: 1
+  muteAudio: 1
+  hideVideoUntilPrepared: 1
+  fallbackWidth: 2560
+  fallbackHeight: 1440

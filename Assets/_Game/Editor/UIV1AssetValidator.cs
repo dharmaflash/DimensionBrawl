@@ -8,6 +8,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.Video;
 
 namespace DimensionBrawl.Editor
 {
@@ -37,7 +38,9 @@ namespace DimensionBrawl.Editor
         private const string TooltipCatalogPath = "Assets/_Game/DesignData/UI/DB_UITooltips.asset";
         private const string DialogCatalogPath = "Assets/_Game/DesignData/UI/DB_UIDialogs.asset";
         private const string ResultPreviewCatalogPath = "Assets/_Game/DesignData/UI/DB_UIResultPreviews.asset";
+        private const string LoginVideoProfilePath = "Assets/_Game/DesignData/UI/DB_LoginBackgroundVideo.asset";
         private const string LoginScreenPrefabPath = "Assets/_Game/UI/Login/PF_UI_LoginScreen.prefab";
+        private const string LoginVideoRoot = "Assets/_Game/UI/Login/Art/Videos/";
         private const string LoginAccountServerToastId = "Login.AccountServerNotice";
         private const string UiSceneRoot = "Assets/_Game/Scenes/UI/";
         private const string ImportedRoot = "Assets/_Imported/";
@@ -75,6 +78,7 @@ namespace DimensionBrawl.Editor
             RequireAsset<UITooltipCatalog>(TooltipCatalogPath);
             RequireAsset<UIDialogCatalog>(DialogCatalogPath);
             RequireAsset<UIResultPreviewCatalog>(ResultPreviewCatalogPath);
+            ValidateLoginVideoProfile(RequireAsset<LoginVideoBackgroundProfile>(LoginVideoProfilePath));
 
             HashSet<string> loadingCardIds = CollectStringKeys(LoadingDeckPath, "cards", "id");
             HashSet<UIRouteId> routeIds = ValidateRouteTable(loadingCardIds);
@@ -1250,6 +1254,7 @@ namespace DimensionBrawl.Editor
                 ValidateToastPresenters(path, prefab);
                 ValidateDialogPresenters(path, prefab);
                 ValidateLoginTapStartSurface(path, prefab);
+                ValidateLoginVideoBackground(path, prefab);
                 ValidateLoginAccountServerNotice(path, prefab);
                 ValidateLoadingCardPresenters(path, prefab, loadingCardIds);
                 ValidateThemePresenters(path, prefab, themeColorKeys, themeTextStyleKeys);
@@ -1539,6 +1544,87 @@ namespace DimensionBrawl.Editor
             }
 
             RequireTrue(rootImage.raycastTarget, $"{prefabPath}.rootImage.raycastTarget");
+        }
+
+        private static void ValidateLoginVideoBackground(string prefabPath, GameObject prefab)
+        {
+            if (!string.Equals(prefabPath, LoginScreenPrefabPath, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            LoginVideoBackgroundPresenter presenter = prefab.GetComponentInChildren<LoginVideoBackgroundPresenter>(true);
+            if (presenter == null)
+            {
+                throw new InvalidOperationException($"{prefabPath} must include LoginVideoBackgroundPresenter.");
+            }
+
+            SerializedObject serializedObject = new SerializedObject(presenter);
+            RequireObjectReference(serializedObject, "targetImage", $"{prefabPath}.LoginVideoBackgroundPresenter.targetImage");
+            RequireObjectReference(serializedObject, "aspectRatioFitter", $"{prefabPath}.LoginVideoBackgroundPresenter.aspectRatioFitter");
+            SerializedProperty profileProperty = serializedObject.FindProperty("profile");
+            if (profileProperty == null || profileProperty.objectReferenceValue == null)
+            {
+                throw new InvalidOperationException($"{prefabPath}.LoginVideoBackgroundPresenter.profile must be assigned.");
+            }
+
+            if (!(profileProperty.objectReferenceValue is LoginVideoBackgroundProfile profile))
+            {
+                throw new InvalidOperationException($"{prefabPath}.LoginVideoBackgroundPresenter.profile must reference a LoginVideoBackgroundProfile.");
+            }
+
+            string profilePath = AssetDatabase.GetAssetPath(profileProperty.objectReferenceValue).Replace('\\', '/');
+            if (!string.Equals(profilePath, LoginVideoProfilePath, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"{prefabPath}.LoginVideoBackgroundPresenter.profile must reference {LoginVideoProfilePath}.");
+            }
+
+            ValidateLoginVideoProfile(profile);
+
+            RawImage image = presenter.GetComponent<RawImage>();
+            if (image == null)
+            {
+                throw new InvalidOperationException($"{prefabPath}.LoginVideoBackgroundPresenter must sit on a RawImage.");
+            }
+
+            if (image.texture == null)
+            {
+                throw new InvalidOperationException($"{prefabPath}.LoginVideoBackgroundPresenter must keep a fallback background texture.");
+            }
+
+            if (image.raycastTarget)
+            {
+                throw new InvalidOperationException($"{prefabPath}.LoginVideoBackgroundPresenter target image must not block login taps.");
+            }
+
+            AspectRatioFitter fitter = presenter.GetComponent<AspectRatioFitter>();
+            if (fitter == null || fitter.aspectMode != AspectRatioFitter.AspectMode.EnvelopeParent)
+            {
+                throw new InvalidOperationException($"{prefabPath}.LoginVideoBackgroundPresenter must use an Envelope Parent AspectRatioFitter.");
+            }
+        }
+
+        private static void ValidateLoginVideoProfile(LoginVideoBackgroundProfile profile)
+        {
+            SerializedObject serializedObject = new SerializedObject(profile);
+            SerializedProperty backgroundClip = serializedObject.FindProperty("backgroundClip");
+            if (backgroundClip == null || backgroundClip.objectReferenceValue == null)
+            {
+                throw new InvalidOperationException($"{LoginVideoProfilePath}.backgroundClip must be assigned.");
+            }
+
+            if (!(backgroundClip.objectReferenceValue is VideoClip))
+            {
+                throw new InvalidOperationException($"{LoginVideoProfilePath}.backgroundClip must reference a VideoClip.");
+            }
+
+            string backgroundClipPath = AssetDatabase.GetAssetPath(backgroundClip.objectReferenceValue).Replace('\\', '/');
+            if (!backgroundClipPath.StartsWith(LoginVideoRoot, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"{LoginVideoProfilePath}.backgroundClip must stay under {LoginVideoRoot}.");
+            }
+
+            RequireTrue(serializedObject.FindProperty("muteAudio").boolValue, $"{LoginVideoProfilePath}.muteAudio");
         }
 
         private static void ValidateLoginAccountServerNotice(string prefabPath, GameObject prefab)
