@@ -276,23 +276,23 @@ namespace DimensionBrawl.Tests
                 bossSummonPressureProfile,
                 1,
                 "LV1 Escort Probe",
-                "Low-cost boss proxy that tests whether the player can keep firing lanes clear.",
-                "Strafe or use basic fire; do not spend summon unless pressure stacks.",
-                "Usually save SummonSlot1 for the next boss screen.");
+                "Low-cost boss proxy that holds the lane long enough for the player to answer with fire or a saved summon.",
+                "Strafe and keep firing; spend SummonSlot1 only if the next barrage overlaps this proxy.",
+                "A short relief answer should remove the screen and keep the lane from being locked.");
             AssertBossSummonPressureReadout(
                 bossSummonPressureProfile,
                 2,
                 "LV2 Pressure Screen",
-                "Boss-side summon pressure that contests the frontline and can block player follow-up shots.",
-                "Take EN only long enough to prepare a clean response.",
-                "Use SummonSlot1 screen to absorb the boss curtain and reopen Skill1.");
+                "Boss-side summon pressure that contests the frontline for several seconds and blocks player follow-up shots.",
+                "Take EN only long enough to prepare a clean response, then break the screen before the next boss pattern layers on top.",
+                "Use SummonSlot1 or Vanguard support to absorb the curtain and reopen ranged punish time.");
             AssertBossSummonPressureReadout(
                 bossSummonPressureProfile,
                 3,
                 "LV3 Clamp Guard",
-                "High-cost boss proxy that punishes overextension and forces a high-tier answer or retreat.",
-                "Retreat from forward-risk lanes before firing back.",
-                "A saved LV2/LV3 SummonSlot1 answer should create the relief window.");
+                "High-cost boss proxy that punishes overextension and demands a committed high-tier answer or retreat.",
+                "Back off from forward-risk lanes unless a summon answer is already charged.",
+                "A saved LV2/LV3 summon should create a visible pressure-break window before counterfire.");
             AssertSummonActorRoleVisual(
                 LoadAsset<GameObject>(BossSummonPressureActorPrefabPath),
                 BossSummonPressureActorVisualName);
@@ -485,8 +485,12 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(summonActorPrefabObject, GetObjectReference<GameObject>(summonSlot1Action, "summonActorPrefabObject"));
             SummonFrontlineProxy summonActorPrefab =
                 RequireComponent<SummonFrontlineProxy>(summonActorPrefabObject, "SummonSlot1 actor prefab");
-            SummonPressureScreen summonPressureScreen =
-                RequireComponent<SummonPressureScreen>(summonActorPrefabObject, "SummonSlot1 pressure screen");
+            SummonPressureScreen summonPressureScreen = summonActorPrefab.PressureScreen;
+            Assert.IsNotNull(summonPressureScreen, "SummonSlot1 actor prefab should reference its pressure screen.");
+            Assert.AreNotSame(
+                summonActorPrefab.transform,
+                summonPressureScreen.transform,
+                "SummonSlot1 pressure screen should stay separate from the body hitbox.");
             SummonPressureScreenPresenter summonPressureScreenPresenter =
                 RequireComponent<SummonPressureScreenPresenter>(summonActorPrefabObject, "SummonSlot1 pressure screen presenter");
             SummonFrontlineProxyPresenter summonActorPresenter =
@@ -498,7 +502,10 @@ namespace DimensionBrawl.Tests
             Assert.Greater(summonPressureScreenPresenter.RendererCount, 0);
             Assert.AreSame(summonActorPrefab, summonActorPresenter.Proxy);
             Assert.IsNotNull(summonActorPresenter.PulseRoot);
-            Assert.GreaterOrEqual(summonActorPresenter.RendererCount, 2);
+            Assert.AreEqual(
+                1,
+                summonActorPresenter.RendererCount,
+                "SummonSlot1 actor presenter should tint only the tier pulse, not the promoted summon model.");
             Assert.AreSame(summonActorPrefab, summonHealthBarPresenter.Proxy);
             Assert.IsNotNull(summonHealthBarPresenter.BarRoot);
             Assert.IsNotNull(summonHealthBarPresenter.FillRoot);
@@ -2168,15 +2175,24 @@ namespace DimensionBrawl.Tests
             BossSummonPressureAction bossSummonPressureAction =
                 RequireComponent<BossSummonPressureAction>(bossRoot, "boss summon pressure action");
 
+            float summonPressureRisk01 = 0.5f;
+            float summonPressureLaneZ = Mathf.Lerp(
+                laneSpace.BackLimitZ,
+                laneSpace.ForwardBoundaryZ,
+                summonPressureRisk01);
             player.transform.position = laneSpace.GetLaneWorldPoint(
                 0f,
-                laneSpace.ForwardBoundaryZ,
+                summonPressureLaneZ,
                 player.transform.position.y);
             targetSelector.NotifyTargetContact(bossHealth);
             targetSelector.RefreshTarget();
             Physics.SyncTransforms();
             yield return null;
 
+            Assert.AreEqual(
+                summonPressureRisk01,
+                bossPressureActionDirector.CurrentPlayerForwardRisk01,
+                0.001f);
             bossPressureCost.GrantCurrentTierCost(200f);
             Assert.IsTrue(
                 bossPressureActionDirector.TryQueueBestAvailableAction(),
