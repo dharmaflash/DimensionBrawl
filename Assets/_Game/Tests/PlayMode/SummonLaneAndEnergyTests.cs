@@ -162,6 +162,70 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void SummonHealthBarPresenterShowsAfterActivationAndTracksDamage()
+        {
+            GameObject proxyObject = new GameObject("SummonProxy");
+            CombatHealth health = proxyObject.AddComponent<CombatHealth>();
+            health.ConfigureTeam(DamageTeam.AllySummon);
+            health.ResetHealthToFull();
+            SummonFrontlineProxy proxy = proxyObject.AddComponent<SummonFrontlineProxy>();
+            proxy.ConfigureHealth(health);
+
+            GameObject barRoot = new GameObject("HealthBarRoot");
+            barRoot.transform.SetParent(proxyObject.transform, worldPositionStays: false);
+            GameObject backObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            backObject.name = "HealthBarBack";
+            backObject.transform.SetParent(barRoot.transform, worldPositionStays: false);
+            Object.DestroyImmediate(backObject.GetComponent<Collider>());
+            Renderer backRenderer = backObject.GetComponent<Renderer>();
+
+            GameObject fillObject = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            fillObject.name = "HealthBarFill";
+            fillObject.transform.SetParent(barRoot.transform, worldPositionStays: false);
+            Object.DestroyImmediate(fillObject.GetComponent<Collider>());
+            Renderer fillRenderer = fillObject.GetComponent<Renderer>();
+
+            SummonFrontlineHealthBarPresenter presenter =
+                proxyObject.AddComponent<SummonFrontlineHealthBarPresenter>();
+            presenter.ConfigurePresentation(
+                proxy,
+                health,
+                barRoot.transform,
+                fillObject.transform,
+                new[] { backRenderer, fillRenderer });
+            presenter.RefreshNow();
+            Assert.IsFalse(presenter.IsShowing, "The summon HP bar should stay hidden before the actor is summoned.");
+
+            proxy.Activate(Vector3.zero, Vector3.forward, 1, 0f, 1f, 1f, 0.2f);
+            presenter.RefreshNow();
+            float fullFillWidth = fillObject.transform.localScale.x;
+            Assert.IsTrue(presenter.IsShowing, "The summon HP bar should become visible after activation.");
+            Assert.AreEqual(1f, presenter.LastHealthRatio, 0.001f);
+
+            Assert.IsTrue(health.TryApplyDamage(new DamageInfo(
+                null,
+                DamageTeam.Enemy,
+                40f,
+                Vector3.zero,
+                Vector3.back,
+                0f)));
+            presenter.RefreshNow();
+
+            Assert.AreEqual(0.6f, presenter.LastHealthRatio, 0.001f);
+            Assert.AreEqual(
+                fullFillWidth * 0.6f,
+                fillObject.transform.localScale.x,
+                0.001f,
+                "The in-world summon HP fill should follow CombatHealth after the summoned actor takes damage.");
+
+            proxy.Deactivate();
+            presenter.RefreshNow();
+            Assert.IsFalse(presenter.IsShowing, "The summon HP bar should hide again when the actor leaves.");
+
+            Object.DestroyImmediate(proxyObject);
+        }
+
+        [Test]
         public void SummonBodyAndPressureScreenResolveDifferentCombatContacts()
         {
             GameObject actorObject = new GameObject("EnemySummonActor");

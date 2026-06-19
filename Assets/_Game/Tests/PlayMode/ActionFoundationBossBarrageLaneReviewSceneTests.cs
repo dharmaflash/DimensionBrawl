@@ -491,12 +491,18 @@ namespace DimensionBrawl.Tests
                 RequireComponent<SummonPressureScreenPresenter>(summonActorPrefabObject, "SummonSlot1 pressure screen presenter");
             SummonFrontlineProxyPresenter summonActorPresenter =
                 RequireComponent<SummonFrontlineProxyPresenter>(summonActorPrefabObject, "SummonSlot1 actor presenter");
+            SummonFrontlineHealthBarPresenter summonHealthBarPresenter =
+                RequireComponent<SummonFrontlineHealthBarPresenter>(summonActorPrefabObject, "SummonSlot1 health bar presenter");
             Assert.AreSame(summonPressureScreen, summonActorPrefab.PressureScreen);
             Assert.AreSame(summonPressureScreen, summonPressureScreenPresenter.PressureScreen);
             Assert.Greater(summonPressureScreenPresenter.RendererCount, 0);
             Assert.AreSame(summonActorPrefab, summonActorPresenter.Proxy);
             Assert.IsNotNull(summonActorPresenter.PulseRoot);
             Assert.GreaterOrEqual(summonActorPresenter.RendererCount, 2);
+            Assert.AreSame(summonActorPrefab, summonHealthBarPresenter.Proxy);
+            Assert.IsNotNull(summonHealthBarPresenter.BarRoot);
+            Assert.IsNotNull(summonHealthBarPresenter.FillRoot);
+            Assert.GreaterOrEqual(summonHealthBarPresenter.RendererCount, 2);
             AssertSummonActorRoleVisual(summonActorPrefabObject, SummonSlot1ActorVisualName);
             AssertSummonPresentationCandidateProfile(
                 summonSlot1PresentationCandidate,
@@ -1096,6 +1102,11 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(3, activeActorPresenter.LastObservedTier);
             Assert.Greater(activeActorPresenter.EntryFlashCount, 0);
             Assert.IsNotNull(activeActorPresenter.PulseRoot);
+            SummonFrontlineHealthBarPresenter activeHealthBarPresenter =
+                RequireComponent<SummonFrontlineHealthBarPresenter>(activeSummonActor.gameObject, "active SummonSlot1 health bar presenter");
+            activeHealthBarPresenter.RefreshNow();
+            Assert.IsTrue(activeHealthBarPresenter.IsShowing);
+            Assert.AreEqual(activeSummonActor.HealthRatio, activeHealthBarPresenter.LastHealthRatio, 0.001f);
             float actorStartLaneZ = laneSpace.GetLaneCoordinates(activeSummonActor.transform.position).y;
             Assert.IsTrue(activeSummonActor.IsAdvancing, "SummonSlot1 actor should march into the frontline after entry.");
             activeSummonActor.Tick(0.24f);

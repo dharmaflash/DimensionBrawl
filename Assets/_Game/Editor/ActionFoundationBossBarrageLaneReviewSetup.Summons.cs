@@ -9,6 +9,17 @@ namespace DimensionBrawl.Editor
 {
     public static partial class ActionFoundationBossBarrageLaneReviewSetup
     {
+        [MenuItem("DimensionBrawl/Reapply Action Foundation Summon Actor Health Bars")]
+        public static void ReapplySummonActorHealthBarsMenu()
+        {
+            EnsureSummonActorPrefab();
+            EnsureSummonSlot2ActorPrefab();
+            EnsureSummonSlot3ActorPrefab();
+            EnsureBossSummonPressureActorPrefab();
+            AssetDatabase.SaveAssets();
+            Debug.Log("Reapplied ActionFoundation summon actor health bars.");
+        }
+
         private static GameObject EnsureSummonEntryCuePrefab()
         {
             EnsureFolderForAsset(SummonSlot1EntryCuePrefabPath);
@@ -189,6 +200,13 @@ namespace DimensionBrawl.Editor
                     new Vector3(0f, -0.04f, -0.08f),
                     Vector3.zero,
                     new Vector3(0.62f, 0.62f, 0.62f));
+                EnsureSummonHealthBar(
+                    editableRoot,
+                    proxy,
+                    proxyHealth,
+                    DamageTeam.AllySummon,
+                    new Vector3(0f, 1.78f, 0.02f),
+                    0.78f);
 
                 SummonFrontlineProxyPresenter actorPresenter =
                     EnsureComponent<SummonFrontlineProxyPresenter>(editableRoot);
@@ -392,6 +410,13 @@ namespace DimensionBrawl.Editor
                     visualLocalPosition,
                     visualLocalEulerAngles,
                     visualLocalScale);
+                EnsureSummonHealthBar(
+                    editableRoot,
+                    proxy,
+                    proxyHealth,
+                    DamageTeam.AllySummon,
+                    new Vector3(0f, 1.78f, 0.02f),
+                    Mathf.Max(0.68f, bodyRadius * 0.95f));
 
                 SummonFrontlineProxyPresenter actorPresenter =
                     EnsureComponent<SummonFrontlineProxyPresenter>(editableRoot);
@@ -642,6 +667,13 @@ namespace DimensionBrawl.Editor
                     new Vector3(0f, -0.04f, 0.1f),
                     Vector3.zero,
                     new Vector3(0.66f, 0.66f, 0.66f));
+                EnsureSummonHealthBar(
+                    editableRoot,
+                    proxy,
+                    proxyHealth,
+                    DamageTeam.Enemy,
+                    new Vector3(0f, 1.82f, -0.02f),
+                    0.84f);
 
                 SummonFrontlineProxyPresenter actorPresenter =
                     EnsureComponent<SummonFrontlineProxyPresenter>(editableRoot);
@@ -682,6 +714,81 @@ namespace DimensionBrawl.Editor
             }
 
             return LoadPrefabComponent<SummonFrontlineProxy>(BossSummonPressureActorPrefabPath);
+        }
+
+        private static SummonFrontlineHealthBarPresenter EnsureSummonHealthBar(
+            GameObject editableRoot,
+            SummonFrontlineProxy proxy,
+            CombatHealth health,
+            DamageTeam ownerTeam,
+            Vector3 localPosition,
+            float width)
+        {
+            Material backMaterial = LoadOrCreateTransparentMaterial(
+                SummonHealthBarBackMaterialPath,
+                new Color(0.015f, 0.018f, 0.022f, 0.78f));
+            Material fillMaterial = LoadOrCreateMaterial(
+                ownerTeam == DamageTeam.Enemy
+                    ? SummonHealthBarEnemyFillMaterialPath
+                    : SummonHealthBarAllyFillMaterialPath,
+                ownerTeam == DamageTeam.Enemy
+                    ? new Color(1f, 0.22f, 0.32f, 1f)
+                    : new Color(0.18f, 1f, 0.48f, 1f));
+
+            Transform barRoot = EnsureChild(editableRoot.transform, SummonHealthBarRootName);
+            barRoot.localPosition = localPosition;
+            barRoot.localRotation = Quaternion.identity;
+            barRoot.localScale = Vector3.one;
+
+            float clampedWidth = Mathf.Max(0.2f, width);
+            MeshRenderer backRenderer = EnsureSummonHealthBarSegment(
+                EnsureChild(barRoot, SummonHealthBarBackName),
+                backMaterial,
+                Vector3.zero,
+                new Vector3(clampedWidth, 0.075f, 0.035f));
+            MeshRenderer fillRenderer = EnsureSummonHealthBarSegment(
+                EnsureChild(barRoot, SummonHealthBarFillName),
+                fillMaterial,
+                new Vector3(0f, 0f, -0.024f),
+                new Vector3(clampedWidth - 0.08f, 0.045f, 0.04f));
+
+            SummonFrontlineHealthBarPresenter healthBarPresenter =
+                EnsureComponent<SummonFrontlineHealthBarPresenter>(editableRoot);
+            healthBarPresenter.ConfigurePresentation(
+                proxy,
+                health,
+                barRoot,
+                fillRenderer.transform,
+                new Renderer[] { backRenderer, fillRenderer });
+            EditorUtility.SetDirty(editableRoot);
+            return healthBarPresenter;
+        }
+
+        private static MeshRenderer EnsureSummonHealthBarSegment(
+            Transform segment,
+            Material material,
+            Vector3 localPosition,
+            Vector3 localScale)
+        {
+            segment.localPosition = localPosition;
+            segment.localRotation = Quaternion.identity;
+            segment.localScale = localScale;
+
+            MeshFilter filter = EnsureComponent<MeshFilter>(segment.gameObject);
+            filter.sharedMesh = LoadPrimitiveMesh(PrimitiveType.Cube);
+            MeshRenderer renderer = EnsureComponent<MeshRenderer>(segment.gameObject);
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            renderer.allowOcclusionWhenDynamic = false;
+
+            Collider[] colliders = segment.GetComponents<Collider>();
+            for (int i = colliders.Length - 1; i >= 0; i--)
+            {
+                UnityEngine.Object.DestroyImmediate(colliders[i]);
+            }
+
+            return renderer;
         }
 
         private static void EnsureSupportSummonActionProfiles()

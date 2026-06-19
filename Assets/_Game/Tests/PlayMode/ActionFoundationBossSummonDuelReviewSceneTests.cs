@@ -269,6 +269,8 @@ namespace DimensionBrawl.Tests
             SummonFrontlineClash clash = RequireComponent<SummonFrontlineClash>(prefabRoot, label);
             SummonFrontlineProxyPresenter presenter =
                 RequireComponent<SummonFrontlineProxyPresenter>(prefabRoot, label);
+            SummonFrontlineHealthBarPresenter healthBarPresenter =
+                RequireComponent<SummonFrontlineHealthBarPresenter>(prefabRoot, label);
             CombatHealth health = RequireComponent<CombatHealth>(prefabRoot, label);
             SphereCollider bodyCollider = RequireComponent<SphereCollider>(prefabRoot, label);
             Rigidbody bodyRigidbody = RequireComponent<Rigidbody>(prefabRoot, label);
@@ -278,6 +280,14 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(health, GetObjectReference<CombatHealth>(clash, "health"));
             Assert.AreSame(proxy, GetObjectReference<SummonFrontlineProxy>(presenter, "proxy"));
             Assert.AreSame(clash, GetObjectReference<SummonFrontlineClash>(presenter, "clash"));
+            Assert.AreSame(proxy, healthBarPresenter.Proxy);
+            Assert.AreSame(health, healthBarPresenter.Health);
+            Assert.IsNotNull(healthBarPresenter.BarRoot, $"{label} should carry an in-world HP bar root.");
+            Assert.IsNotNull(healthBarPresenter.FillRoot, $"{label} should carry an in-world HP fill.");
+            Assert.GreaterOrEqual(
+                healthBarPresenter.RendererCount,
+                2,
+                $"{label} should render both HP bar back and fill after being summoned.");
             if (expectPressureScreen)
             {
                 Assert.IsNotNull(proxy.PressureScreen, $"{label} should carry a visible pressure screen.");

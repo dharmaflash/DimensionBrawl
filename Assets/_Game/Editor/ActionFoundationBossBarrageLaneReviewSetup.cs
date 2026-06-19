@@ -132,6 +132,15 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossSummonPressureScreen.mat";
         private const string BossSummonPressureActorPulseMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossSummonPressureActorPulse.mat";
+        private const string SummonHealthBarBackMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonHealthBarBack.mat";
+        private const string SummonHealthBarAllyFillMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonHealthBarAllyFill.mat";
+        private const string SummonHealthBarEnemyFillMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonHealthBarEnemyFill.mat";
+        private const string SummonHealthBarRootName = "HealthBarRoot";
+        private const string SummonHealthBarBackName = "HealthBarBack";
+        private const string SummonHealthBarFillName = "HealthBarFill";
 
         private const string ReviewRootPrefix = "BossBarrageLaneReview_";
         private const string LaneRootName = ReviewRootPrefix + "SummonLaneSpace";
@@ -3354,6 +3363,11 @@ namespace DimensionBrawl.Editor
                 summonHealth,
                 DamageTeam.AllySummon,
                 "SummonSlot1 actor prefab");
+            ValidateSummonHealthBar(
+                summonActorPrefab.gameObject,
+                summonActorPrefab,
+                summonHealth,
+                "SummonSlot1 actor prefab");
             ValidateEnum(pressureScreen, "ownerTeam", (int)DamageTeam.AllySummon);
             ValidateInt(pressureScreen, "defaultMaxIntercepts", 2);
             ValidateFloat(pressureScreen, "defaultLifetimeSeconds", 1.2f);
@@ -3461,6 +3475,11 @@ namespace DimensionBrawl.Editor
                 actorClash,
                 actorHealth,
                 DamageTeam.AllySummon,
+                $"{slotActionName} actor prefab");
+            ValidateSummonHealthBar(
+                actorPrefab.gameObject,
+                actorPrefab,
+                actorHealth,
                 $"{slotActionName} actor prefab");
             ValidateSupportSummonPressureScreen(actorPrefab, expectPressureScreen, slotActionName);
             ValidatePulseOnlyActorRenderers(actorPresenter, pulseRenderer, "TierPulseCore");
@@ -3667,6 +3686,11 @@ namespace DimensionBrawl.Editor
                 bossSummonClash,
                 bossSummonHealth,
                 DamageTeam.Enemy,
+                "Boss summon pressure actor prefab");
+            ValidateSummonHealthBar(
+                bossSummonActorPrefab.gameObject,
+                bossSummonActorPrefab,
+                bossSummonHealth,
                 "Boss summon pressure actor prefab");
             if (bossSummonVisualRenderers.Length == 0)
             {
@@ -4149,6 +4173,51 @@ namespace DimensionBrawl.Editor
             {
                 throw new InvalidOperationException($"{label} must have positive max health.");
             }
+        }
+
+        private static void ValidateSummonHealthBar(
+            GameObject prefabRoot,
+            SummonFrontlineProxy proxy,
+            CombatHealth health,
+            string label)
+        {
+            SummonFrontlineHealthBarPresenter healthBarPresenter =
+                prefabRoot.GetComponent<SummonFrontlineHealthBarPresenter>();
+            if (healthBarPresenter == null)
+            {
+                throw new InvalidOperationException($"{label} must keep a summon health bar presenter.");
+            }
+
+            Transform barRoot = prefabRoot.transform.Find(SummonHealthBarRootName);
+            if (barRoot == null)
+            {
+                throw new InvalidOperationException($"{label} is missing {SummonHealthBarRootName}.");
+            }
+
+            Transform back = barRoot.Find(SummonHealthBarBackName);
+            Transform fill = barRoot.Find(SummonHealthBarFillName);
+            if (back == null || fill == null)
+            {
+                throw new InvalidOperationException($"{label} health bar must keep back and fill children.");
+            }
+
+            MeshRenderer backRenderer = back.GetComponent<MeshRenderer>();
+            MeshRenderer fillRenderer = fill.GetComponent<MeshRenderer>();
+            if (backRenderer == null || fillRenderer == null)
+            {
+                throw new InvalidOperationException($"{label} health bar children must have MeshRenderers.");
+            }
+
+            ValidateObjectReference(healthBarPresenter, "proxy", proxy);
+            ValidateObjectReference(healthBarPresenter, "health", health);
+            ValidateObjectReference(healthBarPresenter, "barRoot", barRoot);
+            ValidateObjectReference(healthBarPresenter, "fillRoot", fill);
+            ValidateArrayReference(healthBarPresenter, "barRenderers", 0, backRenderer);
+            ValidateArrayReference(healthBarPresenter, "barRenderers", 1, fillRenderer);
+            ValidateRenderableMaterialShader(backRenderer.sharedMaterial, $"{label} health bar back material");
+            ValidateRenderableMaterialShader(fillRenderer.sharedMaterial, $"{label} health bar fill material");
+            ValidateGameOwnedAsset(backRenderer.sharedMaterial, $"{label} health bar back material");
+            ValidateGameOwnedAsset(fillRenderer.sharedMaterial, $"{label} health bar fill material");
         }
 
         private static Transform ValidateSummonActorRoleVisual(GameObject prefabRoot, string visualName)
