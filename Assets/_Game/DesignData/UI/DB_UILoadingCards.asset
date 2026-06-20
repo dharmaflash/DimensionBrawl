@@ -18,22 +18,18 @@ MonoBehaviour:
     description: The test title fades into the lobby without account or server ownership.
     weight: 5
   - id: lobby_primary_cta_anchor
-    title: Story PvE Standby
-    description: Lobby focuses the primary combat route and keeps feature anchors
-      compact.
+    title: 차원 안정화 대기
+    description: 로비에서 감지된 균열 신호가 작전 준비 단계로 이어집니다.
     weight: 4
   - id: stage_card_expand
-    title: Mission Prep
-    description: Stage select previews threat, role hints, and disabled reward copy
-      without owning progression.
+    title: 작전 브리핑
+    description: 균열 신호와 권장 지원 정보를 확인합니다.
     weight: 4
   - id: stage_to_combat_mood_bridge
-    title: Combat HUD Handoff
-    description: Async scene flow presents loading progress before the HUD test scene
-      activates.
+    title: 차원 진입
+    description: 흔들리는 균열을 지나 작전 구역으로 진입합니다.
     weight: 4
   - id: combat_start_banner
-    title: HUD Readiness
-    description: Summon slots are visual placeholders; action buttons use canonical
-      names.
+    title: HUD 준비
+    description: 목표, 지원 슬롯, 결과 신호를 동기화합니다.
     weight: 4

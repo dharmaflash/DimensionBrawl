@@ -1073,6 +1073,8 @@ namespace DimensionBrawl.Editor
                 StageSelectScreenPresenter presenter = RequireSingleSceneComponent<StageSelectScreenPresenter>(scenePath, roots);
                 SerializedObject serializedObject = new SerializedObject(presenter);
                 RequireObjectReference(serializedObject, "stageCatalog", $"{scenePath} stage catalog");
+                RequireObjectReference(serializedObject, "stageNameText", $"{scenePath} stage name text");
+                RequireObjectReference(serializedObject, "summaryText", $"{scenePath} stage summary text");
                 RequireObjectReference(serializedObject, "startButton", $"{scenePath} stage start button");
                 RequireObjectReference(serializedObject, "backButton", $"{scenePath} stage back button");
                 RequireObjectReference(serializedObject, "router", $"{scenePath} stage router");
@@ -1236,6 +1238,7 @@ namespace DimensionBrawl.Editor
                 ValidateFlowNoticePresenters(path, prefab, toastIds);
                 ValidateRouteRequestButtons(path, prefab, routeIds);
                 ValidateRouteInteractableGates(path, prefab);
+                ValidateStageSelectScreenPresenters(path, prefab, routeIds);
                 ValidateLobbyScreenPresenters(path, prefab, routeIds, textKeys);
                 ValidateLobbyGuideConditionControls(path, prefab);
                 ValidateScreenPresentationPresenters(path, prefab, routeIds);
@@ -1276,6 +1279,26 @@ namespace DimensionBrawl.Editor
             {
                 SerializedObject serializedObject = new SerializedObject(gates[i]);
                 ValidateRouteInteractableGateArrays(serializedObject, $"{prefabPath}.UIRouteInteractableGate[{i}]");
+            }
+        }
+
+        private static void ValidateStageSelectScreenPresenters(
+            string prefabPath,
+            GameObject prefab,
+            HashSet<UIRouteId> routeIds)
+        {
+            StageSelectScreenPresenter[] presenters = prefab.GetComponentsInChildren<StageSelectScreenPresenter>(true);
+            for (int i = 0; i < presenters.Length; i++)
+            {
+                SerializedObject serializedObject = new SerializedObject(presenters[i]);
+                string label = $"{prefabPath}.StageSelectScreenPresenter[{i}]";
+                RequireObjectReference(serializedObject, "stageCatalog", $"{label}.stageCatalog");
+                RequireObjectReference(serializedObject, "stageNameText", $"{label}.stageNameText");
+                RequireObjectReference(serializedObject, "summaryText", $"{label}.summaryText");
+                RequireObjectReference(serializedObject, "startButton", $"{label}.startButton");
+                RequireObjectReference(serializedObject, "backButton", $"{label}.backButton");
+                RequireKnownRoute(routeIds, (UIRouteId)serializedObject.FindProperty("startRoute").intValue, $"{label}.startRoute");
+                RequireKnownRoute(routeIds, (UIRouteId)serializedObject.FindProperty("backRoute").intValue, $"{label}.backRoute");
             }
         }
 
