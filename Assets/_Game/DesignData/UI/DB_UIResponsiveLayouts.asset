@@ -1,0 +1,36 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 68cb19ac42e911744b38872f340b66e8, type: 3}
+  m_Name: DB_UIResponsiveLayouts
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIResponsiveLayoutCatalog
+  breakpoints:
+  - id: MobileCompactLandscape
+    breakpoint: 0
+    minimumResolution: {x: 0, y: 0}
+    referenceResolution: {x: 1280, y: 720}
+    matchWidthOrHeight: 0.65
+    edgeInset: 18
+    safeAreaMode: 10
+  - id: AndroidLandscape
+    breakpoint: 10
+    minimumResolution: {x: 1600, y: 720}
+    referenceResolution: {x: 2400, y: 1080}
+    matchWidthOrHeight: 0.5
+    edgeInset: 32
+    safeAreaMode: 10
+  - id: WideAndroidDebug
+    breakpoint: 20
+    minimumResolution: {x: 2560, y: 1080}
+    referenceResolution: {x: 2400, y: 1080}
+    matchWidthOrHeight: 0.45
+    edgeInset: 40
+    safeAreaMode: 10

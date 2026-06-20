@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1863801131847be44b5cbe9d19c7f662, type: 3}
+  m_Name: DB_UIStateMessages
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIStateMessageCatalog
+  states:
+  - id: Common.Empty
+    kind: 0
+    titleTextKey: ui.state.empty.title
+    bodyTextKey: ui.state.empty.body
+    iconKey: status_ready
+    actionTextKey:
+    actionVisible: 0
+    actionInteractable: 0
+    cueId:
+  - id: Common.Locked
+    kind: 10
+    titleTextKey: ui.state.locked.title
+    bodyTextKey: ui.state.locked.body
+    iconKey: status_locked
+    actionTextKey: ui.state.dismiss
+    actionVisible: 1
+    actionInteractable: 1
+    cueId: DeniedActionMicroToast
+  - id: Common.Loading
+    kind: 20
+    titleTextKey: ui.state.loading.title
+    bodyTextKey: ui.state.loading.body
+    iconKey: status_ready
+    actionTextKey:
+    actionVisible: 0
+    actionInteractable: 0
+    cueId: TitleEnter
+  - id: Common.ComingSoon
+    kind: 40
+    titleTextKey: ui.state.coming_soon.title
+    bodyTextKey: ui.state.coming_soon.body
+    iconKey: status_locked
+    actionTextKey: ui.state.dismiss
+    actionVisible: 1
+    actionInteractable: 1
+    cueId: DeniedActionMicroToast

@@ -12,8 +12,19 @@ V1 UI should prove:
 
 - A title/login flow can enter the next screen without fake account/server complexity.
 - A lobby can present the project fantasy, one primary PvE entry, and a small set of secondary anchors.
+- A stage-select test screen can bridge lobby CTA and combat HUD without owning progression or rewards.
 - A combat HUD can display the fixed-rear boss-barrage + summon-first action vocabulary without owning combat logic.
 - UI prefabs, scenes, data, and presentation cues are organized so another PC can work without touching the active combat scene.
+- Android/mobile-first landscape is the default layout assumption; PC is a debug surface, not the sizing baseline.
+
+## Android Mobile-First Baseline
+
+- Default product target is Android landscape.
+- UI test scenes should use `Scale With Screen Size` with a mobile landscape reference resolution.
+- Safe Area must be represented by an authored scene/prefab root, not left as a later runtime-only concern.
+- UI input prompts must use common action names across keyboard/mouse, gamepad, and mobile display rows.
+- Avoid hardcoded device-specific branches in UI presenters. Device differences belong in prompt/layout data.
+- For contest or local test builds that need to boot directly into the UI loop, Build Settings should register the UI route scenes in route-table order, starting with `UI_LoginTest`. This is a narrow scene-list setting, not a broader ProjectSettings ownership change.
 
 ## Parallel Work Rule
 
@@ -45,8 +56,9 @@ Do not create a single catch-all UI folder with unrelated prefabs, sprites, data
 
 Other-PC UI work may include a minimal scene-flow shell if it stays UI-owned:
 
-- Allowed route: `UI_LoginTest -> UI_LobbyTest -> UI_CombatHudTest -> UI_LobbyTest`.
+- Allowed route: `UI_LoginTest -> UI_LobbyTest -> UI_StageSelectTest -> UI_CombatHudTest -> UI_LobbyTest`.
 - The flow may use fade panels, loading-card placeholders, transition duration data, and local button events.
+- Loading cards are conditional presentation for routes with a real wait reason. Immediate UI-to-UI routes should use a short fade without a card/progress layer.
 - Scene route names or scene references must be serialized or data-driven in one small route asset/component, not duplicated as magic strings across button scripts.
 - Scene flow code must not own save data, account login, progression unlocks, combat result resolution, or gameplay state.
 - The combat HUD test scene may simulate `Start Combat`, `Win`, `Fail`, and `Return Lobby` with mock UI state only.
@@ -180,6 +192,7 @@ Before merging UI work from another PC:
 
 - The branch starts from the latest pushed `main`.
 - No changes to `ActionFoundationTest.unity` unless explicitly coordinated.
+- For UI-loop test builds, the first enabled Build Settings scene is `UI_LoginTest`, followed by the route-table UI scenes only.
 - No direct references to `_Imported/`.
 - No full runtime UI hierarchy construction.
 - Scene navigation is limited to the UI test route unless explicitly coordinated.
@@ -197,3 +210,19 @@ Before merging UI work from another PC:
 2. Create `UI_LobbyTest` with a guide slot, primary PvE CTA, and compact secondary anchors.
 3. Create `UI_CombatHudTest` with static HUD layout and mock state updates.
 4. Only after the three screens are inspectable, add shared transition/audio/cue data.
+
+## Implementation Notes
+
+### 2026-06-15 Lobby Character Presentation
+
+- `UI_LobbyTest` may contain a separate authored presentation prefab beside the Canvas for a RenderTexture-based lobby character stage.
+- The current lobby character presentation is display-only: `PF_UI_LobbyCharacterStage` frames the game-owned CombatGirl visual with a UI-only camera and renders it into `RT_LobbyCharacterStage`, while `PF_UI_LobbyScreen` displays that texture as a transparent full-screen lobby art layer behind authored UI panels.
+- Lobby character skeletal motion should stay display-only. The lobby stage uses a lobby-only signboard Animator Controller through `LobbyCharacterAnimatorPresenter`, while root/tap/drag reactions stay in `LobbyCharacterStagePresenter`. This follows the PGR-style signboard/action split without binding the lobby UI to the combat/action animator state machine.
+- Lobby character framing uses a PGR-style low-FOV presentation camera plus explicit viewport-fill and composition settings, so size tweaks happen in the prefab instead of through scene transforms.
+- The character RenderTexture should use the 2560x1440 landscape presentation ratio used by the lobby art, and `PresentationStage` should preserve that 16:9 ratio instead of stretching across extra-wide Game views. The stage camera should frame against that target texture aspect. The framer should refit after Play-mode presenters have updated once, ignore inactive hidden variant renderers, and use visible skinned body renderers for signboard framing before falling back to all visible renderers. It should keep humanoid foot/toe bones anchored above the lower viewport margin when available, falling back to renderer bounds only for non-humanoid presentation props. This keeps the Game view from clipping the model differently than the Scene view camera preview without hardcoding weapon or mesh names.
+- Lobby character idle/tap reactions should read from `LobbyGuideFeedbackCatalog` rows shaped after the PGR signboard pattern: condition, line key, voice key placeholder, motion key, duration, weight, and cooldown.
+- Lobby screen input should reach the character presentation through a narrow `LobbyCharacterStageInputChannel` asset so the UI prefab and presentation prefab stay inspectable without scene-wide object searches.
+- Unused imported model variants in the lobby character stage, such as extra weapon meshes, may be hidden by `LobbyCharacterStageObjectVisibility`. This is a display-only prefab override list that applies in edit and play mode so the authored scene view matches runtime, and must not become equipment, inventory, progression, or combat weapon ownership.
+- Lobby character render tuning should stay local to the presentation prefab first: adjust stage lights, transparent RenderTexture camera output, RenderTexture MSAA, and lobby-only `MaterialPropertyBlock` render profiles, including local unlit/rim/outline width and shade-feather tweaks, before mutating shared CombatGirl Unity Toon Shader materials that are also used by action inspection content.
+- Outfit/body clipping observed around the current CombatGirl stocking and top areas should be treated as an art/model mask issue if it remains after lobby-only render tuning. Do not hide whole skin meshes from UI code unless an authored lobby display variant confirms that exposed hands, face, and skin are still valid.
+- This slice must not connect the lobby character to player control, combat controllers, summon behavior, progression, account state, rewards, or gacha/economy systems.

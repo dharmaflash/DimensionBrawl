@@ -1,0 +1,171 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d2567d98da237844b65ff1dff8246ea, type: 3}
+  m_Name: DB_UIInputPrompts
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIInputPromptCatalog
+  prompts:
+  - actionName: Confirm
+    device: 0
+    promptLabel: Enter
+    iconKey: key_enter
+  - actionName: Confirm
+    device: 10
+    promptLabel: A
+    iconKey: pad_a
+  - actionName: Confirm
+    device: 20
+    promptLabel: Tap
+    iconKey: touch_tap
+  - actionName: Back
+    device: 0
+    promptLabel: Esc
+    iconKey: key_escape
+  - actionName: Back
+    device: 10
+    promptLabel: B
+    iconKey: pad_b
+  - actionName: Back
+    device: 20
+    promptLabel: Back
+    iconKey: touch_back
+  - actionName: Move
+    device: 0
+    promptLabel: WASD
+    iconKey: key_wasd
+  - actionName: Move
+    device: 10
+    promptLabel: Left Stick
+    iconKey: pad_left_stick
+  - actionName: Move
+    device: 20
+    promptLabel: Left Joystick
+    iconKey: touch_joystick
+  - actionName: Look
+    device: 0
+    promptLabel: Mouse
+    iconKey: mouse_move
+  - actionName: Look
+    device: 10
+    promptLabel: Right Stick
+    iconKey: pad_right_stick
+  - actionName: Look
+    device: 20
+    promptLabel: Drag
+    iconKey: touch_drag
+  - actionName: TargetBias
+    device: 0
+    promptLabel: Auto Bias
+    iconKey: touch_auto
+  - actionName: TargetBias
+    device: 10
+    promptLabel: Right Stick
+    iconKey: pad_right_stick
+  - actionName: TargetBias
+    device: 20
+    promptLabel: Auto Bias
+    iconKey: touch_auto
+  - actionName: BasicAttack
+    device: 0
+    promptLabel: LMB
+    iconKey: mouse_left
+  - actionName: BasicAttack
+    device: 10
+    promptLabel: Face West
+    iconKey: pad_x
+  - actionName: BasicAttack
+    device: 20
+    promptLabel: Attack
+    iconKey: action_basic_attack
+  - actionName: Dodge
+    device: 0
+    promptLabel: Space
+    iconKey: key_space
+  - actionName: Dodge
+    device: 10
+    promptLabel: Face South
+    iconKey: pad_a
+  - actionName: Dodge
+    device: 20
+    promptLabel: Dodge
+    iconKey: action_dodge
+  - actionName: Skill1
+    device: 0
+    promptLabel: Q
+    iconKey: key_q
+  - actionName: Skill1
+    device: 10
+    promptLabel: R1
+    iconKey: pad_rb
+  - actionName: Skill1
+    device: 20
+    promptLabel: Skill
+    iconKey: action_skill
+  - actionName: Ultimate
+    device: 0
+    promptLabel: R
+    iconKey: key_r
+  - actionName: Ultimate
+    device: 10
+    promptLabel: L1+R1
+    iconKey: pad_lb_rb
+  - actionName: Ultimate
+    device: 20
+    promptLabel: Ultimate
+    iconKey: action_ultimate
+  - actionName: SummonSlot1
+    device: 0
+    promptLabel: 1
+    iconKey: key_1
+  - actionName: SummonSlot1
+    device: 10
+    promptLabel: D-Pad Up
+    iconKey: pad_dpad_up
+  - actionName: SummonSlot1
+    device: 20
+    promptLabel: Summon 1
+    iconKey: action_summon
+  - actionName: SummonSlot2
+    device: 0
+    promptLabel: 2
+    iconKey: key_2
+  - actionName: SummonSlot2
+    device: 10
+    promptLabel: D-Pad Right
+    iconKey: pad_dpad_right
+  - actionName: SummonSlot2
+    device: 20
+    promptLabel: Summon 2
+    iconKey: action_summon
+  - actionName: SummonSlot3
+    device: 0
+    promptLabel: 3
+    iconKey: key_3
+  - actionName: SummonSlot3
+    device: 10
+    promptLabel: D-Pad Down
+    iconKey: pad_dpad_down
+  - actionName: SummonSlot3
+    device: 20
+    promptLabel: Summon 3
+    iconKey: action_summon
+  - actionName: Pause
+    device: 0
+    promptLabel: Esc
+    iconKey: key_escape
+  - actionName: Pause
+    device: 10
+    promptLabel: Menu
+    iconKey: pad_menu
+  - actionName: Pause
+    device: 20
+    promptLabel: Pause
+    iconKey: touch_pause
