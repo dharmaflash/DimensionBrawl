@@ -5302,6 +5302,7 @@ MonoBehaviour:
   summonSlot2Action: {fileID: 4016}
   summonSlot3Action: {fileID: 4015}
   bossBarrageEmitter: {fileID: 755058624}
+  bossBasicFireEmitter: {fileID: 755058634}
   bossPressureCostLadder: {fileID: 755058630}
   bossPressureActionDirector: {fileID: 755058628}
   bossSummonPressureAction: {fileID: 755058627}
@@ -8186,6 +8187,7 @@ GameObject:
   - component: {fileID: 755058631}
   - component: {fileID: 755058633}
   - component: {fileID: 755058632}
+  - component: {fileID: 755058634}
   m_Layer: 0
   m_Name: BossBarrageLaneReview_BossProxy_NeedleLock
   m_TagString: Untagged
@@ -8660,6 +8662,28 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 1.05
   m_Center: {x: 0, y: -0.35, z: -0.05}
+--- !u!114 &755058634
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 755058623}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 78d830c626a3a3549b15282246430d2b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBasicFireEmitter
+  laneSpace: {fileID: 1686532712}
+  trackedPlayer: {fileID: 4001}
+  sourceHealth: {fileID: 755058625}
+  fireProfile: {fileID: 11400000, guid: 2250ad5d8f39e334ba6213f256f82a6a, type: 2}
+  projectilePrefab: {fileID: 2794082157248871863, guid: ef1f50f39a6e91f4dbecd513d1afe095, type: 3}
+  projectilePrefabObject: {fileID: 2676862116300731253, guid: ef1f50f39a6e91f4dbecd513d1afe095, type: 3}
+  sourceTeam: 2
+  firingEnabled: 1
+  prewarmCount: 10
+  projectileRoot: {fileID: 1152475404}
 --- !u!1 &755940861
 GameObject:
   m_ObjectHideFlags: 0
@@ -14729,6 +14753,7 @@ MonoBehaviour:
   skill1Action: {fileID: 4018}
   summonSlot1Action: {fileID: 4017}
   bossBarrageEmitter: {fileID: 755058624}
+  bossBasicFireEmitter: {fileID: 755058634}
   bossPressureCostLadder: {fileID: 755058630}
   bossPressureActionDirector: {fileID: 755058628}
   stopBarrageOnClear: 1
@@ -19519,6 +19544,7 @@ MonoBehaviour:
   summonSlot2Action: {fileID: 4016}
   summonSlot3Action: {fileID: 4015}
   bossBarrageEmitter: {fileID: 755058624}
+  bossBasicFireEmitter: {fileID: 755058634}
   bossPressureCostLadder: {fileID: 755058630}
   bossPressurePositionController: {fileID: 755058629}
   bossPressureActionDirector: {fileID: 755058628}

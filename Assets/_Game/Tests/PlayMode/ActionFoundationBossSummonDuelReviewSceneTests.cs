@@ -52,6 +52,7 @@ namespace DimensionBrawl.Tests
             BossPressureActionDirector bossPressureActionDirector = RequireObject<BossPressureActionDirector>();
             BossSummonPressureAction bossSummonPressureAction = RequireObject<BossSummonPressureAction>();
             BossBarrageEmitter bossBarrageEmitter = RequireObject<BossBarrageEmitter>();
+            BossBasicFireEmitter bossBasicFireEmitter = RequireObject<BossBasicFireEmitter>();
             BossPressureCostLadder bossPressureCostLadder = RequireObject<BossPressureCostLadder>();
             SummonEnergyLadder energyLadder = RequireObject<SummonEnergyLadder>();
             SummonLaneSpace laneSpace = RequireObject<SummonLaneSpace>();
@@ -99,6 +100,7 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(summonSlot2Action, GetObjectReference<PlayerSupportSummonSlotAction>(duelOwner, "summonSlot2Action"));
             Assert.AreSame(summonSlot3Action, GetObjectReference<PlayerSupportSummonSlotAction>(duelOwner, "summonSlot3Action"));
             Assert.AreSame(bossBarrageEmitter, GetObjectReference<BossBarrageEmitter>(duelOwner, "bossBarrageEmitter"));
+            Assert.AreSame(bossBasicFireEmitter, GetObjectReference<BossBasicFireEmitter>(duelOwner, "bossBasicFireEmitter"));
             Assert.AreSame(
                 bossPressureCostLadder,
                 GetObjectReference<BossPressureCostLadder>(duelOwner, "bossPressureCostLadder"));
@@ -188,6 +190,7 @@ namespace DimensionBrawl.Tests
                 expectPressureScreen: true);
 
             Assert.AreSame(duelOwner, GetObjectReference<BossSummonDuelReviewOwner>(reviewHud, "duelReviewOwner"));
+            Assert.AreSame(bossBasicFireEmitter, GetObjectReference<BossBasicFireEmitter>(reviewHud, "bossBasicFireEmitter"));
             Assert.IsTrue(
                 targetSelector.IncludesActiveHostileSummons,
                 "Player response targeting should include active hostile summon bodies without expanding authored scene candidates.");

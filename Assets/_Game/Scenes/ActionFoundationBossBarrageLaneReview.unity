@@ -3484,6 +3484,7 @@ GameObject:
   - component: {fileID: 175579997}
   - component: {fileID: 175579998}
   - component: {fileID: 175580000}
+  - component: {fileID: 175580003}
   m_Layer: 0
   m_Name: BossBarrageLaneReview_BossProxy_NeedleLock
   m_TagString: Untagged
@@ -3960,6 +3961,28 @@ SphereCollider:
   serializedVersion: 3
   m_Radius: 1.05
   m_Center: {x: 0, y: -0.35, z: -0.05}
+--- !u!114 &175580003
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 175579992}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 78d830c626a3a3549b15282246430d2b, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBasicFireEmitter
+  laneSpace: {fileID: 784986392}
+  trackedPlayer: {fileID: 4001}
+  sourceHealth: {fileID: 175579994}
+  fireProfile: {fileID: 11400000, guid: 2250ad5d8f39e334ba6213f256f82a6a, type: 2}
+  projectilePrefab: {fileID: 2794082157248871863, guid: ef1f50f39a6e91f4dbecd513d1afe095, type: 3}
+  projectilePrefabObject: {fileID: 2676862116300731253, guid: ef1f50f39a6e91f4dbecd513d1afe095, type: 3}
+  sourceTeam: 2
+  firingEnabled: 1
+  prewarmCount: 10
+  projectileRoot: {fileID: 1878730093}
 --- !u!1 &175766437
 GameObject:
   m_ObjectHideFlags: 0
@@ -7562,6 +7585,7 @@ MonoBehaviour:
   skill1Action: {fileID: 4018}
   summonSlot1Action: {fileID: 4017}
   bossBarrageEmitter: {fileID: 175579993}
+  bossBasicFireEmitter: {fileID: 175580003}
   bossPressureCostLadder: {fileID: 175579999}
   bossPressureActionDirector: {fileID: 175579997}
   stopBarrageOnClear: 1
@@ -15985,6 +16009,7 @@ MonoBehaviour:
   summonSlot2Action: {fileID: 4016}
   summonSlot3Action: {fileID: 4015}
   bossBarrageEmitter: {fileID: 175579993}
+  bossBasicFireEmitter: {fileID: 175580003}
   bossPressureCostLadder: {fileID: 175579999}
   bossPressurePositionController: {fileID: 175579998}
   bossPressureActionDirector: {fileID: 175579997}

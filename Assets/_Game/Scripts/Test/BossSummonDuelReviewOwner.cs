@@ -33,6 +33,7 @@ namespace DimensionBrawl.Test
 
         [Header("Boss Side")]
         [SerializeField] private BossBarrageEmitter bossBarrageEmitter;
+        [SerializeField] private BossBasicFireEmitter bossBasicFireEmitter;
         [SerializeField] private BossPressureCostLadder bossPressureCostLadder;
         [SerializeField] private BossPressureActionDirector bossPressureActionDirector;
         [SerializeField] private BossSummonPressureAction bossSummonPressureAction;
@@ -373,6 +374,7 @@ namespace DimensionBrawl.Test
             PlayerSupportSummonSlotAction newSummonSlot2Action,
             PlayerSupportSummonSlotAction newSummonSlot3Action,
             BossBarrageEmitter newBossBarrageEmitter,
+            BossBasicFireEmitter newBossBasicFireEmitter,
             BossPressureCostLadder newBossPressureCostLadder,
             BossPressureActionDirector newBossPressureActionDirector,
             BossSummonPressureAction newBossSummonPressureAction,
@@ -388,6 +390,7 @@ namespace DimensionBrawl.Test
             summonSlot2Action = newSummonSlot2Action;
             summonSlot3Action = newSummonSlot3Action;
             bossBarrageEmitter = newBossBarrageEmitter;
+            bossBasicFireEmitter = newBossBasicFireEmitter;
             bossPressureCostLadder = newBossPressureCostLadder;
             bossPressureActionDirector = newBossPressureActionDirector;
             bossSummonPressureAction = newBossSummonPressureAction;
@@ -460,6 +463,7 @@ namespace DimensionBrawl.Test
             }
 
             bossBarrageEmitter?.SetFiringEnabled(true);
+            bossBasicFireEmitter?.SetFiringEnabled(true);
             bossPressureCostLadder?.SetGainEnabled(true);
             bossPressureActionDirector?.SetActionsEnabled(true);
         }
@@ -610,6 +614,11 @@ namespace DimensionBrawl.Test
             if (stopBarrageOnEnd && bossBarrageEmitter != null)
             {
                 bossBarrageEmitter.SetFiringEnabled(enabled);
+            }
+
+            if (stopBarrageOnEnd && bossBasicFireEmitter != null)
+            {
+                bossBasicFireEmitter.SetFiringEnabled(enabled);
             }
 
             if (stopEnergyGainOnEnd && energyLadder != null)

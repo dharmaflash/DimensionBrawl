@@ -43,6 +43,10 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_PunishNet.asset";
         private const string LinePressurePatternProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_LinePressure.asset";
+        private const string BossBasicFireProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBasicFire_LanePoke.asset";
+        private const string BossBasicFireProjectileMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBasicFireProjectile.mat";
         private const string ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossBarrageProjectile_NeedleLock.prefab";
         private const string LocalDefenseProfilePath =
@@ -179,12 +183,15 @@ namespace DimensionBrawl.Tests
             GameObject closeThreatRoot = RequireRoot(CloseThreatRootName);
             CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreatRoot, "close threat health");
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            BossBasicFireEmitter bossBasicFireEmitter =
+                RequireComponent<BossBasicFireEmitter>(bossRoot, "boss basic fire emitter");
             BossPressureCostLadder bossPressureCost =
                 RequireComponent<BossPressureCostLadder>(bossRoot, "boss pressure cost ladder");
             BossPressureActionDirector bossPressureActionDirector =
                 RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
             BossPressureActionDeckProfile bossPressureActionDeck =
                 LoadAsset<BossPressureActionDeckProfile>(BossPressureActionDeckProfilePath);
+            BossBasicFireProfile bossBasicFireProfile = LoadAsset<BossBasicFireProfile>(BossBasicFireProfilePath);
             BossSummonPressureAction bossSummonPressureAction =
                 RequireComponent<BossSummonPressureAction>(bossRoot, "boss summon pressure action");
             BossSummonPressureProfile bossSummonPressureProfile =
@@ -236,6 +243,28 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(laneSpace, player.LaneSpace, "Player movement must clamp through the authored lane space.");
             Assert.AreSame(emitter, telegraphPresenter.BossBarrageEmitter);
             Assert.AreSame(laneSpace, telegraphPresenter.LaneSpace);
+            Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(bossBasicFireEmitter, "laneSpace"));
+            Assert.AreSame(player.transform, GetObjectReference<Transform>(bossBasicFireEmitter, "trackedPlayer"));
+            Assert.AreSame(bossHealth, GetObjectReference<CombatHealth>(bossBasicFireEmitter, "sourceHealth"));
+            Assert.AreSame(bossBasicFireProfile, GetObjectReference<BossBasicFireProfile>(bossBasicFireEmitter, "fireProfile"));
+            Assert.AreSame(
+                LoadAsset<GameObject>(ProjectilePrefabPath),
+                GetObjectReference<GameObject>(bossBasicFireEmitter, "projectilePrefabObject"));
+            Assert.AreSame(projectileRoot.transform, GetObjectReference<Transform>(bossBasicFireEmitter, "projectileRoot"));
+            Assert.AreEqual(DamageTeam.Enemy, GetEnum<DamageTeam>(bossBasicFireEmitter, "sourceTeam"));
+            Assert.IsTrue(GetBool(bossBasicFireEmitter, "firingEnabled"));
+            Assert.AreEqual(10, GetInt(bossBasicFireEmitter, "prewarmCount"));
+            Assert.AreEqual("LanePoke", bossBasicFireProfile.FireId);
+            Assert.AreEqual("Lane Poke", bossBasicFireProfile.ReadoutLabel);
+            Assert.AreEqual(2, bossBasicFireProfile.ProjectilesPerVolley);
+            Assert.AreEqual(5f, bossBasicFireProfile.Damage, 0.001f);
+            Assert.AreEqual(2.2f, bossBasicFireProfile.FireIntervalSeconds, 0.001f);
+            Assert.AreEqual(0.22f, bossBasicFireProfile.ProjectileRadius, 0.001f);
+            Assert.AreSame(LoadAsset<Material>(BossBasicFireProjectileMaterialPath), bossBasicFireProfile.ProjectileMaterial);
+            Assert.Greater(
+                bossBasicFireProfile.GetLateralOffset(1, 2, 0f),
+                bossBasicFireProfile.GetLateralOffset(1, 2, 1f),
+                "Boss basic fire should keep the same front/back risk grammar: safer backline gaps, tighter forward pressure.");
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(bossPressureCost, "laneSpace"));
             Assert.AreSame(bossRoot.transform, GetObjectReference<Transform>(bossPressureCost, "trackedBoss"));
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(bossPressurePosition, "laneSpace"));
@@ -728,6 +757,7 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(skill1Action, GetObjectReference<PlayerSkill1Action>(pocketOwner, "skill1Action"));
             Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(pocketOwner, "summonSlot1Action"));
             Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(pocketOwner, "bossBarrageEmitter"));
+            Assert.AreSame(bossBasicFireEmitter, GetObjectReference<BossBasicFireEmitter>(pocketOwner, "bossBasicFireEmitter"));
             Assert.AreSame(bossPressureCost, GetObjectReference<BossPressureCostLadder>(pocketOwner, "bossPressureCostLadder"));
             Assert.AreSame(
                 bossPressureActionDirector,
@@ -795,6 +825,7 @@ namespace DimensionBrawl.Tests
                 "Save for hard boss pressure when retreat alone will not stabilize the pocket.",
                 "Large ShieldBreaker screen, seven-shot block budget, three assist bolts, and a committed boss-lane push.");
             Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(reviewHud, "bossBarrageEmitter"));
+            Assert.AreSame(bossBasicFireEmitter, GetObjectReference<BossBasicFireEmitter>(reviewHud, "bossBasicFireEmitter"));
             Assert.AreSame(
                 bossPressureCost,
                 GetObjectReference<BossPressureCostLadder>(reviewHud, "bossPressureCostLadder"));
@@ -2038,6 +2069,8 @@ namespace DimensionBrawl.Tests
                     "pocket VFX cue bridge");
             GameObject bossRoot = RequireRoot(BossRootName);
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            BossBasicFireEmitter bossBasicFireEmitter =
+                RequireComponent<BossBasicFireEmitter>(bossRoot, "boss basic fire emitter");
             BossPressureCostLadder bossPressureCost =
                 RequireComponent<BossPressureCostLadder>(bossRoot, "boss pressure cost ladder");
             BossPressureActionDirector bossPressureActionDirector =
@@ -2178,6 +2211,11 @@ namespace DimensionBrawl.Tests
                 energyLadder.CurrentTierEnergy,
                 0.001f,
                 "Pocket clear should stop EN gain so the completed review state does not keep charging behind the result.");
+            bossBasicFireEmitter.Tick(20f);
+            Assert.IsFalse(
+                bossBasicFireEmitter.IsFiringEnabled,
+                "Pocket clear should stop boss basic fire alongside committed barrage patterns.");
+            Assert.AreEqual(0, bossBasicFireEmitter.ActiveProjectileCount);
             float bossCostAfterClear = bossPressureCost.CurrentTierCost;
             bossPressureCost.Tick(1f);
             Assert.AreEqual(
@@ -2325,6 +2363,8 @@ namespace DimensionBrawl.Tests
             SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
             GameObject bossRoot = RequireRoot(BossRootName);
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            BossBasicFireEmitter bossBasicFireEmitter =
+                RequireComponent<BossBasicFireEmitter>(bossRoot, "boss basic fire emitter");
             BossPressureCostLadder bossPressureCost =
                 RequireComponent<BossPressureCostLadder>(bossRoot, "boss pressure cost ladder");
             BossPressureActionDirector bossPressureActionDirector =
@@ -2356,6 +2396,11 @@ namespace DimensionBrawl.Tests
                 emitter.IsWindupActive,
                 "Pocket failure should stop boss barrage progression for a readable fail state.");
             Assert.AreEqual(0, emitter.ActiveProjectileCount);
+            bossBasicFireEmitter.Tick(20f);
+            Assert.IsFalse(
+                bossBasicFireEmitter.IsFiringEnabled,
+                "Pocket failure should stop boss basic fire alongside committed barrage patterns.");
+            Assert.AreEqual(0, bossBasicFireEmitter.ActiveProjectileCount);
             float bossCostAfterFail = bossPressureCost.CurrentTierCost;
             bossPressureCost.Tick(1f);
             Assert.AreEqual(
@@ -2373,6 +2418,55 @@ namespace DimensionBrawl.Tests
                 bossActionCountAfterFail,
                 bossPressureActionDirector.TotalActionCount,
                 "Pocket failure should keep boss costed actions disabled even if boss cost is later granted by a test or designer tool.");
+        }
+
+        [UnityTest]
+        public IEnumerator BossBasicFireEmitterFiresVisibleWeakProjectilesFromBossSide()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
+            Collider playerHitCollider = RequireCombatHitCollider(player.gameObject, playerHealth, "player");
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            GameObject bossRoot = RequireRoot(BossRootName);
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
+            BossBasicFireEmitter basicFireEmitter =
+                RequireComponent<BossBasicFireEmitter>(bossRoot, "boss basic fire emitter");
+            BossBasicFireProfile profile = LoadAsset<BossBasicFireProfile>(BossBasicFireProfilePath);
+
+            basicFireEmitter.SetFiringEnabled(false);
+            basicFireEmitter.SetFiringEnabled(true);
+            float playerHealthBefore = playerHealth.CurrentHealth;
+            int firedCount = basicFireEmitter.FireVolley();
+
+            Assert.AreEqual(profile.ProjectilesPerVolley, firedCount);
+            Assert.AreEqual(firedCount, basicFireEmitter.LastVolleyProjectileCount);
+            Assert.AreEqual(1, basicFireEmitter.TotalVolleysFired);
+            Assert.AreSame(profile, basicFireEmitter.FireProfile);
+            Assert.GreaterOrEqual(basicFireEmitter.ActiveProjectileCount, firedCount);
+            Assert.AreEqual(laneSpace.EvaluateForwardRisk01(player.transform.position), basicFireEmitter.LastForwardRisk01, 0.001f);
+
+            BossBarrageProjectile basicProjectile = RequireActiveBossProjectileWithMaterial(profile.ProjectileMaterial);
+            Assert.AreEqual(DamageTeam.Enemy, basicProjectile.SourceTeam);
+            AssertBossBarrageProjectilePresentation(
+                basicProjectile,
+                profile.ProjectileColor,
+                profile.ProjectileVisualScale,
+                profile.ProjectileMaterial,
+                "boss basic fire projectile");
+            Vector2 projectileLanePoint = laneSpace.GetLaneCoordinates(basicProjectile.transform.position);
+            Assert.Greater(
+                projectileLanePoint.y,
+                laneSpace.ForwardBoundaryZ,
+                "Boss basic fire should still originate from the boss/frontline side.");
+
+            Assert.IsTrue(basicProjectile.TryApplyImpact(playerHitCollider, basicProjectile.transform.position));
+            Assert.AreEqual(
+                playerHealthBefore - profile.Damage,
+                playerHealth.CurrentHealth,
+                0.001f,
+                "Boss basic fire should use a weak regular-fire damage value, not the heavier boss skill-pattern damage.");
+            Assert.AreSame(bossHealth, GetObjectReference<CombatHealth>(basicFireEmitter, "sourceHealth"));
+            yield return null;
         }
 
         [UnityTest]
@@ -3300,6 +3394,25 @@ namespace DimensionBrawl.Tests
             return null;
         }
 
+        private static BossBarrageProjectile RequireActiveBossProjectileWithMaterial(Material material)
+        {
+            BossBarrageProjectile[] bossProjectiles = Object.FindObjectsByType<BossBarrageProjectile>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < bossProjectiles.Length; i++)
+            {
+                if (bossProjectiles[i].IsActive
+                    && bossProjectiles[i].SourceTeam == DamageTeam.Enemy
+                    && bossProjectiles[i].LastPresentationMaterial == material)
+                {
+                    return bossProjectiles[i];
+                }
+            }
+
+            Assert.Fail("Expected an active enemy boss projectile with the requested presentation material.");
+            return null;
+        }
+
         private static T LoadAsset<T>(string assetPath) where T : Object
         {
             Assert.IsFalse(assetPath.Contains("/_Imported/"), $"{assetPath} must not point at raw imported assets.");
@@ -3937,6 +4050,11 @@ namespace DimensionBrawl.Tests
         private static float GetFloat(Object target, string propertyName)
         {
             return RequireProperty(new SerializedObject(target), propertyName).floatValue;
+        }
+
+        private static int GetInt(Object target, string propertyName)
+        {
+            return RequireProperty(new SerializedObject(target), propertyName).intValue;
         }
 
         private static T GetEnum<T>(Object target, string propertyName) where T : System.Enum

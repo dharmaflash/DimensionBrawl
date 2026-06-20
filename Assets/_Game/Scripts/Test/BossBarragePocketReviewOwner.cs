@@ -37,6 +37,7 @@ namespace DimensionBrawl.Test
 
         [Header("Pressure")]
         [SerializeField] private BossBarrageEmitter bossBarrageEmitter;
+        [SerializeField] private BossBasicFireEmitter bossBasicFireEmitter;
         [SerializeField] private BossPressureCostLadder bossPressureCostLadder;
         [SerializeField] private BossPressureActionDirector bossPressureActionDirector;
         [SerializeField] private bool stopBarrageOnClear = true;
@@ -234,7 +235,8 @@ namespace DimensionBrawl.Test
             GameObject newClearMarker,
             GameObject newFailMarker,
             BossPressureCostLadder newBossPressureCostLadder = null,
-            BossPressureActionDirector newBossPressureActionDirector = null)
+            BossPressureActionDirector newBossPressureActionDirector = null,
+            BossBasicFireEmitter newBossBasicFireEmitter = null)
         {
             playerHealth = newPlayerHealth;
             closeThreatHealth = newCloseThreatHealth;
@@ -243,6 +245,7 @@ namespace DimensionBrawl.Test
             skill1Action = newSkill1Action;
             summonSlot1Action = newSummonSlot1Action;
             bossBarrageEmitter = newBossBarrageEmitter;
+            bossBasicFireEmitter = newBossBasicFireEmitter;
             bossPressureCostLadder = newBossPressureCostLadder;
             bossPressureActionDirector = newBossPressureActionDirector;
             clearMarker = newClearMarker;
@@ -749,6 +752,11 @@ namespace DimensionBrawl.Test
             if (bossBarrageEmitter != null)
             {
                 bossBarrageEmitter.SetFiringEnabled(enabled);
+            }
+
+            if (bossBasicFireEmitter != null)
+            {
+                bossBasicFireEmitter.SetFiringEnabled(enabled);
             }
         }
 

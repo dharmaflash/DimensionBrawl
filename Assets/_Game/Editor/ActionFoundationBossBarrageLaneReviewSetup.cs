@@ -42,6 +42,8 @@ namespace DimensionBrawl.Editor
             ActionFoundationProfileSetup.ProfileRoot + "/DB_BossBarrage_PunishNet.asset";
         public const string LinePressurePatternProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_BossBarrage_LinePressure.asset";
+        public const string BossBasicFireProfilePath =
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_BossBasicFire_LanePoke.asset";
         public const string ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossBarrageProjectile_NeedleLock.prefab";
         public const string LocalDefenseProfilePath =
@@ -54,6 +56,8 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageProjectile_LinePressure.mat";
         private const string LayeredSalvoProjectileMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageProjectile_LayeredSalvo.mat";
+        private const string BossBasicFireProjectileMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBasicFireProjectile.mat";
         public const string Skill1ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_PlayerSkill1Projectile_LaneBolt.prefab";
         public const string RangedBasicProjectilePrefabPath =
@@ -236,6 +240,13 @@ namespace DimensionBrawl.Editor
             Debug.Log("Reapplied ActionFoundation boss barrage lane review scene.");
         }
 
+        [MenuItem("DimensionBrawl/Reapply Action Foundation Boss Basic Fire Bindings")]
+        public static void ReapplyBossBasicFireBindingsMenu()
+        {
+            EnsureBossBasicFireBindings();
+            Debug.Log("Reapplied ActionFoundation boss basic fire bindings.");
+        }
+
         [MenuItem("DimensionBrawl/Validate Action Foundation Boss Barrage Lane Review Scene")]
         public static void ValidateBossBarrageLaneReviewSceneMenu()
         {
@@ -299,6 +310,61 @@ namespace DimensionBrawl.Editor
             EnsureBossProxyBodyHitbox(DuelReviewScenePath);
         }
 
+        public static void EnsureBossBasicFireBindings()
+        {
+            EnsureBossBasicFireProfile();
+            EnsureBossBasicFireBinding(ReviewScenePath);
+            EnsureBossBasicFireBinding(DuelReviewScenePath);
+            AssetDatabase.SaveAssets();
+        }
+
+        private static void EnsureBossBasicFireBinding(string scenePath)
+        {
+            if (AssetDatabase.LoadAssetAtPath<SceneAsset>(scenePath) == null)
+            {
+                return;
+            }
+
+            Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
+            PlayerMovementController player = RequireObject<PlayerMovementController>(scene, "player movement");
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(scene, LaneRootName), "lane space");
+            GameObject bossProxy = RequireRoot(scene, BossProxyRootName);
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossProxy, "boss proxy health");
+            Transform projectileRoot = RequireRoot(scene, ProjectilePoolRootName).transform;
+            BossBasicFireEmitter bossBasicFireEmitter = ConfigureBossBasicFireEmitter(
+                bossProxy,
+                laneSpace,
+                player.transform,
+                bossHealth,
+                projectileRoot);
+
+            GameObject pocketRoot = FindRoot(scene, PocketOwnerRootName);
+            if (pocketRoot != null
+                && pocketRoot.TryGetComponent(out BossBarragePocketReviewOwner pocketOwner))
+            {
+                SetObjectReference(pocketOwner, "bossBasicFireEmitter", bossBasicFireEmitter);
+            }
+
+            GameObject duelRoot = FindRoot(scene, DuelOwnerRootName);
+            if (duelRoot != null
+                && duelRoot.TryGetComponent(out BossSummonDuelReviewOwner duelOwner))
+            {
+                SetObjectReference(duelOwner, "bossBasicFireEmitter", bossBasicFireEmitter);
+            }
+
+            GameObject hudRoot = FindRoot(scene, HudRootName);
+            if (hudRoot != null
+                && hudRoot.TryGetComponent(out BossBarrageLaneReviewHud reviewHud))
+            {
+                SetObjectReference(reviewHud, "bossBasicFireEmitter", bossBasicFireEmitter);
+            }
+
+            if (!EditorSceneManager.SaveScene(scene, scenePath))
+            {
+                throw new InvalidOperationException($"Failed to save boss basic fire bindings in {scenePath}.");
+            }
+        }
+
         private static void EnsureBossProxyBodyHitbox(string scenePath)
         {
             Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
@@ -326,6 +392,7 @@ namespace DimensionBrawl.Editor
             BossBarragePatternProfile rightClampPatternProfile = EnsureRightClampPatternProfile();
             BossBarragePatternProfile punishNetPatternProfile = EnsurePunishNetPatternProfile();
             BossBarragePatternProfile linePressurePatternProfile = EnsureLinePressurePatternProfile();
+            BossBasicFireProfile bossBasicFireProfile = EnsureBossBasicFireProfile();
             BossBarrageProjectile projectilePrefab = EnsureProjectilePrefab();
             PlayerActionProfile localDefenseProfile = EnsureLocalDefenseProfile();
             LaneActionProjectile skill1ProjectilePrefab = EnsureLaneActionProjectilePrefab(
@@ -382,6 +449,7 @@ namespace DimensionBrawl.Editor
             rightClampPatternProfile = LoadAsset<BossBarragePatternProfile>(RightClampPatternProfilePath);
             punishNetPatternProfile = LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath);
             linePressurePatternProfile = LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath);
+            bossBasicFireProfile = LoadAsset<BossBasicFireProfile>(BossBasicFireProfilePath);
             projectilePrefab = LoadPrefabComponent<BossBarrageProjectile>(ProjectilePrefabPath);
             localDefenseProfile = LoadAsset<PlayerActionProfile>(LocalDefenseProfilePath);
             skill1ProjectilePrefab = LoadPrefabComponent<LaneActionProjectile>(Skill1ProjectilePrefabPath);
@@ -430,6 +498,7 @@ namespace DimensionBrawl.Editor
                 rightClampPatternProfile,
                 punishNetPatternProfile,
                 linePressurePatternProfile,
+                bossBasicFireProfile,
                 projectilePrefab,
                 projectileRoot.transform,
                 bossSummonActorPrefab,
@@ -466,6 +535,8 @@ namespace DimensionBrawl.Editor
             ConfigureTargetReferences(targetSelector, cameraTargetBridge, cameraController, player, playerHealth, closeThreatHealth, bossHealth);
             ConfigureEncounter(encounter, playerHealth, closeThreatHealth);
             BossBarrageEmitter bossBarrageEmitter = RequireComponent<BossBarrageEmitter>(bossProxy, "boss barrage emitter");
+            BossBasicFireEmitter bossBasicFireEmitter =
+                RequireComponent<BossBasicFireEmitter>(bossProxy, "boss basic fire emitter");
             BossPressureCostLadder bossPressureCost =
                 RequireComponent<BossPressureCostLadder>(bossProxy, "boss pressure cost ladder");
             BossPressureActionDirector bossPressureActionDirector =
@@ -481,6 +552,7 @@ namespace DimensionBrawl.Editor
                 skill1Action,
                 summonSlot1Action,
                 bossBarrageEmitter,
+                bossBasicFireEmitter,
                 bossPressureCost,
                 bossPressureActionDirector,
                 laneSpace);
@@ -529,6 +601,7 @@ namespace DimensionBrawl.Editor
                 summonSlot2Action,
                 summonSlot3Action,
                 bossBarrageEmitter,
+                bossBasicFireEmitter,
                 pocketOwner,
                 bossPressureCost,
                 RequireComponent<BossPressurePositionController>(bossBarrageEmitter.gameObject, "boss pressure position controller"),
@@ -580,6 +653,8 @@ namespace DimensionBrawl.Editor
             SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(scene, LaneRootName), "lane space");
             GameObject bossProxy = RequireRoot(scene, BossProxyRootName);
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossProxy, "boss barrage emitter");
+            BossBasicFireEmitter bossBasicFireEmitter =
+                RequireComponent<BossBasicFireEmitter>(bossProxy, "boss basic fire emitter");
             BossPressureCostLadder bossPressureCost =
                 RequireComponent<BossPressureCostLadder>(bossProxy, "boss pressure cost ladder");
             BossPressureActionDirector bossPressureActionDirector =
@@ -744,6 +819,12 @@ namespace DimensionBrawl.Editor
             ValidateInt(emitter, "wavesPerPattern", 1);
             ValidateObjectReference(emitter, "projectilePrefabObject", LoadAsset<GameObject>(ProjectilePrefabPath));
             ValidateBossBarrageProjectilePrefab();
+            ValidateBossBasicFire(
+                bossBasicFireEmitter,
+                laneSpace,
+                player.transform,
+                bossHealth,
+                RequireRoot(scene, ProjectilePoolRootName).transform);
             ValidateBossPressureLoop(
                 bossPressureCost,
                 bossPressureActionDirector,
@@ -789,6 +870,7 @@ namespace DimensionBrawl.Editor
                 skill1Action,
                 summonSlot1Action,
                 emitter,
+                bossBasicFireEmitter,
                 bossPressureCost,
                 bossPressureActionDirector);
             ValidatePocketCueBridges(
@@ -811,6 +893,7 @@ namespace DimensionBrawl.Editor
                 skill1Action,
                 summonSlot1Action,
                 emitter,
+                bossBasicFireEmitter,
                 pocketOwner,
                 bossPressureCost,
                 bossPressurePosition,
@@ -844,6 +927,8 @@ namespace DimensionBrawl.Editor
             ValidateNoImportedAssetReference(RightClampPatternProfilePath);
             ValidateNoImportedAssetReference(PunishNetPatternProfilePath);
             ValidateNoImportedAssetReference(LinePressurePatternProfilePath);
+            ValidateNoImportedAssetReference(BossBasicFireProfilePath);
+            ValidateNoImportedAssetReference(BossBasicFireProjectileMaterialPath);
             ValidateNoImportedAssetReference(LocalDefenseProfilePath);
             ValidateNoImportedAssetReference(Skill1ProjectilePrefabPath);
             ValidateNoImportedAssetReference(RangedBasicProjectilePrefabPath);
@@ -886,6 +971,8 @@ namespace DimensionBrawl.Editor
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossProxy, "boss proxy health");
             ValidateBossProxyBodyContract(bossProxy, bossHealth);
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossProxy, "boss barrage emitter");
+            BossBasicFireEmitter bossBasicFireEmitter =
+                RequireComponent<BossBasicFireEmitter>(bossProxy, "boss basic fire emitter");
             BossPressureCostLadder bossPressureCost =
                 RequireComponent<BossPressureCostLadder>(bossProxy, "boss pressure cost ladder");
             BossPressureActionDirector bossPressureActionDirector =
@@ -924,6 +1011,7 @@ namespace DimensionBrawl.Editor
                 summonSlot2Action,
                 summonSlot3Action,
                 emitter,
+                bossBasicFireEmitter,
                 bossPressureCost,
                 bossPressureActionDirector,
                 bossSummonPressureAction,
@@ -959,6 +1047,8 @@ namespace DimensionBrawl.Editor
             GameObject bossProxy = RequireRoot(scene, BossProxyRootName);
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossProxy, "boss proxy health");
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossProxy, "boss barrage emitter");
+            BossBasicFireEmitter bossBasicFireEmitter =
+                RequireComponent<BossBasicFireEmitter>(bossProxy, "boss basic fire emitter");
             BossPressureCostLadder bossPressureCost =
                 RequireComponent<BossPressureCostLadder>(bossProxy, "boss pressure cost ladder");
             BossPressureActionDirector bossPressureActionDirector =
@@ -990,6 +1080,7 @@ namespace DimensionBrawl.Editor
                 summonSlot2Action,
                 summonSlot3Action,
                 emitter,
+                bossBasicFireEmitter,
                 bossPressureCost,
                 bossPressureActionDirector,
                 bossSummonPressureAction,
@@ -1051,6 +1142,8 @@ namespace DimensionBrawl.Editor
             GameObject bossProxy = RequireRoot(scene, BossProxyRootName);
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossProxy, "boss proxy health");
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossProxy, "boss barrage emitter");
+            BossBasicFireEmitter bossBasicFireEmitter =
+                RequireComponent<BossBasicFireEmitter>(bossProxy, "boss basic fire emitter");
             BossPressureCostLadder bossPressureCost =
                 RequireComponent<BossPressureCostLadder>(bossProxy, "boss pressure cost ladder");
             BossPressureActionDirector bossPressureActionDirector =
@@ -1094,6 +1187,7 @@ namespace DimensionBrawl.Editor
                 summonSlot2Action,
                 summonSlot3Action,
                 emitter,
+                bossBasicFireEmitter,
                 bossPressureCost,
                 bossPressureActionDirector,
                 bossSummonPressureAction,
@@ -1175,6 +1269,42 @@ namespace DimensionBrawl.Editor
             RequireProperty(serializedObject, "forwardHalfSpread").floatValue = 1.05f;
             RequireProperty(serializedObject, "spawnHeight").floatValue = 1.35f;
             RequireProperty(serializedObject, "targetHeight").floatValue = 1.05f;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(profile);
+            return profile;
+        }
+
+        private static BossBasicFireProfile EnsureBossBasicFireProfile()
+        {
+            EnsureFolderForAsset(BossBasicFireProfilePath);
+            BossBasicFireProfile profile =
+                AssetDatabase.LoadAssetAtPath<BossBasicFireProfile>(BossBasicFireProfilePath);
+            if (profile == null)
+            {
+                profile = ScriptableObject.CreateInstance<BossBasicFireProfile>();
+                AssetDatabase.CreateAsset(profile, BossBasicFireProfilePath);
+            }
+
+            Material projectileMaterial =
+                LoadOrCreateMaterial(BossBasicFireProjectileMaterialPath, new Color(0.7f, 0.95f, 1f, 1f));
+            var serializedObject = new SerializedObject(profile);
+            RequireProperty(serializedObject, "fireId").stringValue = "LanePoke";
+            RequireProperty(serializedObject, "readoutLabel").stringValue = "Lane Poke";
+            RequireProperty(serializedObject, "initialDelaySeconds").floatValue = 1.1f;
+            RequireProperty(serializedObject, "fireIntervalSeconds").floatValue = 2.2f;
+            RequireProperty(serializedObject, "projectilesPerVolley").intValue = 2;
+            RequireProperty(serializedObject, "damage").floatValue = 5f;
+            RequireProperty(serializedObject, "projectileSpeed").floatValue = 11.5f;
+            RequireProperty(serializedObject, "projectileLifetimeSeconds").floatValue = 5.2f;
+            RequireProperty(serializedObject, "projectileRadius").floatValue = 0.22f;
+            RequireProperty(serializedObject, "backlineHalfSpread").floatValue = 1.45f;
+            RequireProperty(serializedObject, "forwardHalfSpread").floatValue = 0.48f;
+            RequireProperty(serializedObject, "spawnLateralFollowRatio").floatValue = 0.2f;
+            RequireProperty(serializedObject, "spawnHeight").floatValue = 1.28f;
+            RequireProperty(serializedObject, "targetHeight").floatValue = 1.02f;
+            RequireProperty(serializedObject, "projectileColor").colorValue = new Color(0.7f, 0.95f, 1f, 1f);
+            RequireProperty(serializedObject, "projectileVisualScale").vector3Value = new Vector3(0.62f, 0.62f, 0.62f);
+            RequireProperty(serializedObject, "projectileMaterial").objectReferenceValue = projectileMaterial;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(profile);
             return profile;
@@ -1731,6 +1861,7 @@ namespace DimensionBrawl.Editor
             BossBarragePatternProfile rightClampPatternProfile,
             BossBarragePatternProfile punishNetPatternProfile,
             BossBarragePatternProfile linePressurePatternProfile,
+            BossBasicFireProfile bossBasicFireProfile,
             BossBarrageProjectile projectilePrefab,
             Transform projectileRoot,
             SummonFrontlineProxy bossSummonActorPrefab,
@@ -1775,6 +1906,13 @@ namespace DimensionBrawl.Editor
             SetInt(emitter, "sourceTeam", (int)DamageTeam.Enemy);
             SetBool(emitter, "firingEnabled", true);
             SetInt(emitter, "prewarmCount", 24);
+
+            BossBasicFireEmitter basicFireEmitter = ConfigureBossBasicFireEmitter(
+                bossProxy,
+                laneSpace,
+                playerTransform,
+                bossHealth,
+                projectileRoot);
 
             BossPressureCostLadder bossPressureCost = EnsureComponent<BossPressureCostLadder>(bossProxy);
             bossPressureCost.ConfigureReferences(laneSpace, bossProxy.transform);
@@ -1830,6 +1968,7 @@ namespace DimensionBrawl.Editor
             SetBool(bossPressurePosition, "returnToRestWhenActionsDisabled", true);
             SetBool(bossPressurePosition, "movementEnabled", true);
             EditorUtility.SetDirty(bossPressureCost);
+            EditorUtility.SetDirty(basicFireEmitter);
             EditorUtility.SetDirty(bossSummonPressureAction);
             EditorUtility.SetDirty(bossPressureActionDirector);
             EditorUtility.SetDirty(bossPressurePosition);
@@ -1837,6 +1976,27 @@ namespace DimensionBrawl.Editor
             CreateBossProxyVisual(bossProxy.transform);
             ConfigureBossProxyVisualCueDriver(bossProxy, emitter, bossPressureActionDirector);
             return bossProxy;
+        }
+
+        private static BossBasicFireEmitter ConfigureBossBasicFireEmitter(
+            GameObject bossProxy,
+            SummonLaneSpace laneSpace,
+            Transform playerTransform,
+            CombatHealth bossHealth,
+            Transform projectileRoot)
+        {
+            BossBasicFireEmitter basicFireEmitter = EnsureComponent<BossBasicFireEmitter>(bossProxy);
+            SetObjectReference(basicFireEmitter, "laneSpace", laneSpace);
+            SetObjectReference(basicFireEmitter, "trackedPlayer", playerTransform);
+            SetObjectReference(basicFireEmitter, "sourceHealth", bossHealth);
+            SetObjectReference(basicFireEmitter, "fireProfile", LoadAsset<BossBasicFireProfile>(BossBasicFireProfilePath));
+            SetObjectReference(basicFireEmitter, "projectilePrefab", LoadPrefabComponent<BossBarrageProjectile>(ProjectilePrefabPath));
+            SetObjectReference(basicFireEmitter, "projectilePrefabObject", LoadAsset<GameObject>(ProjectilePrefabPath));
+            SetObjectReference(basicFireEmitter, "projectileRoot", projectileRoot);
+            SetInt(basicFireEmitter, "sourceTeam", (int)DamageTeam.Enemy);
+            SetBool(basicFireEmitter, "firingEnabled", true);
+            SetInt(basicFireEmitter, "prewarmCount", 10);
+            return basicFireEmitter;
         }
 
         private static GameObject CreateCloseThreat(
@@ -2615,6 +2775,7 @@ namespace DimensionBrawl.Editor
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
             BossBarrageEmitter bossBarrageEmitter,
+            BossBasicFireEmitter bossBasicFireEmitter,
             BossPressureCostLadder bossPressureCost,
             BossPressureActionDirector bossPressureActionDirector,
             SummonLaneSpace laneSpace)
@@ -2642,7 +2803,9 @@ namespace DimensionBrawl.Editor
                 clearMarker,
                 failMarker,
                 bossPressureCost,
-                bossPressureActionDirector);
+                bossPressureActionDirector,
+                bossBasicFireEmitter);
+            SetObjectReference(owner, "bossBasicFireEmitter", bossBasicFireEmitter);
             SetObjectReference(
                 owner,
                 "summonPressureBlockOpportunity",
@@ -2731,6 +2894,7 @@ namespace DimensionBrawl.Editor
             PlayerSupportSummonSlotAction summonSlot2Action,
             PlayerSupportSummonSlotAction summonSlot3Action,
             BossBarrageEmitter bossBarrageEmitter,
+            BossBasicFireEmitter bossBasicFireEmitter,
             BossBarragePocketReviewOwner pocketOwner,
             BossPressureCostLadder bossPressureCost,
             BossPressurePositionController bossPressurePosition,
@@ -2758,7 +2922,9 @@ namespace DimensionBrawl.Editor
                 bossPressureActionDirector,
                 bossSummonPressureAction,
                 summonSlot2Action,
-                summonSlot3Action);
+                summonSlot3Action,
+                bossBasicFireEmitter);
+            SetObjectReference(hud, "bossBasicFireEmitter", bossBasicFireEmitter);
             SetObjectReference(hud, "duelReviewOwner", null);
             SetBool(hud, "showCenterReticle", false);
             BossBarrageLaneReviewMobileHud mobileHud = hudRoot.AddComponent<BossBarrageLaneReviewMobileHud>();
@@ -3214,6 +3380,46 @@ namespace DimensionBrawl.Editor
 
             ValidateGameOwnedAsset(renderer.sharedMaterial, "boss barrage projectile material");
             ValidateRenderableMaterialShader(renderer.sharedMaterial, "boss barrage projectile material shader");
+        }
+
+        private static void ValidateBossBasicFire(
+            BossBasicFireEmitter basicFireEmitter,
+            SummonLaneSpace laneSpace,
+            Transform playerTransform,
+            CombatHealth bossHealth,
+            Transform projectileRoot)
+        {
+            ValidateObjectReference(basicFireEmitter, "laneSpace", laneSpace);
+            ValidateObjectReference(basicFireEmitter, "trackedPlayer", playerTransform);
+            ValidateObjectReference(basicFireEmitter, "sourceHealth", bossHealth);
+            ValidateObjectReference(
+                basicFireEmitter,
+                "fireProfile",
+                LoadAsset<BossBasicFireProfile>(BossBasicFireProfilePath));
+            ValidateObjectReference(basicFireEmitter, "projectilePrefabObject", LoadAsset<GameObject>(ProjectilePrefabPath));
+            ValidateObjectReference(basicFireEmitter, "projectileRoot", projectileRoot);
+            ValidateEnum(basicFireEmitter, "sourceTeam", (int)DamageTeam.Enemy);
+            ValidateBool(basicFireEmitter, "firingEnabled", true);
+            ValidateInt(basicFireEmitter, "prewarmCount", 10);
+
+            BossBasicFireProfile profile = LoadAsset<BossBasicFireProfile>(BossBasicFireProfilePath);
+            ValidateString(profile, "fireId", "LanePoke");
+            ValidateString(profile, "readoutLabel", "Lane Poke");
+            ValidateFloat(profile, "initialDelaySeconds", 1.1f);
+            ValidateFloat(profile, "fireIntervalSeconds", 2.2f);
+            ValidateInt(profile, "projectilesPerVolley", 2);
+            ValidateFloat(profile, "damage", 5f);
+            ValidateFloat(profile, "projectileSpeed", 11.5f);
+            ValidateFloat(profile, "projectileLifetimeSeconds", 5.2f);
+            ValidateFloat(profile, "projectileRadius", 0.22f);
+            ValidateFloat(profile, "backlineHalfSpread", 1.45f);
+            ValidateFloat(profile, "forwardHalfSpread", 0.48f);
+            ValidateFloat(profile, "spawnLateralFollowRatio", 0.2f);
+            ValidateFloat(profile, "spawnHeight", 1.28f);
+            ValidateFloat(profile, "targetHeight", 1.02f);
+            ValidateColor(profile, "projectileColor", new Color(0.7f, 0.95f, 1f, 1f));
+            ValidateVector3(profile, "projectileVisualScale", new Vector3(0.62f, 0.62f, 0.62f));
+            ValidateObjectReference(profile, "projectileMaterial", LoadAsset<Material>(BossBasicFireProjectileMaterialPath));
         }
 
         private static void ValidateEnergyRiskZoneMarkers(Scene scene, SummonLaneSpace laneSpace)
@@ -4993,6 +5199,7 @@ namespace DimensionBrawl.Editor
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
             BossBarrageEmitter bossBarrageEmitter,
+            BossBasicFireEmitter bossBasicFireEmitter,
             BossPressureCostLadder bossPressureCost,
             BossPressureActionDirector bossPressureActionDirector)
         {
@@ -5003,6 +5210,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(owner, "skill1Action", skill1Action);
             ValidateObjectReference(owner, "summonSlot1Action", summonSlot1Action);
             ValidateObjectReference(owner, "bossBarrageEmitter", bossBarrageEmitter);
+            ValidateObjectReference(owner, "bossBasicFireEmitter", bossBasicFireEmitter);
             ValidateObjectReference(owner, "bossPressureCostLadder", bossPressureCost);
             ValidateObjectReference(owner, "bossPressureActionDirector", bossPressureActionDirector);
             ValidateObjectReference(
@@ -5028,6 +5236,7 @@ namespace DimensionBrawl.Editor
             PlayerSupportSummonSlotAction summonSlot2Action,
             PlayerSupportSummonSlotAction summonSlot3Action,
             BossBarrageEmitter bossBarrageEmitter,
+            BossBasicFireEmitter bossBasicFireEmitter,
             BossPressureCostLadder bossPressureCost,
             BossPressureActionDirector bossPressureActionDirector,
             BossSummonPressureAction bossSummonPressureAction,
@@ -5042,6 +5251,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(owner, "summonSlot2Action", summonSlot2Action);
             SetObjectReference(owner, "summonSlot3Action", summonSlot3Action);
             SetObjectReference(owner, "bossBarrageEmitter", bossBarrageEmitter);
+            SetObjectReference(owner, "bossBasicFireEmitter", bossBasicFireEmitter);
             SetObjectReference(owner, "bossPressureCostLadder", bossPressureCost);
             SetObjectReference(owner, "bossPressureActionDirector", bossPressureActionDirector);
             SetObjectReference(owner, "bossSummonPressureAction", bossSummonPressureAction);
@@ -5087,6 +5297,7 @@ namespace DimensionBrawl.Editor
             PlayerSupportSummonSlotAction summonSlot2Action,
             PlayerSupportSummonSlotAction summonSlot3Action,
             BossBarrageEmitter bossBarrageEmitter,
+            BossBasicFireEmitter bossBasicFireEmitter,
             BossPressureCostLadder bossPressureCost,
             BossPressureActionDirector bossPressureActionDirector,
             BossSummonPressureAction bossSummonPressureAction,
@@ -5101,6 +5312,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(owner, "summonSlot2Action", summonSlot2Action);
             ValidateObjectReference(owner, "summonSlot3Action", summonSlot3Action);
             ValidateObjectReference(owner, "bossBarrageEmitter", bossBarrageEmitter);
+            ValidateObjectReference(owner, "bossBasicFireEmitter", bossBasicFireEmitter);
             ValidateObjectReference(owner, "bossPressureCostLadder", bossPressureCost);
             ValidateObjectReference(owner, "bossPressureActionDirector", bossPressureActionDirector);
             ValidateObjectReference(owner, "bossSummonPressureAction", bossSummonPressureAction);
@@ -5177,6 +5389,7 @@ namespace DimensionBrawl.Editor
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
             BossBarrageEmitter bossBarrageEmitter,
+            BossBasicFireEmitter bossBasicFireEmitter,
             BossBarragePocketReviewOwner pocketOwner,
             BossPressureCostLadder bossPressureCost,
             BossPressurePositionController bossPressurePosition,
@@ -5199,6 +5412,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(hud, "summonSlot2Action", summonSlot2Action);
             ValidateObjectReference(hud, "summonSlot3Action", summonSlot3Action);
             ValidateObjectReference(hud, "bossBarrageEmitter", bossBarrageEmitter);
+            ValidateObjectReference(hud, "bossBasicFireEmitter", bossBasicFireEmitter);
             ValidateObjectReference(hud, "bossPressureCostLadder", bossPressureCost);
             ValidateObjectReference(hud, "bossPressurePositionController", bossPressurePosition);
             ValidateObjectReference(hud, "bossPressureActionDirector", bossPressureActionDirector);
@@ -5887,6 +6101,20 @@ namespace DimensionBrawl.Editor
             }
 
             throw new InvalidOperationException($"Missing root {rootName} in {scene.path}.");
+        }
+
+        private static GameObject FindRoot(Scene scene, string rootName)
+        {
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int i = 0; i < roots.Length; i++)
+            {
+                if (roots[i] != null && string.Equals(roots[i].name, rootName, StringComparison.Ordinal))
+                {
+                    return roots[i];
+                }
+            }
+
+            return null;
         }
 
         private static T RequireComponent<T>(GameObject root, string label) where T : Component

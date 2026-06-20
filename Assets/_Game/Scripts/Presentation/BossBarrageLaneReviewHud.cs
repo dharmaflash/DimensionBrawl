@@ -109,6 +109,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private PlayerSupportSummonSlotAction summonSlot2Action;
         [SerializeField] private PlayerSupportSummonSlotAction summonSlot3Action;
         [SerializeField] private BossBarrageEmitter bossBarrageEmitter;
+        [SerializeField] private BossBasicFireEmitter bossBasicFireEmitter;
         [SerializeField] private BossPressureCostLadder bossPressureCostLadder;
         [SerializeField] private BossPressurePositionController bossPressurePositionController;
         [SerializeField] private BossPressureActionDirector bossPressureActionDirector;
@@ -163,7 +164,8 @@ namespace DimensionBrawl.Presentation
             BossPressureActionDirector newBossPressureActionDirector = null,
             BossSummonPressureAction newBossSummonPressureAction = null,
             PlayerSupportSummonSlotAction newSummonSlot2Action = null,
-            PlayerSupportSummonSlotAction newSummonSlot3Action = null)
+            PlayerSupportSummonSlotAction newSummonSlot3Action = null,
+            BossBasicFireEmitter newBossBasicFireEmitter = null)
         {
             playerHealth = newPlayerHealth;
             closeThreatHealth = newCloseThreatHealth;
@@ -179,6 +181,7 @@ namespace DimensionBrawl.Presentation
             summonSlot2Action = newSummonSlot2Action;
             summonSlot3Action = newSummonSlot3Action;
             bossBarrageEmitter = newBossBarrageEmitter;
+            bossBasicFireEmitter = newBossBasicFireEmitter;
             bossPressureCostLadder = newBossPressureCostLadder;
             bossPressurePositionController = newBossPressurePositionController;
             bossPressureActionDirector = newBossPressureActionDirector;
@@ -207,6 +210,7 @@ namespace DimensionBrawl.Presentation
             GUILayout.Label(ResolvePhaseLine(), labelStyle);
             GUILayout.Label(ResolveEnergyLine(), labelStyle);
             GUILayout.Label(ResolveRiskLine(), labelStyle);
+            GUILayout.Label(ResolveBossBasicFireLine(), labelStyle);
             GUILayout.Label(ResolveBossBarrageLine(), labelStyle);
             GUILayout.Label(ResolveBossPressureLine(), labelStyle);
             GUILayout.Label(ResolveBossPressureResponseLine(), labelStyle);
@@ -297,6 +301,23 @@ namespace DimensionBrawl.Presentation
                 : string.Empty;
             return $"Boss {source} P{bossBarrageEmitter.CurrentPatternSequenceIndex + 1}{priorityWaves}: "
                 + $"{pattern.PatternId} [{pattern.LateralShape}]   {pressureState}";
+        }
+
+        private string ResolveBossBasicFireLine()
+        {
+            if (bossBasicFireEmitter == null)
+            {
+                return "Boss Basic Fire -";
+            }
+
+            BossBasicFireProfile profile = bossBasicFireEmitter.FireProfile;
+            string label = profile != null ? profile.ReadoutLabel : "-";
+            string state = bossBasicFireEmitter.IsFiringEnabled
+                ? $"next {bossBasicFireEmitter.CooldownRemaining:0.0}s"
+                : "off";
+            return $"Boss Basic Fire {label}   {state}   shots {bossBasicFireEmitter.ActiveProjectileCount} "
+                + $"volley {bossBasicFireEmitter.LastVolleyProjectileCount} "
+                + $"risk {bossBasicFireEmitter.LastForwardRisk01 * 100f:0}%";
         }
 
         private string ResolveBossPressureLine()
