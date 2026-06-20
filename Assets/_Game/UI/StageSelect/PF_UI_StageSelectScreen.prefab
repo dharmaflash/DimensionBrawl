@@ -7056,8 +7056,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.StageSelectScreenPresenter
   stageCatalog: {fileID: 11400000, guid: 01ea475be7459924b9a3a961dec8d097, type: 2}
   selectedStageId: story_v1_training_route
-  stageNameText: {fileID: 0}
-  summaryText: {fileID: 0}
+  stageNameText: {fileID: 6795821753406765337}
+  summaryText: {fileID: 8326640740073386669}
   threatTagsText: {fileID: 0}
   summonHintText: {fileID: 0}
   rewardPreviewText: {fileID: 0}
