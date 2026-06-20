@@ -1,0 +1,123 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2dc240553f8b308458e6dee7f005a001, type: 3}
+  m_Name: DB_UIComponentCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIComponentCatalog
+  components:
+  - key: Common.PrimaryActionButton
+    category: Common
+    prefab: {fileID: 9155680919945219554, guid: dde3d13b22d34a3449cafffe5fe84a57, type: 3}
+    cachePolicy: 20
+  - key: Common.SecondaryActionButton
+    category: Common
+    prefab: {fileID: 2745978502163100918, guid: 0ba9915a648c5cb41b4549eb85125330, type: 3}
+    cachePolicy: 20
+  - key: Common.StatusChip
+    category: Common
+    prefab: {fileID: 2140973421339638223, guid: 48b5504daa5376a439a9b8694992a031, type: 3}
+    cachePolicy: 20
+  - key: Common.ProgressBar
+    category: Common
+    prefab: {fileID: 6577271655480396040, guid: a1d4da87b50f44447ab2f4e1878e3f15, type: 3}
+    cachePolicy: 20
+  - key: Common.Toast
+    category: Common
+    prefab: {fileID: 5521383059174187600, guid: 4e5e836fd16412246b4a8f70c9d6c7fb, type: 3}
+    cachePolicy: 20
+  - key: Common.TabButton
+    category: Common
+    prefab: {fileID: 6831347632214893585, guid: a4c11dd25a6de5146a9692447f142a12, type: 3}
+    cachePolicy: 20
+  - key: Common.PanelFrame
+    category: Common
+    prefab: {fileID: 1011280350925926436, guid: 7aef59ed035ce8d499fb65d2f6948eb1, type: 3}
+    cachePolicy: 20
+  - key: Common.InputPrompt
+    category: Common
+    prefab: {fileID: 3559757014859304810, guid: d26cb3e0a036a8c41bd63f60576340fe, type: 3}
+    cachePolicy: 20
+  - key: Common.SafeAreaFrame
+    category: Common
+    prefab: {fileID: 2165982150814433126, guid: 2be3e9d0a2345514fa2a577d7aabf389, type: 3}
+    cachePolicy: 20
+  - key: Common.IconBadge
+    category: Common
+    prefab: {fileID: 6751465362191994715, guid: fe8277d3d8587c548ab58400b88f5041, type: 3}
+    cachePolicy: 20
+  - key: Common.ButtonStateSample
+    category: Common
+    prefab: {fileID: 8572027539944063450, guid: af6932591fb40a444bfdc4c001693ed4, type: 3}
+    cachePolicy: 20
+  - key: Common.FocusRing
+    category: Common
+    prefab: {fileID: 1548508929299558387, guid: 9170b736f9f407d47b7d8bbf1d6c2204, type: 3}
+    cachePolicy: 20
+  - key: Common.TextLabel
+    category: Common
+    prefab: {fileID: 6944453700366441327, guid: 2414edaac05bbd9498e709cce5724e22, type: 3}
+    cachePolicy: 20
+  - key: Common.StateMessage
+    category: Common
+    prefab: {fileID: 3801135810327483629, guid: 45f6bdc4a6a357947a372daf4f25fb41, type: 3}
+    cachePolicy: 20
+  - key: Common.NumberBadge
+    category: Common
+    prefab: {fileID: 3347248263326998527, guid: ecdadd875e2ae174eb52849307fd1583, type: 3}
+    cachePolicy: 20
+  - key: Common.Tooltip
+    category: Common
+    prefab: {fileID: 4081561930543887827, guid: a75ed209d08a2b645a2aad57614c3f53, type: 3}
+    cachePolicy: 20
+  - key: Common.Dialog
+    category: Common
+    prefab: {fileID: 3395203886135566032, guid: 4d521e4d7c24a2743a05278c65bcb164, type: 3}
+    cachePolicy: 20
+  - key: Common.ThemeTokenSample
+    category: Common
+    prefab: {fileID: 192414516257464995, guid: ddde88771aaa6ce478bd7dfe53e62563, type: 3}
+    cachePolicy: 20
+  - key: Common.MotionPreview
+    category: Common
+    prefab: {fileID: 5768945487414397378, guid: f3e77092bd08fca48b846c7031ed3ec6, type: 3}
+    cachePolicy: 20
+  - key: Transitions.CuePreview
+    category: Transitions
+    prefab: {fileID: 8650817131604382237, guid: 9a3ff221b6af2e54b83b9d75a3998199, type: 3}
+    cachePolicy: 20
+  - key: Transitions.LoadingCard
+    category: Transitions
+    prefab: {fileID: 3430454371607782258, guid: cc268f9ab9dee904884f6f80f5242737, type: 3}
+    cachePolicy: 20
+  - key: Transitions.FlowStatus
+    category: Transitions
+    prefab: {fileID: 5625896266760037188, guid: 551d2b9537e372c4b8c4324e03f12d15, type: 3}
+    cachePolicy: 20
+  - key: Common.SceneShell
+    category: Common
+    prefab: {fileID: 2125348368331879324, guid: d8088cb97419c034ca4029890cf4d239, type: 3}
+    cachePolicy: 20
+  - key: Presentation.Login
+    category: Presentation
+    prefab: {fileID: 7825460606704662450, guid: da1e49b9eebea39498057f06cb8ea61a, type: 3}
+    cachePolicy: 10
+  - key: Presentation.Lobby
+    category: Presentation
+    prefab: {fileID: 8703424799917552057, guid: 64028167a71c21941b8bcaa08d6ac911, type: 3}
+    cachePolicy: 20
+  - key: Presentation.StageSelect
+    category: Presentation
+    prefab: {fileID: 8787085597574654304, guid: c8497756bcbea2c44ae44252ea3410fa, type: 3}
+    cachePolicy: 20
+  - key: Presentation.CombatHud
+    category: Presentation
+    prefab: {fileID: 6566984278669171275, guid: b47ae1489aeaf6c4d9f7d7c3395df295, type: 3}
+    cachePolicy: 10

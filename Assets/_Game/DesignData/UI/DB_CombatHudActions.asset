@@ -1,0 +1,81 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e4514b1f4d8a662428a131c3441a087f, type: 3}
+  m_Name: DB_CombatHudActions
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.CombatHudActionCatalog
+  actions:
+  - actionId: 100
+    displayName: Attack
+    canonicalName: BasicAttack
+    placeholderState: Required V1 action
+    cooldownDisplayMode: 0
+    enabledInV1: 1
+  - actionId: 110
+    displayName: Dodge
+    canonicalName: Dodge
+    placeholderState: Required V1 action
+    cooldownDisplayMode: 10
+    enabledInV1: 1
+  - actionId: 120
+    displayName: Skill1
+    canonicalName: Skill1
+    placeholderState: Placeholder only
+    cooldownDisplayMode: 10
+    enabledInV1: 0
+  - actionId: 130
+    displayName: Ultimate
+    canonicalName: Ultimate
+    placeholderState: Placeholder only
+    cooldownDisplayMode: 10
+    enabledInV1: 0
+  - actionId: 200
+    displayName: Summon 1
+    canonicalName: SummonSlot1
+    placeholderState: Visual placeholder only
+    cooldownDisplayMode: 30
+    enabledInV1: 0
+  - actionId: 210
+    displayName: Summon 2
+    canonicalName: SummonSlot2
+    placeholderState: Visual placeholder only
+    cooldownDisplayMode: 30
+    enabledInV1: 0
+  - actionId: 220
+    displayName: Summon 3
+    canonicalName: SummonSlot3
+    placeholderState: Visual placeholder only
+    cooldownDisplayMode: 30
+    enabledInV1: 0
+  - actionId: 300
+    displayName: Pause
+    canonicalName: Pause
+    placeholderState: Optional UI route control
+    cooldownDisplayMode: 0
+    enabledInV1: 1
+  - actionId: 10
+    displayName: Move
+    canonicalName: Move
+    placeholderState: Joystick visual placeholder
+    cooldownDisplayMode: 0
+    enabledInV1: 1
+  - actionId: 20
+    displayName: Look
+    canonicalName: Look
+    placeholderState: Camera look placeholder
+    cooldownDisplayMode: 0
+    enabledInV1: 1
+  - actionId: 30
+    displayName: Target Bias
+    canonicalName: TargetBias
+    placeholderState: Target bias placeholder
+    cooldownDisplayMode: 0
+    enabledInV1: 1

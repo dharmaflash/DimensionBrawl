@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3d938af1fd3d47c4984f3638b274f3b1, type: 3}
+  m_Name: DB_UIScreenCatalog
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIScreenCatalog
+  screens:
+  - routeId: 10
+    screenId: Login
+    screenPrefab: {fileID: 2918109732283464059, guid: 4ae099a9eda693944a7449b9502be406, type: 3}
+    presentationPrefab: {fileID: 7825460606704662450, guid: da1e49b9eebea39498057f06cb8ea61a, type: 3}
+    bgmContextId: Title
+    cachePolicy: 10
+  - routeId: 20
+    screenId: Lobby
+    screenPrefab: {fileID: 5849050130512686628, guid: 96f69b9993b745a47b7e42a0d921aa8c, type: 3}
+    presentationPrefab: {fileID: 8703424799917552057, guid: 64028167a71c21941b8bcaa08d6ac911, type: 3}
+    bgmContextId: Lobby
+    cachePolicy: 20
+  - routeId: 30
+    screenId: StageSelect
+    screenPrefab: {fileID: 7637927707150198054, guid: 8c09e4b9ef616434f88ae527c0cfb358, type: 3}
+    presentationPrefab: {fileID: 8787085597574654304, guid: c8497756bcbea2c44ae44252ea3410fa, type: 3}
+    bgmContextId: StageSelect
+    cachePolicy: 20
+  - routeId: 40
+    screenId: CombatHud
+    screenPrefab: {fileID: 8163093375362245534, guid: 4e5297b5734b6664b935ffb1ae9b48b6, type: 3}
+    presentationPrefab: {fileID: 6566984278669171275, guid: b47ae1489aeaf6c4d9f7d7c3395df295, type: 3}
+    bgmContextId: Combat
+    cachePolicy: 10

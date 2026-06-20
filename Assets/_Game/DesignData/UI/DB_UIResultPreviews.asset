@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e41c62036f1bbc24f854f9314aec5577, type: 3}
+  m_Name: DB_UIResultPreviews
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UIResultPreviewCatalog
+  results:
+  - id: MockWin
+    outcome: 0
+    titleTextKey: ui.result.mock_win.title
+    summaryTextKey: ui.result.mock_win.summary
+    primaryActionTextKey: ui.result.retry
+    secondaryActionTextKey: ui.result.lobby
+    cueId: ResultWinPreview
+    accentColor: {r: 0.18, g: 0.82, b: 0.88, a: 1}
+  - id: MockFail
+    outcome: 10
+    titleTextKey: ui.result.mock_fail.title
+    summaryTextKey: ui.result.mock_fail.summary
+    primaryActionTextKey: ui.result.retry
+    secondaryActionTextKey: ui.result.lobby
+    cueId: ResultFailPreview
+    accentColor: {r: 1, g: 0.68, b: 0.22, a: 1}

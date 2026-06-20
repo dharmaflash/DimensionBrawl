@@ -1,0 +1,87 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f5bd7ff2d1f55c947b1b96467c4b5372, type: 3}
+  m_Name: DB_UICueBundles
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UICueBundleCatalog
+  cueBundles:
+  - id: TitleEnter
+    eventId: TitleEnter
+    uiMotionId: title_ambient_start
+    sfxId: ui_title_enter
+    vfxId:
+    cameraCueId:
+    durationSeconds: 0.55
+    cleanupPolicy: 0
+  - id: LobbyFocusHero
+    eventId: LobbyFocusHero
+    uiMotionId: lobby_character_signboard
+    sfxId: ui_lobby_focus
+    vfxId:
+    cameraCueId:
+    durationSeconds: 1.2
+    cleanupPolicy: 10
+  - id: StageCardExpand
+    eventId: StageSelect
+    uiMotionId: stage_card_expand
+    sfxId: ui_stage_expand
+    vfxId:
+    cameraCueId:
+    durationSeconds: 0.35
+    cleanupPolicy: 0
+  - id: StageToCombatMoodBridge
+    eventId: StageStart
+    uiMotionId: stage_to_combat_mood_bridge
+    sfxId: ui_confirm_start
+    vfxId:
+    cameraCueId:
+    durationSeconds: 0.65
+    cleanupPolicy: 0
+  - id: SummonCallPrimaryPulse
+    eventId: SummonCall
+    uiMotionId: summon_call_primary_pulse
+    sfxId: combat_ui_summon_call
+    vfxId: summon_card_aura
+    cameraCueId: AssistEntryPush
+    durationSeconds: 0.45
+    cleanupPolicy: 0
+  - id: UltimateReadySting
+    eventId: UltimateReady
+    uiMotionId: ultimate_ready_sting
+    sfxId: combat_ui_ultimate_ready
+    vfxId:
+    cameraCueId:
+    durationSeconds: 0.55
+    cleanupPolicy: 0
+  - id: DeniedActionMicroToast
+    eventId: DeniedAction
+    uiMotionId: denied_action_micro_toast
+    sfxId: ui_denied
+    vfxId:
+    cameraCueId:
+    durationSeconds: 0.8
+    cleanupPolicy: 0
+  - id: ResultWinPreview
+    eventId: ResultWinPreview
+    uiMotionId: result_rank_reward_sequence
+    sfxId: ui_result_win_preview
+    vfxId:
+    cameraCueId:
+    durationSeconds: 0.65
+    cleanupPolicy: 0
+  - id: ResultFailPreview
+    eventId: ResultFailPreview
+    uiMotionId: result_fail_fast_retry
+    sfxId: ui_result_fail_preview
+    vfxId:
+    cameraCueId:
+    durationSeconds: 0.35
+    cleanupPolicy: 0
