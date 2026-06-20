@@ -135,7 +135,7 @@ namespace DimensionBrawl.Editor
             ValidateKnownStringReferences(iconKeys, TooltipCatalogPath, "tooltips", "iconKey");
             ValidateKnownStringReferences(iconKeys, DialogCatalogPath, "dialogs", "iconKey");
             HashSet<string> motionIds = CollectStringKeys(MotionCatalogPath, "motions", "id");
-            HashSet<string> stageIds = CollectStringKeys(StageCatalogPath, "stages", "id");
+            CollectStringKeys(StageCatalogPath, "stages", "id");
             ValidateRouteMotionReferences(motionIds);
             ValidateCueMotionReferences(motionIds);
             HashSet<string> cueIds = CollectStringKeys(CueBundleCatalogPath, "cueBundles", "id");
@@ -146,8 +146,8 @@ namespace DimensionBrawl.Editor
             ValidatePanelRoots(panelIds);
             ValidatePanelRouters(panelIds);
             ValidatePanelRequestButtons(panelIds);
-            ValidateKnownPrefabs(themeColorKeys, themeTextStyleKeys, motionIds, cueIds, loadingCardIds, toastIds, resultIds, routeIds, stageIds);
-            ValidateUiScenes(routeIds, toastIds, stageIds);
+            ValidateKnownPrefabs(themeColorKeys, themeTextStyleKeys, motionIds, cueIds, loadingCardIds, toastIds, resultIds, routeIds);
+            ValidateUiScenes(routeIds, toastIds);
             UIV1BuildSettingsReadinessReporter.ReportCurrentReadiness();
             Debug.Log("UI V1 asset validation passed.");
         }
@@ -800,7 +800,7 @@ namespace DimensionBrawl.Editor
             return false;
         }
 
-        private static void ValidateUiScenes(HashSet<UIRouteId> routeIds, HashSet<string> toastIds, HashSet<string> stageIds)
+        private static void ValidateUiScenes(HashSet<UIRouteId> routeIds, HashSet<string> toastIds)
         {
             string[] sceneGuids = AssetDatabase.FindAssets("t:Scene", new[] { UiSceneRoot });
             if (sceneGuids.Length < 4)
@@ -822,7 +822,7 @@ namespace DimensionBrawl.Editor
                 Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Additive);
                 try
                 {
-                    ValidateLoadedUiScene(scenePath, scene, routeIds, toastIds, stageIds);
+                    ValidateLoadedUiScene(scenePath, scene, routeIds, toastIds);
                 }
                 finally
                 {
@@ -835,8 +835,7 @@ namespace DimensionBrawl.Editor
             string scenePath,
             Scene scene,
             HashSet<UIRouteId> routeIds,
-            HashSet<string> toastIds,
-            HashSet<string> stageIds)
+            HashSet<string> toastIds)
         {
             if (!scene.IsValid() || !scene.isLoaded)
             {
@@ -886,7 +885,7 @@ namespace DimensionBrawl.Editor
             ValidateScenePresentation(scenePath, roots, routeIds);
             ValidateSceneRouteButtons(scenePath, roots, routeIds);
             ValidateSceneRouteInteractableGates(scenePath, roots, router);
-            ValidateSceneSpecificPresenter(scenePath, roots, routeIds, stageIds);
+            ValidateSceneSpecificPresenter(scenePath, roots, routeIds);
         }
 
         private static void ValidateMobileFirstSceneFrame(
@@ -1046,8 +1045,7 @@ namespace DimensionBrawl.Editor
         private static void ValidateSceneSpecificPresenter(
             string scenePath,
             GameObject[] roots,
-            HashSet<UIRouteId> routeIds,
-            HashSet<string> stageIds)
+            HashSet<UIRouteId> routeIds)
         {
             if (scenePath.EndsWith("UI_LoginTest.unity", StringComparison.Ordinal))
             {
@@ -1080,7 +1078,6 @@ namespace DimensionBrawl.Editor
                 RequireObjectReference(serializedObject, "router", $"{scenePath} stage router");
                 RequireKnownRoute(routeIds, (UIRouteId)serializedObject.FindProperty("startRoute").intValue, $"{scenePath}.StageSelectScreenPresenter.startRoute");
                 RequireKnownRoute(routeIds, (UIRouteId)serializedObject.FindProperty("backRoute").intValue, $"{scenePath}.StageSelectScreenPresenter.backRoute");
-                ValidateSceneStageSelectMockControls(scenePath, roots, presenter, stageIds);
                 return;
             }
 
@@ -1105,16 +1102,6 @@ namespace DimensionBrawl.Editor
         {
             LobbyMockStateControls controls = RequireSingleSceneComponent<LobbyMockStateControls>(scenePath, roots);
             ValidateLobbyMockStateControls(scenePath, controls, presenter);
-        }
-
-        private static void ValidateSceneStageSelectMockControls(
-            string scenePath,
-            GameObject[] roots,
-            StageSelectScreenPresenter presenter,
-            HashSet<string> stageIds)
-        {
-            StageSelectMockStageControls controls = RequireSingleSceneComponent<StageSelectMockStageControls>(scenePath, roots);
-            ValidateStageSelectMockStageControls(scenePath, controls, presenter, stageIds);
         }
 
         private static void ValidateSceneRouteButtons(string scenePath, GameObject[] roots, HashSet<UIRouteId> routeIds)
@@ -1222,8 +1209,7 @@ namespace DimensionBrawl.Editor
             HashSet<string> loadingCardIds,
             HashSet<string> toastIds,
             HashSet<string> resultIds,
-            HashSet<UIRouteId> routeIds,
-            HashSet<string> stageIds)
+            HashSet<UIRouteId> routeIds)
         {
             string[] prefabPaths = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/_Game/UI" });
             for (int i = 0; i < prefabPaths.Length; i++)
@@ -1249,7 +1235,6 @@ namespace DimensionBrawl.Editor
                 ValidateRouteRequestButtons(path, prefab, routeIds);
                 ValidateRouteInteractableGates(path, prefab);
                 ValidateLobbyMockStateControls(path, prefab);
-                ValidateStageSelectMockStageControls(path, prefab, stageIds);
                 ValidateScreenPresentationPresenters(path, prefab, routeIds);
                 ValidateToastPresenters(path, prefab);
                 ValidateDialogPresenters(path, prefab);
@@ -1348,37 +1333,6 @@ namespace DimensionBrawl.Editor
             if (expectedPresenter != null && serializedObject.FindProperty("presenter").objectReferenceValue != expectedPresenter)
             {
                 throw new InvalidOperationException($"{label}.presenter must reference the scene LobbyScreenPresenter.");
-            }
-        }
-
-        private static void ValidateStageSelectMockStageControls(
-            string prefabPath,
-            GameObject prefab,
-            HashSet<string> stageIds)
-        {
-            StageSelectMockStageControls[] controls = prefab.GetComponentsInChildren<StageSelectMockStageControls>(true);
-            for (int i = 0; i < controls.Length; i++)
-            {
-                ValidateStageSelectMockStageControls($"{prefabPath}.StageSelectMockStageControls[{i}]", controls[i], null, stageIds);
-            }
-        }
-
-        private static void ValidateStageSelectMockStageControls(
-            string label,
-            StageSelectMockStageControls controls,
-            StageSelectScreenPresenter expectedPresenter,
-            HashSet<string> stageIds)
-        {
-            SerializedObject serializedObject = new SerializedObject(controls);
-            RequireObjectReference(serializedObject, "presenter", $"{label}.presenter");
-            RequireObjectReference(serializedObject, "primaryStageButton", $"{label}.primaryStageButton");
-            RequireObjectReference(serializedObject, "alternateStageButton", $"{label}.alternateStageButton");
-            RequireKnownKey(stageIds, serializedObject.FindProperty("primaryStageId").stringValue, $"{label}.primaryStageId");
-            RequireKnownKey(stageIds, serializedObject.FindProperty("alternateStageId").stringValue, $"{label}.alternateStageId");
-
-            if (expectedPresenter != null && serializedObject.FindProperty("presenter").objectReferenceValue != expectedPresenter)
-            {
-                throw new InvalidOperationException($"{label}.presenter must reference the scene StageSelectScreenPresenter.");
             }
         }
 

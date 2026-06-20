@@ -11,6 +11,7 @@ namespace DimensionBrawl.Editor
     {
         private const string StageSelectPrefabPath = "Assets/_Game/UI/StageSelect/PF_UI_StageSelectScreen.prefab";
         private const string MotionCatalogPath = "Assets/_Game/DesignData/UI/DB_UIMotionCatalog.asset";
+        private const string StageCatalogPath = "Assets/_Game/DesignData/UI/DB_UIStageCatalog.asset";
 
         [MenuItem("DimensionBrawl/UI V1/Reapply Stage Select Motion")]
         public static void ApplyMenu()
@@ -24,6 +25,12 @@ namespace DimensionBrawl.Editor
             if (motionCatalog == null)
             {
                 throw new InvalidOperationException($"Stage select motion setup could not find {MotionCatalogPath}.");
+            }
+
+            UIStageCatalog stageCatalog = AssetDatabase.LoadAssetAtPath<UIStageCatalog>(StageCatalogPath);
+            if (stageCatalog == null)
+            {
+                throw new InvalidOperationException($"Stage select motion setup could not find {StageCatalogPath}.");
             }
 
             GameObject prefabRoot = PrefabUtility.LoadPrefabContents(StageSelectPrefabPath);
@@ -67,7 +74,7 @@ namespace DimensionBrawl.Editor
                     "ChapterScrollArea",
                     snapOnEndDrag: false,
                     focusDurationSeconds: 0.28f);
-                ConfigureStageSelectPresenterFocus(prefabRoot, stageScrollMotion, chapterScrollMotion);
+                ConfigureStageSelectPresenterFocus(prefabRoot, stageScrollMotion, chapterScrollMotion, stageCatalog);
                 PrefabUtility.SaveAsPrefabAsset(prefabRoot, StageSelectPrefabPath);
                 AssetDatabase.SaveAssets();
                 Debug.Log($"Stage select motion setup applied with {entries.Count} sequence entr{(entries.Count == 1 ? "y" : "ies")}.");
@@ -208,7 +215,8 @@ namespace DimensionBrawl.Editor
         private static void ConfigureStageSelectPresenterFocus(
             GameObject prefabRoot,
             UIScrollRectMotionPresenter stageScrollMotion,
-            UIScrollRectMotionPresenter chapterScrollMotion)
+            UIScrollRectMotionPresenter chapterScrollMotion,
+            UIStageCatalog stageCatalog)
         {
             StageSelectScreenPresenter presenter = prefabRoot.GetComponent<StageSelectScreenPresenter>();
             if (presenter == null)
@@ -229,15 +237,33 @@ namespace DimensionBrawl.Editor
             entriesProperty.arraySize = 2;
             ConfigureStageFocusEntry(
                 entriesProperty.GetArrayElementAtIndex(0),
-                "story_v1_training_route",
+                RequireStageId(stageCatalog, 0),
                 RequireRectTransform(prefabRoot, "03-3_StageCard"),
                 selectedChapterTarget);
             ConfigureStageFocusEntry(
                 entriesProperty.GetArrayElementAtIndex(1),
-                "story_v1_retry_route",
+                RequireStageId(stageCatalog, 1),
                 RequireRectTransform(prefabRoot, "03-2_StageCard"),
                 selectedChapterTarget);
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
+        }
+
+        private static string RequireStageId(UIStageCatalog stageCatalog, int index)
+        {
+            SerializedObject serializedObject = new SerializedObject(stageCatalog);
+            SerializedProperty stages = serializedObject.FindProperty("stages");
+            if (stages == null || !stages.isArray || stages.arraySize <= index)
+            {
+                throw new InvalidOperationException($"{StageCatalogPath} must include stage entry #{index} for stage select focus setup.");
+            }
+
+            string stageId = stages.GetArrayElementAtIndex(index).FindPropertyRelative("id").stringValue;
+            if (string.IsNullOrWhiteSpace(stageId))
+            {
+                throw new InvalidOperationException($"{StageCatalogPath} stage entry #{index} must have an id.");
+            }
+
+            return stageId;
         }
 
         private static void ConfigureStageFocusEntry(

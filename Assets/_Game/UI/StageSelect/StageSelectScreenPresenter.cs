@@ -22,7 +22,7 @@ namespace DimensionBrawl.UI
         }
 
         [SerializeField] private UIStageCatalog stageCatalog;
-        [SerializeField] private string selectedStageId = "story_v1_training_route";
+        [SerializeField] private string selectedStageId;
         [SerializeField] private Text stageNameText;
         [SerializeField] private Text summaryText;
         [SerializeField] private Text threatTagsText;
@@ -87,6 +87,11 @@ namespace DimensionBrawl.UI
 
         public void SelectStage(string stageId)
         {
+            if (string.IsNullOrWhiteSpace(stageId))
+            {
+                return;
+            }
+
             selectedStageId = stageId;
             ApplySelectedStage();
             QueueSelectedStageFocus(true);
@@ -114,23 +119,44 @@ namespace DimensionBrawl.UI
 
         private void ApplySelectedStage()
         {
-            if (stageCatalog != null && stageCatalog.TryGetStage(selectedStageId, out UIStageCatalog.StageEntry stage))
+            if (TryResolveSelectedStage(out UIStageCatalog.StageEntry stage))
             {
                 SetText(stageNameText, stage.DisplayName);
                 SetText(summaryText, stage.Summary);
                 SetText(threatTagsText, stage.ThreatTags);
                 SetText(summonHintText, stage.RecommendedSummonRole);
                 SetText(rewardPreviewText, stage.MockRewardPreview);
-                SetText(statusText, "Mission prep UI only");
+                SetText(statusText, string.Empty);
                 return;
             }
 
-            SetText(stageNameText, "Story V1 Training Route");
-            SetText(summaryText, "A UI-only mission prep placeholder before the combat HUD test.");
-            SetText(threatTagsText, "Threat: Basic soldier pressure");
-            SetText(summonHintText, "Summon role hint: visual placeholder");
-            SetText(rewardPreviewText, "Reward preview: disabled");
-            SetText(statusText, "No stage catalog assigned");
+            ClearStageDetails();
+        }
+
+        private bool TryResolveSelectedStage(out UIStageCatalog.StageEntry stage)
+        {
+            if (stageCatalog == null)
+            {
+                stage = default;
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(selectedStageId))
+            {
+                return stageCatalog.TryGetFirstStage(out stage);
+            }
+
+            return stageCatalog.TryGetStage(selectedStageId, out stage);
+        }
+
+        private void ClearStageDetails()
+        {
+            SetText(stageNameText, string.Empty);
+            SetText(summaryText, string.Empty);
+            SetText(threatTagsText, string.Empty);
+            SetText(summonHintText, string.Empty);
+            SetText(rewardPreviewText, string.Empty);
+            SetText(statusText, string.Empty);
         }
 
         private void QueueSelectedStageFocus(bool animate)

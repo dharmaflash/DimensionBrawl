@@ -30,18 +30,27 @@ namespace DimensionBrawl.UI
 
         public bool TryGetStage(string id, out StageEntry stage)
         {
-            if (!string.IsNullOrWhiteSpace(id))
+            if (string.IsNullOrWhiteSpace(id))
             {
-                for (int i = 0; i < stages.Length; i++)
+                stage = default;
+                return false;
+            }
+
+            for (int i = 0; i < stages.Length; i++)
+            {
+                if (string.Equals(stages[i].Id, id, StringComparison.Ordinal))
                 {
-                    if (string.Equals(stages[i].Id, id, StringComparison.Ordinal))
-                    {
-                        stage = stages[i];
-                        return true;
-                    }
+                    stage = stages[i];
+                    return true;
                 }
             }
 
+            stage = default;
+            return false;
+        }
+
+        public bool TryGetFirstStage(out StageEntry stage)
+        {
             if (stages.Length > 0)
             {
                 stage = stages[0];

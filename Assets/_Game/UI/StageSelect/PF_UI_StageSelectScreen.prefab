@@ -6987,7 +6987,6 @@ GameObject:
   - component: {fileID: 2386009844913875551}
   - component: {fileID: 2928099876851146526}
   - component: {fileID: 7007097248679840577}
-  - component: {fileID: 2984583990236368029}
   - component: {fileID: 7544699301051515754}
   - component: {fileID: 6569315740052381265}
   m_Layer: 0
@@ -7087,23 +7086,6 @@ MonoBehaviour:
   focusDelaySeconds: 0.02
   initialFocusDurationSeconds: 0.18
   selectedFocusDurationSeconds: 0.3
---- !u!114 &2984583990236368029
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7637927707150198054}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8cabf4f89f0239041ba43721eadd318d, type: 3}
-  m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.StageSelectMockStageControls
-  presenter: {fileID: 7007097248679840577}
-  primaryStageButton: {fileID: 6656942050546679206}
-  alternateStageButton: {fileID: 5402349769114290417}
-  primaryStageId: story_v1_training_route
-  alternateStageId: story_v1_retry_route
 --- !u!114 &7544699301051515754
 MonoBehaviour:
   m_ObjectHideFlags: 0
