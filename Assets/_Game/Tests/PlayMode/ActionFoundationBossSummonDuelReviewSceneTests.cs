@@ -70,6 +70,9 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(1, duelOwner.RequiredBossResponsesToPlayerSummons);
             Assert.AreEqual(1, duelOwner.RequiredAllyPressureBlocks);
             Assert.AreEqual(1, duelOwner.RequiredSummonClashes);
+            Assert.AreEqual(2, duelOwner.RequiredSummonActorDefeats);
+            Assert.AreEqual(2, duelOwner.RequiredBossRepressureAfterSummonDefeat);
+            Assert.AreEqual(2, duelOwner.RequiredFrontlineLoopCycles);
             Assert.AreEqual(1, duelOwner.RequiredSkill1ResponseUses);
             Assert.Greater(duelOwner.RequiredSkill1ResponseDamage, 0f);
             Assert.Greater(duelOwner.RequiredBossDamage, duelOwner.RequiredSkill1ResponseDamage);
@@ -77,6 +80,18 @@ namespace DimensionBrawl.Tests
             StringAssert.Contains("support", duelOwner.ProgressLine);
             StringAssert.Contains("bossReply", duelOwner.ProgressLine);
             StringAssert.Contains("clash", duelOwner.ProgressLine);
+            StringAssert.Contains("defeat", duelOwner.ProgressLine);
+            StringAssert.Contains("repressure", duelOwner.ProgressLine);
+            StringAssert.Contains("loopCycle", duelOwner.ProgressLine);
+            StringAssert.Contains("Loop", reviewHud.FrontlineLoopReadout);
+            StringAssert.Contains("frontline", reviewHud.FrontlineLoopReadout);
+            StringAssert.Contains("player", reviewHud.FrontlineLoopReadout);
+            StringAssert.Contains("boss", reviewHud.FrontlineLoopReadout);
+            StringAssert.Contains("Tune", reviewHud.FrontlineTuningReadout);
+            StringAssert.Contains("EN", reviewHud.FrontlineTuningReadout);
+            StringAssert.Contains("Cost", reviewHud.FrontlineTuningReadout);
+            StringAssert.Contains("A0", reviewHud.FrontlineTuningReadout);
+            StringAssert.Contains("E0", reviewHud.FrontlineTuningReadout);
 
             Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(duelOwner, "energyLadder"));
             Assert.AreSame(skill1Action, GetObjectReference<PlayerSkill1Action>(duelOwner, "skill1Action"));
@@ -130,6 +145,7 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(bossPressureCostLadder, "laneSpace"));
             Assert.IsTrue(bossSummonPressureAction.HasPressureProfile);
             Assert.AreEqual(3, bossSummonPressureAction.PressureProfile.TierCount);
+            AssertBossSummonPressureRoleProfile(bossSummonPressureAction.PressureProfile);
             Assert.IsTrue(bossSummonPressureAction.CanRelease);
             Assert.AreEqual(
                 2,
@@ -192,7 +208,10 @@ namespace DimensionBrawl.Tests
             PlayerSupportSummonSlotAction summonSlot3Action = RequireSupportSummonAction("SummonSlot3");
             BossSummonPressureAction bossSummonPressureAction = RequireObject<BossSummonPressureAction>();
             BossPressureActionDirector bossPressureActionDirector = RequireObject<BossPressureActionDirector>();
+            BossPressureCostLadder bossPressureCostLadder = RequireObject<BossPressureCostLadder>();
+            BossBarrageEmitter bossBarrageEmitter = RequireObject<BossBarrageEmitter>();
             BossSummonDuelReviewOwner duelOwner = RequireObject<BossSummonDuelReviewOwner>();
+            BossBarrageLaneReviewHud reviewHud = RequireObject<BossBarrageLaneReviewHud>();
 
             energyLadder.SetGainEnabled(false);
             GrantEnergyToTier(energyLadder, 1);
@@ -215,7 +234,11 @@ namespace DimensionBrawl.Tests
                 float.IsPositiveInfinity(summonSlot2Action.LastSummonActorRemainingLifetimeSeconds),
                 "S2 is a normal body-bearing summon and should persist until defeated or recalled, not expire as a short effect.");
             Assert.AreEqual(SummonFrontlineProxyExitReason.None, summonSlot2Action.LastSummonActorExitReason);
+            SummonFrontlineProxy slot2Proxy = RequireActiveSummonProxy(DamageTeam.AllySummon, 1.35f, "S2");
+            AssertSummonProxyIsMarching(slot2Proxy, 1.35f, "S2");
+            float slot2EntryProgress = slot2Proxy.AdvanceProgress01;
             yield return new WaitForSeconds(0.15f);
+            AssertSummonProxyAdvancedWithoutSnapping(slot2Proxy, slot2EntryProgress, "S2");
             Assert.Greater(
                 summonSlot2Action.ActiveProjectileCount,
                 0,
@@ -239,7 +262,11 @@ namespace DimensionBrawl.Tests
                 float.IsPositiveInfinity(summonSlot3Action.LastSummonActorRemainingLifetimeSeconds),
                 "S3 is a normal body-bearing summon and should persist until defeated or recalled, not expire as a short effect.");
             Assert.AreEqual(SummonFrontlineProxyExitReason.None, summonSlot3Action.LastSummonActorExitReason);
+            SummonFrontlineProxy slot3Proxy = RequireActiveSummonProxy(DamageTeam.AllySummon, 1.25f, "S3");
+            AssertSummonProxyIsMarching(slot3Proxy, 1.25f, "S3");
+            float slot3EntryProgress = slot3Proxy.AdvanceProgress01;
             yield return new WaitForSeconds(0.15f);
+            AssertSummonProxyAdvancedWithoutSnapping(slot3Proxy, slot3EntryProgress, "S3");
             Assert.Greater(
                 summonSlot3Action.ActiveProjectileCount,
                 0,
@@ -254,17 +281,132 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(
                 bossSummonPressureAction.LastSummonActorHasHealth,
                 "Boss summon pressure should also release a damageable frontline actor for summon-vs-summon exchange.");
+            StringAssert.Contains("frontline", reviewHud.FrontlineLoopReadout);
+            StringAssert.Contains("ally", reviewHud.FrontlineLoopReadout);
+            StringAssert.Contains("enemy", reviewHud.FrontlineLoopReadout);
+            StringAssert.Contains("Tune", reviewHud.FrontlineTuningReadout);
+            StringAssert.Contains("EN", reviewHud.FrontlineTuningReadout);
+            StringAssert.Contains("Cost", reviewHud.FrontlineTuningReadout);
+            StringAssert.Contains("hp", reviewHud.FrontlineTuningReadout);
+            StringAssert.Contains("spd", reviewHud.FrontlineTuningReadout);
+            StringAssert.Contains("dps", reviewHud.FrontlineTuningReadout);
             Assert.Greater(bossSummonPressureAction.LastSummonActorRemainingLifetimeSeconds, 0f);
             Assert.IsTrue(
                 float.IsPositiveInfinity(bossSummonPressureAction.LastSummonActorRemainingLifetimeSeconds),
                 "Boss summon pressure should create a persistent opposing actor until the player answers it.");
             Assert.AreEqual(SummonFrontlineProxyExitReason.None, bossSummonPressureAction.LastSummonActorExitReason);
+            SummonFrontlineProxy enemyProxy = RequireActiveSummonProxy(DamageTeam.Enemy, 1.42f, "boss summon");
+            AssertSummonProxyIsMarching(enemyProxy, 1.42f, "boss summon");
+            float enemyEntryProgress = enemyProxy.AdvanceProgress01;
+            yield return new WaitForSeconds(0.15f);
+            AssertSummonProxyAdvancedWithoutSnapping(enemyProxy, enemyEntryProgress, "boss summon");
             CombatHealth enemySummonHealth = RequireActiveEnemySummonHealth();
             targetSelector.NotifyTargetContact(enemySummonHealth);
             Assert.AreSame(
                 enemySummonHealth,
                 targetSelector.CurrentTargetHealth,
                 "The review loop should let player Skill1/ranged fire respond to the active boss summon body.");
+
+            Assert.IsTrue(
+                enemySummonHealth.TryApplyDamage(new DamageInfo(
+                    null,
+                    DamageTeam.Player,
+                    enemySummonHealth.MaxHealth + 100f,
+                    enemySummonHealth.transform.position,
+                    Vector3.forward,
+                    0f)),
+                "The duel review should let the player side remove an enemy summon body through CombatHealth.");
+            yield return null;
+            Assert.AreEqual(
+                SummonFrontlineProxyExitReason.Defeated,
+                bossSummonPressureAction.LastSummonActorExitReason,
+                "Boss summon pressure should expose defeated removal after its body HP is depleted.");
+            Assert.GreaterOrEqual(
+                duelOwner.ObservedSummonActorDefeats,
+                1,
+                "The review owner should count the first summon body removal before re-pressure is checked.");
+
+            yield return QueueBossRepressureAfterDefeat(
+                bossPressureActionDirector,
+                bossBarrageEmitter,
+                bossPressureCostLadder,
+                duelOwner,
+                1,
+                "first loop");
+
+            Assert.IsTrue(bossSummonPressureAction.TryReleasePressureSummon(1));
+            SummonFrontlineProxy secondEnemyProxy = RequireActiveSummonProxy(DamageTeam.Enemy, 1.35f, "second boss summon");
+            AssertSummonProxyIsMarching(secondEnemyProxy, 1.35f, "second boss summon");
+            CombatHealth secondEnemySummonHealth = secondEnemyProxy.Health;
+            Assert.IsTrue(
+                secondEnemySummonHealth.TryApplyDamage(new DamageInfo(
+                    null,
+                    DamageTeam.Player,
+                    secondEnemySummonHealth.MaxHealth + 100f,
+                    secondEnemySummonHealth.transform.position,
+                    Vector3.forward,
+                    0f)),
+                "The second boss summon body should also be removable through CombatHealth.");
+            yield return null;
+            Assert.GreaterOrEqual(
+                duelOwner.ObservedSummonActorDefeats,
+                duelOwner.RequiredSummonActorDefeats,
+                "The review owner should count repeated summon body removal before claiming the loop is stable.");
+
+            Assert.IsTrue(
+                bossSummonPressureAction.TryReleasePressureSummon(1),
+                "Boss pressure should be able to release another summon after the second body falls.");
+            yield return null;
+            Assert.GreaterOrEqual(
+                duelOwner.ObservedBossRepressureAfterSummonDefeat,
+                duelOwner.RequiredBossRepressureAfterSummonDefeat,
+                "The duel review should count boss re-pressure after summon body removal.");
+            Assert.GreaterOrEqual(
+                duelOwner.ObservedFrontlineLoopCycles,
+                duelOwner.RequiredFrontlineLoopCycles,
+                "The duel review should expose remove-to-repressure as a full frontline loop cycle.");
+            StringAssert.Contains("defeat", duelOwner.ProgressLine);
+            StringAssert.Contains("repressure", duelOwner.ProgressLine);
+            StringAssert.Contains("loopCycle", duelOwner.ProgressLine);
+        }
+
+        private static IEnumerator QueueBossRepressureAfterDefeat(
+            BossPressureActionDirector bossPressureActionDirector,
+            BossBarrageEmitter bossBarrageEmitter,
+            BossPressureCostLadder bossPressureCostLadder,
+            BossSummonDuelReviewOwner duelOwner,
+            int targetRepressureCount,
+            string label)
+        {
+            if (duelOwner.ObservedBossRepressureAfterSummonDefeat >= targetRepressureCount)
+            {
+                yield break;
+            }
+
+            int repressureBefore = duelOwner.ObservedBossRepressureAfterSummonDefeat;
+            bossPressureActionDirector.SetHoldForNextTierActionWhenGateAllows(false);
+            bossBarrageEmitter.SetFiringEnabled(true);
+            bossPressureCostLadder.ResetLadder();
+            bossPressureCostLadder.GrantCurrentTierCost(bossPressureCostLadder.CurrentTierTarget);
+
+            bool sawBossRepressure = false;
+            for (int i = 0; i < 180; i++)
+            {
+                sawBossRepressure |= bossPressureActionDirector.TryQueueBestAvailableAction();
+                sawBossRepressure |= duelOwner.ObservedBossRepressureAfterSummonDefeat > repressureBefore
+                    && duelOwner.ObservedBossRepressureAfterSummonDefeat >= targetRepressureCount;
+                if (sawBossRepressure)
+                {
+                    break;
+                }
+
+                yield return null;
+            }
+
+            Assert.IsTrue(
+                sawBossRepressure,
+                $"Boss pressure should be able to resume after a summon body is defeated during {label} "
+                + $"({duelOwner.ObservedBossRepressureAfterSummonDefeat}/{targetRepressureCount}).");
         }
 
         private static void AssertBossPressureSlot(
@@ -325,13 +467,45 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("SummonSlot3.VanguardCommander", slot3Profile.ActionId);
             Assert.AreEqual(3, slot2Tiers.Length);
             Assert.AreEqual(3, slot3Tiers.Length);
+            float[] slot2ExpectedHealth = { 160f, 190f, 225f };
+            float[] slot2ExpectedMoveSpeed = { 1.35f, 1.42f, 1.5f };
+            float[] slot2ExpectedDps = { 20f, 24f, 28f };
+            float[] slot3ExpectedHealth = { 360f, 430f, 520f };
+            float[] slot3ExpectedMoveSpeed = { 1.15f, 1.2f, 1.25f };
+            float[] slot3ExpectedDps = { 24f, 32f, 42f };
+            int[] slot3ExpectedScreens = { 2, 4, 7 };
             for (int i = 0; i < slot2Tiers.Length; i++)
             {
                 Assert.AreEqual("BacklineMarksman", slot2Tiers[i].ActorRoleId);
+                Assert.AreEqual(0f, slot2Tiers[i].ActorLifetimeSeconds, 0.001f);
+                Assert.AreEqual(slot2ExpectedHealth[i], slot2Tiers[i].ActorMaxHealth, 0.001f);
+                Assert.AreEqual(slot2ExpectedMoveSpeed[i], slot2Tiers[i].ActorMoveSpeed, 0.001f);
+                Assert.AreEqual(slot2ExpectedDps[i], slot2Tiers[i].ActorAttackDamagePerSecond, 0.001f);
                 Assert.AreEqual(0, slot2Tiers[i].ScreenIntercepts);
                 Assert.AreEqual("VanguardCommander", slot3Tiers[i].ActorRoleId);
+                Assert.AreEqual(0f, slot3Tiers[i].ActorLifetimeSeconds, 0.001f);
+                Assert.AreEqual(slot3ExpectedHealth[i], slot3Tiers[i].ActorMaxHealth, 0.001f);
+                Assert.AreEqual(slot3ExpectedMoveSpeed[i], slot3Tiers[i].ActorMoveSpeed, 0.001f);
+                Assert.AreEqual(slot3ExpectedDps[i], slot3Tiers[i].ActorAttackDamagePerSecond, 0.001f);
+                Assert.AreEqual(slot3ExpectedScreens[i], slot3Tiers[i].ScreenIntercepts);
                 Assert.Greater(slot3Tiers[i].ScreenIntercepts, 0);
                 Assert.Greater(slot3Tiers[i].ActorMaxHealth, slot2Tiers[i].ActorMaxHealth);
+                Assert.Greater(
+                    slot2Tiers[i].ActorMoveSpeed,
+                    slot3Tiers[i].ActorMoveSpeed,
+                    "S2 should keep the smaller/faster marksman read while S3 advances like a heavier frontline body.");
+                Assert.Greater(
+                    slot3Tiers[i].ActorAttackDamagePerSecond,
+                    slot2Tiers[i].ActorAttackDamagePerSecond,
+                    "S3 should win sustained body trades through HP and clash DPS instead of only projectile count.");
+                Assert.LessOrEqual(
+                    slot2Tiers[i].ActorMoveSpeed,
+                    1.5f,
+                    "Support summons should still march across the lane instead of snapping forward.");
+                Assert.LessOrEqual(
+                    slot3Tiers[i].ActorMoveSpeed,
+                    1.25f,
+                    "Vanguard support should visibly trudge forward as the heavier body.");
                 Assert.GreaterOrEqual(
                     slot2Tiers[i].ProjectileCount,
                     slot3Tiers[i].ProjectileCount,
@@ -342,6 +516,40 @@ namespace DimensionBrawl.Tests
                 GetFloat(summonSlot2Action, "volleyIntervalSeconds"),
                 GetFloat(summonSlot3Action, "volleyIntervalSeconds"),
                 "S2 should cycle its support shots faster than the slower vanguard counter-volley.");
+        }
+
+        private static void AssertBossSummonPressureRoleProfile(BossSummonPressureProfile profile)
+        {
+            BossSummonPressureAction.BossSummonTierSettings[] tiers = profile.CopyTierSettings();
+            string[] expectedRoles = { "EscortProbe", "PressureScreen", "ClampGuard" };
+            float[] expectedHealth = { 220f, 320f, 460f };
+            float[] expectedMoveSpeed = { 1.35f, 1.42f, 1.48f };
+            float[] expectedDps = { 32f, 44f, 58f };
+            int[] expectedScreens = { 2, 4, 7 };
+
+            Assert.AreEqual(3, tiers.Length);
+            for (int i = 0; i < tiers.Length; i++)
+            {
+                Assert.AreEqual(expectedRoles[i], tiers[i].ActorRoleId);
+                Assert.AreEqual(0f, tiers[i].ActorLifetimeSeconds, 0.001f);
+                Assert.AreEqual(expectedHealth[i], tiers[i].ActorMaxHealth, 0.001f);
+                Assert.AreEqual(expectedMoveSpeed[i], tiers[i].ActorMoveSpeed, 0.001f);
+                Assert.AreEqual(expectedDps[i], tiers[i].ActorAttackDamagePerSecond, 0.001f);
+                Assert.AreEqual(expectedScreens[i], tiers[i].ScreenIntercepts);
+                Assert.LessOrEqual(
+                    tiers[i].ActorMoveSpeed,
+                    1.5f,
+                    "Boss pressure summons should walk into the player side instead of snapping like a projectile.");
+
+                if (i == 0)
+                {
+                    continue;
+                }
+
+                Assert.Greater(tiers[i].ActorMaxHealth, tiers[i - 1].ActorMaxHealth);
+                Assert.Greater(tiers[i].ActorAttackDamagePerSecond, tiers[i - 1].ActorAttackDamagePerSecond);
+                Assert.Greater(tiers[i].ScreenIntercepts, tiers[i - 1].ScreenIntercepts);
+            }
         }
 
         private static CombatHealth RequireActiveEnemySummonHealth()
@@ -359,6 +567,68 @@ namespace DimensionBrawl.Tests
 
             Assert.Fail("Boss summon pressure should register an active enemy summon body for player response targeting.");
             return null;
+        }
+
+        private static SummonFrontlineProxy RequireActiveSummonProxy(
+            DamageTeam expectedTeam,
+            float expectedMoveSpeed,
+            string label)
+        {
+            for (int i = 0; i < SummonFrontlineProxy.ActiveRegisteredProxyCount; i++)
+            {
+                Assert.IsTrue(SummonFrontlineProxy.TryGetActiveRegisteredProxy(i, out SummonFrontlineProxy proxy));
+                if (proxy == null
+                    || proxy.Health == null
+                    || proxy.Health.Team != expectedTeam)
+                {
+                    continue;
+                }
+
+                if (Mathf.Abs(proxy.ActiveMoveSpeed - expectedMoveSpeed) <= 0.001f)
+                {
+                    return proxy;
+                }
+            }
+
+            Assert.Fail($"{label} should register an active {expectedTeam} summon body moving at {expectedMoveSpeed:0.00}.");
+            return null;
+        }
+
+        private static void AssertSummonProxyIsMarching(
+            SummonFrontlineProxy proxy,
+            float expectedMoveSpeed,
+            string label)
+        {
+            Assert.IsNotNull(proxy, $"{label} summon proxy should be active.");
+            Assert.AreEqual(expectedMoveSpeed, proxy.ActiveMoveSpeed, 0.001f);
+            Assert.AreEqual(
+                SummonFrontlineProxyState.Advancing,
+                proxy.CurrentState,
+                $"{label} should start in an advancing state so the player can read it entering the frontline.");
+            Assert.Greater(
+                proxy.AdvanceDistance,
+                0.5f,
+                $"{label} should have real travel distance instead of spawning already at its target.");
+            Assert.Less(
+                proxy.AdvanceProgress01,
+                0.25f,
+                $"{label} should not snap most of the way to the target on spawn.");
+        }
+
+        private static void AssertSummonProxyAdvancedWithoutSnapping(
+            SummonFrontlineProxy proxy,
+            float previousProgress,
+            string label)
+        {
+            Assert.IsNotNull(proxy, $"{label} summon proxy should remain active while entering.");
+            Assert.Greater(
+                proxy.AdvanceProgress01,
+                previousProgress,
+                $"{label} should visibly advance after entering the lane.");
+            Assert.Less(
+                proxy.AdvanceProgress01,
+                0.65f,
+                $"{label} should still be marching after a short review beat instead of instantly reaching the target.");
         }
 
         private static void AssertSummonActorPrefabContract(

@@ -73,6 +73,7 @@ namespace DimensionBrawl.Combat
         private int lastPressureScreenInterceptCount;
         private int lastPressureScreenInterceptTier;
         private int totalPressureScreenInterceptCount;
+        private int totalSummonActorDefeatCount;
         private Vector3 lastSummonActorPosition;
         private SummonFrontlineProxy lastSummonActor;
 
@@ -85,6 +86,7 @@ namespace DimensionBrawl.Combat
         public int LastPressureScreenInterceptCount => lastPressureScreenInterceptCount;
         public int LastPressureScreenInterceptTier => lastPressureScreenInterceptTier;
         public int TotalPressureScreenInterceptCount => totalPressureScreenInterceptCount;
+        public int TotalSummonActorDefeatCount => totalSummonActorDefeatCount;
         public Vector3 LastSummonActorPosition => lastSummonActorPosition;
         public int ActiveSummonActorCount => summonActorPool.CountActive();
         public int ActivePressureScreenCount => summonActorPool.CountActivePressureScreens();
@@ -138,6 +140,7 @@ namespace DimensionBrawl.Combat
         private void OnDisable()
         {
             UnsubscribePressureScreens();
+            summonActorPool.ForEach(actor => actor.Exited -= HandleSummonActorExited);
         }
 
         private void OnValidate()
@@ -205,6 +208,8 @@ namespace DimensionBrawl.Combat
                 return false;
             }
 
+            actor.Exited -= HandleSummonActorExited;
+            actor.Exited += HandleSummonActorExited;
             Vector3 entryPosition = ResolveEntryPosition(settings);
             Vector3 targetPosition = ResolvePressureTargetPosition(entryPosition, settings);
             Vector3 facingDirection = ResolveFacingDirection(entryPosition, targetPosition);
@@ -249,6 +254,16 @@ namespace DimensionBrawl.Combat
             lastSummonActor = actor;
             PressureSummonReleased?.Invoke(this, resolvedTier);
             return true;
+        }
+
+        private void HandleSummonActorExited(
+            SummonFrontlineProxy actor,
+            SummonFrontlineProxyExitReason reason)
+        {
+            if (reason == SummonFrontlineProxyExitReason.Defeated)
+            {
+                totalSummonActorDefeatCount++;
+            }
         }
 
         private Vector3 ResolveEntryPosition(BossSummonTierSettings settings)

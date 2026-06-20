@@ -40,6 +40,8 @@ namespace DimensionBrawl.Combat
         public DamageTeam LastOpponentTeam => lastOpponentTeam;
         public float LastDamageAmount => lastDamageAmount;
         public SummonFrontlineClashTargetKind LastTargetKind => lastTargetKind;
+        public float ContactDamagePerSecond => contactDamagePerSecond;
+        public float ContactDamageIntervalSeconds => contactDamageIntervalSeconds;
         public float EngageRadius => engageRadius;
 
         private void Awake()

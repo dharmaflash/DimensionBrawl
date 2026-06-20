@@ -1113,7 +1113,7 @@ namespace DimensionBrawl.Editor
             RequireProperty(serializedObject, "windupSeconds").floatValue = 0.75f;
             RequireProperty(serializedObject, "waveIntervalSeconds").floatValue = 4.8f;
             RequireProperty(serializedObject, "projectilesPerWave").intValue = 3;
-            RequireProperty(serializedObject, "damage").floatValue = 18f;
+            RequireProperty(serializedObject, "damage").floatValue = 12f;
             RequireProperty(serializedObject, "projectileSpeed").floatValue = 13.5f;
             RequireProperty(serializedObject, "projectileLifetimeSeconds").floatValue = 4.6f;
             RequireProperty(serializedObject, "projectileRadius").floatValue = 0.34f;
@@ -1144,7 +1144,7 @@ namespace DimensionBrawl.Editor
             RequireProperty(serializedObject, "windupSeconds").floatValue = 1.1f;
             RequireProperty(serializedObject, "waveIntervalSeconds").floatValue = 5.8f;
             RequireProperty(serializedObject, "projectilesPerWave").intValue = 5;
-            RequireProperty(serializedObject, "damage").floatValue = 14f;
+            RequireProperty(serializedObject, "damage").floatValue = 9f;
             RequireProperty(serializedObject, "projectileSpeed").floatValue = 12.4f;
             RequireProperty(serializedObject, "projectileLifetimeSeconds").floatValue = 5.2f;
             RequireProperty(serializedObject, "projectileRadius").floatValue = 0.29f;
@@ -1178,7 +1178,7 @@ namespace DimensionBrawl.Editor
             RequireProperty(serializedObject, "windupSeconds").floatValue = 0.85f;
             RequireProperty(serializedObject, "waveIntervalSeconds").floatValue = 5.2f;
             RequireProperty(serializedObject, "projectilesPerWave").intValue = 5;
-            RequireProperty(serializedObject, "damage").floatValue = 15f;
+            RequireProperty(serializedObject, "damage").floatValue = 10f;
             RequireProperty(serializedObject, "projectileSpeed").floatValue = 13.5f;
             RequireProperty(serializedObject, "projectileLifetimeSeconds").floatValue = 4.8f;
             RequireProperty(serializedObject, "projectileRadius").floatValue = 0.3f;
@@ -1211,7 +1211,7 @@ namespace DimensionBrawl.Editor
             RequireProperty(serializedObject, "windupSeconds").floatValue = 1.0f;
             RequireProperty(serializedObject, "waveIntervalSeconds").floatValue = 5.7f;
             RequireProperty(serializedObject, "projectilesPerWave").intValue = 6;
-            RequireProperty(serializedObject, "damage").floatValue = 13f;
+            RequireProperty(serializedObject, "damage").floatValue = 9f;
             RequireProperty(serializedObject, "projectileSpeed").floatValue = 12.6f;
             RequireProperty(serializedObject, "projectileLifetimeSeconds").floatValue = 5.1f;
             RequireProperty(serializedObject, "projectileRadius").floatValue = 0.28f;
@@ -1247,7 +1247,7 @@ namespace DimensionBrawl.Editor
             RequireProperty(serializedObject, "windupSeconds").floatValue = 1.1f;
             RequireProperty(serializedObject, "waveIntervalSeconds").floatValue = 6.4f;
             RequireProperty(serializedObject, "projectilesPerWave").intValue = 9;
-            RequireProperty(serializedObject, "damage").floatValue = 14f;
+            RequireProperty(serializedObject, "damage").floatValue = 8f;
             RequireProperty(serializedObject, "projectileSpeed").floatValue = 11.8f;
             RequireProperty(serializedObject, "projectileLifetimeSeconds").floatValue = 5.6f;
             RequireProperty(serializedObject, "projectileRadius").floatValue = 0.3f;
@@ -1281,7 +1281,7 @@ namespace DimensionBrawl.Editor
             RequireProperty(serializedObject, "windupSeconds").floatValue = 1.0f;
             RequireProperty(serializedObject, "waveIntervalSeconds").floatValue = 5.6f;
             RequireProperty(serializedObject, "projectilesPerWave").intValue = 4;
-            RequireProperty(serializedObject, "damage").floatValue = 15f;
+            RequireProperty(serializedObject, "damage").floatValue = 10f;
             RequireProperty(serializedObject, "projectileSpeed").floatValue = 13.0f;
             RequireProperty(serializedObject, "projectileLifetimeSeconds").floatValue = 5.1f;
             RequireProperty(serializedObject, "projectileRadius").floatValue = 0.3f;
@@ -1319,7 +1319,7 @@ namespace DimensionBrawl.Editor
             RequireProperty(serializedObject, "windupSeconds").floatValue = 1.15f;
             RequireProperty(serializedObject, "waveIntervalSeconds").floatValue = 6.2f;
             RequireProperty(serializedObject, "projectilesPerWave").intValue = 6;
-            RequireProperty(serializedObject, "damage").floatValue = 17f;
+            RequireProperty(serializedObject, "damage").floatValue = 10f;
             RequireProperty(serializedObject, "projectileSpeed").floatValue = 10.6f;
             RequireProperty(serializedObject, "projectileLifetimeSeconds").floatValue = 5.8f;
             RequireProperty(serializedObject, "projectileRadius").floatValue = 0.38f;
@@ -1353,7 +1353,7 @@ namespace DimensionBrawl.Editor
             RequireProperty(serializedObject, "windupSeconds").floatValue = 0.95f;
             RequireProperty(serializedObject, "waveIntervalSeconds").floatValue = 5.2f;
             RequireProperty(serializedObject, "projectilesPerWave").intValue = 4;
-            RequireProperty(serializedObject, "damage").floatValue = 15f;
+            RequireProperty(serializedObject, "damage").floatValue = 10f;
             RequireProperty(serializedObject, "projectileSpeed").floatValue = 12.2f;
             RequireProperty(serializedObject, "projectileLifetimeSeconds").floatValue = 4.9f;
             RequireProperty(serializedObject, "projectileRadius").floatValue = 0.31f;
@@ -1385,7 +1385,7 @@ namespace DimensionBrawl.Editor
             RequireProperty(serializedObject, "windupSeconds").floatValue = 1.05f;
             RequireProperty(serializedObject, "waveIntervalSeconds").floatValue = 5.4f;
             RequireProperty(serializedObject, "projectilesPerWave").intValue = 5;
-            RequireProperty(serializedObject, "damage").floatValue = 16f;
+            RequireProperty(serializedObject, "damage").floatValue = 10f;
             RequireProperty(serializedObject, "projectileSpeed").floatValue = 12.8f;
             RequireProperty(serializedObject, "projectileLifetimeSeconds").floatValue = 5.0f;
             RequireProperty(serializedObject, "projectileRadius").floatValue = 0.3f;
@@ -1418,7 +1418,7 @@ namespace DimensionBrawl.Editor
             RequireProperty(serializedObject, "windupSeconds").floatValue = 1.05f;
             RequireProperty(serializedObject, "waveIntervalSeconds").floatValue = 5.4f;
             RequireProperty(serializedObject, "projectilesPerWave").intValue = 5;
-            RequireProperty(serializedObject, "damage").floatValue = 16f;
+            RequireProperty(serializedObject, "damage").floatValue = 10f;
             RequireProperty(serializedObject, "projectileSpeed").floatValue = 12.8f;
             RequireProperty(serializedObject, "projectileLifetimeSeconds").floatValue = 5.0f;
             RequireProperty(serializedObject, "projectileRadius").floatValue = 0.3f;
@@ -3360,10 +3360,9 @@ namespace DimensionBrawl.Editor
             ValidateInt(action, "maxActiveSummonActors", 1);
             ValidateFloat(action, "entryForwardOffset", 1.35f);
             ValidateFloatAtLeast(action, "actorEntryCatchupSecondsPerMeter", 0.3f);
-            ValidateObjectReference(
-                action,
-                "summonActionProfile",
-                LoadAsset<SummonSlotActionProfile>(actionProfilePath));
+            SummonSlotActionProfile actionProfile = LoadAsset<SummonSlotActionProfile>(actionProfilePath);
+            ValidateObjectReference(action, "summonActionProfile", actionProfile);
+            ValidateSupportSummonRoleProfile(actionProfile, slotActionName);
             ValidateFloat(action, "firstVolleyDelaySeconds", firstVolleyDelaySeconds);
             ValidateFloat(action, "volleyIntervalSeconds", volleyIntervalSeconds);
             ValidateInt(action, "maxVolleyCount", maxVolleyCount);
@@ -3416,6 +3415,134 @@ namespace DimensionBrawl.Editor
             ValidateNoImportedAssetReference(projectilePrefabPath);
             ValidateNoImportedAssetReference(actorPrefabPath);
             ValidateNoImportedAssetReference(actionProfilePath);
+        }
+
+        private static void ValidateSupportSummonRoleProfile(
+            SummonSlotActionProfile profile,
+            string slotActionName)
+        {
+            if (string.Equals(slotActionName, "SummonSlot2", StringComparison.Ordinal))
+            {
+                ValidateSummonSlotReadout(
+                    profile,
+                    1,
+                    "LV1 Cover Shot",
+                    "Quick ranged support that adds two clean bolts without blocking boss pressure.",
+                    "Spend when the boss is open but the shield slot is not needed yet.",
+                    "BacklineShooter enters left of the player lane, advances toward the boss lane, and fires a narrow cover pair.");
+                ValidateSummonSlotTier(
+                    profile,
+                    1,
+                    "BacklineMarksman",
+                    expectedActorMaxHealth: 160f,
+                    expectedActorMoveSpeed: 1.35f,
+                    expectedActorEngageRadius: 0.82f,
+                    expectedActorAttackDamagePerSecond: 20f,
+                    expectedActorAttackIntervalSeconds: 0.35f,
+                    expectedActorLifetimeSeconds: 0f,
+                    expectedActorAdvanceDistance: 1.2f,
+                    expectedScreenIntercepts: 0);
+                ValidateSummonSlotReadout(
+                    profile,
+                    2,
+                    "LV2 Focus Volley",
+                    "Mid-tier support that pressures the boss lane with a wider three-shot answer.",
+                    "Hold EN when you can stay forward long enough for a stronger punish.",
+                    "BacklineShooter keeps a side-lane advance toward the boss and fires a three-bolt focused volley.");
+                ValidateSummonSlotTier(
+                    profile,
+                    2,
+                    "BacklineMarksman",
+                    expectedActorMaxHealth: 190f,
+                    expectedActorMoveSpeed: 1.42f,
+                    expectedActorEngageRadius: 0.86f,
+                    expectedActorAttackDamagePerSecond: 24f,
+                    expectedActorAttackIntervalSeconds: 0.35f,
+                    expectedActorLifetimeSeconds: 0f,
+                    expectedActorAdvanceDistance: 1.45f,
+                    expectedScreenIntercepts: 0);
+                ValidateSummonSlotReadout(
+                    profile,
+                    3,
+                    "LV3 Marksman Burst",
+                    "High-tier ranged support for a clear boss punish window after surviving pressure.",
+                    "Use when the next exchange should convert defense into visible boss damage.",
+                    "BacklineShooter stays alive long enough to send repeated four-bolt volleys across the contested lane.");
+                ValidateSummonSlotTier(
+                    profile,
+                    3,
+                    "BacklineMarksman",
+                    expectedActorMaxHealth: 225f,
+                    expectedActorMoveSpeed: 1.5f,
+                    expectedActorEngageRadius: 0.9f,
+                    expectedActorAttackDamagePerSecond: 28f,
+                    expectedActorAttackIntervalSeconds: 0.35f,
+                    expectedActorLifetimeSeconds: 0f,
+                    expectedActorAdvanceDistance: 1.75f,
+                    expectedScreenIntercepts: 0);
+                return;
+            }
+
+            if (string.Equals(slotActionName, "SummonSlot3", StringComparison.Ordinal))
+            {
+                ValidateSummonSlotReadout(
+                    profile,
+                    1,
+                    "LV1 Body Block",
+                    "Short vanguard entry that brings an actual guard screen before answering once.",
+                    "Spend if the player is cornered near the backline and needs breathing room.",
+                    "FinalStandCommander enters right of the lane and pushes toward the frontline with a body-and-screen block.");
+                ValidateSummonSlotTier(
+                    profile,
+                    1,
+                    "VanguardCommander",
+                    expectedActorMaxHealth: 360f,
+                    expectedActorMoveSpeed: 1.15f,
+                    expectedActorEngageRadius: 1.18f,
+                    expectedActorAttackDamagePerSecond: 24f,
+                    expectedActorAttackIntervalSeconds: 0.35f,
+                    expectedActorLifetimeSeconds: 0f,
+                    expectedActorAdvanceDistance: 1.35f,
+                    expectedScreenIntercepts: 2);
+                ValidateSummonSlotReadout(
+                    profile,
+                    2,
+                    "LV2 Hold Line",
+                    "Tankier frontline actor that can absorb a small boss curtain before counterfire.",
+                    "Hold EN when the next boss pressure wave is readable but dense.",
+                    "FinalStandCommander advances until contested, holds a four-hit screen, then fires two heavy bolts.");
+                ValidateSummonSlotTier(
+                    profile,
+                    2,
+                    "VanguardCommander",
+                    expectedActorMaxHealth: 430f,
+                    expectedActorMoveSpeed: 1.2f,
+                    expectedActorEngageRadius: 1.25f,
+                    expectedActorAttackDamagePerSecond: 32f,
+                    expectedActorAttackIntervalSeconds: 0.35f,
+                    expectedActorLifetimeSeconds: 0f,
+                    expectedActorAdvanceDistance: 1.7f,
+                    expectedScreenIntercepts: 4);
+                ValidateSummonSlotReadout(
+                    profile,
+                    3,
+                    "LV3 Break Wall",
+                    "High-cost vanguard actor and screen for stabilizing a bad exchange and forcing a counter window.",
+                    "Save for the committed boss pattern that would otherwise push the player back.",
+                    "FinalStandCommander drives into the frontline with a seven-hit screen and heavy three-shot response.");
+                ValidateSummonSlotTier(
+                    profile,
+                    3,
+                    "VanguardCommander",
+                    expectedActorMaxHealth: 520f,
+                    expectedActorMoveSpeed: 1.25f,
+                    expectedActorEngageRadius: 1.34f,
+                    expectedActorAttackDamagePerSecond: 42f,
+                    expectedActorAttackIntervalSeconds: 0.35f,
+                    expectedActorLifetimeSeconds: 0f,
+                    expectedActorAdvanceDistance: 2.1f,
+                    expectedScreenIntercepts: 7);
+            }
         }
 
         private static void ValidateSupportSummonPressureScreen(
@@ -4750,6 +4877,9 @@ namespace DimensionBrawl.Editor
             SetInt(owner, "requiredBossResponsesToPlayerSummons", 1);
             SetInt(owner, "requiredAllyPressureBlocks", 1);
             SetInt(owner, "requiredSummonClashes", 1);
+            SetInt(owner, "requiredSummonActorDefeats", 2);
+            SetInt(owner, "requiredBossRepressureAfterSummonDefeat", 2);
+            SetInt(owner, "requiredFrontlineLoopCycles", 2);
             SetInt(owner, "requiredSkill1ResponseUses", 1);
             SetFloat(owner, "requiredSkill1ResponseDamage", 60f);
             SetFloat(owner, "skill1ResponseDamageWindowSeconds", 2.5f);
@@ -4806,6 +4936,9 @@ namespace DimensionBrawl.Editor
             ValidateInt(owner, "requiredBossResponsesToPlayerSummons", 1);
             ValidateInt(owner, "requiredAllyPressureBlocks", 1);
             ValidateInt(owner, "requiredSummonClashes", 1);
+            ValidateInt(owner, "requiredSummonActorDefeats", 2);
+            ValidateInt(owner, "requiredBossRepressureAfterSummonDefeat", 2);
+            ValidateInt(owner, "requiredFrontlineLoopCycles", 2);
             ValidateInt(owner, "requiredSkill1ResponseUses", 1);
             ValidateFloat(owner, "requiredSkill1ResponseDamage", 60f);
             ValidateFloat(owner, "skill1ResponseDamageWindowSeconds", 2.5f);

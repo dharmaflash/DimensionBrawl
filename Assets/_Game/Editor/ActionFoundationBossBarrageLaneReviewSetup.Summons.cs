@@ -1061,12 +1061,12 @@ namespace DimensionBrawl.Editor
                         "LV2 Hold Line",
                         "Tankier frontline actor that can absorb a small boss curtain before counterfire.",
                         "Hold EN when the next boss pressure wave is readable but dense.",
-                        "FinalStandCommander advances until contested, holds a three-hit screen, then fires two heavy bolts."),
+                        "FinalStandCommander advances until contested, holds a four-hit screen, then fires two heavy bolts."),
                     CreateSummonReadout(
                         "LV3 Break Wall",
                         "High-cost vanguard actor and screen for stabilizing a bad exchange and forcing a counter window.",
                         "Save for the committed boss pattern that would otherwise push the player back.",
-                        "FinalStandCommander drives into the frontline with a five-hit screen and heavy three-shot response.")
+                        "FinalStandCommander drives into the frontline with a seven-hit screen and heavy three-shot response.")
                 });
 
             AssetDatabase.SaveAssets();

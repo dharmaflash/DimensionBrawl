@@ -110,12 +110,12 @@ MonoBehaviour:
     StageRole: Tankier frontline actor that can absorb a small boss curtain before
       counterfire.
     PlayerUse: Hold EN when the next boss pressure wave is readable but dense.
-    SummonRead: FinalStandCommander advances until contested, holds a three-hit screen,
+    SummonRead: FinalStandCommander advances until contested, holds a four-hit screen,
       then fires two heavy bolts.
   - TierLabel: LV3 Break Wall
     StageRole: High-cost vanguard actor and screen for stabilizing a bad exchange
       and forcing a counter window.
     PlayerUse: Save for the committed boss pattern that would otherwise push the
       player back.
-    SummonRead: FinalStandCommander drives into the frontline with a five-hit screen
+    SummonRead: FinalStandCommander drives into the frontline with a seven-hit screen
       and heavy three-shot response.

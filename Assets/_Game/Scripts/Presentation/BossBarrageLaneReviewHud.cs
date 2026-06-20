@@ -139,6 +139,9 @@ namespace DimensionBrawl.Presentation
         private GUIStyle boxStyle;
         private GUIStyle resourceBarStyle;
 
+        public string FrontlineLoopReadout => ResolveFrontlineLoopLine();
+        public string FrontlineTuningReadout => ResolveFrontlineTuningLine();
+
         public void Configure(
             CombatHealth newPlayerHealth,
             CombatHealth newCloseThreatHealth,
@@ -206,6 +209,8 @@ namespace DimensionBrawl.Presentation
             GUILayout.Label(ResolveBossPressureLine(), labelStyle);
             GUILayout.Label(ResolveBossPressureResponseLine(), labelStyle);
             GUILayout.Label(ResolveBossSummonLine(), labelStyle);
+            GUILayout.Label(ResolveFrontlineLoopLine(), labelStyle);
+            GUILayout.Label(ResolveFrontlineTuningLine(), labelStyle);
             GUILayout.Label(ResolveWeaponModeLine(), labelStyle);
             GUILayout.Label(ResolveRangedFireLine(), labelStyle);
             GUILayout.Label(ResolveActionLine(), labelStyle);
@@ -370,6 +375,201 @@ namespace DimensionBrawl.Presentation
                     bossSummonPressureAction.LastSummonActorClashCount,
                     bossSummonPressureAction.LastSummonActorExitReason)
                 + $" used {bossSummonPressureAction.TotalReleaseCount}";
+        }
+
+        private string ResolveFrontlineLoopLine()
+        {
+            FrontlineProxyReadout readout = ResolveFrontlineProxyReadout();
+            string loop = duelReviewOwner != null
+                ? duelReviewOwner.CurrentPhase.ToString()
+                : pocketReviewOwner != null
+                    ? pocketReviewOwner.CurrentPhase.ToString()
+                    : "-";
+            string player = energyLadder != null
+                ? energyLadder.CanSpend
+                    ? $"player ready LV{energyLadder.AvailableTier}"
+                    : $"player build LV{energyLadder.ChargingTier} {energyLadder.CurrentTierFillRatio * 100f:0}%"
+                : "player -";
+            string boss = ResolveBossLoopReadout();
+            return $"Loop {loop}   frontline {readout.State} "
+                + $"ally {readout.AllyCount} hp {readout.AllyHealthText} "
+                + $"enemy {readout.EnemyCount} hp {readout.EnemyHealthText}   "
+                + $"{player}   {boss}";
+        }
+
+        private string ResolveFrontlineTuningLine()
+        {
+            return $"Tune EN {ResolveEnergyTuningText()}   Cost {ResolveBossCostTuningText()}   "
+                + ResolveActiveFrontlineTuningText();
+        }
+
+        private string ResolveEnergyTuningText()
+        {
+            if (energyLadder == null)
+            {
+                return "-";
+            }
+
+            string ready = energyLadder.CanSpend ? $" ready LV{energyLadder.AvailableTier}" : string.Empty;
+            return $"LV{energyLadder.ChargingTier} {energyLadder.CurrentTierEnergy:0}/{energyLadder.CurrentTierTarget:0}{ready}";
+        }
+
+        private string ResolveBossCostTuningText()
+        {
+            if (bossPressureCostLadder == null)
+            {
+                return "-";
+            }
+
+            string ready = bossPressureCostLadder.CanSpend ? $" ready LV{bossPressureCostLadder.AvailableTier}" : string.Empty;
+            return $"LV{bossPressureCostLadder.ChargingTier} {bossPressureCostLadder.CurrentTierCost:0}/{bossPressureCostLadder.CurrentTierTarget:0}{ready}";
+        }
+
+        private static string ResolveActiveFrontlineTuningText()
+        {
+            int allyCount = 0;
+            int enemyCount = 0;
+            string allyText = "--";
+            string enemyText = "--";
+            int proxyCount = SummonFrontlineProxy.ActiveRegisteredProxyCount;
+            for (int i = 0; i < proxyCount; i++)
+            {
+                if (!SummonFrontlineProxy.TryGetActiveRegisteredProxy(i, out SummonFrontlineProxy proxy)
+                    || proxy == null
+                    || proxy.Health == null)
+                {
+                    continue;
+                }
+
+                if (CombatTeamUtility.IsPlayerSide(proxy.Health.Team))
+                {
+                    allyCount++;
+                    if (allyCount == 1)
+                    {
+                        allyText = ResolveFrontlineUnitTuningText(proxy);
+                    }
+                }
+                else
+                {
+                    enemyCount++;
+                    if (enemyCount == 1)
+                    {
+                        enemyText = ResolveFrontlineUnitTuningText(proxy);
+                    }
+                }
+            }
+
+            return $"A{allyCount} {allyText}   E{enemyCount} {enemyText}";
+        }
+
+        private static string ResolveFrontlineUnitTuningText(SummonFrontlineProxy proxy)
+        {
+            if (proxy == null)
+            {
+                return "--";
+            }
+
+            SummonFrontlineClash clash = proxy.GetComponent<SummonFrontlineClash>();
+            string health = proxy.HasHealth ? $"{proxy.CurrentHealth:0}/{proxy.MaxHealth:0}" : "--";
+            string dps = clash != null ? $"{clash.ContactDamagePerSecond:0}" : "--";
+            return $"T{proxy.ActiveTier} {proxy.CurrentState} hp {health} spd {proxy.ActiveMoveSpeed:0.00} dps {dps}";
+        }
+
+        private string ResolveBossLoopReadout()
+        {
+            if (bossPressureActionDirector != null
+                && bossPressureActionDirector.IsPlayerSummonResponseWindowActive)
+            {
+                return $"boss reply {bossPressureActionDirector.PlayerSummonResponseRemainingSeconds:0.0}s";
+            }
+
+            if (bossPressureCostLadder == null)
+            {
+                return "boss -";
+            }
+
+            if (bossPressureCostLadder.CanSpend)
+            {
+                return $"boss ready LV{bossPressureCostLadder.AvailableTier}";
+            }
+
+            return $"boss build LV{bossPressureCostLadder.ChargingTier} {bossPressureCostLadder.CurrentTierFillRatio * 100f:0}%";
+        }
+
+        private static FrontlineProxyReadout ResolveFrontlineProxyReadout()
+        {
+            int allyCount = 0;
+            int enemyCount = 0;
+            bool allyAdvancing = false;
+            bool enemyAdvancing = false;
+            bool clashing = false;
+            float allyLowestHealth01 = 1f;
+            float enemyLowestHealth01 = 1f;
+
+            int proxyCount = SummonFrontlineProxy.ActiveRegisteredProxyCount;
+            for (int i = 0; i < proxyCount; i++)
+            {
+                if (!SummonFrontlineProxy.TryGetActiveRegisteredProxy(i, out SummonFrontlineProxy proxy)
+                    || proxy == null
+                    || proxy.Health == null)
+                {
+                    continue;
+                }
+
+                bool isPlayerSide = CombatTeamUtility.IsPlayerSide(proxy.Health.Team);
+                if (isPlayerSide)
+                {
+                    allyCount++;
+                    allyAdvancing |= proxy.IsAdvancing;
+                    allyLowestHealth01 = Mathf.Min(allyLowestHealth01, proxy.HealthRatio);
+                }
+                else
+                {
+                    enemyCount++;
+                    enemyAdvancing |= proxy.IsAdvancing;
+                    enemyLowestHealth01 = Mathf.Min(enemyLowestHealth01, proxy.HealthRatio);
+                }
+
+                clashing |= proxy.IsAdvanceHeld || proxy.CurrentState == SummonFrontlineProxyState.Attacking;
+            }
+
+            string state = ResolveFrontlineState(allyCount, enemyCount, allyAdvancing, enemyAdvancing, clashing);
+            return new FrontlineProxyReadout(
+                state,
+                allyCount,
+                enemyCount,
+                ResolveHealthPercentText(allyCount, allyLowestHealth01),
+                ResolveHealthPercentText(enemyCount, enemyLowestHealth01));
+        }
+
+        private static string ResolveFrontlineState(
+            int allyCount,
+            int enemyCount,
+            bool allyAdvancing,
+            bool enemyAdvancing,
+            bool clashing)
+        {
+            if (allyCount > 0 && enemyCount > 0)
+            {
+                return clashing ? "clash" : "contest";
+            }
+
+            if (allyCount > 0)
+            {
+                return allyAdvancing ? "ally push" : "ally hold";
+            }
+
+            if (enemyCount > 0)
+            {
+                return enemyAdvancing ? "boss push" : "boss hold";
+            }
+
+            return "open";
+        }
+
+        private static string ResolveHealthPercentText(int count, float health01)
+        {
+            return count > 0 ? $"{Mathf.Clamp01(health01) * 100f:0}%" : "--";
         }
 
         private string ResolveActionLine()
@@ -748,6 +948,29 @@ namespace DimensionBrawl.Presentation
                 SummonFrontlineProxyExitReason.Recalled => "recalled",
                 _ => "-"
             };
+        }
+
+        private readonly struct FrontlineProxyReadout
+        {
+            public FrontlineProxyReadout(
+                string state,
+                int allyCount,
+                int enemyCount,
+                string allyHealthText,
+                string enemyHealthText)
+            {
+                State = state;
+                AllyCount = allyCount;
+                EnemyCount = enemyCount;
+                AllyHealthText = allyHealthText;
+                EnemyHealthText = enemyHealthText;
+            }
+
+            public string State { get; }
+            public int AllyCount { get; }
+            public int EnemyCount { get; }
+            public string AllyHealthText { get; }
+            public string EnemyHealthText { get; }
         }
     }
 }

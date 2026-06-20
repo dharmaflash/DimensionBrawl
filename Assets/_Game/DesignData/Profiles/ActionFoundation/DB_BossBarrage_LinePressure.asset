@@ -17,7 +17,7 @@ MonoBehaviour:
   windupSeconds: 1
   waveIntervalSeconds: 5.6
   projectilesPerWave: 4
-  damage: 15
+  damage: 10
   projectileSpeed: 13
   projectileLifetimeSeconds: 5.1
   projectileRadius: 0.3

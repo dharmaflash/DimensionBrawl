@@ -55,6 +55,9 @@ namespace DimensionBrawl.Test
         [SerializeField, Min(0)] private int requiredBossResponsesToPlayerSummons = 1;
         [SerializeField, Min(0)] private int requiredAllyPressureBlocks = 1;
         [SerializeField, Min(0)] private int requiredSummonClashes = 1;
+        [SerializeField, Min(0)] private int requiredSummonActorDefeats = 2;
+        [SerializeField, Min(0)] private int requiredBossRepressureAfterSummonDefeat = 2;
+        [SerializeField, Min(0)] private int requiredFrontlineLoopCycles = 2;
         [SerializeField, Min(0)] private int requiredSkill1ResponseUses = 1;
         [SerializeField, Min(0f)] private float requiredSkill1ResponseDamage = 60f;
         [SerializeField, Min(0.05f)] private float skill1ResponseDamageWindowSeconds = 2.5f;
@@ -90,6 +93,10 @@ namespace DimensionBrawl.Test
         private int observedBossSummonResponsesToPlayerSummons;
         private int observedBossPunishResponsesToPlayerSummons;
         private int observedSkill1ResponseUses;
+        private int observedSummonActorDefeats;
+        private int observedBossRepressureAfterSummonDefeat;
+        private int bossPressureActionsAtFirstSummonDefeat = -1;
+        private int bossSummonReleasesAtFirstSummonDefeat = -1;
         private int highestPlayerSummonTier;
         private int highestBossPressureTier;
         private int highestBossSummonTier;
@@ -100,6 +107,10 @@ namespace DimensionBrawl.Test
         private int lastObservedSummonSlot2Clashes;
         private int lastObservedSummonSlot3Clashes;
         private int lastObservedBossSummonClashes;
+        private int lastObservedSummonSlot1DefeatedUseCount;
+        private int lastObservedSummonSlot2DefeatedUseCount;
+        private int lastObservedSummonSlot3DefeatedUseCount;
+        private int lastObservedBossSummonDefeatCount;
 
         public bool IsCleared => cleared;
         public bool IsFailed => failed;
@@ -120,6 +131,11 @@ namespace DimensionBrawl.Test
         public int ObservedBossSummonResponsesToPlayerSummons => observedBossSummonResponsesToPlayerSummons;
         public int ObservedBossPunishResponsesToPlayerSummons => observedBossPunishResponsesToPlayerSummons;
         public int ObservedSkill1ResponseUses => observedSkill1ResponseUses;
+        public int ObservedSummonActorDefeats => observedSummonActorDefeats;
+        public int ObservedBossRepressureAfterSummonDefeat => observedBossRepressureAfterSummonDefeat;
+        public int ObservedFrontlineLoopCycles => Mathf.Min(
+            observedSummonActorDefeats,
+            observedBossRepressureAfterSummonDefeat);
         public int HighestPlayerSummonTier => highestPlayerSummonTier;
         public int HighestBossPressureTier => highestBossPressureTier;
         public int HighestBossSummonTier => highestBossSummonTier;
@@ -136,6 +152,9 @@ namespace DimensionBrawl.Test
         public int RequiredBossResponsesToPlayerSummons => requiredBossResponsesToPlayerSummons;
         public int RequiredAllyPressureBlocks => requiredAllyPressureBlocks;
         public int RequiredSummonClashes => requiredSummonClashes;
+        public int RequiredSummonActorDefeats => requiredSummonActorDefeats;
+        public int RequiredBossRepressureAfterSummonDefeat => requiredBossRepressureAfterSummonDefeat;
+        public int RequiredFrontlineLoopCycles => requiredFrontlineLoopCycles;
         public int RequiredSkill1ResponseUses => requiredSkill1ResponseUses;
         public float RequiredSkill1ResponseDamage => requiredSkill1ResponseDamage;
         public float RequiredBossDamage => requiredBossDamage;
@@ -259,6 +278,21 @@ namespace DimensionBrawl.Test
                     return "Let an ally summon and boss summon body-clash so the frontline duel is not only projectiles";
                 }
 
+                if (observedSummonActorDefeats < requiredSummonActorDefeats)
+                {
+                    return "Finish two frontline summon bodies through HP damage so the duel is not only overlapping blockers";
+                }
+
+                if (observedBossRepressureAfterSummonDefeat < requiredBossRepressureAfterSummonDefeat)
+                {
+                    return "Let the boss rebuild pressure after a summon body falls";
+                }
+
+                if (ObservedFrontlineLoopCycles < requiredFrontlineLoopCycles)
+                {
+                    return "Complete two remove-to-repressure frontline cycles before claiming the loop is stable";
+                }
+
                 if (observedSkill1ResponseUses < requiredSkill1ResponseUses)
                 {
                     return "Answer the summon block with Skill1 before going back to basic pressure";
@@ -286,6 +320,9 @@ namespace DimensionBrawl.Test
             + $"block {observedAllyPressureBlocks}/{requiredAllyPressureBlocks} "
             + $"sBlock {observedSupportPressureBlocks} "
             + $"clash {observedSummonClashes}/{requiredSummonClashes} "
+            + $"defeat {observedSummonActorDefeats}/{requiredSummonActorDefeats} "
+            + $"repressure {observedBossRepressureAfterSummonDefeat}/{requiredBossRepressureAfterSummonDefeat} "
+            + $"loopCycle {ObservedFrontlineLoopCycles}/{requiredFrontlineLoopCycles} "
             + $"skill {observedSkill1ResponseUses}/{requiredSkill1ResponseUses} "
             + $"skillDmg {skill1ResponseDamageFromPlayerSide:0}/{requiredSkill1ResponseDamage:0} "
             + $"dmg {bossDamageFromPlayerSide:0}/{requiredBossDamage:0}";
@@ -320,6 +357,7 @@ namespace DimensionBrawl.Test
             }
 
             ObserveSummonClashes();
+            ObserveSummonActorDefeats();
             if (HasMetReviewGoals())
             {
                 EnterCleared();
@@ -380,6 +418,10 @@ namespace DimensionBrawl.Test
             observedBossSummonResponsesToPlayerSummons = 0;
             observedBossPunishResponsesToPlayerSummons = 0;
             observedSkill1ResponseUses = 0;
+            observedSummonActorDefeats = 0;
+            observedBossRepressureAfterSummonDefeat = 0;
+            bossPressureActionsAtFirstSummonDefeat = -1;
+            bossSummonReleasesAtFirstSummonDefeat = -1;
             highestPlayerSummonTier = 0;
             highestBossPressureTier = 0;
             highestBossSummonTier = 0;
@@ -390,6 +432,10 @@ namespace DimensionBrawl.Test
             lastObservedSummonSlot2Clashes = 0;
             lastObservedSummonSlot3Clashes = 0;
             lastObservedBossSummonClashes = 0;
+            lastObservedSummonSlot1DefeatedUseCount = 0;
+            lastObservedSummonSlot2DefeatedUseCount = 0;
+            lastObservedSummonSlot3DefeatedUseCount = 0;
+            lastObservedBossSummonDefeatCount = 0;
             warmStartApplied = false;
             SetReviewSystemsEnabled(true);
             SetMarkers();
@@ -427,6 +473,7 @@ namespace DimensionBrawl.Test
                 && observedBossSummonReleases >= requiredBossSummonReleases
                 && HasMetSummonExchangeGoal()
                 && HasMetBossResponseToPlayerSummonGoal()
+                && HasMetSummonRemovalAndRepressureGoal()
                 && HasMetSkillResponseGoal()
                 && bossDamageFromPlayerSide >= requiredBossDamage;
         }
@@ -443,6 +490,13 @@ namespace DimensionBrawl.Test
         private bool HasMetBossResponseToPlayerSummonGoal()
         {
             return observedBossResponsesToPlayerSummons >= requiredBossResponsesToPlayerSummons;
+        }
+
+        private bool HasMetSummonRemovalAndRepressureGoal()
+        {
+            return observedSummonActorDefeats >= requiredSummonActorDefeats
+                && observedBossRepressureAfterSummonDefeat >= requiredBossRepressureAfterSummonDefeat
+                && ObservedFrontlineLoopCycles >= requiredFrontlineLoopCycles;
         }
 
         private void ObserveSummonClashes()
@@ -462,6 +516,59 @@ namespace DimensionBrawl.Test
         }
 
         private static int CountNewClashes(int currentCount, ref int lastObservedCount)
+        {
+            int delta = Mathf.Max(0, currentCount - lastObservedCount);
+            lastObservedCount = Mathf.Max(lastObservedCount, currentCount);
+            return delta;
+        }
+
+        private void ObserveSummonActorDefeats()
+        {
+            observedSummonActorDefeats += CountNewDefeats(
+                summonSlot1Action != null
+                    ? summonSlot1Action.LastSummonActorExitReason
+                    : SummonFrontlineProxyExitReason.None,
+                summonSlot1Action != null ? summonSlot1Action.TotalUseCount : 0,
+                ref lastObservedSummonSlot1DefeatedUseCount);
+            observedSummonActorDefeats += CountNewDefeats(
+                summonSlot2Action != null
+                    ? summonSlot2Action.LastSummonActorExitReason
+                    : SummonFrontlineProxyExitReason.None,
+                summonSlot2Action != null ? summonSlot2Action.TotalUseCount : 0,
+                ref lastObservedSummonSlot2DefeatedUseCount);
+            observedSummonActorDefeats += CountNewDefeats(
+                summonSlot3Action != null
+                    ? summonSlot3Action.LastSummonActorExitReason
+                    : SummonFrontlineProxyExitReason.None,
+                summonSlot3Action != null ? summonSlot3Action.TotalUseCount : 0,
+                ref lastObservedSummonSlot3DefeatedUseCount);
+            observedSummonActorDefeats += CountNewDefeatTotal(
+                bossSummonPressureAction != null ? bossSummonPressureAction.TotalSummonActorDefeatCount : 0,
+                ref lastObservedBossSummonDefeatCount);
+
+            if (bossPressureActionsAtFirstSummonDefeat < 0 && observedSummonActorDefeats > 0)
+            {
+                bossPressureActionsAtFirstSummonDefeat = observedBossPressureActions;
+                bossSummonReleasesAtFirstSummonDefeat = observedBossSummonReleases;
+            }
+        }
+
+        private static int CountNewDefeats(
+            SummonFrontlineProxyExitReason currentReason,
+            int currentSequence,
+            ref int lastObservedDefeatedSequence)
+        {
+            bool newlyDefeated = currentReason == SummonFrontlineProxyExitReason.Defeated
+                && currentSequence > lastObservedDefeatedSequence;
+            if (newlyDefeated)
+            {
+                lastObservedDefeatedSequence = currentSequence;
+            }
+
+            return newlyDefeated ? 1 : 0;
+        }
+
+        private static int CountNewDefeatTotal(int currentCount, ref int lastObservedCount)
         {
             int delta = Mathf.Max(0, currentCount - lastObservedCount);
             lastObservedCount = Mathf.Max(lastObservedCount, currentCount);
@@ -700,6 +807,8 @@ namespace DimensionBrawl.Test
                     break;
             }
 
+            CaptureBossRepressureAfterSummonDefeat();
+
             if (director != null && director.LastActionRespondedToPlayerSummon)
             {
                 observedBossResponsesToPlayerSummons++;
@@ -718,10 +827,28 @@ namespace DimensionBrawl.Test
             }
         }
 
+        private void CaptureBossRepressureAfterSummonDefeat()
+        {
+            if (bossPressureActionsAtFirstSummonDefeat < 0)
+            {
+                return;
+            }
+
+            int pressureActionDelta = observedBossPressureActions - bossPressureActionsAtFirstSummonDefeat;
+            int summonReleaseDelta = bossSummonReleasesAtFirstSummonDefeat >= 0
+                ? observedBossSummonReleases - bossSummonReleasesAtFirstSummonDefeat
+                : 0;
+            observedBossRepressureAfterSummonDefeat = Mathf.Max(
+                observedBossRepressureAfterSummonDefeat,
+                pressureActionDelta,
+                summonReleaseDelta);
+        }
+
         private void HandleBossPressureSummonReleased(BossSummonPressureAction action, int tier)
         {
             observedBossSummonReleases++;
             highestBossSummonTier = Mathf.Max(highestBossSummonTier, tier);
+            CaptureBossRepressureAfterSummonDefeat();
         }
 
         private void HandleBossPressureSummonIntercepted(BossSummonPressureAction action, int tier)

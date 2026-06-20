@@ -82,6 +82,9 @@ namespace DimensionBrawl.Combat
             && AdvanceProgress01 < 1f
             && !IsAdvanceHeld
             && (advanceTargetPosition - advanceStartPosition).sqrMagnitude > 0.0001f;
+
+        public event Action<SummonFrontlineProxy, SummonFrontlineProxyExitReason> Exited;
+
         public static int ActiveRegisteredProxyCount
         {
             get
@@ -339,9 +342,11 @@ namespace DimensionBrawl.Combat
             }
 
             UnregisterActiveProxy();
-            if (active || reason != SummonFrontlineProxyExitReason.None)
+            bool shouldReportExit = active || reason != SummonFrontlineProxyExitReason.None;
+            if (shouldReportExit)
             {
                 lastExitReason = reason;
+                Exited?.Invoke(this, reason);
             }
 
             active = false;

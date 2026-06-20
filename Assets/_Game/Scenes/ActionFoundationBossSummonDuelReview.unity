@@ -5308,6 +5308,9 @@ MonoBehaviour:
   requiredBossResponsesToPlayerSummons: 1
   requiredAllyPressureBlocks: 1
   requiredSummonClashes: 1
+  requiredSummonActorDefeats: 2
+  requiredBossRepressureAfterSummonDefeat: 2
+  requiredFrontlineLoopCycles: 2
   requiredSkill1ResponseUses: 1
   requiredSkill1ResponseDamage: 60
   skill1ResponseDamageWindowSeconds: 2.5
