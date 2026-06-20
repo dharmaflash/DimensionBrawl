@@ -14,6 +14,8 @@ namespace DimensionBrawl.UI
         [SerializeField] private Text summaryText;
         [SerializeField] private Text primaryActionText;
         [SerializeField] private Text secondaryActionText;
+        [SerializeField] private string winResultId;
+        [SerializeField] private string failResultId;
         [SerializeField] private bool visibleOnAwake;
 
         private void Reset()
@@ -48,12 +50,12 @@ namespace DimensionBrawl.UI
 
         public void ShowWin()
         {
-            ShowResult("MockWin");
+            ShowResult(winResultId);
         }
 
         public void ShowFail()
         {
-            ShowResult("MockFail");
+            ShowResult(failResultId);
         }
 
         public void Hide()

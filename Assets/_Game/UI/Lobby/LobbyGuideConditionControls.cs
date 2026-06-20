@@ -4,7 +4,7 @@ using UnityEngine.UI;
 namespace DimensionBrawl.UI
 {
     [DisallowMultipleComponent]
-    public sealed class LobbyMockStateControls : MonoBehaviour
+    public sealed class LobbyGuideConditionControls : MonoBehaviour
     {
         [SerializeField] private LobbyScreenPresenter presenter;
         [SerializeField] private Button normalButton;
@@ -24,22 +24,22 @@ namespace DimensionBrawl.UI
 
         public void ShowNormal()
         {
-            presenter?.SetMockState(LobbyMockState.Normal);
+            presenter?.SetGuideCondition(LobbyGuideCondition.Default);
         }
 
         public void ShowReturnedFromCombat()
         {
-            presenter?.SetMockState(LobbyMockState.ReturnedFromCombat);
+            presenter?.SetGuideCondition(LobbyGuideCondition.ReturnFromCombat);
         }
 
         public void ShowNewReward()
         {
-            presenter?.SetMockState(LobbyMockState.NewReward);
+            presenter?.SetGuideCondition(LobbyGuideCondition.NewRewardDisplay);
         }
 
         public void ShowSummonReady()
         {
-            presenter?.SetMockState(LobbyMockState.SummonReady);
+            presenter?.SetGuideCondition(LobbyGuideCondition.SummonReadyDisplay);
         }
 
         private void AddListeners()

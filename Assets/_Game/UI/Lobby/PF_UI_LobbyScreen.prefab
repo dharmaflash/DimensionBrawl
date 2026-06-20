@@ -6493,7 +6493,11 @@ MonoBehaviour:
   primaryCtaButton: {fileID: 4242585408528983934}
   router: {fileID: 0}
   primaryRoute: 30
-  mockState: 0
+  guideFeedbackCatalog: {fileID: 11400000, guid: f028a874e70c9a64cbcd044d3862f0e9, type: 2}
+  textCatalog: {fileID: 11400000, guid: 3796364a7e3eedf4aba132c65d31bdb8, type: 2}
+  guideCondition: 0
+  guideNameTextKey: ui.lobby.guide_name
+  primaryCtaTextKey: ui.lobby.primary_cta
   primaryCtaRequested:
     m_PersistentCalls:
       m_Calls: []
@@ -6508,7 +6512,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ca4c327218e04284083b99750d45523c, type: 3}
   m_Name:
-  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.LobbyMockStateControls
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.LobbyGuideConditionControls
   presenter: {fileID: 6976803788826905305}
   normalButton: {fileID: 2742381466815879838}
   returnedButton: {fileID: 7356111607306875388}

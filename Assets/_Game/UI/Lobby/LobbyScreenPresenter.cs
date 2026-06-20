@@ -4,14 +4,6 @@ using UnityEngine.UI;
 
 namespace DimensionBrawl.UI
 {
-    public enum LobbyMockState
-    {
-        Normal = 0,
-        ReturnedFromCombat = 10,
-        NewReward = 20,
-        SummonReady = 30
-    }
-
     [DisallowMultipleComponent]
     public sealed class LobbyScreenPresenter : MonoBehaviour
     {
@@ -22,12 +14,16 @@ namespace DimensionBrawl.UI
         [SerializeField] private Button primaryCtaButton;
         [SerializeField] private UISceneFlowRouter router;
         [SerializeField] private UIRouteId primaryRoute = UIRouteId.StageSelect;
-        [SerializeField] private LobbyMockState mockState = LobbyMockState.Normal;
+        [SerializeField] private LobbyGuideFeedbackCatalog guideFeedbackCatalog;
+        [SerializeField] private UITextCatalog textCatalog;
+        [SerializeField] private LobbyGuideCondition guideCondition = LobbyGuideCondition.Default;
+        [SerializeField] private string guideNameTextKey;
+        [SerializeField] private string primaryCtaTextKey;
         [SerializeField] private UnityEvent primaryCtaRequested = new UnityEvent();
 
         private void OnEnable()
         {
-            ApplyMockState(mockState);
+            ApplyGuideCondition(guideCondition);
 
             if (primaryCtaButton != null)
             {
@@ -43,10 +39,10 @@ namespace DimensionBrawl.UI
             }
         }
 
-        public void SetMockState(LobbyMockState state)
+        public void SetGuideCondition(LobbyGuideCondition condition)
         {
-            mockState = state;
-            ApplyMockState(mockState);
+            guideCondition = condition;
+            ApplyGuideCondition(guideCondition);
         }
 
         public void HandlePrimaryCtaClicked()
@@ -59,30 +55,62 @@ namespace DimensionBrawl.UI
             }
         }
 
-        private void ApplyMockState(LobbyMockState state)
+        private void ApplyGuideCondition(LobbyGuideCondition condition)
         {
-            SetText(guideNameText, "Guide Unit");
-            SetText(primaryCtaText, "Story PvE");
+            SetCatalogText(guideNameText, guideNameTextKey);
+            SetCatalogText(primaryCtaText, primaryCtaTextKey);
+            SetText(statusText, string.Empty);
 
-            switch (state)
+            if (TryGetGuideLineKey(condition, out string lineKey))
             {
-                case LobbyMockState.ReturnedFromCombat:
-                    SetText(guideLineText, "Combat readback complete. Ready for another route.");
-                    SetText(statusText, "Return from combat");
-                    break;
-                case LobbyMockState.NewReward:
-                    SetText(guideLineText, "Reward review placeholder is waiting.");
-                    SetText(statusText, "New reward");
-                    break;
-                case LobbyMockState.SummonReady:
-                    SetText(guideLineText, "Summon slot presentation is ready, behavior is locked.");
-                    SetText(statusText, "Summon ready display");
-                    break;
-                default:
-                    SetText(guideLineText, "Choose a route when you are ready.");
-                    SetText(statusText, "Lobby UI V1");
-                    break;
+                SetCatalogText(guideLineText, lineKey);
+                return;
             }
+
+            SetText(guideLineText, string.Empty);
+        }
+
+        private bool TryGetGuideLineKey(LobbyGuideCondition condition, out string lineKey)
+        {
+            if (TryGetGuideLineKeyExact(condition, out lineKey))
+            {
+                return true;
+            }
+
+            return condition != LobbyGuideCondition.Default &&
+                TryGetGuideLineKeyExact(LobbyGuideCondition.Default, out lineKey);
+        }
+
+        private bool TryGetGuideLineKeyExact(LobbyGuideCondition condition, out string lineKey)
+        {
+            if (guideFeedbackCatalog != null &&
+                guideFeedbackCatalog.TryGetFirst(condition, out LobbyGuideFeedbackCatalog.FeedbackEntry entry) &&
+                !string.IsNullOrWhiteSpace(entry.LineKey))
+            {
+                lineKey = entry.LineKey;
+                return true;
+            }
+
+            lineKey = string.Empty;
+            return false;
+        }
+
+        private void SetCatalogText(Text target, string key)
+        {
+            if (target == null)
+            {
+                return;
+            }
+
+            if (textCatalog != null &&
+                !string.IsNullOrWhiteSpace(key) &&
+                textCatalog.TryGetText(key, out string value))
+            {
+                target.text = value;
+                return;
+            }
+
+            target.text = string.Empty;
         }
 
         private static void SetText(Text target, string value)

@@ -6,21 +6,23 @@ namespace DimensionBrawl.UI
 {
     [DisallowMultipleComponent]
     [RequireComponent(typeof(RawImage))]
+    [RequireComponent(typeof(VideoPlayer))]
     public sealed class LoginVideoBackgroundPresenter : MonoBehaviour
     {
         [SerializeField] private RawImage targetImage;
         [SerializeField] private AspectRatioFitter aspectRatioFitter;
         [SerializeField] private LoginVideoBackgroundProfile profile;
+        [SerializeField] private VideoPlayer videoPlayer;
         [SerializeField] private bool playOnEnable = true;
 
-        private VideoPlayer videoPlayer;
-        private RenderTexture renderTexture;
         private Texture fallbackTexture;
         private Color fallbackColor;
         private bool fallbackCached;
+        private bool videoEventsBound;
         private VideoClip runtimeClipOverride;
 
         private VideoClip ActiveClip => runtimeClipOverride != null ? runtimeClipOverride : profile != null ? profile.BackgroundClip : null;
+        private RenderTexture TargetTexture => profile != null ? profile.TargetTexture : null;
         private bool Loop => profile == null || profile.Loop;
         private bool MuteAudio => profile == null || profile.MuteAudio;
         private bool HideVideoUntilPrepared => profile == null || profile.HideVideoUntilPrepared;
@@ -31,18 +33,19 @@ namespace DimensionBrawl.UI
         {
             targetImage = GetComponent<RawImage>();
             aspectRatioFitter = GetComponent<AspectRatioFitter>();
+            videoPlayer = GetComponent<VideoPlayer>();
         }
 
         private void Awake()
         {
             CacheFallback();
-            EnsureVideoPlayer();
+            BindVideoPlayer();
         }
 
         private void OnEnable()
         {
             CacheFallback();
-            EnsureVideoPlayer();
+            BindVideoPlayer();
             ConfigureVideoPlayer();
 
             if (playOnEnable)
@@ -59,12 +62,11 @@ namespace DimensionBrawl.UI
             }
 
             RestoreFallback();
-            ReleaseRenderTexture();
         }
 
         private void OnDestroy()
         {
-            ReleaseRenderTexture();
+            UnbindVideoPlayer();
         }
 
         public void SetClip(VideoClip clip, bool playImmediately = true)
@@ -81,19 +83,19 @@ namespace DimensionBrawl.UI
         public void Play()
         {
             VideoClip clip = ActiveClip;
-            if (clip == null || videoPlayer == null || targetImage == null)
+            RenderTexture targetTexture = TargetTexture;
+            if (clip == null || videoPlayer == null || targetImage == null || targetTexture == null)
             {
                 RestoreFallback();
                 return;
             }
 
-            EnsureRenderTexture(FallbackWidth, FallbackHeight);
-            videoPlayer.targetTexture = renderTexture;
+            videoPlayer.targetTexture = targetTexture;
             videoPlayer.clip = clip;
 
             if (!HideVideoUntilPrepared)
             {
-                ShowVideoTexture();
+                ShowVideoTexture(targetTexture);
             }
 
             videoPlayer.Prepare();
@@ -111,21 +113,33 @@ namespace DimensionBrawl.UI
             fallbackCached = true;
         }
 
-        private void EnsureVideoPlayer()
+        private void BindVideoPlayer()
         {
-            if (videoPlayer != null)
+            if (videoPlayer == null)
+            {
+                videoPlayer = GetComponent<VideoPlayer>();
+            }
+
+            if (videoPlayer == null || videoEventsBound)
             {
                 return;
             }
 
-            videoPlayer = GetComponent<VideoPlayer>();
-            if (videoPlayer == null)
-            {
-                videoPlayer = gameObject.AddComponent<VideoPlayer>();
-            }
-
             videoPlayer.prepareCompleted += HandlePrepared;
             videoPlayer.errorReceived += HandleErrorReceived;
+            videoEventsBound = true;
+        }
+
+        private void UnbindVideoPlayer()
+        {
+            if (videoPlayer == null || !videoEventsBound)
+            {
+                return;
+            }
+
+            videoPlayer.prepareCompleted -= HandlePrepared;
+            videoPlayer.errorReceived -= HandleErrorReceived;
+            videoEventsBound = false;
         }
 
         private void ConfigureVideoPlayer()
@@ -148,10 +162,16 @@ namespace DimensionBrawl.UI
         {
             int width = source.width > 0 ? (int)source.width : FallbackWidth;
             int height = source.height > 0 ? (int)source.height : FallbackHeight;
-            EnsureRenderTexture(width, height);
-            source.targetTexture = renderTexture;
+            RenderTexture targetTexture = TargetTexture;
+            if (targetTexture == null)
+            {
+                RestoreFallback();
+                return;
+            }
+
+            source.targetTexture = targetTexture;
             ApplyAspect(width, height);
-            ShowVideoTexture();
+            ShowVideoTexture(targetTexture);
             source.Play();
         }
 
@@ -160,14 +180,14 @@ namespace DimensionBrawl.UI
             RestoreFallback();
         }
 
-        private void ShowVideoTexture()
+        private void ShowVideoTexture(RenderTexture targetTexture)
         {
-            if (targetImage == null || renderTexture == null)
+            if (targetImage == null || targetTexture == null)
             {
                 return;
             }
 
-            targetImage.texture = renderTexture;
+            targetImage.texture = targetTexture;
             targetImage.color = Color.white;
         }
 
@@ -181,41 +201,6 @@ namespace DimensionBrawl.UI
             targetImage.texture = fallbackTexture;
             targetImage.color = fallbackColor;
             ApplyAspect(FallbackWidth, FallbackHeight);
-        }
-
-        private void EnsureRenderTexture(int width, int height)
-        {
-            width = Mathf.Max(16, width);
-            height = Mathf.Max(16, height);
-
-            if (renderTexture != null && renderTexture.width == width && renderTexture.height == height)
-            {
-                return;
-            }
-
-            ReleaseRenderTexture();
-            renderTexture = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32)
-            {
-                name = "LoginVideoBackground"
-            };
-            renderTexture.Create();
-        }
-
-        private void ReleaseRenderTexture()
-        {
-            if (renderTexture == null)
-            {
-                return;
-            }
-
-            if (targetImage != null && targetImage.texture == renderTexture)
-            {
-                targetImage.texture = null;
-            }
-
-            renderTexture.Release();
-            Destroy(renderTexture);
-            renderTexture = null;
         }
 
         private void ApplyAspect(int width, int height)

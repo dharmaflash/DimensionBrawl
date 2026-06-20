@@ -21,10 +21,22 @@ MonoBehaviour:
     domain: Login
     value: START
     note: Single local entry action.
+  - key: ui.login.version
+    domain: Login
+    value: UI V1 Test
+    note: Local UI shell version label.
+  - key: ui.login.status
+    domain: Login
+    value: Local UI shell
+    note: Local UI shell status label.
   - key: ui.lobby.primary_cta
     domain: Lobby
     value: Story PvE
     note: Primary route into mission prep.
+  - key: ui.lobby.guide_name
+    domain: Lobby
+    value: Guide Unit
+    note: Temporary guide speaker label.
   - key: ui.lobby.guide_default
     domain: Lobby
     value: Choose a route when you are ready.
@@ -133,6 +145,70 @@ MonoBehaviour:
     domain: CombatHud
     value: Pause UI input.
     note: Narration placeholder.
+  - key: ui.combat.objective.mock_running
+    domain: CombatHud
+    value: Mock encounter running
+    note: UI-only combat running objective.
+  - key: ui.combat.objective.mock_clear
+    domain: CombatHud
+    value: Mock clear state
+    note: UI-only clear objective preview.
+  - key: ui.combat.objective.mock_fail
+    domain: CombatHud
+    value: Mock fail state
+    note: UI-only fail objective preview.
+  - key: ui.combat.input.ready
+    domain: CombatHud
+    value: Mobile HUD placeholder
+    note: UI-only ready input mode label.
+  - key: ui.combat.input.mock_running
+    domain: CombatHud
+    value: Direct-control HUD mock
+    note: UI-only running input mode label.
+  - key: ui.combat.feedback.ready
+    domain: CombatHud
+    value: HUD ready
+    note: UI-only ready feedback label.
+  - key: ui.combat.feedback.mock_start
+    domain: CombatHud
+    value: Start Combat mock
+    note: UI-only mock start feedback.
+  - key: ui.combat.feedback.mock_clear
+    domain: CombatHud
+    value: 'Mock result: clear'
+    note: UI-only mock clear feedback.
+  - key: ui.combat.feedback.mock_fail
+    domain: CombatHud
+    value: 'Mock result: fail'
+    note: UI-only mock fail feedback.
+  - key: ui.combat.skill1
+    domain: CombatHud
+    value: Skill1
+    note: UI-only skill slot label.
+  - key: ui.combat.ultimate
+    domain: CombatHud
+    value: Ultimate
+    note: UI-only ultimate slot label.
+  - key: ui.combat.summon.break
+    domain: CombatHud
+    value: Break
+    note: UI-only summon slot label.
+  - key: ui.combat.summon.tank
+    domain: CombatHud
+    value: Tank
+    note: UI-only summon slot label.
+  - key: ui.combat.summon.heal
+    domain: CombatHud
+    value: Heal
+    note: UI-only summon slot label.
+  - key: ui.combat.summon.visual_only
+    domain: CombatHud
+    value: Visual only
+    note: UI-only summon slot state.
+  - key: ui.combat.summon.locked
+    domain: CombatHud
+    value: Locked
+    note: UI-only locked summon slot state.
   - key: ui.common.button.normal
     domain: Common
     value: Normal
@@ -313,6 +389,14 @@ MonoBehaviour:
     domain: CombatHud
     value: Mock combat running
     note: UI-only combat mock running state.
+  - key: ui.combat.mock_state.clear
+    domain: CombatHud
+    value: Mock clear preview
+    note: UI-only combat mock clear state.
+  - key: ui.combat.mock_state.fail
+    domain: CombatHud
+    value: Mock fail preview
+    note: UI-only combat mock fail state.
   - key: ui.toast.combat_mock_start
     domain: CombatHud
     value: UI-only combat mock started

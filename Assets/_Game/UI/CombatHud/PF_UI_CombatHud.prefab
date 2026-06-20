@@ -2815,6 +2815,8 @@ MonoBehaviour:
   summaryText: {fileID: 886776491525127005}
   primaryActionText: {fileID: 6717190255024560604}
   secondaryActionText: {fileID: 2683497516915950240}
+  winResultId: MockWin
+  failResultId: MockFail
   visibleOnAwake: 0
 --- !u!1 &3064745008924700192
 GameObject:
@@ -5796,6 +5798,7 @@ MonoBehaviour:
   actionFeedbackText: {fileID: 5419335234344246674}
   healthFill: {fileID: 8747059325834610369}
   resourceFill: {fileID: 1265204428943132751}
+  actionCatalog: {fileID: 11400000, guid: 9616070d7ba163940a9d627cc2291b22, type: 2}
   actionSlots:
   - actionId: 100
     labelText: {fileID: 4460268097884856119}
@@ -5864,11 +5867,72 @@ MonoBehaviour:
   hudPresenter: {fileID: 5107563179232993290}
   resultPreviewPresenter: {fileID: 2014299382574127402}
   toastPresenter: {fileID: 2507541266718856153}
+  textCatalog: {fileID: 11400000, guid: 3796364a7e3eedf4aba132c65d31bdb8, type: 2}
   stateText: {fileID: 1354508888723128470}
   startButton: {fileID: 8694332259042537825}
   winButton: {fileID: 6831291436887234788}
   failButton: {fileID: 4693126938696975569}
   resetButton: {fileID: 2105265101911867607}
+  readySnapshot:
+    objectiveTextKey: ui.combat.objective
+    inputModeTextKey: ui.combat.input.ready
+    actionFeedbackTextKey: ui.combat.feedback.ready
+    stateTextKey: ui.combat.mock_state.ready
+    timerSeconds: 180
+    healthCurrent: 840
+    healthMax: 1000
+    resourceCurrent: 56
+    resourceMax: 100
+  runningSnapshot:
+    objectiveTextKey: ui.combat.objective.mock_running
+    inputModeTextKey: ui.combat.input.mock_running
+    actionFeedbackTextKey: ui.combat.feedback.mock_start
+    stateTextKey: ui.combat.mock_state.running
+    timerSeconds: 180
+    healthCurrent: 840
+    healthMax: 1000
+    resourceCurrent: 56
+    resourceMax: 100
+  winSnapshot:
+    objectiveTextKey: ui.combat.objective.mock_clear
+    inputModeTextKey: ui.combat.input.ready
+    actionFeedbackTextKey: ui.combat.feedback.mock_clear
+    stateTextKey: ui.combat.mock_state.clear
+    timerSeconds: 0
+    healthCurrent: 840
+    healthMax: 1000
+    resourceCurrent: 100
+    resourceMax: 100
+  failSnapshot:
+    objectiveTextKey: ui.combat.objective.mock_fail
+    inputModeTextKey: ui.combat.input.ready
+    actionFeedbackTextKey: ui.combat.feedback.mock_fail
+    stateTextKey: ui.combat.mock_state.fail
+    timerSeconds: 0
+    healthCurrent: 0
+    healthMax: 1000
+    resourceCurrent: 18
+    resourceMax: 100
+  skillCooldowns:
+  - actionId: 120
+    normalizedRemaining: 0.35
+    labelTextKey: ui.combat.skill1
+  - actionId: 130
+    normalizedRemaining: 0
+    labelTextKey: ui.combat.ultimate
+  summonSlotStates:
+  - actionId: 200
+    labelTextKey: ui.combat.summon.break
+    stateTextKey: ui.combat.summon.visual_only
+    enabled: 0
+  - actionId: 210
+    labelTextKey: ui.combat.summon.tank
+    stateTextKey: ui.combat.summon.locked
+    enabled: 0
+  - actionId: 220
+    labelTextKey: ui.combat.summon.heal
+    stateTextKey: ui.combat.summon.locked
+    enabled: 0
   winResultId: MockWin
   failResultId: MockFail
   startToastId: Combat.MockStart

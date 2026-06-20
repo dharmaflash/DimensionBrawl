@@ -7,6 +7,7 @@ namespace DimensionBrawl.UI
     public sealed class LoginVideoBackgroundProfile : ScriptableObject
     {
         [SerializeField] private VideoClip backgroundClip;
+        [SerializeField] private RenderTexture targetTexture;
         [SerializeField] private bool loop = true;
         [SerializeField] private bool muteAudio = true;
         [SerializeField] private bool hideVideoUntilPrepared = true;
@@ -14,6 +15,7 @@ namespace DimensionBrawl.UI
         [SerializeField, Min(16)] private int fallbackHeight = 1440;
 
         public VideoClip BackgroundClip => backgroundClip;
+        public RenderTexture TargetTexture => targetTexture;
         public bool Loop => loop;
         public bool MuteAudio => muteAudio;
         public bool HideVideoUntilPrepared => hideVideoUntilPrepared;

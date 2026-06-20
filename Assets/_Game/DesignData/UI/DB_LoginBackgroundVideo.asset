@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: DB_LoginBackgroundVideo
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.LoginVideoBackgroundProfile
   backgroundClip: {fileID: 32900000, guid: 9be3b96482a918f42a30c83a7920daf2, type: 3}
+  targetTexture: {fileID: 8400000, guid: c8d88236171d41bf8828555e714ce9aa, type: 2}
   loop: 1
   muteAudio: 1
   hideVideoUntilPrepared: 1

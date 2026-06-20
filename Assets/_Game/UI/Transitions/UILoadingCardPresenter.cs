@@ -64,7 +64,7 @@ namespace DimensionBrawl.UI
             SetText(titleText, card.Title);
             SetText(descriptionText, card.Description);
             SetText(idText, card.Id);
-            SetText(weightText, $"Weight {card.Weight}");
+            SetText(weightText, card.Weight.ToString());
         }
 
         private static void SetText(Text target, string value)

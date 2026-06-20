@@ -88,22 +88,9 @@ namespace DimensionBrawl.UI
         [SerializeField] private Text actionFeedbackText;
         [SerializeField] private Image healthFill;
         [SerializeField] private Image resourceFill;
+        [SerializeField] private CombatHudActionCatalog actionCatalog;
         [SerializeField] private ActionSlotBinding[] actionSlots = Array.Empty<ActionSlotBinding>();
         [SerializeField] private SummonSlotBinding[] summonSlots = Array.Empty<SummonSlotBinding>();
-
-        private void Start()
-        {
-            SetObjective("Reach the encounter marker");
-            SetTimer(180f);
-            SetHealth(840f, 1000f);
-            SetResource(56f, 100f);
-            SetInputMode("Mobile HUD placeholder");
-            SetSummonSlotState(CombatHudActionId.SummonSlot1, "Break", "Visual only", false);
-            SetSummonSlotState(CombatHudActionId.SummonSlot2, "Tank", "Locked", false);
-            SetSummonSlotState(CombatHudActionId.SummonSlot3, "Heal", "Locked", false);
-            SetSkillCooldown(CombatHudActionId.Skill1, 0.35f, "Skill1");
-            SetSkillCooldown(CombatHudActionId.Ultimate, 0f, "Ultimate");
-        }
 
         public void SetObjective(string objective)
         {
@@ -159,7 +146,19 @@ namespace DimensionBrawl.UI
 
         public void SetActionFeedback(CombatHudActionId actionId)
         {
-            SetActionFeedbackText(actionId == CombatHudActionId.None ? string.Empty : actionId.ToString());
+            if (actionId == CombatHudActionId.None)
+            {
+                SetActionFeedbackText(string.Empty);
+                return;
+            }
+
+            if (actionCatalog != null && actionCatalog.TryGetAction(actionId, out CombatHudActionCatalog.ActionEntry action))
+            {
+                SetActionFeedbackText(action.DisplayName);
+                return;
+            }
+
+            SetActionFeedbackText(string.Empty);
         }
 
         public void SetActionFeedbackText(string feedback)

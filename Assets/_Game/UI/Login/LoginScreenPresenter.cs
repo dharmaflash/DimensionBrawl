@@ -16,10 +16,11 @@ namespace DimensionBrawl.UI
         [SerializeField] private bool startOnScreenTap = true;
         [SerializeField] private UISceneFlowRouter router;
         [SerializeField] private UIRouteId startRoute = UIRouteId.Lobby;
-        [SerializeField] private string title = "Dimension Brawl";
-        [SerializeField] private string prompt = "Start";
-        [SerializeField] private string version = "UI V1 Test";
-        [SerializeField] private string status = "Local UI shell";
+        [SerializeField] private UITextCatalog textCatalog;
+        [SerializeField] private string titleTextKey;
+        [SerializeField] private string promptTextKey;
+        [SerializeField] private string versionTextKey;
+        [SerializeField] private string statusTextKey;
         [SerializeField] private UnityEvent startRequested = new UnityEvent();
 
         private void OnEnable()
@@ -57,10 +58,10 @@ namespace DimensionBrawl.UI
 
         public void Apply()
         {
-            SetText(titleText, title);
-            SetText(promptText, prompt);
-            SetText(versionText, version);
-            SetText(statusText, status);
+            SetCatalogText(titleText, titleTextKey);
+            SetCatalogText(promptText, promptTextKey);
+            SetCatalogText(versionText, versionTextKey);
+            SetCatalogText(statusText, statusTextKey);
         }
 
         public void HandleStartClicked()
@@ -78,12 +79,23 @@ namespace DimensionBrawl.UI
             return startButton == null || startButton.IsInteractable();
         }
 
-        private static void SetText(Text target, string value)
+        private void SetCatalogText(Text target, string key)
         {
-            if (target != null)
+            if (target == null)
+            {
+                return;
+            }
+
+            if (textCatalog != null &&
+                !string.IsNullOrWhiteSpace(key) &&
+                textCatalog.TryGetText(key, out string value))
             {
                 target.text = value;
+                return;
             }
+
+            target.text = string.Empty;
         }
+
     }
 }

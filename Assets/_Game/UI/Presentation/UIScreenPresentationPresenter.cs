@@ -28,21 +28,20 @@ namespace DimensionBrawl.UI
         {
             if (screenCatalog == null || !screenCatalog.TryGetScreen(routeId, out UIScreenCatalog.ScreenEntry screen))
             {
-                SetText(screenIdText, routeId == UIRouteId.None ? "Screen" : routeId.ToString());
-                SetText(soundContextText, "Sound context unavailable");
-                SetText(cachePolicyText, "Cache unknown");
+                SetText(screenIdText, routeId == UIRouteId.None ? string.Empty : routeId.ToString());
+                SetText(soundContextText, string.Empty);
+                SetText(cachePolicyText, string.Empty);
                 SetAccent(fallbackAccentColor);
                 return;
             }
 
             SetText(screenIdText, screen.ScreenId);
-            SetText(cachePolicyText, $"Cache {screen.CachePolicy}");
+            SetText(cachePolicyText, screen.CachePolicy.ToString());
 
             if (soundContextCatalog != null
                 && soundContextCatalog.TryGetContext(screen.BgmContextId, out UISoundContextCatalog.SoundContext context))
             {
-                string loopLabel = context.Loop ? "Loop" : "One-shot";
-                SetText(soundContextText, $"{context.Id} | {loopLabel} | Fade {context.FadeCrossSeconds:0.00}s");
+                SetText(soundContextText, $"{context.Id} | {context.Loop} | {context.FadeCrossSeconds:0.00}");
             }
             else
             {
