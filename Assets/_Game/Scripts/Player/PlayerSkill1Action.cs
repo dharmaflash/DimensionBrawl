@@ -25,8 +25,6 @@ namespace DimensionBrawl.Player
 
         [Header("Input")]
         [SerializeField] private InputActionReference skillAction;
-        [SerializeField] private bool useKeyboardWhenActionMissing = true;
-        [SerializeField] private Key keyboardTestKey = Key.E;
 
         [Header("References")]
         [SerializeField] private SummonEnergyLadder energyLadder;
@@ -373,14 +371,7 @@ namespace DimensionBrawl.Player
                 pressed |= skillAction.action.WasPressedThisFrame();
             }
 
-            if (pressed || !useKeyboardWhenActionMissing || !IsActionMissing(skillAction))
-            {
-                return pressed;
-            }
-
-            return Keyboard.current != null
-                && Keyboard.current[keyboardTestKey] != null
-                && Keyboard.current[keyboardTestKey].wasPressedThisFrame;
+            return pressed;
         }
 
         private static Vector3 ResolveRight(Vector3 direction)
@@ -417,11 +408,6 @@ namespace DimensionBrawl.Player
             {
                 actionReference.action.Disable();
             }
-        }
-
-        private static bool IsActionMissing(InputActionReference actionReference)
-        {
-            return actionReference == null || actionReference.action == null;
         }
     }
 }

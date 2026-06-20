@@ -63,6 +63,17 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private float aimFieldOfViewDelta = -5.5f;
         [SerializeField, Min(0f)] private float aimBlendInSpeed = 14f;
         [SerializeField, Min(0f)] private float aimBlendOutSpeed = 18f;
+        [Tooltip("Tightens positional follow while aiming so the zoomed shoulder view feels attached to the player.")]
+        [SerializeField, Min(0f)] private float aimFollowSmoothTime = 0.025f;
+        [Tooltip("Lets Look/TargetBias peek the fixed-rear aim camera without enabling free orbit.")]
+        [SerializeField] private bool aimOrbitUsesInput = true;
+        [Tooltip("Keeps the last aim-camera peek while ranged aim/fire is held, then returns when aim ends.")]
+        [SerializeField] private bool aimOrbitHoldsYawUntilAimEnds = true;
+        [Tooltip("Moves the shoulder camera position with aim peek so the player stays anchored like a linked TPS rig.")]
+        [SerializeField] private bool aimOrbitRotatesCameraPosition;
+        [SerializeField, Range(0f, 90f)] private float aimOrbitYawLimitDegrees = 45f;
+        [SerializeField, Min(0f)] private float aimOrbitYawSpeedDegrees = 360f;
+        [SerializeField, Min(0f)] private float aimOrbitReturnSpeedDegrees = 420f;
 
         private Camera controlledCamera;
         private Vector3 followVelocity;
@@ -77,10 +88,15 @@ namespace DimensionBrawl.Presentation
         private bool enabledOrbitAction;
         private float aimTargetWeight;
         private float aimWeight;
+        private Vector2 aimOrbitInput;
+        private float aimYawOffsetDegrees;
+        private bool wasAimFollowActive;
 
         public bool HasActiveCue => cueTimer > 0f;
         public bool IsAimModifierActive => aimTargetWeight > 0.5f;
         public float AimWeight => aimWeight;
+        public Vector2 AimOrbitInput => aimOrbitInput;
+        public float AimYawOffsetDegrees => aimYawOffsetDegrees;
         public float OrbitYawDegrees => orbitYawDegrees;
         public Transform Target => target;
         public Transform Threat => threat;
@@ -104,6 +120,11 @@ namespace DimensionBrawl.Presentation
         public void SetOrbitInput(Vector2 input)
         {
             mobileOrbitInput = Vector2.ClampMagnitude(input, 1f);
+        }
+
+        public void SetAimOrbitInput(Vector2 input)
+        {
+            aimOrbitInput = Vector2.ClampMagnitude(input, 1f);
         }
 
         public void ConfigureTargets(Transform newTarget, Transform newThreat)
@@ -160,23 +181,69 @@ namespace DimensionBrawl.Presentation
                 UpdateOrbit(deltaTime);
             }
 
-            Quaternion orbitRotation = Quaternion.Euler(0f, orbitYawDegrees, 0f);
             float cueWeight = UpdateCueWeight(deltaTime);
             UpdateAimWeight(deltaTime);
-            Vector3 focus = BuildFocusPoint()
-                + Vector3.up * (cueFocusHeightDelta * cueWeight)
-                + orbitRotation * (aimFocusOffset * aimWeight);
+            UpdateAimYawOffset(deltaTime);
+            Quaternion baseRotation = Quaternion.Euler(
+                0f,
+                NormalizeYaw(orbitYawDegrees),
+                0f);
+            Quaternion aimRotation = Quaternion.Euler(
+                0f,
+                NormalizeYaw(orbitYawDegrees + aimYawOffsetDegrees),
+                0f);
+            Quaternion cameraPositionRotation = aimOrbitRotatesCameraPosition ? aimRotation : baseRotation;
+            Vector3 baseFocus = BuildFocusPoint() + Vector3.up * (cueFocusHeightDelta * cueWeight);
             Vector3 cueCameraOffset = Vector3.forward * (cueCameraDistanceDelta * cueWeight);
-            Vector3 desiredPosition = focus
-                + orbitRotation * (cameraOffset + cueCameraOffset + aimCameraOffset * aimWeight)
+            Vector3 basePosition = baseFocus
+                + baseRotation * (cameraOffset + cueCameraOffset)
                 + cueOffset * cueWeight;
+            Vector3 aimFocus = baseFocus
+                + (aimOrbitRotatesCameraPosition ? aimRotation : baseRotation) * (aimFocusOffset * aimWeight);
+            Vector3 desiredPosition;
+            Vector3 focus;
+            if (aimOrbitRotatesCameraPosition)
+            {
+                BuildAimRigPose(
+                    aimRotation,
+                    cueCameraOffset,
+                    cueWeight,
+                    cueFocusHeightDelta,
+                    out Vector3 aimRigPosition,
+                    out Vector3 aimRigFocus);
+                desiredPosition = Vector3.Lerp(basePosition, aimRigPosition, aimWeight);
+                focus = Vector3.Lerp(baseFocus, aimRigFocus, aimWeight);
+            }
+            else
+            {
+                desiredPosition = baseFocus
+                    + cameraPositionRotation * (cameraOffset + cueCameraOffset + aimCameraOffset * aimWeight)
+                    + cueOffset * cueWeight;
+                focus = RotateFocusAroundAnchor(desiredPosition, aimFocus, aimYawOffsetDegrees * aimWeight);
+            }
             UpdateFieldOfView(deltaTime, cueWeight);
 
-            transform.position = Vector3.SmoothDamp(
-                transform.position,
-                desiredPosition,
-                ref followVelocity,
-                followSmoothTime);
+            bool aimFollowActive = aimWeight > 0.5f;
+            if (aimFollowActive != wasAimFollowActive)
+            {
+                followVelocity = Vector3.zero;
+                wasAimFollowActive = aimFollowActive;
+            }
+
+            float activeFollowSmoothTime = Mathf.Lerp(followSmoothTime, aimFollowSmoothTime, aimWeight);
+            if (activeFollowSmoothTime <= 0.0001f)
+            {
+                transform.position = desiredPosition;
+                followVelocity = Vector3.zero;
+            }
+            else
+            {
+                transform.position = Vector3.SmoothDamp(
+                    transform.position,
+                    desiredPosition,
+                    ref followVelocity,
+                    activeFollowSmoothTime);
+            }
 
             Vector3 lookDirection = focus - transform.position;
             if (lookDirection.sqrMagnitude <= 0.0001f)
@@ -213,6 +280,8 @@ namespace DimensionBrawl.Presentation
         private void OnDisable()
         {
             DisableActionIfOwned(orbitAction, enabledOrbitAction);
+            aimOrbitInput = Vector2.zero;
+            aimYawOffsetDegrees = 0f;
         }
 
         private Vector3 BuildFocusPoint()
@@ -227,6 +296,23 @@ namespace DimensionBrawl.Presentation
 
             Vector3 lead = Vector3.ProjectOnPlane(target.forward, Vector3.up) * maxLeadFromPlayerSpeed;
             return focus + lead;
+        }
+
+        private void BuildAimRigPose(
+            Quaternion aimRotation,
+            Vector3 cueCameraOffset,
+            float cueWeight,
+            float activeCueFocusHeightDelta,
+            out Vector3 position,
+            out Vector3 focus)
+        {
+            Vector3 rigOrigin = target.position;
+            position = rigOrigin
+                + aimRotation * (cameraOffset + cueCameraOffset + aimCameraOffset)
+                + cueOffset * cueWeight;
+            focus = rigOrigin
+                + aimRotation * (lookOffset + aimFocusOffset)
+                + Vector3.up * (activeCueFocusHeightDelta * cueWeight);
         }
 
         private float ResolveFixedRearYaw()
@@ -364,6 +450,25 @@ namespace DimensionBrawl.Presentation
             return yaw < 0f ? yaw + 360f : yaw;
         }
 
+        private static Vector3 RotateFocusAroundAnchor(Vector3 anchor, Vector3 focus, float yawDegrees)
+        {
+            if (Mathf.Approximately(yawDegrees, 0f))
+            {
+                return focus;
+            }
+
+            Vector3 localFocus = focus - anchor;
+            Vector3 planarFocus = Vector3.ProjectOnPlane(localFocus, Vector3.up);
+            if (planarFocus.sqrMagnitude <= 0.0001f)
+            {
+                return focus;
+            }
+
+            Vector3 verticalFocus = localFocus - planarFocus;
+            Vector3 rotatedPlanarFocus = Quaternion.Euler(0f, yawDegrees, 0f) * planarFocus;
+            return anchor + rotatedPlanarFocus + verticalFocus;
+        }
+
         private float UpdateCueWeight(float deltaTime)
         {
             if (cueTimer <= 0f)
@@ -387,6 +492,32 @@ namespace DimensionBrawl.Presentation
 
             float step = 1f - Mathf.Exp(-speed * deltaTime);
             aimWeight = Mathf.Lerp(aimWeight, aimTargetWeight, step);
+        }
+
+        private void UpdateAimYawOffset(float deltaTime)
+        {
+            float targetOffset = 0f;
+            Vector2 aimInput = ApplyDeadZone(aimOrbitInput);
+            bool holdsCurrentYaw = false;
+            if (aimOrbitUsesInput && aimTargetWeight > 0f && aimOrbitYawLimitDegrees > 0f)
+            {
+                holdsCurrentYaw = aimOrbitHoldsYawUntilAimEnds && aimInput.sqrMagnitude <= 0f;
+                targetOffset = holdsCurrentYaw ? aimYawOffsetDegrees : aimInput.x * aimOrbitYawLimitDegrees;
+            }
+
+            float speed = Mathf.Approximately(targetOffset, 0f) && !holdsCurrentYaw
+                ? aimOrbitReturnSpeedDegrees
+                : aimOrbitYawSpeedDegrees;
+            if (speed <= 0f)
+            {
+                aimYawOffsetDegrees = targetOffset;
+                return;
+            }
+
+            aimYawOffsetDegrees = Mathf.MoveTowards(
+                aimYawOffsetDegrees,
+                targetOffset,
+                speed * deltaTime);
         }
 
         private void UpdateFieldOfView(float deltaTime, float cueWeight)

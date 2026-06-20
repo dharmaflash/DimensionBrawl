@@ -113,7 +113,7 @@ namespace DimensionBrawl.Tests
                 bossPressureActionDirector.HoldForNextTierActionWhenGateAllows,
                 "Duel review should let the boss bank LV1 pressure into a visible LV2 summon-pressure exchange.");
             AssertVector3(
-                new Vector3(0.45f, -0.38f, 0.12f),
+                new Vector3(0.75f, 0.88f, 3.12f),
                 GetVector3(cameraController, "aimCameraOffset"),
                 "Boss summon duel aim camera offset should keep the reviewed inspector framing.");
             Assert.AreEqual(4, bossPressureActionDirector.ActionSlotCount);

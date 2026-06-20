@@ -255,11 +255,18 @@ MonoBehaviour:
   maxCueCameraDistanceDelta: 0.45
   maxCueFocusHeightDelta: 0.25
   cueFieldOfViewSmooth: 18
-  aimCameraOffset: {x: 0.5, y: 0.18, z: 0.12}
+  aimCameraOffset: {x: 0.75, y: 0.88, z: 3.12}
   aimFocusOffset: {x: 0.08, y: 0.06, z: 1.05}
   aimFieldOfViewDelta: -5.5
   aimBlendInSpeed: 14
   aimBlendOutSpeed: 18
+  aimFollowSmoothTime: 0.025
+  aimOrbitUsesInput: 1
+  aimOrbitHoldsYawUntilAimEnds: 1
+  aimOrbitRotatesCameraPosition: 1
+  aimOrbitYawLimitDegrees: 45
+  aimOrbitYawSpeedDegrees: 360
+  aimOrbitReturnSpeedDegrees: 420
 --- !u!114 &1005
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1179,6 +1186,7 @@ MonoBehaviour:
   aimInputDeadZone: 0.18
   aimInputYawDegrees: 34
   aimFromCameraViewport: 1
+  useFixedCenterAimViewport: 1
   preserveVerticalAim: 1
   cameraAimFallbackDistance: 26
   aimInputViewportOffsetX: 0.39
@@ -1209,11 +1217,14 @@ MonoBehaviour:
   holdToAim: 1
   useDeviceFallbackWhenActionMissing: 1
   allowMouseAimFallback: 0
-  keyboardTestKey: 31
   combatModeController: {fileID: 4013}
   cameraController: {fileID: 1004}
+  movement: {fileID: 4004}
   animator: {fileID: 5856348789852390386}
   aimingParameter:
+  faceCameraForwardWhileAiming: 1
+  aimingFacingHoldSeconds: 0.08
+  snapAimingFacing: 0
 --- !u!114 &4013
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1505,8 +1516,6 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerSkill1Action
   skillAction: {fileID: 0}
-  useKeyboardWhenActionMissing: 1
-  keyboardTestKey: 19
   energyLadder: {fileID: 4014}
   sourceHealth: {fileID: 4003}
   targetSelector: {fileID: 4008}
@@ -13889,12 +13898,16 @@ MonoBehaviour:
   screenDragControlsAim: 1
   rightMouseDragControlsAim: 0
   leftMouseDragControlsAim: 1
-  fireDragControlsAim: 1
+  keyboardPeekControlsAim: 1
+  keyboardPeekLeftKey: 31
+  keyboardPeekRightKey: 19
+  keyboardPeekRequiresActiveAim: 1
   lookAimDragDeadZone: 0.08
   lookAimDragRadius: 230
   lookAimKnobSize: 30
   lookAimScreenMinX: 0
   showFireAimReticle: 1
+  fireAimReticleUsesScreenCenter: 1
   fireAimReticleSize: 34
   fireAimReticleGap: 9
   fireAimReticleThickness: 2

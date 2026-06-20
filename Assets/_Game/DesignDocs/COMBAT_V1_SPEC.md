@@ -59,7 +59,7 @@ Use these action names as the shared vocabulary across PC, gamepad, and mobile H
 | Action | PC / Keyboard Mouse | Gamepad | Mobile HUD | V1 implementation |
 |---|---|---|---|---|
 | `Move` | WASD / left stick equivalent | Left stick | Left joystick | Required |
-| `Look` / `TargetBias` | Mouse drag / camera stick equivalent | Right stick | Drag on non-button screen space, or drag while holding `Fire` | Aim/target bias only; first slice camera stays fixed rear and `Fire` remains the trigger |
+| `Look` / `TargetBias` | Mouse drag / camera stick equivalent | Right stick | Drag on non-button screen space | Aim/target bias only; first slice camera stays fixed rear and `Fire` remains the trigger |
 | `BasicDefenseAttack` | Left click or attack key | Face button | Large attack button | Required |
 | `Dodge` | Shift / space / dodge key | Face button | Dodge button | Required |
 | `Skill1` | Key/button | Face/shoulder button | Skill button | Required first tiered skill action |
@@ -73,13 +73,17 @@ Existing Unity sample actions may be renamed or wrapped later, but gameplay code
 
 Current review-scene control split:
 
-- Mobile: touch the HUD buttons for movement/fire/dodge/skill/summon, drag non-button screen space for `Look` / `TargetBias`, or hold and drag the `Fire` button for a compact aim-fire gesture.
-- PC test: use WASD for movement, `F` or the on-screen `Fire` button for `BasicDefenseAttack` / fire, and left-mouse drag on non-button screen space for `Look` / `TargetBias`. The review scene must not require simultaneous left-click fire plus right-click aim.
-- The fire action is the trigger. Holding fire may request the ranged aim/zoom camera, and dragging the held fire button may provide the same `Look` / `TargetBias` value as screen drag. Do not make player basic fire a hard lock-on route.
+- Mobile: touch the HUD buttons for movement/fire/dodge/skill/summon, and drag non-button screen space for `Look` / `TargetBias`. The current review Fire button is a pure trigger with no drag-aim or joystick-style aim path.
+- PC test: use WASD for movement, `F` or the on-screen `Fire` button for `BasicDefenseAttack` / fire, left-mouse drag on non-button screen space for `Look` / `TargetBias`, and the review HUD's explicit `Q`/`E` keyboard peek hook for left/right target-bias while aim is already active. `RangedAim` and `Skill1` should not keep hidden Q/E-style keyboard fallback keys; use HUD buttons or explicit Input Actions for those verbs until a reviewed PC keymap is chosen. The review scene must not require simultaneous left-click fire plus right-click aim.
+- The fire action is the trigger. Holding fire may request the ranged aim/zoom camera, but the held Fire button must not produce `Look` / `TargetBias` input. Keep player basic fire forward-lane biased and handle correction through non-button screen drag or a later explicit aim-assist rule.
+- While aiming, non-button `Look` / `TargetBias` may peek the fixed-rear camera up to `45` degrees left/right from the authored rear yaw. This is an aim-limited forward cone, not baseline free orbit. Once the player releases `Look` / `TargetBias`, the peek yaw should hold while ranged aim/fire remains active, then return naturally when aim/fire ends.
+- Aim peek turns the center aim line and, in the current review scenes, moves the shoulder camera position with it from a player-based rig origin so the player stays near the same screen anchor. This remains a limited TPS-style forward-cone aim mode, not baseline free orbit.
+- While ranged aim/fire is held, player facing should stay aligned to the aim/camera forward direction so left/right movement reads as strafe/back movement inside the fixed-rear lane, not as the body turning away from the aim line.
+- The current review reticle stays fixed at screen center like an FPS reticle. `Look` / `TargetBias` and temporary `Q`/`E` controls move the aim camera within the 45-degree cone; basic ranged fire uses the center camera ray instead of moving the reticle across the screen.
 - Snowbreak data in `C:\Ark` is currently strongest for weapon/model/material reference, not direct camera tuning. Use it as 3D shooter presentation context while keeping camera/input tuning on the shared action contracts and cross-game camera transition guardrails.
 - Ranged aim camera composition is scene-authored Inspector tuning on `ActionCameraController > Aim Mode`. Editor setup may provide structural camera wiring, but it must not force exact aim offset/FOV values after the scene is authored.
 - Editor setup/validation for review scenes may verify required references, promoted asset ownership, prefab links, team ownership, animation trigger existence, and required scene anchors.
-- Editor setup/validation must not exact-lock movement feel, camera composition, aim assist, fire cadence, projectile feel, reticle placement, HUD joystick sizes, or other values that a designer should tune in Inspector or profile assets.
+- Editor setup/validation must not exact-lock movement feel, camera composition, aim assist, fire cadence, projectile feel, reticle size/style, HUD joystick sizes, or other values that a designer should tune in Inspector or profile assets.
 - Reapply tools may seed a scene when rebuilding from scratch, but after a review scene exists, authored Inspector values are the source of truth for action feel and camera feel.
 - Device fallback input is allowed only as an explicit review-scene convenience. It must stay serialized and visible, and production scenes should use assigned Input Actions instead of relying on missing-action fallbacks.
 

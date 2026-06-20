@@ -52,8 +52,11 @@ namespace DimensionBrawl.UI
         [SerializeField] private bool screenDragControlsAim = true;
         [SerializeField] private bool rightMouseDragControlsAim = true;
         [SerializeField] private bool leftMouseDragControlsAim;
-        [SerializeField] private bool fireDragControlsAim = true;
         [SerializeField] private bool routeAimToMovementLook;
+        [SerializeField] private bool keyboardPeekControlsAim = true;
+        [SerializeField] private Key keyboardPeekLeftKey = Key.Q;
+        [SerializeField] private Key keyboardPeekRightKey = Key.E;
+        [SerializeField] private bool keyboardPeekRequiresActiveAim = true;
         [SerializeField, Range(0f, 1f)] private float lookAimDragDeadZone = 0.08f;
         [SerializeField, Min(8f)] private float lookAimDragRadius = 230f;
         [SerializeField, Min(8f)] private float lookAimKnobSize = 30f;
@@ -61,6 +64,7 @@ namespace DimensionBrawl.UI
 
         [Header("Review Reticle")]
         [SerializeField] private bool showFireAimReticle = true;
+        [SerializeField] private bool fireAimReticleUsesScreenCenter = true;
         [SerializeField, Min(4f)] private float fireAimReticleSize = 34f;
         [SerializeField, Min(0f)] private float fireAimReticleGap = 9f;
         [SerializeField, Min(1f)] private float fireAimReticleThickness = 2f;
@@ -87,8 +91,6 @@ namespace DimensionBrawl.UI
         private bool firePointerPressed;
         private bool firePointerUsesMouse;
         private int firePointerTouchId = -1;
-        private Vector2 firePointerStartGuiPoint;
-        private Vector2 firePointerCurrentGuiPoint;
         private bool lookPointerHeld;
         private bool lookPointerUsesMouse;
         private bool lookPointerUsesRightMouse;
@@ -96,7 +98,6 @@ namespace DimensionBrawl.UI
         private Vector2 lookPointerStartGuiPoint;
         private Vector2 lookPointerCurrentGuiPoint;
         private Vector2 lookAimInput;
-        private Vector2 fireAimInput;
         private bool hudLookAimActive;
 
         public string MoveActionName => moveActionName;
@@ -408,7 +409,7 @@ namespace DimensionBrawl.UI
                 Vector2 point = ToGuiPoint(touch.position.ReadValue());
                 if (basicRect.Contains(point))
                 {
-                    BeginFirePointer(point, usesMouse: false, touch.touchId.ReadValue());
+                    BeginFirePointer(usesMouse: false, touch.touchId.ReadValue());
                     return true;
                 }
             }
@@ -431,7 +432,6 @@ namespace DimensionBrawl.UI
                     return true;
                 }
 
-                UpdateFirePointer(ToGuiPoint(touch.position.ReadValue()));
                 return true;
             }
 
@@ -456,7 +456,7 @@ namespace DimensionBrawl.UI
             {
                 if (Mouse.current.leftButton.isPressed)
                 {
-                    UpdateFirePointer(point);
+                    return;
                 }
                 else
                 {
@@ -468,7 +468,7 @@ namespace DimensionBrawl.UI
 
             if (Mouse.current.leftButton.wasPressedThisFrame && basicRect.Contains(point))
             {
-                BeginFirePointer(point, usesMouse: true, touchId: -1);
+                BeginFirePointer(usesMouse: true, touchId: -1);
             }
         }
 
@@ -588,20 +588,12 @@ namespace DimensionBrawl.UI
             }
         }
 
-        private void BeginFirePointer(Vector2 point, bool usesMouse, int touchId)
+        private void BeginFirePointer(bool usesMouse, int touchId)
         {
             firePointerHeld = true;
             firePointerPressed = true;
             firePointerUsesMouse = usesMouse;
             firePointerTouchId = touchId;
-            firePointerStartGuiPoint = point;
-            UpdateFirePointer(point);
-        }
-
-        private void UpdateFirePointer(Vector2 point)
-        {
-            firePointerCurrentGuiPoint = point;
-            fireAimInput = ResolveDragAimInput(firePointerStartGuiPoint, firePointerCurrentGuiPoint);
         }
 
         private void ClearFirePointerState()
@@ -610,9 +602,6 @@ namespace DimensionBrawl.UI
             firePointerPressed = false;
             firePointerUsesMouse = false;
             firePointerTouchId = -1;
-            firePointerStartGuiPoint = Vector2.zero;
-            firePointerCurrentGuiPoint = Vector2.zero;
-            fireAimInput = Vector2.zero;
         }
 
         private void BeginLookPointer(Vector2 point, bool usesMouse, bool usesRightMouse, int touchId)
@@ -644,21 +633,32 @@ namespace DimensionBrawl.UI
 
         private void UpdateHudLookAim()
         {
-            bool shouldHoldFireAim = fireDragControlsAim
-                && firePointerHeld
-                && (combatModeController == null || combatModeController.IsRangedMode);
-            bool shouldHoldLookAim = screenDragControlsAim && lookPointerHeld;
-            bool shouldHoldAnyAim = shouldHoldFireAim || shouldHoldLookAim;
-            if (!shouldHoldAnyAim && !hudLookAimActive)
+            bool pointerAimActive = screenDragControlsAim && lookPointerHeld;
+            Vector2 keyboardPeekInput = ResolveKeyboardPeekAimInput();
+            bool keyboardPeekActive = keyboardPeekInput.sqrMagnitude > 0.0001f && IsKeyboardPeekAllowed();
+            bool shouldRouteLookAim = pointerAimActive || keyboardPeekActive;
+            if (!shouldRouteLookAim && !hudLookAimActive)
             {
                 return;
             }
 
-            Vector2 aimInput = ResolveHudAimInput(shouldHoldFireAim, shouldHoldLookAim);
+            Vector2 aimInput = Vector2.zero;
+            if (pointerAimActive)
+            {
+                aimInput += lookAimInput;
+            }
+
+            if (keyboardPeekActive)
+            {
+                aimInput += keyboardPeekInput;
+            }
+
+            aimInput = Vector2.ClampMagnitude(aimInput, 1f);
             movement?.SetLookInput(routeAimToMovementLook ? aimInput : Vector2.zero);
             rangedBasicAttackAction?.SetAimInput(aimInput);
-            aimController?.SetAimHeld(shouldHoldAnyAim);
-            hudLookAimActive = shouldHoldAnyAim;
+            aimController?.SetAimInput(aimInput);
+            aimController?.SetAimHeld(pointerAimActive);
+            hudLookAimActive = shouldRouteLookAim;
         }
 
         private void ReleaseHudLookAim()
@@ -670,6 +670,7 @@ namespace DimensionBrawl.UI
 
             movement?.SetLookInput(Vector2.zero);
             rangedBasicAttackAction?.SetAimInput(Vector2.zero);
+            aimController?.SetAimInput(Vector2.zero);
             aimController?.SetAimHeld(false);
             hudLookAimActive = false;
         }
@@ -682,19 +683,52 @@ namespace DimensionBrawl.UI
             return input.sqrMagnitude >= lookAimDragDeadZone * lookAimDragDeadZone ? input : Vector2.zero;
         }
 
-        private Vector2 ResolveHudAimInput(bool shouldHoldFireAim, bool shouldHoldLookAim)
+        private Vector2 ResolveKeyboardPeekAimInput()
         {
-            if (shouldHoldFireAim && shouldHoldLookAim)
+            if (!keyboardPeekControlsAim || Keyboard.current == null)
             {
-                return fireAimInput.sqrMagnitude >= lookAimInput.sqrMagnitude ? fireAimInput : lookAimInput;
+                return Vector2.zero;
             }
 
-            if (shouldHoldFireAim)
+            float x = 0f;
+            if (IsKeyboardKeyPressed(keyboardPeekLeftKey))
             {
-                return fireAimInput;
+                x -= 1f;
             }
 
-            return shouldHoldLookAim ? lookAimInput : Vector2.zero;
+            if (IsKeyboardKeyPressed(keyboardPeekRightKey))
+            {
+                x += 1f;
+            }
+
+            return Mathf.Abs(x) > 0f ? new Vector2(Mathf.Clamp(x, -1f, 1f), 0f) : Vector2.zero;
+        }
+
+        private bool IsKeyboardPeekAllowed()
+        {
+            if (combatModeController != null && !combatModeController.IsRangedMode)
+            {
+                return false;
+            }
+
+            if (!keyboardPeekRequiresActiveAim)
+            {
+                return true;
+            }
+
+            return (aimController != null && aimController.IsAiming)
+                || (rangedBasicAttackAction != null && rangedBasicAttackAction.IsAimPreviewActive);
+        }
+
+        private static bool IsKeyboardKeyPressed(Key key)
+        {
+            if (key == Key.None || Keyboard.current == null)
+            {
+                return false;
+            }
+
+            var control = Keyboard.current[key];
+            return control != null && control.isPressed;
         }
 
         private bool IsLookAimStartPoint(Vector2 point)
@@ -894,15 +928,7 @@ namespace DimensionBrawl.UI
 
         private bool TryGetAimGuide(out Vector2 startGuiPoint, out Vector2 input)
         {
-            bool hasFireAim = fireDragControlsAim && firePointerHeld && fireAimInput.sqrMagnitude > 0.0001f;
             bool hasLookAim = lookPointerHeld && lookAimInput.sqrMagnitude > 0.0001f;
-            if (hasFireAim && (!hasLookAim || fireAimInput.sqrMagnitude >= lookAimInput.sqrMagnitude))
-            {
-                startGuiPoint = firePointerStartGuiPoint;
-                input = fireAimInput;
-                return true;
-            }
-
             if (hasLookAim)
             {
                 startGuiPoint = lookPointerStartGuiPoint;
@@ -956,7 +982,8 @@ namespace DimensionBrawl.UI
         private Vector2 ResolveFireAimReticleGuiPoint()
         {
             Vector2 viewportPoint = new Vector2(0.5f, 0.5f);
-            if (rangedBasicAttackAction != null
+            if (!fireAimReticleUsesScreenCenter
+                && rangedBasicAttackAction != null
                 && rangedBasicAttackAction.TryGetAimPreviewViewportPoint(out Vector2 actionViewportPoint))
             {
                 viewportPoint = actionViewportPoint;

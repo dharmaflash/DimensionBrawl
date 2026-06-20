@@ -56,6 +56,7 @@ namespace DimensionBrawl.Player
         [SerializeField, Range(0f, 1f)] private float aimInputDeadZone = 0.18f;
         [SerializeField, Range(0f, 85f)] private float aimInputYawDegrees = 34f;
         [SerializeField] private bool aimFromCameraViewport = true;
+        [SerializeField] private bool useFixedCenterAimViewport = true;
         [SerializeField] private bool preserveVerticalAim = true;
         [SerializeField, Min(1f)] private float cameraAimFallbackDistance = 26f;
         [SerializeField, Range(0f, 0.49f)] private float aimInputViewportOffsetX = 0.39f;
@@ -421,6 +422,11 @@ namespace DimensionBrawl.Player
 
         private Vector2 ResolveAimViewportPoint()
         {
+            if (useFixedCenterAimViewport)
+            {
+                return new Vector2(0.5f, 0.5f);
+            }
+
             Vector2 resolvedAimInput = aimInput.sqrMagnitude > aimInputDeadZone * aimInputDeadZone
                 ? Vector2.ClampMagnitude(aimInput, 1f)
                 : Vector2.zero;

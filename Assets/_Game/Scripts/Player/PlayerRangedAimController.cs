@@ -13,23 +13,30 @@ namespace DimensionBrawl.Player
         [SerializeField] private bool holdToAim = true;
         [SerializeField] private bool useDeviceFallbackWhenActionMissing = true;
         [SerializeField] private bool allowMouseAimFallback;
-        [SerializeField] private Key keyboardTestKey = Key.Q;
 
         [Header("References")]
         [SerializeField] private PlayerCombatModeController combatModeController;
         [SerializeField] private ActionCameraController cameraController;
+        [SerializeField] private PlayerMovementController movement;
         [SerializeField] private Animator animator;
 
         [Header("Animation")]
         [SerializeField] private string aimingParameter = "IsAiming";
+
+        [Header("Facing")]
+        [SerializeField] private bool faceCameraForwardWhileAiming = true;
+        [SerializeField, Min(0f)] private float aimingFacingHoldSeconds = 0.08f;
+        [SerializeField] private bool snapAimingFacing;
 
         private bool actionEnabledHere;
         private bool mobileAimHeld;
         private bool fireAimHeld;
         private bool queuedAimToggle;
         private bool isAiming;
+        private Vector2 aimInput;
 
         public bool IsAiming => isAiming;
+        public Vector2 AimInput => aimInput;
         public bool CanAim => combatModeController == null || combatModeController.IsRangedMode;
 
         public event Action<bool> AimModeChanged;
@@ -39,6 +46,11 @@ namespace DimensionBrawl.Player
             if (combatModeController == null)
             {
                 combatModeController = GetComponent<PlayerCombatModeController>();
+            }
+
+            if (movement == null)
+            {
+                movement = GetComponent<PlayerMovementController>();
             }
         }
 
@@ -54,6 +66,7 @@ namespace DimensionBrawl.Player
         private void OnDisable()
         {
             fireAimHeld = false;
+            SetAimInput(Vector2.zero);
             SetAimMode(false);
             if (combatModeController != null)
             {
@@ -68,6 +81,7 @@ namespace DimensionBrawl.Player
         {
             if (!CanAim)
             {
+                SetAimInput(Vector2.zero);
                 SetAimMode(false);
                 return;
             }
@@ -75,6 +89,7 @@ namespace DimensionBrawl.Player
             if (holdToAim)
             {
                 SetAimMode(ReadAimHeld());
+                RequestAimFacingIfNeeded();
                 return;
             }
 
@@ -82,6 +97,8 @@ namespace DimensionBrawl.Player
             {
                 SetAimMode(!isAiming);
             }
+
+            RequestAimFacingIfNeeded();
         }
 
         public void SetAimHeld(bool active)
@@ -102,6 +119,12 @@ namespace DimensionBrawl.Player
             }
         }
 
+        public void SetAimInput(Vector2 input)
+        {
+            aimInput = CanAim ? Vector2.ClampMagnitude(input, 1f) : Vector2.zero;
+            cameraController?.SetAimOrbitInput(aimInput);
+        }
+
         public void QueueAimToggle()
         {
             queuedAimToggle = true;
@@ -113,11 +136,21 @@ namespace DimensionBrawl.Player
             if (isAiming == resolvedActive)
             {
                 cameraController?.SetAimModifierActive(resolvedActive);
+                if (!resolvedActive)
+                {
+                    SetAimInput(Vector2.zero);
+                }
+
                 return;
             }
 
             isAiming = resolvedActive;
             cameraController?.SetAimModifierActive(isAiming);
+            if (!isAiming)
+            {
+                SetAimInput(Vector2.zero);
+            }
+
             SetAnimatorBool(aimingParameter, isAiming);
             AimModeChanged?.Invoke(isAiming);
         }
@@ -125,11 +158,16 @@ namespace DimensionBrawl.Player
         public void ConfigureReferences(
             PlayerCombatModeController newCombatModeController,
             ActionCameraController newCameraController,
-            Animator newAnimator)
+            Animator newAnimator,
+            PlayerMovementController newMovement = null)
         {
             combatModeController = newCombatModeController;
             cameraController = newCameraController;
             animator = newAnimator;
+            if (newMovement != null)
+            {
+                movement = newMovement;
+            }
         }
 
         public void SetAnimator(Animator newAnimator)
@@ -159,8 +197,7 @@ namespace DimensionBrawl.Player
                 return held;
             }
 
-            return IsKeyboardHeld()
-                || (allowMouseAimFallback
+            return (allowMouseAimFallback
                     && Mouse.current != null
                     && Mouse.current.rightButton.isPressed)
                 || (Gamepad.current != null && Gamepad.current.leftTrigger.ReadValue() > 0.5f);
@@ -186,25 +223,29 @@ namespace DimensionBrawl.Player
                 return pressed;
             }
 
-            return IsKeyboardPressed()
-                || (allowMouseAimFallback
+            return (allowMouseAimFallback
                     && Mouse.current != null
                     && Mouse.current.rightButton.wasPressedThisFrame)
                 || (Gamepad.current != null && Gamepad.current.leftTrigger.wasPressedThisFrame);
         }
 
-        private bool IsKeyboardHeld()
+        private void RequestAimFacingIfNeeded()
         {
-            return Keyboard.current != null
-                && Keyboard.current[keyboardTestKey] != null
-                && Keyboard.current[keyboardTestKey].isPressed;
-        }
+            if (!isAiming || !faceCameraForwardWhileAiming || movement == null || cameraController == null)
+            {
+                return;
+            }
 
-        private bool IsKeyboardPressed()
-        {
-            return Keyboard.current != null
-                && Keyboard.current[keyboardTestKey] != null
-                && Keyboard.current[keyboardTestKey].wasPressedThisFrame;
+            Vector3 facingDirection = Vector3.ProjectOnPlane(cameraController.transform.forward, Vector3.up);
+            if (facingDirection.sqrMagnitude <= 0.0001f)
+            {
+                return;
+            }
+
+            movement.RequestFacingDirection(
+                facingDirection.normalized,
+                aimingFacingHoldSeconds,
+                snapAimingFacing);
         }
 
         private void SetAnimatorBool(string parameterName, bool value)

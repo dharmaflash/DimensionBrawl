@@ -232,8 +232,64 @@ Impact: Boss candidate promotion should check prefab ownership, animation contro
 
 ## 2026-06-18: Ranged Fire Uses One Cross-Platform Aim Contract
 
-Decision: Player ranged local-defense fire should use one cross-platform `Fire` plus `Look` / `TargetBias` contract instead of a PC-only left-click fire plus right-click aim split. In the review scene, `Fire` comes from the HUD fire button, `F`, gamepad trigger/button, or bound Input Actions; non-button screen drag and held-fire drag both feed the same aim-bias input.
+Decision: Player ranged local-defense fire should use one cross-platform `Fire` plus `Look` / `TargetBias` contract instead of a PC-only left-click fire plus right-click aim split. In the review scene, `Fire` comes from the HUD fire button, `F`, gamepad trigger/button, or bound Input Actions; non-button screen drag feeds aim-bias input, while the Fire button remains a pure trigger with no drag-aim joystick path.
 
 Reason: The game is mobile-first and will later support guns, magic, and other projectile verbs. Requiring simultaneous left and right mouse buttons during PC review does not match the mobile control shape and risks splitting tuning across platform-only paths.
 
 Impact: Raw mouse fallbacks for ranged fire/aim are disabled by serialized fields unless a reviewed scene explicitly opts in. Basic fire remains input-led with weak aim assist only; future skills or magic shots should reuse the same action names instead of adding separate PC/mobile code paths.
+
+## 2026-06-20: Fire Button Is A Pure Trigger
+
+Decision: Remove the review HUD fire-button drag aim path. Fire may be held for firing stance, repeat fire, and aim-camera presentation, but it must not generate joystick-style `Look` / `TargetBias` input.
+
+Reason: In the fixed-rear corridor slice, making the Fire button act like a second aiming joystick creates a false 360-degree shooter expectation and conflicts with forward-lane biased local defense.
+
+Impact: Mobile aim correction remains on non-button screen drag and future explicit aim-assist rules. Fire-button touch tracking should only report pressed/held/released state.
+
+## 2026-06-20: Aim Camera Peek Is Limited To 45 Degrees
+
+Decision: While ranged aim mode is active, non-button `Look` / `TargetBias` input may rotate the fixed-rear camera up to 45 degrees left or right from the authored rear yaw.
+
+Reason: A small forward-cone peek gives the player readable side targeting without turning the lane game into a free-orbit shooter or reviving Fire-button joystick aiming.
+
+Impact: The limit is Inspector-tunable on `ActionCameraController` as `aimOrbitYawLimitDegrees`. Fire remains a pure trigger; aim correction still comes from non-button target-bias input and later explicit aim-assist rules.
+
+## 2026-06-20: Aim Camera Peek Holds While Fire Aim Is Held
+
+Decision: When the player releases `Look` / `TargetBias` while ranged aim/fire remains held, the aim camera keeps its current yaw peek instead of immediately recentering. The camera returns to the authored rear yaw only when ranged aim/fire ends.
+
+Reason: On mobile, forcing the camera back while the player is still holding the fire/aim button makes it difficult to keep shooting at an adjusted side angle. Holding the last peek preserves FPS-style center reticle aiming without requiring continuous drag or Q/E input.
+
+Impact: `ActionCameraController` exposes `aimOrbitHoldsYawUntilAimEnds` for review-scene tuning. The 45-degree cap and return speed remain Inspector-tunable, and this does not add free orbit or Fire-button joystick aiming.
+
+## 2026-06-20: Ranged Aim Uses Center Reticle And Center Camera Ray
+
+Decision: The review ranged reticle stays fixed at screen center like an FPS reticle. `Look` / `TargetBias` and temporary `Q`/`E` controls rotate the aim camera within the reviewed cone, and player basic ranged fire resolves through that center camera ray instead of offsetting the reticle viewport point.
+
+Reason: Once Fire stopped being a joystick, moving the reticle separately from the camera created a mismatch between what the player sees and where the shot goes. Center-reticle aiming keeps the fixed-rear shooter read understandable while still allowing limited side targeting through camera peek.
+
+Impact: `PlayerRangedBasicAttackAction` should keep center-viewport aiming enabled in review scenes, and `BossBarrageLaneReviewMobileHud` should draw the fire reticle at screen center. Viewport-offset aim values may remain serialized for future experiments, but they are not the current default review contract.
+
+## 2026-06-20: Ranged Aim Holds Player Facing To Aim Direction
+
+Decision: While ranged aim/fire is held, the player body should keep facing the aim/camera forward direction, and left/right movement should read as strafe movement instead of rotating the body away from the aim line.
+
+Reason: The fixed-rear shoulder view feels detached when movement owns facing during aim. Player movement should still own the final rotation, but ranged aim may request a short-lived facing direction so camera, body, reticle, and projectile direction stay coherent.
+
+Impact: `PlayerRangedAimController` requests aim-facing through `PlayerMovementController.RequestFacingDirection` while aim is active. Camera aim-follow values remain Inspector tuning, not editor-validation-locked scene requirements.
+
+## 2026-06-20: Ranged Aim Uses A Linked Shoulder Rig
+
+Decision: In the review scenes, aim peek should move the shoulder camera position together with the center aim line from a player-based rig origin so the player body keeps a stable TPS screen anchor.
+
+Reason: Rotating only the aim focus while leaving the camera position fixed made the character and camera feel like separate objects. Rotating around the aim focus instead of the player rig origin then made the character slide across the screen. A TPS-style shoulder rig preserves the fixed-rear lane's limited 45-degree aim cone while making camera, player facing, reticle, and projectile direction feel connected.
+
+Impact: `ActionCameraController.aimOrbitRotatesCameraPosition` is enabled in the review scenes and seeded by the review setup tool, but camera feel values remain Inspector-authored and are not exact-validated.
+
+## 2026-06-20: Remove Hidden Aim And Skill Keyboard Test Keys
+
+Decision: Remove the temporary Q/E-style keyboard fallback fields from `RangedAim` and `Skill1`.
+
+Reason: Hidden per-component keyboard test keys collided with the emerging PC review controls and made it unclear which input owned aim, skill, and camera-bias behavior.
+
+Impact: `RangedAim` and `Skill1` should be triggered through HUD calls or explicit Input Actions until a reviewed PC keymap is chosen. Temporary PC `Q`/`E` peek input may exist only as an explicitly serialized review-HUD hook that can be disabled or replaced without touching the action components. Do not add new hidden keyboard fallbacks to solve temporary PC testing gaps.

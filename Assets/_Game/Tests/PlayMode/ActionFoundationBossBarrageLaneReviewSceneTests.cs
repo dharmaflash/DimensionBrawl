@@ -82,6 +82,8 @@ namespace DimensionBrawl.Tests
         private const string SummonActorAttackTrigger = "Attack";
         private const string SummonActorHitTrigger = "Hit";
         private const string SummonActorDeathTrigger = "Death";
+        private const int InputSystemKeyE = 19;
+        private const int InputSystemKeyQ = 31;
         private const string RifleGirlRangedControllerPath =
             "Assets/_Game/Art/Animations/Player/RifleGirl/DB_RifleGirl_RangedCandidate.controller";
         private const string RifleGirlModelPath =
@@ -440,7 +442,13 @@ namespace DimensionBrawl.Tests
             AssertSingleCharacterWeaponVisual(rangedVisualRoot, rangedAnimator, rangedWeaponRoot, meleeWeaponRoot);
             Assert.AreSame(combatModeController, GetObjectReference<PlayerCombatModeController>(rangedAimController, "combatModeController"));
             Assert.AreSame(cameraController, GetObjectReference<ActionCameraController>(rangedAimController, "cameraController"));
+            Assert.AreSame(player, GetObjectReference<PlayerMovementController>(rangedAimController, "movement"));
             Assert.AreSame(rangedAnimator, GetObjectReference<Animator>(rangedAimController, "animator"));
+            Assert.IsTrue(GetBool(rangedAimController, "faceCameraForwardWhileAiming"));
+            Assert.IsFalse(GetBool(rangedAimController, "snapAimingFacing"));
+            AssertNoPrivateField<PlayerRangedAimController>("keyboardTestKey");
+            AssertNoPrivateField<PlayerSkill1Action>("keyboardTestKey");
+            AssertNoPrivateField<PlayerSkill1Action>("useKeyboardWhenActionMissing");
             Assert.AreSame(combatModeController, GetObjectReference<PlayerCombatModeController>(rangedBasicAttackAction, "combatModeController"));
             Assert.AreSame(rangedAimController, GetObjectReference<PlayerRangedAimController>(rangedBasicAttackAction, "aimController"));
             Assert.AreSame(player, GetObjectReference<PlayerMovementController>(rangedBasicAttackAction, "movement"));
@@ -455,6 +463,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(0.18f, GetFloat(rangedBasicAttackAction, "aimInputDeadZone"), 0.001f);
             Assert.AreEqual(34f, GetFloat(rangedBasicAttackAction, "aimInputYawDegrees"), 0.001f);
             Assert.IsTrue(GetBool(rangedBasicAttackAction, "aimFromCameraViewport"));
+            Assert.IsTrue(GetBool(rangedBasicAttackAction, "useFixedCenterAimViewport"));
             Assert.IsTrue(GetBool(rangedBasicAttackAction, "preserveVerticalAim"));
             Assert.AreEqual(26f, GetFloat(rangedBasicAttackAction, "cameraAimFallbackDistance"), 0.001f);
             Assert.AreEqual(0.39f, GetFloat(rangedBasicAttackAction, "aimInputViewportOffsetX"), 0.001f);
@@ -470,7 +479,7 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(LoadAsset<GameObject>(RangedBasicProjectilePrefabPath), GetObjectReference<GameObject>(rangedBasicAttackAction, "projectilePrefabObject"));
             Assert.IsTrue(
                 LoadAsset<GameObject>(RangedBasicProjectilePrefabPath).GetComponent<LaneActionProjectile>().AllowsVerticalTravel,
-                "Player basic ranged fire should preserve vertical aim so look aim can move the reticle up/down.");
+                "Player basic ranged fire should allow vertical travel when the center camera ray carries height.");
             Assert.AreSame(projectileRoot.transform, GetObjectReference<Transform>(rangedBasicAttackAction, "projectileRoot"));
             combatModeController.SetMeleeMode();
             yield return null;
@@ -744,8 +753,12 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(GetBool(mobileHud, "screenDragControlsAim"));
             Assert.IsFalse(GetBool(mobileHud, "rightMouseDragControlsAim"));
             Assert.IsTrue(GetBool(mobileHud, "leftMouseDragControlsAim"));
-            Assert.IsTrue(GetBool(mobileHud, "fireDragControlsAim"));
             Assert.IsFalse(GetBool(mobileHud, "routeAimToMovementLook"));
+            Assert.IsTrue(GetBool(mobileHud, "keyboardPeekControlsAim"));
+            Assert.AreEqual(InputSystemKeyQ, GetEnumIndex(mobileHud, "keyboardPeekLeftKey"));
+            Assert.AreEqual(InputSystemKeyE, GetEnumIndex(mobileHud, "keyboardPeekRightKey"));
+            Assert.IsTrue(GetBool(mobileHud, "keyboardPeekRequiresActiveAim"));
+            Assert.IsTrue(GetBool(mobileHud, "fireAimReticleUsesScreenCenter"));
             Assert.AreEqual(0.08f, GetFloat(mobileHud, "lookAimDragDeadZone"), 0.001f);
             Assert.AreEqual(230f, GetFloat(mobileHud, "lookAimDragRadius"), 0.001f);
             Assert.AreEqual(30f, GetFloat(mobileHud, "lookAimKnobSize"), 0.001f);
@@ -863,8 +876,8 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(cameraController.IsAimModifierActive, "Holding FIRE should request the persistent aim camera modifier.");
             Assert.IsTrue(rangedBasicAttackAction.IsAimPreviewActive);
             Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewViewportPoint(out Vector2 viewportPoint));
-            Assert.That(viewportPoint.x, Is.InRange(0.25f, 0.75f));
-            Assert.That(viewportPoint.y, Is.InRange(0.25f, 0.75f));
+            Assert.AreEqual(0.5f, viewportPoint.x, 0.001f);
+            Assert.AreEqual(0.5f, viewportPoint.y, 0.001f);
 
             rangedBasicAttackAction.SetFireHeld(false);
             yield return null;
@@ -874,7 +887,122 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator RangedBasicFireHonorsManualAimInputBeforeWeakAssist()
+        public IEnumerator RangedAimTargetBiasMovesPlayerAttachedShoulderRigWithinFortyFiveDegrees()
+        {
+            PlayerCombatModeController combatModeController =
+                RequireComponent<PlayerCombatModeController>(
+                    RequireObject<PlayerMovementController>().gameObject,
+                    "player combat mode controller");
+            PlayerRangedAimController aimController =
+                RequireComponent<PlayerRangedAimController>(
+                    combatModeController.gameObject,
+                    "player ranged aim controller");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            Camera camera = RequireComponent<Camera>(cameraController.gameObject, "review camera");
+
+            combatModeController.SetRangedMode();
+            aimController.SetAimHeld(true);
+            aimController.SetAimInput(Vector2.zero);
+            yield return WaitSeconds(0.35f);
+
+            Vector3 shoulderDirectionBeforePeek = Vector3.ProjectOnPlane(
+                cameraController.transform.position - combatModeController.transform.position,
+                Vector3.up).normalized;
+            Vector3 playerViewportBeforePeek =
+                camera.WorldToViewportPoint(combatModeController.transform.position + Vector3.up * 1.15f);
+
+            aimController.SetAimInput(Vector2.right);
+            yield return WaitSeconds(0.35f);
+
+            Assert.AreEqual(1f, cameraController.AimOrbitInput.x, 0.001f);
+            Assert.That(cameraController.AimYawOffsetDegrees, Is.InRange(30f, 45.01f));
+            Vector3 shoulderDirectionAfterPeek = Vector3.ProjectOnPlane(
+                cameraController.transform.position - combatModeController.transform.position,
+                Vector3.up).normalized;
+            float shoulderAngle = Vector3.Angle(shoulderDirectionBeforePeek, shoulderDirectionAfterPeek);
+            Assert.Greater(
+                shoulderAngle,
+                18f,
+                "Aim peek should move the shoulder camera position with the center aim line so player and camera read as one linked rig.");
+            Vector3 playerViewportAfterPeek =
+                camera.WorldToViewportPoint(combatModeController.transform.position + Vector3.up * 1.15f);
+            Assert.Less(
+                Mathf.Abs(playerViewportAfterPeek.x - playerViewportBeforePeek.x),
+                0.06f,
+                "TPS aim peek should keep the player near the same horizontal screen anchor instead of sliding across the view.");
+            Assert.Less(
+                Mathf.Abs(playerViewportAfterPeek.y - playerViewportBeforePeek.y),
+                0.06f,
+                "TPS aim peek should keep the player near the same vertical screen anchor instead of sliding across the view.");
+
+            aimController.SetAimInput(Vector2.right * 5f);
+            yield return WaitSeconds(0.1f);
+            Assert.LessOrEqual(
+                Mathf.Abs(cameraController.AimYawOffsetDegrees),
+                45.01f,
+                "Aim camera peek should stay inside the authored forward 45-degree cone.");
+
+            float heldRightYaw = cameraController.AimYawOffsetDegrees;
+            aimController.SetAimInput(Vector2.zero);
+            yield return WaitSeconds(0.22f);
+            Assert.AreEqual(
+                heldRightYaw,
+                cameraController.AimYawOffsetDegrees,
+                1.5f,
+                "Aim camera peek should hold while ranged aim/fire remains active.");
+
+            aimController.SetAimInput(Vector2.left);
+            yield return WaitSeconds(0.35f);
+            Assert.That(cameraController.AimYawOffsetDegrees, Is.InRange(-45.01f, -30f));
+
+            aimController.SetAimHeld(false);
+            yield return WaitSeconds(0.22f);
+            Assert.Less(
+                Mathf.Abs(cameraController.AimYawOffsetDegrees),
+                1f,
+                "Aim camera peek should recenter when aim mode ends.");
+        }
+
+        [UnityTest]
+        public IEnumerator RangedAimKeepsPlayerFacingCameraForwardWhileMovingSideways()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            PlayerCombatModeController combatModeController =
+                RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
+            PlayerRangedAimController aimController =
+                RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            BossBarrageLaneReviewMobileHud mobileHud =
+                RequireComponent<BossBarrageLaneReviewMobileHud>(RequireRoot(HudRootName), "boss barrage mobile HUD");
+
+            mobileHud.enabled = false;
+            combatModeController.SetRangedMode();
+            aimController.SetAimHeld(true);
+            aimController.SetAimInput(Vector2.zero);
+            player.SetMoveInput(Vector2.right);
+            Physics.SyncTransforms();
+            yield return WaitSeconds(0.35f);
+
+            Vector3 playerForward = Vector3.ProjectOnPlane(player.transform.forward, Vector3.up).normalized;
+            Vector3 cameraForward = Vector3.ProjectOnPlane(cameraController.transform.forward, Vector3.up).normalized;
+            Vector3 moveDirection = Vector3.ProjectOnPlane(player.CurrentMoveDirection, Vector3.up).normalized;
+            Assert.Less(
+                Vector3.Angle(playerForward, cameraForward),
+                14f,
+                "While ranged aim is held, the player body should keep facing the aim camera forward instead of turning into movement.");
+            Assert.Greater(
+                Vector3.Angle(playerForward, moveDirection),
+                35f,
+                "Side movement during ranged aim should read as a strafe/backstep layer, not as the main facing owner.");
+
+            player.SetMoveInput(Vector2.zero);
+            aimController.SetAimHeld(false);
+            mobileHud.enabled = true;
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator RangedBasicFireUsesCenterCameraRayAfterAimPeek()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             PlayerCombatModeController combatModeController =
@@ -893,15 +1021,14 @@ namespace DimensionBrawl.Tests
             player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
             targetSelector.NotifyTargetContact(bossHealth);
             targetSelector.RefreshTarget();
+            aimController.SetAimInput(Vector2.right);
             rangedBasicAttackAction.SetAimInput(Vector2.right);
             Physics.SyncTransforms();
-            yield return null;
+            yield return WaitSeconds(0.22f);
 
             Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewViewportPoint(out Vector2 viewportPoint));
-            Assert.Greater(
-                viewportPoint.x,
-                0.5f,
-                "Manual look aim should move the review reticle in the same direction as the shot.");
+            Assert.AreEqual(0.5f, viewportPoint.x, 0.001f);
+            Assert.AreEqual(0.5f, viewportPoint.y, 0.001f);
             Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out Vector3 previewDirection));
             Assert.IsTrue(rangedBasicAttackAction.TryFire());
             LaneActionProjectile playerProjectile = RequireActivePlayerRangedProjectile();
@@ -911,19 +1038,20 @@ namespace DimensionBrawl.Tests
                 "The actual basic-fire projectile should use the same direction as the aim preview reticle.");
             Assert.Greater(
                 Vector3.Dot(playerProjectile.TravelDirection, Vector3.right),
-                0.45f,
-                "Manual look aim should steer the basic shot before weak aim assist is considered.");
+                0.2f,
+                "Look/TargetBias should steer the aim camera, then basic fire should use the center camera ray.");
             Assert.Greater(
                 Vector3.Dot(playerProjectile.TravelDirection, Vector3.forward),
                 0.7f,
-                "Manual look aim should stay in the forward lane instead of becoming a side-only shot.");
+                "Center-ray aim should stay in the forward lane instead of becoming a side-only shot.");
 
+            aimController.SetAimInput(Vector2.zero);
             rangedBasicAttackAction.ClearAimInput();
             yield return null;
         }
 
         [UnityTest]
-        public IEnumerator RangedBasicFireKeepsManualAimStableWhenMuzzleMoves()
+        public IEnumerator RangedBasicFireKeepsCenterRayStableWhenMuzzleMoves()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             PlayerCombatModeController combatModeController =
@@ -938,9 +1066,10 @@ namespace DimensionBrawl.Tests
             combatModeController.SetRangedMode();
             aimController.SetAimHeld(true);
             player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
+            aimController.SetAimInput(new Vector2(0.65f, 0.15f));
             rangedBasicAttackAction.SetAimInput(new Vector2(0.65f, 0.15f));
             Physics.SyncTransforms();
-            yield return null;
+            yield return WaitSeconds(0.22f);
 
             Vector3 originalFireOriginLocalPosition = fireOrigin.localPosition;
             Quaternion originalFireOriginLocalRotation = fireOrigin.localRotation;
@@ -954,17 +1083,18 @@ namespace DimensionBrawl.Tests
             Assert.Less(
                 Vector3.Angle(initialPreviewDirection, shiftedPreviewDirection),
                 0.5f,
-                "Manual ranged aim should stay stable when the animated muzzle moves between frames.");
+                "Center camera-ray aim should stay stable when the animated muzzle moves between frames.");
             Assert.IsTrue(rangedBasicAttackAction.TryFire());
 
             LaneActionProjectile playerProjectile = RequireActivePlayerRangedProjectile();
             Assert.Less(
                 Vector3.Angle(playerProjectile.TravelDirection, initialPreviewDirection),
                 0.5f,
-                "The fired projectile should follow the stable aim direction instead of the current muzzle wobble.");
+                "The fired projectile should follow the stable center aim direction instead of the current muzzle wobble.");
 
             fireOrigin.localPosition = originalFireOriginLocalPosition;
             fireOrigin.localRotation = originalFireOriginLocalRotation;
+            aimController.SetAimInput(Vector2.zero);
             rangedBasicAttackAction.ClearAimInput();
             yield return null;
         }
@@ -986,9 +1116,10 @@ namespace DimensionBrawl.Tests
             player.transform.SetPositionAndRotation(
                 laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y),
                 Quaternion.LookRotation(Vector3.forward, Vector3.up));
+            aimController.SetAimInput(Vector2.right);
             rangedBasicAttackAction.SetAimInput(Vector2.right);
             Physics.SyncTransforms();
-            yield return null;
+            yield return WaitSeconds(0.22f);
 
             Quaternion rootRotationBefore = player.transform.rotation;
             Assert.IsTrue(rangedBasicAttackAction.TryFire());
@@ -1002,15 +1133,16 @@ namespace DimensionBrawl.Tests
             LaneActionProjectile playerProjectile = RequireActivePlayerRangedProjectile();
             Assert.Greater(
                 Vector3.Dot(playerProjectile.TravelDirection, Vector3.right),
-                0.45f,
-                "Manual aim should still steer the shot even when root facing is stable.");
+                0.2f,
+                "Aim-camera peek should steer the center-ray shot even when root facing is stable.");
 
+            aimController.SetAimInput(Vector2.zero);
             rangedBasicAttackAction.ClearAimInput();
             yield return null;
         }
 
         [UnityTest]
-        public IEnumerator MobileHudFireDragAimDoesNotRotateStandingPlayerRoot()
+        public IEnumerator MobileHudFireButtonHoldDoesNotRouteAimOrRotateStandingPlayerRoot()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             PlayerCombatModeController combatModeController =
@@ -1029,25 +1161,31 @@ namespace DimensionBrawl.Tests
             yield return null;
 
             Quaternion rootRotationBefore = player.transform.rotation;
+            rangedBasicAttackAction.ClearAimInput();
+            Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out Vector3 previewDirectionBefore));
+
             SetPrivateField(mobileHud, "firePointerHeld", true);
-            SetPrivateField(mobileHud, "fireAimInput", Vector2.right);
             InvokePrivateMethod(mobileHud, "UpdateHudLookAim");
 
             Assert.Less(
                 GetVector2(player, "mobileLookInput").sqrMagnitude,
                 0.0001f,
-                "Fire-button drag aim should not be routed into movement look/facing input.");
+                "Fire-button hold should not be routed into movement look/facing input.");
+            Assert.Less(
+                rangedBasicAttackAction.AimInput.sqrMagnitude,
+                0.0001f,
+                "Fire-button hold should not create a manual ranged aim input.");
             Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out Vector3 previewDirection));
-            Assert.Greater(
-                Vector3.Dot(previewDirection, Vector3.right),
-                0.45f,
-                "Fire-button drag aim should still steer the ranged aim preview.");
+            Assert.Less(
+                Vector3.Angle(previewDirectionBefore, previewDirection),
+                0.5f,
+                "Fire-button hold should stay a fire gesture, not a joystick-style ranged aim input.");
             yield return null;
             yield return null;
             Assert.Less(
                 Quaternion.Angle(rootRotationBefore, player.transform.rotation),
                 0.5f,
-                "Fire-button drag aim should not feed movement look/facing and spin the player root.");
+                "Fire-button hold should not spin the player root.");
 
             SetPrivateField(mobileHud, "firePointerHeld", false);
             InvokePrivateMethod(mobileHud, "ReleaseHudLookAim");
@@ -1094,7 +1232,7 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator RangedBasicFirePreservesVerticalAimInput()
+        public IEnumerator RangedBasicFireKeepsFpsStyleCenterReticleForVerticalAimInput()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             PlayerCombatModeController combatModeController =
@@ -1108,33 +1246,29 @@ namespace DimensionBrawl.Tests
             combatModeController.SetRangedMode();
             aimController.SetAimHeld(true);
             player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
+            aimController.SetAimInput(Vector2.up);
             rangedBasicAttackAction.SetAimInput(Vector2.up);
             Physics.SyncTransforms();
             yield return null;
 
             Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewViewportPoint(out Vector2 viewportPoint));
-            Assert.Greater(
-                viewportPoint.y,
+            Assert.AreEqual(0.5f, viewportPoint.x, 0.001f);
+            Assert.AreEqual(
                 0.5f,
-                "Dragging look aim upward should move the review reticle upward, not collapse back to a horizontal-only lane.");
+                viewportPoint.y,
+                0.001f,
+                "Look/TargetBias should not move the FPS-style center reticle.");
             Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out Vector3 previewDirection));
-            Assert.Greater(
-                previewDirection.y,
-                0.05f,
-                "Camera-viewport aim should preserve vertical shot direction for player basic ranged fire.");
             Assert.IsTrue(rangedBasicAttackAction.TryFire());
 
             LaneActionProjectile playerProjectile = RequireActivePlayerRangedProjectile();
             Assert.IsTrue(playerProjectile.AllowsVerticalTravel);
-            Assert.Greater(
-                playerProjectile.TravelDirection.y,
-                0.05f,
-                "The fired player projectile should keep the same upward aim implied by the reticle.");
             Assert.Less(
                 Vector3.Angle(playerProjectile.TravelDirection, previewDirection),
                 0.5f,
-                "The actual projectile should match the vertical aim preview direction.");
+                "The actual projectile should match the center camera-ray preview direction.");
 
+            aimController.SetAimInput(Vector2.zero);
             rangedBasicAttackAction.ClearAimInput();
             yield return null;
         }
@@ -3440,11 +3574,27 @@ namespace DimensionBrawl.Tests
             method.Invoke(target, null);
         }
 
+        private static IEnumerator WaitSeconds(float seconds)
+        {
+            float remaining = seconds;
+            while (remaining > 0f)
+            {
+                yield return null;
+                remaining -= Time.deltaTime;
+            }
+        }
+
         private static FieldInfo RequirePrivateField(object target, string fieldName)
         {
             FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
             Assert.IsNotNull(field, $"{target.GetType().Name} should define private field {fieldName}.");
             return field;
+        }
+
+        private static void AssertNoPrivateField<T>(string fieldName)
+        {
+            FieldInfo field = typeof(T).GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNull(field, $"{typeof(T).Name} should not keep temporary keyboard fallback field {fieldName}.");
         }
 
         private static float GetFloat(Object target, string propertyName)
@@ -3456,6 +3606,11 @@ namespace DimensionBrawl.Tests
         {
             int value = RequireProperty(new SerializedObject(target), propertyName).enumValueIndex;
             return (T)System.Enum.ToObject(typeof(T), value);
+        }
+
+        private static int GetEnumIndex(Object target, string propertyName)
+        {
+            return RequireProperty(new SerializedObject(target), propertyName).enumValueIndex;
         }
 
         private static string GetString(Object target, string propertyName)

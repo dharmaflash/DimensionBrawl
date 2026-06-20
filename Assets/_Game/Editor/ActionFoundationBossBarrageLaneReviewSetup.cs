@@ -200,7 +200,7 @@ namespace DimensionBrawl.Editor
         private static readonly Vector3 PlayerStartPosition = new Vector3(0f, 0f, -8.5f);
         private static readonly Vector3 CameraStartOffset = new Vector3(0.14f, 0.68f, -4.25f);
         private static readonly Vector3 CameraLookOffset = new Vector3(0f, 1.18f, 1.5f);
-        private static readonly Vector3 CameraAimOffset = new Vector3(0.45f, -0.38f, 0.12f);
+        private static readonly Vector3 CameraAimOffset = new Vector3(0.75f, 0.88f, 3.12f);
         private static readonly Vector3 CameraAimFocusOffset = new Vector3(0.08f, 0.06f, 1.05f);
         private const float CameraAimFieldOfViewDelta = -5.5f;
         private const float CameraAimBlendInSpeed = 14f;
@@ -2644,8 +2644,12 @@ namespace DimensionBrawl.Editor
             SetBool(mobileHud, "screenDragControlsAim", true);
             SetBool(mobileHud, "rightMouseDragControlsAim", false);
             SetBool(mobileHud, "leftMouseDragControlsAim", true);
-            SetBool(mobileHud, "fireDragControlsAim", true);
             SetBool(mobileHud, "routeAimToMovementLook", false);
+            SetBool(mobileHud, "keyboardPeekControlsAim", true);
+            SetEnum(mobileHud, "keyboardPeekLeftKey", (int)Key.Q);
+            SetEnum(mobileHud, "keyboardPeekRightKey", (int)Key.E);
+            SetBool(mobileHud, "keyboardPeekRequiresActiveAim", true);
+            SetBool(mobileHud, "fireAimReticleUsesScreenCenter", true);
             // Touch/reticle composition is review-scene HUD tuning. Keep it Inspector-authored.
             EditorUtility.SetDirty(hud);
             EditorUtility.SetDirty(mobileHud);
@@ -2827,6 +2831,7 @@ namespace DimensionBrawl.Editor
             SetFloat(cameraController, "aimFieldOfViewDelta", CameraAimFieldOfViewDelta);
             SetFloat(cameraController, "aimBlendInSpeed", CameraAimBlendInSpeed);
             SetFloat(cameraController, "aimBlendOutSpeed", CameraAimBlendOutSpeed);
+            SetBool(cameraController, "aimOrbitRotatesCameraPosition", true);
         }
 
         private static void ConfigureRangedAimController(
@@ -2836,16 +2841,20 @@ namespace DimensionBrawl.Editor
         {
             PlayerCombatModeController combatModeController =
                 RequireComponent<PlayerCombatModeController>(player, "player combat mode controller");
+            PlayerMovementController movement = RequireComponent<PlayerMovementController>(player, "player movement controller");
             PlayerRangedAimController aimController = EnsureComponent<PlayerRangedAimController>(player);
-            aimController.ConfigureReferences(combatModeController, cameraController, rangedAnimator);
+            aimController.ConfigureReferences(combatModeController, cameraController, rangedAnimator, movement);
             SetObjectReference(aimController, "combatModeController", combatModeController);
             SetObjectReference(aimController, "cameraController", cameraController);
+            SetObjectReference(aimController, "movement", movement);
             SetObjectReference(aimController, "animator", rangedAnimator);
             SetBool(aimController, "holdToAim", true);
-            // Review-only PC fallback. Production scenes should bind explicit Input Actions instead.
+            // Review-only device fallback stays off keyboard so temporary test keys cannot collide with action keys.
             SetBool(aimController, "useDeviceFallbackWhenActionMissing", true);
             SetBool(aimController, "allowMouseAimFallback", false);
             SetString(aimController, "aimingParameter", string.Empty);
+            SetBool(aimController, "faceCameraForwardWhileAiming", true);
+            SetBool(aimController, "snapAimingFacing", false);
         }
 
         private static PlayerRangedBasicAttackAction ConfigurePlayerRangedBasicAttack(
@@ -2890,6 +2899,7 @@ namespace DimensionBrawl.Editor
             SetBool(rangedBasicAttackAction, "snapFacingOnFire", false);
             SetBool(rangedBasicAttackAction, "suppressFacingOnFireWhileMoving", true);
             SetFloat(rangedBasicAttackAction, "movingFacingSuppressSpeed", 0.08f);
+            SetBool(rangedBasicAttackAction, "useFixedCenterAimViewport", true);
             SetBool(rangedBasicAttackAction, "useStableAimOrigin", true);
             SetBool(rangedBasicAttackAction, "disableAimAssistWithManualInput", true);
             SetString(rangedBasicAttackAction, "fireTrigger", string.Empty);
@@ -2953,9 +2963,11 @@ namespace DimensionBrawl.Editor
         {
             ValidateObjectReference(aimController, "combatModeController", combatModeController);
             ValidateObjectReference(aimController, "cameraController", cameraController);
+            ValidateObjectReference(aimController, "movement", combatModeController.GetComponent<PlayerMovementController>());
             ValidateObjectReference(aimController, "animator", rangedAnimator);
             ValidateBool(aimController, "holdToAim", true);
             ValidateBool(aimController, "allowMouseAimFallback", false);
+            ValidateBool(aimController, "faceCameraForwardWhileAiming", true);
             ValidateString(aimController, "aimingParameter", string.Empty);
         }
 
@@ -2991,6 +3003,7 @@ namespace DimensionBrawl.Editor
             ValidateBool(rangedBasicAttackAction, "snapFacingOnFire", false);
             ValidateBool(rangedBasicAttackAction, "suppressFacingOnFireWhileMoving", true);
             ValidateFloat(rangedBasicAttackAction, "movingFacingSuppressSpeed", 0.08f);
+            ValidateBool(rangedBasicAttackAction, "useFixedCenterAimViewport", true);
             ValidateBool(rangedBasicAttackAction, "useStableAimOrigin", true);
             ValidateBool(rangedBasicAttackAction, "disableAimAssistWithManualInput", true);
             ValidateString(rangedBasicAttackAction, "fireTrigger", string.Empty);
@@ -5066,8 +5079,12 @@ namespace DimensionBrawl.Editor
             ValidateBool(hud, "screenDragControlsAim", true);
             ValidateBool(hud, "rightMouseDragControlsAim", false);
             ValidateBool(hud, "leftMouseDragControlsAim", true);
-            ValidateBool(hud, "fireDragControlsAim", true);
             ValidateBool(hud, "routeAimToMovementLook", false);
+            ValidateBool(hud, "keyboardPeekControlsAim", true);
+            ValidateEnum(hud, "keyboardPeekLeftKey", (int)Key.Q);
+            ValidateEnum(hud, "keyboardPeekRightKey", (int)Key.E);
+            ValidateBool(hud, "keyboardPeekRequiresActiveAim", true);
+            ValidateBool(hud, "fireAimReticleUsesScreenCenter", true);
         }
 
         private static void ConfigureArenaInfluenceTargets(Scene scene, Transform player, params Transform[] influenceTargets)
