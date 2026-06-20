@@ -13,6 +13,20 @@ MonoBehaviour:
   m_Name: DB_BossBarrage_EscortScreen
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBarragePatternProfile
   patternId: EscortScreen
+  skillPatternFamily: 2
+  skillTransferMode: 2
+  playerSkillTranslationNote: Can become a costed screen skill that protects a summon
+    or denies side lanes.
+  counterplayNote: Answer with side reposition, projectile block, or summon screen
+    before the curtain closes.
+  telegraphWindupColor: {r: 1, g: 0.62, b: 0.18, a: 0.64}
+  telegraphReleaseColor: {r: 1, g: 0.96, b: 0.44, a: 0.9}
+  telegraphMarkerWidthScale: 1
+  telegraphMarkerDepthScale: 1
+  telegraphPulseScale: 1
+  projectileColor: {r: 1, g: 0.72, b: 0.12, a: 1}
+  projectileVisualScale: {x: 1, y: 1, z: 1}
+  projectileMaterial: {fileID: 0}
   initialDelaySeconds: 0.2
   windupSeconds: 1
   waveIntervalSeconds: 5.7

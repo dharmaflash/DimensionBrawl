@@ -50,6 +50,10 @@ namespace DimensionBrawl.Editor
             ActionFoundationProfileSetup.PlayerActionProfilePath;
         public const string ProjectileMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageProjectile.mat";
+        private const string LinePressureProjectileMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageProjectile_LinePressure.mat";
+        private const string LayeredSalvoProjectileMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageProjectile_LayeredSalvo.mat";
         public const string Skill1ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_PlayerSkill1Projectile_LaneBolt.prefab";
         public const string RangedBasicProjectilePrefabPath =
@@ -687,54 +691,59 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(emitter, "trackedPlayer", player.transform);
             ValidateObjectReference(emitter, "sourceHealth", bossHealth);
             ValidateObjectReference(emitter, "patternProfile", LoadAsset<BossBarragePatternProfile>(PatternProfilePath));
-            ValidateArrayReference(emitter, "patternSequence", 0, LoadAsset<BossBarragePatternProfile>(PatternProfilePath));
+            ValidateArrayReference(
+                emitter,
+                "patternSequence",
+                0,
+                LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath));
             ValidateArrayReference(
                 emitter,
                 "patternSequence",
                 1,
-                LoadAsset<BossBarragePatternProfile>(CoverFirePatternProfilePath));
-            ValidateArrayReference(
-                emitter,
-                "patternSequence",
-                2,
-                LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath));
-            ValidateArrayReference(
-                emitter,
-                "patternSequence",
-                3,
                 LoadAsset<BossBarragePatternProfile>(LayeredSalvoPatternProfilePath));
             ValidateArrayReference(
                 emitter,
                 "patternSequence",
+                2,
+                LoadAsset<BossBarragePatternProfile>(PatternProfilePath));
+            ValidateArrayReference(
+                emitter,
+                "patternSequence",
+                3,
+                LoadAsset<BossBarragePatternProfile>(CoverFirePatternProfilePath));
+            ValidateArrayReference(
+                emitter,
+                "patternSequence",
                 4,
-                LoadAsset<BossBarragePatternProfile>(StaggeredCrossfirePatternProfilePath));
+                LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath));
             ValidateArrayReference(
                 emitter,
                 "patternSequence",
                 5,
-                LoadAsset<BossBarragePatternProfile>(TwinSweepPatternProfilePath));
+                LoadAsset<BossBarragePatternProfile>(StaggeredCrossfirePatternProfilePath));
             ValidateArrayReference(
                 emitter,
                 "patternSequence",
                 6,
-                LoadAsset<BossBarragePatternProfile>(LeftClampPatternProfilePath));
+                LoadAsset<BossBarragePatternProfile>(TwinSweepPatternProfilePath));
             ValidateArrayReference(
                 emitter,
                 "patternSequence",
                 7,
-                LoadAsset<BossBarragePatternProfile>(RightClampPatternProfilePath));
+                LoadAsset<BossBarragePatternProfile>(LeftClampPatternProfilePath));
             ValidateArrayReference(
                 emitter,
                 "patternSequence",
                 8,
-                LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath));
+                LoadAsset<BossBarragePatternProfile>(RightClampPatternProfilePath));
             ValidateArrayReference(
                 emitter,
                 "patternSequence",
                 9,
-                LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath));
+                LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath));
             ValidateInt(emitter, "wavesPerPattern", 1);
             ValidateObjectReference(emitter, "projectilePrefabObject", LoadAsset<GameObject>(ProjectilePrefabPath));
+            ValidateBossBarrageProjectilePrefab();
             ValidateBossPressureLoop(
                 bossPressureCost,
                 bossPressureActionDirector,
@@ -1096,6 +1105,45 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(reviewHud, "duelReviewOwner", duelOwner);
         }
 
+        private static void ApplySkillGrammar(
+            SerializedObject serializedObject,
+            LaneSkillPatternFamily family,
+            LaneSkillTransferMode transferMode,
+            string playerSkillTranslationNote,
+            string counterplayNote)
+        {
+            RequireProperty(serializedObject, "skillPatternFamily").enumValueIndex = (int)family;
+            RequireProperty(serializedObject, "skillTransferMode").enumValueIndex = (int)transferMode;
+            RequireProperty(serializedObject, "playerSkillTranslationNote").stringValue = playerSkillTranslationNote;
+            RequireProperty(serializedObject, "counterplayNote").stringValue = counterplayNote;
+        }
+
+        private static void ApplyTelegraphRead(
+            SerializedObject serializedObject,
+            Color windupColor,
+            Color releaseColor,
+            float markerWidthScale,
+            float markerDepthScale,
+            float markerPulseScale)
+        {
+            RequireProperty(serializedObject, "telegraphWindupColor").colorValue = windupColor;
+            RequireProperty(serializedObject, "telegraphReleaseColor").colorValue = releaseColor;
+            RequireProperty(serializedObject, "telegraphMarkerWidthScale").floatValue = markerWidthScale;
+            RequireProperty(serializedObject, "telegraphMarkerDepthScale").floatValue = markerDepthScale;
+            RequireProperty(serializedObject, "telegraphPulseScale").floatValue = markerPulseScale;
+        }
+
+        private static void ApplyProjectileRead(
+            SerializedObject serializedObject,
+            Color projectileColor,
+            Vector3 projectileVisualScale,
+            Material projectileMaterial)
+        {
+            RequireProperty(serializedObject, "projectileColor").colorValue = projectileColor;
+            RequireProperty(serializedObject, "projectileVisualScale").vector3Value = projectileVisualScale;
+            RequireProperty(serializedObject, "projectileMaterial").objectReferenceValue = projectileMaterial;
+        }
+
         private static BossBarragePatternProfile EnsurePatternProfile()
         {
             EnsureFolderForAsset(PatternProfilePath);
@@ -1108,6 +1156,12 @@ namespace DimensionBrawl.Editor
 
             var serializedObject = new SerializedObject(profile);
             RequireProperty(serializedObject, "patternId").stringValue = "NeedleLock";
+            ApplySkillGrammar(
+                serializedObject,
+                LaneSkillPatternFamily.DirectLock,
+                LaneSkillTransferMode.BossOnly,
+                "Keep out of player basic fire; reuse only as a locked skill with startup.",
+                "Dodge the tracked line after windup or answer overlapping frontline pressure with a summon.");
             RequireProperty(serializedObject, "lateralShape").enumValueIndex = (int)BossBarrageLateralShape.CenterSpread;
             RequireProperty(serializedObject, "initialDelaySeconds").floatValue = 0.8f;
             RequireProperty(serializedObject, "windupSeconds").floatValue = 0.75f;
@@ -1139,6 +1193,12 @@ namespace DimensionBrawl.Editor
 
             var serializedObject = new SerializedObject(profile);
             RequireProperty(serializedObject, "patternId").stringValue = "PunishNet";
+            ApplySkillGrammar(
+                serializedObject,
+                LaneSkillPatternFamily.PunishNet,
+                LaneSkillTransferMode.CostedPlayerSkillCandidate,
+                "Can become an overextend-punish skill that targets a committed opponent, never a basic shot.",
+                "Avoid overcommitting forward; break lock with dodge or summon cover during windup.");
             RequireProperty(serializedObject, "lateralShape").enumValueIndex = (int)BossBarrageLateralShape.PunishNet;
             RequireProperty(serializedObject, "initialDelaySeconds").floatValue = 0.2f;
             RequireProperty(serializedObject, "windupSeconds").floatValue = 1.1f;
@@ -1171,6 +1231,12 @@ namespace DimensionBrawl.Editor
 
             var serializedObject = new SerializedObject(profile);
             RequireProperty(serializedObject, "patternId").stringValue = "CoverFire";
+            ApplySkillGrammar(
+                serializedObject,
+                LaneSkillPatternFamily.CenterCover,
+                LaneSkillTransferMode.CostedPlayerSkillCandidate,
+                "Can become a costed center-lane suppress skill with fixed lane aim and no hard tracking.",
+                "Read center lane windup and move to side gaps before the spread tightens.");
             RequireProperty(serializedObject, "targetingRule").enumValueIndex = (int)BossBarrageTargetingRule.LaneCenter;
             RequireProperty(serializedObject, "laneCenterLateralRatio").floatValue = 0f;
             RequireProperty(serializedObject, "lateralShape").enumValueIndex = (int)BossBarrageLateralShape.CenterSpread;
@@ -1204,6 +1270,12 @@ namespace DimensionBrawl.Editor
 
             var serializedObject = new SerializedObject(profile);
             RequireProperty(serializedObject, "patternId").stringValue = "EscortScreen";
+            ApplySkillGrammar(
+                serializedObject,
+                LaneSkillPatternFamily.EscortScreen,
+                LaneSkillTransferMode.SharedPvpSkillCandidate,
+                "Can become a costed screen skill that protects a summon or denies side lanes.",
+                "Answer with side reposition, projectile block, or summon screen before the curtain closes.");
             RequireProperty(serializedObject, "targetingRule").enumValueIndex = (int)BossBarrageTargetingRule.LaneCenter;
             RequireProperty(serializedObject, "laneCenterLateralRatio").floatValue = 0f;
             RequireProperty(serializedObject, "lateralShape").enumValueIndex = (int)BossBarrageLateralShape.EscortScreen;
@@ -1239,7 +1311,27 @@ namespace DimensionBrawl.Editor
             }
 
             var serializedObject = new SerializedObject(profile);
+            Material projectileMaterial =
+                LoadOrCreateMaterial(LayeredSalvoProjectileMaterialPath, new Color(1f, 0.28f, 0.78f, 1f));
             RequireProperty(serializedObject, "patternId").stringValue = "LayeredSalvo";
+            ApplySkillGrammar(
+                serializedObject,
+                LaneSkillPatternFamily.LayeredSalvo,
+                LaneSkillTransferMode.SharedPvpSkillCandidate,
+                "Can become a committed multi-row skill with authored row timing and visible release beats.",
+                "Read row depth telegraphs and dodge through the widest late gap.");
+            ApplyTelegraphRead(
+                serializedObject,
+                new Color(1f, 0.24f, 0.72f, 0.7f),
+                new Color(1f, 0.8f, 0.35f, 0.95f),
+                1.28f,
+                0.58f,
+                0.85f);
+            ApplyProjectileRead(
+                serializedObject,
+                new Color(1f, 0.28f, 0.78f, 1f),
+                new Vector3(1.45f, 0.58f, 0.9f),
+                projectileMaterial);
             RequireProperty(serializedObject, "targetingRule").enumValueIndex = (int)BossBarrageTargetingRule.LaneCenter;
             RequireProperty(serializedObject, "laneCenterLateralRatio").floatValue = 0f;
             RequireProperty(serializedObject, "lateralShape").enumValueIndex = (int)BossBarrageLateralShape.LayeredSalvo;
@@ -1275,7 +1367,27 @@ namespace DimensionBrawl.Editor
             }
 
             var serializedObject = new SerializedObject(profile);
+            Material projectileMaterial =
+                LoadOrCreateMaterial(LinePressureProjectileMaterialPath, new Color(0.2f, 0.95f, 1f, 1f));
             RequireProperty(serializedObject, "patternId").stringValue = "LinePressure";
+            ApplySkillGrammar(
+                serializedObject,
+                LaneSkillPatternFamily.LinePressure,
+                LaneSkillTransferMode.SharedPvpSkillCandidate,
+                "Can become a committed rail-pressure skill with narrow scatter and depth spacing.",
+                "Move off the marked rail or block it with tank-screen summon timing.");
+            ApplyTelegraphRead(
+                serializedObject,
+                new Color(0.12f, 0.9f, 1f, 0.72f),
+                new Color(0.56f, 1f, 1f, 0.96f),
+                0.48f,
+                1.85f,
+                1.35f);
+            ApplyProjectileRead(
+                serializedObject,
+                new Color(0.2f, 0.95f, 1f, 1f),
+                new Vector3(0.72f, 0.72f, 2.35f),
+                projectileMaterial);
             RequireProperty(serializedObject, "lateralShape").enumValueIndex = (int)BossBarrageLateralShape.LinePressure;
             RequireProperty(serializedObject, "initialDelaySeconds").floatValue = 0.2f;
             RequireProperty(serializedObject, "windupSeconds").floatValue = 1.0f;
@@ -1312,6 +1424,12 @@ namespace DimensionBrawl.Editor
 
             var serializedObject = new SerializedObject(profile);
             RequireProperty(serializedObject, "patternId").stringValue = "StaggeredCrossfire";
+            ApplySkillGrammar(
+                serializedObject,
+                LaneSkillPatternFamily.StaggeredCrossfire,
+                LaneSkillTransferMode.SharedPvpSkillCandidate,
+                "Can become a heavy crossed-pair skill with delayed correction rows.",
+                "Bait the first pair, then sidestep the reversed correction lane.");
             RequireProperty(serializedObject, "targetingRule").enumValueIndex = (int)BossBarrageTargetingRule.LaneCenter;
             RequireProperty(serializedObject, "laneCenterLateralRatio").floatValue = 0f;
             RequireProperty(serializedObject, "lateralShape").enumValueIndex = (int)BossBarrageLateralShape.StaggeredCrossfire;
@@ -1348,6 +1466,12 @@ namespace DimensionBrawl.Editor
 
             var serializedObject = new SerializedObject(profile);
             RequireProperty(serializedObject, "patternId").stringValue = "TwinSweep";
+            ApplySkillGrammar(
+                serializedObject,
+                LaneSkillPatternFamily.TwinSweep,
+                LaneSkillTransferMode.SharedPvpSkillCandidate,
+                "Can become a costed twin-column sweep that leaves a readable center or side lane.",
+                "Hold the readable gap and shift before the second column closes.");
             RequireProperty(serializedObject, "lateralShape").enumValueIndex = (int)BossBarrageLateralShape.TwinColumns;
             RequireProperty(serializedObject, "initialDelaySeconds").floatValue = 0.2f;
             RequireProperty(serializedObject, "windupSeconds").floatValue = 0.95f;
@@ -1380,6 +1504,12 @@ namespace DimensionBrawl.Editor
 
             var serializedObject = new SerializedObject(profile);
             RequireProperty(serializedObject, "patternId").stringValue = "LeftClamp";
+            ApplySkillGrammar(
+                serializedObject,
+                LaneSkillPatternFamily.SideClamp,
+                LaneSkillTransferMode.SharedPvpSkillCandidate,
+                "Can become a mirrored side-clamp skill authored per side instead of hidden aim logic.",
+                "Identify the closing side and escape through the opposite gap.");
             RequireProperty(serializedObject, "lateralShape").enumValueIndex = (int)BossBarrageLateralShape.SideClamp;
             RequireProperty(serializedObject, "initialDelaySeconds").floatValue = 0.2f;
             RequireProperty(serializedObject, "windupSeconds").floatValue = 1.05f;
@@ -1413,6 +1543,12 @@ namespace DimensionBrawl.Editor
 
             var serializedObject = new SerializedObject(profile);
             RequireProperty(serializedObject, "patternId").stringValue = "RightClamp";
+            ApplySkillGrammar(
+                serializedObject,
+                LaneSkillPatternFamily.SideClamp,
+                LaneSkillTransferMode.SharedPvpSkillCandidate,
+                "Can become a mirrored side-clamp skill authored per side instead of hidden aim logic.",
+                "Identify the closing side and escape through the opposite gap.");
             RequireProperty(serializedObject, "lateralShape").enumValueIndex = (int)BossBarrageLateralShape.SideClamp;
             RequireProperty(serializedObject, "initialDelaySeconds").floatValue = 0.2f;
             RequireProperty(serializedObject, "windupSeconds").floatValue = 1.05f;
@@ -1489,7 +1625,7 @@ namespace DimensionBrawl.Editor
 
                 MeshRenderer renderer = EnsureComponent<MeshRenderer>(editableRoot);
                 renderer.sharedMaterial = material;
-                renderer.enabled = false;
+                renderer.enabled = true;
 
                 SphereCollider collider = EnsureComponent<SphereCollider>(editableRoot);
                 collider.isTrigger = true;
@@ -1621,16 +1757,16 @@ namespace DimensionBrawl.Editor
                 "patternSequence",
                 new UnityEngine.Object[]
                 {
+                    linePressurePatternProfile,
+                    layeredSalvoPatternProfile,
                     patternProfile,
                     coverFirePatternProfile,
                     escortScreenPatternProfile,
-                    layeredSalvoPatternProfile,
                     staggeredCrossfirePatternProfile,
                     twinSweepPatternProfile,
                     leftClampPatternProfile,
                     rightClampPatternProfile,
-                    punishNetPatternProfile,
-                    linePressurePatternProfile
+                    punishNetPatternProfile
                 });
             SetInt(emitter, "wavesPerPattern", 1);
             SetObjectReference(emitter, "projectilePrefab", projectilePrefab);
@@ -3062,6 +3198,24 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static void ValidateBossBarrageProjectilePrefab()
+        {
+            GameObject projectilePrefab = LoadAsset<GameObject>(ProjectilePrefabPath);
+            MeshRenderer renderer = projectilePrefab.GetComponent<MeshRenderer>();
+            if (renderer == null)
+            {
+                throw new InvalidOperationException("Boss barrage projectile prefab needs a MeshRenderer so incoming shots are visible.");
+            }
+
+            if (!renderer.enabled)
+            {
+                throw new InvalidOperationException("Boss barrage projectile MeshRenderer must stay enabled for in-world projectile readability.");
+            }
+
+            ValidateGameOwnedAsset(renderer.sharedMaterial, "boss barrage projectile material");
+            ValidateRenderableMaterialShader(renderer.sharedMaterial, "boss barrage projectile material shader");
+        }
+
         private static void ValidateEnergyRiskZoneMarkers(Scene scene, SummonLaneSpace laneSpace)
         {
             Transform root = RequireRoot(scene, EnergyZoneRootName).transform;
@@ -3852,7 +4006,9 @@ namespace DimensionBrawl.Editor
                 "Spend SummonSlot1 to place a pressure screen and intercept the boss curtain.",
                 true,
                 0.22f,
-                1f);
+                1f,
+                true,
+                1);
             ValidateBossPressureActionSlot(
                 bossPressureActionDirector,
                 3,
@@ -3880,7 +4036,9 @@ namespace DimensionBrawl.Editor
             string expectedSummonAnswer,
             bool expectedUsePlayerForwardRiskGate,
             float expectedMinimumPlayerForwardRisk01,
-            float expectedMaximumPlayerForwardRisk01)
+            float expectedMaximumPlayerForwardRisk01,
+            bool expectedUsePlayerSummonResponseGate = false,
+            int expectedMinimumPlayerSummonTier = 1)
         {
             if (!bossPressureActionDirector.TryGetActionSlot(
                     index,
@@ -3923,6 +4081,16 @@ namespace DimensionBrawl.Editor
                 || !Mathf.Approximately(slot.MaximumPlayerForwardRisk01, expectedMaximumPlayerForwardRisk01))
             {
                 throw new InvalidOperationException($"Boss pressure action slot {index} has the wrong player risk gate range.");
+            }
+
+            if (slot.UsePlayerSummonResponseGate != expectedUsePlayerSummonResponseGate)
+            {
+                throw new InvalidOperationException($"Boss pressure action slot {index} has the wrong player summon response gate setting.");
+            }
+
+            if (slot.MinimumPlayerSummonTier != expectedMinimumPlayerSummonTier)
+            {
+                throw new InvalidOperationException($"Boss pressure action slot {index} has the wrong player summon response tier.");
             }
         }
 

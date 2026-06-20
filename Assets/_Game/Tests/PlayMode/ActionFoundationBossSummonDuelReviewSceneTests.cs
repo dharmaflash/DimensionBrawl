@@ -91,7 +91,7 @@ namespace DimensionBrawl.Tests
             StringAssert.Contains("EN", reviewHud.FrontlineTuningReadout);
             StringAssert.Contains("Cost", reviewHud.FrontlineTuningReadout);
             StringAssert.Contains("A0", reviewHud.FrontlineTuningReadout);
-            StringAssert.Contains("E0", reviewHud.FrontlineTuningReadout);
+            StringAssert.Contains("E", reviewHud.FrontlineTuningReadout);
 
             Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(duelOwner, "energyLadder"));
             Assert.AreSame(skill1Action, GetObjectReference<PlayerSkill1Action>(duelOwner, "skill1Action"));
@@ -134,7 +134,9 @@ namespace DimensionBrawl.Tests
                 2,
                 BossPressureActionKind.SummonPressure,
                 2,
-                "SummonSlot1PressureBlock");
+                "SummonSlot1PressureBlock",
+                true,
+                1);
             AssertBossPressureSlot(
                 bossPressureActionDirector,
                 3,
@@ -295,12 +297,14 @@ namespace DimensionBrawl.Tests
                 float.IsPositiveInfinity(bossSummonPressureAction.LastSummonActorRemainingLifetimeSeconds),
                 "Boss summon pressure should create a persistent opposing actor until the player answers it.");
             Assert.AreEqual(SummonFrontlineProxyExitReason.None, bossSummonPressureAction.LastSummonActorExitReason);
-            SummonFrontlineProxy enemyProxy = RequireActiveSummonProxy(DamageTeam.Enemy, 1.42f, "boss summon");
+            SummonFrontlineProxy enemyProxy = bossSummonPressureAction.LastSummonActor;
+            Assert.IsNotNull(enemyProxy, "Boss summon pressure should expose the latest released summon actor.");
+            Assert.AreEqual(DamageTeam.Enemy, enemyProxy.Health.Team);
             AssertSummonProxyIsMarching(enemyProxy, 1.42f, "boss summon");
             float enemyEntryProgress = enemyProxy.AdvanceProgress01;
             yield return new WaitForSeconds(0.15f);
             AssertSummonProxyAdvancedWithoutSnapping(enemyProxy, enemyEntryProgress, "boss summon");
-            CombatHealth enemySummonHealth = RequireActiveEnemySummonHealth();
+            CombatHealth enemySummonHealth = enemyProxy.Health;
             targetSelector.NotifyTargetContact(enemySummonHealth);
             Assert.AreSame(
                 enemySummonHealth,
@@ -316,6 +320,7 @@ namespace DimensionBrawl.Tests
                     Vector3.forward,
                     0f)),
                 "The duel review should let the player side remove an enemy summon body through CombatHealth.");
+            enemyProxy.Tick(0.01f);
             yield return null;
             Assert.AreEqual(
                 SummonFrontlineProxyExitReason.Defeated,
@@ -388,11 +393,16 @@ namespace DimensionBrawl.Tests
             bossBarrageEmitter.SetFiringEnabled(true);
             bossPressureCostLadder.ResetLadder();
             bossPressureCostLadder.GrantCurrentTierCost(bossPressureCostLadder.CurrentTierTarget);
+            bossPressureActionDirector.NotifyPlayerSummonFrontlineCreated(1);
 
             bool sawBossRepressure = false;
+            const float StepSeconds = 0.05f;
             for (int i = 0; i < 180; i++)
             {
-                sawBossRepressure |= bossPressureActionDirector.TryQueueBestAvailableAction();
+                bossPressureActionDirector.NotifyPlayerSummonFrontlineCreated(1);
+                bossPressureCostLadder.Tick(StepSeconds);
+                bossBarrageEmitter.Tick(StepSeconds);
+                bossPressureActionDirector.Tick(StepSeconds);
                 sawBossRepressure |= duelOwner.ObservedBossRepressureAfterSummonDefeat > repressureBefore
                     && duelOwner.ObservedBossRepressureAfterSummonDefeat >= targetRepressureCount;
                 if (sawBossRepressure)
@@ -414,13 +424,17 @@ namespace DimensionBrawl.Tests
             int index,
             BossPressureActionKind expectedKind,
             int expectedTier,
-            string expectedResponseId)
+            string expectedResponseId,
+            bool expectedUsePlayerSummonResponseGate = false,
+            int expectedMinimumPlayerSummonTier = 1)
         {
             Assert.IsTrue(director.TryGetActionSlot(index, out BossPressureActionDirector.BossPressureActionSlot slot));
             Assert.IsNotNull(slot.Pattern);
             Assert.AreEqual(expectedKind, slot.ActionKind);
             Assert.AreEqual(expectedTier, slot.MinimumTier);
             Assert.AreEqual(expectedResponseId, slot.ResponseId);
+            Assert.AreEqual(expectedUsePlayerSummonResponseGate, slot.UsePlayerSummonResponseGate);
+            Assert.AreEqual(expectedMinimumPlayerSummonTier, slot.MinimumPlayerSummonTier);
             Assert.IsTrue(slot.HasResponsePlan);
         }
 

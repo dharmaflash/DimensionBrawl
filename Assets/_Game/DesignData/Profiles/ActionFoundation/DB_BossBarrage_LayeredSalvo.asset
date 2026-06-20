@@ -13,6 +13,19 @@ MonoBehaviour:
   m_Name: DB_BossBarrage_LayeredSalvo
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBarragePatternProfile
   patternId: LayeredSalvo
+  skillPatternFamily: 3
+  skillTransferMode: 2
+  playerSkillTranslationNote: Can become a committed multi-row skill with authored
+    row timing and visible release beats.
+  counterplayNote: Read row depth telegraphs and dodge through the widest late gap.
+  telegraphWindupColor: {r: 1, g: 0.24, b: 0.72, a: 0.7}
+  telegraphReleaseColor: {r: 1, g: 0.8, b: 0.35, a: 0.95}
+  telegraphMarkerWidthScale: 1.28
+  telegraphMarkerDepthScale: 0.58
+  telegraphPulseScale: 0.85
+  projectileColor: {r: 1, g: 0.28, b: 0.78, a: 1}
+  projectileVisualScale: {x: 1.45, y: 0.58, z: 0.9}
+  projectileMaterial: {fileID: 2100000, guid: a91f67d5b8cd4b4a9e9f04ca3d5b7210, type: 2}
   initialDelaySeconds: 0.35
   windupSeconds: 1.1
   waveIntervalSeconds: 6.4

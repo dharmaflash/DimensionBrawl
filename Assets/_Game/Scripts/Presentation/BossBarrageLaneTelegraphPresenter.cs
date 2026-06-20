@@ -40,6 +40,9 @@ namespace DimensionBrawl.Presentation
         private int windupRefreshCount;
         private int releaseFlashCount;
         private string lastPatternId = string.Empty;
+        private BossBarragePatternProfile visiblePattern;
+        private Vector3 lastMarkerScale;
+        private Color lastMarkerColor;
 
         public BossBarrageEmitter BossBarrageEmitter => bossBarrageEmitter;
         public SummonLaneSpace LaneSpace => laneSpace;
@@ -49,6 +52,9 @@ namespace DimensionBrawl.Presentation
         public int WindupRefreshCount => windupRefreshCount;
         public int ReleaseFlashCount => releaseFlashCount;
         public string LastPatternId => lastPatternId;
+        public BossBarragePatternProfile VisiblePattern => visiblePattern;
+        public Vector3 LastMarkerScale => lastMarkerScale;
+        public Color LastMarkerColor => lastMarkerColor;
 
         public void Configure(
             BossBarrageEmitter newEmitter,
@@ -84,6 +90,8 @@ namespace DimensionBrawl.Presentation
 
             if (bossBarrageEmitter.IsWindupActive)
             {
+                visiblePattern = bossBarrageEmitter.CurrentPattern;
+                lastPatternId = visiblePattern != null ? visiblePattern.PatternId : string.Empty;
                 lastPreviewCount = bossBarrageEmitter.BuildPendingLaneTargetPreview(previewBuffer);
             }
 
@@ -100,8 +108,8 @@ namespace DimensionBrawl.Presentation
                     continue;
                 }
 
-                RefreshMarkerTransform(i, previewBuffer[i], risk01);
-                ApplyColor(ResolveColor(risk01, release01), ResolveRenderer(i));
+                RefreshMarkerTransform(i, previewBuffer[i], risk01, visiblePattern);
+                ApplyColor(ResolveColor(visiblePattern, risk01, release01), ResolveRenderer(i));
             }
 
             visibleMarkerCount = count;
@@ -142,6 +150,7 @@ namespace DimensionBrawl.Presentation
 
         private void HandleWindupStarted(BossBarrageEmitter emitter, BossBarragePatternProfile pattern)
         {
+            visiblePattern = pattern;
             lastPatternId = pattern != null ? pattern.PatternId : string.Empty;
             windupRefreshCount++;
             RefreshNow();
@@ -149,27 +158,38 @@ namespace DimensionBrawl.Presentation
 
         private void HandleWaveFired(BossBarrageEmitter emitter, BossBarragePatternProfile pattern, int spawnedCount)
         {
+            visiblePattern = pattern;
             lastPatternId = pattern != null ? pattern.PatternId : string.Empty;
             releaseFlashTimer = releaseFlashSeconds;
             releaseFlashCount++;
             RefreshNow();
         }
 
-        private void RefreshMarkerTransform(int index, Vector2 lanePoint, float risk01)
+        private void RefreshMarkerTransform(
+            int index,
+            Vector2 lanePoint,
+            float risk01,
+            BossBarragePatternProfile pattern)
         {
             Transform marker = markerTransforms[index];
             marker.position = laneSpace.GetLaneWorldPoint(lanePoint.x, lanePoint.y, markerHeight);
             marker.rotation = laneSpace.transform.rotation;
-            float pulse = 1f + Mathf.Sin(Time.time * pulseSpeed + index * 0.6f) * pulseScale;
+            float patternPulseScale = pattern != null ? pattern.TelegraphPulseScale : 1f;
+            float pulse = 1f + Mathf.Sin(Time.time * pulseSpeed + index * 0.6f) * pulseScale * patternPulseScale;
+            float widthScale = pattern != null ? pattern.TelegraphMarkerWidthScale : 1f;
+            float depthScale = pattern != null ? pattern.TelegraphMarkerDepthScale : 1f;
             marker.localScale = new Vector3(
-                Mathf.Lerp(backlineMarkerWidth, forwardMarkerWidth, risk01) * pulse,
+                Mathf.Lerp(backlineMarkerWidth, forwardMarkerWidth, risk01) * widthScale * pulse,
                 markerThickness,
-                Mathf.Lerp(backlineMarkerDepth, forwardMarkerDepth, risk01) * pulse);
+                Mathf.Lerp(backlineMarkerDepth, forwardMarkerDepth, risk01) * depthScale * pulse);
+            lastMarkerScale = marker.localScale;
         }
 
-        private Color ResolveColor(float risk01, float release01)
+        private Color ResolveColor(BossBarragePatternProfile pattern, float risk01, float release01)
         {
-            Color color = Color.Lerp(windupColor, releaseColor, release01);
+            Color baseWindupColor = pattern != null ? pattern.TelegraphWindupColor : windupColor;
+            Color baseReleaseColor = pattern != null ? pattern.TelegraphReleaseColor : releaseColor;
+            Color color = Color.Lerp(baseWindupColor, baseReleaseColor, release01);
             color.a = Mathf.Clamp01(Mathf.Lerp(0.42f, color.a, risk01));
             return color;
         }
@@ -187,6 +207,7 @@ namespace DimensionBrawl.Presentation
             propertyBlock.SetColor(ColorId, color);
             propertyBlock.SetColor(EmissionColorId, color * 1.2f);
             markerRenderer.SetPropertyBlock(propertyBlock);
+            lastMarkerColor = color;
         }
 
         private Renderer ResolveRenderer(int index)
@@ -219,6 +240,8 @@ namespace DimensionBrawl.Presentation
             {
                 SetMarkerVisible(i, false);
             }
+
+            visiblePattern = null;
         }
 
         private void EnsurePreviewBuffer()

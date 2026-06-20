@@ -7,17 +7,29 @@ namespace DimensionBrawl.Combat
     [RequireComponent(typeof(Rigidbody))]
     public sealed class BossBarrageProjectile : MonoBehaviour
     {
+        private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
+        private static readonly int ColorId = Shader.PropertyToID("_Color");
+        private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
+
         [SerializeField] private bool deactivateOnHit = true;
+        [SerializeField] private Renderer[] visualRenderers = new Renderer[0];
 
         private Collider triggerCollider;
         private Rigidbody projectileRigidbody;
+        private MaterialPropertyBlock materialPropertyBlock;
+        private Material[][] baseSharedMaterials = new Material[0][];
         private CombatHealth sourceHealth;
         private DamageTeam sourceTeam = DamageTeam.Enemy;
         private Vector3 travelDirection = Vector3.back;
+        private Vector3 baseLocalScale = Vector3.one;
+        private Vector3 lastPresentationScale = Vector3.one;
+        private Color lastPresentationColor = Color.white;
+        private Material lastPresentationMaterial;
         private float damage;
         private float speed;
         private float remainingLifetime;
         private bool active;
+        private bool presentationInitialized;
         private ProjectileImpactResult lastImpactResult = ProjectileImpactResult.None;
         private CombatHealth lastImpactTargetHealth;
         private SummonFrontlineProxy lastImpactTargetProxy;
@@ -27,10 +39,25 @@ namespace DimensionBrawl.Combat
         public ProjectileImpactResult LastImpactResult => lastImpactResult;
         public CombatHealth LastImpactTargetHealth => lastImpactTargetHealth;
         public SummonFrontlineProxy LastImpactTargetProxy => lastImpactTargetProxy;
+        public Vector3 LastPresentationScale => lastPresentationScale;
+        public Color LastPresentationColor => lastPresentationColor;
+        public Material LastPresentationMaterial => lastPresentationMaterial;
 
         private void Awake()
         {
             EnsurePhysicsComponents();
+            EnsurePresentationComponents();
+        }
+
+        public void ApplyPresentation(Color color, Vector3 visualScale, Material visualMaterial)
+        {
+            EnsurePresentationComponents();
+            lastPresentationColor = color;
+            lastPresentationScale = SanitizeVisualScale(visualScale);
+            lastPresentationMaterial = visualMaterial;
+            transform.localScale = Vector3.Scale(baseLocalScale, lastPresentationScale);
+            ApplySharedMaterial(visualMaterial);
+            ApplyColor(lastPresentationColor);
         }
 
         public void Configure(
@@ -54,7 +81,7 @@ namespace DimensionBrawl.Combat
 
             if (triggerCollider is SphereCollider sphereCollider && radius > 0f)
             {
-                sphereCollider.radius = radius;
+                sphereCollider.radius = radius / ResolvePresentationColliderScale();
             }
 
             gameObject.SetActive(true);
@@ -152,6 +179,7 @@ namespace DimensionBrawl.Combat
 
         public void Deactivate()
         {
+            ResetPresentation();
             active = false;
             remainingLifetime = 0f;
             gameObject.SetActive(false);
@@ -199,6 +227,143 @@ namespace DimensionBrawl.Combat
                 projectileRigidbody.useGravity = false;
                 projectileRigidbody.isKinematic = true;
             }
+        }
+
+        private void EnsurePresentationComponents()
+        {
+            if (presentationInitialized)
+            {
+                return;
+            }
+
+            presentationInitialized = true;
+            baseLocalScale = transform.localScale;
+            if (visualRenderers == null || visualRenderers.Length == 0)
+            {
+                visualRenderers = GetComponentsInChildren<Renderer>(true);
+            }
+
+            materialPropertyBlock = new MaterialPropertyBlock();
+            baseSharedMaterials = new Material[visualRenderers.Length][];
+            for (int i = 0; i < visualRenderers.Length; i++)
+            {
+                baseSharedMaterials[i] = visualRenderers[i] != null
+                    ? (Material[])visualRenderers[i].sharedMaterials.Clone()
+                    : new Material[0];
+            }
+        }
+
+        private void ApplySharedMaterial(Material visualMaterial)
+        {
+            if (visualRenderers == null)
+            {
+                return;
+            }
+
+            if (visualMaterial == null)
+            {
+                RestoreBaseSharedMaterials();
+                return;
+            }
+
+            for (int i = 0; i < visualRenderers.Length; i++)
+            {
+                Renderer visualRenderer = visualRenderers[i];
+                if (visualRenderer == null)
+                {
+                    continue;
+                }
+
+                Material[] materials = visualRenderer.sharedMaterials;
+                for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                {
+                    materials[materialIndex] = visualMaterial;
+                }
+
+                visualRenderer.sharedMaterials = materials;
+            }
+        }
+
+        private void RestoreBaseSharedMaterials()
+        {
+            if (visualRenderers == null || baseSharedMaterials == null)
+            {
+                return;
+            }
+
+            int count = Mathf.Min(visualRenderers.Length, baseSharedMaterials.Length);
+            for (int i = 0; i < count; i++)
+            {
+                if (visualRenderers[i] != null && baseSharedMaterials[i] != null && baseSharedMaterials[i].Length > 0)
+                {
+                    visualRenderers[i].sharedMaterials = (Material[])baseSharedMaterials[i].Clone();
+                }
+            }
+        }
+
+        private void ApplyColor(Color color)
+        {
+            if (visualRenderers == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < visualRenderers.Length; i++)
+            {
+                Renderer visualRenderer = visualRenderers[i];
+                if (visualRenderer == null)
+                {
+                    continue;
+                }
+
+                visualRenderer.GetPropertyBlock(materialPropertyBlock);
+                materialPropertyBlock.SetColor(BaseColorId, color);
+                materialPropertyBlock.SetColor(ColorId, color);
+                materialPropertyBlock.SetColor(EmissionColorId, color * 1.35f);
+                visualRenderer.SetPropertyBlock(materialPropertyBlock);
+            }
+        }
+
+        private void ResetPresentation()
+        {
+            EnsurePresentationComponents();
+            lastPresentationScale = Vector3.one;
+            lastPresentationColor = Color.white;
+            lastPresentationMaterial = null;
+            transform.localScale = baseLocalScale;
+            RestoreBaseSharedMaterials();
+            ClearColorOverrides();
+        }
+
+        private void ClearColorOverrides()
+        {
+            if (visualRenderers == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < visualRenderers.Length; i++)
+            {
+                if (visualRenderers[i] != null)
+                {
+                    visualRenderers[i].SetPropertyBlock(null);
+                }
+            }
+        }
+
+        private float ResolvePresentationColliderScale()
+        {
+            return Mathf.Max(
+                0.05f,
+                Mathf.Max(lastPresentationScale.x, Mathf.Max(lastPresentationScale.y, lastPresentationScale.z)));
+        }
+
+        private static Vector3 SanitizeVisualScale(Vector3 scale)
+        {
+            return new Vector3(
+                Mathf.Max(0.05f, scale.x),
+                Mathf.Max(0.05f, scale.y),
+                Mathf.Max(0.05f, scale.z));
         }
 
         private static Vector3 ResolveDirection(Vector3 direction)

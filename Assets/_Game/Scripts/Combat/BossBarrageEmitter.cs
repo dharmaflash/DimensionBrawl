@@ -314,6 +314,10 @@ namespace DimensionBrawl.Combat
             DamageTeam resolvedSourceTeam = sourceHealth != null && sourceHealth.Team != DamageTeam.Neutral
                 ? sourceHealth.Team
                 : sourceTeam;
+            projectile.ApplyPresentation(
+                activePattern.ProjectileColor,
+                activePattern.ProjectileVisualScale,
+                activePattern.ProjectileMaterial);
             projectile.Configure(
                 sourceHealth,
                 resolvedSourceTeam,

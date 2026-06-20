@@ -13,6 +13,19 @@ MonoBehaviour:
   m_Name: DB_BossBarrage_LinePressure
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBarragePatternProfile
   patternId: LinePressure
+  skillPatternFamily: 8
+  skillTransferMode: 2
+  playerSkillTranslationNote: Can become a committed rail-pressure skill with narrow
+    scatter and depth spacing.
+  counterplayNote: Move off the marked rail or block it with tank-screen summon timing.
+  telegraphWindupColor: {r: 0.12, g: 0.9, b: 1, a: 0.72}
+  telegraphReleaseColor: {r: 0.56, g: 1, b: 1, a: 0.96}
+  telegraphMarkerWidthScale: 0.48
+  telegraphMarkerDepthScale: 1.85
+  telegraphPulseScale: 1.35
+  projectileColor: {r: 0.2, g: 0.95, b: 1, a: 1}
+  projectileVisualScale: {x: 0.72, y: 0.72, z: 2.35}
+  projectileMaterial: {fileID: 2100000, guid: f2a6c1d873be4b44a5bd6e2c0f872c11, type: 2}
   initialDelaySeconds: 0.2
   windupSeconds: 1
   waveIntervalSeconds: 5.6

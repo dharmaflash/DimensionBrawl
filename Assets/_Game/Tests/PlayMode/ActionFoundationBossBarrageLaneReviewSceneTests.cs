@@ -362,7 +362,9 @@ namespace DimensionBrawl.Tests
                 "Spend SummonSlot1 to place a pressure screen and intercept the boss curtain.",
                 true,
                 0.22f,
-                1f);
+                1f,
+                true,
+                1);
             AssertBossPressureActionSlot(
                 bossPressureActionDirector,
                 3,
@@ -572,64 +574,135 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(emitter, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(emitter, "trackedPlayer"));
             Assert.AreSame(bossHealth, GetObjectReference<CombatHealth>(emitter, "sourceHealth"));
-            Assert.AreSame(LoadAsset<BossBarragePatternProfile>(PatternProfilePath), GetObjectReference<BossBarragePatternProfile>(emitter, "patternProfile"));
+            BossBarragePatternProfile needleLockPattern = LoadAsset<BossBarragePatternProfile>(PatternProfilePath);
+            Assert.AreSame(needleLockPattern, GetObjectReference<BossBarragePatternProfile>(emitter, "patternProfile"));
+            BossBarragePatternProfile linePressurePattern = LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath);
             Assert.AreSame(
-                LoadAsset<BossBarragePatternProfile>(PatternProfilePath),
+                linePressurePattern,
                 GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 0));
-            BossBarragePatternProfile coverFirePattern = LoadAsset<BossBarragePatternProfile>(CoverFirePatternProfilePath);
-            Assert.AreSame(
-                coverFirePattern,
-                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 1));
-            Assert.AreEqual(BossBarrageTargetingRule.LaneCenter, coverFirePattern.TargetingRule);
-            Assert.AreEqual(BossBarrageLateralShape.CenterSpread, coverFirePattern.LateralShape);
-            BossBarragePatternProfile escortScreenPattern = LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath);
-            Assert.AreSame(
-                escortScreenPattern,
-                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 2));
-            Assert.AreEqual(BossBarrageTargetingRule.LaneCenter, escortScreenPattern.TargetingRule);
-            Assert.AreEqual(BossBarrageLateralShape.EscortScreen, escortScreenPattern.LateralShape);
+            Assert.AreEqual(BossBarrageLateralShape.LinePressure, linePressurePattern.LateralShape);
+            Assert.Greater(linePressurePattern.LinePressureDirection, 0f);
+            AssertBossPatternSkillGrammar(
+                linePressurePattern,
+                LaneSkillPatternFamily.LinePressure,
+                LaneSkillTransferMode.SharedPvpSkillCandidate);
+            AssertBossPatternTelegraphRead(
+                linePressurePattern,
+                0.48f,
+                1.85f,
+                new Color(0.12f, 0.9f, 1f, 0.72f));
+            AssertBossPatternProjectileRead(
+                linePressurePattern,
+                new Color(0.2f, 0.95f, 1f, 1f),
+                new Vector3(0.72f, 0.72f, 2.35f));
+            AssertBossPatternTightensForwardRisk(linePressurePattern);
             BossBarragePatternProfile layeredSalvoPattern = LoadAsset<BossBarragePatternProfile>(LayeredSalvoPatternProfilePath);
             Assert.AreSame(
                 layeredSalvoPattern,
-                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 3));
+                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 1));
             Assert.AreEqual(BossBarrageTargetingRule.LaneCenter, layeredSalvoPattern.TargetingRule);
             Assert.AreEqual(BossBarrageLateralShape.LayeredSalvo, layeredSalvoPattern.LateralShape);
+            AssertBossPatternSkillGrammar(
+                layeredSalvoPattern,
+                LaneSkillPatternFamily.LayeredSalvo,
+                LaneSkillTransferMode.SharedPvpSkillCandidate);
+            AssertBossPatternTelegraphRead(
+                layeredSalvoPattern,
+                1.28f,
+                0.58f,
+                new Color(1f, 0.24f, 0.72f, 0.7f));
+            AssertBossPatternProjectileRead(
+                layeredSalvoPattern,
+                new Color(1f, 0.28f, 0.78f, 1f),
+                new Vector3(1.45f, 0.58f, 0.9f));
+            AssertBossPatternTightensForwardRisk(layeredSalvoPattern);
+            Assert.AreSame(
+                needleLockPattern,
+                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 2));
+            AssertBossPatternSkillGrammar(
+                needleLockPattern,
+                LaneSkillPatternFamily.DirectLock,
+                LaneSkillTransferMode.BossOnly);
+            AssertBossPatternTightensForwardRisk(needleLockPattern);
+            BossBarragePatternProfile coverFirePattern = LoadAsset<BossBarragePatternProfile>(CoverFirePatternProfilePath);
+            Assert.AreSame(
+                coverFirePattern,
+                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 3));
+            Assert.AreEqual(BossBarrageTargetingRule.LaneCenter, coverFirePattern.TargetingRule);
+            Assert.AreEqual(BossBarrageLateralShape.CenterSpread, coverFirePattern.LateralShape);
+            AssertBossPatternSkillGrammar(
+                coverFirePattern,
+                LaneSkillPatternFamily.CenterCover,
+                LaneSkillTransferMode.CostedPlayerSkillCandidate);
+            AssertBossPatternTightensForwardRisk(coverFirePattern);
+            BossBarragePatternProfile escortScreenPattern = LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath);
+            Assert.AreSame(
+                escortScreenPattern,
+                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 4));
+            Assert.AreEqual(BossBarrageTargetingRule.LaneCenter, escortScreenPattern.TargetingRule);
+            Assert.AreEqual(BossBarrageLateralShape.EscortScreen, escortScreenPattern.LateralShape);
+            AssertBossPatternSkillGrammar(
+                escortScreenPattern,
+                LaneSkillPatternFamily.EscortScreen,
+                LaneSkillTransferMode.SharedPvpSkillCandidate);
+            AssertBossPatternTightensForwardRisk(escortScreenPattern);
             BossBarragePatternProfile twinSweepPattern = LoadAsset<BossBarragePatternProfile>(TwinSweepPatternProfilePath);
             BossBarragePatternProfile staggeredCrossfirePattern =
                 LoadAsset<BossBarragePatternProfile>(StaggeredCrossfirePatternProfilePath);
             Assert.AreSame(
                 staggeredCrossfirePattern,
-                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 4));
+                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 5));
             Assert.AreEqual(BossBarrageTargetingRule.LaneCenter, staggeredCrossfirePattern.TargetingRule);
             Assert.AreEqual(BossBarrageLateralShape.StaggeredCrossfire, staggeredCrossfirePattern.LateralShape);
+            AssertBossPatternSkillGrammar(
+                staggeredCrossfirePattern,
+                LaneSkillPatternFamily.StaggeredCrossfire,
+                LaneSkillTransferMode.SharedPvpSkillCandidate);
+            AssertBossPatternTightensForwardRisk(staggeredCrossfirePattern);
             Assert.AreSame(
                 twinSweepPattern,
-                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 5));
+                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 6));
             Assert.AreEqual(BossBarrageLateralShape.TwinColumns, twinSweepPattern.LateralShape);
+            AssertBossPatternSkillGrammar(
+                twinSweepPattern,
+                LaneSkillPatternFamily.TwinSweep,
+                LaneSkillTransferMode.SharedPvpSkillCandidate);
+            AssertBossPatternTightensForwardRisk(twinSweepPattern);
             BossBarragePatternProfile leftClampPattern = LoadAsset<BossBarragePatternProfile>(LeftClampPatternProfilePath);
             Assert.AreSame(
                 leftClampPattern,
-                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 6));
+                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 7));
             Assert.AreEqual(BossBarrageLateralShape.SideClamp, leftClampPattern.LateralShape);
             Assert.Less(leftClampPattern.SideClampDirection, 0f);
+            AssertBossPatternSkillGrammar(
+                leftClampPattern,
+                LaneSkillPatternFamily.SideClamp,
+                LaneSkillTransferMode.SharedPvpSkillCandidate);
+            AssertBossPatternTightensForwardRisk(leftClampPattern);
             BossBarragePatternProfile rightClampPattern = LoadAsset<BossBarragePatternProfile>(RightClampPatternProfilePath);
             Assert.AreSame(
                 rightClampPattern,
-                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 7));
+                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 8));
             Assert.AreEqual(BossBarrageLateralShape.SideClamp, rightClampPattern.LateralShape);
             Assert.Greater(rightClampPattern.SideClampDirection, 0f);
+            AssertBossPatternSkillGrammar(
+                rightClampPattern,
+                LaneSkillPatternFamily.SideClamp,
+                LaneSkillTransferMode.SharedPvpSkillCandidate);
+            AssertBossPatternTightensForwardRisk(rightClampPattern);
             BossBarragePatternProfile punishNetPattern = LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath);
             Assert.AreSame(
                 punishNetPattern,
-                GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 8));
-            Assert.AreEqual(BossBarrageLateralShape.PunishNet, punishNetPattern.LateralShape);
-            BossBarragePatternProfile linePressurePattern = LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath);
-            Assert.AreSame(
-                linePressurePattern,
                 GetArrayObjectReference<BossBarragePatternProfile>(emitter, "patternSequence", 9));
-            Assert.AreEqual(BossBarrageLateralShape.LinePressure, linePressurePattern.LateralShape);
-            Assert.Greater(linePressurePattern.LinePressureDirection, 0f);
-            Assert.AreSame(LoadAsset<GameObject>(ProjectilePrefabPath), GetObjectReference<GameObject>(emitter, "projectilePrefabObject"));
+            Assert.AreEqual(BossBarrageLateralShape.PunishNet, punishNetPattern.LateralShape);
+            AssertBossPatternSkillGrammar(
+                punishNetPattern,
+                LaneSkillPatternFamily.PunishNet,
+                LaneSkillTransferMode.CostedPlayerSkillCandidate);
+            AssertBossPatternTightensForwardRisk(punishNetPattern);
+            GameObject bossProjectilePrefabObject = LoadAsset<GameObject>(ProjectilePrefabPath);
+            Assert.AreSame(bossProjectilePrefabObject, GetObjectReference<GameObject>(emitter, "projectilePrefabObject"));
+            AssertBossBarrageProjectileVisible(bossProjectilePrefabObject, "boss barrage projectile prefab");
             Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(targetSelector, "selfHealth"));
             Assert.AreSame(closeThreatHealth, GetArrayObjectReference<CombatHealth>(targetSelector, "targetCandidates", 0));
             Assert.AreSame(bossHealth, GetArrayObjectReference<CombatHealth>(targetSelector, "targetCandidates", 1));
@@ -2307,7 +2380,7 @@ namespace DimensionBrawl.Tests
         {
             SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(RequireRoot(BossRootName), "boss barrage emitter");
-            BossBarragePatternProfile pattern = LoadAsset<BossBarragePatternProfile>(PatternProfilePath);
+            BossBarragePatternProfile pattern = LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath);
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
             BossBarrageCameraCueDriver bossCameraCueDriver =
                 RequireComponent<BossBarrageCameraCueDriver>(cameraController.gameObject, "boss barrage camera cue driver");
@@ -2354,65 +2427,72 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(cameraController.HasActiveCue);
             Assert.IsFalse(string.IsNullOrEmpty(cueDriver.LastReleaseTrigger));
             Assert.AreSame(
+                LoadAsset<BossBarragePatternProfile>(LayeredSalvoPatternProfilePath),
+                emitter.CurrentPattern,
+                "Review boss should surface LayeredSalvo immediately after the opening LinePressure wave.");
+
+            Assert.IsTrue(emitter.BeginWindup());
+            emitter.FirePendingWave();
+            Assert.AreSame(
+                LoadAsset<BossBarragePatternProfile>(PatternProfilePath),
+                emitter.CurrentPattern,
+                "Review boss should return to NeedleLock after the two visible pattern openers.");
+
+            Assert.IsTrue(emitter.BeginWindup());
+            emitter.FirePendingWave();
+            Assert.AreSame(
                 LoadAsset<BossBarragePatternProfile>(CoverFirePatternProfilePath),
                 emitter.CurrentPattern,
-                "Review boss should move from NeedleLock into the center-path CoverFire pattern after one wave.");
+                "Review boss should move from NeedleLock into the center-path CoverFire pattern after the third wave.");
 
             Assert.IsTrue(emitter.BeginWindup());
             emitter.FirePendingWave();
             Assert.AreSame(
                 LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath),
                 emitter.CurrentPattern,
-                "Review boss should move from CoverFire into the escort-screen pressure pattern after the second wave.");
-
-            Assert.IsTrue(emitter.BeginWindup());
-            emitter.FirePendingWave();
-            Assert.AreSame(
-                LoadAsset<BossBarragePatternProfile>(LayeredSalvoPatternProfilePath),
-                emitter.CurrentPattern,
-                "Review boss should move from EscortScreen into the layered-salvo barrage pattern after the third wave.");
+                "Review boss should move from CoverFire into the escort-screen pressure pattern after the fourth wave.");
 
             Assert.IsTrue(emitter.BeginWindup());
             emitter.FirePendingWave();
             Assert.AreSame(
                 LoadAsset<BossBarragePatternProfile>(StaggeredCrossfirePatternProfilePath),
                 emitter.CurrentPattern,
-                "Review boss should move from LayeredSalvo into the staggered crossfire barrage after the fourth wave.");
+                "Review boss should move from EscortScreen into the staggered crossfire barrage after the fifth wave.");
 
             Assert.IsTrue(emitter.BeginWindup());
             emitter.FirePendingWave();
             Assert.AreSame(
                 LoadAsset<BossBarragePatternProfile>(TwinSweepPatternProfilePath),
                 emitter.CurrentPattern,
-                "Review boss should move from StaggeredCrossfire into the twin-column barrage pattern after the fifth wave.");
+                "Review boss should move from StaggeredCrossfire into the twin-column barrage pattern after the sixth wave.");
 
             Assert.IsTrue(emitter.BeginWindup());
             emitter.FirePendingWave();
             Assert.AreSame(
                 LoadAsset<BossBarragePatternProfile>(LeftClampPatternProfilePath),
                 emitter.CurrentPattern,
-                "Review boss should move from TwinSweep into the first side-clamp barrage pattern after the sixth wave.");
+                "Review boss should move from TwinSweep into the first side-clamp barrage pattern after the seventh wave.");
 
             Assert.IsTrue(emitter.BeginWindup());
             emitter.FirePendingWave();
             Assert.AreSame(
                 LoadAsset<BossBarragePatternProfile>(RightClampPatternProfilePath),
                 emitter.CurrentPattern,
-                "Review boss should mirror side-clamp pressure after the seventh wave.");
+                "Review boss should mirror side-clamp pressure after the eighth wave.");
 
             Assert.IsTrue(emitter.BeginWindup());
             emitter.FirePendingWave();
             Assert.AreSame(
                 LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath),
                 emitter.CurrentPattern,
-                "Review boss should move from mirrored side clamp into the player-centered PunishNet pattern after the eighth wave.");
+                "Review boss should move from mirrored side clamp into the player-centered PunishNet pattern after the ninth wave.");
 
             Assert.IsTrue(emitter.BeginWindup());
             emitter.FirePendingWave();
             Assert.AreSame(
                 LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath),
                 emitter.CurrentPattern,
-                "Review boss should move from PunishNet into the reference-backed LinePressure rail pattern after the ninth wave.");
+                "Review boss should loop back into the visible LinePressure opener after PunishNet.");
 
             BossBarrageProjectile[] projectiles = Object.FindObjectsByType<BossBarrageProjectile>(
                 FindObjectsInactive.Exclude,
@@ -2424,12 +2504,83 @@ namespace DimensionBrawl.Tests
                 Vector2 laneCoordinates = laneSpace.GetLaneCoordinates(projectiles[i].transform.position);
                 if (laneCoordinates.y > laneSpace.ForwardBoundaryZ)
                 {
+                    AssertBossBarrageProjectileVisible(
+                        projectiles[i].gameObject,
+                        "active boss barrage projectile");
                     foundBossSideProjectile = true;
                     break;
                 }
             }
 
             Assert.IsTrue(foundBossSideProjectile, "Boss barrage projectiles should spawn from the boss/frontline side.");
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator BossBarrageTelegraphUsesPatternSpecificLineAndLayeredReads()
+        {
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(RequireRoot(BossRootName), "boss barrage emitter");
+            BossBarrageLaneTelegraphPresenter telegraphPresenter =
+                RequireComponent<BossBarrageLaneTelegraphPresenter>(
+                    RequireRoot(BossTelegraphRootName),
+                    "boss barrage lane telegraph presenter");
+            BossBarragePatternProfile linePressurePattern =
+                LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath);
+            BossBarragePatternProfile layeredSalvoPattern =
+                LoadAsset<BossBarragePatternProfile>(LayeredSalvoPatternProfilePath);
+
+            emitter.ConfigurePatternSequence(new[] { linePressurePattern }, 1);
+            Assert.IsTrue(emitter.BeginWindup());
+            telegraphPresenter.RefreshNow();
+
+            Vector3 lineScale = telegraphPresenter.LastMarkerScale;
+            Color lineColor = telegraphPresenter.LastMarkerColor;
+            Assert.AreSame(linePressurePattern, telegraphPresenter.VisiblePattern);
+            Assert.AreEqual(linePressurePattern.ProjectilesPerWave, telegraphPresenter.VisibleMarkerCount);
+            Assert.Less(
+                lineScale.x / lineScale.z,
+                0.4f,
+                "LinePressure telegraph should read as a narrow depth rail, not a generic square marker.");
+            Assert.Greater(
+                lineColor.g,
+                lineColor.r,
+                "LinePressure should use its cyan rail warning color instead of the generic orange warning.");
+
+            emitter.FirePendingWave();
+            BossBarrageProjectile lineProjectile = RequireActiveBossProjectile();
+            AssertBossBarrageProjectilePresentation(
+                lineProjectile,
+                linePressurePattern.ProjectileColor,
+                linePressurePattern.ProjectileVisualScale,
+                linePressurePattern.ProjectileMaterial,
+                "LinePressure fired projectile");
+            emitter.SetFiringEnabled(false);
+            emitter.ConfigurePatternSequence(new[] { layeredSalvoPattern }, 1);
+            emitter.SetFiringEnabled(true);
+            Assert.IsTrue(emitter.BeginWindup());
+            telegraphPresenter.RefreshNow();
+
+            Vector3 layeredScale = telegraphPresenter.LastMarkerScale;
+            Color layeredColor = telegraphPresenter.LastMarkerColor;
+            Assert.AreSame(layeredSalvoPattern, telegraphPresenter.VisiblePattern);
+            Assert.AreEqual(layeredSalvoPattern.ProjectilesPerWave, telegraphPresenter.VisibleMarkerCount);
+            Assert.Greater(
+                layeredScale.x / layeredScale.z,
+                lineScale.x / lineScale.z,
+                "LayeredSalvo telegraph should read as row plates instead of the LinePressure rail shape.");
+            Assert.Greater(
+                layeredColor.r,
+                layeredColor.g,
+                "LayeredSalvo should use its magenta row warning color before release.");
+            emitter.FirePendingWave();
+            BossBarrageProjectile layeredProjectile = RequireActiveBossProjectile();
+            AssertBossBarrageProjectilePresentation(
+                layeredProjectile,
+                layeredSalvoPattern.ProjectileColor,
+                layeredSalvoPattern.ProjectileVisualScale,
+                layeredSalvoPattern.ProjectileMaterial,
+                "LayeredSalvo fired projectile");
+
             yield return null;
         }
 
@@ -2900,7 +3051,9 @@ namespace DimensionBrawl.Tests
             string expectedSummonAnswer,
             bool expectedUsePlayerForwardRiskGate = false,
             float expectedMinimumPlayerForwardRisk01 = 0f,
-            float expectedMaximumPlayerForwardRisk01 = 1f)
+            float expectedMaximumPlayerForwardRisk01 = 1f,
+            bool expectedUsePlayerSummonResponseGate = false,
+            int expectedMinimumPlayerSummonTier = 1)
         {
             Assert.IsTrue(director.TryGetActionSlot(index, out BossPressureActionDirector.BossPressureActionSlot slot));
             Assert.AreSame(expectedPattern, slot.Pattern);
@@ -2914,6 +3067,190 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(expectedUsePlayerForwardRiskGate, slot.UsePlayerForwardRiskGate);
             Assert.AreEqual(expectedMinimumPlayerForwardRisk01, slot.MinimumPlayerForwardRisk01, 0.001f);
             Assert.AreEqual(expectedMaximumPlayerForwardRisk01, slot.MaximumPlayerForwardRisk01, 0.001f);
+            Assert.AreEqual(expectedUsePlayerSummonResponseGate, slot.UsePlayerSummonResponseGate);
+            Assert.AreEqual(expectedMinimumPlayerSummonTier, slot.MinimumPlayerSummonTier);
+        }
+
+        private static void AssertBossPatternSkillGrammar(
+            BossBarragePatternProfile pattern,
+            LaneSkillPatternFamily expectedFamily,
+            LaneSkillTransferMode expectedTransferMode)
+        {
+            Assert.IsNotNull(pattern);
+            Assert.AreEqual(expectedFamily, pattern.SkillPatternFamily);
+            Assert.AreEqual(expectedTransferMode, pattern.SkillTransferMode);
+            Assert.AreEqual(
+                expectedTransferMode != LaneSkillTransferMode.BossOnly,
+                pattern.IsPlayerSkillCandidate,
+                $"{pattern.PatternId} should expose whether it can become a costed player/PvP skill.");
+            Assert.IsFalse(
+                string.IsNullOrWhiteSpace(pattern.CounterplayNote),
+                $"{pattern.PatternId} should document the readable answer before reuse as shared skill grammar.");
+
+            if (pattern.IsPlayerSkillCandidate)
+            {
+                Assert.IsFalse(
+                    string.IsNullOrWhiteSpace(pattern.PlayerSkillTranslationNote),
+                    $"{pattern.PatternId} should document how it can move to a costed player/PvP skill.");
+            }
+        }
+
+        private static void AssertBossPatternTelegraphRead(
+            BossBarragePatternProfile pattern,
+            float expectedWidthScale,
+            float expectedDepthScale,
+            Color expectedWindupColor)
+        {
+            Assert.IsNotNull(pattern);
+            Assert.AreEqual(expectedWidthScale, pattern.TelegraphMarkerWidthScale, 0.001f);
+            Assert.AreEqual(expectedDepthScale, pattern.TelegraphMarkerDepthScale, 0.001f);
+            Assert.AreEqual(expectedWindupColor.r, pattern.TelegraphWindupColor.r, 0.001f);
+            Assert.AreEqual(expectedWindupColor.g, pattern.TelegraphWindupColor.g, 0.001f);
+            Assert.AreEqual(expectedWindupColor.b, pattern.TelegraphWindupColor.b, 0.001f);
+            Assert.AreEqual(expectedWindupColor.a, pattern.TelegraphWindupColor.a, 0.001f);
+        }
+
+        private static void AssertBossPatternProjectileRead(
+            BossBarragePatternProfile pattern,
+            Color expectedColor,
+            Vector3 expectedScale)
+        {
+            Assert.IsNotNull(pattern);
+            AssertColorNear(expectedColor, pattern.ProjectileColor, $"{pattern.PatternId} projectile color");
+            AssertVectorNear(expectedScale, pattern.ProjectileVisualScale, $"{pattern.PatternId} projectile visual scale");
+            Assert.IsNotNull(pattern.ProjectileMaterial, $"{pattern.PatternId} should bind a game-owned projectile material.");
+            AssertGameOwnedAsset(pattern.ProjectileMaterial, $"{pattern.PatternId} projectile material");
+            AssertColorNear(expectedColor, ReadMaterialColor(pattern.ProjectileMaterial), $"{pattern.PatternId} projectile material color");
+        }
+
+        private static void AssertBossBarrageProjectilePresentation(
+            BossBarrageProjectile projectile,
+            Color expectedColor,
+            Vector3 expectedScale,
+            Material expectedMaterial,
+            string label)
+        {
+            Assert.IsNotNull(projectile, $"{label} should exist.");
+            AssertColorNear(expectedColor, projectile.LastPresentationColor, $"{label} color");
+            AssertVectorNear(expectedScale, projectile.LastPresentationScale, $"{label} scale");
+            Assert.AreSame(expectedMaterial, projectile.LastPresentationMaterial, $"{label} should remember its pattern material.");
+            MeshRenderer renderer = projectile.GetComponent<MeshRenderer>();
+            Assert.IsNotNull(renderer, $"{label} should keep a visible MeshRenderer.");
+            Assert.AreSame(expectedMaterial, renderer.sharedMaterial, $"{label} should use its pattern material.");
+            AssertGameOwnedAsset(renderer.sharedMaterial, $"{label} material");
+            AssertColorNear(expectedColor, ReadMaterialColor(renderer.sharedMaterial), $"{label} rendered material color");
+        }
+
+        private static void AssertBossBarrageProjectileVisible(GameObject projectileObject, string label)
+        {
+            Assert.IsNotNull(projectileObject, $"{label} should be assigned.");
+            MeshRenderer renderer = projectileObject.GetComponent<MeshRenderer>();
+            Assert.IsNotNull(renderer, $"{label} needs a MeshRenderer so boss shots are visible in-world.");
+            Assert.IsTrue(renderer.enabled, $"{label} MeshRenderer must stay enabled for projectile readability.");
+            Assert.IsNotNull(renderer.sharedMaterial, $"{label} should keep a visible material.");
+            AssertGameOwnedAsset(renderer.sharedMaterial, $"{label} material");
+            AssertRenderableMaterialShader(renderer.sharedMaterial, $"{label} material shader");
+        }
+
+        private static void AssertColorNear(Color expected, Color actual, string label)
+        {
+            Assert.AreEqual(expected.r, actual.r, 0.001f, $"{label} red channel.");
+            Assert.AreEqual(expected.g, actual.g, 0.001f, $"{label} green channel.");
+            Assert.AreEqual(expected.b, actual.b, 0.001f, $"{label} blue channel.");
+            Assert.AreEqual(expected.a, actual.a, 0.001f, $"{label} alpha channel.");
+        }
+
+        private static void AssertVectorNear(Vector3 expected, Vector3 actual, string label)
+        {
+            Assert.AreEqual(expected.x, actual.x, 0.001f, $"{label} x.");
+            Assert.AreEqual(expected.y, actual.y, 0.001f, $"{label} y.");
+            Assert.AreEqual(expected.z, actual.z, 0.001f, $"{label} z.");
+        }
+
+        private static Color ReadMaterialColor(Material material)
+        {
+            Assert.IsNotNull(material);
+            if (material.HasProperty("_BaseColor"))
+            {
+                return material.GetColor("_BaseColor");
+            }
+
+            if (material.HasProperty("_Color"))
+            {
+                return material.GetColor("_Color");
+            }
+
+            Assert.Fail($"{material.name} should expose _BaseColor or _Color for projectile readability.");
+            return Color.clear;
+        }
+
+        private static void AssertBossPatternTightensForwardRisk(BossBarragePatternProfile pattern)
+        {
+            Assert.IsNotNull(pattern);
+            float backlineHalfSpread = pattern.EvaluateHalfSpread(0f);
+            float forwardHalfSpread = pattern.EvaluateHalfSpread(1f);
+            Assert.Less(
+                forwardHalfSpread,
+                backlineHalfSpread,
+                $"{pattern.PatternId} should keep forward-risk lateral gaps tighter than backline gaps.");
+
+            float backlineWidth = ResolveBossPatternWidth(pattern, 0f);
+            float forwardWidth = ResolveBossPatternWidth(pattern, 1f);
+            Assert.Less(
+                forwardWidth,
+                backlineWidth,
+                $"{pattern.PatternId} should preview/fire with narrower forward-risk spacing than backline spacing.");
+
+            if (!BossPatternUsesDepthSpacing(pattern.LateralShape))
+            {
+                return;
+            }
+
+            float backlineDepthWidth = ResolveBossPatternDepthWidth(pattern, 0f);
+            float forwardDepthWidth = ResolveBossPatternDepthWidth(pattern, 1f);
+            Assert.Greater(backlineDepthWidth, 0f, $"{pattern.PatternId} should use target-depth spacing.");
+            Assert.Less(
+                forwardDepthWidth,
+                backlineDepthWidth,
+                $"{pattern.PatternId} should tighten target-depth spacing near the forward-risk boundary.");
+        }
+
+        private static float ResolveBossPatternWidth(BossBarragePatternProfile pattern, float forwardRisk01)
+        {
+            int count = Mathf.Max(1, pattern.ProjectilesPerWave);
+            float min = float.PositiveInfinity;
+            float max = float.NegativeInfinity;
+            for (int i = 0; i < count; i++)
+            {
+                float offset = pattern.GetLateralOffset(i, count, forwardRisk01);
+                min = Mathf.Min(min, offset);
+                max = Mathf.Max(max, offset);
+            }
+
+            return max - min;
+        }
+
+        private static float ResolveBossPatternDepthWidth(BossBarragePatternProfile pattern, float forwardRisk01)
+        {
+            int count = Mathf.Max(1, pattern.ProjectilesPerWave);
+            float min = float.PositiveInfinity;
+            float max = float.NegativeInfinity;
+            for (int i = 0; i < count; i++)
+            {
+                float offset = pattern.GetTargetDepthOffset(i, count, forwardRisk01);
+                min = Mathf.Min(min, offset);
+                max = Mathf.Max(max, offset);
+            }
+
+            return max - min;
+        }
+
+        private static bool BossPatternUsesDepthSpacing(BossBarrageLateralShape shape)
+        {
+            return shape == BossBarrageLateralShape.LinePressure
+                || shape == BossBarrageLateralShape.EscortScreen
+                || shape == BossBarrageLateralShape.LayeredSalvo
+                || shape == BossBarrageLateralShape.StaggeredCrossfire;
         }
 
         private static void AssertSummonSlotReadout(

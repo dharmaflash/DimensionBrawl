@@ -27,6 +27,8 @@ MonoBehaviour:
     UsePlayerForwardRiskGate: 0
     MinimumPlayerForwardRisk01: 0
     MaximumPlayerForwardRisk01: 1
+    UsePlayerSummonResponseGate: 0
+    MinimumPlayerSummonTier: 1
   - Pattern: {fileID: 11400000, guid: 732ffa1eae726f14386a4a02115611c9, type: 2}
     ActionKind: 1
     MinimumTier: 1
@@ -39,6 +41,8 @@ MonoBehaviour:
     UsePlayerForwardRiskGate: 0
     MinimumPlayerForwardRisk01: 0
     MaximumPlayerForwardRisk01: 1
+    UsePlayerSummonResponseGate: 0
+    MinimumPlayerSummonTier: 1
   - Pattern: {fileID: 11400000, guid: 732ffa1eae726f14386a4a02115611c9, type: 2}
     ActionKind: 1
     MinimumTier: 2
@@ -51,6 +55,8 @@ MonoBehaviour:
     UsePlayerForwardRiskGate: 1
     MinimumPlayerForwardRisk01: 0.22
     MaximumPlayerForwardRisk01: 1
+    UsePlayerSummonResponseGate: 1
+    MinimumPlayerSummonTier: 1
   - Pattern: {fileID: 11400000, guid: b0b5e71e44209f74394f56e232db8d78, type: 2}
     ActionKind: 2
     MinimumTier: 3
@@ -63,3 +69,5 @@ MonoBehaviour:
     UsePlayerForwardRiskGate: 1
     MinimumPlayerForwardRisk01: 0.66
     MaximumPlayerForwardRisk01: 1
+    UsePlayerSummonResponseGate: 0
+    MinimumPlayerSummonTier: 1

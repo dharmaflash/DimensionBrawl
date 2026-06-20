@@ -13,6 +13,20 @@ MonoBehaviour:
   m_Name: DB_BossBarrage_NeedleLock
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBarragePatternProfile
   patternId: NeedleLock
+  skillPatternFamily: 0
+  skillTransferMode: 0
+  playerSkillTranslationNote: Keep out of player basic fire; reuse only as a locked
+    skill with startup.
+  counterplayNote: Dodge the tracked line after windup or answer overlapping frontline
+    pressure with a summon.
+  telegraphWindupColor: {r: 1, g: 0.62, b: 0.18, a: 0.64}
+  telegraphReleaseColor: {r: 1, g: 0.96, b: 0.44, a: 0.9}
+  telegraphMarkerWidthScale: 1
+  telegraphMarkerDepthScale: 1
+  telegraphPulseScale: 1
+  projectileColor: {r: 1, g: 0.72, b: 0.12, a: 1}
+  projectileVisualScale: {x: 1, y: 1, z: 1}
+  projectileMaterial: {fileID: 0}
   initialDelaySeconds: 0.8
   windupSeconds: 0.75
   waveIntervalSeconds: 4.8

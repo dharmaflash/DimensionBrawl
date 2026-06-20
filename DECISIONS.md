@@ -206,6 +206,30 @@ Reason: The new product direction needs the boss exchange to foreshadow future P
 
 Impact: `BossPressureCostLadder` owns boss cost, `BossPressurePositionController` owns only the bound boss proxy's lane position, and `BossPressureActionDirector` spends cost on authored pressure slots. Future boss skills, normal fire, summon-like calls, and PvP conversions should extend this module split rather than hiding behavior inside barrage, HUD, or encounter owners.
 
+## 2026-06-20: Boss Costed Slots Can Gate On Player Summon Responses
+
+Decision: Boss pressure action slots may be authored as player-summon-response actions that only open during the short window after the player creates a frontline summon and only at or above a configured observed summon tier.
+
+Reason: The boss should share the player's risk/resource/frontline grammar instead of firing every costed pattern as generic pressure. A response gate lets the boss answer a player summon without introducing a broad boss AI, boss phase manager, or symmetric full summon system.
+
+Impact: `BossPressureActionDirector.BossPressureActionSlot` exposes `UsePlayerSummonResponseGate` and `MinimumPlayerSummonTier`. The review LV2 `SummonSlot1PressureBlock` slot uses this gate, while proactive LV1 skill pressure, proactive LV1 summon pressure, and LV3 overextend punishment stay available through their existing cost/risk rules. Only slots authored with this gate receive player-summon response priority or consume/count the player-summon response window.
+
+## 2026-06-20: Boss AI Stays Playable-Compatible Through Shared Slots
+
+Decision: Fixed-rear boss AI should grow through costed action slots, authored state gates, and narrow pressure modules that can later map back to playable-like verbs. A player-summon response window is only one gate type; proactive basic pressure, proactive summon-like pressure, overextend punish, and later boss special moves remain separate slot roles.
+
+Reason: ArkData review references show production data separated around stage pressure, enemy placement, skill slots, triggers, and presentation instead of one hidden boss brain. PGR tutorial/stage notes keep guide overlays separate from exact stage rows unless the source join is proven, PGR combat notes separate skill slot values from runtime MagicId usage, and GFL2 stage/enemy notes separate enemy placement, AI lists, skill slots, events/triggers, and presentation coverage. That matches the project need for the first-stage boss to have special PvE behavior now while still staying convertible into a future playable or reusable boss/enemy actor.
+
+Impact: New boss behavior should extend `BossPressureActionDeckProfile`, `BossPressureActionDirector`, or another similarly narrow owner with explicit data gates. Do not add broad boss AI managers, hidden scene searches, or pattern-id branches to handle a specific tutorial response.
+
+## 2026-06-20: Boss Patterns Mark Future Player-Skill Transfer Explicitly
+
+Decision: `BossBarragePatternProfile` carries shared skill-grammar metadata beside its projectile timing and shape data. Each authored pattern declares a lane skill pattern family, whether it is boss-only, a costed player-skill candidate, or a shared PvP skill candidate, plus player-skill translation and counterplay notes.
+
+Reason: The first boss should use PvP-readable pressure without collapsing boss skills, player skills, and player basic fire into one verb. Marking transfer intent on the pattern data keeps future player skill work honest: reusable patterns must become costed, readable skills with startup and counterplay, not hidden aim assist or copied boss spam.
+
+Impact: Current review patterns remain executed only by `BossBarrageEmitter` and boss pressure slots. Future player skill work may inspect these profile notes when authoring player-side skills, but must still add a narrow player skill owner/profile instead of moving boss selection, cost, or phase behavior into shared projectile code.
+
 ## 2026-06-19: Summon Presentation Candidates Stay Separate From Gameplay Data
 
 Decision: First-pass player summon and boss pressure proxy art/animation candidates should be recorded in `SummonPresentationCandidateProfile` assets instead of being hidden in summon EN, boss cost, projectile, or encounter logic.

@@ -13,6 +13,20 @@ MonoBehaviour:
   m_Name: DB_BossBarrage_PunishNet
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBarragePatternProfile
   patternId: PunishNet
+  skillPatternFamily: 7
+  skillTransferMode: 1
+  playerSkillTranslationNote: Can become an overextend-punish skill that targets
+    a committed opponent, never a basic shot.
+  counterplayNote: Avoid overcommitting forward; break lock with dodge or summon
+    cover during windup.
+  telegraphWindupColor: {r: 1, g: 0.62, b: 0.18, a: 0.64}
+  telegraphReleaseColor: {r: 1, g: 0.96, b: 0.44, a: 0.9}
+  telegraphMarkerWidthScale: 1
+  telegraphMarkerDepthScale: 1
+  telegraphPulseScale: 1
+  projectileColor: {r: 1, g: 0.72, b: 0.12, a: 1}
+  projectileVisualScale: {x: 1, y: 1, z: 1}
+  projectileMaterial: {fileID: 0}
   initialDelaySeconds: 0.2
   windupSeconds: 1.1
   waveIntervalSeconds: 5.8

@@ -20,6 +20,26 @@ namespace DimensionBrawl.Combat
         LaneCenter = 1,
     }
 
+    public enum LaneSkillPatternFamily
+    {
+        DirectLock = 0,
+        CenterCover = 1,
+        EscortScreen = 2,
+        LayeredSalvo = 3,
+        StaggeredCrossfire = 4,
+        TwinSweep = 5,
+        SideClamp = 6,
+        PunishNet = 7,
+        LinePressure = 8,
+    }
+
+    public enum LaneSkillTransferMode
+    {
+        BossOnly = 0,
+        CostedPlayerSkillCandidate = 1,
+        SharedPvpSkillCandidate = 2,
+    }
+
     [CreateAssetMenu(
         fileName = "DB_BossBarragePattern",
         menuName = "DimensionBrawl/Combat/Boss Barrage Pattern")]
@@ -27,6 +47,32 @@ namespace DimensionBrawl.Combat
     {
         [Header("Identity")]
         [SerializeField] private string patternId = "NeedleLock";
+
+        [Header("Shared Skill Grammar")]
+        [SerializeField] private LaneSkillPatternFamily skillPatternFamily = LaneSkillPatternFamily.DirectLock;
+        [SerializeField] private LaneSkillTransferMode skillTransferMode = LaneSkillTransferMode.BossOnly;
+        [Tooltip("How this boss pattern could become a costed player/PvP skill without becoming basic fire.")]
+        [SerializeField, TextArea(1, 3)] private string playerSkillTranslationNote;
+        [Tooltip("Readable answer the opposing side should have before this pattern is reused as a shared skill verb.")]
+        [SerializeField, TextArea(1, 3)] private string counterplayNote;
+
+        [Header("Telegraph Read")]
+        [SerializeField] private Color telegraphWindupColor = new Color(1f, 0.62f, 0.18f, 0.64f);
+        [SerializeField] private Color telegraphReleaseColor = new Color(1f, 0.96f, 0.44f, 0.9f);
+        [Tooltip("Pattern-specific width multiplier for in-world incoming-lane markers.")]
+        [SerializeField, Min(0.05f)] private float telegraphMarkerWidthScale = 1f;
+        [Tooltip("Pattern-specific depth multiplier for in-world incoming-lane markers.")]
+        [SerializeField, Min(0.05f)] private float telegraphMarkerDepthScale = 1f;
+        [Tooltip("Pattern-specific pulse strength for in-world incoming-lane markers.")]
+        [SerializeField, Min(0f)] private float telegraphPulseScale = 1f;
+
+        [Header("Projectile Read")]
+        [Tooltip("Pattern-specific color applied to the actual fired projectile, not only the telegraph.")]
+        [SerializeField] private Color projectileColor = new Color(1f, 0.72f, 0.12f, 1f);
+        [Tooltip("Pattern-specific visual scale applied to fired projectiles. Keep gameplay radius in Projectile separate.")]
+        [SerializeField] private Vector3 projectileVisualScale = Vector3.one;
+        [Tooltip("Optional game-owned material for patterns that need a stronger visual read than material property overrides.")]
+        [SerializeField] private Material projectileMaterial;
 
         [Header("Timing")]
         [SerializeField, Min(0f)] private float initialDelaySeconds = 1.2f;
@@ -79,6 +125,19 @@ namespace DimensionBrawl.Combat
         [SerializeField, Min(0f)] private float targetHeight = 1f;
 
         public string PatternId => patternId;
+        public LaneSkillPatternFamily SkillPatternFamily => skillPatternFamily;
+        public LaneSkillTransferMode SkillTransferMode => skillTransferMode;
+        public string PlayerSkillTranslationNote => playerSkillTranslationNote;
+        public string CounterplayNote => counterplayNote;
+        public bool IsPlayerSkillCandidate => skillTransferMode != LaneSkillTransferMode.BossOnly;
+        public Color TelegraphWindupColor => telegraphWindupColor;
+        public Color TelegraphReleaseColor => telegraphReleaseColor;
+        public float TelegraphMarkerWidthScale => telegraphMarkerWidthScale;
+        public float TelegraphMarkerDepthScale => telegraphMarkerDepthScale;
+        public float TelegraphPulseScale => telegraphPulseScale;
+        public Color ProjectileColor => projectileColor;
+        public Vector3 ProjectileVisualScale => SanitizeVisualScale(projectileVisualScale);
+        public Material ProjectileMaterial => projectileMaterial;
         public BossBarrageLateralShape LateralShape => lateralShape;
         public float InitialDelaySeconds => initialDelaySeconds;
         public float WindupSeconds => windupSeconds;
@@ -101,6 +160,14 @@ namespace DimensionBrawl.Combat
         public float LinePressureHalfSpreadRatio => linePressureHalfSpreadRatio;
         public float SpawnHeight => spawnHeight;
         public float TargetHeight => targetHeight;
+
+        private static Vector3 SanitizeVisualScale(Vector3 scale)
+        {
+            return new Vector3(
+                Mathf.Max(0.05f, scale.x),
+                Mathf.Max(0.05f, scale.y),
+                Mathf.Max(0.05f, scale.z));
+        }
 
         public float EvaluateHalfSpread(float forwardRisk01)
         {

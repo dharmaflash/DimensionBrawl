@@ -13,6 +13,19 @@ MonoBehaviour:
   m_Name: DB_BossBarrage_TwinSweep
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBarragePatternProfile
   patternId: TwinSweep
+  skillPatternFamily: 5
+  skillTransferMode: 2
+  playerSkillTranslationNote: Can become a costed twin-column sweep that leaves a
+    readable center or side lane.
+  counterplayNote: Hold the readable gap and shift before the second column closes.
+  telegraphWindupColor: {r: 1, g: 0.62, b: 0.18, a: 0.64}
+  telegraphReleaseColor: {r: 1, g: 0.96, b: 0.44, a: 0.9}
+  telegraphMarkerWidthScale: 1
+  telegraphMarkerDepthScale: 1
+  telegraphPulseScale: 1
+  projectileColor: {r: 1, g: 0.72, b: 0.12, a: 1}
+  projectileVisualScale: {x: 1, y: 1, z: 1}
+  projectileMaterial: {fileID: 0}
   initialDelaySeconds: 0.2
   windupSeconds: 0.95
   waveIntervalSeconds: 5.2

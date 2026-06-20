@@ -29,6 +29,8 @@ namespace DimensionBrawl.Combat
             public bool UsePlayerForwardRiskGate;
             [Range(0f, 1f)] public float MinimumPlayerForwardRisk01;
             [Range(0f, 1f)] public float MaximumPlayerForwardRisk01;
+            public bool UsePlayerSummonResponseGate;
+            [Range(1, 3)] public int MinimumPlayerSummonTier;
 
             public bool HasResponsePlan =>
                 !string.IsNullOrWhiteSpace(ResponseId)
@@ -44,6 +46,8 @@ namespace DimensionBrawl.Combat
                 bool usePlayerForwardRiskGate = false,
                 float minimumPlayerForwardRisk01 = 0f,
                 float maximumPlayerForwardRisk01 = 1f,
+                bool usePlayerSummonResponseGate = false,
+                int minimumPlayerSummonTier = 1,
                 string responseId = "",
                 string stageLoopRole = "",
                 string playerAnswer = "",
@@ -65,6 +69,9 @@ namespace DimensionBrawl.Combat
                 {
                     MaximumPlayerForwardRisk01 = MinimumPlayerForwardRisk01;
                 }
+
+                UsePlayerSummonResponseGate = usePlayerSummonResponseGate;
+                MinimumPlayerSummonTier = Mathf.Clamp(minimumPlayerSummonTier, 1, 3);
             }
         }
 
@@ -84,9 +91,12 @@ namespace DimensionBrawl.Combat
 
         [Header("Player Summon Response")]
         [SerializeField, Min(0f)] private float playerSummonResponseWindowSeconds = 4f;
+        [SerializeField, Min(0f)] private float heldResponseWindowFloorSeconds = 0.6f;
+        [SerializeField, Min(0f)] private float maxHeldResponseWindowExtensionSeconds = 1.5f;
 
         private float globalRecoveryTimer;
         private float playerSummonResponseTimer;
+        private float heldResponseWindowExtensionRemainingSeconds;
         private float[] perSlotTimers = Array.Empty<float>();
         private int selectionCursor;
         private int totalActionCount;
@@ -118,6 +128,8 @@ namespace DimensionBrawl.Combat
         public float CurrentPlayerForwardRisk01 => ResolvePlayerForwardRisk01();
         public bool IsPlayerSummonResponseWindowActive => playerSummonResponseTimer > 0f;
         public float PlayerSummonResponseRemainingSeconds => playerSummonResponseTimer;
+        public float HeldResponseWindowFloorSeconds => heldResponseWindowFloorSeconds;
+        public float HeldResponseWindowExtensionRemainingSeconds => heldResponseWindowExtensionRemainingSeconds;
         public int LastObservedPlayerSummonTier => lastObservedPlayerSummonTier;
         public bool LastActionRespondedToPlayerSummon => lastActionRespondedToPlayerSummon;
         public int TotalPlayerSummonResponseCount => totalPlayerSummonResponseCount;
@@ -146,6 +158,7 @@ namespace DimensionBrawl.Combat
                 slot.MinimumIntervalSeconds = Mathf.Max(0f, slot.MinimumIntervalSeconds);
                 slot.MinimumPlayerForwardRisk01 = Mathf.Clamp01(slot.MinimumPlayerForwardRisk01);
                 slot.MaximumPlayerForwardRisk01 = Mathf.Clamp01(slot.MaximumPlayerForwardRisk01);
+                slot.MinimumPlayerSummonTier = Mathf.Clamp(slot.MinimumPlayerSummonTier, 1, 3);
                 if (slot.MaximumPlayerForwardRisk01 < slot.MinimumPlayerForwardRisk01)
                 {
                     slot.MaximumPlayerForwardRisk01 = slot.MinimumPlayerForwardRisk01;
@@ -155,6 +168,8 @@ namespace DimensionBrawl.Combat
             }
 
             playerSummonResponseWindowSeconds = Mathf.Max(0f, playerSummonResponseWindowSeconds);
+            heldResponseWindowFloorSeconds = Mathf.Max(0f, heldResponseWindowFloorSeconds);
+            maxHeldResponseWindowExtensionSeconds = Mathf.Max(0f, maxHeldResponseWindowExtensionSeconds);
         }
 
         public void ConfigureReferences(
@@ -220,6 +235,7 @@ namespace DimensionBrawl.Combat
             playerSummonResponseTimer = Mathf.Max(
                 playerSummonResponseTimer,
                 playerSummonResponseWindowSeconds);
+            heldResponseWindowExtensionRemainingSeconds = maxHeldResponseWindowExtensionSeconds;
         }
 
         public bool TryGetHeldNextTierAction(out BossPressureActionSlot slot, out int nextTier)
@@ -267,7 +283,7 @@ namespace DimensionBrawl.Combat
             }
 
             BossPressureActionSlot slot = actionSlots[slotIndex];
-            bool respondsToPlayerSummon = IsPlayerSummonResponseWindowActive;
+            bool respondsToPlayerSummon = slot.UsePlayerSummonResponseGate && IsPlayerSummonResponseWindowActive;
             if (!bossBarrageEmitter.CanQueuePriorityPattern(slot.Pattern))
             {
                 return false;
@@ -301,6 +317,7 @@ namespace DimensionBrawl.Combat
                 lastPlayerSummonResponseKind = slot.ActionKind;
                 lastPlayerSummonResponseTier = lastSpentTier;
                 playerSummonResponseTimer = 0f;
+                heldResponseWindowExtensionRemainingSeconds = 0f;
             }
 
             selectionCursor = (slotIndex + 1) % Mathf.Max(1, actionSlots.Length);
@@ -362,7 +379,8 @@ namespace DimensionBrawl.Combat
                     || slot.MinimumTier > availableTier
                     || perSlotTimers[index] > 0f
                     || !CanRunActionKind(slot.ActionKind)
-                    || !IsPlayerRiskAllowed(slot))
+                    || !IsPlayerRiskAllowed(slot)
+                    || !IsPlayerSummonResponseAllowed(slot))
                 {
                     continue;
                 }
@@ -383,10 +401,12 @@ namespace DimensionBrawl.Combat
         private int ResolveSlotSelectionScore(BossPressureActionSlot slot)
         {
             int score = slot.MinimumTier * 100;
-            if (!IsPlayerSummonResponseWindowActive)
+            if (!IsPlayerSummonResponseWindowActive || !slot.UsePlayerSummonResponseGate)
             {
                 return score;
             }
+
+            score += 80;
 
             switch (slot.ActionKind)
             {
@@ -441,6 +461,7 @@ namespace DimensionBrawl.Combat
                     || perSlotTimers[i] > 0f
                     || !CanRunActionKind(slot.ActionKind)
                     || !IsPlayerRiskAllowed(slot)
+                    || !IsPlayerSummonResponseAllowed(slot)
                     || bossBarrageEmitter == null
                     || !bossBarrageEmitter.CanQueuePriorityPattern(slot.Pattern))
                 {
@@ -467,6 +488,17 @@ namespace DimensionBrawl.Combat
                 && risk01 <= slot.MaximumPlayerForwardRisk01;
         }
 
+        private bool IsPlayerSummonResponseAllowed(BossPressureActionSlot slot)
+        {
+            if (!slot.UsePlayerSummonResponseGate)
+            {
+                return true;
+            }
+
+            return IsPlayerSummonResponseWindowActive
+                && lastObservedPlayerSummonTier >= Mathf.Clamp(slot.MinimumPlayerSummonTier, 1, 3);
+        }
+
         private float ResolvePlayerForwardRisk01()
         {
             return laneSpace != null && trackedPlayer != null
@@ -481,9 +513,19 @@ namespace DimensionBrawl.Combat
                 globalRecoveryTimer = Mathf.Max(0f, globalRecoveryTimer - deltaTime);
             }
 
+            bool preserveHeldResponseWindow = ShouldPreserveHeldPlayerSummonResponseWindow();
             if (playerSummonResponseTimer > 0f)
             {
                 playerSummonResponseTimer = Mathf.Max(0f, playerSummonResponseTimer - deltaTime);
+                if (preserveHeldResponseWindow)
+                {
+                    PreserveHeldPlayerSummonResponseWindow();
+                }
+
+                if (playerSummonResponseTimer <= 0f)
+                {
+                    heldResponseWindowExtensionRemainingSeconds = 0f;
+                }
             }
 
             EnsurePerSlotTimers();
@@ -508,6 +550,32 @@ namespace DimensionBrawl.Combat
             {
                 selectionCursor = 0;
             }
+        }
+
+        private bool ShouldPreserveHeldPlayerSummonResponseWindow()
+        {
+            return heldResponseWindowFloorSeconds > 0f
+                && heldResponseWindowExtensionRemainingSeconds > 0f
+                && IsPlayerSummonResponseWindowActive
+                && CanAttemptAction()
+                && TryGetNextTierHoldCandidate(costLadder.AvailableTier, out _, out _);
+        }
+
+        private void PreserveHeldPlayerSummonResponseWindow()
+        {
+            float desiredTimer = Mathf.Max(
+                playerSummonResponseTimer,
+                heldResponseWindowFloorSeconds);
+            float extensionSeconds = Mathf.Min(
+                desiredTimer - playerSummonResponseTimer,
+                heldResponseWindowExtensionRemainingSeconds);
+            if (extensionSeconds <= 0f)
+            {
+                return;
+            }
+
+            playerSummonResponseTimer += extensionSeconds;
+            heldResponseWindowExtensionRemainingSeconds -= extensionSeconds;
         }
     }
 }

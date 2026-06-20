@@ -88,6 +88,7 @@ namespace DimensionBrawl.Combat
         public int TotalPressureScreenInterceptCount => totalPressureScreenInterceptCount;
         public int TotalSummonActorDefeatCount => totalSummonActorDefeatCount;
         public Vector3 LastSummonActorPosition => lastSummonActorPosition;
+        public SummonFrontlineProxy LastSummonActor => lastSummonActor;
         public int ActiveSummonActorCount => summonActorPool.CountActive();
         public int ActivePressureScreenCount => summonActorPool.CountActivePressureScreens();
         public int ActivePressureScreenRemainingIntercepts => summonActorPool.CountActivePressureScreenRemainingIntercepts();

@@ -37,6 +37,7 @@ namespace DimensionBrawl.Combat
                 slot.MinimumIntervalSeconds = Mathf.Max(0f, slot.MinimumIntervalSeconds);
                 slot.MinimumPlayerForwardRisk01 = Mathf.Clamp01(slot.MinimumPlayerForwardRisk01);
                 slot.MaximumPlayerForwardRisk01 = Mathf.Clamp01(slot.MaximumPlayerForwardRisk01);
+                slot.MinimumPlayerSummonTier = Mathf.Clamp(slot.MinimumPlayerSummonTier, 1, 3);
                 if (slot.MaximumPlayerForwardRisk01 < slot.MinimumPlayerForwardRisk01)
                 {
                     slot.MaximumPlayerForwardRisk01 = slot.MinimumPlayerForwardRisk01;

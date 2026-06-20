@@ -13,6 +13,20 @@ MonoBehaviour:
   m_Name: DB_BossBarrage_CoverFire
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBarragePatternProfile
   patternId: CoverFire
+  skillPatternFamily: 1
+  skillTransferMode: 1
+  playerSkillTranslationNote: Can become a costed center-lane suppress skill with
+    fixed lane aim and no hard tracking.
+  counterplayNote: Read center lane windup and move to side gaps before the spread
+    tightens.
+  telegraphWindupColor: {r: 1, g: 0.62, b: 0.18, a: 0.64}
+  telegraphReleaseColor: {r: 1, g: 0.96, b: 0.44, a: 0.9}
+  telegraphMarkerWidthScale: 1
+  telegraphMarkerDepthScale: 1
+  telegraphPulseScale: 1
+  projectileColor: {r: 1, g: 0.72, b: 0.12, a: 1}
+  projectileVisualScale: {x: 1, y: 1, z: 1}
+  projectileMaterial: {fileID: 0}
   initialDelaySeconds: 0.25
   windupSeconds: 0.85
   waveIntervalSeconds: 5.2

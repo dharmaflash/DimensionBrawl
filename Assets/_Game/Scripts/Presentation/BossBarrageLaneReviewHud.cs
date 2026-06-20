@@ -141,6 +141,8 @@ namespace DimensionBrawl.Presentation
 
         public string FrontlineLoopReadout => ResolveFrontlineLoopLine();
         public string FrontlineTuningReadout => ResolveFrontlineTuningLine();
+        public string BossPressureReadout => ResolveBossPressureLine();
+        public string BossPressureResponseReadout => ResolveBossPressureResponseLine();
 
         public void Configure(
             CombatHealth newPlayerHealth,
@@ -330,12 +332,28 @@ namespace DimensionBrawl.Presentation
             }
 
             string patternId = slot.Pattern != null ? slot.Pattern.PatternId : "-";
-            return $" Hold->LV{nextTier} {slot.ActionKind}/{patternId}";
+            string responseId = string.IsNullOrWhiteSpace(slot.ResponseId) ? string.Empty : $" {slot.ResponseId}";
+            return $" Hold->LV{nextTier} {slot.ActionKind}/{patternId}{responseId}";
         }
 
         private string ResolveBossPressureResponseLine()
         {
-            if (bossPressureActionDirector == null || !bossPressureActionDirector.HasLastQueuedActionSlot)
+            if (bossPressureActionDirector == null)
+            {
+                return "Boss Answer -";
+            }
+
+            if (bossPressureActionDirector.IsPlayerSummonResponseWindowActive)
+            {
+                string extension = bossPressureActionDirector.HeldResponseWindowExtensionRemainingSeconds > 0f
+                    ? $" ext {bossPressureActionDirector.HeldResponseWindowExtensionRemainingSeconds:0.0}s"
+                    : string.Empty;
+                string waiting = ResolveBossPressureResponseWaitingText();
+                return $"Boss Answer window summon LV{bossPressureActionDirector.LastObservedPlayerSummonTier} "
+                    + $"{bossPressureActionDirector.PlayerSummonResponseRemainingSeconds:0.0}s{extension}{waiting}";
+            }
+
+            if (!bossPressureActionDirector.HasLastQueuedActionSlot)
             {
                 return "Boss Answer -";
             }
@@ -350,6 +368,22 @@ namespace DimensionBrawl.Presentation
                 ? slot.SummonAnswer
                 : slot.PlayerAnswer;
             return $"Boss Answer {slot.ResponseId}: {answer}";
+        }
+
+        private string ResolveBossPressureResponseWaitingText()
+        {
+            if (bossPressureActionDirector == null
+                || !bossPressureActionDirector.TryGetHeldNextTierAction(
+                    out BossPressureActionDirector.BossPressureActionSlot slot,
+                    out int nextTier))
+            {
+                return string.Empty;
+            }
+
+            string responseId = string.IsNullOrWhiteSpace(slot.ResponseId)
+                ? slot.ActionKind.ToString()
+                : slot.ResponseId;
+            return $" waiting LV{nextTier} {responseId}";
         }
 
         private string ResolveBossSummonLine()

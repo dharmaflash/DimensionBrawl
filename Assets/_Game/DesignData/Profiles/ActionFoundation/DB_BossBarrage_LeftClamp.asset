@@ -13,6 +13,19 @@ MonoBehaviour:
   m_Name: DB_BossBarrage_LeftClamp
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBarragePatternProfile
   patternId: LeftClamp
+  skillPatternFamily: 6
+  skillTransferMode: 2
+  playerSkillTranslationNote: Can become a mirrored side-clamp skill authored per
+    side instead of hidden aim logic.
+  counterplayNote: Identify the closing side and escape through the opposite gap.
+  telegraphWindupColor: {r: 1, g: 0.62, b: 0.18, a: 0.64}
+  telegraphReleaseColor: {r: 1, g: 0.96, b: 0.44, a: 0.9}
+  telegraphMarkerWidthScale: 1
+  telegraphMarkerDepthScale: 1
+  telegraphPulseScale: 1
+  projectileColor: {r: 1, g: 0.72, b: 0.12, a: 1}
+  projectileVisualScale: {x: 1, y: 1, z: 1}
+  projectileMaterial: {fileID: 0}
   initialDelaySeconds: 0.2
   windupSeconds: 1.05
   waveIntervalSeconds: 5.4

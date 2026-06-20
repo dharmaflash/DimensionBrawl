@@ -2391,7 +2391,7 @@ GameObject:
   - component: {fileID: 3865225494408010337}
   - component: {fileID: 5730452138290530981}
   - component: {fileID: 1204449651909265962}
-  - component: {fileID: 5434597042050384809}
+  - component: {fileID: 6279701930843664677}
   m_Layer: 0
   m_Name: PF_SummonSlot2Actor_MarksmanProxy
   m_TagString: Untagged
@@ -2485,7 +2485,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6aac67f59f569014494be0476679f301, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.SummonFrontlineProxy
   projectileOrigin: {fileID: 8401646742091694591}
   pressureScreen: {fileID: 0}
@@ -2505,7 +2505,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 293a97ae51b245cdb6a1cc62b37c45b0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.SummonFrontlineProxyPresenter
   proxy: {fileID: 3019733875376920206}
   clash: {fileID: 5730452138290530981}
@@ -2553,7 +2553,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.CombatHealth
   team: 3
   maxHealth: 160
@@ -2601,7 +2601,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0f8e54a6c924c4a91a87f5df2698a67, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.SummonFrontlineClash
   proxy: {fileID: 3019733875376920206}
   health: {fileID: 4302775834767430666}
@@ -2626,7 +2626,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 957864eb97e83ad448073486f7d84e2f, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.SummonFrontlineHealthBarPresenter
   proxy: {fileID: 3019733875376920206}
   health: {fileID: 4302775834767430666}
@@ -2637,7 +2637,7 @@ MonoBehaviour:
   - {fileID: 1013559773981479449}
   fullFillLocalScale: {x: 0.66099995, y: 0.045, z: 0.04}
   fullFillLocalPosition: {x: 0, y: 0, z: -0.024}
---- !u!135 &5434597042050384809
+--- !u!135 &6279701930843664677
 SphereCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
