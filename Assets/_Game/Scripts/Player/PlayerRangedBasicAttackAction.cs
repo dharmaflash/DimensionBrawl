@@ -45,6 +45,7 @@ namespace DimensionBrawl.Player
         [SerializeField, Min(0f)] private float spawnHeight = 1.12f;
         [SerializeField, Min(0f)] private float targetHeight = 1.0f;
         [SerializeField, Min(0f)] private float facingHoldSeconds = 0.16f;
+        [SerializeField] private bool requestFacingOnFire;
         [SerializeField] private bool snapFacingOnFire = true;
         [SerializeField] private bool suppressFacingOnFireWhileMoving = true;
         [SerializeField, Min(0f)] private float movingFacingSuppressSpeed = 0.08f;
@@ -59,7 +60,9 @@ namespace DimensionBrawl.Player
         [SerializeField, Min(1f)] private float cameraAimFallbackDistance = 26f;
         [SerializeField, Range(0f, 0.49f)] private float aimInputViewportOffsetX = 0.39f;
         [SerializeField, Range(0f, 0.49f)] private float aimInputViewportOffsetY = 0.20f;
+        [SerializeField] private bool useStableAimOrigin = true;
         [SerializeField] private bool useAimAssist = true;
+        [SerializeField] private bool disableAimAssistWithManualInput = true;
         [SerializeField, Min(0f)] private float aimAssistDistance = 18f;
         [SerializeField, Range(0f, 45f)] private float hipAimAssistAngleDegrees = 12f;
         [SerializeField, Range(0f, 45f)] private float aimedAimAssistAngleDegrees = 7f;
@@ -312,12 +315,29 @@ namespace DimensionBrawl.Player
         {
             Vector3 fallbackDirection = movement != null ? movement.FacingDirection : transform.forward;
             fallbackDirection = ResolveBaseFireDirection(fallbackDirection);
-            spawnPosition = fireOrigin != null
-                ? fireOrigin.position
-                : transform.position + fallbackDirection * spawnForwardOffset + Vector3.up * spawnHeight;
+            spawnPosition = ResolveSpawnPosition(fallbackDirection);
 
-            Vector3 rawAimDirection = ResolveRawAimDirection(spawnPosition, fallbackDirection);
-            return ResolveAssistedAimDirection(spawnPosition, rawAimDirection);
+            Vector3 aimOriginPosition = ResolveAimOriginPosition(spawnPosition, fallbackDirection);
+            Vector3 rawAimDirection = ResolveRawAimDirection(aimOriginPosition, fallbackDirection);
+            return ResolveAssistedAimDirection(aimOriginPosition, rawAimDirection);
+        }
+
+        private Vector3 ResolveSpawnPosition(Vector3 fallbackDirection)
+        {
+            return fireOrigin != null
+                ? fireOrigin.position
+                : ResolveDefaultFireOriginPosition(fallbackDirection);
+        }
+
+        private Vector3 ResolveAimOriginPosition(Vector3 spawnPosition, Vector3 fallbackDirection)
+        {
+            return useStableAimOrigin ? ResolveDefaultFireOriginPosition(fallbackDirection) : spawnPosition;
+        }
+
+        private Vector3 ResolveDefaultFireOriginPosition(Vector3 fallbackDirection)
+        {
+            Vector3 planarDirection = ResolvePlanarDirection(fallbackDirection, transform.forward);
+            return transform.position + planarDirection * spawnForwardOffset + Vector3.up * spawnHeight;
         }
 
         private Vector3 ResolveBaseFireDirection(Vector3 fallbackDirection)
@@ -409,9 +429,11 @@ namespace DimensionBrawl.Player
                 Mathf.Clamp01(0.5f + resolvedAimInput.y * aimInputViewportOffsetY));
         }
 
-        private Vector3 ResolveAssistedAimDirection(Vector3 spawnPosition, Vector3 rawAimDirection)
+        private Vector3 ResolveAssistedAimDirection(Vector3 aimOriginPosition, Vector3 rawAimDirection)
         {
-            if (!useAimAssist || targetSelector == null)
+            if (!useAimAssist
+                || targetSelector == null
+                || (disableAimAssistWithManualInput && HasManualAimInput()))
             {
                 return rawAimDirection;
             }
@@ -420,7 +442,7 @@ namespace DimensionBrawl.Player
                 ? aimedAimAssistAngleDegrees
                 : hipAimAssistAngleDegrees;
             if (!targetSelector.TryGetAimAssistDirection(
-                spawnPosition,
+                aimOriginPosition,
                 rawAimDirection,
                 aimAssistDistance,
                 assistAngle,
@@ -431,7 +453,7 @@ namespace DimensionBrawl.Player
             }
 
             Vector3 assistDirection = assistTargetHealth != null
-                ? ResolveFireTravelDirection(assistTargetHealth.transform.position + Vector3.up * targetHeight - spawnPosition, selectorAssistDirection)
+                ? ResolveFireTravelDirection(assistTargetHealth.transform.position + Vector3.up * targetHeight - aimOriginPosition, selectorAssistDirection)
                 : selectorAssistDirection;
             Vector3 assistedDirection = Vector3.RotateTowards(
                 rawAimDirection,
@@ -441,9 +463,14 @@ namespace DimensionBrawl.Player
             return ResolveFireTravelDirection(assistedDirection, rawAimDirection);
         }
 
+        private bool HasManualAimInput()
+        {
+            return aimInput.sqrMagnitude > aimInputDeadZone * aimInputDeadZone;
+        }
+
         private void RequestFacingOnFire(Vector3 direction)
         {
-            if (movement == null)
+            if (!requestFacingOnFire || movement == null)
             {
                 return;
             }

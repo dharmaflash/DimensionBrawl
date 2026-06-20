@@ -19,6 +19,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private string aimSocketCommand = "To_add_weapon_r";
         [SerializeField] private string leftIkOnCommand = "IK_ON_Left_Handle";
         [SerializeField] private string leftIkOffCommand = "IK_OFF_Left_Handle";
+        [SerializeField] private bool ignoreRedundantSocketCommands = true;
 
         [Header("IK")]
         [SerializeField] private AvatarIKGoal leftIkGoal = AvatarIKGoal.LeftHand;
@@ -27,8 +28,14 @@ namespace DimensionBrawl.Presentation
 
         private float leftIkCurrentWeight;
         private float leftIkTargetWeight;
+        private int activeRifleConstraintSourceIndex = -1;
+        private int rifleConstraintSourceApplyCount;
+        private int redundantRifleConstraintCommandCount;
 
         public bool IsConfigured => animator != null && rifleConstraint != null && leftHandIkTarget != null;
+        public int ActiveRifleConstraintSourceIndex => activeRifleConstraintSourceIndex;
+        public int RifleConstraintSourceApplyCount => rifleConstraintSourceApplyCount;
+        public int RedundantRifleConstraintCommandCount => redundantRifleConstraintCommandCount;
 
         public void Configure(Animator newAnimator, ParentConstraint newRifleConstraint, Transform newLeftHandIkTarget)
         {
@@ -114,14 +121,30 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
+            if (ignoreRedundantSocketCommands
+                && rifleConstraint.constraintActive
+                && activeRifleConstraintSourceIndex == activeIndex)
+            {
+                redundantRifleConstraintCommandCount++;
+                return;
+            }
+
             rifleConstraint.constraintActive = true;
             int count = rifleConstraint.sourceCount;
+            if (activeIndex < 0 || activeIndex >= count)
+            {
+                return;
+            }
+
             for (int i = 0; i < count; i++)
             {
                 ConstraintSource source = rifleConstraint.GetSource(i);
                 source.weight = i == activeIndex ? 1f : 0f;
                 rifleConstraint.SetSource(i, source);
             }
+
+            activeRifleConstraintSourceIndex = activeIndex;
+            rifleConstraintSourceApplyCount++;
         }
 
         private void OnAnimatorIK(int layerIndex)

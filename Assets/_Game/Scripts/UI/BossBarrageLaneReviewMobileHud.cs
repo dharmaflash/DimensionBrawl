@@ -53,6 +53,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private bool rightMouseDragControlsAim = true;
         [SerializeField] private bool leftMouseDragControlsAim;
         [SerializeField] private bool fireDragControlsAim = true;
+        [SerializeField] private bool routeAimToMovementLook;
         [SerializeField, Range(0f, 1f)] private float lookAimDragDeadZone = 0.08f;
         [SerializeField, Min(8f)] private float lookAimDragRadius = 230f;
         [SerializeField, Min(8f)] private float lookAimKnobSize = 30f;
@@ -654,7 +655,7 @@ namespace DimensionBrawl.UI
             }
 
             Vector2 aimInput = ResolveHudAimInput(shouldHoldFireAim, shouldHoldLookAim);
-            movement?.SetLookInput(aimInput);
+            movement?.SetLookInput(routeAimToMovementLook ? aimInput : Vector2.zero);
             rangedBasicAttackAction?.SetAimInput(aimInput);
             aimController?.SetAimHeld(shouldHoldAnyAim);
             hudLookAimActive = shouldHoldAnyAim;

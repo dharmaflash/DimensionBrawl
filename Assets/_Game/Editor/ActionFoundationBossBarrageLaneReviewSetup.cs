@@ -2279,6 +2279,7 @@ namespace DimensionBrawl.Editor
             SetString(driver, "aimSocketCommand", "To_add_weapon_r");
             SetString(driver, "leftIkOnCommand", "IK_ON_Left_Handle");
             SetString(driver, "leftIkOffCommand", "IK_OFF_Left_Handle");
+            SetBool(driver, "ignoreRedundantSocketCommands", true);
             SetFloat(driver, "leftIkMaxWeight", 1f);
             SetFloat(driver, "leftIkBlendSpeed", 15f);
             driver.SwitchSocketByString("To_Hand_R_Socket, IK_ON_Left_Handle");
@@ -2644,6 +2645,7 @@ namespace DimensionBrawl.Editor
             SetBool(mobileHud, "rightMouseDragControlsAim", false);
             SetBool(mobileHud, "leftMouseDragControlsAim", true);
             SetBool(mobileHud, "fireDragControlsAim", true);
+            SetBool(mobileHud, "routeAimToMovementLook", false);
             // Touch/reticle composition is review-scene HUD tuning. Keep it Inspector-authored.
             EditorUtility.SetDirty(hud);
             EditorUtility.SetDirty(mobileHud);
@@ -2884,9 +2886,12 @@ namespace DimensionBrawl.Editor
             SetEnum(rangedBasicAttackAction, "sourceTeam", (int)DamageTeam.Player);
             SetInt(rangedBasicAttackAction, "prewarmCount", 8);
             SetBool(rangedBasicAttackAction, "allowMouseFireFallback", false);
+            SetBool(rangedBasicAttackAction, "requestFacingOnFire", false);
             SetBool(rangedBasicAttackAction, "snapFacingOnFire", false);
             SetBool(rangedBasicAttackAction, "suppressFacingOnFireWhileMoving", true);
             SetFloat(rangedBasicAttackAction, "movingFacingSuppressSpeed", 0.08f);
+            SetBool(rangedBasicAttackAction, "useStableAimOrigin", true);
+            SetBool(rangedBasicAttackAction, "disableAimAssistWithManualInput", true);
             SetString(rangedBasicAttackAction, "fireTrigger", string.Empty);
             // Damage, shot cadence, aim assist, muzzle framing, and fire camera feedback are authored tuning.
             EditorUtility.SetDirty(rangedBasicAttackAction);
@@ -2982,9 +2987,12 @@ namespace DimensionBrawl.Editor
             ValidateEnum(rangedBasicAttackAction, "sourceTeam", (int)DamageTeam.Player);
             ValidateInt(rangedBasicAttackAction, "prewarmCount", 8);
             ValidateBool(rangedBasicAttackAction, "allowMouseFireFallback", false);
+            ValidateBool(rangedBasicAttackAction, "requestFacingOnFire", false);
             ValidateBool(rangedBasicAttackAction, "snapFacingOnFire", false);
             ValidateBool(rangedBasicAttackAction, "suppressFacingOnFireWhileMoving", true);
             ValidateFloat(rangedBasicAttackAction, "movingFacingSuppressSpeed", 0.08f);
+            ValidateBool(rangedBasicAttackAction, "useStableAimOrigin", true);
+            ValidateBool(rangedBasicAttackAction, "disableAimAssistWithManualInput", true);
             ValidateString(rangedBasicAttackAction, "fireTrigger", string.Empty);
         }
 
@@ -5059,6 +5067,7 @@ namespace DimensionBrawl.Editor
             ValidateBool(hud, "rightMouseDragControlsAim", false);
             ValidateBool(hud, "leftMouseDragControlsAim", true);
             ValidateBool(hud, "fireDragControlsAim", true);
+            ValidateBool(hud, "routeAimToMovementLook", false);
         }
 
         private static void ConfigureArenaInfluenceTargets(Scene scene, Transform player, params Transform[] influenceTargets)
@@ -5482,6 +5491,7 @@ namespace DimensionBrawl.Editor
             ValidateString(weaponSocketDriver, "aimSocketCommand", "To_add_weapon_r");
             ValidateString(weaponSocketDriver, "leftIkOnCommand", "IK_ON_Left_Handle");
             ValidateString(weaponSocketDriver, "leftIkOffCommand", "IK_OFF_Left_Handle");
+            ValidateBool(weaponSocketDriver, "ignoreRedundantSocketCommands", true);
 
             if (FindDescendant(rangedRoot.transform, "Hand_R_Socket") == null)
             {

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
 using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Enemies;
@@ -458,7 +459,10 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(26f, GetFloat(rangedBasicAttackAction, "cameraAimFallbackDistance"), 0.001f);
             Assert.AreEqual(0.39f, GetFloat(rangedBasicAttackAction, "aimInputViewportOffsetX"), 0.001f);
             Assert.AreEqual(0.20f, GetFloat(rangedBasicAttackAction, "aimInputViewportOffsetY"), 0.001f);
+            Assert.IsTrue(GetBool(rangedBasicAttackAction, "useStableAimOrigin"));
             Assert.IsTrue(GetBool(rangedBasicAttackAction, "useAimAssist"));
+            Assert.IsTrue(GetBool(rangedBasicAttackAction, "disableAimAssistWithManualInput"));
+            Assert.IsFalse(GetBool(rangedBasicAttackAction, "requestFacingOnFire"));
             Assert.AreEqual(18f, GetFloat(rangedBasicAttackAction, "aimAssistDistance"), 0.001f);
             Assert.AreEqual(12f, GetFloat(rangedBasicAttackAction, "hipAimAssistAngleDegrees"), 0.001f);
             Assert.AreEqual(7f, GetFloat(rangedBasicAttackAction, "aimedAimAssistAngleDegrees"), 0.001f);
@@ -740,6 +744,8 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(GetBool(mobileHud, "screenDragControlsAim"));
             Assert.IsFalse(GetBool(mobileHud, "rightMouseDragControlsAim"));
             Assert.IsTrue(GetBool(mobileHud, "leftMouseDragControlsAim"));
+            Assert.IsTrue(GetBool(mobileHud, "fireDragControlsAim"));
+            Assert.IsFalse(GetBool(mobileHud, "routeAimToMovementLook"));
             Assert.AreEqual(0.08f, GetFloat(mobileHud, "lookAimDragDeadZone"), 0.001f);
             Assert.AreEqual(230f, GetFloat(mobileHud, "lookAimDragRadius"), 0.001f);
             Assert.AreEqual(30f, GetFloat(mobileHud, "lookAimKnobSize"), 0.001f);
@@ -913,6 +919,177 @@ namespace DimensionBrawl.Tests
                 "Manual look aim should stay in the forward lane instead of becoming a side-only shot.");
 
             rangedBasicAttackAction.ClearAimInput();
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator RangedBasicFireKeepsManualAimStableWhenMuzzleMoves()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            PlayerCombatModeController combatModeController =
+                RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
+            PlayerRangedAimController aimController =
+                RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
+            PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            Transform fireOrigin = GetObjectReference<Transform>(rangedBasicAttackAction, "fireOrigin");
+
+            combatModeController.SetRangedMode();
+            aimController.SetAimHeld(true);
+            player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
+            rangedBasicAttackAction.SetAimInput(new Vector2(0.65f, 0.15f));
+            Physics.SyncTransforms();
+            yield return null;
+
+            Vector3 originalFireOriginLocalPosition = fireOrigin.localPosition;
+            Quaternion originalFireOriginLocalRotation = fireOrigin.localRotation;
+            Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out Vector3 initialPreviewDirection));
+
+            fireOrigin.localPosition = originalFireOriginLocalPosition + new Vector3(0.35f, -0.16f, 0.22f);
+            fireOrigin.localRotation = originalFireOriginLocalRotation * Quaternion.Euler(0f, 22f, -18f);
+            Physics.SyncTransforms();
+
+            Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out Vector3 shiftedPreviewDirection));
+            Assert.Less(
+                Vector3.Angle(initialPreviewDirection, shiftedPreviewDirection),
+                0.5f,
+                "Manual ranged aim should stay stable when the animated muzzle moves between frames.");
+            Assert.IsTrue(rangedBasicAttackAction.TryFire());
+
+            LaneActionProjectile playerProjectile = RequireActivePlayerRangedProjectile();
+            Assert.Less(
+                Vector3.Angle(playerProjectile.TravelDirection, initialPreviewDirection),
+                0.5f,
+                "The fired projectile should follow the stable aim direction instead of the current muzzle wobble.");
+
+            fireOrigin.localPosition = originalFireOriginLocalPosition;
+            fireOrigin.localRotation = originalFireOriginLocalRotation;
+            rangedBasicAttackAction.ClearAimInput();
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator RangedBasicFireDoesNotRotateStandingPlayerRoot()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            PlayerCombatModeController combatModeController =
+                RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
+            PlayerRangedAimController aimController =
+                RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
+            PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+
+            combatModeController.SetRangedMode();
+            aimController.SetAimHeld(true);
+            player.transform.SetPositionAndRotation(
+                laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y),
+                Quaternion.LookRotation(Vector3.forward, Vector3.up));
+            rangedBasicAttackAction.SetAimInput(Vector2.right);
+            Physics.SyncTransforms();
+            yield return null;
+
+            Quaternion rootRotationBefore = player.transform.rotation;
+            Assert.IsTrue(rangedBasicAttackAction.TryFire());
+            yield return null;
+            yield return null;
+
+            Assert.Less(
+                Quaternion.Angle(rootRotationBefore, player.transform.rotation),
+                0.5f,
+                "Standing basic fire should not rotate the player root; Look/TargetBias owns shot direction.");
+            LaneActionProjectile playerProjectile = RequireActivePlayerRangedProjectile();
+            Assert.Greater(
+                Vector3.Dot(playerProjectile.TravelDirection, Vector3.right),
+                0.45f,
+                "Manual aim should still steer the shot even when root facing is stable.");
+
+            rangedBasicAttackAction.ClearAimInput();
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator MobileHudFireDragAimDoesNotRotateStandingPlayerRoot()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            PlayerCombatModeController combatModeController =
+                RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
+            PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
+            BossBarrageLaneReviewMobileHud mobileHud =
+                RequireComponent<BossBarrageLaneReviewMobileHud>(RequireRoot(HudRootName), "mobile HUD");
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+
+            combatModeController.SetRangedMode();
+            player.transform.SetPositionAndRotation(
+                laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y),
+                Quaternion.LookRotation(Vector3.forward, Vector3.up));
+            Physics.SyncTransforms();
+            yield return null;
+
+            Quaternion rootRotationBefore = player.transform.rotation;
+            SetPrivateField(mobileHud, "firePointerHeld", true);
+            SetPrivateField(mobileHud, "fireAimInput", Vector2.right);
+            InvokePrivateMethod(mobileHud, "UpdateHudLookAim");
+
+            Assert.Less(
+                GetVector2(player, "mobileLookInput").sqrMagnitude,
+                0.0001f,
+                "Fire-button drag aim should not be routed into movement look/facing input.");
+            Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out Vector3 previewDirection));
+            Assert.Greater(
+                Vector3.Dot(previewDirection, Vector3.right),
+                0.45f,
+                "Fire-button drag aim should still steer the ranged aim preview.");
+            yield return null;
+            yield return null;
+            Assert.Less(
+                Quaternion.Angle(rootRotationBefore, player.transform.rotation),
+                0.5f,
+                "Fire-button drag aim should not feed movement look/facing and spin the player root.");
+
+            SetPrivateField(mobileHud, "firePointerHeld", false);
+            InvokePrivateMethod(mobileHud, "ReleaseHudLookAim");
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator RifleGirlWeaponSocketIgnoresRepeatedShootSocketEvents()
+        {
+            PlayerCombatModeController combatModeController =
+                RequireComponent<PlayerCombatModeController>(
+                    RequireObject<PlayerMovementController>().gameObject,
+                    "player combat mode controller");
+            Animator rangedAnimator = GetObjectReference<Animator>(combatModeController, "rangedAnimator");
+            RifleGirlWeaponSocketDriver socketDriver =
+                RequireComponent<RifleGirlWeaponSocketDriver>(rangedAnimator.gameObject, "RifleGirl weapon socket driver");
+            ParentConstraint rifleConstraint =
+                GetObjectReference<ParentConstraint>(socketDriver, "rifleConstraint");
+
+            Assert.IsTrue(GetBool(socketDriver, "ignoreRedundantSocketCommands"));
+            socketDriver.SwitchSocketByString("To_Hand_R_Socket, IK_ON_Left_Handle");
+            int applyCountBefore = socketDriver.RifleConstraintSourceApplyCount;
+            int redundantCountBefore = socketDriver.RedundantRifleConstraintCommandCount;
+
+            socketDriver.SwitchSocketByString("To_Hand_R_Socket");
+            socketDriver.SwitchSocketByString("To_Hand_R_Socket");
+
+            Assert.AreEqual(
+                applyCountBefore,
+                socketDriver.RifleConstraintSourceApplyCount,
+                "Repeated RG_Shoot hand-socket events should not rewrite the same rifle ParentConstraint source.");
+            Assert.GreaterOrEqual(
+                socketDriver.RedundantRifleConstraintCommandCount,
+                redundantCountBefore + 2,
+                "Repeated hand-socket commands should be counted as redundant visual events.");
+            Assert.AreEqual(0, socketDriver.ActiveRifleConstraintSourceIndex);
+            Assert.AreEqual(1f, rifleConstraint.GetSource(0).weight, 0.001f);
+            for (int i = 1; i < rifleConstraint.sourceCount; i++)
+            {
+                Assert.AreEqual(0f, rifleConstraint.GetSource(i).weight, 0.001f);
+            }
+
             yield return null;
         }
 
@@ -3243,6 +3420,31 @@ namespace DimensionBrawl.Tests
         private static bool GetBool(Object target, string propertyName)
         {
             return RequireProperty(new SerializedObject(target), propertyName).boolValue;
+        }
+
+        private static Vector2 GetVector2(Object target, string propertyName)
+        {
+            return RequireProperty(new SerializedObject(target), propertyName).vector2Value;
+        }
+
+        private static void SetPrivateField<T>(object target, string fieldName, T value)
+        {
+            FieldInfo field = RequirePrivateField(target, fieldName);
+            field.SetValue(target, value);
+        }
+
+        private static void InvokePrivateMethod(object target, string methodName)
+        {
+            MethodInfo method = target.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(method, $"{target.GetType().Name} should define private method {methodName}.");
+            method.Invoke(target, null);
+        }
+
+        private static FieldInfo RequirePrivateField(object target, string fieldName)
+        {
+            FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(field, $"{target.GetType().Name} should define private field {fieldName}.");
+            return field;
         }
 
         private static float GetFloat(Object target, string propertyName)
