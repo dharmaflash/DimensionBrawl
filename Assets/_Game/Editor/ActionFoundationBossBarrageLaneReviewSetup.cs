@@ -703,7 +703,11 @@ namespace DimensionBrawl.Editor
                 rangedAimController,
                 rangedBasicAttackAction);
             Animator rangedAnimator = RequireReferencedObject<Animator>(combatModeController, "rangedAnimator");
-            ValidateRangedAimController(rangedAimController, combatModeController, cameraController, rangedAnimator);
+            ValidateRangedAimController(
+                rangedAimController,
+                combatModeController,
+                cameraController,
+                rangedAnimator);
             ValidatePlayerRangedBasicAttack(
                 rangedBasicAttackAction,
                 combatModeController,
@@ -2952,6 +2956,8 @@ namespace DimensionBrawl.Editor
             SetEnum(mobileHud, "keyboardPeekRightKey", (int)Key.E);
             SetBool(mobileHud, "keyboardPeekRequiresActiveAim", true);
             SetBool(mobileHud, "fireAimReticleUsesScreenCenter", true);
+            SetBool(mobileHud, "fireAimReticleFollowsAssist", true);
+            SetFloat(mobileHud, "fireAimAssistReticleMaxOffset", 96f);
             // Touch/reticle composition is review-scene HUD tuning. Keep it Inspector-authored.
             EditorUtility.SetDirty(hud);
             EditorUtility.SetDirty(mobileHud);
@@ -3134,6 +3140,10 @@ namespace DimensionBrawl.Editor
             SetFloat(cameraController, "aimBlendInSpeed", CameraAimBlendInSpeed);
             SetFloat(cameraController, "aimBlendOutSpeed", CameraAimBlendOutSpeed);
             SetBool(cameraController, "aimOrbitRotatesCameraPosition", true);
+            SetBool(cameraController, "aimAssistUsesYawTarget", true);
+            SetFloat(cameraController, "aimAssistMaxYawBlend", 0.85f);
+            SetFloat(cameraController, "aimAssistYawSpeedDegrees", 420f);
+            SetFloat(cameraController, "aimAssistYawReturnSpeedDegrees", 520f);
         }
 
         private static void ConfigureRangedAimController(
@@ -3203,7 +3213,10 @@ namespace DimensionBrawl.Editor
             SetFloat(rangedBasicAttackAction, "movingFacingSuppressSpeed", 0.08f);
             SetBool(rangedBasicAttackAction, "useFixedCenterAimViewport", true);
             SetBool(rangedBasicAttackAction, "useStableAimOrigin", true);
-            SetBool(rangedBasicAttackAction, "disableAimAssistWithManualInput", true);
+            SetBool(rangedBasicAttackAction, "disableAimAssistWithManualInput", false);
+            SetBool(rangedBasicAttackAction, "driveCameraAimAssist", true);
+            SetFloat(rangedBasicAttackAction, "cameraAimAssistStrengthScale", 1f);
+            SetFloat(rangedBasicAttackAction, "cameraAimAssistMinStrength", 0.05f);
             SetString(rangedBasicAttackAction, "fireTrigger", string.Empty);
             // Damage, shot cadence, aim assist, muzzle framing, and fire camera feedback are authored tuning.
             EditorUtility.SetDirty(rangedBasicAttackAction);
@@ -3255,6 +3268,10 @@ namespace DimensionBrawl.Editor
             ValidateBool(cameraController, "useFixedRearYaw", true);
             ValidateObjectReference(cameraController, "fixedRearYawReference", rearYawReference);
             ValidateBool(cameraController, "useDeviceFallbackWhenActionMissing", false);
+            ValidateBool(cameraController, "aimAssistUsesYawTarget", true);
+            ValidateFloat(cameraController, "aimAssistMaxYawBlend", 0.85f);
+            ValidateFloat(cameraController, "aimAssistYawSpeedDegrees", 420f);
+            ValidateFloat(cameraController, "aimAssistYawReturnSpeedDegrees", 520f);
         }
 
         private static void ValidateRangedAimController(
@@ -3307,7 +3324,10 @@ namespace DimensionBrawl.Editor
             ValidateFloat(rangedBasicAttackAction, "movingFacingSuppressSpeed", 0.08f);
             ValidateBool(rangedBasicAttackAction, "useFixedCenterAimViewport", true);
             ValidateBool(rangedBasicAttackAction, "useStableAimOrigin", true);
-            ValidateBool(rangedBasicAttackAction, "disableAimAssistWithManualInput", true);
+            ValidateBool(rangedBasicAttackAction, "disableAimAssistWithManualInput", false);
+            ValidateBool(rangedBasicAttackAction, "driveCameraAimAssist", true);
+            ValidateFloat(rangedBasicAttackAction, "cameraAimAssistStrengthScale", 1f);
+            ValidateFloat(rangedBasicAttackAction, "cameraAimAssistMinStrength", 0.05f);
             ValidateString(rangedBasicAttackAction, "fireTrigger", string.Empty);
         }
 
@@ -5467,6 +5487,8 @@ namespace DimensionBrawl.Editor
             ValidateEnum(hud, "keyboardPeekRightKey", (int)Key.E);
             ValidateBool(hud, "keyboardPeekRequiresActiveAim", true);
             ValidateBool(hud, "fireAimReticleUsesScreenCenter", true);
+            ValidateBool(hud, "fireAimReticleFollowsAssist", true);
+            ValidateFloat(hud, "fireAimAssistReticleMaxOffset", 96f);
         }
 
         private static void ConfigureArenaInfluenceTargets(Scene scene, Transform player, params Transform[] influenceTargets)

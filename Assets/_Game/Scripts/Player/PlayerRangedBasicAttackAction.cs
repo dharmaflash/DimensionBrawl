@@ -36,7 +36,7 @@ namespace DimensionBrawl.Player
         [SerializeField, Min(0f)] private float damage = 12f;
         [SerializeField, Min(0.01f)] private float projectileSpeed = 19f;
         [SerializeField, Min(0.01f)] private float projectileLifetimeSeconds = 1.4f;
-        [SerializeField, Min(0.01f)] private float projectileRadius = 0.22f;
+        [SerializeField, Min(0.01f)] private float projectileRadius = 0.28f;
         [SerializeField, Min(0f)] private int prewarmCount = 8;
 
         [Header("Fire Feel")]
@@ -63,11 +63,16 @@ namespace DimensionBrawl.Player
         [SerializeField, Range(0f, 0.49f)] private float aimInputViewportOffsetY = 0.20f;
         [SerializeField] private bool useStableAimOrigin = true;
         [SerializeField] private bool useAimAssist = true;
-        [SerializeField] private bool disableAimAssistWithManualInput = true;
+        [SerializeField] private bool disableAimAssistWithManualInput;
         [SerializeField, Min(0f)] private float aimAssistDistance = 18f;
         [SerializeField, Range(0f, 45f)] private float hipAimAssistAngleDegrees = 12f;
-        [SerializeField, Range(0f, 45f)] private float aimedAimAssistAngleDegrees = 7f;
-        [SerializeField, Range(0f, 45f)] private float aimAssistMaxTurnDegrees = 8f;
+        [SerializeField, Range(0f, 45f)] private float aimedAimAssistAngleDegrees = 12f;
+        [SerializeField, Range(0f, 45f)] private float aimAssistMaxTurnDegrees = 12f;
+
+        [Header("Camera Aim Assist")]
+        [SerializeField] private bool driveCameraAimAssist = true;
+        [SerializeField, Range(0f, 1f)] private float cameraAimAssistStrengthScale = 1f;
+        [SerializeField, Range(0f, 1f)] private float cameraAimAssistMinStrength = 0.05f;
 
         [Header("Camera Feedback")]
         [SerializeField] private Vector3 fireCameraCueOffset = new Vector3(0.025f, 0.01f, -0.045f);
@@ -93,6 +98,11 @@ namespace DimensionBrawl.Player
             && (currentFireHeld || (aimController != null && aimController.IsAiming));
         public Vector2 AimInput => aimInput;
         public Vector3 LastResolvedFireDirection { get; private set; } = Vector3.forward;
+        public bool HasAimAssistTarget { get; private set; }
+        public float AimAssistStrength01 { get; private set; }
+        public CombatHealth AimAssistTargetHealth { get; private set; }
+        public Vector3 LastRawAimDirection { get; private set; } = Vector3.forward;
+        public Vector3 LastAimAssistDirection { get; private set; } = Vector3.forward;
         public string LastUseBlockedReason { get; private set; } = string.Empty;
         public bool ShowUseBlockedHint => Time.time < blockedHintUntil && !string.IsNullOrWhiteSpace(LastUseBlockedReason);
         public int ActiveProjectileCount
@@ -268,6 +278,7 @@ namespace DimensionBrawl.Player
             bool held = fireContinuouslyWhileHeld && ReadFireHeld();
             currentFireHeld = held || pressed;
             SetFireAimHold(currentFireHeld);
+            UpdateCameraAimAssistIfNeeded();
             if (pressed || held)
             {
                 TryFire();
@@ -320,7 +331,7 @@ namespace DimensionBrawl.Player
 
             Vector3 aimOriginPosition = ResolveAimOriginPosition(spawnPosition, fallbackDirection);
             Vector3 rawAimDirection = ResolveRawAimDirection(aimOriginPosition, fallbackDirection);
-            return ResolveAssistedAimDirection(aimOriginPosition, rawAimDirection);
+            return ResolveAssistedAimDirection(aimOriginPosition, spawnPosition, rawAimDirection);
         }
 
         private Vector3 ResolveSpawnPosition(Vector3 fallbackDirection)
@@ -381,6 +392,66 @@ namespace DimensionBrawl.Player
             return true;
         }
 
+        public bool TryGetAimAssistPreviewViewportPoint(out Vector2 viewportPoint)
+        {
+            viewportPoint = new Vector2(0.5f, 0.5f);
+            if (cameraController == null
+                || !TryGetAimPreviewDirection(out _)
+                || !HasAimAssistTarget)
+            {
+                return false;
+            }
+
+            Vector3 fallbackDirection = movement != null ? movement.FacingDirection : transform.forward;
+            fallbackDirection = ResolveBaseFireDirection(fallbackDirection);
+            Vector3 spawnPosition = ResolveSpawnPosition(fallbackDirection);
+            Vector3 aimPoint = spawnPosition + LastAimAssistDirection * cameraAimFallbackDistance;
+            if (!cameraController.TryWorldToViewportPoint(aimPoint, out Vector3 projectedPoint))
+            {
+                return false;
+            }
+
+            viewportPoint = new Vector2(
+                Mathf.Clamp01(projectedPoint.x),
+                Mathf.Clamp01(projectedPoint.y));
+            return true;
+        }
+
+        private void UpdateCameraAimAssistIfNeeded()
+        {
+            if (!driveCameraAimAssist
+                || cameraController == null
+                || !currentFireHeld
+                || !IsAimPreviewActive
+                || !TryGetAimPreviewDirection(out _)
+                || !HasAimAssistTarget
+                || AimAssistTargetHealth == null)
+            {
+                return;
+            }
+
+            float strength = AimAssistStrength01 * cameraAimAssistStrengthScale;
+            if (strength < cameraAimAssistMinStrength)
+            {
+                return;
+            }
+
+            Vector3 targetOffset = Vector3.ProjectOnPlane(
+                AimAssistTargetHealth.transform.position + Vector3.up * targetHeight - cameraController.transform.position,
+                Vector3.up);
+            if (targetOffset.sqrMagnitude <= 0.0001f)
+            {
+                return;
+            }
+
+            Vector3 baseForward = Quaternion.Euler(0f, cameraController.OrbitYawDegrees, 0f) * Vector3.forward;
+            float targetYawOffset = Vector3.SignedAngle(
+                baseForward,
+                targetOffset.normalized,
+                Vector3.up);
+            cameraController.RequestAimAssistYawTarget(targetYawOffset, strength);
+        }
+
         private Vector3 ResolveRawAimDirection(Vector3 spawnPosition, Vector3 fallbackDirection)
         {
             if (aimFromCameraViewport
@@ -435,12 +506,17 @@ namespace DimensionBrawl.Player
                 Mathf.Clamp01(0.5f + resolvedAimInput.y * aimInputViewportOffsetY));
         }
 
-        private Vector3 ResolveAssistedAimDirection(Vector3 aimOriginPosition, Vector3 rawAimDirection)
+        private Vector3 ResolveAssistedAimDirection(
+            Vector3 aimOriginPosition,
+            Vector3 projectileSpawnPosition,
+            Vector3 rawAimDirection)
         {
+            LastRawAimDirection = ResolveFireTravelDirection(rawAimDirection, LastResolvedFireDirection);
             if (!useAimAssist
                 || targetSelector == null
                 || (disableAimAssistWithManualInput && HasManualAimInput()))
             {
+                SetAimAssistState(null, 0f, LastRawAimDirection);
                 return rawAimDirection;
             }
 
@@ -455,23 +531,40 @@ namespace DimensionBrawl.Player
                 out Vector3 selectorAssistDirection,
                 out CombatHealth assistTargetHealth))
             {
+                SetAimAssistState(null, 0f, LastRawAimDirection);
                 return rawAimDirection;
             }
 
             Vector3 assistDirection = assistTargetHealth != null
-                ? ResolveFireTravelDirection(assistTargetHealth.transform.position + Vector3.up * targetHeight - aimOriginPosition, selectorAssistDirection)
+                ? ResolveFireTravelDirection(
+                    assistTargetHealth.transform.position + Vector3.up * targetHeight - projectileSpawnPosition,
+                    selectorAssistDirection)
                 : selectorAssistDirection;
             Vector3 assistedDirection = Vector3.RotateTowards(
                 rawAimDirection,
                 assistDirection,
                 aimAssistMaxTurnDegrees * Mathf.Deg2Rad,
                 0f);
-            return ResolveFireTravelDirection(assistedDirection, rawAimDirection);
+            Vector3 resolvedDirection = ResolveFireTravelDirection(assistedDirection, rawAimDirection);
+            float assistTargetAngle = Vector3.Angle(LastRawAimDirection, assistDirection);
+            float assistStrength = assistAngle > 0f
+                ? 1f - Mathf.Clamp01(assistTargetAngle / assistAngle)
+                : 0f;
+            SetAimAssistState(assistTargetHealth, assistStrength, resolvedDirection);
+            return resolvedDirection;
         }
 
         private bool HasManualAimInput()
         {
             return aimInput.sqrMagnitude > aimInputDeadZone * aimInputDeadZone;
+        }
+
+        private void SetAimAssistState(CombatHealth targetHealth, float strength01, Vector3 assistedDirection)
+        {
+            AimAssistTargetHealth = targetHealth;
+            HasAimAssistTarget = targetHealth != null && targetHealth.IsAlive && strength01 > 0f;
+            AimAssistStrength01 = HasAimAssistTarget ? Mathf.Clamp01(strength01) : 0f;
+            LastAimAssistDirection = ResolveFireTravelDirection(assistedDirection, LastRawAimDirection);
         }
 
         private void RequestFacingOnFire(Vector3 direction)

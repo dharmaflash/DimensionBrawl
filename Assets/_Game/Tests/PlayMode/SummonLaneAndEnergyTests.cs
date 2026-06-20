@@ -338,6 +338,60 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void RangedBasicManualAimStillAppliesWeakAssistForCloseThreat()
+        {
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.LookRotation(Vector3.forward, Vector3.up));
+            CombatHealth playerHealth = playerObject.AddComponent<CombatHealth>();
+            playerHealth.ConfigureTeam(DamageTeam.Player);
+            PlayerCombatTargetSelector targetSelector = playerObject.AddComponent<PlayerCombatTargetSelector>();
+            PlayerRangedBasicAttackAction rangedAction = playerObject.AddComponent<PlayerRangedBasicAttackAction>();
+
+            GameObject targetObject = new GameObject("CloseThreat");
+            targetObject.transform.position = new Vector3(0.6f, 0f, 5f);
+            CombatHealth targetHealth = targetObject.AddComponent<CombatHealth>();
+            targetHealth.ConfigureTeam(DamageTeam.Enemy);
+
+            var serializedSelector = new SerializedObject(targetSelector);
+            serializedSelector.FindProperty("selfHealth").objectReferenceValue = playerHealth;
+            serializedSelector.FindProperty("selectionOrigin").objectReferenceValue = playerObject.transform;
+            SerializedProperty candidates = serializedSelector.FindProperty("targetCandidates");
+            candidates.arraySize = 1;
+            candidates.GetArrayElementAtIndex(0).objectReferenceValue = targetHealth;
+            serializedSelector.ApplyModifiedPropertiesWithoutUndo();
+
+            rangedAction.ConfigureReferences(null, null, null, targetSelector, playerHealth, null, null);
+            var serializedAction = new SerializedObject(rangedAction);
+            serializedAction.FindProperty("aimFromCameraViewport").boolValue = false;
+            serializedAction.FindProperty("preserveVerticalAim").boolValue = false;
+            serializedAction.FindProperty("useAimAssist").boolValue = true;
+            serializedAction.FindProperty("disableAimAssistWithManualInput").boolValue = false;
+            serializedAction.FindProperty("aimInputYawDegrees").floatValue = 0f;
+            serializedAction.FindProperty("aimAssistDistance").floatValue = 10f;
+            serializedAction.FindProperty("hipAimAssistAngleDegrees").floatValue = 12f;
+            serializedAction.FindProperty("aimAssistMaxTurnDegrees").floatValue = 12f;
+            serializedAction.FindProperty("spawnForwardOffset").floatValue = 0f;
+            serializedAction.FindProperty("spawnHeight").floatValue = 0f;
+            serializedAction.FindProperty("targetHeight").floatValue = 0f;
+            serializedAction.ApplyModifiedPropertiesWithoutUndo();
+
+            rangedAction.SetAimInput(Vector2.right);
+
+            Assert.IsTrue(rangedAction.TryGetAimPreviewDirection(out Vector3 assistedDirection));
+            Assert.IsTrue(rangedAction.HasAimAssistTarget);
+            Assert.AreSame(targetHealth, rangedAction.AimAssistTargetHealth);
+            Assert.Greater(rangedAction.AimAssistStrength01, 0f);
+            Vector3 expectedTargetDirection = (targetObject.transform.position - playerObject.transform.position).normalized;
+            Assert.Less(
+                Vector3.Angle(assistedDirection, expectedTargetDirection),
+                0.5f,
+                "Manual Look/TargetBias input should not disable the weak close-threat assist around the center aim line.");
+
+            Object.DestroyImmediate(targetObject);
+            Object.DestroyImmediate(playerObject);
+        }
+
+        [Test]
         public void SummonHealthBarPresenterShowsAfterActivationAndTracksDamage()
         {
             GameObject proxyObject = new GameObject("SummonProxy");

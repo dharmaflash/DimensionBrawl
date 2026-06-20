@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!29 &1
 OcclusionCullingSettings:
@@ -255,7 +255,7 @@ MonoBehaviour:
   maxCueCameraDistanceDelta: 0.45
   maxCueFocusHeightDelta: 0.25
   cueFieldOfViewSmooth: 18
-  aimCameraOffset: {x: 0.75, y: 0.88, z: 3.12}
+  aimCameraOffset: {x: 0.75, y: 0.88, z: 2.72}
   aimFocusOffset: {x: 0.08, y: 0.06, z: 1.05}
   aimFieldOfViewDelta: -5.5
   aimBlendInSpeed: 14
@@ -267,6 +267,10 @@ MonoBehaviour:
   aimOrbitYawLimitDegrees: 45
   aimOrbitYawSpeedDegrees: 360
   aimOrbitReturnSpeedDegrees: 420
+  aimAssistUsesYawTarget: 1
+  aimAssistMaxYawBlend: 0.85
+  aimAssistYawSpeedDegrees: 420
+  aimAssistYawReturnSpeedDegrees: 520
 --- !u!114 &1005
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1172,7 +1176,7 @@ MonoBehaviour:
   damage: 12
   projectileSpeed: 19
   projectileLifetimeSeconds: 1.4
-  projectileRadius: 0.22
+  projectileRadius: 0.28
   prewarmCount: 8
   fireIntervalSeconds: 0.22
   spawnForwardOffset: 0.85
@@ -1195,11 +1199,14 @@ MonoBehaviour:
   aimInputViewportOffsetY: 0.2
   useStableAimOrigin: 1
   useAimAssist: 1
-  disableAimAssistWithManualInput: 1
+  disableAimAssistWithManualInput: 0
   aimAssistDistance: 18
   hipAimAssistAngleDegrees: 12
-  aimedAimAssistAngleDegrees: 7
-  aimAssistMaxTurnDegrees: 8
+  aimedAimAssistAngleDegrees: 12
+  aimAssistMaxTurnDegrees: 12
+  driveCameraAimAssist: 1
+  cameraAimAssistStrengthScale: 1
+  cameraAimAssistMinStrength: 0.05
   fireCameraCueOffset: {x: 0.025, y: 0.01, z: -0.045}
   fireCameraCueSeconds: 0.1
   fireFieldOfViewDelta: -0.8
@@ -8429,6 +8436,8 @@ MonoBehaviour:
   holdForNextTierActionWhenGateAllows: 1
   actionsEnabled: 1
   playerSummonResponseWindowSeconds: 4
+  heldResponseWindowFloorSeconds: 0.6
+  maxHeldResponseWindowExtensionSeconds: 1.5
 --- !u!114 &755058629
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -19518,6 +19527,12 @@ MonoBehaviour:
   fireAimReticleGap: 9
   fireAimReticleThickness: 2
   fireAimReticleColor: {r: 0.82, g: 0.96, b: 1, a: 0.88}
+  fireAimAssistReticleColor: {r: 0.38, g: 1, b: 0.72, a: 0.96}
+  fireAimAssistGapTighten: 0.35
+  fireAimAssistSizeBoost: 0.22
+  fireAimAssistThicknessBoost: 0.45
+  fireAimReticleFollowsAssist: 1
+  fireAimAssistReticleMaxOffset: 96
 --- !u!114 &2020706046
 MonoBehaviour:
   m_ObjectHideFlags: 0

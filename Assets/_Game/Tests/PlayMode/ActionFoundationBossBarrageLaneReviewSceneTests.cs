@@ -501,12 +501,16 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(0.20f, GetFloat(rangedBasicAttackAction, "aimInputViewportOffsetY"), 0.001f);
             Assert.IsTrue(GetBool(rangedBasicAttackAction, "useStableAimOrigin"));
             Assert.IsTrue(GetBool(rangedBasicAttackAction, "useAimAssist"));
-            Assert.IsTrue(GetBool(rangedBasicAttackAction, "disableAimAssistWithManualInput"));
+            Assert.IsFalse(GetBool(rangedBasicAttackAction, "disableAimAssistWithManualInput"));
             Assert.IsFalse(GetBool(rangedBasicAttackAction, "requestFacingOnFire"));
-            Assert.AreEqual(18f, GetFloat(rangedBasicAttackAction, "aimAssistDistance"), 0.001f);
-            Assert.AreEqual(12f, GetFloat(rangedBasicAttackAction, "hipAimAssistAngleDegrees"), 0.001f);
-            Assert.AreEqual(7f, GetFloat(rangedBasicAttackAction, "aimedAimAssistAngleDegrees"), 0.001f);
-            Assert.AreEqual(8f, GetFloat(rangedBasicAttackAction, "aimAssistMaxTurnDegrees"), 0.001f);
+            Assert.Greater(GetFloat(rangedBasicAttackAction, "projectileRadius"), 0f);
+            Assert.That(GetFloat(rangedBasicAttackAction, "aimAssistDistance"), Is.InRange(0.01f, 25f));
+            Assert.That(GetFloat(rangedBasicAttackAction, "hipAimAssistAngleDegrees"), Is.InRange(0.01f, 20f));
+            Assert.That(GetFloat(rangedBasicAttackAction, "aimedAimAssistAngleDegrees"), Is.InRange(0.01f, 20f));
+            Assert.That(GetFloat(rangedBasicAttackAction, "aimAssistMaxTurnDegrees"), Is.InRange(0.01f, 20f));
+            Assert.IsTrue(GetBool(rangedBasicAttackAction, "driveCameraAimAssist"));
+            Assert.That(GetFloat(rangedBasicAttackAction, "cameraAimAssistStrengthScale"), Is.InRange(0.01f, 1f));
+            Assert.That(GetFloat(rangedBasicAttackAction, "cameraAimAssistMinStrength"), Is.InRange(0f, 0.5f));
             Assert.AreSame(LoadAsset<GameObject>(RangedBasicProjectilePrefabPath), GetObjectReference<GameObject>(rangedBasicAttackAction, "projectilePrefabObject"));
             Assert.IsTrue(
                 LoadAsset<GameObject>(RangedBasicProjectilePrefabPath).GetComponent<LaneActionProjectile>().AllowsVerticalTravel,
@@ -868,9 +872,14 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(30f, GetFloat(mobileHud, "lookAimKnobSize"), 0.001f);
             Assert.AreEqual(0f, GetFloat(mobileHud, "lookAimScreenMinX"), 0.001f);
             Assert.IsTrue(GetBool(mobileHud, "showFireAimReticle"));
-            Assert.AreEqual(34f, GetFloat(mobileHud, "fireAimReticleSize"), 0.001f);
-            Assert.AreEqual(9f, GetFloat(mobileHud, "fireAimReticleGap"), 0.001f);
-            Assert.AreEqual(2f, GetFloat(mobileHud, "fireAimReticleThickness"), 0.001f);
+            Assert.Greater(GetFloat(mobileHud, "fireAimReticleSize"), 0f);
+            Assert.Greater(GetFloat(mobileHud, "fireAimReticleGap"), 0f);
+            Assert.Greater(GetFloat(mobileHud, "fireAimReticleThickness"), 0f);
+            Assert.Greater(GetFloat(mobileHud, "fireAimAssistGapTighten"), 0f);
+            Assert.Greater(GetFloat(mobileHud, "fireAimAssistSizeBoost"), 0f);
+            Assert.Greater(GetFloat(mobileHud, "fireAimAssistThicknessBoost"), 0f);
+            Assert.IsTrue(GetBool(mobileHud, "fireAimReticleFollowsAssist"));
+            Assert.Greater(GetFloat(mobileHud, "fireAimAssistReticleMaxOffset"), 0f);
 
             yield return null;
         }
@@ -1068,6 +1077,163 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator RangedAimKeepsPeekInputUnmodifiedWhenFireAssistTargetIsActive()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            PlayerCombatModeController combatModeController =
+                RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
+            PlayerRangedAimController aimController =
+                RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
+            PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            GameObject closeThreatRoot = RequireRoot(CloseThreatRootName);
+            CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreatRoot, "close threat health");
+            BasicSoldierEnemy closeThreatEnemy = closeThreatRoot.GetComponent<BasicSoldierEnemy>();
+
+            combatModeController.SetRangedMode();
+            aimController.SetAimHeld(true);
+            if (closeThreatEnemy != null)
+            {
+                closeThreatEnemy.enabled = false;
+            }
+
+            player.transform.position =
+                laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
+            rangedBasicAttackAction.SetAimInput(Vector2.right);
+            aimController.SetAimInput(Vector2.right);
+            Physics.SyncTransforms();
+            yield return WaitSeconds(0.35f);
+
+            Vector3 aimPlanarDirection = Vector3.ProjectOnPlane(cameraController.transform.forward, Vector3.up);
+            Assert.Greater(aimPlanarDirection.sqrMagnitude, 0.0001f);
+            aimPlanarDirection.Normalize();
+            Vector3 aimRight = Vector3.Cross(Vector3.up, aimPlanarDirection).normalized;
+            Vector3 closeThreatPosition =
+                player.transform.position + aimPlanarDirection * 4.6f + aimRight * 0.35f;
+            closeThreatPosition.y = closeThreatRoot.transform.position.y;
+            closeThreatRoot.transform.SetPositionAndRotation(
+                closeThreatPosition,
+                Quaternion.LookRotation(-aimPlanarDirection, Vector3.up));
+            closeThreatHealth.ResetHealthToFull();
+            targetSelector.NotifyTargetContact(closeThreatHealth);
+            targetSelector.RefreshTarget();
+            Physics.SyncTransforms();
+            yield return null;
+
+            rangedBasicAttackAction.SetAimInput(Vector2.right);
+            Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out _));
+            Assert.IsTrue(rangedBasicAttackAction.HasAimAssistTarget);
+            Assert.AreSame(closeThreatHealth, rangedBasicAttackAction.AimAssistTargetHealth);
+
+            aimController.SetAimInput(Vector2.right);
+
+            Assert.AreEqual(
+                1f,
+                aimController.AimInput.x,
+                0.001f,
+                "Q/E-style review peek must remain camera input, not hidden aim-assist friction.");
+            Assert.AreEqual(
+                1f,
+                cameraController.AimOrbitInput.x,
+                0.001f,
+                "Fire assist may bend the shot, but it must not silently change the camera peek input.");
+
+            rangedBasicAttackAction.ClearAimInput();
+            aimController.SetAimInput(Vector2.zero);
+            if (closeThreatEnemy != null)
+            {
+                closeThreatEnemy.enabled = true;
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator RangedFireAssistPullsCameraAimAxisTowardCloseThreat()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            PlayerCombatModeController combatModeController =
+                RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
+            PlayerRangedAimController aimController =
+                RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
+            PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            GameObject closeThreatRoot = RequireRoot(CloseThreatRootName);
+            CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreatRoot, "close threat health");
+            BasicSoldierEnemy closeThreatEnemy = closeThreatRoot.GetComponent<BasicSoldierEnemy>();
+
+            combatModeController.SetRangedMode();
+            aimController.SetAimHeld(true);
+            aimController.SetAimInput(Vector2.zero);
+            rangedBasicAttackAction.ClearAimInput();
+            if (closeThreatEnemy != null)
+            {
+                closeThreatEnemy.enabled = false;
+            }
+
+            player.transform.position =
+                laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
+            Physics.SyncTransforms();
+            yield return WaitSeconds(0.22f);
+
+            Vector3 initialAimForward = Vector3.ProjectOnPlane(cameraController.transform.forward, Vector3.up);
+            Assert.Greater(initialAimForward.sqrMagnitude, 0.0001f);
+            initialAimForward.Normalize();
+            Vector3 aimRight = Vector3.Cross(Vector3.up, initialAimForward).normalized;
+            Vector3 closeThreatPosition =
+                player.transform.position + initialAimForward * 4.6f + aimRight * 0.45f;
+            closeThreatPosition.y = closeThreatRoot.transform.position.y;
+            closeThreatRoot.transform.SetPositionAndRotation(
+                closeThreatPosition,
+                Quaternion.LookRotation(-initialAimForward, Vector3.up));
+            closeThreatHealth.ResetHealthToFull();
+            targetSelector.NotifyTargetContact(closeThreatHealth);
+            targetSelector.RefreshTarget();
+            Physics.SyncTransforms();
+            yield return null;
+
+            Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out _));
+            Assert.IsTrue(rangedBasicAttackAction.HasAimAssistTarget);
+            Assert.AreSame(closeThreatHealth, rangedBasicAttackAction.AimAssistTargetHealth);
+            Assert.That(cameraController.AimOrbitInput.x, Is.EqualTo(0f).Within(0.001f));
+
+            Vector3 initialCameraTargetDirection =
+                Vector3.ProjectOnPlane(closeThreatPosition - cameraController.transform.position, Vector3.up).normalized;
+            float angleBeforePull = Vector3.Angle(initialAimForward, initialCameraTargetDirection);
+            rangedBasicAttackAction.SetFireHeld(true);
+            yield return WaitSeconds(0.18f);
+
+            Vector3 pulledAimForward = Vector3.ProjectOnPlane(cameraController.transform.forward, Vector3.up);
+            Assert.Greater(pulledAimForward.sqrMagnitude, 0.0001f);
+            pulledAimForward.Normalize();
+            Vector3 pulledCameraTargetDirection =
+                Vector3.ProjectOnPlane(closeThreatPosition - cameraController.transform.position, Vector3.up).normalized;
+            Assert.Greater(
+                Mathf.Abs(cameraController.AimAssistYawOffsetDegrees),
+                0.05f,
+                "Fire assist should pull the camera aim axis, not only bend an invisible projectile path.");
+            Assert.Less(
+                Vector3.Angle(pulledAimForward, pulledCameraTargetDirection),
+                angleBeforePull,
+                "The center aim axis should move toward the close assisted target while FIRE is held.");
+            Assert.That(cameraController.AimOrbitInput.x, Is.EqualTo(0f).Within(0.001f));
+
+            rangedBasicAttackAction.SetFireHeld(false);
+            rangedBasicAttackAction.ClearAimInput();
+            aimController.SetAimInput(Vector2.zero);
+            if (closeThreatEnemy != null)
+            {
+                closeThreatEnemy.enabled = true;
+            }
+
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator RangedAimKeepsPlayerFacingCameraForwardWhileMovingSideways()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
@@ -1151,6 +1317,97 @@ namespace DimensionBrawl.Tests
 
             aimController.SetAimInput(Vector2.zero);
             rangedBasicAttackAction.ClearAimInput();
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator RangedBasicAimAssistLandsNearCloseThreatBodyFromMuzzle()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            PlayerCombatModeController combatModeController =
+                RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
+            PlayerRangedAimController aimController =
+                RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
+            PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            GameObject closeThreatRoot = RequireRoot(CloseThreatRootName);
+            CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreatRoot, "close threat health");
+            Collider closeThreatCollider = RequireCombatHitCollider(closeThreatRoot, closeThreatHealth, "close threat");
+            BasicSoldierEnemy closeThreatEnemy = closeThreatRoot.GetComponent<BasicSoldierEnemy>();
+
+            combatModeController.SetRangedMode();
+            aimController.SetAimHeld(true);
+            if (closeThreatEnemy != null)
+            {
+                closeThreatEnemy.enabled = false;
+            }
+
+            player.transform.position =
+                laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
+            aimController.SetAimInput(Vector2.right);
+            rangedBasicAttackAction.SetAimInput(Vector2.right);
+            Physics.SyncTransforms();
+            yield return WaitSeconds(0.35f);
+
+            Vector3 aimPlanarDirection = Vector3.ProjectOnPlane(cameraController.transform.forward, Vector3.up);
+            Assert.Greater(aimPlanarDirection.sqrMagnitude, 0.0001f);
+            aimPlanarDirection.Normalize();
+            Vector3 aimRight = Vector3.Cross(Vector3.up, aimPlanarDirection).normalized;
+            Vector3 closeThreatPosition =
+                player.transform.position + aimPlanarDirection * 4.6f + aimRight * 0.35f;
+            closeThreatPosition.y = closeThreatRoot.transform.position.y;
+            closeThreatRoot.transform.SetPositionAndRotation(
+                closeThreatPosition,
+                Quaternion.LookRotation(-aimPlanarDirection, Vector3.up));
+            closeThreatHealth.ResetHealthToFull();
+            targetSelector.NotifyTargetContact(closeThreatHealth);
+            targetSelector.RefreshTarget();
+            Physics.SyncTransforms();
+            yield return null;
+
+            Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out Vector3 previewDirection));
+            Assert.IsTrue(rangedBasicAttackAction.HasAimAssistTarget);
+            Assert.AreSame(closeThreatHealth, rangedBasicAttackAction.AimAssistTargetHealth);
+            Assert.Greater(rangedBasicAttackAction.AimAssistStrength01, 0f);
+            Assert.IsTrue(rangedBasicAttackAction.TryGetAimAssistPreviewViewportPoint(out Vector2 assistViewportPoint));
+            Assert.That(assistViewportPoint.x, Is.InRange(0f, 1f));
+            Assert.That(assistViewportPoint.y, Is.InRange(0f, 1f));
+            Assert.Greater(
+                Vector2.Distance(assistViewportPoint, new Vector2(0.5f, 0.5f)),
+                0.003f,
+                "The main fire reticle needs a moving screen point so the player can see where weak fire assist is pulling the shot.");
+            Assert.IsTrue(rangedBasicAttackAction.TryFire());
+
+            LaneActionProjectile playerProjectile = RequireActivePlayerRangedProjectile();
+            Assert.Less(
+                Vector3.Angle(playerProjectile.TravelDirection, previewDirection),
+                0.5f,
+                "The fired projectile should use the same assisted direction shown by the aim preview.");
+
+            float projectileRadius = GetFloat(rangedBasicAttackAction, "projectileRadius");
+            float pathMissDistance = DistanceFromRayToBounds(
+                playerProjectile.transform.position,
+                playerProjectile.TravelDirection,
+                closeThreatCollider.bounds);
+            Assert.LessOrEqual(
+                pathMissDistance,
+                projectileRadius + 0.03f,
+                "Assisted ranged basic fire should route the actual muzzle projectile through the close-threat body bounds.");
+
+            float healthBeforeImpact = closeThreatHealth.CurrentHealth;
+            Assert.IsTrue(playerProjectile.TryApplyImpact(closeThreatCollider, playerProjectile.transform.position));
+            Assert.Less(closeThreatHealth.CurrentHealth, healthBeforeImpact);
+
+            rangedBasicAttackAction.ClearAimInput();
+            aimController.SetAimInput(Vector2.zero);
+            if (closeThreatEnemy != null)
+            {
+                closeThreatEnemy.enabled = true;
+            }
+
             yield return null;
         }
 
@@ -4032,6 +4289,17 @@ namespace DimensionBrawl.Tests
                 yield return null;
                 remaining -= Time.deltaTime;
             }
+        }
+
+        private static float DistanceFromRayToBounds(Vector3 rayOrigin, Vector3 rayDirection, Bounds bounds)
+        {
+            Vector3 direction = rayDirection.sqrMagnitude > 0.0001f
+                ? rayDirection.normalized
+                : Vector3.forward;
+            Vector3 toCenter = bounds.center - rayOrigin;
+            float projectedDistance = Mathf.Max(0f, Vector3.Dot(toCenter, direction));
+            Vector3 closestPointOnRay = rayOrigin + direction * projectedDistance;
+            return Mathf.Sqrt(bounds.SqrDistance(closestPointOnRay));
         }
 
         private static FieldInfo RequirePrivateField(object target, string fieldName)

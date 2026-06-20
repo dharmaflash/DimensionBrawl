@@ -69,6 +69,12 @@ namespace DimensionBrawl.UI
         [SerializeField, Min(0f)] private float fireAimReticleGap = 9f;
         [SerializeField, Min(1f)] private float fireAimReticleThickness = 2f;
         [SerializeField] private Color fireAimReticleColor = new Color(0.82f, 0.96f, 1f, 0.88f);
+        [SerializeField] private Color fireAimAssistReticleColor = new Color(0.38f, 1f, 0.72f, 0.96f);
+        [SerializeField, Range(0f, 1f)] private float fireAimAssistGapTighten = 0.35f;
+        [SerializeField, Range(0f, 1f)] private float fireAimAssistSizeBoost = 0.22f;
+        [SerializeField, Range(0f, 1f)] private float fireAimAssistThicknessBoost = 0.45f;
+        [SerializeField] private bool fireAimReticleFollowsAssist = true;
+        [SerializeField, Min(0f)] private float fireAimAssistReticleMaxOffset = 96f;
 
         private Rect moveUpRect;
         private Rect moveDownRect;
@@ -954,14 +960,19 @@ namespace DimensionBrawl.UI
                 return;
             }
 
-            Vector2 center = ResolveFireAimReticleGuiPoint();
+            Vector2 rawCenter = ResolveFireAimReticleGuiPoint();
             float resolvedScale = ResolveScale();
-            float size = fireAimReticleSize * resolvedScale;
-            float gap = fireAimReticleGap * resolvedScale;
-            float thickness = fireAimReticleThickness * resolvedScale;
+            float assistStrength = ResolveFireAimAssistStrength();
+            Vector2 assistCenter = rawCenter;
+            bool hasAssistPoint = fireAimReticleFollowsAssist
+                && TryResolveFireAimAssistGuiPoint(rawCenter, resolvedScale, out assistCenter);
+            Vector2 center = hasAssistPoint ? assistCenter : rawCenter;
+            float size = fireAimReticleSize * resolvedScale * (1f + fireAimAssistSizeBoost * assistStrength);
+            float gap = fireAimReticleGap * resolvedScale * (1f - fireAimAssistGapTighten * assistStrength);
+            float thickness = fireAimReticleThickness * resolvedScale * (1f + fireAimAssistThicknessBoost * assistStrength);
 
             Color previousColor = GUI.color;
-            GUI.color = fireAimReticleColor;
+            GUI.color = Color.Lerp(fireAimReticleColor, fireAimAssistReticleColor, assistStrength);
             DrawReticleSegment(new Rect(center.x - gap - size, center.y - thickness * 0.5f, size, thickness));
             DrawReticleSegment(new Rect(center.x + gap, center.y - thickness * 0.5f, size, thickness));
             DrawReticleSegment(new Rect(center.x - thickness * 0.5f, center.y - gap - size, thickness, size));
@@ -977,6 +988,41 @@ namespace DimensionBrawl.UI
             }
 
             return true;
+        }
+
+        private float ResolveFireAimAssistStrength()
+        {
+            if (rangedBasicAttackAction == null
+                || !rangedBasicAttackAction.TryGetAimPreviewDirection(out _)
+                || !rangedBasicAttackAction.HasAimAssistTarget)
+            {
+                return 0f;
+            }
+
+            return Mathf.Clamp01(rangedBasicAttackAction.AimAssistStrength01);
+        }
+
+        private bool TryResolveFireAimAssistGuiPoint(Vector2 rawCenter, float resolvedScale, out Vector2 assistCenter)
+        {
+            assistCenter = rawCenter;
+            if (rangedBasicAttackAction == null
+                || !rangedBasicAttackAction.TryGetAimAssistPreviewViewportPoint(out Vector2 assistViewportPoint))
+            {
+                return false;
+            }
+
+            assistCenter = new Vector2(
+                assistViewportPoint.x * Screen.width,
+                (1f - assistViewportPoint.y) * Screen.height);
+            Vector2 offset = assistCenter - rawCenter;
+            float maxOffset = fireAimAssistReticleMaxOffset * resolvedScale;
+            if (maxOffset > 0f)
+            {
+                offset = Vector2.ClampMagnitude(offset, maxOffset);
+                assistCenter = rawCenter + offset;
+            }
+
+            return offset.sqrMagnitude > 1f;
         }
 
         private Vector2 ResolveFireAimReticleGuiPoint()

@@ -1173,7 +1173,7 @@ MonoBehaviour:
   damage: 12
   projectileSpeed: 19
   projectileLifetimeSeconds: 1.4
-  projectileRadius: 0.22
+  projectileRadius: 0.28
   prewarmCount: 8
   fireIntervalSeconds: 0.22
   spawnForwardOffset: 0.85
@@ -1196,11 +1196,11 @@ MonoBehaviour:
   aimInputViewportOffsetY: 0.2
   useStableAimOrigin: 1
   useAimAssist: 1
-  disableAimAssistWithManualInput: 1
+  disableAimAssistWithManualInput: 0
   aimAssistDistance: 18
   hipAimAssistAngleDegrees: 12
-  aimedAimAssistAngleDegrees: 7
-  aimAssistMaxTurnDegrees: 8
+  aimedAimAssistAngleDegrees: 12
+  aimAssistMaxTurnDegrees: 12
   fireCameraCueOffset: {x: 0.025, y: 0.01, z: -0.045}
   fireCameraCueSeconds: 0.1
   fireFieldOfViewDelta: -0.8

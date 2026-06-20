@@ -75,6 +75,12 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0f)] private float aimOrbitYawSpeedDegrees = 360f;
         [SerializeField, Min(0f)] private float aimOrbitReturnSpeedDegrees = 420f;
 
+        [Header("Aim Assist")]
+        [SerializeField] private bool aimAssistUsesYawTarget = true;
+        [SerializeField, Range(0f, 1f)] private float aimAssistMaxYawBlend = 0.85f;
+        [SerializeField, Min(0f)] private float aimAssistYawSpeedDegrees = 420f;
+        [SerializeField, Min(0f)] private float aimAssistYawReturnSpeedDegrees = 520f;
+
         private Camera controlledCamera;
         private Vector3 followVelocity;
         private Vector3 cueOffset;
@@ -90,6 +96,10 @@ namespace DimensionBrawl.Presentation
         private float aimWeight;
         private Vector2 aimOrbitInput;
         private float aimYawOffsetDegrees;
+        private bool hasAimAssistYawTarget;
+        private float requestedAimAssistYawTargetDegrees;
+        private float requestedAimAssistStrength01;
+        private float aimAssistYawOffsetDegrees;
         private bool wasAimFollowActive;
 
         public bool HasActiveCue => cueTimer > 0f;
@@ -97,6 +107,8 @@ namespace DimensionBrawl.Presentation
         public float AimWeight => aimWeight;
         public Vector2 AimOrbitInput => aimOrbitInput;
         public float AimYawOffsetDegrees => aimYawOffsetDegrees;
+        public float AimAssistYawOffsetDegrees => aimAssistYawOffsetDegrees;
+        public float TotalAimYawOffsetDegrees => ResolveTotalAimYawOffset();
         public float OrbitYawDegrees => orbitYawDegrees;
         public Transform Target => target;
         public Transform Threat => threat;
@@ -117,6 +129,19 @@ namespace DimensionBrawl.Presentation
             return true;
         }
 
+        public bool TryWorldToViewportPoint(Vector3 worldPoint, out Vector3 viewportPoint)
+        {
+            Camera camera = ResolveControlledCamera();
+            if (camera == null)
+            {
+                viewportPoint = default;
+                return false;
+            }
+
+            viewportPoint = camera.WorldToViewportPoint(worldPoint);
+            return viewportPoint.z > 0f;
+        }
+
         public void SetOrbitInput(Vector2 input)
         {
             mobileOrbitInput = Vector2.ClampMagnitude(input, 1f);
@@ -125,6 +150,27 @@ namespace DimensionBrawl.Presentation
         public void SetAimOrbitInput(Vector2 input)
         {
             aimOrbitInput = Vector2.ClampMagnitude(input, 1f);
+        }
+
+        public void RequestAimAssistYawTarget(float targetYawOffsetDegrees, float strength01)
+        {
+            if (!aimAssistUsesYawTarget || strength01 <= 0f)
+            {
+                return;
+            }
+
+            float resolvedStrength = Mathf.Clamp01(strength01);
+            if (hasAimAssistYawTarget && resolvedStrength < requestedAimAssistStrength01)
+            {
+                return;
+            }
+
+            hasAimAssistYawTarget = true;
+            requestedAimAssistYawTargetDegrees = Mathf.Clamp(
+                Mathf.DeltaAngle(0f, targetYawOffsetDegrees),
+                -aimOrbitYawLimitDegrees,
+                aimOrbitYawLimitDegrees);
+            requestedAimAssistStrength01 = resolvedStrength;
         }
 
         public void ConfigureTargets(Transform newTarget, Transform newThreat)
@@ -184,13 +230,15 @@ namespace DimensionBrawl.Presentation
             float cueWeight = UpdateCueWeight(deltaTime);
             UpdateAimWeight(deltaTime);
             UpdateAimYawOffset(deltaTime);
+            UpdateAimAssistYawOffset(deltaTime);
+            float totalAimYawOffsetDegrees = ResolveTotalAimYawOffset();
             Quaternion baseRotation = Quaternion.Euler(
                 0f,
                 NormalizeYaw(orbitYawDegrees),
                 0f);
             Quaternion aimRotation = Quaternion.Euler(
                 0f,
-                NormalizeYaw(orbitYawDegrees + aimYawOffsetDegrees),
+                NormalizeYaw(orbitYawDegrees + totalAimYawOffsetDegrees),
                 0f);
             Quaternion cameraPositionRotation = aimOrbitRotatesCameraPosition ? aimRotation : baseRotation;
             Vector3 baseFocus = BuildFocusPoint() + Vector3.up * (cueFocusHeightDelta * cueWeight);
@@ -219,7 +267,7 @@ namespace DimensionBrawl.Presentation
                 desiredPosition = baseFocus
                     + cameraPositionRotation * (cameraOffset + cueCameraOffset + aimCameraOffset * aimWeight)
                     + cueOffset * cueWeight;
-                focus = RotateFocusAroundAnchor(desiredPosition, aimFocus, aimYawOffsetDegrees * aimWeight);
+                focus = RotateFocusAroundAnchor(desiredPosition, aimFocus, totalAimYawOffsetDegrees * aimWeight);
             }
             UpdateFieldOfView(deltaTime, cueWeight);
 
@@ -282,6 +330,10 @@ namespace DimensionBrawl.Presentation
             DisableActionIfOwned(orbitAction, enabledOrbitAction);
             aimOrbitInput = Vector2.zero;
             aimYawOffsetDegrees = 0f;
+            hasAimAssistYawTarget = false;
+            requestedAimAssistYawTargetDegrees = 0f;
+            requestedAimAssistStrength01 = 0f;
+            aimAssistYawOffsetDegrees = 0f;
         }
 
         private Vector3 BuildFocusPoint()
@@ -518,6 +570,50 @@ namespace DimensionBrawl.Presentation
                 aimYawOffsetDegrees,
                 targetOffset,
                 speed * deltaTime);
+        }
+
+        private void UpdateAimAssistYawOffset(float deltaTime)
+        {
+            float targetOffset = 0f;
+            if (aimAssistUsesYawTarget && hasAimAssistYawTarget && aimTargetWeight > 0f && aimOrbitYawLimitDegrees > 0f)
+            {
+                float blend = Mathf.Clamp01(requestedAimAssistStrength01 * aimAssistMaxYawBlend);
+                float desiredTotalOffset = Mathf.Lerp(
+                    aimYawOffsetDegrees,
+                    requestedAimAssistYawTargetDegrees,
+                    blend);
+                targetOffset = Mathf.Clamp(
+                    desiredTotalOffset - aimYawOffsetDegrees,
+                    -aimOrbitYawLimitDegrees,
+                    aimOrbitYawLimitDegrees);
+            }
+
+            float speed = Mathf.Approximately(targetOffset, 0f)
+                ? aimAssistYawReturnSpeedDegrees
+                : aimAssistYawSpeedDegrees;
+            if (speed <= 0f)
+            {
+                aimAssistYawOffsetDegrees = targetOffset;
+            }
+            else
+            {
+                aimAssistYawOffsetDegrees = Mathf.MoveTowards(
+                    aimAssistYawOffsetDegrees,
+                    targetOffset,
+                    speed * deltaTime);
+            }
+
+            hasAimAssistYawTarget = false;
+            requestedAimAssistYawTargetDegrees = 0f;
+            requestedAimAssistStrength01 = 0f;
+        }
+
+        private float ResolveTotalAimYawOffset()
+        {
+            return Mathf.Clamp(
+                aimYawOffsetDegrees + aimAssistYawOffsetDegrees,
+                -aimOrbitYawLimitDegrees,
+                aimOrbitYawLimitDegrees);
         }
 
         private void UpdateFieldOfView(float deltaTime, float cueWeight)
