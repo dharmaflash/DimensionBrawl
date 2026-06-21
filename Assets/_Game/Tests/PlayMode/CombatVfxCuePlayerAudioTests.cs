@@ -193,19 +193,25 @@ namespace DimensionBrawl.Tests
         {
             Assert.IsTrue(profile.TryGetCue(cueId, out CombatVfxCue cue), $"{cueId} should be authored.");
             Assert.IsNotNull(cue.Prefab, $"{cueId} should reference a cue prefab.");
-            AudioSource audioSource = cue.Prefab.GetComponentInChildren<AudioSource>(true);
-            Assert.IsNotNull(audioSource, $"{cueId} should include a promoted one-shot AudioSource.");
-            Assert.IsNotNull(audioSource.clip, $"{cueId} AudioSource should reference a clip.");
-            Assert.IsFalse(audioSource.playOnAwake, $"{cueId} AudioSource should only play when CombatVfxCuePlayer fires the cue.");
-            Assert.IsFalse(audioSource.loop, $"{cueId} AudioSource should be a one-shot cue.");
+            AudioSource[] audioSources = cue.Prefab.GetComponentsInChildren<AudioSource>(true);
+            Assert.IsNotEmpty(audioSources, $"{cueId} should include a promoted one-shot AudioSource.");
 
-            string clipPath = AssetDatabase.GetAssetPath(audioSource.clip).Replace('\\', '/');
+            bool foundExpectedClip = false;
+            for (int i = 0; i < audioSources.Length; i++)
+            {
+                AudioSource audioSource = audioSources[i];
+                Assert.IsNotNull(audioSource.clip, $"{cueId} AudioSource {i} should reference a clip.");
+                Assert.IsFalse(audioSource.playOnAwake, $"{cueId} AudioSource {i} should only play when CombatVfxCuePlayer fires the cue.");
+                Assert.IsFalse(audioSource.loop, $"{cueId} AudioSource {i} should be a one-shot cue.");
+
+                string clipPath = AssetDatabase.GetAssetPath(audioSource.clip).Replace('\\', '/');
+                foundExpectedClip |= clipPath.StartsWith(expectedPathPrefix, System.StringComparison.Ordinal)
+                    && clipPath.Contains(expectedClipName);
+            }
+
             Assert.IsTrue(
-                clipPath.StartsWith(expectedPathPrefix, System.StringComparison.Ordinal),
-                $"{cueId} audio should be promoted under {expectedPathPrefix}, found {clipPath}.");
-            Assert.IsTrue(
-                clipPath.Contains(expectedClipName),
-                $"{cueId} should use the intended shot audio clip, found {clipPath}.");
+                foundExpectedClip,
+                $"{cueId} should include {expectedClipName} under {expectedPathPrefix}.");
         }
 
         private static void AssertPromotedProjectileAudio(string prefabPath, string expectedClipName)
