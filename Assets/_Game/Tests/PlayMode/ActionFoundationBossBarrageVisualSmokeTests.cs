@@ -49,6 +49,8 @@ namespace DimensionBrawl.Tests
             BossSummonPressureAction bossSummonPressure = Object.FindFirstObjectByType<BossSummonPressureAction>();
             SummonEnergyLadder energyLadder = Object.FindFirstObjectByType<SummonEnergyLadder>();
             PlayerSummonSlot1Action summonSlot1 = Object.FindFirstObjectByType<PlayerSummonSlot1Action>();
+            PlayerSupportSummonSlotAction summonSlot2 = RequireSupportSummonAction("SummonSlot2");
+            PlayerSupportSummonSlotAction summonSlot3 = RequireSupportSummonAction("SummonSlot3");
 
             Assert.IsNotNull(bossBasicFire, "Boss basic fire should be present for regular projectile pressure.");
             Assert.IsNotNull(bossBarrage, "Boss barrage emitter should be present for pattern projectile pressure.");
@@ -64,6 +66,10 @@ namespace DimensionBrawl.Tests
 
             energyLadder.GrantCurrentTierEnergy(100f);
             Assert.IsTrue(summonSlot1.TryUseSummonSlot1(), "SummonSlot1 should spend LV1 energy for a visible actor/state read.");
+            energyLadder.GrantCurrentTierEnergy(200f);
+            Assert.IsTrue(summonSlot2.TryUseSummon(), "SummonSlot2 should spend LV2 energy for a visible marksman actor/volley read.");
+            energyLadder.GrantCurrentTierEnergy(300f);
+            Assert.IsTrue(summonSlot3.TryUseSummon(), "SummonSlot3 should spend LV3 energy for a visible vanguard actor/screen read.");
 
             if (bossSummonPressure != null)
             {
@@ -80,9 +86,19 @@ namespace DimensionBrawl.Tests
                 "At least one boss projectile should still be visible when the frame is captured.");
             Assert.Greater(
                 summonSlot1.ActiveCueCount + summonSlot1.ActiveSummonActorCount
+                    + summonSlot2.ActiveSummonActorCount + summonSlot2.ActiveProjectileCount
+                    + summonSlot3.ActiveSummonActorCount + summonSlot3.ActiveProjectileCount
                     + (bossSummonPressure != null ? bossSummonPressure.ActiveSummonActorCount : 0),
                 0,
-                "At least one summon/state visual should still be visible when the frame is captured.");
+                "At least one player or boss summon/state visual should still be visible when the frame is captured.");
+            Assert.Greater(
+                summonSlot2.ActiveSummonActorCount + summonSlot2.ActiveProjectileCount,
+                0,
+                "The smoke frame should include the promoted SummonSlot2 marksman actor or volley, not only the shield slot.");
+            Assert.Greater(
+                summonSlot3.ActiveSummonActorCount + summonSlot3.ActiveProjectileCount,
+                0,
+                "The smoke frame should include the promoted SummonSlot3 vanguard actor or volley, not only the shield slot.");
 
             string capturePath = Path.GetFullPath(Path.Combine(
                 Application.dataPath,
@@ -283,6 +299,23 @@ namespace DimensionBrawl.Tests
             T component = root.GetComponent<T>();
             Assert.IsNotNull(component, $"{label} is missing {typeof(T).Name}.");
             return component;
+        }
+
+        private static PlayerSupportSummonSlotAction RequireSupportSummonAction(string slotActionName)
+        {
+            PlayerSupportSummonSlotAction[] actions = Object.FindObjectsByType<PlayerSupportSummonSlotAction>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < actions.Length; i++)
+            {
+                if (actions[i] != null && actions[i].SlotActionName == slotActionName)
+                {
+                    return actions[i];
+                }
+            }
+
+            Assert.Fail($"Scene is missing {slotActionName} support summon action.");
+            return null;
         }
 
         private static Collider RequireCombatHitCollider(GameObject root, CombatHealth expectedHealth, string label)
