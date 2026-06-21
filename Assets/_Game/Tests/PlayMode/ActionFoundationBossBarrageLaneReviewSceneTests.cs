@@ -571,6 +571,9 @@ namespace DimensionBrawl.Tests
             Assert.IsNull(
                 rangedBasicProjectilePrefab.GetComponent<TrailRenderer>(),
                 "Player basic ranged projectile should not fall back to generated TrailRenderer visuals.");
+            AssertProjectileVfxAudioDoesNotAutoPlay(
+                rangedBasicShotVfx,
+                "Player basic ranged projectile Vefects shot loop");
             ParticleSystem[] rangedBasicShotParticles =
                 rangedBasicShotVfx.GetComponentsInChildren<ParticleSystem>(true);
             Assert.GreaterOrEqual(
@@ -3666,10 +3669,15 @@ namespace DimensionBrawl.Tests
             Assert.IsNotNull(renderer.sharedMaterial, $"{label} should keep a game-owned root material for editor repair.");
             AssertGameOwnedAsset(renderer.sharedMaterial, $"{label} hidden root material");
             AssertRenderableMaterialShader(renderer.sharedMaterial, $"{label} hidden root material shader");
+            Transform magicMissilesFireShot =
+                projectileObject.transform.Find("BossBarrageProjectileVfx_MagicMissilesFireShot");
             AssertPromotedParticleVfx(
-                projectileObject.transform.Find("BossBarrageProjectileVfx_MagicMissilesFireShot"),
+                magicMissilesFireShot,
                 $"{label} MagicMissiles fire shot",
                 2);
+            AssertProjectileVfxAudioDoesNotAutoPlay(
+                magicMissilesFireShot,
+                $"{label} MagicMissiles fire shot");
             TrailRenderer trail = projectileObject.GetComponent<TrailRenderer>();
             Assert.IsNotNull(trail, $"{label} should include a TrailRenderer for incoming shot readability.");
             Assert.IsNotNull(trail.sharedMaterial, $"{label} trail should keep a visible material.");
@@ -3777,10 +3785,12 @@ namespace DimensionBrawl.Tests
             Assert.IsNull(
                 projectileObject.GetComponent<TrailRenderer>(),
                 $"{label} should not fall back to generated TrailRenderer visuals.");
+            Transform projectileVfx = projectileObject.transform.Find(childName);
             AssertPromotedParticleVfx(
-                projectileObject.transform.Find(childName),
+                projectileVfx,
                 label,
                 2);
+            AssertProjectileVfxAudioDoesNotAutoPlay(projectileVfx, label);
         }
 
         private static void AssertPromotedParticleVfx(Transform root, string label, int minimumParticleSystems)
@@ -3816,6 +3826,22 @@ namespace DimensionBrawl.Tests
                 }
 
                 AssertGameOwnedAsset(audioSource.clip, $"{label}.{audioSource.name} audio clip");
+            }
+        }
+
+        private static void AssertProjectileVfxAudioDoesNotAutoPlay(Transform root, string label)
+        {
+            Assert.IsNotNull(root, $"{label} should have a VFX root before checking projectile audio.");
+            AudioSource[] audioSources = root.GetComponentsInChildren<AudioSource>(true);
+            for (int i = 0; i < audioSources.Length; i++)
+            {
+                AudioSource audioSource = audioSources[i];
+                Assert.IsFalse(
+                    audioSource.playOnAwake,
+                    $"{label}.{audioSource.name} should not auto-play audio from a high-frequency projectile loop.");
+                Assert.IsFalse(
+                    audioSource.loop,
+                    $"{label}.{audioSource.name} should not keep looping audio on pooled projectiles.");
             }
         }
 

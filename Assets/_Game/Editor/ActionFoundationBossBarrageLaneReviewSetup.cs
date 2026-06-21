@@ -2001,15 +2001,16 @@ namespace DimensionBrawl.Editor
                 ImportedMagicMissilesFireMissilePrefabPath,
                 Vector3.zero,
                 Vector3.zero,
-                new Vector3(0.62f, 0.62f, 1.18f),
+                new Vector3(0.46f, 0.46f, 1.02f),
                 loopParticles: true,
-                playOnAwake: true);
+                playOnAwake: true,
+                playAudioOnAwake: false);
 
             TrailRenderer trail = EnsureComponent<TrailRenderer>(projectileRoot);
             trail.sharedMaterial = trailMaterial;
-            trail.time = 0.22f;
+            trail.time = 0.18f;
             trail.minVertexDistance = 0.03f;
-            trail.startWidth = 0.28f;
+            trail.startWidth = 0.2f;
             trail.endWidth = 0.035f;
             trail.numCornerVertices = 2;
             trail.numCapVertices = 2;
@@ -2048,7 +2049,7 @@ namespace DimensionBrawl.Editor
                 ImportedMagicMissilesLightImpactPrefabPath,
                 new Vector3(0f, 0.08f, 0f),
                 Vector3.zero,
-                Vector3.one * 0.36f,
+                Vector3.one * 0.3f,
                 loopParticles: false);
             EnsureCombatCueAssetOverlay(
                 profile,
@@ -2057,7 +2058,7 @@ namespace DimensionBrawl.Editor
                 ImportedMagicMissilesLightImpactPrefabPath,
                 new Vector3(0f, 0.1f, 0f),
                 Vector3.zero,
-                Vector3.one * 0.42f,
+                Vector3.one * 0.34f,
                 loopParticles: false);
             EnsureCombatCueAssetOverlay(
                 profile,
@@ -2066,7 +2067,7 @@ namespace DimensionBrawl.Editor
                 ImportedMagicMissilesDeathImpactPrefabPath,
                 new Vector3(0f, 0.04f, 0f),
                 Vector3.zero,
-                Vector3.one * 0.58f,
+                Vector3.one * 0.5f,
                 loopParticles: false);
             EnsureCombatCueAssetOverlay(
                 profile,
@@ -2075,7 +2076,7 @@ namespace DimensionBrawl.Editor
                 ImportedMagicMissilesHolyImpactPrefabPath,
                 new Vector3(0f, 0.08f, 0f),
                 Vector3.zero,
-                Vector3.one * 0.48f,
+                Vector3.one * 0.42f,
                 loopParticles: false);
             EnsureCombatCueAssetOverlay(
                 profile,
@@ -2084,7 +2085,7 @@ namespace DimensionBrawl.Editor
                 ImportedMagicMissilesHealingAuraPrefabPath,
                 new Vector3(0f, 0.08f, 0f),
                 Vector3.zero,
-                Vector3.one * 0.82f,
+                Vector3.one * 0.64f,
                 loopParticles: true);
             EnsureCombatCueAssetOverlay(
                 profile,
@@ -2093,7 +2094,7 @@ namespace DimensionBrawl.Editor
                 ImportedMagicMissilesArcaneAuraPrefabPath,
                 new Vector3(0f, 0.08f, 0f),
                 Vector3.zero,
-                Vector3.one * 0.78f,
+                Vector3.one * 0.6f,
                 loopParticles: true);
             EnsureCombatCueAssetOverlay(
                 profile,
@@ -2102,7 +2103,7 @@ namespace DimensionBrawl.Editor
                 ImportedMagicMissilesArcaneAuraPrefabPath,
                 new Vector3(0f, 0.08f, 0f),
                 Vector3.zero,
-                Vector3.one * 0.78f,
+                Vector3.one * 0.58f,
                 loopParticles: true);
             EnsureCombatCueAssetOverlay(
                 profile,
@@ -2111,7 +2112,7 @@ namespace DimensionBrawl.Editor
                 ImportedMagicMissilesArcaneAuraPrefabPath,
                 new Vector3(0f, 0.08f, 0f),
                 Vector3.zero,
-                Vector3.one * 0.78f,
+                Vector3.one * 0.62f,
                 loopParticles: true);
         }
 
@@ -2310,7 +2311,8 @@ namespace DimensionBrawl.Editor
                 Vector3.zero,
                 localScale,
                 loopParticles: true,
-                playOnAwake: true);
+                playOnAwake: true,
+                playAudioOnAwake: false);
             EditorUtility.SetDirty(projectileRoot);
         }
 
@@ -2355,6 +2357,7 @@ namespace DimensionBrawl.Editor
             UnpackNestedPrefabInstances(vfxInstance);
             ConfigureRangedBasicProjectileAssetParticles(vfxInstance);
             RemapRangedBasicProjectileAssetRenderers(vfxInstance);
+            DisableVfxAudioSources(vfxInstance);
             return vfxInstance;
         }
 
@@ -2527,7 +2530,8 @@ namespace DimensionBrawl.Editor
             Vector3 localEuler,
             Vector3 localScale,
             bool loopParticles,
-            bool playOnAwake)
+            bool playOnAwake,
+            bool playAudioOnAwake = true)
         {
             DestroyChildIfPresent(parent, childName);
             GameObject sourcePrefab = LoadAsset<GameObject>(sourcePrefabPath);
@@ -2554,7 +2558,7 @@ namespace DimensionBrawl.Editor
             UnpackNestedPrefabInstances(vfxInstance);
             StripNonGameMonoBehaviours(vfxInstance);
             RemoveColliders(vfxInstance);
-            RemapPromotedVfxAudioSources(vfxInstance, playOnAwake);
+            RemapPromotedVfxAudioSources(vfxInstance, playOnAwake && playAudioOnAwake);
             ConfigurePromotedVfxParticles(vfxInstance, loopParticles, playOnAwake);
             RemapPromotedVfxRenderers(vfxInstance);
             EditorUtility.SetDirty(vfxInstance);
@@ -2798,12 +2802,26 @@ namespace DimensionBrawl.Editor
                 }
 
                 audioSource.playOnAwake = playOnAwake && audioSource.clip != null;
+                audioSource.loop = false;
                 audioSource.spatialBlend = 1f;
                 audioSource.rolloffMode = AudioRolloffMode.Linear;
                 audioSource.dopplerLevel = 0f;
                 audioSource.minDistance = Mathf.Max(0.6f, audioSource.minDistance);
                 audioSource.maxDistance = Mathf.Clamp(audioSource.maxDistance, 8f, 22f);
                 audioSource.volume = Mathf.Clamp(audioSource.volume, 0.08f, 0.42f);
+                EditorUtility.SetDirty(audioSource);
+            }
+        }
+
+        private static void DisableVfxAudioSources(GameObject vfxRoot)
+        {
+            AudioSource[] audioSources = vfxRoot.GetComponentsInChildren<AudioSource>(includeInactive: true);
+            for (int i = 0; i < audioSources.Length; i++)
+            {
+                AudioSource audioSource = audioSources[i];
+                audioSource.playOnAwake = false;
+                audioSource.loop = false;
+                audioSource.Stop();
                 EditorUtility.SetDirty(audioSource);
             }
         }

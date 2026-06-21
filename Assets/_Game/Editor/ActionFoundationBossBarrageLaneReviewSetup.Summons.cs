@@ -369,7 +369,7 @@ namespace DimensionBrawl.Editor
                     "ShieldBreakerReadyAura",
                     ImportedMagicMissilesHealingAuraPrefabPath,
                     new Vector3(0f, 0.1f, 0.02f),
-                    Vector3.one * 0.86f);
+                    Vector3.one * 0.7f);
 
                 Transform summonVisual = AttachRoleVisualOnly(
                     editableRoot.transform,
@@ -609,7 +609,7 @@ namespace DimensionBrawl.Editor
                         ? ImportedMagicMissilesArcaneAuraPrefabPath
                         : ImportedMagicMissilesHealingAuraPrefabPath,
                     new Vector3(0f, 0.1f, 0.02f),
-                    Vector3.one * (roleId == SummonSlot2ActorVisualRoleId ? 0.72f : 0.98f));
+                    Vector3.one * (roleId == SummonSlot2ActorVisualRoleId ? 0.56f : 0.78f));
 
                 Transform summonVisual = AttachRoleVisualOnly(
                     editableRoot.transform,
@@ -887,7 +887,7 @@ namespace DimensionBrawl.Editor
                     "BossPressureAura",
                     ImportedMagicMissilesPressureAuraPrefabPath,
                     new Vector3(0f, 0.08f, -0.04f),
-                    Vector3.one * 1.08f);
+                    Vector3.one * 0.84f);
 
                 Transform summonVisual = AttachRoleVisualOnly(
                     editableRoot.transform,
@@ -958,7 +958,7 @@ namespace DimensionBrawl.Editor
                 ImportedMagicMissilesArcaneCirclePrefabPath,
                 new Vector3(0f, 0.08f, 0f),
                 Vector3.zero,
-                new Vector3(1.55f, 1.55f, 1.55f),
+                new Vector3(1.25f, 1.25f, 1.25f),
                 loopParticles: true,
                 playOnAwake: true);
             EditorUtility.SetDirty(cueRoot);
@@ -981,7 +981,7 @@ namespace DimensionBrawl.Editor
                 ImportedMagicMissilesShieldCirclePrefabPath,
                 screenCenter + new Vector3(0f, 0f, Mathf.Sign(forwardSign) * 0.08f),
                 new Vector3(90f, 0f, 0f),
-                Vector3.one * (clampedRadius * 0.95f),
+                Vector3.one * (clampedRadius * 0.78f),
                 loopParticles: true,
                 playOnAwake: true);
             EditorUtility.SetDirty(actorRoot);
@@ -1012,7 +1012,7 @@ namespace DimensionBrawl.Editor
                 ImportedMagicMissilesPulsePrefabPath,
                 pulseCenter + new Vector3(0f, 0f, direction * 0.08f),
                 Vector3.zero,
-                Vector3.one * Mathf.Max(0.5f, clampedRadius * 1.35f),
+                Vector3.one * Mathf.Max(0.44f, clampedRadius * 1.08f),
                 loopParticles: true,
                 playOnAwake: true);
             EditorUtility.SetDirty(actorRoot);
