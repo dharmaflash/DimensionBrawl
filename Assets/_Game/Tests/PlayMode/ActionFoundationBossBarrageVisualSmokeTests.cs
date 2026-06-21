@@ -2,6 +2,8 @@ using System.Collections;
 using System.IO;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
+using DimensionBrawl.Presentation;
+using DimensionBrawl.Test;
 using NUnit.Framework;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -13,6 +15,10 @@ namespace DimensionBrawl.Tests
     public sealed class ActionFoundationBossBarrageVisualSmokeTests
     {
         private const string ScenePath = "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity";
+        private const string BossRootName = "BossBarrageLaneReview_BossProxy_NeedleLock";
+        private const string CloseThreatRootName = "BossBarrageLaneReview_CloseThreat_ClosePunish";
+        private const string PocketOwnerRootName = "BossBarrageLaneReview_PocketOwner";
+        private const string HudRootName = "BossBarrageLaneReview_DebugHud";
         private const int CaptureWidth = 960;
         private const int CaptureHeight = 540;
 
@@ -36,10 +42,7 @@ namespace DimensionBrawl.Tests
         {
             yield return null;
 
-            Camera camera = Camera.main != null
-                ? Camera.main
-                : Object.FindFirstObjectByType<Camera>();
-            Assert.IsNotNull(camera, "Boss barrage visual smoke needs a renderable gameplay camera.");
+            Camera camera = RequireGameplayCamera();
 
             BossBasicFireEmitter bossBasicFire = Object.FindFirstObjectByType<BossBasicFireEmitter>();
             BossBarrageEmitter bossBarrage = Object.FindFirstObjectByType<BossBarrageEmitter>();
@@ -103,6 +106,112 @@ namespace DimensionBrawl.Tests
             }
         }
 
+        [UnityTest]
+        public IEnumerator ReviewSceneRendersReadablePocketClearResultFrame()
+        {
+            yield return null;
+
+            Camera camera = RequireGameplayCamera();
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
+            SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            PlayerSummonSlot1Action summonSlot1 = RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
+            GameObject bossRoot = RequireRoot(BossRootName);
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
+            Collider bossHitCollider = RequireCombatHitCollider(bossRoot, bossHealth, "boss proxy");
+            BossBarrageEmitter bossBarrage = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            CombatHealth closeThreatHealth =
+                RequireComponent<CombatHealth>(RequireRoot(CloseThreatRootName), "close threat health");
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            BossBarragePocketVfxCueBridge pocketVfxCueBridge =
+                RequireComponent<BossBarragePocketVfxCueBridge>(RequireRoot(PocketOwnerRootName), "pocket VFX cue bridge");
+            ActionScreenCuePresenter screenCuePresenter =
+                RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "screen cue presenter");
+
+            energyLadder.GrantCurrentTierEnergy(100f);
+            Assert.IsTrue(summonSlot1.TryUseSummonSlot1(), "SummonSlot1 should be usable to create the result flow.");
+            closeThreatHealth.TryApplyDamage(new DamageInfo(
+                playerHealth,
+                DamageTeam.Player,
+                closeThreatHealth.MaxHealth + 10f,
+                closeThreatHealth.transform.position,
+                Vector3.forward,
+                0f));
+            yield return null;
+
+            SummonPressureScreen activeScreen = RequireActiveAllyPressureScreen();
+            Assert.IsTrue(bossBarrage.BeginWindup());
+            Assert.Greater(bossBarrage.FirePendingWave(), 0);
+            BossBarrageProjectile bossProjectile = RequireActiveBossProjectile();
+            Assert.IsTrue(activeScreen.TryIntercept(bossProjectile));
+            pocketOwner.Tick(0f);
+
+            Assert.IsTrue(skill1Action.TryUseSkill1());
+            LaneActionProjectile followupProjectile = RequireActivePlayerSkillProjectile();
+            Assert.IsTrue(followupProjectile.TryApplyImpact(bossHitCollider, followupProjectile.transform.position));
+            pocketOwner.Tick(0f);
+
+            int resultCueCountBeforeClear = screenCuePresenter.ResultCueRequestCount;
+            int worldCueCountBeforeClear = pocketVfxCueBridge.PocketClearCueRequestCount;
+            pocketOwner.Tick(0.77f);
+            yield return null;
+
+            Assert.IsTrue(pocketOwner.IsCleared, "The clear result frame should be reached through the authored summon-follow-up flow.");
+            Assert.AreEqual(resultCueCountBeforeClear + 1, screenCuePresenter.ResultCueRequestCount);
+            Assert.AreEqual("Pocket.Cleared", screenCuePresenter.LastCueId);
+            Assert.IsTrue(screenCuePresenter.HasActiveCue);
+            Assert.AreEqual(worldCueCountBeforeClear + 1, pocketVfxCueBridge.PocketClearCueRequestCount);
+
+            string capturePath = Path.GetFullPath(Path.Combine(
+                Application.dataPath,
+                "..",
+                "Logs",
+                "boss_barrage_visual_smoke_clear.png"));
+            CaptureAndAssertReadableResultFrame(camera, capturePath);
+        }
+
+        [UnityTest]
+        public IEnumerator ReviewSceneRendersReadablePocketFailResultFrame()
+        {
+            yield return null;
+
+            Camera camera = RequireGameplayCamera();
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            BossBarragePocketVfxCueBridge pocketVfxCueBridge =
+                RequireComponent<BossBarragePocketVfxCueBridge>(RequireRoot(PocketOwnerRootName), "pocket VFX cue bridge");
+            ActionScreenCuePresenter screenCuePresenter =
+                RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "screen cue presenter");
+
+            int resultCueCountBeforeFail = screenCuePresenter.ResultCueRequestCount;
+            int worldCueCountBeforeFail = pocketVfxCueBridge.PocketFailCueRequestCount;
+            playerHealth.TryApplyDamage(new DamageInfo(
+                null,
+                DamageTeam.Enemy,
+                playerHealth.MaxHealth + 10f,
+                player.transform.position,
+                Vector3.back,
+                0f));
+            yield return null;
+
+            Assert.IsTrue(pocketOwner.IsFailed, "The fail result frame should be reached when the player is defeated.");
+            Assert.AreEqual(resultCueCountBeforeFail + 1, screenCuePresenter.ResultCueRequestCount);
+            Assert.AreEqual("Pocket.Failed", screenCuePresenter.LastCueId);
+            Assert.IsTrue(screenCuePresenter.HasActiveCue);
+            Assert.AreEqual(worldCueCountBeforeFail + 1, pocketVfxCueBridge.PocketFailCueRequestCount);
+
+            string capturePath = Path.GetFullPath(Path.Combine(
+                Application.dataPath,
+                "..",
+                "Logs",
+                "boss_barrage_visual_smoke_fail.png"));
+            CaptureAndAssertReadableResultFrame(camera, capturePath);
+        }
+
         private static Texture2D CaptureCamera(Camera camera, string path)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(path));
@@ -126,6 +235,118 @@ namespace DimensionBrawl.Tests
                 RenderTexture.active = previousActive;
                 Object.Destroy(renderTexture);
             }
+        }
+
+        private static void CaptureAndAssertReadableResultFrame(Camera camera, string capturePath)
+        {
+            Texture2D frame = CaptureCamera(camera, capturePath);
+            try
+            {
+                FrameColorStats stats = AnalyzeFrame(frame);
+                Assert.Greater(stats.VisiblePixelCount, frame.width * frame.height * 0.55f);
+                Assert.Greater(stats.SaturatedPixelCount, frame.width * frame.height * 0.025f);
+                Assert.Less(stats.NearWhitePixelCount, frame.width * frame.height * 0.38f);
+            }
+            finally
+            {
+                Object.Destroy(frame);
+            }
+        }
+
+        private static Camera RequireGameplayCamera()
+        {
+            Camera camera = Camera.main != null
+                ? Camera.main
+                : Object.FindFirstObjectByType<Camera>();
+            Assert.IsNotNull(camera, "Boss barrage visual smoke needs a renderable gameplay camera.");
+            return camera;
+        }
+
+        private static GameObject RequireRoot(string rootName)
+        {
+            GameObject root = GameObject.Find(rootName);
+            Assert.IsNotNull(root, $"Scene root {rootName} is missing.");
+            return root;
+        }
+
+        private static T RequireObject<T>() where T : Component
+        {
+            T component = Object.FindFirstObjectByType<T>();
+            Assert.IsNotNull(component, $"Scene is missing {typeof(T).Name}.");
+            return component;
+        }
+
+        private static T RequireComponent<T>(GameObject root, string label) where T : Component
+        {
+            T component = root.GetComponent<T>();
+            Assert.IsNotNull(component, $"{label} is missing {typeof(T).Name}.");
+            return component;
+        }
+
+        private static Collider RequireCombatHitCollider(GameObject root, CombatHealth expectedHealth, string label)
+        {
+            Collider[] colliders = root.GetComponentsInChildren<Collider>(includeInactive: true);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                if (colliders[i] != null && colliders[i].GetComponentInParent<CombatHealth>() == expectedHealth)
+                {
+                    return colliders[i];
+                }
+            }
+
+            Assert.Fail($"{label} should expose at least one child collider under its CombatHealth root.");
+            return null;
+        }
+
+        private static SummonPressureScreen RequireActiveAllyPressureScreen()
+        {
+            SummonPressureScreen[] pressureScreens = Object.FindObjectsByType<SummonPressureScreen>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < pressureScreens.Length; i++)
+            {
+                if (pressureScreens[i].IsActive && pressureScreens[i].OwnerTeam == DamageTeam.AllySummon)
+                {
+                    return pressureScreens[i];
+                }
+            }
+
+            Assert.Fail("Expected an active AllySummon pressure screen.");
+            return null;
+        }
+
+        private static BossBarrageProjectile RequireActiveBossProjectile()
+        {
+            BossBarrageProjectile[] bossProjectiles = Object.FindObjectsByType<BossBarrageProjectile>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < bossProjectiles.Length; i++)
+            {
+                if (bossProjectiles[i].IsActive && bossProjectiles[i].SourceTeam == DamageTeam.Enemy)
+                {
+                    return bossProjectiles[i];
+                }
+            }
+
+            Assert.Fail("Expected an active enemy boss barrage projectile.");
+            return null;
+        }
+
+        private static LaneActionProjectile RequireActivePlayerSkillProjectile()
+        {
+            LaneActionProjectile[] projectiles = Object.FindObjectsByType<LaneActionProjectile>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < projectiles.Length; i++)
+            {
+                if (projectiles[i].IsActive && projectiles[i].SourceTeam == DamageTeam.Player)
+                {
+                    return projectiles[i];
+                }
+            }
+
+            Assert.Fail("Expected an active Player Skill1 projectile.");
+            return null;
         }
 
         private static FrameColorStats AnalyzeFrame(Texture2D frame)
