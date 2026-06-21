@@ -126,6 +126,15 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0f)] private float margin = 18f;
         [SerializeField] private bool showCenterReticle;
 
+        [Header("Result Banner")]
+        [SerializeField] private bool showResultBanner = true;
+        [SerializeField, Min(1f)] private float resultBannerWidth = 540f;
+        [SerializeField, Min(1f)] private float resultBannerHeight = 82f;
+        [SerializeField, Min(0f)] private float resultBannerBottomOffset = 112f;
+        [SerializeField] private Color resultClearBackColor = new Color(0.08f, 0.54f, 0.28f, 0.82f);
+        [SerializeField] private Color resultFailBackColor = new Color(0.66f, 0.08f, 0.08f, 0.86f);
+        [SerializeField] private Color resultBannerTextColor = Color.white;
+
         [Header("Resource Bars")]
         [SerializeField] private bool showResourceBars = true;
         [SerializeField, Min(8f)] private float resourceBarHeight = 18f;
@@ -141,6 +150,8 @@ namespace DimensionBrawl.Presentation
         private GUIStyle titleStyle;
         private GUIStyle boxStyle;
         private GUIStyle resourceBarStyle;
+        private GUIStyle resultBannerTitleStyle;
+        private GUIStyle resultBannerDetailStyle;
 
         public string FrontlineLoopReadout => ResolveFrontlineLoopLine();
         public string FrontlineTuningReadout => ResolveFrontlineTuningLine();
@@ -152,6 +163,9 @@ namespace DimensionBrawl.Presentation
         public string CompactObjectiveReadout => ResolveCompactObjectiveLine();
         public string CompactCombatCueReadout => ResolveCompactCombatCueLine();
         public string CompactFrontlineCueReadout => ResolveCompactFrontlineCueLine();
+        public bool ShouldShowResultBanner => TryResolveResultBanner(out _, out _, out _);
+        public string ResultBannerTitle => TryResolveResultBanner(out string title, out _, out _) ? title : string.Empty;
+        public string ResultBannerDetail => TryResolveResultBanner(out _, out string detail, out _) ? detail : string.Empty;
 
         public void Configure(
             CombatHealth newPlayerHealth,
@@ -224,6 +238,7 @@ namespace DimensionBrawl.Presentation
             }
 
             GUILayout.EndArea();
+            DrawResultBanner(uiScale);
             GUI.matrix = previousMatrix;
             DrawReticleIfNeeded();
         }
@@ -1151,6 +1166,104 @@ namespace DimensionBrawl.Presentation
                 padding = new RectOffset(6, 6, 0, 0),
                 normal = { textColor = resourceTextColor }
             };
+            resultBannerTitleStyle = new GUIStyle(GUI.skin.label)
+            {
+                alignment = TextAnchor.UpperCenter,
+                fontSize = 28,
+                fontStyle = FontStyle.Bold,
+                normal = { textColor = resultBannerTextColor }
+            };
+            resultBannerDetailStyle = new GUIStyle(GUI.skin.label)
+            {
+                alignment = TextAnchor.UpperCenter,
+                fontSize = 15,
+                wordWrap = true,
+                normal = { textColor = resultBannerTextColor }
+            };
+        }
+
+        private void DrawResultBanner(float uiScale)
+        {
+            if (!TryResolveResultBanner(out string title, out string detail, out Color backColor))
+            {
+                return;
+            }
+
+            float scaledScreenWidth = Screen.width / uiScale;
+            float scaledScreenHeight = Screen.height / uiScale;
+            float bannerWidth = Mathf.Min(resultBannerWidth, Mathf.Max(1f, scaledScreenWidth - margin * 2f));
+            float bannerHeight = Mathf.Min(resultBannerHeight, Mathf.Max(1f, scaledScreenHeight - margin * 2f));
+            float x = (scaledScreenWidth - bannerWidth) * 0.5f;
+            float y = Mathf.Clamp(
+                scaledScreenHeight - bannerHeight - resultBannerBottomOffset,
+                margin,
+                Mathf.Max(margin, scaledScreenHeight - bannerHeight - margin));
+            Rect rect = new Rect(x, y, bannerWidth, bannerHeight);
+
+            Color previousColor = GUI.color;
+            GUI.color = backColor;
+            GUI.DrawTexture(rect, Texture2D.whiteTexture);
+            GUI.color = resultBannerTextColor;
+            GUI.Label(new Rect(rect.x + 12f, rect.y + 9f, rect.width - 24f, 34f), title, resultBannerTitleStyle);
+            GUI.Label(new Rect(rect.x + 18f, rect.y + 45f, rect.width - 36f, rect.height - 48f), detail, resultBannerDetailStyle);
+            GUI.color = previousColor;
+        }
+
+        private bool TryResolveResultBanner(out string title, out string detail, out Color backColor)
+        {
+            title = string.Empty;
+            detail = string.Empty;
+            backColor = Color.clear;
+            if (!showResultBanner)
+            {
+                return false;
+            }
+
+            if (duelReviewOwner != null)
+            {
+                if (duelReviewOwner.IsCleared)
+                {
+                    title = "DUEL CLEAR";
+                    detail = duelReviewOwner.ObjectiveCue;
+                    backColor = resultClearBackColor;
+                    return true;
+                }
+
+                if (duelReviewOwner.IsFailed)
+                {
+                    title = "DUEL FAILED";
+                    detail = duelReviewOwner.ObjectiveCue;
+                    backColor = resultFailBackColor;
+                    return true;
+                }
+
+                return false;
+            }
+
+            if (pocketReviewOwner == null)
+            {
+                return false;
+            }
+
+            if (pocketReviewOwner.IsCleared)
+            {
+                title = "BOSS CLEAR";
+                detail = pocketReviewOwner.Skill1FollowupHitConfirmed
+                    ? $"Skill1 follow-up confirmed for {pocketReviewOwner.Skill1FollowupDamage:0} damage"
+                    : "Boss pressure answered";
+                backColor = resultClearBackColor;
+                return true;
+            }
+
+            if (pocketReviewOwner.IsFailed)
+            {
+                title = "MISSION FAILED";
+                detail = "Player down; boss pressure halted";
+                backColor = resultFailBackColor;
+                return true;
+            }
+
+            return false;
         }
 
         private void DrawCombatResourceBars()

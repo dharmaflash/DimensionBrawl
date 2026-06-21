@@ -6795,6 +6795,13 @@ MonoBehaviour:
   height: 230
   margin: 18
   showCenterReticle: 0
+  showResultBanner: 1
+  resultBannerWidth: 540
+  resultBannerHeight: 82
+  resultBannerBottomOffset: 112
+  resultClearBackColor: {r: 0.08, g: 0.54, b: 0.28, a: 0.82}
+  resultFailBackColor: {r: 0.66, g: 0.08, b: 0.08, a: 0.86}
+  resultBannerTextColor: {r: 1, g: 1, b: 1, a: 1}
   showResourceBars: 1
   resourceBarHeight: 18
   resourceBarGap: 3

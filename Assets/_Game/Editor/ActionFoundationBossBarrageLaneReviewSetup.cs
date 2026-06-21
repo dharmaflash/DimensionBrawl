@@ -4746,6 +4746,10 @@ namespace DimensionBrawl.Editor
             SetObjectReference(hud, "bossBasicFireEmitter", bossBasicFireEmitter);
             SetObjectReference(hud, "duelReviewOwner", null);
             SetBool(hud, "showCenterReticle", false);
+            SetBool(hud, "showResultBanner", true);
+            SetFloat(hud, "resultBannerWidth", 540f);
+            SetFloat(hud, "resultBannerHeight", 82f);
+            SetFloat(hud, "resultBannerBottomOffset", 112f);
             BossBarrageLaneReviewMobileHud mobileHud = hudRoot.AddComponent<BossBarrageLaneReviewMobileHud>();
             mobileHud.Configure(
                 player.GetComponent<PlayerMovementController>(),
@@ -7666,6 +7670,10 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(hud, "pocketReviewOwner", pocketOwner);
             ValidateObjectReference(hud, "duelReviewOwner", null);
             ValidateBool(hud, "showCenterReticle", false);
+            ValidateBool(hud, "showResultBanner", true);
+            ValidateFloat(hud, "resultBannerWidth", 540f);
+            ValidateFloat(hud, "resultBannerHeight", 82f);
+            ValidateFloat(hud, "resultBannerBottomOffset", 112f);
         }
 
         private static void ValidateMobileReviewHud(

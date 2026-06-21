@@ -1012,6 +1012,12 @@ namespace DimensionBrawl.Tests
                 GetObjectReference<BossSummonPressureAction>(reviewHud, "bossSummonPressureAction"));
             Assert.AreSame(pocketOwner, GetObjectReference<BossBarragePocketReviewOwner>(reviewHud, "pocketReviewOwner"));
             Assert.IsFalse(GetBool(reviewHud, "showCenterReticle"), "Review text HUD should not draw a second center reticle.");
+            Assert.IsTrue(GetBool(reviewHud, "showResultBanner"));
+            Assert.AreEqual(540f, GetFloat(reviewHud, "resultBannerWidth"), 0.001f);
+            Assert.AreEqual(82f, GetFloat(reviewHud, "resultBannerHeight"), 0.001f);
+            Assert.AreEqual(112f, GetFloat(reviewHud, "resultBannerBottomOffset"), 0.001f);
+            Assert.IsFalse(reviewHud.ShouldShowResultBanner);
+            Assert.AreEqual(string.Empty, reviewHud.ResultBannerTitle);
             Assert.AreSame(player, GetObjectReference<PlayerMovementController>(mobileHud, "movement"));
             Assert.AreSame(playerActionController, GetObjectReference<PlayerActionController>(mobileHud, "actionController"));
             Assert.AreSame(combatModeController, GetObjectReference<PlayerCombatModeController>(mobileHud, "combatModeController"));
@@ -2966,6 +2972,8 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
             ActionScreenCuePresenter screenCuePresenter =
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "action screen cue presenter");
+            BossBarrageLaneReviewHud reviewHud =
+                RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "boss barrage HUD");
 
             FillEnergyToTier(energyLadder, 1);
             Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
@@ -3107,6 +3115,9 @@ namespace DimensionBrawl.Tests
                 pocketVfxCueBridge.PocketClearCueRequestCount,
                 "The completed pocket should also leave an in-world result VFX read, not only a screen flash.");
             Assert.AreEqual(1.42f, pocketVfxCueBridge.PocketClearIntensity, 0.001f);
+            Assert.IsTrue(reviewHud.ShouldShowResultBanner);
+            Assert.AreEqual("BOSS CLEAR", reviewHud.ResultBannerTitle);
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Skill1 follow-up confirmed"));
             Assert.IsFalse(pocketOwner.IsSummonPressureBreakActive);
             float energyAfterClear = energyLadder.CurrentTierEnergy;
             energyLadder.Tick(1f);
@@ -3422,6 +3433,8 @@ namespace DimensionBrawl.Tests
                     "pocket VFX cue bridge");
             ActionScreenCuePresenter screenCuePresenter =
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "action screen cue presenter");
+            BossBarrageLaneReviewHud reviewHud =
+                RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "boss barrage HUD");
 
             int resultCueCountBeforeFail = screenCuePresenter.ResultCueRequestCount;
             int pocketFailVfxCueCountBefore = pocketVfxCueBridge.PocketFailCueRequestCount;
@@ -3455,6 +3468,9 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(1.48f, pocketVfxCueBridge.PocketFailIntensity, 0.001f);
             Assert.AreEqual(CombatVfxCueId.EnemyClosePunishActive, pocketVfxCueBridge.PocketFailAccentCueId);
             Assert.AreEqual(1.32f, pocketVfxCueBridge.PocketFailAccentIntensity, 0.001f);
+            Assert.IsTrue(reviewHud.ShouldShowResultBanner);
+            Assert.AreEqual("MISSION FAILED", reviewHud.ResultBannerTitle);
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Player down"));
             float energyAfterFail = energyLadder.CurrentTierEnergy;
             energyLadder.Tick(1f);
             Assert.AreEqual(
