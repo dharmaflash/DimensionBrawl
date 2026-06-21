@@ -90,8 +90,12 @@ namespace DimensionBrawl.Tests
         private const int InputSystemKeyQ = 31;
         private const string RifleGirlRangedControllerPath =
             "Assets/_Game/Art/Animations/Player/RifleGirl/DB_RifleGirl_RangedCandidate.controller";
+        private const string InoriRifleAnimatorControllerPath =
+            "Assets/_Game/Art/Animations/Player/Inori/DB_Inori_Rifle_ActionFoundation.controller";
         private const string RifleGirlModelPath =
             "Assets/_Game/Art/Characters/Player/RifleGirl/Models/Rifle_Full_Body.fbx";
+        private const string InoriModelPath =
+            "Assets/_Game/Art/Characters/Player/Inori/Models/Inori_Unity.fbx";
         private const string RifleGirlIdleClipPath =
             "Assets/_Game/Art/Animations/Player/RifleGirl/RG_Idle.fbx";
         private const string RifleGirlAimIdleClipPath =
@@ -107,7 +111,7 @@ namespace DimensionBrawl.Tests
         private const string LaneRootName = "BossBarrageLaneReview_SummonLaneSpace";
         private const string BossRootName = "BossBarrageLaneReview_BossProxy_NeedleLock";
         private const string BossHumanoidVisualName = "BossBarrageLaneReview_HumanoidBossVisual_SummonCallerElite";
-        private const string RangedPlayerVisualRootName = "BossBarrageLaneReview_RangedVisual_RifleGirl";
+        private const string RangedPlayerVisualRootName = "BossBarrageLaneReview_RangedVisual_Inori";
         private const string RangedPlayerWeaponName = "BossBarrageLaneReview_RangedWeapon_Rifle";
         private const string MeleePlayerWeaponRootName = "BossBarrageLaneReview_MeleeWeapons_CombatGirlSwordShield";
         private const string BossProjectileCoreName = "BossBarrageLaneReview_BossProxyMarker";
@@ -469,20 +473,20 @@ namespace DimensionBrawl.Tests
             GameObject meleeWeaponRoot = GetObjectReference<GameObject>(combatModeController, "meleeWeaponRoot");
             Animator rangedAnimator = GetObjectReference<Animator>(combatModeController, "rangedAnimator");
             Animator meleeAnimator = GetObjectReference<Animator>(combatModeController, "meleeAnimator");
-            Assert.IsNotNull(rangedVisualRoot, "Review scene must bind a ranged visual root for RifleGirl.");
+            Assert.IsNotNull(rangedVisualRoot, "Review scene must bind a ranged visual root for Inori.");
             Assert.IsNotNull(meleeVisualRoot, "Review scene may keep the old melee source visual inactive for weapon/clip reuse.");
             Assert.IsNotNull(rangedWeaponRoot, "Review scene must bind a ranged weapon root.");
             Assert.IsNotNull(meleeWeaponRoot, "Review scene must bind a melee weapon root.");
-            Assert.IsNotNull(rangedAnimator, "Review scene must bind the RifleGirl ranged Animator.");
+            Assert.IsNotNull(rangedAnimator, "Review scene must bind the Inori ranged Animator.");
             Assert.AreSame(rangedAnimator, meleeAnimator, "Weapon swap should reuse one visible player Animator instead of swapping character bodies.");
             Assert.AreEqual(RangedPlayerVisualRootName, rangedVisualRoot.name);
             Assert.IsTrue(rangedVisualRoot.activeSelf, "The single visible player body should stay active for the review starting mode.");
             Assert.IsFalse(meleeVisualRoot.activeSelf, "The old melee source visual should stay inactive; weapon swap must not swap character bodies.");
             Assert.IsTrue(rangedWeaponRoot.activeSelf, "Rifle should start visible in ranged mode.");
             Assert.IsFalse(meleeWeaponRoot.activeSelf, "Melee weapons should start hidden in ranged mode.");
-            Assert.AreSame(LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath), rangedAnimator.runtimeAnimatorController);
+            Assert.AreSame(LoadAsset<RuntimeAnimatorController>(InoriRifleAnimatorControllerPath), rangedAnimator.runtimeAnimatorController);
             Assert.AreSame(
-                LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath),
+                LoadAsset<RuntimeAnimatorController>(InoriRifleAnimatorControllerPath),
                 GetObjectReference<RuntimeAnimatorController>(combatModeController, "rangedAnimatorController"));
             Assert.AreSame(
                 LoadAsset<RuntimeAnimatorController>(CombatGirlMeleeControllerPath),
@@ -491,10 +495,16 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(GetBool(combatModeController, "rangedAnimatorUsesExternalPresentationBridge"));
             Assert.IsNull(
                 GetOptionalObjectReference<Animator>(player, "animator"),
-                "Ranged mode uses the RifleGirl native bridge, so generic movement Animator parameters should not route into it.");
+                "Inori ranged mode should let the RifleGirl native bridge drive locomotion instead of generic player movement parameters.");
             Assert.IsNull(
                 GetOptionalObjectReference<Animator>(playerActionController, "animator"),
-                "Ranged mode blocks generic basic attacks and should not route CombatGirl attack triggers into the RifleGirl native controller.");
+                "Inori ranged mode should let the RifleGirl native bridge drive native fire triggers.");
+            RifleGirlNativeGameplayAnimatorBridge nativeBridge =
+                RequireComponent<RifleGirlNativeGameplayAnimatorBridge>(rangedAnimator.gameObject, "Inori native ranged animator bridge");
+            Assert.AreSame(rangedAnimator, GetObjectReference<Animator>(nativeBridge, "animator"));
+            Assert.AreSame(player, GetObjectReference<PlayerMovementController>(nativeBridge, "movement"));
+            Assert.AreSame(playerActionController, GetObjectReference<PlayerActionController>(nativeBridge, "actionController"));
+            Assert.AreSame(combatModeController, GetObjectReference<PlayerCombatModeController>(nativeBridge, "combatModeController"));
             AssertSingleCharacterWeaponVisual(rangedVisualRoot, rangedAnimator, rangedWeaponRoot, meleeWeaponRoot);
             Assert.AreSame(combatModeController, GetObjectReference<PlayerCombatModeController>(rangedAimController, "combatModeController"));
             Assert.AreSame(cameraController, GetObjectReference<ActionCameraController>(rangedAimController, "cameraController"));
@@ -514,7 +524,7 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(rangedAnimator, GetObjectReference<Animator>(rangedBasicAttackAction, "animator"));
             Assert.IsTrue(
                 string.IsNullOrEmpty(GetString(rangedBasicAttackAction, "fireTrigger")),
-                "RifleGirl ranged fire animation should be routed through the native bridge, not a temporary Attack1 trigger.");
+                "Inori ranged fire should stay projectile/VFX-led instead of forcing a mismatched melee attack trigger.");
             Assert.IsTrue(GetBool(rangedBasicAttackAction, "holdFireActivatesAim"));
             Assert.AreEqual(0.18f, GetFloat(rangedBasicAttackAction, "aimInputDeadZone"), 0.001f);
             Assert.AreEqual(34f, GetFloat(rangedBasicAttackAction, "aimInputYawDegrees"), 0.001f);
@@ -541,15 +551,40 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(
                 rangedBasicProjectilePrefab.GetComponent<LaneActionProjectile>().AllowsVerticalTravel,
                 "Player basic ranged fire should allow vertical travel when the center camera ray carries height.");
+            MeshRenderer rangedBasicRootRenderer = rangedBasicProjectilePrefab.GetComponent<MeshRenderer>();
             Assert.IsNotNull(
-                rangedBasicProjectilePrefab.transform.Find("RangedBasicProjectileVfx_Core"),
-                "Player basic ranged projectile should include a promoted visual core.");
+                rangedBasicRootRenderer,
+                "Player basic ranged projectile should keep the collision root renderer available for editor repair.");
+            Assert.IsFalse(
+                rangedBasicRootRenderer.enabled,
+                "Player basic ranged projectile should not show its collision root sphere over the Vefects asset shot.");
+            Transform rangedBasicShotVfx =
+                rangedBasicProjectilePrefab.transform.Find("RangedBasicProjectileVfx_VefectsRifleShotLoop");
             Assert.IsNotNull(
-                rangedBasicProjectilePrefab.transform.Find("RangedBasicProjectileVfx_CompressedFlame"),
-                "Player basic ranged projectile should include a compressed flame/tracer visual.");
-            Assert.IsNotNull(
+                rangedBasicShotVfx,
+                "Player basic ranged projectile should use the Vefects rifle shot loop asset VFX, not generated tracer primitives.");
+            Assert.IsNull(
                 rangedBasicProjectilePrefab.GetComponent<TrailRenderer>(),
-                "Player basic ranged projectile should include a trail renderer for fired-shot readability.");
+                "Player basic ranged projectile should not fall back to generated TrailRenderer visuals.");
+            ParticleSystem[] rangedBasicShotParticles =
+                rangedBasicShotVfx.GetComponentsInChildren<ParticleSystem>(true);
+            Assert.GreaterOrEqual(
+                rangedBasicShotParticles.Length,
+                4,
+                "Player basic ranged projectile should preserve the authored multi-part Vefects particle setup.");
+            ParticleSystemRenderer[] rangedBasicShotRenderers =
+                rangedBasicShotVfx.GetComponentsInChildren<ParticleSystemRenderer>(true);
+            Assert.Greater(rangedBasicShotRenderers.Length, 0, "Vefects shot VFX should expose particle renderers.");
+            for (int rendererIndex = 0; rendererIndex < rangedBasicShotRenderers.Length; rendererIndex++)
+            {
+                ParticleSystemRenderer renderer = rangedBasicShotRenderers[rendererIndex];
+                AssertGameOwnedAsset(renderer.sharedMaterial, $"{renderer.name} shot VFX material");
+                AssertVefectsFlipbookMaterial(renderer.sharedMaterial, $"{renderer.name} shot VFX material");
+                if (renderer.mesh != null)
+                {
+                    AssertGameOwnedAsset(renderer.mesh, $"{renderer.name} shot VFX mesh");
+                }
+            }
             Assert.AreSame(projectileRoot.transform, GetObjectReference<Transform>(rangedBasicAttackAction, "projectileRoot"));
             combatModeController.SetMeleeMode();
             yield return null;
@@ -570,7 +605,7 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(meleeWeaponRoot.activeSelf, "Melee weapons should hide again after returning to ranged mode.");
             Assert.IsNull(GetOptionalObjectReference<Animator>(player, "animator"));
             Assert.IsNull(GetOptionalObjectReference<Animator>(playerActionController, "animator"));
-            Assert.AreSame(LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath), rangedAnimator.runtimeAnimatorController);
+            Assert.AreSame(LoadAsset<RuntimeAnimatorController>(InoriRifleAnimatorControllerPath), rangedAnimator.runtimeAnimatorController);
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(energyLadder, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(energyLadder, "trackedPlayer"));
             Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(skill1Action, "energyLadder"));
@@ -1261,23 +1296,24 @@ namespace DimensionBrawl.Tests
 
             Vector3 initialCameraTargetDirection =
                 Vector3.ProjectOnPlane(closeThreatPosition - cameraController.transform.position, Vector3.up).normalized;
-            float angleBeforePull = Vector3.Angle(initialAimForward, initialCameraTargetDirection);
+            float signedAngleBeforePull =
+                Vector3.SignedAngle(initialAimForward, initialCameraTargetDirection, Vector3.up);
+            Assert.Greater(Mathf.Abs(signedAngleBeforePull), 0.1f);
             rangedBasicAttackAction.SetFireHeld(true);
             yield return WaitSeconds(0.18f);
 
             Vector3 pulledAimForward = Vector3.ProjectOnPlane(cameraController.transform.forward, Vector3.up);
             Assert.Greater(pulledAimForward.sqrMagnitude, 0.0001f);
             pulledAimForward.Normalize();
-            Vector3 pulledCameraTargetDirection =
-                Vector3.ProjectOnPlane(closeThreatPosition - cameraController.transform.position, Vector3.up).normalized;
+            float signedPullAngle = Vector3.SignedAngle(initialAimForward, pulledAimForward, Vector3.up);
             Assert.Greater(
                 Mathf.Abs(cameraController.AimAssistYawOffsetDegrees),
                 0.05f,
                 "Fire assist should pull the camera aim axis, not only bend an invisible projectile path.");
-            Assert.Less(
-                Vector3.Angle(pulledAimForward, pulledCameraTargetDirection),
-                angleBeforePull,
-                "The center aim axis should move toward the close assisted target while FIRE is held.");
+            Assert.Greater(
+                signedPullAngle * signedAngleBeforePull,
+                0f,
+                "The center aim axis should yaw toward the close assisted target while FIRE is held.");
             Assert.That(cameraController.AimOrbitInput.x, Is.EqualTo(0f).Within(0.001f));
 
             rangedBasicAttackAction.SetFireHeld(false);
@@ -1612,7 +1648,7 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator RifleGirlWeaponSocketIgnoresRepeatedShootSocketEvents()
+        public IEnumerator InoriRifleSocketUsesAuthoredRiflePoseWithoutConstraintSwitching()
         {
             PlayerCombatModeController combatModeController =
                 RequireComponent<PlayerCombatModeController>(
@@ -1620,34 +1656,69 @@ namespace DimensionBrawl.Tests
                     "player combat mode controller");
             Animator rangedAnimator = GetObjectReference<Animator>(combatModeController, "rangedAnimator");
             RifleGirlWeaponSocketDriver socketDriver =
-                RequireComponent<RifleGirlWeaponSocketDriver>(rangedAnimator.gameObject, "RifleGirl weapon socket driver");
-            ParentConstraint rifleConstraint =
-                GetObjectReference<ParentConstraint>(socketDriver, "rifleConstraint");
+                RequireComponent<RifleGirlWeaponSocketDriver>(rangedAnimator.gameObject, "Inori rifle socket driver");
 
+            Assert.IsTrue(socketDriver.IsConfigured, "Inori rifle socket driver should be configured for the right-hand rifle anchor.");
+            Assert.IsNull(
+                GetOptionalObjectReference<ParentConstraint>(socketDriver, "rifleConstraint"),
+                "Inori rifle is parented directly to the right hand, so it should not rely on a ParentConstraint.");
             Assert.IsTrue(GetBool(socketDriver, "ignoreRedundantSocketCommands"));
-            socketDriver.SwitchSocketByString("To_Hand_R_Socket, IK_ON_Left_Handle");
-            int applyCountBefore = socketDriver.RifleConstraintSourceApplyCount;
-            int redundantCountBefore = socketDriver.RedundantRifleConstraintCommandCount;
+            Assert.IsNotNull(
+                GetObjectReference<Transform>(socketDriver, "leftHandIkTarget"),
+                "Inori rifle socket driver should bind the rifle support-hand IK target.");
+            Assert.AreEqual("IK_OFF_Left_Handle", GetString(socketDriver, "defaultCommands"));
+            Assert.AreEqual(
+                0f,
+                GetFloat(socketDriver, "leftIkMaxWeight"),
+                0.001f,
+                "Inori should not pull the retargeted left arm toward a RifleGirl-specific support-handle position.");
+            Assert.AreEqual(
+                0f,
+                GetFloat(socketDriver, "leftIkRotationMaxWeight"),
+                0.001f,
+                "Inori should not force the retargeted left wrist to match the RifleGirl handle roll.");
+            GameObject rangedWeaponRoot = GetObjectReference<GameObject>(combatModeController, "rangedWeaponRoot");
+            RetargetedHandWeaponAttachment attachment =
+                RequireComponent<RetargetedHandWeaponAttachment>(
+                    rangedWeaponRoot,
+                    "retargeted Inori rifle attachment");
+            Assert.IsTrue(attachment.IsConfigured, "Inori rifle should follow the hand position while using a character-upright roll frame.");
+            Assert.AreEqual(Vector3.up, GetVector3(attachment, "referenceLocalForward"));
+            Assert.AreEqual(Vector3.left, GetVector3(attachment, "referenceLocalUp"));
+            yield return null;
+            Transform rifleMesh = FindDescendant(rangedWeaponRoot.transform, "Weapon_Rifle");
+            Assert.IsNotNull(rifleMesh, "Inori rifle should keep the original RifleGirl mesh child.");
+            Assert.Greater(
+                Vector3.Dot(rifleMesh.forward.normalized, combatModeController.transform.forward),
+                0.85f,
+                "Inori rifle mesh should face the player aim direction instead of the retargeted hand roll/back axis.");
+            Assert.Greater(
+                Vector3.Dot((-rangedWeaponRoot.transform.right).normalized, combatModeController.transform.forward),
+                0.85f,
+                "Inori rifle root should keep the RifleGirl barrel axis aimed forward while applying the corrected roll.");
+            Assert.Greater(
+                Vector3.Dot((-rangedWeaponRoot.transform.up).normalized, combatModeController.transform.right),
+                0.85f,
+                "Inori rifle root should rotate the weapon underside downward instead of leaving the rifle sideways.");
+            Assert.Less(
+                Mathf.Abs(Vector3.Dot(rifleMesh.forward.normalized, Vector3.up)),
+                0.25f,
+                "Inori rifle mesh should not stand vertically from the retargeted hand axis.");
 
-            socketDriver.SwitchSocketByString("To_Hand_R_Socket");
-            socketDriver.SwitchSocketByString("To_Hand_R_Socket");
+            socketDriver.SwitchSocketByString("IK_OFF_Left_Handle");
+            yield return null;
+            socketDriver.SwitchSocketByString("IK_ON_Left_Handle");
+            yield return null;
 
             Assert.AreEqual(
-                applyCountBefore,
+                0,
                 socketDriver.RifleConstraintSourceApplyCount,
-                "Repeated RG_Shoot hand-socket events should not rewrite the same rifle ParentConstraint source.");
-            Assert.GreaterOrEqual(
+                "Inori rifle socket events should not try to rewrite a missing ParentConstraint.");
+            Assert.AreEqual(
+                0,
                 socketDriver.RedundantRifleConstraintCommandCount,
-                redundantCountBefore + 2,
-                "Repeated hand-socket commands should be counted as redundant visual events.");
-            Assert.AreEqual(0, socketDriver.ActiveRifleConstraintSourceIndex);
-            Assert.AreEqual(1f, rifleConstraint.GetSource(0).weight, 0.001f);
-            for (int i = 1; i < rifleConstraint.sourceCount; i++)
-            {
-                Assert.AreEqual(0f, rifleConstraint.GetSource(i).weight, 0.001f);
-            }
-
-            yield return null;
+                "Inori IK-only socket events should not be counted as redundant rifle socket rewrites.");
+            Assert.AreEqual(-1, socketDriver.ActiveRifleConstraintSourceIndex);
         }
 
         [UnityTest]
@@ -3543,22 +3614,41 @@ namespace DimensionBrawl.Tests
             AssertColorNear(expectedColor, projectile.LastPresentationColor, $"{label} color");
             AssertVectorNear(expectedScale, projectile.LastPresentationScale, $"{label} scale");
             Assert.AreSame(expectedMaterial, projectile.LastPresentationMaterial, $"{label} should remember its pattern material.");
-            MeshRenderer renderer = projectile.GetComponent<MeshRenderer>();
-            Assert.IsNotNull(renderer, $"{label} should keep a visible MeshRenderer.");
-            Assert.AreSame(expectedMaterial, renderer.sharedMaterial, $"{label} should use its pattern material.");
-            AssertGameOwnedAsset(renderer.sharedMaterial, $"{label} material");
-            AssertColorNear(expectedColor, ReadMaterialColor(renderer.sharedMaterial), $"{label} rendered material color");
+            MeshRenderer rootRenderer = projectile.GetComponent<MeshRenderer>();
+            Assert.IsNotNull(rootRenderer, $"{label} should keep a hidden collision root MeshRenderer.");
+            Assert.IsFalse(rootRenderer.enabled, $"{label} should not render its collision root sphere.");
+
+            Renderer[] renderers = projectile.GetComponentsInChildren<Renderer>(true);
+            int visibleProjectileVisualCount = 0;
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer visualRenderer = renderers[i];
+                if (visualRenderer == null
+                    || !visualRenderer.enabled
+                    || visualRenderer is TrailRenderer
+                    || visualRenderer.transform == projectile.transform)
+                {
+                    continue;
+                }
+
+                visibleProjectileVisualCount++;
+                Assert.AreSame(expectedMaterial, visualRenderer.sharedMaterial, $"{label} visible VFX should use its pattern material.");
+                AssertGameOwnedAsset(visualRenderer.sharedMaterial, $"{label} visible VFX material");
+                AssertColorNear(expectedColor, ReadMaterialColor(visualRenderer.sharedMaterial), $"{label} visible VFX rendered material color");
+            }
+
+            Assert.Greater(visibleProjectileVisualCount, 0, $"{label} should render through child projectile VFX.");
         }
 
         private static void AssertBossBarrageProjectileVisible(GameObject projectileObject, string label)
         {
             Assert.IsNotNull(projectileObject, $"{label} should be assigned.");
             MeshRenderer renderer = projectileObject.GetComponent<MeshRenderer>();
-            Assert.IsNotNull(renderer, $"{label} needs a MeshRenderer so boss shots are visible in-world.");
-            Assert.IsTrue(renderer.enabled, $"{label} MeshRenderer must stay enabled for projectile readability.");
-            Assert.IsNotNull(renderer.sharedMaterial, $"{label} should keep a visible material.");
-            AssertGameOwnedAsset(renderer.sharedMaterial, $"{label} material");
-            AssertRenderableMaterialShader(renderer.sharedMaterial, $"{label} material shader");
+            Assert.IsNotNull(renderer, $"{label} should keep a hidden collision root MeshRenderer.");
+            Assert.IsFalse(renderer.enabled, $"{label} root MeshRenderer must stay disabled so child VFX defines the shot.");
+            Assert.IsNotNull(renderer.sharedMaterial, $"{label} should keep a game-owned root material for editor repair.");
+            AssertGameOwnedAsset(renderer.sharedMaterial, $"{label} hidden root material");
+            AssertRenderableMaterialShader(renderer.sharedMaterial, $"{label} hidden root material shader");
             Assert.IsNotNull(
                 projectileObject.transform.Find("BossBarrageProjectileVfx_HotCore"),
                 $"{label} should include a promoted hot core visual.");
@@ -3829,6 +3919,30 @@ namespace DimensionBrawl.Tests
             AssertAnimationClipUsesPromotedAvatar(RifleGirlDrawClipPath, "RG_DrawRangedFocus");
         }
 
+        private static void AssertInoriAvatarUsesAuthoredMapping()
+        {
+            ModelImporter modelImporter = AssetImporter.GetAtPath(InoriModelPath) as ModelImporter;
+            Assert.IsNotNull(modelImporter, $"Missing ModelImporter for {InoriModelPath}.");
+            Assert.AreEqual(ModelImporterAnimationType.Human, modelImporter.animationType);
+            Assert.AreEqual(ModelImporterAvatarSetup.CreateFromThisModel, modelImporter.avatarSetup);
+            AssertHumanBoneMapped(modelImporter, "hand.r", "RightHand");
+            AssertHumanBoneMapped(modelImporter, "hand.l", "LeftHand");
+        }
+
+        private static void AssertHumanBoneMapped(ModelImporter importer, string boneName, string humanName)
+        {
+            HumanBone[] humanBones = importer.humanDescription.human;
+            for (int i = 0; i < humanBones.Length; i++)
+            {
+                if (humanBones[i].boneName == boneName && humanBones[i].humanName == humanName)
+                {
+                    return;
+                }
+            }
+
+            Assert.Fail($"{boneName} must be mapped as {humanName} on the promoted Inori avatar.");
+        }
+
         private static void AssertHumanBoneNotMapped(ModelImporter importer, string boneName, string humanName)
         {
             HumanBone[] humanBones = importer.humanDescription.human;
@@ -3960,38 +4074,19 @@ namespace DimensionBrawl.Tests
         {
             Assert.AreEqual(RangedPlayerVisualRootName, rangedRoot.name);
             Assert.AreSame(
-                LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath),
+                LoadAsset<RuntimeAnimatorController>(InoriRifleAnimatorControllerPath),
                 rangedAnimator.runtimeAnimatorController);
-            AssertGameOwnedAsset(rangedAnimator.runtimeAnimatorController, "RifleGirl ranged Animator Controller");
-            AssertGameOwnedAsset(rangedAnimator.avatar, "RifleGirl ranged Avatar");
-            AnimatorController rangedController = LoadAsset<AnimatorController>(RifleGirlRangedControllerPath);
+            AssertGameOwnedAsset(rangedAnimator.runtimeAnimatorController, "Inori player Animator Controller");
+            AssertGameOwnedAsset(rangedAnimator.avatar, "Inori ranged Avatar");
+            AnimatorController rangedController = LoadAsset<AnimatorController>(InoriRifleAnimatorControllerPath);
             Assert.IsTrue(
                 rangedController.layers[0].iKPass,
-                "RifleGirl ranged controller must keep IK pass enabled for the support hand.");
+                "Inori rifle controller must keep IK pass enabled for support-hand correction.");
             Assert.IsNotNull(
                 rangedController.layers[0].stateMachine.defaultState,
-                "RifleGirl ranged controller should preserve the native controller default state.");
+                "Inori ranged controller should preserve the promoted RifleGirl native default state.");
             AssertControllerUsesGameOwnedMotions(rangedController);
-            AssertRifleGirlAvatarUsesAuthoredMapping();
-            AssertImportedClipHasMotion(RifleGirlIdleClipPath, "RG_Idle");
-            AssertImportedClipHasMotion(RifleGirlAimIdleClipPath, "RG_AimIdle");
-            AssertImportedClipHasMotion(RifleGirlShootClipPath, "RG_Shoot");
-            AssertImportedClipHasEvent(
-                RifleGirlAimIdleClipPath,
-                "RG_AimIdle",
-                "SwitchSocket",
-                "To_Hand_R_Socket, IK_ON_Left_Handle");
-            AssertImportedClipHasEvent(RifleGirlShootClipPath, "RG_Shoot", "SwitchSocket", "To_Hand_R_Socket");
-            AssertImportedClipHasEvent(
-                RifleGirlDrawClipPath,
-                "RG_DrawRangedFocus",
-                "SwitchSocket",
-                "To_Hand_R_Socket, IK_OFF_Left_Handle");
-            AssertImportedClipHasEvent(
-                RifleGirlHolsterClipPath,
-                "RG_HolsterRangedFocus",
-                "SwitchSocket",
-                "To_Put_Socket_Rifle");
+            AssertInoriAvatarUsesAuthoredMapping();
 
             Assert.IsNull(
                 rangedRoot.GetComponentInChildren<CombatHealth>(true),
@@ -4004,45 +4099,53 @@ namespace DimensionBrawl.Tests
                 "Ranged player visual should not duplicate local defense actions.");
 
             Renderer[] renderers = rangedRoot.GetComponentsInChildren<Renderer>(true);
-            Assert.Greater(renderers.Length, 0, "RifleGirl ranged visual should expose promoted renderers.");
+            Assert.Greater(renderers.Length, 0, "Inori ranged visual should expose promoted renderers.");
             for (int i = 0; i < renderers.Length; i++)
             {
                 AssertRendererUsesGameOwnedAssets(renderers[i], renderers[i].name);
             }
 
             Transform weapon = FindDescendant(rangedRoot.transform, RangedPlayerWeaponName);
-            Assert.IsNotNull(weapon, $"RifleGirl ranged visual should include {RangedPlayerWeaponName}.");
+            Assert.IsNotNull(weapon, $"Inori ranged visual should include {RangedPlayerWeaponName}.");
             Assert.AreSame(rangedWeaponRoot.transform, weapon, "Ranged weapon reference should point at the actual rifle object.");
-            Assert.AreNotSame(rangedRoot.transform, weapon.parent, "Ranged weapon should stay inside the RifleGirl authored hierarchy.");
+            Assert.AreNotSame(rangedRoot.transform, weapon.parent, "Ranged weapon should stay under the Inori hand hierarchy.");
+            Assert.IsTrue(weapon.IsChildOf(rangedAnimator.transform), "Ranged weapon should be parented to the active Inori player model.");
             Assert.Greater(
                 weapon.GetComponentsInChildren<Renderer>(true).Length,
                 0,
                 "Ranged weapon should be a visible promoted model, not a hidden data marker.");
-            ParentConstraint weaponConstraint = weapon.GetComponent<ParentConstraint>();
-            Assert.IsNotNull(weaponConstraint, "Ranged weapon should preserve the authored ParentConstraint from the source prefab.");
-            Assert.GreaterOrEqual(
-                weaponConstraint.sourceCount,
-                2,
-                "Ranged weapon ParentConstraint should keep the RifleGirl authored weapon sockets.");
-            Assert.IsTrue(weaponConstraint.constraintActive, "Ranged weapon ParentConstraint should start active.");
             RifleGirlWeaponSocketDriver weaponSocketDriver =
                 rangedAnimator.GetComponent<RifleGirlWeaponSocketDriver>();
-            Assert.IsNotNull(weaponSocketDriver, "Ranged visual should bind a game-owned RifleGirl weapon socket driver.");
+            Assert.IsNotNull(weaponSocketDriver, "Ranged visual should bind a game-owned Inori rifle socket driver.");
             Assert.IsTrue(weaponSocketDriver.IsConfigured, "Ranged visual weapon socket driver should be fully configured.");
             Assert.AreSame(rangedAnimator, GetObjectReference<Animator>(weaponSocketDriver, "animator"));
-            Assert.AreSame(weaponConstraint, GetObjectReference<ParentConstraint>(weaponSocketDriver, "rifleConstraint"));
+            Assert.IsNull(
+                GetOptionalObjectReference<ParentConstraint>(weaponSocketDriver, "rifleConstraint"),
+                "Inori rifle should stay directly parented to the hand instead of depending on a ParentConstraint.");
+            Assert.AreEqual("IK_OFF_Left_Handle", GetString(weaponSocketDriver, "defaultCommands"));
+            Assert.AreEqual(
+                0f,
+                GetFloat(weaponSocketDriver, "leftIkMaxWeight"),
+                0.001f,
+                "Inori rifle socket should not pull the retargeted left arm toward a RifleGirl-specific support-handle position.");
+            Assert.AreEqual(
+                0f,
+                GetFloat(weaponSocketDriver, "leftIkRotationMaxWeight"),
+                0.001f,
+                "Inori rifle socket should not apply RifleGirl handle rotation to the retargeted wrist.");
             Transform leftHandle = FindDescendant(weapon, "Left_Handle");
-            Assert.IsNotNull(leftHandle, "Rifle should expose Left_Handle for support-hand IK.");
+            Assert.IsNotNull(leftHandle, "Rifle should expose Left_Handle for later authored support-hand pose work.");
             Assert.AreSame(leftHandle, GetObjectReference<Transform>(weaponSocketDriver, "leftHandIkTarget"));
+            Assert.AreEqual(
+                AnimatorCullingMode.AlwaysAnimate,
+                rangedAnimator.cullingMode,
+                "Inori ranged Animator should always update so rifle pose and support-hand IK stay stable.");
             Assert.IsNotNull(
-                FindDescendant(rangedRoot.transform, "Hand_R_Socket"),
-                "Ranged visual should preserve the right-hand socket.");
+                FindLikelyHand(rangedRoot.transform, rightHand: true),
+                "Inori ranged visual should expose a right hand bone for weapon parenting.");
             Assert.IsNotNull(
-                FindDescendant(rangedRoot.transform, "Put_Socket_Rifle"),
-                "Ranged visual should preserve the rifle put-away socket.");
-            Assert.IsNotNull(
-                FindDescendant(rangedRoot.transform, "R_Weapon_Bone_Dymmy_R"),
-                "Ranged visual should preserve the rifle aiming socket.");
+                FindLikelyHand(rangedRoot.transform, rightHand: false),
+                "Inori ranged visual should expose a left hand bone for future support-hand pose authoring.");
             Assert.AreEqual(MeleePlayerWeaponRootName, meleeWeaponRoot.name);
             Assert.Greater(
                 meleeWeaponRoot.GetComponentsInChildren<Renderer>(true).Length,
@@ -4052,15 +4155,9 @@ namespace DimensionBrawl.Tests
                 meleeWeaponRoot.GetComponent<CombatGirlWeaponSocketBinder>();
             Assert.IsNotNull(meleeWeaponBinder, "Melee weapon root should keep cloned sword/shield objects bound to the same visible hands.");
             Assert.IsTrue(meleeWeaponBinder.AllBindingsValid, "Melee weapon bindings should be valid.");
-            AssertAnimatorParameter(rangedAnimator, "IDLE", AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(rangedAnimator, "IDLE 0", AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(rangedAnimator, "SHOOT", AnimatorControllerParameterType.Trigger);
-            AssertAnimatorParameter(rangedAnimator, "AUTO SHOOT", AnimatorControllerParameterType.Trigger);
-            AssertAnimatorParameter(rangedAnimator, "RELOAD", AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(rangedAnimator, "WALK F", AnimatorControllerParameterType.Trigger);
-            AssertAnimatorParameter(rangedAnimator, "WALK B", AnimatorControllerParameterType.Trigger);
-            AssertAnimatorParameter(rangedAnimator, "RUN", AnimatorControllerParameterType.Trigger);
-            AssertAnimatorParameter(rangedAnimator, "EVADE", AnimatorControllerParameterType.Trigger);
         }
 
         private static void AssertBossVisualCueBindings(BossBarrageVisualCueDriver cueDriver, Animator animator)
@@ -4239,6 +4336,45 @@ namespace DimensionBrawl.Tests
             return null;
         }
 
+        private static Transform FindLikelyHand(Transform root, bool rightHand)
+        {
+            Transform[] children = root.GetComponentsInChildren<Transform>(true);
+            for (int i = 0; i < children.Length; i++)
+            {
+                string normalized = NormalizeTransformNameForLookup(children[i].name);
+                if (rightHand)
+                {
+                    if (normalized == "handr" ||
+                        normalized == "righthand" ||
+                        normalized == "handright" ||
+                        normalized == "handsocketr")
+                    {
+                        return children[i];
+                    }
+                }
+                else if (normalized == "handl" ||
+                         normalized == "lefthand" ||
+                         normalized == "handleft" ||
+                         normalized == "handsocketl")
+                {
+                    return children[i];
+                }
+            }
+
+            return null;
+        }
+
+        private static string NormalizeTransformNameForLookup(string value)
+        {
+            return string.IsNullOrEmpty(value)
+                ? string.Empty
+                : value.Replace("_", string.Empty)
+                    .Replace("-", string.Empty)
+                    .Replace(".", string.Empty)
+                    .Replace(" ", string.Empty)
+                    .ToLowerInvariant();
+        }
+
         private static void AssertRendererUsesGameOwnedAssets(Renderer renderer, string label)
         {
             MeshFilter meshFilter = renderer.GetComponent<MeshFilter>();
@@ -4271,6 +4407,15 @@ namespace DimensionBrawl.Tests
                 "Hidden/InternalErrorShader",
                 material.shader.name,
                 $"{label} should not use Unity's missing/error shader.");
+        }
+
+        private static void AssertVefectsFlipbookMaterial(Material material, string label)
+        {
+            AssertGameOwnedAsset(material.shader, $"{label} shader");
+            Assert.IsTrue(material.HasProperty("_Flipbook"), $"{label} should use the promoted Vefects flipbook shader.");
+            Texture flipbook = material.GetTexture("_Flipbook");
+            Assert.IsNotNull(flipbook, $"{label} should keep an assigned Vefects flipbook texture.");
+            AssertGameOwnedAsset(flipbook, $"{label} flipbook texture");
         }
 
         private static void AssertEnergyZoneMarker(
@@ -4437,6 +4582,11 @@ namespace DimensionBrawl.Tests
         private static Vector2 GetVector2(Object target, string propertyName)
         {
             return RequireProperty(new SerializedObject(target), propertyName).vector2Value;
+        }
+
+        private static Vector3 GetVector3(Object target, string propertyName)
+        {
+            return RequireProperty(new SerializedObject(target), propertyName).vector3Value;
         }
 
         private static void SetPrivateField<T>(object target, string fieldName, T value)

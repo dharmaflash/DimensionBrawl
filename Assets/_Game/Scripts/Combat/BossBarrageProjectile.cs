@@ -458,7 +458,7 @@ namespace DimensionBrawl.Combat
             int count = 0;
             for (int i = 0; i < renderers.Length; i++)
             {
-                if (renderers[i] != null && renderers[i] is not TrailRenderer)
+                if (renderers[i] != null && renderers[i].enabled && renderers[i] is not TrailRenderer)
                 {
                     count++;
                 }
@@ -469,7 +469,7 @@ namespace DimensionBrawl.Combat
             for (int i = 0; i < renderers.Length; i++)
             {
                 Renderer renderer = renderers[i];
-                if (renderer == null || renderer is TrailRenderer)
+                if (renderer == null || !renderer.enabled || renderer is TrailRenderer)
                 {
                     continue;
                 }

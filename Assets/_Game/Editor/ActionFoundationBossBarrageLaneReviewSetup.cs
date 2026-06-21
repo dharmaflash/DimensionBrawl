@@ -9,6 +9,7 @@ using DimensionBrawl.Presentation;
 using DimensionBrawl.Test;
 using DimensionBrawl.UI;
 using UnityEditor;
+using UnityEditor.Animations;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Animations;
@@ -117,8 +118,18 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Art/Materials/ActionFoundation/AF_PlayerSkill1Projectile.mat";
         private const string RangedBasicProjectileMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_PlayerRangedBasicProjectile.mat";
-        private const string RangedBasicProjectileTrailMaterialPath =
-            "Assets/_Game/Art/Materials/ActionFoundation/AF_PlayerRangedBasicProjectileTrail.mat";
+        private const string ImportedRifleShotLoopedVfxPrefabPath =
+            "Assets/_Imported/AssetStore/VFX/Vefects_ShotsVFXURP/Shots VFX URP/Shots/Muzzle Flash/Looped/VFX_Muzzle_Flash_Rifle_Looped.prefab";
+        private const string CombatVfxMaterialRoot =
+            "Assets/_Game/Art/VFX/CombatCues/Materials";
+        private const string CombatVfxMeshRoot =
+            "Assets/_Game/Art/VFX/CombatCues/Meshes";
+        private const string MuzzleFlashFrontMaterialPath =
+            CombatVfxMaterialRoot + "/DB_CombatVfx_MuzzleFlashFront.mat";
+        private const string MuzzleFlashSideMaterialPath =
+            CombatVfxMaterialRoot + "/DB_CombatVfx_MuzzleFlashSide.mat";
+        private const string MuzzleSmokeMaterialPath =
+            CombatVfxMaterialRoot + "/DB_CombatVfx_Smoke.mat";
         private const string SummonSlot1ProjectileMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot1Projectile.mat";
         private const string SummonSlot2ProjectileMaterialPath =
@@ -185,16 +196,21 @@ namespace DimensionBrawl.Editor
         private static readonly Vector3 BossProxyBodyHitboxCenter = new Vector3(0f, -0.35f, -0.05f);
         private const string BossTelegraphRootName = ReviewRootPrefix + "BossBarrageTelegraphMarkers";
         private const string BossProxyHumanoidVisualName = ReviewRootPrefix + "HumanoidBossVisual_SummonCallerElite";
-        private const string RangedPlayerVisualRootName = ReviewRootPrefix + "RangedVisual_RifleGirl";
-        private const string RangedPlayerModelName = ReviewRootPrefix + "RangedModel_RifleGirl";
+        private const string RangedPlayerVisualRootName = ReviewRootPrefix + "RangedVisual_Inori";
+        private const string RangedPlayerModelName = ReviewRootPrefix + "RangedModel_Inori";
         private const string RangedPlayerWeaponName = ReviewRootPrefix + "RangedWeapon_Rifle";
         private const string MeleePlayerWeaponRootName = ReviewRootPrefix + "MeleeWeapons_CombatGirlSwordShield";
         private const string RifleGirlSourcePrefabPath =
             "Assets/_Imported/AssetStore/CombatGirlsCharacterPack_RifleGirl/RifleGirl/Prefab/Rifle_Full_Body.prefab";
+        private const string InoriSourcePrefabPath =
+            ActionFoundationInoriPlayerVisualAssetSetup.SourcePrefabPath;
         private const string RifleGirlRangedControllerPath =
             ActionFoundationPlayerCombatModeAssetSetup.RangedCandidateControllerPath;
+        private const string InoriRifleAnimatorControllerPath =
+            "Assets/_Game/Art/Animations/Player/Inori/DB_Inori_Rifle_ActionFoundation.controller";
         private const string CombatGirlAnimatorControllerPath =
             "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/DB_CombatGirl_ActionFoundation.controller";
+        private static readonly Vector3 InoriRifleMuzzleFallbackLocalPosition = new Vector3(-0.92f, 0.03f, 0f);
         private const string BossProxyVisualMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossProxy.mat";
         private const string BossTelegraphMaterialPath =
@@ -454,6 +470,7 @@ namespace DimensionBrawl.Editor
         public static void EnsureBossBarrageLaneReviewScene()
         {
             ActionFoundationPlayerCombatModeAssetSetup.EnsureRangedCandidateAssets();
+            ActionFoundationInoriPlayerVisualAssetSetup.EnsureInoriPlayerVisualAssets();
             ActionFoundationCombatVfxSetup.EnsureCombatVfxAssets();
             BossBarragePatternProfile patternProfile = EnsurePatternProfile();
             BossBarragePatternProfile coverFirePatternProfile = EnsureCoverFirePatternProfile();
@@ -649,6 +666,17 @@ namespace DimensionBrawl.Editor
                 rangedBasicProjectilePrefab,
                 projectileRoot.transform,
                 combatModeVisuals.RangedFireOrigin);
+            ConfigurePlayerRangedBasicVfxCueDriver(
+                player.gameObject,
+                rangedBasicAttackAction,
+                RequireComponent<CombatVfxCuePlayer>(player.gameObject, "player combat VFX cue player"),
+                combatModeVisuals.RangedFireOrigin);
+            ConfigureCombatModeActionLinks(combatModeController, rangedAimController, rangedBasicAttackAction);
+            if (combatModeVisuals.NativeAnimatorBridge == null)
+            {
+                throw new InvalidOperationException("Inori ranged visual requires the RifleGirl native animator bridge.");
+            }
+
             ConfigureRifleGirlNativeBridge(
                 combatModeVisuals.NativeAnimatorBridge,
                 combatModeVisuals.RangedAnimator,
@@ -657,12 +685,6 @@ namespace DimensionBrawl.Editor
                 combatModeController,
                 rangedAimController,
                 rangedBasicAttackAction);
-            ConfigurePlayerRangedBasicVfxCueDriver(
-                player.gameObject,
-                rangedBasicAttackAction,
-                RequireComponent<CombatVfxCuePlayer>(player.gameObject, "player combat VFX cue player"),
-                combatModeVisuals.RangedFireOrigin);
-            ConfigureCombatModeActionLinks(combatModeController, rangedAimController, rangedBasicAttackAction);
             CreateReviewHud(
                 scene,
                 playerHealth,
@@ -809,10 +831,12 @@ namespace DimensionBrawl.Editor
                 rangedBasicAttackAction,
                 playerCuePlayer,
                 rangedFireOrigin);
-            ValidateRifleGirlNativeBridge(
+            RifleGirlNativeGameplayAnimatorBridge nativeBridge =
                 RequireComponent<RifleGirlNativeGameplayAnimatorBridge>(
                     rangedAnimator.gameObject,
-                    "RifleGirl native gameplay animator bridge"),
+                    "Inori RifleGirl native animator bridge");
+            ValidateRifleGirlNativeBridge(
+                nativeBridge,
                 rangedAnimator,
                 player,
                 playerActionController,
@@ -1866,7 +1890,10 @@ namespace DimensionBrawl.Editor
 
                 MeshRenderer renderer = EnsureComponent<MeshRenderer>(editableRoot);
                 renderer.sharedMaterial = material;
-                renderer.enabled = true;
+                renderer.enabled = false;
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+                renderer.allowOcclusionWhenDynamic = false;
 
                 SphereCollider collider = EnsureComponent<SphereCollider>(editableRoot);
                 collider.isTrigger = true;
@@ -1976,7 +2003,7 @@ namespace DimensionBrawl.Editor
             for (int i = 0; i < renderers.Length; i++)
             {
                 Renderer renderer = renderers[i];
-                if (renderer != null && renderer is not TrailRenderer)
+                if (renderer != null && renderer.enabled && renderer is not TrailRenderer)
                 {
                     presentationRenderers.Add(renderer);
                 }
@@ -2009,6 +2036,15 @@ namespace DimensionBrawl.Editor
 
                 MeshRenderer renderer = EnsureComponent<MeshRenderer>(editableRoot);
                 renderer.sharedMaterial = material;
+                bool usesAuthoredProjectileVfx =
+                    string.Equals(prefabPath, RangedBasicProjectilePrefabPath, StringComparison.Ordinal);
+                renderer.enabled = !usesAuthoredProjectileVfx;
+                if (usesAuthoredProjectileVfx)
+                {
+                    renderer.shadowCastingMode = ShadowCastingMode.Off;
+                    renderer.receiveShadows = false;
+                    renderer.allowOcclusionWhenDynamic = false;
+                }
 
                 SphereCollider collider = EnsureComponent<SphereCollider>(editableRoot);
                 collider.isTrigger = true;
@@ -2046,74 +2082,148 @@ namespace DimensionBrawl.Editor
         {
             const string VisualPrefix = "RangedBasicProjectileVfx_";
             RemoveChildrenWithPrefix(projectileRoot.transform, VisualPrefix);
-            Material trailMaterial = LoadOrCreateTransparentMaterial(
-                RangedBasicProjectileTrailMaterialPath,
-                new Color(0.36f, 0.94f, 1f, 0.72f));
+            TrailRenderer oldTrail = projectileRoot.GetComponent<TrailRenderer>();
+            if (oldTrail != null)
+            {
+                UnityEngine.Object.DestroyImmediate(oldTrail);
+            }
 
-            AddProjectileVisualPrimitive(
-                projectileRoot.transform,
-                VisualPrefix + "Core",
-                PrimitiveType.Sphere,
-                coreMaterial,
-                new Vector3(0f, 0f, 0.18f),
-                Vector3.zero,
-                new Vector3(0.72f, 0.72f, 1.25f));
-            AddProjectileVisualPrimitive(
-                projectileRoot.transform,
-                VisualPrefix + "CompressedFlame",
-                PrimitiveType.Cube,
-                trailMaterial,
-                new Vector3(0f, 0f, -0.42f),
-                Vector3.zero,
-                new Vector3(0.32f, 0.22f, 2.2f));
-            AddProjectileVisualPrimitive(
-                projectileRoot.transform,
-                VisualPrefix + "LeftSpark",
-                PrimitiveType.Cube,
-                trailMaterial,
-                new Vector3(-0.16f, 0.03f, -0.18f),
-                new Vector3(0f, -18f, 0f),
-                new Vector3(0.08f, 0.06f, 1.05f));
-            AddProjectileVisualPrimitive(
-                projectileRoot.transform,
-                VisualPrefix + "RightSpark",
-                PrimitiveType.Cube,
-                trailMaterial,
-                new Vector3(0.16f, -0.03f, -0.18f),
-                new Vector3(0f, 18f, 0f),
-                new Vector3(0.08f, 0.06f, 1.05f));
-
-            TrailRenderer trail = EnsureComponent<TrailRenderer>(projectileRoot);
-            trail.sharedMaterial = trailMaterial;
-            trail.time = 0.16f;
-            trail.minVertexDistance = 0.025f;
-            trail.startWidth = 0.20f;
-            trail.endWidth = 0.025f;
-            trail.numCornerVertices = 2;
-            trail.numCapVertices = 2;
-            trail.alignment = LineAlignment.View;
-            trail.textureMode = LineTextureMode.Stretch;
-            trail.shadowCastingMode = ShadowCastingMode.Off;
-            trail.receiveShadows = false;
-            trail.emitting = true;
-            trail.autodestruct = false;
-
-            Gradient gradient = new Gradient();
-            gradient.SetKeys(
-                new[]
-                {
-                    new GradientColorKey(new Color(0.82f, 1f, 1f, 1f), 0f),
-                    new GradientColorKey(new Color(0.14f, 0.58f, 1f, 1f), 1f)
-                },
-                new[]
-                {
-                    new GradientAlphaKey(0.86f, 0f),
-                    new GradientAlphaKey(0f, 1f)
-                });
-            trail.colorGradient = gradient;
-
-            EditorUtility.SetDirty(trail);
+            GameObject shotVfx = CreateRangedBasicProjectileAssetVfx(projectileRoot.transform, VisualPrefix);
+            EditorUtility.SetDirty(shotVfx);
             EditorUtility.SetDirty(projectileRoot);
+        }
+
+        private static GameObject CreateRangedBasicProjectileAssetVfx(Transform parent, string visualPrefix)
+        {
+            GameObject sourcePrefab = LoadAsset<GameObject>(ImportedRifleShotLoopedVfxPrefabPath);
+            GameObject vfxInstance = PrefabUtility.InstantiatePrefab(sourcePrefab, parent.gameObject.scene) as GameObject;
+            if (vfxInstance == null)
+            {
+                vfxInstance = UnityEngine.Object.Instantiate(sourcePrefab);
+            }
+
+            if (PrefabUtility.IsPartOfPrefabInstance(vfxInstance))
+            {
+                PrefabUtility.UnpackPrefabInstance(
+                    vfxInstance,
+                    PrefabUnpackMode.Completely,
+                    InteractionMode.AutomatedAction);
+            }
+
+            vfxInstance.name = visualPrefix + "VefectsRifleShotLoop";
+            vfxInstance.transform.SetParent(parent, worldPositionStays: false);
+            vfxInstance.transform.localPosition = new Vector3(0f, 0f, -0.08f);
+            vfxInstance.transform.localRotation = Quaternion.identity;
+            vfxInstance.transform.localScale = new Vector3(0.72f, 0.72f, 1.55f);
+
+            ConfigureRangedBasicProjectileAssetParticles(vfxInstance);
+            RemapRangedBasicProjectileAssetRenderers(vfxInstance);
+            return vfxInstance;
+        }
+
+        private static void ConfigureRangedBasicProjectileAssetParticles(GameObject vfxRoot)
+        {
+            ParticleSystem[] particleSystems = vfxRoot.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            for (int i = 0; i < particleSystems.Length; i++)
+            {
+                ParticleSystem particleSystem = particleSystems[i];
+                ParticleSystem.MainModule main = particleSystem.main;
+                main.loop = true;
+                main.playOnAwake = true;
+                main.simulationSpace = ParticleSystemSimulationSpace.Local;
+                main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+                ParticleSystem.EmissionModule emission = particleSystem.emission;
+                emission.enabled = true;
+                particleSystem.Clear(withChildren: true);
+                particleSystem.Play(withChildren: true);
+                EditorUtility.SetDirty(particleSystem);
+            }
+        }
+
+        private static void RemapRangedBasicProjectileAssetRenderers(GameObject vfxRoot)
+        {
+            Material frontMaterial = LoadAsset<Material>(MuzzleFlashFrontMaterialPath);
+            Material sideMaterial = LoadAsset<Material>(MuzzleFlashSideMaterialPath);
+            Material smokeMaterial = LoadAsset<Material>(MuzzleSmokeMaterialPath);
+
+            ParticleSystemRenderer[] renderers =
+                vfxRoot.GetComponentsInChildren<ParticleSystemRenderer>(includeInactive: true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                ParticleSystemRenderer renderer = renderers[i];
+                string normalizedName = NormalizeTransformName(renderer.name);
+                if (normalizedName.Contains("smoke", StringComparison.Ordinal))
+                {
+                    renderer.sharedMaterial = smokeMaterial;
+                }
+                else if (normalizedName.Contains("side", StringComparison.Ordinal)
+                    && !normalizedName.Contains("frontside", StringComparison.Ordinal))
+                {
+                    renderer.sharedMaterial = sideMaterial;
+                }
+                else
+                {
+                    renderer.sharedMaterial = frontMaterial;
+                }
+
+                Mesh mesh = renderer.mesh;
+                if (mesh != null)
+                {
+                    renderer.mesh = EnsurePromotedVefectsMesh(mesh);
+                }
+
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+                renderer.allowOcclusionWhenDynamic = false;
+                EditorUtility.SetDirty(renderer);
+            }
+        }
+
+        private static Mesh EnsurePromotedVefectsMesh(Mesh sourceMesh)
+        {
+            string sourcePath = AssetDatabase.GetAssetPath(sourceMesh).Replace('\\', '/');
+            if (sourcePath.StartsWith("Assets/_Game/", StringComparison.Ordinal))
+            {
+                return sourceMesh;
+            }
+
+            if (string.IsNullOrWhiteSpace(sourcePath)
+                || !sourcePath.StartsWith("Assets/_Imported/", StringComparison.Ordinal))
+            {
+                return sourceMesh;
+            }
+
+            string targetPath = CombatVfxMeshRoot + "/" + System.IO.Path.GetFileName(sourcePath);
+            EnsureFolderForAsset(targetPath);
+            if (AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(targetPath) == null)
+            {
+                if (!AssetDatabase.CopyAsset(sourcePath, targetPath))
+                {
+                    throw new InvalidOperationException($"Failed to promote Vefects mesh from {sourcePath} to {targetPath}.");
+                }
+
+                AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
+            }
+
+            UnityEngine.Object[] promotedAssets = AssetDatabase.LoadAllAssetsAtPath(targetPath);
+            for (int i = 0; i < promotedAssets.Length; i++)
+            {
+                if (promotedAssets[i] is Mesh promotedMesh
+                    && string.Equals(promotedMesh.name, sourceMesh.name, StringComparison.Ordinal))
+                {
+                    return promotedMesh;
+                }
+            }
+
+            for (int i = 0; i < promotedAssets.Length; i++)
+            {
+                if (promotedAssets[i] is Mesh promotedMesh)
+                {
+                    return promotedMesh;
+                }
+            }
+
+            throw new InvalidOperationException($"Failed to load promoted Vefects mesh {sourceMesh.name} from {targetPath}.");
         }
 
         private static Renderer AddProjectileVisualPrimitive(
@@ -2795,6 +2905,264 @@ namespace DimensionBrawl.Editor
             SetObjectReference(playerActionController, "actionProfile", localDefenseProfile);
         }
 
+        private static AnimatorController EnsureInoriRifleAnimatorController()
+        {
+            AnimatorController controller =
+                AssetDatabase.LoadAssetAtPath<AnimatorController>(InoriRifleAnimatorControllerPath);
+            if (controller != null && IsInoriRifleAnimatorControllerCurrent(controller))
+            {
+                return controller;
+            }
+
+            if (controller != null && !AssetDatabase.DeleteAsset(InoriRifleAnimatorControllerPath))
+            {
+                throw new InvalidOperationException($"Failed to replace {InoriRifleAnimatorControllerPath}.");
+            }
+
+            EnsureFolderForAsset(InoriRifleAnimatorControllerPath);
+            controller = AnimatorController.CreateAnimatorControllerAtPath(InoriRifleAnimatorControllerPath);
+            if (controller == null)
+            {
+                throw new InvalidOperationException($"Failed to create {InoriRifleAnimatorControllerPath}.");
+            }
+
+            AddTrigger(controller, "IDLE");
+            AddTrigger(controller, "IDLE 0");
+            AddTrigger(controller, "SHOOT");
+            AddTrigger(controller, "AUTO SHOOT");
+            AddTrigger(controller, "JOG");
+            AddTrigger(controller, "WALK");
+            AddTrigger(controller, "RUN");
+            AddTrigger(controller, "WALK F");
+            AddTrigger(controller, "WALK FL");
+            AddTrigger(controller, "WALK FR");
+            AddTrigger(controller, "WALK B");
+            AddTrigger(controller, "WALK BL");
+            AddTrigger(controller, "WALK BR");
+            AddTrigger(controller, "EVADE");
+
+            AnimatorControllerLayer[] layers = controller.layers;
+            AnimatorControllerLayer layer = layers[0];
+            layer.iKPass = true;
+            AnimatorStateMachine stateMachine = layer.stateMachine;
+            stateMachine.name = "Inori Rifle";
+
+            AnimatorState aimIdle = CreateState(
+                stateMachine,
+                "R_AimIdle",
+                "Assets/_Game/Art/Animations/Player/RifleGirl/RG_AimIdle.fbx",
+                true,
+                new Vector3(280f, 80f, 0f));
+            AnimatorState shoot = CreateState(
+                stateMachine,
+                "R_Shoot",
+                "Assets/_Game/Art/Animations/Player/RifleGirl/RG_Shoot.fbx",
+                false,
+                new Vector3(560f, 80f, 0f));
+            AnimatorState autoShoot = CreateState(
+                stateMachine,
+                "R_AimIdleAutoShoot",
+                "Assets/_Game/Art/Animations/Player/RifleGirl/RG_AimIdleAutoShoot.fbx",
+                true,
+                new Vector3(560f, 160f, 0f));
+            AnimatorState aimJog = CreateState(
+                stateMachine,
+                "R_AimJog",
+                "Assets/_Game/Art/Animations/Player/RifleGirl/RG_AimJog.fbx",
+                true,
+                new Vector3(280f, 240f, 0f));
+            AnimatorState walkForward = CreateState(
+                stateMachine,
+                "R_AimWalkForward",
+                "Assets/_Game/Art/Animations/Player/RifleGirl/RG_AimWalkForward.fbx",
+                true,
+                new Vector3(280f, 320f, 0f));
+            AnimatorState walkBack = CreateState(
+                stateMachine,
+                "R_AimWalkBack",
+                "Assets/_Game/Art/Animations/Player/RifleGirl/RG_AimWalkBack.fbx",
+                true,
+                new Vector3(80f, 320f, 0f));
+            AnimatorState walkForwardLeft = CreateState(
+                stateMachine,
+                "R_AimWalkForwardLeft",
+                "Assets/_Game/Art/Animations/Player/RifleGirl/RG_AimWalkForwardLeft.fbx",
+                true,
+                new Vector3(80f, 240f, 0f));
+            AnimatorState walkForwardRight = CreateState(
+                stateMachine,
+                "R_AimWalkForwardRight",
+                "Assets/_Game/Art/Animations/Player/RifleGirl/RG_AimWalkForwardRight.fbx",
+                true,
+                new Vector3(480f, 240f, 0f));
+            AnimatorState walkBackLeft = CreateState(
+                stateMachine,
+                "R_AimWalkBackLeft",
+                "Assets/_Game/Art/Animations/Player/RifleGirl/RG_AimWalkBackLeft.fbx",
+                true,
+                new Vector3(80f, 400f, 0f));
+            AnimatorState walkBackRight = CreateState(
+                stateMachine,
+                "R_AimWalkBackRight",
+                "Assets/_Game/Art/Animations/Player/RifleGirl/RG_AimWalkBackRight.fbx",
+                true,
+                new Vector3(480f, 400f, 0f));
+            AnimatorState evade = CreateState(
+                stateMachine,
+                "R_Evade",
+                "Assets/_Game/Art/Animations/Player/RifleGirl/RG_Evade.fbx",
+                false,
+                new Vector3(560f, 320f, 0f));
+
+            stateMachine.defaultState = aimIdle;
+            AddAnyTriggerTransition(stateMachine, "IDLE", aimIdle);
+            AddAnyTriggerTransition(stateMachine, "IDLE 0", aimIdle);
+            AddAnyTriggerTransition(stateMachine, "SHOOT", shoot);
+            AddAnyTriggerTransition(stateMachine, "AUTO SHOOT", autoShoot);
+            AddAnyTriggerTransition(stateMachine, "JOG", aimJog);
+            AddAnyTriggerTransition(stateMachine, "WALK", walkForward);
+            AddAnyTriggerTransition(stateMachine, "RUN", aimJog);
+            AddAnyTriggerTransition(stateMachine, "WALK F", walkForward);
+            AddAnyTriggerTransition(stateMachine, "WALK FL", walkForwardLeft);
+            AddAnyTriggerTransition(stateMachine, "WALK FR", walkForwardRight);
+            AddAnyTriggerTransition(stateMachine, "WALK B", walkBack);
+            AddAnyTriggerTransition(stateMachine, "WALK BL", walkBackLeft);
+            AddAnyTriggerTransition(stateMachine, "WALK BR", walkBackRight);
+            AddAnyTriggerTransition(stateMachine, "EVADE", evade);
+            AddReturnTransition(shoot, aimIdle);
+            AddReturnTransition(evade, aimIdle);
+
+            layers[0] = layer;
+            controller.layers = layers;
+            EditorUtility.SetDirty(controller);
+            AssetDatabase.SaveAssets();
+            return controller;
+        }
+
+        private static bool IsInoriRifleAnimatorControllerCurrent(AnimatorController controller)
+        {
+            if (controller.layers.Length == 0 || !controller.layers[0].iKPass)
+            {
+                return false;
+            }
+
+            AnimatorStateMachine stateMachine = controller.layers[0].stateMachine;
+            return HasTrigger(controller, "IDLE")
+                && HasTrigger(controller, "IDLE 0")
+                && HasTrigger(controller, "SHOOT")
+                && HasTrigger(controller, "AUTO SHOOT")
+                && HasTrigger(controller, "JOG")
+                && HasTrigger(controller, "WALK")
+                && HasTrigger(controller, "RUN")
+                && HasTrigger(controller, "WALK F")
+                && HasTrigger(controller, "WALK FL")
+                && HasTrigger(controller, "WALK FR")
+                && HasTrigger(controller, "WALK B")
+                && HasTrigger(controller, "WALK BL")
+                && HasTrigger(controller, "WALK BR")
+                && HasTrigger(controller, "EVADE")
+                && HasState(stateMachine, "R_AimIdle")
+                && HasState(stateMachine, "R_Shoot")
+                && HasState(stateMachine, "R_AimIdleAutoShoot")
+                && HasState(stateMachine, "R_AimJog")
+                && HasState(stateMachine, "R_AimWalkForward")
+                && HasState(stateMachine, "R_AimWalkBack")
+                && HasState(stateMachine, "R_AimWalkForwardLeft")
+                && HasState(stateMachine, "R_AimWalkForwardRight")
+                && HasState(stateMachine, "R_AimWalkBackLeft")
+                && HasState(stateMachine, "R_AimWalkBackRight")
+                && HasState(stateMachine, "R_Evade");
+        }
+
+        private static bool HasTrigger(AnimatorController controller, string parameterName)
+        {
+            AnimatorControllerParameter[] parameters = controller.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                if (parameters[i].type == AnimatorControllerParameterType.Trigger
+                    && string.Equals(parameters[i].name, parameterName, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool HasState(AnimatorStateMachine stateMachine, string stateName)
+        {
+            ChildAnimatorState[] states = stateMachine.states;
+            for (int i = 0; i < states.Length; i++)
+            {
+                if (string.Equals(states[i].state.name, stateName, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            ChildAnimatorStateMachine[] childMachines = stateMachine.stateMachines;
+            for (int i = 0; i < childMachines.Length; i++)
+            {
+                if (HasState(childMachines[i].stateMachine, stateName))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void AddTrigger(AnimatorController controller, string parameterName)
+        {
+            controller.AddParameter(parameterName, AnimatorControllerParameterType.Trigger);
+        }
+
+        private static AnimatorState CreateState(
+            AnimatorStateMachine stateMachine,
+            string stateName,
+            string clipPath,
+            bool loopTime,
+            Vector3 position)
+        {
+            AnimatorState state = stateMachine.AddState(stateName, position);
+            AnimationClip clip = LoadAsset<AnimationClip>(clipPath);
+            AnimationClipSettings settings = AnimationUtility.GetAnimationClipSettings(clip);
+            if (settings.loopTime != loopTime)
+            {
+                settings.loopTime = loopTime;
+                AnimationUtility.SetAnimationClipSettings(clip, settings);
+                EditorUtility.SetDirty(clip);
+            }
+
+            state.motion = clip;
+            state.writeDefaultValues = true;
+            EditorUtility.SetDirty(state);
+            return state;
+        }
+
+        private static void AddAnyTriggerTransition(
+            AnimatorStateMachine stateMachine,
+            string trigger,
+            AnimatorState destination)
+        {
+            AnimatorStateTransition transition = stateMachine.AddAnyStateTransition(destination);
+            transition.hasExitTime = false;
+            transition.duration = 0.04f;
+            transition.canTransitionToSelf = false;
+            transition.AddCondition(AnimatorConditionMode.If, 0f, trigger);
+            EditorUtility.SetDirty(transition);
+        }
+
+        private static void AddReturnTransition(AnimatorState source, AnimatorState destination)
+        {
+            AnimatorStateTransition transition = source.AddTransition(destination);
+            transition.hasExitTime = true;
+            transition.exitTime = 0.96f;
+            transition.duration = 0.06f;
+            transition.canTransitionToSelf = false;
+            EditorUtility.SetDirty(transition);
+        }
+
         private static PlayerCombatModeVisualBinding CreatePlayerCombatModeVisuals(Scene scene, GameObject player)
         {
             Transform playerTransform = player.transform;
@@ -2806,11 +3174,11 @@ namespace DimensionBrawl.Editor
             rangedRoot.transform.localRotation = Quaternion.identity;
             rangedRoot.transform.localScale = Vector3.one;
 
-            GameObject modelAsset = LoadAsset<GameObject>(RifleGirlSourcePrefabPath);
+            GameObject modelAsset = LoadAsset<GameObject>(InoriSourcePrefabPath);
             GameObject modelInstance = PrefabUtility.InstantiatePrefab(modelAsset, scene) as GameObject;
             if (modelInstance == null)
             {
-                throw new InvalidOperationException("Failed to instantiate RifleGirl source prefab for combat mode promotion.");
+                throw new InvalidOperationException("Failed to instantiate Inori source prefab for combat mode promotion.");
             }
 
             PrefabUtility.UnpackPrefabInstance(
@@ -2823,34 +3191,28 @@ namespace DimensionBrawl.Editor
             modelInstance.transform.localRotation = Quaternion.identity;
             modelInstance.transform.localScale = Vector3.one;
             StripNonGameMonoBehaviours(modelInstance);
-            RemapRangedCandidateMeshes(modelInstance);
-            AssignRangedCandidateMaterials(modelInstance);
+            RemapInoriPlayerMeshes(modelInstance);
+            AssignInoriPlayerMaterials(modelInstance);
 
             Animator rangedAnimator = modelInstance.GetComponentInChildren<Animator>(includeInactive: true)
                 ?? modelInstance.AddComponent<Animator>();
-            rangedAnimator.runtimeAnimatorController = LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath);
-            rangedAnimator.avatar = LoadPromotedRifleGirlAvatar();
+            rangedAnimator.runtimeAnimatorController = EnsureInoriRifleAnimatorController();
+            rangedAnimator.avatar = ActionFoundationInoriPlayerVisualAssetSetup.LoadPromotedAvatar();
             rangedAnimator.applyRootMotion = false;
+            rangedAnimator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
             RifleGirlNativeGameplayAnimatorBridge nativeBridge =
                 modelInstance.GetComponent<RifleGirlNativeGameplayAnimatorBridge>()
                 ?? modelInstance.AddComponent<RifleGirlNativeGameplayAnimatorBridge>();
-            EditorUtility.SetDirty(nativeBridge);
 
-            GameObject weaponInstance = FindRifleConstraintWeaponRoot(modelInstance.transform);
-            if (weaponInstance == null)
-            {
-                throw new InvalidOperationException("RifleGirl source prefab must keep its constrained rifle object.");
-            }
-
-            weaponInstance.name = RangedPlayerWeaponName;
+            GameObject weaponInstance = CreateInoriRangedWeapon(scene, modelInstance.transform);
             Transform muzzle = FindOrCreateRifleMuzzle(weaponInstance.transform);
             RifleGirlWeaponSocketDriver weaponSocketDriver =
-                ConfigureRifleGirlWeaponSocketDriver(modelInstance, rangedAnimator, weaponInstance);
+                ConfigureInoriRangedWeaponSocketDriver(modelInstance, rangedAnimator, weaponInstance);
 
             GameObject meleeRoot = FindPlayerMeleeVisualRoot(playerTransform);
             if (meleeRoot == null)
             {
-                throw new InvalidOperationException("CombatGirl melee visual root is required as the sword/shield source for RifleGirl weapon-only swap.");
+                throw new InvalidOperationException("CombatGirl melee visual root is required as the sword/shield source for Inori weapon-only swap.");
             }
 
             GameObject meleeWeaponRoot = CreateMeleeWeaponRoot(scene, rangedRoot.transform, modelInstance.transform, meleeRoot);
@@ -2879,6 +3241,48 @@ namespace DimensionBrawl.Editor
                 nativeBridge,
                 rangedAnimator,
                 rangedAnimator);
+        }
+
+        private static GameObject CreateInoriRangedWeapon(Scene scene, Transform inoriModelRoot)
+        {
+            GameObject sourceAsset = LoadAsset<GameObject>(RifleGirlSourcePrefabPath);
+            GameObject sourceInstance = PrefabUtility.InstantiatePrefab(sourceAsset, scene) as GameObject;
+            if (sourceInstance == null)
+            {
+                throw new InvalidOperationException("Failed to instantiate RifleGirl source prefab for Inori rifle extraction.");
+            }
+
+            PrefabUtility.UnpackPrefabInstance(
+                sourceInstance,
+                PrefabUnpackMode.Completely,
+                InteractionMode.AutomatedAction);
+            StripNonGameMonoBehaviours(sourceInstance);
+            RemapRangedCandidateMeshes(sourceInstance);
+            AssignRangedCandidateMaterials(sourceInstance);
+
+            Transform sourceWeapon = FindRifleConstraintWeaponRoot(sourceInstance.transform)?.transform;
+            Transform sourceRightHand = FindLikelyRightHandSocket(sourceInstance.transform);
+            Transform targetRightHand = FindLikelyRightHandSocket(inoriModelRoot);
+            if (sourceWeapon == null || sourceRightHand == null || targetRightHand == null)
+            {
+                UnityEngine.Object.DestroyImmediate(sourceInstance);
+                throw new InvalidOperationException("Inori rifle extraction requires a RifleGirl source weapon/right hand and Inori right hand.");
+            }
+
+            GameObject weaponClone = UnityEngine.Object.Instantiate(sourceWeapon.gameObject);
+            weaponClone.name = RangedPlayerWeaponName;
+            ApplyUprightRifleAttachment(sourceWeapon, sourceRightHand, inoriModelRoot, targetRightHand, weaponClone.transform);
+            weaponClone.transform.localScale = sourceWeapon.localScale;
+
+            ParentConstraint[] constraints = weaponClone.GetComponentsInChildren<ParentConstraint>(includeInactive: true);
+            for (int i = constraints.Length - 1; i >= 0; i--)
+            {
+                UnityEngine.Object.DestroyImmediate(constraints[i]);
+            }
+
+            UnityEngine.Object.DestroyImmediate(sourceInstance);
+            EditorUtility.SetDirty(weaponClone);
+            return weaponClone;
         }
 
         private static GameObject CreateMeleeWeaponRoot(
@@ -2921,27 +3325,76 @@ namespace DimensionBrawl.Editor
             root.transform.localRotation = Quaternion.identity;
             root.transform.localScale = Vector3.one;
 
-            Transform rightWeapon = CloneWeaponObject(sourceRightWeapon, sourceRightHand, rightHand, "MeleeWeapon_RightHand");
-            Transform leftWeapon = CloneWeaponObject(sourceLeftWeapon, sourceLeftHand, leftHand, "MeleeWeapon_LeftHand");
+            Transform rightWeapon = CreateMeleeWeaponAnchor(
+                sourceRightWeapon,
+                sourceRightHand,
+                rightHand,
+                "MeleeWeapon_RightHand");
+            Transform leftWeapon = CreateMeleeWeaponAnchor(
+                sourceLeftWeapon,
+                sourceLeftHand,
+                leftHand,
+                "MeleeWeapon_LeftHand");
             CombatGirlWeaponSocketBinder binder = root.AddComponent<CombatGirlWeaponSocketBinder>();
             binder.ConfigureWeaponSockets(leftHand, leftWeapon, rightHand, rightWeapon);
             binder.ApplyBindings();
             EditorUtility.SetDirty(binder);
             return root;
 
-            Transform CloneWeaponObject(Transform sourceWeapon, Transform sourceHand, Transform targetHand, string cloneName)
+            Transform CreateMeleeWeaponAnchor(
+                Transform sourceWeapon,
+                Transform sourceHand,
+                Transform targetHand,
+                string cloneName)
             {
                 GameObject clone = UnityEngine.Object.Instantiate(sourceWeapon.gameObject, root.transform);
                 clone.name = cloneName;
-                Vector3 localPositionOffset = sourceHand.InverseTransformPoint(sourceWeapon.position);
-                Quaternion localRotationOffset = Quaternion.Inverse(sourceHand.rotation) * sourceWeapon.rotation;
-                clone.transform.SetPositionAndRotation(
-                    targetHand.TransformPoint(localPositionOffset),
-                    targetHand.rotation * localRotationOffset);
+                ApplyRetargetedHandAttachment(sourceWeapon, sourceHand, targetHand, clone.transform);
                 clone.transform.localScale = sourceWeapon.localScale;
                 EditorUtility.SetDirty(clone);
                 return clone.transform;
             }
+        }
+
+        private static void ApplyRetargetedHandAttachment(
+            Transform sourceWeapon,
+            Transform sourceHand,
+            Transform targetHand,
+            Transform targetWeapon)
+        {
+            Quaternion handAxisCorrection = Quaternion.Inverse(targetHand.rotation) * sourceHand.rotation;
+            Vector3 sourceLocalPosition = sourceHand.InverseTransformPoint(sourceWeapon.position);
+            Quaternion sourceLocalRotation = Quaternion.Inverse(sourceHand.rotation) * sourceWeapon.rotation;
+            Vector3 correctedLocalPosition = handAxisCorrection * sourceLocalPosition;
+            Quaternion correctedLocalRotation = handAxisCorrection * sourceLocalRotation;
+
+            targetWeapon.SetPositionAndRotation(
+                targetHand.TransformPoint(correctedLocalPosition),
+                targetHand.rotation * correctedLocalRotation);
+        }
+
+        private static void ApplyUprightRifleAttachment(
+            Transform sourceWeapon,
+            Transform sourceHand,
+            Transform orientationReference,
+            Transform targetHand,
+            Transform targetWeapon)
+        {
+            Vector3 sourceLocalPosition = sourceHand.InverseTransformPoint(sourceWeapon.position);
+            targetWeapon.SetParent(targetHand, worldPositionStays: false);
+            targetWeapon.localPosition = sourceLocalPosition;
+            targetWeapon.localRotation = Quaternion.identity;
+
+            RetargetedHandWeaponAttachment attachment =
+                targetWeapon.GetComponent<RetargetedHandWeaponAttachment>()
+                ?? targetWeapon.gameObject.AddComponent<RetargetedHandWeaponAttachment>();
+            attachment.Configure(
+                targetHand,
+                orientationReference,
+                sourceLocalPosition,
+                Vector3.up,
+                Vector3.left);
+            EditorUtility.SetDirty(attachment);
         }
 
         private static GameObject FindRifleConstraintWeaponRoot(Transform modelRoot)
@@ -2969,21 +3422,108 @@ namespace DimensionBrawl.Editor
             return null;
         }
 
-        private static Transform FindOrCreateRifleMuzzle(Transform weaponRoot)
+        private static RifleGirlWeaponSocketDriver ConfigureInoriRangedWeaponSocketDriver(
+            GameObject modelInstance,
+            Animator rangedAnimator,
+            GameObject weaponInstance)
         {
-            Transform existing = FindDescendant(weaponRoot, "Muzzle");
-            if (existing != null)
+            Transform leftHandle = FindDescendant(weaponInstance.transform, "Left_Handle");
+            if (leftHandle == null)
             {
-                return existing;
+                GameObject handle = new GameObject("Left_Handle");
+                handle.transform.SetParent(weaponInstance.transform, worldPositionStays: false);
+                handle.transform.localPosition = new Vector3(0.2f, 0.03f, 0f);
+                handle.transform.localRotation = Quaternion.identity;
+                handle.transform.localScale = Vector3.one;
+                leftHandle = handle.transform;
+                EditorUtility.SetDirty(handle);
             }
 
-            GameObject muzzle = new GameObject("Muzzle");
-            muzzle.transform.SetParent(weaponRoot, worldPositionStays: false);
-            muzzle.transform.localPosition = new Vector3(-0.92f, 0.055f, 0.035f);
-            muzzle.transform.localRotation = Quaternion.Euler(0f, -90f, 0f);
-            muzzle.transform.localScale = Vector3.one;
+            RifleGirlWeaponSocketDriver driver =
+                modelInstance.GetComponent<RifleGirlWeaponSocketDriver>()
+                ?? modelInstance.AddComponent<RifleGirlWeaponSocketDriver>();
+            driver.Configure(rangedAnimator, null, leftHandle);
+            SetObjectReference(driver, "animator", rangedAnimator);
+            SetObjectReference(driver, "rifleConstraint", null);
+            SetObjectReference(driver, "leftHandIkTarget", leftHandle);
+            SetString(driver, "defaultCommands", "IK_OFF_Left_Handle");
+            SetString(driver, "handSocketCommand", "To_Hand_R_Socket");
+            SetString(driver, "holsterSocketCommand", "To_Put_Socket_Rifle");
+            SetString(driver, "aimSocketCommand", "To_add_weapon_r");
+            SetString(driver, "leftIkOnCommand", "IK_ON_Left_Handle");
+            SetString(driver, "leftIkOffCommand", "IK_OFF_Left_Handle");
+            SetBool(driver, "ignoreRedundantSocketCommands", true);
+            SetFloat(driver, "leftIkMaxWeight", 0f);
+            SetFloat(driver, "leftIkRotationMaxWeight", 0f);
+            SetFloat(driver, "leftIkBlendSpeed", 15f);
+            driver.SwitchSocketByString("IK_OFF_Left_Handle");
+            EditorUtility.SetDirty(driver);
+            return driver;
+        }
+
+        private static Transform FindOrCreateRifleMuzzle(Transform weaponRoot)
+        {
+            Transform existing = weaponRoot.Find("Muzzle");
+            Transform muzzle = existing;
+            if (muzzle == null)
+            {
+                muzzle = new GameObject("Muzzle").transform;
+                muzzle.SetParent(weaponRoot, worldPositionStays: false);
+            }
+
+            muzzle.localPosition = TryCalculateLocalRendererBounds(weaponRoot, out Bounds localBounds)
+                ? new Vector3(localBounds.min.x, localBounds.center.y, localBounds.center.z)
+                : InoriRifleMuzzleFallbackLocalPosition;
+            muzzle.localRotation = Quaternion.LookRotation(Vector3.left, Vector3.up);
+            muzzle.localScale = Vector3.one;
             EditorUtility.SetDirty(muzzle);
-            return muzzle.transform;
+            return muzzle;
+        }
+
+        private static bool TryCalculateLocalRendererBounds(Transform root, out Bounds localBounds)
+        {
+            localBounds = default;
+            bool hasBounds = false;
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(includeInactive: true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                Bounds worldBounds = renderer.bounds;
+                Vector3 min = worldBounds.min;
+                Vector3 max = worldBounds.max;
+                Vector3[] corners =
+                {
+                    new Vector3(min.x, min.y, min.z),
+                    new Vector3(min.x, min.y, max.z),
+                    new Vector3(min.x, max.y, min.z),
+                    new Vector3(min.x, max.y, max.z),
+                    new Vector3(max.x, min.y, min.z),
+                    new Vector3(max.x, min.y, max.z),
+                    new Vector3(max.x, max.y, min.z),
+                    new Vector3(max.x, max.y, max.z),
+                };
+
+                for (int cornerIndex = 0; cornerIndex < corners.Length; cornerIndex++)
+                {
+                    Vector3 localCorner = root.InverseTransformPoint(corners[cornerIndex]);
+                    if (!hasBounds)
+                    {
+                        localBounds = new Bounds(localCorner, Vector3.zero);
+                        hasBounds = true;
+                    }
+                    else
+                    {
+                        localBounds.Encapsulate(localCorner);
+                    }
+                }
+            }
+
+            return hasBounds;
         }
 
         private static RifleGirlWeaponSocketDriver ConfigureRifleGirlWeaponSocketDriver(
@@ -3018,6 +3558,7 @@ namespace DimensionBrawl.Editor
             SetString(driver, "leftIkOffCommand", "IK_OFF_Left_Handle");
             SetBool(driver, "ignoreRedundantSocketCommands", true);
             SetFloat(driver, "leftIkMaxWeight", 1f);
+            SetFloat(driver, "leftIkRotationMaxWeight", 1f);
             SetFloat(driver, "leftIkBlendSpeed", 15f);
             driver.SwitchSocketByString("To_Hand_R_Socket, IK_ON_Left_Handle");
             EditorUtility.SetDirty(driver);
@@ -3045,7 +3586,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(
                 combatModeController,
                 "rangedAnimatorController",
-                LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath));
+                EnsureInoriRifleAnimatorController());
             SetObjectReference(
                 combatModeController,
                 "meleeAnimatorController",
@@ -3055,8 +3596,8 @@ namespace DimensionBrawl.Editor
             SetBool(combatModeController, "useSingleCharacterVisual", true);
             SetEnum(combatModeController, "startingMode", (int)PlayerCombatMode.Ranged);
             SetObjectReference(playerActionController, "combatModeController", combatModeController);
-            SetObjectReference(playerActionController, "animator", visualBinding.RangedAnimator);
-            SetObjectReference(playerMovementController, "animator", visualBinding.RangedAnimator);
+            SetObjectReference(playerActionController, "animator", null);
+            SetObjectReference(playerMovementController, "animator", null);
             SetBool(playerActionController, "blockBasicAttackInRangedMode", true);
         }
 
@@ -3160,11 +3701,11 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(
                 rangedAnimator,
                 "m_Controller",
-                LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath));
+                EnsureInoriRifleAnimatorController());
             ValidateObjectReference(
                 combatModeController,
                 "rangedAnimatorController",
-                LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath));
+                EnsureInoriRifleAnimatorController());
             ValidateObjectReference(
                 combatModeController,
                 "meleeAnimatorController",
@@ -3176,17 +3717,17 @@ namespace DimensionBrawl.Editor
             ValidatePlayerCombatModeVisual(rangedRoot, rangedAnimator, rangedWeaponRoot, meleeWeaponRoot);
             if (meleeRoot.activeSelf)
             {
-                throw new InvalidOperationException("CombatGirl source visual root must stay inactive; RifleGirl is the single visible player body.");
+                throw new InvalidOperationException("CombatGirl source visual root must stay inactive; Inori is the single visible player body.");
             }
 
             if (meleeAnimator != rangedAnimator)
             {
-                throw new InvalidOperationException("Melee mode must reuse the RifleGirl Animator so weapon swap does not replace the character body.");
+                throw new InvalidOperationException("Melee mode must reuse the Inori Animator so weapon swap does not replace the character body.");
             }
 
             ValidateObjectReference(playerActionController, "combatModeController", combatModeController);
-            ValidateObjectReference(playerActionController, "animator", rangedAnimator);
-            ValidateObjectReference(playerMovementController, "animator", rangedAnimator);
+            ValidateObjectReference(playerActionController, "animator", null);
+            ValidateObjectReference(playerMovementController, "animator", null);
             ValidateBool(playerActionController, "blockBasicAttackInRangedMode", true);
         }
 
@@ -3878,12 +4419,12 @@ namespace DimensionBrawl.Editor
             MeshRenderer renderer = projectilePrefab.GetComponent<MeshRenderer>();
             if (renderer == null)
             {
-                throw new InvalidOperationException("Boss barrage projectile prefab needs a MeshRenderer so incoming shots are visible.");
+                throw new InvalidOperationException("Boss barrage projectile prefab should keep a root MeshRenderer only as a hidden collision-authoring remnant.");
             }
 
-            if (!renderer.enabled)
+            if (renderer.enabled)
             {
-                throw new InvalidOperationException("Boss barrage projectile MeshRenderer must stay enabled for in-world projectile readability.");
+                throw new InvalidOperationException("Boss barrage projectile root MeshRenderer must stay disabled so the authored VFX carries projectile readability.");
             }
 
             ValidateGameOwnedAsset(renderer.sharedMaterial, "boss barrage projectile material");
@@ -3912,24 +4453,48 @@ namespace DimensionBrawl.Editor
         private static void ValidateRangedBasicProjectilePrefab()
         {
             GameObject projectilePrefab = LoadAsset<GameObject>(RangedBasicProjectilePrefabPath);
-            if (projectilePrefab.transform.Find("RangedBasicProjectileVfx_Core") == null)
+            MeshRenderer rootRenderer = projectilePrefab.GetComponent<MeshRenderer>();
+            if (rootRenderer != null && rootRenderer.enabled)
             {
-                throw new InvalidOperationException("Player ranged basic projectile prefab should include a promoted visual core.");
+                throw new InvalidOperationException("Player ranged basic projectile root MeshRenderer must stay disabled so the Vefects asset shot is the only visible projectile body.");
             }
 
-            if (projectilePrefab.transform.Find("RangedBasicProjectileVfx_CompressedFlame") == null)
+            Transform shotVfxRoot = projectilePrefab.transform.Find("RangedBasicProjectileVfx_VefectsRifleShotLoop");
+            if (shotVfxRoot == null)
             {
-                throw new InvalidOperationException("Player ranged basic projectile prefab should include a compressed flame/tracer visual.");
+                throw new InvalidOperationException("Player ranged basic projectile prefab should use the promoted Vefects rifle shot loop asset VFX.");
             }
 
-            TrailRenderer trail = projectilePrefab.GetComponent<TrailRenderer>();
-            if (trail == null)
+            if (projectilePrefab.GetComponent<TrailRenderer>() != null)
             {
-                throw new InvalidOperationException("Player ranged basic projectile prefab should include a TrailRenderer.");
+                throw new InvalidOperationException("Player ranged basic projectile prefab should not fall back to generated TrailRenderer visuals.");
             }
 
-            ValidateGameOwnedAsset(trail.sharedMaterial, "player ranged basic projectile trail material");
-            ValidateRenderableMaterialShader(trail.sharedMaterial, "player ranged basic projectile trail material shader");
+            ParticleSystem[] particleSystems =
+                shotVfxRoot.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            if (particleSystems.Length < 4)
+            {
+                throw new InvalidOperationException("Player ranged basic projectile should keep the authored multi-part Vefects particle setup.");
+            }
+
+            ParticleSystemRenderer[] renderers =
+                shotVfxRoot.GetComponentsInChildren<ParticleSystemRenderer>(includeInactive: true);
+            if (renderers.Length == 0)
+            {
+                throw new InvalidOperationException("Player ranged basic projectile Vefects asset should expose particle renderers.");
+            }
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                ParticleSystemRenderer renderer = renderers[i];
+                ValidateGameOwnedAsset(renderer.sharedMaterial, $"{renderer.name} projectile Vefects material");
+                ValidateRenderableMaterialShader(renderer.sharedMaterial, $"{renderer.name} projectile Vefects material shader");
+                ValidateVefectsFlipbookMaterial(renderer.sharedMaterial, $"{renderer.name} projectile Vefects material");
+                if (renderer.mesh != null)
+                {
+                    ValidateGameOwnedAsset(renderer.mesh, $"{renderer.name} projectile Vefects mesh");
+                }
+            }
         }
 
         private static void ValidateSummonEntryCueVfx(GameObject entryCuePrefab)
@@ -6205,6 +6770,12 @@ namespace DimensionBrawl.Editor
 
         private static Transform FindLikelyRightHandSocket(Transform root)
         {
+            Transform humanoidHand = FindHumanoidHandSocket(root, HumanBodyBones.RightHand);
+            if (humanoidHand != null)
+            {
+                return humanoidHand;
+            }
+
             Transform[] candidates = root.GetComponentsInChildren<Transform>(includeInactive: true);
             for (int i = 0; i < candidates.Length; i++)
             {
@@ -6224,6 +6795,12 @@ namespace DimensionBrawl.Editor
 
         private static Transform FindLikelyLeftHandSocket(Transform root)
         {
+            Transform humanoidHand = FindHumanoidHandSocket(root, HumanBodyBones.LeftHand);
+            if (humanoidHand != null)
+            {
+                return humanoidHand;
+            }
+
             Transform[] candidates = root.GetComponentsInChildren<Transform>(includeInactive: true);
             for (int i = 0; i < candidates.Length; i++)
             {
@@ -6235,6 +6812,32 @@ namespace DimensionBrawl.Editor
                         && normalized.Contains("hand", StringComparison.Ordinal)))
                 {
                     return candidates[i];
+                }
+            }
+
+            return null;
+        }
+
+        private static Transform FindHumanoidHandSocket(Transform root, HumanBodyBones handBone)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            Animator[] animators = root.GetComponentsInChildren<Animator>(includeInactive: true);
+            for (int i = 0; i < animators.Length; i++)
+            {
+                Animator animator = animators[i];
+                if (animator == null || animator.avatar == null || !animator.avatar.isHuman)
+                {
+                    continue;
+                }
+
+                Transform hand = animator.GetBoneTransform(handBone);
+                if (hand != null && hand.IsChildOf(root))
+                {
+                    return hand;
                 }
             }
 
@@ -6278,7 +6881,27 @@ namespace DimensionBrawl.Editor
                 .Replace("_", string.Empty)
                 .Replace("-", string.Empty)
                 .Replace(":", string.Empty)
+                .Replace(".", string.Empty)
                 .ToLowerInvariant();
+        }
+
+        private static void AssignInoriPlayerMaterials(GameObject visualRoot)
+        {
+            Renderer[] renderers = visualRoot.GetComponentsInChildren<Renderer>(includeInactive: true);
+            for (int rendererIndex = 0; rendererIndex < renderers.Length; rendererIndex++)
+            {
+                Renderer renderer = renderers[rendererIndex];
+                Material[] materials = renderer.sharedMaterials;
+                for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                {
+                    string hint = $"{renderer.name} {materials[materialIndex]?.name ?? string.Empty}";
+                    materials[materialIndex] =
+                        ActionFoundationInoriPlayerVisualAssetSetup.ResolvePromotedMaterial(hint, materialIndex);
+                }
+
+                renderer.sharedMaterials = materials;
+                EditorUtility.SetDirty(renderer);
+            }
         }
 
         private static void AssignRangedCandidateMaterials(GameObject visualRoot)
@@ -6296,6 +6919,38 @@ namespace DimensionBrawl.Editor
 
                 renderer.sharedMaterials = materials;
                 EditorUtility.SetDirty(renderer);
+            }
+        }
+
+        private static void RemapInoriPlayerMeshes(GameObject visualRoot)
+        {
+            Dictionary<string, Mesh> promotedMeshes =
+                LoadPromotedMeshMap(ActionFoundationInoriPlayerVisualAssetSetup.ModelPath);
+
+            MeshFilter[] meshFilters = visualRoot.GetComponentsInChildren<MeshFilter>(includeInactive: true);
+            for (int i = 0; i < meshFilters.Length; i++)
+            {
+                Mesh promotedMesh = ResolvePromotedMesh(meshFilters[i].sharedMesh, promotedMeshes, $"{meshFilters[i].name} mesh");
+                if (meshFilters[i].sharedMesh != promotedMesh)
+                {
+                    meshFilters[i].sharedMesh = promotedMesh;
+                    EditorUtility.SetDirty(meshFilters[i]);
+                }
+            }
+
+            SkinnedMeshRenderer[] skinnedRenderers =
+                visualRoot.GetComponentsInChildren<SkinnedMeshRenderer>(includeInactive: true);
+            for (int i = 0; i < skinnedRenderers.Length; i++)
+            {
+                Mesh promotedMesh = ResolvePromotedMesh(
+                    skinnedRenderers[i].sharedMesh,
+                    promotedMeshes,
+                    $"{skinnedRenderers[i].name} skinned mesh");
+                if (skinnedRenderers[i].sharedMesh != promotedMesh)
+                {
+                    skinnedRenderers[i].sharedMesh = promotedMesh;
+                    EditorUtility.SetDirty(skinnedRenderers[i]);
+                }
             }
         }
 
@@ -6504,12 +7159,23 @@ namespace DimensionBrawl.Editor
             }
 
             if (rangedAnimator.runtimeAnimatorController
-                != LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath))
+                != EnsureInoriRifleAnimatorController())
             {
-                throw new InvalidOperationException("Ranged player visual must use the promoted RifleGirl controller for review.");
+                throw new InvalidOperationException("Ranged player visual must use the promoted RifleGirl controller so Inori can play the authored rifle poses.");
             }
 
             ValidateGameOwnedAsset(rangedAnimator.avatar, "Ranged player visual Avatar");
+            if (rangedAnimator.runtimeAnimatorController is not AnimatorController inoriController
+                || inoriController.layers.Length == 0
+                || !inoriController.layers[0].iKPass)
+            {
+                throw new InvalidOperationException("Inori rifle Animator Controller must keep IK pass enabled for the support hand.");
+            }
+
+            if (rangedAnimator.cullingMode != AnimatorCullingMode.AlwaysAnimate)
+            {
+                throw new InvalidOperationException("Ranged player Animator must always animate so weapon IK and ranged clips keep updating off-center.");
+            }
 
             Renderer[] renderers = rangedRoot.GetComponentsInChildren<Renderer>(includeInactive: true);
             if (renderers.Length == 0)
@@ -6538,7 +7204,12 @@ namespace DimensionBrawl.Editor
 
             if (weapon.parent == rangedRoot.transform)
             {
-                throw new InvalidOperationException("Ranged weapon must stay inside the RifleGirl authored weapon hierarchy.");
+                throw new InvalidOperationException("Ranged weapon must stay under the Inori hand hierarchy.");
+            }
+
+            if (!weapon.IsChildOf(rangedAnimator.transform))
+            {
+                throw new InvalidOperationException("Ranged weapon must be parented to the active Inori player model.");
             }
 
             if (weapon.GetComponentsInChildren<Renderer>(includeInactive: true).Length == 0)
@@ -6546,31 +7217,15 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"{RangedPlayerWeaponName} must include visible renderers.");
             }
 
-            ParentConstraint weaponConstraint = weapon.GetComponent<ParentConstraint>();
-            if (weaponConstraint == null)
-            {
-                throw new InvalidOperationException($"{RangedPlayerWeaponName} must preserve the source rifle ParentConstraint.");
-            }
-
-            if (weaponConstraint.sourceCount < 2)
-            {
-                throw new InvalidOperationException($"{RangedPlayerWeaponName} ParentConstraint must keep authored weapon sockets.");
-            }
-
-            if (!weaponConstraint.constraintActive)
-            {
-                throw new InvalidOperationException($"{RangedPlayerWeaponName} ParentConstraint must start active.");
-            }
-
             RifleGirlWeaponSocketDriver weaponSocketDriver =
                 rangedAnimator.GetComponent<RifleGirlWeaponSocketDriver>();
             if (weaponSocketDriver == null || !weaponSocketDriver.IsConfigured)
             {
-                throw new InvalidOperationException("Ranged player visual must bind the RifleGirl weapon socket and left-hand IK driver.");
+                throw new InvalidOperationException("Ranged player visual must bind the Inori rifle socket driver.");
             }
 
             ValidateObjectReference(weaponSocketDriver, "animator", rangedAnimator);
-            ValidateObjectReference(weaponSocketDriver, "rifleConstraint", weaponConstraint);
+            ValidateObjectReference(weaponSocketDriver, "rifleConstraint", null);
             Transform leftHandle = FindDescendant(weapon.transform, "Left_Handle");
             if (leftHandle == null)
             {
@@ -6578,23 +7233,31 @@ namespace DimensionBrawl.Editor
             }
 
             ValidateObjectReference(weaponSocketDriver, "leftHandIkTarget", leftHandle);
-            ValidateString(weaponSocketDriver, "defaultCommands", "To_Hand_R_Socket, IK_ON_Left_Handle");
+            ValidateString(weaponSocketDriver, "defaultCommands", "IK_OFF_Left_Handle");
             ValidateString(weaponSocketDriver, "handSocketCommand", "To_Hand_R_Socket");
             ValidateString(weaponSocketDriver, "holsterSocketCommand", "To_Put_Socket_Rifle");
             ValidateString(weaponSocketDriver, "aimSocketCommand", "To_add_weapon_r");
             ValidateString(weaponSocketDriver, "leftIkOnCommand", "IK_ON_Left_Handle");
             ValidateString(weaponSocketDriver, "leftIkOffCommand", "IK_OFF_Left_Handle");
             ValidateBool(weaponSocketDriver, "ignoreRedundantSocketCommands", true);
-
-            if (FindDescendant(rangedRoot.transform, "Hand_R_Socket") == null)
+            ValidateFloat(weaponSocketDriver, "leftIkMaxWeight", 0f);
+            ValidateFloat(weaponSocketDriver, "leftIkRotationMaxWeight", 0f);
+            RetargetedHandWeaponAttachment retargetedAttachment =
+                weapon.GetComponent<RetargetedHandWeaponAttachment>();
+            if (retargetedAttachment == null || !retargetedAttachment.IsConfigured)
             {
-                throw new InvalidOperationException("Ranged player visual must expose a right-hand socket for weapon-only swap.");
+                throw new InvalidOperationException(
+                    $"{RangedPlayerWeaponName} must use a retargeted attachment driver so the rifle follows Inori's hand position without inheriting the incompatible hand roll.");
             }
 
-            if (FindDescendant(rangedRoot.transform, "Put_Socket_Rifle") == null
-                || FindDescendant(rangedRoot.transform, "R_Weapon_Bone_Dymmy_R") == null)
+            if (FindLikelyRightHandSocket(rangedRoot.transform) == null)
             {
-                throw new InvalidOperationException("Ranged player visual must preserve RifleGirl authored rifle sockets.");
+                throw new InvalidOperationException("Ranged player visual must expose a right-hand socket for weapon attachment.");
+            }
+
+            if (FindLikelyLeftHandSocket(rangedRoot.transform) == null)
+            {
+                throw new InvalidOperationException("Ranged player visual must expose a left-hand socket for support-hand IK.");
             }
 
             if (rangedWeaponRoot != weapon.gameObject)
@@ -6667,6 +7330,23 @@ namespace DimensionBrawl.Editor
             {
                 throw new InvalidOperationException($"{label} must not use Unity's missing/error shader.");
             }
+        }
+
+        private static void ValidateVefectsFlipbookMaterial(Material material, string label)
+        {
+            ValidateGameOwnedAsset(material.shader, $"{label} shader");
+            if (!material.HasProperty("_Flipbook"))
+            {
+                throw new InvalidOperationException($"{label} should use the promoted Vefects flipbook shader.");
+            }
+
+            Texture flipbook = material.GetTexture("_Flipbook");
+            if (flipbook == null)
+            {
+                throw new InvalidOperationException($"{label} should keep an assigned Vefects flipbook texture.");
+            }
+
+            ValidateGameOwnedAsset(flipbook, $"{label} flipbook texture");
         }
 
         private static Material LoadOrCreateMaterial(string assetPath, Color color)

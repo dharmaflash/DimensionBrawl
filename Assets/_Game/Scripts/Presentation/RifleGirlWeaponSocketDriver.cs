@@ -24,6 +24,7 @@ namespace DimensionBrawl.Presentation
         [Header("IK")]
         [SerializeField] private AvatarIKGoal leftIkGoal = AvatarIKGoal.LeftHand;
         [SerializeField, Range(0f, 1f)] private float leftIkMaxWeight = 1f;
+        [SerializeField, Range(0f, 1f)] private float leftIkRotationMaxWeight = 1f;
         [SerializeField, Min(0f)] private float leftIkBlendSpeed = 15f;
 
         private float leftIkCurrentWeight;
@@ -32,7 +33,7 @@ namespace DimensionBrawl.Presentation
         private int rifleConstraintSourceApplyCount;
         private int redundantRifleConstraintCommandCount;
 
-        public bool IsConfigured => animator != null && rifleConstraint != null && leftHandIkTarget != null;
+        public bool IsConfigured => animator != null && leftHandIkTarget != null;
         public int ActiveRifleConstraintSourceIndex => activeRifleConstraintSourceIndex;
         public int RifleConstraintSourceApplyCount => rifleConstraintSourceApplyCount;
         public int RedundantRifleConstraintCommandCount => redundantRifleConstraintCommandCount;
@@ -154,15 +155,25 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
+            float resolvedTargetWeight = leftHandIkTarget.gameObject.activeInHierarchy
+                ? leftIkTargetWeight
+                : 0f;
+
             leftIkCurrentWeight = Mathf.Lerp(
                 leftIkCurrentWeight,
-                leftIkTargetWeight,
+                resolvedTargetWeight,
                 Time.deltaTime * leftIkBlendSpeed);
 
             animator.SetIKPositionWeight(leftIkGoal, leftIkCurrentWeight);
-            animator.SetIKRotationWeight(leftIkGoal, leftIkCurrentWeight);
+            float rotationWeight = leftIkMaxWeight > 0f
+                ? Mathf.Clamp01(leftIkCurrentWeight / leftIkMaxWeight) * leftIkRotationMaxWeight
+                : 0f;
+            animator.SetIKRotationWeight(leftIkGoal, rotationWeight);
             animator.SetIKPosition(leftIkGoal, leftHandIkTarget.position);
-            animator.SetIKRotation(leftIkGoal, leftHandIkTarget.rotation);
+            if (rotationWeight > 0f)
+            {
+                animator.SetIKRotation(leftIkGoal, leftHandIkTarget.rotation);
+            }
         }
     }
 }

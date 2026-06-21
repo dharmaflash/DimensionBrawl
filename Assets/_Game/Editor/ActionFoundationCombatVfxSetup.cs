@@ -22,12 +22,23 @@ namespace DimensionBrawl.Editor
         private const string MaterialRoot = CombatVfxRoot + "/Materials";
         private const string PrefabRoot = CombatVfxRoot + "/Prefabs";
         private const string TextureRoot = CombatVfxRoot + "/Textures";
+        private const string ShaderRoot = CombatVfxRoot + "/Shaders";
         private const string ImportedMuzzleFlashRoot =
             "Assets/_Imported/AssetStore/VFX/Vefects_ShotsVFXURP/Shots VFX URP/Shots/Muzzle Flash/Textures";
+        private const string ImportedMuzzleFlashShaderRoot =
+            "Assets/_Imported/AssetStore/VFX/Vefects_ShotsVFXURP/Shots VFX URP/Shots/Muzzle Flash/Shaders";
+        private const string ImportedSharedTextureRoot =
+            "Assets/_Imported/AssetStore/VFX/Vefects_ShotsVFXURP/Shots VFX URP/Shared/Textures";
         private const string MuzzleFlashFrontSourcePath = ImportedMuzzleFlashRoot + "/T_VFX_MuzzleFlash_Front.tga";
         private const string MuzzleFlashSideSourcePath = ImportedMuzzleFlashRoot + "/T_VFX_MuzzleFlash_Side.tga";
+        private const string MuzzleSmokeSourcePath = ImportedSharedTextureRoot + "/T_VFX_SmokePuff_Animated_NonDir01_Optimized.tga";
+        private const string MuzzleFlashShaderSourcePath = ImportedMuzzleFlashShaderRoot + "/SH_Vefects_URP_VFX_Muzzle_Flash.shader";
+        private const string MuzzleSmokeShaderSourcePath = ImportedMuzzleFlashShaderRoot + "/SH_Vefects_URP_VFX_Muzzle_Smoke.shader";
         private const string MuzzleFlashFrontTexturePath = TextureRoot + "/T_VFX_MuzzleFlash_Front.tga";
         private const string MuzzleFlashSideTexturePath = TextureRoot + "/T_VFX_MuzzleFlash_Side.tga";
+        private const string MuzzleSmokeTexturePath = TextureRoot + "/T_VFX_SmokePuff_Animated_NonDir01_Optimized.tga";
+        private const string MuzzleFlashShaderPath = ShaderRoot + "/SH_Vefects_URP_VFX_Muzzle_Flash.shader";
+        private const string MuzzleSmokeShaderPath = ShaderRoot + "/SH_Vefects_URP_VFX_Muzzle_Smoke.shader";
         private const string PoolRootName = "ActionFoundation_CombatVfxPool";
 
         [MenuItem("DimensionBrawl/Reapply Action Foundation Combat VFX Cues")]
@@ -120,6 +131,13 @@ namespace DimensionBrawl.Editor
             EnsureFolder(MaterialRoot);
             EnsureFolder(PrefabRoot);
             EnsureFolder(TextureRoot);
+            EnsureFolder(ShaderRoot);
+
+            Shader muzzleFlashShader = EnsurePromotedShader(MuzzleFlashShaderSourcePath, MuzzleFlashShaderPath);
+            Shader muzzleSmokeShader = EnsurePromotedShader(MuzzleSmokeShaderSourcePath, MuzzleSmokeShaderPath);
+            Texture2D muzzleFront = EnsurePromotedTexture(MuzzleFlashFrontSourcePath, MuzzleFlashFrontTexturePath);
+            Texture2D muzzleSide = EnsurePromotedTexture(MuzzleFlashSideSourcePath, MuzzleFlashSideTexturePath);
+            Texture2D muzzleSmoke = EnsurePromotedTexture(MuzzleSmokeSourcePath, MuzzleSmokeTexturePath);
 
             Material cyan = LoadOrCreateParticleMaterial("DB_CombatVfx_Cyan", new Color(0.22f, 0.88f, 1f, 0.82f));
             Material blue = LoadOrCreateParticleMaterial("DB_CombatVfx_Blue", new Color(0.18f, 0.45f, 1f, 0.82f));
@@ -128,11 +146,29 @@ namespace DimensionBrawl.Editor
             Material violet = LoadOrCreateParticleMaterial("DB_CombatVfx_Violet", new Color(0.62f, 0.28f, 1f, 0.82f));
             Material gold = LoadOrCreateParticleMaterial("DB_CombatVfx_Gold", new Color(1f, 0.78f, 0.18f, 0.88f));
             Material white = LoadOrCreateParticleMaterial("DB_CombatVfx_White", new Color(0.92f, 0.98f, 1f, 0.9f));
-            Material smoke = LoadOrCreateParticleMaterial("DB_CombatVfx_Smoke", new Color(0.45f, 0.52f, 0.58f, 0.55f), additive: false);
-            Texture2D muzzleFront = EnsurePromotedTexture(MuzzleFlashFrontSourcePath, MuzzleFlashFrontTexturePath);
-            Texture2D muzzleSide = EnsurePromotedTexture(MuzzleFlashSideSourcePath, MuzzleFlashSideTexturePath);
-            Material muzzleFrontMaterial = LoadOrCreateTextureMaterial("DB_CombatVfx_MuzzleFlashFront", muzzleFront, new Color(1f, 0.86f, 0.42f, 0.96f));
-            Material muzzleSideMaterial = LoadOrCreateTextureMaterial("DB_CombatVfx_MuzzleFlashSide", muzzleSide, new Color(1f, 0.56f, 0.14f, 0.92f));
+            Material smoke = LoadOrCreateVefectsSmokeMaterial(
+                "DB_CombatVfx_Smoke",
+                muzzleSmokeShader,
+                muzzleSmoke,
+                new Color(0.45f, 0.52f, 0.58f, 0.55f));
+            Material muzzleFrontMaterial = LoadOrCreateVefectsMuzzleFlashMaterial(
+                "DB_CombatVfx_MuzzleFlashFront",
+                muzzleFlashShader,
+                muzzleFront,
+                new Color(1f, 0.86f, 0.42f, 0.96f),
+                (float)BlendMode.One,
+                (float)BlendMode.One,
+                0.03f,
+                1f);
+            Material muzzleSideMaterial = LoadOrCreateVefectsMuzzleFlashMaterial(
+                "DB_CombatVfx_MuzzleFlashSide",
+                muzzleFlashShader,
+                muzzleSide,
+                new Color(1f, 0.56f, 0.14f, 0.92f),
+                (float)BlendMode.SrcAlpha,
+                (float)BlendMode.OneMinusSrcAlpha,
+                0.02f,
+                0f);
 
             CombatCuePrefabs prefabs = new CombatCuePrefabs
             {
@@ -1092,6 +1128,30 @@ namespace DimensionBrawl.Editor
             return texture;
         }
 
+        private static Shader EnsurePromotedShader(string sourcePath, string targetPath)
+        {
+            string absoluteTarget = ToProjectAbsolutePath(targetPath);
+            if (!File.Exists(absoluteTarget))
+            {
+                string absoluteSource = ToProjectAbsolutePath(sourcePath);
+                if (!File.Exists(absoluteSource))
+                {
+                    throw new InvalidOperationException($"Missing source Vefects shader at {sourcePath}.");
+                }
+
+                FileUtil.CopyFileOrDirectory(absoluteSource, absoluteTarget);
+            }
+
+            AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
+            Shader shader = AssetDatabase.LoadAssetAtPath<Shader>(targetPath);
+            if (shader == null)
+            {
+                throw new InvalidOperationException($"Failed to load promoted Vefects shader at {targetPath}.");
+            }
+
+            return shader;
+        }
+
         private static bool SetImporterValue<T>(T currentValue, T desiredValue, Action<T> applyValue)
         {
             if (Equals(currentValue, desiredValue))
@@ -1129,6 +1189,81 @@ namespace DimensionBrawl.Editor
             return material;
         }
 
+        private static Material LoadOrCreateVefectsMuzzleFlashMaterial(
+            string name,
+            Shader shader,
+            Texture texture,
+            Color color,
+            float sourceBlend,
+            float destinationBlend,
+            float depthFade,
+            float sideFadeStrength)
+        {
+            Material material = LoadOrCreateMaterialWithShader(name, shader);
+            ConfigureVefectsFlipbookMaterial(material, texture, color);
+            SetMaterialFloatIfPresent(material, "_Src", sourceBlend);
+            SetMaterialFloatIfPresent(material, "_Dst", destinationBlend);
+            SetMaterialFloatIfPresent(material, "_IsAdditive", 1f);
+            SetMaterialFloatIfPresent(material, "_DepthFade", depthFade);
+            SetMaterialFloatIfPresent(material, "_SideFadeStrength", sideFadeStrength);
+            SetMaterialFloatIfPresent(material, "_EmissiveOverall", 1f);
+            SetMaterialFloatIfPresent(material, "_Cull", 0f);
+            SetMaterialFloatIfPresent(material, "_ZTest", 2f);
+            SetMaterialFloatIfPresent(material, "_ZWrite", 0f);
+            SetMaterialFloatIfPresent(material, "_ReceiveShadows", 1f);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        private static Material LoadOrCreateVefectsSmokeMaterial(
+            string name,
+            Shader shader,
+            Texture texture,
+            Color color)
+        {
+            Material material = LoadOrCreateMaterialWithShader(name, shader);
+            ConfigureVefectsFlipbookMaterial(material, texture, color);
+            SetMaterialFloatIfPresent(material, "_Src", (float)BlendMode.SrcAlpha);
+            SetMaterialFloatIfPresent(material, "_Dst", (float)BlendMode.OneMinusSrcAlpha);
+            SetMaterialFloatIfPresent(material, "_DepthFade", 0.3f);
+            SetMaterialFloatIfPresent(material, "_TextureTint", 0f);
+            SetMaterialFloatIfPresent(material, "_SSEroSoft", 1f);
+            SetMaterialFloatIfPresent(material, "_Cull", 0f);
+            SetMaterialFloatIfPresent(material, "_ZTest", 2f);
+            SetMaterialFloatIfPresent(material, "_ZWrite", 0f);
+            SetMaterialFloatIfPresent(material, "_ReceiveShadows", 1f);
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        private static Material LoadOrCreateMaterialWithShader(string name, Shader shader)
+        {
+            string path = $"{MaterialRoot}/{name}.mat";
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, path);
+            }
+
+            material.shader = shader;
+            material.enableInstancing = true;
+            material.renderQueue = -1;
+            material.DisableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            return material;
+        }
+
+        private static void ConfigureVefectsFlipbookMaterial(Material material, Texture texture, Color color)
+        {
+            SetMaterialTextureIfPresent(material, "_Flipbook", texture);
+            SetMaterialTextureIfPresent(material, "_BaseMap", texture);
+            SetMaterialTextureIfPresent(material, "_MainTex", texture);
+            SetMaterialTextureIfPresent(material, "_MainTexture", texture);
+            SetMaterialColorIfPresent(material, "_BaseColor", color);
+            SetMaterialColorIfPresent(material, "_Color", color);
+            SetMaterialColorIfPresent(material, "_EmissionColor", Color.white);
+        }
+
         private static Shader FindParticleShader()
         {
             return Shader.Find("Universal Render Pipeline/Unlit")
@@ -1150,6 +1285,14 @@ namespace DimensionBrawl.Editor
             if (material.HasProperty(propertyName))
             {
                 material.SetTexture(propertyName, texture);
+            }
+        }
+
+        private static void SetMaterialColorIfPresent(Material material, string propertyName, Color color)
+        {
+            if (material.HasProperty(propertyName))
+            {
+                material.SetColor(propertyName, color);
             }
         }
 
