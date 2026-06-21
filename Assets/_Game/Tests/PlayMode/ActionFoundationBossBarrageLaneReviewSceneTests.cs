@@ -4347,6 +4347,16 @@ namespace DimensionBrawl.Tests
                 "summon follow-up window MagicMissiles overlay");
             AssertCombatCueAssetOverlay(
                 profile,
+                CombatVfxCueId.SummonFollowupHit,
+                "CueAssetVfx_MagicMissilesLightImpact",
+                "summon follow-up hit MagicMissiles impact overlay");
+            AssertCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.SummonFollowupMissed,
+                "CueAssetVfx_MagicMissilesDeathBurst",
+                "summon follow-up missed MagicMissiles break overlay");
+            AssertCombatCueAssetOverlay(
+                profile,
                 CombatVfxCueId.PocketCleared,
                 "CueAssetVfx_MagicMissilesSummonState",
                 "pocket clear MagicMissiles overlay");

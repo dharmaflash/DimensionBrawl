@@ -81,6 +81,17 @@ namespace DimensionBrawl.Tests
             AssertPromotedCueAudio(profile, CombatVfxCueId.EnemyHit, "light_hit", magicMissilesAudioPath);
             AssertPromotedCueAudio(profile, CombatVfxCueId.EnemyDeath, "death_hit", magicMissilesAudioPath);
             AssertPromotedCueAudio(profile, CombatVfxCueId.EliteShieldSignal, "holy_hit", magicMissilesAudioPath);
+            AssertPromotedCueAudio(profile, CombatVfxCueId.SummonFollowupMissed, "death_hit", magicMissilesAudioPath);
+            AssertPromotedCueAudio(profile, CombatVfxCueId.PocketFailed, "death_hit", magicMissilesAudioPath);
+        }
+
+        [Test]
+        public void PocketFollowupHitCueUsesPromotedImpactAudio()
+        {
+            CombatVfxCueProfile profile = AssetDatabase.LoadAssetAtPath<CombatVfxCueProfile>(CombatVfxCueProfilePath);
+            Assert.IsNotNull(profile, $"Missing combat VFX cue profile at {CombatVfxCueProfilePath}.");
+
+            AssertPromotedCueAudio(profile, CombatVfxCueId.SummonFollowupHit, "SFX_Vefects_Shots_Squib_Metal");
         }
 
         [UnityTest]
