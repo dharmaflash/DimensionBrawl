@@ -16,6 +16,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private Color tierTwoColor = new Color(0.38f, 0.74f, 1f, 0.5f);
         [SerializeField] private Color tierThreeColor = new Color(1f, 0.76f, 0.24f, 0.62f);
         [SerializeField] private Color interceptColor = new Color(0.92f, 1f, 1f, 0.88f);
+        [SerializeField, Range(0.25f, 1f)] private float visualRadiusScale = 0.58f;
         [SerializeField, Min(0f)] private float activationFlashSeconds = 0.12f;
         [SerializeField, Min(0f)] private float interceptFlashSeconds = 0.18f;
         [SerializeField, Min(0f)] private float finalHitLingerSeconds = 0.16f;
@@ -43,6 +44,7 @@ namespace DimensionBrawl.Presentation
         public int RendererCount => screenRenderers != null ? screenRenderers.Length : 0;
         public int InterceptFlashCount => interceptFlashCount;
         public int LastObservedTier => lastObservedTier;
+        public float VisualRadiusScale => visualRadiusScale;
 
         private void Awake()
         {
@@ -181,7 +183,11 @@ namespace DimensionBrawl.Presentation
             float pulse = 1f + Mathf.Sin(Time.time * pulseSpeed) * pulseScale;
             float flash = ResolveFlashWeight();
             float punch = ResolvePunchWeight();
-            float scale = Mathf.Max(0.05f, lastKnownRadius) * 2f * (pulse + flash * 0.12f + punch * interceptPunchScale);
+            float radiusScale = Mathf.Clamp(visualRadiusScale, 0.25f, 1f);
+            float scale = Mathf.Max(0.05f, lastKnownRadius)
+                * radiusScale
+                * 2f
+                * (pulse + flash * 0.12f + punch * interceptPunchScale);
             visualRoot.localScale = Vector3.Scale(visualBaseScale, new Vector3(scale, scale, scale));
             if (visualRoot != transform)
             {

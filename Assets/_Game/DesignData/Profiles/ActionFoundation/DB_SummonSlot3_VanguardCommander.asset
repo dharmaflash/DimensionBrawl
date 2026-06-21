@@ -22,8 +22,8 @@ MonoBehaviour:
     LateralReach: 0.8
     EntryHeight: 0.18
     TargetHeight: 1.35
-    CueScale: 1.45
-    CueLifetimeSeconds: 0.82
+    CueScale: 0.88
+    CueLifetimeSeconds: 0.62
     ActorLifetimeSeconds: 0
     ActorScale: 1.05
     ActorRoleId: VanguardCommander
@@ -50,8 +50,8 @@ MonoBehaviour:
     LateralReach: 2.2
     EntryHeight: 0.18
     TargetHeight: 1.35
-    CueScale: 1.57
-    CueLifetimeSeconds: 0.82
+    CueScale: 0.96
+    CueLifetimeSeconds: 0.62
     ActorLifetimeSeconds: 0
     ActorScale: 1.18
     ActorRoleId: VanguardCommander
@@ -78,8 +78,8 @@ MonoBehaviour:
     LateralReach: 3.4
     EntryHeight: 0.18
     TargetHeight: 1.35
-    CueScale: 1.69
-    CueLifetimeSeconds: 0.82
+    CueScale: 1.04
+    CueLifetimeSeconds: 0.62
     ActorLifetimeSeconds: 0
     ActorScale: 1.34
     ActorRoleId: VanguardCommander

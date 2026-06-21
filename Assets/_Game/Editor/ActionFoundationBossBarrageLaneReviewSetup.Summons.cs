@@ -227,7 +227,7 @@ namespace DimensionBrawl.Editor
             Material material = LoadOrCreateMaterial(SummonSlot1ActorMaterialPath, new Color(0.2f, 1f, 0.78f, 1f));
             Material pressureScreenMaterial = LoadOrCreateTransparentMaterial(
                 SummonPressureScreenMaterialPath,
-                new Color(0.18f, 1f, 0.78f, 0.38f));
+                new Color(0.18f, 1f, 0.78f, 0.24f));
             Material pulseMaterial = LoadOrCreateTransparentMaterial(
                 SummonSlot1ActorPulseMaterialPath,
                 new Color(0.45f, 0.95f, 1f, 0.72f));
@@ -326,13 +326,16 @@ namespace DimensionBrawl.Editor
                 SetObjectReference(presenter, "pressureScreen", pressureScreen);
                 SetObjectReference(presenter, "visualRoot", pressureScreenVisual);
                 SetObjectReferenceArray(presenter, "screenRenderers", new UnityEngine.Object[] { visualRenderer });
-                SetColor(presenter, "activeColor", new Color(0.22f, 1f, 0.82f, 0.42f));
-                SetColor(presenter, "interceptColor", new Color(0.92f, 1f, 1f, 0.88f));
+                SetColor(presenter, "activeColor", new Color(0.22f, 1f, 0.82f, 0.26f));
+                SetColor(presenter, "tierTwoColor", new Color(0.38f, 0.74f, 1f, 0.3f));
+                SetColor(presenter, "tierThreeColor", new Color(1f, 0.76f, 0.24f, 0.36f));
+                SetColor(presenter, "interceptColor", new Color(0.92f, 1f, 1f, 0.68f));
+                SetFloat(presenter, "visualRadiusScale", 0.56f);
                 SetFloat(presenter, "activationFlashSeconds", 0.12f);
                 SetFloat(presenter, "interceptFlashSeconds", 0.18f);
                 SetFloat(presenter, "finalHitLingerSeconds", 0.16f);
                 SetFloat(presenter, "pulseSpeed", 9f);
-                SetFloat(presenter, "pulseScale", 0.04f);
+                SetFloat(presenter, "pulseScale", 0.025f);
 
                 Transform tierPulseCore = EnsureChild(editableRoot.transform, "TierPulseCore");
                 tierPulseCore.localPosition = new Vector3(0f, 1.08f, 0.08f);
@@ -369,7 +372,7 @@ namespace DimensionBrawl.Editor
                     "ShieldBreakerReadyAura",
                     ImportedMagicMissilesHealingAuraPrefabPath,
                     new Vector3(0f, 0.1f, 0.02f),
-                    Vector3.one * 0.7f);
+                    Vector3.one * 0.52f);
 
                 Transform summonVisual = AttachRoleVisualOnly(
                     editableRoot.transform,
@@ -474,7 +477,7 @@ namespace DimensionBrawl.Editor
                 0.34f,
                 includePressureScreen: true,
                 pressureScreenMaterialPath: SummonSlot3PressureScreenMaterialPath,
-                pressureScreenColor: new Color(1f, 0.74f, 0.32f, 0.42f));
+                pressureScreenColor: new Color(1f, 0.74f, 0.32f, 0.28f));
         }
 
         private static SummonFrontlineProxy EnsureSupportSummonActorPrefab(
@@ -717,12 +720,15 @@ namespace DimensionBrawl.Editor
             SetObjectReference(screenPresenter, "visualRoot", pressureScreenVisual);
             SetObjectReferenceArray(screenPresenter, "screenRenderers", new UnityEngine.Object[] { visualRenderer });
             SetColor(screenPresenter, "activeColor", pressureScreenColor);
-            SetColor(screenPresenter, "interceptColor", new Color(1f, 0.96f, 0.78f, 0.9f));
+            SetColor(screenPresenter, "tierTwoColor", new Color(1f, 0.805f, 0.49f, 0.34f));
+            SetColor(screenPresenter, "tierThreeColor", new Color(1f, 0.758f, 0.275f, 0.42f));
+            SetColor(screenPresenter, "interceptColor", new Color(1f, 0.96f, 0.78f, 0.68f));
+            SetFloat(screenPresenter, "visualRadiusScale", 0.56f);
             SetFloat(screenPresenter, "activationFlashSeconds", 0.12f);
             SetFloat(screenPresenter, "interceptFlashSeconds", 0.18f);
             SetFloat(screenPresenter, "finalHitLingerSeconds", 0.16f);
             SetFloat(screenPresenter, "pulseSpeed", 7.8f);
-            SetFloat(screenPresenter, "pulseScale", 0.035f);
+            SetFloat(screenPresenter, "pulseScale", 0.024f);
 
             return pressureScreen;
         }
@@ -745,7 +751,7 @@ namespace DimensionBrawl.Editor
             Material material = LoadOrCreateMaterial(BossSummonPressureActorMaterialPath, new Color(1f, 0.36f, 0.64f, 1f));
             Material pressureScreenMaterial = LoadOrCreateTransparentMaterial(
                 BossSummonPressureScreenMaterialPath,
-                new Color(1f, 0.22f, 0.55f, 0.38f));
+                new Color(1f, 0.22f, 0.55f, 0.24f));
             Material pulseMaterial = LoadOrCreateTransparentMaterial(
                 BossSummonPressureActorPulseMaterialPath,
                 new Color(1f, 0.62f, 0.28f, 0.74f));
@@ -844,13 +850,16 @@ namespace DimensionBrawl.Editor
                 SetObjectReference(presenter, "pressureScreen", pressureScreen);
                 SetObjectReference(presenter, "visualRoot", pressureScreenVisual);
                 SetObjectReferenceArray(presenter, "screenRenderers", new UnityEngine.Object[] { visualRenderer });
-                SetColor(presenter, "activeColor", new Color(1f, 0.22f, 0.55f, 0.42f));
-                SetColor(presenter, "interceptColor", new Color(1f, 0.86f, 0.64f, 0.9f));
+                SetColor(presenter, "activeColor", new Color(1f, 0.22f, 0.55f, 0.28f));
+                SetColor(presenter, "tierTwoColor", new Color(1f, 0.62f, 0.24f, 0.34f));
+                SetColor(presenter, "tierThreeColor", new Color(1f, 0.22f, 0.9f, 0.42f));
+                SetColor(presenter, "interceptColor", new Color(1f, 0.86f, 0.64f, 0.68f));
+                SetFloat(presenter, "visualRadiusScale", 0.56f);
                 SetFloat(presenter, "activationFlashSeconds", 0.14f);
                 SetFloat(presenter, "interceptFlashSeconds", 0.2f);
                 SetFloat(presenter, "finalHitLingerSeconds", 0.16f);
                 SetFloat(presenter, "pulseSpeed", 8.2f);
-                SetFloat(presenter, "pulseScale", 0.055f);
+                SetFloat(presenter, "pulseScale", 0.032f);
 
                 Transform tierPulseCore = EnsureChild(editableRoot.transform, "TierPressureCore");
                 tierPulseCore.localPosition = new Vector3(0f, 1.08f, -0.08f);
@@ -887,7 +896,7 @@ namespace DimensionBrawl.Editor
                     "BossPressureAura",
                     ImportedMagicMissilesPressureAuraPrefabPath,
                     new Vector3(0f, 0.08f, -0.04f),
-                    Vector3.one * 0.84f);
+                    Vector3.one * 0.62f);
 
                 Transform summonVisual = AttachRoleVisualOnly(
                     editableRoot.transform,
@@ -958,7 +967,7 @@ namespace DimensionBrawl.Editor
                 ImportedMagicMissilesArcaneCirclePrefabPath,
                 new Vector3(0f, 0.08f, 0f),
                 Vector3.zero,
-                new Vector3(1.25f, 1.25f, 1.25f),
+                new Vector3(0.62f, 0.62f, 0.62f),
                 loopParticles: true,
                 playOnAwake: true);
             EditorUtility.SetDirty(cueRoot);
@@ -981,7 +990,7 @@ namespace DimensionBrawl.Editor
                 ImportedMagicMissilesShieldCirclePrefabPath,
                 screenCenter + new Vector3(0f, 0f, Mathf.Sign(forwardSign) * 0.08f),
                 new Vector3(90f, 0f, 0f),
-                Vector3.one * (clampedRadius * 0.78f),
+                Vector3.one * (clampedRadius * 0.48f),
                 loopParticles: true,
                 playOnAwake: true);
             EditorUtility.SetDirty(actorRoot);
@@ -1012,7 +1021,7 @@ namespace DimensionBrawl.Editor
                 ImportedMagicMissilesPulsePrefabPath,
                 pulseCenter + new Vector3(0f, 0f, direction * 0.08f),
                 Vector3.zero,
-                Vector3.one * Mathf.Max(0.44f, clampedRadius * 1.08f),
+                Vector3.one * Mathf.Max(0.34f, clampedRadius * 0.82f),
                 loopParticles: true,
                 playOnAwake: true);
             EditorUtility.SetDirty(actorRoot);
@@ -1531,8 +1540,8 @@ namespace DimensionBrawl.Editor
                 LateralReach = lateralReach,
                 EntryHeight = 0.18f,
                 TargetHeight = 1.35f,
-                CueScale = 1.45f + Mathf.Max(0, projectileCount - 1) * 0.12f,
-                CueLifetimeSeconds = 0.82f,
+                CueScale = 0.88f + Mathf.Max(0, projectileCount - 1) * 0.08f,
+                CueLifetimeSeconds = 0.62f,
                 ActorLifetimeSeconds = actorLifetimeSeconds,
                 ActorScale = actorScale,
                 ActorRoleId = actorRoleId,

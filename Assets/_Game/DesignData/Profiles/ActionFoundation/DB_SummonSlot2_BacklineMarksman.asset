@@ -22,8 +22,8 @@ MonoBehaviour:
     LateralReach: 1.4
     EntryHeight: 0.18
     TargetHeight: 1.35
-    CueScale: 1.57
-    CueLifetimeSeconds: 0.82
+    CueScale: 0.96
+    CueLifetimeSeconds: 0.62
     ActorLifetimeSeconds: 0
     ActorScale: 0.95
     ActorRoleId: BacklineMarksman
@@ -50,8 +50,8 @@ MonoBehaviour:
     LateralReach: 2.8
     EntryHeight: 0.18
     TargetHeight: 1.35
-    CueScale: 1.69
-    CueLifetimeSeconds: 0.82
+    CueScale: 1.04
+    CueLifetimeSeconds: 0.62
     ActorLifetimeSeconds: 0
     ActorScale: 1.05
     ActorRoleId: BacklineMarksman
@@ -78,8 +78,8 @@ MonoBehaviour:
     LateralReach: 4.2
     EntryHeight: 0.18
     TargetHeight: 1.35
-    CueScale: 1.8100001
-    CueLifetimeSeconds: 0.82
+    CueScale: 1.12
+    CueLifetimeSeconds: 0.62
     ActorLifetimeSeconds: 0
     ActorScale: 1.16
     ActorRoleId: BacklineMarksman
