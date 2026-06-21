@@ -322,8 +322,15 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("LanePoke", bossBasicFireProfile.FireId);
             Assert.AreEqual("Lane Poke", bossBasicFireProfile.ReadoutLabel);
             Assert.AreEqual(2, bossBasicFireProfile.ProjectilesPerVolley);
-            Assert.AreEqual(4.5f, bossBasicFireProfile.Damage, 0.001f);
-            Assert.AreEqual(2.45f, bossBasicFireProfile.FireIntervalSeconds, 0.001f);
+            Assert.AreEqual(3.4f, bossBasicFireProfile.Damage, 0.001f);
+            Assert.AreEqual(0.95f, bossBasicFireProfile.InitialDelaySeconds, 0.001f);
+            Assert.AreEqual(1.85f, bossBasicFireProfile.FireIntervalSeconds, 0.001f);
+            Assert.LessOrEqual(
+                bossBasicFireProfile.ProjectilesPerVolley
+                    * bossBasicFireProfile.Damage
+                    / bossBasicFireProfile.FireIntervalSeconds,
+                3.9f,
+                "Boss basic fire can fill visual pressure gaps, but should stay a weak regular-fire layer instead of becoming the main fail source.");
             Assert.AreEqual(0.22f, bossBasicFireProfile.ProjectileRadius, 0.001f);
             Assert.IsNull(
                 bossBasicFireProfile.ProjectileMaterial,

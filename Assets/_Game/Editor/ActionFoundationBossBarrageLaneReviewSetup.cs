@@ -1500,15 +1500,13 @@ namespace DimensionBrawl.Editor
                 AssetDatabase.CreateAsset(profile, BossBasicFireProfilePath);
             }
 
-            Material projectileMaterial =
-                LoadOrCreateMaterial(BossBasicFireProjectileMaterialPath, new Color(0.7f, 0.95f, 1f, 1f));
             var serializedObject = new SerializedObject(profile);
             RequireProperty(serializedObject, "fireId").stringValue = "LanePoke";
             RequireProperty(serializedObject, "readoutLabel").stringValue = "Lane Poke";
-            RequireProperty(serializedObject, "initialDelaySeconds").floatValue = 1.25f;
-            RequireProperty(serializedObject, "fireIntervalSeconds").floatValue = 2.45f;
+            RequireProperty(serializedObject, "initialDelaySeconds").floatValue = 0.95f;
+            RequireProperty(serializedObject, "fireIntervalSeconds").floatValue = 1.85f;
             RequireProperty(serializedObject, "projectilesPerVolley").intValue = 2;
-            RequireProperty(serializedObject, "damage").floatValue = 4.5f;
+            RequireProperty(serializedObject, "damage").floatValue = 3.4f;
             RequireProperty(serializedObject, "projectileSpeed").floatValue = 11.5f;
             RequireProperty(serializedObject, "projectileLifetimeSeconds").floatValue = 5.2f;
             RequireProperty(serializedObject, "projectileRadius").floatValue = 0.22f;
@@ -1519,7 +1517,7 @@ namespace DimensionBrawl.Editor
             RequireProperty(serializedObject, "targetHeight").floatValue = 1.02f;
             RequireProperty(serializedObject, "projectileColor").colorValue = new Color(0.7f, 0.95f, 1f, 1f);
             RequireProperty(serializedObject, "projectileVisualScale").vector3Value = new Vector3(0.62f, 0.62f, 0.62f);
-            RequireProperty(serializedObject, "projectileMaterial").objectReferenceValue = projectileMaterial;
+            RequireProperty(serializedObject, "projectileMaterial").objectReferenceValue = null;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(profile);
             return profile;
@@ -5594,10 +5592,10 @@ namespace DimensionBrawl.Editor
             BossBasicFireProfile profile = LoadAsset<BossBasicFireProfile>(BossBasicFireProfilePath);
             ValidateString(profile, "fireId", "LanePoke");
             ValidateString(profile, "readoutLabel", "Lane Poke");
-            ValidateFloat(profile, "initialDelaySeconds", 1.25f);
-            ValidateFloat(profile, "fireIntervalSeconds", 2.45f);
+            ValidateFloat(profile, "initialDelaySeconds", 0.95f);
+            ValidateFloat(profile, "fireIntervalSeconds", 1.85f);
             ValidateInt(profile, "projectilesPerVolley", 2);
-            ValidateFloat(profile, "damage", 4.5f);
+            ValidateFloat(profile, "damage", 3.4f);
             ValidateFloat(profile, "projectileSpeed", 11.5f);
             ValidateFloat(profile, "projectileLifetimeSeconds", 5.2f);
             ValidateFloat(profile, "projectileRadius", 0.22f);
@@ -5608,7 +5606,7 @@ namespace DimensionBrawl.Editor
             ValidateFloat(profile, "targetHeight", 1.02f);
             ValidateColor(profile, "projectileColor", new Color(0.7f, 0.95f, 1f, 1f));
             ValidateVector3(profile, "projectileVisualScale", new Vector3(0.62f, 0.62f, 0.62f));
-            ValidateObjectReference(profile, "projectileMaterial", LoadAsset<Material>(BossBasicFireProjectileMaterialPath));
+            ValidateObjectReference(profile, "projectileMaterial", null);
         }
 
         private static void ValidateEnergyRiskZoneMarkers(Scene scene, SummonLaneSpace laneSpace)
