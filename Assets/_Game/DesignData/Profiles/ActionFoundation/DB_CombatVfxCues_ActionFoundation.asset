@@ -332,8 +332,8 @@ MonoBehaviour:
     prefab: {fileID: 464807569203744432, guid: 53d43299e6d21114790ecfb628981f4f, type: 3}
     localPositionOffset: {x: 0, y: 0.45, z: 0}
     localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 1.3, y: 1, z: 1.3}
-    lifetimeSeconds: 0.76
+    localScale: {x: 1.45, y: 1.08, z: 1.45}
+    lifetimeSeconds: 0.86
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
@@ -341,8 +341,8 @@ MonoBehaviour:
     prefab: {fileID: 7478284790387558022, guid: 1ee6562adf95d1740901f3b53124cafd, type: 3}
     localPositionOffset: {x: 0, y: 0.18, z: -0.12}
     localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 1.45, y: 1.1, z: 1.45}
-    lifetimeSeconds: 1.05
+    localScale: {x: 1.75, y: 1.2, z: 1.75}
+    lifetimeSeconds: 1.2
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 0

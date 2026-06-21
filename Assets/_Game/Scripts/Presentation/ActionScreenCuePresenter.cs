@@ -258,12 +258,12 @@ namespace DimensionBrawl.Presentation
 
         private void HandlePocketCleared()
         {
-            RequestScreenCue("Pocket.Cleared", pocketClearColor, 0.36f, 1.18f, ScreenCueCategory.Result);
+            RequestScreenCue("Pocket.Cleared", pocketClearColor, 0.42f, 1.32f, ScreenCueCategory.Result);
         }
 
         private void HandlePocketFailed()
         {
-            RequestScreenCue("Pocket.Failed", pocketFailColor, 0.38f, 1.1f, ScreenCueCategory.Result);
+            RequestScreenCue("Pocket.Failed", pocketFailColor, 0.48f, 1.45f, ScreenCueCategory.Result);
         }
 
         private void RequestScreenCue(

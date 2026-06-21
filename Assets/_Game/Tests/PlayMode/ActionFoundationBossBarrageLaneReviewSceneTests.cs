@@ -952,7 +952,7 @@ namespace DimensionBrawl.Tests
                 pocketVfxCueBridge.PocketFailAnchor);
             Assert.AreSame(bossRoot.transform, pocketVfxCueBridge.DirectionTarget);
             Assert.AreEqual(
-                CombatVfxCueId.EliteArmorBreakSignal,
+                CombatVfxCueId.EnemyClosePunishActive,
                 GetEnum<CombatVfxCueId>(pocketVfxCueBridge, "pocketFailAccentCueId"));
             Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(reviewHud, "playerHealth"));
             Assert.AreSame(closeThreatHealth, GetObjectReference<CombatHealth>(reviewHud, "closeThreatHealth"));
@@ -1036,6 +1036,10 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(0.16f, screenCuePresenter.MaxFullScreenAlpha, 0.001f);
             Assert.AreEqual(0.34f, screenCuePresenter.MaxEdgeAlpha, 0.001f);
             Assert.AreEqual(118f, screenCuePresenter.EdgeThickness, 0.001f);
+            Assert.AreEqual(1.42f, pocketVfxCueBridge.PocketClearIntensity, 0.001f);
+            Assert.AreEqual(1.48f, pocketVfxCueBridge.PocketFailIntensity, 0.001f);
+            Assert.AreEqual(CombatVfxCueId.EnemyClosePunishActive, pocketVfxCueBridge.PocketFailAccentCueId);
+            Assert.AreEqual(1.32f, pocketVfxCueBridge.PocketFailAccentIntensity, 0.001f);
             Assert.AreEqual(0, screenCuePresenter.ResultCueRequestCount);
             Assert.AreEqual("Move", GetString(mobileHud, "moveActionName"));
             Assert.AreEqual("BasicDefenseAttack", GetString(mobileHud, "basicDefenseActionName"));
@@ -3096,11 +3100,13 @@ namespace DimensionBrawl.Tests
                 screenCuePresenter.ResultCueRequestCount,
                 "The completed pocket should produce a distinct screen cue instead of ending with only HUD text or a marker.");
             Assert.AreEqual("Pocket.Cleared", screenCuePresenter.LastCueId);
+            Assert.AreEqual(1.32f, screenCuePresenter.LastCueIntensity, 0.001f);
             Assert.IsTrue(screenCuePresenter.HasActiveCue);
             Assert.AreEqual(
                 pocketClearVfxCueCountBefore + 1,
                 pocketVfxCueBridge.PocketClearCueRequestCount,
                 "The completed pocket should also leave an in-world result VFX read, not only a screen flash.");
+            Assert.AreEqual(1.42f, pocketVfxCueBridge.PocketClearIntensity, 0.001f);
             Assert.IsFalse(pocketOwner.IsSummonPressureBreakActive);
             float energyAfterClear = energyLadder.CurrentTierEnergy;
             energyLadder.Tick(1f);
@@ -3436,6 +3442,7 @@ namespace DimensionBrawl.Tests
                 screenCuePresenter.ResultCueRequestCount,
                 "The failed pocket should produce a distinct screen cue instead of ending with only HUD text or a marker.");
             Assert.AreEqual("Pocket.Failed", screenCuePresenter.LastCueId);
+            Assert.AreEqual(1.45f, screenCuePresenter.LastCueIntensity, 0.001f);
             Assert.IsTrue(screenCuePresenter.HasActiveCue);
             Assert.AreEqual(
                 pocketFailVfxCueCountBefore + 1,
@@ -3445,6 +3452,9 @@ namespace DimensionBrawl.Tests
                 pocketFailAccentVfxCueCountBefore + 1,
                 pocketVfxCueBridge.PocketFailAccentCueRequestCount,
                 "The failed pocket should layer an additional break accent so defeat reads stronger than a quiet ground marker.");
+            Assert.AreEqual(1.48f, pocketVfxCueBridge.PocketFailIntensity, 0.001f);
+            Assert.AreEqual(CombatVfxCueId.EnemyClosePunishActive, pocketVfxCueBridge.PocketFailAccentCueId);
+            Assert.AreEqual(1.32f, pocketVfxCueBridge.PocketFailAccentIntensity, 0.001f);
             float energyAfterFail = energyLadder.CurrentTierEnergy;
             energyLadder.Tick(1f);
             Assert.AreEqual(

@@ -11823,10 +11823,10 @@ MonoBehaviour:
   windowIntensity: 1.15
   hitIntensity: 1.3
   missedIntensity: 0.85
-  pocketClearIntensity: 1.3
-  pocketFailIntensity: 1.2
-  pocketFailAccentCueId: 25
-  pocketFailAccentIntensity: 1.15
+  pocketClearIntensity: 1.42
+  pocketFailIntensity: 1.48
+  pocketFailAccentCueId: 9
+  pocketFailAccentIntensity: 1.32
   tierIntensityStep: 0.12
 --- !u!114 &1045561730
 MonoBehaviour:

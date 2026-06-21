@@ -4689,6 +4689,10 @@ namespace DimensionBrawl.Editor
             SetObjectReference(vfxBridge, "followupHitAnchor", directionTarget);
             SetObjectReference(vfxBridge, "followupMissedAnchor", ReadObjectReference<Transform>(playerVfxCueDriver, "dodgeAnchor"));
             SetObjectReference(vfxBridge, "directionTarget", directionTarget);
+            SetFloat(vfxBridge, "pocketClearIntensity", 1.42f);
+            SetFloat(vfxBridge, "pocketFailIntensity", 1.48f);
+            SetEnum(vfxBridge, "pocketFailAccentCueId", (int)CombatVfxCueId.EnemyClosePunishActive);
+            SetFloat(vfxBridge, "pocketFailAccentIntensity", 1.32f);
             EditorUtility.SetDirty(cameraBridge);
             EditorUtility.SetDirty(vfxBridge);
         }
@@ -7611,6 +7615,10 @@ namespace DimensionBrawl.Editor
                 "followupMissedAnchor",
                 ReadObjectReference<Transform>(playerVfxCueDriver, "dodgeAnchor"));
             ValidateObjectReference(vfxBridge, "directionTarget", directionTarget);
+            ValidateFloat(vfxBridge, "pocketClearIntensity", 1.42f);
+            ValidateFloat(vfxBridge, "pocketFailIntensity", 1.48f);
+            ValidateEnum(vfxBridge, "pocketFailAccentCueId", (int)CombatVfxCueId.EnemyClosePunishActive);
+            ValidateFloat(vfxBridge, "pocketFailAccentIntensity", 1.32f);
         }
 
         private static void ValidateReviewHud(

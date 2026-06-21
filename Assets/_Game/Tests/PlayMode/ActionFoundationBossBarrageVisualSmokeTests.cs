@@ -199,15 +199,21 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(pocketOwner.IsCleared, "The clear result frame should be reached through the authored summon-follow-up flow.");
             Assert.AreEqual(resultCueCountBeforeClear + 1, screenCuePresenter.ResultCueRequestCount);
             Assert.AreEqual("Pocket.Cleared", screenCuePresenter.LastCueId);
+            Assert.AreEqual(1.32f, screenCuePresenter.LastCueIntensity, 0.001f);
             Assert.IsTrue(screenCuePresenter.HasActiveCue);
             Assert.AreEqual(worldCueCountBeforeClear + 1, pocketVfxCueBridge.PocketClearCueRequestCount);
+            Assert.AreEqual(1.42f, pocketVfxCueBridge.PocketClearIntensity, 0.001f);
 
             string capturePath = Path.GetFullPath(Path.Combine(
                 Application.dataPath,
                 "..",
                 "Logs",
                 "boss_barrage_visual_smoke_clear.png"));
-            CaptureAndAssertReadableResultFrame(camera, capturePath);
+            FrameColorStats stats = CaptureAndAssertReadableResultFrame(camera, capturePath);
+            Assert.Greater(
+                stats.ClearResultPixelCount,
+                20000,
+                "The clear result frame should visibly read as a green success cue in the captured gameplay frame.");
         }
 
         [UnityTest]
@@ -240,16 +246,24 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(pocketOwner.IsFailed, "The fail result frame should be reached when the player is defeated.");
             Assert.AreEqual(resultCueCountBeforeFail + 1, screenCuePresenter.ResultCueRequestCount);
             Assert.AreEqual("Pocket.Failed", screenCuePresenter.LastCueId);
+            Assert.AreEqual(1.45f, screenCuePresenter.LastCueIntensity, 0.001f);
             Assert.IsTrue(screenCuePresenter.HasActiveCue);
             Assert.AreEqual(worldCueCountBeforeFail + 1, pocketVfxCueBridge.PocketFailCueRequestCount);
             Assert.AreEqual(accentCueCountBeforeFail + 1, pocketVfxCueBridge.PocketFailAccentCueRequestCount);
+            Assert.AreEqual(1.48f, pocketVfxCueBridge.PocketFailIntensity, 0.001f);
+            Assert.AreEqual(CombatVfxCueId.EnemyClosePunishActive, pocketVfxCueBridge.PocketFailAccentCueId);
+            Assert.AreEqual(1.32f, pocketVfxCueBridge.PocketFailAccentIntensity, 0.001f);
 
             string capturePath = Path.GetFullPath(Path.Combine(
                 Application.dataPath,
                 "..",
                 "Logs",
                 "boss_barrage_visual_smoke_fail.png"));
-            CaptureAndAssertReadableResultFrame(camera, capturePath);
+            FrameColorStats stats = CaptureAndAssertReadableResultFrame(camera, capturePath);
+            Assert.Greater(
+                stats.FailResultPixelCount,
+                5000,
+                "The fail result frame should visibly read as a red defeat cue in the captured gameplay frame.");
         }
 
         private static Texture2D CaptureCamera(Camera camera, string path)
@@ -277,7 +291,7 @@ namespace DimensionBrawl.Tests
             }
         }
 
-        private static void CaptureAndAssertReadableResultFrame(Camera camera, string capturePath)
+        private static FrameColorStats CaptureAndAssertReadableResultFrame(Camera camera, string capturePath)
         {
             Texture2D frame = CaptureCamera(camera, capturePath);
             try
@@ -286,6 +300,7 @@ namespace DimensionBrawl.Tests
                 Assert.Greater(stats.VisiblePixelCount, frame.width * frame.height * 0.55f);
                 Assert.Greater(stats.SaturatedPixelCount, frame.width * frame.height * 0.025f);
                 Assert.Less(stats.NearWhitePixelCount, frame.width * frame.height * 0.38f);
+                return stats;
             }
             finally
             {
@@ -473,6 +488,16 @@ namespace DimensionBrawl.Tests
                     stats.MagentaStatePixelCount++;
                 }
 
+                if (pixel.g > 135 && pixel.r < 125 && pixel.b < 145)
+                {
+                    stats.ClearResultPixelCount++;
+                }
+
+                if (pixel.r > 145 && pixel.g < 105 && pixel.b < 105)
+                {
+                    stats.FailResultPixelCount++;
+                }
+
                 if (pixel.r > 236 && pixel.g > 236 && pixel.b > 236)
                 {
                     stats.NearWhitePixelCount++;
@@ -489,6 +514,8 @@ namespace DimensionBrawl.Tests
             public int WarmProjectilePixelCount;
             public int CyanOrGreenStatePixelCount;
             public int MagentaStatePixelCount;
+            public int ClearResultPixelCount;
+            public int FailResultPixelCount;
             public int NearWhitePixelCount;
         }
     }
