@@ -176,7 +176,7 @@ namespace DimensionBrawl.Tests
                 energy.ConfigureReferences(lane, playerObject.transform);
 
                 ActionScreenCuePresenter presenter = presenterObject.AddComponent<ActionScreenCuePresenter>();
-                presenter.Configure(null, null, energy, null, null, null, null, null, null, null);
+                presenter.Configure(null, null, null, energy, null, null, null, null, null, null, null);
 
                 playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.ForwardBoundaryZ);
                 energy.Tick(0.01f);
@@ -206,6 +206,40 @@ namespace DimensionBrawl.Tests
                 Object.DestroyImmediate(presenterObject);
                 Object.DestroyImmediate(playerObject);
                 Object.DestroyImmediate(laneObject);
+            }
+        }
+
+        [Test]
+        public void ActionScreenCuePresenterReadsPlayerDamageSignal()
+        {
+            GameObject playerObject = new GameObject("Player");
+            GameObject presenterObject = new GameObject("ScreenCuePresenter");
+            try
+            {
+                CombatHealth playerHealth = playerObject.AddComponent<CombatHealth>();
+                playerHealth.ConfigureTeam(DamageTeam.Player);
+                playerHealth.ConfigureMaxHealth(120f);
+
+                ActionScreenCuePresenter presenter = presenterObject.AddComponent<ActionScreenCuePresenter>();
+                presenter.Configure(null, playerHealth, null, null, null, null, null, null, null, null, null);
+
+                Assert.IsTrue(playerHealth.TryApplyDamage(new DamageInfo(
+                    null,
+                    DamageTeam.Enemy,
+                    36f,
+                    playerObject.transform.position,
+                    Vector3.back,
+                    0f)));
+
+                Assert.AreEqual("Player.Damaged", presenter.LastCueId);
+                Assert.AreEqual(1, presenter.PlayerDamageCueRequestCount);
+                Assert.AreEqual(1, presenter.PlayerCueRequestCount);
+                Assert.Greater(presenter.LastCueIntensity, 0.74f);
+            }
+            finally
+            {
+                Object.DestroyImmediate(presenterObject);
+                Object.DestroyImmediate(playerObject);
             }
         }
 

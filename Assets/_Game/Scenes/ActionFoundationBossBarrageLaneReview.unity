@@ -6665,6 +6665,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionScreenCuePresenter
   actionController: {fileID: 4005}
+  playerHealth: {fileID: 4003}
   rangedBasicAttackAction: {fileID: 4011}
   energyLadder: {fileID: 4014}
   skill1Action: {fileID: 4018}
@@ -6681,6 +6682,7 @@ MonoBehaviour:
   dodgeColor: {r: 0.18, g: 0.92, b: 1, a: 1}
   rangedFireColor: {r: 0.48, g: 0.95, b: 1, a: 1}
   hitColor: {r: 1, g: 0.92, b: 0.46, a: 1}
+  damagedColor: {r: 1, g: 0.18, b: 0.12, a: 1}
   skillColor: {r: 0.46, g: 1, b: 0.78, a: 1}
   summonColor: {r: 0.18, g: 1, b: 0.62, a: 1}
   summonBlockColor: {r: 0.85, g: 1, b: 1, a: 1}

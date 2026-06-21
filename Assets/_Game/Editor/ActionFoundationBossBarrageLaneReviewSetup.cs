@@ -1101,7 +1101,9 @@ namespace DimensionBrawl.Editor
             ValidateActionScreenCuePresenter(
                 screenCuePresenter,
                 playerActionController,
+                playerHealth,
                 rangedBasicAttackAction,
+                energyLadder,
                 skill1Action,
                 summonSlot1Action,
                 summonSlot2Action,
@@ -4781,6 +4783,7 @@ namespace DimensionBrawl.Editor
             ActionScreenCuePresenter screenCuePresenter = hudRoot.AddComponent<ActionScreenCuePresenter>();
             screenCuePresenter.Configure(
                 player.GetComponent<PlayerActionController>(),
+                playerHealth,
                 rangedBasicAttackAction,
                 energyLadder,
                 skill1Action,
@@ -7729,7 +7732,9 @@ namespace DimensionBrawl.Editor
         private static void ValidateActionScreenCuePresenter(
             ActionScreenCuePresenter presenter,
             PlayerActionController actionController,
+            CombatHealth playerHealth,
             PlayerRangedBasicAttackAction rangedBasicAttackAction,
+            SummonEnergyLadder energyLadder,
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
             PlayerSupportSummonSlotAction summonSlot2Action,
@@ -7739,7 +7744,9 @@ namespace DimensionBrawl.Editor
             BossBarragePocketReviewOwner pocketOwner)
         {
             ValidateObjectReference(presenter, "actionController", actionController);
+            ValidateObjectReference(presenter, "playerHealth", playerHealth);
             ValidateObjectReference(presenter, "rangedBasicAttackAction", rangedBasicAttackAction);
+            ValidateObjectReference(presenter, "energyLadder", energyLadder);
             ValidateObjectReference(presenter, "skill1Action", skill1Action);
             ValidateObjectReference(presenter, "summonSlot1Action", summonSlot1Action);
             ValidateObjectReference(presenter, "summonSlot2Action", summonSlot2Action);

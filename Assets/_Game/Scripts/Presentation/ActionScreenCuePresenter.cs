@@ -19,6 +19,7 @@ namespace DimensionBrawl.Presentation
 
         [Header("References")]
         [SerializeField] private PlayerActionController actionController;
+        [SerializeField] private CombatHealth playerHealth;
         [SerializeField] private PlayerRangedBasicAttackAction rangedBasicAttackAction;
         [SerializeField] private SummonEnergyLadder energyLadder;
         [SerializeField] private PlayerSkill1Action skill1Action;
@@ -39,6 +40,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private Color dodgeColor = new Color(0.18f, 0.92f, 1f, 1f);
         [SerializeField] private Color rangedFireColor = new Color(0.48f, 0.95f, 1f, 1f);
         [SerializeField] private Color hitColor = new Color(1f, 0.92f, 0.46f, 1f);
+        [SerializeField] private Color damagedColor = new Color(1f, 0.18f, 0.12f, 1f);
         [SerializeField] private Color skillColor = new Color(0.46f, 1f, 0.78f, 1f);
         [SerializeField] private Color summonColor = new Color(0.18f, 1f, 0.62f, 1f);
         [SerializeField] private Color summonBlockColor = new Color(0.85f, 1f, 1f, 1f);
@@ -76,6 +78,7 @@ namespace DimensionBrawl.Presentation
         private int bossCueRequestCount;
         private int followupCueRequestCount;
         private int resultCueRequestCount;
+        private int playerDamageCueRequestCount;
         private int energyCueRequestCount;
         private int forwardRiskCueRequestCount;
         private int energyReadyCueRequestCount;
@@ -97,6 +100,7 @@ namespace DimensionBrawl.Presentation
         public int BossCueRequestCount => bossCueRequestCount;
         public int FollowupCueRequestCount => followupCueRequestCount;
         public int ResultCueRequestCount => resultCueRequestCount;
+        public int PlayerDamageCueRequestCount => playerDamageCueRequestCount;
         public int EnergyCueRequestCount => energyCueRequestCount;
         public int ForwardRiskCueRequestCount => forwardRiskCueRequestCount;
         public int EnergyReadyCueRequestCount => energyReadyCueRequestCount;
@@ -110,6 +114,7 @@ namespace DimensionBrawl.Presentation
 
         public void Configure(
             PlayerActionController newActionController,
+            CombatHealth newPlayerHealth,
             PlayerRangedBasicAttackAction newRangedBasicAttackAction,
             SummonEnergyLadder newEnergyLadder,
             PlayerSkill1Action newSkill1Action,
@@ -122,6 +127,7 @@ namespace DimensionBrawl.Presentation
         {
             Unsubscribe();
             actionController = newActionController;
+            playerHealth = newPlayerHealth;
             rangedBasicAttackAction = newRangedBasicAttackAction;
             energyLadder = newEnergyLadder;
             skill1Action = newSkill1Action;
@@ -191,6 +197,20 @@ namespace DimensionBrawl.Presentation
         private void HandleDodgeStarted()
         {
             RequestScreenCue("Player.Dodge", dodgeColor, 0.18f, 0.78f, ScreenCueCategory.Player);
+        }
+
+        private void HandlePlayerDamaged(DamageInfo damageInfo)
+        {
+            playerDamageCueRequestCount++;
+            float healthScale = playerHealth != null && playerHealth.MaxHealth > 0f
+                ? Mathf.Clamp01(damageInfo.Amount / playerHealth.MaxHealth)
+                : 0f;
+            RequestScreenCue(
+                "Player.Damaged",
+                damagedColor,
+                0.20f,
+                0.74f + healthScale * 0.42f,
+                ScreenCueCategory.Player);
         }
 
         private void HandleRangedFireStarted()
@@ -416,6 +436,11 @@ namespace DimensionBrawl.Presentation
                 rangedBasicAttackAction.RangedFireStarted += HandleRangedFireStarted;
             }
 
+            if (playerHealth != null)
+            {
+                playerHealth.Damaged += HandlePlayerDamaged;
+            }
+
             if (energyLadder != null)
             {
                 energyLadder.RiskBandChanged += HandleEnergyRiskBandChanged;
@@ -478,6 +503,11 @@ namespace DimensionBrawl.Presentation
             if (rangedBasicAttackAction != null)
             {
                 rangedBasicAttackAction.RangedFireStarted -= HandleRangedFireStarted;
+            }
+
+            if (playerHealth != null)
+            {
+                playerHealth.Damaged -= HandlePlayerDamaged;
             }
 
             if (energyLadder != null)
