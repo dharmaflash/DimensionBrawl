@@ -2631,10 +2631,19 @@ namespace DimensionBrawl.Tests
             Renderer visualRenderer = visualObject.GetComponent<Renderer>();
             SummonPressureScreenPresenter presenter = screenObject.AddComponent<SummonPressureScreenPresenter>();
             presenter.ConfigurePresentation(screen, visualObject.transform, new[] { visualRenderer });
+            GameObject cuePrefab = new GameObject("PressureScreenCuePrefab");
+            CombatVfxCueProfile cueProfile = CreatePressureScreenCueProfile(cuePrefab);
+            CombatVfxCuePlayer cuePlayer = screenObject.AddComponent<CombatVfxCuePlayer>();
+            ConfigureCombatVfxCuePlayer(cuePlayer, cueProfile);
+            presenter.ConfigureVfxCuePlayer(cuePlayer, screen.transform, null);
 
             screen.Activate(DamageTeam.AllySummon, 1, 1.25f, 1f, 3);
             Assert.IsTrue(presenter.IsShowing);
             Assert.IsTrue(visualObject.activeSelf);
+            Assert.AreEqual(
+                1,
+                presenter.ActivationVfxCueRequestCount,
+                "Pressure-screen activation should request a promoted shield-state VFX cue, not only tint the primitive screen.");
             Assert.AreEqual(3, screen.ActiveTier);
             Assert.AreEqual(
                 3,
@@ -2654,6 +2663,10 @@ namespace DimensionBrawl.Tests
                 presenter.IsShowing,
                 "The final intercept should linger briefly instead of disappearing on the same frame.");
             Assert.AreEqual(1, presenter.InterceptFlashCount);
+            Assert.AreEqual(
+                1,
+                presenter.InterceptVfxCueRequestCount,
+                "Pressure-screen intercepts should layer an in-world block cue so absorbed boss fire reads as an authored effect.");
             Assert.Greater(
                 (visualObject.transform.localPosition - visualLocalPositionBeforeIntercept).sqrMagnitude,
                 0.0001f,
@@ -2667,6 +2680,8 @@ namespace DimensionBrawl.Tests
 
             Object.DestroyImmediate(enemyProjectileObject);
             Object.DestroyImmediate(screenObject);
+            Object.DestroyImmediate(cuePrefab);
+            Object.DestroyImmediate(cueProfile);
         }
 
         [Test]
@@ -2919,6 +2934,43 @@ namespace DimensionBrawl.Tests
             requestMethod.Invoke(
                 presenter,
                 new object[] { cueId, color, durationSeconds, intensity, category });
+        }
+
+        private static CombatVfxCueProfile CreatePressureScreenCueProfile(GameObject prefab)
+        {
+            CombatVfxCueProfile profile = ScriptableObject.CreateInstance<CombatVfxCueProfile>();
+            SerializedObject serializedObject = new SerializedObject(profile);
+            SerializedProperty cues = serializedObject.FindProperty("cues");
+            cues.arraySize = 2;
+            ConfigureCue(cues.GetArrayElementAtIndex(0), CombatVfxCueId.EliteShieldSignal, prefab);
+            ConfigureCue(cues.GetArrayElementAtIndex(1), CombatVfxCueId.SummonBlockOpportunity, prefab);
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            return profile;
+        }
+
+        private static void ConfigureCue(
+            SerializedProperty cue,
+            CombatVfxCueId cueId,
+            GameObject prefab)
+        {
+            cue.FindPropertyRelative("cueId").enumValueIndex = (int)cueId;
+            cue.FindPropertyRelative("prefab").objectReferenceValue = prefab;
+            cue.FindPropertyRelative("localPositionOffset").vector3Value = Vector3.zero;
+            cue.FindPropertyRelative("localEulerOffset").vector3Value = Vector3.zero;
+            cue.FindPropertyRelative("localScale").vector3Value = Vector3.one;
+            cue.FindPropertyRelative("lifetimeSeconds").floatValue = 0f;
+            cue.FindPropertyRelative("prewarmCount").intValue = 0;
+            cue.FindPropertyRelative("parentToAnchor").boolValue = true;
+            cue.FindPropertyRelative("alignForwardToDirection").boolValue = false;
+        }
+
+        private static void ConfigureCombatVfxCuePlayer(
+            CombatVfxCuePlayer cuePlayer,
+            CombatVfxCueProfile profile)
+        {
+            SerializedObject serializedObject = new SerializedObject(cuePlayer);
+            serializedObject.FindProperty("profile").objectReferenceValue = profile;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
         }
     }
 }

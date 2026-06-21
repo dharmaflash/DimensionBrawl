@@ -26,6 +26,16 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0f)] private float interceptPunchDistance = 0.18f;
         [SerializeField, Min(0f)] private float interceptPunchScale = 0.16f;
 
+        [Header("VFX Cues")]
+        [SerializeField] private CombatVfxCuePlayer cuePlayer;
+        [SerializeField] private Transform vfxAnchor;
+        [SerializeField] private Transform vfxDirectionTarget;
+        [SerializeField] private CombatVfxCueId activationCueId = CombatVfxCueId.EliteShieldSignal;
+        [SerializeField] private CombatVfxCueId interceptCueId = CombatVfxCueId.SummonBlockOpportunity;
+        [SerializeField, Min(0f)] private float activationCueIntensity = 0.85f;
+        [SerializeField, Min(0f)] private float interceptCueIntensity = 1.05f;
+        [SerializeField, Min(0f)] private float tierCueIntensityStep = 0.12f;
+
         private MaterialPropertyBlock propertyBlock;
         private Vector3 visualBaseScale = Vector3.one;
         private Vector3 visualBaseLocalPosition;
@@ -35,6 +45,8 @@ namespace DimensionBrawl.Presentation
         private float interceptPunchTimer;
         private float lastKnownRadius = 1.35f;
         private int interceptFlashCount;
+        private int activationVfxCueRequestCount;
+        private int interceptVfxCueRequestCount;
         private int lastObservedTier = 1;
         private bool showing;
         private bool subscribed;
@@ -43,6 +55,8 @@ namespace DimensionBrawl.Presentation
         public bool IsShowing => showing;
         public int RendererCount => screenRenderers != null ? screenRenderers.Length : 0;
         public int InterceptFlashCount => interceptFlashCount;
+        public int ActivationVfxCueRequestCount => activationVfxCueRequestCount;
+        public int InterceptVfxCueRequestCount => interceptVfxCueRequestCount;
         public int LastObservedTier => lastObservedTier;
         public float VisualRadiusScale => visualRadiusScale;
 
@@ -112,6 +126,16 @@ namespace DimensionBrawl.Presentation
             RefreshNow();
         }
 
+        public void ConfigureVfxCuePlayer(
+            CombatVfxCuePlayer newCuePlayer,
+            Transform newVfxAnchor,
+            Transform newVfxDirectionTarget)
+        {
+            cuePlayer = newCuePlayer;
+            vfxAnchor = newVfxAnchor;
+            vfxDirectionTarget = newVfxDirectionTarget;
+        }
+
         public void RefreshNow()
         {
             if (pressureScreen != null && pressureScreen.IsActive)
@@ -136,6 +160,11 @@ namespace DimensionBrawl.Presentation
             lingerTimer = 0f;
             interceptPunchTimer = 0f;
             SetShowing(true);
+            if (PlayVfxCue(activationCueId, screen.ActiveTier, activationCueIntensity))
+            {
+                activationVfxCueRequestCount++;
+            }
+
             RefreshVisual();
         }
 
@@ -159,6 +188,11 @@ namespace DimensionBrawl.Presentation
             interceptPunchLocalDirection = ResolveInterceptPunchLocalDirection(projectileTransform);
             interceptFlashCount++;
             SetShowing(true);
+            if (PlayVfxCue(interceptCueId, screen.ActiveTier, interceptCueIntensity, projectileTransform))
+            {
+                interceptVfxCueRequestCount++;
+            }
+
             RefreshVisual();
         }
 
@@ -273,6 +307,66 @@ namespace DimensionBrawl.Presentation
                 propertyBlock.SetColor(ColorId, color);
                 screenRenderer.SetPropertyBlock(propertyBlock);
             }
+        }
+
+        private bool PlayVfxCue(
+            CombatVfxCueId cueId,
+            int tier,
+            float baseIntensity,
+            Transform directionSource = null)
+        {
+            CombatVfxCuePlayer resolvedCuePlayer = ResolveCuePlayer();
+            if (resolvedCuePlayer == null)
+            {
+                return false;
+            }
+
+            Transform anchor = vfxAnchor != null ? vfxAnchor : (pressureScreen != null ? pressureScreen.transform : transform);
+            float intensity = baseIntensity + Mathf.Max(0, tier - 1) * tierCueIntensityStep;
+            return resolvedCuePlayer.PlayCue(cueId, anchor, ResolveVfxDirection(anchor, directionSource), intensity);
+        }
+
+        private CombatVfxCuePlayer ResolveCuePlayer()
+        {
+            if (cuePlayer != null)
+            {
+                return cuePlayer;
+            }
+
+            cuePlayer = GetComponent<CombatVfxCuePlayer>();
+            return cuePlayer;
+        }
+
+        private Vector3 ResolveVfxDirection(Transform anchor, Transform directionSource)
+        {
+            if (anchor != null && directionSource != null)
+            {
+                Vector3 impactDirection = Vector3.ProjectOnPlane(anchor.position - directionSource.position, Vector3.up);
+                if (impactDirection.sqrMagnitude > 0.0001f)
+                {
+                    return impactDirection.normalized;
+                }
+            }
+
+            if (anchor != null && vfxDirectionTarget != null)
+            {
+                Vector3 targetDirection = Vector3.ProjectOnPlane(vfxDirectionTarget.position - anchor.position, Vector3.up);
+                if (targetDirection.sqrMagnitude > 0.0001f)
+                {
+                    return targetDirection.normalized;
+                }
+            }
+
+            if (anchor != null)
+            {
+                Vector3 forward = Vector3.ProjectOnPlane(anchor.forward, Vector3.up);
+                if (forward.sqrMagnitude > 0.0001f)
+                {
+                    return forward.normalized;
+                }
+            }
+
+            return Vector3.forward;
         }
 
         private void SetShowing(bool value)

@@ -274,12 +274,24 @@ namespace DimensionBrawl.Combat
             }
 
             SummonFrontlineProxyPresenter presenter = actor.GetComponent<SummonFrontlineProxyPresenter>();
-            if (presenter == null)
+            CombatVfxCuePlayer resolvedCuePlayer = ResolveCombatVfxCuePlayer();
+            if (presenter != null)
             {
-                return;
+                presenter.ConfigureVfxCuePlayer(resolvedCuePlayer, actor.transform, trackedPlayer);
             }
 
-            presenter.ConfigureVfxCuePlayer(ResolveCombatVfxCuePlayer(), actor.transform, trackedPlayer);
+            SummonPressureScreenPresenter pressureScreenPresenter =
+                actor.GetComponent<SummonPressureScreenPresenter>();
+            if (pressureScreenPresenter != null)
+            {
+                Transform pressureScreenAnchor = actor.PressureScreen != null
+                    ? actor.PressureScreen.transform
+                    : actor.transform;
+                pressureScreenPresenter.ConfigureVfxCuePlayer(
+                    resolvedCuePlayer,
+                    pressureScreenAnchor,
+                    trackedPlayer);
+            }
         }
 
         private CombatVfxCuePlayer ResolveCombatVfxCuePlayer()

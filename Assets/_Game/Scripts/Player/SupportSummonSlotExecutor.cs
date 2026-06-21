@@ -248,15 +248,26 @@ namespace DimensionBrawl.Player
 
             DimensionBrawl.Presentation.SummonFrontlineProxyPresenter presenter =
                 actor.GetComponent<DimensionBrawl.Presentation.SummonFrontlineProxyPresenter>();
-            if (presenter == null)
-            {
-                return;
-            }
-
             Transform directionTarget = owner.FrontlineTargetHealth != null
                 ? owner.FrontlineTargetHealth.transform
                 : null;
-            presenter.ConfigureVfxCuePlayer(owner.CombatVfxCuePlayer, actor.transform, directionTarget);
+            if (presenter != null)
+            {
+                presenter.ConfigureVfxCuePlayer(owner.CombatVfxCuePlayer, actor.transform, directionTarget);
+            }
+
+            DimensionBrawl.Presentation.SummonPressureScreenPresenter pressureScreenPresenter =
+                actor.GetComponent<DimensionBrawl.Presentation.SummonPressureScreenPresenter>();
+            if (pressureScreenPresenter != null)
+            {
+                Transform pressureScreenAnchor = actor.PressureScreen != null
+                    ? actor.PressureScreen.transform
+                    : actor.transform;
+                pressureScreenPresenter.ConfigureVfxCuePlayer(
+                    owner.CombatVfxCuePlayer,
+                    pressureScreenAnchor,
+                    directionTarget);
+            }
         }
 
         private static void ConfigureActorCombat(

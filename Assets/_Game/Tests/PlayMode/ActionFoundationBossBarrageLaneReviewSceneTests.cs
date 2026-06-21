@@ -2134,11 +2134,16 @@ namespace DimensionBrawl.Tests
             }
 
             Assert.IsNotNull(activePresenter, "The active summon pressure screen should keep a visible presenter.");
+            Assert.GreaterOrEqual(
+                activePresenter.ActivationVfxCueRequestCount,
+                1,
+                "The active summon pressure screen should request a promoted shield-state VFX cue when it opens.");
             int summonProjectileCountBeforeIntercept = summonSlot1Action.ActiveProjectileCount;
             HashSet<LaneActionProjectile> activeSummonProjectilesBeforeIntercept = CollectActiveSummonProjectiles();
             float bossHealthBeforeCounter = bossHealth.CurrentHealth;
             int pressureBlockCueCountBeforeIntercept = cameraCueDriver.SummonPressureBlockCueRequestCount;
             int presenterFlashCountBeforeIntercept = activePresenter.InterceptFlashCount;
+            int presenterBlockVfxCountBeforeIntercept = activePresenter.InterceptVfxCueRequestCount;
 
             Assert.IsTrue(emitter.BeginWindup());
             Assert.Greater(emitter.FirePendingWave(), 0);
@@ -2171,6 +2176,10 @@ namespace DimensionBrawl.Tests
                 presenterFlashCountBeforeIntercept + 1,
                 activePresenter.InterceptFlashCount,
                 "The summon pressure-screen presenter should flash on the same block that triggers the counter exchange.");
+            Assert.AreEqual(
+                presenterBlockVfxCountBeforeIntercept + 1,
+                activePresenter.InterceptVfxCueRequestCount,
+                "A summon pressure-screen block should also request a promoted in-world VFX cue, not only a primitive flash.");
             Assert.Greater(
                 summonSlot1Action.ActiveProjectileCount,
                 summonProjectileCountBeforeIntercept,
@@ -3283,9 +3292,14 @@ namespace DimensionBrawl.Tests
                 laneSpace.ForwardBoundaryZ - 0.5f,
                 "Boss summon pressure should be allowed to cross the player forward boundary.");
             SummonPressureScreenPresenter presenter = RequirePresenterForPressureScreen(enemyPressureScreen);
+            Assert.GreaterOrEqual(
+                presenter.ActivationVfxCueRequestCount,
+                1,
+                "Boss summon pressure screens should also request a promoted shield-state VFX cue when they open.");
             int bossPressureInterceptCountBefore = bossSummonPressureAction.LastPressureScreenInterceptCount;
             int bossPressureTotalInterceptCountBefore = bossSummonPressureAction.TotalPressureScreenInterceptCount;
             int presenterFlashCountBefore = presenter.InterceptFlashCount;
+            int presenterBlockVfxCountBefore = presenter.InterceptVfxCueRequestCount;
 
             FillEnergyToTier(energyLadder, 1);
             Assert.IsTrue(skill1Action.TryUseSkill1());
@@ -3309,6 +3323,10 @@ namespace DimensionBrawl.Tests
                 presenterFlashCountBefore + 1,
                 presenter.InterceptFlashCount,
                 "Boss summon pressure screen should use the same visible intercept flash path as ally summon screens.");
+            Assert.AreEqual(
+                presenterBlockVfxCountBefore + 1,
+                presenter.InterceptVfxCueRequestCount,
+                "Boss summon pressure intercepts should layer the same promoted in-world block cue as ally screens.");
             yield return null;
         }
 
