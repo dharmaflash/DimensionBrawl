@@ -170,6 +170,19 @@ namespace DimensionBrawl.Presentation
                 visualEffects[i].Reinit();
                 visualEffects[i].Play();
             }
+
+            AudioSource[] audioSources = instance.GetComponentsInChildren<AudioSource>(includeInactive: true);
+            for (int i = 0; i < audioSources.Length; i++)
+            {
+                AudioSource audioSource = audioSources[i];
+                if (audioSource.clip == null || !audioSource.enabled || !audioSource.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                audioSource.Stop();
+                audioSource.Play();
+            }
         }
 
         private static void StopEffects(GameObject instance)
@@ -190,6 +203,12 @@ namespace DimensionBrawl.Presentation
             for (int i = 0; i < visualEffects.Length; i++)
             {
                 visualEffects[i].Stop();
+            }
+
+            AudioSource[] audioSources = instance.GetComponentsInChildren<AudioSource>(includeInactive: true);
+            for (int i = 0; i < audioSources.Length; i++)
+            {
+                audioSources[i].Stop();
             }
         }
 

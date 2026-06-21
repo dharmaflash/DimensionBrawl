@@ -23,22 +23,29 @@ namespace DimensionBrawl.Editor
         private const string PrefabRoot = CombatVfxRoot + "/Prefabs";
         private const string TextureRoot = CombatVfxRoot + "/Textures";
         private const string ShaderRoot = CombatVfxRoot + "/Shaders";
+        private const string AudioRoot = CombatVfxRoot + "/Audio";
         private const string ImportedMuzzleFlashRoot =
             "Assets/_Imported/AssetStore/VFX/Vefects_ShotsVFXURP/Shots VFX URP/Shots/Muzzle Flash/Textures";
         private const string ImportedMuzzleFlashShaderRoot =
             "Assets/_Imported/AssetStore/VFX/Vefects_ShotsVFXURP/Shots VFX URP/Shots/Muzzle Flash/Shaders";
         private const string ImportedSharedTextureRoot =
             "Assets/_Imported/AssetStore/VFX/Vefects_ShotsVFXURP/Shots VFX URP/Shared/Textures";
+        private const string ImportedShotsAudioRoot =
+            "Assets/_Imported/AssetStore/VFX/Vefects_ShotsVFXURP/Shots VFX URP/Audio/WAV";
         private const string MuzzleFlashFrontSourcePath = ImportedMuzzleFlashRoot + "/T_VFX_MuzzleFlash_Front.tga";
         private const string MuzzleFlashSideSourcePath = ImportedMuzzleFlashRoot + "/T_VFX_MuzzleFlash_Side.tga";
         private const string MuzzleSmokeSourcePath = ImportedSharedTextureRoot + "/T_VFX_SmokePuff_Animated_NonDir01_Optimized.tga";
         private const string MuzzleFlashShaderSourcePath = ImportedMuzzleFlashShaderRoot + "/SH_Vefects_URP_VFX_Muzzle_Flash.shader";
         private const string MuzzleSmokeShaderSourcePath = ImportedMuzzleFlashShaderRoot + "/SH_Vefects_URP_VFX_Muzzle_Smoke.shader";
+        private const string RifleShotAudioSourcePath = ImportedShotsAudioRoot + "/SFX_Vefects_Shots_Weapon_Rifle.wav";
+        private const string MetalSquibAudioSourcePath = ImportedShotsAudioRoot + "/SFX_Vefects_Shots_Squib_Metal.wav";
         private const string MuzzleFlashFrontTexturePath = TextureRoot + "/T_VFX_MuzzleFlash_Front.tga";
         private const string MuzzleFlashSideTexturePath = TextureRoot + "/T_VFX_MuzzleFlash_Side.tga";
         private const string MuzzleSmokeTexturePath = TextureRoot + "/T_VFX_SmokePuff_Animated_NonDir01_Optimized.tga";
         private const string MuzzleFlashShaderPath = ShaderRoot + "/SH_Vefects_URP_VFX_Muzzle_Flash.shader";
         private const string MuzzleSmokeShaderPath = ShaderRoot + "/SH_Vefects_URP_VFX_Muzzle_Smoke.shader";
+        private const string RifleShotAudioPath = AudioRoot + "/SFX_Vefects_Shots_Weapon_Rifle.wav";
+        private const string MetalSquibAudioPath = AudioRoot + "/SFX_Vefects_Shots_Squib_Metal.wav";
         private const string PoolRootName = "ActionFoundation_CombatVfxPool";
 
         [MenuItem("DimensionBrawl/Reapply Action Foundation Combat VFX Cues")]
@@ -132,12 +139,15 @@ namespace DimensionBrawl.Editor
             EnsureFolder(PrefabRoot);
             EnsureFolder(TextureRoot);
             EnsureFolder(ShaderRoot);
+            EnsureFolder(AudioRoot);
 
             Shader muzzleFlashShader = EnsurePromotedShader(MuzzleFlashShaderSourcePath, MuzzleFlashShaderPath);
             Shader muzzleSmokeShader = EnsurePromotedShader(MuzzleSmokeShaderSourcePath, MuzzleSmokeShaderPath);
             Texture2D muzzleFront = EnsurePromotedTexture(MuzzleFlashFrontSourcePath, MuzzleFlashFrontTexturePath);
             Texture2D muzzleSide = EnsurePromotedTexture(MuzzleFlashSideSourcePath, MuzzleFlashSideTexturePath);
             Texture2D muzzleSmoke = EnsurePromotedTexture(MuzzleSmokeSourcePath, MuzzleSmokeTexturePath);
+            AudioClip rifleShotAudio = EnsurePromotedAudioClip(RifleShotAudioSourcePath, RifleShotAudioPath);
+            AudioClip metalSquibAudio = EnsurePromotedAudioClip(MetalSquibAudioSourcePath, MetalSquibAudioPath);
 
             Material cyan = LoadOrCreateParticleMaterial("DB_CombatVfx_Cyan", new Color(0.22f, 0.88f, 1f, 0.82f));
             Material blue = LoadOrCreateParticleMaterial("DB_CombatVfx_Blue", new Color(0.18f, 0.45f, 1f, 0.82f));
@@ -175,8 +185,8 @@ namespace DimensionBrawl.Editor
                 PlayerAttackStart = SaveBurstPrefab("DB_VFX_PlayerAttackStart", cyan, ParticleSystemShapeType.Cone, 0.16f, 24f, 115f, 0.16f, 0.36f, 0.12f, 0.32f, 18, new Color(0.26f, 0.95f, 1f, 0.86f), new Color(0.14f, 0.42f, 1f, 0f)),
                 PlayerAttackHit = SaveBurstPrefab("DB_VFX_PlayerAttackHit", white, ParticleSystemShapeType.Sphere, 0.32f, 35f, 360f, 0.12f, 0.28f, 0.16f, 0.42f, 34, new Color(1f, 0.95f, 0.75f, 0.95f), new Color(0.18f, 0.74f, 1f, 0f)),
                 PlayerDodgeStart = SaveBurstPrefab("DB_VFX_PlayerDodgeStart", blue, ParticleSystemShapeType.Cone, 0.22f, 18f, 75f, 0.18f, 0.40f, 0.18f, 0.46f, 28, new Color(0.18f, 0.58f, 1f, 0.75f), new Color(0.1f, 0.2f, 0.7f, 0f)),
-                PlayerRangedMuzzleFlash = SaveMuzzleFlashPrefab("DB_VFX_PlayerRangedMuzzleFlash", muzzleFrontMaterial, muzzleSideMaterial, smoke),
-                PlayerRangedProjectileImpact = SaveRangedProjectileImpactPrefab("DB_VFX_PlayerRangedProjectileImpact", white, gold, smoke),
+                PlayerRangedMuzzleFlash = SaveMuzzleFlashPrefab("DB_VFX_PlayerRangedMuzzleFlash", muzzleFrontMaterial, muzzleSideMaterial, smoke, rifleShotAudio),
+                PlayerRangedProjectileImpact = SaveRangedProjectileImpactPrefab("DB_VFX_PlayerRangedProjectileImpact", white, gold, smoke, metalSquibAudio),
                 EnemyWindup = SaveBurstPrefab("DB_VFX_EnemyWindup_Generic", orange, ParticleSystemShapeType.Cone, 0.28f, 9f, 150f, 0.28f, 0.54f, 0.10f, 0.30f, 24, new Color(1f, 0.44f, 0.08f, 0.78f), new Color(1f, 0.12f, 0f, 0f)),
                 EnemyAttackActive = SaveBurstPrefab("DB_VFX_EnemyAttackActive_Generic", white, ParticleSystemShapeType.Cone, 0.36f, 42f, 120f, 0.10f, 0.24f, 0.22f, 0.55f, 36, new Color(1f, 0.9f, 0.55f, 0.95f), new Color(1f, 0.2f, 0.02f, 0f)),
                 EnemyHit = SaveBurstPrefab("DB_VFX_EnemyHit", white, ParticleSystemShapeType.Sphere, 0.28f, 28f, 360f, 0.12f, 0.26f, 0.10f, 0.34f, 24, new Color(1f, 0.96f, 0.72f, 0.9f), new Color(0.8f, 0.16f, 0.04f, 0f)),
@@ -552,7 +562,8 @@ namespace DimensionBrawl.Editor
             string name,
             Material frontMaterial,
             Material sideMaterial,
-            Material smokeMaterial)
+            Material smokeMaterial,
+            AudioClip shotAudio)
         {
             string prefabPath = $"{PrefabRoot}/{name}.prefab";
             GameObject root = new GameObject(name);
@@ -658,6 +669,7 @@ namespace DimensionBrawl.Editor
                 0.015f,
                 0.14f);
 
+            AddOneShotAudioCue(root.transform, "AudioCue_RifleShot", shotAudio, 0.28f, 0.72f, 18f);
             GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             UnityEngine.Object.DestroyImmediate(root);
             return savedPrefab;
@@ -667,7 +679,8 @@ namespace DimensionBrawl.Editor
             string name,
             Material flashMaterial,
             Material sparkMaterial,
-            Material smokeMaterial)
+            Material smokeMaterial,
+            AudioClip impactAudio)
         {
             string prefabPath = $"{PrefabRoot}/{name}.prefab";
             GameObject root = new GameObject(name);
@@ -766,9 +779,38 @@ namespace DimensionBrawl.Editor
                 0.05f,
                 0.08f);
 
+            AddOneShotAudioCue(root.transform, "AudioCue_MetalImpact", impactAudio, 0.22f, 0.7f, 14f);
             GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             UnityEngine.Object.DestroyImmediate(root);
             return savedPrefab;
+        }
+
+        private static AudioSource AddOneShotAudioCue(
+            Transform parent,
+            string name,
+            AudioClip clip,
+            float volume,
+            float minDistance,
+            float maxDistance)
+        {
+            if (clip == null)
+            {
+                return null;
+            }
+
+            GameObject audioObject = new GameObject(name);
+            audioObject.transform.SetParent(parent, worldPositionStays: false);
+            AudioSource audioSource = audioObject.AddComponent<AudioSource>();
+            audioSource.clip = clip;
+            audioSource.playOnAwake = false;
+            audioSource.loop = false;
+            audioSource.spatialBlend = 1f;
+            audioSource.rolloffMode = AudioRolloffMode.Linear;
+            audioSource.dopplerLevel = 0f;
+            audioSource.volume = Mathf.Clamp01(volume);
+            audioSource.minDistance = Mathf.Max(0.05f, minDistance);
+            audioSource.maxDistance = Mathf.Max(audioSource.minDistance, maxDistance);
+            return audioSource;
         }
 
         private static ParticleSystem AddParticleBurst(
@@ -1150,6 +1192,24 @@ namespace DimensionBrawl.Editor
             }
 
             return shader;
+        }
+
+        private static AudioClip EnsurePromotedAudioClip(string sourcePath, string targetPath)
+        {
+            if (AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(targetPath) == null
+                && !AssetDatabase.CopyAsset(sourcePath, targetPath))
+            {
+                throw new InvalidOperationException($"Failed to promote Vefects audio from {sourcePath} to {targetPath}.");
+            }
+
+            AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
+            AudioClip clip = AssetDatabase.LoadAssetAtPath<AudioClip>(targetPath);
+            if (clip == null)
+            {
+                throw new InvalidOperationException($"Failed to load promoted Vefects audio at {targetPath}.");
+            }
+
+            return clip;
         }
 
         private static bool SetImporterValue<T>(T currentValue, T desiredValue, Action<T> applyValue)
