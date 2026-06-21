@@ -1,4 +1,4 @@
-﻿%YAML 1.1
+%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!29 &1
 OcclusionCullingSettings:
@@ -226,8 +226,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 68a992b8d629437bb642aeb3ea4a3342, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   target: {fileID: 4001}
   threat: {fileID: 755058626}
   cameraOffset: {x: 0.14, y: 0.68, z: -4.25}
@@ -281,7 +281,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 95c5c904e05ee3d43ba6d3da070c39eb, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionCameraCueDriver
   actionController: {fileID: 4005}
   movement: {fileID: 4004}
@@ -417,7 +417,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
@@ -461,7 +461,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 59f4125f170140fc8d135210e0d24d59, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionCameraTargetBridge
   cameraController: {fileID: 1004}
   targetSelector: {fileID: 4008}
@@ -476,7 +476,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8f04b3c4c5df4d5a9a5ab1c067c2db7e, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.BossBarrageCameraCueDriver
   bossBarrageEmitter: {fileID: 755058624}
   bossPressureActionDirector: {fileID: 755058628}
@@ -635,7 +635,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -792,6 +792,7 @@ GameObject:
   - component: {fileID: 4013}
   - component: {fileID: 4012}
   - component: {fileID: 4011}
+  - component: {fileID: 4019}
   m_Layer: 0
   m_Name: Player_CombatGirl_ActionFoundation
   m_TagString: Player
@@ -855,8 +856,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   team: 1
   maxHealth: 120
   startAtFullHealth: 1
@@ -876,8 +877,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6253f5fe88f04869b1dc4654feb51dd1, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   moveAction: {fileID: 0}
   lookAction: {fileID: 0}
   mobileMoveInput: {x: 0, y: 0}
@@ -919,8 +920,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 418dc101151a481e99bf66c89a1a2c85, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   basicAttackAction: {fileID: 0}
   dodgeAction: {fileID: 0}
   useDeviceFallbackWhenActionMissing: 1
@@ -1021,8 +1022,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 288c9f48f54943e798cab8c17a6806dc, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   health: {fileID: 4003}
   flashRenderers:
   - {fileID: 4511202044854305800}
@@ -1058,8 +1059,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3e42d67d3a144d6991ac7b99f75b2e06, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   actionController: {fileID: 4005}
   targetRenderers:
   - {fileID: 4511202044854305800}
@@ -1092,7 +1093,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 934852f257b94ad6a96b33999f3ab7f9, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerCombatTargetSelector
   selfHealth: {fileID: 4003}
   selectionOrigin: {fileID: 4001}
@@ -1123,7 +1124,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d051f987e9194992881a51929c4af0a5, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.PlayerCombatVfxCueDriver
   actionController: {fileID: 4005}
   cuePlayer: {fileID: 4010}
@@ -1139,7 +1140,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c3f14f3a7faa43aeb87a640a05d34d09, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCuePlayer
   profile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
   pooledRoot: {fileID: 1907862087}
@@ -1153,7 +1154,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8f1be8a7e71e45f892b9acfa0f0e2157, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerRangedBasicAttackAction
   fireAction: {fileID: 0}
   fireContinuouslyWhileHeld: 1
@@ -1188,7 +1189,7 @@ MonoBehaviour:
   suppressFacingOnFireWhileMoving: 1
   movingFacingSuppressSpeed: 0.08
   requireAimToFire: 0
-  fireTrigger:
+  fireTrigger: 
   aimInputDeadZone: 0.18
   aimInputYawDegrees: 34
   aimFromCameraViewport: 1
@@ -1222,7 +1223,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9d7e0b22f4b34f9185e12a2de9555f32, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerRangedAimController
   aimAction: {fileID: 0}
   holdToAim: 1
@@ -1232,7 +1233,7 @@ MonoBehaviour:
   cameraController: {fileID: 1004}
   movement: {fileID: 4004}
   animator: {fileID: 3837575196118898309}
-  aimingParameter:
+  aimingParameter: 
   faceCameraForwardWhileAiming: 1
   aimingFacingHoldSeconds: 0.08
   snapAimingFacing: 0
@@ -1246,7 +1247,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 36090a0b03e54fe9a077fa32b4524916, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerCombatModeController
   combatModeSwapAction: {fileID: 0}
   useKeyboardWhenActionMissing: 1
@@ -1279,7 +1280,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9c2d4e6f70814a3b8c5d1e2f3a4b6c7d, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.SummonEnergyLadder
   laneSpace: {fileID: 1686532712}
   trackedPlayer: {fileID: 4001}
@@ -1325,7 +1326,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e3f7797398c11124fa8f62f060375fb1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerSupportSummonSlotAction
   slotActionName: SummonSlot3
   summonAction: {fileID: 0}
@@ -1364,7 +1365,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e3f7797398c11124fa8f62f060375fb1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerSupportSummonSlotAction
   slotActionName: SummonSlot2
   summonAction: {fileID: 0}
@@ -1403,7 +1404,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 49022cb4726287f458a2f17a568ca0cf, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerSummonSlot1Action
   summonAction: {fileID: 0}
   useKeyboardWhenActionMissing: 1
@@ -1524,7 +1525,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 9028d8fa7506fda4ba7604a1ea2f46f8, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerSkill1Action
   skillAction: {fileID: 0}
   energyLadder: {fileID: 4014}
@@ -1564,6 +1565,25 @@ MonoBehaviour:
     SpawnForwardOffset: 0.95
     SpawnHeight: 1.25
     TargetHeight: 1.3
+--- !u!114 &4019
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d4e4e2bd8f654e04a8d1581f7fc4b9fb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.PlayerRangedBasicVfxCueDriver
+  rangedBasicAttackAction: {fileID: 4011}
+  cuePlayer: {fileID: 4010}
+  muzzleAnchor: {fileID: 2009422686}
+  muzzleFlashCueId: 33
+  muzzleFlashIntensity: 1
+  impactCueId: 34
+  impactIntensity: 1
 --- !u!1 &4100
 GameObject:
   m_ObjectHideFlags: 0
@@ -1786,8 +1806,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3332ce2d0b3240ea95c5c66945f512a5, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   playerHealth: {fileID: 4003}
   enemyHealth: {fileID: 755058625}
   winMarker: {fileID: 6100}
@@ -2084,7 +2104,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 0, z: 0}
   bobAxis: {x: -0.55, y: 0.8, z: 0.25}
@@ -2140,7 +2160,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 30, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -4085,7 +4105,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 396118273611275809, guid: 3d5bd31d160d2064a9c8ff54e04d2d65, type: 3}
       propertyPath: 'targetCandidates.Array.data[0]'
-      value:
+      value: 
       objectReference: {fileID: 4003}
     - target: {fileID: 1086411759956909423, guid: 3d5bd31d160d2064a9c8ff54e04d2d65, type: 3}
       propertyPath: m_Name
@@ -4097,7 +4117,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1543923529739882463, guid: 3d5bd31d160d2064a9c8ff54e04d2d65, type: 3}
       propertyPath: cameraController
-      value:
+      value: 
       objectReference: {fileID: 1004}
     - target: {fileID: 4358676765322598395, guid: 3d5bd31d160d2064a9c8ff54e04d2d65, type: 3}
       propertyPath: m_LocalPosition.x
@@ -4157,8 +4177,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!4 &233714455 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 4358676765322598395, guid: 3d5bd31d160d2064a9c8ff54e04d2d65, type: 3}
@@ -5299,7 +5319,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 58b4ad2da02b4f70b16850b0de5ac185, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Test.BossSummonDuelReviewOwner
   playerHealth: {fileID: 4003}
   bossHealth: {fileID: 755058625}
@@ -6203,7 +6223,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ae03e3c86d3cb9f4dbf93f0f69f161c1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaTransformMotion
   localRotationDegreesPerSecond: {x: 0, y: 0, z: 0}
   bobAxis: {x: 0, y: 0, z: 1}
@@ -6590,7 +6610,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 24, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -6930,7 +6950,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c5b3c1a16b81c094785bc0b51623d7e4, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.BossBarrageLaneTelegraphPresenter
   bossBarrageEmitter: {fileID: 755058624}
   laneSpace: {fileID: 1686532712}
@@ -7034,7 +7054,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 18, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -7354,7 +7374,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 19, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -7532,7 +7552,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -7717,7 +7737,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 040303e933874bc993e03b9a439cead1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaShapeInfluenceDriver
   renderers:
   - {fileID: 711388407}
@@ -7735,7 +7755,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: -3, y: -10, z: 4}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -8006,7 +8026,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 22, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -8212,7 +8232,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c3d4e5f6471890abcdeffedcba123456, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBarrageEmitter
   laneSpace: {fileID: 1686532712}
   trackedPlayer: {fileID: 4001}
@@ -8246,7 +8266,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.CombatHealth
   team: 2
   maxHealth: 5000
@@ -8284,7 +8304,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 84b58112c21226844881d824e2eb7ecc, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossSummonPressureAction
   laneSpace: {fileID: 1686532712}
   trackedPlayer: {fileID: 4001}
@@ -8356,7 +8376,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 630890bd4f66f01479c55f58a987d7f4, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossPressureActionDirector
   costLadder: {fileID: 755058630}
   bossBarrageEmitter: {fileID: 755058624}
@@ -8448,7 +8468,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8d3f1c2b9a4e4561b0c7d8e9f0123456, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossPressurePositionController
   laneSpace: {fileID: 1686532712}
   costLadder: {fileID: 755058630}
@@ -8470,7 +8490,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 05c83bdbe7851b8459f4e03b08d6e96c, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossPressureCostLadder
   laneSpace: {fileID: 1686532712}
   trackedBoss: {fileID: 755058626}
@@ -8516,7 +8536,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0ed3f804e35be3a42bc0b8e861c34b3f, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.BossBarrageVisualCueDriver
   bossBarrageEmitter: {fileID: 755058624}
   bossPressureActionDirector: {fileID: 755058628}
@@ -8681,7 +8701,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 78d830c626a3a3549b15282246430d2b, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBasicFireEmitter
   laneSpace: {fileID: 1686532712}
   trackedPlayer: {fileID: 4001}
@@ -9055,7 +9075,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 20, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -9502,7 +9522,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 33, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -9912,7 +9932,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 29, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -10402,7 +10422,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 25, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -11689,7 +11709,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 21, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -11834,7 +11854,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 27, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -13684,7 +13704,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 040303e933874bc993e03b9a439cead1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaShapeInfluenceDriver
   renderers:
   - {fileID: 1376262359}
@@ -13702,7 +13722,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 8, y: 6, z: -3}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -13814,7 +13834,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 172515602e62fb746b5d573b38a5fe58, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Core.Runtime::UnityEngine.Rendering.Volume
   m_IsGlobal: 1
   priority: 20
@@ -14179,7 +14199,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 0, z: 0}
   bobAxis: {x: -0.8, y: 0.4, z: -0.35}
@@ -14753,7 +14773,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 195573a44d3b84a448c1c22ea8e868f0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Test.BossBarragePocketReviewOwner
   playerHealth: {fileID: 4003}
   closeThreatHealth: {fileID: 233714454}
@@ -14811,7 +14831,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a7c6d2f4db64e0f94566f910abbcd1a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Test.BossBarragePocketVfxCueBridge
   pocketReviewOwner: {fileID: 1504930836}
   cuePlayer: {fileID: 4010}
@@ -14834,7 +14854,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3f0d5ee2af4340f7b9e6f2f12b2e4a45, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Test.BossBarragePocketCameraCueBridge
   pocketReviewOwner: {fileID: 1504930836}
   cameraCueDriver: {fileID: 1005}
@@ -15826,7 +15846,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 26, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -16391,7 +16411,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -16437,7 +16457,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7b3a4f1c6d2e4f0e9a1b8c3d5e6f7081, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.SummonLaneSpace
   halfWidth: 5.25
   backLimitZ: -12
@@ -16666,7 +16686,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 040303e933874bc993e03b9a439cead1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaShapeInfluenceDriver
   renderers:
   - {fileID: 1723322382}
@@ -16684,7 +16704,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 3, y: 11, z: -4}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -17119,7 +17139,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 040303e933874bc993e03b9a439cead1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaShapeInfluenceDriver
   renderers:
   - {fileID: 1777501759}
@@ -17137,7 +17157,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 0, z: 7}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -17249,7 +17269,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 0, z: 0}
   bobAxis: {x: 1.2, y: 0.5, z: 0.15}
@@ -17545,7 +17565,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 0, z: 0}
   bobAxis: {x: 0.4, y: -0.2, z: 1}
@@ -17728,7 +17748,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -17791,7 +17811,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 31, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -18719,7 +18739,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 040303e933874bc993e03b9a439cead1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaShapeInfluenceDriver
   renderers:
   - {fileID: 1961815686}
@@ -18737,7 +18757,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 9, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -19099,7 +19119,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 28, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -19349,7 +19369,7 @@ Animator:
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
-  m_WarningMessage:
+  m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -19475,7 +19495,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 73a58b6f8dc54c8da48a9016d94d3f14, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.UI.BossBarrageLaneReviewMobileHud
   movement: {fileID: 4004}
   actionController: {fileID: 4005}
@@ -19543,7 +19563,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0c04f7d879586d349b8aed9949d1d720, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.BossBarrageLaneReviewHud
   playerHealth: {fileID: 4003}
   closeThreatHealth: {fileID: 0}
@@ -19881,7 +19901,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 32, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -20027,7 +20047,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 040303e933874bc993e03b9a439cead1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaShapeInfluenceDriver
   renderers:
   - {fileID: 2066667281}
@@ -20045,7 +20065,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 0, z: -10}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -20223,7 +20243,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a5cd14630dd9148478d1b89b204b74ff, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatGirlWeaponSocketBinder
   bindings:
   - label: Left weapon socket
@@ -20424,7 +20444,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 040303e933874bc993e03b9a439cead1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaShapeInfluenceDriver
   renderers:
   - {fileID: 2110969827}
@@ -20442,7 +20462,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: -7, y: 5, z: 4}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -20790,7 +20810,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 625decd5cb6c4d9883d8182ff98637d0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionFoundationArenaFloatingShape
   localRotationDegreesPerSecond: {x: 0, y: 23, z: 0}
   bobAxis: {x: 0, y: 1, z: 0}
@@ -22306,7 +22326,7 @@ Animator:
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
-  m_WarningMessage:
+  m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -22321,7 +22341,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a5cd14630dd9148478d1b89b204b74ff, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatGirlWeaponSocketBinder
   bindings:
   - label: Left weapon socket
@@ -26818,7 +26838,7 @@ Animator:
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
-  m_WarningMessage:
+  m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -26833,7 +26853,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1b0d14ad5acfb85418e2367d4f4a8835, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.RifleGirlWeaponSocketDriver
   animator: {fileID: 3837575196118898309}
   rifleConstraint: {fileID: 3837575194510396813}
@@ -26858,7 +26878,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 34323a34dbcf1fb409db2e34f1191361, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.RifleGirlNativeGameplayAnimatorBridge
   animator: {fileID: 3837575196118898309}
   movement: {fileID: 4004}

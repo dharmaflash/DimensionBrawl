@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace DimensionBrawl.Combat
@@ -46,6 +47,8 @@ namespace DimensionBrawl.Combat
         public CombatHealth LastImpactTargetHealth => lastImpactTargetHealth;
         public SummonFrontlineProxy LastImpactTargetProxy => lastImpactTargetProxy;
 
+        public event Action<LaneActionProjectile, CombatHealth, Vector3, Vector3> DamageApplied;
+
         private void Awake()
         {
             EnsurePhysicsComponents();
@@ -80,6 +83,7 @@ namespace DimensionBrawl.Combat
                 transform.rotation = Quaternion.LookRotation(travelDirection, Vector3.up);
             }
 
+            ResetTrailRenderers();
             gameObject.SetActive(true);
         }
 
@@ -155,15 +159,20 @@ namespace DimensionBrawl.Combat
                 0f);
 
             bool applied = targetHealth.TryApplyDamage(damageInfo);
-            if (applied && deactivateOnHit)
-            {
-                Deactivate();
-            }
-
             SetLastImpact(
                 applied ? ProjectileImpactResult.AppliedDamage : ProjectileImpactResult.IgnoredDamageRejected,
                 targetHealth,
                 targetProxy);
+
+            if (applied)
+            {
+                DamageApplied?.Invoke(this, targetHealth, impactPoint, travelDirection);
+                if (deactivateOnHit)
+                {
+                    Deactivate();
+                }
+            }
+
             return applied;
         }
 
@@ -215,6 +224,22 @@ namespace DimensionBrawl.Combat
             {
                 projectileRigidbody.useGravity = false;
                 projectileRigidbody.isKinematic = true;
+            }
+        }
+
+        private void ResetTrailRenderers()
+        {
+            TrailRenderer[] trailRenderers = GetComponentsInChildren<TrailRenderer>(includeInactive: true);
+            for (int i = 0; i < trailRenderers.Length; i++)
+            {
+                TrailRenderer trail = trailRenderers[i];
+                if (trail == null)
+                {
+                    continue;
+                }
+
+                trail.emitting = true;
+                trail.Clear();
             }
         }
 

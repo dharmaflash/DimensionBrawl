@@ -13,6 +13,7 @@ namespace DimensionBrawl.Combat
 
         [SerializeField] private bool deactivateOnHit = true;
         [SerializeField] private Renderer[] visualRenderers = new Renderer[0];
+        [SerializeField] private TrailRenderer[] trailRenderers = new TrailRenderer[0];
 
         private Collider triggerCollider;
         private Rigidbody projectileRigidbody;
@@ -58,6 +59,7 @@ namespace DimensionBrawl.Combat
             transform.localScale = Vector3.Scale(baseLocalScale, lastPresentationScale);
             ApplySharedMaterial(visualMaterial);
             ApplyColor(lastPresentationColor);
+            ApplyTrailPresentation(lastPresentationColor);
         }
 
         public void Configure(
@@ -85,6 +87,7 @@ namespace DimensionBrawl.Combat
             }
 
             gameObject.SetActive(true);
+            ResetTrailRenderers();
         }
 
         public void Tick(float deltaTime)
@@ -180,6 +183,7 @@ namespace DimensionBrawl.Combat
         public void Deactivate()
         {
             ResetPresentation();
+            StopTrailRenderers();
             active = false;
             remainingLifetime = 0f;
             gameObject.SetActive(false);
@@ -240,7 +244,12 @@ namespace DimensionBrawl.Combat
             baseLocalScale = transform.localScale;
             if (visualRenderers == null || visualRenderers.Length == 0)
             {
-                visualRenderers = GetComponentsInChildren<Renderer>(true);
+                visualRenderers = ResolveNonTrailRenderers();
+            }
+
+            if (trailRenderers == null || trailRenderers.Length == 0)
+            {
+                trailRenderers = GetComponentsInChildren<TrailRenderer>(true);
             }
 
             materialPropertyBlock = new MaterialPropertyBlock();
@@ -335,6 +344,83 @@ namespace DimensionBrawl.Combat
             ClearColorOverrides();
         }
 
+        private void ApplyTrailPresentation(Color color)
+        {
+            if (trailRenderers == null)
+            {
+                return;
+            }
+
+            Color head = color;
+            head.a = Mathf.Max(head.a, 0.75f);
+            Color tail = color;
+            tail.a = 0f;
+
+            Gradient gradient = new Gradient();
+            gradient.SetKeys(
+                new[]
+                {
+                    new GradientColorKey(head, 0f),
+                    new GradientColorKey(tail, 1f)
+                },
+                new[]
+                {
+                    new GradientAlphaKey(head.a, 0f),
+                    new GradientAlphaKey(0f, 1f)
+                });
+
+            for (int i = 0; i < trailRenderers.Length; i++)
+            {
+                TrailRenderer trail = trailRenderers[i];
+                if (trail == null)
+                {
+                    continue;
+                }
+
+                trail.colorGradient = gradient;
+            }
+        }
+
+        private void ResetTrailRenderers()
+        {
+            if (trailRenderers == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < trailRenderers.Length; i++)
+            {
+                TrailRenderer trail = trailRenderers[i];
+                if (trail == null)
+                {
+                    continue;
+                }
+
+                trail.emitting = true;
+                trail.Clear();
+            }
+        }
+
+        private void StopTrailRenderers()
+        {
+            if (trailRenderers == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < trailRenderers.Length; i++)
+            {
+                TrailRenderer trail = trailRenderers[i];
+                if (trail == null)
+                {
+                    continue;
+                }
+
+                trail.emitting = false;
+                trail.Clear();
+            }
+        }
+
         private void ClearColorOverrides()
         {
             if (visualRenderers == null)
@@ -364,6 +450,35 @@ namespace DimensionBrawl.Combat
                 Mathf.Max(0.05f, scale.x),
                 Mathf.Max(0.05f, scale.y),
                 Mathf.Max(0.05f, scale.z));
+        }
+
+        private Renderer[] ResolveNonTrailRenderers()
+        {
+            Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+            int count = 0;
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                if (renderers[i] != null && renderers[i] is not TrailRenderer)
+                {
+                    count++;
+                }
+            }
+
+            Renderer[] filtered = new Renderer[count];
+            int writeIndex = 0;
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null || renderer is TrailRenderer)
+                {
+                    continue;
+                }
+
+                filtered[writeIndex] = renderer;
+                writeIndex++;
+            }
+
+            return filtered;
         }
 
         private static Vector3 ResolveDirection(Vector3 direction)

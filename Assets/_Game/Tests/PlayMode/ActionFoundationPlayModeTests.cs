@@ -1416,10 +1416,16 @@ namespace DimensionBrawl.Tests
                     $"{cueId} should not reference raw imported VFX pack assets directly.");
                 Assert.IsNotNull(
                     cue.Prefab.GetComponentInChildren<CombatVfxCueVisual>(true),
-                    $"{cueId} should use a stable promoted mesh cue visual instead of raw particle shards.");
-                Assert.IsEmpty(
-                    cue.Prefab.GetComponentsInChildren<ParticleSystem>(true),
-                    $"{cueId} should not use first-pass particle shards in the ActionFoundation readability slice.");
+                    $"{cueId} should use a stable promoted cue visual; optional particle polish must remain game-owned.");
+
+                string[] dependencies = AssetDatabase.GetDependencies(prefabPath, true);
+                for (int i = 0; i < dependencies.Length; i++)
+                {
+                    string dependency = dependencies[i].Replace('\\', '/');
+                    Assert.IsFalse(
+                        dependency.Contains("/_Imported/"),
+                        $"{cueId} should not depend on raw imported VFX assets, found {dependency}.");
+                }
             }
         }
 

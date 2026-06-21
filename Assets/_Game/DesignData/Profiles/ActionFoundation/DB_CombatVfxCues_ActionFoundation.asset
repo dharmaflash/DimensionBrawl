@@ -40,6 +40,24 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1
+  - cueId: 33
+    prefab: {fileID: 8980601270831269164, guid: f9fc85eada6840147a96d36d88284e79, type: 3}
+    localPositionOffset: {x: 0, y: 0, z: 0.08}
+    localEulerOffset: {x: 0, y: 0, z: 0}
+    localScale: {x: 0.72, y: 0.72, z: 0.72}
+    lifetimeSeconds: 0.16
+    prewarmCount: 0
+    parentToAnchor: 0
+    alignForwardToDirection: 1
+  - cueId: 34
+    prefab: {fileID: 3204485409673659939, guid: 73e0ef70f45b2834ba962a131d2ab3ec, type: 3}
+    localPositionOffset: {x: 0, y: 0.04, z: 0}
+    localEulerOffset: {x: 0, y: 0, z: 0}
+    localScale: {x: 0.9, y: 0.9, z: 0.9}
+    lifetimeSeconds: 0.46
+    prewarmCount: 0
+    parentToAnchor: 0
+    alignForwardToDirection: 1
   - cueId: 3
     prefab: {fileID: 6317775638521204061, guid: 89d9b914c94405042b977ab715f15e61, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0}

@@ -118,6 +118,7 @@ namespace DimensionBrawl.Tests
         private const string PocketOwnerRootName = "BossBarrageLaneReview_PocketOwner";
         private const string BossTelegraphRootName = "BossBarrageLaneReview_BossBarrageTelegraphMarkers";
         private const string EnergyZoneRootName = "BossBarrageLaneReview_EnergyRiskZones";
+        private const string AmbientVfxRootName = "BossBarrageLaneReview_AmbientVfx";
         private const string HudRootName = "BossBarrageLaneReview_DebugHud";
         private const string BacklineEnergyZoneMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageBacklineEnergyZone.mat";
@@ -125,6 +126,12 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageMidEnergyZone.mat";
         private const string ForwardEnergyZoneMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageForwardEnergyZone.mat";
+        private const string LaneAmbientFlowMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageLaneAmbientFlow.mat";
+        private const string BossPressureHorizonMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarragePressureHorizon.mat";
+        private const string SummonRouteWispMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageSummonRouteWisp.mat";
         private static readonly string[] RequiredBossPatternCueIds =
         {
             "NeedleLock",
@@ -230,10 +237,14 @@ namespace DimensionBrawl.Tests
                 RequireComponent<CombatVfxCuePlayer>(player.gameObject, "player combat VFX cue player");
             PlayerCombatVfxCueDriver playerVfxCueDriver =
                 RequireComponent<PlayerCombatVfxCueDriver>(player.gameObject, "player combat VFX cue driver");
+            PlayerRangedBasicVfxCueDriver rangedBasicVfxCueDriver =
+                RequireComponent<PlayerRangedBasicVfxCueDriver>(player.gameObject, "player ranged basic VFX cue driver");
             BossBarrageLaneReviewHud reviewHud =
                 RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "boss barrage HUD");
             BossBarrageLaneReviewMobileHud mobileHud =
                 RequireComponent<BossBarrageLaneReviewMobileHud>(RequireRoot(HudRootName), "boss barrage mobile HUD");
+            ActionScreenCuePresenter screenCuePresenter =
+                RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "action screen cue presenter");
             BossBarrageLaneTelegraphPresenter telegraphPresenter =
                 RequireComponent<BossBarrageLaneTelegraphPresenter>(
                     RequireRoot(BossTelegraphRootName),
@@ -246,6 +257,15 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(bossBasicFireEmitter, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(bossBasicFireEmitter, "trackedPlayer"));
             Assert.AreSame(bossHealth, GetObjectReference<CombatHealth>(bossBasicFireEmitter, "sourceHealth"));
+            Assert.AreSame(rangedBasicAttackAction, GetObjectReference<PlayerRangedBasicAttackAction>(rangedBasicVfxCueDriver, "rangedBasicAttackAction"));
+            Assert.AreSame(playerCuePlayer, GetObjectReference<CombatVfxCuePlayer>(rangedBasicVfxCueDriver, "cuePlayer"));
+            Assert.AreSame(
+                GetObjectReference<Transform>(rangedBasicAttackAction, "fireOrigin"),
+                GetObjectReference<Transform>(rangedBasicVfxCueDriver, "muzzleAnchor"));
+            Assert.AreEqual(CombatVfxCueId.PlayerRangedMuzzleFlash, GetEnum<CombatVfxCueId>(rangedBasicVfxCueDriver, "muzzleFlashCueId"));
+            Assert.AreEqual(1f, GetFloat(rangedBasicVfxCueDriver, "muzzleFlashIntensity"), 0.001f);
+            Assert.AreEqual(CombatVfxCueId.PlayerRangedProjectileImpact, GetEnum<CombatVfxCueId>(rangedBasicVfxCueDriver, "impactCueId"));
+            Assert.AreEqual(1f, GetFloat(rangedBasicVfxCueDriver, "impactIntensity"), 0.001f);
             Assert.AreSame(bossBasicFireProfile, GetObjectReference<BossBasicFireProfile>(bossBasicFireEmitter, "fireProfile"));
             Assert.AreSame(
                 LoadAsset<GameObject>(ProjectilePrefabPath),
@@ -342,6 +362,10 @@ namespace DimensionBrawl.Tests
                 bossSummonActorPresenter,
                 bossSummonAnimator,
                 "Boss summon pressure actor prefab");
+            AssertSummonActorVfx(
+                bossSummonActorPrefabObject,
+                expectPressureScreen: true,
+                label: "Boss summon pressure actor prefab");
             AssertSummonPresentationCandidateProfile(
                 bossSummonPresentationCandidate,
                 "BossPressure.AuraCaptain",
@@ -432,6 +456,7 @@ namespace DimensionBrawl.Tests
                 2f / 3f,
                 1f,
                 ForwardEnergyZoneMaterialPath);
+            AssertLaneAmbientVfx(RequireRoot(AmbientVfxRootName));
             Assert.AreSame(LoadAsset<PlayerActionProfile>(LocalDefenseProfilePath), playerActionController.ActionProfile);
             Assert.IsTrue(combatModeController.IsRangedMode, "Review scene should start in the ranged channel.");
             Assert.AreSame(playerActionController, GetObjectReference<PlayerActionController>(combatModeController, "actionController"));
@@ -511,10 +536,20 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(GetBool(rangedBasicAttackAction, "driveCameraAimAssist"));
             Assert.That(GetFloat(rangedBasicAttackAction, "cameraAimAssistStrengthScale"), Is.InRange(0.01f, 1f));
             Assert.That(GetFloat(rangedBasicAttackAction, "cameraAimAssistMinStrength"), Is.InRange(0f, 0.5f));
-            Assert.AreSame(LoadAsset<GameObject>(RangedBasicProjectilePrefabPath), GetObjectReference<GameObject>(rangedBasicAttackAction, "projectilePrefabObject"));
+            GameObject rangedBasicProjectilePrefab = LoadAsset<GameObject>(RangedBasicProjectilePrefabPath);
+            Assert.AreSame(rangedBasicProjectilePrefab, GetObjectReference<GameObject>(rangedBasicAttackAction, "projectilePrefabObject"));
             Assert.IsTrue(
-                LoadAsset<GameObject>(RangedBasicProjectilePrefabPath).GetComponent<LaneActionProjectile>().AllowsVerticalTravel,
+                rangedBasicProjectilePrefab.GetComponent<LaneActionProjectile>().AllowsVerticalTravel,
                 "Player basic ranged fire should allow vertical travel when the center camera ray carries height.");
+            Assert.IsNotNull(
+                rangedBasicProjectilePrefab.transform.Find("RangedBasicProjectileVfx_Core"),
+                "Player basic ranged projectile should include a promoted visual core.");
+            Assert.IsNotNull(
+                rangedBasicProjectilePrefab.transform.Find("RangedBasicProjectileVfx_CompressedFlame"),
+                "Player basic ranged projectile should include a compressed flame/tracer visual.");
+            Assert.IsNotNull(
+                rangedBasicProjectilePrefab.GetComponent<TrailRenderer>(),
+                "Player basic ranged projectile should include a trail renderer for fired-shot readability.");
             Assert.AreSame(projectileRoot.transform, GetObjectReference<Transform>(rangedBasicAttackAction, "projectileRoot"));
             combatModeController.SetMeleeMode();
             yield return null;
@@ -555,7 +590,9 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(
                 LoadAsset<GameObject>(SummonSlot1ProjectilePrefabPath).GetComponent<LaneActionProjectile>().AllowsVerticalTravel,
                 "Summon lane counter shots should keep the authored lane plane instead of inheriting player aim elevation.");
-            Assert.AreSame(LoadAsset<GameObject>(SummonSlot1EntryCuePrefabPath), GetObjectReference<GameObject>(summonSlot1Action, "entryCuePrefab"));
+            GameObject summonEntryCuePrefabObject = LoadAsset<GameObject>(SummonSlot1EntryCuePrefabPath);
+            Assert.AreSame(summonEntryCuePrefabObject, GetObjectReference<GameObject>(summonSlot1Action, "entryCuePrefab"));
+            AssertSummonEntryCueVfx(summonEntryCuePrefabObject);
             GameObject summonActorPrefabObject = LoadAsset<GameObject>(SummonSlot1ActorPrefabPath);
             Assert.AreSame(summonActorPrefabObject, GetObjectReference<GameObject>(summonSlot1Action, "summonActorPrefabObject"));
             SummonFrontlineProxy summonActorPrefab =
@@ -575,6 +612,10 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(summonPressureScreen, summonActorPrefab.PressureScreen);
             Assert.AreSame(summonPressureScreen, summonPressureScreenPresenter.PressureScreen);
             Assert.Greater(summonPressureScreenPresenter.RendererCount, 0);
+            AssertSummonActorVfx(
+                summonActorPrefabObject,
+                expectPressureScreen: true,
+                label: "SummonSlot1 actor prefab");
             Assert.AreSame(summonActorPrefab, summonActorPresenter.Proxy);
             Assert.IsNotNull(summonActorPresenter.PulseRoot);
             Assert.AreEqual(
@@ -851,6 +892,23 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(rangedBasicAttackAction, GetObjectReference<PlayerRangedBasicAttackAction>(mobileHud, "rangedBasicAttackAction"));
             Assert.AreSame(skill1Action, GetObjectReference<PlayerSkill1Action>(mobileHud, "skill1Action"));
             Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(mobileHud, "summonSlot1Action"));
+            Assert.AreSame(playerActionController, GetObjectReference<PlayerActionController>(screenCuePresenter, "actionController"));
+            Assert.AreSame(rangedBasicAttackAction, GetObjectReference<PlayerRangedBasicAttackAction>(screenCuePresenter, "rangedBasicAttackAction"));
+            Assert.AreSame(skill1Action, GetObjectReference<PlayerSkill1Action>(screenCuePresenter, "skill1Action"));
+            Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(screenCuePresenter, "summonSlot1Action"));
+            Assert.AreSame(
+                GetObjectReference<PlayerSupportSummonSlotAction>(mobileHud, "summonSlot2Action"),
+                GetObjectReference<PlayerSupportSummonSlotAction>(screenCuePresenter, "summonSlot2Action"));
+            Assert.AreSame(
+                GetObjectReference<PlayerSupportSummonSlotAction>(mobileHud, "summonSlot3Action"),
+                GetObjectReference<PlayerSupportSummonSlotAction>(screenCuePresenter, "summonSlot3Action"));
+            Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(screenCuePresenter, "bossBarrageEmitter"));
+            Assert.AreSame(bossPressureActionDirector, GetObjectReference<BossPressureActionDirector>(screenCuePresenter, "bossPressureActionDirector"));
+            Assert.AreSame(pocketOwner, GetObjectReference<BossBarragePocketReviewOwner>(screenCuePresenter, "pocketReviewOwner"));
+            Assert.IsTrue(screenCuePresenter.ShowScreenCues);
+            Assert.AreEqual(0.16f, screenCuePresenter.MaxFullScreenAlpha, 0.001f);
+            Assert.AreEqual(0.34f, screenCuePresenter.MaxEdgeAlpha, 0.001f);
+            Assert.AreEqual(118f, screenCuePresenter.EdgeThickness, 0.001f);
             Assert.AreEqual("Move", GetString(mobileHud, "moveActionName"));
             Assert.AreEqual("BasicDefenseAttack", GetString(mobileHud, "basicDefenseActionName"));
             Assert.AreEqual("Dodge", GetString(mobileHud, "dodgeActionName"));
@@ -3501,6 +3559,49 @@ namespace DimensionBrawl.Tests
             Assert.IsNotNull(renderer.sharedMaterial, $"{label} should keep a visible material.");
             AssertGameOwnedAsset(renderer.sharedMaterial, $"{label} material");
             AssertRenderableMaterialShader(renderer.sharedMaterial, $"{label} material shader");
+            Assert.IsNotNull(
+                projectileObject.transform.Find("BossBarrageProjectileVfx_HotCore"),
+                $"{label} should include a promoted hot core visual.");
+            Assert.IsNotNull(
+                projectileObject.transform.Find("BossBarrageProjectileVfx_NeedleTail"),
+                $"{label} should include a promoted needle tail visual.");
+            TrailRenderer trail = projectileObject.GetComponent<TrailRenderer>();
+            Assert.IsNotNull(trail, $"{label} should include a TrailRenderer for incoming shot readability.");
+            Assert.IsNotNull(trail.sharedMaterial, $"{label} trail should keep a visible material.");
+            AssertGameOwnedAsset(trail.sharedMaterial, $"{label} trail material");
+            AssertRenderableMaterialShader(trail.sharedMaterial, $"{label} trail material shader");
+        }
+
+        private static void AssertSummonEntryCueVfx(GameObject entryCuePrefab)
+        {
+            AssertVisualOnlyVfxPrimitive(entryCuePrefab, "SummonEntryVfx_OuterRing", "summon entry outer ring");
+            AssertVisualOnlyVfxPrimitive(entryCuePrefab, "SummonEntryVfx_CrossLineX", "summon entry cross line X");
+            AssertVisualOnlyVfxPrimitive(entryCuePrefab, "SummonEntryVfx_VerticalBeacon", "summon entry vertical beacon");
+        }
+
+        private static void AssertSummonActorVfx(GameObject actorPrefab, bool expectPressureScreen, string label)
+        {
+            AssertVisualOnlyVfxPrimitive(actorPrefab, "SummonPulseVfx_EnergyRing", $"{label} pulse energy ring");
+            AssertVisualOnlyVfxPrimitive(actorPrefab, "SummonPulseVfx_ClashStreak", $"{label} pulse clash streak");
+            if (!expectPressureScreen)
+            {
+                return;
+            }
+
+            AssertVisualOnlyVfxPrimitive(actorPrefab, "SummonShieldVfx_OuterHalo", $"{label} shield outer halo");
+            AssertVisualOnlyVfxPrimitive(actorPrefab, "SummonShieldVfx_LeftBrace", $"{label} shield left brace");
+            AssertVisualOnlyVfxPrimitive(actorPrefab, "SummonShieldVfx_GroundRing", $"{label} shield ground ring");
+        }
+
+        private static void AssertVisualOnlyVfxPrimitive(GameObject root, string childName, string label)
+        {
+            Transform child = root.transform.Find(childName);
+            Assert.IsNotNull(child, $"{label} should be authored in the prefab.");
+            Assert.IsNull(child.GetComponent<Collider>(), $"{label} should stay visual-only.");
+            Renderer renderer = RequireComponent<Renderer>(child.gameObject, label);
+            Assert.IsNotNull(renderer.sharedMaterial, $"{label} should keep a material.");
+            AssertGameOwnedAsset(renderer.sharedMaterial, $"{label} material");
+            AssertRenderableMaterialShader(renderer.sharedMaterial, $"{label} material shader");
         }
 
         private static void AssertColorNear(Color expected, Color actual, string label)
@@ -4206,6 +4307,76 @@ namespace DimensionBrawl.Tests
             Material expectedMaterial = LoadAsset<Material>(materialPath);
             Assert.AreSame(expectedMaterial, renderer.sharedMaterial, $"{markerName} should use its authored zone material.");
             AssertGameOwnedAsset(renderer.sharedMaterial, $"{markerName} material");
+        }
+
+        private static void AssertLaneAmbientVfx(GameObject root)
+        {
+            AssertVisualOnlySceneVfx(
+                root.transform,
+                "AmbientFlow_LeftRail_00",
+                LaneAmbientFlowMaterialPath,
+                expectMotion: true,
+                expectFloating: false);
+            AssertVisualOnlySceneVfx(
+                root.transform,
+                "AmbientFlow_RightRail_00",
+                LaneAmbientFlowMaterialPath,
+                expectMotion: true,
+                expectFloating: false);
+            AssertVisualOnlySceneVfx(
+                root.transform,
+                "AmbientDepthTick_04",
+                BossPressureHorizonMaterialPath,
+                expectMotion: false,
+                expectFloating: false);
+            AssertVisualOnlySceneVfx(
+                root.transform,
+                "BossPressureHorizon_Curtain",
+                BossPressureHorizonMaterialPath,
+                expectMotion: true,
+                expectFloating: false);
+            AssertVisualOnlySceneVfx(
+                root.transform,
+                "SummonRouteWisp_00",
+                SummonRouteWispMaterialPath,
+                expectMotion: false,
+                expectFloating: true);
+            AssertVisualOnlySceneVfx(
+                root.transform,
+                "SummonRouteWisp_03",
+                SummonRouteWispMaterialPath,
+                expectMotion: false,
+                expectFloating: true);
+        }
+
+        private static void AssertVisualOnlySceneVfx(
+            Transform root,
+            string childName,
+            string materialPath,
+            bool expectMotion,
+            bool expectFloating)
+        {
+            Transform child = root.Find(childName);
+            Assert.IsNotNull(child, $"{childName} should be authored under the ambient VFX root.");
+            Assert.IsNull(child.GetComponent<Collider>(), $"{childName} should stay visual-only.");
+
+            Renderer renderer = RequireComponent<Renderer>(child.gameObject, childName);
+            Assert.AreSame(LoadAsset<Material>(materialPath), renderer.sharedMaterial, $"{childName} should use its authored material.");
+            AssertGameOwnedAsset(renderer.sharedMaterial, $"{childName} material");
+            AssertRenderableMaterialShader(renderer.sharedMaterial, $"{childName} material shader");
+            if (expectMotion)
+            {
+                Assert.IsNotNull(
+                    child.GetComponent<ActionFoundationArenaTransformMotion>(),
+                    $"{childName} should use ambient transform motion.");
+            }
+
+            if (expectFloating)
+            {
+                Assert.IsNotNull(
+                    child.GetComponent<ActionFoundationArenaFloatingShape>(),
+                    $"{childName} should use floating pulse motion.");
+            }
         }
 
         private static void AssertGameOwnedAsset(Object asset, string label)

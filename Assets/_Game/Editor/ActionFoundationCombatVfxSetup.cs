@@ -1,4 +1,5 @@
 using System;
+using System.IO;
 using DimensionBrawl.AI;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Enemies;
@@ -20,6 +21,13 @@ namespace DimensionBrawl.Editor
         private const string CombatVfxRoot = "Assets/_Game/Art/VFX/CombatCues";
         private const string MaterialRoot = CombatVfxRoot + "/Materials";
         private const string PrefabRoot = CombatVfxRoot + "/Prefabs";
+        private const string TextureRoot = CombatVfxRoot + "/Textures";
+        private const string ImportedMuzzleFlashRoot =
+            "Assets/_Imported/AssetStore/VFX/Vefects_ShotsVFXURP/Shots VFX URP/Shots/Muzzle Flash/Textures";
+        private const string MuzzleFlashFrontSourcePath = ImportedMuzzleFlashRoot + "/T_VFX_MuzzleFlash_Front.tga";
+        private const string MuzzleFlashSideSourcePath = ImportedMuzzleFlashRoot + "/T_VFX_MuzzleFlash_Side.tga";
+        private const string MuzzleFlashFrontTexturePath = TextureRoot + "/T_VFX_MuzzleFlash_Front.tga";
+        private const string MuzzleFlashSideTexturePath = TextureRoot + "/T_VFX_MuzzleFlash_Side.tga";
         private const string PoolRootName = "ActionFoundation_CombatVfxPool";
 
         [MenuItem("DimensionBrawl/Reapply Action Foundation Combat VFX Cues")]
@@ -71,10 +79,7 @@ namespace DimensionBrawl.Editor
                     throw new InvalidOperationException($"{cueId} should use a stable promoted CombatVfxCueVisual prefab, found {prefabPath}.");
                 }
 
-                if (cue.Prefab.GetComponentInChildren<ParticleSystem>(includeInactive: true) != null)
-                {
-                    throw new InvalidOperationException($"{cueId} should not use first-pass particle shards for ActionFoundation readability.");
-                }
+                ValidateNoImportedAssetDependencies(cueId, prefabPath);
             }
 
             Scene scene = SceneManager.GetActiveScene();
@@ -114,6 +119,7 @@ namespace DimensionBrawl.Editor
             EnsureFolder(CombatVfxRoot);
             EnsureFolder(MaterialRoot);
             EnsureFolder(PrefabRoot);
+            EnsureFolder(TextureRoot);
 
             Material cyan = LoadOrCreateParticleMaterial("DB_CombatVfx_Cyan", new Color(0.22f, 0.88f, 1f, 0.82f));
             Material blue = LoadOrCreateParticleMaterial("DB_CombatVfx_Blue", new Color(0.18f, 0.45f, 1f, 0.82f));
@@ -123,12 +129,18 @@ namespace DimensionBrawl.Editor
             Material gold = LoadOrCreateParticleMaterial("DB_CombatVfx_Gold", new Color(1f, 0.78f, 0.18f, 0.88f));
             Material white = LoadOrCreateParticleMaterial("DB_CombatVfx_White", new Color(0.92f, 0.98f, 1f, 0.9f));
             Material smoke = LoadOrCreateParticleMaterial("DB_CombatVfx_Smoke", new Color(0.45f, 0.52f, 0.58f, 0.55f), additive: false);
+            Texture2D muzzleFront = EnsurePromotedTexture(MuzzleFlashFrontSourcePath, MuzzleFlashFrontTexturePath);
+            Texture2D muzzleSide = EnsurePromotedTexture(MuzzleFlashSideSourcePath, MuzzleFlashSideTexturePath);
+            Material muzzleFrontMaterial = LoadOrCreateTextureMaterial("DB_CombatVfx_MuzzleFlashFront", muzzleFront, new Color(1f, 0.86f, 0.42f, 0.96f));
+            Material muzzleSideMaterial = LoadOrCreateTextureMaterial("DB_CombatVfx_MuzzleFlashSide", muzzleSide, new Color(1f, 0.56f, 0.14f, 0.92f));
 
             CombatCuePrefabs prefabs = new CombatCuePrefabs
             {
                 PlayerAttackStart = SaveBurstPrefab("DB_VFX_PlayerAttackStart", cyan, ParticleSystemShapeType.Cone, 0.16f, 24f, 115f, 0.16f, 0.36f, 0.12f, 0.32f, 18, new Color(0.26f, 0.95f, 1f, 0.86f), new Color(0.14f, 0.42f, 1f, 0f)),
                 PlayerAttackHit = SaveBurstPrefab("DB_VFX_PlayerAttackHit", white, ParticleSystemShapeType.Sphere, 0.32f, 35f, 360f, 0.12f, 0.28f, 0.16f, 0.42f, 34, new Color(1f, 0.95f, 0.75f, 0.95f), new Color(0.18f, 0.74f, 1f, 0f)),
                 PlayerDodgeStart = SaveBurstPrefab("DB_VFX_PlayerDodgeStart", blue, ParticleSystemShapeType.Cone, 0.22f, 18f, 75f, 0.18f, 0.40f, 0.18f, 0.46f, 28, new Color(0.18f, 0.58f, 1f, 0.75f), new Color(0.1f, 0.2f, 0.7f, 0f)),
+                PlayerRangedMuzzleFlash = SaveMuzzleFlashPrefab("DB_VFX_PlayerRangedMuzzleFlash", muzzleFrontMaterial, muzzleSideMaterial, smoke),
+                PlayerRangedProjectileImpact = SaveRangedProjectileImpactPrefab("DB_VFX_PlayerRangedProjectileImpact", white, gold, smoke),
                 EnemyWindup = SaveBurstPrefab("DB_VFX_EnemyWindup_Generic", orange, ParticleSystemShapeType.Cone, 0.28f, 9f, 150f, 0.28f, 0.54f, 0.10f, 0.30f, 24, new Color(1f, 0.44f, 0.08f, 0.78f), new Color(1f, 0.12f, 0f, 0f)),
                 EnemyAttackActive = SaveBurstPrefab("DB_VFX_EnemyAttackActive_Generic", white, ParticleSystemShapeType.Cone, 0.36f, 42f, 120f, 0.10f, 0.24f, 0.22f, 0.55f, 36, new Color(1f, 0.9f, 0.55f, 0.95f), new Color(1f, 0.2f, 0.02f, 0f)),
                 EnemyHit = SaveBurstPrefab("DB_VFX_EnemyHit", white, ParticleSystemShapeType.Sphere, 0.28f, 28f, 360f, 0.12f, 0.26f, 0.10f, 0.34f, 24, new Color(1f, 0.96f, 0.72f, 0.9f), new Color(0.8f, 0.16f, 0.04f, 0f)),
@@ -179,6 +191,7 @@ namespace DimensionBrawl.Editor
         {
             CombatVfxCuePlayer cuePlayer = EnsureComponent<CombatVfxCuePlayer>(player.gameObject);
             PlayerCombatVfxCueDriver driver = EnsureComponent<PlayerCombatVfxCueDriver>(player.gameObject);
+            PlayerRangedBasicAttackAction rangedBasicAttackAction = player.GetComponent<PlayerRangedBasicAttackAction>();
             Transform attackAnchor = EnsureChild(player.transform, "Player_CombatVfx_AttackAnchor", new Vector3(0f, 1.05f, 0.65f));
             Transform dodgeAnchor = EnsureChild(player.transform, "Player_CombatVfx_DodgeAnchor", new Vector3(0f, 0.18f, -0.22f));
 
@@ -188,6 +201,22 @@ namespace DimensionBrawl.Editor
             SetObjectReference(driver, "cuePlayer", cuePlayer);
             SetObjectReference(driver, "attackAnchor", attackAnchor);
             SetObjectReference(driver, "dodgeAnchor", dodgeAnchor);
+            if (rangedBasicAttackAction != null)
+            {
+                PlayerRangedBasicVfxCueDriver rangedDriver =
+                    EnsureComponent<PlayerRangedBasicVfxCueDriver>(player.gameObject);
+                Transform muzzleAnchor = rangedBasicAttackAction.FireOrigin != null
+                    ? rangedBasicAttackAction.FireOrigin
+                    : attackAnchor;
+                SetObjectReference(rangedDriver, "rangedBasicAttackAction", rangedBasicAttackAction);
+                SetObjectReference(rangedDriver, "cuePlayer", cuePlayer);
+                SetObjectReference(rangedDriver, "muzzleAnchor", muzzleAnchor);
+                SetEnum(rangedDriver, "muzzleFlashCueId", (int)CombatVfxCueId.PlayerRangedMuzzleFlash);
+                SetFloat(rangedDriver, "muzzleFlashIntensity", 1f);
+                SetEnum(rangedDriver, "impactCueId", (int)CombatVfxCueId.PlayerRangedProjectileImpact);
+                SetFloat(rangedDriver, "impactIntensity", 1f);
+            }
+
             EditorUtility.SetDirty(player.gameObject);
         }
 
@@ -328,6 +357,19 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static void ValidateNoImportedAssetDependencies(CombatVfxCueId cueId, string prefabPath)
+        {
+            string[] dependencies = AssetDatabase.GetDependencies(prefabPath, recursive: true);
+            for (int i = 0; i < dependencies.Length; i++)
+            {
+                string dependency = dependencies[i].Replace('\\', '/');
+                if (dependency.Contains("/_Imported/", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException($"{cueId} should not depend on raw imported VFX asset {dependency}.");
+                }
+            }
+        }
+
         private static void ConfigureCombatVfxCueProfile(CombatVfxCueProfile profile, CombatCuePrefabs prefabs)
         {
             CueDefinition[] cues =
@@ -335,6 +377,8 @@ namespace DimensionBrawl.Editor
                 new CueDefinition(CombatVfxCueId.PlayerBasicAttackStart, prefabs.PlayerAttackStart, new Vector3(0f, 0f, 0.35f), Vector3.zero, new Vector3(1f, 1f, 1.25f), 0.40f, false, true),
                 new CueDefinition(CombatVfxCueId.PlayerBasicAttackHit, prefabs.PlayerAttackHit, new Vector3(0f, 0f, 0.82f), Vector3.zero, Vector3.one, 0.34f, false, true),
                 new CueDefinition(CombatVfxCueId.PlayerDodgeStart, prefabs.PlayerDodgeStart, new Vector3(0f, 0f, -0.15f), Vector3.zero, new Vector3(1.1f, 0.8f, 1.5f), 0.46f, false, true),
+                new CueDefinition(CombatVfxCueId.PlayerRangedMuzzleFlash, prefabs.PlayerRangedMuzzleFlash, new Vector3(0f, 0f, 0.08f), Vector3.zero, new Vector3(0.72f, 0.72f, 0.72f), 0.16f, false, true),
+                new CueDefinition(CombatVfxCueId.PlayerRangedProjectileImpact, prefabs.PlayerRangedProjectileImpact, new Vector3(0f, 0.04f, 0f), Vector3.zero, new Vector3(0.9f, 0.9f, 0.9f), 0.46f, false, true),
                 new CueDefinition(CombatVfxCueId.EnemyWindup, prefabs.EnemyWindup, Vector3.zero, Vector3.zero, Vector3.one, 0.55f, true, true),
                 new CueDefinition(CombatVfxCueId.EnemyAttackActive, prefabs.EnemyAttackActive, new Vector3(0f, 0f, 0.7f), Vector3.zero, Vector3.one, 0.28f, false, true),
                 new CueDefinition(CombatVfxCueId.EnemyHit, prefabs.EnemyHit, new Vector3(0f, 0.1f, 0f), Vector3.zero, Vector3.one, 0.32f, false, true),
@@ -466,6 +510,315 @@ namespace DimensionBrawl.Editor
             GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             UnityEngine.Object.DestroyImmediate(root);
             return savedPrefab;
+        }
+
+        private static GameObject SaveMuzzleFlashPrefab(
+            string name,
+            Material frontMaterial,
+            Material sideMaterial,
+            Material smokeMaterial)
+        {
+            string prefabPath = $"{PrefabRoot}/{name}.prefab";
+            GameObject root = new GameObject(name);
+            var renderers = new System.Collections.Generic.List<Renderer>
+            {
+                AddPrimitive(
+                    root.transform,
+                    "MuzzleFlash_Front",
+                    PrimitiveType.Quad,
+                    frontMaterial,
+                    new Vector3(0f, 0f, 0.18f),
+                    Vector3.zero,
+                    new Vector3(0.62f, 0.62f, 1f)),
+                AddPrimitive(
+                    root.transform,
+                    "MuzzleFlash_ForwardTongue",
+                    PrimitiveType.Quad,
+                    sideMaterial,
+                    new Vector3(0f, 0f, 0.42f),
+                    new Vector3(90f, 0f, 0f),
+                    new Vector3(0.34f, 0.92f, 1f)),
+                AddPrimitive(
+                    root.transform,
+                    "MuzzleFlash_VerticalTongue",
+                    PrimitiveType.Quad,
+                    sideMaterial,
+                    new Vector3(0f, 0f, 0.38f),
+                    Vector3.zero,
+                    new Vector3(0.28f, 0.82f, 1f))
+            };
+
+            AddParticleBurst(
+                root.transform,
+                "RifleFlash_FrontBurst",
+                frontMaterial,
+                new Vector3(0f, 0f, 0.24f),
+                Vector3.zero,
+                0.12f,
+                0.045f,
+                0.2f,
+                0.72f,
+                4,
+                ParticleSystemShapeType.Cone,
+                0.03f,
+                12f,
+                new Color(1f, 0.92f, 0.56f, 1f));
+            AddParticleBurst(
+                root.transform,
+                "RifleFlash_SideTongues",
+                sideMaterial,
+                new Vector3(0f, 0f, 0.2f),
+                new Vector3(0f, 90f, 0f),
+                0.12f,
+                0.05f,
+                0.15f,
+                0.58f,
+                5,
+                ParticleSystemShapeType.Cone,
+                0.02f,
+                18f,
+                new Color(1f, 0.62f, 0.22f, 0.96f));
+            AddParticleBurst(
+                root.transform,
+                "RifleFlash_SmokePuff",
+                smokeMaterial,
+                new Vector3(0f, 0f, 0.02f),
+                Vector3.zero,
+                0.32f,
+                0.24f,
+                0.42f,
+                0.28f,
+                8,
+                ParticleSystemShapeType.Cone,
+                0.06f,
+                24f,
+                new Color(0.62f, 0.66f, 0.68f, 0.38f));
+            AddParticleBurst(
+                root.transform,
+                "RifleFlash_LightSpark",
+                sideMaterial,
+                new Vector3(0f, 0f, 0.34f),
+                Vector3.zero,
+                0.10f,
+                0.08f,
+                1.4f,
+                0.08f,
+                9,
+                ParticleSystemShapeType.Cone,
+                0.025f,
+                9f,
+                new Color(1f, 0.76f, 0.28f, 0.96f));
+
+            CombatVfxCueVisual visual = root.AddComponent<CombatVfxCueVisual>();
+            ConfigureCueVisual(
+                visual,
+                renderers.ToArray(),
+                0.16f,
+                new Color(1f, 0.88f, 0.44f, 0.98f),
+                new Color(1f, 0.12f, 0.02f, 0f),
+                new Vector3(0.66f, 0.66f, 0.66f),
+                new Vector3(1.45f, 1.15f, 1.65f),
+                0f,
+                0.015f,
+                0.14f);
+
+            GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            UnityEngine.Object.DestroyImmediate(root);
+            return savedPrefab;
+        }
+
+        private static GameObject SaveRangedProjectileImpactPrefab(
+            string name,
+            Material flashMaterial,
+            Material sparkMaterial,
+            Material smokeMaterial)
+        {
+            string prefabPath = $"{PrefabRoot}/{name}.prefab";
+            GameObject root = new GameObject(name);
+            var renderers = new System.Collections.Generic.List<Renderer>
+            {
+                AddPrimitive(
+                    root.transform,
+                    "ImpactFlashCore",
+                    PrimitiveType.Sphere,
+                    flashMaterial,
+                    new Vector3(0f, 0.16f, 0f),
+                    Vector3.zero,
+                    new Vector3(0.34f, 0.26f, 0.34f)),
+                AddPrimitive(
+                    root.transform,
+                    "ImpactSparkFan",
+                    PrimitiveType.Cube,
+                    sparkMaterial,
+                    new Vector3(0f, 0.18f, -0.12f),
+                    Vector3.zero,
+                    new Vector3(0.18f, 0.04f, 0.78f)),
+                AddPrimitive(
+                    root.transform,
+                    "ImpactSparkLeft",
+                    PrimitiveType.Cube,
+                    sparkMaterial,
+                    new Vector3(-0.18f, 0.16f, -0.05f),
+                    new Vector3(0f, -24f, 0f),
+                    new Vector3(0.06f, 0.035f, 0.52f)),
+                AddPrimitive(
+                    root.transform,
+                    "ImpactSparkRight",
+                    PrimitiveType.Cube,
+                    sparkMaterial,
+                    new Vector3(0.18f, 0.16f, -0.05f),
+                    new Vector3(0f, 24f, 0f),
+                    new Vector3(0.06f, 0.035f, 0.52f))
+            };
+
+            AddParticleBurst(
+                root.transform,
+                "Impact_FrontFlash",
+                flashMaterial,
+                new Vector3(0f, 0.22f, 0f),
+                Vector3.zero,
+                0.16f,
+                0.08f,
+                0.6f,
+                0.42f,
+                8,
+                ParticleSystemShapeType.Cone,
+                0.05f,
+                28f,
+                new Color(1f, 0.96f, 0.72f, 0.96f));
+            AddParticleBurst(
+                root.transform,
+                "Impact_EmberSpray",
+                sparkMaterial,
+                new Vector3(0f, 0.14f, -0.04f),
+                Vector3.zero,
+                0.34f,
+                0.26f,
+                2.6f,
+                0.08f,
+                18,
+                ParticleSystemShapeType.Cone,
+                0.04f,
+                22f,
+                new Color(1f, 0.68f, 0.2f, 0.95f));
+            AddParticleBurst(
+                root.transform,
+                "Impact_SmokePuff",
+                smokeMaterial,
+                new Vector3(0f, 0.12f, -0.05f),
+                Vector3.zero,
+                0.42f,
+                0.34f,
+                0.48f,
+                0.24f,
+                10,
+                ParticleSystemShapeType.Cone,
+                0.08f,
+                34f,
+                new Color(0.6f, 0.64f, 0.66f, 0.36f));
+
+            CombatVfxCueVisual visual = root.AddComponent<CombatVfxCueVisual>();
+            ConfigureCueVisual(
+                visual,
+                renderers.ToArray(),
+                0.34f,
+                new Color(1f, 0.92f, 0.48f, 0.98f),
+                new Color(1f, 0.24f, 0.08f, 0f),
+                new Vector3(0.55f, 0.55f, 0.55f),
+                new Vector3(1.65f, 1.3f, 1.65f),
+                30f,
+                0.05f,
+                0.08f);
+
+            GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+            UnityEngine.Object.DestroyImmediate(root);
+            return savedPrefab;
+        }
+
+        private static ParticleSystem AddParticleBurst(
+            Transform parent,
+            string name,
+            Material material,
+            Vector3 localPosition,
+            Vector3 localEuler,
+            float duration,
+            float startLifetime,
+            float startSpeed,
+            float startSize,
+            int burstCount,
+            ParticleSystemShapeType shapeType,
+            float radius,
+            float angle,
+            Color startColor)
+        {
+            GameObject particleObject = new GameObject(name);
+            particleObject.transform.SetParent(parent, worldPositionStays: false);
+            particleObject.transform.localPosition = localPosition;
+            particleObject.transform.localRotation = Quaternion.Euler(localEuler);
+            particleObject.transform.localScale = Vector3.one;
+
+            ParticleSystem particleSystem = particleObject.AddComponent<ParticleSystem>();
+            ParticleSystem.MainModule main = particleSystem.main;
+            main.loop = false;
+            main.duration = Mathf.Max(0.02f, duration);
+            main.startLifetime = Mathf.Max(0.01f, startLifetime);
+            main.startSpeed = Mathf.Max(0f, startSpeed);
+            main.startSize = Mathf.Max(0.001f, startSize);
+            main.startColor = startColor;
+            main.simulationSpace = ParticleSystemSimulationSpace.Local;
+            main.playOnAwake = true;
+            main.maxParticles = Mathf.Max(16, burstCount * 3);
+
+            ParticleSystem.EmissionModule emission = particleSystem.emission;
+            emission.rateOverTime = 0f;
+            emission.SetBursts(new[]
+            {
+                new ParticleSystem.Burst(0f, (short)Mathf.Max(1, burstCount))
+            });
+
+            ParticleSystem.ShapeModule shape = particleSystem.shape;
+            shape.enabled = true;
+            shape.shapeType = shapeType;
+            shape.radius = Mathf.Max(0f, radius);
+            shape.angle = Mathf.Max(0f, angle);
+
+            ParticleSystem.ColorOverLifetimeModule colorOverLifetime = particleSystem.colorOverLifetime;
+            colorOverLifetime.enabled = true;
+            Gradient gradient = new Gradient();
+            gradient.SetKeys(
+                new[]
+                {
+                    new GradientColorKey(startColor, 0f),
+                    new GradientColorKey(new Color(startColor.r, startColor.g, startColor.b, 0f), 1f)
+                },
+                new[]
+                {
+                    new GradientAlphaKey(startColor.a, 0f),
+                    new GradientAlphaKey(0f, 1f)
+                });
+            colorOverLifetime.color = new ParticleSystem.MinMaxGradient(gradient);
+
+            ParticleSystem.SizeOverLifetimeModule sizeOverLifetime = particleSystem.sizeOverLifetime;
+            sizeOverLifetime.enabled = true;
+            sizeOverLifetime.size = new ParticleSystem.MinMaxCurve(
+                1f,
+                new AnimationCurve(
+                    new Keyframe(0f, 0.55f),
+                    new Keyframe(0.18f, 1f),
+                    new Keyframe(1f, 0f)));
+
+            ParticleSystem.NoiseModule noise = particleSystem.noise;
+            noise.enabled = true;
+            noise.strength = 0.05f;
+            noise.frequency = 1.8f;
+
+            ParticleSystemRenderer renderer = particleObject.GetComponent<ParticleSystemRenderer>();
+            renderer.renderMode = ParticleSystemRenderMode.Billboard;
+            renderer.sharedMaterial = material;
+            renderer.sortingFudge = 1f;
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            return particleSystem;
         }
 
         private static void AddProjectileCueGeometry(
@@ -702,6 +1055,80 @@ namespace DimensionBrawl.Editor
             return material;
         }
 
+        private static Texture2D EnsurePromotedTexture(string sourcePath, string targetPath)
+        {
+            string absoluteTarget = ToProjectAbsolutePath(targetPath);
+            if (!File.Exists(absoluteTarget))
+            {
+                string absoluteSource = ToProjectAbsolutePath(sourcePath);
+                if (!File.Exists(absoluteSource))
+                {
+                    throw new InvalidOperationException($"Missing source muzzle flash texture at {sourcePath}.");
+                }
+
+                FileUtil.CopyFileOrDirectory(absoluteSource, absoluteTarget);
+            }
+
+            AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
+            if (AssetImporter.GetAtPath(targetPath) is TextureImporter importer)
+            {
+                bool changed = false;
+                changed |= SetImporterValue(importer.textureType, TextureImporterType.Default, value => importer.textureType = value);
+                changed |= SetImporterValue(importer.alphaIsTransparency, true, value => importer.alphaIsTransparency = value);
+                changed |= SetImporterValue(importer.mipmapEnabled, false, value => importer.mipmapEnabled = value);
+                changed |= SetImporterValue(importer.sRGBTexture, true, value => importer.sRGBTexture = value);
+                if (changed)
+                {
+                    importer.SaveAndReimport();
+                }
+            }
+
+            Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(targetPath);
+            if (texture == null)
+            {
+                throw new InvalidOperationException($"Failed to load promoted muzzle flash texture at {targetPath}.");
+            }
+
+            return texture;
+        }
+
+        private static bool SetImporterValue<T>(T currentValue, T desiredValue, Action<T> applyValue)
+        {
+            if (Equals(currentValue, desiredValue))
+            {
+                return false;
+            }
+
+            applyValue(desiredValue);
+            return true;
+        }
+
+        private static Material LoadOrCreateTextureMaterial(string name, Texture texture, Color color)
+        {
+            string path = $"{MaterialRoot}/{name}.mat";
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                material = new Material(FindParticleShader());
+                AssetDatabase.CreateAsset(material, path);
+            }
+
+            material.shader = FindParticleShader();
+            material.SetColor("_BaseColor", color);
+            material.SetColor("_Color", color);
+            SetMaterialTextureIfPresent(material, "_BaseMap", texture);
+            SetMaterialTextureIfPresent(material, "_MainTex", texture);
+            SetMaterialFloatIfPresent(material, "_Surface", 1f);
+            SetMaterialFloatIfPresent(material, "_Blend", 2f);
+            SetMaterialFloatIfPresent(material, "_SrcBlend", (float)BlendMode.SrcAlpha);
+            SetMaterialFloatIfPresent(material, "_DstBlend", (float)BlendMode.One);
+            SetMaterialFloatIfPresent(material, "_ZWrite", 0f);
+            material.renderQueue = (int)RenderQueue.Transparent;
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
         private static Shader FindParticleShader()
         {
             return Shader.Find("Universal Render Pipeline/Unlit")
@@ -716,6 +1143,21 @@ namespace DimensionBrawl.Editor
             {
                 material.SetFloat(propertyName, value);
             }
+        }
+
+        private static void SetMaterialTextureIfPresent(Material material, string propertyName, Texture texture)
+        {
+            if (material.HasProperty(propertyName))
+            {
+                material.SetTexture(propertyName, texture);
+            }
+        }
+
+        private static string ToProjectAbsolutePath(string assetPath)
+        {
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string relativePath = assetPath.Replace('/', Path.DirectorySeparatorChar);
+            return Path.Combine(projectRoot, relativePath);
         }
 
         private static void SetCue(SerializedProperty cue, CueDefinition definition)
@@ -868,6 +1310,24 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(target);
         }
 
+        private static void SetEnum(UnityEngine.Object target, string propertyName, int value)
+        {
+            SerializedObject serializedObject = new SerializedObject(target);
+            SerializedProperty property = RequireProperty(serializedObject, propertyName);
+            property.enumValueIndex = value;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(target);
+        }
+
+        private static void SetFloat(UnityEngine.Object target, string propertyName, float value)
+        {
+            SerializedObject serializedObject = new SerializedObject(target);
+            SerializedProperty property = RequireProperty(serializedObject, propertyName);
+            property.floatValue = value;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(target);
+        }
+
         private static void SetRelativeEnum<TEnum>(SerializedProperty property, string propertyName, TEnum value) where TEnum : Enum
         {
             SerializedProperty relative = property.FindPropertyRelative(propertyName);
@@ -961,6 +1421,8 @@ namespace DimensionBrawl.Editor
             public GameObject PlayerAttackStart;
             public GameObject PlayerAttackHit;
             public GameObject PlayerDodgeStart;
+            public GameObject PlayerRangedMuzzleFlash;
+            public GameObject PlayerRangedProjectileImpact;
             public GameObject EnemyWindup;
             public GameObject EnemyAttackActive;
             public GameObject EnemyHit;

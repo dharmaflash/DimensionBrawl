@@ -97,6 +97,7 @@ namespace DimensionBrawl.Player
         public bool IsAimPreviewActive => IsRangedModeActive()
             && (currentFireHeld || (aimController != null && aimController.IsAiming));
         public Vector2 AimInput => aimInput;
+        public Transform FireOrigin => fireOrigin;
         public Vector3 LastResolvedFireDirection { get; private set; } = Vector3.forward;
         public bool HasAimAssistTarget { get; private set; }
         public float AimAssistStrength01 { get; private set; }
@@ -123,6 +124,7 @@ namespace DimensionBrawl.Player
         }
 
         public event Action RangedFireStarted;
+        public event Action<LaneActionProjectile> RangedProjectileFired;
 
         public void QueueFire()
         {
@@ -186,6 +188,7 @@ namespace DimensionBrawl.Player
             nextFireTime = Time.time + fireIntervalSeconds;
             LastUseBlockedReason = string.Empty;
             blockedHintUntil = 0f;
+            RangedProjectileFired?.Invoke(projectile);
             RangedFireStarted?.Invoke();
             return true;
         }

@@ -24,7 +24,7 @@ Material:
   - MOTIONVECTORS
   - DepthOnly
   - SHADOWCASTER
-  m_LockedProperties:
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -56,7 +56,7 @@ Material:
     - _ZWrite: 0
     m_Colors:
     - _BaseColor: {r: 0.18, g: 0.64, b: 1, a: 0.2}
-    - _Color: {r: 0.17999998, g: 0.6399999, b: 1, a: 0.2}
+    - _Color: {r: 0.18, g: 0.64, b: 1, a: 0.2}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &5765077672202844379
@@ -69,6 +69,6 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Editor::UnityEditor.Rendering.Universal.AssetVersion
   version: 10

@@ -22,6 +22,19 @@ namespace DimensionBrawl.Editor
             Debug.Log("Reapplied ActionFoundation summon actor health bars.");
         }
 
+        [MenuItem("DimensionBrawl/Reapply Action Foundation Summon Frontline VFX")]
+        public static void ReapplySummonFrontlineVfxMenu()
+        {
+            EnsureSummonEntryCuePrefab();
+            EnsureSummonActorPrefab();
+            EnsureSummonSlot2ActorPrefab();
+            EnsureSummonSlot3ActorPrefab();
+            EnsureBossSummonPressureActorPrefab();
+            EnsureSummonPresentationCandidateProfiles();
+            AssetDatabase.SaveAssets();
+            Debug.Log("Reapplied ActionFoundation summon frontline VFX assets.");
+        }
+
         private static void EnsureSummonPresentationCandidateProfiles()
         {
             CombatVfxCueProfile vfxCueProfile =
@@ -162,6 +175,9 @@ namespace DimensionBrawl.Editor
         {
             EnsureFolderForAsset(SummonSlot1EntryCuePrefabPath);
             Material material = LoadOrCreateMaterial(SummonSlot1EntryCueMaterialPath, new Color(0.25f, 1f, 0.68f, 1f));
+            Material accentMaterial = LoadOrCreateTransparentMaterial(
+                SummonSlot1EntryCueAccentMaterialPath,
+                new Color(0.18f, 1f, 0.78f, 0.62f));
             bool prefabExists = AssetDatabase.LoadAssetAtPath<GameObject>(SummonSlot1EntryCuePrefabPath) != null;
             GameObject editableRoot = prefabExists
                 ? PrefabUtility.LoadPrefabContents(SummonSlot1EntryCuePrefabPath)
@@ -183,6 +199,7 @@ namespace DimensionBrawl.Editor
                     UnityEngine.Object.DestroyImmediate(collider);
                 }
 
+                ConfigureSummonEntryCueVfx(editableRoot, accentMaterial);
                 PrefabUtility.SaveAsPrefabAsset(editableRoot, SummonSlot1EntryCuePrefabPath);
             }
             finally
@@ -329,6 +346,19 @@ namespace DimensionBrawl.Editor
                 {
                     UnityEngine.Object.DestroyImmediate(pulseCollider);
                 }
+
+                ConfigureSummonShieldVfx(
+                    editableRoot,
+                    pressureScreenMaterial,
+                    pressureScreenVisual.localPosition,
+                    forwardSign: 1f,
+                    radius: 1.35f);
+                ConfigureSummonPulseVfx(
+                    editableRoot,
+                    "TierPulseCore",
+                    pulseMaterial,
+                    forwardSign: 1f,
+                    radius: 0.48f);
 
                 Transform summonVisual = AttachRoleVisualOnly(
                     editableRoot.transform,
@@ -520,6 +550,7 @@ namespace DimensionBrawl.Editor
                 if (!includePressureScreen)
                 {
                     RemoveSupportPressureScreen(editableRoot);
+                    RemoveChildrenWithPrefix(editableRoot.transform, "SummonShieldVfx_");
                 }
 
                 SetObjectReference(proxy, "pressureScreen", pressureScreen);
@@ -540,6 +571,23 @@ namespace DimensionBrawl.Editor
                 {
                     UnityEngine.Object.DestroyImmediate(pulseCollider);
                 }
+
+                if (includePressureScreen)
+                {
+                    ConfigureSummonShieldVfx(
+                        editableRoot,
+                        pressureScreenMaterial,
+                        new Vector3(0f, 0.82f, 0.2f),
+                        forwardSign: 1f,
+                        radius: Mathf.Max(1.2f, bodyRadius * 1.18f));
+                }
+
+                ConfigureSummonPulseVfx(
+                    editableRoot,
+                    "TierPulseCore",
+                    pulseMaterial,
+                    forwardSign: 1f,
+                    radius: Mathf.Max(0.42f, bodyRadius * 0.42f));
 
                 Transform summonVisual = AttachRoleVisualOnly(
                     editableRoot.transform,
@@ -799,6 +847,19 @@ namespace DimensionBrawl.Editor
                     UnityEngine.Object.DestroyImmediate(pulseCollider);
                 }
 
+                ConfigureSummonShieldVfx(
+                    editableRoot,
+                    pressureScreenMaterial,
+                    pressureScreenVisual.localPosition,
+                    forwardSign: -1f,
+                    radius: 1.45f);
+                ConfigureSummonPulseVfx(
+                    editableRoot,
+                    "TierPressureCore",
+                    pulseMaterial,
+                    forwardSign: -1f,
+                    radius: 0.52f);
+
                 Transform summonVisual = AttachRoleVisualOnly(
                     editableRoot.transform,
                     BossSummonPressureActorVisualRoleId,
@@ -855,6 +916,179 @@ namespace DimensionBrawl.Editor
             }
 
             return LoadPrefabComponent<SummonFrontlineProxy>(BossSummonPressureActorPrefabPath);
+        }
+
+        private static void ConfigureSummonEntryCueVfx(GameObject cueRoot, Material accentMaterial)
+        {
+            const string VisualPrefix = "SummonEntryVfx_";
+            RemoveChildrenWithPrefix(cueRoot.transform, VisualPrefix);
+
+            AddProjectileVisualPrimitive(
+                cueRoot.transform,
+                VisualPrefix + "OuterRing",
+                PrimitiveType.Cylinder,
+                accentMaterial,
+                new Vector3(0f, 0.08f, 0f),
+                Vector3.zero,
+                new Vector3(1.78f, 0.045f, 1.78f));
+            AddProjectileVisualPrimitive(
+                cueRoot.transform,
+                VisualPrefix + "InnerRing",
+                PrimitiveType.Cylinder,
+                accentMaterial,
+                new Vector3(0f, 0.12f, 0f),
+                Vector3.zero,
+                new Vector3(1.06f, 0.04f, 1.06f));
+            AddProjectileVisualPrimitive(
+                cueRoot.transform,
+                VisualPrefix + "CrossLineX",
+                PrimitiveType.Cube,
+                accentMaterial,
+                new Vector3(0f, 0.16f, 0f),
+                Vector3.zero,
+                new Vector3(1.82f, 0.04f, 0.055f));
+            AddProjectileVisualPrimitive(
+                cueRoot.transform,
+                VisualPrefix + "CrossLineZ",
+                PrimitiveType.Cube,
+                accentMaterial,
+                new Vector3(0f, 0.18f, 0f),
+                Vector3.zero,
+                new Vector3(0.055f, 0.04f, 1.82f));
+            AddProjectileVisualPrimitive(
+                cueRoot.transform,
+                VisualPrefix + "VerticalBeacon",
+                PrimitiveType.Cylinder,
+                accentMaterial,
+                new Vector3(0f, 20f, 0f),
+                Vector3.zero,
+                new Vector3(0.12f, 23f, 0.12f));
+            AddProjectileVisualPrimitive(
+                cueRoot.transform,
+                VisualPrefix + "SparkNeedleA",
+                PrimitiveType.Cube,
+                accentMaterial,
+                new Vector3(0.24f, 14f, 0.02f),
+                new Vector3(0f, 0f, -18f),
+                new Vector3(0.035f, 14f, 0.035f));
+            AddProjectileVisualPrimitive(
+                cueRoot.transform,
+                VisualPrefix + "SparkNeedleB",
+                PrimitiveType.Cube,
+                accentMaterial,
+                new Vector3(-0.24f, 12f, -0.02f),
+                new Vector3(0f, 0f, 18f),
+                new Vector3(0.035f, 12f, 0.035f));
+            EditorUtility.SetDirty(cueRoot);
+        }
+
+        private static void ConfigureSummonShieldVfx(
+            GameObject actorRoot,
+            Material material,
+            Vector3 screenCenter,
+            float forwardSign,
+            float radius)
+        {
+            const string VisualPrefix = "SummonShieldVfx_";
+            RemoveChildrenWithPrefix(actorRoot.transform, VisualPrefix);
+
+            float depth = Mathf.Sign(forwardSign) * 0.08f;
+            float clampedRadius = Mathf.Max(0.4f, radius);
+            AddProjectileVisualPrimitive(
+                actorRoot.transform,
+                VisualPrefix + "OuterHalo",
+                PrimitiveType.Sphere,
+                material,
+                screenCenter + new Vector3(0f, 0f, depth),
+                Vector3.zero,
+                new Vector3(clampedRadius * 1.72f, clampedRadius * 1.25f, 0.07f));
+            AddProjectileVisualPrimitive(
+                actorRoot.transform,
+                VisualPrefix + "InnerLens",
+                PrimitiveType.Sphere,
+                material,
+                screenCenter + new Vector3(0f, 0f, depth * 1.6f),
+                Vector3.zero,
+                new Vector3(clampedRadius * 1.18f, clampedRadius * 0.86f, 0.045f));
+            AddProjectileVisualPrimitive(
+                actorRoot.transform,
+                VisualPrefix + "TopBrace",
+                PrimitiveType.Cube,
+                material,
+                screenCenter + new Vector3(0f, clampedRadius * 0.66f, depth * 2f),
+                Vector3.zero,
+                new Vector3(clampedRadius * 1.35f, 0.045f, 0.055f));
+            AddProjectileVisualPrimitive(
+                actorRoot.transform,
+                VisualPrefix + "LeftBrace",
+                PrimitiveType.Cube,
+                material,
+                screenCenter + new Vector3(-clampedRadius * 0.78f, 0f, depth * 2f),
+                new Vector3(0f, 0f, -8f),
+                new Vector3(0.05f, clampedRadius * 1.15f, 0.055f));
+            AddProjectileVisualPrimitive(
+                actorRoot.transform,
+                VisualPrefix + "RightBrace",
+                PrimitiveType.Cube,
+                material,
+                screenCenter + new Vector3(clampedRadius * 0.78f, 0f, depth * 2f),
+                new Vector3(0f, 0f, 8f),
+                new Vector3(0.05f, clampedRadius * 1.15f, 0.055f));
+            AddProjectileVisualPrimitive(
+                actorRoot.transform,
+                VisualPrefix + "GroundRing",
+                PrimitiveType.Cylinder,
+                material,
+                new Vector3(0f, 0.045f, screenCenter.z - Mathf.Sign(forwardSign) * 0.12f),
+                Vector3.zero,
+                new Vector3(clampedRadius * 0.92f, 0.025f, clampedRadius * 0.92f));
+            EditorUtility.SetDirty(actorRoot);
+        }
+
+        private static void ConfigureSummonPulseVfx(
+            GameObject actorRoot,
+            string pulseRootName,
+            Material material,
+            float forwardSign,
+            float radius)
+        {
+            const string VisualPrefix = "SummonPulseVfx_";
+            RemoveChildrenWithPrefix(actorRoot.transform, VisualPrefix);
+
+            Transform pulseRoot = actorRoot.transform.Find(pulseRootName);
+            if (pulseRoot == null)
+            {
+                return;
+            }
+
+            float direction = Mathf.Sign(forwardSign);
+            Vector3 pulseCenter = pulseRoot.localPosition;
+            float clampedRadius = Mathf.Max(0.28f, radius);
+            AddProjectileVisualPrimitive(
+                actorRoot.transform,
+                VisualPrefix + "EnergyRing",
+                PrimitiveType.Cylinder,
+                material,
+                pulseCenter + new Vector3(0f, -0.035f, 0f),
+                Vector3.zero,
+                new Vector3(clampedRadius, 0.025f, clampedRadius));
+            AddProjectileVisualPrimitive(
+                actorRoot.transform,
+                VisualPrefix + "BackFin",
+                PrimitiveType.Cube,
+                material,
+                pulseCenter + new Vector3(0f, 0f, direction * 0.22f),
+                new Vector3(0f, 18f * direction, 0f),
+                new Vector3(0.08f, clampedRadius * 1.1f, 0.055f));
+            AddProjectileVisualPrimitive(
+                actorRoot.transform,
+                VisualPrefix + "ClashStreak",
+                PrimitiveType.Cube,
+                material,
+                pulseCenter + new Vector3(0f, -0.16f, direction * 0.28f),
+                new Vector3(0f, -20f * direction, 0f),
+                new Vector3(clampedRadius * 1.25f, 0.035f, 0.06f));
+            EditorUtility.SetDirty(actorRoot);
         }
 
         private static SummonFrontlineHealthBarPresenter EnsureSummonHealthBar(
