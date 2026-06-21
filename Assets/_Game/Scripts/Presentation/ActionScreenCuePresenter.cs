@@ -59,10 +59,12 @@ namespace DimensionBrawl.Presentation
         private float activeIntensity = 1f;
         private Color activeFlashColor = Color.clear;
         private Color activeVignetteColor = Color.clear;
+        private ScreenCueCategory activeCategory = ScreenCueCategory.Player;
         private int cueRequestCount;
         private int playerCueRequestCount;
         private int bossCueRequestCount;
         private int followupCueRequestCount;
+        private int suppressedCueRequestCount;
         private string lastCueId = string.Empty;
         private Color lastCueColor = Color.clear;
         private float lastCueIntensity;
@@ -76,6 +78,7 @@ namespace DimensionBrawl.Presentation
         public int PlayerCueRequestCount => playerCueRequestCount;
         public int BossCueRequestCount => bossCueRequestCount;
         public int FollowupCueRequestCount => followupCueRequestCount;
+        public int SuppressedCueRequestCount => suppressedCueRequestCount;
         public string LastCueId => lastCueId;
         public Color LastCueColor => lastCueColor;
         public float LastCueIntensity => lastCueIntensity;
@@ -255,9 +258,16 @@ namespace DimensionBrawl.Presentation
         {
             float safeDuration = Mathf.Max(0.01f, durationSeconds);
             float safeIntensity = Mathf.Clamp(intensity, 0f, 1.6f);
+            if (ShouldSuppressScreenCue(category))
+            {
+                suppressedCueRequestCount++;
+                return;
+            }
+
             activeFlashColor = cueColor;
             activeVignetteColor = cueColor;
             activeIntensity = safeIntensity;
+            activeCategory = category;
             flashDuration = Mathf.Max(0.01f, safeDuration * 0.58f);
             flashTimer = flashDuration;
             vignetteDuration = safeDuration;
@@ -278,6 +288,29 @@ namespace DimensionBrawl.Presentation
                 default:
                     playerCueRequestCount++;
                     break;
+            }
+        }
+
+        private bool ShouldSuppressScreenCue(ScreenCueCategory category)
+        {
+            if (!HasActiveCue)
+            {
+                return false;
+            }
+
+            return ResolveCuePriority(category) < ResolveCuePriority(activeCategory);
+        }
+
+        private static int ResolveCuePriority(ScreenCueCategory category)
+        {
+            switch (category)
+            {
+                case ScreenCueCategory.Followup:
+                    return 3;
+                case ScreenCueCategory.Boss:
+                    return 2;
+                default:
+                    return 1;
             }
         }
 

@@ -230,6 +230,33 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void ActionScreenCuePresenterKeepsFollowupCueReadableAgainstLowerPrioritySpam()
+        {
+            GameObject presenterObject = new GameObject("ScreenCuePresenter");
+            ActionScreenCuePresenter presenter = presenterObject.AddComponent<ActionScreenCuePresenter>();
+
+            RequestScreenCueForTest(presenter, "Followup.Window", Color.green, 0.24f, 1f, "Followup");
+            RequestScreenCueForTest(presenter, "Boss.Fire", Color.red, 0.16f, 1f, "Boss");
+            RequestScreenCueForTest(presenter, "Player.RangedFire", Color.cyan, 0.09f, 0.42f, "Player");
+
+            Assert.AreEqual("Followup.Window", presenter.LastCueId);
+            Assert.AreEqual(1, presenter.CueRequestCount);
+            Assert.AreEqual(1, presenter.FollowupCueRequestCount);
+            Assert.AreEqual(0, presenter.BossCueRequestCount);
+            Assert.AreEqual(0, presenter.PlayerCueRequestCount);
+            Assert.AreEqual(2, presenter.SuppressedCueRequestCount);
+
+            RequestScreenCueForTest(presenter, "Followup.Hit", Color.yellow, 0.18f, 1.1f, "Followup");
+
+            Assert.AreEqual("Followup.Hit", presenter.LastCueId);
+            Assert.AreEqual(2, presenter.CueRequestCount);
+            Assert.AreEqual(2, presenter.FollowupCueRequestCount);
+            Assert.AreEqual(2, presenter.SuppressedCueRequestCount);
+
+            Object.DestroyImmediate(presenterObject);
+        }
+
+        [Test]
         public void SummonFrontlineProxyReportsLifetimeAndDefeatExitReasons()
         {
             GameObject proxyObject = new GameObject("SummonProxy");
@@ -2868,6 +2895,30 @@ namespace DimensionBrawl.Tests
             Object.DestroyImmediate(bossObject);
             Object.DestroyImmediate(playerObject);
             Object.DestroyImmediate(laneObject);
+        }
+
+        private static void RequestScreenCueForTest(
+            ActionScreenCuePresenter presenter,
+            string cueId,
+            Color color,
+            float durationSeconds,
+            float intensity,
+            string categoryName)
+        {
+            System.Type categoryType = typeof(ActionScreenCuePresenter).GetNestedType(
+                "ScreenCueCategory",
+                System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(categoryType);
+
+            System.Reflection.MethodInfo requestMethod = typeof(ActionScreenCuePresenter).GetMethod(
+                "RequestScreenCue",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(requestMethod);
+
+            object category = System.Enum.Parse(categoryType, categoryName);
+            requestMethod.Invoke(
+                presenter,
+                new object[] { cueId, color, durationSeconds, intensity, category });
         }
     }
 }
