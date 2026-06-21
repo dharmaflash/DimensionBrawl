@@ -2176,6 +2176,73 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator SummonSlot1ActorDamageAndDeathUsePromotedVfxCues()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            PlayerSummonSlot1Action summonSlot1Action =
+                RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            CombatVfxCuePlayer playerCuePlayer =
+                RequireComponent<CombatVfxCuePlayer>(player.gameObject, "player combat VFX cue player");
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(RequireRoot(BossRootName), "boss health");
+
+            player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
+            FillEnergyToTier(energyLadder, 1);
+
+            Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
+            yield return null;
+
+            SummonPressureScreen activeScreen = RequireActiveAllyPressureScreen();
+            SummonFrontlineProxy activeActor = RequireActiveSummonActorForPressureScreen(activeScreen);
+            SummonFrontlineProxyPresenter activeActorPresenter =
+                RequireComponent<SummonFrontlineProxyPresenter>(
+                    activeActor.gameObject,
+                    "active SummonSlot1 actor presenter");
+            activeActorPresenter.RefreshNow();
+            Assert.AreSame(
+                playerCuePlayer,
+                activeActorPresenter.CuePlayer,
+                "SummonSlot1 damage/death reads should reuse the promoted combat VFX cue player.");
+
+            int damageVfxCueCountBefore = activeActorPresenter.DamageVfxCueRequestCount;
+            int deathVfxCueCountBefore = activeActorPresenter.DeathVfxCueRequestCount;
+            Assert.IsTrue(activeActor.Health.TryApplyDamage(new DamageInfo(
+                bossHealth,
+                DamageTeam.Enemy,
+                1f,
+                activeActor.transform.position,
+                Vector3.back,
+                0f)));
+            activeActorPresenter.RefreshNow();
+
+            Assert.Greater(
+                activeActorPresenter.DamageVfxCueRequestCount,
+                damageVfxCueCountBefore,
+                "SummonSlot1 actor damage should request a promoted hit VFX cue, not only flash material color.");
+            Assert.AreEqual(CombatVfxCueId.EnemyHit, activeActorPresenter.DamageCueId);
+
+            Assert.IsTrue(activeActor.Health.TryApplyDamage(new DamageInfo(
+                bossHealth,
+                DamageTeam.Enemy,
+                activeActor.Health.CurrentHealth + 10f,
+                activeActor.transform.position,
+                Vector3.back,
+                0f)));
+            activeActorPresenter.RefreshNow();
+
+            Assert.Greater(
+                activeActorPresenter.DeathVfxCueRequestCount,
+                deathVfxCueCountBefore,
+                "SummonSlot1 actor defeat should request a promoted death VFX cue, not disappear silently.");
+            Assert.AreEqual(CombatVfxCueId.EnemyDeath, activeActorPresenter.DeathCueId);
+            Assert.AreEqual(SummonFrontlineProxyExitReason.Defeated, activeActor.LastExitReason);
+            Assert.IsTrue(
+                activeActor.IsPresentationVisible,
+                "Defeated summon actors should linger briefly so the death VFX has a visible anchor.");
+        }
+
+        [UnityTest]
         public IEnumerator SummonPressureScreenCountersInterceptedBossProjectiles()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
