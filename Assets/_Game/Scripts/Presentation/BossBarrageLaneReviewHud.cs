@@ -1,3 +1,4 @@
+using System;
 using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
@@ -119,6 +120,7 @@ namespace DimensionBrawl.Presentation
 
         [Header("Display")]
         [SerializeField] private bool showHud = true;
+        [SerializeField] private bool showDetailedTelemetry;
         [SerializeField, Min(1f)] private float width = 430f;
         [SerializeField, Min(1f)] private float height = 280f;
         [SerializeField, Min(0f)] private float margin = 18f;
@@ -144,6 +146,9 @@ namespace DimensionBrawl.Presentation
         public string FrontlineTuningReadout => ResolveFrontlineTuningLine();
         public string BossPressureReadout => ResolveBossPressureLine();
         public string BossPressureResponseReadout => ResolveBossPressureResponseLine();
+        public bool ShowDetailedTelemetry => showDetailedTelemetry;
+        public string CombatCueReadout => ResolveCombatCueLine();
+        public string FrontlineCueReadout => ResolveFrontlineCueLine();
 
         public void Configure(
             CombatHealth newPlayerHealth,
@@ -202,10 +207,26 @@ namespace DimensionBrawl.Presentation
             float uiScale = ResolveUiScale();
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(uiScale, uiScale, 1f));
             EnsureStyles();
-            float areaHeight = Mathf.Max(height, (Screen.height / uiScale) - (margin * 2f));
+            float areaHeight = ResolveHudAreaHeight(uiScale);
             GUILayout.BeginArea(new Rect(margin, margin, width, areaHeight), boxStyle);
             GUILayout.Label("Boss Barrage Lane Review", titleStyle);
             DrawCombatResourceBars();
+            if (showDetailedTelemetry)
+            {
+                DrawDetailedTelemetry();
+            }
+            else
+            {
+                DrawCompactCombatCues();
+            }
+
+            GUILayout.EndArea();
+            GUI.matrix = previousMatrix;
+            DrawReticleIfNeeded();
+        }
+
+        private void DrawDetailedTelemetry()
+        {
             GUILayout.Label(ResolveHealthLine(), labelStyle);
             GUILayout.Label(ResolvePhaseLine(), labelStyle);
             GUILayout.Label(ResolveEnergyLine(), labelStyle);
@@ -229,9 +250,26 @@ namespace DimensionBrawl.Presentation
             }
 
             GUILayout.Label(ResolveObjectiveLine(), labelStyle);
-            GUILayout.EndArea();
-            GUI.matrix = previousMatrix;
-            DrawReticleIfNeeded();
+        }
+
+        private void DrawCompactCombatCues()
+        {
+            GUILayout.Label(ResolveObjectiveLine(), labelStyle);
+            GUILayout.Label(ResolvePhaseLine(), labelStyle);
+            GUILayout.Label(ResolveCombatCueLine(), labelStyle);
+            GUILayout.Label(ResolveFrontlineCueLine(), labelStyle);
+
+            string hintLine = ResolveActionHintLine();
+            if (!IsEmptyHintLine(hintLine))
+            {
+                GUILayout.Label(hintLine, labelStyle);
+            }
+
+            string duelLine = ResolveDuelProgressLine();
+            if (!string.IsNullOrEmpty(duelLine))
+            {
+                GUILayout.Label(duelLine, labelStyle);
+            }
         }
 
         private string ResolveHealthLine()
@@ -407,6 +445,69 @@ namespace DimensionBrawl.Presentation
             return $" waiting LV{nextTier} {responseId}";
         }
 
+        private string ResolveCombatCueLine()
+        {
+            string cue = ResolvePrimaryCombatCueText();
+            string risk = ResolveCompactRiskText();
+            string ranged = rangedBasicAttackAction != null
+                ? rangedBasicAttackAction.IsFireReady
+                    ? "Fire ready"
+                    : $"Fire {rangedBasicAttackAction.FireCooldownRemaining:0.0}s"
+                : "Fire -";
+            return $"{cue}   {risk}   {ranged}";
+        }
+
+        private string ResolvePrimaryCombatCueText()
+        {
+            if (bossPressureActionDirector != null
+                && bossPressureActionDirector.IsPlayerSummonResponseWindowActive)
+            {
+                string waiting = ResolveBossPressureResponseWaitingText();
+                return $"Answer: Summon shield LV{bossPressureActionDirector.LastObservedPlayerSummonTier} "
+                    + $"{bossPressureActionDirector.PlayerSummonResponseRemainingSeconds:0.0}s{waiting}";
+            }
+
+            if (pocketReviewOwner != null && pocketReviewOwner.IsSummonPressureBreakActive)
+            {
+                if (pocketReviewOwner.IsSummonFollowupWindowActive)
+                {
+                    return $"Follow-up: Skill1 {pocketReviewOwner.SummonFollowupWindowRemainingSeconds:0.0}s";
+                }
+
+                return "Relief: EN pulse";
+            }
+
+            if (bossBarrageEmitter != null && bossBarrageEmitter.IsWindupActive)
+            {
+                BossBarragePatternProfile pattern = bossBarrageEmitter.CurrentPattern;
+                string patternId = pattern != null ? pattern.PatternId : "-";
+                return $"Dodge: {patternId} risk {bossBarrageEmitter.PendingForwardRisk01 * 100f:0}%";
+            }
+
+            if (bossPressureCostLadder != null && bossPressureCostLadder.CanSpend)
+            {
+                return $"Boss ready LV{bossPressureCostLadder.AvailableTier}";
+            }
+
+            if (bossBarrageEmitter != null && bossBarrageEmitter.CurrentPattern != null)
+            {
+                return $"Boss: {bossBarrageEmitter.CurrentPattern.PatternId}";
+            }
+
+            return "Cue: Hold lane";
+        }
+
+        private string ResolveCompactRiskText()
+        {
+            float risk = energyLadder != null
+                ? energyLadder.CurrentForwardRisk01
+                : laneSpace != null && player != null
+                    ? laneSpace.EvaluateForwardRisk01(player.position)
+                    : 0f;
+            string band = energyLadder != null ? ResolveRiskBandLabel(energyLadder.CurrentRiskBand) : "BackSafety";
+            return $"Risk {band} {risk * 100f:0}%";
+        }
+
         private string ResolveBossSummonLine()
         {
             if (bossSummonPressureAction == null)
@@ -430,6 +531,25 @@ namespace DimensionBrawl.Presentation
                     bossSummonPressureAction.LastSummonActorClashCount,
                     bossSummonPressureAction.LastSummonActorExitReason)
                 + $" used {bossSummonPressureAction.TotalReleaseCount}";
+        }
+
+        private string ResolveFrontlineCueLine()
+        {
+            FrontlineProxyReadout readout = ResolveFrontlineProxyReadout();
+            return $"Frontline {readout.State} A{readout.AllyCount} {readout.AllyHealthText} / "
+                + $"E{readout.EnemyCount} {readout.EnemyHealthText}   {ResolvePlayerSummonCueText()}";
+        }
+
+        private string ResolvePlayerSummonCueText()
+        {
+            if (energyLadder == null)
+            {
+                return "Summon -";
+            }
+
+            return energyLadder.CanSpend
+                ? $"Summon ready LV{energyLadder.AvailableTier}"
+                : $"Summon charge LV{energyLadder.ChargingTier} {energyLadder.CurrentTierFillRatio * 100f:0}%";
         }
 
         private string ResolveFrontlineLoopLine()
@@ -919,6 +1039,18 @@ namespace DimensionBrawl.Presentation
         private static float ResolveUiScale()
         {
             return Mathf.Clamp(Screen.height / 1440f, 1f, 2f);
+        }
+
+        private float ResolveHudAreaHeight(float uiScale)
+        {
+            float maxAreaHeight = Mathf.Max(1f, (Screen.height / uiScale) - (margin * 2f));
+            float requestedHeight = showDetailedTelemetry ? maxAreaHeight : height;
+            return Mathf.Clamp(requestedHeight, 1f, maxAreaHeight);
+        }
+
+        private static bool IsEmptyHintLine(string hintLine)
+        {
+            return string.IsNullOrWhiteSpace(hintLine) || string.Equals(hintLine, "Hint: -", StringComparison.Ordinal);
         }
 
         private void DrawReticleIfNeeded()
