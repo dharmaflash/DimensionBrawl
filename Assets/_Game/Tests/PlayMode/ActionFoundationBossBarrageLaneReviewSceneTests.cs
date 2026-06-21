@@ -3134,6 +3134,150 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator PocketGuidedPlayerActionFlowClearsWithinOneRoundBudget()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            PlayerCombatModeController combatModeController =
+                RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
+            PlayerRangedAimController aimController =
+                RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
+            PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
+            SummonEnergyLadder energyLadder =
+                RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
+            PlayerSummonSlot1Action summonSlot1Action =
+                RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            ActionCameraCueDriver cameraCueDriver =
+                RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
+            BossBarragePocketVfxCueBridge pocketVfxCueBridge =
+                RequireComponent<BossBarragePocketVfxCueBridge>(
+                    RequireRoot(PocketOwnerRootName),
+                    "pocket VFX cue bridge");
+            ActionScreenCuePresenter screenCuePresenter =
+                RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "action screen cue presenter");
+            GameObject bossRoot = RequireRoot(BossRootName);
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            BossBarrageVisualCueDriver bossVisualCueDriver =
+                RequireComponent<BossBarrageVisualCueDriver>(bossRoot, "boss visual cue driver");
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
+            Collider bossHitCollider = RequireCombatHitCollider(bossRoot, bossHealth, "boss proxy");
+            GameObject closeThreatRoot = RequireRoot(CloseThreatRootName);
+            CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreatRoot, "close threat health");
+            Collider closeThreatCollider = RequireCombatHitCollider(closeThreatRoot, closeThreatHealth, "close threat");
+            BasicSoldierEnemy closeThreatEnemy = closeThreatRoot.GetComponent<BasicSoldierEnemy>();
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+
+            if (closeThreatEnemy != null)
+            {
+                closeThreatEnemy.enabled = false;
+            }
+
+            combatModeController.SetRangedMode();
+            aimController.SetAimHeld(true);
+            float guidedLaneZ = Mathf.Lerp(laneSpace.BackLimitZ, laneSpace.ForwardBoundaryZ, 0.4f);
+            player.transform.position = laneSpace.GetLaneWorldPoint(0f, guidedLaneZ, player.transform.position.y);
+            Assert.That(
+                laneSpace.EvaluateForwardRisk01(player.transform.position),
+                Is.InRange(0.38f, 0.42f),
+                "The guided flow should charge from low-mid risk, not from an extreme forward-risk shortcut.");
+            targetSelector.NotifyTargetContact(closeThreatHealth);
+            targetSelector.RefreshTarget();
+            Physics.SyncTransforms();
+            yield return WaitSeconds(0.22f);
+
+            int closeThreatShotCount = 0;
+            float closeThreatAttackSeconds = 0f;
+            float fireIntervalSeconds = GetFloat(rangedBasicAttackAction, "fireIntervalSeconds");
+            while (closeThreatHealth.IsAlive && closeThreatShotCount < 10)
+            {
+                Assert.IsTrue(
+                    rangedBasicAttackAction.TryFire(),
+                    "The guided pocket flow should use the authored ranged basic fire path against the close threat.");
+                LaneActionProjectile closeThreatShot = RequireActivePlayerRangedProjectile();
+                Assert.IsTrue(
+                    closeThreatShot.TryApplyImpact(closeThreatCollider, closeThreatShot.transform.position),
+                    "Ranged basic fire should resolve the close threat through the projectile impact path.");
+                closeThreatShotCount++;
+
+                if (closeThreatHealth.IsAlive)
+                {
+                    yield return WaitSeconds(fireIntervalSeconds + 0.02f);
+                    closeThreatAttackSeconds += fireIntervalSeconds + 0.02f;
+                }
+            }
+
+            Assert.IsFalse(closeThreatHealth.IsAlive, "The close threat should fall to actual ranged basic projectiles.");
+            Assert.That(
+                closeThreatShotCount,
+                Is.InRange(5, 8),
+                "The local threat should take a short burst, not a single accidental hit or a long attrition string.");
+            pocketOwner.Tick(0f);
+            Assert.IsTrue(pocketOwner.CloseThreatDefeated);
+            Assert.IsTrue(pocketOwner.IsSummonBlockOpportunityCueActive);
+
+            float energyReadySeconds = TickEnergyToTier(energyLadder, 1, 0.25f);
+            float reliefSeconds = pocketOwner.PressureReliefRemainingSeconds + 0.02f;
+            pocketOwner.Tick(reliefSeconds);
+            Assert.IsTrue(pocketOwner.IsAwaitingSummonPressureBlock);
+            Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
+            Assert.Greater(summonSlot1Action.ActiveSummonActorCount, 0);
+            Assert.Greater(summonSlot1Action.ActivePressureScreenCount, 0);
+
+            SummonPressureScreen activeScreen = RequireActiveAllyPressureScreen();
+            int bossWindupCueCountBefore = bossVisualCueDriver.WindupWorldVfxCueRequestCount;
+            int bossReleaseCueCountBefore = bossVisualCueDriver.ReleaseWorldVfxCueRequestCount;
+            Assert.IsTrue(emitter.BeginWindup());
+            Assert.Greater(emitter.FirePendingWave(), 0);
+            Assert.AreEqual(bossWindupCueCountBefore + 1, bossVisualCueDriver.WindupWorldVfxCueRequestCount);
+            Assert.AreEqual(bossReleaseCueCountBefore + 1, bossVisualCueDriver.ReleaseWorldVfxCueRequestCount);
+            BossBarrageProjectile bossProjectile = RequireActiveBossProjectile();
+            Assert.IsTrue(activeScreen.TryIntercept(bossProjectile));
+
+            int followupWindowCueCountBefore = cameraCueDriver.SummonFollowupWindowCueRequestCount;
+            int followupWindowVfxCountBefore = pocketVfxCueBridge.FollowupWindowCueRequestCount;
+            pocketOwner.Tick(0f);
+            Assert.IsTrue(pocketOwner.BlockedBossPressureWithSummon);
+            Assert.IsTrue(pocketOwner.IsSummonFollowupWindowActive);
+            Assert.AreEqual(followupWindowCueCountBefore + 1, cameraCueDriver.SummonFollowupWindowCueRequestCount);
+            Assert.AreEqual(followupWindowVfxCountBefore + 1, pocketVfxCueBridge.FollowupWindowCueRequestCount);
+            Assert.IsTrue(energyLadder.CanSpend, "The summon block should reopen EN for the follow-up Skill1 answer.");
+
+            targetSelector.NotifyTargetContact(bossHealth);
+            targetSelector.RefreshTarget();
+            Assert.IsTrue(skill1Action.TryUseSkill1());
+            LaneActionProjectile followupProjectile = RequireActivePlayerSkillProjectile();
+            Assert.IsTrue(followupProjectile.TryApplyImpact(bossHitCollider, followupProjectile.transform.position));
+            pocketOwner.Tick(0f);
+
+            int resultCueCountBeforeClear = screenCuePresenter.ResultCueRequestCount;
+            int pocketClearVfxCueCountBefore = pocketVfxCueBridge.PocketClearCueRequestCount;
+            pocketOwner.Tick(0.77f);
+
+            float guidedSuccessSeconds = closeThreatAttackSeconds
+                + energyReadySeconds
+                + reliefSeconds
+                + GetFloat(pocketOwner, "skill1FollowupClearDelaySeconds");
+            Assert.That(
+                guidedSuccessSeconds,
+                Is.InRange(8f, 12.8f),
+                "The guided player-action path should resolve as one complete review exchange.");
+            Assert.IsTrue(pocketOwner.IsCleared);
+            Assert.AreEqual(resultCueCountBeforeClear + 1, screenCuePresenter.ResultCueRequestCount);
+            Assert.AreEqual("Pocket.Cleared", screenCuePresenter.LastCueId);
+            Assert.AreEqual(pocketClearVfxCueCountBefore + 1, pocketVfxCueBridge.PocketClearCueRequestCount);
+
+            if (closeThreatEnemy != null)
+            {
+                closeThreatEnemy.enabled = true;
+            }
+        }
+
+        [UnityTest]
         public IEnumerator PocketLv3SummonBlockCarriesOverflowIntoLv2FollowupChoice()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
@@ -5480,6 +5624,23 @@ namespace DimensionBrawl.Tests
                 energyLadder.AvailableTier,
                 targetTier,
                 $"Energy ladder should reach tier {targetTier} during the review test.");
+        }
+
+        private static float TickEnergyToTier(SummonEnergyLadder energyLadder, int targetTier, float stepSeconds)
+        {
+            float elapsedSeconds = 0f;
+            float safeStepSeconds = Mathf.Max(0.01f, stepSeconds);
+            for (int i = 0; i < 240 && energyLadder.AvailableTier < targetTier; i++)
+            {
+                energyLadder.Tick(safeStepSeconds);
+                elapsedSeconds += safeStepSeconds;
+            }
+
+            Assert.GreaterOrEqual(
+                energyLadder.AvailableTier,
+                targetTier,
+                $"Energy ladder should reach tier {targetTier} during the guided review flow.");
+            return elapsedSeconds;
         }
 
         private static T GetObjectReference<T>(Object target, string propertyName) where T : Object
