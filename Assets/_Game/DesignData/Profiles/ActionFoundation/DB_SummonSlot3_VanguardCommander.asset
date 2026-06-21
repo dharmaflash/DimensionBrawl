@@ -36,7 +36,7 @@ MonoBehaviour:
     ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 2
     ScreenRadius: 1.47
-    ScreenLifetimeSeconds: 2.2
+    ScreenLifetimeSeconds: 2.65
     CounterDamage: 10.88
     CounterProjectileSpeed: 18
     CounterLifetimeSeconds: 1.45
@@ -64,7 +64,7 @@ MonoBehaviour:
     ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 4
     ScreenRadius: 1.79
-    ScreenLifetimeSeconds: 3
+    ScreenLifetimeSeconds: 3.5
     CounterDamage: 13.44
     CounterProjectileSpeed: 19.5
     CounterLifetimeSeconds: 1.45
@@ -92,7 +92,7 @@ MonoBehaviour:
     ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 7
     ScreenRadius: 2.27
-    ScreenLifetimeSeconds: 3.8
+    ScreenLifetimeSeconds: 4.35
     CounterDamage: 16
     CounterProjectileSpeed: 21
     CounterLifetimeSeconds: 1.45

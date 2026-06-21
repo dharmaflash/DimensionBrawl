@@ -1134,6 +1134,66 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator SupportSummonRoleBudgetKeepsDamageScreenAndTankReadsDistinct()
+        {
+            BossBasicFireProfile bossBasicFireProfile = LoadAsset<BossBasicFireProfile>(BossBasicFireProfilePath);
+            SummonSlotActionProfile shieldBreakerProfile = LoadAsset<SummonSlotActionProfile>(SummonSlot1ActionProfilePath);
+            SummonSlotActionProfile marksmanProfile = LoadAsset<SummonSlotActionProfile>(SummonSlot2ActionProfilePath);
+            SummonSlotActionProfile vanguardProfile = LoadAsset<SummonSlotActionProfile>(SummonSlot3ActionProfilePath);
+            PlayerSummonSlot1Action.SummonTierSettings[] shieldBreakerTiers =
+                shieldBreakerProfile.CopyTierSettings();
+            PlayerSummonSlot1Action.SummonTierSettings[] marksmanTiers =
+                marksmanProfile.CopyTierSettings();
+            PlayerSummonSlot1Action.SummonTierSettings[] vanguardTiers =
+                vanguardProfile.CopyTierSettings();
+
+            Assert.AreEqual(shieldBreakerTiers.Length, marksmanTiers.Length);
+            Assert.AreEqual(shieldBreakerTiers.Length, vanguardTiers.Length);
+            for (int i = 0; i < shieldBreakerTiers.Length; i++)
+            {
+                float shieldBreakerVolleyDamage =
+                    shieldBreakerTiers[i].Damage * shieldBreakerTiers[i].ProjectileCount;
+                float marksmanVolleyDamage = marksmanTiers[i].Damage * marksmanTiers[i].ProjectileCount;
+                float vanguardVolleyDamage = vanguardTiers[i].Damage * vanguardTiers[i].ProjectileCount;
+
+                Assert.Greater(
+                    marksmanVolleyDamage,
+                    shieldBreakerVolleyDamage,
+                    $"SummonSlot2 tier {i + 1} should compensate for no screen with the highest immediate volley damage.");
+                Assert.Greater(
+                    shieldBreakerVolleyDamage,
+                    vanguardVolleyDamage,
+                    $"SummonSlot1 tier {i + 1} should stay the breaker between marksman damage and vanguard defense.");
+                Assert.AreEqual(
+                    0,
+                    marksmanTiers[i].ScreenIntercepts,
+                    $"SummonSlot2 tier {i + 1} must stay a damage read, not a hidden shield clone.");
+                Assert.Greater(
+                    vanguardTiers[i].ActorMaxHealth,
+                    shieldBreakerTiers[i].ActorMaxHealth,
+                    $"SummonSlot3 tier {i + 1} should be the tankier frontline actor.");
+                Assert.Greater(
+                    shieldBreakerTiers[i].ActorMaxHealth,
+                    marksmanTiers[i].ActorMaxHealth,
+                    $"SummonSlot2 tier {i + 1} should remain the fragile ranged support slot.");
+                Assert.GreaterOrEqual(
+                    vanguardTiers[i].ScreenIntercepts,
+                    bossBasicFireProfile.ProjectilesPerVolley,
+                    $"SummonSlot3 tier {i + 1} should visibly block at least one full boss basic-fire volley.");
+                Assert.Greater(
+                    vanguardTiers[i].ScreenLifetimeSeconds,
+                    shieldBreakerTiers[i].ScreenLifetimeSeconds,
+                    $"SummonSlot3 tier {i + 1} should hold the defensive screen longer than ShieldBreaker.");
+                Assert.Greater(
+                    shieldBreakerTiers[i].CounterDamage,
+                    vanguardTiers[i].CounterDamage,
+                    $"SummonSlot1 tier {i + 1} should keep the stronger counter-shot identity after a block.");
+            }
+
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator LocalDefenseAttackDamagesCloseThreatWithoutSolvingBoss()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();

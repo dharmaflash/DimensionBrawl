@@ -42,7 +42,7 @@ MonoBehaviour:
     CounterLifetimeSeconds: 1.45
     CounterRadius: 0.2
     CounterTargetHeight: 1.35
-  - Damage: 44
+  - Damage: 50
     ProjectileSpeed: 20.5
     LifetimeSeconds: 2.35
     Radius: 0.3
@@ -60,17 +60,17 @@ MonoBehaviour:
     ActorAdvanceDistance: 1.45
     ActorAdvanceSeconds: 1.3575001
     ActorEngageRadius: 0.86
-    ActorAttackDamagePerSecond: 24
+    ActorAttackDamagePerSecond: 30
     ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 0
     ScreenRadius: 1.15
     ScreenLifetimeSeconds: 0.2
-    CounterDamage: 14.08
+    CounterDamage: 16
     CounterProjectileSpeed: 22.5
     CounterLifetimeSeconds: 1.45
     CounterRadius: 0.21000001
     CounterTargetHeight: 1.35
-  - Damage: 52
+  - Damage: 64
     ProjectileSpeed: 22
     LifetimeSeconds: 2.6
     Radius: 0.32
@@ -88,12 +88,12 @@ MonoBehaviour:
     ActorAdvanceDistance: 1.75
     ActorAdvanceSeconds: 1.4625
     ActorEngageRadius: 0.9
-    ActorAttackDamagePerSecond: 28
+    ActorAttackDamagePerSecond: 38
     ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 0
     ScreenRadius: 1.15
     ScreenLifetimeSeconds: 0.2
-    CounterDamage: 16.64
+    CounterDamage: 20.48
     CounterProjectileSpeed: 24
     CounterLifetimeSeconds: 1.45
     CounterRadius: 0.22399999
