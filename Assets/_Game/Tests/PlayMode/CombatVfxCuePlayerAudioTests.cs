@@ -18,6 +18,10 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Prefabs/Combat/PF_PlayerSkill1Projectile_LaneBolt.prefab";
         private const string SummonSlot1ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Projectile_AssistBolt.prefab";
+        private const string SummonSlot2ProjectilePrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot2Projectile_MarksmanBolt.prefab";
+        private const string SummonSlot3ProjectilePrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot3Projectile_VanguardBolt.prefab";
 
         [UnityTest]
         public IEnumerator CombatVfxCuePlayerRestartsAudioSourcesInsideCuePrefab()
@@ -147,6 +151,8 @@ namespace DimensionBrawl.Tests
             AssertPromotedProjectileAudio(BossBarrageProjectilePrefabPath, "fire_shoot");
             AssertPromotedProjectileAudio(Skill1ProjectilePrefabPath, "arcane_shoot");
             AssertPromotedProjectileAudio(SummonSlot1ProjectilePrefabPath, "light_shoot");
+            AssertPromotedProjectileAudio(SummonSlot2ProjectilePrefabPath, "arcane_shoot");
+            AssertPromotedProjectileAudio(SummonSlot3ProjectilePrefabPath, "holy_shoot");
         }
 
         private static CombatVfxCueProfile CreateSingleCueProfile(GameObject prefab)
