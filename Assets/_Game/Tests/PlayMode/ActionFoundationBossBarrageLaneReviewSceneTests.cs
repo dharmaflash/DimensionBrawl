@@ -907,6 +907,10 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(
                 GetObjectReference<Transform>(playerVfxCueDriver, "dodgeAnchor"),
                 pocketVfxCueBridge.FollowupMissedAnchor);
+            Assert.AreSame(bossRoot.transform, pocketVfxCueBridge.PocketClearAnchor);
+            Assert.AreSame(
+                GetObjectReference<Transform>(playerVfxCueDriver, "dodgeAnchor"),
+                pocketVfxCueBridge.PocketFailAnchor);
             Assert.AreSame(bossRoot.transform, pocketVfxCueBridge.DirectionTarget);
             Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(reviewHud, "playerHealth"));
             Assert.AreSame(closeThreatHealth, GetObjectReference<CombatHealth>(reviewHud, "closeThreatHealth"));
@@ -2637,6 +2641,7 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(pocketOwner.IsSkill1FollowupClearCountdownActive);
 
             int resultCueCountBeforeClear = screenCuePresenter.ResultCueRequestCount;
+            int pocketClearVfxCueCountBefore = pocketVfxCueBridge.PocketClearCueRequestCount;
             pocketOwner.Tick(0.02f);
             Assert.IsFalse(
                 pocketOwner.IsSummonFollowupWindowActive,
@@ -2648,6 +2653,10 @@ namespace DimensionBrawl.Tests
                 "The completed pocket should produce a distinct screen cue instead of ending with only HUD text or a marker.");
             Assert.AreEqual("Pocket.Cleared", screenCuePresenter.LastCueId);
             Assert.IsTrue(screenCuePresenter.HasActiveCue);
+            Assert.AreEqual(
+                pocketClearVfxCueCountBefore + 1,
+                pocketVfxCueBridge.PocketClearCueRequestCount,
+                "The completed pocket should also leave an in-world result VFX read, not only a screen flash.");
             Assert.IsFalse(pocketOwner.IsSummonPressureBreakActive);
             float energyAfterClear = energyLadder.CurrentTierEnergy;
             energyLadder.Tick(1f);
@@ -2813,10 +2822,15 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
             BossBarragePocketReviewOwner pocketOwner =
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            BossBarragePocketVfxCueBridge pocketVfxCueBridge =
+                RequireComponent<BossBarragePocketVfxCueBridge>(
+                    RequireRoot(PocketOwnerRootName),
+                    "pocket VFX cue bridge");
             ActionScreenCuePresenter screenCuePresenter =
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "action screen cue presenter");
 
             int resultCueCountBeforeFail = screenCuePresenter.ResultCueRequestCount;
+            int pocketFailVfxCueCountBefore = pocketVfxCueBridge.PocketFailCueRequestCount;
             playerHealth.TryApplyDamage(new DamageInfo(
                 null,
                 DamageTeam.Enemy,
@@ -2834,6 +2848,10 @@ namespace DimensionBrawl.Tests
                 "The failed pocket should produce a distinct screen cue instead of ending with only HUD text or a marker.");
             Assert.AreEqual("Pocket.Failed", screenCuePresenter.LastCueId);
             Assert.IsTrue(screenCuePresenter.HasActiveCue);
+            Assert.AreEqual(
+                pocketFailVfxCueCountBefore + 1,
+                pocketVfxCueBridge.PocketFailCueRequestCount,
+                "The failed pocket should also leave an in-world result VFX read, not only a screen flash.");
             float energyAfterFail = energyLadder.CurrentTierEnergy;
             energyLadder.Tick(1f);
             Assert.AreEqual(
@@ -3812,6 +3830,16 @@ namespace DimensionBrawl.Tests
                 CombatVfxCueId.SummonFollowupWindow,
                 "CueAssetVfx_MagicMissilesSummonState",
                 "summon follow-up window MagicMissiles overlay");
+            AssertCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.PocketCleared,
+                "CueAssetVfx_MagicMissilesSummonState",
+                "pocket clear MagicMissiles overlay");
+            AssertCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.PocketFailed,
+                "CueAssetVfx_MagicMissilesDeathBurst",
+                "pocket fail MagicMissiles overlay");
         }
 
         private static void AssertCombatCueAssetOverlay(

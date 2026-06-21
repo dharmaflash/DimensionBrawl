@@ -11,6 +11,8 @@ namespace DimensionBrawl.Test
         [SerializeField] private Transform followupWindowAnchor;
         [SerializeField] private Transform followupHitAnchor;
         [SerializeField] private Transform followupMissedAnchor;
+        [SerializeField] private Transform pocketClearAnchor;
+        [SerializeField] private Transform pocketFailAnchor;
         [SerializeField] private Transform directionTarget;
 
         [Header("Cue Intensity")]
@@ -18,12 +20,16 @@ namespace DimensionBrawl.Test
         [SerializeField, Min(0f)] private float windowIntensity = 1.15f;
         [SerializeField, Min(0f)] private float hitIntensity = 1.3f;
         [SerializeField, Min(0f)] private float missedIntensity = 0.85f;
+        [SerializeField, Min(0f)] private float pocketClearIntensity = 1.3f;
+        [SerializeField, Min(0f)] private float pocketFailIntensity = 1.05f;
         [SerializeField, Min(0f)] private float tierIntensityStep = 0.12f;
 
         private int summonBlockOpportunityCueRequestCount;
         private int followupWindowCueRequestCount;
         private int followupHitCueRequestCount;
         private int followupMissedCueRequestCount;
+        private int pocketClearCueRequestCount;
+        private int pocketFailCueRequestCount;
         private int lastFollowupWindowTier;
         private int lastFollowupHitTier;
         private float lastFollowupHitDamage;
@@ -33,11 +39,15 @@ namespace DimensionBrawl.Test
         public Transform FollowupWindowAnchor => followupWindowAnchor;
         public Transform FollowupHitAnchor => followupHitAnchor;
         public Transform FollowupMissedAnchor => followupMissedAnchor;
+        public Transform PocketClearAnchor => pocketClearAnchor != null ? pocketClearAnchor : followupHitAnchor;
+        public Transform PocketFailAnchor => pocketFailAnchor != null ? pocketFailAnchor : followupMissedAnchor;
         public Transform DirectionTarget => directionTarget;
         public int SummonBlockOpportunityCueRequestCount => summonBlockOpportunityCueRequestCount;
         public int FollowupWindowCueRequestCount => followupWindowCueRequestCount;
         public int FollowupHitCueRequestCount => followupHitCueRequestCount;
         public int FollowupMissedCueRequestCount => followupMissedCueRequestCount;
+        public int PocketClearCueRequestCount => pocketClearCueRequestCount;
+        public int PocketFailCueRequestCount => pocketFailCueRequestCount;
         public int LastFollowupWindowTier => lastFollowupWindowTier;
         public int LastFollowupHitTier => lastFollowupHitTier;
         public float LastFollowupHitDamage => lastFollowupHitDamage;
@@ -61,6 +71,8 @@ namespace DimensionBrawl.Test
             pocketReviewOwner.SummonFollowupHitConfirmed += HandleSummonFollowupHitConfirmed;
             pocketReviewOwner.SummonFollowupMissed += HandleSummonFollowupMissed;
             pocketReviewOwner.SummonBlockOpportunityOpened += HandleSummonBlockOpportunityOpened;
+            pocketReviewOwner.PocketCleared += HandlePocketCleared;
+            pocketReviewOwner.PocketFailed += HandlePocketFailed;
         }
 
         private void OnDisable()
@@ -74,6 +86,8 @@ namespace DimensionBrawl.Test
             pocketReviewOwner.SummonFollowupHitConfirmed -= HandleSummonFollowupHitConfirmed;
             pocketReviewOwner.SummonFollowupMissed -= HandleSummonFollowupMissed;
             pocketReviewOwner.SummonBlockOpportunityOpened -= HandleSummonBlockOpportunityOpened;
+            pocketReviewOwner.PocketCleared -= HandlePocketCleared;
+            pocketReviewOwner.PocketFailed -= HandlePocketFailed;
         }
 
         private void HandleSummonBlockOpportunityOpened()
@@ -108,6 +122,22 @@ namespace DimensionBrawl.Test
             if (Play(CombatVfxCueId.SummonFollowupMissed, followupMissedAnchor, 1, missedIntensity))
             {
                 followupMissedCueRequestCount++;
+            }
+        }
+
+        private void HandlePocketCleared()
+        {
+            if (Play(CombatVfxCueId.PocketCleared, PocketClearAnchor, 1, pocketClearIntensity))
+            {
+                pocketClearCueRequestCount++;
+            }
+        }
+
+        private void HandlePocketFailed()
+        {
+            if (Play(CombatVfxCueId.PocketFailed, PocketFailAnchor, 1, pocketFailIntensity))
+            {
+                pocketFailCueRequestCount++;
             }
         }
 

@@ -40,7 +40,9 @@ namespace DimensionBrawl.Presentation
         SummonFollowupMissed,
         SummonBlockOpportunity,
         PlayerRangedMuzzleFlash,
-        PlayerRangedProjectileImpact
+        PlayerRangedProjectileImpact,
+        PocketCleared,
+        PocketFailed
     }
 
     [CreateAssetMenu(menuName = "DimensionBrawl/Presentation/Combat VFX Cue Profile", fileName = "DB_CombatVfxCueProfile")]
