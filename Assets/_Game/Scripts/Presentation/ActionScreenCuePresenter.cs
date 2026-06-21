@@ -13,7 +13,8 @@ namespace DimensionBrawl.Presentation
         {
             Player,
             Boss,
-            Followup
+            Followup,
+            Result
         }
 
         [Header("References")]
@@ -51,6 +52,10 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private Color followupHitColor = new Color(1f, 0.78f, 0.22f, 1f);
         [SerializeField] private Color followupMissedColor = new Color(0.68f, 0.74f, 0.82f, 1f);
 
+        [Header("Result Colors")]
+        [SerializeField] private Color pocketClearColor = new Color(0.32f, 1f, 0.68f, 1f);
+        [SerializeField] private Color pocketFailColor = new Color(1f, 0.18f, 0.12f, 1f);
+
         private bool subscribed;
         private float flashTimer;
         private float flashDuration;
@@ -64,6 +69,7 @@ namespace DimensionBrawl.Presentation
         private int playerCueRequestCount;
         private int bossCueRequestCount;
         private int followupCueRequestCount;
+        private int resultCueRequestCount;
         private int suppressedCueRequestCount;
         private string lastCueId = string.Empty;
         private Color lastCueColor = Color.clear;
@@ -78,6 +84,7 @@ namespace DimensionBrawl.Presentation
         public int PlayerCueRequestCount => playerCueRequestCount;
         public int BossCueRequestCount => bossCueRequestCount;
         public int FollowupCueRequestCount => followupCueRequestCount;
+        public int ResultCueRequestCount => resultCueRequestCount;
         public int SuppressedCueRequestCount => suppressedCueRequestCount;
         public string LastCueId => lastCueId;
         public Color LastCueColor => lastCueColor;
@@ -249,6 +256,16 @@ namespace DimensionBrawl.Presentation
             RequestScreenCue("Followup.Missed", followupMissedColor, 0.18f, 0.52f, ScreenCueCategory.Followup);
         }
 
+        private void HandlePocketCleared()
+        {
+            RequestScreenCue("Pocket.Cleared", pocketClearColor, 0.36f, 1.18f, ScreenCueCategory.Result);
+        }
+
+        private void HandlePocketFailed()
+        {
+            RequestScreenCue("Pocket.Failed", pocketFailColor, 0.38f, 1.1f, ScreenCueCategory.Result);
+        }
+
         private void RequestScreenCue(
             string cueId,
             Color cueColor,
@@ -279,6 +296,9 @@ namespace DimensionBrawl.Presentation
 
             switch (category)
             {
+                case ScreenCueCategory.Result:
+                    resultCueRequestCount++;
+                    break;
                 case ScreenCueCategory.Boss:
                     bossCueRequestCount++;
                     break;
@@ -305,6 +325,8 @@ namespace DimensionBrawl.Presentation
         {
             switch (category)
             {
+                case ScreenCueCategory.Result:
+                    return 4;
                 case ScreenCueCategory.Followup:
                     return 3;
                 case ScreenCueCategory.Boss:
@@ -364,6 +386,8 @@ namespace DimensionBrawl.Presentation
                 pocketReviewOwner.SummonFollowupWindowOpened += HandleSummonFollowupWindowOpened;
                 pocketReviewOwner.SummonFollowupHitConfirmed += HandleSummonFollowupHitConfirmed;
                 pocketReviewOwner.SummonFollowupMissed += HandleSummonFollowupMissed;
+                pocketReviewOwner.PocketCleared += HandlePocketCleared;
+                pocketReviewOwner.PocketFailed += HandlePocketFailed;
             }
 
             subscribed = true;
@@ -419,6 +443,8 @@ namespace DimensionBrawl.Presentation
                 pocketReviewOwner.SummonFollowupWindowOpened -= HandleSummonFollowupWindowOpened;
                 pocketReviewOwner.SummonFollowupHitConfirmed -= HandleSummonFollowupHitConfirmed;
                 pocketReviewOwner.SummonFollowupMissed -= HandleSummonFollowupMissed;
+                pocketReviewOwner.PocketCleared -= HandlePocketCleared;
+                pocketReviewOwner.PocketFailed -= HandlePocketFailed;
             }
 
             subscribed = false;

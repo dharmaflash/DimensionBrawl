@@ -985,6 +985,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(0.16f, screenCuePresenter.MaxFullScreenAlpha, 0.001f);
             Assert.AreEqual(0.34f, screenCuePresenter.MaxEdgeAlpha, 0.001f);
             Assert.AreEqual(118f, screenCuePresenter.EdgeThickness, 0.001f);
+            Assert.AreEqual(0, screenCuePresenter.ResultCueRequestCount);
             Assert.AreEqual("Move", GetString(mobileHud, "moveActionName"));
             Assert.AreEqual("BasicDefenseAttack", GetString(mobileHud, "basicDefenseActionName"));
             Assert.AreEqual("Dodge", GetString(mobileHud, "dodgeActionName"));
@@ -2511,6 +2512,8 @@ namespace DimensionBrawl.Tests
                 RequireComponent<CombatHealth>(RequireRoot(CloseThreatRootName), "close threat health");
             BossBarragePocketReviewOwner pocketOwner =
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            ActionScreenCuePresenter screenCuePresenter =
+                RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "action screen cue presenter");
 
             FillEnergyToTier(energyLadder, 1);
             Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
@@ -2633,11 +2636,18 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(pocketOwner.IsSummonPressureBreakActive);
             Assert.IsTrue(pocketOwner.IsSkill1FollowupClearCountdownActive);
 
+            int resultCueCountBeforeClear = screenCuePresenter.ResultCueRequestCount;
             pocketOwner.Tick(0.02f);
             Assert.IsFalse(
                 pocketOwner.IsSummonFollowupWindowActive,
                 "The follow-up opportunity should stay closed after the hit-confirm settle beat.");
             Assert.IsTrue(pocketOwner.IsCleared);
+            Assert.AreEqual(
+                resultCueCountBeforeClear + 1,
+                screenCuePresenter.ResultCueRequestCount,
+                "The completed pocket should produce a distinct screen cue instead of ending with only HUD text or a marker.");
+            Assert.AreEqual("Pocket.Cleared", screenCuePresenter.LastCueId);
+            Assert.IsTrue(screenCuePresenter.HasActiveCue);
             Assert.IsFalse(pocketOwner.IsSummonPressureBreakActive);
             float energyAfterClear = energyLadder.CurrentTierEnergy;
             energyLadder.Tick(1f);
@@ -2803,7 +2813,10 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
             BossBarragePocketReviewOwner pocketOwner =
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            ActionScreenCuePresenter screenCuePresenter =
+                RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "action screen cue presenter");
 
+            int resultCueCountBeforeFail = screenCuePresenter.ResultCueRequestCount;
             playerHealth.TryApplyDamage(new DamageInfo(
                 null,
                 DamageTeam.Enemy,
@@ -2815,6 +2828,12 @@ namespace DimensionBrawl.Tests
             yield return null;
 
             Assert.IsTrue(pocketOwner.IsFailed);
+            Assert.AreEqual(
+                resultCueCountBeforeFail + 1,
+                screenCuePresenter.ResultCueRequestCount,
+                "The failed pocket should produce a distinct screen cue instead of ending with only HUD text or a marker.");
+            Assert.AreEqual("Pocket.Failed", screenCuePresenter.LastCueId);
+            Assert.IsTrue(screenCuePresenter.HasActiveCue);
             float energyAfterFail = energyLadder.CurrentTierEnergy;
             energyLadder.Tick(1f);
             Assert.AreEqual(

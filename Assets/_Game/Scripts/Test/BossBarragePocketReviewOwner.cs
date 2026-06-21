@@ -108,6 +108,8 @@ namespace DimensionBrawl.Test
         public event Action<int, float> SummonFollowupHitConfirmed;
         public event Action SummonFollowupMissed;
         public event Action SummonBlockOpportunityOpened;
+        public event Action PocketCleared;
+        public event Action PocketFailed;
 
         public bool IsRunning => state == PocketState.Running;
         public bool IsCleared => state == PocketState.Cleared;
@@ -562,6 +564,7 @@ namespace DimensionBrawl.Test
             SetBossPressureCostGainEnabled(!stopBossPressureCostOnEnd);
             SetBossPressureActionsEnabled(!stopBossPressureActionsOnEnd);
             SetMarkers();
+            PocketCleared?.Invoke();
         }
 
         private void FailPocket()
@@ -573,6 +576,7 @@ namespace DimensionBrawl.Test
             SetBossPressureCostGainEnabled(!stopBossPressureCostOnEnd);
             SetBossPressureActionsEnabled(!stopBossPressureActionsOnEnd);
             SetMarkers();
+            PocketFailed?.Invoke();
         }
 
         private void ClearPressurePacing()
