@@ -8,10 +8,11 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private Transform followTarget;
         [SerializeField] private Transform orientationReference;
         [SerializeField] private Vector3 localPosition;
+        [SerializeField] private Quaternion localRotation = Quaternion.identity;
         [SerializeField] private Vector3 referenceLocalForward = Vector3.forward;
         [SerializeField] private Vector3 referenceLocalUp = Vector3.up;
 
-        public bool IsConfigured => followTarget != null && orientationReference != null;
+        public bool IsConfigured => followTarget != null;
 
         public void Configure(
             Transform newFollowTarget,
@@ -23,8 +24,23 @@ namespace DimensionBrawl.Presentation
             followTarget = newFollowTarget;
             orientationReference = newOrientationReference;
             localPosition = newLocalPosition;
+            localRotation = Quaternion.identity;
             referenceLocalForward = newReferenceLocalForward;
             referenceLocalUp = newReferenceLocalUp;
+            ApplyAttachment();
+        }
+
+        public void Configure(
+            Transform newFollowTarget,
+            Vector3 newLocalPosition,
+            Quaternion newLocalRotation)
+        {
+            followTarget = newFollowTarget;
+            orientationReference = null;
+            localPosition = newLocalPosition;
+            localRotation = newLocalRotation;
+            referenceLocalForward = Vector3.forward;
+            referenceLocalUp = Vector3.up;
             ApplyAttachment();
         }
 
@@ -48,6 +64,7 @@ namespace DimensionBrawl.Presentation
             transform.position = followTarget.TransformPoint(localPosition);
             if (orientationReference == null)
             {
+                transform.rotation = followTarget.rotation * localRotation;
                 return;
             }
 
