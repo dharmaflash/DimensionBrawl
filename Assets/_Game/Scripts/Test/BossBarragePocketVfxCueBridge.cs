@@ -22,6 +22,8 @@ namespace DimensionBrawl.Test
         [SerializeField, Min(0f)] private float missedIntensity = 0.85f;
         [SerializeField, Min(0f)] private float pocketClearIntensity = 1.3f;
         [SerializeField, Min(0f)] private float pocketFailIntensity = 1.2f;
+        [SerializeField] private CombatVfxCueId pocketFailAccentCueId = CombatVfxCueId.EliteArmorBreakSignal;
+        [SerializeField, Min(0f)] private float pocketFailAccentIntensity = 1.15f;
         [SerializeField, Min(0f)] private float tierIntensityStep = 0.12f;
 
         private int summonBlockOpportunityCueRequestCount;
@@ -30,6 +32,7 @@ namespace DimensionBrawl.Test
         private int followupMissedCueRequestCount;
         private int pocketClearCueRequestCount;
         private int pocketFailCueRequestCount;
+        private int pocketFailAccentCueRequestCount;
         private int lastFollowupWindowTier;
         private int lastFollowupHitTier;
         private float lastFollowupHitDamage;
@@ -48,6 +51,7 @@ namespace DimensionBrawl.Test
         public int FollowupMissedCueRequestCount => followupMissedCueRequestCount;
         public int PocketClearCueRequestCount => pocketClearCueRequestCount;
         public int PocketFailCueRequestCount => pocketFailCueRequestCount;
+        public int PocketFailAccentCueRequestCount => pocketFailAccentCueRequestCount;
         public int LastFollowupWindowTier => lastFollowupWindowTier;
         public int LastFollowupHitTier => lastFollowupHitTier;
         public float LastFollowupHitDamage => lastFollowupHitDamage;
@@ -138,6 +142,11 @@ namespace DimensionBrawl.Test
             if (Play(CombatVfxCueId.PocketFailed, PocketFailAnchor, 1, pocketFailIntensity))
             {
                 pocketFailCueRequestCount++;
+            }
+
+            if (Play(pocketFailAccentCueId, PocketFailAnchor, 1, pocketFailAccentIntensity))
+            {
+                pocketFailAccentCueRequestCount++;
             }
         }
 

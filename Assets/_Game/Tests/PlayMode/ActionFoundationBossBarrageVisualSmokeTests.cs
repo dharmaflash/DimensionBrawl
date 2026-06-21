@@ -189,6 +189,7 @@ namespace DimensionBrawl.Tests
 
             int resultCueCountBeforeFail = screenCuePresenter.ResultCueRequestCount;
             int worldCueCountBeforeFail = pocketVfxCueBridge.PocketFailCueRequestCount;
+            int accentCueCountBeforeFail = pocketVfxCueBridge.PocketFailAccentCueRequestCount;
             playerHealth.TryApplyDamage(new DamageInfo(
                 null,
                 DamageTeam.Enemy,
@@ -203,6 +204,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("Pocket.Failed", screenCuePresenter.LastCueId);
             Assert.IsTrue(screenCuePresenter.HasActiveCue);
             Assert.AreEqual(worldCueCountBeforeFail + 1, pocketVfxCueBridge.PocketFailCueRequestCount);
+            Assert.AreEqual(accentCueCountBeforeFail + 1, pocketVfxCueBridge.PocketFailAccentCueRequestCount);
 
             string capturePath = Path.GetFullPath(Path.Combine(
                 Application.dataPath,

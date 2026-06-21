@@ -912,6 +912,9 @@ namespace DimensionBrawl.Tests
                 GetObjectReference<Transform>(playerVfxCueDriver, "dodgeAnchor"),
                 pocketVfxCueBridge.PocketFailAnchor);
             Assert.AreSame(bossRoot.transform, pocketVfxCueBridge.DirectionTarget);
+            Assert.AreEqual(
+                CombatVfxCueId.EliteArmorBreakSignal,
+                GetEnum<CombatVfxCueId>(pocketVfxCueBridge, "pocketFailAccentCueId"));
             Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(reviewHud, "playerHealth"));
             Assert.AreSame(closeThreatHealth, GetObjectReference<CombatHealth>(reviewHud, "closeThreatHealth"));
             Assert.AreSame(bossHealth, GetObjectReference<CombatHealth>(reviewHud, "bossHealth"));
@@ -2831,6 +2834,7 @@ namespace DimensionBrawl.Tests
 
             int resultCueCountBeforeFail = screenCuePresenter.ResultCueRequestCount;
             int pocketFailVfxCueCountBefore = pocketVfxCueBridge.PocketFailCueRequestCount;
+            int pocketFailAccentVfxCueCountBefore = pocketVfxCueBridge.PocketFailAccentCueRequestCount;
             playerHealth.TryApplyDamage(new DamageInfo(
                 null,
                 DamageTeam.Enemy,
@@ -2852,6 +2856,10 @@ namespace DimensionBrawl.Tests
                 pocketFailVfxCueCountBefore + 1,
                 pocketVfxCueBridge.PocketFailCueRequestCount,
                 "The failed pocket should also leave an in-world result VFX read, not only a screen flash.");
+            Assert.AreEqual(
+                pocketFailAccentVfxCueCountBefore + 1,
+                pocketVfxCueBridge.PocketFailAccentCueRequestCount,
+                "The failed pocket should layer an additional break accent so defeat reads stronger than a quiet ground marker.");
             float energyAfterFail = energyLadder.CurrentTierEnergy;
             energyLadder.Tick(1f);
             Assert.AreEqual(
