@@ -75,6 +75,8 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossPressureActionDeck_PocketReview.asset";
         private const string SummonOpportunityProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonOpportunity_BossPressureBlock.asset";
+        private const string PressureRescueSegmentProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDesign/Segments/DB_Segment_PressureRescue.asset";
         private const string SummonSlot1PresentationCandidateProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonPresentation_PlayerShieldBreaker.asset";
         private const string BossSummonPressurePresentationCandidateProfilePath =
@@ -1022,6 +1024,93 @@ namespace DimensionBrawl.Tests
             Assert.Greater(GetFloat(mobileHud, "fireAimAssistThicknessBoost"), 0f);
             Assert.IsTrue(GetBool(mobileHud, "fireAimReticleFollowsAssist"));
             Assert.Greater(GetFloat(mobileHud, "fireAimAssistReticleMaxOffset"), 0f);
+
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator BossBarragePocketPacingMatchesPressureRescueBudget()
+        {
+            LinearStageSegmentProfile pressureRescue =
+                LoadAsset<LinearStageSegmentProfile>(PressureRescueSegmentProfilePath);
+            LinearStagePocket pressurePocket = pressureRescue.GetPocket(0);
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
+            PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
+            SummonEnergyLadder energyLadder =
+                RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            GameObject bossRoot = RequireRoot(BossRootName);
+            CombatHealth closeThreatHealth =
+                RequireComponent<CombatHealth>(RequireRoot(CloseThreatRootName), "close threat health");
+            BossBasicFireProfile bossBasicFireProfile = LoadAsset<BossBasicFireProfile>(BossBasicFireProfilePath);
+            SummonOpportunityWindowProfile summonOpportunity =
+                LoadAsset<SummonOpportunityWindowProfile>(SummonOpportunityProfilePath);
+            SummonSlotActionProfile summonSlot1Profile = LoadAsset<SummonSlotActionProfile>(SummonSlot1ActionProfilePath);
+            PlayerSummonSlot1Action.SummonTierSettings[] summonTiers = summonSlot1Profile.CopyTierSettings();
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            BossBarragePocketVfxCueBridge pocketVfxCueBridge =
+                RequireComponent<BossBarragePocketVfxCueBridge>(RequireRoot(PocketOwnerRootName), "pocket VFX cue bridge");
+
+            Assert.GreaterOrEqual(summonTiers.Length, 1);
+            float rangedDamage = GetFloat(rangedBasicAttackAction, "damage");
+            float rangedFireIntervalSeconds = GetFloat(rangedBasicAttackAction, "fireIntervalSeconds");
+            float closeThreatShots = Mathf.Ceil(closeThreatHealth.MaxHealth / rangedDamage);
+            float closeThreatSustainedClearSeconds = Mathf.Max(0f, closeThreatShots - 1f) * rangedFireIntervalSeconds;
+            float bossBasicFireDps =
+                bossBasicFireProfile.Damage
+                * bossBasicFireProfile.ProjectilesPerVolley
+                / bossBasicFireProfile.FireIntervalSeconds;
+            float ignoredBarrageSurvivalSeconds = playerHealth.MaxHealth / bossBasicFireDps;
+            float summonLv1ReadySeconds = ResolveLevelOneReadySeconds(
+                GetFloat(energyLadder, "levelOneEnergy"),
+                GetFloat(energyLadder, "baseEnergyPerSecond"),
+                GetFloat(energyLadder, "fallbackForwardRisk01"),
+                GetAnimationCurve(energyLadder, "forwardRiskGainCurve"));
+            float followupSequenceSeconds =
+                summonOpportunity.ResolvePressureBreakSeconds(1)
+                + summonOpportunity.ResolveFollowupWindowSeconds(1)
+                + GetFloat(pocketOwner, "skill1FollowupClearDelaySeconds");
+
+            Assert.AreEqual(LinearStageSegmentKind.PressureRescue, pressureRescue.SegmentKind);
+            Assert.AreEqual(45f, pressureRescue.RecommendedDurationSeconds, 0.001f);
+            Assert.AreEqual(0.62f, pressureRescue.TargetIntensity, 0.001f);
+            Assert.AreEqual(1, pressureRescue.PocketCount);
+            Assert.AreEqual("rescue_overload_mix", pressurePocket.PocketId);
+            Assert.AreEqual(LinearStageObjectiveKind.SurvivePressure, pressurePocket.ObjectiveKind);
+            Assert.AreEqual(StageSummonNeed.Tank, pressurePocket.FeaturedSummonNeed);
+            Assert.AreEqual(32f, pressurePocket.TargetDurationSeconds, 0.001f);
+            Assert.AreEqual(0.64f, pressurePocket.TargetIntensity, 0.001f);
+            Assert.AreEqual(72f, closeThreatHealth.MaxHealth, 0.001f);
+            Assert.That(
+                closeThreatSustainedClearSeconds,
+                Is.InRange(1f, 1.3f),
+                "The close threat should be a quick local-defense check before the pressure-rescue loop starts.");
+            Assert.That(
+                ignoredBarrageSurvivalSeconds,
+                Is.InRange(pressurePocket.TargetDurationSeconds - 2f, pressurePocket.TargetDurationSeconds + 2f),
+                "Ignoring boss lane fire should roughly match the PressureRescue pocket budget instead of becoming random chip.");
+            Assert.That(
+                summonLv1ReadySeconds,
+                Is.InRange(5f, 8.5f),
+                "LV1 summon should come online quickly enough for a repeated review pocket without becoming an instant free answer.");
+            Assert.GreaterOrEqual(
+                summonTiers[0].ScreenIntercepts,
+                bossBasicFireProfile.ProjectilesPerVolley,
+                "LV1 ShieldBreaker must be able to block a full basic-fire volley.");
+            Assert.GreaterOrEqual(
+                summonTiers[0].ScreenLifetimeSeconds,
+                bossBasicFireProfile.FireIntervalSeconds - 0.1f,
+                "LV1 ShieldBreaker screen should visibly cover the immediate returning boss fire beat.");
+            Assert.LessOrEqual(
+                summonLv1ReadySeconds + summonOpportunity.OpportunityCueSeconds + followupSequenceSeconds,
+                pressurePocket.TargetDurationSeconds * 0.5f,
+                "The tutorial answer path should resolve well before the target duration so failed reads still have recovery room.");
+            Assert.AreSame(
+                bossRoot.transform,
+                GetObjectReference<Transform>(pocketVfxCueBridge, "directionTarget"),
+                "Follow-up and result VFX should face the boss lane so the pocket answer reads as a completed exchange.");
 
             yield return null;
         }
@@ -4946,6 +5035,23 @@ namespace DimensionBrawl.Tests
         private static Vector3 GetVector3(Object target, string propertyName)
         {
             return RequireProperty(new SerializedObject(target), propertyName).vector3Value;
+        }
+
+        private static AnimationCurve GetAnimationCurve(Object target, string propertyName)
+        {
+            return RequireProperty(new SerializedObject(target), propertyName).animationCurveValue;
+        }
+
+        private static float ResolveLevelOneReadySeconds(
+            float levelOneTarget,
+            float baseGainPerSecond,
+            float fallbackRisk01,
+            AnimationCurve gainCurve)
+        {
+            float gainMultiplier = gainCurve != null
+                ? Mathf.Max(0f, gainCurve.Evaluate(Mathf.Clamp01(fallbackRisk01)))
+                : 1f;
+            return levelOneTarget / Mathf.Max(0.001f, baseGainPerSecond * gainMultiplier);
         }
 
         private static void SetPrivateField<T>(object target, string fieldName, T value)
