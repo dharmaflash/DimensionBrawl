@@ -115,6 +115,20 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0.01f)] private float releaseFlashSeconds = 0.22f;
         [SerializeField, Min(0f)] private float pulseSpeed = 14f;
 
+        [Header("World VFX Cues")]
+        [SerializeField] private CombatVfxCuePlayer cuePlayer;
+        [SerializeField] private Transform vfxAnchor;
+        [SerializeField] private Transform vfxDirectionTarget;
+        [SerializeField] private CombatVfxCueId windupCueId = CombatVfxCueId.EliteAuraSignal;
+        [SerializeField] private CombatVfxCueId releaseCueId = CombatVfxCueId.EnemyRetreatShotActive;
+        [SerializeField] private CombatVfxCueId skillPressureCueId = CombatVfxCueId.EnemyLinePressureWindup;
+        [SerializeField] private CombatVfxCueId summonPressureCueId = CombatVfxCueId.EliteSummonSignal;
+        [SerializeField] private CombatVfxCueId punishPressureCueId = CombatVfxCueId.EliteArmorBreakSignal;
+        [SerializeField, Min(0f)] private float windupCueIntensity = 0.86f;
+        [SerializeField, Min(0f)] private float releaseCueIntensity = 1.05f;
+        [SerializeField, Min(0f)] private float pressureActionCueIntensity = 1.12f;
+        [SerializeField, Min(0f)] private float tierCueIntensityStep = 0.12f;
+
         [Header("Pattern Cues")]
         [SerializeField] private PatternAnimationCue[] patternCues = Array.Empty<PatternAnimationCue>();
 
@@ -135,11 +149,23 @@ namespace DimensionBrawl.Presentation
         private BossPressureActionKind lastPressureActionKind;
         private int lastPressureActionTier;
         private int pressureActionCueRequestCount;
+        private int windupWorldVfxCueRequestCount;
+        private int releaseWorldVfxCueRequestCount;
+        private int pressureActionWorldVfxCueRequestCount;
+        private CombatVfxCueId lastPressureActionWorldVfxCueId;
 
         public BossBarrageEmitter BossBarrageEmitter => bossBarrageEmitter;
         public BossPressureActionDirector BossPressureActionDirector => bossPressureActionDirector;
         public Animator Animator => animator;
         public Transform PulseRoot => pulseRoot;
+        public CombatVfxCuePlayer CuePlayer => cuePlayer;
+        public Transform VfxAnchor => vfxAnchor != null ? vfxAnchor : pulseRoot;
+        public Transform VfxDirectionTarget => vfxDirectionTarget;
+        public CombatVfxCueId WindupCueId => windupCueId;
+        public CombatVfxCueId ReleaseCueId => releaseCueId;
+        public CombatVfxCueId SkillPressureCueId => skillPressureCueId;
+        public CombatVfxCueId SummonPressureCueId => summonPressureCueId;
+        public CombatVfxCueId PunishPressureCueId => punishPressureCueId;
         public int PulseRendererCount => pulseRenderers != null ? pulseRenderers.Length : 0;
         public int PatternCueCount => patternCues != null ? patternCues.Length : 0;
         public int PressureActionCueCount => pressureActionCues != null ? pressureActionCues.Length : 0;
@@ -150,6 +176,10 @@ namespace DimensionBrawl.Presentation
         public BossPressureActionKind LastPressureActionKind => lastPressureActionKind;
         public int LastPressureActionTier => lastPressureActionTier;
         public int PressureActionCueRequestCount => pressureActionCueRequestCount;
+        public int WindupWorldVfxCueRequestCount => windupWorldVfxCueRequestCount;
+        public int ReleaseWorldVfxCueRequestCount => releaseWorldVfxCueRequestCount;
+        public int PressureActionWorldVfxCueRequestCount => pressureActionWorldVfxCueRequestCount;
+        public CombatVfxCueId LastPressureActionWorldVfxCueId => lastPressureActionWorldVfxCueId;
 
         public bool TryGetPatternCue(int index, out PatternAnimationCue cue)
         {
@@ -196,6 +226,16 @@ namespace DimensionBrawl.Presentation
             UnsubscribePressureActionSource();
             bossPressureActionDirector = newBossPressureActionDirector;
             SubscribePressureActionSource();
+        }
+
+        public void ConfigureWorldVfx(
+            CombatVfxCuePlayer newCuePlayer,
+            Transform newVfxAnchor,
+            Transform newVfxDirectionTarget)
+        {
+            cuePlayer = newCuePlayer;
+            vfxAnchor = newVfxAnchor;
+            vfxDirectionTarget = newVfxDirectionTarget;
         }
 
         public void ResetToDefaultPatternCues()
@@ -375,6 +415,10 @@ namespace DimensionBrawl.Presentation
                 cue.WindupColor,
                 Mathf.Max(0.01f, pattern != null ? pattern.WindupSeconds : 0.01f),
                 cue.WindupPulseScale);
+            if (PlayWorldVfx(windupCueId, 1, windupCueIntensity + cue.WindupPulseScale))
+            {
+                windupWorldVfxCueRequestCount++;
+            }
         }
 
         private void OnWaveFired(BossBarrageEmitter emitter, BossBarragePatternProfile pattern, int spawnedCount)
@@ -384,6 +428,10 @@ namespace DimensionBrawl.Presentation
             lastReleaseTrigger = trigger;
             TriggerAnimator(trigger);
             StartCue(cue.ReleaseColor, releaseFlashSeconds, cue.ReleasePulseScale);
+            if (PlayWorldVfx(releaseCueId, 1, releaseCueIntensity + cue.ReleasePulseScale))
+            {
+                releaseWorldVfxCueRequestCount++;
+            }
         }
 
         private void OnPressureActionQueued(
@@ -400,6 +448,12 @@ namespace DimensionBrawl.Presentation
             pressureActionCueRequestCount++;
             TriggerAnimator(trigger);
             StartCue(cue.Color, cue.DurationSeconds, cue.ResolvePulseScale(lastPressureActionTier));
+            CombatVfxCueId worldCueId = ResolvePressureActionWorldVfxCueId(actionKind);
+            lastPressureActionWorldVfxCueId = worldCueId;
+            if (PlayWorldVfx(worldCueId, lastPressureActionTier, pressureActionCueIntensity + cue.ResolvePulseScale(lastPressureActionTier)))
+            {
+                pressureActionWorldVfxCueRequestCount++;
+            }
         }
 
         private void Subscribe()
@@ -604,6 +658,51 @@ namespace DimensionBrawl.Presentation
             }
 
             return false;
+        }
+
+        private CombatVfxCueId ResolvePressureActionWorldVfxCueId(BossPressureActionKind actionKind)
+        {
+            return actionKind switch
+            {
+                BossPressureActionKind.SummonPressure => summonPressureCueId,
+                BossPressureActionKind.PunishOverextend => punishPressureCueId,
+                _ => skillPressureCueId
+            };
+        }
+
+        private bool PlayWorldVfx(CombatVfxCueId cueId, int tier, float baseIntensity)
+        {
+            if (cuePlayer == null)
+            {
+                return false;
+            }
+
+            Transform anchor = VfxAnchor != null ? VfxAnchor : transform;
+            float intensity = baseIntensity + Mathf.Max(0, tier - 1) * tierCueIntensityStep;
+            return cuePlayer.PlayCue(cueId, anchor, ResolveWorldVfxDirection(anchor), Mathf.Max(0f, intensity));
+        }
+
+        private Vector3 ResolveWorldVfxDirection(Transform anchor)
+        {
+            if (anchor != null && vfxDirectionTarget != null)
+            {
+                Vector3 targetDirection = Vector3.ProjectOnPlane(vfxDirectionTarget.position - anchor.position, Vector3.up);
+                if (targetDirection.sqrMagnitude > 0.0001f)
+                {
+                    return targetDirection.normalized;
+                }
+            }
+
+            if (anchor != null)
+            {
+                Vector3 forward = Vector3.ProjectOnPlane(anchor.forward, Vector3.up);
+                if (forward.sqrMagnitude > 0.0001f)
+                {
+                    return forward.normalized;
+                }
+            }
+
+            return Vector3.back;
         }
     }
 }

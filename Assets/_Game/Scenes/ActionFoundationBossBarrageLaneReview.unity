@@ -2851,6 +2851,18 @@ MonoBehaviour:
   defaultReleasePulseScale: 0.36
   releaseFlashSeconds: 0.22
   pulseSpeed: 14
+  cuePlayer: {fileID: 4010}
+  vfxAnchor: {fileID: 1622265773}
+  vfxDirectionTarget: {fileID: 4001}
+  windupCueId: 26
+  releaseCueId: 19
+  skillPressureCueId: 14
+  summonPressureCueId: 27
+  punishPressureCueId: 25
+  windupCueIntensity: 0.86
+  releaseCueIntensity: 1.05
+  pressureActionCueIntensity: 1.12
+  tierCueIntensityStep: 0.12
   patternCues:
   - patternId: NeedleLock
     windupTrigger: EliteAuraBuffer

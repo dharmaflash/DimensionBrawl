@@ -715,6 +715,10 @@ namespace DimensionBrawl.Editor
                 rangedBasicAttackAction,
                 RequireComponent<CombatVfxCuePlayer>(player.gameObject, "player combat VFX cue player"),
                 combatModeVisuals.RangedFireOrigin);
+            ConfigureBossProxyWorldVfxCueDriver(
+                bossProxy,
+                RequireComponent<CombatVfxCuePlayer>(player.gameObject, "player combat VFX cue player"),
+                player.transform);
             ConfigureCombatModeActionLinks(combatModeController, rangedAimController, rangedBasicAttackAction);
             if (combatModeVisuals.NativeAnimatorBridge == null)
             {
@@ -3312,6 +3316,27 @@ namespace DimensionBrawl.Editor
             cueDriver.ConfigurePressureActionSource(bossPressureActionDirector);
             cueDriver.ResetToDefaultPatternCues();
             cueDriver.ResetToDefaultPressureActionCues();
+            EditorUtility.SetDirty(cueDriver);
+        }
+
+        private static void ConfigureBossProxyWorldVfxCueDriver(
+            GameObject bossProxy,
+            CombatVfxCuePlayer cuePlayer,
+            Transform directionTarget)
+        {
+            if (bossProxy == null)
+            {
+                throw new ArgumentNullException(nameof(bossProxy));
+            }
+
+            Transform projectileCore = bossProxy.transform.Find(BossProxyMarkerName);
+            if (projectileCore == null)
+            {
+                throw new InvalidOperationException($"Boss proxy should include {BossProxyMarkerName} before world VFX cue binding.");
+            }
+
+            BossBarrageVisualCueDriver cueDriver = EnsureComponent<BossBarrageVisualCueDriver>(bossProxy);
+            cueDriver.ConfigureWorldVfx(cuePlayer, projectileCore, directionTarget);
             EditorUtility.SetDirty(cueDriver);
         }
 
@@ -6752,6 +6777,32 @@ namespace DimensionBrawl.Editor
             if (cueDriver.PulseRoot != projectileCore)
             {
                 throw new InvalidOperationException("Boss visual cue driver should pulse the authored projectile source core.");
+            }
+
+            PlayerMovementController player = UnityEngine.Object.FindFirstObjectByType<PlayerMovementController>();
+            CombatVfxCuePlayer playerCuePlayer = player != null ? player.GetComponent<CombatVfxCuePlayer>() : null;
+            if (playerCuePlayer == null || cueDriver.CuePlayer != playerCuePlayer)
+            {
+                throw new InvalidOperationException("Boss visual cue driver should request promoted world VFX through the player combat VFX cue player.");
+            }
+
+            if (cueDriver.VfxAnchor != projectileCore)
+            {
+                throw new InvalidOperationException("Boss visual cue driver should anchor promoted world VFX at the projectile source core.");
+            }
+
+            if (cueDriver.VfxDirectionTarget == null)
+            {
+                throw new InvalidOperationException("Boss visual cue driver should aim promoted world VFX toward the player side.");
+            }
+
+            if (cueDriver.WindupCueId != CombatVfxCueId.EliteAuraSignal
+                || cueDriver.ReleaseCueId != CombatVfxCueId.EnemyRetreatShotActive
+                || cueDriver.SkillPressureCueId != CombatVfxCueId.EnemyLinePressureWindup
+                || cueDriver.SummonPressureCueId != CombatVfxCueId.EliteSummonSignal
+                || cueDriver.PunishPressureCueId != CombatVfxCueId.EliteArmorBreakSignal)
+            {
+                throw new InvalidOperationException("Boss visual cue driver should use promoted combat VFX cues for windup, release, and pressure states.");
             }
 
             if (cueDriver.PatternCueCount < 10)

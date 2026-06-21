@@ -3381,14 +3381,25 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossBarrageLaneTelegraphPresenter>(
                     RequireRoot(BossTelegraphRootName),
                     "boss barrage lane telegraph presenter");
+            BossBarrageVisualCueDriver cueDriver =
+                RequireComponent<BossBarrageVisualCueDriver>(RequireRoot(BossRootName), "boss visual cue driver");
+            CombatVfxCuePlayer playerCuePlayer =
+                RequireComponent<CombatVfxCuePlayer>(RequireObject<PlayerMovementController>().gameObject, "player combat VFX cue player");
 
             int windupCueCountBefore = bossCameraCueDriver.WindupCueRequestCount;
+            int windupWorldVfxCueCountBefore = cueDriver.WindupWorldVfxCueRequestCount;
             Assert.IsTrue(emitter.BeginWindup());
             telegraphPresenter.RefreshNow();
             Assert.AreEqual(
                 windupCueCountBefore + 1,
                 bossCameraCueDriver.WindupCueRequestCount,
                 "Boss barrage windup should request a short camera cue through the dedicated presentation driver.");
+            Assert.AreEqual(
+                windupWorldVfxCueCountBefore + 1,
+                cueDriver.WindupWorldVfxCueRequestCount,
+                "Boss barrage windup should also request a promoted in-world VFX cue at the boss source.");
+            Assert.AreSame(playerCuePlayer, cueDriver.CuePlayer);
+            Assert.AreSame(cueDriver.PulseRoot, cueDriver.VfxAnchor);
             Assert.AreEqual(pattern.PatternId, telegraphPresenter.LastPatternId);
             Assert.AreEqual(pattern.ProjectilesPerWave, telegraphPresenter.LastPreviewCount);
             Assert.AreEqual(pattern.ProjectilesPerWave, telegraphPresenter.VisibleMarkerCount);
@@ -3397,11 +3408,10 @@ namespace DimensionBrawl.Tests
                 1,
                 "Boss barrage windup should reveal lane-space target markers before the projectiles fire.");
             Assert.IsTrue(cameraController.HasActiveCue);
-            BossBarrageVisualCueDriver cueDriver =
-                RequireComponent<BossBarrageVisualCueDriver>(RequireRoot(BossRootName), "boss visual cue driver");
             Assert.IsTrue(cueDriver.IsCueActive, "Boss visual cue driver should react when barrage windup starts.");
             Assert.IsFalse(string.IsNullOrEmpty(cueDriver.LastWindupTrigger));
             int fireCueCountBefore = bossCameraCueDriver.FireCueRequestCount;
+            int releaseWorldVfxCueCountBefore = cueDriver.ReleaseWorldVfxCueRequestCount;
             int firedCount = emitter.FirePendingWave();
             telegraphPresenter.RefreshNow();
 
@@ -3417,6 +3427,10 @@ namespace DimensionBrawl.Tests
                 fireCueCountBefore + 1,
                 bossCameraCueDriver.FireCueRequestCount,
                 "Boss barrage release should request a short camera cue without owning boss pattern logic.");
+            Assert.AreEqual(
+                releaseWorldVfxCueCountBefore + 1,
+                cueDriver.ReleaseWorldVfxCueRequestCount,
+                "Boss barrage release should also emit a promoted attack-state world VFX cue.");
             Assert.IsTrue(cameraController.HasActiveCue);
             Assert.IsFalse(string.IsNullOrEmpty(cueDriver.LastReleaseTrigger));
             Assert.AreSame(
@@ -3596,6 +3610,7 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(bossPressureActionDirector, cueDriver.BossPressureActionDirector);
             Assert.AreSame(bossPressureActionDirector, cameraCueDriver.BossPressureActionDirector);
             int cueCountBefore = cueDriver.PressureActionCueRequestCount;
+            int worldVfxCueCountBefore = cueDriver.PressureActionWorldVfxCueRequestCount;
             int cameraCueCountBefore = cameraCueDriver.PressureActionCueRequestCount;
 
             bossPressureCost.GrantCurrentTierCost(300f);
@@ -3608,8 +3623,15 @@ namespace DimensionBrawl.Tests
             int sequenceIndexBeforePriority = emitter.CurrentPatternSequenceIndex;
 
             Assert.AreEqual(cueCountBefore + 1, cueDriver.PressureActionCueRequestCount);
+            Assert.AreEqual(
+                worldVfxCueCountBefore + 1,
+                cueDriver.PressureActionWorldVfxCueRequestCount,
+                "Boss costed pressure choices should emit a promoted combat VFX cue, not only pulse a material.");
             Assert.AreEqual(bossPressureActionDirector.LastActionKind, cueDriver.LastPressureActionKind);
             Assert.AreEqual(bossPressureActionDirector.LastSpentTier, cueDriver.LastPressureActionTier);
+            Assert.AreEqual(
+                ResolveExpectedBossPressureWorldCue(bossPressureActionDirector.LastActionKind),
+                cueDriver.LastPressureActionWorldVfxCueId);
             Assert.IsTrue(bossPressureActionDirector.HasLastQueuedActionSlot);
             Assert.AreSame(queuedPattern, queuedSlot.Pattern);
             Assert.IsTrue(queuedSlot.HasResponsePlan);
@@ -5094,6 +5116,16 @@ namespace DimensionBrawl.Tests
             }
 
             Assert.Fail($"Boss visual cue {label} references missing Animator trigger {triggerName}.");
+        }
+
+        private static CombatVfxCueId ResolveExpectedBossPressureWorldCue(BossPressureActionKind actionKind)
+        {
+            return actionKind switch
+            {
+                BossPressureActionKind.SummonPressure => CombatVfxCueId.EliteSummonSignal,
+                BossPressureActionKind.PunishOverextend => CombatVfxCueId.EliteArmorBreakSignal,
+                _ => CombatVfxCueId.EnemyLinePressureWindup
+            };
         }
 
         private static void AssertAnimatorParameter(
