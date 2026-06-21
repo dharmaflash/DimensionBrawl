@@ -121,15 +121,15 @@ namespace DimensionBrawl.Presentation
         [Header("Display")]
         [SerializeField] private bool showHud = true;
         [SerializeField] private bool showDetailedTelemetry;
-        [SerializeField, Min(1f)] private float width = 430f;
-        [SerializeField, Min(1f)] private float height = 280f;
+        [SerializeField, Min(1f)] private float width = 390f;
+        [SerializeField, Min(1f)] private float height = 230f;
         [SerializeField, Min(0f)] private float margin = 18f;
         [SerializeField] private bool showCenterReticle;
 
         [Header("Resource Bars")]
         [SerializeField] private bool showResourceBars = true;
-        [SerializeField, Min(8f)] private float resourceBarHeight = 22f;
-        [SerializeField, Min(0f)] private float resourceBarGap = 5f;
+        [SerializeField, Min(8f)] private float resourceBarHeight = 18f;
+        [SerializeField, Min(0f)] private float resourceBarGap = 3f;
         [SerializeField] private Color resourceBarBackColor = new Color(0.02f, 0.025f, 0.035f, 0.82f);
         [SerializeField] private Color playerHealthColor = new Color(0.25f, 1f, 0.46f, 1f);
         [SerializeField] private Color bossHealthColor = new Color(1f, 0.22f, 0.32f, 1f);
@@ -149,6 +149,9 @@ namespace DimensionBrawl.Presentation
         public bool ShowDetailedTelemetry => showDetailedTelemetry;
         public string CombatCueReadout => ResolveCombatCueLine();
         public string FrontlineCueReadout => ResolveFrontlineCueLine();
+        public string CompactObjectiveReadout => ResolveCompactObjectiveLine();
+        public string CompactCombatCueReadout => ResolveCompactCombatCueLine();
+        public string CompactFrontlineCueReadout => ResolveCompactFrontlineCueLine();
 
         public void Configure(
             CombatHealth newPlayerHealth,
@@ -209,7 +212,7 @@ namespace DimensionBrawl.Presentation
             EnsureStyles();
             float areaHeight = ResolveHudAreaHeight(uiScale);
             GUILayout.BeginArea(new Rect(margin, margin, width, areaHeight), boxStyle);
-            GUILayout.Label("Boss Barrage Lane Review", titleStyle);
+            GUILayout.Label("Boss Barrage", titleStyle);
             DrawCombatResourceBars();
             if (showDetailedTelemetry)
             {
@@ -254,10 +257,10 @@ namespace DimensionBrawl.Presentation
 
         private void DrawCompactCombatCues()
         {
-            GUILayout.Label(ResolveObjectiveLine(), labelStyle);
-            GUILayout.Label(ResolvePhaseLine(), labelStyle);
-            GUILayout.Label(ResolveCombatCueLine(), labelStyle);
-            GUILayout.Label(ResolveFrontlineCueLine(), labelStyle);
+            GUILayout.Label(ResolveCompactObjectiveLine(), labelStyle);
+            GUILayout.Label(ResolveCompactPhaseLine(), labelStyle);
+            GUILayout.Label(ResolveCompactCombatCueLine(), labelStyle);
+            GUILayout.Label(ResolveCompactFrontlineCueLine(), labelStyle);
 
             string hintLine = ResolveActionHintLine();
             if (!IsEmptyHintLine(hintLine))
@@ -497,6 +500,141 @@ namespace DimensionBrawl.Presentation
             return "Cue: Hold lane";
         }
 
+        private string ResolveCompactObjectiveLine()
+        {
+            if (duelReviewOwner != null)
+            {
+                if (duelReviewOwner.IsCleared)
+                {
+                    return "Goal: Duel cleared";
+                }
+
+                if (duelReviewOwner.IsFailed)
+                {
+                    return "Goal: Duel failed";
+                }
+
+                return "Goal: Win summon duel";
+            }
+
+            if (pocketReviewOwner == null)
+            {
+                return "Goal: -";
+            }
+
+            if (pocketReviewOwner.IsCleared)
+            {
+                return "Goal: Clear";
+            }
+
+            if (pocketReviewOwner.IsFailed)
+            {
+                return "Goal: Failed";
+            }
+
+            if (pocketReviewOwner.IsSkill1FollowupClearCountdownActive)
+            {
+                return $"Goal: Confirm hit {pocketReviewOwner.Skill1FollowupClearRemainingSeconds:0.0}s";
+            }
+
+            if (pocketReviewOwner.IsSummonFollowupWindowActive)
+            {
+                return $"Goal: Fire Skill1 {pocketReviewOwner.SummonFollowupWindowRemainingSeconds:0.0}s";
+            }
+
+            if (pocketReviewOwner.IsSummonPressureBreakActive)
+            {
+                return $"Goal: Push break {pocketReviewOwner.SummonPressureBreakRemainingSeconds:0.0}s";
+            }
+
+            if (pocketReviewOwner.IsSummonBlockOpportunityCueActive)
+            {
+                return $"Goal: Summon block {pocketReviewOwner.SummonBlockOpportunityRemainingSeconds:0.0}s";
+            }
+
+            if (pocketReviewOwner.IsAwaitingSummonPressureBlock)
+            {
+                return "Goal: Summon block NOW";
+            }
+
+            if (pocketReviewOwner.CloseThreatDefeated)
+            {
+                return energyLadder != null && !energyLadder.CanSpend
+                    ? "Goal: Build EN"
+                    : "Goal: Block boss fire";
+            }
+
+            return energyLadder != null && !energyLadder.CanSpend
+                ? "Goal: Advance for EN"
+                : "Goal: Clear close threat";
+        }
+
+        private string ResolveCompactPhaseLine()
+        {
+            if (duelReviewOwner != null)
+            {
+                return $"Phase: {ResolveCompactPhaseLabel(duelReviewOwner.CurrentPhase.ToString())}";
+            }
+
+            if (pocketReviewOwner == null)
+            {
+                return "Phase: -";
+            }
+
+            return $"Phase: {ResolveCompactPhaseLabel(pocketReviewOwner.CurrentPhase.ToString())}";
+        }
+
+        private string ResolveCompactCombatCueLine()
+        {
+            return $"{ResolveCompactPrimaryCombatCueText()} | {ResolveCompactRiskText()} | {ResolveCompactFireText()}";
+        }
+
+        private string ResolveCompactPrimaryCombatCueText()
+        {
+            if (bossPressureActionDirector != null
+                && bossPressureActionDirector.IsPlayerSummonResponseWindowActive)
+            {
+                return $"Answer: Summon LV{bossPressureActionDirector.LastObservedPlayerSummonTier} "
+                    + $"{bossPressureActionDirector.PlayerSummonResponseRemainingSeconds:0.0}s";
+            }
+
+            if (pocketReviewOwner != null && pocketReviewOwner.IsSummonPressureBreakActive)
+            {
+                return pocketReviewOwner.IsSummonFollowupWindowActive
+                    ? $"Follow-up {pocketReviewOwner.SummonFollowupWindowRemainingSeconds:0.0}s"
+                    : "Break: EN pulse";
+            }
+
+            if (bossBarrageEmitter != null && bossBarrageEmitter.IsWindupActive)
+            {
+                return $"Dodge: {ShortenPatternId(bossBarrageEmitter.CurrentPattern?.PatternId)}";
+            }
+
+            if (bossPressureCostLadder != null && bossPressureCostLadder.CanSpend)
+            {
+                return $"Boss LV{bossPressureCostLadder.AvailableTier} ready";
+            }
+
+            if (bossBarrageEmitter != null && bossBarrageEmitter.CurrentPattern != null)
+            {
+                return $"Boss: {ShortenPatternId(bossBarrageEmitter.CurrentPattern.PatternId)}";
+            }
+
+            return "Hold lane";
+        }
+
+        private string ResolveCompactFireText()
+        {
+            if (rangedBasicAttackAction == null)
+            {
+                return "Fire -";
+            }
+
+            return rangedBasicAttackAction.IsFireReady
+                ? "Fire ready"
+                : $"Fire {rangedBasicAttackAction.FireCooldownRemaining:0.0}s";
+        }
+
         private string ResolveCompactRiskText()
         {
             float risk = energyLadder != null
@@ -504,7 +642,7 @@ namespace DimensionBrawl.Presentation
                 : laneSpace != null && player != null
                     ? laneSpace.EvaluateForwardRisk01(player.position)
                     : 0f;
-            string band = energyLadder != null ? ResolveRiskBandLabel(energyLadder.CurrentRiskBand) : "BackSafety";
+            string band = energyLadder != null ? ResolveCompactRiskBandLabel(energyLadder.CurrentRiskBand) : "Back";
             return $"Risk {band} {risk * 100f:0}%";
         }
 
@@ -538,6 +676,25 @@ namespace DimensionBrawl.Presentation
             FrontlineProxyReadout readout = ResolveFrontlineProxyReadout();
             return $"Frontline {readout.State} A{readout.AllyCount} {readout.AllyHealthText} / "
                 + $"E{readout.EnemyCount} {readout.EnemyHealthText}   {ResolvePlayerSummonCueText()}";
+        }
+
+        private string ResolveCompactFrontlineCueLine()
+        {
+            FrontlineProxyReadout readout = ResolveFrontlineProxyReadout();
+            return $"Front {readout.State}: A{readout.AllyCount} {readout.AllyHealthText} / "
+                + $"E{readout.EnemyCount} {readout.EnemyHealthText} | {ResolveCompactSummonText()}";
+        }
+
+        private string ResolveCompactSummonText()
+        {
+            if (energyLadder == null)
+            {
+                return "S1 -";
+            }
+
+            return energyLadder.CanSpend
+                ? $"S1 ready LV{energyLadder.AvailableTier}"
+                : $"S1 LV{energyLadder.ChargingTier} {energyLadder.CurrentTierFillRatio * 100f:0}%";
         }
 
         private string ResolvePlayerSummonCueText()
@@ -971,27 +1128,27 @@ namespace DimensionBrawl.Presentation
 
             titleStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 24,
+                fontSize = 20,
                 fontStyle = FontStyle.Bold,
                 normal = { textColor = Color.white }
             };
             labelStyle = new GUIStyle(GUI.skin.label)
             {
-                fontSize = 20,
+                fontSize = 16,
                 wordWrap = true,
                 normal = { textColor = Color.white }
             };
             boxStyle = new GUIStyle(GUI.skin.box)
             {
-                padding = new RectOffset(18, 18, 16, 16),
+                padding = new RectOffset(14, 14, 12, 12),
                 normal = { textColor = Color.white }
             };
             resourceBarStyle = new GUIStyle(GUI.skin.label)
             {
                 alignment = TextAnchor.MiddleLeft,
-                fontSize = 16,
+                fontSize = 13,
                 fontStyle = FontStyle.Bold,
-                padding = new RectOffset(8, 8, 0, 0),
+                padding = new RectOffset(6, 6, 0, 0),
                 normal = { textColor = resourceTextColor }
             };
         }
@@ -1003,13 +1160,13 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
-            DrawResourceBar(CombatResourceReadout.FromHealth("Player HP", playerHealth, playerHealthColor));
-            DrawResourceBar(CombatResourceReadout.FromEnergy("Player EN", energyLadder));
-            DrawResourceBar(CombatResourceReadout.FromHealth("Boss HP", bossHealth, bossHealthColor));
-            DrawResourceBar(CombatResourceReadout.FromBossCost("Boss Cost", bossPressureCostLadder));
+            DrawResourceBar(CombatResourceReadout.FromHealth("HP", playerHealth, playerHealthColor));
+            DrawResourceBar(CombatResourceReadout.FromEnergy("EN", energyLadder));
+            DrawResourceBar(CombatResourceReadout.FromHealth("Boss", bossHealth, bossHealthColor));
+            DrawResourceBar(CombatResourceReadout.FromBossCost("Cost", bossPressureCostLadder));
             if (closeThreatHealth != null && closeThreatHealth.IsAlive)
             {
-                DrawResourceBar(CombatResourceReadout.FromHealth("Threat HP", closeThreatHealth, threatHealthColor));
+                DrawResourceBar(CombatResourceReadout.FromHealth("Threat", closeThreatHealth, threatHealthColor));
             }
         }
 
@@ -1038,7 +1195,7 @@ namespace DimensionBrawl.Presentation
 
         private static float ResolveUiScale()
         {
-            return Mathf.Clamp(Screen.height / 1440f, 1f, 2f);
+            return Mathf.Clamp(Screen.height / 1440f, 0.9f, 1.2f);
         }
 
         private float ResolveHudAreaHeight(float uiScale)
@@ -1051,6 +1208,44 @@ namespace DimensionBrawl.Presentation
         private static bool IsEmptyHintLine(string hintLine)
         {
             return string.IsNullOrWhiteSpace(hintLine) || string.Equals(hintLine, "Hint: -", StringComparison.Ordinal);
+        }
+
+        private static string ResolveCompactPhaseLabel(string phase)
+        {
+            return phase switch
+            {
+                "ThreatDefense" => "Threat",
+                "SummonBlock" => "Summon Block",
+                "SummonFollowup" => "Follow-up",
+                "PressureBreak" => "Break",
+                "Cleared" => "Clear",
+                "Failed" => "Fail",
+                _ => phase
+            };
+        }
+
+        private static string ResolveCompactRiskBandLabel(SummonEnergyRiskBand riskBand)
+        {
+            return riskBand switch
+            {
+                SummonEnergyRiskBand.BackSafety => "Back",
+                SummonEnergyRiskBand.MidCharge => "Mid",
+                SummonEnergyRiskBand.ForwardRisk => "Front",
+                _ => riskBand.ToString()
+            };
+        }
+
+        private static string ShortenPatternId(string patternId)
+        {
+            if (string.IsNullOrWhiteSpace(patternId))
+            {
+                return "-";
+            }
+
+            const int maxLength = 18;
+            return patternId.Length <= maxLength
+                ? patternId
+                : patternId.Substring(0, maxLength);
         }
 
         private void DrawReticleIfNeeded()

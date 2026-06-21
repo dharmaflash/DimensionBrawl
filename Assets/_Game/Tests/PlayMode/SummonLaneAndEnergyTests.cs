@@ -284,6 +284,10 @@ namespace DimensionBrawl.Tests
             StringAssert.Contains("Answer: Summon shield LV1", hud.CombatCueReadout);
             StringAssert.Contains("waiting LV2 SummonSlot1PressureBlock", hud.CombatCueReadout);
             StringAssert.Contains("Frontline", hud.FrontlineCueReadout);
+            Assert.AreEqual("Goal: -", hud.CompactObjectiveReadout);
+            StringAssert.Contains("Answer: Summon LV1", hud.CompactCombatCueReadout);
+            Assert.LessOrEqual(hud.CompactCombatCueReadout.Length, 72);
+            Assert.LessOrEqual(hud.CompactFrontlineCueReadout.Length, 72);
 
             Object.DestroyImmediate(hudObject);
             Object.DestroyImmediate(basicPattern);

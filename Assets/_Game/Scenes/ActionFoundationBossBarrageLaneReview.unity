@@ -6779,13 +6779,13 @@ MonoBehaviour:
   pocketReviewOwner: {fileID: 1045561727}
   duelReviewOwner: {fileID: 0}
   showHud: 1
-  width: 430
-  height: 280
+  width: 390
+  height: 230
   margin: 18
   showCenterReticle: 0
   showResourceBars: 1
-  resourceBarHeight: 22
-  resourceBarGap: 5
+  resourceBarHeight: 18
+  resourceBarGap: 3
   resourceBarBackColor: {r: 0.02, g: 0.025, b: 0.035, a: 0.82}
   playerHealthColor: {r: 0.25, g: 1, b: 0.46, a: 1}
   bossHealthColor: {r: 1, g: 0.22, b: 0.32, a: 1}
