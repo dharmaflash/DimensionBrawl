@@ -304,6 +304,10 @@ namespace DimensionBrawl.Tests
                 Assert.Greater(stats.VisiblePixelCount, frame.width * frame.height * 0.55f);
                 Assert.Greater(stats.SaturatedPixelCount, frame.width * frame.height * 0.025f);
                 Assert.Less(stats.NearWhitePixelCount, frame.width * frame.height * 0.38f);
+                Assert.Less(
+                    stats.BrightLowSaturationPixelCount,
+                    frame.width * frame.height * 0.14f,
+                    "Result VFX should not wash the frame into a broad pale overlay that hides the result cause.");
                 return stats;
             }
             finally

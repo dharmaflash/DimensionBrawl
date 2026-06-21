@@ -4607,8 +4607,8 @@ namespace DimensionBrawl.Tests
             AssertCombatCueAssetOverlay(
                 profile,
                 CombatVfxCueId.PlayerCritical,
-                "CueAssetVfx_MagicMissilesDeathBurst",
-                "player critical MagicMissiles break overlay");
+                "CueAssetVfx_MagicMissilesLightImpact",
+                "player critical MagicMissiles impact overlay");
             AssertCombatCueAssetOverlay(
                 profile,
                 CombatVfxCueId.EnemyHit,
@@ -4662,8 +4662,8 @@ namespace DimensionBrawl.Tests
             AssertCombatCueAssetOverlay(
                 profile,
                 CombatVfxCueId.PocketFailed,
-                "CueAssetVfx_MagicMissilesDeathBurst",
-                "pocket fail MagicMissiles overlay");
+                "CueAssetVfx_MagicMissilesLightImpact",
+                "pocket fail MagicMissiles impact overlay");
             AssertDistinctCombatCuePrefabs(
                 profile,
                 CombatVfxCueId.EliteSummonSignal,

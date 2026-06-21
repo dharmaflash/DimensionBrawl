@@ -5461,8 +5461,8 @@ namespace DimensionBrawl.Editor
             ValidateCombatCueAssetOverlay(
                 profile,
                 CombatVfxCueId.PlayerCritical,
-                "CueAssetVfx_MagicMissilesDeathBurst",
-                "player critical MagicMissiles break overlay");
+                "CueAssetVfx_MagicMissilesLightImpact",
+                "player critical MagicMissiles impact overlay");
             ValidateCombatCueAssetOverlay(
                 profile,
                 CombatVfxCueId.EnemyHit,

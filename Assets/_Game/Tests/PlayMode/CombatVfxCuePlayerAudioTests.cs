@@ -81,7 +81,7 @@ namespace DimensionBrawl.Tests
             AssertPromotedCueAudio(profile, CombatVfxCueId.EnemyHit, "light_hit", magicMissilesAudioPath);
             AssertPromotedCueAudio(profile, CombatVfxCueId.EnemyDeath, "death_hit", magicMissilesAudioPath);
             AssertPromotedCueAudio(profile, CombatVfxCueId.PlayerDamaged, "light_hit", magicMissilesAudioPath);
-            AssertPromotedCueAudio(profile, CombatVfxCueId.PlayerCritical, "death_hit", magicMissilesAudioPath);
+            AssertPromotedCueAudio(profile, CombatVfxCueId.PlayerCritical, "light_hit", magicMissilesAudioPath);
             AssertPromotedCueAudio(profile, CombatVfxCueId.EliteShieldSignal, "holy_hit", magicMissilesAudioPath);
             AssertPromotedCueAudio(profile, CombatVfxCueId.EliteArmorBreakSignal, "light_hit", magicMissilesAudioPath);
             AssertPromotedCueAudio(profile, CombatVfxCueId.EliteSummonSignal, "holy_shoot", magicMissilesAudioPath);
@@ -89,7 +89,7 @@ namespace DimensionBrawl.Tests
             AssertPromotedCueAudio(profile, CombatVfxCueId.SummonBlockOpportunity, "holy_shoot", magicMissilesAudioPath);
             AssertPromotedCueAudio(profile, CombatVfxCueId.PocketCleared, "holy_shoot", magicMissilesAudioPath);
             AssertPromotedCueAudio(profile, CombatVfxCueId.SummonFollowupMissed, "death_hit", magicMissilesAudioPath);
-            AssertPromotedCueAudio(profile, CombatVfxCueId.PocketFailed, "death_hit", magicMissilesAudioPath);
+            AssertPromotedCueAudio(profile, CombatVfxCueId.PocketFailed, "light_hit", magicMissilesAudioPath);
         }
 
         [Test]
