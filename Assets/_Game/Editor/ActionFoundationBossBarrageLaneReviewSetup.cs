@@ -2947,81 +2947,99 @@ namespace DimensionBrawl.Editor
             AnimatorStateMachine stateMachine = layer.stateMachine;
             stateMachine.name = "Inori Rifle";
 
+            AnimatorState normalIdle = CreateState(
+                stateMachine,
+                "R_Idle",
+                "Assets/_Game/Art/Animations/Player/RifleGirl/RG_Idle.fbx",
+                true,
+                new Vector3(80f, 80f, 0f));
+            AnimatorState normalWalk = CreateState(
+                stateMachine,
+                "R_Walk",
+                "Assets/_Game/Art/Animations/Player/RifleGirl/RG_Walk.fbx",
+                true,
+                new Vector3(80f, 160f, 0f));
+            AnimatorState normalRun = CreateState(
+                stateMachine,
+                "R_Run",
+                "Assets/_Game/Art/Animations/Player/RifleGirl/RG_Run.fbx",
+                true,
+                new Vector3(80f, 240f, 0f));
             AnimatorState aimIdle = CreateState(
                 stateMachine,
                 "R_AimIdle",
                 "Assets/_Game/Art/Animations/Player/RifleGirl/RG_AimIdle.fbx",
                 true,
-                new Vector3(280f, 80f, 0f));
+                new Vector3(360f, 80f, 0f));
             AnimatorState shoot = CreateState(
                 stateMachine,
                 "R_Shoot",
                 "Assets/_Game/Art/Animations/Player/RifleGirl/RG_Shoot.fbx",
                 false,
-                new Vector3(560f, 80f, 0f));
+                new Vector3(640f, 80f, 0f));
             AnimatorState autoShoot = CreateState(
                 stateMachine,
                 "R_AimIdleAutoShoot",
                 "Assets/_Game/Art/Animations/Player/RifleGirl/RG_AimIdleAutoShoot.fbx",
                 true,
-                new Vector3(560f, 160f, 0f));
+                new Vector3(640f, 160f, 0f));
             AnimatorState aimJog = CreateState(
                 stateMachine,
                 "R_AimJog",
                 "Assets/_Game/Art/Animations/Player/RifleGirl/RG_AimJog.fbx",
                 true,
-                new Vector3(280f, 240f, 0f));
+                new Vector3(360f, 240f, 0f));
             AnimatorState walkForward = CreateState(
                 stateMachine,
                 "R_AimWalkForward",
                 "Assets/_Game/Art/Animations/Player/RifleGirl/RG_AimWalkForward.fbx",
                 true,
-                new Vector3(280f, 320f, 0f));
+                new Vector3(360f, 320f, 0f));
             AnimatorState walkBack = CreateState(
                 stateMachine,
                 "R_AimWalkBack",
                 "Assets/_Game/Art/Animations/Player/RifleGirl/RG_AimWalkBack.fbx",
                 true,
-                new Vector3(80f, 320f, 0f));
+                new Vector3(160f, 320f, 0f));
             AnimatorState walkForwardLeft = CreateState(
                 stateMachine,
                 "R_AimWalkForwardLeft",
                 "Assets/_Game/Art/Animations/Player/RifleGirl/RG_AimWalkForwardLeft.fbx",
                 true,
-                new Vector3(80f, 240f, 0f));
+                new Vector3(160f, 400f, 0f));
             AnimatorState walkForwardRight = CreateState(
                 stateMachine,
                 "R_AimWalkForwardRight",
                 "Assets/_Game/Art/Animations/Player/RifleGirl/RG_AimWalkForwardRight.fbx",
                 true,
-                new Vector3(480f, 240f, 0f));
+                new Vector3(560f, 400f, 0f));
             AnimatorState walkBackLeft = CreateState(
                 stateMachine,
                 "R_AimWalkBackLeft",
                 "Assets/_Game/Art/Animations/Player/RifleGirl/RG_AimWalkBackLeft.fbx",
                 true,
-                new Vector3(80f, 400f, 0f));
+                new Vector3(160f, 480f, 0f));
             AnimatorState walkBackRight = CreateState(
                 stateMachine,
                 "R_AimWalkBackRight",
                 "Assets/_Game/Art/Animations/Player/RifleGirl/RG_AimWalkBackRight.fbx",
                 true,
-                new Vector3(480f, 400f, 0f));
+                new Vector3(560f, 480f, 0f));
             AnimatorState evade = CreateState(
                 stateMachine,
                 "R_Evade",
                 "Assets/_Game/Art/Animations/Player/RifleGirl/RG_Evade.fbx",
                 false,
-                new Vector3(560f, 320f, 0f));
+                new Vector3(640f, 320f, 0f));
 
-            stateMachine.defaultState = aimIdle;
-            AddAnyTriggerTransition(stateMachine, "IDLE", aimIdle);
+            stateMachine.defaultState = normalIdle;
+            AddAnyTriggerTransition(stateMachine, "IDLE", normalIdle);
             AddAnyTriggerTransition(stateMachine, "IDLE 0", aimIdle);
             AddAnyTriggerTransition(stateMachine, "SHOOT", shoot);
             AddAnyTriggerTransition(stateMachine, "AUTO SHOOT", autoShoot);
             AddAnyTriggerTransition(stateMachine, "JOG", aimJog);
-            AddAnyTriggerTransition(stateMachine, "WALK", walkForward);
-            AddAnyTriggerTransition(stateMachine, "RUN", aimJog);
+            AddAnyTriggerTransition(stateMachine, "WALK", normalWalk);
+            AddAnyTriggerTransition(stateMachine, "RUN", normalRun);
             AddAnyTriggerTransition(stateMachine, "WALK F", walkForward);
             AddAnyTriggerTransition(stateMachine, "WALK FL", walkForwardLeft);
             AddAnyTriggerTransition(stateMachine, "WALK FR", walkForwardRight);
@@ -3030,7 +3048,7 @@ namespace DimensionBrawl.Editor
             AddAnyTriggerTransition(stateMachine, "WALK BR", walkBackRight);
             AddAnyTriggerTransition(stateMachine, "EVADE", evade);
             AddReturnTransition(shoot, aimIdle);
-            AddReturnTransition(evade, aimIdle);
+            AddReturnTransition(evade, normalIdle);
 
             layers[0] = layer;
             controller.layers = layers;
@@ -3061,6 +3079,11 @@ namespace DimensionBrawl.Editor
                 && HasTrigger(controller, "WALK BL")
                 && HasTrigger(controller, "WALK BR")
                 && HasTrigger(controller, "EVADE")
+                && stateMachine.defaultState != null
+                && string.Equals(stateMachine.defaultState.name, "R_Idle", StringComparison.Ordinal)
+                && HasState(stateMachine, "R_Idle")
+                && HasState(stateMachine, "R_Walk")
+                && HasState(stateMachine, "R_Run")
                 && HasState(stateMachine, "R_AimIdle")
                 && HasState(stateMachine, "R_Shoot")
                 && HasState(stateMachine, "R_AimIdleAutoShoot")

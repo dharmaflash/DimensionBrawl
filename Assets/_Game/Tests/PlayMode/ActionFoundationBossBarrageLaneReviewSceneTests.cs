@@ -3993,6 +3993,24 @@ namespace DimensionBrawl.Tests
             }
         }
 
+        private static void AssertAnimatorStateUsesMotion(
+            AnimatorStateMachine stateMachine,
+            string stateName,
+            Motion expectedMotion)
+        {
+            ChildAnimatorState[] states = stateMachine.states;
+            for (int i = 0; i < states.Length; i++)
+            {
+                if (states[i].state.name == stateName)
+                {
+                    Assert.AreSame(expectedMotion, states[i].state.motion, $"{stateName} should use the expected promoted clip.");
+                    return;
+                }
+            }
+
+            Assert.Fail($"Missing Animator state {stateName}.");
+        }
+
         private static void AssertMotionIsGameOwned(Motion motion, string label)
         {
             if (motion == null)
@@ -4082,9 +4100,22 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(
                 rangedController.layers[0].iKPass,
                 "Inori rifle controller must keep IK pass enabled for support-hand correction.");
+            AnimatorStateMachine inoriStateMachine = rangedController.layers[0].stateMachine;
             Assert.IsNotNull(
-                rangedController.layers[0].stateMachine.defaultState,
-                "Inori ranged controller should preserve the promoted RifleGirl native default state.");
+                inoriStateMachine.defaultState,
+                "Inori ranged controller should preserve an explicit default state.");
+            Assert.AreEqual(
+                "R_Idle",
+                inoriStateMachine.defaultState.name,
+                "Inori ranged controller should start from the low-ready RifleGirl normal idle, not the aim-idle pose.");
+            Assert.AreSame(
+                LoadAsset<AnimationClip>(RifleGirlIdleClipPath),
+                inoriStateMachine.defaultState.motion,
+                "Inori default rifle idle should use the promoted RifleGirl normal idle clip.");
+            AssertAnimatorStateUsesMotion(
+                inoriStateMachine,
+                "R_AimIdle",
+                LoadAsset<AnimationClip>(RifleGirlAimIdleClipPath));
             AssertControllerUsesGameOwnedMotions(rangedController);
             AssertInoriAvatarUsesAuthoredMapping();
 
@@ -4156,7 +4187,10 @@ namespace DimensionBrawl.Tests
             Assert.IsNotNull(meleeWeaponBinder, "Melee weapon root should keep cloned sword/shield objects bound to the same visible hands.");
             Assert.IsTrue(meleeWeaponBinder.AllBindingsValid, "Melee weapon bindings should be valid.");
             AssertAnimatorParameter(rangedAnimator, "IDLE 0", AnimatorControllerParameterType.Trigger);
+            AssertAnimatorParameter(rangedAnimator, "IDLE", AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(rangedAnimator, "SHOOT", AnimatorControllerParameterType.Trigger);
+            AssertAnimatorParameter(rangedAnimator, "WALK", AnimatorControllerParameterType.Trigger);
+            AssertAnimatorParameter(rangedAnimator, "RUN", AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(rangedAnimator, "WALK F", AnimatorControllerParameterType.Trigger);
         }
 
