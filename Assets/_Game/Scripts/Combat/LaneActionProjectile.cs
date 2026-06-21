@@ -38,6 +38,8 @@ namespace DimensionBrawl.Combat
         private ProjectileImpactResult lastImpactResult = ProjectileImpactResult.None;
         private CombatHealth lastImpactTargetHealth;
         private SummonFrontlineProxy lastImpactTargetProxy;
+        private AudioSource[] audioSources = Array.Empty<AudioSource>();
+        private bool audioSourcesResolved;
 
         public bool IsActive => active && gameObject.activeInHierarchy;
         public DamageTeam SourceTeam => sourceTeam;
@@ -85,6 +87,7 @@ namespace DimensionBrawl.Combat
 
             ResetTrailRenderers();
             gameObject.SetActive(true);
+            RestartAudioSources();
         }
 
         public void Tick(float deltaTime)
@@ -180,6 +183,7 @@ namespace DimensionBrawl.Combat
         {
             active = false;
             remainingLifetime = 0f;
+            StopAudioSources();
             gameObject.SetActive(false);
         }
 
@@ -241,6 +245,45 @@ namespace DimensionBrawl.Combat
                 trail.emitting = true;
                 trail.Clear();
             }
+        }
+
+        private void RestartAudioSources()
+        {
+            EnsureAudioSources();
+            for (int i = 0; i < audioSources.Length; i++)
+            {
+                AudioSource audioSource = audioSources[i];
+                if (audioSource == null || audioSource.clip == null || !audioSource.enabled)
+                {
+                    continue;
+                }
+
+                audioSource.Stop();
+                audioSource.Play();
+            }
+        }
+
+        private void StopAudioSources()
+        {
+            EnsureAudioSources();
+            for (int i = 0; i < audioSources.Length; i++)
+            {
+                if (audioSources[i] != null)
+                {
+                    audioSources[i].Stop();
+                }
+            }
+        }
+
+        private void EnsureAudioSources()
+        {
+            if (audioSourcesResolved)
+            {
+                return;
+            }
+
+            audioSourcesResolved = true;
+            audioSources = GetComponentsInChildren<AudioSource>(includeInactive: true);
         }
 
         private Vector3 ResolveDirection(Vector3 direction)

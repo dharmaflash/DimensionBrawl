@@ -19,6 +19,7 @@ namespace DimensionBrawl.Combat
         private Rigidbody projectileRigidbody;
         private MaterialPropertyBlock materialPropertyBlock;
         private Material[][] baseSharedMaterials = new Material[0][];
+        private AudioSource[] audioSources = System.Array.Empty<AudioSource>();
         private CombatHealth sourceHealth;
         private DamageTeam sourceTeam = DamageTeam.Enemy;
         private Vector3 travelDirection = Vector3.back;
@@ -88,6 +89,7 @@ namespace DimensionBrawl.Combat
 
             gameObject.SetActive(true);
             ResetTrailRenderers();
+            RestartAudioSources();
         }
 
         public void Tick(float deltaTime)
@@ -184,6 +186,7 @@ namespace DimensionBrawl.Combat
         {
             ResetPresentation();
             StopTrailRenderers();
+            StopAudioSources();
             active = false;
             remainingLifetime = 0f;
             gameObject.SetActive(false);
@@ -251,6 +254,8 @@ namespace DimensionBrawl.Combat
             {
                 trailRenderers = GetComponentsInChildren<TrailRenderer>(true);
             }
+
+            audioSources = GetComponentsInChildren<AudioSource>(true);
 
             materialPropertyBlock = new MaterialPropertyBlock();
             baseSharedMaterials = new Material[visualRenderers.Length][];
@@ -418,6 +423,34 @@ namespace DimensionBrawl.Combat
 
                 trail.emitting = false;
                 trail.Clear();
+            }
+        }
+
+        private void RestartAudioSources()
+        {
+            EnsurePresentationComponents();
+            for (int i = 0; i < audioSources.Length; i++)
+            {
+                AudioSource audioSource = audioSources[i];
+                if (audioSource == null || audioSource.clip == null || !audioSource.enabled)
+                {
+                    continue;
+                }
+
+                audioSource.Stop();
+                audioSource.Play();
+            }
+        }
+
+        private void StopAudioSources()
+        {
+            EnsurePresentationComponents();
+            for (int i = 0; i < audioSources.Length; i++)
+            {
+                if (audioSources[i] != null)
+                {
+                    audioSources[i].Stop();
+                }
             }
         }
 

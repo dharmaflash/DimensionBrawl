@@ -1,4 +1,5 @@
 using System.Collections;
+using DimensionBrawl.Combat;
 using DimensionBrawl.Presentation;
 using NUnit.Framework;
 using UnityEditor;
@@ -11,6 +12,12 @@ namespace DimensionBrawl.Tests
     {
         private const string CombatVfxCueProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_CombatVfxCues_ActionFoundation.asset";
+        private const string BossBarrageProjectilePrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_BossBarrageProjectile_NeedleLock.prefab";
+        private const string Skill1ProjectilePrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_PlayerSkill1Projectile_LaneBolt.prefab";
+        private const string SummonSlot1ProjectilePrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Projectile_AssistBolt.prefab";
 
         [UnityTest]
         public IEnumerator CombatVfxCuePlayerRestartsAudioSourcesInsideCuePrefab()
@@ -60,6 +67,76 @@ namespace DimensionBrawl.Tests
             AssertPromotedCueAudio(profile, CombatVfxCueId.PlayerRangedProjectileImpact, "SFX_Vefects_Shots_Squib_Metal");
         }
 
+        [UnityTest]
+        public IEnumerator LaneActionProjectileRestartsAudioSourcesOnConfigure()
+        {
+            GameObject listener = new GameObject("LaneActionProjectileAudioListener");
+            GameObject projectileObject = new GameObject("LaneActionProjectileAudioTest");
+            AudioClip clip = CreateTestClip("LaneActionProjectileAudioClip");
+            try
+            {
+                listener.AddComponent<AudioListener>();
+                AudioSource source = AddOneShotAudio(projectileObject, clip);
+                LaneActionProjectile projectile = projectileObject.AddComponent<LaneActionProjectile>();
+                projectileObject.SetActive(false);
+
+                projectile.Configure(null, DamageTeam.Player, 0f, Vector3.forward, 1f, 1f, 0.1f);
+                yield return null;
+
+                Assert.IsTrue(source.isPlaying, "LaneActionProjectile should restart authored projectile AudioSources when fired.");
+
+                projectile.Deactivate();
+                yield return null;
+
+                Assert.IsFalse(source.isPlaying, "LaneActionProjectile should stop authored projectile AudioSources when deactivated.");
+            }
+            finally
+            {
+                Object.Destroy(listener);
+                Object.Destroy(projectileObject);
+                Object.Destroy(clip);
+            }
+        }
+
+        [UnityTest]
+        public IEnumerator BossBarrageProjectileRestartsAudioSourcesOnConfigure()
+        {
+            GameObject listener = new GameObject("BossBarrageProjectileAudioListener");
+            GameObject projectileObject = new GameObject("BossBarrageProjectileAudioTest");
+            AudioClip clip = CreateTestClip("BossBarrageProjectileAudioClip");
+            try
+            {
+                listener.AddComponent<AudioListener>();
+                AudioSource source = AddOneShotAudio(projectileObject, clip);
+                BossBarrageProjectile projectile = projectileObject.AddComponent<BossBarrageProjectile>();
+                projectileObject.SetActive(false);
+
+                projectile.Configure(null, DamageTeam.Enemy, 0f, Vector3.back, 1f, 1f, 0.1f);
+                yield return null;
+
+                Assert.IsTrue(source.isPlaying, "BossBarrageProjectile should restart authored projectile AudioSources when fired.");
+
+                projectile.Deactivate();
+                yield return null;
+
+                Assert.IsFalse(source.isPlaying, "BossBarrageProjectile should stop authored projectile AudioSources when deactivated.");
+            }
+            finally
+            {
+                Object.Destroy(listener);
+                Object.Destroy(projectileObject);
+                Object.Destroy(clip);
+            }
+        }
+
+        [Test]
+        public void PromotedProjectilePrefabsUseOneShotAudioResources()
+        {
+            AssertPromotedProjectileAudio(BossBarrageProjectilePrefabPath, "fire_shoot");
+            AssertPromotedProjectileAudio(Skill1ProjectilePrefabPath, "arcane_shoot");
+            AssertPromotedProjectileAudio(SummonSlot1ProjectilePrefabPath, "light_shoot");
+        }
+
         private static CombatVfxCueProfile CreateSingleCueProfile(GameObject prefab)
         {
             CombatVfxCueProfile profile = ScriptableObject.CreateInstance<CombatVfxCueProfile>();
@@ -79,6 +156,21 @@ namespace DimensionBrawl.Tests
             cue.FindPropertyRelative("alignForwardToDirection").boolValue = false;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             return profile;
+        }
+
+        private static AudioClip CreateTestClip(string name)
+        {
+            return AudioClip.Create(name, 44100, 1, 44100, false);
+        }
+
+        private static AudioSource AddOneShotAudio(GameObject owner, AudioClip clip)
+        {
+            AudioSource source = owner.AddComponent<AudioSource>();
+            source.clip = clip;
+            source.playOnAwake = false;
+            source.loop = false;
+            source.spatialBlend = 0f;
+            return source;
         }
 
         private static void AssertPromotedCueAudio(
@@ -101,6 +193,25 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(
                 clipPath.Contains(expectedClipName),
                 $"{cueId} should use the intended shot audio clip, found {clipPath}.");
+        }
+
+        private static void AssertPromotedProjectileAudio(string prefabPath, string expectedClipName)
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            Assert.IsNotNull(prefab, $"Missing projectile prefab at {prefabPath}.");
+            AudioSource audioSource = prefab.GetComponentInChildren<AudioSource>(true);
+            Assert.IsNotNull(audioSource, $"{prefab.name} should include a promoted projectile AudioSource.");
+            Assert.IsNotNull(audioSource.clip, $"{prefab.name} AudioSource should reference a clip.");
+            Assert.IsFalse(audioSource.playOnAwake, $"{prefab.name} AudioSource should play only when the projectile is configured.");
+            Assert.IsFalse(audioSource.loop, $"{prefab.name} AudioSource should be a one-shot projectile cue.");
+
+            string clipPath = AssetDatabase.GetAssetPath(audioSource.clip).Replace('\\', '/');
+            Assert.IsTrue(
+                clipPath.StartsWith("Assets/_Game/Art/VFX/", System.StringComparison.Ordinal),
+                $"{prefab.name} audio should be promoted under _Game/Art/VFX, found {clipPath}.");
+            Assert.IsTrue(
+                clipPath.Contains(expectedClipName),
+                $"{prefab.name} should use the intended promoted projectile audio clip, found {clipPath}.");
         }
 
         private static void SetObjectReference(Object target, string propertyName, Object value)
