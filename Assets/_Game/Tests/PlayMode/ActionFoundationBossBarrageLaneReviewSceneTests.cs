@@ -1142,6 +1142,8 @@ namespace DimensionBrawl.Tests
                 summonOpportunity.ResolvePressureBreakSeconds(1)
                 + summonOpportunity.ResolveFollowupWindowSeconds(1)
                 + GetFloat(pocketOwner, "skill1FollowupClearDelaySeconds");
+            float levelOnePressureBreakSeconds = summonOpportunity.ResolvePressureBreakSeconds(1);
+            float levelOneFollowupWindowSeconds = summonOpportunity.ResolveFollowupWindowSeconds(1);
             float cleanAnswerToResultSeconds =
                 closeThreatSustainedClearSeconds
                 + summonLv1ReadySeconds
@@ -1185,6 +1187,22 @@ namespace DimensionBrawl.Tests
                 pressurePocket.TimeToNextReliefWindowSeconds,
                 Is.InRange(bossBasicFireProfile.FireIntervalSeconds * 2f, pressurePocket.TargetDurationSeconds * 0.25f),
                 "Relief should arrive after the player reads repeated boss fire, but before the pocket becomes a long attrition test.");
+            Assert.That(
+                summonOpportunity.OpportunityCueSeconds,
+                Is.InRange(1.2f, bossBasicFireProfile.FireIntervalSeconds),
+                "ArkData/PGR fight-node references use short readable trigger beats before longer combat reads; the block-opportunity cue should not collapse into instant HUD-only feedback or exceed one basic-fire breath.");
+            Assert.That(
+                levelOnePressureBreakSeconds,
+                Is.InRange(3f, 5f),
+                "The LV1 pressure break should stay in the short combat-read band observed in ArkData/PGR fight-node cues, below major countdown-warning pacing.");
+            Assert.That(
+                levelOneFollowupWindowSeconds,
+                Is.InRange(bossBasicFireProfile.FireIntervalSeconds, levelOnePressureBreakSeconds),
+                "The LV1 follow-up window should cover one returning boss-fire breath while still closing inside the pressure break.");
+            Assert.GreaterOrEqual(
+                pressurePocket.TimeToNextReliefWindowSeconds,
+                levelOnePressureBreakSeconds + summonOpportunity.OpportunityCueSeconds,
+                "The next relief target should leave room for the short block cue plus the actual pressure-break read before another spike.");
             Assert.That(
                 pressurePocket.RiskDifferential,
                 Is.EqualTo(forwardRiskDifferential).Within(0.02f),
