@@ -19,13 +19,13 @@ MonoBehaviour:
   readyCue: Prepare SummonSlot1 block
   chargeCue: Forward EN now
   payoffCue: Skill1 follow-up
-  opportunityCueSeconds: 1.35
-  pressureBreakSeconds: 3
-  followupWindowSeconds: 2.1
+  opportunityCueSeconds: 1.15
+  pressureBreakSeconds: 2.75
+  followupWindowSeconds: 1.8
   followupEnergyPulse: 125
   pressureBreakTierTwoBonusSeconds: 0.35
-  pressureBreakTierThreeBonusSeconds: 0.6
+  pressureBreakTierThreeBonusSeconds: 0.65
   followupWindowTierTwoBonusSeconds: 0.35
-  followupWindowTierThreeBonusSeconds: 0.75
+  followupWindowTierThreeBonusSeconds: 0.7
   followupEnergyPulseTierTwo: 185
   followupEnergyPulseTierThree: 240
