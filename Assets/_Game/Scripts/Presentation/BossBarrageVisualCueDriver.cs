@@ -20,6 +20,11 @@ namespace DimensionBrawl.Presentation
             [SerializeField] private Color releaseColor;
             [SerializeField, Min(0f)] private float windupPulseScale;
             [SerializeField, Min(0f)] private float releasePulseScale;
+            [SerializeField] private bool useWorldVfxCueOverride;
+            [SerializeField] private CombatVfxCueId windupWorldCueId;
+            [SerializeField] private CombatVfxCueId releaseWorldCueId;
+            [SerializeField, Min(0f)] private float windupWorldCueIntensity;
+            [SerializeField, Min(0f)] private float releaseWorldCueIntensity;
 
             public PatternAnimationCue(
                 string patternId,
@@ -28,7 +33,12 @@ namespace DimensionBrawl.Presentation
                 Color windupColor,
                 Color releaseColor,
                 float windupPulseScale,
-                float releasePulseScale)
+                float releasePulseScale,
+                bool useWorldVfxCueOverride = false,
+                CombatVfxCueId windupWorldCueId = CombatVfxCueId.EliteAuraSignal,
+                CombatVfxCueId releaseWorldCueId = CombatVfxCueId.EnemyRetreatShotActive,
+                float windupWorldCueIntensity = 1f,
+                float releaseWorldCueIntensity = 1f)
             {
                 this.patternId = patternId;
                 this.windupTrigger = windupTrigger;
@@ -37,6 +47,11 @@ namespace DimensionBrawl.Presentation
                 this.releaseColor = releaseColor;
                 this.windupPulseScale = windupPulseScale;
                 this.releasePulseScale = releasePulseScale;
+                this.useWorldVfxCueOverride = useWorldVfxCueOverride;
+                this.windupWorldCueId = windupWorldCueId;
+                this.releaseWorldCueId = releaseWorldCueId;
+                this.windupWorldCueIntensity = windupWorldCueIntensity;
+                this.releaseWorldCueIntensity = releaseWorldCueIntensity;
             }
 
             public string PatternId => patternId;
@@ -46,6 +61,11 @@ namespace DimensionBrawl.Presentation
             public Color ReleaseColor => releaseColor;
             public float WindupPulseScale => windupPulseScale;
             public float ReleasePulseScale => releasePulseScale;
+            public bool UseWorldVfxCueOverride => useWorldVfxCueOverride;
+            public CombatVfxCueId WindupWorldCueId => windupWorldCueId;
+            public CombatVfxCueId ReleaseWorldCueId => releaseWorldCueId;
+            public float WindupWorldCueIntensity => windupWorldCueIntensity > 0f ? windupWorldCueIntensity : 1f;
+            public float ReleaseWorldCueIntensity => releaseWorldCueIntensity > 0f ? releaseWorldCueIntensity : 1f;
 
             public bool Matches(string candidatePatternId)
             {
@@ -249,7 +269,12 @@ namespace DimensionBrawl.Presentation
                     new Color(1f, 0.7f, 0.18f, 1f),
                     new Color(1f, 0.9f, 0.4f, 1f),
                     0.2f,
-                    0.42f),
+                    0.42f,
+                    true,
+                    CombatVfxCueId.EnemyRetreatShotWindup,
+                    CombatVfxCueId.EnemyRetreatShotActive,
+                    1.02f,
+                    1.12f),
                 new PatternAnimationCue(
                     "CoverFire",
                     "EliteAuraBuffer",
@@ -257,7 +282,12 @@ namespace DimensionBrawl.Presentation
                     new Color(0.35f, 0.85f, 1f, 1f),
                     new Color(0.68f, 0.96f, 1f, 1f),
                     0.16f,
-                    0.33f),
+                    0.33f,
+                    true,
+                    CombatVfxCueId.EnemyFanPressureWindup,
+                    CombatVfxCueId.EnemyRetreatShotActive,
+                    0.95f,
+                    1.08f),
                 new PatternAnimationCue(
                     "EscortScreen",
                     "EliteSummonPackage",
@@ -265,7 +295,12 @@ namespace DimensionBrawl.Presentation
                     new Color(0.42f, 1f, 0.62f, 1f),
                     new Color(0.76f, 1f, 0.86f, 1f),
                     0.22f,
-                    0.38f),
+                    0.38f,
+                    true,
+                    CombatVfxCueId.EliteSummonSignal,
+                    CombatVfxCueId.EnemyFanPressureActive,
+                    1.15f,
+                    1.14f),
                 new PatternAnimationCue(
                     "LayeredSalvo",
                     "EliteSummonPackage",
@@ -273,7 +308,12 @@ namespace DimensionBrawl.Presentation
                     new Color(1f, 0.46f, 0.18f, 1f),
                     new Color(1f, 0.72f, 0.36f, 1f),
                     0.26f,
-                    0.48f),
+                    0.48f,
+                    true,
+                    CombatVfxCueId.EnemyHeavyWindupWindup,
+                    CombatVfxCueId.EnemyHeavyWindupActive,
+                    1.12f,
+                    1.22f),
                 new PatternAnimationCue(
                     "StaggeredCrossfire",
                     "ElitePhaseSwap",
@@ -281,7 +321,12 @@ namespace DimensionBrawl.Presentation
                     new Color(0.74f, 0.48f, 1f, 1f),
                     new Color(0.92f, 0.78f, 1f, 1f),
                     0.24f,
-                    0.42f),
+                    0.42f,
+                    true,
+                    CombatVfxCueId.ElitePhaseSwapSignal,
+                    CombatVfxCueId.EnemyFanPressureActive,
+                    1.1f,
+                    1.16f),
                 new PatternAnimationCue(
                     "TwinSweep",
                     "EliteAuraBuffer",
@@ -289,7 +334,12 @@ namespace DimensionBrawl.Presentation
                     new Color(0.3f, 0.9f, 1f, 1f),
                     new Color(0.62f, 1f, 1f, 1f),
                     0.18f,
-                    0.36f),
+                    0.36f,
+                    true,
+                    CombatVfxCueId.EnemyLinePressureWindup,
+                    CombatVfxCueId.EnemyLinePressureActive,
+                    1.02f,
+                    1.16f),
                 new PatternAnimationCue(
                     "LeftClamp",
                     "EliteAuraBuffer",
@@ -297,7 +347,12 @@ namespace DimensionBrawl.Presentation
                     new Color(1f, 0.36f, 0.72f, 1f),
                     new Color(1f, 0.62f, 0.88f, 1f),
                     0.2f,
-                    0.4f),
+                    0.4f,
+                    true,
+                    CombatVfxCueId.EnemyLinePressureWindup,
+                    CombatVfxCueId.EnemyLinePressureActive,
+                    1.06f,
+                    1.18f),
                 new PatternAnimationCue(
                     "RightClamp",
                     "EliteAuraBuffer",
@@ -305,7 +360,12 @@ namespace DimensionBrawl.Presentation
                     new Color(1f, 0.36f, 0.72f, 1f),
                     new Color(1f, 0.62f, 0.88f, 1f),
                     0.2f,
-                    0.4f),
+                    0.4f,
+                    true,
+                    CombatVfxCueId.EnemyLinePressureWindup,
+                    CombatVfxCueId.EnemyLinePressureActive,
+                    1.06f,
+                    1.18f),
                 new PatternAnimationCue(
                     "PunishNet",
                     "EliteSummonPackage",
@@ -313,7 +373,12 @@ namespace DimensionBrawl.Presentation
                     new Color(1f, 0.22f, 0.18f, 1f),
                     new Color(1f, 0.66f, 0.38f, 1f),
                     0.3f,
-                    0.52f),
+                    0.52f,
+                    true,
+                    CombatVfxCueId.EnemyGuardBreakWindup,
+                    CombatVfxCueId.EnemyGuardBreakActive,
+                    1.18f,
+                    1.28f),
                 new PatternAnimationCue(
                     "LinePressure",
                     "EliteAuraBuffer",
@@ -321,7 +386,12 @@ namespace DimensionBrawl.Presentation
                     new Color(1f, 0.82f, 0.22f, 1f),
                     new Color(1f, 0.98f, 0.58f, 1f),
                     0.2f,
-                    0.38f)
+                    0.38f,
+                    true,
+                    CombatVfxCueId.EnemyLinePressureWindup,
+                    CombatVfxCueId.EnemyLinePressureActive,
+                    1.08f,
+                    1.2f)
             };
         }
 
@@ -415,7 +485,7 @@ namespace DimensionBrawl.Presentation
                 cue.WindupColor,
                 Mathf.Max(0.01f, pattern != null ? pattern.WindupSeconds : 0.01f),
                 cue.WindupPulseScale);
-            if (PlayWorldVfx(windupCueId, 1, windupCueIntensity + cue.WindupPulseScale))
+            if (PlayWorldVfx(ResolveWindupWorldVfxCueId(cue), 1, windupCueIntensity * cue.WindupWorldCueIntensity + cue.WindupPulseScale))
             {
                 windupWorldVfxCueRequestCount++;
             }
@@ -428,7 +498,7 @@ namespace DimensionBrawl.Presentation
             lastReleaseTrigger = trigger;
             TriggerAnimator(trigger);
             StartCue(cue.ReleaseColor, releaseFlashSeconds, cue.ReleasePulseScale);
-            if (PlayWorldVfx(releaseCueId, 1, releaseCueIntensity + cue.ReleasePulseScale))
+            if (PlayWorldVfx(ResolveReleaseWorldVfxCueId(cue), 1, releaseCueIntensity * cue.ReleaseWorldCueIntensity + cue.ReleasePulseScale))
             {
                 releaseWorldVfxCueRequestCount++;
             }
@@ -668,6 +738,16 @@ namespace DimensionBrawl.Presentation
                 BossPressureActionKind.PunishOverextend => punishPressureCueId,
                 _ => skillPressureCueId
             };
+        }
+
+        private CombatVfxCueId ResolveWindupWorldVfxCueId(PatternAnimationCue cue)
+        {
+            return cue.UseWorldVfxCueOverride ? cue.WindupWorldCueId : windupCueId;
+        }
+
+        private CombatVfxCueId ResolveReleaseWorldVfxCueId(PatternAnimationCue cue)
+        {
+            return cue.UseWorldVfxCueOverride ? cue.ReleaseWorldCueId : releaseCueId;
         }
 
         private bool PlayWorldVfx(CombatVfxCueId cueId, int tier, float baseIntensity)

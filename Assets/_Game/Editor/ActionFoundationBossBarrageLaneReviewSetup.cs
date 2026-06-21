@@ -7354,6 +7354,12 @@ namespace DimensionBrawl.Editor
 
         private static void ValidateBossVisualCueBindings(BossBarrageVisualCueDriver cueDriver, Animator animator)
         {
+            CombatVfxCueProfile cueProfile = cueDriver.CuePlayer != null ? cueDriver.CuePlayer.Profile : null;
+            if (cueProfile == null)
+            {
+                throw new InvalidOperationException("Boss visual cue driver should reference the shared combat VFX cue profile.");
+            }
+
             var foundPatternIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < cueDriver.PatternCueCount; i++)
             {
@@ -7370,6 +7376,7 @@ namespace DimensionBrawl.Editor
                 foundPatternIds.Add(cue.PatternId);
                 ValidateAnimatorTrigger(animator, cue.WindupTrigger, $"{cue.PatternId} windup trigger");
                 ValidateAnimatorTrigger(animator, cue.ReleaseTrigger, $"{cue.PatternId} release trigger");
+                ValidateBossPatternWorldVfxCue(cueProfile, cue);
             }
 
             for (int i = 0; i < RequiredBossPatternCueIds.Length; i++)
@@ -7378,6 +7385,29 @@ namespace DimensionBrawl.Editor
                 {
                     throw new InvalidOperationException($"Boss visual cue driver is missing pattern cue {RequiredBossPatternCueIds[i]}.");
                 }
+            }
+        }
+
+        private static void ValidateBossPatternWorldVfxCue(
+            CombatVfxCueProfile cueProfile,
+            BossBarrageVisualCueDriver.PatternAnimationCue cue)
+        {
+            if (!cue.UseWorldVfxCueOverride)
+            {
+                throw new InvalidOperationException(
+                    $"Boss pattern {cue.PatternId} should choose pattern-specific world VFX cues.");
+            }
+
+            if (!cueProfile.TryGetCue(cue.WindupWorldCueId, out _))
+            {
+                throw new InvalidOperationException(
+                    $"Boss pattern {cue.PatternId} windup world VFX cue {cue.WindupWorldCueId} is missing from the combat VFX profile.");
+            }
+
+            if (!cueProfile.TryGetCue(cue.ReleaseWorldCueId, out _))
+            {
+                throw new InvalidOperationException(
+                    $"Boss pattern {cue.PatternId} release world VFX cue {cue.ReleaseWorldCueId} is missing from the combat VFX profile.");
             }
         }
 

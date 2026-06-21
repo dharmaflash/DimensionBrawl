@@ -2878,6 +2878,11 @@ MonoBehaviour:
     releaseColor: {r: 1, g: 0.9, b: 0.4, a: 1}
     windupPulseScale: 0.2
     releasePulseScale: 0.42
+    useWorldVfxCueOverride: 1
+    windupWorldCueId: 18
+    releaseWorldCueId: 19
+    windupWorldCueIntensity: 1.02
+    releaseWorldCueIntensity: 1.12
   - patternId: CoverFire
     windupTrigger: EliteAuraBuffer
     releaseTrigger: AttackRetreatShot
@@ -2885,6 +2890,11 @@ MonoBehaviour:
     releaseColor: {r: 0.68, g: 0.96, b: 1, a: 1}
     windupPulseScale: 0.16
     releasePulseScale: 0.33
+    useWorldVfxCueOverride: 1
+    windupWorldCueId: 16
+    releaseWorldCueId: 19
+    windupWorldCueIntensity: 0.95
+    releaseWorldCueIntensity: 1.08
   - patternId: EscortScreen
     windupTrigger: EliteSummonPackage
     releaseTrigger: AttackFanPressure
@@ -2892,6 +2902,11 @@ MonoBehaviour:
     releaseColor: {r: 0.76, g: 1, b: 0.86, a: 1}
     windupPulseScale: 0.22
     releasePulseScale: 0.38
+    useWorldVfxCueOverride: 1
+    windupWorldCueId: 27
+    releaseWorldCueId: 17
+    windupWorldCueIntensity: 1.15
+    releaseWorldCueIntensity: 1.14
   - patternId: LayeredSalvo
     windupTrigger: EliteSummonPackage
     releaseTrigger: AttackHeavy
@@ -2899,6 +2914,11 @@ MonoBehaviour:
     releaseColor: {r: 1, g: 0.72, b: 0.36, a: 1}
     windupPulseScale: 0.26
     releasePulseScale: 0.48
+    useWorldVfxCueOverride: 1
+    windupWorldCueId: 12
+    releaseWorldCueId: 13
+    windupWorldCueIntensity: 1.12
+    releaseWorldCueIntensity: 1.22
   - patternId: StaggeredCrossfire
     windupTrigger: ElitePhaseSwap
     releaseTrigger: AttackFanPressure
@@ -2906,6 +2926,11 @@ MonoBehaviour:
     releaseColor: {r: 0.92, g: 0.78, b: 1, a: 1}
     windupPulseScale: 0.24
     releasePulseScale: 0.42
+    useWorldVfxCueOverride: 1
+    windupWorldCueId: 28
+    releaseWorldCueId: 17
+    windupWorldCueIntensity: 1.1
+    releaseWorldCueIntensity: 1.16
   - patternId: TwinSweep
     windupTrigger: EliteAuraBuffer
     releaseTrigger: AttackLinePressure
@@ -2913,6 +2938,11 @@ MonoBehaviour:
     releaseColor: {r: 0.62, g: 1, b: 1, a: 1}
     windupPulseScale: 0.18
     releasePulseScale: 0.36
+    useWorldVfxCueOverride: 1
+    windupWorldCueId: 14
+    releaseWorldCueId: 15
+    windupWorldCueIntensity: 1.02
+    releaseWorldCueIntensity: 1.16
   - patternId: LeftClamp
     windupTrigger: EliteAuraBuffer
     releaseTrigger: AttackLinePressure
@@ -2920,6 +2950,11 @@ MonoBehaviour:
     releaseColor: {r: 1, g: 0.62, b: 0.88, a: 1}
     windupPulseScale: 0.2
     releasePulseScale: 0.4
+    useWorldVfxCueOverride: 1
+    windupWorldCueId: 14
+    releaseWorldCueId: 15
+    windupWorldCueIntensity: 1.06
+    releaseWorldCueIntensity: 1.18
   - patternId: RightClamp
     windupTrigger: EliteAuraBuffer
     releaseTrigger: AttackLinePressure
@@ -2927,6 +2962,11 @@ MonoBehaviour:
     releaseColor: {r: 1, g: 0.62, b: 0.88, a: 1}
     windupPulseScale: 0.2
     releasePulseScale: 0.4
+    useWorldVfxCueOverride: 1
+    windupWorldCueId: 14
+    releaseWorldCueId: 15
+    windupWorldCueIntensity: 1.06
+    releaseWorldCueIntensity: 1.18
   - patternId: PunishNet
     windupTrigger: EliteSummonPackage
     releaseTrigger: AttackHeavy
@@ -2934,6 +2974,11 @@ MonoBehaviour:
     releaseColor: {r: 1, g: 0.66, b: 0.38, a: 1}
     windupPulseScale: 0.3
     releasePulseScale: 0.52
+    useWorldVfxCueOverride: 1
+    windupWorldCueId: 22
+    releaseWorldCueId: 23
+    windupWorldCueIntensity: 1.18
+    releaseWorldCueIntensity: 1.28
   - patternId: LinePressure
     windupTrigger: EliteAuraBuffer
     releaseTrigger: AttackLinePressure
@@ -2941,6 +2986,11 @@ MonoBehaviour:
     releaseColor: {r: 1, g: 0.98, b: 0.58, a: 1}
     windupPulseScale: 0.2
     releasePulseScale: 0.38
+    useWorldVfxCueOverride: 1
+    windupWorldCueId: 14
+    releaseWorldCueId: 15
+    windupWorldCueIntensity: 1.08
+    releaseWorldCueIntensity: 1.2
   pressureActionCues:
   - actionKind: 0
     trigger: AttackLinePressure

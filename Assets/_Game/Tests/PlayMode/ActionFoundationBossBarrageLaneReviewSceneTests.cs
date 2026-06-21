@@ -5322,6 +5322,9 @@ namespace DimensionBrawl.Tests
 
         private static void AssertBossVisualCueBindings(BossBarrageVisualCueDriver cueDriver, Animator animator)
         {
+            CombatVfxCueProfile cueProfile = cueDriver.CuePlayer != null ? cueDriver.CuePlayer.Profile : null;
+            Assert.IsNotNull(cueProfile, "Boss visual cue driver should reference the shared combat VFX cue profile.");
+
             var foundPatternIds = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
             for (int i = 0; i < cueDriver.PatternCueCount; i++)
             {
@@ -5330,6 +5333,7 @@ namespace DimensionBrawl.Tests
                 foundPatternIds.Add(cue.PatternId);
                 AssertAnimatorTrigger(animator, cue.WindupTrigger, $"{cue.PatternId} windup trigger");
                 AssertAnimatorTrigger(animator, cue.ReleaseTrigger, $"{cue.PatternId} release trigger");
+                AssertBossPatternWorldVfxCue(cueProfile, cue);
             }
 
             for (int i = 0; i < RequiredBossPatternCueIds.Length; i++)
@@ -5338,6 +5342,21 @@ namespace DimensionBrawl.Tests
                     foundPatternIds.Contains(RequiredBossPatternCueIds[i]),
                     $"Boss visual cue driver should map {RequiredBossPatternCueIds[i]}.");
             }
+        }
+
+        private static void AssertBossPatternWorldVfxCue(
+            CombatVfxCueProfile cueProfile,
+            BossBarrageVisualCueDriver.PatternAnimationCue cue)
+        {
+            Assert.IsTrue(
+                cue.UseWorldVfxCueOverride,
+                $"Boss pattern {cue.PatternId} should choose pattern-specific world VFX cues.");
+            Assert.IsTrue(
+                cueProfile.TryGetCue(cue.WindupWorldCueId, out _),
+                $"Boss pattern {cue.PatternId} windup world VFX cue {cue.WindupWorldCueId} should exist.");
+            Assert.IsTrue(
+                cueProfile.TryGetCue(cue.ReleaseWorldCueId, out _),
+                $"Boss pattern {cue.PatternId} release world VFX cue {cue.ReleaseWorldCueId} should exist.");
         }
 
         private static void AssertBossPressureActionCueBindings(BossBarrageVisualCueDriver cueDriver, Animator animator)
