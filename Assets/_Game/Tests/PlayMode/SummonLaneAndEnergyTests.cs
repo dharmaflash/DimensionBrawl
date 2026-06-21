@@ -164,6 +164,52 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void ActionScreenCuePresenterReadsSummonEnergyStateSignals()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            GameObject playerObject = new GameObject("Player");
+            GameObject presenterObject = new GameObject("ScreenCuePresenter");
+            try
+            {
+                SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+                SummonEnergyLadder energy = playerObject.AddComponent<SummonEnergyLadder>();
+                energy.ConfigureReferences(lane, playerObject.transform);
+
+                ActionScreenCuePresenter presenter = presenterObject.AddComponent<ActionScreenCuePresenter>();
+                presenter.Configure(null, null, energy, null, null, null, null, null, null, null);
+
+                playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.ForwardBoundaryZ);
+                energy.Tick(0.01f);
+
+                Assert.AreEqual("Energy.ForwardRisk", presenter.LastCueId);
+                Assert.AreEqual(1, presenter.EnergyCueRequestCount);
+                Assert.AreEqual(1, presenter.ForwardRiskCueRequestCount);
+                Assert.AreEqual(SummonEnergyRiskBand.ForwardRisk, presenter.LastEnergyRiskBand);
+
+                energy.GrantCurrentTierEnergy(energy.CurrentTierTarget);
+
+                Assert.AreEqual("Energy.ReadyLV1", presenter.LastCueId);
+                Assert.AreEqual(2, presenter.EnergyCueRequestCount);
+                Assert.AreEqual(1, presenter.EnergyReadyCueRequestCount);
+                Assert.AreEqual(1, presenter.LastEnergyCueTier);
+
+                Assert.IsTrue(energy.TrySpend(out int spentTier));
+
+                Assert.AreEqual(1, spentTier);
+                Assert.AreEqual("Energy.SpentLV1", presenter.LastCueId);
+                Assert.AreEqual(3, presenter.EnergyCueRequestCount);
+                Assert.AreEqual(1, presenter.EnergySpendCueRequestCount);
+                Assert.AreEqual(3, presenter.PlayerCueRequestCount);
+            }
+            finally
+            {
+                Object.DestroyImmediate(presenterObject);
+                Object.DestroyImmediate(playerObject);
+                Object.DestroyImmediate(laneObject);
+            }
+        }
+
+        [Test]
         public void EnergyRewardPulseCarriesOverflowIntoHigherTierReadiness()
         {
             GameObject playerObject = new GameObject("Player");

@@ -20,6 +20,7 @@ namespace DimensionBrawl.Presentation
         [Header("References")]
         [SerializeField] private PlayerActionController actionController;
         [SerializeField] private PlayerRangedBasicAttackAction rangedBasicAttackAction;
+        [SerializeField] private SummonEnergyLadder energyLadder;
         [SerializeField] private PlayerSkill1Action skill1Action;
         [SerializeField] private PlayerSummonSlot1Action summonSlot1Action;
         [SerializeField] private PlayerSupportSummonSlotAction summonSlot2Action;
@@ -41,6 +42,11 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private Color skillColor = new Color(0.46f, 1f, 0.78f, 1f);
         [SerializeField] private Color summonColor = new Color(0.18f, 1f, 0.62f, 1f);
         [SerializeField] private Color summonBlockColor = new Color(0.85f, 1f, 1f, 1f);
+
+        [Header("Energy Colors")]
+        [SerializeField] private Color forwardRiskColor = new Color(0.35f, 1f, 0.72f, 1f);
+        [SerializeField] private Color energyReadyColor = new Color(0.92f, 1f, 0.34f, 1f);
+        [SerializeField] private Color energySpendColor = new Color(0.62f, 0.74f, 0.92f, 1f);
 
         [Header("Boss Colors")]
         [SerializeField] private Color bossWindupColor = new Color(1f, 0.62f, 0.16f, 1f);
@@ -70,10 +76,16 @@ namespace DimensionBrawl.Presentation
         private int bossCueRequestCount;
         private int followupCueRequestCount;
         private int resultCueRequestCount;
+        private int energyCueRequestCount;
+        private int forwardRiskCueRequestCount;
+        private int energyReadyCueRequestCount;
+        private int energySpendCueRequestCount;
         private int suppressedCueRequestCount;
         private string lastCueId = string.Empty;
         private Color lastCueColor = Color.clear;
         private float lastCueIntensity;
+        private int lastEnergyCueTier;
+        private SummonEnergyRiskBand lastEnergyRiskBand = SummonEnergyRiskBand.BackSafety;
 
         public bool ShowScreenCues => showScreenCues;
         public bool HasActiveCue => flashTimer > 0f || vignetteTimer > 0f;
@@ -85,14 +97,21 @@ namespace DimensionBrawl.Presentation
         public int BossCueRequestCount => bossCueRequestCount;
         public int FollowupCueRequestCount => followupCueRequestCount;
         public int ResultCueRequestCount => resultCueRequestCount;
+        public int EnergyCueRequestCount => energyCueRequestCount;
+        public int ForwardRiskCueRequestCount => forwardRiskCueRequestCount;
+        public int EnergyReadyCueRequestCount => energyReadyCueRequestCount;
+        public int EnergySpendCueRequestCount => energySpendCueRequestCount;
         public int SuppressedCueRequestCount => suppressedCueRequestCount;
         public string LastCueId => lastCueId;
         public Color LastCueColor => lastCueColor;
         public float LastCueIntensity => lastCueIntensity;
+        public int LastEnergyCueTier => lastEnergyCueTier;
+        public SummonEnergyRiskBand LastEnergyRiskBand => lastEnergyRiskBand;
 
         public void Configure(
             PlayerActionController newActionController,
             PlayerRangedBasicAttackAction newRangedBasicAttackAction,
+            SummonEnergyLadder newEnergyLadder,
             PlayerSkill1Action newSkill1Action,
             PlayerSummonSlot1Action newSummonSlot1Action,
             PlayerSupportSummonSlotAction newSummonSlot2Action,
@@ -104,6 +123,7 @@ namespace DimensionBrawl.Presentation
             Unsubscribe();
             actionController = newActionController;
             rangedBasicAttackAction = newRangedBasicAttackAction;
+            energyLadder = newEnergyLadder;
             skill1Action = newSkill1Action;
             summonSlot1Action = newSummonSlot1Action;
             summonSlot2Action = newSummonSlot2Action;
@@ -176,6 +196,47 @@ namespace DimensionBrawl.Presentation
         private void HandleRangedFireStarted()
         {
             RequestScreenCue("Player.RangedFire", rangedFireColor, 0.09f, 0.42f, ScreenCueCategory.Player);
+        }
+
+        private void HandleEnergyRiskBandChanged(SummonEnergyRiskBand riskBand)
+        {
+            lastEnergyRiskBand = riskBand;
+            if (riskBand != SummonEnergyRiskBand.ForwardRisk)
+            {
+                return;
+            }
+
+            energyCueRequestCount++;
+            forwardRiskCueRequestCount++;
+            RequestScreenCue("Energy.ForwardRisk", forwardRiskColor, 0.18f, 0.58f, ScreenCueCategory.Player);
+        }
+
+        private void HandleEnergyTierAvailable(int tier)
+        {
+            int safeTier = Mathf.Clamp(tier, 1, 3);
+            lastEnergyCueTier = safeTier;
+            energyCueRequestCount++;
+            energyReadyCueRequestCount++;
+            RequestScreenCue(
+                $"Energy.ReadyLV{safeTier}",
+                energyReadyColor,
+                0.18f,
+                ResolveTierIntensity(safeTier, 0.68f),
+                ScreenCueCategory.Player);
+        }
+
+        private void HandleEnergySpent(int tier)
+        {
+            int safeTier = Mathf.Clamp(tier, 1, 3);
+            lastEnergyCueTier = safeTier;
+            energyCueRequestCount++;
+            energySpendCueRequestCount++;
+            RequestScreenCue(
+                $"Energy.SpentLV{safeTier}",
+                energySpendColor,
+                0.12f,
+                0.42f,
+                ScreenCueCategory.Player);
         }
 
         private void HandleSkill1Used(int tier)
@@ -355,6 +416,13 @@ namespace DimensionBrawl.Presentation
                 rangedBasicAttackAction.RangedFireStarted += HandleRangedFireStarted;
             }
 
+            if (energyLadder != null)
+            {
+                energyLadder.RiskBandChanged += HandleEnergyRiskBandChanged;
+                energyLadder.TierAvailable += HandleEnergyTierAvailable;
+                energyLadder.EnergySpent += HandleEnergySpent;
+            }
+
             if (skill1Action != null)
             {
                 skill1Action.Skill1Used += HandleSkill1Used;
@@ -410,6 +478,13 @@ namespace DimensionBrawl.Presentation
             if (rangedBasicAttackAction != null)
             {
                 rangedBasicAttackAction.RangedFireStarted -= HandleRangedFireStarted;
+            }
+
+            if (energyLadder != null)
+            {
+                energyLadder.RiskBandChanged -= HandleEnergyRiskBandChanged;
+                energyLadder.TierAvailable -= HandleEnergyTierAvailable;
+                energyLadder.EnergySpent -= HandleEnergySpent;
             }
 
             if (skill1Action != null)

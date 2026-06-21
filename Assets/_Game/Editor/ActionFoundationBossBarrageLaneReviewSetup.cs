@@ -4782,6 +4782,7 @@ namespace DimensionBrawl.Editor
             screenCuePresenter.Configure(
                 player.GetComponent<PlayerActionController>(),
                 rangedBasicAttackAction,
+                energyLadder,
                 skill1Action,
                 summonSlot1Action,
                 summonSlot2Action,

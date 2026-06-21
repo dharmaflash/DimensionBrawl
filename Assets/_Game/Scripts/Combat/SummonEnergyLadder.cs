@@ -44,6 +44,7 @@ namespace DimensionBrawl.Combat
         private float currentGainMultiplier = 1f;
 
         public event Action EnergyChanged;
+        public event Action<SummonEnergyRiskBand> RiskBandChanged;
         public event Action<int> TierAvailable;
         public event Action<int> EnergySpent;
 
@@ -119,7 +120,14 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
+            SummonEnergyRiskBand previousRiskBand = CurrentRiskBand;
             currentGainMultiplier = EvaluateGainMultiplier();
+            SummonEnergyRiskBand currentRiskBand = CurrentRiskBand;
+            if (currentRiskBand != previousRiskBand)
+            {
+                RiskBandChanged?.Invoke(currentRiskBand);
+            }
+
             ApplyEnergyAmount(baseEnergyPerSecond * currentGainMultiplier * deltaTime);
         }
 

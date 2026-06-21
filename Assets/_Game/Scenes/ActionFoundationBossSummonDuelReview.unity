@@ -7202,6 +7202,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionScreenCuePresenter
   actionController: {fileID: 4005}
   rangedBasicAttackAction: {fileID: 4011}
+  energyLadder: {fileID: 4014}
   skill1Action: {fileID: 4018}
   summonSlot1Action: {fileID: 4017}
   summonSlot2Action: {fileID: 4016}
@@ -7219,6 +7220,9 @@ MonoBehaviour:
   skillColor: {r: 0.46, g: 1, b: 0.78, a: 1}
   summonColor: {r: 0.18, g: 1, b: 0.62, a: 1}
   summonBlockColor: {r: 0.85, g: 1, b: 1, a: 1}
+  forwardRiskColor: {r: 0.35, g: 1, b: 0.72, a: 1}
+  energyReadyColor: {r: 0.92, g: 1, b: 0.34, a: 1}
+  energySpendColor: {r: 0.62, g: 0.74, b: 0.92, a: 1}
   bossWindupColor: {r: 1, g: 0.62, b: 0.16, a: 1}
   bossFireColor: {r: 1, g: 0.2, b: 0.1, a: 1}
   bossPressureColor: {r: 1, g: 0.24, b: 0.58, a: 1}

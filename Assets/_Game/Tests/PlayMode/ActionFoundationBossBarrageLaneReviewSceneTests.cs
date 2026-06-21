@@ -1027,6 +1027,7 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(mobileHud, "summonSlot1Action"));
             Assert.AreSame(playerActionController, GetObjectReference<PlayerActionController>(screenCuePresenter, "actionController"));
             Assert.AreSame(rangedBasicAttackAction, GetObjectReference<PlayerRangedBasicAttackAction>(screenCuePresenter, "rangedBasicAttackAction"));
+            Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(screenCuePresenter, "energyLadder"));
             Assert.AreSame(skill1Action, GetObjectReference<PlayerSkill1Action>(screenCuePresenter, "skill1Action"));
             Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(screenCuePresenter, "summonSlot1Action"));
             Assert.AreSame(
@@ -1047,6 +1048,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(CombatVfxCueId.EnemyClosePunishActive, pocketVfxCueBridge.PocketFailAccentCueId);
             Assert.AreEqual(1.32f, pocketVfxCueBridge.PocketFailAccentIntensity, 0.001f);
             Assert.AreEqual(0, screenCuePresenter.ResultCueRequestCount);
+            Assert.AreEqual(0, screenCuePresenter.EnergyCueRequestCount);
             Assert.AreEqual("Move", GetString(mobileHud, "moveActionName"));
             Assert.AreEqual("BasicDefenseAttack", GetString(mobileHud, "basicDefenseActionName"));
             Assert.AreEqual("Dodge", GetString(mobileHud, "dodgeActionName"));
