@@ -208,6 +208,7 @@ namespace DimensionBrawl.Player
             summonActorPool.TrimActiveCountBeforeSpawn(owner.MaxActiveSummonActors);
             SummonFrontlineProxy actor = GetSummonActor(prefab);
             actor.transform.SetParent(owner.SummonActorRoot != null ? owner.SummonActorRoot : owner.transform, worldPositionStays: true);
+            ConfigureActorVfx(actor);
             ConfigureActorCombat(actor, settings);
             actor.Activate(
                 position,
@@ -236,6 +237,26 @@ namespace DimensionBrawl.Player
             }
 
             return actor;
+        }
+
+        private void ConfigureActorVfx(SummonFrontlineProxy actor)
+        {
+            if (actor == null)
+            {
+                return;
+            }
+
+            DimensionBrawl.Presentation.SummonFrontlineProxyPresenter presenter =
+                actor.GetComponent<DimensionBrawl.Presentation.SummonFrontlineProxyPresenter>();
+            if (presenter == null)
+            {
+                return;
+            }
+
+            Transform directionTarget = owner.FrontlineTargetHealth != null
+                ? owner.FrontlineTargetHealth.transform
+                : null;
+            presenter.ConfigureVfxCuePlayer(owner.CombatVfxCuePlayer, actor.transform, directionTarget);
         }
 
         private static void ConfigureActorCombat(

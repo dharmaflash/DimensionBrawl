@@ -118,8 +118,7 @@ namespace DimensionBrawl.Test
                 return false;
             }
 
-            cuePlayer.PlayCue(cueId, anchor, ResolveCueDirection(anchor), ResolveTierIntensity(tier, baseIntensity));
-            return true;
+            return cuePlayer.PlayCue(cueId, anchor, ResolveCueDirection(anchor), ResolveTierIntensity(tier, baseIntensity));
         }
 
         private Vector3 ResolveCueDirection(Transform anchor)

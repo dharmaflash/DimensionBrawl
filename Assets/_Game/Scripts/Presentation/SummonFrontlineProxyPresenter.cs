@@ -22,6 +22,23 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0f)] private float animatorMoveSpeedScale = 1f;
         [SerializeField] private Transform pulseRoot;
         [SerializeField] private Renderer[] actorRenderers = System.Array.Empty<Renderer>();
+
+        [Header("VFX Cues")]
+        [SerializeField] private CombatVfxCuePlayer cuePlayer;
+        [SerializeField] private Transform vfxAnchor;
+        [SerializeField] private Transform vfxDirectionTarget;
+        [SerializeField] private CombatVfxCueId entryCueId = CombatVfxCueId.EliteSummonSignal;
+        [SerializeField] private CombatVfxCueId attackCueId = CombatVfxCueId.EnemyAttackActive;
+        [SerializeField] private CombatVfxCueId clashCueId = CombatVfxCueId.EliteShieldSignal;
+        [SerializeField] private CombatVfxCueId damageCueId = CombatVfxCueId.EnemyHit;
+        [SerializeField] private CombatVfxCueId deathCueId = CombatVfxCueId.EnemyDeath;
+        [SerializeField, Min(0f)] private float entryCueIntensity = 0.95f;
+        [SerializeField, Min(0f)] private float attackCueIntensity = 0.9f;
+        [SerializeField, Min(0f)] private float clashCueIntensity = 1.0f;
+        [SerializeField, Min(0f)] private float damageCueIntensity = 0.9f;
+        [SerializeField, Min(0f)] private float deathCueIntensity = 1.05f;
+        [SerializeField, Min(0f)] private float tierCueIntensityStep = 0.1f;
+
         [SerializeField] private Color tierOneColor = new Color(0.24f, 1f, 0.78f, 0.78f);
         [SerializeField] private Color tierTwoColor = new Color(0.38f, 0.74f, 1f, 0.9f);
         [SerializeField] private Color tierThreeColor = new Color(1f, 0.76f, 0.24f, 1f);
@@ -71,6 +88,11 @@ namespace DimensionBrawl.Presentation
         private int animatorHitTriggerCount;
         private int animatorDeathTriggerCount;
         private int animatorMoveSpeedSetCount;
+        private int entryVfxCueRequestCount;
+        private int attackVfxCueRequestCount;
+        private int clashVfxCueRequestCount;
+        private int damageVfxCueRequestCount;
+        private int deathVfxCueRequestCount;
 
         public SummonFrontlineProxy Proxy => proxy;
         public SummonFrontlineClash Clash => clash;
@@ -81,6 +103,14 @@ namespace DimensionBrawl.Presentation
         public string AttackTrigger => attackTrigger;
         public string HitTrigger => hitTrigger;
         public string DeathTrigger => deathTrigger;
+        public CombatVfxCuePlayer CuePlayer => cuePlayer;
+        public Transform VfxAnchor => vfxAnchor;
+        public Transform VfxDirectionTarget => vfxDirectionTarget;
+        public CombatVfxCueId EntryCueId => entryCueId;
+        public CombatVfxCueId AttackCueId => attackCueId;
+        public CombatVfxCueId ClashCueId => clashCueId;
+        public CombatVfxCueId DamageCueId => damageCueId;
+        public CombatVfxCueId DeathCueId => deathCueId;
         public Transform PulseRoot => pulseRoot;
         public int RendererCount => actorRenderers != null ? actorRenderers.Length : 0;
         public bool IsShowing => proxy != null && proxy.IsPresentationVisible;
@@ -97,6 +127,11 @@ namespace DimensionBrawl.Presentation
         public int AnimatorHitTriggerCount => animatorHitTriggerCount;
         public int AnimatorDeathTriggerCount => animatorDeathTriggerCount;
         public int AnimatorMoveSpeedSetCount => animatorMoveSpeedSetCount;
+        public int EntryVfxCueRequestCount => entryVfxCueRequestCount;
+        public int AttackVfxCueRequestCount => attackVfxCueRequestCount;
+        public int ClashVfxCueRequestCount => clashVfxCueRequestCount;
+        public int DamageVfxCueRequestCount => damageVfxCueRequestCount;
+        public int DeathVfxCueRequestCount => deathVfxCueRequestCount;
 
         private void Awake()
         {
@@ -193,6 +228,16 @@ namespace DimensionBrawl.Presentation
             RefreshNow();
         }
 
+        public void ConfigureVfxCuePlayer(
+            CombatVfxCuePlayer newCuePlayer,
+            Transform newVfxAnchor,
+            Transform newVfxDirectionTarget)
+        {
+            cuePlayer = newCuePlayer;
+            vfxAnchor = newVfxAnchor;
+            vfxDirectionTarget = newVfxDirectionTarget;
+        }
+
         public void RefreshNow()
         {
             ResolveReferences();
@@ -208,6 +253,11 @@ namespace DimensionBrawl.Presentation
                     entryFlashTimer = Mathf.Max(entryFlashTimer, entryFlashSeconds);
                     impactFlashedThisActivation = false;
                     entryFlashCount++;
+                    if (PlayVfxCue(entryCueId, tier, entryCueIntensity))
+                    {
+                        entryVfxCueRequestCount++;
+                    }
+
                     if (active && TriggerAnimator(spawnTrigger))
                     {
                         animatorSpawnTriggerCount++;
@@ -281,6 +331,10 @@ namespace DimensionBrawl.Presentation
             {
                 clashFlashTimer = Mathf.Max(clashFlashTimer, clashFlashSeconds);
                 clashFlashCount += currentClashCount - lastObservedClashCount;
+                if (PlayVfxCue(clashCueId, Mathf.Max(lastObservedTier, 1), clashCueIntensity))
+                {
+                    clashVfxCueRequestCount++;
+                }
             }
 
             lastObservedClashCount = currentClashCount;
@@ -293,6 +347,11 @@ namespace DimensionBrawl.Presentation
             {
                 attackFlashTimer = Mathf.Max(attackFlashTimer, attackFlashSeconds);
                 attackFlashCount++;
+                if (PlayVfxCue(attackCueId, Mathf.Max(lastObservedTier, 1), attackCueIntensity))
+                {
+                    attackVfxCueRequestCount++;
+                }
+
                 if (TriggerAnimator(attackTrigger))
                 {
                     animatorAttackTriggerCount++;
@@ -418,6 +477,11 @@ namespace DimensionBrawl.Presentation
         {
             damageFlashTimer = Mathf.Max(damageFlashTimer, damageFlashSeconds);
             damageFlashCount++;
+            if (PlayVfxCue(damageCueId, Mathf.Max(lastObservedTier, 1), damageCueIntensity))
+            {
+                damageVfxCueRequestCount++;
+            }
+
             if (TriggerAnimator(hitTrigger))
             {
                 animatorHitTriggerCount++;
@@ -430,6 +494,11 @@ namespace DimensionBrawl.Presentation
         {
             deathFlashTimer = Mathf.Max(deathFlashTimer, deathFlashSeconds);
             deathFlashCount++;
+            if (PlayVfxCue(deathCueId, Mathf.Max(lastObservedTier, 1), deathCueIntensity))
+            {
+                deathVfxCueRequestCount++;
+            }
+
             if (TriggerAnimator(deathTrigger))
             {
                 animatorDeathTriggerCount++;
@@ -460,6 +529,50 @@ namespace DimensionBrawl.Presentation
             {
                 animator = GetComponentInChildren<Animator>(includeInactive: true);
             }
+
+            if (vfxAnchor == null)
+            {
+                vfxAnchor = transform;
+            }
+        }
+
+        private bool PlayVfxCue(CombatVfxCueId cueId, int tier, float baseIntensity)
+        {
+            CombatVfxCuePlayer resolvedCuePlayer = ResolveCuePlayer();
+            if (resolvedCuePlayer == null)
+            {
+                return false;
+            }
+
+            Transform anchor = vfxAnchor != null ? vfxAnchor : transform;
+            float intensity = baseIntensity + Mathf.Max(0, tier - 1) * tierCueIntensityStep;
+            return resolvedCuePlayer.PlayCue(cueId, anchor, ResolveVfxDirection(anchor), intensity);
+        }
+
+        private CombatVfxCuePlayer ResolveCuePlayer()
+        {
+            if (cuePlayer != null)
+            {
+                return cuePlayer;
+            }
+
+            cuePlayer = GetComponent<CombatVfxCuePlayer>();
+            return cuePlayer;
+        }
+
+        private Vector3 ResolveVfxDirection(Transform anchor)
+        {
+            if (vfxDirectionTarget != null)
+            {
+                Vector3 targetDirection = Vector3.ProjectOnPlane(vfxDirectionTarget.position - anchor.position, Vector3.up);
+                if (targetDirection.sqrMagnitude > 0.0001f)
+                {
+                    return targetDirection.normalized;
+                }
+            }
+
+            Vector3 forward = Vector3.ProjectOnPlane(anchor.forward, Vector3.up);
+            return forward.sqrMagnitude > 0.0001f ? forward.normalized : Vector3.forward;
         }
 
         private void SubscribeHealth()

@@ -29,11 +29,11 @@ namespace DimensionBrawl.Presentation
             PrewarmKnownCues();
         }
 
-        public void PlayCue(CombatVfxCueId cueId, Transform anchor, Vector3 planarDirection, float intensity = 1f)
+        public bool PlayCue(CombatVfxCueId cueId, Transform anchor, Vector3 planarDirection, float intensity = 1f)
         {
             if (profile == null || !profile.TryGetCue(cueId, out CombatVfxCue cue))
             {
-                return;
+                return false;
             }
 
             GameObject instance = GetInstance(cue.Prefab);
@@ -69,6 +69,8 @@ namespace DimensionBrawl.Presentation
             {
                 StartCoroutine(ReleaseAfterSeconds(instance, cue.LifetimeSeconds));
             }
+
+            return true;
         }
 
         private void PrewarmKnownCues()

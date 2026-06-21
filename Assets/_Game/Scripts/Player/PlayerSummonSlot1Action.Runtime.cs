@@ -156,6 +156,7 @@ namespace DimensionBrawl.Player
                 }
 
                 actor.transform.SetParent(owner.summonActorRoot != null ? owner.summonActorRoot : owner.transform, worldPositionStays: true);
+                ConfigureActorVfx(actor);
                 ConfigureActorCombat(actor, settings);
                 actor.Activate(
                     position,
@@ -184,6 +185,26 @@ namespace DimensionBrawl.Player
 
                 LastSummonActorPosition = actor.transform.position;
                 return actor;
+            }
+
+            private void ConfigureActorVfx(SummonFrontlineProxy actor)
+            {
+                if (actor == null)
+                {
+                    return;
+                }
+
+                DimensionBrawl.Presentation.SummonFrontlineProxyPresenter presenter =
+                    actor.GetComponent<DimensionBrawl.Presentation.SummonFrontlineProxyPresenter>();
+                if (presenter == null)
+                {
+                    return;
+                }
+
+                Transform directionTarget = owner.frontlineTargetHealth != null
+                    ? owner.frontlineTargetHealth.transform
+                    : null;
+                presenter.ConfigureVfxCuePlayer(owner.CombatVfxCuePlayer, actor.transform, directionTarget);
             }
 
             private static void ConfigureActorCombat(SummonFrontlineProxy actor, SummonTierSettings settings)

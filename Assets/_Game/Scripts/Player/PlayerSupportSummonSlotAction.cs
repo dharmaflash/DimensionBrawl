@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
+using DimensionBrawl.Presentation;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -31,6 +32,7 @@ namespace DimensionBrawl.Player
         [SerializeField] private Transform projectileRoot;
         [SerializeField] private Transform cueRoot;
         [SerializeField] private Transform summonActorRoot;
+        [SerializeField] private CombatVfxCuePlayer combatVfxCuePlayer;
         [SerializeField] private DamageTeam sourceTeam = DamageTeam.AllySummon;
         [SerializeField] private Vector2 laneOffset = Vector2.zero;
 
@@ -92,6 +94,7 @@ namespace DimensionBrawl.Player
         internal Transform ProjectileRoot => projectileRoot;
         internal Transform CueRoot => cueRoot;
         internal Transform SummonActorRoot => summonActorRoot;
+        internal CombatVfxCuePlayer CombatVfxCuePlayer => combatVfxCuePlayer;
         internal GameObject EntryCuePrefab => entryCuePrefab;
         internal float FirstVolleyDelaySeconds => Mathf.Max(0f, firstVolleyDelaySeconds);
         internal float VolleyIntervalSeconds => Mathf.Max(0.1f, volleyIntervalSeconds);
@@ -108,6 +111,7 @@ namespace DimensionBrawl.Player
             energyLadder ??= GetComponent<SummonEnergyLadder>();
             sourceHealth ??= GetComponent<CombatHealth>();
             targetSelector ??= GetComponent<PlayerCombatTargetSelector>();
+            combatVfxCuePlayer ??= GetComponent<CombatVfxCuePlayer>();
         }
 
         private void OnValidate()
@@ -155,7 +159,8 @@ namespace DimensionBrawl.Player
             SummonFrontlineProxy newSummonActorPrefab,
             Transform newProjectileRoot,
             Transform newCueRoot,
-            Transform newSummonActorRoot)
+            Transform newSummonActorRoot,
+            CombatVfxCuePlayer newCombatVfxCuePlayer = null)
         {
             energyLadder = newEnergyLadder;
             sourceHealth = newSourceHealth;
@@ -170,6 +175,10 @@ namespace DimensionBrawl.Player
             projectileRoot = newProjectileRoot;
             cueRoot = newCueRoot;
             summonActorRoot = newSummonActorRoot;
+            if (newCombatVfxCuePlayer != null)
+            {
+                combatVfxCuePlayer = newCombatVfxCuePlayer;
+            }
         }
 
         public void ConfigureSlot(string newSlotActionName, Key newKeyboardTestKey, Vector2 newLaneOffset)

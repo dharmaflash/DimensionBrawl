@@ -336,6 +336,9 @@ namespace DimensionBrawl.Tests
                 GetObjectReference<GameObject>(bossSummonPressureAction, "summonActorPrefabObject"));
             Assert.AreSame(bossSummonPressureProfile, bossSummonPressureAction.PressureProfile);
             Assert.IsTrue(bossSummonPressureAction.HasPressureProfile);
+            Assert.AreSame(
+                playerCuePlayer,
+                GetObjectReference<CombatVfxCuePlayer>(bossSummonPressureAction, "combatVfxCuePlayer"));
             Assert.AreEqual("BossSummonPressure.SummonCaller", bossSummonPressureProfile.PressureId);
             Assert.AreEqual(3, bossSummonPressureProfile.TierCount);
             AssertBossSummonPressureReadout(
@@ -714,6 +717,9 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(projectileRoot.transform, GetObjectReference<Transform>(summonSlot1Action, "projectileRoot"));
             Assert.AreSame(actionCueRoot.transform, GetObjectReference<Transform>(summonSlot1Action, "cueRoot"));
             Assert.AreSame(summonActorRoot.transform, GetObjectReference<Transform>(summonSlot1Action, "summonActorRoot"));
+            Assert.AreSame(
+                playerCuePlayer,
+                GetObjectReference<CombatVfxCuePlayer>(summonSlot1Action, "combatVfxCuePlayer"));
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(emitter, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(emitter, "trackedPlayer"));
             Assert.AreSame(bossHealth, GetObjectReference<CombatHealth>(emitter, "sourceHealth"));
@@ -1878,6 +1884,8 @@ namespace DimensionBrawl.Tests
             SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            CombatVfxCuePlayer playerCuePlayer =
+                RequireComponent<CombatVfxCuePlayer>(player.gameObject, "player combat VFX cue player");
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
 
             player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
@@ -1966,8 +1974,16 @@ namespace DimensionBrawl.Tests
                 RequireComponent<SummonFrontlineProxyPresenter>(activeSummonActor.gameObject, "active SummonSlot1 actor presenter");
             activeActorPresenter.RefreshNow();
             Assert.IsTrue(activeActorPresenter.IsShowing);
+            Assert.AreSame(
+                playerCuePlayer,
+                activeActorPresenter.CuePlayer,
+                "SummonSlot1 active actor should reuse the promoted combat VFX cue player instead of material-only feedback.");
             Assert.AreEqual(3, activeActorPresenter.LastObservedTier);
             Assert.Greater(activeActorPresenter.EntryFlashCount, 0);
+            Assert.Greater(
+                activeActorPresenter.EntryVfxCueRequestCount,
+                0,
+                "SummonSlot1 active actor entry should request a promoted combat VFX cue, not only tint the proxy pulse.");
             Assert.IsNotNull(activeActorPresenter.PulseRoot);
             SummonFrontlineHealthBarPresenter activeHealthBarPresenter =
                 RequireComponent<SummonFrontlineHealthBarPresenter>(activeSummonActor.gameObject, "active SummonSlot1 health bar presenter");
@@ -3311,6 +3327,19 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(
                 bossSummonPressureAction.TryReleasePressureSummon(2),
                 "The boss pressure summon actor should be directly releasable as the review's enemy-side guard answer.");
+            SummonFrontlineProxy bossPressureActor = bossSummonPressureAction.LastSummonActor;
+            Assert.IsNotNull(bossPressureActor, "Boss pressure summon should expose the released actor for presentation checks.");
+            SummonFrontlineProxyPresenter bossPressureActorPresenter =
+                RequireComponent<SummonFrontlineProxyPresenter>(bossPressureActor.gameObject, "boss pressure summon actor presenter");
+            bossPressureActorPresenter.RefreshNow();
+            Assert.AreSame(
+                GetObjectReference<CombatVfxCuePlayer>(bossSummonPressureAction, "combatVfxCuePlayer"),
+                bossPressureActorPresenter.CuePlayer,
+                "Boss pressure actor should reuse the promoted combat VFX cue player instead of material-only feedback.");
+            Assert.Greater(
+                bossPressureActorPresenter.EntryVfxCueRequestCount,
+                0,
+                "Boss pressure actor entry should request a promoted combat VFX cue when released.");
             SummonPressureScreen enemyScreen = RequireActiveEnemyPressureScreen();
             Assert.IsTrue(skill1Action.TryUseSkill1());
             LaneActionProjectile followupProjectile = RequireActivePlayerSkillProjectile();
@@ -4530,6 +4559,11 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(SummonActorAttackTrigger, presenter.AttackTrigger);
             Assert.AreEqual(SummonActorHitTrigger, presenter.HitTrigger);
             Assert.AreEqual(SummonActorDeathTrigger, presenter.DeathTrigger);
+            Assert.AreEqual(CombatVfxCueId.EliteSummonSignal, presenter.EntryCueId);
+            Assert.AreEqual(CombatVfxCueId.EnemyAttackActive, presenter.AttackCueId);
+            Assert.AreEqual(CombatVfxCueId.EliteShieldSignal, presenter.ClashCueId);
+            Assert.AreEqual(CombatVfxCueId.EnemyHit, presenter.DamageCueId);
+            Assert.AreEqual(CombatVfxCueId.EnemyDeath, presenter.DeathCueId);
             AssertAnimatorParameter(animator, presenter.MoveSpeedParameter, AnimatorControllerParameterType.Float);
             AssertAnimatorParameter(animator, presenter.SpawnTrigger, AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(animator, presenter.AttackTrigger, AnimatorControllerParameterType.Trigger);

@@ -1,5 +1,6 @@
 using System;
 using DimensionBrawl.LevelDesign;
+using DimensionBrawl.Presentation;
 using UnityEngine;
 
 namespace DimensionBrawl.Combat
@@ -53,6 +54,7 @@ namespace DimensionBrawl.Combat
         [SerializeField] private SummonFrontlineProxy summonActorPrefab;
         [SerializeField] private GameObject summonActorPrefabObject;
         [SerializeField] private Transform summonActorRoot;
+        [SerializeField] private CombatVfxCuePlayer combatVfxCuePlayer;
 
         [Header("Boss Summon")]
         [SerializeField] private DamageTeam ownerTeam = DamageTeam.Enemy;
@@ -134,6 +136,7 @@ namespace DimensionBrawl.Combat
 
         private void OnEnable()
         {
+            ResolveCombatVfxCuePlayer();
             ApplyPressureProfile();
             PrewarmSummonActors();
         }
@@ -167,13 +170,18 @@ namespace DimensionBrawl.Combat
             SummonLaneSpace newLaneSpace,
             Transform newTrackedPlayer,
             SummonFrontlineProxy newSummonActorPrefab,
-            Transform newSummonActorRoot)
+            Transform newSummonActorRoot,
+            CombatVfxCuePlayer newCombatVfxCuePlayer = null)
         {
             laneSpace = newLaneSpace;
             trackedPlayer = newTrackedPlayer;
             summonActorPrefab = newSummonActorPrefab;
             summonActorPrefabObject = newSummonActorPrefab != null ? newSummonActorPrefab.gameObject : null;
             summonActorRoot = newSummonActorRoot;
+            if (newCombatVfxCuePlayer != null)
+            {
+                combatVfxCuePlayer = newCombatVfxCuePlayer;
+            }
         }
 
         public void ConfigurePressureProfile(BossSummonPressureProfile newPressureProfile)
@@ -219,6 +227,7 @@ namespace DimensionBrawl.Combat
                 Vector3.zero);
             float actorAdvanceSeconds = ResolveActorAdvanceSeconds(actorAdvanceDistance, settings);
             actor.transform.SetParent(summonActorRoot != null ? summonActorRoot : transform, worldPositionStays: true);
+            ConfigureActorVfx(actor);
             ConfigureActorCombat(actor, settings);
             actor.Activate(
                 entryPosition,
@@ -255,6 +264,41 @@ namespace DimensionBrawl.Combat
             lastSummonActor = actor;
             PressureSummonReleased?.Invoke(this, resolvedTier);
             return true;
+        }
+
+        private void ConfigureActorVfx(SummonFrontlineProxy actor)
+        {
+            if (actor == null)
+            {
+                return;
+            }
+
+            SummonFrontlineProxyPresenter presenter = actor.GetComponent<SummonFrontlineProxyPresenter>();
+            if (presenter == null)
+            {
+                return;
+            }
+
+            presenter.ConfigureVfxCuePlayer(ResolveCombatVfxCuePlayer(), actor.transform, trackedPlayer);
+        }
+
+        private CombatVfxCuePlayer ResolveCombatVfxCuePlayer()
+        {
+            if (combatVfxCuePlayer != null)
+            {
+                return combatVfxCuePlayer;
+            }
+
+            combatVfxCuePlayer = GetComponent<CombatVfxCuePlayer>();
+            if (combatVfxCuePlayer != null)
+            {
+                return combatVfxCuePlayer;
+            }
+
+            combatVfxCuePlayer = trackedPlayer != null
+                ? trackedPlayer.GetComponent<CombatVfxCuePlayer>()
+                : null;
+            return combatVfxCuePlayer;
         }
 
         private void HandleSummonActorExited(

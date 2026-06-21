@@ -3084,17 +3084,21 @@ namespace DimensionBrawl.Editor
             SetFloat(bossPressureCost, "fallbackBossForwardRisk01", 0.25f);
 
             BossSummonPressureAction bossSummonPressureAction = EnsureComponent<BossSummonPressureAction>(bossProxy);
+            CombatVfxCuePlayer playerCuePlayer =
+                RequireComponent<CombatVfxCuePlayer>(playerTransform.gameObject, "player combat VFX cue player");
             bossSummonPressureAction.ConfigureReferences(
                 laneSpace,
                 playerTransform,
                 bossSummonActorPrefab,
-                bossSummonActorRoot);
+                bossSummonActorRoot,
+                playerCuePlayer);
             SetObjectReference(bossSummonPressureAction, "summonActorPrefab", bossSummonActorPrefab);
             SetObjectReference(
                 bossSummonPressureAction,
                 "summonActorPrefabObject",
                 LoadAsset<GameObject>(BossSummonPressureActorPrefabPath));
             SetObjectReference(bossSummonPressureAction, "summonActorRoot", bossSummonActorRoot);
+            SetObjectReference(bossSummonPressureAction, "combatVfxCuePlayer", playerCuePlayer);
             SetEnum(bossSummonPressureAction, "ownerTeam", (int)DamageTeam.Enemy);
             SetInt(bossSummonPressureAction, "actorPrewarmCount", 3);
             SetInt(bossSummonPressureAction, "maxActiveSummonActors", 2);
@@ -4792,6 +4796,8 @@ namespace DimensionBrawl.Editor
             SetInt(skill1Action, "prewarmCount", 6);
 
             PlayerSummonSlot1Action summonSlot1Action = EnsureComponent<PlayerSummonSlot1Action>(playerRoot);
+            CombatVfxCuePlayer playerCuePlayer =
+                RequireComponent<CombatVfxCuePlayer>(playerRoot, "player combat VFX cue player");
             SetObjectReference(summonSlot1Action, "energyLadder", energyLadder);
             SetObjectReference(summonSlot1Action, "sourceHealth", playerHealth);
             SetObjectReference(summonSlot1Action, "targetSelector", targetSelector);
@@ -4805,6 +4811,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(summonSlot1Action, "projectileRoot", projectileRoot);
             SetObjectReference(summonSlot1Action, "cueRoot", actionCueRoot);
             SetObjectReference(summonSlot1Action, "summonActorRoot", summonActorRoot);
+            SetObjectReference(summonSlot1Action, "combatVfxCuePlayer", playerCuePlayer);
             SetEnum(summonSlot1Action, "sourceTeam", (int)DamageTeam.AllySummon);
             SetInt(summonSlot1Action, "prewarmCount", 8);
             SetInt(summonSlot1Action, "actorPrewarmCount", 2);
@@ -4832,7 +4839,9 @@ namespace DimensionBrawl.Editor
                 summonSlot2ActorPrefab,
                 projectileRoot,
                 actionCueRoot,
-                summonActorRoot);
+                summonActorRoot,
+                playerCuePlayer);
+            SetObjectReference(summonSlot2Action, "combatVfxCuePlayer", playerCuePlayer);
             summonSlot2Action.ConfigureSummonActionProfile(
                 LoadAsset<SummonSlotActionProfile>(SummonSlot2ActionProfilePath));
             EditorUtility.SetDirty(summonSlot2Action);
@@ -4854,7 +4863,9 @@ namespace DimensionBrawl.Editor
                 summonSlot3ActorPrefab,
                 projectileRoot,
                 actionCueRoot,
-                summonActorRoot);
+                summonActorRoot,
+                playerCuePlayer);
+            SetObjectReference(summonSlot3Action, "combatVfxCuePlayer", playerCuePlayer);
             summonSlot3Action.ConfigureSummonActionProfile(
                 LoadAsset<SummonSlotActionProfile>(SummonSlot3ActionProfilePath));
             EditorUtility.SetDirty(summonSlot3Action);
@@ -5674,6 +5685,10 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(summonSlot1Action, "projectileRoot", projectileRoot.transform);
             ValidateObjectReference(summonSlot1Action, "cueRoot", actionCueRoot.transform);
             ValidateObjectReference(summonSlot1Action, "summonActorRoot", summonActorRoot.transform);
+            ValidateCombatVfxCuePlayerReference(
+                summonSlot1Action,
+                "combatVfxCuePlayer",
+                RequireComponent<CombatVfxCuePlayer>(summonSlot1Action.gameObject, "player combat VFX cue player"));
             ValidateEnum(summonSlot1Action, "sourceTeam", (int)DamageTeam.AllySummon);
             ValidateInt(summonSlot1Action, "maxActiveSummonActors", 1);
             ValidateFloat(summonSlot1Action, "entryForwardOffset", 1.35f);
@@ -5871,6 +5886,10 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(action, "projectileRoot", projectileRoot.transform);
             ValidateObjectReference(action, "cueRoot", actionCueRoot.transform);
             ValidateObjectReference(action, "summonActorRoot", summonActorRoot.transform);
+            ValidateCombatVfxCuePlayerReference(
+                action,
+                "combatVfxCuePlayer",
+                RequireComponent<CombatVfxCuePlayer>(action.gameObject, "player combat VFX cue player"));
             ValidateEnum(action, "sourceTeam", (int)DamageTeam.AllySummon);
             ValidateInt(action, "maxActiveSummonActors", 1);
             ValidateFloat(action, "entryForwardOffset", 1.35f);
@@ -6164,6 +6183,10 @@ namespace DimensionBrawl.Editor
                 bossSummonPressureAction,
                 "summonActorRoot",
                 RequireRoot(SceneManager.GetActiveScene(), BossSummonActorPoolRootName).transform);
+            ValidateCombatVfxCuePlayerReference(
+                bossSummonPressureAction,
+                "combatVfxCuePlayer",
+                RequireComponent<CombatVfxCuePlayer>(playerTransform.gameObject, "player combat VFX cue player"));
             ValidateEnum(bossSummonPressureAction, "ownerTeam", (int)DamageTeam.Enemy);
             ValidateInt(bossSummonPressureAction, "actorPrewarmCount", 3);
             ValidateInt(bossSummonPressureAction, "maxActiveSummonActors", 2);
@@ -6919,6 +6942,11 @@ namespace DimensionBrawl.Editor
             ValidateString(actorPresenter, "hitTrigger", SummonActorHitTrigger);
             ValidateString(actorPresenter, "deathTrigger", SummonActorDeathTrigger);
             ValidateFloat(actorPresenter, "animatorMoveSpeedScale", 1f);
+            ValidateEnum(actorPresenter, "entryCueId", (int)CombatVfxCueId.EliteSummonSignal);
+            ValidateEnum(actorPresenter, "attackCueId", (int)CombatVfxCueId.EnemyAttackActive);
+            ValidateEnum(actorPresenter, "clashCueId", (int)CombatVfxCueId.EliteShieldSignal);
+            ValidateEnum(actorPresenter, "damageCueId", (int)CombatVfxCueId.EnemyHit);
+            ValidateEnum(actorPresenter, "deathCueId", (int)CombatVfxCueId.EnemyDeath);
             ValidateAnimatorParameter(
                 animator,
                 SummonActorMoveSpeedParameter,
@@ -8646,6 +8674,48 @@ namespace DimensionBrawl.Editor
                 string actualName = actual != null ? actual.name : "null";
                 throw new InvalidOperationException($"{target.name}.{propertyName} expected {expectedName}, found {actualName}.");
             }
+        }
+
+        private static void ValidateCombatVfxCuePlayerReference(
+            UnityEngine.Object target,
+            string propertyName,
+            CombatVfxCuePlayer expected)
+        {
+            CombatVfxCuePlayer actual = ReadObjectReference<CombatVfxCuePlayer>(target, propertyName);
+            if (actual == expected || ResolveImplicitCombatVfxCuePlayer(target) == expected)
+            {
+                return;
+            }
+
+            string expectedName = expected != null ? expected.name : "null";
+            string actualName = actual != null ? actual.name : "null";
+            throw new InvalidOperationException(
+                $"{target.name}.{propertyName} expected {expectedName}, found {actualName}.");
+        }
+
+        private static CombatVfxCuePlayer ResolveImplicitCombatVfxCuePlayer(UnityEngine.Object target)
+        {
+            Component component = target as Component;
+            if (component == null)
+            {
+                return null;
+            }
+
+            CombatVfxCuePlayer localCuePlayer = component.GetComponent<CombatVfxCuePlayer>();
+            if (localCuePlayer != null)
+            {
+                return localCuePlayer;
+            }
+
+            if (target is BossSummonPressureAction)
+            {
+                Transform trackedPlayer = ReadObjectReference<Transform>(target, "trackedPlayer");
+                return trackedPlayer != null
+                    ? trackedPlayer.GetComponent<CombatVfxCuePlayer>()
+                    : null;
+            }
+
+            return null;
         }
 
         private static void ValidateAssignedObjectReference(UnityEngine.Object target, string propertyName)

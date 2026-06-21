@@ -1,6 +1,7 @@
 using System;
 using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
+using DimensionBrawl.Presentation;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -97,6 +98,7 @@ namespace DimensionBrawl.Player
         [SerializeField] private Transform projectileRoot;
         [SerializeField] private Transform cueRoot;
         [SerializeField] private Transform summonActorRoot;
+        [SerializeField] private CombatVfxCuePlayer combatVfxCuePlayer;
         [SerializeField] private DamageTeam sourceTeam = DamageTeam.AllySummon;
         [SerializeField, Min(0)] private int prewarmCount = 6;
         [SerializeField, Min(0)] private int actorPrewarmCount = 2;
@@ -162,6 +164,7 @@ namespace DimensionBrawl.Player
         public bool ShowUseBlockedHint => blockedHintTimer > 0f;
         public string LastUseBlockedReason => lastBlockedReason;
         internal int MaxActiveSummonActors => Mathf.Max(1, maxActiveSummonActors);
+        internal CombatVfxCuePlayer CombatVfxCuePlayer => combatVfxCuePlayer;
 
         public event Action<int> SummonSlot1Used;
         public event Action<int> SummonPressureBlocked;
@@ -182,6 +185,11 @@ namespace DimensionBrawl.Player
             if (targetSelector == null)
             {
                 targetSelector = GetComponent<PlayerCombatTargetSelector>();
+            }
+
+            if (combatVfxCuePlayer == null)
+            {
+                combatVfxCuePlayer = GetComponent<CombatVfxCuePlayer>();
             }
         }
 
@@ -240,7 +248,8 @@ namespace DimensionBrawl.Player
             Transform newProjectileRoot,
             Transform newCueRoot,
             SummonFrontlineProxy newSummonActorPrefab = null,
-            Transform newSummonActorRoot = null)
+            Transform newSummonActorRoot = null,
+            CombatVfxCuePlayer newCombatVfxCuePlayer = null)
         {
             energyLadder = newEnergyLadder;
             sourceHealth = newSourceHealth;
@@ -262,6 +271,11 @@ namespace DimensionBrawl.Player
             if (newSummonActorRoot != null)
             {
                 summonActorRoot = newSummonActorRoot;
+            }
+
+            if (newCombatVfxCuePlayer != null)
+            {
+                combatVfxCuePlayer = newCombatVfxCuePlayer;
             }
         }
 
