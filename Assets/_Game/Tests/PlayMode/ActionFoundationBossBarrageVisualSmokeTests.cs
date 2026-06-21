@@ -60,9 +60,23 @@ namespace DimensionBrawl.Tests
             int basicProjectiles = bossBasicFire.FireVolley();
             Assert.Greater(basicProjectiles, 0, "Regular boss fire must spawn visible projectile actors.");
 
+            BossBarrageVisualCueDriver bossVisualCueDriver =
+                bossBarrage.GetComponent<BossBarrageVisualCueDriver>();
+            Assert.IsNotNull(bossVisualCueDriver, "Boss barrage smoke should include the authored boss visual cue driver.");
+            int bossWindupWorldCueCountBefore = bossVisualCueDriver.WindupWorldVfxCueRequestCount;
+            int bossReleaseWorldCueCountBefore = bossVisualCueDriver.ReleaseWorldVfxCueRequestCount;
+
             bossBarrage.BeginWindup();
+            Assert.AreEqual(
+                bossWindupWorldCueCountBefore + 1,
+                bossVisualCueDriver.WindupWorldVfxCueRequestCount,
+                "Boss windup should fire an in-world VFX cue, not only an Animator trigger.");
             int barrageProjectiles = bossBarrage.FirePendingWave();
             Assert.Greater(barrageProjectiles, 0, "Committed boss barrage must spawn visible projectile actors.");
+            Assert.AreEqual(
+                bossReleaseWorldCueCountBefore + 1,
+                bossVisualCueDriver.ReleaseWorldVfxCueRequestCount,
+                "Boss release should fire an in-world VFX cue alongside the projectile wave.");
 
             energyLadder.GrantCurrentTierEnergy(100f);
             Assert.IsTrue(summonSlot1.TryUseSummonSlot1(), "SummonSlot1 should spend LV1 energy for a visible actor/state read.");
@@ -99,6 +113,14 @@ namespace DimensionBrawl.Tests
                 summonSlot3.ActiveSummonActorCount + summonSlot3.ActiveProjectileCount,
                 0,
                 "The smoke frame should include the promoted SummonSlot3 vanguard actor or volley, not only the shield slot.");
+            Assert.GreaterOrEqual(
+                CountSummonActorStateVfxRequests(),
+                bossSummonPressure != null ? 4 : 3,
+                "The smoke frame should include state VFX fired by player and boss summon presenters, not only spawned meshes.");
+            Assert.GreaterOrEqual(
+                CountPressureScreenStateVfxRequests(),
+                2,
+                "The smoke frame should include pressure-screen activation/intercept VFX so summon states read in-world.");
 
             string capturePath = Path.GetFullPath(Path.Combine(
                 Application.dataPath,
@@ -382,6 +404,39 @@ namespace DimensionBrawl.Tests
 
             Assert.Fail("Expected an active Player Skill1 projectile.");
             return null;
+        }
+
+        private static int CountSummonActorStateVfxRequests()
+        {
+            int count = 0;
+            SummonFrontlineProxyPresenter[] presenters = Object.FindObjectsByType<SummonFrontlineProxyPresenter>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < presenters.Length; i++)
+            {
+                count += presenters[i].EntryVfxCueRequestCount;
+                count += presenters[i].AttackVfxCueRequestCount;
+                count += presenters[i].ClashVfxCueRequestCount;
+                count += presenters[i].DamageVfxCueRequestCount;
+                count += presenters[i].DeathVfxCueRequestCount;
+            }
+
+            return count;
+        }
+
+        private static int CountPressureScreenStateVfxRequests()
+        {
+            int count = 0;
+            SummonPressureScreenPresenter[] presenters = Object.FindObjectsByType<SummonPressureScreenPresenter>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < presenters.Length; i++)
+            {
+                count += presenters[i].ActivationVfxCueRequestCount;
+                count += presenters[i].InterceptVfxCueRequestCount;
+            }
+
+            return count;
         }
 
         private static FrameColorStats AnalyzeFrame(Texture2D frame)

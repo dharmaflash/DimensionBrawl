@@ -1114,6 +1114,17 @@ namespace DimensionBrawl.Tests
                 summonOpportunity.ResolvePressureBreakSeconds(1)
                 + summonOpportunity.ResolveFollowupWindowSeconds(1)
                 + GetFloat(pocketOwner, "skill1FollowupClearDelaySeconds");
+            float cleanAnswerToResultSeconds =
+                closeThreatSustainedClearSeconds
+                + summonLv1ReadySeconds
+                + summonOpportunity.OpportunityCueSeconds
+                + GetFloat(pocketOwner, "skill1FollowupClearDelaySeconds");
+            float missedFollowupRecoverySeconds =
+                summonOpportunity.ResolveFollowupWindowSeconds(1)
+                + Mathf.Max(
+                    0f,
+                    summonOpportunity.ResolvePressureBreakSeconds(1)
+                        - summonOpportunity.ResolveFollowupWindowSeconds(1));
             float forwardRiskDifferential =
                 1f - bossBasicFireProfile.EvaluateHalfSpread(1f) / bossBasicFireProfile.EvaluateHalfSpread(0f);
 
@@ -1175,6 +1186,14 @@ namespace DimensionBrawl.Tests
                 summonLv1ReadySeconds + summonOpportunity.OpportunityCueSeconds + followupSequenceSeconds,
                 pressurePocket.TargetDurationSeconds * 0.5f,
                 "The tutorial answer path should resolve well before the target duration so failed reads still have recovery room.");
+            Assert.That(
+                cleanAnswerToResultSeconds,
+                Is.InRange(8f, 12.5f),
+                "A clean one-round read should feel like a complete ARPG exchange, not a long attrition puzzle.");
+            Assert.That(
+                missedFollowupRecoverySeconds,
+                Is.InRange(2.6f, 3.4f),
+                "Missing the follow-up should cost one readable pressure breath before retrying, not silently reset the whole pocket.");
             Assert.AreSame(
                 bossRoot.transform,
                 GetObjectReference<Transform>(pocketVfxCueBridge, "directionTarget"),
