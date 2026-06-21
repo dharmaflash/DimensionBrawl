@@ -59,6 +59,9 @@ namespace DimensionBrawl.Tests
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
             BossBarrageLaneReviewHud reviewHud = RequireObject<BossBarrageLaneReviewHud>();
             BossBarrageLaneReviewMobileHud mobileHud = RequireObject<BossBarrageLaneReviewMobileHud>();
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            CombatVfxCuePlayer playerCuePlayer =
+                RequireComponent<CombatVfxCuePlayer>(player.gameObject, "player combat VFX cue player");
 
             Assert.AreEqual(2, duelOwner.RequiredBossPressureActions);
             Assert.AreEqual(1, duelOwner.RequiredBossSkillPatterns);
@@ -168,6 +171,18 @@ namespace DimensionBrawl.Tests
                 expectPressureScreen: true);
             AssertSupportSummonAction(summonSlot2Action, "SummonSlot2");
             AssertSupportSummonAction(summonSlot3Action, "SummonSlot3");
+            Assert.AreSame(
+                playerCuePlayer,
+                GetObjectReference<CombatVfxCuePlayer>(summonSlot1Action, "combatVfxCuePlayer"));
+            Assert.AreSame(
+                playerCuePlayer,
+                GetObjectReference<CombatVfxCuePlayer>(summonSlot2Action, "combatVfxCuePlayer"));
+            Assert.AreSame(
+                playerCuePlayer,
+                GetObjectReference<CombatVfxCuePlayer>(summonSlot3Action, "combatVfxCuePlayer"));
+            Assert.AreSame(
+                playerCuePlayer,
+                GetObjectReference<CombatVfxCuePlayer>(bossSummonPressureAction, "combatVfxCuePlayer"));
             GameObject summonSlot2ActorPrefab =
                 GetObjectReference<GameObject>(summonSlot2Action, "summonActorPrefabObject");
             GameObject summonSlot3ActorPrefab =
@@ -221,6 +236,9 @@ namespace DimensionBrawl.Tests
             BossBarrageEmitter bossBarrageEmitter = RequireObject<BossBarrageEmitter>();
             BossSummonDuelReviewOwner duelOwner = RequireObject<BossSummonDuelReviewOwner>();
             BossBarrageLaneReviewHud reviewHud = RequireObject<BossBarrageLaneReviewHud>();
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            CombatVfxCuePlayer playerCuePlayer =
+                RequireComponent<CombatVfxCuePlayer>(player.gameObject, "player combat VFX cue player");
 
             energyLadder.SetGainEnabled(false);
             GrantEnergyToTier(energyLadder, 1);
@@ -244,6 +262,7 @@ namespace DimensionBrawl.Tests
                 "S2 is a normal body-bearing summon and should persist until defeated or recalled, not expire as a short effect.");
             Assert.AreEqual(SummonFrontlineProxyExitReason.None, summonSlot2Action.LastSummonActorExitReason);
             SummonFrontlineProxy slot2Proxy = RequireActiveSummonProxy(DamageTeam.AllySummon, 1.35f, "S2");
+            AssertActiveSummonPresenterUsesCombatVfx(slot2Proxy, playerCuePlayer, 1, "S2");
             AssertSummonProxyIsMarching(slot2Proxy, 1.35f, "S2");
             float slot2EntryProgress = slot2Proxy.AdvanceProgress01;
             yield return new WaitForSeconds(0.15f);
@@ -272,6 +291,7 @@ namespace DimensionBrawl.Tests
                 "S3 is a normal body-bearing summon and should persist until defeated or recalled, not expire as a short effect.");
             Assert.AreEqual(SummonFrontlineProxyExitReason.None, summonSlot3Action.LastSummonActorExitReason);
             SummonFrontlineProxy slot3Proxy = RequireActiveSummonProxy(DamageTeam.AllySummon, 1.25f, "S3");
+            AssertActiveSummonPresenterUsesCombatVfx(slot3Proxy, playerCuePlayer, 3, "S3");
             AssertSummonProxyIsMarching(slot3Proxy, 1.25f, "S3");
             float slot3EntryProgress = slot3Proxy.AdvanceProgress01;
             yield return new WaitForSeconds(0.15f);
@@ -307,6 +327,7 @@ namespace DimensionBrawl.Tests
             SummonFrontlineProxy enemyProxy = bossSummonPressureAction.LastSummonActor;
             Assert.IsNotNull(enemyProxy, "Boss summon pressure should expose the latest released summon actor.");
             Assert.AreEqual(DamageTeam.Enemy, enemyProxy.Health.Team);
+            AssertActiveSummonPresenterUsesCombatVfx(enemyProxy, playerCuePlayer, 2, "boss summon");
             AssertSummonProxyIsMarching(enemyProxy, 1.42f, "boss summon");
             float enemyEntryProgress = enemyProxy.AdvanceProgress01;
             yield return new WaitForSeconds(0.15f);
@@ -650,6 +671,29 @@ namespace DimensionBrawl.Tests
                 proxy.AdvanceProgress01,
                 0.65f,
                 $"{label} should still be marching after a short review beat instead of instantly reaching the target.");
+        }
+
+        private static void AssertActiveSummonPresenterUsesCombatVfx(
+            SummonFrontlineProxy proxy,
+            CombatVfxCuePlayer expectedCuePlayer,
+            int expectedTier,
+            string label)
+        {
+            SummonFrontlineProxyPresenter presenter =
+                RequireComponent<SummonFrontlineProxyPresenter>(proxy.gameObject, $"{label} presenter");
+            presenter.RefreshNow();
+
+            Assert.IsTrue(presenter.IsShowing, $"{label} presenter should show the promoted summon actor.");
+            Assert.AreSame(
+                expectedCuePlayer,
+                presenter.CuePlayer,
+                $"{label} summon actor should reuse the promoted combat VFX cue player instead of material-only feedback.");
+            Assert.AreEqual(expectedTier, presenter.LastObservedTier);
+            Assert.Greater(presenter.EntryFlashCount, 0, $"{label} should still keep its actor-local entry flash.");
+            Assert.Greater(
+                presenter.EntryVfxCueRequestCount,
+                0,
+                $"{label} entry should request a promoted combat VFX cue, not only tint the proxy pulse.");
         }
 
         private static void AssertSummonActorPrefabContract(
