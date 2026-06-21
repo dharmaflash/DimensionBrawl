@@ -57,6 +57,10 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Prefabs/Combat/PF_PlayerRangedBasicProjectile_AimBolt.prefab";
         private const string SummonSlot1ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Projectile_AssistBolt.prefab";
+        private const string SummonSlot2ProjectilePrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot2Projectile_MarksmanBolt.prefab";
+        private const string SummonSlot3ProjectilePrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot3Projectile_VanguardBolt.prefab";
         private const string SummonSlot1EntryCuePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1EntryCue_MagicCircle.prefab";
         private const string SummonSlot1ActorPrefabPath =
@@ -270,6 +274,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(1f, GetFloat(rangedBasicVfxCueDriver, "muzzleFlashIntensity"), 0.001f);
             Assert.AreEqual(CombatVfxCueId.PlayerRangedProjectileImpact, GetEnum<CombatVfxCueId>(rangedBasicVfxCueDriver, "impactCueId"));
             Assert.AreEqual(1f, GetFloat(rangedBasicVfxCueDriver, "impactIntensity"), 0.001f);
+            AssertBossBarrageCombatCueAssetOverlays();
             Assert.AreSame(bossBasicFireProfile, GetObjectReference<BossBasicFireProfile>(bossBasicFireEmitter, "fireProfile"));
             Assert.AreSame(
                 LoadAsset<GameObject>(ProjectilePrefabPath),
@@ -572,6 +577,15 @@ namespace DimensionBrawl.Tests
                 rangedBasicShotParticles.Length,
                 4,
                 "Player basic ranged projectile should preserve the authored multi-part Vefects particle setup.");
+            for (int particleIndex = 0; particleIndex < rangedBasicShotParticles.Length; particleIndex++)
+            {
+                ParticleSystem.LightsModule lights = rangedBasicShotParticles[particleIndex].lights;
+                if (lights.enabled && lights.light != null)
+                {
+                    AssertGameOwnedAsset(lights.light, $"{rangedBasicShotParticles[particleIndex].name} shot VFX light");
+                }
+            }
+
             ParticleSystemRenderer[] rangedBasicShotRenderers =
                 rangedBasicShotVfx.GetComponentsInChildren<ParticleSystemRenderer>(true);
             Assert.Greater(rangedBasicShotRenderers.Length, 0, "Vefects shot VFX should expose particle renderers.");
@@ -608,6 +622,7 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath), rangedAnimator.runtimeAnimatorController);
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(energyLadder, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(energyLadder, "trackedPlayer"));
+            Assert.AreEqual(16.5f, GetFloat(energyLadder, "baseEnergyPerSecond"), 0.001f);
             Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(skill1Action, "energyLadder"));
             Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(skill1Action, "sourceHealth"));
             Assert.AreSame(targetSelector, GetObjectReference<PlayerCombatTargetSelector>(skill1Action, "targetSelector"));
@@ -615,6 +630,10 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(
                 LoadAsset<GameObject>(Skill1ProjectilePrefabPath).GetComponent<LaneActionProjectile>().AllowsVerticalTravel,
                 "Lane skill projectiles should stay planar until authored as aimed shots.");
+            AssertMagicMissilesLaneProjectile(
+                Skill1ProjectilePrefabPath,
+                "LaneActionProjectileVfx_MagicMissilesArcaneBolt",
+                "Skill1 lane bolt");
             Assert.AreSame(projectileRoot.transform, GetObjectReference<Transform>(skill1Action, "projectileRoot"));
             Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(summonSlot1Action, "energyLadder"));
             Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(summonSlot1Action, "sourceHealth"));
@@ -625,6 +644,18 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(
                 LoadAsset<GameObject>(SummonSlot1ProjectilePrefabPath).GetComponent<LaneActionProjectile>().AllowsVerticalTravel,
                 "Summon lane counter shots should keep the authored lane plane instead of inheriting player aim elevation.");
+            AssertMagicMissilesLaneProjectile(
+                SummonSlot1ProjectilePrefabPath,
+                "LaneActionProjectileVfx_MagicMissilesLightAssistBolt",
+                "SummonSlot1 assist bolt");
+            AssertMagicMissilesLaneProjectile(
+                SummonSlot2ProjectilePrefabPath,
+                "LaneActionProjectileVfx_MagicMissilesArcaneMarksmanBolt",
+                "SummonSlot2 marksman bolt");
+            AssertMagicMissilesLaneProjectile(
+                SummonSlot3ProjectilePrefabPath,
+                "LaneActionProjectileVfx_MagicMissilesHolyVanguardBolt",
+                "SummonSlot3 vanguard bolt");
             GameObject summonEntryCuePrefabObject = LoadAsset<GameObject>(SummonSlot1EntryCuePrefabPath);
             Assert.AreSame(summonEntryCuePrefabObject, GetObjectReference<GameObject>(summonSlot1Action, "entryCuePrefab"));
             AssertSummonEntryCueVfx(summonEntryCuePrefabObject);
@@ -3611,26 +3642,19 @@ namespace DimensionBrawl.Tests
             Assert.IsNotNull(rootRenderer, $"{label} should keep a hidden collision root MeshRenderer.");
             Assert.IsFalse(rootRenderer.enabled, $"{label} should not render its collision root sphere.");
 
-            Renderer[] renderers = projectile.GetComponentsInChildren<Renderer>(true);
-            int visibleProjectileVisualCount = 0;
+            ParticleSystemRenderer[] renderers = projectile.GetComponentsInChildren<ParticleSystemRenderer>(true);
+            Assert.Greater(renderers.Length, 0, $"{label} should render through authored asset particle VFX.");
             for (int i = 0; i < renderers.Length; i++)
             {
-                Renderer visualRenderer = renderers[i];
-                if (visualRenderer == null
-                    || !visualRenderer.enabled
-                    || visualRenderer is TrailRenderer
-                    || visualRenderer.transform == projectile.transform)
-                {
-                    continue;
-                }
-
-                visibleProjectileVisualCount++;
-                Assert.AreSame(expectedMaterial, visualRenderer.sharedMaterial, $"{label} visible VFX should use its pattern material.");
-                AssertGameOwnedAsset(visualRenderer.sharedMaterial, $"{label} visible VFX material");
-                AssertColorNear(expectedColor, ReadMaterialColor(visualRenderer.sharedMaterial), $"{label} visible VFX rendered material color");
+                ParticleSystemRenderer visualRenderer = renderers[i];
+                Assert.IsNotNull(visualRenderer.sharedMaterial, $"{label} asset VFX material should be assigned.");
+                Assert.AreNotSame(
+                    expectedMaterial,
+                    visualRenderer.sharedMaterial,
+                    $"{label} asset particle material should not be overwritten by the pattern color carrier.");
+                AssertGameOwnedAsset(visualRenderer.sharedMaterial, $"{label} asset VFX material");
+                AssertRenderableMaterialShader(visualRenderer.sharedMaterial, $"{label} asset VFX material shader");
             }
-
-            Assert.Greater(visibleProjectileVisualCount, 0, $"{label} should render through child projectile VFX.");
         }
 
         private static void AssertBossBarrageProjectileVisible(GameObject projectileObject, string label)
@@ -3642,12 +3666,10 @@ namespace DimensionBrawl.Tests
             Assert.IsNotNull(renderer.sharedMaterial, $"{label} should keep a game-owned root material for editor repair.");
             AssertGameOwnedAsset(renderer.sharedMaterial, $"{label} hidden root material");
             AssertRenderableMaterialShader(renderer.sharedMaterial, $"{label} hidden root material shader");
-            Assert.IsNotNull(
-                projectileObject.transform.Find("BossBarrageProjectileVfx_HotCore"),
-                $"{label} should include a promoted hot core visual.");
-            Assert.IsNotNull(
-                projectileObject.transform.Find("BossBarrageProjectileVfx_NeedleTail"),
-                $"{label} should include a promoted needle tail visual.");
+            AssertPromotedParticleVfx(
+                projectileObject.transform.Find("BossBarrageProjectileVfx_MagicMissilesFireShot"),
+                $"{label} MagicMissiles fire shot",
+                2);
             TrailRenderer trail = projectileObject.GetComponent<TrailRenderer>();
             Assert.IsNotNull(trail, $"{label} should include a TrailRenderer for incoming shot readability.");
             Assert.IsNotNull(trail.sharedMaterial, $"{label} trail should keep a visible material.");
@@ -3657,34 +3679,158 @@ namespace DimensionBrawl.Tests
 
         private static void AssertSummonEntryCueVfx(GameObject entryCuePrefab)
         {
-            AssertVisualOnlyVfxPrimitive(entryCuePrefab, "SummonEntryVfx_OuterRing", "summon entry outer ring");
-            AssertVisualOnlyVfxPrimitive(entryCuePrefab, "SummonEntryVfx_CrossLineX", "summon entry cross line X");
-            AssertVisualOnlyVfxPrimitive(entryCuePrefab, "SummonEntryVfx_VerticalBeacon", "summon entry vertical beacon");
+            MeshRenderer rootRenderer = entryCuePrefab.GetComponent<MeshRenderer>();
+            Assert.IsNotNull(rootRenderer, "summon entry cue should keep its root renderer for editor repair.");
+            Assert.IsFalse(rootRenderer.enabled, "summon entry cue should hide its primitive root.");
+            AssertPromotedParticleVfx(
+                entryCuePrefab.transform.Find("SummonEntryVfx_MagicMissilesArcaneCircle"),
+                "summon entry MagicMissiles circle",
+                2);
         }
 
         private static void AssertSummonActorVfx(GameObject actorPrefab, bool expectPressureScreen, string label)
         {
-            AssertVisualOnlyVfxPrimitive(actorPrefab, "SummonPulseVfx_EnergyRing", $"{label} pulse energy ring");
-            AssertVisualOnlyVfxPrimitive(actorPrefab, "SummonPulseVfx_ClashStreak", $"{label} pulse clash streak");
+            AssertPromotedParticleVfx(
+                actorPrefab.transform.Find("SummonPulseVfx_MagicMissilesPulse"),
+                $"{label} MagicMissiles pulse",
+                1);
+            AssertPromotedParticleVfx(
+                FindChildWithPrefix(actorPrefab.transform, "SummonStateVfx_"),
+                $"{label} MagicMissiles state aura",
+                1);
             if (!expectPressureScreen)
             {
                 return;
             }
 
-            AssertVisualOnlyVfxPrimitive(actorPrefab, "SummonShieldVfx_OuterHalo", $"{label} shield outer halo");
-            AssertVisualOnlyVfxPrimitive(actorPrefab, "SummonShieldVfx_LeftBrace", $"{label} shield left brace");
-            AssertVisualOnlyVfxPrimitive(actorPrefab, "SummonShieldVfx_GroundRing", $"{label} shield ground ring");
+            AssertPromotedParticleVfx(
+                actorPrefab.transform.Find("SummonShieldVfx_MagicMissilesShieldCircle"),
+                $"{label} MagicMissiles shield circle",
+                2);
         }
 
-        private static void AssertVisualOnlyVfxPrimitive(GameObject root, string childName, string label)
+        private static void AssertBossBarrageCombatCueAssetOverlays()
         {
-            Transform child = root.transform.Find(childName);
-            Assert.IsNotNull(child, $"{label} should be authored in the prefab.");
-            Assert.IsNull(child.GetComponent<Collider>(), $"{label} should stay visual-only.");
-            Renderer renderer = RequireComponent<Renderer>(child.gameObject, label);
-            Assert.IsNotNull(renderer.sharedMaterial, $"{label} should keep a material.");
-            AssertGameOwnedAsset(renderer.sharedMaterial, $"{label} material");
-            AssertRenderableMaterialShader(renderer.sharedMaterial, $"{label} material shader");
+            CombatVfxCueProfile profile = LoadAsset<CombatVfxCueProfile>(
+                "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_CombatVfxCues_ActionFoundation.asset");
+            AssertCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.PlayerRangedProjectileImpact,
+                "CueAssetVfx_MagicMissilesLightImpact",
+                "player ranged impact MagicMissiles overlay");
+            AssertCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.EnemyHit,
+                "CueAssetVfx_MagicMissilesLightImpact",
+                "enemy hit MagicMissiles overlay");
+            AssertCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.EnemyDeath,
+                "CueAssetVfx_MagicMissilesDeathBurst",
+                "enemy death MagicMissiles overlay");
+            AssertCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.EliteShieldSignal,
+                "CueAssetVfx_MagicMissilesGuardState",
+                "elite shield MagicMissiles overlay");
+            AssertCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.EliteAuraSignal,
+                "CueAssetVfx_MagicMissilesActiveAura",
+                "elite aura MagicMissiles overlay");
+            AssertCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.EliteSummonSignal,
+                "CueAssetVfx_MagicMissilesSummonState",
+                "elite summon MagicMissiles overlay");
+            AssertCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.SummonBlockOpportunity,
+                "CueAssetVfx_MagicMissilesSummonState",
+                "summon block opportunity MagicMissiles overlay");
+            AssertCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.SummonFollowupWindow,
+                "CueAssetVfx_MagicMissilesSummonState",
+                "summon follow-up window MagicMissiles overlay");
+        }
+
+        private static void AssertCombatCueAssetOverlay(
+            CombatVfxCueProfile profile,
+            CombatVfxCueId cueId,
+            string childName,
+            string label)
+        {
+            Assert.IsTrue(profile.TryGetCue(cueId, out CombatVfxCue cue), $"{cueId} should exist.");
+            Assert.IsNotNull(cue.Prefab, $"{cueId} should keep a cue prefab.");
+            AssertPromotedParticleVfx(cue.Prefab.transform.Find(childName), label, 1);
+            AssertGameOwnedAsset(cue.Prefab, $"{cueId} cue prefab");
+        }
+
+        private static void AssertMagicMissilesLaneProjectile(string prefabPath, string childName, string label)
+        {
+            GameObject projectileObject = LoadAsset<GameObject>(prefabPath);
+            Assert.IsNotNull(projectileObject, $"{label} prefab should be assigned.");
+            MeshRenderer rootRenderer = projectileObject.GetComponent<MeshRenderer>();
+            Assert.IsNotNull(rootRenderer, $"{label} should keep a hidden collision root MeshRenderer.");
+            Assert.IsFalse(rootRenderer.enabled, $"{label} root MeshRenderer must stay disabled behind asset VFX.");
+            Assert.IsNull(
+                projectileObject.GetComponent<TrailRenderer>(),
+                $"{label} should not fall back to generated TrailRenderer visuals.");
+            AssertPromotedParticleVfx(
+                projectileObject.transform.Find(childName),
+                label,
+                2);
+        }
+
+        private static void AssertPromotedParticleVfx(Transform root, string label, int minimumParticleSystems)
+        {
+            Assert.IsNotNull(root, $"{label} should be authored in the prefab.");
+            Assert.IsNull(root.GetComponentInChildren<Collider>(true), $"{label} should stay visual-only.");
+            ParticleSystem[] particles = root.GetComponentsInChildren<ParticleSystem>(true);
+            Assert.GreaterOrEqual(
+                particles.Length,
+                minimumParticleSystems,
+                $"{label} should preserve its authored particle system stack.");
+            ParticleSystemRenderer[] renderers = root.GetComponentsInChildren<ParticleSystemRenderer>(true);
+            Assert.Greater(renderers.Length, 0, $"{label} should expose particle renderers.");
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                ParticleSystemRenderer renderer = renderers[i];
+                Assert.IsNotNull(renderer.sharedMaterial, $"{label}.{renderer.name} should keep a material.");
+                AssertGameOwnedAsset(renderer.sharedMaterial, $"{label}.{renderer.name} material");
+                AssertRenderableMaterialShader(renderer.sharedMaterial, $"{label}.{renderer.name} material shader");
+                if (renderer.mesh != null)
+                {
+                    AssertGameOwnedAsset(renderer.mesh, $"{label}.{renderer.name} mesh");
+                }
+            }
+
+            AudioSource[] audioSources = root.GetComponentsInChildren<AudioSource>(true);
+            for (int i = 0; i < audioSources.Length; i++)
+            {
+                AudioSource audioSource = audioSources[i];
+                if (audioSource.clip == null)
+                {
+                    continue;
+                }
+
+                AssertGameOwnedAsset(audioSource.clip, $"{label}.{audioSource.name} audio clip");
+            }
+        }
+
+        private static Transform FindChildWithPrefix(Transform parent, string prefix)
+        {
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform child = parent.GetChild(i);
+                if (child.name.StartsWith(prefix, System.StringComparison.Ordinal))
+                {
+                    return child;
+                }
+            }
+
+            return null;
         }
 
         private static void AssertColorNear(Color expected, Color actual, string label)

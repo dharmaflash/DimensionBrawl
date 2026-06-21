@@ -192,6 +192,10 @@ namespace DimensionBrawl.Editor
 
                 MeshRenderer renderer = EnsureComponent<MeshRenderer>(editableRoot);
                 renderer.sharedMaterial = material;
+                renderer.enabled = false;
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+                renderer.allowOcclusionWhenDynamic = false;
 
                 Collider collider = editableRoot.GetComponent<Collider>();
                 if (collider != null && !(collider is SphereCollider))
@@ -338,6 +342,7 @@ namespace DimensionBrawl.Editor
                 pulseFilter.sharedMesh = LoadPrimitiveMesh(PrimitiveType.Sphere);
                 MeshRenderer pulseRenderer = EnsureComponent<MeshRenderer>(tierPulseCore.gameObject);
                 pulseRenderer.sharedMaterial = pulseMaterial;
+                pulseRenderer.enabled = false;
                 pulseRenderer.shadowCastingMode = ShadowCastingMode.Off;
                 pulseRenderer.receiveShadows = false;
                 pulseRenderer.allowOcclusionWhenDynamic = false;
@@ -359,6 +364,12 @@ namespace DimensionBrawl.Editor
                     pulseMaterial,
                     forwardSign: 1f,
                     radius: 0.48f);
+                ConfigureSummonStateVfx(
+                    editableRoot,
+                    "ShieldBreakerReadyAura",
+                    ImportedMagicMissilesHealingAuraPrefabPath,
+                    new Vector3(0f, 0.1f, 0.02f),
+                    Vector3.one * 0.86f);
 
                 Transform summonVisual = AttachRoleVisualOnly(
                     editableRoot.transform,
@@ -563,6 +574,7 @@ namespace DimensionBrawl.Editor
                 pulseFilter.sharedMesh = LoadPrimitiveMesh(PrimitiveType.Sphere);
                 MeshRenderer pulseRenderer = EnsureComponent<MeshRenderer>(tierPulseCore.gameObject);
                 pulseRenderer.sharedMaterial = pulseMaterial;
+                pulseRenderer.enabled = false;
                 pulseRenderer.shadowCastingMode = ShadowCastingMode.Off;
                 pulseRenderer.receiveShadows = false;
                 pulseRenderer.allowOcclusionWhenDynamic = false;
@@ -588,6 +600,16 @@ namespace DimensionBrawl.Editor
                     pulseMaterial,
                     forwardSign: 1f,
                     radius: Mathf.Max(0.42f, bodyRadius * 0.42f));
+                ConfigureSummonStateVfx(
+                    editableRoot,
+                    roleId == SummonSlot2ActorVisualRoleId
+                        ? "MarksmanFocusAura"
+                        : "VanguardGuardAura",
+                    roleId == SummonSlot2ActorVisualRoleId
+                        ? ImportedMagicMissilesArcaneAuraPrefabPath
+                        : ImportedMagicMissilesHealingAuraPrefabPath,
+                    new Vector3(0f, 0.1f, 0.02f),
+                    Vector3.one * (roleId == SummonSlot2ActorVisualRoleId ? 0.72f : 0.98f));
 
                 Transform summonVisual = AttachRoleVisualOnly(
                     editableRoot.transform,
@@ -838,6 +860,7 @@ namespace DimensionBrawl.Editor
                 pulseFilter.sharedMesh = LoadPrimitiveMesh(PrimitiveType.Sphere);
                 MeshRenderer pulseRenderer = EnsureComponent<MeshRenderer>(tierPulseCore.gameObject);
                 pulseRenderer.sharedMaterial = pulseMaterial;
+                pulseRenderer.enabled = false;
                 pulseRenderer.shadowCastingMode = ShadowCastingMode.Off;
                 pulseRenderer.receiveShadows = false;
                 pulseRenderer.allowOcclusionWhenDynamic = false;
@@ -859,6 +882,12 @@ namespace DimensionBrawl.Editor
                     pulseMaterial,
                     forwardSign: -1f,
                     radius: 0.52f);
+                ConfigureSummonStateVfx(
+                    editableRoot,
+                    "BossPressureAura",
+                    ImportedMagicMissilesPressureAuraPrefabPath,
+                    new Vector3(0f, 0.08f, -0.04f),
+                    Vector3.one * 1.08f);
 
                 Transform summonVisual = AttachRoleVisualOnly(
                     editableRoot.transform,
@@ -923,62 +952,15 @@ namespace DimensionBrawl.Editor
             const string VisualPrefix = "SummonEntryVfx_";
             RemoveChildrenWithPrefix(cueRoot.transform, VisualPrefix);
 
-            AddProjectileVisualPrimitive(
+            AttachPromotedVfxPrefab(
                 cueRoot.transform,
-                VisualPrefix + "OuterRing",
-                PrimitiveType.Cylinder,
-                accentMaterial,
+                VisualPrefix + "MagicMissilesArcaneCircle",
+                ImportedMagicMissilesArcaneCirclePrefabPath,
                 new Vector3(0f, 0.08f, 0f),
                 Vector3.zero,
-                new Vector3(1.78f, 0.045f, 1.78f));
-            AddProjectileVisualPrimitive(
-                cueRoot.transform,
-                VisualPrefix + "InnerRing",
-                PrimitiveType.Cylinder,
-                accentMaterial,
-                new Vector3(0f, 0.12f, 0f),
-                Vector3.zero,
-                new Vector3(1.06f, 0.04f, 1.06f));
-            AddProjectileVisualPrimitive(
-                cueRoot.transform,
-                VisualPrefix + "CrossLineX",
-                PrimitiveType.Cube,
-                accentMaterial,
-                new Vector3(0f, 0.16f, 0f),
-                Vector3.zero,
-                new Vector3(1.82f, 0.04f, 0.055f));
-            AddProjectileVisualPrimitive(
-                cueRoot.transform,
-                VisualPrefix + "CrossLineZ",
-                PrimitiveType.Cube,
-                accentMaterial,
-                new Vector3(0f, 0.18f, 0f),
-                Vector3.zero,
-                new Vector3(0.055f, 0.04f, 1.82f));
-            AddProjectileVisualPrimitive(
-                cueRoot.transform,
-                VisualPrefix + "VerticalBeacon",
-                PrimitiveType.Cylinder,
-                accentMaterial,
-                new Vector3(0f, 20f, 0f),
-                Vector3.zero,
-                new Vector3(0.12f, 23f, 0.12f));
-            AddProjectileVisualPrimitive(
-                cueRoot.transform,
-                VisualPrefix + "SparkNeedleA",
-                PrimitiveType.Cube,
-                accentMaterial,
-                new Vector3(0.24f, 14f, 0.02f),
-                new Vector3(0f, 0f, -18f),
-                new Vector3(0.035f, 14f, 0.035f));
-            AddProjectileVisualPrimitive(
-                cueRoot.transform,
-                VisualPrefix + "SparkNeedleB",
-                PrimitiveType.Cube,
-                accentMaterial,
-                new Vector3(-0.24f, 12f, -0.02f),
-                new Vector3(0f, 0f, 18f),
-                new Vector3(0.035f, 12f, 0.035f));
+                new Vector3(1.55f, 1.55f, 1.55f),
+                loopParticles: true,
+                playOnAwake: true);
             EditorUtility.SetDirty(cueRoot);
         }
 
@@ -992,56 +974,16 @@ namespace DimensionBrawl.Editor
             const string VisualPrefix = "SummonShieldVfx_";
             RemoveChildrenWithPrefix(actorRoot.transform, VisualPrefix);
 
-            float depth = Mathf.Sign(forwardSign) * 0.08f;
             float clampedRadius = Mathf.Max(0.4f, radius);
-            AddProjectileVisualPrimitive(
+            AttachPromotedVfxPrefab(
                 actorRoot.transform,
-                VisualPrefix + "OuterHalo",
-                PrimitiveType.Sphere,
-                material,
-                screenCenter + new Vector3(0f, 0f, depth),
-                Vector3.zero,
-                new Vector3(clampedRadius * 1.72f, clampedRadius * 1.25f, 0.07f));
-            AddProjectileVisualPrimitive(
-                actorRoot.transform,
-                VisualPrefix + "InnerLens",
-                PrimitiveType.Sphere,
-                material,
-                screenCenter + new Vector3(0f, 0f, depth * 1.6f),
-                Vector3.zero,
-                new Vector3(clampedRadius * 1.18f, clampedRadius * 0.86f, 0.045f));
-            AddProjectileVisualPrimitive(
-                actorRoot.transform,
-                VisualPrefix + "TopBrace",
-                PrimitiveType.Cube,
-                material,
-                screenCenter + new Vector3(0f, clampedRadius * 0.66f, depth * 2f),
-                Vector3.zero,
-                new Vector3(clampedRadius * 1.35f, 0.045f, 0.055f));
-            AddProjectileVisualPrimitive(
-                actorRoot.transform,
-                VisualPrefix + "LeftBrace",
-                PrimitiveType.Cube,
-                material,
-                screenCenter + new Vector3(-clampedRadius * 0.78f, 0f, depth * 2f),
-                new Vector3(0f, 0f, -8f),
-                new Vector3(0.05f, clampedRadius * 1.15f, 0.055f));
-            AddProjectileVisualPrimitive(
-                actorRoot.transform,
-                VisualPrefix + "RightBrace",
-                PrimitiveType.Cube,
-                material,
-                screenCenter + new Vector3(clampedRadius * 0.78f, 0f, depth * 2f),
-                new Vector3(0f, 0f, 8f),
-                new Vector3(0.05f, clampedRadius * 1.15f, 0.055f));
-            AddProjectileVisualPrimitive(
-                actorRoot.transform,
-                VisualPrefix + "GroundRing",
-                PrimitiveType.Cylinder,
-                material,
-                new Vector3(0f, 0.045f, screenCenter.z - Mathf.Sign(forwardSign) * 0.12f),
-                Vector3.zero,
-                new Vector3(clampedRadius * 0.92f, 0.025f, clampedRadius * 0.92f));
+                VisualPrefix + "MagicMissilesShieldCircle",
+                ImportedMagicMissilesShieldCirclePrefabPath,
+                screenCenter + new Vector3(0f, 0f, Mathf.Sign(forwardSign) * 0.08f),
+                new Vector3(90f, 0f, 0f),
+                Vector3.one * (clampedRadius * 0.95f),
+                loopParticles: true,
+                playOnAwake: true);
             EditorUtility.SetDirty(actorRoot);
         }
 
@@ -1064,30 +1006,37 @@ namespace DimensionBrawl.Editor
             float direction = Mathf.Sign(forwardSign);
             Vector3 pulseCenter = pulseRoot.localPosition;
             float clampedRadius = Mathf.Max(0.28f, radius);
-            AddProjectileVisualPrimitive(
+            AttachPromotedVfxPrefab(
                 actorRoot.transform,
-                VisualPrefix + "EnergyRing",
-                PrimitiveType.Cylinder,
-                material,
-                pulseCenter + new Vector3(0f, -0.035f, 0f),
+                VisualPrefix + "MagicMissilesPulse",
+                ImportedMagicMissilesPulsePrefabPath,
+                pulseCenter + new Vector3(0f, 0f, direction * 0.08f),
                 Vector3.zero,
-                new Vector3(clampedRadius, 0.025f, clampedRadius));
-            AddProjectileVisualPrimitive(
+                Vector3.one * Mathf.Max(0.5f, clampedRadius * 1.35f),
+                loopParticles: true,
+                playOnAwake: true);
+            EditorUtility.SetDirty(actorRoot);
+        }
+
+        private static void ConfigureSummonStateVfx(
+            GameObject actorRoot,
+            string stateName,
+            string sourcePrefabPath,
+            Vector3 localPosition,
+            Vector3 localScale)
+        {
+            const string VisualPrefix = "SummonStateVfx_";
+            RemoveChildrenWithPrefix(actorRoot.transform, VisualPrefix);
+
+            AttachPromotedVfxPrefab(
                 actorRoot.transform,
-                VisualPrefix + "BackFin",
-                PrimitiveType.Cube,
-                material,
-                pulseCenter + new Vector3(0f, 0f, direction * 0.22f),
-                new Vector3(0f, 18f * direction, 0f),
-                new Vector3(0.08f, clampedRadius * 1.1f, 0.055f));
-            AddProjectileVisualPrimitive(
-                actorRoot.transform,
-                VisualPrefix + "ClashStreak",
-                PrimitiveType.Cube,
-                material,
-                pulseCenter + new Vector3(0f, -0.16f, direction * 0.28f),
-                new Vector3(0f, -20f * direction, 0f),
-                new Vector3(clampedRadius * 1.25f, 0.035f, 0.06f));
+                VisualPrefix + stateName,
+                sourcePrefabPath,
+                localPosition,
+                Vector3.zero,
+                localScale,
+                loopParticles: true,
+                playOnAwake: true);
             EditorUtility.SetDirty(actorRoot);
         }
 

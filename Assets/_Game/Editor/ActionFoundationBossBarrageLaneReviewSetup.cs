@@ -120,10 +120,52 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Art/Materials/ActionFoundation/AF_PlayerRangedBasicProjectile.mat";
         private const string ImportedRifleShotLoopedVfxPrefabPath =
             "Assets/_Imported/AssetStore/VFX/Vefects_ShotsVFXURP/Shots VFX URP/Shots/Muzzle Flash/Looped/VFX_Muzzle_Flash_Rifle_Looped.prefab";
+        private const string ImportedMagicMissilesPrefabRoot =
+            "Assets/_Imported/AssetStore/VFX/MagicMissiles/Prefabs";
+        private const string ImportedMagicMissilesFireMissilePrefabPath =
+            ImportedMagicMissilesPrefabRoot + "/Missiles/FireMissile.prefab";
+        private const string ImportedMagicMissilesLightMissilePrefabPath =
+            ImportedMagicMissilesPrefabRoot + "/Missiles/LightMissile.prefab";
+        private const string ImportedMagicMissilesArcaneMissilePrefabPath =
+            ImportedMagicMissilesPrefabRoot + "/Missiles/ArcaneMissile.prefab";
+        private const string ImportedMagicMissilesHolyMissilePrefabPath =
+            ImportedMagicMissilesPrefabRoot + "/Missiles/HolyMissile.prefab";
+        private const string ImportedMagicMissilesArcaneCirclePrefabPath =
+            ImportedMagicMissilesPrefabRoot + "/Circles/ArcaneCircle3.prefab";
+        private const string ImportedMagicMissilesShieldCirclePrefabPath =
+            ImportedMagicMissilesPrefabRoot + "/Circles/ArcaneCircle4.prefab";
+        private const string ImportedMagicMissilesPulsePrefabPath =
+            ImportedMagicMissilesPrefabRoot + "/Muzzleflash/HolyMuzzle.prefab";
+        private const string ImportedMagicMissilesHealingAuraPrefabPath =
+            ImportedMagicMissilesPrefabRoot + "/AreaEffect/AOE_Healing2.prefab";
+        private const string ImportedMagicMissilesArcaneAuraPrefabPath =
+            ImportedMagicMissilesPrefabRoot + "/AreaEffect/AOE_Purple.prefab";
+        private const string ImportedMagicMissilesPressureAuraPrefabPath =
+            ImportedMagicMissilesPrefabRoot + "/AreaEffect/AOE_PsychStorm.prefab";
+        private const string ImportedMagicMissilesLightImpactPrefabPath =
+            ImportedMagicMissilesPrefabRoot + "/Explosions/LightExplosion.prefab";
+        private const string ImportedMagicMissilesArcaneImpactPrefabPath =
+            ImportedMagicMissilesPrefabRoot + "/Explosions/ArcaneExplosion.prefab";
+        private const string ImportedMagicMissilesHolyImpactPrefabPath =
+            ImportedMagicMissilesPrefabRoot + "/Explosions/HolyExplosion.prefab";
+        private const string ImportedMagicMissilesDeathImpactPrefabPath =
+            ImportedMagicMissilesPrefabRoot + "/Explosions/DeathExplosion.prefab";
+        private const string MagicMissilesPromotedRoot =
+            "Assets/_Game/Art/VFX/MagicMissiles";
+        private const string MagicMissilesMaterialRoot =
+            MagicMissilesPromotedRoot + "/Materials";
+        private const string MagicMissilesTextureRoot =
+            MagicMissilesPromotedRoot + "/Textures";
+        private const string MagicMissilesMeshRoot =
+            MagicMissilesPromotedRoot + "/Meshes";
+        private const string MagicMissilesAudioRoot =
+            MagicMissilesPromotedRoot + "/Audio";
         private const string CombatVfxMaterialRoot =
             "Assets/_Game/Art/VFX/CombatCues/Materials";
         private const string CombatVfxMeshRoot =
             "Assets/_Game/Art/VFX/CombatCues/Meshes";
+        private const string CombatVfxPrefabRoot =
+            "Assets/_Game/Art/VFX/CombatCues/Prefabs";
         private const string MuzzleFlashFrontMaterialPath =
             CombatVfxMaterialRoot + "/DB_CombatVfx_MuzzleFlashFront.mat";
         private const string MuzzleFlashSideMaterialPath =
@@ -472,6 +514,7 @@ namespace DimensionBrawl.Editor
         {
             ActionFoundationPlayerCombatModeAssetSetup.EnsureRangedCandidateAssets();
             ActionFoundationCombatVfxSetup.EnsureCombatVfxAssets();
+            EnsureBossBarrageCombatCueAssetOverlays();
             BossBarragePatternProfile patternProfile = EnsurePatternProfile();
             BossBarragePatternProfile coverFirePatternProfile = EnsureCoverFirePatternProfile();
             BossBarragePatternProfile escortScreenPatternProfile = EnsureEscortScreenPatternProfile();
@@ -570,6 +613,7 @@ namespace DimensionBrawl.Editor
             SummonEnergyLadder energyLadder = EnsureComponent<SummonEnergyLadder>(player.gameObject);
             SetObjectReference(energyLadder, "laneSpace", laneSpace);
             SetObjectReference(energyLadder, "trackedPlayer", player.transform);
+            SetFloat(energyLadder, "baseEnergyPerSecond", 16.5f);
 
             GameObject projectileRoot = CreateRoot(scene, ProjectilePoolRootName);
             GameObject actionCueRoot = CreateRoot(scene, ActionCuePoolRootName);
@@ -826,6 +870,23 @@ namespace DimensionBrawl.Editor
                 RequireRoot(scene, ProjectilePoolRootName).transform,
                 rangedFireOrigin);
             ValidateRangedBasicProjectilePrefab();
+            ValidateBossBarrageCombatCueAssetOverlays();
+            ValidateMagicMissilesLaneProjectilePrefab(
+                Skill1ProjectilePrefabPath,
+                "LaneActionProjectileVfx_MagicMissilesArcaneBolt",
+                "Skill1 lane bolt");
+            ValidateMagicMissilesLaneProjectilePrefab(
+                SummonSlot1ProjectilePrefabPath,
+                "LaneActionProjectileVfx_MagicMissilesLightAssistBolt",
+                "SummonSlot1 assist bolt");
+            ValidateMagicMissilesLaneProjectilePrefab(
+                SummonSlot2ProjectilePrefabPath,
+                "LaneActionProjectileVfx_MagicMissilesArcaneMarksmanBolt",
+                "SummonSlot2 marksman bolt");
+            ValidateMagicMissilesLaneProjectilePrefab(
+                SummonSlot3ProjectilePrefabPath,
+                "LaneActionProjectileVfx_MagicMissilesHolyVanguardBolt",
+                "SummonSlot3 vanguard bolt");
             ValidatePlayerRangedBasicVfxCueDriver(
                 rangedBasicVfxCueDriver,
                 rangedBasicAttackAction,
@@ -845,6 +906,7 @@ namespace DimensionBrawl.Editor
                 rangedBasicAttackAction);
             ValidateObjectReference(energyLadder, "laneSpace", laneSpace);
             ValidateObjectReference(energyLadder, "trackedPlayer", player.transform);
+            ValidateFloat(energyLadder, "baseEnergyPerSecond", 16.5f);
             ValidatePlayerEnergyActions(skill1Action, summonSlot1Action, energyLadder, playerHealth, targetSelector, bossHealth, laneSpace);
             ValidateSupportSummonSlotAction(
                 summonSlot2Action,
@@ -1064,6 +1126,8 @@ namespace DimensionBrawl.Editor
             ValidateNoImportedAssetReference(Skill1ProjectilePrefabPath);
             ValidateNoImportedAssetReference(RangedBasicProjectilePrefabPath);
             ValidateNoImportedAssetReference(SummonSlot1ProjectilePrefabPath);
+            ValidateNoImportedAssetReference(SummonSlot2ProjectilePrefabPath);
+            ValidateNoImportedAssetReference(SummonSlot3ProjectilePrefabPath);
             ValidateNoImportedAssetReference(SummonSlot1EntryCuePrefabPath);
             ValidateNoImportedAssetReference(SummonSlot1EntryCueAccentMaterialPath);
             ValidateNoImportedAssetReference(SummonSlot1ActorPrefabPath);
@@ -1905,7 +1969,7 @@ namespace DimensionBrawl.Editor
 
                 ConfigureBossBarrageProjectileVisuals(editableRoot, material);
                 BossBarrageProjectile projectile = EnsureComponent<BossBarrageProjectile>(editableRoot);
-                SetObjectReferenceArray(projectile, "visualRenderers", CollectProjectilePresentationRenderers(editableRoot));
+                SetObjectReferenceArray(projectile, "visualRenderers", new UnityEngine.Object[] { renderer });
                 PrefabUtility.SaveAsPrefabAsset(editableRoot, ProjectilePrefabPath);
             }
             finally
@@ -1931,38 +1995,15 @@ namespace DimensionBrawl.Editor
                 BossBarrageProjectileTrailMaterialPath,
                 new Color(1f, 0.52f, 0.12f, 0.68f));
 
-            AddProjectileVisualPrimitive(
+            AttachPromotedVfxPrefab(
                 projectileRoot.transform,
-                VisualPrefix + "HotCore",
-                PrimitiveType.Sphere,
-                coreMaterial,
-                new Vector3(0f, 0f, 0.18f),
+                VisualPrefix + "MagicMissilesFireShot",
+                ImportedMagicMissilesFireMissilePrefabPath,
                 Vector3.zero,
-                new Vector3(0.68f, 0.68f, 1.28f));
-            AddProjectileVisualPrimitive(
-                projectileRoot.transform,
-                VisualPrefix + "NeedleTail",
-                PrimitiveType.Cube,
-                trailMaterial,
-                new Vector3(0f, 0f, -0.38f),
                 Vector3.zero,
-                new Vector3(0.28f, 0.20f, 1.95f));
-            AddProjectileVisualPrimitive(
-                projectileRoot.transform,
-                VisualPrefix + "LeftWarningWing",
-                PrimitiveType.Cube,
-                trailMaterial,
-                new Vector3(-0.22f, 0f, -0.05f),
-                new Vector3(0f, -24f, 0f),
-                new Vector3(0.08f, 0.05f, 1.08f));
-            AddProjectileVisualPrimitive(
-                projectileRoot.transform,
-                VisualPrefix + "RightWarningWing",
-                PrimitiveType.Cube,
-                trailMaterial,
-                new Vector3(0.22f, 0f, -0.05f),
-                new Vector3(0f, 24f, 0f),
-                new Vector3(0.08f, 0.05f, 1.08f));
+                new Vector3(0.62f, 0.62f, 1.18f),
+                loopParticles: true,
+                playOnAwake: true);
 
             TrailRenderer trail = EnsureComponent<TrailRenderer>(projectileRoot);
             trail.sharedMaterial = trailMaterial;
@@ -1996,20 +2037,123 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(projectileRoot);
         }
 
-        private static Renderer[] CollectProjectilePresentationRenderers(GameObject projectileRoot)
+        private static void EnsureBossBarrageCombatCueAssetOverlays()
         {
-            Renderer[] renderers = projectileRoot.GetComponentsInChildren<Renderer>(includeInactive: true);
-            var presentationRenderers = new List<Renderer>(renderers.Length);
-            for (int i = 0; i < renderers.Length; i++)
+            CombatVfxCueProfile profile =
+                LoadAsset<CombatVfxCueProfile>(ActionFoundationCombatVfxSetup.CombatVfxCueProfilePath);
+            EnsureCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.PlayerRangedProjectileImpact,
+                "CueAssetVfx_MagicMissilesLightImpact",
+                ImportedMagicMissilesLightImpactPrefabPath,
+                new Vector3(0f, 0.08f, 0f),
+                Vector3.zero,
+                Vector3.one * 0.36f,
+                loopParticles: false);
+            EnsureCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.EnemyHit,
+                "CueAssetVfx_MagicMissilesLightImpact",
+                ImportedMagicMissilesLightImpactPrefabPath,
+                new Vector3(0f, 0.1f, 0f),
+                Vector3.zero,
+                Vector3.one * 0.42f,
+                loopParticles: false);
+            EnsureCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.EnemyDeath,
+                "CueAssetVfx_MagicMissilesDeathBurst",
+                ImportedMagicMissilesDeathImpactPrefabPath,
+                new Vector3(0f, 0.04f, 0f),
+                Vector3.zero,
+                Vector3.one * 0.58f,
+                loopParticles: false);
+            EnsureCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.EliteShieldSignal,
+                "CueAssetVfx_MagicMissilesGuardState",
+                ImportedMagicMissilesHolyImpactPrefabPath,
+                new Vector3(0f, 0.08f, 0f),
+                Vector3.zero,
+                Vector3.one * 0.48f,
+                loopParticles: false);
+            EnsureCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.EliteAuraSignal,
+                "CueAssetVfx_MagicMissilesActiveAura",
+                ImportedMagicMissilesHealingAuraPrefabPath,
+                new Vector3(0f, 0.08f, 0f),
+                Vector3.zero,
+                Vector3.one * 0.82f,
+                loopParticles: true);
+            EnsureCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.EliteSummonSignal,
+                "CueAssetVfx_MagicMissilesSummonState",
+                ImportedMagicMissilesArcaneAuraPrefabPath,
+                new Vector3(0f, 0.08f, 0f),
+                Vector3.zero,
+                Vector3.one * 0.78f,
+                loopParticles: true);
+            EnsureCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.SummonBlockOpportunity,
+                "CueAssetVfx_MagicMissilesSummonState",
+                ImportedMagicMissilesArcaneAuraPrefabPath,
+                new Vector3(0f, 0.08f, 0f),
+                Vector3.zero,
+                Vector3.one * 0.78f,
+                loopParticles: true);
+            EnsureCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.SummonFollowupWindow,
+                "CueAssetVfx_MagicMissilesSummonState",
+                ImportedMagicMissilesArcaneAuraPrefabPath,
+                new Vector3(0f, 0.08f, 0f),
+                Vector3.zero,
+                Vector3.one * 0.78f,
+                loopParticles: true);
+        }
+
+        private static void EnsureCombatCueAssetOverlay(
+            CombatVfxCueProfile profile,
+            CombatVfxCueId cueId,
+            string childName,
+            string sourcePrefabPath,
+            Vector3 localPosition,
+            Vector3 localEuler,
+            Vector3 localScale,
+            bool loopParticles)
+        {
+            if (!profile.TryGetCue(cueId, out CombatVfxCue cue) || cue.Prefab == null)
             {
-                Renderer renderer = renderers[i];
-                if (renderer != null && renderer.enabled && renderer is not TrailRenderer)
-                {
-                    presentationRenderers.Add(renderer);
-                }
+                throw new InvalidOperationException($"Boss barrage combat cue profile is missing {cueId}.");
             }
 
-            return presentationRenderers.ToArray();
+            string prefabPath = AssetDatabase.GetAssetPath(cue.Prefab).Replace('\\', '/');
+            if (string.IsNullOrWhiteSpace(prefabPath))
+            {
+                throw new InvalidOperationException($"{cueId} should reference a saved combat VFX prefab.");
+            }
+
+            GameObject editableRoot = PrefabUtility.LoadPrefabContents(prefabPath);
+            try
+            {
+                AttachPromotedVfxPrefab(
+                    editableRoot.transform,
+                    childName,
+                    sourcePrefabPath,
+                    localPosition,
+                    localEuler,
+                    localScale,
+                    loopParticles,
+                    playOnAwake: true);
+                PrefabUtility.SaveAsPrefabAsset(editableRoot, prefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(editableRoot);
+            }
         }
 
         private static LaneActionProjectile EnsureLaneActionProjectilePrefab(
@@ -2037,7 +2181,7 @@ namespace DimensionBrawl.Editor
                 MeshRenderer renderer = EnsureComponent<MeshRenderer>(editableRoot);
                 renderer.sharedMaterial = material;
                 bool usesAuthoredProjectileVfx =
-                    string.Equals(prefabPath, RangedBasicProjectilePrefabPath, StringComparison.Ordinal);
+                    UsesAuthoredLaneProjectileVfx(prefabPath);
                 renderer.enabled = !usesAuthoredProjectileVfx;
                 if (usesAuthoredProjectileVfx)
                 {
@@ -2060,6 +2204,18 @@ namespace DimensionBrawl.Editor
                 {
                     ConfigureRangedBasicProjectileVisuals(editableRoot, material);
                 }
+                else if (TryGetMagicMissilesProjectileVfxSpec(
+                    prefabPath,
+                    out string sourcePrefabPath,
+                    out string visualName,
+                    out Vector3 localScale))
+                {
+                    ConfigureMagicMissilesLaneProjectileVisuals(
+                        editableRoot,
+                        sourcePrefabPath,
+                        visualName,
+                        localScale);
+                }
 
                 PrefabUtility.SaveAsPrefabAsset(editableRoot, prefabPath);
             }
@@ -2076,6 +2232,86 @@ namespace DimensionBrawl.Editor
             }
 
             return LoadPrefabComponent<LaneActionProjectile>(prefabPath);
+        }
+
+        private static bool UsesAuthoredLaneProjectileVfx(string prefabPath)
+        {
+            return string.Equals(prefabPath, RangedBasicProjectilePrefabPath, StringComparison.Ordinal)
+                || TryGetMagicMissilesProjectileVfxSpec(
+                    prefabPath,
+                    out _,
+                    out _,
+                    out _);
+        }
+
+        private static bool TryGetMagicMissilesProjectileVfxSpec(
+            string prefabPath,
+            out string sourcePrefabPath,
+            out string visualName,
+            out Vector3 localScale)
+        {
+            if (string.Equals(prefabPath, Skill1ProjectilePrefabPath, StringComparison.Ordinal))
+            {
+                sourcePrefabPath = ImportedMagicMissilesArcaneMissilePrefabPath;
+                visualName = "MagicMissilesArcaneBolt";
+                localScale = new Vector3(0.34f, 0.34f, 0.78f);
+                return true;
+            }
+
+            if (string.Equals(prefabPath, SummonSlot1ProjectilePrefabPath, StringComparison.Ordinal))
+            {
+                sourcePrefabPath = ImportedMagicMissilesLightMissilePrefabPath;
+                visualName = "MagicMissilesLightAssistBolt";
+                localScale = new Vector3(0.38f, 0.38f, 0.86f);
+                return true;
+            }
+
+            if (string.Equals(prefabPath, SummonSlot2ProjectilePrefabPath, StringComparison.Ordinal))
+            {
+                sourcePrefabPath = ImportedMagicMissilesArcaneMissilePrefabPath;
+                visualName = "MagicMissilesArcaneMarksmanBolt";
+                localScale = new Vector3(0.26f, 0.26f, 0.72f);
+                return true;
+            }
+
+            if (string.Equals(prefabPath, SummonSlot3ProjectilePrefabPath, StringComparison.Ordinal))
+            {
+                sourcePrefabPath = ImportedMagicMissilesHolyMissilePrefabPath;
+                visualName = "MagicMissilesHolyVanguardBolt";
+                localScale = new Vector3(0.44f, 0.44f, 0.95f);
+                return true;
+            }
+
+            sourcePrefabPath = string.Empty;
+            visualName = string.Empty;
+            localScale = Vector3.one;
+            return false;
+        }
+
+        private static void ConfigureMagicMissilesLaneProjectileVisuals(
+            GameObject projectileRoot,
+            string sourcePrefabPath,
+            string visualName,
+            Vector3 localScale)
+        {
+            const string VisualPrefix = "LaneActionProjectileVfx_";
+            RemoveChildrenWithPrefix(projectileRoot.transform, VisualPrefix);
+            TrailRenderer oldTrail = projectileRoot.GetComponent<TrailRenderer>();
+            if (oldTrail != null)
+            {
+                UnityEngine.Object.DestroyImmediate(oldTrail);
+            }
+
+            AttachPromotedVfxPrefab(
+                projectileRoot.transform,
+                VisualPrefix + visualName,
+                sourcePrefabPath,
+                Vector3.zero,
+                Vector3.zero,
+                localScale,
+                loopParticles: true,
+                playOnAwake: true);
+            EditorUtility.SetDirty(projectileRoot);
         }
 
         private static void ConfigureRangedBasicProjectileVisuals(GameObject projectileRoot, Material coreMaterial)
@@ -2116,6 +2352,7 @@ namespace DimensionBrawl.Editor
             vfxInstance.transform.localRotation = Quaternion.identity;
             vfxInstance.transform.localScale = new Vector3(0.72f, 0.72f, 1.55f);
 
+            UnpackNestedPrefabInstances(vfxInstance);
             ConfigureRangedBasicProjectileAssetParticles(vfxInstance);
             RemapRangedBasicProjectileAssetRenderers(vfxInstance);
             return vfxInstance;
@@ -2134,6 +2371,12 @@ namespace DimensionBrawl.Editor
                 main.scalingMode = ParticleSystemScalingMode.Hierarchy;
                 ParticleSystem.EmissionModule emission = particleSystem.emission;
                 emission.enabled = true;
+                ParticleSystem.LightsModule lights = particleSystem.lights;
+                if (lights.enabled && lights.light != null)
+                {
+                    lights.light = EnsurePromotedVefectsLight(lights.light);
+                }
+
                 particleSystem.Clear(withChildren: true);
                 particleSystem.Play(withChildren: true);
                 EditorUtility.SetDirty(particleSystem);
@@ -2177,6 +2420,56 @@ namespace DimensionBrawl.Editor
                 renderer.allowOcclusionWhenDynamic = false;
                 EditorUtility.SetDirty(renderer);
             }
+        }
+
+        private static Light EnsurePromotedVefectsLight(Light sourceLight)
+        {
+            string sourcePath = AssetDatabase.GetAssetPath(sourceLight).Replace('\\', '/');
+            if (sourcePath.StartsWith("Assets/_Game/", StringComparison.Ordinal))
+            {
+                return sourceLight;
+            }
+
+            string sourceName = string.IsNullOrWhiteSpace(sourcePath)
+                ? sourceLight.name
+                : System.IO.Path.GetFileNameWithoutExtension(sourcePath);
+            string targetPath = CombatVfxPrefabRoot + "/DB_Vefects_"
+                + SanitizeAssetFileName(sourceName)
+                + ".prefab";
+            EnsureFolderForAsset(targetPath);
+
+            GameObject promotedPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(targetPath);
+            if (promotedPrefab == null)
+            {
+                GameObject lightRoot = new GameObject("DB_Vefects_" + SanitizeAssetFileName(sourceName));
+                try
+                {
+                    Light promotedLight = lightRoot.AddComponent<Light>();
+                    promotedLight.type = sourceLight.type;
+                    promotedLight.color = sourceLight.color;
+                    promotedLight.intensity = sourceLight.intensity;
+                    promotedLight.range = sourceLight.range;
+                    promotedLight.spotAngle = sourceLight.spotAngle;
+                    promotedLight.shadows = sourceLight.shadows;
+                    promotedLight.shadowStrength = sourceLight.shadowStrength;
+                    promotedLight.renderMode = sourceLight.renderMode;
+                    PrefabUtility.SaveAsPrefabAsset(lightRoot, targetPath);
+                }
+                finally
+                {
+                    UnityEngine.Object.DestroyImmediate(lightRoot);
+                }
+
+                promotedPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(targetPath);
+            }
+
+            Light promotedPrefabLight = promotedPrefab != null ? promotedPrefab.GetComponent<Light>() : null;
+            if (promotedPrefabLight == null)
+            {
+                throw new InvalidOperationException($"Failed to promote Vefects light prefab at {targetPath}.");
+            }
+
+            return promotedPrefabLight;
         }
 
         private static Mesh EnsurePromotedVefectsMesh(Mesh sourceMesh)
@@ -2224,6 +2517,433 @@ namespace DimensionBrawl.Editor
             }
 
             throw new InvalidOperationException($"Failed to load promoted Vefects mesh {sourceMesh.name} from {targetPath}.");
+        }
+
+        private static GameObject AttachPromotedVfxPrefab(
+            Transform parent,
+            string childName,
+            string sourcePrefabPath,
+            Vector3 localPosition,
+            Vector3 localEuler,
+            Vector3 localScale,
+            bool loopParticles,
+            bool playOnAwake)
+        {
+            DestroyChildIfPresent(parent, childName);
+            GameObject sourcePrefab = LoadAsset<GameObject>(sourcePrefabPath);
+            GameObject vfxInstance = PrefabUtility.InstantiatePrefab(sourcePrefab, parent.gameObject.scene) as GameObject;
+            if (vfxInstance == null)
+            {
+                vfxInstance = UnityEngine.Object.Instantiate(sourcePrefab);
+            }
+
+            if (PrefabUtility.IsPartOfPrefabInstance(vfxInstance))
+            {
+                PrefabUtility.UnpackPrefabInstance(
+                    vfxInstance,
+                    PrefabUnpackMode.Completely,
+                    InteractionMode.AutomatedAction);
+            }
+
+            vfxInstance.name = childName;
+            vfxInstance.transform.SetParent(parent, worldPositionStays: false);
+            vfxInstance.transform.localPosition = localPosition;
+            vfxInstance.transform.localRotation = Quaternion.Euler(localEuler);
+            vfxInstance.transform.localScale = localScale;
+
+            UnpackNestedPrefabInstances(vfxInstance);
+            StripNonGameMonoBehaviours(vfxInstance);
+            RemoveColliders(vfxInstance);
+            RemapPromotedVfxAudioSources(vfxInstance, playOnAwake);
+            ConfigurePromotedVfxParticles(vfxInstance, loopParticles, playOnAwake);
+            RemapPromotedVfxRenderers(vfxInstance);
+            EditorUtility.SetDirty(vfxInstance);
+            return vfxInstance;
+        }
+
+        private static void UnpackNestedPrefabInstances(GameObject root)
+        {
+            Transform[] transforms = root.GetComponentsInChildren<Transform>(includeInactive: true);
+            for (int i = transforms.Length - 1; i >= 0; i--)
+            {
+                GameObject candidate = transforms[i].gameObject;
+                if (candidate != root
+                    && PrefabUtility.IsAnyPrefabInstanceRoot(candidate)
+                    && PrefabUtility.IsPartOfPrefabInstance(candidate))
+                {
+                    PrefabUtility.UnpackPrefabInstance(
+                        candidate,
+                        PrefabUnpackMode.Completely,
+                        InteractionMode.AutomatedAction);
+                }
+            }
+        }
+
+        private static void ConfigurePromotedVfxParticles(
+            GameObject vfxRoot,
+            bool loopParticles,
+            bool playOnAwake)
+        {
+            ParticleSystem[] particleSystems = vfxRoot.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            for (int i = 0; i < particleSystems.Length; i++)
+            {
+                ParticleSystem particleSystem = particleSystems[i];
+                ParticleSystem.MainModule main = particleSystem.main;
+                main.loop = loopParticles;
+                main.playOnAwake = playOnAwake;
+                main.simulationSpace = ParticleSystemSimulationSpace.Local;
+                main.scalingMode = ParticleSystemScalingMode.Hierarchy;
+
+                ParticleSystem.EmissionModule emission = particleSystem.emission;
+                emission.enabled = true;
+                particleSystem.Clear(withChildren: true);
+                if (playOnAwake)
+                {
+                    particleSystem.Play(withChildren: true);
+                }
+
+                EditorUtility.SetDirty(particleSystem);
+            }
+        }
+
+        private static void RemapPromotedVfxRenderers(GameObject vfxRoot)
+        {
+            Renderer[] renderers = vfxRoot.GetComponentsInChildren<Renderer>(includeInactive: true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                Material[] materials = renderer.sharedMaterials;
+                for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+                {
+                    if (materials[materialIndex] != null)
+                    {
+                        materials[materialIndex] = EnsurePromotedMagicMissilesMaterial(materials[materialIndex]);
+                    }
+                }
+
+                renderer.sharedMaterials = materials;
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+                renderer.allowOcclusionWhenDynamic = false;
+                EditorUtility.SetDirty(renderer);
+            }
+
+            ParticleSystemRenderer[] particleRenderers =
+                vfxRoot.GetComponentsInChildren<ParticleSystemRenderer>(includeInactive: true);
+            for (int i = 0; i < particleRenderers.Length; i++)
+            {
+                ParticleSystemRenderer renderer = particleRenderers[i];
+                if (renderer.mesh != null)
+                {
+                    renderer.mesh = EnsurePromotedMagicMissilesMesh(renderer.mesh);
+                }
+
+                EditorUtility.SetDirty(renderer);
+            }
+
+            MeshFilter[] meshFilters = vfxRoot.GetComponentsInChildren<MeshFilter>(includeInactive: true);
+            for (int i = 0; i < meshFilters.Length; i++)
+            {
+                if (meshFilters[i].sharedMesh != null)
+                {
+                    meshFilters[i].sharedMesh = EnsurePromotedMagicMissilesMesh(meshFilters[i].sharedMesh);
+                    EditorUtility.SetDirty(meshFilters[i]);
+                }
+            }
+        }
+
+        private static Material EnsurePromotedMagicMissilesMaterial(Material sourceMaterial)
+        {
+            string sourcePath = AssetDatabase.GetAssetPath(sourceMaterial).Replace('\\', '/');
+            if (sourcePath.StartsWith("Assets/_Game/", StringComparison.Ordinal))
+            {
+                return sourceMaterial;
+            }
+
+            string targetPath = MagicMissilesMaterialRoot + "/DB_MagicMissiles_"
+                + SanitizeAssetFileName(sourceMaterial.name)
+                + ".mat";
+            EnsureFolderForAsset(targetPath);
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(targetPath);
+            if (material == null)
+            {
+                material = new Material(ResolveUnlitShader());
+                AssetDatabase.CreateAsset(material, targetPath);
+            }
+
+            material.shader = ResolveUnlitShader();
+            ConfigureTransparentVfxMaterial(material, ResolveMagicMissilesMaterialColor(sourceMaterial));
+
+            string[] textureProperties = sourceMaterial.GetTexturePropertyNames();
+            for (int i = 0; i < textureProperties.Length; i++)
+            {
+                Texture texture = sourceMaterial.GetTexture(textureProperties[i]);
+                if (texture == null)
+                {
+                    continue;
+                }
+
+                Texture promotedTexture = EnsurePromotedMagicMissilesTexture(texture);
+                SetTextureIfPresent(material, textureProperties[i], promotedTexture);
+                SetTextureIfPresent(material, "_MainTex", promotedTexture);
+                SetTextureIfPresent(material, "_BaseMap", promotedTexture);
+            }
+
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        private static void ConfigureTransparentVfxMaterial(Material material, Color color)
+        {
+            if (material.HasProperty("_BaseColor"))
+            {
+                material.SetColor("_BaseColor", color);
+            }
+
+            if (material.HasProperty("_Color"))
+            {
+                material.SetColor("_Color", color);
+            }
+
+            if (material.HasProperty("_EmissionColor"))
+            {
+                material.SetColor("_EmissionColor", color * 1.35f);
+            }
+
+            SetMaterialFloatIfPresent(material, "_Surface", 1f);
+            SetMaterialFloatIfPresent(material, "_Blend", 2f);
+            SetMaterialFloatIfPresent(material, "_SrcBlend", (float)BlendMode.SrcAlpha);
+            SetMaterialFloatIfPresent(material, "_DstBlend", (float)BlendMode.One);
+            SetMaterialFloatIfPresent(material, "_ZWrite", 0f);
+            material.renderQueue = (int)RenderQueue.Transparent;
+            material.SetOverrideTag("RenderType", "Transparent");
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.EnableKeyword("_ALPHAPREMULTIPLY_ON");
+        }
+
+        private static Color ResolveMagicMissilesMaterialColor(Material sourceMaterial)
+        {
+            if (sourceMaterial.HasProperty("_TintColor"))
+            {
+                return sourceMaterial.GetColor("_TintColor");
+            }
+
+            if (sourceMaterial.HasProperty("_BaseColor"))
+            {
+                return sourceMaterial.GetColor("_BaseColor");
+            }
+
+            if (sourceMaterial.HasProperty("_Color"))
+            {
+                return sourceMaterial.GetColor("_Color");
+            }
+
+            return Color.white;
+        }
+
+        private static void SetTextureIfPresent(Material material, string propertyName, Texture texture)
+        {
+            if (material != null && texture != null && material.HasProperty(propertyName))
+            {
+                material.SetTexture(propertyName, texture);
+            }
+        }
+
+        private static Texture EnsurePromotedMagicMissilesTexture(Texture sourceTexture)
+        {
+            string sourcePath = AssetDatabase.GetAssetPath(sourceTexture).Replace('\\', '/');
+            if (sourcePath.StartsWith("Assets/_Game/", StringComparison.Ordinal) || string.IsNullOrWhiteSpace(sourcePath))
+            {
+                return sourceTexture;
+            }
+
+            string targetPath = MagicMissilesTextureRoot + "/"
+                + SanitizeAssetFileName(System.IO.Path.GetFileNameWithoutExtension(sourcePath))
+                + System.IO.Path.GetExtension(sourcePath);
+            EnsureFolderForAsset(targetPath);
+            if (AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(targetPath) == null)
+            {
+                if (!AssetDatabase.CopyAsset(sourcePath, targetPath))
+                {
+                    throw new InvalidOperationException(
+                        $"Failed to promote MagicMissiles texture from {sourcePath} to {targetPath}.");
+                }
+
+                AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
+            }
+
+            Texture promotedTexture = AssetDatabase.LoadAssetAtPath<Texture>(targetPath);
+            if (promotedTexture == null)
+            {
+                throw new InvalidOperationException($"Failed to load promoted MagicMissiles texture at {targetPath}.");
+            }
+
+            return promotedTexture;
+        }
+
+        private static void RemapPromotedVfxAudioSources(GameObject vfxRoot, bool playOnAwake)
+        {
+            AudioSource[] audioSources = vfxRoot.GetComponentsInChildren<AudioSource>(includeInactive: true);
+            for (int i = 0; i < audioSources.Length; i++)
+            {
+                AudioSource audioSource = audioSources[i];
+                if (audioSource.clip != null)
+                {
+                    audioSource.clip = EnsurePromotedMagicMissilesAudioClip(audioSource.clip);
+                }
+
+                audioSource.playOnAwake = playOnAwake && audioSource.clip != null;
+                audioSource.spatialBlend = 1f;
+                audioSource.rolloffMode = AudioRolloffMode.Linear;
+                audioSource.dopplerLevel = 0f;
+                audioSource.minDistance = Mathf.Max(0.6f, audioSource.minDistance);
+                audioSource.maxDistance = Mathf.Clamp(audioSource.maxDistance, 8f, 22f);
+                audioSource.volume = Mathf.Clamp(audioSource.volume, 0.08f, 0.42f);
+                EditorUtility.SetDirty(audioSource);
+            }
+        }
+
+        private static AudioClip EnsurePromotedMagicMissilesAudioClip(AudioClip sourceClip)
+        {
+            string sourcePath = AssetDatabase.GetAssetPath(sourceClip).Replace('\\', '/');
+            if (sourcePath.StartsWith("Assets/_Game/", StringComparison.Ordinal) || string.IsNullOrWhiteSpace(sourcePath))
+            {
+                return sourceClip;
+            }
+
+            string targetPath = MagicMissilesAudioRoot + "/"
+                + SanitizeAssetFileName(System.IO.Path.GetFileNameWithoutExtension(sourcePath))
+                + System.IO.Path.GetExtension(sourcePath);
+            EnsureFolderForAsset(targetPath);
+            if (AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(targetPath) == null)
+            {
+                if (!AssetDatabase.CopyAsset(sourcePath, targetPath))
+                {
+                    throw new InvalidOperationException(
+                        $"Failed to promote MagicMissiles audio from {sourcePath} to {targetPath}.");
+                }
+
+                AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
+            }
+
+            AudioClip promotedClip = AssetDatabase.LoadAssetAtPath<AudioClip>(targetPath);
+            if (promotedClip == null)
+            {
+                throw new InvalidOperationException($"Failed to load promoted MagicMissiles audio at {targetPath}.");
+            }
+
+            return promotedClip;
+        }
+
+        private static Mesh EnsurePromotedMagicMissilesMesh(Mesh sourceMesh)
+        {
+            string sourcePath = AssetDatabase.GetAssetPath(sourceMesh).Replace('\\', '/');
+            if (sourcePath.StartsWith("Assets/_Game/", StringComparison.Ordinal))
+            {
+                return sourceMesh;
+            }
+
+            if (string.IsNullOrWhiteSpace(sourcePath)
+                || sourcePath.StartsWith("Library/", StringComparison.Ordinal))
+            {
+                string generatedTargetPath = MagicMissilesMeshRoot + "/DB_MagicMissiles_"
+                    + SanitizeAssetFileName(sourceMesh.name)
+                    + ".asset";
+                EnsureFolderForAsset(generatedTargetPath);
+                Mesh generatedMesh = AssetDatabase.LoadAssetAtPath<Mesh>(generatedTargetPath);
+                if (generatedMesh == null)
+                {
+                    generatedMesh = UnityEngine.Object.Instantiate(sourceMesh);
+                    generatedMesh.name = sourceMesh.name;
+                    AssetDatabase.CreateAsset(generatedMesh, generatedTargetPath);
+                    AssetDatabase.ImportAsset(generatedTargetPath, ImportAssetOptions.ForceUpdate);
+                }
+
+                return generatedMesh;
+            }
+
+            if (!sourcePath.StartsWith("Assets/_Imported/", StringComparison.Ordinal))
+            {
+                string generatedTargetPath = MagicMissilesMeshRoot + "/DB_MagicMissiles_"
+                    + SanitizeAssetFileName(sourceMesh.name)
+                    + ".asset";
+                EnsureFolderForAsset(generatedTargetPath);
+                Mesh generatedMesh = AssetDatabase.LoadAssetAtPath<Mesh>(generatedTargetPath);
+                if (generatedMesh == null)
+                {
+                    generatedMesh = UnityEngine.Object.Instantiate(sourceMesh);
+                    generatedMesh.name = sourceMesh.name;
+                    AssetDatabase.CreateAsset(generatedMesh, generatedTargetPath);
+                    AssetDatabase.ImportAsset(generatedTargetPath, ImportAssetOptions.ForceUpdate);
+                }
+
+                return generatedMesh;
+            }
+
+            string targetPath = MagicMissilesMeshRoot + "/"
+                + SanitizeAssetFileName(System.IO.Path.GetFileName(sourcePath));
+            EnsureFolderForAsset(targetPath);
+            if (AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(targetPath) == null)
+            {
+                if (!AssetDatabase.CopyAsset(sourcePath, targetPath))
+                {
+                    throw new InvalidOperationException(
+                        $"Failed to promote MagicMissiles mesh from {sourcePath} to {targetPath}.");
+                }
+
+                AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
+            }
+
+            UnityEngine.Object[] promotedAssets = AssetDatabase.LoadAllAssetsAtPath(targetPath);
+            for (int i = 0; i < promotedAssets.Length; i++)
+            {
+                if (promotedAssets[i] is Mesh promotedMesh
+                    && string.Equals(promotedMesh.name, sourceMesh.name, StringComparison.Ordinal))
+                {
+                    return promotedMesh;
+                }
+            }
+
+            for (int i = 0; i < promotedAssets.Length; i++)
+            {
+                if (promotedAssets[i] is Mesh promotedMesh)
+                {
+                    return promotedMesh;
+                }
+            }
+
+            return sourceMesh;
+        }
+
+        private static void RemoveColliders(GameObject root)
+        {
+            Collider[] colliders = root.GetComponentsInChildren<Collider>(includeInactive: true);
+            for (int i = colliders.Length - 1; i >= 0; i--)
+            {
+                UnityEngine.Object.DestroyImmediate(colliders[i]);
+            }
+        }
+
+        private static string SanitizeAssetFileName(string rawName)
+        {
+            if (string.IsNullOrWhiteSpace(rawName))
+            {
+                return "Asset";
+            }
+
+            char[] invalid = System.IO.Path.GetInvalidFileNameChars();
+            string safe = rawName.Trim();
+            for (int i = 0; i < invalid.Length; i++)
+            {
+                safe = safe.Replace(invalid[i], '_');
+            }
+
+            return safe.Replace(' ', '_');
         }
 
         private static Renderer AddProjectileVisualPrimitive(
@@ -4461,14 +5181,18 @@ namespace DimensionBrawl.Editor
             ValidateGameOwnedAsset(renderer.sharedMaterial, "boss barrage projectile material");
             ValidateRenderableMaterialShader(renderer.sharedMaterial, "boss barrage projectile material shader");
 
-            if (projectilePrefab.transform.Find("BossBarrageProjectileVfx_HotCore") == null)
-            {
-                throw new InvalidOperationException("Boss barrage projectile prefab should include a promoted hot core visual.");
-            }
+            Transform shotVfx = projectilePrefab.transform.Find("BossBarrageProjectileVfx_MagicMissilesFireShot");
+            ValidatePromotedParticleVfx(shotVfx, "boss barrage MagicMissiles fire shot", 2);
 
-            if (projectilePrefab.transform.Find("BossBarrageProjectileVfx_NeedleTail") == null)
+            BossBarrageProjectile projectile = projectilePrefab.GetComponent<BossBarrageProjectile>();
+            SerializedObject projectileObject = new SerializedObject(projectile);
+            SerializedProperty visualRenderers = RequireProperty(projectileObject, "visualRenderers");
+            if (!visualRenderers.isArray
+                || visualRenderers.arraySize != 1
+                || visualRenderers.GetArrayElementAtIndex(0).objectReferenceValue != renderer)
             {
-                throw new InvalidOperationException("Boss barrage projectile prefab should include a promoted needle tail visual.");
+                throw new InvalidOperationException(
+                    "Boss barrage projectile should keep asset particle renderers out of runtime material swapping.");
             }
 
             TrailRenderer trail = projectilePrefab.GetComponent<TrailRenderer>();
@@ -4508,6 +5232,16 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException("Player ranged basic projectile should keep the authored multi-part Vefects particle setup.");
             }
 
+            for (int i = 0; i < particleSystems.Length; i++)
+            {
+                ParticleSystem.LightsModule lights = particleSystems[i].lights;
+                if (lights.enabled && lights.light != null)
+                {
+                    ValidateGameOwnedAsset(lights.light, $"{particleSystems[i].name} projectile Vefects light");
+                    ValidateNoImportedDependencies(lights.light, $"{particleSystems[i].name} projectile Vefects light");
+                }
+            }
+
             ParticleSystemRenderer[] renderers =
                 shotVfxRoot.GetComponentsInChildren<ParticleSystemRenderer>(includeInactive: true);
             if (renderers.Length == 0)
@@ -4528,11 +5262,42 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static void ValidateMagicMissilesLaneProjectilePrefab(
+            string prefabPath,
+            string childName,
+            string label)
+        {
+            GameObject projectilePrefab = LoadAsset<GameObject>(prefabPath);
+            MeshRenderer rootRenderer = projectilePrefab.GetComponent<MeshRenderer>();
+            if (rootRenderer == null)
+            {
+                throw new InvalidOperationException($"{label} should keep a hidden collision root MeshRenderer.");
+            }
+
+            if (rootRenderer.enabled)
+            {
+                throw new InvalidOperationException($"{label} root MeshRenderer must stay hidden behind the asset VFX.");
+            }
+
+            ValidatePromotedParticleVfx(projectilePrefab.transform.Find(childName), label, 2);
+            if (projectilePrefab.GetComponent<TrailRenderer>() != null)
+            {
+                throw new InvalidOperationException($"{label} should not fall back to generated TrailRenderer visuals.");
+            }
+        }
+
         private static void ValidateSummonEntryCueVfx(GameObject entryCuePrefab)
         {
-            ValidatePromotedVfxPrimitive(entryCuePrefab.transform, "SummonEntryVfx_OuterRing", "summon entry outer ring");
-            ValidatePromotedVfxPrimitive(entryCuePrefab.transform, "SummonEntryVfx_CrossLineX", "summon entry cross line X");
-            ValidatePromotedVfxPrimitive(entryCuePrefab.transform, "SummonEntryVfx_VerticalBeacon", "summon entry vertical beacon");
+            MeshRenderer rootRenderer = entryCuePrefab.GetComponent<MeshRenderer>();
+            if (rootRenderer == null || rootRenderer.enabled)
+            {
+                throw new InvalidOperationException("summon entry cue should hide its collision/repair root renderer.");
+            }
+
+            ValidatePromotedParticleVfx(
+                entryCuePrefab.transform.Find("SummonEntryVfx_MagicMissilesArcaneCircle"),
+                "summon entry MagicMissiles circle",
+                2);
         }
 
         private static void ValidateSummonActorVfx(
@@ -4546,39 +5311,138 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"{label} is missing {pulseRootName}.");
             }
 
-            ValidatePromotedVfxPrimitive(actorPrefab.transform, "SummonPulseVfx_EnergyRing", $"{label} pulse energy ring");
-            ValidatePromotedVfxPrimitive(actorPrefab.transform, "SummonPulseVfx_ClashStreak", $"{label} pulse clash streak");
+            ValidatePromotedParticleVfx(
+                actorPrefab.transform.Find("SummonPulseVfx_MagicMissilesPulse"),
+                $"{label} MagicMissiles pulse",
+                1);
+            ValidatePromotedParticleVfx(
+                FindChildWithPrefix(actorPrefab.transform, "SummonStateVfx_"),
+                $"{label} MagicMissiles state aura",
+                1);
             if (!expectPressureScreen)
             {
                 return;
             }
 
-            ValidatePromotedVfxPrimitive(actorPrefab.transform, "SummonShieldVfx_OuterHalo", $"{label} shield outer halo");
-            ValidatePromotedVfxPrimitive(actorPrefab.transform, "SummonShieldVfx_LeftBrace", $"{label} shield left brace");
-            ValidatePromotedVfxPrimitive(actorPrefab.transform, "SummonShieldVfx_GroundRing", $"{label} shield ground ring");
+            ValidatePromotedParticleVfx(
+                actorPrefab.transform.Find("SummonShieldVfx_MagicMissilesShieldCircle"),
+                $"{label} MagicMissiles shield circle",
+                2);
         }
 
-        private static void ValidatePromotedVfxPrimitive(Transform root, string childName, string label)
+        private static void ValidateBossBarrageCombatCueAssetOverlays()
         {
-            Transform child = root.Find(childName);
-            if (child == null)
+            CombatVfxCueProfile profile =
+                LoadAsset<CombatVfxCueProfile>(ActionFoundationCombatVfxSetup.CombatVfxCueProfilePath);
+            ValidateCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.PlayerRangedProjectileImpact,
+                "CueAssetVfx_MagicMissilesLightImpact",
+                "player ranged impact MagicMissiles overlay");
+            ValidateCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.EnemyHit,
+                "CueAssetVfx_MagicMissilesLightImpact",
+                "enemy hit MagicMissiles overlay");
+            ValidateCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.EnemyDeath,
+                "CueAssetVfx_MagicMissilesDeathBurst",
+                "enemy death MagicMissiles overlay");
+            ValidateCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.EliteShieldSignal,
+                "CueAssetVfx_MagicMissilesGuardState",
+                "elite shield MagicMissiles overlay");
+            ValidateCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.EliteAuraSignal,
+                "CueAssetVfx_MagicMissilesActiveAura",
+                "elite aura MagicMissiles overlay");
+            ValidateCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.EliteSummonSignal,
+                "CueAssetVfx_MagicMissilesSummonState",
+                "elite summon MagicMissiles overlay");
+            ValidateCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.SummonBlockOpportunity,
+                "CueAssetVfx_MagicMissilesSummonState",
+                "summon block opportunity MagicMissiles overlay");
+            ValidateCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.SummonFollowupWindow,
+                "CueAssetVfx_MagicMissilesSummonState",
+                "summon follow-up window MagicMissiles overlay");
+        }
+
+        private static void ValidateCombatCueAssetOverlay(
+            CombatVfxCueProfile profile,
+            CombatVfxCueId cueId,
+            string childName,
+            string label)
+        {
+            if (!profile.TryGetCue(cueId, out CombatVfxCue cue) || cue.Prefab == null)
+            {
+                throw new InvalidOperationException($"Boss barrage combat cue profile is missing {cueId}.");
+            }
+
+            ValidatePromotedParticleVfx(cue.Prefab.transform.Find(childName), label, 1);
+            string prefabPath = AssetDatabase.GetAssetPath(cue.Prefab).Replace('\\', '/');
+            ValidateNoImportedAssetReference(prefabPath);
+        }
+
+        private static void ValidatePromotedParticleVfx(Transform root, string label, int minimumParticleSystems)
+        {
+            if (root == null)
             {
                 throw new InvalidOperationException($"{label} should be authored as visual-only promoted VFX.");
             }
 
-            Renderer renderer = child.GetComponent<Renderer>();
-            if (renderer == null)
-            {
-                throw new InvalidOperationException($"{label} should expose a Renderer.");
-            }
-
-            if (child.GetComponent<Collider>() != null)
+            if (root.GetComponentInChildren<Collider>(includeInactive: true) != null)
             {
                 throw new InvalidOperationException($"{label} must remain visual-only and should not own a Collider.");
             }
 
-            ValidateGameOwnedAsset(renderer.sharedMaterial, $"{label} material");
-            ValidateRenderableMaterialShader(renderer.sharedMaterial, $"{label} material shader");
+            ParticleSystem[] particleSystems = root.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            if (particleSystems.Length < minimumParticleSystems)
+            {
+                throw new InvalidOperationException(
+                    $"{label} should preserve its authored particle system stack.");
+            }
+
+            ParticleSystemRenderer[] renderers =
+                root.GetComponentsInChildren<ParticleSystemRenderer>(includeInactive: true);
+            if (renderers.Length == 0)
+            {
+                throw new InvalidOperationException($"{label} should expose promoted particle renderers.");
+            }
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                ParticleSystemRenderer renderer = renderers[i];
+                ValidateGameOwnedAsset(renderer.sharedMaterial, $"{label}.{renderer.name} material");
+                ValidateRenderableMaterialShader(renderer.sharedMaterial, $"{label}.{renderer.name} material shader");
+                ValidateNoImportedDependencies(renderer.sharedMaterial, $"{label}.{renderer.name} material");
+                if (renderer.mesh != null)
+                {
+                    ValidateGameOwnedAsset(renderer.mesh, $"{label}.{renderer.name} mesh");
+                    ValidateNoImportedDependencies(renderer.mesh, $"{label}.{renderer.name} mesh");
+                }
+            }
+
+            AudioSource[] audioSources = root.GetComponentsInChildren<AudioSource>(includeInactive: true);
+            for (int i = 0; i < audioSources.Length; i++)
+            {
+                AudioSource audioSource = audioSources[i];
+                if (audioSource.clip == null)
+                {
+                    continue;
+                }
+
+                ValidateGameOwnedAsset(audioSource.clip, $"{label}.{audioSource.name} audio clip");
+                ValidateNoImportedDependencies(audioSource.clip, $"{label}.{audioSource.name} audio clip");
+            }
         }
 
         private static void ValidateBossBasicFire(
@@ -5953,6 +6817,20 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static Transform FindChildWithPrefix(Transform parent, string prefix)
+        {
+            for (int i = 0; i < parent.childCount; i++)
+            {
+                Transform child = parent.GetChild(i);
+                if (child.name.StartsWith(prefix, StringComparison.Ordinal))
+                {
+                    return child;
+                }
+            }
+
+            return null;
+        }
+
         private static UnityEngine.Object[] BuildPulseRendererReferenceArray(Renderer pulseRenderer)
         {
             return new UnityEngine.Object[] { pulseRenderer };
@@ -6519,9 +7397,9 @@ namespace DimensionBrawl.Editor
             SetObjectReference(owner, "clearMarker", clearMarker);
             SetObjectReference(owner, "failMarker", failMarker);
             SetBool(owner, "grantPlayerEnergyOnStart", true);
-            SetFloat(owner, "startingPlayerEnergy", 115f);
+            SetFloat(owner, "startingPlayerEnergy", 150f);
             SetBool(owner, "grantBossCostOnStart", true);
-            SetFloat(owner, "startingBossCost", 130f);
+            SetFloat(owner, "startingBossCost", 150f);
             SetBool(owner, "stopBarrageOnEnd", true);
             SetBool(owner, "stopBossPressureCostOnEnd", true);
             SetBool(owner, "stopBossPressureActionsOnEnd", true);
@@ -6537,13 +7415,13 @@ namespace DimensionBrawl.Editor
             SetInt(owner, "requiredBossResponsesToPlayerSummons", 1);
             SetInt(owner, "requiredAllyPressureBlocks", 1);
             SetInt(owner, "requiredSummonClashes", 1);
-            SetInt(owner, "requiredSummonActorDefeats", 2);
-            SetInt(owner, "requiredBossRepressureAfterSummonDefeat", 2);
-            SetInt(owner, "requiredFrontlineLoopCycles", 2);
+            SetInt(owner, "requiredSummonActorDefeats", 1);
+            SetInt(owner, "requiredBossRepressureAfterSummonDefeat", 1);
+            SetInt(owner, "requiredFrontlineLoopCycles", 1);
             SetInt(owner, "requiredSkill1ResponseUses", 1);
             SetFloat(owner, "requiredSkill1ResponseDamage", 60f);
             SetFloat(owner, "skill1ResponseDamageWindowSeconds", 2.5f);
-            SetFloat(owner, "requiredBossDamage", 260f);
+            SetFloat(owner, "requiredBossDamage", 220f);
             SetBool(owner, "failWhenPlayerDies", true);
             EditorUtility.SetDirty(owner);
         }
@@ -6580,9 +7458,9 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(owner, "clearMarker", clearMarker);
             ValidateObjectReference(owner, "failMarker", failMarker);
             ValidateBool(owner, "grantPlayerEnergyOnStart", true);
-            ValidateFloat(owner, "startingPlayerEnergy", 115f);
+            ValidateFloat(owner, "startingPlayerEnergy", 150f);
             ValidateBool(owner, "grantBossCostOnStart", true);
-            ValidateFloat(owner, "startingBossCost", 130f);
+            ValidateFloat(owner, "startingBossCost", 150f);
             ValidateBool(owner, "stopBarrageOnEnd", true);
             ValidateBool(owner, "stopBossPressureCostOnEnd", true);
             ValidateBool(owner, "stopBossPressureActionsOnEnd", true);
@@ -6598,13 +7476,13 @@ namespace DimensionBrawl.Editor
             ValidateInt(owner, "requiredBossResponsesToPlayerSummons", 1);
             ValidateInt(owner, "requiredAllyPressureBlocks", 1);
             ValidateInt(owner, "requiredSummonClashes", 1);
-            ValidateInt(owner, "requiredSummonActorDefeats", 2);
-            ValidateInt(owner, "requiredBossRepressureAfterSummonDefeat", 2);
-            ValidateInt(owner, "requiredFrontlineLoopCycles", 2);
+            ValidateInt(owner, "requiredSummonActorDefeats", 1);
+            ValidateInt(owner, "requiredBossRepressureAfterSummonDefeat", 1);
+            ValidateInt(owner, "requiredFrontlineLoopCycles", 1);
             ValidateInt(owner, "requiredSkill1ResponseUses", 1);
             ValidateFloat(owner, "requiredSkill1ResponseDamage", 60f);
             ValidateFloat(owner, "skill1ResponseDamageWindowSeconds", 2.5f);
-            ValidateFloat(owner, "requiredBossDamage", 260f);
+            ValidateFloat(owner, "requiredBossDamage", 220f);
             ValidateBool(owner, "failWhenPlayerDies", true);
         }
 
@@ -7616,6 +8494,31 @@ namespace DimensionBrawl.Editor
             if (assetPath.Replace('\\', '/').Contains("/_Imported/", StringComparison.Ordinal))
             {
                 throw new InvalidOperationException($"{assetPath} must not point at raw _Imported assets.");
+            }
+
+            UnityEngine.Object asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
+            if (asset != null)
+            {
+                ValidateNoImportedDependencies(asset, assetPath);
+            }
+        }
+
+        private static void ValidateNoImportedDependencies(UnityEngine.Object asset, string label)
+        {
+            string assetPath = AssetDatabase.GetAssetPath(asset).Replace('\\', '/');
+            if (string.IsNullOrWhiteSpace(assetPath))
+            {
+                return;
+            }
+
+            string[] dependencies = AssetDatabase.GetDependencies(assetPath, recursive: true);
+            for (int i = 0; i < dependencies.Length; i++)
+            {
+                string dependency = dependencies[i].Replace('\\', '/');
+                if (dependency.Contains("/_Imported/", StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException($"{label} must not depend on raw imported asset {dependency}.");
+                }
             }
         }
 
