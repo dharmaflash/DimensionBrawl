@@ -1090,6 +1090,8 @@ namespace DimensionBrawl.Tests
                 summonOpportunity.ResolvePressureBreakSeconds(1)
                 + summonOpportunity.ResolveFollowupWindowSeconds(1)
                 + GetFloat(pocketOwner, "skill1FollowupClearDelaySeconds");
+            float forwardRiskDifferential =
+                1f - bossBasicFireProfile.EvaluateHalfSpread(1f) / bossBasicFireProfile.EvaluateHalfSpread(0f);
 
             Assert.AreEqual(LinearStageSegmentKind.PressureRescue, pressureRescue.SegmentKind);
             Assert.AreEqual(45f, pressureRescue.RecommendedDurationSeconds, 0.001f);
@@ -1100,6 +1102,30 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(StageSummonNeed.Tank, pressurePocket.FeaturedSummonNeed);
             Assert.AreEqual(32f, pressurePocket.TargetDurationSeconds, 0.001f);
             Assert.AreEqual(0.64f, pressurePocket.TargetIntensity, 0.001f);
+            Assert.That(
+                pressurePocket.TargetPeakWindowSharePct,
+                Is.InRange(30f, 45.49f),
+                "The review pocket should target a clear pressure spike without jumping past the Arknights normal-stage p90 clumpiness reference.");
+            Assert.That(
+                pressurePocket.TargetTop3WindowSharePct,
+                Is.InRange(66.36f, 85.9f),
+                "The review pocket should concentrate danger into a few authored beats, matching the Arknights top-3 window reference shape.");
+            Assert.That(
+                pressurePocket.RouteDominanceShare,
+                Is.InRange(0.55f, 0.75f),
+                "One boss lane should visibly carry the pocket pressure without becoming a one-route-only script.");
+            Assert.That(
+                pressurePocket.EntryExitLaneBias,
+                Is.InRange(0.6f, 0.85f),
+                "Forward-risk and backline reads should stay intentionally asymmetric for the rescue pocket.");
+            Assert.That(
+                pressurePocket.TimeToNextReliefWindowSeconds,
+                Is.InRange(bossBasicFireProfile.FireIntervalSeconds * 2f, pressurePocket.TargetDurationSeconds * 0.25f),
+                "Relief should arrive after the player reads repeated boss fire, but before the pocket becomes a long attrition test.");
+            Assert.That(
+                pressurePocket.RiskDifferential,
+                Is.EqualTo(forwardRiskDifferential).Within(0.02f),
+                "The recorded pocket risk differential should match the authored forward/backline boss-fire spread.");
             Assert.AreEqual(72f, closeThreatHealth.MaxHealth, 0.001f);
             Assert.That(
                 closeThreatSustainedClearSeconds,

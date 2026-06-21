@@ -29,6 +29,12 @@ MonoBehaviour:
     objectiveKind: 5
     targetDurationSeconds: 32
     targetIntensity: 0.64
+    targetPeakWindowSharePct: 38
+    targetTop3WindowSharePct: 72
+    routeDominanceShare: 0.64
+    entryExitLaneBias: 0.7
+    timeToNextReliefWindowSeconds: 6
+    riskDifferential: 0.67
     featuredSummonNeed: 3
     objectiveCue: Survive the pressure pocket.
     designNotes: FanSuppressor controls space, LungeChaser punishes retreat, Skirmisher
