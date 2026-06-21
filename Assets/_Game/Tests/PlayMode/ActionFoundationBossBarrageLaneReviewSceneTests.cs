@@ -61,6 +61,10 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot2Projectile_MarksmanBolt.prefab";
         private const string SummonSlot3ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot3Projectile_VanguardBolt.prefab";
+        private const string SummonSlot2ActorPrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot2Actor_MarksmanProxy.prefab";
+        private const string SummonSlot3ActorPrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot3Actor_VanguardProxy.prefab";
         private const string SummonSlot1EntryCuePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1EntryCue_MagicCircle.prefab";
         private const string SummonSlot1ActorPrefabPath =
@@ -79,13 +83,27 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDesign/Segments/DB_Segment_PressureRescue.asset";
         private const string SummonSlot1PresentationCandidateProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonPresentation_PlayerShieldBreaker.asset";
+        private const string SummonSlot2ActionProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonSlot2_BacklineMarksman.asset";
+        private const string SummonSlot2PresentationCandidateProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonPresentation_PlayerBacklineMarksman.asset";
+        private const string SummonSlot3ActionProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonSlot3_VanguardCommander.asset";
+        private const string SummonSlot3PresentationCandidateProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonPresentation_PlayerVanguardCommander.asset";
         private const string BossSummonPressurePresentationCandidateProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonPresentation_BossAuraCaptain.asset";
         private const string ShieldBreakerEliteRoleCandidateProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyRoleCandidates/DB_RoleCandidate_ShieldBreakerElite.asset";
+        private const string BacklineShooterRoleCandidateProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyRoleCandidates/DB_RoleCandidate_BacklineShooter.asset";
+        private const string FinalStandCommanderEliteRoleCandidateProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyRoleCandidates/DB_RoleCandidate_FinalStandCommanderElite.asset";
         private const string AuraCaptainEliteRoleCandidateProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyRoleCandidates/DB_RoleCandidate_AuraCaptainElite.asset";
         private const string SummonSlot1ActorVisualName = "SummonSlot1Visual_ShieldBreakerElite";
+        private const string SummonSlot2ActorVisualName = "SummonSlot2Visual_BacklineShooter";
+        private const string SummonSlot3ActorVisualName = "SummonSlot3Visual_FinalStandCommanderElite";
         private const string BossSummonPressureActorVisualName = "BossSummonPressureVisual_AuraCaptainElite";
         private const string SummonActorMoveSpeedParameter = "MoveSpeed";
         private const string SummonActorSpawnTrigger = "EliteSummonPackage";
@@ -2243,6 +2261,131 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator SupportSummonActorsUseRoleStateVfxAndScreenReads()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(RequireRoot(BossRootName), "boss health");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            CombatVfxCuePlayer playerCuePlayer =
+                RequireComponent<CombatVfxCuePlayer>(player.gameObject, "player combat VFX cue player");
+            GameObject projectileRoot = RequireRoot(ProjectilePoolRootName);
+            GameObject actionCueRoot = RequireRoot(ActionCuePoolRootName);
+            GameObject summonActorRoot = RequireRoot(SummonActorPoolRootName);
+            PlayerSupportSummonSlotAction summonSlot2Action =
+                RequireSupportSummonAction(player.gameObject, "SummonSlot2");
+            PlayerSupportSummonSlotAction summonSlot3Action =
+                RequireSupportSummonAction(player.gameObject, "SummonSlot3");
+
+            GameObject summonSlot2ActorPrefab = LoadAsset<GameObject>(SummonSlot2ActorPrefabPath);
+            GameObject summonSlot3ActorPrefab = LoadAsset<GameObject>(SummonSlot3ActorPrefabPath);
+            AssertSupportSummonSceneBinding(
+                summonSlot2Action,
+                "SummonSlot2",
+                SummonSlot2ActionProfilePath,
+                SummonSlot2ProjectilePrefabPath,
+                summonSlot2ActorPrefab,
+                playerHealth,
+                targetSelector,
+                bossHealth,
+                laneSpace,
+                projectileRoot.transform,
+                actionCueRoot.transform,
+                summonActorRoot.transform,
+                playerCuePlayer);
+            AssertSupportSummonSceneBinding(
+                summonSlot3Action,
+                "SummonSlot3",
+                SummonSlot3ActionProfilePath,
+                SummonSlot3ProjectilePrefabPath,
+                summonSlot3ActorPrefab,
+                playerHealth,
+                targetSelector,
+                bossHealth,
+                laneSpace,
+                projectileRoot.transform,
+                actionCueRoot.transform,
+                summonActorRoot.transform,
+                playerCuePlayer);
+            AssertSupportSummonActorPrefab(
+                summonSlot2ActorPrefab,
+                SummonSlot2ActorVisualName,
+                expectPressureScreen: false,
+                SummonSlot2PresentationCandidateProfilePath,
+                "PlayerSummon.BacklineMarksman",
+                BacklineShooterRoleCandidateProfilePath,
+                "SciFiSoldier.BacklineShooter",
+                "SummonSlot2 marksman actor prefab");
+            AssertSupportSummonActorPrefab(
+                summonSlot3ActorPrefab,
+                SummonSlot3ActorVisualName,
+                expectPressureScreen: true,
+                SummonSlot3PresentationCandidateProfilePath,
+                "PlayerSummon.VanguardCommander",
+                FinalStandCommanderEliteRoleCandidateProfilePath,
+                "SciFiSoldier.Elite.FinalStandCommander",
+                "SummonSlot3 vanguard actor prefab");
+
+            player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
+            targetSelector.NotifyTargetContact(bossHealth);
+            targetSelector.RefreshTarget();
+            Physics.SyncTransforms();
+
+            FillEnergyToTier(energyLadder, 2);
+            Assert.IsTrue(summonSlot2Action.TryUseSummon());
+            yield return null;
+
+            SummonFrontlineProxy marksmanActor = RequireActiveSummonActorWithVisual(SummonSlot2ActorVisualName);
+            SummonFrontlineProxyPresenter marksmanPresenter =
+                RequireComponent<SummonFrontlineProxyPresenter>(marksmanActor.gameObject, "active SummonSlot2 actor presenter");
+            marksmanPresenter.RefreshNow();
+            Assert.AreEqual("BacklineMarksman", summonSlot2Action.LastSummonActorRoleId);
+            Assert.AreEqual(2, marksmanActor.ActiveTier);
+            Assert.AreSame(playerCuePlayer, marksmanPresenter.CuePlayer);
+            Assert.AreEqual(CombatVfxCueId.EliteSummonSignal, marksmanPresenter.EntryCueId);
+            Assert.Greater(
+                marksmanPresenter.EntryVfxCueRequestCount,
+                0,
+                "SummonSlot2 should request a promoted entry/state VFX cue when the marksman actor appears.");
+            Assert.IsFalse(
+                marksmanActor.PressureScreen != null && marksmanActor.PressureScreen.IsActive,
+                "SummonSlot2 is the review marksman slot; it should read through actor aura and volleys, not a shield screen.");
+
+            FillEnergyToTier(energyLadder, 3);
+            Assert.IsTrue(summonSlot3Action.TryUseSummon());
+            yield return null;
+
+            SummonFrontlineProxy vanguardActor = RequireActiveSummonActorWithVisual(SummonSlot3ActorVisualName);
+            SummonFrontlineProxyPresenter vanguardPresenter =
+                RequireComponent<SummonFrontlineProxyPresenter>(vanguardActor.gameObject, "active SummonSlot3 actor presenter");
+            vanguardPresenter.RefreshNow();
+            Assert.AreEqual("VanguardCommander", summonSlot3Action.LastSummonActorRoleId);
+            Assert.AreEqual(3, vanguardActor.ActiveTier);
+            Assert.AreSame(playerCuePlayer, vanguardPresenter.CuePlayer);
+            Assert.AreEqual(CombatVfxCueId.EliteSummonSignal, vanguardPresenter.EntryCueId);
+            Assert.Greater(
+                vanguardPresenter.EntryVfxCueRequestCount,
+                0,
+                "SummonSlot3 should request a promoted entry/state VFX cue when the vanguard actor appears.");
+            SummonPressureScreen vanguardScreen = vanguardActor.PressureScreen;
+            Assert.IsNotNull(vanguardScreen, "SummonSlot3 vanguard actor should own the tank pressure screen.");
+            Assert.IsTrue(vanguardScreen.IsActive);
+            Assert.AreEqual(DamageTeam.AllySummon, vanguardScreen.OwnerTeam);
+            Assert.AreEqual(7, vanguardScreen.MaxIntercepts);
+            Assert.AreEqual(3, vanguardScreen.ActiveTier);
+            SummonPressureScreenPresenter vanguardScreenPresenter = RequirePresenterForPressureScreen(vanguardScreen);
+            Assert.AreSame(
+                playerCuePlayer,
+                GetObjectReference<CombatVfxCuePlayer>(vanguardScreenPresenter, "cuePlayer"));
+            Assert.Greater(
+                vanguardScreenPresenter.ActivationVfxCueRequestCount,
+                0,
+                "SummonSlot3 screen activation should request a promoted shield-state VFX cue, not only tint the material.");
+        }
+
+        [UnityTest]
         public IEnumerator SummonPressureScreenCountersInterceptedBossProjectiles()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
@@ -3780,6 +3923,25 @@ namespace DimensionBrawl.Tests
             return null;
         }
 
+        private static SummonFrontlineProxy RequireActiveSummonActorWithVisual(string visualName)
+        {
+            SummonFrontlineProxy[] proxies = Object.FindObjectsByType<SummonFrontlineProxy>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < proxies.Length; i++)
+            {
+                if (proxies[i] != null
+                    && proxies[i].IsActive
+                    && proxies[i].transform.Find(visualName) != null)
+                {
+                    return proxies[i];
+                }
+            }
+
+            Assert.Fail($"Expected an active summon actor with visual {visualName}.");
+            return null;
+        }
+
         private static SummonPressureScreenPresenter RequirePresenterForPressureScreen(SummonPressureScreen pressureScreen)
         {
             SummonPressureScreenPresenter[] presenters = Object.FindObjectsByType<SummonPressureScreenPresenter>(
@@ -3794,6 +3956,22 @@ namespace DimensionBrawl.Tests
             }
 
             Assert.Fail("Expected an active presenter for the pressure screen.");
+            return null;
+        }
+
+        private static PlayerSupportSummonSlotAction RequireSupportSummonAction(GameObject player, string slotActionName)
+        {
+            PlayerSupportSummonSlotAction[] actions = player.GetComponents<PlayerSupportSummonSlotAction>();
+            for (int i = 0; i < actions.Length; i++)
+            {
+                if (actions[i] != null
+                    && string.Equals(actions[i].SlotActionName, slotActionName, System.StringComparison.Ordinal))
+                {
+                    return actions[i];
+                }
+            }
+
+            Assert.Fail($"Expected player support summon action {slotActionName}.");
             return null;
         }
 
@@ -3945,6 +4123,75 @@ namespace DimensionBrawl.Tests
                 entryCuePrefab.transform.Find("SummonEntryVfx_MagicMissilesArcaneCircle"),
                 "summon entry MagicMissiles circle",
                 2);
+        }
+
+        private static void AssertSupportSummonSceneBinding(
+            PlayerSupportSummonSlotAction action,
+            string expectedSlotActionName,
+            string actionProfilePath,
+            string projectilePrefabPath,
+            GameObject expectedActorPrefab,
+            CombatHealth expectedSourceHealth,
+            PlayerCombatTargetSelector expectedTargetSelector,
+            CombatHealth expectedFrontlineTargetHealth,
+            SummonLaneSpace expectedLaneSpace,
+            Transform expectedProjectileRoot,
+            Transform expectedCueRoot,
+            Transform expectedSummonActorRoot,
+            CombatVfxCuePlayer expectedCuePlayer)
+        {
+            Assert.IsNotNull(action, $"{expectedSlotActionName} action should exist.");
+            Assert.AreEqual(expectedSlotActionName, action.SlotActionName);
+            Assert.AreSame(LoadAsset<SummonSlotActionProfile>(actionProfilePath), GetObjectReference<SummonSlotActionProfile>(action, "summonActionProfile"));
+            Assert.AreSame(expectedSourceHealth, GetObjectReference<CombatHealth>(action, "sourceHealth"));
+            Assert.AreSame(expectedTargetSelector, GetObjectReference<PlayerCombatTargetSelector>(action, "targetSelector"));
+            Assert.AreSame(expectedFrontlineTargetHealth, GetObjectReference<CombatHealth>(action, "frontlineTargetHealth"));
+            Assert.AreSame(expectedLaneSpace, GetObjectReference<SummonLaneSpace>(action, "laneSpace"));
+            Assert.AreSame(LoadAsset<GameObject>(projectilePrefabPath), GetObjectReference<GameObject>(action, "projectilePrefabObject"));
+            Assert.AreSame(LoadAsset<GameObject>(SummonSlot1EntryCuePrefabPath), GetObjectReference<GameObject>(action, "entryCuePrefab"));
+            Assert.AreSame(expectedActorPrefab, GetObjectReference<GameObject>(action, "summonActorPrefabObject"));
+            Assert.AreSame(expectedProjectileRoot, GetObjectReference<Transform>(action, "projectileRoot"));
+            Assert.AreSame(expectedCueRoot, GetObjectReference<Transform>(action, "cueRoot"));
+            Assert.AreSame(expectedSummonActorRoot, GetObjectReference<Transform>(action, "summonActorRoot"));
+            Assert.AreSame(expectedCuePlayer, GetObjectReference<CombatVfxCuePlayer>(action, "combatVfxCuePlayer"));
+            Assert.IsTrue(action.HasRequiredPresentation);
+        }
+
+        private static void AssertSupportSummonActorPrefab(
+            GameObject actorPrefab,
+            string visualName,
+            bool expectPressureScreen,
+            string presentationCandidatePath,
+            string expectedCandidateId,
+            string roleCandidateProfilePath,
+            string expectedSourceRoleId,
+            string label)
+        {
+            SummonFrontlineProxy actor = RequireComponent<SummonFrontlineProxy>(actorPrefab, label);
+            SummonFrontlineProxyPresenter presenter =
+                RequireComponent<SummonFrontlineProxyPresenter>(actorPrefab, $"{label} presenter");
+            SummonFrontlineHealthBarPresenter healthBarPresenter =
+                RequireComponent<SummonFrontlineHealthBarPresenter>(actorPrefab, $"{label} health bar presenter");
+            AssertSummonActorVfx(actorPrefab, expectPressureScreen, label);
+            Assert.AreSame(actor, presenter.Proxy);
+            Assert.IsNotNull(presenter.PulseRoot);
+            Assert.GreaterOrEqual(presenter.RendererCount, 1);
+            Assert.AreSame(actor, healthBarPresenter.Proxy);
+            Assert.IsNotNull(healthBarPresenter.BarRoot);
+            Assert.IsNotNull(healthBarPresenter.FillRoot);
+            Assert.GreaterOrEqual(healthBarPresenter.RendererCount, 2);
+            Animator animator = AssertSummonActorRoleVisual(actorPrefab, visualName);
+            AssertSummonProxyAnimatorPresentation(presenter, animator, label);
+            AssertSummonPresentationCandidateProfile(
+                LoadAsset<SummonPresentationCandidateProfile>(presentationCandidatePath),
+                expectedCandidateId,
+                SummonPresentationSide.PlayerSummon,
+                actorPrefab,
+                roleCandidateProfilePath,
+                visualName,
+                expectedSourceRoleId,
+                LoadAsset<CombatVfxCueProfile>(
+                    "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_CombatVfxCues_ActionFoundation.asset"));
         }
 
         private static void AssertSummonActorVfx(GameObject actorPrefab, bool expectPressureScreen, string label)
