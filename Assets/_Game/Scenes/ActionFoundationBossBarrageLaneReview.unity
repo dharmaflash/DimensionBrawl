@@ -1129,9 +1129,16 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.PlayerCombatVfxCueDriver
   actionController: {fileID: 4005}
+  playerHealth: {fileID: 4003}
   cuePlayer: {fileID: 4010}
   attackAnchor: {fileID: 85052602}
   dodgeAnchor: {fileID: 1228450371}
+  damageAnchor: {fileID: 85052602}
+  damagedCueId: 37
+  criticalCueId: 38
+  damagedCueIntensity: 1
+  criticalHealthRatio: 0.35
+  criticalCueIntensity: 1.18
 --- !u!114 &4010
 MonoBehaviour:
   m_ObjectHideFlags: 0

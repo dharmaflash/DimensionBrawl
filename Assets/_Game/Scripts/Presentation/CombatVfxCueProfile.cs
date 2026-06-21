@@ -42,7 +42,9 @@ namespace DimensionBrawl.Presentation
         PlayerRangedMuzzleFlash,
         PlayerRangedProjectileImpact,
         PocketCleared,
-        PocketFailed
+        PocketFailed,
+        PlayerDamaged,
+        PlayerCritical
     }
 
     [CreateAssetMenu(menuName = "DimensionBrawl/Presentation/Combat VFX Cue Profile", fileName = "DB_CombatVfxCueProfile")]

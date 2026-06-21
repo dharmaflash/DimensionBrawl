@@ -290,6 +290,13 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(
                 GetObjectReference<Transform>(rangedBasicAttackAction, "fireOrigin"),
                 GetObjectReference<Transform>(rangedBasicVfxCueDriver, "muzzleAnchor"));
+            Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(playerVfxCueDriver, "playerHealth"));
+            Assert.AreSame(playerCuePlayer, GetObjectReference<CombatVfxCuePlayer>(playerVfxCueDriver, "cuePlayer"));
+            Assert.AreSame(
+                GetObjectReference<Transform>(playerVfxCueDriver, "attackAnchor"),
+                GetObjectReference<Transform>(playerVfxCueDriver, "damageAnchor"));
+            Assert.AreEqual(CombatVfxCueId.PlayerDamaged, GetEnum<CombatVfxCueId>(playerVfxCueDriver, "damagedCueId"));
+            Assert.AreEqual(CombatVfxCueId.PlayerCritical, GetEnum<CombatVfxCueId>(playerVfxCueDriver, "criticalCueId"));
             Assert.AreEqual(CombatVfxCueId.PlayerRangedMuzzleFlash, GetEnum<CombatVfxCueId>(rangedBasicVfxCueDriver, "muzzleFlashCueId"));
             Assert.AreEqual(1f, GetFloat(rangedBasicVfxCueDriver, "muzzleFlashIntensity"), 0.001f);
             Assert.AreEqual(CombatVfxCueId.PlayerRangedProjectileImpact, GetEnum<CombatVfxCueId>(rangedBasicVfxCueDriver, "impactCueId"));
@@ -4567,6 +4574,16 @@ namespace DimensionBrawl.Tests
                 CombatVfxCueId.PlayerRangedProjectileImpact,
                 "CueAssetVfx_MagicMissilesLightImpact",
                 "player ranged impact MagicMissiles overlay");
+            AssertCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.PlayerDamaged,
+                "CueAssetVfx_MagicMissilesLightImpact",
+                "player damaged MagicMissiles overlay");
+            AssertCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.PlayerCritical,
+                "CueAssetVfx_MagicMissilesDeathBurst",
+                "player critical MagicMissiles break overlay");
             AssertCombatCueAssetOverlay(
                 profile,
                 CombatVfxCueId.EnemyHit,

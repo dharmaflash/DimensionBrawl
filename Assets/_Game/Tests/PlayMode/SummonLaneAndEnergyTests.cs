@@ -244,6 +244,67 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void PlayerCombatVfxCueDriverPlaysDamageAndCriticalStateCues()
+        {
+            GameObject playerObject = new GameObject("Player");
+            GameObject damagedCuePrefab = new GameObject("PlayerDamagedCuePrefab");
+            GameObject criticalCuePrefab = new GameObject("PlayerCriticalCuePrefab");
+            CombatVfxCueProfile cueProfile = null;
+            try
+            {
+                CombatHealth playerHealth = playerObject.AddComponent<CombatHealth>();
+                playerHealth.ConfigureTeam(DamageTeam.Player);
+                playerHealth.ConfigureMaxHealth(100f);
+
+                CombatVfxCuePlayer cuePlayer = playerObject.AddComponent<CombatVfxCuePlayer>();
+                cueProfile = CreatePlayerDamageVfxCueProfile(damagedCuePrefab, criticalCuePrefab);
+                ConfigureCombatVfxCuePlayer(cuePlayer, cueProfile);
+
+                PlayerCombatVfxCueDriver driver = playerObject.AddComponent<PlayerCombatVfxCueDriver>();
+                driver.ConfigureDamageFeedback(playerHealth, playerObject.transform);
+
+                Assert.IsTrue(playerHealth.TryApplyDamage(new DamageInfo(
+                    null,
+                    DamageTeam.Enemy,
+                    40f,
+                    playerObject.transform.position,
+                    Vector3.back,
+                    0f)));
+
+                Assert.AreEqual(1, driver.DamageVfxCueRequestCount);
+                Assert.AreEqual(0, driver.CriticalVfxCueRequestCount);
+                Assert.IsNotNull(
+                    playerObject.transform.Find(damagedCuePrefab.name),
+                    "Player damage should spawn an authored world VFX cue, not only flash the screen.");
+
+                Assert.IsTrue(playerHealth.TryApplyDamage(new DamageInfo(
+                    null,
+                    DamageTeam.Enemy,
+                    30f,
+                    playerObject.transform.position,
+                    Vector3.back,
+                    0f)));
+
+                Assert.AreEqual(2, driver.DamageVfxCueRequestCount);
+                Assert.AreEqual(1, driver.CriticalVfxCueRequestCount);
+                Assert.IsNotNull(
+                    playerObject.transform.Find(criticalCuePrefab.name),
+                    "Crossing the critical health threshold should spawn a stronger player-state VFX cue.");
+            }
+            finally
+            {
+                if (cueProfile != null)
+                {
+                    Object.DestroyImmediate(cueProfile);
+                }
+
+                Object.DestroyImmediate(criticalCuePrefab);
+                Object.DestroyImmediate(damagedCuePrefab);
+                Object.DestroyImmediate(playerObject);
+            }
+        }
+
+        [Test]
         public void EnergyRewardPulseCarriesOverflowIntoHigherTierReadiness()
         {
             GameObject playerObject = new GameObject("Player");
@@ -3103,6 +3164,20 @@ namespace DimensionBrawl.Tests
             ConfigureCue(cues.GetArrayElementAtIndex(0), CombatVfxCueId.EliteAuraSignal, prefab);
             ConfigureCue(cues.GetArrayElementAtIndex(1), CombatVfxCueId.SummonFollowupWindow, prefab);
             ConfigureCue(cues.GetArrayElementAtIndex(2), CombatVfxCueId.SummonFollowupMissed, prefab);
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            return profile;
+        }
+
+        private static CombatVfxCueProfile CreatePlayerDamageVfxCueProfile(
+            GameObject damagedPrefab,
+            GameObject criticalPrefab)
+        {
+            CombatVfxCueProfile profile = ScriptableObject.CreateInstance<CombatVfxCueProfile>();
+            SerializedObject serializedObject = new SerializedObject(profile);
+            SerializedProperty cues = serializedObject.FindProperty("cues");
+            cues.arraySize = 2;
+            ConfigureCue(cues.GetArrayElementAtIndex(0), CombatVfxCueId.PlayerDamaged, damagedPrefab);
+            ConfigureCue(cues.GetArrayElementAtIndex(1), CombatVfxCueId.PlayerCritical, criticalPrefab);
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             return profile;
         }

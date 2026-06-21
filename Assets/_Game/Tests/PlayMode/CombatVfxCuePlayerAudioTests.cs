@@ -80,6 +80,8 @@ namespace DimensionBrawl.Tests
             const string magicMissilesAudioPath = "Assets/_Game/Art/VFX/MagicMissiles/Audio/";
             AssertPromotedCueAudio(profile, CombatVfxCueId.EnemyHit, "light_hit", magicMissilesAudioPath);
             AssertPromotedCueAudio(profile, CombatVfxCueId.EnemyDeath, "death_hit", magicMissilesAudioPath);
+            AssertPromotedCueAudio(profile, CombatVfxCueId.PlayerDamaged, "light_hit", magicMissilesAudioPath);
+            AssertPromotedCueAudio(profile, CombatVfxCueId.PlayerCritical, "death_hit", magicMissilesAudioPath);
             AssertPromotedCueAudio(profile, CombatVfxCueId.EliteShieldSignal, "holy_hit", magicMissilesAudioPath);
             AssertPromotedCueAudio(profile, CombatVfxCueId.EliteArmorBreakSignal, "light_hit", magicMissilesAudioPath);
             AssertPromotedCueAudio(profile, CombatVfxCueId.EliteSummonSignal, "holy_shoot", magicMissilesAudioPath);

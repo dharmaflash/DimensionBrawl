@@ -346,3 +346,21 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 0
+  - cueId: 37
+    prefab: {fileID: 5862732402163036215, guid: 0fce666aeb9817649b2c6fea6e90bce6, type: 3}
+    localPositionOffset: {x: 0, y: 0.9, z: 0}
+    localEulerOffset: {x: 0, y: 0, z: 0}
+    localScale: {x: 1.18, y: 1.05, z: 1.18}
+    lifetimeSeconds: 0.38
+    prewarmCount: 0
+    parentToAnchor: 1
+    alignForwardToDirection: 0
+  - cueId: 38
+    prefab: {fileID: 7478284790387558022, guid: 1ee6562adf95d1740901f3b53124cafd, type: 3}
+    localPositionOffset: {x: 0, y: 0.32, z: 0}
+    localEulerOffset: {x: 0, y: 0, z: 0}
+    localScale: {x: 1.45, y: 1.08, z: 1.45}
+    lifetimeSeconds: 0.78
+    prewarmCount: 0
+    parentToAnchor: 1
+    alignForwardToDirection: 0

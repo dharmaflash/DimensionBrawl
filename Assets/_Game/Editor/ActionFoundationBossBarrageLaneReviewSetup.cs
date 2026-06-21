@@ -715,6 +715,11 @@ namespace DimensionBrawl.Editor
                 rangedBasicAttackAction,
                 RequireComponent<CombatVfxCuePlayer>(player.gameObject, "player combat VFX cue player"),
                 combatModeVisuals.RangedFireOrigin);
+            ConfigurePlayerCombatVfxCueDriver(
+                player.gameObject,
+                playerActionController,
+                playerHealth,
+                RequireComponent<CombatVfxCuePlayer>(player.gameObject, "player combat VFX cue player"));
             ConfigureBossProxyWorldVfxCueDriver(
                 bossProxy,
                 RequireComponent<CombatVfxCuePlayer>(player.gameObject, "player combat VFX cue player"),
@@ -896,6 +901,11 @@ namespace DimensionBrawl.Editor
                 rangedBasicAttackAction,
                 playerCuePlayer,
                 rangedFireOrigin);
+            ValidatePlayerCombatVfxCueDriver(
+                playerVfxCueDriver,
+                playerActionController,
+                playerHealth,
+                playerCuePlayer);
             RifleGirlNativeGameplayAnimatorBridge nativeBridge =
                 RequireComponent<RifleGirlNativeGameplayAnimatorBridge>(
                     rangedAnimator.gameObject,
@@ -4473,6 +4483,29 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(driver);
         }
 
+        private static void ConfigurePlayerCombatVfxCueDriver(
+            GameObject player,
+            PlayerActionController actionController,
+            CombatHealth playerHealth,
+            CombatVfxCuePlayer cuePlayer)
+        {
+            PlayerCombatVfxCueDriver driver = EnsureComponent<PlayerCombatVfxCueDriver>(player);
+            Transform attackAnchor = EnsureChild(player.transform, "Player_CombatVfx_AttackAnchor");
+            Transform dodgeAnchor = EnsureChild(player.transform, "Player_CombatVfx_DodgeAnchor");
+            attackAnchor.localPosition = new Vector3(0f, 1.05f, 0.65f);
+            dodgeAnchor.localPosition = new Vector3(0f, 0.18f, -0.22f);
+            SetObjectReference(driver, "actionController", actionController);
+            SetObjectReference(driver, "playerHealth", playerHealth);
+            SetObjectReference(driver, "cuePlayer", cuePlayer);
+            SetObjectReference(driver, "attackAnchor", attackAnchor);
+            SetObjectReference(driver, "dodgeAnchor", dodgeAnchor);
+            SetObjectReference(driver, "damageAnchor", attackAnchor);
+            SetEnum(driver, "damagedCueId", (int)CombatVfxCueId.PlayerDamaged);
+            SetEnum(driver, "criticalCueId", (int)CombatVfxCueId.PlayerCritical);
+            EditorUtility.SetDirty(player);
+            EditorUtility.SetDirty(driver);
+        }
+
         private static void ValidateCombatModeController(
             PlayerCombatModeController combatModeController,
             PlayerActionController playerActionController,
@@ -4580,6 +4613,22 @@ namespace DimensionBrawl.Editor
             ValidateFloat(driver, "muzzleFlashIntensity", 1f);
             ValidateEnum(driver, "impactCueId", (int)CombatVfxCueId.PlayerRangedProjectileImpact);
             ValidateFloat(driver, "impactIntensity", 1f);
+        }
+
+        private static void ValidatePlayerCombatVfxCueDriver(
+            PlayerCombatVfxCueDriver driver,
+            PlayerActionController actionController,
+            CombatHealth playerHealth,
+            CombatVfxCuePlayer cuePlayer)
+        {
+            ValidateObjectReference(driver, "actionController", actionController);
+            ValidateObjectReference(driver, "playerHealth", playerHealth);
+            ValidateObjectReference(driver, "cuePlayer", cuePlayer);
+            Transform attackAnchor = RequireReferencedObject<Transform>(driver, "attackAnchor");
+            RequireReferencedObject<Transform>(driver, "dodgeAnchor");
+            ValidateObjectReference(driver, "damageAnchor", attackAnchor);
+            ValidateEnum(driver, "damagedCueId", (int)CombatVfxCueId.PlayerDamaged);
+            ValidateEnum(driver, "criticalCueId", (int)CombatVfxCueId.PlayerCritical);
         }
 
         private static BossBarragePocketReviewOwner CreatePocketOwner(
@@ -5406,6 +5455,16 @@ namespace DimensionBrawl.Editor
                 CombatVfxCueId.PlayerRangedProjectileImpact,
                 "CueAssetVfx_MagicMissilesLightImpact",
                 "player ranged impact MagicMissiles overlay");
+            ValidateCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.PlayerDamaged,
+                "CueAssetVfx_MagicMissilesLightImpact",
+                "player damaged MagicMissiles overlay");
+            ValidateCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.PlayerCritical,
+                "CueAssetVfx_MagicMissilesDeathBurst",
+                "player critical MagicMissiles break overlay");
             ValidateCombatCueAssetOverlay(
                 profile,
                 CombatVfxCueId.EnemyHit,

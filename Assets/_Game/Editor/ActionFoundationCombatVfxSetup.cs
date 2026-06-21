@@ -244,9 +244,13 @@ namespace DimensionBrawl.Editor
             SetObjectReference(cuePlayer, "profile", profile);
             SetObjectReference(cuePlayer, "pooledRoot", poolRoot);
             SetObjectReference(driver, "actionController", player);
+            SetObjectReference(driver, "playerHealth", player.GetComponent<CombatHealth>());
             SetObjectReference(driver, "cuePlayer", cuePlayer);
             SetObjectReference(driver, "attackAnchor", attackAnchor);
             SetObjectReference(driver, "dodgeAnchor", dodgeAnchor);
+            SetObjectReference(driver, "damageAnchor", attackAnchor);
+            SetEnum(driver, "damagedCueId", (int)CombatVfxCueId.PlayerDamaged);
+            SetEnum(driver, "criticalCueId", (int)CombatVfxCueId.PlayerCritical);
             if (rangedBasicAttackAction != null)
             {
                 PlayerRangedBasicVfxCueDriver rangedDriver =
@@ -423,6 +427,8 @@ namespace DimensionBrawl.Editor
                 new CueDefinition(CombatVfxCueId.PlayerBasicAttackStart, prefabs.PlayerAttackStart, new Vector3(0f, 0f, 0.35f), Vector3.zero, new Vector3(1f, 1f, 1.25f), 0.40f, false, true),
                 new CueDefinition(CombatVfxCueId.PlayerBasicAttackHit, prefabs.PlayerAttackHit, new Vector3(0f, 0f, 0.82f), Vector3.zero, Vector3.one, 0.34f, false, true),
                 new CueDefinition(CombatVfxCueId.PlayerDodgeStart, prefabs.PlayerDodgeStart, new Vector3(0f, 0f, -0.15f), Vector3.zero, new Vector3(1.1f, 0.8f, 1.5f), 0.46f, false, true),
+                new CueDefinition(CombatVfxCueId.PlayerDamaged, prefabs.EnemyHit, new Vector3(0f, 0.9f, 0f), Vector3.zero, new Vector3(1.18f, 1.05f, 1.18f), 0.38f, true, false),
+                new CueDefinition(CombatVfxCueId.PlayerCritical, prefabs.EnemyDeath, new Vector3(0f, 0.32f, 0f), Vector3.zero, new Vector3(1.45f, 1.08f, 1.45f), 0.78f, true, false),
                 new CueDefinition(CombatVfxCueId.PlayerRangedMuzzleFlash, prefabs.PlayerRangedMuzzleFlash, new Vector3(0f, 0f, 0.08f), Vector3.zero, new Vector3(0.72f, 0.72f, 0.72f), 0.16f, false, true),
                 new CueDefinition(CombatVfxCueId.PlayerRangedProjectileImpact, prefabs.PlayerRangedProjectileImpact, new Vector3(0f, 0.04f, 0f), Vector3.zero, new Vector3(0.9f, 0.9f, 0.9f), 0.46f, false, true),
                 new CueDefinition(CombatVfxCueId.EnemyWindup, prefabs.EnemyWindup, Vector3.zero, Vector3.zero, Vector3.one, 0.55f, true, true),
