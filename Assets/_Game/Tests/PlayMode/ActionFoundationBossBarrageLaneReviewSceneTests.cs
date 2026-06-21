@@ -4619,13 +4619,13 @@ namespace DimensionBrawl.Tests
             AssertCombatCueAssetOverlay(
                 profile,
                 CombatVfxCueId.SummonBlockOpportunity,
-                "CueAssetVfx_MagicMissilesSummonState",
-                "summon block opportunity MagicMissiles overlay");
+                "CueAssetVfx_MagicMissilesPressureStorm",
+                "summon block opportunity MagicMissiles pressure storm overlay");
             AssertCombatCueAssetOverlay(
                 profile,
                 CombatVfxCueId.SummonFollowupWindow,
-                "CueAssetVfx_MagicMissilesSummonState",
-                "summon follow-up window MagicMissiles overlay");
+                "CueAssetVfx_MagicMissilesFollowupCircle",
+                "summon follow-up window MagicMissiles circle overlay");
             AssertCombatCueAssetOverlay(
                 profile,
                 CombatVfxCueId.SummonFollowupHit,
@@ -4646,6 +4646,21 @@ namespace DimensionBrawl.Tests
                 CombatVfxCueId.PocketFailed,
                 "CueAssetVfx_MagicMissilesDeathBurst",
                 "pocket fail MagicMissiles overlay");
+            AssertDistinctCombatCuePrefabs(
+                profile,
+                CombatVfxCueId.EliteSummonSignal,
+                CombatVfxCueId.SummonBlockOpportunity,
+                "summon block opportunity should not share and overwrite the elite summon state prefab");
+            AssertDistinctCombatCuePrefabs(
+                profile,
+                CombatVfxCueId.EliteSummonSignal,
+                CombatVfxCueId.SummonFollowupWindow,
+                "summon follow-up window should not share and overwrite the elite summon state prefab");
+            AssertDistinctCombatCuePrefabs(
+                profile,
+                CombatVfxCueId.SummonBlockOpportunity,
+                CombatVfxCueId.SummonFollowupWindow,
+                "summon block and follow-up window need separate visual reads");
         }
 
         private static void AssertCombatCueAssetOverlay(
@@ -4658,6 +4673,17 @@ namespace DimensionBrawl.Tests
             Assert.IsNotNull(cue.Prefab, $"{cueId} should keep a cue prefab.");
             AssertPromotedParticleVfx(cue.Prefab.transform.Find(childName), label, 1);
             AssertGameOwnedAsset(cue.Prefab, $"{cueId} cue prefab");
+        }
+
+        private static void AssertDistinctCombatCuePrefabs(
+            CombatVfxCueProfile profile,
+            CombatVfxCueId firstCueId,
+            CombatVfxCueId secondCueId,
+            string message)
+        {
+            Assert.IsTrue(profile.TryGetCue(firstCueId, out CombatVfxCue firstCue), $"{firstCueId} should exist.");
+            Assert.IsTrue(profile.TryGetCue(secondCueId, out CombatVfxCue secondCue), $"{secondCueId} should exist.");
+            Assert.AreNotSame(firstCue.Prefab, secondCue.Prefab, message);
         }
 
         private static void AssertMagicMissilesLaneProjectile(string prefabPath, string childName, string label)

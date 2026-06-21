@@ -2113,20 +2113,20 @@ namespace DimensionBrawl.Editor
             EnsureCombatCueAssetOverlay(
                 profile,
                 CombatVfxCueId.SummonBlockOpportunity,
-                "CueAssetVfx_MagicMissilesSummonState",
-                ImportedMagicMissilesArcaneAuraPrefabPath,
-                new Vector3(0f, 0.08f, 0f),
+                "CueAssetVfx_MagicMissilesPressureStorm",
+                ImportedMagicMissilesPressureAuraPrefabPath,
+                new Vector3(0f, 0.1f, 0f),
                 Vector3.zero,
-                Vector3.one * 0.58f,
+                Vector3.one * 0.78f,
                 loopParticles: true);
             EnsureCombatCueAssetOverlay(
                 profile,
                 CombatVfxCueId.SummonFollowupWindow,
-                "CueAssetVfx_MagicMissilesSummonState",
-                ImportedMagicMissilesArcaneAuraPrefabPath,
-                new Vector3(0f, 0.08f, 0f),
+                "CueAssetVfx_MagicMissilesFollowupCircle",
+                ImportedMagicMissilesArcaneCirclePrefabPath,
+                new Vector3(0f, 0.06f, 0f),
                 Vector3.zero,
-                Vector3.one * 0.62f,
+                Vector3.one * 0.74f,
                 loopParticles: true);
         }
 
@@ -5491,13 +5491,13 @@ namespace DimensionBrawl.Editor
             ValidateCombatCueAssetOverlay(
                 profile,
                 CombatVfxCueId.SummonBlockOpportunity,
-                "CueAssetVfx_MagicMissilesSummonState",
-                "summon block opportunity MagicMissiles overlay");
+                "CueAssetVfx_MagicMissilesPressureStorm",
+                "summon block opportunity MagicMissiles pressure storm overlay");
             ValidateCombatCueAssetOverlay(
                 profile,
                 CombatVfxCueId.SummonFollowupWindow,
-                "CueAssetVfx_MagicMissilesSummonState",
-                "summon follow-up window MagicMissiles overlay");
+                "CueAssetVfx_MagicMissilesFollowupCircle",
+                "summon follow-up window MagicMissiles circle overlay");
         }
 
         private static void ValidateCombatCueAssetOverlay(
