@@ -267,6 +267,8 @@ namespace DimensionBrawl.Tests
                 RequireComponent<PlayerCombatVfxCueDriver>(player.gameObject, "player combat VFX cue driver");
             PlayerRangedBasicVfxCueDriver rangedBasicVfxCueDriver =
                 RequireComponent<PlayerRangedBasicVfxCueDriver>(player.gameObject, "player ranged basic VFX cue driver");
+            SummonEnergyVfxCuePresenter energyVfxCuePresenter =
+                RequireComponent<SummonEnergyVfxCuePresenter>(player.gameObject, "summon energy VFX cue presenter");
             BossBarrageLaneReviewHud reviewHud =
                 RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "boss barrage HUD");
             BossBarrageLaneReviewMobileHud mobileHud =
@@ -294,6 +296,15 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(1f, GetFloat(rangedBasicVfxCueDriver, "muzzleFlashIntensity"), 0.001f);
             Assert.AreEqual(CombatVfxCueId.PlayerRangedProjectileImpact, GetEnum<CombatVfxCueId>(rangedBasicVfxCueDriver, "impactCueId"));
             Assert.AreEqual(1f, GetFloat(rangedBasicVfxCueDriver, "impactIntensity"), 0.001f);
+            Assert.AreSame(energyLadder, energyVfxCuePresenter.EnergyLadder);
+            Assert.AreSame(playerCuePlayer, energyVfxCuePresenter.CuePlayer);
+            Assert.AreSame(
+                GetObjectReference<Transform>(playerVfxCueDriver, "attackAnchor"),
+                energyVfxCuePresenter.CueAnchor);
+            Assert.AreSame(bossRoot.transform, energyVfxCuePresenter.DirectionTarget);
+            Assert.AreEqual(CombatVfxCueId.EliteAuraSignal, energyVfxCuePresenter.ForwardRiskCueId);
+            Assert.AreEqual(CombatVfxCueId.SummonFollowupWindow, energyVfxCuePresenter.TierReadyCueId);
+            Assert.AreEqual(CombatVfxCueId.SummonFollowupMissed, energyVfxCuePresenter.SpendCueId);
             AssertBossBarrageCombatCueAssetOverlays();
             Assert.AreSame(bossBasicFireProfile, GetObjectReference<BossBasicFireProfile>(bossBasicFireEmitter, "fireProfile"));
             Assert.AreSame(

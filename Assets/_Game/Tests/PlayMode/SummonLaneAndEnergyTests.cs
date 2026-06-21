@@ -102,6 +102,68 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void SummonEnergyVfxCuePresenterPlaysForwardRiskReadyAndSpendReads()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            GameObject playerObject = new GameObject("Player");
+            GameObject cuePrefab = new GameObject("EnergyStateCuePrefab");
+            CombatVfxCueProfile cueProfile = null;
+            try
+            {
+                SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+                SummonEnergyLadder energy = playerObject.AddComponent<SummonEnergyLadder>();
+                energy.ConfigureReferences(lane, playerObject.transform);
+
+                CombatVfxCuePlayer cuePlayer = playerObject.AddComponent<CombatVfxCuePlayer>();
+                cueProfile = CreateEnergyVfxCueProfile(cuePrefab);
+                ConfigureCombatVfxCuePlayer(cuePlayer, cueProfile);
+
+                SummonEnergyVfxCuePresenter presenter = playerObject.AddComponent<SummonEnergyVfxCuePresenter>();
+                presenter.Configure(energy, cuePlayer, playerObject.transform, null);
+
+                playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.ForwardBoundaryZ);
+                energy.Tick(0.01f);
+                presenter.RefreshNow();
+
+                Assert.AreEqual(
+                    1,
+                    presenter.ForwardRiskCueRequestCount,
+                    "Entering the forward-risk EN band should create a visible player-side state cue.");
+
+                energy.GrantCurrentTierEnergy(energy.CurrentTierTarget);
+
+                Assert.AreEqual(
+                    1,
+                    presenter.TierReadyCueRequestCount,
+                    "Opening an EN spend tier should create a visible ready cue at the player.");
+                Assert.AreEqual(1, presenter.LastReadyTier);
+
+                Assert.IsTrue(energy.TrySpend(out int spentTier));
+
+                Assert.AreEqual(1, spentTier);
+                Assert.AreEqual(
+                    1,
+                    presenter.SpendCueRequestCount,
+                    "Spending EN should create a visible reset/spend cue at the player.");
+                Assert.AreEqual(1, presenter.LastSpentTier);
+                Assert.IsNotNull(
+                    playerObject.transform.Find(cuePrefab.name),
+                    "Energy state cues should be spawned through CombatVfxCuePlayer, not only counted in code.");
+            }
+            finally
+            {
+                if (cueProfile != null)
+                {
+                    Object.DestroyImmediate(cueProfile);
+                }
+
+                Object.DestroyImmediate(cuePrefab);
+                Object.DestroyImmediate(playerObject);
+                Object.DestroyImmediate(laneObject);
+            }
+        }
+
+        [Test]
         public void EnergyRewardPulseCarriesOverflowIntoHigherTierReadiness()
         {
             GameObject playerObject = new GameObject("Player");
@@ -2944,6 +3006,19 @@ namespace DimensionBrawl.Tests
             cues.arraySize = 2;
             ConfigureCue(cues.GetArrayElementAtIndex(0), CombatVfxCueId.EliteShieldSignal, prefab);
             ConfigureCue(cues.GetArrayElementAtIndex(1), CombatVfxCueId.SummonBlockOpportunity, prefab);
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            return profile;
+        }
+
+        private static CombatVfxCueProfile CreateEnergyVfxCueProfile(GameObject prefab)
+        {
+            CombatVfxCueProfile profile = ScriptableObject.CreateInstance<CombatVfxCueProfile>();
+            SerializedObject serializedObject = new SerializedObject(profile);
+            SerializedProperty cues = serializedObject.FindProperty("cues");
+            cues.arraySize = 3;
+            ConfigureCue(cues.GetArrayElementAtIndex(0), CombatVfxCueId.EliteAuraSignal, prefab);
+            ConfigureCue(cues.GetArrayElementAtIndex(1), CombatVfxCueId.SummonFollowupWindow, prefab);
+            ConfigureCue(cues.GetArrayElementAtIndex(2), CombatVfxCueId.SummonFollowupMissed, prefab);
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             return profile;
         }

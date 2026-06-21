@@ -793,6 +793,7 @@ GameObject:
   - component: {fileID: 4012}
   - component: {fileID: 4011}
   - component: {fileID: 4019}
+  - component: {fileID: 4020}
   m_Layer: 0
   m_Name: Player_CombatGirl_ActionFoundation
   m_TagString: Player
@@ -1585,6 +1586,30 @@ MonoBehaviour:
   muzzleFlashIntensity: 1
   impactCueId: 34
   impactIntensity: 1
+--- !u!114 &4020
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c43a663b4d334c34bc75181727699fd7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.SummonEnergyVfxCuePresenter
+  energyLadder: {fileID: 4014}
+  cuePlayer: {fileID: 4010}
+  cueAnchor: {fileID: 85052602}
+  directionTarget: {fileID: 42641010}
+  forwardRiskCueId: 26
+  tierReadyCueId: 29
+  spendCueId: 31
+  forwardRiskCueIntensity: 0.62
+  tierReadyCueIntensity: 0.9
+  spendCueIntensity: 0.55
+  tierIntensityStep: 0.12
+  forwardRiskCueCooldownSeconds: 0.75
 --- !u!1 &4100
 GameObject:
   m_ObjectHideFlags: 0
