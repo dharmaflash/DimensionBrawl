@@ -938,7 +938,15 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(
                 GetObjectReference<Transform>(playerVfxCueDriver, "dodgeAnchor"),
                 pocketVfxCueBridge.FollowupMissedAnchor);
+            Assert.AreSame(
+                bossRoot.transform,
+                GetObjectReference<Transform>(pocketVfxCueBridge, "pocketClearAnchor"),
+                "Pocket clear VFX should be explicitly anchored to the boss result, not only rely on the follow-up fallback.");
             Assert.AreSame(bossRoot.transform, pocketVfxCueBridge.PocketClearAnchor);
+            Assert.AreSame(
+                GetObjectReference<Transform>(playerVfxCueDriver, "dodgeAnchor"),
+                GetObjectReference<Transform>(pocketVfxCueBridge, "pocketFailAnchor"),
+                "Pocket fail VFX should be explicitly anchored to the player fail read, not only rely on the missed-follow-up fallback.");
             Assert.AreSame(
                 GetObjectReference<Transform>(playerVfxCueDriver, "dodgeAnchor"),
                 pocketVfxCueBridge.PocketFailAnchor);
@@ -950,6 +958,11 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(closeThreatHealth, GetObjectReference<CombatHealth>(reviewHud, "closeThreatHealth"));
             Assert.AreSame(bossHealth, GetObjectReference<CombatHealth>(reviewHud, "bossHealth"));
             Assert.AreSame(bossHealth, GetObjectReference<CombatHealth>(pocketOwner, "bossHealth"));
+            Assert.AreEqual(
+                900f,
+                bossHealth.MaxHealth,
+                0.001f,
+                "The review boss proxy should be durable, but Skill1 follow-up hits must still move the HP bar visibly.");
             Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(reviewHud, "energyLadder"));
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(reviewHud, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(reviewHud, "player"));
@@ -2058,6 +2071,10 @@ namespace DimensionBrawl.Tests
                 bossHealth.CurrentHealth,
                 bossHealthBeforeSkill,
                 "Skill1 should spend EN into a real boss/proxy health result, not only a visible projectile.");
+            Assert.GreaterOrEqual(
+                (bossHealthBeforeSkill - bossHealth.CurrentHealth) / bossHealth.MaxHealth,
+                0.04f,
+                "The review boss HP scale should make a successful Skill1 spend visibly move the health bar.");
             yield return null;
         }
 

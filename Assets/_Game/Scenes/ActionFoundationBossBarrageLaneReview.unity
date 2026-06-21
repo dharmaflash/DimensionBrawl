@@ -2545,7 +2545,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.CombatHealth
   team: 2
-  maxHealth: 5000
+  maxHealth: 900
   startAtFullHealth: 1
   onDamaged:
     m_PersistentCalls:
@@ -11804,11 +11804,17 @@ MonoBehaviour:
   followupWindowAnchor: {fileID: 85052602}
   followupHitAnchor: {fileID: 42641010}
   followupMissedAnchor: {fileID: 1228450371}
+  pocketClearAnchor: {fileID: 42641010}
+  pocketFailAnchor: {fileID: 1228450371}
   directionTarget: {fileID: 42641010}
   blockOpportunityIntensity: 1.05
   windowIntensity: 1.15
   hitIntensity: 1.3
   missedIntensity: 0.85
+  pocketClearIntensity: 1.3
+  pocketFailIntensity: 1.2
+  pocketFailAccentCueId: 25
+  pocketFailAccentIntensity: 1.15
   tierIntensityStep: 0.12
 --- !u!114 &1045561730
 MonoBehaviour:
