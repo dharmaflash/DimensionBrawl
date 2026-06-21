@@ -45,8 +45,6 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_LinePressure.asset";
         private const string BossBasicFireProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBasicFire_LanePoke.asset";
-        private const string BossBasicFireProjectileMaterialPath =
-            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBasicFireProjectile.mat";
         private const string ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossBarrageProjectile_NeedleLock.prefab";
         private const string LocalDefenseProfilePath =
@@ -320,7 +318,9 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(4.5f, bossBasicFireProfile.Damage, 0.001f);
             Assert.AreEqual(2.45f, bossBasicFireProfile.FireIntervalSeconds, 0.001f);
             Assert.AreEqual(0.22f, bossBasicFireProfile.ProjectileRadius, 0.001f);
-            Assert.AreSame(LoadAsset<Material>(BossBasicFireProjectileMaterialPath), bossBasicFireProfile.ProjectileMaterial);
+            Assert.IsNull(
+                bossBasicFireProfile.ProjectileMaterial,
+                "Boss basic fire should preserve the authored projectile VFX prefab materials instead of overriding them with a plain read material.");
             Assert.Greater(
                 bossBasicFireProfile.GetLateralOffset(1, 2, 0f),
                 bossBasicFireProfile.GetLateralOffset(1, 2, 1f),
