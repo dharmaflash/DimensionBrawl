@@ -51,11 +51,11 @@ MonoBehaviour:
   renderers:
   - {fileID: 6879360039385571418}
   - {fileID: 3013232064753693847}
-  startColor: {r: 0.74, g: 0.38, b: 1, a: 0.86}
+  startColor: {r: 0.74, g: 0.38, b: 1, a: 0.64}
   endColor: {r: 0.12, g: 0.04, b: 0.7, a: 0}
-  startScale: {x: 0.82, y: 0.82, z: 0.82}
-  endScale: {x: 1.837, y: 1.837, z: 1.837}
-  lifetimeSeconds: 0.74
+  startScale: {x: 0.54, y: 0.54, z: 0.54}
+  endScale: {x: 0.95, y: 0.95, z: 0.95}
+  lifetimeSeconds: 0.42
   spinDegreesPerSecond: 33.6
   verticalLift: 0.22
   forwardTravelDistance: 0
@@ -306,7 +306,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0.08, z: 0}
-  m_LocalScale: {x: 0.62, y: 0.62, z: 0.62}
+  m_LocalScale: {x: 0.16, y: 0.16, z: 0.16}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 4865467374152661127}
@@ -400,14 +400,14 @@ ParticleSystem:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4865467374152385199}
   serializedVersion: 8
-  lengthInSec: 5
+  lengthInSec: 1.1
   simulationSpeed: 1
   stopAction: 0
   cullingMode: 1
   ringBufferMode: 0
   ringBufferLoopRange: {x: 0, y: 1}
   emitterVelocityMode: 0
-  looping: 1
+  looping: 0
   prewarm: 0
   playOnAwake: 1
   useUnscaledTime: 0
@@ -646,7 +646,7 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 6
+      scalar: 0.8
       minScalar: 1
       maxCurve:
         serializedVersion: 2
@@ -5144,14 +5144,14 @@ ParticleSystem:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4865467374152414819}
   serializedVersion: 8
-  lengthInSec: 5
+  lengthInSec: 1.1
   simulationSpeed: 1
   stopAction: 0
   cullingMode: 3
   ringBufferMode: 0
   ringBufferLoopRange: {x: 0, y: 1}
   emitterVelocityMode: 0
-  looping: 1
+  looping: 0
   prewarm: 0
   playOnAwake: 1
   useUnscaledTime: 0

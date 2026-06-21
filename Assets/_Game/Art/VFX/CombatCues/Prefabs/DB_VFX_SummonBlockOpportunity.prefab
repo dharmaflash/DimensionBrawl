@@ -298,7 +298,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0.1, z: 0}
-  m_LocalScale: {x: 0.78, y: 0.78, z: 0.78}
+  m_LocalScale: {x: 0.15, y: 0.15, z: 0.15}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 5937501998024443922}
@@ -392,14 +392,14 @@ ParticleSystem:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5937501998024595012}
   serializedVersion: 8
-  lengthInSec: 5
+  lengthInSec: 1.15
   simulationSpeed: 1
   stopAction: 0
   cullingMode: 1
   ringBufferMode: 0
   ringBufferLoopRange: {x: 0, y: 1}
   emitterVelocityMode: 0
-  looping: 1
+  looping: 0
   prewarm: 0
   playOnAwake: 1
   useUnscaledTime: 0
@@ -638,8 +638,8 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 5
-      minScalar: 4
+      scalar: 0.75
+      minScalar: 0.6
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -5087,7 +5087,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.16, y: 0.16, z: 0.16}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5937501998024371810}
@@ -5100,14 +5100,14 @@ ParticleSystem:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5937501998024617594}
   serializedVersion: 8
-  lengthInSec: 5
+  lengthInSec: 1.1
   simulationSpeed: 1
   stopAction: 0
   cullingMode: 1
   ringBufferMode: 0
   ringBufferLoopRange: {x: 0, y: 1}
   emitterVelocityMode: 0
-  looping: 1
+  looping: 0
   prewarm: 0
   playOnAwake: 1
   useUnscaledTime: 0
@@ -5346,8 +5346,8 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 5
-      minScalar: 7
+      scalar: 0.7
+      minScalar: 0.7
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -9882,11 +9882,11 @@ MonoBehaviour:
   - {fileID: 1238400028928332974}
   - {fileID: 7774209538355665912}
   - {fileID: 3316602377900315864}
-  startColor: {r: 0.98, g: 0.7, b: 1, a: 0.9}
+  startColor: {r: 0.98, g: 0.7, b: 1, a: 0.62}
   endColor: {r: 0.28, g: 0.06, b: 0.72, a: 0}
-  startScale: {x: 0.8, y: 0.8, z: 0.8}
-  endScale: {x: 1.9, y: 1.9, z: 1.9}
-  lifetimeSeconds: 0.92
+  startScale: {x: 0.5, y: 0.5, z: 0.5}
+  endScale: {x: 0.9, y: 0.9, z: 0.9}
+  lifetimeSeconds: 0.44
   spinDegreesPerSecond: 66
   verticalLift: 0
   forwardTravelDistance: 0

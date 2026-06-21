@@ -37349,14 +37349,14 @@ MonoBehaviour:
   visualRoot: {fileID: 6693782277880877833}
   screenRenderers:
   - {fileID: 220082403188987380}
-  activeColor: {r: 1, g: 0.22, b: 0.55, a: 0.28}
-  tierTwoColor: {r: 1, g: 0.62, b: 0.24, a: 0.34}
-  tierThreeColor: {r: 1, g: 0.22, b: 0.9, a: 0.42}
-  interceptColor: {r: 1, g: 0.86, b: 0.64, a: 0.68}
-  visualRadiusScale: 0.56
-  activationFlashSeconds: 0.14
-  interceptFlashSeconds: 0.2
-  finalHitLingerSeconds: 0.16
+  activeColor: {r: 1, g: 0.22, b: 0.55, a: 0.23}
+  tierTwoColor: {r: 1, g: 0.62, b: 0.24, a: 0.28}
+  tierThreeColor: {r: 1, g: 0.22, b: 0.9, a: 0.34}
+  interceptColor: {r: 1, g: 0.86, b: 0.64, a: 0.46}
+  visualRadiusScale: 0.42
+  activationFlashSeconds: 0.09
+  interceptFlashSeconds: 0.13
+  finalHitLingerSeconds: 0.1
   pulseSpeed: 8.2
   pulseScale: 0.032
   interceptPunchSeconds: 0.14

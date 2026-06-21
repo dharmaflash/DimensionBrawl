@@ -210,12 +210,12 @@ namespace DimensionBrawl.Editor
                 RetreatBlinkActive = SaveBurstPrefab("DB_VFX_RetreatBlinkActive", violet, ParticleSystemShapeType.Circle, 0.52f, 38f, 360f, 0.10f, 0.28f, 0.18f, 0.56f, 50, new Color(0.78f, 0.48f, 1f, 0.95f), new Color(0.18f, 0.06f, 0.8f, 0f)),
                 GuardBreakWindup = SaveBurstPrefab("DB_VFX_GuardBreakWindup", gold, ParticleSystemShapeType.Sphere, 0.38f, 14f, 360f, 0.42f, 0.78f, 0.20f, 0.48f, 48, new Color(1f, 0.76f, 0.16f, 0.88f), new Color(1f, 0.22f, 0.02f, 0f)),
                 GuardBreakActive = SaveBurstPrefab("DB_VFX_GuardBreakActive", gold, ParticleSystemShapeType.Circle, 0.72f, 42f, 360f, 0.14f, 0.36f, 0.34f, 0.86f, 72, new Color(1f, 0.92f, 0.42f, 0.98f), new Color(1f, 0.3f, 0.04f, 0f)),
-                EliteShield = SaveBurstPrefab("DB_VFX_EliteShieldSignal", blue, ParticleSystemShapeType.Circle, 0.64f, 20f, 360f, 0.28f, 0.62f, 0.18f, 0.58f, 48, new Color(0.28f, 0.72f, 1f, 0.82f), new Color(0.04f, 0.16f, 1f, 0f)),
+                EliteShield = SaveBurstPrefab("DB_VFX_EliteShieldSignal", blue, ParticleSystemShapeType.Circle, 0.64f, 20f, 360f, 0.22f, 0.46f, 0.12f, 0.24f, 48, new Color(0.28f, 0.72f, 1f, 0.64f), new Color(0.04f, 0.16f, 1f, 0f)),
                 EliteArmorBreak = SaveBurstPrefab("DB_VFX_EliteArmorBreakSignal", gold, ParticleSystemShapeType.Sphere, 0.48f, 24f, 360f, 0.18f, 0.48f, 0.18f, 0.58f, 42, new Color(1f, 0.86f, 0.18f, 0.9f), new Color(1f, 0.18f, 0.02f, 0f)),
                 EliteAura = SaveBurstPrefab("DB_VFX_EliteAuraSignal", cyan, ParticleSystemShapeType.Circle, 0.70f, 18f, 360f, 0.42f, 0.84f, 0.16f, 0.52f, 58, new Color(0.18f, 1f, 0.78f, 0.76f), new Color(0.04f, 0.36f, 0.86f, 0f)),
-                EliteSummon = SaveBurstPrefab("DB_VFX_EliteSummonSignal", violet, ParticleSystemShapeType.Sphere, 0.58f, 24f, 360f, 0.32f, 0.74f, 0.18f, 0.62f, 64, new Color(0.74f, 0.38f, 1f, 0.86f), new Color(0.12f, 0.04f, 0.7f, 0f), oneShotAudio: holySummonAudio, audioCueName: "AudioCue_HolySummon", audioVolume: 0.36f, audioMinDistance: 1f, audioMaxDistance: 16f),
-                SummonFollowupWindow = SaveBurstPrefab("DB_VFX_SummonFollowupWindow", violet, ParticleSystemShapeType.Circle, 0.76f, 34f, 360f, 0.24f, 0.82f, 0.18f, 0.72f, 82, new Color(0.88f, 0.52f, 1f, 0.88f), new Color(0.18f, 0.06f, 0.78f, 0f), oneShotAudio: holySummonAudio, audioCueName: "AudioCue_HolyFollowupWindow", audioVolume: 0.34f, audioMinDistance: 1.06f, audioMaxDistance: 18f),
-                SummonBlockOpportunity = SaveBurstPrefab("DB_VFX_SummonBlockOpportunity", violet, ParticleSystemShapeType.Circle, 0.86f, 30f, 360f, 0.28f, 0.92f, 0.20f, 0.82f, 96, new Color(0.98f, 0.7f, 1f, 0.9f), new Color(0.28f, 0.06f, 0.72f, 0f), oneShotAudio: holySummonAudio, audioCueName: "AudioCue_HolyBlockOpportunity", audioVolume: 0.38f, audioMinDistance: 0.94f, audioMaxDistance: 18f),
+                EliteSummon = SaveBurstPrefab("DB_VFX_EliteSummonSignal", violet, ParticleSystemShapeType.Sphere, 0.58f, 24f, 360f, 0.24f, 0.48f, 0.14f, 0.26f, 64, new Color(0.74f, 0.38f, 1f, 0.64f), new Color(0.12f, 0.04f, 0.7f, 0f), oneShotAudio: holySummonAudio, audioCueName: "AudioCue_HolySummon", audioVolume: 0.36f, audioMinDistance: 1f, audioMaxDistance: 16f),
+                SummonFollowupWindow = SaveBurstPrefab("DB_VFX_SummonFollowupWindow", violet, ParticleSystemShapeType.Circle, 0.76f, 34f, 360f, 0.18f, 0.56f, 0.12f, 0.22f, 82, new Color(0.88f, 0.52f, 1f, 0.58f), new Color(0.18f, 0.06f, 0.78f, 0f), oneShotAudio: holySummonAudio, audioCueName: "AudioCue_HolyFollowupWindow", audioVolume: 0.34f, audioMinDistance: 1.06f, audioMaxDistance: 18f),
+                SummonBlockOpportunity = SaveBurstPrefab("DB_VFX_SummonBlockOpportunity", violet, ParticleSystemShapeType.Circle, 0.86f, 30f, 360f, 0.2f, 0.5f, 0.14f, 0.24f, 96, new Color(0.98f, 0.7f, 1f, 0.62f), new Color(0.28f, 0.06f, 0.72f, 0f), oneShotAudio: holySummonAudio, audioCueName: "AudioCue_HolyBlockOpportunity", audioVolume: 0.38f, audioMinDistance: 0.94f, audioMaxDistance: 18f),
                 ElitePhaseSwap = SaveBurstPrefab("DB_VFX_ElitePhaseSwapSignal", white, ParticleSystemShapeType.Circle, 0.82f, 44f, 360f, 0.18f, 0.48f, 0.26f, 0.82f, 84, new Color(0.9f, 0.98f, 1f, 0.96f), new Color(0.26f, 0.46f, 1f, 0f))
             };
 
@@ -457,17 +457,17 @@ namespace DimensionBrawl.Editor
                 new CueDefinition(CombatVfxCueId.EnemyRetreatBlinkActive, prefabs.RetreatBlinkActive, new Vector3(0f, -0.05f, 0f), Vector3.zero, new Vector3(1.35f, 0.65f, 1.35f), 0.34f, false, false),
                 new CueDefinition(CombatVfxCueId.EnemyGuardBreakWindup, prefabs.GuardBreakWindup, new Vector3(0f, 0.1f, 0f), Vector3.zero, new Vector3(1.25f, 1.1f, 1.25f), 0.82f, true, false),
                 new CueDefinition(CombatVfxCueId.EnemyGuardBreakActive, prefabs.GuardBreakActive, new Vector3(0f, -0.12f, 0.8f), Vector3.zero, new Vector3(1.55f, 0.65f, 1.55f), 0.42f, false, true),
-                new CueDefinition(CombatVfxCueId.EliteShieldSignal, prefabs.EliteShield, Vector3.zero, Vector3.zero, new Vector3(1.2f, 0.9f, 1.2f), 0.72f, true, false),
+                new CueDefinition(CombatVfxCueId.EliteShieldSignal, prefabs.EliteShield, Vector3.zero, Vector3.zero, new Vector3(0.72f, 0.52f, 0.72f), 0.44f, true, false),
                 new CueDefinition(CombatVfxCueId.EliteArmorBreakSignal, prefabs.EliteArmorBreak, Vector3.zero, Vector3.zero, new Vector3(1.15f, 1f, 1.15f), 0.58f, true, false),
                 new CueDefinition(CombatVfxCueId.EliteAuraSignal, prefabs.EliteAura, Vector3.zero, Vector3.zero, new Vector3(1.55f, 0.8f, 1.55f), 0.88f, true, false),
-                new CueDefinition(CombatVfxCueId.EliteSummonSignal, prefabs.EliteSummon, Vector3.zero, Vector3.zero, new Vector3(1.45f, 1.1f, 1.45f), 0.86f, true, false),
+                new CueDefinition(CombatVfxCueId.EliteSummonSignal, prefabs.EliteSummon, Vector3.zero, Vector3.zero, new Vector3(0.58f, 0.44f, 0.58f), 0.42f, true, false),
                 new CueDefinition(CombatVfxCueId.ElitePhaseSwapSignal, prefabs.ElitePhaseSwap, Vector3.zero, Vector3.zero, new Vector3(1.85f, 0.8f, 1.85f), 0.68f, true, false),
-                new CueDefinition(CombatVfxCueId.SummonFollowupWindow, prefabs.SummonFollowupWindow, new Vector3(0f, 0.48f, 0.25f), Vector3.zero, new Vector3(1.35f, 0.95f, 1.35f), 0.96f, true, false),
+                new CueDefinition(CombatVfxCueId.SummonFollowupWindow, prefabs.SummonFollowupWindow, new Vector3(0f, 0.48f, 0.25f), Vector3.zero, new Vector3(0.46f, 0.34f, 0.46f), 0.48f, true, false),
                 new CueDefinition(CombatVfxCueId.SummonFollowupHit, prefabs.PlayerRangedProjectileImpact, new Vector3(0f, 1.05f, -0.35f), Vector3.zero, new Vector3(1.35f, 1.1f, 1.35f), 0.34f, false, true),
                 new CueDefinition(CombatVfxCueId.SummonFollowupMissed, prefabs.EnemyDeath, new Vector3(0f, 0.08f, -0.25f), Vector3.zero, new Vector3(0.75f, 0.6f, 0.75f), 0.58f, false, false),
-                new CueDefinition(CombatVfxCueId.SummonBlockOpportunity, prefabs.SummonBlockOpportunity, new Vector3(0f, 0.32f, 0.5f), Vector3.zero, new Vector3(1.45f, 0.85f, 1.45f), 0.9f, true, false),
-                new CueDefinition(CombatVfxCueId.PocketCleared, prefabs.EliteSummon, new Vector3(0f, 0.45f, 0f), Vector3.zero, new Vector3(1.45f, 1.08f, 1.45f), 0.86f, true, false),
-                new CueDefinition(CombatVfxCueId.PocketFailed, prefabs.EnemyDeath, new Vector3(0f, 0.18f, -0.12f), Vector3.zero, new Vector3(1.75f, 1.2f, 1.75f), 1.2f, false, false)
+                new CueDefinition(CombatVfxCueId.SummonBlockOpportunity, prefabs.SummonBlockOpportunity, new Vector3(0f, 0.32f, 0.5f), Vector3.zero, new Vector3(0.5f, 0.32f, 0.5f), 0.44f, true, false),
+                new CueDefinition(CombatVfxCueId.PocketCleared, prefabs.EliteSummon, new Vector3(0f, 0.45f, 0f), Vector3.zero, new Vector3(0.6f, 0.46f, 0.6f), 0.48f, true, false),
+                new CueDefinition(CombatVfxCueId.PocketFailed, prefabs.EnemyDeath, new Vector3(0f, 0.18f, -0.12f), Vector3.zero, new Vector3(1f, 0.72f, 1f), 0.72f, false, false)
             };
 
             SerializedObject serializedObject = new SerializedObject(profile);

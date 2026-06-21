@@ -137,6 +137,10 @@ namespace DimensionBrawl.Tests
                 Assert.Greater(stats.CyanOrGreenStatePixelCount, 420);
                 Assert.Greater(stats.MagentaStatePixelCount, 160);
                 Assert.Less(stats.NearWhitePixelCount, frame.width * frame.height * 0.34f);
+                Assert.Less(
+                    stats.BrightLowSaturationPixelCount,
+                    frame.width * frame.height * 0.18f,
+                    "Combat VFX should not wash the frame into a broad pale overlay that hides boss/summon/projectile reads.");
             }
             finally
             {
@@ -502,6 +506,12 @@ namespace DimensionBrawl.Tests
                 {
                     stats.NearWhitePixelCount++;
                 }
+
+                int average = (pixel.r + pixel.g + pixel.b) / 3;
+                if (average > 170 && max - min < 55)
+                {
+                    stats.BrightLowSaturationPixelCount++;
+                }
             }
 
             return stats;
@@ -517,6 +527,7 @@ namespace DimensionBrawl.Tests
             public int ClearResultPixelCount;
             public int FailResultPixelCount;
             public int NearWhitePixelCount;
+            public int BrightLowSaturationPixelCount;
         }
     }
 }

@@ -168,6 +168,8 @@ Raw packs currently staged only as local files:
 
 These must not be committed directly.
 
+- Boss-barrage visual polish now keeps the promoted Magic Missiles cue assets for summon/boss state reads but clamps their gameplay-scale size, alpha, lifetime, loop/prewarm behavior, and pressure-screen wash so the running frame still shows boss/summon/projectile positions. `ActionFoundationBossBarrageVisualSmokeTests` now includes a bright low-saturation pixel guard in addition to actor/cue-count checks.
+
 ## Next Safe Step
 
 Use `Assets/_Game/DesignDocs/COMBAT_V1_SPEC.md`, `Assets/_Game/DesignDocs/ACTION_FEEL_TARGETS.md`, `Assets/_Game/DesignDocs/ACTION_FOUNDATION_OWNERSHIP.md`, `Assets/_Game/DesignDocs/SUMMON_SYSTEM_REFERENCE_RESEARCH.md`, `Assets/_Game/DesignDocs/CINEMACHINE_INGAME_CUTSCENE_REFERENCE_RESEARCH.md`, and `Assets/_Game/DesignDocs/LINEAR_STAGE_DESIGN_FOUNDATION.md` as implementation guardrails. The next safe step is to keep tuning the current `ActionFoundationBossBarrageLaneReview.unity` loop so the close-threat local defense read, forward-risk EN pacing, boss projectile pressure, tier-aware `SummonSlot1` payoff, and one-pocket clear/fail read all feel strong without adding full summon roster/economy, full boss phases, rewards, progression, stage-select UI, or production chapter art yet.

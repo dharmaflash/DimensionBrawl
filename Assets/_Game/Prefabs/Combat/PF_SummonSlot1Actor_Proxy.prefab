@@ -223,14 +223,14 @@ MonoBehaviour:
   visualRoot: {fileID: 2543636273977711382}
   screenRenderers:
   - {fileID: 1593275826050662354}
-  activeColor: {r: 0.22, g: 1, b: 0.82, a: 0.26}
-  tierTwoColor: {r: 0.38, g: 0.74, b: 1, a: 0.3}
-  tierThreeColor: {r: 1, g: 0.76, b: 0.24, a: 0.36}
-  interceptColor: {r: 0.92, g: 1, b: 1, a: 0.68}
-  visualRadiusScale: 0.56
-  activationFlashSeconds: 0.12
-  interceptFlashSeconds: 0.18
-  finalHitLingerSeconds: 0.16
+  activeColor: {r: 0.22, g: 1, b: 0.82, a: 0.22}
+  tierTwoColor: {r: 0.38, g: 0.74, b: 1, a: 0.25}
+  tierThreeColor: {r: 1, g: 0.76, b: 0.24, a: 0.3}
+  interceptColor: {r: 0.92, g: 1, b: 1, a: 0.42}
+  visualRadiusScale: 0.42
+  activationFlashSeconds: 0.08
+  interceptFlashSeconds: 0.12
+  finalHitLingerSeconds: 0.1
   pulseSpeed: 9
   pulseScale: 0.025
   interceptPunchSeconds: 0.14

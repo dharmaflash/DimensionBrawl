@@ -28,7 +28,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0.06, z: 0}
-  m_LocalScale: {x: 0.74, y: 0.74, z: 0.74}
+  m_LocalScale: {x: 0.09, y: 0.09, z: 0.09}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 38835020952250448}
@@ -43,15 +43,15 @@ ParticleSystem:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 38835020951991554}
   serializedVersion: 8
-  lengthInSec: 5
+  lengthInSec: 1.25
   simulationSpeed: 1
   stopAction: 0
   cullingMode: 1
   ringBufferMode: 0
   ringBufferLoopRange: {x: 0, y: 1}
   emitterVelocityMode: 0
-  looping: 1
-  prewarm: 1
+  looping: 0
+  prewarm: 0
   playOnAwake: 1
   useUnscaledTime: 0
   autoRandomSeed: 1
@@ -118,7 +118,7 @@ ParticleSystem:
     startLifetime:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 2
+      scalar: 1.05
       minScalar: 5
       maxCurve:
         serializedVersion: 2
@@ -289,8 +289,8 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 10
-      minScalar: 8
+      scalar: 0.85
+      minScalar: 0.7
       maxCurve:
         serializedVersion: 2
         m_Curve:
@@ -4827,7 +4827,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 0.12, y: 0.12, z: 0.12}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 38835020952276428}
@@ -4840,15 +4840,15 @@ ParticleSystem:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 38835020952021494}
   serializedVersion: 8
-  lengthInSec: 5
+  lengthInSec: 1.1
   simulationSpeed: 1
   stopAction: 0
   cullingMode: 1
   ringBufferMode: 0
   ringBufferLoopRange: {x: 0, y: 1}
   emitterVelocityMode: 0
-  looping: 1
-  prewarm: 1
+  looping: 0
+  prewarm: 0
   playOnAwake: 1
   useUnscaledTime: 0
   autoRandomSeed: 1
@@ -5086,7 +5086,7 @@ ParticleSystem:
     startSize:
       serializedVersion: 2
       minMaxState: 0
-      scalar: 10
+      scalar: 0.7
       minScalar: 1
       maxCurve:
         serializedVersion: 2
@@ -9664,14 +9664,14 @@ ParticleSystem:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 38835020952223364}
   serializedVersion: 8
-  lengthInSec: 5
+  lengthInSec: 1.1
   simulationSpeed: 1
   stopAction: 0
   cullingMode: 3
   ringBufferMode: 0
   ringBufferLoopRange: {x: 0, y: 1}
   emitterVelocityMode: 0
-  looping: 1
+  looping: 0
   prewarm: 0
   playOnAwake: 1
   useUnscaledTime: 0
@@ -14903,11 +14903,11 @@ MonoBehaviour:
   - {fileID: 5206667989726293927}
   - {fileID: 7980769066343883771}
   - {fileID: 4798814855745233889}
-  startColor: {r: 0.88, g: 0.52, b: 1, a: 0.88}
+  startColor: {r: 0.88, g: 0.52, b: 1, a: 0.58}
   endColor: {r: 0.18, g: 0.06, b: 0.78, a: 0}
-  startScale: {x: 0.82, y: 0.82, z: 0.82}
-  endScale: {x: 1.9, y: 1.9, z: 1.9}
-  lifetimeSeconds: 0.82
+  startScale: {x: 0.48, y: 0.48, z: 0.48}
+  endScale: {x: 0.85, y: 0.85, z: 0.85}
+  lifetimeSeconds: 0.48
   spinDegreesPerSecond: 74.8
   verticalLift: 0
   forwardTravelDistance: 0

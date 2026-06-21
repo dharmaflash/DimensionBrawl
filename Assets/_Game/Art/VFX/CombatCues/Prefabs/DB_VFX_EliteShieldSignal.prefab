@@ -232,11 +232,11 @@ MonoBehaviour:
   - {fileID: 5602585925538497966}
   - {fileID: 337127026525170873}
   - {fileID: 1649809110870608758}
-  startColor: {r: 0.28, g: 0.72, b: 1, a: 0.82}
+  startColor: {r: 0.28, g: 0.72, b: 1, a: 0.64}
   endColor: {r: 0.04, g: 0.16, b: 1, a: 0}
-  startScale: {x: 0.82, y: 0.82, z: 0.82}
-  endScale: {x: 1.783, y: 1.783, z: 1.783}
-  lifetimeSeconds: 0.62
+  startScale: {x: 0.62, y: 0.62, z: 0.62}
+  endScale: {x: 1.22, y: 1.22, z: 1.22}
+  lifetimeSeconds: 0.44
   spinDegreesPerSecond: 44
   verticalLift: 0
   forwardTravelDistance: 0
