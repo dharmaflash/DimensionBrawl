@@ -549,12 +549,12 @@ namespace DimensionBrawl.Presentation
 
             if (pocketReviewOwner.IsSkill1FollowupClearCountdownActive)
             {
-                return $"Goal: Confirm hit {pocketReviewOwner.Skill1FollowupClearRemainingSeconds:0.0}s";
+                return $"Goal: Confirm {ResolveCompactSkillFollowupText()} {pocketReviewOwner.Skill1FollowupClearRemainingSeconds:0.0}s";
             }
 
             if (pocketReviewOwner.IsSummonFollowupWindowActive)
             {
-                return $"Goal: Fire Skill1 {pocketReviewOwner.SummonFollowupWindowRemainingSeconds:0.0}s";
+                return $"Goal: {ResolveCompactSkillFollowupText()} follow-up {pocketReviewOwner.SummonFollowupWindowRemainingSeconds:0.0}s";
             }
 
             if (pocketReviewOwner.IsSummonPressureBreakActive)
@@ -564,24 +564,54 @@ namespace DimensionBrawl.Presentation
 
             if (pocketReviewOwner.IsSummonBlockOpportunityCueActive)
             {
-                return $"Goal: Summon block {pocketReviewOwner.SummonBlockOpportunityRemainingSeconds:0.0}s";
+                return $"Goal: {ResolveCompactSummonBlockText()} {pocketReviewOwner.SummonBlockOpportunityRemainingSeconds:0.0}s";
             }
 
             if (pocketReviewOwner.IsAwaitingSummonPressureBlock)
             {
-                return "Goal: Summon block NOW";
+                return $"Goal: {ResolveCompactSummonBlockText()} NOW";
             }
 
             if (pocketReviewOwner.CloseThreatDefeated)
             {
                 return energyLadder != null && !energyLadder.CanSpend
-                    ? "Goal: Build EN"
-                    : "Goal: Block boss fire";
+                    ? $"Goal: Build EN for {ResolveCompactSummonBlockText()}"
+                    : $"Goal: {ResolveCompactSummonBlockText()}";
             }
 
             return energyLadder != null && !energyLadder.CanSpend
                 ? "Goal: Advance for EN"
                 : "Goal: Clear close threat";
+        }
+
+        private string ResolveCompactSummonBlockText()
+        {
+            return $"{ResolveSummonTierLabel(ResolveCompactSummonTier())} block";
+        }
+
+        private int ResolveCompactSummonTier()
+        {
+            if (pocketReviewOwner != null && pocketReviewOwner.LastSummonPressureBreakTier > 0)
+            {
+                return pocketReviewOwner.LastSummonPressureBreakTier;
+            }
+
+            if (energyLadder != null && energyLadder.CanSpend)
+            {
+                return energyLadder.AvailableTier;
+            }
+
+            return 1;
+        }
+
+        private string ResolveCompactSkillFollowupText()
+        {
+            int tier = energyLadder != null && energyLadder.CanSpend
+                ? energyLadder.AvailableTier
+                : pocketReviewOwner != null && pocketReviewOwner.LastSummonPressureBreakTier > 0
+                    ? pocketReviewOwner.LastSummonPressureBreakTier
+                    : 1;
+            return $"Skill1 LV{Mathf.Clamp(tier, 1, 3)}";
         }
 
         private string ResolveCompactPhaseLine()

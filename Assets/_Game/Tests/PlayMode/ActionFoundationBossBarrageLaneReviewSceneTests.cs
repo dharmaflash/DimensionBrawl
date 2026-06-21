@@ -2727,6 +2727,8 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossBarragePocketVfxCueBridge>(
                     RequireRoot(PocketOwnerRootName),
                     "pocket VFX cue bridge");
+            BossBarrageLaneReviewHud reviewHud =
+                RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "boss barrage HUD");
 
             Assert.IsTrue(emitter.IsFiringEnabled);
             int summonBlockOpportunityCueCountBefore = pocketVfxCueBridge.SummonBlockOpportunityCueRequestCount;
@@ -2772,6 +2774,10 @@ namespace DimensionBrawl.Tests
                 pocketOwner.ObjectiveCue,
                 Does.Contain("LV1 Guard Entry"),
                 "The summon-block opportunity should name the current SummonSlot1 tier readout instead of only saying SummonSlot1.");
+            Assert.That(
+                reviewHud.CompactObjectiveReadout,
+                Does.Contain("LV1 Guard Entry"),
+                "The compact HUD goal should preserve the summon tier answer during the block-opportunity cue.");
 
             pocketOwner.Tick(1.24f);
             Assert.IsTrue(pocketOwner.IsPressureReliefActive);
@@ -2799,6 +2805,10 @@ namespace DimensionBrawl.Tests
                 pocketOwner.ObjectiveCue,
                 Does.Contain("LV1 Guard Entry"),
                 "After the cue beat ends, the pocket objective should still identify the current summon tier answer.");
+            Assert.That(
+                reviewHud.CompactObjectiveReadout,
+                Does.Contain("LV1 Guard Entry block NOW"),
+                "After the cue beat, the compact HUD goal should call out the tiered summon block answer.");
 
             yield return null;
         }
@@ -3013,6 +3023,10 @@ namespace DimensionBrawl.Tests
                 pocketOwner.ObjectiveCue,
                 Does.Contain("LV1 Guard Entry"),
                 "The summon follow-up objective should preserve which tier of SummonSlot1 created the opening.");
+            Assert.That(
+                reviewHud.CompactObjectiveReadout,
+                Does.Contain("Skill1 LV1"),
+                "The compact HUD goal should name the follow-up Skill tier instead of only saying Fire Skill1.");
             Assert.That(
                 pocketOwner.SummonPressureBreakRemainingSeconds,
                 Is.EqualTo(3f).Within(0.001f),
