@@ -1489,10 +1489,10 @@ namespace DimensionBrawl.Editor
             var serializedObject = new SerializedObject(profile);
             RequireProperty(serializedObject, "fireId").stringValue = "LanePoke";
             RequireProperty(serializedObject, "readoutLabel").stringValue = "Lane Poke";
-            RequireProperty(serializedObject, "initialDelaySeconds").floatValue = 1.1f;
-            RequireProperty(serializedObject, "fireIntervalSeconds").floatValue = 2.2f;
+            RequireProperty(serializedObject, "initialDelaySeconds").floatValue = 1.25f;
+            RequireProperty(serializedObject, "fireIntervalSeconds").floatValue = 2.45f;
             RequireProperty(serializedObject, "projectilesPerVolley").intValue = 2;
-            RequireProperty(serializedObject, "damage").floatValue = 5f;
+            RequireProperty(serializedObject, "damage").floatValue = 4.5f;
             RequireProperty(serializedObject, "projectileSpeed").floatValue = 11.5f;
             RequireProperty(serializedObject, "projectileLifetimeSeconds").floatValue = 5.2f;
             RequireProperty(serializedObject, "projectileRadius").floatValue = 0.22f;
@@ -4595,6 +4595,7 @@ namespace DimensionBrawl.Editor
                 owner,
                 "summonPressureBlockOpportunity",
                 LoadAsset<SummonOpportunityWindowProfile>(SummonOpportunityProfilePath));
+            SetFloat(owner, "skill1FollowupClearDelaySeconds", 0.75f);
             EditorUtility.SetDirty(owner);
             return owner;
         }
@@ -5486,10 +5487,10 @@ namespace DimensionBrawl.Editor
             BossBasicFireProfile profile = LoadAsset<BossBasicFireProfile>(BossBasicFireProfilePath);
             ValidateString(profile, "fireId", "LanePoke");
             ValidateString(profile, "readoutLabel", "Lane Poke");
-            ValidateFloat(profile, "initialDelaySeconds", 1.1f);
-            ValidateFloat(profile, "fireIntervalSeconds", 2.2f);
+            ValidateFloat(profile, "initialDelaySeconds", 1.25f);
+            ValidateFloat(profile, "fireIntervalSeconds", 2.45f);
             ValidateInt(profile, "projectilesPerVolley", 2);
-            ValidateFloat(profile, "damage", 5f);
+            ValidateFloat(profile, "damage", 4.5f);
             ValidateFloat(profile, "projectileSpeed", 11.5f);
             ValidateFloat(profile, "projectileLifetimeSeconds", 5.2f);
             ValidateFloat(profile, "projectileRadius", 0.22f);
@@ -7379,6 +7380,7 @@ namespace DimensionBrawl.Editor
             ValidateBool(owner, "stopBossPressureCostOnEnd", true);
             ValidateBool(owner, "stopBossPressureActionsOnEnd", true);
             ValidateBool(owner, "stopEnergyGainOnEnd", true);
+            ValidateFloat(owner, "skill1FollowupClearDelaySeconds", 0.75f);
             ValidateAssignedObjectReference(owner, "clearMarker");
             ValidateAssignedObjectReference(owner, "failMarker");
         }

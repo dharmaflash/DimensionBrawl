@@ -14,10 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossBasicFireProfile
   fireId: LanePoke
   readoutLabel: Lane Poke
-  initialDelaySeconds: 1.1
-  fireIntervalSeconds: 2.2
+  initialDelaySeconds: 1.25
+  fireIntervalSeconds: 2.45
   projectilesPerVolley: 2
-  damage: 5
+  damage: 4.5
   projectileSpeed: 11.5
   projectileLifetimeSeconds: 5.2
   projectileRadius: 0.22

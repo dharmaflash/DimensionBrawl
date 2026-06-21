@@ -388,7 +388,7 @@ Local code already exposes useful hooks and current mismatches:
   - cue types already include `PressureRead`, `Dodge`, `Burst`, `Hit`, `SummonCall`, `BossBreak`, `FinalKill`
   - repeat minor cue recovery and priority suppression already exist
 - `StoryPveEncounterRuntime`
-  - current blocker break breathing window is about `0.9s`
+  - earlier blocker break breathing was about `0.9s`; the boss-barrage lane review now uses a readable `1.35s` summon-block cue before the longer pressure-break beat
   - boss cue request durations are about `0.26s` for boss break and `0.42s` for final kill
 - `SummonPresentationUtility`
   - current need labels already map to `BREAK`, `TANK`, `ARROW`, `HEAL`
@@ -397,7 +397,7 @@ IsekaiBrawl application:
 
 - The project does not need a new combat-feel engine first.
 - It needs a small authoring layer that feeds existing hooks with consistent tags.
-- Current `0.9s` blocker breathing is probably too short for the documented `2 to 3 second` pocket shift; the next implementation pass should test `1.6s to 3.0s` relief envelopes.
+- The old `0.9s` blocker breathing was too short for the documented `2 to 3 second` pocket shift; the boss-barrage review now tests a `1.35s` cue into an approximately `3.0s` pressure-break envelope.
 
 ## IsekaiBrawl Frame Tag Dictionary
 
@@ -630,7 +630,7 @@ Use this to make summons feel like ARPG assists without adding manual targeting.
 - Elite armor flinch: `0.10s to 0.22s`, with reduced knockback.
 - Elite pressure break: `1.4s to 2.4s`.
 - Boss pressure break: `2.0s to 4.0s`, but should often move/retreat rather than stand still.
-- Blocker break relief: test `1.6s`, `2.2s`, and `3.0s`; current `0.9s` is likely too short.
+- Blocker break relief: test `1.35s` cue, `2.2s`, and `3.0s`; old `0.9s` was likely too short for the boss-barrage review.
 
 ### Cue bundle intensity
 

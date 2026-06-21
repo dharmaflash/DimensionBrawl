@@ -28,18 +28,18 @@ namespace DimensionBrawl.Combat
         [SerializeField] private string payoffCue = "Skill1 follow-up";
 
         [Header("Opportunity Timing")]
-        [SerializeField, Min(0f)] private float opportunityCueSeconds = 1.1f;
-        [SerializeField, Min(0f)] private float pressureBreakSeconds = 2.55f;
-        [SerializeField, Min(0f)] private float followupWindowSeconds = 1.55f;
-        [SerializeField, Min(0f)] private float followupEnergyPulse = 110f;
+        [SerializeField, Min(0f)] private float opportunityCueSeconds = 1.35f;
+        [SerializeField, Min(0f)] private float pressureBreakSeconds = 3f;
+        [SerializeField, Min(0f)] private float followupWindowSeconds = 2.1f;
+        [SerializeField, Min(0f)] private float followupEnergyPulse = 125f;
 
         [Header("Tier Scaling")]
-        [SerializeField, Min(0f)] private float pressureBreakTierTwoBonusSeconds = 0.3f;
-        [SerializeField, Min(0f)] private float pressureBreakTierThreeBonusSeconds = 0.45f;
-        [SerializeField, Min(0f)] private float followupWindowTierTwoBonusSeconds = 0.25f;
-        [SerializeField, Min(0f)] private float followupWindowTierThreeBonusSeconds = 0.45f;
-        [SerializeField, Min(0f)] private float followupEnergyPulseTierTwo = 170f;
-        [SerializeField, Min(0f)] private float followupEnergyPulseTierThree = 220f;
+        [SerializeField, Min(0f)] private float pressureBreakTierTwoBonusSeconds = 0.35f;
+        [SerializeField, Min(0f)] private float pressureBreakTierThreeBonusSeconds = 0.6f;
+        [SerializeField, Min(0f)] private float followupWindowTierTwoBonusSeconds = 0.35f;
+        [SerializeField, Min(0f)] private float followupWindowTierThreeBonusSeconds = 0.75f;
+        [SerializeField, Min(0f)] private float followupEnergyPulseTierTwo = 185f;
+        [SerializeField, Min(0f)] private float followupEnergyPulseTierThree = 240f;
 
         public string WindowId => windowId;
         public SummonOpportunityTrigger Trigger => trigger;
