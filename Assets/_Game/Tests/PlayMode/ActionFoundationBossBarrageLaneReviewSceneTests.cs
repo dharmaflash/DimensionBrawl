@@ -2138,7 +2138,7 @@ namespace DimensionBrawl.Tests
                 "Skill1 should spend EN into a real boss/proxy health result, not only a visible projectile.");
             Assert.GreaterOrEqual(
                 (bossHealthBeforeSkill - bossHealth.CurrentHealth) / bossHealth.MaxHealth,
-                0.04f,
+                0.06f,
                 "The review boss HP scale should make a successful Skill1 spend visibly move the health bar.");
             yield return null;
         }
@@ -3114,22 +3114,22 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(1, pocketOwner.HighestSummonFollowupSkillTier);
             Assert.IsTrue(pocketOwner.Skill1FollowupHitConfirmed);
             Assert.AreEqual(1, pocketOwner.HighestSkill1FollowupHitTier);
-            Assert.Greater(
-                pocketOwner.Skill1FollowupDamage,
-                0f,
-                "The follow-up response should be confirmed by boss damage, not only by pressing the button.");
+            Assert.GreaterOrEqual(
+                pocketOwner.Skill1FollowupDamage / bossHealth.MaxHealth,
+                0.06f,
+                "The follow-up response should be confirmed by a visible boss HP shift, not only by pressing the button.");
             Assert.AreEqual(
                 followupHitCueCountBefore + 1,
                 cameraCueDriver.SummonFollowupHitCueRequestCount,
                 "A confirmed Skill1 boss hit should produce the follow-up hit camera cue.");
             Assert.AreEqual(1, cameraCueDriver.LastSummonFollowupHitTier);
-            Assert.Greater(cameraCueDriver.LastSummonFollowupHitDamage, 0f);
+            Assert.GreaterOrEqual(cameraCueDriver.LastSummonFollowupHitDamage / bossHealth.MaxHealth, 0.06f);
             Assert.AreEqual(
                 followupHitVfxCueCountBefore + 1,
                 pocketVfxCueBridge.FollowupHitCueRequestCount,
                 "A confirmed Skill1 boss hit should also produce a follow-up hit VFX cue.");
             Assert.AreEqual(1, pocketVfxCueBridge.LastFollowupHitTier);
-            Assert.Greater(pocketVfxCueBridge.LastFollowupHitDamage, 0f);
+            Assert.GreaterOrEqual(pocketVfxCueBridge.LastFollowupHitDamage / bossHealth.MaxHealth, 0.06f);
             Assert.Less(bossHealth.CurrentHealth, bossHealthBeforeFollowup);
             Assert.IsFalse(
                 pocketOwner.IsSummonFollowupWindowActive,

@@ -1547,7 +1547,7 @@ MonoBehaviour:
   prewarmCount: 6
   useBlockedHintSeconds: 0.75
   tierSettings:
-  - Damage: 38
+  - Damage: 58
     ProjectileSpeed: 24
     LifetimeSeconds: 1.7
     Radius: 0.28
@@ -1556,7 +1556,7 @@ MonoBehaviour:
     SpawnForwardOffset: 0.85
     SpawnHeight: 1.15
     TargetHeight: 1.25
-  - Damage: 44
+  - Damage: 64
     ProjectileSpeed: 25.5
     LifetimeSeconds: 1.85
     Radius: 0.3
@@ -1565,7 +1565,7 @@ MonoBehaviour:
     SpawnForwardOffset: 0.9
     SpawnHeight: 1.2
     TargetHeight: 1.25
-  - Damage: 52
+  - Damage: 74
     ProjectileSpeed: 27
     LifetimeSeconds: 2
     Radius: 0.32
