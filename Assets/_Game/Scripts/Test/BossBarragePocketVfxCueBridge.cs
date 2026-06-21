@@ -21,7 +21,7 @@ namespace DimensionBrawl.Test
         [SerializeField, Min(0f)] private float hitIntensity = 1.3f;
         [SerializeField, Min(0f)] private float missedIntensity = 0.85f;
         [SerializeField, Min(0f)] private float pocketClearIntensity = 1.3f;
-        [SerializeField, Min(0f)] private float pocketFailIntensity = 1.05f;
+        [SerializeField, Min(0f)] private float pocketFailIntensity = 1.2f;
         [SerializeField, Min(0f)] private float tierIntensityStep = 0.12f;
 
         private int summonBlockOpportunityCueRequestCount;
