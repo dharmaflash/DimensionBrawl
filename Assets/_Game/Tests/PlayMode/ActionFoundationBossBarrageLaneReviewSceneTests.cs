@@ -23,8 +23,8 @@ namespace DimensionBrawl.Tests
     public sealed class ActionFoundationBossBarrageLaneReviewSceneTests
     {
         private const string ScenePath = "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity";
-        private const float ReviewBossMaxHealth = 420f;
-        private const float Skill1VisibleBossHpShiftRatio = 0.19f;
+        private const float ReviewBossMaxHealth = 980f;
+        private const float Skill1VisibleBossHpShiftRatio = 0.08f;
         private const string PatternProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_NeedleLock.asset";
         private const string CoverFirePatternProfilePath =
@@ -3440,8 +3440,8 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(bossHealthBefore - damage, bossHealth.CurrentHealth, 0.001f);
             Assert.That(
                 damage / ReviewBossMaxHealth,
-                Is.InRange(0.06f, 0.075f),
-                "One basic shot should visibly move the demo boss HP bar without replacing the Skill1/summon payoff.");
+                Is.InRange(0.025f, 0.035f),
+                "One basic shot should still visibly chip the demo boss HP bar without replacing the Skill1/summon payoff.");
             Assert.Less(
                 damage,
                 84f,

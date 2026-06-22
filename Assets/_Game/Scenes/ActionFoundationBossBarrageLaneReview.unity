@@ -2937,7 +2937,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.CombatHealth
   team: 2
-  maxHealth: 420
+  maxHealth: 980
   startAtFullHealth: 1
   onDamaged:
     m_PersistentCalls:
