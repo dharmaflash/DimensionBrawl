@@ -559,6 +559,7 @@ namespace DimensionBrawl.Test
         {
             state = PocketState.Cleared;
             ClearPressurePacing();
+            DismissActiveSummonPressureScreens();
             SetBarrageEnabled(!stopBarrageOnClear);
             SetEnergyGainEnabled(!stopEnergyGainOnEnd);
             SetBossPressureCostGainEnabled(!stopBossPressureCostOnEnd);
@@ -571,12 +572,18 @@ namespace DimensionBrawl.Test
         {
             state = PocketState.Failed;
             ClearPressurePacing();
+            DismissActiveSummonPressureScreens();
             SetBarrageEnabled(!stopBarrageOnFail);
             SetEnergyGainEnabled(!stopEnergyGainOnEnd);
             SetBossPressureCostGainEnabled(!stopBossPressureCostOnEnd);
             SetBossPressureActionsEnabled(!stopBossPressureActionsOnEnd);
             SetMarkers();
             PocketFailed?.Invoke();
+        }
+
+        private void DismissActiveSummonPressureScreens()
+        {
+            summonSlot1Action?.DismissActivePressureScreens();
         }
 
         private void ClearPressurePacing()

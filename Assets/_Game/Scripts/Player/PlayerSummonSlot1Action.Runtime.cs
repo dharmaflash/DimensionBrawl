@@ -80,6 +80,11 @@ namespace DimensionBrawl.Player
                 UnsubscribePressureScreens();
             }
 
+            public void DismissActivePressureScreens()
+            {
+                summonActorPool.DismissActivePressureScreens();
+            }
+
             public void FireTier(int tier)
             {
                 SummonTierSettings settings = owner.ResolveTierSettings(tier);

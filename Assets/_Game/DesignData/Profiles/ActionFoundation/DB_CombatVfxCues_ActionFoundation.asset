@@ -269,8 +269,8 @@ MonoBehaviour:
     prefab: {fileID: 5420902348688501287, guid: 224c0a8c6be3c4441826de22c6c3d53b, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0}
     localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 0.72, y: 0.52, z: 0.72}
-    lifetimeSeconds: 0.44
+    localScale: {x: 0.58, y: 0.44, z: 0.58}
+    lifetimeSeconds: 0.34
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
@@ -341,17 +341,17 @@ MonoBehaviour:
     prefab: {fileID: 7428633424889265235, guid: 9f873826e7092c7429618ea15857be24, type: 3}
     localPositionOffset: {x: 0, y: 0.24, z: 0.42}
     localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 0.34, y: 0.22, z: 0.34}
-    lifetimeSeconds: 0.34
+    localScale: {x: 0.26, y: 0.18, z: 0.26}
+    lifetimeSeconds: 0.28
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
   - cueId: 35
     prefab: {fileID: 464807569203744432, guid: 53d43299e6d21114790ecfb628981f4f, type: 3}
-    localPositionOffset: {x: 0, y: 0.32, z: 0}
+    localPositionOffset: {x: 0, y: 0.42, z: 0}
     localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 0.36, y: 0.28, z: 0.36}
-    lifetimeSeconds: 0.36
+    localScale: {x: 0.045, y: 0.034, z: 0.045}
+    lifetimeSeconds: 0.2
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0

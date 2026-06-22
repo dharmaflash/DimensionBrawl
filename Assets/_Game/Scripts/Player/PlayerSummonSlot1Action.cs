@@ -307,6 +307,11 @@ namespace DimensionBrawl.Player
             queued = true;
         }
 
+        public void DismissActivePressureScreens()
+        {
+            executionRuntime?.DismissActivePressureScreens();
+        }
+
         public bool TryUseSummonSlot1()
         {
             if (energyLadder == null)

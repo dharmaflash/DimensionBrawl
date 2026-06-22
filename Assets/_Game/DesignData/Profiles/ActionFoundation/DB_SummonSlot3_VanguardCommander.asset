@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.SummonSlotActionProfile
   actionId: SummonSlot3.VanguardCommander
   tierSettings:
-  - Damage: 34
+  - Damage: 46
     ProjectileSpeed: 16
     LifetimeSeconds: 2.2
     Radius: 0.36
@@ -32,17 +32,17 @@ MonoBehaviour:
     ActorAdvanceDistance: 1.35
     ActorAdvanceSeconds: 1.3225
     ActorEngageRadius: 1.18
-    ActorAttackDamagePerSecond: 24
+    ActorAttackDamagePerSecond: 32
     ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 2
     ScreenRadius: 1.47
-    ScreenLifetimeSeconds: 2.65
-    CounterDamage: 10.88
+    ScreenLifetimeSeconds: 2.6
+    CounterDamage: 14.719999
     CounterProjectileSpeed: 18
     CounterLifetimeSeconds: 1.45
     CounterRadius: 0.252
     CounterTargetHeight: 1.35
-  - Damage: 42
+  - Damage: 62
     ProjectileSpeed: 17.5
     LifetimeSeconds: 2.55
     Radius: 0.4
@@ -60,17 +60,17 @@ MonoBehaviour:
     ActorAdvanceDistance: 1.7
     ActorAdvanceSeconds: 1.445
     ActorEngageRadius: 1.25
-    ActorAttackDamagePerSecond: 32
+    ActorAttackDamagePerSecond: 46
     ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 4
     ScreenRadius: 1.79
-    ScreenLifetimeSeconds: 3.5
-    CounterDamage: 13.44
+    ScreenLifetimeSeconds: 3.6
+    CounterDamage: 19.84
     CounterProjectileSpeed: 19.5
     CounterLifetimeSeconds: 1.45
     CounterRadius: 0.28
     CounterTargetHeight: 1.35
-  - Damage: 50
+  - Damage: 82
     ProjectileSpeed: 19
     LifetimeSeconds: 2.9
     Radius: 0.45
@@ -88,12 +88,12 @@ MonoBehaviour:
     ActorAdvanceDistance: 2.1
     ActorAdvanceSeconds: 1.5849999
     ActorEngageRadius: 1.34
-    ActorAttackDamagePerSecond: 42
+    ActorAttackDamagePerSecond: 62
     ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 7
     ScreenRadius: 2.27
-    ScreenLifetimeSeconds: 4.35
-    CounterDamage: 16
+    ScreenLifetimeSeconds: 4.4
+    CounterDamage: 26.24
     CounterProjectileSpeed: 21
     CounterLifetimeSeconds: 1.45
     CounterRadius: 0.315

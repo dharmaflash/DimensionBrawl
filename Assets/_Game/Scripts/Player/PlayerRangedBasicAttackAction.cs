@@ -33,14 +33,14 @@ namespace DimensionBrawl.Player
         [SerializeField] private Transform projectileRoot;
         [SerializeField] private Transform fireOrigin;
         [SerializeField] private DamageTeam sourceTeam = DamageTeam.Player;
-        [SerializeField, Min(0f)] private float damage = 12f;
-        [SerializeField, Min(0.01f)] private float projectileSpeed = 19f;
-        [SerializeField, Min(0.01f)] private float projectileLifetimeSeconds = 1.4f;
-        [SerializeField, Min(0.01f)] private float projectileRadius = 0.28f;
+        [SerializeField, Min(0f)] private float damage = 28f;
+        [SerializeField, Min(0.01f)] private float projectileSpeed = 24f;
+        [SerializeField, Min(0.01f)] private float projectileLifetimeSeconds = 1.75f;
+        [SerializeField, Min(0.01f)] private float projectileRadius = 0.31f;
         [SerializeField, Min(0f)] private int prewarmCount = 8;
 
         [Header("Fire Feel")]
-        [SerializeField, Min(0.01f)] private float fireIntervalSeconds = 0.22f;
+        [SerializeField, Min(0.01f)] private float fireIntervalSeconds = 0.24f;
         [SerializeField, Min(0f)] private float spawnForwardOffset = 0.85f;
         [SerializeField, Min(0f)] private float spawnHeight = 1.12f;
         [SerializeField, Min(0f)] private float targetHeight = 1.0f;
@@ -58,16 +58,16 @@ namespace DimensionBrawl.Player
         [SerializeField] private bool aimFromCameraViewport = true;
         [SerializeField] private bool useFixedCenterAimViewport = true;
         [SerializeField] private bool preserveVerticalAim = true;
-        [SerializeField, Min(1f)] private float cameraAimFallbackDistance = 26f;
+        [SerializeField, Min(1f)] private float cameraAimFallbackDistance = 32f;
         [SerializeField, Range(0f, 0.49f)] private float aimInputViewportOffsetX = 0.39f;
         [SerializeField, Range(0f, 0.49f)] private float aimInputViewportOffsetY = 0.20f;
         [SerializeField] private bool useStableAimOrigin = true;
         [SerializeField] private bool useAimAssist = true;
         [SerializeField] private bool disableAimAssistWithManualInput;
-        [SerializeField, Min(0f)] private float aimAssistDistance = 18f;
-        [SerializeField, Range(0f, 45f)] private float hipAimAssistAngleDegrees = 12f;
-        [SerializeField, Range(0f, 45f)] private float aimedAimAssistAngleDegrees = 12f;
-        [SerializeField, Range(0f, 45f)] private float aimAssistMaxTurnDegrees = 12f;
+        [SerializeField, Min(0f)] private float aimAssistDistance = 30f;
+        [SerializeField, Range(0f, 45f)] private float hipAimAssistAngleDegrees = 14f;
+        [SerializeField, Range(0f, 45f)] private float aimedAimAssistAngleDegrees = 14f;
+        [SerializeField, Range(0f, 45f)] private float aimAssistMaxTurnDegrees = 14f;
 
         [Header("Camera Aim Assist")]
         [SerializeField] private bool driveCameraAimAssist = true;

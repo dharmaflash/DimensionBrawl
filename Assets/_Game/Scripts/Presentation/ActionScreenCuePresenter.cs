@@ -32,9 +32,9 @@ namespace DimensionBrawl.Presentation
 
         [Header("Display")]
         [SerializeField] private bool showScreenCues = true;
-        [SerializeField, Range(0f, 0.35f)] private float maxFullScreenAlpha = 0.16f;
-        [SerializeField, Range(0f, 0.65f)] private float maxEdgeAlpha = 0.34f;
-        [SerializeField, Min(0f)] private float edgeThickness = 118f;
+        [SerializeField, Range(0f, 0.35f)] private float maxFullScreenAlpha = 0.15f;
+        [SerializeField, Range(0f, 0.65f)] private float maxEdgeAlpha = 0.36f;
+        [SerializeField, Min(0f)] private float edgeThickness = 132f;
 
         [Header("Player Colors")]
         [SerializeField] private Color dodgeColor = new Color(0.18f, 0.92f, 1f, 1f);
@@ -61,7 +61,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private Color followupMissedColor = new Color(0.68f, 0.74f, 0.82f, 1f);
 
         [Header("Result Colors")]
-        [SerializeField] private Color pocketClearColor = new Color(0.32f, 1f, 0.68f, 1f);
+        [SerializeField] private Color pocketClearColor = new Color(0.22f, 1f, 0.42f, 1f);
         [SerializeField] private Color pocketFailColor = new Color(1f, 0.18f, 0.12f, 1f);
 
         private bool subscribed;
@@ -327,8 +327,8 @@ namespace DimensionBrawl.Presentation
             RequestScreenCue(
                 "Followup.Hit",
                 followupHitColor,
-                0.18f,
-                ResolveTierIntensity(tier, 0.95f) + damageWeight * 0.18f,
+                0.30f,
+                ResolveTierIntensity(tier, 1.08f) + damageWeight * 0.22f,
                 ScreenCueCategory.Followup);
         }
 
@@ -339,12 +339,12 @@ namespace DimensionBrawl.Presentation
 
         private void HandlePocketCleared()
         {
-            RequestScreenCue("Pocket.Cleared", pocketClearColor, 0.42f, 1.32f, ScreenCueCategory.Result);
+            RequestScreenCue("Pocket.Cleared", pocketClearColor, 0.58f, 1.22f, ScreenCueCategory.Result);
         }
 
         private void HandlePocketFailed()
         {
-            RequestScreenCue("Pocket.Failed", pocketFailColor, 0.48f, 1.45f, ScreenCueCategory.Result);
+            RequestScreenCue("Pocket.Failed", pocketFailColor, 0.66f, 1.36f, ScreenCueCategory.Result);
         }
 
         private void RequestScreenCue(

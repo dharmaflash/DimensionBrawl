@@ -326,11 +326,13 @@ namespace DimensionBrawl.Editor
                 SetObjectReference(presenter, "pressureScreen", pressureScreen);
                 SetObjectReference(presenter, "visualRoot", pressureScreenVisual);
                 SetObjectReferenceArray(presenter, "screenRenderers", new UnityEngine.Object[] { visualRenderer });
-                SetColor(presenter, "activeColor", new Color(0.22f, 1f, 0.82f, 0.22f));
-                SetColor(presenter, "tierTwoColor", new Color(0.38f, 0.74f, 1f, 0.25f));
-                SetColor(presenter, "tierThreeColor", new Color(1f, 0.76f, 0.24f, 0.3f));
-                SetColor(presenter, "interceptColor", new Color(0.92f, 1f, 1f, 0.42f));
-                SetFloat(presenter, "visualRadiusScale", 0.42f);
+                SetColor(presenter, "activeColor", new Color(0.22f, 1f, 0.82f, 0.12f));
+                SetColor(presenter, "tierTwoColor", new Color(0.38f, 0.74f, 1f, 0.14f));
+                SetColor(presenter, "tierThreeColor", new Color(1f, 0.76f, 0.24f, 0.16f));
+                SetColor(presenter, "interceptColor", new Color(0.92f, 1f, 1f, 0.22f));
+                SetFloat(presenter, "visualRadiusScale", 0.22f);
+                SetFloat(presenter, "activationCueIntensity", 0.65f);
+                SetFloat(presenter, "interceptCueIntensity", 0.78f);
                 SetFloat(presenter, "activationFlashSeconds", 0.08f);
                 SetFloat(presenter, "interceptFlashSeconds", 0.12f);
                 SetFloat(presenter, "finalHitLingerSeconds", 0.1f);
@@ -720,10 +722,12 @@ namespace DimensionBrawl.Editor
             SetObjectReference(screenPresenter, "visualRoot", pressureScreenVisual);
             SetObjectReferenceArray(screenPresenter, "screenRenderers", new UnityEngine.Object[] { visualRenderer });
             SetColor(screenPresenter, "activeColor", pressureScreenColor);
-            SetColor(screenPresenter, "tierTwoColor", new Color(1f, 0.805f, 0.49f, 0.27f));
-            SetColor(screenPresenter, "tierThreeColor", new Color(1f, 0.758f, 0.275f, 0.32f));
-            SetColor(screenPresenter, "interceptColor", new Color(1f, 0.96f, 0.78f, 0.44f));
-            SetFloat(screenPresenter, "visualRadiusScale", 0.42f);
+            SetColor(screenPresenter, "tierTwoColor", new Color(1f, 0.805f, 0.49f, 0.14f));
+            SetColor(screenPresenter, "tierThreeColor", new Color(1f, 0.758f, 0.275f, 0.17f));
+            SetColor(screenPresenter, "interceptColor", new Color(1f, 0.96f, 0.78f, 0.23f));
+            SetFloat(screenPresenter, "visualRadiusScale", 0.22f);
+            SetFloat(screenPresenter, "activationCueIntensity", 0.65f);
+            SetFloat(screenPresenter, "interceptCueIntensity", 0.78f);
             SetFloat(screenPresenter, "activationFlashSeconds", 0.08f);
             SetFloat(screenPresenter, "interceptFlashSeconds", 0.12f);
             SetFloat(screenPresenter, "finalHitLingerSeconds", 0.1f);
@@ -850,11 +854,13 @@ namespace DimensionBrawl.Editor
                 SetObjectReference(presenter, "pressureScreen", pressureScreen);
                 SetObjectReference(presenter, "visualRoot", pressureScreenVisual);
                 SetObjectReferenceArray(presenter, "screenRenderers", new UnityEngine.Object[] { visualRenderer });
-                SetColor(presenter, "activeColor", new Color(1f, 0.22f, 0.55f, 0.23f));
-                SetColor(presenter, "tierTwoColor", new Color(1f, 0.62f, 0.24f, 0.28f));
-                SetColor(presenter, "tierThreeColor", new Color(1f, 0.22f, 0.9f, 0.34f));
-                SetColor(presenter, "interceptColor", new Color(1f, 0.86f, 0.64f, 0.46f));
-                SetFloat(presenter, "visualRadiusScale", 0.42f);
+                SetColor(presenter, "activeColor", new Color(1f, 0.22f, 0.55f, 0.12f));
+                SetColor(presenter, "tierTwoColor", new Color(1f, 0.62f, 0.24f, 0.15f));
+                SetColor(presenter, "tierThreeColor", new Color(1f, 0.22f, 0.9f, 0.18f));
+                SetColor(presenter, "interceptColor", new Color(1f, 0.86f, 0.64f, 0.24f));
+                SetFloat(presenter, "visualRadiusScale", 0.22f);
+                SetFloat(presenter, "activationCueIntensity", 0.65f);
+                SetFloat(presenter, "interceptCueIntensity", 0.78f);
                 SetFloat(presenter, "activationFlashSeconds", 0.09f);
                 SetFloat(presenter, "interceptFlashSeconds", 0.13f);
                 SetFloat(presenter, "finalHitLingerSeconds", 0.1f);
@@ -1132,7 +1138,7 @@ namespace DimensionBrawl.Editor
                 new[]
                 {
                     CreateSummonTierSettings(
-                        58f,
+                        78f,
                         17f,
                         2.4f,
                         0.34f,
@@ -1147,10 +1153,10 @@ namespace DimensionBrawl.Editor
                         230f,
                         1.45f,
                         0.95f,
-                        34f,
+                        48f,
                         0.35f),
                     CreateSummonTierSettings(
-                        66f,
+                        94f,
                         18.5f,
                         2.65f,
                         0.38f,
@@ -1165,10 +1171,10 @@ namespace DimensionBrawl.Editor
                         300f,
                         1.6f,
                         1.05f,
-                        42f,
+                        64f,
                         0.35f),
                     CreateSummonTierSettings(
-                        78f,
+                        116f,
                         20f,
                         2.9f,
                         0.42f,
@@ -1183,7 +1189,7 @@ namespace DimensionBrawl.Editor
                         380f,
                         1.7f,
                         1.15f,
-                        54f,
+                        84f,
                         0.35f)
                 },
                 new[]
@@ -1210,9 +1216,9 @@ namespace DimensionBrawl.Editor
                 "SummonSlot2.BacklineMarksman",
                 new[]
                 {
-                    CreateSummonTierSettings(38f, 19f, 2.1f, 0.28f, 2, 1.4f, 1.2f, 2.85f, 0, 0f, 0.2f, "BacklineMarksman", 160f, 1.35f, 0.82f, 20f, 0.35f),
-                    CreateSummonTierSettings(44f, 20.5f, 2.35f, 0.3f, 3, 2.8f, 1.45f, 3.15f, 0, 0f, 0.2f, "BacklineMarksman", 190f, 1.42f, 0.86f, 24f, 0.35f),
-                    CreateSummonTierSettings(52f, 22f, 2.6f, 0.32f, 4, 4.2f, 1.75f, 3.48f, 0, 0f, 0.2f, "BacklineMarksman", 225f, 1.5f, 0.9f, 28f, 0.35f)
+                    CreateSummonTierSettings(54f, 19f, 2.1f, 0.28f, 2, 1.4f, 1.2f, 2.85f, 0, 0f, 0.2f, "BacklineMarksman", 160f, 1.35f, 0.82f, 30f, 0.35f),
+                    CreateSummonTierSettings(72f, 20.5f, 2.35f, 0.3f, 3, 2.8f, 1.45f, 3.15f, 0, 0f, 0.2f, "BacklineMarksman", 190f, 1.42f, 0.86f, 44f, 0.35f),
+                    CreateSummonTierSettings(96f, 22f, 2.6f, 0.32f, 4, 4.2f, 1.75f, 3.48f, 0, 0f, 0.2f, "BacklineMarksman", 225f, 1.5f, 0.9f, 58f, 0.35f)
                 },
                 new[]
                 {
@@ -1238,9 +1244,9 @@ namespace DimensionBrawl.Editor
                 "SummonSlot3.VanguardCommander",
                 new[]
                 {
-                    CreateSummonTierSettings(34f, 16f, 2.2f, 0.36f, 1, 0.8f, 1.35f, 3.15f, 2, 0f, 2.2f, "VanguardCommander", 360f, 1.15f, 1.18f, 24f, 0.35f),
-                    CreateSummonTierSettings(42f, 17.5f, 2.55f, 0.4f, 2, 2.2f, 1.7f, 3.54f, 4, 0f, 3.0f, "VanguardCommander", 430f, 1.2f, 1.25f, 32f, 0.35f),
-                    CreateSummonTierSettings(50f, 19f, 2.9f, 0.45f, 3, 3.4f, 2.1f, 4.02f, 7, 0f, 3.8f, "VanguardCommander", 520f, 1.25f, 1.34f, 42f, 0.35f)
+                    CreateSummonTierSettings(46f, 16f, 2.2f, 0.36f, 1, 0.8f, 1.35f, 3.15f, 2, 0f, 2.6f, "VanguardCommander", 360f, 1.15f, 1.18f, 32f, 0.35f),
+                    CreateSummonTierSettings(62f, 17.5f, 2.55f, 0.4f, 2, 2.2f, 1.7f, 3.54f, 4, 0f, 3.6f, "VanguardCommander", 430f, 1.2f, 1.25f, 46f, 0.35f),
+                    CreateSummonTierSettings(82f, 19f, 2.9f, 0.45f, 3, 3.4f, 2.1f, 4.02f, 7, 0f, 4.4f, "VanguardCommander", 520f, 1.25f, 1.34f, 62f, 0.35f)
                 },
                 new[]
                 {

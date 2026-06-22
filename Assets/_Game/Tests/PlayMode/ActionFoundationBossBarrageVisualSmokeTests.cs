@@ -135,7 +135,7 @@ namespace DimensionBrawl.Tests
                 Assert.Greater(stats.SaturatedPixelCount, frame.width * frame.height * 0.035f);
                 Assert.Greater(stats.WarmProjectilePixelCount, 180);
                 Assert.Greater(stats.CyanOrGreenStatePixelCount, 420);
-                Assert.Greater(stats.MagentaStatePixelCount, 160);
+                Assert.Greater(stats.MagentaStatePixelCount, 120);
                 Assert.Less(stats.NearWhitePixelCount, frame.width * frame.height * 0.34f);
                 Assert.Less(
                     stats.BrightLowSaturationPixelCount,
@@ -203,10 +203,10 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(pocketOwner.IsCleared, "The clear result frame should be reached through the authored summon-follow-up flow.");
             Assert.AreEqual(resultCueCountBeforeClear + 1, screenCuePresenter.ResultCueRequestCount);
             Assert.AreEqual("Pocket.Cleared", screenCuePresenter.LastCueId);
-            Assert.AreEqual(1.32f, screenCuePresenter.LastCueIntensity, 0.001f);
+            Assert.AreEqual(1.22f, screenCuePresenter.LastCueIntensity, 0.001f);
             Assert.IsTrue(screenCuePresenter.HasActiveCue);
             Assert.AreEqual(worldCueCountBeforeClear + 1, pocketVfxCueBridge.PocketClearCueRequestCount);
-            Assert.AreEqual(1.42f, pocketVfxCueBridge.PocketClearIntensity, 0.001f);
+            Assert.AreEqual(1.24f, pocketVfxCueBridge.PocketClearIntensity, 0.001f);
 
             string capturePath = Path.GetFullPath(Path.Combine(
                 Application.dataPath,
@@ -216,8 +216,8 @@ namespace DimensionBrawl.Tests
             FrameColorStats stats = CaptureAndAssertReadableResultFrame(camera, capturePath);
             Assert.Greater(
                 stats.ClearResultPixelCount,
-                20000,
-                "The clear result frame should visibly read as a green success cue in the captured gameplay frame.");
+                10000,
+                "The clear result frame should retain a visible green success read without relying on a broad pale overlay.");
         }
 
         [UnityTest]
@@ -250,13 +250,13 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(pocketOwner.IsFailed, "The fail result frame should be reached when the player is defeated.");
             Assert.AreEqual(resultCueCountBeforeFail + 1, screenCuePresenter.ResultCueRequestCount);
             Assert.AreEqual("Pocket.Failed", screenCuePresenter.LastCueId);
-            Assert.AreEqual(1.45f, screenCuePresenter.LastCueIntensity, 0.001f);
+            Assert.AreEqual(1.36f, screenCuePresenter.LastCueIntensity, 0.001f);
             Assert.IsTrue(screenCuePresenter.HasActiveCue);
             Assert.AreEqual(worldCueCountBeforeFail + 1, pocketVfxCueBridge.PocketFailCueRequestCount);
             Assert.AreEqual(accentCueCountBeforeFail + 1, pocketVfxCueBridge.PocketFailAccentCueRequestCount);
-            Assert.AreEqual(1.48f, pocketVfxCueBridge.PocketFailIntensity, 0.001f);
+            Assert.AreEqual(1.36f, pocketVfxCueBridge.PocketFailIntensity, 0.001f);
             Assert.AreEqual(CombatVfxCueId.EnemyClosePunishActive, pocketVfxCueBridge.PocketFailAccentCueId);
-            Assert.AreEqual(1.32f, pocketVfxCueBridge.PocketFailAccentIntensity, 0.001f);
+            Assert.AreEqual(1.22f, pocketVfxCueBridge.PocketFailAccentIntensity, 0.001f);
 
             string capturePath = Path.GetFullPath(Path.Combine(
                 Application.dataPath,
@@ -306,7 +306,7 @@ namespace DimensionBrawl.Tests
                 Assert.Less(stats.NearWhitePixelCount, frame.width * frame.height * 0.38f);
                 Assert.Less(
                     stats.BrightLowSaturationPixelCount,
-                    frame.width * frame.height * 0.14f,
+                    frame.width * frame.height * 0.10f,
                     "Result VFX should not wash the frame into a broad pale overlay that hides the result cause.");
                 return stats;
             }

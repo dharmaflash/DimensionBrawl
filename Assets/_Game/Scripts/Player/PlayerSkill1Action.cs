@@ -45,7 +45,7 @@ namespace DimensionBrawl.Player
         {
             new SkillTierSettings
             {
-                Damage = 58f,
+                Damage = 84f,
                 ProjectileSpeed = 24f,
                 LifetimeSeconds = 1.7f,
                 Radius = 0.28f,
@@ -57,7 +57,7 @@ namespace DimensionBrawl.Player
             },
             new SkillTierSettings
             {
-                Damage = 64f,
+                Damage = 104f,
                 ProjectileSpeed = 25.5f,
                 LifetimeSeconds = 1.85f,
                 Radius = 0.3f,
@@ -69,7 +69,7 @@ namespace DimensionBrawl.Player
             },
             new SkillTierSettings
             {
-                Damage = 74f,
+                Damage = 128f,
                 ProjectileSpeed = 27f,
                 LifetimeSeconds = 2f,
                 Radius = 0.32f,

@@ -739,6 +739,21 @@ namespace DimensionBrawl.Combat
             return count;
         }
 
+        public void DismissActivePressureScreens()
+        {
+            for (int i = 0; i < actors.Count; i++)
+            {
+                SummonFrontlineProxy actor = actors[i];
+                if (actor != null && actor.PressureScreen != null)
+                {
+                    actor.PressureScreen.Deactivate();
+                    DimensionBrawl.Presentation.SummonPressureScreenPresenter presenter =
+                        actor.GetComponent<DimensionBrawl.Presentation.SummonPressureScreenPresenter>();
+                    presenter?.DismissImmediately();
+                }
+            }
+        }
+
         private SummonFrontlineProxy ResolveFirstActive()
         {
             for (int i = 0; i < actors.Count; i++)
