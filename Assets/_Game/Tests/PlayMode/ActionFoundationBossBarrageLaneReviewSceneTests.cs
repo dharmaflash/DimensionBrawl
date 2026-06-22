@@ -1997,6 +1997,48 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator HiddenMobileHudReleasesReviewInputInsteadOfDrivingInvisibleControls()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            PlayerRangedAimController aimController =
+                RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
+            PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
+            BossBarrageLaneReviewMobileHud mobileHud =
+                RequireComponent<BossBarrageLaneReviewMobileHud>(RequireRoot(HudRootName), "mobile HUD");
+
+            player.SetMoveInput(Vector2.right);
+            player.SetLookInput(Vector2.left);
+            rangedBasicAttackAction.SetFireHeld(true);
+            rangedBasicAttackAction.SetAimInput(Vector2.right);
+            aimController.SetAimInput(Vector2.right);
+            aimController.SetAimHeld(true);
+            SetPrivateField(mobileHud, "showHud", false);
+            SetPrivateField(mobileHud, "firePointerHeld", true);
+            SetPrivateField(mobileHud, "movePointerHeld", true);
+            SetPrivateField(mobileHud, "lookPointerHeld", true);
+            SetPrivateField(mobileHud, "hudLookAimActive", true);
+            SetPrivateField(mobileHud, "previousBasicHeld", true);
+
+            InvokePrivateMethod(mobileHud, "Update");
+
+            Assert.IsFalse(GetPrivateField<bool>(mobileHud, "firePointerHeld"));
+            Assert.IsFalse(GetPrivateField<bool>(mobileHud, "movePointerHeld"));
+            Assert.IsFalse(GetPrivateField<bool>(mobileHud, "lookPointerHeld"));
+            Assert.IsFalse(GetPrivateField<bool>(mobileHud, "hudLookAimActive"));
+            Assert.Less(GetVector2(player, "mobileMoveInput").sqrMagnitude, 0.0001f);
+            Assert.Less(GetVector2(player, "mobileLookInput").sqrMagnitude, 0.0001f);
+            Assert.Less(rangedBasicAttackAction.AimInput.sqrMagnitude, 0.0001f);
+            Assert.Less(GetPrivateField<Vector2>(aimController, "aimInput").sqrMagnitude, 0.0001f);
+            Assert.IsFalse(GetPrivateField<bool>(aimController, "mobileAimHeld"));
+            Assert.IsFalse(GetPrivateField<bool>(mobileHud, "previousBasicHeld"));
+            Assert.IsFalse(GetPrivateField<bool>(rangedBasicAttackAction, "mobileFireHeld"));
+
+            SetPrivateField(mobileHud, "showHud", true);
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator RifleGirlRangedVisualKeepsAuthoredWeaponConstraintAndSupportHand()
         {
             PlayerCombatModeController combatModeController =
@@ -5968,6 +6010,13 @@ namespace DimensionBrawl.Tests
         {
             FieldInfo field = RequirePrivateField(target, fieldName);
             field.SetValue(target, value);
+        }
+
+        private static T GetPrivateField<T>(object target, string fieldName)
+        {
+            FieldInfo field = RequirePrivateField(target, fieldName);
+            Assert.IsInstanceOf<T>(field.GetValue(target));
+            return (T)field.GetValue(target);
         }
 
         private static void InvokePrivateMethod(object target, string methodName)

@@ -81,7 +81,7 @@ namespace DimensionBrawl.Player
         [SerializeField] private float fireCameraDistanceDelta = -0.04f;
         [SerializeField] private float fireFocusHeightDelta;
 
-        private readonly List<LaneActionProjectile> projectiles = new List<LaneActionProjectile>(12);
+        private readonly PlayerRangedProjectilePool projectilePool = new PlayerRangedProjectilePool();
         private bool actionEnabledHere;
         private bool queuedFire;
         private bool mobileFireHeld;
@@ -110,16 +110,7 @@ namespace DimensionBrawl.Player
         {
             get
             {
-                int count = 0;
-                for (int i = 0; i < projectiles.Count; i++)
-                {
-                    if (projectiles[i] != null && projectiles[i].IsActive)
-                    {
-                        count++;
-                    }
-                }
-
-                return count;
+                return projectilePool.ActiveCount;
             }
         }
 
@@ -159,7 +150,7 @@ namespace DimensionBrawl.Player
                 return false;
             }
 
-            LaneActionProjectile projectile = GetProjectile();
+            LaneActionProjectile projectile = projectilePool.Get(ResolveProjectilePrefab(), projectileRoot);
             if (projectile == null)
             {
                 SetBlockedHint("Ranged projectile prefab is missing.");
@@ -252,7 +243,7 @@ namespace DimensionBrawl.Player
         private void OnEnable()
         {
             actionEnabledHere = EnableActionIfNeeded(fireAction);
-            PrewarmProjectiles();
+            projectilePool.Prewarm(ResolveProjectilePrefab(), projectileRoot, prewarmCount);
         }
 
         private void OnDisable()
@@ -597,29 +588,6 @@ namespace DimensionBrawl.Player
             return planarVelocity.sqrMagnitude > threshold;
         }
 
-        private LaneActionProjectile GetProjectile()
-        {
-            for (int i = 0; i < projectiles.Count; i++)
-            {
-                LaneActionProjectile projectile = projectiles[i];
-                if (projectile != null && !projectile.IsActive)
-                {
-                    return projectile;
-                }
-            }
-
-            LaneActionProjectile prefab = ResolveProjectilePrefab();
-            if (prefab == null)
-            {
-                return null;
-            }
-
-            LaneActionProjectile instance = Instantiate(prefab, projectileRoot);
-            instance.gameObject.SetActive(false);
-            projectiles.Add(instance);
-            return instance;
-        }
-
         private LaneActionProjectile ResolveProjectilePrefab()
         {
             if (projectilePrefab != null)
@@ -630,23 +598,6 @@ namespace DimensionBrawl.Player
             return projectilePrefabObject != null
                 ? projectilePrefabObject.GetComponent<LaneActionProjectile>()
                 : null;
-        }
-
-        private void PrewarmProjectiles()
-        {
-            LaneActionProjectile prefab = ResolveProjectilePrefab();
-            if (prefab == null)
-            {
-                return;
-            }
-
-            int targetCount = Mathf.Max(0, prewarmCount);
-            while (projectiles.Count < targetCount)
-            {
-                LaneActionProjectile instance = Instantiate(prefab, projectileRoot);
-                instance.gameObject.SetActive(false);
-                projectiles.Add(instance);
-            }
         }
 
         private void RequestCameraFireCue()
@@ -800,6 +751,70 @@ namespace DimensionBrawl.Player
         private static bool IsActionMissing(InputActionReference actionReference)
         {
             return actionReference == null || actionReference.action == null;
+        }
+    }
+
+    internal sealed class PlayerRangedProjectilePool
+    {
+        private readonly List<LaneActionProjectile> projectiles = new List<LaneActionProjectile>(12);
+
+        public int ActiveCount
+        {
+            get
+            {
+                int count = 0;
+                for (int i = 0; i < projectiles.Count; i++)
+                {
+                    if (projectiles[i] != null && projectiles[i].IsActive)
+                    {
+                        count++;
+                    }
+                }
+
+                return count;
+            }
+        }
+
+        public LaneActionProjectile Get(LaneActionProjectile prefab, Transform root)
+        {
+            for (int i = 0; i < projectiles.Count; i++)
+            {
+                LaneActionProjectile projectile = projectiles[i];
+                if (projectile != null && !projectile.IsActive)
+                {
+                    return projectile;
+                }
+            }
+
+            if (prefab == null)
+            {
+                return null;
+            }
+
+            LaneActionProjectile instance = CreateInstance(prefab, root);
+            projectiles.Add(instance);
+            return instance;
+        }
+
+        public void Prewarm(LaneActionProjectile prefab, Transform root, int count)
+        {
+            if (prefab == null)
+            {
+                return;
+            }
+
+            int targetCount = Mathf.Max(0, count);
+            while (projectiles.Count < targetCount)
+            {
+                projectiles.Add(CreateInstance(prefab, root));
+            }
+        }
+
+        private static LaneActionProjectile CreateInstance(LaneActionProjectile prefab, Transform root)
+        {
+            LaneActionProjectile instance = UnityEngine.Object.Instantiate(prefab, root);
+            instance.gameObject.SetActive(false);
+            return instance;
         }
     }
 }

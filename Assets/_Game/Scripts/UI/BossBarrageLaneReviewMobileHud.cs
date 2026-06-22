@@ -204,17 +204,17 @@ namespace DimensionBrawl.UI
 
         private void OnDisable()
         {
-            movement?.SetMoveInput(Vector2.zero);
-            ReleaseHudLookAim();
-            rangedBasicAttackAction?.SetFireHeld(false);
-            ClearFirePointerState();
-            ClearMovePointerState();
-            ClearLookPointerState();
-            previousBasicHeld = false;
+            ReleaseHudControls();
         }
 
         private void Update()
         {
+            if (!showHud)
+            {
+                ReleaseHudControls();
+                return;
+            }
+
             BuildLayout();
             UpdateMovePointerState();
             UpdateFirePointerState();
@@ -298,6 +298,17 @@ namespace DimensionBrawl.UI
             {
                 summonSlot3Action?.QueueSummon();
             }
+        }
+
+        private void ReleaseHudControls()
+        {
+            movement?.SetMoveInput(Vector2.zero);
+            ReleaseHudLookAim();
+            rangedBasicAttackAction?.SetFireHeld(false);
+            ClearFirePointerState();
+            ClearMovePointerState();
+            ClearLookPointerState();
+            previousBasicHeld = false;
         }
 
         private void OnGUI()

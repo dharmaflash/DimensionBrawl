@@ -158,8 +158,6 @@ namespace DimensionBrawl.Editor
             MagicMissilesPromotedRoot + "/Textures";
         private const string MagicMissilesMeshRoot =
             MagicMissilesPromotedRoot + "/Meshes";
-        private const string MagicMissilesAudioRoot =
-            MagicMissilesPromotedRoot + "/Audio";
         private const string CombatVfxMaterialRoot =
             "Assets/_Game/Art/VFX/CombatCues/Materials";
         private const string CombatVfxMeshRoot =
@@ -2080,8 +2078,7 @@ namespace DimensionBrawl.Editor
                 Vector3.zero,
                 new Vector3(0.46f, 0.46f, 1.02f),
                 loopParticles: true,
-                playOnAwake: true,
-                playAudioOnAwake: false);
+                playOnAwake: true);
 
             TrailRenderer trail = EnsureComponent<TrailRenderer>(projectileRoot);
             trail.sharedMaterial = trailMaterial;
@@ -2388,8 +2385,7 @@ namespace DimensionBrawl.Editor
                 Vector3.zero,
                 localScale,
                 loopParticles: true,
-                playOnAwake: true,
-                playAudioOnAwake: false);
+                playOnAwake: true);
             EditorUtility.SetDirty(projectileRoot);
         }
 
@@ -2607,8 +2603,7 @@ namespace DimensionBrawl.Editor
             Vector3 localEuler,
             Vector3 localScale,
             bool loopParticles,
-            bool playOnAwake,
-            bool playAudioOnAwake = true)
+            bool playOnAwake)
         {
             DestroyChildIfPresent(parent, childName);
             GameObject sourcePrefab = LoadAsset<GameObject>(sourcePrefabPath);
@@ -2635,7 +2630,7 @@ namespace DimensionBrawl.Editor
             UnpackNestedPrefabInstances(vfxInstance);
             StripNonGameMonoBehaviours(vfxInstance);
             RemoveColliders(vfxInstance);
-            RemapPromotedVfxAudioSources(vfxInstance, playOnAwake && playAudioOnAwake);
+            DisableVfxAudioSources(vfxInstance);
             ConfigurePromotedVfxParticles(vfxInstance, loopParticles, playOnAwake);
             RemapPromotedVfxRenderers(vfxInstance);
             EditorUtility.SetDirty(vfxInstance);
@@ -2867,72 +2862,18 @@ namespace DimensionBrawl.Editor
             return promotedTexture;
         }
 
-        private static void RemapPromotedVfxAudioSources(GameObject vfxRoot, bool playOnAwake)
-        {
-            AudioSource[] audioSources = vfxRoot.GetComponentsInChildren<AudioSource>(includeInactive: true);
-            for (int i = 0; i < audioSources.Length; i++)
-            {
-                AudioSource audioSource = audioSources[i];
-                if (audioSource.clip != null)
-                {
-                    audioSource.clip = EnsurePromotedMagicMissilesAudioClip(audioSource.clip);
-                }
-
-                audioSource.playOnAwake = playOnAwake && audioSource.clip != null;
-                audioSource.loop = false;
-                audioSource.spatialBlend = 1f;
-                audioSource.rolloffMode = AudioRolloffMode.Linear;
-                audioSource.dopplerLevel = 0f;
-                audioSource.minDistance = Mathf.Max(0.6f, audioSource.minDistance);
-                audioSource.maxDistance = Mathf.Clamp(audioSource.maxDistance, 8f, 22f);
-                audioSource.volume = Mathf.Clamp(audioSource.volume, 0.08f, 0.42f);
-                EditorUtility.SetDirty(audioSource);
-            }
-        }
-
         private static void DisableVfxAudioSources(GameObject vfxRoot)
         {
             AudioSource[] audioSources = vfxRoot.GetComponentsInChildren<AudioSource>(includeInactive: true);
             for (int i = 0; i < audioSources.Length; i++)
             {
                 AudioSource audioSource = audioSources[i];
+                audioSource.clip = null;
                 audioSource.playOnAwake = false;
                 audioSource.loop = false;
                 audioSource.Stop();
                 EditorUtility.SetDirty(audioSource);
             }
-        }
-
-        private static AudioClip EnsurePromotedMagicMissilesAudioClip(AudioClip sourceClip)
-        {
-            string sourcePath = AssetDatabase.GetAssetPath(sourceClip).Replace('\\', '/');
-            if (sourcePath.StartsWith("Assets/_Game/", StringComparison.Ordinal) || string.IsNullOrWhiteSpace(sourcePath))
-            {
-                return sourceClip;
-            }
-
-            string targetPath = MagicMissilesAudioRoot + "/"
-                + SanitizeAssetFileName(System.IO.Path.GetFileNameWithoutExtension(sourcePath))
-                + System.IO.Path.GetExtension(sourcePath);
-            EnsureFolderForAsset(targetPath);
-            if (AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(targetPath) == null)
-            {
-                if (!AssetDatabase.CopyAsset(sourcePath, targetPath))
-                {
-                    throw new InvalidOperationException(
-                        $"Failed to promote MagicMissiles audio from {sourcePath} to {targetPath}.");
-                }
-
-                AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
-            }
-
-            AudioClip promotedClip = AssetDatabase.LoadAssetAtPath<AudioClip>(targetPath);
-            if (promotedClip == null)
-            {
-                throw new InvalidOperationException($"Failed to load promoted MagicMissiles audio at {targetPath}.");
-            }
-
-            return promotedClip;
         }
 
         private static Mesh EnsurePromotedMagicMissilesMesh(Mesh sourceMesh)
@@ -5740,11 +5681,11 @@ namespace DimensionBrawl.Editor
                 CombatVfxCueId.SummonFollowupWindow,
                 "CueAssetVfx_MagicMissilesFollowupCircle",
                 "summon follow-up window MagicMissiles circle overlay");
-            ValidateCombatCueAudio(profile, CombatVfxCueId.PlayerRangedMuzzleFlash, "player ranged muzzle flash audio");
-            ValidateCombatCueAudio(profile, CombatVfxCueId.PlayerRangedProjectileImpact, "player ranged projectile impact audio");
-            ValidateCombatCueAudio(profile, CombatVfxCueId.EliteSummonSignal, "summon signal audio");
-            ValidateCombatCueAudio(profile, CombatVfxCueId.SummonBlockOpportunity, "summon block opportunity audio");
-            ValidateCombatCueAudio(profile, CombatVfxCueId.SummonFollowupWindow, "summon follow-up window audio");
+            ValidateCombatCueHasNoAuthoredAudio(profile, CombatVfxCueId.PlayerRangedMuzzleFlash, "player ranged muzzle flash");
+            ValidateCombatCueHasNoAuthoredAudio(profile, CombatVfxCueId.PlayerRangedProjectileImpact, "player ranged projectile impact");
+            ValidateCombatCueHasNoAuthoredAudio(profile, CombatVfxCueId.EliteSummonSignal, "summon signal");
+            ValidateCombatCueHasNoAuthoredAudio(profile, CombatVfxCueId.SummonBlockOpportunity, "summon block opportunity");
+            ValidateCombatCueHasNoAuthoredAudio(profile, CombatVfxCueId.SummonFollowupWindow, "summon follow-up window");
         }
 
         private static void ValidateCombatCueAssetOverlay(
@@ -5763,7 +5704,7 @@ namespace DimensionBrawl.Editor
             ValidateNoImportedAssetReference(prefabPath);
         }
 
-        private static void ValidateCombatCueAudio(
+        private static void ValidateCombatCueHasNoAuthoredAudio(
             CombatVfxCueProfile profile,
             CombatVfxCueId cueId,
             string label)
@@ -5782,12 +5723,10 @@ namespace DimensionBrawl.Editor
                     continue;
                 }
 
-                ValidateGameOwnedAsset(audioSource.clip, $"{label}.{audioSource.name} audio clip");
-                ValidateNoImportedDependencies(audioSource.clip, $"{label}.{audioSource.name} audio clip");
-                return;
+                string clipPath = AssetDatabase.GetAssetPath(audioSource.clip).Replace('\\', '/');
+                throw new InvalidOperationException(
+                    $"{label} should stay visual-only until the reviewed audio pass, found {clipPath}.");
             }
-
-            throw new InvalidOperationException($"{label} should use an authored game-owned AudioClip.");
         }
 
         private static void ValidatePromotedParticleVfx(Transform root, string label, int minimumParticleSystems)

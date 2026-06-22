@@ -62,43 +62,42 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
-        public void PlayerRangedCombatCuesUsePromotedShotAudio()
+        public void PlayerRangedCombatCuesDoNotCarryTemporarySfx()
         {
             CombatVfxCueProfile profile = AssetDatabase.LoadAssetAtPath<CombatVfxCueProfile>(CombatVfxCueProfilePath);
             Assert.IsNotNull(profile, $"Missing combat VFX cue profile at {CombatVfxCueProfilePath}.");
 
-            AssertPromotedCueAudio(profile, CombatVfxCueId.PlayerRangedMuzzleFlash, "SFX_Vefects_Shots_Weapon_Rifle");
-            AssertPromotedCueAudio(profile, CombatVfxCueId.PlayerRangedProjectileImpact, "SFX_Vefects_Shots_Squib_Metal");
+            AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.PlayerRangedMuzzleFlash);
+            AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.PlayerRangedProjectileImpact);
         }
 
         [Test]
-        public void CombatStateCuesUsePromotedMagicMissilesAudio()
+        public void CombatStateCuesDoNotCarryTemporarySfx()
         {
             CombatVfxCueProfile profile = AssetDatabase.LoadAssetAtPath<CombatVfxCueProfile>(CombatVfxCueProfilePath);
             Assert.IsNotNull(profile, $"Missing combat VFX cue profile at {CombatVfxCueProfilePath}.");
 
-            const string magicMissilesAudioPath = "Assets/_Game/Art/VFX/MagicMissiles/Audio/";
-            AssertPromotedCueAudio(profile, CombatVfxCueId.EnemyHit, "light_hit", magicMissilesAudioPath);
-            AssertPromotedCueAudio(profile, CombatVfxCueId.EnemyDeath, "death_hit", magicMissilesAudioPath);
-            AssertPromotedCueAudio(profile, CombatVfxCueId.PlayerDamaged, "light_hit", magicMissilesAudioPath);
-            AssertPromotedCueAudio(profile, CombatVfxCueId.PlayerCritical, "light_hit", magicMissilesAudioPath);
-            AssertPromotedCueAudio(profile, CombatVfxCueId.EliteShieldSignal, "holy_hit", magicMissilesAudioPath);
-            AssertPromotedCueAudio(profile, CombatVfxCueId.EliteArmorBreakSignal, "light_hit", magicMissilesAudioPath);
-            AssertPromotedCueAudio(profile, CombatVfxCueId.EliteSummonSignal, "holy_shoot", magicMissilesAudioPath);
-            AssertPromotedCueAudio(profile, CombatVfxCueId.SummonFollowupWindow, "holy_shoot", magicMissilesAudioPath);
-            AssertPromotedCueAudio(profile, CombatVfxCueId.SummonBlockOpportunity, "holy_shoot", magicMissilesAudioPath);
-            AssertPromotedCueAudio(profile, CombatVfxCueId.PocketCleared, "holy_shoot", magicMissilesAudioPath);
-            AssertPromotedCueAudio(profile, CombatVfxCueId.SummonFollowupMissed, "death_hit", magicMissilesAudioPath);
-            AssertPromotedCueAudio(profile, CombatVfxCueId.PocketFailed, "light_hit", magicMissilesAudioPath);
+            AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.EnemyHit);
+            AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.EnemyDeath);
+            AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.PlayerDamaged);
+            AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.PlayerCritical);
+            AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.EliteShieldSignal);
+            AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.EliteArmorBreakSignal);
+            AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.EliteSummonSignal);
+            AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.SummonFollowupWindow);
+            AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.SummonBlockOpportunity);
+            AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.PocketCleared);
+            AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.SummonFollowupMissed);
+            AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.PocketFailed);
         }
 
         [Test]
-        public void PocketFollowupHitCueUsesPromotedImpactAudio()
+        public void PocketFollowupHitCueDoesNotCarryTemporarySfx()
         {
             CombatVfxCueProfile profile = AssetDatabase.LoadAssetAtPath<CombatVfxCueProfile>(CombatVfxCueProfilePath);
             Assert.IsNotNull(profile, $"Missing combat VFX cue profile at {CombatVfxCueProfilePath}.");
 
-            AssertPromotedCueAudio(profile, CombatVfxCueId.SummonFollowupHit, "SFX_Vefects_Shots_Squib_Metal");
+            AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.SummonFollowupHit);
         }
 
         [UnityTest]
@@ -164,13 +163,13 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
-        public void PromotedProjectilePrefabsUseOneShotAudioResources()
+        public void PromotedProjectilePrefabsDoNotCarryTemporarySfx()
         {
-            AssertPromotedProjectileAudio(BossBarrageProjectilePrefabPath, "fire_shoot");
-            AssertPromotedProjectileAudio(Skill1ProjectilePrefabPath, "arcane_shoot");
-            AssertPromotedProjectileAudio(SummonSlot1ProjectilePrefabPath, "light_shoot");
-            AssertPromotedProjectileAudio(SummonSlot2ProjectilePrefabPath, "arcane_shoot");
-            AssertPromotedProjectileAudio(SummonSlot3ProjectilePrefabPath, "holy_shoot");
+            AssertProjectilePrefabHasNoAuthoredAudio(BossBarrageProjectilePrefabPath);
+            AssertProjectilePrefabHasNoAuthoredAudio(Skill1ProjectilePrefabPath);
+            AssertProjectilePrefabHasNoAuthoredAudio(SummonSlot1ProjectilePrefabPath);
+            AssertProjectilePrefabHasNoAuthoredAudio(SummonSlot2ProjectilePrefabPath);
+            AssertProjectilePrefabHasNoAuthoredAudio(SummonSlot3ProjectilePrefabPath);
         }
 
         private static CombatVfxCueProfile CreateSingleCueProfile(GameObject prefab)
@@ -209,52 +208,30 @@ namespace DimensionBrawl.Tests
             return source;
         }
 
-        private static void AssertPromotedCueAudio(
-            CombatVfxCueProfile profile,
-            CombatVfxCueId cueId,
-            string expectedClipName,
-            string expectedPathPrefix = "Assets/_Game/Art/VFX/CombatCues/Audio/")
+        private static void AssertCueHasNoAuthoredAudio(CombatVfxCueProfile profile, CombatVfxCueId cueId)
         {
             Assert.IsTrue(profile.TryGetCue(cueId, out CombatVfxCue cue), $"{cueId} should be authored.");
             Assert.IsNotNull(cue.Prefab, $"{cueId} should reference a cue prefab.");
-            AudioSource[] audioSources = cue.Prefab.GetComponentsInChildren<AudioSource>(true);
-            Assert.IsNotEmpty(audioSources, $"{cueId} should include a promoted one-shot AudioSource.");
-
-            bool foundExpectedClip = false;
-            for (int i = 0; i < audioSources.Length; i++)
-            {
-                AudioSource audioSource = audioSources[i];
-                Assert.IsNotNull(audioSource.clip, $"{cueId} AudioSource {i} should reference a clip.");
-                Assert.IsFalse(audioSource.playOnAwake, $"{cueId} AudioSource {i} should only play when CombatVfxCuePlayer fires the cue.");
-                Assert.IsFalse(audioSource.loop, $"{cueId} AudioSource {i} should be a one-shot cue.");
-
-                string clipPath = AssetDatabase.GetAssetPath(audioSource.clip).Replace('\\', '/');
-                foundExpectedClip |= clipPath.StartsWith(expectedPathPrefix, System.StringComparison.Ordinal)
-                    && clipPath.Contains(expectedClipName);
-            }
-
-            Assert.IsTrue(
-                foundExpectedClip,
-                $"{cueId} should include {expectedClipName} under {expectedPathPrefix}.");
+            AssertNoAuthoredAudio(cue.Prefab, cueId.ToString());
         }
 
-        private static void AssertPromotedProjectileAudio(string prefabPath, string expectedClipName)
+        private static void AssertProjectilePrefabHasNoAuthoredAudio(string prefabPath)
         {
             GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
             Assert.IsNotNull(prefab, $"Missing projectile prefab at {prefabPath}.");
-            AudioSource audioSource = prefab.GetComponentInChildren<AudioSource>(true);
-            Assert.IsNotNull(audioSource, $"{prefab.name} should include a promoted projectile AudioSource.");
-            Assert.IsNotNull(audioSource.clip, $"{prefab.name} AudioSource should reference a clip.");
-            Assert.IsFalse(audioSource.playOnAwake, $"{prefab.name} AudioSource should play only when the projectile is configured.");
-            Assert.IsFalse(audioSource.loop, $"{prefab.name} AudioSource should be a one-shot projectile cue.");
+            AssertNoAuthoredAudio(prefab, prefab.name);
+        }
 
-            string clipPath = AssetDatabase.GetAssetPath(audioSource.clip).Replace('\\', '/');
-            Assert.IsTrue(
-                clipPath.StartsWith("Assets/_Game/Art/VFX/", System.StringComparison.Ordinal),
-                $"{prefab.name} audio should be promoted under _Game/Art/VFX, found {clipPath}.");
-            Assert.IsTrue(
-                clipPath.Contains(expectedClipName),
-                $"{prefab.name} should use the intended promoted projectile audio clip, found {clipPath}.");
+        private static void AssertNoAuthoredAudio(GameObject root, string label)
+        {
+            AudioSource[] audioSources = root.GetComponentsInChildren<AudioSource>(true);
+            for (int i = 0; i < audioSources.Length; i++)
+            {
+                AudioSource audioSource = audioSources[i];
+                Assert.IsNull(audioSource.clip, $"{label}.{audioSource.name} should not carry temporary authored SFX.");
+                Assert.IsFalse(audioSource.playOnAwake, $"{label}.{audioSource.name} should not auto-play audio.");
+                Assert.IsFalse(audioSource.loop, $"{label}.{audioSource.name} should not loop audio.");
+            }
         }
 
         private static void SetObjectReference(Object target, string propertyName, Object value)
