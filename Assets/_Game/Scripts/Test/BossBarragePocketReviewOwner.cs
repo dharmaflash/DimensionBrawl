@@ -100,6 +100,8 @@ namespace DimensionBrawl.Test
         private float lastSummonPressureBreakDuration;
         private float lastSummonFollowupWindowDuration;
         private float lastGrantedSummonFollowupEnergyPulse;
+        private float elapsedSeconds;
+        private float resultElapsedSeconds;
         private CombatHealth subscribedBossHealth;
         private bool followupMissedNotified;
         private bool bossBlockedSkill1Followup;
@@ -161,6 +163,10 @@ namespace DimensionBrawl.Test
         public int LastSummonPressureBreakTier => lastSummonPressureBreakTier;
         public float LastSummonPressureBreakDuration => lastSummonPressureBreakDuration;
         public float LastSummonFollowupWindowDuration => lastSummonFollowupWindowDuration;
+        public int ObjectiveStepCount => 3;
+        public int CompletedObjectiveStepCount => ResolveCompletedObjectiveStepCount();
+        public float ElapsedSeconds => elapsedSeconds;
+        public float ResultElapsedSeconds => state == PocketState.Running ? elapsedSeconds : resultElapsedSeconds;
         public ReviewPhase CurrentPhase
         {
             get
@@ -296,6 +302,8 @@ namespace DimensionBrawl.Test
             lastSummonPressureBreakDuration = 0f;
             lastSummonFollowupWindowDuration = 0f;
             lastGrantedSummonFollowupEnergyPulse = 0f;
+            elapsedSeconds = 0f;
+            resultElapsedSeconds = 0f;
             SetBarrageEnabled(true);
             SetEnergyGainEnabled(true);
             SetBossPressureCostGainEnabled(true);
@@ -326,6 +334,7 @@ namespace DimensionBrawl.Test
                 return;
             }
 
+            elapsedSeconds += Mathf.Max(0f, deltaTime);
             CaptureActionUse();
             if (playerHealth != null && !playerHealth.IsAlive)
             {
@@ -557,6 +566,7 @@ namespace DimensionBrawl.Test
 
         private void ClearPocket()
         {
+            resultElapsedSeconds = elapsedSeconds;
             state = PocketState.Cleared;
             ClearPressurePacing();
             DismissActiveSummonPressureScreens();
@@ -570,6 +580,7 @@ namespace DimensionBrawl.Test
 
         private void FailPocket()
         {
+            resultElapsedSeconds = elapsedSeconds;
             state = PocketState.Failed;
             ClearPressurePacing();
             DismissActiveSummonPressureScreens();
@@ -756,6 +767,39 @@ namespace DimensionBrawl.Test
                 2 => summonFollowupEnergyPulseTierTwo,
                 _ => summonFollowupEnergyPulse
             };
+        }
+
+        private int ResolveCompletedObjectiveStepCount()
+        {
+            if (state == PocketState.Cleared)
+            {
+                return ObjectiveStepCount;
+            }
+
+            int completed = 0;
+            if (closeThreatDefeated)
+            {
+                completed++;
+            }
+
+            if (blockedBossPressureWithSummon)
+            {
+                completed++;
+            }
+
+            if (requireSkill1FollowupHitToClear)
+            {
+                if (skill1FollowupHitConfirmed)
+                {
+                    completed++;
+                }
+            }
+            else if (blockedBossPressureWithSummon && !pressurePacing.IsSummonPressureBreakActive)
+            {
+                completed++;
+            }
+
+            return Mathf.Clamp(completed, 0, ObjectiveStepCount);
         }
 
         private void SubscribeBossHealth()

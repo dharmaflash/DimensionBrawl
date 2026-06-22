@@ -578,49 +578,73 @@ namespace DimensionBrawl.Presentation
 
             if (pocketReviewOwner.IsCleared)
             {
-                return "Goal: Clear";
+                return $"Goal: Mission clear {ResolvePocketProgressText()}";
             }
 
             if (pocketReviewOwner.IsFailed)
             {
-                return "Goal: Failed";
+                return $"Goal: Failed {ResolvePocketProgressText()}";
             }
 
             if (pocketReviewOwner.IsSkill1FollowupClearCountdownActive)
             {
-                return $"Goal: Confirm {ResolveCompactSkillFollowupText()} {pocketReviewOwner.Skill1FollowupClearRemainingSeconds:0.0}s";
+                return $"{ResolvePocketStepPrefix()}: Confirm {ResolveCompactSkillFollowupText()} {pocketReviewOwner.Skill1FollowupClearRemainingSeconds:0.0}s";
             }
 
             if (pocketReviewOwner.IsSummonFollowupWindowActive)
             {
-                return $"Goal: {ResolveCompactSkillFollowupText()} follow-up {pocketReviewOwner.SummonFollowupWindowRemainingSeconds:0.0}s";
+                return $"{ResolvePocketStepPrefix()}: {ResolveCompactSkillFollowupText()} follow-up {pocketReviewOwner.SummonFollowupWindowRemainingSeconds:0.0}s";
             }
 
             if (pocketReviewOwner.IsSummonPressureBreakActive)
             {
-                return $"Goal: Push break {pocketReviewOwner.SummonPressureBreakRemainingSeconds:0.0}s";
+                return $"{ResolvePocketStepPrefix()}: Push break {pocketReviewOwner.SummonPressureBreakRemainingSeconds:0.0}s";
             }
 
             if (pocketReviewOwner.IsSummonBlockOpportunityCueActive)
             {
-                return $"Goal: {ResolveCompactSummonBlockText()} {pocketReviewOwner.SummonBlockOpportunityRemainingSeconds:0.0}s";
+                return $"{ResolvePocketStepPrefix()}: {ResolveCompactSummonBlockText()} {pocketReviewOwner.SummonBlockOpportunityRemainingSeconds:0.0}s";
             }
 
             if (pocketReviewOwner.IsAwaitingSummonPressureBlock)
             {
-                return $"Goal: {ResolveCompactSummonBlockText()} NOW";
+                return $"{ResolvePocketStepPrefix()}: {ResolveCompactSummonBlockText()} NOW";
             }
 
             if (pocketReviewOwner.CloseThreatDefeated)
             {
                 return energyLadder != null && !energyLadder.CanSpend
-                    ? $"Goal: Build EN for {ResolveCompactSummonBlockText()}"
-                    : $"Goal: {ResolveCompactSummonBlockText()}";
+                    ? $"{ResolvePocketStepPrefix()}: Build EN for {ResolveCompactSummonBlockText()}"
+                    : $"{ResolvePocketStepPrefix()}: {ResolveCompactSummonBlockText()}";
             }
 
             return energyLadder != null && !energyLadder.CanSpend
-                ? "Goal: Advance for EN"
-                : "Goal: Clear close threat";
+                ? $"{ResolvePocketStepPrefix()}: Advance for EN"
+                : $"{ResolvePocketStepPrefix()}: Clear close threat";
+        }
+
+        private string ResolvePocketStepPrefix()
+        {
+            if (pocketReviewOwner == null)
+            {
+                return "Goal";
+            }
+
+            int total = Mathf.Max(1, pocketReviewOwner.ObjectiveStepCount);
+            int nextStep = Mathf.Clamp(pocketReviewOwner.CompletedObjectiveStepCount + 1, 1, total);
+            return $"Step {nextStep}/{total}";
+        }
+
+        private string ResolvePocketProgressText()
+        {
+            if (pocketReviewOwner == null)
+            {
+                return "0/0";
+            }
+
+            int total = Mathf.Max(1, pocketReviewOwner.ObjectiveStepCount);
+            int completed = Mathf.Clamp(pocketReviewOwner.CompletedObjectiveStepCount, 0, total);
+            return $"{completed}/{total}";
         }
 
         private string ResolveCompactSummonBlockText()
@@ -1194,8 +1218,8 @@ namespace DimensionBrawl.Presentation
             {
                 title = "BOSS CLEAR";
                 detail = pocketReviewOwner.Skill1FollowupHitConfirmed
-                    ? $"Skill1 follow-up confirmed for {pocketReviewOwner.Skill1FollowupDamage:0} damage"
-                    : "Boss pressure answered";
+                    ? $"Skill1 follow-up confirmed for {pocketReviewOwner.Skill1FollowupDamage:0} damage | {ResolvePocketResultSuffix()}"
+                    : $"Boss pressure answered | {ResolvePocketResultSuffix()}";
                 backColor = resultClearBackColor;
                 return true;
             }
@@ -1203,12 +1227,22 @@ namespace DimensionBrawl.Presentation
             if (pocketReviewOwner.IsFailed)
             {
                 title = "MISSION FAILED";
-                detail = "Player down; boss pressure halted";
+                detail = $"Player down; boss pressure halted | {ResolvePocketResultSuffix()}";
                 backColor = resultFailBackColor;
                 return true;
             }
 
             return false;
+        }
+
+        private string ResolvePocketResultSuffix()
+        {
+            if (pocketReviewOwner == null)
+            {
+                return "Checks - | Time -";
+            }
+
+            return $"Checks {ResolvePocketProgressText()} | Time {pocketReviewOwner.ResultElapsedSeconds:0.0}s";
         }
 
         private void DrawCombatResourceBars()

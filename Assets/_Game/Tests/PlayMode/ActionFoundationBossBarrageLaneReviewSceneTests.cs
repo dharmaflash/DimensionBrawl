@@ -1044,6 +1044,10 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(112f, GetFloat(reviewHud, "resultBannerBottomOffset"), 0.001f);
             Assert.IsFalse(reviewHud.ShouldShowResultBanner);
             Assert.AreEqual(string.Empty, reviewHud.ResultBannerTitle);
+            Assert.That(
+                reviewHud.CompactObjectiveReadout,
+                Does.StartWith("Step 1/3"),
+                "The compact review objective should expose a stage-style checklist instead of a flat debug goal.");
             Assert.AreSame(player, GetObjectReference<PlayerMovementController>(mobileHud, "movement"));
             Assert.AreSame(playerActionController, GetObjectReference<PlayerActionController>(mobileHud, "actionController"));
             Assert.AreSame(combatModeController, GetObjectReference<PlayerCombatModeController>(mobileHud, "combatModeController"));
@@ -2872,6 +2876,10 @@ namespace DimensionBrawl.Tests
                 reviewHud.CompactObjectiveReadout,
                 Does.Contain("LV1 Guard Entry"),
                 "The compact HUD goal should preserve the summon tier answer during the block-opportunity cue.");
+            Assert.That(
+                reviewHud.CompactObjectiveReadout,
+                Does.StartWith("Step 2/3"),
+                "After the close threat falls, the compact HUD should advance to the summon-block checklist step.");
 
             pocketOwner.Tick(1.34f);
             Assert.IsTrue(pocketOwner.IsPressureReliefActive);
@@ -3255,6 +3263,9 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(reviewHud.ShouldShowResultBanner);
             Assert.AreEqual("BOSS CLEAR", reviewHud.ResultBannerTitle);
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Skill1 follow-up confirmed"));
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Checks 3/3"));
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Time"));
+            Assert.That(reviewHud.CompactObjectiveReadout, Does.Contain("3/3"));
             Assert.IsFalse(pocketOwner.IsSummonPressureBreakActive);
             float energyAfterClear = energyLadder.CurrentTierEnergy;
             energyLadder.Tick(1f);
@@ -3669,6 +3680,8 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(reviewHud.ShouldShowResultBanner);
             Assert.AreEqual("MISSION FAILED", reviewHud.ResultBannerTitle);
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Player down"));
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Checks"));
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Time"));
             float energyAfterFail = energyLadder.CurrentTierEnergy;
             energyLadder.Tick(1f);
             Assert.AreEqual(
