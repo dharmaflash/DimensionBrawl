@@ -967,7 +967,7 @@ namespace DimensionBrawl.Editor
                 ImportedMagicMissilesArcaneCirclePrefabPath,
                 new Vector3(0f, 0.08f, 0f),
                 Vector3.zero,
-                new Vector3(0.62f, 0.62f, 0.62f),
+                new Vector3(0.24f, 0.24f, 0.24f),
                 loopParticles: true,
                 playOnAwake: true);
             EditorUtility.SetDirty(cueRoot);
@@ -1540,8 +1540,8 @@ namespace DimensionBrawl.Editor
                 LateralReach = lateralReach,
                 EntryHeight = 0.18f,
                 TargetHeight = 1.35f,
-                CueScale = 0.88f + Mathf.Max(0, projectileCount - 1) * 0.08f,
-                CueLifetimeSeconds = 0.62f,
+                CueScale = 0.46f + Mathf.Max(0, projectileCount - 1) * 0.05f,
+                CueLifetimeSeconds = 0.36f,
                 ActorLifetimeSeconds = actorLifetimeSeconds,
                 ActorScale = actorScale,
                 ActorRoleId = actorRoleId,

@@ -22,8 +22,8 @@ MonoBehaviour:
     LateralReach: 1.2
     EntryHeight: 0.18
     TargetHeight: 1.35
-    CueScale: 0.88
-    CueLifetimeSeconds: 0.62
+    CueScale: 0.46
+    CueLifetimeSeconds: 0.36
     ActorLifetimeSeconds: 0
     ActorScale: 0.9
     ActorRoleId: ShieldBreaker
@@ -50,8 +50,8 @@ MonoBehaviour:
     LateralReach: 4.2
     EntryHeight: 0.18
     TargetHeight: 1.35
-    CueScale: 0.96
-    CueLifetimeSeconds: 0.62
+    CueScale: 0.51
+    CueLifetimeSeconds: 0.36
     ActorLifetimeSeconds: 0
     ActorScale: 1.08
     ActorRoleId: ShieldBreaker
@@ -78,8 +78,8 @@ MonoBehaviour:
     LateralReach: 6.8
     EntryHeight: 0.18
     TargetHeight: 1.35
-    CueScale: 1.04
-    CueLifetimeSeconds: 0.62
+    CueScale: 0.56
+    CueLifetimeSeconds: 0.36
     ActorLifetimeSeconds: 0
     ActorScale: 1.28
     ActorRoleId: ShieldBreaker

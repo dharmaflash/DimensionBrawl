@@ -296,8 +296,8 @@ MonoBehaviour:
     prefab: {fileID: 464807569203744432, guid: 53d43299e6d21114790ecfb628981f4f, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0}
     localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 0.58, y: 0.44, z: 0.58}
-    lifetimeSeconds: 0.42
+    localScale: {x: 0.36, y: 0.28, z: 0.36}
+    lifetimeSeconds: 0.34
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
@@ -312,10 +312,10 @@ MonoBehaviour:
     alignForwardToDirection: 0
   - cueId: 29
     prefab: {fileID: 8666660637357580547, guid: f7455ae1f4665c14486a0e7859904d5a, type: 3}
-    localPositionOffset: {x: 0, y: 0.42, z: 0.2}
+    localPositionOffset: {x: 0, y: 0.36, z: 0.2}
     localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 0.36, y: 0.27, z: 0.36}
-    lifetimeSeconds: 0.42
+    localScale: {x: 0.26, y: 0.2, z: 0.26}
+    lifetimeSeconds: 0.34
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
@@ -339,19 +339,19 @@ MonoBehaviour:
     alignForwardToDirection: 0
   - cueId: 32
     prefab: {fileID: 7428633424889265235, guid: 9f873826e7092c7429618ea15857be24, type: 3}
-    localPositionOffset: {x: 0, y: 0.28, z: 0.42}
+    localPositionOffset: {x: 0, y: 0.24, z: 0.42}
     localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 0.42, y: 0.28, z: 0.42}
-    lifetimeSeconds: 0.4
+    localScale: {x: 0.34, y: 0.22, z: 0.34}
+    lifetimeSeconds: 0.34
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
   - cueId: 35
     prefab: {fileID: 464807569203744432, guid: 53d43299e6d21114790ecfb628981f4f, type: 3}
-    localPositionOffset: {x: 0, y: 0.4, z: 0}
+    localPositionOffset: {x: 0, y: 0.32, z: 0}
     localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 0.52, y: 0.4, z: 0.52}
-    lifetimeSeconds: 0.44
+    localScale: {x: 0.36, y: 0.28, z: 0.36}
+    lifetimeSeconds: 0.36
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
