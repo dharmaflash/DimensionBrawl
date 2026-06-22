@@ -1,0 +1,268 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 706b2c3e4c440ef459605661995b693d, type: 3}
+  m_Name: DB_ActionCinematicCues_ActionFoundation
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionCinematicCueProfile
+  skillCutIn:
+    enabled: 1
+    cueId: skill1_short_cutin
+    priority: 35
+    canBeInterrupted: 1
+    timeScale: 1
+    timeScaleSeconds: 0
+    shots:
+    - enabled: 1
+      localOffset: {x: -0.1, y: 0.06, z: -0.18}
+      planarDirectionOffset: 0.1
+      fieldOfViewDelta: 1.4
+      cameraDistanceDelta: -0.12
+      focusHeightDelta: 0.05
+      durationSeconds: 0.16
+      pauseAfterSeconds: 0.02
+      tierScale: 1.08
+    - enabled: 1
+      localOffset: {x: 0.05, y: 0.02, z: 0.18}
+      planarDirectionOffset: 0.08
+      fieldOfViewDelta: -2.1
+      cameraDistanceDelta: 0.18
+      focusHeightDelta: 0.02
+      durationSeconds: 0.18
+      pauseAfterSeconds: 0.02
+      tierScale: 1.18
+    - enabled: 1
+      localOffset: {x: 0, y: 0.04, z: -0.1}
+      planarDirectionOffset: 0.04
+      fieldOfViewDelta: 0.7
+      cameraDistanceDelta: -0.08
+      focusHeightDelta: 0.02
+      durationSeconds: 0.18
+      pauseAfterSeconds: 0
+      tierScale: 1.04
+  summonEntry:
+    enabled: 1
+    cueId: summon_break_entry_cutin
+    priority: 60
+    canBeInterrupted: 0
+    timeScale: 0.92
+    timeScaleSeconds: 0.16
+    shots:
+    - enabled: 1
+      localOffset: {x: 0, y: 0.08, z: -0.22}
+      planarDirectionOffset: 0.18
+      fieldOfViewDelta: 2.8
+      cameraDistanceDelta: -0.3
+      focusHeightDelta: 0.09
+      durationSeconds: 0.18
+      pauseAfterSeconds: 0.03
+      tierScale: 1.12
+    - enabled: 1
+      localOffset: {x: -0.18, y: 0.05, z: 0.12}
+      planarDirectionOffset: 0.08
+      fieldOfViewDelta: -2.2
+      cameraDistanceDelta: 0.18
+      focusHeightDelta: 0.03
+      durationSeconds: 0.24
+      pauseAfterSeconds: 0.02
+      tierScale: 1.22
+    - enabled: 1
+      localOffset: {x: 0.16, y: 0.09, z: -0.24}
+      planarDirectionOffset: 0.16
+      fieldOfViewDelta: 3
+      cameraDistanceDelta: -0.32
+      focusHeightDelta: 0.1
+      durationSeconds: 0.28
+      pauseAfterSeconds: 0.04
+      tierScale: 1.18
+    - enabled: 1
+      localOffset: {x: 0, y: 0.04, z: -0.1}
+      planarDirectionOffset: 0.04
+      fieldOfViewDelta: 0.8
+      cameraDistanceDelta: -0.08
+      focusHeightDelta: 0.04
+      durationSeconds: 0.18
+      pauseAfterSeconds: 0
+      tierScale: 1.04
+  ultimateCutIn:
+    enabled: 1
+    cueId: skill1_lv3_ultimate_short_cutin
+    priority: 85
+    canBeInterrupted: 0
+    timeScale: 0.84
+    timeScaleSeconds: 0.24
+    shots:
+    - enabled: 1
+      localOffset: {x: -0.16, y: 0.08, z: -0.16}
+      planarDirectionOffset: 0.1
+      fieldOfViewDelta: 2.4
+      cameraDistanceDelta: -0.18
+      focusHeightDelta: 0.06
+      durationSeconds: 0.26
+      pauseAfterSeconds: 0.04
+      tierScale: 1.1
+    - enabled: 1
+      localOffset: {x: 0.1, y: 0.03, z: 0.22}
+      planarDirectionOffset: 0.08
+      fieldOfViewDelta: -3.2
+      cameraDistanceDelta: 0.28
+      focusHeightDelta: 0.03
+      durationSeconds: 0.32
+      pauseAfterSeconds: 0.03
+      tierScale: 1.28
+    - enabled: 1
+      localOffset: {x: -0.06, y: 0.08, z: -0.24}
+      planarDirectionOffset: 0.2
+      fieldOfViewDelta: 3.6
+      cameraDistanceDelta: -0.36
+      focusHeightDelta: 0.1
+      durationSeconds: 0.3
+      pauseAfterSeconds: 0.04
+      tierScale: 1.24
+    - enabled: 1
+      localOffset: {x: 0, y: 0.04, z: -0.08}
+      planarDirectionOffset: 0.04
+      fieldOfViewDelta: 0.9
+      cameraDistanceDelta: -0.1
+      focusHeightDelta: 0.03
+      durationSeconds: 0.22
+      pauseAfterSeconds: 0
+      tierScale: 1.05
+  bossPressureBreak:
+    enabled: 1
+    cueId: boss_pressure_break_reframe
+    priority: 65
+    canBeInterrupted: 1
+    timeScale: 0.9
+    timeScaleSeconds: 0.12
+    shots:
+    - enabled: 1
+      localOffset: {x: 0.18, y: 0.07, z: -0.24}
+      planarDirectionOffset: 0.18
+      fieldOfViewDelta: 2.8
+      cameraDistanceDelta: -0.3
+      focusHeightDelta: 0.09
+      durationSeconds: 0.22
+      pauseAfterSeconds: 0.03
+      tierScale: 1.14
+    - enabled: 1
+      localOffset: {x: -0.14, y: 0.04, z: 0.1}
+      planarDirectionOffset: 0.08
+      fieldOfViewDelta: -1.8
+      cameraDistanceDelta: 0.14
+      focusHeightDelta: 0.02
+      durationSeconds: 0.24
+      pauseAfterSeconds: 0.02
+      tierScale: 1.2
+    - enabled: 1
+      localOffset: {x: 0, y: 0.05, z: -0.14}
+      planarDirectionOffset: 0.08
+      fieldOfViewDelta: 1.4
+      cameraDistanceDelta: -0.16
+      focusHeightDelta: 0.04
+      durationSeconds: 0.22
+      pauseAfterSeconds: 0
+      tierScale: 1.08
+  summonFollowupHit:
+    enabled: 1
+    cueId: summon_followup_hit_confirm
+    priority: 72
+    canBeInterrupted: 1
+    timeScale: 0.88
+    timeScaleSeconds: 0.1
+    shots:
+    - enabled: 1
+      localOffset: {x: -0.08, y: 0.05, z: -0.1}
+      planarDirectionOffset: 0.08
+      fieldOfViewDelta: 1.6
+      cameraDistanceDelta: -0.14
+      focusHeightDelta: 0.04
+      durationSeconds: 0.14
+      pauseAfterSeconds: 0.02
+      tierScale: 1.08
+    - enabled: 1
+      localOffset: {x: 0.08, y: 0.03, z: 0.22}
+      planarDirectionOffset: 0.12
+      fieldOfViewDelta: -3
+      cameraDistanceDelta: 0.24
+      focusHeightDelta: 0.03
+      durationSeconds: 0.22
+      pauseAfterSeconds: 0.03
+      tierScale: 1.28
+    - enabled: 1
+      localOffset: {x: 0, y: 0.04, z: -0.08}
+      planarDirectionOffset: 0.04
+      fieldOfViewDelta: 0.8
+      cameraDistanceDelta: -0.08
+      focusHeightDelta: 0.02
+      durationSeconds: 0.18
+      pauseAfterSeconds: 0
+      tierScale: 1.04
+  pocketClear:
+    enabled: 1
+    cueId: pocket_result_clear_bridge
+    priority: 75
+    canBeInterrupted: 0
+    timeScale: 0.86
+    timeScaleSeconds: 0.14
+    shots:
+    - enabled: 1
+      localOffset: {x: 0, y: 0.08, z: -0.28}
+      planarDirectionOffset: 0.2
+      fieldOfViewDelta: 3.2
+      cameraDistanceDelta: -0.34
+      focusHeightDelta: 0.1
+      durationSeconds: 0.26
+      pauseAfterSeconds: 0.04
+      tierScale: 1.12
+    - enabled: 1
+      localOffset: {x: 0.12, y: 0.04, z: 0.16}
+      planarDirectionOffset: 0.1
+      fieldOfViewDelta: -2.4
+      cameraDistanceDelta: 0.2
+      focusHeightDelta: 0.04
+      durationSeconds: 0.26
+      pauseAfterSeconds: 0.04
+      tierScale: 1.22
+    - enabled: 1
+      localOffset: {x: 0, y: 0.05, z: -0.12}
+      planarDirectionOffset: 0.04
+      fieldOfViewDelta: 0.9
+      cameraDistanceDelta: -0.1
+      focusHeightDelta: 0.04
+      durationSeconds: 0.22
+      pauseAfterSeconds: 0
+      tierScale: 1.04
+  pocketFail:
+    enabled: 1
+    cueId: pocket_result_fail_bridge
+    priority: 75
+    canBeInterrupted: 0
+    timeScale: 0.92
+    timeScaleSeconds: 0.1
+    shots:
+    - enabled: 1
+      localOffset: {x: 0, y: -0.04, z: -0.18}
+      planarDirectionOffset: -0.06
+      fieldOfViewDelta: 1.8
+      cameraDistanceDelta: -0.2
+      focusHeightDelta: -0.04
+      durationSeconds: 0.24
+      pauseAfterSeconds: 0.03
+      tierScale: 1.05
+    - enabled: 1
+      localOffset: {x: -0.08, y: 0.02, z: -0.1}
+      planarDirectionOffset: -0.04
+      fieldOfViewDelta: 0.6
+      cameraDistanceDelta: -0.08
+      focusHeightDelta: -0.03
+      durationSeconds: 0.22
+      pauseAfterSeconds: 0
+      tierScale: 1

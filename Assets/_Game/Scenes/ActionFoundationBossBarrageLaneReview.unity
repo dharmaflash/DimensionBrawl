@@ -135,6 +135,7 @@ GameObject:
   - component: {fileID: 1006}
   - component: {fileID: 1007}
   - component: {fileID: 1008}
+  - component: {fileID: 1009}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -288,6 +289,7 @@ MonoBehaviour:
   skill1Action: {fileID: 4015}
   summonSlot1Action: {fileID: 4014}
   cameraController: {fileID: 1004}
+  cinematicCueDirector: {fileID: 1009}
   cueSpace: {fileID: 4001}
   cueProfile: {fileID: 11400000, guid: a31d129dad592f844954532630dca6a0, type: 2}
   runStartCue:
@@ -466,6 +468,25 @@ MonoBehaviour:
   cameraController: {fileID: 1004}
   targetSelector: {fileID: 4008}
   followTarget: {fileID: 4001}
+--- !u!114 &1009
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f8914b1dea82eb41afc515bc541ffc5, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.ActionCinematicCueDirector
+  cueProfile: {fileID: 11400000, guid: 22c6a27659a21384095362ba02edcfc9, type: 2}
+  cameraController: {fileID: 1004}
+  cueSpace: {fileID: 4001}
+  useUnscaledClock: 1
+  drawCinematicBars: 1
+  maxBarScreenRatio: 0.085
+  maxBarAlpha: 0.62
 --- !u!114 &1008
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -4848,6 +4869,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Test.BossBarragePocketCameraCueBridge
   pocketReviewOwner: {fileID: 412261282}
   cameraCueDriver: {fileID: 1005}
+  cinematicCueDirector: {fileID: 1009}
 --- !u!1 &413436701
 GameObject:
   m_ObjectHideFlags: 0

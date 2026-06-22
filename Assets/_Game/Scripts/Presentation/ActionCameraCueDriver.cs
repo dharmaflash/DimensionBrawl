@@ -11,6 +11,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private PlayerSkill1Action skill1Action;
         [SerializeField] private PlayerSummonSlot1Action summonSlot1Action;
         [SerializeField] private ActionCameraController cameraController;
+        [SerializeField] private ActionCinematicCueDirector cinematicCueDirector;
         [SerializeField] private Transform cueSpace;
 
         [Header("Profile")]
@@ -197,6 +198,7 @@ namespace DimensionBrawl.Presentation
         private float lastSummonFollowupHitDamage;
 
         public ActionCameraCueProfile CueProfile => cueProfile;
+        public ActionCinematicCueDirector CinematicCueDirector => cinematicCueDirector;
         public int SummonPressureBlockCueRequestCount => summonPressureBlockCueRequestCount;
         public int LastSummonPressureBlockTier => lastSummonPressureBlockTier;
         public int SummonBlockOpportunityCueRequestCount => summonBlockOpportunityCueRequestCount;
@@ -231,6 +233,11 @@ namespace DimensionBrawl.Presentation
             if (cameraController == null)
             {
                 cameraController = GetComponent<ActionCameraController>();
+            }
+
+            if (cinematicCueDirector == null)
+            {
+                cinematicCueDirector = GetComponent<ActionCinematicCueDirector>();
             }
         }
 
@@ -328,13 +335,22 @@ namespace DimensionBrawl.Presentation
         private void HandleSkill1Used(int tier)
         {
             ActionCameraCueProfile.CameraCue cue = ActiveSkill1Cue;
-            RequestCue(cue, ResolvePlanarDirection(), ResolveTierScale(tier, cue));
+            Vector3 direction = ResolvePlanarDirection();
+            RequestCue(cue, direction, ResolveTierScale(tier, cue));
+            RequestCinematic(
+                tier >= 3
+                    ? ActionCinematicCueProfile.CueKind.UltimateCutIn
+                    : ActionCinematicCueProfile.CueKind.SkillCutIn,
+                tier,
+                direction);
         }
 
         private void HandleSummonSlot1Used(int tier)
         {
             ActionCameraCueProfile.CameraCue cue = ActiveSummonSlot1Cue;
-            RequestCue(cue, ResolvePlanarDirection(), ResolveTierScale(tier, cue));
+            Vector3 direction = ResolvePlanarDirection();
+            RequestCue(cue, direction, ResolveTierScale(tier, cue));
+            RequestCinematic(ActionCinematicCueProfile.CueKind.SummonEntry, tier, direction);
         }
 
         private void HandleSummonPressureBlocked(int tier)
@@ -407,6 +423,11 @@ namespace DimensionBrawl.Presentation
                 cue.cameraDistanceDelta * clampedScale,
                 cue.focusHeightDelta * clampedScale);
             return true;
+        }
+
+        private bool RequestCinematic(ActionCinematicCueProfile.CueKind kind, int tier, Vector3 planarDirection)
+        {
+            return cinematicCueDirector != null && cinematicCueDirector.TryPlay(kind, tier, planarDirection);
         }
 
         private Vector3 ResolvePlanarDirection()

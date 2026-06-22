@@ -47,6 +47,8 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_LinePressure.asset";
         private const string BossBasicFireProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBasicFire_LanePoke.asset";
+        private const string CinematicCueProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_ActionCinematicCues_ActionFoundation.asset";
         private const string ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossBarrageProjectile_NeedleLock.prefab";
         private const string LocalDefenseProfilePath =
@@ -295,6 +297,8 @@ namespace DimensionBrawl.Tests
                 LoadAsset<SummonPresentationCandidateProfile>(SummonSlot1PresentationCandidateProfilePath);
             ActionCameraCueDriver cameraCueDriver =
                 RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
+            ActionCinematicCueDirector cinematicCueDirector =
+                RequireComponent<ActionCinematicCueDirector>(cameraController.gameObject, "action cinematic cue director");
             BossBarrageCameraCueDriver bossCameraCueDriver =
                 RequireComponent<BossBarrageCameraCueDriver>(cameraController.gameObject, "boss barrage camera cue driver");
             GameObject projectileRoot = RequireRoot(ProjectilePoolRootName);
@@ -952,7 +956,14 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(skill1Action, GetObjectReference<PlayerSkill1Action>(cameraCueDriver, "skill1Action"));
             Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(cameraCueDriver, "summonSlot1Action"));
             Assert.AreSame(cameraController, GetObjectReference<ActionCameraController>(cameraCueDriver, "cameraController"));
+            Assert.AreSame(cinematicCueDirector, GetObjectReference<ActionCinematicCueDirector>(cameraCueDriver, "cinematicCueDirector"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(cameraCueDriver, "cueSpace"));
+            Assert.AreSame(LoadAsset<ActionCinematicCueProfile>(CinematicCueProfilePath), cinematicCueDirector.CueProfile);
+            Assert.AreSame(cameraController, cinematicCueDirector.CameraController);
+            Assert.AreSame(player.transform, cinematicCueDirector.CueSpace);
+            Assert.IsTrue(cinematicCueDirector.DrawCinematicBars);
+            Assert.GreaterOrEqual(cinematicCueDirector.CueProfile.SummonEntry.ShotCount, 3);
+            Assert.GreaterOrEqual(cinematicCueDirector.CueProfile.UltimateCutIn.ShotCount, 3);
             Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(bossCameraCueDriver, "bossBarrageEmitter"));
             Assert.AreSame(
                 bossPressureActionDirector,
@@ -986,6 +997,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(0.75f, GetFloat(pocketOwner, "skill1FollowupClearDelaySeconds"), 0.001f);
             Assert.AreSame(pocketOwner, pocketCameraCueBridge.PocketReviewOwner);
             Assert.AreSame(cameraCueDriver, pocketCameraCueBridge.CameraCueDriver);
+            Assert.AreSame(cinematicCueDirector, pocketCameraCueBridge.CinematicCueDirector);
             Assert.AreSame(pocketOwner, pocketVfxCueBridge.PocketReviewOwner);
             Assert.AreSame(playerCuePlayer, pocketVfxCueBridge.CuePlayer);
             Assert.AreSame(
@@ -3005,6 +3017,8 @@ namespace DimensionBrawl.Tests
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
             ActionCameraCueDriver cameraCueDriver =
                 RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
+            ActionCinematicCueDirector cinematicCueDirector =
+                RequireComponent<ActionCinematicCueDirector>(cameraController.gameObject, "action cinematic cue director");
             BossBarragePocketVfxCueBridge pocketVfxCueBridge =
                 RequireComponent<BossBarragePocketVfxCueBridge>(
                     RequireRoot(PocketOwnerRootName),
@@ -3142,6 +3156,8 @@ namespace DimensionBrawl.Tests
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
             ActionCameraCueDriver cameraCueDriver =
                 RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
+            ActionCinematicCueDirector cinematicCueDirector =
+                RequireComponent<ActionCinematicCueDirector>(cameraController.gameObject, "action cinematic cue director");
             BossBarragePocketVfxCueBridge pocketVfxCueBridge =
                 RequireComponent<BossBarragePocketVfxCueBridge>(
                     RequireRoot(PocketOwnerRootName),
@@ -3192,6 +3208,7 @@ namespace DimensionBrawl.Tests
             int followupHitCueCountBefore = cameraCueDriver.SummonFollowupHitCueRequestCount;
             int followupWindowVfxCueCountBefore = pocketVfxCueBridge.FollowupWindowCueRequestCount;
             int followupHitVfxCueCountBefore = pocketVfxCueBridge.FollowupHitCueRequestCount;
+            int cinematicCueCountBeforeWindow = cinematicCueDirector.TotalPlayCount;
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.IsRunning);
@@ -3226,6 +3243,12 @@ namespace DimensionBrawl.Tests
                 "A correct SummonSlot1 block should make the follow-up opportunity readable without relying on HUD text only.");
             Assert.AreEqual(1, cameraCueDriver.LastSummonFollowupWindowTier);
             Assert.AreEqual(
+                cinematicCueCountBeforeWindow + 1,
+                cinematicCueDirector.TotalPlayCount,
+                "A correct summon block should escalate the follow-up opening into a boss-pressure break camera sequence.");
+            Assert.AreEqual(ActionCinematicCueProfile.CueKind.BossPressureBreak, cinematicCueDirector.LastPlayedKind);
+            Assert.IsTrue(cinematicCueDirector.HasActiveFrameOverlay);
+            Assert.AreEqual(
                 followupWindowVfxCueCountBefore + 1,
                 pocketVfxCueBridge.FollowupWindowCueRequestCount,
                 "A correct SummonSlot1 block should also create an in-world follow-up VFX read.");
@@ -3243,6 +3266,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(1, energyLadder.AvailableTier);
 
             float bossHealthBeforeFollowup = bossHealth.CurrentHealth;
+            int cinematicCueCountBeforeHit = cinematicCueDirector.TotalPlayCount;
             Assert.IsTrue(skill1Action.TryUseSkill1());
             Assert.Greater(
                 skill1Action.ActiveProjectileCount,
@@ -3267,6 +3291,12 @@ namespace DimensionBrawl.Tests
                 cameraCueDriver.SummonFollowupHitCueRequestCount,
                 "A confirmed Skill1 boss hit should produce the follow-up hit camera cue.");
             Assert.AreEqual(1, cameraCueDriver.LastSummonFollowupHitTier);
+            Assert.AreEqual(
+                cinematicCueCountBeforeHit + 1,
+                cinematicCueDirector.TotalPlayCount,
+                "A confirmed Skill1 hit should interrupt the opening reframe with a follow-up hit camera sequence.");
+            Assert.AreEqual(ActionCinematicCueProfile.CueKind.SummonFollowupHit, cinematicCueDirector.LastPlayedKind);
+            Assert.IsTrue(cinematicCueDirector.HasActiveFrameOverlay);
             Assert.GreaterOrEqual(
                 cameraCueDriver.LastSummonFollowupHitDamage / bossHealth.MaxHealth,
                 Skill1VisibleBossHpShiftRatio);
@@ -3301,6 +3331,7 @@ namespace DimensionBrawl.Tests
 
             int resultCueCountBeforeClear = screenCuePresenter.ResultCueRequestCount;
             int pocketClearVfxCueCountBefore = pocketVfxCueBridge.PocketClearCueRequestCount;
+            int cinematicCueCountBeforeClear = cinematicCueDirector.TotalPlayCount;
             Assert.Greater(
                 summonSlot1Action.ActivePressureScreenCount,
                 0,
@@ -3315,6 +3346,12 @@ namespace DimensionBrawl.Tests
                 screenCuePresenter.ResultCueRequestCount,
                 "The completed pocket should produce a distinct screen cue instead of ending with only HUD text or a marker.");
             Assert.AreEqual("Pocket.Cleared", screenCuePresenter.LastCueId);
+            Assert.AreEqual(
+                cinematicCueCountBeforeClear + 1,
+                cinematicCueDirector.TotalPlayCount,
+                "Pocket clear should finish with a result camera bridge instead of ending on the hit-confirm shot.");
+            Assert.AreEqual(ActionCinematicCueProfile.CueKind.PocketClear, cinematicCueDirector.LastPlayedKind);
+            Assert.IsTrue(cinematicCueDirector.HasActiveFrameOverlay);
             Assert.AreEqual(0.92f, screenCuePresenter.LastCueIntensity, 0.001f);
             Assert.IsTrue(screenCuePresenter.HasActiveCue);
             Assert.AreEqual(
@@ -3700,6 +3737,9 @@ namespace DimensionBrawl.Tests
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
             SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            ActionCinematicCueDirector cinematicCueDirector =
+                RequireComponent<ActionCinematicCueDirector>(cameraController.gameObject, "action cinematic cue director");
             GameObject bossRoot = RequireRoot(BossRootName);
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
             BossBasicFireEmitter bossBasicFireEmitter =
@@ -3722,6 +3762,7 @@ namespace DimensionBrawl.Tests
             int resultCueCountBeforeFail = screenCuePresenter.ResultCueRequestCount;
             int pocketFailVfxCueCountBefore = pocketVfxCueBridge.PocketFailCueRequestCount;
             int pocketFailAccentVfxCueCountBefore = pocketVfxCueBridge.PocketFailAccentCueRequestCount;
+            int cinematicCueCountBeforeFail = cinematicCueDirector.TotalPlayCount;
             playerHealth.TryApplyDamage(new DamageInfo(
                 null,
                 DamageTeam.Enemy,
@@ -3738,6 +3779,12 @@ namespace DimensionBrawl.Tests
                 screenCuePresenter.ResultCueRequestCount,
                 "The failed pocket should produce a distinct screen cue instead of ending with only HUD text or a marker.");
             Assert.AreEqual("Pocket.Failed", screenCuePresenter.LastCueId);
+            Assert.AreEqual(
+                cinematicCueCountBeforeFail + 1,
+                cinematicCueDirector.TotalPlayCount,
+                "Pocket failure should trigger a result camera bridge, not only a screen cue and marker.");
+            Assert.AreEqual(ActionCinematicCueProfile.CueKind.PocketFail, cinematicCueDirector.LastPlayedKind);
+            Assert.IsTrue(cinematicCueDirector.HasActiveFrameOverlay);
             Assert.AreEqual(1.02f, screenCuePresenter.LastCueIntensity, 0.001f);
             Assert.IsTrue(screenCuePresenter.HasActiveCue);
             Assert.AreEqual(

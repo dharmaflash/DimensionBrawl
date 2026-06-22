@@ -18,6 +18,7 @@ namespace DimensionBrawl.Editor
         public const string ProfileRoot = "Assets/_Game/DesignData/Profiles/ActionFoundation";
         public const string PlayerActionProfilePath = ProfileRoot + "/DB_PlayerAction_ActionFoundation.asset";
         public const string CameraCueProfilePath = ProfileRoot + "/DB_ActionCameraCues_ActionFoundation.asset";
+        public const string CinematicCueProfilePath = ProfileRoot + "/DB_ActionCinematicCues_ActionFoundation.asset";
         public const string EnemyPatternProfilePath = ProfileRoot + "/DB_BasicSoldier_ClosePunish.asset";
         public const string EnemyLungePatternProfilePath = ProfileRoot + "/DB_BasicSoldier_LungeStrike.asset";
         public const string EnemyHeavyWindupPatternProfilePath = ProfileRoot + "/DB_BasicSoldier_HeavyWindup.asset";
@@ -794,6 +795,15 @@ namespace DimensionBrawl.Editor
                     CreateCombatAiPatternDeckEntry(enemyLinePressurePatternProfile, 3.2f, 6.8f, 1.1f, 2f)
                 });
             AssetDatabase.SaveAssets();
+        }
+
+        public static ActionCinematicCueProfile EnsureCinematicCueProfileAsset()
+        {
+            EnsureFolder(ProfileRoot);
+            ActionCinematicCueProfile cinematicCueProfile =
+                LoadOrCreate<ActionCinematicCueProfile>(CinematicCueProfilePath);
+            EditorUtility.SetDirty(cinematicCueProfile);
+            return cinematicCueProfile;
         }
 
         private static void ConfigurePlayerActionProfile(PlayerActionProfile profile)

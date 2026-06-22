@@ -7,9 +7,11 @@ namespace DimensionBrawl.Test
     {
         [SerializeField] private BossBarragePocketReviewOwner pocketReviewOwner;
         [SerializeField] private ActionCameraCueDriver cameraCueDriver;
+        [SerializeField] private ActionCinematicCueDirector cinematicCueDirector;
 
         public BossBarragePocketReviewOwner PocketReviewOwner => pocketReviewOwner;
         public ActionCameraCueDriver CameraCueDriver => cameraCueDriver;
+        public ActionCinematicCueDirector CinematicCueDirector => cinematicCueDirector;
 
         private void Awake()
         {
@@ -30,6 +32,8 @@ namespace DimensionBrawl.Test
             pocketReviewOwner.SummonFollowupWindowOpened += HandleSummonFollowupWindowOpened;
             pocketReviewOwner.SummonFollowupHitConfirmed += HandleSummonFollowupHitConfirmed;
             pocketReviewOwner.SummonFollowupMissed += HandleSummonFollowupMissed;
+            pocketReviewOwner.PocketCleared += HandlePocketCleared;
+            pocketReviewOwner.PocketFailed += HandlePocketFailed;
         }
 
         private void OnDisable()
@@ -43,6 +47,8 @@ namespace DimensionBrawl.Test
             pocketReviewOwner.SummonFollowupWindowOpened -= HandleSummonFollowupWindowOpened;
             pocketReviewOwner.SummonFollowupHitConfirmed -= HandleSummonFollowupHitConfirmed;
             pocketReviewOwner.SummonFollowupMissed -= HandleSummonFollowupMissed;
+            pocketReviewOwner.PocketCleared -= HandlePocketCleared;
+            pocketReviewOwner.PocketFailed -= HandlePocketFailed;
         }
 
         private void HandleSummonBlockOpportunityOpened()
@@ -59,6 +65,8 @@ namespace DimensionBrawl.Test
             {
                 cameraCueDriver.RequestSummonFollowupWindowCue(tier);
             }
+
+            RequestCinematic(ActionCinematicCueProfile.CueKind.BossPressureBreak, tier);
         }
 
         private void HandleSummonFollowupHitConfirmed(int tier, float damage)
@@ -67,6 +75,8 @@ namespace DimensionBrawl.Test
             {
                 cameraCueDriver.RequestSummonFollowupHitCue(tier, damage);
             }
+
+            RequestCinematic(ActionCinematicCueProfile.CueKind.SummonFollowupHit, tier);
         }
 
         private void HandleSummonFollowupMissed()
@@ -75,6 +85,21 @@ namespace DimensionBrawl.Test
             {
                 cameraCueDriver.RequestSummonFollowupMissedCue();
             }
+        }
+
+        private void HandlePocketCleared()
+        {
+            RequestCinematic(ActionCinematicCueProfile.CueKind.PocketClear, 3);
+        }
+
+        private void HandlePocketFailed()
+        {
+            RequestCinematic(ActionCinematicCueProfile.CueKind.PocketFail, 1);
+        }
+
+        private bool RequestCinematic(ActionCinematicCueProfile.CueKind kind, int tier)
+        {
+            return cinematicCueDirector != null && cinematicCueDirector.TryPlay(kind, tier);
         }
     }
 }
