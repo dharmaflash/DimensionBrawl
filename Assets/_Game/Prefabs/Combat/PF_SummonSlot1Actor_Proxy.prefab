@@ -1,4 +1,4 @@
-%YAML 1.1
+﻿%YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
 --- !u!1 &76535356739553504
 GameObject:
@@ -80,6 +80,7 @@ Transform:
   - {fileID: 684598131297192951}
   - {fileID: 4572635535758530187}
   - {fileID: 5490582133184223293}
+  - {fileID: 6733543716718372370}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &7899913059057069571
@@ -149,7 +150,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6aac67f59f569014494be0476679f301, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.SummonFrontlineProxy
   projectileOrigin: {fileID: 5404801265229619131}
   pressureScreen: {fileID: 1012398341183448348}
@@ -217,7 +218,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 199bb0bc169b2be448de7703ddcc2a41, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.SummonPressureScreenPresenter
   pressureScreen: {fileID: 1012398341183448348}
   visualRoot: {fileID: 2543636273977711382}
@@ -254,7 +255,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 293a97ae51b245cdb6a1cc62b37c45b0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.SummonFrontlineProxyPresenter
   proxy: {fileID: 2545721826767157788}
   clash: {fileID: 1468321651076263994}
@@ -316,7 +317,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.CombatHealth
   team: 3
   maxHealth: 260
@@ -337,7 +338,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0f8e54a6c924c4a91a87f5df2698a67, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.SummonFrontlineClash
   proxy: {fileID: 2545721826767157788}
   health: {fileID: 3252584719484518424}
@@ -362,7 +363,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 957864eb97e83ad448073486f7d84e2f, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.SummonFrontlineHealthBarPresenter
   proxy: {fileID: 2545721826767157788}
   health: {fileID: 3252584719484518424}
@@ -438,6 +439,163 @@ Transform:
   - {fileID: 726711215545743097}
   m_Father: {fileID: 4304737946914807141}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &432913733097622144
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6733543716718372370}
+  - component: {fileID: 3764491419775524109}
+  - component: {fileID: 312585511538806579}
+  m_Layer: 0
+  m_Name: ReviewedFootstepAudio_Actor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6733543716718372370
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 432913733097622144}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6794172203611637624}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!82 &3764491419775524109
+AudioSource:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 432913733097622144}
+  m_Enabled: 1
+  serializedVersion: 4
+  OutputAudioMixerGroup: {fileID: 0}
+  m_audioClip: {fileID: 0}
+  m_Resource: {fileID: 0}
+  m_PlayOnAwake: 0
+  m_Volume: 0.24
+  m_Pitch: 1
+  Loop: 0
+  Mute: 0
+  Spatialize: 0
+  SpatializePostEffects: 0
+  Priority: 156
+  DopplerLevel: 0
+  MinDistance: 2.5
+  MaxDistance: 36
+  Pan2D: 0
+  rolloffMode: 1
+  BypassEffects: 0
+  BypassListenerEffects: 0
+  BypassReverbZones: 0
+  rolloffCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  panLevelCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0.7
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  spreadCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  reverbZoneMixCustomCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+--- !u!114 &312585511538806579
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 432913733097622144}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a21bf0d309e067a49a6c5b0bbd7aac05, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.MovementFootstepAudioPresenter
+  source: {fileID: 3764491419775524109}
+  trackedTransform: {fileID: 6794172203611637624}
+  playerMovement: {fileID: 0}
+  clips:
+  - {fileID: 8300000, guid: 5709428a107b2e745b8cbd5b15d427ac, type: 3}
+  - {fileID: 8300000, guid: 922fb3ef4a265104c9df7985a36fa9e4, type: 3}
+  - {fileID: 8300000, guid: bf67b9ec864e7ec40bd4e9b21cf50fe8, type: 3}
+  baseVolume: 0.24
+  minimumSpeed: 0.32
+  metersPerStep: 1.2
+  minimumIntervalSeconds: 0.15
+  minimumPitch: 0.96
+  maximumPitch: 1.05
+  minimumVolumeMultiplier: 0.84
+  maximumVolumeMultiplier: 1.08
 --- !u!1 &511689653121912716
 GameObject:
   m_ObjectHideFlags: 0
@@ -40400,7 +40558,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 945a81936f96ecf4286e8c0df159e218, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.SummonPressureScreen
   ownerTeam: 3
   defaultMaxIntercepts: 2

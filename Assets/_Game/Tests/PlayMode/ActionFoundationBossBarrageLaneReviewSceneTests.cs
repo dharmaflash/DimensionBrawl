@@ -146,6 +146,7 @@ namespace DimensionBrawl.Tests
         private const string PocketOwnerRootName = "BossBarrageLaneReview_PocketOwner";
         private const string BossTelegraphRootName = "BossBarrageLaneReview_BossBarrageTelegraphMarkers";
         private const string AmbientVfxRootName = "BossBarrageLaneReview_AmbientVfx";
+        private const string AmbientAudioRootName = "BossBarrageLaneReview_AmbientAudio";
         private const string HudRootName = "BossBarrageLaneReview_DebugHud";
         private const string LaneAmbientFlowMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageLaneAmbientFlow.mat";
@@ -153,6 +154,63 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarragePressureHorizon.mat";
         private const string SummonRouteWispMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageSummonRouteWisp.mat";
+        private const string AmbientArenaStormClipPath =
+            "Assets/_Game/Art/Audio/Ambience/DB_AMB_BossBarrage_ArenaStorm.mp3";
+        private const string AmbientLaneEnergyHumClipPath =
+            "Assets/_Game/Art/Audio/Ambience/DB_AMB_BossBarrage_LaneEnergyHum.wav";
+        private const string AmbientRailDustFlowClipPath =
+            "Assets/_Game/Art/Audio/Ambience/DB_AMB_BossBarrage_RailDustFlow.wav";
+        private const string PlayerFootstepAudioName = "ReviewedFootstepAudio_Player";
+        private const string CloseThreatFootstepAudioName = "ReviewedFootstepAudio_CloseThreat";
+        private const string BossProxyFootstepAudioName = "ReviewedFootstepAudio_BossProxy";
+        private const string SummonActorFootstepAudioName = "ReviewedFootstepAudio_Actor";
+        private static readonly string[] PlayerFootstepClipPaths =
+        {
+            "Assets/_Game/Art/Audio/SFX/Footsteps/DB_SFX_Footstep_PlayerBootHardGround_01.wav",
+            "Assets/_Game/Art/Audio/SFX/Footsteps/DB_SFX_Footstep_PlayerBootHardGround_02.wav",
+            "Assets/_Game/Art/Audio/SFX/Footsteps/DB_SFX_Footstep_PlayerBootHardGround_03.wav"
+        };
+
+        private static readonly string[] ArmoredFootstepClipPaths =
+        {
+            "Assets/_Game/Art/Audio/SFX/Footsteps/DB_SFX_Footstep_ArmoredMedium_01.wav",
+            "Assets/_Game/Art/Audio/SFX/Footsteps/DB_SFX_Footstep_ArmoredMedium_02.wav",
+            "Assets/_Game/Art/Audio/SFX/Footsteps/DB_SFX_Footstep_ArmoredMedium_03.wav"
+        };
+
+        private static readonly string[] HeavyFootstepClipPaths =
+        {
+            "Assets/_Game/Art/Audio/SFX/Footsteps/DB_SFX_Footstep_HeavyGround_01.wav",
+            "Assets/_Game/Art/Audio/SFX/Footsteps/DB_SFX_Footstep_HeavyGround_02.wav",
+            "Assets/_Game/Art/Audio/SFX/Footsteps/DB_SFX_Footstep_HeavyGround_03.wav"
+        };
+        private static readonly string[] PlayerRangedProjectileImpactClipPaths =
+        {
+            "Assets/_Game/Art/Audio/SFX/CombatCues/DB_SFX_PlayerRangedProjectileImpact_01.wav",
+            "Assets/_Game/Art/Audio/SFX/CombatCues/DB_SFX_PlayerRangedProjectileImpact_02.wav",
+            "Assets/_Game/Art/Audio/SFX/CombatCues/DB_SFX_PlayerRangedProjectileImpact_03.wav"
+        };
+
+        private static readonly string[] EliteSummonSignalClipPaths =
+        {
+            "Assets/_Game/Art/Audio/SFX/CombatCues/DB_SFX_EliteSummonSignal_01.wav",
+            "Assets/_Game/Art/Audio/SFX/CombatCues/DB_SFX_EliteSummonSignal_02.wav",
+            "Assets/_Game/Art/Audio/SFX/CombatCues/DB_SFX_EliteSummonSignal_03.wav"
+        };
+
+        private static readonly string[] SummonBlockOpportunityClipPaths =
+        {
+            "Assets/_Game/Art/Audio/SFX/CombatCues/DB_SFX_SummonBlockOpportunity_01.wav",
+            "Assets/_Game/Art/Audio/SFX/CombatCues/DB_SFX_SummonBlockOpportunity_02.wav",
+            "Assets/_Game/Art/Audio/SFX/CombatCues/DB_SFX_SummonBlockOpportunity_03.wav"
+        };
+
+        private static readonly string[] SummonFollowupWindowClipPaths =
+        {
+            "Assets/_Game/Art/Audio/SFX/CombatCues/DB_SFX_SummonFollowupWindow_01.wav",
+            "Assets/_Game/Art/Audio/SFX/CombatCues/DB_SFX_SummonFollowupWindow_02.wav",
+            "Assets/_Game/Art/Audio/SFX/CombatCues/DB_SFX_SummonFollowupWindow_03.wav"
+        };
         private static readonly string[] RequiredBossPatternCueIds =
         {
             "NeedleLock",
@@ -493,6 +551,8 @@ namespace DimensionBrawl.Tests
                 9,
                 "Boss barrage lane telegraphs must be authored world markers, not HUD-only warning text.");
             AssertLaneAmbientVfx(RequireRoot(AmbientVfxRootName));
+            AssertLaneAmbientAudio(RequireRoot(AmbientAudioRootName));
+            AssertBossBarrageLaneReviewFootstepAudio(player, closeThreatRoot, bossRoot);
             Assert.AreSame(LoadAsset<PlayerActionProfile>(LocalDefenseProfilePath), playerActionController.ActionProfile);
             Assert.IsTrue(combatModeController.IsRangedMode, "Review scene should start in the ranged channel.");
             Assert.AreSame(playerActionController, GetObjectReference<PlayerActionController>(combatModeController, "actionController"));
@@ -4879,6 +4939,34 @@ namespace DimensionBrawl.Tests
                 CombatVfxCueId.SummonBlockOpportunity,
                 CombatVfxCueId.SummonFollowupWindow,
                 "summon block and follow-up window need separate visual reads");
+            AssertCombatCueHasReviewedAudioBank(
+                profile,
+                CombatVfxCueId.PlayerRangedProjectileImpact,
+                PlayerRangedProjectileImpactClipPaths,
+                "player ranged projectile impact",
+                0.45f,
+                0.62f);
+            AssertCombatCueHasReviewedAudioBank(
+                profile,
+                CombatVfxCueId.EliteSummonSignal,
+                EliteSummonSignalClipPaths,
+                "summon signal",
+                0.34f,
+                0.52f);
+            AssertCombatCueHasReviewedAudioBank(
+                profile,
+                CombatVfxCueId.SummonBlockOpportunity,
+                SummonBlockOpportunityClipPaths,
+                "summon block opportunity",
+                0.42f,
+                0.62f);
+            AssertCombatCueHasReviewedAudioBank(
+                profile,
+                CombatVfxCueId.SummonFollowupWindow,
+                SummonFollowupWindowClipPaths,
+                "summon follow-up window",
+                0.3f,
+                0.5f);
         }
 
         private static void AssertCombatCueAssetOverlay(
@@ -4891,6 +4979,42 @@ namespace DimensionBrawl.Tests
             Assert.IsNotNull(cue.Prefab, $"{cueId} should keep a cue prefab.");
             AssertPromotedParticleVfx(cue.Prefab.transform.Find(childName), label, 1);
             AssertGameOwnedAsset(cue.Prefab, $"{cueId} cue prefab");
+        }
+
+        private static void AssertCombatCueHasReviewedAudioBank(
+            CombatVfxCueProfile profile,
+            CombatVfxCueId cueId,
+            string[] expectedClipPaths,
+            string label,
+            float minimumBaseVolume,
+            float maximumBaseVolume)
+        {
+            Assert.IsTrue(profile.TryGetCue(cueId, out CombatVfxCue cue), $"{cueId} should exist.");
+            Assert.IsNotNull(cue.Prefab, $"{cueId} should keep a cue prefab.");
+            CombatVfxCueAudioRandomizer[] randomizers =
+                cue.Prefab.GetComponentsInChildren<CombatVfxCueAudioRandomizer>(true);
+            Assert.AreEqual(1, randomizers.Length, $"{label} should carry one reviewed audio randomizer.");
+            CombatVfxCueAudioRandomizer randomizer = randomizers[0];
+            Assert.AreEqual(expectedClipPaths.Length, randomizer.ClipCount, $"{label} should use reviewed audio variations.");
+            Assert.That(randomizer.BaseVolume, Is.InRange(minimumBaseVolume, maximumBaseVolume), $"{label} volume should stay reviewed.");
+            Assert.That(randomizer.MinimumPitch, Is.InRange(0.94f, 1.08f), $"{label} pitch variation should stay subtle.");
+            Assert.LessOrEqual(randomizer.MaximumPitch, 1.1f, $"{label} pitch variation should stay readable.");
+            Assert.GreaterOrEqual(randomizer.MinimumVolumeMultiplier, 0.86f, $"{label} random volume should not vanish.");
+            Assert.LessOrEqual(randomizer.MaximumVolumeMultiplier, 1.08f, $"{label} random volume should not spike.");
+            AudioSource source = randomizer.Source;
+            Assert.IsNotNull(source, $"{label} randomizer should own an AudioSource.");
+            Assert.IsNull(source.clip, $"{label} should be randomizer-driven.");
+            Assert.IsFalse(source.playOnAwake, $"{label} should not auto-play.");
+            Assert.IsFalse(source.loop, $"{label} should not loop.");
+            Assert.That(source.volume, Is.InRange(minimumBaseVolume, maximumBaseVolume), $"{label} source volume should stay reviewed.");
+
+            for (int i = 0; i < expectedClipPaths.Length; i++)
+            {
+                AudioClip expectedClip = LoadAsset<AudioClip>(expectedClipPaths[i]);
+                AudioClip actualClip = randomizer.GetClip(i);
+                Assert.AreSame(expectedClip, actualClip, $"{label} clip {i} should use a promoted reviewed SFX clip.");
+                AssertGameOwnedAsset(actualClip, $"{label} clip {i}");
+            }
         }
 
         private static void AssertDistinctCombatCuePrefabs(
@@ -5868,6 +5992,104 @@ namespace DimensionBrawl.Tests
                 SummonRouteWispMaterialPath,
                 expectMotion: false,
                 expectFloating: true);
+        }
+
+        private static void AssertLaneAmbientAudio(GameObject root)
+        {
+            AudioSource[] sources = root.GetComponentsInChildren<AudioSource>(true);
+            Assert.AreEqual(4, sources.Length, "Lane ambient audio should stay a small, explicit loop bed.");
+            AssertAmbientAudio(root.transform, "AmbientAudio_ArenaStormBed", AmbientArenaStormClipPath, 0f, 0.05f, 0.07f);
+            AssertAmbientAudio(root.transform, "AmbientAudio_LaneEnergyHum", AmbientLaneEnergyHumClipPath, 0.25f, 0.06f, 0.09f);
+            AssertAmbientAudio(root.transform, "AmbientAudio_LeftRailDustFlow", AmbientRailDustFlowClipPath, 0.45f, 0.03f, 0.055f);
+            AssertAmbientAudio(root.transform, "AmbientAudio_RightRailDustFlow", AmbientRailDustFlowClipPath, 0.45f, 0.03f, 0.055f);
+        }
+
+        private static void AssertAmbientAudio(
+            Transform root,
+            string childName,
+            string clipPath,
+            float minimumSpatialBlend,
+            float minimumVolume,
+            float maximumVolume)
+        {
+            Transform child = root.Find(childName);
+            Assert.IsNotNull(child, $"Missing ambient audio source {childName}.");
+            AudioSource source = child.GetComponent<AudioSource>();
+            Assert.IsNotNull(source, $"{childName} should own one AudioSource.");
+            AudioClip expectedClip = LoadAsset<AudioClip>(clipPath);
+            Assert.AreSame(expectedClip, source.clip, $"{childName} should use the reviewed promoted ambience clip.");
+            AssertGameOwnedAsset(source.clip, $"{childName} clip");
+            Assert.IsTrue(source.playOnAwake, $"{childName} should start with the authored review scene.");
+            Assert.IsTrue(source.loop, $"{childName} should be a loop bed, not repeated one-shots.");
+            Assert.That(source.volume, Is.InRange(minimumVolume, maximumVolume), $"{childName} should stay below combat SFX.");
+            Assert.GreaterOrEqual(source.spatialBlend, minimumSpatialBlend, $"{childName} should preserve its authored space.");
+            Assert.GreaterOrEqual(source.priority, 180, $"{childName} should have lower priority than combat SFX.");
+        }
+
+        private static void AssertBossBarrageLaneReviewFootstepAudio(
+            PlayerMovementController player,
+            GameObject closeThreatRoot,
+            GameObject bossRoot)
+        {
+            AssertFootstepAudio(
+                player.gameObject,
+                PlayerFootstepAudioName,
+                PlayerFootstepClipPaths,
+                player,
+                0.34f,
+                0.25f);
+            AssertFootstepAudio(
+                closeThreatRoot,
+                CloseThreatFootstepAudioName,
+                ArmoredFootstepClipPaths,
+                null,
+                0.32f,
+                0.65f);
+            AssertFootstepAudio(
+                bossRoot,
+                BossProxyFootstepAudioName,
+                ArmoredFootstepClipPaths,
+                null,
+                0.24f,
+                0.75f);
+            AssertFootstepAudio(LoadAsset<GameObject>(SummonSlot1ActorPrefabPath), SummonActorFootstepAudioName, HeavyFootstepClipPaths, null, 0.28f, 0.65f);
+            AssertFootstepAudio(LoadAsset<GameObject>(SummonSlot2ActorPrefabPath), SummonActorFootstepAudioName, ArmoredFootstepClipPaths, null, 0.24f, 0.6f);
+            AssertFootstepAudio(LoadAsset<GameObject>(SummonSlot3ActorPrefabPath), SummonActorFootstepAudioName, HeavyFootstepClipPaths, null, 0.34f, 0.7f);
+            AssertFootstepAudio(LoadAsset<GameObject>(BossSummonPressureActorPrefabPath), SummonActorFootstepAudioName, HeavyFootstepClipPaths, null, 0.32f, 0.72f);
+        }
+
+        private static void AssertFootstepAudio(
+            GameObject root,
+            string childName,
+            string[] expectedClipPaths,
+            PlayerMovementController expectedPlayerMovement,
+            float maximumBaseVolume,
+            float minimumSpatialBlend)
+        {
+            Transform child = root.transform.Find(childName);
+            Assert.IsNotNull(child, $"{root.name} should own reviewed footstep audio child {childName}.");
+            AudioSource source = RequireComponent<AudioSource>(child.gameObject, $"{childName} source");
+            MovementFootstepAudioPresenter presenter =
+                RequireComponent<MovementFootstepAudioPresenter>(child.gameObject, $"{childName} presenter");
+            Assert.AreSame(source, presenter.Source, $"{childName} should drive its local AudioSource.");
+            Assert.AreSame(root.transform, presenter.TrackedTransform, $"{childName} should track the actor root.");
+            Assert.AreSame(expectedPlayerMovement, presenter.PlayerMovement, $"{childName} should use the expected movement source.");
+            Assert.IsNull(source.clip, $"{childName} should use one-shot clips, not a looping source clip.");
+            Assert.IsFalse(source.loop, $"{childName} should not loop.");
+            Assert.IsFalse(source.playOnAwake, $"{childName} should be movement driven.");
+            Assert.LessOrEqual(source.volume, maximumBaseVolume, $"{childName} should stay under combat SFX volume.");
+            Assert.LessOrEqual(presenter.BaseVolume, maximumBaseVolume, $"{childName} presenter volume should stay restrained.");
+            Assert.GreaterOrEqual(source.spatialBlend, minimumSpatialBlend, $"{childName} should keep positional space.");
+            Assert.That(source.priority, Is.InRange(130, 170), $"{childName} should sit between combat SFX and ambience priority.");
+            Assert.AreEqual(expectedClipPaths.Length, presenter.ClipCount, $"{childName} should use reviewed footstep variations.");
+
+            for (int i = 0; i < expectedClipPaths.Length; i++)
+            {
+                AudioClip expectedClip = LoadAsset<AudioClip>(expectedClipPaths[i]);
+                AudioClip actualClip = presenter.GetClip(i);
+                Assert.AreSame(expectedClip, actualClip, $"{childName} clip {i} should use a promoted footstep clip.");
+                AssertGameOwnedAsset(actualClip, $"{childName} clip {i}");
+            }
         }
 
         private static void AssertVisualOnlySceneVfx(

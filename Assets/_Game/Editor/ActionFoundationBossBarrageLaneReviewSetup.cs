@@ -229,6 +229,11 @@ namespace DimensionBrawl.Editor
         private const string HudRootName = ReviewRootPrefix + "DebugHud";
         private const string MarkerRootName = ReviewRootPrefix + "Markers";
         private const string AmbientVfxRootName = ReviewRootPrefix + "AmbientVfx";
+        private const string AmbientAudioRootName = ReviewRootPrefix + "AmbientAudio";
+        private const string PlayerFootstepAudioName = "ReviewedFootstepAudio_Player";
+        private const string CloseThreatFootstepAudioName = "ReviewedFootstepAudio_CloseThreat";
+        private const string BossProxyFootstepAudioName = "ReviewedFootstepAudio_BossProxy";
+        private const string SummonActorFootstepAudioName = "ReviewedFootstepAudio_Actor";
         private const string PocketClearMarkerName = ReviewRootPrefix + "PocketClearMarker";
         private const string PocketFailMarkerName = ReviewRootPrefix + "PocketFailMarker";
         private const string SummonEntryMarkerName = ReviewRootPrefix + "SummonEntryMarker";
@@ -281,6 +286,32 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarragePressureHorizon.mat";
         private const string SummonRouteWispMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageSummonRouteWisp.mat";
+        private const string AmbientArenaStormClipPath =
+            "Assets/_Game/Art/Audio/Ambience/DB_AMB_BossBarrage_ArenaStorm.mp3";
+        private const string AmbientLaneEnergyHumClipPath =
+            "Assets/_Game/Art/Audio/Ambience/DB_AMB_BossBarrage_LaneEnergyHum.wav";
+        private const string AmbientRailDustFlowClipPath =
+            "Assets/_Game/Art/Audio/Ambience/DB_AMB_BossBarrage_RailDustFlow.wav";
+        private static readonly string[] PlayerFootstepClipPaths =
+        {
+            "Assets/_Game/Art/Audio/SFX/Footsteps/DB_SFX_Footstep_PlayerBootHardGround_01.wav",
+            "Assets/_Game/Art/Audio/SFX/Footsteps/DB_SFX_Footstep_PlayerBootHardGround_02.wav",
+            "Assets/_Game/Art/Audio/SFX/Footsteps/DB_SFX_Footstep_PlayerBootHardGround_03.wav"
+        };
+
+        private static readonly string[] ArmoredFootstepClipPaths =
+        {
+            "Assets/_Game/Art/Audio/SFX/Footsteps/DB_SFX_Footstep_ArmoredMedium_01.wav",
+            "Assets/_Game/Art/Audio/SFX/Footsteps/DB_SFX_Footstep_ArmoredMedium_02.wav",
+            "Assets/_Game/Art/Audio/SFX/Footsteps/DB_SFX_Footstep_ArmoredMedium_03.wav"
+        };
+
+        private static readonly string[] HeavyFootstepClipPaths =
+        {
+            "Assets/_Game/Art/Audio/SFX/Footsteps/DB_SFX_Footstep_HeavyGround_01.wav",
+            "Assets/_Game/Art/Audio/SFX/Footsteps/DB_SFX_Footstep_HeavyGround_02.wav",
+            "Assets/_Game/Art/Audio/SFX/Footsteps/DB_SFX_Footstep_HeavyGround_03.wav"
+        };
 
         private static readonly Vector3 PlayerStartPosition = new Vector3(0f, 0f, -8.5f);
         private static readonly Vector3 CameraStartOffset = new Vector3(0.14f, 0.68f, -4.25f);
@@ -315,6 +346,20 @@ namespace DimensionBrawl.Editor
         {
             EnsureBossBarrageLaneReviewScene();
             Debug.Log("Reapplied ActionFoundation boss barrage lane review scene.");
+        }
+
+        [MenuItem("DimensionBrawl/Refresh Action Foundation Boss Barrage Lane Review Ambient Audio")]
+        public static void RefreshBossBarrageLaneReviewAmbientAudioMenu()
+        {
+            RefreshBossBarrageLaneReviewAmbientAudio();
+            Debug.Log("Refreshed ActionFoundation boss barrage lane review ambient audio.");
+        }
+
+        [MenuItem("DimensionBrawl/Refresh Action Foundation Boss Barrage Lane Review Footstep Audio")]
+        public static void RefreshBossBarrageLaneReviewFootstepAudioMenu()
+        {
+            RefreshBossBarrageLaneReviewFootstepAudio();
+            Debug.Log("Refreshed ActionFoundation boss barrage lane review footstep audio.");
         }
 
         [MenuItem("DimensionBrawl/Reapply Action Foundation Boss Barrage Lane Review Balance")]
@@ -830,6 +875,8 @@ namespace DimensionBrawl.Editor
             ConfigureArenaInfluenceTargets(scene, player.transform, bossProxy.transform, closeThreat.transform);
             CreateLaneMarkers(scene, laneSpace);
             CreateLaneAmbientVfx(scene, laneSpace);
+            CreateLaneAmbientAudio(scene, laneSpace);
+            ConfigureBossBarrageLaneReviewFootstepAudio(scene);
             CreateBossBarrageTelegraphMarkers(scene, laneSpace, bossBarrageEmitter);
             // Keep the serialized default aligned with the ranged starting mode after all visual swaps are rebuilt.
             ConfigureLocalDefenseProfile(playerActionController, localDefenseProfile);
@@ -1108,6 +1155,8 @@ namespace DimensionBrawl.Editor
                 emitter,
                 laneSpace);
             ValidateLaneAmbientVfx(scene);
+            ValidateLaneAmbientAudio(scene);
+            ValidateBossBarrageLaneReviewFootstepAudio(scene);
             ValidateObjectReference(encounter, "playerHealth", playerHealth);
             ValidateObjectReference(encounter, "enemyHealth", closeThreatHealth);
             ValidatePocketOwner(
@@ -1213,6 +1262,58 @@ namespace DimensionBrawl.Editor
             ValidateNoImportedAssetReference(LaneAmbientFlowMaterialPath);
             ValidateNoImportedAssetReference(BossPressureHorizonMaterialPath);
             ValidateNoImportedAssetReference(SummonRouteWispMaterialPath);
+            ValidateNoImportedAssetReference(AmbientArenaStormClipPath);
+            ValidateNoImportedAssetReference(AmbientLaneEnergyHumClipPath);
+            ValidateNoImportedAssetReference(AmbientRailDustFlowClipPath);
+            ValidateNoImportedAssetReferences(PlayerFootstepClipPaths);
+            ValidateNoImportedAssetReferences(ArmoredFootstepClipPaths);
+            ValidateNoImportedAssetReferences(HeavyFootstepClipPaths);
+        }
+
+        private static void RefreshBossBarrageLaneReviewAmbientAudio()
+        {
+            Scene scene = EditorSceneManager.OpenScene(ReviewScenePath, OpenSceneMode.Single);
+            GameObject existingRoot = FindRoot(scene, AmbientAudioRootName);
+            if (existingRoot != null)
+            {
+                UnityEngine.Object.DestroyImmediate(existingRoot);
+            }
+
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(
+                RequireRoot(scene, LaneRootName),
+                "lane space");
+            CreateLaneAmbientAudio(scene, laneSpace);
+            ValidateLaneAmbientAudio(scene);
+
+            if (!EditorSceneManager.SaveScene(scene, ReviewScenePath))
+            {
+                throw new InvalidOperationException($"Failed to save boss barrage lane ambient audio at {ReviewScenePath}.");
+            }
+
+            AssetDatabase.SaveAssets();
+        }
+
+        private static void RefreshBossBarrageLaneReviewFootstepAudio()
+        {
+            AssetDatabase.Refresh();
+            Scene scene = EditorSceneManager.OpenScene(ReviewScenePath, OpenSceneMode.Single);
+            ConfigureBossBarrageLaneReviewFootstepAudio(scene);
+            ValidateBossBarrageLaneReviewFootstepAudio(scene);
+
+            if (!EditorSceneManager.SaveScene(scene, ReviewScenePath))
+            {
+                throw new InvalidOperationException($"Failed to save boss barrage lane footstep audio at {ReviewScenePath}.");
+            }
+
+            AssetDatabase.SaveAssets();
+        }
+
+        private static void ValidateNoImportedAssetReferences(IEnumerable<string> assetPaths)
+        {
+            foreach (string assetPath in assetPaths)
+            {
+                ValidateNoImportedAssetReference(assetPath);
+            }
         }
 
         public static void EnsureBossSummonDuelReviewScene()
@@ -3589,6 +3690,233 @@ namespace DimensionBrawl.Editor
             return marker;
         }
 
+        private static void CreateLaneAmbientAudio(Scene scene, SummonLaneSpace laneSpace)
+        {
+            GameObject root = CreateRoot(scene, AmbientAudioRootName);
+            float backZ = laneSpace.BackLimitZ;
+            float forwardZ = laneSpace.ForwardBoundaryZ;
+
+            CreateAmbientAudioSource(
+                root.transform,
+                "AmbientAudio_ArenaStormBed",
+                LoadAsset<AudioClip>(AmbientArenaStormClipPath),
+                laneSpace.GetLaneWorldPoint(0f, Mathf.Lerp(backZ, forwardZ, 0.36f), 1.6f),
+                0.055f,
+                0f,
+                8f,
+                80f,
+                0.98f);
+            CreateAmbientAudioSource(
+                root.transform,
+                "AmbientAudio_LaneEnergyHum",
+                LoadAsset<AudioClip>(AmbientLaneEnergyHumClipPath),
+                laneSpace.GetLaneWorldPoint(0f, Mathf.Lerp(backZ, forwardZ, 0.76f), 0.45f),
+                0.075f,
+                0.38f,
+                6f,
+                48f,
+                1.02f);
+            CreateAmbientAudioSource(
+                root.transform,
+                "AmbientAudio_LeftRailDustFlow",
+                LoadAsset<AudioClip>(AmbientRailDustFlowClipPath),
+                laneSpace.GetLaneWorldPoint(-laneSpace.HalfWidth * 0.72f, Mathf.Lerp(backZ, forwardZ, 0.42f), 0.25f),
+                0.042f,
+                0.55f,
+                4f,
+                36f,
+                0.97f);
+            CreateAmbientAudioSource(
+                root.transform,
+                "AmbientAudio_RightRailDustFlow",
+                LoadAsset<AudioClip>(AmbientRailDustFlowClipPath),
+                laneSpace.GetLaneWorldPoint(laneSpace.HalfWidth * 0.72f, Mathf.Lerp(backZ, forwardZ, 0.58f), 0.25f),
+                0.042f,
+                0.55f,
+                4f,
+                36f,
+                1.03f);
+
+            EditorUtility.SetDirty(root);
+        }
+
+        private static void CreateAmbientAudioSource(
+            Transform parent,
+            string name,
+            AudioClip clip,
+            Vector3 position,
+            float volume,
+            float spatialBlend,
+            float minDistance,
+            float maxDistance,
+            float pitch)
+        {
+            GameObject audioObject = new GameObject(name);
+            audioObject.transform.SetParent(parent, worldPositionStays: true);
+            audioObject.transform.position = position;
+            AudioSource source = audioObject.AddComponent<AudioSource>();
+            source.clip = clip;
+            source.loop = true;
+            source.playOnAwake = true;
+            source.volume = volume;
+            source.pitch = pitch;
+            source.spatialBlend = spatialBlend;
+            source.rolloffMode = AudioRolloffMode.Linear;
+            source.minDistance = minDistance;
+            source.maxDistance = maxDistance;
+            source.dopplerLevel = 0f;
+            source.priority = 210;
+            EditorUtility.SetDirty(audioObject);
+            EditorUtility.SetDirty(source);
+        }
+
+        private static void ConfigureBossBarrageLaneReviewFootstepAudio(Scene scene)
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>(scene, "player movement");
+            ConfigureFootstepAudio(
+                player.gameObject,
+                PlayerFootstepAudioName,
+                PlayerFootstepClipPaths,
+                player,
+                0.3f,
+                0.55f,
+                1.25f,
+                0.16f,
+                0.32f,
+                2f,
+                26f,
+                150);
+
+            ConfigureFootstepAudio(
+                RequireRoot(scene, CloseThreatRootName),
+                CloseThreatFootstepAudioName,
+                ArmoredFootstepClipPaths,
+                null,
+                0.28f,
+                0.35f,
+                1.18f,
+                0.14f,
+                0.72f,
+                2.4f,
+                34f,
+                155);
+
+            ConfigureFootstepAudio(
+                RequireRoot(scene, BossProxyRootName),
+                BossProxyFootstepAudioName,
+                ArmoredFootstepClipPaths,
+                null,
+                0.2f,
+                0.28f,
+                1.55f,
+                0.18f,
+                0.82f,
+                3f,
+                44f,
+                165);
+
+            ConfigurePrefabFootstepAudio(SummonSlot1ActorPrefabPath, HeavyFootstepClipPaths, 0.24f, 1.2f, 0.7f, 156);
+            ConfigurePrefabFootstepAudio(SummonSlot2ActorPrefabPath, ArmoredFootstepClipPaths, 0.2f, 1.28f, 0.68f, 160);
+            ConfigurePrefabFootstepAudio(SummonSlot3ActorPrefabPath, HeavyFootstepClipPaths, 0.3f, 1.35f, 0.76f, 152);
+            ConfigurePrefabFootstepAudio(BossSummonPressureActorPrefabPath, HeavyFootstepClipPaths, 0.28f, 1.3f, 0.78f, 154);
+        }
+
+        private static void ConfigurePrefabFootstepAudio(
+            string prefabPath,
+            string[] clipPaths,
+            float baseVolume,
+            float metersPerStep,
+            float spatialBlend,
+            int priority)
+        {
+            GameObject editableRoot = PrefabUtility.LoadPrefabContents(prefabPath);
+            try
+            {
+                ConfigureFootstepAudio(
+                    editableRoot,
+                    SummonActorFootstepAudioName,
+                    clipPaths,
+                    null,
+                    baseVolume,
+                    0.32f,
+                    metersPerStep,
+                    0.15f,
+                    spatialBlend,
+                    2.5f,
+                    36f,
+                    priority);
+                PrefabUtility.SaveAsPrefabAsset(editableRoot, prefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(editableRoot);
+            }
+        }
+
+        private static void ConfigureFootstepAudio(
+            GameObject root,
+            string childName,
+            string[] clipPaths,
+            PlayerMovementController playerMovement,
+            float baseVolume,
+            float minimumSpeed,
+            float metersPerStep,
+            float minimumIntervalSeconds,
+            float spatialBlend,
+            float minDistance,
+            float maxDistance,
+            int priority)
+        {
+            Transform child = EnsureChild(root.transform, childName);
+            child.localPosition = Vector3.zero;
+            child.localRotation = Quaternion.identity;
+            child.localScale = Vector3.one;
+
+            AudioSource source = EnsureComponent<AudioSource>(child.gameObject);
+            source.clip = null;
+            source.loop = false;
+            source.playOnAwake = false;
+            source.volume = baseVolume;
+            source.pitch = 1f;
+            source.spatialBlend = spatialBlend;
+            source.rolloffMode = AudioRolloffMode.Linear;
+            source.minDistance = minDistance;
+            source.maxDistance = maxDistance;
+            source.dopplerLevel = 0f;
+            source.priority = priority;
+
+            MovementFootstepAudioPresenter presenter = EnsureComponent<MovementFootstepAudioPresenter>(child.gameObject);
+            presenter.Configure(
+                source,
+                root.transform,
+                playerMovement,
+                LoadFootstepClips(clipPaths),
+                baseVolume,
+                minimumSpeed,
+                metersPerStep,
+                minimumIntervalSeconds,
+                0.96f,
+                1.05f,
+                0.84f,
+                1.08f);
+
+            EditorUtility.SetDirty(child.gameObject);
+            EditorUtility.SetDirty(source);
+            EditorUtility.SetDirty(presenter);
+            EditorUtility.SetDirty(root);
+        }
+
+        private static AudioClip[] LoadFootstepClips(string[] clipPaths)
+        {
+            var clips = new AudioClip[clipPaths.Length];
+            for (int i = 0; i < clipPaths.Length; i++)
+            {
+                clips[i] = LoadAsset<AudioClip>(clipPaths[i]);
+            }
+
+            return clips;
+        }
+
         private static GameObject CreateMarker(
             Transform parent,
             string name,
@@ -5663,10 +5991,34 @@ namespace DimensionBrawl.Editor
                 CombatVfxCueId.PlayerRangedMuzzleFlash,
                 ActionFoundationCombatVfxSetup.GetPlayerRangedGunshotClipPaths(),
                 "player ranged muzzle flash");
-            ValidateCombatCueHasNoAuthoredAudio(profile, CombatVfxCueId.PlayerRangedProjectileImpact, "player ranged projectile impact");
-            ValidateCombatCueHasNoAuthoredAudio(profile, CombatVfxCueId.EliteSummonSignal, "summon signal");
-            ValidateCombatCueHasNoAuthoredAudio(profile, CombatVfxCueId.SummonBlockOpportunity, "summon block opportunity");
-            ValidateCombatCueHasNoAuthoredAudio(profile, CombatVfxCueId.SummonFollowupWindow, "summon follow-up window");
+            ValidateCombatCueHasReviewedAudioBank(
+                profile,
+                CombatVfxCueId.PlayerRangedProjectileImpact,
+                ActionFoundationCombatVfxSetup.GetPlayerRangedProjectileImpactClipPaths(),
+                "player ranged projectile impact",
+                0.45f,
+                0.62f);
+            ValidateCombatCueHasReviewedAudioBank(
+                profile,
+                CombatVfxCueId.EliteSummonSignal,
+                ActionFoundationCombatVfxSetup.GetEliteSummonSignalClipPaths(),
+                "summon signal",
+                0.34f,
+                0.52f);
+            ValidateCombatCueHasReviewedAudioBank(
+                profile,
+                CombatVfxCueId.SummonBlockOpportunity,
+                ActionFoundationCombatVfxSetup.GetSummonBlockOpportunityClipPaths(),
+                "summon block opportunity",
+                0.42f,
+                0.62f);
+            ValidateCombatCueHasReviewedAudioBank(
+                profile,
+                CombatVfxCueId.SummonFollowupWindow,
+                ActionFoundationCombatVfxSetup.GetSummonFollowupWindowClipPaths(),
+                "summon follow-up window",
+                0.3f,
+                0.5f);
         }
 
         private static void ValidateCombatCueAssetOverlay(
@@ -5710,6 +6062,28 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static void ValidateCombatCueHasReviewedAudioBank(
+            CombatVfxCueProfile profile,
+            CombatVfxCueId cueId,
+            string[] expectedClipPaths,
+            string label,
+            float minimumBaseVolume,
+            float maximumBaseVolume)
+        {
+            if (!profile.TryGetCue(cueId, out CombatVfxCue cue) || cue.Prefab == null)
+            {
+                throw new InvalidOperationException($"Boss barrage combat cue profile is missing {cueId}.");
+            }
+
+            CombatVfxCueAudioRandomizer[] randomizers = cue.Prefab.GetComponentsInChildren<CombatVfxCueAudioRandomizer>(includeInactive: true);
+            if (randomizers.Length != 1)
+            {
+                throw new InvalidOperationException($"{label} should carry exactly one reviewed audio randomizer, found {randomizers.Length}.");
+            }
+
+            ValidateReviewedAudioRandomizer(randomizers[0], expectedClipPaths, label, minimumBaseVolume, maximumBaseVolume);
+        }
+
         private static void ValidateCombatCueHasReviewedGunshotAudioBank(
             CombatVfxCueProfile profile,
             CombatVfxCueId cueId,
@@ -5732,10 +6106,19 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"{label} should carry exactly one reviewed audio randomizer, found {randomizers.Length}.");
             }
 
-            CombatVfxCueAudioRandomizer randomizer = randomizers[0];
+            ValidateReviewedAudioRandomizer(randomizers[0], expectedClipPaths, label, 0.6f, 0.78f);
+        }
+
+        private static void ValidateReviewedAudioRandomizer(
+            CombatVfxCueAudioRandomizer randomizer,
+            string[] expectedClipPaths,
+            string label,
+            float minimumBaseVolume,
+            float maximumBaseVolume)
+        {
             if (randomizer.ClipCount != expectedClipPaths.Length)
             {
-                throw new InvalidOperationException($"{label} should carry {expectedClipPaths.Length} reviewed gunshot clips, found {randomizer.ClipCount}.");
+                throw new InvalidOperationException($"{label} should carry {expectedClipPaths.Length} reviewed audio clips, found {randomizer.ClipCount}.");
             }
 
             for (int i = 0; i < expectedClipPaths.Length; i++)
@@ -5762,15 +6145,16 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"{label} audio should be randomizer-driven, one-shot only, and must not auto-play or loop.");
             }
 
-            if (source.volume < 0.55f || Mathf.Abs(source.pitch - 1f) > 0.01f || source.spatialBlend > 0.05f)
+            if (source.volume < minimumBaseVolume || source.volume > maximumBaseVolume || Mathf.Abs(source.pitch - 1f) > 0.01f)
             {
-                throw new InvalidOperationException($"{label} audio source should stay clear, unpitched by default, and local-player readable.");
+                throw new InvalidOperationException($"{label} audio source should stay reviewed, readable, and unpitched by default.");
             }
 
-            if (randomizer.BaseVolume < 0.6f
-                || randomizer.MinimumPitch < 1f
+            if (randomizer.BaseVolume < minimumBaseVolume
+                || randomizer.BaseVolume > maximumBaseVolume
+                || randomizer.MinimumPitch < 0.94f
                 || randomizer.MaximumPitch > 1.1f
-                || randomizer.MinimumVolumeMultiplier < 0.9f
+                || randomizer.MinimumVolumeMultiplier < 0.86f
                 || randomizer.MaximumVolumeMultiplier > 1.08f)
             {
                 throw new InvalidOperationException($"{label} audio randomization should stay subtle and readable.");
@@ -5880,6 +6264,166 @@ namespace DimensionBrawl.Editor
             ValidateAmbientVisual(root, "BossPressureHorizon_Curtain", BossPressureHorizonMaterialPath, expectMotion: true, expectFloating: false);
             ValidateAmbientVisual(root, "SummonRouteWisp_00", SummonRouteWispMaterialPath, expectMotion: false, expectFloating: true);
             ValidateAmbientVisual(root, "SummonRouteWisp_03", SummonRouteWispMaterialPath, expectMotion: false, expectFloating: true);
+        }
+
+        private static void ValidateLaneAmbientAudio(Scene scene)
+        {
+            Transform root = RequireRoot(scene, AmbientAudioRootName).transform;
+            AudioSource[] sources = root.GetComponentsInChildren<AudioSource>(includeInactive: true);
+            if (sources.Length != 4)
+            {
+                throw new InvalidOperationException($"Lane ambient audio should use exactly 4 low-volume loops, found {sources.Length}.");
+            }
+
+            ValidateAmbientAudio(root, "AmbientAudio_ArenaStormBed", AmbientArenaStormClipPath, 0f, 0.05f, 0.07f);
+            ValidateAmbientAudio(root, "AmbientAudio_LaneEnergyHum", AmbientLaneEnergyHumClipPath, 0.25f, 0.06f, 0.09f);
+            ValidateAmbientAudio(root, "AmbientAudio_LeftRailDustFlow", AmbientRailDustFlowClipPath, 0.45f, 0.03f, 0.055f);
+            ValidateAmbientAudio(root, "AmbientAudio_RightRailDustFlow", AmbientRailDustFlowClipPath, 0.45f, 0.03f, 0.055f);
+        }
+
+        private static void ValidateAmbientAudio(
+            Transform root,
+            string childName,
+            string clipPath,
+            float minimumSpatialBlend,
+            float minimumVolume,
+            float maximumVolume)
+        {
+            Transform child = root.Find(childName);
+            if (child == null)
+            {
+                throw new InvalidOperationException($"Missing ambient audio source {childName}.");
+            }
+
+            AudioSource source = RequireComponent<AudioSource>(child.gameObject, childName);
+            AudioClip expectedClip = LoadAsset<AudioClip>(clipPath);
+            if (source.clip != expectedClip)
+            {
+                string actualName = source.clip != null ? source.clip.name : "null";
+                throw new InvalidOperationException($"{childName} should use {expectedClip.name}, found {actualName}.");
+            }
+
+            ValidateGameOwnedAsset(source.clip, $"{childName} clip");
+            if (!source.playOnAwake || !source.loop)
+            {
+                throw new InvalidOperationException($"{childName} should be an authored play-on-awake loop.");
+            }
+
+            if (source.volume < minimumVolume || source.volume > maximumVolume)
+            {
+                throw new InvalidOperationException($"{childName} volume should stay between {minimumVolume:0.###} and {maximumVolume:0.###}.");
+            }
+
+            if (source.spatialBlend < minimumSpatialBlend || source.priority < 180)
+            {
+                throw new InvalidOperationException($"{childName} should stay subtle and lower priority than combat SFX.");
+            }
+        }
+
+        private static void ValidateBossBarrageLaneReviewFootstepAudio(Scene scene)
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>(scene, "player movement");
+            ValidateFootstepAudio(
+                player.gameObject,
+                PlayerFootstepAudioName,
+                PlayerFootstepClipPaths,
+                player,
+                0.34f,
+                0.25f);
+            ValidateFootstepAudio(
+                RequireRoot(scene, CloseThreatRootName),
+                CloseThreatFootstepAudioName,
+                ArmoredFootstepClipPaths,
+                null,
+                0.32f,
+                0.65f);
+            ValidateFootstepAudio(
+                RequireRoot(scene, BossProxyRootName),
+                BossProxyFootstepAudioName,
+                ArmoredFootstepClipPaths,
+                null,
+                0.24f,
+                0.75f);
+            ValidatePrefabFootstepAudio(SummonSlot1ActorPrefabPath, HeavyFootstepClipPaths, 0.28f, 0.65f);
+            ValidatePrefabFootstepAudio(SummonSlot2ActorPrefabPath, ArmoredFootstepClipPaths, 0.24f, 0.6f);
+            ValidatePrefabFootstepAudio(SummonSlot3ActorPrefabPath, HeavyFootstepClipPaths, 0.34f, 0.7f);
+            ValidatePrefabFootstepAudio(BossSummonPressureActorPrefabPath, HeavyFootstepClipPaths, 0.32f, 0.72f);
+        }
+
+        private static void ValidatePrefabFootstepAudio(
+            string prefabPath,
+            string[] expectedClipPaths,
+            float maximumBaseVolume,
+            float minimumSpatialBlend)
+        {
+            GameObject prefab = LoadAsset<GameObject>(prefabPath);
+            ValidateFootstepAudio(
+                prefab,
+                SummonActorFootstepAudioName,
+                expectedClipPaths,
+                null,
+                maximumBaseVolume,
+                minimumSpatialBlend);
+        }
+
+        private static void ValidateFootstepAudio(
+            GameObject root,
+            string childName,
+            string[] expectedClipPaths,
+            PlayerMovementController expectedPlayerMovement,
+            float maximumBaseVolume,
+            float minimumSpatialBlend)
+        {
+            Transform child = root.transform.Find(childName);
+            if (child == null)
+            {
+                throw new InvalidOperationException($"{root.name} is missing reviewed footstep audio child {childName}.");
+            }
+
+            AudioSource source = RequireComponent<AudioSource>(child.gameObject, $"{childName} source");
+            MovementFootstepAudioPresenter presenter =
+                RequireComponent<MovementFootstepAudioPresenter>(child.gameObject, $"{childName} presenter");
+            ValidateObjectReference(presenter, "source", source);
+            ValidateObjectReference(presenter, "trackedTransform", root.transform);
+            ValidateObjectReference(presenter, "playerMovement", expectedPlayerMovement);
+            if (source.clip != null || source.loop || source.playOnAwake)
+            {
+                throw new InvalidOperationException($"{childName} should play randomized one-shot footsteps only.");
+            }
+
+            if (source.volume > maximumBaseVolume || presenter.BaseVolume > maximumBaseVolume)
+            {
+                throw new InvalidOperationException($"{childName} footstep volume is too high for review-scene ambience.");
+            }
+
+            if (source.spatialBlend < minimumSpatialBlend)
+            {
+                throw new InvalidOperationException($"{childName} should keep positional space.");
+            }
+
+            if (source.priority < 130 || source.priority > 170)
+            {
+                throw new InvalidOperationException($"{childName} should sit between combat SFX and ambient loop priority.");
+            }
+
+            if (presenter.ClipCount != expectedClipPaths.Length)
+            {
+                throw new InvalidOperationException(
+                    $"{childName} should use {expectedClipPaths.Length} reviewed footstep variations.");
+            }
+
+            for (int i = 0; i < expectedClipPaths.Length; i++)
+            {
+                AudioClip clip = presenter.GetClip(i);
+                AudioClip expectedClip = LoadAsset<AudioClip>(expectedClipPaths[i]);
+                if (clip != expectedClip)
+                {
+                    string actualPath = clip != null ? AssetDatabase.GetAssetPath(clip) : "null";
+                    throw new InvalidOperationException($"{childName} clip {i} should use {expectedClipPaths[i]}, found {actualPath}.");
+                }
+
+                ValidateGameOwnedAsset(clip, $"{childName} clip {i}");
+            }
         }
 
         private static void ValidateAmbientVisual(
