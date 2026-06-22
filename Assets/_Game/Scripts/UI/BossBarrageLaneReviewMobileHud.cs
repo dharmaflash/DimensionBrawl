@@ -951,111 +951,31 @@ namespace DimensionBrawl.UI
 
         private void DrawSummonButtons()
         {
-            DrawButton(summonSlot1Rect, BuildSummonSlot1Label(), IsHeld(summonSlot1Rect));
+            DrawButton(
+                summonSlot1Rect,
+                BossBarrageLaneReviewMobileHudLabels.BuildPrimarySummonLabel(
+                    summonSlot1Label,
+                    energyLadder,
+                    summonSlot1Action),
+                IsHeld(summonSlot1Rect));
             DrawButton(
                 summonSlot2Rect,
-                BuildSupportSummonLabel(summonSlot2Action, summonSlot2Label),
+                BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
+                    summonSlot2Action,
+                    summonSlot2Label,
+                    lockedSummonLabel,
+                    energyLadder),
                 IsHeld(summonSlot2Rect),
                 pending: summonSlot2Action == null);
             DrawButton(
                 summonSlot3Rect,
-                BuildSupportSummonLabel(summonSlot3Action, summonSlot3Label),
+                BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
+                    summonSlot3Action,
+                    summonSlot3Label,
+                    lockedSummonLabel,
+                    energyLadder),
                 IsHeld(summonSlot3Rect),
                 pending: summonSlot3Action == null);
-        }
-
-        private string BuildSummonSlot1Label()
-        {
-            int availableTier = energyLadder != null ? energyLadder.AvailableTier : 0;
-            if (availableTier > 0)
-            {
-                string tierName = TryGetSummonTierShortName(availableTier);
-                return $"{summonSlot1Label}\nREADY LV{availableTier} {tierName}".TrimEnd();
-            }
-
-            if (energyLadder == null)
-            {
-                return $"{summonSlot1Label}\nREADY?";
-            }
-
-            int chargingTier = Mathf.Clamp(energyLadder.ChargingTier, 1, 3);
-            int fillPercent = Mathf.RoundToInt(energyLadder.CurrentTierFillRatio * 100f);
-            return $"{summonSlot1Label}\nLV{chargingTier} {fillPercent}%";
-        }
-
-        private string TryGetSummonTierShortName(int tier)
-        {
-            if (summonSlot1Action == null
-                || !summonSlot1Action.TryGetTierReadout(
-                    tier,
-                    out SummonSlotActionProfile.SummonTierReadout readout)
-                || string.IsNullOrWhiteSpace(readout.TierLabel))
-            {
-                return string.Empty;
-            }
-
-            string displayName = readout.TierLabel.Trim();
-            int firstSpaceIndex = displayName.IndexOf(' ');
-            if (firstSpaceIndex <= 0 || firstSpaceIndex >= displayName.Length - 1)
-            {
-                return displayName.Length <= 10 ? displayName : string.Empty;
-            }
-
-            string trailingName = displayName.Substring(firstSpaceIndex + 1).Trim();
-            return trailingName.Length <= 10 ? trailingName : string.Empty;
-        }
-
-        private string BuildPendingSummonLabel(string slotLabel)
-        {
-            return $"{slotLabel}\n{lockedSummonLabel}";
-        }
-
-        private string BuildSupportSummonLabel(PlayerSupportSummonSlotAction supportAction, string slotLabel)
-        {
-            if (supportAction == null)
-            {
-                return BuildPendingSummonLabel(slotLabel);
-            }
-
-            int availableTier = energyLadder != null ? energyLadder.AvailableTier : 0;
-            if (availableTier > 0)
-            {
-                string tierName = TryGetSupportSummonTierShortName(supportAction, availableTier);
-                return $"{slotLabel}\nREADY LV{availableTier} {tierName}".TrimEnd();
-            }
-
-            if (energyLadder == null)
-            {
-                return $"{slotLabel}\nREADY?";
-            }
-
-            int chargingTier = Mathf.Clamp(energyLadder.ChargingTier, 1, 3);
-            int fillPercent = Mathf.RoundToInt(energyLadder.CurrentTierFillRatio * 100f);
-            return $"{slotLabel}\nLV{chargingTier} {fillPercent}%";
-        }
-
-        private static string TryGetSupportSummonTierShortName(
-            PlayerSupportSummonSlotAction supportAction,
-            int tier)
-        {
-            if (supportAction == null
-                || !supportAction.TryGetTierReadout(
-                    tier,
-                    out SummonSlotActionProfile.SummonTierReadout readout)
-                || string.IsNullOrWhiteSpace(readout.TierLabel))
-            {
-                return string.Empty;
-            }
-
-            string displayName = readout.TierLabel.Trim();
-            int firstSpaceIndex = displayName.IndexOf(' ');
-            if (firstSpaceIndex <= 0 || firstSpaceIndex >= displayName.Length - 1)
-            {
-                return displayName.Length <= 10 ? displayName : string.Empty;
-            }
-
-            string trailingName = displayName.Substring(firstSpaceIndex + 1).Trim();
-            return trailingName.Length <= 10 ? trailingName : string.Empty;
         }
 
         private void DrawLookAimGuide()
