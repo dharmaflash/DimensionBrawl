@@ -2,6 +2,7 @@ using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using DimensionBrawl.Test;
+using DimensionBrawl.UI;
 using UnityEngine;
 
 namespace DimensionBrawl.Presentation
@@ -39,6 +40,11 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(1f)] private float height = 230f;
         [SerializeField, Min(0f)] private float margin = 18f;
         [SerializeField] private bool showCenterReticle;
+        [SerializeField] private bool usePremiumCompactHud = true;
+        [SerializeField] private string stageEpisodeLabel = "EP 03 Rift Stabilization";
+        [SerializeField] private string objectiveBadgeLabel = "LANE";
+        [SerializeField] private string bossDisplayName = "Dimensional Rift Guardian";
+        [SerializeField] private string playerDisplayName = "Player";
 
         [Header("Result Banner")]
         [SerializeField] private bool showResultBanner = true;
@@ -138,23 +144,83 @@ namespace DimensionBrawl.Presentation
             float uiScale = ResolveUiScale();
             GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(uiScale, uiScale, 1f));
             EnsureStyles();
-            float areaHeight = ResolveHudAreaHeight(uiScale);
-            GUILayout.BeginArea(new Rect(margin, margin, width, areaHeight), boxStyle);
-            GUILayout.Label("Boss Barrage", titleStyle);
-            DrawCombatResourceBars();
-            if (showDetailedTelemetry)
+            if (showDetailedTelemetry || !usePremiumCompactHud)
             {
-                DrawDetailedTelemetry();
+                float areaHeight = ResolveHudAreaHeight(uiScale);
+                GUILayout.BeginArea(new Rect(margin, margin, width, areaHeight), boxStyle);
+                GUILayout.Label("Boss Barrage", titleStyle);
+                DrawCombatResourceBars();
+                if (showDetailedTelemetry)
+                {
+                    DrawDetailedTelemetry();
+                }
+                else
+                {
+                    DrawCompactCombatCues();
+                }
+
+                GUILayout.EndArea();
             }
             else
             {
-                DrawCompactCombatCues();
+                DrawPremiumCompactHud(uiScale);
             }
 
-            GUILayout.EndArea();
             DrawResultBanner(uiScale);
             GUI.matrix = previousMatrix;
             DrawReticleIfNeeded();
+        }
+
+        private void DrawPremiumCompactHud(float uiScale)
+        {
+            float screenWidth = Screen.width / uiScale;
+            float screenHeight = Screen.height / uiScale;
+            float usableWidth = Mathf.Max(320f, screenWidth - margin * 2f);
+
+            Rect objectiveRect = new Rect(
+                margin,
+                margin,
+                Mathf.Min(430f, Mathf.Max(300f, usableWidth * 0.32f)),
+                94f);
+            BossBarrageLaneReviewHudChrome.DrawObjectivePanel(
+                objectiveRect,
+                stageEpisodeLabel,
+                ResolveCompactObjectiveLine(),
+                ResolvePremiumObjectiveBadge());
+
+            float rightHudReserve = Mathf.Clamp(screenWidth * 0.18f, 170f, 300f);
+            float bossBarLeftLimit = objectiveRect.xMax + 44f;
+            float bossBarRightLimit = screenWidth - margin - rightHudReserve;
+            float bossBarMaxWidth = Mathf.Max(340f, bossBarRightLimit - bossBarLeftLimit);
+            float bossBarWidth = Mathf.Min(Mathf.Clamp(screenWidth * 0.38f, 420f, 760f), bossBarMaxWidth);
+            float bossBarX = Mathf.Max((screenWidth - bossBarWidth) * 0.5f, bossBarLeftLimit);
+            bossBarX = Mathf.Min(bossBarX, screenWidth - margin - bossBarWidth);
+            Rect bossBarRect = new Rect(
+                bossBarX,
+                margin + 6f,
+                bossBarWidth,
+                86f);
+            BossBarrageLaneReviewHudChrome.DrawBossBar(
+                bossBarRect,
+                bossDisplayName,
+                ResolveCompactCombatCueLine(),
+                ResolveHealthFill01(bossHealth),
+                ResolveBossCostFill01());
+
+            float playerPanelWidth = Mathf.Min(Mathf.Clamp(screenWidth * 0.34f, 430f, 620f), usableWidth);
+            Rect playerPanelRect = new Rect(
+                (screenWidth - playerPanelWidth) * 0.5f,
+                screenHeight - 120f,
+                playerPanelWidth,
+                82f);
+            BossBarrageLaneReviewHudChrome.DrawPlayerResourcePanel(
+                playerPanelRect,
+                playerDisplayName,
+                ResolveHealthValueText(playerHealth),
+                ResolveHealthFill01(playerHealth),
+                ResolveEnergyValueText(),
+                ResolveEnergyFill01(),
+                energyLadder != null && energyLadder.CanSpend);
         }
 
         private void DrawDetailedTelemetry()
@@ -202,6 +268,63 @@ namespace DimensionBrawl.Presentation
             {
                 GUILayout.Label(duelLine, labelStyle);
             }
+        }
+
+        private string ResolvePremiumObjectiveBadge()
+        {
+            if (energyLadder == null)
+            {
+                return objectiveBadgeLabel;
+            }
+
+            return energyLadder.CanSpend
+                ? $"LV{energyLadder.AvailableTier}"
+                : $"LV{energyLadder.ChargingTier}";
+        }
+
+        private static float ResolveHealthFill01(CombatHealth health)
+        {
+            return health != null ? Mathf.Clamp01(health.HealthRatio) : 0f;
+        }
+
+        private static string ResolveHealthValueText(CombatHealth health)
+        {
+            if (health == null)
+            {
+                return "HP -";
+            }
+
+            return $"HP {Mathf.CeilToInt(Mathf.Max(0f, health.CurrentHealth))}/{Mathf.CeilToInt(Mathf.Max(0f, health.MaxHealth))}";
+        }
+
+        private string ResolveEnergyValueText()
+        {
+            if (energyLadder == null)
+            {
+                return "EN -";
+            }
+
+            if (energyLadder.CanSpend)
+            {
+                return $"Summon ready LV{energyLadder.AvailableTier}";
+            }
+
+            return $"Cost LV{energyLadder.ChargingTier} {energyLadder.CurrentTierEnergy:0}/{energyLadder.CurrentTierTarget:0}";
+        }
+
+        private float ResolveEnergyFill01()
+        {
+            return energyLadder != null ? energyLadder.CurrentTierFillRatio : 0f;
+        }
+
+        private float ResolveBossCostFill01()
+        {
+            if (bossPressureCostLadder == null)
+            {
+                return 0f;
+            }
+
+            return bossPressureCostLadder.CanSpend ? 1f : bossPressureCostLadder.CurrentTierFillRatio;
         }
 
         private string ResolveHealthLine()

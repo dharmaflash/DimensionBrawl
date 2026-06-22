@@ -8071,9 +8071,12 @@ MonoBehaviour:
   rangedAimActionName: RangedAim
   weaponSwapActionName: WeaponSwap
   showHud: 1
-  buttonSize: 146
-  buttonGap: 30
-  margin: 34
+  buttonSize: 168
+  buttonGap: 38
+  margin: 72
+  minimumActionButtonSize: 124
+  minimumButtonGap: 30
+  minimumTouchEdgeInset: 64
   scale: 1
   buttonColor: {r: 0.04, g: 0.11, b: 0.16, a: 0.58}
   heldButtonColor: {r: 0.18, g: 0.84, b: 1, a: 0.72}
@@ -8083,10 +8086,12 @@ MonoBehaviour:
   summonSlot2Label: S2 ARROW
   summonSlot3Label: S3 TANK
   lockedSummonLabel: NEXT
-  moveJoystickRadius: 142
-  moveJoystickKnobSize: 54
+  moveJoystickRadius: 154
+  moveJoystickKnobSize: 64
   moveJoystickDeadZone: 0.12
-  moveJoystickTouchRadiusScale: 1.35
+  moveJoystickTouchRadiusScale: 1.45
+  minimumMoveJoystickRadius: 118
+  minimumMoveJoystickKnobSize: 52
   screenDragControlsAim: 1
   rightMouseDragControlsAim: 0
   leftMouseDragControlsAim: 1

@@ -35,9 +35,12 @@ namespace DimensionBrawl.UI
 
         [Header("Display")]
         [SerializeField] private bool showHud = true;
-        [SerializeField, Min(40f)] private float buttonSize = 146f;
-        [SerializeField, Min(0f)] private float buttonGap = 30f;
-        [SerializeField, Min(0f)] private float margin = 34f;
+        [SerializeField, Min(40f)] private float buttonSize = 168f;
+        [SerializeField, Min(0f)] private float buttonGap = 38f;
+        [SerializeField, Min(0f)] private float margin = 72f;
+        [SerializeField, Min(40f)] private float minimumActionButtonSize = 124f;
+        [SerializeField, Min(0f)] private float minimumButtonGap = 30f;
+        [SerializeField, Min(0f)] private float minimumTouchEdgeInset = 64f;
         [SerializeField, Range(0.5f, 2f)] private float scale = 1f;
         [SerializeField] private Color buttonColor = new Color(0.04f, 0.11f, 0.16f, 0.58f);
         [SerializeField] private Color heldButtonColor = new Color(0.18f, 0.84f, 1f, 0.72f);
@@ -48,11 +51,21 @@ namespace DimensionBrawl.UI
         [SerializeField] private string summonSlot3Label = "S3 TANK";
         [SerializeField] private string lockedSummonLabel = "NEXT";
 
+        [Header("Chrome")]
+        [SerializeField] private Color fireAccentColor = new Color(1f, 0.74f, 0.34f, 1f);
+        [SerializeField] private Color dodgeAccentColor = new Color(0.38f, 0.9f, 1f, 1f);
+        [SerializeField] private Color skillAccentColor = new Color(1f, 0.86f, 0.46f, 1f);
+        [SerializeField] private Color summonSlot1AccentColor = new Color(1f, 0.78f, 0.36f, 1f);
+        [SerializeField] private Color summonSlot2AccentColor = new Color(0.42f, 0.9f, 1f, 1f);
+        [SerializeField] private Color summonSlot3AccentColor = new Color(0.78f, 0.72f, 1f, 1f);
+
         [Header("Move Joystick")]
-        [SerializeField, Min(48f)] private float moveJoystickRadius = 142f;
-        [SerializeField, Min(16f)] private float moveJoystickKnobSize = 54f;
+        [SerializeField, Min(48f)] private float moveJoystickRadius = 154f;
+        [SerializeField, Min(16f)] private float moveJoystickKnobSize = 64f;
         [SerializeField, Range(0f, 0.95f)] private float moveJoystickDeadZone = 0.12f;
-        [SerializeField, Min(1f)] private float moveJoystickTouchRadiusScale = 1.35f;
+        [SerializeField, Min(1f)] private float moveJoystickTouchRadiusScale = 1.45f;
+        [SerializeField, Min(48f)] private float minimumMoveJoystickRadius = 118f;
+        [SerializeField, Min(16f)] private float minimumMoveJoystickKnobSize = 52f;
 
         [Header("Look Aim")]
         [SerializeField] private bool screenDragControlsAim = true;
@@ -341,23 +354,27 @@ namespace DimensionBrawl.UI
         private void BuildLayout()
         {
             float resolvedScale = ResolveScale();
-            float size = buttonSize * resolvedScale;
-            float gap = buttonGap * resolvedScale;
-            float edge = margin * resolvedScale;
+            float size = ResolveActionButtonSize(resolvedScale);
+            float gap = ResolveButtonGap(resolvedScale);
+            float edge = ResolveTouchEdgeInset(resolvedScale);
 
-            float joystickRadius = moveJoystickRadius * resolvedScale;
+            float joystickRadius = ResolveMoveJoystickRadius(resolvedScale);
             float joystickTouchRadius = joystickRadius * moveJoystickTouchRadiusScale;
-            moveJoystickCenterGuiPoint = new Vector2(edge + joystickRadius, Screen.height - edge - joystickRadius);
+            moveJoystickCenterGuiPoint = new Vector2(
+                edge + joystickTouchRadius,
+                Screen.height - edge - joystickTouchRadius);
             moveJoystickRect = RectFromCenter(moveJoystickCenterGuiPoint, joystickRadius * 2f);
             moveJoystickTouchRect = RectFromCenter(moveJoystickCenterGuiPoint, joystickTouchRadius * 2f);
 
-            float rightX = Screen.width - edge - size;
-            float bottomY = Screen.height - edge - size;
+            float rightX = Mathf.Max(edge, Screen.width - edge - size);
+            float bottomY = Mathf.Max(edge, Screen.height - edge - size);
+            float secondaryX = Mathf.Max(edge, rightX - size - gap);
+            float upperY = Mathf.Max(edge, bottomY - size - gap);
             basicRect = new Rect(rightX, bottomY, size, size);
             aimRect = Rect.zero;
-            dodgeRect = new Rect(rightX, bottomY - size - gap, size, size);
-            swapRect = new Rect(rightX - size - gap, bottomY - size - gap, size, size);
-            skillRect = new Rect(rightX - size - gap, bottomY, size, size);
+            dodgeRect = new Rect(rightX, upperY, size, size);
+            swapRect = new Rect(secondaryX, upperY, size, size);
+            skillRect = new Rect(secondaryX, bottomY, size, size);
 
             float summonWidth = size * 1.55f;
             float summonHeight = size * 0.72f;
@@ -372,6 +389,31 @@ namespace DimensionBrawl.UI
         {
             float screenScale = Mathf.Clamp(Screen.height / 1440f, 0.72f, 1.35f);
             return screenScale * Mathf.Max(0.5f, scale);
+        }
+
+        private float ResolveActionButtonSize(float resolvedScale)
+        {
+            return Mathf.Max(buttonSize * resolvedScale, minimumActionButtonSize);
+        }
+
+        private float ResolveButtonGap(float resolvedScale)
+        {
+            return Mathf.Max(buttonGap * resolvedScale, minimumButtonGap);
+        }
+
+        private float ResolveTouchEdgeInset(float resolvedScale)
+        {
+            return Mathf.Max(margin * resolvedScale, minimumTouchEdgeInset);
+        }
+
+        private float ResolveMoveJoystickRadius(float resolvedScale)
+        {
+            return Mathf.Max(moveJoystickRadius * resolvedScale, minimumMoveJoystickRadius);
+        }
+
+        private float ResolveMoveJoystickKnobSize(float resolvedScale)
+        {
+            return Mathf.Max(moveJoystickKnobSize * resolvedScale, minimumMoveJoystickKnobSize);
         }
 
         private void UpdateMovePointerState()
@@ -498,7 +540,7 @@ namespace DimensionBrawl.UI
 
         private Vector2 ResolveMoveJoystickInput(Vector2 currentGuiPoint)
         {
-            float radius = Mathf.Max(1f, moveJoystickRadius * ResolveScale());
+            float radius = Mathf.Max(1f, ResolveMoveJoystickRadius(ResolveScale()));
             Vector2 delta = currentGuiPoint - moveJoystickCenterGuiPoint;
             Vector2 input = Vector2.ClampMagnitude(new Vector2(delta.x, -delta.y) / radius, 1f);
             float magnitude = input.magnitude;
@@ -932,33 +974,39 @@ namespace DimensionBrawl.UI
 
         private void DrawButton(Rect rect, string label, bool held, bool pending = false)
         {
-            GUI.Box(rect, label, held ? heldButtonStyle : pending ? pendingButtonStyle : buttonStyle);
+            BossBarrageLaneReviewHudChrome.DrawActionButton(
+                rect,
+                label,
+                held,
+                pending,
+                ResolveActionAccent(label));
         }
 
         private void DrawMoveJoystick()
         {
-            GUI.Box(moveJoystickRect, string.Empty, buttonStyle);
-
             float resolvedScale = ResolveScale();
-            float radius = moveJoystickRadius * resolvedScale;
-            float knobSize = moveJoystickKnobSize * resolvedScale;
-            Vector2 knobCenter = movePointerHeld
-                ? moveJoystickCenterGuiPoint + new Vector2(moveJoystickInput.x, -moveJoystickInput.y) * radius
-                : moveJoystickCenterGuiPoint;
-            Rect knobRect = RectFromCenter(knobCenter, knobSize);
-            GUI.Box(knobRect, string.Empty, movePointerHeld ? heldButtonStyle : pendingButtonStyle);
+            float knobSize = ResolveMoveJoystickKnobSize(resolvedScale);
+            BossBarrageLaneReviewHudChrome.DrawJoystick(
+                moveJoystickRect,
+                moveJoystickInput,
+                movePointerHeld,
+                knobSize,
+                dodgeAccentColor);
         }
 
         private void DrawSummonButtons()
         {
-            DrawButton(
+            BossBarrageLaneReviewHudChrome.DrawSummonSlot(
                 summonSlot1Rect,
                 BossBarrageLaneReviewMobileHudLabels.BuildPrimarySummonLabel(
                     summonSlot1Label,
                     energyLadder,
                     summonSlot1Action),
-                IsHeld(summonSlot1Rect));
-            DrawButton(
+                IsHeld(summonSlot1Rect),
+                pending: summonSlot1Action == null,
+                ResolveSummonFill01(summonSlot1Action != null),
+                summonSlot1AccentColor);
+            BossBarrageLaneReviewHudChrome.DrawSummonSlot(
                 summonSlot2Rect,
                 BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
                     summonSlot2Action,
@@ -966,8 +1014,10 @@ namespace DimensionBrawl.UI
                     lockedSummonLabel,
                     energyLadder),
                 IsHeld(summonSlot2Rect),
-                pending: summonSlot2Action == null);
-            DrawButton(
+                pending: summonSlot2Action == null,
+                ResolveSummonFill01(summonSlot2Action != null),
+                summonSlot2AccentColor);
+            BossBarrageLaneReviewHudChrome.DrawSummonSlot(
                 summonSlot3Rect,
                 BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
                     summonSlot3Action,
@@ -975,7 +1025,9 @@ namespace DimensionBrawl.UI
                     lockedSummonLabel,
                     energyLadder),
                 IsHeld(summonSlot3Rect),
-                pending: summonSlot3Action == null);
+                pending: summonSlot3Action == null,
+                ResolveSummonFill01(summonSlot3Action != null),
+                summonSlot3AccentColor);
         }
 
         private void DrawLookAimGuide()
@@ -988,13 +1040,7 @@ namespace DimensionBrawl.UI
             float resolvedScale = ResolveScale();
             float radius = lookAimDragRadius * resolvedScale;
             float knobSize = lookAimKnobSize * resolvedScale;
-            Vector2 knobCenter = startGuiPoint + new Vector2(input.x, -input.y) * radius;
-            Rect knobRect = new Rect(
-                knobCenter.x - knobSize * 0.5f,
-                knobCenter.y - knobSize * 0.5f,
-                knobSize,
-                knobSize);
-            GUI.Box(knobRect, string.Empty, heldButtonStyle);
+            BossBarrageLaneReviewHudChrome.DrawAimGuide(startGuiPoint, input, radius, knobSize);
         }
 
         private bool TryGetAimGuide(out Vector2 startGuiPoint, out Vector2 input)
@@ -1143,6 +1189,31 @@ namespace DimensionBrawl.UI
             };
             style.normal.background = MakeTexture(color);
             return style;
+        }
+
+        private Color ResolveActionAccent(string label)
+        {
+            if (label == "DODGE" || label == "SWAP")
+            {
+                return dodgeAccentColor;
+            }
+
+            if (label == "SKILL")
+            {
+                return skillAccentColor;
+            }
+
+            return fireAccentColor;
+        }
+
+        private float ResolveSummonFill01(bool hasAction)
+        {
+            if (!hasAction || energyLadder == null)
+            {
+                return 0f;
+            }
+
+            return energyLadder.CanSpend ? 1f : energyLadder.CurrentTierFillRatio;
         }
 
         private static Texture2D MakeTexture(Color color)
