@@ -86,6 +86,7 @@ namespace DimensionBrawl.Player
         private bool mobileFireHeld;
         private bool currentFireHeld;
         private bool suppressDeviceFallbackThisFrame;
+        private bool cinematicInputLocked;
         private float nextFireTime;
         private float blockedHintUntil;
         private Vector2 aimInput;
@@ -140,6 +141,21 @@ namespace DimensionBrawl.Player
         public void SuppressDeviceFallbackThisFrame()
         {
             suppressDeviceFallbackThisFrame = true;
+        }
+
+        public void SetCinematicInputLocked(bool locked)
+        {
+            cinematicInputLocked = locked;
+            if (!locked)
+            {
+                return;
+            }
+
+            queuedFire = false;
+            mobileFireHeld = false;
+            currentFireHeld = false;
+            suppressDeviceFallbackThisFrame = true;
+            SetFireAimHold(false);
         }
 
         public bool TryFire()
@@ -263,6 +279,16 @@ namespace DimensionBrawl.Player
             if (!IsRangedModeActive())
             {
                 SetFireAimHold(false);
+                currentFireHeld = false;
+                suppressDeviceFallbackThisFrame = false;
+                return;
+            }
+
+            if (cinematicInputLocked)
+            {
+                SetFireAimHold(false);
+                queuedFire = false;
+                mobileFireHeld = false;
                 currentFireHeld = false;
                 suppressDeviceFallbackThisFrame = false;
                 return;

@@ -961,9 +961,21 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(LoadAsset<ActionCinematicCueProfile>(CinematicCueProfilePath), cinematicCueDirector.CueProfile);
             Assert.AreSame(cameraController, cinematicCueDirector.CameraController);
             Assert.AreSame(player.transform, cinematicCueDirector.CueSpace);
+            Assert.AreSame(player, GetObjectReference<PlayerMovementController>(cinematicCueDirector, "movement"));
+            Assert.AreSame(playerActionController, GetObjectReference<PlayerActionController>(cinematicCueDirector, "actionController"));
+            Assert.AreSame(skill1Action, GetObjectReference<PlayerSkill1Action>(cinematicCueDirector, "skill1Action"));
+            Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(cinematicCueDirector, "summonSlot1Action"));
+            Assert.AreSame(rangedBasicAttackAction, GetObjectReference<PlayerRangedBasicAttackAction>(cinematicCueDirector, "rangedBasicAttackAction"));
+            Assert.AreSame(playerCuePlayer, GetObjectReference<CombatVfxCuePlayer>(cinematicCueDirector, "cuePlayer"));
+            Assert.AreSame(player.transform, GetObjectReference<Transform>(cinematicCueDirector, "vfxAnchor"));
+            Assert.AreSame(rangedAnimator, GetObjectReference<Animator>(cinematicCueDirector, "cueAnimator"));
             Assert.IsTrue(cinematicCueDirector.DrawCinematicBars);
             Assert.GreaterOrEqual(cinematicCueDirector.CueProfile.SummonEntry.ShotCount, 3);
+            Assert.GreaterOrEqual(cinematicCueDirector.CueProfile.SummonEntry.SignalCount, 2);
+            Assert.GreaterOrEqual(cinematicCueDirector.CueProfile.SummonEntry.inputLockSeconds, 0.5f);
             Assert.GreaterOrEqual(cinematicCueDirector.CueProfile.UltimateCutIn.ShotCount, 3);
+            Assert.GreaterOrEqual(cinematicCueDirector.CueProfile.UltimateCutIn.SignalCount, 2);
+            Assert.GreaterOrEqual(cinematicCueDirector.CueProfile.UltimateCutIn.inputLockSeconds, 0.6f);
             Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(bossCameraCueDriver, "bossBarrageEmitter"));
             Assert.AreSame(
                 bossPressureActionDirector,
@@ -1168,6 +1180,40 @@ namespace DimensionBrawl.Tests
             Assert.Greater(GetFloat(mobileHud, "fireAimAssistReticleMaxOffset"), 0f);
 
             yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator SummonEntryCinematicDispatchesLocksAndSignals()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            ActionCinematicCueDirector cinematicCueDirector =
+                RequireComponent<ActionCinematicCueDirector>(cameraController.gameObject, "action cinematic cue director");
+            Assert.AreSame(player.transform, cinematicCueDirector.CueSpace);
+
+            int signalCountBefore = cinematicCueDirector.TotalSignalCount;
+            int vfxCountBefore = cinematicCueDirector.VfxCueRequestCount;
+            Assert.IsTrue(cinematicCueDirector.TryPlay(ActionCinematicCueProfile.CueKind.SummonEntry, 3, Vector3.forward));
+            yield return null;
+
+            Assert.IsTrue(cinematicCueDirector.HasActiveMovementLock);
+            Assert.IsTrue(cinematicCueDirector.HasActiveInputLock);
+            Assert.IsTrue(player.IsCinematicMoveInputLocked);
+
+            yield return new WaitForSecondsRealtime(0.14f);
+            Assert.Greater(cinematicCueDirector.TotalSignalCount, signalCountBefore);
+            Assert.Greater(cinematicCueDirector.VfxCueRequestCount, vfxCountBefore);
+            Assert.AreEqual("summon_spawn_signal", cinematicCueDirector.LastSignalId);
+            Assert.AreEqual(CombatVfxCueId.EliteSummonSignal, cinematicCueDirector.LastVfxCueId);
+
+            yield return new WaitForSecondsRealtime(0.62f);
+            Assert.IsFalse(cinematicCueDirector.HasActiveMovementLock);
+            Assert.IsFalse(cinematicCueDirector.HasActiveInputLock);
+            Assert.IsFalse(player.IsCinematicMoveInputLocked);
+
+            yield return new WaitForSecondsRealtime(0.35f);
+            Assert.IsFalse(cinematicCueDirector.IsPlaying);
+            Assert.AreEqual(1f, Time.timeScale, 0.001f);
         }
 
         [UnityTest]

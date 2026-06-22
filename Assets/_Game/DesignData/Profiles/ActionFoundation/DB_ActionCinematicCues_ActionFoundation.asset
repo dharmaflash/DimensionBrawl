@@ -17,6 +17,8 @@ MonoBehaviour:
     cueId: skill1_short_cutin
     priority: 35
     canBeInterrupted: 1
+    movementLockSeconds: 0.16
+    inputLockSeconds: 0.22
     timeScale: 1
     timeScaleSeconds: 0
     shots:
@@ -47,11 +49,21 @@ MonoBehaviour:
       durationSeconds: 0.18
       pauseAfterSeconds: 0
       tierScale: 1.04
+    signals:
+    - enabled: 1
+      delaySeconds: 0.08
+      signalId: skill1_fire_signal
+      animatorTrigger: SHOOT
+      playVfx: 1
+      vfxCueId: 33
+      vfxIntensity: 1.05
   summonEntry:
     enabled: 1
     cueId: summon_break_entry_cutin
     priority: 60
     canBeInterrupted: 0
+    movementLockSeconds: 0.45
+    inputLockSeconds: 0.55
     timeScale: 0.92
     timeScaleSeconds: 0.16
     shots:
@@ -91,11 +103,28 @@ MonoBehaviour:
       durationSeconds: 0.18
       pauseAfterSeconds: 0
       tierScale: 1.04
+    signals:
+    - enabled: 1
+      delaySeconds: 0.1
+      signalId: summon_spawn_signal
+      animatorTrigger:
+      playVfx: 1
+      vfxCueId: 27
+      vfxIntensity: 1.12
+    - enabled: 1
+      delaySeconds: 0.42
+      signalId: summon_landing_signal
+      animatorTrigger:
+      playVfx: 1
+      vfxCueId: 32
+      vfxIntensity: 0.92
   ultimateCutIn:
     enabled: 1
     cueId: skill1_lv3_ultimate_short_cutin
     priority: 85
     canBeInterrupted: 0
+    movementLockSeconds: 0.62
+    inputLockSeconds: 0.74
     timeScale: 0.84
     timeScaleSeconds: 0.24
     shots:
@@ -135,11 +164,28 @@ MonoBehaviour:
       durationSeconds: 0.22
       pauseAfterSeconds: 0
       tierScale: 1.05
+    signals:
+    - enabled: 1
+      delaySeconds: 0.12
+      signalId: ultimate_charge_signal
+      animatorTrigger: AUTO SHOOT
+      playVfx: 1
+      vfxCueId: 28
+      vfxIntensity: 1.18
+    - enabled: 1
+      delaySeconds: 0.58
+      signalId: ultimate_impact_signal
+      animatorTrigger:
+      playVfx: 1
+      vfxCueId: 30
+      vfxIntensity: 1.25
   bossPressureBreak:
     enabled: 1
     cueId: boss_pressure_break_reframe
     priority: 65
     canBeInterrupted: 1
+    movementLockSeconds: 0.18
+    inputLockSeconds: 0.24
     timeScale: 0.9
     timeScaleSeconds: 0.12
     shots:
@@ -170,11 +216,21 @@ MonoBehaviour:
       durationSeconds: 0.22
       pauseAfterSeconds: 0
       tierScale: 1.08
+    signals:
+    - enabled: 1
+      delaySeconds: 0.1
+      signalId: pressure_break_signal
+      animatorTrigger:
+      playVfx: 1
+      vfxCueId: 29
+      vfxIntensity: 1
   summonFollowupHit:
     enabled: 1
     cueId: summon_followup_hit_confirm
     priority: 72
     canBeInterrupted: 1
+    movementLockSeconds: 0.12
+    inputLockSeconds: 0.18
     timeScale: 0.88
     timeScaleSeconds: 0.1
     shots:
@@ -205,11 +261,21 @@ MonoBehaviour:
       durationSeconds: 0.18
       pauseAfterSeconds: 0
       tierScale: 1.04
+    signals:
+    - enabled: 1
+      delaySeconds: 0.08
+      signalId: followup_hit_signal
+      animatorTrigger:
+      playVfx: 1
+      vfxCueId: 30
+      vfxIntensity: 1.16
   pocketClear:
     enabled: 1
     cueId: pocket_result_clear_bridge
     priority: 75
     canBeInterrupted: 0
+    movementLockSeconds: 0.3
+    inputLockSeconds: 0.42
     timeScale: 0.86
     timeScaleSeconds: 0.14
     shots:
@@ -240,11 +306,21 @@ MonoBehaviour:
       durationSeconds: 0.22
       pauseAfterSeconds: 0
       tierScale: 1.04
+    signals:
+    - enabled: 1
+      delaySeconds: 0.12
+      signalId: pocket_clear_signal
+      animatorTrigger:
+      playVfx: 1
+      vfxCueId: 35
+      vfxIntensity: 0.98
   pocketFail:
     enabled: 1
     cueId: pocket_result_fail_bridge
     priority: 75
     canBeInterrupted: 0
+    movementLockSeconds: 0.24
+    inputLockSeconds: 0.34
     timeScale: 0.92
     timeScaleSeconds: 0.1
     shots:
@@ -266,3 +342,11 @@ MonoBehaviour:
       durationSeconds: 0.22
       pauseAfterSeconds: 0
       tierScale: 1
+    signals:
+    - enabled: 1
+      delaySeconds: 0.08
+      signalId: pocket_fail_signal
+      animatorTrigger:
+      playVfx: 1
+      vfxCueId: 36
+      vfxIntensity: 1.02

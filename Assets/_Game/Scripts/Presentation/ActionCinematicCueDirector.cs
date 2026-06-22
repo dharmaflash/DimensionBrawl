@@ -1,15 +1,24 @@
 using System.Collections;
+using DimensionBrawl.Player;
 using UnityEngine;
 
 namespace DimensionBrawl.Presentation
 {
     [DisallowMultipleComponent]
-    public sealed class ActionCinematicCueDirector : MonoBehaviour
+    public sealed partial class ActionCinematicCueDirector : MonoBehaviour
     {
         [Header("References")]
         [SerializeField] private ActionCinematicCueProfile cueProfile;
         [SerializeField] private ActionCameraController cameraController;
         [SerializeField] private Transform cueSpace;
+        [SerializeField] private PlayerMovementController movement;
+        [SerializeField] private PlayerActionController actionController;
+        [SerializeField] private PlayerSkill1Action skill1Action;
+        [SerializeField] private PlayerSummonSlot1Action summonSlot1Action;
+        [SerializeField] private PlayerRangedBasicAttackAction rangedBasicAttackAction;
+        [SerializeField] private CombatVfxCuePlayer cuePlayer;
+        [SerializeField] private Transform vfxAnchor;
+        [SerializeField] private Animator cueAnimator;
 
         [Header("Timing")]
         [SerializeField] private bool useUnscaledClock = true;
@@ -24,10 +33,18 @@ namespace DimensionBrawl.Presentation
         private bool activeCanBeInterrupted = true;
         private bool hasStoredTimeScale;
         private float storedTimeScale = 1f;
+        private bool movementLockActive;
+        private bool inputLockActive;
         private int totalPlayCount;
+        private int totalSignalCount;
+        private int animatorTriggerRequestCount;
+        private int vfxCueRequestCount;
         private ActionCinematicCueProfile.CueKind lastPlayedKind;
         private int lastPlayedTier;
         private string lastPlayedCueId;
+        private string lastSignalId;
+        private string lastAnimatorTrigger;
+        private CombatVfxCueId lastVfxCueId;
         private float frameTimer;
         private float frameDuration;
 
@@ -36,11 +53,19 @@ namespace DimensionBrawl.Presentation
         public Transform CueSpace => cueSpace;
         public bool DrawCinematicBars => drawCinematicBars;
         public bool HasActiveFrameOverlay => frameTimer > 0f;
+        public bool HasActiveMovementLock => movementLockActive;
+        public bool HasActiveInputLock => inputLockActive;
         public bool IsPlaying => activeRoutine != null;
         public int TotalPlayCount => totalPlayCount;
+        public int TotalSignalCount => totalSignalCount;
+        public int AnimatorTriggerRequestCount => animatorTriggerRequestCount;
+        public int VfxCueRequestCount => vfxCueRequestCount;
         public ActionCinematicCueProfile.CueKind LastPlayedKind => lastPlayedKind;
         public int LastPlayedTier => lastPlayedTier;
         public string LastPlayedCueId => lastPlayedCueId;
+        public string LastSignalId => lastSignalId;
+        public string LastAnimatorTrigger => lastAnimatorTrigger;
+        public CombatVfxCueId LastVfxCueId => lastVfxCueId;
 
         private void Awake()
         {
@@ -48,6 +73,8 @@ namespace DimensionBrawl.Presentation
             {
                 cameraController = GetComponent<ActionCameraController>();
             }
+
+            ResolveCueSpaceReferences();
         }
 
         private void OnDisable()
@@ -58,7 +85,7 @@ namespace DimensionBrawl.Presentation
                 activeRoutine = null;
             }
 
-            RestoreTimeScale();
+            RestoreCinematicState();
             frameTimer = 0f;
             frameDuration = 0f;
         }
@@ -121,7 +148,7 @@ namespace DimensionBrawl.Presentation
 
                 StopCoroutine(activeRoutine);
                 activeRoutine = null;
-                RestoreTimeScale();
+                RestoreCinematicState();
             }
 
             activePriority = sequence.priority;
@@ -141,11 +168,27 @@ namespace DimensionBrawl.Presentation
             int tier,
             Vector3 planarDirection)
         {
+            float movementLockTimer = Mathf.Max(0f, sequence.movementLockSeconds);
+            float inputLockTimer = Mathf.Max(0f, sequence.inputLockSeconds);
+            if (movementLockTimer > 0f)
+            {
+                ApplyMovementLock();
+            }
+
+            if (inputLockTimer > 0f)
+            {
+                ApplyInputLock();
+            }
+
             float timeScaleTimer = Mathf.Max(0f, sequence.timeScaleSeconds);
             if (timeScaleTimer > 0f && sequence.timeScale > 0f && !Mathf.Approximately(sequence.timeScale, 1f))
             {
                 ApplyTimeScale(sequence.timeScale);
             }
+
+            bool[] signalPlayed = sequence.SignalCount > 0 ? new bool[sequence.SignalCount] : null;
+            float sequenceElapsed = 0f;
+            DispatchDueSignals(sequence, signalPlayed, sequenceElapsed, tier, planarDirection);
 
             for (int i = 0; i < sequence.shots.Length; i++)
             {
@@ -161,12 +204,16 @@ namespace DimensionBrawl.Presentation
                 {
                     float deltaTime = useUnscaledClock ? Time.unscaledDeltaTime : Time.deltaTime;
                     elapsed += deltaTime;
+                    sequenceElapsed += deltaTime;
                     timeScaleTimer = TickTimeScaleTimer(timeScaleTimer, deltaTime);
+                    movementLockTimer = TickMovementLockTimer(movementLockTimer, deltaTime);
+                    inputLockTimer = TickInputLockTimer(inputLockTimer, deltaTime);
+                    DispatchDueSignals(sequence, signalPlayed, sequenceElapsed, tier, planarDirection);
                     yield return null;
                 }
             }
 
-            RestoreTimeScale();
+            RestoreCinematicState();
             activeRoutine = null;
             activePriority = 0;
             activeCanBeInterrupted = true;

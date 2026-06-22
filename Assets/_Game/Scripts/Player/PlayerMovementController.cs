@@ -89,7 +89,9 @@ namespace DimensionBrawl.Player
         private Vector3 requestedFacingDirection;
         private float requestedFacingTimer;
         private float actionMoveInputSpeedScale = 1f;
+        private float cinematicMoveInputSpeedScale = 1f;
         private bool actionMoveInputScaleActive;
+        private bool cinematicMoveInputScaleActive;
         private bool inputWasMoving;
         private bool enabledMoveAction;
         private bool enabledLookAction;
@@ -99,6 +101,7 @@ namespace DimensionBrawl.Player
         public Vector3 CurrentMoveDirection => currentMoveDirection;
         public bool HasMoveInput => currentMoveInput.sqrMagnitude > 0f;
         public bool IsStopSettling => stopSettleTimer > 0f;
+        public bool IsCinematicMoveInputLocked => cinematicMoveInputScaleActive && cinematicMoveInputSpeedScale <= 0f;
         public Vector3 FacingDirection => transform.forward;
         public SummonLaneSpace LaneSpace => laneSpace;
 
@@ -167,6 +170,29 @@ namespace DimensionBrawl.Player
             actionMoveInputScaleActive = false;
         }
 
+        public void SetCinematicMoveInputSpeedScale(float speedScale)
+        {
+            cinematicMoveInputSpeedScale = Mathf.Clamp01(speedScale);
+            cinematicMoveInputScaleActive = true;
+            if (cinematicMoveInputSpeedScale <= 0f)
+            {
+                planarVelocity = Vector3.zero;
+                externalPlanarVelocity = Vector3.zero;
+                externalPlanarDuration = 0f;
+                externalPlanarTimer = 0f;
+            }
+            else
+            {
+                ClampPlanarVelocityToInputScales();
+            }
+        }
+
+        public void ClearCinematicMoveInputSpeedScale()
+        {
+            cinematicMoveInputSpeedScale = 1f;
+            cinematicMoveInputScaleActive = false;
+        }
+
         public void RequestFacingDirection(Vector3 direction, float holdSeconds, bool snapImmediately)
         {
             Vector3 planarDirection = Vector3.ProjectOnPlane(direction, Vector3.up);
@@ -217,7 +243,7 @@ namespace DimensionBrawl.Player
             Vector2 lookInput = ApplyDeadZone(ReadLookInput());
 
             Vector3 desiredMoveDirection = BuildWorldDirection(moveInput);
-            float locomotionSpeedScale = actionMoveInputScaleActive ? actionMoveInputSpeedScale : 1f;
+            float locomotionSpeedScale = ResolveLocomotionSpeedScale();
             Vector2 locomotionMoveInput = moveInput * locomotionSpeedScale;
             Vector3 locomotionMoveDirection = locomotionMoveInput.sqrMagnitude > 0f ? desiredMoveDirection : Vector3.zero;
             UpdateCurrentMoveInput(moveInput, desiredMoveDirection);
@@ -359,14 +385,35 @@ namespace DimensionBrawl.Player
 
         private void ClampPlanarVelocityToActionMoveScale()
         {
+            ClampPlanarVelocityToInputScales();
+        }
+
+        private void ClampPlanarVelocityToInputScales()
+        {
             float currentSpeed = planarVelocity.magnitude;
-            float maxActionSpeed = moveSpeed * actionMoveInputSpeedScale;
+            float maxActionSpeed = moveSpeed * ResolveLocomotionSpeedScale();
             if (currentSpeed <= maxActionSpeed)
             {
                 return;
             }
 
             planarVelocity = maxActionSpeed > 0f ? planarVelocity.normalized * maxActionSpeed : Vector3.zero;
+        }
+
+        private float ResolveLocomotionSpeedScale()
+        {
+            float speedScale = 1f;
+            if (actionMoveInputScaleActive)
+            {
+                speedScale = Mathf.Min(speedScale, actionMoveInputSpeedScale);
+            }
+
+            if (cinematicMoveInputScaleActive)
+            {
+                speedScale = Mathf.Min(speedScale, cinematicMoveInputSpeedScale);
+            }
+
+            return speedScale;
         }
 
         private void UpdateMoveIntent(Vector3 desiredDirection)

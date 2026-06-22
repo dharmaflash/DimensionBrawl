@@ -146,6 +146,7 @@ namespace DimensionBrawl.Player
         private bool enabledDodgeAction;
         private bool dodgeFeedbackActive;
         private bool nextAttackQueued;
+        private bool cinematicInputLocked;
         private Vector3 currentAttackDirection = Vector3.forward;
 
         public PlayerActionProfile ActionProfile => actionProfile;
@@ -193,6 +194,21 @@ namespace DimensionBrawl.Player
 
         public void SuppressBasicAttackDeviceFallbackThisFrame()
         {
+            suppressBasicAttackDeviceFallback = true;
+        }
+
+        public void SetCinematicInputLocked(bool locked)
+        {
+            cinematicInputLocked = locked;
+            if (!locked)
+            {
+                return;
+            }
+
+            mobileAttackQueued = false;
+            mobileDodgeQueued = false;
+            attackBufferTimer = 0f;
+            nextAttackQueued = false;
             suppressBasicAttackDeviceFallback = true;
         }
 
@@ -649,6 +665,13 @@ namespace DimensionBrawl.Player
 
         private bool ReadAttackPressed()
         {
+            if (cinematicInputLocked)
+            {
+                mobileAttackQueued = false;
+                suppressBasicAttackDeviceFallback = false;
+                return false;
+            }
+
             bool pressed = ReadButtonDown(basicAttackAction, ref mobileAttackQueued);
             if (pressed || !useDeviceFallbackWhenActionMissing || !IsActionMissing(basicAttackAction))
             {
@@ -669,6 +692,12 @@ namespace DimensionBrawl.Player
 
         private bool ReadDodgePressed()
         {
+            if (cinematicInputLocked)
+            {
+                mobileDodgeQueued = false;
+                return false;
+            }
+
             bool pressed = ReadButtonDown(dodgeAction, ref mobileDodgeQueued);
             if (pressed || !useDeviceFallbackWhenActionMissing || !IsActionMissing(dodgeAction))
             {

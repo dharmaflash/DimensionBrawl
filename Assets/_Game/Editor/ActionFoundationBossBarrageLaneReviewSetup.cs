@@ -862,6 +862,9 @@ namespace DimensionBrawl.Editor
                 player,
                 skill1Action,
                 summonSlot1Action,
+                rangedBasicAttackAction,
+                playerCuePlayer,
+                combatModeVisuals.RangedAnimator,
                 cinematicCueProfile);
             ConfigurePocketCueBridges(
                 pocketOwner,
@@ -1149,7 +1152,17 @@ namespace DimensionBrawl.Editor
                 skill1Action,
                 summonSlot1Action,
                 cinematicCueDirector);
-            ValidateActionCinematicCueDirector(cinematicCueDirector, cameraController, player.transform);
+            ValidateActionCinematicCueDirector(
+                cinematicCueDirector,
+                cameraController,
+                player.transform,
+                player,
+                playerActionController,
+                skill1Action,
+                summonSlot1Action,
+                rangedBasicAttackAction,
+                playerCuePlayer,
+                rangedAnimator);
             ValidateBossBarrageCameraCueDriver(
                 RequireComponent<BossBarrageCameraCueDriver>(cameraController.gameObject, "boss barrage camera cue driver"),
                 cameraController,
@@ -5611,10 +5624,23 @@ namespace DimensionBrawl.Editor
             PlayerMovementController movement,
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
+            PlayerRangedBasicAttackAction rangedBasicAttackAction,
+            CombatVfxCuePlayer playerCuePlayer,
+            Animator cueAnimator,
             ActionCinematicCueProfile cinematicCueProfile)
         {
             ActionCinematicCueDirector cinematicCueDirector =
-                ConfigureActionCinematicCueDirector(cameraController, movement.transform, cinematicCueProfile);
+                ConfigureActionCinematicCueDirector(
+                    cameraController,
+                    movement.transform,
+                    actionController,
+                    movement,
+                    skill1Action,
+                    summonSlot1Action,
+                    rangedBasicAttackAction,
+                    playerCuePlayer,
+                    cueAnimator,
+                    cinematicCueProfile);
             ActionCameraCueDriver cueDriver = EnsureComponent<ActionCameraCueDriver>(cameraController.gameObject);
             SetObjectReference(cueDriver, "actionController", actionController);
             SetObjectReference(cueDriver, "movement", movement);
@@ -5628,6 +5654,13 @@ namespace DimensionBrawl.Editor
         private static ActionCinematicCueDirector ConfigureActionCinematicCueDirector(
             ActionCameraController cameraController,
             Transform cueSpace,
+            PlayerActionController actionController,
+            PlayerMovementController movement,
+            PlayerSkill1Action skill1Action,
+            PlayerSummonSlot1Action summonSlot1Action,
+            PlayerRangedBasicAttackAction rangedBasicAttackAction,
+            CombatVfxCuePlayer playerCuePlayer,
+            Animator cueAnimator,
             ActionCinematicCueProfile cinematicCueProfile)
         {
             ActionCinematicCueDirector cueDirector =
@@ -5635,6 +5668,14 @@ namespace DimensionBrawl.Editor
             SetObjectReference(cueDirector, "cueProfile", cinematicCueProfile);
             SetObjectReference(cueDirector, "cameraController", cameraController);
             SetObjectReference(cueDirector, "cueSpace", cueSpace);
+            SetObjectReference(cueDirector, "movement", movement);
+            SetObjectReference(cueDirector, "actionController", actionController);
+            SetObjectReference(cueDirector, "skill1Action", skill1Action);
+            SetObjectReference(cueDirector, "summonSlot1Action", summonSlot1Action);
+            SetObjectReference(cueDirector, "rangedBasicAttackAction", rangedBasicAttackAction);
+            SetObjectReference(cueDirector, "cuePlayer", playerCuePlayer);
+            SetObjectReference(cueDirector, "vfxAnchor", cueSpace);
+            SetObjectReference(cueDirector, "cueAnimator", cueAnimator);
             SetBool(cueDirector, "useUnscaledClock", true);
             SetBool(cueDirector, "drawCinematicBars", true);
             SetFloat(cueDirector, "maxBarScreenRatio", 0.085f);
@@ -5766,13 +5807,28 @@ namespace DimensionBrawl.Editor
         private static void ValidateActionCinematicCueDirector(
             ActionCinematicCueDirector cueDirector,
             ActionCameraController cameraController,
-            Transform cueSpace)
+            Transform cueSpace,
+            PlayerMovementController movement,
+            PlayerActionController actionController,
+            PlayerSkill1Action skill1Action,
+            PlayerSummonSlot1Action summonSlot1Action,
+            PlayerRangedBasicAttackAction rangedBasicAttackAction,
+            CombatVfxCuePlayer playerCuePlayer,
+            Animator cueAnimator)
         {
             ActionCinematicCueProfile profile =
                 LoadAsset<ActionCinematicCueProfile>(ActionFoundationProfileSetup.CinematicCueProfilePath);
             ValidateObjectReference(cueDirector, "cueProfile", profile);
             ValidateObjectReference(cueDirector, "cameraController", cameraController);
             ValidateObjectReference(cueDirector, "cueSpace", cueSpace);
+            ValidateObjectReference(cueDirector, "movement", movement);
+            ValidateObjectReference(cueDirector, "actionController", actionController);
+            ValidateObjectReference(cueDirector, "skill1Action", skill1Action);
+            ValidateObjectReference(cueDirector, "summonSlot1Action", summonSlot1Action);
+            ValidateObjectReference(cueDirector, "rangedBasicAttackAction", rangedBasicAttackAction);
+            ValidateObjectReference(cueDirector, "cuePlayer", playerCuePlayer);
+            ValidateObjectReference(cueDirector, "vfxAnchor", cueSpace);
+            ValidateObjectReference(cueDirector, "cueAnimator", cueAnimator);
             ValidateBool(cueDirector, "useUnscaledClock", true);
             ValidateBool(cueDirector, "drawCinematicBars", true);
             ValidateFloat(cueDirector, "maxBarScreenRatio", 0.085f);
@@ -5783,10 +5839,25 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException("Action cinematic profile must author a multi-shot summon entry cut-in.");
             }
 
+            if (summonEntry.movementLockSeconds < 0.4f || summonEntry.inputLockSeconds < 0.5f)
+            {
+                throw new InvalidOperationException("Summon entry cut-in must author a short movement/input lock.");
+            }
+
+            if (summonEntry.SignalCount < 2)
+            {
+                throw new InvalidOperationException("Summon entry cut-in must author spawn and landing presentation signals.");
+            }
+
             if (!profile.TryGetSequence(ActionCinematicCueProfile.CueKind.UltimateCutIn, out var ultimateCutIn)
                 || ultimateCutIn.ShotCount < 3)
             {
                 throw new InvalidOperationException("Action cinematic profile must author a multi-shot ultimate-style cut-in.");
+            }
+
+            if (ultimateCutIn.inputLockSeconds < 0.6f || ultimateCutIn.SignalCount < 2)
+            {
+                throw new InvalidOperationException("Ultimate-style cut-in must author lock and charge/impact signals.");
             }
         }
 

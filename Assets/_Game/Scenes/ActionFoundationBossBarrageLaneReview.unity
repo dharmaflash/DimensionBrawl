@@ -483,6 +483,14 @@ MonoBehaviour:
   cueProfile: {fileID: 11400000, guid: 22c6a27659a21384095362ba02edcfc9, type: 2}
   cameraController: {fileID: 1004}
   cueSpace: {fileID: 4001}
+  movement: {fileID: 4004}
+  actionController: {fileID: 4005}
+  skill1Action: {fileID: 4015}
+  summonSlot1Action: {fileID: 4014}
+  rangedBasicAttackAction: {fileID: 4011}
+  cuePlayer: {fileID: 4010}
+  vfxAnchor: {fileID: 4001}
+  cueAnimator: {fileID: 2879966361713264750}
   useUnscaledClock: 1
   drawCinematicBars: 1
   maxBarScreenRatio: 0.085

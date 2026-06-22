@@ -38,11 +38,27 @@ namespace DimensionBrawl.Presentation
             public string cueId;
             public int priority;
             public bool canBeInterrupted;
+            public float movementLockSeconds;
+            public float inputLockSeconds;
             public float timeScale;
             public float timeScaleSeconds;
             public CameraShot[] shots;
+            public CueSignal[] signals;
 
             public int ShotCount => shots != null ? shots.Length : 0;
+            public int SignalCount => signals != null ? signals.Length : 0;
+        }
+
+        [Serializable]
+        public struct CueSignal
+        {
+            public bool enabled;
+            public float delaySeconds;
+            public string signalId;
+            public string animatorTrigger;
+            public bool playVfx;
+            public CombatVfxCueId vfxCueId;
+            public float vfxIntensity;
         }
 
         [Header("Player Actions")]
@@ -52,6 +68,8 @@ namespace DimensionBrawl.Presentation
             cueId = "skill1_short_cutin",
             priority = 35,
             canBeInterrupted = true,
+            movementLockSeconds = 0.16f,
+            inputLockSeconds = 0.22f,
             timeScale = 1f,
             timeScaleSeconds = 0f,
             shots = new[]
@@ -59,6 +77,10 @@ namespace DimensionBrawl.Presentation
                 CreateShot(new Vector3(-0.10f, 0.06f, -0.18f), 0.10f, 1.4f, -0.12f, 0.05f, 0.16f, 0.02f, 1.08f),
                 CreateShot(new Vector3(0.05f, 0.02f, 0.18f), 0.08f, -2.1f, 0.18f, 0.02f, 0.18f, 0.02f, 1.18f),
                 CreateShot(new Vector3(0f, 0.04f, -0.10f), 0.04f, 0.7f, -0.08f, 0.02f, 0.18f, 0f, 1.04f)
+            },
+            signals = new[]
+            {
+                CreateSignal("skill1_fire_signal", 0.08f, "SHOOT", CombatVfxCueId.PlayerRangedMuzzleFlash, 1.05f)
             }
         };
 
@@ -68,6 +90,8 @@ namespace DimensionBrawl.Presentation
             cueId = "summon_break_entry_cutin",
             priority = 60,
             canBeInterrupted = false,
+            movementLockSeconds = 0.45f,
+            inputLockSeconds = 0.55f,
             timeScale = 0.92f,
             timeScaleSeconds = 0.16f,
             shots = new[]
@@ -76,6 +100,11 @@ namespace DimensionBrawl.Presentation
                 CreateShot(new Vector3(-0.18f, 0.05f, 0.12f), 0.08f, -2.2f, 0.18f, 0.03f, 0.24f, 0.02f, 1.22f),
                 CreateShot(new Vector3(0.16f, 0.09f, -0.24f), 0.16f, 3.0f, -0.32f, 0.10f, 0.28f, 0.04f, 1.18f),
                 CreateShot(new Vector3(0f, 0.04f, -0.10f), 0.04f, 0.8f, -0.08f, 0.04f, 0.18f, 0f, 1.04f)
+            },
+            signals = new[]
+            {
+                CreateSignal("summon_spawn_signal", 0.10f, string.Empty, CombatVfxCueId.EliteSummonSignal, 1.12f),
+                CreateSignal("summon_landing_signal", 0.42f, string.Empty, CombatVfxCueId.SummonBlockOpportunity, 0.92f)
             }
         };
 
@@ -85,6 +114,8 @@ namespace DimensionBrawl.Presentation
             cueId = "skill1_lv3_ultimate_short_cutin",
             priority = 85,
             canBeInterrupted = false,
+            movementLockSeconds = 0.62f,
+            inputLockSeconds = 0.74f,
             timeScale = 0.84f,
             timeScaleSeconds = 0.24f,
             shots = new[]
@@ -93,6 +124,11 @@ namespace DimensionBrawl.Presentation
                 CreateShot(new Vector3(0.10f, 0.03f, 0.22f), 0.08f, -3.2f, 0.28f, 0.03f, 0.32f, 0.03f, 1.28f),
                 CreateShot(new Vector3(-0.06f, 0.08f, -0.24f), 0.20f, 3.6f, -0.36f, 0.10f, 0.30f, 0.04f, 1.24f),
                 CreateShot(new Vector3(0f, 0.04f, -0.08f), 0.04f, 0.9f, -0.10f, 0.03f, 0.22f, 0f, 1.05f)
+            },
+            signals = new[]
+            {
+                CreateSignal("ultimate_charge_signal", 0.12f, "AUTO SHOOT", CombatVfxCueId.ElitePhaseSwapSignal, 1.18f),
+                CreateSignal("ultimate_impact_signal", 0.58f, string.Empty, CombatVfxCueId.SummonFollowupHit, 1.25f)
             }
         };
 
@@ -103,6 +139,8 @@ namespace DimensionBrawl.Presentation
             cueId = "boss_pressure_break_reframe",
             priority = 65,
             canBeInterrupted = true,
+            movementLockSeconds = 0.18f,
+            inputLockSeconds = 0.24f,
             timeScale = 0.9f,
             timeScaleSeconds = 0.12f,
             shots = new[]
@@ -110,6 +148,10 @@ namespace DimensionBrawl.Presentation
                 CreateShot(new Vector3(0.18f, 0.07f, -0.24f), 0.18f, 2.8f, -0.30f, 0.09f, 0.22f, 0.03f, 1.14f),
                 CreateShot(new Vector3(-0.14f, 0.04f, 0.10f), 0.08f, -1.8f, 0.14f, 0.02f, 0.24f, 0.02f, 1.2f),
                 CreateShot(new Vector3(0f, 0.05f, -0.14f), 0.08f, 1.4f, -0.16f, 0.04f, 0.22f, 0f, 1.08f)
+            },
+            signals = new[]
+            {
+                CreateSignal("pressure_break_signal", 0.10f, string.Empty, CombatVfxCueId.SummonFollowupWindow, 1.0f)
             }
         };
 
@@ -119,6 +161,8 @@ namespace DimensionBrawl.Presentation
             cueId = "summon_followup_hit_confirm",
             priority = 72,
             canBeInterrupted = true,
+            movementLockSeconds = 0.12f,
+            inputLockSeconds = 0.18f,
             timeScale = 0.88f,
             timeScaleSeconds = 0.10f,
             shots = new[]
@@ -126,6 +170,10 @@ namespace DimensionBrawl.Presentation
                 CreateShot(new Vector3(-0.08f, 0.05f, -0.10f), 0.08f, 1.6f, -0.14f, 0.04f, 0.14f, 0.02f, 1.08f),
                 CreateShot(new Vector3(0.08f, 0.03f, 0.22f), 0.12f, -3.0f, 0.24f, 0.03f, 0.22f, 0.03f, 1.28f),
                 CreateShot(new Vector3(0f, 0.04f, -0.08f), 0.04f, 0.8f, -0.08f, 0.02f, 0.18f, 0f, 1.04f)
+            },
+            signals = new[]
+            {
+                CreateSignal("followup_hit_signal", 0.08f, string.Empty, CombatVfxCueId.SummonFollowupHit, 1.16f)
             }
         };
 
@@ -135,6 +183,8 @@ namespace DimensionBrawl.Presentation
             cueId = "pocket_result_clear_bridge",
             priority = 75,
             canBeInterrupted = false,
+            movementLockSeconds = 0.30f,
+            inputLockSeconds = 0.42f,
             timeScale = 0.86f,
             timeScaleSeconds = 0.14f,
             shots = new[]
@@ -142,6 +192,10 @@ namespace DimensionBrawl.Presentation
                 CreateShot(new Vector3(0f, 0.08f, -0.28f), 0.20f, 3.2f, -0.34f, 0.10f, 0.26f, 0.04f, 1.12f),
                 CreateShot(new Vector3(0.12f, 0.04f, 0.16f), 0.10f, -2.4f, 0.20f, 0.04f, 0.26f, 0.04f, 1.22f),
                 CreateShot(new Vector3(0f, 0.05f, -0.12f), 0.04f, 0.9f, -0.10f, 0.04f, 0.22f, 0f, 1.04f)
+            },
+            signals = new[]
+            {
+                CreateSignal("pocket_clear_signal", 0.12f, string.Empty, CombatVfxCueId.PocketCleared, 0.98f)
             }
         };
 
@@ -151,12 +205,18 @@ namespace DimensionBrawl.Presentation
             cueId = "pocket_result_fail_bridge",
             priority = 75,
             canBeInterrupted = false,
+            movementLockSeconds = 0.24f,
+            inputLockSeconds = 0.34f,
             timeScale = 0.92f,
             timeScaleSeconds = 0.10f,
             shots = new[]
             {
                 CreateShot(new Vector3(0f, -0.04f, -0.18f), -0.06f, 1.8f, -0.20f, -0.04f, 0.24f, 0.03f, 1.05f),
                 CreateShot(new Vector3(-0.08f, 0.02f, -0.10f), -0.04f, 0.6f, -0.08f, -0.03f, 0.22f, 0f, 1f)
+            },
+            signals = new[]
+            {
+                CreateSignal("pocket_fail_signal", 0.08f, string.Empty, CombatVfxCueId.PocketFailed, 1.02f)
             }
         };
 
@@ -206,6 +266,25 @@ namespace DimensionBrawl.Presentation
                 durationSeconds = durationSeconds,
                 pauseAfterSeconds = pauseAfterSeconds,
                 tierScale = tierScale
+            };
+        }
+
+        private static CueSignal CreateSignal(
+            string signalId,
+            float delaySeconds,
+            string animatorTrigger,
+            CombatVfxCueId vfxCueId,
+            float vfxIntensity)
+        {
+            return new CueSignal
+            {
+                enabled = true,
+                delaySeconds = delaySeconds,
+                signalId = signalId,
+                animatorTrigger = animatorTrigger,
+                playVfx = true,
+                vfxCueId = vfxCueId,
+                vfxIntensity = vfxIntensity
             };
         }
     }

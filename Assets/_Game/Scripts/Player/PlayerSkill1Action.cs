@@ -90,6 +90,7 @@ namespace DimensionBrawl.Player
         private int totalUseCount;
         private float blockedHintTimer;
         private string lastBlockedReason;
+        private bool cinematicInputLocked;
 
         public int LastSpentTier => lastSpentTier;
         public int LastFiredProjectileCount => lastFiredProjectileCount;
@@ -158,6 +159,15 @@ namespace DimensionBrawl.Player
         public void QueueSkill1()
         {
             queued = true;
+        }
+
+        public void SetCinematicInputLocked(bool locked)
+        {
+            cinematicInputLocked = locked;
+            if (locked)
+            {
+                queued = false;
+            }
         }
 
         public bool TryUseSkill1()
@@ -363,6 +373,12 @@ namespace DimensionBrawl.Player
 
         private bool ReadSkillPressed()
         {
+            if (cinematicInputLocked)
+            {
+                queued = false;
+                return false;
+            }
+
             bool pressed = queued;
             queued = false;
 
