@@ -1503,10 +1503,10 @@ namespace DimensionBrawl.Editor
             var serializedObject = new SerializedObject(profile);
             RequireProperty(serializedObject, "fireId").stringValue = "LanePoke";
             RequireProperty(serializedObject, "readoutLabel").stringValue = "Lane Poke";
-            RequireProperty(serializedObject, "initialDelaySeconds").floatValue = 0.95f;
-            RequireProperty(serializedObject, "fireIntervalSeconds").floatValue = 1.85f;
+            RequireProperty(serializedObject, "initialDelaySeconds").floatValue = 1.05f;
+            RequireProperty(serializedObject, "fireIntervalSeconds").floatValue = 1.95f;
             RequireProperty(serializedObject, "projectilesPerVolley").intValue = 2;
-            RequireProperty(serializedObject, "damage").floatValue = 3.4f;
+            RequireProperty(serializedObject, "damage").floatValue = 3.6f;
             RequireProperty(serializedObject, "projectileSpeed").floatValue = 11.5f;
             RequireProperty(serializedObject, "projectileLifetimeSeconds").floatValue = 5.2f;
             RequireProperty(serializedObject, "projectileRadius").floatValue = 0.22f;
@@ -5592,10 +5592,10 @@ namespace DimensionBrawl.Editor
             BossBasicFireProfile profile = LoadAsset<BossBasicFireProfile>(BossBasicFireProfilePath);
             ValidateString(profile, "fireId", "LanePoke");
             ValidateString(profile, "readoutLabel", "Lane Poke");
-            ValidateFloat(profile, "initialDelaySeconds", 0.95f);
-            ValidateFloat(profile, "fireIntervalSeconds", 1.85f);
+            ValidateFloat(profile, "initialDelaySeconds", 1.05f);
+            ValidateFloat(profile, "fireIntervalSeconds", 1.95f);
             ValidateInt(profile, "projectilesPerVolley", 2);
-            ValidateFloat(profile, "damage", 3.4f);
+            ValidateFloat(profile, "damage", 3.6f);
             ValidateFloat(profile, "projectileSpeed", 11.5f);
             ValidateFloat(profile, "projectileLifetimeSeconds", 5.2f);
             ValidateFloat(profile, "projectileRadius", 0.22f);

@@ -322,9 +322,9 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("LanePoke", bossBasicFireProfile.FireId);
             Assert.AreEqual("Lane Poke", bossBasicFireProfile.ReadoutLabel);
             Assert.AreEqual(2, bossBasicFireProfile.ProjectilesPerVolley);
-            Assert.AreEqual(3.4f, bossBasicFireProfile.Damage, 0.001f);
-            Assert.AreEqual(0.95f, bossBasicFireProfile.InitialDelaySeconds, 0.001f);
-            Assert.AreEqual(1.85f, bossBasicFireProfile.FireIntervalSeconds, 0.001f);
+            Assert.AreEqual(3.6f, bossBasicFireProfile.Damage, 0.001f);
+            Assert.AreEqual(1.05f, bossBasicFireProfile.InitialDelaySeconds, 0.001f);
+            Assert.AreEqual(1.95f, bossBasicFireProfile.FireIntervalSeconds, 0.001f);
             Assert.LessOrEqual(
                 bossBasicFireProfile.ProjectilesPerVolley
                     * bossBasicFireProfile.Damage
@@ -933,11 +933,11 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(SummonOpportunityTrigger.CloseThreatCleared, summonOpportunity.Trigger);
             Assert.AreEqual("SummonSlot1", summonOpportunity.PrimaryAnswerAction);
             Assert.AreEqual("Skill1", summonOpportunity.FollowupAction);
-            Assert.AreEqual(1.25f, summonOpportunity.OpportunityCueSeconds, 0.001f);
-            Assert.AreEqual(3f, summonOpportunity.ResolvePressureBreakSeconds(1), 0.001f);
-            Assert.AreEqual(3.65f, summonOpportunity.ResolvePressureBreakSeconds(3), 0.001f);
-            Assert.AreEqual(2.05f, summonOpportunity.ResolveFollowupWindowSeconds(1), 0.001f);
-            Assert.AreEqual(2.75f, summonOpportunity.ResolveFollowupWindowSeconds(3), 0.001f);
+            Assert.AreEqual(1.35f, summonOpportunity.OpportunityCueSeconds, 0.001f);
+            Assert.AreEqual(3.25f, summonOpportunity.ResolvePressureBreakSeconds(1), 0.001f);
+            Assert.AreEqual(4f, summonOpportunity.ResolvePressureBreakSeconds(3), 0.001f);
+            Assert.AreEqual(2.25f, summonOpportunity.ResolveFollowupWindowSeconds(1), 0.001f);
+            Assert.AreEqual(3.1f, summonOpportunity.ResolveFollowupWindowSeconds(3), 0.001f);
             Assert.AreEqual(125f, summonOpportunity.ResolveFollowupEnergyPulse(1), 0.001f);
             Assert.AreEqual(240f, summonOpportunity.ResolveFollowupEnergyPulse(3), 0.001f);
             Assert.AreEqual(0.75f, GetFloat(pocketOwner, "skill1FollowupClearDelaySeconds"), 0.001f);
@@ -2797,11 +2797,11 @@ namespace DimensionBrawl.Tests
                 "Defeating the close threat should also create a short camera read for the summon-block opportunity.");
             Assert.That(
                 pocketOwner.PressureReliefRemainingSeconds,
-                Is.EqualTo(1.25f).Within(0.001f),
+                Is.EqualTo(1.35f).Within(0.001f),
                 "The first close-threat relief window should start from the authored blocker-break value.");
             Assert.That(
                 pocketOwner.SummonBlockOpportunityRemainingSeconds,
-                Is.EqualTo(1.25f).Within(0.001f),
+                Is.EqualTo(1.35f).Within(0.001f),
                 "The summon-block cue timer should expose the same authored relief beat for HUD/readability.");
             Assert.IsFalse(
                 emitter.IsFiringEnabled,
@@ -2815,7 +2815,7 @@ namespace DimensionBrawl.Tests
                 Does.Contain("LV1 Guard Entry"),
                 "The compact HUD goal should preserve the summon tier answer during the block-opportunity cue.");
 
-            pocketOwner.Tick(1.24f);
+            pocketOwner.Tick(1.34f);
             Assert.IsTrue(pocketOwner.IsPressureReliefActive);
             Assert.IsFalse(emitter.IsFiringEnabled);
             Assert.AreEqual(
@@ -2936,7 +2936,7 @@ namespace DimensionBrawl.Tests
                 "A correct SummonSlot1 block should also open an in-world follow-up VFX read, not HUD text only.");
             Assert.AreEqual(1, pocketVfxCueBridge.LastFollowupWindowTier);
 
-            pocketOwner.Tick(2.04f);
+            pocketOwner.Tick(2.24f);
             Assert.IsTrue(pocketOwner.IsRunning);
             Assert.IsTrue(pocketOwner.IsSummonPressureBreakActive);
             Assert.IsTrue(pocketOwner.IsSummonFollowupWindowActive);
@@ -2954,7 +2954,7 @@ namespace DimensionBrawl.Tests
                 pocketVfxCueBridge.FollowupMissedCueRequestCount,
                 "Letting the follow-up window expire should leave a short missed-response VFX read.");
 
-            pocketOwner.Tick(0.95f);
+            pocketOwner.Tick(1.05f);
             Assert.IsTrue(pocketOwner.IsRunning);
             Assert.IsFalse(
                 pocketOwner.IsCleared,
@@ -3065,11 +3065,11 @@ namespace DimensionBrawl.Tests
                 "The compact HUD goal should name the follow-up Skill tier instead of only saying Fire Skill1.");
             Assert.That(
                 pocketOwner.SummonPressureBreakRemainingSeconds,
-                Is.EqualTo(3f).Within(0.001f),
+                Is.EqualTo(3.25f).Within(0.001f),
                 "A correct SummonSlot1 block should open the documented boss-pressure break relief.");
             Assert.That(
                 pocketOwner.SummonFollowupWindowRemainingSeconds,
-                Is.EqualTo(2.05f).Within(0.001f),
+                Is.EqualTo(2.25f).Within(0.001f),
                 "The correct block should also expose a short summon follow-up window.");
             Assert.IsFalse(
                 emitter.IsFiringEnabled,
@@ -3399,8 +3399,8 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(3, pocketOwner.HighestSummonTier);
             Assert.AreEqual(3, pocketOwner.HighestSummonPressureTier);
             Assert.AreEqual(3, pocketOwner.LastSummonPressureBreakTier);
-            Assert.That(pocketOwner.LastSummonPressureBreakDuration, Is.EqualTo(3.65f).Within(0.001f));
-            Assert.That(pocketOwner.LastSummonFollowupWindowDuration, Is.EqualTo(2.75f).Within(0.001f));
+            Assert.That(pocketOwner.LastSummonPressureBreakDuration, Is.EqualTo(4f).Within(0.001f));
+            Assert.That(pocketOwner.LastSummonFollowupWindowDuration, Is.EqualTo(3.1f).Within(0.001f));
             Assert.That(pocketOwner.SummonFollowupEnergyPulse, Is.EqualTo(240f).Within(0.001f));
             Assert.AreEqual(
                 followupWindowCueCountBefore + 1,

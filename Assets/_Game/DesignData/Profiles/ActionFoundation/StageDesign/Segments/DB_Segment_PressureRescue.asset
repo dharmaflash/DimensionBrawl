@@ -33,12 +33,13 @@ MonoBehaviour:
     targetTop3WindowSharePct: 72
     routeDominanceShare: 0.64
     entryExitLaneBias: 0.7
-    timeToNextReliefWindowSeconds: 6
+    timeToNextReliefWindowSeconds: 6.4
     riskDifferential: 0.67
     featuredSummonNeed: 3
     objectiveCue: Survive the pressure pocket.
-    designNotes: FanSuppressor controls space, LungeChaser punishes retreat, Skirmisher
-      tests tracking.
+    designNotes: Boss lane fire carries the main overload, close pressure forces the
+      first local-defense check, and the player should see a clear SummonSlot1 block
+      into Skill1 follow-up relief beat.
     enemyRoles:
     - role: {fileID: 11400000, guid: b7b03e1c520e0ff4896a99da9ba6b68b, type: 2}
       minimumCount: 1
