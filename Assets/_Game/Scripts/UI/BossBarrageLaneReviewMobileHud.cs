@@ -35,8 +35,8 @@ namespace DimensionBrawl.UI
 
         [Header("Display")]
         [SerializeField] private bool showHud = true;
-        [SerializeField, Min(40f)] private float buttonSize = 118f;
-        [SerializeField, Min(0f)] private float buttonGap = 18f;
+        [SerializeField, Min(40f)] private float buttonSize = 146f;
+        [SerializeField, Min(0f)] private float buttonGap = 30f;
         [SerializeField, Min(0f)] private float margin = 34f;
         [SerializeField, Range(0.5f, 2f)] private float scale = 1f;
         [SerializeField] private Color buttonColor = new Color(0.04f, 0.11f, 0.16f, 0.58f);
@@ -47,6 +47,12 @@ namespace DimensionBrawl.UI
         [SerializeField] private string summonSlot2Label = "S2 ARROW";
         [SerializeField] private string summonSlot3Label = "S3 TANK";
         [SerializeField] private string lockedSummonLabel = "NEXT";
+
+        [Header("Move Joystick")]
+        [SerializeField, Min(48f)] private float moveJoystickRadius = 142f;
+        [SerializeField, Min(16f)] private float moveJoystickKnobSize = 54f;
+        [SerializeField, Range(0f, 0.95f)] private float moveJoystickDeadZone = 0.12f;
+        [SerializeField, Min(1f)] private float moveJoystickTouchRadiusScale = 1.35f;
 
         [Header("Look Aim")]
         [SerializeField] private bool screenDragControlsAim = true;
@@ -76,10 +82,8 @@ namespace DimensionBrawl.UI
         [SerializeField] private bool fireAimReticleFollowsAssist = true;
         [SerializeField, Min(0f)] private float fireAimAssistReticleMaxOffset = 96f;
 
-        private Rect moveUpRect;
-        private Rect moveDownRect;
-        private Rect moveLeftRect;
-        private Rect moveRightRect;
+        private Rect moveJoystickRect;
+        private Rect moveJoystickTouchRect;
         private Rect basicRect;
         private Rect aimRect;
         private Rect dodgeRect;
@@ -97,6 +101,11 @@ namespace DimensionBrawl.UI
         private bool firePointerPressed;
         private bool firePointerUsesMouse;
         private int firePointerTouchId = -1;
+        private bool movePointerHeld;
+        private bool movePointerUsesMouse;
+        private int movePointerTouchId = -1;
+        private Vector2 moveJoystickCenterGuiPoint;
+        private Vector2 moveJoystickInput;
         private bool lookPointerHeld;
         private bool lookPointerUsesMouse;
         private bool lookPointerUsesRightMouse;
@@ -199,6 +208,7 @@ namespace DimensionBrawl.UI
             ReleaseHudLookAim();
             rangedBasicAttackAction?.SetFireHeld(false);
             ClearFirePointerState();
+            ClearMovePointerState();
             ClearLookPointerState();
             previousBasicHeld = false;
         }
@@ -206,14 +216,12 @@ namespace DimensionBrawl.UI
         private void Update()
         {
             BuildLayout();
+            UpdateMovePointerState();
             UpdateFirePointerState();
             UpdateLookPointerState();
 
             bool lookPointerBlocksDeviceFallback = lookPointerHeld && (!lookPointerUsesMouse || !lookPointerUsesRightMouse);
-            bool anyHudHeld = IsHeld(moveUpRect)
-                || IsHeld(moveDownRect)
-                || IsHeld(moveLeftRect)
-                || IsHeld(moveRightRect)
+            bool anyHudHeld = movePointerHeld
                 || firePointerHeld
                 || lookPointerBlocksDeviceFallback
                 || IsHeld(dodgeRect)
@@ -301,10 +309,7 @@ namespace DimensionBrawl.UI
 
             BuildLayout();
             EnsureStyles();
-            DrawButton(moveUpRect, "UP", IsHeld(moveUpRect));
-            DrawButton(moveDownRect, "DN", IsHeld(moveDownRect));
-            DrawButton(moveLeftRect, "L", IsHeld(moveLeftRect));
-            DrawButton(moveRightRect, "R", IsHeld(moveRightRect));
+            DrawMoveJoystick();
             DrawButton(basicRect, combatModeController != null && combatModeController.IsMeleeMode ? "SLASH" : "FIRE", firePointerHeld);
             DrawLookAimGuide();
             DrawFireAimReticle();
@@ -316,28 +321,7 @@ namespace DimensionBrawl.UI
 
         private Vector2 ResolveMoveInput()
         {
-            Vector2 input = Vector2.zero;
-            if (IsHeld(moveLeftRect))
-            {
-                input.x -= 1f;
-            }
-
-            if (IsHeld(moveRightRect))
-            {
-                input.x += 1f;
-            }
-
-            if (IsHeld(moveUpRect))
-            {
-                input.y += 1f;
-            }
-
-            if (IsHeld(moveDownRect))
-            {
-                input.y -= 1f;
-            }
-
-            return Vector2.ClampMagnitude(input, 1f);
+            return movePointerHeld ? moveJoystickInput : Vector2.zero;
         }
 
         private void BuildLayout()
@@ -347,12 +331,11 @@ namespace DimensionBrawl.UI
             float gap = buttonGap * resolvedScale;
             float edge = margin * resolvedScale;
 
-            float leftBaseX = edge + size;
-            float leftBaseY = Screen.height - edge - size * 2f;
-            moveUpRect = new Rect(leftBaseX, leftBaseY - size - gap, size, size);
-            moveDownRect = new Rect(leftBaseX, leftBaseY + size + gap, size, size);
-            moveLeftRect = new Rect(leftBaseX - size - gap, leftBaseY, size, size);
-            moveRightRect = new Rect(leftBaseX + size + gap, leftBaseY, size, size);
+            float joystickRadius = moveJoystickRadius * resolvedScale;
+            float joystickTouchRadius = joystickRadius * moveJoystickTouchRadiusScale;
+            moveJoystickCenterGuiPoint = new Vector2(edge + joystickRadius, Screen.height - edge - joystickRadius);
+            moveJoystickRect = RectFromCenter(moveJoystickCenterGuiPoint, joystickRadius * 2f);
+            moveJoystickTouchRect = RectFromCenter(moveJoystickCenterGuiPoint, joystickTouchRadius * 2f);
 
             float rightX = Screen.width - edge - size;
             float bottomY = Screen.height - edge - size;
@@ -375,6 +358,143 @@ namespace DimensionBrawl.UI
         {
             float screenScale = Mathf.Clamp(Screen.height / 1440f, 0.72f, 1.35f);
             return screenScale * Mathf.Max(0.5f, scale);
+        }
+
+        private void UpdateMovePointerState()
+        {
+            if (TryUpdateMoveTouchPointer())
+            {
+                return;
+            }
+
+            UpdateMoveMousePointer();
+        }
+
+        private bool TryUpdateMoveTouchPointer()
+        {
+            if (Touchscreen.current == null)
+            {
+                if (!movePointerUsesMouse)
+                {
+                    ClearMovePointerState();
+                }
+
+                return false;
+            }
+
+            if (movePointerHeld && !movePointerUsesMouse)
+            {
+                return UpdateActiveMoveTouchPointer();
+            }
+
+            foreach (var touch in Touchscreen.current.touches)
+            {
+                if (touch.phase.ReadValue() != UnityEngine.InputSystem.TouchPhase.Began)
+                {
+                    continue;
+                }
+
+                Vector2 point = ToGuiPoint(touch.position.ReadValue());
+                if (moveJoystickTouchRect.Contains(point))
+                {
+                    BeginMovePointer(point, usesMouse: false, touch.touchId.ReadValue());
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private bool UpdateActiveMoveTouchPointer()
+        {
+            foreach (var touch in Touchscreen.current.touches)
+            {
+                if (touch.touchId.ReadValue() != movePointerTouchId)
+                {
+                    continue;
+                }
+
+                if (!touch.press.isPressed)
+                {
+                    ClearMovePointerState();
+                    return true;
+                }
+
+                UpdateMovePointer(ToGuiPoint(touch.position.ReadValue()));
+                return true;
+            }
+
+            ClearMovePointerState();
+            return true;
+        }
+
+        private void UpdateMoveMousePointer()
+        {
+            if (Mouse.current == null)
+            {
+                if (movePointerUsesMouse)
+                {
+                    ClearMovePointerState();
+                }
+
+                return;
+            }
+
+            Vector2 point = ToGuiPoint(Mouse.current.position.ReadValue());
+            if (movePointerHeld && movePointerUsesMouse)
+            {
+                if (Mouse.current.leftButton.isPressed)
+                {
+                    UpdateMovePointer(point);
+                }
+                else
+                {
+                    ClearMovePointerState();
+                }
+
+                return;
+            }
+
+            if (Mouse.current.leftButton.wasPressedThisFrame && moveJoystickTouchRect.Contains(point))
+            {
+                BeginMovePointer(point, usesMouse: true, touchId: -1);
+            }
+        }
+
+        private void BeginMovePointer(Vector2 point, bool usesMouse, int touchId)
+        {
+            movePointerHeld = true;
+            movePointerUsesMouse = usesMouse;
+            movePointerTouchId = touchId;
+            UpdateMovePointer(point);
+        }
+
+        private void UpdateMovePointer(Vector2 point)
+        {
+            moveJoystickInput = ResolveMoveJoystickInput(point);
+        }
+
+        private void ClearMovePointerState()
+        {
+            movePointerHeld = false;
+            movePointerUsesMouse = false;
+            movePointerTouchId = -1;
+            moveJoystickInput = Vector2.zero;
+        }
+
+        private Vector2 ResolveMoveJoystickInput(Vector2 currentGuiPoint)
+        {
+            float radius = Mathf.Max(1f, moveJoystickRadius * ResolveScale());
+            Vector2 delta = currentGuiPoint - moveJoystickCenterGuiPoint;
+            Vector2 input = Vector2.ClampMagnitude(new Vector2(delta.x, -delta.y) / radius, 1f);
+            float magnitude = input.magnitude;
+            if (magnitude < moveJoystickDeadZone)
+            {
+                return Vector2.zero;
+            }
+
+            float adjustedMagnitude = Mathf.InverseLerp(moveJoystickDeadZone, 1f, magnitude);
+            return magnitude > 0f ? input.normalized * adjustedMagnitude : Vector2.zero;
         }
 
         private void UpdateFirePointerState()
@@ -744,10 +864,7 @@ namespace DimensionBrawl.UI
 
         private bool IsHudControlPoint(Vector2 point)
         {
-            return moveUpRect.Contains(point)
-                || moveDownRect.Contains(point)
-                || moveLeftRect.Contains(point)
-                || moveRightRect.Contains(point)
+            return moveJoystickTouchRect.Contains(point)
                 || basicRect.Contains(point)
                 || dodgeRect.Contains(point)
                 || swapRect.Contains(point)
@@ -802,6 +919,20 @@ namespace DimensionBrawl.UI
         private void DrawButton(Rect rect, string label, bool held, bool pending = false)
         {
             GUI.Box(rect, label, held ? heldButtonStyle : pending ? pendingButtonStyle : buttonStyle);
+        }
+
+        private void DrawMoveJoystick()
+        {
+            GUI.Box(moveJoystickRect, string.Empty, buttonStyle);
+
+            float resolvedScale = ResolveScale();
+            float radius = moveJoystickRadius * resolvedScale;
+            float knobSize = moveJoystickKnobSize * resolvedScale;
+            Vector2 knobCenter = movePointerHeld
+                ? moveJoystickCenterGuiPoint + new Vector2(moveJoystickInput.x, -moveJoystickInput.y) * radius
+                : moveJoystickCenterGuiPoint;
+            Rect knobRect = RectFromCenter(knobCenter, knobSize);
+            GUI.Box(knobRect, string.Empty, movePointerHeld ? heldButtonStyle : pendingButtonStyle);
         }
 
         private void DrawSummonButtons()
@@ -1094,6 +1225,11 @@ namespace DimensionBrawl.UI
         private static Vector2 ToGuiPoint(Vector2 screenPoint)
         {
             return new Vector2(screenPoint.x, Screen.height - screenPoint.y);
+        }
+
+        private static Rect RectFromCenter(Vector2 center, float size)
+        {
+            return new Rect(center.x - size * 0.5f, center.y - size * 0.5f, size, size);
         }
 
         private T FindFirstComponentOnSelfOrParent<T>() where T : Component

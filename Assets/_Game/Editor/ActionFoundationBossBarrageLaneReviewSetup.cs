@@ -5817,6 +5817,7 @@ namespace DimensionBrawl.Editor
                 summonSlot1Profile,
                 1,
                 "ShieldBreaker",
+                expectedActorScale: 2.7f,
                 expectedActorMaxHealth: 230f,
                 expectedActorMoveSpeed: 1.45f,
                 expectedActorEngageRadius: 0.95f,
@@ -5829,6 +5830,7 @@ namespace DimensionBrawl.Editor
                 summonSlot1Profile,
                 2,
                 "ShieldBreaker",
+                expectedActorScale: 3.24f,
                 expectedActorMaxHealth: 300f,
                 expectedActorMoveSpeed: 1.6f,
                 expectedActorEngageRadius: 1.05f,
@@ -5841,6 +5843,7 @@ namespace DimensionBrawl.Editor
                 summonSlot1Profile,
                 3,
                 "ShieldBreaker",
+                expectedActorScale: 3.84f,
                 expectedActorMaxHealth: 380f,
                 expectedActorMoveSpeed: 1.7f,
                 expectedActorEngageRadius: 1.15f,
@@ -6067,6 +6070,7 @@ namespace DimensionBrawl.Editor
                     profile,
                     1,
                     "BacklineMarksman",
+                    expectedActorScale: 2.85f,
                     expectedActorMaxHealth: 160f,
                     expectedActorMoveSpeed: 1.35f,
                     expectedActorEngageRadius: 0.82f,
@@ -6086,6 +6090,7 @@ namespace DimensionBrawl.Editor
                     profile,
                     2,
                     "BacklineMarksman",
+                    expectedActorScale: 3.15f,
                     expectedActorMaxHealth: 190f,
                     expectedActorMoveSpeed: 1.42f,
                     expectedActorEngageRadius: 0.86f,
@@ -6105,6 +6110,7 @@ namespace DimensionBrawl.Editor
                     profile,
                     3,
                     "BacklineMarksman",
+                    expectedActorScale: 3.48f,
                     expectedActorMaxHealth: 225f,
                     expectedActorMoveSpeed: 1.5f,
                     expectedActorEngageRadius: 0.9f,
@@ -6129,6 +6135,7 @@ namespace DimensionBrawl.Editor
                     profile,
                     1,
                     "VanguardCommander",
+                    expectedActorScale: 3.15f,
                     expectedActorMaxHealth: 360f,
                     expectedActorMoveSpeed: 1.15f,
                     expectedActorEngageRadius: 1.18f,
@@ -6148,6 +6155,7 @@ namespace DimensionBrawl.Editor
                     profile,
                     2,
                     "VanguardCommander",
+                    expectedActorScale: 3.54f,
                     expectedActorMaxHealth: 430f,
                     expectedActorMoveSpeed: 1.2f,
                     expectedActorEngageRadius: 1.25f,
@@ -6167,6 +6175,7 @@ namespace DimensionBrawl.Editor
                     profile,
                     3,
                     "VanguardCommander",
+                    expectedActorScale: 4.02f,
                     expectedActorMaxHealth: 520f,
                     expectedActorMoveSpeed: 1.25f,
                     expectedActorEngageRadius: 1.34f,
@@ -6302,6 +6311,7 @@ namespace DimensionBrawl.Editor
                 bossSummonPressureProfile,
                 1,
                 expectedEntryForwardBlend01: 0.28f,
+                expectedActorScale: 2.76f,
                 expectedActorLifetimeSeconds: 0f,
                 expectedActorAdvanceDistance: 2.4f,
                 expectedActorRoleId: "EscortProbe",
@@ -6323,6 +6333,7 @@ namespace DimensionBrawl.Editor
                 bossSummonPressureProfile,
                 2,
                 expectedEntryForwardBlend01: 0.38f,
+                expectedActorScale: 3.36f,
                 expectedActorLifetimeSeconds: 0f,
                 expectedActorAdvanceDistance: 3.8f,
                 expectedActorRoleId: "PressureScreen",
@@ -6344,6 +6355,7 @@ namespace DimensionBrawl.Editor
                 bossSummonPressureProfile,
                 3,
                 expectedEntryForwardBlend01: 0.5f,
+                expectedActorScale: 4.08f,
                 expectedActorLifetimeSeconds: 0f,
                 expectedActorAdvanceDistance: 5.2f,
                 expectedActorRoleId: "ClampGuard",
@@ -6613,6 +6625,7 @@ namespace DimensionBrawl.Editor
             BossSummonPressureProfile profile,
             int tier,
             float expectedEntryForwardBlend01,
+            float expectedActorScale,
             float expectedActorLifetimeSeconds,
             float expectedActorAdvanceDistance,
             string expectedActorRoleId,
@@ -6651,6 +6664,10 @@ namespace DimensionBrawl.Editor
                 settings.ActorLifetimeSeconds,
                 expectedActorLifetimeSeconds,
                 $"Boss summon pressure tier {tier} has the wrong actor lifetime.");
+            ValidateFloatValue(
+                settings.ActorScale,
+                expectedActorScale,
+                $"Boss summon pressure tier {tier} has the wrong actor scale.");
             ValidateFloatValue(
                 settings.ActorAdvanceDistance,
                 expectedActorAdvanceDistance,
@@ -6691,6 +6708,7 @@ namespace DimensionBrawl.Editor
             SummonSlotActionProfile profile,
             int tier,
             string expectedActorRoleId,
+            float expectedActorScale,
             float expectedActorMaxHealth,
             float expectedActorMoveSpeed,
             float expectedActorEngageRadius,
@@ -6718,6 +6736,10 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"Summon slot tier {tier} has the wrong actor role id.");
             }
 
+            ValidateFloatValue(
+                settings.ActorScale,
+                expectedActorScale,
+                $"Summon slot tier {tier} has the wrong actor scale.");
             ValidateFloatValue(
                 settings.ActorMaxHealth,
                 expectedActorMaxHealth,

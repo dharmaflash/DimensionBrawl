@@ -18,7 +18,7 @@ MonoBehaviour:
     LateralOffset: 0.9
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
-    ActorScale: 0.92
+    ActorScale: 2.76
     ActorRoleId: EscortProbe
     ActorMaxHealth: 220
     ActorMoveSpeed: 1.35
@@ -34,7 +34,7 @@ MonoBehaviour:
     LateralOffset: 1.4
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
-    ActorScale: 1.12
+    ActorScale: 3.36
     ActorRoleId: PressureScreen
     ActorMaxHealth: 320
     ActorMoveSpeed: 1.42
@@ -50,7 +50,7 @@ MonoBehaviour:
     LateralOffset: 2
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
-    ActorScale: 1.36
+    ActorScale: 4.08
     ActorRoleId: ClampGuard
     ActorMaxHealth: 460
     ActorMoveSpeed: 1.48

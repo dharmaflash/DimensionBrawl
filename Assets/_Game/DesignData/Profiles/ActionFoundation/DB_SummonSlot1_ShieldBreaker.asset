@@ -25,7 +25,7 @@ MonoBehaviour:
     CueScale: 0.46
     CueLifetimeSeconds: 0.36
     ActorLifetimeSeconds: 0
-    ActorScale: 0.9
+    ActorScale: 2.7
     ActorRoleId: ShieldBreaker
     ActorMaxHealth: 230
     ActorMoveSpeed: 1.45
@@ -53,7 +53,7 @@ MonoBehaviour:
     CueScale: 0.51
     CueLifetimeSeconds: 0.36
     ActorLifetimeSeconds: 0
-    ActorScale: 1.08
+    ActorScale: 3.24
     ActorRoleId: ShieldBreaker
     ActorMaxHealth: 300
     ActorMoveSpeed: 1.6
@@ -81,7 +81,7 @@ MonoBehaviour:
     CueScale: 0.56
     CueLifetimeSeconds: 0.36
     ActorLifetimeSeconds: 0
-    ActorScale: 1.28
+    ActorScale: 3.84
     ActorRoleId: ShieldBreaker
     ActorMaxHealth: 380
     ActorMoveSpeed: 1.7

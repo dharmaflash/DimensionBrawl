@@ -25,7 +25,7 @@ MonoBehaviour:
     CueScale: 0.51
     CueLifetimeSeconds: 0.36
     ActorLifetimeSeconds: 0
-    ActorScale: 0.95
+    ActorScale: 2.85
     ActorRoleId: BacklineMarksman
     ActorMaxHealth: 160
     ActorMoveSpeed: 1.35
@@ -53,7 +53,7 @@ MonoBehaviour:
     CueScale: 0.56
     CueLifetimeSeconds: 0.36
     ActorLifetimeSeconds: 0
-    ActorScale: 1.05
+    ActorScale: 3.15
     ActorRoleId: BacklineMarksman
     ActorMaxHealth: 190
     ActorMoveSpeed: 1.42
@@ -81,7 +81,7 @@ MonoBehaviour:
     CueScale: 0.61
     CueLifetimeSeconds: 0.36
     ActorLifetimeSeconds: 0
-    ActorScale: 1.16
+    ActorScale: 3.48
     ActorRoleId: BacklineMarksman
     ActorMaxHealth: 225
     ActorMoveSpeed: 1.5

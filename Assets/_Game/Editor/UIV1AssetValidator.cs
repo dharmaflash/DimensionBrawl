@@ -45,6 +45,8 @@ namespace DimensionBrawl.Editor
         private const string UiSceneRoot = "Assets/_Game/Scenes/UI/";
         private const string ImportedRoot = "Assets/_Imported/";
         private const string ActionFoundationScenePath = "Assets/_Game/Scenes/ActionFoundationTest.unity";
+        private const string BossBarrageReviewScenePath =
+            "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity";
 
         [MenuItem("DimensionBrawl/UI V1/Validate UI Test Assets")]
         public static void ValidateMenu()
@@ -185,7 +187,10 @@ namespace DimensionBrawl.Editor
                 }
 
                 RequireNonEmpty(sceneName, $"{RouteTablePath}.routes[{i}].sceneName");
-                RequireScenePath(scenePath, $"{RouteTablePath}.routes[{i}].scenePath");
+                RequireScenePath(
+                    scenePath,
+                    $"{RouteTablePath}.routes[{i}].scenePath",
+                    routeId == UIRouteId.CombatHud);
                 RequireSceneNameMatchesPath(sceneName, scenePath, $"{RouteTablePath}.routes[{i}]");
                 ValidateRouteLoadingPolicy(
                     routeId,
@@ -2111,7 +2116,10 @@ namespace DimensionBrawl.Editor
             }
         }
 
-        private static void RequireScenePath(string scenePath, string label)
+        private static void RequireScenePath(
+            string scenePath,
+            string label,
+            bool allowCombatReviewScene = false)
         {
             RequireNonEmpty(scenePath, label);
             string normalized = scenePath.Replace('\\', '/');
@@ -2120,9 +2128,13 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"{label} must not route to ActionFoundationTest.");
             }
 
-            if (!normalized.StartsWith(UiSceneRoot, StringComparison.Ordinal))
+            bool isAllowedCombatReviewScene = allowCombatReviewScene
+                && string.Equals(normalized, BossBarrageReviewScenePath, StringComparison.Ordinal);
+            if (!normalized.StartsWith(UiSceneRoot, StringComparison.Ordinal) && !isAllowedCombatReviewScene)
             {
-                throw new InvalidOperationException($"{label} must stay under {UiSceneRoot}, found {scenePath}.");
+                throw new InvalidOperationException(
+                    $"{label} must stay under {UiSceneRoot}"
+                    + $" unless it is the reviewed combat handoff scene, found {scenePath}.");
             }
 
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>(normalized) == null)

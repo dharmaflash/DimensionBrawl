@@ -407,6 +407,11 @@ namespace DimensionBrawl.Tests
                 "High-cost boss proxy that punishes overextension and demands a committed high-tier answer or retreat.",
                 "Back off from forward-risk lanes unless a summon answer is already charged.",
                 "A saved LV2/LV3 summon should create a visible pressure-break window before counterfire.");
+            BossSummonPressureAction.BossSummonTierSettings[] bossSummonTiers =
+                bossSummonPressureProfile.CopyTierSettings();
+            Assert.AreEqual(2.76f, bossSummonTiers[0].ActorScale, 0.001f);
+            Assert.AreEqual(3.36f, bossSummonTiers[1].ActorScale, 0.001f);
+            Assert.AreEqual(4.08f, bossSummonTiers[2].ActorScale, 0.001f);
             GameObject bossSummonActorPrefabObject = LoadAsset<GameObject>(BossSummonPressureActorPrefabPath);
             SummonFrontlineProxyPresenter bossSummonActorPresenter =
                 RequireComponent<SummonFrontlineProxyPresenter>(
@@ -1261,6 +1266,9 @@ namespace DimensionBrawl.Tests
                 marksmanProfile.CopyTierSettings();
             PlayerSummonSlot1Action.SummonTierSettings[] vanguardTiers =
                 vanguardProfile.CopyTierSettings();
+            float[] expectedShieldBreakerScales = { 2.7f, 3.24f, 3.84f };
+            float[] expectedMarksmanScales = { 2.85f, 3.15f, 3.48f };
+            float[] expectedVanguardScales = { 3.15f, 3.54f, 4.02f };
 
             Assert.AreEqual(shieldBreakerTiers.Length, marksmanTiers.Length);
             Assert.AreEqual(shieldBreakerTiers.Length, vanguardTiers.Length);
@@ -1271,6 +1279,9 @@ namespace DimensionBrawl.Tests
                 float marksmanVolleyDamage = marksmanTiers[i].Damage * marksmanTiers[i].ProjectileCount;
                 float vanguardVolleyDamage = vanguardTiers[i].Damage * vanguardTiers[i].ProjectileCount;
 
+                Assert.AreEqual(expectedShieldBreakerScales[i], shieldBreakerTiers[i].ActorScale, 0.001f);
+                Assert.AreEqual(expectedMarksmanScales[i], marksmanTiers[i].ActorScale, 0.001f);
+                Assert.AreEqual(expectedVanguardScales[i], vanguardTiers[i].ActorScale, 0.001f);
                 Assert.Greater(
                     marksmanVolleyDamage,
                     shieldBreakerVolleyDamage,
