@@ -1,4 +1,3 @@
-using System;
 using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
@@ -7,91 +6,6 @@ using UnityEngine;
 
 namespace DimensionBrawl.Presentation
 {
-    public readonly struct CombatResourceReadout
-    {
-        public CombatResourceReadout(
-            string label,
-            string valueText,
-            string stateText,
-            float fill01,
-            Color fillColor,
-            bool isReady)
-        {
-            Label = string.IsNullOrWhiteSpace(label) ? "-" : label;
-            ValueText = string.IsNullOrWhiteSpace(valueText) ? "-" : valueText;
-            StateText = string.IsNullOrWhiteSpace(stateText) ? "-" : stateText;
-            Fill01 = Mathf.Clamp01(fill01);
-            FillColor = fillColor;
-            IsReady = isReady;
-        }
-
-        public string Label { get; }
-        public string ValueText { get; }
-        public string StateText { get; }
-        public float Fill01 { get; }
-        public Color FillColor { get; }
-        public bool IsReady { get; }
-        public string Line => $"{Label} {ValueText} {StateText}";
-
-        public static CombatResourceReadout Missing(string label)
-        {
-            return new CombatResourceReadout(label, "-", "missing", 0f, new Color(0.28f, 0.28f, 0.28f, 1f), false);
-        }
-
-        public static CombatResourceReadout FromHealth(string label, CombatHealth health, Color fillColor)
-        {
-            if (health == null)
-            {
-                return Missing(label);
-            }
-
-            string state = health.IsAlive ? "alive" : "down";
-            return new CombatResourceReadout(
-                label,
-                $"{health.CurrentHealth:0}/{health.MaxHealth:0}",
-                state,
-                health.HealthRatio,
-                fillColor,
-                false);
-        }
-
-        public static CombatResourceReadout FromEnergy(string label, SummonEnergyLadder energy)
-        {
-            if (energy == null)
-            {
-                return Missing(label);
-            }
-
-            string ready = energy.CanSpend ? $"READY LV{energy.AvailableTier}" : "charging";
-            string capped = energy.IsCapped ? " capped" : string.Empty;
-            return new CombatResourceReadout(
-                label,
-                $"LV{energy.ChargingTier} {energy.CurrentTierFillRatio * 100f:0}%",
-                $"{ready}{capped}",
-                energy.CurrentTierFillRatio,
-                new Color(0.18f, 0.92f, 1f, 1f),
-                energy.CanSpend);
-        }
-
-        public static CombatResourceReadout FromBossCost(string label, BossPressureCostLadder cost)
-        {
-            if (cost == null)
-            {
-                return Missing(label);
-            }
-
-            string ready = cost.CanSpend ? $"READY LV{cost.AvailableTier}" : "charging";
-            string capped = cost.IsCapped ? " capped" : string.Empty;
-            return new CombatResourceReadout(
-                label,
-                $"LV{cost.ChargingTier} {cost.CurrentTierFillRatio * 100f:0}%",
-                $"{ready}{capped}",
-                cost.CurrentTierFillRatio,
-                new Color(1f, 0.58f, 0.18f, 1f),
-                cost.CanSpend);
-        }
-    }
-
     // Review-only readout for the boss barrage lane slice; production HUD should be authored separately.
     public sealed class BossBarrageLaneReviewHud : MonoBehaviour
     {
@@ -278,7 +192,7 @@ namespace DimensionBrawl.Presentation
             GUILayout.Label(ResolveCompactFrontlineCueLine(), labelStyle);
 
             string hintLine = ResolveActionHintLine();
-            if (!IsEmptyHintLine(hintLine))
+            if (!BossBarrageLaneReviewHudText.IsEmptyHintLine(hintLine))
             {
                 GUILayout.Label(hintLine, labelStyle);
             }
@@ -331,7 +245,9 @@ namespace DimensionBrawl.Presentation
                     ? laneSpace.EvaluateForwardRisk01(player.position)
                     : 0f;
             float gain = energyLadder != null ? energyLadder.CurrentGainMultiplier : 0f;
-            string band = energyLadder != null ? ResolveRiskBandLabel(energyLadder.CurrentRiskBand) : "BackSafety";
+            string band = energyLadder != null
+                ? BossBarrageLaneReviewHudText.ResolveRiskBandLabel(energyLadder.CurrentRiskBand)
+                : "BackSafety";
             return $"Risk {band} {risk * 100f:0}%   EN Gain x{gain:0.00}";
         }
 
@@ -618,7 +534,7 @@ namespace DimensionBrawl.Presentation
         {
             if (duelReviewOwner != null)
             {
-                return $"Phase: {ResolveCompactPhaseLabel(duelReviewOwner.CurrentPhase.ToString())}";
+                return $"Phase: {BossBarrageLaneReviewHudText.ResolveCompactPhaseLabel(duelReviewOwner.CurrentPhase.ToString())}";
             }
 
             if (pocketReviewOwner == null)
@@ -626,7 +542,7 @@ namespace DimensionBrawl.Presentation
                 return "Phase: -";
             }
 
-            return $"Phase: {ResolveCompactPhaseLabel(pocketReviewOwner.CurrentPhase.ToString())}";
+            return $"Phase: {BossBarrageLaneReviewHudText.ResolveCompactPhaseLabel(pocketReviewOwner.CurrentPhase.ToString())}";
         }
 
         private string ResolveCompactCombatCueLine()
@@ -652,7 +568,7 @@ namespace DimensionBrawl.Presentation
 
             if (bossBarrageEmitter != null && bossBarrageEmitter.IsWindupActive)
             {
-                return $"Dodge: {ShortenPatternId(bossBarrageEmitter.CurrentPattern?.PatternId)}";
+                return $"Dodge: {BossBarrageLaneReviewHudText.ShortenPatternId(bossBarrageEmitter.CurrentPattern?.PatternId)}";
             }
 
             if (bossPressureCostLadder != null && bossPressureCostLadder.CanSpend)
@@ -662,7 +578,7 @@ namespace DimensionBrawl.Presentation
 
             if (bossBarrageEmitter != null && bossBarrageEmitter.CurrentPattern != null)
             {
-                return $"Boss: {ShortenPatternId(bossBarrageEmitter.CurrentPattern.PatternId)}";
+                return $"Boss: {BossBarrageLaneReviewHudText.ShortenPatternId(bossBarrageEmitter.CurrentPattern.PatternId)}";
             }
 
             return "Hold lane";
@@ -687,7 +603,9 @@ namespace DimensionBrawl.Presentation
                 : laneSpace != null && player != null
                     ? laneSpace.EvaluateForwardRisk01(player.position)
                     : 0f;
-            string band = energyLadder != null ? ResolveCompactRiskBandLabel(energyLadder.CurrentRiskBand) : "Back";
+            string band = energyLadder != null
+                ? BossBarrageLaneReviewHudText.ResolveCompactRiskBandLabel(energyLadder.CurrentRiskBand)
+                : "Back";
             return $"Risk {band} {risk * 100f:0}%";
         }
 
@@ -704,7 +622,7 @@ namespace DimensionBrawl.Presentation
             return $"Boss Summon {tier} proxy {bossSummonPressureAction.ActiveSummonActorCount} "
                 + $"shield {bossSummonPressureAction.ActivePressureScreenCount} "
                 + $"blocks {bossSummonPressureAction.ActivePressureScreenRemainingIntercepts} "
-                + ResolveSummonLifecycleLine(
+                + BossBarrageLaneReviewHudText.ResolveSummonLifecycleLine(
                     bossSummonPressureAction.ActiveSummonActorCount,
                     bossSummonPressureAction.LastSummonActorRemainingLifetimeSeconds,
                     bossSummonPressureAction.ActiveSummonActorAdvanceProgress01,
@@ -718,14 +636,14 @@ namespace DimensionBrawl.Presentation
 
         private string ResolveFrontlineCueLine()
         {
-            FrontlineProxyReadout readout = ResolveFrontlineProxyReadout();
+            BossBarrageFrontlineReadout readout = BossBarrageLaneReviewHudText.ResolveFrontlineProxyReadout();
             return $"Frontline {readout.State} A{readout.AllyCount} {readout.AllyHealthText} / "
                 + $"E{readout.EnemyCount} {readout.EnemyHealthText}   {ResolvePlayerSummonCueText()}";
         }
 
         private string ResolveCompactFrontlineCueLine()
         {
-            FrontlineProxyReadout readout = ResolveFrontlineProxyReadout();
+            BossBarrageFrontlineReadout readout = BossBarrageLaneReviewHudText.ResolveFrontlineProxyReadout();
             return $"Front {readout.State}: A{readout.AllyCount} {readout.AllyHealthText} / "
                 + $"E{readout.EnemyCount} {readout.EnemyHealthText} | {ResolveCompactSummonText()}";
         }
@@ -756,7 +674,7 @@ namespace DimensionBrawl.Presentation
 
         private string ResolveFrontlineLoopLine()
         {
-            FrontlineProxyReadout readout = ResolveFrontlineProxyReadout();
+            BossBarrageFrontlineReadout readout = BossBarrageLaneReviewHudText.ResolveFrontlineProxyReadout();
             string loop = duelReviewOwner != null
                 ? duelReviewOwner.CurrentPhase.ToString()
                 : pocketReviewOwner != null
@@ -777,7 +695,7 @@ namespace DimensionBrawl.Presentation
         private string ResolveFrontlineTuningLine()
         {
             return $"Tune EN {ResolveEnergyTuningText()}   Cost {ResolveBossCostTuningText()}   "
-                + ResolveActiveFrontlineTuningText();
+                + BossBarrageLaneReviewHudText.ResolveActiveFrontlineTuningText();
         }
 
         private string ResolveEnergyTuningText()
@@ -802,56 +720,6 @@ namespace DimensionBrawl.Presentation
             return $"LV{bossPressureCostLadder.ChargingTier} {bossPressureCostLadder.CurrentTierCost:0}/{bossPressureCostLadder.CurrentTierTarget:0}{ready}";
         }
 
-        private static string ResolveActiveFrontlineTuningText()
-        {
-            int allyCount = 0;
-            int enemyCount = 0;
-            string allyText = "--";
-            string enemyText = "--";
-            int proxyCount = SummonFrontlineProxy.ActiveRegisteredProxyCount;
-            for (int i = 0; i < proxyCount; i++)
-            {
-                if (!SummonFrontlineProxy.TryGetActiveRegisteredProxy(i, out SummonFrontlineProxy proxy)
-                    || proxy == null
-                    || proxy.Health == null)
-                {
-                    continue;
-                }
-
-                if (CombatTeamUtility.IsPlayerSide(proxy.Health.Team))
-                {
-                    allyCount++;
-                    if (allyCount == 1)
-                    {
-                        allyText = ResolveFrontlineUnitTuningText(proxy);
-                    }
-                }
-                else
-                {
-                    enemyCount++;
-                    if (enemyCount == 1)
-                    {
-                        enemyText = ResolveFrontlineUnitTuningText(proxy);
-                    }
-                }
-            }
-
-            return $"A{allyCount} {allyText}   E{enemyCount} {enemyText}";
-        }
-
-        private static string ResolveFrontlineUnitTuningText(SummonFrontlineProxy proxy)
-        {
-            if (proxy == null)
-            {
-                return "--";
-            }
-
-            SummonFrontlineClash clash = proxy.GetComponent<SummonFrontlineClash>();
-            string health = proxy.HasHealth ? $"{proxy.CurrentHealth:0}/{proxy.MaxHealth:0}" : "--";
-            string dps = clash != null ? $"{clash.ContactDamagePerSecond:0}" : "--";
-            return $"T{proxy.ActiveTier} {proxy.CurrentState} hp {health} spd {proxy.ActiveMoveSpeed:0.00} dps {dps}";
-        }
-
         private string ResolveBossLoopReadout()
         {
             if (bossPressureActionDirector != null
@@ -871,82 +739,6 @@ namespace DimensionBrawl.Presentation
             }
 
             return $"boss build LV{bossPressureCostLadder.ChargingTier} {bossPressureCostLadder.CurrentTierFillRatio * 100f:0}%";
-        }
-
-        private static FrontlineProxyReadout ResolveFrontlineProxyReadout()
-        {
-            int allyCount = 0;
-            int enemyCount = 0;
-            bool allyAdvancing = false;
-            bool enemyAdvancing = false;
-            bool clashing = false;
-            float allyLowestHealth01 = 1f;
-            float enemyLowestHealth01 = 1f;
-
-            int proxyCount = SummonFrontlineProxy.ActiveRegisteredProxyCount;
-            for (int i = 0; i < proxyCount; i++)
-            {
-                if (!SummonFrontlineProxy.TryGetActiveRegisteredProxy(i, out SummonFrontlineProxy proxy)
-                    || proxy == null
-                    || proxy.Health == null)
-                {
-                    continue;
-                }
-
-                bool isPlayerSide = CombatTeamUtility.IsPlayerSide(proxy.Health.Team);
-                if (isPlayerSide)
-                {
-                    allyCount++;
-                    allyAdvancing |= proxy.IsAdvancing;
-                    allyLowestHealth01 = Mathf.Min(allyLowestHealth01, proxy.HealthRatio);
-                }
-                else
-                {
-                    enemyCount++;
-                    enemyAdvancing |= proxy.IsAdvancing;
-                    enemyLowestHealth01 = Mathf.Min(enemyLowestHealth01, proxy.HealthRatio);
-                }
-
-                clashing |= proxy.IsAdvanceHeld || proxy.CurrentState == SummonFrontlineProxyState.Attacking;
-            }
-
-            string state = ResolveFrontlineState(allyCount, enemyCount, allyAdvancing, enemyAdvancing, clashing);
-            return new FrontlineProxyReadout(
-                state,
-                allyCount,
-                enemyCount,
-                ResolveHealthPercentText(allyCount, allyLowestHealth01),
-                ResolveHealthPercentText(enemyCount, enemyLowestHealth01));
-        }
-
-        private static string ResolveFrontlineState(
-            int allyCount,
-            int enemyCount,
-            bool allyAdvancing,
-            bool enemyAdvancing,
-            bool clashing)
-        {
-            if (allyCount > 0 && enemyCount > 0)
-            {
-                return clashing ? "clash" : "contest";
-            }
-
-            if (allyCount > 0)
-            {
-                return allyAdvancing ? "ally push" : "ally hold";
-            }
-
-            if (enemyCount > 0)
-            {
-                return enemyAdvancing ? "boss push" : "boss hold";
-            }
-
-            return "open";
-        }
-
-        private static string ResolveHealthPercentText(int count, float health01)
-        {
-            return count > 0 ? $"{Mathf.Clamp01(health01) * 100f:0}%" : "--";
         }
 
         private string ResolveActionLine()
@@ -996,7 +788,7 @@ namespace DimensionBrawl.Presentation
             return $"{skillShots}   Summon {tier} proxy {summonSlot1Action.ActiveSummonActorCount} "
                 + $"bolts {summonSlot1Action.ActiveProjectileCount} shield {summonSlot1Action.ActivePressureScreenCount} "
                 + $"blocks {summonSlot1Action.ActivePressureScreenRemainingIntercepts}"
-                + ResolveSummonLifecycleLine(
+                + BossBarrageLaneReviewHudText.ResolveSummonLifecycleLine(
                     summonSlot1Action.ActiveSummonActorCount,
                     summonSlot1Action.LastSummonActorRemainingLifetimeSeconds,
                     summonSlot1Action.ActiveSummonActorAdvanceProgress01,
@@ -1025,7 +817,7 @@ namespace DimensionBrawl.Presentation
             return $"{label} {tier} {role} proxy {action.ActiveSummonActorCount} "
                 + $"volley {action.LastVolleyWaveCount} bolts {action.ActiveProjectileCount} "
                 + $"blocks {action.TotalPressureScreenInterceptCount}"
-                + ResolveSummonLifecycleLine(
+                + BossBarrageLaneReviewHudText.ResolveSummonLifecycleLine(
                     action.ActiveSummonActorCount,
                     action.LastSummonActorRemainingLifetimeSeconds,
                     action.ActiveSummonActorAdvanceProgress01,
@@ -1348,49 +1140,6 @@ namespace DimensionBrawl.Presentation
             return Mathf.Clamp(requestedHeight, 1f, maxAreaHeight);
         }
 
-        private static bool IsEmptyHintLine(string hintLine)
-        {
-            return string.IsNullOrWhiteSpace(hintLine) || string.Equals(hintLine, "Hint: -", StringComparison.Ordinal);
-        }
-
-        private static string ResolveCompactPhaseLabel(string phase)
-        {
-            return phase switch
-            {
-                "ThreatDefense" => "Threat",
-                "SummonBlock" => "Summon Block",
-                "SummonFollowup" => "Follow-up",
-                "PressureBreak" => "Break",
-                "Cleared" => "Clear",
-                "Failed" => "Fail",
-                _ => phase
-            };
-        }
-
-        private static string ResolveCompactRiskBandLabel(SummonEnergyRiskBand riskBand)
-        {
-            return riskBand switch
-            {
-                SummonEnergyRiskBand.BackSafety => "Back",
-                SummonEnergyRiskBand.MidCharge => "Mid",
-                SummonEnergyRiskBand.ForwardRisk => "Front",
-                _ => riskBand.ToString()
-            };
-        }
-
-        private static string ShortenPatternId(string patternId)
-        {
-            if (string.IsNullOrWhiteSpace(patternId))
-            {
-                return "-";
-            }
-
-            const int maxLength = 18;
-            return patternId.Length <= maxLength
-                ? patternId
-                : patternId.Substring(0, maxLength);
-        }
-
         private void DrawReticleIfNeeded()
         {
             if (!showCenterReticle)
@@ -1425,77 +1174,6 @@ namespace DimensionBrawl.Presentation
             GUI.DrawTexture(new Rect(centerX - thickness * 0.5f, centerY + gap, thickness, length), Texture2D.whiteTexture);
             GUI.DrawTexture(new Rect(centerX - thickness * 0.5f, centerY - thickness * 0.5f, thickness, thickness), Texture2D.whiteTexture);
             GUI.color = previousColor;
-        }
-
-        private static string ResolveRiskBandLabel(SummonEnergyRiskBand riskBand)
-        {
-            return riskBand switch
-            {
-                SummonEnergyRiskBand.ForwardRisk => "ForwardRisk",
-                SummonEnergyRiskBand.MidCharge => "MidCharge",
-                _ => "BackSafety"
-            };
-        }
-
-        private static string ResolveSummonLifecycleLine(
-            int activeActorCount,
-            float remainingLifetimeSeconds,
-            float advanceProgress01,
-            bool hasHealth,
-            float healthRatio,
-            bool isClashing,
-            int clashCount,
-            SummonFrontlineProxyExitReason exitReason)
-        {
-            if (activeActorCount > 0)
-            {
-                string health = hasHealth ? $" hp {healthRatio * 100f:0}%" : " hp --";
-                string clash = clashCount > 0 || isClashing
-                    ? $" clash {clashCount}{(isClashing ? "*" : string.Empty)}"
-                    : string.Empty;
-                string lifetime = float.IsPositiveInfinity(remainingLifetimeSeconds)
-                    ? " life hold"
-                    : $" life {remainingLifetimeSeconds:0.0}s";
-                return $"{lifetime} adv {advanceProgress01 * 100f:0}%{health}{clash}";
-            }
-
-            return exitReason == SummonFrontlineProxyExitReason.None
-                ? " idle"
-                : $" exit {ResolveSummonExitReasonLabel(exitReason)}";
-        }
-
-        private static string ResolveSummonExitReasonLabel(SummonFrontlineProxyExitReason exitReason)
-        {
-            return exitReason switch
-            {
-                SummonFrontlineProxyExitReason.LifetimeExpired => "time",
-                SummonFrontlineProxyExitReason.Defeated => "defeated",
-                SummonFrontlineProxyExitReason.Recalled => "recalled",
-                _ => "-"
-            };
-        }
-
-        private readonly struct FrontlineProxyReadout
-        {
-            public FrontlineProxyReadout(
-                string state,
-                int allyCount,
-                int enemyCount,
-                string allyHealthText,
-                string enemyHealthText)
-            {
-                State = state;
-                AllyCount = allyCount;
-                EnemyCount = enemyCount;
-                AllyHealthText = allyHealthText;
-                EnemyHealthText = enemyHealthText;
-            }
-
-            public string State { get; }
-            public int AllyCount { get; }
-            public int EnemyCount { get; }
-            public string AllyHealthText { get; }
-            public string EnemyHealthText { get; }
         }
     }
 }
