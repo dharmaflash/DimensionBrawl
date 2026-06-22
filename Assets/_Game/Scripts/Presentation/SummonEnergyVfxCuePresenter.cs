@@ -19,7 +19,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private CombatVfxCueId spendCueId = CombatVfxCueId.SummonFollowupMissed;
 
         [Header("Intensity")]
-        [SerializeField, Min(0f)] private float forwardRiskCueIntensity = 0.58f;
+        [SerializeField, Min(0f)] private float forwardRiskCueIntensity = 0.05f;
         [SerializeField, Min(0f)] private float tierReadyCueIntensity = 0.82f;
         [SerializeField, Min(0f)] private float spendCueIntensity = 0.5f;
         [SerializeField, Min(0f)] private float tierIntensityStep = 0.12f;

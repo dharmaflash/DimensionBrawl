@@ -145,15 +145,8 @@ namespace DimensionBrawl.Tests
         private const string SummonActorPoolRootName = "BossBarrageLaneReview_SummonActorPool";
         private const string PocketOwnerRootName = "BossBarrageLaneReview_PocketOwner";
         private const string BossTelegraphRootName = "BossBarrageLaneReview_BossBarrageTelegraphMarkers";
-        private const string EnergyZoneRootName = "BossBarrageLaneReview_EnergyRiskZones";
         private const string AmbientVfxRootName = "BossBarrageLaneReview_AmbientVfx";
         private const string HudRootName = "BossBarrageLaneReview_DebugHud";
-        private const string BacklineEnergyZoneMaterialPath =
-            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageBacklineEnergyZone.mat";
-        private const string MidEnergyZoneMaterialPath =
-            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageMidEnergyZone.mat";
-        private const string ForwardEnergyZoneMaterialPath =
-            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageForwardEnergyZone.mat";
         private const string LaneAmbientFlowMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageLaneAmbientFlow.mat";
         private const string BossPressureHorizonMaterialPath =
@@ -275,12 +268,12 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossBarrageLaneReviewMobileHud>(RequireRoot(HudRootName), "boss barrage mobile HUD");
             ActionScreenCuePresenter screenCuePresenter =
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "action screen cue presenter");
+            BossBarrageLaneReviewOverlayHud overlayHud =
+                RequireComponent<BossBarrageLaneReviewOverlayHud>(RequireRoot(HudRootName), "boss barrage overlay HUD");
             BossBarrageLaneTelegraphPresenter telegraphPresenter =
                 RequireComponent<BossBarrageLaneTelegraphPresenter>(
                     RequireRoot(BossTelegraphRootName),
                     "boss barrage lane telegraph presenter");
-            GameObject energyZoneRoot = RequireRoot(EnergyZoneRootName);
-
             Assert.AreSame(laneSpace, player.LaneSpace, "Player movement must clamp through the authored lane space.");
             Assert.AreSame(emitter, telegraphPresenter.BossBarrageEmitter);
             Assert.AreSame(laneSpace, telegraphPresenter.LaneSpace);
@@ -499,27 +492,6 @@ namespace DimensionBrawl.Tests
                 telegraphPresenter.MarkerCount,
                 9,
                 "Boss barrage lane telegraphs must be authored world markers, not HUD-only warning text.");
-            AssertEnergyZoneMarker(
-                energyZoneRoot.transform,
-                "BackSafety_ENSlow_0_33",
-                laneSpace,
-                0f,
-                1f / 3f,
-                BacklineEnergyZoneMaterialPath);
-            AssertEnergyZoneMarker(
-                energyZoneRoot.transform,
-                "MidCharge_ENBase_33_66",
-                laneSpace,
-                1f / 3f,
-                2f / 3f,
-                MidEnergyZoneMaterialPath);
-            AssertEnergyZoneMarker(
-                energyZoneRoot.transform,
-                "ForwardRisk_ENFast_66_100",
-                laneSpace,
-                2f / 3f,
-                1f,
-                ForwardEnergyZoneMaterialPath);
             AssertLaneAmbientVfx(RequireRoot(AmbientVfxRootName));
             Assert.AreSame(LoadAsset<PlayerActionProfile>(LocalDefenseProfilePath), playerActionController.ActionProfile);
             Assert.IsTrue(combatModeController.IsRangedMode, "Review scene should start in the ranged channel.");
@@ -1055,6 +1027,18 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(rangedBasicAttackAction, GetObjectReference<PlayerRangedBasicAttackAction>(mobileHud, "rangedBasicAttackAction"));
             Assert.AreSame(skill1Action, GetObjectReference<PlayerSkill1Action>(mobileHud, "skill1Action"));
             Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(mobileHud, "summonSlot1Action"));
+            Assert.AreEqual(0.42f, GetFloat(mobileHud, "summonButtonGroupCenterY01"), 0.001f);
+            Assert.AreEqual(1.05f, GetFloat(mobileHud, "summonButtonGapMultiplier"), 0.001f);
+            Assert.AreSame(pocketOwner, overlayHud.PocketReviewOwner);
+            Assert.AreSame(reviewHud, overlayHud.ReviewHud);
+            Assert.AreSame(mobileHud, overlayHud.MobileHud);
+            Assert.AreSame(screenCuePresenter, overlayHud.ScreenCuePresenter);
+            Assert.AreEqual("ActionFoundationBossBarrageLaneReview", overlayHud.RetrySceneName);
+            Assert.AreEqual("Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity", overlayHud.RetryScenePath);
+            Assert.AreEqual("UI_StageSelectTest", overlayHud.StageSelectSceneName);
+            Assert.AreEqual("Assets/_Game/Scenes/UI/UI_StageSelectTest.unity", overlayHud.StageSelectScenePath);
+            Assert.AreEqual("UI_LobbyTest", overlayHud.LobbySceneName);
+            Assert.AreEqual("Assets/_Game/Scenes/UI/UI_LobbyTest.unity", overlayHud.LobbyScenePath);
             Assert.AreSame(playerActionController, GetObjectReference<PlayerActionController>(screenCuePresenter, "actionController"));
             Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(screenCuePresenter, "playerHealth"));
             Assert.AreSame(rangedBasicAttackAction, GetObjectReference<PlayerRangedBasicAttackAction>(screenCuePresenter, "rangedBasicAttackAction"));
@@ -2038,6 +2022,40 @@ namespace DimensionBrawl.Tests
 
             SetPrivateField(mobileHud, "showHud", true);
             yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator ReviewOverlayPauseStopsTimeAndDisablesMobileControls()
+        {
+            BossBarrageLaneReviewMobileHud mobileHud =
+                RequireComponent<BossBarrageLaneReviewMobileHud>(RequireRoot(HudRootName), "mobile HUD");
+            BossBarrageLaneReviewOverlayHud overlayHud =
+                RequireComponent<BossBarrageLaneReviewOverlayHud>(RequireRoot(HudRootName), "overlay HUD");
+
+            Time.timeScale = 1f;
+            Assert.IsTrue(mobileHud.enabled);
+
+            overlayHud.OpenPauseMenu();
+            yield return null;
+
+            Assert.IsTrue(overlayHud.IsPauseMenuVisible);
+            Assert.AreEqual(0f, Time.timeScale, 0.001f);
+            Assert.IsFalse(mobileHud.enabled);
+
+            overlayHud.OpenSettings();
+            yield return null;
+
+            Assert.IsTrue(overlayHud.IsSettingsVisible);
+            Assert.AreEqual(0f, Time.timeScale, 0.001f);
+            Assert.IsFalse(mobileHud.enabled);
+
+            overlayHud.Resume();
+            yield return null;
+
+            Assert.IsFalse(overlayHud.IsPauseMenuVisible);
+            Assert.IsFalse(overlayHud.IsSettingsVisible);
+            Assert.AreEqual(1f, Time.timeScale, 0.001f);
+            Assert.IsTrue(mobileHud.enabled);
         }
 
         [UnityTest]
@@ -5810,42 +5828,6 @@ namespace DimensionBrawl.Tests
             Texture flipbook = material.GetTexture("_Flipbook");
             Assert.IsNotNull(flipbook, $"{label} should keep an assigned Vefects flipbook texture.");
             AssertGameOwnedAsset(flipbook, $"{label} flipbook texture");
-        }
-
-        private static void AssertEnergyZoneMarker(
-            Transform root,
-            string markerName,
-            SummonLaneSpace laneSpace,
-            float startRisk01,
-            float endRisk01,
-            string materialPath)
-        {
-            Transform marker = root.Find(markerName);
-            Assert.IsNotNull(marker, $"{markerName} should be authored in the review scene.");
-            Assert.IsNull(marker.GetComponent<Collider>(), $"{markerName} should be visual-only and not block movement.");
-
-            float startZ = Mathf.Lerp(laneSpace.BackLimitZ, laneSpace.ForwardBoundaryZ, startRisk01);
-            float endZ = Mathf.Lerp(laneSpace.BackLimitZ, laneSpace.ForwardBoundaryZ, endRisk01);
-            float expectedCenterZ = (startZ + endZ) * 0.5f;
-            float expectedDepth = Mathf.Abs(endZ - startZ);
-            Vector2 laneCoordinates = laneSpace.GetLaneCoordinates(marker.position);
-            Assert.That(
-                laneCoordinates.y,
-                Is.EqualTo(expectedCenterZ).Within(0.05f),
-                $"{markerName} should sit in the intended EN risk band.");
-            Assert.That(
-                marker.localScale.z,
-                Is.EqualTo(expectedDepth).Within(0.05f),
-                $"{markerName} should cover its EN risk band depth.");
-            Assert.That(
-                marker.localScale.x,
-                Is.EqualTo(laneSpace.HalfWidth * 2f).Within(0.05f),
-                $"{markerName} should cover the player lane width.");
-
-            Renderer renderer = RequireComponent<Renderer>(marker.gameObject, markerName);
-            Material expectedMaterial = LoadAsset<Material>(materialPath);
-            Assert.AreSame(expectedMaterial, renderer.sharedMaterial, $"{markerName} should use its authored zone material.");
-            AssertGameOwnedAsset(renderer.sharedMaterial, $"{markerName} material");
         }
 
         private static void AssertLaneAmbientVfx(GameObject root)

@@ -1,0 +1,543 @@
+using DimensionBrawl.Presentation;
+using DimensionBrawl.Test;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
+
+#if UNITY_EDITOR
+using UnityEditor.SceneManagement;
+#endif
+
+namespace DimensionBrawl.UI
+{
+    // Review-only overlay for pause, settings, and pocket results in the boss barrage lane scene.
+    [DefaultExecutionOrder(1200)]
+    [DisallowMultipleComponent]
+    public sealed class BossBarrageLaneReviewOverlayHud : MonoBehaviour
+    {
+        private enum OverlayMode
+        {
+            None,
+            Pause,
+            Settings
+        }
+
+        [Header("References")]
+        [SerializeField] private BossBarragePocketReviewOwner pocketReviewOwner;
+        [SerializeField] private BossBarrageLaneReviewHud reviewHud;
+        [SerializeField] private BossBarrageLaneReviewMobileHud mobileHud;
+        [SerializeField] private ActionScreenCuePresenter screenCuePresenter;
+
+        [Header("Routes")]
+        [SerializeField] private string retrySceneName;
+        [SerializeField] private string retryScenePath;
+        [SerializeField] private string stageSelectSceneName;
+        [SerializeField] private string stageSelectScenePath;
+        [SerializeField] private string lobbySceneName;
+        [SerializeField] private string lobbyScenePath;
+
+        [Header("Display")]
+        [SerializeField] private bool showOverlay = true;
+        [SerializeField, Min(1f)] private float pauseButtonSize = 72f;
+        [SerializeField, Min(0f)] private float edgeInset = 32f;
+        [SerializeField, Min(1f)] private float panelWidth = 560f;
+        [SerializeField, Min(1f)] private float panelHeight = 430f;
+        [SerializeField] private Color panelColor = new Color(0.015f, 0.022f, 0.034f, 0.92f);
+        [SerializeField] private Color dimColor = new Color(0f, 0f, 0f, 0.46f);
+        [SerializeField] private Color accentColor = new Color(1f, 0.72f, 0.34f, 0.96f);
+        [SerializeField] private Color clearAccentColor = new Color(0.28f, 1f, 0.62f, 0.96f);
+        [SerializeField] private Color failAccentColor = new Color(1f, 0.28f, 0.2f, 0.96f);
+
+        [Header("Input")]
+        [SerializeField] private Key pauseKey = Key.Escape;
+
+        private OverlayMode mode;
+        private bool hasPausedTime;
+        private float previousTimeScale = 1f;
+        private float hudScale = 1f;
+        private bool telemetryVisible;
+        private bool screenCuesVisible = true;
+        private GUIStyle titleStyle;
+        private GUIStyle bodyStyle;
+        private GUIStyle buttonStyle;
+        private GUIStyle primaryButtonStyle;
+        private GUIStyle smallButtonStyle;
+        private Texture2D solidTexture;
+
+        public BossBarragePocketReviewOwner PocketReviewOwner => pocketReviewOwner;
+        public BossBarrageLaneReviewHud ReviewHud => reviewHud;
+        public BossBarrageLaneReviewMobileHud MobileHud => mobileHud;
+        public ActionScreenCuePresenter ScreenCuePresenter => screenCuePresenter;
+        public string RetrySceneName => retrySceneName;
+        public string RetryScenePath => retryScenePath;
+        public string StageSelectSceneName => stageSelectSceneName;
+        public string StageSelectScenePath => stageSelectScenePath;
+        public string LobbySceneName => lobbySceneName;
+        public string LobbyScenePath => lobbyScenePath;
+        public bool IsPauseMenuVisible => mode == OverlayMode.Pause;
+        public bool IsSettingsVisible => mode == OverlayMode.Settings;
+        public bool IsResultVisible => HasResult;
+
+        public void Configure(
+            BossBarragePocketReviewOwner newPocketReviewOwner,
+            BossBarrageLaneReviewHud newReviewHud,
+            BossBarrageLaneReviewMobileHud newMobileHud,
+            ActionScreenCuePresenter newScreenCuePresenter)
+        {
+            pocketReviewOwner = newPocketReviewOwner;
+            reviewHud = newReviewHud;
+            mobileHud = newMobileHud;
+            screenCuePresenter = newScreenCuePresenter;
+            CaptureSettings();
+        }
+
+        public void ConfigureRoutes(
+            string newRetrySceneName,
+            string newRetryScenePath,
+            string newStageSelectSceneName,
+            string newStageSelectScenePath,
+            string newLobbySceneName,
+            string newLobbyScenePath)
+        {
+            retrySceneName = newRetrySceneName;
+            retryScenePath = newRetryScenePath;
+            stageSelectSceneName = newStageSelectSceneName;
+            stageSelectScenePath = newStageSelectScenePath;
+            lobbySceneName = newLobbySceneName;
+            lobbyScenePath = newLobbyScenePath;
+        }
+
+        public void OpenPauseMenu()
+        {
+            if (HasResult)
+            {
+                return;
+            }
+
+            if (!hasPausedTime)
+            {
+                previousTimeScale = Time.timeScale;
+                Time.timeScale = 0f;
+                hasPausedTime = true;
+            }
+
+            mode = OverlayMode.Pause;
+            SetMobileControlsEnabled(false);
+        }
+
+        public void OpenSettings()
+        {
+            if (!HasResult)
+            {
+                OpenPauseMenu();
+                mode = OverlayMode.Settings;
+            }
+        }
+
+        public void Resume()
+        {
+            if (HasResult)
+            {
+                return;
+            }
+
+            RestoreTimeScale();
+            mode = OverlayMode.None;
+            SetMobileControlsEnabled(true);
+        }
+
+        private bool HasResult => pocketReviewOwner != null
+            && (pocketReviewOwner.IsCleared || pocketReviewOwner.IsFailed);
+
+        private void Awake()
+        {
+            if (reviewHud == null)
+            {
+                reviewHud = GetComponent<BossBarrageLaneReviewHud>();
+            }
+
+            if (mobileHud == null)
+            {
+                mobileHud = GetComponent<BossBarrageLaneReviewMobileHud>();
+            }
+
+            if (screenCuePresenter == null)
+            {
+                screenCuePresenter = GetComponent<ActionScreenCuePresenter>();
+            }
+
+            CaptureSettings();
+        }
+
+        private void OnDisable()
+        {
+            RestoreTimeScale();
+            SetMobileControlsEnabled(true);
+        }
+
+        private void Update()
+        {
+            if (!showOverlay)
+            {
+                RestoreTimeScale();
+                SetMobileControlsEnabled(true);
+                return;
+            }
+
+            if (HasResult)
+            {
+                RestoreTimeScale();
+                mode = OverlayMode.None;
+                SetMobileControlsEnabled(false);
+                return;
+            }
+
+            if (WasPausePressed())
+            {
+                if (mode == OverlayMode.None)
+                {
+                    OpenPauseMenu();
+                }
+                else
+                {
+                    Resume();
+                }
+            }
+        }
+
+        private void OnGUI()
+        {
+            if (!showOverlay)
+            {
+                return;
+            }
+
+            EnsureStyles();
+            int previousDepth = GUI.depth;
+            GUI.depth = -2200;
+
+            if (HasResult)
+            {
+                DrawResultOverlay();
+            }
+            else if (mode == OverlayMode.Pause)
+            {
+                DrawPauseOverlay();
+            }
+            else if (mode == OverlayMode.Settings)
+            {
+                DrawSettingsOverlay();
+            }
+            else
+            {
+                DrawPauseButton();
+            }
+
+            GUI.depth = previousDepth;
+        }
+
+        private bool WasPausePressed()
+        {
+            if (pauseKey == Key.None || Keyboard.current == null)
+            {
+                return false;
+            }
+
+            var key = Keyboard.current[pauseKey];
+            return key != null && key.wasPressedThisFrame;
+        }
+
+        private void DrawPauseButton()
+        {
+            float scale = ResolveScale();
+            float size = pauseButtonSize * scale;
+            float inset = edgeInset * scale;
+            Rect rect = new Rect(Screen.width - inset - size, inset, size, size);
+            if (GUI.Button(rect, "II", smallButtonStyle))
+            {
+                OpenPauseMenu();
+            }
+        }
+
+        private void DrawPauseOverlay()
+        {
+            Rect panel = BeginModal("PAUSED", "Combat flow is held.");
+            if (DrawMenuButton("CONTINUE", primary: true))
+            {
+                Resume();
+            }
+
+            if (DrawMenuButton("RETRY", primary: false))
+            {
+                LoadConfiguredScene(retrySceneName, retryScenePath);
+            }
+
+            if (DrawMenuButton("SETTINGS", primary: false))
+            {
+                mode = OverlayMode.Settings;
+            }
+
+            if (DrawMenuButton("STAGE SELECT", primary: false))
+            {
+                LoadConfiguredScene(stageSelectSceneName, stageSelectScenePath);
+            }
+
+            if (DrawMenuButton("LOBBY", primary: false))
+            {
+                LoadConfiguredScene(lobbySceneName, lobbyScenePath);
+            }
+
+            EndModal(panel);
+        }
+
+        private void DrawSettingsOverlay()
+        {
+            Rect panel = BeginModal("SETTINGS", "Review tuning");
+            GUILayout.Label($"HUD Scale {hudScale:0.00}", bodyStyle);
+            float newScale = GUILayout.HorizontalSlider(hudScale, 0.8f, 1.35f);
+            if (!Mathf.Approximately(newScale, hudScale))
+            {
+                hudScale = newScale;
+                mobileHud?.SetHudScale(hudScale);
+            }
+
+            GUILayout.Space(12f);
+            bool newTelemetry = GUILayout.Toggle(telemetryVisible, "Detailed Telemetry", bodyStyle);
+            if (newTelemetry != telemetryVisible)
+            {
+                telemetryVisible = newTelemetry;
+                reviewHud?.SetDetailedTelemetryVisible(telemetryVisible);
+            }
+
+            bool newScreenCues = GUILayout.Toggle(screenCuesVisible, "Screen Cues", bodyStyle);
+            if (newScreenCues != screenCuesVisible)
+            {
+                screenCuesVisible = newScreenCues;
+                screenCuePresenter?.SetScreenCuesVisible(screenCuesVisible);
+            }
+
+            GUILayout.FlexibleSpace();
+            if (DrawMenuButton("BACK", primary: false))
+            {
+                mode = OverlayMode.Pause;
+            }
+
+            if (DrawMenuButton("CONTINUE", primary: true))
+            {
+                Resume();
+            }
+
+            EndModal(panel);
+        }
+
+        private void DrawResultOverlay()
+        {
+            bool cleared = pocketReviewOwner != null && pocketReviewOwner.IsCleared;
+            string title = cleared ? "BOSS CLEAR" : "MISSION FAILED";
+            string summary = cleared
+                ? "Boss pressure answered."
+                : "Player down.";
+            Color resultAccent = cleared ? clearAccentColor : failAccentColor;
+
+            Rect panel = BeginModal(title, summary, resultAccent);
+            GUILayout.Label(ResolveResultLine("Time", $"{pocketReviewOwner.ResultElapsedSeconds:0.0}s"), bodyStyle);
+            GUILayout.Label(
+                ResolveResultLine(
+                    "Objectives",
+                    $"{pocketReviewOwner.CompletedObjectiveStepCount}/{pocketReviewOwner.ObjectiveStepCount}"),
+                bodyStyle);
+            GUILayout.Label(
+                ResolveResultLine("Summon", $"LV{Mathf.Max(1, pocketReviewOwner.HighestSummonTier)}"),
+                bodyStyle);
+            GUILayout.Label(
+                ResolveResultLine("Follow-up", $"{pocketReviewOwner.Skill1FollowupDamage:0} damage"),
+                bodyStyle);
+            GUILayout.Space(18f);
+
+            if (DrawMenuButton("RETRY", primary: true))
+            {
+                LoadConfiguredScene(retrySceneName, retryScenePath);
+            }
+
+            if (DrawMenuButton("STAGE SELECT", primary: false))
+            {
+                LoadConfiguredScene(stageSelectSceneName, stageSelectScenePath);
+            }
+
+            if (DrawMenuButton("LOBBY", primary: false))
+            {
+                LoadConfiguredScene(lobbySceneName, lobbyScenePath);
+            }
+
+            EndModal(panel);
+        }
+
+        private Rect BeginModal(string title, string subtitle)
+        {
+            return BeginModal(title, subtitle, accentColor);
+        }
+
+        private Rect BeginModal(string title, string subtitle, Color accent)
+        {
+            DrawSolid(new Rect(0f, 0f, Screen.width, Screen.height), dimColor);
+            float scale = ResolveScale();
+            float width = Mathf.Min(panelWidth * scale, Screen.width - edgeInset * scale * 2f);
+            float height = Mathf.Min(panelHeight * scale, Screen.height - edgeInset * scale * 2f);
+            Rect panel = new Rect((Screen.width - width) * 0.5f, (Screen.height - height) * 0.5f, width, height);
+            DrawSolid(panel, panelColor);
+            DrawBorder(panel, accent, 2f);
+            GUILayout.BeginArea(new Rect(panel.x + 28f, panel.y + 24f, panel.width - 56f, panel.height - 48f));
+            titleStyle.normal.textColor = accent;
+            GUILayout.Label(title, titleStyle);
+            GUILayout.Label(subtitle, bodyStyle);
+            GUILayout.Space(18f);
+            return panel;
+        }
+
+        private static void EndModal(Rect panel)
+        {
+            _ = panel;
+            GUILayout.EndArea();
+        }
+
+        private bool DrawMenuButton(string label, bool primary)
+        {
+            GUILayout.Space(6f);
+            return GUILayout.Button(label, primary ? primaryButtonStyle : buttonStyle, GUILayout.Height(48f));
+        }
+
+        private static string ResolveResultLine(string label, string value)
+        {
+            return $"{label}: {value}";
+        }
+
+        private void CaptureSettings()
+        {
+            hudScale = mobileHud != null ? mobileHud.HudScale : 1f;
+            telemetryVisible = reviewHud != null && reviewHud.ShowDetailedTelemetry;
+            screenCuesVisible = screenCuePresenter == null || screenCuePresenter.ShowScreenCues;
+        }
+
+        private void LoadConfiguredScene(string sceneName, string scenePath)
+        {
+            RestoreTimeScale();
+            Time.timeScale = 1f;
+            SetMobileControlsEnabled(false);
+
+#if UNITY_EDITOR
+            if (!string.IsNullOrWhiteSpace(scenePath))
+            {
+                EditorSceneManager.LoadSceneInPlayMode(scenePath, new LoadSceneParameters(LoadSceneMode.Single));
+                return;
+            }
+#endif
+
+            if (!string.IsNullOrWhiteSpace(sceneName))
+            {
+                SceneManager.LoadScene(sceneName, LoadSceneMode.Single);
+                return;
+            }
+
+            Debug.LogWarning("Review overlay scene route is not configured.", this);
+        }
+
+        private void RestoreTimeScale()
+        {
+            if (!hasPausedTime)
+            {
+                return;
+            }
+
+            Time.timeScale = previousTimeScale;
+            hasPausedTime = false;
+        }
+
+        private void SetMobileControlsEnabled(bool enabled)
+        {
+            if (mobileHud != null && mobileHud.enabled != enabled)
+            {
+                mobileHud.enabled = enabled;
+            }
+        }
+
+        private float ResolveScale()
+        {
+            return Mathf.Clamp(Screen.height / 1440f, 0.82f, 1.18f);
+        }
+
+        private void EnsureStyles()
+        {
+            if (titleStyle != null)
+            {
+                return;
+            }
+
+            titleStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 30,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.MiddleLeft,
+                normal = { textColor = accentColor }
+            };
+            bodyStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = 17,
+                wordWrap = true,
+                normal = { textColor = new Color(0.9f, 0.96f, 1f, 0.94f) }
+            };
+            buttonStyle = CreateButtonStyle(new Color(0.05f, 0.08f, 0.12f, 0.9f), Color.white);
+            primaryButtonStyle = CreateButtonStyle(new Color(0.9f, 0.56f, 0.18f, 0.96f), Color.black);
+            smallButtonStyle = CreateButtonStyle(new Color(0.015f, 0.022f, 0.034f, 0.82f), Color.white);
+        }
+
+        private static GUIStyle CreateButtonStyle(Color background, Color text)
+        {
+            var style = new GUIStyle(GUI.skin.button)
+            {
+                alignment = TextAnchor.MiddleCenter,
+                fontStyle = FontStyle.Bold,
+                fontSize = 18,
+                normal = { textColor = text },
+                hover = { textColor = text },
+                active = { textColor = text },
+                wordWrap = true
+            };
+            style.normal.background = MakeTexture(background);
+            style.hover.background = MakeTexture(new Color(background.r + 0.05f, background.g + 0.05f, background.b + 0.05f, background.a));
+            style.active.background = MakeTexture(new Color(background.r + 0.1f, background.g + 0.1f, background.b + 0.1f, background.a));
+            return style;
+        }
+
+        private void DrawSolid(Rect rect, Color color)
+        {
+            if (solidTexture == null)
+            {
+                solidTexture = MakeTexture(Color.white);
+            }
+
+            Color previous = GUI.color;
+            GUI.color = color;
+            GUI.DrawTexture(rect, solidTexture);
+            GUI.color = previous;
+        }
+
+        private void DrawBorder(Rect rect, Color color, float thickness)
+        {
+            DrawSolid(new Rect(rect.x, rect.y, rect.width, thickness), color);
+            DrawSolid(new Rect(rect.x, rect.yMax - thickness, rect.width, thickness), color);
+            DrawSolid(new Rect(rect.x, rect.y, thickness, rect.height), color);
+            DrawSolid(new Rect(rect.xMax - thickness, rect.y, thickness, rect.height), color);
+        }
+
+        private static Texture2D MakeTexture(Color color)
+        {
+            var texture = new Texture2D(1, 1)
+            {
+                hideFlags = HideFlags.HideAndDontSave
+            };
+            texture.SetPixel(0, 0, color);
+            texture.Apply();
+            return texture;
+        }
+    }
+}

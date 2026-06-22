@@ -112,6 +112,11 @@ namespace DimensionBrawl.Presentation
         public int LastEnergyCueTier => lastEnergyCueTier;
         public SummonEnergyRiskBand LastEnergyRiskBand => lastEnergyRiskBand;
 
+        public void SetScreenCuesVisible(bool visible)
+        {
+            showScreenCues = visible;
+        }
+
         public void Configure(
             PlayerActionController newActionController,
             CombatHealth newPlayerHealth,

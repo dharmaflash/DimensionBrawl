@@ -93,6 +93,8 @@ namespace DimensionBrawl.Editor
             ActionFoundationProfileSetup.ProfileRoot + "/DB_BossPressureActionDeck_PocketReview.asset";
         public const string SummonOpportunityProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonOpportunity_BossPressureBlock.asset";
+        private const string UIRouteTablePath =
+            "Assets/_Game/DesignData/UI/DB_UIRouteTable.asset";
         public const string SummonSlot1PresentationCandidateProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonPresentation_PlayerShieldBreaker.asset";
         public const string SummonSlot2PresentationCandidateProfilePath =
@@ -226,7 +228,6 @@ namespace DimensionBrawl.Editor
         private const string DuelFailMarkerName = ReviewRootPrefix + "DuelFailMarker";
         private const string HudRootName = ReviewRootPrefix + "DebugHud";
         private const string MarkerRootName = ReviewRootPrefix + "Markers";
-        private const string EnergyZoneRootName = ReviewRootPrefix + "EnergyRiskZones";
         private const string AmbientVfxRootName = ReviewRootPrefix + "AmbientVfx";
         private const string PocketClearMarkerName = ReviewRootPrefix + "PocketClearMarker";
         private const string PocketFailMarkerName = ReviewRootPrefix + "PocketFailMarker";
@@ -274,12 +275,6 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarragePlayerBoundary.mat";
         private const string SummonBoundaryMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageSummonBoundary.mat";
-        private const string BacklineEnergyZoneMaterialPath =
-            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageBacklineEnergyZone.mat";
-        private const string MidEnergyZoneMaterialPath =
-            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageMidEnergyZone.mat";
-        private const string ForwardEnergyZoneMaterialPath =
-            "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageForwardEnergyZone.mat";
         private const string LaneAmbientFlowMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageLaneAmbientFlow.mat";
         private const string BossPressureHorizonMaterialPath =
@@ -834,7 +829,6 @@ namespace DimensionBrawl.Editor
                 player.transform);
             ConfigureArenaInfluenceTargets(scene, player.transform, bossProxy.transform, closeThreat.transform);
             CreateLaneMarkers(scene, laneSpace);
-            CreateEnergyRiskZoneMarkers(scene, laneSpace);
             CreateLaneAmbientVfx(scene, laneSpace);
             CreateBossBarrageTelegraphMarkers(scene, laneSpace, bossBarrageEmitter);
             // Keep the serialized default aligned with the ranged starting mode after all visual swaps are rebuilt.
@@ -1113,7 +1107,6 @@ namespace DimensionBrawl.Editor
                     "boss barrage lane telegraph presenter"),
                 emitter,
                 laneSpace);
-            ValidateEnergyRiskZoneMarkers(scene, laneSpace);
             ValidateLaneAmbientVfx(scene);
             ValidateObjectReference(encounter, "playerHealth", playerHealth);
             ValidateObjectReference(encounter, "enemyHealth", closeThreatHealth);
@@ -1217,9 +1210,6 @@ namespace DimensionBrawl.Editor
             ValidateNoImportedAssetReference(BossSummonPressureScreenMaterialPath);
             ValidateNoImportedAssetReference(BossSummonPressureActorPulseMaterialPath);
             ValidateNoImportedAssetReference(BossTelegraphMaterialPath);
-            ValidateNoImportedAssetReference(BacklineEnergyZoneMaterialPath);
-            ValidateNoImportedAssetReference(MidEnergyZoneMaterialPath);
-            ValidateNoImportedAssetReference(ForwardEnergyZoneMaterialPath);
             ValidateNoImportedAssetReference(LaneAmbientFlowMaterialPath);
             ValidateNoImportedAssetReference(BossPressureHorizonMaterialPath);
             ValidateNoImportedAssetReference(SummonRouteWispMaterialPath);
@@ -3474,66 +3464,6 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(presenter);
         }
 
-        private static void CreateEnergyRiskZoneMarkers(Scene scene, SummonLaneSpace laneSpace)
-        {
-            GameObject root = CreateRoot(scene, EnergyZoneRootName);
-            Material backlineMaterial = LoadOrCreateTransparentMaterial(
-                BacklineEnergyZoneMaterialPath,
-                new Color(0.18f, 0.64f, 1f, 0.2f));
-            Material midMaterial = LoadOrCreateTransparentMaterial(
-                MidEnergyZoneMaterialPath,
-                new Color(0.35f, 1f, 0.72f, 0.22f));
-            Material forwardMaterial = LoadOrCreateTransparentMaterial(
-                ForwardEnergyZoneMaterialPath,
-                new Color(1f, 0.6f, 0.18f, 0.25f));
-
-            float backZ = laneSpace.BackLimitZ;
-            float forwardZ = laneSpace.ForwardBoundaryZ;
-            float backEndZ = Mathf.Lerp(backZ, forwardZ, 1f / 3f);
-            float midEndZ = Mathf.Lerp(backZ, forwardZ, 2f / 3f);
-
-            CreateEnergyZoneMarker(
-                root.transform,
-                laneSpace,
-                "BackSafety_ENSlow_0_33",
-                backZ,
-                backEndZ,
-                backlineMaterial);
-            CreateEnergyZoneMarker(
-                root.transform,
-                laneSpace,
-                "MidCharge_ENBase_33_66",
-                backEndZ,
-                midEndZ,
-                midMaterial);
-            CreateEnergyZoneMarker(
-                root.transform,
-                laneSpace,
-                "ForwardRisk_ENFast_66_100",
-                midEndZ,
-                forwardZ,
-                forwardMaterial);
-        }
-
-        private static void CreateEnergyZoneMarker(
-            Transform root,
-            SummonLaneSpace laneSpace,
-            string markerName,
-            float startZ,
-            float endZ,
-            Material material)
-        {
-            float centerZ = (startZ + endZ) * 0.5f;
-            float depth = Mathf.Abs(endZ - startZ);
-            CreateMarker(
-                root,
-                markerName,
-                laneSpace.GetLaneWorldPoint(0f, centerZ, 0.026f),
-                new Vector3(laneSpace.HalfWidth * 2f, 0.025f, depth),
-                material,
-                removeCollider: true);
-        }
-
         private static void CreateLaneAmbientVfx(Scene scene, SummonLaneSpace laneSpace)
         {
             GameObject root = CreateRoot(scene, AmbientVfxRootName);
@@ -4567,7 +4497,7 @@ namespace DimensionBrawl.Editor
             SetEnum(presenter, "forwardRiskCueId", (int)CombatVfxCueId.EliteAuraSignal);
             SetEnum(presenter, "tierReadyCueId", (int)CombatVfxCueId.SummonFollowupWindow);
             SetEnum(presenter, "spendCueId", (int)CombatVfxCueId.SummonFollowupMissed);
-            SetFloat(presenter, "forwardRiskCueIntensity", 0.58f);
+            SetFloat(presenter, "forwardRiskCueIntensity", 0.05f);
             SetFloat(presenter, "tierReadyCueIntensity", 0.82f);
             SetFloat(presenter, "spendCueIntensity", 0.5f);
             SetFloat(presenter, "tierIntensityStep", 0.12f);
@@ -4716,7 +4646,7 @@ namespace DimensionBrawl.Editor
             ValidateEnum(presenter, "forwardRiskCueId", (int)CombatVfxCueId.EliteAuraSignal);
             ValidateEnum(presenter, "tierReadyCueId", (int)CombatVfxCueId.SummonFollowupWindow);
             ValidateEnum(presenter, "spendCueId", (int)CombatVfxCueId.SummonFollowupMissed);
-            ValidateFloat(presenter, "forwardRiskCueIntensity", 0.58f);
+            ValidateFloat(presenter, "forwardRiskCueIntensity", 0.05f);
             ValidateFloat(presenter, "tierReadyCueIntensity", 0.82f);
             ValidateFloat(presenter, "spendCueIntensity", 0.5f);
             ValidateFloat(presenter, "tierIntensityStep", 0.12f);
@@ -4918,6 +4848,8 @@ namespace DimensionBrawl.Editor
             SetFloat(mobileHud, "minimumActionButtonSize", 124f);
             SetFloat(mobileHud, "minimumButtonGap", 30f);
             SetFloat(mobileHud, "minimumTouchEdgeInset", 64f);
+            SetFloat(mobileHud, "summonButtonGroupCenterY01", 0.42f);
+            SetFloat(mobileHud, "summonButtonGapMultiplier", 1.05f);
             SetFloat(mobileHud, "moveJoystickRadius", 154f);
             SetFloat(mobileHud, "moveJoystickKnobSize", 64f);
             SetFloat(mobileHud, "moveJoystickTouchRadiusScale", 1.45f);
@@ -4952,10 +4884,44 @@ namespace DimensionBrawl.Editor
             SetFloat(screenCuePresenter, "maxFullScreenAlpha", 0.10f);
             SetFloat(screenCuePresenter, "maxEdgeAlpha", 0.26f);
             SetFloat(screenCuePresenter, "edgeThickness", 104f);
+
+            BossBarrageLaneReviewOverlayHud overlayHud = hudRoot.AddComponent<BossBarrageLaneReviewOverlayHud>();
+            overlayHud.Configure(
+                pocketOwner,
+                hud,
+                mobileHud,
+                screenCuePresenter);
+            ConfigureOverlayRoutes(overlayHud);
             // Touch/reticle composition is review-scene HUD tuning. Keep it Inspector-authored.
             EditorUtility.SetDirty(hud);
             EditorUtility.SetDirty(mobileHud);
             EditorUtility.SetDirty(screenCuePresenter);
+            EditorUtility.SetDirty(overlayHud);
+        }
+
+        private static void ConfigureOverlayRoutes(BossBarrageLaneReviewOverlayHud overlayHud)
+        {
+            UIScreenRouteTable routeTable = AssetDatabase.LoadAssetAtPath<UIScreenRouteTable>(UIRouteTablePath);
+            UIScreenRouteTable.Route retryRoute = ResolveRoute(routeTable, UIRouteId.CombatHud);
+            UIScreenRouteTable.Route stageSelectRoute = ResolveRoute(routeTable, UIRouteId.StageSelect);
+            UIScreenRouteTable.Route lobbyRoute = ResolveRoute(routeTable, UIRouteId.Lobby);
+            overlayHud.ConfigureRoutes(
+                retryRoute.SceneName,
+                retryRoute.ScenePath,
+                stageSelectRoute.SceneName,
+                stageSelectRoute.ScenePath,
+                lobbyRoute.SceneName,
+                lobbyRoute.ScenePath);
+        }
+
+        private static UIScreenRouteTable.Route ResolveRoute(UIScreenRouteTable routeTable, UIRouteId routeId)
+        {
+            if (routeTable == null || !routeTable.TryGetRoute(routeId, out UIScreenRouteTable.Route route))
+            {
+                throw new InvalidOperationException($"Missing UI route {routeId} for boss barrage review overlay.");
+            }
+
+            return route;
         }
 
         private static void ConfigurePlayerEnergyActions(
@@ -5831,76 +5797,6 @@ namespace DimensionBrawl.Editor
             ValidateColor(profile, "projectileColor", new Color(0.7f, 0.95f, 1f, 1f));
             ValidateVector3(profile, "projectileVisualScale", new Vector3(0.62f, 0.62f, 0.62f));
             ValidateObjectReference(profile, "projectileMaterial", null);
-        }
-
-        private static void ValidateEnergyRiskZoneMarkers(Scene scene, SummonLaneSpace laneSpace)
-        {
-            Transform root = RequireRoot(scene, EnergyZoneRootName).transform;
-            ValidateEnergyRiskZoneMarker(
-                root,
-                "BackSafety_ENSlow_0_33",
-                laneSpace,
-                0f,
-                1f / 3f,
-                BacklineEnergyZoneMaterialPath);
-            ValidateEnergyRiskZoneMarker(
-                root,
-                "MidCharge_ENBase_33_66",
-                laneSpace,
-                1f / 3f,
-                2f / 3f,
-                MidEnergyZoneMaterialPath);
-            ValidateEnergyRiskZoneMarker(
-                root,
-                "ForwardRisk_ENFast_66_100",
-                laneSpace,
-                2f / 3f,
-                1f,
-                ForwardEnergyZoneMaterialPath);
-        }
-
-        private static void ValidateEnergyRiskZoneMarker(
-            Transform root,
-            string markerName,
-            SummonLaneSpace laneSpace,
-            float startRisk01,
-            float endRisk01,
-            string materialPath)
-        {
-            Transform marker = root.Find(markerName);
-            if (marker == null)
-            {
-                throw new InvalidOperationException($"Missing energy risk zone marker {markerName}.");
-            }
-
-            float startZ = Mathf.Lerp(laneSpace.BackLimitZ, laneSpace.ForwardBoundaryZ, startRisk01);
-            float endZ = Mathf.Lerp(laneSpace.BackLimitZ, laneSpace.ForwardBoundaryZ, endRisk01);
-            float expectedCenterZ = (startZ + endZ) * 0.5f;
-            float expectedDepth = Mathf.Abs(endZ - startZ);
-            Vector2 coordinates = laneSpace.GetLaneCoordinates(marker.position);
-            if (Mathf.Abs(coordinates.y - expectedCenterZ) > 0.05f)
-            {
-                throw new InvalidOperationException($"{markerName} is not centered in the expected lane zone.");
-            }
-
-            if (Mathf.Abs(marker.localScale.z - expectedDepth) > 0.05f)
-            {
-                throw new InvalidOperationException($"{markerName} does not cover the expected lane depth.");
-            }
-
-            if (Mathf.Abs(marker.localScale.x - laneSpace.HalfWidth * 2f) > 0.05f)
-            {
-                throw new InvalidOperationException($"{markerName} does not cover the player lane width.");
-            }
-
-            if (marker.GetComponent<Collider>() != null)
-            {
-                throw new InvalidOperationException($"{markerName} must remain visual-only and not block movement.");
-            }
-
-            Renderer renderer = RequireComponent<Renderer>(marker.gameObject, markerName);
-            ValidateObjectReference(renderer, "m_Materials.Array.data[0]", LoadAsset<Material>(materialPath));
-            ValidateGameOwnedAsset(renderer.sharedMaterial, $"{markerName} material");
         }
 
         private static void ValidateLaneAmbientVfx(Scene scene)
@@ -8125,6 +8021,8 @@ namespace DimensionBrawl.Editor
             ValidateFloat(hud, "minimumActionButtonSize", 124f);
             ValidateFloat(hud, "minimumButtonGap", 30f);
             ValidateFloat(hud, "minimumTouchEdgeInset", 64f);
+            ValidateFloat(hud, "summonButtonGroupCenterY01", 0.42f);
+            ValidateFloat(hud, "summonButtonGapMultiplier", 1.05f);
             ValidateFloat(hud, "moveJoystickRadius", 154f);
             ValidateFloat(hud, "moveJoystickKnobSize", 64f);
             ValidateFloat(hud, "moveJoystickTouchRadiusScale", 1.45f);
@@ -8516,7 +8414,7 @@ namespace DimensionBrawl.Editor
             }
 
             MonoBehaviour[] behaviours = root.GetComponentsInChildren<MonoBehaviour>(includeInactive: true);
-            for (int i = 0; i < behaviours.Length; i++)
+            for (int i = behaviours.Length - 1; i >= 0; i--)
             {
                 MonoBehaviour behaviour = behaviours[i];
                 if (behaviour == null)

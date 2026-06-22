@@ -87,6 +87,11 @@ namespace DimensionBrawl.Presentation
         public string ResultBannerTitle => TryResolveResultBanner(out string title, out _, out _) ? title : string.Empty;
         public string ResultBannerDetail => TryResolveResultBanner(out _, out string detail, out _) ? detail : string.Empty;
 
+        public void SetDetailedTelemetryVisible(bool visible)
+        {
+            showDetailedTelemetry = visible;
+        }
+
         public void Configure(
             CombatHealth newPlayerHealth,
             CombatHealth newCloseThreatHealth,

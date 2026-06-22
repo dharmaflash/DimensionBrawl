@@ -41,6 +41,8 @@ namespace DimensionBrawl.UI
         [SerializeField, Min(40f)] private float minimumActionButtonSize = 124f;
         [SerializeField, Min(0f)] private float minimumButtonGap = 30f;
         [SerializeField, Min(0f)] private float minimumTouchEdgeInset = 64f;
+        [SerializeField, Range(0.2f, 0.65f)] private float summonButtonGroupCenterY01 = 0.42f;
+        [SerializeField, Min(0.1f)] private float summonButtonGapMultiplier = 1.05f;
         [SerializeField, Range(0.5f, 2f)] private float scale = 1f;
         [SerializeField] private Color buttonColor = new Color(0.04f, 0.11f, 0.16f, 0.58f);
         [SerializeField] private Color heldButtonColor = new Color(0.18f, 0.84f, 1f, 0.72f);
@@ -140,6 +142,12 @@ namespace DimensionBrawl.UI
         public bool HasActiveReviewPointerInput => movePointerHeld || firePointerHeld || lookPointerHeld;
         public bool IsReviewLookAimActive => hudLookAimActive;
         public bool WasBasicFireHeldLastFrame => previousBasicHeld;
+        public float HudScale => scale;
+
+        public void SetHudScale(float value)
+        {
+            scale = Mathf.Clamp(value, 0.5f, 2f);
+        }
 
         public void Configure(
             PlayerMovementController newMovement,
@@ -378,11 +386,16 @@ namespace DimensionBrawl.UI
 
             float summonWidth = size * 1.55f;
             float summonHeight = size * 0.72f;
-            float summonGap = gap * 0.48f;
+            float summonGap = Mathf.Max(gap * summonButtonGapMultiplier, minimumButtonGap);
+            float summonGroupHeight = summonHeight * 3f + summonGap * 2f;
+            float desiredSummonY = Screen.height * summonButtonGroupCenterY01 - summonGroupHeight * 0.5f;
+            float actionClusterTopY = Mathf.Min(upperY, bottomY);
+            float maxSummonY = actionClusterTopY - gap - summonGroupHeight;
+            float summonY = Mathf.Clamp(desiredSummonY, edge, Mathf.Max(edge, maxSummonY));
             float summonX = Screen.width - edge - summonWidth;
-            summonSlot1Rect = new Rect(summonX, edge, summonWidth, summonHeight);
-            summonSlot2Rect = new Rect(summonX, edge + summonHeight + summonGap, summonWidth, summonHeight);
-            summonSlot3Rect = new Rect(summonX, edge + (summonHeight + summonGap) * 2f, summonWidth, summonHeight);
+            summonSlot1Rect = new Rect(summonX, summonY, summonWidth, summonHeight);
+            summonSlot2Rect = new Rect(summonX, summonY + summonHeight + summonGap, summonWidth, summonHeight);
+            summonSlot3Rect = new Rect(summonX, summonY + (summonHeight + summonGap) * 2f, summonWidth, summonHeight);
         }
 
         private float ResolveScale()
