@@ -269,8 +269,8 @@ MonoBehaviour:
     prefab: {fileID: 5420902348688501287, guid: 224c0a8c6be3c4441826de22c6c3d53b, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0}
     localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 0.58, y: 0.44, z: 0.58}
-    lifetimeSeconds: 0.34
+    localScale: {x: 0.46, y: 0.34, z: 0.46}
+    lifetimeSeconds: 0.28
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
@@ -296,8 +296,8 @@ MonoBehaviour:
     prefab: {fileID: 464807569203744432, guid: 53d43299e6d21114790ecfb628981f4f, type: 3}
     localPositionOffset: {x: 0, y: 0, z: 0}
     localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 0.36, y: 0.28, z: 0.36}
-    lifetimeSeconds: 0.34
+    localScale: {x: 0.28, y: 0.22, z: 0.28}
+    lifetimeSeconds: 0.28
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
@@ -314,8 +314,8 @@ MonoBehaviour:
     prefab: {fileID: 8666660637357580547, guid: f7455ae1f4665c14486a0e7859904d5a, type: 3}
     localPositionOffset: {x: 0, y: 0.36, z: 0.2}
     localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 0.26, y: 0.2, z: 0.26}
-    lifetimeSeconds: 0.34
+    localScale: {x: 0.2, y: 0.16, z: 0.2}
+    lifetimeSeconds: 0.26
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
@@ -323,8 +323,8 @@ MonoBehaviour:
     prefab: {fileID: 3204485409673659939, guid: 73e0ef70f45b2834ba962a131d2ab3ec, type: 3}
     localPositionOffset: {x: 0, y: 1.05, z: -0.35}
     localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 1.35, y: 1.1, z: 1.35}
-    lifetimeSeconds: 0.34
+    localScale: {x: 1.08, y: 0.9, z: 1.08}
+    lifetimeSeconds: 0.3
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1
@@ -332,8 +332,8 @@ MonoBehaviour:
     prefab: {fileID: 7478284790387558022, guid: 1ee6562adf95d1740901f3b53124cafd, type: 3}
     localPositionOffset: {x: 0, y: 0.08, z: -0.2}
     localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 0.62, y: 0.48, z: 0.62}
-    lifetimeSeconds: 0.48
+    localScale: {x: 0.46, y: 0.36, z: 0.46}
+    lifetimeSeconds: 0.38
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 0
@@ -341,8 +341,8 @@ MonoBehaviour:
     prefab: {fileID: 7428633424889265235, guid: 9f873826e7092c7429618ea15857be24, type: 3}
     localPositionOffset: {x: 0, y: 0.24, z: 0.42}
     localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 0.26, y: 0.18, z: 0.26}
-    lifetimeSeconds: 0.28
+    localScale: {x: 0.19, y: 0.14, z: 0.19}
+    lifetimeSeconds: 0.22
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
@@ -350,8 +350,8 @@ MonoBehaviour:
     prefab: {fileID: 464807569203744432, guid: 53d43299e6d21114790ecfb628981f4f, type: 3}
     localPositionOffset: {x: 0, y: 0.42, z: 0}
     localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 0.045, y: 0.034, z: 0.045}
-    lifetimeSeconds: 0.2
+    localScale: {x: 0.036, y: 0.027, z: 0.036}
+    lifetimeSeconds: 0.18
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
@@ -359,8 +359,8 @@ MonoBehaviour:
     prefab: {fileID: 5862732402163036215, guid: 0fce666aeb9817649b2c6fea6e90bce6, type: 3}
     localPositionOffset: {x: 0, y: 0.18, z: -0.08}
     localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 0.12, y: 0.1, z: 0.12}
-    lifetimeSeconds: 0.22
+    localScale: {x: 0.1, y: 0.085, z: 0.1}
+    lifetimeSeconds: 0.2
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1

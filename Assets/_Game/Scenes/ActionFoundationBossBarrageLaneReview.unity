@@ -3254,8 +3254,8 @@ MonoBehaviour:
   punishPressureCueId: 25
   windupCueIntensity: 0.86
   releaseCueIntensity: 1.05
-  pressureActionCueIntensity: 1.12
-  tierCueIntensityStep: 0.12
+  pressureActionCueIntensity: 0.95
+  tierCueIntensityStep: 0.08
   patternCues:
   - patternId: NeedleLock
     windupTrigger: EliteAuraBuffer
@@ -8018,9 +8018,9 @@ MonoBehaviour:
   bossPressureActionDirector: {fileID: 107455198}
   pocketReviewOwner: {fileID: 2068206446}
   showScreenCues: 1
-  maxFullScreenAlpha: 0.15
-  maxEdgeAlpha: 0.36
-  edgeThickness: 132
+  maxFullScreenAlpha: 0.1
+  maxEdgeAlpha: 0.26
+  edgeThickness: 104
   dodgeColor: {r: 0.18, g: 0.92, b: 1, a: 1}
   rangedFireColor: {r: 0.48, g: 0.95, b: 1, a: 1}
   hitColor: {r: 1, g: 0.92, b: 0.46, a: 1}
@@ -21200,12 +21200,12 @@ MonoBehaviour:
   directionTarget: {fileID: 107455195}
   blockOpportunityIntensity: 1.05
   windowIntensity: 1.15
-  hitIntensity: 1.44
+  hitIntensity: 1.18
   missedIntensity: 0.85
-  pocketClearIntensity: 1.24
-  pocketFailIntensity: 1.36
+  pocketClearIntensity: 0.92
+  pocketFailIntensity: 1.02
   pocketFailAccentCueId: 9
-  pocketFailAccentIntensity: 1.22
+  pocketFailAccentIntensity: 0.88
   tierIntensityStep: 0.12
 --- !u!114 &2068206449
 MonoBehaviour:

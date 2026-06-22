@@ -32,9 +32,9 @@ namespace DimensionBrawl.Presentation
 
         [Header("Display")]
         [SerializeField] private bool showScreenCues = true;
-        [SerializeField, Range(0f, 0.35f)] private float maxFullScreenAlpha = 0.15f;
-        [SerializeField, Range(0f, 0.65f)] private float maxEdgeAlpha = 0.36f;
-        [SerializeField, Min(0f)] private float edgeThickness = 132f;
+        [SerializeField, Range(0f, 0.35f)] private float maxFullScreenAlpha = 0.10f;
+        [SerializeField, Range(0f, 0.65f)] private float maxEdgeAlpha = 0.26f;
+        [SerializeField, Min(0f)] private float edgeThickness = 104f;
 
         [Header("Player Colors")]
         [SerializeField] private Color dodgeColor = new Color(0.18f, 0.92f, 1f, 1f);
@@ -339,12 +339,12 @@ namespace DimensionBrawl.Presentation
 
         private void HandlePocketCleared()
         {
-            RequestScreenCue("Pocket.Cleared", pocketClearColor, 0.58f, 1.22f, ScreenCueCategory.Result);
+            RequestScreenCue("Pocket.Cleared", pocketClearColor, 0.58f, 0.92f, ScreenCueCategory.Result);
         }
 
         private void HandlePocketFailed()
         {
-            RequestScreenCue("Pocket.Failed", pocketFailColor, 0.66f, 1.36f, ScreenCueCategory.Result);
+            RequestScreenCue("Pocket.Failed", pocketFailColor, 0.66f, 1.02f, ScreenCueCategory.Result);
         }
 
         private void RequestScreenCue(

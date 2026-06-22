@@ -227,7 +227,7 @@ namespace DimensionBrawl.Editor
             Material material = LoadOrCreateMaterial(SummonSlot1ActorMaterialPath, new Color(0.2f, 1f, 0.78f, 1f));
             Material pressureScreenMaterial = LoadOrCreateTransparentMaterial(
                 SummonPressureScreenMaterialPath,
-                new Color(0.18f, 1f, 0.78f, 0.24f));
+                new Color(0.18f, 1f, 0.78f, 0.16f));
             Material pulseMaterial = LoadOrCreateTransparentMaterial(
                 SummonSlot1ActorPulseMaterialPath,
                 new Color(0.45f, 0.95f, 1f, 0.72f));
@@ -326,13 +326,14 @@ namespace DimensionBrawl.Editor
                 SetObjectReference(presenter, "pressureScreen", pressureScreen);
                 SetObjectReference(presenter, "visualRoot", pressureScreenVisual);
                 SetObjectReferenceArray(presenter, "screenRenderers", new UnityEngine.Object[] { visualRenderer });
-                SetColor(presenter, "activeColor", new Color(0.22f, 1f, 0.82f, 0.12f));
-                SetColor(presenter, "tierTwoColor", new Color(0.38f, 0.74f, 1f, 0.14f));
-                SetColor(presenter, "tierThreeColor", new Color(1f, 0.76f, 0.24f, 0.16f));
-                SetColor(presenter, "interceptColor", new Color(0.92f, 1f, 1f, 0.22f));
-                SetFloat(presenter, "visualRadiusScale", 0.22f);
-                SetFloat(presenter, "activationCueIntensity", 0.65f);
-                SetFloat(presenter, "interceptCueIntensity", 0.78f);
+                SetColor(presenter, "activeColor", new Color(0.22f, 1f, 0.82f, 0.09f));
+                SetColor(presenter, "tierTwoColor", new Color(0.38f, 0.74f, 1f, 0.10f));
+                SetColor(presenter, "tierThreeColor", new Color(1f, 0.76f, 0.24f, 0.12f));
+                SetColor(presenter, "interceptColor", new Color(0.92f, 1f, 1f, 0.16f));
+                SetFloat(presenter, "visualRadiusScale", 0.18f);
+                SetFloat(presenter, "activationCueIntensity", 0.48f);
+                SetFloat(presenter, "interceptCueIntensity", 0.58f);
+                SetFloat(presenter, "tierCueIntensityStep", 0.08f);
                 SetFloat(presenter, "activationFlashSeconds", 0.08f);
                 SetFloat(presenter, "interceptFlashSeconds", 0.12f);
                 SetFloat(presenter, "finalHitLingerSeconds", 0.1f);
@@ -479,7 +480,7 @@ namespace DimensionBrawl.Editor
                 0.34f,
                 includePressureScreen: true,
                 pressureScreenMaterialPath: SummonSlot3PressureScreenMaterialPath,
-                pressureScreenColor: new Color(1f, 0.74f, 0.32f, 0.28f));
+                pressureScreenColor: new Color(1f, 0.74f, 0.32f, 0.10f));
         }
 
         private static SummonFrontlineProxy EnsureSupportSummonActorPrefab(
@@ -722,12 +723,13 @@ namespace DimensionBrawl.Editor
             SetObjectReference(screenPresenter, "visualRoot", pressureScreenVisual);
             SetObjectReferenceArray(screenPresenter, "screenRenderers", new UnityEngine.Object[] { visualRenderer });
             SetColor(screenPresenter, "activeColor", pressureScreenColor);
-            SetColor(screenPresenter, "tierTwoColor", new Color(1f, 0.805f, 0.49f, 0.14f));
-            SetColor(screenPresenter, "tierThreeColor", new Color(1f, 0.758f, 0.275f, 0.17f));
-            SetColor(screenPresenter, "interceptColor", new Color(1f, 0.96f, 0.78f, 0.23f));
-            SetFloat(screenPresenter, "visualRadiusScale", 0.22f);
-            SetFloat(screenPresenter, "activationCueIntensity", 0.65f);
-            SetFloat(screenPresenter, "interceptCueIntensity", 0.78f);
+            SetColor(screenPresenter, "tierTwoColor", new Color(1f, 0.805f, 0.49f, 0.10f));
+            SetColor(screenPresenter, "tierThreeColor", new Color(1f, 0.758f, 0.275f, 0.12f));
+            SetColor(screenPresenter, "interceptColor", new Color(1f, 0.96f, 0.78f, 0.16f));
+            SetFloat(screenPresenter, "visualRadiusScale", 0.18f);
+            SetFloat(screenPresenter, "activationCueIntensity", 0.48f);
+            SetFloat(screenPresenter, "interceptCueIntensity", 0.58f);
+            SetFloat(screenPresenter, "tierCueIntensityStep", 0.08f);
             SetFloat(screenPresenter, "activationFlashSeconds", 0.08f);
             SetFloat(screenPresenter, "interceptFlashSeconds", 0.12f);
             SetFloat(screenPresenter, "finalHitLingerSeconds", 0.1f);
@@ -755,7 +757,7 @@ namespace DimensionBrawl.Editor
             Material material = LoadOrCreateMaterial(BossSummonPressureActorMaterialPath, new Color(1f, 0.36f, 0.64f, 1f));
             Material pressureScreenMaterial = LoadOrCreateTransparentMaterial(
                 BossSummonPressureScreenMaterialPath,
-                new Color(1f, 0.22f, 0.55f, 0.24f));
+                new Color(1f, 0.22f, 0.55f, 0.16f));
             Material pulseMaterial = LoadOrCreateTransparentMaterial(
                 BossSummonPressureActorPulseMaterialPath,
                 new Color(1f, 0.62f, 0.28f, 0.74f));
@@ -854,13 +856,14 @@ namespace DimensionBrawl.Editor
                 SetObjectReference(presenter, "pressureScreen", pressureScreen);
                 SetObjectReference(presenter, "visualRoot", pressureScreenVisual);
                 SetObjectReferenceArray(presenter, "screenRenderers", new UnityEngine.Object[] { visualRenderer });
-                SetColor(presenter, "activeColor", new Color(1f, 0.22f, 0.55f, 0.12f));
-                SetColor(presenter, "tierTwoColor", new Color(1f, 0.62f, 0.24f, 0.15f));
-                SetColor(presenter, "tierThreeColor", new Color(1f, 0.22f, 0.9f, 0.18f));
-                SetColor(presenter, "interceptColor", new Color(1f, 0.86f, 0.64f, 0.24f));
-                SetFloat(presenter, "visualRadiusScale", 0.22f);
-                SetFloat(presenter, "activationCueIntensity", 0.65f);
-                SetFloat(presenter, "interceptCueIntensity", 0.78f);
+                SetColor(presenter, "activeColor", new Color(1f, 0.22f, 0.55f, 0.09f));
+                SetColor(presenter, "tierTwoColor", new Color(1f, 0.62f, 0.24f, 0.10f));
+                SetColor(presenter, "tierThreeColor", new Color(1f, 0.22f, 0.9f, 0.12f));
+                SetColor(presenter, "interceptColor", new Color(1f, 0.86f, 0.64f, 0.16f));
+                SetFloat(presenter, "visualRadiusScale", 0.18f);
+                SetFloat(presenter, "activationCueIntensity", 0.48f);
+                SetFloat(presenter, "interceptCueIntensity", 0.58f);
+                SetFloat(presenter, "tierCueIntensityStep", 0.08f);
                 SetFloat(presenter, "activationFlashSeconds", 0.09f);
                 SetFloat(presenter, "interceptFlashSeconds", 0.13f);
                 SetFloat(presenter, "finalHitLingerSeconds", 0.1f);

@@ -37349,11 +37349,11 @@ MonoBehaviour:
   visualRoot: {fileID: 6693782277880877833}
   screenRenderers:
   - {fileID: 220082403188987380}
-  activeColor: {r: 1, g: 0.22, b: 0.55, a: 0.12}
-  tierTwoColor: {r: 1, g: 0.62, b: 0.24, a: 0.15}
-  tierThreeColor: {r: 1, g: 0.22, b: 0.9, a: 0.18}
-  interceptColor: {r: 1, g: 0.86, b: 0.64, a: 0.24}
-  visualRadiusScale: 0.22
+  activeColor: {r: 1, g: 0.22, b: 0.55, a: 0.09}
+  tierTwoColor: {r: 1, g: 0.62, b: 0.24, a: 0.1}
+  tierThreeColor: {r: 1, g: 0.22, b: 0.9, a: 0.12}
+  interceptColor: {r: 1, g: 0.86, b: 0.64, a: 0.16}
+  visualRadiusScale: 0.18
   activationFlashSeconds: 0.09
   interceptFlashSeconds: 0.13
   finalHitLingerSeconds: 0.1
@@ -37367,9 +37367,9 @@ MonoBehaviour:
   vfxDirectionTarget: {fileID: 0}
   activationCueId: 24
   interceptCueId: 32
-  activationCueIntensity: 0.65
-  interceptCueIntensity: 0.78
-  tierCueIntensityStep: 0.12
+  activationCueIntensity: 0.48
+  interceptCueIntensity: 0.58
+  tierCueIntensityStep: 0.08
 --- !u!114 &8974159736997284467
 MonoBehaviour:
   m_ObjectHideFlags: 0

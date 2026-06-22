@@ -203,10 +203,10 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(pocketOwner.IsCleared, "The clear result frame should be reached through the authored summon-follow-up flow.");
             Assert.AreEqual(resultCueCountBeforeClear + 1, screenCuePresenter.ResultCueRequestCount);
             Assert.AreEqual("Pocket.Cleared", screenCuePresenter.LastCueId);
-            Assert.AreEqual(1.22f, screenCuePresenter.LastCueIntensity, 0.001f);
+            Assert.AreEqual(0.92f, screenCuePresenter.LastCueIntensity, 0.001f);
             Assert.IsTrue(screenCuePresenter.HasActiveCue);
             Assert.AreEqual(worldCueCountBeforeClear + 1, pocketVfxCueBridge.PocketClearCueRequestCount);
-            Assert.AreEqual(1.24f, pocketVfxCueBridge.PocketClearIntensity, 0.001f);
+            Assert.AreEqual(0.92f, pocketVfxCueBridge.PocketClearIntensity, 0.001f);
 
             string capturePath = Path.GetFullPath(Path.Combine(
                 Application.dataPath,
@@ -250,13 +250,13 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(pocketOwner.IsFailed, "The fail result frame should be reached when the player is defeated.");
             Assert.AreEqual(resultCueCountBeforeFail + 1, screenCuePresenter.ResultCueRequestCount);
             Assert.AreEqual("Pocket.Failed", screenCuePresenter.LastCueId);
-            Assert.AreEqual(1.36f, screenCuePresenter.LastCueIntensity, 0.001f);
+            Assert.AreEqual(1.02f, screenCuePresenter.LastCueIntensity, 0.001f);
             Assert.IsTrue(screenCuePresenter.HasActiveCue);
             Assert.AreEqual(worldCueCountBeforeFail + 1, pocketVfxCueBridge.PocketFailCueRequestCount);
             Assert.AreEqual(accentCueCountBeforeFail + 1, pocketVfxCueBridge.PocketFailAccentCueRequestCount);
-            Assert.AreEqual(1.36f, pocketVfxCueBridge.PocketFailIntensity, 0.001f);
+            Assert.AreEqual(1.02f, pocketVfxCueBridge.PocketFailIntensity, 0.001f);
             Assert.AreEqual(CombatVfxCueId.EnemyClosePunishActive, pocketVfxCueBridge.PocketFailAccentCueId);
-            Assert.AreEqual(1.22f, pocketVfxCueBridge.PocketFailAccentIntensity, 0.001f);
+            Assert.AreEqual(0.88f, pocketVfxCueBridge.PocketFailAccentIntensity, 0.001f);
 
             string capturePath = Path.GetFullPath(Path.Combine(
                 Application.dataPath,

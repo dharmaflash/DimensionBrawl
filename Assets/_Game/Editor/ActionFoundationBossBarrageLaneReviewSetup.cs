@@ -4834,11 +4834,11 @@ namespace DimensionBrawl.Editor
             SetObjectReference(vfxBridge, "pocketClearAnchor", directionTarget);
             SetObjectReference(vfxBridge, "pocketFailAnchor", ReadObjectReference<Transform>(playerVfxCueDriver, "dodgeAnchor"));
             SetObjectReference(vfxBridge, "directionTarget", directionTarget);
-            SetFloat(vfxBridge, "hitIntensity", 1.44f);
-            SetFloat(vfxBridge, "pocketClearIntensity", 1.24f);
-            SetFloat(vfxBridge, "pocketFailIntensity", 1.36f);
+            SetFloat(vfxBridge, "hitIntensity", 1.18f);
+            SetFloat(vfxBridge, "pocketClearIntensity", 0.92f);
+            SetFloat(vfxBridge, "pocketFailIntensity", 1.02f);
             SetEnum(vfxBridge, "pocketFailAccentCueId", (int)CombatVfxCueId.EnemyClosePunishActive);
-            SetFloat(vfxBridge, "pocketFailAccentIntensity", 1.22f);
+            SetFloat(vfxBridge, "pocketFailAccentIntensity", 0.88f);
             EditorUtility.SetDirty(cameraBridge);
             EditorUtility.SetDirty(vfxBridge);
         }
@@ -4938,9 +4938,9 @@ namespace DimensionBrawl.Editor
                 bossPressureActionDirector,
                 pocketOwner);
             SetBool(screenCuePresenter, "showScreenCues", true);
-            SetFloat(screenCuePresenter, "maxFullScreenAlpha", 0.15f);
-            SetFloat(screenCuePresenter, "maxEdgeAlpha", 0.36f);
-            SetFloat(screenCuePresenter, "edgeThickness", 132f);
+            SetFloat(screenCuePresenter, "maxFullScreenAlpha", 0.10f);
+            SetFloat(screenCuePresenter, "maxEdgeAlpha", 0.26f);
+            SetFloat(screenCuePresenter, "edgeThickness", 104f);
             // Touch/reticle composition is review-scene HUD tuning. Keep it Inspector-authored.
             EditorUtility.SetDirty(hud);
             EditorUtility.SetDirty(mobileHud);
@@ -8014,11 +8014,11 @@ namespace DimensionBrawl.Editor
                 "pocketFailAnchor",
                 ReadObjectReference<Transform>(playerVfxCueDriver, "dodgeAnchor"));
             ValidateObjectReference(vfxBridge, "directionTarget", directionTarget);
-            ValidateFloat(vfxBridge, "hitIntensity", 1.44f);
-            ValidateFloat(vfxBridge, "pocketClearIntensity", 1.24f);
-            ValidateFloat(vfxBridge, "pocketFailIntensity", 1.36f);
+            ValidateFloat(vfxBridge, "hitIntensity", 1.18f);
+            ValidateFloat(vfxBridge, "pocketClearIntensity", 0.92f);
+            ValidateFloat(vfxBridge, "pocketFailIntensity", 1.02f);
             ValidateEnum(vfxBridge, "pocketFailAccentCueId", (int)CombatVfxCueId.EnemyClosePunishActive);
-            ValidateFloat(vfxBridge, "pocketFailAccentIntensity", 1.22f);
+            ValidateFloat(vfxBridge, "pocketFailAccentIntensity", 0.88f);
         }
 
         private static void ValidateReviewHud(
@@ -8147,9 +8147,9 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(presenter, "bossPressureActionDirector", bossPressureActionDirector);
             ValidateObjectReference(presenter, "pocketReviewOwner", pocketOwner);
             ValidateBool(presenter, "showScreenCues", true);
-            ValidateFloat(presenter, "maxFullScreenAlpha", 0.15f);
-            ValidateFloat(presenter, "maxEdgeAlpha", 0.36f);
-            ValidateFloat(presenter, "edgeThickness", 132f);
+            ValidateFloat(presenter, "maxFullScreenAlpha", 0.10f);
+            ValidateFloat(presenter, "maxEdgeAlpha", 0.26f);
+            ValidateFloat(presenter, "edgeThickness", 104f);
         }
 
         private static void ConfigureArenaInfluenceTargets(Scene scene, Transform player, params Transform[] influenceTargets)

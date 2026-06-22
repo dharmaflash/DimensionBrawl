@@ -12,11 +12,11 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private SummonPressureScreen pressureScreen;
         [SerializeField] private Transform visualRoot;
         [SerializeField] private Renderer[] screenRenderers = System.Array.Empty<Renderer>();
-        [SerializeField] private Color activeColor = new Color(0.22f, 1f, 0.82f, 0.12f);
-        [SerializeField] private Color tierTwoColor = new Color(0.38f, 0.74f, 1f, 0.14f);
-        [SerializeField] private Color tierThreeColor = new Color(1f, 0.76f, 0.24f, 0.16f);
-        [SerializeField] private Color interceptColor = new Color(0.92f, 1f, 1f, 0.22f);
-        [SerializeField, Range(0.18f, 1f)] private float visualRadiusScale = 0.22f;
+        [SerializeField] private Color activeColor = new Color(0.22f, 1f, 0.82f, 0.09f);
+        [SerializeField] private Color tierTwoColor = new Color(0.38f, 0.74f, 1f, 0.10f);
+        [SerializeField] private Color tierThreeColor = new Color(1f, 0.76f, 0.24f, 0.12f);
+        [SerializeField] private Color interceptColor = new Color(0.92f, 1f, 1f, 0.16f);
+        [SerializeField, Range(0.18f, 1f)] private float visualRadiusScale = 0.18f;
         [SerializeField, Min(0f)] private float activationFlashSeconds = 0.08f;
         [SerializeField, Min(0f)] private float interceptFlashSeconds = 0.12f;
         [SerializeField, Min(0f)] private float finalHitLingerSeconds = 0.1f;
@@ -32,9 +32,9 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private Transform vfxDirectionTarget;
         [SerializeField] private CombatVfxCueId activationCueId = CombatVfxCueId.EliteShieldSignal;
         [SerializeField] private CombatVfxCueId interceptCueId = CombatVfxCueId.SummonBlockOpportunity;
-        [SerializeField, Min(0f)] private float activationCueIntensity = 0.65f;
-        [SerializeField, Min(0f)] private float interceptCueIntensity = 0.78f;
-        [SerializeField, Min(0f)] private float tierCueIntensityStep = 0.12f;
+        [SerializeField, Min(0f)] private float activationCueIntensity = 0.48f;
+        [SerializeField, Min(0f)] private float interceptCueIntensity = 0.58f;
+        [SerializeField, Min(0f)] private float tierCueIntensityStep = 0.08f;
 
         private MaterialPropertyBlock propertyBlock;
         private Vector3 visualBaseScale = Vector3.one;

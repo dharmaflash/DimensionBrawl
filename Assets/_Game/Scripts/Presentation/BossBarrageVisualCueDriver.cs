@@ -146,8 +146,8 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private CombatVfxCueId punishPressureCueId = CombatVfxCueId.EliteArmorBreakSignal;
         [SerializeField, Min(0f)] private float windupCueIntensity = 0.86f;
         [SerializeField, Min(0f)] private float releaseCueIntensity = 1.05f;
-        [SerializeField, Min(0f)] private float pressureActionCueIntensity = 1.12f;
-        [SerializeField, Min(0f)] private float tierCueIntensityStep = 0.12f;
+        [SerializeField, Min(0f)] private float pressureActionCueIntensity = 0.95f;
+        [SerializeField, Min(0f)] private float tierCueIntensityStep = 0.08f;
 
         [Header("Pattern Cues")]
         [SerializeField] private PatternAnimationCue[] patternCues = Array.Empty<PatternAnimationCue>();
