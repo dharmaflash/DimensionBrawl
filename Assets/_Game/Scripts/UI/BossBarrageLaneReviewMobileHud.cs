@@ -124,6 +124,9 @@ namespace DimensionBrawl.UI
         public string SummonSlot3ActionName => summonSlot3ActionName;
         public string RangedAimActionName => rangedAimActionName;
         public string WeaponSwapActionName => weaponSwapActionName;
+        public bool HasActiveReviewPointerInput => movePointerHeld || firePointerHeld || lookPointerHeld;
+        public bool IsReviewLookAimActive => hudLookAimActive;
+        public bool WasBasicFireHeldLastFrame => previousBasicHeld;
 
         public void Configure(
             PlayerMovementController newMovement,

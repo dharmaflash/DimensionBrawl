@@ -94,6 +94,7 @@ namespace DimensionBrawl.Player
         public float FireCooldownRemaining => Mathf.Max(0f, nextFireTime - Time.time);
         public bool IsFireReady => FireCooldownRemaining <= 0f;
         public bool IsFireHeld => currentFireHeld;
+        public bool HasExternalFireHeldInput => mobileFireHeld;
         public bool IsAimPreviewActive => IsRangedModeActive()
             && (currentFireHeld || (aimController != null && aimController.IsAiming));
         public Vector2 AimInput => aimInput;

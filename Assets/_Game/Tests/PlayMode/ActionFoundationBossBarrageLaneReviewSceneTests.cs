@@ -2022,17 +2022,15 @@ namespace DimensionBrawl.Tests
 
             InvokePrivateMethod(mobileHud, "Update");
 
-            Assert.IsFalse(GetPrivateField<bool>(mobileHud, "firePointerHeld"));
-            Assert.IsFalse(GetPrivateField<bool>(mobileHud, "movePointerHeld"));
-            Assert.IsFalse(GetPrivateField<bool>(mobileHud, "lookPointerHeld"));
-            Assert.IsFalse(GetPrivateField<bool>(mobileHud, "hudLookAimActive"));
+            Assert.IsFalse(mobileHud.HasActiveReviewPointerInput);
+            Assert.IsFalse(mobileHud.IsReviewLookAimActive);
             Assert.Less(GetVector2(player, "mobileMoveInput").sqrMagnitude, 0.0001f);
             Assert.Less(GetVector2(player, "mobileLookInput").sqrMagnitude, 0.0001f);
             Assert.Less(rangedBasicAttackAction.AimInput.sqrMagnitude, 0.0001f);
-            Assert.Less(GetPrivateField<Vector2>(aimController, "aimInput").sqrMagnitude, 0.0001f);
-            Assert.IsFalse(GetPrivateField<bool>(aimController, "mobileAimHeld"));
-            Assert.IsFalse(GetPrivateField<bool>(mobileHud, "previousBasicHeld"));
-            Assert.IsFalse(GetPrivateField<bool>(rangedBasicAttackAction, "mobileFireHeld"));
+            Assert.Less(aimController.AimInput.sqrMagnitude, 0.0001f);
+            Assert.IsFalse(aimController.HasExternalAimHeldInput);
+            Assert.IsFalse(mobileHud.WasBasicFireHeldLastFrame);
+            Assert.IsFalse(rangedBasicAttackAction.HasExternalFireHeldInput);
 
             SetPrivateField(mobileHud, "showHud", true);
             yield return null;
@@ -6010,13 +6008,6 @@ namespace DimensionBrawl.Tests
         {
             FieldInfo field = RequirePrivateField(target, fieldName);
             field.SetValue(target, value);
-        }
-
-        private static T GetPrivateField<T>(object target, string fieldName)
-        {
-            FieldInfo field = RequirePrivateField(target, fieldName);
-            Assert.IsInstanceOf<T>(field.GetValue(target));
-            return (T)field.GetValue(target);
         }
 
         private static void InvokePrivateMethod(object target, string methodName)

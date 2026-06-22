@@ -37,6 +37,7 @@ namespace DimensionBrawl.Player
 
         public bool IsAiming => isAiming;
         public Vector2 AimInput => aimInput;
+        public bool HasExternalAimHeldInput => mobileAimHeld || fireAimHeld;
         public bool CanAim => combatModeController == null || combatModeController.IsRangedMode;
 
         public event Action<bool> AimModeChanged;
