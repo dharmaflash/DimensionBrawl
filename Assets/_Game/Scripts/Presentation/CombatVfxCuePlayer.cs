@@ -173,10 +173,29 @@ namespace DimensionBrawl.Presentation
                 visualEffects[i].Play();
             }
 
+            CombatVfxCueAudioRandomizer[] audioRandomizers = instance.GetComponentsInChildren<CombatVfxCueAudioRandomizer>(includeInactive: true);
+            HashSet<AudioSource> randomizedSources = null;
+            for (int i = 0; i < audioRandomizers.Length; i++)
+            {
+                CombatVfxCueAudioRandomizer audioRandomizer = audioRandomizers[i];
+                if (audioRandomizer == null || !audioRandomizer.Play() || audioRandomizer.Source == null)
+                {
+                    continue;
+                }
+
+                randomizedSources ??= new HashSet<AudioSource>();
+                randomizedSources.Add(audioRandomizer.Source);
+            }
+
             AudioSource[] audioSources = instance.GetComponentsInChildren<AudioSource>(includeInactive: true);
             for (int i = 0; i < audioSources.Length; i++)
             {
                 AudioSource audioSource = audioSources[i];
+                if (randomizedSources != null && randomizedSources.Contains(audioSource))
+                {
+                    continue;
+                }
+
                 if (audioSource.clip == null || !audioSource.enabled || !audioSource.gameObject.activeInHierarchy)
                 {
                     continue;

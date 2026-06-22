@@ -12,6 +12,14 @@ namespace DimensionBrawl.Tests
     {
         private const string CombatVfxCueProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_CombatVfxCues_ActionFoundation.asset";
+        private static readonly string[] PlayerRangedGunshotClipPaths =
+        {
+            "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Gunshot_01.wav",
+            "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Gunshot_02.wav",
+            "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Gunshot_03.wav",
+            "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Gunshot_04.wav",
+            "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Gunshot_05.wav",
+        };
         private const string BossBarrageProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossBarrageProjectile_NeedleLock.prefab";
         private const string Skill1ProjectilePrefabPath =
@@ -61,13 +69,57 @@ namespace DimensionBrawl.Tests
             }
         }
 
+        [UnityTest]
+        public IEnumerator CombatVfxCuePlayerPlaysRandomizedAudioBankInsideCuePrefab()
+        {
+            GameObject owner = new GameObject("CombatVfxCuePlayerRandomAudioTestOwner");
+            GameObject prefab = new GameObject("CombatVfxCuePlayerRandomAudioTestPrefab");
+            AudioClip firstClip = AudioClip.Create("CombatVfxCuePlayerRandomAudioClipA", 44100, 1, 44100, false);
+            AudioClip secondClip = AudioClip.Create("CombatVfxCuePlayerRandomAudioClipB", 44100, 1, 44100, false);
+            try
+            {
+                owner.AddComponent<AudioListener>();
+                GameObject audioObject = new GameObject("RandomAudioCue");
+                audioObject.transform.SetParent(prefab.transform, worldPositionStays: false);
+                AudioSource source = audioObject.AddComponent<AudioSource>();
+                source.playOnAwake = false;
+                source.loop = false;
+                source.spatialBlend = 0f;
+                CombatVfxCueAudioRandomizer randomizer = audioObject.AddComponent<CombatVfxCueAudioRandomizer>();
+                randomizer.Configure(source, new[] { firstClip, secondClip }, 0.68f, 0.96f, 1.04f, 0.92f, 1.06f);
+
+                CombatVfxCueProfile profile = CreateSingleCueProfile(prefab);
+                CombatVfxCuePlayer cuePlayer = owner.AddComponent<CombatVfxCuePlayer>();
+                SetObjectReference(cuePlayer, "profile", profile);
+
+                cuePlayer.PlayCue(CombatVfxCueId.PlayerRangedMuzzleFlash, owner.transform, Vector3.forward);
+                yield return null;
+
+                Transform instance = owner.transform.Find(prefab.name);
+                Assert.IsNotNull(instance, "Parented combat cue instance should be spawned under the anchor.");
+                AudioSource playedSource = instance.GetComponentInChildren<AudioSource>(true);
+                Assert.IsNotNull(playedSource, "Spawned combat cue should keep the prefab AudioSource.");
+                Assert.IsTrue(playedSource.isPlaying, "CombatVfxCuePlayer should play randomized AudioSources when a cue plays.");
+                Assert.Contains(playedSource.clip, new[] { firstClip, secondClip });
+                Assert.That(playedSource.pitch, Is.InRange(0.96f, 1.04f));
+                Assert.That(playedSource.volume, Is.InRange(0.68f * 0.92f, 0.68f * 1.06f));
+            }
+            finally
+            {
+                Object.Destroy(owner);
+                Object.Destroy(prefab);
+                Object.Destroy(firstClip);
+                Object.Destroy(secondClip);
+            }
+        }
+
         [Test]
-        public void PlayerRangedCombatCuesDoNotCarryTemporarySfx()
+        public void PlayerRangedMuzzleCueUsesReviewedGunshotSfxBank()
         {
             CombatVfxCueProfile profile = AssetDatabase.LoadAssetAtPath<CombatVfxCueProfile>(CombatVfxCueProfilePath);
             Assert.IsNotNull(profile, $"Missing combat VFX cue profile at {CombatVfxCueProfilePath}.");
 
-            AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.PlayerRangedMuzzleFlash);
+            AssertCueHasReviewedGunshotAudioBank(profile, CombatVfxCueId.PlayerRangedMuzzleFlash, PlayerRangedGunshotClipPaths);
             AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.PlayerRangedProjectileImpact);
         }
 
@@ -213,6 +265,42 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(profile.TryGetCue(cueId, out CombatVfxCue cue), $"{cueId} should be authored.");
             Assert.IsNotNull(cue.Prefab, $"{cueId} should reference a cue prefab.");
             AssertNoAuthoredAudio(cue.Prefab, cueId.ToString());
+        }
+
+        private static void AssertCueHasReviewedGunshotAudioBank(
+            CombatVfxCueProfile profile,
+            CombatVfxCueId cueId,
+            string[] expectedClipPaths)
+        {
+            Assert.IsTrue(profile.TryGetCue(cueId, out CombatVfxCue cue), $"{cueId} should be authored.");
+            Assert.IsNotNull(cue.Prefab, $"{cueId} should reference a cue prefab.");
+            Assert.That(cue.LifetimeSeconds, Is.InRange(0.34f, 0.55f), $"{cueId} lifetime should stay tight for the snappy reviewed gunshot bank.");
+            CombatVfxCueAudioRandomizer[] randomizers = cue.Prefab.GetComponentsInChildren<CombatVfxCueAudioRandomizer>(true);
+            Assert.AreEqual(1, randomizers.Length, $"{cueId} should carry exactly one reviewed audio randomizer.");
+            CombatVfxCueAudioRandomizer randomizer = randomizers[0];
+            Assert.AreEqual(expectedClipPaths.Length, randomizer.ClipCount, $"{cueId} should carry the reviewed gunshot bank.");
+
+            for (int i = 0; i < expectedClipPaths.Length; i++)
+            {
+                AudioClip clip = randomizer.GetClip(i);
+                string clipPath = AssetDatabase.GetAssetPath(clip).Replace('\\', '/');
+                Assert.AreEqual(expectedClipPaths[i], clipPath, $"{cueId} should use reviewed game-owned gunshot clip {i + 1}.");
+                Assert.That(clipPath, Does.StartWith("Assets/_Game/"), $"{cueId} audio clip should be promoted under _Game.");
+                Assert.That(clipPath, Does.Not.Contain("/_Imported/"), $"{cueId} audio clip must not reference the raw pack.");
+            }
+
+            AudioSource audioSource = randomizer.Source;
+            Assert.IsNotNull(audioSource, $"{cueId} randomizer should reference its local AudioSource.");
+            Assert.IsNull(audioSource.clip, $"{cueId}.{audioSource.name} should let the randomizer choose the clip on play.");
+            Assert.IsFalse(audioSource.playOnAwake, $"{cueId}.{audioSource.name} should not auto-play audio.");
+            Assert.IsFalse(audioSource.loop, $"{cueId}.{audioSource.name} should not loop audio.");
+            Assert.GreaterOrEqual(audioSource.volume, 0.55f, $"{cueId}.{audioSource.name} should keep the reviewed gunshot audible.");
+            Assert.AreEqual(1f, audioSource.pitch, 0.01f, $"{cueId}.{audioSource.name} should not start pitch-shifted.");
+            Assert.LessOrEqual(audioSource.spatialBlend, 0.05f, $"{cueId}.{audioSource.name} should play as a clear local player shot.");
+            Assert.That(randomizer.MinimumPitch, Is.InRange(1f, 1.04f));
+            Assert.That(randomizer.MaximumPitch, Is.InRange(1.06f, 1.1f));
+            Assert.That(randomizer.MinimumVolumeMultiplier, Is.InRange(0.9f, 1f));
+            Assert.That(randomizer.MaximumVolumeMultiplier, Is.InRange(1f, 1.08f));
         }
 
         private static void AssertProjectilePrefabHasNoAuthoredAudio(string prefabPath)

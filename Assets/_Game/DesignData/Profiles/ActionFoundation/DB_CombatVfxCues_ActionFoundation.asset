@@ -63,7 +63,7 @@ MonoBehaviour:
     localPositionOffset: {x: 0, y: 0, z: 0.08}
     localEulerOffset: {x: 0, y: 0, z: 0}
     localScale: {x: 0.72, y: 0.72, z: 0.72}
-    lifetimeSeconds: 0.16
+    lifetimeSeconds: 0.42
     prewarmCount: 0
     parentToAnchor: 0
     alignForwardToDirection: 1

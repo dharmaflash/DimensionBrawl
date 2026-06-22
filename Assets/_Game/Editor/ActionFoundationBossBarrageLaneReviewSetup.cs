@@ -5658,7 +5658,11 @@ namespace DimensionBrawl.Editor
                 CombatVfxCueId.SummonFollowupWindow,
                 "CueAssetVfx_MagicMissilesFollowupCircle",
                 "summon follow-up window MagicMissiles circle overlay");
-            ValidateCombatCueHasNoAuthoredAudio(profile, CombatVfxCueId.PlayerRangedMuzzleFlash, "player ranged muzzle flash");
+            ValidateCombatCueHasReviewedGunshotAudioBank(
+                profile,
+                CombatVfxCueId.PlayerRangedMuzzleFlash,
+                ActionFoundationCombatVfxSetup.GetPlayerRangedGunshotClipPaths(),
+                "player ranged muzzle flash");
             ValidateCombatCueHasNoAuthoredAudio(profile, CombatVfxCueId.PlayerRangedProjectileImpact, "player ranged projectile impact");
             ValidateCombatCueHasNoAuthoredAudio(profile, CombatVfxCueId.EliteSummonSignal, "summon signal");
             ValidateCombatCueHasNoAuthoredAudio(profile, CombatVfxCueId.SummonBlockOpportunity, "summon block opportunity");
@@ -5703,6 +5707,73 @@ namespace DimensionBrawl.Editor
                 string clipPath = AssetDatabase.GetAssetPath(audioSource.clip).Replace('\\', '/');
                 throw new InvalidOperationException(
                     $"{label} should stay visual-only until the reviewed audio pass, found {clipPath}.");
+            }
+        }
+
+        private static void ValidateCombatCueHasReviewedGunshotAudioBank(
+            CombatVfxCueProfile profile,
+            CombatVfxCueId cueId,
+            string[] expectedClipPaths,
+            string label)
+        {
+            if (!profile.TryGetCue(cueId, out CombatVfxCue cue) || cue.Prefab == null)
+            {
+                throw new InvalidOperationException($"Boss barrage combat cue profile is missing {cueId}.");
+            }
+
+            if (cue.LifetimeSeconds < 0.34f || cue.LifetimeSeconds > 0.55f)
+            {
+                throw new InvalidOperationException($"{label} cue lifetime should keep the reviewed gunshot short and snappy.");
+            }
+
+            CombatVfxCueAudioRandomizer[] randomizers = cue.Prefab.GetComponentsInChildren<CombatVfxCueAudioRandomizer>(includeInactive: true);
+            if (randomizers.Length != 1)
+            {
+                throw new InvalidOperationException($"{label} should carry exactly one reviewed audio randomizer, found {randomizers.Length}.");
+            }
+
+            CombatVfxCueAudioRandomizer randomizer = randomizers[0];
+            if (randomizer.ClipCount != expectedClipPaths.Length)
+            {
+                throw new InvalidOperationException($"{label} should carry {expectedClipPaths.Length} reviewed gunshot clips, found {randomizer.ClipCount}.");
+            }
+
+            for (int i = 0; i < expectedClipPaths.Length; i++)
+            {
+                AudioClip clip = randomizer.GetClip(i);
+                string clipPath = AssetDatabase.GetAssetPath(clip).Replace('\\', '/');
+                if (!string.Equals(clipPath, expectedClipPaths[i], StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException($"{label} should use reviewed audio clip {expectedClipPaths[i]}, found {clipPath}.");
+                }
+
+                ValidateGameOwnedAsset(clip, $"{label}.{clip.name} audio clip");
+                ValidateNoImportedDependencies(clip, $"{label}.{clip.name} audio clip");
+            }
+
+            AudioSource source = randomizer.Source;
+            if (source == null)
+            {
+                throw new InvalidOperationException($"{label} audio randomizer should reference its local AudioSource.");
+            }
+
+            if (source.clip != null || source.playOnAwake || source.loop)
+            {
+                throw new InvalidOperationException($"{label} audio should be randomizer-driven, one-shot only, and must not auto-play or loop.");
+            }
+
+            if (source.volume < 0.55f || Mathf.Abs(source.pitch - 1f) > 0.01f || source.spatialBlend > 0.05f)
+            {
+                throw new InvalidOperationException($"{label} audio source should stay clear, unpitched by default, and local-player readable.");
+            }
+
+            if (randomizer.BaseVolume < 0.6f
+                || randomizer.MinimumPitch < 1f
+                || randomizer.MaximumPitch > 1.1f
+                || randomizer.MinimumVolumeMultiplier < 0.9f
+                || randomizer.MaximumVolumeMultiplier > 1.08f)
+            {
+                throw new InvalidOperationException($"{label} audio randomization should stay subtle and readable.");
             }
         }
 

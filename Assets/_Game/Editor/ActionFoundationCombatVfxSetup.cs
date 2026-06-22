@@ -39,7 +39,27 @@ namespace DimensionBrawl.Editor
         private const string MuzzleSmokeTexturePath = TextureRoot + "/T_VFX_SmokePuff_Animated_NonDir01_Optimized.tga";
         private const string MuzzleFlashShaderPath = ShaderRoot + "/SH_Vefects_URP_VFX_Muzzle_Flash.shader";
         private const string MuzzleSmokeShaderPath = ShaderRoot + "/SH_Vefects_URP_VFX_Muzzle_Smoke.shader";
+        private static readonly string[] PlayerRangedGunshotClipPaths =
+        {
+            "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Gunshot_01.wav",
+            "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Gunshot_02.wav",
+            "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Gunshot_03.wav",
+            "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Gunshot_04.wav",
+            "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Gunshot_05.wav",
+        };
+
+        private const string PlayerRangedGunshotAudioName = "ReviewedGunshot_PlayerRangedBasic";
+        private const float PlayerRangedGunshotBaseVolume = 0.72f;
+        private const float PlayerRangedGunshotMinimumPitch = 1.02f;
+        private const float PlayerRangedGunshotMaximumPitch = 1.08f;
+        private const float PlayerRangedGunshotMinimumVolumeMultiplier = 0.94f;
+        private const float PlayerRangedGunshotMaximumVolumeMultiplier = 1.04f;
         private const string PoolRootName = "ActionFoundation_CombatVfxPool";
+
+        public static string[] GetPlayerRangedGunshotClipPaths()
+        {
+            return (string[])PlayerRangedGunshotClipPaths.Clone();
+        }
 
         [MenuItem("DimensionBrawl/Reapply Action Foundation Combat VFX Cues")]
         public static void ReapplyCombatVfxCuesMenu()
@@ -56,6 +76,25 @@ namespace DimensionBrawl.Editor
             EditorSceneManager.SaveScene(scene);
             AssetDatabase.SaveAssets();
             Debug.Log("Reapplied ActionFoundation combat VFX cue assets and scene bindings.");
+        }
+
+        [MenuItem("DimensionBrawl/Refresh Player Ranged Gunshot Audio Bank")]
+        public static void RefreshPlayerRangedGunshotAudioBankMenu()
+        {
+            const string prefabPath = PrefabRoot + "/DB_VFX_PlayerRangedMuzzleFlash.prefab";
+            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
+            try
+            {
+                AttachReviewedGunshotAudio(prefabRoot);
+                PrefabUtility.SaveAsPrefabAsset(prefabRoot, prefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+
+            AssetDatabase.SaveAssets();
+            Debug.Log("Refreshed player ranged gunshot audio bank on the promoted muzzle flash prefab.");
         }
 
         [MenuItem("DimensionBrawl/Validate Action Foundation Combat VFX Cues")]
@@ -120,7 +159,11 @@ namespace DimensionBrawl.Editor
 
             ValidateProjectileCueVisual(profile, CombatVfxCueId.EnemyLinePressureActive, 3f);
             ValidateProjectileCueVisual(profile, CombatVfxCueId.EnemyRetreatShotActive, 2.8f);
-            ValidateCueHasNoAuthoredAudio(profile, CombatVfxCueId.PlayerRangedMuzzleFlash, "player ranged muzzle flash");
+            ValidateCueHasReviewedGunshotAudioBank(
+                profile,
+                CombatVfxCueId.PlayerRangedMuzzleFlash,
+                PlayerRangedGunshotClipPaths,
+                "player ranged muzzle flash");
             ValidateCueHasNoAuthoredAudio(profile, CombatVfxCueId.PlayerRangedProjectileImpact, "player ranged projectile impact");
             ValidateCueHasNoAuthoredAudio(profile, CombatVfxCueId.EliteSummonSignal, "summon signal");
             ValidateCueHasNoAuthoredAudio(profile, CombatVfxCueId.SummonBlockOpportunity, "summon block opportunity");
@@ -426,6 +469,72 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static void ValidateCueHasReviewedGunshotAudioBank(
+            CombatVfxCueProfile profile,
+            CombatVfxCueId cueId,
+            string[] expectedClipPaths,
+            string label)
+        {
+            if (!profile.TryGetCue(cueId, out CombatVfxCue cue) || cue.Prefab == null)
+            {
+                throw new InvalidOperationException($"{label} should reference a promoted combat VFX prefab.");
+            }
+
+            if (cue.LifetimeSeconds < 0.34f || cue.LifetimeSeconds > 0.55f)
+            {
+                throw new InvalidOperationException($"{label} cue lifetime should keep the reviewed gunshot short and snappy.");
+            }
+
+            CombatVfxCueAudioRandomizer[] randomizers = cue.Prefab.GetComponentsInChildren<CombatVfxCueAudioRandomizer>(includeInactive: true);
+            if (randomizers.Length != 1)
+            {
+                throw new InvalidOperationException($"{label} should carry exactly one reviewed audio randomizer, found {randomizers.Length}.");
+            }
+
+            CombatVfxCueAudioRandomizer randomizer = randomizers[0];
+            if (randomizer.ClipCount != expectedClipPaths.Length)
+            {
+                throw new InvalidOperationException($"{label} should carry {expectedClipPaths.Length} reviewed gunshot clips, found {randomizer.ClipCount}.");
+            }
+
+            for (int i = 0; i < expectedClipPaths.Length; i++)
+            {
+                AudioClip clip = randomizer.GetClip(i);
+                string clipPath = AssetDatabase.GetAssetPath(clip).Replace('\\', '/');
+                if (!string.Equals(clipPath, expectedClipPaths[i], StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException($"{label} should use reviewed audio clip {expectedClipPaths[i]}, found {clipPath}.");
+                }
+
+                ValidateNoImportedAssetDependencies(cueId, clipPath);
+            }
+
+            AudioSource source = randomizer.Source;
+            if (source == null)
+            {
+                throw new InvalidOperationException($"{label} audio randomizer should reference its local AudioSource.");
+            }
+
+            if (source.clip != null || source.playOnAwake || source.loop)
+            {
+                throw new InvalidOperationException($"{label} audio should be randomizer-driven, one-shot only, and must not auto-play or loop.");
+            }
+
+            if (source.volume < 0.55f || Mathf.Abs(source.pitch - 1f) > 0.01f || source.spatialBlend > 0.05f)
+            {
+                throw new InvalidOperationException($"{label} audio source should stay clear, unpitched by default, and local-player readable.");
+            }
+
+            if (randomizer.BaseVolume < 0.6f
+                || randomizer.MinimumPitch < 1f
+                || randomizer.MaximumPitch > 1.1f
+                || randomizer.MinimumVolumeMultiplier < 0.9f
+                || randomizer.MaximumVolumeMultiplier > 1.08f)
+            {
+                throw new InvalidOperationException($"{label} audio randomization should stay subtle and readable.");
+            }
+        }
+
         private static void ValidateNoImportedAssetDependencies(CombatVfxCueId cueId, string prefabPath)
         {
             string[] dependencies = AssetDatabase.GetDependencies(prefabPath, recursive: true);
@@ -448,7 +557,7 @@ namespace DimensionBrawl.Editor
                 new CueDefinition(CombatVfxCueId.PlayerDodgeStart, prefabs.PlayerDodgeStart, new Vector3(0f, 0f, -0.15f), Vector3.zero, new Vector3(1.1f, 0.8f, 1.5f), 0.46f, false, true),
                 new CueDefinition(CombatVfxCueId.PlayerDamaged, prefabs.EnemyHit, new Vector3(0f, 0.72f, 0f), Vector3.zero, new Vector3(0.14f, 0.12f, 0.14f), 0.22f, true, false),
                 new CueDefinition(CombatVfxCueId.PlayerCritical, prefabs.EnemyHit, new Vector3(0f, 0.82f, 0f), Vector3.zero, new Vector3(0.1f, 0.09f, 0.1f), 0.22f, true, false),
-                new CueDefinition(CombatVfxCueId.PlayerRangedMuzzleFlash, prefabs.PlayerRangedMuzzleFlash, new Vector3(0f, 0f, 0.08f), Vector3.zero, new Vector3(0.72f, 0.72f, 0.72f), 0.16f, false, true),
+                new CueDefinition(CombatVfxCueId.PlayerRangedMuzzleFlash, prefabs.PlayerRangedMuzzleFlash, new Vector3(0f, 0f, 0.08f), Vector3.zero, new Vector3(0.72f, 0.72f, 0.72f), 0.42f, false, true),
                 new CueDefinition(CombatVfxCueId.PlayerRangedProjectileImpact, prefabs.PlayerRangedProjectileImpact, new Vector3(0f, 0.04f, 0f), Vector3.zero, new Vector3(0.9f, 0.9f, 0.9f), 0.46f, false, true),
                 new CueDefinition(CombatVfxCueId.EnemyWindup, prefabs.EnemyWindup, Vector3.zero, Vector3.zero, Vector3.one, 0.55f, true, true),
                 new CueDefinition(CombatVfxCueId.EnemyAttackActive, prefabs.EnemyAttackActive, new Vector3(0f, 0f, 0.7f), Vector3.zero, Vector3.one, 0.28f, false, true),
@@ -681,6 +790,8 @@ namespace DimensionBrawl.Editor
                 9f,
                 new Color(1f, 0.76f, 0.28f, 0.96f));
 
+            AttachReviewedGunshotAudio(root);
+
             CombatVfxCueVisual visual = root.AddComponent<CombatVfxCueVisual>();
             ConfigureCueVisual(
                 visual,
@@ -697,6 +808,58 @@ namespace DimensionBrawl.Editor
             GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
             UnityEngine.Object.DestroyImmediate(root);
             return savedPrefab;
+        }
+
+        private static void AttachReviewedGunshotAudio(GameObject root)
+        {
+            AudioClip[] clips = LoadReviewedGunshotClips();
+            Transform existing = root.transform.Find(PlayerRangedGunshotAudioName);
+            if (existing != null)
+            {
+                UnityEngine.Object.DestroyImmediate(existing.gameObject);
+            }
+
+            GameObject audioObject = new GameObject(PlayerRangedGunshotAudioName);
+            audioObject.transform.SetParent(root.transform, worldPositionStays: false);
+            AudioSource source = audioObject.AddComponent<AudioSource>();
+            source.clip = null;
+            source.playOnAwake = false;
+            source.loop = false;
+            source.volume = PlayerRangedGunshotBaseVolume;
+            source.pitch = 1f;
+            source.spatialBlend = 0f;
+            source.dopplerLevel = 0f;
+            source.rolloffMode = AudioRolloffMode.Linear;
+            source.minDistance = 4f;
+            source.maxDistance = 24f;
+            CombatVfxCueAudioRandomizer randomizer = audioObject.AddComponent<CombatVfxCueAudioRandomizer>();
+            randomizer.Configure(
+                source,
+                clips,
+                PlayerRangedGunshotBaseVolume,
+                PlayerRangedGunshotMinimumPitch,
+                PlayerRangedGunshotMaximumPitch,
+                PlayerRangedGunshotMinimumVolumeMultiplier,
+                PlayerRangedGunshotMaximumVolumeMultiplier);
+            EditorUtility.SetDirty(source);
+            EditorUtility.SetDirty(randomizer);
+        }
+
+        private static AudioClip[] LoadReviewedGunshotClips()
+        {
+            AudioClip[] clips = new AudioClip[PlayerRangedGunshotClipPaths.Length];
+            for (int i = 0; i < PlayerRangedGunshotClipPaths.Length; i++)
+            {
+                AudioClip clip = AssetDatabase.LoadAssetAtPath<AudioClip>(PlayerRangedGunshotClipPaths[i]);
+                if (clip == null)
+                {
+                    throw new FileNotFoundException($"Missing reviewed gunshot clip at {PlayerRangedGunshotClipPaths[i]}.");
+                }
+
+                clips[i] = clip;
+            }
+
+            return clips;
         }
 
         private static GameObject SaveRangedProjectileImpactPrefab(
