@@ -199,9 +199,19 @@ namespace DimensionBrawl.Editor
             }
 
             Transform sanctuaryRoot = RequireChild(lookdevRoot.transform, SanctuaryVisualsName);
-            if (sanctuaryRoot.GetComponentsInChildren<LineRenderer>(includeInactive: true).Length < 12)
+            if (sanctuaryRoot.GetComponentsInChildren<LineRenderer>(includeInactive: true).Length < 28)
             {
-                throw new InvalidOperationException("Olympus corridor sanctuary visuals should include rift, portal, and floor line renderers.");
+                throw new InvalidOperationException("Olympus corridor sanctuary visuals should include rift, portal, backdrop, and floor line renderers.");
+            }
+
+            if (CountNamedRenderers(sanctuaryRoot, "Backdrop_") < 8)
+            {
+                throw new InvalidOperationException("Olympus corridor sanctuary visuals should include far celestial backdrop silhouettes.");
+            }
+
+            if (CountNamedRenderers(sanctuaryRoot, "SkyConstellation_") < 2)
+            {
+                throw new InvalidOperationException("Olympus corridor sanctuary visuals should include sky constellation depth lines.");
             }
 
             if (CountNamedRenderers(sanctuaryRoot, "Billboard_") < 6)
@@ -954,6 +964,7 @@ namespace DimensionBrawl.Editor
 
             Vector3 gateCenter = new Vector3(14.8f, 2.65f, 0f);
             CreateCelestialGate(visualsRoot.transform, blueGlow, goldGlow, whiteGlow, gateCenter);
+            CreateCelestialDepthBackdrop(visualsRoot.transform, blueGlow, goldGlow, whiteGlow, gateCenter);
             CreateRiftStarburst(visualsRoot.transform, blueGlow, gateCenter);
             CreateFloorCracks(visualsRoot.transform, blueGlow, goldGlow);
             CreateCelestialLaneAccents(visualsRoot.transform, whiteGlow, goldGlow);
@@ -991,6 +1002,45 @@ namespace DimensionBrawl.Editor
             });
             CreateLine(parent, "GateFloorConvergence_Left", goldGlow, 0.085f, new[] { new Vector3(-6f, 0.19f, -2.25f), new Vector3(4.5f, 0.19f, -1.35f), center + new Vector3(0f, -2.25f, -0.45f) });
             CreateLine(parent, "GateFloorConvergence_Right", goldGlow, 0.085f, new[] { new Vector3(-6f, 0.19f, 2.25f), new Vector3(4.5f, 0.19f, 1.35f), center + new Vector3(0f, -2.25f, 0.45f) });
+        }
+
+        private static void CreateCelestialDepthBackdrop(Transform parent, Material blueGlow, Material goldGlow, Material whiteGlow, Vector3 gateCenter)
+        {
+            Vector3 farCenter = gateCenter + new Vector3(3.4f, 0.5f, 0f);
+            CreateCircleLine(parent, "Backdrop_Halo_FarBlue", blueGlow, farCenter, 3.1f, 0.028f, 160);
+            CreateCircleLine(parent, "Backdrop_Halo_FarGold", goldGlow, farCenter + new Vector3(-0.08f, 0.1f, 0f), 2.32f, 0.026f, 144);
+            CreateLine(parent, "Backdrop_Arch_WhiteCrown", whiteGlow, 0.038f, new[]
+            {
+                farCenter + new Vector3(-0.25f, -1.15f, -4.05f), farCenter + new Vector3(-0.1f, 1.3f, -3.05f),
+                farCenter + new Vector3(0f, 2.85f, -1.05f), farCenter + new Vector3(0.06f, 3.22f, 0f),
+                farCenter + new Vector3(0f, 2.85f, 1.05f), farCenter + new Vector3(-0.1f, 1.3f, 3.05f),
+                farCenter + new Vector3(-0.25f, -1.15f, 4.05f)
+            });
+            CreateLine(parent, "Backdrop_Spire_Center", whiteGlow, 0.06f, new[]
+            {
+                farCenter + new Vector3(0.1f, -1.45f, 0f), farCenter + new Vector3(0.05f, 0.2f, 0f),
+                farCenter + new Vector3(0f, 2.45f, 0f), farCenter + new Vector3(0.1f, 4.25f, 0f)
+            });
+            CreateLine(parent, "Backdrop_Spire_LeftA", blueGlow, 0.045f, new[] { farCenter + new Vector3(0f, -1.1f, -1.28f), farCenter + new Vector3(0.08f, 1.15f, -1.28f), farCenter + new Vector3(0.16f, 3.25f, -1.28f) });
+            CreateLine(parent, "Backdrop_Spire_RightA", blueGlow, 0.045f, new[] { farCenter + new Vector3(0f, -1.1f, 1.28f), farCenter + new Vector3(0.08f, 1.15f, 1.28f), farCenter + new Vector3(0.16f, 3.25f, 1.28f) });
+            CreateLine(parent, "Backdrop_Spire_LeftB", goldGlow, 0.035f, new[] { farCenter + new Vector3(-0.12f, -0.75f, -2.45f), farCenter + new Vector3(0f, 0.95f, -2.45f), farCenter + new Vector3(0.14f, 2.55f, -2.45f) });
+            CreateLine(parent, "Backdrop_Spire_RightB", goldGlow, 0.035f, new[] { farCenter + new Vector3(-0.12f, -0.75f, 2.45f), farCenter + new Vector3(0f, 0.95f, 2.45f), farCenter + new Vector3(0.14f, 2.55f, 2.45f) });
+            CreateLine(parent, "Backdrop_FloorMirror_Left", whiteGlow, 0.028f, new[] { new Vector3(2.2f, 0.235f, -2.8f), new Vector3(9.5f, 0.225f, -2.25f), farCenter + new Vector3(-0.35f, -2.25f, -0.95f) });
+            CreateLine(parent, "Backdrop_FloorMirror_Right", whiteGlow, 0.028f, new[] { new Vector3(2.2f, 0.235f, 2.8f), new Vector3(9.5f, 0.225f, 2.25f), farCenter + new Vector3(-0.35f, -2.25f, 0.95f) });
+            CreateLine(parent, "SkyConstellation_Left", goldGlow, 0.026f, new[]
+            {
+                new Vector3(5.5f, 4.05f, -4.55f), new Vector3(8.2f, 4.85f, -3.95f), new Vector3(11.7f, 4.5f, -3.45f),
+                new Vector3(14.4f, 5.35f, -2.55f), new Vector3(17.4f, 4.95f, -1.35f)
+            });
+            CreateLine(parent, "SkyConstellation_Right", whiteGlow, 0.024f, new[]
+            {
+                new Vector3(4.8f, 4.35f, 4.35f), new Vector3(7.7f, 5.1f, 3.6f), new Vector3(10.8f, 4.65f, 3.0f),
+                new Vector3(13.6f, 5.55f, 2.25f), new Vector3(16.8f, 5.15f, 1.18f)
+            });
+            CreateLine(parent, "SideArc_LeftUpperBlue", blueGlow, 0.035f, new[] { new Vector3(-7.8f, 2.55f, -3.55f), new Vector3(-1.2f, 3.1f, -3.35f), new Vector3(6.8f, 3.45f, -3.05f), new Vector3(14.6f, 3.75f, -2.45f) });
+            CreateLine(parent, "SideArc_RightUpperBlue", blueGlow, 0.035f, new[] { new Vector3(-7.8f, 2.55f, 3.55f), new Vector3(-1.2f, 3.1f, 3.35f), new Vector3(6.8f, 3.45f, 3.05f), new Vector3(14.6f, 3.75f, 2.45f) });
+            CreateLine(parent, "SideArc_LeftGoldNeedle", goldGlow, 0.024f, new[] { new Vector3(-6.5f, 1.45f, -3.05f), new Vector3(1.5f, 2.15f, -2.65f), new Vector3(10.5f, 2.75f, -1.85f) });
+            CreateLine(parent, "SideArc_RightGoldNeedle", goldGlow, 0.024f, new[] { new Vector3(-6.5f, 1.45f, 3.05f), new Vector3(1.5f, 2.15f, 2.65f), new Vector3(10.5f, 2.75f, 1.85f) });
         }
 
         private static void CreateCelestialLaneAccents(Transform parent, Material whiteGlow, Material goldGlow)
