@@ -15,6 +15,7 @@ namespace DimensionBrawl.Editor
         private const string SourceScenePath = "Assets/_Imported/Hivemind/OlympusTemple/HDRP/Scene/L_Olympus.unity";
         private const string SceneRoot = "Assets/_Game/Scenes/Lookdev";
         private const string TargetScenePath = SceneRoot + "/OlympusCorridorLookdev.unity";
+        private const string DenseTargetScenePath = SceneRoot + "/OlympusCorridorDenseLookdev.unity";
         private const string ArtRoot = "Assets/_Game/Art/Environment/OlympusCorridor";
         private const string ProfileRoot = ArtRoot + "/Profiles";
         private const string MaterialRoot = ArtRoot + "/Materials";
@@ -43,6 +44,7 @@ namespace DimensionBrawl.Editor
         private const string ShapesFxGeometryRoot = ShapesFxRoot + "/Geometry";
         private const string ShapesFxMaterialRoot = ShapesFxRoot + "/Materials/ShapesFX";
         private const string LookdevRootName = "OlympusCorridorLookdev_RuntimeFreePass";
+        private const string DenseLookdevRootName = "OlympusCorridorDenseLookdev_RuntimeFreePass";
         private const string ImportedSkyFogVolumeName = "Sky and Fog Global Volume";
         private const string ImportedLightingRootName = "Lights";
         private const string VolumeName = "OlympusCorridor_GlobalPostProcess";
@@ -53,6 +55,7 @@ namespace DimensionBrawl.Editor
         private const string PreviewFileName = "olympus-corridor-lookdev-preview.png";
         private const string ClosePreviewFileName = "olympus-corridor-lookdev-close-preview.png";
         private const string HighPreviewFileName = "olympus-corridor-lookdev-high-preview.png";
+        private const string DensePreviewFileName = "olympus-corridor-dense-lookdev-preview.png";
 
         [MenuItem("DimensionBrawl/Reapply Olympus Corridor Lookdev")]
         public static void ReapplyOlympusCorridorLookdevMenu()
@@ -75,7 +78,7 @@ namespace DimensionBrawl.Editor
             Debug.Log($"Rendered Olympus corridor lookdev preview: {previewPath}");
         }
 
-        public static void ReapplyOlympusCorridorLookdev()
+        private static void EnsureLookdevSceneExists(string targetScenePath)
         {
             EnsureFolder("Assets/_Game/Scenes");
             EnsureFolder(SceneRoot);
@@ -94,13 +97,18 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"Missing imported Olympus source scene: {SourceScenePath}");
             }
 
-            if (!AssetDatabase.LoadAssetAtPath<SceneAsset>(TargetScenePath))
+            if (!AssetDatabase.LoadAssetAtPath<SceneAsset>(targetScenePath))
             {
-                if (!AssetDatabase.CopyAsset(SourceScenePath, TargetScenePath))
+                if (!AssetDatabase.CopyAsset(SourceScenePath, targetScenePath))
                 {
-                    throw new InvalidOperationException($"Failed to copy Olympus source scene to {TargetScenePath}.");
+                    throw new InvalidOperationException($"Failed to copy Olympus source scene to {targetScenePath}.");
                 }
             }
+        }
+        public static void ReapplyOlympusCorridorLookdev()
+        {
+            EnsureLookdevSceneExists(TargetScenePath);
+
 
             Scene scene = EditorSceneManager.OpenScene(TargetScenePath, OpenSceneMode.Single);
             ConfigureOpenCombatSightline(scene);
@@ -264,6 +272,29 @@ namespace DimensionBrawl.Editor
             EditorSceneManager.SaveScene(scene);
             AssetDatabase.SaveAssets();
         }
+        [MenuItem("DimensionBrawl/Rebuild Olympus Corridor Dense Lookdev")]
+        public static void RebuildOlympusCorridorDenseLookdevMenu()
+        {
+            RebuildOlympusCorridorDenseLookdev();
+            Debug.Log("Rebuilt Olympus corridor dense lookdev scene.");
+        }
+
+        public static void RebuildOlympusCorridorDenseLookdev()
+        {
+            EnsureLookdevSceneExists(DenseTargetScenePath);
+            Scene scene = EditorSceneManager.OpenScene(DenseTargetScenePath, OpenSceneMode.Single);
+            RestoreFullDemoRendererDensity(scene);
+            ConfigureImportedLighting(scene);
+            RestoreSourceEnvironmentMaterials(scene);
+            ConfigurePgrPreserveEnvironmentMaterials(scene);
+            ConfigureSceneAtmosphere(scene);
+            ConfigureImportedSkyFogVolumes(scene);
+            ConfigureDenseLookdevRoot(scene);
+            ClearGeneratedLightingData(scene);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            AssetDatabase.SaveAssets();
+        }
         public static void DisableOlympusCorridorImportedLightingOnly()
         {
             Scene scene = EditorSceneManager.OpenScene(TargetScenePath, OpenSceneMode.Single);
@@ -314,10 +345,32 @@ namespace DimensionBrawl.Editor
                 58f);
         }
 
+        [MenuItem("DimensionBrawl/Render Olympus Corridor Dense Preview")]
+        public static void RenderOlympusCorridorDenseLookdevPreviewMenu()
+        {
+            string previewPath = RenderOlympusCorridorDenseLookdevPreview();
+            Debug.Log($"Rendered Olympus corridor dense preview: {previewPath}");
+        }
+
+        public static string RenderOlympusCorridorDenseLookdevPreview()
+        {
+            Camera camera = OpenLookdevCamera(DenseTargetScenePath, DenseLookdevRootName);
+            return RenderPreviewWithTemporaryCameraPose(
+                camera,
+                DensePreviewFileName,
+                new Vector3(-9.8f, 2.85f, 0f),
+                Quaternion.Euler(12.5f, 90f, 0f),
+                68f);
+        }
         private static Camera OpenLookdevCamera()
         {
-            Scene scene = EditorSceneManager.OpenScene(TargetScenePath, OpenSceneMode.Single);
-            GameObject lookdevRoot = RequireRoot(scene, LookdevRootName);
+            return OpenLookdevCamera(TargetScenePath, LookdevRootName);
+        }
+
+        private static Camera OpenLookdevCamera(string scenePath, string lookdevRootName)
+        {
+            Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
+            GameObject lookdevRoot = RequireRoot(scene, lookdevRootName);
             return RequireComponent<Camera>(RequireChild(lookdevRoot.transform, CameraName).gameObject);
         }
 
@@ -395,7 +448,7 @@ namespace DimensionBrawl.Editor
             int restoredSlots = 0;
             foreach (GameObject root in scene.GetRootGameObjects())
             {
-                if (root.name == LookdevRootName)
+                if (IsGeneratedLookdevRoot(root.name))
                 {
                     continue;
                 }
@@ -472,7 +525,7 @@ namespace DimensionBrawl.Editor
             int remappedSlots = 0;
             foreach (GameObject root in scene.GetRootGameObjects())
             {
-                if (root.name == LookdevRootName)
+                if (IsGeneratedLookdevRoot(root.name))
                 {
                     continue;
                 }
@@ -526,6 +579,37 @@ namespace DimensionBrawl.Editor
             Debug.Log($"Olympus corridor lookdev remapped {remappedSlots} material slots into {remapCache.Count} PGR-preserve Olympus material variants.");
         }
 
+        private static bool IsGeneratedLookdevRoot(string rootName)
+        {
+            return string.Equals(rootName, LookdevRootName, StringComparison.Ordinal)
+                || string.Equals(rootName, DenseLookdevRootName, StringComparison.Ordinal);
+        }
+
+        private static void RestoreFullDemoRendererDensity(Scene scene)
+        {
+            int restoredRendererCount = 0;
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                if (IsGeneratedLookdevRoot(root.name))
+                {
+                    continue;
+                }
+
+                foreach (MeshRenderer renderer in root.GetComponentsInChildren<MeshRenderer>(includeInactive: true))
+                {
+                    if (renderer.enabled)
+                    {
+                        continue;
+                    }
+
+                    renderer.enabled = true;
+                    restoredRendererCount++;
+                    EditorUtility.SetDirty(renderer);
+                }
+            }
+
+            Debug.Log($"Olympus corridor dense lookdev restored {restoredRendererCount} source mesh renderers for demo-level structure density.");
+        }
         private static bool ShouldUsePgrPreserveSourceMaterial(Material sourceMaterial)
         {
             if (sourceMaterial == null)
@@ -905,6 +989,21 @@ namespace DimensionBrawl.Editor
             return profile;
         }
 
+        private static void ConfigureDenseLookdevRoot(Scene scene)
+        {
+            RemoveRoot(scene, DenseLookdevRootName);
+
+            GameObject root = new GameObject(DenseLookdevRootName);
+            SceneManager.MoveGameObjectToScene(root, scene);
+
+            ConfigurePostProcessVolume(root.transform);
+            ConfigureDenseLookdevCamera(root.transform);
+            ConfigureLookdevLighting(root.transform);
+            ConfigureSanctuaryVisuals(root.transform);
+            ConfigureCombatAnchors(root.transform);
+
+            EditorUtility.SetDirty(root);
+        }
         private static void ConfigureLookdevCamera(Transform root)
         {
             GameObject cameraObject = CreateChild(
@@ -932,6 +1031,32 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(cameraData);
         }
 
+        private static void ConfigureDenseLookdevCamera(Transform root)
+        {
+            GameObject cameraObject = CreateChild(
+                root,
+                CameraName,
+                new Vector3(-9.8f, 2.85f, 0f),
+                Quaternion.Euler(12.5f, 90f, 0f),
+                Vector3.one);
+
+            Camera camera = cameraObject.AddComponent<Camera>();
+            camera.fieldOfView = 68f;
+            camera.nearClipPlane = 0.05f;
+            camera.farClipPlane = 220f;
+            camera.allowHDR = true;
+            camera.allowMSAA = true;
+            camera.clearFlags = CameraClearFlags.Skybox;
+            camera.depth = 10f;
+
+            UniversalAdditionalCameraData cameraData = camera.GetUniversalAdditionalCameraData();
+            cameraData.renderPostProcessing = true;
+            cameraData.antialiasing = AntialiasingMode.FastApproximateAntialiasing;
+            cameraData.antialiasingQuality = AntialiasingQuality.High;
+
+            EditorUtility.SetDirty(camera);
+            EditorUtility.SetDirty(cameraData);
+        }
         private static void ConfigureLookdevLighting(Transform root)
         {
             GameObject lightingRoot = CreateChild(root, LightingName, Vector3.zero, Quaternion.identity, Vector3.one);
@@ -1462,7 +1587,7 @@ namespace DimensionBrawl.Editor
             int disabledCount = 0;
             foreach (GameObject root in scene.GetRootGameObjects())
             {
-                if (root.name == LookdevRootName)
+                if (IsGeneratedLookdevRoot(root.name))
                 {
                     continue;
                 }
@@ -1676,7 +1801,7 @@ namespace DimensionBrawl.Editor
             int disabledCount = 0;
             foreach (GameObject root in scene.GetRootGameObjects())
             {
-                if (root.name == LookdevRootName)
+                if (IsGeneratedLookdevRoot(root.name))
                 {
                     continue;
                 }
