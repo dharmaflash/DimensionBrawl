@@ -1,5 +1,6 @@
 using System;
 using System.IO;
+using DimensionBrawl.Presentation;
 using UnityEditor;
 using UnityEngine;
 
@@ -8,16 +9,16 @@ namespace DimensionBrawl.Editor
     public static class ActionFoundationInoriPlayerVisualAssetSetup
     {
         public const string SourcePrefabPath =
-            "Assets/_Imported/AssetStore/RoloArt/Inori/Prefabs/Inori_BasicSetup_Costume2.prefab";
+            "Assets/_Imported/AssetStore/RoloArt/Inori/Prefabs/Inori_MagicaCloth2_Costume1.prefab";
         public const string ModelPath =
             "Assets/_Game/Art/Characters/Player/Inori/Models/Inori_Unity.fbx";
+        public const string RiflePoseTuningProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_InoriRiflePoseTuning.asset";
 
         private const string SourceRoot = "Assets/_Imported/AssetStore/RoloArt/Inori";
         private const string SourceModelPath = SourceRoot + "/FBX/Inori_Unity.fbx";
         private const string MaterialRoot = "Assets/_Game/Art/Characters/Player/Inori/Materials";
         private const string TextureRoot = "Assets/_Game/Art/Characters/Player/Inori/Textures";
-        private const string ReferenceToonMaterialPath =
-            "Assets/_Game/Art/Characters/Player/CombatGirlSwordShield/Materials/DB_CombatGirl_Body.mat";
 
         private static readonly MaterialSpec[] MaterialSpecs =
         {
@@ -45,6 +46,7 @@ namespace DimensionBrawl.Editor
         {
             PromoteModel();
             PromoteMaterials();
+            EnsureRiflePoseTuningProfile();
             AssetDatabase.SaveAssets();
         }
 
@@ -68,16 +70,6 @@ namespace DimensionBrawl.Editor
                 ? string.Empty
                 : sourceMaterialName.ToLowerInvariant();
 
-            if (lower.Contains("costume2", StringComparison.Ordinal))
-            {
-                return LoadMaterial("DB_Inori_Body_Costume2");
-            }
-
-            if (lower.Contains("costume1", StringComparison.Ordinal))
-            {
-                return LoadMaterial("DB_Inori_Body_Costume1");
-            }
-
             if (lower.Contains("costumeextra", StringComparison.Ordinal))
             {
                 return LoadMaterial("DB_Inori_CostumeExtra");
@@ -91,6 +83,16 @@ namespace DimensionBrawl.Editor
             if (lower.Contains("costume_b", StringComparison.Ordinal))
             {
                 return LoadMaterial("DB_Inori_Costume_B");
+            }
+
+            if (lower.Contains("costume2", StringComparison.Ordinal))
+            {
+                return LoadMaterial("DB_Inori_Body_Costume2");
+            }
+
+            if (lower.Contains("costume1", StringComparison.Ordinal))
+            {
+                return LoadMaterial("DB_Inori_Body_Costume1");
             }
 
             if (lower.Contains("express", StringComparison.Ordinal))
@@ -182,14 +184,14 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"Promoted Inori material missing at {targetPath}.");
             }
 
-            targetMaterial.shader = ResolvePlayerToonShader() ?? sourceMaterial.shader;
+            targetMaterial.shader = sourceMaterial.shader;
+            targetMaterial.CopyPropertiesFromMaterial(sourceMaterial);
             string[] textureProperties = sourceMaterial.GetTexturePropertyNames();
             for (int i = 0; i < textureProperties.Length; i++)
             {
                 CopyTextureProperty(sourceMaterial, targetMaterial, textureProperties[i]);
             }
 
-            CopyMainTextureToCommonBaseSlots(sourceMaterial, targetMaterial);
             EditorUtility.SetDirty(targetMaterial);
         }
 
@@ -210,20 +212,6 @@ namespace DimensionBrawl.Editor
             return $"{MaterialRoot}/{materialName}.mat";
         }
 
-        private static Shader ResolvePlayerToonShader()
-        {
-            Material referenceMaterial = AssetDatabase.LoadAssetAtPath<Material>(ReferenceToonMaterialPath);
-            if (referenceMaterial != null &&
-                referenceMaterial.shader != null &&
-                !string.Equals(referenceMaterial.shader.name, "Hidden/InternalErrorShader", StringComparison.Ordinal))
-            {
-                return referenceMaterial.shader;
-            }
-
-            return Shader.Find("Universal Render Pipeline/Lit")
-                ?? Shader.Find("Standard");
-        }
-
         private static void CopyTextureProperty(Material sourceMaterial, Material targetMaterial, string propertyName)
         {
             if (!targetMaterial.HasProperty(propertyName))
@@ -234,36 +222,10 @@ namespace DimensionBrawl.Editor
             Texture sourceTexture = sourceMaterial.GetTexture(propertyName);
             targetMaterial.SetTexture(
                 propertyName,
-                sourceTexture != null ? PromoteTexture(sourceTexture, ClassifyTextureUsage(propertyName)) : null);
+                sourceTexture != null ? PromoteTexture(sourceTexture) : null);
         }
 
-        private static void CopyMainTextureToCommonBaseSlots(Material sourceMaterial, Material targetMaterial)
-        {
-            if (!sourceMaterial.HasProperty("_MainTex"))
-            {
-                return;
-            }
-
-            Texture sourceTexture = sourceMaterial.GetTexture("_MainTex");
-            if (sourceTexture == null)
-            {
-                return;
-            }
-
-            Texture promotedTexture = PromoteTexture(sourceTexture, TextureUsage.Color);
-            SetTextureIfPresent(targetMaterial, "_BaseMap", promotedTexture);
-            SetTextureIfPresent(targetMaterial, "_1st_ShadeMap", promotedTexture);
-        }
-
-        private static void SetTextureIfPresent(Material material, string propertyName, Texture texture)
-        {
-            if (material.HasProperty(propertyName))
-            {
-                material.SetTexture(propertyName, texture);
-            }
-        }
-
-        private static Texture PromoteTexture(Texture sourceTexture, TextureUsage usage)
+        private static Texture PromoteTexture(Texture sourceTexture)
         {
             string sourcePath = AssetDatabase.GetAssetPath(sourceTexture).Replace('\\', '/');
             if (string.IsNullOrWhiteSpace(sourcePath) || !sourcePath.StartsWith("Assets/_Imported/", StringComparison.Ordinal))
@@ -278,7 +240,7 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"Failed to promote Inori texture from {sourcePath} to {targetPath}.");
             }
 
-            ConfigureTextureImporter(targetPath, usage);
+            MirrorTextureImporter(sourcePath, targetPath);
             Texture promotedTexture = AssetDatabase.LoadAssetAtPath<Texture>(targetPath);
             if (promotedTexture == null)
             {
@@ -288,37 +250,44 @@ namespace DimensionBrawl.Editor
             return promotedTexture;
         }
 
-        private static void ConfigureTextureImporter(string path, TextureUsage usage)
+        private static void MirrorTextureImporter(string sourcePath, string targetPath)
         {
-            TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
-            if (importer == null)
+            TextureImporter sourceImporter = AssetImporter.GetAtPath(sourcePath) as TextureImporter;
+            TextureImporter targetImporter = AssetImporter.GetAtPath(targetPath) as TextureImporter;
+            if (sourceImporter == null || targetImporter == null)
             {
                 return;
             }
 
-            importer.textureType = usage == TextureUsage.Normal ? TextureImporterType.NormalMap : TextureImporterType.Default;
-            importer.sRGBTexture = usage == TextureUsage.Color;
-            importer.maxTextureSize = 2048;
-            importer.SaveAndReimport();
+            targetImporter.textureType = sourceImporter.textureType;
+            targetImporter.sRGBTexture = sourceImporter.sRGBTexture;
+            targetImporter.alphaSource = sourceImporter.alphaSource;
+            targetImporter.alphaIsTransparency = sourceImporter.alphaIsTransparency;
+            targetImporter.mipmapEnabled = sourceImporter.mipmapEnabled;
+            targetImporter.streamingMipmaps = sourceImporter.streamingMipmaps;
+            targetImporter.npotScale = sourceImporter.npotScale;
+            targetImporter.maxTextureSize = sourceImporter.maxTextureSize;
+            targetImporter.textureCompression = sourceImporter.textureCompression;
+            targetImporter.compressionQuality = sourceImporter.compressionQuality;
+            targetImporter.crunchedCompression = sourceImporter.crunchedCompression;
+            targetImporter.filterMode = sourceImporter.filterMode;
+            targetImporter.anisoLevel = sourceImporter.anisoLevel;
+            targetImporter.wrapMode = sourceImporter.wrapMode;
+            targetImporter.SetPlatformTextureSettings(sourceImporter.GetDefaultPlatformTextureSettings());
+            targetImporter.SaveAndReimport();
         }
 
-        private static TextureUsage ClassifyTextureUsage(string propertyName)
+        private static void EnsureRiflePoseTuningProfile()
         {
-            string lower = propertyName.ToLowerInvariant();
-            if (lower.Contains("normal", StringComparison.Ordinal) || lower.Contains("bump", StringComparison.Ordinal))
+            EnsureFolder(PathParent(RiflePoseTuningProfilePath));
+            if (AssetDatabase.LoadAssetAtPath<InoriRiflePoseTuningProfile>(RiflePoseTuningProfilePath) != null)
             {
-                return TextureUsage.Normal;
+                return;
             }
 
-            if (lower.Contains("metal", StringComparison.Ordinal)
-                || lower.Contains("spec", StringComparison.Ordinal)
-                || lower.Contains("mask", StringComparison.Ordinal)
-                || lower.Contains("matcap", StringComparison.Ordinal))
-            {
-                return TextureUsage.Linear;
-            }
-
-            return TextureUsage.Color;
+            InoriRiflePoseTuningProfile profile = ScriptableObject.CreateInstance<InoriRiflePoseTuningProfile>();
+            AssetDatabase.CreateAsset(profile, RiflePoseTuningProfilePath);
+            EditorUtility.SetDirty(profile);
         }
 
         private static ModelImporter RequireModelImporter(string path)
@@ -366,11 +335,5 @@ namespace DimensionBrawl.Editor
             public string TargetName { get; }
         }
 
-        private enum TextureUsage
-        {
-            Color,
-            Normal,
-            Linear
-        }
     }
 }
