@@ -115,7 +115,7 @@ MonoBehaviour:
     - enabled: 1
       delaySeconds: 0.1
       signalId: summon_spawn_signal
-      animatorTrigger:
+      animatorTrigger: 
       requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 27
@@ -124,7 +124,7 @@ MonoBehaviour:
     - enabled: 1
       delaySeconds: 0.42
       signalId: summon_landing_signal
-      animatorTrigger:
+      animatorTrigger: 
       requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 32
@@ -192,7 +192,7 @@ MonoBehaviour:
     - enabled: 1
       delaySeconds: 0.58
       signalId: ultimate_impact_signal
-      animatorTrigger:
+      animatorTrigger: 
       requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 30
@@ -242,7 +242,7 @@ MonoBehaviour:
     - enabled: 1
       delaySeconds: 0.1
       signalId: pressure_break_signal
-      animatorTrigger:
+      animatorTrigger: 
       requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 29
@@ -292,7 +292,7 @@ MonoBehaviour:
     - enabled: 1
       delaySeconds: 0.08
       signalId: followup_hit_signal
-      animatorTrigger:
+      animatorTrigger: 
       requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 30
@@ -342,7 +342,7 @@ MonoBehaviour:
     - enabled: 1
       delaySeconds: 0.12
       signalId: pocket_clear_signal
-      animatorTrigger:
+      animatorTrigger: 
       requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 35
@@ -383,7 +383,7 @@ MonoBehaviour:
     - enabled: 1
       delaySeconds: 0.08
       signalId: pocket_fail_signal
-      animatorTrigger:
+      animatorTrigger: 
       requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 36

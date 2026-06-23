@@ -241,11 +241,12 @@ namespace DimensionBrawl.Editor
         private const float BossProxyReviewMaxHealth = 980f;
         private const float BossProxyBodyHitboxRadius = 1.05f;
         private static readonly Vector3 BossProxyBodyHitboxCenter = new Vector3(0f, -0.35f, -0.05f);
-        private const float PlayerRangedBasicDamage = 28f;
+        private const int PlayerRangedBasicPrewarmCount = 16;
+        private const float PlayerRangedBasicDamage = 14f;
         private const float PlayerRangedBasicProjectileSpeed = 24f;
         private const float PlayerRangedBasicProjectileLifetimeSeconds = 1.75f;
         private const float PlayerRangedBasicProjectileRadius = 0.31f;
-        private const float PlayerRangedBasicFireIntervalSeconds = 0.24f;
+        private const float PlayerRangedBasicFireIntervalSeconds = 0.12f;
         private const float PlayerRangedBasicCameraAimFallbackDistance = 32f;
         private const float PlayerRangedBasicAimAssistDistance = 30f;
         private const float PlayerRangedBasicAimAssistAngleDegrees = 14f;
@@ -881,7 +882,7 @@ namespace DimensionBrawl.Editor
             ConfigureArenaInfluenceTargets(scene, player.transform, bossProxy.transform, closeThreat.transform);
             CreateLaneMarkers(scene, laneSpace);
             CreateLaneAmbientVfx(scene, laneSpace);
-            CreateLaneAmbientAudio(scene, laneSpace);
+            RemoveLaneAmbientAudio(scene);
             ConfigureBossBarrageLaneReviewFootstepAudio(scene);
             CreateBossBarrageTelegraphMarkers(scene, laneSpace, bossBarrageEmitter);
             // Keep the serialized default aligned with the ranged starting mode after all visual swaps are rebuilt.
@@ -1294,16 +1295,7 @@ namespace DimensionBrawl.Editor
         private static void RefreshBossBarrageLaneReviewAmbientAudio()
         {
             Scene scene = EditorSceneManager.OpenScene(ReviewScenePath, OpenSceneMode.Single);
-            GameObject existingRoot = FindRoot(scene, AmbientAudioRootName);
-            if (existingRoot != null)
-            {
-                UnityEngine.Object.DestroyImmediate(existingRoot);
-            }
-
-            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(
-                RequireRoot(scene, LaneRootName),
-                "lane space");
-            CreateLaneAmbientAudio(scene, laneSpace);
+            RemoveLaneAmbientAudio(scene);
             ValidateLaneAmbientAudio(scene);
 
             if (!EditorSceneManager.SaveScene(scene, ReviewScenePath))
@@ -1312,6 +1304,15 @@ namespace DimensionBrawl.Editor
             }
 
             AssetDatabase.SaveAssets();
+        }
+
+        private static void RemoveLaneAmbientAudio(Scene scene)
+        {
+            GameObject existingRoot = FindRoot(scene, AmbientAudioRootName);
+            if (existingRoot != null)
+            {
+                UnityEngine.Object.DestroyImmediate(existingRoot);
+            }
         }
 
         private static void RefreshBossBarrageLaneReviewFootstepAudio()
@@ -3806,7 +3807,8 @@ namespace DimensionBrawl.Editor
                 0.32f,
                 2f,
                 26f,
-                150);
+                150,
+                0.82f);
 
             ConfigureFootstepAudio(
                 RequireRoot(scene, CloseThreatRootName),
@@ -3820,7 +3822,8 @@ namespace DimensionBrawl.Editor
                 0.72f,
                 2.4f,
                 34f,
-                155);
+                155,
+                0.74f);
 
             ConfigureFootstepAudio(
                 RequireRoot(scene, BossProxyRootName),
@@ -3834,12 +3837,13 @@ namespace DimensionBrawl.Editor
                 0.82f,
                 3f,
                 44f,
-                165);
+                165,
+                0.7f);
 
-            ConfigurePrefabFootstepAudio(SummonSlot1ActorPrefabPath, HeavyFootstepClipPaths, 0.24f, 1.2f, 0.7f, 156);
-            ConfigurePrefabFootstepAudio(SummonSlot2ActorPrefabPath, ArmoredFootstepClipPaths, 0.2f, 1.28f, 0.68f, 160);
-            ConfigurePrefabFootstepAudio(SummonSlot3ActorPrefabPath, HeavyFootstepClipPaths, 0.3f, 1.35f, 0.76f, 152);
-            ConfigurePrefabFootstepAudio(BossSummonPressureActorPrefabPath, HeavyFootstepClipPaths, 0.28f, 1.3f, 0.78f, 154);
+            ConfigurePrefabFootstepAudio(SummonSlot1ActorPrefabPath, HeavyFootstepClipPaths, 0.24f, 1.2f, 0.7f, 156, 0.58f);
+            ConfigurePrefabFootstepAudio(SummonSlot2ActorPrefabPath, ArmoredFootstepClipPaths, 0.2f, 1.28f, 0.68f, 160, 0.54f);
+            ConfigurePrefabFootstepAudio(SummonSlot3ActorPrefabPath, HeavyFootstepClipPaths, 0.3f, 1.35f, 0.76f, 152, 0.6f);
+            ConfigurePrefabFootstepAudio(BossSummonPressureActorPrefabPath, HeavyFootstepClipPaths, 0.28f, 1.3f, 0.78f, 154, 0.62f);
         }
 
         private static void ConfigurePrefabFootstepAudio(
@@ -3848,7 +3852,8 @@ namespace DimensionBrawl.Editor
             float baseVolume,
             float metersPerStep,
             float spatialBlend,
-            int priority)
+            int priority,
+            float playbackVolumeScale)
         {
             GameObject editableRoot = PrefabUtility.LoadPrefabContents(prefabPath);
             try
@@ -3865,7 +3870,8 @@ namespace DimensionBrawl.Editor
                     spatialBlend,
                     2.5f,
                     36f,
-                    priority);
+                    priority,
+                    playbackVolumeScale);
                 PrefabUtility.SaveAsPrefabAsset(editableRoot, prefabPath);
             }
             finally
@@ -3886,7 +3892,8 @@ namespace DimensionBrawl.Editor
             float spatialBlend,
             float minDistance,
             float maxDistance,
-            int priority)
+            int priority,
+            float playbackVolumeScale)
         {
             Transform child = EnsureChild(root.transform, childName);
             child.localPosition = Vector3.zero;
@@ -3919,7 +3926,8 @@ namespace DimensionBrawl.Editor
                 0.96f,
                 1.05f,
                 0.84f,
-                1.08f);
+                1.08f,
+                playbackVolumeScale);
 
             EditorUtility.SetDirty(child.gameObject);
             EditorUtility.SetDirty(source);
@@ -4800,8 +4808,10 @@ namespace DimensionBrawl.Editor
             SetObjectReference(driver, "muzzleAnchor", muzzleAnchor);
             SetEnum(driver, "muzzleFlashCueId", (int)CombatVfxCueId.PlayerRangedMuzzleFlash);
             SetFloat(driver, "muzzleFlashIntensity", 1f);
+            SetFloat(driver, "muzzleFlashAudioIntensity", 1f);
             SetEnum(driver, "impactCueId", (int)CombatVfxCueId.PlayerRangedProjectileImpact);
             SetFloat(driver, "impactIntensity", 1f);
+            SetFloat(driver, "impactAudioIntensity", 0.56f);
             EditorUtility.SetDirty(player);
             EditorUtility.SetDirty(driver);
         }
@@ -4960,8 +4970,10 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(driver, "muzzleAnchor", muzzleAnchor);
             ValidateEnum(driver, "muzzleFlashCueId", (int)CombatVfxCueId.PlayerRangedMuzzleFlash);
             ValidateFloat(driver, "muzzleFlashIntensity", 1f);
+            ValidateFloat(driver, "muzzleFlashAudioIntensity", 1f);
             ValidateEnum(driver, "impactCueId", (int)CombatVfxCueId.PlayerRangedProjectileImpact);
             ValidateFloat(driver, "impactIntensity", 1f);
+            ValidateFloat(driver, "impactAudioIntensity", 0.56f);
         }
 
         private static void ValidatePlayerCombatVfxCueDriver(
@@ -5590,7 +5602,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(rangedBasicAttackAction, "projectileRoot", projectileRoot);
             SetObjectReference(rangedBasicAttackAction, "fireOrigin", fireOrigin);
             SetEnum(rangedBasicAttackAction, "sourceTeam", (int)DamageTeam.Player);
-            SetInt(rangedBasicAttackAction, "prewarmCount", 8);
+            SetInt(rangedBasicAttackAction, "prewarmCount", PlayerRangedBasicPrewarmCount);
             SetBool(rangedBasicAttackAction, "allowMouseFireFallback", false);
             SetBool(rangedBasicAttackAction, "requestFacingOnFire", false);
             SetBool(rangedBasicAttackAction, "snapFacingOnFire", false);
@@ -5761,7 +5773,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(rangedBasicAttackAction, "projectileRoot", projectileRoot);
             ValidateObjectReference(rangedBasicAttackAction, "fireOrigin", fireOrigin);
             ValidateEnum(rangedBasicAttackAction, "sourceTeam", (int)DamageTeam.Player);
-            ValidateInt(rangedBasicAttackAction, "prewarmCount", 8);
+            ValidateInt(rangedBasicAttackAction, "prewarmCount", PlayerRangedBasicPrewarmCount);
             ValidateBool(rangedBasicAttackAction, "allowMouseFireFallback", false);
             ValidateBool(rangedBasicAttackAction, "requestFacingOnFire", false);
             ValidateBool(rangedBasicAttackAction, "snapFacingOnFire", false);
@@ -6234,34 +6246,22 @@ namespace DimensionBrawl.Editor
                 CombatVfxCueId.PlayerRangedMuzzleFlash,
                 ActionFoundationCombatVfxSetup.GetPlayerRangedGunshotClipPaths(),
                 "player ranged muzzle flash");
-            ValidateCombatCueHasReviewedAudioBank(
+            ValidateCombatCueHasNoAuthoredAudio(
                 profile,
                 CombatVfxCueId.PlayerRangedProjectileImpact,
-                ActionFoundationCombatVfxSetup.GetPlayerRangedProjectileImpactClipPaths(),
-                "player ranged projectile impact",
-                0.45f,
-                0.62f);
-            ValidateCombatCueHasReviewedAudioBank(
+                "player ranged projectile impact");
+            ValidateCombatCueHasNoAuthoredAudio(
                 profile,
                 CombatVfxCueId.EliteSummonSignal,
-                ActionFoundationCombatVfxSetup.GetEliteSummonSignalClipPaths(),
-                "summon signal",
-                0.34f,
-                0.52f);
-            ValidateCombatCueHasReviewedAudioBank(
+                "summon signal");
+            ValidateCombatCueHasNoAuthoredAudio(
                 profile,
                 CombatVfxCueId.SummonBlockOpportunity,
-                ActionFoundationCombatVfxSetup.GetSummonBlockOpportunityClipPaths(),
-                "summon block opportunity",
-                0.42f,
-                0.62f);
-            ValidateCombatCueHasReviewedAudioBank(
+                "summon block opportunity");
+            ValidateCombatCueHasNoAuthoredAudio(
                 profile,
                 CombatVfxCueId.SummonFollowupWindow,
-                ActionFoundationCombatVfxSetup.GetSummonFollowupWindowClipPaths(),
-                "summon follow-up window",
-                0.3f,
-                0.5f);
+                "summon follow-up window");
         }
 
         private static void ValidateCombatCueAssetOverlay(
@@ -6290,18 +6290,17 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"Boss barrage combat cue profile is missing {cueId}.");
             }
 
-            AudioSource[] audioSources = cue.Prefab.GetComponentsInChildren<AudioSource>(includeInactive: true);
-            for (int i = 0; i < audioSources.Length; i++)
+            CombatVfxCueAudioRandomizer[] randomizers =
+                cue.Prefab.GetComponentsInChildren<CombatVfxCueAudioRandomizer>(includeInactive: true);
+            if (randomizers.Length > 0)
             {
-                AudioSource audioSource = audioSources[i];
-                if (audioSource == null || audioSource.clip == null)
-                {
-                    continue;
-                }
+                throw new InvalidOperationException($"{label} should not carry reviewed audio randomizers.");
+            }
 
-                string clipPath = AssetDatabase.GetAssetPath(audioSource.clip).Replace('\\', '/');
-                throw new InvalidOperationException(
-                    $"{label} should stay visual-only until the reviewed audio pass, found {clipPath}.");
+            AudioSource[] audioSources = cue.Prefab.GetComponentsInChildren<AudioSource>(includeInactive: true);
+            if (audioSources.Length > 0)
+            {
+                throw new InvalidOperationException($"{label} should stay fully silent in the stripped-audio pass.");
             }
         }
 
@@ -6511,17 +6510,11 @@ namespace DimensionBrawl.Editor
 
         private static void ValidateLaneAmbientAudio(Scene scene)
         {
-            Transform root = RequireRoot(scene, AmbientAudioRootName).transform;
-            AudioSource[] sources = root.GetComponentsInChildren<AudioSource>(includeInactive: true);
-            if (sources.Length != 4)
+            if (FindRoot(scene, AmbientAudioRootName) != null)
             {
-                throw new InvalidOperationException($"Lane ambient audio should use exactly 4 low-volume loops, found {sources.Length}.");
+                throw new InvalidOperationException(
+                    "Boss barrage lane review scene should not carry ambient audio in the stripped-audio pass.");
             }
-
-            ValidateAmbientAudio(root, "AmbientAudio_ArenaStormBed", AmbientArenaStormClipPath, 0f, 0.05f, 0.07f);
-            ValidateAmbientAudio(root, "AmbientAudio_LaneEnergyHum", AmbientLaneEnergyHumClipPath, 0.25f, 0.06f, 0.09f);
-            ValidateAmbientAudio(root, "AmbientAudio_LeftRailDustFlow", AmbientRailDustFlowClipPath, 0.45f, 0.03f, 0.055f);
-            ValidateAmbientAudio(root, "AmbientAudio_RightRailDustFlow", AmbientRailDustFlowClipPath, 0.45f, 0.03f, 0.055f);
         }
 
         private static void ValidateAmbientAudio(
@@ -6572,32 +6565,36 @@ namespace DimensionBrawl.Editor
                 PlayerFootstepClipPaths,
                 player,
                 0.34f,
-                0.25f);
+                0.25f,
+                0.82f);
             ValidateFootstepAudio(
                 RequireRoot(scene, CloseThreatRootName),
                 CloseThreatFootstepAudioName,
                 ArmoredFootstepClipPaths,
                 null,
                 0.32f,
-                0.65f);
+                0.65f,
+                0.74f);
             ValidateFootstepAudio(
                 RequireRoot(scene, BossProxyRootName),
                 BossProxyFootstepAudioName,
                 ArmoredFootstepClipPaths,
                 null,
                 0.24f,
-                0.75f);
-            ValidatePrefabFootstepAudio(SummonSlot1ActorPrefabPath, HeavyFootstepClipPaths, 0.28f, 0.65f);
-            ValidatePrefabFootstepAudio(SummonSlot2ActorPrefabPath, ArmoredFootstepClipPaths, 0.24f, 0.6f);
-            ValidatePrefabFootstepAudio(SummonSlot3ActorPrefabPath, HeavyFootstepClipPaths, 0.34f, 0.7f);
-            ValidatePrefabFootstepAudio(BossSummonPressureActorPrefabPath, HeavyFootstepClipPaths, 0.32f, 0.72f);
+                0.75f,
+                0.7f);
+            ValidatePrefabFootstepAudio(SummonSlot1ActorPrefabPath, HeavyFootstepClipPaths, 0.28f, 0.65f, 0.58f);
+            ValidatePrefabFootstepAudio(SummonSlot2ActorPrefabPath, ArmoredFootstepClipPaths, 0.24f, 0.6f, 0.54f);
+            ValidatePrefabFootstepAudio(SummonSlot3ActorPrefabPath, HeavyFootstepClipPaths, 0.34f, 0.7f, 0.6f);
+            ValidatePrefabFootstepAudio(BossSummonPressureActorPrefabPath, HeavyFootstepClipPaths, 0.32f, 0.72f, 0.62f);
         }
 
         private static void ValidatePrefabFootstepAudio(
             string prefabPath,
             string[] expectedClipPaths,
             float maximumBaseVolume,
-            float minimumSpatialBlend)
+            float minimumSpatialBlend,
+            float expectedPlaybackVolumeScale)
         {
             GameObject prefab = LoadAsset<GameObject>(prefabPath);
             ValidateFootstepAudio(
@@ -6606,7 +6603,8 @@ namespace DimensionBrawl.Editor
                 expectedClipPaths,
                 null,
                 maximumBaseVolume,
-                minimumSpatialBlend);
+                minimumSpatialBlend,
+                expectedPlaybackVolumeScale);
         }
 
         private static void ValidateFootstepAudio(
@@ -6615,7 +6613,8 @@ namespace DimensionBrawl.Editor
             string[] expectedClipPaths,
             PlayerMovementController expectedPlayerMovement,
             float maximumBaseVolume,
-            float minimumSpatialBlend)
+            float minimumSpatialBlend,
+            float expectedPlaybackVolumeScale)
         {
             Transform child = root.transform.Find(childName);
             if (child == null)
@@ -6642,6 +6641,12 @@ namespace DimensionBrawl.Editor
             if (source.spatialBlend < minimumSpatialBlend)
             {
                 throw new InvalidOperationException($"{childName} should keep positional space.");
+            }
+
+            if (Mathf.Abs(presenter.PlaybackVolumeScale - expectedPlaybackVolumeScale) > 0.001f)
+            {
+                throw new InvalidOperationException(
+                    $"{childName} playback volume scale should stay at {expectedPlaybackVolumeScale:0.##}.");
             }
 
             if (source.priority < 130 || source.priority > 170)

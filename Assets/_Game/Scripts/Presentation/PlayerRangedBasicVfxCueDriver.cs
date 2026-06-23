@@ -13,8 +13,10 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private Transform muzzleAnchor;
         [SerializeField] private CombatVfxCueId muzzleFlashCueId = CombatVfxCueId.PlayerRangedMuzzleFlash;
         [SerializeField, Min(0f)] private float muzzleFlashIntensity = 1f;
+        [SerializeField, Min(0f)] private float muzzleFlashAudioIntensity = 1f;
         [SerializeField] private CombatVfxCueId impactCueId = CombatVfxCueId.PlayerRangedProjectileImpact;
         [SerializeField, Min(0f)] private float impactIntensity = 1f;
+        [SerializeField, Min(0f)] private float impactAudioIntensity = 0.56f;
 
         private readonly HashSet<LaneActionProjectile> watchedProjectiles = new HashSet<LaneActionProjectile>();
         private bool subscribed;
@@ -101,7 +103,8 @@ namespace DimensionBrawl.Presentation
                 muzzleFlashCueId,
                 anchor,
                 rangedBasicAttackAction.LastResolvedFireDirection,
-                muzzleFlashIntensity);
+                muzzleFlashIntensity,
+                muzzleFlashAudioIntensity);
         }
 
         private void HandleRangedProjectileFired(LaneActionProjectile projectile)
@@ -130,7 +133,8 @@ namespace DimensionBrawl.Presentation
                 impactCueId,
                 projectile.transform,
                 impactDirection,
-                impactIntensity);
+                impactIntensity,
+                impactAudioIntensity);
         }
 
         private void UnsubscribeProjectiles()

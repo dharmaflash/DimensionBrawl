@@ -24,6 +24,8 @@ namespace DimensionBrawl.Editor
         private const string TextureRoot = CombatVfxRoot + "/Textures";
         private const string ShaderRoot = CombatVfxRoot + "/Shaders";
         private const string CombatCueAudioRoot = "Assets/_Game/Art/Audio/SFX/CombatCues";
+        private const string ImportedGunshotAudioRoot =
+            "Assets/_Imported/AssetStore/Gun Sounds Pack Vol 1/Gun Shot";
         private const string ImportedActionRpgSfxCombatRoot =
             "Assets/_Imported/AssetStore/Action RPG SFX V2/Combat";
         private const string ImportedActionRpgSfxDesignedSkillRoot =
@@ -52,13 +54,21 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Gunshot_04.wav",
             "Assets/_Game/Art/Audio/SFX/Guns/DB_SFX_PlayerRanged_Gunshot_05.wav",
         };
+        private static readonly string[] PlayerRangedGunshotSourceClipPaths =
+        {
+            ImportedGunshotAudioRoot + "/Gunshot 1-1.wav",
+            ImportedGunshotAudioRoot + "/Gunshot 1-2.wav",
+            ImportedGunshotAudioRoot + "/Gunshot 1-3.wav",
+            ImportedGunshotAudioRoot + "/Gunshot 1-4.wav",
+            ImportedGunshotAudioRoot + "/Gunshot 1-5.wav",
+        };
 
         private const string PlayerRangedGunshotAudioName = "ReviewedGunshot_PlayerRangedBasic";
-        private const float PlayerRangedGunshotBaseVolume = 0.72f;
-        private const float PlayerRangedGunshotMinimumPitch = 1.02f;
-        private const float PlayerRangedGunshotMaximumPitch = 1.08f;
-        private const float PlayerRangedGunshotMinimumVolumeMultiplier = 0.94f;
-        private const float PlayerRangedGunshotMaximumVolumeMultiplier = 1.04f;
+        private const float PlayerRangedGunshotBaseVolume = 0.78f;
+        private const float PlayerRangedGunshotMinimumPitch = 0.96f;
+        private const float PlayerRangedGunshotMaximumPitch = 1.01f;
+        private const float PlayerRangedGunshotMinimumVolumeMultiplier = 0.98f;
+        private const float PlayerRangedGunshotMaximumVolumeMultiplier = 1.06f;
         private const string PlayerRangedProjectileImpactAudioName = "ReviewedSfx_PlayerRangedProjectileImpact";
         private const string EliteSummonSignalAudioName = "ReviewedSfx_EliteSummonSignal";
         private const string SummonBlockOpportunityAudioName = "ReviewedSfx_SummonBlockOpportunity";
@@ -166,6 +176,7 @@ namespace DimensionBrawl.Editor
         public static void RefreshPlayerRangedGunshotAudioBankMenu()
         {
             const string prefabPath = PrefabRoot + "/DB_VFX_PlayerRangedMuzzleFlash.prefab";
+            PromoteReviewedAudioClips(PlayerRangedGunshotSourceClipPaths, PlayerRangedGunshotClipPaths);
             GameObject prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
             try
             {
@@ -256,34 +267,22 @@ namespace DimensionBrawl.Editor
                 CombatVfxCueId.PlayerRangedMuzzleFlash,
                 PlayerRangedGunshotClipPaths,
                 "player ranged muzzle flash");
-            ValidateCueHasReviewedAudioBank(
+            ValidateCueHasNoAuthoredAudio(
                 profile,
                 CombatVfxCueId.PlayerRangedProjectileImpact,
-                PlayerRangedProjectileImpactClipPaths,
-                "player ranged projectile impact",
-                0.45f,
-                0.62f);
-            ValidateCueHasReviewedAudioBank(
+                "player ranged projectile impact");
+            ValidateCueHasNoAuthoredAudio(
                 profile,
                 CombatVfxCueId.EliteSummonSignal,
-                EliteSummonSignalClipPaths,
-                "summon signal",
-                0.34f,
-                0.52f);
-            ValidateCueHasReviewedAudioBank(
+                "summon signal");
+            ValidateCueHasNoAuthoredAudio(
                 profile,
                 CombatVfxCueId.SummonBlockOpportunity,
-                SummonBlockOpportunityClipPaths,
-                "summon block opportunity",
-                0.42f,
-                0.62f);
-            ValidateCueHasReviewedAudioBank(
+                "summon block opportunity");
+            ValidateCueHasNoAuthoredAudio(
                 profile,
                 CombatVfxCueId.SummonFollowupWindow,
-                SummonFollowupWindowClipPaths,
-                "summon follow-up window",
-                0.3f,
-                0.5f);
+                "summon follow-up window");
 
             Debug.Log("Action foundation combat VFX cue validation passed.");
         }
@@ -296,6 +295,10 @@ namespace DimensionBrawl.Editor
             EnsureFolder(PrefabRoot);
             EnsureFolder(TextureRoot);
             EnsureFolder(ShaderRoot);
+            EnsureFolder("Assets/_Game/Art/Audio");
+            EnsureFolder("Assets/_Game/Art/Audio/SFX");
+            EnsureFolder("Assets/_Game/Art/Audio/SFX/Guns");
+            PromoteReviewedAudioClips(PlayerRangedGunshotSourceClipPaths, PlayerRangedGunshotClipPaths);
 
             Shader muzzleFlashShader = EnsurePromotedShader(MuzzleFlashShaderSourcePath, MuzzleFlashShaderPath);
             Shader muzzleSmokeShader = EnsurePromotedShader(MuzzleSmokeShaderSourcePath, MuzzleSmokeShaderPath);
@@ -420,8 +423,10 @@ namespace DimensionBrawl.Editor
                 SetObjectReference(rangedDriver, "muzzleAnchor", muzzleAnchor);
                 SetEnum(rangedDriver, "muzzleFlashCueId", (int)CombatVfxCueId.PlayerRangedMuzzleFlash);
                 SetFloat(rangedDriver, "muzzleFlashIntensity", 1f);
+                SetFloat(rangedDriver, "muzzleFlashAudioIntensity", 1f);
                 SetEnum(rangedDriver, "impactCueId", (int)CombatVfxCueId.PlayerRangedProjectileImpact);
                 SetFloat(rangedDriver, "impactIntensity", 1f);
+                SetFloat(rangedDriver, "impactAudioIntensity", 0.56f);
             }
 
             EditorUtility.SetDirty(player.gameObject);
@@ -571,18 +576,17 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"{label} should reference a promoted combat VFX prefab.");
             }
 
-            AudioSource[] audioSources = cue.Prefab.GetComponentsInChildren<AudioSource>(includeInactive: true);
-            for (int i = 0; i < audioSources.Length; i++)
+            CombatVfxCueAudioRandomizer[] randomizers =
+                cue.Prefab.GetComponentsInChildren<CombatVfxCueAudioRandomizer>(includeInactive: true);
+            if (randomizers.Length > 0)
             {
-                AudioSource audioSource = audioSources[i];
-                if (audioSource == null || audioSource.clip == null)
-                {
-                    continue;
-                }
+                throw new InvalidOperationException($"{label} should not carry reviewed audio randomizers.");
+            }
 
-                string clipPath = AssetDatabase.GetAssetPath(audioSource.clip).Replace('\\', '/');
-                throw new InvalidOperationException(
-                    $"{label} should stay visual-only until the reviewed audio pass, found {clipPath}.");
+            AudioSource[] audioSources = cue.Prefab.GetComponentsInChildren<AudioSource>(includeInactive: true);
+            if (audioSources.Length > 0)
+            {
+                throw new InvalidOperationException($"{label} should stay fully silent in the stripped-audio pass.");
             }
         }
 
@@ -1008,58 +1012,56 @@ namespace DimensionBrawl.Editor
 
         private static void EnsureReviewedCombatCueAudioBanks()
         {
-            EnsureFolder("Assets/_Game/Art/Audio");
-            EnsureFolder("Assets/_Game/Art/Audio/SFX");
-            EnsureFolder(CombatCueAudioRoot);
-            PromoteReviewedAudioClips(PlayerRangedProjectileImpactSourceClipPaths, PlayerRangedProjectileImpactClipPaths);
-            PromoteReviewedAudioClips(EliteSummonSignalSourceClipPaths, EliteSummonSignalClipPaths);
-            PromoteReviewedAudioClips(SummonBlockOpportunitySourceClipPaths, SummonBlockOpportunityClipPaths);
-            PromoteReviewedAudioClips(SummonFollowupWindowSourceClipPaths, SummonFollowupWindowClipPaths);
-
-            AttachReviewedCueAudio(
+            StripReviewedCueAudio(
                 PrefabRoot + "/DB_VFX_PlayerRangedProjectileImpact.prefab",
-                PlayerRangedProjectileImpactAudioName,
-                PlayerRangedProjectileImpactClipPaths,
-                0.52f,
-                0.97f,
-                1.05f,
-                0.9f,
-                1.08f,
-                0.32f,
-                145);
-            AttachReviewedCueAudio(
+                PlayerRangedProjectileImpactAudioName);
+            StripReviewedCueAudio(
                 PrefabRoot + "/DB_VFX_EliteSummonSignal.prefab",
-                EliteSummonSignalAudioName,
-                EliteSummonSignalClipPaths,
-                0.42f,
-                0.95f,
-                1.04f,
-                0.88f,
-                1.06f,
-                0.45f,
-                155);
-            AttachReviewedCueAudio(
+                EliteSummonSignalAudioName);
+            StripReviewedCueAudio(
                 PrefabRoot + "/DB_VFX_SummonBlockOpportunity.prefab",
-                SummonBlockOpportunityAudioName,
-                SummonBlockOpportunityClipPaths,
-                0.54f,
-                0.96f,
-                1.04f,
-                0.88f,
-                1.08f,
-                0.48f,
-                148);
-            AttachReviewedCueAudio(
+                SummonBlockOpportunityAudioName);
+            StripReviewedCueAudio(
                 PrefabRoot + "/DB_VFX_SummonFollowupWindow.prefab",
-                SummonFollowupWindowAudioName,
-                SummonFollowupWindowClipPaths,
-                0.38f,
-                0.98f,
-                1.06f,
-                0.9f,
-                1.08f,
-                0.38f,
-                158);
+                SummonFollowupWindowAudioName);
+        }
+
+        private static void StripReviewedCueAudio(string prefabPath, string childName)
+        {
+            GameObject prefabRoot = PrefabUtility.LoadPrefabContents(prefabPath);
+            try
+            {
+                Transform existing = prefabRoot.transform.Find(childName);
+                if (existing != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(existing.gameObject);
+                }
+
+                CombatVfxCueAudioRandomizer[] randomizers =
+                    prefabRoot.GetComponentsInChildren<CombatVfxCueAudioRandomizer>(includeInactive: true);
+                for (int i = 0; i < randomizers.Length; i++)
+                {
+                    if (randomizers[i] != null)
+                    {
+                        UnityEngine.Object.DestroyImmediate(randomizers[i]);
+                    }
+                }
+
+                AudioSource[] audioSources = prefabRoot.GetComponentsInChildren<AudioSource>(includeInactive: true);
+                for (int i = 0; i < audioSources.Length; i++)
+                {
+                    if (audioSources[i] != null)
+                    {
+                        UnityEngine.Object.DestroyImmediate(audioSources[i]);
+                    }
+                }
+
+                PrefabUtility.SaveAsPrefabAsset(prefabRoot, prefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
         }
 
         private static void PromoteReviewedAudioClips(string[] sourceClipPaths, string[] targetClipPaths)
@@ -1077,15 +1079,7 @@ namespace DimensionBrawl.Editor
                 }
 
                 EnsureFolder(Path.GetDirectoryName(targetClipPaths[i]).Replace('\\', '/'));
-                if (AssetDatabase.LoadAssetAtPath<AudioClip>(targetClipPaths[i]) == null)
-                {
-                    if (!AssetDatabase.CopyAsset(sourceClipPaths[i], targetClipPaths[i]))
-                    {
-                        throw new InvalidOperationException(
-                            $"Failed to promote reviewed audio clip from {sourceClipPaths[i]} to {targetClipPaths[i]}.");
-                    }
-                }
-
+                File.Copy(sourceClipPaths[i], targetClipPaths[i], overwrite: true);
                 AssetDatabase.ImportAsset(targetClipPaths[i], ImportAssetOptions.ForceUpdate);
             }
         }

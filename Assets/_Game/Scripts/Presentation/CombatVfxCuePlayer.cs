@@ -29,7 +29,12 @@ namespace DimensionBrawl.Presentation
             PrewarmKnownCues();
         }
 
-        public bool PlayCue(CombatVfxCueId cueId, Transform anchor, Vector3 planarDirection, float intensity = 1f)
+        public bool PlayCue(
+            CombatVfxCueId cueId,
+            Transform anchor,
+            Vector3 planarDirection,
+            float intensity = 1f,
+            float audioIntensity = -1f)
         {
             if (profile == null || !profile.TryGetCue(cueId, out CombatVfxCue cue))
             {
@@ -61,9 +66,10 @@ namespace DimensionBrawl.Presentation
             }
 
             float scale = Mathf.Max(0f, intensity);
+            float resolvedAudioScale = audioIntensity >= 0f ? Mathf.Max(0f, audioIntensity) : scale;
             instanceTransform.localScale = cue.LocalScale * Mathf.Max(0.001f, scale);
             instance.SetActive(true);
-            PlayEffects(instance);
+            PlayEffects(instance, resolvedAudioScale);
 
             if (cue.LifetimeSeconds > 0f)
             {
@@ -151,7 +157,7 @@ namespace DimensionBrawl.Presentation
             GetPool(prefab).Enqueue(instance);
         }
 
-        private static void PlayEffects(GameObject instance)
+        private static void PlayEffects(GameObject instance, float audioScale)
         {
             CombatVfxCueVisual[] cueVisuals = instance.GetComponentsInChildren<CombatVfxCueVisual>(includeInactive: true);
             for (int i = 0; i < cueVisuals.Length; i++)
@@ -178,7 +184,7 @@ namespace DimensionBrawl.Presentation
             for (int i = 0; i < audioRandomizers.Length; i++)
             {
                 CombatVfxCueAudioRandomizer audioRandomizer = audioRandomizers[i];
-                if (audioRandomizer == null || !audioRandomizer.Play() || audioRandomizer.Source == null)
+                if (audioRandomizer == null || !audioRandomizer.Play(audioScale) || audioRandomizer.Source == null)
                 {
                     continue;
                 }

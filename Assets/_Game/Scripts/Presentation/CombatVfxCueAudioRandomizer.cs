@@ -59,7 +59,7 @@ namespace DimensionBrawl.Presentation
             return clips[index];
         }
 
-        public bool Play()
+        public bool Play(float volumeScale = 1f)
         {
             if (source == null || !source.enabled || !source.gameObject.activeInHierarchy || clips == null || clips.Length == 0)
             {
@@ -76,7 +76,9 @@ namespace DimensionBrawl.Presentation
             lastClipIndex = clipIndex;
             source.Stop();
             source.clip = clip;
-            source.volume = baseVolume * Random.Range(minimumVolumeMultiplier, maximumVolumeMultiplier);
+            source.volume = baseVolume
+                * Mathf.Max(0f, volumeScale)
+                * Random.Range(minimumVolumeMultiplier, maximumVolumeMultiplier);
             source.pitch = Random.Range(minimumPitch, maximumPitch);
             source.Play();
             return true;

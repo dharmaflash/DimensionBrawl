@@ -287,6 +287,7 @@ MonoBehaviour:
   skill1Action: {fileID: 0}
   summonSlot1Action: {fileID: 0}
   cameraController: {fileID: 1004}
+  cinematicCueDirector: {fileID: 0}
   cueSpace: {fileID: 4001}
   cueProfile: {fileID: 11400000, guid: a31d129dad592f844954532630dca6a0, type: 2}
   runStartCue:

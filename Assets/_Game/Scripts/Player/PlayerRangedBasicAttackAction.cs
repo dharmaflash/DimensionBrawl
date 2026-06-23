@@ -32,14 +32,14 @@ namespace DimensionBrawl.Player
         [SerializeField] private Transform projectileRoot;
         [SerializeField] private Transform fireOrigin;
         [SerializeField] private DamageTeam sourceTeam = DamageTeam.Player;
-        [SerializeField, Min(0f)] private float damage = 28f;
+        [SerializeField, Min(0f)] private float damage = 14f;
         [SerializeField, Min(0.01f)] private float projectileSpeed = 24f;
         [SerializeField, Min(0.01f)] private float projectileLifetimeSeconds = 1.75f;
         [SerializeField, Min(0.01f)] private float projectileRadius = 0.31f;
-        [SerializeField, Min(0f)] private int prewarmCount = 8;
+        [SerializeField, Min(0f)] private int prewarmCount = 16;
 
         [Header("Fire Feel")]
-        [SerializeField, Min(0.01f)] private float fireIntervalSeconds = 0.24f;
+        [SerializeField, Min(0.01f)] private float fireIntervalSeconds = 0.12f;
         [SerializeField, Min(0f)] private float spawnForwardOffset = 0.85f;
         [SerializeField, Min(0f)] private float spawnHeight = 1.12f;
         [SerializeField, Min(0f)] private float targetHeight = 1.0f;

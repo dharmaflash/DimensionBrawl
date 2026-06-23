@@ -18,6 +18,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0f)] private float maximumPitch = 1.04f;
         [SerializeField, Min(0f)] private float minimumVolumeMultiplier = 0.88f;
         [SerializeField, Min(0f)] private float maximumVolumeMultiplier = 1.08f;
+        [SerializeField, Min(0f)] private float playbackVolumeScale = 1f;
 
         private Vector3 lastPosition;
         private float accumulatedDistance;
@@ -37,6 +38,7 @@ namespace DimensionBrawl.Presentation
         public float MaximumPitch => maximumPitch;
         public float MinimumVolumeMultiplier => minimumVolumeMultiplier;
         public float MaximumVolumeMultiplier => maximumVolumeMultiplier;
+        public float PlaybackVolumeScale => playbackVolumeScale;
 
         private void Reset()
         {
@@ -75,7 +77,8 @@ namespace DimensionBrawl.Presentation
             float configuredMinimumPitch,
             float configuredMaximumPitch,
             float configuredMinimumVolumeMultiplier,
-            float configuredMaximumVolumeMultiplier)
+            float configuredMaximumVolumeMultiplier,
+            float configuredPlaybackVolumeScale)
         {
             source = audioSource;
             trackedTransform = newTrackedTransform != null ? newTrackedTransform : transform;
@@ -89,6 +92,7 @@ namespace DimensionBrawl.Presentation
             maximumPitch = Mathf.Max(minimumPitch, configuredMaximumPitch);
             minimumVolumeMultiplier = Mathf.Max(0f, Mathf.Min(configuredMinimumVolumeMultiplier, configuredMaximumVolumeMultiplier));
             maximumVolumeMultiplier = Mathf.Max(minimumVolumeMultiplier, configuredMaximumVolumeMultiplier);
+            playbackVolumeScale = Mathf.Max(0f, configuredPlaybackVolumeScale);
             ResetStepState();
         }
 
@@ -161,7 +165,9 @@ namespace DimensionBrawl.Presentation
 
             lastClipIndex = clipIndex;
             source.pitch = Random.Range(minimumPitch, maximumPitch);
-            float volume = baseVolume * Random.Range(minimumVolumeMultiplier, maximumVolumeMultiplier);
+            float volume = baseVolume
+                * playbackVolumeScale
+                * Random.Range(minimumVolumeMultiplier, maximumVolumeMultiplier);
             source.PlayOneShot(clip, volume);
         }
 
