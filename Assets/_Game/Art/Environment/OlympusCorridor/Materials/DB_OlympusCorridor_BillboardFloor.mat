@@ -25,10 +25,10 @@ Material:
     m_TexEnvs: []
     m_Ints: []
     m_Floats:
-    - _GlowPower: 0.95
+    - _GlowPower: 0.58
     - _Shape: 3
     m_Colors:
-    - _BaseColor: {r: 0.08, g: 0.48, b: 1, a: 0.68}
-    - _EdgeColor: {r: 0.64, g: 0.94, b: 1.55, a: 1}
+    - _BaseColor: {r: 0.06, g: 0.34, b: 0.95, a: 0.32}
+    - _EdgeColor: {r: 0.46, g: 0.7, b: 1.08, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

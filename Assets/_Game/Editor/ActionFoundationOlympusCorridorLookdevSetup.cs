@@ -27,9 +27,10 @@ namespace DimensionBrawl.Editor
         private const string BlueGlowMaterialPath = MaterialRoot + "/DB_OlympusCorridor_BlueGlow.mat";
         private const string GoldGlowMaterialPath = MaterialRoot + "/DB_OlympusCorridor_GoldGlow.mat";
         private const string WhiteGlowMaterialPath = MaterialRoot + "/DB_OlympusCorridor_WhiteGlow.mat";
+        private const string InvasionGlowMaterialPath = MaterialRoot + "/DB_OlympusCorridor_InvasionGlow.mat";
         private const string SkyboxMaterialPath = MaterialRoot + "/DB_OlympusCorridor_HeavenlySkybox.mat";
         private const string AllSkyRoot = "Assets/_Imported/AssetStore/Sky/Allsky";
-        private const string AllSkySourceSkyboxPath = AllSkyRoot + "/Cartoon/Cartoon Airbrush FluffyBlueSky/Cartoon_FluffyBlueSky Equirect.mat";
+        private const string AllSkySourceSkyboxPath = AllSkyRoot + "/Cartoon/Cartoon Base BlueSky/Day_BlueSky_Nothing.mat";
         private const string ToonOutlineMaterialPath = MaterialRoot + "/DB_OlympusCorridor_ToonOutline.mat";
         private const string BillboardBlueMaterialPath = MaterialRoot + "/DB_OlympusCorridor_BillboardBlue.mat";
         private const string BillboardWhiteMaterialPath = MaterialRoot + "/DB_OlympusCorridor_BillboardWhite.mat";
@@ -37,6 +38,7 @@ namespace DimensionBrawl.Editor
         private const string BillboardDarkMaterialPath = MaterialRoot + "/DB_OlympusCorridor_BillboardDark.mat";
         private const string BillboardBlueCoreMaterialPath = MaterialRoot + "/DB_OlympusCorridor_BillboardBlueCore.mat";
         private const string BillboardFloorMaterialPath = MaterialRoot + "/DB_OlympusCorridor_BillboardFloor.mat";
+        private const string PromotedSkyTexturePrefix = "DB_OlympusCorridor_Sky_";
         private const string ShapesFxRoot = "Assets/_Game/Art/VFX/ShapesFXArena";
         private const string ShapesFxGeometryRoot = ShapesFxRoot + "/Geometry";
         private const string ShapesFxMaterialRoot = ShapesFxRoot + "/Materials/ShapesFX";
@@ -252,6 +254,8 @@ namespace DimensionBrawl.Editor
             Scene scene = EditorSceneManager.OpenScene(TargetScenePath, OpenSceneMode.Single);
             ConfigureOpenCombatSightline(scene);
             ConfigureImportedLighting(scene);
+            RestoreSourceEnvironmentMaterials(scene);
+            ConfigurePgrPreserveEnvironmentMaterials(scene);
             ConfigureSceneAtmosphere(scene);
             ConfigureImportedSkyFogVolumes(scene);
             ConfigureLookdevRoot(scene);
@@ -564,20 +568,40 @@ namespace DimensionBrawl.Editor
             PgrEnvironmentMaterialStyle style = BuildPgrEnvironmentMaterialStyle(sourceMaterial);
             Color sampledColor = ExtractSourceMaterialColor(sourceMaterial, style.BaseColor);
             Color baseColor = Color.Lerp(style.BaseColor, sampledColor, style.SourceColorBlend);
-            Color lightColor = Color.Lerp(baseColor, Color.white, 0.16f);
-            Color coolAccent = Color.Lerp(baseColor, new Color(0.38f, 0.68f, 1f, 1f), 0.18f);
+            Color lightColor = Color.Lerp(baseColor, Color.white, 0.32f);
+            Color coolAccent = Color.Lerp(baseColor, new Color(0.58f, 0.78f, 1f, 1f), 0.22f);
+            Color softShadow = Color.Lerp(baseColor, new Color(0.56f, 0.68f, 0.9f, 1f), 0.18f);
+            Color flatGrunge = Color.Lerp(baseColor, Color.white, 0.24f);
+            softShadow.a = 0f;
+            flatGrunge.a = 0f;
 
             SetMaterialColor(targetMaterial, "_BaseColor", baseColor);
             SetMaterialColor(targetMaterial, "_Color", baseColor);
             SetMaterialColor(targetMaterial, "_ColorR", lightColor);
             SetMaterialColor(targetMaterial, "_ColorG", baseColor);
             SetMaterialColor(targetMaterial, "_ColorB", coolAccent);
+            SetMaterialColor(targetMaterial, "_ColorBlack", softShadow);
+            SetMaterialColor(targetMaterial, "_ColorGrunge", flatGrunge);
+            SetMaterialColor(targetMaterial, "_PatternASharpness", new Color(2.5f, 2.5f, 2.5f, 0f));
             SetMaterialColor(targetMaterial, "_EmissionColor", style.EmissionColor);
             SetMaterialColor(targetMaterial, "_Emissive_Color", style.EmissionColor);
             SetMaterialFloat(targetMaterial, "_Metallic", style.Metallic);
             SetMaterialFloat(targetMaterial, "_Smoothness", style.Smoothness);
-            SetMaterialFloat(targetMaterial, "_SmoothnessRemapMin", Mathf.Clamp01(style.Smoothness - 0.18f));
-            SetMaterialFloat(targetMaterial, "_SmoothnessRemapMax", Mathf.Clamp01(style.Smoothness + 0.08f));
+            SetMaterialFloat(targetMaterial, "_SmoothnessRemapMin", Mathf.Clamp01(style.Smoothness - 0.12f));
+            SetMaterialFloat(targetMaterial, "_SmoothnessRemapMax", Mathf.Clamp01(style.Smoothness + 0.06f));
+            SetMaterialFloat(targetMaterial, "_NormalStrength", 0.04f);
+            SetMaterialFloat(targetMaterial, "_BumpScale", 0.04f);
+            SetMaterialFloat(targetMaterial, "_ColorGrungeBlend", 0.16f);
+            SetMaterialFloat(targetMaterial, "_ColorGrungeInt", 1f);
+            SetMaterialFloat(targetMaterial, "_Tiling_Grunge", 0.24f);
+            SetMaterialFloat(targetMaterial, "_Roughness", 10f);
+            SetMaterialFloat(targetMaterial, "_Tiling", 1.05f);
+            SetMaterialFloat(targetMaterial, "_ReceivesSSR", 0f);
+            CopyMaterialTexture(sourceMaterial, targetMaterial, "_IDMap");
+            ClearMaterialTexture(targetMaterial, "_NormalMap");
+            ClearMaterialTexture(targetMaterial, "_BumpMap");
+            ClearMaterialTexture(targetMaterial, "_MRAEMap");
+            ClearMaterialTexture(targetMaterial, "_GrungeMap");
         }
 
         private static PgrEnvironmentMaterialStyle BuildPgrEnvironmentMaterialStyle(Material sourceMaterial)
@@ -585,45 +609,45 @@ namespace DimensionBrawl.Editor
             string materialName = sourceMaterial.name.ToLowerInvariant();
             if (ContainsAny(materialName, "gold", "trim", "lamp"))
             {
-                return new PgrEnvironmentMaterialStyle(new Color(1f, 0.76f, 0.34f, 1f), new Color(0.18f, 0.1f, 0.025f, 1f), 1f, 0.86f, 0.16f);
+                return new PgrEnvironmentMaterialStyle(new Color(1f, 0.78f, 0.36f, 1f), new Color(0.12f, 0.07f, 0.02f, 1f), 0.72f, 0.72f, 0.08f);
             }
 
             if (ContainsAny(materialName, "glass"))
             {
-                return new PgrEnvironmentMaterialStyle(new Color(0.48f, 0.78f, 1f, 0.78f), new Color(0.03f, 0.1f, 0.18f, 1f), 0f, 0.96f, 0.12f);
+                return new PgrEnvironmentMaterialStyle(new Color(0.62f, 0.86f, 1f, 0.78f), new Color(0.02f, 0.06f, 0.12f, 1f), 0f, 0.62f, 0.04f);
             }
 
             if (ContainsAny(materialName, "cloth", "flag", "wave"))
             {
-                return new PgrEnvironmentMaterialStyle(new Color(0.18f, 0.38f, 0.88f, 1f), new Color(0.01f, 0.035f, 0.09f, 1f), 0f, 0.62f, 0.08f);
+                return new PgrEnvironmentMaterialStyle(new Color(0.52f, 0.72f, 1f, 1f), new Color(0.01f, 0.025f, 0.07f, 1f), 0f, 0.46f, 0f);
             }
 
             if (ContainsAny(materialName, "green", "tile"))
             {
-                return new PgrEnvironmentMaterialStyle(new Color(0.64f, 0.78f, 0.92f, 1f), Color.black, 0.08f, 0.9f, 0.08f);
+                return new PgrEnvironmentMaterialStyle(new Color(0.72f, 0.86f, 0.98f, 1f), Color.black, 0.02f, 0.48f, 0.02f);
             }
 
             if (ContainsAny(materialName, "dark"))
             {
-                return new PgrEnvironmentMaterialStyle(new Color(0.7f, 0.82f, 0.96f, 1f), Color.black, 0.03f, 0.9f, 0.04f);
+                return new PgrEnvironmentMaterialStyle(new Color(0.94f, 0.98f, 1f, 1f), Color.black, 0.01f, 0.52f, 0f);
             }
 
             if (ContainsAny(materialName, "ground", "marble", "sculpture", "cayn", "gray", "cylinder"))
             {
-                return new PgrEnvironmentMaterialStyle(new Color(0.9f, 0.96f, 1f, 1f), Color.black, 0.03f, 0.94f, 0.06f);
+                return new PgrEnvironmentMaterialStyle(new Color(0.98f, 1f, 1f, 1f), Color.black, 0.01f, 0.54f, 0f);
             }
 
             if (ContainsAny(materialName, "pine", "leaf", "leaves", "bark"))
             {
-                return new PgrEnvironmentMaterialStyle(new Color(0.34f, 0.52f, 0.58f, 1f), Color.black, 0f, 0.52f, 0.1f);
+                return new PgrEnvironmentMaterialStyle(new Color(0.46f, 0.68f, 0.68f, 1f), Color.black, 0f, 0.42f, 0.04f);
             }
 
             if (ContainsAny(materialName, "cloud", "emissive"))
             {
-                return new PgrEnvironmentMaterialStyle(new Color(0.58f, 0.76f, 1f, 1f), new Color(0.05f, 0.12f, 0.22f, 1f), 0f, 0.72f, 0.08f);
+                return new PgrEnvironmentMaterialStyle(new Color(0.72f, 0.88f, 1f, 1f), new Color(0.035f, 0.09f, 0.18f, 1f), 0f, 0.48f, 0.02f);
             }
 
-            return new PgrEnvironmentMaterialStyle(new Color(0.68f, 0.8f, 0.96f, 1f), Color.black, 0.02f, 0.78f, 0.1f);
+            return new PgrEnvironmentMaterialStyle(new Color(0.76f, 0.88f, 1f, 1f), Color.black, 0.01f, 0.5f, 0.02f);
         }
         private static bool TryResolveSourceMaterialFromGeneratedMaterial(Material generatedMaterial, out Material sourceMaterial)
         {
@@ -783,6 +807,22 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static void CopyMaterialTexture(Material sourceMaterial, Material targetMaterial, string propertyName)
+        {
+            if (sourceMaterial.HasProperty(propertyName) && targetMaterial.HasProperty(propertyName))
+            {
+                targetMaterial.SetTexture(propertyName, sourceMaterial.GetTexture(propertyName));
+            }
+        }
+
+        private static void ClearMaterialTexture(Material material, string propertyName)
+        {
+            if (material.HasProperty(propertyName))
+            {
+                material.SetTexture(propertyName, null);
+            }
+        }
+
         private static void ConfigureLookdevRoot(Scene scene)
         {
             RemoveRoot(scene, LookdevRootName);
@@ -822,10 +862,10 @@ namespace DimensionBrawl.Editor
 
             Bloom bloom = GetOrAddVolumeComponent<Bloom>(profile);
             bloom.active = true;
-            SetParameter(bloom.threshold, 0.78f);
-            SetParameter(bloom.intensity, 0.62f);
+            SetParameter(bloom.threshold, 1.02f);
+            SetParameter(bloom.intensity, 0.3f);
             SetParameter(bloom.scatter, 0.42f);
-            SetParameter(bloom.clamp, 4.5f);
+            SetParameter(bloom.clamp, 3.2f);
             SetParameter(bloom.tint, new Color(0.88f, 0.95f, 1f, 1f));
             SetParameter(bloom.highQualityFiltering, false);
             SetParameter(bloom.maxIterations, 4);
@@ -836,10 +876,10 @@ namespace DimensionBrawl.Editor
 
             ColorAdjustments color = GetOrAddVolumeComponent<ColorAdjustments>(profile);
             color.active = true;
-            SetParameter(color.postExposure, 0.02f);
-            SetParameter(color.contrast, 20f);
+            SetParameter(color.postExposure, 0.2f);
+            SetParameter(color.contrast, 16f);
             SetParameter(color.colorFilter, new Color(0.92f, 0.96f, 1f, 1f));
-            SetParameter(color.saturation, 2f);
+            SetParameter(color.saturation, 6f);
 
             WhiteBalance whiteBalance = GetOrAddVolumeComponent<WhiteBalance>(profile);
             whiteBalance.active = true;
@@ -850,7 +890,7 @@ namespace DimensionBrawl.Editor
             vignette.active = true;
             SetParameter(vignette.color, new Color(0.05f, 0.055f, 0.07f, 1f));
             SetParameter(vignette.center, new Vector2(0.5f, 0.48f));
-            SetParameter(vignette.intensity, 0.09f);
+            SetParameter(vignette.intensity, 0.018f);
             SetParameter(vignette.smoothness, 0.55f);
 
             DepthOfField depthOfField = GetOrAddVolumeComponent<DepthOfField>(profile);
@@ -899,7 +939,7 @@ namespace DimensionBrawl.Editor
             Light key = CreateLight(lightingRoot.transform, "CoolCorridorKey", new Vector3(0f, 4.8f, -3.6f));
             key.type = LightType.Point;
             key.color = new Color(0.68f, 0.78f, 1f, 1f);
-            key.intensity = 1.05f;
+            key.intensity = 1.25f;
             key.range = 18f;
             key.shadows = LightShadows.None;
             key.bounceIntensity = 0f;
@@ -909,7 +949,7 @@ namespace DimensionBrawl.Editor
             sun.type = LightType.Directional;
             sun.transform.rotation = Quaternion.Euler(48f, 112f, 0f);
             sun.color = new Color(0.84f, 0.92f, 1f, 1f);
-            sun.intensity = 0.3f;
+            sun.intensity = 0.62f;
             sun.shadows = LightShadows.None;
             sun.bounceIntensity = 0f;
             Light gold = CreateLight(lightingRoot.transform, "WarmGoldAccent", new Vector3(0f, 3.1f, 2.8f));
@@ -923,7 +963,7 @@ namespace DimensionBrawl.Editor
             Light endGlow = CreateLight(lightingRoot.transform, "EndPortalBacklight", new Vector3(18f, 3.8f, 0f));
             endGlow.type = LightType.Point;
             endGlow.color = new Color(0.52f, 0.76f, 1f, 1f);
-            endGlow.intensity = 2.45f;
+            endGlow.intensity = 3.05f;
             endGlow.range = 34f;
             endGlow.shadows = LightShadows.None;
             endGlow.bounceIntensity = 0f;
@@ -931,7 +971,7 @@ namespace DimensionBrawl.Editor
             Light riftCore = CreateLight(lightingRoot.transform, "BlueRiftCore", new Vector3(14.8f, 2.65f, 0f));
             riftCore.type = LightType.Point;
             riftCore.color = new Color(0.34f, 0.62f, 1f, 1f);
-            riftCore.intensity = 3.15f;
+            riftCore.intensity = 2.65f;
             riftCore.range = 26f;
             riftCore.shadows = LightShadows.None;
             riftCore.bounceIntensity = 0f;
@@ -939,7 +979,7 @@ namespace DimensionBrawl.Editor
             Light gateGold = CreateLight(lightingRoot.transform, "GateGoldCrown", new Vector3(14.2f, 3.15f, 0f));
             gateGold.type = LightType.Point;
             gateGold.color = new Color(1f, 0.68f, 0.24f, 1f);
-            gateGold.intensity = 1.55f;
+            gateGold.intensity = 1.25f;
             gateGold.range = 12f;
             gateGold.shadows = LightShadows.None;
             gateGold.bounceIntensity = 0f;
@@ -947,7 +987,7 @@ namespace DimensionBrawl.Editor
             Light floorBounce = CreateLight(lightingRoot.transform, "WetFloorBlueBounce", new Vector3(6f, 0.55f, 0f));
             floorBounce.type = LightType.Point;
             floorBounce.color = new Color(0.18f, 0.46f, 1f, 1f);
-            floorBounce.intensity = 0.72f;
+            floorBounce.intensity = 0.86f;
             floorBounce.range = 12f;
             floorBounce.shadows = LightShadows.None;
             floorBounce.bounceIntensity = 0f;
@@ -955,7 +995,7 @@ namespace DimensionBrawl.Editor
             Light leftFill = CreateLight(lightingRoot.transform, "LeftWallBlueFill", new Vector3(-3f, 2.25f, -3.35f));
             leftFill.type = LightType.Point;
             leftFill.color = new Color(0.24f, 0.5f, 1f, 1f);
-            leftFill.intensity = 0.18f;
+            leftFill.intensity = 0.42f;
             leftFill.range = 11f;
             leftFill.shadows = LightShadows.None;
             leftFill.bounceIntensity = 0f;
@@ -963,7 +1003,7 @@ namespace DimensionBrawl.Editor
             Light rightFill = CreateLight(lightingRoot.transform, "RightWallBlueFill", new Vector3(-3f, 2.25f, 3.35f));
             rightFill.type = LightType.Point;
             rightFill.color = new Color(0.24f, 0.5f, 1f, 1f);
-            rightFill.intensity = 0.18f;
+            rightFill.intensity = 0.42f;
             rightFill.range = 11f;
             rightFill.shadows = LightShadows.None;
             rightFill.bounceIntensity = 0f;
@@ -971,56 +1011,58 @@ namespace DimensionBrawl.Editor
 
         private static void ConfigureSanctuaryVisuals(Transform root)
         {
-            Material blueGlow = EnsureMaterial(BlueGlowMaterialPath, new Color(0.12f, 0.48f, 1f, 1f), new Color(0.28f, 0.82f, 3.05f, 1f));
-            Material goldGlow = EnsureMaterial(GoldGlowMaterialPath, new Color(1f, 0.66f, 0.22f, 1f), new Color(2.75f, 1.62f, 0.42f, 1f));
-            Material whiteGlow = EnsureMaterial(WhiteGlowMaterialPath, new Color(0.82f, 0.94f, 1f, 1f), new Color(1.18f, 1.55f, 2.15f, 1f));
+            Material blueGlow = EnsureMaterial(BlueGlowMaterialPath, new Color(0.09f, 0.38f, 1f, 1f), new Color(0.32f, 0.9f, 3.55f, 1f));
+            Material goldGlow = EnsureMaterial(GoldGlowMaterialPath, new Color(1f, 0.68f, 0.26f, 1f), new Color(2.35f, 1.36f, 0.36f, 1f));
+            Material whiteGlow = EnsureMaterial(WhiteGlowMaterialPath, new Color(0.9f, 0.97f, 1f, 1f), new Color(1.25f, 1.58f, 2.18f, 1f));
+            Material invasionGlow = EnsureMaterial(InvasionGlowMaterialPath, new Color(0.018f, 0.032f, 0.12f, 1f), new Color(0.08f, 0.2f, 0.85f, 1f));
             Material toonOutline = EnsureMaterial(ToonOutlineMaterialPath, new Color(0.004f, 0.006f, 0.012f, 1f), new Color(0f, 0f, 0f, 1f));
-            Material billboardBlue = EnsureBillboardMaterial(BillboardBlueMaterialPath, new Color(0.08f, 0.38f, 1f, 0.56f), new Color(0.68f, 0.9f, 1.65f, 1f), 0f, 0.92f);
-            Material billboardWhite = EnsureBillboardMaterial(BillboardWhiteMaterialPath, new Color(0.72f, 0.9f, 1f, 0.5f), new Color(1.35f, 1.68f, 2.35f, 1f), 0f, 0.82f);
-            Material billboardGold = EnsureBillboardMaterial(BillboardGoldMaterialPath, new Color(1f, 0.62f, 0.18f, 0.7f), new Color(1.8f, 1.18f, 0.42f, 1f), 2f, 0.75f);
-            Material billboardDark = EnsureBillboardMaterial(BillboardDarkMaterialPath, new Color(0.012f, 0.018f, 0.052f, 0.9f), new Color(0.16f, 0.52f, 1.35f, 1f), 1f, 0.45f);
-            Material billboardBlueCore = EnsureBillboardMaterial(BillboardBlueCoreMaterialPath, new Color(0.18f, 0.72f, 1f, 0.88f), new Color(0.86f, 0.98f, 1.7f, 1f), 2f, 1.1f);
-            Material billboardFloor = EnsureBillboardMaterial(BillboardFloorMaterialPath, new Color(0.08f, 0.48f, 1f, 0.68f), new Color(0.64f, 0.94f, 1.55f, 1f), 3f, 0.95f);
+            Material billboardBlue = EnsureBillboardMaterial(BillboardBlueMaterialPath, new Color(0.06f, 0.3f, 0.95f, 0.45f), new Color(0.58f, 0.82f, 1.45f, 1f), 0f, 0.78f);
+            Material billboardWhite = EnsureBillboardMaterial(BillboardWhiteMaterialPath, new Color(0.82f, 0.94f, 1f, 0.42f), new Color(1.25f, 1.56f, 2.1f, 1f), 0f, 0.72f);
+            Material billboardGold = EnsureBillboardMaterial(BillboardGoldMaterialPath, new Color(1f, 0.58f, 0.16f, 0.5f), new Color(1.22f, 0.78f, 0.28f, 1f), 2f, 0.56f);
+            Material billboardDark = EnsureBillboardMaterial(BillboardDarkMaterialPath, new Color(0.022f, 0.034f, 0.11f, 0.3f), new Color(0.16f, 0.44f, 0.9f, 1f), 1f, 0.22f);
+            Material billboardBlueCore = EnsureBillboardMaterial(BillboardBlueCoreMaterialPath, new Color(0.16f, 0.62f, 1f, 0.76f), new Color(0.74f, 0.9f, 1.48f, 1f), 2f, 0.92f);
+            Material billboardFloor = EnsureBillboardMaterial(BillboardFloorMaterialPath, new Color(0.06f, 0.34f, 0.95f, 0.32f), new Color(0.46f, 0.7f, 1.08f, 1f), 3f, 0.58f);
             GameObject visualsRoot = CreateChild(root, SanctuaryVisualsName, Vector3.zero, Quaternion.identity, Vector3.one);
 
             Vector3 gateCenter = new Vector3(14.8f, 2.65f, 0f);
             CreateCelestialGate(visualsRoot.transform, blueGlow, goldGlow, whiteGlow, gateCenter);
             CreateCelestialDepthBackdrop(visualsRoot.transform, blueGlow, goldGlow, whiteGlow, gateCenter);
             CreatePromotedShapesFxGate(visualsRoot.transform, gateCenter, blueGlow, goldGlow, whiteGlow);
+            CreateInvadingHeavenBreach(visualsRoot.transform, invasionGlow, blueGlow, goldGlow, gateCenter);
             CreateRiftStarburst(visualsRoot.transform, blueGlow, gateCenter);
             CreateFloorCracks(visualsRoot.transform, blueGlow, goldGlow);
             CreateCelestialLaneAccents(visualsRoot.transform, whiteGlow, goldGlow);
-            CreateEnemyProxySet(visualsRoot.transform, blueGlow, goldGlow, toonOutline);
+            CreateEnemyProxySet(visualsRoot.transform, invasionGlow, blueGlow, toonOutline);
             CreateReadableCombatBillboards(visualsRoot.transform, root, billboardWhite, billboardBlue, billboardGold, billboardDark, billboardBlueCore, billboardFloor);
         }
 
 
         private static void CreateCelestialGate(Transform parent, Material blueGlow, Material goldGlow, Material whiteGlow, Vector3 center)
         {
-            CreateCircleLine(parent, "GateHalo_Outer", blueGlow, center, 2.35f, 0.075f, 128);
-            CreateCircleLine(parent, "GateHalo_Middle", goldGlow, center + new Vector3(-0.04f, 0f, 0f), 1.55f, 0.045f, 128);
-            CreateCircleLine(parent, "GateHalo_Core", blueGlow, center + new Vector3(-0.08f, 0f, 0f), 0.72f, 0.052f, 96);
-            CreateCircleLine(parent, "GateHalo_WhiteInner", whiteGlow, center + new Vector3(-0.12f, 0f, 0f), 1.08f, 0.055f, 128);
+            CreateCircleLine(parent, "GateHalo_Outer", blueGlow, center, 4.65f, 0.082f, 160);
+            CreateCircleLine(parent, "GateHalo_Middle", goldGlow, center + new Vector3(-0.04f, 0f, 0f), 3.28f, 0.048f, 144);
+            CreateCircleLine(parent, "GateHalo_Core", blueGlow, center + new Vector3(-0.08f, 0f, 0f), 1.38f, 0.05f, 112);
+            CreateCircleLine(parent, "GateHalo_WhiteInner", whiteGlow, center + new Vector3(-0.12f, 0f, 0f), 2.38f, 0.05f, 144);
             CreateLine(parent, "GateSpire_Vertical", blueGlow, 0.06f, new[]
             {
-                center + new Vector3(0f, -2.65f, 0f), center + new Vector3(0f, -1.1f, 0f), center,
-                center + new Vector3(0f, 1.3f, 0f), center + new Vector3(0f, 3.15f, 0f)
+                center + new Vector3(0f, -2.95f, 0f), center + new Vector3(0f, -1.2f, 0f), center,
+                center + new Vector3(0f, 1.8f, 0f), center + new Vector3(0f, 4.65f, 0f)
             });
             CreateLine(parent, "GateCrown_Gold", goldGlow, 0.06f, new[]
             {
                 center + new Vector3(0f, 1.72f, -1.35f), center + new Vector3(0f, 2.22f, -0.48f), center + new Vector3(0f, 2.48f, 0f),
                 center + new Vector3(0f, 2.22f, 0.48f), center + new Vector3(0f, 1.72f, 1.35f)
             });
-            CreateLine(parent, "GateFlare_WhiteHorizontal", whiteGlow, 0.055f, new[] { center + new Vector3(-0.16f, 0f, -2.25f), center, center + new Vector3(-0.16f, 0f, 2.25f) });
-            CreateLine(parent, "GateFlare_WhiteDiagonalA", whiteGlow, 0.04f, new[] { center + new Vector3(-0.14f, -1.35f, -1.55f), center, center + new Vector3(-0.14f, 1.35f, 1.55f) });
-            CreateLine(parent, "GateFlare_WhiteDiagonalB", whiteGlow, 0.04f, new[] { center + new Vector3(-0.14f, -1.35f, 1.55f), center, center + new Vector3(-0.14f, 1.35f, -1.55f) });
+            CreateLine(parent, "GateFlare_WhiteHorizontal", whiteGlow, 0.042f, new[] { center + new Vector3(-0.16f, 0f, -1.65f), center, center + new Vector3(-0.16f, 0f, 1.65f) });
+            CreateLine(parent, "GateFlare_WhiteDiagonalA", whiteGlow, 0.03f, new[] { center + new Vector3(-0.14f, -1f, -1.05f), center, center + new Vector3(-0.14f, 1f, 1.05f) });
+            CreateLine(parent, "GateFlare_WhiteDiagonalB", whiteGlow, 0.03f, new[] { center + new Vector3(-0.14f, -1f, 1.05f), center, center + new Vector3(-0.14f, 1f, -1.05f) });
             CreateLine(parent, "GateWing_Left", blueGlow, 0.04f, new[]
             {
-                center + new Vector3(-0.1f, 0.2f, -2.3f), center + new Vector3(-0.15f, 0.95f, -3.05f), center + new Vector3(-0.18f, 1.75f, -3.7f)
+                center + new Vector3(-0.1f, 0.35f, -2.65f), center + new Vector3(-0.15f, 1.35f, -3.35f), center + new Vector3(-0.18f, 2.35f, -4.05f)
             });
             CreateLine(parent, "GateWing_Right", blueGlow, 0.04f, new[]
             {
-                center + new Vector3(-0.1f, 0.2f, 2.3f), center + new Vector3(-0.15f, 0.95f, 3.05f), center + new Vector3(-0.18f, 1.75f, 3.7f)
+                center + new Vector3(-0.1f, 0.35f, 2.65f), center + new Vector3(-0.15f, 1.35f, 3.35f), center + new Vector3(-0.18f, 2.35f, 4.05f)
             });
             CreateLine(parent, "GateFloorConvergence_Left", goldGlow, 0.085f, new[] { new Vector3(-6f, 0.19f, -2.25f), new Vector3(4.5f, 0.19f, -1.35f), center + new Vector3(0f, -2.25f, -0.45f) });
             CreateLine(parent, "GateFloorConvergence_Right", goldGlow, 0.085f, new[] { new Vector3(-6f, 0.19f, 2.25f), new Vector3(4.5f, 0.19f, 1.35f), center + new Vector3(0f, -2.25f, 0.45f) });
@@ -1080,15 +1122,18 @@ namespace DimensionBrawl.Editor
             Material deepCube = RequireAsset<Material>(ShapesFxMaterialRoot + "/DB_ShapesFX_DeepCube.mat");
 
             Transform shapesRoot = CreateChild(parent, "ShapesFX_CelestialGateComposition", Vector3.zero, Quaternion.identity, Vector3.one).transform;
-            CreateShapeFxObject(shapesRoot, "ShapesFX_GateOuterRing", torus, portalOuter, gateCenter + new Vector3(-0.28f, 0f, 0f), Quaternion.Euler(0f, 90f, 0f), Vector3.one * 2.65f);
-            CreateShapeFxObject(shapesRoot, "ShapesFX_GateTiltRing_A", torus, portalInner, gateCenter + new Vector3(-0.36f, 0.02f, 0f), Quaternion.Euler(18f, 90f, 35f), Vector3.one * 2.05f);
-            CreateShapeFxObject(shapesRoot, "ShapesFX_GateTiltRing_B", torus, portalInner, gateCenter + new Vector3(-0.42f, -0.03f, 0f), Quaternion.Euler(-14f, 90f, -28f), Vector3.one * 1.45f);
-            CreateShapeFxObject(shapesRoot, "ShapesFX_GateCoreOrb", sphere, blueSphere, gateCenter + new Vector3(-0.66f, 0f, 0f), Quaternion.Euler(0f, 22f, 0f), Vector3.one * 0.54f);
+            CreateShapeFxObject(shapesRoot, "ShapesFX_GateOuterRing", torus, portalOuter, gateCenter + new Vector3(-0.3f, 0f, 0f), Quaternion.Euler(0f, 90f, 0f), Vector3.one * 5.15f);
+            CreateShapeFxObject(shapesRoot, "ShapesFX_GateTiltRing_A", torus, portalInner, gateCenter + new Vector3(-0.38f, 0.02f, 0f), Quaternion.Euler(18f, 90f, 35f), Vector3.one * 3.65f);
+            CreateShapeFxObject(shapesRoot, "ShapesFX_GateTiltRing_B", torus, portalInner, gateCenter + new Vector3(-0.44f, -0.03f, 0f), Quaternion.Euler(-14f, 90f, -28f), Vector3.one * 2.46f);
+            CreateShapeFxObject(shapesRoot, "ShapesFX_GateCoreOrb", sphere, blueSphere, gateCenter + new Vector3(-0.7f, 0f, 0f), Quaternion.Euler(0f, 22f, 0f), Vector3.one * 0.68f);
             CreateShapeFxObject(shapesRoot, "ShapesFX_LeftFloatingShard", icosa, violetIcosa, gateCenter + new Vector3(-1.02f, 1.25f, -1.55f), Quaternion.Euler(18f, 38f, 11f), Vector3.one * 0.36f);
             CreateShapeFxObject(shapesRoot, "ShapesFX_RightFloatingShard", dodeca, cyanDodeca, gateCenter + new Vector3(-0.96f, 1.18f, 1.52f), Quaternion.Euler(-16f, -34f, 9f), Vector3.one * 0.34f);
             CreateShapeFxObject(shapesRoot, "ShapesFX_UpperDeepShard", icosa, deepCube, gateCenter + new Vector3(-0.82f, 2.25f, 0.2f), Quaternion.Euler(28f, 12f, 40f), Vector3.one * 0.28f);
-            CreateShapeFxObject(shapesRoot, "ShapesFX_ReadableBlueRingShell", torus, blueGlow, gateCenter + new Vector3(-0.48f, 0f, 0f), Quaternion.Euler(0f, 90f, 0f), Vector3.one * 2.9f);
-            CreateShapeFxObject(shapesRoot, "ShapesFX_ReadableGoldInnerShell", torus, goldGlow, gateCenter + new Vector3(-0.52f, 0f, 0f), Quaternion.Euler(16f, 90f, -24f), Vector3.one * 1.65f);
+            CreateShapeFxObject(shapesRoot, "ShapesFX_InvasionShard_Left", icosa, deepCube, gateCenter + new Vector3(-0.62f, 1.78f, -1.05f), Quaternion.Euler(42f, -24f, 58f), Vector3.one * 0.46f);
+            CreateShapeFxObject(shapesRoot, "ShapesFX_InvasionShard_Right", dodeca, deepCube, gateCenter + new Vector3(-0.58f, 1.52f, 1.08f), Quaternion.Euler(-36f, 28f, -46f), Vector3.one * 0.42f);
+            CreateShapeFxObject(shapesRoot, "ShapesFX_InvasionShard_Lower", icosa, deepCube, gateCenter + new Vector3(-0.72f, -1.28f, 0.18f), Quaternion.Euler(18f, 72f, 34f), Vector3.one * 0.38f);
+            CreateShapeFxObject(shapesRoot, "ShapesFX_ReadableBlueRingShell", torus, blueGlow, gateCenter + new Vector3(-0.5f, 0f, 0f), Quaternion.Euler(0f, 90f, 0f), Vector3.one * 5.55f);
+            CreateShapeFxObject(shapesRoot, "ShapesFX_ReadableGoldInnerShell", torus, goldGlow, gateCenter + new Vector3(-0.54f, 0f, 0f), Quaternion.Euler(16f, 90f, -24f), Vector3.one * 2.82f);
             CreateShapeFxObject(shapesRoot, "ShapesFX_ReadableWhiteCoreShard", dodeca, whiteGlow, gateCenter + new Vector3(-0.58f, 0f, 0f), Quaternion.Euler(0f, 45f, 0f), Vector3.one * 0.32f);
         }
 
@@ -1150,9 +1195,10 @@ namespace DimensionBrawl.Editor
         private static void CreateReadableCombatBillboards(Transform parent, Transform lookdevRoot, Material heavenMaterial, Material riftMaterial, Material goldCoreMaterial, Material enemyMaterial, Material blueCoreMaterial, Material floorMaterial)
         {
             Transform cameraTransform = RequireChild(lookdevRoot, CameraName);
-            CreateCameraBillboard(parent, cameraTransform, "Billboard_HeavenGateBloom", heavenMaterial, 32.2f, 0f, 0.38f, new Vector2(6.4f, 3.65f));
-            CreateCameraBillboard(parent, cameraTransform, "Billboard_RiftGlow", riftMaterial, 31.9f, 0f, 0.24f, new Vector2(4.65f, 2.55f));
-            CreateCameraBillboard(parent, cameraTransform, "Billboard_RiftCore", goldCoreMaterial, 31.8f, 0f, 0.25f, new Vector2(1.5f, 1.5f));
+            CreateCameraBillboard(parent, cameraTransform, "Billboard_InvasionVeil", enemyMaterial, 32.45f, 0f, 0.44f, new Vector2(5.4f, 3.35f));
+            CreateCameraBillboard(parent, cameraTransform, "Billboard_HeavenGateBloom", heavenMaterial, 32.2f, 0f, 0.58f, new Vector2(12.2f, 7.35f));
+            CreateCameraBillboard(parent, cameraTransform, "Billboard_RiftGlow", riftMaterial, 31.9f, 0f, 0.42f, new Vector2(8.25f, 5.2f));
+            CreateCameraBillboard(parent, cameraTransform, "Billboard_RiftCore", goldCoreMaterial, 31.8f, 0f, 0.3f, new Vector2(2.05f, 2.05f));
             CreateCameraBillboard(parent, cameraTransform, "Billboard_BossOutline", enemyMaterial, 27.8f, 0f, -0.65f, new Vector2(1.65f, 2.35f));
             CreateCameraBillboard(parent, cameraTransform, "Billboard_BossCore", blueCoreMaterial, 27.6f, 0f, -0.38f, new Vector2(0.58f, 0.58f));
             CreateCameraBillboard(parent, cameraTransform, "Billboard_AddLeft", enemyMaterial, 26.5f, -2.15f, -0.75f, new Vector2(0.95f, 1.35f));
@@ -1185,53 +1231,84 @@ namespace DimensionBrawl.Editor
 
         private static void CreateRiftStarburst(Transform parent, Material material, Vector3 center)
         {
-            CreateLine(parent, "RiftBolt_Vertical", material, 0.075f, new[]
+            CreateLine(parent, "RiftBolt_Vertical", material, 0.052f, new[]
             {
-                center + new Vector3(0f, -4.5f, 0f), center + new Vector3(0f, -1.4f, 0.25f), center,
-                center + new Vector3(0f, 1.7f, -0.22f), center + new Vector3(0f, 4.2f, 0.08f)
+                center + new Vector3(0f, -3.55f, 0f), center + new Vector3(0f, -1.2f, 0.18f), center,
+                center + new Vector3(0f, 1.45f, -0.18f), center + new Vector3(0f, 3.35f, 0.08f)
             });
-            CreateLine(parent, "RiftBolt_LeftFork", material, 0.052f, new[]
+            CreateLine(parent, "RiftBolt_LeftFork", material, 0.036f, new[]
             {
-                center, center + new Vector3(-1.2f, 0.95f, -1.2f), center + new Vector3(-2.4f, 1.8f, -2.05f), center + new Vector3(-3.1f, 2.6f, -2.8f)
+                center, center + new Vector3(-0.95f, 0.8f, -0.9f), center + new Vector3(-1.8f, 1.55f, -1.55f), center + new Vector3(-2.35f, 2.1f, -2.05f)
             });
-            CreateLine(parent, "RiftBolt_RightFork", material, 0.052f, new[]
+            CreateLine(parent, "RiftBolt_RightFork", material, 0.036f, new[]
             {
-                center, center + new Vector3(-1.1f, 0.7f, 1.05f), center + new Vector3(-2.2f, 1.55f, 2.2f), center + new Vector3(-3.3f, 2.25f, 3.05f)
+                center, center + new Vector3(-0.9f, 0.65f, 0.85f), center + new Vector3(-1.75f, 1.35f, 1.65f), center + new Vector3(-2.4f, 1.95f, 2.2f)
             });
-            CreateLine(parent, "RiftBolt_FloorFork", material, 0.045f, new[]
+            CreateLine(parent, "RiftBolt_FloorFork", material, 0.028f, new[]
             {
                 center + new Vector3(-0.2f, -0.2f, 0f), center + new Vector3(-1.5f, -1.3f, -0.95f), center + new Vector3(-2.7f, -2.2f, -1.8f)
             });
-            CreateLine(parent, "RiftBolt_UpperArc", material, 0.04f, new[]
+            CreateLine(parent, "RiftBolt_UpperArc", material, 0.026f, new[]
             {
                 center + new Vector3(-3.9f, 3.2f, -3.6f), center + new Vector3(-2.2f, 3.65f, -1.5f), center + new Vector3(-0.4f, 3.95f, 0.5f), center + new Vector3(-2.1f, 3.55f, 2.6f)
             });
         }
 
+        private static void CreateInvadingHeavenBreach(Transform parent, Material invasionGlow, Material blueGlow, Material goldGlow, Vector3 center)
+        {
+            CreateLine(parent, "InvasionBreach_LeftClaw", invasionGlow, 0.066f, new[]
+            {
+                center + new Vector3(-0.34f, 2.28f, -1.92f), center + new Vector3(-0.44f, 1.45f, -1.18f),
+                center + new Vector3(-0.54f, 0.62f, -0.46f), center + new Vector3(-0.64f, -0.12f, -0.12f)
+            });
+            CreateLine(parent, "InvasionBreach_RightClaw", invasionGlow, 0.066f, new[]
+            {
+                center + new Vector3(-0.34f, 2.08f, 1.82f), center + new Vector3(-0.48f, 1.22f, 1.08f),
+                center + new Vector3(-0.58f, 0.42f, 0.42f), center + new Vector3(-0.66f, -0.18f, 0.08f)
+            });
+            CreateLine(parent, "InvasionBreach_CeilingTear", invasionGlow, 0.052f, new[]
+            {
+                center + new Vector3(-2.3f, 3.38f, -0.98f), center + new Vector3(-1.28f, 3.08f, -0.34f),
+                center + new Vector3(-0.36f, 2.72f, 0.04f), center + new Vector3(-1.2f, 3f, 0.7f),
+                center + new Vector3(-2.05f, 3.22f, 1.18f)
+            });
+            CreateLine(parent, "InvasionBreach_SealBreakGold", goldGlow, 0.036f, new[]
+            {
+                center + new Vector3(-1.8f, -1.88f, -0.85f), center + new Vector3(-0.95f, -1.52f, -0.34f),
+                center + new Vector3(-0.25f, -1.24f, 0.08f), center + new Vector3(-0.92f, -1.5f, 0.42f),
+                center + new Vector3(-1.72f, -1.82f, 0.92f)
+            });
+            CreateLine(parent, "InvasionBreach_BlueCounterSeal", blueGlow, 0.032f, new[]
+            {
+                center + new Vector3(-2.25f, 0.88f, -1.38f), center + new Vector3(-1.48f, 0.72f, -0.62f),
+                center + new Vector3(-0.7f, 0.48f, 0f), center + new Vector3(-1.46f, 0.72f, 0.66f),
+                center + new Vector3(-2.18f, 0.92f, 1.42f)
+            });
+        }
         private static void CreateFloorCracks(Transform parent, Material blueGlow, Material goldGlow)
         {
-            CreateLine(parent, "FloorRift_CenterSpine", blueGlow, 0.12f, new[]
+            CreateLine(parent, "FloorRift_CenterSpine", blueGlow, 0.07f, new[]
             {
                 new Vector3(-8f, 0.16f, 0.05f), new Vector3(-3.2f, 0.16f, -0.18f), new Vector3(2.5f, 0.16f, 0.18f),
                 new Vector3(8.5f, 0.16f, -0.12f), new Vector3(16.5f, 0.16f, 0.05f)
             });
-            CreateLine(parent, "FloorRift_LeftBranch", blueGlow, 0.085f, new[]
+            CreateLine(parent, "FloorRift_LeftBranch", blueGlow, 0.045f, new[]
             {
                 new Vector3(3f, 0.17f, 0f), new Vector3(5.8f, 0.17f, -1.2f), new Vector3(8.1f, 0.17f, -2.5f), new Vector3(11.8f, 0.17f, -3.25f)
             });
-            CreateLine(parent, "FloorRift_RightBranch", blueGlow, 0.085f, new[]
+            CreateLine(parent, "FloorRift_RightBranch", blueGlow, 0.045f, new[]
             {
                 new Vector3(5f, 0.17f, 0.05f), new Vector3(7.1f, 0.17f, 1.35f), new Vector3(10.6f, 0.17f, 2.55f), new Vector3(14.2f, 0.17f, 3.1f)
             });
-            CreateLine(parent, "FloorGold_LeftGuide", goldGlow, 0.115f, new[] { new Vector3(-11f, 0.18f, -1.9f), new Vector3(18f, 0.18f, -1.9f) });
-            CreateLine(parent, "FloorGold_RightGuide", goldGlow, 0.115f, new[] { new Vector3(-11f, 0.18f, 1.9f), new Vector3(18f, 0.18f, 1.9f) });
+            CreateLine(parent, "FloorGold_LeftGuide", goldGlow, 0.078f, new[] { new Vector3(-11f, 0.18f, -1.9f), new Vector3(18f, 0.18f, -1.9f) });
+            CreateLine(parent, "FloorGold_RightGuide", goldGlow, 0.078f, new[] { new Vector3(-11f, 0.18f, 1.9f), new Vector3(18f, 0.18f, 1.9f) });
         }
 
         private static void CreateEnemyProxySet(Transform parent, Material bodyMaterial, Material eyeMaterial, Material outlineMaterial)
         {
-            CreateEnemyProxy(parent, "BossSilhouette_Center", bodyMaterial, eyeMaterial, outlineMaterial, new Vector3(10.2f, 1.0f, 0f), 0.92f);
-            CreateEnemyProxy(parent, "AddSilhouette_Left", bodyMaterial, eyeMaterial, outlineMaterial, new Vector3(8.9f, 0.72f, -1.25f), 0.54f);
-            CreateEnemyProxy(parent, "AddSilhouette_Right", bodyMaterial, eyeMaterial, outlineMaterial, new Vector3(8.9f, 0.72f, 1.25f), 0.54f);
+            CreateEnemyProxy(parent, "BossSilhouette_Center", bodyMaterial, eyeMaterial, outlineMaterial, new Vector3(12.35f, 0.86f, 0f), 0.74f);
+            CreateEnemyProxy(parent, "AddSilhouette_Left", bodyMaterial, eyeMaterial, outlineMaterial, new Vector3(11.65f, 0.66f, -1.62f), 0.44f);
+            CreateEnemyProxy(parent, "AddSilhouette_Right", bodyMaterial, eyeMaterial, outlineMaterial, new Vector3(11.65f, 0.66f, 1.62f), 0.44f);
         }
 
         private static void CreateEnemyProxy(Transform parent, string name, Material bodyMaterial, Material eyeMaterial, Material outlineMaterial, Vector3 position, float scale)
@@ -1443,13 +1520,13 @@ namespace DimensionBrawl.Editor
         private static void ConfigureSceneAtmosphere(Scene scene)
         {
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(0.46f, 0.58f, 0.76f, 1f);
-            RenderSettings.ambientEquatorColor = new Color(0.3f, 0.4f, 0.58f, 1f);
-            RenderSettings.ambientGroundColor = new Color(0.11f, 0.14f, 0.22f, 1f);
+            RenderSettings.ambientSkyColor = new Color(0.72f, 0.78f, 0.94f, 1f);
+            RenderSettings.ambientEquatorColor = new Color(0.58f, 0.66f, 0.86f, 1f);
+            RenderSettings.ambientGroundColor = new Color(0.26f, 0.28f, 0.4f, 1f);
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.ExponentialSquared;
-            RenderSettings.fogColor = new Color(0.16f, 0.25f, 0.42f, 1f);
-            RenderSettings.fogDensity = 0.00125f;
+            RenderSettings.fogColor = new Color(0.42f, 0.52f, 0.76f, 1f);
+            RenderSettings.fogDensity = 0.00065f;
             RenderSettings.skybox = EnsurePromotedAllSkySkybox();
 
             foreach (GameObject root in scene.GetRootGameObjects())
@@ -1479,17 +1556,19 @@ namespace DimensionBrawl.Editor
             EnsureFolder(TextureRoot);
             EnsureFolder(SkyTextureRoot);
             skybox.CopyPropertiesFromMaterial(sourceSkybox);
-            PromoteSkyboxTextures(sourceSkybox, skybox);
+            HashSet<string> promotedSkyTexturePaths = new HashSet<string>(StringComparer.Ordinal);
+            PromoteSkyboxTextures(sourceSkybox, skybox, promotedSkyTexturePaths);
+            DeleteUnusedPromotedSkyTextures(promotedSkyTexturePaths);
             skybox.shader = sourceSkybox.shader;
             skybox.name = Path.GetFileNameWithoutExtension(SkyboxMaterialPath);
-            SetMaterialColor(skybox, "_Tint", new Color(0.68f, 0.74f, 0.9f, 0.65f));
-            SetMaterialFloat(skybox, "_Exposure", 0.72f);
-            SetMaterialFloat(skybox, "_Rotation", 8f);
+            SetMaterialColor(skybox, "_Tint", new Color(0.9f, 0.94f, 1f, 0.82f));
+            SetMaterialFloat(skybox, "_Exposure", 0.82f);
+            SetMaterialFloat(skybox, "_Rotation", 28f);
             EditorUtility.SetDirty(skybox);
             return skybox;
         }
 
-        private static void PromoteSkyboxTextures(Material sourceSkybox, Material destinationSkybox)
+        private static void PromoteSkyboxTextures(Material sourceSkybox, Material destinationSkybox, HashSet<string> promotedTexturePaths)
         {
             Shader shader = sourceSkybox.shader;
             int propertyCount = shader.GetPropertyCount();
@@ -1500,17 +1579,17 @@ namespace DimensionBrawl.Editor
                     continue;
                 }
 
-                PromoteSkyboxTextureProperty(sourceSkybox, destinationSkybox, shader.GetPropertyName(i));
+                PromoteSkyboxTextureProperty(sourceSkybox, destinationSkybox, shader.GetPropertyName(i), promotedTexturePaths);
             }
 
             string[] copiedMaterialTextureProperties = { "_BackTex", "_DownTex", "_FrontTex", "_LeftTex", "_RightTex", "_Tex", "_UpTex" };
             for (int i = 0; i < copiedMaterialTextureProperties.Length; i++)
             {
-                PromoteSkyboxTextureProperty(sourceSkybox, destinationSkybox, copiedMaterialTextureProperties[i]);
+                PromoteSkyboxTextureProperty(sourceSkybox, destinationSkybox, copiedMaterialTextureProperties[i], promotedTexturePaths);
             }
         }
 
-        private static void PromoteSkyboxTextureProperty(Material sourceSkybox, Material destinationSkybox, string propertyName)
+        private static void PromoteSkyboxTextureProperty(Material sourceSkybox, Material destinationSkybox, string propertyName, HashSet<string> promotedTexturePaths)
         {
             Texture sourceTexture = sourceSkybox.GetTexture(propertyName);
             if (sourceTexture == null)
@@ -1518,15 +1597,21 @@ namespace DimensionBrawl.Editor
                 return;
             }
 
-            Texture promotedTexture = PromoteSkyboxTexture(sourceTexture);
+            Texture promotedTexture = PromoteSkyboxTexture(sourceTexture, out string promotedPath);
             if (promotedTexture != null)
             {
                 destinationSkybox.SetTexture(propertyName, promotedTexture);
             }
+
+            if (!string.IsNullOrEmpty(promotedPath))
+            {
+                promotedTexturePaths.Add(promotedPath);
+            }
         }
 
-        private static Texture PromoteSkyboxTexture(Texture sourceTexture)
+        private static Texture PromoteSkyboxTexture(Texture sourceTexture, out string promotedPath)
         {
+            promotedPath = null;
             string sourcePath = AssetDatabase.GetAssetPath(sourceTexture);
             if (string.IsNullOrWhiteSpace(sourcePath))
             {
@@ -1535,7 +1620,8 @@ namespace DimensionBrawl.Editor
 
             string extension = Path.GetExtension(sourcePath);
             string sourceName = Path.GetFileNameWithoutExtension(sourcePath);
-            string destinationPath = SkyTextureRoot + "/DB_OlympusCorridor_" + SanitizeAssetName(sourceName) + extension;
+            string destinationPath = SkyTextureRoot + "/" + PromotedSkyTexturePrefix + SanitizeAssetName(sourceName) + extension;
+            promotedPath = destinationPath;
             if (AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(destinationPath) == null)
             {
                 if (!AssetDatabase.CopyAsset(sourcePath, destinationPath))
@@ -1550,6 +1636,20 @@ namespace DimensionBrawl.Editor
             return exactTexture != null ? exactTexture : AssetDatabase.LoadAssetAtPath<Texture>(destinationPath);
         }
 
+        private static void DeleteUnusedPromotedSkyTextures(HashSet<string> activeTexturePaths)
+        {
+            foreach (string textureGuid in AssetDatabase.FindAssets("t:Texture", new[] { SkyTextureRoot }))
+            {
+                string texturePath = AssetDatabase.GUIDToAssetPath(textureGuid);
+                string textureName = Path.GetFileNameWithoutExtension(texturePath);
+                if (!textureName.StartsWith(PromotedSkyTexturePrefix, StringComparison.Ordinal) || activeTexturePaths.Contains(texturePath))
+                {
+                    continue;
+                }
+
+                AssetDatabase.DeleteAsset(texturePath);
+            }
+        }
         private static Texture LoadPromotedTexture(string path, Type preferredType)
         {
             UnityEngine.Object[] assets = AssetDatabase.LoadAllAssetsAtPath(path);

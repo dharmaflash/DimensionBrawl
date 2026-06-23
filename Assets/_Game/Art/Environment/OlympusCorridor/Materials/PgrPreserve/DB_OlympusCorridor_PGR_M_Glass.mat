@@ -46,7 +46,7 @@ Material:
     serializedVersion: 3
     m_TexEnvs:
     - _GrungeMap:
-        m_Texture: {fileID: 2800000, guid: 745dfc3804ed77e4db8eb2ac41d4d833, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _IDMap:
@@ -54,11 +54,11 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _MRAEMap:
-        m_Texture: {fileID: 2800000, guid: 8d1cede6f2a6fcd4ba0ca9e6494a203c, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _NormalMap:
-        m_Texture: {fileID: 2800000, guid: b8b69e4011c542e4fbc5e0808c0b510b, type: 3}
+        m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - unity_Lightmaps:
@@ -88,7 +88,7 @@ Material:
     - _BlendMode: 0
     - _BlendModePreserveSpecular: 0
     - _CastShadows: 1
-    - _ColorGrungeBlend: 1
+    - _ColorGrungeBlend: 0.16
     - _ConservativeDepthOffsetEnable: 0
     - _Cull: 2
     - _CullMode: 2
@@ -102,7 +102,7 @@ Material:
     - _EnableBlendModePreserveSpecularLighting: 1
     - _EnableFogOnTransparent: 1
     - _Metallic: 0
-    - _NormalStrength: 1
+    - _NormalStrength: 0.04
     - _Opacity: 0.8
     - _OpaqueCullMode: 2
     - _PatternASharpness: 60
@@ -115,7 +115,7 @@ Material:
     - _RefractionModel: 0
     - _RenderQueueType: 4
     - _RequireSplitLighting: 0
-    - _Roughness: 110.5
+    - _Roughness: 10
     - _SrcBlend: 1
     - _SrcBlendAlpha: 1
     - _StencilRef: 0
@@ -131,8 +131,8 @@ Material:
     - _SupportDecals: 1
     - _Surface: 0
     - _SurfaceType: 1
-    - _Tiling: 20
-    - _Tiling_Grunge: 55.74
+    - _Tiling: 1.05
+    - _Tiling_Grunge: 0.24
     - _TransparentBackfaceEnable: 0
     - _TransparentCullMode: 2
     - _TransparentDepthPostpassEnable: 0
@@ -151,15 +151,15 @@ Material:
     - _ZWrite: 1
     - _ZWriteControl: 0
     m_Colors:
-    - _ColorB: {r: 0.44022477, g: 0.7329521, b: 0.95873344, a: 0.841248}
-    - _ColorBlack: {r: 0.12993948, g: 0.26831406, b: 0.3773585, a: 0}
+    - _ColorB: {r: 0.59992766, g: 0.8306937, b: 0.98691547, a: 0.835264}
+    - _ColorBlack: {r: 0.5973496, g: 0.8152934, b: 0.9682445, a: 0}
     - _ColorEmissive: {r: 0, g: 0, b: 0, a: 0}
-    - _ColorG: {r: 0.45344484, g: 0.74457574, b: 0.9496749, a: 0.8064}
-    - _ColorGrunge: {r: 0.17942329, g: 0.48749882, b: 0.6037736, a: 0}
-    - _ColorR: {r: 0.5408937, g: 0.7854436, b: 0.9577269, a: 0.837376}
+    - _ColorG: {r: 0.60554826, g: 0.8449919, b: 0.983225, a: 0.7888}
+    - _ColorGrunge: {r: 0.70021665, g: 0.88219386, b: 0.987251, a: 0}
+    - _ColorR: {r: 0.73177284, g: 0.8945945, b: 0.988593, a: 0.856384}
     - _DoubleSidedConstants: {r: 1, g: 1, b: 1, a: 0}
     - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
-    - _PatternASharpness: {r: 6, g: 6, b: 6, a: 0}
+    - _PatternASharpness: {r: 2.5, g: 2.5, b: 2.5, a: 0}
     - _Tiling_1: {r: 1, g: 1, b: 1, a: 0}
   m_BuildTextureStacks: []
   m_AllowLocking: 1

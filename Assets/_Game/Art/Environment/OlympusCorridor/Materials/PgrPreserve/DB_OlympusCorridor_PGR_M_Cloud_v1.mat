@@ -143,6 +143,6 @@ Material:
     - _Base_Tint: {r: 1, g: 1, b: 1, a: 0}
     - _DoubleSidedConstants: {r: 1, g: 1, b: 1, a: 0}
     - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}
-    - _Emissive_Color: {r: 0.05, g: 0.12, b: 0.22, a: 1}
+    - _Emissive_Color: {r: 0.035, g: 0.09, b: 0.18, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
