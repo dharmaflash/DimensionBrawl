@@ -21343,7 +21343,7 @@ MonoBehaviour:
   lookAimKnobSize: 30
   lookAimScreenMinX: 0
   showFireAimReticle: 1
-  fireAimReticleUsesScreenCenter: 1
+  fireAimReticleUsesScreenCenter: 0
   fireAimReticleSize: 34
   fireAimReticleGap: 9
   fireAimReticleThickness: 2
@@ -21352,7 +21352,7 @@ MonoBehaviour:
   fireAimAssistGapTighten: 0.35
   fireAimAssistSizeBoost: 0.22
   fireAimAssistThicknessBoost: 0.45
-  fireAimReticleFollowsAssist: 1
+  fireAimReticleFollowsAssist: 0
   fireAimAssistReticleMaxOffset: 96
 --- !u!114 &2103557355
 MonoBehaviour:

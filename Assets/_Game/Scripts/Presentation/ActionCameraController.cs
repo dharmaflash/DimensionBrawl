@@ -59,7 +59,7 @@ namespace DimensionBrawl.Presentation
         [Header("Aim Mode")]
         [Tooltip("Persistent ranged-aim shoulder offset. This is a mode modifier, not a short combat cue.")]
         [SerializeField] private Vector3 aimCameraOffset = new Vector3(0.5f, 0.18f, 0.12f);
-        [SerializeField] private Vector3 aimFocusOffset = new Vector3(0.08f, 0.06f, 1.05f);
+        [SerializeField] private Vector3 aimFocusOffset = new Vector3(0.5f, 0.06f, 1.05f);
         [SerializeField] private float aimFieldOfViewDelta = -5.5f;
         [SerializeField, Min(0f)] private float aimBlendInSpeed = 14f;
         [SerializeField, Min(0f)] private float aimBlendOutSpeed = 18f;
@@ -112,6 +112,12 @@ namespace DimensionBrawl.Presentation
         public float OrbitYawDegrees => orbitYawDegrees;
         public Transform Target => target;
         public Transform Threat => threat;
+
+        public Vector3 GetAimPlanarForward()
+        {
+            float resolvedYaw = NormalizeYaw(orbitYawDegrees + ResolveTotalAimYawOffset());
+            return Quaternion.Euler(0f, resolvedYaw, 0f) * Vector3.forward;
+        }
 
         public bool TryGetViewportAimRay(Vector2 viewportPoint, out Ray ray)
         {

@@ -631,7 +631,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(0.39f, GetFloat(rangedBasicAttackAction, "aimInputViewportOffsetX"), 0.001f);
             Assert.AreEqual(0.20f, GetFloat(rangedBasicAttackAction, "aimInputViewportOffsetY"), 0.001f);
             Assert.IsTrue(GetBool(rangedBasicAttackAction, "useStableAimOrigin"));
-            Assert.IsTrue(GetBool(rangedBasicAttackAction, "useAimAssist"));
+            Assert.IsFalse(GetBool(rangedBasicAttackAction, "useAimAssist"));
             Assert.IsFalse(GetBool(rangedBasicAttackAction, "disableAimAssistWithManualInput"));
             Assert.IsFalse(GetBool(rangedBasicAttackAction, "requestFacingOnFire"));
             Assert.AreEqual(28f, GetFloat(rangedBasicAttackAction, "damage"), 0.001f);
@@ -643,7 +643,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(14f, GetFloat(rangedBasicAttackAction, "hipAimAssistAngleDegrees"), 0.001f);
             Assert.AreEqual(14f, GetFloat(rangedBasicAttackAction, "aimedAimAssistAngleDegrees"), 0.001f);
             Assert.AreEqual(14f, GetFloat(rangedBasicAttackAction, "aimAssistMaxTurnDegrees"), 0.001f);
-            Assert.IsTrue(GetBool(rangedBasicAttackAction, "driveCameraAimAssist"));
+            Assert.IsFalse(GetBool(rangedBasicAttackAction, "driveCameraAimAssist"));
             Assert.That(GetFloat(rangedBasicAttackAction, "cameraAimAssistStrengthScale"), Is.InRange(0.01f, 1f));
             Assert.That(GetFloat(rangedBasicAttackAction, "cameraAimAssistMinStrength"), Is.InRange(0f, 0.5f));
             GameObject rangedBasicProjectilePrefab = LoadAsset<GameObject>(RangedBasicProjectilePrefabPath);
@@ -1173,7 +1173,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(InputSystemKeyQ, GetEnumIndex(mobileHud, "keyboardPeekLeftKey"));
             Assert.AreEqual(InputSystemKeyE, GetEnumIndex(mobileHud, "keyboardPeekRightKey"));
             Assert.IsTrue(GetBool(mobileHud, "keyboardPeekRequiresActiveAim"));
-            Assert.IsTrue(GetBool(mobileHud, "fireAimReticleUsesScreenCenter"));
+            Assert.IsFalse(GetBool(mobileHud, "fireAimReticleUsesScreenCenter"));
             Assert.AreEqual(0.08f, GetFloat(mobileHud, "lookAimDragDeadZone"), 0.001f);
             Assert.AreEqual(230f, GetFloat(mobileHud, "lookAimDragRadius"), 0.001f);
             Assert.AreEqual(30f, GetFloat(mobileHud, "lookAimKnobSize"), 0.001f);
@@ -1185,7 +1185,7 @@ namespace DimensionBrawl.Tests
             Assert.Greater(GetFloat(mobileHud, "fireAimAssistGapTighten"), 0f);
             Assert.Greater(GetFloat(mobileHud, "fireAimAssistSizeBoost"), 0f);
             Assert.Greater(GetFloat(mobileHud, "fireAimAssistThicknessBoost"), 0f);
-            Assert.IsTrue(GetBool(mobileHud, "fireAimReticleFollowsAssist"));
+            Assert.IsFalse(GetBool(mobileHud, "fireAimReticleFollowsAssist"));
             Assert.Greater(GetFloat(mobileHud, "fireAimAssistReticleMaxOffset"), 0f);
 
             yield return null;
@@ -1546,8 +1546,10 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(cameraController.IsAimModifierActive, "Holding FIRE should request the persistent aim camera modifier.");
             Assert.IsTrue(rangedBasicAttackAction.IsAimPreviewActive);
             Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewViewportPoint(out Vector2 viewportPoint));
-            Assert.AreEqual(0.5f, viewportPoint.x, 0.001f);
-            Assert.AreEqual(0.5f, viewportPoint.y, 0.001f);
+            Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewWorldPoint(out Vector3 previewWorldPoint));
+            Assert.IsTrue(cameraController.TryWorldToViewportPoint(previewWorldPoint, out Vector3 projectedPreviewPoint));
+            Assert.AreEqual(projectedPreviewPoint.x, viewportPoint.x, 0.001f);
+            Assert.AreEqual(projectedPreviewPoint.y, viewportPoint.y, 0.001f);
 
             rangedBasicAttackAction.SetFireHeld(false);
             yield return null;
@@ -1634,7 +1636,7 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator RangedAimKeepsPeekInputUnmodifiedWhenFireAssistTargetIsActive()
+        public IEnumerator RangedAimKeepsPeekInputUnmodifiedWhenCloseThreatIsNearCenter()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             PlayerCombatModeController combatModeController =
@@ -1682,8 +1684,9 @@ namespace DimensionBrawl.Tests
 
             rangedBasicAttackAction.SetAimInput(Vector2.right);
             Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out _));
-            Assert.IsTrue(rangedBasicAttackAction.HasAimAssistTarget);
-            Assert.AreSame(closeThreatHealth, rangedBasicAttackAction.AimAssistTargetHealth);
+            Assert.IsFalse(
+                rangedBasicAttackAction.HasAimAssistTarget,
+                "The resolved aim solution should not silently pull bullets toward an off-center close threat.");
 
             aimController.SetAimInput(Vector2.right);
 
@@ -1696,7 +1699,7 @@ namespace DimensionBrawl.Tests
                 1f,
                 cameraController.AimOrbitInput.x,
                 0.001f,
-                "Fire assist may bend the shot, but it must not silently change the camera peek input.");
+                "Close threats may be readable targets, but they must not silently change the camera peek input.");
 
             rangedBasicAttackAction.ClearAimInput();
             aimController.SetAimInput(Vector2.zero);
@@ -1707,7 +1710,7 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator RangedFireAssistPullsCameraAimAxisTowardCloseThreat()
+        public IEnumerator RangedFireDoesNotPullCameraAimAxisTowardCloseThreat()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             PlayerCombatModeController combatModeController =
@@ -1754,8 +1757,9 @@ namespace DimensionBrawl.Tests
             yield return null;
 
             Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out _));
-            Assert.IsTrue(rangedBasicAttackAction.HasAimAssistTarget);
-            Assert.AreSame(closeThreatHealth, rangedBasicAttackAction.AimAssistTargetHealth);
+            Assert.IsFalse(
+                rangedBasicAttackAction.HasAimAssistTarget,
+                "Soft ranged fire assist should stay disabled while the review scene uses direct preview aiming.");
             Assert.That(cameraController.AimOrbitInput.x, Is.EqualTo(0f).Within(0.001f));
 
             Vector3 initialCameraTargetDirection =
@@ -1770,14 +1774,14 @@ namespace DimensionBrawl.Tests
             Assert.Greater(pulledAimForward.sqrMagnitude, 0.0001f);
             pulledAimForward.Normalize();
             float signedPullAngle = Vector3.SignedAngle(initialAimForward, pulledAimForward, Vector3.up);
-            Assert.Greater(
+            Assert.Less(
                 Mathf.Abs(cameraController.AimAssistYawOffsetDegrees),
                 0.05f,
-                "Fire assist should pull the camera aim axis, not only bend an invisible projectile path.");
-            Assert.Greater(
-                signedPullAngle * signedAngleBeforePull,
-                0f,
-                "The center aim axis should yaw toward the close assisted target while FIRE is held.");
+                "Holding FIRE should not pull the camera aim axis away from the resolved preview aim line.");
+            Assert.Less(
+                Mathf.Abs(signedPullAngle),
+                0.5f,
+                "The center aim axis should stay stable while FIRE is held.");
             Assert.That(cameraController.AimOrbitInput.x, Is.EqualTo(0f).Within(0.001f));
 
             rangedBasicAttackAction.SetFireHeld(false);
@@ -1840,6 +1844,7 @@ namespace DimensionBrawl.Tests
             PlayerRangedBasicAttackAction rangedBasicAttackAction =
                 RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
             PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
             SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
             GameObject bossRoot = RequireRoot(BossRootName);
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
@@ -1855,8 +1860,10 @@ namespace DimensionBrawl.Tests
             yield return WaitSeconds(0.22f);
 
             Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewViewportPoint(out Vector2 viewportPoint));
-            Assert.AreEqual(0.5f, viewportPoint.x, 0.001f);
-            Assert.AreEqual(0.5f, viewportPoint.y, 0.001f);
+            Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewWorldPoint(out Vector3 previewWorldPoint));
+            Assert.IsTrue(cameraController.TryWorldToViewportPoint(previewWorldPoint, out Vector3 projectedPreviewPoint));
+            Assert.AreEqual(projectedPreviewPoint.x, viewportPoint.x, 0.001f);
+            Assert.AreEqual(projectedPreviewPoint.y, viewportPoint.y, 0.001f);
             Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out Vector3 previewDirection));
             Assert.IsTrue(rangedBasicAttackAction.TryFire());
             LaneActionProjectile playerProjectile = RequireActivePlayerRangedProjectile();
@@ -1879,7 +1886,7 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator RangedBasicAimAssistLandsNearCloseThreatBodyFromMuzzle()
+        public IEnumerator RangedBasicFireKeepsCenterLineWhenCloseThreatIsOffCenter()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             PlayerCombatModeController combatModeController =
@@ -1927,37 +1934,26 @@ namespace DimensionBrawl.Tests
             yield return null;
 
             Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out Vector3 previewDirection));
-            Assert.IsTrue(rangedBasicAttackAction.HasAimAssistTarget);
-            Assert.AreSame(closeThreatHealth, rangedBasicAttackAction.AimAssistTargetHealth);
-            Assert.Greater(rangedBasicAttackAction.AimAssistStrength01, 0f);
-            Assert.IsTrue(rangedBasicAttackAction.TryGetAimAssistPreviewViewportPoint(out Vector2 assistViewportPoint));
-            Assert.That(assistViewportPoint.x, Is.InRange(0f, 1f));
-            Assert.That(assistViewportPoint.y, Is.InRange(0f, 1f));
-            Assert.Greater(
-                Vector2.Distance(assistViewportPoint, new Vector2(0.5f, 0.5f)),
-                0.003f,
-                "The main fire reticle needs a moving screen point so the player can see where weak fire assist is pulling the shot.");
+            Assert.IsFalse(
+                rangedBasicAttackAction.HasAimAssistTarget,
+                "An off-center close threat should not bend basic fire away from the resolved preview aim line.");
             Assert.IsTrue(rangedBasicAttackAction.TryFire());
 
             LaneActionProjectile playerProjectile = RequireActivePlayerRangedProjectile();
             Assert.Less(
                 Vector3.Angle(playerProjectile.TravelDirection, previewDirection),
                 0.5f,
-                "The fired projectile should use the same assisted direction shown by the aim preview.");
+                "The fired projectile should use the same center-line direction shown by the aim preview.");
 
             float projectileRadius = GetFloat(rangedBasicAttackAction, "projectileRadius");
             float pathMissDistance = DistanceFromRayToBounds(
                 playerProjectile.transform.position,
                 playerProjectile.TravelDirection,
                 closeThreatCollider.bounds);
-            Assert.LessOrEqual(
+            Assert.Greater(
                 pathMissDistance,
                 projectileRadius + 0.03f,
-                "Assisted ranged basic fire should route the actual muzzle projectile through the close-threat body bounds.");
-
-            float healthBeforeImpact = closeThreatHealth.CurrentHealth;
-            Assert.IsTrue(playerProjectile.TryApplyImpact(closeThreatCollider, playerProjectile.transform.position));
-            Assert.Less(closeThreatHealth.CurrentHealth, healthBeforeImpact);
+                "Without soft assist, an off-center close threat should not receive a hidden basic-fire bend.");
 
             rangedBasicAttackAction.ClearAimInput();
             aimController.SetAimInput(Vector2.zero);
@@ -1979,6 +1975,7 @@ namespace DimensionBrawl.Tests
                 RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
             PlayerRangedBasicAttackAction rangedBasicAttackAction =
                 RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
             SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
             Transform fireOrigin = GetObjectReference<Transform>(rangedBasicAttackAction, "fireOrigin");
 
@@ -2253,7 +2250,7 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator RangedBasicFireKeepsFpsStyleCenterReticleForVerticalAimInput()
+        public IEnumerator RangedBasicFireProjectsPreviewViewportForVerticalAimInput()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             PlayerCombatModeController combatModeController =
@@ -2262,6 +2259,7 @@ namespace DimensionBrawl.Tests
                 RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
             PlayerRangedBasicAttackAction rangedBasicAttackAction =
                 RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
             SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
 
             combatModeController.SetRangedMode();
@@ -2273,12 +2271,14 @@ namespace DimensionBrawl.Tests
             yield return null;
 
             Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewViewportPoint(out Vector2 viewportPoint));
-            Assert.AreEqual(0.5f, viewportPoint.x, 0.001f);
+            Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewWorldPoint(out Vector3 previewWorldPoint));
+            Assert.IsTrue(cameraController.TryWorldToViewportPoint(previewWorldPoint, out Vector3 projectedPreviewPoint));
+            Assert.AreEqual(projectedPreviewPoint.x, viewportPoint.x, 0.001f);
             Assert.AreEqual(
-                0.5f,
+                projectedPreviewPoint.y,
                 viewportPoint.y,
                 0.001f,
-                "Look/TargetBias should not move the FPS-style center reticle.");
+                "The preview viewport should follow the same resolved world aim point as the actual shot.");
             Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out Vector3 previewDirection));
             Assert.IsTrue(rangedBasicAttackAction.TryFire());
 
@@ -3637,13 +3637,6 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(
                 rangedBasicAttackAction.TryFire(),
                 "Held Fire should be able to launch the player basic shot toward the far boss, not only close threats.");
-            Assert.IsTrue(
-                rangedBasicAttackAction.HasAimAssistTarget,
-                "The far boss should sit inside the reviewed basic-fire aim assist range so mobile fire feels contributory.");
-            Assert.AreSame(
-                bossHealth,
-                rangedBasicAttackAction.AimAssistTargetHealth,
-                "Boss-target stickiness should let basic fire keep assisting the far boss when the player intentionally aims there.");
 
             LaneActionProjectile projectile = RequireActivePlayerRangedProjectile();
             float travelBudget = GetFloat(rangedBasicAttackAction, "projectileSpeed")

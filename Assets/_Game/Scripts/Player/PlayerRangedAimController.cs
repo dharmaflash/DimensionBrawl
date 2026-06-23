@@ -237,7 +237,7 @@ namespace DimensionBrawl.Player
                 return;
             }
 
-            Vector3 facingDirection = Vector3.ProjectOnPlane(cameraController.transform.forward, Vector3.up);
+            Vector3 facingDirection = cameraController.GetAimPlanarForward();
             if (facingDirection.sqrMagnitude <= 0.0001f)
             {
                 return;

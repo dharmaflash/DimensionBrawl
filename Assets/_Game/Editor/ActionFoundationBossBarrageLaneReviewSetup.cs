@@ -248,6 +248,8 @@ namespace DimensionBrawl.Editor
         private const float PlayerRangedBasicProjectileRadius = 0.31f;
         private const float PlayerRangedBasicFireIntervalSeconds = 0.12f;
         private const float PlayerRangedBasicCameraAimFallbackDistance = 32f;
+        private const float PlayerRangedBasicCameraAimRaycastDistance = 96f;
+        private const float PlayerRangedBasicTargetHeight = 1.1f;
         private const float PlayerRangedBasicAimAssistDistance = 30f;
         private const float PlayerRangedBasicAimAssistAngleDegrees = 14f;
         private const string CloseThreatBodyHitboxName = ReviewRootPrefix + "CloseThreatBodyHitbox";
@@ -271,6 +273,10 @@ namespace DimensionBrawl.Editor
         private const string CombatGirlAnimatorControllerPath =
             "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/DB_CombatGirl_ActionFoundation.controller";
         private static readonly Vector3 InoriRifleMuzzleFallbackLocalPosition = new Vector3(-0.92f, 0.03f, 0f);
+        private static readonly string[] PreservedImportedRuntimeScriptPrefixes =
+        {
+            "Assets/_Imported/AssetStore/MagicaCloth2/"
+        };
         private const string BossProxyVisualMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossProxy.mat";
         private const string BossTelegraphMaterialPath =
@@ -317,8 +323,8 @@ namespace DimensionBrawl.Editor
         private static readonly Vector3 PlayerStartPosition = new Vector3(0f, 0f, -8.5f);
         private static readonly Vector3 CameraStartOffset = new Vector3(0.14f, 0.68f, -4.25f);
         private static readonly Vector3 CameraLookOffset = new Vector3(0f, 1.18f, 1.5f);
-        private static readonly Vector3 CameraAimOffset = new Vector3(0.75f, 0.88f, 3.12f);
-        private static readonly Vector3 CameraAimFocusOffset = new Vector3(0.08f, 0.06f, 1.05f);
+        private static readonly Vector3 CameraAimOffset = new Vector3(0.45f, 0.88f, 2.72f);
+        private static readonly Vector3 CameraAimFocusOffset = new Vector3(0.89f, 0.06f, 1.05f);
         private const float CameraAimFieldOfViewDelta = -5.5f;
         private const float CameraAimBlendInSpeed = 14f;
         private const float CameraAimBlendOutSpeed = 18f;
@@ -5226,8 +5232,8 @@ namespace DimensionBrawl.Editor
             SetEnum(mobileHud, "keyboardPeekLeftKey", (int)Key.Q);
             SetEnum(mobileHud, "keyboardPeekRightKey", (int)Key.E);
             SetBool(mobileHud, "keyboardPeekRequiresActiveAim", true);
-            SetBool(mobileHud, "fireAimReticleUsesScreenCenter", true);
-            SetBool(mobileHud, "fireAimReticleFollowsAssist", true);
+            SetBool(mobileHud, "fireAimReticleUsesScreenCenter", false);
+            SetBool(mobileHud, "fireAimReticleFollowsAssist", false);
             SetFloat(mobileHud, "fireAimAssistReticleMaxOffset", 96f);
 
             ActionScreenCuePresenter screenCuePresenter = hudRoot.AddComponent<ActionScreenCuePresenter>();
@@ -5537,7 +5543,7 @@ namespace DimensionBrawl.Editor
             SetFloat(cameraController, "aimBlendInSpeed", CameraAimBlendInSpeed);
             SetFloat(cameraController, "aimBlendOutSpeed", CameraAimBlendOutSpeed);
             SetBool(cameraController, "aimOrbitRotatesCameraPosition", true);
-            SetBool(cameraController, "aimAssistUsesYawTarget", true);
+            SetBool(cameraController, "aimAssistUsesYawTarget", false);
             SetFloat(cameraController, "aimAssistMaxYawBlend", 0.85f);
             SetFloat(cameraController, "aimAssistYawSpeedDegrees", 420f);
             SetFloat(cameraController, "aimAssistYawReturnSpeedDegrees", 520f);
@@ -5610,14 +5616,17 @@ namespace DimensionBrawl.Editor
             SetFloat(rangedBasicAttackAction, "movingFacingSuppressSpeed", 0.08f);
             SetBool(rangedBasicAttackAction, "useFixedCenterAimViewport", true);
             SetBool(rangedBasicAttackAction, "useStableAimOrigin", true);
+            SetBool(rangedBasicAttackAction, "useAimAssist", false);
             SetBool(rangedBasicAttackAction, "disableAimAssistWithManualInput", false);
-            SetBool(rangedBasicAttackAction, "driveCameraAimAssist", true);
+            SetBool(rangedBasicAttackAction, "driveCameraAimAssist", false);
             SetFloat(rangedBasicAttackAction, "damage", PlayerRangedBasicDamage);
             SetFloat(rangedBasicAttackAction, "projectileSpeed", PlayerRangedBasicProjectileSpeed);
             SetFloat(rangedBasicAttackAction, "projectileLifetimeSeconds", PlayerRangedBasicProjectileLifetimeSeconds);
             SetFloat(rangedBasicAttackAction, "projectileRadius", PlayerRangedBasicProjectileRadius);
             SetFloat(rangedBasicAttackAction, "fireIntervalSeconds", PlayerRangedBasicFireIntervalSeconds);
+            SetFloat(rangedBasicAttackAction, "targetHeight", PlayerRangedBasicTargetHeight);
             SetFloat(rangedBasicAttackAction, "cameraAimFallbackDistance", PlayerRangedBasicCameraAimFallbackDistance);
+            SetFloat(rangedBasicAttackAction, "cameraAimRaycastDistance", PlayerRangedBasicCameraAimRaycastDistance);
             SetFloat(rangedBasicAttackAction, "aimAssistDistance", PlayerRangedBasicAimAssistDistance);
             SetFloat(rangedBasicAttackAction, "hipAimAssistAngleDegrees", PlayerRangedBasicAimAssistAngleDegrees);
             SetFloat(rangedBasicAttackAction, "aimedAimAssistAngleDegrees", PlayerRangedBasicAimAssistAngleDegrees);
@@ -5725,7 +5734,7 @@ namespace DimensionBrawl.Editor
             ValidateBool(cameraController, "useFixedRearYaw", true);
             ValidateObjectReference(cameraController, "fixedRearYawReference", rearYawReference);
             ValidateBool(cameraController, "useDeviceFallbackWhenActionMissing", false);
-            ValidateBool(cameraController, "aimAssistUsesYawTarget", true);
+            ValidateBool(cameraController, "aimAssistUsesYawTarget", false);
             ValidateFloat(cameraController, "aimAssistMaxYawBlend", 0.85f);
             ValidateFloat(cameraController, "aimAssistYawSpeedDegrees", 420f);
             ValidateFloat(cameraController, "aimAssistYawReturnSpeedDegrees", 520f);
@@ -5781,14 +5790,17 @@ namespace DimensionBrawl.Editor
             ValidateFloat(rangedBasicAttackAction, "movingFacingSuppressSpeed", 0.08f);
             ValidateBool(rangedBasicAttackAction, "useFixedCenterAimViewport", true);
             ValidateBool(rangedBasicAttackAction, "useStableAimOrigin", true);
+            ValidateBool(rangedBasicAttackAction, "useAimAssist", false);
             ValidateBool(rangedBasicAttackAction, "disableAimAssistWithManualInput", false);
-            ValidateBool(rangedBasicAttackAction, "driveCameraAimAssist", true);
+            ValidateBool(rangedBasicAttackAction, "driveCameraAimAssist", false);
             ValidateFloat(rangedBasicAttackAction, "damage", PlayerRangedBasicDamage);
             ValidateFloat(rangedBasicAttackAction, "projectileSpeed", PlayerRangedBasicProjectileSpeed);
             ValidateFloat(rangedBasicAttackAction, "projectileLifetimeSeconds", PlayerRangedBasicProjectileLifetimeSeconds);
             ValidateFloat(rangedBasicAttackAction, "projectileRadius", PlayerRangedBasicProjectileRadius);
             ValidateFloat(rangedBasicAttackAction, "fireIntervalSeconds", PlayerRangedBasicFireIntervalSeconds);
+            ValidateFloat(rangedBasicAttackAction, "targetHeight", PlayerRangedBasicTargetHeight);
             ValidateFloat(rangedBasicAttackAction, "cameraAimFallbackDistance", PlayerRangedBasicCameraAimFallbackDistance);
+            ValidateFloat(rangedBasicAttackAction, "cameraAimRaycastDistance", PlayerRangedBasicCameraAimRaycastDistance);
             ValidateFloat(rangedBasicAttackAction, "aimAssistDistance", PlayerRangedBasicAimAssistDistance);
             ValidateFloat(rangedBasicAttackAction, "hipAimAssistAngleDegrees", PlayerRangedBasicAimAssistAngleDegrees);
             ValidateFloat(rangedBasicAttackAction, "aimedAimAssistAngleDegrees", PlayerRangedBasicAimAssistAngleDegrees);
@@ -8901,8 +8913,8 @@ namespace DimensionBrawl.Editor
             ValidateEnum(hud, "keyboardPeekLeftKey", (int)Key.Q);
             ValidateEnum(hud, "keyboardPeekRightKey", (int)Key.E);
             ValidateBool(hud, "keyboardPeekRequiresActiveAim", true);
-            ValidateBool(hud, "fireAimReticleUsesScreenCenter", true);
-            ValidateBool(hud, "fireAimReticleFollowsAssist", true);
+            ValidateBool(hud, "fireAimReticleUsesScreenCenter", false);
+            ValidateBool(hud, "fireAimReticleFollowsAssist", false);
             ValidateFloat(hud, "fireAimAssistReticleMaxOffset", 96f);
         }
 
@@ -9291,11 +9303,30 @@ namespace DimensionBrawl.Editor
                 string scriptPath = script != null
                     ? AssetDatabase.GetAssetPath(script).Replace('\\', '/')
                     : string.Empty;
-                if (!scriptPath.StartsWith("Assets/_Game/", StringComparison.Ordinal))
+                if (!scriptPath.StartsWith("Assets/_Game/", StringComparison.Ordinal)
+                    && !ShouldPreserveImportedRuntimeMonoBehaviour(scriptPath))
                 {
                     UnityEngine.Object.DestroyImmediate(behaviour);
                 }
             }
+        }
+
+        private static bool ShouldPreserveImportedRuntimeMonoBehaviour(string scriptPath)
+        {
+            if (string.IsNullOrWhiteSpace(scriptPath))
+            {
+                return false;
+            }
+
+            for (int i = 0; i < PreservedImportedRuntimeScriptPrefixes.Length; i++)
+            {
+                if (scriptPath.StartsWith(PreservedImportedRuntimeScriptPrefixes[i], StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static Material ResolveRangedCandidateMaterial(string hint, int slotIndex)
