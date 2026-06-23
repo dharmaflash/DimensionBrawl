@@ -18,6 +18,8 @@ namespace DimensionBrawl.Editor
         private const string ArtRoot = "Assets/_Game/Art/Environment/OlympusCorridor";
         private const string ProfileRoot = ArtRoot + "/Profiles";
         private const string MaterialRoot = ArtRoot + "/Materials";
+        private const string TextureRoot = ArtRoot + "/Textures";
+        private const string SkyTextureRoot = TextureRoot + "/Sky";
         private const string ShaderRoot = ArtRoot + "/Shaders";
         private const string DisallowedToonEnvironmentMaterialRoot = MaterialRoot + "/Toonized";
         private const string PgrPreserveMaterialRoot = MaterialRoot + "/PgrPreserve";
@@ -26,6 +28,8 @@ namespace DimensionBrawl.Editor
         private const string GoldGlowMaterialPath = MaterialRoot + "/DB_OlympusCorridor_GoldGlow.mat";
         private const string WhiteGlowMaterialPath = MaterialRoot + "/DB_OlympusCorridor_WhiteGlow.mat";
         private const string SkyboxMaterialPath = MaterialRoot + "/DB_OlympusCorridor_HeavenlySkybox.mat";
+        private const string AllSkyRoot = "Assets/_Imported/AssetStore/Sky/Allsky";
+        private const string AllSkySourceSkyboxPath = AllSkyRoot + "/Cartoon/Cartoon Airbrush FluffyBlueSky/Cartoon_FluffyBlueSky Equirect.mat";
         private const string ToonOutlineMaterialPath = MaterialRoot + "/DB_OlympusCorridor_ToonOutline.mat";
         private const string BillboardBlueMaterialPath = MaterialRoot + "/DB_OlympusCorridor_BillboardBlue.mat";
         private const string BillboardWhiteMaterialPath = MaterialRoot + "/DB_OlympusCorridor_BillboardWhite.mat";
@@ -33,6 +37,9 @@ namespace DimensionBrawl.Editor
         private const string BillboardDarkMaterialPath = MaterialRoot + "/DB_OlympusCorridor_BillboardDark.mat";
         private const string BillboardBlueCoreMaterialPath = MaterialRoot + "/DB_OlympusCorridor_BillboardBlueCore.mat";
         private const string BillboardFloorMaterialPath = MaterialRoot + "/DB_OlympusCorridor_BillboardFloor.mat";
+        private const string ShapesFxRoot = "Assets/_Game/Art/VFX/ShapesFXArena";
+        private const string ShapesFxGeometryRoot = ShapesFxRoot + "/Geometry";
+        private const string ShapesFxMaterialRoot = ShapesFxRoot + "/Materials/ShapesFX";
         private const string LookdevRootName = "OlympusCorridorLookdev_RuntimeFreePass";
         private const string ImportedSkyFogVolumeName = "Sky and Fog Global Volume";
         private const string ImportedLightingRootName = "Lights";
@@ -75,6 +82,8 @@ namespace DimensionBrawl.Editor
             EnsureFolder(ArtRoot);
             EnsureFolder(ProfileRoot);
             EnsureFolder(MaterialRoot);
+            EnsureFolder(TextureRoot);
+            EnsureFolder(SkyTextureRoot);
             EnsureFolder(PgrPreserveMaterialRoot);
             EnsureFolder(ShaderRoot);
 
@@ -144,6 +153,13 @@ namespace DimensionBrawl.Editor
             {
                 throw new InvalidOperationException("Olympus corridor lookdev camera should keep the reference-backed 62 degree combat FOV.");
             }
+
+            if (RenderSettings.skybox == null || !string.Equals(AssetDatabase.GetAssetPath(RenderSettings.skybox), SkyboxMaterialPath, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("RenderSettings.skybox should use the promoted Olympus AllSky material.");
+            }
+
+            RequireAsset<Material>(AllSkySourceSkyboxPath);
 
             VolumeProfile profile = RequireAsset<VolumeProfile>(PostProcessProfilePath);
             ValidateVolumeProfile(profile);
@@ -217,6 +233,11 @@ namespace DimensionBrawl.Editor
             if (CountNamedRenderers(sanctuaryRoot, "Billboard_") < 6)
             {
                 throw new InvalidOperationException("Olympus corridor sanctuary visuals should include camera-facing toon billboard reads.");
+            }
+
+            if (CountNamedRenderers(sanctuaryRoot, "ShapesFX_") < 7)
+            {
+                throw new InvalidOperationException("Olympus corridor sanctuary visuals should include promoted ShapesFX ring and shard meshes.");
             }
 
             if (RequireChild(lookdevRoot.transform, CombatAnchorsName).childCount < 5)
@@ -802,7 +823,7 @@ namespace DimensionBrawl.Editor
             Bloom bloom = GetOrAddVolumeComponent<Bloom>(profile);
             bloom.active = true;
             SetParameter(bloom.threshold, 0.78f);
-            SetParameter(bloom.intensity, 0.78f);
+            SetParameter(bloom.intensity, 0.62f);
             SetParameter(bloom.scatter, 0.42f);
             SetParameter(bloom.clamp, 4.5f);
             SetParameter(bloom.tint, new Color(0.88f, 0.95f, 1f, 1f));
@@ -815,8 +836,8 @@ namespace DimensionBrawl.Editor
 
             ColorAdjustments color = GetOrAddVolumeComponent<ColorAdjustments>(profile);
             color.active = true;
-            SetParameter(color.postExposure, -0.16f);
-            SetParameter(color.contrast, 24f);
+            SetParameter(color.postExposure, 0.02f);
+            SetParameter(color.contrast, 20f);
             SetParameter(color.colorFilter, new Color(0.92f, 0.96f, 1f, 1f));
             SetParameter(color.saturation, 2f);
 
@@ -829,7 +850,7 @@ namespace DimensionBrawl.Editor
             vignette.active = true;
             SetParameter(vignette.color, new Color(0.05f, 0.055f, 0.07f, 1f));
             SetParameter(vignette.center, new Vector2(0.5f, 0.48f));
-            SetParameter(vignette.intensity, 0.14f);
+            SetParameter(vignette.intensity, 0.09f);
             SetParameter(vignette.smoothness, 0.55f);
 
             DepthOfField depthOfField = GetOrAddVolumeComponent<DepthOfField>(profile);
@@ -878,7 +899,7 @@ namespace DimensionBrawl.Editor
             Light key = CreateLight(lightingRoot.transform, "CoolCorridorKey", new Vector3(0f, 4.8f, -3.6f));
             key.type = LightType.Point;
             key.color = new Color(0.68f, 0.78f, 1f, 1f);
-            key.intensity = 0.85f;
+            key.intensity = 1.05f;
             key.range = 18f;
             key.shadows = LightShadows.None;
             key.bounceIntensity = 0f;
@@ -888,7 +909,7 @@ namespace DimensionBrawl.Editor
             sun.type = LightType.Directional;
             sun.transform.rotation = Quaternion.Euler(48f, 112f, 0f);
             sun.color = new Color(0.84f, 0.92f, 1f, 1f);
-            sun.intensity = 0.22f;
+            sun.intensity = 0.3f;
             sun.shadows = LightShadows.None;
             sun.bounceIntensity = 0f;
             Light gold = CreateLight(lightingRoot.transform, "WarmGoldAccent", new Vector3(0f, 3.1f, 2.8f));
@@ -902,7 +923,7 @@ namespace DimensionBrawl.Editor
             Light endGlow = CreateLight(lightingRoot.transform, "EndPortalBacklight", new Vector3(18f, 3.8f, 0f));
             endGlow.type = LightType.Point;
             endGlow.color = new Color(0.52f, 0.76f, 1f, 1f);
-            endGlow.intensity = 3.1f;
+            endGlow.intensity = 2.45f;
             endGlow.range = 34f;
             endGlow.shadows = LightShadows.None;
             endGlow.bounceIntensity = 0f;
@@ -910,7 +931,7 @@ namespace DimensionBrawl.Editor
             Light riftCore = CreateLight(lightingRoot.transform, "BlueRiftCore", new Vector3(14.8f, 2.65f, 0f));
             riftCore.type = LightType.Point;
             riftCore.color = new Color(0.34f, 0.62f, 1f, 1f);
-            riftCore.intensity = 4.2f;
+            riftCore.intensity = 3.15f;
             riftCore.range = 26f;
             riftCore.shadows = LightShadows.None;
             riftCore.bounceIntensity = 0f;
@@ -918,7 +939,7 @@ namespace DimensionBrawl.Editor
             Light gateGold = CreateLight(lightingRoot.transform, "GateGoldCrown", new Vector3(14.2f, 3.15f, 0f));
             gateGold.type = LightType.Point;
             gateGold.color = new Color(1f, 0.68f, 0.24f, 1f);
-            gateGold.intensity = 2.2f;
+            gateGold.intensity = 1.55f;
             gateGold.range = 12f;
             gateGold.shadows = LightShadows.None;
             gateGold.bounceIntensity = 0f;
@@ -950,9 +971,9 @@ namespace DimensionBrawl.Editor
 
         private static void ConfigureSanctuaryVisuals(Transform root)
         {
-            Material blueGlow = EnsureMaterial(BlueGlowMaterialPath, new Color(0.12f, 0.48f, 1f, 1f), new Color(0.32f, 0.95f, 4.2f, 1f));
-            Material goldGlow = EnsureMaterial(GoldGlowMaterialPath, new Color(1f, 0.66f, 0.22f, 1f), new Color(3.8f, 2.15f, 0.54f, 1f));
-            Material whiteGlow = EnsureMaterial(WhiteGlowMaterialPath, new Color(0.82f, 0.94f, 1f, 1f), new Color(1.35f, 1.9f, 2.8f, 1f));
+            Material blueGlow = EnsureMaterial(BlueGlowMaterialPath, new Color(0.12f, 0.48f, 1f, 1f), new Color(0.28f, 0.82f, 3.05f, 1f));
+            Material goldGlow = EnsureMaterial(GoldGlowMaterialPath, new Color(1f, 0.66f, 0.22f, 1f), new Color(2.75f, 1.62f, 0.42f, 1f));
+            Material whiteGlow = EnsureMaterial(WhiteGlowMaterialPath, new Color(0.82f, 0.94f, 1f, 1f), new Color(1.18f, 1.55f, 2.15f, 1f));
             Material toonOutline = EnsureMaterial(ToonOutlineMaterialPath, new Color(0.004f, 0.006f, 0.012f, 1f), new Color(0f, 0f, 0f, 1f));
             Material billboardBlue = EnsureBillboardMaterial(BillboardBlueMaterialPath, new Color(0.08f, 0.38f, 1f, 0.56f), new Color(0.68f, 0.9f, 1.65f, 1f), 0f, 0.92f);
             Material billboardWhite = EnsureBillboardMaterial(BillboardWhiteMaterialPath, new Color(0.72f, 0.9f, 1f, 0.5f), new Color(1.35f, 1.68f, 2.35f, 1f), 0f, 0.82f);
@@ -965,6 +986,7 @@ namespace DimensionBrawl.Editor
             Vector3 gateCenter = new Vector3(14.8f, 2.65f, 0f);
             CreateCelestialGate(visualsRoot.transform, blueGlow, goldGlow, whiteGlow, gateCenter);
             CreateCelestialDepthBackdrop(visualsRoot.transform, blueGlow, goldGlow, whiteGlow, gateCenter);
+            CreatePromotedShapesFxGate(visualsRoot.transform, gateCenter, blueGlow, goldGlow, whiteGlow);
             CreateRiftStarburst(visualsRoot.transform, blueGlow, gateCenter);
             CreateFloorCracks(visualsRoot.transform, blueGlow, goldGlow);
             CreateCelestialLaneAccents(visualsRoot.transform, whiteGlow, goldGlow);
@@ -1037,12 +1059,71 @@ namespace DimensionBrawl.Editor
                 new Vector3(4.8f, 4.35f, 4.35f), new Vector3(7.7f, 5.1f, 3.6f), new Vector3(10.8f, 4.65f, 3.0f),
                 new Vector3(13.6f, 5.55f, 2.25f), new Vector3(16.8f, 5.15f, 1.18f)
             });
-            CreateLine(parent, "SideArc_LeftUpperBlue", blueGlow, 0.035f, new[] { new Vector3(-7.8f, 2.55f, -3.55f), new Vector3(-1.2f, 3.1f, -3.35f), new Vector3(6.8f, 3.45f, -3.05f), new Vector3(14.6f, 3.75f, -2.45f) });
-            CreateLine(parent, "SideArc_RightUpperBlue", blueGlow, 0.035f, new[] { new Vector3(-7.8f, 2.55f, 3.55f), new Vector3(-1.2f, 3.1f, 3.35f), new Vector3(6.8f, 3.45f, 3.05f), new Vector3(14.6f, 3.75f, 2.45f) });
-            CreateLine(parent, "SideArc_LeftGoldNeedle", goldGlow, 0.024f, new[] { new Vector3(-6.5f, 1.45f, -3.05f), new Vector3(1.5f, 2.15f, -2.65f), new Vector3(10.5f, 2.75f, -1.85f) });
-            CreateLine(parent, "SideArc_RightGoldNeedle", goldGlow, 0.024f, new[] { new Vector3(-6.5f, 1.45f, 3.05f), new Vector3(1.5f, 2.15f, 2.65f), new Vector3(10.5f, 2.75f, 1.85f) });
+            CreateLine(parent, "SideArc_LeftUpperBlue", blueGlow, 0.022f, new[] { new Vector3(8.4f, 3.15f, -2.95f), new Vector3(11.4f, 3.55f, -2.62f), new Vector3(14.6f, 3.72f, -2.15f) });
+            CreateLine(parent, "SideArc_RightUpperBlue", blueGlow, 0.022f, new[] { new Vector3(8.4f, 3.15f, 2.95f), new Vector3(11.4f, 3.55f, 2.62f), new Vector3(14.6f, 3.72f, 2.15f) });
+            CreateLine(parent, "SideArc_LeftGoldNeedle", goldGlow, 0.018f, new[] { new Vector3(7.8f, 2.05f, -2.55f), new Vector3(10.8f, 2.55f, -2.08f), new Vector3(13.8f, 2.9f, -1.42f) });
+            CreateLine(parent, "SideArc_RightGoldNeedle", goldGlow, 0.018f, new[] { new Vector3(7.8f, 2.05f, 2.55f), new Vector3(10.8f, 2.55f, 2.08f), new Vector3(13.8f, 2.9f, 1.42f) });
         }
 
+        private static void CreatePromotedShapesFxGate(Transform parent, Vector3 gateCenter, Material blueGlow, Material goldGlow, Material whiteGlow)
+        {
+            Mesh sphere = LoadMesh(ShapesFxGeometryRoot + "/Geo_Sphere_Hi.fbx");
+            Mesh torus = LoadMesh(ShapesFxGeometryRoot + "/Geo_Torus_Hex_Hi.fbx");
+            Mesh icosa = LoadMesh(ShapesFxGeometryRoot + "/Geo_Icosahedron_Hex.fbx");
+            Mesh dodeca = LoadMesh(ShapesFxGeometryRoot + "/Geo_Dodecahedron.fbx");
+
+            Material portalOuter = RequireAsset<Material>(ShapesFxMaterialRoot + "/DB_ShapesFX_PortalOuter.mat");
+            Material portalInner = RequireAsset<Material>(ShapesFxMaterialRoot + "/DB_ShapesFX_PortalInner.mat");
+            Material blueSphere = RequireAsset<Material>(ShapesFxMaterialRoot + "/DB_ShapesFX_BlueSphere.mat");
+            Material cyanDodeca = RequireAsset<Material>(ShapesFxMaterialRoot + "/DB_ShapesFX_CyanDodeca.mat");
+            Material violetIcosa = RequireAsset<Material>(ShapesFxMaterialRoot + "/DB_ShapesFX_VioletIcosa.mat");
+            Material deepCube = RequireAsset<Material>(ShapesFxMaterialRoot + "/DB_ShapesFX_DeepCube.mat");
+
+            Transform shapesRoot = CreateChild(parent, "ShapesFX_CelestialGateComposition", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+            CreateShapeFxObject(shapesRoot, "ShapesFX_GateOuterRing", torus, portalOuter, gateCenter + new Vector3(-0.28f, 0f, 0f), Quaternion.Euler(0f, 90f, 0f), Vector3.one * 2.65f);
+            CreateShapeFxObject(shapesRoot, "ShapesFX_GateTiltRing_A", torus, portalInner, gateCenter + new Vector3(-0.36f, 0.02f, 0f), Quaternion.Euler(18f, 90f, 35f), Vector3.one * 2.05f);
+            CreateShapeFxObject(shapesRoot, "ShapesFX_GateTiltRing_B", torus, portalInner, gateCenter + new Vector3(-0.42f, -0.03f, 0f), Quaternion.Euler(-14f, 90f, -28f), Vector3.one * 1.45f);
+            CreateShapeFxObject(shapesRoot, "ShapesFX_GateCoreOrb", sphere, blueSphere, gateCenter + new Vector3(-0.66f, 0f, 0f), Quaternion.Euler(0f, 22f, 0f), Vector3.one * 0.54f);
+            CreateShapeFxObject(shapesRoot, "ShapesFX_LeftFloatingShard", icosa, violetIcosa, gateCenter + new Vector3(-1.02f, 1.25f, -1.55f), Quaternion.Euler(18f, 38f, 11f), Vector3.one * 0.36f);
+            CreateShapeFxObject(shapesRoot, "ShapesFX_RightFloatingShard", dodeca, cyanDodeca, gateCenter + new Vector3(-0.96f, 1.18f, 1.52f), Quaternion.Euler(-16f, -34f, 9f), Vector3.one * 0.34f);
+            CreateShapeFxObject(shapesRoot, "ShapesFX_UpperDeepShard", icosa, deepCube, gateCenter + new Vector3(-0.82f, 2.25f, 0.2f), Quaternion.Euler(28f, 12f, 40f), Vector3.one * 0.28f);
+            CreateShapeFxObject(shapesRoot, "ShapesFX_ReadableBlueRingShell", torus, blueGlow, gateCenter + new Vector3(-0.48f, 0f, 0f), Quaternion.Euler(0f, 90f, 0f), Vector3.one * 2.9f);
+            CreateShapeFxObject(shapesRoot, "ShapesFX_ReadableGoldInnerShell", torus, goldGlow, gateCenter + new Vector3(-0.52f, 0f, 0f), Quaternion.Euler(16f, 90f, -24f), Vector3.one * 1.65f);
+            CreateShapeFxObject(shapesRoot, "ShapesFX_ReadableWhiteCoreShard", dodeca, whiteGlow, gateCenter + new Vector3(-0.58f, 0f, 0f), Quaternion.Euler(0f, 45f, 0f), Vector3.one * 0.32f);
+        }
+
+        private static GameObject CreateShapeFxObject(Transform parent, string name, Mesh mesh, Material material, Vector3 localPosition, Quaternion localRotation, Vector3 localScale)
+        {
+            GameObject target = new GameObject(name);
+            target.transform.SetParent(parent, worldPositionStays: false);
+            target.transform.localPosition = localPosition;
+            target.transform.localRotation = localRotation;
+            target.transform.localScale = localScale;
+
+            MeshFilter meshFilter = target.AddComponent<MeshFilter>();
+            meshFilter.sharedMesh = mesh;
+
+            MeshRenderer renderer = target.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = material;
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = false;
+            EditorUtility.SetDirty(renderer);
+            return target;
+        }
+
+        private static Mesh LoadMesh(string path)
+        {
+            UnityEngine.Object[] assets = AssetDatabase.LoadAllAssetsAtPath(path);
+            for (int i = 0; i < assets.Length; i++)
+            {
+                if (assets[i] is Mesh mesh)
+                {
+                    return mesh;
+                }
+            }
+
+            throw new InvalidOperationException($"Missing promoted ShapesFX mesh at {path}");
+        }
         private static void CreateCelestialLaneAccents(Transform parent, Material whiteGlow, Material goldGlow)
         {
             CreateLine(parent, "LaneWhite_LeftRim", whiteGlow, 0.075f, new[] { new Vector3(-11f, 0.36f, -2.38f), new Vector3(-1f, 0.34f, -2.22f), new Vector3(9f, 0.31f, -1.85f), new Vector3(18f, 0.28f, -1.25f) });
@@ -1332,7 +1413,11 @@ namespace DimensionBrawl.Editor
                 && Mathf.Abs(bounds.center.z) < 0.95f
                 && bounds.size.y > 1.4f
                 && RendererUsesMaterialName(renderer, "cloth");
-            return broadOverheadSlab || highCanopy || centerHangingCloth;
+            bool tallHangingTextile = bounds.center.y > 1.55f
+                && bounds.size.y > 1.05f
+                && bounds.size.x < 4.2f
+                && (RendererUsesMaterialName(renderer, "cloth") || RendererUsesMaterialName(renderer, "flag") || RendererUsesMaterialName(renderer, "wave") || RendererUsesMaterialName(renderer, "banner"));
+            return broadOverheadSlab || highCanopy || centerHangingCloth || tallHangingTextile;
         }
 
 
@@ -1358,14 +1443,14 @@ namespace DimensionBrawl.Editor
         private static void ConfigureSceneAtmosphere(Scene scene)
         {
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(0.36f, 0.48f, 0.68f, 1f);
-            RenderSettings.ambientEquatorColor = new Color(0.22f, 0.3f, 0.48f, 1f);
-            RenderSettings.ambientGroundColor = new Color(0.065f, 0.085f, 0.14f, 1f);
+            RenderSettings.ambientSkyColor = new Color(0.46f, 0.58f, 0.76f, 1f);
+            RenderSettings.ambientEquatorColor = new Color(0.3f, 0.4f, 0.58f, 1f);
+            RenderSettings.ambientGroundColor = new Color(0.11f, 0.14f, 0.22f, 1f);
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.ExponentialSquared;
-            RenderSettings.fogColor = new Color(0.12f, 0.2f, 0.36f, 1f);
-            RenderSettings.fogDensity = 0.0016f;
-            RenderSettings.skybox = EnsureProceduralSkybox();
+            RenderSettings.fogColor = new Color(0.16f, 0.25f, 0.42f, 1f);
+            RenderSettings.fogDensity = 0.00125f;
+            RenderSettings.skybox = EnsurePromotedAllSkySkybox();
 
             foreach (GameObject root in scene.GetRootGameObjects())
             {
@@ -1381,29 +1466,111 @@ namespace DimensionBrawl.Editor
         }
 
 
-        private static Material EnsureProceduralSkybox()
+        private static Material EnsurePromotedAllSkySkybox()
         {
+            Material sourceSkybox = RequireAsset<Material>(AllSkySourceSkyboxPath);
             Material skybox = AssetDatabase.LoadAssetAtPath<Material>(SkyboxMaterialPath);
-            Shader shader = Shader.Find("Skybox/Procedural");
             if (skybox == null)
             {
-                skybox = new Material(shader);
+                skybox = new Material(sourceSkybox.shader);
                 AssetDatabase.CreateAsset(skybox, SkyboxMaterialPath);
             }
-            else if (shader != null && skybox.shader != shader)
-            {
-                skybox.shader = shader;
-            }
 
-            SetMaterialColor(skybox, "_SkyTint", new Color(0.08f, 0.16f, 0.34f, 1f));
-            SetMaterialColor(skybox, "_GroundColor", new Color(0.018f, 0.03f, 0.08f, 1f));
-            SetMaterialFloat(skybox, "_Exposure", 0.52f);
-            SetMaterialFloat(skybox, "_AtmosphereThickness", 1.25f);
-            SetMaterialFloat(skybox, "_SunSize", 0.025f);
+            EnsureFolder(TextureRoot);
+            EnsureFolder(SkyTextureRoot);
+            skybox.CopyPropertiesFromMaterial(sourceSkybox);
+            PromoteSkyboxTextures(sourceSkybox, skybox);
+            skybox.shader = sourceSkybox.shader;
+            skybox.name = Path.GetFileNameWithoutExtension(SkyboxMaterialPath);
+            SetMaterialColor(skybox, "_Tint", new Color(0.68f, 0.74f, 0.9f, 0.65f));
+            SetMaterialFloat(skybox, "_Exposure", 0.72f);
+            SetMaterialFloat(skybox, "_Rotation", 8f);
             EditorUtility.SetDirty(skybox);
             return skybox;
         }
 
+        private static void PromoteSkyboxTextures(Material sourceSkybox, Material destinationSkybox)
+        {
+            Shader shader = sourceSkybox.shader;
+            int propertyCount = shader.GetPropertyCount();
+            for (int i = 0; i < propertyCount; i++)
+            {
+                if (shader.GetPropertyType(i) != ShaderPropertyType.Texture)
+                {
+                    continue;
+                }
+
+                PromoteSkyboxTextureProperty(sourceSkybox, destinationSkybox, shader.GetPropertyName(i));
+            }
+
+            string[] copiedMaterialTextureProperties = { "_BackTex", "_DownTex", "_FrontTex", "_LeftTex", "_RightTex", "_Tex", "_UpTex" };
+            for (int i = 0; i < copiedMaterialTextureProperties.Length; i++)
+            {
+                PromoteSkyboxTextureProperty(sourceSkybox, destinationSkybox, copiedMaterialTextureProperties[i]);
+            }
+        }
+
+        private static void PromoteSkyboxTextureProperty(Material sourceSkybox, Material destinationSkybox, string propertyName)
+        {
+            Texture sourceTexture = sourceSkybox.GetTexture(propertyName);
+            if (sourceTexture == null)
+            {
+                return;
+            }
+
+            Texture promotedTexture = PromoteSkyboxTexture(sourceTexture);
+            if (promotedTexture != null)
+            {
+                destinationSkybox.SetTexture(propertyName, promotedTexture);
+            }
+        }
+
+        private static Texture PromoteSkyboxTexture(Texture sourceTexture)
+        {
+            string sourcePath = AssetDatabase.GetAssetPath(sourceTexture);
+            if (string.IsNullOrWhiteSpace(sourcePath))
+            {
+                return sourceTexture;
+            }
+
+            string extension = Path.GetExtension(sourcePath);
+            string sourceName = Path.GetFileNameWithoutExtension(sourcePath);
+            string destinationPath = SkyTextureRoot + "/DB_OlympusCorridor_" + SanitizeAssetName(sourceName) + extension;
+            if (AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(destinationPath) == null)
+            {
+                if (!AssetDatabase.CopyAsset(sourcePath, destinationPath))
+                {
+                    throw new InvalidOperationException($"Failed to promote Allsky texture from {sourcePath} to {destinationPath}.");
+                }
+
+                AssetDatabase.ImportAsset(destinationPath);
+            }
+
+            Texture exactTexture = LoadPromotedTexture(destinationPath, sourceTexture.GetType());
+            return exactTexture != null ? exactTexture : AssetDatabase.LoadAssetAtPath<Texture>(destinationPath);
+        }
+
+        private static Texture LoadPromotedTexture(string path, Type preferredType)
+        {
+            UnityEngine.Object[] assets = AssetDatabase.LoadAllAssetsAtPath(path);
+            for (int i = 0; i < assets.Length; i++)
+            {
+                if (assets[i] is Texture texture && preferredType.IsInstanceOfType(texture))
+                {
+                    return texture;
+                }
+            }
+
+            for (int i = 0; i < assets.Length; i++)
+            {
+                if (assets[i] is Texture texture)
+                {
+                    return texture;
+                }
+            }
+
+            return null;
+        }
         private static void ConfigureImportedSkyFogVolumes(Scene scene)
         {
             int disabledCount = 0;
