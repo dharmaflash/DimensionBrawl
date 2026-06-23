@@ -25,7 +25,7 @@ MonoBehaviour:
     CueScale: 0.46
     CueLifetimeSeconds: 0.36
     ActorLifetimeSeconds: 0
-    ActorScale: 3.15
+    ActorScale: 2.3625
     ActorRoleId: VanguardCommander
     ActorMaxHealth: 360
     ActorMoveSpeed: 1.15
@@ -53,7 +53,7 @@ MonoBehaviour:
     CueScale: 0.51
     CueLifetimeSeconds: 0.36
     ActorLifetimeSeconds: 0
-    ActorScale: 3.54
+    ActorScale: 2.655
     ActorRoleId: VanguardCommander
     ActorMaxHealth: 430
     ActorMoveSpeed: 1.2
@@ -81,7 +81,7 @@ MonoBehaviour:
     CueScale: 0.56
     CueLifetimeSeconds: 0.36
     ActorLifetimeSeconds: 0
-    ActorScale: 4.02
+    ActorScale: 3.015
     ActorRoleId: VanguardCommander
     ActorMaxHealth: 520
     ActorMoveSpeed: 1.25
