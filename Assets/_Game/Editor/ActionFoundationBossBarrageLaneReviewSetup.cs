@@ -5833,6 +5833,41 @@ namespace DimensionBrawl.Editor
             ValidateBool(cueDirector, "drawCinematicBars", true);
             ValidateFloat(cueDirector, "maxBarScreenRatio", 0.085f);
             ValidateFloat(cueDirector, "maxBarAlpha", 0.62f);
+            ValidateCinematicCueContract(
+                profile.SkillCutIn,
+                "SkillCutIn",
+                ActionCinematicCueProfile.CueTier.CombatCue,
+                cueAnimator);
+            ValidateCinematicCueContract(
+                profile.SummonEntry,
+                "SummonEntry",
+                ActionCinematicCueProfile.CueTier.MicroCinematic,
+                cueAnimator);
+            ValidateCinematicCueContract(
+                profile.UltimateCutIn,
+                "UltimateCutIn",
+                ActionCinematicCueProfile.CueTier.CombatCutIn,
+                cueAnimator);
+            ValidateCinematicCueContract(
+                profile.BossPressureBreak,
+                "BossPressureBreak",
+                ActionCinematicCueProfile.CueTier.MicroCinematic,
+                cueAnimator);
+            ValidateCinematicCueContract(
+                profile.SummonFollowupHit,
+                "SummonFollowupHit",
+                ActionCinematicCueProfile.CueTier.MicroCinematic,
+                cueAnimator);
+            ValidateCinematicCueContract(
+                profile.PocketClear,
+                "PocketClear",
+                ActionCinematicCueProfile.CueTier.MicroCinematic,
+                cueAnimator);
+            ValidateCinematicCueContract(
+                profile.PocketFail,
+                "PocketFail",
+                ActionCinematicCueProfile.CueTier.MicroCinematic,
+                cueAnimator);
             if (!profile.TryGetSequence(ActionCinematicCueProfile.CueKind.SummonEntry, out var summonEntry)
                 || summonEntry.ShotCount < 3)
             {
@@ -5859,6 +5894,82 @@ namespace DimensionBrawl.Editor
             {
                 throw new InvalidOperationException("Ultimate-style cut-in must author lock and charge/impact signals.");
             }
+        }
+
+        private static void ValidateCinematicCueContract(
+            ActionCinematicCueProfile.CueSequence sequence,
+            string label,
+            ActionCinematicCueProfile.CueTier expectedTier,
+            Animator cueAnimator)
+        {
+            if (!sequence.enabled)
+            {
+                throw new InvalidOperationException($"{label} cinematic cue must stay enabled in the review profile.");
+            }
+
+            if (sequence.tier != expectedTier)
+            {
+                throw new InvalidOperationException($"{label} cinematic cue must declare tier {expectedTier}.");
+            }
+
+            if (!string.Equals(
+                    sequence.returnTargetId,
+                    ActionCinematicCueProfile.GameplayReturnTargetId,
+                    StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"{label} cinematic cue must declare gameplay camera return target.");
+            }
+
+            if (sequence.returnPolicy != ActionCinematicCueProfile.CameraReturnPolicy.ActionCameraCueRecovery)
+            {
+                throw new InvalidOperationException($"{label} cinematic cue must return through the action camera recovery policy.");
+            }
+
+            if (sequence.signals == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < sequence.signals.Length; i++)
+            {
+                ActionCinematicCueProfile.CueSignal signal = sequence.signals[i];
+                if (!signal.enabled)
+                {
+                    continue;
+                }
+
+                if (signal.tierIntensityScale <= 0f)
+                {
+                    throw new InvalidOperationException($"{label} signal {i} must author a positive tier intensity scale.");
+                }
+
+                if (signal.requireAnimatorTrigger && !HasAnimatorTrigger(cueAnimator, signal.animatorTrigger))
+                {
+                    throw new InvalidOperationException(
+                        $"{label} signal {i} requires missing Animator trigger '{signal.animatorTrigger}'.");
+                }
+            }
+        }
+
+        private static bool HasAnimatorTrigger(Animator animator, string triggerName)
+        {
+            if (animator == null || string.IsNullOrWhiteSpace(triggerName))
+            {
+                return false;
+            }
+
+            AnimatorControllerParameter[] parameters = animator.parameters;
+            for (int i = 0; i < parameters.Length; i++)
+            {
+                AnimatorControllerParameter parameter = parameters[i];
+                if (parameter.type == AnimatorControllerParameterType.Trigger
+                    && string.Equals(parameter.name, triggerName, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void ValidateBossBarrageCameraCueDriver(

@@ -15,12 +15,15 @@ MonoBehaviour:
   skillCutIn:
     enabled: 1
     cueId: skill1_short_cutin
+    tier: 0
     priority: 35
     canBeInterrupted: 1
     movementLockSeconds: 0.16
     inputLockSeconds: 0.22
     timeScale: 1
     timeScaleSeconds: 0
+    returnTargetId: action_camera_controller
+    returnPolicy: 0
     shots:
     - enabled: 1
       localOffset: {x: -0.1, y: 0.06, z: -0.18}
@@ -54,18 +57,23 @@ MonoBehaviour:
       delaySeconds: 0.08
       signalId: skill1_fire_signal
       animatorTrigger: SHOOT
+      requireAnimatorTrigger: 1
       playVfx: 1
       vfxCueId: 33
       vfxIntensity: 1.05
+      tierIntensityScale: 1.18
   summonEntry:
     enabled: 1
     cueId: summon_break_entry_cutin
+    tier: 1
     priority: 60
     canBeInterrupted: 0
     movementLockSeconds: 0.45
     inputLockSeconds: 0.55
     timeScale: 0.92
     timeScaleSeconds: 0.16
+    returnTargetId: action_camera_controller
+    returnPolicy: 0
     shots:
     - enabled: 1
       localOffset: {x: 0, y: 0.08, z: -0.22}
@@ -108,25 +116,32 @@ MonoBehaviour:
       delaySeconds: 0.1
       signalId: summon_spawn_signal
       animatorTrigger:
+      requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 27
       vfxIntensity: 1.12
+      tierIntensityScale: 1.18
     - enabled: 1
       delaySeconds: 0.42
       signalId: summon_landing_signal
       animatorTrigger:
+      requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 32
       vfxIntensity: 0.92
+      tierIntensityScale: 1.18
   ultimateCutIn:
     enabled: 1
     cueId: skill1_lv3_ultimate_short_cutin
+    tier: 2
     priority: 85
     canBeInterrupted: 0
     movementLockSeconds: 0.62
     inputLockSeconds: 0.74
     timeScale: 0.84
     timeScaleSeconds: 0.24
+    returnTargetId: action_camera_controller
+    returnPolicy: 0
     shots:
     - enabled: 1
       localOffset: {x: -0.16, y: 0.08, z: -0.16}
@@ -169,25 +184,32 @@ MonoBehaviour:
       delaySeconds: 0.12
       signalId: ultimate_charge_signal
       animatorTrigger: AUTO SHOOT
+      requireAnimatorTrigger: 1
       playVfx: 1
       vfxCueId: 28
       vfxIntensity: 1.18
+      tierIntensityScale: 1.18
     - enabled: 1
       delaySeconds: 0.58
       signalId: ultimate_impact_signal
       animatorTrigger:
+      requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 30
       vfxIntensity: 1.25
+      tierIntensityScale: 1.18
   bossPressureBreak:
     enabled: 1
     cueId: boss_pressure_break_reframe
+    tier: 1
     priority: 65
     canBeInterrupted: 1
     movementLockSeconds: 0.18
     inputLockSeconds: 0.24
     timeScale: 0.9
     timeScaleSeconds: 0.12
+    returnTargetId: action_camera_controller
+    returnPolicy: 0
     shots:
     - enabled: 1
       localOffset: {x: 0.18, y: 0.07, z: -0.24}
@@ -221,18 +243,23 @@ MonoBehaviour:
       delaySeconds: 0.1
       signalId: pressure_break_signal
       animatorTrigger:
+      requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 29
       vfxIntensity: 1
+      tierIntensityScale: 1.18
   summonFollowupHit:
     enabled: 1
     cueId: summon_followup_hit_confirm
+    tier: 1
     priority: 72
     canBeInterrupted: 1
     movementLockSeconds: 0.12
     inputLockSeconds: 0.18
     timeScale: 0.88
     timeScaleSeconds: 0.1
+    returnTargetId: action_camera_controller
+    returnPolicy: 0
     shots:
     - enabled: 1
       localOffset: {x: -0.08, y: 0.05, z: -0.1}
@@ -266,18 +293,23 @@ MonoBehaviour:
       delaySeconds: 0.08
       signalId: followup_hit_signal
       animatorTrigger:
+      requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 30
       vfxIntensity: 1.16
+      tierIntensityScale: 1.18
   pocketClear:
     enabled: 1
     cueId: pocket_result_clear_bridge
+    tier: 1
     priority: 75
     canBeInterrupted: 0
     movementLockSeconds: 0.3
     inputLockSeconds: 0.42
     timeScale: 0.86
     timeScaleSeconds: 0.14
+    returnTargetId: action_camera_controller
+    returnPolicy: 0
     shots:
     - enabled: 1
       localOffset: {x: 0, y: 0.08, z: -0.28}
@@ -311,18 +343,23 @@ MonoBehaviour:
       delaySeconds: 0.12
       signalId: pocket_clear_signal
       animatorTrigger:
+      requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 35
       vfxIntensity: 0.98
+      tierIntensityScale: 1.18
   pocketFail:
     enabled: 1
     cueId: pocket_result_fail_bridge
+    tier: 1
     priority: 75
     canBeInterrupted: 0
     movementLockSeconds: 0.24
     inputLockSeconds: 0.34
     timeScale: 0.92
     timeScaleSeconds: 0.1
+    returnTargetId: action_camera_controller
+    returnPolicy: 0
     shots:
     - enabled: 1
       localOffset: {x: 0, y: -0.04, z: -0.18}
@@ -347,6 +384,8 @@ MonoBehaviour:
       delaySeconds: 0.08
       signalId: pocket_fail_signal
       animatorTrigger:
+      requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 36
       vfxIntensity: 1.02
+      tierIntensityScale: 1.18

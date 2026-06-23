@@ -1,145 +1,9 @@
-using DimensionBrawl.Player;
 using UnityEngine;
 
 namespace DimensionBrawl.Presentation
 {
     public sealed partial class ActionCinematicCueDirector
     {
-        private void ResolveCueSpaceReferences()
-        {
-            if (cueSpace == null)
-            {
-                return;
-            }
-
-            if (movement == null)
-            {
-                movement = cueSpace.GetComponent<PlayerMovementController>();
-            }
-
-            if (actionController == null)
-            {
-                actionController = cueSpace.GetComponent<PlayerActionController>();
-            }
-
-            if (skill1Action == null)
-            {
-                skill1Action = cueSpace.GetComponent<PlayerSkill1Action>();
-            }
-
-            if (summonSlot1Action == null)
-            {
-                summonSlot1Action = cueSpace.GetComponent<PlayerSummonSlot1Action>();
-            }
-
-            if (rangedBasicAttackAction == null)
-            {
-                rangedBasicAttackAction = cueSpace.GetComponent<PlayerRangedBasicAttackAction>();
-            }
-
-            if (cuePlayer == null)
-            {
-                cuePlayer = cueSpace.GetComponent<CombatVfxCuePlayer>();
-            }
-
-            if (cueAnimator == null)
-            {
-                cueAnimator = cueSpace.GetComponentInChildren<Animator>(includeInactive: true);
-            }
-        }
-
-        private void ApplyMovementLock()
-        {
-            if (movementLockActive)
-            {
-                return;
-            }
-
-            movement?.SetCinematicMoveInputSpeedScale(0f);
-            movementLockActive = movement != null;
-        }
-
-        private void ReleaseMovementLock()
-        {
-            if (!movementLockActive)
-            {
-                return;
-            }
-
-            movement?.ClearCinematicMoveInputSpeedScale();
-            movementLockActive = false;
-        }
-
-        private void ApplyInputLock()
-        {
-            if (inputLockActive)
-            {
-                return;
-            }
-
-            actionController?.SetCinematicInputLocked(true);
-            skill1Action?.SetCinematicInputLocked(true);
-            summonSlot1Action?.SetCinematicInputLocked(true);
-            rangedBasicAttackAction?.SetCinematicInputLocked(true);
-            inputLockActive = actionController != null
-                || skill1Action != null
-                || summonSlot1Action != null
-                || rangedBasicAttackAction != null;
-        }
-
-        private void ReleaseInputLock()
-        {
-            if (!inputLockActive)
-            {
-                return;
-            }
-
-            actionController?.SetCinematicInputLocked(false);
-            skill1Action?.SetCinematicInputLocked(false);
-            summonSlot1Action?.SetCinematicInputLocked(false);
-            rangedBasicAttackAction?.SetCinematicInputLocked(false);
-            inputLockActive = false;
-        }
-
-        private float TickMovementLockTimer(float timer, float deltaTime)
-        {
-            if (!movementLockActive || timer <= 0f)
-            {
-                return timer;
-            }
-
-            timer = Mathf.Max(0f, timer - Mathf.Max(0f, deltaTime));
-            if (timer <= 0f)
-            {
-                ReleaseMovementLock();
-            }
-
-            return timer;
-        }
-
-        private float TickInputLockTimer(float timer, float deltaTime)
-        {
-            if (!inputLockActive || timer <= 0f)
-            {
-                return timer;
-            }
-
-            timer = Mathf.Max(0f, timer - Mathf.Max(0f, deltaTime));
-            if (timer <= 0f)
-            {
-                ReleaseInputLock();
-            }
-
-            return timer;
-        }
-
-        private void RestoreCinematicState()
-        {
-            ReleaseMovementLock();
-            ReleaseInputLock();
-            RestoreTimeScale();
-        }
-
         private void DispatchDueSignals(
             ActionCinematicCueProfile.CueSequence sequence,
             bool[] signalPlayed,
@@ -180,6 +44,10 @@ namespace DimensionBrawl.Presentation
                 animatorTriggerRequestCount++;
                 lastAnimatorTrigger = signal.animatorTrigger;
             }
+            else if (signal.requireAnimatorTrigger)
+            {
+                return;
+            }
 
             if (!signal.playVfx || cuePlayer == null)
             {
@@ -188,7 +56,8 @@ namespace DimensionBrawl.Presentation
 
             Transform anchor = vfxAnchor != null ? vfxAnchor : (cueSpace != null ? cueSpace : transform);
             float tierWeight = Mathf.Clamp01((Mathf.Max(1, tier) - 1) / 2f);
-            float intensity = Mathf.Max(0.01f, signal.vfxIntensity) * Mathf.Lerp(1f, 1.18f, tierWeight);
+            float tierIntensityScale = signal.tierIntensityScale > 0f ? signal.tierIntensityScale : 1f;
+            float intensity = Mathf.Max(0.01f, signal.vfxIntensity) * Mathf.Lerp(1f, tierIntensityScale, tierWeight);
             if (cuePlayer.PlayCue(signal.vfxCueId, anchor, planarDirection, intensity))
             {
                 vfxCueRequestCount++;

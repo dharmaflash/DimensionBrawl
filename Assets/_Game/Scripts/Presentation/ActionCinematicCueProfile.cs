@@ -17,6 +17,20 @@ namespace DimensionBrawl.Presentation
             PocketFail
         }
 
+        public enum CueTier
+        {
+            CombatCue,
+            MicroCinematic,
+            CombatCutIn
+        }
+
+        public enum CameraReturnPolicy
+        {
+            ActionCameraCueRecovery
+        }
+
+        public const string GameplayReturnTargetId = "action_camera_controller";
+
         [Serializable]
         public struct CameraShot
         {
@@ -36,12 +50,15 @@ namespace DimensionBrawl.Presentation
         {
             public bool enabled;
             public string cueId;
+            public CueTier tier;
             public int priority;
             public bool canBeInterrupted;
             public float movementLockSeconds;
             public float inputLockSeconds;
             public float timeScale;
             public float timeScaleSeconds;
+            public string returnTargetId;
+            public CameraReturnPolicy returnPolicy;
             public CameraShot[] shots;
             public CueSignal[] signals;
 
@@ -56,9 +73,11 @@ namespace DimensionBrawl.Presentation
             public float delaySeconds;
             public string signalId;
             public string animatorTrigger;
+            public bool requireAnimatorTrigger;
             public bool playVfx;
             public CombatVfxCueId vfxCueId;
             public float vfxIntensity;
+            public float tierIntensityScale;
         }
 
         [Header("Player Actions")]
@@ -66,12 +85,15 @@ namespace DimensionBrawl.Presentation
         {
             enabled = true,
             cueId = "skill1_short_cutin",
+            tier = CueTier.CombatCue,
             priority = 35,
             canBeInterrupted = true,
             movementLockSeconds = 0.16f,
             inputLockSeconds = 0.22f,
             timeScale = 1f,
             timeScaleSeconds = 0f,
+            returnTargetId = GameplayReturnTargetId,
+            returnPolicy = CameraReturnPolicy.ActionCameraCueRecovery,
             shots = new[]
             {
                 CreateShot(new Vector3(-0.10f, 0.06f, -0.18f), 0.10f, 1.4f, -0.12f, 0.05f, 0.16f, 0.02f, 1.08f),
@@ -88,12 +110,15 @@ namespace DimensionBrawl.Presentation
         {
             enabled = true,
             cueId = "summon_break_entry_cutin",
+            tier = CueTier.MicroCinematic,
             priority = 60,
             canBeInterrupted = false,
             movementLockSeconds = 0.45f,
             inputLockSeconds = 0.55f,
             timeScale = 0.92f,
             timeScaleSeconds = 0.16f,
+            returnTargetId = GameplayReturnTargetId,
+            returnPolicy = CameraReturnPolicy.ActionCameraCueRecovery,
             shots = new[]
             {
                 CreateShot(new Vector3(0f, 0.08f, -0.22f), 0.18f, 2.8f, -0.30f, 0.09f, 0.18f, 0.03f, 1.12f),
@@ -112,12 +137,15 @@ namespace DimensionBrawl.Presentation
         {
             enabled = true,
             cueId = "skill1_lv3_ultimate_short_cutin",
+            tier = CueTier.CombatCutIn,
             priority = 85,
             canBeInterrupted = false,
             movementLockSeconds = 0.62f,
             inputLockSeconds = 0.74f,
             timeScale = 0.84f,
             timeScaleSeconds = 0.24f,
+            returnTargetId = GameplayReturnTargetId,
+            returnPolicy = CameraReturnPolicy.ActionCameraCueRecovery,
             shots = new[]
             {
                 CreateShot(new Vector3(-0.16f, 0.08f, -0.16f), 0.10f, 2.4f, -0.18f, 0.06f, 0.26f, 0.04f, 1.1f),
@@ -137,12 +165,15 @@ namespace DimensionBrawl.Presentation
         {
             enabled = true,
             cueId = "boss_pressure_break_reframe",
+            tier = CueTier.MicroCinematic,
             priority = 65,
             canBeInterrupted = true,
             movementLockSeconds = 0.18f,
             inputLockSeconds = 0.24f,
             timeScale = 0.9f,
             timeScaleSeconds = 0.12f,
+            returnTargetId = GameplayReturnTargetId,
+            returnPolicy = CameraReturnPolicy.ActionCameraCueRecovery,
             shots = new[]
             {
                 CreateShot(new Vector3(0.18f, 0.07f, -0.24f), 0.18f, 2.8f, -0.30f, 0.09f, 0.22f, 0.03f, 1.14f),
@@ -159,12 +190,15 @@ namespace DimensionBrawl.Presentation
         {
             enabled = true,
             cueId = "summon_followup_hit_confirm",
+            tier = CueTier.MicroCinematic,
             priority = 72,
             canBeInterrupted = true,
             movementLockSeconds = 0.12f,
             inputLockSeconds = 0.18f,
             timeScale = 0.88f,
             timeScaleSeconds = 0.10f,
+            returnTargetId = GameplayReturnTargetId,
+            returnPolicy = CameraReturnPolicy.ActionCameraCueRecovery,
             shots = new[]
             {
                 CreateShot(new Vector3(-0.08f, 0.05f, -0.10f), 0.08f, 1.6f, -0.14f, 0.04f, 0.14f, 0.02f, 1.08f),
@@ -181,12 +215,15 @@ namespace DimensionBrawl.Presentation
         {
             enabled = true,
             cueId = "pocket_result_clear_bridge",
+            tier = CueTier.MicroCinematic,
             priority = 75,
             canBeInterrupted = false,
             movementLockSeconds = 0.30f,
             inputLockSeconds = 0.42f,
             timeScale = 0.86f,
             timeScaleSeconds = 0.14f,
+            returnTargetId = GameplayReturnTargetId,
+            returnPolicy = CameraReturnPolicy.ActionCameraCueRecovery,
             shots = new[]
             {
                 CreateShot(new Vector3(0f, 0.08f, -0.28f), 0.20f, 3.2f, -0.34f, 0.10f, 0.26f, 0.04f, 1.12f),
@@ -203,12 +240,15 @@ namespace DimensionBrawl.Presentation
         {
             enabled = true,
             cueId = "pocket_result_fail_bridge",
+            tier = CueTier.MicroCinematic,
             priority = 75,
             canBeInterrupted = false,
             movementLockSeconds = 0.24f,
             inputLockSeconds = 0.34f,
             timeScale = 0.92f,
             timeScaleSeconds = 0.10f,
+            returnTargetId = GameplayReturnTargetId,
+            returnPolicy = CameraReturnPolicy.ActionCameraCueRecovery,
             shots = new[]
             {
                 CreateShot(new Vector3(0f, -0.04f, -0.18f), -0.06f, 1.8f, -0.20f, -0.04f, 0.24f, 0.03f, 1.05f),
@@ -274,7 +314,8 @@ namespace DimensionBrawl.Presentation
             float delaySeconds,
             string animatorTrigger,
             CombatVfxCueId vfxCueId,
-            float vfxIntensity)
+            float vfxIntensity,
+            float tierIntensityScale = 1.18f)
         {
             return new CueSignal
             {
@@ -282,9 +323,11 @@ namespace DimensionBrawl.Presentation
                 delaySeconds = delaySeconds,
                 signalId = signalId,
                 animatorTrigger = animatorTrigger,
+                requireAnimatorTrigger = !string.IsNullOrWhiteSpace(animatorTrigger),
                 playVfx = true,
                 vfxCueId = vfxCueId,
-                vfxIntensity = vfxIntensity
+                vfxIntensity = vfxIntensity,
+                tierIntensityScale = tierIntensityScale
             };
         }
     }

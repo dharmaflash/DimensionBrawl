@@ -970,12 +970,21 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(player.transform, GetObjectReference<Transform>(cinematicCueDirector, "vfxAnchor"));
             Assert.AreSame(rangedAnimator, GetObjectReference<Animator>(cinematicCueDirector, "cueAnimator"));
             Assert.IsTrue(cinematicCueDirector.DrawCinematicBars);
-            Assert.GreaterOrEqual(cinematicCueDirector.CueProfile.SummonEntry.ShotCount, 3);
-            Assert.GreaterOrEqual(cinematicCueDirector.CueProfile.SummonEntry.SignalCount, 2);
-            Assert.GreaterOrEqual(cinematicCueDirector.CueProfile.SummonEntry.inputLockSeconds, 0.5f);
-            Assert.GreaterOrEqual(cinematicCueDirector.CueProfile.UltimateCutIn.ShotCount, 3);
-            Assert.GreaterOrEqual(cinematicCueDirector.CueProfile.UltimateCutIn.SignalCount, 2);
-            Assert.GreaterOrEqual(cinematicCueDirector.CueProfile.UltimateCutIn.inputLockSeconds, 0.6f);
+            ActionCinematicCueProfile.CueSequence summonEntry = cinematicCueDirector.CueProfile.SummonEntry;
+            Assert.AreEqual(ActionCinematicCueProfile.CueTier.MicroCinematic, summonEntry.tier);
+            Assert.AreEqual(ActionCinematicCueProfile.GameplayReturnTargetId, summonEntry.returnTargetId);
+            Assert.AreEqual(ActionCinematicCueProfile.CameraReturnPolicy.ActionCameraCueRecovery, summonEntry.returnPolicy);
+            Assert.GreaterOrEqual(summonEntry.ShotCount, 3);
+            Assert.GreaterOrEqual(summonEntry.SignalCount, 2);
+            Assert.GreaterOrEqual(summonEntry.inputLockSeconds, 0.5f);
+            Assert.Greater(summonEntry.signals[0].tierIntensityScale, 1f);
+            ActionCinematicCueProfile.CueSequence ultimateCutIn = cinematicCueDirector.CueProfile.UltimateCutIn;
+            Assert.AreEqual(ActionCinematicCueProfile.CueTier.CombatCutIn, ultimateCutIn.tier);
+            Assert.AreEqual(ActionCinematicCueProfile.GameplayReturnTargetId, ultimateCutIn.returnTargetId);
+            Assert.GreaterOrEqual(ultimateCutIn.ShotCount, 3);
+            Assert.GreaterOrEqual(ultimateCutIn.SignalCount, 2);
+            Assert.GreaterOrEqual(ultimateCutIn.inputLockSeconds, 0.6f);
+            Assert.IsTrue(ultimateCutIn.signals[0].requireAnimatorTrigger);
             Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(bossCameraCueDriver, "bossBarrageEmitter"));
             Assert.AreSame(
                 bossPressureActionDirector,
