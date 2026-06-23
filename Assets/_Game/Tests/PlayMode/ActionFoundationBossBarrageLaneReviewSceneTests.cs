@@ -580,9 +580,9 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(meleeVisualRoot.activeSelf, "CombatGirl melee source body should stay inactive while the review starts.");
             Assert.IsTrue(rangedWeaponRoot.activeSelf, "Rifle should start visible in ranged mode.");
             Assert.IsFalse(meleeWeaponRoot.activeSelf, "Extracted melee weapons should start hidden in ranged mode.");
-            Assert.AreSame(LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath), rangedAnimator.runtimeAnimatorController);
+            Assert.AreSame(LoadAsset<RuntimeAnimatorController>(InoriRifleAnimatorControllerPath), rangedAnimator.runtimeAnimatorController);
             Assert.AreSame(
-                LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath),
+                LoadAsset<RuntimeAnimatorController>(InoriRifleAnimatorControllerPath),
                 GetObjectReference<RuntimeAnimatorController>(combatModeController, "rangedAnimatorController"));
             Assert.AreSame(
                 LoadAsset<RuntimeAnimatorController>(CombatGirlMeleeControllerPath),
@@ -717,7 +717,7 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(meleeWeaponRoot.activeInHierarchy, "Extracted melee weapons should hide again after returning to ranged mode.");
             Assert.IsNull(GetOptionalObjectReference<Animator>(player, "animator"));
             Assert.IsNull(GetOptionalObjectReference<Animator>(playerActionController, "animator"));
-            Assert.AreSame(LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath), rangedAnimator.runtimeAnimatorController);
+            Assert.AreSame(LoadAsset<RuntimeAnimatorController>(InoriRifleAnimatorControllerPath), rangedAnimator.runtimeAnimatorController);
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(energyLadder, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(energyLadder, "trackedPlayer"));
             Assert.AreEqual(16.5f, GetFloat(energyLadder, "baseEnergyPerSecond"), 0.001f);
@@ -2195,7 +2195,7 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator RifleGirlRangedVisualKeepsAuthoredWeaponConstraintAndSupportHand()
+        public IEnumerator InoriRangedVisualKeepsManualWeaponSocketAndDefaultSupportHandIkOff()
         {
             PlayerCombatModeController combatModeController =
                 RequireComponent<PlayerCombatModeController>(
@@ -2203,62 +2203,55 @@ namespace DimensionBrawl.Tests
                     "player combat mode controller");
             Animator rangedAnimator = GetObjectReference<Animator>(combatModeController, "rangedAnimator");
             RifleGirlWeaponSocketDriver socketDriver =
-                RequireComponent<RifleGirlWeaponSocketDriver>(rangedAnimator.gameObject, "RifleGirl rifle socket driver");
+                RequireComponent<RifleGirlWeaponSocketDriver>(rangedAnimator.gameObject, "Inori rifle socket driver");
 
-            Assert.IsTrue(socketDriver.IsConfigured, "RifleGirl rifle socket driver should be configured for the authored rifle constraint.");
-            ParentConstraint rifleConstraint = GetObjectReference<ParentConstraint>(socketDriver, "rifleConstraint");
-            Assert.IsNotNull(rifleConstraint, "Fallback RifleGirl ranged visual should keep the authored ParentConstraint.");
-            Assert.GreaterOrEqual(rifleConstraint.sourceCount, 3, "RifleGirl rifle constraint should keep hand, holster, and aim sources.");
+            Assert.IsTrue(socketDriver.IsConfigured, "Inori rifle socket driver should be configured for the manual rifle socket.");
+            Assert.IsNull(
+                GetOptionalObjectReference<ParentConstraint>(socketDriver, "rifleConstraint"),
+                "Inori rifle should use the manual right-hand socket instead of RifleGirl's authored ParentConstraint.");
             Assert.IsTrue(GetBool(socketDriver, "ignoreRedundantSocketCommands"));
             Assert.IsNotNull(
                 GetObjectReference<Transform>(socketDriver, "leftHandIkTarget"),
-                "RifleGirl rifle socket driver should bind the authored support-hand IK target.");
-            Assert.AreEqual("To_Hand_R_Socket, IK_ON_Left_Handle", GetString(socketDriver, "defaultCommands"));
+                "Inori rifle socket driver should bind the support-hand IK target for later pose tuning.");
+            Assert.AreEqual("To_Hand_R_Socket, IK_OFF_Left_Handle", GetString(socketDriver, "defaultCommands"));
             Assert.AreEqual(
-                1f,
+                0f,
                 GetFloat(socketDriver, "leftIkMaxWeight"),
                 0.001f,
-                "RifleGirl should use the authored full support-hand IK weight.");
+                "Inori should start with support-hand IK disabled until the pose tuning profile is explicitly enabled.");
             Assert.AreEqual(
-                1f,
+                0f,
                 GetFloat(socketDriver, "leftIkRotationMaxWeight"),
                 0.001f,
-                "RifleGirl should preserve the authored support-hand wrist roll.");
+                "Inori should not force support-hand wrist roll in the default pose.");
             GameObject rangedWeaponRoot = GetObjectReference<GameObject>(combatModeController, "rangedWeaponRoot");
             Assert.IsNull(
                 rangedWeaponRoot.GetComponent<RetargetedHandWeaponAttachment>(),
-                "Fallback RifleGirl rifle should use its native ParentConstraint instead of the failed retargeted hand attachment.");
+                "Inori rifle should use its manual socket instead of the failed retargeted hand attachment.");
             yield return null;
             Transform rightHand = rangedAnimator.GetBoneTransform(HumanBodyBones.RightHand);
-            Assert.IsNotNull(rightHand, "RifleGirl should resolve a humanoid right hand socket.");
+            Assert.IsNotNull(rightHand, "Inori should resolve a humanoid right hand socket.");
             Transform leftHand = rangedAnimator.GetBoneTransform(HumanBodyBones.LeftHand);
-            Assert.IsNotNull(leftHand, "RifleGirl should resolve a humanoid left hand socket.");
+            Assert.IsNotNull(leftHand, "Inori should resolve a humanoid left hand socket.");
             Transform leftHandle = FindDescendant(rangedWeaponRoot.transform, "Left_Handle");
-            Assert.IsNotNull(leftHandle, "RifleGirl rifle should keep the authored support-hand handle.");
-            Assert.Less(
-                Vector3.Distance(leftHand.position, leftHandle.position),
-                0.12f,
-                "RifleGirl left hand should stay on the authored support handle instead of floating away from the gun.");
+            Assert.IsNotNull(leftHandle, "Inori rifle should keep the support-hand handle for later authored pose work.");
             Assert.Greater(
                 rangedWeaponRoot.GetComponentsInChildren<Renderer>(true).Length,
                 0,
-                "RifleGirl ranged weapon should keep visible promoted renderers.");
-            Vector3 rifleToHandle = (leftHandle.position - rangedWeaponRoot.transform.position).normalized;
-            Assert.Greater(
-                Vector3.Dot(rifleToHandle, (leftHand.position - rangedWeaponRoot.transform.position).normalized),
-                0.95f,
-                "Support hand and handle should remain on the same authored side of the rifle.");
+                "Inori ranged weapon should keep visible promoted renderers.");
+            Assert.IsTrue(
+                rangedWeaponRoot.transform.IsChildOf(rightHand),
+                "Inori rifle should be parented through the manual right-hand socket.");
 
             socketDriver.SwitchSocketByString("IK_OFF_Left_Handle");
             yield return null;
             socketDriver.SwitchSocketByString("IK_ON_Left_Handle");
             yield return null;
 
-            Assert.GreaterOrEqual(
-                socketDriver.RifleConstraintSourceApplyCount,
-                1,
-                "RifleGirl socket events should apply the authored weapon ParentConstraint source.");
-            Assert.AreEqual(0, socketDriver.ActiveRifleConstraintSourceIndex);
+            Assert.AreEqual(
+                -1,
+                socketDriver.ActiveRifleConstraintSourceIndex,
+                "Inori manual socket mode should not activate RifleGirl ParentConstraint sources.");
         }
 
         [UnityTest]
@@ -5680,18 +5673,18 @@ namespace DimensionBrawl.Tests
         {
             Assert.AreEqual(RangedPlayerVisualRootName, rangedRoot.name);
             Assert.AreSame(
-                LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath),
+                LoadAsset<RuntimeAnimatorController>(InoriRifleAnimatorControllerPath),
                 rangedAnimator.runtimeAnimatorController);
-            AssertGameOwnedAsset(rangedAnimator.runtimeAnimatorController, "RifleGirl player Animator Controller");
-            AssertGameOwnedAsset(rangedAnimator.avatar, "RifleGirl ranged Avatar");
-            AnimatorController rangedController = LoadAsset<AnimatorController>(RifleGirlRangedControllerPath);
+            AssertGameOwnedAsset(rangedAnimator.runtimeAnimatorController, "Inori player Animator Controller");
+            AssertGameOwnedAsset(rangedAnimator.avatar, "Inori ranged Avatar");
+            AnimatorController rangedController = LoadAsset<AnimatorController>(InoriRifleAnimatorControllerPath);
             Assert.IsTrue(
                 rangedController.layers[0].iKPass,
-                "RifleGirl ranged controller must keep IK pass enabled for support-hand correction.");
+                "Inori ranged controller must keep IK pass enabled for optional support-hand correction.");
             AnimatorStateMachine inoriStateMachine = rangedController.layers[0].stateMachine;
             Assert.IsNotNull(
                 inoriStateMachine.defaultState,
-                "RifleGirl ranged controller should preserve an explicit default state.");
+                "Inori ranged controller should preserve an explicit default state.");
             AssertRifleGirlControllerHasMotion(inoriStateMachine, LoadAsset<AnimationClip>(RifleGirlIdleClipPath));
             AssertRifleGirlControllerHasMotion(inoriStateMachine, LoadAsset<AnimationClip>(RifleGirlAimIdleClipPath));
             AssertControllerUsesGameOwnedMotions(rangedController);
@@ -5715,10 +5708,10 @@ namespace DimensionBrawl.Tests
             }
 
             Transform weapon = FindDescendant(rangedRoot.transform, RangedPlayerWeaponName);
-            Assert.IsNotNull(weapon, $"RifleGirl ranged visual should include {RangedPlayerWeaponName}.");
+            Assert.IsNotNull(weapon, $"Inori ranged visual should include {RangedPlayerWeaponName}.");
             Assert.AreSame(rangedWeaponRoot.transform, weapon, "Ranged weapon reference should point at the actual rifle object.");
-            Assert.AreNotSame(rangedRoot.transform, weapon.parent, "Ranged weapon should stay under the RifleGirl authored hierarchy.");
-            Assert.IsTrue(weapon.IsChildOf(rangedAnimator.transform), "Ranged weapon should be parented to the active RifleGirl player model.");
+            Assert.AreNotSame(rangedRoot.transform, weapon.parent, "Ranged weapon should stay under the Inori manual socket hierarchy.");
+            Assert.IsTrue(weapon.IsChildOf(rangedAnimator.transform), "Ranged weapon should be parented to the active Inori player model.");
             Assert.Greater(
                 weapon.GetComponentsInChildren<Renderer>(true).Length,
                 0,
@@ -5729,21 +5722,19 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(weaponSocketDriver.IsConfigured, "Ranged visual weapon socket driver should be fully configured.");
             Assert.AreSame(rangedAnimator, GetObjectReference<Animator>(weaponSocketDriver, "animator"));
             ParentConstraint weaponConstraint = weapon.GetComponent<ParentConstraint>();
-            Assert.IsNotNull(weaponConstraint, "RifleGirl rifle should keep its authored ParentConstraint.");
-            Assert.AreSame(
-                weaponConstraint,
-                GetObjectReference<ParentConstraint>(weaponSocketDriver, "rifleConstraint"));
-            Assert.AreEqual("To_Hand_R_Socket, IK_ON_Left_Handle", GetString(weaponSocketDriver, "defaultCommands"));
+            Assert.IsNull(weaponConstraint, "Inori rifle should not keep the RifleGirl authored ParentConstraint.");
+            Assert.IsNull(GetOptionalObjectReference<ParentConstraint>(weaponSocketDriver, "rifleConstraint"));
+            Assert.AreEqual("To_Hand_R_Socket, IK_OFF_Left_Handle", GetString(weaponSocketDriver, "defaultCommands"));
             Assert.AreEqual(
-                1f,
+                0f,
                 GetFloat(weaponSocketDriver, "leftIkMaxWeight"),
                 0.001f,
-                "RifleGirl rifle socket should use full support-hand IK from the authored setup.");
+                "Inori rifle socket should leave support-hand IK off until pose tuning is enabled.");
             Assert.AreEqual(
-                1f,
+                0f,
                 GetFloat(weaponSocketDriver, "leftIkRotationMaxWeight"),
                 0.001f,
-                "RifleGirl rifle socket should preserve the authored wrist rotation.");
+                "Inori rifle socket should not force support-hand wrist rotation by default.");
             Transform leftHandle = FindDescendant(weapon, "Left_Handle");
             Assert.IsNotNull(leftHandle, "Rifle should expose Left_Handle for later authored support-hand pose work.");
             Assert.AreSame(leftHandle, GetObjectReference<Transform>(weaponSocketDriver, "leftHandIkTarget"));

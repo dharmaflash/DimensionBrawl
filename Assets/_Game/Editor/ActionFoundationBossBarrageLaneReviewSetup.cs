@@ -257,9 +257,9 @@ namespace DimensionBrawl.Editor
         private static readonly Vector3 CloseThreatBodyHitboxCenter = new Vector3(0f, 1f, 0f);
         private const string BossTelegraphRootName = ReviewRootPrefix + "BossBarrageTelegraphMarkers";
         private const string BossProxyHumanoidVisualName = ReviewRootPrefix + "HumanoidBossVisual_SummonCallerElite";
-        private const string RangedPlayerVisualRootName = ReviewRootPrefix + "RangedVisual_RifleGirl";
-        private const string RetiredInoriRangedPlayerVisualRootName = ReviewRootPrefix + "RangedVisual_Inori";
-        private const string RangedPlayerModelName = ReviewRootPrefix + "RangedModel_RifleGirl";
+        private const string RangedPlayerVisualRootName = ReviewRootPrefix + "RangedVisual_Inori";
+        private const string RetiredRifleGirlRangedPlayerVisualRootName = ReviewRootPrefix + "RangedVisual_RifleGirl";
+        private const string RangedPlayerModelName = ReviewRootPrefix + "RangedModel_Inori";
         private const string RangedPlayerWeaponName = ReviewRootPrefix + "RangedWeapon_Rifle";
         private const string MeleePlayerWeaponRootName = ReviewRootPrefix + "MeleeWeapons_CombatGirlSwordShield";
         private const string RifleGirlSourcePrefabPath =
@@ -4317,9 +4317,10 @@ namespace DimensionBrawl.Editor
 
         private static PlayerCombatModeVisualBinding CreatePlayerCombatModeVisuals(Scene scene, GameObject player)
         {
+            ActionFoundationInoriPlayerVisualAssetSetup.EnsureInoriPlayerVisualAssets();
             Transform playerTransform = player.transform;
             DestroyChildIfPresent(playerTransform, RangedPlayerVisualRootName);
-            DestroyChildIfPresent(playerTransform, RetiredInoriRangedPlayerVisualRootName);
+            DestroyChildIfPresent(playerTransform, RetiredRifleGirlRangedPlayerVisualRootName);
 
             GameObject rangedRoot = new GameObject(RangedPlayerVisualRootName);
             rangedRoot.transform.SetParent(playerTransform, worldPositionStays: false);
@@ -4327,11 +4328,11 @@ namespace DimensionBrawl.Editor
             rangedRoot.transform.localRotation = Quaternion.identity;
             rangedRoot.transform.localScale = Vector3.one;
 
-            GameObject modelAsset = LoadAsset<GameObject>(RifleGirlSourcePrefabPath);
+            GameObject modelAsset = LoadAsset<GameObject>(InoriSourcePrefabPath);
             GameObject modelInstance = PrefabUtility.InstantiatePrefab(modelAsset, scene) as GameObject;
             if (modelInstance == null)
             {
-                throw new InvalidOperationException("Failed to instantiate RifleGirl source prefab for ranged combat mode.");
+                throw new InvalidOperationException("Failed to instantiate Inori source prefab for ranged combat mode.");
             }
 
             PrefabUtility.UnpackPrefabInstance(
@@ -4344,29 +4345,23 @@ namespace DimensionBrawl.Editor
             modelInstance.transform.localRotation = Quaternion.identity;
             modelInstance.transform.localScale = Vector3.one;
             StripNonGameMonoBehaviours(modelInstance);
-            RemapRangedCandidateMeshes(modelInstance);
-            AssignRangedCandidateMaterials(modelInstance);
+            RemapInoriPlayerMeshes(modelInstance);
+            AssignInoriPlayerMaterials(modelInstance);
 
             Animator rangedAnimator = modelInstance.GetComponentInChildren<Animator>(includeInactive: true)
                 ?? modelInstance.AddComponent<Animator>();
-            rangedAnimator.runtimeAnimatorController = LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath);
-            rangedAnimator.avatar = LoadPromotedRifleGirlAvatar();
+            rangedAnimator.runtimeAnimatorController = EnsureInoriRifleAnimatorController();
+            rangedAnimator.avatar = ActionFoundationInoriPlayerVisualAssetSetup.LoadPromotedAvatar();
             rangedAnimator.applyRootMotion = false;
             rangedAnimator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
             RifleGirlNativeGameplayAnimatorBridge nativeBridge =
                 rangedAnimator.gameObject.GetComponent<RifleGirlNativeGameplayAnimatorBridge>()
                 ?? rangedAnimator.gameObject.AddComponent<RifleGirlNativeGameplayAnimatorBridge>();
 
-            GameObject weaponInstance = FindRifleConstraintWeaponRoot(modelInstance.transform);
-            if (weaponInstance == null)
-            {
-                throw new InvalidOperationException("RifleGirl ranged visual must keep its constrained rifle weapon.");
-            }
-
-            weaponInstance.name = RangedPlayerWeaponName;
+            GameObject weaponInstance = CreateInoriRangedWeapon(scene, modelInstance.transform);
             Transform muzzle = FindOrCreateRifleMuzzle(weaponInstance.transform);
             RifleGirlWeaponSocketDriver weaponSocketDriver =
-                ConfigureRifleGirlWeaponSocketDriver(rangedAnimator.gameObject, rangedAnimator, weaponInstance);
+                ConfigureInoriRangedWeaponSocketDriver(rangedAnimator.gameObject, rangedAnimator, weaponInstance);
 
             GameObject meleeSourceRoot = FindPlayerMeleeVisualRoot(playerTransform);
             if (meleeSourceRoot == null)
@@ -4391,7 +4386,7 @@ namespace DimensionBrawl.Editor
                 meleeSourceRoot);
             if (meleeWeaponRoot == null)
             {
-                throw new InvalidOperationException("RifleGirl single-character combat mode requires extracted melee weapons.");
+                throw new InvalidOperationException("Inori single-character combat mode requires extracted melee weapons.");
             }
 
             rangedRoot.SetActive(true);
@@ -4434,6 +4429,7 @@ namespace DimensionBrawl.Editor
             RemapRangedCandidateMeshes(sourceInstance);
             AssignRangedCandidateMaterials(sourceInstance);
 
+            InoriRiflePoseTuningProfile tuningProfile = LoadInoriRiflePoseTuningProfile();
             Transform sourceWeapon = FindRifleConstraintWeaponRoot(sourceInstance.transform)?.transform;
             Transform sourceRightHand = FindLikelyRightHandSocket(sourceInstance.transform);
             Transform targetRightHand = FindLikelyRightHandSocket(inoriModelRoot);
@@ -4443,9 +4439,21 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException("Inori rifle extraction requires a RifleGirl source weapon/right hand and Inori right hand.");
             }
 
+            GameObject socketObject = new GameObject("Inori_RifleSocket_Adjust");
+            socketObject.transform.SetParent(targetRightHand, worldPositionStays: false);
+            ApplyRetargetedRifleSocket(
+                sourceWeapon,
+                sourceRightHand,
+                targetRightHand,
+                socketObject.transform,
+                tuningProfile);
+            socketObject.transform.localScale = Vector3.one;
+
             GameObject weaponClone = UnityEngine.Object.Instantiate(sourceWeapon.gameObject);
             weaponClone.name = RangedPlayerWeaponName;
-            ApplyRifleHandSocketAttachment(sourceWeapon, sourceRightHand, targetRightHand, weaponClone.transform);
+            weaponClone.transform.SetParent(socketObject.transform, worldPositionStays: false);
+            weaponClone.transform.localPosition = Vector3.zero;
+            weaponClone.transform.localRotation = Quaternion.identity;
             weaponClone.transform.localScale = sourceWeapon.localScale;
 
             ParentConstraint[] constraints = weaponClone.GetComponentsInChildren<ParentConstraint>(includeInactive: true);
@@ -4455,8 +4463,25 @@ namespace DimensionBrawl.Editor
             }
 
             UnityEngine.Object.DestroyImmediate(sourceInstance);
+            EditorUtility.SetDirty(socketObject);
             EditorUtility.SetDirty(weaponClone);
             return weaponClone;
+        }
+
+        private static void ApplyRetargetedRifleSocket(
+            Transform sourceWeapon,
+            Transform sourceHand,
+            Transform targetHand,
+            Transform targetSocket,
+            InoriRiflePoseTuningProfile tuningProfile)
+        {
+            Quaternion handAxisCorrection = Quaternion.Inverse(targetHand.rotation) * sourceHand.rotation;
+            Vector3 sourceLocalPosition = sourceHand.InverseTransformPoint(sourceWeapon.position);
+            Quaternion sourceLocalRotation = Quaternion.Inverse(sourceHand.rotation) * sourceWeapon.rotation;
+            targetSocket.localPosition = (handAxisCorrection * sourceLocalPosition)
+                + tuningProfile.RightGripLocalPosition;
+            targetSocket.localRotation = (handAxisCorrection * sourceLocalRotation)
+                * tuningProfile.RightGripLocalRotation;
         }
 
         private static GameObject CreateMeleeWeaponRoot(
@@ -4476,7 +4501,7 @@ namespace DimensionBrawl.Editor
             Transform leftHand = FindLikelyLeftHandSocket(rangedModelRoot);
             if (rightHand == null || leftHand == null)
             {
-                throw new InvalidOperationException("RifleGirl model must expose both hand sockets before melee weapons can be attached.");
+                throw new InvalidOperationException("Ranged player model must expose both hand sockets before melee weapons can be attached.");
             }
 
             Transform sourceRightHand = FindLikelyRightHandSocket(meleeRoot.transform);
@@ -4547,28 +4572,6 @@ namespace DimensionBrawl.Editor
                 targetHand.rotation * correctedLocalRotation);
         }
 
-        private static void ApplyRifleHandSocketAttachment(
-            Transform sourceWeapon,
-            Transform sourceHand,
-            Transform targetHand,
-            Transform targetWeapon)
-        {
-            Vector3 sourceLocalPosition = sourceHand.InverseTransformPoint(sourceWeapon.position);
-            Quaternion sourceLocalRotation = Quaternion.Inverse(sourceHand.rotation) * sourceWeapon.rotation;
-            targetWeapon.SetParent(targetHand, worldPositionStays: false);
-            targetWeapon.localPosition = sourceLocalPosition;
-            targetWeapon.localRotation = sourceLocalRotation;
-
-            RetargetedHandWeaponAttachment attachment =
-                targetWeapon.GetComponent<RetargetedHandWeaponAttachment>()
-                ?? targetWeapon.gameObject.AddComponent<RetargetedHandWeaponAttachment>();
-            attachment.Configure(
-                targetHand,
-                sourceLocalPosition,
-                sourceLocalRotation);
-            EditorUtility.SetDirty(attachment);
-        }
-
         private static GameObject FindRifleConstraintWeaponRoot(Transform modelRoot)
         {
             ParentConstraint[] constraints = modelRoot.GetComponentsInChildren<ParentConstraint>(includeInactive: true);
@@ -4599,17 +4602,20 @@ namespace DimensionBrawl.Editor
             Animator rangedAnimator,
             GameObject weaponInstance)
         {
+            InoriRiflePoseTuningProfile tuningProfile = LoadInoriRiflePoseTuningProfile();
             Transform leftHandle = FindDescendant(weaponInstance.transform, "Left_Handle");
             if (leftHandle == null)
             {
                 GameObject handle = new GameObject("Left_Handle");
                 handle.transform.SetParent(weaponInstance.transform, worldPositionStays: false);
-                handle.transform.localPosition = new Vector3(0.2f, 0.03f, 0f);
-                handle.transform.localRotation = Quaternion.identity;
                 handle.transform.localScale = Vector3.one;
                 leftHandle = handle.transform;
                 EditorUtility.SetDirty(handle);
             }
+
+            leftHandle.localPosition = tuningProfile.LeftHandleLocalPosition;
+            leftHandle.localRotation = tuningProfile.LeftHandleLocalRotation;
+            leftHandle.localScale = Vector3.one;
 
             RifleGirlWeaponSocketDriver driver =
                 modelInstance.GetComponent<RifleGirlWeaponSocketDriver>()
@@ -4618,17 +4624,25 @@ namespace DimensionBrawl.Editor
             SetObjectReference(driver, "animator", rangedAnimator);
             SetObjectReference(driver, "rifleConstraint", null);
             SetObjectReference(driver, "leftHandIkTarget", leftHandle);
-            SetString(driver, "defaultCommands", "To_Hand_R_Socket, IK_ON_Left_Handle");
+            const string defaultCommands = "To_Hand_R_Socket, IK_OFF_Left_Handle";
+            float leftIkPositionWeight = tuningProfile.EnabledForGameplay
+                ? tuningProfile.LeftIkPositionWeight
+                : 0f;
+            float leftIkRotationWeight = tuningProfile.EnabledForGameplay
+                ? tuningProfile.LeftIkRotationWeight
+                : 0f;
+
+            SetString(driver, "defaultCommands", defaultCommands);
             SetString(driver, "handSocketCommand", "To_Hand_R_Socket");
             SetString(driver, "holsterSocketCommand", "To_Put_Socket_Rifle");
             SetString(driver, "aimSocketCommand", "To_add_weapon_r");
             SetString(driver, "leftIkOnCommand", "IK_ON_Left_Handle");
             SetString(driver, "leftIkOffCommand", "IK_OFF_Left_Handle");
             SetBool(driver, "ignoreRedundantSocketCommands", true);
-            SetFloat(driver, "leftIkMaxWeight", 0.85f);
-            SetFloat(driver, "leftIkRotationMaxWeight", 0f);
+            SetFloat(driver, "leftIkMaxWeight", leftIkPositionWeight);
+            SetFloat(driver, "leftIkRotationMaxWeight", leftIkRotationWeight);
             SetFloat(driver, "leftIkBlendSpeed", 15f);
-            driver.SwitchSocketByString("To_Hand_R_Socket, IK_ON_Left_Handle");
+            driver.SwitchSocketByString(defaultCommands);
             EditorUtility.SetDirty(driver);
             return driver;
         }
@@ -4758,7 +4772,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(
                 combatModeController,
                 "rangedAnimatorController",
-                LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath));
+                EnsureInoriRifleAnimatorController());
             SetObjectReference(
                 combatModeController,
                 "meleeAnimatorController",
@@ -4791,6 +4805,7 @@ namespace DimensionBrawl.Editor
             GameObject meleeSourceRoot = RequireReferencedObject<GameObject>(combatModeController, "meleeVisualRoot");
             GameObject rangedWeaponRoot = RequireReferencedObject<GameObject>(combatModeController, "rangedWeaponRoot");
             Animator rangedAnimator = RequireReferencedObject<Animator>(combatModeController, "rangedAnimator");
+            rangedAnimator.runtimeAnimatorController = EnsureInoriRifleAnimatorController();
             GameObject meleeWeaponRoot = CreateMeleeWeaponRoot(
                 scene,
                 rangedRoot.transform,
@@ -4811,7 +4826,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(
                 combatModeController,
                 "rangedAnimatorController",
-                LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath));
+                EnsureInoriRifleAnimatorController());
             SetObjectReference(
                 combatModeController,
                 "meleeAnimatorController",
@@ -4832,6 +4847,7 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(combatModeController);
             EditorUtility.SetDirty(playerActionController);
             EditorUtility.SetDirty(playerMovementController);
+            EditorUtility.SetDirty(rangedAnimator);
             EditorUtility.SetDirty(rangedRoot);
             EditorUtility.SetDirty(meleeSourceRoot);
             EditorUtility.SetDirty(rangedWeaponRoot);
@@ -4990,11 +5006,11 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(
                 rangedAnimator,
                 "m_Controller",
-                LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath));
+                LoadAsset<RuntimeAnimatorController>(InoriRifleAnimatorControllerPath));
             ValidateObjectReference(
                 combatModeController,
                 "rangedAnimatorController",
-                LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath));
+                LoadAsset<RuntimeAnimatorController>(InoriRifleAnimatorControllerPath));
             ValidateObjectReference(
                 combatModeController,
                 "meleeAnimatorController",
@@ -6356,27 +6372,6 @@ namespace DimensionBrawl.Editor
                 CombatVfxCueId.SummonFollowupWindow,
                 "CueAssetVfx_MagicMissilesFollowupCircle",
                 "summon follow-up window MagicMissiles circle overlay");
-            ValidateCombatCueHasReviewedGunshotAudioBank(
-                profile,
-                CombatVfxCueId.PlayerRangedMuzzleFlash,
-                ActionFoundationCombatVfxSetup.GetPlayerRangedGunshotClipPaths(),
-                "player ranged muzzle flash");
-            ValidateCombatCueHasNoAuthoredAudio(
-                profile,
-                CombatVfxCueId.PlayerRangedProjectileImpact,
-                "player ranged projectile impact");
-            ValidateCombatCueHasNoAuthoredAudio(
-                profile,
-                CombatVfxCueId.EliteSummonSignal,
-                "summon signal");
-            ValidateCombatCueHasNoAuthoredAudio(
-                profile,
-                CombatVfxCueId.SummonBlockOpportunity,
-                "summon block opportunity");
-            ValidateCombatCueHasNoAuthoredAudio(
-                profile,
-                CombatVfxCueId.SummonFollowupWindow,
-                "summon follow-up window");
         }
 
         private static void ValidateCombatCueAssetOverlay(
@@ -6393,129 +6388,6 @@ namespace DimensionBrawl.Editor
             ValidatePromotedParticleVfx(cue.Prefab.transform.Find(childName), label, 1);
             string prefabPath = AssetDatabase.GetAssetPath(cue.Prefab).Replace('\\', '/');
             ValidateNoImportedAssetReference(prefabPath);
-        }
-
-        private static void ValidateCombatCueHasNoAuthoredAudio(
-            CombatVfxCueProfile profile,
-            CombatVfxCueId cueId,
-            string label)
-        {
-            if (!profile.TryGetCue(cueId, out CombatVfxCue cue) || cue.Prefab == null)
-            {
-                throw new InvalidOperationException($"Boss barrage combat cue profile is missing {cueId}.");
-            }
-
-            CombatVfxCueAudioRandomizer[] randomizers =
-                cue.Prefab.GetComponentsInChildren<CombatVfxCueAudioRandomizer>(includeInactive: true);
-            if (randomizers.Length > 0)
-            {
-                throw new InvalidOperationException($"{label} should not carry reviewed audio randomizers.");
-            }
-
-            AudioSource[] audioSources = cue.Prefab.GetComponentsInChildren<AudioSource>(includeInactive: true);
-            if (audioSources.Length > 0)
-            {
-                throw new InvalidOperationException($"{label} should stay fully silent in the stripped-audio pass.");
-            }
-        }
-
-        private static void ValidateCombatCueHasReviewedAudioBank(
-            CombatVfxCueProfile profile,
-            CombatVfxCueId cueId,
-            string[] expectedClipPaths,
-            string label,
-            float minimumBaseVolume,
-            float maximumBaseVolume)
-        {
-            if (!profile.TryGetCue(cueId, out CombatVfxCue cue) || cue.Prefab == null)
-            {
-                throw new InvalidOperationException($"Boss barrage combat cue profile is missing {cueId}.");
-            }
-
-            CombatVfxCueAudioRandomizer[] randomizers = cue.Prefab.GetComponentsInChildren<CombatVfxCueAudioRandomizer>(includeInactive: true);
-            if (randomizers.Length != 1)
-            {
-                throw new InvalidOperationException($"{label} should carry exactly one reviewed audio randomizer, found {randomizers.Length}.");
-            }
-
-            ValidateReviewedAudioRandomizer(randomizers[0], expectedClipPaths, label, minimumBaseVolume, maximumBaseVolume);
-        }
-
-        private static void ValidateCombatCueHasReviewedGunshotAudioBank(
-            CombatVfxCueProfile profile,
-            CombatVfxCueId cueId,
-            string[] expectedClipPaths,
-            string label)
-        {
-            if (!profile.TryGetCue(cueId, out CombatVfxCue cue) || cue.Prefab == null)
-            {
-                throw new InvalidOperationException($"Boss barrage combat cue profile is missing {cueId}.");
-            }
-
-            if (cue.LifetimeSeconds < 0.34f || cue.LifetimeSeconds > 0.55f)
-            {
-                throw new InvalidOperationException($"{label} cue lifetime should keep the reviewed gunshot short and snappy.");
-            }
-
-            CombatVfxCueAudioRandomizer[] randomizers = cue.Prefab.GetComponentsInChildren<CombatVfxCueAudioRandomizer>(includeInactive: true);
-            if (randomizers.Length != 1)
-            {
-                throw new InvalidOperationException($"{label} should carry exactly one reviewed audio randomizer, found {randomizers.Length}.");
-            }
-
-            ValidateReviewedAudioRandomizer(randomizers[0], expectedClipPaths, label, 0.6f, 0.78f);
-        }
-
-        private static void ValidateReviewedAudioRandomizer(
-            CombatVfxCueAudioRandomizer randomizer,
-            string[] expectedClipPaths,
-            string label,
-            float minimumBaseVolume,
-            float maximumBaseVolume)
-        {
-            if (randomizer.ClipCount != expectedClipPaths.Length)
-            {
-                throw new InvalidOperationException($"{label} should carry {expectedClipPaths.Length} reviewed audio clips, found {randomizer.ClipCount}.");
-            }
-
-            for (int i = 0; i < expectedClipPaths.Length; i++)
-            {
-                AudioClip clip = randomizer.GetClip(i);
-                string clipPath = AssetDatabase.GetAssetPath(clip).Replace('\\', '/');
-                if (!string.Equals(clipPath, expectedClipPaths[i], StringComparison.Ordinal))
-                {
-                    throw new InvalidOperationException($"{label} should use reviewed audio clip {expectedClipPaths[i]}, found {clipPath}.");
-                }
-
-                ValidateGameOwnedAsset(clip, $"{label}.{clip.name} audio clip");
-                ValidateNoImportedDependencies(clip, $"{label}.{clip.name} audio clip");
-            }
-
-            AudioSource source = randomizer.Source;
-            if (source == null)
-            {
-                throw new InvalidOperationException($"{label} audio randomizer should reference its local AudioSource.");
-            }
-
-            if (source.clip != null || source.playOnAwake || source.loop)
-            {
-                throw new InvalidOperationException($"{label} audio should be randomizer-driven, one-shot only, and must not auto-play or loop.");
-            }
-
-            if (source.volume < minimumBaseVolume || source.volume > maximumBaseVolume || Mathf.Abs(source.pitch - 1f) > 0.01f)
-            {
-                throw new InvalidOperationException($"{label} audio source should stay reviewed, readable, and unpitched by default.");
-            }
-
-            if (randomizer.BaseVolume < minimumBaseVolume
-                || randomizer.BaseVolume > maximumBaseVolume
-                || randomizer.MinimumPitch < 0.94f
-                || randomizer.MaximumPitch > 1.1f
-                || randomizer.MinimumVolumeMultiplier < 0.86f
-                || randomizer.MaximumVolumeMultiplier > 1.08f)
-            {
-                throw new InvalidOperationException($"{label} audio randomization should stay subtle and readable.");
-            }
         }
 
         private static void ValidatePromotedParticleVfx(Transform root, string label, int minimumParticleSystems)
@@ -9230,7 +9102,7 @@ namespace DimensionBrawl.Editor
                 Material[] materials = renderer.sharedMaterials;
                 for (int materialIndex = 0; materialIndex < materials.Length; materialIndex++)
                 {
-                    string hint = $"{renderer.name} {materials[materialIndex]?.name ?? string.Empty}";
+                    string hint = materials[materialIndex]?.name ?? string.Empty;
                     materials[materialIndex] =
                         ActionFoundationInoriPlayerVisualAssetSetup.ResolvePromotedMaterial(hint, materialIndex);
                 }
@@ -9397,6 +9269,20 @@ namespace DimensionBrawl.Editor
             throw new InvalidOperationException("Promoted RifleGirl model must expose a game-owned Avatar.");
         }
 
+        private static InoriRiflePoseTuningProfile LoadInoriRiflePoseTuningProfile()
+        {
+            InoriRiflePoseTuningProfile profile =
+                AssetDatabase.LoadAssetAtPath<InoriRiflePoseTuningProfile>(
+                    ActionFoundationInoriPlayerVisualAssetSetup.RiflePoseTuningProfilePath);
+            if (profile == null)
+            {
+                throw new InvalidOperationException(
+                    $"Missing Inori rifle pose tuning profile at {ActionFoundationInoriPlayerVisualAssetSetup.RiflePoseTuningProfilePath}.");
+            }
+
+            return profile;
+        }
+
         private static void StripNonGameMonoBehaviours(GameObject root)
         {
             Transform[] transforms = root.GetComponentsInChildren<Transform>(includeInactive: true);
@@ -9514,17 +9400,17 @@ namespace DimensionBrawl.Editor
             }
 
             if (rangedAnimator.runtimeAnimatorController
-                != LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath))
+                != LoadAsset<RuntimeAnimatorController>(InoriRifleAnimatorControllerPath))
             {
-                throw new InvalidOperationException("Ranged player visual must use the promoted RifleGirl controller with authored rifle poses.");
+                throw new InvalidOperationException("Inori ranged player visual must use its dedicated controller, not the RifleGirl source controller.");
             }
 
             ValidateGameOwnedAsset(rangedAnimator.avatar, "Ranged player visual Avatar");
-            if (rangedAnimator.runtimeAnimatorController is not AnimatorController rifleGirlController
-                || rifleGirlController.layers.Length == 0
-                || !rifleGirlController.layers[0].iKPass)
+            if (rangedAnimator.runtimeAnimatorController is not AnimatorController inoriController
+                || inoriController.layers.Length == 0
+                || !inoriController.layers[0].iKPass)
             {
-                throw new InvalidOperationException("RifleGirl ranged Animator Controller must keep IK pass enabled for the support hand.");
+                throw new InvalidOperationException("Ranged Animator Controller must keep IK pass enabled for the support hand.");
             }
 
             if (rangedAnimator.cullingMode != AnimatorCullingMode.AlwaysAnimate)
@@ -9564,7 +9450,7 @@ namespace DimensionBrawl.Editor
 
             if (!weapon.IsChildOf(rangedAnimator.transform))
             {
-                throw new InvalidOperationException("Ranged weapon must be parented to the active RifleGirl player model.");
+                throw new InvalidOperationException("Ranged weapon must be parented to the active player model.");
             }
 
             if (weapon.GetComponentsInChildren<Renderer>(includeInactive: true).Length == 0)
@@ -9581,12 +9467,22 @@ namespace DimensionBrawl.Editor
 
             ValidateObjectReference(weaponSocketDriver, "animator", rangedAnimator);
             ParentConstraint weaponConstraint = weapon.GetComponent<ParentConstraint>();
-            if (weaponConstraint == null)
+            RetargetedHandWeaponAttachment retargetedAttachment =
+                weapon.GetComponent<RetargetedHandWeaponAttachment>();
+            Transform rightHandSocket = FindLikelyRightHandSocket(rangedRoot.transform);
+            bool hasManualHandParent = rightHandSocket != null && weapon.IsChildOf(rightHandSocket);
+            if (weaponConstraint == null
+                && (retargetedAttachment == null || !retargetedAttachment.IsConfigured)
+                && !hasManualHandParent)
             {
-                throw new InvalidOperationException($"{RangedPlayerWeaponName} must keep the authored RifleGirl ParentConstraint.");
+                throw new InvalidOperationException($"{RangedPlayerWeaponName} must keep a valid hand attachment.");
             }
 
-            ValidateObjectReference(weaponSocketDriver, "rifleConstraint", weaponConstraint);
+            if (weaponConstraint != null)
+            {
+                ValidateObjectReference(weaponSocketDriver, "rifleConstraint", weaponConstraint);
+            }
+
             Transform leftHandle = FindDescendant(weapon.transform, "Left_Handle");
             if (leftHandle == null)
             {
@@ -9594,17 +9490,24 @@ namespace DimensionBrawl.Editor
             }
 
             ValidateObjectReference(weaponSocketDriver, "leftHandIkTarget", leftHandle);
-            ValidateString(weaponSocketDriver, "defaultCommands", "To_Hand_R_Socket, IK_ON_Left_Handle");
+            ValidateString(weaponSocketDriver, "defaultCommands", "To_Hand_R_Socket, IK_OFF_Left_Handle");
             ValidateString(weaponSocketDriver, "handSocketCommand", "To_Hand_R_Socket");
             ValidateString(weaponSocketDriver, "holsterSocketCommand", "To_Put_Socket_Rifle");
             ValidateString(weaponSocketDriver, "aimSocketCommand", "To_add_weapon_r");
             ValidateString(weaponSocketDriver, "leftIkOnCommand", "IK_ON_Left_Handle");
             ValidateString(weaponSocketDriver, "leftIkOffCommand", "IK_OFF_Left_Handle");
             ValidateBool(weaponSocketDriver, "ignoreRedundantSocketCommands", true);
-            ValidateFloat(weaponSocketDriver, "leftIkMaxWeight", 1f);
-            ValidateFloat(weaponSocketDriver, "leftIkRotationMaxWeight", 1f);
+            InoriRiflePoseTuningProfile tuningProfile = LoadInoriRiflePoseTuningProfile();
+            float expectedLeftIkPositionWeight = tuningProfile.EnabledForGameplay
+                ? tuningProfile.LeftIkPositionWeight
+                : 0f;
+            float expectedLeftIkRotationWeight = tuningProfile.EnabledForGameplay
+                ? tuningProfile.LeftIkRotationWeight
+                : 0f;
+            ValidateFloat(weaponSocketDriver, "leftIkMaxWeight", expectedLeftIkPositionWeight);
+            ValidateFloat(weaponSocketDriver, "leftIkRotationMaxWeight", expectedLeftIkRotationWeight);
 
-            if (FindLikelyRightHandSocket(rangedRoot.transform) == null)
+            if (rightHandSocket == null)
             {
                 throw new InvalidOperationException("Ranged player visual must expose a right-hand socket for weapon attachment.");
             }
@@ -9636,14 +9539,14 @@ namespace DimensionBrawl.Editor
 
             if (!meleeWeaponRoot.transform.IsChildOf(rangedRoot.transform))
             {
-                throw new InvalidOperationException("Extracted melee weapons should live under the persistent RifleGirl visual root.");
+                throw new InvalidOperationException("Extracted melee weapons should live under the persistent player visual root.");
             }
 
             CombatGirlWeaponSocketBinder meleeWeaponBinder =
                 meleeWeaponRoot.GetComponent<CombatGirlWeaponSocketBinder>();
             if (meleeWeaponBinder == null || !meleeWeaponBinder.AllBindingsValid)
             {
-                throw new InvalidOperationException("Extracted melee weapons must bind to the persistent RifleGirl hand sockets.");
+                throw new InvalidOperationException("Extracted melee weapons must bind to the persistent player hand sockets.");
             }
         }
 

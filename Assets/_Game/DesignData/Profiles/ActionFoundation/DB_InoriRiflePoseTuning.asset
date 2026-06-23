@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7889610988b3b2d409130794ccefe708, type: 3}
+  m_Name: DB_InoriRiflePoseTuning
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.InoriRiflePoseTuningProfile
+  enabledForGameplay: 0
+  poseAnchorLocalPosition: {x: 0.08, y: 1.2, z: 0.28}
+  poseAnchorLocalEulerAngles: {x: 0, y: 0, z: 0}
+  rightGripLocalPosition: {x: 0, y: 0, z: 0}
+  rightGripLocalEulerAngles: {x: 0, y: 0, z: 0}
+  leftHandleLocalPosition: {x: -0.261, y: 0.067, z: 0.061}
+  leftHandleLocalEulerAngles: {x: 133.522, y: -296.891, z: -119.992004}
+  rightIkPositionWeight: 0
+  rightIkRotationWeight: 0
+  leftIkPositionWeight: 0.85
+  leftIkRotationWeight: 0
