@@ -570,16 +570,16 @@ namespace DimensionBrawl.Tests
             Animator rangedAnimator = GetObjectReference<Animator>(combatModeController, "rangedAnimator");
             Animator meleeAnimator = GetObjectReference<Animator>(combatModeController, "meleeAnimator");
             Assert.IsNotNull(rangedVisualRoot, "Review scene must bind a ranged RifleGirl visual root.");
-            Assert.IsNotNull(meleeVisualRoot, "Review scene must keep the CombatGirl melee source visual for fallback mode switching.");
+            Assert.IsNotNull(meleeVisualRoot, "Review scene must keep the CombatGirl melee source visual for sword/shield extraction.");
             Assert.IsNotNull(rangedWeaponRoot, "Review scene must bind a ranged weapon root.");
-            Assert.IsNotNull(meleeWeaponRoot, "Review scene must bind a melee visual root reference.");
+            Assert.IsNotNull(meleeWeaponRoot, "Review scene must bind extracted melee weapons.");
             Assert.IsNotNull(rangedAnimator, "Review scene must bind the RifleGirl ranged Animator.");
-            Assert.AreNotSame(rangedAnimator, meleeAnimator, "Fallback presentation should use separate RifleGirl and CombatGirl Animators.");
+            Assert.AreSame(rangedAnimator, meleeAnimator, "Combat mode switching should keep the same RifleGirl Animator.");
             Assert.AreEqual(RangedPlayerVisualRootName, rangedVisualRoot.name);
             Assert.IsTrue(rangedVisualRoot.activeSelf, "RifleGirl ranged body should be active for the review starting mode.");
-            Assert.IsFalse(meleeVisualRoot.activeSelf, "CombatGirl melee body should stay inactive while the review starts in ranged mode.");
+            Assert.IsFalse(meleeVisualRoot.activeSelf, "CombatGirl melee source body should stay inactive while the review starts.");
             Assert.IsTrue(rangedWeaponRoot.activeSelf, "Rifle should start visible in ranged mode.");
-            Assert.IsFalse(meleeWeaponRoot.activeSelf, "Melee visual should start hidden in ranged mode.");
+            Assert.IsFalse(meleeWeaponRoot.activeSelf, "Extracted melee weapons should start hidden in ranged mode.");
             Assert.AreSame(LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath), rangedAnimator.runtimeAnimatorController);
             Assert.AreSame(
                 LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath),
@@ -587,7 +587,7 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(
                 LoadAsset<RuntimeAnimatorController>(CombatGirlMeleeControllerPath),
                 GetObjectReference<RuntimeAnimatorController>(combatModeController, "meleeAnimatorController"));
-            Assert.IsFalse(GetBool(combatModeController, "useSingleCharacterVisual"));
+            Assert.IsTrue(GetBool(combatModeController, "useSingleCharacterVisual"));
             Assert.IsTrue(GetBool(combatModeController, "rangedAnimatorUsesExternalPresentationBridge"));
             Assert.IsNull(
                 GetOptionalObjectReference<Animator>(player, "animator"),
@@ -601,7 +601,7 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(player, GetObjectReference<PlayerMovementController>(nativeBridge, "movement"));
             Assert.AreSame(playerActionController, GetObjectReference<PlayerActionController>(nativeBridge, "actionController"));
             Assert.AreSame(combatModeController, GetObjectReference<PlayerCombatModeController>(nativeBridge, "combatModeController"));
-            AssertFallbackCombatModeVisual(rangedVisualRoot, rangedAnimator, rangedWeaponRoot, meleeWeaponRoot);
+            AssertSingleCharacterCombatModeVisual(rangedVisualRoot, rangedAnimator, rangedWeaponRoot, meleeWeaponRoot);
             Assert.AreSame(combatModeController, GetObjectReference<PlayerCombatModeController>(rangedAimController, "combatModeController"));
             Assert.AreSame(cameraController, GetObjectReference<ActionCameraController>(rangedAimController, "cameraController"));
             Assert.AreSame(player, GetObjectReference<PlayerMovementController>(rangedAimController, "movement"));
@@ -701,20 +701,20 @@ namespace DimensionBrawl.Tests
             combatModeController.SetMeleeMode();
             yield return null;
             Assert.IsTrue(combatModeController.IsMeleeMode);
-            Assert.IsFalse(rangedVisualRoot.activeSelf, "Melee mode should hide the RifleGirl ranged body.");
-            Assert.IsTrue(meleeVisualRoot.activeSelf, "Melee mode should reveal the CombatGirl melee body.");
-            Assert.IsFalse(rangedWeaponRoot.activeInHierarchy, "Rifle should hide with the ranged body in melee mode.");
-            Assert.IsTrue(meleeWeaponRoot.activeInHierarchy, "Melee visual should show in melee mode.");
-            Assert.AreSame(meleeAnimator, GetObjectReference<Animator>(player, "animator"));
-            Assert.AreSame(meleeAnimator, GetObjectReference<Animator>(playerActionController, "animator"));
-            Assert.AreSame(LoadAsset<RuntimeAnimatorController>(CombatGirlMeleeControllerPath), meleeAnimator.runtimeAnimatorController);
+            Assert.IsTrue(rangedVisualRoot.activeSelf, "Melee mode should keep the RifleGirl body visible.");
+            Assert.IsFalse(meleeVisualRoot.activeSelf, "Melee mode should keep the CombatGirl source body hidden.");
+            Assert.IsFalse(rangedWeaponRoot.activeInHierarchy, "Rifle should hide while melee weapons are equipped.");
+            Assert.IsTrue(meleeWeaponRoot.activeInHierarchy, "Extracted melee weapons should show in melee mode.");
+            Assert.AreSame(rangedAnimator, GetObjectReference<Animator>(player, "animator"));
+            Assert.AreSame(rangedAnimator, GetObjectReference<Animator>(playerActionController, "animator"));
+            Assert.AreSame(LoadAsset<RuntimeAnimatorController>(CombatGirlMeleeControllerPath), rangedAnimator.runtimeAnimatorController);
             combatModeController.SetRangedMode();
             yield return null;
             Assert.IsTrue(combatModeController.IsRangedMode);
             Assert.IsTrue(rangedVisualRoot.activeSelf);
             Assert.IsFalse(meleeVisualRoot.activeSelf);
             Assert.IsTrue(rangedWeaponRoot.activeInHierarchy, "Rifle should show again after returning to ranged mode.");
-            Assert.IsFalse(meleeWeaponRoot.activeInHierarchy, "Melee visual should hide again after returning to ranged mode.");
+            Assert.IsFalse(meleeWeaponRoot.activeInHierarchy, "Extracted melee weapons should hide again after returning to ranged mode.");
             Assert.IsNull(GetOptionalObjectReference<Animator>(player, "animator"));
             Assert.IsNull(GetOptionalObjectReference<Animator>(playerActionController, "animator"));
             Assert.AreSame(LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath), rangedAnimator.runtimeAnimatorController);
@@ -5660,11 +5660,11 @@ namespace DimensionBrawl.Tests
             Assert.Greater(cueDriver.PulseRendererCount, 0);
         }
 
-        private static void AssertFallbackCombatModeVisual(
+        private static void AssertSingleCharacterCombatModeVisual(
             GameObject rangedRoot,
             Animator rangedAnimator,
             GameObject rangedWeaponRoot,
-            GameObject meleeVisualRoot)
+            GameObject meleeWeaponRoot)
         {
             Assert.AreEqual(RangedPlayerVisualRootName, rangedRoot.name);
             Assert.AreSame(
@@ -5746,9 +5746,16 @@ namespace DimensionBrawl.Tests
                 FindLikelyHand(rangedRoot.transform, rightHand: false),
                 "RifleGirl ranged visual should expose a left hand bone for support-hand IK.");
             Assert.Greater(
-                meleeVisualRoot.GetComponentsInChildren<Renderer>(true).Length,
+                meleeWeaponRoot.GetComponentsInChildren<Renderer>(true).Length,
                 0,
-                "CombatGirl melee visual should contain visible sword/shield renderers.");
+                "Extracted melee weapons should contain visible sword/shield renderers.");
+            Assert.IsTrue(
+                meleeWeaponRoot.transform.IsChildOf(rangedRoot.transform),
+                "Extracted melee weapons should stay under the persistent RifleGirl body root.");
+            CombatGirlWeaponSocketBinder meleeWeaponBinder =
+                meleeWeaponRoot.GetComponent<CombatGirlWeaponSocketBinder>();
+            Assert.IsNotNull(meleeWeaponBinder, "Extracted melee weapons should bind to RifleGirl hand sockets.");
+            Assert.IsTrue(meleeWeaponBinder.AllBindingsValid, "Extracted melee weapon bindings should be fully configured.");
             AssertAnimatorParameter(rangedAnimator, "IDLE 0", AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(rangedAnimator, "IDLE", AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(rangedAnimator, "SHOOT", AnimatorControllerParameterType.Trigger);

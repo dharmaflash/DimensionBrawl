@@ -376,6 +376,19 @@ namespace DimensionBrawl.Editor
             Debug.Log("Reapplied ActionFoundation boss barrage lane review balance tuning.");
         }
 
+        [MenuItem("DimensionBrawl/Rebind Action Foundation Boss Barrage Lane Review Single Character Mode")]
+        public static void RebindBossBarrageLaneReviewSingleCharacterModeMenu()
+        {
+            Scene scene = EditorSceneManager.OpenScene(ReviewScenePath, OpenSceneMode.Single);
+            RebindBossBarrageLaneReviewSingleCharacterMode(scene);
+            if (!EditorSceneManager.SaveScene(scene, ReviewScenePath))
+            {
+                throw new InvalidOperationException($"Failed to save boss barrage lane single-character combat binding at {ReviewScenePath}.");
+            }
+
+            Debug.Log("Rebound ActionFoundation boss barrage lane review single-character combat mode.");
+        }
+
         [MenuItem("DimensionBrawl/Reapply Action Foundation Boss Basic Fire Bindings")]
         public static void ReapplyBossBasicFireBindingsMenu()
         {
@@ -4355,41 +4368,53 @@ namespace DimensionBrawl.Editor
             RifleGirlWeaponSocketDriver weaponSocketDriver =
                 ConfigureRifleGirlWeaponSocketDriver(rangedAnimator.gameObject, rangedAnimator, weaponInstance);
 
-            GameObject meleeRoot = FindPlayerMeleeVisualRoot(playerTransform);
-            if (meleeRoot == null)
+            GameObject meleeSourceRoot = FindPlayerMeleeVisualRoot(playerTransform);
+            if (meleeSourceRoot == null)
             {
-                throw new InvalidOperationException("CombatGirl melee visual root is required for the fallback two-body combat presentation.");
+                throw new InvalidOperationException("CombatGirl melee source visual root is required for sword/shield extraction.");
             }
 
-            Animator meleeAnimator = meleeRoot.GetComponentInChildren<Animator>(includeInactive: true);
-            if (meleeAnimator == null)
+            Animator meleeSourceAnimator = meleeSourceRoot.GetComponentInChildren<Animator>(includeInactive: true);
+            if (meleeSourceAnimator == null)
             {
-                throw new InvalidOperationException("CombatGirl melee visual root must keep its Animator.");
+                throw new InvalidOperationException("CombatGirl melee source visual root must keep its Animator.");
             }
 
-            meleeAnimator.runtimeAnimatorController = LoadAsset<RuntimeAnimatorController>(CombatGirlAnimatorControllerPath);
-            meleeAnimator.applyRootMotion = false;
-            meleeAnimator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            meleeSourceAnimator.runtimeAnimatorController = LoadAsset<RuntimeAnimatorController>(CombatGirlAnimatorControllerPath);
+            meleeSourceAnimator.applyRootMotion = false;
+            meleeSourceAnimator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+
+            GameObject meleeWeaponRoot = CreateMeleeWeaponRoot(
+                scene,
+                rangedRoot.transform,
+                modelInstance.transform,
+                meleeSourceRoot);
+            if (meleeWeaponRoot == null)
+            {
+                throw new InvalidOperationException("RifleGirl single-character combat mode requires extracted melee weapons.");
+            }
 
             rangedRoot.SetActive(true);
-            meleeRoot.SetActive(false);
+            meleeSourceRoot.SetActive(false);
+            meleeWeaponRoot.SetActive(false);
 
             EditorUtility.SetDirty(rangedRoot);
             EditorUtility.SetDirty(modelInstance);
             EditorUtility.SetDirty(weaponInstance);
             EditorUtility.SetDirty(weaponSocketDriver);
-            EditorUtility.SetDirty(meleeRoot);
-            EditorUtility.SetDirty(meleeAnimator);
+            EditorUtility.SetDirty(meleeSourceRoot);
+            EditorUtility.SetDirty(meleeSourceAnimator);
+            EditorUtility.SetDirty(meleeWeaponRoot);
 
             return new PlayerCombatModeVisualBinding(
                 rangedRoot,
-                meleeRoot,
+                meleeSourceRoot,
                 weaponInstance,
                 muzzle,
-                meleeRoot,
+                meleeWeaponRoot,
                 nativeBridge,
                 rangedAnimator,
-                meleeAnimator);
+                rangedAnimator);
         }
 
         private static GameObject CreateInoriRangedWeapon(Scene scene, Transform inoriModelRoot)
@@ -4740,12 +4765,78 @@ namespace DimensionBrawl.Editor
                 LoadAsset<RuntimeAnimatorController>(CombatGirlAnimatorControllerPath));
             SetBool(combatModeController, "routeAnimatorsByMode", true);
             SetBool(combatModeController, "rangedAnimatorUsesExternalPresentationBridge", true);
-            SetBool(combatModeController, "useSingleCharacterVisual", false);
+            SetBool(combatModeController, "useSingleCharacterVisual", true);
             SetEnum(combatModeController, "startingMode", (int)PlayerCombatMode.Ranged);
             SetObjectReference(playerActionController, "combatModeController", combatModeController);
             SetObjectReference(playerActionController, "animator", null);
             SetObjectReference(playerMovementController, "animator", null);
             SetBool(playerActionController, "blockBasicAttackInRangedMode", true);
+        }
+
+        private static void RebindBossBarrageLaneReviewSingleCharacterMode(Scene scene)
+        {
+            PlayerCombatModeController combatModeController =
+                RequireObject<PlayerCombatModeController>(scene, "player combat mode controller");
+            GameObject player = combatModeController.gameObject;
+            PlayerActionController playerActionController =
+                RequireComponent<PlayerActionController>(player, "player action controller");
+            PlayerMovementController playerMovementController =
+                RequireComponent<PlayerMovementController>(player, "player movement controller");
+            PlayerRangedAimController rangedAimController =
+                RequireComponent<PlayerRangedAimController>(player, "player ranged aim controller");
+            PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                RequireComponent<PlayerRangedBasicAttackAction>(player, "player ranged basic attack action");
+
+            GameObject rangedRoot = RequireReferencedObject<GameObject>(combatModeController, "rangedVisualRoot");
+            GameObject meleeSourceRoot = RequireReferencedObject<GameObject>(combatModeController, "meleeVisualRoot");
+            GameObject rangedWeaponRoot = RequireReferencedObject<GameObject>(combatModeController, "rangedWeaponRoot");
+            Animator rangedAnimator = RequireReferencedObject<Animator>(combatModeController, "rangedAnimator");
+            GameObject meleeWeaponRoot = CreateMeleeWeaponRoot(
+                scene,
+                rangedRoot.transform,
+                rangedAnimator.transform,
+                meleeSourceRoot);
+            if (meleeWeaponRoot == null)
+            {
+                throw new InvalidOperationException("Single-character combat mode requires extracted melee weapons.");
+            }
+
+            rangedRoot.SetActive(true);
+            meleeSourceRoot.SetActive(false);
+            rangedWeaponRoot.SetActive(true);
+            meleeWeaponRoot.SetActive(false);
+
+            SetObjectReference(combatModeController, "meleeWeaponRoot", meleeWeaponRoot);
+            SetObjectReference(combatModeController, "meleeAnimator", rangedAnimator);
+            SetObjectReference(
+                combatModeController,
+                "rangedAnimatorController",
+                LoadAsset<RuntimeAnimatorController>(RifleGirlRangedControllerPath));
+            SetObjectReference(
+                combatModeController,
+                "meleeAnimatorController",
+                LoadAsset<RuntimeAnimatorController>(CombatGirlAnimatorControllerPath));
+            SetBool(combatModeController, "routeAnimatorsByMode", true);
+            SetBool(combatModeController, "rangedAnimatorUsesExternalPresentationBridge", true);
+            SetBool(combatModeController, "useSingleCharacterVisual", true);
+            SetObjectReference(playerActionController, "animator", null);
+            SetObjectReference(playerMovementController, "animator", null);
+            SetBool(playerActionController, "blockBasicAttackInRangedMode", true);
+
+            ValidateCombatModeController(
+                combatModeController,
+                playerActionController,
+                playerMovementController,
+                rangedAimController,
+                rangedBasicAttackAction);
+            EditorUtility.SetDirty(combatModeController);
+            EditorUtility.SetDirty(playerActionController);
+            EditorUtility.SetDirty(playerMovementController);
+            EditorUtility.SetDirty(rangedRoot);
+            EditorUtility.SetDirty(meleeSourceRoot);
+            EditorUtility.SetDirty(rangedWeaponRoot);
+            EditorUtility.SetDirty(meleeWeaponRoot);
+            EditorSceneManager.MarkSceneDirty(scene);
         }
 
         private static void ConfigureCombatModeActionLinks(
@@ -4910,17 +5001,17 @@ namespace DimensionBrawl.Editor
                 LoadAsset<RuntimeAnimatorController>(CombatGirlAnimatorControllerPath));
             ValidateBool(combatModeController, "routeAnimatorsByMode", true);
             ValidateBool(combatModeController, "rangedAnimatorUsesExternalPresentationBridge", true);
-            ValidateBool(combatModeController, "useSingleCharacterVisual", false);
+            ValidateBool(combatModeController, "useSingleCharacterVisual", true);
             ValidateEnum(combatModeController, "startingMode", (int)PlayerCombatMode.Ranged);
             ValidatePlayerCombatModeVisual(rangedRoot, rangedAnimator, rangedWeaponRoot, meleeWeaponRoot);
             if (meleeRoot.activeSelf)
             {
-                throw new InvalidOperationException("CombatGirl melee visual root should stay inactive while the review starts in ranged mode.");
+                throw new InvalidOperationException("CombatGirl melee source visual root should stay inactive while the review starts.");
             }
 
-            if (meleeAnimator == rangedAnimator)
+            if (meleeAnimator != rangedAnimator)
             {
-                throw new InvalidOperationException("Fallback combat presentation should use separate RifleGirl and CombatGirl Animators.");
+                throw new InvalidOperationException("Single-character combat presentation should route both modes through the RifleGirl Animator.");
             }
 
             ValidateObjectReference(playerActionController, "combatModeController", combatModeController);
@@ -9511,12 +9602,24 @@ namespace DimensionBrawl.Editor
 
             if (meleeWeaponRoot.activeSelf)
             {
-                throw new InvalidOperationException("CombatGirl melee visual should start inactive because the review scene starts in ranged mode.");
+                throw new InvalidOperationException("Extracted melee weapons should start inactive because the review scene starts in ranged mode.");
             }
 
             if (meleeWeaponRoot.GetComponentsInChildren<Renderer>(includeInactive: true).Length == 0)
             {
-                throw new InvalidOperationException("CombatGirl melee visual must include visible sword/shield renderers.");
+                throw new InvalidOperationException("Extracted melee weapon root must include visible sword/shield renderers.");
+            }
+
+            if (!meleeWeaponRoot.transform.IsChildOf(rangedRoot.transform))
+            {
+                throw new InvalidOperationException("Extracted melee weapons should live under the persistent RifleGirl visual root.");
+            }
+
+            CombatGirlWeaponSocketBinder meleeWeaponBinder =
+                meleeWeaponRoot.GetComponent<CombatGirlWeaponSocketBinder>();
+            if (meleeWeaponBinder == null || !meleeWeaponBinder.AllBindingsValid)
+            {
+                throw new InvalidOperationException("Extracted melee weapons must bind to the persistent RifleGirl hand sockets.");
             }
         }
 
