@@ -36,9 +36,22 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Range(0f, 0.65f)] private float maxEdgeAlpha = 0.26f;
         [SerializeField, Min(0f)] private float edgeThickness = 104f;
 
+        [Header("Damage Screen Feedback")]
+        [SerializeField] private bool useDamageScreenFeedback = true;
+        [SerializeField, Range(0f, 0.65f)] private float maxDamageVignetteAlpha = 0.42f;
+        [SerializeField, Range(0f, 0.3f)] private float maxDamageFlashAlpha = 0.11f;
+        [SerializeField, Min(0.01f)] private float damageVignetteSeconds = 0.34f;
+        [SerializeField, Min(0f)] private float heavyDamageExtraSeconds = 0.14f;
+        [SerializeField, Range(0.01f, 1f)] private float heavyDamageHealthRatio = 0.26f;
+        [SerializeField, Range(0f, 0.45f)] private float criticalHealthThreshold = 0.32f;
+        [SerializeField, Range(0f, 0.4f)] private float criticalHealthPulseAlpha = 0.13f;
+        [SerializeField, Min(0f)] private float criticalHealthPulseSeconds = 0.9f;
+        [SerializeField, Min(0f)] private float criticalHealthPulseRate = 2.3f;
+        [SerializeField, Range(0f, 0.45f)] private float damageDirectionAccentAlpha = 0.24f;
+        [SerializeField, Min(0f)] private float damageDirectionAccentThickness = 178f;
+
         [Header("Player Colors")]
         [SerializeField] private Color dodgeColor = new Color(0.18f, 0.92f, 1f, 1f);
-        [SerializeField] private Color rangedFireColor = new Color(0.48f, 0.95f, 1f, 1f);
         [SerializeField] private Color hitColor = new Color(1f, 0.92f, 0.46f, 1f);
         [SerializeField] private Color damagedColor = new Color(1f, 0.18f, 0.12f, 1f);
         [SerializeField] private Color skillColor = new Color(0.46f, 1f, 0.78f, 1f);
@@ -69,6 +82,12 @@ namespace DimensionBrawl.Presentation
         private float flashDuration;
         private float vignetteTimer;
         private float vignetteDuration;
+        private float damageFeedbackTimer;
+        private float damageFeedbackDuration;
+        private float damageFeedbackIntensity;
+        private float criticalHealthPulseTimer;
+        private Vector2 damageScreenDirection = Vector2.zero;
+        private Texture2D damageVignetteTexture;
         private float activeIntensity = 1f;
         private Color activeFlashColor = Color.clear;
         private Color activeVignetteColor = Color.clear;
@@ -83,18 +102,35 @@ namespace DimensionBrawl.Presentation
         private int forwardRiskCueRequestCount;
         private int energyReadyCueRequestCount;
         private int energySpendCueRequestCount;
+        private int damageFeedbackRequestCount;
         private int suppressedCueRequestCount;
         private string lastCueId = string.Empty;
         private Color lastCueColor = Color.clear;
         private float lastCueIntensity;
+        private float lastDamageFeedbackIntensity;
+        private float lastDamageFeedbackDuration;
+        private Vector2 lastDamageScreenDirection = Vector2.zero;
         private int lastEnergyCueTier;
         private SummonEnergyRiskBand lastEnergyRiskBand = SummonEnergyRiskBand.BackSafety;
 
         public bool ShowScreenCues => showScreenCues;
         public bool HasActiveCue => flashTimer > 0f || vignetteTimer > 0f;
+        public bool HasActiveDamageFeedback => damageFeedbackTimer > 0f || criticalHealthPulseTimer > 0f;
         public float EdgeThickness => edgeThickness;
         public float MaxFullScreenAlpha => maxFullScreenAlpha;
         public float MaxEdgeAlpha => maxEdgeAlpha;
+        public bool UseDamageScreenFeedback => useDamageScreenFeedback;
+        public float MaxDamageVignetteAlpha => maxDamageVignetteAlpha;
+        public float MaxDamageFlashAlpha => maxDamageFlashAlpha;
+        public float DamageVignetteSeconds => damageVignetteSeconds;
+        public float HeavyDamageExtraSeconds => heavyDamageExtraSeconds;
+        public float HeavyDamageHealthRatio => heavyDamageHealthRatio;
+        public float CriticalHealthThreshold => criticalHealthThreshold;
+        public float CriticalHealthPulseAlpha => criticalHealthPulseAlpha;
+        public float CriticalHealthPulseSeconds => criticalHealthPulseSeconds;
+        public float CriticalHealthPulseRate => criticalHealthPulseRate;
+        public float DamageDirectionAccentAlpha => damageDirectionAccentAlpha;
+        public float DamageDirectionAccentThickness => damageDirectionAccentThickness;
         public int CueRequestCount => cueRequestCount;
         public int PlayerCueRequestCount => playerCueRequestCount;
         public int BossCueRequestCount => bossCueRequestCount;
@@ -105,10 +141,14 @@ namespace DimensionBrawl.Presentation
         public int ForwardRiskCueRequestCount => forwardRiskCueRequestCount;
         public int EnergyReadyCueRequestCount => energyReadyCueRequestCount;
         public int EnergySpendCueRequestCount => energySpendCueRequestCount;
+        public int DamageFeedbackRequestCount => damageFeedbackRequestCount;
         public int SuppressedCueRequestCount => suppressedCueRequestCount;
         public string LastCueId => lastCueId;
         public Color LastCueColor => lastCueColor;
         public float LastCueIntensity => lastCueIntensity;
+        public float LastDamageFeedbackIntensity => lastDamageFeedbackIntensity;
+        public float LastDamageFeedbackDuration => lastDamageFeedbackDuration;
+        public Vector2 LastDamageScreenDirection => lastDamageScreenDirection;
         public int LastEnergyCueTier => lastEnergyCueTier;
         public SummonEnergyRiskBand LastEnergyRiskBand => lastEnergyRiskBand;
 
@@ -155,16 +195,37 @@ namespace DimensionBrawl.Presentation
             Unsubscribe();
         }
 
+        private void OnDestroy()
+        {
+            if (damageVignetteTexture == null)
+            {
+                return;
+            }
+
+            if (Application.isPlaying)
+            {
+                Destroy(damageVignetteTexture);
+            }
+            else
+            {
+                DestroyImmediate(damageVignetteTexture);
+            }
+
+            damageVignetteTexture = null;
+        }
+
         private void Update()
         {
             float deltaTime = Time.unscaledDeltaTime > 0f ? Time.unscaledDeltaTime : Time.deltaTime;
             flashTimer = Mathf.Max(0f, flashTimer - deltaTime);
             vignetteTimer = Mathf.Max(0f, vignetteTimer - deltaTime);
+            damageFeedbackTimer = Mathf.Max(0f, damageFeedbackTimer - deltaTime);
+            criticalHealthPulseTimer = Mathf.Max(0f, criticalHealthPulseTimer - deltaTime);
         }
 
         private void OnGUI()
         {
-            if (!showScreenCues || !HasActiveCue)
+            if (!showScreenCues || (!HasActiveCue && !HasActiveDamageFeedback))
             {
                 return;
             }
@@ -183,6 +244,8 @@ namespace DimensionBrawl.Presentation
                 float alpha = maxEdgeAlpha * activeIntensity * ResolveFade01(vignetteTimer, vignetteDuration);
                 DrawVignette(WithAlpha(activeVignetteColor, alpha));
             }
+
+            DrawDamageFeedback();
 
             GUI.color = previousColor;
             GUI.depth = previousDepth;
@@ -216,11 +279,7 @@ namespace DimensionBrawl.Presentation
                 0.20f,
                 0.74f + healthScale * 0.42f,
                 ScreenCueCategory.Player);
-        }
-
-        private void HandleRangedFireStarted()
-        {
-            RequestScreenCue("Player.RangedFire", rangedFireColor, 0.09f, 0.42f, ScreenCueCategory.Player);
+            RequestDamageFeedback(damageInfo, healthScale);
         }
 
         private void HandleEnergyRiskBandChanged(SummonEnergyRiskBand riskBand)
@@ -397,6 +456,35 @@ namespace DimensionBrawl.Presentation
             }
         }
 
+        private void RequestDamageFeedback(DamageInfo damageInfo, float healthScale)
+        {
+            if (!useDamageScreenFeedback)
+            {
+                return;
+            }
+
+            if (HasActiveCue && activeCategory == ScreenCueCategory.Result)
+            {
+                return;
+            }
+
+            float safeHealthScale = Mathf.Clamp01(healthScale);
+            float heavyDamage01 = Mathf.Clamp01(safeHealthScale / heavyDamageHealthRatio);
+            float healthDanger01 = playerHealth != null
+                ? Mathf.Clamp01((criticalHealthThreshold - playerHealth.HealthRatio) / Mathf.Max(0.01f, criticalHealthThreshold))
+                : 0f;
+            float safeDuration = damageVignetteSeconds + heavyDamageExtraSeconds * Mathf.Max(heavyDamage01, healthDanger01);
+            damageFeedbackDuration = Mathf.Max(0.01f, safeDuration);
+            damageFeedbackTimer = damageFeedbackDuration;
+            damageFeedbackIntensity = Mathf.Clamp01(0.54f + heavyDamage01 * 0.30f + healthDanger01 * 0.24f);
+            damageScreenDirection = ResolveDamageScreenDirection(damageInfo.Direction);
+            criticalHealthPulseTimer = Mathf.Max(criticalHealthPulseTimer, criticalHealthPulseSeconds * healthDanger01);
+            damageFeedbackRequestCount++;
+            lastDamageFeedbackIntensity = damageFeedbackIntensity;
+            lastDamageFeedbackDuration = damageFeedbackDuration;
+            lastDamageScreenDirection = damageScreenDirection;
+        }
+
         private bool ShouldSuppressScreenCue(ScreenCueCategory category)
         {
             if (!HasActiveCue)
@@ -434,11 +522,6 @@ namespace DimensionBrawl.Presentation
                 actionController.BasicAttackStarted += HandleBasicAttackStarted;
                 actionController.BasicAttackHit += HandleBasicAttackHit;
                 actionController.DodgeStarted += HandleDodgeStarted;
-            }
-
-            if (rangedBasicAttackAction != null)
-            {
-                rangedBasicAttackAction.RangedFireStarted += HandleRangedFireStarted;
             }
 
             if (playerHealth != null)
@@ -503,11 +586,6 @@ namespace DimensionBrawl.Presentation
                 actionController.BasicAttackStarted -= HandleBasicAttackStarted;
                 actionController.BasicAttackHit -= HandleBasicAttackHit;
                 actionController.DodgeStarted -= HandleDodgeStarted;
-            }
-
-            if (rangedBasicAttackAction != null)
-            {
-                rangedBasicAttackAction.RangedFireStarted -= HandleRangedFireStarted;
             }
 
             if (playerHealth != null)
@@ -591,11 +669,86 @@ namespace DimensionBrawl.Presentation
             DrawRect(new Rect(Screen.width - thickness, 0f, thickness, Screen.height), color);
         }
 
+        private void DrawDamageFeedback()
+        {
+            if (!useDamageScreenFeedback)
+            {
+                return;
+            }
+
+            float damageAlpha = 0f;
+            if (damageFeedbackTimer > 0f)
+            {
+                float fade01 = ResolveDamageFade01(damageFeedbackTimer, damageFeedbackDuration);
+                damageAlpha = maxDamageVignetteAlpha * damageFeedbackIntensity * fade01;
+                float flashAlpha = maxDamageFlashAlpha * damageFeedbackIntensity * ResolveDamageFlash01(damageFeedbackTimer, damageFeedbackDuration);
+                DrawRect(new Rect(0f, 0f, Screen.width, Screen.height), WithAlpha(damagedColor, flashAlpha));
+                DrawTexture(new Rect(0f, 0f, Screen.width, Screen.height), EnsureDamageVignetteTexture(), WithAlpha(damagedColor, damageAlpha));
+                DrawDamageDirectionAccent(damageAlpha);
+            }
+
+            if (criticalHealthPulseTimer > 0f && criticalHealthPulseAlpha > 0f)
+            {
+                float pulseFade = ResolveFade01(criticalHealthPulseTimer, criticalHealthPulseSeconds);
+                float wave = 0.55f + Mathf.Sin(Time.unscaledTime * criticalHealthPulseRate * Mathf.PI * 2f) * 0.45f;
+                float pulseAlpha = criticalHealthPulseAlpha * pulseFade * Mathf.Clamp01(wave);
+                DrawTexture(
+                    new Rect(0f, 0f, Screen.width, Screen.height),
+                    EnsureDamageVignetteTexture(),
+                    WithAlpha(damagedColor, pulseAlpha));
+            }
+        }
+
+        private void DrawDamageDirectionAccent(float baseAlpha)
+        {
+            if (damageDirectionAccentAlpha <= 0f || damageDirectionAccentThickness <= 0f)
+            {
+                return;
+            }
+
+            Vector2 direction = damageScreenDirection;
+            if (direction.sqrMagnitude <= 0.01f)
+            {
+                return;
+            }
+
+            float thickness = Mathf.Min(damageDirectionAccentThickness, Mathf.Min(Screen.width, Screen.height) * 0.38f);
+            float alpha = Mathf.Min(damageDirectionAccentAlpha, baseAlpha * 0.72f);
+            Color color = WithAlpha(damagedColor, alpha);
+            if (direction.x < -0.12f)
+            {
+                DrawRect(new Rect(0f, 0f, thickness * Mathf.Abs(direction.x), Screen.height), color);
+            }
+            else if (direction.x > 0.12f)
+            {
+                float width = thickness * direction.x;
+                DrawRect(new Rect(Screen.width - width, 0f, width, Screen.height), color);
+            }
+
+            if (direction.y > 0.12f)
+            {
+                DrawRect(new Rect(0f, 0f, Screen.width, thickness * direction.y), color);
+            }
+            else if (direction.y < -0.12f)
+            {
+                float height = thickness * Mathf.Abs(direction.y);
+                DrawRect(new Rect(0f, Screen.height - height, Screen.width, height), color);
+            }
+        }
+
         private static void DrawRect(Rect rect, Color color)
         {
             Color previousColor = GUI.color;
             GUI.color = color;
             GUI.DrawTexture(rect, Texture2D.whiteTexture);
+            GUI.color = previousColor;
+        }
+
+        private static void DrawTexture(Rect rect, Texture2D texture, Color color)
+        {
+            Color previousColor = GUI.color;
+            GUI.color = color;
+            GUI.DrawTexture(rect, texture);
             GUI.color = previousColor;
         }
 
@@ -616,6 +769,40 @@ namespace DimensionBrawl.Presentation
             return t * t * (3f - 2f * t);
         }
 
+        private static float ResolveDamageFade01(float timer, float duration)
+        {
+            if (duration <= 0f)
+            {
+                return 0f;
+            }
+
+            float t = Mathf.Clamp01(timer / duration);
+            return t * t * (3f - 2f * t);
+        }
+
+        private static float ResolveDamageFlash01(float timer, float duration)
+        {
+            if (duration <= 0f)
+            {
+                return 0f;
+            }
+
+            float age01 = 1f - Mathf.Clamp01(timer / duration);
+            return Mathf.Clamp01(1f - age01 * 4.2f);
+        }
+
+        private static Vector2 ResolveDamageScreenDirection(Vector3 damageDirection)
+        {
+            if (damageDirection.sqrMagnitude <= 0.0001f)
+            {
+                return Vector2.zero;
+            }
+
+            Vector3 normalized = damageDirection.normalized;
+            Vector2 screenDirection = new Vector2(normalized.x, -normalized.z);
+            return screenDirection.sqrMagnitude > 0.0001f ? screenDirection.normalized : Vector2.zero;
+        }
+
         private static float ResolveTierIntensity(int tier, float baseIntensity)
         {
             float tierWeight = Mathf.Clamp01((Mathf.Max(1, tier) - 1) / 2f);
@@ -626,6 +813,40 @@ namespace DimensionBrawl.Presentation
         {
             int count = Mathf.Max(spawnedCount, pattern != null ? pattern.ProjectilesPerWave : 1);
             return 0.58f + Mathf.Clamp01((count - 1) / 6f) * 0.38f;
+        }
+
+        private Texture2D EnsureDamageVignetteTexture()
+        {
+            if (damageVignetteTexture != null)
+            {
+                return damageVignetteTexture;
+            }
+
+            const int size = 96;
+            damageVignetteTexture = new Texture2D(size, size, TextureFormat.RGBA32, false)
+            {
+                hideFlags = HideFlags.HideAndDontSave,
+                wrapMode = TextureWrapMode.Clamp,
+                filterMode = FilterMode.Bilinear
+            };
+
+            Color[] pixels = new Color[size * size];
+            for (int y = 0; y < size; y++)
+            {
+                for (int x = 0; x < size; x++)
+                {
+                    float u = (x + 0.5f) / size * 2f - 1f;
+                    float v = (y + 0.5f) / size * 2f - 1f;
+                    float distance = Mathf.Sqrt(u * u + v * v);
+                    float edge01 = Mathf.Clamp01((distance - 0.46f) / 0.52f);
+                    float alpha = edge01 * edge01 * (3f - 2f * edge01);
+                    pixels[y * size + x] = new Color(1f, 1f, 1f, alpha);
+                }
+            }
+
+            damageVignetteTexture.SetPixels(pixels);
+            damageVignetteTexture.Apply(false, true);
+            return damageVignetteTexture;
         }
     }
 }

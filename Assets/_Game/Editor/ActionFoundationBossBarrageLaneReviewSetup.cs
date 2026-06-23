@@ -5344,6 +5344,18 @@ namespace DimensionBrawl.Editor
             SetFloat(screenCuePresenter, "maxFullScreenAlpha", 0.10f);
             SetFloat(screenCuePresenter, "maxEdgeAlpha", 0.26f);
             SetFloat(screenCuePresenter, "edgeThickness", 104f);
+            SetBool(screenCuePresenter, "useDamageScreenFeedback", true);
+            SetFloat(screenCuePresenter, "maxDamageVignetteAlpha", 0.42f);
+            SetFloat(screenCuePresenter, "maxDamageFlashAlpha", 0.11f);
+            SetFloat(screenCuePresenter, "damageVignetteSeconds", 0.34f);
+            SetFloat(screenCuePresenter, "heavyDamageExtraSeconds", 0.14f);
+            SetFloat(screenCuePresenter, "heavyDamageHealthRatio", 0.26f);
+            SetFloat(screenCuePresenter, "criticalHealthThreshold", 0.32f);
+            SetFloat(screenCuePresenter, "criticalHealthPulseAlpha", 0.13f);
+            SetFloat(screenCuePresenter, "criticalHealthPulseSeconds", 0.9f);
+            SetFloat(screenCuePresenter, "criticalHealthPulseRate", 2.3f);
+            SetFloat(screenCuePresenter, "damageDirectionAccentAlpha", 0.24f);
+            SetFloat(screenCuePresenter, "damageDirectionAccentThickness", 178f);
 
             BossBarrageLaneReviewOverlayHud overlayHud = hudRoot.AddComponent<BossBarrageLaneReviewOverlayHud>();
             overlayHud.Configure(
@@ -9038,6 +9050,18 @@ namespace DimensionBrawl.Editor
             ValidateFloat(presenter, "maxFullScreenAlpha", 0.10f);
             ValidateFloat(presenter, "maxEdgeAlpha", 0.26f);
             ValidateFloat(presenter, "edgeThickness", 104f);
+            ValidateBool(presenter, "useDamageScreenFeedback", true);
+            ValidateFloat(presenter, "maxDamageVignetteAlpha", 0.42f);
+            ValidateFloat(presenter, "maxDamageFlashAlpha", 0.11f);
+            ValidateFloat(presenter, "damageVignetteSeconds", 0.34f);
+            ValidateFloat(presenter, "heavyDamageExtraSeconds", 0.14f);
+            ValidateFloat(presenter, "heavyDamageHealthRatio", 0.26f);
+            ValidateFloat(presenter, "criticalHealthThreshold", 0.32f);
+            ValidateFloat(presenter, "criticalHealthPulseAlpha", 0.13f);
+            ValidateFloat(presenter, "criticalHealthPulseSeconds", 0.9f);
+            ValidateFloat(presenter, "criticalHealthPulseRate", 2.3f);
+            ValidateFloat(presenter, "damageDirectionAccentAlpha", 0.24f);
+            ValidateFloat(presenter, "damageDirectionAccentThickness", 178f);
         }
 
         private static void ConfigureArenaInfluenceTargets(Scene scene, Transform player, params Transform[] influenceTargets)

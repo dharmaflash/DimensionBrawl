@@ -233,8 +233,13 @@ namespace DimensionBrawl.Tests
 
                 Assert.AreEqual("Player.Damaged", presenter.LastCueId);
                 Assert.AreEqual(1, presenter.PlayerDamageCueRequestCount);
+                Assert.AreEqual(1, presenter.DamageFeedbackRequestCount);
                 Assert.AreEqual(1, presenter.PlayerCueRequestCount);
                 Assert.Greater(presenter.LastCueIntensity, 0.74f);
+                Assert.IsTrue(presenter.HasActiveDamageFeedback);
+                Assert.Greater(presenter.LastDamageFeedbackIntensity, 0.5f);
+                Assert.Greater(presenter.LastDamageFeedbackDuration, presenter.DamageVignetteSeconds);
+                Assert.Greater(presenter.LastDamageScreenDirection.y, 0.9f);
             }
             finally
             {
@@ -444,7 +449,7 @@ namespace DimensionBrawl.Tests
 
             RequestScreenCueForTest(presenter, "Followup.Window", Color.green, 0.24f, 1f, "Followup");
             RequestScreenCueForTest(presenter, "Boss.Fire", Color.red, 0.16f, 1f, "Boss");
-            RequestScreenCueForTest(presenter, "Player.RangedFire", Color.cyan, 0.09f, 0.42f, "Player");
+            RequestScreenCueForTest(presenter, "Player.LowPriorityPulse", Color.cyan, 0.09f, 0.42f, "Player");
 
             Assert.AreEqual("Followup.Window", presenter.LastCueId);
             Assert.AreEqual(1, presenter.CueRequestCount);

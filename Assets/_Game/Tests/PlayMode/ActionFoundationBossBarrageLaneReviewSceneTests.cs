@@ -1151,6 +1151,18 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(0.10f, screenCuePresenter.MaxFullScreenAlpha, 0.001f);
             Assert.AreEqual(0.26f, screenCuePresenter.MaxEdgeAlpha, 0.001f);
             Assert.AreEqual(104f, screenCuePresenter.EdgeThickness, 0.001f);
+            Assert.IsTrue(screenCuePresenter.UseDamageScreenFeedback);
+            Assert.AreEqual(0.42f, screenCuePresenter.MaxDamageVignetteAlpha, 0.001f);
+            Assert.AreEqual(0.11f, screenCuePresenter.MaxDamageFlashAlpha, 0.001f);
+            Assert.AreEqual(0.34f, screenCuePresenter.DamageVignetteSeconds, 0.001f);
+            Assert.AreEqual(0.14f, screenCuePresenter.HeavyDamageExtraSeconds, 0.001f);
+            Assert.AreEqual(0.26f, screenCuePresenter.HeavyDamageHealthRatio, 0.001f);
+            Assert.AreEqual(0.32f, screenCuePresenter.CriticalHealthThreshold, 0.001f);
+            Assert.AreEqual(0.13f, screenCuePresenter.CriticalHealthPulseAlpha, 0.001f);
+            Assert.AreEqual(0.9f, screenCuePresenter.CriticalHealthPulseSeconds, 0.001f);
+            Assert.AreEqual(2.3f, screenCuePresenter.CriticalHealthPulseRate, 0.001f);
+            Assert.AreEqual(0.24f, screenCuePresenter.DamageDirectionAccentAlpha, 0.001f);
+            Assert.AreEqual(178f, screenCuePresenter.DamageDirectionAccentThickness, 0.001f);
             Assert.AreEqual(0.92f, pocketVfxCueBridge.PocketClearIntensity, 0.001f);
             Assert.AreEqual(1.02f, pocketVfxCueBridge.PocketFailIntensity, 0.001f);
             Assert.AreEqual(CombatVfxCueId.EnemyClosePunishActive, pocketVfxCueBridge.PocketFailAccentCueId);
