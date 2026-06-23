@@ -946,11 +946,11 @@ namespace DimensionBrawl.Editor
 
             Bloom bloom = GetOrAddVolumeComponent<Bloom>(profile);
             bloom.active = true;
-            SetParameter(bloom.threshold, 1.02f);
-            SetParameter(bloom.intensity, 0.3f);
-            SetParameter(bloom.scatter, 0.42f);
-            SetParameter(bloom.clamp, 3.2f);
-            SetParameter(bloom.tint, new Color(0.88f, 0.95f, 1f, 1f));
+            SetParameter(bloom.threshold, 1f);
+            SetParameter(bloom.intensity, 0.26f);
+            SetParameter(bloom.scatter, 0.38f);
+            SetParameter(bloom.clamp, 3.4f);
+            SetParameter(bloom.tint, new Color(0.94f, 0.97f, 1f, 1f));
             SetParameter(bloom.highQualityFiltering, false);
             SetParameter(bloom.maxIterations, 4);
 
@@ -960,15 +960,15 @@ namespace DimensionBrawl.Editor
 
             ColorAdjustments color = GetOrAddVolumeComponent<ColorAdjustments>(profile);
             color.active = true;
-            SetParameter(color.postExposure, 0.2f);
-            SetParameter(color.contrast, 16f);
-            SetParameter(color.colorFilter, new Color(0.92f, 0.96f, 1f, 1f));
-            SetParameter(color.saturation, 6f);
+            SetParameter(color.postExposure, 0.64f);
+            SetParameter(color.contrast, 15f);
+            SetParameter(color.colorFilter, new Color(0.96f, 0.985f, 1f, 1f));
+            SetParameter(color.saturation, 7f);
 
             WhiteBalance whiteBalance = GetOrAddVolumeComponent<WhiteBalance>(profile);
             whiteBalance.active = true;
-            SetParameter(whiteBalance.temperature, -6f);
-            SetParameter(whiteBalance.tint, 0f);
+            SetParameter(whiteBalance.temperature, -3f);
+            SetParameter(whiteBalance.tint, 1f);
 
             Vignette vignette = GetOrAddVolumeComponent<Vignette>(profile);
             vignette.active = true;
@@ -1041,7 +1041,7 @@ namespace DimensionBrawl.Editor
                 Vector3.one);
 
             Camera camera = cameraObject.AddComponent<Camera>();
-            camera.fieldOfView = 68f;
+            camera.fieldOfView = 66f;
             camera.nearClipPlane = 0.05f;
             camera.farClipPlane = 220f;
             camera.allowHDR = true;
@@ -1063,8 +1063,8 @@ namespace DimensionBrawl.Editor
 
             Light key = CreateLight(lightingRoot.transform, "CoolCorridorKey", new Vector3(0f, 4.8f, -3.6f));
             key.type = LightType.Point;
-            key.color = new Color(0.68f, 0.78f, 1f, 1f);
-            key.intensity = 1.25f;
+            key.color = new Color(0.74f, 0.84f, 1f, 1f);
+            key.intensity = 1.32f;
             key.range = 18f;
             key.shadows = LightShadows.None;
             key.bounceIntensity = 0f;
@@ -1073,22 +1073,22 @@ namespace DimensionBrawl.Editor
             Light sun = CreateLight(lightingRoot.transform, "HeavenlyCorridorSun", new Vector3(-8f, 7.5f, -5.5f));
             sun.type = LightType.Directional;
             sun.transform.rotation = Quaternion.Euler(48f, 112f, 0f);
-            sun.color = new Color(0.84f, 0.92f, 1f, 1f);
-            sun.intensity = 0.62f;
+            sun.color = new Color(0.9f, 0.95f, 1f, 1f);
+            sun.intensity = 0.72f;
             sun.shadows = LightShadows.None;
             sun.bounceIntensity = 0f;
             Light gold = CreateLight(lightingRoot.transform, "WarmGoldAccent", new Vector3(0f, 3.1f, 2.8f));
             gold.type = LightType.Point;
             gold.color = new Color(1f, 0.77f, 0.42f, 1f);
-            gold.intensity = 1.1f;
+            gold.intensity = 1.24f;
             gold.range = 12f;
             gold.shadows = LightShadows.None;
             gold.bounceIntensity = 0f;
 
             Light endGlow = CreateLight(lightingRoot.transform, "EndPortalBacklight", new Vector3(18f, 3.8f, 0f));
             endGlow.type = LightType.Point;
-            endGlow.color = new Color(0.52f, 0.76f, 1f, 1f);
-            endGlow.intensity = 3.05f;
+            endGlow.color = new Color(0.58f, 0.8f, 1f, 1f);
+            endGlow.intensity = 3.18f;
             endGlow.range = 34f;
             endGlow.shadows = LightShadows.None;
             endGlow.bounceIntensity = 0f;
@@ -1096,7 +1096,7 @@ namespace DimensionBrawl.Editor
             Light riftCore = CreateLight(lightingRoot.transform, "BlueRiftCore", new Vector3(14.8f, 2.65f, 0f));
             riftCore.type = LightType.Point;
             riftCore.color = new Color(0.34f, 0.62f, 1f, 1f);
-            riftCore.intensity = 2.65f;
+            riftCore.intensity = 2.42f;
             riftCore.range = 26f;
             riftCore.shadows = LightShadows.None;
             riftCore.bounceIntensity = 0f;
@@ -1112,7 +1112,7 @@ namespace DimensionBrawl.Editor
             Light floorBounce = CreateLight(lightingRoot.transform, "WetFloorBlueBounce", new Vector3(6f, 0.55f, 0f));
             floorBounce.type = LightType.Point;
             floorBounce.color = new Color(0.18f, 0.46f, 1f, 1f);
-            floorBounce.intensity = 0.86f;
+            floorBounce.intensity = 0.64f;
             floorBounce.range = 12f;
             floorBounce.shadows = LightShadows.None;
             floorBounce.bounceIntensity = 0f;
@@ -1120,7 +1120,7 @@ namespace DimensionBrawl.Editor
             Light leftFill = CreateLight(lightingRoot.transform, "LeftWallBlueFill", new Vector3(-3f, 2.25f, -3.35f));
             leftFill.type = LightType.Point;
             leftFill.color = new Color(0.24f, 0.5f, 1f, 1f);
-            leftFill.intensity = 0.42f;
+            leftFill.intensity = 0.34f;
             leftFill.range = 11f;
             leftFill.shadows = LightShadows.None;
             leftFill.bounceIntensity = 0f;
@@ -1128,7 +1128,7 @@ namespace DimensionBrawl.Editor
             Light rightFill = CreateLight(lightingRoot.transform, "RightWallBlueFill", new Vector3(-3f, 2.25f, 3.35f));
             rightFill.type = LightType.Point;
             rightFill.color = new Color(0.24f, 0.5f, 1f, 1f);
-            rightFill.intensity = 0.42f;
+            rightFill.intensity = 0.34f;
             rightFill.range = 11f;
             rightFill.shadows = LightShadows.None;
             rightFill.bounceIntensity = 0f;
@@ -1139,12 +1139,9 @@ namespace DimensionBrawl.Editor
             Material blueGlow = EnsureMaterial(BlueGlowMaterialPath, new Color(0.09f, 0.38f, 1f, 1f), new Color(0.32f, 0.9f, 3.55f, 1f));
             Material goldGlow = EnsureMaterial(GoldGlowMaterialPath, new Color(1f, 0.68f, 0.26f, 1f), new Color(2.35f, 1.36f, 0.36f, 1f));
             Material whiteGlow = EnsureMaterial(WhiteGlowMaterialPath, new Color(0.9f, 0.97f, 1f, 1f), new Color(1.25f, 1.58f, 2.18f, 1f));
-            Material invasionGlow = EnsureMaterial(InvasionGlowMaterialPath, new Color(0.018f, 0.032f, 0.12f, 1f), new Color(0.08f, 0.2f, 0.85f, 1f));
-            Material toonOutline = EnsureMaterial(ToonOutlineMaterialPath, new Color(0.004f, 0.006f, 0.012f, 1f), new Color(0f, 0f, 0f, 1f));
             Material billboardBlue = EnsureBillboardMaterial(BillboardBlueMaterialPath, new Color(0.06f, 0.3f, 0.95f, 0.45f), new Color(0.58f, 0.82f, 1.45f, 1f), 0f, 0.78f);
             Material billboardWhite = EnsureBillboardMaterial(BillboardWhiteMaterialPath, new Color(0.82f, 0.94f, 1f, 0.42f), new Color(1.25f, 1.56f, 2.1f, 1f), 0f, 0.72f);
             Material billboardGold = EnsureBillboardMaterial(BillboardGoldMaterialPath, new Color(1f, 0.58f, 0.16f, 0.5f), new Color(1.22f, 0.78f, 0.28f, 1f), 2f, 0.56f);
-            Material billboardDark = EnsureBillboardMaterial(BillboardDarkMaterialPath, new Color(0.022f, 0.034f, 0.11f, 0.3f), new Color(0.16f, 0.44f, 0.9f, 1f), 1f, 0.22f);
             Material billboardBlueCore = EnsureBillboardMaterial(BillboardBlueCoreMaterialPath, new Color(0.16f, 0.62f, 1f, 0.76f), new Color(0.74f, 0.9f, 1.48f, 1f), 2f, 0.92f);
             Material billboardFloor = EnsureBillboardMaterial(BillboardFloorMaterialPath, new Color(0.06f, 0.34f, 0.95f, 0.32f), new Color(0.46f, 0.7f, 1.08f, 1f), 3f, 0.58f);
             GameObject visualsRoot = CreateChild(root, SanctuaryVisualsName, Vector3.zero, Quaternion.identity, Vector3.one);
@@ -1153,12 +1150,10 @@ namespace DimensionBrawl.Editor
             CreateCelestialGate(visualsRoot.transform, blueGlow, goldGlow, whiteGlow, gateCenter);
             CreateCelestialDepthBackdrop(visualsRoot.transform, blueGlow, goldGlow, whiteGlow, gateCenter);
             CreatePromotedShapesFxGate(visualsRoot.transform, gateCenter, blueGlow, goldGlow, whiteGlow);
-            CreateInvadingHeavenBreach(visualsRoot.transform, invasionGlow, blueGlow, goldGlow, gateCenter);
             CreateRiftStarburst(visualsRoot.transform, blueGlow, gateCenter);
             CreateFloorCracks(visualsRoot.transform, blueGlow, goldGlow);
             CreateCelestialLaneAccents(visualsRoot.transform, whiteGlow, goldGlow);
-            CreateEnemyProxySet(visualsRoot.transform, invasionGlow, blueGlow, toonOutline);
-            CreateReadableCombatBillboards(visualsRoot.transform, root, billboardWhite, billboardBlue, billboardGold, billboardDark, billboardBlueCore, billboardFloor);
+            CreateReadableCombatBillboards(visualsRoot.transform, root, billboardWhite, billboardBlue, billboardGold, billboardBlueCore, billboardFloor);
         }
 
 
@@ -1317,17 +1312,13 @@ namespace DimensionBrawl.Editor
 
             CreateLine(parent, name, material, width, positions);
         }
-        private static void CreateReadableCombatBillboards(Transform parent, Transform lookdevRoot, Material heavenMaterial, Material riftMaterial, Material goldCoreMaterial, Material enemyMaterial, Material blueCoreMaterial, Material floorMaterial)
+        private static void CreateReadableCombatBillboards(Transform parent, Transform lookdevRoot, Material heavenMaterial, Material riftMaterial, Material goldCoreMaterial, Material blueCoreMaterial, Material floorMaterial)
         {
             Transform cameraTransform = RequireChild(lookdevRoot, CameraName);
-            CreateCameraBillboard(parent, cameraTransform, "Billboard_InvasionVeil", enemyMaterial, 32.45f, 0f, 0.44f, new Vector2(5.4f, 3.35f));
             CreateCameraBillboard(parent, cameraTransform, "Billboard_HeavenGateBloom", heavenMaterial, 32.2f, 0f, 0.58f, new Vector2(12.2f, 7.35f));
             CreateCameraBillboard(parent, cameraTransform, "Billboard_RiftGlow", riftMaterial, 31.9f, 0f, 0.42f, new Vector2(8.25f, 5.2f));
             CreateCameraBillboard(parent, cameraTransform, "Billboard_RiftCore", goldCoreMaterial, 31.8f, 0f, 0.3f, new Vector2(2.05f, 2.05f));
-            CreateCameraBillboard(parent, cameraTransform, "Billboard_BossOutline", enemyMaterial, 27.8f, 0f, -0.65f, new Vector2(1.65f, 2.35f));
-            CreateCameraBillboard(parent, cameraTransform, "Billboard_BossCore", blueCoreMaterial, 27.6f, 0f, -0.38f, new Vector2(0.58f, 0.58f));
-            CreateCameraBillboard(parent, cameraTransform, "Billboard_AddLeft", enemyMaterial, 26.5f, -2.15f, -0.75f, new Vector2(0.95f, 1.35f));
-            CreateCameraBillboard(parent, cameraTransform, "Billboard_AddRight", enemyMaterial, 26.5f, 2.15f, -0.75f, new Vector2(0.95f, 1.35f));
+            CreateCameraBillboard(parent, cameraTransform, "Billboard_BlueSanctuaryCore", blueCoreMaterial, 27.6f, 0f, -0.38f, new Vector2(0.58f, 0.58f));
             CreateCameraBillboard(parent, cameraTransform, "Billboard_FloorRiftRead", floorMaterial, 18.5f, 0f, -1.9f, new Vector2(7.4f, 0.34f));
         }
 
@@ -1645,13 +1636,13 @@ namespace DimensionBrawl.Editor
         private static void ConfigureSceneAtmosphere(Scene scene)
         {
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(0.72f, 0.78f, 0.94f, 1f);
-            RenderSettings.ambientEquatorColor = new Color(0.58f, 0.66f, 0.86f, 1f);
-            RenderSettings.ambientGroundColor = new Color(0.26f, 0.28f, 0.4f, 1f);
+            RenderSettings.ambientSkyColor = new Color(0.8f, 0.84f, 0.98f, 1f);
+            RenderSettings.ambientEquatorColor = new Color(0.62f, 0.7f, 0.9f, 1f);
+            RenderSettings.ambientGroundColor = new Color(0.32f, 0.34f, 0.46f, 1f);
             RenderSettings.fog = true;
             RenderSettings.fogMode = FogMode.ExponentialSquared;
-            RenderSettings.fogColor = new Color(0.42f, 0.52f, 0.76f, 1f);
-            RenderSettings.fogDensity = 0.00065f;
+            RenderSettings.fogColor = new Color(0.5f, 0.62f, 0.86f, 1f);
+            RenderSettings.fogDensity = 0.00056f;
             RenderSettings.skybox = EnsurePromotedAllSkySkybox();
 
             foreach (GameObject root in scene.GetRootGameObjects())
@@ -1686,8 +1677,8 @@ namespace DimensionBrawl.Editor
             DeleteUnusedPromotedSkyTextures(promotedSkyTexturePaths);
             skybox.shader = sourceSkybox.shader;
             skybox.name = Path.GetFileNameWithoutExtension(SkyboxMaterialPath);
-            SetMaterialColor(skybox, "_Tint", new Color(0.9f, 0.94f, 1f, 0.82f));
-            SetMaterialFloat(skybox, "_Exposure", 0.82f);
+            SetMaterialColor(skybox, "_Tint", new Color(0.96f, 0.975f, 1f, 0.86f));
+            SetMaterialFloat(skybox, "_Exposure", 0.94f);
             SetMaterialFloat(skybox, "_Rotation", 28f);
             EditorUtility.SetDirty(skybox);
             return skybox;
