@@ -23,6 +23,7 @@ namespace DimensionBrawl.Editor
         private const string MaterialRoot = ArtRoot + "/Materials";
         private const string TextureRoot = ArtRoot + "/Textures";
         private const string SkyTextureRoot = TextureRoot + "/Sky";
+        private const string DecalTextureRoot = TextureRoot + "/Decals";
         private const string ShaderRoot = ArtRoot + "/Shaders";
         private const string DisallowedToonEnvironmentMaterialRoot = MaterialRoot + "/Toonized";
         private const string PgrPreserveMaterialRoot = MaterialRoot + "/PgrPreserve";
@@ -33,6 +34,8 @@ namespace DimensionBrawl.Editor
         private const string WhiteGlowMaterialPath = MaterialRoot + "/DB_OlympusCorridor_WhiteGlow.mat";
         private const string ScorchedStoneMaterialPath = MaterialRoot + "/DB_OlympusCorridor_ScorchedStone.mat";
         private const string DamagedMarbleMaterialPath = MaterialRoot + "/DB_OlympusCorridor_DamagedMarble.mat";
+        private const string InvasionCrackDecalMaterialPath = MaterialRoot + "/DB_OlympusCorridor_InvasionCrackDecal.mat";
+        private const string InvasionCrackOverlayMaterialPath = MaterialRoot + "/DB_OlympusCorridor_InvasionCrackOverlay.mat";
         private const string SkyboxMaterialPath = MaterialRoot + "/DB_OlympusCorridor_HeavenlySkybox.mat";
 
         private const string AllSkyRoot = "Assets/_Imported/AssetStore/Sky/Allsky";
@@ -44,6 +47,9 @@ namespace DimensionBrawl.Editor
         private const string UniBonfirePrefabPath = UniFireSmokePrefabRoot + "/UNI_Bonfire.prefab";
         private const string UniLongSmokePrefabPath = UniFireSmokePrefabRoot + "/UNI_Long_Smoke.prefab";
         private const string AllSkySourceSkyboxPath = AllSkyRoot + "/Cartoon/Cartoon Base BlueSky/Day_BlueSky_Nothing.mat";
+        private const string InvasionCrackDecalTexturePath = DecalTextureRoot + "/DB_OlympusCorridor_InvasionCrackDecal.png";
+        private const string MobileRendererDataPath = "Assets/Settings/Mobile_Renderer.asset";
+        private const string PcRendererDataPath = "Assets/Settings/PC_Renderer.asset";
         private const string ToonOutlineMaterialPath = MaterialRoot + "/DB_OlympusCorridor_ToonOutline.mat";
         private const string BillboardBlueMaterialPath = MaterialRoot + "/DB_OlympusCorridor_BillboardBlue.mat";
         private const string BillboardWhiteMaterialPath = MaterialRoot + "/DB_OlympusCorridor_BillboardWhite.mat";
@@ -106,6 +112,7 @@ namespace DimensionBrawl.Editor
             EnsureFolder(MaterialRoot);
             EnsureFolder(TextureRoot);
             EnsureFolder(SkyTextureRoot);
+            EnsureFolder(DecalTextureRoot);
             EnsureFolder(PgrPreserveMaterialRoot);
             EnsureFolder(ShaderRoot);
 
@@ -322,6 +329,7 @@ namespace DimensionBrawl.Editor
 
         public static void RebuildOlympusCorridorInvasionLookdev()
         {
+            EnsureOlympusCorridorDecalRendererFeature();
             EnsureLookdevSceneExists(InvasionTargetScenePath);
             Scene scene = EditorSceneManager.OpenScene(InvasionTargetScenePath, OpenSceneMode.Single);
             RestoreFullDemoRendererDensity(scene);
@@ -337,6 +345,13 @@ namespace DimensionBrawl.Editor
             AssetDatabase.SaveAssets();
         }
 
+
+        [MenuItem("DimensionBrawl/Ensure Olympus Corridor Decal Renderer Feature")]
+        public static void EnsureOlympusCorridorDecalRendererFeatureMenu()
+        {
+            EnsureOlympusCorridorDecalRendererFeature();
+            Debug.Log("Ensured Olympus corridor URP decal renderer features.");
+        }
         public static void DisableOlympusCorridorImportedLightingOnly()
         {
             Scene scene = EditorSceneManager.OpenScene(TargetScenePath, OpenSceneMode.Single);
@@ -1280,37 +1295,61 @@ namespace DimensionBrawl.Editor
         {
             GameObject lightingRoot = CreateChild(root, "OlympusCorridor_InvasionFxLighting", Vector3.zero, Quaternion.identity, Vector3.one);
 
-            Light leftPlanterFire = CreateLight(lightingRoot.transform, "FireFx_LeftPlanter", new Vector3(-4.05f, 0.95f, -1.92f));
+            Light leftPlanterFire = CreateLight(lightingRoot.transform, "FireFx_LeftOuterFloorNear", new Vector3(-4.15f, 0.92f, -3.25f));
             leftPlanterFire.type = LightType.Point;
             leftPlanterFire.color = new Color(1f, 0.34f, 0.08f, 1f);
-            leftPlanterFire.intensity = 1.2f;
-            leftPlanterFire.range = 6.8f;
+            leftPlanterFire.intensity = 0.72f;
+            leftPlanterFire.range = 5.8f;
             leftPlanterFire.shadows = LightShadows.None;
             leftPlanterFire.bounceIntensity = 0f;
 
-            Light rightRailFire = CreateLight(lightingRoot.transform, "FireFx_RightRail", new Vector3(2.75f, 0.9f, 1.86f));
+            Light rightRailFire = CreateLight(lightingRoot.transform, "FireFx_RightOuterFloorNear", new Vector3(-2.4f, 0.9f, 3.2f));
             rightRailFire.type = LightType.Point;
             rightRailFire.color = new Color(1f, 0.28f, 0.06f, 1f);
-            rightRailFire.intensity = 1.22f;
-            rightRailFire.range = 6.8f;
+            rightRailFire.intensity = 0.68f;
+            rightRailFire.range = 5.6f;
             rightRailFire.shadows = LightShadows.None;
             rightRailFire.bounceIntensity = 0f;
 
-            Light leftGateFire = CreateLight(lightingRoot.transform, "FireFx_LeftGateSide", new Vector3(8.7f, 1.05f, -1.82f));
+            Light leftGateFire = CreateLight(lightingRoot.transform, "FireFx_LeftOuterFloorBack", new Vector3(8.6f, 1f, -3.2f));
             leftGateFire.type = LightType.Point;
             leftGateFire.color = new Color(1f, 0.3f, 0.06f, 1f);
-            leftGateFire.intensity = 1.38f;
-            leftGateFire.range = 7.8f;
+            leftGateFire.intensity = 0.86f;
+            leftGateFire.range = 7f;
             leftGateFire.shadows = LightShadows.None;
             leftGateFire.bounceIntensity = 0f;
 
-            Light rightGateFire = CreateLight(lightingRoot.transform, "FireFx_RightGateSide", new Vector3(9.05f, 1.05f, 1.82f));
+            Light rightGateFire = CreateLight(lightingRoot.transform, "FireFx_RightOuterFloorBack", new Vector3(9f, 1f, 3.2f));
             rightGateFire.type = LightType.Point;
             rightGateFire.color = new Color(1f, 0.28f, 0.06f, 1f);
-            rightGateFire.intensity = 1.45f;
-            rightGateFire.range = 7.8f;
+            rightGateFire.intensity = 0.9f;
+            rightGateFire.range = 7f;
             rightGateFire.shadows = LightShadows.None;
             rightGateFire.bounceIntensity = 0f;
+
+            Light farLeftCanopyFire = CreateLight(lightingRoot.transform, "FireFx_FarLeftBackgroundFloor", new Vector3(12.4f, 1.2f, -3.45f));
+            farLeftCanopyFire.type = LightType.Point;
+            farLeftCanopyFire.color = new Color(1f, 0.24f, 0.05f, 1f);
+            farLeftCanopyFire.intensity = 0.75f;
+            farLeftCanopyFire.range = 7.5f;
+            farLeftCanopyFire.shadows = LightShadows.None;
+            farLeftCanopyFire.bounceIntensity = 0f;
+
+            Light farRightCanopyFire = CreateLight(lightingRoot.transform, "FireFx_FarRightBackgroundFloor", new Vector3(12.9f, 1.2f, 3.45f));
+            farRightCanopyFire.type = LightType.Point;
+            farRightCanopyFire.color = new Color(1f, 0.25f, 0.055f, 1f);
+            farRightCanopyFire.intensity = 0.78f;
+            farRightCanopyFire.range = 7.5f;
+            farRightCanopyFire.shadows = LightShadows.None;
+            farRightCanopyFire.bounceIntensity = 0f;
+
+            Light rearGateFire = CreateLight(lightingRoot.transform, "FireFx_RearBackgroundFloor", new Vector3(14.2f, 1f, 0f));
+            rearGateFire.type = LightType.Point;
+            rearGateFire.color = new Color(1f, 0.3f, 0.08f, 1f);
+            rearGateFire.intensity = 0.35f;
+            rearGateFire.range = 6.5f;
+            rearGateFire.shadows = LightShadows.None;
+            rearGateFire.bounceIntensity = 0f;
         }
         private static void ConfigureLookdevLighting(Transform root)
         {
@@ -1398,6 +1437,64 @@ namespace DimensionBrawl.Editor
 
             CreateInvasionFireAndSmoke(visualsRoot.transform);
             CreateInvasionRubble(visualsRoot.transform, scorchedStone, damagedMarble, goldGlow);
+            CreateInvasionCrackDecals(visualsRoot.transform);
+        }
+
+        private static void CreateInvasionCrackDecals(Transform parent)
+        {
+            Material crackDecal = EnsureInvasionCrackDecalMaterial();
+            Material crackOverlay = EnsureInvasionCrackOverlayMaterial();
+            Transform decalsRoot = CreateChild(parent, "OfficialDecal_CrackScorchProjectors", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+            Transform overlaysRoot = CreateChild(parent, "VisibleCrackScorchOverlays", Vector3.zero, Quaternion.identity, Vector3.one).transform;
+
+            CreateInvasionCrackMark(decalsRoot, overlaysRoot, crackDecal, crackOverlay, "LeftOuterNear", new Vector3(-4.25f, 0.72f, -3.18f), 18f, new Vector2(3.25f, 2.05f), 0.98f);
+            CreateInvasionCrackMark(decalsRoot, overlaysRoot, crackDecal, crackOverlay, "RightOuterNear", new Vector3(-2.25f, 0.72f, 3.16f), -22f, new Vector2(2.9f, 1.85f), 0.95f);
+            CreateInvasionCrackMark(decalsRoot, overlaysRoot, crackDecal, crackOverlay, "LeftOuterMid", new Vector3(2.85f, 0.72f, -3.28f), -9f, new Vector2(3.55f, 2.05f), 0.98f);
+            CreateInvasionCrackMark(decalsRoot, overlaysRoot, crackDecal, crackOverlay, "RightOuterBack", new Vector3(8.95f, 0.72f, 3.12f), 26f, new Vector2(3.85f, 2.25f), 0.98f);
+            CreateInvasionCrackMark(decalsRoot, overlaysRoot, crackDecal, crackOverlay, "RearBackgroundFloor", new Vector3(13.7f, 0.72f, -2.72f), -16f, new Vector2(4.3f, 2.5f), 0.92f);
+        }
+
+        private static void CreateInvasionCrackMark(Transform decalsParent, Transform overlaysParent, Material decalMaterial, Material overlayMaterial, string suffix, Vector3 position, float yawDegrees, Vector2 size, float fade)
+        {
+            CreateInvasionCrackDecal(decalsParent, decalMaterial, "Decal_Crack_" + suffix, position + Vector3.up * 1.15f, yawDegrees, size, fade);
+            CreateInvasionCrackOverlay(overlaysParent, overlayMaterial, "Overlay_Crack_" + suffix, position + Vector3.up * 0.08f, yawDegrees, size, fade);
+        }
+
+        private static void CreateInvasionCrackDecal(Transform parent, Material material, string name, Vector3 position, float yawDegrees, Vector2 size, float fade)
+        {
+            Quaternion floorProjection = Quaternion.Euler(90f, yawDegrees, 0f);
+            GameObject decalObject = CreateChild(parent, name, position, floorProjection, Vector3.one);
+            DecalProjector projector = decalObject.AddComponent<DecalProjector>();
+            projector.material = material;
+            projector.drawDistance = 80f;
+            projector.fadeScale = 0.95f;
+            projector.startAngleFade = 180f;
+            projector.endAngleFade = 180f;
+            projector.size = new Vector3(size.x, size.y, 3.2f);
+            projector.pivot = new Vector3(0f, 0f, 1.6f);
+            projector.fadeFactor = fade;
+            EditorUtility.SetDirty(projector);
+        }
+
+        private static void CreateInvasionCrackOverlay(Transform parent, Material material, string name, Vector3 position, float yawDegrees, Vector2 size, float fade)
+        {
+            GameObject quad = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            quad.name = name;
+            quad.transform.SetParent(parent, worldPositionStays: false);
+            quad.transform.localPosition = position;
+            quad.transform.localRotation = Quaternion.Euler(90f, yawDegrees, 0f);
+            quad.transform.localScale = new Vector3(size.x, size.y, 1f);
+            AssignMaterial(quad, material);
+            MeshRenderer renderer = quad.GetComponent<MeshRenderer>();
+            if (renderer != null)
+            {
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+                renderer.sortingOrder = 12;
+                EditorUtility.SetDirty(renderer);
+            }
+            DestroyCollider(quad);
+            EditorUtility.SetDirty(quad);
         }
         private static void ConfigureSanctuaryVisuals(Transform root)
         {
@@ -1602,16 +1699,18 @@ namespace DimensionBrawl.Editor
 
         private static void CreateInvasionFireAndSmoke(Transform parent)
         {
-            CreateImportedVfxInstance(parent, UniDeviceFirePrefabPath, "VFX_DeviceFire_LeftPlanterNear", new Vector3(-4.05f, 0.34f, -1.92f), Quaternion.identity, Vector3.one * 0.7f);
-            CreateImportedVfxInstance(parent, UniSmallFirePrefabPath, "VFX_SmallFire_RightPlanterNear", new Vector3(-2.35f, 0.26f, 1.9f), Quaternion.identity, Vector3.one * 0.56f);
-            CreateImportedVfxInstance(parent, UniGroundFirePrefabPath, "VFX_GroundFire_LeftRailMid", new Vector3(2.35f, 0.28f, -1.86f), Quaternion.identity, Vector3.one * 0.74f);
-            CreateImportedVfxInstance(parent, UniGasFirePrefabPath, "VFX_GasFire_RightRailMid", new Vector3(2.75f, 0.32f, 1.86f), Quaternion.identity, Vector3.one * 0.62f);
-            CreateImportedVfxInstance(parent, UniSmallFirePrefabPath, "VFX_SmallFire_LeftBrokenRail", new Vector3(-2.8f, 0.26f, -1.88f), Quaternion.identity, Vector3.one * 0.52f);
-            CreateImportedVfxInstance(parent, UniSmallFirePrefabPath, "VFX_SmallFire_RightBrokenRail", new Vector3(6.55f, 0.26f, 1.78f), Quaternion.identity, Vector3.one * 0.54f);
-            CreateImportedVfxInstance(parent, UniDeviceFirePrefabPath, "VFX_DeviceFire_LeftGateSide", new Vector3(8.7f, 0.34f, -1.82f), Quaternion.identity, Vector3.one * 0.68f);
-            CreateImportedVfxInstance(parent, UniBonfirePrefabPath, "VFX_Bonfire_RightGateSide", new Vector3(9.05f, 0.34f, 1.82f), Quaternion.identity, Vector3.one * 0.62f);
-            CreateImportedVfxInstance(parent, UniLongSmokePrefabPath, "VFX_LongSmoke_LeftPlanter", new Vector3(-4.05f, 0.52f, -1.94f), Quaternion.identity, Vector3.one * 0.58f);
-            CreateImportedVfxInstance(parent, UniLongSmokePrefabPath, "VFX_LongSmoke_RightGateSide", new Vector3(9.05f, 0.55f, 1.84f), Quaternion.identity, Vector3.one * 0.66f);
+            CreateImportedVfxInstance(parent, UniSmallFirePrefabPath, "VFX_SmallFire_LeftOuterFloorNear", new Vector3(-4.2f, 0.22f, -3.25f), Quaternion.identity, Vector3.one * 0.34f);
+            CreateImportedVfxInstance(parent, UniSmallFirePrefabPath, "VFX_SmallFire_RightOuterFloorNear", new Vector3(-2.4f, 0.22f, 3.2f), Quaternion.identity, Vector3.one * 0.32f);
+            CreateImportedVfxInstance(parent, UniGroundFirePrefabPath, "VFX_GroundFire_LeftOuterFloorMid", new Vector3(2.7f, 0.22f, -3.35f), Quaternion.identity, Vector3.one * 0.42f);
+            CreateImportedVfxInstance(parent, UniGroundFirePrefabPath, "VFX_GroundFire_RightOuterFloorMid", new Vector3(3.2f, 0.22f, 3.35f), Quaternion.identity, Vector3.one * 0.44f);
+            CreateImportedVfxInstance(parent, UniDeviceFirePrefabPath, "VFX_DeviceFire_LeftOuterFloorBack", new Vector3(8.6f, 0.32f, -3.2f), Quaternion.identity, Vector3.one * 0.42f);
+            CreateImportedVfxInstance(parent, UniDeviceFirePrefabPath, "VFX_DeviceFire_RightOuterFloorBack", new Vector3(9f, 0.32f, 3.2f), Quaternion.identity, Vector3.one * 0.44f);
+            CreateImportedVfxInstance(parent, UniGasFirePrefabPath, "VFX_GasFire_FarLeftBackgroundFloor", new Vector3(12.4f, 0.55f, -3.45f), Quaternion.identity, Vector3.one * 0.36f);
+            CreateImportedVfxInstance(parent, UniGasFirePrefabPath, "VFX_GasFire_FarRightBackgroundFloor", new Vector3(12.9f, 0.55f, 3.45f), Quaternion.identity, Vector3.one * 0.38f);
+            CreateImportedVfxInstance(parent, UniGroundFirePrefabPath, "VFX_GroundFire_RearLeftBackgroundFloor", new Vector3(14f, 0.22f, -2.7f), Quaternion.identity, Vector3.one * 0.36f);
+            CreateImportedVfxInstance(parent, UniGroundFirePrefabPath, "VFX_GroundFire_RearRightBackgroundFloor", new Vector3(14.3f, 0.22f, 2.7f), Quaternion.identity, Vector3.one * 0.38f);
+            CreateImportedVfxInstance(parent, UniLongSmokePrefabPath, "VFX_LongSmoke_FarLeftBackground", new Vector3(12.4f, 0.48f, -3.45f), Quaternion.identity, Vector3.one * 0.26f);
+            CreateImportedVfxInstance(parent, UniLongSmokePrefabPath, "VFX_LongSmoke_FarRightBackground", new Vector3(12.9f, 0.48f, 3.45f), Quaternion.identity, Vector3.one * 0.28f);
         }
         private static GameObject CreateImportedVfxInstance(Transform parent, string prefabPath, string name, Vector3 localPosition, Quaternion localRotation, Vector3 localScale)
         {
@@ -1908,6 +2007,304 @@ namespace DimensionBrawl.Editor
             return material;
         }
 
+
+        private static void EnsureOlympusCorridorDecalRendererFeature()
+        {
+            bool changed = EnsureDecalRendererFeature(MobileRendererDataPath);
+            changed |= EnsureDecalRendererFeature(PcRendererDataPath);
+            if (changed)
+            {
+                AssetDatabase.SaveAssets();
+            }
+        }
+
+        private static bool EnsureDecalRendererFeature(string rendererDataPath)
+        {
+            ScriptableRendererData rendererData = AssetDatabase.LoadAssetAtPath<ScriptableRendererData>(rendererDataPath);
+            if (rendererData == null)
+            {
+                throw new InvalidOperationException($"Missing URP renderer data for decals: {rendererDataPath}");
+            }
+
+            bool changed = false;
+            if (!rendererData.TryGetRendererFeature(out DecalRendererFeature decalFeature))
+            {
+                decalFeature = ScriptableObject.CreateInstance<DecalRendererFeature>();
+                decalFeature.name = "DecalRendererFeature";
+                AssetDatabase.AddObjectToAsset(decalFeature, rendererData);
+                AssetDatabase.TryGetGUIDAndLocalFileIdentifier(decalFeature, out string _, out long localId);
+
+                SerializedObject rendererObject = new SerializedObject(rendererData);
+                SerializedProperty features = rendererObject.FindProperty("m_RendererFeatures");
+                SerializedProperty featureMap = rendererObject.FindProperty("m_RendererFeatureMap");
+                features.arraySize++;
+                features.GetArrayElementAtIndex(features.arraySize - 1).objectReferenceValue = decalFeature;
+                featureMap.arraySize++;
+                featureMap.GetArrayElementAtIndex(featureMap.arraySize - 1).longValue = localId;
+                rendererObject.ApplyModifiedPropertiesWithoutUndo();
+                changed = true;
+            }
+
+            if (!decalFeature.isActive)
+            {
+                decalFeature.SetActive(true);
+                changed = true;
+            }
+
+            SerializedObject featureObject = new SerializedObject(decalFeature);
+            SerializedProperty settings = featureObject.FindProperty("m_Settings");
+            bool settingsChanged = false;
+            if (settings != null)
+            {
+                settingsChanged |= SetSerializedRelativeInt(settings, "technique", 2);
+                settingsChanged |= SetSerializedRelativeFloat(settings, "maxDrawDistance", 80f);
+                settingsChanged |= SetSerializedRelativeBool(settings, "decalLayers", false);
+                SerializedProperty screenSpace = settings.FindPropertyRelative("screenSpaceSettings");
+                if (screenSpace != null)
+                {
+                    settingsChanged |= SetSerializedRelativeInt(screenSpace, "normalBlend", 0);
+                }
+            }
+
+            if (settingsChanged)
+            {
+                featureObject.ApplyModifiedPropertiesWithoutUndo();
+                changed = true;
+            }
+
+            if (changed)
+            {
+                decalFeature.Create();
+                rendererData.SetDirty();
+                EditorUtility.SetDirty(decalFeature);
+                EditorUtility.SetDirty(rendererData);
+            }
+
+            return changed;
+        }
+
+        private static bool SetSerializedRelativeInt(SerializedProperty parent, string propertyName, int value)
+        {
+            SerializedProperty property = parent.FindPropertyRelative(propertyName);
+            if (property == null)
+            {
+                return false;
+            }
+
+            if (property.propertyType == SerializedPropertyType.Enum)
+            {
+                if (property.enumValueIndex == value)
+                {
+                    return false;
+                }
+
+                property.enumValueIndex = value;
+                return true;
+            }
+
+            if (property.intValue == value)
+            {
+                return false;
+            }
+
+            property.intValue = value;
+            return true;
+        }
+
+        private static bool SetSerializedRelativeFloat(SerializedProperty parent, string propertyName, float value)
+        {
+            SerializedProperty property = parent.FindPropertyRelative(propertyName);
+            if (property == null || Mathf.Approximately(property.floatValue, value))
+            {
+                return false;
+            }
+
+            property.floatValue = value;
+            return true;
+        }
+
+        private static bool SetSerializedRelativeBool(SerializedProperty parent, string propertyName, bool value)
+        {
+            SerializedProperty property = parent.FindPropertyRelative(propertyName);
+            if (property == null || property.boolValue == value)
+            {
+                return false;
+            }
+
+            property.boolValue = value;
+            return true;
+        }
+
+        private static Material EnsureInvasionCrackDecalMaterial()
+        {
+            Texture2D crackTexture = EnsureInvasionCrackDecalTexture();
+            Shader shader = Shader.Find("Shader Graphs/Decal") ?? Shader.Find("Universal Render Pipeline/Lit");
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(InvasionCrackDecalMaterialPath);
+            if (material == null)
+            {
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, InvasionCrackDecalMaterialPath);
+            }
+            else if (shader != null && material.shader != shader)
+            {
+                material.shader = shader;
+            }
+
+            if (material.HasProperty("Base_Map"))
+            {
+                material.SetTexture("Base_Map", crackTexture);
+            }
+            if (material.HasProperty("_BaseMap"))
+            {
+                material.SetTexture("_BaseMap", crackTexture);
+            }
+            if (material.HasProperty("_MainTex"))
+            {
+                material.SetTexture("_MainTex", crackTexture);
+            }
+            if (material.HasProperty("Base_Color"))
+            {
+                material.SetColor("Base_Color", new Color(0.12f, 0.075f, 0.045f, 0.76f));
+            }
+            if (material.HasProperty("_BaseColor"))
+            {
+                material.SetColor("_BaseColor", new Color(0.12f, 0.075f, 0.045f, 0.76f));
+            }
+            if (material.HasProperty("_Color"))
+            {
+                material.SetColor("_Color", new Color(0.045f, 0.032f, 0.026f, 0.76f));
+            }
+            SetMaterialFloat(material, "_Smoothness", 0f);
+            SetMaterialFloat(material, "_Metallic", 0f);
+            SetMaterialFloat(material, "_DrawOrder", 18f);
+            SetMaterialFloat(material, "_EdgeSharpness", 0.68f);
+            material.enableInstancing = true;
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+
+        private static Material EnsureInvasionCrackOverlayMaterial()
+        {
+            Texture2D crackTexture = EnsureInvasionCrackDecalTexture();
+            Shader shader = Shader.Find("Sprites/Default") ?? Shader.Find("Universal Render Pipeline/Unlit");
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(InvasionCrackOverlayMaterialPath);
+            if (material == null)
+            {
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, InvasionCrackOverlayMaterialPath);
+            }
+            else if (shader != null && material.shader != shader)
+            {
+                material.shader = shader;
+            }
+
+            if (material.HasProperty("_MainTex"))
+            {
+                material.SetTexture("_MainTex", crackTexture);
+            }
+            if (material.HasProperty("_BaseMap"))
+            {
+                material.SetTexture("_BaseMap", crackTexture);
+            }
+            Color overlayColor = new Color(0.12f, 0.055f, 0.028f, 0.9f);
+            if (material.HasProperty("_Color"))
+            {
+                material.SetColor("_Color", overlayColor);
+            }
+            if (material.HasProperty("_BaseColor"))
+            {
+                material.SetColor("_BaseColor", overlayColor);
+            }
+            SetMaterialFloat(material, "_Surface", 1f);
+            SetMaterialFloat(material, "_Blend", 0f);
+            SetMaterialFloat(material, "_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            SetMaterialFloat(material, "_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            SetMaterialFloat(material, "_ZWrite", 0f);
+            SetMaterialFloat(material, "_Cull", 0f);
+            material.renderQueue = 4100;
+            material.enableInstancing = true;
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+        private static Texture2D EnsureInvasionCrackDecalTexture()
+        {
+            EnsureFolder(DecalTextureRoot);
+            const int size = 512;
+            Texture2D texture = new Texture2D(size, size, TextureFormat.RGBA32, mipChain: false);
+            Color[] pixels = new Color[size * size];
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                pixels[i] = new Color(0f, 0f, 0f, 0f);
+            }
+
+            DrawCrackLine(pixels, size, new Vector2(0.08f, 0.48f), new Vector2(0.92f, 0.54f), 9.4f, 1f, 1.6f);
+            DrawCrackLine(pixels, size, new Vector2(0.36f, 0.51f), new Vector2(0.14f, 0.24f), 6.2f, 0.88f, 2.7f);
+            DrawCrackLine(pixels, size, new Vector2(0.46f, 0.51f), new Vector2(0.56f, 0.2f), 5.5f, 0.82f, 3.4f);
+            DrawCrackLine(pixels, size, new Vector2(0.58f, 0.53f), new Vector2(0.84f, 0.29f), 6.4f, 0.86f, 4.2f);
+            DrawCrackLine(pixels, size, new Vector2(0.62f, 0.54f), new Vector2(0.8f, 0.78f), 4.8f, 0.72f, 5.1f);
+            DrawCrackLine(pixels, size, new Vector2(0.28f, 0.49f), new Vector2(0.12f, 0.72f), 4.6f, 0.68f, 6.6f);
+            texture.SetPixels(pixels);
+            texture.Apply(updateMipmaps: false, makeNoLongerReadable: false);
+            File.WriteAllBytes(InvasionCrackDecalTexturePath, texture.EncodeToPNG());
+            UnityEngine.Object.DestroyImmediate(texture);
+            AssetDatabase.ImportAsset(InvasionCrackDecalTexturePath, ImportAssetOptions.ForceUpdate);
+
+            TextureImporter importer = AssetImporter.GetAtPath(InvasionCrackDecalTexturePath) as TextureImporter;
+            if (importer != null)
+            {
+                importer.alphaSource = TextureImporterAlphaSource.FromInput;
+                importer.alphaIsTransparency = true;
+                importer.mipmapEnabled = false;
+                importer.sRGBTexture = true;
+                importer.wrapMode = TextureWrapMode.Clamp;
+                importer.textureCompression = TextureImporterCompression.CompressedHQ;
+                importer.SaveAndReimport();
+            }
+
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(InvasionCrackDecalTexturePath);
+        }
+
+        private static void DrawCrackLine(Color[] pixels, int textureSize, Vector2 from, Vector2 to, float radius, float alpha, float waveSeed)
+        {
+            Vector2 start = from * textureSize;
+            Vector2 end = to * textureSize;
+            Vector2 direction = end - start;
+            Vector2 normal = new Vector2(-direction.y, direction.x).normalized;
+            int steps = Mathf.Max(8, Mathf.CeilToInt(direction.magnitude * 1.25f));
+            for (int i = 0; i <= steps; i++)
+            {
+                float t = (float)i / steps;
+                float wiggle = Mathf.Sin((t * 13.7f + waveSeed) * Mathf.PI) * 2.4f + Mathf.Sin((t * 31.1f + waveSeed * 0.37f) * Mathf.PI) * 0.85f;
+                Vector2 point = Vector2.Lerp(start, end, t) + normal * wiggle;
+                float taperedRadius = radius * Mathf.Lerp(0.62f, 1f, Mathf.Sin(t * Mathf.PI));
+                PaintCrackStamp(pixels, textureSize, point, taperedRadius, alpha);
+            }
+        }
+
+        private static void PaintCrackStamp(Color[] pixels, int textureSize, Vector2 center, float radius, float alpha)
+        {
+            int minX = Mathf.Clamp(Mathf.FloorToInt(center.x - radius * 2f), 0, textureSize - 1);
+            int maxX = Mathf.Clamp(Mathf.CeilToInt(center.x + radius * 2f), 0, textureSize - 1);
+            int minY = Mathf.Clamp(Mathf.FloorToInt(center.y - radius * 2f), 0, textureSize - 1);
+            int maxY = Mathf.Clamp(Mathf.CeilToInt(center.y + radius * 2f), 0, textureSize - 1);
+            for (int y = minY; y <= maxY; y++)
+            {
+                for (int x = minX; x <= maxX; x++)
+                {
+                    float distance = Vector2.Distance(center, new Vector2(x + 0.5f, y + 0.5f));
+                    float falloff = Mathf.Clamp01(1f - distance / Mathf.Max(0.01f, radius * 1.8f));
+                    if (falloff <= 0f)
+                    {
+                        continue;
+                    }
+
+                    int index = y * textureSize + x;
+                    float nextAlpha = Mathf.Max(pixels[index].a, alpha * falloff * falloff);
+                    pixels[index] = new Color(0.026f, 0.019f, 0.015f, nextAlpha);
+                }
+            }
+        }
         private static Material EnsureMaterial(string path, Color baseColor, Color emissionColor)
         {
             Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
