@@ -19,6 +19,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private CombatVfxCuePlayer cuePlayer;
         [SerializeField] private Transform vfxAnchor;
         [SerializeField] private Animator cueAnimator;
+        [SerializeField] private ActionCinematicSequenceBridge sequenceBridge;
 
         [Header("Timing")]
         [SerializeField] private bool useUnscaledClock = true;
@@ -72,6 +73,11 @@ namespace DimensionBrawl.Presentation
             if (cameraController == null)
             {
                 cameraController = GetComponent<ActionCameraController>();
+            }
+
+            if (sequenceBridge == null)
+            {
+                sequenceBridge = GetComponent<ActionCinematicSequenceBridge>();
             }
 
             ResolveCueSpaceReferences();
@@ -170,6 +176,19 @@ namespace DimensionBrawl.Presentation
         {
             float movementLockTimer = Mathf.Max(0f, sequence.movementLockSeconds);
             float inputLockTimer = Mathf.Max(0f, sequence.inputLockSeconds);
+            bool sequenceBridgePlayed = TryPlaySequenceBridge(
+                lastPlayedKind,
+                tier,
+                planarDirection,
+                out float sequenceBridgeLockSeconds);
+            if (sequenceBridgePlayed)
+            {
+                movementLockTimer = Mathf.Max(movementLockTimer, sequenceBridgeLockSeconds);
+                inputLockTimer = Mathf.Max(inputLockTimer, sequenceBridgeLockSeconds);
+                frameDuration = Mathf.Max(frameDuration, sequenceBridgeLockSeconds);
+                frameTimer = Mathf.Max(frameTimer, sequenceBridgeLockSeconds);
+            }
+
             if (movementLockTimer > 0f)
             {
                 ApplyMovementLock();
@@ -188,12 +207,17 @@ namespace DimensionBrawl.Presentation
 
             bool[] signalPlayed = sequence.SignalCount > 0 ? new bool[sequence.SignalCount] : null;
             float sequenceElapsed = 0f;
-            DispatchDueSignals(sequence, signalPlayed, sequenceElapsed, tier, planarDirection);
+            bool suppressLegacySignals = sequenceBridgePlayed && sequenceBridge.BlockLegacySignalsWhenPlayed;
+            bool suppressLegacyCameraShots = sequenceBridgePlayed && sequenceBridge.BlockLegacyCameraShotsWhenPlayed;
+            if (!suppressLegacySignals)
+            {
+                DispatchDueSignals(sequence, signalPlayed, sequenceElapsed, tier, planarDirection);
+            }
 
             for (int i = 0; i < sequence.shots.Length; i++)
             {
                 ActionCinematicCueProfile.CameraShot shot = sequence.shots[i];
-                if (shot.enabled)
+                if (!suppressLegacyCameraShots && shot.enabled)
                 {
                     RequestShot(shot, tier, planarDirection);
                 }
@@ -208,15 +232,46 @@ namespace DimensionBrawl.Presentation
                     timeScaleTimer = TickTimeScaleTimer(timeScaleTimer, deltaTime);
                     movementLockTimer = TickMovementLockTimer(movementLockTimer, deltaTime);
                     inputLockTimer = TickInputLockTimer(inputLockTimer, deltaTime);
-                    DispatchDueSignals(sequence, signalPlayed, sequenceElapsed, tier, planarDirection);
+                    if (!suppressLegacySignals)
+                    {
+                        DispatchDueSignals(sequence, signalPlayed, sequenceElapsed, tier, planarDirection);
+                    }
                     yield return null;
                 }
+            }
+
+            while (sequenceBridgePlayed
+                && (movementLockTimer > 0f
+                    || inputLockTimer > 0f
+                    || (sequenceBridge.Runner != null && sequenceBridge.Runner.IsPlaying)))
+            {
+                float deltaTime = useUnscaledClock ? Time.unscaledDeltaTime : Time.deltaTime;
+                timeScaleTimer = TickTimeScaleTimer(timeScaleTimer, deltaTime);
+                movementLockTimer = TickMovementLockTimer(movementLockTimer, deltaTime);
+                inputLockTimer = TickInputLockTimer(inputLockTimer, deltaTime);
+                yield return null;
             }
 
             RestoreCinematicState();
             activeRoutine = null;
             activePriority = 0;
             activeCanBeInterrupted = true;
+        }
+
+        private bool TryPlaySequenceBridge(
+            ActionCinematicCueProfile.CueKind kind,
+            int tier,
+            Vector3 planarDirection,
+            out float lockSeconds)
+        {
+            lockSeconds = 0f;
+            if (sequenceBridge == null)
+            {
+                sequenceBridge = GetComponent<ActionCinematicSequenceBridge>();
+            }
+
+            return sequenceBridge != null
+                && sequenceBridge.TryPlay(kind, tier, planarDirection, out lockSeconds);
         }
 
         private float ResolveFrameWeight()

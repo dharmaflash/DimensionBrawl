@@ -28,6 +28,7 @@ namespace DimensionBrawl.Presentation
 
         [Header("Bindings")]
         [SerializeField] private ActorBinding[] actorBindings = Array.Empty<ActorBinding>();
+        [SerializeField] private RuntimeAnimatorController bodyControllerOverride;
         [SerializeField] private ActionCameraController cameraController;
         [SerializeField] private CombatVfxCuePlayer combatVfxCuePlayer;
         [SerializeField] private CinematicTutorialPromptPresenter tutorialPromptPresenter;
@@ -62,6 +63,8 @@ namespace DimensionBrawl.Presentation
         private float originalCameraFieldOfView;
         private bool originalCameraControllerEnabled;
         private bool cameraControllerStateCaptured;
+        private RuntimeAnimatorController[] originalBodyControllers = Array.Empty<RuntimeAnimatorController>();
+        private bool bodyControllerStateCaptured;
         private bool forceImmediateCameraPoseForReviewSample;
 
         public CinematicSequenceProfile SequenceProfile => sequenceProfile;
@@ -284,10 +287,12 @@ namespace DimensionBrawl.Presentation
             }
 
             RestoreCameraStateIfNeeded();
+            RestoreBodyControllersIfNeeded();
         }
 
         private IEnumerator PlayRoutine(Vector3 planarDirection)
         {
+            PrepareBodyControllersForSequence();
             bool[] cameraPlayed = new bool[sequenceProfile.CameraCues.Length];
             bool[] actorPlayed = new bool[sequenceProfile.ActorCues.Length];
             bool[] vfxPlayed = new bool[sequenceProfile.VfxCues.Length];
@@ -333,6 +338,7 @@ namespace DimensionBrawl.Presentation
 
             activeCameraPoseRoutine = null;
             RestoreCameraStateIfNeeded();
+            RestoreBodyControllersIfNeeded();
         }
 
         private void DispatchDueCues(
@@ -684,6 +690,63 @@ namespace DimensionBrawl.Presentation
             }
 
             PrewarmOpeningCameraPose(camera);
+        }
+
+        private void PrepareBodyControllersForSequence()
+        {
+            bodyControllerStateCaptured = false;
+            if (bodyControllerOverride == null || actorBindings == null || actorBindings.Length == 0)
+            {
+                return;
+            }
+
+            originalBodyControllers = new RuntimeAnimatorController[actorBindings.Length];
+            for (int i = 0; i < actorBindings.Length; i++)
+            {
+                Animator animator = actorBindings[i].BodyAnimator;
+                if (animator == null)
+                {
+                    continue;
+                }
+
+                originalBodyControllers[i] = animator.runtimeAnimatorController;
+                if (ShouldApplyBodyControllerOverride(actorBindings[i].Role)
+                    && animator.runtimeAnimatorController != bodyControllerOverride)
+                {
+                    animator.runtimeAnimatorController = bodyControllerOverride;
+                }
+            }
+
+            bodyControllerStateCaptured = true;
+        }
+
+        private static bool ShouldApplyBodyControllerOverride(CinematicSequenceProfile.ActorRole role)
+        {
+            return role == CinematicSequenceProfile.ActorRole.Inori
+                || role == CinematicSequenceProfile.ActorRole.Player;
+        }
+
+        private void RestoreBodyControllersIfNeeded()
+        {
+            if (!bodyControllerStateCaptured || actorBindings == null || originalBodyControllers == null)
+            {
+                return;
+            }
+
+            int count = Mathf.Min(actorBindings.Length, originalBodyControllers.Length);
+            for (int i = 0; i < count; i++)
+            {
+                Animator animator = actorBindings[i].BodyAnimator;
+                if (animator == null)
+                {
+                    continue;
+                }
+
+                animator.runtimeAnimatorController = originalBodyControllers[i];
+            }
+
+            bodyControllerStateCaptured = false;
+            originalBodyControllers = Array.Empty<RuntimeAnimatorController>();
         }
 
         private void RestoreCameraStateIfNeeded()

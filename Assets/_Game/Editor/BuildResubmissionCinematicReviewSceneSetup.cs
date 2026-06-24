@@ -1052,6 +1052,10 @@ namespace DimensionBrawl.Editor
             CinematicSequenceRunner runner = runnerObject.AddComponent<CinematicSequenceRunner>();
             SerializedObject serializedRunner = new SerializedObject(runner);
             SetObjectReference(serializedRunner, "sequenceProfile", LoadAsset<CinematicSequenceProfile>(UltimateProfilePath));
+            SetObjectReference(
+                serializedRunner,
+                "bodyControllerOverride",
+                LoadAsset<RuntimeAnimatorController>(BuildResubmissionCinematicAnimationSetup.CinematicControllerPath));
             SetObjectReference(serializedRunner, "cameraController", cameraController);
             SetObjectReference(serializedRunner, "cinematicCamera", cameraController.GetComponent<Camera>());
             RequireProperty(serializedRunner, "driveCameraTransformFromProfile").boolValue = true;
@@ -1079,6 +1083,10 @@ namespace DimensionBrawl.Editor
 
             serializedRunner.ApplyModifiedPropertiesWithoutUndo();
 
+            ActionCinematicSequenceBridge sequenceBridge =
+                runnerObject.AddComponent<ActionCinematicSequenceBridge>();
+            ConfigureActionCinematicSequenceBridge(sequenceBridge, runner);
+
             CinematicSequenceAutoPlay autoPlay = runnerObject.AddComponent<CinematicSequenceAutoPlay>();
             SetObjectReference(autoPlay, "runner", runner);
             SetBool(autoPlay, "playOnStart", false);
@@ -1090,9 +1098,28 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(cuePlayer);
             EditorUtility.SetDirty(promptPresenter);
             EditorUtility.SetDirty(runner);
+            EditorUtility.SetDirty(sequenceBridge);
             EditorUtility.SetDirty(autoPlay);
             EditorUtility.SetDirty(playlistRunner);
             return runner;
+        }
+
+        private static void ConfigureActionCinematicSequenceBridge(
+            ActionCinematicSequenceBridge sequenceBridge,
+            CinematicSequenceRunner runner)
+        {
+            SetObjectReference(sequenceBridge, "runner", runner);
+            SetBool(sequenceBridge, "blockLegacyCameraShotsWhenPlayed", true);
+            SetBool(sequenceBridge, "blockLegacySignalsWhenPlayed", true);
+            SetFloat(sequenceBridge, "minimumLockSeconds", 0.12f);
+            SetObjectReference(sequenceBridge, "skillCutInProfile", LoadAsset<CinematicSequenceProfile>(QteProfilePath));
+            SetObjectReference(sequenceBridge, "summonEntryProfile", LoadAsset<CinematicSequenceProfile>(SummonEntryProfilePath));
+            SetObjectReference(sequenceBridge, "ultimateCutInProfile", LoadAsset<CinematicSequenceProfile>(UltimateProfilePath));
+            SetObjectReference(sequenceBridge, "bossPressureBreakProfile", LoadAsset<CinematicSequenceProfile>(BreakMomentProfilePath));
+            SetObjectReference(sequenceBridge, "summonFollowupHitProfile", LoadAsset<CinematicSequenceProfile>(BreakMomentProfilePath));
+            SetObjectReference(sequenceBridge, "pocketClearProfile", LoadAsset<CinematicSequenceProfile>(ResultBridgeProfilePath));
+            SetObjectReference(sequenceBridge, "pocketFailProfile", LoadAsset<CinematicSequenceProfile>(DangerProfilePath));
+            EditorUtility.SetDirty(sequenceBridge);
         }
 
         private static void ConfigureTutorialPromptPresenter(

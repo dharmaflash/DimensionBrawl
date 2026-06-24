@@ -41,7 +41,7 @@ Status:
 - Step 5: Complete for the reusable foundation. Runtime sequence profiles, actor/VFX/tutorial/handoff cues, promoted animation controller binding, direct camera shot-pose data, and the first review runner exist.
 - Step 6: In progress. P0 profile assets exist, every enabled P0 camera cue now has authored direct shot-pose data, module preview captures exist, weapon visibility is profile-driven, the review scene has a six-module P0 playlist route with sampled Play Mode visual QA, QTE/tutorial prompts now render as camera-captured readable overlays, and the review scene has a reusable dressed stage/lighting shell. A continuous Play Mode timeline frame capture now generates labeled route strips and 23 timeline frames including the final gameplay handoff. Remaining P0 work is animation safety per module, production art polish, and production-style movie capture.
 - Step 7: In progress. First-pass P1 profile assets now exist for `BossIntro`, `PhaseTransition`, `BreakMoment`, `DialogueReactionBeat`, `ResultBridge`, and `SummonEntry`; each has authored direct camera shot poses, Inori body/face cues, profile-driven rifle visibility, VFX where relevant, and explicit gameplay/result handoff data. Remaining P1 work is inspectable playlist capture, visual tuning on Inori, and integration into actual game triggers.
-- Step 8: Pending.
+- Step 8: In progress. Action cue integration now has a bridge from existing action cinematic cue requests to reusable build-resubmission cinematic sequence profiles. Boss barrage review generation binds the bridge, runner, Inori animator controller override, expression player, VFX player, and camera handoff path for ultimate, summon, break, and result cues.
 - Step 9: Pending.
 
 Current blockers:
@@ -634,6 +634,41 @@ Implementation correction:
 - The summon frame should prove three separate reads at once: Inori command/projectile intent, summon actor presence, and large-creature support silhouette.
 - Keep dragon and other large summons out of the primary emotional face layer unless the shot is authored for them. In combat samples, they should support depth, threat, and spectacle without hiding Inori, the enemy, or the summon proxy.
 - Future summon variants should branch into command, empower, clash, recall, and boss-summon-pressure modules rather than replacing the corridor projectile language.
+
+### 2026-06-24 Action Cue Bridge Integration
+
+Why this was added:
+
+- A cinematic package that only plays in the isolated review scene is not enough for build resubmission.
+- Existing combat input already requests action cinematic cues through `ActionCinematicCueDirector`; the reusable `CinematicSequenceRunner` now needs to be reachable from that route.
+
+Runtime/editor changes:
+
+- Added `ActionCinematicSequenceBridge`, which maps existing `ActionCinematicCueProfile.CueKind` values to reusable `CinematicSequenceProfile` assets.
+- `ActionCinematicCueDirector` now detects the bridge, plays the mapped sequence when present, suppresses the older short camera/signals while the mapped sequence owns presentation, and keeps movement/input locks alive for the mapped sequence duration.
+- `CinematicSequenceRunner` now supports a temporary body Animator controller override. This lets gameplay Inori keep the normal rifle controller outside cutscenes, then switch to `DB_Inori_CinematicP0.controller` only while a build-resubmission cinematic profile is playing.
+- The controller override is role-gated to Inori/Player bindings so summon actors keep their own Animator controllers.
+- Boss barrage review scene generation now binds ultimate, summon entry, boss-pressure break, summon follow-up hit, pocket clear, and pocket fail routes to build-resubmission profiles. Normal low-tier skill cut-in remains unmapped there so routine shots do not become long QTE-style cutscenes.
+
+Verification:
+
+- method: `DimensionBrawl.Editor.BuildResubmissionCinematicReviewSceneSetup.RunBatchReviewSceneGeneration`
+- log: `C:\tmp\DimensionBrawl-CinematicReviewScene-ActionBridge.log`
+- result: PASS, exit code 0
+- method: `DimensionBrawl.Editor.BuildResubmissionCinematicPackageVerifier.RunBatchVerification`
+- log: `C:\tmp\DimensionBrawl-CinematicPackageVerifier-ActionBridge.log`
+- report: `C:\tmp\DimensionBrawl-CinematicPackageVerifier.md`
+- result: PASS, failures 0, warnings 0
+- method: `DimensionBrawl.Editor.ActionFoundationBossBarrageLaneReviewSetup.EnsureBossBarrageLaneReviewScene`
+- log: `C:\tmp\DimensionBrawl-BossBarrageLaneReview-ActionBridge-Ensure.log`
+- result: PASS, exit code 0
+- method: `DimensionBrawl.Editor.ActionFoundationBossBarrageLaneReviewSetup.ValidateBossBarrageLaneReviewScene`
+- log: `C:\tmp\DimensionBrawl-BossBarrageLaneReview-ActionBridge-Validate.log`
+- result: PASS, exit code 0
+
+Remaining caveat:
+
+- This proves serialized integration and Unity scene validation. The next gate should be Play Mode input-route capture for ultimate and summon entry to prove the bridge fires from actual button/action events, not only from generated scene references.
 
 ## Source Data Read
 

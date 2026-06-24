@@ -325,6 +325,38 @@ namespace DimensionBrawl.Editor
                 state.Check(runner.TutorialPromptPresenter != null, "Review runner has a cinematic tutorial prompt presenter assigned.");
             }
 
+            ActionCinematicSequenceBridge sequenceBridge =
+                FindComponentInScene<ActionCinematicSequenceBridge>(scene);
+            state.Check(sequenceBridge != null, "Review scene has ActionCinematicSequenceBridge for action-cue integration.");
+            if (sequenceBridge != null)
+            {
+                SerializedObject serializedBridge = new SerializedObject(sequenceBridge);
+                VerifyBridgeProfile(
+                    state,
+                    serializedBridge,
+                    "summonEntryProfile",
+                    "DB_Cinematic_SummonEntry.asset",
+                    "Action bridge routes SummonEntry to the reusable summon profile.");
+                VerifyBridgeProfile(
+                    state,
+                    serializedBridge,
+                    "ultimateCutInProfile",
+                    "DB_Cinematic_UltimateCutIn.asset",
+                    "Action bridge routes UltimateCutIn to the reusable ultimate profile.");
+                VerifyBridgeProfile(
+                    state,
+                    serializedBridge,
+                    "bossPressureBreakProfile",
+                    "DB_Cinematic_BreakMoment.asset",
+                    "Action bridge routes BossPressureBreak to the reusable break profile.");
+                VerifyBridgeProfile(
+                    state,
+                    serializedBridge,
+                    "pocketClearProfile",
+                    "DB_Cinematic_ResultBridge.asset",
+                    "Action bridge routes PocketClear to the reusable result profile.");
+            }
+
             CinematicSequenceAutoPlay autoPlay = FindComponentInScene<CinematicSequenceAutoPlay>(scene);
             state.Check(autoPlay != null, "Review scene keeps a single-profile AutoPlay component for manual fallback.");
             if (autoPlay != null)
@@ -396,6 +428,21 @@ namespace DimensionBrawl.Editor
                 UnityEngine.Object actual = entry.FindPropertyRelative("profile").objectReferenceValue;
                 state.Check(actual == expected, $"P0 playlist entry {i + 1} is `{assetName}`.");
             }
+        }
+
+        private static void VerifyBridgeProfile(
+            VerificationState state,
+            SerializedObject serializedBridge,
+            string propertyName,
+            string expectedAssetName,
+            string label)
+        {
+            SerializedProperty property = serializedBridge.FindProperty(propertyName);
+            CinematicSequenceProfile expected =
+                AssetDatabase.LoadAssetAtPath<CinematicSequenceProfile>($"{ProfileRoot}/{expectedAssetName}");
+            state.Check(
+                property != null && property.objectReferenceValue == expected,
+                label);
         }
 
         private static Dictionary<string, AnimatorState> CollectStates(AnimatorController controller)
