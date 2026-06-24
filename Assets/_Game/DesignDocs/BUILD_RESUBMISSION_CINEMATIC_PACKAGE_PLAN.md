@@ -41,7 +41,7 @@ Status:
 - Step 5: Complete for the reusable foundation. Runtime sequence profiles, actor/VFX/tutorial/handoff cues, promoted animation controller binding, direct camera shot-pose data, and the first review runner exist.
 - Step 6: In progress. P0 profile assets exist, every enabled P0 camera cue now has authored direct shot-pose data, module preview captures exist, weapon visibility is profile-driven, the review scene has a six-module P0 playlist route with sampled Play Mode visual QA, QTE/tutorial prompts now render as camera-captured readable overlays, and the review scene has a reusable dressed stage/lighting shell. A continuous Play Mode timeline frame capture now generates labeled route strips and 23 timeline frames including the final gameplay handoff. Remaining P0 work is animation safety per module, production art polish, and production-style movie capture.
 - Step 7: In progress. First-pass P1 profile assets now exist for `BossIntro`, `PhaseTransition`, `BreakMoment`, `DialogueReactionBeat`, `ResultBridge`, and `SummonEntry`; each has authored direct camera shot poses, Inori body/face cues, profile-driven rifle visibility, VFX where relevant, and explicit gameplay/result handoff data. Remaining P1 work is inspectable playlist capture, visual tuning on Inori, and integration into actual game triggers.
-- Step 8: In progress. Action cue integration now has a bridge from existing action cinematic cue requests to reusable build-resubmission cinematic sequence profiles. Boss barrage review generation binds the bridge, runner, Inori animator controller override, expression player, VFX player, and camera handoff path for ultimate, summon, break, and result cues.
+- Step 8: In progress. Action cue integration now has a bridge from existing action cinematic cue requests to reusable build-resubmission cinematic sequence profiles. Boss barrage review generation binds the bridge, runner, Inori animator controller override, expression player, VFX player, and camera handoff path for ultimate, summon, break, and result cues. Play Mode input-route verification now proves tier-3 `Skill1` and `SummonSlot1` can trigger the mapped reusable cinematic sequences from the actual player action methods.
 - Step 9: Pending.
 
 Current blockers:
@@ -649,6 +649,7 @@ Runtime/editor changes:
 - `CinematicSequenceRunner` now supports a temporary body Animator controller override. This lets gameplay Inori keep the normal rifle controller outside cutscenes, then switch to `DB_Inori_CinematicP0.controller` only while a build-resubmission cinematic profile is playing.
 - The controller override is role-gated to Inori/Player bindings so summon actors keep their own Animator controllers.
 - Boss barrage review scene generation now binds ultimate, summon entry, boss-pressure break, summon follow-up hit, pocket clear, and pocket fail routes to build-resubmission profiles. Normal low-tier skill cut-in remains unmapped there so routine shots do not become long QTE-style cutscenes.
+- Added `BossBarrageActionBridgeRouteProbe` plus a batch runner that enters Play Mode in `ActionFoundationBossBarrageLaneReview.unity`, grants tier-3 EN, calls `PlayerSkill1Action.TryUseSkill1()` and `PlayerSummonSlot1Action.TryUseSummonSlot1()`, and writes whether the cue director, sequence bridge, and cinematic runner all observed the expected route.
 
 Verification:
 
@@ -665,10 +666,16 @@ Verification:
 - method: `DimensionBrawl.Editor.ActionFoundationBossBarrageLaneReviewSetup.ValidateBossBarrageLaneReviewScene`
 - log: `C:\tmp\DimensionBrawl-BossBarrageLaneReview-ActionBridge-Validate.log`
 - result: PASS, exit code 0
+- method: `DimensionBrawl.Editor.ActionFoundationBossBarrageLaneReviewSetup.RunBatchActionBridgeInputRouteVerification`
+- log: `C:\tmp\DimensionBrawl-BossBarrageActionBridgeRoute-Final.log`
+- result file: `C:\tmp\DimensionBrawl-BossBarrageActionBridgeRoute.result`
+- result: PASS, exit code 0
+- observed route: `skill1_tier3_ultimate` -> `UltimateCutIn` -> `ultimate_cutin`
+- observed route: `summon_slot1_tier3_entry` -> `SummonEntry` -> `summon_entry`
 
 Remaining caveat:
 
-- This proves serialized integration and Unity scene validation. The next gate should be Play Mode input-route capture for ultimate and summon entry to prove the bridge fires from actual button/action events, not only from generated scene references.
+- This now proves the actual player-action route, not only generated scene references. The next gate should combine this route verifier with camera/frame capture for the boss-barrage route specifically, then tune the summon proxy and dragon support composition so corridor back-view projectile language, summon entry, and large-creature support all read cleanly in one playable flow.
 
 ## Source Data Read
 
