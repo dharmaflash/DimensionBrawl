@@ -38,6 +38,8 @@ namespace DimensionBrawl.Editor
             ConfigureResultBridge(LoadOrCreate(ProfileRoot + "/DB_Cinematic_ResultBridge.asset"));
             ConfigureSummonEntry(LoadOrCreate(ProfileRoot + "/DB_Cinematic_SummonEntry.asset"));
             ConfigureSummonFollowupHit(LoadOrCreate(ProfileRoot + "/DB_Cinematic_SummonFollowupHit.asset"));
+            ConfigureSummonEmpower(LoadOrCreate(ProfileRoot + "/DB_Cinematic_SummonEmpower.asset"));
+            ConfigureSummonRecall(LoadOrCreate(ProfileRoot + "/DB_Cinematic_SummonRecall.asset"));
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log("Rebuilt build-resubmission P0/P1 cinematic sequence profiles.");
@@ -568,6 +570,99 @@ namespace DimensionBrawl.Editor
                     Vfx("summon_followup_muzzle", 0.68f, CombatVfxCueId.PlayerRangedMuzzleFlash, 1.04f, new Vector3(0.12f, 1.08f, 0.82f)),
                     Vfx("summon_followup_hit", 0.92f, CombatVfxCueId.SummonFollowupHit, 1.24f, new Vector3(0.05f, 1.04f, 4.10f)),
                     Vfx("summon_followup_dragon_flash", 1.72f, CombatVfxCueId.EliteSummonSignal, 0.82f, new Vector3(3.40f, 1.62f, 3.15f))
+                },
+                new CinematicSequenceProfile.TutorialCue[0],
+                Handoff(2.95f, "action_camera_controller"));
+            EditorUtility.SetDirty(profile);
+        }
+
+        private static void ConfigureSummonEmpower(CinematicSequenceProfile profile)
+        {
+            profile.Configure(
+                "summon_empower",
+                "Summon Empower",
+                CinematicSequenceProfile.SequenceCategory.SummonEmpower,
+                "Reusable summon empower beat: Inori channels energy into the frontline summon, the summon holds the lane, dragon support amplifies the read, and control returns cleanly.",
+                3.45f,
+                74,
+                true,
+                true,
+                true,
+                true,
+                true,
+                new[]
+                {
+                    ShotCamera("summon_empower_channel", CinematicSequenceProfile.ShotPurpose.MechanicConnection, CinematicSequenceProfile.CameraBlendKind.Reframe, 0f, 0.85f, new Vector3(0.08f, 0.06f, -0.14f), 0.10f, 1.2f, -0.10f, 0.04f, new Vector3(-1.65f, 1.54f, -2.80f), new Vector3(0.85f, 1.18f, 2.95f), 40f),
+                    ShotCamera("summon_empower_transfer", CinematicSequenceProfile.ShotPurpose.CharacterAction, CinematicSequenceProfile.CameraBlendKind.PushIn, 0.85f, 0.95f, new Vector3(-0.08f, 0.08f, -0.16f), 0.12f, -1.2f, -0.10f, 0.05f, new Vector3(0.85f, 1.34f, -2.15f), new Vector3(0.20f, 1.10f, 3.25f), 36f),
+                    ShotCamera("summon_empower_hold", CinematicSequenceProfile.ShotPurpose.ThreatDirection, CinematicSequenceProfile.CameraBlendKind.Reframe, 1.80f, 0.8f, new Vector3(0.10f, 0.04f, -0.12f), 0.14f, 1.6f, -0.12f, 0.03f, new Vector3(2.35f, 1.42f, -1.95f), new Vector3(0.45f, 1.18f, 3.80f), 40f),
+                    ShotCamera("summon_empower_handoff", CinematicSequenceProfile.ShotPurpose.GameplayHandoff, CinematicSequenceProfile.CameraBlendKind.GameplayMatch, 2.60f, 0.85f, new Vector3(0f, 0.03f, -0.08f), 0.02f, 0.4f, -0.05f, 0.01f, new Vector3(0f, 1.26f, -3.70f), new Vector3(0f, 1.17f, 0.55f), 35f)
+                },
+                new[]
+                {
+                    WeaponVisibility("summon_empower_keep_rifle_visible", 0f, true),
+                    Face("summon_empower_inori_focus", 0f, 1.2f, "Angry"),
+                    Body("summon_empower_inori_channel", 0f, 1.05f, "CIN_BackViewProjectileCharge"),
+                    Body("summon_empower_inori_transfer", 0.95f, 1.0f, "CIN_BackViewProjectileFire"),
+                    Body("summon_empower_inori_ready", 2.05f, 1.1f, "CIN_BackViewProjectileAim"),
+                    Face("summon_empower_inori_calm", 2.25f, 0.8f, "CalmEye"),
+                    ActorVisibility("summon_empower_dragon_visible", CinematicSequenceProfile.ActorRole.Environment, 0f, true),
+                    BodyTrigger("summon_empower_proxy_manifest", CinematicSequenceProfile.ActorRole.Summon, 0.10f, "EliteSummonPackage"),
+                    BodyTrigger("summon_empower_proxy_attack", CinematicSequenceProfile.ActorRole.Summon, 1.70f, "Attack"),
+                    ActorBody("summon_empower_dragon_fire", CinematicSequenceProfile.ActorRole.Environment, 1.35f, 1.0f, DragonSupportAttackStateName),
+                    ActorVisibility("summon_empower_dragon_hide", CinematicSequenceProfile.ActorRole.Environment, 3.35f, false)
+                },
+                new[]
+                {
+                    Vfx("summon_empower_channel_ring", 0f, CombatVfxCueId.SummonFollowupWindow, 1.10f, new Vector3(0.85f, 0.55f, 2.35f)),
+                    Vfx("summon_empower_transfer_flash", 0.90f, CombatVfxCueId.EliteAuraSignal, 0.90f, new Vector3(0.80f, 0.95f, 2.75f)),
+                    Vfx("summon_empower_guard", 1.82f, CombatVfxCueId.EliteShieldSignal, 0.84f, new Vector3(0.30f, 1.05f, 3.65f)),
+                    Vfx("summon_empower_release", 2.15f, CombatVfxCueId.PlayerRangedMuzzleFlash, 0.92f, new Vector3(0.12f, 1.08f, 0.82f))
+                },
+                new CinematicSequenceProfile.TutorialCue[0],
+                Handoff(3.05f, "action_camera_controller"));
+            EditorUtility.SetDirty(profile);
+        }
+
+        private static void ConfigureSummonRecall(CinematicSequenceProfile profile)
+        {
+            profile.Configure(
+                "summon_recall",
+                "Summon Recall",
+                CinematicSequenceProfile.SequenceCategory.SummonRecall,
+                "Reusable summon recall beat: Inori calls the summon back, the field collapses inward, dragon support exits, and the camera settles to gameplay.",
+                3.35f,
+                70,
+                true,
+                true,
+                true,
+                true,
+                true,
+                new[]
+                {
+                    ShotCamera("summon_recall_signal", CinematicSequenceProfile.ShotPurpose.MechanicConnection, CinematicSequenceProfile.CameraBlendKind.Reframe, 0f, 0.75f, new Vector3(0.08f, 0.06f, -0.14f), 0.10f, 1.0f, -0.10f, 0.04f, new Vector3(-1.35f, 1.44f, -2.70f), new Vector3(0.45f, 1.10f, 2.85f), 38f),
+                    ShotCamera("summon_recall_collapse", CinematicSequenceProfile.ShotPurpose.Transition, CinematicSequenceProfile.CameraBlendKind.PullBack, 0.75f, 1.05f, new Vector3(-0.11f, 0.08f, -0.15f), 0.12f, 1.55f, -0.15f, 0.05f, new Vector3(-0.95f, 1.50f, -2.45f), new Vector3(0.55f, 1.10f, 3.15f), 40f),
+                    ShotCamera("summon_recall_dragon_exit", CinematicSequenceProfile.ShotPurpose.ThreatDirection, CinematicSequenceProfile.CameraBlendKind.Reframe, 1.80f, 0.75f, new Vector3(-0.10f, 0.08f, -0.18f), 0.18f, 1.6f, -0.18f, 0.08f, new Vector3(-2.65f, 1.80f, -1.85f), new Vector3(3.95f, 1.80f, 3.05f), 50f),
+                    ShotCamera("summon_recall_handoff", CinematicSequenceProfile.ShotPurpose.GameplayHandoff, CinematicSequenceProfile.CameraBlendKind.GameplayMatch, 2.55f, 0.8f, new Vector3(0f, 0.03f, -0.08f), 0.02f, 0.4f, -0.05f, 0.01f, new Vector3(0f, 1.26f, -3.70f), new Vector3(0f, 1.17f, 0.55f), 35f)
+                },
+                new[]
+                {
+                    WeaponVisibility("summon_recall_keep_rifle_visible", 0f, true),
+                    Face("summon_recall_inori_signal", 0f, 1.0f, "CalmEye"),
+                    Body("summon_recall_inori_ready_signal", 0f, 0.9f, "CIN_BackViewProjectileAim"),
+                    Body("summon_recall_inori_close", 0.82f, 1.0f, "CIN_BackViewProjectileRecover"),
+                    Body("summon_recall_inori_ready", 1.90f, 1.0f, "CIN_CombatReady"),
+                    Face("summon_recall_inori_calm", 1.95f, 0.9f, "CalmEye"),
+                    ActorVisibility("summon_recall_dragon_visible", CinematicSequenceProfile.ActorRole.Environment, 0f, true),
+                    BodyTrigger("summon_recall_proxy_manifest", CinematicSequenceProfile.ActorRole.Summon, 0.05f, "EliteSummonPackage"),
+                    BodyTrigger("summon_recall_proxy_attack", CinematicSequenceProfile.ActorRole.Summon, 0.72f, "Attack"),
+                    ActorBody("summon_recall_dragon_fire", CinematicSequenceProfile.ActorRole.Environment, 1.35f, 0.85f, DragonSupportAttackStateName),
+                    ActorVisibility("summon_recall_dragon_hide", CinematicSequenceProfile.ActorRole.Environment, 2.65f, false)
+                },
+                new[]
+                {
+                    Vfx("summon_recall_ring", 0f, CombatVfxCueId.EliteSummonSignal, 0.88f, new Vector3(0.70f, 0.50f, 2.25f)),
+                    Vfx("summon_recall_collapse", 0.82f, CombatVfxCueId.SummonBlockOpportunity, 0.92f, new Vector3(0.42f, 0.62f, 2.95f)),
+                    Vfx("summon_recall_exit_flash", 1.72f, CombatVfxCueId.PocketCleared, 0.82f, new Vector3(2.90f, 1.50f, 3.10f))
                 },
                 new CinematicSequenceProfile.TutorialCue[0],
                 Handoff(2.95f, "action_camera_controller"));

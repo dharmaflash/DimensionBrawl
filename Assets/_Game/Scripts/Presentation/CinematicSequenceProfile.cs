@@ -24,7 +24,9 @@ namespace DimensionBrawl.Presentation
             StoryTransition,
             StageClear,
             FailureBridge,
-            SummonFollowupHit
+            SummonFollowupHit,
+            SummonEmpower,
+            SummonRecall
         }
 
         public enum ShotPurpose

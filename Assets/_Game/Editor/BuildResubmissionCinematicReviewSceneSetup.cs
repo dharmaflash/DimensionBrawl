@@ -56,6 +56,10 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/DesignData/Profiles/Cinematics/DB_Cinematic_SummonEntry.asset";
         private const string SummonFollowupHitProfilePath =
             "Assets/_Game/DesignData/Profiles/Cinematics/DB_Cinematic_SummonFollowupHit.asset";
+        private const string SummonEmpowerProfilePath =
+            "Assets/_Game/DesignData/Profiles/Cinematics/DB_Cinematic_SummonEmpower.asset";
+        private const string SummonRecallProfilePath =
+            "Assets/_Game/DesignData/Profiles/Cinematics/DB_Cinematic_SummonRecall.asset";
         private const string RifleGirlSourcePrefabPath =
             "Assets/_Imported/AssetStore/CombatGirlsCharacterPack_RifleGirl/RifleGirl/Prefab/Rifle_Full_Body.prefab";
         private const string EnemyPrefabPath =
@@ -722,6 +726,24 @@ namespace DimensionBrawl.Editor
                     "Angry",
                     "summon_followup_clash",
                     0.96f,
+                    weaponVisible: true),
+                new PlaylistStripSample(
+                    "Summon empower: transfer",
+                    "p1_08_summon_empower_transfer",
+                    SummonEmpowerProfilePath,
+                    "CIN_BackViewProjectileFire + Summon.Attack",
+                    "Angry",
+                    "summon_empower_transfer",
+                    1.12f,
+                    weaponVisible: true),
+                new PlaylistStripSample(
+                    "Summon recall: collapse",
+                    "p1_09_summon_recall_collapse",
+                    SummonRecallProfilePath,
+                    "CIN_BackViewProjectileRecover + Summon.Attack",
+                    "CalmEye",
+                    "summon_recall_collapse",
+                    1.08f,
                     weaponVisible: true)
             };
         }
@@ -729,7 +751,9 @@ namespace DimensionBrawl.Editor
         private static bool IsSummonReviewProfile(string profilePath)
         {
             return string.Equals(profilePath, SummonEntryProfilePath, StringComparison.Ordinal)
-                || string.Equals(profilePath, SummonFollowupHitProfilePath, StringComparison.Ordinal);
+                || string.Equals(profilePath, SummonFollowupHitProfilePath, StringComparison.Ordinal)
+                || string.Equals(profilePath, SummonEmpowerProfilePath, StringComparison.Ordinal)
+                || string.Equals(profilePath, SummonRecallProfilePath, StringComparison.Ordinal);
         }
 
         private static void ResetActorForRunnerDrivenSample(Transform actorRoot, Animator animator)

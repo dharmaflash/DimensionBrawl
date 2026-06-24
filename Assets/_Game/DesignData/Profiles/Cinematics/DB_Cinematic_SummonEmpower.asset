@@ -1,0 +1,305 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6198cb8366640314588780649f505e38, type: 3}
+  m_Name: DB_Cinematic_SummonEmpower
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CinematicSequenceProfile
+  sequenceId: summon_empower
+  displayName: Summon Empower
+  category: 16
+  reviewerIntent: 'Reusable summon empower beat: Inori channels energy into the frontline
+    summon, the summon holds the lane, dragon support amplifies the read, and control
+    returns cleanly.'
+  authoredDurationSeconds: 3.45
+  priority: 74
+  lockMovement: 1
+  lockInput: 1
+  hideHud: 1
+  canSkip: 1
+  useUnscaledClock: 1
+  cameraCues:
+  - enabled: 1
+    cueId: summon_empower_channel
+    purpose: 3
+    blendKind: 4
+    startSeconds: 0
+    durationSeconds: 0.85
+    localOffset: {x: 0.08, y: 0.06, z: -0.14}
+    planarDirectionOffset: 0.1
+    fieldOfViewDelta: 1.2
+    cameraDistanceDelta: -0.1
+    focusHeightDelta: 0.04
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: -1.65, y: 1.54, z: -2.8}
+    lookAtLocalPosition: {x: 0.85, y: 1.18, z: 2.95}
+    fieldOfView: 40
+  - enabled: 1
+    cueId: summon_empower_transfer
+    purpose: 1
+    blendKind: 2
+    startSeconds: 0.85
+    durationSeconds: 0.95
+    localOffset: {x: -0.08, y: 0.08, z: -0.16}
+    planarDirectionOffset: 0.12
+    fieldOfViewDelta: -1.2
+    cameraDistanceDelta: -0.1
+    focusHeightDelta: 0.05
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 0.85, y: 1.34, z: -2.15}
+    lookAtLocalPosition: {x: 0.2, y: 1.1, z: 3.25}
+    fieldOfView: 36
+  - enabled: 1
+    cueId: summon_empower_hold
+    purpose: 2
+    blendKind: 4
+    startSeconds: 1.8
+    durationSeconds: 0.8
+    localOffset: {x: 0.1, y: 0.04, z: -0.12}
+    planarDirectionOffset: 0.14
+    fieldOfViewDelta: 1.6
+    cameraDistanceDelta: -0.12
+    focusHeightDelta: 0.03
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 2.35, y: 1.42, z: -1.95}
+    lookAtLocalPosition: {x: 0.45, y: 1.18, z: 3.8}
+    fieldOfView: 40
+  - enabled: 1
+    cueId: summon_empower_handoff
+    purpose: 4
+    blendKind: 5
+    startSeconds: 2.6
+    durationSeconds: 0.85
+    localOffset: {x: 0, y: 0.03, z: -0.08}
+    planarDirectionOffset: 0.02
+    fieldOfViewDelta: 0.4
+    cameraDistanceDelta: -0.05
+    focusHeightDelta: 0.01
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 0, y: 1.26, z: -3.7}
+    lookAtLocalPosition: {x: 0, y: 1.17, z: 0.55}
+    fieldOfView: 35
+  actorCues:
+  - enabled: 1
+    cueId: summon_empower_keep_rifle_visible
+    role: 0
+    cueKind: 5
+    startSeconds: 0
+    durationSeconds: 0
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: InoriRifle
+    requireSocket: 1
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: summon_empower_inori_focus
+    role: 0
+    cueKind: 2
+    startSeconds: 0
+    durationSeconds: 1.2
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: Angry
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: summon_empower_inori_channel
+    role: 0
+    cueKind: 0
+    startSeconds: 0
+    durationSeconds: 1.05
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_BackViewProjectileCharge
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: summon_empower_inori_transfer
+    role: 0
+    cueKind: 0
+    startSeconds: 0.95
+    durationSeconds: 1
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_BackViewProjectileFire
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: summon_empower_inori_ready
+    role: 0
+    cueKind: 0
+    startSeconds: 2.05
+    durationSeconds: 1.1
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_BackViewProjectileAim
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: summon_empower_inori_calm
+    role: 0
+    cueKind: 2
+    startSeconds: 2.25
+    durationSeconds: 0.8
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: CalmEye
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: summon_empower_dragon_visible
+    role: 6
+    cueKind: 5
+    startSeconds: 0
+    durationSeconds: 0
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: summon_empower_proxy_manifest
+    role: 3
+    cueKind: 1
+    startSeconds: 0.1
+    durationSeconds: 0
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: EliteSummonPackage
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: summon_empower_proxy_attack
+    role: 3
+    cueKind: 1
+    startSeconds: 1.7
+    durationSeconds: 0
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: Attack
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: summon_empower_dragon_fire
+    role: 6
+    cueKind: 0
+    startSeconds: 1.35
+    durationSeconds: 1
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: FlyStationarySpitFireBall
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: summon_empower_dragon_hide
+    role: 6
+    cueKind: 5
+    startSeconds: 3.35
+    durationSeconds: 0
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 0
+  vfxCues:
+  - enabled: 1
+    cueId: summon_empower_channel_ring
+    startSeconds: 0
+    durationSeconds: 0
+    useCombatVfxCue: 1
+    combatVfxCueId: 29
+    prefab: {fileID: 0}
+    localOffset: {x: 0.85, y: 0.55, z: 2.35}
+    intensity: 1.1
+  - enabled: 1
+    cueId: summon_empower_transfer_flash
+    startSeconds: 0.9
+    durationSeconds: 0
+    useCombatVfxCue: 1
+    combatVfxCueId: 26
+    prefab: {fileID: 0}
+    localOffset: {x: 0.8, y: 0.95, z: 2.75}
+    intensity: 0.9
+  - enabled: 1
+    cueId: summon_empower_guard
+    startSeconds: 1.82
+    durationSeconds: 0
+    useCombatVfxCue: 1
+    combatVfxCueId: 24
+    prefab: {fileID: 0}
+    localOffset: {x: 0.3, y: 1.05, z: 3.65}
+    intensity: 0.84
+  - enabled: 1
+    cueId: summon_empower_release
+    startSeconds: 2.15
+    durationSeconds: 0
+    useCombatVfxCue: 1
+    combatVfxCueId: 33
+    prefab: {fileID: 0}
+    localOffset: {x: 0.12, y: 1.08, z: 0.82}
+    intensity: 0.92
+  tutorialCues: []
+  gameplayHandoff:
+    enabled: 1
+    returnMode: 1
+    startSeconds: 3.05
+    targetId: action_camera_controller
+    inputReleaseDelaySeconds: 0.08
+    restoreHud: 1
+    restoreTimeScale: 1
+    restoreCamera: 1

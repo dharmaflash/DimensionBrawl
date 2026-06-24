@@ -1,0 +1,295 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6198cb8366640314588780649f505e38, type: 3}
+  m_Name: DB_Cinematic_SummonRecall
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CinematicSequenceProfile
+  sequenceId: summon_recall
+  displayName: Summon Recall
+  category: 17
+  reviewerIntent: 'Reusable summon recall beat: Inori calls the summon back, the
+    field collapses inward, dragon support exits, and the camera settles to gameplay.'
+  authoredDurationSeconds: 3.35
+  priority: 70
+  lockMovement: 1
+  lockInput: 1
+  hideHud: 1
+  canSkip: 1
+  useUnscaledClock: 1
+  cameraCues:
+  - enabled: 1
+    cueId: summon_recall_signal
+    purpose: 3
+    blendKind: 4
+    startSeconds: 0
+    durationSeconds: 0.75
+    localOffset: {x: 0.08, y: 0.06, z: -0.14}
+    planarDirectionOffset: 0.1
+    fieldOfViewDelta: 1
+    cameraDistanceDelta: -0.1
+    focusHeightDelta: 0.04
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: -1.35, y: 1.44, z: -2.7}
+    lookAtLocalPosition: {x: 0.45, y: 1.1, z: 2.85}
+    fieldOfView: 38
+  - enabled: 1
+    cueId: summon_recall_collapse
+    purpose: 6
+    blendKind: 3
+    startSeconds: 0.75
+    durationSeconds: 1.05
+    localOffset: {x: -0.11, y: 0.08, z: -0.15}
+    planarDirectionOffset: 0.12
+    fieldOfViewDelta: 1.55
+    cameraDistanceDelta: -0.15
+    focusHeightDelta: 0.05
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: -0.95, y: 1.5, z: -2.45}
+    lookAtLocalPosition: {x: 0.55, y: 1.1, z: 3.15}
+    fieldOfView: 40
+  - enabled: 1
+    cueId: summon_recall_dragon_exit
+    purpose: 2
+    blendKind: 4
+    startSeconds: 1.8
+    durationSeconds: 0.75
+    localOffset: {x: -0.1, y: 0.08, z: -0.18}
+    planarDirectionOffset: 0.18
+    fieldOfViewDelta: 1.6
+    cameraDistanceDelta: -0.18
+    focusHeightDelta: 0.08
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: -2.65, y: 1.8, z: -1.85}
+    lookAtLocalPosition: {x: 3.95, y: 1.8, z: 3.05}
+    fieldOfView: 50
+  - enabled: 1
+    cueId: summon_recall_handoff
+    purpose: 4
+    blendKind: 5
+    startSeconds: 2.55
+    durationSeconds: 0.8
+    localOffset: {x: 0, y: 0.03, z: -0.08}
+    planarDirectionOffset: 0.02
+    fieldOfViewDelta: 0.4
+    cameraDistanceDelta: -0.05
+    focusHeightDelta: 0.01
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 0, y: 1.26, z: -3.7}
+    lookAtLocalPosition: {x: 0, y: 1.17, z: 0.55}
+    fieldOfView: 35
+  actorCues:
+  - enabled: 1
+    cueId: summon_recall_keep_rifle_visible
+    role: 0
+    cueKind: 5
+    startSeconds: 0
+    durationSeconds: 0
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: InoriRifle
+    requireSocket: 1
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: summon_recall_inori_signal
+    role: 0
+    cueKind: 2
+    startSeconds: 0
+    durationSeconds: 1
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: CalmEye
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: summon_recall_inori_ready_signal
+    role: 0
+    cueKind: 0
+    startSeconds: 0
+    durationSeconds: 0.9
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_BackViewProjectileAim
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: summon_recall_inori_close
+    role: 0
+    cueKind: 0
+    startSeconds: 0.82
+    durationSeconds: 1
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_BackViewProjectileRecover
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: summon_recall_inori_ready
+    role: 0
+    cueKind: 0
+    startSeconds: 1.9
+    durationSeconds: 1
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_CombatReady
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: summon_recall_inori_calm
+    role: 0
+    cueKind: 2
+    startSeconds: 1.95
+    durationSeconds: 0.9
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: CalmEye
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: summon_recall_dragon_visible
+    role: 6
+    cueKind: 5
+    startSeconds: 0
+    durationSeconds: 0
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: summon_recall_proxy_manifest
+    role: 3
+    cueKind: 1
+    startSeconds: 0.05
+    durationSeconds: 0
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: EliteSummonPackage
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: summon_recall_proxy_attack
+    role: 3
+    cueKind: 1
+    startSeconds: 0.72
+    durationSeconds: 0
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: Attack
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: summon_recall_dragon_fire
+    role: 6
+    cueKind: 0
+    startSeconds: 1.35
+    durationSeconds: 0.85
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: FlyStationarySpitFireBall
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: summon_recall_dragon_hide
+    role: 6
+    cueKind: 5
+    startSeconds: 2.65
+    durationSeconds: 0
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 0
+  vfxCues:
+  - enabled: 1
+    cueId: summon_recall_ring
+    startSeconds: 0
+    durationSeconds: 0
+    useCombatVfxCue: 1
+    combatVfxCueId: 27
+    prefab: {fileID: 0}
+    localOffset: {x: 0.7, y: 0.5, z: 2.25}
+    intensity: 0.88
+  - enabled: 1
+    cueId: summon_recall_collapse
+    startSeconds: 0.82
+    durationSeconds: 0
+    useCombatVfxCue: 1
+    combatVfxCueId: 32
+    prefab: {fileID: 0}
+    localOffset: {x: 0.42, y: 0.62, z: 2.95}
+    intensity: 0.92
+  - enabled: 1
+    cueId: summon_recall_exit_flash
+    startSeconds: 1.72
+    durationSeconds: 0
+    useCombatVfxCue: 1
+    combatVfxCueId: 35
+    prefab: {fileID: 0}
+    localOffset: {x: 2.9, y: 1.5, z: 3.1}
+    intensity: 0.82
+  tutorialCues: []
+  gameplayHandoff:
+    enabled: 1
+    returnMode: 1
+    startSeconds: 2.95
+    targetId: action_camera_controller
+    inputReleaseDelaySeconds: 0.08
+    restoreHud: 1
+    restoreTimeScale: 1
+    restoreCamera: 1

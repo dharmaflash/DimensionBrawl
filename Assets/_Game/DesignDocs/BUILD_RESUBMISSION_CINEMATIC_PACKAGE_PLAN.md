@@ -40,7 +40,7 @@ Status:
 - Step 4: Complete for the initial P0 gap list. Actual retargeted clip promotion and visual inspection on Inori remain per-module work.
 - Step 5: Complete for the reusable foundation. Runtime sequence profiles, actor/VFX/tutorial/handoff cues, promoted animation controller binding, direct camera shot-pose data, and the first review runner exist.
 - Step 6: In progress. P0 profile assets exist, every enabled P0 camera cue now has authored direct shot-pose data, module preview captures exist, weapon visibility is profile-driven, the review scene has a six-module P0 playlist route with sampled Play Mode visual QA, QTE/tutorial prompts now render as camera-captured readable overlays, and the review scene has a reusable dressed stage/lighting shell. A continuous Play Mode timeline frame capture now generates labeled route strips and 23 timeline frames including the final gameplay handoff. Remaining P0 work is animation safety per module, production art polish, and production-style movie capture.
-- Step 7: In progress. First-pass P1 profile assets now exist for `BossIntro`, `PhaseTransition`, `BreakMoment`, `DialogueReactionBeat`, `ResultBridge`, `SummonEntry`, and `SummonFollowupHit`; each has authored direct camera shot poses, Inori body/face cues, profile-driven rifle visibility, VFX where relevant, and explicit gameplay/result handoff data. Remaining P1 work is broader summon variants, visual tuning on Inori, and integration into actual game triggers.
+- Step 7: In progress. First-pass P1 profile assets now exist for `BossIntro`, `PhaseTransition`, `BreakMoment`, `DialogueReactionBeat`, `ResultBridge`, `SummonEntry`, `SummonFollowupHit`, `SummonEmpower`, and `SummonRecall`; each has authored direct camera shot poses, Inori body/face cues, profile-driven rifle visibility, VFX where relevant, and explicit gameplay/result handoff data. Remaining P1 work is broader non-summon variants, visual tuning on Inori, and integration into actual game triggers.
 - Step 8: In progress. Action cue integration now has a bridge from existing action cinematic cue requests to reusable build-resubmission cinematic sequence profiles. Boss barrage review generation binds the bridge, runner, Inori animator controller override, expression player, VFX player, support-dragon actor binding, and camera handoff path for ultimate, summon entry, summon follow-up, break, and result cues. Play Mode input-route verification now proves tier-3 `Skill1` and `SummonSlot1` can trigger the mapped reusable cinematic sequences from the actual player action methods, dispatch bound actor cues, and produce multi-beat camera captures for summon entry.
 - Step 9: Pending.
 
@@ -781,6 +781,49 @@ Visual QA:
 Quality note:
 
 - The tuned clash frame now keeps Inori, the frontline summon, VFX impact, and dragon support visible together. It is still a review-stage composition, but the follow-up hit is no longer a generic break moment.
+
+### 2026-06-24 Summon Empower And Recall Expansion
+
+Why this was added:
+
+- The build needs reusable summon lifecycle beats, not only summon entry and hit confirmation.
+- Combat-facing summon presentation should support Inori commanding a frontline summon, empowering it, recalling it, and using large-creature support in the same corridor/back-view grammar.
+
+Runtime/editor changes:
+
+- Added `SequenceCategory.SummonEmpower` and `SequenceCategory.SummonRecall` without shifting existing serialized enum values.
+- Added `DB_Cinematic_SummonEmpower.asset` with channel, transfer, hold, and handoff camera cues; Inori charge/fire/aim body cues; summon manifest/attack triggers; dragon visibility/fire cues; and VFX for channel, transfer, guard, and release beats.
+- Added `DB_Cinematic_SummonRecall.asset` with signal, collapse, dragon-exit, and handoff camera cues; Inori aim/recover/ready body cues; summon and dragon actor cues; and recall-safe VFX.
+- P1 runner-driven review now includes `p1_08_summon_empower_transfer` and `p1_09_summon_recall_collapse`.
+- Package verifier now requires both new profiles and treats them as P1 direct-shot/body/face/weapon/handoff coverage.
+
+Verification:
+
+- method: `DimensionBrawl.Editor.BuildResubmissionCinematicProfileSetup.RunBatchProfileGeneration`
+- log: `C:\tmp\DimensionBrawl-BuildResubmissionCinematicProfiles-SummonLifecycle-Retune3.log`
+- result: PASS, exit code 0
+- method: `DimensionBrawl.Editor.BuildResubmissionCinematicReviewSceneSetup.RunBatchReviewSceneGeneration`
+- log: `C:\tmp\DimensionBrawl-CinematicReviewScene-SummonLifecycle-Retune2.log`
+- result: PASS, exit code 0
+- method: `DimensionBrawl.Editor.BuildResubmissionCinematicPackageVerifier.RunBatchVerification`
+- log: `C:\tmp\DimensionBrawl-CinematicPackageVerifier-SummonLifecycle-Retune3.log`
+- report: `C:\tmp\DimensionBrawl-CinematicPackageVerifier.md`
+- result: PASS, failures 0, warnings 0
+- method: `DimensionBrawl.Editor.BuildResubmissionCinematicReviewSceneSetup.RunBatchP1RunnerDrivenPlaylistCapture`
+- log: `C:\tmp\DimensionBrawl-CinematicP1RunnerDriven-SummonLifecycle-Retune3.log`
+- result: PASS, exit code 0
+
+Visual QA:
+
+- contact sheet: `C:\tmp\DimensionBrawl-CinematicP1Review-RunnerDrivenStrip.png`
+- empower frame: `C:\tmp\DimensionBrawl-CinematicP1Review-RunnerDrivenFrames\08_p1_08_summon_empower_transfer.png`
+- recall frame: `C:\tmp\DimensionBrawl-CinematicP1Review-RunnerDrivenFrames\09_p1_09_summon_recall_collapse.png`
+- report: `C:\tmp\DimensionBrawl-CinematicP1Review-RunnerDrivenStrip.md`
+
+Quality note:
+
+- `SummonEmpower` reads as Inori sending power forward to the frontline summon while the support dragon remains visible in the rear layer.
+- The first `SummonRecall` collapse pass was rejected because `SummonFollowupMissed` rendered as a large vertical death-column and blocked the frame. The accepted pass uses a smaller summon-opportunity cue and a safe corridor back-view camera so Inori, the enemy lane, dragon, and recall signal remain visible.
 
 ## Source Data Read
 
