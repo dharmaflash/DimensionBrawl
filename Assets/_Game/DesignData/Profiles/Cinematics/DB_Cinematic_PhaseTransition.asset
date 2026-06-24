@@ -1,0 +1,220 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6198cb8366640314588780649f505e38, type: 3}
+  m_Name: DB_Cinematic_PhaseTransition
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CinematicSequenceProfile
+  sequenceId: phase_transition
+  displayName: Phase Transition
+  category: 7
+  reviewerIntent: 'Reusable boss/elite phase swap: field shock, close emotional response,
+    release beat, then combat handoff.'
+  authoredDurationSeconds: 4.8
+  priority: 84
+  lockMovement: 1
+  lockInput: 1
+  hideHud: 1
+  canSkip: 1
+  useUnscaledClock: 1
+  cameraCues:
+  - enabled: 1
+    cueId: phase_field_shock
+    purpose: 6
+    blendKind: 4
+    startSeconds: 0
+    durationSeconds: 1
+    localOffset: {x: 0.12, y: 0.08, z: -0.18}
+    planarDirectionOffset: 0.14
+    fieldOfViewDelta: 2.2
+    cameraDistanceDelta: -0.18
+    focusHeightDelta: 0.08
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: -1.2, y: 1.46, z: 2.34}
+    lookAtLocalPosition: {x: 0, y: 1.12, z: 0.18}
+    fieldOfView: 36
+  - enabled: 1
+    cueId: phase_inori_focus
+    purpose: 5
+    blendKind: 2
+    startSeconds: 1
+    durationSeconds: 1
+    localOffset: {x: -0.1, y: 0.08, z: -0.14}
+    planarDirectionOffset: 0.08
+    fieldOfViewDelta: -1.4
+    cameraDistanceDelta: 0.08
+    focusHeightDelta: 0.05
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 0.56, y: 1.36, z: 1.42}
+    lookAtLocalPosition: {x: 0, y: 1.15, z: 0.06}
+    fieldOfView: 28
+  - enabled: 1
+    cueId: phase_counter_release
+    purpose: 1
+    blendKind: 0
+    startSeconds: 2
+    durationSeconds: 1.15
+    localOffset: {x: 0.1, y: 0.04, z: -0.16}
+    planarDirectionOffset: 0.12
+    fieldOfViewDelta: -1.2
+    cameraDistanceDelta: -0.1
+    focusHeightDelta: 0.02
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: -0.36, y: 1.34, z: -2.62}
+    lookAtLocalPosition: {x: 0, y: 1.1, z: 3.2}
+    fieldOfView: 34
+  - enabled: 1
+    cueId: phase_handoff
+    purpose: 4
+    blendKind: 5
+    startSeconds: 3.15
+    durationSeconds: 1.3
+    localOffset: {x: 0, y: 0.03, z: -0.1}
+    planarDirectionOffset: 0.02
+    fieldOfViewDelta: 0.4
+    cameraDistanceDelta: -0.06
+    focusHeightDelta: 0.01
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 0, y: 1.25, z: -3.7}
+    lookAtLocalPosition: {x: 0, y: 1.17, z: 0.55}
+    fieldOfView: 35
+  actorCues:
+  - enabled: 1
+    cueId: phase_keep_rifle_visible
+    role: 0
+    cueKind: 5
+    startSeconds: 0
+    durationSeconds: 0
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: InoriRifle
+    requireSocket: 1
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: phase_inori_shock
+    role: 0
+    cueKind: 2
+    startSeconds: 0.15
+    durationSeconds: 1
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: Surprised
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: phase_inori_stagger
+    role: 0
+    cueKind: 0
+    startSeconds: 0.2
+    durationSeconds: 1.4
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_IntroStumble
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: phase_inori_answer
+    role: 0
+    cueKind: 2
+    startSeconds: 1.15
+    durationSeconds: 2
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: Angry
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: phase_inori_release
+    role: 0
+    cueKind: 0
+    startSeconds: 2
+    durationSeconds: 1
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_BackViewProjectileFire
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: phase_inori_recover
+    role: 0
+    cueKind: 0
+    startSeconds: 3.15
+    durationSeconds: 1.4
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_BackViewProjectileAim
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  vfxCues:
+  - enabled: 1
+    cueId: phase_swap_burst
+    startSeconds: 0
+    durationSeconds: 0
+    useCombatVfxCue: 1
+    combatVfxCueId: 28
+    prefab: {fileID: 0}
+    localOffset: {x: 0, y: 0, z: 0}
+    intensity: 1.25
+  - enabled: 1
+    cueId: phase_counter_muzzle
+    startSeconds: 2.03
+    durationSeconds: 0
+    useCombatVfxCue: 1
+    combatVfxCueId: 33
+    prefab: {fileID: 0}
+    localOffset: {x: 0.1, y: 1.08, z: 0.82}
+    intensity: 1
+  - enabled: 1
+    cueId: phase_counter_impact
+    startSeconds: 2.26
+    durationSeconds: 0
+    useCombatVfxCue: 1
+    combatVfxCueId: 34
+    prefab: {fileID: 0}
+    localOffset: {x: 0, y: 1.02, z: 4.15}
+    intensity: 1.16
+  tutorialCues: []
+  gameplayHandoff:
+    enabled: 1
+    returnMode: 1
+    startSeconds: 4.25
+    targetId: action_camera_controller
+    inputReleaseDelaySeconds: 0.08
+    restoreHud: 1
+    restoreTimeScale: 1
+    restoreCamera: 1

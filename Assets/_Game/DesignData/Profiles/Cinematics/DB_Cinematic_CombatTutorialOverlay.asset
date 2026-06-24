@@ -1,0 +1,153 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6198cb8366640314588780649f505e38, type: 3}
+  m_Name: DB_Cinematic_CombatTutorialOverlay
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CinematicSequenceProfile
+  sequenceId: combat_tutorial_overlay
+  displayName: Combat Tutorial Overlay
+  category: 5
+  reviewerIntent: TutorialSystem-inspired mask/prompt sequence with large readable
+    combat prompts. This profile records cue timing; final UI owner remains separate.
+  authoredDurationSeconds: 4.2
+  priority: 65
+  lockMovement: 0
+  lockInput: 0
+  hideHud: 0
+  canSkip: 0
+  useUnscaledClock: 1
+  cameraCues:
+  - enabled: 1
+    cueId: tutorial_basic_attack_focus
+    purpose: 3
+    blendKind: 1
+    startSeconds: 0
+    durationSeconds: 1
+    localOffset: {x: 0, y: 0.04, z: -0.1}
+    planarDirectionOffset: 0.05
+    fieldOfViewDelta: 0.6
+    cameraDistanceDelta: -0.08
+    focusHeightDelta: 0.02
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 0.68, y: 1.3, z: 1.72}
+    lookAtLocalPosition: {x: 0, y: 1.1, z: 0.16}
+    fieldOfView: 35
+  - enabled: 1
+    cueId: tutorial_skill_focus
+    purpose: 3
+    blendKind: 4
+    startSeconds: 1.4
+    durationSeconds: 1
+    localOffset: {x: -0.08, y: 0.04, z: -0.12}
+    planarDirectionOffset: 0.08
+    fieldOfViewDelta: 0.8
+    cameraDistanceDelta: -0.1
+    focusHeightDelta: 0.02
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: -0.72, y: 1.28, z: 1.84}
+    lookAtLocalPosition: {x: 0, y: 1.1, z: 0.16}
+    fieldOfView: 35
+  - enabled: 1
+    cueId: tutorial_ultimate_ready_focus
+    purpose: 3
+    blendKind: 1
+    startSeconds: 2.8
+    durationSeconds: 1
+    localOffset: {x: 0.08, y: 0.04, z: -0.12}
+    planarDirectionOffset: 0.1
+    fieldOfViewDelta: 0.9
+    cameraDistanceDelta: -0.1
+    focusHeightDelta: 0.03
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 0.82, y: 1.34, z: 1.92}
+    lookAtLocalPosition: {x: 0, y: 1.12, z: 0.18}
+    fieldOfView: 34
+  actorCues:
+  - enabled: 1
+    cueId: tutorial_keep_rifle_visible
+    role: 0
+    cueKind: 5
+    startSeconds: 0
+    durationSeconds: 0
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: InoriRifle
+    requireSocket: 1
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: inori_tutorial_ready
+    role: 0
+    cueKind: 0
+    startSeconds: 0
+    durationSeconds: 4.2
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_CombatReady
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  vfxCues:
+  - enabled: 1
+    cueId: tutorial_skill_ready_signal
+    startSeconds: 1.4
+    durationSeconds: 0
+    useCombatVfxCue: 1
+    combatVfxCueId: 33
+    prefab: {fileID: 0}
+    localOffset: {x: 0, y: 0, z: 0}
+    intensity: 0.55
+  tutorialCues:
+  - enabled: 1
+    cueId: basic_attack_prompt
+    cueKind: 2
+    startSeconds: 0
+    durationSeconds: 1.25
+    promptKey: BASIC_ATTACK
+    guideText: ATTACK
+    requireLargeReadableText: 1
+    screenAnchor: {x: 0.78, y: 0.7}
+  - enabled: 1
+    cueId: skill_prompt
+    cueKind: 6
+    startSeconds: 1.4
+    durationSeconds: 1.25
+    promptKey: SKILL
+    guideText: SKILL
+    requireLargeReadableText: 1
+    screenAnchor: {x: 0.78, y: 0.66}
+  - enabled: 1
+    cueId: ultimate_prompt
+    cueKind: 7
+    startSeconds: 2.8
+    durationSeconds: 1.25
+    promptKey: ULTIMATE
+    guideText: ULT
+    requireLargeReadableText: 1
+    screenAnchor: {x: 0.78, y: 0.62}
+  gameplayHandoff:
+    enabled: 1
+    returnMode: 1
+    startSeconds: 3.8
+    targetId: action_camera_controller
+    inputReleaseDelaySeconds: 0.08
+    restoreHud: 1
+    restoreTimeScale: 1
+    restoreCamera: 1

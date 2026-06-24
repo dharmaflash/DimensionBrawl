@@ -1,0 +1,244 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6198cb8366640314588780649f505e38, type: 3}
+  m_Name: DB_Cinematic_BossIntro
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CinematicSequenceProfile
+  sequenceId: boss_intro
+  displayName: Boss Intro
+  category: 6
+  reviewerIntent: 'Reusable elite/boss entrance: threat reveal, Inori reaction, weapon-ready
+    answer, and a clean return to combat framing.'
+  authoredDurationSeconds: 5.6
+  priority: 86
+  lockMovement: 1
+  lockInput: 1
+  hideHud: 1
+  canSkip: 1
+  useUnscaledClock: 1
+  cameraCues:
+  - enabled: 1
+    cueId: boss_shadow_reveal
+    purpose: 0
+    blendKind: 3
+    startSeconds: 0
+    durationSeconds: 1.45
+    localOffset: {x: 0.18, y: 0.12, z: -0.22}
+    planarDirectionOffset: 0.24
+    fieldOfViewDelta: 3
+    cameraDistanceDelta: -0.26
+    focusHeightDelta: 0.12
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 1.65, y: 1.62, z: 2.84}
+    lookAtLocalPosition: {x: 0, y: 1.2, z: 0.22}
+    fieldOfView: 38
+  - enabled: 1
+    cueId: inori_boss_reaction
+    purpose: 5
+    blendKind: 2
+    startSeconds: 1.45
+    durationSeconds: 1.15
+    localOffset: {x: -0.08, y: 0.08, z: -0.16}
+    planarDirectionOffset: 0.1
+    fieldOfViewDelta: -1.8
+    cameraDistanceDelta: 0.12
+    focusHeightDelta: 0.06
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 0.62, y: 1.38, z: 1.5}
+    lookAtLocalPosition: {x: 0, y: 1.16, z: 0.06}
+    fieldOfView: 29
+  - enabled: 1
+    cueId: boss_weapon_answer
+    purpose: 1
+    blendKind: 4
+    startSeconds: 2.6
+    durationSeconds: 1.55
+    localOffset: {x: 0.06, y: 0.04, z: -0.16}
+    planarDirectionOffset: 0.12
+    fieldOfViewDelta: -1
+    cameraDistanceDelta: -0.1
+    focusHeightDelta: 0.03
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 0.46, y: 1.36, z: -2.82}
+    lookAtLocalPosition: {x: 0, y: 1.14, z: 3.35}
+    fieldOfView: 36
+  - enabled: 1
+    cueId: boss_intro_handoff
+    purpose: 4
+    blendKind: 5
+    startSeconds: 4.15
+    durationSeconds: 1.45
+    localOffset: {x: 0, y: 0.03, z: -0.1}
+    planarDirectionOffset: 0.03
+    fieldOfViewDelta: 0.5
+    cameraDistanceDelta: -0.06
+    focusHeightDelta: 0.01
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 0, y: 1.26, z: -3.85}
+    lookAtLocalPosition: {x: 0, y: 1.18, z: 0.55}
+    fieldOfView: 35
+  actorCues:
+  - enabled: 1
+    cueId: boss_intro_keep_rifle_visible
+    role: 0
+    cueKind: 5
+    startSeconds: 0
+    durationSeconds: 0
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: InoriRifle
+    requireSocket: 1
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: inori_boss_surprised
+    role: 0
+    cueKind: 2
+    startSeconds: 0.25
+    durationSeconds: 1.4
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: Surprised
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: inori_boss_brace
+    role: 0
+    cueKind: 0
+    startSeconds: 1.25
+    durationSeconds: 1.4
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_IntroSurprised
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: inori_boss_resolve
+    role: 0
+    cueKind: 2
+    startSeconds: 2.2
+    durationSeconds: 2.2
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: Angry
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: inori_boss_ready
+    role: 0
+    cueKind: 0
+    startSeconds: 2.35
+    durationSeconds: 0.55
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_BackViewProjectileAim
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: inori_boss_fire
+    role: 0
+    cueKind: 0
+    startSeconds: 2.9
+    durationSeconds: 1.05
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_BackViewProjectileBurst
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: inori_boss_recover
+    role: 0
+    cueKind: 0
+    startSeconds: 3.95
+    durationSeconds: 1.1
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_BackViewProjectileAim
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  vfxCues:
+  - enabled: 1
+    cueId: boss_aura_reveal
+    startSeconds: 0.25
+    durationSeconds: 0
+    useCombatVfxCue: 1
+    combatVfxCueId: 26
+    prefab: {fileID: 0}
+    localOffset: {x: 0, y: 0, z: 0}
+    intensity: 1.25
+  - enabled: 1
+    cueId: boss_pressure_windup
+    startSeconds: 2.15
+    durationSeconds: 0
+    useCombatVfxCue: 1
+    combatVfxCueId: 3
+    prefab: {fileID: 0}
+    localOffset: {x: 0, y: 0, z: 0}
+    intensity: 1.08
+  - enabled: 1
+    cueId: boss_answer_muzzle
+    startSeconds: 2.92
+    durationSeconds: 0
+    useCombatVfxCue: 1
+    combatVfxCueId: 33
+    prefab: {fileID: 0}
+    localOffset: {x: 0.12, y: 1.08, z: 0.85}
+    intensity: 1.08
+  - enabled: 1
+    cueId: boss_answer_impact
+    startSeconds: 3.16
+    durationSeconds: 0
+    useCombatVfxCue: 1
+    combatVfxCueId: 34
+    prefab: {fileID: 0}
+    localOffset: {x: 0, y: 1.02, z: 4.35}
+    intensity: 1.18
+  tutorialCues: []
+  gameplayHandoff:
+    enabled: 1
+    returnMode: 1
+    startSeconds: 5.1
+    targetId: action_camera_controller
+    inputReleaseDelaySeconds: 0.08
+    restoreHud: 1
+    restoreTimeScale: 1
+    restoreCamera: 1

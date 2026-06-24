@@ -36,6 +36,17 @@ namespace DimensionBrawl.Presentation
             float intensity = 1f,
             float audioIntensity = -1f)
         {
+            return PlayCue(cueId, anchor, planarDirection, intensity, audioIntensity, Vector3.zero);
+        }
+
+        public bool PlayCue(
+            CombatVfxCueId cueId,
+            Transform anchor,
+            Vector3 planarDirection,
+            float intensity,
+            float audioIntensity,
+            Vector3 additionalLocalPositionOffset)
+        {
             if (profile == null || !profile.TryGetCue(cueId, out CombatVfxCue cue))
             {
                 return false;
@@ -54,7 +65,7 @@ namespace DimensionBrawl.Presentation
 
             if (parent != null)
             {
-                instanceTransform.localPosition = cue.LocalPositionOffset;
+                instanceTransform.localPosition = cue.LocalPositionOffset + additionalLocalPositionOffset;
                 instanceTransform.localRotation = localRotation;
             }
             else
@@ -62,7 +73,8 @@ namespace DimensionBrawl.Presentation
                 Vector3 basePosition = anchor != null ? anchor.position : transform.position;
                 Quaternion baseRotation = anchor != null ? anchor.rotation : transform.rotation;
                 Quaternion worldRotation = cue.AlignForwardToDirection ? localRotation : baseRotation * localRotation;
-                instanceTransform.SetPositionAndRotation(basePosition + baseRotation * cue.LocalPositionOffset, worldRotation);
+                Vector3 localPosition = cue.LocalPositionOffset + additionalLocalPositionOffset;
+                instanceTransform.SetPositionAndRotation(basePosition + baseRotation * localPosition, worldRotation);
             }
 
             float scale = Mathf.Max(0f, intensity);
@@ -77,6 +89,36 @@ namespace DimensionBrawl.Presentation
             }
 
             return true;
+        }
+
+        public void StopAllActiveCuesForReview()
+        {
+            if (pooledRoot == null)
+            {
+                pooledRoot = transform;
+            }
+
+            foreach (Queue<GameObject> pool in poolsByPrefab.Values)
+            {
+                pool.Clear();
+            }
+
+            List<KeyValuePair<GameObject, GameObject>> instances =
+                new List<KeyValuePair<GameObject, GameObject>>(prefabByInstance);
+            for (int i = 0; i < instances.Count; i++)
+            {
+                GameObject instance = instances[i].Key;
+                GameObject prefab = instances[i].Value;
+                if (instance == null || prefab == null)
+                {
+                    continue;
+                }
+
+                StopEffects(instance);
+                instance.SetActive(false);
+                instance.transform.SetParent(pooledRoot, worldPositionStays: false);
+                GetPool(prefab).Enqueue(instance);
+            }
         }
 
         private void PrewarmKnownCues()

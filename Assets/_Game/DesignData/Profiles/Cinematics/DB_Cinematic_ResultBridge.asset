@@ -1,0 +1,204 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6198cb8366640314588780649f505e38, type: 3}
+  m_Name: DB_Cinematic_ResultBridge
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CinematicSequenceProfile
+  sequenceId: result_bridge
+  displayName: Result Bridge
+  category: 10
+  reviewerIntent: 'Reusable end-of-fight bridge: final stance, impact cleanup, calm
+    expression, and handoff to result UI.'
+  authoredDurationSeconds: 4.2
+  priority: 72
+  lockMovement: 1
+  lockInput: 1
+  hideHud: 1
+  canSkip: 1
+  useUnscaledClock: 1
+  cameraCues:
+  - enabled: 1
+    cueId: result_final_impact
+    purpose: 1
+    blendKind: 0
+    startSeconds: 0
+    durationSeconds: 0.8
+    localOffset: {x: 0.12, y: 0.04, z: -0.16}
+    planarDirectionOffset: 0.12
+    fieldOfViewDelta: -1.2
+    cameraDistanceDelta: -0.12
+    focusHeightDelta: 0.02
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 0.3, y: 1.26, z: -2.45}
+    lookAtLocalPosition: {x: 0, y: 1.08, z: 3.15}
+    fieldOfView: 34
+  - enabled: 1
+    cueId: result_inori_settle
+    purpose: 5
+    blendKind: 3
+    startSeconds: 0.8
+    durationSeconds: 1.35
+    localOffset: {x: 0, y: 0.06, z: -0.16}
+    planarDirectionOffset: 0.03
+    fieldOfViewDelta: 1
+    cameraDistanceDelta: -0.08
+    focusHeightDelta: 0.03
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 0.66, y: 1.34, z: 1.82}
+    lookAtLocalPosition: {x: 0, y: 1.13, z: 0.12}
+    fieldOfView: 32
+  - enabled: 1
+    cueId: result_ui_handoff
+    purpose: 4
+    blendKind: 1
+    startSeconds: 2.15
+    durationSeconds: 1.45
+    localOffset: {x: 0, y: 0.02, z: -0.08}
+    planarDirectionOffset: 0.01
+    fieldOfViewDelta: 0.4
+    cameraDistanceDelta: -0.04
+    focusHeightDelta: 0.01
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 0.35, y: 1.28, z: 1.72}
+    lookAtLocalPosition: {x: 0, y: 1.12, z: 0.14}
+    fieldOfView: 34
+  actorCues:
+  - enabled: 1
+    cueId: result_keep_rifle_visible
+    role: 0
+    cueKind: 5
+    startSeconds: 0
+    durationSeconds: 0
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: InoriRifle
+    requireSocket: 1
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: result_inori_release
+    role: 0
+    cueKind: 0
+    startSeconds: 0
+    durationSeconds: 0.8
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_BackViewProjectileBurst
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: result_inori_intense
+    role: 0
+    cueKind: 2
+    startSeconds: 0
+    durationSeconds: 0.9
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: Angry
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: result_inori_recover
+    role: 0
+    cueKind: 0
+    startSeconds: 0.8
+    durationSeconds: 1.5
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_ResultSettle
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: result_inori_calm
+    role: 0
+    cueKind: 2
+    startSeconds: 1.4
+    durationSeconds: 1.8
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: CalmEye
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: result_inori_ready
+    role: 0
+    cueKind: 0
+    startSeconds: 2.15
+    durationSeconds: 1.8
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_BackViewProjectileAim
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  vfxCues:
+  - enabled: 1
+    cueId: result_final_muzzle
+    startSeconds: 0.02
+    durationSeconds: 0
+    useCombatVfxCue: 1
+    combatVfxCueId: 33
+    prefab: {fileID: 0}
+    localOffset: {x: 0.12, y: 1.08, z: 0.85}
+    intensity: 1.05
+  - enabled: 1
+    cueId: result_final_hit
+    startSeconds: 0
+    durationSeconds: 0
+    useCombatVfxCue: 1
+    combatVfxCueId: 6
+    prefab: {fileID: 0}
+    localOffset: {x: 0, y: 1.05, z: 4.2}
+    intensity: 1.05
+  - enabled: 1
+    cueId: result_clear_signal
+    startSeconds: 1.35
+    durationSeconds: 0
+    useCombatVfxCue: 1
+    combatVfxCueId: 35
+    prefab: {fileID: 0}
+    localOffset: {x: 0, y: 0, z: 0}
+    intensity: 1
+  tutorialCues: []
+  gameplayHandoff:
+    enabled: 1
+    returnMode: 4
+    startSeconds: 3.6
+    targetId: result_ui
+    inputReleaseDelaySeconds: 0.1
+    restoreHud: 1
+    restoreTimeScale: 1
+    restoreCamera: 0

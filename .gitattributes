@@ -13,14 +13,12 @@
 *.md text eol=lf
 *.txt text eol=lf
 *.inputactions text eol=lf
-
 *.unity text eol=lf
 *.prefab text eol=lf
 *.asset text eol=lf
 *.meta text eol=lf
 *.mat text eol=lf
 *.controller text eol=lf
-
 *.png binary
 *.jpg binary
 *.jpeg binary
@@ -32,3 +30,4 @@
 *.mp4 binary
 *.ttf binary
 *.otf binary
+Assets/_Game/Art/Environment/OlympusTemple/URP/OlympusURP.unitypackage filter=lfs diff=lfs merge=lfs -text

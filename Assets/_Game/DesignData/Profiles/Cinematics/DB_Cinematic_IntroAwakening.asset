@@ -1,0 +1,370 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6198cb8366640314588780649f505e38, type: 3}
+  m_Name: DB_Cinematic_IntroAwakening
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CinematicSequenceProfile
+  sequenceId: intro_awakening
+  displayName: Intro Awakening
+  category: 0
+  reviewerIntent: '39-second opening vertical slice: capsule wake, system warning,
+    body reveal, collapse establish, sword/gun pickup, enemy standoff, and gameplay
+    back-view takeover. Kawaii candidates remain candidate notes until promoted/retargeted
+    onto Inori.'
+  authoredDurationSeconds: 39
+  priority: 90
+  lockMovement: 1
+  lockInput: 1
+  hideHud: 1
+  canSkip: 0
+  useUnscaledClock: 1
+  cameraCues:
+  - enabled: 1
+    cueId: capsule_wakeup_first_person
+    purpose: 0
+    blendKind: 1
+    startSeconds: 0
+    durationSeconds: 4.6
+    localOffset: {x: 0, y: 0.02, z: -0.1}
+    planarDirectionOffset: 0
+    fieldOfViewDelta: -1
+    cameraDistanceDelta: -0.06
+    focusHeightDelta: -0.02
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 0.24, y: 1.48, z: 1.62}
+    lookAtLocalPosition: {x: 0, y: 1.22, z: 0.04}
+    fieldOfView: 34
+  - enabled: 1
+    cueId: system_warning_scan
+    purpose: 3
+    blendKind: 4
+    startSeconds: 4.6
+    durationSeconds: 5.2
+    localOffset: {x: -0.1, y: 0.08, z: -0.18}
+    planarDirectionOffset: 0.08
+    fieldOfViewDelta: 1.2
+    cameraDistanceDelta: -0.16
+    focusHeightDelta: 0.04
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: -0.82, y: 1.42, z: 1.42}
+    lookAtLocalPosition: {x: 0.04, y: 1.12, z: 0.08}
+    fieldOfView: 34
+  - enabled: 1
+    cueId: capsule_open_body_reveal
+    purpose: 1
+    blendKind: 3
+    startSeconds: 9.8
+    durationSeconds: 1.1
+    localOffset: {x: 0.08, y: 0.08, z: -0.26}
+    planarDirectionOffset: 0.12
+    fieldOfViewDelta: 2
+    cameraDistanceDelta: -0.22
+    focusHeightDelta: 0.08
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 0.58, y: 1.28, z: 1.62}
+    lookAtLocalPosition: {x: 0, y: 1.16, z: 0.12}
+    fieldOfView: 32
+  - enabled: 1
+    cueId: heaven_collapse_establishing
+    purpose: 0
+    blendKind: 3
+    startSeconds: 15.6
+    durationSeconds: 5
+    localOffset: {x: 0.22, y: 0.14, z: -0.32}
+    planarDirectionOffset: -0.1
+    fieldOfViewDelta: 2.8
+    cameraDistanceDelta: -0.3
+    focusHeightDelta: 0.12
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 2.15, y: 1.72, z: 3.24}
+    lookAtLocalPosition: {x: 0, y: 1.1, z: 0.08}
+    fieldOfView: 43
+  - enabled: 1
+    cueId: sword_pickup_action
+    purpose: 3
+    blendKind: 2
+    startSeconds: 20.6
+    durationSeconds: 4.6
+    localOffset: {x: -0.14, y: 0.04, z: 0.1}
+    planarDirectionOffset: 0.06
+    fieldOfViewDelta: -1.8
+    cameraDistanceDelta: 0.14
+    focusHeightDelta: -0.01
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 0.62, y: 0.92, z: 1.04}
+    lookAtLocalPosition: {x: 0.02, y: 0.72, z: 0.1}
+    fieldOfView: 29
+  - enabled: 1
+    cueId: gun_pickup_action
+    purpose: 3
+    blendKind: 2
+    startSeconds: 25.2
+    durationSeconds: 1.1
+    localOffset: {x: 0.1, y: 0.05, z: 0.14}
+    planarDirectionOffset: 0.1
+    fieldOfViewDelta: -2
+    cameraDistanceDelta: 0.16
+    focusHeightDelta: 0.02
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 0.9, y: 1.34, z: 2.12}
+    lookAtLocalPosition: {x: 0, y: 1.04, z: 0.16}
+    fieldOfView: 36
+  - enabled: 1
+    cueId: enemy_standoff_threat_direction
+    purpose: 2
+    blendKind: 4
+    startSeconds: 30
+    durationSeconds: 5.2
+    localOffset: {x: 0, y: 0.08, z: -0.24}
+    planarDirectionOffset: 0.2
+    fieldOfViewDelta: 2.4
+    cameraDistanceDelta: -0.24
+    focusHeightDelta: 0.08
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 1.18, y: 1.34, z: 2.08}
+    lookAtLocalPosition: {x: 0, y: 1.12, z: 0.2}
+    fieldOfView: 34
+  - enabled: 1
+    cueId: gameplay_backview_takeover
+    purpose: 4
+    blendKind: 5
+    startSeconds: 35.2
+    durationSeconds: 3.8
+    localOffset: {x: 0, y: 0.03, z: -0.1}
+    planarDirectionOffset: 0.04
+    fieldOfViewDelta: 0.6
+    cameraDistanceDelta: -0.08
+    focusHeightDelta: 0.02
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 0, y: 1.26, z: -3.85}
+    lookAtLocalPosition: {x: 0, y: 1.18, z: 0.45}
+    fieldOfView: 34
+  actorCues:
+  - enabled: 1
+    cueId: intro_hide_rifle_until_pickup
+    role: 0
+    cueKind: 5
+    startSeconds: 0
+    durationSeconds: 0
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: InoriRifle
+    requireSocket: 1
+    controllerOverride: {fileID: 0}
+    objectActive: 0
+  - enabled: 1
+    cueId: inori_confused_idle
+    role: 0
+    cueKind: 0
+    startSeconds: 0.3
+    durationSeconds: 6.6
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_IntroLookAtHands
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: inori_surprised_wake
+    role: 0
+    cueKind: 2
+    startSeconds: 1.2
+    durationSeconds: 2.5
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: Surprised
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: inori_confused_scan
+    role: 0
+    cueKind: 2
+    startSeconds: 6
+    durationSeconds: 4
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: Confused
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: inori_body_reveal_surprised
+    role: 0
+    cueKind: 0
+    startSeconds: 9.9
+    durationSeconds: 3.7
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_IntroSurprised
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: inori_surprised_body_reveal
+    role: 0
+    cueKind: 2
+    startSeconds: 9.9
+    durationSeconds: 3.2
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: Surprised
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: inori_sword_pickup_candidate
+    role: 0
+    cueKind: 0
+    startSeconds: 20.8
+    durationSeconds: 3.8
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_IntroPickUp
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: intro_show_rifle_after_pickup
+    role: 0
+    cueKind: 5
+    startSeconds: 25.2
+    durationSeconds: 0
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: InoriRifle
+    requireSocket: 1
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: inori_rifle_ready
+    role: 0
+    cueKind: 0
+    startSeconds: 26.6
+    durationSeconds: 3.4
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_CombatReady
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: inori_resolve
+    role: 0
+    cueKind: 2
+    startSeconds: 30.5
+    durationSeconds: 3.8
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: Angry
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: inori_gameplay_ready
+    role: 0
+    cueKind: 0
+    startSeconds: 35.2
+    durationSeconds: 3.6
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_CombatReady
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  vfxCues:
+  - enabled: 1
+    cueId: system_warning_glitch
+    startSeconds: 4.8
+    durationSeconds: 0
+    useCombatVfxCue: 1
+    combatVfxCueId: 28
+    prefab: {fileID: 0}
+    localOffset: {x: 0, y: 0, z: 0}
+    intensity: 0.8
+  - enabled: 1
+    cueId: capsule_open_flash
+    startSeconds: 9.8
+    durationSeconds: 0
+    useCombatVfxCue: 1
+    combatVfxCueId: 27
+    prefab: {fileID: 0}
+    localOffset: {x: 0, y: 0, z: 0}
+    intensity: 0.9
+  - enabled: 1
+    cueId: weapon_ready_muzzle_read
+    startSeconds: 27.6
+    durationSeconds: 0
+    useCombatVfxCue: 1
+    combatVfxCueId: 33
+    prefab: {fileID: 0}
+    localOffset: {x: 0, y: 0, z: 0}
+    intensity: 0.65
+  - enabled: 1
+    cueId: enemy_standoff_pressure
+    startSeconds: 31
+    durationSeconds: 0
+    useCombatVfxCue: 1
+    combatVfxCueId: 3
+    prefab: {fileID: 0}
+    localOffset: {x: 0, y: 0, z: 0}
+    intensity: 1
+  tutorialCues: []
+  gameplayHandoff:
+    enabled: 1
+    returnMode: 1
+    startSeconds: 38.2
+    targetId: action_camera_controller
+    inputReleaseDelaySeconds: 0.08
+    restoreHud: 1
+    restoreTimeScale: 1
+    restoreCamera: 1
