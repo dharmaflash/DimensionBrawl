@@ -600,7 +600,9 @@ namespace DimensionBrawl.Presentation
                     issues.Add($"{name}: actor cue {cue.CueId} has no state name.");
                 }
 
-                if (cue.CueKind == ActorCueKind.WeaponVisibility && string.IsNullOrWhiteSpace(cue.SocketPath))
+                if (cue.CueKind == ActorCueKind.WeaponVisibility
+                    && cue.Role == ActorRole.Inori
+                    && string.IsNullOrWhiteSpace(cue.SocketPath))
                 {
                     issues.Add($"{name}: actor cue {cue.CueId} changes weapon visibility but has no object path.");
                 }

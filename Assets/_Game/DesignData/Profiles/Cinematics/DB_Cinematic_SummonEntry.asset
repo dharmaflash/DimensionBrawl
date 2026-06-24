@@ -38,9 +38,9 @@ MonoBehaviour:
     focusHeightDelta: 0.04
     impulseScale: 1
     driveCameraPose: 1
-    cameraLocalPosition: {x: -0.95, y: 1.42, z: -3.1}
-    lookAtLocalPosition: {x: 0, y: 1.16, z: 2.2}
-    fieldOfView: 36
+    cameraLocalPosition: {x: -2.85, y: 1.92, z: -2.85}
+    lookAtLocalPosition: {x: 3.75, y: 1.7, z: 3.15}
+    fieldOfView: 56
   - enabled: 1
     cueId: summon_command_close
     purpose: 1
@@ -54,9 +54,9 @@ MonoBehaviour:
     focusHeightDelta: 0.04
     impulseScale: 1
     driveCameraPose: 1
-    cameraLocalPosition: {x: 0.85, y: 1.36, z: -2.2}
-    lookAtLocalPosition: {x: 0, y: 1.12, z: 2.4}
-    fieldOfView: 34
+    cameraLocalPosition: {x: 1.45, y: 1.54, z: -2.35}
+    lookAtLocalPosition: {x: 0.15, y: 1.12, z: 2.7}
+    fieldOfView: 36
   - enabled: 1
     cueId: summon_proxy_hit
     purpose: 3
@@ -70,9 +70,9 @@ MonoBehaviour:
     focusHeightDelta: 0.02
     impulseScale: 1
     driveCameraPose: 1
-    cameraLocalPosition: {x: 0.42, y: 1.3, z: -2.55}
-    lookAtLocalPosition: {x: 0, y: 1.08, z: 3.2}
-    fieldOfView: 34
+    cameraLocalPosition: {x: 2.1, y: 1.44, z: -1.65}
+    lookAtLocalPosition: {x: 0.35, y: 1.14, z: 3.65}
+    fieldOfView: 36
   - enabled: 1
     cueId: summon_handoff
     purpose: 4
@@ -181,6 +181,36 @@ MonoBehaviour:
     controllerOverride: {fileID: 0}
     objectActive: 1
   - enabled: 1
+    cueId: summon_support_dragon_visible
+    role: 6
+    cueKind: 5
+    startSeconds: 0
+    durationSeconds: 0
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: summon_support_dragon_fire
+    role: 6
+    cueKind: 0
+    startSeconds: 0.2
+    durationSeconds: 1.5
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: FlyStationarySpitFireBall
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
     cueId: summon_proxy_manifest
     role: 3
     cueKind: 1
@@ -210,6 +240,21 @@ MonoBehaviour:
     requireSocket: 0
     controllerOverride: {fileID: 0}
     objectActive: 1
+  - enabled: 1
+    cueId: summon_support_dragon_hide
+    role: 6
+    cueKind: 5
+    startSeconds: 4.15
+    durationSeconds: 0
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 0
   vfxCues:
   - enabled: 1
     cueId: summon_entry_signal

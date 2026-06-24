@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using DimensionBrawl.Combat;
 using UnityEngine;
 
 namespace DimensionBrawl.Presentation
@@ -15,6 +16,20 @@ namespace DimensionBrawl.Presentation
             [SerializeField] private Animator faceAnimator;
             [SerializeField] private CinematicBlendShapeExpressionPlayer expressionPlayer;
             [SerializeField] private Transform anchor;
+
+            public ActorBinding(
+                CinematicSequenceProfile.ActorRole role,
+                Animator bodyAnimator,
+                Animator faceAnimator,
+                CinematicBlendShapeExpressionPlayer expressionPlayer,
+                Transform anchor)
+            {
+                this.role = role;
+                this.bodyAnimator = bodyAnimator;
+                this.faceAnimator = faceAnimator;
+                this.expressionPlayer = expressionPlayer;
+                this.anchor = anchor;
+            }
 
             public CinematicSequenceProfile.ActorRole Role => role;
             public Animator BodyAnimator => bodyAnimator;
@@ -49,6 +64,7 @@ namespace DimensionBrawl.Presentation
         private Coroutine activeRoutine;
         private int totalCameraCueCount;
         private int totalActorCueCount;
+        private int totalBoundActorCueCount;
         private int totalVfxCueCount;
         private int totalTutorialCueCount;
         private string lastCameraCueId;
@@ -73,6 +89,7 @@ namespace DimensionBrawl.Presentation
         public bool IsPlaying => activeRoutine != null;
         public int TotalCameraCueCount => totalCameraCueCount;
         public int TotalActorCueCount => totalActorCueCount;
+        public int TotalBoundActorCueCount => totalBoundActorCueCount;
         public int TotalVfxCueCount => totalVfxCueCount;
         public int TotalTutorialCueCount => totalTutorialCueCount;
         public CinematicTutorialPromptPresenter TutorialPromptPresenter => tutorialPromptPresenter;
@@ -449,6 +466,7 @@ namespace DimensionBrawl.Presentation
                 animator.runtimeAnimatorController = cue.ControllerOverride;
             }
 
+            totalBoundActorCueCount++;
             switch (cue.CueKind)
             {
                 case CinematicSequenceProfile.ActorCueKind.BodyState:
@@ -512,6 +530,42 @@ namespace DimensionBrawl.Presentation
                     binding = actorBindings[i];
                     return true;
                 }
+            }
+
+            if (role == CinematicSequenceProfile.ActorRole.Summon
+                && TryResolveActiveSummonBinding(out binding))
+            {
+                return true;
+            }
+
+            binding = default;
+            return false;
+        }
+
+        private static bool TryResolveActiveSummonBinding(out ActorBinding binding)
+        {
+            for (int i = SummonFrontlineProxy.ActiveRegisteredProxyCount - 1; i >= 0; i--)
+            {
+                if (!SummonFrontlineProxy.TryGetActiveRegisteredProxy(i, out SummonFrontlineProxy proxy)
+                    || proxy == null
+                    || !proxy.IsPresentationVisible)
+                {
+                    continue;
+                }
+
+                Animator animator = proxy.GetComponentInChildren<Animator>(includeInactive: true);
+                if (animator == null)
+                {
+                    continue;
+                }
+
+                binding = new ActorBinding(
+                    CinematicSequenceProfile.ActorRole.Summon,
+                    animator,
+                    null,
+                    null,
+                    proxy.transform);
+                return true;
             }
 
             binding = default;
@@ -993,6 +1047,7 @@ namespace DimensionBrawl.Presentation
         {
             totalCameraCueCount = 0;
             totalActorCueCount = 0;
+            totalBoundActorCueCount = 0;
             totalVfxCueCount = 0;
             totalTutorialCueCount = 0;
             lastCameraCueId = string.Empty;

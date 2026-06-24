@@ -152,6 +152,7 @@ namespace DimensionBrawl.Editor
             GameObject summonActor = CreateSummonActor(scene);
             Animator summonAnimator = summonActor.GetComponentInChildren<Animator>(includeInactive: true);
             GameObject dragonSummon = CreateDragonSummonActor(scene);
+            Animator dragonAnimator = dragonSummon.GetComponentInChildren<Animator>(includeInactive: true);
             ActionCameraController cameraController = CreateReviewCamera(scene, inori.transform, enemy.transform);
             ApplyInitialReviewCameraPose(cameraController.GetComponent<Camera>(), inori.transform);
             CinematicSequenceRunner runner = CreateRunner(
@@ -161,6 +162,8 @@ namespace DimensionBrawl.Editor
                 expressionPlayer,
                 summonActor,
                 summonAnimator,
+                dragonSummon,
+                dragonAnimator,
                 cameraController,
                 vfxCueProfile);
 
@@ -220,7 +223,8 @@ namespace DimensionBrawl.Editor
 
             GameObject dragonSummon = FindRoot(scene, DragonSummonRootName)
                 ?? throw new InvalidOperationException($"Missing {DragonSummonRootName}.");
-            if (dragonSummon.GetComponentInChildren<Animator>(true) == null)
+            Animator dragonAnimator = dragonSummon.GetComponentInChildren<Animator>(true);
+            if (dragonAnimator == null)
             {
                 throw new InvalidOperationException("Review scene Volcano Dragon summon candidate must expose an Animator.");
             }
@@ -230,6 +234,12 @@ namespace DimensionBrawl.Editor
             {
                 throw new InvalidOperationException("Review runner must bind DB_Cinematic_UltimateCutIn.asset.");
             }
+
+            ValidateRunnerActorBinding(
+                runner,
+                CinematicSequenceProfile.ActorRole.Environment,
+                dragonAnimator,
+                dragonSummon.transform);
 
             CinematicTutorialPromptPresenter promptPresenter =
                 RequireComponent<CinematicTutorialPromptPresenter>(runnerObject, "cinematic tutorial prompt presenter");
@@ -270,6 +280,43 @@ namespace DimensionBrawl.Editor
             {
                 throw new InvalidOperationException("Review scene is missing required cinematic stage dressing.");
             }
+        }
+
+        private static void ValidateRunnerActorBinding(
+            CinematicSequenceRunner runner,
+            CinematicSequenceProfile.ActorRole expectedRole,
+            Animator expectedBodyAnimator,
+            Transform expectedAnchor)
+        {
+            SerializedProperty bindings = RequireProperty(new SerializedObject(runner), "actorBindings");
+            for (int i = 0; i < bindings.arraySize; i++)
+            {
+                SerializedProperty binding = bindings.GetArrayElementAtIndex(i);
+                if (binding.FindPropertyRelative("role").enumValueIndex != (int)expectedRole)
+                {
+                    continue;
+                }
+
+                UnityEngine.Object bodyAnimator =
+                    binding.FindPropertyRelative("bodyAnimator").objectReferenceValue;
+                UnityEngine.Object anchor =
+                    binding.FindPropertyRelative("anchor").objectReferenceValue;
+                if (bodyAnimator != expectedBodyAnimator)
+                {
+                    throw new InvalidOperationException(
+                        $"Review runner binds {expectedRole} to {bodyAnimator}, expected {expectedBodyAnimator}.");
+                }
+
+                if (anchor != expectedAnchor)
+                {
+                    throw new InvalidOperationException(
+                        $"Review runner binds {expectedRole} anchor to {anchor}, expected {expectedAnchor}.");
+                }
+
+                return;
+            }
+
+            throw new InvalidOperationException($"Review runner is missing an actor binding for {expectedRole}.");
         }
 
         private static void ValidatePlaylistOrder(CinematicSequencePlaylistRunner playlistRunner)
@@ -1031,6 +1078,8 @@ namespace DimensionBrawl.Editor
             CinematicBlendShapeExpressionPlayer expressionPlayer,
             GameObject summonActor,
             Animator summonAnimator,
+            GameObject dragonSummon,
+            Animator dragonAnimator,
             ActionCameraController cameraController,
             CombatVfxCueProfile vfxCueProfile)
         {
@@ -1064,7 +1113,18 @@ namespace DimensionBrawl.Editor
             SetObjectReference(serializedRunner, "tutorialPromptPresenter", promptPresenter);
             SetObjectReference(serializedRunner, "cueSpace", inori.transform);
             SerializedProperty bindings = RequireProperty(serializedRunner, "actorBindings");
-            bindings.arraySize = summonAnimator != null ? 2 : 1;
+            int bindingCount = 1;
+            if (summonAnimator != null)
+            {
+                bindingCount++;
+            }
+
+            if (dragonAnimator != null)
+            {
+                bindingCount++;
+            }
+
+            bindings.arraySize = bindingCount;
             SerializedProperty binding = bindings.GetArrayElementAtIndex(0);
             SetRelativeEnum(binding, "role", (int)CinematicSequenceProfile.ActorRole.Inori);
             SetRelativeObjectReference(binding, "bodyAnimator", inoriAnimator);
@@ -1079,6 +1139,16 @@ namespace DimensionBrawl.Editor
                 SetRelativeObjectReference(summonBinding, "faceAnimator", null);
                 SetRelativeObjectReference(summonBinding, "expressionPlayer", null);
                 SetRelativeObjectReference(summonBinding, "anchor", summonActor != null ? summonActor.transform : summonAnimator.transform);
+            }
+
+            if (dragonAnimator != null)
+            {
+                SerializedProperty dragonBinding = bindings.GetArrayElementAtIndex(bindings.arraySize - 1);
+                SetRelativeEnum(dragonBinding, "role", (int)CinematicSequenceProfile.ActorRole.Environment);
+                SetRelativeObjectReference(dragonBinding, "bodyAnimator", dragonAnimator);
+                SetRelativeObjectReference(dragonBinding, "faceAnimator", null);
+                SetRelativeObjectReference(dragonBinding, "expressionPlayer", null);
+                SetRelativeObjectReference(dragonBinding, "anchor", dragonSummon != null ? dragonSummon.transform : dragonAnimator.transform);
             }
 
             serializedRunner.ApplyModifiedPropertiesWithoutUndo();

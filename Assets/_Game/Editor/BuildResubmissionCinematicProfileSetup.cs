@@ -8,6 +8,7 @@ namespace DimensionBrawl.Editor
     {
         public const string ProfileRoot = "Assets/_Game/DesignData/Profiles/Cinematics";
         private const string InoriRifleObjectName = "InoriRifle";
+        private const string DragonSupportAttackStateName = "FlyStationarySpitFireBall";
 
         [MenuItem("DimensionBrawl/Cinematics/Rebuild Build Resubmission P0 Profiles")]
         public static void RebuildP0ProfilesMenu()
@@ -495,9 +496,9 @@ namespace DimensionBrawl.Editor
                 true,
                 new[]
                 {
-                    ShotCamera("summon_signal_start", CinematicSequenceProfile.ShotPurpose.MechanicConnection, CinematicSequenceProfile.CameraBlendKind.Reframe, 0f, 0.95f, new Vector3(0.10f, 0.06f, -0.14f), 0.12f, 1.2f, -0.10f, 0.04f, new Vector3(-0.95f, 1.42f, -3.10f), new Vector3(0f, 1.16f, 2.20f), 36f),
-                    ShotCamera("summon_command_close", CinematicSequenceProfile.ShotPurpose.CharacterAction, CinematicSequenceProfile.CameraBlendKind.PushIn, 0.95f, 1.0f, new Vector3(-0.08f, 0.08f, -0.14f), 0.08f, -1.4f, 0.08f, 0.04f, new Vector3(0.85f, 1.36f, -2.20f), new Vector3(0f, 1.12f, 2.40f), 34f),
-                    ShotCamera("summon_proxy_hit", CinematicSequenceProfile.ShotPurpose.MechanicConnection, CinematicSequenceProfile.CameraBlendKind.Cut, 1.95f, 1.0f, new Vector3(0.14f, 0.04f, -0.16f), 0.14f, -1.2f, -0.12f, 0.02f, new Vector3(0.42f, 1.30f, -2.55f), new Vector3(0f, 1.08f, 3.20f), 34f),
+                    ShotCamera("summon_signal_start", CinematicSequenceProfile.ShotPurpose.MechanicConnection, CinematicSequenceProfile.CameraBlendKind.Reframe, 0f, 0.95f, new Vector3(0.10f, 0.06f, -0.14f), 0.12f, 1.2f, -0.10f, 0.04f, new Vector3(-2.85f, 1.92f, -2.85f), new Vector3(3.75f, 1.70f, 3.15f), 56f),
+                    ShotCamera("summon_command_close", CinematicSequenceProfile.ShotPurpose.CharacterAction, CinematicSequenceProfile.CameraBlendKind.PushIn, 0.95f, 1.0f, new Vector3(-0.08f, 0.08f, -0.14f), 0.08f, -1.4f, 0.08f, 0.04f, new Vector3(1.45f, 1.54f, -2.35f), new Vector3(0.15f, 1.12f, 2.70f), 36f),
+                    ShotCamera("summon_proxy_hit", CinematicSequenceProfile.ShotPurpose.MechanicConnection, CinematicSequenceProfile.CameraBlendKind.Cut, 1.95f, 1.0f, new Vector3(0.14f, 0.04f, -0.16f), 0.14f, -1.2f, -0.12f, 0.02f, new Vector3(2.10f, 1.44f, -1.65f), new Vector3(0.35f, 1.14f, 3.65f), 36f),
                     ShotCamera("summon_handoff", CinematicSequenceProfile.ShotPurpose.GameplayHandoff, CinematicSequenceProfile.CameraBlendKind.GameplayMatch, 2.95f, 1.2f, new Vector3(0f, 0.03f, -0.08f), 0.02f, 0.4f, -0.05f, 0.01f, new Vector3(0f, 1.26f, -3.70f), new Vector3(0f, 1.17f, 0.55f), 35f)
                 },
                 new[]
@@ -508,8 +509,11 @@ namespace DimensionBrawl.Editor
                     Body("summon_inori_proxy_fire", 1.9f, 0.9f, "CIN_BackViewProjectileBurst"),
                     Body("summon_inori_recover", 2.6f, 1.6f, "CIN_BackViewProjectileAim"),
                     Face("summon_inori_calm", 2.8f, 1.0f, "CalmEye"),
+                    ActorVisibility("summon_support_dragon_visible", CinematicSequenceProfile.ActorRole.Environment, 0f, true),
+                    ActorBody("summon_support_dragon_fire", CinematicSequenceProfile.ActorRole.Environment, 0.2f, 1.5f, DragonSupportAttackStateName),
                     BodyTrigger("summon_proxy_manifest", CinematicSequenceProfile.ActorRole.Summon, 0.05f, "EliteSummonPackage"),
-                    BodyTrigger("summon_proxy_attack", CinematicSequenceProfile.ActorRole.Summon, 1.95f, "Attack")
+                    BodyTrigger("summon_proxy_attack", CinematicSequenceProfile.ActorRole.Summon, 1.95f, "Attack"),
+                    ActorVisibility("summon_support_dragon_hide", CinematicSequenceProfile.ActorRole.Environment, 4.15f, false)
                 },
                 new[]
                 {
@@ -590,6 +594,22 @@ namespace DimensionBrawl.Editor
                 stateName);
         }
 
+        private static CinematicSequenceProfile.ActorCue ActorBody(
+            string cueId,
+            CinematicSequenceProfile.ActorRole role,
+            float startSeconds,
+            float durationSeconds,
+            string stateName)
+        {
+            return new CinematicSequenceProfile.ActorCue(
+                cueId,
+                role,
+                CinematicSequenceProfile.ActorCueKind.BodyState,
+                startSeconds,
+                durationSeconds,
+                stateName);
+        }
+
         private static CinematicSequenceProfile.ActorCue BodyTrigger(
             string cueId,
             CinematicSequenceProfile.ActorRole role,
@@ -630,6 +650,23 @@ namespace DimensionBrawl.Editor
                 string.Empty,
                 socketPath: InoriRifleObjectName,
                 requireSocket: true,
+                objectActive: visible);
+        }
+
+        private static CinematicSequenceProfile.ActorCue ActorVisibility(
+            string cueId,
+            CinematicSequenceProfile.ActorRole role,
+            float startSeconds,
+            bool visible)
+        {
+            return new CinematicSequenceProfile.ActorCue(
+                cueId,
+                role,
+                CinematicSequenceProfile.ActorCueKind.WeaponVisibility,
+                startSeconds,
+                0f,
+                string.Empty,
+                requireSocket: false,
                 objectActive: visible);
         }
 

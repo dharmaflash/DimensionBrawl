@@ -224,6 +224,14 @@ namespace DimensionBrawl.Editor
                         continue;
                     }
 
+                    if (cue.Role != CinematicSequenceProfile.ActorRole.Inori)
+                    {
+                        state.Check(
+                            !string.IsNullOrWhiteSpace(cue.CueId),
+                            $"{profile.name} external actor visibility cue `{cue.CueId}` is authored for role `{cue.Role}`.");
+                        continue;
+                    }
+
                     weaponVisibilityCueCount++;
                     state.Check(
                         !string.IsNullOrWhiteSpace(cue.SocketPath),
@@ -263,9 +271,19 @@ namespace DimensionBrawl.Editor
                     }
 
                     string stateName = cue.AnimatorStateName;
-                    state.Check(
-                        controllerStates.ContainsKey(stateName),
-                        $"{profile.name} body cue `{cue.CueId}` references controller state `{stateName}`.");
+                    if (cue.Role == CinematicSequenceProfile.ActorRole.Inori)
+                    {
+                        state.Check(
+                            controllerStates.ContainsKey(stateName),
+                            $"{profile.name} body cue `{cue.CueId}` references controller state `{stateName}`.");
+                    }
+                    else
+                    {
+                        state.Check(
+                            !string.IsNullOrWhiteSpace(stateName),
+                            $"{profile.name} external actor body cue `{cue.CueId}` has actor state `{stateName}` for role `{cue.Role}`.");
+                    }
+
                     state.Check(
                         !stateName.StartsWith("R_", StringComparison.Ordinal),
                         $"{profile.name} body cue `{cue.CueId}` no longer uses rifle-only state `{stateName}`.");
