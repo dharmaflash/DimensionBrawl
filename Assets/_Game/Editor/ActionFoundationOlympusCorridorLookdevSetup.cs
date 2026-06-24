@@ -7,6 +7,7 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.SceneManagement;
+using UnityEngine.VFX;
 
 namespace DimensionBrawl.Editor
 {
@@ -16,6 +17,7 @@ namespace DimensionBrawl.Editor
         private const string SceneRoot = "Assets/_Game/Scenes/Lookdev";
         private const string TargetScenePath = SceneRoot + "/OlympusCorridorLookdev.unity";
         private const string DenseTargetScenePath = SceneRoot + "/OlympusCorridorDenseLookdev.unity";
+        private const string InvasionTargetScenePath = SceneRoot + "/OlympusCorridorInvasionLookdev.unity";
         private const string ArtRoot = "Assets/_Game/Art/Environment/OlympusCorridor";
         private const string ProfileRoot = ArtRoot + "/Profiles";
         private const string MaterialRoot = ArtRoot + "/Materials";
@@ -25,12 +27,22 @@ namespace DimensionBrawl.Editor
         private const string DisallowedToonEnvironmentMaterialRoot = MaterialRoot + "/Toonized";
         private const string PgrPreserveMaterialRoot = MaterialRoot + "/PgrPreserve";
         private const string PostProcessProfilePath = ProfileRoot + "/DB_OlympusCorridor_PostProcess.asset";
+
         private const string BlueGlowMaterialPath = MaterialRoot + "/DB_OlympusCorridor_BlueGlow.mat";
         private const string GoldGlowMaterialPath = MaterialRoot + "/DB_OlympusCorridor_GoldGlow.mat";
         private const string WhiteGlowMaterialPath = MaterialRoot + "/DB_OlympusCorridor_WhiteGlow.mat";
-        private const string InvasionGlowMaterialPath = MaterialRoot + "/DB_OlympusCorridor_InvasionGlow.mat";
+        private const string ScorchedStoneMaterialPath = MaterialRoot + "/DB_OlympusCorridor_ScorchedStone.mat";
+        private const string DamagedMarbleMaterialPath = MaterialRoot + "/DB_OlympusCorridor_DamagedMarble.mat";
         private const string SkyboxMaterialPath = MaterialRoot + "/DB_OlympusCorridor_HeavenlySkybox.mat";
+
         private const string AllSkyRoot = "Assets/_Imported/AssetStore/Sky/Allsky";
+        private const string UniFireSmokePrefabRoot = "Assets/_Imported/AssetStore/VFX/UNI VFX/Realistic Explosions, Fire & Smoke/Prefabs";
+        private const string UniGroundFirePrefabPath = UniFireSmokePrefabRoot + "/UNI_Ground_Fire.prefab";
+        private const string UniSmallFirePrefabPath = UniFireSmokePrefabRoot + "/UNI_Small_Fire.prefab";
+        private const string UniDeviceFirePrefabPath = UniFireSmokePrefabRoot + "/UNI_Device_Fire.prefab";
+        private const string UniGasFirePrefabPath = UniFireSmokePrefabRoot + "/UNI_Gas_Fire.prefab";
+        private const string UniBonfirePrefabPath = UniFireSmokePrefabRoot + "/UNI_Bonfire.prefab";
+        private const string UniLongSmokePrefabPath = UniFireSmokePrefabRoot + "/UNI_Long_Smoke.prefab";
         private const string AllSkySourceSkyboxPath = AllSkyRoot + "/Cartoon/Cartoon Base BlueSky/Day_BlueSky_Nothing.mat";
         private const string ToonOutlineMaterialPath = MaterialRoot + "/DB_OlympusCorridor_ToonOutline.mat";
         private const string BillboardBlueMaterialPath = MaterialRoot + "/DB_OlympusCorridor_BillboardBlue.mat";
@@ -45,6 +57,7 @@ namespace DimensionBrawl.Editor
         private const string ShapesFxMaterialRoot = ShapesFxRoot + "/Materials/ShapesFX";
         private const string LookdevRootName = "OlympusCorridorLookdev_RuntimeFreePass";
         private const string DenseLookdevRootName = "OlympusCorridorDenseLookdev_RuntimeFreePass";
+        private const string InvasionLookdevRootName = "OlympusCorridorInvasionLookdev_RuntimeFreePass";
         private const string ImportedSkyFogVolumeName = "Sky and Fog Global Volume";
         private const string ImportedLightingRootName = "Lights";
         private const string VolumeName = "OlympusCorridor_GlobalPostProcess";
@@ -56,7 +69,11 @@ namespace DimensionBrawl.Editor
         private const string ClosePreviewFileName = "olympus-corridor-lookdev-close-preview.png";
         private const string HighPreviewFileName = "olympus-corridor-lookdev-high-preview.png";
         private const string DensePreviewFileName = "olympus-corridor-dense-lookdev-preview.png";
-
+        private const string InvasionPreviewFileName = "olympus-corridor-invasion-lookdev-preview.png";
+        private const string InvasionPlayPreviewFileName = "olympus-corridor-invasion-play-preview.png";
+        private const string InvasionPlayPreviewPendingKey = "DimensionBrawl.OlympusCorridor.InvasionPlayPreviewPending";
+        private const float InvasionPlayPreviewWarmupSeconds = 3.0f;
+        private static double invasionPlayPreviewCaptureStartTime;
         [MenuItem("DimensionBrawl/Reapply Olympus Corridor Lookdev")]
         public static void ReapplyOlympusCorridorLookdevMenu()
         {
@@ -295,6 +312,31 @@ namespace DimensionBrawl.Editor
             EditorSceneManager.SaveScene(scene);
             AssetDatabase.SaveAssets();
         }
+
+        [MenuItem("DimensionBrawl/Rebuild Olympus Corridor Invasion Lookdev")]
+        public static void RebuildOlympusCorridorInvasionLookdevMenu()
+        {
+            RebuildOlympusCorridorInvasionLookdev();
+            Debug.Log("Rebuilt Olympus corridor invasion lookdev scene.");
+        }
+
+        public static void RebuildOlympusCorridorInvasionLookdev()
+        {
+            EnsureLookdevSceneExists(InvasionTargetScenePath);
+            Scene scene = EditorSceneManager.OpenScene(InvasionTargetScenePath, OpenSceneMode.Single);
+            RestoreFullDemoRendererDensity(scene);
+            ConfigureImportedLighting(scene);
+            RestoreSourceEnvironmentMaterials(scene);
+            ConfigurePgrPreserveEnvironmentMaterials(scene);
+            ConfigureSceneAtmosphere(scene);
+            ConfigureImportedSkyFogVolumes(scene);
+            ConfigureInvasionLookdevRoot(scene);
+            ClearGeneratedLightingData(scene);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            AssetDatabase.SaveAssets();
+        }
+
         public static void DisableOlympusCorridorImportedLightingOnly()
         {
             Scene scene = EditorSceneManager.OpenScene(TargetScenePath, OpenSceneMode.Single);
@@ -362,6 +404,164 @@ namespace DimensionBrawl.Editor
                 Quaternion.Euler(12.5f, 90f, 0f),
                 68f);
         }
+        [MenuItem("DimensionBrawl/Render Olympus Corridor Invasion Preview")]
+        public static void RenderOlympusCorridorInvasionLookdevPreviewMenu()
+        {
+            string previewPath = RenderOlympusCorridorInvasionLookdevPreview();
+            Debug.Log($"Rendered Olympus corridor invasion preview: {previewPath}");
+        }
+
+        public static string RenderOlympusCorridorInvasionLookdevPreview()
+        {
+            Camera camera = OpenLookdevCamera(InvasionTargetScenePath, InvasionLookdevRootName);
+            return RenderPreviewWithTemporaryCameraPose(
+                camera,
+                InvasionPreviewFileName,
+                new Vector3(-9.35f, 3.05f, 0f),
+                Quaternion.Euler(13.5f, 90f, 0f),
+                66f);
+        }
+
+        [InitializeOnLoadMethod]
+        private static void RegisterInvasionPlayPreviewWatcher()
+        {
+            EditorApplication.playModeStateChanged -= HandleInvasionPlayPreviewStateChanged;
+            EditorApplication.playModeStateChanged += HandleInvasionPlayPreviewStateChanged;
+            if (EditorApplication.isPlaying && SessionState.GetBool(InvasionPlayPreviewPendingKey, false))
+            {
+                BeginInvasionPlayPreviewCapture();
+            }
+        }
+
+        [MenuItem("DimensionBrawl/Capture Olympus Corridor Invasion Play Preview")]
+        public static void CaptureOlympusCorridorInvasionPlayPreviewMenu()
+        {
+            if (EditorApplication.isPlaying)
+            {
+                SessionState.SetBool(InvasionPlayPreviewPendingKey, true);
+                BeginInvasionPlayPreviewCapture();
+                return;
+            }
+
+            EditorSceneManager.OpenScene(InvasionTargetScenePath, OpenSceneMode.Single);
+            SessionState.SetBool(InvasionPlayPreviewPendingKey, true);
+            EditorApplication.EnterPlaymode();
+        }
+
+        private static void HandleInvasionPlayPreviewStateChanged(PlayModeStateChange state)
+        {
+            if (state == PlayModeStateChange.EnteredPlayMode && SessionState.GetBool(InvasionPlayPreviewPendingKey, false))
+            {
+                BeginInvasionPlayPreviewCapture();
+            }
+            else if (state == PlayModeStateChange.ExitingPlayMode)
+            {
+                EditorApplication.update -= CaptureInvasionPlayPreviewWhenReady;
+            }
+        }
+
+        private static void BeginInvasionPlayPreviewCapture()
+        {
+            invasionPlayPreviewCaptureStartTime = EditorApplication.timeSinceStartup;
+            EditorApplication.update -= CaptureInvasionPlayPreviewWhenReady;
+            EditorApplication.update += CaptureInvasionPlayPreviewWhenReady;
+        }
+
+        private static void CaptureInvasionPlayPreviewWhenReady()
+        {
+            if (!EditorApplication.isPlaying)
+            {
+                return;
+            }
+
+            if (EditorApplication.timeSinceStartup - invasionPlayPreviewCaptureStartTime < InvasionPlayPreviewWarmupSeconds)
+            {
+                return;
+            }
+
+            int exitCode = 0;
+            try
+            {
+                string previewPath = CaptureOlympusCorridorInvasionPlayPreviewFromActiveScene();
+                Debug.Log($"Captured Olympus corridor invasion play preview: {previewPath}");
+            }
+            catch (Exception exception)
+            {
+                exitCode = 1;
+                Debug.LogException(exception);
+            }
+            finally
+            {
+                SessionState.SetBool(InvasionPlayPreviewPendingKey, false);
+                EditorApplication.update -= CaptureInvasionPlayPreviewWhenReady;
+                if (Application.isBatchMode)
+                {
+                    EditorApplication.Exit(exitCode);
+                }
+                else
+                {
+                    EditorApplication.ExitPlaymode();
+                }
+            }
+        }
+
+        public static string CaptureOlympusCorridorInvasionPlayPreviewFromActiveScene()
+        {
+            Scene scene = SceneManager.GetActiveScene();
+            GameObject lookdevRoot = RequireRoot(scene, InvasionLookdevRootName);
+            Camera camera = RequireComponent<Camera>(RequireChild(lookdevRoot.transform, CameraName).gameObject);
+            return CapturePlayScreenWithTemporaryCameraPose(
+                camera,
+                InvasionPlayPreviewFileName,
+                new Vector3(-9.35f, 3.05f, 0f),
+                Quaternion.Euler(13.5f, 90f, 0f),
+                66f);
+        }
+
+        private static string CapturePlayScreenWithTemporaryCameraPose(Camera camera, string fileName, Vector3 position, Quaternion rotation, float fieldOfView)
+        {
+            Vector3 previousPosition = camera.transform.position;
+            Quaternion previousRotation = camera.transform.rotation;
+            float previousFieldOfView = camera.fieldOfView;
+
+            try
+            {
+                camera.transform.position = position;
+                camera.transform.rotation = rotation;
+                camera.fieldOfView = fieldOfView;
+                camera.enabled = true;
+                Screen.SetResolution(1280, 720, FullScreenMode.Windowed);
+                camera.Render();
+                return CapturePlayScreen(fileName);
+            }
+            finally
+            {
+                camera.transform.position = previousPosition;
+                camera.transform.rotation = previousRotation;
+                camera.fieldOfView = previousFieldOfView;
+            }
+        }
+
+        private static string CapturePlayScreen(string fileName)
+        {
+            string previewPath = Path.Combine(Path.GetTempPath(), fileName);
+            Texture2D preview = ScreenCapture.CaptureScreenshotAsTexture();
+            if (preview == null)
+            {
+                throw new InvalidOperationException("ScreenCapture.CaptureScreenshotAsTexture returned null during Play Mode preview capture.");
+            }
+
+            try
+            {
+                File.WriteAllBytes(previewPath, preview.EncodeToPNG());
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(preview);
+            }
+
+            return previewPath;
+        }
         private static Camera OpenLookdevCamera()
         {
             return OpenLookdevCamera(TargetScenePath, LookdevRootName);
@@ -410,6 +610,7 @@ namespace DimensionBrawl.Editor
             {
                 camera.targetTexture = renderTexture;
                 RenderTexture.active = renderTexture;
+                SimulateSceneVisualEffects(camera.gameObject.scene, 1.15f);
                 camera.Render();
                 preview.ReadPixels(new Rect(0f, 0f, width, height), 0, 0);
                 preview.Apply();
@@ -582,7 +783,8 @@ namespace DimensionBrawl.Editor
         private static bool IsGeneratedLookdevRoot(string rootName)
         {
             return string.Equals(rootName, LookdevRootName, StringComparison.Ordinal)
-                || string.Equals(rootName, DenseLookdevRootName, StringComparison.Ordinal);
+                || string.Equals(rootName, DenseLookdevRootName, StringComparison.Ordinal)
+                || string.Equals(rootName, InvasionLookdevRootName, StringComparison.Ordinal);
         }
 
         private static void RestoreFullDemoRendererDensity(Scene scene)
@@ -989,6 +1191,23 @@ namespace DimensionBrawl.Editor
             return profile;
         }
 
+
+        private static void ConfigureInvasionLookdevRoot(Scene scene)
+        {
+            RemoveRoot(scene, InvasionLookdevRootName);
+
+            GameObject root = new GameObject(InvasionLookdevRootName);
+            SceneManager.MoveGameObjectToScene(root, scene);
+
+            ConfigurePostProcessVolume(root.transform);
+            ConfigureDenseLookdevCamera(root.transform);
+            ConfigureLookdevLighting(root.transform);
+            ConfigureInvasionLighting(root.transform);
+            ConfigureInvasionSanctuaryVisuals(root.transform);
+            ConfigureCombatAnchors(root.transform);
+
+            EditorUtility.SetDirty(root);
+        }
         private static void ConfigureDenseLookdevRoot(Scene scene)
         {
             RemoveRoot(scene, DenseLookdevRootName);
@@ -1056,6 +1275,42 @@ namespace DimensionBrawl.Editor
 
             EditorUtility.SetDirty(camera);
             EditorUtility.SetDirty(cameraData);
+        }
+        private static void ConfigureInvasionLighting(Transform root)
+        {
+            GameObject lightingRoot = CreateChild(root, "OlympusCorridor_InvasionFxLighting", Vector3.zero, Quaternion.identity, Vector3.one);
+
+            Light leftPlanterFire = CreateLight(lightingRoot.transform, "FireFx_LeftPlanter", new Vector3(-4.05f, 0.95f, -1.92f));
+            leftPlanterFire.type = LightType.Point;
+            leftPlanterFire.color = new Color(1f, 0.34f, 0.08f, 1f);
+            leftPlanterFire.intensity = 1.2f;
+            leftPlanterFire.range = 6.8f;
+            leftPlanterFire.shadows = LightShadows.None;
+            leftPlanterFire.bounceIntensity = 0f;
+
+            Light rightRailFire = CreateLight(lightingRoot.transform, "FireFx_RightRail", new Vector3(2.75f, 0.9f, 1.86f));
+            rightRailFire.type = LightType.Point;
+            rightRailFire.color = new Color(1f, 0.28f, 0.06f, 1f);
+            rightRailFire.intensity = 1.22f;
+            rightRailFire.range = 6.8f;
+            rightRailFire.shadows = LightShadows.None;
+            rightRailFire.bounceIntensity = 0f;
+
+            Light leftGateFire = CreateLight(lightingRoot.transform, "FireFx_LeftGateSide", new Vector3(8.7f, 1.05f, -1.82f));
+            leftGateFire.type = LightType.Point;
+            leftGateFire.color = new Color(1f, 0.3f, 0.06f, 1f);
+            leftGateFire.intensity = 1.38f;
+            leftGateFire.range = 7.8f;
+            leftGateFire.shadows = LightShadows.None;
+            leftGateFire.bounceIntensity = 0f;
+
+            Light rightGateFire = CreateLight(lightingRoot.transform, "FireFx_RightGateSide", new Vector3(9.05f, 1.05f, 1.82f));
+            rightGateFire.type = LightType.Point;
+            rightGateFire.color = new Color(1f, 0.28f, 0.06f, 1f);
+            rightGateFire.intensity = 1.45f;
+            rightGateFire.range = 7.8f;
+            rightGateFire.shadows = LightShadows.None;
+            rightGateFire.bounceIntensity = 0f;
         }
         private static void ConfigureLookdevLighting(Transform root)
         {
@@ -1134,6 +1389,16 @@ namespace DimensionBrawl.Editor
             rightFill.bounceIntensity = 0f;
         }
 
+        private static void ConfigureInvasionSanctuaryVisuals(Transform root)
+        {
+            Material goldGlow = EnsureMaterial(GoldGlowMaterialPath, new Color(1f, 0.68f, 0.26f, 1f), new Color(2.35f, 1.36f, 0.36f, 1f));
+            Material scorchedStone = EnsureMaterial(ScorchedStoneMaterialPath, new Color(0.42f, 0.38f, 0.36f, 1f), new Color(0.055f, 0.025f, 0.012f, 1f));
+            Material damagedMarble = EnsureMaterial(DamagedMarbleMaterialPath, new Color(0.68f, 0.66f, 0.66f, 1f), new Color(0.08f, 0.055f, 0.045f, 1f));
+            GameObject visualsRoot = CreateChild(root, SanctuaryVisualsName, Vector3.zero, Quaternion.identity, Vector3.one);
+
+            CreateInvasionFireAndSmoke(visualsRoot.transform);
+            CreateInvasionRubble(visualsRoot.transform, scorchedStone, damagedMarble, goldGlow);
+        }
         private static void ConfigureSanctuaryVisuals(Transform root)
         {
             Material blueGlow = EnsureMaterial(BlueGlowMaterialPath, new Color(0.09f, 0.38f, 1f, 1f), new Color(0.32f, 0.9f, 3.55f, 1f));
@@ -1335,6 +1600,124 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(quad);
         }
 
+        private static void CreateInvasionFireAndSmoke(Transform parent)
+        {
+            CreateImportedVfxInstance(parent, UniDeviceFirePrefabPath, "VFX_DeviceFire_LeftPlanterNear", new Vector3(-4.05f, 0.34f, -1.92f), Quaternion.identity, Vector3.one * 0.7f);
+            CreateImportedVfxInstance(parent, UniSmallFirePrefabPath, "VFX_SmallFire_RightPlanterNear", new Vector3(-2.35f, 0.26f, 1.9f), Quaternion.identity, Vector3.one * 0.56f);
+            CreateImportedVfxInstance(parent, UniGroundFirePrefabPath, "VFX_GroundFire_LeftRailMid", new Vector3(2.35f, 0.28f, -1.86f), Quaternion.identity, Vector3.one * 0.74f);
+            CreateImportedVfxInstance(parent, UniGasFirePrefabPath, "VFX_GasFire_RightRailMid", new Vector3(2.75f, 0.32f, 1.86f), Quaternion.identity, Vector3.one * 0.62f);
+            CreateImportedVfxInstance(parent, UniSmallFirePrefabPath, "VFX_SmallFire_LeftBrokenRail", new Vector3(-2.8f, 0.26f, -1.88f), Quaternion.identity, Vector3.one * 0.52f);
+            CreateImportedVfxInstance(parent, UniSmallFirePrefabPath, "VFX_SmallFire_RightBrokenRail", new Vector3(6.55f, 0.26f, 1.78f), Quaternion.identity, Vector3.one * 0.54f);
+            CreateImportedVfxInstance(parent, UniDeviceFirePrefabPath, "VFX_DeviceFire_LeftGateSide", new Vector3(8.7f, 0.34f, -1.82f), Quaternion.identity, Vector3.one * 0.68f);
+            CreateImportedVfxInstance(parent, UniBonfirePrefabPath, "VFX_Bonfire_RightGateSide", new Vector3(9.05f, 0.34f, 1.82f), Quaternion.identity, Vector3.one * 0.62f);
+            CreateImportedVfxInstance(parent, UniLongSmokePrefabPath, "VFX_LongSmoke_LeftPlanter", new Vector3(-4.05f, 0.52f, -1.94f), Quaternion.identity, Vector3.one * 0.58f);
+            CreateImportedVfxInstance(parent, UniLongSmokePrefabPath, "VFX_LongSmoke_RightGateSide", new Vector3(9.05f, 0.55f, 1.84f), Quaternion.identity, Vector3.one * 0.66f);
+        }
+        private static GameObject CreateImportedVfxInstance(Transform parent, string prefabPath, string name, Vector3 localPosition, Quaternion localRotation, Vector3 localScale)
+        {
+            GameObject sourcePrefab = RequireAsset<GameObject>(prefabPath);
+            GameObject instance = PrefabUtility.InstantiatePrefab(sourcePrefab, parent.gameObject.scene) as GameObject;
+            if (instance == null)
+            {
+                instance = UnityEngine.Object.Instantiate(sourcePrefab);
+            }
+
+            instance.name = name;
+            instance.transform.SetParent(parent, worldPositionStays: false);
+            instance.transform.localPosition = localPosition;
+            instance.transform.localRotation = localRotation;
+            instance.transform.localScale = localScale;
+
+            instance.AddComponent<DimensionBrawl.VFX.VfxPlayOnEnable>();
+
+            instance.SetActive(true);
+            foreach (Transform child in instance.GetComponentsInChildren<Transform>(includeInactive: true))
+            {
+                child.gameObject.SetActive(true);
+            }
+
+            Renderer[] renderers = instance.GetComponentsInChildren<Renderer>(includeInactive: true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                renderers[i].enabled = true;
+                renderers[i].shadowCastingMode = ShadowCastingMode.Off;
+                renderers[i].receiveShadows = false;
+                EditorUtility.SetDirty(renderers[i]);
+            }
+
+            VisualEffect[] effects = instance.GetComponentsInChildren<VisualEffect>(includeInactive: true);
+            for (int i = 0; i < effects.Length; i++)
+            {
+                effects[i].enabled = true;
+                effects[i].Reinit();
+                effects[i].SendEvent("OnPlay");
+                effects[i].Play();
+                effects[i].Simulate(1f / 30f, 90u);
+                EditorUtility.SetDirty(effects[i]);
+            }
+
+            AudioSource[] audioSources = instance.GetComponentsInChildren<AudioSource>(includeInactive: true);
+            for (int i = 0; i < audioSources.Length; i++)
+            {
+                audioSources[i].enabled = false;
+                EditorUtility.SetDirty(audioSources[i]);
+            }
+
+            EditorUtility.SetDirty(instance);
+            return instance;
+        }
+
+        private static void SimulateSceneVisualEffects(Scene scene, float seconds)
+        {
+            uint steps = (uint)Mathf.Max(1, Mathf.CeilToInt(seconds * 30f));
+            foreach (GameObject root in scene.GetRootGameObjects())
+            {
+                VisualEffect[] effects = root.GetComponentsInChildren<VisualEffect>(includeInactive: true);
+                for (int i = 0; i < effects.Length; i++)
+                {
+                    effects[i].Reinit();
+                    effects[i].Play();
+                    effects[i].Simulate(1f / 30f, steps);
+                }
+            }
+        }
+        private static void CreateInvasionRubble(Transform parent, Material scorchedStone, Material damagedMarble, Material goldGlow)
+        {
+            CreatePrimitiveVisual(parent, "FallenPillar_LeftNear", PrimitiveType.Cylinder, new Vector3(-1.7f, 0.52f, -2.22f), Quaternion.Euler(0f, 0f, 78f), new Vector3(0.28f, 1.45f, 0.28f), damagedMarble);
+            CreatePrimitiveVisual(parent, "FallenPillar_RightMid", PrimitiveType.Cylinder, new Vector3(4.35f, 0.5f, 2.18f), Quaternion.Euler(0f, 0f, -74f), new Vector3(0.26f, 1.35f, 0.26f), damagedMarble);
+            CreatePrimitiveVisual(parent, "CollapsedMarbleSlab_LeftNear", PrimitiveType.Cube, new Vector3(-4.2f, 0.28f, -2.06f), Quaternion.Euler(5f, 26f, -11f), new Vector3(1.15f, 0.18f, 0.48f), damagedMarble);
+            CreatePrimitiveVisual(parent, "CollapsedMarbleSlab_RightMid", PrimitiveType.Cube, new Vector3(1.55f, 0.28f, 1.94f), Quaternion.Euler(-8f, -28f, 9f), new Vector3(1.05f, 0.18f, 0.42f), damagedMarble);
+            CreatePrimitiveVisual(parent, "BrokenCapstone_Left", PrimitiveType.Cube, new Vector3(0.8f, 0.3f, -1.72f), Quaternion.Euler(8f, 36f, -12f), new Vector3(0.78f, 0.22f, 0.42f), scorchedStone);
+            CreatePrimitiveVisual(parent, "BrokenCapstone_Right", PrimitiveType.Cube, new Vector3(7.8f, 0.31f, 1.48f), Quaternion.Euler(-10f, -28f, 16f), new Vector3(0.86f, 0.2f, 0.38f), scorchedStone);
+            CreatePrimitiveVisual(parent, "BrokenGoldRail_LeftFront", PrimitiveType.Cube, new Vector3(-2.8f, 0.72f, -2.36f), Quaternion.Euler(0f, 10f, -24f), new Vector3(1.7f, 0.07f, 0.07f), goldGlow);
+            CreatePrimitiveVisual(parent, "BrokenGoldRail_RightGate", PrimitiveType.Cube, new Vector3(6.6f, 0.78f, 2.08f), Quaternion.Euler(0f, -18f, 18f), new Vector3(1.45f, 0.07f, 0.07f), goldGlow);
+            CreatePrimitiveVisual(parent, "ScorchedShard_LeftA", PrimitiveType.Cube, new Vector3(3.2f, 0.17f, -1.18f), Quaternion.Euler(18f, 24f, 12f), new Vector3(0.26f, 0.16f, 0.32f), scorchedStone);
+            CreatePrimitiveVisual(parent, "ScorchedShard_LeftB", PrimitiveType.Cube, new Vector3(4.1f, 0.19f, -1.42f), Quaternion.Euler(-12f, 48f, -9f), new Vector3(0.32f, 0.18f, 0.22f), scorchedStone);
+            CreatePrimitiveVisual(parent, "ScorchedShard_RightA", PrimitiveType.Cube, new Vector3(6.6f, 0.17f, 1.14f), Quaternion.Euler(11f, -40f, 6f), new Vector3(0.24f, 0.14f, 0.34f), scorchedStone);
+            CreatePrimitiveVisual(parent, "ScorchedShard_RightB", PrimitiveType.Cube, new Vector3(8.5f, 0.21f, 1.68f), Quaternion.Euler(-18f, 18f, 22f), new Vector3(0.38f, 0.16f, 0.24f), scorchedStone);
+        }
+        private static GameObject CreatePrimitiveVisual(Transform parent, string name, PrimitiveType primitiveType, Vector3 localPosition, Quaternion localRotation, Vector3 localScale, Material material)
+        {
+            GameObject target = GameObject.CreatePrimitive(primitiveType);
+            target.name = name;
+            target.transform.SetParent(parent, worldPositionStays: false);
+            target.transform.localPosition = localPosition;
+            target.transform.localRotation = localRotation;
+            target.transform.localScale = localScale;
+            AssignMaterial(target, material);
+            DestroyCollider(target);
+
+            Renderer renderer = target.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+                EditorUtility.SetDirty(renderer);
+            }
+
+            EditorUtility.SetDirty(target);
+            return target;
+        }
         private static void ConfigureCombatAnchors(Transform root)
         {
             GameObject anchorsRoot = CreateChild(root, CombatAnchorsName, Vector3.zero, Quaternion.identity, Vector3.one);
@@ -1661,12 +2044,17 @@ namespace DimensionBrawl.Editor
 
         private static Material EnsurePromotedAllSkySkybox()
         {
+            return EnsurePromotedAllSkySkybox(SkyboxMaterialPath, new Color(0.96f, 0.975f, 1f, 0.86f), 0.94f, 28f);
+        }
+
+        private static Material EnsurePromotedAllSkySkybox(string skyboxPath, Color tint, float exposure, float rotation)
+        {
             Material sourceSkybox = RequireAsset<Material>(AllSkySourceSkyboxPath);
-            Material skybox = AssetDatabase.LoadAssetAtPath<Material>(SkyboxMaterialPath);
+            Material skybox = AssetDatabase.LoadAssetAtPath<Material>(skyboxPath);
             if (skybox == null)
             {
                 skybox = new Material(sourceSkybox.shader);
-                AssetDatabase.CreateAsset(skybox, SkyboxMaterialPath);
+                AssetDatabase.CreateAsset(skybox, skyboxPath);
             }
 
             EnsureFolder(TextureRoot);
@@ -1676,10 +2064,10 @@ namespace DimensionBrawl.Editor
             PromoteSkyboxTextures(sourceSkybox, skybox, promotedSkyTexturePaths);
             DeleteUnusedPromotedSkyTextures(promotedSkyTexturePaths);
             skybox.shader = sourceSkybox.shader;
-            skybox.name = Path.GetFileNameWithoutExtension(SkyboxMaterialPath);
-            SetMaterialColor(skybox, "_Tint", new Color(0.96f, 0.975f, 1f, 0.86f));
-            SetMaterialFloat(skybox, "_Exposure", 0.94f);
-            SetMaterialFloat(skybox, "_Rotation", 28f);
+            skybox.name = Path.GetFileNameWithoutExtension(skyboxPath);
+            SetMaterialColor(skybox, "_Tint", tint);
+            SetMaterialFloat(skybox, "_Exposure", exposure);
+            SetMaterialFloat(skybox, "_Rotation", rotation);
             EditorUtility.SetDirty(skybox);
             return skybox;
         }
