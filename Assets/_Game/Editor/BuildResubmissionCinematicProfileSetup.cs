@@ -37,6 +37,7 @@ namespace DimensionBrawl.Editor
             ConfigureDialogueReactionBeat(LoadOrCreate(ProfileRoot + "/DB_Cinematic_DialogueReactionBeat.asset"));
             ConfigureResultBridge(LoadOrCreate(ProfileRoot + "/DB_Cinematic_ResultBridge.asset"));
             ConfigureSummonEntry(LoadOrCreate(ProfileRoot + "/DB_Cinematic_SummonEntry.asset"));
+            ConfigureSummonFollowupHit(LoadOrCreate(ProfileRoot + "/DB_Cinematic_SummonFollowupHit.asset"));
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log("Rebuilt build-resubmission P0/P1 cinematic sequence profiles.");
@@ -524,6 +525,52 @@ namespace DimensionBrawl.Editor
                 },
                 new CinematicSequenceProfile.TutorialCue[0],
                 Handoff(3.95f, "action_camera_controller"));
+            EditorUtility.SetDirty(profile);
+        }
+
+        private static void ConfigureSummonFollowupHit(CinematicSequenceProfile profile)
+        {
+            profile.Configure(
+                "summon_followup_hit",
+                "Summon Follow-up Hit",
+                CinematicSequenceProfile.SequenceCategory.SummonFollowupHit,
+                "Reusable summon follow-up payoff: Inori gives the command, the frontline summon attacks, dragon support crosses the flank, and the camera returns to action.",
+                3.25f,
+                78,
+                true,
+                true,
+                false,
+                true,
+                true,
+                new[]
+                {
+                    ShotCamera("summon_followup_command", CinematicSequenceProfile.ShotPurpose.MechanicConnection, CinematicSequenceProfile.CameraBlendKind.Reframe, 0f, 0.65f, new Vector3(0.08f, 0.06f, -0.14f), 0.10f, 1.0f, -0.10f, 0.04f, new Vector3(-1.95f, 1.62f, -2.65f), new Vector3(1.25f, 1.18f, 3.05f), 42f),
+                    ShotCamera("summon_followup_clash", CinematicSequenceProfile.ShotPurpose.CharacterAction, CinematicSequenceProfile.CameraBlendKind.Cut, 0.65f, 1.05f, new Vector3(0.14f, 0.04f, -0.16f), 0.16f, -1.4f, -0.12f, 0.02f, new Vector3(1.20f, 1.40f, -2.10f), new Vector3(0.45f, 1.08f, 3.95f), 46f),
+                    ShotCamera("summon_followup_dragon_cross", CinematicSequenceProfile.ShotPurpose.ThreatDirection, CinematicSequenceProfile.CameraBlendKind.Reframe, 1.70f, 0.8f, new Vector3(-0.10f, 0.08f, -0.18f), 0.18f, 2.0f, -0.18f, 0.08f, new Vector3(-3.05f, 1.86f, -1.95f), new Vector3(4.10f, 1.92f, 3.25f), 54f),
+                    ShotCamera("summon_followup_handoff", CinematicSequenceProfile.ShotPurpose.GameplayHandoff, CinematicSequenceProfile.CameraBlendKind.GameplayMatch, 2.50f, 0.75f, new Vector3(0f, 0.03f, -0.08f), 0.02f, 0.4f, -0.05f, 0.01f, new Vector3(0f, 1.26f, -3.70f), new Vector3(0f, 1.17f, 0.55f), 35f)
+                },
+                new[]
+                {
+                    WeaponVisibility("summon_followup_keep_rifle_visible", 0f, true),
+                    Face("summon_followup_inori_command", 0f, 1.0f, "Angry"),
+                    Body("summon_followup_inori_signal", 0f, 0.85f, "CIN_BackViewProjectileCharge"),
+                    Body("summon_followup_inori_release", 0.66f, 0.95f, "CIN_BackViewProjectileFire"),
+                    Body("summon_followup_inori_recover", 1.75f, 1.2f, "CIN_BackViewProjectileAim"),
+                    Face("summon_followup_inori_calm", 2.05f, 1.0f, "CalmEye"),
+                    ActorVisibility("summon_followup_dragon_visible", CinematicSequenceProfile.ActorRole.Environment, 0f, true),
+                    BodyTrigger("summon_followup_proxy_attack", CinematicSequenceProfile.ActorRole.Summon, 0.62f, "Attack"),
+                    ActorBody("summon_followup_dragon_fire", CinematicSequenceProfile.ActorRole.Environment, 1.45f, 1.0f, DragonSupportAttackStateName),
+                    ActorVisibility("summon_followup_dragon_hide", CinematicSequenceProfile.ActorRole.Environment, 3.15f, false)
+                },
+                new[]
+                {
+                    Vfx("summon_followup_window", 0f, CombatVfxCueId.SummonFollowupWindow, 1.08f, new Vector3(0.95f, 0.72f, 2.35f)),
+                    Vfx("summon_followup_muzzle", 0.68f, CombatVfxCueId.PlayerRangedMuzzleFlash, 1.04f, new Vector3(0.12f, 1.08f, 0.82f)),
+                    Vfx("summon_followup_hit", 0.92f, CombatVfxCueId.SummonFollowupHit, 1.24f, new Vector3(0.05f, 1.04f, 4.10f)),
+                    Vfx("summon_followup_dragon_flash", 1.72f, CombatVfxCueId.EliteSummonSignal, 0.82f, new Vector3(3.40f, 1.62f, 3.15f))
+                },
+                new CinematicSequenceProfile.TutorialCue[0],
+                Handoff(2.95f, "action_camera_controller"));
             EditorUtility.SetDirty(profile);
         }
 

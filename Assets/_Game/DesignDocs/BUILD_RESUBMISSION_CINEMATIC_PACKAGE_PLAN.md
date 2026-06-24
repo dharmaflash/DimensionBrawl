@@ -40,8 +40,8 @@ Status:
 - Step 4: Complete for the initial P0 gap list. Actual retargeted clip promotion and visual inspection on Inori remain per-module work.
 - Step 5: Complete for the reusable foundation. Runtime sequence profiles, actor/VFX/tutorial/handoff cues, promoted animation controller binding, direct camera shot-pose data, and the first review runner exist.
 - Step 6: In progress. P0 profile assets exist, every enabled P0 camera cue now has authored direct shot-pose data, module preview captures exist, weapon visibility is profile-driven, the review scene has a six-module P0 playlist route with sampled Play Mode visual QA, QTE/tutorial prompts now render as camera-captured readable overlays, and the review scene has a reusable dressed stage/lighting shell. A continuous Play Mode timeline frame capture now generates labeled route strips and 23 timeline frames including the final gameplay handoff. Remaining P0 work is animation safety per module, production art polish, and production-style movie capture.
-- Step 7: In progress. First-pass P1 profile assets now exist for `BossIntro`, `PhaseTransition`, `BreakMoment`, `DialogueReactionBeat`, `ResultBridge`, and `SummonEntry`; each has authored direct camera shot poses, Inori body/face cues, profile-driven rifle visibility, VFX where relevant, and explicit gameplay/result handoff data. Remaining P1 work is inspectable playlist capture, visual tuning on Inori, and integration into actual game triggers.
-- Step 8: In progress. Action cue integration now has a bridge from existing action cinematic cue requests to reusable build-resubmission cinematic sequence profiles. Boss barrage review generation binds the bridge, runner, Inori animator controller override, expression player, VFX player, support-dragon actor binding, and camera handoff path for ultimate, summon, break, and result cues. Play Mode input-route verification now proves tier-3 `Skill1` and `SummonSlot1` can trigger the mapped reusable cinematic sequences from the actual player action methods, dispatch bound actor cues, and produce multi-beat camera captures for summon entry.
+- Step 7: In progress. First-pass P1 profile assets now exist for `BossIntro`, `PhaseTransition`, `BreakMoment`, `DialogueReactionBeat`, `ResultBridge`, `SummonEntry`, and `SummonFollowupHit`; each has authored direct camera shot poses, Inori body/face cues, profile-driven rifle visibility, VFX where relevant, and explicit gameplay/result handoff data. Remaining P1 work is broader summon variants, visual tuning on Inori, and integration into actual game triggers.
+- Step 8: In progress. Action cue integration now has a bridge from existing action cinematic cue requests to reusable build-resubmission cinematic sequence profiles. Boss barrage review generation binds the bridge, runner, Inori animator controller override, expression player, VFX player, support-dragon actor binding, and camera handoff path for ultimate, summon entry, summon follow-up, break, and result cues. Play Mode input-route verification now proves tier-3 `Skill1` and `SummonSlot1` can trigger the mapped reusable cinematic sequences from the actual player action methods, dispatch bound actor cues, and produce multi-beat camera captures for summon entry.
 - Step 9: Pending.
 
 Current blockers:
@@ -734,6 +734,53 @@ Route captures:
 Quality note:
 
 - The route is now mechanically real and visually inspectable: Skill1 triggers `UltimateCutIn`, SummonSlot1 triggers `SummonEntry`, bound actor cues are observed, and the hit/handoff capture shows Inori with the frontline summon and right-flank dragon support. It is still a review-scene composition pass, not final production cinematography.
+
+### 2026-06-24 Summon Follow-up Profile Split
+
+Why this was added:
+
+- `ActionCinematicCueProfile.CueKind.SummonFollowupHit` existed, but the reusable sequence bridge was still temporarily mapping it to `BreakMoment`.
+- That made summon follow-up hits look like generic pressure breaks instead of a distinct Inori command plus summon attack payoff.
+
+Runtime/editor changes:
+
+- Added `DB_Cinematic_SummonFollowupHit.asset` as a dedicated reusable P1 profile with command, clash, dragon-cross, and handoff camera cues.
+- Added `SequenceCategory.SummonFollowupHit` without shifting existing serialized enum values.
+- `ActionFoundationCinematicP0Review.unity` and `ActionFoundationBossBarrageLaneReview.unity` now map `summonFollowupHitProfile` to `DB_Cinematic_SummonFollowupHit.asset`.
+- P1 runner-driven review now includes a seventh sample, `p1_07_summon_followup_clash`, with Inori left/rear command framing, the frontline summon in the lane, and Volcano Dragon support on the right flank.
+- Package verifier now requires the new profile and rejects the old `SummonFollowupHit -> BreakMoment` bridge mapping.
+
+Verification:
+
+- method: `DimensionBrawl.Editor.BuildResubmissionCinematicProfileSetup.RunBatchProfileGeneration`
+- log: `C:\tmp\DimensionBrawl-BuildResubmissionCinematicProfiles-SummonFollowup-Retune.log`
+- result: PASS, exit code 0
+- method: `DimensionBrawl.Editor.BuildResubmissionCinematicReviewSceneSetup.RunBatchReviewSceneGeneration`
+- log: `C:\tmp\DimensionBrawl-CinematicReviewScene-SummonFollowup.log`
+- result: PASS, exit code 0
+- method: `DimensionBrawl.Editor.ActionFoundationBossBarrageLaneReviewSetup.EnsureBossBarrageLaneReviewScene`
+- log: `C:\tmp\DimensionBrawl-BossBarrageLaneReview-SummonFollowup-Ensure.log`
+- result: PASS, exit code 0
+- method: `DimensionBrawl.Editor.ActionFoundationBossBarrageLaneReviewSetup.ValidateBossBarrageLaneReviewSceneMenu`
+- log: `C:\tmp\DimensionBrawl-BossBarrageLaneReview-SummonFollowup-Validate.log`
+- result: PASS, exit code 0
+- method: `DimensionBrawl.Editor.BuildResubmissionCinematicPackageVerifier.RunBatchVerification`
+- log: `C:\tmp\DimensionBrawl-CinematicPackageVerifier-SummonFollowup-Retune.log`
+- report: `C:\tmp\DimensionBrawl-CinematicPackageVerifier.md`
+- result: PASS, failures 0, warnings 0
+- method: `DimensionBrawl.Editor.BuildResubmissionCinematicReviewSceneSetup.RunBatchP1RunnerDrivenPlaylistCapture`
+- log: `C:\tmp\DimensionBrawl-CinematicP1RunnerDriven-SummonFollowup-Retune.log`
+- result: PASS, exit code 0
+
+Visual QA:
+
+- contact sheet: `C:\tmp\DimensionBrawl-CinematicP1Review-RunnerDrivenStrip.png`
+- frame: `C:\tmp\DimensionBrawl-CinematicP1Review-RunnerDrivenFrames\07_p1_07_summon_followup_clash.png`
+- report: `C:\tmp\DimensionBrawl-CinematicP1Review-RunnerDrivenStrip.md`
+
+Quality note:
+
+- The tuned clash frame now keeps Inori, the frontline summon, VFX impact, and dragon support visible together. It is still a review-stage composition, but the follow-up hit is no longer a generic break moment.
 
 ## Source Data Read
 

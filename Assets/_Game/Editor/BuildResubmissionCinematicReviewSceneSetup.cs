@@ -54,6 +54,8 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/DesignData/Profiles/Cinematics/DB_Cinematic_ResultBridge.asset";
         private const string SummonEntryProfilePath =
             "Assets/_Game/DesignData/Profiles/Cinematics/DB_Cinematic_SummonEntry.asset";
+        private const string SummonFollowupHitProfilePath =
+            "Assets/_Game/DesignData/Profiles/Cinematics/DB_Cinematic_SummonFollowupHit.asset";
         private const string RifleGirlSourcePrefabPath =
             "Assets/_Imported/AssetStore/CombatGirlsCharacterPack_RifleGirl/RifleGirl/Prefab/Rifle_Full_Body.prefab";
         private const string EnemyPrefabPath =
@@ -441,7 +443,7 @@ namespace DimensionBrawl.Editor
                 PrepareSummonActorsForRunnerDrivenSample(
                     summonActor,
                     dragonSummon,
-                    string.Equals(sample.ProfilePath, SummonEntryProfilePath, StringComparison.Ordinal));
+                    IsSummonReviewProfile(sample.ProfilePath));
                 ResetSceneEffectsForRunnerDrivenSample(scene, cuePlayer);
                 CinematicSequenceProfile profile = LoadAsset<CinematicSequenceProfile>(sample.ProfilePath);
                 if (!runner.TryApplyProfileSampleForReview(profile, sample.SampleSeconds, Vector3.forward))
@@ -711,8 +713,23 @@ namespace DimensionBrawl.Editor
                     "Angry",
                     "summon_proxy_hit",
                     2.24f,
+                    weaponVisible: true),
+                new PlaylistStripSample(
+                    "Summon follow-up: clash",
+                    "p1_07_summon_followup_clash",
+                    SummonFollowupHitProfilePath,
+                    "CIN_BackViewProjectileFire + Summon.Attack",
+                    "Angry",
+                    "summon_followup_clash",
+                    0.96f,
                     weaponVisible: true)
             };
+        }
+
+        private static bool IsSummonReviewProfile(string profilePath)
+        {
+            return string.Equals(profilePath, SummonEntryProfilePath, StringComparison.Ordinal)
+                || string.Equals(profilePath, SummonFollowupHitProfilePath, StringComparison.Ordinal);
         }
 
         private static void ResetActorForRunnerDrivenSample(Transform actorRoot, Animator animator)
@@ -1186,7 +1203,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(sequenceBridge, "summonEntryProfile", LoadAsset<CinematicSequenceProfile>(SummonEntryProfilePath));
             SetObjectReference(sequenceBridge, "ultimateCutInProfile", LoadAsset<CinematicSequenceProfile>(UltimateProfilePath));
             SetObjectReference(sequenceBridge, "bossPressureBreakProfile", LoadAsset<CinematicSequenceProfile>(BreakMomentProfilePath));
-            SetObjectReference(sequenceBridge, "summonFollowupHitProfile", LoadAsset<CinematicSequenceProfile>(BreakMomentProfilePath));
+            SetObjectReference(sequenceBridge, "summonFollowupHitProfile", LoadAsset<CinematicSequenceProfile>(SummonFollowupHitProfilePath));
             SetObjectReference(sequenceBridge, "pocketClearProfile", LoadAsset<CinematicSequenceProfile>(ResultBridgeProfilePath));
             SetObjectReference(sequenceBridge, "pocketFailProfile", LoadAsset<CinematicSequenceProfile>(DangerProfilePath));
             EditorUtility.SetDirty(sequenceBridge);

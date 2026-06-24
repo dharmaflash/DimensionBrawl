@@ -290,6 +290,8 @@ namespace DimensionBrawl.Editor
             CinematicProfileRoot + "/DB_Cinematic_ResultBridge.asset";
         private const string CinematicSummonProfilePath =
             CinematicProfileRoot + "/DB_Cinematic_SummonEntry.asset";
+        private const string CinematicSummonFollowupProfilePath =
+            CinematicProfileRoot + "/DB_Cinematic_SummonFollowupHit.asset";
         private const string CombatGirlAnimatorControllerPath =
             "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/DB_CombatGirl_ActionFoundation.controller";
         private static readonly Vector3 InoriRifleMuzzleFallbackLocalPosition = new Vector3(-0.92f, 0.03f, 0f);
@@ -5988,7 +5990,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(bridge, "summonEntryProfile", LoadAsset<CinematicSequenceProfile>(CinematicSummonProfilePath));
             SetObjectReference(bridge, "ultimateCutInProfile", LoadAsset<CinematicSequenceProfile>(CinematicUltimateProfilePath));
             SetObjectReference(bridge, "bossPressureBreakProfile", LoadAsset<CinematicSequenceProfile>(CinematicBreakProfilePath));
-            SetObjectReference(bridge, "summonFollowupHitProfile", LoadAsset<CinematicSequenceProfile>(CinematicBreakProfilePath));
+            SetObjectReference(bridge, "summonFollowupHitProfile", LoadAsset<CinematicSequenceProfile>(CinematicSummonFollowupProfilePath));
             SetObjectReference(bridge, "pocketClearProfile", LoadAsset<CinematicSequenceProfile>(CinematicResultProfilePath));
             SetObjectReference(bridge, "pocketFailProfile", LoadAsset<CinematicSequenceProfile>(CinematicDangerProfilePath));
             EditorUtility.SetDirty(bridge);
@@ -6244,6 +6246,10 @@ namespace DimensionBrawl.Editor
                 sequenceBridge,
                 "bossPressureBreakProfile",
                 LoadAsset<CinematicSequenceProfile>(CinematicBreakProfilePath));
+            ValidateObjectReference(
+                sequenceBridge,
+                "summonFollowupHitProfile",
+                LoadAsset<CinematicSequenceProfile>(CinematicSummonFollowupProfilePath));
             ValidateObjectReference(
                 sequenceBridge,
                 "pocketClearProfile",

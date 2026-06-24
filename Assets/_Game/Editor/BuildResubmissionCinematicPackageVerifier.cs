@@ -29,7 +29,8 @@ namespace DimensionBrawl.Editor
             "DB_Cinematic_BreakMoment.asset",
             "DB_Cinematic_DialogueReactionBeat.asset",
             "DB_Cinematic_ResultBridge.asset",
-            "DB_Cinematic_SummonEntry.asset"
+            "DB_Cinematic_SummonEntry.asset",
+            "DB_Cinematic_SummonFollowupHit.asset"
         };
 
         private static readonly string[] RequiredPlaylistProfiles =
@@ -294,7 +295,8 @@ namespace DimensionBrawl.Editor
                     || profile.Category == CinematicSequenceProfile.SequenceCategory.BreakMoment
                     || profile.Category == CinematicSequenceProfile.SequenceCategory.DialogueReactionBeat
                     || profile.Category == CinematicSequenceProfile.SequenceCategory.ResultBridge
-                    || profile.Category == CinematicSequenceProfile.SequenceCategory.SummonEntry)
+                    || profile.Category == CinematicSequenceProfile.SequenceCategory.SummonEntry
+                    || profile.Category == CinematicSequenceProfile.SequenceCategory.SummonFollowupHit)
                 {
                     state.Check(
                         profile.GameplayHandoff.Enabled,
@@ -367,6 +369,12 @@ namespace DimensionBrawl.Editor
                     "bossPressureBreakProfile",
                     "DB_Cinematic_BreakMoment.asset",
                     "Action bridge routes BossPressureBreak to the reusable break profile.");
+                VerifyBridgeProfile(
+                    state,
+                    serializedBridge,
+                    "summonFollowupHitProfile",
+                    "DB_Cinematic_SummonFollowupHit.asset",
+                    "Action bridge routes SummonFollowupHit to the reusable summon follow-up profile.");
                 VerifyBridgeProfile(
                     state,
                     serializedBridge,
