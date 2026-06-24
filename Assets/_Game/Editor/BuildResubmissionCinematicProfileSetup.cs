@@ -495,8 +495,8 @@ namespace DimensionBrawl.Editor
                 true,
                 new[]
                 {
-                    ShotCamera("summon_signal_start", CinematicSequenceProfile.ShotPurpose.MechanicConnection, CinematicSequenceProfile.CameraBlendKind.Reframe, 0f, 0.95f, new Vector3(0.10f, 0.06f, -0.14f), 0.12f, 1.2f, -0.10f, 0.04f, new Vector3(-0.82f, 1.34f, 1.76f), new Vector3(0f, 1.10f, 0.14f), 33f),
-                    ShotCamera("summon_command_close", CinematicSequenceProfile.ShotPurpose.CharacterAction, CinematicSequenceProfile.CameraBlendKind.PushIn, 0.95f, 1.0f, new Vector3(-0.08f, 0.08f, -0.14f), 0.08f, -1.4f, 0.08f, 0.04f, new Vector3(0.62f, 1.36f, 1.42f), new Vector3(0f, 1.14f, 0.08f), 28f),
+                    ShotCamera("summon_signal_start", CinematicSequenceProfile.ShotPurpose.MechanicConnection, CinematicSequenceProfile.CameraBlendKind.Reframe, 0f, 0.95f, new Vector3(0.10f, 0.06f, -0.14f), 0.12f, 1.2f, -0.10f, 0.04f, new Vector3(-0.95f, 1.42f, -3.10f), new Vector3(0f, 1.16f, 2.20f), 36f),
+                    ShotCamera("summon_command_close", CinematicSequenceProfile.ShotPurpose.CharacterAction, CinematicSequenceProfile.CameraBlendKind.PushIn, 0.95f, 1.0f, new Vector3(-0.08f, 0.08f, -0.14f), 0.08f, -1.4f, 0.08f, 0.04f, new Vector3(0.85f, 1.36f, -2.20f), new Vector3(0f, 1.12f, 2.40f), 34f),
                     ShotCamera("summon_proxy_hit", CinematicSequenceProfile.ShotPurpose.MechanicConnection, CinematicSequenceProfile.CameraBlendKind.Cut, 1.95f, 1.0f, new Vector3(0.14f, 0.04f, -0.16f), 0.14f, -1.2f, -0.12f, 0.02f, new Vector3(0.42f, 1.30f, -2.55f), new Vector3(0f, 1.08f, 3.20f), 34f),
                     ShotCamera("summon_handoff", CinematicSequenceProfile.ShotPurpose.GameplayHandoff, CinematicSequenceProfile.CameraBlendKind.GameplayMatch, 2.95f, 1.2f, new Vector3(0f, 0.03f, -0.08f), 0.02f, 0.4f, -0.05f, 0.01f, new Vector3(0f, 1.26f, -3.70f), new Vector3(0f, 1.17f, 0.55f), 35f)
                 },

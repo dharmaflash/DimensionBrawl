@@ -53,6 +53,10 @@ namespace DimensionBrawl.Editor
             RequireActionBridgeRouteProbeProperty(serializedProbe, "idleTimeoutSeconds").floatValue = 12f;
             RequireActionBridgeRouteProbeProperty(serializedProbe, "tierThreeGrantEnergy").floatValue = 1000f;
             RequireActionBridgeRouteProbeProperty(serializedProbe, "settleSeconds").floatValue = 0.2f;
+            RequireActionBridgeRouteProbeProperty(serializedProbe, "outputDirectory").stringValue =
+                "C:/tmp/DimensionBrawl-BossBarrageActionBridgeRouteFrames";
+            RequireActionBridgeRouteProbeProperty(serializedProbe, "captureWidth").intValue = 1280;
+            RequireActionBridgeRouteProbeProperty(serializedProbe, "captureHeight").intValue = 720;
             serializedProbe.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(probe);
 

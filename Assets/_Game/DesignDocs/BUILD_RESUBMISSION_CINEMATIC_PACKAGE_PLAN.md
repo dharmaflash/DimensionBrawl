@@ -650,6 +650,8 @@ Runtime/editor changes:
 - The controller override is role-gated to Inori/Player bindings so summon actors keep their own Animator controllers.
 - Boss barrage review scene generation now binds ultimate, summon entry, boss-pressure break, summon follow-up hit, pocket clear, and pocket fail routes to build-resubmission profiles. Normal low-tier skill cut-in remains unmapped there so routine shots do not become long QTE-style cutscenes.
 - Added `BossBarrageActionBridgeRouteProbe` plus a batch runner that enters Play Mode in `ActionFoundationBossBarrageLaneReview.unity`, grants tier-3 EN, calls `PlayerSkill1Action.TryUseSkill1()` and `PlayerSummonSlot1Action.TryUseSummonSlot1()`, and writes whether the cue director, sequence bridge, and cinematic runner all observed the expected route.
+- The input-route probe now captures the active cinematic camera to PNG frames for the tier-3 ultimate and summon-entry routes, so the route is both mechanically verified and visually inspectable.
+- `SummonEntry` moved its first two camera poses from front/face closeups to rear and side-rear corridor positions after route capture showed the summon proxy could fully occlude Inori. The current read keeps Inori in back view with the large summon support silhouette and entry circle in front.
 
 Verification:
 
@@ -672,6 +674,12 @@ Verification:
 - result: PASS, exit code 0
 - observed route: `skill1_tier3_ultimate` -> `UltimateCutIn` -> `ultimate_cutin`
 - observed route: `summon_slot1_tier3_entry` -> `SummonEntry` -> `summon_entry`
+- capture: `C:\tmp\DimensionBrawl-BossBarrageActionBridgeRouteFrames\01_skill1_tier3_ultimate.png`
+- capture: `C:\tmp\DimensionBrawl-BossBarrageActionBridgeRouteFrames\02_summon_slot1_tier3_entry.png`
+- method: `DimensionBrawl.Editor.BuildResubmissionCinematicPackageVerifier.RunBatchVerification`
+- log: `C:\tmp\DimensionBrawl-CinematicPackageVerifier-SummonCameraFix.log`
+- report: `C:\tmp\DimensionBrawl-CinematicPackageVerifier.md`
+- result: PASS, failures 0, warnings 0
 
 Remaining caveat:
 

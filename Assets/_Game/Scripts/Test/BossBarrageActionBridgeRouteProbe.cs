@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using DimensionBrawl.Combat;
@@ -17,6 +18,10 @@ namespace DimensionBrawl.Test
         [SerializeField, Min(0.25f)] private float idleTimeoutSeconds = 12f;
         [SerializeField, Min(300f)] private float tierThreeGrantEnergy = 1000f;
         [SerializeField, Min(0f)] private float settleSeconds = 0.2f;
+        [SerializeField] private string outputDirectory =
+            "C:/tmp/DimensionBrawl-BossBarrageActionBridgeRouteFrames";
+        [SerializeField, Min(16)] private int captureWidth = 1280;
+        [SerializeField, Min(16)] private int captureHeight = 720;
 
         private bool verificationStarted;
         private bool lastStepPassed;
@@ -30,6 +35,17 @@ namespace DimensionBrawl.Test
             public ActionCinematicCueDirector CueDirector;
             public ActionCinematicSequenceBridge SequenceBridge;
             public CinematicSequenceRunner SequenceRunner;
+        }
+
+        private struct CapturedRouteFrame
+        {
+            public string Label;
+            public string Path;
+            public bool CaptureSucceeded;
+            public string SequenceId;
+            public string LastCameraCueId;
+            public string LastActorCueId;
+            public string LastVfxCueId;
         }
 
         private void Start()
@@ -55,6 +71,7 @@ namespace DimensionBrawl.Test
 
             StringBuilder report = new StringBuilder(2048);
             report.AppendLine("ROUTE=BossBarrageActionBridgeInput");
+            List<CapturedRouteFrame> capturedFrames = new List<CapturedRouteFrame>(2);
 
             ProbeContext context;
             try
@@ -76,7 +93,8 @@ namespace DimensionBrawl.Test
                 ActionCinematicCueProfile.CueKind.UltimateCutIn,
                 "ultimate_cutin",
                 () => context.Skill1Action.TryUseSkill1(),
-                report);
+                report,
+                capturedFrames);
             bool skillRoutePassed = lastStepPassed;
 
             yield return WaitForIdle(context, "after_skill1_tier3_ultimate", report);
@@ -88,13 +106,15 @@ namespace DimensionBrawl.Test
                 ActionCinematicCueProfile.CueKind.SummonEntry,
                 "summon_entry",
                 () => context.SummonSlot1Action.TryUseSummonSlot1(),
-                report);
+                report,
+                capturedFrames);
             bool summonRoutePassed = lastStepPassed;
 
             yield return WaitForIdle(context, "after_summon_slot1_tier3_entry", report);
             bool summonIdlePassed = lastStepPassed;
 
             bool passed = skillRoutePassed && skillIdlePassed && summonRoutePassed && summonIdlePassed;
+            AppendCaptureSummary(report, capturedFrames);
             WriteResult(passed, report.ToString());
         }
 
@@ -104,7 +124,8 @@ namespace DimensionBrawl.Test
             ActionCinematicCueProfile.CueKind expectedKind,
             string expectedSequenceId,
             Func<bool> triggerAction,
-            StringBuilder report)
+            StringBuilder report,
+            List<CapturedRouteFrame> capturedFrames)
         {
             lastStepPassed = false;
             PrepareTierThreeEnergy(context.Energy, tierThreeGrantEnergy);
@@ -188,12 +209,47 @@ namespace DimensionBrawl.Test
                 yield return new WaitForSecondsRealtime(settleSeconds);
             }
 
-            lastStepPassed = bridgeMatched && directorMatched && runnerDispatched;
+            bool routeSignalsPassed = bridgeMatched && directorMatched && runnerDispatched;
+            bool capturePassed = routeSignalsPassed
+                && CaptureRouteFrame(context, label, report, capturedFrames);
+            lastStepPassed = routeSignalsPassed && capturePassed;
             report.AppendLine($"ROUTE_RESULT {label}={(lastStepPassed ? "PASS" : "FAIL")}");
             report.AppendLine($"OBSERVED {label}=bridge:{bridgeMatched} director:{directorMatched} runner:{runnerDispatched}");
             report.AppendLine($"BRIDGE {label}=count:{context.SequenceBridge.TotalPlayCount - bridgeCountBefore} kind:{context.SequenceBridge.LastPlayedKind} tier:{context.SequenceBridge.LastPlayedTier} profile:{ResolveSequenceId(context.SequenceBridge.LastPlayedProfile)}");
             report.AppendLine($"DIRECTOR {label}=count:{context.CueDirector.TotalPlayCount - directorCountBefore} kind:{context.CueDirector.LastPlayedKind} tier:{context.CueDirector.LastPlayedTier} cue:{context.CueDirector.LastPlayedCueId}");
             report.AppendLine($"RUNNER {label}=cameraCount:{cameraCueCountBefore}->{context.SequenceRunner.TotalCameraCueCount} actorCount:{actorCueCountBefore}->{context.SequenceRunner.TotalActorCueCount} vfxCount:{vfxCueCountBefore}->{context.SequenceRunner.TotalVfxCueCount} lastCamera:{context.SequenceRunner.LastCameraCueId} lastActor:{context.SequenceRunner.LastActorCueId} lastVfx:{context.SequenceRunner.LastVfxCueId}");
+        }
+
+        private bool CaptureRouteFrame(
+            ProbeContext context,
+            string label,
+            StringBuilder report,
+            List<CapturedRouteFrame> capturedFrames)
+        {
+            Camera camera = context.SequenceRunner.CinematicCamera;
+            if (camera == null)
+            {
+                report.AppendLine($"CAPTURE {label}=FAIL path:<none> reason:Missing cinematic camera.");
+                return false;
+            }
+
+            string framePath = Path.Combine(
+                    outputDirectory,
+                    $"{capturedFrames.Count + 1:00}_{SanitizeFileName(label)}.png")
+                .Replace('\\', '/');
+            bool captured = CaptureCamera(camera, framePath, captureWidth, captureHeight);
+            capturedFrames.Add(new CapturedRouteFrame
+            {
+                Label = label,
+                Path = framePath,
+                CaptureSucceeded = captured,
+                SequenceId = ResolveSequenceId(context.SequenceRunner.SequenceProfile),
+                LastCameraCueId = context.SequenceRunner.LastCameraCueId,
+                LastActorCueId = context.SequenceRunner.LastActorCueId,
+                LastVfxCueId = context.SequenceRunner.LastVfxCueId
+            });
+            report.AppendLine($"CAPTURE {label}={(captured ? "PASS" : "FAIL")} path:{framePath}");
+            return captured;
         }
 
         private IEnumerator WaitForIdle(ProbeContext context, string label, StringBuilder report)
@@ -273,6 +329,108 @@ namespace DimensionBrawl.Test
         {
             return !string.IsNullOrWhiteSpace(after)
                 && !string.Equals(before, after, StringComparison.Ordinal);
+        }
+
+        private bool CaptureCamera(Camera camera, string path, int width, int height)
+        {
+            RenderTexture previousTarget = camera.targetTexture;
+            RenderTexture previousActive = RenderTexture.active;
+            RenderTexture renderTexture = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
+            Texture2D image = new Texture2D(width, height, TextureFormat.RGBA32, mipChain: false);
+            try
+            {
+                camera.targetTexture = renderTexture;
+                RenderTexture.active = renderTexture;
+                camera.Render();
+                image.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+                image.Apply();
+
+                if (!IsUsableTexture(image))
+                {
+                    return false;
+                }
+
+                Directory.CreateDirectory(Path.GetDirectoryName(path) ?? outputDirectory);
+                File.WriteAllBytes(path, image.EncodeToPNG());
+                return true;
+            }
+            finally
+            {
+                camera.targetTexture = previousTarget;
+                RenderTexture.active = previousActive;
+                Destroy(image);
+                Destroy(renderTexture);
+            }
+        }
+
+        private static bool IsUsableTexture(Texture2D image)
+        {
+            if (image == null)
+            {
+                return false;
+            }
+
+            int readableSamples = 0;
+            int sampleStepX = Mathf.Max(1, image.width / 16);
+            int sampleStepY = Mathf.Max(1, image.height / 9);
+            for (int y = 0; y < image.height; y += sampleStepY)
+            {
+                for (int x = 0; x < image.width; x += sampleStepX)
+                {
+                    Color pixel = image.GetPixel(x, y);
+                    if (pixel.a > 0.05f && pixel.maxColorComponent > 0.03f)
+                    {
+                        readableSamples++;
+                        if (readableSamples >= 6)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private static string SanitizeFileName(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "route";
+            }
+
+            char[] invalid = Path.GetInvalidFileNameChars();
+            StringBuilder builder = new StringBuilder(value.Length);
+            for (int i = 0; i < value.Length; i++)
+            {
+                char current = value[i];
+                bool isInvalid = false;
+                for (int j = 0; j < invalid.Length; j++)
+                {
+                    if (current == invalid[j])
+                    {
+                        isInvalid = true;
+                        break;
+                    }
+                }
+
+                builder.Append(isInvalid ? '_' : current);
+            }
+
+            return builder.ToString();
+        }
+
+        private static void AppendCaptureSummary(
+            StringBuilder report,
+            List<CapturedRouteFrame> capturedFrames)
+        {
+            report.AppendLine($"CAPTURE_COUNT={capturedFrames.Count}");
+            for (int i = 0; i < capturedFrames.Count; i++)
+            {
+                CapturedRouteFrame frame = capturedFrames[i];
+                report.AppendLine(
+                    $"CAPTURE_FRAME {frame.Label}=success:{frame.CaptureSucceeded} sequence:{frame.SequenceId} camera:{frame.LastCameraCueId} actor:{frame.LastActorCueId} vfx:{frame.LastVfxCueId} path:{frame.Path}");
+            }
         }
 
         private void WriteResult(bool passed, string details)
