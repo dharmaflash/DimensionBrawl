@@ -1228,6 +1228,8 @@ namespace DimensionBrawl.Editor
             SetObjectReference(sequenceBridge, "ultimateCutInProfile", LoadAsset<CinematicSequenceProfile>(UltimateProfilePath));
             SetObjectReference(sequenceBridge, "bossPressureBreakProfile", LoadAsset<CinematicSequenceProfile>(BreakMomentProfilePath));
             SetObjectReference(sequenceBridge, "summonFollowupHitProfile", LoadAsset<CinematicSequenceProfile>(SummonFollowupHitProfilePath));
+            SetObjectReference(sequenceBridge, "summonEmpowerProfile", LoadAsset<CinematicSequenceProfile>(SummonEmpowerProfilePath));
+            SetObjectReference(sequenceBridge, "summonRecallProfile", LoadAsset<CinematicSequenceProfile>(SummonRecallProfilePath));
             SetObjectReference(sequenceBridge, "pocketClearProfile", LoadAsset<CinematicSequenceProfile>(ResultBridgeProfilePath));
             SetObjectReference(sequenceBridge, "pocketFailProfile", LoadAsset<CinematicSequenceProfile>(DangerProfilePath));
             EditorUtility.SetDirty(sequenceBridge);

@@ -17,6 +17,8 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private CinematicSequenceProfile ultimateCutInProfile;
         [SerializeField] private CinematicSequenceProfile bossPressureBreakProfile;
         [SerializeField] private CinematicSequenceProfile summonFollowupHitProfile;
+        [SerializeField] private CinematicSequenceProfile summonEmpowerProfile;
+        [SerializeField] private CinematicSequenceProfile summonRecallProfile;
         [SerializeField] private CinematicSequenceProfile pocketClearProfile;
         [SerializeField] private CinematicSequenceProfile pocketFailProfile;
 
@@ -81,6 +83,8 @@ namespace DimensionBrawl.Presentation
                 ActionCinematicCueProfile.CueKind.UltimateCutIn => ultimateCutInProfile,
                 ActionCinematicCueProfile.CueKind.BossPressureBreak => bossPressureBreakProfile,
                 ActionCinematicCueProfile.CueKind.SummonFollowupHit => summonFollowupHitProfile,
+                ActionCinematicCueProfile.CueKind.SummonEmpower => summonEmpowerProfile,
+                ActionCinematicCueProfile.CueKind.SummonRecall => summonRecallProfile,
                 ActionCinematicCueProfile.CueKind.PocketClear => pocketClearProfile,
                 ActionCinematicCueProfile.CueKind.PocketFail => pocketFailProfile,
                 _ => null

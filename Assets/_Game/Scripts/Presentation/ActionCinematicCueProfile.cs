@@ -14,7 +14,9 @@ namespace DimensionBrawl.Presentation
             BossPressureBreak,
             SummonFollowupHit,
             PocketClear,
-            PocketFail
+            PocketFail,
+            SummonEmpower,
+            SummonRecall
         }
 
         public enum CueTier
@@ -211,6 +213,58 @@ namespace DimensionBrawl.Presentation
             }
         };
 
+        [SerializeField] private CueSequence summonEmpower = new CueSequence
+        {
+            enabled = true,
+            cueId = "summon_empower_transfer_micro",
+            tier = CueTier.MicroCinematic,
+            priority = 74,
+            canBeInterrupted = true,
+            movementLockSeconds = 0.26f,
+            inputLockSeconds = 0.34f,
+            timeScale = 0.9f,
+            timeScaleSeconds = 0.12f,
+            returnTargetId = GameplayReturnTargetId,
+            returnPolicy = CameraReturnPolicy.ActionCameraCueRecovery,
+            shots = new[]
+            {
+                CreateShot(new Vector3(-0.10f, 0.05f, -0.14f), 0.08f, 1.4f, -0.16f, 0.04f, 0.18f, 0.02f, 1.08f),
+                CreateShot(new Vector3(0.08f, 0.05f, 0.18f), 0.10f, -2.4f, 0.22f, 0.02f, 0.24f, 0.02f, 1.22f),
+                CreateShot(new Vector3(0f, 0.04f, -0.08f), 0.04f, 0.8f, -0.08f, 0.02f, 0.18f, 0f, 1.04f)
+            },
+            signals = new[]
+            {
+                CreateSignal("summon_empower_transfer_signal", 0.10f, string.Empty, CombatVfxCueId.EliteAuraSignal, 1.05f),
+                CreateSignal("summon_empower_guard_signal", 0.42f, string.Empty, CombatVfxCueId.EliteShieldSignal, 0.92f)
+            }
+        };
+
+        [SerializeField] private CueSequence summonRecall = new CueSequence
+        {
+            enabled = true,
+            cueId = "summon_recall_collapse_micro",
+            tier = CueTier.MicroCinematic,
+            priority = 70,
+            canBeInterrupted = true,
+            movementLockSeconds = 0.22f,
+            inputLockSeconds = 0.30f,
+            timeScale = 0.92f,
+            timeScaleSeconds = 0.10f,
+            returnTargetId = GameplayReturnTargetId,
+            returnPolicy = CameraReturnPolicy.ActionCameraCueRecovery,
+            shots = new[]
+            {
+                CreateShot(new Vector3(-0.08f, 0.04f, -0.12f), 0.08f, 1.2f, -0.14f, 0.04f, 0.18f, 0.02f, 1.05f),
+                CreateShot(new Vector3(0.04f, 0.02f, 0.14f), 0.08f, -1.8f, 0.16f, 0.02f, 0.22f, 0.02f, 1.18f),
+                CreateShot(new Vector3(0f, 0.04f, -0.08f), 0.04f, 0.8f, -0.08f, 0.02f, 0.18f, 0f, 1.04f)
+            },
+            signals = new[]
+            {
+                CreateSignal("summon_recall_collapse_signal", 0.08f, string.Empty, CombatVfxCueId.SummonBlockOpportunity, 0.88f),
+                CreateSignal("summon_recall_exit_signal", 0.52f, string.Empty, CombatVfxCueId.PocketCleared, 0.72f)
+            }
+        };
+
         [SerializeField] private CueSequence pocketClear = new CueSequence
         {
             enabled = true,
@@ -265,6 +319,8 @@ namespace DimensionBrawl.Presentation
         public CueSequence UltimateCutIn => ultimateCutIn;
         public CueSequence BossPressureBreak => bossPressureBreak;
         public CueSequence SummonFollowupHit => summonFollowupHit;
+        public CueSequence SummonEmpower => summonEmpower;
+        public CueSequence SummonRecall => summonRecall;
         public CueSequence PocketClear => pocketClear;
         public CueSequence PocketFail => pocketFail;
 
@@ -277,6 +333,8 @@ namespace DimensionBrawl.Presentation
                 CueKind.UltimateCutIn => ultimateCutIn,
                 CueKind.BossPressureBreak => bossPressureBreak,
                 CueKind.SummonFollowupHit => summonFollowupHit,
+                CueKind.SummonEmpower => summonEmpower,
+                CueKind.SummonRecall => summonRecall,
                 CueKind.PocketClear => pocketClear,
                 CueKind.PocketFail => pocketFail,
                 _ => default

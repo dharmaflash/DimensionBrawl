@@ -292,6 +292,10 @@ namespace DimensionBrawl.Editor
             CinematicProfileRoot + "/DB_Cinematic_SummonEntry.asset";
         private const string CinematicSummonFollowupProfilePath =
             CinematicProfileRoot + "/DB_Cinematic_SummonFollowupHit.asset";
+        private const string CinematicSummonEmpowerProfilePath =
+            CinematicProfileRoot + "/DB_Cinematic_SummonEmpower.asset";
+        private const string CinematicSummonRecallProfilePath =
+            CinematicProfileRoot + "/DB_Cinematic_SummonRecall.asset";
         private const string CombatGirlAnimatorControllerPath =
             "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/DB_CombatGirl_ActionFoundation.controller";
         private static readonly Vector3 InoriRifleMuzzleFallbackLocalPosition = new Vector3(-0.92f, 0.03f, 0f);
@@ -5991,6 +5995,8 @@ namespace DimensionBrawl.Editor
             SetObjectReference(bridge, "ultimateCutInProfile", LoadAsset<CinematicSequenceProfile>(CinematicUltimateProfilePath));
             SetObjectReference(bridge, "bossPressureBreakProfile", LoadAsset<CinematicSequenceProfile>(CinematicBreakProfilePath));
             SetObjectReference(bridge, "summonFollowupHitProfile", LoadAsset<CinematicSequenceProfile>(CinematicSummonFollowupProfilePath));
+            SetObjectReference(bridge, "summonEmpowerProfile", LoadAsset<CinematicSequenceProfile>(CinematicSummonEmpowerProfilePath));
+            SetObjectReference(bridge, "summonRecallProfile", LoadAsset<CinematicSequenceProfile>(CinematicSummonRecallProfilePath));
             SetObjectReference(bridge, "pocketClearProfile", LoadAsset<CinematicSequenceProfile>(CinematicResultProfilePath));
             SetObjectReference(bridge, "pocketFailProfile", LoadAsset<CinematicSequenceProfile>(CinematicDangerProfilePath));
             EditorUtility.SetDirty(bridge);
@@ -6252,6 +6258,14 @@ namespace DimensionBrawl.Editor
                 LoadAsset<CinematicSequenceProfile>(CinematicSummonFollowupProfilePath));
             ValidateObjectReference(
                 sequenceBridge,
+                "summonEmpowerProfile",
+                LoadAsset<CinematicSequenceProfile>(CinematicSummonEmpowerProfilePath));
+            ValidateObjectReference(
+                sequenceBridge,
+                "summonRecallProfile",
+                LoadAsset<CinematicSequenceProfile>(CinematicSummonRecallProfilePath));
+            ValidateObjectReference(
+                sequenceBridge,
                 "pocketClearProfile",
                 LoadAsset<CinematicSequenceProfile>(CinematicResultProfilePath));
             ValidateAssignedObjectReference(cueAnimator, "m_Controller");
@@ -6293,6 +6307,16 @@ namespace DimensionBrawl.Editor
             ValidateCinematicCueContract(
                 profile.SummonFollowupHit,
                 "SummonFollowupHit",
+                ActionCinematicCueProfile.CueTier.MicroCinematic,
+                cueAnimator);
+            ValidateCinematicCueContract(
+                profile.SummonEmpower,
+                "SummonEmpower",
+                ActionCinematicCueProfile.CueTier.MicroCinematic,
+                cueAnimator);
+            ValidateCinematicCueContract(
+                profile.SummonRecall,
+                "SummonRecall",
                 ActionCinematicCueProfile.CueTier.MicroCinematic,
                 cueAnimator);
             ValidateCinematicCueContract(

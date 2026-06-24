@@ -382,6 +382,18 @@ namespace DimensionBrawl.Editor
                 VerifyBridgeProfile(
                     state,
                     serializedBridge,
+                    "summonEmpowerProfile",
+                    "DB_Cinematic_SummonEmpower.asset",
+                    "Action bridge routes SummonEmpower to the reusable summon empower profile.");
+                VerifyBridgeProfile(
+                    state,
+                    serializedBridge,
+                    "summonRecallProfile",
+                    "DB_Cinematic_SummonRecall.asset",
+                    "Action bridge routes SummonRecall to the reusable summon recall profile.");
+                VerifyBridgeProfile(
+                    state,
+                    serializedBridge,
                     "pocketClearProfile",
                     "DB_Cinematic_ResultBridge.asset",
                     "Action bridge routes PocketClear to the reusable result profile.");

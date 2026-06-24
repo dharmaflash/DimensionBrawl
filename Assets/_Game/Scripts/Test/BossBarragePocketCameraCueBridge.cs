@@ -57,6 +57,8 @@ namespace DimensionBrawl.Test
             {
                 cameraCueDriver.RequestSummonBlockOpportunityCue();
             }
+
+            RequestCinematic(ActionCinematicCueProfile.CueKind.SummonEmpower, 2);
         }
 
         private void HandleSummonFollowupWindowOpened(int tier)
@@ -85,6 +87,8 @@ namespace DimensionBrawl.Test
             {
                 cameraCueDriver.RequestSummonFollowupMissedCue();
             }
+
+            RequestCinematic(ActionCinematicCueProfile.CueKind.SummonRecall, 2);
         }
 
         private void HandlePocketCleared()

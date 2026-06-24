@@ -41,7 +41,7 @@ Status:
 - Step 5: Complete for the reusable foundation. Runtime sequence profiles, actor/VFX/tutorial/handoff cues, promoted animation controller binding, direct camera shot-pose data, and the first review runner exist.
 - Step 6: In progress. P0 profile assets exist, every enabled P0 camera cue now has authored direct shot-pose data, module preview captures exist, weapon visibility is profile-driven, the review scene has a six-module P0 playlist route with sampled Play Mode visual QA, QTE/tutorial prompts now render as camera-captured readable overlays, and the review scene has a reusable dressed stage/lighting shell. A continuous Play Mode timeline frame capture now generates labeled route strips and 23 timeline frames including the final gameplay handoff. Remaining P0 work is animation safety per module, production art polish, and production-style movie capture.
 - Step 7: In progress. First-pass P1 profile assets now exist for `BossIntro`, `PhaseTransition`, `BreakMoment`, `DialogueReactionBeat`, `ResultBridge`, `SummonEntry`, `SummonFollowupHit`, `SummonEmpower`, and `SummonRecall`; each has authored direct camera shot poses, Inori body/face cues, profile-driven rifle visibility, VFX where relevant, and explicit gameplay/result handoff data. Remaining P1 work is broader non-summon variants, visual tuning on Inori, and integration into actual game triggers.
-- Step 8: In progress. Action cue integration now has a bridge from existing action cinematic cue requests to reusable build-resubmission cinematic sequence profiles. Boss barrage review generation binds the bridge, runner, Inori animator controller override, expression player, VFX player, support-dragon actor binding, and camera handoff path for ultimate, summon entry, summon follow-up, break, and result cues. Play Mode input-route verification now proves tier-3 `Skill1` and `SummonSlot1` can trigger the mapped reusable cinematic sequences from the actual player action methods, dispatch bound actor cues, and produce multi-beat camera captures for summon entry.
+- Step 8: In progress. Action cue integration now has a bridge from existing action cinematic cue requests to reusable build-resubmission cinematic sequence profiles. Boss barrage review generation binds the bridge, runner, Inori animator controller override, expression player, VFX player, support-dragon actor binding, and camera handoff path for ultimate, summon entry, summon follow-up, summon empower, summon recall, break, and result cues. Play Mode input-route verification now proves tier-3 `Skill1` and `SummonSlot1` can trigger the mapped reusable cinematic sequences from the actual player action methods, dispatch bound actor cues, and produce multi-beat camera captures for summon entry plus direct bridge captures for summon empower/recall.
 - Step 9: Pending.
 
 Current blockers:
@@ -824,6 +824,52 @@ Quality note:
 
 - `SummonEmpower` reads as Inori sending power forward to the frontline summon while the support dragon remains visible in the rear layer.
 - The first `SummonRecall` collapse pass was rejected because `SummonFollowupMissed` rendered as a large vertical death-column and blocked the frame. The accepted pass uses a smaller summon-opportunity cue and a safe corridor back-view camera so Inori, the enemy lane, dragon, and recall signal remain visible.
+
+### 2026-06-24 Summon Lifecycle Action Bridge Integration
+
+Why this was added:
+
+- `SummonEmpower` and `SummonRecall` should not remain isolated review samples. They need a route through the same action cinematic director and sequence bridge used by actual boss-barrage review actions.
+- The boss-barrage slice is the current best proof surface because it already exercises tier-3 Skill1, SummonSlot1, summon follow-up, visible summon actor binding, and Volcano Dragon support.
+
+Runtime/editor changes:
+
+- Added `ActionCinematicCueProfile.CueKind.SummonEmpower` and `ActionCinematicCueProfile.CueKind.SummonRecall` at the end of the enum to avoid shifting existing serialized cue values.
+- Added fallback `CueSequence` data for the two new action cue kinds so `ActionCinematicCueDirector.TryPlay(...)` can route them even before the reusable sequence bridge takes over camera/VFX playback.
+- `ActionCinematicSequenceBridge` now has `summonEmpowerProfile` and `summonRecallProfile` slots and resolves them to `DB_Cinematic_SummonEmpower.asset` and `DB_Cinematic_SummonRecall.asset`.
+- `BossBarragePocketCameraCueBridge` requests `SummonEmpower` when the summon block opportunity opens and `SummonRecall` when the summon follow-up window is missed.
+- P0 review scene generation, boss-barrage review scene generation, boss-barrage validation, and package verification now all check the new bridge profile references.
+- `BossBarrageActionBridgeRouteProbe` now verifies direct director-to-sequence bridge playback for `SummonEmpower` and `SummonRecall` after the real Skill1/SummonSlot1 route checks.
+
+Verification:
+
+- method: `DimensionBrawl.Editor.BuildResubmissionCinematicReviewSceneSetup.RunBatchReviewSceneGeneration`
+- log: `C:\tmp\DimensionBrawl-CinematicReviewScene-SummonLifecycleBridge.log`
+- result: PASS, exit code 0
+- method: `DimensionBrawl.Editor.ActionFoundationBossBarrageLaneReviewSetup.EnsureBossBarrageLaneReviewScene`
+- log: `C:\tmp\DimensionBrawl-BossBarrageLaneReview-SummonLifecycleBridge-Ensure.log`
+- result: PASS, exit code 0
+- method: `DimensionBrawl.Editor.ActionFoundationBossBarrageLaneReviewSetup.ValidateBossBarrageLaneReviewSceneMenu`
+- log: `C:\tmp\DimensionBrawl-BossBarrageLaneReview-SummonLifecycleBridge-Validate.log`
+- result: PASS, exit code 0
+- method: `DimensionBrawl.Editor.BuildResubmissionCinematicPackageVerifier.RunBatchVerification`
+- log: `C:\tmp\DimensionBrawl-CinematicPackageVerifier-SummonLifecycleBridge.log`
+- report: `C:\tmp\DimensionBrawl-CinematicPackageVerifier.md`
+- result: PASS, failures 0, warnings 0
+- method: `DimensionBrawl.Editor.ActionFoundationBossBarrageLaneReviewSetup.RunBatchActionBridgeInputRouteVerification`
+- log: `C:\tmp\DimensionBrawl-BossBarrageActionBridgeRoute-SummonLifecycleBridge-Retune.log`
+- result: PASS, route result file reports `RESULT=PASS`
+
+Route capture:
+
+- result file: `C:\tmp\DimensionBrawl-BossBarrageActionBridgeRoute.result`
+- frame 05: `C:\tmp\DimensionBrawl-BossBarrageActionBridgeRouteFrames\05_summon_empower_direct_bridge.png`
+- frame 06: `C:\tmp\DimensionBrawl-BossBarrageActionBridgeRouteFrames\06_summon_recall_direct_bridge.png`
+
+Quality note:
+
+- The bridge route frames use the actual boss-barrage review stage, so they read better than the plain P1 review strip: Inori remains in corridor back-view, the frontline summon occupies the lane, and the Volcano Dragon remains visible as a support layer.
+- This still proves deterministic route frames rather than final authored movie capture. It is enough to trust the new cue kinds and bridge mapping, but production polish still needs per-shot lighting, occlusion, animation, and continuous capture passes.
 
 ## Source Data Read
 

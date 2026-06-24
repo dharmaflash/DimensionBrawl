@@ -298,6 +298,124 @@ MonoBehaviour:
       vfxCueId: 30
       vfxIntensity: 1.16
       tierIntensityScale: 1.18
+  summonEmpower:
+    enabled: 1
+    cueId: summon_empower_transfer_micro
+    tier: 1
+    priority: 74
+    canBeInterrupted: 1
+    movementLockSeconds: 0.26
+    inputLockSeconds: 0.34
+    timeScale: 0.9
+    timeScaleSeconds: 0.12
+    returnTargetId: action_camera_controller
+    returnPolicy: 0
+    shots:
+    - enabled: 1
+      localOffset: {x: -0.1, y: 0.05, z: -0.14}
+      planarDirectionOffset: 0.08
+      fieldOfViewDelta: 1.4
+      cameraDistanceDelta: -0.16
+      focusHeightDelta: 0.04
+      durationSeconds: 0.18
+      pauseAfterSeconds: 0.02
+      tierScale: 1.08
+    - enabled: 1
+      localOffset: {x: 0.08, y: 0.05, z: 0.18}
+      planarDirectionOffset: 0.1
+      fieldOfViewDelta: -2.4
+      cameraDistanceDelta: 0.22
+      focusHeightDelta: 0.02
+      durationSeconds: 0.24
+      pauseAfterSeconds: 0.02
+      tierScale: 1.22
+    - enabled: 1
+      localOffset: {x: 0, y: 0.04, z: -0.08}
+      planarDirectionOffset: 0.04
+      fieldOfViewDelta: 0.8
+      cameraDistanceDelta: -0.08
+      focusHeightDelta: 0.02
+      durationSeconds: 0.18
+      pauseAfterSeconds: 0
+      tierScale: 1.04
+    signals:
+    - enabled: 1
+      delaySeconds: 0.1
+      signalId: summon_empower_transfer_signal
+      animatorTrigger: 
+      requireAnimatorTrigger: 0
+      playVfx: 1
+      vfxCueId: 26
+      vfxIntensity: 1.05
+      tierIntensityScale: 1.18
+    - enabled: 1
+      delaySeconds: 0.42
+      signalId: summon_empower_guard_signal
+      animatorTrigger: 
+      requireAnimatorTrigger: 0
+      playVfx: 1
+      vfxCueId: 24
+      vfxIntensity: 0.92
+      tierIntensityScale: 1.18
+  summonRecall:
+    enabled: 1
+    cueId: summon_recall_collapse_micro
+    tier: 1
+    priority: 70
+    canBeInterrupted: 1
+    movementLockSeconds: 0.22
+    inputLockSeconds: 0.3
+    timeScale: 0.92
+    timeScaleSeconds: 0.1
+    returnTargetId: action_camera_controller
+    returnPolicy: 0
+    shots:
+    - enabled: 1
+      localOffset: {x: -0.08, y: 0.04, z: -0.12}
+      planarDirectionOffset: 0.08
+      fieldOfViewDelta: 1.2
+      cameraDistanceDelta: -0.14
+      focusHeightDelta: 0.04
+      durationSeconds: 0.18
+      pauseAfterSeconds: 0.02
+      tierScale: 1.05
+    - enabled: 1
+      localOffset: {x: 0.04, y: 0.02, z: 0.14}
+      planarDirectionOffset: 0.08
+      fieldOfViewDelta: -1.8
+      cameraDistanceDelta: 0.16
+      focusHeightDelta: 0.02
+      durationSeconds: 0.22
+      pauseAfterSeconds: 0.02
+      tierScale: 1.18
+    - enabled: 1
+      localOffset: {x: 0, y: 0.04, z: -0.08}
+      planarDirectionOffset: 0.04
+      fieldOfViewDelta: 0.8
+      cameraDistanceDelta: -0.08
+      focusHeightDelta: 0.02
+      durationSeconds: 0.18
+      pauseAfterSeconds: 0
+      tierScale: 1.04
+    signals:
+    - enabled: 1
+      delaySeconds: 0.08
+      signalId: summon_recall_collapse_signal
+      animatorTrigger: 
+      requireAnimatorTrigger: 0
+      playVfx: 1
+      vfxCueId: 32
+      vfxIntensity: 0.88
+      tierIntensityScale: 1.18
+    - enabled: 1
+      delaySeconds: 0.52
+      signalId: summon_recall_exit_signal
+      animatorTrigger: 
+      requireAnimatorTrigger: 0
+      playVfx: 1
+      vfxCueId: 35
+      vfxIntensity: 0.72
+      tierIntensityScale: 1.18
   pocketClear:
     enabled: 1
     cueId: pocket_result_clear_bridge

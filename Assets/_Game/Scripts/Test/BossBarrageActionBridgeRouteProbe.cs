@@ -71,7 +71,7 @@ namespace DimensionBrawl.Test
 
             StringBuilder report = new StringBuilder(2048);
             report.AppendLine("ROUTE=BossBarrageActionBridgeInput");
-            List<CapturedRouteFrame> capturedFrames = new List<CapturedRouteFrame>(4);
+            List<CapturedRouteFrame> capturedFrames = new List<CapturedRouteFrame>(6);
 
             ProbeContext context;
             try
@@ -113,7 +113,40 @@ namespace DimensionBrawl.Test
             yield return WaitForIdle(context, "after_summon_slot1_tier3_entry", report);
             bool summonIdlePassed = lastStepPassed;
 
-            bool passed = skillRoutePassed && skillIdlePassed && summonRoutePassed && summonIdlePassed;
+            yield return VerifyDirectorRoute(
+                context,
+                "summon_empower_direct_bridge",
+                ActionCinematicCueProfile.CueKind.SummonEmpower,
+                "summon_empower",
+                1.12f,
+                report,
+                capturedFrames);
+            bool summonEmpowerRoutePassed = lastStepPassed;
+
+            yield return WaitForIdle(context, "after_summon_empower_direct_bridge", report);
+            bool summonEmpowerIdlePassed = lastStepPassed;
+
+            yield return VerifyDirectorRoute(
+                context,
+                "summon_recall_direct_bridge",
+                ActionCinematicCueProfile.CueKind.SummonRecall,
+                "summon_recall",
+                1.08f,
+                report,
+                capturedFrames);
+            bool summonRecallRoutePassed = lastStepPassed;
+
+            yield return WaitForIdle(context, "after_summon_recall_direct_bridge", report);
+            bool summonRecallIdlePassed = lastStepPassed;
+
+            bool passed = skillRoutePassed
+                && skillIdlePassed
+                && summonRoutePassed
+                && summonIdlePassed
+                && summonEmpowerRoutePassed
+                && summonEmpowerIdlePassed
+                && summonRecallRoutePassed
+                && summonRecallIdlePassed;
             AppendCaptureSummary(report, capturedFrames);
             WriteResult(passed, report.ToString());
         }
@@ -224,6 +257,102 @@ namespace DimensionBrawl.Test
 
             lastStepPassed = routeSignalsPassed && capturePassed;
             report.AppendLine($"ROUTE_RESULT {label}={(lastStepPassed ? "PASS" : "FAIL")}");
+            report.AppendLine($"OBSERVED {label}=bridge:{bridgeMatched} director:{directorMatched} runner:{runnerDispatched} boundActor:{boundActorDispatched}");
+            report.AppendLine($"BRIDGE {label}=count:{context.SequenceBridge.TotalPlayCount - bridgeCountBefore} kind:{context.SequenceBridge.LastPlayedKind} tier:{context.SequenceBridge.LastPlayedTier} profile:{ResolveSequenceId(context.SequenceBridge.LastPlayedProfile)}");
+            report.AppendLine($"DIRECTOR {label}=count:{context.CueDirector.TotalPlayCount - directorCountBefore} kind:{context.CueDirector.LastPlayedKind} tier:{context.CueDirector.LastPlayedTier} cue:{context.CueDirector.LastPlayedCueId}");
+            report.AppendLine($"RUNNER {label}=cameraCount:{cameraCueCountBefore}->{context.SequenceRunner.TotalCameraCueCount} actorCount:{actorCueCountBefore}->{context.SequenceRunner.TotalActorCueCount} boundActorCount:{boundActorCueCountBefore}->{context.SequenceRunner.TotalBoundActorCueCount} vfxCount:{vfxCueCountBefore}->{context.SequenceRunner.TotalVfxCueCount} lastCamera:{context.SequenceRunner.LastCameraCueId} lastActor:{context.SequenceRunner.LastActorCueId} lastVfx:{context.SequenceRunner.LastVfxCueId}");
+        }
+
+        private IEnumerator VerifyDirectorRoute(
+            ProbeContext context,
+            string label,
+            ActionCinematicCueProfile.CueKind expectedKind,
+            string expectedSequenceId,
+            float sampleDelaySeconds,
+            StringBuilder report,
+            List<CapturedRouteFrame> capturedFrames)
+        {
+            lastStepPassed = false;
+
+            int bridgeCountBefore = context.SequenceBridge.TotalPlayCount;
+            int directorCountBefore = context.CueDirector.TotalPlayCount;
+            int cameraCueCountBefore = context.SequenceRunner.TotalCameraCueCount;
+            int actorCueCountBefore = context.SequenceRunner.TotalActorCueCount;
+            int boundActorCueCountBefore = context.SequenceRunner.TotalBoundActorCueCount;
+            int vfxCueCountBefore = context.SequenceRunner.TotalVfxCueCount;
+            string lastCameraCueBefore = context.SequenceRunner.LastCameraCueId;
+            string lastActorCueBefore = context.SequenceRunner.LastActorCueId;
+            string lastVfxCueBefore = context.SequenceRunner.LastVfxCueId;
+
+            bool triggerSucceeded = false;
+            string triggerException = null;
+            try
+            {
+                triggerSucceeded = context.CueDirector.TryPlay(expectedKind, 3, Vector3.forward);
+            }
+            catch (Exception exception)
+            {
+                triggerException = exception.ToString();
+            }
+
+            if (!string.IsNullOrEmpty(triggerException))
+            {
+                report.AppendLine($"DIRECT_ROUTE_RESULT {label}=FAIL");
+                report.AppendLine($"EXCEPTION {label}={triggerException}");
+                yield break;
+            }
+
+            if (!triggerSucceeded)
+            {
+                report.AppendLine($"DIRECT_ROUTE_RESULT {label}=FAIL");
+                report.AppendLine($"REASON {label}=Cue director returned false.");
+                yield break;
+            }
+
+            float startedAt = Time.realtimeSinceStartup;
+            bool bridgeMatched = false;
+            bool directorMatched = false;
+            bool runnerDispatched = false;
+            while (Time.realtimeSinceStartup - startedAt < routeTimeoutSeconds)
+            {
+                bridgeMatched |= context.SequenceBridge.TotalPlayCount > bridgeCountBefore
+                    && context.SequenceBridge.LastPlayedKind == expectedKind
+                    && context.SequenceBridge.LastPlayedTier == 3
+                    && context.SequenceBridge.LastPlayedProfile != null
+                    && string.Equals(
+                        context.SequenceBridge.LastPlayedProfile.SequenceId,
+                        expectedSequenceId,
+                        StringComparison.Ordinal);
+                directorMatched |= context.CueDirector.TotalPlayCount > directorCountBefore
+                    && context.CueDirector.LastPlayedKind == expectedKind
+                    && context.CueDirector.LastPlayedTier == 3;
+                runnerDispatched |= context.SequenceRunner.TotalCameraCueCount > cameraCueCountBefore
+                    || context.SequenceRunner.TotalActorCueCount > actorCueCountBefore
+                    || context.SequenceRunner.TotalVfxCueCount > vfxCueCountBefore
+                    || HasChangedCue(lastCameraCueBefore, context.SequenceRunner.LastCameraCueId)
+                    || HasChangedCue(lastActorCueBefore, context.SequenceRunner.LastActorCueId)
+                    || HasChangedCue(lastVfxCueBefore, context.SequenceRunner.LastVfxCueId);
+
+                if (bridgeMatched && directorMatched && runnerDispatched)
+                {
+                    break;
+                }
+
+                yield return null;
+            }
+
+            if (sampleDelaySeconds > 0f)
+            {
+                yield return new WaitForSecondsRealtime(sampleDelaySeconds);
+            }
+
+            bool boundActorDispatched = context.SequenceRunner.TotalBoundActorCueCount > 0;
+            bool routeSignalsPassed = bridgeMatched && directorMatched && runnerDispatched && boundActorDispatched;
+            bool capturePassed = routeSignalsPassed
+                && CaptureRouteFrame(context, label, report, capturedFrames);
+
+            lastStepPassed = routeSignalsPassed && capturePassed;
+            report.AppendLine($"DIRECT_ROUTE_RESULT {label}={(lastStepPassed ? "PASS" : "FAIL")}");
             report.AppendLine($"OBSERVED {label}=bridge:{bridgeMatched} director:{directorMatched} runner:{runnerDispatched} boundActor:{boundActorDispatched}");
             report.AppendLine($"BRIDGE {label}=count:{context.SequenceBridge.TotalPlayCount - bridgeCountBefore} kind:{context.SequenceBridge.LastPlayedKind} tier:{context.SequenceBridge.LastPlayedTier} profile:{ResolveSequenceId(context.SequenceBridge.LastPlayedProfile)}");
             report.AppendLine($"DIRECTOR {label}=count:{context.CueDirector.TotalPlayCount - directorCountBefore} kind:{context.CueDirector.LastPlayedKind} tier:{context.CueDirector.LastPlayedTier} cue:{context.CueDirector.LastPlayedCueId}");
