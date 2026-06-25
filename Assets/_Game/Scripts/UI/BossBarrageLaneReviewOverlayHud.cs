@@ -1,3 +1,4 @@
+using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.Test;
 using UnityEngine;
@@ -77,6 +78,11 @@ namespace DimensionBrawl.UI
         public bool IsPauseMenuVisible => mode == OverlayMode.Pause;
         public bool IsSettingsVisible => mode == OverlayMode.Settings;
         public bool IsResultVisible => HasResult;
+        public string ResultTitleReadout => HasResult ? ResolveResultTitle() : string.Empty;
+        public string ResultSummaryReadout => HasResult ? ResolveResultSummary() : string.Empty;
+        public string ResultRewardReadout => HasResult ? ResolveResultRewardHook() : string.Empty;
+        public string ResultNextObjectiveReadout => HasResult ? ResolveResultNextObjective() : string.Empty;
+        public string ResultRouteReadout => HasResult ? ResolveResultRouteLabel() : string.Empty;
 
         public void Configure(
             BossBarragePocketReviewOwner newPocketReviewOwner,
@@ -333,10 +339,8 @@ namespace DimensionBrawl.UI
         private void DrawResultOverlay()
         {
             bool cleared = pocketReviewOwner != null && pocketReviewOwner.IsCleared;
-            string title = cleared ? "BOSS CLEAR" : "MISSION FAILED";
-            string summary = cleared
-                ? "Boss pressure answered."
-                : "Player down.";
+            string title = ResolveResultTitle();
+            string summary = ResolveResultSummary();
             Color resultAccent = cleared ? clearAccentColor : failAccentColor;
 
             Rect panel = BeginModal(title, summary, resultAccent);
@@ -347,10 +351,13 @@ namespace DimensionBrawl.UI
                     $"{pocketReviewOwner.CompletedObjectiveStepCount}/{pocketReviewOwner.ObjectiveStepCount}"),
                 bodyStyle);
             GUILayout.Label(
-                ResolveResultLine("Summon", $"LV{Mathf.Max(1, pocketReviewOwner.HighestSummonTier)}"),
+                ResolveResultLine("Route", ResolveResultRouteLabel()),
                 bodyStyle);
             GUILayout.Label(
-                ResolveResultLine("Follow-up", $"{pocketReviewOwner.Skill1FollowupDamage:0} damage"),
+                ResolveResultLine("Analysis", ResolveResultRewardHook()),
+                bodyStyle);
+            GUILayout.Label(
+                ResolveResultLine("Next", ResolveResultNextObjective()),
                 bodyStyle);
             GUILayout.Space(18f);
 
@@ -404,6 +411,185 @@ namespace DimensionBrawl.UI
         {
             GUILayout.Space(6f);
             return GUILayout.Button(label, primary ? primaryButtonStyle : buttonStyle, GUILayout.Height(48f));
+        }
+
+        private string ResolveResultTitle()
+        {
+            FrontlineWaveStageProfile profile = ResolveActiveStageProfile();
+            if (pocketReviewOwner == null)
+            {
+                return string.Empty;
+            }
+
+            if (pocketReviewOwner.IsCleared)
+            {
+                return ResolveStageText(profile?.ClearTitle, "FRONTLINE STABILIZED");
+            }
+
+            if (pocketReviewOwner.IsFailed)
+            {
+                return ResolveStageText(profile?.FailTitle, "LINE COLLAPSED");
+            }
+
+            return string.Empty;
+        }
+
+        private string ResolveResultSummary()
+        {
+            FrontlineWaveStageProfile profile = ResolveActiveStageProfile();
+            if (pocketReviewOwner == null)
+            {
+                return string.Empty;
+            }
+
+            if (pocketReviewOwner.IsCleared)
+            {
+                if (IsCounterRecoveryClear())
+                {
+                    return ResolveStageText(
+                        profile?.ClearCounterDetail,
+                        "Counter wave held; final follow-up confirmed");
+                }
+
+                if (pocketReviewOwner.Skill1FollowupHitConfirmed)
+                {
+                    return ResolveStageText(
+                        profile?.ClearFollowupDetail,
+                        "Summon route analyzed; Skill1 follow-up confirmed");
+                }
+
+                return ResolveStageText(
+                    profile?.ClearPressureDetail,
+                    "Boss curtain suppressed; frontline route recorded");
+            }
+
+            if (pocketReviewOwner.IsFailed)
+            {
+                if (pocketReviewOwner.FailedFromRouteStabilityCollapse)
+                {
+                    return ResolveStageText(
+                        profile?.RouteCollapseFailDetail,
+                        "Route stability collapsed before the frontline could stabilize");
+                }
+
+                return ResolveStageText(
+                    profile?.FailDetail,
+                    "Player down before the frontline route could stabilize");
+            }
+
+            return string.Empty;
+        }
+
+        private string ResolveResultRewardHook()
+        {
+            FrontlineWaveStageProfile profile = ResolveActiveStageProfile();
+            if (pocketReviewOwner == null)
+            {
+                return string.Empty;
+            }
+
+            if (pocketReviewOwner.IsFailed)
+            {
+                return ResolveStageText(
+                    profile?.FailedRouteRewardHook,
+                    "Failure analysis logged: route stability fell before the frontline answer was complete.");
+            }
+
+            if (IsCounterRecoveryClear())
+            {
+                return ResolveStageText(
+                    profile?.CounterRecoveryRewardHook,
+                    "Counter recovery logged: summon restored a broken frontline and reopened the final strike window.");
+            }
+
+            if (pocketReviewOwner.IsCleared && pocketReviewOwner.Skill1FollowupHitConfirmed)
+            {
+                return ResolveStageText(
+                    profile?.CleanRouteRewardHook,
+                    "Clean route logged: summon screen created a Skill1 confirm before the counter wave arrived.");
+            }
+
+            return ResolveStageText(
+                profile?.RewardHook,
+                "Review-only route record; no payout or progression grant.");
+        }
+
+        private string ResolveResultNextObjective()
+        {
+            FrontlineWaveStageProfile profile = ResolveActiveStageProfile();
+            if (pocketReviewOwner == null)
+            {
+                return string.Empty;
+            }
+
+            if (pocketReviewOwner.IsFailed)
+            {
+                return ResolveStageText(
+                    profile?.FailedRouteNextObjective,
+                    "Next run: stop the close probe, build forward EN, then spend summon on the visible curtain.");
+            }
+
+            if (IsCounterRecoveryClear())
+            {
+                return ResolveStageText(
+                    profile?.CounterRecoveryNextObjective,
+                    "Next run: answer the counter wave earlier so recovery becomes a clean summon route.");
+            }
+
+            if (pocketReviewOwner.IsCleared)
+            {
+                return ResolveStageText(
+                    profile?.CleanRouteNextObjective,
+                    "Next run: keep the route clean by confirming before the counter wave enters.");
+            }
+
+            return string.Empty;
+        }
+
+        private string ResolveResultRouteLabel()
+        {
+            if (pocketReviewOwner == null)
+            {
+                return "-";
+            }
+
+            if (pocketReviewOwner.IsFailed)
+            {
+                return pocketReviewOwner.FailedFromRouteStabilityCollapse
+                    ? "Route stability collapse"
+                    : "Player down";
+            }
+
+            if (IsCounterRecoveryClear())
+            {
+                return "Counter recovery";
+            }
+
+            return pocketReviewOwner.Skill1FollowupHitConfirmed
+                ? "Clean summon follow-up"
+                : "Pressure suppression";
+        }
+
+        private FrontlineWaveStageProfile ResolveActiveStageProfile()
+        {
+            if (pocketReviewOwner != null && pocketReviewOwner.StageProfile != null)
+            {
+                return pocketReviewOwner.StageProfile;
+            }
+
+            return reviewHud != null ? reviewHud.StageProfileForReview : null;
+        }
+
+        private bool IsCounterRecoveryClear()
+        {
+            return pocketReviewOwner != null
+                && pocketReviewOwner.Skill1FollowupHitConfirmed
+                && (pocketReviewOwner.IsCounterWaveStabilized || pocketReviewOwner.IsCounterWaveFinalWindowOpened);
+        }
+
+        private static string ResolveStageText(string profileText, string fallback)
+        {
+            return string.IsNullOrWhiteSpace(profileText) ? fallback : profileText;
         }
 
         private static string ResolveResultLine(string label, string value)

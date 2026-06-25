@@ -79,6 +79,9 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(90f, stageProfile.TargetDurationSeconds);
             Assert.AreEqual(0.62f, stageProfile.RouteStabilityStart01, 0.001f);
             Assert.That(stageProfile.RouteCollapseFailDetail, Does.Contain("Route stability collapsed"));
+            Assert.That(stageProfile.CleanRouteRewardHook, Does.Contain("Clean route"));
+            Assert.That(stageProfile.CounterRecoveryRewardHook, Does.Contain("Counter recovery"));
+            Assert.That(stageProfile.FailedRouteNextObjective, Does.Contain("visible curtain"));
             Assert.Greater(stageProfile.CloseProbeRouteDrainPerSecond, 0f);
             Assert.Greater(stageProfile.CounterWaveRouteDrainPerSecond, stageProfile.CloseProbeRouteDrainPerSecond);
             Assert.Greater(stageProfile.CounterWaveStabilizeRouteBonus01, 0f);
@@ -173,6 +176,12 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Record S"));
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("42.0/90.0s"));
             Assert.That(reviewHud.ResultBannerDetail, Does.Not.Contain("BOSS CLEAR"));
+            Assert.AreEqual("FRONTLINE STABILIZED", overlayHud.ResultTitleReadout);
+            Assert.That(overlayHud.ResultSummaryReadout, Does.Contain("Summon route analyzed"));
+            Assert.That(overlayHud.ResultRewardReadout, Does.Contain("Clean route logged"));
+            Assert.That(overlayHud.ResultNextObjectiveReadout, Does.Contain("counter wave"));
+            Assert.That(overlayHud.ResultTitleReadout, Does.Not.Contain("BOSS CLEAR"));
+            Assert.That(overlayHud.ResultSummaryReadout, Does.Not.Contain("Boss pressure answered"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Summon follow-up"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("close:recorded"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("summon:recorded"));
@@ -279,6 +288,8 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket owner");
             BossBarrageLaneReviewHud reviewHud =
                 RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "review HUD");
+            BossBarrageLaneReviewOverlayHud overlayHud =
+                RequireComponent<BossBarrageLaneReviewOverlayHud>(RequireRoot(HudRootName), "overlay HUD");
             ActionScreenCuePresenter screenCuePresenter =
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "screen cue presenter");
             BossBarragePocketVfxCueBridge pocketVfxCueBridge =
@@ -435,6 +446,9 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Counter wave held"));
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("final follow-up"));
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Counter recovery"));
+            Assert.That(overlayHud.ResultSummaryReadout, Does.Contain("Counter wave held"));
+            Assert.That(overlayHud.ResultRewardReadout, Does.Contain("Counter recovery logged"));
+            Assert.That(overlayHud.ResultNextObjectiveReadout, Does.Contain("earlier"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Counter recovery"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("followup:recorded"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter_window:opened(final_followup)"));
@@ -656,6 +670,8 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket owner");
             BossBarrageLaneReviewHud reviewHud =
                 RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "review HUD");
+            BossBarrageLaneReviewOverlayHud overlayHud =
+                RequireComponent<BossBarrageLaneReviewOverlayHud>(RequireRoot(HudRootName), "overlay HUD");
             PlayerMovementController player = UnityEngine.Object.FindFirstObjectByType<PlayerMovementController>();
             Assert.NotNull(player, "Frontline route collapse test needs the scene player.");
             CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
@@ -674,6 +690,11 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("LINE COLLAPSED", reviewHud.ResultBannerTitle);
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Route stability collapsed"));
             Assert.That(reviewHud.ResultBannerDetail, Does.Not.Contain("Player down"));
+            Assert.AreEqual("LINE COLLAPSED", overlayHud.ResultTitleReadout);
+            Assert.That(overlayHud.ResultSummaryReadout, Does.Contain("Route stability collapsed"));
+            Assert.That(overlayHud.ResultRewardReadout, Does.Contain("Failure analysis logged"));
+            Assert.That(overlayHud.ResultNextObjectiveReadout, Does.Contain("visible curtain"));
+            Assert.That(overlayHud.ResultTitleReadout, Does.Not.Contain("MISSION FAILED"));
             Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("stability 0%"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Incomplete 0/3"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("reason route collapse"));
@@ -691,6 +712,8 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket owner");
             BossBarrageLaneReviewHud reviewHud =
                 RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "review HUD");
+            BossBarrageLaneReviewOverlayHud overlayHud =
+                RequireComponent<BossBarrageLaneReviewOverlayHud>(RequireRoot(HudRootName), "overlay HUD");
             PlayerMovementController player = UnityEngine.Object.FindFirstObjectByType<PlayerMovementController>();
             Assert.NotNull(player, "Frontline player defeat test needs the scene player.");
             CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
@@ -708,6 +731,9 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(BossBarragePocketReviewOwner.RouteFailureReason.PlayerDown, pocketOwner.FailureReason);
             Assert.AreEqual("LINE COLLAPSED", reviewHud.ResultBannerTitle);
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Player down"));
+            Assert.AreEqual("LINE COLLAPSED", overlayHud.ResultTitleReadout);
+            Assert.That(overlayHud.ResultSummaryReadout, Does.Contain("Player down"));
+            Assert.That(overlayHud.ResultRewardReadout, Does.Contain("Failure analysis logged"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("reason player down"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("decision:failed(player_down)"));
         }

@@ -109,6 +109,18 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField] private string failTitle = "LINE COLLAPSED";
         [SerializeField] private string failDetail = "Player down before the frontline route could stabilize";
         [SerializeField] private string routeCollapseFailDetail = "Route stability collapsed before the frontline could stabilize";
+        [TextArea, SerializeField] private string cleanRouteRewardHook =
+            "Clean route logged: summon screen created a Skill1 confirm before the counter wave arrived.";
+        [TextArea, SerializeField] private string counterRecoveryRewardHook =
+            "Counter recovery logged: summon restored a broken frontline and reopened the final strike window.";
+        [TextArea, SerializeField] private string failedRouteRewardHook =
+            "Failure analysis logged: route stability fell before the frontline answer was complete.";
+        [TextArea, SerializeField] private string cleanRouteNextObjective =
+            "Next run: keep the route clean by confirming before the counter wave enters.";
+        [TextArea, SerializeField] private string counterRecoveryNextObjective =
+            "Next run: answer the counter wave earlier so recovery becomes a clean summon route.";
+        [TextArea, SerializeField] private string failedRouteNextObjective =
+            "Next run: stop the close probe, build forward EN, then spend summon on the visible curtain.";
 
         [Header("Review Evidence")]
         [SerializeField] private StageBeat[] beats = Array.Empty<StageBeat>();
@@ -158,6 +170,12 @@ namespace DimensionBrawl.LevelDesign
         public string FailTitle => failTitle;
         public string FailDetail => failDetail;
         public string RouteCollapseFailDetail => routeCollapseFailDetail;
+        public string CleanRouteRewardHook => cleanRouteRewardHook;
+        public string CounterRecoveryRewardHook => counterRecoveryRewardHook;
+        public string FailedRouteRewardHook => failedRouteRewardHook;
+        public string CleanRouteNextObjective => cleanRouteNextObjective;
+        public string CounterRecoveryNextObjective => counterRecoveryNextObjective;
+        public string FailedRouteNextObjective => failedRouteNextObjective;
         public int BeatCount => beats != null ? beats.Length : 0;
         public int PressureSlotCount => pressureSlots != null ? pressureSlots.Length : 0;
         public int SourceReferenceCount => sourceReferences != null ? sourceReferences.Length : 0;

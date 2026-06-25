@@ -57,6 +57,18 @@ MonoBehaviour:
   failTitle: LINE COLLAPSED
   failDetail: Player down before the frontline route could stabilize
   routeCollapseFailDetail: Route stability collapsed before the frontline could stabilize
+  cleanRouteRewardHook: 'Clean route logged: summon screen created a Skill1 confirm
+    before the counter wave arrived.'
+  counterRecoveryRewardHook: 'Counter recovery logged: summon restored a broken
+    frontline and reopened the final strike window.'
+  failedRouteRewardHook: 'Failure analysis logged: route stability fell before the
+    frontline answer was complete.'
+  cleanRouteNextObjective: 'Next run: keep the route clean by confirming before the
+    counter wave enters.'
+  counterRecoveryNextObjective: 'Next run: answer the counter wave earlier so recovery
+    becomes a clean summon route.'
+  failedRouteNextObjective: 'Next run: stop the close probe, build forward EN, then
+    spend summon on the visible curtain.'
   beats:
   - beatId: B0.MatchRead
     label: Match Read
