@@ -215,6 +215,7 @@ namespace DimensionBrawl.Presentation
                 }
 
                 CinematicSequenceProfile.ActorCue? selectedCue = null;
+                float selectedStartSeconds = float.NegativeInfinity;
                 CinematicSequenceProfile.ActorCue[] actorCues = sequenceProfile.ActorCues;
                 for (int j = 0; j < actorCues.Length; j++)
                 {
@@ -228,7 +229,11 @@ namespace DimensionBrawl.Presentation
                         continue;
                     }
 
-                    selectedCue = cue;
+                    if (cue.StartSeconds >= selectedStartSeconds)
+                    {
+                        selectedCue = cue;
+                        selectedStartSeconds = cue.StartSeconds;
+                    }
                 }
 
                 if (!selectedCue.HasValue)

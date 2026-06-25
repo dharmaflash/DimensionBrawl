@@ -12,10 +12,12 @@ namespace DimensionBrawl.Editor
     public static class ActionFoundationOlympusCorridorInoriPresentationSetup
     {
         private const string DenseScenePath = "Assets/_Game/Scenes/Lookdev/OlympusCorridorDenseLookdev.unity";
-        private const string InoriPrefabPath = "Assets/_Imported/AssetStore/RoloArt/Inori/Prefabs/Inori_MagicaCloth2_Costume1.prefab";
+        private const string InvasionScenePath = "Assets/_Game/Scenes/Lookdev/OlympusCorridorInvasionLookdev.unity";
+        private const string InoriModelPath = ActionFoundationInoriPlayerVisualAssetSetup.ModelPath;
         private const string InoriWalkPosePath = "Assets/_Imported/AssetStore/RoloArt/Inori/Demo/UnityChan Animations/WALK00_F.anim";
         private const string PresentationProfilePath = "Assets/_Game/Art/Environment/OlympusCorridor/Profiles/DB_OlympusCorridor_InoriPresentationPostProcess.asset";
-        private const string InoriInstanceName = "Inori_MagicaCloth2_Costume1";
+        private const string LegacyInoriInstanceName = "Inori_MagicaCloth2_Costume1";
+        private const string InoriInstanceName = "Inori_PromotedLookdev";
         private const string PresentationRootName = "OlympusCorridor_InoriPresentationLookdev";
         private const string PresentationVolumeName = "InoriPresentation_WarmPostProcess";
         private const string PortraitCameraName = "OlympusCorridor_InoriPortraitCamera";
@@ -51,16 +53,30 @@ namespace DimensionBrawl.Editor
             Debug.Log($"Rendered Olympus corridor Inori full body preview: {previewPath}");
         }
 
+        [MenuItem("DimensionBrawl/Apply Olympus Corridor Inori Presentation To Invasion Lookdev")]
+        public static void ApplyInoriPresentationToInvasionLookdevMenu()
+        {
+            ApplyInoriPresentationLookdev(InvasionScenePath);
+            Debug.Log("Applied Olympus corridor Inori presentation lookdev to the invasion scene.");
+        }
+
         public static void ApplyInoriPresentationLookdev()
         {
-            Scene scene = EditorSceneManager.OpenScene(DenseScenePath, OpenSceneMode.Single);
+            ApplyInoriPresentationLookdev(DenseScenePath);
+        }
+
+        private static void ApplyInoriPresentationLookdev(string scenePath)
+        {
+            Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
             if (!scene.IsValid())
             {
-                throw new InvalidOperationException($"Scene is invalid: {DenseScenePath}");
+                throw new InvalidOperationException($"Scene is invalid: {scenePath}");
             }
 
+            RemoveRoot(scene, LegacyInoriInstanceName);
             GameObject inori = FindSceneObjectByName(scene, InoriInstanceName) ?? InstantiateInori(scene);
             RevertInoriPrefabOverrides(inori);
+            ApplyPromotedInoriMaterials(inori);
             ConfigureInoriPlacement(inori);
             ConfigureInoriPoseAndExpression(inori);
             ConfigurePresentationSceneBaseline(scene);
@@ -99,16 +115,17 @@ namespace DimensionBrawl.Editor
 
         private static GameObject InstantiateInori(Scene scene)
         {
-            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(InoriPrefabPath);
-            if (prefab == null)
+            GameObject model = AssetDatabase.LoadAssetAtPath<GameObject>(InoriModelPath);
+            if (model == null)
             {
-                throw new InvalidOperationException($"Missing Inori prefab: {InoriPrefabPath}");
+                throw new InvalidOperationException($"Missing promoted Inori model: {InoriModelPath}");
             }
 
-            GameObject instance = PrefabUtility.InstantiatePrefab(prefab, scene) as GameObject;
+            GameObject instance = PrefabUtility.InstantiatePrefab(model, scene) as GameObject;
             if (instance == null)
             {
-                throw new InvalidOperationException($"Failed to instantiate Inori prefab: {InoriPrefabPath}");
+                instance = UnityEngine.Object.Instantiate(model);
+                SceneManager.MoveGameObjectToScene(instance, scene);
             }
 
             instance.name = InoriInstanceName;
@@ -132,6 +149,22 @@ namespace DimensionBrawl.Editor
             inori.transform.SetPositionAndRotation(InoriPosition, InoriRotation);
             inori.transform.localScale = Vector3.one;
             EditorUtility.SetDirty(inori.transform);
+        }
+
+        private static void ApplyPromotedInoriMaterials(GameObject inori)
+        {
+            foreach (Renderer renderer in inori.GetComponentsInChildren<Renderer>(includeInactive: true))
+            {
+                Material[] materials = renderer.sharedMaterials;
+                for (int i = 0; i < materials.Length; i++)
+                {
+                    string sourceName = materials[i] != null ? materials[i].name : string.Empty;
+                    materials[i] = ActionFoundationInoriPlayerVisualAssetSetup.ResolvePromotedMaterial(sourceName, i);
+                }
+
+                renderer.sharedMaterials = materials;
+                EditorUtility.SetDirty(renderer);
+            }
         }
 
         private static void ConfigureInoriPoseAndExpression(GameObject inori)

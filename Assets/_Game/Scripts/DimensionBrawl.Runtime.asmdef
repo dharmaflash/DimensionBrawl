@@ -3,7 +3,9 @@
     "rootNamespace": "DimensionBrawl",
     "references": [
         "Unity.InputSystem",
-        "Unity.TextMeshPro"
+        "Unity.TextMeshPro",
+        "Unity.Cinemachine",
+        "Unity.Timeline"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

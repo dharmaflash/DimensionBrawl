@@ -150,7 +150,7 @@ namespace DimensionBrawl.Editor
                 clips[i].loopPose = spec.LoopTime;
                 clips[i].lockRootHeightY = true;
                 clips[i].lockRootPositionXZ = true;
-                clips[i].lockRootRotation = false;
+                clips[i].lockRootRotation = true;
                 clips[i].keepOriginalPositionY = true;
                 clips[i].keepOriginalPositionXZ = true;
                 clips[i].keepOriginalOrientation = true;

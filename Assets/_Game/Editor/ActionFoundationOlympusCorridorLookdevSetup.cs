@@ -13,7 +13,7 @@ namespace DimensionBrawl.Editor
 {
     public static class ActionFoundationOlympusCorridorLookdevSetup
     {
-        private const string SourceScenePath = "Assets/_Imported/Hivemind/OlympusTemple/HDRP/Scene/L_Olympus.unity";
+        private const string SourceScenePath = "Assets/_Game/Art/Environment/OlympusTemple/HDRP/Scene/L_Olympus.unity";
         private const string SceneRoot = "Assets/_Game/Scenes/Lookdev";
         private const string TargetScenePath = SceneRoot + "/OlympusCorridorLookdev.unity";
         private const string DenseTargetScenePath = SceneRoot + "/OlympusCorridorDenseLookdev.unity";
@@ -39,13 +39,12 @@ namespace DimensionBrawl.Editor
         private const string SkyboxMaterialPath = MaterialRoot + "/DB_OlympusCorridor_HeavenlySkybox.mat";
 
         private const string AllSkyRoot = "Assets/_Imported/AssetStore/Sky/Allsky";
-        private const string UniFireSmokePrefabRoot = "Assets/_Imported/AssetStore/VFX/UNI VFX/Realistic Explosions, Fire & Smoke/Prefabs";
-        private const string UniGroundFirePrefabPath = UniFireSmokePrefabRoot + "/UNI_Ground_Fire.prefab";
-        private const string UniSmallFirePrefabPath = UniFireSmokePrefabRoot + "/UNI_Small_Fire.prefab";
-        private const string UniDeviceFirePrefabPath = UniFireSmokePrefabRoot + "/UNI_Device_Fire.prefab";
-        private const string UniGasFirePrefabPath = UniFireSmokePrefabRoot + "/UNI_Gas_Fire.prefab";
-        private const string UniBonfirePrefabPath = UniFireSmokePrefabRoot + "/UNI_Bonfire.prefab";
-        private const string UniLongSmokePrefabPath = UniFireSmokePrefabRoot + "/UNI_Long_Smoke.prefab";
+        private const string PromotedUniFireSmokePrefabRoot = "Assets/_Game/Art/VFX/UNI VFX/Realistic Explosions, Fire & Smoke/Prefabs";
+        private const string UniGroundFirePrefabPath = PromotedUniFireSmokePrefabRoot + "/UNI_Ground_Fire.prefab";
+        private const string UniSmallFirePrefabPath = PromotedUniFireSmokePrefabRoot + "/UNI_Small_Fire.prefab";
+        private const string UniDeviceFirePrefabPath = PromotedUniFireSmokePrefabRoot + "/UNI_Device_Fire.prefab";
+        private const string UniGasFirePrefabPath = PromotedUniFireSmokePrefabRoot + "/UNI_Gas_Fire.prefab";
+        private const string UniLongSmokePrefabPath = PromotedUniFireSmokePrefabRoot + "/UNI_Long_Smoke.prefab";
         private const string AllSkySourceSkyboxPath = AllSkyRoot + "/Cartoon/Cartoon Base BlueSky/Day_BlueSky_Nothing.mat";
         private const string InvasionCrackDecalTexturePath = DecalTextureRoot + "/DB_OlympusCorridor_InvasionCrackDecal.png";
         private const string MobileRendererDataPath = "Assets/Settings/Mobile_Renderer.asset";
@@ -70,6 +69,9 @@ namespace DimensionBrawl.Editor
         private const string CameraName = "OlympusCorridor_LookdevCamera";
         private const string LightingName = "OlympusCorridor_LookdevLighting";
         private const string SanctuaryVisualsName = "OlympusCorridor_BlueRiftSanctuary";
+        private const string InvasionFireBillboardsRootName = "InvasionFireBillboards";
+        private const string InvasionSmokeBillboardsRootName = "InvasionSmokeBillboards";
+        private const string PromotedUniFireSmokeVfxRootName = "PromotedUniFireSmokeVfx";
         private const string CombatAnchorsName = "OlympusCorridor_CombatReadAnchors";
         private const string PreviewFileName = "olympus-corridor-lookdev-preview.png";
         private const string ClosePreviewFileName = "olympus-corridor-lookdev-close-preview.png";
@@ -79,6 +81,7 @@ namespace DimensionBrawl.Editor
         private const string InvasionPlayPreviewFileName = "olympus-corridor-invasion-play-preview.png";
         private const string InvasionPlayPreviewPendingKey = "DimensionBrawl.OlympusCorridor.InvasionPlayPreviewPending";
         private const float InvasionPlayPreviewWarmupSeconds = 3.0f;
+        private const bool EnableInvasionFireVisuals = true;
         private static double invasionPlayPreviewCaptureStartTime;
         [MenuItem("DimensionBrawl/Reapply Olympus Corridor Lookdev")]
         public static void ReapplyOlympusCorridorLookdevMenu()
@@ -118,7 +121,7 @@ namespace DimensionBrawl.Editor
 
             if (!AssetDatabase.LoadAssetAtPath<SceneAsset>(SourceScenePath))
             {
-                throw new InvalidOperationException($"Missing imported Olympus source scene: {SourceScenePath}");
+                throw new InvalidOperationException($"Missing promoted Olympus source scene: {SourceScenePath}");
             }
 
             if (!AssetDatabase.LoadAssetAtPath<SceneAsset>(targetScenePath))
@@ -193,8 +196,6 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException("RenderSettings.skybox should use the promoted Olympus AllSky material.");
             }
 
-            RequireAsset<Material>(AllSkySourceSkyboxPath);
-
             VolumeProfile profile = RequireAsset<VolumeProfile>(PostProcessProfilePath);
             ValidateVolumeProfile(profile);
             RequireVolumeComponent<Bloom>(profile);
@@ -206,7 +207,7 @@ namespace DimensionBrawl.Editor
 
             if (!AssetDatabase.LoadAssetAtPath<SceneAsset>(SourceScenePath))
             {
-                throw new InvalidOperationException($"Imported Olympus source scene should remain available: {SourceScenePath}");
+                throw new InvalidOperationException($"Promoted Olympus source scene should remain available: {SourceScenePath}");
             }
 
             if (string.Equals(SourceScenePath, TargetScenePath, StringComparison.Ordinal))
@@ -340,6 +341,34 @@ namespace DimensionBrawl.Editor
             ConfigureImportedSkyFogVolumes(scene);
             ConfigureInvasionLookdevRoot(scene);
             ClearGeneratedLightingData(scene);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            AssetDatabase.SaveAssets();
+        }
+
+        [MenuItem("DimensionBrawl/Apply Promoted UNI Fire VFX To Olympus Invasion")]
+        public static void ApplyPromotedUniFireVfxToOlympusInvasionMenu()
+        {
+            ApplyPromotedUniFireVfxToOlympusInvasion();
+            Debug.Log("Applied promoted UNI fire VFX to the Olympus invasion lookdev scene.");
+        }
+
+        public static void ApplyPromotedUniFireVfxToOlympusInvasion()
+        {
+            Scene scene = EditorSceneManager.OpenScene(InvasionTargetScenePath, OpenSceneMode.Single);
+            GameObject root = RequireRoot(scene, InvasionLookdevRootName);
+            Transform sanctuary = RequireChild(root.transform, SanctuaryVisualsName);
+            sanctuary.gameObject.SetActive(true);
+
+            RemoveChild(sanctuary, InvasionFireBillboardsRootName);
+            RemoveChild(sanctuary, InvasionSmokeBillboardsRootName);
+            RemoveChild(sanctuary, PromotedUniFireSmokeVfxRootName);
+
+            if (EnableInvasionFireVisuals)
+            {
+                CreateInvasionFireAndSmoke(sanctuary);
+            }
+
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
             AssetDatabase.SaveAssets();
@@ -625,7 +654,7 @@ namespace DimensionBrawl.Editor
             {
                 camera.targetTexture = renderTexture;
                 RenderTexture.active = renderTexture;
-                SimulateSceneVisualEffects(camera.gameObject.scene, 1.15f);
+                SimulateSceneVisualEffects(camera.gameObject.scene, 1.8f);
                 camera.Render();
                 preview.ReadPixels(new Rect(0f, 0f, width, height), 0, 0);
                 preview.Apply();
@@ -1435,7 +1464,11 @@ namespace DimensionBrawl.Editor
             Material damagedMarble = EnsureMaterial(DamagedMarbleMaterialPath, new Color(0.68f, 0.66f, 0.66f, 1f), new Color(0.08f, 0.055f, 0.045f, 1f));
             GameObject visualsRoot = CreateChild(root, SanctuaryVisualsName, Vector3.zero, Quaternion.identity, Vector3.one);
 
-            CreateInvasionFireAndSmoke(visualsRoot.transform);
+            if (EnableInvasionFireVisuals)
+            {
+                CreateInvasionFireAndSmoke(visualsRoot.transform);
+            }
+
             CreateInvasionRubble(visualsRoot.transform, scorchedStone, damagedMarble, goldGlow);
             CreateInvasionCrackDecals(visualsRoot.transform);
         }
@@ -1699,20 +1732,37 @@ namespace DimensionBrawl.Editor
 
         private static void CreateInvasionFireAndSmoke(Transform parent)
         {
-            CreateImportedVfxInstance(parent, UniSmallFirePrefabPath, "VFX_SmallFire_LeftOuterFloorNear", new Vector3(-4.2f, 0.22f, -3.25f), Quaternion.identity, Vector3.one * 0.34f);
-            CreateImportedVfxInstance(parent, UniSmallFirePrefabPath, "VFX_SmallFire_RightOuterFloorNear", new Vector3(-2.4f, 0.22f, 3.2f), Quaternion.identity, Vector3.one * 0.32f);
-            CreateImportedVfxInstance(parent, UniGroundFirePrefabPath, "VFX_GroundFire_LeftOuterFloorMid", new Vector3(2.7f, 0.22f, -3.35f), Quaternion.identity, Vector3.one * 0.42f);
-            CreateImportedVfxInstance(parent, UniGroundFirePrefabPath, "VFX_GroundFire_RightOuterFloorMid", new Vector3(3.2f, 0.22f, 3.35f), Quaternion.identity, Vector3.one * 0.44f);
-            CreateImportedVfxInstance(parent, UniDeviceFirePrefabPath, "VFX_DeviceFire_LeftOuterFloorBack", new Vector3(8.6f, 0.32f, -3.2f), Quaternion.identity, Vector3.one * 0.42f);
-            CreateImportedVfxInstance(parent, UniDeviceFirePrefabPath, "VFX_DeviceFire_RightOuterFloorBack", new Vector3(9f, 0.32f, 3.2f), Quaternion.identity, Vector3.one * 0.44f);
-            CreateImportedVfxInstance(parent, UniGasFirePrefabPath, "VFX_GasFire_FarLeftBackgroundFloor", new Vector3(12.4f, 0.55f, -3.45f), Quaternion.identity, Vector3.one * 0.36f);
-            CreateImportedVfxInstance(parent, UniGasFirePrefabPath, "VFX_GasFire_FarRightBackgroundFloor", new Vector3(12.9f, 0.55f, 3.45f), Quaternion.identity, Vector3.one * 0.38f);
-            CreateImportedVfxInstance(parent, UniGroundFirePrefabPath, "VFX_GroundFire_RearLeftBackgroundFloor", new Vector3(14f, 0.22f, -2.7f), Quaternion.identity, Vector3.one * 0.36f);
-            CreateImportedVfxInstance(parent, UniGroundFirePrefabPath, "VFX_GroundFire_RearRightBackgroundFloor", new Vector3(14.3f, 0.22f, 2.7f), Quaternion.identity, Vector3.one * 0.38f);
-            CreateImportedVfxInstance(parent, UniLongSmokePrefabPath, "VFX_LongSmoke_FarLeftBackground", new Vector3(12.4f, 0.48f, -3.45f), Quaternion.identity, Vector3.one * 0.26f);
-            CreateImportedVfxInstance(parent, UniLongSmokePrefabPath, "VFX_LongSmoke_FarRightBackground", new Vector3(12.9f, 0.48f, 3.45f), Quaternion.identity, Vector3.one * 0.28f);
+            parent.gameObject.SetActive(true);
+            Transform vfxRoot = CreateChild(parent, PromotedUniFireSmokeVfxRootName, Vector3.zero, Quaternion.identity, Vector3.one).transform;
+            vfxRoot.gameObject.SetActive(true);
+
+            CreatePromotedVfxInstance(vfxRoot, UniSmallFirePrefabPath, "UNI_SmallFire_LeftCollapsedSlab", new Vector3(-4.2f, 0.46f, -2.06f), Quaternion.identity, Vector3.one * 1.65f);
+            CreatePromotedVfxInstance(vfxRoot, UniSmallFirePrefabPath, "UNI_SmallFire_LeftBrokenCapstone", new Vector3(0.8f, 0.48f, -1.72f), Quaternion.identity, Vector3.one * 1.35f);
+            CreatePromotedVfxInstance(vfxRoot, UniGroundFirePrefabPath, "UNI_GroundFire_RightCollapsedSlab", new Vector3(1.55f, 0.42f, 1.94f), Quaternion.identity, Vector3.one * 1.48f);
+            CreatePromotedVfxInstance(vfxRoot, UniDeviceFirePrefabPath, "UNI_DeviceFire_RightBrokenRail", new Vector3(6.6f, 0.7f, 2.08f), Quaternion.identity, Vector3.one * 1.18f);
+            CreatePromotedVfxInstance(vfxRoot, UniGroundFirePrefabPath, "UNI_GroundFire_RightBackShard", new Vector3(8.5f, 0.38f, 1.68f), Quaternion.identity, Vector3.one * 1.22f);
+            CreatePromotedVfxInstance(vfxRoot, UniLongSmokePrefabPath, "UNI_LongSmoke_RightBrokenRail", new Vector3(6.6f, 0.8f, 2.08f), Quaternion.identity, Vector3.one * 0.62f);
+            CreatePromotedVfxInstance(vfxRoot, UniLongSmokePrefabPath, "UNI_LongSmoke_RightBackShard", new Vector3(8.5f, 0.58f, 1.68f), Quaternion.identity, Vector3.one * 0.56f);
+
+            CreateInvasionFireLight(vfxRoot, "FireGlow_LeftCollapsedSlab", new Vector3(-4.2f, 0.78f, -2.06f), 0.55f, 2.9f);
+            CreateInvasionFireLight(vfxRoot, "FireGlow_LeftBrokenCapstone", new Vector3(0.8f, 0.75f, -1.72f), 0.45f, 2.6f);
+            CreateInvasionFireLight(vfxRoot, "FireGlow_RightCollapsedSlab", new Vector3(1.55f, 0.72f, 1.94f), 0.45f, 2.6f);
+            CreateInvasionFireLight(vfxRoot, "FireGlow_RightBrokenRail", new Vector3(6.6f, 1.02f, 2.08f), 0.38f, 2.5f);
         }
-        private static GameObject CreateImportedVfxInstance(Transform parent, string prefabPath, string name, Vector3 localPosition, Quaternion localRotation, Vector3 localScale)
+
+        private static void CreateInvasionFireLight(Transform parent, string name, Vector3 localPosition, float intensity, float range)
+        {
+            Light light = CreateLight(parent, name, localPosition);
+            light.type = LightType.Point;
+            light.color = new Color(1f, 0.34f, 0.08f, 1f);
+            light.intensity = intensity;
+            light.range = range;
+            light.shadows = LightShadows.None;
+            light.bounceIntensity = 0f;
+            EditorUtility.SetDirty(light);
+        }
+
+        private static GameObject CreatePromotedVfxInstance(Transform parent, string prefabPath, string name, Vector3 localPosition, Quaternion localRotation, Vector3 localScale)
         {
             GameObject sourcePrefab = RequireAsset<GameObject>(prefabPath);
             GameObject instance = PrefabUtility.InstantiatePrefab(sourcePrefab, parent.gameObject.scene) as GameObject;
@@ -1726,40 +1776,44 @@ namespace DimensionBrawl.Editor
             instance.transform.localPosition = localPosition;
             instance.transform.localRotation = localRotation;
             instance.transform.localScale = localScale;
-
-            instance.AddComponent<DimensionBrawl.VFX.VfxPlayOnEnable>();
-
             instance.SetActive(true);
+
             foreach (Transform child in instance.GetComponentsInChildren<Transform>(includeInactive: true))
             {
                 child.gameObject.SetActive(true);
             }
 
-            Renderer[] renderers = instance.GetComponentsInChildren<Renderer>(includeInactive: true);
-            for (int i = 0; i < renderers.Length; i++)
+            foreach (Renderer renderer in instance.GetComponentsInChildren<Renderer>(includeInactive: true))
             {
-                renderers[i].enabled = true;
-                renderers[i].shadowCastingMode = ShadowCastingMode.Off;
-                renderers[i].receiveShadows = false;
-                EditorUtility.SetDirty(renderers[i]);
+                renderer.enabled = true;
+                renderer.shadowCastingMode = ShadowCastingMode.Off;
+                renderer.receiveShadows = false;
+                EditorUtility.SetDirty(renderer);
             }
 
-            VisualEffect[] effects = instance.GetComponentsInChildren<VisualEffect>(includeInactive: true);
-            for (int i = 0; i < effects.Length; i++)
+            foreach (VisualEffect effect in instance.GetComponentsInChildren<VisualEffect>(includeInactive: true))
             {
-                effects[i].enabled = true;
-                effects[i].Reinit();
-                effects[i].SendEvent("OnPlay");
-                effects[i].Play();
-                effects[i].Simulate(1f / 30f, 90u);
-                EditorUtility.SetDirty(effects[i]);
+                effect.enabled = true;
+                effect.Reinit();
+                effect.SendEvent("OnPlay");
+                effect.Play();
+                effect.Simulate(1f / 30f, 90u);
+                EditorUtility.SetDirty(effect);
             }
 
-            AudioSource[] audioSources = instance.GetComponentsInChildren<AudioSource>(includeInactive: true);
-            for (int i = 0; i < audioSources.Length; i++)
+            foreach (ParticleSystem particleSystem in instance.GetComponentsInChildren<ParticleSystem>(includeInactive: true))
             {
-                audioSources[i].enabled = false;
-                EditorUtility.SetDirty(audioSources[i]);
+                particleSystem.gameObject.SetActive(true);
+                particleSystem.Clear(withChildren: true);
+                particleSystem.Play(withChildren: true);
+                particleSystem.Simulate(1.8f, withChildren: true, restart: true, fixedTimeStep: true);
+                EditorUtility.SetDirty(particleSystem);
+            }
+
+            foreach (AudioSource audioSource in instance.GetComponentsInChildren<AudioSource>(includeInactive: true))
+            {
+                audioSource.enabled = false;
+                EditorUtility.SetDirty(audioSource);
             }
 
             EditorUtility.SetDirty(instance);
@@ -1771,15 +1825,36 @@ namespace DimensionBrawl.Editor
             uint steps = (uint)Mathf.Max(1, Mathf.CeilToInt(seconds * 30f));
             foreach (GameObject root in scene.GetRootGameObjects())
             {
-                VisualEffect[] effects = root.GetComponentsInChildren<VisualEffect>(includeInactive: true);
-                for (int i = 0; i < effects.Length; i++)
+                foreach (VisualEffect effect in root.GetComponentsInChildren<VisualEffect>(includeInactive: true))
                 {
-                    effects[i].Reinit();
-                    effects[i].Play();
-                    effects[i].Simulate(1f / 30f, steps);
+                    effect.enabled = true;
+                    effect.Reinit();
+                    effect.SendEvent("OnPlay");
+                    effect.Play();
+                    effect.Simulate(1f / 30f, steps);
+                    EditorUtility.SetDirty(effect);
+                }
+
+                foreach (Renderer renderer in root.GetComponentsInChildren<Renderer>(includeInactive: true))
+                {
+                    if (renderer.GetComponent<VisualEffect>() != null)
+                    {
+                        renderer.enabled = true;
+                        EditorUtility.SetDirty(renderer);
+                    }
+                }
+
+                foreach (ParticleSystem particleSystem in root.GetComponentsInChildren<ParticleSystem>(includeInactive: true))
+                {
+                    particleSystem.gameObject.SetActive(true);
+                    particleSystem.Clear(withChildren: true);
+                    particleSystem.Play(withChildren: true);
+                    particleSystem.Simulate(seconds, withChildren: true, restart: true, fixedTimeStep: true);
+                    EditorUtility.SetDirty(particleSystem);
                 }
             }
         }
+
         private static void CreateInvasionRubble(Transform parent, Material scorchedStone, Material damagedMarble, Material goldGlow)
         {
             CreatePrimitiveVisual(parent, "FallenPillar_LeftNear", PrimitiveType.Cylinder, new Vector3(-1.7f, 0.52f, -2.22f), Quaternion.Euler(0f, 0f, 78f), new Vector3(0.28f, 1.45f, 0.28f), damagedMarble);
@@ -2006,7 +2081,6 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(material);
             return material;
         }
-
 
         private static void EnsureOlympusCorridorDecalRendererFeature()
         {
@@ -2446,8 +2520,22 @@ namespace DimensionBrawl.Editor
 
         private static Material EnsurePromotedAllSkySkybox(string skyboxPath, Color tint, float exposure, float rotation)
         {
-            Material sourceSkybox = RequireAsset<Material>(AllSkySourceSkyboxPath);
+            Material sourceSkybox = AssetDatabase.LoadAssetAtPath<Material>(AllSkySourceSkyboxPath);
             Material skybox = AssetDatabase.LoadAssetAtPath<Material>(skyboxPath);
+            if (sourceSkybox == null)
+            {
+                if (skybox == null)
+                {
+                    throw new InvalidOperationException($"Missing promoted skybox {skyboxPath}; install the local AllSky source pack at {AllSkySourceSkyboxPath} to regenerate it.");
+                }
+
+                SetMaterialColor(skybox, "_Tint", tint);
+                SetMaterialFloat(skybox, "_Exposure", exposure);
+                SetMaterialFloat(skybox, "_Rotation", rotation);
+                EditorUtility.SetDirty(skybox);
+                return skybox;
+            }
+
             if (skybox == null)
             {
                 skybox = new Material(sourceSkybox.shader);
@@ -2776,6 +2864,15 @@ namespace DimensionBrawl.Editor
                     UnityEngine.Object.DestroyImmediate(root);
                     return;
                 }
+            }
+        }
+
+        private static void RemoveChild(Transform parent, string childName)
+        {
+            Transform child = parent.Find(childName);
+            if (child != null)
+            {
+                UnityEngine.Object.DestroyImmediate(child.gameObject);
             }
         }
 
