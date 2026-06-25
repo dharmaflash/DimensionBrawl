@@ -833,6 +833,7 @@ Route stability is now part of the review-scene contract:
 - The profile carries a compact combat promise and entry cue, and the premium HUD objective panel must surface them before the beat line so the player sees why the route matters, not just which button to press next.
 - CloseProbe, SummonNeed, and CounterWave beats drain route stability until the player answers the local objective.
 - Close-threat defeat, `SummonSlot1` pressure block, and confirmed `Skill1` follow-up restore stability.
+- Active frontline proxies must affect route pressure: ally presence reduces drain, contested presence softens it, and enemy-only presence increases it.
 - If stability collapses, the pocket fails as `LINE COLLAPSED` even when player HP remains, so the match is not reducible to HP trading or button timing.
 - Route stability must warn before collapse with `stable` / `unstable` / `critical` bands and frontline screen cues, so the player feels the line being lost before the failure banner.
 - The HUD and route record must show the active pressure slot, stability, route progress, and target time.

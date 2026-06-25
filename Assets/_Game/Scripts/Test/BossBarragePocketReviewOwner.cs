@@ -203,6 +203,13 @@ namespace DimensionBrawl.Test
         public float RouteStability01 => IsRouteStabilityActive ? Mathf.Clamp01(routeStability01) : 1f;
         public float RouteStabilityPercent => RouteStability01 * 100f;
         public RouteStabilityBand CurrentRouteStabilityBand => ResolveRouteStabilityBand(RouteStability01);
+        public float CurrentRouteStabilityDrainPerSecond => IsRouteStabilityActive && state == PocketState.Running
+            ? ResolveRouteStabilityDrainPerSecond()
+            : 0f;
+        public int ActiveAllyFrontlineProxyCount => ResolveActiveFrontlineProxyCount(playerSide: true);
+        public int ActiveEnemyFrontlineProxyCount => ResolveActiveFrontlineProxyCount(playerSide: false);
+        public float CurrentFrontlinePresenceDrainScale => ResolveFrontlinePresenceDrainScale();
+        public string FrontlinePresenceReadout => ResolveFrontlinePresenceReadout();
         public int CurrentPressureSlotIndex => ResolveCurrentPressureSlotIndex();
         public string CurrentPressureSlotLabel => ResolveCurrentPressureSlotLabel();
         public float CurrentRoutePressureWeight => ResolveCurrentRoutePressureWeight();
@@ -739,13 +746,18 @@ namespace DimensionBrawl.Test
         {
             if (!closeThreatDefeated)
             {
-                return stageProfile.CloseProbeRouteDrainPerSecond * ResolveCurrentRoutePressureWeight();
+                return stageProfile.CloseProbeRouteDrainPerSecond
+                    * ResolveCurrentRoutePressureWeight()
+                    * ResolveFrontlinePresenceDrainScale();
             }
 
             if (!blockedBossPressureWithSummon)
             {
                 float reliefScale = pressurePacing.IsCloseThreatReliefActive ? 0.45f : 1f;
-                return stageProfile.SummonAnswerRouteDrainPerSecond * reliefScale * ResolveCurrentRoutePressureWeight();
+                return stageProfile.SummonAnswerRouteDrainPerSecond
+                    * reliefScale
+                    * ResolveCurrentRoutePressureWeight()
+                    * ResolveFrontlinePresenceDrainScale();
             }
 
             if (requireSkill1FollowupHitToClear && !skill1FollowupHitConfirmed)
@@ -756,7 +768,10 @@ namespace DimensionBrawl.Test
                 }
 
                 float pressureBreakScale = pressurePacing.IsSummonPressureBreakActive ? 0.35f : 1f;
-                return stageProfile.CounterWaveRouteDrainPerSecond * pressureBreakScale * ResolveCurrentRoutePressureWeight();
+                return stageProfile.CounterWaveRouteDrainPerSecond
+                    * pressureBreakScale
+                    * ResolveCurrentRoutePressureWeight()
+                    * ResolveFrontlinePresenceDrainScale();
             }
 
             return 0f;
@@ -804,6 +819,76 @@ namespace DimensionBrawl.Test
             }
 
             return RouteStabilityBand.Stable;
+        }
+
+        private string ResolveFrontlinePresenceReadout()
+        {
+            ResolveActiveFrontlineProxyCounts(out int allyCount, out int enemyCount);
+            string state = allyCount > 0 && enemyCount > 0
+                ? "contest"
+                : allyCount > 0
+                    ? "ally"
+                    : enemyCount > 0
+                        ? "enemy"
+                        : "open";
+            return $"frontline x{ResolveFrontlinePresenceDrainScale(allyCount, enemyCount):0.00} {state}";
+        }
+
+        private float ResolveFrontlinePresenceDrainScale()
+        {
+            ResolveActiveFrontlineProxyCounts(out int allyCount, out int enemyCount);
+            return ResolveFrontlinePresenceDrainScale(allyCount, enemyCount);
+        }
+
+        private static float ResolveFrontlinePresenceDrainScale(int allyCount, int enemyCount)
+        {
+            if (allyCount > 0 && enemyCount > 0)
+            {
+                return 0.85f;
+            }
+
+            if (allyCount > 0)
+            {
+                return 0.70f;
+            }
+
+            if (enemyCount > 0)
+            {
+                return 1.20f;
+            }
+
+            return 1f;
+        }
+
+        private int ResolveActiveFrontlineProxyCount(bool playerSide)
+        {
+            ResolveActiveFrontlineProxyCounts(out int allyCount, out int enemyCount);
+            return playerSide ? allyCount : enemyCount;
+        }
+
+        private static void ResolveActiveFrontlineProxyCounts(out int allyCount, out int enemyCount)
+        {
+            allyCount = 0;
+            enemyCount = 0;
+            int proxyCount = SummonFrontlineProxy.ActiveRegisteredProxyCount;
+            for (int i = 0; i < proxyCount; i++)
+            {
+                if (!SummonFrontlineProxy.TryGetActiveRegisteredProxy(i, out SummonFrontlineProxy proxy)
+                    || proxy == null
+                    || proxy.Health == null)
+                {
+                    continue;
+                }
+
+                if (CombatTeamUtility.IsPlayerSide(proxy.Health.Team))
+                {
+                    allyCount++;
+                }
+                else
+                {
+                    enemyCount++;
+                }
+            }
         }
 
         private float ResolveRouteStabilityStart01()

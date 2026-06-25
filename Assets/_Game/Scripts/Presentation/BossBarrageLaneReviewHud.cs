@@ -1497,7 +1497,7 @@ namespace DimensionBrawl.Presentation
             }
 
             string band = pocketReviewOwner.CurrentRouteStabilityBand.ToString().ToLowerInvariant();
-            return $"stability {pocketReviewOwner.RouteStabilityPercent:0}% {band}";
+            return $"stability {pocketReviewOwner.RouteStabilityPercent:0}% {band} {pocketReviewOwner.FrontlinePresenceReadout}";
         }
 
         private string ResolveCompactRouteStabilityText()
@@ -1508,7 +1508,7 @@ namespace DimensionBrawl.Presentation
             }
 
             string band = pocketReviewOwner.CurrentRouteStabilityBand.ToString().ToLowerInvariant();
-            return $"Route {pocketReviewOwner.RouteStabilityPercent:0}% {band}";
+            return $"Route {pocketReviewOwner.RouteStabilityPercent:0}% {band} {pocketReviewOwner.FrontlinePresenceReadout}";
         }
 
         private string ResolveRouteRecordGrade(float targetSeconds)

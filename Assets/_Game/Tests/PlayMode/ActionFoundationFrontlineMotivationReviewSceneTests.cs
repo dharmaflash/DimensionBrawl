@@ -208,6 +208,47 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator FrontlinePresenceChangesRoutePressureDrain()
+        {
+            EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
+            yield return null;
+
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket owner");
+            BossBarrageLaneReviewHud reviewHud =
+                RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "review HUD");
+
+            Assert.AreEqual(0, pocketOwner.ActiveAllyFrontlineProxyCount);
+            Assert.AreEqual(0, pocketOwner.ActiveEnemyFrontlineProxyCount);
+            Assert.AreEqual(1f, pocketOwner.CurrentFrontlinePresenceDrainScale, 0.001f);
+            Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("frontline x1.00 open"));
+            float openDrain = pocketOwner.CurrentRouteStabilityDrainPerSecond;
+            Assert.Greater(openDrain, 0f);
+
+            SummonFrontlineProxy allyProxy = CreateActiveFrontlineProxy("Test_Ally_FrontlineProxy", DamageTeam.AllySummon);
+            Assert.AreEqual(1, pocketOwner.ActiveAllyFrontlineProxyCount);
+            Assert.AreEqual(0, pocketOwner.ActiveEnemyFrontlineProxyCount);
+            Assert.AreEqual(0.70f, pocketOwner.CurrentFrontlinePresenceDrainScale, 0.001f);
+            Assert.Less(pocketOwner.CurrentRouteStabilityDrainPerSecond, openDrain);
+            Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("frontline x0.70 ally"));
+
+            SummonFrontlineProxy enemyProxy = CreateActiveFrontlineProxy("Test_Enemy_FrontlineProxy", DamageTeam.Enemy);
+            Assert.AreEqual(1, pocketOwner.ActiveAllyFrontlineProxyCount);
+            Assert.AreEqual(1, pocketOwner.ActiveEnemyFrontlineProxyCount);
+            Assert.AreEqual(0.85f, pocketOwner.CurrentFrontlinePresenceDrainScale, 0.001f);
+            Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("frontline x0.85 contest"));
+
+            allyProxy.Deactivate(SummonFrontlineProxyExitReason.Recalled);
+            Assert.AreEqual(0, pocketOwner.ActiveAllyFrontlineProxyCount);
+            Assert.AreEqual(1, pocketOwner.ActiveEnemyFrontlineProxyCount);
+            Assert.AreEqual(1.20f, pocketOwner.CurrentFrontlinePresenceDrainScale, 0.001f);
+            Assert.Greater(pocketOwner.CurrentRouteStabilityDrainPerSecond, openDrain);
+            Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("frontline x1.20 enemy"));
+
+            enemyProxy.Deactivate(SummonFrontlineProxyExitReason.Recalled);
+        }
+
+        [UnityTest]
         public IEnumerator FrontlineRouteStabilityCollapseFailsRouteWithoutPlayerDefeat()
         {
             EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
@@ -302,6 +343,18 @@ namespace DimensionBrawl.Tests
             T component = gameObject.GetComponent<T>();
             Assert.NotNull(component, $"{gameObject.name} is missing {label}.");
             return component;
+        }
+
+        private static SummonFrontlineProxy CreateActiveFrontlineProxy(string objectName, DamageTeam team)
+        {
+            GameObject proxyObject = new GameObject(objectName);
+            CombatHealth health = proxyObject.AddComponent<CombatHealth>();
+            health.ConfigureTeam(team);
+            health.ConfigureMaxHealth(100f);
+            SummonFrontlineProxy proxy = proxyObject.AddComponent<SummonFrontlineProxy>();
+            proxy.ConfigureHealth(health);
+            proxy.Activate(Vector3.zero, Vector3.forward, 1, 10f, 1f);
+            return proxy;
         }
 
         private static T GetObjectReference<T>(UnityEngine.Object target, string fieldName)
