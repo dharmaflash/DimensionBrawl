@@ -26,6 +26,13 @@ namespace DimensionBrawl.Test
             RouteStabilityCollapsed
         }
 
+        public enum RouteStabilityBand
+        {
+            Stable,
+            Unstable,
+            Critical
+        }
+
         private enum PocketState
         {
             Running,
@@ -119,6 +126,7 @@ namespace DimensionBrawl.Test
         private bool followupMissedNotified;
         private bool bossBlockedSkill1Followup;
         private int announcedStageBeatIndex;
+        private RouteStabilityBand announcedRouteStabilityBand;
 
         public event Action<int> SummonFollowupWindowOpened;
         public event Action<int, float> SummonFollowupHitConfirmed;
@@ -127,6 +135,7 @@ namespace DimensionBrawl.Test
         public event Action PocketCleared;
         public event Action PocketFailed;
         public event Action<int> StageBeatChanged;
+        public event Action<RouteStabilityBand, float> RouteStabilityBandChanged;
 
         public bool IsRunning => state == PocketState.Running;
         public bool IsCleared => state == PocketState.Cleared;
@@ -193,6 +202,7 @@ namespace DimensionBrawl.Test
         public bool IsRouteStabilityActive => stageProfile != null;
         public float RouteStability01 => IsRouteStabilityActive ? Mathf.Clamp01(routeStability01) : 1f;
         public float RouteStabilityPercent => RouteStability01 * 100f;
+        public RouteStabilityBand CurrentRouteStabilityBand => ResolveRouteStabilityBand(RouteStability01);
         public int CurrentPressureSlotIndex => ResolveCurrentPressureSlotIndex();
         public string CurrentPressureSlotLabel => ResolveCurrentPressureSlotLabel();
         public float CurrentRoutePressureWeight => ResolveCurrentRoutePressureWeight();
@@ -369,6 +379,7 @@ namespace DimensionBrawl.Test
             routeStability01 = ResolveRouteStabilityStart01();
             failureReason = RouteFailureReason.None;
             announcedStageBeatIndex = ResolveCurrentStageBeatIndex();
+            announcedRouteStabilityBand = CurrentRouteStabilityBand;
             SetBarrageEnabled(true);
             SetEnergyGainEnabled(true);
             SetBossPressureCostGainEnabled(true);
@@ -721,6 +732,7 @@ namespace DimensionBrawl.Test
             }
 
             routeStability01 = Mathf.Clamp01(routeStability01 - drain * Mathf.Max(0f, deltaTime));
+            PublishRouteStabilityBandChangeIfNeeded();
         }
 
         private float ResolveRouteStabilityDrainPerSecond()
@@ -758,6 +770,40 @@ namespace DimensionBrawl.Test
             }
 
             routeStability01 = Mathf.Clamp01(routeStability01 + amount01);
+            PublishRouteStabilityBandChangeIfNeeded();
+        }
+
+        private void PublishRouteStabilityBandChangeIfNeeded()
+        {
+            if (!IsRouteStabilityActive)
+            {
+                return;
+            }
+
+            RouteStabilityBand currentBand = CurrentRouteStabilityBand;
+            if (currentBand == announcedRouteStabilityBand)
+            {
+                return;
+            }
+
+            announcedRouteStabilityBand = currentBand;
+            RouteStabilityBandChanged?.Invoke(currentBand, RouteStability01);
+        }
+
+        private static RouteStabilityBand ResolveRouteStabilityBand(float stability01)
+        {
+            float safeStability = Mathf.Clamp01(stability01);
+            if (safeStability <= 0.2f)
+            {
+                return RouteStabilityBand.Critical;
+            }
+
+            if (safeStability <= 0.4f)
+            {
+                return RouteStabilityBand.Unstable;
+            }
+
+            return RouteStabilityBand.Stable;
         }
 
         private float ResolveRouteStabilityStart01()

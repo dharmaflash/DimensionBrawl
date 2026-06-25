@@ -834,6 +834,7 @@ Route stability is now part of the review-scene contract:
 - CloseProbe, SummonNeed, and CounterWave beats drain route stability until the player answers the local objective.
 - Close-threat defeat, `SummonSlot1` pressure block, and confirmed `Skill1` follow-up restore stability.
 - If stability collapses, the pocket fails as `LINE COLLAPSED` even when player HP remains, so the match is not reducible to HP trading or button timing.
+- Route stability must warn before collapse with `stable` / `unstable` / `critical` bands and frontline screen cues, so the player feels the line being lost before the failure banner.
 - The HUD and route record must show the active pressure slot, stability, route progress, and target time.
 - The route record must also expose the observer-completion snapshot (`close`, `summon`, `followup` as `pending`/`recorded`) so the pocket follows the PGR-style condition gate -> combat observer -> completion record chain instead of ending as loose debug text.
 

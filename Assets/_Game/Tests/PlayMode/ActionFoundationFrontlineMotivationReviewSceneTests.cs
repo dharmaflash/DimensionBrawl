@@ -165,6 +165,49 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator FrontlineRouteStabilityBandWarnsBeforeCollapse()
+        {
+            EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
+            yield return null;
+
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket owner");
+            BossBarrageLaneReviewHud reviewHud =
+                RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "review HUD");
+            ActionScreenCuePresenter screenCuePresenter =
+                RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "screen cue presenter");
+
+            Assert.AreEqual(BossBarragePocketReviewOwner.RouteStabilityBand.Stable, pocketOwner.CurrentRouteStabilityBand);
+            Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("stable"));
+
+            SetField(pocketOwner, "routeStability01", 0.4005f);
+            int stabilityCueCountBeforeUnstable = screenCuePresenter.FrontlineStabilityCueRequestCount;
+            pocketOwner.Tick(0.1f);
+
+            Assert.IsTrue(pocketOwner.IsRunning);
+            Assert.AreEqual(BossBarragePocketReviewOwner.RouteStabilityBand.Unstable, pocketOwner.CurrentRouteStabilityBand);
+            Assert.Greater(screenCuePresenter.FrontlineStabilityCueRequestCount, stabilityCueCountBeforeUnstable);
+            Assert.AreEqual(
+                BossBarragePocketReviewOwner.RouteStabilityBand.Unstable,
+                screenCuePresenter.LastFrontlineStabilityBand);
+            Assert.That(screenCuePresenter.LastCueId, Does.Contain("FrontlineStability.Unstable"));
+            Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("unstable"));
+
+            SetField(pocketOwner, "routeStability01", 0.2005f);
+            int stabilityCueCountBeforeCritical = screenCuePresenter.FrontlineStabilityCueRequestCount;
+            pocketOwner.Tick(0.1f);
+
+            Assert.IsTrue(pocketOwner.IsRunning);
+            Assert.AreEqual(BossBarragePocketReviewOwner.RouteStabilityBand.Critical, pocketOwner.CurrentRouteStabilityBand);
+            Assert.Greater(screenCuePresenter.FrontlineStabilityCueRequestCount, stabilityCueCountBeforeCritical);
+            Assert.AreEqual(
+                BossBarragePocketReviewOwner.RouteStabilityBand.Critical,
+                screenCuePresenter.LastFrontlineStabilityBand);
+            Assert.That(screenCuePresenter.LastCueId, Does.Contain("FrontlineStability.Critical"));
+            Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("critical"));
+        }
+
+        [UnityTest]
         public IEnumerator FrontlineRouteStabilityCollapseFailsRouteWithoutPlayerDefeat()
         {
             EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));

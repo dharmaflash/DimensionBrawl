@@ -71,6 +71,7 @@ namespace DimensionBrawl.Presentation
 
         [Header("Frontline Colors")]
         [SerializeField] private Color frontlineBeatColor = new Color(0.52f, 0.92f, 1f, 1f);
+        [SerializeField] private Color frontlineWarningColor = new Color(1f, 0.72f, 0.22f, 1f);
 
         [Header("Follow-up Colors")]
         [SerializeField] private Color followupWindowColor = new Color(0.34f, 1f, 0.64f, 1f);
@@ -109,6 +110,7 @@ namespace DimensionBrawl.Presentation
         private int energySpendCueRequestCount;
         private int damageFeedbackRequestCount;
         private int suppressedCueRequestCount;
+        private int frontlineStabilityCueRequestCount;
         private string lastCueId = string.Empty;
         private Color lastCueColor = Color.clear;
         private float lastCueIntensity;
@@ -118,6 +120,9 @@ namespace DimensionBrawl.Presentation
         private int lastEnergyCueTier;
         private int lastFrontlineBeatIndex = -1;
         private string lastFrontlineBeatLabel = string.Empty;
+        private BossBarragePocketReviewOwner.RouteStabilityBand lastFrontlineStabilityBand =
+            BossBarragePocketReviewOwner.RouteStabilityBand.Stable;
+        private float lastFrontlineStability01 = 1f;
         private SummonEnergyRiskBand lastEnergyRiskBand = SummonEnergyRiskBand.BackSafety;
 
         public bool ShowScreenCues => showScreenCues;
@@ -151,6 +156,7 @@ namespace DimensionBrawl.Presentation
         public int EnergySpendCueRequestCount => energySpendCueRequestCount;
         public int DamageFeedbackRequestCount => damageFeedbackRequestCount;
         public int SuppressedCueRequestCount => suppressedCueRequestCount;
+        public int FrontlineStabilityCueRequestCount => frontlineStabilityCueRequestCount;
         public string LastCueId => lastCueId;
         public Color LastCueColor => lastCueColor;
         public float LastCueIntensity => lastCueIntensity;
@@ -160,6 +166,8 @@ namespace DimensionBrawl.Presentation
         public int LastEnergyCueTier => lastEnergyCueTier;
         public int LastFrontlineBeatIndex => lastFrontlineBeatIndex;
         public string LastFrontlineBeatLabel => lastFrontlineBeatLabel;
+        public BossBarragePocketReviewOwner.RouteStabilityBand LastFrontlineStabilityBand => lastFrontlineStabilityBand;
+        public float LastFrontlineStability01 => lastFrontlineStability01;
         public SummonEnergyRiskBand LastEnergyRiskBand => lastEnergyRiskBand;
 
         public void SetScreenCuesVisible(bool visible)
@@ -398,6 +406,31 @@ namespace DimensionBrawl.Presentation
                 ScreenCueCategory.Frontline);
         }
 
+        private void HandleRouteStabilityBandChanged(
+            BossBarragePocketReviewOwner.RouteStabilityBand band,
+            float stability01)
+        {
+            lastFrontlineStabilityBand = band;
+            lastFrontlineStability01 = Mathf.Clamp01(stability01);
+            if (band == BossBarragePocketReviewOwner.RouteStabilityBand.Stable)
+            {
+                return;
+            }
+
+            frontlineStabilityCueRequestCount++;
+            Color color = band == BossBarragePocketReviewOwner.RouteStabilityBand.Critical
+                ? pocketFailColor
+                : frontlineWarningColor;
+            float intensity = band == BossBarragePocketReviewOwner.RouteStabilityBand.Critical ? 0.96f : 0.68f;
+            float duration = band == BossBarragePocketReviewOwner.RouteStabilityBand.Critical ? 0.36f : 0.24f;
+            RequestScreenCue(
+                $"FrontlineStability.{band}",
+                color,
+                duration,
+                intensity,
+                ScreenCueCategory.Frontline);
+        }
+
         private void HandleSummonBlockOpportunityOpened()
         {
             RequestScreenCue("Followup.BlockOpportunity", followupWindowColor, 0.20f, 0.72f, ScreenCueCategory.Followup);
@@ -612,6 +645,7 @@ namespace DimensionBrawl.Presentation
             if (pocketReviewOwner != null)
             {
                 pocketReviewOwner.StageBeatChanged += HandleStageBeatChanged;
+                pocketReviewOwner.RouteStabilityBandChanged += HandleRouteStabilityBandChanged;
                 pocketReviewOwner.SummonBlockOpportunityOpened += HandleSummonBlockOpportunityOpened;
                 pocketReviewOwner.SummonFollowupWindowOpened += HandleSummonFollowupWindowOpened;
                 pocketReviewOwner.SummonFollowupHitConfirmed += HandleSummonFollowupHitConfirmed;
@@ -677,6 +711,7 @@ namespace DimensionBrawl.Presentation
             if (pocketReviewOwner != null)
             {
                 pocketReviewOwner.StageBeatChanged -= HandleStageBeatChanged;
+                pocketReviewOwner.RouteStabilityBandChanged -= HandleRouteStabilityBandChanged;
                 pocketReviewOwner.SummonBlockOpportunityOpened -= HandleSummonBlockOpportunityOpened;
                 pocketReviewOwner.SummonFollowupWindowOpened -= HandleSummonFollowupWindowOpened;
                 pocketReviewOwner.SummonFollowupHitConfirmed -= HandleSummonFollowupHitConfirmed;
