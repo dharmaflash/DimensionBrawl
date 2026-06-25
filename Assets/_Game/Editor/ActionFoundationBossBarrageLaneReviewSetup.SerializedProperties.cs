@@ -93,6 +93,16 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(target);
         }
 
+        private static void SetBehaviourEnabled(Behaviour target, bool value)
+        {
+            if (target.enabled != value)
+            {
+                target.enabled = value;
+            }
+
+            EditorUtility.SetDirty(target);
+        }
+
         private static void SetString(UnityEngine.Object target, string propertyName, string value)
         {
             var serializedObject = new SerializedObject(target);
@@ -220,6 +230,24 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static T ValidateAssignedObjectReference<T>(UnityEngine.Object target, string propertyName)
+            where T : UnityEngine.Object
+        {
+            UnityEngine.Object actual = RequireProperty(new SerializedObject(target), propertyName).objectReferenceValue;
+            if (actual == null)
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} must be assigned.");
+            }
+
+            if (actual is not T typedActual)
+            {
+                throw new InvalidOperationException(
+                    $"{target.name}.{propertyName} expected {typeof(T).Name}, found {actual.GetType().Name}.");
+            }
+
+            return typedActual;
+        }
+
         private static void ValidateArrayReference(UnityEngine.Object target, string propertyName, int index, UnityEngine.Object expected)
         {
             SerializedProperty array = RequireProperty(new SerializedObject(target), propertyName);
@@ -296,6 +324,15 @@ namespace DimensionBrawl.Editor
             if (actual != expected)
             {
                 throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected}, found {actual}.");
+            }
+        }
+
+        private static void ValidateBehaviourEnabled(Behaviour target, bool expected)
+        {
+            if (target.enabled != expected)
+            {
+                throw new InvalidOperationException(
+                    $"{target.name}.{target.GetType().Name}.enabled expected {expected}, found {target.enabled}.");
             }
         }
 

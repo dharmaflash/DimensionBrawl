@@ -149,7 +149,7 @@ namespace DimensionBrawl.Presentation
 
         public bool TryPlayProfile(CinematicSequenceProfile profile, Vector3 planarDirection)
         {
-            if (profile == null || activeRoutine != null)
+            if (!isActiveAndEnabled || profile == null || activeRoutine != null)
             {
                 return false;
             }
@@ -273,7 +273,7 @@ namespace DimensionBrawl.Presentation
 
         public bool TryPlay(Vector3 planarDirection)
         {
-            if (sequenceProfile == null || activeRoutine != null)
+            if (!isActiveAndEnabled || sequenceProfile == null || activeRoutine != null)
             {
                 return false;
             }

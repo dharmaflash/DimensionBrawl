@@ -53,13 +53,18 @@ namespace DimensionBrawl.Presentation
             out float lockSeconds)
         {
             lockSeconds = 0f;
+            if (!isActiveAndEnabled)
+            {
+                return false;
+            }
+
             if (runner == null)
             {
                 runner = GetComponent<CinematicSequenceRunner>();
             }
 
             CinematicSequenceProfile profile = ResolveProfile(kind);
-            if (runner == null || profile == null)
+            if (runner == null || !runner.isActiveAndEnabled || profile == null)
             {
                 return false;
             }

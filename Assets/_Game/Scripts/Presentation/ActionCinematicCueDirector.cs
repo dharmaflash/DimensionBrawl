@@ -21,6 +21,10 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private Animator cueAnimator;
         [SerializeField] private ActionCinematicSequenceBridge sequenceBridge;
 
+        [Header("Playback Gate")]
+        [SerializeField] private bool allowCuePlayback = true;
+        [SerializeField] private bool allowSequenceBridgePlayback = true;
+
         [Header("Timing")]
         [SerializeField] private bool useUnscaledClock = true;
 
@@ -52,6 +56,8 @@ namespace DimensionBrawl.Presentation
         public ActionCinematicCueProfile CueProfile => cueProfile;
         public ActionCameraController CameraController => cameraController;
         public Transform CueSpace => cueSpace;
+        public bool AllowCuePlayback => allowCuePlayback;
+        public bool AllowSequenceBridgePlayback => allowSequenceBridgePlayback;
         public bool DrawCinematicBars => drawCinematicBars;
         public bool HasActiveFrameOverlay => frameTimer > 0f;
         public bool HasActiveMovementLock => movementLockActive;
@@ -138,7 +144,9 @@ namespace DimensionBrawl.Presentation
 
         public bool TryPlay(ActionCinematicCueProfile.CueKind kind, int tier, Vector3 planarDirection)
         {
-            if (cueProfile == null
+            if (!allowCuePlayback
+                || !isActiveAndEnabled
+                || cueProfile == null
                 || cameraController == null
                 || !cueProfile.TryGetSequence(kind, out ActionCinematicCueProfile.CueSequence sequence))
             {
@@ -265,12 +273,18 @@ namespace DimensionBrawl.Presentation
             out float lockSeconds)
         {
             lockSeconds = 0f;
+            if (!allowSequenceBridgePlayback)
+            {
+                return false;
+            }
+
             if (sequenceBridge == null)
             {
                 sequenceBridge = GetComponent<ActionCinematicSequenceBridge>();
             }
 
             return sequenceBridge != null
+                && sequenceBridge.isActiveAndEnabled
                 && sequenceBridge.TryPlay(kind, tier, planarDirection, out lockSeconds);
         }
 
