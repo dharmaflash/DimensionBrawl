@@ -826,4 +826,12 @@ Local review beats are locked as:
 5. Counter wave: missed follow-up returns boss pressure instead of silently failing.
 6. Suppression result: result copy records `frontline stabilized` / `summon route analyzed`, not boss HP death.
 
+Route stability is now part of the review-scene contract:
+
+- The profile carries a route-stability budget derived from the same 90-second stage shell and wave-slot read.
+- CloseProbe, SummonNeed, and CounterWave beats drain route stability until the player answers the local objective.
+- Close-threat defeat, `SummonSlot1` pressure block, and confirmed `Skill1` follow-up restore stability.
+- If stability collapses, the pocket fails as `LINE COLLAPSED` even when player HP remains, so the match is not reducible to HP trading or button timing.
+- The HUD and route record must show stability alongside route progress and target time.
+
 The profile is review-only. It must not grant rewards, unlock progression, replace the stage-select flow, or become a general combat manager.
