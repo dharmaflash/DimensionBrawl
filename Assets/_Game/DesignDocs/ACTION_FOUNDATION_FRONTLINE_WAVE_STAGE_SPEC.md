@@ -798,3 +798,32 @@ Local anchors from the current project investigation:
 - NIKKE `stage-wave-monster-slots.csv`: encounter slots preserve wave index, slot index, path, spawn type, monster ID/model, stat group, AI, skill weapon type, and skill fire type.
 - NIKKE `noncampaign-stage-wave-join.csv` and `nikke-noncampaign-stage-wave-rollup.csv`: event, tower, simulation, lost-sector, and raid modes reuse the same wave-group reading pattern instead of inventing unrelated encounter grammar.
 - NIKKE LostSector runtime bridge: public runtime shape separates map loading, StageSpawner links, cleared-stage state, completed-scenario hooks, reward/item flow, and clear handling.
+
+## 2026-06-26 Implementation Lock: Frontline Motivation Review
+
+The first implementation pass is a separate review scene, not an overwrite of the existing boss-barrage lane review scene.
+
+New authored targets:
+
+- Scene: `Assets/_Game/Scenes/ActionFoundationFrontlineMotivationReview.unity`
+- Data shell: `Assets/_Game/DesignData/Profiles/ActionFoundation/DB_FrontlineWaveStage_MotivationReview.asset`
+- Runtime data type: `FrontlineWaveStageProfile`
+- Editor setup: `ActionFoundationFrontlineMotivationReviewSetup`
+
+The profile uses the ArkData references as structural evidence only:
+
+- NIKKE `stage-wave-join.csv`: 90-second stage shell, scenario/result hooks, reward ID, wave group, close/mid/far counts.
+- NIKKE `stage-wave-monster-slots.csv`: spawn families (`Drop`, `Dash`, `Jump`, `Normal`), wave paths, monster/skill/fire slots.
+- PGR tutorial runner contract: condition gate -> combat observer -> completion record -> reward/state hook.
+- Combat payload family guide: action -> target selector -> projectile/hit event -> presentation feedback.
+
+Local review beats are locked as:
+
+1. Match read: player and boss bodies stay separated by the contested line.
+2. Close probe: local defense stops the first close threat.
+3. First summon need: `SummonSlot1` answers the boss curtain because the player cannot cross.
+4. Follow-up window: `Skill1` confirms the route after summon pressure suppression.
+5. Counter wave: missed follow-up returns boss pressure instead of silently failing.
+6. Suppression result: result copy records `frontline stabilized` / `summon route analyzed`, not boss HP death.
+
+The profile is review-only. It must not grant rewards, unlock progression, replace the stage-select flow, or become a general combat manager.

@@ -33,6 +33,9 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private BossBarragePocketReviewOwner pocketReviewOwner;
         [SerializeField] private BossSummonDuelReviewOwner duelReviewOwner;
 
+        [Header("Frontline Stage Review")]
+        [SerializeField] private FrontlineWaveStageProfile stageProfile;
+
         [Header("Display")]
         [SerializeField] private bool showHud = true;
         [SerializeField] private bool showDetailedTelemetry;
@@ -86,6 +89,8 @@ namespace DimensionBrawl.Presentation
         public bool ShouldShowResultBanner => TryResolveResultBanner(out _, out _, out _);
         public string ResultBannerTitle => TryResolveResultBanner(out string title, out _, out _) ? title : string.Empty;
         public string ResultBannerDetail => TryResolveResultBanner(out _, out string detail, out _) ? detail : string.Empty;
+        private FrontlineWaveStageProfile ActiveStageProfile =>
+            stageProfile != null ? stageProfile : pocketReviewOwner != null ? pocketReviewOwner.StageProfile : null;
 
         public void SetDetailedTelemetryVisible(bool visible)
         {
@@ -189,7 +194,7 @@ namespace DimensionBrawl.Presentation
                 94f);
             BossBarrageLaneReviewHudChrome.DrawObjectivePanel(
                 objectiveRect,
-                stageEpisodeLabel,
+                ResolveStageEpisodeLabel(),
                 ResolveCompactObjectiveLine(),
                 ResolvePremiumObjectiveBadge());
 
@@ -279,12 +284,17 @@ namespace DimensionBrawl.Presentation
         {
             if (energyLadder == null)
             {
-                return objectiveBadgeLabel;
+                return ResolveStageText(ActiveStageProfile?.ObjectiveBadgeLabel, objectiveBadgeLabel);
             }
 
             return energyLadder.CanSpend
                 ? $"LV{energyLadder.AvailableTier}"
                 : $"LV{energyLadder.ChargingTier}";
+        }
+
+        private string ResolveStageEpisodeLabel()
+        {
+            return ResolveStageText(ActiveStageProfile?.StageEpisodeLabel, stageEpisodeLabel);
         }
 
         private static float ResolveHealthFill01(CombatHealth health)
@@ -583,32 +593,32 @@ namespace DimensionBrawl.Presentation
 
             if (pocketReviewOwner.IsCleared)
             {
-                return $"Goal: Mission clear {ResolvePocketProgressText()}";
+                return $"Goal: Frontline stabilized {ResolvePocketProgressText()}";
             }
 
             if (pocketReviewOwner.IsFailed)
             {
-                return $"Goal: Failed {ResolvePocketProgressText()}";
+                return $"Goal: Line collapsed {ResolvePocketProgressText()}";
             }
 
             if (pocketReviewOwner.IsSkill1FollowupClearCountdownActive)
             {
-                return $"{ResolvePocketStepPrefix()}: Confirm {ResolveCompactSkillFollowupText()} {pocketReviewOwner.Skill1FollowupClearRemainingSeconds:0.0}s";
+                return $"{ResolvePocketStepPrefix()}: Confirm summon route {pocketReviewOwner.Skill1FollowupClearRemainingSeconds:0.0}s";
             }
 
             if (pocketReviewOwner.IsSummonFollowupWindowActive)
             {
-                return $"{ResolvePocketStepPrefix()}: {ResolveCompactSkillFollowupText()} follow-up {pocketReviewOwner.SummonFollowupWindowRemainingSeconds:0.0}s";
+                return $"{ResolvePocketStepPrefix()}: {ResolveCompactSkillFollowupText()} route window {pocketReviewOwner.SummonFollowupWindowRemainingSeconds:0.0}s";
             }
 
             if (pocketReviewOwner.IsSummonPressureBreakActive)
             {
-                return $"{ResolvePocketStepPrefix()}: Push break {pocketReviewOwner.SummonPressureBreakRemainingSeconds:0.0}s";
+                return $"{ResolvePocketStepPrefix()}: Suppress boss curtain {pocketReviewOwner.SummonPressureBreakRemainingSeconds:0.0}s";
             }
 
             if (pocketReviewOwner.IsSummonBlockOpportunityCueActive)
             {
-                return $"{ResolvePocketStepPrefix()}: {ResolveCompactSummonBlockText()} {pocketReviewOwner.SummonBlockOpportunityRemainingSeconds:0.0}s";
+                return $"{ResolvePocketStepPrefix()}: Open summon route {pocketReviewOwner.SummonBlockOpportunityRemainingSeconds:0.0}s";
             }
 
             if (pocketReviewOwner.IsAwaitingSummonPressureBlock)
@@ -619,13 +629,13 @@ namespace DimensionBrawl.Presentation
             if (pocketReviewOwner.CloseThreatDefeated)
             {
                 return energyLadder != null && !energyLadder.CanSpend
-                    ? $"{ResolvePocketStepPrefix()}: Build EN for {ResolveCompactSummonBlockText()}"
+                    ? $"{ResolvePocketStepPrefix()}: Build EN for summon route"
                     : $"{ResolvePocketStepPrefix()}: {ResolveCompactSummonBlockText()}";
             }
 
             return energyLadder != null && !energyLadder.CanSpend
-                ? $"{ResolvePocketStepPrefix()}: Advance for EN"
-                : $"{ResolvePocketStepPrefix()}: Clear close threat";
+                ? $"{ResolvePocketStepPrefix()}: Hold line for EN"
+                : $"{ResolvePocketStepPrefix()}: Stop close probe";
         }
 
         private string ResolvePocketStepPrefix()
@@ -637,7 +647,8 @@ namespace DimensionBrawl.Presentation
 
             int total = Mathf.Max(1, pocketReviewOwner.ObjectiveStepCount);
             int nextStep = Mathf.Clamp(pocketReviewOwner.CompletedObjectiveStepCount + 1, 1, total);
-            return $"Step {nextStep}/{total}";
+            string prefix = ResolveStageText(ActiveStageProfile?.StepPrefix, "Step");
+            return $"{prefix} {nextStep}/{total}";
         }
 
         private string ResolvePocketProgressText()
@@ -1221,18 +1232,20 @@ namespace DimensionBrawl.Presentation
 
             if (pocketReviewOwner.IsCleared)
             {
-                title = "BOSS CLEAR";
+                FrontlineWaveStageProfile activeProfile = ActiveStageProfile;
+                title = ResolveStageText(activeProfile?.ClearTitle, "FRONTLINE STABILIZED");
                 detail = pocketReviewOwner.Skill1FollowupHitConfirmed
-                    ? $"Skill1 follow-up confirmed for {pocketReviewOwner.Skill1FollowupDamage:0} damage | {ResolvePocketResultSuffix()}"
-                    : $"Boss pressure answered | {ResolvePocketResultSuffix()}";
+                    ? $"{ResolveStageText(activeProfile?.ClearFollowupDetail, "Summon route analyzed; Skill1 follow-up confirmed")} ({pocketReviewOwner.Skill1FollowupDamage:0}) | {ResolvePocketResultSuffix()}"
+                    : $"{ResolveStageText(activeProfile?.ClearPressureDetail, "Boss curtain suppressed; frontline route recorded")} | {ResolvePocketResultSuffix()}";
                 backColor = resultClearBackColor;
                 return true;
             }
 
             if (pocketReviewOwner.IsFailed)
             {
-                title = "MISSION FAILED";
-                detail = $"Player down; boss pressure halted | {ResolvePocketResultSuffix()}";
+                FrontlineWaveStageProfile activeProfile = ActiveStageProfile;
+                title = ResolveStageText(activeProfile?.FailTitle, "LINE COLLAPSED");
+                detail = $"{ResolveStageText(activeProfile?.FailDetail, "Player down before the frontline route could stabilize")} | {ResolvePocketResultSuffix()}";
                 backColor = resultFailBackColor;
                 return true;
             }
@@ -1244,10 +1257,16 @@ namespace DimensionBrawl.Presentation
         {
             if (pocketReviewOwner == null)
             {
-                return "Checks - | Time -";
+                return "Route - | Time -";
             }
 
-            return $"Checks {ResolvePocketProgressText()} | Time {pocketReviewOwner.ResultElapsedSeconds:0.0}s";
+            string prefix = ResolveStageText(ActiveStageProfile?.StepPrefix, "Route");
+            return $"{prefix} {ResolvePocketProgressText()} | Time {pocketReviewOwner.ResultElapsedSeconds:0.0}s";
+        }
+
+        private static string ResolveStageText(string profileText, string fallback)
+        {
+            return string.IsNullOrWhiteSpace(profileText) ? fallback : profileText;
         }
 
         private void DrawCombatResourceBars()

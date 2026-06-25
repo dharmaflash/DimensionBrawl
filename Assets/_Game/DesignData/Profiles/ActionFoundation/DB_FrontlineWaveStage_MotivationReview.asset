@@ -1,0 +1,100 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fb3d807d08c01c94d87e07561b00997b, type: 3}
+  m_Name: DB_FrontlineWaveStage_MotivationReview
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.FrontlineWaveStageProfile
+  stageId: FRONTLINE-MOTIVATION-REVIEW-01
+  displayName: Frontline Motivation Review
+  stageEpisodeLabel: EP 03 Frontline Stabilization
+  objectiveBadgeLabel: ROUTE
+  targetDurationSeconds: 90
+  waveSlotPattern: CloseProbe -> LineProjectile -> ScreenCurtain -> FrontlineBody
+    -> CoreExpose
+  spawnFamilyPattern: Drop | Dash | Jump | Normal
+  observerLoop: condition gate -> combat observer -> completion record -> reward/state
+    hook
+  rewardHook: Review-only route record; no payout or progression grant.
+  objectiveStepCount: 3
+  stepPrefix: Route
+  preThreatChargeCue: Hold the player line, build EN, then stop the close probe
+  preThreatReadyCue: Stop the close probe and keep SummonSlot1 ready for boss curtain
+  summonChargeCue: Build EN for SummonSlot1; boss curtain is returning
+  summonReadyCue: Send SummonSlot1 across the line to block boss curtain
+  summonOpportunityCue: Summon route is open
+  followupReadyCue: Confirm the summon opening with Skill1
+  followupFiredCue: Skill1 committed into the summon opening
+  followupHitCue: Summon route analyzed; Skill1 hit confirmed
+  followupBlockedCue: Boss screen absorbed the follow-up; rebuild the summon answer
+  followupMissedCue: Follow-up window missed; boss pressure is returning
+  pressureBreakCue: Boss curtain suppressed briefly; read the follow-up window
+  clearObjectiveCue: Frontline stabilized; summon route secured
+  failObjectiveCue: Player line collapsed before route stabilization
+  clearTitle: FRONTLINE STABILIZED
+  clearFollowupDetail: Summon route analyzed; Skill1 follow-up confirmed
+  clearPressureDetail: Boss curtain suppressed; frontline route recorded
+  failTitle: LINE COLLAPSED
+  failDetail: Player down before the frontline route could stabilize
+  beats:
+  - beatId: B0.MatchRead
+    label: Match Read
+    objectiveCue: Read the uncrossable player line and the rear boss curtain.
+    observedEvent: stage_started + player_line_guarded
+    sourcePattern: Project spec beat 0; NIKKE stage row carries time, theme, scenario,
+      wave, reward hooks.
+  - beatId: B1.CloseProbe
+    label: Probe Wave
+    objectiveCue: Stop the close probe before it turns the match into button pressure.
+    observedEvent: close_probe_defeated
+    sourcePattern: NIKKE close/mid/far monster counts and Drop/Dash/Jump spawn families.
+  - beatId: B2.SummonNeed
+    label: First Summon Need
+    objectiveCue: Use SummonSlot1 because the boss curtain cannot be answered by
+      player body crossing.
+    observedEvent: summon_slot1_used + pressure_screen_intercept
+    sourcePattern: Project summon-first pivot; PGR combat observer maps local events
+      to tutorial completion.
+  - beatId: B3.Followup
+    label: Follow-Up Window
+    objectiveCue: Confirm the summon route with Skill1 after the curtain is suppressed.
+    observedEvent: skill1_used_during_followup + boss_damage
+    sourcePattern: 'Combat payload model: action -> target -> hit event -> presentation
+      feedback.'
+  - beatId: B4.CounterWave
+    label: Enemy Counter Wave
+    objectiveCue: If the follow-up is missed, the boss screen returns and asks for
+      another summon answer.
+    observedEvent: followup_missed_or_blocked
+    sourcePattern: NIKKE ScreenCurtain/FrontlineBody pressure slot adaptation from
+      stage-wave slots.
+  - beatId: B5.Result
+    label: Suppression Result
+    objectiveCue: Record frontline stabilization, not boss HP death.
+    observedEvent: route_record_committed
+    sourcePattern: 'Tutorial contract: completion record -> reward/state hook; review-only,
+      no payout.'
+  sourceReferences:
+  - sourceId: NIKKE.StageWaveJoin
+    sourcePath: ArkData/SubcultureGameData/games/nikke/raw/alt3ri-nikke-data/2026-06-13/files/stage-wave-join.csv
+    localTakeaway: Stage rows pair time limit, scenario hooks, reward id, wave group,
+      monster slots, spawn families, and close/mid/far counts.
+  - sourceId: NIKKE.StageWaveMonsterSlots
+    sourcePath: ArkData/SubcultureGameData/games/nikke/raw/alt3ri-nikke-data/2026-06-13/files/stage-wave-monster-slots.csv
+    localTakeaway: Encounter slots preserve spawn type, wave path, monster ratios,
+      AI hints, and monster skill fire families.
+  - sourceId: PGR.TutorialRunnerContract
+    sourcePath: ArkData/TutorialSystem_ApplyData_2026-06-24/normalized_enhanced/tutorial_runner_contract.json
+    localTakeaway: Local completion should be driven by combat observer events and
+      idempotent completion records.
+  - sourceId: Project.FrontlineWaveSpec
+    sourcePath: Assets/_Game/DesignDocs/ACTION_FOUNDATION_FRONTLINE_WAVE_STAGE_SPEC.md
+    localTakeaway: 'Canonical local adaptation: fixed rear boss, player line lock,
+      summon-first frontline agency, review-only result hook.'

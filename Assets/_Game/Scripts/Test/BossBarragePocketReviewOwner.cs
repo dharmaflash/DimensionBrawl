@@ -1,5 +1,6 @@
 using System;
 using DimensionBrawl.Combat;
+using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using UnityEngine;
 
@@ -62,6 +63,9 @@ namespace DimensionBrawl.Test
 
         [Header("Follow-up Result")]
         [SerializeField] private bool requireSkill1FollowupHitToClear = true;
+
+        [Header("Frontline Stage Review")]
+        [SerializeField] private FrontlineWaveStageProfile stageProfile;
 
         [Header("Result Pace")]
         [SerializeField, Min(0f)] private float skill1FollowupClearDelaySeconds = 0.75f;
@@ -163,7 +167,8 @@ namespace DimensionBrawl.Test
         public int LastSummonPressureBreakTier => lastSummonPressureBreakTier;
         public float LastSummonPressureBreakDuration => lastSummonPressureBreakDuration;
         public float LastSummonFollowupWindowDuration => lastSummonFollowupWindowDuration;
-        public int ObjectiveStepCount => 3;
+        public FrontlineWaveStageProfile StageProfile => stageProfile;
+        public int ObjectiveStepCount => stageProfile != null ? stageProfile.ObjectiveStepCount : 3;
         public int CompletedObjectiveStepCount => ResolveCompletedObjectiveStepCount();
         public float ElapsedSeconds => elapsedSeconds;
         public float ResultElapsedSeconds => state == PocketState.Running ? elapsedSeconds : resultElapsedSeconds;
@@ -187,28 +192,52 @@ namespace DimensionBrawl.Test
         {
             get
             {
+                if (state == PocketState.Cleared)
+                {
+                    return ResolveStageText(
+                        stageProfile != null ? stageProfile.ClearObjectiveCue : null,
+                        "Frontline stabilized; summon route secured");
+                }
+
+                if (state == PocketState.Failed)
+                {
+                    return ResolveStageText(
+                        stageProfile != null ? stageProfile.FailObjectiveCue : null,
+                        "Player line collapsed before route stabilization");
+                }
+
                 if (pressurePacing.IsSummonPressureBreakActive)
                 {
                     if (skill1FollowupHitConfirmed)
                     {
-                        return "Follow-up Skill1 hit confirmed";
+                        return ResolveStageText(
+                            stageProfile != null ? stageProfile.FollowupHitCue : null,
+                            "Summon route analyzed; Skill1 hit confirmed");
                     }
 
                     if (usedSkill1DuringSummonFollowup)
                     {
                         if (bossBlockedSkill1Followup)
                         {
-                            return "Boss screen blocked follow-up Skill1";
+                            return ResolveStageText(
+                                stageProfile != null ? stageProfile.FollowupBlockedCue : null,
+                                "Boss screen absorbed the follow-up; rebuild the summon answer");
                         }
 
-                        return "Follow-up Skill1 fired";
+                        return ResolveStageText(
+                            stageProfile != null ? stageProfile.FollowupFiredCue : null,
+                            "Skill1 committed into the summon opening");
                     }
 
                     return pressurePacing.IsSummonFollowupWindowActive
                         ? ResolveFollowupReadyCue()
                         : requireSkill1FollowupHitToClear
-                            ? "Follow-up missed; boss pressure returning"
-                            : "Boss pressure is broken briefly";
+                            ? ResolveStageText(
+                                stageProfile != null ? stageProfile.FollowupMissedCue : null,
+                                "Follow-up window missed; boss pressure is returning")
+                            : ResolveStageText(
+                                stageProfile != null ? stageProfile.PressureBreakCue : null,
+                                "Boss curtain suppressed briefly; read the follow-up window");
                 }
 
                 if (closeThreatDefeated
@@ -217,10 +246,10 @@ namespace DimensionBrawl.Test
                     && !skill1FollowupHitConfirmed)
                 {
                     return energyLadder != null && !energyLadder.CanSpend
-                        ? $"Regain EN, then block boss fire again with {ResolveObjectiveSummonAnswerLabel()}"
+                        ? $"{ResolveStageText(stageProfile != null ? stageProfile.SummonChargeCue : null, "Regain EN, then block boss curtain")}: {ResolveObjectiveSummonAnswerLabel()}"
                         : bossBlockedSkill1Followup
-                            ? $"Boss screen blocked Skill1; block boss fire again with {ResolveObjectiveSummonAnswerLabel()}"
-                            : $"Follow-up missed; block boss fire again with {ResolveObjectiveSummonAnswerLabel()}";
+                            ? $"{ResolveStageText(stageProfile != null ? stageProfile.FollowupBlockedCue : null, "Boss screen blocked Skill1; rebuild the summon answer")}: {ResolveObjectiveSummonAnswerLabel()}"
+                            : $"{ResolveStageText(stageProfile != null ? stageProfile.FollowupMissedCue : null, "Follow-up missed; block boss fire again")}: {ResolveObjectiveSummonAnswerLabel()}";
                 }
 
                 if (closeThreatDefeated)
@@ -231,13 +260,15 @@ namespace DimensionBrawl.Test
                     }
 
                     return energyLadder != null && !energyLadder.CanSpend
-                        ? $"Advance for EN and block boss fire with {ResolveObjectiveSummonAnswerLabel()}"
-                        : $"Block boss fire with {ResolveObjectiveSummonAnswerLabel()}";
+                        ? $"{ResolveStageText(stageProfile != null ? stageProfile.SummonChargeCue : null, "Build EN for SummonSlot1; boss curtain is returning")}: {ResolveObjectiveSummonAnswerLabel()}"
+                        : $"{ResolveStageText(stageProfile != null ? stageProfile.SummonReadyCue : null, "Send SummonSlot1 across the line to block boss curtain")}: {ResolveObjectiveSummonAnswerLabel()}";
                 }
 
                 return energyLadder != null && !energyLadder.CanSpend
-                    ? "Advance for EN, then defeat close threat"
-                    : $"Defeat close threat and prepare {ResolveObjectiveSummonAnswerLabel()}";
+                    ? ResolveStageText(
+                        stageProfile != null ? stageProfile.PreThreatChargeCue : null,
+                        "Build EN while holding the player line, then stop the close probe")
+                    : $"{ResolveStageText(stageProfile != null ? stageProfile.PreThreatReadyCue : null, "Stop the close probe and prepare the summon answer")}: {ResolveObjectiveSummonAnswerLabel()}";
             }
         }
 
@@ -647,12 +678,15 @@ namespace DimensionBrawl.Test
         private string ResolveFollowupReadyCue()
         {
             string summonTierLabel = ResolveSummonTierLabel(lastSummonPressureBreakTier);
+            string cue = ResolveStageText(
+                stageProfile != null ? stageProfile.FollowupReadyCue : null,
+                "Confirm the summon opening with Skill1");
             if (energyLadder == null || !energyLadder.CanSpend)
             {
-                return $"Hold lane and take EN for the {summonTierLabel} follow-up";
+                return $"{cue}: hold lane and take EN for the {summonTierLabel} window";
             }
 
-            return $"Use Skill1 LV{energyLadder.AvailableTier} during {summonTierLabel} follow-up";
+            return $"{cue}: Skill1 LV{energyLadder.AvailableTier} during {summonTierLabel} window";
         }
 
         private string ResolveSummonBlockOpportunityCue()
@@ -665,7 +699,15 @@ namespace DimensionBrawl.Test
                 : summonPressureBlockOpportunity != null
                     ? summonPressureBlockOpportunity.ReadyCue
                     : "Prepare SummonSlot1 block";
-            return $"{cue}: {ResolveObjectiveSummonTierLabel()}; boss fire returns in {SummonBlockOpportunityRemainingSeconds:0.0}s";
+            string stageCue = ResolveStageText(
+                stageProfile != null ? stageProfile.SummonOpportunityCue : null,
+                cue);
+            return $"{stageCue}: {ResolveObjectiveSummonTierLabel()}; boss curtain returns in {SummonBlockOpportunityRemainingSeconds:0.0}s";
+        }
+
+        private static string ResolveStageText(string profileText, string fallback)
+        {
+            return string.IsNullOrWhiteSpace(profileText) ? fallback : profileText;
         }
 
         private string ResolveObjectiveSummonTierLabel()
