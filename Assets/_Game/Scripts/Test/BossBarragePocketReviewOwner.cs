@@ -126,6 +126,7 @@ namespace DimensionBrawl.Test
         private bool followupMissedNotified;
         private bool bossBlockedSkill1Followup;
         private bool counterWaveObserved;
+        private int bossPressureSummonReleasesAtReset;
         private int announcedStageBeatIndex;
         private RouteStabilityBand announcedRouteStabilityBand;
 
@@ -376,6 +377,7 @@ namespace DimensionBrawl.Test
             followupMissedNotified = false;
             bossBlockedSkill1Followup = false;
             counterWaveObserved = false;
+            bossPressureSummonReleasesAtReset = GetBossPressureSummonReleaseCount();
             highestSkillTier = 0;
             highestSummonTier = 0;
             highestSummonPressureTier = 0;
@@ -675,6 +677,7 @@ namespace DimensionBrawl.Test
 
             if (followupMissedNotified
                 || bossBlockedSkill1Followup
+                || GetBossPressureSummonReleaseCount() > bossPressureSummonReleasesAtReset
                 || ActiveEnemyFrontlineProxyCount > 0)
             {
                 counterWaveObserved = true;
@@ -982,6 +985,14 @@ namespace DimensionBrawl.Test
                 ? bossPressureActionDirector.SummonPressureAction
                 : null;
             return pressureAction != null ? pressureAction.TotalPressureScreenInterceptCount : 0;
+        }
+
+        private int GetBossPressureSummonReleaseCount()
+        {
+            BossSummonPressureAction pressureAction = bossPressureActionDirector != null
+                ? bossPressureActionDirector.SummonPressureAction
+                : null;
+            return pressureAction != null ? pressureAction.TotalReleaseCount : 0;
         }
 
         private string ResolveFollowupReadyCue()

@@ -280,6 +280,31 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator FrontlineBossSummonReleaseRecordsCounterWave()
+        {
+            EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
+            yield return null;
+
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket owner");
+            BossBarrageLaneReviewHud reviewHud =
+                RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "review HUD");
+            BossSummonPressureAction bossSummonPressureAction =
+                UnityEngine.Object.FindFirstObjectByType<BossSummonPressureAction>();
+            Assert.NotNull(bossSummonPressureAction, "Frontline review scene should keep the boss summon pressure action.");
+
+            SetField(pocketOwner, "closeThreatDefeated", true);
+            SetField(pocketOwner, "usedSummonSlot1", true);
+            SetField(pocketOwner, "blockedBossPressureWithSummon", true);
+            SetField(bossSummonPressureAction, "totalReleaseCount", bossSummonPressureAction.TotalReleaseCount + 1);
+            pocketOwner.Tick(0f);
+
+            Assert.IsTrue(pocketOwner.IsCounterWaveCompletionRecorded);
+            Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter:recorded"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter:recorded"));
+        }
+
+        [UnityTest]
         public IEnumerator FrontlineRouteStabilityCollapseFailsRouteWithoutPlayerDefeat()
         {
             EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
