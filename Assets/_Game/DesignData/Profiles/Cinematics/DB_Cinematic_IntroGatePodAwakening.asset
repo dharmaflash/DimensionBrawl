@@ -112,7 +112,7 @@ MonoBehaviour:
     purpose: 2
     blendKind: 0
     startSeconds: 12.883333
-    durationSeconds: 1.1499996
+    durationSeconds: 2.3500004
     localOffset: {x: 0, y: 0, z: 0}
     planarDirectionOffset: 0
     fieldOfViewDelta: 0
@@ -127,8 +127,8 @@ MonoBehaviour:
     cueId: src_c08_heaven_background_explosion
     purpose: 0
     blendKind: 4
-    startSeconds: 14.033333
-    durationSeconds: 0.9000006
+    startSeconds: 15.233334
+    durationSeconds: 1.1000004
     localOffset: {x: 0, y: 0, z: 0}
     planarDirectionOffset: 0
     fieldOfViewDelta: 0
@@ -136,15 +136,15 @@ MonoBehaviour:
     focusHeightDelta: 0
     impulseScale: 1
     driveCameraPose: 1
-    cameraLocalPosition: {x: -3.45, y: 1.18, z: 3.72}
-    lookAtLocalPosition: {x: -0.88, y: 1.55, z: 7.18}
-    fieldOfView: 56
+    cameraLocalPosition: {x: -3.25, y: 1.36, z: 5.05}
+    lookAtLocalPosition: {x: -1.02, y: 1.6, z: 7.24}
+    fieldOfView: 38
   - enabled: 1
     cueId: src_c09_commando_bridge_push_past
     purpose: 2
     blendKind: 2
-    startSeconds: 14.933333
-    durationSeconds: 4.991021
+    startSeconds: 16.333334
+    durationSeconds: 3.5910206
     localOffset: {x: 0, y: 0, z: 0}
     planarDirectionOffset: 0
     fieldOfViewDelta: 0
@@ -152,9 +152,9 @@ MonoBehaviour:
     focusHeightDelta: 0
     impulseScale: 1
     driveCameraPose: 1
-    cameraLocalPosition: {x: -1.45, y: 0.48, z: 2.9}
-    lookAtLocalPosition: {x: 0.48, y: 0.82, z: 4.82}
-    fieldOfView: 58
+    cameraLocalPosition: {x: -1.06, y: 0.34, z: 1.02}
+    lookAtLocalPosition: {x: 0.32, y: 0.68, z: 2.42}
+    fieldOfView: 56
   actorCues:
   - enabled: 1
     cueId: hide_attached_rifle_at_wake

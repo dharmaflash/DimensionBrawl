@@ -135,9 +135,9 @@ namespace DimensionBrawl.Editor
         private const float HandLookHoldLeadSeconds = 1.45f;
         private const float InvasionBridgeHandLookHoldSeconds = 1.75f;
         private const float InvasionBridgeRunDurationSeconds = 4.35f;
-        private const float InvasionBridgeExplosionOffsetSeconds = 1.15f;
+        private const float InvasionBridgeExplosionOffsetSeconds = 2.35f;
         private const float InvasionBridgeExplosionDurationSeconds = 1.25f;
-        private const float InvasionBridgePushShotOffsetSeconds = 2.05f;
+        private const float InvasionBridgePushShotOffsetSeconds = 3.45f;
 
         private static readonly Vector3 FirstPersonViewMarkerPosition =
             new Vector3(-4.02049f, 0.9818602f, -0.5965308f);
@@ -319,6 +319,7 @@ namespace DimensionBrawl.Editor
                 ?? throw new InvalidOperationException("Missing existing IntroGatePodInvasionBridgeCue.");
             Camera camera = FindComponentInScene<Camera>(scene)
                 ?? throw new InvalidOperationException("Missing review Camera for invasion camera impact.");
+            CinematicSequenceProfile profile = ConfigureProfile();
 
             GameObject explosionRoot = invasionBridgeCue.ExplosionRoot
                 ?? FindRootOrDescendant(scene, InvasionExplosionRootName);
@@ -335,8 +336,8 @@ namespace DimensionBrawl.Editor
                 screenEffects.ImpactFlashGroup,
                 screenEffects.WarningSweepGroup,
                 2.65f,
-                0.42f,
-                0.62f,
+                0.22f,
+                0.38f,
                 0.78f,
                 new Vector3(0.060f, 0.044f, 0.012f),
                 new Vector3(1.55f, 2.15f, 0.72f),
@@ -346,6 +347,7 @@ namespace DimensionBrawl.Editor
             SetVector3(invasionBridgeCue, "explosionPeakScale", new Vector3(1.18f, 0.78f, 1.18f));
             SetFloat(invasionBridgeCue, "explosionPeakLightIntensity", 8.6f);
 
+            EnsureExistingCinemachineShots(scene, profile);
             EnsureInvasionFadeCues(scene);
             EnsureTimelineInvasionFadeClips();
 
@@ -354,6 +356,161 @@ namespace DimensionBrawl.Editor
             EditorSceneManager.SaveScene(scene);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+        }
+
+        private static void EnsureExistingCinemachineShots(Scene scene, CinematicSequenceProfile profile)
+        {
+            if (profile == null)
+            {
+                throw new InvalidOperationException("Missing intro GatePod cinematic profile.");
+            }
+
+            IntroGatePodCinemachineShotPlayer shotPlayer =
+                FindComponentInScene<IntroGatePodCinemachineShotPlayer>(scene)
+                ?? throw new InvalidOperationException("Missing existing IntroGatePodCinemachineShotPlayer.");
+            CinemachineBrain brain = shotPlayer.Brain ?? FindComponentInScene<CinemachineBrain>(scene);
+            if (brain == null)
+            {
+                throw new InvalidOperationException("Missing CinemachineBrain for existing intro GatePod shots.");
+            }
+
+            Dictionary<string, CinemachineCamera> camerasByShotId =
+                new Dictionary<string, CinemachineCamera>(StringComparer.Ordinal);
+            IntroGatePodCinemachineShotPlayer.Shot[] existingShots = shotPlayer.Shots;
+            for (int i = 0; i < existingShots.Length; i++)
+            {
+                IntroGatePodCinemachineShotPlayer.Shot shot = existingShots[i];
+                if (!string.IsNullOrWhiteSpace(shot.ShotId) && shot.Camera != null)
+                {
+                    camerasByShotId[shot.ShotId] = shot.Camera;
+                }
+            }
+
+            CinematicSequenceProfile.CameraCue[] cameraCues = profile.CameraCues;
+            IntroGatePodCinemachineShotPlayer.Shot[] refreshedShots =
+                new IntroGatePodCinemachineShotPlayer.Shot[cameraCues.Length];
+            for (int i = 0; i < cameraCues.Length; i++)
+            {
+                CinematicSequenceProfile.CameraCue cue = cameraCues[i];
+                if (!camerasByShotId.TryGetValue(cue.CueId, out CinemachineCamera shotCamera)
+                    || shotCamera == null)
+                {
+                    throw new InvalidOperationException($"Missing existing Cinemachine shot camera `{cue.CueId}`.");
+                }
+
+                ApplyExistingCinemachineCameraCue(shotCamera, cue);
+                CinemachineBlendDefinition.Styles blendStyle = ResolveCinemachineBlendStyle(cue.BlendKind);
+                float blendSeconds = i == 0
+                    ? 0f
+                    : ResolveCinemachineBlendSeconds(cue.BlendKind);
+                refreshedShots[i] = new IntroGatePodCinemachineShotPlayer.Shot(
+                    cue.CueId,
+                    cue.StartSeconds,
+                    shotCamera,
+                    blendStyle,
+                    blendSeconds);
+            }
+
+            shotPlayer.Configure(brain, refreshedShots, false, true);
+            shotPlayer.enabled = false;
+            EnsureExistingCinemachineTimelineClips(profile, brain, refreshedShots);
+            EditorUtility.SetDirty(shotPlayer);
+        }
+
+        private static void ApplyExistingCinemachineCameraCue(
+            CinemachineCamera shotCamera,
+            CinematicSequenceProfile.CameraCue cue)
+        {
+            if (!string.Equals(cue.CueId, OpeningDollyCueId, StringComparison.Ordinal))
+            {
+                shotCamera.transform.SetPositionAndRotation(
+                    cue.CameraLocalPosition,
+                    ResolveLookRotation(cue.CameraLocalPosition, cue.LookAtLocalPosition));
+            }
+
+            Transform lookAt = shotCamera.LookAt;
+            if (lookAt == null)
+            {
+                GameObject lookAtObject = new GameObject($"{shotCamera.name}_LookAt");
+                lookAtObject.transform.SetParent(shotCamera.transform.parent, worldPositionStays: false);
+                lookAt = lookAtObject.transform;
+                shotCamera.LookAt = lookAt;
+            }
+
+            if (!string.Equals(cue.CueId, OpeningDollyCueId, StringComparison.Ordinal))
+            {
+                lookAt.position = cue.LookAtLocalPosition;
+            }
+
+            LensSettings lens = shotCamera.Lens;
+            lens.ModeOverride = LensSettings.OverrideModes.Perspective;
+            lens.FieldOfView = cue.FieldOfView > 0f ? cue.FieldOfView : 36f;
+            lens.NearClipPlane = 0.03f;
+            lens.FarClipPlane = 150f;
+            shotCamera.Lens = lens;
+            EditorUtility.SetDirty(lookAt);
+            EditorUtility.SetDirty(shotCamera);
+        }
+
+        private static void EnsureExistingCinemachineTimelineClips(
+            CinematicSequenceProfile profile,
+            CinemachineBrain brain,
+            IntroGatePodCinemachineShotPlayer.Shot[] shots)
+        {
+            TimelineAsset timeline = AssetDatabase.LoadAssetAtPath<TimelineAsset>(TimelinePath)
+                ?? throw new InvalidOperationException($"Missing Timeline asset at {TimelinePath}.");
+            PlayableDirector director = FindComponentInScene<PlayableDirector>(EditorSceneManager.GetActiveScene())
+                ?? throw new InvalidOperationException("Missing PlayableDirector for Cinemachine shot timeline refresh.");
+            CinemachineTrack track = FindTimelineTrack<CinemachineTrack>(timeline, "Cinemachine Shots")
+                ?? throw new InvalidOperationException("Timeline is missing the Cinemachine Shots track.");
+
+            director.SetGenericBinding(track, brain);
+            Dictionary<string, TimelineClip> clipsByName =
+                new Dictionary<string, TimelineClip>(StringComparer.Ordinal);
+            foreach (TimelineClip clip in track.GetClips())
+            {
+                if (!string.IsNullOrWhiteSpace(clip.displayName))
+                {
+                    clipsByName[clip.displayName] = clip;
+                }
+            }
+
+            float sequenceEndSeconds = ResolveIntroGameplayHandoffSeconds();
+            for (int i = 0; i < shots.Length; i++)
+            {
+                if (!clipsByName.TryGetValue(shots[i].ShotId, out TimelineClip clip) || clip == null)
+                {
+                    clip = track.CreateClip<CinemachineShot>();
+                    clip.displayName = shots[i].ShotId;
+                }
+
+                float blendSeconds = i == 0 ? 0f : shots[i].BlendSeconds;
+                float clipStartSeconds = Mathf.Max(0f, shots[i].StartSeconds - blendSeconds);
+                float nextStartSeconds = i < shots.Length - 1
+                    ? shots[i + 1].StartSeconds
+                    : sequenceEndSeconds;
+                clip.displayName = shots[i].ShotId;
+                clip.start = clipStartSeconds;
+                clip.duration = Mathf.Max(0.1f, nextStartSeconds - clipStartSeconds);
+                clip.blendInDuration = blendSeconds;
+                clip.easeInDuration = blendSeconds;
+
+                CinemachineShot shotAsset = clip.asset as CinemachineShot;
+                if (shotAsset == null || shots[i].Camera == null)
+                {
+                    continue;
+                }
+
+                shotAsset.DisplayName = shots[i].ShotId;
+                PropertyName exposedName = new PropertyName($"cm_{i + 1:00}_{shots[i].ShotId}");
+                shotAsset.VirtualCamera.exposedName = exposedName;
+                director.SetReferenceValue(exposedName, shots[i].Camera);
+                EditorUtility.SetDirty(shotAsset);
+            }
+
+            EditorUtility.SetDirty(track);
+            EditorUtility.SetDirty(timeline);
+            EditorUtility.SetDirty(director);
         }
 
         private static void EnsureInvasionExplosionVfx(Scene scene, Transform explosionRoot)
@@ -814,18 +971,18 @@ namespace DimensionBrawl.Editor
                         CinematicSequenceProfile.CameraBlendKind.Reframe,
                         invasionExplosionStartSeconds,
                         invasionPushStartSeconds - invasionExplosionStartSeconds,
-                        new Vector3(-3.45f, 1.18f, 3.72f),
-                        new Vector3(-0.88f, 1.55f, 7.18f),
-                        56f),
+                        new Vector3(-3.25f, 1.36f, 5.05f),
+                        new Vector3(-1.02f, 1.60f, 7.24f),
+                        38f),
                     ShotCamera(
                         "src_c09_commando_bridge_push_past",
                         CinematicSequenceProfile.ShotPurpose.ThreatDirection,
                         CinematicSequenceProfile.CameraBlendKind.PushIn,
                         invasionPushStartSeconds,
                         introGameplayHandoffSeconds - invasionPushStartSeconds,
-                        new Vector3(-1.45f, 0.48f, 2.90f),
-                        new Vector3(0.48f, 0.82f, 4.82f),
-                        58f)
+                        new Vector3(-1.06f, 0.34f, 1.02f),
+                        new Vector3(0.32f, 0.68f, 2.42f),
+                        56f)
                 },
                 new[]
                 {
@@ -1228,8 +1385,8 @@ namespace DimensionBrawl.Editor
                 screenEffects.ImpactFlashGroup,
                 screenEffects.WarningSweepGroup,
                 2.65f,
-                0.42f,
-                0.62f,
+                0.22f,
+                0.38f,
                 0.78f,
                 new Vector3(0.060f, 0.044f, 0.012f),
                 new Vector3(1.55f, 2.15f, 0.72f),
@@ -2771,7 +2928,7 @@ namespace DimensionBrawl.Editor
             CaptureSample(runner, shotPlayer, cueDirector, rendererMask, invasionBridgeCue, profile, camera, handLookStartSeconds + 0.85f, HandsCapturePath);
             CaptureSample(runner, shotPlayer, cueDirector, rendererMask, invasionBridgeCue, profile, camera, voiceThreeStartSeconds + 1.05f, CommandoLegsCapturePath);
             CaptureSample(runner, shotPlayer, cueDirector, rendererMask, invasionBridgeCue, profile, camera, ResolveInvasionExplosionStartSeconds(voiceThreeStartSeconds) + 0.45f, HeavenExplosionCapturePath);
-            CaptureSample(runner, shotPlayer, cueDirector, rendererMask, invasionBridgeCue, profile, camera, ResolveInvasionPushShotStartSeconds(voiceThreeStartSeconds) + 0.95f, CommandoPushCapturePath);
+            CaptureSample(runner, shotPlayer, cueDirector, rendererMask, invasionBridgeCue, profile, camera, ResolveInvasionPushShotStartSeconds(voiceThreeStartSeconds) + 0.35f, CommandoPushCapturePath);
             ApplyProfileSample(runner, profile, 0.1f);
             ApplyCinemachineSample(shotPlayer, cueDirector, camera, 0.1f);
             rendererMask?.ApplyForReview(0.1f);
