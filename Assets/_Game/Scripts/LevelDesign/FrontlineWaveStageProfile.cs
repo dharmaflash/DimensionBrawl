@@ -80,6 +80,7 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField, Range(0f, 1f)] private float closeProbeDefeatRouteBonus01 = 0.12f;
         [SerializeField, Range(0f, 1f)] private float summonBlockRouteBonus01 = 0.18f;
         [SerializeField, Range(0f, 1f)] private float followupHitRouteBonus01 = 0.20f;
+        [SerializeField, Range(0f, 1f)] private float counterWaveStabilizeRouteBonus01 = 0.14f;
 
         [Header("Objective Copy")]
         [SerializeField, Min(1)] private int objectiveStepCount = 3;
@@ -96,6 +97,7 @@ namespace DimensionBrawl.LevelDesign
         [TextArea, SerializeField] private string followupMissedCue = "Follow-up window missed; boss pressure is returning";
         [TextArea, SerializeField] private string pressureBreakCue = "Boss curtain suppressed briefly; read the follow-up window";
         [TextArea, SerializeField] private string counterWaveCue = "Counter wave entered the line; hold frontline and answer with summon";
+        [TextArea, SerializeField] private string counterWaveStabilizedCue = "Counter wave held by summon; rebuild the route opening";
         [TextArea, SerializeField] private string clearObjectiveCue = "Frontline stabilized; summon route secured";
         [TextArea, SerializeField] private string failObjectiveCue = "Player line collapsed before route stabilization";
 
@@ -130,6 +132,7 @@ namespace DimensionBrawl.LevelDesign
         public float CloseProbeDefeatRouteBonus01 => Mathf.Clamp01(closeProbeDefeatRouteBonus01);
         public float SummonBlockRouteBonus01 => Mathf.Clamp01(summonBlockRouteBonus01);
         public float FollowupHitRouteBonus01 => Mathf.Clamp01(followupHitRouteBonus01);
+        public float CounterWaveStabilizeRouteBonus01 => Mathf.Clamp01(counterWaveStabilizeRouteBonus01);
         public int ObjectiveStepCount => Mathf.Max(1, objectiveStepCount);
         public string StepPrefix => string.IsNullOrWhiteSpace(stepPrefix) ? "Route" : stepPrefix;
         public string PreThreatChargeCue => preThreatChargeCue;
@@ -144,6 +147,7 @@ namespace DimensionBrawl.LevelDesign
         public string FollowupMissedCue => followupMissedCue;
         public string PressureBreakCue => pressureBreakCue;
         public string CounterWaveCue => counterWaveCue;
+        public string CounterWaveStabilizedCue => counterWaveStabilizedCue;
         public string ClearObjectiveCue => clearObjectiveCue;
         public string FailObjectiveCue => failObjectiveCue;
         public string ClearTitle => clearTitle;

@@ -136,7 +136,9 @@ namespace DimensionBrawl.Test
         private bool followupMissedNotified;
         private bool bossBlockedSkill1Followup;
         private bool counterWaveObserved;
+        private bool counterWaveStabilized;
         private CounterWaveSource counterWaveSource;
+        private float lastCounterWaveStabilityBonus;
         private int bossPressureSummonReleasesAtReset;
         private int announcedStageBeatIndex;
         private RouteStabilityBand announcedRouteStabilityBand;
@@ -166,9 +168,13 @@ namespace DimensionBrawl.Test
         public bool IsSummonRouteCompletionRecorded => usedSummonSlot1 && blockedBossPressureWithSummon;
         public bool IsFollowupCompletionRecorded => skill1FollowupHitConfirmed;
         public bool IsCounterWaveCompletionRecorded => counterWaveObserved;
+        public bool IsCounterWaveStabilized => counterWaveStabilized;
         public CounterWaveSource CounterWaveObservedSource => counterWaveSource;
         public string CounterWaveSourceReadout => ResolveCounterWaveSourceReadout();
         public string CounterWaveRecordState => ResolveCounterWaveRecordState();
+        public string CounterWaveAnswerState => ResolveCounterWaveAnswerState();
+        public string CounterWaveAnswerReadout => ResolveCounterWaveAnswerReadout();
+        public float LastCounterWaveStabilityBonus => lastCounterWaveStabilityBonus;
         public string CompletionRecordReadout => ResolveCompletionRecordReadout();
         public bool IsSkill1FollowupClearCountdownActive => state == PocketState.Running
             && skill1FollowupHitConfirmed
@@ -306,7 +312,9 @@ namespace DimensionBrawl.Test
                 {
                     if (counterWaveObserved)
                     {
-                        return $"{ResolveCounterWaveCue()}: {ResolveObjectiveSummonAnswerLabel()}";
+                        return counterWaveStabilized
+                            ? $"{ResolveCounterWaveStabilizedCue()}: {ResolveObjectiveSummonAnswerLabel()}"
+                            : $"{ResolveCounterWaveCue()}: {ResolveObjectiveSummonAnswerLabel()}";
                     }
 
                     return energyLadder != null && !energyLadder.CanSpend
@@ -396,7 +404,9 @@ namespace DimensionBrawl.Test
             followupMissedNotified = false;
             bossBlockedSkill1Followup = false;
             counterWaveObserved = false;
+            counterWaveStabilized = false;
             counterWaveSource = CounterWaveSource.None;
+            lastCounterWaveStabilityBonus = 0f;
             bossPressureSummonReleasesAtReset = GetBossPressureSummonReleaseCount();
             highestSkillTier = 0;
             highestSummonTier = 0;
@@ -456,6 +466,7 @@ namespace DimensionBrawl.Test
             CaptureBossBlockedFollowup();
             UpdatePressurePacing(deltaTime);
             CaptureCounterWavePressure();
+            CaptureCounterWaveAnswer();
             TickSkill1FollowupClearTimer(deltaTime);
             TickRouteStability(deltaTime);
             if (IsRouteStabilityActive && routeStability01 <= 0f)
@@ -719,6 +730,18 @@ namespace DimensionBrawl.Test
             counterWaveSource = source == CounterWaveSource.None ? CounterWaveSource.EnemyFrontlineBody : source;
         }
 
+        private void CaptureCounterWaveAnswer()
+        {
+            if (!counterWaveObserved || counterWaveStabilized || ActiveAllyFrontlineProxyCount <= 0)
+            {
+                return;
+            }
+
+            counterWaveStabilized = true;
+            lastCounterWaveStabilityBonus = ResolveCounterWaveStabilizeRouteBonus01();
+            AddRouteStability(lastCounterWaveStabilityBonus);
+        }
+
         private void ClearPocket()
         {
             resultElapsedSeconds = elapsedSeconds;
@@ -972,6 +995,11 @@ namespace DimensionBrawl.Test
             return stageProfile != null ? stageProfile.FollowupHitRouteBonus01 : 0f;
         }
 
+        private float ResolveCounterWaveStabilizeRouteBonus01()
+        {
+            return stageProfile != null ? stageProfile.CounterWaveStabilizeRouteBonus01 : 0f;
+        }
+
         private int ResolveCurrentPressureSlotIndex()
         {
             if (stageProfile == null || stageProfile.PressureSlotCount <= 0)
@@ -1049,6 +1077,13 @@ namespace DimensionBrawl.Test
             return ResolveStageText(
                 stageProfile != null ? stageProfile.CounterWaveCue : null,
                 "Counter wave entered the line; hold frontline and answer with summon");
+        }
+
+        private string ResolveCounterWaveStabilizedCue()
+        {
+            return ResolveStageText(
+                stageProfile != null ? stageProfile.CounterWaveStabilizedCue : null,
+                "Counter wave held by summon; rebuild the route opening");
         }
 
         private string ResolveSummonBlockOpportunityCue()
@@ -1211,7 +1246,8 @@ namespace DimensionBrawl.Test
             return $"close:{ResolveRecordState(IsCloseProbeCompletionRecorded)} "
                 + $"summon:{ResolveRecordState(IsSummonRouteCompletionRecorded)} "
                 + $"followup:{ResolveRecordState(IsFollowupCompletionRecorded)} "
-                + $"counter:{CounterWaveRecordState}({CounterWaveSourceReadout})";
+                + $"counter:{CounterWaveRecordState}({CounterWaveSourceReadout}) "
+                + $"counter_answer:{CounterWaveAnswerState}({CounterWaveAnswerReadout})";
         }
 
         private static string ResolveRecordState(bool completed)
@@ -1239,6 +1275,36 @@ namespace DimensionBrawl.Test
                 CounterWaveSource.BossSummonRelease => "boss_summon",
                 _ => "none"
             };
+        }
+
+        private string ResolveCounterWaveAnswerState()
+        {
+            if (counterWaveStabilized)
+            {
+                return "stabilized";
+            }
+
+            if (IsCounterWaveCompletionRecorded)
+            {
+                return "pending";
+            }
+
+            return IsFollowupCompletionRecorded ? "not_needed" : "pending";
+        }
+
+        private string ResolveCounterWaveAnswerReadout()
+        {
+            if (counterWaveStabilized)
+            {
+                return "ally_hold";
+            }
+
+            if (IsCounterWaveCompletionRecorded)
+            {
+                return "awaiting";
+            }
+
+            return IsFollowupCompletionRecorded ? "clean_followup" : "none";
         }
 
         private int ResolveCurrentStageBeatIndex()

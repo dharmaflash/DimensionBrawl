@@ -694,7 +694,9 @@ namespace DimensionBrawl.Presentation
 
             if (pocketReviewOwner.IsCounterWaveCompletionRecorded && !pocketReviewOwner.Skill1FollowupHitConfirmed)
             {
-                return $"{ResolvePocketStepPrefix()}: Hold counter wave";
+                return pocketReviewOwner.IsCounterWaveStabilized
+                    ? $"{ResolvePocketStepPrefix()}: Counter held"
+                    : $"{ResolvePocketStepPrefix()}: Hold counter wave";
             }
 
             if (pocketReviewOwner.IsSummonBlockOpportunityCueActive)
@@ -1491,7 +1493,7 @@ namespace DimensionBrawl.Presentation
         {
             return pocketReviewOwner != null
                 ? pocketReviewOwner.CompletionRecordReadout
-                : "close:pending summon:pending followup:pending";
+                : "close:pending summon:pending followup:pending counter:pending(none) counter_answer:pending(none)";
         }
 
         private string ResolveRouteStabilityText()

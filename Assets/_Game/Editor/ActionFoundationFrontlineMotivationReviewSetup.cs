@@ -219,6 +219,7 @@ namespace DimensionBrawl.Editor
             SetFloat(serializedObject, "closeProbeDefeatRouteBonus01", 0.12f);
             SetFloat(serializedObject, "summonBlockRouteBonus01", 0.18f);
             SetFloat(serializedObject, "followupHitRouteBonus01", 0.20f);
+            SetFloat(serializedObject, "counterWaveStabilizeRouteBonus01", 0.14f);
             SetInt(serializedObject, "objectiveStepCount", 3);
             SetString(serializedObject, "stepPrefix", "Route");
             SetString(
@@ -254,6 +255,10 @@ namespace DimensionBrawl.Editor
                 serializedObject,
                 "counterWaveCue",
                 "Counter wave entered the line; hold frontline and answer with summon");
+            SetString(
+                serializedObject,
+                "counterWaveStabilizedCue",
+                "Counter wave held by summon; rebuild the route opening");
             SetString(serializedObject, "clearObjectiveCue", "Frontline stabilized; summon route secured");
             SetString(serializedObject, "failObjectiveCue", "Player line collapsed before route stabilization");
             SetString(serializedObject, "clearTitle", "FRONTLINE STABILIZED");
