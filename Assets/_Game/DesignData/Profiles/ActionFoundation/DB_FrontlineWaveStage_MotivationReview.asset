@@ -16,6 +16,8 @@ MonoBehaviour:
   displayName: Frontline Motivation Review
   stageEpisodeLabel: EP 03 Frontline Stabilization
   objectiveBadgeLabel: ROUTE
+  combatPromise: Bodies stay split; waves and summons contest the line
+  entryCue: Hold line; prove summon route
   targetDurationSeconds: 90
   waveSlotPattern: CloseProbe -> LineProjectile -> ScreenCurtain -> FrontlineBody
     -> CoreExpose

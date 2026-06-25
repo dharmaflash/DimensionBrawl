@@ -20,7 +20,13 @@ namespace DimensionBrawl.UI
         private static GUIStyle leftLabelStyle;
         private static GUIStyle titleLabelStyle;
 
-        public static void DrawObjectivePanel(Rect rect, string title, string detail, string badge, string subdetail = null)
+        public static void DrawObjectivePanel(
+            Rect rect,
+            string title,
+            string detail,
+            string badge,
+            string subdetail = null,
+            string footnote = null)
         {
             DrawPanel(rect, GoldColor);
             DrawDiamond(new Vector2(rect.x + 32f, rect.center.y), 21f, GoldColor);
@@ -37,7 +43,12 @@ namespace DimensionBrawl.UI
                 smallCenterLabelStyle.alignment = TextAnchor.MiddleLeft;
                 smallCenterLabelStyle.fontSize = 12;
                 smallCenterLabelStyle.normal.textColor = MutedTextColor;
-                GUI.Label(new Rect(rect.x + 66f, rect.y + 66f, rect.width - 108f, 20f), subdetail, smallCenterLabelStyle);
+                GUI.Label(new Rect(rect.x + 66f, rect.y + 65f, rect.width - 108f, 18f), subdetail, smallCenterLabelStyle);
+                if (!string.IsNullOrWhiteSpace(footnote))
+                {
+                    GUI.Label(new Rect(rect.x + 66f, rect.y + 83f, rect.width - 108f, 18f), footnote, smallCenterLabelStyle);
+                }
+
                 smallCenterLabelStyle.alignment = TextAnchor.MiddleCenter;
                 smallCenterLabelStyle.normal.textColor = TextColor;
             }

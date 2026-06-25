@@ -830,6 +830,7 @@ Route stability is now part of the review-scene contract:
 
 - The profile carries a route-stability budget derived from the same 90-second stage shell and wave-slot read.
 - The profile also carries six structured pressure slots (`BackPressure`, `CloseProbe`, `ScreenCurtain`, `CoreExpose`, `FrontlineBody`, `RecordHook`) derived from NIKKE spawn family/path slot grammar and mapped to local review beats.
+- The profile carries a compact combat promise and entry cue, and the premium HUD objective panel must surface them before the beat line so the player sees why the route matters, not just which button to press next.
 - CloseProbe, SummonNeed, and CounterWave beats drain route stability until the player answers the local objective.
 - Close-threat defeat, `SummonSlot1` pressure block, and confirmed `Skill1` follow-up restore stability.
 - If stability collapses, the pocket fails as `LINE COLLAPSED` even when player HP remains, so the match is not reducible to HP trading or button timing.

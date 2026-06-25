@@ -189,6 +189,11 @@ namespace DimensionBrawl.Editor
             SetString(serializedObject, "displayName", "Frontline Motivation Review");
             SetString(serializedObject, "stageEpisodeLabel", "EP 03 Frontline Stabilization");
             SetString(serializedObject, "objectiveBadgeLabel", "ROUTE");
+            SetString(
+                serializedObject,
+                "combatPromise",
+                "Bodies stay split; waves and summons contest the line");
+            SetString(serializedObject, "entryCue", "Hold line; prove summon route");
             SetFloat(serializedObject, "targetDurationSeconds", 90f);
             SetString(
                 serializedObject,

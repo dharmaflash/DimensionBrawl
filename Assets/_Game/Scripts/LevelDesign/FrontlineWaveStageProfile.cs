@@ -61,6 +61,9 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField] private string displayName = "Frontline Motivation Review";
         [SerializeField] private string stageEpisodeLabel = "EP 03 Frontline Stabilization";
         [SerializeField] private string objectiveBadgeLabel = "LANE";
+        [TextArea, SerializeField] private string combatPromise =
+            "Bodies stay split; waves and summons contest the line";
+        [TextArea, SerializeField] private string entryCue = "Hold line; prove summon route";
 
         [Header("Data Pattern")]
         [SerializeField, Min(1f)] private float targetDurationSeconds = 90f;
@@ -112,6 +115,8 @@ namespace DimensionBrawl.LevelDesign
         public string DisplayName => displayName;
         public string StageEpisodeLabel => stageEpisodeLabel;
         public string ObjectiveBadgeLabel => objectiveBadgeLabel;
+        public string CombatPromise => combatPromise;
+        public string EntryCue => entryCue;
         public float TargetDurationSeconds => targetDurationSeconds;
         public string WaveSlotPattern => waveSlotPattern;
         public string SpawnFamilyPattern => spawnFamilyPattern;

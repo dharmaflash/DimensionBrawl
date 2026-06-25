@@ -47,8 +47,8 @@ namespace DimensionBrawl.Tests
                 AssertRectInsideViewport(layout.PlayerPanelRect, viewport, "player panel", layout);
                 Assert.GreaterOrEqual(
                     layout.ObjectiveRect.height,
-                    94f,
-                    $"{viewport} objective panel must keep room for the beat subdetail line.");
+                    118f,
+                    $"{viewport} objective panel must keep room for route promise and beat subdetail lines.");
                 AssertNoOverlap(layout.ObjectiveRect, layout.BossBarRect, viewport, "objective", "boss bar");
                 AssertNoOverlap(layout.ObjectiveRect, layout.PlayerPanelRect, viewport, "objective", "player panel");
                 AssertNoOverlap(layout.BossBarRect, layout.PlayerPanelRect, viewport, "boss bar", "player panel");
@@ -67,6 +67,8 @@ namespace DimensionBrawl.Tests
                 AssetDatabase.LoadAssetAtPath<FrontlineWaveStageProfile>(StageProfilePath);
             Assert.NotNull(stageProfile);
             Assert.AreEqual("FRONTLINE-MOTIVATION-REVIEW-01", stageProfile.StageId);
+            Assert.That(stageProfile.CombatPromise, Does.Contain("Bodies stay split"));
+            Assert.That(stageProfile.EntryCue, Does.Contain("summon route"));
             Assert.AreEqual(90f, stageProfile.TargetDurationSeconds);
             Assert.AreEqual(0.62f, stageProfile.RouteStabilityStart01, 0.001f);
             Assert.That(stageProfile.RouteCollapseFailDetail, Does.Contain("Route stability collapsed"));
@@ -97,6 +99,9 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("ActionFoundationFrontlineMotivationReview", overlayHud.RetrySceneName);
             Assert.AreEqual(ScenePath, overlayHud.RetryScenePath);
 
+            Assert.That(reviewHud.StageBriefingReadout, Does.Contain("Bodies stay split"));
+            Assert.That(reviewHud.StageBriefingReadout, Does.Contain("Hold line"));
+            Assert.That(reviewHud.CompactStageBriefingReadout, Does.Contain("summon route"));
             Assert.That(reviewHud.CompactObjectiveReadout, Does.Contain("Route 1/3"));
             Assert.That(reviewHud.CompactObjectiveReadout, Does.Not.Contain("Boss"));
             Assert.That(pocketOwner.ObjectiveCue, Does.Contain("line").IgnoreCase);

@@ -78,6 +78,8 @@ namespace DimensionBrawl.Presentation
 
         public string FrontlineLoopReadout => ResolveFrontlineLoopLine();
         public string FrontlineTuningReadout => ResolveFrontlineTuningLine();
+        public string StageBriefingReadout => ResolveStageBriefingLine();
+        public string CompactStageBriefingReadout => ResolveCompactStageBriefingLine();
         public string StageBeatReadout => ResolveStageBeatLine();
         public string PressureSlotReadout => ResolvePressureSlotLine();
         public string RouteRecordReadout => ResolveRouteRecordLine();
@@ -221,6 +223,7 @@ namespace DimensionBrawl.Presentation
                 ResolveStageEpisodeLabel(),
                 ResolveCompactObjectiveLine(),
                 ResolvePremiumObjectiveBadge(),
+                ResolveCompactStageBriefingLine(),
                 ResolveCompactStageBeatLine());
 
             BossBarrageLaneReviewHudChrome.DrawBossBar(
@@ -254,7 +257,7 @@ namespace DimensionBrawl.Presentation
                 resolvedMargin,
                 resolvedMargin,
                 Mathf.Min(430f, Mathf.Max(300f, usableWidth * 0.32f)),
-                104f);
+                124f);
 
             float rightHudReserve = Mathf.Clamp(resolvedWidth * 0.18f, 170f, 300f);
             float bossBarLeftLimit = objectiveRect.xMax + 44f;
@@ -263,7 +266,7 @@ namespace DimensionBrawl.Presentation
             Rect bossBarRect;
             if (shouldStackTopPanels)
             {
-                objectiveRect = new Rect(resolvedMargin, resolvedMargin, usableWidth, 104f);
+                objectiveRect = new Rect(resolvedMargin, resolvedMargin, usableWidth, 124f);
                 bossBarRect = new Rect(
                     resolvedMargin,
                     objectiveRect.yMax + 10f,
@@ -311,6 +314,7 @@ namespace DimensionBrawl.Presentation
             GUILayout.Label(ResolveBossPressureLine(), labelStyle);
             GUILayout.Label(ResolveBossPressureResponseLine(), labelStyle);
             GUILayout.Label(ResolveBossSummonLine(), labelStyle);
+            GUILayout.Label(ResolveStageBriefingLine(), labelStyle);
             GUILayout.Label(ResolveStageBeatLine(), labelStyle);
             GUILayout.Label(ResolvePressureSlotLine(), labelStyle);
             GUILayout.Label(ResolveRouteStabilityLine(), labelStyle);
@@ -708,6 +712,31 @@ namespace DimensionBrawl.Presentation
             return energyLadder != null && !energyLadder.CanSpend
                 ? $"{ResolvePocketStepPrefix()}: Hold line for EN"
                 : $"{ResolvePocketStepPrefix()}: Stop close probe";
+        }
+
+        private string ResolveStageBriefingLine()
+        {
+            FrontlineWaveStageProfile profile = ActiveStageProfile;
+            if (profile == null)
+            {
+                return "Stage Briefing -";
+            }
+
+            string displayName = ResolveStageText(profile.DisplayName, "Frontline Review");
+            string promise = ResolveStageText(profile.CombatPromise, "Bodies split; summons contest the line");
+            string entryCue = ResolveStageText(profile.EntryCue, "Hold line; prove summon route");
+            return $"{displayName}: {promise} | {entryCue}";
+        }
+
+        private string ResolveCompactStageBriefingLine()
+        {
+            FrontlineWaveStageProfile profile = ActiveStageProfile;
+            if (profile == null)
+            {
+                return string.Empty;
+            }
+
+            return ResolveStageText(profile.EntryCue, "Hold line; prove summon route");
         }
 
         private string ResolveStageBeatLine()
