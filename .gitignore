@@ -29,6 +29,8 @@ Thumbs.db
 # Keep curated game-ready prefabs/data under Assets/_Game instead.
 Assets/_Imported/
 Assets/_Imported.meta
+Assets/_Game/Art/Environment/OlympusTemple/URP/OlympusURP.unitypackage
+Assets/_Game/Art/Environment/OlympusTemple/URP/OlympusURP.unitypackage.meta
 
 # Unity may recreate this when package tooling probes code coverage.
 ProjectSettings/Packages/com.unity.testtools.codecoverage/
