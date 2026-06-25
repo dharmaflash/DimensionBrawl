@@ -1,6 +1,6 @@
 # Build Resubmission Cinematic Package Plan
 
-Last updated: 2026-06-24 KST
+Last updated: 2026-06-25 KST
 
 ## Purpose
 
@@ -40,8 +40,8 @@ Status:
 - Step 4: Complete for the initial P0 gap list. Actual retargeted clip promotion and visual inspection on Inori remain per-module work.
 - Step 5: Complete for the reusable foundation. Runtime sequence profiles, actor/VFX/tutorial/handoff cues, promoted animation controller binding, direct camera shot-pose data, and the first review runner exist.
 - Step 6: In progress. P0 profile assets exist, every enabled P0 camera cue now has authored direct shot-pose data, module preview captures exist, weapon visibility is profile-driven, the review scene has a six-module P0 playlist route with sampled Play Mode visual QA, QTE/tutorial prompts now render as camera-captured readable overlays, and the review scene has a reusable dressed stage/lighting shell. A continuous Play Mode timeline frame capture now generates labeled route strips and 23 timeline frames including the final gameplay handoff. Remaining P0 work is animation safety per module, production art polish, and production-style movie capture.
-- Step 7: In progress. First-pass P1 profile assets now exist for `BossIntro`, `PhaseTransition`, `BreakMoment`, `DialogueReactionBeat`, `ResultBridge`, `SummonEntry`, `SummonFollowupHit`, `SummonEmpower`, and `SummonRecall`; each has authored direct camera shot poses, Inori body/face cues, profile-driven rifle visibility, VFX where relevant, and explicit gameplay/result handoff data. Remaining P1 work is broader non-summon variants, visual tuning on Inori, and integration into actual game triggers.
-- Step 8: In progress. Action cue integration now has a bridge from existing action cinematic cue requests to reusable build-resubmission cinematic sequence profiles. Boss barrage review generation binds the bridge, runner, Inori animator controller override, expression player, VFX player, support-dragon actor binding, and camera handoff path for ultimate, summon entry, summon follow-up, summon empower, summon recall, break, and result cues. Play Mode input-route verification now proves tier-3 `Skill1` and `SummonSlot1` can trigger the mapped reusable cinematic sequences from the actual player action methods, dispatch bound actor cues, and produce multi-beat camera captures for summon entry plus direct bridge captures for summon empower/recall.
+- Step 7: In progress. First-pass P1 profile assets now exist for `BossIntro`, `PhaseTransition`, `BreakMoment`, `DialogueReactionBeat`, `ResultBridge`, `SummonEntry`, `SummonFollowupHit`, `SummonEmpower`, `SummonRecall`, and `BossSummonPressure`; each has authored direct camera shot poses, Inori body/face cues, profile-driven rifle visibility, VFX where relevant, and explicit gameplay/result handoff data. Remaining P1 work is broader non-summon variants, visual tuning on Inori, and integration into actual game triggers.
+- Step 8: In progress. Action cue integration now has a bridge from existing action cinematic cue requests to reusable build-resubmission cinematic sequence profiles. Boss barrage review generation binds the bridge, runner, Inori animator controller override, expression player, VFX player, support-dragon actor binding, and camera handoff path for ultimate, summon entry, summon follow-up, summon empower, summon recall, boss-summon pressure, break, and result cues. Play Mode input-route verification now proves tier-3 `Skill1` and `SummonSlot1` can trigger the mapped reusable cinematic sequences from the actual player action methods, dispatch bound actor cues, and produce multi-beat camera captures for summon entry plus direct bridge captures for boss-summon pressure, summon empower, and summon recall.
 - Step 9: Pending.
 
 Current blockers:
@@ -870,6 +870,58 @@ Quality note:
 
 - The bridge route frames use the actual boss-barrage review stage, so they read better than the plain P1 review strip: Inori remains in corridor back-view, the frontline summon occupies the lane, and the Volcano Dragon remains visible as a support layer.
 - This still proves deterministic route frames rather than final authored movie capture. It is enough to trust the new cue kinds and bridge mapping, but production polish still needs per-shot lighting, occlusion, animation, and continuous capture passes.
+
+### 2026-06-25 Boss Summon Pressure Profile Split
+
+Why this was added:
+
+- `BossPressureBreak` was still routed to the generic `BreakMoment` profile.
+- The boss-barrage route now has summon entry, summon follow-up, empower, and recall beats, so the pressure-break response should also use a summon-aware profile rather than a generic guard break shot.
+
+Runtime/editor changes:
+
+- Added `SequenceCategory.BossSummonPressure` at the end of the cinematic profile enum.
+- Added `DB_Cinematic_BossSummonPressure.asset` as a dedicated P1 profile with pressure-wall, summon-guard, crack, and handoff camera cues.
+- The profile drives Inori back-view projectile animation, Inori face state, weapon visibility, frontline summon actor cues, support-dragon cues, and VFX for pressure window, shield guard, muzzle answer, impact crack, and dragon mark.
+- `BossPressureBreak` bridge mapping now points to `DB_Cinematic_BossSummonPressure.asset` in both the P0 cinematic review scene and the boss-barrage review scene.
+- P1 runner-driven review adds `p1_10_boss_summon_pressure_guard`.
+- The action bridge route probe now directly verifies `BossPressureBreak -> boss_summon_pressure`.
+
+Verification:
+
+- method: `DimensionBrawl.Editor.BuildResubmissionCinematicProfileSetup.RunBatchProfileGeneration`
+- log: `C:\tmp\DimensionBrawl-BuildResubmissionCinematicProfiles-BossSummonPressure.log`
+- result: PASS, exit code 0
+- method: `DimensionBrawl.Editor.BuildResubmissionCinematicReviewSceneSetup.RunBatchReviewSceneGeneration`
+- log: `C:\tmp\DimensionBrawl-CinematicReviewScene-BossSummonPressure.log`
+- result: PASS, exit code 0
+- method: `DimensionBrawl.Editor.ActionFoundationBossBarrageLaneReviewSetup.EnsureBossBarrageLaneReviewScene`
+- log: `C:\tmp\DimensionBrawl-BossBarrageLaneReview-BossSummonPressure-Ensure.log`
+- result: PASS, exit code 0
+- method: `DimensionBrawl.Editor.ActionFoundationBossBarrageLaneReviewSetup.ValidateBossBarrageLaneReviewSceneMenu`
+- log: `C:\tmp\DimensionBrawl-BossBarrageLaneReview-BossSummonPressure-Validate.log`
+- result: PASS, exit code 0
+- method: `DimensionBrawl.Editor.BuildResubmissionCinematicPackageVerifier.RunBatchVerification`
+- log: `C:\tmp\DimensionBrawl-CinematicPackageVerifier-BossSummonPressure.log`
+- report: `C:\tmp\DimensionBrawl-CinematicPackageVerifier.md`
+- result: PASS, failures 0, warnings 0
+- method: `DimensionBrawl.Editor.BuildResubmissionCinematicReviewSceneSetup.RunBatchP1RunnerDrivenPlaylistCapture`
+- log: `C:\tmp\DimensionBrawl-CinematicP1RunnerDriven-BossSummonPressure.log`
+- result: PASS, exit code 0
+- method: `DimensionBrawl.Editor.ActionFoundationBossBarrageLaneReviewSetup.RunBatchActionBridgeInputRouteVerification`
+- log: `C:\tmp\DimensionBrawl-BossBarrageActionBridgeRoute-BossSummonPressure.log`
+- result: PASS, route result file reports `RESULT=PASS`
+
+Visual QA:
+
+- P1 sample frame: `C:\tmp\DimensionBrawl-CinematicP1Review-RunnerDrivenFrames\10_p1_10_boss_summon_pressure_guard.png`
+- action bridge route frame: `C:\tmp\DimensionBrawl-BossBarrageActionBridgeRouteFrames\05_boss_summon_pressure_direct_bridge.png`
+- result file: `C:\tmp\DimensionBrawl-BossBarrageActionBridgeRoute.result`
+
+Quality note:
+
+- The route frame clearly reads as Inori supporting from corridor back-view while the frontline summon absorbs a boss pressure beat. Dragon support remains visible as a flank layer.
+- The route result may show later director events after the direct bridge sample because boss-barrage follow-up events continue to tick, but the bridge, profile, camera, actor, and VFX evidence for `boss_summon_pressure` all pass before the follow-up event changes the final director label.
 
 ## Source Data Read
 

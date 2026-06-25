@@ -71,7 +71,7 @@ namespace DimensionBrawl.Test
 
             StringBuilder report = new StringBuilder(2048);
             report.AppendLine("ROUTE=BossBarrageActionBridgeInput");
-            List<CapturedRouteFrame> capturedFrames = new List<CapturedRouteFrame>(6);
+            List<CapturedRouteFrame> capturedFrames = new List<CapturedRouteFrame>(7);
 
             ProbeContext context;
             try
@@ -115,6 +115,19 @@ namespace DimensionBrawl.Test
 
             yield return VerifyDirectorRoute(
                 context,
+                "boss_summon_pressure_direct_bridge",
+                ActionCinematicCueProfile.CueKind.BossPressureBreak,
+                "boss_summon_pressure",
+                1.02f,
+                report,
+                capturedFrames);
+            bool bossSummonPressureRoutePassed = lastStepPassed;
+
+            yield return WaitForIdle(context, "after_boss_summon_pressure_direct_bridge", report);
+            bool bossSummonPressureIdlePassed = lastStepPassed;
+
+            yield return VerifyDirectorRoute(
+                context,
                 "summon_empower_direct_bridge",
                 ActionCinematicCueProfile.CueKind.SummonEmpower,
                 "summon_empower",
@@ -143,6 +156,8 @@ namespace DimensionBrawl.Test
                 && skillIdlePassed
                 && summonRoutePassed
                 && summonIdlePassed
+                && bossSummonPressureRoutePassed
+                && bossSummonPressureIdlePassed
                 && summonEmpowerRoutePassed
                 && summonEmpowerIdlePassed
                 && summonRecallRoutePassed

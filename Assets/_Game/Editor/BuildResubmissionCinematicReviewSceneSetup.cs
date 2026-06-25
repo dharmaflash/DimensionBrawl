@@ -60,6 +60,8 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/DesignData/Profiles/Cinematics/DB_Cinematic_SummonEmpower.asset";
         private const string SummonRecallProfilePath =
             "Assets/_Game/DesignData/Profiles/Cinematics/DB_Cinematic_SummonRecall.asset";
+        private const string BossSummonPressureProfilePath =
+            "Assets/_Game/DesignData/Profiles/Cinematics/DB_Cinematic_BossSummonPressure.asset";
         private const string RifleGirlSourcePrefabPath =
             "Assets/_Imported/AssetStore/CombatGirlsCharacterPack_RifleGirl/RifleGirl/Prefab/Rifle_Full_Body.prefab";
         private const string EnemyPrefabPath =
@@ -744,6 +746,15 @@ namespace DimensionBrawl.Editor
                     "CalmEye",
                     "summon_recall_collapse",
                     1.08f,
+                    weaponVisible: true),
+                new PlaylistStripSample(
+                    "Boss summon pressure: guard",
+                    "p1_10_boss_summon_pressure_guard",
+                    BossSummonPressureProfilePath,
+                    "CIN_BackViewProjectileFire + Summon.Attack",
+                    "Angry",
+                    "boss_summon_pressure_guard",
+                    1.02f,
                     weaponVisible: true)
             };
         }
@@ -753,7 +764,8 @@ namespace DimensionBrawl.Editor
             return string.Equals(profilePath, SummonEntryProfilePath, StringComparison.Ordinal)
                 || string.Equals(profilePath, SummonFollowupHitProfilePath, StringComparison.Ordinal)
                 || string.Equals(profilePath, SummonEmpowerProfilePath, StringComparison.Ordinal)
-                || string.Equals(profilePath, SummonRecallProfilePath, StringComparison.Ordinal);
+                || string.Equals(profilePath, SummonRecallProfilePath, StringComparison.Ordinal)
+                || string.Equals(profilePath, BossSummonPressureProfilePath, StringComparison.Ordinal);
         }
 
         private static void ResetActorForRunnerDrivenSample(Transform actorRoot, Animator animator)
@@ -1226,7 +1238,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(sequenceBridge, "skillCutInProfile", LoadAsset<CinematicSequenceProfile>(QteProfilePath));
             SetObjectReference(sequenceBridge, "summonEntryProfile", LoadAsset<CinematicSequenceProfile>(SummonEntryProfilePath));
             SetObjectReference(sequenceBridge, "ultimateCutInProfile", LoadAsset<CinematicSequenceProfile>(UltimateProfilePath));
-            SetObjectReference(sequenceBridge, "bossPressureBreakProfile", LoadAsset<CinematicSequenceProfile>(BreakMomentProfilePath));
+            SetObjectReference(sequenceBridge, "bossPressureBreakProfile", LoadAsset<CinematicSequenceProfile>(BossSummonPressureProfilePath));
             SetObjectReference(sequenceBridge, "summonFollowupHitProfile", LoadAsset<CinematicSequenceProfile>(SummonFollowupHitProfilePath));
             SetObjectReference(sequenceBridge, "summonEmpowerProfile", LoadAsset<CinematicSequenceProfile>(SummonEmpowerProfilePath));
             SetObjectReference(sequenceBridge, "summonRecallProfile", LoadAsset<CinematicSequenceProfile>(SummonRecallProfilePath));

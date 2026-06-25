@@ -32,7 +32,8 @@ namespace DimensionBrawl.Editor
             "DB_Cinematic_SummonEntry.asset",
             "DB_Cinematic_SummonFollowupHit.asset",
             "DB_Cinematic_SummonEmpower.asset",
-            "DB_Cinematic_SummonRecall.asset"
+            "DB_Cinematic_SummonRecall.asset",
+            "DB_Cinematic_BossSummonPressure.asset"
         };
 
         private static readonly string[] RequiredPlaylistProfiles =
@@ -300,7 +301,8 @@ namespace DimensionBrawl.Editor
                     || profile.Category == CinematicSequenceProfile.SequenceCategory.SummonEntry
                     || profile.Category == CinematicSequenceProfile.SequenceCategory.SummonFollowupHit
                     || profile.Category == CinematicSequenceProfile.SequenceCategory.SummonEmpower
-                    || profile.Category == CinematicSequenceProfile.SequenceCategory.SummonRecall)
+                    || profile.Category == CinematicSequenceProfile.SequenceCategory.SummonRecall
+                    || profile.Category == CinematicSequenceProfile.SequenceCategory.BossSummonPressure)
                 {
                     state.Check(
                         profile.GameplayHandoff.Enabled,
@@ -371,8 +373,8 @@ namespace DimensionBrawl.Editor
                     state,
                     serializedBridge,
                     "bossPressureBreakProfile",
-                    "DB_Cinematic_BreakMoment.asset",
-                    "Action bridge routes BossPressureBreak to the reusable break profile.");
+                    "DB_Cinematic_BossSummonPressure.asset",
+                    "Action bridge routes BossPressureBreak to the reusable boss-summon pressure profile.");
                 VerifyBridgeProfile(
                     state,
                     serializedBridge,

@@ -26,7 +26,8 @@ namespace DimensionBrawl.Presentation
             FailureBridge,
             SummonFollowupHit,
             SummonEmpower,
-            SummonRecall
+            SummonRecall,
+            BossSummonPressure
         }
 
         public enum ShotPurpose

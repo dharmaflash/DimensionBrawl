@@ -40,6 +40,7 @@ namespace DimensionBrawl.Editor
             ConfigureSummonFollowupHit(LoadOrCreate(ProfileRoot + "/DB_Cinematic_SummonFollowupHit.asset"));
             ConfigureSummonEmpower(LoadOrCreate(ProfileRoot + "/DB_Cinematic_SummonEmpower.asset"));
             ConfigureSummonRecall(LoadOrCreate(ProfileRoot + "/DB_Cinematic_SummonRecall.asset"));
+            ConfigureBossSummonPressure(LoadOrCreate(ProfileRoot + "/DB_Cinematic_BossSummonPressure.asset"));
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
             Debug.Log("Rebuilt build-resubmission P0/P1 cinematic sequence profiles.");
@@ -666,6 +667,54 @@ namespace DimensionBrawl.Editor
                 },
                 new CinematicSequenceProfile.TutorialCue[0],
                 Handoff(2.95f, "action_camera_controller"));
+            EditorUtility.SetDirty(profile);
+        }
+
+        private static void ConfigureBossSummonPressure(CinematicSequenceProfile profile)
+        {
+            profile.Configure(
+                "boss_summon_pressure",
+                "Boss Summon Pressure",
+                CinematicSequenceProfile.SequenceCategory.BossSummonPressure,
+                "Reusable boss-summon pressure beat: the frontline summon catches the lane pressure, Inori answers from back-view, dragon support marks the flank, and control returns to action.",
+                3.55f,
+                76,
+                true,
+                true,
+                false,
+                true,
+                true,
+                new[]
+                {
+                    ShotCamera("boss_summon_pressure_wall", CinematicSequenceProfile.ShotPurpose.MechanicConnection, CinematicSequenceProfile.CameraBlendKind.Reframe, 0f, 0.75f, new Vector3(0.08f, 0.06f, -0.14f), 0.10f, 1.5f, -0.12f, 0.04f, new Vector3(-1.75f, 1.52f, -2.55f), new Vector3(0.65f, 1.12f, 3.20f), 42f),
+                    ShotCamera("boss_summon_pressure_guard", CinematicSequenceProfile.ShotPurpose.ThreatDirection, CinematicSequenceProfile.CameraBlendKind.Cut, 0.75f, 0.95f, new Vector3(0.12f, 0.05f, -0.16f), 0.14f, -1.4f, -0.12f, 0.03f, new Vector3(0.95f, 1.36f, -2.05f), new Vector3(0.15f, 1.08f, 3.55f), 38f),
+                    ShotCamera("boss_summon_pressure_crack", CinematicSequenceProfile.ShotPurpose.CharacterAction, CinematicSequenceProfile.CameraBlendKind.PushIn, 1.70f, 0.85f, new Vector3(0.10f, 0.04f, -0.14f), 0.12f, -1.2f, -0.10f, 0.02f, new Vector3(2.25f, 1.42f, -1.70f), new Vector3(0.35f, 1.10f, 3.85f), 42f),
+                    ShotCamera("boss_summon_pressure_handoff", CinematicSequenceProfile.ShotPurpose.GameplayHandoff, CinematicSequenceProfile.CameraBlendKind.GameplayMatch, 2.55f, 0.85f, new Vector3(0f, 0.03f, -0.08f), 0.02f, 0.4f, -0.05f, 0.01f, new Vector3(0f, 1.26f, -3.70f), new Vector3(0f, 1.17f, 0.55f), 35f)
+                },
+                new[]
+                {
+                    WeaponVisibility("boss_summon_pressure_keep_rifle_visible", 0f, true),
+                    Face("boss_summon_pressure_inori_focus", 0f, 1.15f, "Angry"),
+                    Body("boss_summon_pressure_inori_charge", 0f, 0.85f, "CIN_BackViewProjectileCharge"),
+                    Body("boss_summon_pressure_inori_fire", 0.82f, 0.95f, "CIN_BackViewProjectileFire"),
+                    Body("boss_summon_pressure_inori_ready", 1.85f, 1.1f, "CIN_BackViewProjectileAim"),
+                    Face("boss_summon_pressure_inori_calm", 2.10f, 0.9f, "CalmEye"),
+                    ActorVisibility("boss_summon_pressure_dragon_visible", CinematicSequenceProfile.ActorRole.Environment, 0f, true),
+                    BodyTrigger("boss_summon_pressure_proxy_manifest", CinematicSequenceProfile.ActorRole.Summon, 0.05f, "EliteSummonPackage"),
+                    BodyTrigger("boss_summon_pressure_proxy_guard", CinematicSequenceProfile.ActorRole.Summon, 0.62f, "Attack"),
+                    ActorBody("boss_summon_pressure_dragon_fire", CinematicSequenceProfile.ActorRole.Environment, 1.35f, 1.0f, DragonSupportAttackStateName),
+                    ActorVisibility("boss_summon_pressure_dragon_hide", CinematicSequenceProfile.ActorRole.Environment, 3.35f, false)
+                },
+                new[]
+                {
+                    Vfx("boss_summon_pressure_window", 0f, CombatVfxCueId.SummonFollowupWindow, 1.08f, new Vector3(0.92f, 0.58f, 2.35f)),
+                    Vfx("boss_summon_pressure_guard", 0.72f, CombatVfxCueId.EliteShieldSignal, 1.02f, new Vector3(0.35f, 1.04f, 3.40f)),
+                    Vfx("boss_summon_pressure_answer", 1.05f, CombatVfxCueId.PlayerRangedMuzzleFlash, 0.94f, new Vector3(0.12f, 1.08f, 0.82f)),
+                    Vfx("boss_summon_pressure_crack", 1.68f, CombatVfxCueId.PlayerRangedProjectileImpact, 1.18f, new Vector3(0.05f, 1.02f, 4.05f)),
+                    Vfx("boss_summon_pressure_dragon_mark", 1.92f, CombatVfxCueId.EliteAuraSignal, 0.72f, new Vector3(3.10f, 1.58f, 3.15f))
+                },
+                new CinematicSequenceProfile.TutorialCue[0],
+                Handoff(3.10f, "action_camera_controller"));
             EditorUtility.SetDirty(profile);
         }
 

@@ -286,6 +286,8 @@ namespace DimensionBrawl.Editor
             CinematicProfileRoot + "/DB_Cinematic_DangerCue.asset";
         private const string CinematicBreakProfilePath =
             CinematicProfileRoot + "/DB_Cinematic_BreakMoment.asset";
+        private const string CinematicBossSummonPressureProfilePath =
+            CinematicProfileRoot + "/DB_Cinematic_BossSummonPressure.asset";
         private const string CinematicResultProfilePath =
             CinematicProfileRoot + "/DB_Cinematic_ResultBridge.asset";
         private const string CinematicSummonProfilePath =
@@ -5993,7 +5995,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(bridge, "skillCutInProfile", null);
             SetObjectReference(bridge, "summonEntryProfile", LoadAsset<CinematicSequenceProfile>(CinematicSummonProfilePath));
             SetObjectReference(bridge, "ultimateCutInProfile", LoadAsset<CinematicSequenceProfile>(CinematicUltimateProfilePath));
-            SetObjectReference(bridge, "bossPressureBreakProfile", LoadAsset<CinematicSequenceProfile>(CinematicBreakProfilePath));
+            SetObjectReference(bridge, "bossPressureBreakProfile", LoadAsset<CinematicSequenceProfile>(CinematicBossSummonPressureProfilePath));
             SetObjectReference(bridge, "summonFollowupHitProfile", LoadAsset<CinematicSequenceProfile>(CinematicSummonFollowupProfilePath));
             SetObjectReference(bridge, "summonEmpowerProfile", LoadAsset<CinematicSequenceProfile>(CinematicSummonEmpowerProfilePath));
             SetObjectReference(bridge, "summonRecallProfile", LoadAsset<CinematicSequenceProfile>(CinematicSummonRecallProfilePath));
@@ -6251,7 +6253,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(
                 sequenceBridge,
                 "bossPressureBreakProfile",
-                LoadAsset<CinematicSequenceProfile>(CinematicBreakProfilePath));
+                LoadAsset<CinematicSequenceProfile>(CinematicBossSummonPressureProfilePath));
             ValidateObjectReference(
                 sequenceBridge,
                 "summonFollowupHitProfile",
