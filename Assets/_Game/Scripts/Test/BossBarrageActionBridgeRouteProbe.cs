@@ -22,6 +22,14 @@ namespace DimensionBrawl.Test
             "C:/tmp/DimensionBrawl-BossBarrageActionBridgeRouteFrames";
         [SerializeField, Min(16)] private int captureWidth = 1280;
         [SerializeField, Min(16)] private int captureHeight = 720;
+        [SerializeField] private string routeStripPath =
+            "C:/tmp/DimensionBrawl-BossBarrageActionBridgeRouteStrip.png";
+        [SerializeField] private string routeReportPath =
+            "C:/tmp/DimensionBrawl-BossBarrageActionBridgeRoute.md";
+        [SerializeField, Min(1)] private int routeStripColumns = 2;
+        [SerializeField, Min(64)] private int routeStripThumbnailWidth = 480;
+        [SerializeField, Min(64)] private int routeStripThumbnailHeight = 270;
+        [SerializeField] private bool requireDragonVisibilityForSummonRoutes = true;
 
         private bool verificationStarted;
         private bool lastStepPassed;
@@ -46,6 +54,11 @@ namespace DimensionBrawl.Test
             public string LastCameraCueId;
             public string LastActorCueId;
             public string LastVfxCueId;
+            public bool ExpectedDragonVisible;
+            public bool SupportDragonVisible;
+            public string SupportDragonName;
+            public int SupportDragonRendererCount;
+            public bool SupportDragonInCameraFrustum;
         }
 
         private void Start()
@@ -163,6 +176,10 @@ namespace DimensionBrawl.Test
                 && summonRecallRoutePassed
                 && summonRecallIdlePassed;
             AppendCaptureSummary(report, capturedFrames);
+            bool dragonVisibilityPassed = !requireDragonVisibilityForSummonRoutes
+                || ValidateExpectedDragonVisibility(capturedFrames, report);
+            bool routeEvidencePassed = WriteRouteEvidence(capturedFrames, report);
+            passed = passed && dragonVisibilityPassed && routeEvidencePassed;
             WriteResult(passed, report.ToString());
         }
 
@@ -392,6 +409,12 @@ namespace DimensionBrawl.Test
                     $"{capturedFrames.Count + 1:00}_{SanitizeFileName(label)}.png")
                 .Replace('\\', '/');
             bool captured = CaptureCamera(camera, framePath, captureWidth, captureHeight);
+            bool expectedDragonVisible = IsDragonExpectedFrame(label);
+            bool supportDragonVisible = TryResolveSupportDragonRead(
+                camera,
+                out string supportDragonName,
+                out int supportDragonRendererCount,
+                out bool supportDragonInCameraFrustum);
             capturedFrames.Add(new CapturedRouteFrame
             {
                 Label = label,
@@ -400,9 +423,16 @@ namespace DimensionBrawl.Test
                 SequenceId = ResolveSequenceId(context.SequenceRunner.SequenceProfile),
                 LastCameraCueId = context.SequenceRunner.LastCameraCueId,
                 LastActorCueId = context.SequenceRunner.LastActorCueId,
-                LastVfxCueId = context.SequenceRunner.LastVfxCueId
+                LastVfxCueId = context.SequenceRunner.LastVfxCueId,
+                ExpectedDragonVisible = expectedDragonVisible,
+                SupportDragonVisible = supportDragonVisible,
+                SupportDragonName = supportDragonName,
+                SupportDragonRendererCount = supportDragonRendererCount,
+                SupportDragonInCameraFrustum = supportDragonInCameraFrustum
             });
             report.AppendLine($"CAPTURE {label}={(captured ? "PASS" : "FAIL")} path:{framePath}");
+            report.AppendLine(
+                $"DRAGON {label}=expected:{expectedDragonVisible} visible:{supportDragonVisible} frustum:{supportDragonInCameraFrustum} renderers:{supportDragonRendererCount} object:{NormalizeReportValue(supportDragonName)}");
             return captured;
         }
 
@@ -583,7 +613,506 @@ namespace DimensionBrawl.Test
             {
                 CapturedRouteFrame frame = capturedFrames[i];
                 report.AppendLine(
-                    $"CAPTURE_FRAME {frame.Label}=success:{frame.CaptureSucceeded} sequence:{frame.SequenceId} camera:{frame.LastCameraCueId} actor:{frame.LastActorCueId} vfx:{frame.LastVfxCueId} path:{frame.Path}");
+                    $"CAPTURE_FRAME {frame.Label}=success:{frame.CaptureSucceeded} sequence:{frame.SequenceId} camera:{frame.LastCameraCueId} actor:{frame.LastActorCueId} vfx:{frame.LastVfxCueId} dragonExpected:{frame.ExpectedDragonVisible} dragonVisible:{frame.SupportDragonVisible} dragonFrustum:{frame.SupportDragonInCameraFrustum} dragonRenderers:{frame.SupportDragonRendererCount} dragon:{NormalizeReportValue(frame.SupportDragonName)} path:{frame.Path}");
+            }
+        }
+
+        private bool ValidateExpectedDragonVisibility(
+            List<CapturedRouteFrame> capturedFrames,
+            StringBuilder report)
+        {
+            bool passed = true;
+            for (int i = 0; i < capturedFrames.Count; i++)
+            {
+                CapturedRouteFrame frame = capturedFrames[i];
+                if (!frame.ExpectedDragonVisible || frame.SupportDragonVisible)
+                {
+                    continue;
+                }
+
+                passed = false;
+                report.AppendLine(
+                    $"DRAGON_VISIBILITY_RESULT {frame.Label}=FAIL expected support dragon in camera frame.");
+            }
+
+            report.AppendLine($"DRAGON_VISIBILITY_RESULT={(passed ? "PASS" : "FAIL")}");
+            return passed;
+        }
+
+        private bool WriteRouteEvidence(List<CapturedRouteFrame> capturedFrames, StringBuilder report)
+        {
+            try
+            {
+                CapturedRouteFrame[] frames = capturedFrames.ToArray();
+                CreateRouteContactSheet(
+                    frames,
+                    routeStripPath,
+                    routeStripThumbnailWidth,
+                    routeStripThumbnailHeight,
+                    routeStripColumns);
+                WriteRouteReport(frames);
+                report.AppendLine("ROUTE_EVIDENCE=PASS");
+                report.AppendLine($"ROUTE_STRIP={routeStripPath}");
+                report.AppendLine($"ROUTE_REPORT={routeReportPath}");
+                return true;
+            }
+            catch (Exception exception)
+            {
+                report.AppendLine("ROUTE_EVIDENCE=FAIL");
+                report.AppendLine(exception.ToString());
+                return false;
+            }
+        }
+
+        private static bool IsDragonExpectedFrame(string label)
+        {
+            if (string.IsNullOrWhiteSpace(label)
+                || label.IndexOf("summon", StringComparison.OrdinalIgnoreCase) < 0)
+            {
+                return false;
+            }
+
+            return !label.EndsWith("_command", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool TryResolveSupportDragonRead(
+            Camera camera,
+            out string supportDragonName,
+            out int supportDragonRendererCount,
+            out bool supportDragonInCameraFrustum)
+        {
+            supportDragonName = string.Empty;
+            supportDragonRendererCount = 0;
+            supportDragonInCameraFrustum = false;
+
+            Transform[] transforms = FindObjectsByType<Transform>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < transforms.Length; i++)
+            {
+                Transform candidate = transforms[i];
+                if (candidate == null || !IsSupportDragonCandidate(candidate))
+                {
+                    continue;
+                }
+
+                if (!candidate.gameObject.activeInHierarchy)
+                {
+                    supportDragonName = candidate.name;
+                    continue;
+                }
+
+                if (!TryBuildRendererBounds(
+                        candidate.gameObject,
+                        out Bounds bounds,
+                        out int rendererCount))
+                {
+                    supportDragonName = candidate.name;
+                    continue;
+                }
+
+                bool inFrustum = camera == null
+                    || GeometryUtility.TestPlanesAABB(
+                        GeometryUtility.CalculateFrustumPlanes(camera),
+                        bounds);
+                supportDragonName = candidate.name;
+                supportDragonRendererCount = rendererCount;
+                supportDragonInCameraFrustum = inFrustum;
+                return inFrustum && rendererCount > 0;
+            }
+
+            return false;
+        }
+
+        private static bool IsSupportDragonCandidate(Transform candidate)
+        {
+            string name = candidate.name;
+            if (name.IndexOf("CinematicSupportDragon", StringComparison.OrdinalIgnoreCase) >= 0
+                || name.IndexOf("VolcanoDragon", StringComparison.OrdinalIgnoreCase) >= 0
+                || name.IndexOf("Volcano Dragon", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return true;
+            }
+
+            return name.IndexOf("Dragon", StringComparison.OrdinalIgnoreCase) >= 0
+                && candidate.GetComponentInChildren<Animator>(includeInactive: true) != null;
+        }
+
+        private static bool TryBuildRendererBounds(
+            GameObject root,
+            out Bounds bounds,
+            out int rendererCount)
+        {
+            bounds = default;
+            rendererCount = 0;
+            if (root == null)
+            {
+                return false;
+            }
+
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(includeInactive: false);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                if (rendererCount == 0)
+                {
+                    bounds = renderer.bounds;
+                }
+                else
+                {
+                    bounds.Encapsulate(renderer.bounds);
+                }
+
+                rendererCount++;
+            }
+
+            return rendererCount > 0;
+        }
+
+        private void CreateRouteContactSheet(
+            CapturedRouteFrame[] frames,
+            string outputPath,
+            int thumbnailWidth,
+            int thumbnailHeight,
+            int columns)
+        {
+            if (frames == null || frames.Length == 0)
+            {
+                throw new InvalidOperationException("Cannot create route contact sheet without captured frames.");
+            }
+
+            int resolvedColumns = Mathf.Max(1, columns);
+            int rows = Mathf.CeilToInt(frames.Length / (float)resolvedColumns);
+            Texture2D sheet = new Texture2D(
+                thumbnailWidth * resolvedColumns,
+                thumbnailHeight * rows,
+                TextureFormat.RGBA32,
+                mipChain: false);
+
+            try
+            {
+                Color[] background = new Color[sheet.width * sheet.height];
+                Color backgroundColor = new Color(0.045f, 0.052f, 0.064f, 1f);
+                for (int i = 0; i < background.Length; i++)
+                {
+                    background[i] = backgroundColor;
+                }
+
+                sheet.SetPixels(background);
+                for (int i = 0; i < frames.Length; i++)
+                {
+                    CapturedRouteFrame frame = frames[i];
+                    int column = i % resolvedColumns;
+                    int row = i / resolvedColumns;
+                    int targetX = column * thumbnailWidth;
+                    int targetY = sheet.height - ((row + 1) * thumbnailHeight);
+
+                    if (File.Exists(frame.Path))
+                    {
+                        Texture2D source = new Texture2D(2, 2, TextureFormat.RGBA32, mipChain: false);
+                        Texture2D resized = null;
+                        try
+                        {
+                            if (!source.LoadImage(File.ReadAllBytes(frame.Path)))
+                            {
+                                throw new InvalidOperationException($"Failed to load route frame {frame.Path}.");
+                            }
+
+                            resized = ResizeTexture(source, thumbnailWidth, thumbnailHeight);
+                            sheet.SetPixels(targetX, targetY, thumbnailWidth, thumbnailHeight, resized.GetPixels());
+                        }
+                        finally
+                        {
+                            UnityEngine.Object.Destroy(source);
+                            if (resized != null)
+                            {
+                                UnityEngine.Object.Destroy(resized);
+                            }
+                        }
+                    }
+
+                    DrawLabelOverlay(sheet, targetX, targetY, thumbnailWidth, thumbnailHeight, BuildRouteLabelLines(frame, i + 1));
+                }
+
+                sheet.Apply();
+                Directory.CreateDirectory(Path.GetDirectoryName(outputPath) ?? "C:/tmp");
+                File.WriteAllBytes(outputPath, sheet.EncodeToPNG());
+            }
+            finally
+            {
+                UnityEngine.Object.Destroy(sheet);
+            }
+        }
+
+        private static Texture2D ResizeTexture(Texture2D source, int width, int height)
+        {
+            Texture2D resized = new Texture2D(width, height, TextureFormat.RGBA32, mipChain: false);
+            Color[] pixels = new Color[width * height];
+            for (int y = 0; y < height; y++)
+            {
+                float v = height > 1 ? y / (float)(height - 1) : 0f;
+                for (int x = 0; x < width; x++)
+                {
+                    float u = width > 1 ? x / (float)(width - 1) : 0f;
+                    pixels[x + (y * width)] = source.GetPixelBilinear(u, v);
+                }
+            }
+
+            resized.SetPixels(pixels);
+            resized.Apply();
+            return resized;
+        }
+
+        private void WriteRouteReport(CapturedRouteFrame[] frames)
+        {
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine("# DimensionBrawl Boss Barrage Action Bridge Route Capture");
+            builder.AppendLine();
+            builder.AppendLine($"Generated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+            builder.AppendLine($"Contact sheet: `{routeStripPath}`");
+            builder.AppendLine($"Frame directory: `{outputDirectory}`");
+            builder.AppendLine();
+            builder.AppendLine("This route is captured from the boss-barrage review scene after invoking the action bridge path. Dragon visibility is required on summon-labeled frames so support-creature use cannot silently regress.");
+            builder.AppendLine();
+            builder.AppendLine("| # | Label | Sequence | Camera | Actor | VFX | Dragon expected | Dragon visible | Dragon object | Frame |");
+            builder.AppendLine("|---|-------|----------|--------|-------|-----|-----------------|----------------|---------------|-------|");
+
+            for (int i = 0; i < frames.Length; i++)
+            {
+                CapturedRouteFrame frame = frames[i];
+                builder.AppendLine(
+                    $"| {i + 1} | {frame.Label} | `{frame.SequenceId}` | `{frame.LastCameraCueId}` | `{frame.LastActorCueId}` | `{frame.LastVfxCueId}` | {frame.ExpectedDragonVisible} | {frame.SupportDragonVisible} ({frame.SupportDragonRendererCount} renderers, frustum {frame.SupportDragonInCameraFrustum}) | `{NormalizeReportValue(frame.SupportDragonName)}` | `{frame.Path}` |");
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(routeReportPath) ?? "C:/tmp");
+            File.WriteAllText(routeReportPath, builder.ToString(), Encoding.UTF8);
+        }
+
+        private static string[] BuildRouteLabelLines(CapturedRouteFrame frame, int index)
+        {
+            return new[]
+            {
+                $"{index:00} {NormalizeLabel(frame.Label)}",
+                $"SEQ {NormalizeLabel(frame.SequenceId)}",
+                $"CAM {NormalizeLabel(frame.LastCameraCueId)}",
+                frame.ExpectedDragonVisible
+                    ? $"DRAGON {(frame.SupportDragonVisible ? "VISIBLE" : "MISSING")}"
+                    : "DRAGON N/A"
+            };
+        }
+
+        private static string NormalizeLabel(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return "NONE";
+            }
+
+            return value
+                .Replace('_', ' ')
+                .Replace('-', ' ')
+                .ToUpperInvariant();
+        }
+
+        private static string NormalizeReportValue(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? "<none>" : value.Replace('|', '/');
+        }
+
+        private static void DrawLabelOverlay(Texture2D target, int tileX, int tileY, int tileWidth, int tileHeight, string[] lines)
+        {
+            if (target == null || lines == null || lines.Length == 0)
+            {
+                return;
+            }
+
+            const int scale = 2;
+            const int glyphHeight = 7;
+            const int lineGap = 3;
+            int panelHeight = Mathf.Clamp(
+                10 + (lines.Length * glyphHeight * scale) + ((lines.Length - 1) * lineGap),
+                42,
+                Mathf.Max(42, tileHeight / 2));
+            int panelX = tileX + 4;
+            int panelY = tileY + tileHeight - panelHeight - 4;
+            int panelWidth = Mathf.Max(1, tileWidth - 8);
+
+            DrawFilledRect(target, panelX, panelY, panelWidth, panelHeight, new Color(0.02f, 0.025f, 0.035f, 0.78f));
+            DrawFilledRect(target, panelX, panelY, 4, panelHeight, new Color(0.28f, 0.75f, 1f, 0.9f));
+
+            int textX = panelX + 10;
+            int textWidth = Mathf.Max(16, panelWidth - 18);
+            for (int i = 0; i < lines.Length; i++)
+            {
+                string line = TrimForPixelWidth(lines[i], textWidth, scale);
+                int lineBottomY = panelY + panelHeight - 7 - ((i + 1) * glyphHeight * scale) - (i * lineGap);
+                Color color = i == 0
+                    ? new Color(1f, 0.93f, 0.45f, 1f)
+                    : Color.white;
+                DrawBitmapText(target, line, textX + 1, lineBottomY - 1, scale, new Color(0f, 0f, 0f, 0.85f));
+                DrawBitmapText(target, line, textX, lineBottomY, scale, color);
+            }
+        }
+
+        private static void DrawFilledRect(Texture2D target, int x, int y, int width, int height, Color color)
+        {
+            int maxX = Mathf.Min(target.width, x + width);
+            int maxY = Mathf.Min(target.height, y + height);
+            for (int yy = Mathf.Max(0, y); yy < maxY; yy++)
+            {
+                for (int xx = Mathf.Max(0, x); xx < maxX; xx++)
+                {
+                    Color existing = target.GetPixel(xx, yy);
+                    target.SetPixel(xx, yy, Color.Lerp(existing, color, color.a));
+                }
+            }
+        }
+
+        private static string TrimForPixelWidth(string value, int maxWidth, int scale)
+        {
+            string resolved = string.IsNullOrWhiteSpace(value) ? "NONE" : value;
+            if (MeasureBitmapTextWidth(resolved, scale) <= maxWidth)
+            {
+                return resolved;
+            }
+
+            const string suffix = "...";
+            while (resolved.Length > 0 && MeasureBitmapTextWidth(resolved + suffix, scale) > maxWidth)
+            {
+                resolved = resolved.Substring(0, resolved.Length - 1);
+            }
+
+            return string.IsNullOrEmpty(resolved) ? suffix : resolved + suffix;
+        }
+
+        private static int MeasureBitmapTextWidth(string text, int scale)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return 0;
+            }
+
+            int width = 0;
+            for (int i = 0; i < text.Length; i++)
+            {
+                width += ((text[i] == ' ' ? 3 : 5) * scale) + scale;
+            }
+
+            return Mathf.Max(0, width - scale);
+        }
+
+        private static void DrawBitmapText(Texture2D target, string text, int x, int bottomY, int scale, Color color)
+        {
+            if (string.IsNullOrEmpty(text))
+            {
+                return;
+            }
+
+            int cursorX = x;
+            for (int i = 0; i < text.Length; i++)
+            {
+                char c = text[i];
+                string[] glyph = GetBitmapGlyph(c);
+                if (glyph != null)
+                {
+                    DrawGlyph(target, glyph, cursorX, bottomY, scale, color);
+                }
+
+                cursorX += ((c == ' ' ? 3 : 5) * scale) + scale;
+            }
+        }
+
+        private static void DrawGlyph(Texture2D target, string[] glyph, int x, int bottomY, int scale, Color color)
+        {
+            for (int row = 0; row < glyph.Length; row++)
+            {
+                string pattern = glyph[row];
+                for (int column = 0; column < pattern.Length; column++)
+                {
+                    if (pattern[column] != '1')
+                    {
+                        continue;
+                    }
+
+                    int baseX = x + (column * scale);
+                    int baseY = bottomY + ((glyph.Length - 1 - row) * scale);
+                    for (int yy = 0; yy < scale; yy++)
+                    {
+                        int pixelY = baseY + yy;
+                        if (pixelY < 0 || pixelY >= target.height)
+                        {
+                            continue;
+                        }
+
+                        for (int xx = 0; xx < scale; xx++)
+                        {
+                            int pixelX = baseX + xx;
+                            if (pixelX < 0 || pixelX >= target.width)
+                            {
+                                continue;
+                            }
+
+                            Color existing = target.GetPixel(pixelX, pixelY);
+                            target.SetPixel(pixelX, pixelY, Color.Lerp(existing, color, color.a));
+                        }
+                    }
+                }
+            }
+        }
+
+        private static string[] GetBitmapGlyph(char c)
+        {
+            switch (char.ToUpperInvariant(c))
+            {
+                case 'A': return new[] { "01110", "10001", "10001", "11111", "10001", "10001", "10001" };
+                case 'B': return new[] { "11110", "10001", "10001", "11110", "10001", "10001", "11110" };
+                case 'C': return new[] { "01111", "10000", "10000", "10000", "10000", "10000", "01111" };
+                case 'D': return new[] { "11110", "10001", "10001", "10001", "10001", "10001", "11110" };
+                case 'E': return new[] { "11111", "10000", "10000", "11110", "10000", "10000", "11111" };
+                case 'F': return new[] { "11111", "10000", "10000", "11110", "10000", "10000", "10000" };
+                case 'G': return new[] { "01111", "10000", "10000", "10011", "10001", "10001", "01111" };
+                case 'H': return new[] { "10001", "10001", "10001", "11111", "10001", "10001", "10001" };
+                case 'I': return new[] { "11111", "00100", "00100", "00100", "00100", "00100", "11111" };
+                case 'J': return new[] { "00111", "00010", "00010", "00010", "00010", "10010", "01100" };
+                case 'K': return new[] { "10001", "10010", "10100", "11000", "10100", "10010", "10001" };
+                case 'L': return new[] { "10000", "10000", "10000", "10000", "10000", "10000", "11111" };
+                case 'M': return new[] { "10001", "11011", "10101", "10101", "10001", "10001", "10001" };
+                case 'N': return new[] { "10001", "11001", "10101", "10011", "10001", "10001", "10001" };
+                case 'O': return new[] { "01110", "10001", "10001", "10001", "10001", "10001", "01110" };
+                case 'P': return new[] { "11110", "10001", "10001", "11110", "10000", "10000", "10000" };
+                case 'Q': return new[] { "01110", "10001", "10001", "10001", "10101", "10010", "01101" };
+                case 'R': return new[] { "11110", "10001", "10001", "11110", "10100", "10010", "10001" };
+                case 'S': return new[] { "01111", "10000", "10000", "01110", "00001", "00001", "11110" };
+                case 'T': return new[] { "11111", "00100", "00100", "00100", "00100", "00100", "00100" };
+                case 'U': return new[] { "10001", "10001", "10001", "10001", "10001", "10001", "01110" };
+                case 'V': return new[] { "10001", "10001", "10001", "10001", "01010", "01010", "00100" };
+                case 'W': return new[] { "10001", "10001", "10001", "10101", "10101", "10101", "01010" };
+                case 'X': return new[] { "10001", "01010", "00100", "00100", "00100", "01010", "10001" };
+                case 'Y': return new[] { "10001", "01010", "00100", "00100", "00100", "00100", "00100" };
+                case 'Z': return new[] { "11111", "00001", "00010", "00100", "01000", "10000", "11111" };
+                case '0': return new[] { "01110", "10001", "10011", "10101", "11001", "10001", "01110" };
+                case '1': return new[] { "00100", "01100", "00100", "00100", "00100", "00100", "01110" };
+                case '2': return new[] { "01110", "10001", "00001", "00010", "00100", "01000", "11111" };
+                case '3': return new[] { "11110", "00001", "00001", "01110", "00001", "00001", "11110" };
+                case '4': return new[] { "00010", "00110", "01010", "10010", "11111", "00010", "00010" };
+                case '5': return new[] { "11111", "10000", "10000", "11110", "00001", "00001", "11110" };
+                case '6': return new[] { "01110", "10000", "10000", "11110", "10001", "10001", "01110" };
+                case '7': return new[] { "11111", "00001", "00010", "00100", "01000", "01000", "01000" };
+                case '8': return new[] { "01110", "10001", "10001", "01110", "10001", "10001", "01110" };
+                case '9': return new[] { "01110", "10001", "10001", "01111", "00001", "00001", "01110" };
+                case '.': return new[] { "00000", "00000", "00000", "00000", "00000", "01100", "01100" };
+                case ':': return new[] { "00000", "01100", "01100", "00000", "01100", "01100", "00000" };
+                case '+': return new[] { "00000", "00100", "00100", "11111", "00100", "00100", "00000" };
+                case '-': return new[] { "00000", "00000", "00000", "11111", "00000", "00000", "00000" };
+                case '/': return new[] { "00001", "00010", "00010", "00100", "01000", "01000", "10000" };
+                case '?': return new[] { "01110", "10001", "00001", "00010", "00100", "00000", "00100" };
+                case ' ': return new[] { "00000", "00000", "00000", "00000", "00000", "00000", "00000" };
+                default: return GetBitmapGlyph('?');
             }
         }
 
@@ -598,7 +1127,7 @@ namespace DimensionBrawl.Test
                 Directory.CreateDirectory(directory);
             }
 
-            string body = $"RESULT={(passed ? "PASS" : "FAIL")}{Environment.NewLine}{details}";
+            string body = $"RESULT={(passed ? "PASS" : "FAIL")}{Environment.NewLine}STRIP={routeStripPath}{Environment.NewLine}REPORT={routeReportPath}{Environment.NewLine}{details}";
             File.WriteAllText(resolvedPath, body, Encoding.UTF8);
 
             if (passed)

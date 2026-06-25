@@ -12,6 +12,10 @@ namespace DimensionBrawl.Editor
     {
         public const string ActionBridgeRouteResultPath =
             "C:/tmp/DimensionBrawl-BossBarrageActionBridgeRoute.result";
+        public const string ActionBridgeRouteStripPath =
+            "C:/tmp/DimensionBrawl-BossBarrageActionBridgeRouteStrip.png";
+        public const string ActionBridgeRouteReportPath =
+            "C:/tmp/DimensionBrawl-BossBarrageActionBridgeRoute.md";
 
         private const string ActionBridgeRouteProbeName =
             "BossBarrageLaneReview_ActionBridgeRouteProbe";
@@ -57,6 +61,14 @@ namespace DimensionBrawl.Editor
                 "C:/tmp/DimensionBrawl-BossBarrageActionBridgeRouteFrames";
             RequireActionBridgeRouteProbeProperty(serializedProbe, "captureWidth").intValue = 1280;
             RequireActionBridgeRouteProbeProperty(serializedProbe, "captureHeight").intValue = 720;
+            RequireActionBridgeRouteProbeProperty(serializedProbe, "routeStripPath").stringValue =
+                ActionBridgeRouteStripPath;
+            RequireActionBridgeRouteProbeProperty(serializedProbe, "routeReportPath").stringValue =
+                ActionBridgeRouteReportPath;
+            RequireActionBridgeRouteProbeProperty(serializedProbe, "routeStripColumns").intValue = 2;
+            RequireActionBridgeRouteProbeProperty(serializedProbe, "routeStripThumbnailWidth").intValue = 480;
+            RequireActionBridgeRouteProbeProperty(serializedProbe, "routeStripThumbnailHeight").intValue = 270;
+            RequireActionBridgeRouteProbeProperty(serializedProbe, "requireDragonVisibilityForSummonRoutes").boolValue = true;
             serializedProbe.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(probe);
 
