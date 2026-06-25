@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.IO;
 using DimensionBrawl.Editor;
 using IsekaiBrawl.Gameplay;
 using TMPro;
@@ -31,16 +30,6 @@ namespace IsekaiBrawl.EditorTools
             RootPath + "/Art/Animations/Cinematics/Inori/KawaiiP0/CIN_BackViewProjectileAim.fbx";
         private const string CastAnimationPath =
             RootPath + "/Art/Animations/Cinematics/Inori/KawaiiP0/CIN_QTEMagicShot.fbx";
-        private const string PendingBuildFlagAssetPath = RootPath + "/Editor/BattlePrototype.autorun";
-
-        [InitializeOnLoadMethod]
-        private static void RegisterPendingBuildWatcher()
-        {
-            EditorApplication.update -= ProcessPendingBuild;
-            EditorApplication.update += ProcessPendingBuild;
-            EditorApplication.delayCall -= RepairOpenBattleSceneReferences;
-            EditorApplication.delayCall += RepairOpenBattleSceneReferences;
-        }
 
         [MenuItem("Tools/IsekaiBrawl/Build Battle Prototype")]
         public static void BuildBattlePrototype()
@@ -69,18 +58,6 @@ namespace IsekaiBrawl.EditorTools
         {
             BuildBattlePrototype();
             EditorApplication.Exit(0);
-        }
-
-        private static void ProcessPendingBuild()
-        {
-            string absoluteFlagPath = GetAbsoluteProjectPath(PendingBuildFlagAssetPath);
-            if (!File.Exists(absoluteFlagPath))
-            {
-                return;
-            }
-
-            File.Delete(absoluteFlagPath);
-            BuildBattlePrototype();
         }
 
         private static void RepairOpenBattleSceneReferences()
@@ -1439,12 +1416,6 @@ namespace IsekaiBrawl.EditorTools
 
                 currentPath = nextPath;
             }
-        }
-
-        private static string GetAbsoluteProjectPath(string assetPath)
-        {
-            string projectRoot = Path.GetDirectoryName(Application.dataPath);
-            return Path.Combine(projectRoot ?? string.Empty, assetPath.Replace('/', Path.DirectorySeparatorChar));
         }
 
         private static void SetTagIfExists(GameObject gameObject, string tagName)

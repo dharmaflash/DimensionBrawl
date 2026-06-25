@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using DimensionBrawl.Presentation;
 using UnityEditor;
@@ -144,12 +145,31 @@ namespace DimensionBrawl.Editor
 
             ModelImporter importer = RequireModelImporter(ModelPath);
             ModelImporter sourceImporter = RequireModelImporter(SourceModelPath);
-            importer.importAnimation = false;
-            importer.materialImportMode = ModelImporterMaterialImportMode.None;
-            importer.animationType = ModelImporterAnimationType.Human;
-            importer.avatarSetup = ModelImporterAvatarSetup.CreateFromThisModel;
-            importer.humanDescription = sourceImporter.humanDescription;
-            importer.SaveAndReimport();
+            bool changed = false;
+            changed |= SetIfDifferent(() => importer.importAnimation, value => importer.importAnimation = value, false);
+            changed |= SetIfDifferent(
+                () => importer.materialImportMode,
+                value => importer.materialImportMode = value,
+                ModelImporterMaterialImportMode.None);
+            changed |= SetIfDifferent(
+                () => importer.animationType,
+                value => importer.animationType = value,
+                ModelImporterAnimationType.Human);
+            changed |= SetIfDifferent(
+                () => importer.avatarSetup,
+                value => importer.avatarSetup = value,
+                ModelImporterAvatarSetup.CreateFromThisModel);
+
+            if (!HumanDescriptionsMatch(importer.humanDescription, sourceImporter.humanDescription))
+            {
+                importer.humanDescription = sourceImporter.humanDescription;
+                changed = true;
+            }
+
+            if (changed)
+            {
+                importer.SaveAndReimport();
+            }
         }
 
         private static void PromoteMaterials()
@@ -259,22 +279,75 @@ namespace DimensionBrawl.Editor
                 return;
             }
 
-            targetImporter.textureType = sourceImporter.textureType;
-            targetImporter.sRGBTexture = sourceImporter.sRGBTexture;
-            targetImporter.alphaSource = sourceImporter.alphaSource;
-            targetImporter.alphaIsTransparency = sourceImporter.alphaIsTransparency;
-            targetImporter.mipmapEnabled = sourceImporter.mipmapEnabled;
-            targetImporter.streamingMipmaps = sourceImporter.streamingMipmaps;
-            targetImporter.npotScale = sourceImporter.npotScale;
-            targetImporter.maxTextureSize = sourceImporter.maxTextureSize;
-            targetImporter.textureCompression = sourceImporter.textureCompression;
-            targetImporter.compressionQuality = sourceImporter.compressionQuality;
-            targetImporter.crunchedCompression = sourceImporter.crunchedCompression;
-            targetImporter.filterMode = sourceImporter.filterMode;
-            targetImporter.anisoLevel = sourceImporter.anisoLevel;
-            targetImporter.wrapMode = sourceImporter.wrapMode;
-            targetImporter.SetPlatformTextureSettings(sourceImporter.GetDefaultPlatformTextureSettings());
-            targetImporter.SaveAndReimport();
+            bool changed = false;
+            changed |= SetIfDifferent(
+                () => targetImporter.textureType,
+                value => targetImporter.textureType = value,
+                sourceImporter.textureType);
+            changed |= SetIfDifferent(
+                () => targetImporter.sRGBTexture,
+                value => targetImporter.sRGBTexture = value,
+                sourceImporter.sRGBTexture);
+            changed |= SetIfDifferent(
+                () => targetImporter.alphaSource,
+                value => targetImporter.alphaSource = value,
+                sourceImporter.alphaSource);
+            changed |= SetIfDifferent(
+                () => targetImporter.alphaIsTransparency,
+                value => targetImporter.alphaIsTransparency = value,
+                sourceImporter.alphaIsTransparency);
+            changed |= SetIfDifferent(
+                () => targetImporter.mipmapEnabled,
+                value => targetImporter.mipmapEnabled = value,
+                sourceImporter.mipmapEnabled);
+            changed |= SetIfDifferent(
+                () => targetImporter.streamingMipmaps,
+                value => targetImporter.streamingMipmaps = value,
+                sourceImporter.streamingMipmaps);
+            changed |= SetIfDifferent(
+                () => targetImporter.npotScale,
+                value => targetImporter.npotScale = value,
+                sourceImporter.npotScale);
+            changed |= SetIfDifferent(
+                () => targetImporter.maxTextureSize,
+                value => targetImporter.maxTextureSize = value,
+                sourceImporter.maxTextureSize);
+            changed |= SetIfDifferent(
+                () => targetImporter.textureCompression,
+                value => targetImporter.textureCompression = value,
+                sourceImporter.textureCompression);
+            changed |= SetIfDifferent(
+                () => targetImporter.compressionQuality,
+                value => targetImporter.compressionQuality = value,
+                sourceImporter.compressionQuality);
+            changed |= SetIfDifferent(
+                () => targetImporter.crunchedCompression,
+                value => targetImporter.crunchedCompression = value,
+                sourceImporter.crunchedCompression);
+            changed |= SetIfDifferent(
+                () => targetImporter.filterMode,
+                value => targetImporter.filterMode = value,
+                sourceImporter.filterMode);
+            changed |= SetIfDifferent(
+                () => targetImporter.anisoLevel,
+                value => targetImporter.anisoLevel = value,
+                sourceImporter.anisoLevel);
+            changed |= SetIfDifferent(
+                () => targetImporter.wrapMode,
+                value => targetImporter.wrapMode = value,
+                sourceImporter.wrapMode);
+
+            TextureImporterPlatformSettings sourceDefaultSettings = sourceImporter.GetDefaultPlatformTextureSettings();
+            if (JsonUtility.ToJson(targetImporter.GetDefaultPlatformTextureSettings()) != JsonUtility.ToJson(sourceDefaultSettings))
+            {
+                targetImporter.SetPlatformTextureSettings(sourceDefaultSettings);
+                changed = true;
+            }
+
+            if (changed)
+            {
+                targetImporter.SaveAndReimport();
+            }
         }
 
         private static void EnsureRiflePoseTuningProfile()
@@ -321,6 +394,22 @@ namespace DimensionBrawl.Editor
         {
             string normalized = path.Replace('\\', '/');
             return normalized.Substring(0, normalized.LastIndexOf('/'));
+        }
+
+        private static bool SetIfDifferent<T>(Func<T> getValue, Action<T> setValue, T targetValue)
+        {
+            if (EqualityComparer<T>.Default.Equals(getValue(), targetValue))
+            {
+                return false;
+            }
+
+            setValue(targetValue);
+            return true;
+        }
+
+        private static bool HumanDescriptionsMatch(HumanDescription left, HumanDescription right)
+        {
+            return JsonUtility.ToJson(left) == JsonUtility.ToJson(right);
         }
 
         private readonly struct MaterialSpec
