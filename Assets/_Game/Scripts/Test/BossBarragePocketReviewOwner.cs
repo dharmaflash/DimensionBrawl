@@ -137,8 +137,10 @@ namespace DimensionBrawl.Test
         private bool bossBlockedSkill1Followup;
         private bool counterWaveObserved;
         private bool counterWaveStabilized;
+        private bool counterWaveFinalWindowOpened;
         private CounterWaveSource counterWaveSource;
         private float lastCounterWaveStabilityBonus;
+        private float lastCounterWaveFinalWindowDuration;
         private int bossPressureSummonReleasesAtReset;
         private int announcedStageBeatIndex;
         private RouteStabilityBand announcedRouteStabilityBand;
@@ -171,12 +173,16 @@ namespace DimensionBrawl.Test
         public bool IsFollowupCompletionRecorded => skill1FollowupHitConfirmed;
         public bool IsCounterWaveCompletionRecorded => counterWaveObserved;
         public bool IsCounterWaveStabilized => counterWaveStabilized;
+        public bool IsCounterWaveFinalWindowOpened => counterWaveFinalWindowOpened;
         public CounterWaveSource CounterWaveObservedSource => counterWaveSource;
         public string CounterWaveSourceReadout => ResolveCounterWaveSourceReadout();
         public string CounterWaveRecordState => ResolveCounterWaveRecordState();
         public string CounterWaveAnswerState => ResolveCounterWaveAnswerState();
         public string CounterWaveAnswerReadout => ResolveCounterWaveAnswerReadout();
         public float LastCounterWaveStabilityBonus => lastCounterWaveStabilityBonus;
+        public string CounterWaveFinalWindowState => ResolveCounterWaveFinalWindowState();
+        public string CounterWaveFinalWindowReadout => ResolveCounterWaveFinalWindowReadout();
+        public float LastCounterWaveFinalWindowDuration => lastCounterWaveFinalWindowDuration;
         public string CompletionRecordReadout => ResolveCompletionRecordReadout();
         public bool IsSkill1FollowupClearCountdownActive => state == PocketState.Running
             && skill1FollowupHitConfirmed
@@ -247,7 +253,7 @@ namespace DimensionBrawl.Test
                     PocketState.Cleared => ReviewPhase.Cleared,
                     PocketState.Failed => ReviewPhase.Failed,
                     _ when IsSkill1FollowupClearCountdownActive => ReviewPhase.SummonFollowup,
-                    _ when pressurePacing.IsSummonPressureBreakActive && pressurePacing.IsSummonFollowupWindowActive => ReviewPhase.SummonFollowup,
+                    _ when pressurePacing.IsSummonFollowupWindowActive => ReviewPhase.SummonFollowup,
                     _ when pressurePacing.IsSummonPressureBreakActive => ReviewPhase.PressureBreak,
                     _ when counterWaveObserved => ReviewPhase.CounterWave,
                     _ when closeThreatDefeated => ReviewPhase.SummonBlock,
@@ -273,7 +279,7 @@ namespace DimensionBrawl.Test
                         "Player line collapsed before route stabilization");
                 }
 
-                if (pressurePacing.IsSummonPressureBreakActive)
+                if (pressurePacing.IsSummonFollowupWindowActive || usedSkill1DuringSummonFollowup)
                 {
                     if (skill1FollowupHitConfirmed)
                     {
@@ -296,15 +302,18 @@ namespace DimensionBrawl.Test
                             "Skill1 committed into the summon opening");
                     }
 
-                    return pressurePacing.IsSummonFollowupWindowActive
-                        ? ResolveFollowupReadyCue()
-                        : requireSkill1FollowupHitToClear
-                            ? ResolveStageText(
-                                stageProfile != null ? stageProfile.FollowupMissedCue : null,
-                                "Follow-up window missed; boss pressure is returning")
-                            : ResolveStageText(
-                                stageProfile != null ? stageProfile.PressureBreakCue : null,
-                                "Boss curtain suppressed briefly; read the follow-up window");
+                    return ResolveFollowupReadyCue();
+                }
+
+                if (pressurePacing.IsSummonPressureBreakActive)
+                {
+                    return requireSkill1FollowupHitToClear
+                        ? ResolveStageText(
+                            stageProfile != null ? stageProfile.FollowupMissedCue : null,
+                            "Follow-up window missed; boss pressure is returning")
+                        : ResolveStageText(
+                            stageProfile != null ? stageProfile.PressureBreakCue : null,
+                            "Boss curtain suppressed briefly; read the follow-up window");
                 }
 
                 if (closeThreatDefeated
@@ -407,8 +416,10 @@ namespace DimensionBrawl.Test
             bossBlockedSkill1Followup = false;
             counterWaveObserved = false;
             counterWaveStabilized = false;
+            counterWaveFinalWindowOpened = false;
             counterWaveSource = CounterWaveSource.None;
             lastCounterWaveStabilityBonus = 0f;
+            lastCounterWaveFinalWindowDuration = 0f;
             bossPressureSummonReleasesAtReset = GetBossPressureSummonReleaseCount();
             highestSkillTier = 0;
             highestSummonTier = 0;
@@ -748,6 +759,37 @@ namespace DimensionBrawl.Test
             lastCounterWaveStabilityBonus = ResolveCounterWaveStabilizeRouteBonus01();
             AddRouteStability(lastCounterWaveStabilityBonus);
             CounterWaveStabilized?.Invoke();
+            OpenCounterWaveFinalWindow();
+        }
+
+        private void OpenCounterWaveFinalWindow()
+        {
+            if (counterWaveFinalWindowOpened)
+            {
+                return;
+            }
+
+            int resolvedTier = Mathf.Clamp(ResolveObjectiveSummonTier(), 1, 3);
+            float followupWindowSeconds = ResolveSummonFollowupWindowSeconds(resolvedTier);
+            float followupEnergyPulse = ResolveSummonFollowupEnergyPulse(resolvedTier);
+            skillUsesAtSummonBreakStart = GetSkillUseCount();
+            grantedSummonFollowupEnergy = false;
+            usedSkill1DuringSummonFollowup = false;
+            skill1FollowupHitConfirmed = false;
+            bossBlockedSkill1Followup = false;
+            skill1FollowupDamage = 0f;
+            skill1FollowupClearTimer = 0f;
+            followupMissedNotified = false;
+            bossPressureBlocksAtSummonBreakStart = GetBossPressureScreenBlockCount();
+            bossPressureBlocksConsumedDuringFollowup = 0;
+            lastSummonPressureBreakTier = resolvedTier;
+            lastSummonFollowupWindowDuration = followupWindowSeconds;
+            counterWaveFinalWindowOpened = true;
+            lastCounterWaveFinalWindowDuration = followupWindowSeconds;
+            pressurePacing.StartSummonFollowupWindow(followupWindowSeconds);
+            GrantSummonFollowupEnergyPulse(followupEnergyPulse);
+            ApplyRunningBarragePacing();
+            SummonFollowupWindowOpened?.Invoke(resolvedTier);
         }
 
         private void ClearPocket()
@@ -1255,7 +1297,8 @@ namespace DimensionBrawl.Test
                 + $"summon:{ResolveRecordState(IsSummonRouteCompletionRecorded)} "
                 + $"followup:{ResolveRecordState(IsFollowupCompletionRecorded)} "
                 + $"counter:{CounterWaveRecordState}({CounterWaveSourceReadout}) "
-                + $"counter_answer:{CounterWaveAnswerState}({CounterWaveAnswerReadout})";
+                + $"counter_answer:{CounterWaveAnswerState}({CounterWaveAnswerReadout}) "
+                + $"counter_window:{CounterWaveFinalWindowState}({CounterWaveFinalWindowReadout})";
         }
 
         private static string ResolveRecordState(bool completed)
@@ -1310,6 +1353,36 @@ namespace DimensionBrawl.Test
             if (IsCounterWaveCompletionRecorded)
             {
                 return "awaiting";
+            }
+
+            return IsFollowupCompletionRecorded ? "clean_followup" : "none";
+        }
+
+        private string ResolveCounterWaveFinalWindowState()
+        {
+            if (counterWaveFinalWindowOpened)
+            {
+                return "opened";
+            }
+
+            if (IsCounterWaveCompletionRecorded)
+            {
+                return "pending";
+            }
+
+            return IsFollowupCompletionRecorded ? "not_needed" : "pending";
+        }
+
+        private string ResolveCounterWaveFinalWindowReadout()
+        {
+            if (counterWaveFinalWindowOpened)
+            {
+                return "final_followup";
+            }
+
+            if (IsCounterWaveCompletionRecorded)
+            {
+                return "awaiting_answer";
             }
 
             return IsFollowupCompletionRecorded ? "clean_followup" : "none";

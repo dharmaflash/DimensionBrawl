@@ -43,6 +43,12 @@ namespace DimensionBrawl.Test
             summonFollowupWindowActive = summonFollowupWindowTimer > 0f;
         }
 
+        public void StartSummonFollowupWindow(float followupWindowSeconds)
+        {
+            summonFollowupWindowTimer = Mathf.Max(0f, followupWindowSeconds);
+            summonFollowupWindowActive = summonFollowupWindowTimer > 0f;
+        }
+
         public void EndSummonFollowupWindow()
         {
             summonFollowupWindowTimer = 0f;

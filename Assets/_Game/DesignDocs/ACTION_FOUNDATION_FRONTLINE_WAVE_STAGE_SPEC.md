@@ -840,6 +840,7 @@ Route stability is now part of the review-scene contract:
 - The route record must also expose the observer-completion snapshot (`close`, `summon`, `followup` as `pending`/`recorded`) so the pocket follows the PGR-style condition gate -> combat observer -> completion record chain instead of ending as loose debug text.
 - The route record must distinguish the optional counter-wave branch and source: clean follow-up marks `counter:avoided(none)`, while observed enemy frontline body pressure and boss summon release mark `counter:recorded(enemy_body)` or `counter:recorded(boss_summon)`.
 - The route record must separately show the counter-wave answer: after observed counter pressure, ally summon/frontline presence marks `counter_answer:stabilized(ally_hold)` and restores a small route-stability bonus; clean follow-up keeps `counter_answer:not_needed(clean_followup)`.
+- A stabilized counter wave must open the final follow-up window and record it as `counter_window:opened(final_followup)`, matching the Beat 4 success state instead of leaving the player in a dead-end hold state.
 - Counter-wave observation and ally-hold stabilization must also emit frontline screen cues, not just HUD text, so the player feels the line entering danger and then being held.
 - When counter pressure is observed, the review phase and compact objective must read as counter-wave/frontline-hold work instead of falling back to generic summon-block text.
 
