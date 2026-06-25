@@ -21,6 +21,9 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private CinematicSequenceProfile summonRecallProfile;
         [SerializeField] private CinematicSequenceProfile pocketClearProfile;
         [SerializeField] private CinematicSequenceProfile pocketFailProfile;
+        [SerializeField] private CinematicSequenceProfile bossIntroProfile;
+        [SerializeField] private CinematicSequenceProfile phaseTransitionProfile;
+        [SerializeField] private CinematicSequenceProfile dialogueReactionBeatProfile;
 
         private int totalPlayCount;
         private ActionCinematicCueProfile.CueKind lastPlayedKind;
@@ -87,6 +90,9 @@ namespace DimensionBrawl.Presentation
                 ActionCinematicCueProfile.CueKind.SummonRecall => summonRecallProfile,
                 ActionCinematicCueProfile.CueKind.PocketClear => pocketClearProfile,
                 ActionCinematicCueProfile.CueKind.PocketFail => pocketFailProfile,
+                ActionCinematicCueProfile.CueKind.BossIntro => bossIntroProfile,
+                ActionCinematicCueProfile.CueKind.PhaseTransition => phaseTransitionProfile,
+                ActionCinematicCueProfile.CueKind.DialogueReactionBeat => dialogueReactionBeatProfile,
                 _ => null
             };
         }

@@ -82,9 +82,9 @@ namespace DimensionBrawl.Test
             yield return null;
             yield return null;
 
-            StringBuilder report = new StringBuilder(2048);
+            StringBuilder report = new StringBuilder(4096);
             report.AppendLine("ROUTE=BossBarrageActionBridgeInput");
-            List<CapturedRouteFrame> capturedFrames = new List<CapturedRouteFrame>(9);
+            List<CapturedRouteFrame> capturedFrames = new List<CapturedRouteFrame>(12);
 
             ProbeContext context;
             try
@@ -167,6 +167,45 @@ namespace DimensionBrawl.Test
 
             yield return VerifyDirectorRoute(
                 context,
+                "boss_intro_direct_bridge",
+                ActionCinematicCueProfile.CueKind.BossIntro,
+                "boss_intro",
+                1.85f,
+                report,
+                capturedFrames);
+            bool bossIntroRoutePassed = lastStepPassed;
+
+            yield return WaitForIdle(context, "after_boss_intro_direct_bridge", report);
+            bool bossIntroIdlePassed = lastStepPassed;
+
+            yield return VerifyDirectorRoute(
+                context,
+                "phase_transition_direct_bridge",
+                ActionCinematicCueProfile.CueKind.PhaseTransition,
+                "phase_transition",
+                2.34f,
+                report,
+                capturedFrames);
+            bool phaseTransitionRoutePassed = lastStepPassed;
+
+            yield return WaitForIdle(context, "after_phase_transition_direct_bridge", report);
+            bool phaseTransitionIdlePassed = lastStepPassed;
+
+            yield return VerifyDirectorRoute(
+                context,
+                "dialogue_reaction_direct_bridge",
+                ActionCinematicCueProfile.CueKind.DialogueReactionBeat,
+                "dialogue_reaction_beat",
+                1.35f,
+                report,
+                capturedFrames);
+            bool dialogueReactionRoutePassed = lastStepPassed;
+
+            yield return WaitForIdle(context, "after_dialogue_reaction_direct_bridge", report);
+            bool dialogueReactionIdlePassed = lastStepPassed;
+
+            yield return VerifyDirectorRoute(
+                context,
                 "pocket_clear_result_direct_bridge",
                 ActionCinematicCueProfile.CueKind.PocketClear,
                 "result_bridge",
@@ -201,6 +240,12 @@ namespace DimensionBrawl.Test
                 && summonEmpowerIdlePassed
                 && summonRecallRoutePassed
                 && summonRecallIdlePassed
+                && bossIntroRoutePassed
+                && bossIntroIdlePassed
+                && phaseTransitionRoutePassed
+                && phaseTransitionIdlePassed
+                && dialogueReactionRoutePassed
+                && dialogueReactionIdlePassed
                 && pocketClearRoutePassed
                 && pocketClearIdlePassed
                 && pocketFailRoutePassed

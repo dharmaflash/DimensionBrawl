@@ -16,7 +16,10 @@ namespace DimensionBrawl.Presentation
             PocketClear,
             PocketFail,
             SummonEmpower,
-            SummonRecall
+            SummonRecall,
+            BossIntro,
+            PhaseTransition,
+            DialogueReactionBeat
         }
 
         public enum CueTier
@@ -314,6 +317,81 @@ namespace DimensionBrawl.Presentation
             }
         };
 
+        [Header("P1 Story Beats")]
+        [SerializeField] private CueSequence bossIntro = new CueSequence
+        {
+            enabled = true,
+            cueId = "boss_intro_bridge",
+            tier = CueTier.CombatCutIn,
+            priority = 84,
+            canBeInterrupted = false,
+            movementLockSeconds = 0.46f,
+            inputLockSeconds = 0.60f,
+            timeScale = 0.88f,
+            timeScaleSeconds = 0.14f,
+            returnTargetId = GameplayReturnTargetId,
+            returnPolicy = CameraReturnPolicy.ActionCameraCueRecovery,
+            shots = new[]
+            {
+                CreateShot(new Vector3(0.10f, 0.08f, -0.22f), 0.14f, 2.2f, -0.24f, 0.08f, 0.26f, 0.04f, 1.12f),
+                CreateShot(new Vector3(0.04f, 0.04f, -0.12f), 0.08f, 0.6f, -0.10f, 0.03f, 0.24f, 0f, 1.04f)
+            },
+            signals = new[]
+            {
+                CreateSignal("boss_intro_reveal_signal", 0.10f, string.Empty, CombatVfxCueId.EliteAuraSignal, 1.10f),
+                CreateSignal("boss_intro_answer_signal", 0.36f, string.Empty, CombatVfxCueId.PlayerRangedMuzzleFlash, 0.92f)
+            }
+        };
+
+        [SerializeField] private CueSequence phaseTransition = new CueSequence
+        {
+            enabled = true,
+            cueId = "phase_transition_bridge",
+            tier = CueTier.CombatCutIn,
+            priority = 82,
+            canBeInterrupted = false,
+            movementLockSeconds = 0.40f,
+            inputLockSeconds = 0.54f,
+            timeScale = 0.9f,
+            timeScaleSeconds = 0.12f,
+            returnTargetId = GameplayReturnTargetId,
+            returnPolicy = CameraReturnPolicy.ActionCameraCueRecovery,
+            shots = new[]
+            {
+                CreateShot(new Vector3(0.12f, 0.06f, -0.20f), 0.12f, 1.8f, -0.20f, 0.06f, 0.22f, 0.03f, 1.10f),
+                CreateShot(new Vector3(-0.04f, 0.04f, -0.10f), 0.05f, 0.5f, -0.08f, 0.02f, 0.22f, 0f, 1.04f)
+            },
+            signals = new[]
+            {
+                CreateSignal("phase_transition_swap_signal", 0.05f, string.Empty, CombatVfxCueId.ElitePhaseSwapSignal, 1.12f),
+                CreateSignal("phase_transition_counter_signal", 0.32f, string.Empty, CombatVfxCueId.PlayerRangedMuzzleFlash, 0.9f)
+            }
+        };
+
+        [SerializeField] private CueSequence dialogueReactionBeat = new CueSequence
+        {
+            enabled = true,
+            cueId = "dialogue_reaction_bridge",
+            tier = CueTier.MicroCinematic,
+            priority = 68,
+            canBeInterrupted = true,
+            movementLockSeconds = 0.24f,
+            inputLockSeconds = 0.34f,
+            timeScale = 0.96f,
+            timeScaleSeconds = 0.08f,
+            returnTargetId = GameplayReturnTargetId,
+            returnPolicy = CameraReturnPolicy.ActionCameraCueRecovery,
+            shots = new[]
+            {
+                CreateShot(new Vector3(-0.06f, 0.05f, -0.14f), 0.04f, 0.8f, -0.10f, 0.04f, 0.22f, 0.02f, 1.05f),
+                CreateShot(new Vector3(0f, 0.03f, -0.08f), 0.02f, 0.3f, -0.06f, 0.02f, 0.18f, 0f, 1.02f)
+            },
+            signals = new[]
+            {
+                CreateSignal("dialogue_reaction_focus_signal", 0.10f, string.Empty, CombatVfxCueId.EliteAuraSignal, 0.58f, 1.0f)
+            }
+        };
+
         public CueSequence SkillCutIn => skillCutIn;
         public CueSequence SummonEntry => summonEntry;
         public CueSequence UltimateCutIn => ultimateCutIn;
@@ -323,6 +401,9 @@ namespace DimensionBrawl.Presentation
         public CueSequence SummonRecall => summonRecall;
         public CueSequence PocketClear => pocketClear;
         public CueSequence PocketFail => pocketFail;
+        public CueSequence BossIntro => bossIntro;
+        public CueSequence PhaseTransition => phaseTransition;
+        public CueSequence DialogueReactionBeat => dialogueReactionBeat;
 
         public bool TryGetSequence(CueKind kind, out CueSequence sequence)
         {
@@ -337,6 +418,9 @@ namespace DimensionBrawl.Presentation
                 CueKind.SummonRecall => summonRecall,
                 CueKind.PocketClear => pocketClear,
                 CueKind.PocketFail => pocketFail,
+                CueKind.BossIntro => bossIntro,
+                CueKind.PhaseTransition => phaseTransition,
+                CueKind.DialogueReactionBeat => dialogueReactionBeat,
                 _ => default
             };
 

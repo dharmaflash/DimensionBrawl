@@ -399,6 +399,30 @@ namespace DimensionBrawl.Editor
                     "pocketClearProfile",
                     "DB_Cinematic_ResultBridge.asset",
                     "Action bridge routes PocketClear to the reusable result profile.");
+                VerifyBridgeProfile(
+                    state,
+                    serializedBridge,
+                    "pocketFailProfile",
+                    "DB_Cinematic_DangerCue.asset",
+                    "Action bridge routes PocketFail to the reusable danger profile.");
+                VerifyBridgeProfile(
+                    state,
+                    serializedBridge,
+                    "bossIntroProfile",
+                    "DB_Cinematic_BossIntro.asset",
+                    "Action bridge routes BossIntro to the reusable boss-intro profile.");
+                VerifyBridgeProfile(
+                    state,
+                    serializedBridge,
+                    "phaseTransitionProfile",
+                    "DB_Cinematic_PhaseTransition.asset",
+                    "Action bridge routes PhaseTransition to the reusable phase-transition profile.");
+                VerifyBridgeProfile(
+                    state,
+                    serializedBridge,
+                    "dialogueReactionBeatProfile",
+                    "DB_Cinematic_DialogueReactionBeat.asset",
+                    "Action bridge routes DialogueReactionBeat to the reusable dialogue reaction profile.");
             }
 
             CinematicSequenceAutoPlay autoPlay = FindComponentInScene<CinematicSequenceAutoPlay>(scene);

@@ -667,13 +667,13 @@ namespace DimensionBrawl.Editor
             return new[]
             {
                 new PlaylistStripSample(
-                    "Boss intro: weapon answer",
-                    "p1_01_boss_intro_weapon_answer",
+                    "Boss intro: Inori reaction",
+                    "p1_01_boss_intro_inori_reaction",
                     BossIntroProfilePath,
-                    "CIN_BackViewProjectileBurst",
-                    "Angry",
-                    "boss_weapon_answer",
-                    3.24f,
+                    "CIN_IntroSurprised",
+                    "Surprised",
+                    "inori_boss_reaction",
+                    1.85f,
                     weaponVisible: true),
                 new PlaylistStripSample(
                     "Phase transition: counter release",
@@ -1244,6 +1244,9 @@ namespace DimensionBrawl.Editor
             SetObjectReference(sequenceBridge, "summonRecallProfile", LoadAsset<CinematicSequenceProfile>(SummonRecallProfilePath));
             SetObjectReference(sequenceBridge, "pocketClearProfile", LoadAsset<CinematicSequenceProfile>(ResultBridgeProfilePath));
             SetObjectReference(sequenceBridge, "pocketFailProfile", LoadAsset<CinematicSequenceProfile>(DangerProfilePath));
+            SetObjectReference(sequenceBridge, "bossIntroProfile", LoadAsset<CinematicSequenceProfile>(BossIntroProfilePath));
+            SetObjectReference(sequenceBridge, "phaseTransitionProfile", LoadAsset<CinematicSequenceProfile>(PhaseTransitionProfilePath));
+            SetObjectReference(sequenceBridge, "dialogueReactionBeatProfile", LoadAsset<CinematicSequenceProfile>(DialogueReactionBeatProfilePath));
             EditorUtility.SetDirty(sequenceBridge);
         }
 

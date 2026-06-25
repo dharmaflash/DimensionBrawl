@@ -2820,6 +2820,9 @@ MonoBehaviour:
   summonRecallProfile: {fileID: 11400000, guid: 1795e33ea2415e54a9ec3d9a3217867e, type: 2}
   pocketClearProfile: {fileID: 11400000, guid: 6fb87f598ea3d1042a9087dc8091d121, type: 2}
   pocketFailProfile: {fileID: 11400000, guid: 39253b27abed2f64e89489163a7d87a0, type: 2}
+  bossIntroProfile: {fileID: 11400000, guid: 908b3067c579c194882bacbc26212de3, type: 2}
+  phaseTransitionProfile: {fileID: 11400000, guid: 2247842f9334ffe488877fc276290069, type: 2}
+  dialogueReactionBeatProfile: {fileID: 11400000, guid: f378e3c69421fcf4ba48fd3db9817ba1, type: 2}
 --- !u!114 &1924005742
 MonoBehaviour:
   m_ObjectHideFlags: 0

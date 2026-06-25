@@ -284,8 +284,14 @@ namespace DimensionBrawl.Editor
             CinematicProfileRoot + "/DB_Cinematic_UltimateCutIn.asset";
         private const string CinematicDangerProfilePath =
             CinematicProfileRoot + "/DB_Cinematic_DangerCue.asset";
+        private const string CinematicBossIntroProfilePath =
+            CinematicProfileRoot + "/DB_Cinematic_BossIntro.asset";
+        private const string CinematicPhaseTransitionProfilePath =
+            CinematicProfileRoot + "/DB_Cinematic_PhaseTransition.asset";
         private const string CinematicBreakProfilePath =
             CinematicProfileRoot + "/DB_Cinematic_BreakMoment.asset";
+        private const string CinematicDialogueReactionBeatProfilePath =
+            CinematicProfileRoot + "/DB_Cinematic_DialogueReactionBeat.asset";
         private const string CinematicBossSummonPressureProfilePath =
             CinematicProfileRoot + "/DB_Cinematic_BossSummonPressure.asset";
         private const string CinematicResultProfilePath =
@@ -6001,6 +6007,12 @@ namespace DimensionBrawl.Editor
             SetObjectReference(bridge, "summonRecallProfile", LoadAsset<CinematicSequenceProfile>(CinematicSummonRecallProfilePath));
             SetObjectReference(bridge, "pocketClearProfile", LoadAsset<CinematicSequenceProfile>(CinematicResultProfilePath));
             SetObjectReference(bridge, "pocketFailProfile", LoadAsset<CinematicSequenceProfile>(CinematicDangerProfilePath));
+            SetObjectReference(bridge, "bossIntroProfile", LoadAsset<CinematicSequenceProfile>(CinematicBossIntroProfilePath));
+            SetObjectReference(bridge, "phaseTransitionProfile", LoadAsset<CinematicSequenceProfile>(CinematicPhaseTransitionProfilePath));
+            SetObjectReference(
+                bridge,
+                "dialogueReactionBeatProfile",
+                LoadAsset<CinematicSequenceProfile>(CinematicDialogueReactionBeatProfilePath));
             EditorUtility.SetDirty(bridge);
             return bridge;
         }
@@ -6270,6 +6282,22 @@ namespace DimensionBrawl.Editor
                 sequenceBridge,
                 "pocketClearProfile",
                 LoadAsset<CinematicSequenceProfile>(CinematicResultProfilePath));
+            ValidateObjectReference(
+                sequenceBridge,
+                "pocketFailProfile",
+                LoadAsset<CinematicSequenceProfile>(CinematicDangerProfilePath));
+            ValidateObjectReference(
+                sequenceBridge,
+                "bossIntroProfile",
+                LoadAsset<CinematicSequenceProfile>(CinematicBossIntroProfilePath));
+            ValidateObjectReference(
+                sequenceBridge,
+                "phaseTransitionProfile",
+                LoadAsset<CinematicSequenceProfile>(CinematicPhaseTransitionProfilePath));
+            ValidateObjectReference(
+                sequenceBridge,
+                "dialogueReactionBeatProfile",
+                LoadAsset<CinematicSequenceProfile>(CinematicDialogueReactionBeatProfilePath));
             ValidateAssignedObjectReference(cueAnimator, "m_Controller");
             CinematicBlendShapeExpressionPlayer expressionPlayer =
                 RequireComponent<CinematicBlendShapeExpressionPlayer>(
@@ -6329,6 +6357,21 @@ namespace DimensionBrawl.Editor
             ValidateCinematicCueContract(
                 profile.PocketFail,
                 "PocketFail",
+                ActionCinematicCueProfile.CueTier.MicroCinematic,
+                cueAnimator);
+            ValidateCinematicCueContract(
+                profile.BossIntro,
+                "BossIntro",
+                ActionCinematicCueProfile.CueTier.CombatCutIn,
+                cueAnimator);
+            ValidateCinematicCueContract(
+                profile.PhaseTransition,
+                "PhaseTransition",
+                ActionCinematicCueProfile.CueTier.CombatCutIn,
+                cueAnimator);
+            ValidateCinematicCueContract(
+                profile.DialogueReactionBeat,
+                "DialogueReactionBeat",
                 ActionCinematicCueProfile.CueTier.MicroCinematic,
                 cueAnimator);
             if (!profile.TryGetSequence(ActionCinematicCueProfile.CueKind.SummonEntry, out var summonEntry)
