@@ -75,6 +75,8 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "review HUD");
             BossBarrageLaneReviewOverlayHud overlayHud =
                 RequireComponent<BossBarrageLaneReviewOverlayHud>(RequireRoot(HudRootName), "overlay HUD");
+            ActionScreenCuePresenter screenCuePresenter =
+                RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "screen cue presenter");
 
             Assert.AreSame(stageProfile, GetObjectReference<FrontlineWaveStageProfile>(pocketOwner, "stageProfile"));
             Assert.AreSame(stageProfile, GetObjectReference<FrontlineWaveStageProfile>(reviewHud, "stageProfile"));
@@ -88,7 +90,14 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Pending 0/3"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("target 90"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Review-only route record"));
-            SetField(pocketOwner, "elapsedSeconds", 2f);
+            int frontlineCueCountBeforeProbe = screenCuePresenter.FrontlineCueRequestCount;
+            pocketOwner.Tick(0.6f);
+            Assert.AreEqual(1, pocketOwner.CurrentStageBeatIndex);
+            Assert.Greater(screenCuePresenter.FrontlineCueRequestCount, frontlineCueCountBeforeProbe);
+            Assert.AreEqual(1, screenCuePresenter.LastFrontlineBeatIndex);
+            Assert.AreEqual("Probe Wave", screenCuePresenter.LastFrontlineBeatLabel);
+            Assert.That(screenCuePresenter.LastCueId, Does.Contain("FrontlineBeat.B1.CloseProbe"));
+            Assert.IsTrue(screenCuePresenter.HasActiveCue);
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("Probe Wave"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("close_probe_defeated"));
             SetField(pocketOwner, "closeThreatDefeated", true);

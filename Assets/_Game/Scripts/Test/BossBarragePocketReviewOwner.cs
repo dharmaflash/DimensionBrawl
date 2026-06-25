@@ -109,6 +109,7 @@ namespace DimensionBrawl.Test
         private CombatHealth subscribedBossHealth;
         private bool followupMissedNotified;
         private bool bossBlockedSkill1Followup;
+        private int announcedStageBeatIndex;
 
         public event Action<int> SummonFollowupWindowOpened;
         public event Action<int, float> SummonFollowupHitConfirmed;
@@ -116,6 +117,7 @@ namespace DimensionBrawl.Test
         public event Action SummonBlockOpportunityOpened;
         public event Action PocketCleared;
         public event Action PocketFailed;
+        public event Action<int> StageBeatChanged;
 
         public bool IsRunning => state == PocketState.Running;
         public bool IsCleared => state == PocketState.Cleared;
@@ -343,6 +345,7 @@ namespace DimensionBrawl.Test
             lastGrantedSummonFollowupEnergyPulse = 0f;
             elapsedSeconds = 0f;
             resultElapsedSeconds = 0f;
+            announcedStageBeatIndex = ResolveCurrentStageBeatIndex();
             SetBarrageEnabled(true);
             SetEnergyGainEnabled(true);
             SetBossPressureCostGainEnabled(true);
@@ -378,6 +381,7 @@ namespace DimensionBrawl.Test
             if (playerHealth != null && !playerHealth.IsAlive)
             {
                 FailPocket();
+                PublishStageBeatChangeIfNeeded();
                 return;
             }
 
@@ -390,6 +394,8 @@ namespace DimensionBrawl.Test
             {
                 ClearPocket();
             }
+
+            PublishStageBeatChangeIfNeeded();
         }
 
         private void CaptureActionUse()
@@ -883,6 +889,18 @@ namespace DimensionBrawl.Test
             }
 
             return elapsedSeconds <= 0.5f ? 0 : 1;
+        }
+
+        private void PublishStageBeatChangeIfNeeded()
+        {
+            int currentBeatIndex = ResolveCurrentStageBeatIndex();
+            if (currentBeatIndex == announcedStageBeatIndex)
+            {
+                return;
+            }
+
+            announcedStageBeatIndex = currentBeatIndex;
+            StageBeatChanged?.Invoke(currentBeatIndex);
         }
 
         private void SubscribeBossHealth()

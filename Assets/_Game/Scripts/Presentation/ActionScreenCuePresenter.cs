@@ -13,6 +13,7 @@ namespace DimensionBrawl.Presentation
         {
             Player,
             Boss,
+            Frontline,
             Followup,
             Result
         }
@@ -68,6 +69,9 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private Color bossFireColor = new Color(1f, 0.2f, 0.1f, 1f);
         [SerializeField] private Color bossPressureColor = new Color(1f, 0.24f, 0.58f, 1f);
 
+        [Header("Frontline Colors")]
+        [SerializeField] private Color frontlineBeatColor = new Color(0.52f, 0.92f, 1f, 1f);
+
         [Header("Follow-up Colors")]
         [SerializeField] private Color followupWindowColor = new Color(0.34f, 1f, 0.64f, 1f);
         [SerializeField] private Color followupHitColor = new Color(1f, 0.78f, 0.22f, 1f);
@@ -95,6 +99,7 @@ namespace DimensionBrawl.Presentation
         private int cueRequestCount;
         private int playerCueRequestCount;
         private int bossCueRequestCount;
+        private int frontlineCueRequestCount;
         private int followupCueRequestCount;
         private int resultCueRequestCount;
         private int playerDamageCueRequestCount;
@@ -111,6 +116,8 @@ namespace DimensionBrawl.Presentation
         private float lastDamageFeedbackDuration;
         private Vector2 lastDamageScreenDirection = Vector2.zero;
         private int lastEnergyCueTier;
+        private int lastFrontlineBeatIndex = -1;
+        private string lastFrontlineBeatLabel = string.Empty;
         private SummonEnergyRiskBand lastEnergyRiskBand = SummonEnergyRiskBand.BackSafety;
 
         public bool ShowScreenCues => showScreenCues;
@@ -134,6 +141,7 @@ namespace DimensionBrawl.Presentation
         public int CueRequestCount => cueRequestCount;
         public int PlayerCueRequestCount => playerCueRequestCount;
         public int BossCueRequestCount => bossCueRequestCount;
+        public int FrontlineCueRequestCount => frontlineCueRequestCount;
         public int FollowupCueRequestCount => followupCueRequestCount;
         public int ResultCueRequestCount => resultCueRequestCount;
         public int PlayerDamageCueRequestCount => playerDamageCueRequestCount;
@@ -150,6 +158,8 @@ namespace DimensionBrawl.Presentation
         public float LastDamageFeedbackDuration => lastDamageFeedbackDuration;
         public Vector2 LastDamageScreenDirection => lastDamageScreenDirection;
         public int LastEnergyCueTier => lastEnergyCueTier;
+        public int LastFrontlineBeatIndex => lastFrontlineBeatIndex;
+        public string LastFrontlineBeatLabel => lastFrontlineBeatLabel;
         public SummonEnergyRiskBand LastEnergyRiskBand => lastEnergyRiskBand;
 
         public void SetScreenCuesVisible(bool visible)
@@ -375,6 +385,19 @@ namespace DimensionBrawl.Presentation
                 ScreenCueCategory.Boss);
         }
 
+        private void HandleStageBeatChanged(int beatIndex)
+        {
+            string beatId = ResolveFrontlineBeatId(beatIndex, out string beatLabel);
+            lastFrontlineBeatIndex = beatIndex;
+            lastFrontlineBeatLabel = beatLabel;
+            RequestScreenCue(
+                $"FrontlineBeat.{beatId}",
+                frontlineBeatColor,
+                0.20f,
+                0.58f,
+                ScreenCueCategory.Frontline);
+        }
+
         private void HandleSummonBlockOpportunityOpened()
         {
             RequestScreenCue("Followup.BlockOpportunity", followupWindowColor, 0.20f, 0.72f, ScreenCueCategory.Followup);
@@ -444,6 +467,9 @@ namespace DimensionBrawl.Presentation
                 case ScreenCueCategory.Result:
                     resultCueRequestCount++;
                     break;
+                case ScreenCueCategory.Frontline:
+                    frontlineCueRequestCount++;
+                    break;
                 case ScreenCueCategory.Boss:
                     bossCueRequestCount++;
                     break;
@@ -500,14 +526,36 @@ namespace DimensionBrawl.Presentation
             switch (category)
             {
                 case ScreenCueCategory.Result:
-                    return 4;
+                    return 5;
                 case ScreenCueCategory.Followup:
+                    return 4;
+                case ScreenCueCategory.Frontline:
                     return 3;
                 case ScreenCueCategory.Boss:
                     return 2;
                 default:
                     return 1;
             }
+        }
+
+        private string ResolveFrontlineBeatId(int beatIndex, out string beatLabel)
+        {
+            beatLabel = $"Beat {beatIndex + 1}";
+            if (pocketReviewOwner == null || pocketReviewOwner.StageProfile == null)
+            {
+                return $"B{Mathf.Max(0, beatIndex)}";
+            }
+
+            int beatCount = pocketReviewOwner.StageProfile.BeatCount;
+            if (beatCount <= 0)
+            {
+                return $"B{Mathf.Max(0, beatIndex)}";
+            }
+
+            int safeBeatIndex = Mathf.Clamp(beatIndex, 0, beatCount - 1);
+            var beat = pocketReviewOwner.StageProfile.GetBeat(safeBeatIndex);
+            beatLabel = string.IsNullOrWhiteSpace(beat.Label) ? beatLabel : beat.Label;
+            return string.IsNullOrWhiteSpace(beat.BeatId) ? beatLabel : beat.BeatId;
         }
 
         private void Subscribe()
@@ -563,6 +611,7 @@ namespace DimensionBrawl.Presentation
 
             if (pocketReviewOwner != null)
             {
+                pocketReviewOwner.StageBeatChanged += HandleStageBeatChanged;
                 pocketReviewOwner.SummonBlockOpportunityOpened += HandleSummonBlockOpportunityOpened;
                 pocketReviewOwner.SummonFollowupWindowOpened += HandleSummonFollowupWindowOpened;
                 pocketReviewOwner.SummonFollowupHitConfirmed += HandleSummonFollowupHitConfirmed;
@@ -627,6 +676,7 @@ namespace DimensionBrawl.Presentation
 
             if (pocketReviewOwner != null)
             {
+                pocketReviewOwner.StageBeatChanged -= HandleStageBeatChanged;
                 pocketReviewOwner.SummonBlockOpportunityOpened -= HandleSummonBlockOpportunityOpened;
                 pocketReviewOwner.SummonFollowupWindowOpened -= HandleSummonFollowupWindowOpened;
                 pocketReviewOwner.SummonFollowupHitConfirmed -= HandleSummonFollowupHitConfirmed;
