@@ -55,13 +55,17 @@ namespace DimensionBrawl.Editor
             BossBarrageLaneReviewHud hud = RequireComponentOnRoot<BossBarrageLaneReviewHud>(HudRootName);
             BossBarrageLaneReviewOverlayHud overlayHud =
                 RequireComponentOnRoot<BossBarrageLaneReviewOverlayHud>(HudRootName);
+            BossBarragePocketCameraCueBridge cameraCueBridge =
+                RequireComponentOnRoot<BossBarragePocketCameraCueBridge>(PocketOwnerRootName);
 
             SetObjectReference(pocketOwner, "stageProfile", profile);
             SetObjectReference(hud, "stageProfile", profile);
+            cameraCueBridge.enabled = true;
             pocketOwner.AssignStageProfileForReview(profile);
             hud.AssignStageProfileForReview(profile);
             MarkDirty(pocketOwner);
             MarkDirty(hud);
+            MarkDirty(cameraCueBridge);
             SetString(hud, "stageEpisodeLabel", profile.StageEpisodeLabel);
             SetString(hud, "objectiveBadgeLabel", profile.ObjectiveBadgeLabel);
             SetString(hud, "bossDisplayName", "Dimensional Rift Curtain");
@@ -116,12 +120,19 @@ namespace DimensionBrawl.Editor
             BossBarrageLaneReviewHud hud = RequireComponentOnRoot<BossBarrageLaneReviewHud>(HudRootName);
             BossBarrageLaneReviewOverlayHud overlayHud =
                 RequireComponentOnRoot<BossBarrageLaneReviewOverlayHud>(HudRootName);
+            BossBarragePocketCameraCueBridge cameraCueBridge =
+                RequireComponentOnRoot<BossBarragePocketCameraCueBridge>(PocketOwnerRootName);
             ValidateObjectReference(pocketOwner, "stageProfile", profile);
             ValidateObjectReference(hud, "stageProfile", profile);
             ValidateString(overlayHud, "retryScenePath", ScenePath);
             if (pocketOwner.ObjectiveStepCount != profile.ObjectiveStepCount)
             {
                 throw new InvalidOperationException("Pocket owner objective count does not match the stage profile.");
+            }
+
+            if (!cameraCueBridge.enabled)
+            {
+                throw new InvalidOperationException("Pocket camera cue bridge must be enabled for guided one-round review readability.");
             }
         }
 
@@ -134,6 +145,8 @@ namespace DimensionBrawl.Editor
                 RequireComponentOnRoot<BossBarrageLaneReviewOverlayHud>(HudRootName);
             BossPressureActionDirector bossPressureActionDirector = RequireObject<BossPressureActionDirector>();
             BossSummonPressureAction bossSummonPressureAction = RequireObject<BossSummonPressureAction>();
+            BossBarragePocketCameraCueBridge cameraCueBridge =
+                RequireComponentOnRoot<BossBarragePocketCameraCueBridge>(PocketOwnerRootName);
             ValidateObjectReference(pocketOwner, "stageProfile", profile);
             ValidateObjectReference(hud, "stageProfile", profile);
             ValidateObjectReference(pocketOwner, "bossPressureActionDirector", bossPressureActionDirector);
@@ -148,6 +161,11 @@ namespace DimensionBrawl.Editor
             if (hud.StageProfileForReview != profile)
             {
                 throw new InvalidOperationException($"{hud.name}.StageProfileForReview is not bound to {profile.name}.");
+            }
+
+            if (!cameraCueBridge.enabled)
+            {
+                throw new InvalidOperationException($"{cameraCueBridge.name} must keep the pocket camera cue bridge enabled.");
             }
 
             ValidateString(overlayHud, "retrySceneName", "ActionFoundationFrontlineMotivationReview");

@@ -3737,6 +3737,8 @@ MonoBehaviour:
   followupWindowAnchor: {fileID: 85052602}
   followupHitAnchor: {fileID: 1426401972}
   followupMissedAnchor: {fileID: 1228450371}
+  counterWaveAnchor: {fileID: 0}
+  counterWaveStabilizedAnchor: {fileID: 0}
   pocketClearAnchor: {fileID: 1426401972}
   pocketFailAnchor: {fileID: 1228450371}
   directionTarget: {fileID: 1426401972}
@@ -3744,8 +3746,12 @@ MonoBehaviour:
   windowIntensity: 1.15
   hitIntensity: 1.18
   missedIntensity: 0.85
+  counterWaveIntensity: 0.94
+  counterWaveStabilizedIntensity: 0.88
   pocketClearIntensity: 0.92
   pocketFailIntensity: 1.02
+  counterWaveCueId: 15
+  counterWaveStabilizedCueId: 24
   pocketFailAccentCueId: 9
   pocketFailAccentIntensity: 0.88
   tierIntensityStep: 0.12
@@ -3756,7 +3762,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 132563470}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3f0d5ee2af4340f7b9e6f2f12b2e4a45, type: 3}
   m_Name: 

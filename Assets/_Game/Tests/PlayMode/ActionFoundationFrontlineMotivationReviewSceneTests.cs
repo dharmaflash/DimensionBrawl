@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Reflection;
 using DimensionBrawl.Combat;
+using DimensionBrawl.Enemies;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.Player;
@@ -24,6 +25,11 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_FrontlineWaveStage_MotivationReview.asset";
         private const string PocketOwnerRootName = "BossBarrageLaneReview_PocketOwner";
         private const string HudRootName = "BossBarrageLaneReview_DebugHud";
+        private const string LaneRootName = "BossBarrageLaneReview_SummonLaneSpace";
+        private const string BossRootName = "BossBarrageLaneReview_BossProxy_NeedleLock";
+        private const string CloseThreatRootName = "BossBarrageLaneReview_CloseThreat_ClosePunish";
+        private const string RangedBasicProjectilePrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_PlayerRangedBasicProjectile_AimBolt.prefab";
 
         [Test]
         public void PremiumHudLayoutAvoidsPrimaryPanelOverlapAcrossReviewViewports()
@@ -454,6 +460,147 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator FrontlineGuidedPlayerActionFlowClearsAsCleanRoute()
+        {
+            EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
+            yield return null;
+
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            PlayerCombatModeController combatModeController =
+                RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
+            PlayerRangedAimController aimController =
+                RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
+            PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
+            SummonEnergyLadder energyLadder =
+                RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
+            PlayerSummonSlot1Action summonSlot1Action =
+                RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            ActionCameraCueDriver cameraCueDriver =
+                RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
+            BossBarragePocketVfxCueBridge pocketVfxCueBridge =
+                RequireComponent<BossBarragePocketVfxCueBridge>(RequireRoot(PocketOwnerRootName), "pocket VFX cue bridge");
+            BossBarrageLaneReviewHud reviewHud =
+                RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "review HUD");
+            ActionScreenCuePresenter screenCuePresenter =
+                RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "screen cue presenter");
+            GameObject bossRoot = RequireRoot(BossRootName);
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
+            Collider bossHitCollider = RequireCombatHitCollider(bossRoot, bossHealth, "boss proxy");
+            GameObject closeThreatRoot = RequireRoot(CloseThreatRootName);
+            CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreatRoot, "close threat health");
+            Collider closeThreatCollider = RequireCombatHitCollider(closeThreatRoot, closeThreatHealth, "close threat");
+            BasicSoldierEnemy closeThreatEnemy = closeThreatRoot.GetComponent<BasicSoldierEnemy>();
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket owner");
+
+            if (closeThreatEnemy != null)
+            {
+                closeThreatEnemy.enabled = false;
+            }
+
+            combatModeController.SetRangedMode();
+            aimController.SetAimHeld(true);
+            float guidedLaneZ = Mathf.Lerp(laneSpace.BackLimitZ, laneSpace.ForwardBoundaryZ, 0.4f);
+            player.transform.position = laneSpace.GetLaneWorldPoint(0f, guidedLaneZ, player.transform.position.y);
+            targetSelector.NotifyTargetContact(closeThreatHealth);
+            targetSelector.RefreshTarget();
+            Physics.SyncTransforms();
+            yield return WaitSeconds(0.22f);
+
+            int closeThreatShotCount = 0;
+            float closeThreatAttackSeconds = 0f;
+            float fireIntervalSeconds = GetFloat(rangedBasicAttackAction, "fireIntervalSeconds");
+            while (closeThreatHealth.IsAlive && closeThreatShotCount < 10)
+            {
+                Assert.IsTrue(
+                    rangedBasicAttackAction.TryFire(),
+                    "The Frontline review should start with actual ranged basic fire against the local close threat.");
+                LaneActionProjectile closeThreatShot = RequireActivePlayerRangedProjectile();
+                Assert.IsTrue(
+                    closeThreatShot.TryApplyImpact(closeThreatCollider, closeThreatShot.transform.position),
+                    "The close threat should fall through the real projectile impact path.");
+                closeThreatShotCount++;
+
+                if (closeThreatHealth.IsAlive)
+                {
+                    yield return WaitSeconds(fireIntervalSeconds + 0.02f);
+                    closeThreatAttackSeconds += fireIntervalSeconds + 0.02f;
+                }
+            }
+
+            Assert.IsFalse(closeThreatHealth.IsAlive);
+            Assert.That(
+                closeThreatShotCount,
+                Is.InRange(3, 6),
+                "The local threat should take a short burst, not a single accidental hit or a long attrition string.");
+            pocketOwner.Tick(0f);
+            Assert.IsTrue(pocketOwner.CloseThreatDefeated);
+            Assert.IsTrue(pocketOwner.IsSummonBlockOpportunityCueActive);
+            Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("decision:prepare_summon(cue_window)"));
+
+            float energyReadySeconds = TickEnergyToTier(energyLadder, 1, 0.25f);
+            float reliefSeconds = pocketOwner.PressureReliefRemainingSeconds + 0.02f;
+            pocketOwner.Tick(reliefSeconds);
+            Assert.IsTrue(pocketOwner.IsAwaitingSummonPressureBlock);
+            Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("decision:summon_now(boss_curtain)"));
+
+            Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
+            Assert.Greater(summonSlot1Action.ActivePressureScreenCount, 0);
+            SummonPressureScreen activeScreen = RequireActiveAllyPressureScreen();
+            Assert.IsTrue(emitter.BeginWindup());
+            Assert.Greater(emitter.FirePendingWave(), 0);
+            BossBarrageProjectile bossProjectile = RequireActiveBossProjectile();
+            Assert.IsTrue(activeScreen.TryIntercept(bossProjectile));
+
+            int followupWindowCueCountBefore = cameraCueDriver.SummonFollowupWindowCueRequestCount;
+            int followupWindowVfxCountBefore = pocketVfxCueBridge.FollowupWindowCueRequestCount;
+            pocketOwner.Tick(0f);
+            Assert.IsTrue(pocketOwner.BlockedBossPressureWithSummon);
+            Assert.IsTrue(pocketOwner.IsSummonFollowupWindowActive);
+            Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("decision:confirm(followup_window)"));
+            Assert.AreEqual(followupWindowCueCountBefore + 1, cameraCueDriver.SummonFollowupWindowCueRequestCount);
+            Assert.AreEqual(followupWindowVfxCountBefore + 1, pocketVfxCueBridge.FollowupWindowCueRequestCount);
+            Assert.IsTrue(energyLadder.CanSpend);
+
+            targetSelector.NotifyTargetContact(bossHealth);
+            targetSelector.RefreshTarget();
+            Assert.IsTrue(skill1Action.TryUseSkill1());
+            LaneActionProjectile followupProjectile = RequireActivePlayerSkillProjectile();
+            Assert.IsTrue(followupProjectile.TryApplyImpact(bossHitCollider, followupProjectile.transform.position));
+            pocketOwner.Tick(0f);
+
+            int resultCueCountBeforeClear = screenCuePresenter.ResultCueRequestCount;
+            int pocketClearVfxCueCountBefore = pocketVfxCueBridge.PocketClearCueRequestCount;
+            pocketOwner.Tick(0.77f);
+
+            float guidedSuccessSeconds = closeThreatAttackSeconds
+                + energyReadySeconds
+                + reliefSeconds
+                + GetFloat(pocketOwner, "skill1FollowupClearDelaySeconds");
+            Assert.That(guidedSuccessSeconds, Is.InRange(8f, 12.8f));
+            Assert.IsTrue(pocketOwner.IsCleared);
+            Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.Cleared, pocketOwner.CurrentPhase);
+            Assert.AreEqual(resultCueCountBeforeClear + 1, screenCuePresenter.ResultCueRequestCount);
+            Assert.AreEqual("Pocket.Cleared", screenCuePresenter.LastCueId);
+            Assert.AreEqual(pocketClearVfxCueCountBefore + 1, pocketVfxCueBridge.PocketClearCueRequestCount);
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Summon follow-up"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("decision:clean_clear(clean_followup)"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter:avoided(none)"));
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Summon route analyzed"));
+
+            if (closeThreatEnemy != null)
+            {
+                closeThreatEnemy.enabled = true;
+            }
+        }
+
+        [UnityTest]
         public IEnumerator FrontlineRouteStabilityCollapseFailsRouteWithoutPlayerDefeat()
         {
             EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
@@ -552,6 +699,103 @@ namespace DimensionBrawl.Tests
             return component;
         }
 
+        private static T RequireObject<T>() where T : Component
+        {
+            T[] found = UnityEngine.Object.FindObjectsByType<T>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            Assert.AreEqual(1, found.Length, $"Expected exactly one {typeof(T).Name} in the review scene.");
+            return found[0];
+        }
+
+        private static Collider RequireCombatHitCollider(GameObject root, CombatHealth expectedHealth, string label)
+        {
+            Collider[] colliders = root.GetComponentsInChildren<Collider>(includeInactive: true);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                if (colliders[i] != null && colliders[i].GetComponentInParent<CombatHealth>() == expectedHealth)
+                {
+                    return colliders[i];
+                }
+            }
+
+            Assert.Fail($"{label} should expose at least one child collider under its CombatHealth root.");
+            return null;
+        }
+
+        private static LaneActionProjectile RequireActivePlayerSkillProjectile()
+        {
+            LaneActionProjectile[] projectiles = UnityEngine.Object.FindObjectsByType<LaneActionProjectile>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < projectiles.Length; i++)
+            {
+                if (projectiles[i].IsActive && projectiles[i].SourceTeam == DamageTeam.Player)
+                {
+                    return projectiles[i];
+                }
+            }
+
+            Assert.Fail("Expected an active Player Skill1 projectile.");
+            return null;
+        }
+
+        private static LaneActionProjectile RequireActivePlayerRangedProjectile()
+        {
+            LaneActionProjectile[] projectiles = UnityEngine.Object.FindObjectsByType<LaneActionProjectile>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            GameObject expectedPrefab = LoadAsset<GameObject>(RangedBasicProjectilePrefabPath);
+            float expectedRadius = expectedPrefab.transform.localScale.x;
+
+            for (int i = 0; i < projectiles.Length; i++)
+            {
+                if (projectiles[i].IsActive
+                    && projectiles[i].SourceTeam == DamageTeam.Player
+                    && Mathf.Abs(projectiles[i].transform.localScale.x - expectedRadius) < 0.001f)
+                {
+                    return projectiles[i];
+                }
+            }
+
+            Assert.Fail("Expected an active Player ranged basic projectile.");
+            return null;
+        }
+
+        private static SummonPressureScreen RequireActiveAllyPressureScreen()
+        {
+            SummonPressureScreen[] pressureScreens = UnityEngine.Object.FindObjectsByType<SummonPressureScreen>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < pressureScreens.Length; i++)
+            {
+                if (pressureScreens[i].IsActive && pressureScreens[i].OwnerTeam == DamageTeam.AllySummon)
+                {
+                    return pressureScreens[i];
+                }
+            }
+
+            Assert.Fail("Expected an active AllySummon pressure screen.");
+            return null;
+        }
+
+        private static BossBarrageProjectile RequireActiveBossProjectile()
+        {
+            BossBarrageProjectile[] projectiles = UnityEngine.Object.FindObjectsByType<BossBarrageProjectile>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < projectiles.Length; i++)
+            {
+                if (projectiles[i].IsActive)
+                {
+                    return projectiles[i];
+                }
+            }
+
+            Assert.Fail("Expected an active boss barrage projectile.");
+            return null;
+        }
+
         private static SummonFrontlineProxy CreateActiveFrontlineProxy(string objectName, DamageTeam team)
         {
             GameObject proxyObject = new GameObject(objectName);
@@ -585,6 +829,46 @@ namespace DimensionBrawl.Tests
         {
             FieldInfo field = RequireField(target.GetType(), fieldName);
             field.SetValue(target, value);
+        }
+
+        private static float TickEnergyToTier(SummonEnergyLadder energyLadder, int targetTier, float stepSeconds)
+        {
+            float elapsedSeconds = 0f;
+            float safeStepSeconds = Mathf.Max(0.01f, stepSeconds);
+            for (int i = 0; i < 240 && energyLadder.AvailableTier < targetTier; i++)
+            {
+                energyLadder.Tick(safeStepSeconds);
+                elapsedSeconds += safeStepSeconds;
+            }
+
+            Assert.GreaterOrEqual(
+                energyLadder.AvailableTier,
+                targetTier,
+                $"Energy ladder should reach tier {targetTier} during the guided frontline flow.");
+            return elapsedSeconds;
+        }
+
+        private static IEnumerator WaitSeconds(float seconds)
+        {
+            float remaining = seconds;
+            while (remaining > 0f)
+            {
+                yield return null;
+                remaining -= Time.deltaTime;
+            }
+        }
+
+        private static T LoadAsset<T>(string path) where T : UnityEngine.Object
+        {
+            T asset = AssetDatabase.LoadAssetAtPath<T>(path);
+            Assert.NotNull(asset, $"Missing asset {path}.");
+            return asset;
+        }
+
+        private static float GetFloat(UnityEngine.Object target, string fieldName)
+        {
+            FieldInfo field = RequireField(target.GetType(), fieldName);
+            return (float)field.GetValue(target);
         }
 
         private static FieldInfo RequireField(Type type, string fieldName)
