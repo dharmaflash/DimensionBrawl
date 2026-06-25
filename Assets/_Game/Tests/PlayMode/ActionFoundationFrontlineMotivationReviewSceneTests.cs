@@ -283,6 +283,17 @@ namespace DimensionBrawl.Tests
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "screen cue presenter");
             BossBarragePocketVfxCueBridge pocketVfxCueBridge =
                 RequireComponent<BossBarragePocketVfxCueBridge>(RequireRoot(PocketOwnerRootName), "pocket VFX cue bridge");
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            SummonEnergyLadder energyLadder =
+                RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
+            PlayerSummonSlot1Action summonSlot1Action =
+                RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            GameObject bossRoot = RequireRoot(BossRootName);
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
+            Collider bossHitCollider = RequireCombatHitCollider(bossRoot, bossHealth, "boss proxy");
             FrontlineWaveStageProfile stageProfile =
                 AssetDatabase.LoadAssetAtPath<FrontlineWaveStageProfile>(StageProfilePath);
             Assert.NotNull(stageProfile);
@@ -299,8 +310,23 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("none", pocketOwner.CounterWaveFinalWindowReadout);
 
             SetField(pocketOwner, "closeThreatDefeated", true);
-            SetField(pocketOwner, "usedSummonSlot1", true);
-            SetField(pocketOwner, "blockedBossPressureWithSummon", true);
+            TickEnergyToTier(energyLadder, 1, 0.25f);
+            Assert.IsTrue(
+                summonSlot1Action.TryUseSummonSlot1(),
+                "Counter recovery setup should still enter through the real SummonSlot1 action.");
+            Assert.Greater(summonSlot1Action.ActivePressureScreenCount, 0);
+            SummonPressureScreen openingScreen = RequireActiveAllyPressureScreen();
+            Assert.IsTrue(emitter.BeginWindup());
+            Assert.Greater(emitter.FirePendingWave(), 0);
+            BossBarrageProjectile openingProjectile = RequireActiveBossProjectile();
+            Assert.IsTrue(
+                openingScreen.TryIntercept(openingProjectile),
+                "The initial route break should be recorded from a real summon pressure screen intercept.");
+            pocketOwner.Tick(0f);
+            Assert.IsTrue(pocketOwner.UsedSummonSlot1);
+            Assert.IsTrue(pocketOwner.BlockedBossPressureWithSummon);
+            DeactivateActiveFrontlineProxies(DamageTeam.AllySummon);
+
             SummonFrontlineProxy enemyProxy = CreateActiveFrontlineProxy("Test_CounterWave_EnemyProxy", DamageTeam.Enemy);
             int counterCueCountBeforeEnemy = screenCuePresenter.CounterWaveCueRequestCount;
             int counterVfxCueCountBeforeEnemy = pocketVfxCueBridge.CounterWaveCueRequestCount;
@@ -339,12 +365,19 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(CombatVfxCueId.EnemyLinePressureActive, pocketVfxCueBridge.CounterWaveCueId);
 
             float stabilityBeforeAnswer = pocketOwner.RouteStability01;
-            SummonFrontlineProxy allyProxy = CreateActiveFrontlineProxy("Test_CounterWave_AllyProxy", DamageTeam.AllySummon);
+            TickEnergyToTier(energyLadder, 1, 0.25f);
+            int summonUseCountBeforeCounterAnswer = summonSlot1Action.TotalUseCount;
+            Assert.IsTrue(
+                summonSlot1Action.TryUseSummonSlot1(),
+                "Counter wave recovery should be answered by the real SummonSlot1 action.");
+            Assert.Greater(summonSlot1Action.TotalUseCount, summonUseCountBeforeCounterAnswer);
+            Assert.Greater(summonSlot1Action.ActiveSummonActorCount, 0);
             int counterAnswerCueCountBeforeAlly = screenCuePresenter.CounterWaveAnswerCueRequestCount;
             int followupCueCountBeforeAlly = screenCuePresenter.FollowupCueRequestCount;
             int counterStabilizedVfxCueCountBeforeAlly = pocketVfxCueBridge.CounterWaveStabilizedCueRequestCount;
             pocketOwner.Tick(0f);
 
+            Assert.Greater(pocketOwner.ActiveAllyFrontlineProxyCount, 0);
             Assert.IsTrue(pocketOwner.IsCounterWaveStabilized);
             Assert.IsTrue(pocketOwner.IsCounterWaveFinalWindowOpened);
             Assert.AreEqual("stabilized", pocketOwner.CounterWaveAnswerState);
@@ -373,17 +406,14 @@ namespace DimensionBrawl.Tests
                 counterStabilizedVfxCueCountBeforeAlly);
             Assert.AreEqual(CombatVfxCueId.EliteShieldSignal, pocketVfxCueBridge.CounterWaveStabilizedCueId);
 
-            CombatHealth bossHealth = GetObjectReference<CombatHealth>(pocketOwner, "bossHealth");
-            Assert.NotNull(bossHealth, "Counter path clear needs the pocket owner's boss damage observer.");
             float bossHealthBeforeFinalHit = bossHealth.CurrentHealth;
-            SetField(pocketOwner, "skillUsesAtSummonBreakStart", -1);
-            Assert.IsTrue(bossHealth.TryApplyDamage(new DamageInfo(
-                null,
-                DamageTeam.Player,
-                75f,
-                bossHealth.transform.position,
-                Vector3.forward,
-                0f)));
+            targetSelector.NotifyTargetContact(bossHealth);
+            targetSelector.RefreshTarget();
+            Assert.IsTrue(
+                skill1Action.TryUseSkill1(),
+                "Counter recovery should end through the real Skill1 action.");
+            LaneActionProjectile finalFollowupProjectile = RequireActivePlayerSkillProjectile();
+            Assert.IsTrue(finalFollowupProjectile.TryApplyImpact(bossHitCollider, finalFollowupProjectile.transform.position));
             Assert.Less(bossHealth.CurrentHealth, bossHealthBeforeFinalHit);
             pocketOwner.Tick(1f);
 
@@ -399,7 +429,6 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter_window:opened(final_followup)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("decision:recovery_clear(counter_recovery)"));
 
-            allyProxy.Deactivate(SummonFrontlineProxyExitReason.Recalled);
             enemyProxy.Deactivate(SummonFrontlineProxyExitReason.Recalled);
         }
 
@@ -806,6 +835,21 @@ namespace DimensionBrawl.Tests
             proxy.ConfigureHealth(health);
             proxy.Activate(Vector3.zero, Vector3.forward, 1, 10f, 1f);
             return proxy;
+        }
+
+        private static void DeactivateActiveFrontlineProxies(DamageTeam team)
+        {
+            SummonFrontlineProxy[] proxies = UnityEngine.Object.FindObjectsByType<SummonFrontlineProxy>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < proxies.Length; i++)
+            {
+                CombatHealth health = proxies[i].Health;
+                if (proxies[i].IsActive && health != null && health.Team == team)
+                {
+                    proxies[i].Deactivate(SummonFrontlineProxyExitReason.Recalled);
+                }
+            }
         }
 
         private static T GetObjectReference<T>(UnityEngine.Object target, string fieldName)

@@ -677,6 +677,13 @@ namespace DimensionBrawl.Presentation
                 return $"Goal: Line collapsed {ResolvePocketProgressText()}";
             }
 
+            if (pocketReviewOwner.IsCounterWaveCompletionRecorded
+                && !pocketReviewOwner.IsCounterWaveStabilized
+                && !pocketReviewOwner.Skill1FollowupHitConfirmed)
+            {
+                return $"{ResolvePocketStepPrefix()}: Hold counter wave";
+            }
+
             if (pocketReviewOwner.IsSkill1FollowupClearCountdownActive)
             {
                 return $"{ResolvePocketStepPrefix()}: Confirm summon route {pocketReviewOwner.Skill1FollowupClearRemainingSeconds:0.0}s";

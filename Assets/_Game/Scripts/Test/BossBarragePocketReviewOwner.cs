@@ -255,6 +255,7 @@ namespace DimensionBrawl.Test
                     PocketState.Cleared => ReviewPhase.Cleared,
                     PocketState.Failed => ReviewPhase.Failed,
                     _ when IsSkill1FollowupClearCountdownActive => ReviewPhase.SummonFollowup,
+                    _ when counterWaveObserved && !counterWaveStabilized => ReviewPhase.CounterWave,
                     _ when pressurePacing.IsSummonFollowupWindowActive => ReviewPhase.SummonFollowup,
                     _ when pressurePacing.IsSummonPressureBreakActive => ReviewPhase.PressureBreak,
                     _ when counterWaveObserved => ReviewPhase.CounterWave,
@@ -279,6 +280,11 @@ namespace DimensionBrawl.Test
                     return ResolveStageText(
                         stageProfile != null ? stageProfile.FailObjectiveCue : null,
                         "Player line collapsed before route stabilization");
+                }
+
+                if (counterWaveObserved && !counterWaveStabilized)
+                {
+                    return $"{ResolveCounterWaveCue()}: {ResolveObjectiveSummonAnswerLabel()}";
                 }
 
                 if (pressurePacing.IsSummonFollowupWindowActive || usedSkill1DuringSummonFollowup)
@@ -1490,6 +1496,11 @@ namespace DimensionBrawl.Test
             if (skill1FollowupHitConfirmed)
             {
                 return 5;
+            }
+
+            if (counterWaveObserved && !counterWaveStabilized)
+            {
+                return 4;
             }
 
             if (pressurePacing.IsSummonFollowupWindowActive || usedSkill1DuringSummonFollowup)
