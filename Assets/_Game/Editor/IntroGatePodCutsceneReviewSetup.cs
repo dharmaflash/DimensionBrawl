@@ -49,6 +49,16 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Art/VFX/UNI VFX/Realistic Explosions, Fire & Smoke/Prefabs/UNI_Gas_Fire.prefab";
         private const string UniLongSmokePrefabPath =
             "Assets/_Game/Art/VFX/UNI VFX/Realistic Explosions, Fire & Smoke/Prefabs/UNI_Long_Smoke.prefab";
+        private const string UniDeviceFirePrefabPath =
+            "Assets/_Game/Art/VFX/UNI VFX/Realistic Explosions, Fire & Smoke/Prefabs/UNI_Device_Fire.prefab";
+        private const string UniSmallFirePrefabPath =
+            "Assets/_Game/Art/VFX/UNI VFX/Realistic Explosions, Fire & Smoke/Prefabs/UNI_Small_Fire.prefab";
+        private const string UniHighExplosionTexturePath =
+            "Assets/_Game/Art/VFX/UNI VFX/Realistic Explosions, Fire & Smoke/Textures/uni_high_explosion.tga";
+        private const string UniSmokeBigTexturePath =
+            "Assets/_Game/Art/VFX/UNI VFX/Realistic Explosions, Fire & Smoke/Textures/uni_smoke_big.tga";
+        private const string UniSmallFireballsTexturePath =
+            "Assets/_Game/Art/VFX/UNI VFX/Realistic Explosions, Fire & Smoke/Textures/uni_smallfireballs.tga";
 
         private const string SceneRootName = "IntroGatePodReview_Root";
         private const string StageRootName = "IntroGatePodReview_StageRoot";
@@ -56,6 +66,9 @@ namespace DimensionBrawl.Editor
         private const string InvasionBridgeRootName = "IntroGatePodReview_InvasionBridge";
         private const string InvasionCommandoGroupName = "IntroGatePodReview_CommandoRunGroup";
         private const string InvasionExplosionRootName = "IntroGatePodReview_HeavenBackgroundExplosion";
+        private const string InvasionScreenEffectRootName = "IntroGatePodReview_InvasionScreenEffects";
+        private const string InvasionImpactFlashGroupName = "IntroGatePodReview_InvasionImpactFlash";
+        private const string InvasionWarningSweepGroupName = "IntroGatePodReview_InvasionWarningSweep";
         private const string InoriPlacementRootName = "IntroGatePodReview_InoriPlacement";
         private const string InoriRootName = "IntroGatePodReview_Inori";
         private const string RunnerRootName = "IntroGatePodReview_Runner";
@@ -94,6 +107,12 @@ namespace DimensionBrawl.Editor
         private const string StageStoneMaterialPath = MaterialRoot + "/DB_GatePodReview_HeavenStone.mat";
         private const string StageWarningMaterialPath = MaterialRoot + "/DB_GatePodReview_InvasionWarning.mat";
         private const string StageGoldMaterialPath = MaterialRoot + "/DB_GatePodReview_GoldTrim.mat";
+        private const string InvasionExplosionBillboardMaterialPath =
+            MaterialRoot + "/DB_GatePodReview_UniHighExplosionBillboard.mat";
+        private const string InvasionSmokeBillboardMaterialPath =
+            MaterialRoot + "/DB_GatePodReview_UniSmokeBillboard.mat";
+        private const string InvasionSparkBillboardMaterialPath =
+            MaterialRoot + "/DB_GatePodReview_UniSparkBillboard.mat";
         private const string PodAlbedoTexturePath = TextureRoot + "/pods.psd";
         private const string PodEmissionTexturePath = TextureRoot + "/pods_L.psd";
         private const string VoiceRoot = "Assets/_Game/Art/Audio/Voice/Cinematics/IntroGatePod";
@@ -124,6 +143,18 @@ namespace DimensionBrawl.Editor
             new Vector3(-4.02049f, 0.9818602f, -0.5965308f);
         private static readonly Quaternion FirstPersonViewMarkerRotation =
             new Quaternion(-0.020559791f, -0.6982825f, 0.020178175f, -0.7152425f);
+
+        private readonly struct InvasionScreenEffectBindings
+        {
+            public InvasionScreenEffectBindings(CanvasGroup impactFlashGroup, CanvasGroup warningSweepGroup)
+            {
+                ImpactFlashGroup = impactFlashGroup;
+                WarningSweepGroup = warningSweepGroup;
+            }
+
+            public CanvasGroup ImpactFlashGroup { get; }
+            public CanvasGroup WarningSweepGroup { get; }
+        }
 
         [MenuItem("DimensionBrawl/Cinematics/Reapply Intro GatePod Review Scene")]
         public static void ReapplyReviewSceneMenu()
@@ -168,6 +199,22 @@ namespace DimensionBrawl.Editor
         {
             BuildResubmissionCinematicAnimationSetup.RebuildInoriCinematicP0Animations();
             FixInoriRotationDrift();
+        }
+
+        [MenuItem("DimensionBrawl/Cinematics/Polish Existing Intro GatePod Invasion Bridge")]
+        public static void PolishExistingInvasionBridgeMenu()
+        {
+            BackupExistingReviewAuthoringFiles("manual-polish");
+            PolishExistingInvasionBridge();
+            Debug.Log("Polished existing intro GatePod invasion bridge without regenerating the review scene.");
+        }
+
+        public static void RunBatchPolishExistingInvasionBridgeCaptureAndValidation()
+        {
+            BackupExistingReviewAuthoringFiles("batch-polish");
+            PolishExistingInvasionBridge();
+            CaptureReviewSamples();
+            ValidateReviewScene();
         }
 
         private static void EnsureReviewScene()
@@ -223,7 +270,7 @@ namespace DimensionBrawl.Editor
                 inoriAnimator,
                 fadeOverlay);
             IntroGatePodInvasionBridgeCue invasionBridgeCue =
-                CreateInvasionBridge(scene, root.transform, timelineDirector);
+                CreateInvasionBridge(scene, root.transform, timelineDirector, cameraController.GetComponent<Camera>());
             CreateFirstPersonRendererMask(scene, root.transform, timelineDirector, inori);
             CinematicSequenceRunner runner = CreateRunner(scene, profile, inori, inoriAnimator, expressionPlayer, cameraController);
             ApplyProfileSample(runner, profile, 0.1f);
@@ -235,6 +282,443 @@ namespace DimensionBrawl.Editor
             EditorSceneManager.SaveScene(scene, ReviewScenePath);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+        }
+
+        private static void BackupExistingReviewAuthoringFiles(string label)
+        {
+            string stamp = DateTime.Now.ToString("yyyyMMdd-HHmmss");
+            string backupDirectory = $"C:/tmp/DimensionBrawl-IntroGatePod-{label}-{stamp}";
+            Directory.CreateDirectory(backupDirectory);
+            CopyAuthoringFileIfExists(ReviewScenePath, backupDirectory);
+            CopyAuthoringFileIfExists(ReviewScenePath + ".meta", backupDirectory);
+            CopyAuthoringFileIfExists(TimelinePath, backupDirectory);
+            CopyAuthoringFileIfExists(TimelinePath + ".meta", backupDirectory);
+            CopyAuthoringFileIfExists(ProfilePath, backupDirectory);
+            CopyAuthoringFileIfExists(ProfilePath + ".meta", backupDirectory);
+            Debug.Log($"Backed up intro GatePod authoring files to {backupDirectory}.");
+        }
+
+        private static void CopyAuthoringFileIfExists(string assetPath, string backupDirectory)
+        {
+            if (!File.Exists(assetPath))
+            {
+                return;
+            }
+
+            File.Copy(assetPath, Path.Combine(backupDirectory, Path.GetFileName(assetPath)), overwrite: true);
+        }
+
+        private static void PolishExistingInvasionBridge()
+        {
+            AssetDatabase.Refresh();
+            Scene scene = EditorSceneManager.OpenScene(ReviewScenePath, OpenSceneMode.Single);
+            GameObject root = FindRootOrDescendant(scene, SceneRootName)
+                ?? throw new InvalidOperationException($"Missing {SceneRootName} in existing review scene.");
+            IntroGatePodInvasionBridgeCue invasionBridgeCue =
+                FindComponentInScene<IntroGatePodInvasionBridgeCue>(scene)
+                ?? throw new InvalidOperationException("Missing existing IntroGatePodInvasionBridgeCue.");
+            Camera camera = FindComponentInScene<Camera>(scene)
+                ?? throw new InvalidOperationException("Missing review Camera for invasion camera impact.");
+
+            GameObject explosionRoot = invasionBridgeCue.ExplosionRoot
+                ?? FindRootOrDescendant(scene, InvasionExplosionRootName);
+            if (explosionRoot == null)
+            {
+                throw new InvalidOperationException($"Missing {InvasionExplosionRootName} in existing review scene.");
+            }
+
+            EnsureInvasionExplosionVfx(scene, explosionRoot.transform);
+            InvasionScreenEffectBindings screenEffects =
+                CreateInvasionScreenEffectOverlay(scene, root.transform);
+            invasionBridgeCue.ConfigurePresentation(
+                camera,
+                screenEffects.ImpactFlashGroup,
+                screenEffects.WarningSweepGroup,
+                2.65f,
+                0.42f,
+                0.62f,
+                0.78f,
+                new Vector3(0.060f, 0.044f, 0.012f),
+                new Vector3(1.55f, 2.15f, 0.72f),
+                0.78f);
+            SetFloat(invasionBridgeCue, "explosionDurationSeconds", 1.42f);
+            SetVector3(invasionBridgeCue, "explosionRestScale", Vector3.one * 0.10f);
+            SetVector3(invasionBridgeCue, "explosionPeakScale", new Vector3(1.18f, 0.78f, 1.18f));
+            SetFloat(invasionBridgeCue, "explosionPeakLightIntensity", 8.6f);
+
+            EnsureInvasionFadeCues(scene);
+            EnsureTimelineInvasionFadeClips();
+
+            EditorUtility.SetDirty(invasionBridgeCue);
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
+        private static void EnsureInvasionExplosionVfx(Scene scene, Transform explosionRoot)
+        {
+            EnsureVfxChild(
+                scene,
+                explosionRoot,
+                UniGasFirePrefabPath,
+                "UNI_Gas_Fire_BackgroundBurst",
+                Vector3.zero,
+                Quaternion.identity,
+                Vector3.one * 1.32f);
+            EnsureVfxChild(
+                scene,
+                explosionRoot,
+                UniLongSmokePrefabPath,
+                "UNI_Long_Smoke_BackgroundBurst",
+                new Vector3(0f, 0.14f, 0.06f),
+                Quaternion.Euler(-8f, 0f, 0f),
+                Vector3.one * 1.12f);
+            EnsureVfxChild(
+                scene,
+                explosionRoot,
+                UniDeviceFirePrefabPath,
+                "UNI_Device_Fire_ImpactCore",
+                new Vector3(-0.04f, -0.02f, -0.02f),
+                Quaternion.Euler(0f, 0f, -8f),
+                Vector3.one * 0.72f);
+            EnsureVfxChild(
+                scene,
+                explosionRoot,
+                UniSmallFirePrefabPath,
+                "UNI_Small_Fire_Sparks",
+                new Vector3(0.10f, 0.05f, 0.02f),
+                Quaternion.Euler(0f, 0f, 16f),
+                Vector3.one * 0.58f);
+            EnsureExplosionBillboard(
+                scene,
+                explosionRoot,
+                "UNI_HighExplosion_Billboard",
+                InvasionExplosionBillboardMaterialPath,
+                UniHighExplosionTexturePath,
+                new Vector3(-0.03f, 0.02f, -0.045f),
+                Quaternion.Euler(0f, 0f, -8f),
+                new Vector3(1.82f, 1.42f, 1f),
+                new Color(1f, 0.72f, 0.36f, 0.92f),
+                new Vector2(0.125f, 0.125f),
+                new Vector2(0.375f, 0.625f));
+            EnsureExplosionBillboard(
+                scene,
+                explosionRoot,
+                "UNI_SmokeBig_Billboard",
+                InvasionSmokeBillboardMaterialPath,
+                UniSmokeBigTexturePath,
+                new Vector3(0.10f, 0.10f, 0.02f),
+                Quaternion.Euler(0f, 0f, 11f),
+                new Vector3(2.55f, 1.88f, 1f),
+                new Color(0.42f, 0.36f, 0.34f, 0.54f),
+                new Vector2(0.125f, 0.125f),
+                new Vector2(0.250f, 0.625f));
+            EnsureExplosionBillboard(
+                scene,
+                explosionRoot,
+                "UNI_SmallFireballs_Billboard",
+                InvasionSparkBillboardMaterialPath,
+                UniSmallFireballsTexturePath,
+                new Vector3(-0.06f, -0.04f, -0.065f),
+                Quaternion.Euler(0f, 0f, 18f),
+                new Vector3(1.42f, 1.08f, 1f),
+                new Color(1f, 0.86f, 0.48f, 0.82f),
+                new Vector2(0.125f, 0.125f),
+                new Vector2(0.500f, 0.750f));
+        }
+
+        private static void EnsureVfxChild(
+            Scene scene,
+            Transform parent,
+            string prefabPath,
+            string name,
+            Vector3 localPosition,
+            Quaternion localRotation,
+            Vector3 localScale)
+        {
+            Transform child = FindDescendant(parent, name);
+            GameObject instance = child != null ? child.gameObject : null;
+            if (instance == null)
+            {
+                GameObject prefab = LoadAsset<GameObject>(prefabPath);
+                instance = PrefabUtility.InstantiatePrefab(prefab, parent) as GameObject;
+                if (instance == null)
+                {
+                    throw new InvalidOperationException($"Failed to instantiate VFX prefab at {prefabPath}.");
+                }
+
+                instance.name = name;
+            }
+
+            instance.transform.SetParent(parent, worldPositionStays: false);
+            instance.transform.localPosition = localPosition;
+            instance.transform.localRotation = localRotation;
+            instance.transform.localScale = localScale;
+            EditorUtility.SetDirty(instance);
+        }
+
+        private static void EnsureExplosionBillboard(
+            Scene scene,
+            Transform parent,
+            string name,
+            string materialPath,
+            string texturePath,
+            Vector3 localPosition,
+            Quaternion localRotation,
+            Vector3 localScale,
+            Color color,
+            Vector2 textureScale,
+            Vector2 textureOffset)
+        {
+            Transform child = FindDescendant(parent, name);
+            GameObject billboard = child != null ? child.gameObject : null;
+            if (billboard == null)
+            {
+                billboard = GameObject.CreatePrimitive(PrimitiveType.Quad);
+                billboard.name = name;
+                SceneManager.MoveGameObjectToScene(billboard, scene);
+                Collider collider = billboard.GetComponent<Collider>();
+                if (collider != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(collider);
+                }
+            }
+
+            billboard.transform.SetParent(parent, worldPositionStays: false);
+            billboard.transform.SetLocalPositionAndRotation(localPosition, localRotation);
+            billboard.transform.localScale = localScale;
+            Renderer renderer = billboard.GetComponent<Renderer>();
+            if (renderer != null)
+            {
+                renderer.sharedMaterial = LoadOrCreateTransparentTextureMaterial(
+                    materialPath,
+                    texturePath,
+                    color,
+                    textureScale,
+                    textureOffset);
+            }
+
+            EditorUtility.SetDirty(billboard);
+        }
+
+        private static InvasionScreenEffectBindings CreateInvasionScreenEffectOverlay(
+            Scene scene,
+            Transform parent)
+        {
+            GameObject existing = FindRootOrDescendant(scene, InvasionScreenEffectRootName);
+            if (existing != null)
+            {
+                UnityEngine.Object.DestroyImmediate(existing);
+            }
+
+            GameObject overlay = new GameObject(InvasionScreenEffectRootName, typeof(RectTransform));
+            SceneManager.MoveGameObjectToScene(overlay, scene);
+            overlay.transform.SetParent(parent, worldPositionStays: false);
+            ConfigureFullScreenRect(overlay.GetComponent<RectTransform>());
+
+            Canvas canvas = overlay.AddComponent<Canvas>();
+            canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+            canvas.sortingOrder = 31980;
+            CanvasScaler scaler = overlay.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = new Vector2(1920f, 1080f);
+            scaler.matchWidthOrHeight = 0.5f;
+
+            CanvasGroup warningSweepGroup = CreateScreenEffectGroup(
+                scene,
+                overlay.transform,
+                InvasionWarningSweepGroupName);
+            CreateScreenEffectImage(
+                scene,
+                warningSweepGroup.transform,
+                "IntroGatePodReview_InvasionWarningSweepBar",
+                new Color(1f, 0.05f, 0.10f, 0.62f),
+                new Vector2(0.5f, 0.60f),
+                new Vector2(2250f, 145f),
+                -13f);
+            CreateScreenEffectImage(
+                scene,
+                warningSweepGroup.transform,
+                "IntroGatePodReview_InvasionWarningSweepCore",
+                new Color(1f, 0.82f, 0.72f, 0.38f),
+                new Vector2(0.5f, 0.60f),
+                new Vector2(2250f, 28f),
+                -13f);
+
+            CanvasGroup impactFlashGroup = CreateScreenEffectGroup(
+                scene,
+                overlay.transform,
+                InvasionImpactFlashGroupName);
+            CreateScreenEffectImage(
+                scene,
+                impactFlashGroup.transform,
+                "IntroGatePodReview_InvasionImpactWarmFlash",
+                new Color(1f, 0.48f, 0.16f, 0.72f),
+                new Vector2(0.5f, 0.5f),
+                Vector2.zero,
+                0f);
+            CreateScreenEffectImage(
+                scene,
+                impactFlashGroup.transform,
+                "IntroGatePodReview_InvasionImpactWhiteCore",
+                new Color(1f, 0.92f, 0.72f, 0.42f),
+                new Vector2(0.47f, 0.52f),
+                new Vector2(1540f, 840f),
+                -6f);
+
+            EditorUtility.SetDirty(canvas);
+            EditorUtility.SetDirty(scaler);
+            return new InvasionScreenEffectBindings(impactFlashGroup, warningSweepGroup);
+        }
+
+        private static CanvasGroup CreateScreenEffectGroup(
+            Scene scene,
+            Transform parent,
+            string name)
+        {
+            GameObject groupObject = new GameObject(name, typeof(RectTransform));
+            SceneManager.MoveGameObjectToScene(groupObject, scene);
+            groupObject.transform.SetParent(parent, worldPositionStays: false);
+            ConfigureFullScreenRect(groupObject.GetComponent<RectTransform>());
+            CanvasGroup group = groupObject.AddComponent<CanvasGroup>();
+            group.alpha = 0f;
+            group.interactable = false;
+            group.blocksRaycasts = false;
+            EditorUtility.SetDirty(group);
+            return group;
+        }
+
+        private static void CreateScreenEffectImage(
+            Scene scene,
+            Transform parent,
+            string name,
+            Color color,
+            Vector2 anchor,
+            Vector2 sizeDelta,
+            float zRotation)
+        {
+            GameObject imageObject = new GameObject(name, typeof(RectTransform));
+            SceneManager.MoveGameObjectToScene(imageObject, scene);
+            imageObject.transform.SetParent(parent, worldPositionStays: false);
+            RectTransform rect = imageObject.GetComponent<RectTransform>();
+            if (sizeDelta == Vector2.zero)
+            {
+                ConfigureFullScreenRect(rect);
+            }
+            else
+            {
+                rect.anchorMin = anchor;
+                rect.anchorMax = anchor;
+                rect.pivot = new Vector2(0.5f, 0.5f);
+                rect.anchoredPosition = Vector2.zero;
+                rect.sizeDelta = sizeDelta;
+            }
+
+            rect.localRotation = Quaternion.Euler(0f, 0f, zRotation);
+            Image image = imageObject.AddComponent<Image>();
+            image.color = color;
+            image.raycastTarget = false;
+            EditorUtility.SetDirty(rect);
+            EditorUtility.SetDirty(image);
+        }
+
+        private static void ConfigureFullScreenRect(RectTransform rect)
+        {
+            rect.anchorMin = Vector2.zero;
+            rect.anchorMax = Vector2.one;
+            rect.offsetMin = Vector2.zero;
+            rect.offsetMax = Vector2.zero;
+            rect.pivot = new Vector2(0.5f, 0.5f);
+            rect.anchoredPosition = Vector2.zero;
+            rect.localScale = Vector3.one;
+        }
+
+        private static void EnsureInvasionFadeCues(Scene scene)
+        {
+            IntroGatePodCutsceneCueDirector cueDirector =
+                FindComponentInScene<IntroGatePodCutsceneCueDirector>(scene);
+            if (cueDirector == null)
+            {
+                return;
+            }
+
+            List<IntroGatePodCutsceneCueDirector.FadeCue> fadeCues =
+                new List<IntroGatePodCutsceneCueDirector.FadeCue>(cueDirector.FadeCues);
+            float explosionStartSeconds = ResolveInvasionExplosionStartSeconds(ResolveInvasionBridgeStartSeconds());
+            AddFadeCueIfMissing(
+                fadeCues,
+                "invasion_pre_impact_black_snap",
+                explosionStartSeconds - 0.075f,
+                0.075f,
+                0f,
+                0.58f);
+            AddFadeCueIfMissing(
+                fadeCues,
+                "invasion_impact_black_recover",
+                explosionStartSeconds,
+                0.24f,
+                0.58f,
+                0f);
+            cueDirector.Configure(
+                cueDirector.DollyCues,
+                cueDirector.VoiceCues,
+                fadeCues.ToArray(),
+                false,
+                true);
+            EditorUtility.SetDirty(cueDirector);
+        }
+
+        private static void AddFadeCueIfMissing(
+            List<IntroGatePodCutsceneCueDirector.FadeCue> fadeCues,
+            string cueId,
+            float startSeconds,
+            float durationSeconds,
+            float fromAlpha,
+            float toAlpha)
+        {
+            for (int i = 0; i < fadeCues.Count; i++)
+            {
+                if (string.Equals(fadeCues[i].CueId, cueId, StringComparison.Ordinal))
+                {
+                    return;
+                }
+            }
+
+            fadeCues.Add(new IntroGatePodCutsceneCueDirector.FadeCue(
+                cueId,
+                startSeconds,
+                durationSeconds,
+                fromAlpha,
+                toAlpha));
+        }
+
+        private static void EnsureTimelineInvasionFadeClips()
+        {
+            TimelineAsset timeline = LoadAsset<TimelineAsset>(TimelinePath);
+            IntroGatePodFadeTrack fadeTrack = FindTimelineTrack<IntroGatePodFadeTrack>(timeline, "Fade");
+            if (fadeTrack == null)
+            {
+                throw new InvalidOperationException("Timeline is missing the Fade track.");
+            }
+
+            float explosionStartSeconds = ResolveInvasionExplosionStartSeconds(ResolveInvasionBridgeStartSeconds());
+            EnsureFadeClip(
+                fadeTrack,
+                "Invasion Impact Blink In",
+                explosionStartSeconds - 0.075f,
+                0.075f,
+                0f,
+                0.58f);
+            EnsureFadeClip(
+                fadeTrack,
+                "Invasion Impact Blink Out",
+                explosionStartSeconds,
+                0.24f,
+                0.58f,
+                0f);
+            EditorUtility.SetDirty(fadeTrack);
+            EditorUtility.SetDirty(timeline);
         }
 
         private static CinematicSequenceProfile ConfigureProfile()
@@ -652,7 +1136,8 @@ namespace DimensionBrawl.Editor
         private static IntroGatePodInvasionBridgeCue CreateInvasionBridge(
             Scene scene,
             Transform parent,
-            PlayableDirector director)
+            PlayableDirector director,
+            Camera impactCamera)
         {
             GameObject bridgeRoot = new GameObject(InvasionBridgeRootName);
             SceneManager.MoveGameObjectToScene(bridgeRoot, scene);
@@ -734,8 +1219,21 @@ namespace DimensionBrawl.Editor
                 ResolveInvasionExplosionStartSeconds(startSeconds),
                 InvasionBridgeExplosionDurationSeconds,
                 Vector3.one * 0.10f,
-                new Vector3(0.92f, 0.64f, 0.92f),
-                5.2f);
+                new Vector3(1.18f, 0.78f, 1.18f),
+                8.6f);
+            InvasionScreenEffectBindings screenEffects =
+                CreateInvasionScreenEffectOverlay(scene, parent);
+            cue.ConfigurePresentation(
+                impactCamera,
+                screenEffects.ImpactFlashGroup,
+                screenEffects.WarningSweepGroup,
+                2.65f,
+                0.42f,
+                0.62f,
+                0.78f,
+                new Vector3(0.060f, 0.044f, 0.012f),
+                new Vector3(1.55f, 2.15f, 0.72f),
+                0.78f);
 
             EditorUtility.SetDirty(cue);
             return cue;
@@ -817,13 +1315,12 @@ namespace DimensionBrawl.Editor
             root.transform.localRotation = Quaternion.identity;
             root.transform.localScale = Vector3.one * 0.10f;
 
-            TryCreateVfxChild(scene, root.transform, UniGasFirePrefabPath, "UNI_Gas_Fire_BackgroundBurst", Vector3.zero, Vector3.one * 1.18f);
-            TryCreateVfxChild(scene, root.transform, UniLongSmokePrefabPath, "UNI_Long_Smoke_BackgroundBurst", new Vector3(0f, 0.12f, 0.04f), Vector3.one * 0.92f);
+            EnsureInvasionExplosionVfx(scene, root.transform);
 
             Light light = root.AddComponent<Light>();
             light.type = LightType.Point;
             light.color = new Color(1.0f, 0.42f, 0.16f, 1f);
-            light.range = 6.5f;
+            light.range = 7.6f;
             light.intensity = 0f;
 
             root.SetActive(false);
@@ -1945,6 +2442,22 @@ namespace DimensionBrawl.Editor
                 FirstPersonFadeInSeconds,
                 1f,
                 0f);
+            float invasionExplosionStartSeconds =
+                ResolveInvasionExplosionStartSeconds(ResolveInvasionBridgeStartSeconds());
+            CreateFadeClip(
+                fadeTrack,
+                "Invasion Impact Blink In",
+                invasionExplosionStartSeconds - 0.075f,
+                0.075f,
+                0f,
+                0.58f);
+            CreateFadeClip(
+                fadeTrack,
+                "Invasion Impact Blink Out",
+                invasionExplosionStartSeconds,
+                0.24f,
+                0.58f,
+                0f);
             EditorUtility.SetDirty(fadeTrack);
         }
 
@@ -1967,6 +2480,36 @@ namespace DimensionBrawl.Editor
                 asset.ToAlpha = toAlpha;
                 EditorUtility.SetDirty(asset);
             }
+        }
+
+        private static void EnsureFadeClip(
+            IntroGatePodFadeTrack track,
+            string displayName,
+            float startSeconds,
+            float durationSeconds,
+            float fromAlpha,
+            float toAlpha)
+        {
+            foreach (TimelineClip existingClip in track.GetClips())
+            {
+                if (string.Equals(existingClip.displayName, displayName, StringComparison.Ordinal))
+                {
+                    existingClip.start = Mathf.Max(0f, startSeconds);
+                    existingClip.duration = Mathf.Max(0.05f, durationSeconds);
+                    IntroGatePodFadeClip existingAsset = existingClip.asset as IntroGatePodFadeClip;
+                    if (existingAsset != null)
+                    {
+                        existingAsset.FromAlpha = fromAlpha;
+                        existingAsset.ToAlpha = toAlpha;
+                        EditorUtility.SetDirty(existingAsset);
+                    }
+
+                    EditorUtility.SetDirty(track);
+                    return;
+                }
+            }
+
+            CreateFadeClip(track, displayName, startSeconds, durationSeconds, fromAlpha, toAlpha);
         }
 
         private static SplineContainer CreateOpeningDollySpline(
@@ -2100,6 +2643,8 @@ namespace DimensionBrawl.Editor
 
             IntroGatePodCutsceneCueDirector cueDirector =
                 directorObject.AddComponent<IntroGatePodCutsceneCueDirector>();
+            float invasionExplosionStartSeconds =
+                ResolveInvasionExplosionStartSeconds(ResolveInvasionBridgeStartSeconds());
             cueDirector.Configure(
                 new[]
                 {
@@ -2131,6 +2676,18 @@ namespace DimensionBrawl.Editor
                         SourceC03CameraStartSeconds,
                         FirstPersonFadeInSeconds,
                         1f,
+                        0f),
+                    new IntroGatePodCutsceneCueDirector.FadeCue(
+                        "invasion_pre_impact_black_snap",
+                        invasionExplosionStartSeconds - 0.075f,
+                        0.075f,
+                        0f,
+                        0.58f),
+                    new IntroGatePodCutsceneCueDirector.FadeCue(
+                        "invasion_impact_black_recover",
+                        invasionExplosionStartSeconds,
+                        0.24f,
+                        0.58f,
                         0f)
                 },
                 false,
@@ -2253,6 +2810,14 @@ namespace DimensionBrawl.Editor
                 RenderTexture.active = renderTexture;
                 image.ReadPixels(new Rect(0f, 0f, 1280f, 720f), 0, 0);
                 image.Apply();
+                if (invasionBridgeCue != null)
+                {
+                    ApplyInvasionScreenEffectToCapture(
+                        image,
+                        invasionBridgeCue.CurrentImpactFlashAlpha,
+                        invasionBridgeCue.CurrentWarningSweepAlpha);
+                }
+
                 ApplyFadeOverlayToCapture(image, cueDirector.CurrentFadeAlpha);
                 File.WriteAllBytes(outputPath, image.EncodeToPNG());
             }
@@ -2499,6 +3064,11 @@ namespace DimensionBrawl.Editor
                 {
                     issues.Add("Invasion bridge cue is missing the heaven-background explosion root.");
                 }
+
+                if (FindRootOrDescendant(scene, InvasionScreenEffectRootName) == null)
+                {
+                    issues.Add("Invasion bridge is missing ArkData-style screen effect overlay for warning and impact flash.");
+                }
             }
 
             if (timeline != null)
@@ -2556,9 +3126,14 @@ namespace DimensionBrawl.Editor
                 }
                 else
                 {
-                    if (CountTimelineClips(inoriBodyTrack) < 4)
+                    if (CountTimelineClips(inoriBodyTrack) < 2)
                     {
-                        issues.Add("Timeline Inori Body track must contain the authored body animation clips.");
+                        issues.Add("Timeline Inori Body track must contain the wake and combat-ready authored body clips.");
+                    }
+                    else if (!HasTimelineClip(inoriBodyTrack, "wake_confused_hands")
+                        || !HasTimelineClip(inoriBodyTrack, "combat_ready_handoff"))
+                    {
+                        issues.Add("Timeline Inori Body track is missing wake_confused_hands or combat_ready_handoff.");
                     }
 
                     if (director != null && director.GetGenericBinding(inoriBodyTrack) == null)
@@ -2686,6 +3261,25 @@ namespace DimensionBrawl.Editor
             }
 
             return count;
+        }
+
+        private static bool HasTimelineClip(TrackAsset track, string displayName)
+        {
+            if (track == null)
+            {
+                return false;
+            }
+
+            foreach (TimelineClip clip in track.GetClips())
+            {
+                if (clip != null
+                    && string.Equals(clip.displayName, displayName, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void ValidateOpeningDollyAnimationTrack(
@@ -2898,6 +3492,63 @@ namespace DimensionBrawl.Editor
                 pixel.g = (byte)Mathf.RoundToInt(pixel.g * multiplier);
                 pixel.b = (byte)Mathf.RoundToInt(pixel.b * multiplier);
                 pixels[i] = pixel;
+            }
+
+            image.SetPixels32(pixels);
+            image.Apply();
+        }
+
+        private static void ApplyInvasionScreenEffectToCapture(
+            Texture2D image,
+            float impactFlashAlpha,
+            float warningSweepAlpha)
+        {
+            if (image == null)
+            {
+                return;
+            }
+
+            impactFlashAlpha = Mathf.Clamp01(impactFlashAlpha);
+            warningSweepAlpha = Mathf.Clamp01(warningSweepAlpha);
+            if (impactFlashAlpha <= 0.001f && warningSweepAlpha <= 0.001f)
+            {
+                return;
+            }
+
+            Color32[] pixels = image.GetPixels32();
+            int width = image.width;
+            int height = image.height;
+            Color impactWarm = new Color(1f, 0.48f, 0.16f, 1f);
+            Color impactCore = new Color(1f, 0.92f, 0.72f, 1f);
+            Color warningRed = new Color(1f, 0.04f, 0.08f, 1f);
+            float diagonalSlope = Mathf.Tan(-13f * Mathf.Deg2Rad);
+
+            for (int i = 0; i < pixels.Length; i++)
+            {
+                int x = i % width;
+                int y = i / width;
+                Color color = pixels[i];
+
+                if (impactFlashAlpha > 0.001f)
+                {
+                    float u = ((float)x / Mathf.Max(1, width - 1)) - 0.47f;
+                    float v = ((float)y / Mathf.Max(1, height - 1)) - 0.52f;
+                    float core = Mathf.Clamp01(1f - ((u * u * 1.42f) + (v * v * 2.1f)) * 4.2f);
+                    color = Color.Lerp(color, impactWarm, impactFlashAlpha * 0.48f);
+                    color = Color.Lerp(color, impactCore, impactFlashAlpha * core * 0.46f);
+                }
+
+                if (warningSweepAlpha > 0.001f)
+                {
+                    float centerY = (height * 0.60f) + ((x - (width * 0.5f)) * diagonalSlope);
+                    float distance = Mathf.Abs(y - centerY);
+                    float band = Mathf.Clamp01(1f - (distance / 82f));
+                    float core = Mathf.Clamp01(1f - (distance / 18f));
+                    color = Color.Lerp(color, warningRed, warningSweepAlpha * band * 0.50f);
+                    color = Color.Lerp(color, Color.white, warningSweepAlpha * core * 0.22f);
+                }
+
+                pixels[i] = color;
             }
 
             image.SetPixels32(pixels);
@@ -3141,6 +3792,91 @@ namespace DimensionBrawl.Editor
                 material.SetFloat("_Metallic", Mathf.Clamp01(metallic));
             }
 
+            EditorUtility.SetDirty(material);
+            return material;
+        }
+
+        private static Material LoadOrCreateTransparentTextureMaterial(
+            string path,
+            string texturePath,
+            Color color,
+            Vector2 textureScale,
+            Vector2 textureOffset)
+        {
+            EnsureFolder(PathParent(path));
+            Material material = AssetDatabase.LoadAssetAtPath<Material>(path);
+            if (material == null)
+            {
+                Shader shader = Shader.Find("Universal Render Pipeline/Unlit")
+                    ?? Shader.Find("Unlit/Transparent")
+                    ?? Shader.Find("Sprites/Default")
+                    ?? Shader.Find("Standard");
+                material = new Material(shader);
+                AssetDatabase.CreateAsset(material, path);
+            }
+
+            Texture2D texture = AssetDatabase.LoadAssetAtPath<Texture2D>(texturePath);
+            material.color = color;
+            material.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent;
+            if (material.HasProperty("_BaseColor"))
+            {
+                material.SetColor("_BaseColor", color);
+            }
+
+            if (material.HasProperty("_Color"))
+            {
+                material.SetColor("_Color", color);
+            }
+
+            if (texture != null)
+            {
+                if (material.HasProperty("_BaseMap"))
+                {
+                    material.SetTexture("_BaseMap", texture);
+                    material.SetTextureScale("_BaseMap", textureScale);
+                    material.SetTextureOffset("_BaseMap", textureOffset);
+                }
+
+                if (material.HasProperty("_MainTex"))
+                {
+                    material.SetTexture("_MainTex", texture);
+                    material.SetTextureScale("_MainTex", textureScale);
+                    material.SetTextureOffset("_MainTex", textureOffset);
+                }
+            }
+
+            if (material.HasProperty("_Surface"))
+            {
+                material.SetFloat("_Surface", 1f);
+            }
+
+            if (material.HasProperty("_Blend"))
+            {
+                material.SetFloat("_Blend", 0f);
+            }
+
+            if (material.HasProperty("_SrcBlend"))
+            {
+                material.SetFloat("_SrcBlend", (float)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            }
+
+            if (material.HasProperty("_DstBlend"))
+            {
+                material.SetFloat("_DstBlend", (float)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            }
+
+            if (material.HasProperty("_ZWrite"))
+            {
+                material.SetFloat("_ZWrite", 0f);
+            }
+
+            if (material.HasProperty("_Cull"))
+            {
+                material.SetFloat("_Cull", (float)UnityEngine.Rendering.CullMode.Off);
+            }
+
+            material.EnableKeyword("_SURFACE_TYPE_TRANSPARENT");
+            material.DisableKeyword("_ALPHATEST_ON");
             EditorUtility.SetDirty(material);
             return material;
         }

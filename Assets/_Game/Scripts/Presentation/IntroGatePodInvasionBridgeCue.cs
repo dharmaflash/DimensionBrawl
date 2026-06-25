@@ -65,14 +65,35 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private Light explosionLight;
         [SerializeField, Min(0f)] private float explosionStartSeconds;
         [SerializeField, Min(0.01f)] private float explosionDurationSeconds = 1.2f;
+        [SerializeField, Min(0f)] private float explosionAfterSmokeSeconds = 2.4f;
         [SerializeField] private Vector3 explosionRestScale = Vector3.one * 0.1f;
         [SerializeField] private Vector3 explosionPeakScale = Vector3.one * 1.8f;
         [SerializeField, Min(0f)] private float explosionPeakLightIntensity = 5.5f;
 
+        [Header("Screen Impact")]
+        [SerializeField] private CanvasGroup impactFlashGroup;
+        [SerializeField] private CanvasGroup warningSweepGroup;
+        [SerializeField, Min(0f)] private float warningSweepLeadSeconds = 0.42f;
+        [SerializeField, Min(0f)] private float warningSweepDurationSeconds = 0.56f;
+        [SerializeField, Range(0f, 1f)] private float impactFlashPeakAlpha = 0.72f;
+
+        [Header("Camera Impact")]
+        [SerializeField] private Camera impactCamera;
+        [SerializeField] private Vector3 cameraShakePositionAmplitude = new Vector3(0.045f, 0.036f, 0f);
+        [SerializeField] private Vector3 cameraShakeEulerAmplitude = new Vector3(1.35f, 1.80f, 0.55f);
+        [SerializeField, Min(0.01f)] private float cameraShakeDurationSeconds = 0.72f;
+
         private bool explosionWasActive;
+        private float currentImpactFlashAlpha;
+        private float currentWarningSweepAlpha;
+        private bool cameraBaseCaptured;
+        private Vector3 cameraBasePosition;
+        private Quaternion cameraBaseRotation;
 
         public CommandoCue[] Commandos => commandos;
         public GameObject ExplosionRoot => explosionRoot;
+        public float CurrentImpactFlashAlpha => currentImpactFlashAlpha;
+        public float CurrentWarningSweepAlpha => currentWarningSweepAlpha;
 
         public void Configure(
             PlayableDirector newDirector,
@@ -97,6 +118,32 @@ namespace DimensionBrawl.Presentation
             Sample(0f);
         }
 
+        public void ConfigurePresentation(
+            Camera newImpactCamera,
+            CanvasGroup newImpactFlashGroup,
+            CanvasGroup newWarningSweepGroup,
+            float newExplosionAfterSmokeSeconds,
+            float newWarningSweepLeadSeconds,
+            float newWarningSweepDurationSeconds,
+            float newImpactFlashPeakAlpha,
+            Vector3 newCameraShakePositionAmplitude,
+            Vector3 newCameraShakeEulerAmplitude,
+            float newCameraShakeDurationSeconds)
+        {
+            impactCamera = newImpactCamera;
+            impactFlashGroup = newImpactFlashGroup;
+            warningSweepGroup = newWarningSweepGroup;
+            explosionAfterSmokeSeconds = Mathf.Max(0f, newExplosionAfterSmokeSeconds);
+            warningSweepLeadSeconds = Mathf.Max(0f, newWarningSweepLeadSeconds);
+            warningSweepDurationSeconds = Mathf.Max(0.01f, newWarningSweepDurationSeconds);
+            impactFlashPeakAlpha = Mathf.Clamp01(newImpactFlashPeakAlpha);
+            cameraShakePositionAmplitude = newCameraShakePositionAmplitude;
+            cameraShakeEulerAmplitude = newCameraShakeEulerAmplitude;
+            cameraShakeDurationSeconds = Mathf.Max(0.01f, newCameraShakeDurationSeconds);
+            cameraBaseCaptured = false;
+            Sample(0f);
+        }
+
         private void OnEnable()
         {
             Sample(ResolveTimelineTime());
@@ -111,6 +158,8 @@ namespace DimensionBrawl.Presentation
         {
             SampleCommandos(elapsedSeconds);
             SampleExplosion(elapsedSeconds);
+            SampleScreenImpact(elapsedSeconds);
+            SampleCameraImpact(elapsedSeconds);
         }
 
         private float ResolveTimelineTime()
@@ -136,14 +185,16 @@ namespace DimensionBrawl.Presentation
                 }
 
                 float normalized = Mathf.InverseLerp(cue.StartSeconds, cue.EndSeconds, elapsedSeconds);
-                root.localPosition = Vector3.Lerp(cue.StartLocalPosition, cue.EndLocalPosition, normalized);
+                float runCycle = Mathf.Repeat((elapsedSeconds - cue.StartSeconds) * 1.35f + cue.NormalizedTimeOffset, 1f);
+                float strideBob = active ? Mathf.Abs(Mathf.Sin(runCycle * Mathf.PI * 2f)) * 0.026f : 0f;
+                root.localPosition = Vector3.Lerp(cue.StartLocalPosition, cue.EndLocalPosition, normalized)
+                    + (Vector3.up * strideBob);
                 root.localRotation = Quaternion.Euler(cue.LocalEulerAngles);
 
                 Animator animator = cue.Animator;
                 if (active && animator != null && !string.IsNullOrWhiteSpace(cue.RunStateName))
                 {
-                    float runTime = Mathf.Repeat((elapsedSeconds - cue.StartSeconds) * 1.35f + cue.NormalizedTimeOffset, 1f);
-                    animator.Play(cue.RunStateName, 0, runTime);
+                    animator.Play(cue.RunStateName, 0, runCycle);
                     animator.Update(0f);
                 }
             }
@@ -156,7 +207,8 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
-            float endSeconds = explosionStartSeconds + explosionDurationSeconds;
+            float burstEndSeconds = explosionStartSeconds + explosionDurationSeconds;
+            float endSeconds = burstEndSeconds + explosionAfterSmokeSeconds;
             bool active = elapsedSeconds >= explosionStartSeconds && elapsedSeconds <= endSeconds;
             if (explosionRoot.activeSelf != active)
             {
@@ -181,13 +233,19 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
-            float normalized = Mathf.InverseLerp(explosionStartSeconds, endSeconds, elapsedSeconds);
-            float pulse = Mathf.Sin(Mathf.Clamp01(normalized) * Mathf.PI);
-            explosionRoot.transform.localScale = Vector3.Lerp(explosionRestScale, explosionPeakScale, pulse);
+            float burstNormalized = Mathf.InverseLerp(explosionStartSeconds, burstEndSeconds, elapsedSeconds);
+            float smokeNormalized = Mathf.InverseLerp(burstEndSeconds, endSeconds, elapsedSeconds);
+            float pulse = Mathf.Sin(Mathf.Clamp01(burstNormalized) * Mathf.PI);
+            float afterSmokeScale = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(smokeNormalized));
+            explosionRoot.transform.localScale = Vector3.Lerp(
+                explosionRestScale,
+                explosionPeakScale + (Vector3.one * 0.42f * afterSmokeScale),
+                Mathf.Max(pulse, afterSmokeScale * 0.38f));
 
             if (explosionLight != null)
             {
-                explosionLight.intensity = explosionPeakLightIntensity * pulse;
+                float afterglow = Mathf.Exp(-Mathf.Clamp01(smokeNormalized) * 3.4f) * 0.22f;
+                explosionLight.intensity = explosionPeakLightIntensity * Mathf.Max(pulse, afterglow);
             }
 
             float localTime = Mathf.Max(0f, elapsedSeconds - explosionStartSeconds);
@@ -222,6 +280,119 @@ namespace DimensionBrawl.Presentation
             }
 
             explosionWasActive = true;
+        }
+
+        private void SampleScreenImpact(float elapsedSeconds)
+        {
+            currentWarningSweepAlpha = ResolveWarningSweepAlpha(elapsedSeconds);
+            currentImpactFlashAlpha = ResolveImpactFlashAlpha(elapsedSeconds);
+            ApplyCanvasGroupAlpha(warningSweepGroup, currentWarningSweepAlpha);
+            ApplyCanvasGroupAlpha(impactFlashGroup, currentImpactFlashAlpha);
+        }
+
+        private float ResolveWarningSweepAlpha(float elapsedSeconds)
+        {
+            float startSeconds = explosionStartSeconds - warningSweepLeadSeconds;
+            float endSeconds = startSeconds + warningSweepDurationSeconds;
+            if (elapsedSeconds < startSeconds || elapsedSeconds > endSeconds)
+            {
+                return 0f;
+            }
+
+            float t = Mathf.InverseLerp(startSeconds, endSeconds, elapsedSeconds);
+            return Mathf.Sin(t * Mathf.PI) * 0.42f;
+        }
+
+        private float ResolveImpactFlashAlpha(float elapsedSeconds)
+        {
+            float leadSeconds = 0.055f;
+            float recoverSeconds = 0.46f;
+            float startSeconds = explosionStartSeconds - leadSeconds;
+            float endSeconds = explosionStartSeconds + recoverSeconds;
+            if (elapsedSeconds < startSeconds || elapsedSeconds > endSeconds)
+            {
+                return 0f;
+            }
+
+            if (elapsedSeconds <= explosionStartSeconds)
+            {
+                float windup = Mathf.InverseLerp(startSeconds, explosionStartSeconds, elapsedSeconds);
+                return Mathf.Lerp(0.18f, impactFlashPeakAlpha, windup);
+            }
+
+            float recovery = Mathf.InverseLerp(explosionStartSeconds, endSeconds, elapsedSeconds);
+            recovery = recovery * recovery;
+            return Mathf.Lerp(impactFlashPeakAlpha, 0f, recovery);
+        }
+
+        private void SampleCameraImpact(float elapsedSeconds)
+        {
+            if (impactCamera == null)
+            {
+                cameraBaseCaptured = false;
+                return;
+            }
+
+            float shake = ResolveCameraShakeWeight(elapsedSeconds);
+            if (!cameraBaseCaptured || !Application.isPlaying)
+            {
+                cameraBasePosition = impactCamera.transform.position;
+                cameraBaseRotation = impactCamera.transform.rotation;
+                cameraBaseCaptured = true;
+            }
+
+            if (shake <= 0.0001f)
+            {
+                if (Application.isPlaying)
+                {
+                    impactCamera.transform.SetPositionAndRotation(cameraBasePosition, cameraBaseRotation);
+                }
+
+                return;
+            }
+
+            float localTime = Mathf.Max(0f, elapsedSeconds - explosionStartSeconds);
+            float x = (Mathf.PerlinNoise(localTime * 18.0f, 0.17f) - 0.5f) * 2f;
+            float y = (Mathf.PerlinNoise(0.37f, localTime * 21.0f) - 0.5f) * 2f;
+            float z = (Mathf.PerlinNoise(localTime * 11.0f, 0.73f) - 0.5f) * 2f;
+            Vector3 localOffset = Vector3.Scale(cameraShakePositionAmplitude, new Vector3(x, y, z)) * shake;
+            Vector3 eulerOffset = Vector3.Scale(cameraShakeEulerAmplitude, new Vector3(y, x, z)) * shake;
+            Quaternion shakeRotation = Quaternion.Euler(eulerOffset);
+            impactCamera.transform.SetPositionAndRotation(
+                cameraBasePosition + (cameraBaseRotation * localOffset),
+                shakeRotation * cameraBaseRotation);
+        }
+
+        private float ResolveCameraShakeWeight(float elapsedSeconds)
+        {
+            if (elapsedSeconds < explosionStartSeconds)
+            {
+                return 0f;
+            }
+
+            float t = Mathf.InverseLerp(
+                explosionStartSeconds,
+                explosionStartSeconds + cameraShakeDurationSeconds,
+                elapsedSeconds);
+            if (t <= 0f || t >= 1f)
+            {
+                return 0f;
+            }
+
+            float decay = 1f - (t * t * (3f - (2f * t)));
+            return Mathf.Sin(t * Mathf.PI * 7.5f) * decay;
+        }
+
+        private static void ApplyCanvasGroupAlpha(CanvasGroup group, float alpha)
+        {
+            if (group == null)
+            {
+                return;
+            }
+
+            group.alpha = Mathf.Clamp01(alpha);
+            group.interactable = false;
+            group.blocksRaycasts = false;
         }
     }
 }
