@@ -140,6 +140,10 @@ namespace DimensionBrawl.Test
         public bool GrantedSummonFollowupEnergy => grantedSummonFollowupEnergy;
         public bool UsedSkill1DuringSummonFollowup => usedSkill1DuringSummonFollowup;
         public bool Skill1FollowupHitConfirmed => skill1FollowupHitConfirmed;
+        public bool IsCloseProbeCompletionRecorded => closeThreatDefeated;
+        public bool IsSummonRouteCompletionRecorded => usedSummonSlot1 && blockedBossPressureWithSummon;
+        public bool IsFollowupCompletionRecorded => skill1FollowupHitConfirmed;
+        public string CompletionRecordReadout => ResolveCompletionRecordReadout();
         public bool IsSkill1FollowupClearCountdownActive => state == PocketState.Running
             && skill1FollowupHitConfirmed
             && skill1FollowupClearTimer > 0f;
@@ -995,6 +999,18 @@ namespace DimensionBrawl.Test
             }
 
             return Mathf.Clamp(completed, 0, ObjectiveStepCount);
+        }
+
+        private string ResolveCompletionRecordReadout()
+        {
+            return $"close:{ResolveRecordState(IsCloseProbeCompletionRecorded)} "
+                + $"summon:{ResolveRecordState(IsSummonRouteCompletionRecorded)} "
+                + $"followup:{ResolveRecordState(IsFollowupCompletionRecorded)}";
+        }
+
+        private static string ResolveRecordState(bool completed)
+        {
+            return completed ? "recorded" : "pending";
         }
 
         private int ResolveCurrentStageBeatIndex()

@@ -1437,20 +1437,27 @@ namespace DimensionBrawl.Presentation
             string targetText = $"{pocketReviewOwner.ResultElapsedSeconds:0.0}/{targetSeconds:0.0}s";
             if (pocketReviewOwner.IsFailed)
             {
-                return $"Incomplete {ResolvePocketProgressText()} {ResolvePocketFailureReasonText()} {ResolveRouteStabilityText()} ({targetText})";
+                return $"Incomplete {ResolvePocketProgressText()} {ResolvePocketFailureReasonText()} {ResolveRouteStabilityText()} ({targetText}) | {ResolveCompletionRecordText()}";
             }
 
             if (!pocketReviewOwner.IsCleared)
             {
                 string hook = ResolveStageText(profile?.RewardHook, "Review-only route record");
-                return $"Pending {ResolvePocketProgressText()} {ResolveRouteStabilityText()} target {targetSeconds:0}s | {hook}";
+                return $"Pending {ResolvePocketProgressText()} {ResolveRouteStabilityText()} target {targetSeconds:0}s | {ResolveCompletionRecordText()} | {hook}";
             }
 
             string grade = ResolveRouteRecordGrade(targetSeconds);
             string routeType = pocketReviewOwner.Skill1FollowupHitConfirmed
                 ? "Summon follow-up"
                 : "Pressure suppression";
-            return $"Record {grade}: {routeType} {targetText} {ResolveRouteStabilityText()}";
+            return $"Record {grade}: {routeType} {targetText} {ResolveRouteStabilityText()} | {ResolveCompletionRecordText()}";
+        }
+
+        private string ResolveCompletionRecordText()
+        {
+            return pocketReviewOwner != null
+                ? pocketReviewOwner.CompletionRecordReadout
+                : "close:pending summon:pending followup:pending";
         }
 
         private string ResolveRouteStabilityText()

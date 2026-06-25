@@ -103,6 +103,9 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Pending 0/3"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("stability 62%"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("target 90"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("close:pending"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("summon:pending"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("followup:pending"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Review-only route record"));
             Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("stability 62%"));
             int frontlineCueCountBeforeProbe = screenCuePresenter.FrontlineCueRequestCount;
@@ -123,10 +126,13 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.PressureSlotReadout, Does.Contain("Drop|Dash|Jump"));
             Assert.That(reviewHud.PressureSlotReadout, Does.Contain("Local defense"));
             SetField(pocketOwner, "closeThreatDefeated", true);
+            Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("close:recorded"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("First Summon Need"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("summon_slot1_used"));
             Assert.That(reviewHud.PressureSlotReadout, Does.Contain("ScreenCurtain"));
             SetField(pocketOwner, "blockedBossPressureWithSummon", true);
+            SetField(pocketOwner, "usedSummonSlot1", true);
+            Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("summon:recorded"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("Enemy Counter Wave"));
             Assert.That(reviewHud.PressureSlotReadout, Does.Contain("FrontlineBody"));
 
@@ -146,6 +152,9 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("42.0/90.0s"));
             Assert.That(reviewHud.ResultBannerDetail, Does.Not.Contain("BOSS CLEAR"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Summon follow-up"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("close:recorded"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("summon:recorded"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("followup:recorded"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("Suppression Result"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("route_record_committed"));
         }
@@ -181,6 +190,7 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("stability 0%"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Incomplete 0/3"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("reason route collapse"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("close:pending"));
         }
 
         [UnityTest]
