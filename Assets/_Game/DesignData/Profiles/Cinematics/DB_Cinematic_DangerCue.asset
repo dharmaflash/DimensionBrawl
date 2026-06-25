@@ -54,9 +54,9 @@ MonoBehaviour:
     focusHeightDelta: 0
     impulseScale: 1
     driveCameraPose: 1
-    cameraLocalPosition: {x: 0.58, y: 1.26, z: 1.74}
-    lookAtLocalPosition: {x: 0, y: 1.12, z: 0.16}
-    fieldOfView: 33
+    cameraLocalPosition: {x: 0.95, y: 1.34, z: -2.85}
+    lookAtLocalPosition: {x: 0, y: 1.12, z: 1.2}
+    fieldOfView: 39
   actorCues:
   - enabled: 1
     cueId: danger_keep_rifle_visible

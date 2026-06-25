@@ -225,7 +225,7 @@ namespace DimensionBrawl.Editor
                 new[]
                 {
                     ShotCamera("danger_threat_reframe", CinematicSequenceProfile.ShotPurpose.ThreatDirection, CinematicSequenceProfile.CameraBlendKind.Reframe, 0f, 0.55f, new Vector3(0f, 0.05f, -0.16f), 0.18f, 1.6f, -0.16f, 0.05f, new Vector3(0.78f, 1.32f, 1.40f), new Vector3(0f, 1.10f, 0.10f), 31f),
-                    ShotCamera("danger_brace_return", CinematicSequenceProfile.ShotPurpose.GameplayHandoff, CinematicSequenceProfile.CameraBlendKind.Ease, 0.55f, 0.9f, new Vector3(0f, 0.02f, -0.06f), 0.02f, 0.4f, -0.04f, 0f, new Vector3(0.58f, 1.26f, 1.74f), new Vector3(0f, 1.12f, 0.16f), 33f)
+                    ShotCamera("danger_brace_return", CinematicSequenceProfile.ShotPurpose.GameplayHandoff, CinematicSequenceProfile.CameraBlendKind.Ease, 0.55f, 0.9f, new Vector3(0f, 0.02f, -0.06f), 0.02f, 0.4f, -0.04f, 0f, new Vector3(0.95f, 1.34f, -2.85f), new Vector3(0f, 1.12f, 1.20f), 39f)
                 },
                 new[]
                 {
@@ -461,8 +461,8 @@ namespace DimensionBrawl.Editor
                 new[]
                 {
                     ShotCamera("result_final_impact", CinematicSequenceProfile.ShotPurpose.CharacterAction, CinematicSequenceProfile.CameraBlendKind.Cut, 0f, 0.8f, new Vector3(0.12f, 0.04f, -0.16f), 0.12f, -1.2f, -0.12f, 0.02f, new Vector3(0.30f, 1.26f, -2.45f), new Vector3(0f, 1.08f, 3.15f), 34f),
-                    ShotCamera("result_inori_settle", CinematicSequenceProfile.ShotPurpose.EmotionChange, CinematicSequenceProfile.CameraBlendKind.PullBack, 0.8f, 1.35f, new Vector3(0f, 0.06f, -0.16f), 0.03f, 1.0f, -0.08f, 0.03f, new Vector3(0.66f, 1.34f, 1.82f), new Vector3(0f, 1.13f, 0.12f), 32f),
-                    ShotCamera("result_ui_handoff", CinematicSequenceProfile.ShotPurpose.GameplayHandoff, CinematicSequenceProfile.CameraBlendKind.Ease, 2.15f, 1.45f, new Vector3(0f, 0.02f, -0.08f), 0.01f, 0.4f, -0.04f, 0.01f, new Vector3(0.35f, 1.28f, 1.72f), new Vector3(0f, 1.12f, 0.14f), 34f)
+                    ShotCamera("result_inori_settle", CinematicSequenceProfile.ShotPurpose.EmotionChange, CinematicSequenceProfile.CameraBlendKind.PullBack, 0.8f, 1.35f, new Vector3(0f, 0.06f, -0.16f), 0.03f, 1.0f, -0.08f, 0.03f, new Vector3(1.20f, 1.46f, -3.10f), new Vector3(0.10f, 1.08f, 1.85f), 40f),
+                    ShotCamera("result_ui_handoff", CinematicSequenceProfile.ShotPurpose.GameplayHandoff, CinematicSequenceProfile.CameraBlendKind.Ease, 2.15f, 1.45f, new Vector3(0f, 0.02f, -0.08f), 0.01f, 0.4f, -0.04f, 0.01f, new Vector3(0.65f, 1.32f, -3.45f), new Vector3(0f, 1.12f, 0.85f), 38f)
                 },
                 new[]
                 {

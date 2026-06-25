@@ -54,9 +54,9 @@ MonoBehaviour:
     focusHeightDelta: 0.03
     impulseScale: 1
     driveCameraPose: 1
-    cameraLocalPosition: {x: 0.66, y: 1.34, z: 1.82}
-    lookAtLocalPosition: {x: 0, y: 1.13, z: 0.12}
-    fieldOfView: 32
+    cameraLocalPosition: {x: 1.2, y: 1.46, z: -3.1}
+    lookAtLocalPosition: {x: 0.1, y: 1.08, z: 1.85}
+    fieldOfView: 40
   - enabled: 1
     cueId: result_ui_handoff
     purpose: 4
@@ -70,9 +70,9 @@ MonoBehaviour:
     focusHeightDelta: 0.01
     impulseScale: 1
     driveCameraPose: 1
-    cameraLocalPosition: {x: 0.35, y: 1.28, z: 1.72}
-    lookAtLocalPosition: {x: 0, y: 1.12, z: 0.14}
-    fieldOfView: 34
+    cameraLocalPosition: {x: 0.65, y: 1.32, z: -3.45}
+    lookAtLocalPosition: {x: 0, y: 1.12, z: 0.85}
+    fieldOfView: 38
   actorCues:
   - enabled: 1
     cueId: result_keep_rifle_visible

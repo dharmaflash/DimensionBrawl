@@ -84,7 +84,7 @@ namespace DimensionBrawl.Test
 
             StringBuilder report = new StringBuilder(2048);
             report.AppendLine("ROUTE=BossBarrageActionBridgeInput");
-            List<CapturedRouteFrame> capturedFrames = new List<CapturedRouteFrame>(7);
+            List<CapturedRouteFrame> capturedFrames = new List<CapturedRouteFrame>(9);
 
             ProbeContext context;
             try
@@ -165,6 +165,32 @@ namespace DimensionBrawl.Test
             yield return WaitForIdle(context, "after_summon_recall_direct_bridge", report);
             bool summonRecallIdlePassed = lastStepPassed;
 
+            yield return VerifyDirectorRoute(
+                context,
+                "pocket_clear_result_direct_bridge",
+                ActionCinematicCueProfile.CueKind.PocketClear,
+                "result_bridge",
+                1.18f,
+                report,
+                capturedFrames);
+            bool pocketClearRoutePassed = lastStepPassed;
+
+            yield return WaitForIdle(context, "after_pocket_clear_result_direct_bridge", report);
+            bool pocketClearIdlePassed = lastStepPassed;
+
+            yield return VerifyDirectorRoute(
+                context,
+                "pocket_fail_danger_direct_bridge",
+                ActionCinematicCueProfile.CueKind.PocketFail,
+                "danger_cue",
+                0.72f,
+                report,
+                capturedFrames);
+            bool pocketFailRoutePassed = lastStepPassed;
+
+            yield return WaitForIdle(context, "after_pocket_fail_danger_direct_bridge", report);
+            bool pocketFailIdlePassed = lastStepPassed;
+
             bool passed = skillRoutePassed
                 && skillIdlePassed
                 && summonRoutePassed
@@ -174,7 +200,11 @@ namespace DimensionBrawl.Test
                 && summonEmpowerRoutePassed
                 && summonEmpowerIdlePassed
                 && summonRecallRoutePassed
-                && summonRecallIdlePassed;
+                && summonRecallIdlePassed
+                && pocketClearRoutePassed
+                && pocketClearIdlePassed
+                && pocketFailRoutePassed
+                && pocketFailIdlePassed;
             AppendCaptureSummary(report, capturedFrames);
             bool dragonVisibilityPassed = !requireDragonVisibilityForSummonRoutes
                 || ValidateExpectedDragonVisibility(capturedFrames, report);
