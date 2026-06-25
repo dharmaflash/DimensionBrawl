@@ -112,7 +112,7 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("close:pending"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("summon:pending"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("followup:pending"));
-            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter:pending"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter:pending(none)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Review-only route record"));
             Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("stability 62%"));
             int frontlineCueCountBeforeProbe = screenCuePresenter.FrontlineCueRequestCount;
@@ -162,7 +162,7 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("close:recorded"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("summon:recorded"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("followup:recorded"));
-            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter:avoided"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter:avoided(none)"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("Suppression Result"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("route_record_committed"));
         }
@@ -264,6 +264,8 @@ namespace DimensionBrawl.Tests
 
             Assert.IsFalse(pocketOwner.IsCounterWaveCompletionRecorded);
             Assert.AreEqual("pending", pocketOwner.CounterWaveRecordState);
+            Assert.AreEqual(BossBarragePocketReviewOwner.CounterWaveSource.None, pocketOwner.CounterWaveObservedSource);
+            Assert.AreEqual("none", pocketOwner.CounterWaveSourceReadout);
 
             SetField(pocketOwner, "closeThreatDefeated", true);
             SetField(pocketOwner, "usedSummonSlot1", true);
@@ -273,11 +275,13 @@ namespace DimensionBrawl.Tests
 
             Assert.IsTrue(pocketOwner.IsCounterWaveCompletionRecorded);
             Assert.AreEqual("recorded", pocketOwner.CounterWaveRecordState);
+            Assert.AreEqual(BossBarragePocketReviewOwner.CounterWaveSource.EnemyFrontlineBody, pocketOwner.CounterWaveObservedSource);
+            Assert.AreEqual("enemy_body", pocketOwner.CounterWaveSourceReadout);
             Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.CounterWave, pocketOwner.CurrentPhase);
             Assert.That(pocketOwner.ObjectiveCue, Does.Contain("Counter wave"));
             Assert.That(reviewHud.CompactObjectiveReadout, Does.Contain("Hold counter wave"));
-            Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter:recorded"));
-            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter:recorded"));
+            Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter:recorded(enemy_body)"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter:recorded(enemy_body)"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("Enemy Counter Wave"));
 
             enemyProxy.Deactivate(SummonFrontlineProxyExitReason.Recalled);
@@ -304,10 +308,13 @@ namespace DimensionBrawl.Tests
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.IsCounterWaveCompletionRecorded);
+            Assert.AreEqual("recorded", pocketOwner.CounterWaveRecordState);
+            Assert.AreEqual(BossBarragePocketReviewOwner.CounterWaveSource.BossSummonRelease, pocketOwner.CounterWaveObservedSource);
+            Assert.AreEqual("boss_summon", pocketOwner.CounterWaveSourceReadout);
             Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.CounterWave, pocketOwner.CurrentPhase);
             Assert.That(reviewHud.CompactObjectiveReadout, Does.Contain("Hold counter wave"));
-            Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter:recorded"));
-            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter:recorded"));
+            Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter:recorded(boss_summon)"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter:recorded(boss_summon)"));
         }
 
         [UnityTest]

@@ -838,7 +838,7 @@ Route stability is now part of the review-scene contract:
 - Route stability must warn before collapse with `stable` / `unstable` / `critical` bands and frontline screen cues, so the player feels the line being lost before the failure banner.
 - The HUD and route record must show the active pressure slot, stability, route progress, and target time.
 - The route record must also expose the observer-completion snapshot (`close`, `summon`, `followup` as `pending`/`recorded`) so the pocket follows the PGR-style condition gate -> combat observer -> completion record chain instead of ending as loose debug text.
-- The route record must distinguish the optional counter-wave branch: clean follow-up marks `counter:avoided`, while observed enemy frontline body pressure or boss summon release marks `counter:recorded`.
+- The route record must distinguish the optional counter-wave branch and source: clean follow-up marks `counter:avoided(none)`, while observed enemy frontline body pressure and boss summon release mark `counter:recorded(enemy_body)` or `counter:recorded(boss_summon)`.
 - When counter pressure is observed, the review phase and compact objective must read as counter-wave/frontline-hold work instead of falling back to generic summon-block text.
 
 The profile is review-only. It must not grant rewards, unlock progression, replace the stage-select flow, or become a general combat manager.

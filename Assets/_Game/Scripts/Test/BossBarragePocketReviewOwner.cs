@@ -34,6 +34,15 @@ namespace DimensionBrawl.Test
             Critical
         }
 
+        public enum CounterWaveSource
+        {
+            None,
+            FollowupMissed,
+            BossScreenBlock,
+            EnemyFrontlineBody,
+            BossSummonRelease
+        }
+
         private enum PocketState
         {
             Running,
@@ -127,6 +136,7 @@ namespace DimensionBrawl.Test
         private bool followupMissedNotified;
         private bool bossBlockedSkill1Followup;
         private bool counterWaveObserved;
+        private CounterWaveSource counterWaveSource;
         private int bossPressureSummonReleasesAtReset;
         private int announcedStageBeatIndex;
         private RouteStabilityBand announcedRouteStabilityBand;
@@ -156,6 +166,8 @@ namespace DimensionBrawl.Test
         public bool IsSummonRouteCompletionRecorded => usedSummonSlot1 && blockedBossPressureWithSummon;
         public bool IsFollowupCompletionRecorded => skill1FollowupHitConfirmed;
         public bool IsCounterWaveCompletionRecorded => counterWaveObserved;
+        public CounterWaveSource CounterWaveObservedSource => counterWaveSource;
+        public string CounterWaveSourceReadout => ResolveCounterWaveSourceReadout();
         public string CounterWaveRecordState => ResolveCounterWaveRecordState();
         public string CompletionRecordReadout => ResolveCompletionRecordReadout();
         public bool IsSkill1FollowupClearCountdownActive => state == PocketState.Running
@@ -384,6 +396,7 @@ namespace DimensionBrawl.Test
             followupMissedNotified = false;
             bossBlockedSkill1Followup = false;
             counterWaveObserved = false;
+            counterWaveSource = CounterWaveSource.None;
             bossPressureSummonReleasesAtReset = GetBossPressureSummonReleaseCount();
             highestSkillTier = 0;
             highestSummonTier = 0;
@@ -671,7 +684,7 @@ namespace DimensionBrawl.Test
             }
 
             followupMissedNotified = true;
-            counterWaveObserved = true;
+            ObserveCounterWave(CounterWaveSource.FollowupMissed);
             SummonFollowupMissed?.Invoke();
         }
 
@@ -682,13 +695,28 @@ namespace DimensionBrawl.Test
                 return;
             }
 
-            if (followupMissedNotified
-                || bossBlockedSkill1Followup
-                || GetBossPressureSummonReleaseCount() > bossPressureSummonReleasesAtReset
-                || ActiveEnemyFrontlineProxyCount > 0)
+            if (followupMissedNotified)
             {
-                counterWaveObserved = true;
+                ObserveCounterWave(CounterWaveSource.FollowupMissed);
             }
+            else if (bossBlockedSkill1Followup)
+            {
+                ObserveCounterWave(CounterWaveSource.BossScreenBlock);
+            }
+            else if (GetBossPressureSummonReleaseCount() > bossPressureSummonReleasesAtReset)
+            {
+                ObserveCounterWave(CounterWaveSource.BossSummonRelease);
+            }
+            else if (ActiveEnemyFrontlineProxyCount > 0)
+            {
+                ObserveCounterWave(CounterWaveSource.EnemyFrontlineBody);
+            }
+        }
+
+        private void ObserveCounterWave(CounterWaveSource source)
+        {
+            counterWaveObserved = true;
+            counterWaveSource = source == CounterWaveSource.None ? CounterWaveSource.EnemyFrontlineBody : source;
         }
 
         private void ClearPocket()
@@ -1183,7 +1211,7 @@ namespace DimensionBrawl.Test
             return $"close:{ResolveRecordState(IsCloseProbeCompletionRecorded)} "
                 + $"summon:{ResolveRecordState(IsSummonRouteCompletionRecorded)} "
                 + $"followup:{ResolveRecordState(IsFollowupCompletionRecorded)} "
-                + $"counter:{CounterWaveRecordState}";
+                + $"counter:{CounterWaveRecordState}({CounterWaveSourceReadout})";
         }
 
         private static string ResolveRecordState(bool completed)
@@ -1199,6 +1227,18 @@ namespace DimensionBrawl.Test
             }
 
             return IsFollowupCompletionRecorded ? "avoided" : "pending";
+        }
+
+        private string ResolveCounterWaveSourceReadout()
+        {
+            return counterWaveSource switch
+            {
+                CounterWaveSource.FollowupMissed => "followup_miss",
+                CounterWaveSource.BossScreenBlock => "boss_screen",
+                CounterWaveSource.EnemyFrontlineBody => "enemy_body",
+                CounterWaveSource.BossSummonRelease => "boss_summon",
+                _ => "none"
+            };
         }
 
         private int ResolveCurrentStageBeatIndex()
