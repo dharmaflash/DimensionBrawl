@@ -842,6 +842,7 @@ Route stability is now part of the review-scene contract:
 - The route record must separately show the counter-wave answer: after observed counter pressure, ally summon/frontline presence marks `counter_answer:stabilized(ally_hold)` and restores a small route-stability bonus; clean follow-up keeps `counter_answer:not_needed(clean_followup)`.
 - A stabilized counter wave must open the final follow-up window and record it as `counter_window:opened(final_followup)`, matching the Beat 4 success state instead of leaving the player in a dead-end hold state.
 - A clear reached through that stabilized counter path must name the result as `Counter recovery` and use dedicated counter-clear copy, so the route reward recognizes the player's recovery decision instead of flattening it into the clean summon follow-up.
+- The completion record must include `decision:{state}({readout})` so the pocket logs the player's route choice/recovery quality as a state commit, matching ArkData's combat-payload and tutorial-runner evidence instead of leaving choice quality as invisible intent.
 - Counter-wave observation and ally-hold stabilization must also emit frontline screen cues, not just HUD text, so the player feels the line entering danger and then being held.
 - When counter pressure is observed, the review phase and compact objective must read as counter-wave/frontline-hold work instead of falling back to generic summon-block text.
 

@@ -1520,7 +1520,7 @@ namespace DimensionBrawl.Presentation
         {
             return pocketReviewOwner != null
                 ? pocketReviewOwner.CompletionRecordReadout
-                : "close:pending summon:pending followup:pending counter:pending(none) counter_answer:pending(none) counter_window:pending(none)";
+                : "close:pending summon:pending followup:pending counter:pending(none) counter_answer:pending(none) counter_window:pending(none) decision:build_route(hold_line)";
         }
 
         private string ResolveRouteStabilityText()

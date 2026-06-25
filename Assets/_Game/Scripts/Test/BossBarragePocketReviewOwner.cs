@@ -183,6 +183,8 @@ namespace DimensionBrawl.Test
         public string CounterWaveFinalWindowState => ResolveCounterWaveFinalWindowState();
         public string CounterWaveFinalWindowReadout => ResolveCounterWaveFinalWindowReadout();
         public float LastCounterWaveFinalWindowDuration => lastCounterWaveFinalWindowDuration;
+        public string RouteDecisionState => ResolveRouteDecisionState();
+        public string RouteDecisionReadout => ResolveRouteDecisionReadout();
         public string CompletionRecordReadout => ResolveCompletionRecordReadout();
         public bool IsSkill1FollowupClearCountdownActive => state == PocketState.Running
             && skill1FollowupHitConfirmed
@@ -1298,7 +1300,8 @@ namespace DimensionBrawl.Test
                 + $"followup:{ResolveRecordState(IsFollowupCompletionRecorded)} "
                 + $"counter:{CounterWaveRecordState}({CounterWaveSourceReadout}) "
                 + $"counter_answer:{CounterWaveAnswerState}({CounterWaveAnswerReadout}) "
-                + $"counter_window:{CounterWaveFinalWindowState}({CounterWaveFinalWindowReadout})";
+                + $"counter_window:{CounterWaveFinalWindowState}({CounterWaveFinalWindowReadout}) "
+                + $"decision:{RouteDecisionState}({RouteDecisionReadout})";
         }
 
         private static string ResolveRecordState(bool completed)
@@ -1386,6 +1389,95 @@ namespace DimensionBrawl.Test
             }
 
             return IsFollowupCompletionRecorded ? "clean_followup" : "none";
+        }
+
+        private string ResolveRouteDecisionState()
+        {
+            if (state == PocketState.Cleared)
+            {
+                return IsCounterRecoveryRoute() ? "recovery_clear" : "clean_clear";
+            }
+
+            if (state == PocketState.Failed)
+            {
+                return "failed";
+            }
+
+            if (counterWaveObserved)
+            {
+                return counterWaveStabilized ? "recovered" : "recovery_needed";
+            }
+
+            if (pressurePacing.IsSummonFollowupWindowActive || usedSkill1DuringSummonFollowup)
+            {
+                return "confirm";
+            }
+
+            if (blockedBossPressureWithSummon)
+            {
+                return "confirm";
+            }
+
+            if (closeThreatDefeated)
+            {
+                return IsAwaitingSummonPressureBlock ? "summon_now" : "prepare_summon";
+            }
+
+            return "build_route";
+        }
+
+        private string ResolveRouteDecisionReadout()
+        {
+            if (state == PocketState.Cleared)
+            {
+                return IsCounterRecoveryRoute() ? "counter_recovery" : "clean_followup";
+            }
+
+            if (state == PocketState.Failed)
+            {
+                return failureReason == RouteFailureReason.RouteStabilityCollapsed
+                    ? "route_collapse"
+                    : "player_down";
+            }
+
+            if (counterWaveObserved)
+            {
+                if (counterWaveStabilized)
+                {
+                    return counterWaveFinalWindowOpened ? "final_window" : "counter_held";
+                }
+
+                return "answer_counter";
+            }
+
+            if (pressurePacing.IsSummonFollowupWindowActive || usedSkill1DuringSummonFollowup)
+            {
+                return skill1FollowupHitConfirmed ? "hit_confirmed" : "followup_window";
+            }
+
+            if (blockedBossPressureWithSummon)
+            {
+                return bossBlockedSkill1Followup || followupMissedNotified
+                    ? "rebuild_summon"
+                    : "summon_opening";
+            }
+
+            if (closeThreatDefeated)
+            {
+                if (IsAwaitingSummonPressureBlock)
+                {
+                    return "boss_curtain";
+                }
+
+                return IsSummonBlockOpportunityCueActive ? "cue_window" : "build_en";
+            }
+
+            return "hold_line";
+        }
+
+        private bool IsCounterRecoveryRoute()
+        {
+            return counterWaveStabilized || counterWaveFinalWindowOpened;
         }
 
         private int ResolveCurrentStageBeatIndex()
