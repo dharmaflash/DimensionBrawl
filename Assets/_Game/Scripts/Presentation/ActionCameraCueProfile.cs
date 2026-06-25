@@ -176,6 +176,30 @@ namespace DimensionBrawl.Presentation
             finisherScale = 1f
         };
 
+        [SerializeField] private CameraCue counterWaveCue = new CameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, 0.06f, -0.22f),
+            planarDirectionOffset = -0.12f,
+            fieldOfViewDelta = 2.0f,
+            cameraDistanceDelta = -0.22f,
+            focusHeightDelta = 0.05f,
+            durationSeconds = 0.20f,
+            finisherScale = 1.2f
+        };
+
+        [SerializeField] private CameraCue counterWaveStabilizedCue = new CameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, 0.04f, -0.10f),
+            planarDirectionOffset = 0.08f,
+            fieldOfViewDelta = 1.0f,
+            cameraDistanceDelta = -0.10f,
+            focusHeightDelta = 0.03f,
+            durationSeconds = 0.18f,
+            finisherScale = 1.1f
+        };
+
         public CameraCue RunStartCue => runStartCue;
         public CameraCue StopSettleCue => stopSettleCue;
         public CameraCue SharpTurnCue => sharpTurnCue;
@@ -189,5 +213,7 @@ namespace DimensionBrawl.Presentation
         public CameraCue SummonFollowupWindowCue => summonFollowupWindowCue;
         public CameraCue SummonFollowupHitCue => summonFollowupHitCue;
         public CameraCue SummonFollowupMissedCue => summonFollowupMissedCue;
+        public CameraCue CounterWaveCue => counterWaveCue;
+        public CameraCue CounterWaveStabilizedCue => counterWaveStabilizedCue;
     }
 }

@@ -129,3 +129,21 @@ MonoBehaviour:
     focusHeightDelta: -0.02
     durationSeconds: 0.18
     finisherScale: 1
+  counterWaveCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.06, z: -0.22}
+    planarDirectionOffset: -0.12
+    fieldOfViewDelta: 2
+    cameraDistanceDelta: -0.22
+    focusHeightDelta: 0.05
+    durationSeconds: 0.2
+    finisherScale: 1.2
+  counterWaveStabilizedCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.04, z: -0.1}
+    planarDirectionOffset: 0.08
+    fieldOfViewDelta: 1
+    cameraDistanceDelta: -0.1
+    focusHeightDelta: 0.03
+    durationSeconds: 0.18
+    finisherScale: 1.1

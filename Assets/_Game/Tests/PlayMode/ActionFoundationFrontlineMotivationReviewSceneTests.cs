@@ -294,6 +294,9 @@ namespace DimensionBrawl.Tests
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
             Collider bossHitCollider = RequireCombatHitCollider(bossRoot, bossHealth, "boss proxy");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            ActionCameraCueDriver cameraCueDriver =
+                RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
             FrontlineWaveStageProfile stageProfile =
                 AssetDatabase.LoadAssetAtPath<FrontlineWaveStageProfile>(StageProfilePath);
             Assert.NotNull(stageProfile);
@@ -330,6 +333,7 @@ namespace DimensionBrawl.Tests
             SummonFrontlineProxy enemyProxy = CreateActiveFrontlineProxy("Test_CounterWave_EnemyProxy", DamageTeam.Enemy);
             int counterCueCountBeforeEnemy = screenCuePresenter.CounterWaveCueRequestCount;
             int counterVfxCueCountBeforeEnemy = pocketVfxCueBridge.CounterWaveCueRequestCount;
+            int counterCameraCueCountBeforeEnemy = cameraCueDriver.CounterWaveCueRequestCount;
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.IsCounterWaveCompletionRecorded);
@@ -363,6 +367,8 @@ namespace DimensionBrawl.Tests
                 BossBarragePocketReviewOwner.CounterWaveSource.EnemyFrontlineBody,
                 pocketVfxCueBridge.LastCounterWaveSource);
             Assert.AreEqual(CombatVfxCueId.EnemyLinePressureActive, pocketVfxCueBridge.CounterWaveCueId);
+            Assert.AreEqual(counterCameraCueCountBeforeEnemy + 1, cameraCueDriver.CounterWaveCueRequestCount);
+            Assert.AreEqual(1, cameraCueDriver.LastCounterWaveTier);
 
             float stabilityBeforeAnswer = pocketOwner.RouteStability01;
             TickEnergyToTier(energyLadder, 1, 0.25f);
@@ -375,6 +381,7 @@ namespace DimensionBrawl.Tests
             int counterAnswerCueCountBeforeAlly = screenCuePresenter.CounterWaveAnswerCueRequestCount;
             int followupCueCountBeforeAlly = screenCuePresenter.FollowupCueRequestCount;
             int counterStabilizedVfxCueCountBeforeAlly = pocketVfxCueBridge.CounterWaveStabilizedCueRequestCount;
+            int counterStabilizedCameraCueCountBeforeAlly = cameraCueDriver.CounterWaveStabilizedCueRequestCount;
             pocketOwner.Tick(0f);
 
             Assert.Greater(pocketOwner.ActiveAllyFrontlineProxyCount, 0);
@@ -405,6 +412,10 @@ namespace DimensionBrawl.Tests
                 pocketVfxCueBridge.CounterWaveStabilizedCueRequestCount,
                 counterStabilizedVfxCueCountBeforeAlly);
             Assert.AreEqual(CombatVfxCueId.EliteShieldSignal, pocketVfxCueBridge.CounterWaveStabilizedCueId);
+            Assert.AreEqual(
+                counterStabilizedCameraCueCountBeforeAlly + 1,
+                cameraCueDriver.CounterWaveStabilizedCueRequestCount);
+            Assert.AreEqual(2, cameraCueDriver.LastCounterWaveStabilizedTier);
 
             float bossHealthBeforeFinalHit = bossHealth.CurrentHealth;
             targetSelector.NotifyTargetContact(bossHealth);
@@ -446,6 +457,9 @@ namespace DimensionBrawl.Tests
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "screen cue presenter");
             BossBarragePocketVfxCueBridge pocketVfxCueBridge =
                 RequireComponent<BossBarragePocketVfxCueBridge>(RequireRoot(PocketOwnerRootName), "pocket VFX cue bridge");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            ActionCameraCueDriver cameraCueDriver =
+                RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
             BossSummonPressureAction bossSummonPressureAction =
                 UnityEngine.Object.FindFirstObjectByType<BossSummonPressureAction>();
             Assert.NotNull(bossSummonPressureAction, "Frontline review scene should keep the boss summon pressure action.");
@@ -456,6 +470,7 @@ namespace DimensionBrawl.Tests
             SetField(bossSummonPressureAction, "totalReleaseCount", bossSummonPressureAction.TotalReleaseCount + 1);
             int counterCueCountBeforeRelease = screenCuePresenter.CounterWaveCueRequestCount;
             int counterVfxCueCountBeforeRelease = pocketVfxCueBridge.CounterWaveCueRequestCount;
+            int counterCameraCueCountBeforeRelease = cameraCueDriver.CounterWaveCueRequestCount;
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.IsCounterWaveCompletionRecorded);
@@ -486,6 +501,8 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(
                 BossBarragePocketReviewOwner.CounterWaveSource.BossSummonRelease,
                 pocketVfxCueBridge.LastCounterWaveSource);
+            Assert.AreEqual(counterCameraCueCountBeforeRelease + 1, cameraCueDriver.CounterWaveCueRequestCount);
+            Assert.AreEqual(2, cameraCueDriver.LastCounterWaveTier);
         }
 
         [UnityTest]

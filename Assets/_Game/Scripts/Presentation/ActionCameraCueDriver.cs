@@ -187,14 +187,44 @@ namespace DimensionBrawl.Presentation
             finisherScale = 1f
         };
 
+        [Tooltip("Counter wave pressure cue. A short widen/pullback so the player reads the lane has become contested again.")]
+        [SerializeField] private ActionCameraCueProfile.CameraCue counterWaveCue = new ActionCameraCueProfile.CameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, 0.06f, -0.22f),
+            planarDirectionOffset = -0.12f,
+            fieldOfViewDelta = 2.0f,
+            cameraDistanceDelta = -0.22f,
+            focusHeightDelta = 0.05f,
+            durationSeconds = 0.20f,
+            finisherScale = 1.2f
+        };
+
+        [Tooltip("Counter recovery cue. Smaller than the follow-up cue so it marks the line hold without stealing the Skill1 confirm.")]
+        [SerializeField] private ActionCameraCueProfile.CameraCue counterWaveStabilizedCue = new ActionCameraCueProfile.CameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, 0.04f, -0.10f),
+            planarDirectionOffset = 0.08f,
+            fieldOfViewDelta = 1.0f,
+            cameraDistanceDelta = -0.10f,
+            focusHeightDelta = 0.03f,
+            durationSeconds = 0.18f,
+            finisherScale = 1.1f
+        };
+
         private int summonPressureBlockCueRequestCount;
         private int lastSummonPressureBlockTier;
         private int summonBlockOpportunityCueRequestCount;
         private int summonFollowupWindowCueRequestCount;
         private int summonFollowupHitCueRequestCount;
         private int summonFollowupMissedCueRequestCount;
+        private int counterWaveCueRequestCount;
+        private int counterWaveStabilizedCueRequestCount;
         private int lastSummonFollowupWindowTier;
         private int lastSummonFollowupHitTier;
+        private int lastCounterWaveTier;
+        private int lastCounterWaveStabilizedTier;
         private float lastSummonFollowupHitDamage;
 
         public ActionCameraCueProfile CueProfile => cueProfile;
@@ -205,8 +235,12 @@ namespace DimensionBrawl.Presentation
         public int SummonFollowupWindowCueRequestCount => summonFollowupWindowCueRequestCount;
         public int SummonFollowupHitCueRequestCount => summonFollowupHitCueRequestCount;
         public int SummonFollowupMissedCueRequestCount => summonFollowupMissedCueRequestCount;
+        public int CounterWaveCueRequestCount => counterWaveCueRequestCount;
+        public int CounterWaveStabilizedCueRequestCount => counterWaveStabilizedCueRequestCount;
         public int LastSummonFollowupWindowTier => lastSummonFollowupWindowTier;
         public int LastSummonFollowupHitTier => lastSummonFollowupHitTier;
+        public int LastCounterWaveTier => lastCounterWaveTier;
+        public int LastCounterWaveStabilizedTier => lastCounterWaveStabilizedTier;
         public float LastSummonFollowupHitDamage => lastSummonFollowupHitDamage;
 
         private ActionCameraCueProfile.CameraCue ActiveRunStartCue => cueProfile != null ? cueProfile.RunStartCue : runStartCue;
@@ -227,6 +261,10 @@ namespace DimensionBrawl.Presentation
             cueProfile != null ? cueProfile.SummonFollowupHitCue : summonFollowupHitCue;
         private ActionCameraCueProfile.CameraCue ActiveSummonFollowupMissedCue =>
             cueProfile != null ? cueProfile.SummonFollowupMissedCue : summonFollowupMissedCue;
+        private ActionCameraCueProfile.CameraCue ActiveCounterWaveCue =>
+            cueProfile != null ? cueProfile.CounterWaveCue : counterWaveCue;
+        private ActionCameraCueProfile.CameraCue ActiveCounterWaveStabilizedCue =>
+            cueProfile != null ? cueProfile.CounterWaveStabilizedCue : counterWaveStabilizedCue;
 
         private void Awake()
         {
@@ -397,6 +435,28 @@ namespace DimensionBrawl.Presentation
             if (RequestCue(ActiveSummonFollowupMissedCue, -ResolvePlanarDirection(), 1f))
             {
                 summonFollowupMissedCueRequestCount++;
+            }
+        }
+
+        public void RequestCounterWaveCue(int tier)
+        {
+            int resolvedTier = Mathf.Clamp(tier, 1, 3);
+            ActionCameraCueProfile.CameraCue cue = ActiveCounterWaveCue;
+            if (RequestCue(cue, -ResolvePlanarDirection(), ResolveTierScale(resolvedTier, cue)))
+            {
+                counterWaveCueRequestCount++;
+                lastCounterWaveTier = resolvedTier;
+            }
+        }
+
+        public void RequestCounterWaveStabilizedCue(int tier)
+        {
+            int resolvedTier = Mathf.Clamp(tier, 1, 3);
+            ActionCameraCueProfile.CameraCue cue = ActiveCounterWaveStabilizedCue;
+            if (RequestCue(cue, ResolvePlanarDirection(), ResolveTierScale(resolvedTier, cue)))
+            {
+                counterWaveStabilizedCueRequestCount++;
+                lastCounterWaveStabilizedTier = resolvedTier;
             }
         }
 

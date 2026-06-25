@@ -32,6 +32,8 @@ namespace DimensionBrawl.Test
             pocketReviewOwner.SummonFollowupWindowOpened += HandleSummonFollowupWindowOpened;
             pocketReviewOwner.SummonFollowupHitConfirmed += HandleSummonFollowupHitConfirmed;
             pocketReviewOwner.SummonFollowupMissed += HandleSummonFollowupMissed;
+            pocketReviewOwner.CounterWaveObserved += HandleCounterWaveObserved;
+            pocketReviewOwner.CounterWaveStabilized += HandleCounterWaveStabilized;
             pocketReviewOwner.PocketCleared += HandlePocketCleared;
             pocketReviewOwner.PocketFailed += HandlePocketFailed;
         }
@@ -47,6 +49,8 @@ namespace DimensionBrawl.Test
             pocketReviewOwner.SummonFollowupWindowOpened -= HandleSummonFollowupWindowOpened;
             pocketReviewOwner.SummonFollowupHitConfirmed -= HandleSummonFollowupHitConfirmed;
             pocketReviewOwner.SummonFollowupMissed -= HandleSummonFollowupMissed;
+            pocketReviewOwner.CounterWaveObserved -= HandleCounterWaveObserved;
+            pocketReviewOwner.CounterWaveStabilized -= HandleCounterWaveStabilized;
             pocketReviewOwner.PocketCleared -= HandlePocketCleared;
             pocketReviewOwner.PocketFailed -= HandlePocketFailed;
         }
@@ -91,6 +95,16 @@ namespace DimensionBrawl.Test
             RequestCinematic(ActionCinematicCueProfile.CueKind.SummonRecall, 2);
         }
 
+        private void HandleCounterWaveObserved(BossBarragePocketReviewOwner.CounterWaveSource source)
+        {
+            cameraCueDriver?.RequestCounterWaveCue(ResolveCounterWaveCueTier(source));
+        }
+
+        private void HandleCounterWaveStabilized()
+        {
+            cameraCueDriver?.RequestCounterWaveStabilizedCue(2);
+        }
+
         private void HandlePocketCleared()
         {
             RequestCinematic(ActionCinematicCueProfile.CueKind.PocketClear, 3);
@@ -104,6 +118,14 @@ namespace DimensionBrawl.Test
         private bool RequestCinematic(ActionCinematicCueProfile.CueKind kind, int tier)
         {
             return cinematicCueDirector != null && cinematicCueDirector.TryPlay(kind, tier);
+        }
+
+        private static int ResolveCounterWaveCueTier(BossBarragePocketReviewOwner.CounterWaveSource source)
+        {
+            return source == BossBarragePocketReviewOwner.CounterWaveSource.BossSummonRelease
+                || source == BossBarragePocketReviewOwner.CounterWaveSource.FollowupMissed
+                ? 2
+                : 1;
         }
     }
 }
