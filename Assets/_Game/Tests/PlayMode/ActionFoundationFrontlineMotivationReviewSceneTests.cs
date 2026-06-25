@@ -1,8 +1,10 @@
 using System;
 using System.Collections;
 using System.Reflection;
+using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Presentation;
+using DimensionBrawl.Player;
 using DimensionBrawl.Test;
 using DimensionBrawl.UI;
 using NUnit.Framework;
@@ -66,6 +68,9 @@ namespace DimensionBrawl.Tests
             Assert.NotNull(stageProfile);
             Assert.AreEqual("FRONTLINE-MOTIVATION-REVIEW-01", stageProfile.StageId);
             Assert.AreEqual(90f, stageProfile.TargetDurationSeconds);
+            Assert.AreEqual(0.62f, stageProfile.RouteStabilityStart01, 0.001f);
+            Assert.Greater(stageProfile.CloseProbeRouteDrainPerSecond, 0f);
+            Assert.Greater(stageProfile.CounterWaveRouteDrainPerSecond, stageProfile.CloseProbeRouteDrainPerSecond);
             Assert.GreaterOrEqual(stageProfile.BeatCount, 6);
             Assert.GreaterOrEqual(stageProfile.SourceReferenceCount, 3);
 
@@ -88,11 +93,14 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.CompactObjectiveReadout, Does.Not.Contain("Boss"));
             Assert.That(pocketOwner.ObjectiveCue, Does.Contain("line").IgnoreCase);
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Pending 0/3"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("stability 62%"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("target 90"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Review-only route record"));
+            Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("stability 62%"));
             int frontlineCueCountBeforeProbe = screenCuePresenter.FrontlineCueRequestCount;
             pocketOwner.Tick(0.6f);
             Assert.AreEqual(1, pocketOwner.CurrentStageBeatIndex);
+            Assert.Less(pocketOwner.RouteStability01, stageProfile.RouteStabilityStart01);
             Assert.Greater(screenCuePresenter.FrontlineCueRequestCount, frontlineCueCountBeforeProbe);
             Assert.AreEqual(1, screenCuePresenter.LastFrontlineBeatIndex);
             Assert.AreEqual("Probe Wave", screenCuePresenter.LastFrontlineBeatLabel);
@@ -124,6 +132,32 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Summon follow-up"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("Suppression Result"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("route_record_committed"));
+        }
+
+        [UnityTest]
+        public IEnumerator FrontlineRouteStabilityCollapseFailsRouteWithoutPlayerDefeat()
+        {
+            EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
+            yield return null;
+
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket owner");
+            BossBarrageLaneReviewHud reviewHud =
+                RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "review HUD");
+            PlayerMovementController player = UnityEngine.Object.FindFirstObjectByType<PlayerMovementController>();
+            Assert.NotNull(player, "Frontline route collapse test needs the scene player.");
+            CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
+            Assert.IsTrue(playerHealth.IsAlive);
+            Assert.IsTrue(pocketOwner.IsRouteStabilityActive);
+
+            SetField(pocketOwner, "routeStability01", 0.02f);
+            pocketOwner.Tick(1f);
+
+            Assert.IsTrue(pocketOwner.IsFailed);
+            Assert.IsTrue(playerHealth.IsAlive, "Route collapse should be a frontline failure, not a hidden HP defeat.");
+            Assert.AreEqual("LINE COLLAPSED", reviewHud.ResultBannerTitle);
+            Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("stability 0%"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Incomplete 0/3"));
         }
 
         private static void AssertRectInsideViewport(

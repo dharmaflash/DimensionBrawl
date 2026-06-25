@@ -106,6 +106,7 @@ namespace DimensionBrawl.Test
         private float lastGrantedSummonFollowupEnergyPulse;
         private float elapsedSeconds;
         private float resultElapsedSeconds;
+        private float routeStability01 = 1f;
         private CombatHealth subscribedBossHealth;
         private bool followupMissedNotified;
         private bool bossBlockedSkill1Followup;
@@ -175,6 +176,9 @@ namespace DimensionBrawl.Test
         public float ElapsedSeconds => elapsedSeconds;
         public float ResultElapsedSeconds => state == PocketState.Running ? elapsedSeconds : resultElapsedSeconds;
         public int CurrentStageBeatIndex => ResolveCurrentStageBeatIndex();
+        public bool IsRouteStabilityActive => stageProfile != null;
+        public float RouteStability01 => IsRouteStabilityActive ? Mathf.Clamp01(routeStability01) : 1f;
+        public float RouteStabilityPercent => RouteStability01 * 100f;
         public ReviewPhase CurrentPhase
         {
             get
@@ -345,6 +349,7 @@ namespace DimensionBrawl.Test
             lastGrantedSummonFollowupEnergyPulse = 0f;
             elapsedSeconds = 0f;
             resultElapsedSeconds = 0f;
+            routeStability01 = ResolveRouteStabilityStart01();
             announcedStageBeatIndex = ResolveCurrentStageBeatIndex();
             SetBarrageEnabled(true);
             SetEnergyGainEnabled(true);
@@ -389,6 +394,13 @@ namespace DimensionBrawl.Test
             CaptureBossBlockedFollowup();
             UpdatePressurePacing(deltaTime);
             TickSkill1FollowupClearTimer(deltaTime);
+            TickRouteStability(deltaTime);
+            if (IsRouteStabilityActive && routeStability01 <= 0f)
+            {
+                FailPocket();
+                PublishStageBeatChangeIfNeeded();
+                return;
+            }
 
             if (CanClearPocket())
             {
@@ -477,6 +489,7 @@ namespace DimensionBrawl.Test
             highestSkill1FollowupHitTier = Mathf.Max(highestSkill1FollowupHitTier, spentTier);
             if (!wasHitConfirmed)
             {
+                AddRouteStability(ResolveFollowupHitRouteBonus01());
                 skill1FollowupClearTimer = skill1FollowupClearDelaySeconds;
                 pressurePacing.EndSummonFollowupWindow();
                 SummonFollowupHitConfirmed?.Invoke(spentTier, damageInfo.Amount);
@@ -497,6 +510,7 @@ namespace DimensionBrawl.Test
                 ? summonSlot1Action.TotalPressureScreenInterceptCount
                 : 0;
             StartPressureRelief();
+            AddRouteStability(ResolveCloseProbeDefeatRouteBonus01());
             SummonBlockOpportunityOpened?.Invoke();
         }
 
@@ -538,6 +552,7 @@ namespace DimensionBrawl.Test
             pressurePacing.StartSummonPressureBreak(
                 pressureBreakSeconds,
                 followupWindowSeconds);
+            AddRouteStability(ResolveSummonBlockRouteBonus01(resolvedTier));
             GrantSummonFollowupEnergyPulse(followupEnergyPulse);
             ApplyRunningBarragePacing();
             SummonFollowupWindowOpened?.Invoke(resolvedTier);
@@ -613,6 +628,7 @@ namespace DimensionBrawl.Test
         {
             resultElapsedSeconds = elapsedSeconds;
             state = PocketState.Cleared;
+            routeStability01 = 1f;
             ClearPressurePacing();
             DismissActiveSummonPressureScreens();
             SetBarrageEnabled(!stopBarrageOnClear);
@@ -669,6 +685,81 @@ namespace DimensionBrawl.Test
             energyLadder.GrantCurrentTierEnergy(energyAmount);
             grantedSummonFollowupEnergy = true;
             lastGrantedSummonFollowupEnergyPulse = energyAmount;
+        }
+
+        private void TickRouteStability(float deltaTime)
+        {
+            if (!IsRouteStabilityActive || state != PocketState.Running)
+            {
+                return;
+            }
+
+            float drain = ResolveRouteStabilityDrainPerSecond();
+            if (drain <= 0f)
+            {
+                return;
+            }
+
+            routeStability01 = Mathf.Clamp01(routeStability01 - drain * Mathf.Max(0f, deltaTime));
+        }
+
+        private float ResolveRouteStabilityDrainPerSecond()
+        {
+            if (!closeThreatDefeated)
+            {
+                return stageProfile.CloseProbeRouteDrainPerSecond;
+            }
+
+            if (!blockedBossPressureWithSummon)
+            {
+                float reliefScale = pressurePacing.IsCloseThreatReliefActive ? 0.45f : 1f;
+                return stageProfile.SummonAnswerRouteDrainPerSecond * reliefScale;
+            }
+
+            if (requireSkill1FollowupHitToClear && !skill1FollowupHitConfirmed)
+            {
+                if (pressurePacing.IsSummonFollowupWindowActive)
+                {
+                    return 0f;
+                }
+
+                float pressureBreakScale = pressurePacing.IsSummonPressureBreakActive ? 0.35f : 1f;
+                return stageProfile.CounterWaveRouteDrainPerSecond * pressureBreakScale;
+            }
+
+            return 0f;
+        }
+
+        private void AddRouteStability(float amount01)
+        {
+            if (!IsRouteStabilityActive || amount01 <= 0f)
+            {
+                return;
+            }
+
+            routeStability01 = Mathf.Clamp01(routeStability01 + amount01);
+        }
+
+        private float ResolveRouteStabilityStart01()
+        {
+            return stageProfile != null ? stageProfile.RouteStabilityStart01 : 1f;
+        }
+
+        private float ResolveCloseProbeDefeatRouteBonus01()
+        {
+            return stageProfile != null ? stageProfile.CloseProbeDefeatRouteBonus01 : 0f;
+        }
+
+        private float ResolveSummonBlockRouteBonus01(int tier)
+        {
+            float bonus = stageProfile != null ? stageProfile.SummonBlockRouteBonus01 : 0f;
+            float tierScale = Mathf.Lerp(0.85f, 1.15f, Mathf.Clamp01((Mathf.Clamp(tier, 1, 3) - 1) / 2f));
+            return bonus * tierScale;
+        }
+
+        private float ResolveFollowupHitRouteBonus01()
+        {
+            return stageProfile != null ? stageProfile.FollowupHitRouteBonus01 : 0f;
         }
 
         private int GetSkillUseCount()

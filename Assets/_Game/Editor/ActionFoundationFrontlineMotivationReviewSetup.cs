@@ -195,6 +195,13 @@ namespace DimensionBrawl.Editor
                 "observerLoop",
                 "condition gate -> combat observer -> completion record -> reward/state hook");
             SetString(serializedObject, "rewardHook", "Review-only route record; no payout or progression grant.");
+            SetFloat(serializedObject, "routeStabilityStart01", 0.62f);
+            SetFloat(serializedObject, "closeProbeRouteDrainPerSecond", 0.045f);
+            SetFloat(serializedObject, "summonAnswerRouteDrainPerSecond", 0.06f);
+            SetFloat(serializedObject, "counterWaveRouteDrainPerSecond", 0.08f);
+            SetFloat(serializedObject, "closeProbeDefeatRouteBonus01", 0.12f);
+            SetFloat(serializedObject, "summonBlockRouteBonus01", 0.18f);
+            SetFloat(serializedObject, "followupHitRouteBonus01", 0.20f);
             SetInt(serializedObject, "objectiveStepCount", 3);
             SetString(serializedObject, "stepPrefix", "Route");
             SetString(

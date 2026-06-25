@@ -23,6 +23,13 @@ MonoBehaviour:
   observerLoop: condition gate -> combat observer -> completion record -> reward/state
     hook
   rewardHook: Review-only route record; no payout or progression grant.
+  routeStabilityStart01: 0.62
+  closeProbeRouteDrainPerSecond: 0.045
+  summonAnswerRouteDrainPerSecond: 0.06
+  counterWaveRouteDrainPerSecond: 0.08
+  closeProbeDefeatRouteBonus01: 0.12
+  summonBlockRouteBonus01: 0.18
+  followupHitRouteBonus01: 0.2
   objectiveStepCount: 3
   stepPrefix: Route
   preThreatChargeCue: Hold the player line, build EN, then stop the close probe

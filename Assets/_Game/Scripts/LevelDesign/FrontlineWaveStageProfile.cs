@@ -49,6 +49,15 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField] private string observerLoop = "condition gate -> combat observer -> completion record -> reward/state hook";
         [SerializeField] private string rewardHook = "Review-only result hook; no payout or progression grant.";
 
+        [Header("Route Stability")]
+        [SerializeField, Range(0f, 1f)] private float routeStabilityStart01 = 0.62f;
+        [SerializeField, Min(0f)] private float closeProbeRouteDrainPerSecond = 0.045f;
+        [SerializeField, Min(0f)] private float summonAnswerRouteDrainPerSecond = 0.06f;
+        [SerializeField, Min(0f)] private float counterWaveRouteDrainPerSecond = 0.08f;
+        [SerializeField, Range(0f, 1f)] private float closeProbeDefeatRouteBonus01 = 0.12f;
+        [SerializeField, Range(0f, 1f)] private float summonBlockRouteBonus01 = 0.18f;
+        [SerializeField, Range(0f, 1f)] private float followupHitRouteBonus01 = 0.20f;
+
         [Header("Objective Copy")]
         [SerializeField, Min(1)] private int objectiveStepCount = 3;
         [SerializeField] private string stepPrefix = "Route";
@@ -86,6 +95,13 @@ namespace DimensionBrawl.LevelDesign
         public string SpawnFamilyPattern => spawnFamilyPattern;
         public string ObserverLoop => observerLoop;
         public string RewardHook => rewardHook;
+        public float RouteStabilityStart01 => Mathf.Clamp01(routeStabilityStart01);
+        public float CloseProbeRouteDrainPerSecond => Mathf.Max(0f, closeProbeRouteDrainPerSecond);
+        public float SummonAnswerRouteDrainPerSecond => Mathf.Max(0f, summonAnswerRouteDrainPerSecond);
+        public float CounterWaveRouteDrainPerSecond => Mathf.Max(0f, counterWaveRouteDrainPerSecond);
+        public float CloseProbeDefeatRouteBonus01 => Mathf.Clamp01(closeProbeDefeatRouteBonus01);
+        public float SummonBlockRouteBonus01 => Mathf.Clamp01(summonBlockRouteBonus01);
+        public float FollowupHitRouteBonus01 => Mathf.Clamp01(followupHitRouteBonus01);
         public int ObjectiveStepCount => Mathf.Max(1, objectiveStepCount);
         public string StepPrefix => string.IsNullOrWhiteSpace(stepPrefix) ? "Route" : stepPrefix;
         public string PreThreatChargeCue => preThreatChargeCue;

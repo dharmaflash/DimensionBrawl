@@ -80,6 +80,7 @@ namespace DimensionBrawl.Presentation
         public string FrontlineTuningReadout => ResolveFrontlineTuningLine();
         public string StageBeatReadout => ResolveStageBeatLine();
         public string RouteRecordReadout => ResolveRouteRecordLine();
+        public string RouteStabilityReadout => ResolveRouteStabilityLine();
         public string BossPressureReadout => ResolveBossPressureLine();
         public string BossPressureResponseReadout => ResolveBossPressureResponseLine();
         public bool ShowDetailedTelemetry => showDetailedTelemetry;
@@ -310,6 +311,7 @@ namespace DimensionBrawl.Presentation
             GUILayout.Label(ResolveBossPressureResponseLine(), labelStyle);
             GUILayout.Label(ResolveBossSummonLine(), labelStyle);
             GUILayout.Label(ResolveStageBeatLine(), labelStyle);
+            GUILayout.Label(ResolveRouteStabilityLine(), labelStyle);
             GUILayout.Label(ResolveRouteRecordLine(), labelStyle);
             GUILayout.Label(ResolveFrontlineLoopLine(), labelStyle);
             GUILayout.Label(ResolveFrontlineTuningLine(), labelStyle);
@@ -917,7 +919,7 @@ namespace DimensionBrawl.Presentation
         private string ResolveCompactFrontlineCueLine()
         {
             BossBarrageFrontlineReadout readout = BossBarrageLaneReviewHudText.ResolveFrontlineProxyReadout();
-            return $"Front {readout.State}: A{readout.AllyCount} {readout.AllyHealthText} / "
+            return $"Front {readout.State}: {ResolveCompactRouteStabilityText()} A{readout.AllyCount} {readout.AllyHealthText} / "
                 + $"E{readout.EnemyCount} {readout.EnemyHealthText} | {ResolveCompactSummonText()}";
         }
 
@@ -960,6 +962,7 @@ namespace DimensionBrawl.Presentation
                 : "player -";
             string boss = ResolveBossLoopReadout();
             return $"Loop {loop}   frontline {readout.State} "
+                + $"{ResolveRouteStabilityText()}   "
                 + $"ally {readout.AllyCount} hp {readout.AllyHealthText} "
                 + $"enemy {readout.EnemyCount} hp {readout.EnemyHealthText}   "
                 + $"{player}   {boss}";
@@ -1379,6 +1382,11 @@ namespace DimensionBrawl.Presentation
             return $"Route Record: {ResolveRouteRecordSummary()}";
         }
 
+        private string ResolveRouteStabilityLine()
+        {
+            return $"Route Stability: {ResolveRouteStabilityText()}";
+        }
+
         private string ResolveRouteRecordSummary()
         {
             if (pocketReviewOwner == null)
@@ -1391,20 +1399,40 @@ namespace DimensionBrawl.Presentation
             string targetText = $"{pocketReviewOwner.ResultElapsedSeconds:0.0}/{targetSeconds:0.0}s";
             if (pocketReviewOwner.IsFailed)
             {
-                return $"Incomplete {ResolvePocketProgressText()} ({targetText})";
+                return $"Incomplete {ResolvePocketProgressText()} {ResolveRouteStabilityText()} ({targetText})";
             }
 
             if (!pocketReviewOwner.IsCleared)
             {
                 string hook = ResolveStageText(profile?.RewardHook, "Review-only route record");
-                return $"Pending {ResolvePocketProgressText()} target {targetSeconds:0}s | {hook}";
+                return $"Pending {ResolvePocketProgressText()} {ResolveRouteStabilityText()} target {targetSeconds:0}s | {hook}";
             }
 
             string grade = ResolveRouteRecordGrade(targetSeconds);
             string routeType = pocketReviewOwner.Skill1FollowupHitConfirmed
                 ? "Summon follow-up"
                 : "Pressure suppression";
-            return $"Record {grade}: {routeType} {targetText}";
+            return $"Record {grade}: {routeType} {targetText} {ResolveRouteStabilityText()}";
+        }
+
+        private string ResolveRouteStabilityText()
+        {
+            if (pocketReviewOwner == null || !pocketReviewOwner.IsRouteStabilityActive)
+            {
+                return "stability -";
+            }
+
+            return $"stability {pocketReviewOwner.RouteStabilityPercent:0}%";
+        }
+
+        private string ResolveCompactRouteStabilityText()
+        {
+            if (pocketReviewOwner == null || !pocketReviewOwner.IsRouteStabilityActive)
+            {
+                return "Route -";
+            }
+
+            return $"Route {pocketReviewOwner.RouteStabilityPercent:0}%";
         }
 
         private string ResolveRouteRecordGrade(float targetSeconds)
