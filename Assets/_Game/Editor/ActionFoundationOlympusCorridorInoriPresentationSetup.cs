@@ -22,6 +22,10 @@ namespace DimensionBrawl.Editor
         private const string FullBodyCameraName = "OlympusCorridor_InoriFullBodyCamera";
         private const string PreviewFileName = "olympus-corridor-inori-presentation-preview.png";
         private const string FullBodyPreviewFileName = "olympus-corridor-inori-fullbody-preview.png";
+        private const string BlueRiftSanctuaryRootName = "OlympusCorridor_BlueRiftSanctuary";
+        private const string RetiredDefaultDirectionalLightName = "DirectionalLight";
+        private const string DefaultPointLightName = "Point Light";
+        private const string DefaultDirectionalLightName = "Directional Light";
 
         private static readonly Vector3 InoriPosition = new Vector3(-6.792f, 0.5f, 0.02f);
         private static readonly Quaternion InoriRotation = Quaternion.Euler(0f, 270f, 0f);
@@ -59,6 +63,7 @@ namespace DimensionBrawl.Editor
             RevertInoriPrefabOverrides(inori);
             ConfigureInoriPlacement(inori);
             ConfigureInoriPoseAndExpression(inori);
+            ConfigurePresentationSceneBaseline(scene);
 
             RemoveRoot(scene, PresentationRootName);
             GameObject root = new GameObject(PresentationRootName);
@@ -205,10 +210,11 @@ namespace DimensionBrawl.Editor
         private static void ConfigurePresentationAmbient()
         {
             RenderSettings.ambientMode = AmbientMode.Trilight;
-            RenderSettings.ambientSkyColor = new Color(0.9f, 0.9f, 1f, 1f);
-            RenderSettings.ambientEquatorColor = new Color(0.52f, 0.62f, 0.84f, 1f);
-            RenderSettings.ambientGroundColor = new Color(0.42f, 0.4f, 0.58f, 1f);
-            RenderSettings.ambientIntensity = 0.42f;
+            RenderSettings.ambientSkyColor = Color.white;
+            RenderSettings.ambientEquatorColor = new Color(0.88f, 0.86f, 0.95f, 1f);
+            RenderSettings.ambientGroundColor = new Color(0.76f, 0.74f, 0.86f, 1f);
+            RenderSettings.ambientIntensity = 0.66f;
+            RenderSettings.fog = false;
         }
 
         private static void ConfigurePresentationVolume(Transform root)
@@ -217,8 +223,8 @@ namespace DimensionBrawl.Editor
             GameObject volumeObject = CreateChild(root, PresentationVolumeName, Vector3.zero, Quaternion.identity);
             Volume volume = volumeObject.AddComponent<Volume>();
             volume.isGlobal = true;
-            volume.priority = 65f;
-            volume.weight = 0.4f;
+            volume.priority = 95f;
+            volume.weight = 1f;
             volume.sharedProfile = profile;
             EditorUtility.SetDirty(volume);
         }
@@ -242,11 +248,11 @@ namespace DimensionBrawl.Editor
 
             Bloom bloom = GetOrAddVolumeComponent<Bloom>(profile);
             bloom.active = true;
-            SetParameter(bloom.threshold, 1.18f);
-            SetParameter(bloom.intensity, 0.06f);
-            SetParameter(bloom.scatter, 0.54f);
-            SetParameter(bloom.clamp, 3.6f);
-            SetParameter(bloom.tint, new Color(1f, 0.9f, 0.96f, 1f));
+            SetParameter(bloom.threshold, 0.98f);
+            SetParameter(bloom.intensity, 0.04f);
+            SetParameter(bloom.scatter, 0.56f);
+            SetParameter(bloom.clamp, 3.2f);
+            SetParameter(bloom.tint, Color.white);
             SetParameter(bloom.highQualityFiltering, false);
             SetParameter(bloom.maxIterations, 4);
 
@@ -256,30 +262,30 @@ namespace DimensionBrawl.Editor
 
             ColorAdjustments color = GetOrAddVolumeComponent<ColorAdjustments>(profile);
             color.active = true;
-            SetParameter(color.postExposure, 0.12f);
-            SetParameter(color.contrast, 14f);
-            SetParameter(color.colorFilter, new Color(1f, 0.965f, 0.985f, 1f));
+            SetParameter(color.postExposure, 0.2f);
+            SetParameter(color.contrast, -2f);
+            SetParameter(color.colorFilter, new Color(1f, 0.99f, 1f, 1f));
             SetParameter(color.hueShift, 0f);
-            SetParameter(color.saturation, 8f);
+            SetParameter(color.saturation, 18f);
 
             WhiteBalance whiteBalance = GetOrAddVolumeComponent<WhiteBalance>(profile);
             whiteBalance.active = true;
-            SetParameter(whiteBalance.temperature, 4f);
+            SetParameter(whiteBalance.temperature, 0f);
             SetParameter(whiteBalance.tint, 4f);
 
             Vignette vignette = GetOrAddVolumeComponent<Vignette>(profile);
             vignette.active = true;
             SetParameter(vignette.color, new Color(0.08f, 0.045f, 0.07f, 1f));
             SetParameter(vignette.center, new Vector2(0.5f, 0.48f));
-            SetParameter(vignette.intensity, 0.04f);
-            SetParameter(vignette.smoothness, 0.5f);
+            SetParameter(vignette.intensity, 0f);
+            SetParameter(vignette.smoothness, 0.35f);
 
             DepthOfField depthOfField = GetOrAddVolumeComponent<DepthOfField>(profile);
             depthOfField.active = true;
             SetParameter(depthOfField.mode, DepthOfFieldMode.Gaussian);
             SetParameter(depthOfField.gaussianStart, 18f);
             SetParameter(depthOfField.gaussianEnd, 52f);
-            SetParameter(depthOfField.gaussianMaxRadius, 0.2f);
+            SetParameter(depthOfField.gaussianMaxRadius, 0.08f);
             SetParameter(depthOfField.highQualitySampling, false);
 
             foreach (VolumeComponent component in profile.components)
@@ -318,46 +324,54 @@ namespace DimensionBrawl.Editor
             GameObject lightingRoot = CreateChild(root, "InoriPresentation_Lighting", Vector3.zero, Quaternion.identity);
             Vector3 basePosition = inori.position;
 
-            Light key = CreateLight(lightingRoot.transform, "SoftPinkPortraitKey", basePosition + new Vector3(-2.35f, 1.88f, -1.1f));
+            Light key = CreateLight(lightingRoot.transform, "SoftWhiteProductKey", basePosition + new Vector3(-2.75f, 2.15f, -1.25f));
             key.type = LightType.Spot;
-            key.color = new Color(1f, 0.9f, 0.96f, 1f);
-            key.intensity = 1.05f;
-            key.range = 7.5f;
-            key.spotAngle = 62f;
-            key.innerSpotAngle = 38f;
+            key.color = Color.white;
+            key.intensity = 1.42f;
+            key.range = 9.2f;
+            key.spotAngle = 78f;
+            key.innerSpotAngle = 52f;
             key.transform.rotation = Quaternion.LookRotation((basePosition + new Vector3(0f, 1.18f, 0f) - key.transform.position).normalized, Vector3.up);
             key.shadows = LightShadows.None;
             key.bounceIntensity = 0f;
 
-            Light faceFill = CreateLight(lightingRoot.transform, "WarmFaceFill", basePosition + new Vector3(-1.55f, 1.32f, 0.26f));
+            Light faceFill = CreateLight(lightingRoot.transform, "MilkyFaceFill", basePosition + new Vector3(-1.35f, 1.38f, 0.34f));
             faceFill.type = LightType.Point;
-            faceFill.color = new Color(1f, 0.9f, 0.95f, 1f);
-            faceFill.intensity = 0.26f;
-            faceFill.range = 4.8f;
+            faceFill.color = Color.white;
+            faceFill.intensity = 0.4f;
+            faceFill.range = 5.2f;
             faceFill.shadows = LightShadows.None;
             faceFill.bounceIntensity = 0f;
 
-            Light hairRim = CreateLight(lightingRoot.transform, "CoolHairSeparationRim", basePosition + new Vector3(1.1f, 1.85f, 1.1f));
+            Light lavenderFill = CreateLight(lightingRoot.transform, "SoftLavenderShadowFill", basePosition + new Vector3(-0.2f, 2.1f, 1.45f));
+            lavenderFill.type = LightType.Point;
+            lavenderFill.color = new Color(0.82f, 0.78f, 1f, 1f);
+            lavenderFill.intensity = 0.32f;
+            lavenderFill.range = 6.4f;
+            lavenderFill.shadows = LightShadows.None;
+            lavenderFill.bounceIntensity = 0f;
+
+            Light hairRim = CreateLight(lightingRoot.transform, "WhiteHairSeparationRim", basePosition + new Vector3(1.2f, 1.95f, 1.05f));
             hairRim.type = LightType.Point;
-            hairRim.color = new Color(1f, 0.62f, 0.86f, 1f);
-            hairRim.intensity = 1.15f;
-            hairRim.range = 5f;
+            hairRim.color = Color.white;
+            hairRim.intensity = 0.68f;
+            hairRim.range = 5.4f;
             hairRim.shadows = LightShadows.None;
             hairRim.bounceIntensity = 0f;
 
-            Light floorBounce = CreateLight(lightingRoot.transform, "PinkFloorBounce", basePosition + new Vector3(-0.85f, 0.28f, 0.72f));
+            Light floorBounce = CreateLight(lightingRoot.transform, "SoftFloorBounce", basePosition + new Vector3(-0.85f, 0.28f, 0.72f));
             floorBounce.type = LightType.Point;
-            floorBounce.color = new Color(1f, 0.63f, 0.78f, 1f);
-            floorBounce.intensity = 0.16f;
-            floorBounce.range = 4.2f;
+            floorBounce.color = new Color(0.92f, 0.9f, 1f, 1f);
+            floorBounce.intensity = 0.22f;
+            floorBounce.range = 4.8f;
             floorBounce.shadows = LightShadows.None;
             floorBounce.bounceIntensity = 0f;
 
-            Light corridorWash = CreateLight(lightingRoot.transform, "WarmSubcultureStageWash", basePosition + new Vector3(-2.2f, 4.5f, -2.7f));
+            Light corridorWash = CreateLight(lightingRoot.transform, "PaleProductStageWash", basePosition + new Vector3(-2.2f, 4.5f, -2.7f));
             corridorWash.type = LightType.Directional;
             corridorWash.transform.rotation = Quaternion.Euler(42f, 112f, 0f);
-            corridorWash.color = new Color(1f, 0.86f, 0.92f, 1f);
-            corridorWash.intensity = 0.16f;
+            corridorWash.color = Color.white;
+            corridorWash.intensity = 0.3f;
             corridorWash.shadows = LightShadows.None;
             corridorWash.bounceIntensity = 0f;
 
@@ -370,9 +384,9 @@ namespace DimensionBrawl.Editor
         private static void ConfigurePortraitCamera(Transform root, Transform inori)
         {
             Vector3 target = inori.position + new Vector3(0f, 1.28f, 0.02f);
-            Vector3 position = inori.position + new Vector3(-2.55f, 1.16f, -0.48f);
+            Vector3 position = inori.position + new Vector3(-2.9f, 1.18f, -0.42f);
             Camera camera = CreateCamera(root, PortraitCameraName, position, target);
-            camera.fieldOfView = 30f;
+            camera.fieldOfView = 28f;
             camera.nearClipPlane = 0.05f;
             camera.farClipPlane = 140f;
         }
@@ -380,9 +394,9 @@ namespace DimensionBrawl.Editor
         private static void ConfigureFullBodyCamera(Transform root, Transform inori)
         {
             Vector3 target = inori.position + new Vector3(0f, 0.98f, 0.02f);
-            Vector3 position = inori.position + new Vector3(-3.45f, 1.08f, -0.42f);
+            Vector3 position = inori.position + new Vector3(-3.95f, 1.08f, -0.36f);
             Camera camera = CreateCamera(root, FullBodyCameraName, position, target);
-            camera.fieldOfView = 42f;
+            camera.fieldOfView = 30f;
             camera.nearClipPlane = 0.05f;
             camera.farClipPlane = 140f;
         }
@@ -393,7 +407,8 @@ namespace DimensionBrawl.Editor
             Camera camera = cameraObject.AddComponent<Camera>();
             camera.allowHDR = true;
             camera.allowMSAA = true;
-            camera.clearFlags = CameraClearFlags.Skybox;
+            camera.clearFlags = CameraClearFlags.SolidColor;
+            camera.backgroundColor = Color.white;
             camera.depth = 30f;
 
             UniversalAdditionalCameraData cameraData = camera.GetUniversalAdditionalCameraData();
@@ -404,6 +419,44 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(camera);
             EditorUtility.SetDirty(cameraData);
             return camera;
+        }
+
+        private static void ConfigurePresentationSceneBaseline(Scene scene)
+        {
+            SetSceneObjectActive(scene, BlueRiftSanctuaryRootName, false);
+            SetSceneLightEnabled(scene, RetiredDefaultDirectionalLightName, false);
+            RemoveRoot(scene, DefaultPointLightName);
+            RemoveRoot(scene, DefaultDirectionalLightName);
+        }
+
+        private static void SetSceneObjectActive(Scene scene, string objectName, bool active)
+        {
+            GameObject sceneObject = FindSceneObjectByName(scene, objectName);
+            if (sceneObject == null)
+            {
+                return;
+            }
+
+            sceneObject.SetActive(active);
+            EditorUtility.SetDirty(sceneObject);
+        }
+
+        private static void SetSceneLightEnabled(Scene scene, string objectName, bool enabled)
+        {
+            GameObject sceneObject = FindSceneObjectByName(scene, objectName);
+            if (sceneObject == null)
+            {
+                return;
+            }
+
+            Light light = sceneObject.GetComponent<Light>();
+            if (light == null)
+            {
+                return;
+            }
+
+            light.enabled = enabled;
+            EditorUtility.SetDirty(light);
         }
 
         private static string RenderPreview(Camera camera, string fileName)
