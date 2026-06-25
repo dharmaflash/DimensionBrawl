@@ -125,6 +125,7 @@ namespace DimensionBrawl.Test
         private CombatHealth subscribedBossHealth;
         private bool followupMissedNotified;
         private bool bossBlockedSkill1Followup;
+        private bool counterWaveObserved;
         private int announcedStageBeatIndex;
         private RouteStabilityBand announcedRouteStabilityBand;
 
@@ -152,6 +153,8 @@ namespace DimensionBrawl.Test
         public bool IsCloseProbeCompletionRecorded => closeThreatDefeated;
         public bool IsSummonRouteCompletionRecorded => usedSummonSlot1 && blockedBossPressureWithSummon;
         public bool IsFollowupCompletionRecorded => skill1FollowupHitConfirmed;
+        public bool IsCounterWaveCompletionRecorded => counterWaveObserved;
+        public string CounterWaveRecordState => ResolveCounterWaveRecordState();
         public string CompletionRecordReadout => ResolveCompletionRecordReadout();
         public bool IsSkill1FollowupClearCountdownActive => state == PocketState.Running
             && skill1FollowupHitConfirmed
@@ -372,6 +375,7 @@ namespace DimensionBrawl.Test
             pressurePacing.Reset();
             followupMissedNotified = false;
             bossBlockedSkill1Followup = false;
+            counterWaveObserved = false;
             highestSkillTier = 0;
             highestSummonTier = 0;
             highestSummonPressureTier = 0;
@@ -429,6 +433,7 @@ namespace DimensionBrawl.Test
             CaptureCloseThreatDefeat();
             CaptureBossBlockedFollowup();
             UpdatePressurePacing(deltaTime);
+            CaptureCounterWavePressure();
             TickSkill1FollowupClearTimer(deltaTime);
             TickRouteStability(deltaTime);
             if (IsRouteStabilityActive && routeStability01 <= 0f)
@@ -657,7 +662,23 @@ namespace DimensionBrawl.Test
             }
 
             followupMissedNotified = true;
+            counterWaveObserved = true;
             SummonFollowupMissed?.Invoke();
+        }
+
+        private void CaptureCounterWavePressure()
+        {
+            if (counterWaveObserved || !blockedBossPressureWithSummon)
+            {
+                return;
+            }
+
+            if (followupMissedNotified
+                || bossBlockedSkill1Followup
+                || ActiveEnemyFrontlineProxyCount > 0)
+            {
+                counterWaveObserved = true;
+            }
         }
 
         private void ClearPocket()
@@ -1136,12 +1157,23 @@ namespace DimensionBrawl.Test
         {
             return $"close:{ResolveRecordState(IsCloseProbeCompletionRecorded)} "
                 + $"summon:{ResolveRecordState(IsSummonRouteCompletionRecorded)} "
-                + $"followup:{ResolveRecordState(IsFollowupCompletionRecorded)}";
+                + $"followup:{ResolveRecordState(IsFollowupCompletionRecorded)} "
+                + $"counter:{CounterWaveRecordState}";
         }
 
         private static string ResolveRecordState(bool completed)
         {
             return completed ? "recorded" : "pending";
+        }
+
+        private string ResolveCounterWaveRecordState()
+        {
+            if (IsCounterWaveCompletionRecorded)
+            {
+                return "recorded";
+            }
+
+            return IsFollowupCompletionRecorded ? "avoided" : "pending";
         }
 
         private int ResolveCurrentStageBeatIndex()
@@ -1164,6 +1196,7 @@ namespace DimensionBrawl.Test
             if (blockedBossPressureWithSummon
                 || pressurePacing.IsSummonPressureBreakActive
                 || bossBlockedSkill1Followup
+                || counterWaveObserved
                 || followupMissedNotified)
             {
                 return 4;

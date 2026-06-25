@@ -111,6 +111,7 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("close:pending"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("summon:pending"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("followup:pending"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter:pending"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Review-only route record"));
             Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("stability 62%"));
             int frontlineCueCountBeforeProbe = screenCuePresenter.FrontlineCueRequestCount;
@@ -160,6 +161,7 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("close:recorded"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("summon:recorded"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("followup:recorded"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter:avoided"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("Suppression Result"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("route_record_committed"));
         }
@@ -244,6 +246,35 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(1.20f, pocketOwner.CurrentFrontlinePresenceDrainScale, 0.001f);
             Assert.Greater(pocketOwner.CurrentRouteStabilityDrainPerSecond, openDrain);
             Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("frontline x1.20 enemy"));
+
+            enemyProxy.Deactivate(SummonFrontlineProxyExitReason.Recalled);
+        }
+
+        [UnityTest]
+        public IEnumerator FrontlineEnemyBodyPressureRecordsCounterWave()
+        {
+            EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
+            yield return null;
+
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket owner");
+            BossBarrageLaneReviewHud reviewHud =
+                RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "review HUD");
+
+            Assert.IsFalse(pocketOwner.IsCounterWaveCompletionRecorded);
+            Assert.AreEqual("pending", pocketOwner.CounterWaveRecordState);
+
+            SetField(pocketOwner, "closeThreatDefeated", true);
+            SetField(pocketOwner, "usedSummonSlot1", true);
+            SetField(pocketOwner, "blockedBossPressureWithSummon", true);
+            SummonFrontlineProxy enemyProxy = CreateActiveFrontlineProxy("Test_CounterWave_EnemyProxy", DamageTeam.Enemy);
+            pocketOwner.Tick(0f);
+
+            Assert.IsTrue(pocketOwner.IsCounterWaveCompletionRecorded);
+            Assert.AreEqual("recorded", pocketOwner.CounterWaveRecordState);
+            Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter:recorded"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter:recorded"));
+            Assert.That(reviewHud.StageBeatReadout, Does.Contain("Enemy Counter Wave"));
 
             enemyProxy.Deactivate(SummonFrontlineProxyExitReason.Recalled);
         }
