@@ -4532,6 +4532,7 @@ namespace DimensionBrawl.Editor
             weaponClone.transform.localPosition = Vector3.zero;
             weaponClone.transform.localRotation = Quaternion.identity;
             weaponClone.transform.localScale = sourceWeapon.localScale;
+            ApplyInoriRetargetedRifleMeshCorrection(weaponClone.transform, tuningProfile);
 
             ParentConstraint[] constraints = weaponClone.GetComponentsInChildren<ParentConstraint>(includeInactive: true);
             for (int i = constraints.Length - 1; i >= 0; i--)
@@ -4543,6 +4544,22 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(socketObject);
             EditorUtility.SetDirty(weaponClone);
             return weaponClone;
+        }
+
+        private static void ApplyInoriRetargetedRifleMeshCorrection(
+            Transform weaponRoot,
+            InoriRiflePoseTuningProfile tuningProfile)
+        {
+            Transform rifleMesh = FindDescendant(weaponRoot, tuningProfile.RifleMeshName);
+            if (rifleMesh == null)
+            {
+                throw new InvalidOperationException($"{weaponRoot.name} is missing {tuningProfile.RifleMeshName}.");
+            }
+
+            rifleMesh.localPosition = tuningProfile.RifleMeshLocalPosition;
+            rifleMesh.localRotation = tuningProfile.RifleMeshLocalRotation;
+            rifleMesh.localScale = Vector3.one;
+            EditorUtility.SetDirty(rifleMesh);
         }
 
         private static void ApplyRetargetedRifleSocket(
@@ -9859,6 +9876,8 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"{RangedPlayerWeaponName} must include visible renderers.");
             }
 
+            ValidateInoriRetargetedRifleMeshCorrection(weapon);
+
             RifleGirlWeaponSocketDriver weaponSocketDriver =
                 rangedAnimator.GetComponent<RifleGirlWeaponSocketDriver>();
             if (weaponSocketDriver == null || !weaponSocketDriver.IsConfigured)
@@ -9948,6 +9967,28 @@ namespace DimensionBrawl.Editor
             if (meleeWeaponBinder == null || !meleeWeaponBinder.AllBindingsValid)
             {
                 throw new InvalidOperationException("Extracted melee weapons must bind to the persistent player hand sockets.");
+            }
+        }
+
+        private static void ValidateInoriRetargetedRifleMeshCorrection(Transform weaponRoot)
+        {
+            InoriRiflePoseTuningProfile tuningProfile = LoadInoriRiflePoseTuningProfile();
+            Transform rifleMesh = FindDescendant(weaponRoot, tuningProfile.RifleMeshName);
+            if (rifleMesh == null)
+            {
+                throw new InvalidOperationException($"{weaponRoot.name} is missing {tuningProfile.RifleMeshName}.");
+            }
+
+            if ((rifleMesh.localPosition - tuningProfile.RifleMeshLocalPosition).sqrMagnitude > 0.000001f)
+            {
+                throw new InvalidOperationException(
+                    $"{tuningProfile.RifleMeshName}.localPosition drifted from the reviewed Inori hand alignment.");
+            }
+
+            if (Quaternion.Angle(rifleMesh.localRotation, tuningProfile.RifleMeshLocalRotation) > 0.01f)
+            {
+                throw new InvalidOperationException(
+                    $"{tuningProfile.RifleMeshName}.localRotation drifted from the reviewed Inori hand alignment.");
             }
         }
 

@@ -524,6 +524,9 @@ MonoBehaviour:
   summonRecallProfile: {fileID: 11400000, guid: 1795e33ea2415e54a9ec3d9a3217867e, type: 2}
   pocketClearProfile: {fileID: 11400000, guid: 6fb87f598ea3d1042a9087dc8091d121, type: 2}
   pocketFailProfile: {fileID: 11400000, guid: 39253b27abed2f64e89489163a7d87a0, type: 2}
+  bossIntroProfile: {fileID: 11400000, guid: 908b3067c579c194882bacbc26212de3, type: 2}
+  phaseTransitionProfile: {fileID: 11400000, guid: 2247842f9334ffe488877fc276290069, type: 2}
+  dialogueReactionBeatProfile: {fileID: 11400000, guid: f378e3c69421fcf4ba48fd3db9817ba1, type: 2}
 --- !u!114 &1010
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -13367,8 +13370,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1285666159}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.0000034335674, y: -0.70710635, z: -0.0000034335633, w: 0.7071072}
-  m_LocalPosition: {x: -0.22759247, y: 0.017439334, z: 0.022038817}
+  m_LocalRotation: {x: 0.23397046, y: -0.6491049, z: 0.24141417, w: 0.6823782}
+  m_LocalPosition: {x: -0.1972191, y: -0.1509073, z: 0.0530155}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

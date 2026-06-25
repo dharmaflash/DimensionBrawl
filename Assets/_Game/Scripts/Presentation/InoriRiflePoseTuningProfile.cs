@@ -20,6 +20,12 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private Vector3 leftHandleLocalPosition = new Vector3(-0.261f, 0.067f, 0.061f);
         [SerializeField] private Vector3 leftHandleLocalEulerAngles = new Vector3(133.522f, -296.891f, -119.992004f);
 
+        [Header("Weapon Mesh")]
+        [SerializeField] private string rifleMeshName = "Weapon_Rifle";
+        [SerializeField] private Vector3 rifleMeshLocalPosition = new Vector3(-0.1972191f, -0.1509073f, 0.0530155f);
+        [SerializeField] private Quaternion rifleMeshLocalRotation =
+            new Quaternion(0.23397045f, -0.64910483f, 0.24141416f, 0.6823781f);
+
         [Header("IK Weights")]
         [SerializeField, Range(0f, 1f)] private float rightIkPositionWeight;
         [SerializeField, Range(0f, 1f)] private float rightIkRotationWeight;
@@ -33,6 +39,9 @@ namespace DimensionBrawl.Presentation
         public Quaternion RightGripLocalRotation => Quaternion.Euler(rightGripLocalEulerAngles);
         public Vector3 LeftHandleLocalPosition => leftHandleLocalPosition;
         public Quaternion LeftHandleLocalRotation => Quaternion.Euler(leftHandleLocalEulerAngles);
+        public string RifleMeshName => rifleMeshName;
+        public Vector3 RifleMeshLocalPosition => rifleMeshLocalPosition;
+        public Quaternion RifleMeshLocalRotation => rifleMeshLocalRotation;
         public float RightIkPositionWeight => rightIkPositionWeight;
         public float RightIkRotationWeight => rightIkRotationWeight;
         public float LeftIkPositionWeight => leftIkPositionWeight;

@@ -1591,6 +1591,7 @@ namespace DimensionBrawl.Editor
             weapon.transform.localRotation = Quaternion.identity;
             weapon.transform.localScale = sourceWeapon.localScale;
             RemoveConstraints(weapon);
+            ApplyInoriRifleMeshCorrection(weapon.transform, tuningProfile);
 
             Transform leftHandle = FindDescendant(weapon.transform, "Left_Handle");
             if (leftHandle == null)
@@ -1637,6 +1638,22 @@ namespace DimensionBrawl.Editor
             targetSocket.localRotation = (handAxisCorrection * sourceLocalRotation)
                 * tuningProfile.RightGripLocalRotation;
             targetSocket.localScale = Vector3.one;
+        }
+
+        private static void ApplyInoriRifleMeshCorrection(
+            Transform weaponRoot,
+            InoriRiflePoseTuningProfile tuningProfile)
+        {
+            Transform rifleMesh = FindDescendant(weaponRoot, tuningProfile.RifleMeshName);
+            if (rifleMesh == null)
+            {
+                throw new InvalidOperationException($"{weaponRoot.name} is missing {tuningProfile.RifleMeshName}.");
+            }
+
+            rifleMesh.localPosition = tuningProfile.RifleMeshLocalPosition;
+            rifleMesh.localRotation = tuningProfile.RifleMeshLocalRotation;
+            rifleMesh.localScale = Vector3.one;
+            EditorUtility.SetDirty(rifleMesh);
         }
 
         private static void AssignInoriPromotedMaterials(GameObject visualRoot)

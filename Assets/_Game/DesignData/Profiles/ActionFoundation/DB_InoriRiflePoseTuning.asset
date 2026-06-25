@@ -19,6 +19,9 @@ MonoBehaviour:
   rightGripLocalEulerAngles: {x: 0, y: 0, z: 0}
   leftHandleLocalPosition: {x: -0.261, y: 0.067, z: 0.061}
   leftHandleLocalEulerAngles: {x: 133.522, y: -296.891, z: -119.992004}
+  rifleMeshName: Weapon_Rifle
+  rifleMeshLocalPosition: {x: -0.1972191, y: -0.1509073, z: 0.0530155}
+  rifleMeshLocalRotation: {x: 0.23397045, y: -0.64910483, z: 0.24141416, w: 0.6823781}
   rightIkPositionWeight: 0
   rightIkRotationWeight: 0
   leftIkPositionWeight: 0.85
