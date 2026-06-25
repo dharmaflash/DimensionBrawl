@@ -36,6 +36,26 @@ namespace DimensionBrawl.LevelDesign
             public string LocalTakeaway => localTakeaway;
         }
 
+        [Serializable]
+        public struct PressureSlot
+        {
+            [SerializeField] private string slotId;
+            [SerializeField] private string label;
+            [SerializeField] private string spawnFamily;
+            [SerializeField] private string wavePathPattern;
+            [TextArea, SerializeField] private string playerRead;
+            [TextArea, SerializeField] private string observerEvent;
+            [SerializeField, Min(0f)] private float routePressureWeight;
+
+            public string SlotId => slotId;
+            public string Label => label;
+            public string SpawnFamily => spawnFamily;
+            public string WavePathPattern => wavePathPattern;
+            public string PlayerRead => playerRead;
+            public string ObserverEvent => observerEvent;
+            public float RoutePressureWeight => Mathf.Max(0f, routePressureWeight);
+        }
+
         [Header("Identity")]
         [SerializeField] private string stageId = "FRONTLINE-MOTIVATION-REVIEW-01";
         [SerializeField] private string displayName = "Frontline Motivation Review";
@@ -85,6 +105,7 @@ namespace DimensionBrawl.LevelDesign
 
         [Header("Review Evidence")]
         [SerializeField] private StageBeat[] beats = Array.Empty<StageBeat>();
+        [SerializeField] private PressureSlot[] pressureSlots = Array.Empty<PressureSlot>();
         [SerializeField] private SourceReference[] sourceReferences = Array.Empty<SourceReference>();
 
         public string StageId => stageId;
@@ -125,6 +146,7 @@ namespace DimensionBrawl.LevelDesign
         public string FailDetail => failDetail;
         public string RouteCollapseFailDetail => routeCollapseFailDetail;
         public int BeatCount => beats != null ? beats.Length : 0;
+        public int PressureSlotCount => pressureSlots != null ? pressureSlots.Length : 0;
         public int SourceReferenceCount => sourceReferences != null ? sourceReferences.Length : 0;
 
         public StageBeat GetBeat(int index)
@@ -145,6 +167,16 @@ namespace DimensionBrawl.LevelDesign
             }
 
             return sourceReferences[index];
+        }
+
+        public PressureSlot GetPressureSlot(int index)
+        {
+            if (pressureSlots == null || index < 0 || index >= pressureSlots.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            return pressureSlots[index];
         }
 
         public string SelectText(string profileText, string fallback)

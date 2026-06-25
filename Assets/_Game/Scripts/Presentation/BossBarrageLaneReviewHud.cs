@@ -79,6 +79,7 @@ namespace DimensionBrawl.Presentation
         public string FrontlineLoopReadout => ResolveFrontlineLoopLine();
         public string FrontlineTuningReadout => ResolveFrontlineTuningLine();
         public string StageBeatReadout => ResolveStageBeatLine();
+        public string PressureSlotReadout => ResolvePressureSlotLine();
         public string RouteRecordReadout => ResolveRouteRecordLine();
         public string RouteStabilityReadout => ResolveRouteStabilityLine();
         public string BossPressureReadout => ResolveBossPressureLine();
@@ -311,6 +312,7 @@ namespace DimensionBrawl.Presentation
             GUILayout.Label(ResolveBossPressureResponseLine(), labelStyle);
             GUILayout.Label(ResolveBossSummonLine(), labelStyle);
             GUILayout.Label(ResolveStageBeatLine(), labelStyle);
+            GUILayout.Label(ResolvePressureSlotLine(), labelStyle);
             GUILayout.Label(ResolveRouteStabilityLine(), labelStyle);
             GUILayout.Label(ResolveRouteRecordLine(), labelStyle);
             GUILayout.Label(ResolveFrontlineLoopLine(), labelStyle);
@@ -726,7 +728,20 @@ namespace DimensionBrawl.Presentation
                 return "Beat -";
             }
 
-            return $"Beat {beatIndex + 1}/{beatCount} {beat.Label}";
+            string pressureSlotLabel = TryResolveCurrentPressureSlot(out FrontlineWaveStageProfile.PressureSlot slot, out _, out _)
+                ? slot.Label
+                : "-";
+            return $"Beat {beatIndex + 1}/{beatCount} {beat.Label} | {pressureSlotLabel}";
+        }
+
+        private string ResolvePressureSlotLine()
+        {
+            if (!TryResolveCurrentPressureSlot(out FrontlineWaveStageProfile.PressureSlot slot, out int slotIndex, out int slotCount))
+            {
+                return "Pressure Slot -";
+            }
+
+            return $"Pressure Slot {slotIndex + 1}/{slotCount} {slot.Label}: {slot.SpawnFamily} {slot.WavePathPattern} | {slot.PlayerRead} | observe {slot.ObserverEvent}";
         }
 
         private bool TryResolveCurrentStageBeat(
@@ -747,6 +762,29 @@ namespace DimensionBrawl.Presentation
             int currentBeatIndex = pocketReviewOwner != null ? pocketReviewOwner.CurrentStageBeatIndex : 0;
             beatIndex = Mathf.Clamp(currentBeatIndex, 0, beatCount - 1);
             beat = profile.GetBeat(beatIndex);
+            return true;
+        }
+
+        private bool TryResolveCurrentPressureSlot(
+            out FrontlineWaveStageProfile.PressureSlot slot,
+            out int slotIndex,
+            out int slotCount)
+        {
+            slot = default;
+            slotIndex = 0;
+            slotCount = 0;
+            FrontlineWaveStageProfile profile = ActiveStageProfile;
+            if (profile == null || profile.PressureSlotCount <= 0)
+            {
+                return false;
+            }
+
+            slotCount = profile.PressureSlotCount;
+            int currentSlotIndex = pocketReviewOwner != null
+                ? pocketReviewOwner.CurrentPressureSlotIndex
+                : 0;
+            slotIndex = Mathf.Clamp(currentSlotIndex, 0, slotCount - 1);
+            slot = profile.GetPressureSlot(slotIndex);
             return true;
         }
 

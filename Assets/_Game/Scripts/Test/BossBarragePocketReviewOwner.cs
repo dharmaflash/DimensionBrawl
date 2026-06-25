@@ -189,6 +189,9 @@ namespace DimensionBrawl.Test
         public bool IsRouteStabilityActive => stageProfile != null;
         public float RouteStability01 => IsRouteStabilityActive ? Mathf.Clamp01(routeStability01) : 1f;
         public float RouteStabilityPercent => RouteStability01 * 100f;
+        public int CurrentPressureSlotIndex => ResolveCurrentPressureSlotIndex();
+        public string CurrentPressureSlotLabel => ResolveCurrentPressureSlotLabel();
+        public float CurrentRoutePressureWeight => ResolveCurrentRoutePressureWeight();
         public ReviewPhase CurrentPhase
         {
             get
@@ -720,13 +723,13 @@ namespace DimensionBrawl.Test
         {
             if (!closeThreatDefeated)
             {
-                return stageProfile.CloseProbeRouteDrainPerSecond;
+                return stageProfile.CloseProbeRouteDrainPerSecond * ResolveCurrentRoutePressureWeight();
             }
 
             if (!blockedBossPressureWithSummon)
             {
                 float reliefScale = pressurePacing.IsCloseThreatReliefActive ? 0.45f : 1f;
-                return stageProfile.SummonAnswerRouteDrainPerSecond * reliefScale;
+                return stageProfile.SummonAnswerRouteDrainPerSecond * reliefScale * ResolveCurrentRoutePressureWeight();
             }
 
             if (requireSkill1FollowupHitToClear && !skill1FollowupHitConfirmed)
@@ -737,7 +740,7 @@ namespace DimensionBrawl.Test
                 }
 
                 float pressureBreakScale = pressurePacing.IsSummonPressureBreakActive ? 0.35f : 1f;
-                return stageProfile.CounterWaveRouteDrainPerSecond * pressureBreakScale;
+                return stageProfile.CounterWaveRouteDrainPerSecond * pressureBreakScale * ResolveCurrentRoutePressureWeight();
             }
 
             return 0f;
@@ -773,6 +776,38 @@ namespace DimensionBrawl.Test
         private float ResolveFollowupHitRouteBonus01()
         {
             return stageProfile != null ? stageProfile.FollowupHitRouteBonus01 : 0f;
+        }
+
+        private int ResolveCurrentPressureSlotIndex()
+        {
+            if (stageProfile == null || stageProfile.PressureSlotCount <= 0)
+            {
+                return 0;
+            }
+
+            return Mathf.Clamp(ResolveCurrentStageBeatIndex(), 0, stageProfile.PressureSlotCount - 1);
+        }
+
+        private string ResolveCurrentPressureSlotLabel()
+        {
+            if (stageProfile == null || stageProfile.PressureSlotCount <= 0)
+            {
+                return "-";
+            }
+
+            var slot = stageProfile.GetPressureSlot(ResolveCurrentPressureSlotIndex());
+            return string.IsNullOrWhiteSpace(slot.Label) ? slot.SlotId : slot.Label;
+        }
+
+        private float ResolveCurrentRoutePressureWeight()
+        {
+            if (stageProfile == null || stageProfile.PressureSlotCount <= 0)
+            {
+                return 1f;
+            }
+
+            float weight = stageProfile.GetPressureSlot(ResolveCurrentPressureSlotIndex()).RoutePressureWeight;
+            return weight > 0f ? weight : 1f;
         }
 
         private int GetSkillUseCount()

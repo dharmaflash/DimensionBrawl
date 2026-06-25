@@ -89,6 +89,51 @@ MonoBehaviour:
     observedEvent: route_record_committed
     sourcePattern: 'Tutorial contract: completion record -> reward/state hook; review-only,
       no payout.'
+  pressureSlots:
+  - slotId: S0.MatchRead.BackPressure
+    label: BackPressure
+    spawnFamily: Normal
+    wavePathPattern: rear_boss_fixed
+    playerRead: Read the fixed boss curtain before committing resources.
+    observerEvent: stage_started + player_line_guarded
+    routePressureWeight: 0.25
+  - slotId: S1.CloseProbe.DropDashJump
+    label: CloseProbe
+    spawnFamily: Drop|Dash|Jump
+    wavePathPattern: path_grd_tutorial_001|path_grd_close_small
+    playerRead: Local defense must stop the close probe before route stability bleeds
+      out.
+    observerEvent: close_probe_defeated
+    routePressureWeight: 1
+  - slotId: S2.ScreenCurtain.DropNormal
+    label: ScreenCurtain
+    spawnFamily: Drop|Normal
+    wavePathPattern: boss_curtain_proxy|path_grd_tutorial_011
+    playerRead: SummonSlot1 answers screen pressure that the player body cannot cross.
+    observerEvent: summon_slot1_used + pressure_screen_intercept
+    routePressureWeight: 1.1
+  - slotId: S3.CoreExpose.Normal
+    label: CoreExpose
+    spawnFamily: Normal
+    wavePathPattern: boss_core_followup_window
+    playerRead: Skill1 confirms the summon opening while the route is exposed.
+    observerEvent: skill1_used_during_followup + boss_damage
+    routePressureWeight: 0.55
+  - slotId: S4.FrontlineBody.JumpDash
+    label: FrontlineBody
+    spawnFamily: Jump|Dash
+    wavePathPattern: path_grd_tutorial_002|path_grd_tutorial_003
+    playerRead: A missed follow-up returns body pressure and drains route stability
+      faster.
+    observerEvent: followup_missed_or_blocked
+    routePressureWeight: 1.35
+  - slotId: S5.Result.RecordHook
+    label: RecordHook
+    spawnFamily: Normal
+    wavePathPattern: completion_record
+    playerRead: Commit the observed route result without granting progression rewards.
+    observerEvent: route_record_committed
+    routePressureWeight: 0
   sourceReferences:
   - sourceId: NIKKE.StageWaveJoin
     sourcePath: ArkData/SubcultureGameData/games/nikke/raw/alt3ri-nikke-data/2026-06-13/files/stage-wave-join.csv

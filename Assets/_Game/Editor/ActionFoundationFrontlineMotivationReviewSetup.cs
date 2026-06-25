@@ -99,6 +99,11 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"{profile.name} should preserve ArkData/project source references.");
             }
 
+            if (profile.PressureSlotCount < 6)
+            {
+                throw new InvalidOperationException($"{profile.name} should preserve at least six pressure slots.");
+            }
+
             Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
             if (!scene.IsValid() || scene.path != ScenePath)
             {
@@ -246,6 +251,7 @@ namespace DimensionBrawl.Editor
                 "Route stability collapsed before the frontline could stabilize");
 
             ConfigureBeats(serializedObject);
+            ConfigurePressureSlots(serializedObject);
             ConfigureSourceReferences(serializedObject);
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(profile);
@@ -327,6 +333,66 @@ namespace DimensionBrawl.Editor
                 "Canonical local adaptation: fixed rear boss, player line lock, summon-first frontline agency, review-only result hook.");
         }
 
+        private static void ConfigurePressureSlots(SerializedObject serializedObject)
+        {
+            SerializedProperty slots = RequireProperty(serializedObject, "pressureSlots");
+            slots.arraySize = 6;
+            ConfigurePressureSlot(
+                slots.GetArrayElementAtIndex(0),
+                "S0.MatchRead.BackPressure",
+                "BackPressure",
+                "Normal",
+                "rear_boss_fixed",
+                "Read the fixed boss curtain before committing resources.",
+                "stage_started + player_line_guarded",
+                0.25f);
+            ConfigurePressureSlot(
+                slots.GetArrayElementAtIndex(1),
+                "S1.CloseProbe.DropDashJump",
+                "CloseProbe",
+                "Drop|Dash|Jump",
+                "path_grd_tutorial_001|path_grd_close_small",
+                "Local defense must stop the close probe before route stability bleeds out.",
+                "close_probe_defeated",
+                1f);
+            ConfigurePressureSlot(
+                slots.GetArrayElementAtIndex(2),
+                "S2.ScreenCurtain.DropNormal",
+                "ScreenCurtain",
+                "Drop|Normal",
+                "boss_curtain_proxy|path_grd_tutorial_011",
+                "SummonSlot1 answers screen pressure that the player body cannot cross.",
+                "summon_slot1_used + pressure_screen_intercept",
+                1.1f);
+            ConfigurePressureSlot(
+                slots.GetArrayElementAtIndex(3),
+                "S3.CoreExpose.Normal",
+                "CoreExpose",
+                "Normal",
+                "boss_core_followup_window",
+                "Skill1 confirms the summon opening while the route is exposed.",
+                "skill1_used_during_followup + boss_damage",
+                0.55f);
+            ConfigurePressureSlot(
+                slots.GetArrayElementAtIndex(4),
+                "S4.FrontlineBody.JumpDash",
+                "FrontlineBody",
+                "Jump|Dash",
+                "path_grd_tutorial_002|path_grd_tutorial_003",
+                "A missed follow-up returns body pressure and drains route stability faster.",
+                "followup_missed_or_blocked",
+                1.35f);
+            ConfigurePressureSlot(
+                slots.GetArrayElementAtIndex(5),
+                "S5.Result.RecordHook",
+                "RecordHook",
+                "Normal",
+                "completion_record",
+                "Commit the observed route result without granting progression rewards.",
+                "route_record_committed",
+                0f);
+        }
+
         private static void ConfigureBeat(
             SerializedProperty beat,
             string beatId,
@@ -351,6 +417,25 @@ namespace DimensionBrawl.Editor
             RequireRelative(source, "sourceId").stringValue = sourceId;
             RequireRelative(source, "sourcePath").stringValue = sourcePath;
             RequireRelative(source, "localTakeaway").stringValue = localTakeaway;
+        }
+
+        private static void ConfigurePressureSlot(
+            SerializedProperty slot,
+            string slotId,
+            string label,
+            string spawnFamily,
+            string wavePathPattern,
+            string playerRead,
+            string observerEvent,
+            float routePressureWeight)
+        {
+            RequireRelative(slot, "slotId").stringValue = slotId;
+            RequireRelative(slot, "label").stringValue = label;
+            RequireRelative(slot, "spawnFamily").stringValue = spawnFamily;
+            RequireRelative(slot, "wavePathPattern").stringValue = wavePathPattern;
+            RequireRelative(slot, "playerRead").stringValue = playerRead;
+            RequireRelative(slot, "observerEvent").stringValue = observerEvent;
+            RequireRelative(slot, "routePressureWeight").floatValue = routePressureWeight;
         }
 
         private static void EnsureFolderForAsset(string assetPath)

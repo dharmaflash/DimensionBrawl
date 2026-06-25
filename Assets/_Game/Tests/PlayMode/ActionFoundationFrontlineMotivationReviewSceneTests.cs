@@ -73,7 +73,14 @@ namespace DimensionBrawl.Tests
             Assert.Greater(stageProfile.CloseProbeRouteDrainPerSecond, 0f);
             Assert.Greater(stageProfile.CounterWaveRouteDrainPerSecond, stageProfile.CloseProbeRouteDrainPerSecond);
             Assert.GreaterOrEqual(stageProfile.BeatCount, 6);
+            Assert.GreaterOrEqual(stageProfile.PressureSlotCount, 6);
             Assert.GreaterOrEqual(stageProfile.SourceReferenceCount, 3);
+            FrontlineWaveStageProfile.PressureSlot closeProbeSlot = stageProfile.GetPressureSlot(1);
+            Assert.AreEqual("CloseProbe", closeProbeSlot.Label);
+            Assert.That(closeProbeSlot.SpawnFamily, Does.Contain("Drop"));
+            Assert.That(closeProbeSlot.SpawnFamily, Does.Contain("Dash"));
+            Assert.That(closeProbeSlot.WavePathPattern, Does.Contain("path_grd"));
+            Assert.Greater(closeProbeSlot.RoutePressureWeight, 0f);
 
             BossBarragePocketReviewOwner pocketOwner =
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket owner");
@@ -101,6 +108,9 @@ namespace DimensionBrawl.Tests
             int frontlineCueCountBeforeProbe = screenCuePresenter.FrontlineCueRequestCount;
             pocketOwner.Tick(0.6f);
             Assert.AreEqual(1, pocketOwner.CurrentStageBeatIndex);
+            Assert.AreEqual(1, pocketOwner.CurrentPressureSlotIndex);
+            Assert.AreEqual("CloseProbe", pocketOwner.CurrentPressureSlotLabel);
+            Assert.AreEqual(closeProbeSlot.RoutePressureWeight, pocketOwner.CurrentRoutePressureWeight, 0.001f);
             Assert.Less(pocketOwner.RouteStability01, stageProfile.RouteStabilityStart01);
             Assert.Greater(screenCuePresenter.FrontlineCueRequestCount, frontlineCueCountBeforeProbe);
             Assert.AreEqual(1, screenCuePresenter.LastFrontlineBeatIndex);
@@ -109,11 +119,16 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(screenCuePresenter.HasActiveCue);
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("Probe Wave"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("close_probe_defeated"));
+            Assert.That(reviewHud.PressureSlotReadout, Does.Contain("CloseProbe"));
+            Assert.That(reviewHud.PressureSlotReadout, Does.Contain("Drop|Dash|Jump"));
+            Assert.That(reviewHud.PressureSlotReadout, Does.Contain("Local defense"));
             SetField(pocketOwner, "closeThreatDefeated", true);
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("First Summon Need"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("summon_slot1_used"));
+            Assert.That(reviewHud.PressureSlotReadout, Does.Contain("ScreenCurtain"));
             SetField(pocketOwner, "blockedBossPressureWithSummon", true);
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("Enemy Counter Wave"));
+            Assert.That(reviewHud.PressureSlotReadout, Does.Contain("FrontlineBody"));
 
             ForcePocketState(pocketOwner, "Cleared");
             SetField(pocketOwner, "closeThreatDefeated", true);
