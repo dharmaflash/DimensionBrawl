@@ -23,6 +23,36 @@ namespace DimensionBrawl.Tests
         private const string PocketOwnerRootName = "BossBarrageLaneReview_PocketOwner";
         private const string HudRootName = "BossBarrageLaneReview_DebugHud";
 
+        [Test]
+        public void PremiumHudLayoutAvoidsPrimaryPanelOverlapAcrossReviewViewports()
+        {
+            Vector2[] viewports =
+            {
+                new Vector2(360f, 640f),
+                new Vector2(640f, 360f),
+                new Vector2(800f, 600f),
+                new Vector2(960f, 540f),
+                new Vector2(1280f, 720f),
+                new Vector2(1920f, 1080f)
+            };
+
+            foreach (Vector2 viewport in viewports)
+            {
+                BossBarrageLaneReviewHud.PremiumHudLayout layout =
+                    BossBarrageLaneReviewHud.ResolvePremiumHudLayoutForReview(viewport.x, viewport.y, 18f);
+                AssertRectInsideViewport(layout.ObjectiveRect, viewport, "objective", layout);
+                AssertRectInsideViewport(layout.BossBarRect, viewport, "boss bar", layout);
+                AssertRectInsideViewport(layout.PlayerPanelRect, viewport, "player panel", layout);
+                Assert.GreaterOrEqual(
+                    layout.ObjectiveRect.height,
+                    94f,
+                    $"{viewport} objective panel must keep room for the beat subdetail line.");
+                AssertNoOverlap(layout.ObjectiveRect, layout.BossBarRect, viewport, "objective", "boss bar");
+                AssertNoOverlap(layout.ObjectiveRect, layout.PlayerPanelRect, viewport, "objective", "player panel");
+                AssertNoOverlap(layout.BossBarRect, layout.PlayerPanelRect, viewport, "boss bar", "player panel");
+            }
+        }
+
         [UnityTest]
         public IEnumerator FrontlineMotivationReviewScenePreservesRouteContract()
         {
@@ -85,6 +115,25 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Summon follow-up"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("Suppression Result"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("route_record_committed"));
+        }
+
+        private static void AssertRectInsideViewport(
+            Rect rect,
+            Vector2 viewport,
+            string label,
+            BossBarrageLaneReviewHud.PremiumHudLayout layout)
+        {
+            Assert.GreaterOrEqual(rect.xMin, 0f, $"{viewport} {label} xMin should stay onscreen. Layout stacked={layout.IsStacked}.");
+            Assert.GreaterOrEqual(rect.yMin, 0f, $"{viewport} {label} yMin should stay onscreen. Layout stacked={layout.IsStacked}.");
+            Assert.LessOrEqual(rect.xMax, viewport.x, $"{viewport} {label} xMax should stay onscreen. Layout stacked={layout.IsStacked}.");
+            Assert.LessOrEqual(rect.yMax, viewport.y, $"{viewport} {label} yMax should stay onscreen. Layout stacked={layout.IsStacked}.");
+        }
+
+        private static void AssertNoOverlap(Rect first, Rect second, Vector2 viewport, string firstLabel, string secondLabel)
+        {
+            Assert.IsFalse(
+                first.Overlaps(second),
+                $"{viewport} {firstLabel} and {secondLabel} panels should not overlap.");
         }
 
         private static GameObject RequireRoot(string objectName)

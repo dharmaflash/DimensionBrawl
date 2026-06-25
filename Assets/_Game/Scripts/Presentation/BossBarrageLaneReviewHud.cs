@@ -94,6 +94,22 @@ namespace DimensionBrawl.Presentation
         private FrontlineWaveStageProfile ActiveStageProfile =>
             stageProfile != null ? stageProfile : pocketReviewOwner != null ? pocketReviewOwner.StageProfile : null;
 
+        public readonly struct PremiumHudLayout
+        {
+            public PremiumHudLayout(Rect objectiveRect, Rect bossBarRect, Rect playerPanelRect, bool isStacked)
+            {
+                ObjectiveRect = objectiveRect;
+                BossBarRect = bossBarRect;
+                PlayerPanelRect = playerPanelRect;
+                IsStacked = isStacked;
+            }
+
+            public Rect ObjectiveRect { get; }
+            public Rect BossBarRect { get; }
+            public Rect PlayerPanelRect { get; }
+            public bool IsStacked { get; }
+        }
+
 #if UNITY_EDITOR
         public FrontlineWaveStageProfile StageProfileForReview => stageProfile;
 
@@ -196,53 +212,90 @@ namespace DimensionBrawl.Presentation
         {
             float screenWidth = Screen.width / uiScale;
             float screenHeight = Screen.height / uiScale;
-            float usableWidth = Mathf.Max(320f, screenWidth - margin * 2f);
+            PremiumHudLayout layout = ResolvePremiumHudLayoutForReview(screenWidth, screenHeight, margin);
 
-            Rect objectiveRect = new Rect(
-                margin,
-                margin,
-                Mathf.Min(430f, Mathf.Max(300f, usableWidth * 0.32f)),
-                94f);
             BossBarrageLaneReviewHudChrome.DrawObjectivePanel(
-                objectiveRect,
+                layout.ObjectiveRect,
                 ResolveStageEpisodeLabel(),
                 ResolveCompactObjectiveLine(),
                 ResolvePremiumObjectiveBadge(),
                 ResolveCompactStageBeatLine());
 
-            float rightHudReserve = Mathf.Clamp(screenWidth * 0.18f, 170f, 300f);
-            float bossBarLeftLimit = objectiveRect.xMax + 44f;
-            float bossBarRightLimit = screenWidth - margin - rightHudReserve;
-            float bossBarMaxWidth = Mathf.Max(340f, bossBarRightLimit - bossBarLeftLimit);
-            float bossBarWidth = Mathf.Min(Mathf.Clamp(screenWidth * 0.38f, 420f, 760f), bossBarMaxWidth);
-            float bossBarX = Mathf.Max((screenWidth - bossBarWidth) * 0.5f, bossBarLeftLimit);
-            bossBarX = Mathf.Min(bossBarX, screenWidth - margin - bossBarWidth);
-            Rect bossBarRect = new Rect(
-                bossBarX,
-                margin + 6f,
-                bossBarWidth,
-                86f);
             BossBarrageLaneReviewHudChrome.DrawBossBar(
-                bossBarRect,
+                layout.BossBarRect,
                 bossDisplayName,
                 ResolveCompactCombatCueLine(),
                 ResolveHealthFill01(bossHealth),
                 ResolveBossCostFill01());
 
-            float playerPanelWidth = Mathf.Min(Mathf.Clamp(screenWidth * 0.34f, 430f, 620f), usableWidth);
-            Rect playerPanelRect = new Rect(
-                (screenWidth - playerPanelWidth) * 0.5f,
-                screenHeight - 120f,
-                playerPanelWidth,
-                82f);
             BossBarrageLaneReviewHudChrome.DrawPlayerResourcePanel(
-                playerPanelRect,
+                layout.PlayerPanelRect,
                 playerDisplayName,
                 ResolveHealthValueText(playerHealth),
                 ResolveHealthFill01(playerHealth),
                 ResolveEnergyValueText(),
                 ResolveEnergyFill01(),
                 energyLadder != null && energyLadder.CanSpend);
+        }
+
+        public static PremiumHudLayout ResolvePremiumHudLayoutForReview(
+            float screenWidth,
+            float screenHeight,
+            float margin)
+        {
+            float resolvedWidth = Mathf.Max(320f, screenWidth);
+            float resolvedHeight = Mathf.Max(320f, screenHeight);
+            float resolvedMargin = Mathf.Clamp(margin, 8f, 28f);
+            float usableWidth = Mathf.Max(280f, resolvedWidth - resolvedMargin * 2f);
+
+            Rect objectiveRect = new Rect(
+                resolvedMargin,
+                resolvedMargin,
+                Mathf.Min(430f, Mathf.Max(300f, usableWidth * 0.32f)),
+                104f);
+
+            float rightHudReserve = Mathf.Clamp(resolvedWidth * 0.18f, 170f, 300f);
+            float bossBarLeftLimit = objectiveRect.xMax + 44f;
+            float bossBarRightLimit = resolvedWidth - resolvedMargin - rightHudReserve;
+            bool shouldStackTopPanels = resolvedWidth < 720f || bossBarRightLimit - bossBarLeftLimit < 340f;
+            Rect bossBarRect;
+            if (shouldStackTopPanels)
+            {
+                objectiveRect = new Rect(resolvedMargin, resolvedMargin, usableWidth, 104f);
+                bossBarRect = new Rect(
+                    resolvedMargin,
+                    objectiveRect.yMax + 10f,
+                    usableWidth,
+                    82f);
+            }
+            else
+            {
+                float bossBarMaxWidth = Mathf.Max(340f, bossBarRightLimit - bossBarLeftLimit);
+                float bossBarWidth = Mathf.Min(Mathf.Clamp(resolvedWidth * 0.38f, 420f, 760f), bossBarMaxWidth);
+                float bossBarX = Mathf.Max((resolvedWidth - bossBarWidth) * 0.5f, bossBarLeftLimit);
+                bossBarX = Mathf.Min(bossBarX, resolvedWidth - resolvedMargin - bossBarWidth);
+                bossBarRect = new Rect(
+                    bossBarX,
+                    resolvedMargin + 6f,
+                    bossBarWidth,
+                    86f);
+            }
+
+            float playerPanelWidth = shouldStackTopPanels
+                ? usableWidth
+                : Mathf.Min(Mathf.Clamp(resolvedWidth * 0.34f, 430f, 620f), usableWidth);
+            float playerPanelHeight = 82f;
+            Rect playerPanelRect = new Rect(
+                (resolvedWidth - playerPanelWidth) * 0.5f,
+                Mathf.Max(bossBarRect.yMax + 12f, resolvedHeight - 120f),
+                playerPanelWidth,
+                playerPanelHeight);
+            if (playerPanelRect.yMax > resolvedHeight - resolvedMargin)
+            {
+                playerPanelRect.y = Mathf.Max(bossBarRect.yMax + 12f, resolvedHeight - resolvedMargin - playerPanelHeight);
+            }
+
+            return new PremiumHudLayout(objectiveRect, bossBarRect, playerPanelRect, shouldStackTopPanels);
         }
 
         private void DrawDetailedTelemetry()
