@@ -172,6 +172,7 @@ namespace DimensionBrawl.Test
         public int CompletedObjectiveStepCount => ResolveCompletedObjectiveStepCount();
         public float ElapsedSeconds => elapsedSeconds;
         public float ResultElapsedSeconds => state == PocketState.Running ? elapsedSeconds : resultElapsedSeconds;
+        public int CurrentStageBeatIndex => ResolveCurrentStageBeatIndex();
         public ReviewPhase CurrentPhase
         {
             get
@@ -849,6 +850,39 @@ namespace DimensionBrawl.Test
             }
 
             return Mathf.Clamp(completed, 0, ObjectiveStepCount);
+        }
+
+        private int ResolveCurrentStageBeatIndex()
+        {
+            if (state != PocketState.Running)
+            {
+                return 5;
+            }
+
+            if (skill1FollowupHitConfirmed)
+            {
+                return 5;
+            }
+
+            if (pressurePacing.IsSummonFollowupWindowActive || usedSkill1DuringSummonFollowup)
+            {
+                return 3;
+            }
+
+            if (blockedBossPressureWithSummon
+                || pressurePacing.IsSummonPressureBreakActive
+                || bossBlockedSkill1Followup
+                || followupMissedNotified)
+            {
+                return 4;
+            }
+
+            if (closeThreatDefeated)
+            {
+                return 2;
+            }
+
+            return elapsedSeconds <= 0.5f ? 0 : 1;
         }
 
         private void SubscribeBossHealth()

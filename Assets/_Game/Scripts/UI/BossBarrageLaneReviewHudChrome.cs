@@ -20,7 +20,7 @@ namespace DimensionBrawl.UI
         private static GUIStyle leftLabelStyle;
         private static GUIStyle titleLabelStyle;
 
-        public static void DrawObjectivePanel(Rect rect, string title, string detail, string badge)
+        public static void DrawObjectivePanel(Rect rect, string title, string detail, string badge, string subdetail = null)
         {
             DrawPanel(rect, GoldColor);
             DrawDiamond(new Vector2(rect.x + 32f, rect.center.y), 21f, GoldColor);
@@ -29,9 +29,18 @@ namespace DimensionBrawl.UI
             EnsureStyles();
             ResetLabelColors();
             titleLabelStyle.fontSize = Mathf.RoundToInt(Mathf.Clamp(rect.height * 0.24f, 18f, 25f));
-            leftLabelStyle.fontSize = Mathf.RoundToInt(Mathf.Clamp(rect.height * 0.18f, 13f, 18f));
+            leftLabelStyle.fontSize = Mathf.RoundToInt(Mathf.Clamp(rect.height * 0.16f, 13f, 18f));
             GUI.Label(new Rect(rect.x + 66f, rect.y + 13f, rect.width - 108f, 28f), title, titleLabelStyle);
-            GUI.Label(new Rect(rect.x + 66f, rect.y + 45f, rect.width - 108f, 28f), detail, leftLabelStyle);
+            GUI.Label(new Rect(rect.x + 66f, rect.y + 43f, rect.width - 108f, 25f), detail, leftLabelStyle);
+            if (!string.IsNullOrWhiteSpace(subdetail))
+            {
+                smallCenterLabelStyle.alignment = TextAnchor.MiddleLeft;
+                smallCenterLabelStyle.fontSize = 12;
+                smallCenterLabelStyle.normal.textColor = MutedTextColor;
+                GUI.Label(new Rect(rect.x + 66f, rect.y + 66f, rect.width - 108f, 20f), subdetail, smallCenterLabelStyle);
+                smallCenterLabelStyle.alignment = TextAnchor.MiddleCenter;
+                smallCenterLabelStyle.normal.textColor = TextColor;
+            }
 
             Rect badgeRect = new Rect(rect.xMax - 96f, rect.y + 31f, 68f, 25f);
             DrawSolid(badgeRect, new Color(0.02f, 0.04f, 0.055f, 0.74f));

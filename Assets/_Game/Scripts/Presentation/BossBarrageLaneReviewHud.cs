@@ -78,6 +78,7 @@ namespace DimensionBrawl.Presentation
 
         public string FrontlineLoopReadout => ResolveFrontlineLoopLine();
         public string FrontlineTuningReadout => ResolveFrontlineTuningLine();
+        public string StageBeatReadout => ResolveStageBeatLine();
         public string BossPressureReadout => ResolveBossPressureLine();
         public string BossPressureResponseReadout => ResolveBossPressureResponseLine();
         public bool ShowDetailedTelemetry => showDetailedTelemetry;
@@ -205,7 +206,8 @@ namespace DimensionBrawl.Presentation
                 objectiveRect,
                 ResolveStageEpisodeLabel(),
                 ResolveCompactObjectiveLine(),
-                ResolvePremiumObjectiveBadge());
+                ResolvePremiumObjectiveBadge(),
+                ResolveCompactStageBeatLine());
 
             float rightHudReserve = Mathf.Clamp(screenWidth * 0.18f, 170f, 300f);
             float bossBarLeftLimit = objectiveRect.xMax + 44f;
@@ -253,6 +255,7 @@ namespace DimensionBrawl.Presentation
             GUILayout.Label(ResolveBossPressureLine(), labelStyle);
             GUILayout.Label(ResolveBossPressureResponseLine(), labelStyle);
             GUILayout.Label(ResolveBossSummonLine(), labelStyle);
+            GUILayout.Label(ResolveStageBeatLine(), labelStyle);
             GUILayout.Label(ResolveFrontlineLoopLine(), labelStyle);
             GUILayout.Label(ResolveFrontlineTuningLine(), labelStyle);
             GUILayout.Label(ResolveWeaponModeLine(), labelStyle);
@@ -272,6 +275,7 @@ namespace DimensionBrawl.Presentation
         private void DrawCompactCombatCues()
         {
             GUILayout.Label(ResolveCompactObjectiveLine(), labelStyle);
+            GUILayout.Label(ResolveCompactStageBeatLine(), labelStyle);
             GUILayout.Label(ResolveCompactPhaseLine(), labelStyle);
             GUILayout.Label(ResolveCompactCombatCueLine(), labelStyle);
             GUILayout.Label(ResolveCompactFrontlineCueLine(), labelStyle);
@@ -645,6 +649,48 @@ namespace DimensionBrawl.Presentation
             return energyLadder != null && !energyLadder.CanSpend
                 ? $"{ResolvePocketStepPrefix()}: Hold line for EN"
                 : $"{ResolvePocketStepPrefix()}: Stop close probe";
+        }
+
+        private string ResolveStageBeatLine()
+        {
+            if (!TryResolveCurrentStageBeat(out FrontlineWaveStageProfile.StageBeat beat, out int beatIndex, out int beatCount))
+            {
+                return "Beat -";
+            }
+
+            string source = string.IsNullOrWhiteSpace(beat.SourcePattern) ? "-" : beat.SourcePattern;
+            return $"Beat {beatIndex + 1}/{beatCount} {beat.Label}: {beat.ObjectiveCue} | observe {beat.ObservedEvent} | {source}";
+        }
+
+        private string ResolveCompactStageBeatLine()
+        {
+            if (!TryResolveCurrentStageBeat(out FrontlineWaveStageProfile.StageBeat beat, out int beatIndex, out int beatCount))
+            {
+                return "Beat -";
+            }
+
+            return $"Beat {beatIndex + 1}/{beatCount} {beat.Label}";
+        }
+
+        private bool TryResolveCurrentStageBeat(
+            out FrontlineWaveStageProfile.StageBeat beat,
+            out int beatIndex,
+            out int beatCount)
+        {
+            beat = default;
+            beatIndex = 0;
+            beatCount = 0;
+            FrontlineWaveStageProfile profile = ActiveStageProfile;
+            if (profile == null || profile.BeatCount <= 0)
+            {
+                return false;
+            }
+
+            beatCount = profile.BeatCount;
+            int currentBeatIndex = pocketReviewOwner != null ? pocketReviewOwner.CurrentStageBeatIndex : 0;
+            beatIndex = Mathf.Clamp(currentBeatIndex, 0, beatCount - 1);
+            beat = profile.GetBeat(beatIndex);
+            return true;
         }
 
         private string ResolvePocketStepPrefix()

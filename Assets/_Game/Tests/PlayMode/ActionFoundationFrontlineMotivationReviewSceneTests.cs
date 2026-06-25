@@ -55,6 +55,14 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.CompactObjectiveReadout, Does.Contain("Route 1/3"));
             Assert.That(reviewHud.CompactObjectiveReadout, Does.Not.Contain("Boss"));
             Assert.That(pocketOwner.ObjectiveCue, Does.Contain("line").IgnoreCase);
+            SetField(pocketOwner, "elapsedSeconds", 2f);
+            Assert.That(reviewHud.StageBeatReadout, Does.Contain("Probe Wave"));
+            Assert.That(reviewHud.StageBeatReadout, Does.Contain("close_probe_defeated"));
+            SetField(pocketOwner, "closeThreatDefeated", true);
+            Assert.That(reviewHud.StageBeatReadout, Does.Contain("First Summon Need"));
+            Assert.That(reviewHud.StageBeatReadout, Does.Contain("summon_slot1_used"));
+            SetField(pocketOwner, "blockedBossPressureWithSummon", true);
+            Assert.That(reviewHud.StageBeatReadout, Does.Contain("Enemy Counter Wave"));
 
             ForcePocketState(pocketOwner, "Cleared");
             SetField(pocketOwner, "closeThreatDefeated", true);
@@ -69,6 +77,8 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Summon route analyzed"));
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Route 3/3"));
             Assert.That(reviewHud.ResultBannerDetail, Does.Not.Contain("BOSS CLEAR"));
+            Assert.That(reviewHud.StageBeatReadout, Does.Contain("Suppression Result"));
+            Assert.That(reviewHud.StageBeatReadout, Does.Contain("route_record_committed"));
         }
 
         private static GameObject RequireRoot(string objectName)
