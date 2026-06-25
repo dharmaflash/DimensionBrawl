@@ -275,6 +275,8 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "review HUD");
             ActionScreenCuePresenter screenCuePresenter =
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "screen cue presenter");
+            BossBarragePocketVfxCueBridge pocketVfxCueBridge =
+                RequireComponent<BossBarragePocketVfxCueBridge>(RequireRoot(PocketOwnerRootName), "pocket VFX cue bridge");
             FrontlineWaveStageProfile stageProfile =
                 AssetDatabase.LoadAssetAtPath<FrontlineWaveStageProfile>(StageProfilePath);
             Assert.NotNull(stageProfile);
@@ -295,6 +297,7 @@ namespace DimensionBrawl.Tests
             SetField(pocketOwner, "blockedBossPressureWithSummon", true);
             SummonFrontlineProxy enemyProxy = CreateActiveFrontlineProxy("Test_CounterWave_EnemyProxy", DamageTeam.Enemy);
             int counterCueCountBeforeEnemy = screenCuePresenter.CounterWaveCueRequestCount;
+            int counterVfxCueCountBeforeEnemy = pocketVfxCueBridge.CounterWaveCueRequestCount;
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.IsCounterWaveCompletionRecorded);
@@ -323,11 +326,17 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(
                 BossBarragePocketReviewOwner.CounterWaveSource.EnemyFrontlineBody,
                 screenCuePresenter.LastCounterWaveSource);
+            Assert.Greater(pocketVfxCueBridge.CounterWaveCueRequestCount, counterVfxCueCountBeforeEnemy);
+            Assert.AreEqual(
+                BossBarragePocketReviewOwner.CounterWaveSource.EnemyFrontlineBody,
+                pocketVfxCueBridge.LastCounterWaveSource);
+            Assert.AreEqual(CombatVfxCueId.EnemyLinePressureActive, pocketVfxCueBridge.CounterWaveCueId);
 
             float stabilityBeforeAnswer = pocketOwner.RouteStability01;
             SummonFrontlineProxy allyProxy = CreateActiveFrontlineProxy("Test_CounterWave_AllyProxy", DamageTeam.AllySummon);
             int counterAnswerCueCountBeforeAlly = screenCuePresenter.CounterWaveAnswerCueRequestCount;
             int followupCueCountBeforeAlly = screenCuePresenter.FollowupCueRequestCount;
+            int counterStabilizedVfxCueCountBeforeAlly = pocketVfxCueBridge.CounterWaveStabilizedCueRequestCount;
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.IsCounterWaveStabilized);
@@ -353,6 +362,10 @@ namespace DimensionBrawl.Tests
             Assert.Greater(screenCuePresenter.CounterWaveAnswerCueRequestCount, counterAnswerCueCountBeforeAlly);
             Assert.Greater(screenCuePresenter.FollowupCueRequestCount, followupCueCountBeforeAlly);
             Assert.AreEqual("ally_hold", screenCuePresenter.LastCounterWaveAnswer);
+            Assert.Greater(
+                pocketVfxCueBridge.CounterWaveStabilizedCueRequestCount,
+                counterStabilizedVfxCueCountBeforeAlly);
+            Assert.AreEqual(CombatVfxCueId.EliteShieldSignal, pocketVfxCueBridge.CounterWaveStabilizedCueId);
 
             CombatHealth bossHealth = GetObjectReference<CombatHealth>(pocketOwner, "bossHealth");
             Assert.NotNull(bossHealth, "Counter path clear needs the pocket owner's boss damage observer.");
@@ -396,6 +409,8 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "review HUD");
             ActionScreenCuePresenter screenCuePresenter =
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "screen cue presenter");
+            BossBarragePocketVfxCueBridge pocketVfxCueBridge =
+                RequireComponent<BossBarragePocketVfxCueBridge>(RequireRoot(PocketOwnerRootName), "pocket VFX cue bridge");
             BossSummonPressureAction bossSummonPressureAction =
                 UnityEngine.Object.FindFirstObjectByType<BossSummonPressureAction>();
             Assert.NotNull(bossSummonPressureAction, "Frontline review scene should keep the boss summon pressure action.");
@@ -405,6 +420,7 @@ namespace DimensionBrawl.Tests
             SetField(pocketOwner, "blockedBossPressureWithSummon", true);
             SetField(bossSummonPressureAction, "totalReleaseCount", bossSummonPressureAction.TotalReleaseCount + 1);
             int counterCueCountBeforeRelease = screenCuePresenter.CounterWaveCueRequestCount;
+            int counterVfxCueCountBeforeRelease = pocketVfxCueBridge.CounterWaveCueRequestCount;
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.IsCounterWaveCompletionRecorded);
@@ -431,6 +447,10 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(
                 BossBarragePocketReviewOwner.CounterWaveSource.BossSummonRelease,
                 screenCuePresenter.LastCounterWaveSource);
+            Assert.Greater(pocketVfxCueBridge.CounterWaveCueRequestCount, counterVfxCueCountBeforeRelease);
+            Assert.AreEqual(
+                BossBarragePocketReviewOwner.CounterWaveSource.BossSummonRelease,
+                pocketVfxCueBridge.LastCounterWaveSource);
         }
 
         [UnityTest]
