@@ -1,4 +1,5 @@
 using System;
+using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.Test;
@@ -131,8 +132,14 @@ namespace DimensionBrawl.Editor
             BossBarrageLaneReviewHud hud = RequireComponentOnRoot<BossBarrageLaneReviewHud>(HudRootName);
             BossBarrageLaneReviewOverlayHud overlayHud =
                 RequireComponentOnRoot<BossBarrageLaneReviewOverlayHud>(HudRootName);
+            BossPressureActionDirector bossPressureActionDirector = RequireObject<BossPressureActionDirector>();
+            BossSummonPressureAction bossSummonPressureAction = RequireObject<BossSummonPressureAction>();
             ValidateObjectReference(pocketOwner, "stageProfile", profile);
             ValidateObjectReference(hud, "stageProfile", profile);
+            ValidateObjectReference(pocketOwner, "bossPressureActionDirector", bossPressureActionDirector);
+            ValidateObjectReference(hud, "bossPressureActionDirector", bossPressureActionDirector);
+            ValidateObjectReference(hud, "bossSummonPressureAction", bossSummonPressureAction);
+            ValidateObjectReference(bossPressureActionDirector, "summonPressureAction", bossSummonPressureAction);
             if (pocketOwner.StageProfile != profile)
             {
                 throw new InvalidOperationException($"{pocketOwner.name}.StageProfile is not bound to {profile.name}.");
