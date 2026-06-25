@@ -19,6 +19,13 @@ namespace DimensionBrawl.Test
             Failed
         }
 
+        public enum RouteFailureReason
+        {
+            None,
+            PlayerDown,
+            RouteStabilityCollapsed
+        }
+
         private enum PocketState
         {
             Running,
@@ -107,6 +114,7 @@ namespace DimensionBrawl.Test
         private float elapsedSeconds;
         private float resultElapsedSeconds;
         private float routeStability01 = 1f;
+        private RouteFailureReason failureReason;
         private CombatHealth subscribedBossHealth;
         private bool followupMissedNotified;
         private bool bossBlockedSkill1Followup;
@@ -123,6 +131,8 @@ namespace DimensionBrawl.Test
         public bool IsRunning => state == PocketState.Running;
         public bool IsCleared => state == PocketState.Cleared;
         public bool IsFailed => state == PocketState.Failed;
+        public RouteFailureReason FailureReason => failureReason;
+        public bool FailedFromRouteStabilityCollapse => failureReason == RouteFailureReason.RouteStabilityCollapsed;
         public bool UsedSkill1 => usedSkill1;
         public bool UsedSummonSlot1 => usedSummonSlot1;
         public bool CloseThreatDefeated => closeThreatDefeated;
@@ -350,6 +360,7 @@ namespace DimensionBrawl.Test
             elapsedSeconds = 0f;
             resultElapsedSeconds = 0f;
             routeStability01 = ResolveRouteStabilityStart01();
+            failureReason = RouteFailureReason.None;
             announcedStageBeatIndex = ResolveCurrentStageBeatIndex();
             SetBarrageEnabled(true);
             SetEnergyGainEnabled(true);
@@ -385,7 +396,7 @@ namespace DimensionBrawl.Test
             CaptureActionUse();
             if (playerHealth != null && !playerHealth.IsAlive)
             {
-                FailPocket();
+                FailPocket(RouteFailureReason.PlayerDown);
                 PublishStageBeatChangeIfNeeded();
                 return;
             }
@@ -397,7 +408,7 @@ namespace DimensionBrawl.Test
             TickRouteStability(deltaTime);
             if (IsRouteStabilityActive && routeStability01 <= 0f)
             {
-                FailPocket();
+                FailPocket(RouteFailureReason.RouteStabilityCollapsed);
                 PublishStageBeatChangeIfNeeded();
                 return;
             }
@@ -628,6 +639,7 @@ namespace DimensionBrawl.Test
         {
             resultElapsedSeconds = elapsedSeconds;
             state = PocketState.Cleared;
+            failureReason = RouteFailureReason.None;
             routeStability01 = 1f;
             ClearPressurePacing();
             DismissActiveSummonPressureScreens();
@@ -639,10 +651,11 @@ namespace DimensionBrawl.Test
             PocketCleared?.Invoke();
         }
 
-        private void FailPocket()
+        private void FailPocket(RouteFailureReason reason)
         {
             resultElapsedSeconds = elapsedSeconds;
             state = PocketState.Failed;
+            failureReason = reason;
             ClearPressurePacing();
             DismissActiveSummonPressureScreens();
             SetBarrageEnabled(!stopBarrageOnFail);

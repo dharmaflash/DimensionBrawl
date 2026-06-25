@@ -81,6 +81,7 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField] private string clearPressureDetail = "Boss curtain suppressed; frontline route recorded";
         [SerializeField] private string failTitle = "LINE COLLAPSED";
         [SerializeField] private string failDetail = "Player down before the frontline route could stabilize";
+        [SerializeField] private string routeCollapseFailDetail = "Route stability collapsed before the frontline could stabilize";
 
         [Header("Review Evidence")]
         [SerializeField] private StageBeat[] beats = Array.Empty<StageBeat>();
@@ -122,6 +123,7 @@ namespace DimensionBrawl.LevelDesign
         public string ClearPressureDetail => clearPressureDetail;
         public string FailTitle => failTitle;
         public string FailDetail => failDetail;
+        public string RouteCollapseFailDetail => routeCollapseFailDetail;
         public int BeatCount => beats != null ? beats.Length : 0;
         public int SourceReferenceCount => sourceReferences != null ? sourceReferences.Length : 0;
 

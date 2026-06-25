@@ -69,6 +69,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("FRONTLINE-MOTIVATION-REVIEW-01", stageProfile.StageId);
             Assert.AreEqual(90f, stageProfile.TargetDurationSeconds);
             Assert.AreEqual(0.62f, stageProfile.RouteStabilityStart01, 0.001f);
+            Assert.That(stageProfile.RouteCollapseFailDetail, Does.Contain("Route stability collapsed"));
             Assert.Greater(stageProfile.CloseProbeRouteDrainPerSecond, 0f);
             Assert.Greater(stageProfile.CounterWaveRouteDrainPerSecond, stageProfile.CloseProbeRouteDrainPerSecond);
             Assert.GreaterOrEqual(stageProfile.BeatCount, 6);
@@ -154,10 +155,47 @@ namespace DimensionBrawl.Tests
             pocketOwner.Tick(1f);
 
             Assert.IsTrue(pocketOwner.IsFailed);
+            Assert.IsTrue(pocketOwner.FailedFromRouteStabilityCollapse);
+            Assert.AreEqual(
+                BossBarragePocketReviewOwner.RouteFailureReason.RouteStabilityCollapsed,
+                pocketOwner.FailureReason);
             Assert.IsTrue(playerHealth.IsAlive, "Route collapse should be a frontline failure, not a hidden HP defeat.");
             Assert.AreEqual("LINE COLLAPSED", reviewHud.ResultBannerTitle);
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Route stability collapsed"));
+            Assert.That(reviewHud.ResultBannerDetail, Does.Not.Contain("Player down"));
             Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("stability 0%"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Incomplete 0/3"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("reason route collapse"));
+        }
+
+        [UnityTest]
+        public IEnumerator FrontlinePlayerDefeatKeepsPlayerDownFailureReason()
+        {
+            EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
+            yield return null;
+
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket owner");
+            BossBarrageLaneReviewHud reviewHud =
+                RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "review HUD");
+            PlayerMovementController player = UnityEngine.Object.FindFirstObjectByType<PlayerMovementController>();
+            Assert.NotNull(player, "Frontline player defeat test needs the scene player.");
+            CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
+
+            playerHealth.TryApplyDamage(new DamageInfo(
+                null,
+                DamageTeam.Enemy,
+                playerHealth.MaxHealth + 1f,
+                player.transform.position,
+                Vector3.back,
+                0f));
+            pocketOwner.Tick(0f);
+
+            Assert.IsTrue(pocketOwner.IsFailed);
+            Assert.AreEqual(BossBarragePocketReviewOwner.RouteFailureReason.PlayerDown, pocketOwner.FailureReason);
+            Assert.AreEqual("LINE COLLAPSED", reviewHud.ResultBannerTitle);
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Player down"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("reason player down"));
         }
 
         private static void AssertRectInsideViewport(

@@ -50,6 +50,7 @@ MonoBehaviour:
   clearPressureDetail: Boss curtain suppressed; frontline route recorded
   failTitle: LINE COLLAPSED
   failDetail: Player down before the frontline route could stabilize
+  routeCollapseFailDetail: Route stability collapsed before the frontline could stabilize
   beats:
   - beatId: B0.MatchRead
     label: Match Read

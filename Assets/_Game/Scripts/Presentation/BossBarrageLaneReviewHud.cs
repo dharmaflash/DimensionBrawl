@@ -1358,7 +1358,7 @@ namespace DimensionBrawl.Presentation
             {
                 FrontlineWaveStageProfile activeProfile = ActiveStageProfile;
                 title = ResolveStageText(activeProfile?.FailTitle, "LINE COLLAPSED");
-                detail = $"{ResolveStageText(activeProfile?.FailDetail, "Player down before the frontline route could stabilize")} | {ResolvePocketResultSuffix()}";
+                detail = $"{ResolvePocketFailDetail(activeProfile)} | {ResolvePocketResultSuffix()}";
                 backColor = resultFailBackColor;
                 return true;
             }
@@ -1399,7 +1399,7 @@ namespace DimensionBrawl.Presentation
             string targetText = $"{pocketReviewOwner.ResultElapsedSeconds:0.0}/{targetSeconds:0.0}s";
             if (pocketReviewOwner.IsFailed)
             {
-                return $"Incomplete {ResolvePocketProgressText()} {ResolveRouteStabilityText()} ({targetText})";
+                return $"Incomplete {ResolvePocketProgressText()} {ResolvePocketFailureReasonText()} {ResolveRouteStabilityText()} ({targetText})";
             }
 
             if (!pocketReviewOwner.IsCleared)
@@ -1454,6 +1454,35 @@ namespace DimensionBrawl.Presentation
             }
 
             return timeRatio <= 1f ? "B" : "C";
+        }
+
+        private string ResolvePocketFailDetail(FrontlineWaveStageProfile activeProfile)
+        {
+            if (pocketReviewOwner != null && pocketReviewOwner.FailedFromRouteStabilityCollapse)
+            {
+                return ResolveStageText(
+                    activeProfile?.RouteCollapseFailDetail,
+                    "Route stability collapsed before the frontline could stabilize");
+            }
+
+            return ResolveStageText(
+                activeProfile?.FailDetail,
+                "Player down before the frontline route could stabilize");
+        }
+
+        private string ResolvePocketFailureReasonText()
+        {
+            if (pocketReviewOwner == null || !pocketReviewOwner.IsFailed)
+            {
+                return "reason -";
+            }
+
+            return pocketReviewOwner.FailureReason switch
+            {
+                BossBarragePocketReviewOwner.RouteFailureReason.RouteStabilityCollapsed => "reason route collapse",
+                BossBarragePocketReviewOwner.RouteFailureReason.PlayerDown => "reason player down",
+                _ => "reason failed"
+            };
         }
 
         private static string ResolveStageText(string profileText, string fallback)

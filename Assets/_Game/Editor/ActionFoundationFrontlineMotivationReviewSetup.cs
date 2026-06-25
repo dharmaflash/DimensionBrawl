@@ -240,6 +240,10 @@ namespace DimensionBrawl.Editor
             SetString(serializedObject, "clearPressureDetail", "Boss curtain suppressed; frontline route recorded");
             SetString(serializedObject, "failTitle", "LINE COLLAPSED");
             SetString(serializedObject, "failDetail", "Player down before the frontline route could stabilize");
+            SetString(
+                serializedObject,
+                "routeCollapseFailDetail",
+                "Route stability collapsed before the frontline could stabilize");
 
             ConfigureBeats(serializedObject);
             ConfigureSourceReferences(serializedObject);
