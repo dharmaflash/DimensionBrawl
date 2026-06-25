@@ -92,6 +92,15 @@ namespace DimensionBrawl.Presentation
         private FrontlineWaveStageProfile ActiveStageProfile =>
             stageProfile != null ? stageProfile : pocketReviewOwner != null ? pocketReviewOwner.StageProfile : null;
 
+#if UNITY_EDITOR
+        public FrontlineWaveStageProfile StageProfileForReview => stageProfile;
+
+        public void AssignStageProfileForReview(FrontlineWaveStageProfile newStageProfile)
+        {
+            stageProfile = newStageProfile;
+        }
+#endif
+
         public void SetDetailedTelemetryVisible(bool visible)
         {
             showDetailedTelemetry = visible;

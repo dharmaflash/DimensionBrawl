@@ -272,6 +272,13 @@ namespace DimensionBrawl.Test
             }
         }
 
+#if UNITY_EDITOR
+        public void AssignStageProfileForReview(FrontlineWaveStageProfile newStageProfile)
+        {
+            stageProfile = newStageProfile;
+        }
+#endif
+
         public void Configure(
             CombatHealth newPlayerHealth,
             CombatHealth newCloseThreatHealth,

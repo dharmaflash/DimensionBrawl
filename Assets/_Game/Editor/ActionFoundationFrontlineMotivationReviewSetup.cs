@@ -16,6 +16,8 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Scenes/ActionFoundationFrontlineMotivationReview.unity";
         public const string StageProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_FrontlineWaveStage_MotivationReview.asset";
+        private const string PocketOwnerRootName = "BossBarrageLaneReview_PocketOwner";
+        private const string HudRootName = "BossBarrageLaneReview_DebugHud";
 
         [MenuItem("DimensionBrawl/Create Action Foundation Frontline Motivation Review Scene")]
         public static void CreateFrontlineMotivationReviewSceneMenu()
@@ -47,18 +49,25 @@ namespace DimensionBrawl.Editor
             EnsureSceneAsset();
 
             Scene scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-            BossBarragePocketReviewOwner pocketOwner = RequireObject<BossBarragePocketReviewOwner>();
-            BossBarrageLaneReviewHud hud = RequireObject<BossBarrageLaneReviewHud>();
-            BossBarrageLaneReviewOverlayHud overlayHud = RequireObject<BossBarrageLaneReviewOverlayHud>();
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponentOnRoot<BossBarragePocketReviewOwner>(PocketOwnerRootName);
+            BossBarrageLaneReviewHud hud = RequireComponentOnRoot<BossBarrageLaneReviewHud>(HudRootName);
+            BossBarrageLaneReviewOverlayHud overlayHud =
+                RequireComponentOnRoot<BossBarrageLaneReviewOverlayHud>(HudRootName);
 
             SetObjectReference(pocketOwner, "stageProfile", profile);
             SetObjectReference(hud, "stageProfile", profile);
+            pocketOwner.AssignStageProfileForReview(profile);
+            hud.AssignStageProfileForReview(profile);
+            MarkDirty(pocketOwner);
+            MarkDirty(hud);
             SetString(hud, "stageEpisodeLabel", profile.StageEpisodeLabel);
             SetString(hud, "objectiveBadgeLabel", profile.ObjectiveBadgeLabel);
             SetString(hud, "bossDisplayName", "Dimensional Rift Curtain");
             SetString(overlayHud, "retrySceneName", "ActionFoundationFrontlineMotivationReview");
             SetString(overlayHud, "retryScenePath", ScenePath);
 
+            ValidateSceneBindings(profile);
             EditorSceneManager.MarkSceneDirty(scene);
             if (!EditorSceneManager.SaveScene(scene, ScenePath))
             {
@@ -66,6 +75,9 @@ namespace DimensionBrawl.Editor
             }
 
             AssetDatabase.SaveAssets();
+            AssetDatabase.ForceReserializeAssets(new[] { ScenePath });
+            EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            ValidateSceneBindings(profile);
         }
 
         public static void ValidateFrontlineMotivationReviewScene()
@@ -93,9 +105,11 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"Invalid review scene: {ScenePath}.");
             }
 
-            BossBarragePocketReviewOwner pocketOwner = RequireObject<BossBarragePocketReviewOwner>();
-            BossBarrageLaneReviewHud hud = RequireObject<BossBarrageLaneReviewHud>();
-            BossBarrageLaneReviewOverlayHud overlayHud = RequireObject<BossBarrageLaneReviewOverlayHud>();
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponentOnRoot<BossBarragePocketReviewOwner>(PocketOwnerRootName);
+            BossBarrageLaneReviewHud hud = RequireComponentOnRoot<BossBarrageLaneReviewHud>(HudRootName);
+            BossBarrageLaneReviewOverlayHud overlayHud =
+                RequireComponentOnRoot<BossBarrageLaneReviewOverlayHud>(HudRootName);
             ValidateObjectReference(pocketOwner, "stageProfile", profile);
             ValidateObjectReference(hud, "stageProfile", profile);
             ValidateString(overlayHud, "retryScenePath", ScenePath);
@@ -103,6 +117,29 @@ namespace DimensionBrawl.Editor
             {
                 throw new InvalidOperationException("Pocket owner objective count does not match the stage profile.");
             }
+        }
+
+        private static void ValidateSceneBindings(FrontlineWaveStageProfile profile)
+        {
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponentOnRoot<BossBarragePocketReviewOwner>(PocketOwnerRootName);
+            BossBarrageLaneReviewHud hud = RequireComponentOnRoot<BossBarrageLaneReviewHud>(HudRootName);
+            BossBarrageLaneReviewOverlayHud overlayHud =
+                RequireComponentOnRoot<BossBarrageLaneReviewOverlayHud>(HudRootName);
+            ValidateObjectReference(pocketOwner, "stageProfile", profile);
+            ValidateObjectReference(hud, "stageProfile", profile);
+            if (pocketOwner.StageProfile != profile)
+            {
+                throw new InvalidOperationException($"{pocketOwner.name}.StageProfile is not bound to {profile.name}.");
+            }
+
+            if (hud.StageProfileForReview != profile)
+            {
+                throw new InvalidOperationException($"{hud.name}.StageProfileForReview is not bound to {profile.name}.");
+            }
+
+            ValidateString(overlayHud, "retrySceneName", "ActionFoundationFrontlineMotivationReview");
+            ValidateString(overlayHud, "retryScenePath", ScenePath);
         }
 
         private static void EnsureSceneAsset()
@@ -340,12 +377,64 @@ namespace DimensionBrawl.Editor
             return matches[0];
         }
 
+        private static T RequireComponentOnRoot<T>(string rootName) where T : Component
+        {
+            GameObject root = FindSceneObjectByName(rootName);
+            if (root == null)
+            {
+                throw new InvalidOperationException($"Scene is missing root object {rootName}.");
+            }
+
+            T component = root.GetComponent<T>();
+            if (component == null)
+            {
+                throw new InvalidOperationException($"{rootName} is missing {typeof(T).Name}.");
+            }
+
+            return component;
+        }
+
+        private static GameObject FindSceneObjectByName(string objectName)
+        {
+            Scene scene = SceneManager.GetActiveScene();
+            GameObject[] roots = scene.GetRootGameObjects();
+            foreach (GameObject root in roots)
+            {
+                Transform match = FindTransformByName(root.transform, objectName);
+                if (match != null)
+                {
+                    return match.gameObject;
+                }
+            }
+
+            return null;
+        }
+
+        private static Transform FindTransformByName(Transform root, string objectName)
+        {
+            if (root.name == objectName)
+            {
+                return root;
+            }
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform match = FindTransformByName(root.GetChild(i), objectName);
+                if (match != null)
+                {
+                    return match;
+                }
+            }
+
+            return null;
+        }
+
         private static void SetString(UnityEngine.Object target, string propertyName, string value)
         {
             SerializedObject serializedObject = new SerializedObject(target);
             SetString(serializedObject, propertyName, value);
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
-            EditorUtility.SetDirty(target);
+            MarkDirty(target);
         }
 
         private static void SetObjectReference(UnityEngine.Object target, string propertyName, UnityEngine.Object value)
@@ -353,7 +442,17 @@ namespace DimensionBrawl.Editor
             SerializedObject serializedObject = new SerializedObject(target);
             RequireProperty(serializedObject, propertyName).objectReferenceValue = value;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            MarkDirty(target);
+        }
+
+        private static void MarkDirty(UnityEngine.Object target)
+        {
             EditorUtility.SetDirty(target);
+            if (target is Component component)
+            {
+                EditorUtility.SetDirty(component.gameObject);
+                PrefabUtility.RecordPrefabInstancePropertyModifications(component);
+            }
         }
 
         private static void SetString(SerializedObject serializedObject, string propertyName, string value)
