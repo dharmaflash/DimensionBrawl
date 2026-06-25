@@ -79,6 +79,7 @@ namespace DimensionBrawl.Presentation
         public string FrontlineLoopReadout => ResolveFrontlineLoopLine();
         public string FrontlineTuningReadout => ResolveFrontlineTuningLine();
         public string StageBeatReadout => ResolveStageBeatLine();
+        public string RouteRecordReadout => ResolveRouteRecordLine();
         public string BossPressureReadout => ResolveBossPressureLine();
         public string BossPressureResponseReadout => ResolveBossPressureResponseLine();
         public bool ShowDetailedTelemetry => showDetailedTelemetry;
@@ -256,6 +257,7 @@ namespace DimensionBrawl.Presentation
             GUILayout.Label(ResolveBossPressureResponseLine(), labelStyle);
             GUILayout.Label(ResolveBossSummonLine(), labelStyle);
             GUILayout.Label(ResolveStageBeatLine(), labelStyle);
+            GUILayout.Label(ResolveRouteRecordLine(), labelStyle);
             GUILayout.Label(ResolveFrontlineLoopLine(), labelStyle);
             GUILayout.Label(ResolveFrontlineTuningLine(), labelStyle);
             GUILayout.Label(ResolveWeaponModeLine(), labelStyle);
@@ -1312,11 +1314,65 @@ namespace DimensionBrawl.Presentation
         {
             if (pocketReviewOwner == null)
             {
-                return "Route - | Time -";
+                return "Route - | Record -";
             }
 
             string prefix = ResolveStageText(ActiveStageProfile?.StepPrefix, "Route");
-            return $"{prefix} {ResolvePocketProgressText()} | Time {pocketReviewOwner.ResultElapsedSeconds:0.0}s";
+            return $"{prefix} {ResolvePocketProgressText()} | {ResolveRouteRecordSummary()}";
+        }
+
+        private string ResolveRouteRecordLine()
+        {
+            return $"Route Record: {ResolveRouteRecordSummary()}";
+        }
+
+        private string ResolveRouteRecordSummary()
+        {
+            if (pocketReviewOwner == null)
+            {
+                return "-";
+            }
+
+            FrontlineWaveStageProfile profile = ActiveStageProfile;
+            float targetSeconds = Mathf.Max(1f, profile != null ? profile.TargetDurationSeconds : 90f);
+            string targetText = $"{pocketReviewOwner.ResultElapsedSeconds:0.0}/{targetSeconds:0.0}s";
+            if (pocketReviewOwner.IsFailed)
+            {
+                return $"Incomplete {ResolvePocketProgressText()} ({targetText})";
+            }
+
+            if (!pocketReviewOwner.IsCleared)
+            {
+                string hook = ResolveStageText(profile?.RewardHook, "Review-only route record");
+                return $"Pending {ResolvePocketProgressText()} target {targetSeconds:0}s | {hook}";
+            }
+
+            string grade = ResolveRouteRecordGrade(targetSeconds);
+            string routeType = pocketReviewOwner.Skill1FollowupHitConfirmed
+                ? "Summon follow-up"
+                : "Pressure suppression";
+            return $"Record {grade}: {routeType} {targetText}";
+        }
+
+        private string ResolveRouteRecordGrade(float targetSeconds)
+        {
+            if (pocketReviewOwner == null || !pocketReviewOwner.IsCleared)
+            {
+                return "-";
+            }
+
+            float timeRatio = pocketReviewOwner.ResultElapsedSeconds / Mathf.Max(1f, targetSeconds);
+            if (pocketReviewOwner.Skill1FollowupHitConfirmed && timeRatio <= 0.6f)
+            {
+                return "S";
+            }
+
+            if (pocketReviewOwner.Skill1FollowupHitConfirmed && timeRatio <= 1f)
+            {
+                return "A";
+            }
+
+            return timeRatio <= 1f ? "B" : "C";
         }
 
         private static string ResolveStageText(string profileText, string fallback)

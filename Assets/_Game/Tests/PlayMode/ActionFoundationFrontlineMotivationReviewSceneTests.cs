@@ -55,6 +55,9 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.CompactObjectiveReadout, Does.Contain("Route 1/3"));
             Assert.That(reviewHud.CompactObjectiveReadout, Does.Not.Contain("Boss"));
             Assert.That(pocketOwner.ObjectiveCue, Does.Contain("line").IgnoreCase);
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Pending 0/3"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("target 90"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Review-only route record"));
             SetField(pocketOwner, "elapsedSeconds", 2f);
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("Probe Wave"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("close_probe_defeated"));
@@ -76,7 +79,10 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("FRONTLINE STABILIZED", reviewHud.ResultBannerTitle);
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Summon route analyzed"));
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Route 3/3"));
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Record S"));
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("42.0/90.0s"));
             Assert.That(reviewHud.ResultBannerDetail, Does.Not.Contain("BOSS CLEAR"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Summon follow-up"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("Suppression Result"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("route_record_committed"));
         }
