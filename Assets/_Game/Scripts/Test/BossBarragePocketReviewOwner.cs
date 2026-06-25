@@ -147,6 +147,8 @@ namespace DimensionBrawl.Test
         public event Action<int, float> SummonFollowupHitConfirmed;
         public event Action SummonFollowupMissed;
         public event Action SummonBlockOpportunityOpened;
+        public event Action<CounterWaveSource> CounterWaveObserved;
+        public event Action CounterWaveStabilized;
         public event Action PocketCleared;
         public event Action PocketFailed;
         public event Action<int> StageBeatChanged;
@@ -726,8 +728,13 @@ namespace DimensionBrawl.Test
 
         private void ObserveCounterWave(CounterWaveSource source)
         {
+            bool wasObserved = counterWaveObserved;
             counterWaveObserved = true;
             counterWaveSource = source == CounterWaveSource.None ? CounterWaveSource.EnemyFrontlineBody : source;
+            if (!wasObserved)
+            {
+                CounterWaveObserved?.Invoke(counterWaveSource);
+            }
         }
 
         private void CaptureCounterWaveAnswer()
@@ -740,6 +747,7 @@ namespace DimensionBrawl.Test
             counterWaveStabilized = true;
             lastCounterWaveStabilityBonus = ResolveCounterWaveStabilizeRouteBonus01();
             AddRouteStability(lastCounterWaveStabilityBonus);
+            CounterWaveStabilized?.Invoke();
         }
 
         private void ClearPocket()

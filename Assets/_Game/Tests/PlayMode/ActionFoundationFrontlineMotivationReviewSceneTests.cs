@@ -265,6 +265,8 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket owner");
             BossBarrageLaneReviewHud reviewHud =
                 RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "review HUD");
+            ActionScreenCuePresenter screenCuePresenter =
+                RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "screen cue presenter");
             FrontlineWaveStageProfile stageProfile =
                 AssetDatabase.LoadAssetAtPath<FrontlineWaveStageProfile>(StageProfilePath);
             Assert.NotNull(stageProfile);
@@ -281,6 +283,7 @@ namespace DimensionBrawl.Tests
             SetField(pocketOwner, "usedSummonSlot1", true);
             SetField(pocketOwner, "blockedBossPressureWithSummon", true);
             SummonFrontlineProxy enemyProxy = CreateActiveFrontlineProxy("Test_CounterWave_EnemyProxy", DamageTeam.Enemy);
+            int counterCueCountBeforeEnemy = screenCuePresenter.CounterWaveCueRequestCount;
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.IsCounterWaveCompletionRecorded);
@@ -298,9 +301,14 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter:recorded(enemy_body)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter_answer:pending(awaiting)"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("Enemy Counter Wave"));
+            Assert.Greater(screenCuePresenter.CounterWaveCueRequestCount, counterCueCountBeforeEnemy);
+            Assert.AreEqual(
+                BossBarragePocketReviewOwner.CounterWaveSource.EnemyFrontlineBody,
+                screenCuePresenter.LastCounterWaveSource);
 
             float stabilityBeforeAnswer = pocketOwner.RouteStability01;
             SummonFrontlineProxy allyProxy = CreateActiveFrontlineProxy("Test_CounterWave_AllyProxy", DamageTeam.AllySummon);
+            int counterAnswerCueCountBeforeAlly = screenCuePresenter.CounterWaveAnswerCueRequestCount;
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.IsCounterWaveStabilized);
@@ -312,6 +320,8 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.CompactObjectiveReadout, Does.Contain("Counter held"));
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter_answer:stabilized(ally_hold)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter_answer:stabilized(ally_hold)"));
+            Assert.Greater(screenCuePresenter.CounterWaveAnswerCueRequestCount, counterAnswerCueCountBeforeAlly);
+            Assert.AreEqual("ally_hold", screenCuePresenter.LastCounterWaveAnswer);
 
             allyProxy.Deactivate(SummonFrontlineProxyExitReason.Recalled);
             enemyProxy.Deactivate(SummonFrontlineProxyExitReason.Recalled);
@@ -327,6 +337,8 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket owner");
             BossBarrageLaneReviewHud reviewHud =
                 RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "review HUD");
+            ActionScreenCuePresenter screenCuePresenter =
+                RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "screen cue presenter");
             BossSummonPressureAction bossSummonPressureAction =
                 UnityEngine.Object.FindFirstObjectByType<BossSummonPressureAction>();
             Assert.NotNull(bossSummonPressureAction, "Frontline review scene should keep the boss summon pressure action.");
@@ -335,6 +347,7 @@ namespace DimensionBrawl.Tests
             SetField(pocketOwner, "usedSummonSlot1", true);
             SetField(pocketOwner, "blockedBossPressureWithSummon", true);
             SetField(bossSummonPressureAction, "totalReleaseCount", bossSummonPressureAction.TotalReleaseCount + 1);
+            int counterCueCountBeforeRelease = screenCuePresenter.CounterWaveCueRequestCount;
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.IsCounterWaveCompletionRecorded);
@@ -350,6 +363,10 @@ namespace DimensionBrawl.Tests
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter_answer:pending(awaiting)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter:recorded(boss_summon)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter_answer:pending(awaiting)"));
+            Assert.Greater(screenCuePresenter.CounterWaveCueRequestCount, counterCueCountBeforeRelease);
+            Assert.AreEqual(
+                BossBarragePocketReviewOwner.CounterWaveSource.BossSummonRelease,
+                screenCuePresenter.LastCounterWaveSource);
         }
 
         [UnityTest]

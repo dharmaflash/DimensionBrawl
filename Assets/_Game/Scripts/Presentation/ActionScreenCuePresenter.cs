@@ -72,6 +72,8 @@ namespace DimensionBrawl.Presentation
         [Header("Frontline Colors")]
         [SerializeField] private Color frontlineBeatColor = new Color(0.52f, 0.92f, 1f, 1f);
         [SerializeField] private Color frontlineWarningColor = new Color(1f, 0.72f, 0.22f, 1f);
+        [SerializeField] private Color counterWaveColor = new Color(1f, 0.46f, 0.20f, 1f);
+        [SerializeField] private Color counterWaveStabilizedColor = new Color(0.46f, 1f, 0.68f, 1f);
 
         [Header("Follow-up Colors")]
         [SerializeField] private Color followupWindowColor = new Color(0.34f, 1f, 0.64f, 1f);
@@ -111,6 +113,8 @@ namespace DimensionBrawl.Presentation
         private int damageFeedbackRequestCount;
         private int suppressedCueRequestCount;
         private int frontlineStabilityCueRequestCount;
+        private int counterWaveCueRequestCount;
+        private int counterWaveAnswerCueRequestCount;
         private string lastCueId = string.Empty;
         private Color lastCueColor = Color.clear;
         private float lastCueIntensity;
@@ -120,6 +124,9 @@ namespace DimensionBrawl.Presentation
         private int lastEnergyCueTier;
         private int lastFrontlineBeatIndex = -1;
         private string lastFrontlineBeatLabel = string.Empty;
+        private BossBarragePocketReviewOwner.CounterWaveSource lastCounterWaveSource =
+            BossBarragePocketReviewOwner.CounterWaveSource.None;
+        private string lastCounterWaveAnswer = string.Empty;
         private BossBarragePocketReviewOwner.RouteStabilityBand lastFrontlineStabilityBand =
             BossBarragePocketReviewOwner.RouteStabilityBand.Stable;
         private float lastFrontlineStability01 = 1f;
@@ -157,6 +164,8 @@ namespace DimensionBrawl.Presentation
         public int DamageFeedbackRequestCount => damageFeedbackRequestCount;
         public int SuppressedCueRequestCount => suppressedCueRequestCount;
         public int FrontlineStabilityCueRequestCount => frontlineStabilityCueRequestCount;
+        public int CounterWaveCueRequestCount => counterWaveCueRequestCount;
+        public int CounterWaveAnswerCueRequestCount => counterWaveAnswerCueRequestCount;
         public string LastCueId => lastCueId;
         public Color LastCueColor => lastCueColor;
         public float LastCueIntensity => lastCueIntensity;
@@ -166,6 +175,8 @@ namespace DimensionBrawl.Presentation
         public int LastEnergyCueTier => lastEnergyCueTier;
         public int LastFrontlineBeatIndex => lastFrontlineBeatIndex;
         public string LastFrontlineBeatLabel => lastFrontlineBeatLabel;
+        public BossBarragePocketReviewOwner.CounterWaveSource LastCounterWaveSource => lastCounterWaveSource;
+        public string LastCounterWaveAnswer => lastCounterWaveAnswer;
         public BossBarragePocketReviewOwner.RouteStabilityBand LastFrontlineStabilityBand => lastFrontlineStabilityBand;
         public float LastFrontlineStability01 => lastFrontlineStability01;
         public SummonEnergyRiskBand LastEnergyRiskBand => lastEnergyRiskBand;
@@ -431,6 +442,33 @@ namespace DimensionBrawl.Presentation
                 ScreenCueCategory.Frontline);
         }
 
+        private void HandleCounterWaveObserved(BossBarragePocketReviewOwner.CounterWaveSource source)
+        {
+            lastCounterWaveSource = source;
+            counterWaveCueRequestCount++;
+            bool heavyCounterCue = source == BossBarragePocketReviewOwner.CounterWaveSource.BossSummonRelease
+                || source == BossBarragePocketReviewOwner.CounterWaveSource.FollowupMissed;
+            float intensity = heavyCounterCue ? 0.86f : 0.72f;
+            RequestScreenCue(
+                $"Frontline.CounterWave.{source}",
+                counterWaveColor,
+                0.26f,
+                intensity,
+                ScreenCueCategory.Frontline);
+        }
+
+        private void HandleCounterWaveStabilized()
+        {
+            lastCounterWaveAnswer = "ally_hold";
+            counterWaveAnswerCueRequestCount++;
+            RequestScreenCue(
+                "Frontline.CounterAnswer.AllyHold",
+                counterWaveStabilizedColor,
+                0.28f,
+                0.82f,
+                ScreenCueCategory.Frontline);
+        }
+
         private void HandleSummonBlockOpportunityOpened()
         {
             RequestScreenCue("Followup.BlockOpportunity", followupWindowColor, 0.20f, 0.72f, ScreenCueCategory.Followup);
@@ -646,6 +684,8 @@ namespace DimensionBrawl.Presentation
             {
                 pocketReviewOwner.StageBeatChanged += HandleStageBeatChanged;
                 pocketReviewOwner.RouteStabilityBandChanged += HandleRouteStabilityBandChanged;
+                pocketReviewOwner.CounterWaveObserved += HandleCounterWaveObserved;
+                pocketReviewOwner.CounterWaveStabilized += HandleCounterWaveStabilized;
                 pocketReviewOwner.SummonBlockOpportunityOpened += HandleSummonBlockOpportunityOpened;
                 pocketReviewOwner.SummonFollowupWindowOpened += HandleSummonFollowupWindowOpened;
                 pocketReviewOwner.SummonFollowupHitConfirmed += HandleSummonFollowupHitConfirmed;
@@ -712,6 +752,8 @@ namespace DimensionBrawl.Presentation
             {
                 pocketReviewOwner.StageBeatChanged -= HandleStageBeatChanged;
                 pocketReviewOwner.RouteStabilityBandChanged -= HandleRouteStabilityBandChanged;
+                pocketReviewOwner.CounterWaveObserved -= HandleCounterWaveObserved;
+                pocketReviewOwner.CounterWaveStabilized -= HandleCounterWaveStabilized;
                 pocketReviewOwner.SummonBlockOpportunityOpened -= HandleSummonBlockOpportunityOpened;
                 pocketReviewOwner.SummonFollowupWindowOpened -= HandleSummonFollowupWindowOpened;
                 pocketReviewOwner.SummonFollowupHitConfirmed -= HandleSummonFollowupHitConfirmed;
