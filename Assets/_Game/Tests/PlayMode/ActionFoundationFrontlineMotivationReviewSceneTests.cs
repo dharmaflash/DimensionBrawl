@@ -362,6 +362,10 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(pocketOwner.IsCleared);
             Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.Cleared, pocketOwner.CurrentPhase);
             Assert.That(reviewHud.ResultBannerTitle, Does.Contain("FRONTLINE STABILIZED"));
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Counter wave held"));
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("final follow-up"));
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Counter recovery"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Counter recovery"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("followup:recorded"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter_window:opened(final_followup)"));
 

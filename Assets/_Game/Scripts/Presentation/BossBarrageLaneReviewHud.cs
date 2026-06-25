@@ -1422,7 +1422,7 @@ namespace DimensionBrawl.Presentation
                 FrontlineWaveStageProfile activeProfile = ActiveStageProfile;
                 title = ResolveStageText(activeProfile?.ClearTitle, "FRONTLINE STABILIZED");
                 detail = pocketReviewOwner.Skill1FollowupHitConfirmed
-                    ? $"{ResolveStageText(activeProfile?.ClearFollowupDetail, "Summon route analyzed; Skill1 follow-up confirmed")} ({pocketReviewOwner.Skill1FollowupDamage:0}) | {ResolvePocketResultSuffix()}"
+                    ? $"{ResolveStageText(ResolvePocketClearFollowupDetail(activeProfile), "Summon route analyzed; Skill1 follow-up confirmed")} ({pocketReviewOwner.Skill1FollowupDamage:0}) | {ResolvePocketResultSuffix()}"
                     : $"{ResolveStageText(activeProfile?.ClearPressureDetail, "Boss curtain suppressed; frontline route recorded")} | {ResolvePocketResultSuffix()}";
                 backColor = resultClearBackColor;
                 return true;
@@ -1483,10 +1483,37 @@ namespace DimensionBrawl.Presentation
             }
 
             string grade = ResolveRouteRecordGrade(targetSeconds);
-            string routeType = pocketReviewOwner.Skill1FollowupHitConfirmed
+            string routeType = ResolveClearedPocketRouteType();
+            return $"Record {grade}: {routeType} {targetText} {ResolveRouteStabilityText()} | {ResolveCompletionRecordText()}";
+        }
+
+        private string ResolvePocketClearFollowupDetail(FrontlineWaveStageProfile activeProfile)
+        {
+            if (IsCounterRecoveryClear())
+            {
+                return activeProfile?.ClearCounterDetail;
+            }
+
+            return activeProfile?.ClearFollowupDetail;
+        }
+
+        private string ResolveClearedPocketRouteType()
+        {
+            if (IsCounterRecoveryClear())
+            {
+                return "Counter recovery";
+            }
+
+            return pocketReviewOwner.Skill1FollowupHitConfirmed
                 ? "Summon follow-up"
                 : "Pressure suppression";
-            return $"Record {grade}: {routeType} {targetText} {ResolveRouteStabilityText()} | {ResolveCompletionRecordText()}";
+        }
+
+        private bool IsCounterRecoveryClear()
+        {
+            return pocketReviewOwner != null
+                && pocketReviewOwner.Skill1FollowupHitConfirmed
+                && (pocketReviewOwner.IsCounterWaveStabilized || pocketReviewOwner.IsCounterWaveFinalWindowOpened);
         }
 
         private string ResolveCompletionRecordText()

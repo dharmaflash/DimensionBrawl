@@ -104,6 +104,7 @@ namespace DimensionBrawl.LevelDesign
         [Header("Result Copy")]
         [SerializeField] private string clearTitle = "FRONTLINE STABILIZED";
         [SerializeField] private string clearFollowupDetail = "Summon route analyzed; Skill1 follow-up confirmed";
+        [SerializeField] private string clearCounterDetail = "Counter wave held; final follow-up confirmed";
         [SerializeField] private string clearPressureDetail = "Boss curtain suppressed; frontline route recorded";
         [SerializeField] private string failTitle = "LINE COLLAPSED";
         [SerializeField] private string failDetail = "Player down before the frontline route could stabilize";
@@ -152,6 +153,7 @@ namespace DimensionBrawl.LevelDesign
         public string FailObjectiveCue => failObjectiveCue;
         public string ClearTitle => clearTitle;
         public string ClearFollowupDetail => clearFollowupDetail;
+        public string ClearCounterDetail => clearCounterDetail;
         public string ClearPressureDetail => clearPressureDetail;
         public string FailTitle => failTitle;
         public string FailDetail => failDetail;

@@ -263,6 +263,7 @@ namespace DimensionBrawl.Editor
             SetString(serializedObject, "failObjectiveCue", "Player line collapsed before route stabilization");
             SetString(serializedObject, "clearTitle", "FRONTLINE STABILIZED");
             SetString(serializedObject, "clearFollowupDetail", "Summon route analyzed; Skill1 follow-up confirmed");
+            SetString(serializedObject, "clearCounterDetail", "Counter wave held; final follow-up confirmed");
             SetString(serializedObject, "clearPressureDetail", "Boss curtain suppressed; frontline route recorded");
             SetString(serializedObject, "failTitle", "LINE COLLAPSED");
             SetString(serializedObject, "failDetail", "Player down before the frontline route could stabilize");

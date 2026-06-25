@@ -52,6 +52,7 @@ MonoBehaviour:
   failObjectiveCue: Player line collapsed before route stabilization
   clearTitle: FRONTLINE STABILIZED
   clearFollowupDetail: Summon route analyzed; Skill1 follow-up confirmed
+  clearCounterDetail: Counter wave held; final follow-up confirmed
   clearPressureDetail: Boss curtain suppressed; frontline route recorded
   failTitle: LINE COLLAPSED
   failDetail: Player down before the frontline route could stabilize
