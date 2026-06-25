@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0353a89b1f911e48b9e16bdc9f2e058, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Editor::UnityEditor.Rendering.Universal.AssetVersion
   version: 10
 --- !u!21 &2100000
@@ -41,7 +41,7 @@ Material:
   - TransparentBackface
   - RayTracingPrepass
   - MOTIONVECTORS
-  m_LockedProperties: 
+  m_LockedProperties:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -152,10 +152,10 @@ Material:
     - _ZWriteControl: 0
     m_Colors:
     - _ColorB: {r: 0.5998698, g: 0.8306355, b: 0.9870355, a: 0.835264}
-    - _ColorBlack: {r: 0.5972888, g: 0.81523216, b: 0.9683706, a: 0}
+    - _ColorBlack: {r: 0.5973496, g: 0.8152934, b: 0.9682445, a: 0}
     - _ColorEmissive: {r: 0, g: 0, b: 0, a: 0}
     - _ColorG: {r: 0.6054741, g: 0.8449173, b: 0.9833788, a: 0.7888}
-    - _ColorGrunge: {r: 0.7001603, g: 0.8821371, b: 0.9873679, a: 0}
+    - _ColorGrunge: {r: 0.77919656, g: 0.8836296, b: 0.971945, a: 0}
     - _ColorR: {r: 0.7317224, g: 0.89454377, b: 0.9886976, a: 0.856384}
     - _DoubleSidedConstants: {r: 1, g: 1, b: 1, a: 0}
     - _EmissionColor: {r: 1, g: 1, b: 1, a: 1}

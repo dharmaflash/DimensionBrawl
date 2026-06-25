@@ -87,7 +87,7 @@ Material:
     - _BlendMode: 0
     - _BlendModePreserveSpecular: 0
     - _CastShadows: 1
-    - _ColorGrungeBlend: 0.16
+    - _ColorGrungeBlend: 0.32
     - _ConservativeDepthOffsetEnable: 0
     - _Cull: 2
     - _CullMode: 2
