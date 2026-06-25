@@ -692,6 +692,11 @@ namespace DimensionBrawl.Presentation
                 return $"{ResolvePocketStepPrefix()}: Suppress boss curtain {pocketReviewOwner.SummonPressureBreakRemainingSeconds:0.0}s";
             }
 
+            if (pocketReviewOwner.IsCounterWaveCompletionRecorded && !pocketReviewOwner.Skill1FollowupHitConfirmed)
+            {
+                return $"{ResolvePocketStepPrefix()}: Hold counter wave";
+            }
+
             if (pocketReviewOwner.IsSummonBlockOpportunityCueActive)
             {
                 return $"{ResolvePocketStepPrefix()}: Open summon route {pocketReviewOwner.SummonBlockOpportunityRemainingSeconds:0.0}s";

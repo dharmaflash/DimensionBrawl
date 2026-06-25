@@ -250,6 +250,10 @@ namespace DimensionBrawl.Editor
                 serializedObject,
                 "pressureBreakCue",
                 "Boss curtain suppressed briefly; read the follow-up window");
+            SetString(
+                serializedObject,
+                "counterWaveCue",
+                "Counter wave entered the line; hold frontline and answer with summon");
             SetString(serializedObject, "clearObjectiveCue", "Frontline stabilized; summon route secured");
             SetString(serializedObject, "failObjectiveCue", "Player line collapsed before route stabilization");
             SetString(serializedObject, "clearTitle", "FRONTLINE STABILIZED");

@@ -42,6 +42,7 @@ namespace DimensionBrawl.Presentation
                 "SummonBlock" => "Summon Block",
                 "SummonFollowup" => "Follow-up",
                 "PressureBreak" => "Break",
+                "CounterWave" => "Counter",
                 "Cleared" => "Clear",
                 "Failed" => "Fail",
                 _ => phase

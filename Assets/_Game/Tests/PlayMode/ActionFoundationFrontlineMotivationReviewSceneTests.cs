@@ -69,6 +69,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("FRONTLINE-MOTIVATION-REVIEW-01", stageProfile.StageId);
             Assert.That(stageProfile.CombatPromise, Does.Contain("Bodies stay split"));
             Assert.That(stageProfile.EntryCue, Does.Contain("summon route"));
+            Assert.That(stageProfile.CounterWaveCue, Does.Contain("Counter wave"));
             Assert.AreEqual(90f, stageProfile.TargetDurationSeconds);
             Assert.AreEqual(0.62f, stageProfile.RouteStabilityStart01, 0.001f);
             Assert.That(stageProfile.RouteCollapseFailDetail, Does.Contain("Route stability collapsed"));
@@ -272,6 +273,9 @@ namespace DimensionBrawl.Tests
 
             Assert.IsTrue(pocketOwner.IsCounterWaveCompletionRecorded);
             Assert.AreEqual("recorded", pocketOwner.CounterWaveRecordState);
+            Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.CounterWave, pocketOwner.CurrentPhase);
+            Assert.That(pocketOwner.ObjectiveCue, Does.Contain("Counter wave"));
+            Assert.That(reviewHud.CompactObjectiveReadout, Does.Contain("Hold counter wave"));
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter:recorded"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter:recorded"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("Enemy Counter Wave"));
@@ -300,6 +304,8 @@ namespace DimensionBrawl.Tests
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.IsCounterWaveCompletionRecorded);
+            Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.CounterWave, pocketOwner.CurrentPhase);
+            Assert.That(reviewHud.CompactObjectiveReadout, Does.Contain("Hold counter wave"));
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter:recorded"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter:recorded"));
         }

@@ -15,6 +15,7 @@ namespace DimensionBrawl.Test
             SummonBlock,
             SummonFollowup,
             PressureBreak,
+            CounterWave,
             Cleared,
             Failed
         }
@@ -228,6 +229,7 @@ namespace DimensionBrawl.Test
                     _ when IsSkill1FollowupClearCountdownActive => ReviewPhase.SummonFollowup,
                     _ when pressurePacing.IsSummonPressureBreakActive && pressurePacing.IsSummonFollowupWindowActive => ReviewPhase.SummonFollowup,
                     _ when pressurePacing.IsSummonPressureBreakActive => ReviewPhase.PressureBreak,
+                    _ when counterWaveObserved => ReviewPhase.CounterWave,
                     _ when closeThreatDefeated => ReviewPhase.SummonBlock,
                     _ => ReviewPhase.ThreatDefense
                 };
@@ -290,6 +292,11 @@ namespace DimensionBrawl.Test
                     && requireSkill1FollowupHitToClear
                     && !skill1FollowupHitConfirmed)
                 {
+                    if (counterWaveObserved)
+                    {
+                        return $"{ResolveCounterWaveCue()}: {ResolveObjectiveSummonAnswerLabel()}";
+                    }
+
                     return energyLadder != null && !energyLadder.CanSpend
                         ? $"{ResolveStageText(stageProfile != null ? stageProfile.SummonChargeCue : null, "Regain EN, then block boss curtain")}: {ResolveObjectiveSummonAnswerLabel()}"
                         : bossBlockedSkill1Followup
@@ -1007,6 +1014,13 @@ namespace DimensionBrawl.Test
             }
 
             return $"{cue}: Skill1 LV{energyLadder.AvailableTier} during {summonTierLabel} window";
+        }
+
+        private string ResolveCounterWaveCue()
+        {
+            return ResolveStageText(
+                stageProfile != null ? stageProfile.CounterWaveCue : null,
+                "Counter wave entered the line; hold frontline and answer with summon");
         }
 
         private string ResolveSummonBlockOpportunityCue()

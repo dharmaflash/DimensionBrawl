@@ -95,6 +95,7 @@ namespace DimensionBrawl.LevelDesign
         [TextArea, SerializeField] private string followupBlockedCue = "Boss screen absorbed the follow-up; rebuild the summon answer";
         [TextArea, SerializeField] private string followupMissedCue = "Follow-up window missed; boss pressure is returning";
         [TextArea, SerializeField] private string pressureBreakCue = "Boss curtain suppressed briefly; read the follow-up window";
+        [TextArea, SerializeField] private string counterWaveCue = "Counter wave entered the line; hold frontline and answer with summon";
         [TextArea, SerializeField] private string clearObjectiveCue = "Frontline stabilized; summon route secured";
         [TextArea, SerializeField] private string failObjectiveCue = "Player line collapsed before route stabilization";
 
@@ -142,6 +143,7 @@ namespace DimensionBrawl.LevelDesign
         public string FollowupBlockedCue => followupBlockedCue;
         public string FollowupMissedCue => followupMissedCue;
         public string PressureBreakCue => pressureBreakCue;
+        public string CounterWaveCue => counterWaveCue;
         public string ClearObjectiveCue => clearObjectiveCue;
         public string FailObjectiveCue => failObjectiveCue;
         public string ClearTitle => clearTitle;
