@@ -867,7 +867,14 @@ namespace DimensionBrawl.Test
 
         private void CaptureCounterWavePressure()
         {
-            if (counterWaveObserved || !blockedBossPressureWithSummon)
+            if (counterWaveObserved || !blockedBossPressureWithSummon || skill1FollowupHitConfirmed)
+            {
+                return;
+            }
+
+            if (pressurePacing.IsSummonFollowupWindowActive
+                && !followupMissedNotified
+                && !bossBlockedSkill1Followup)
             {
                 return;
             }
