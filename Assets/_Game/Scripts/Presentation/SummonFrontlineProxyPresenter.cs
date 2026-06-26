@@ -53,6 +53,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0f)] private float attackFlashSeconds = 0.12f;
         [SerializeField, Min(0f)] private float damageFlashSeconds = 0.16f;
         [SerializeField, Min(0f)] private float deathFlashSeconds = 0.22f;
+        [SerializeField] private bool suppressSummonClashHitTrigger = true;
         [SerializeField, Range(0.2f, 1f)] private float impactFlashProgress = 0.86f;
         [SerializeField, Min(0.01f)] private float pulseSpeed = 8f;
         [SerializeField, Min(0f)] private float pulseScale = 0.08f;
@@ -473,7 +474,7 @@ namespace DimensionBrawl.Presentation
             return false;
         }
 
-        private void HandleDamaged(DamageInfo _)
+        private void HandleDamaged(DamageInfo damageInfo)
         {
             damageFlashTimer = Mathf.Max(damageFlashTimer, damageFlashSeconds);
             damageFlashCount++;
@@ -482,12 +483,19 @@ namespace DimensionBrawl.Presentation
                 damageVfxCueRequestCount++;
             }
 
-            if (TriggerAnimator(hitTrigger))
+            if (!ShouldSuppressHitTrigger(damageInfo) && TriggerAnimator(hitTrigger))
             {
                 animatorHitTriggerCount++;
             }
 
             RefreshNow();
+        }
+
+        private bool ShouldSuppressHitTrigger(DamageInfo damageInfo)
+        {
+            return suppressSummonClashHitTrigger
+                && damageInfo.Source != null
+                && damageInfo.Source.GetComponentInParent<SummonFrontlineProxy>() != null;
         }
 
         private void HandleDied()

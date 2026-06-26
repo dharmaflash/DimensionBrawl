@@ -429,7 +429,9 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(hud.ShowDetailedTelemetry);
             StringAssert.Contains("Answer: Summon shield LV1", hud.CombatCueReadout);
             StringAssert.Contains("waiting LV2 SummonSlot1PressureBlock", hud.CombatCueReadout);
-            StringAssert.Contains("Frontline", hud.FrontlineCueReadout);
+            StringAssert.Contains("Pressure", hud.FrontlineCueReadout);
+            StringAssert.Contains("Summon", hud.FrontlineCueReadout);
+            Assert.IsFalse(hud.FrontlineCueReadout.Contains("Frontline"));
             Assert.AreEqual("Goal: -", hud.CompactObjectiveReadout);
             StringAssert.Contains("Answer: Summon LV1", hud.CompactCombatCueReadout);
             Assert.LessOrEqual(hud.CompactCombatCueReadout.Length, 72);
@@ -1001,6 +1003,59 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(proxy.IsPresentationVisible);
 
             Object.DestroyImmediate(proxyObject);
+        }
+
+        [Test]
+        public void SummonFrontlineProxyPresenterSuppressesHitTriggerForSummonClashDamage()
+        {
+            GameObject victimObject = new GameObject("VictimSummonProxy");
+            CombatHealth victimHealth = victimObject.AddComponent<CombatHealth>();
+            victimHealth.ConfigureTeam(DamageTeam.AllySummon);
+            victimHealth.ResetHealthToFull();
+            SummonFrontlineProxy victimProxy = victimObject.AddComponent<SummonFrontlineProxy>();
+            victimProxy.ConfigureHealth(victimHealth);
+
+            GameObject pulseObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            pulseObject.name = "TierPulseCore";
+            pulseObject.transform.SetParent(victimObject.transform, worldPositionStays: false);
+            Collider pulseCollider = pulseObject.GetComponent<Collider>();
+            Object.DestroyImmediate(pulseCollider);
+            Renderer pulseRenderer = pulseObject.GetComponent<Renderer>();
+            GameObject visualObject = new GameObject("SummonSlot1Visual_ShieldBreakerElite");
+            visualObject.transform.SetParent(victimObject.transform, worldPositionStays: false);
+            Animator animator = visualObject.AddComponent<Animator>();
+            animator.runtimeAnimatorController =
+                AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(ShieldBreakerEliteAnimatorControllerPath);
+            Assert.IsNotNull(animator.runtimeAnimatorController);
+
+            SummonFrontlineProxyPresenter presenter = victimObject.AddComponent<SummonFrontlineProxyPresenter>();
+            presenter.ConfigurePresentation(victimProxy, pulseObject.transform, new[] { pulseRenderer });
+            presenter.ConfigureAnimator(animator);
+            victimProxy.Activate(Vector3.zero, Vector3.forward, 1, 0f, 1f, 2f, 2f, 120f, 1f);
+            presenter.RefreshNow();
+
+            GameObject sourceObject = new GameObject("EnemySummonProxy");
+            CombatHealth sourceHealth = sourceObject.AddComponent<CombatHealth>();
+            sourceHealth.ConfigureTeam(DamageTeam.Enemy);
+            sourceHealth.ResetHealthToFull();
+            SummonFrontlineProxy sourceProxy = sourceObject.AddComponent<SummonFrontlineProxy>();
+            sourceProxy.ConfigureHealth(sourceHealth);
+
+            Assert.IsTrue(victimHealth.TryApplyDamage(new DamageInfo(
+                sourceHealth,
+                DamageTeam.Enemy,
+                12f,
+                Vector3.zero,
+                Vector3.back,
+                0f)));
+            Assert.AreEqual(1, presenter.DamageFlashCount);
+            Assert.AreEqual(
+                0,
+                presenter.AnimatorHitTriggerCount,
+                "Summon-vs-summon clash damage should use clash/attack feedback instead of making both actors spam the same hit reaction.");
+
+            Object.DestroyImmediate(sourceObject);
+            Object.DestroyImmediate(victimObject);
         }
 
         [Test]
