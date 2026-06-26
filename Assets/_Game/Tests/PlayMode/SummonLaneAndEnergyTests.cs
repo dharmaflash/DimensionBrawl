@@ -1,4 +1,6 @@
 using DimensionBrawl.Combat;
+using DimensionBrawl.AI;
+using DimensionBrawl.Enemies;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
@@ -907,9 +909,13 @@ namespace DimensionBrawl.Tests
             Assert.Less(enemyHealth.CurrentHealth, enemyHealth.MaxHealth);
             Assert.IsTrue(enemyDamageInfo.HasValue);
             Assert.AreEqual(
-                DamageHitReaction.SuppressHitAnimation,
-                enemyDamageInfo.Value.HitReaction,
-                "Summon clash damage should explicitly mark that clash/attack feedback handles the contact read.");
+                DamageResponsePolicy.FlashOnly,
+                enemyDamageInfo.Value.ResponsePolicy,
+                "Summon clash damage should explicitly route contact readability through clash feedback instead of a full-body hit animation.");
+            Assert.AreEqual(
+                CombatControlLockPolicy.None,
+                enemyDamageInfo.Value.ControlLockPolicy,
+                "Summon clash damage should not declare an action lock for the victim.");
             Assert.IsTrue(allyProxy.IsAdvanceHeld);
             Assert.IsTrue(enemyProxy.IsAdvanceHeld);
             Assert.IsTrue(allyClash.IsClashing);
@@ -1013,7 +1019,7 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
-        public void SummonFrontlineProxyPresenterHonorsDamageHitReactionPolicy()
+        public void SummonFrontlineProxyPresenterHonorsDamageResponsePolicy()
         {
             GameObject victimObject = new GameObject("VictimSummonProxy");
             CombatHealth victimHealth = victimObject.AddComponent<CombatHealth>();
@@ -1059,7 +1065,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(
                 1,
                 presenter.AnimatorHitTriggerCount,
-                "A summon source should still trigger the normal hit animation unless the damage explicitly suppresses it.");
+                "Default damage should still trigger the legacy full-body hit animation.");
 
             Assert.IsTrue(victimHealth.TryApplyDamage(new DamageInfo(
                 sourceHealth,
@@ -1068,15 +1074,101 @@ namespace DimensionBrawl.Tests
                 Vector3.zero,
                 Vector3.back,
                 0f,
-                DamageHitReaction.SuppressHitAnimation)));
+                DamageResponsePolicy.FlashOnly)));
             Assert.AreEqual(2, presenter.DamageFlashCount);
             Assert.AreEqual(
                 1,
                 presenter.AnimatorHitTriggerCount,
-                "Hit animation suppression should come from DamageInfo policy instead of presenter-side source type checks.");
+                "Flash-only damage should keep readability without forcing a full-body hit animation.");
+
+            Assert.IsTrue(victimHealth.TryApplyDamage(new DamageInfo(
+                sourceHealth,
+                DamageTeam.Enemy,
+                12f,
+                Vector3.zero,
+                Vector3.back,
+                0f,
+                DamageResponsePolicy.DamageOnly,
+                CombatControlLockPolicy.None)));
+            Assert.AreEqual(
+                2,
+                presenter.DamageFlashCount,
+                "Damage-only policy should stay out of presentation hooks.");
+            Assert.AreEqual(1, presenter.AnimatorHitTriggerCount);
 
             Object.DestroyImmediate(sourceObject);
             Object.DestroyImmediate(victimObject);
+        }
+
+        [Test]
+        public void DamageModificationPreservesDamageResponseAndControlLockPolicies()
+        {
+            GameObject victimObject = new GameObject("PolicyPreservingVictim");
+            CombatHealth victimHealth = victimObject.AddComponent<CombatHealth>();
+            victimHealth.ConfigureTeam(DamageTeam.AllySummon);
+            victimHealth.ResetHealthToFull();
+
+            DamageInfo? resolvedDamageInfo = null;
+            victimHealth.DamageModifying += context => context.ScaleAmount(0.5f);
+            victimHealth.Damaged += damageInfo => resolvedDamageInfo = damageInfo;
+
+            Assert.IsTrue(victimHealth.TryApplyDamage(new DamageInfo(
+                null,
+                DamageTeam.Enemy,
+                20f,
+                Vector3.zero,
+                Vector3.back,
+                0f,
+                DamageResponsePolicy.Break,
+                CombatControlLockPolicy.HardLock)));
+
+            Assert.IsTrue(resolvedDamageInfo.HasValue);
+            Assert.AreEqual(10f, resolvedDamageInfo.Value.Amount, 0.001f);
+            Assert.AreEqual(DamageResponsePolicy.Break, resolvedDamageInfo.Value.ResponsePolicy);
+            Assert.AreEqual(CombatControlLockPolicy.HardLock, resolvedDamageInfo.Value.ControlLockPolicy);
+
+            Object.DestroyImmediate(victimObject);
+        }
+
+        [Test]
+        public void BasicSoldierOnlyStaggersWhenDamageDeclaresControlLock()
+        {
+            GameObject soldierObject = new GameObject("ControlLockPolicySoldier");
+            BasicSoldierEnemy soldier = soldierObject.AddComponent<BasicSoldierEnemy>();
+            CombatHealth soldierHealth = soldierObject.GetComponent<CombatHealth>();
+            soldierHealth.ConfigureTeam(DamageTeam.Enemy);
+            soldierHealth.ResetHealthToFull();
+
+            Assert.AreEqual(CombatAiPatternState.Tracking, soldier.CurrentPatternState);
+            Assert.IsTrue(soldierHealth.TryApplyDamage(new DamageInfo(
+                null,
+                DamageTeam.Player,
+                8f,
+                Vector3.zero,
+                Vector3.forward,
+                0f,
+                DamageResponsePolicy.FlashOnly,
+                CombatControlLockPolicy.None)));
+            Assert.AreEqual(
+                CombatAiPatternState.Tracking,
+                soldier.CurrentPatternState,
+                "Non-locking damage should not force the enemy out of its current action state.");
+
+            Assert.IsTrue(soldierHealth.TryApplyDamage(new DamageInfo(
+                null,
+                DamageTeam.Player,
+                8f,
+                Vector3.zero,
+                Vector3.forward,
+                0f,
+                DamageResponsePolicy.Stagger,
+                CombatControlLockPolicy.InterruptAction)));
+            Assert.AreEqual(
+                CombatAiPatternState.Stagger,
+                soldier.CurrentPatternState,
+                "Damage that declares an action lock should still drive the authored stagger state.");
+
+            Object.DestroyImmediate(soldierObject);
         }
 
         [Test]

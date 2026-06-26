@@ -300,6 +300,11 @@ namespace DimensionBrawl.Presentation
 
         private void HandlePlayerDamaged(DamageInfo damageInfo)
         {
+            if (!DamageResponsePolicyUtility.PlaysDamagePresentation(damageInfo.ResponsePolicy))
+            {
+                return;
+            }
+
             playerDamageCueRequestCount++;
             float healthScale = playerHealth != null && playerHealth.MaxHealth > 0f
                 ? Mathf.Clamp01(damageInfo.Amount / playerHealth.MaxHealth)

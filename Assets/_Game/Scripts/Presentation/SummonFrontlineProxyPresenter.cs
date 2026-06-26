@@ -475,6 +475,11 @@ namespace DimensionBrawl.Presentation
 
         private void HandleDamaged(DamageInfo damageInfo)
         {
+            if (!DamageResponsePolicyUtility.PlaysDamagePresentation(damageInfo.ResponsePolicy))
+            {
+                return;
+            }
+
             damageFlashTimer = Mathf.Max(damageFlashTimer, damageFlashSeconds);
             damageFlashCount++;
             if (PlayVfxCue(damageCueId, Mathf.Max(lastObservedTier, 1), damageCueIntensity))
@@ -492,7 +497,7 @@ namespace DimensionBrawl.Presentation
 
         private static bool ShouldPlayHitAnimation(DamageInfo damageInfo)
         {
-            return damageInfo.HitReaction != DamageHitReaction.SuppressHitAnimation;
+            return DamageResponsePolicyUtility.PlaysFullBodyHitAnimation(damageInfo.ResponsePolicy);
         }
 
         private void HandleDied()

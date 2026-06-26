@@ -469,6 +469,11 @@ namespace DimensionBrawl.Enemies
                 return;
             }
 
+            if (!DamageResponsePolicyUtility.InterruptsAction(damageInfo.ControlLockPolicy))
+            {
+                return;
+            }
+
             EnterState(SoldierState.Stagger, CombatAiPatternState.Stagger);
             stateTimer = 0f;
             hasLockedAttackDirection = false;

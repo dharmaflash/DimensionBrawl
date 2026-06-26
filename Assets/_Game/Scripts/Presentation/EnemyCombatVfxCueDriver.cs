@@ -99,6 +99,11 @@ namespace DimensionBrawl.Presentation
 
         private void HandleDamaged(DamageInfo damageInfo)
         {
+            if (!DamageResponsePolicyUtility.PlaysDamagePresentation(damageInfo.ResponsePolicy))
+            {
+                return;
+            }
+
             Play(CombatVfxCueId.EnemyHit, damageInfo.Direction, 1f);
         }
 

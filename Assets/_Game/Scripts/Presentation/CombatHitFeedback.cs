@@ -62,8 +62,13 @@ namespace DimensionBrawl.Presentation
             }
         }
 
-        private void HandleDamaged(DamageInfo _)
+        private void HandleDamaged(DamageInfo damageInfo)
         {
+            if (!DamageResponsePolicyUtility.PlaysDamagePresentation(damageInfo.ResponsePolicy))
+            {
+                return;
+            }
+
             if (flashRoutine != null)
             {
                 StopCoroutine(flashRoutine);

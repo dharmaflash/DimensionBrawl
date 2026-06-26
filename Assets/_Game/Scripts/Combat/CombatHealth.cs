@@ -12,10 +12,43 @@ namespace DimensionBrawl.Combat
         AllySummon = 3
     }
 
-    public enum DamageHitReaction
+    public enum DamageResponsePolicy
     {
         Default = 0,
-        SuppressHitAnimation = 1
+        DamageOnly = 1,
+        FlashOnly = 2,
+        Flinch = 3,
+        Stagger = 4,
+        Break = 5,
+        Knockdown = 6
+    }
+
+    public enum CombatControlLockPolicy
+    {
+        None = 0,
+        InterruptAction = 1,
+        HardLock = 2
+    }
+
+    public static class DamageResponsePolicyUtility
+    {
+        public static bool PlaysDamagePresentation(DamageResponsePolicy responsePolicy)
+        {
+            return responsePolicy != DamageResponsePolicy.DamageOnly;
+        }
+
+        public static bool PlaysFullBodyHitAnimation(DamageResponsePolicy responsePolicy)
+        {
+            return responsePolicy == DamageResponsePolicy.Default
+                || responsePolicy == DamageResponsePolicy.Stagger
+                || responsePolicy == DamageResponsePolicy.Break
+                || responsePolicy == DamageResponsePolicy.Knockdown;
+        }
+
+        public static bool InterruptsAction(CombatControlLockPolicy controlLockPolicy)
+        {
+            return controlLockPolicy != CombatControlLockPolicy.None;
+        }
     }
 
     public static class CombatTeamUtility
@@ -57,7 +90,8 @@ namespace DimensionBrawl.Combat
             Vector3 point,
             Vector3 direction,
             float hitStopSeconds,
-            DamageHitReaction hitReaction = DamageHitReaction.Default)
+            DamageResponsePolicy responsePolicy = DamageResponsePolicy.Default,
+            CombatControlLockPolicy controlLockPolicy = CombatControlLockPolicy.InterruptAction)
         {
             Source = source;
             SourceTeam = sourceTeam;
@@ -65,7 +99,8 @@ namespace DimensionBrawl.Combat
             Point = point;
             Direction = direction;
             HitStopSeconds = hitStopSeconds;
-            HitReaction = hitReaction;
+            ResponsePolicy = responsePolicy;
+            ControlLockPolicy = controlLockPolicy;
         }
 
         public CombatHealth Source { get; }
@@ -74,7 +109,8 @@ namespace DimensionBrawl.Combat
         public Vector3 Point { get; }
         public Vector3 Direction { get; }
         public float HitStopSeconds { get; }
-        public DamageHitReaction HitReaction { get; }
+        public DamageResponsePolicy ResponsePolicy { get; }
+        public CombatControlLockPolicy ControlLockPolicy { get; }
     }
 
     public sealed class DamageModificationContext
@@ -107,7 +143,8 @@ namespace DimensionBrawl.Combat
                 DamageInfo.Point,
                 DamageInfo.Direction,
                 DamageInfo.HitStopSeconds,
-                DamageInfo.HitReaction);
+                DamageInfo.ResponsePolicy,
+                DamageInfo.ControlLockPolicy);
         }
     }
 
