@@ -1619,6 +1619,16 @@ namespace DimensionBrawl.Presentation
             }
 
             float timeRatio = pocketReviewOwner.ResultElapsedSeconds / Mathf.Max(1f, targetSeconds);
+            if (IsCounterRecoveryClear())
+            {
+                if (timeRatio > 1f)
+                {
+                    return "C";
+                }
+
+                return pocketReviewOwner.LastCounterWaveFinalWindowRouteScale < 0.999f ? "B" : "A";
+            }
+
             if (pocketReviewOwner.Skill1FollowupHitConfirmed && timeRatio <= 0.6f)
             {
                 return "S";
