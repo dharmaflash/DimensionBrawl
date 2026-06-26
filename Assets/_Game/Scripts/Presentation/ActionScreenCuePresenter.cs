@@ -1,7 +1,6 @@
 using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
 using DimensionBrawl.Test;
-using DimensionBrawl.UI;
 using UnityEngine;
 
 namespace DimensionBrawl.Presentation
@@ -32,7 +31,6 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private BossPressureActionDirector bossPressureActionDirector;
         [SerializeField] private BossBarragePocketReviewOwner pocketReviewOwner;
         [SerializeField] private BossSummonDuelReviewOwner duelReviewOwner;
-        [SerializeField] private ProxyCombatHudTutorialRunner proxyTutorialRunner;
 
         [Header("Display")]
         [SerializeField] private bool showScreenCues = true;
@@ -85,19 +83,6 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private Color followupHitColor = new Color(1f, 0.78f, 0.22f, 1f);
         [SerializeField] private Color followupMissedColor = new Color(0.68f, 0.74f, 0.82f, 1f);
 
-        [Header("Proxy Tutorial Cues")]
-        [SerializeField] private bool useProxyTutorialOpportunityCues = true;
-        [SerializeField] private string summonBlockOpportunityProxyMappingId = "partner_skill_button";
-        [SerializeField] private string summonFollowupWindowProxyMappingId = "signature_skill_primary";
-        [SerializeField] private string summonFollowupMissedProxyMappingId = "boss_poise_endure_bar";
-        [SerializeField, TextArea(1, 3)] private string summonBlockOpportunityProxyGuideText =
-            "S1 SHIELD is the support answer. Build or spend summon energy to block the boss curtain.";
-        [SerializeField, TextArea(1, 3)] private string summonFollowupWindowProxyGuideText =
-            "Break LV{tier}: spend SKILL1 during the support opening.";
-        [SerializeField, TextArea(1, 3)] private string summonFollowupMissedProxyGuideText =
-            "Follow-up window closed. Stabilize the counter wave before pushing again.";
-        [SerializeField, Min(0f)] private float summonFollowupMissedProxyDurationSeconds = 0.65f;
-
         [Header("Result Colors")]
         [SerializeField] private Color pocketClearColor = new Color(0.22f, 1f, 0.42f, 1f);
         [SerializeField] private Color pocketFailColor = new Color(1f, 0.18f, 0.12f, 1f);
@@ -134,11 +119,7 @@ namespace DimensionBrawl.Presentation
         private int counterWaveCueRequestCount;
         private int counterWaveAnswerCueRequestCount;
         private int duelPhaseCueRequestCount;
-        private int proxyTutorialOpportunityCueRequestCount;
-        private int proxyTutorialFollowupCueRequestCount;
-        private int proxyTutorialMissCueRequestCount;
         private string lastCueId = string.Empty;
-        private string lastProxyTutorialMappingId = string.Empty;
         private Color lastCueColor = Color.clear;
         private float lastCueIntensity;
         private float lastDamageFeedbackIntensity;
@@ -198,11 +179,7 @@ namespace DimensionBrawl.Presentation
         public int CounterWaveCueRequestCount => counterWaveCueRequestCount;
         public int CounterWaveAnswerCueRequestCount => counterWaveAnswerCueRequestCount;
         public int DuelPhaseCueRequestCount => duelPhaseCueRequestCount;
-        public int ProxyTutorialOpportunityCueRequestCount => proxyTutorialOpportunityCueRequestCount;
-        public int ProxyTutorialFollowupCueRequestCount => proxyTutorialFollowupCueRequestCount;
-        public int ProxyTutorialMissCueRequestCount => proxyTutorialMissCueRequestCount;
         public string LastCueId => lastCueId;
-        public string LastProxyTutorialMappingId => lastProxyTutorialMappingId;
         public Color LastCueColor => lastCueColor;
         public float LastCueIntensity => lastCueIntensity;
         public float LastDamageFeedbackIntensity => lastDamageFeedbackIntensity;
@@ -222,7 +199,6 @@ namespace DimensionBrawl.Presentation
         public float LastFollowupWindowRouteScale => lastFollowupWindowRouteScale;
         public SummonEnergyRiskBand LastEnergyRiskBand => lastEnergyRiskBand;
         public BossSummonDuelReviewOwner.DuelPhase LastDuelPhase => lastDuelPhase;
-        public ProxyCombatHudTutorialRunner ProxyTutorialRunner => proxyTutorialRunner;
 
         public void SetScreenCuesVisible(bool visible)
         {
@@ -257,16 +233,6 @@ namespace DimensionBrawl.Presentation
             pocketReviewOwner = newPocketReviewOwner;
             duelReviewOwner = newDuelReviewOwner;
             Subscribe();
-        }
-
-        public void ConfigureProxyCombatHudTutorial(ProxyCombatHudTutorialRunner newProxyTutorialRunner)
-        {
-            proxyTutorialRunner = newProxyTutorialRunner;
-        }
-
-        private void Awake()
-        {
-            proxyTutorialRunner ??= GetComponent<ProxyCombatHudTutorialRunner>();
         }
 
         private void OnEnable()
@@ -538,14 +504,6 @@ namespace DimensionBrawl.Presentation
         private void HandleSummonBlockOpportunityOpened()
         {
             RequestScreenCue("Followup.BlockOpportunity", followupWindowColor, 0.20f, 0.72f, ScreenCueCategory.Followup);
-            if (TryBeginProxyTutorialCue(
-                summonBlockOpportunityProxyMappingId,
-                summonBlockOpportunityProxyGuideText,
-                0f,
-                ProxyCombatHudInputPolicy.AllowAll))
-            {
-                proxyTutorialOpportunityCueRequestCount++;
-            }
         }
 
         private void HandleSummonFollowupWindowOpened(int tier)
@@ -561,14 +519,6 @@ namespace DimensionBrawl.Presentation
                 : 0.24f;
             float intensity = ResolveTierIntensity(tier, 0.82f) + compression01 * 0.42f;
             RequestScreenCue(cueId, followupWindowColor, duration, intensity, ScreenCueCategory.Followup);
-            if (TryBeginProxyTutorialCue(
-                summonFollowupWindowProxyMappingId,
-                FormatProxyGuideText(summonFollowupWindowProxyGuideText, tier),
-                0f,
-                ProxyCombatHudInputPolicy.GateRequestedInput))
-            {
-                proxyTutorialFollowupCueRequestCount++;
-            }
         }
 
         private void HandleSummonFollowupHitConfirmed(int tier, float damage)
@@ -585,14 +535,6 @@ namespace DimensionBrawl.Presentation
         private void HandleSummonFollowupMissed()
         {
             RequestScreenCue("Followup.Missed", followupMissedColor, 0.18f, 0.52f, ScreenCueCategory.Followup);
-            if (TryBeginProxyTutorialCue(
-                summonFollowupMissedProxyMappingId,
-                summonFollowupMissedProxyGuideText,
-                summonFollowupMissedProxyDurationSeconds,
-                ProxyCombatHudInputPolicy.ObserveOnly))
-            {
-                proxyTutorialMissCueRequestCount++;
-            }
         }
 
         private void HandlePocketCleared()
@@ -665,43 +607,6 @@ namespace DimensionBrawl.Presentation
                     playerCueRequestCount++;
                     break;
             }
-        }
-
-        private bool TryBeginProxyTutorialCue(
-            string mappingId,
-            string guideText,
-            float durationSeconds,
-            ProxyCombatHudInputPolicy inputPolicy)
-        {
-            if (!useProxyTutorialOpportunityCues
-                || proxyTutorialRunner == null
-                || string.IsNullOrWhiteSpace(mappingId))
-            {
-                return false;
-            }
-
-            string safeMappingId = mappingId.Trim();
-            bool started = proxyTutorialRunner.BeginMapping(
-                safeMappingId,
-                guideText,
-                Mathf.Max(0f, durationSeconds),
-                inputPolicy);
-            if (started)
-            {
-                lastProxyTutorialMappingId = safeMappingId;
-            }
-
-            return started;
-        }
-
-        private static string FormatProxyGuideText(string template, int tier)
-        {
-            if (string.IsNullOrWhiteSpace(template))
-            {
-                return string.Empty;
-            }
-
-            return template.Replace("{tier}", Mathf.Clamp(tier, 1, 3).ToString());
         }
 
         private void RequestDamageFeedback(DamageInfo damageInfo, float healthScale)

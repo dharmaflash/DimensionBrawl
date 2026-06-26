@@ -1267,8 +1267,6 @@ namespace DimensionBrawl.Tests
             GameObject hudRoot = RequireRoot(HudRootName);
             BossBarrageLaneReviewMobileHud mobileHud =
                 RequireComponent<BossBarrageLaneReviewMobileHud>(hudRoot, "boss barrage mobile HUD");
-            ActionScreenCuePresenter screenCuePresenter =
-                RequireComponent<ActionScreenCuePresenter>(hudRoot, "action screen cue presenter");
             ProxyCombatHudTargetResolver targetResolver =
                 RequireComponent<ProxyCombatHudTargetResolver>(hudRoot, "proxy combat HUD target resolver");
             ProxyCombatHudTargetSurface targetSurface =
@@ -1292,7 +1290,6 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(targetResolver, targetSurface.TargetResolver);
             Assert.AreSame(mobileHud, targetSurface.ScreenRectProvider);
             Assert.AreSame(tutorialRunner, inputBridge.TutorialRunner);
-            Assert.AreSame(tutorialRunner, screenCuePresenter.ProxyTutorialRunner);
             Assert.AreSame(targetResolver, GetObjectReference<ProxyCombatHudTargetResolver>(tutorialRunner, "targetResolver"));
             Assert.AreSame(tutorialObserver, GetObjectReference<ProxyCombatHudTutorialObserver>(tutorialRunner, "combatObserver"));
             Assert.IsTrue(tutorialRunner.AutoAdvanceOnCompletion);
