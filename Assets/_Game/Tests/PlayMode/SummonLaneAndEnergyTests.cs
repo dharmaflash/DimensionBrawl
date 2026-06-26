@@ -1090,6 +1090,42 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void SummonFrontlineClashCapsPlayerBodyContactDamage()
+        {
+            GameObject enemyObject = new GameObject("EnemySummonActor");
+            SphereCollider enemyCollider = enemyObject.AddComponent<SphereCollider>();
+            enemyCollider.isTrigger = true;
+            enemyObject.AddComponent<Rigidbody>().isKinematic = true;
+            CombatHealth enemyHealth = enemyObject.AddComponent<CombatHealth>();
+            enemyHealth.ConfigureTeam(DamageTeam.Enemy);
+            enemyHealth.ResetHealthToFull();
+            SummonFrontlineProxy enemyProxy = enemyObject.AddComponent<SummonFrontlineProxy>();
+            enemyProxy.ConfigureHealth(enemyHealth);
+            SummonFrontlineClash enemyClash = enemyObject.AddComponent<SummonFrontlineClash>();
+            enemyClash.ConfigureReferences(enemyProxy, enemyHealth);
+            enemyClash.ConfigureTuning(200f, 0.2f, 0f, 0.3f);
+
+            GameObject playerObject = new GameObject("PlayerBodyTarget");
+            CharacterController playerCollider = playerObject.AddComponent<CharacterController>();
+            PlayerMovementController movementController = playerObject.AddComponent<PlayerMovementController>();
+            movementController.enabled = false;
+            CombatHealth playerHealth = playerObject.AddComponent<CombatHealth>();
+            playerHealth.ConfigureTeam(DamageTeam.Player);
+            playerHealth.ConfigureMaxHealth(120f);
+
+            enemyProxy.Activate(Vector3.zero, Vector3.forward, 1, 0f, 1f, Vector3.forward * 4f, 3f);
+
+            Assert.IsTrue(enemyClash.TryProcessClash(playerCollider));
+            Assert.IsTrue(playerHealth.IsAlive);
+            Assert.AreEqual(116f, playerHealth.CurrentHealth, 0.001f);
+            Assert.AreEqual(4f, enemyClash.LastDamageAmount, 0.001f);
+            Assert.AreEqual(SummonFrontlineClashTargetKind.HostileBody, enemyClash.LastTargetKind);
+
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(enemyObject);
+        }
+
+        [Test]
         public void SummonFrontlineClashPrioritizesHostileSummonBeforeBodyTarget()
         {
             GameObject allyObject = new GameObject("AllySummonActor");

@@ -22,6 +22,8 @@ namespace DimensionBrawl.Combat
         [SerializeField, Min(0f)] private float clashFeedbackSeconds = 0.28f;
         [SerializeField, Min(0.05f)] private float engageRadius = 0.95f;
         [SerializeField, Min(0f)] private float engageCenterHeight = 0.9f;
+        [SerializeField, Range(0f, 1f)] private float playerBodyDamageMultiplier = 0.12f;
+        [SerializeField, Min(0f)] private float playerBodyMaxDamagePerHit = 4f;
         [SerializeField] private LayerMask contactLayers = Physics.DefaultRaycastLayers;
         [SerializeField] private bool prioritizeHostileSummons = true;
 
@@ -42,6 +44,8 @@ namespace DimensionBrawl.Combat
         public SummonFrontlineClashTargetKind LastTargetKind => lastTargetKind;
         public float ContactDamagePerSecond => contactDamagePerSecond;
         public float ContactDamageIntervalSeconds => contactDamageIntervalSeconds;
+        public float PlayerBodyDamageMultiplier => playerBodyDamageMultiplier;
+        public float PlayerBodyMaxDamagePerHit => playerBodyMaxDamagePerHit;
         public float EngageRadius => engageRadius;
 
         private void Awake()
@@ -92,6 +96,12 @@ namespace DimensionBrawl.Combat
             tierDamageBonus = Mathf.Max(0f, damageTierBonus);
             clashHoldSeconds = Mathf.Max(0f, holdSeconds);
             engageRadius = Mathf.Max(0.05f, newEngageRadius);
+        }
+
+        public void ConfigurePlayerBodyDamage(float damageMultiplier, float maxDamagePerHit)
+        {
+            playerBodyDamageMultiplier = Mathf.Clamp01(damageMultiplier);
+            playerBodyMaxDamagePerHit = Mathf.Max(0f, maxDamagePerHit);
         }
 
         public void Tick(float deltaTime)
@@ -147,7 +157,7 @@ namespace DimensionBrawl.Combat
             }
 
             float interval = Mathf.Max(0.05f, contactDamageIntervalSeconds);
-            float damageAmount = ResolveDamageAmount(interval);
+            float damageAmount = ResolveDamageAmount(interval, targetKind, otherHealth);
             var damageInfo = new DamageInfo(
                 health,
                 health.Team,
@@ -230,11 +240,31 @@ namespace DimensionBrawl.Combat
             TryProcessClash(other);
         }
 
-        private float ResolveDamageAmount(float interval)
+        private float ResolveDamageAmount(
+            float interval,
+            SummonFrontlineClashTargetKind targetKind,
+            CombatHealth targetHealth)
         {
             int tier = proxy != null ? Mathf.Clamp(proxy.ActiveTier, 1, 3) : 1;
             float tierScale = 1f + (tier - 1) * tierDamageBonus;
-            return contactDamagePerSecond * interval * tierScale;
+            float amount = contactDamagePerSecond * interval * tierScale;
+            if (targetKind == SummonFrontlineClashTargetKind.HostileBody && IsPlayerBody(targetHealth))
+            {
+                amount *= Mathf.Clamp01(playerBodyDamageMultiplier);
+                if (playerBodyMaxDamagePerHit > 0f)
+                {
+                    amount = Mathf.Min(amount, playerBodyMaxDamagePerHit);
+                }
+            }
+
+            return amount;
+        }
+
+        private static bool IsPlayerBody(CombatHealth targetHealth)
+        {
+            return targetHealth != null
+                && (targetHealth.GetComponentInParent<DimensionBrawl.Player.PlayerMovementController>() != null
+                    || targetHealth.GetComponentInParent<IsekaiBrawl.Gameplay.PlayerController>() != null);
         }
 
         private Vector3 ResolveHitDirection(CombatHealth otherHealth, SummonFrontlineProxy otherProxy)
