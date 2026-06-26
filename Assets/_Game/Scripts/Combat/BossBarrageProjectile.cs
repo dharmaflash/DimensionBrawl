@@ -23,6 +23,8 @@ namespace DimensionBrawl.Combat
         private CombatHealth sourceHealth;
         private DamageTeam sourceTeam = DamageTeam.Enemy;
         private Vector3 travelDirection = Vector3.back;
+        private DamageResponsePolicy responsePolicy = DamageResponsePolicy.FlashOnly;
+        private CombatControlLockPolicy controlLockPolicy = CombatControlLockPolicy.None;
         private Vector3 baseLocalScale = Vector3.one;
         private Vector3 lastPresentationScale = Vector3.one;
         private Color lastPresentationColor = Color.white;
@@ -38,6 +40,8 @@ namespace DimensionBrawl.Combat
 
         public bool IsActive => active && gameObject.activeInHierarchy;
         public DamageTeam SourceTeam => sourceTeam;
+        public DamageResponsePolicy ResponsePolicy => responsePolicy;
+        public CombatControlLockPolicy ControlLockPolicy => controlLockPolicy;
         public ProjectileImpactResult LastImpactResult => lastImpactResult;
         public CombatHealth LastImpactTargetHealth => lastImpactTargetHealth;
         public SummonFrontlineProxy LastImpactTargetProxy => lastImpactTargetProxy;
@@ -70,11 +74,14 @@ namespace DimensionBrawl.Combat
             Vector3 newTravelDirection,
             float newSpeed,
             float lifetimeSeconds,
-            float radius)
+            float radius,
+            DamageResponsePolicy newResponsePolicy = DamageResponsePolicy.FlashOnly,
+            CombatControlLockPolicy newControlLockPolicy = CombatControlLockPolicy.None)
         {
             EnsurePhysicsComponents();
             sourceHealth = newSourceHealth;
             sourceTeam = newSourceTeam;
+            ConfigureDamagePolicy(newResponsePolicy, newControlLockPolicy);
             damage = Mathf.Max(0f, newDamage);
             travelDirection = ResolveDirection(newTravelDirection);
             speed = Mathf.Max(0f, newSpeed);
@@ -90,6 +97,14 @@ namespace DimensionBrawl.Combat
             gameObject.SetActive(true);
             ResetTrailRenderers();
             RestartAudioSources();
+        }
+
+        public void ConfigureDamagePolicy(
+            DamageResponsePolicy newResponsePolicy,
+            CombatControlLockPolicy newControlLockPolicy)
+        {
+            responsePolicy = newResponsePolicy;
+            controlLockPolicy = newControlLockPolicy;
         }
 
         public void Tick(float deltaTime)
@@ -167,7 +182,9 @@ namespace DimensionBrawl.Combat
                 damage,
                 impactPoint,
                 travelDirection,
-                0f);
+                0f,
+                responsePolicy,
+                controlLockPolicy);
 
             bool applied = targetHealth.TryApplyDamage(damageInfo);
             if (applied && deactivateOnHit)

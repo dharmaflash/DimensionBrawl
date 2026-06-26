@@ -874,6 +874,51 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void LaneActionProjectileDefaultsToNonLockingFlashDamageAndCanEscalate()
+        {
+            GameObject targetObject = new GameObject("ProjectilePolicyTarget");
+            SphereCollider targetCollider = targetObject.AddComponent<SphereCollider>();
+            CombatHealth targetHealth = targetObject.AddComponent<CombatHealth>();
+            targetHealth.ConfigureTeam(DamageTeam.Enemy);
+            targetHealth.ResetHealthToFull();
+            DamageInfo? lastDamageInfo = null;
+            targetHealth.Damaged += damageInfo => lastDamageInfo = damageInfo;
+
+            GameObject projectileObject = new GameObject("ProjectilePolicySource");
+            projectileObject.AddComponent<SphereCollider>();
+            projectileObject.AddComponent<Rigidbody>();
+            LaneActionProjectile projectile = projectileObject.AddComponent<LaneActionProjectile>();
+
+            projectile.Configure(null, DamageTeam.Player, 10f, Vector3.forward, 0f, 1f, 0.2f);
+            Assert.AreEqual(DamageResponsePolicy.FlashOnly, projectile.ResponsePolicy);
+            Assert.AreEqual(CombatControlLockPolicy.None, projectile.ControlLockPolicy);
+            Assert.IsTrue(projectile.TryApplyImpact(targetCollider, Vector3.zero));
+            Assert.IsTrue(lastDamageInfo.HasValue);
+            Assert.AreEqual(DamageResponsePolicy.FlashOnly, lastDamageInfo.Value.ResponsePolicy);
+            Assert.AreEqual(CombatControlLockPolicy.None, lastDamageInfo.Value.ControlLockPolicy);
+
+            projectile.Configure(
+                null,
+                DamageTeam.Player,
+                10f,
+                Vector3.forward,
+                0f,
+                1f,
+                0.2f,
+                DamageResponsePolicy.Stagger,
+                CombatControlLockPolicy.InterruptAction);
+            Assert.AreEqual(DamageResponsePolicy.Stagger, projectile.ResponsePolicy);
+            Assert.AreEqual(CombatControlLockPolicy.InterruptAction, projectile.ControlLockPolicy);
+            Assert.IsTrue(projectile.TryApplyImpact(targetCollider, Vector3.zero));
+            Assert.IsTrue(lastDamageInfo.HasValue);
+            Assert.AreEqual(DamageResponsePolicy.Stagger, lastDamageInfo.Value.ResponsePolicy);
+            Assert.AreEqual(CombatControlLockPolicy.InterruptAction, lastDamageInfo.Value.ControlLockPolicy);
+
+            Object.DestroyImmediate(projectileObject);
+            Object.DestroyImmediate(targetObject);
+        }
+
+        [Test]
         public void BossBarrageProjectileCanDefeatAllySummonBody()
         {
             GameObject actorObject = new GameObject("AllySummonActor");
@@ -899,6 +944,61 @@ namespace DimensionBrawl.Tests
 
             Object.DestroyImmediate(projectileObject);
             Object.DestroyImmediate(actorObject);
+        }
+
+        [Test]
+        public void BossBarrageProjectileDefaultsToNonLockingFlashDamage()
+        {
+            GameObject targetObject = new GameObject("BossProjectilePolicyTarget");
+            SphereCollider targetCollider = targetObject.AddComponent<SphereCollider>();
+            CombatHealth targetHealth = targetObject.AddComponent<CombatHealth>();
+            targetHealth.ConfigureTeam(DamageTeam.Player);
+            targetHealth.ResetHealthToFull();
+            DamageInfo? lastDamageInfo = null;
+            targetHealth.Damaged += damageInfo => lastDamageInfo = damageInfo;
+
+            GameObject projectileObject = new GameObject("BossProjectilePolicySource");
+            projectileObject.AddComponent<SphereCollider>();
+            projectileObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile projectile = projectileObject.AddComponent<BossBarrageProjectile>();
+            projectile.Configure(null, DamageTeam.Enemy, 10f, Vector3.back, 0f, 1f, 0.2f);
+
+            Assert.AreEqual(DamageResponsePolicy.FlashOnly, projectile.ResponsePolicy);
+            Assert.AreEqual(CombatControlLockPolicy.None, projectile.ControlLockPolicy);
+            Assert.IsTrue(projectile.TryApplyImpact(targetCollider, Vector3.zero));
+            Assert.IsTrue(lastDamageInfo.HasValue);
+            Assert.AreEqual(DamageResponsePolicy.FlashOnly, lastDamageInfo.Value.ResponsePolicy);
+            Assert.AreEqual(CombatControlLockPolicy.None, lastDamageInfo.Value.ControlLockPolicy);
+
+            Object.DestroyImmediate(projectileObject);
+            Object.DestroyImmediate(targetObject);
+        }
+
+        [Test]
+        public void BossProjectileProfilesDefaultToNonLockingFlashDamage()
+        {
+            BossBarragePatternProfile barrageProfile = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            BossBasicFireProfile basicFireProfile = ScriptableObject.CreateInstance<BossBasicFireProfile>();
+
+            Assert.AreEqual(DamageResponsePolicy.FlashOnly, barrageProfile.DamageResponsePolicy);
+            Assert.AreEqual(CombatControlLockPolicy.None, barrageProfile.ControlLockPolicy);
+            Assert.AreEqual(DamageResponsePolicy.FlashOnly, basicFireProfile.DamageResponsePolicy);
+            Assert.AreEqual(CombatControlLockPolicy.None, basicFireProfile.ControlLockPolicy);
+
+            Object.DestroyImmediate(basicFireProfile);
+            Object.DestroyImmediate(barrageProfile);
+        }
+
+        [Test]
+        public void PlayerSkill1ProjectilesDeclareCommittedHitPolicy()
+        {
+            GameObject skillObject = new GameObject("Skill1Policy");
+            PlayerSkill1Action skill1 = skillObject.AddComponent<PlayerSkill1Action>();
+
+            Assert.AreEqual(DamageResponsePolicy.Stagger, skill1.ProjectileResponsePolicy);
+            Assert.AreEqual(CombatControlLockPolicy.InterruptAction, skill1.ProjectileControlLockPolicy);
+
+            Object.DestroyImmediate(skillObject);
         }
 
         [Test]

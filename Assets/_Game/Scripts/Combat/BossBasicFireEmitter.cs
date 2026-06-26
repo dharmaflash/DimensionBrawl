@@ -215,7 +215,9 @@ namespace DimensionBrawl.Combat
                 direction,
                 fireProfile.ProjectileSpeed,
                 fireProfile.ProjectileLifetimeSeconds,
-                fireProfile.ProjectileRadius);
+                fireProfile.ProjectileRadius,
+                fireProfile.DamageResponsePolicy,
+                fireProfile.ControlLockPolicy);
             return true;
         }
 

@@ -37,6 +37,7 @@ namespace DimensionBrawl.Player
         [SerializeField] private Transform projectileRoot;
         [SerializeField] private DamageTeam sourceTeam = DamageTeam.Player;
         [SerializeField, Min(0)] private int prewarmCount = 4;
+
         [Header("Failure Feedback")]
         [SerializeField, Min(0f)] private float useBlockedHintSeconds = 0.75f;
 
@@ -83,6 +84,8 @@ namespace DimensionBrawl.Player
 
         private readonly List<LaneActionProjectile> projectiles = new List<LaneActionProjectile>();
         private readonly Queue<LaneActionProjectile> projectilePool = new Queue<LaneActionProjectile>();
+        private const DamageResponsePolicy SkillProjectileResponsePolicy = DamageResponsePolicy.Stagger;
+        private const CombatControlLockPolicy SkillProjectileControlLockPolicy = CombatControlLockPolicy.InterruptAction;
         private bool actionEnabledHere;
         private bool queued;
         private int lastSpentTier;
@@ -98,6 +101,8 @@ namespace DimensionBrawl.Player
         public int ActiveProjectileCount => CountActiveProjectiles();
         public bool ShowUseBlockedHint => blockedHintTimer > 0f;
         public string LastUseBlockedReason => lastBlockedReason;
+        public DamageResponsePolicy ProjectileResponsePolicy => SkillProjectileResponsePolicy;
+        public CombatControlLockPolicy ProjectileControlLockPolicy => SkillProjectileControlLockPolicy;
 
         public event Action<int> Skill1Used;
         public event Action Skill1UseBlocked;
@@ -240,7 +245,9 @@ namespace DimensionBrawl.Player
                     direction,
                     settings.ProjectileSpeed,
                     settings.LifetimeSeconds,
-                    settings.Radius);
+                    settings.Radius,
+                    SkillProjectileResponsePolicy,
+                    SkillProjectileControlLockPolicy);
             }
         }
 

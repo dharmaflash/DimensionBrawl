@@ -325,7 +325,9 @@ namespace DimensionBrawl.Combat
                 direction,
                 activePattern.ProjectileSpeed,
                 activePattern.ProjectileLifetimeSeconds,
-                activePattern.ProjectileRadius);
+                activePattern.ProjectileRadius,
+                activePattern.DamageResponsePolicy,
+                activePattern.ControlLockPolicy);
             return true;
         }
 

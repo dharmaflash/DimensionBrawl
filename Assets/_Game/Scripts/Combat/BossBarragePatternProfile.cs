@@ -85,6 +85,8 @@ namespace DimensionBrawl.Combat
         [SerializeField, Min(0.1f)] private float projectileSpeed = 13f;
         [SerializeField, Min(0.1f)] private float projectileLifetimeSeconds = 4.5f;
         [SerializeField, Min(0f)] private float projectileRadius = 0.32f;
+        [SerializeField] private DamageResponsePolicy damageResponsePolicy = DamageResponsePolicy.FlashOnly;
+        [SerializeField] private CombatControlLockPolicy controlLockPolicy = CombatControlLockPolicy.None;
 
         [Header("Targeting")]
         [SerializeField] private BossBarrageTargetingRule targetingRule = BossBarrageTargetingRule.TrackedPlayer;
@@ -147,6 +149,9 @@ namespace DimensionBrawl.Combat
         public float ProjectileSpeed => projectileSpeed;
         public float ProjectileLifetimeSeconds => projectileLifetimeSeconds;
         public float ProjectileRadius => projectileRadius;
+        public DamageResponsePolicy DamageResponsePolicy =>
+            damageResponsePolicy == DamageResponsePolicy.Default ? DamageResponsePolicy.FlashOnly : damageResponsePolicy;
+        public CombatControlLockPolicy ControlLockPolicy => controlLockPolicy;
         public BossBarrageTargetingRule TargetingRule => targetingRule;
         public float LaneCenterLateralRatio => laneCenterLateralRatio;
         public float SideClampDirection => sideClampDirection;

@@ -21,6 +21,8 @@ namespace DimensionBrawl.Combat
         [SerializeField, Min(0.1f)] private float projectileSpeed = 11.5f;
         [SerializeField, Min(0.1f)] private float projectileLifetimeSeconds = 5.2f;
         [SerializeField, Min(0f)] private float projectileRadius = 0.22f;
+        [SerializeField] private DamageResponsePolicy damageResponsePolicy = DamageResponsePolicy.FlashOnly;
+        [SerializeField] private CombatControlLockPolicy controlLockPolicy = CombatControlLockPolicy.None;
 
         [Header("Forward Risk Shape")]
         [SerializeField, Min(0f)] private float backlineHalfSpread = 1.45f;
@@ -43,6 +45,9 @@ namespace DimensionBrawl.Combat
         public float ProjectileSpeed => projectileSpeed;
         public float ProjectileLifetimeSeconds => projectileLifetimeSeconds;
         public float ProjectileRadius => projectileRadius;
+        public DamageResponsePolicy DamageResponsePolicy =>
+            damageResponsePolicy == DamageResponsePolicy.Default ? DamageResponsePolicy.FlashOnly : damageResponsePolicy;
+        public CombatControlLockPolicy ControlLockPolicy => controlLockPolicy;
         public float SpawnLateralFollowRatio => spawnLateralFollowRatio;
         public float SpawnHeight => spawnHeight;
         public float TargetHeight => targetHeight;
