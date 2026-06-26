@@ -847,6 +847,7 @@ Route stability is now part of the review-scene contract:
 - A scaled-down final follow-up window must use a distinct compressed follow-up screen cue, so the tighter recovery is visible without adding a new HUD panel.
 - A clear reached through that stabilized counter path must name the result as `Counter recovery` and use dedicated counter-clear copy, so the route reward recognizes the player's recovery decision instead of flattening it into the clean summon follow-up.
 - Route record grade must not rank only by raw clear time: clean follow-up can earn `Record S`, while counter recovery is capped by route quality/window compression so the result motivates a cleaner next run.
+- Clear result records must preserve the final route-stability value instead of resetting it to 100%, so the route record keeps evidence of how clean or damaged the clear was.
 - The completion record must include `decision:{state}({readout})` so the pocket logs the player's route choice/recovery quality as a state commit, matching ArkData's combat-payload and tutorial-runner evidence instead of leaving choice quality as invisible intent.
 - Counter-wave observation and ally-hold stabilization must also emit frontline screen cues and promoted VFX cues, not just HUD text, so the player feels the line entering danger and then being held.
 - When counter pressure is observed, the review phase and compact objective must read as counter-wave/frontline-hold work instead of falling back to generic summon-block text.

@@ -491,6 +491,7 @@ namespace DimensionBrawl.Tests
             Assert.That(overlayHud.ResultNextObjectiveReadout, Does.Contain("earlier"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Counter recovery"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Record B: Counter recovery"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("stability 58%"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("followup:recorded"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter_window:opened(final_followup)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("decision:recovery_clear(counter_recovery)"));

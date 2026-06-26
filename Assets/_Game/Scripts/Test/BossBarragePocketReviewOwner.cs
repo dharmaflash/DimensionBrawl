@@ -820,7 +820,6 @@ namespace DimensionBrawl.Test
             resultElapsedSeconds = elapsedSeconds;
             state = PocketState.Cleared;
             failureReason = RouteFailureReason.None;
-            routeStability01 = 1f;
             ClearPressurePacing();
             DismissActiveSummonPressureScreens();
             SetBarrageEnabled(!stopBarrageOnClear);
