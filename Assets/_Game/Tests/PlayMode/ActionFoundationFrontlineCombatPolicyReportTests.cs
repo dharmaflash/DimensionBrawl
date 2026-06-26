@@ -428,8 +428,13 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"Generated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
             builder.AppendLine($"Scene: `{ScenePath}`");
             builder.AppendLine();
-            builder.AppendLine("| Policy | Result | Sim s | Player HP | HP lost | Boss dmg | Close shots | Boss waves | Player hits | Summons | Blocks | Skill1 | Enemy fronts | Decision |");
-            builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|");
+            builder.AppendLine("## ArkData Read");
+            builder.AppendLine("- Stage/wave/pressure: each policy is one route through the same Frontline stage shell, so unanswered pressure, direct fire, intended summon, and late summon can be compared without changing the scene.");
+            builder.AppendLine("- Trigger -> target -> effect -> status/presentation: follow-up windows, Skill1 hit confirms, counter-wave observation, ally hold, and result records are emitted as measured route evidence.");
+            builder.AppendLine("- QTE/state lock-unlock: summon block opens the follow-up window, counter pressure can lock the clean route, ally hold can unlock the final recovery window.");
+            builder.AppendLine();
+            builder.AppendLine("| Policy | Result | Sim s | HP lost | Boss dmg | Stability | Min stability | Boss waves | Player hits | Summons | Blocks | Skill1 hits | Fronts A/E | Route shape | Decision |");
+            builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---|");
             for (int i = 0; i < results.Count; i++)
             {
                 PolicyMetrics result = results[i];
@@ -440,13 +445,13 @@ namespace DimensionBrawl.Tests
                 builder.Append(" | ");
                 builder.Append(result.ElapsedSeconds.ToString("0.0"));
                 builder.Append(" | ");
-                builder.Append(result.PlayerHealthRemaining.ToString("0.0"));
-                builder.Append(" | ");
                 builder.Append(result.PlayerDamageTaken.ToString("0.0"));
                 builder.Append(" | ");
                 builder.Append(result.BossDamageTaken.ToString("0.0"));
                 builder.Append(" | ");
-                builder.Append(result.CloseThreatBasicHits);
+                builder.Append(FormatPercent01(result.RouteStability01));
+                builder.Append(" | ");
+                builder.Append(FormatPercent01(result.MinRouteStability01));
                 builder.Append(" | ");
                 builder.Append(result.BossWaves);
                 builder.Append(" | ");
@@ -456,11 +461,41 @@ namespace DimensionBrawl.Tests
                 builder.Append(" | ");
                 builder.Append(result.SummonBlocks);
                 builder.Append(" | ");
-                builder.Append(result.SkillUses);
+                builder.Append(result.SkillProjectileHits);
                 builder.Append(" | ");
+                builder.Append(result.MaxAllyFrontlineCount);
+                builder.Append("/");
                 builder.Append(result.MaxEnemyFrontlineCount);
                 builder.Append(" | ");
+                builder.Append(ResolveRouteShape(result));
+                builder.Append(" | ");
                 builder.Append(EscapeTable(result.RouteDecision));
+                builder.AppendLine(" |");
+            }
+
+            builder.AppendLine();
+            builder.AppendLine("## Route Evidence");
+            builder.AppendLine("| Policy | Proof | Follow-up | Counter | Counter answer | Final window | Result record |");
+            builder.AppendLine("|---|---|---|---|---|---|---|");
+            for (int i = 0; i < results.Count; i++)
+            {
+                PolicyMetrics result = results[i];
+                builder.Append("| ");
+                builder.Append(result.Policy);
+                builder.Append(" | ");
+                builder.Append(EscapeTable($"{result.RouteProofState}({result.RouteProofReadout})"));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(ResolveFollowupTiming(result)));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(ResolveCounterTiming(result)));
+                builder.Append(" | ");
+                builder.Append(EscapeTable($"{result.CounterWaveAnswerState}({result.CounterWaveAnswerReadout})"));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(
+                    $"{result.CounterWaveFinalWindowState}({result.CounterWaveFinalWindowReadout}) "
+                    + $"{FormatSeconds(result.CounterWaveFinalWindowSeconds)} x{result.CounterWaveFinalWindowRouteScale:0.00}"));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(ResolveResultRecordReadout(result)));
                 builder.AppendLine(" |");
             }
 
@@ -473,6 +508,8 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Intended route prevented {Mathf.Max(0f, noSummon.PlayerDamageTaken - intended.PlayerDamageTaken):0.0} player damage versus no-action pressure.");
             builder.AppendLine($"- Gun-only dealt {gunOnly.BossDamageTaken:0.0} boss damage but ended as `{gunOnly.ResultKind}` because the route contract still needs summon pressure blocking.");
             builder.AppendLine($"- Late summon ended as `{late.ResultKind}` with {late.PlayerDamageTaken:0.0} damage taken, so the report can compare timing quality without changing the scene.");
+            builder.AppendLine($"- Intended route currently reads as `{ResolveRouteShape(intended)}`: follow-up window {FormatSeconds(intended.FirstFollowupWindowAtSeconds)}, counter {FormatSeconds(intended.FirstCounterWaveAtSeconds)}, Skill1 hit {FormatSeconds(intended.FirstFollowupHitAtSeconds)}.");
+            builder.AppendLine($"- Route stability split: no-action {FormatPercent01(noSummon.RouteStability01)} final / {FormatPercent01(noSummon.MinRouteStability01)} min, gun-only {FormatPercent01(gunOnly.RouteStability01)} / {FormatPercent01(gunOnly.MinRouteStability01)}, intended {FormatPercent01(intended.RouteStability01)} / {FormatPercent01(intended.MinRouteStability01)}.");
             builder.AppendLine($"- Enemy frontline max count across policies was {ResolveMaxEnemyFrontlines(results)}; if this stays 0, enemy summon contact is not yet a real measured pressure source in this slice.");
             builder.AppendLine();
             builder.AppendLine("## Notes");
@@ -486,6 +523,67 @@ namespace DimensionBrawl.Tests
             }
 
             return builder.ToString();
+        }
+
+        private static string ResolveRouteShape(PolicyMetrics result)
+        {
+            if (result.ResultKind == "CleanFollowupClear" || result.CleanFollowupConfirmed)
+            {
+                return "clean_followup";
+            }
+
+            if (result.ResultKind == "CounterRecoveryClear" || result.CounterRecoveryConfirmed)
+            {
+                return "counter_recovery";
+            }
+
+            if (result.CounterWaves > 0)
+            {
+                return "counter_pending";
+            }
+
+            return "route_pending";
+        }
+
+        private static string ResolveFollowupTiming(PolicyMetrics result)
+        {
+            return $"open:{FormatSeconds(result.FirstFollowupWindowAtSeconds)} "
+                + $"hit:{FormatSeconds(result.FirstFollowupHitAtSeconds)} "
+                + $"miss:{FormatSeconds(result.FirstFollowupMissAtSeconds)} "
+                + $"windows:{result.FollowupWindowOpenCount} hits:{result.FollowupHitCount} "
+                + $"tier:{result.HighestFollowupHitTier} dmg:{result.FollowupHitDamage:0.0}";
+        }
+
+        private static string ResolveCounterTiming(PolicyMetrics result)
+        {
+            return $"state:{result.CounterWaveRecordState}({result.CounterWaveSource}) "
+                + $"seen:{FormatSeconds(result.FirstCounterWaveAtSeconds)} "
+                + $"stable:{FormatSeconds(result.FirstCounterStabilizedAtSeconds)} "
+                + $"hold:{result.CounterWaveAllyHoldElapsedSeconds:0.0}/{result.CounterWaveAllyHoldRequiredSeconds:0.0}s "
+                + $"penalty:{FormatPercent01(result.CounterWaveEntryPenalty01)} "
+                + $"bonus:{FormatPercent01(result.CounterWaveStabilityBonus01)}";
+        }
+
+        private static string ResolveResultRecordReadout(PolicyMetrics result)
+        {
+            if (result.ResultRecords <= 0)
+            {
+                return "pending";
+            }
+
+            return $"{result.ResultRecordRouteLabel} "
+                + $"{FormatPercent01(result.ResultRecordRouteStability01)} "
+                + $"{result.ResultRecordDecision}";
+        }
+
+        private static string FormatSeconds(float seconds)
+        {
+            return seconds >= 0f ? $"{seconds:0.0}s" : "-";
+        }
+
+        private static string FormatPercent01(float value)
+        {
+            return $"{Mathf.Clamp01(value) * 100f:0}%";
         }
 
         private static string BuildJson(IReadOnlyList<PolicyMetrics> results)
@@ -514,6 +612,61 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"skillUses\": {result.SkillUses},");
                 builder.AppendLine($"      \"skillProjectileHits\": {result.SkillProjectileHits},");
                 builder.AppendLine($"      \"maxEnemyFrontlineCount\": {result.MaxEnemyFrontlineCount},");
+                builder.AppendLine($"      \"maxAllyFrontlineCount\": {result.MaxAllyFrontlineCount},");
+                builder.AppendLine($"      \"routeShape\": \"{JsonEscape(ResolveRouteShape(result))}\",");
+                builder.AppendLine($"      \"routeStability01\": {result.RouteStability01:0.###},");
+                builder.AppendLine($"      \"minRouteStability01\": {result.MinRouteStability01:0.###},");
+                builder.AppendLine($"      \"routeStabilityBand\": \"{JsonEscape(result.RouteStabilityBand)}\",");
+                builder.AppendLine($"      \"routeProofState\": \"{JsonEscape(result.RouteProofState)}\",");
+                builder.AppendLine($"      \"routeProofReadout\": \"{JsonEscape(result.RouteProofReadout)}\",");
+                builder.AppendLine($"      \"counterWaves\": {result.CounterWaves},");
+                builder.AppendLine($"      \"counterStabilizedCount\": {result.CounterStabilizedCount},");
+                builder.AppendLine($"      \"lastCounterWaveSource\": \"{JsonEscape(result.LastCounterWaveSource)}\",");
+                builder.AppendLine($"      \"counterWaveSource\": \"{JsonEscape(result.CounterWaveSource)}\",");
+                builder.AppendLine($"      \"counterWaveRecordState\": \"{JsonEscape(result.CounterWaveRecordState)}\",");
+                builder.AppendLine($"      \"counterWaveAnswerState\": \"{JsonEscape(result.CounterWaveAnswerState)}\",");
+                builder.AppendLine($"      \"counterWaveAnswerReadout\": \"{JsonEscape(result.CounterWaveAnswerReadout)}\",");
+                builder.AppendLine($"      \"counterWaveFinalWindowState\": \"{JsonEscape(result.CounterWaveFinalWindowState)}\",");
+                builder.AppendLine($"      \"counterWaveFinalWindowReadout\": \"{JsonEscape(result.CounterWaveFinalWindowReadout)}\",");
+                builder.AppendLine($"      \"counterWaveEntryPenalty01\": {result.CounterWaveEntryPenalty01:0.###},");
+                builder.AppendLine($"      \"counterWaveStabilityBonus01\": {result.CounterWaveStabilityBonus01:0.###},");
+                builder.AppendLine($"      \"counterWaveFinalWindowSeconds\": {result.CounterWaveFinalWindowSeconds:0.###},");
+                builder.AppendLine($"      \"counterWaveFinalWindowRouteScale\": {result.CounterWaveFinalWindowRouteScale:0.###},");
+                builder.AppendLine($"      \"counterWaveAllyHoldRequiredSeconds\": {result.CounterWaveAllyHoldRequiredSeconds:0.###},");
+                builder.AppendLine($"      \"counterWaveAllyHoldElapsedSeconds\": {result.CounterWaveAllyHoldElapsedSeconds:0.###},");
+                builder.AppendLine($"      \"counterWaveAllyHoldProgress01\": {result.CounterWaveAllyHoldProgress01:0.###},");
+                builder.AppendLine($"      \"firstCounterWaveAtSeconds\": {JsonNullableSeconds(result.FirstCounterWaveAtSeconds)},");
+                builder.AppendLine($"      \"firstCounterStabilizedAtSeconds\": {JsonNullableSeconds(result.FirstCounterStabilizedAtSeconds)},");
+                builder.AppendLine($"      \"followupWindowOpenCount\": {result.FollowupWindowOpenCount},");
+                builder.AppendLine($"      \"followupHitCount\": {result.FollowupHitCount},");
+                builder.AppendLine($"      \"followupMissCount\": {result.FollowupMissCount},");
+                builder.AppendLine($"      \"highestFollowupWindowTier\": {result.HighestFollowupWindowTier},");
+                builder.AppendLine($"      \"highestFollowupHitTier\": {result.HighestFollowupHitTier},");
+                builder.AppendLine($"      \"followupHitDamage\": {result.FollowupHitDamage:0.###},");
+                builder.AppendLine($"      \"firstFollowupWindowAtSeconds\": {JsonNullableSeconds(result.FirstFollowupWindowAtSeconds)},");
+                builder.AppendLine($"      \"firstFollowupHitAtSeconds\": {JsonNullableSeconds(result.FirstFollowupHitAtSeconds)},");
+                builder.AppendLine($"      \"firstFollowupMissAtSeconds\": {JsonNullableSeconds(result.FirstFollowupMissAtSeconds)},");
+                builder.AppendLine($"      \"summonFollowupWindowRemainingSeconds\": {result.SummonFollowupWindowRemainingSeconds:0.###},");
+                builder.AppendLine($"      \"summonFollowupEnergyPulse\": {result.SummonFollowupEnergyPulse:0.###},");
+                builder.AppendLine($"      \"lastSummonFollowupWindowDuration\": {result.LastSummonFollowupWindowDuration:0.###},");
+                builder.AppendLine($"      \"highestSummonFollowupSkillTier\": {result.HighestSummonFollowupSkillTier},");
+                builder.AppendLine($"      \"highestSkill1FollowupHitTier\": {result.HighestSkill1FollowupHitTier},");
+                builder.AppendLine($"      \"skill1FollowupDamage\": {result.Skill1FollowupDamage:0.###},");
+                builder.AppendLine($"      \"bossBlockedSkill1Followup\": {JsonBool(result.BossBlockedSkill1Followup)},");
+                builder.AppendLine($"      \"bossPressureBlocksDuringSummonFollowup\": {result.BossPressureBlocksDuringSummonFollowup},");
+                builder.AppendLine($"      \"cleanFollowupConfirmed\": {JsonBool(result.CleanFollowupConfirmed)},");
+                builder.AppendLine($"      \"counterRecoveryConfirmed\": {JsonBool(result.CounterRecoveryConfirmed)},");
+                builder.AppendLine($"      \"resultRecords\": {result.ResultRecords},");
+                builder.AppendLine($"      \"resultRecordElapsedSeconds\": {result.ResultRecordElapsedSeconds:0.###},");
+                builder.AppendLine($"      \"resultRecordRouteStability01\": {result.ResultRecordRouteStability01:0.###},");
+                builder.AppendLine($"      \"resultRecordRouteLabel\": \"{JsonEscape(result.ResultRecordRouteLabel)}\",");
+                builder.AppendLine($"      \"resultRecordTitle\": \"{JsonEscape(result.ResultRecordTitle)}\",");
+                builder.AppendLine($"      \"resultRecordSummary\": \"{JsonEscape(result.ResultRecordSummary)}\",");
+                builder.AppendLine($"      \"resultRecordRewardHook\": \"{JsonEscape(result.ResultRecordRewardHook)}\",");
+                builder.AppendLine($"      \"resultRecordNextObjective\": \"{JsonEscape(result.ResultRecordNextObjective)}\",");
+                builder.AppendLine($"      \"resultRecordProofReadout\": \"{JsonEscape(result.ResultRecordProofReadout)}\",");
+                builder.AppendLine($"      \"resultRecordDecision\": \"{JsonEscape(result.ResultRecordDecision)}\",");
+                builder.AppendLine($"      \"resultRecordCounterWaveSource\": \"{JsonEscape(result.ResultRecordCounterWaveSource)}\",");
                 builder.AppendLine($"      \"routeDecision\": \"{JsonEscape(result.RouteDecision)}\",");
                 builder.AppendLine($"      \"completionReadout\": \"{JsonEscape(result.CompletionReadout)}\"");
                 builder.Append("    }");
@@ -523,6 +676,16 @@ namespace DimensionBrawl.Tests
             builder.AppendLine("  ]");
             builder.AppendLine("}");
             return builder.ToString();
+        }
+
+        private static string JsonNullableSeconds(float seconds)
+        {
+            return seconds >= 0f ? seconds.ToString("0.###") : "null";
+        }
+
+        private static string JsonBool(bool value)
+        {
+            return value ? "true" : "false";
         }
 
         private static int ResolveMaxEnemyFrontlines(IReadOnlyList<PolicyMetrics> results)
@@ -729,7 +892,11 @@ namespace DimensionBrawl.Tests
                 BossHealth.Damaged += OnBossDamaged;
                 CloseThreatHealth.Damaged += OnCloseThreatDamaged;
                 SummonSlot1Action.SummonPressureBlocked += OnSummonPressureBlocked;
+                PocketOwner.SummonFollowupWindowOpened += OnSummonFollowupWindowOpened;
+                PocketOwner.SummonFollowupHitConfirmed += OnSummonFollowupHitConfirmed;
+                PocketOwner.SummonFollowupMissed += OnSummonFollowupMissed;
                 PocketOwner.CounterWaveObserved += OnCounterWaveObserved;
+                PocketOwner.CounterWaveStabilized += OnCounterWaveStabilized;
                 PocketOwner.ResultRecordCommitted += OnResultRecordCommitted;
             }
 
@@ -759,6 +926,38 @@ namespace DimensionBrawl.Tests
                 Metrics.RouteDecision = $"{PocketOwner.RouteDecisionState}({PocketOwner.RouteDecisionReadout})";
                 Metrics.CompletionReadout = PocketOwner.CompletionRecordReadout;
                 Metrics.RouteStability01 = PocketOwner.RouteStability01;
+                Metrics.MinRouteStability01 = Mathf.Min(
+                    Metrics.MinRouteStability01,
+                    PocketOwner.RouteStability01);
+                Metrics.RouteStabilityBand = PocketOwner.CurrentRouteStabilityBand.ToString();
+                Metrics.RouteProofState = PocketOwner.RouteProofState;
+                Metrics.RouteProofReadout = PocketOwner.RouteProofReadout;
+                Metrics.CounterWaveRecordState = PocketOwner.CounterWaveRecordState;
+                Metrics.CounterWaveSource = PocketOwner.CounterWaveSourceReadout;
+                Metrics.CounterWaveAnswerState = PocketOwner.CounterWaveAnswerState;
+                Metrics.CounterWaveAnswerReadout = PocketOwner.CounterWaveAnswerReadout;
+                Metrics.CounterWaveFinalWindowState = PocketOwner.CounterWaveFinalWindowState;
+                Metrics.CounterWaveFinalWindowReadout = PocketOwner.CounterWaveFinalWindowReadout;
+                Metrics.CounterWaveEntryPenalty01 = PocketOwner.LastCounterWaveEntryPenalty;
+                Metrics.CounterWaveStabilityBonus01 = PocketOwner.LastCounterWaveStabilityBonus;
+                Metrics.CounterWaveFinalWindowSeconds = PocketOwner.LastCounterWaveFinalWindowDuration;
+                Metrics.CounterWaveFinalWindowRouteScale = PocketOwner.LastCounterWaveFinalWindowRouteScale;
+                Metrics.CounterWaveAllyHoldRequiredSeconds = PocketOwner.CounterWaveAllyHoldRequiredSeconds;
+                Metrics.CounterWaveAllyHoldElapsedSeconds = PocketOwner.CounterWaveAllyHoldElapsedSeconds;
+                Metrics.CounterWaveAllyHoldProgress01 = PocketOwner.CounterWaveAllyHoldProgress01;
+                Metrics.SummonFollowupWindowRemainingSeconds = PocketOwner.SummonFollowupWindowRemainingSeconds;
+                Metrics.SummonFollowupEnergyPulse = PocketOwner.SummonFollowupEnergyPulse;
+                Metrics.LastSummonFollowupWindowDuration = PocketOwner.LastSummonFollowupWindowDuration;
+                Metrics.HighestSummonFollowupSkillTier = PocketOwner.HighestSummonFollowupSkillTier;
+                Metrics.HighestSkill1FollowupHitTier = PocketOwner.HighestSkill1FollowupHitTier;
+                Metrics.Skill1FollowupDamage = PocketOwner.Skill1FollowupDamage;
+                Metrics.BossBlockedSkill1Followup = PocketOwner.BossBlockedSkill1Followup;
+                Metrics.BossPressureBlocksDuringSummonFollowup =
+                    PocketOwner.BossPressureBlocksDuringSummonFollowup;
+                Metrics.CleanFollowupConfirmed = PocketOwner.Skill1FollowupHitConfirmed
+                    && !PocketOwner.IsCounterWaveCompletionRecorded;
+                Metrics.CounterRecoveryConfirmed = PocketOwner.IsCounterWaveStabilized
+                    || PocketOwner.IsCounterWaveFinalWindowOpened;
                 Metrics.MaxEnemyFrontlineCount = Mathf.Max(
                     Metrics.MaxEnemyFrontlineCount,
                     PocketOwner.ActiveEnemyFrontlineProxyCount);
@@ -785,7 +984,11 @@ namespace DimensionBrawl.Tests
                 BossHealth.Damaged -= OnBossDamaged;
                 CloseThreatHealth.Damaged -= OnCloseThreatDamaged;
                 SummonSlot1Action.SummonPressureBlocked -= OnSummonPressureBlocked;
+                PocketOwner.SummonFollowupWindowOpened -= OnSummonFollowupWindowOpened;
+                PocketOwner.SummonFollowupHitConfirmed -= OnSummonFollowupHitConfirmed;
+                PocketOwner.SummonFollowupMissed -= OnSummonFollowupMissed;
                 PocketOwner.CounterWaveObserved -= OnCounterWaveObserved;
+                PocketOwner.CounterWaveStabilized -= OnCounterWaveStabilized;
                 PocketOwner.ResultRecordCommitted -= OnResultRecordCommitted;
             }
 
@@ -810,16 +1013,71 @@ namespace DimensionBrawl.Tests
                 Metrics.HighestSummonBlockTier = Mathf.Max(Metrics.HighestSummonBlockTier, tier);
             }
 
+            private void OnSummonFollowupWindowOpened(int tier)
+            {
+                Metrics.FollowupWindowOpenCount++;
+                Metrics.HighestFollowupWindowTier = Mathf.Max(Metrics.HighestFollowupWindowTier, tier);
+                if (Metrics.FirstFollowupWindowAtSeconds < 0f)
+                {
+                    Metrics.FirstFollowupWindowAtSeconds = Metrics.ElapsedSeconds;
+                }
+
+                Metrics.LastSummonFollowupWindowDuration = PocketOwner.LastSummonFollowupWindowDuration;
+            }
+
+            private void OnSummonFollowupHitConfirmed(int tier, float damage)
+            {
+                Metrics.FollowupHitCount++;
+                Metrics.HighestFollowupHitTier = Mathf.Max(Metrics.HighestFollowupHitTier, tier);
+                Metrics.FollowupHitDamage += damage;
+                if (Metrics.FirstFollowupHitAtSeconds < 0f)
+                {
+                    Metrics.FirstFollowupHitAtSeconds = Metrics.ElapsedSeconds;
+                }
+            }
+
+            private void OnSummonFollowupMissed()
+            {
+                Metrics.FollowupMissCount++;
+                if (Metrics.FirstFollowupMissAtSeconds < 0f)
+                {
+                    Metrics.FirstFollowupMissAtSeconds = Metrics.ElapsedSeconds;
+                }
+            }
+
             private void OnCounterWaveObserved(BossBarragePocketReviewOwner.CounterWaveSource source)
             {
                 Metrics.CounterWaves++;
                 Metrics.LastCounterWaveSource = source.ToString();
+                if (Metrics.FirstCounterWaveAtSeconds < 0f)
+                {
+                    Metrics.FirstCounterWaveAtSeconds = Metrics.ElapsedSeconds;
+                }
+            }
+
+            private void OnCounterWaveStabilized()
+            {
+                Metrics.CounterStabilizedCount++;
+                if (Metrics.FirstCounterStabilizedAtSeconds < 0f)
+                {
+                    Metrics.FirstCounterStabilizedAtSeconds = Metrics.ElapsedSeconds;
+                }
             }
 
             private void OnResultRecordCommitted(BossBarragePocketReviewOwner.RouteResultRecord record)
             {
                 Metrics.ResultRecords++;
                 Metrics.ResultKind = record.ResultKind.ToString();
+                Metrics.ResultRecordElapsedSeconds = record.ElapsedSeconds;
+                Metrics.ResultRecordRouteStability01 = record.RouteStability01;
+                Metrics.ResultRecordRouteLabel = record.RouteLabel;
+                Metrics.ResultRecordTitle = record.Title;
+                Metrics.ResultRecordSummary = record.Summary;
+                Metrics.ResultRecordRewardHook = record.RewardHook;
+                Metrics.ResultRecordNextObjective = record.NextObjective;
+                Metrics.ResultRecordProofReadout = record.ProofReadout;
+                Metrics.ResultRecordDecision = $"{record.DecisionState}({record.DecisionReadout})";
+                Metrics.ResultRecordCounterWaveSource = record.CounterWaveSource.ToString();
             }
         }
 
@@ -858,7 +1116,56 @@ namespace DimensionBrawl.Tests
             public int MaxEnemyFrontlineCount { get; set; }
             public int MaxAllyFrontlineCount { get; set; }
             public float RouteStability01 { get; set; }
+            public float MinRouteStability01 { get; set; } = 1f;
+            public string RouteStabilityBand { get; set; } = "Unknown";
+            public string RouteProofState { get; set; } = "unknown";
+            public string RouteProofReadout { get; set; } = string.Empty;
             public string LastCounterWaveSource { get; set; } = "none";
+            public string CounterWaveSource { get; set; } = "none";
+            public string CounterWaveRecordState { get; set; } = "pending";
+            public string CounterWaveAnswerState { get; set; } = "pending";
+            public string CounterWaveAnswerReadout { get; set; } = "none";
+            public string CounterWaveFinalWindowState { get; set; } = "pending";
+            public string CounterWaveFinalWindowReadout { get; set; } = "none";
+            public float CounterWaveEntryPenalty01 { get; set; }
+            public float CounterWaveStabilityBonus01 { get; set; }
+            public float CounterWaveFinalWindowSeconds { get; set; }
+            public float CounterWaveFinalWindowRouteScale { get; set; } = 1f;
+            public float CounterWaveAllyHoldRequiredSeconds { get; set; }
+            public float CounterWaveAllyHoldElapsedSeconds { get; set; }
+            public float CounterWaveAllyHoldProgress01 { get; set; }
+            public int CounterStabilizedCount { get; set; }
+            public float FirstCounterWaveAtSeconds { get; set; } = -1f;
+            public float FirstCounterStabilizedAtSeconds { get; set; } = -1f;
+            public int FollowupWindowOpenCount { get; set; }
+            public int FollowupHitCount { get; set; }
+            public int FollowupMissCount { get; set; }
+            public int HighestFollowupWindowTier { get; set; }
+            public int HighestFollowupHitTier { get; set; }
+            public float FollowupHitDamage { get; set; }
+            public float FirstFollowupWindowAtSeconds { get; set; } = -1f;
+            public float FirstFollowupHitAtSeconds { get; set; } = -1f;
+            public float FirstFollowupMissAtSeconds { get; set; } = -1f;
+            public float SummonFollowupWindowRemainingSeconds { get; set; }
+            public float SummonFollowupEnergyPulse { get; set; }
+            public float LastSummonFollowupWindowDuration { get; set; }
+            public int HighestSummonFollowupSkillTier { get; set; }
+            public int HighestSkill1FollowupHitTier { get; set; }
+            public float Skill1FollowupDamage { get; set; }
+            public bool BossBlockedSkill1Followup { get; set; }
+            public int BossPressureBlocksDuringSummonFollowup { get; set; }
+            public bool CleanFollowupConfirmed { get; set; }
+            public bool CounterRecoveryConfirmed { get; set; }
+            public float ResultRecordElapsedSeconds { get; set; }
+            public float ResultRecordRouteStability01 { get; set; }
+            public string ResultRecordRouteLabel { get; set; } = string.Empty;
+            public string ResultRecordTitle { get; set; } = string.Empty;
+            public string ResultRecordSummary { get; set; } = string.Empty;
+            public string ResultRecordRewardHook { get; set; } = string.Empty;
+            public string ResultRecordNextObjective { get; set; } = string.Empty;
+            public string ResultRecordProofReadout { get; set; } = string.Empty;
+            public string ResultRecordDecision { get; set; } = string.Empty;
+            public string ResultRecordCounterWaveSource { get; set; } = "None";
             public string RouteDecision { get; set; } = "unknown";
             public string CompletionReadout { get; set; } = string.Empty;
             public List<string> Notes { get; } = new List<string>();
