@@ -7246,7 +7246,7 @@ namespace DimensionBrawl.Editor
                 "LV2 Frontline Push",
                 "Mid-tier exchange that starts converting a successful block into forward damage.",
                 "Hold forward-risk long enough for LV2 when the barrage is readable.",
-                "Wider screen, four-shot block budget, two assist bolts, and a persistent frontline push.");
+                "Wider screen, four-shot block budget, two assist bolts, and a timed frontline push.");
             ValidateSummonSlotReadout(
                 summonSlot1Profile,
                 3,
@@ -7262,9 +7262,9 @@ namespace DimensionBrawl.Editor
                 expectedActorMaxHealth: 230f,
                 expectedActorMoveSpeed: 1.45f,
                 expectedActorEngageRadius: 0.95f,
-                expectedActorAttackDamagePerSecond: 48f,
+                expectedActorAttackDamagePerSecond: 24f,
                 expectedActorAttackIntervalSeconds: 0.35f,
-                expectedActorLifetimeSeconds: 0f,
+                expectedActorLifetimeSeconds: 4.4f,
                 expectedActorAdvanceDistance: 2.2f,
                 expectedScreenIntercepts: 2);
             ValidateSummonSlotTier(
@@ -7275,9 +7275,9 @@ namespace DimensionBrawl.Editor
                 expectedActorMaxHealth: 300f,
                 expectedActorMoveSpeed: 1.6f,
                 expectedActorEngageRadius: 1.05f,
-                expectedActorAttackDamagePerSecond: 64f,
+                expectedActorAttackDamagePerSecond: 32f,
                 expectedActorAttackIntervalSeconds: 0.35f,
-                expectedActorLifetimeSeconds: 0f,
+                expectedActorLifetimeSeconds: 5.2f,
                 expectedActorAdvanceDistance: 3.0f,
                 expectedScreenIntercepts: 4);
             ValidateSummonSlotTier(
@@ -7288,9 +7288,9 @@ namespace DimensionBrawl.Editor
                 expectedActorMaxHealth: 380f,
                 expectedActorMoveSpeed: 1.7f,
                 expectedActorEngageRadius: 1.15f,
-                expectedActorAttackDamagePerSecond: 84f,
+                expectedActorAttackDamagePerSecond: 42f,
                 expectedActorAttackIntervalSeconds: 0.35f,
-                expectedActorLifetimeSeconds: 0f,
+                expectedActorLifetimeSeconds: 6.2f,
                 expectedActorAdvanceDistance: 4.0f,
                 expectedScreenIntercepts: 7);
 
@@ -7757,8 +7757,8 @@ namespace DimensionBrawl.Editor
                 expectedActorAdvanceDistance: 2.4f,
                 expectedActorRoleId: "EscortProbe",
                 expectedActorMaxHealth: 220f,
-                expectedActorMoveSpeed: 1.35f,
-                expectedActorEngageRadius: 0.95f,
+                expectedActorMoveSpeed: 2.35f,
+                expectedActorEngageRadius: 1.25f,
                 expectedActorAttackDamagePerSecond: 32f,
                 expectedActorAttackIntervalSeconds: 0.35f,
                 expectedScreenIntercepts: 2,
@@ -7779,8 +7779,8 @@ namespace DimensionBrawl.Editor
                 expectedActorAdvanceDistance: 3.8f,
                 expectedActorRoleId: "PressureScreen",
                 expectedActorMaxHealth: 320f,
-                expectedActorMoveSpeed: 1.42f,
-                expectedActorEngageRadius: 1.05f,
+                expectedActorMoveSpeed: 2.15f,
+                expectedActorEngageRadius: 1.35f,
                 expectedActorAttackDamagePerSecond: 44f,
                 expectedActorAttackIntervalSeconds: 0.35f,
                 expectedScreenIntercepts: 4,
@@ -7801,8 +7801,8 @@ namespace DimensionBrawl.Editor
                 expectedActorAdvanceDistance: 5.2f,
                 expectedActorRoleId: "ClampGuard",
                 expectedActorMaxHealth: 460f,
-                expectedActorMoveSpeed: 1.48f,
-                expectedActorEngageRadius: 1.18f,
+                expectedActorMoveSpeed: 1.95f,
+                expectedActorEngageRadius: 1.5f,
                 expectedActorAttackDamagePerSecond: 58f,
                 expectedActorAttackIntervalSeconds: 0.35f,
                 expectedScreenIntercepts: 7,

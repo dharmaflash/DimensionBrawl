@@ -295,6 +295,27 @@ namespace DimensionBrawl.Tests
                     0,
                     "A physical summon-punish route should let a real Skill1 projectile hit the boss.");
                 Assert.AreEqual(
+                    0f,
+                    forwardRiskPhysicalSummonBlock.BossDamageFromPlayer,
+                    0.01f,
+                    "The physical block-only probe should not count player-authored boss damage before Skill1.");
+                Assert.Greater(
+                    forwardRiskPhysicalSummonPunish.BossDamageFromPlayer,
+                    0f,
+                    "A physical summon-punish route should attribute boss payoff to the player Skill1 hit.");
+                Assert.Greater(
+                    forwardRiskPhysicalSummonPunish.BossDamageFromPlayer,
+                    forwardRiskPhysicalSummonBlock.BossDamageFromPlayer,
+                    "Block -> Skill1 should create a player-authored boss payoff that block-only cannot provide.");
+                Assert.Less(
+                    forwardRiskPhysicalSummonBlock.BossDamageFromAllySummon,
+                    forwardRiskPhysicalSummonPunish.BossDamageFromPlayer,
+                    "The summon block-only route should not deal as much boss damage as the player-authored Skill1 payoff.");
+                Assert.GreaterOrEqual(
+                    forwardRiskPhysicalSummonPunish.BossDamagePlayerShare01,
+                    0.68f,
+                    "After a successful block, boss payoff should read primarily as the player's Skill1 punish, not summon auto-DPS.");
+                Assert.AreEqual(
                     "CleanFollowupClear",
                     forwardRiskPhysicalSummonPunish.ResultKind,
                     "A physical summon-punish route should close the block -> follow-up -> Skill1 loop as a clean route.");
@@ -1886,6 +1907,30 @@ namespace DimensionBrawl.Tests
             }
 
             builder.AppendLine();
+            builder.AppendLine("## Boss Damage Attribution");
+            builder.AppendLine("| Policy | Boss dmg | Player | Ally summon | Enemy | Neutral/other | Player share |");
+            builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|");
+            for (int i = 0; i < results.Count; i++)
+            {
+                PolicyMetrics result = results[i];
+                builder.Append("| ");
+                builder.Append(result.Policy);
+                builder.Append(" | ");
+                builder.Append(result.BossDamageTaken.ToString("0.0"));
+                builder.Append(" | ");
+                builder.Append(result.BossDamageFromPlayer.ToString("0.0"));
+                builder.Append(" | ");
+                builder.Append(result.BossDamageFromAllySummon.ToString("0.0"));
+                builder.Append(" | ");
+                builder.Append(result.BossDamageFromEnemy.ToString("0.0"));
+                builder.Append(" | ");
+                builder.Append(result.BossDamageFromNeutralOrUnknown.ToString("0.0"));
+                builder.Append(" | ");
+                builder.Append(FormatPercent01(result.BossDamagePlayerShare01));
+                builder.AppendLine(" |");
+            }
+
+            builder.AppendLine();
             builder.AppendLine("## Frontline Clash Cost");
             builder.AppendLine("| Policy | Enemy clashes | Enemy body hits | Enemy summon hits | Enemy clash dmg | Enemy engaged max | Ally clashes | Ally summon hits | Ally engaged max |");
             builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---:|---:|");
@@ -2083,6 +2128,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Forward-risk physical barrage: backline hits {backlinePhysicalBarrage.PhysicalBarragePlayerHits}/{backlinePhysicalBarrage.PhysicalBarrageTrackedProjectileCount}, damage {backlinePhysicalBarrage.PhysicalBarragePlayerDamage:0.0}; forward hits {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}, damage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerDamage:0.0}.");
             builder.AppendLine($"- Forward-risk physical summon block: blocks {forwardRiskPhysicalSummonBlock.SummonBlocks}, player hits {forwardRiskPhysicalSummonBlock.PhysicalBarragePlayerHits}/{forwardRiskPhysicalSummonBlock.PhysicalBarrageTrackedProjectileCount}, damage {forwardRiskPhysicalSummonBlock.PhysicalBarragePlayerDamage:0.0}, block->window {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)}.");
             builder.AppendLine($"- Forward-risk physical summon punish: `{forwardRiskPhysicalSummonPunish.ResultKind}` with blocks {forwardRiskPhysicalSummonPunish.SummonBlocks}, player hits {forwardRiskPhysicalSummonPunish.PhysicalBarragePlayerHits}/{forwardRiskPhysicalSummonPunish.PhysicalBarrageTrackedProjectileCount}, Skill1 hits {forwardRiskPhysicalSummonPunish.SkillProjectileHits}, boss damage {forwardRiskPhysicalSummonPunish.BossDamageTaken:0.0}, window->hit {FormatSeconds(forwardRiskPhysicalSummonPunish.FollowupWindowToHitSeconds)}.");
+            builder.AppendLine($"- Boss damage attribution: physical block-only player/summon boss damage {forwardRiskPhysicalSummonBlock.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonBlock.BossDamageFromAllySummon:0.0}; physical punish player/summon boss damage {forwardRiskPhysicalSummonPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonPunish.BossDamageFromAllySummon:0.0}, player share {FormatPercent01(forwardRiskPhysicalSummonPunish.BossDamagePlayerShare01)}.");
             builder.AppendLine($"- Unanswered hit penalty split: no-action {FormatPercent01(noSummon.TotalUnansweredBossHitRoutePenalty01)} x{noSummon.UnansweredBossHitRoutePenaltyCount}, gun-only {FormatPercent01(gunOnly.TotalUnansweredBossHitRoutePenalty01)} x{gunOnly.UnansweredBossHitRoutePenaltyCount}, late {FormatPercent01(late.TotalUnansweredBossHitRoutePenalty01)} x{late.UnansweredBossHitRoutePenaltyCount}.");
             builder.AppendLine($"- Frontline exposure split: no-action enemy-only {FormatSeconds(noSummon.EnemyOnlyFrontlineSeconds)}, gun-only enemy-only {FormatSeconds(gunOnly.EnemyOnlyFrontlineSeconds)}, intended ally-only {FormatSeconds(intended.AllyOnlyFrontlineSeconds)} / contested {FormatSeconds(intended.ContestedFrontlineSeconds)}.");
             builder.AppendLine($"- ArkData effective pressure shape: no-action peak/top3 {FormatPercent01(noSummon.PeakPressureWindowShare01)}/{FormatPercent01(noSummon.Top3PressureWindowShare01)}, intended {FormatPercent01(intended.PeakPressureWindowShare01)}/{FormatPercent01(intended.Top3PressureWindowShare01)} with relief {FormatSeconds(intended.TimeToNextReliefWindowSeconds)}, ignored boss-screen unanswered burden {FormatPercent01(ignoredRecovery.UnansweredPressureBurdenShare01)} versus intended {FormatPercent01(intended.UnansweredPressureBurdenShare01)}.");
@@ -2247,7 +2293,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 "| CombatPayload runtime pipeline | "
                 + $"{FormatCoverageStatus(combatPayloadMeasured)} | "
-                + $"Target->Hit: forward barrage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; Block->Status: {forwardRiskPhysicalSummonBlock.SummonBlocks} blocks and {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)} to window; Skill1 Hit->Presentation: {forwardRiskPhysicalSummonPunish.SkillProjectileHits} hits with cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests} | "
+                + $"Target->Hit: forward barrage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; Block->Status: {forwardRiskPhysicalSummonBlock.SummonBlocks} blocks and {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)} to window; Skill1 Hit->Presentation: {forwardRiskPhysicalSummonPunish.SkillProjectileHits} hits with cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests}; payoff source player/summon {forwardRiskPhysicalSummonPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonPunish.BossDamageFromAllySummon:0.0} | "
                 + "Candidate labels stay local test evidence, not fake universal opcodes. |");
             builder.AppendLine(
                 "| PGR state-lock and hit-response grammar | "
@@ -2377,6 +2423,11 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"playerDamageTaken\": {result.PlayerDamageTaken:0.###},");
                 builder.AppendLine($"      \"firstPlayerDownAtSeconds\": {JsonNullableSeconds(result.FirstPlayerDownAtSeconds)},");
                 builder.AppendLine($"      \"bossDamageTaken\": {result.BossDamageTaken:0.###},");
+                builder.AppendLine($"      \"bossDamageFromPlayer\": {result.BossDamageFromPlayer:0.###},");
+                builder.AppendLine($"      \"bossDamageFromAllySummon\": {result.BossDamageFromAllySummon:0.###},");
+                builder.AppendLine($"      \"bossDamageFromEnemy\": {result.BossDamageFromEnemy:0.###},");
+                builder.AppendLine($"      \"bossDamageFromNeutralOrUnknown\": {result.BossDamageFromNeutralOrUnknown:0.###},");
+                builder.AppendLine($"      \"bossDamagePlayerShare01\": {result.BossDamagePlayerShare01:0.###},");
                 builder.AppendLine($"      \"firstBossDownAtSeconds\": {JsonNullableSeconds(result.FirstBossDownAtSeconds)},");
                 builder.AppendLine($"      \"survivalProbeMaxSeconds\": {JsonNullableSeconds(result.SurvivalProbeMaxSeconds)},");
                 builder.AppendLine($"      \"closeThreatBasicHits\": {result.CloseThreatBasicHits},");
@@ -3586,6 +3637,22 @@ namespace DimensionBrawl.Tests
             private void OnBossDamaged(DamageInfo damageInfo)
             {
                 Metrics.BossDamageTaken += damageInfo.Amount;
+                switch (damageInfo.SourceTeam)
+                {
+                    case DamageTeam.Player:
+                        Metrics.BossDamageFromPlayer += damageInfo.Amount;
+                        break;
+                    case DamageTeam.AllySummon:
+                        Metrics.BossDamageFromAllySummon += damageInfo.Amount;
+                        break;
+                    case DamageTeam.Enemy:
+                        Metrics.BossDamageFromEnemy += damageInfo.Amount;
+                        break;
+                    default:
+                        Metrics.BossDamageFromNeutralOrUnknown += damageInfo.Amount;
+                        break;
+                }
+
                 RecordDamageResponse(
                     damageInfo,
                     () => Metrics.BossNonLockingDamageEvents++,
@@ -3755,6 +3822,12 @@ namespace DimensionBrawl.Tests
             public float BossHealthStart { get; set; }
             public float BossHealthRemaining { get; set; }
             public float BossDamageTaken { get; set; }
+            public float BossDamageFromPlayer { get; set; }
+            public float BossDamageFromAllySummon { get; set; }
+            public float BossDamageFromEnemy { get; set; }
+            public float BossDamageFromNeutralOrUnknown { get; set; }
+            public float BossDamagePlayerShare01 =>
+                BossDamageTaken > 0f ? Mathf.Clamp01(BossDamageFromPlayer / BossDamageTaken) : 0f;
             public float FirstBossDownAtSeconds { get; set; } = -1f;
             public float CloseThreatHealthStart { get; set; }
             public float CloseThreatHealthRemaining { get; set; }

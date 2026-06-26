@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.SummonSlotActionProfile
   actionId: SummonSlot1.ShieldBreaker
   tierSettings:
-  - Damage: 78
+  - Damage: 56
     ProjectileSpeed: 17
     LifetimeSeconds: 2.4
     Radius: 0.34
@@ -32,17 +32,17 @@ MonoBehaviour:
     ActorAdvanceDistance: 2.2
     ActorAdvanceSeconds: 1.62
     ActorEngageRadius: 0.95
-    ActorAttackDamagePerSecond: 48
+    ActorAttackDamagePerSecond: 24
     ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 2
     ScreenRadius: 1.47
     ScreenLifetimeSeconds: 2.4
-    CounterDamage: 24.96
+    CounterDamage: 17.92
     CounterProjectileSpeed: 19
     CounterLifetimeSeconds: 1.45
     CounterRadius: 0.238
     CounterTargetHeight: 1.35
-  - Damage: 94
+  - Damage: 72
     ProjectileSpeed: 18.5
     LifetimeSeconds: 2.65
     Radius: 0.38
@@ -60,17 +60,17 @@ MonoBehaviour:
     ActorAdvanceDistance: 3
     ActorAdvanceSeconds: 1.9
     ActorEngageRadius: 1.05
-    ActorAttackDamagePerSecond: 64
+    ActorAttackDamagePerSecond: 32
     ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 4
     ScreenRadius: 1.79
     ScreenLifetimeSeconds: 3.2
-    CounterDamage: 30.08
+    CounterDamage: 23.04
     CounterProjectileSpeed: 20.5
     CounterLifetimeSeconds: 1.45
     CounterRadius: 0.266
     CounterTargetHeight: 1.35
-  - Damage: 116
+  - Damage: 92
     ProjectileSpeed: 20
     LifetimeSeconds: 2.9
     Radius: 0.42
@@ -88,12 +88,12 @@ MonoBehaviour:
     ActorAdvanceDistance: 4
     ActorAdvanceSeconds: 2.25
     ActorEngageRadius: 1.15
-    ActorAttackDamagePerSecond: 84
+    ActorAttackDamagePerSecond: 42
     ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 7
     ScreenRadius: 2.27
     ScreenLifetimeSeconds: 4
-    CounterDamage: 37.12
+    CounterDamage: 29.44
     CounterProjectileSpeed: 22
     CounterLifetimeSeconds: 1.45
     CounterRadius: 0.294

@@ -1446,7 +1446,7 @@ MonoBehaviour:
   useBlockedHintSeconds: 0.75
   summonActionProfile: {fileID: 11400000, guid: ea0ac980cb10498e92d7f0dcf1ddf9e7, type: 2}
   tierSettings:
-  - Damage: 78
+  - Damage: 56
     ProjectileSpeed: 17
     LifetimeSeconds: 2.4
     Radius: 0.34
@@ -1456,7 +1456,7 @@ MonoBehaviour:
     TargetHeight: 1.35
     CueScale: 0.46
     CueLifetimeSeconds: 0.36
-    ActorLifetimeSeconds: 0
+    ActorLifetimeSeconds: 4.4
     ActorScale: 2.025
     ActorRoleId: ShieldBreaker
     ActorMaxHealth: 230
@@ -1464,17 +1464,17 @@ MonoBehaviour:
     ActorAdvanceDistance: 2.2
     ActorAdvanceSeconds: 1.62
     ActorEngageRadius: 0.95
-    ActorAttackDamagePerSecond: 48
+    ActorAttackDamagePerSecond: 24
     ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 2
     ScreenRadius: 1.47
     ScreenLifetimeSeconds: 2.4
-    CounterDamage: 24.96
+    CounterDamage: 17.92
     CounterProjectileSpeed: 19
     CounterLifetimeSeconds: 1.45
     CounterRadius: 0.238
     CounterTargetHeight: 1.35
-  - Damage: 94
+  - Damage: 72
     ProjectileSpeed: 18.5
     LifetimeSeconds: 2.65
     Radius: 0.38
@@ -1484,7 +1484,7 @@ MonoBehaviour:
     TargetHeight: 1.35
     CueScale: 0.51
     CueLifetimeSeconds: 0.36
-    ActorLifetimeSeconds: 0
+    ActorLifetimeSeconds: 5.2
     ActorScale: 2.43
     ActorRoleId: ShieldBreaker
     ActorMaxHealth: 300
@@ -1492,17 +1492,17 @@ MonoBehaviour:
     ActorAdvanceDistance: 3
     ActorAdvanceSeconds: 1.9
     ActorEngageRadius: 1.05
-    ActorAttackDamagePerSecond: 64
+    ActorAttackDamagePerSecond: 32
     ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 4
     ScreenRadius: 1.79
     ScreenLifetimeSeconds: 3.2
-    CounterDamage: 30.08
+    CounterDamage: 23.04
     CounterProjectileSpeed: 20.5
     CounterLifetimeSeconds: 1.45
     CounterRadius: 0.266
     CounterTargetHeight: 1.35
-  - Damage: 116
+  - Damage: 92
     ProjectileSpeed: 20
     LifetimeSeconds: 2.9
     Radius: 0.42
@@ -1512,7 +1512,7 @@ MonoBehaviour:
     TargetHeight: 1.35
     CueScale: 0.56
     CueLifetimeSeconds: 0.36
-    ActorLifetimeSeconds: 0
+    ActorLifetimeSeconds: 6.2
     ActorScale: 2.88
     ActorRoleId: ShieldBreaker
     ActorMaxHealth: 380
@@ -1520,12 +1520,12 @@ MonoBehaviour:
     ActorAdvanceDistance: 4
     ActorAdvanceSeconds: 2.25
     ActorEngageRadius: 1.15
-    ActorAttackDamagePerSecond: 84
+    ActorAttackDamagePerSecond: 42
     ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 7
     ScreenRadius: 2.27
     ScreenLifetimeSeconds: 4
-    CounterDamage: 37.12
+    CounterDamage: 29.44
     CounterProjectileSpeed: 22
     CounterLifetimeSeconds: 1.45
     CounterRadius: 0.294
@@ -15019,10 +15019,10 @@ MonoBehaviour:
     ActorScale: 2.07
     ActorRoleId: EscortProbe
     ActorMaxHealth: 220
-    ActorMoveSpeed: 1.35
+    ActorMoveSpeed: 2.35
     ActorAdvanceDistance: 2.4
     ActorAdvanceSeconds: 1.4
-    ActorEngageRadius: 0.95
+    ActorEngageRadius: 1.25
     ActorAttackDamagePerSecond: 32
     ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 2
@@ -15035,10 +15035,10 @@ MonoBehaviour:
     ActorScale: 2.52
     ActorRoleId: PressureScreen
     ActorMaxHealth: 320
-    ActorMoveSpeed: 1.42
+    ActorMoveSpeed: 2.15
     ActorAdvanceDistance: 3.8
     ActorAdvanceSeconds: 1.85
-    ActorEngageRadius: 1.05
+    ActorEngageRadius: 1.35
     ActorAttackDamagePerSecond: 44
     ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 4
@@ -15051,10 +15051,10 @@ MonoBehaviour:
     ActorScale: 3.06
     ActorRoleId: ClampGuard
     ActorMaxHealth: 460
-    ActorMoveSpeed: 1.48
+    ActorMoveSpeed: 1.95
     ActorAdvanceDistance: 5.2
     ActorAdvanceSeconds: 2.35
-    ActorEngageRadius: 1.18
+    ActorEngageRadius: 1.5
     ActorAttackDamagePerSecond: 58
     ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 7
