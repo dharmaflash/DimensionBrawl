@@ -35,8 +35,8 @@ MonoBehaviour:
     useAsyncLoading: 0
     minimumLoadingSeconds: 0
   - routeId: 40
-    sceneName: ActionFoundationBossBarrageLaneReview
-    scenePath: Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity
+    sceneName: ActionFoundationCombatStage
+    scenePath: Assets/_Game/Scenes/ActionFoundationCombatStage.unity
     transitionId: stage_to_combat_mood_bridge
     loadingCardId: stage_to_combat_mood_bridge
     useAsyncLoading: 1
