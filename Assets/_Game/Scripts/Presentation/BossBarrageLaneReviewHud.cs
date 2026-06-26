@@ -93,6 +93,7 @@ namespace DimensionBrawl.Presentation
         public string RouteIncentiveReadout => ResolveCompactRouteIncentiveLine();
         public string CompactCombatCueReadout => ResolveCompactCombatCueLine();
         public string CompactFrontlineCueReadout => ResolveCompactFrontlineCueLine();
+        public string PlayerSurvivalReadout => ResolvePlayerSurvivalReadout().Line;
         public bool ShouldShowResultBanner => TryResolveResultBanner(out _, out _, out _);
         public string ResultBannerTitle => TryResolveResultBanner(out string title, out _, out _) ? title : string.Empty;
         public string ResultBannerDetail => TryResolveResultBanner(out _, out string detail, out _) ? detail : string.Empty;
@@ -217,6 +218,7 @@ namespace DimensionBrawl.Presentation
             float screenWidth = Screen.width / uiScale;
             float screenHeight = Screen.height / uiScale;
             PremiumHudLayout layout = ResolvePremiumHudLayoutForReview(screenWidth, screenHeight, margin);
+            CombatResourceReadout playerSurvivalReadout = ResolvePlayerSurvivalReadout();
 
             BossBarrageLaneReviewHudChrome.DrawObjectivePanel(
                 layout.ObjectiveRect,
@@ -236,8 +238,9 @@ namespace DimensionBrawl.Presentation
             BossBarrageLaneReviewHudChrome.DrawPlayerResourcePanel(
                 layout.PlayerPanelRect,
                 playerDisplayName,
-                ResolveHealthValueText(playerHealth),
+                playerSurvivalReadout.Line,
                 ResolveHealthFill01(playerHealth),
+                playerSurvivalReadout.FillColor,
                 ResolveEnergyValueText(),
                 ResolveEnergyFill01(),
                 energyLadder != null && energyLadder.CanSpend);
@@ -376,14 +379,9 @@ namespace DimensionBrawl.Presentation
             return health != null ? Mathf.Clamp01(health.HealthRatio) : 0f;
         }
 
-        private static string ResolveHealthValueText(CombatHealth health)
+        private CombatResourceReadout ResolvePlayerSurvivalReadout()
         {
-            if (health == null)
-            {
-                return "HP -";
-            }
-
-            return $"HP {Mathf.CeilToInt(Mathf.Max(0f, health.CurrentHealth))}/{Mathf.CeilToInt(Mathf.Max(0f, health.MaxHealth))}";
+            return CombatResourceReadout.FromSurvivalHealth("HP", playerHealth, playerHealthColor);
         }
 
         private string ResolveEnergyValueText()
@@ -418,7 +416,7 @@ namespace DimensionBrawl.Presentation
 
         private string ResolveHealthLine()
         {
-            string playerLine = CombatResourceReadout.FromHealth("HP", playerHealth, playerHealthColor).Line;
+            string playerLine = ResolvePlayerSurvivalReadout().Line;
             string threatLine = CombatResourceReadout.FromHealth("Threat", closeThreatHealth, threatHealthColor).Line;
             string bossLine = CombatResourceReadout.FromHealth("Boss", bossHealth, bossHealthColor).Line;
             return $"{playerLine}   {threatLine}   {bossLine}";
@@ -1707,7 +1705,7 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
-            DrawResourceBar(CombatResourceReadout.FromHealth("HP", playerHealth, playerHealthColor));
+            DrawResourceBar(ResolvePlayerSurvivalReadout());
             DrawResourceBar(CombatResourceReadout.FromEnergy("EN", energyLadder));
             DrawResourceBar(CombatResourceReadout.FromHealth("Boss", bossHealth, bossHealthColor));
             DrawResourceBar(CombatResourceReadout.FromBossCost("Cost", bossPressureCostLadder));

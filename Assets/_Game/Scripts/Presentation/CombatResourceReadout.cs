@@ -6,6 +6,9 @@ namespace DimensionBrawl.Presentation
 {
     public readonly struct CombatResourceReadout
     {
+        private const float PressuredHealthRatio = 0.65f;
+        private const float CriticalHealthRatio = 0.32f;
+
         public CombatResourceReadout(
             string label,
             string valueText,
@@ -50,6 +53,61 @@ namespace DimensionBrawl.Presentation
                 health.HealthRatio,
                 fillColor,
                 false);
+        }
+
+        public static CombatResourceReadout FromSurvivalHealth(string label, CombatHealth health, Color stableFillColor)
+        {
+            if (health == null)
+            {
+                return Missing(label);
+            }
+
+            return new CombatResourceReadout(
+                label,
+                $"{health.CurrentHealth:0}/{health.MaxHealth:0}",
+                ResolveSurvivalStateText(health),
+                health.HealthRatio,
+                ResolveSurvivalFillColor(health, stableFillColor),
+                false);
+        }
+
+        public static string ResolveSurvivalStateText(CombatHealth health)
+        {
+            if (health == null)
+            {
+                return "missing";
+            }
+
+            if (!health.IsAlive)
+            {
+                return "down";
+            }
+
+            float healthRatio = Mathf.Clamp01(health.HealthRatio);
+            if (healthRatio <= CriticalHealthRatio)
+            {
+                return "critical";
+            }
+
+            return healthRatio <= PressuredHealthRatio ? "pressured" : "stable";
+        }
+
+        private static Color ResolveSurvivalFillColor(CombatHealth health, Color stableFillColor)
+        {
+            if (health == null || !health.IsAlive)
+            {
+                return new Color(0.36f, 0.38f, 0.42f, stableFillColor.a);
+            }
+
+            float healthRatio = Mathf.Clamp01(health.HealthRatio);
+            if (healthRatio <= CriticalHealthRatio)
+            {
+                return new Color(1f, 0.24f, 0.18f, stableFillColor.a);
+            }
+
+            return healthRatio <= PressuredHealthRatio
+                ? new Color(1f, 0.76f, 0.24f, stableFillColor.a)
+                : stableFillColor;
         }
 
         public static CombatResourceReadout FromEnergy(string label, SummonEnergyLadder energy)

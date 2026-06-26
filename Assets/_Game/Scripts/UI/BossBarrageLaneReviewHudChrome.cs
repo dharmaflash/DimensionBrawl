@@ -83,6 +83,7 @@ namespace DimensionBrawl.UI
             string title,
             string hpText,
             float hpFill,
+            Color hpFillColor,
             string energyText,
             float energyFill,
             bool energyReady)
@@ -100,7 +101,7 @@ namespace DimensionBrawl.UI
             DrawBar(
                 new Rect(rect.x + 18f, rect.y + 54f, rect.width * 0.44f, 10f),
                 Mathf.Clamp01(hpFill),
-                new Color(0.34f, 1f, 0.58f, 0.92f),
+                hpFillColor,
                 IceColor);
             DrawBar(
                 new Rect(rect.x + rect.width * 0.54f, rect.y + 54f, rect.width * 0.36f, 10f),

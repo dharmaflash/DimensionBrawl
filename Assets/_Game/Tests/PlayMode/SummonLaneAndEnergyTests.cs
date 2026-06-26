@@ -396,6 +396,21 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(0.75f, healthReadout.Fill01, 0.001f);
             StringAssert.Contains("Player HP", healthReadout.Line);
 
+            CombatResourceReadout survivalReadout =
+                CombatResourceReadout.FromSurvivalHealth("Player HP", playerHealth, Color.green);
+            Assert.AreEqual("stable", survivalReadout.StateText);
+            StringAssert.Contains("stable", survivalReadout.Line);
+
+            playerHealth.TryApplyDamage(new DamageInfo(null, DamageTeam.Enemy, 40f, Vector3.zero, Vector3.back, 0f));
+            survivalReadout = CombatResourceReadout.FromSurvivalHealth("Player HP", playerHealth, Color.green);
+            Assert.AreEqual("pressured", survivalReadout.StateText);
+            Assert.AreEqual(0.55f, survivalReadout.Fill01, 0.001f);
+
+            playerHealth.TryApplyDamage(new DamageInfo(null, DamageTeam.Enemy, 50f, Vector3.zero, Vector3.back, 0f));
+            survivalReadout = CombatResourceReadout.FromSurvivalHealth("Player HP", playerHealth, Color.green);
+            Assert.AreEqual("critical", survivalReadout.StateText);
+            Assert.AreEqual(0.3f, survivalReadout.Fill01, 0.001f);
+
             SummonEnergyLadder energy = playerObject.AddComponent<SummonEnergyLadder>();
             energy.GrantCurrentTierEnergy(100f);
             CombatResourceReadout energyReadout = CombatResourceReadout.FromEnergy("Player EN", energy);
@@ -416,6 +431,42 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(costReadout.IsReady);
 
             Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+        }
+
+        [Test]
+        public void BossBarrageLaneReviewHudSurfacesPlayerHpPressureState()
+        {
+            GameObject playerObject = new GameObject("Player");
+            CombatHealth playerHealth = playerObject.AddComponent<CombatHealth>();
+            playerHealth.ConfigureTeam(DamageTeam.Player);
+            playerHealth.ConfigureMaxHealth(100f);
+            playerHealth.TryApplyDamage(new DamageInfo(null, DamageTeam.Enemy, 42f, Vector3.zero, Vector3.back, 0f));
+
+            GameObject hudObject = new GameObject("Hud");
+            BossBarrageLaneReviewHud hud = hudObject.AddComponent<BossBarrageLaneReviewHud>();
+            hud.Configure(
+                playerHealth,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null);
+
+            StringAssert.Contains("HP 58/100 pressured", hud.PlayerSurvivalReadout);
+
+            playerHealth.TryApplyDamage(new DamageInfo(null, DamageTeam.Enemy, 30f, Vector3.zero, Vector3.back, 0f));
+
+            StringAssert.Contains("critical", hud.PlayerSurvivalReadout);
+
+            Object.DestroyImmediate(hudObject);
             Object.DestroyImmediate(playerObject);
         }
 
