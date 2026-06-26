@@ -43,6 +43,63 @@ namespace DimensionBrawl.Test
             BossSummonRelease
         }
 
+        public enum RouteResultKind
+        {
+            None,
+            CleanFollowupClear,
+            CounterRecoveryClear,
+            PressureSuppressionClear,
+            PlayerDownFail,
+            PressureControlFail
+        }
+
+        public readonly struct RouteResultRecord
+        {
+            public RouteResultRecord(
+                bool isCommitted,
+                RouteResultKind resultKind,
+                bool isClear,
+                RouteFailureReason failureReason,
+                CounterWaveSource counterWaveSource,
+                float elapsedSeconds,
+                float routeStability01,
+                int completedObjectiveStepCount,
+                int objectiveStepCount,
+                string completionReadout,
+                string proofReadout,
+                string decisionState,
+                string decisionReadout)
+            {
+                IsCommitted = isCommitted;
+                ResultKind = resultKind;
+                IsClear = isClear;
+                FailureReason = failureReason;
+                CounterWaveSource = counterWaveSource;
+                ElapsedSeconds = elapsedSeconds;
+                RouteStability01 = routeStability01;
+                CompletedObjectiveStepCount = completedObjectiveStepCount;
+                ObjectiveStepCount = objectiveStepCount;
+                CompletionReadout = completionReadout ?? string.Empty;
+                ProofReadout = proofReadout ?? string.Empty;
+                DecisionState = decisionState ?? string.Empty;
+                DecisionReadout = decisionReadout ?? string.Empty;
+            }
+
+            public bool IsCommitted { get; }
+            public RouteResultKind ResultKind { get; }
+            public bool IsClear { get; }
+            public RouteFailureReason FailureReason { get; }
+            public CounterWaveSource CounterWaveSource { get; }
+            public float ElapsedSeconds { get; }
+            public float RouteStability01 { get; }
+            public int CompletedObjectiveStepCount { get; }
+            public int ObjectiveStepCount { get; }
+            public string CompletionReadout { get; }
+            public string ProofReadout { get; }
+            public string DecisionState { get; }
+            public string DecisionReadout { get; }
+        }
+
         private enum PocketState
         {
             Running,
@@ -148,6 +205,8 @@ namespace DimensionBrawl.Test
         private int bossPressureSummonReleasesAtReset;
         private int announcedStageBeatIndex;
         private RouteStabilityBand announcedRouteStabilityBand;
+        private RouteResultRecord lastResultRecord;
+        private int resultRecordCommitCount;
 
         public event Action<int> SummonFollowupWindowOpened;
         public event Action<int, float> SummonFollowupHitConfirmed;
@@ -159,6 +218,7 @@ namespace DimensionBrawl.Test
         public event Action PocketFailed;
         public event Action<int> StageBeatChanged;
         public event Action<RouteStabilityBand, float> RouteStabilityBandChanged;
+        public event Action<RouteResultRecord> ResultRecordCommitted;
 
         public bool IsRunning => state == PocketState.Running;
         public bool IsCleared => state == PocketState.Cleared;
@@ -213,6 +273,9 @@ namespace DimensionBrawl.Test
         public string RouteDecisionState => ResolveRouteDecisionState();
         public string RouteDecisionReadout => ResolveRouteDecisionReadout();
         public string CompletionRecordReadout => ResolveCompletionRecordReadout();
+        public RouteResultRecord LastResultRecord => lastResultRecord;
+        public bool HasCommittedResultRecord => lastResultRecord.IsCommitted;
+        public int ResultRecordCommitCount => resultRecordCommitCount;
         public int RouteProofStepCount => 4;
         public int CompletedRouteProofStepCount => ResolveCompletedRouteProofStepCount();
         public string RouteProofState => ResolveRouteProofState();
@@ -479,6 +542,8 @@ namespace DimensionBrawl.Test
             failureReason = RouteFailureReason.None;
             announcedStageBeatIndex = ResolveCurrentStageBeatIndex();
             announcedRouteStabilityBand = CurrentRouteStabilityBand;
+            lastResultRecord = default;
+            resultRecordCommitCount = 0;
             SetBarrageEnabled(true);
             SetEnergyGainEnabled(true);
             SetBossPressureCostGainEnabled(true);
@@ -876,6 +941,7 @@ namespace DimensionBrawl.Test
             SetBossPressureCostGainEnabled(!stopBossPressureCostOnEnd);
             SetBossPressureActionsEnabled(!stopBossPressureActionsOnEnd);
             SetMarkers();
+            CommitResultRecord();
             PocketCleared?.Invoke();
         }
 
@@ -891,7 +957,33 @@ namespace DimensionBrawl.Test
             SetBossPressureCostGainEnabled(!stopBossPressureCostOnEnd);
             SetBossPressureActionsEnabled(!stopBossPressureActionsOnEnd);
             SetMarkers();
+            CommitResultRecord();
             PocketFailed?.Invoke();
+        }
+
+        private void CommitResultRecord()
+        {
+            if (lastResultRecord.IsCommitted)
+            {
+                return;
+            }
+
+            lastResultRecord = new RouteResultRecord(
+                true,
+                ResolveRouteResultKind(),
+                state == PocketState.Cleared,
+                failureReason,
+                counterWaveSource,
+                resultElapsedSeconds,
+                RouteStability01,
+                CompletedObjectiveStepCount,
+                ObjectiveStepCount,
+                CompletionRecordReadout,
+                RouteProofReadout,
+                RouteDecisionState,
+                RouteDecisionReadout);
+            resultRecordCommitCount++;
+            ResultRecordCommitted?.Invoke(lastResultRecord);
         }
 
         private void DismissActiveSummonPressureScreens()
@@ -1732,6 +1824,30 @@ namespace DimensionBrawl.Test
         private bool IsCounterRecoveryRoute()
         {
             return counterWaveStabilized || counterWaveFinalWindowOpened;
+        }
+
+        private RouteResultKind ResolveRouteResultKind()
+        {
+            if (state == PocketState.Cleared)
+            {
+                if (IsCounterRecoveryRoute())
+                {
+                    return RouteResultKind.CounterRecoveryClear;
+                }
+
+                return skill1FollowupHitConfirmed
+                    ? RouteResultKind.CleanFollowupClear
+                    : RouteResultKind.PressureSuppressionClear;
+            }
+
+            if (state == PocketState.Failed)
+            {
+                return failureReason == RouteFailureReason.RouteStabilityCollapsed
+                    ? RouteResultKind.PressureControlFail
+                    : RouteResultKind.PlayerDownFail;
+            }
+
+            return RouteResultKind.None;
         }
 
         private int ResolveCurrentStageBeatIndex()

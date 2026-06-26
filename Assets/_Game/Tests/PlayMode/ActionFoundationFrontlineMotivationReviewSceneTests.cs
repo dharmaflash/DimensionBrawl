@@ -587,11 +587,33 @@ namespace DimensionBrawl.Tests
             LaneActionProjectile finalFollowupProjectile = RequireActivePlayerSkillProjectile();
             Assert.IsTrue(finalFollowupProjectile.TryApplyImpact(bossHitCollider, finalFollowupProjectile.transform.position));
             Assert.Less(bossHealth.CurrentHealth, bossHealthBeforeFinalHit);
+            int counterRecoveryRecordEventCount = 0;
+            BossBarragePocketReviewOwner.RouteResultRecord counterRecoveryEventRecord = default;
+            pocketOwner.ResultRecordCommitted += record =>
+            {
+                counterRecoveryRecordEventCount++;
+                counterRecoveryEventRecord = record;
+            };
             pocketOwner.Tick(1f);
 
             Assert.IsTrue(pocketOwner.Skill1FollowupHitConfirmed);
             Assert.IsTrue(pocketOwner.IsCleared);
             Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.Cleared, pocketOwner.CurrentPhase);
+            Assert.IsTrue(pocketOwner.HasCommittedResultRecord);
+            Assert.AreEqual(1, pocketOwner.ResultRecordCommitCount);
+            Assert.AreEqual(1, counterRecoveryRecordEventCount);
+            Assert.AreEqual(
+                BossBarragePocketReviewOwner.RouteResultKind.CounterRecoveryClear,
+                pocketOwner.LastResultRecord.ResultKind);
+            Assert.IsTrue(pocketOwner.LastResultRecord.IsClear);
+            Assert.AreEqual(
+                BossBarragePocketReviewOwner.CounterWaveSource.EnemyFrontlineBody,
+                pocketOwner.LastResultRecord.CounterWaveSource);
+            Assert.AreEqual("recovery_clear", pocketOwner.LastResultRecord.DecisionState);
+            Assert.AreEqual("counter_recovery", pocketOwner.LastResultRecord.DecisionReadout);
+            Assert.That(pocketOwner.LastResultRecord.CompletionReadout, Does.Contain("counter_window:opened(final_followup)"));
+            Assert.That(pocketOwner.LastResultRecord.ProofReadout, Does.Contain("answer:final_skill"));
+            Assert.AreEqual(pocketOwner.LastResultRecord.ResultKind, counterRecoveryEventRecord.ResultKind);
             Assert.That(reviewHud.ResultBannerTitle, Does.Contain("PRESSURE BROKEN"));
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Counter pressure held"));
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("final follow-up"));
@@ -794,6 +816,13 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(followupProjectile.TryApplyImpact(bossHitCollider, followupProjectile.transform.position));
             pocketOwner.Tick(0f);
 
+            int cleanRecordEventCount = 0;
+            BossBarragePocketReviewOwner.RouteResultRecord cleanEventRecord = default;
+            pocketOwner.ResultRecordCommitted += record =>
+            {
+                cleanRecordEventCount++;
+                cleanEventRecord = record;
+            };
             int resultCueCountBeforeClear = screenCuePresenter.ResultCueRequestCount;
             int pocketClearVfxCueCountBefore = pocketVfxCueBridge.PocketClearCueRequestCount;
             pocketOwner.Tick(0.77f);
@@ -805,6 +834,19 @@ namespace DimensionBrawl.Tests
             Assert.That(guidedSuccessSeconds, Is.InRange(8f, 12.8f));
             Assert.IsTrue(pocketOwner.IsCleared);
             Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.Cleared, pocketOwner.CurrentPhase);
+            Assert.IsTrue(pocketOwner.HasCommittedResultRecord);
+            Assert.AreEqual(1, pocketOwner.ResultRecordCommitCount);
+            Assert.AreEqual(1, cleanRecordEventCount);
+            Assert.AreEqual(
+                BossBarragePocketReviewOwner.RouteResultKind.CleanFollowupClear,
+                pocketOwner.LastResultRecord.ResultKind);
+            Assert.IsTrue(pocketOwner.LastResultRecord.IsClear);
+            Assert.AreEqual(BossBarragePocketReviewOwner.RouteFailureReason.None, pocketOwner.LastResultRecord.FailureReason);
+            Assert.AreEqual("clean_clear", pocketOwner.LastResultRecord.DecisionState);
+            Assert.AreEqual("clean_followup", pocketOwner.LastResultRecord.DecisionReadout);
+            Assert.That(pocketOwner.LastResultRecord.CompletionReadout, Does.Contain("followup:recorded"));
+            Assert.That(pocketOwner.LastResultRecord.ProofReadout, Does.Contain("log:committed"));
+            Assert.AreEqual(pocketOwner.LastResultRecord.ResultKind, cleanEventRecord.ResultKind);
             Assert.AreEqual(resultCueCountBeforeClear + 1, screenCuePresenter.ResultCueRequestCount);
             Assert.AreEqual("Pocket.Cleared", screenCuePresenter.LastCueId);
             Assert.AreEqual(pocketClearVfxCueCountBefore + 1, pocketVfxCueBridge.PocketClearCueRequestCount);
@@ -870,6 +912,13 @@ namespace DimensionBrawl.Tests
             Assert.NotNull(player, "Frontline player defeat test needs the scene player.");
             CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
 
+            int failRecordEventCount = 0;
+            BossBarragePocketReviewOwner.RouteResultRecord failEventRecord = default;
+            pocketOwner.ResultRecordCommitted += record =>
+            {
+                failRecordEventCount++;
+                failEventRecord = record;
+            };
             playerHealth.TryApplyDamage(new DamageInfo(
                 null,
                 DamageTeam.Enemy,
@@ -881,6 +930,21 @@ namespace DimensionBrawl.Tests
 
             Assert.IsTrue(pocketOwner.IsFailed);
             Assert.AreEqual(BossBarragePocketReviewOwner.RouteFailureReason.PlayerDown, pocketOwner.FailureReason);
+            Assert.IsTrue(pocketOwner.HasCommittedResultRecord);
+            Assert.AreEqual(1, pocketOwner.ResultRecordCommitCount);
+            Assert.AreEqual(1, failRecordEventCount);
+            Assert.AreEqual(
+                BossBarragePocketReviewOwner.RouteResultKind.PlayerDownFail,
+                pocketOwner.LastResultRecord.ResultKind);
+            Assert.IsFalse(pocketOwner.LastResultRecord.IsClear);
+            Assert.AreEqual(
+                BossBarragePocketReviewOwner.RouteFailureReason.PlayerDown,
+                pocketOwner.LastResultRecord.FailureReason);
+            Assert.AreEqual("failed", pocketOwner.LastResultRecord.DecisionState);
+            Assert.AreEqual("player_down", pocketOwner.LastResultRecord.DecisionReadout);
+            Assert.That(pocketOwner.LastResultRecord.CompletionReadout, Does.Contain("decision:failed(player_down)"));
+            Assert.That(pocketOwner.LastResultRecord.ProofReadout, Does.Contain("log:failed"));
+            Assert.AreEqual(pocketOwner.LastResultRecord.ResultKind, failEventRecord.ResultKind);
             Assert.AreEqual("PLAYER DOWN", reviewHud.ResultBannerTitle);
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Player HP reached zero"));
             Assert.AreEqual("PLAYER DOWN", overlayHud.ResultTitleReadout);
