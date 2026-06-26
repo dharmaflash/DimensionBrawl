@@ -68,7 +68,12 @@ namespace DimensionBrawl.Test
                 string completionReadout,
                 string proofReadout,
                 string decisionState,
-                string decisionReadout)
+                string decisionReadout,
+                string title,
+                string summary,
+                string routeLabel,
+                string rewardHook,
+                string nextObjective)
             {
                 IsCommitted = isCommitted;
                 ResultKind = resultKind;
@@ -83,6 +88,11 @@ namespace DimensionBrawl.Test
                 ProofReadout = proofReadout ?? string.Empty;
                 DecisionState = decisionState ?? string.Empty;
                 DecisionReadout = decisionReadout ?? string.Empty;
+                Title = title ?? string.Empty;
+                Summary = summary ?? string.Empty;
+                RouteLabel = routeLabel ?? string.Empty;
+                RewardHook = rewardHook ?? string.Empty;
+                NextObjective = nextObjective ?? string.Empty;
             }
 
             public bool IsCommitted { get; }
@@ -98,6 +108,11 @@ namespace DimensionBrawl.Test
             public string ProofReadout { get; }
             public string DecisionState { get; }
             public string DecisionReadout { get; }
+            public string Title { get; }
+            public string Summary { get; }
+            public string RouteLabel { get; }
+            public string RewardHook { get; }
+            public string NextObjective { get; }
         }
 
         private enum PocketState
@@ -968,9 +983,10 @@ namespace DimensionBrawl.Test
                 return;
             }
 
+            RouteResultKind resultKind = ResolveRouteResultKind();
             lastResultRecord = new RouteResultRecord(
                 true,
-                ResolveRouteResultKind(),
+                resultKind,
                 state == PocketState.Cleared,
                 failureReason,
                 counterWaveSource,
@@ -981,7 +997,12 @@ namespace DimensionBrawl.Test
                 CompletionRecordReadout,
                 RouteProofReadout,
                 RouteDecisionState,
-                RouteDecisionReadout);
+                RouteDecisionReadout,
+                ResolveRouteResultTitle(resultKind),
+                ResolveRouteResultSummary(resultKind),
+                ResolveRouteResultLabel(resultKind),
+                ResolveRouteResultRewardHook(resultKind),
+                ResolveRouteResultNextObjective(resultKind));
             resultRecordCommitCount++;
             ResultRecordCommitted?.Invoke(lastResultRecord);
         }
@@ -1848,6 +1869,94 @@ namespace DimensionBrawl.Test
             }
 
             return RouteResultKind.None;
+        }
+
+        private string ResolveRouteResultLabel(RouteResultKind resultKind)
+        {
+            return resultKind switch
+            {
+                RouteResultKind.CleanFollowupClear => "Clean summon follow-up",
+                RouteResultKind.CounterRecoveryClear => "Counter recovery",
+                RouteResultKind.PressureSuppressionClear => "Pressure suppression",
+                RouteResultKind.PressureControlFail => "Pressure control zero",
+                RouteResultKind.PlayerDownFail => "Player down",
+                _ => "-"
+            };
+        }
+
+        private string ResolveRouteResultTitle(RouteResultKind resultKind)
+        {
+            return resultKind switch
+            {
+                RouteResultKind.CleanFollowupClear
+                    or RouteResultKind.CounterRecoveryClear
+                    or RouteResultKind.PressureSuppressionClear => ResolveStageText(
+                        stageProfile != null ? stageProfile.ClearTitle : null,
+                        "PRESSURE BROKEN"),
+                RouteResultKind.PlayerDownFail or RouteResultKind.PressureControlFail => ResolveStageText(
+                    stageProfile != null ? stageProfile.FailTitle : null,
+                    "PLAYER DOWN"),
+                _ => string.Empty
+            };
+        }
+
+        private string ResolveRouteResultSummary(RouteResultKind resultKind)
+        {
+            return resultKind switch
+            {
+                RouteResultKind.CounterRecoveryClear => ResolveStageText(
+                    stageProfile != null ? stageProfile.ClearCounterDetail : null,
+                    "Counter pressure held; final follow-up confirmed"),
+                RouteResultKind.CleanFollowupClear => ResolveStageText(
+                    stageProfile != null ? stageProfile.ClearFollowupDetail : null,
+                    "Summon opening confirmed; Skill1 follow-up landed"),
+                RouteResultKind.PressureSuppressionClear => ResolveStageText(
+                    stageProfile != null ? stageProfile.ClearPressureDetail : null,
+                    "Boss curtain suppressed; survival answer recorded"),
+                RouteResultKind.PressureControlFail => ResolveStageText(
+                    stageProfile != null ? stageProfile.RouteCollapseFailDetail : null,
+                    "Pressure control hit zero, but HP survival remains the fail state"),
+                RouteResultKind.PlayerDownFail => ResolveStageText(
+                    stageProfile != null ? stageProfile.FailDetail : null,
+                    "Player HP reached zero before the boss pressure was answered"),
+                _ => string.Empty
+            };
+        }
+
+        private string ResolveRouteResultRewardHook(RouteResultKind resultKind)
+        {
+            return resultKind switch
+            {
+                RouteResultKind.PlayerDownFail or RouteResultKind.PressureControlFail => ResolveStageText(
+                    stageProfile != null ? stageProfile.FailedRouteRewardHook : null,
+                    "Failure analysis logged: player HP reached zero before the answer was complete."),
+                RouteResultKind.CounterRecoveryClear => ResolveStageText(
+                    stageProfile != null ? stageProfile.CounterRecoveryRewardHook : null,
+                    "Counter recovery logged: summon absorbed pressure and reopened the final strike window."),
+                RouteResultKind.CleanFollowupClear => ResolveStageText(
+                    stageProfile != null ? stageProfile.CleanRouteRewardHook : null,
+                    "Clean survival logged: summon cover created a Skill1 confirm before counter pressure arrived."),
+                _ => ResolveStageText(
+                    stageProfile != null ? stageProfile.RewardHook : null,
+                    "No payout or progression grant.")
+            };
+        }
+
+        private string ResolveRouteResultNextObjective(RouteResultKind resultKind)
+        {
+            return resultKind switch
+            {
+                RouteResultKind.PlayerDownFail or RouteResultKind.PressureControlFail => ResolveStageText(
+                    stageProfile != null ? stageProfile.FailedRouteNextObjective : null,
+                    "Next run: protect HP first, then spend summon on the visible curtain."),
+                RouteResultKind.CounterRecoveryClear => ResolveStageText(
+                    stageProfile != null ? stageProfile.CounterRecoveryNextObjective : null,
+                    "Next run: answer counter pressure earlier so recovery becomes a clean survival answer."),
+                RouteResultKind.CleanFollowupClear or RouteResultKind.PressureSuppressionClear => ResolveStageText(
+                    stageProfile != null ? stageProfile.CleanRouteNextObjective : null,
+                    "Next run: keep HP clean by confirming before counter pressure enters."),
+                _ => string.Empty
+            };
         }
 
         private int ResolveCurrentStageBeatIndex()

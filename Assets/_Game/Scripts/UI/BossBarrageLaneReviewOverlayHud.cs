@@ -342,13 +342,20 @@ namespace DimensionBrawl.UI
             string title = ResolveResultTitle();
             string summary = ResolveResultSummary();
             Color resultAccent = cleared ? clearAccentColor : failAccentColor;
+            bool hasCommittedRecord = TryGetCommittedResultRecord(
+                out BossBarragePocketReviewOwner.RouteResultRecord resultRecord);
 
             Rect panel = BeginModal(title, summary, resultAccent);
-            GUILayout.Label(ResolveResultLine("Time", $"{pocketReviewOwner.ResultElapsedSeconds:0.0}s"), bodyStyle);
+            float resultSeconds = hasCommittedRecord ? resultRecord.ElapsedSeconds : pocketReviewOwner.ResultElapsedSeconds;
+            int completedObjectives = hasCommittedRecord
+                ? resultRecord.CompletedObjectiveStepCount
+                : pocketReviewOwner.CompletedObjectiveStepCount;
+            int objectiveSteps = hasCommittedRecord ? resultRecord.ObjectiveStepCount : pocketReviewOwner.ObjectiveStepCount;
+            GUILayout.Label(ResolveResultLine("Time", $"{resultSeconds:0.0}s"), bodyStyle);
             GUILayout.Label(
                 ResolveResultLine(
                     "Objectives",
-                    $"{pocketReviewOwner.CompletedObjectiveStepCount}/{pocketReviewOwner.ObjectiveStepCount}"),
+                    $"{completedObjectives}/{objectiveSteps}"),
                 bodyStyle);
             GUILayout.Label(
                 ResolveResultLine("Survival", ResolveResultRouteLabel()),
@@ -412,6 +419,12 @@ namespace DimensionBrawl.UI
 
         private string ResolveResultTitle()
         {
+            if (TryGetCommittedResultRecord(out BossBarragePocketReviewOwner.RouteResultRecord resultRecord)
+                && !string.IsNullOrWhiteSpace(resultRecord.Title))
+            {
+                return resultRecord.Title;
+            }
+
             FrontlineWaveStageProfile profile = ResolveActiveStageProfile();
             if (pocketReviewOwner == null)
             {
@@ -433,6 +446,12 @@ namespace DimensionBrawl.UI
 
         private string ResolveResultSummary()
         {
+            if (TryGetCommittedResultRecord(out BossBarragePocketReviewOwner.RouteResultRecord resultRecord)
+                && !string.IsNullOrWhiteSpace(resultRecord.Summary))
+            {
+                return resultRecord.Summary;
+            }
+
             FrontlineWaveStageProfile profile = ResolveActiveStageProfile();
             if (pocketReviewOwner == null)
             {
@@ -479,6 +498,12 @@ namespace DimensionBrawl.UI
 
         private string ResolveResultRewardHook()
         {
+            if (TryGetCommittedResultRecord(out BossBarragePocketReviewOwner.RouteResultRecord resultRecord)
+                && !string.IsNullOrWhiteSpace(resultRecord.RewardHook))
+            {
+                return resultRecord.RewardHook;
+            }
+
             FrontlineWaveStageProfile profile = ResolveActiveStageProfile();
             if (pocketReviewOwner == null)
             {
@@ -513,6 +538,12 @@ namespace DimensionBrawl.UI
 
         private string ResolveResultNextObjective()
         {
+            if (TryGetCommittedResultRecord(out BossBarragePocketReviewOwner.RouteResultRecord resultRecord)
+                && !string.IsNullOrWhiteSpace(resultRecord.NextObjective))
+            {
+                return resultRecord.NextObjective;
+            }
+
             FrontlineWaveStageProfile profile = ResolveActiveStageProfile();
             if (pocketReviewOwner == null)
             {
@@ -545,6 +576,12 @@ namespace DimensionBrawl.UI
 
         private string ResolveResultRouteLabel()
         {
+            if (TryGetCommittedResultRecord(out BossBarragePocketReviewOwner.RouteResultRecord resultRecord)
+                && !string.IsNullOrWhiteSpace(resultRecord.RouteLabel))
+            {
+                return resultRecord.RouteLabel;
+            }
+
             if (pocketReviewOwner == null)
             {
                 return "-";
@@ -565,6 +602,18 @@ namespace DimensionBrawl.UI
             return pocketReviewOwner.Skill1FollowupHitConfirmed
                 ? "Clean summon follow-up"
                 : "Pressure suppression";
+        }
+
+        private bool TryGetCommittedResultRecord(out BossBarragePocketReviewOwner.RouteResultRecord resultRecord)
+        {
+            if (pocketReviewOwner != null && pocketReviewOwner.HasCommittedResultRecord)
+            {
+                resultRecord = pocketReviewOwner.LastResultRecord;
+                return true;
+            }
+
+            resultRecord = default;
+            return false;
         }
 
         private FrontlineWaveStageProfile ResolveActiveStageProfile()
