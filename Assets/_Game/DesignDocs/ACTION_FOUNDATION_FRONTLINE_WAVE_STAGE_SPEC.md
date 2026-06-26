@@ -837,6 +837,7 @@ Route stability is now part of the review-scene contract:
 - If stability collapses, the pocket fails as `LINE COLLAPSED` even when player HP remains, so the match is not reducible to HP trading or button timing.
 - Route stability must warn before collapse with `stable` / `unstable` / `critical` bands and frontline screen cues, so the player feels the line being lost before the failure banner.
 - The HUD and route record must show the active pressure slot, stability, route progress, and target time.
+- The premium HUD objective panel must also surface an in-match record preview (`stop close probe -> summon block -> Skill1`, counter recovery, or line-collapse warning) so the player sees the route quality being built before the result overlay.
 - The route record must also expose the observer-completion snapshot (`close`, `summon`, `followup` as `pending`/`recorded`) so the pocket follows the PGR-style condition gate -> combat observer -> completion record chain instead of ending as loose debug text.
 - The route record must distinguish the optional counter-wave branch and source: clean follow-up marks `counter:avoided(none)`, while observed enemy frontline body pressure and boss summon release mark `counter:recorded(enemy_body)` or `counter:recorded(boss_summon)`.
 - The route record must separately show the counter-wave answer: after observed counter pressure, ally summon/frontline presence marks `counter_answer:stabilized(ally_hold)` and restores a small route-stability bonus; clean follow-up keeps `counter_answer:not_needed(clean_followup)`.

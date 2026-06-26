@@ -90,11 +90,13 @@ namespace DimensionBrawl.Presentation
         public string CombatCueReadout => ResolveCombatCueLine();
         public string FrontlineCueReadout => ResolveFrontlineCueLine();
         public string CompactObjectiveReadout => ResolveCompactObjectiveLine();
+        public string RouteIncentiveReadout => ResolveCompactRouteIncentiveLine();
         public string CompactCombatCueReadout => ResolveCompactCombatCueLine();
         public string CompactFrontlineCueReadout => ResolveCompactFrontlineCueLine();
         public bool ShouldShowResultBanner => TryResolveResultBanner(out _, out _, out _);
         public string ResultBannerTitle => TryResolveResultBanner(out string title, out _, out _) ? title : string.Empty;
         public string ResultBannerDetail => TryResolveResultBanner(out _, out string detail, out _) ? detail : string.Empty;
+        public FrontlineWaveStageProfile StageProfileForReview => stageProfile;
         private FrontlineWaveStageProfile ActiveStageProfile =>
             stageProfile != null ? stageProfile : pocketReviewOwner != null ? pocketReviewOwner.StageProfile : null;
 
@@ -115,8 +117,6 @@ namespace DimensionBrawl.Presentation
         }
 
 #if UNITY_EDITOR
-        public FrontlineWaveStageProfile StageProfileForReview => stageProfile;
-
         public void AssignStageProfileForReview(FrontlineWaveStageProfile newStageProfile)
         {
             stageProfile = newStageProfile;
@@ -224,7 +224,7 @@ namespace DimensionBrawl.Presentation
                 ResolveCompactObjectiveLine(),
                 ResolvePremiumObjectiveBadge(),
                 ResolveCompactStageBriefingLine(),
-                ResolveCompactStageBeatLine());
+                ResolveCompactRouteIncentiveLine());
 
             BossBarrageLaneReviewHudChrome.DrawBossBar(
                 layout.BossBarRect,
@@ -339,6 +339,7 @@ namespace DimensionBrawl.Presentation
         {
             GUILayout.Label(ResolveCompactObjectiveLine(), labelStyle);
             GUILayout.Label(ResolveCompactStageBeatLine(), labelStyle);
+            GUILayout.Label(ResolveCompactRouteIncentiveLine(), labelStyle);
             GUILayout.Label(ResolveCompactPhaseLine(), labelStyle);
             GUILayout.Label(ResolveCompactCombatCueLine(), labelStyle);
             GUILayout.Label(ResolveCompactFrontlineCueLine(), labelStyle);
@@ -726,6 +727,64 @@ namespace DimensionBrawl.Presentation
             return energyLadder != null && !energyLadder.CanSpend
                 ? $"{ResolvePocketStepPrefix()}: Hold line for EN"
                 : $"{ResolvePocketStepPrefix()}: Stop close probe";
+        }
+
+        private string ResolveCompactRouteIncentiveLine()
+        {
+            if (pocketReviewOwner == null)
+            {
+                return string.Empty;
+            }
+
+            FrontlineWaveStageProfile profile = ActiveStageProfile;
+            if (pocketReviewOwner.IsFailed)
+            {
+                return ResolveStageText(
+                    profile?.CollapseWarningRecordPreview,
+                    "Record warning: line collapse logs failure analysis, not boss progress.");
+            }
+
+            if (pocketReviewOwner.IsCleared)
+            {
+                return $"Record sealed: {ResolveClearedPocketRouteType()}";
+            }
+
+            if (pocketReviewOwner.IsRouteStabilityActive
+                && pocketReviewOwner.CurrentRouteStabilityBand == BossBarragePocketReviewOwner.RouteStabilityBand.Critical)
+            {
+                return ResolveStageText(
+                    profile?.CollapseWarningRecordPreview,
+                    "Record warning: line collapse logs failure analysis, not boss progress.");
+            }
+
+            if (pocketReviewOwner.IsCounterWaveCompletionRecorded && !pocketReviewOwner.Skill1FollowupHitConfirmed)
+            {
+                return ResolveStageText(
+                    profile?.CounterRecoveryRecordPreview,
+                    "Record preview: hold counter wave to reopen final follow-up.");
+            }
+
+            if (pocketReviewOwner.IsSummonFollowupWindowActive
+                || pocketReviewOwner.IsSkill1FollowupClearCountdownActive
+                || pocketReviewOwner.IsSummonPressureBreakActive)
+            {
+                return ResolveStageText(
+                    profile?.CleanFollowupRecordPreview,
+                    "Record preview: Skill1 now secures clean route before counter wave.");
+            }
+
+            if (pocketReviewOwner.IsAwaitingSummonPressureBlock
+                || pocketReviewOwner.IsSummonBlockOpportunityCueActive
+                || pocketReviewOwner.CloseThreatDefeated)
+            {
+                return ResolveStageText(
+                    profile?.SummonRecordPreview,
+                    "Record preview: summon block opens the Skill1 route record.");
+            }
+
+            return ResolveStageText(
+                profile?.OpeningRecordPreview,
+                "Record preview: stop close probe, block curtain, confirm Skill1.");
         }
 
         private string ResolveStageBriefingLine()

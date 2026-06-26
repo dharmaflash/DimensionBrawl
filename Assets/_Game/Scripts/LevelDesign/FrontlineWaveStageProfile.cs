@@ -122,6 +122,18 @@ namespace DimensionBrawl.LevelDesign
         [TextArea, SerializeField] private string failedRouteNextObjective =
             "Next run: stop the close probe, build forward EN, then spend summon on the visible curtain.";
 
+        [Header("In-Match Motivation Copy")]
+        [TextArea, SerializeField] private string openingRecordPreview =
+            "Record preview: stop close probe, block curtain, confirm Skill1.";
+        [TextArea, SerializeField] private string summonRecordPreview =
+            "Record preview: summon block opens the Skill1 route record.";
+        [TextArea, SerializeField] private string cleanFollowupRecordPreview =
+            "Record preview: Skill1 now secures clean route before counter wave.";
+        [TextArea, SerializeField] private string counterRecoveryRecordPreview =
+            "Record preview: hold counter wave to reopen final follow-up.";
+        [TextArea, SerializeField] private string collapseWarningRecordPreview =
+            "Record warning: line collapse logs failure analysis, not boss progress.";
+
         [Header("Review Evidence")]
         [SerializeField] private StageBeat[] beats = Array.Empty<StageBeat>();
         [SerializeField] private PressureSlot[] pressureSlots = Array.Empty<PressureSlot>();
@@ -176,6 +188,11 @@ namespace DimensionBrawl.LevelDesign
         public string CleanRouteNextObjective => cleanRouteNextObjective;
         public string CounterRecoveryNextObjective => counterRecoveryNextObjective;
         public string FailedRouteNextObjective => failedRouteNextObjective;
+        public string OpeningRecordPreview => openingRecordPreview;
+        public string SummonRecordPreview => summonRecordPreview;
+        public string CleanFollowupRecordPreview => cleanFollowupRecordPreview;
+        public string CounterRecoveryRecordPreview => counterRecoveryRecordPreview;
+        public string CollapseWarningRecordPreview => collapseWarningRecordPreview;
         public int BeatCount => beats != null ? beats.Length : 0;
         public int PressureSlotCount => pressureSlots != null ? pressureSlots.Length : 0;
         public int SourceReferenceCount => sourceReferences != null ? sourceReferences.Length : 0;

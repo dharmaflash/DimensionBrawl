@@ -69,6 +69,15 @@ MonoBehaviour:
     becomes a clean summon route.'
   failedRouteNextObjective: 'Next run: stop the close probe, build forward EN, then
     spend summon on the visible curtain.'
+  openingRecordPreview: 'Record preview: stop close probe, block curtain, confirm
+    Skill1.'
+  summonRecordPreview: 'Record preview: summon block opens the Skill1 route record.'
+  cleanFollowupRecordPreview: 'Record preview: Skill1 now secures clean route before
+    counter wave.'
+  counterRecoveryRecordPreview: 'Record preview: hold counter wave to reopen final
+    follow-up.'
+  collapseWarningRecordPreview: 'Record warning: line collapse logs failure analysis,
+    not boss progress.'
   beats:
   - beatId: B0.MatchRead
     label: Match Read
