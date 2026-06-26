@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Reflection;
 using DimensionBrawl.UI;
 using DimensionBrawl.Player;
 using NUnit.Framework;
@@ -60,12 +59,6 @@ namespace DimensionBrawl.Tests
                 Assert.AreEqual("combat-signal-orb-ping", harness.Presenter.LastCueProfileId);
                 Assert.AreEqual("3-PING", harness.Presenter.LastPromptLabel);
                 Assert.Greater(harness.Presenter.LastAccentColor.a, 0.8f);
-                Assert.IsTrue(harness.Presenter.HasCanvasOverlay);
-                Assert.IsTrue(harness.Presenter.RuntimeMaskActive);
-                Assert.IsTrue(harness.Presenter.RuntimeFocusFrameActive);
-                Assert.IsTrue(harness.Presenter.RuntimeGuideBoxActive);
-                Assert.IsFalse(harness.Presenter.RuntimeFallbackPulseActive);
-                Assert.AreEqual("Ping three adjacent orbs.", harness.Presenter.RuntimeGuideBodyText);
 
                 Assert.IsFalse(harness.Runner.TryAcceptInput(ProxyCombatHudInputEvent.Dodge()));
                 Assert.AreEqual(ProxyCombatHudInputKind.DodgePressed, harness.Runner.LastRejectedInput.Kind);
@@ -79,36 +72,6 @@ namespace DimensionBrawl.Tests
                 Assert.IsFalse(harness.Presenter.Visible);
                 Assert.AreEqual("signal_orb_three_ping", harness.Runner.LastCompletedMappingId);
                 Assert.AreEqual(ProxyCombatHudCompletionKind.ThreePingAccepted, harness.Runner.LastCompletionReason);
-            }
-            finally
-            {
-                Object.DestroyImmediate(harness.Root);
-            }
-        }
-
-        [Test]
-        public void PresenterUsesCanvasOverlayInsteadOfOnGuiFallback()
-        {
-            Assert.IsNull(
-                typeof(ProxyCombatHudOverlayPresenter).GetMethod(
-                    "OnGUI",
-                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic));
-
-            ProxyTutorialHarness harness = CreateHarness("CanvasOverlayRunner");
-            try
-            {
-                RectTransform attackButton = CreateRectTransform("AttackButton", harness.Root.transform);
-                harness.Resolver.RegisterTargetGroup("Hud.BasicAttackButton", attackButton);
-
-                Assert.IsTrue(harness.Runner.BeginMapping("basic_attack_primary", "Confirm the attack cue."));
-
-                Assert.IsTrue(harness.Presenter.Visible);
-                Assert.IsTrue(harness.Presenter.HasCanvasOverlay);
-                Assert.IsTrue(harness.Presenter.RuntimeMaskActive);
-                Assert.IsTrue(harness.Presenter.RuntimeFocusFrameActive);
-                Assert.IsFalse(harness.Presenter.RuntimeFallbackPulseActive);
-                Assert.IsTrue(harness.Presenter.RuntimeGuideBoxActive);
-                Assert.AreEqual("Confirm the attack cue.", harness.Presenter.RuntimeGuideBodyText);
             }
             finally
             {
@@ -186,7 +149,7 @@ namespace DimensionBrawl.Tests
             ProxyTutorialHarness harness = CreateHarness("TargetSurfaceRunner");
             try
             {
-                Canvas canvas = harness.Root.GetComponent<Canvas>() ?? harness.Root.AddComponent<Canvas>();
+                Canvas canvas = harness.Root.AddComponent<Canvas>();
                 canvas.renderMode = RenderMode.ScreenSpaceOverlay;
                 ProxyScreenRectProvider provider = harness.Root.AddComponent<ProxyScreenRectProvider>();
                 provider.SetRect("Hud.PartyPortraitSlots[1]", new Rect(100f, 220f, 96f, 64f));

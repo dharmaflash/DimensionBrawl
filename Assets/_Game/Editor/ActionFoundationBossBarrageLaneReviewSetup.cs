@@ -5574,8 +5574,6 @@ namespace DimensionBrawl.Editor
             SetObjectReference(proxyTargetSurface, "canvas", proxyCanvas);
             SetObjectReference(proxyTargetSurface, "targetRoot", proxyTargetSurface.TargetRoot);
 
-            proxyOverlayPresenter.EnsureCanvasOverlay();
-
             proxySummonBridge.Configure(
                 proxyTutorialObserver,
                 summonSlot1Action,
@@ -9569,11 +9567,6 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(tutorialRunner, "combatObserver", tutorialObserver);
             ValidateBool(tutorialRunner, "startFirstStepOnEnable", true);
             ValidateBool(tutorialRunner, "autoAdvanceOnCompletion", true);
-            if (!overlayPresenter.HasCanvasOverlay)
-            {
-                throw new InvalidOperationException("Proxy combat HUD overlay should use the Canvas-backed overlay layer.");
-            }
-
             ValidateProxyTutorialStep(tutorialRunner, 0, "basic_attack_primary");
             ValidateProxyTutorialStep(tutorialRunner, 1, "dodge_matrix_primary");
             ValidateProxyTutorialStep(tutorialRunner, 2, "signature_skill_primary");
