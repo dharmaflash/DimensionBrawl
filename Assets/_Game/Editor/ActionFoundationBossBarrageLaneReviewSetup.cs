@@ -1327,7 +1327,8 @@ namespace DimensionBrawl.Editor
                 summonSlot3Action,
                 emitter,
                 bossPressureActionDirector,
-                pocketOwner);
+                pocketOwner,
+                proxyTutorialRunner);
             ValidateProxyCombatHudTutorial(
                 proxyTargetResolver,
                 proxyTargetSurface,
@@ -5557,6 +5558,8 @@ namespace DimensionBrawl.Editor
 
             proxyTutorialRunner.Configure(null, proxyTargetResolver, proxyOverlayPresenter, proxyTutorialObserver);
             proxyTutorialRunner.ConfigureSteps(CreateBossBarrageProxyHudTutorialSteps());
+            screenCuePresenter.ConfigureProxyCombatHudTutorial(proxyTutorialRunner);
+            SetObjectReference(screenCuePresenter, "proxyTutorialRunner", proxyTutorialRunner);
             SetObjectReference(proxyTutorialRunner, "targetResolver", proxyTargetResolver);
             SetObjectReference(proxyTutorialRunner, "overlayPresenter", proxyOverlayPresenter);
             SetObjectReference(proxyTutorialRunner, "combatObserver", proxyTutorialObserver);
@@ -9513,7 +9516,8 @@ namespace DimensionBrawl.Editor
             PlayerSupportSummonSlotAction summonSlot3Action,
             BossBarrageEmitter bossBarrageEmitter,
             BossPressureActionDirector bossPressureActionDirector,
-            BossBarragePocketReviewOwner pocketOwner)
+            BossBarragePocketReviewOwner pocketOwner,
+            ProxyCombatHudTutorialRunner proxyTutorialRunner)
         {
             ValidateObjectReference(presenter, "actionController", actionController);
             ValidateObjectReference(presenter, "playerHealth", playerHealth);
@@ -9527,7 +9531,13 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(presenter, "bossPressureActionDirector", bossPressureActionDirector);
             ValidateObjectReference(presenter, "pocketReviewOwner", pocketOwner);
             ValidateObjectReference(presenter, "duelReviewOwner", null);
+            ValidateProxyTutorialRunnerReference(presenter, proxyTutorialRunner);
             ValidateBool(presenter, "showScreenCues", true);
+            ValidateBool(presenter, "useProxyTutorialOpportunityCues", true);
+            ValidateString(presenter, "summonBlockOpportunityProxyMappingId", "partner_skill_button");
+            ValidateString(presenter, "summonFollowupWindowProxyMappingId", "signature_skill_primary");
+            ValidateString(presenter, "summonFollowupMissedProxyMappingId", "boss_poise_endure_bar");
+            ValidateFloat(presenter, "summonFollowupMissedProxyDurationSeconds", 0.65f);
             ValidateFloat(presenter, "maxFullScreenAlpha", 0.10f);
             ValidateFloat(presenter, "maxEdgeAlpha", 0.26f);
             ValidateFloat(presenter, "edgeThickness", 104f);
@@ -9545,6 +9555,28 @@ namespace DimensionBrawl.Editor
             ValidateFloat(presenter, "criticalHealthPulseRate", 2.3f);
             ValidateFloat(presenter, "damageDirectionAccentAlpha", 0.24f);
             ValidateFloat(presenter, "damageDirectionAccentThickness", 178f);
+        }
+
+        private static void ValidateProxyTutorialRunnerReference(
+            ActionScreenCuePresenter presenter,
+            ProxyCombatHudTutorialRunner expectedRunner)
+        {
+            SerializedProperty property = RequireProperty(new SerializedObject(presenter), "proxyTutorialRunner");
+            ProxyCombatHudTutorialRunner assignedRunner =
+                property.objectReferenceValue as ProxyCombatHudTutorialRunner;
+            if (assignedRunner == expectedRunner)
+            {
+                return;
+            }
+
+            if (assignedRunner == null && presenter.GetComponent<ProxyCombatHudTutorialRunner>() == expectedRunner)
+            {
+                return;
+            }
+
+            string foundName = assignedRunner != null ? assignedRunner.name : "null";
+            throw new InvalidOperationException(
+                $"{presenter.name}.proxyTutorialRunner expected {expectedRunner.name} or same-object fallback, found {foundName}.");
         }
 
         private static void ValidateProxyCombatHudTutorial(

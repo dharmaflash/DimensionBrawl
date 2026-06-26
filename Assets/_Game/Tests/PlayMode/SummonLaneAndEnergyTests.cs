@@ -5,6 +5,7 @@ using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.Test;
+using DimensionBrawl.UI;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -690,6 +691,53 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(2, presenter.FollowupCueRequestCount);
             Assert.AreEqual(2, presenter.SuppressedCueRequestCount);
 
+            Object.DestroyImmediate(presenterObject);
+        }
+
+        [Test]
+        public void ActionScreenCuePresenterStartsProxyHudTutorialsFromFollowupOpportunities()
+        {
+            GameObject presenterObject = new GameObject("ScreenCuePresenter");
+            GameObject proxyHudObject = new GameObject("ProxyHud");
+            ActionScreenCuePresenter screenPresenter = presenterObject.AddComponent<ActionScreenCuePresenter>();
+            ProxyCombatHudTargetResolver targetResolver = proxyHudObject.AddComponent<ProxyCombatHudTargetResolver>();
+            ProxyCombatHudOverlayPresenter overlayPresenter = proxyHudObject.AddComponent<ProxyCombatHudOverlayPresenter>();
+            ProxyCombatHudTutorialObserver tutorialObserver = proxyHudObject.AddComponent<ProxyCombatHudTutorialObserver>();
+            ProxyCombatHudTutorialRunner tutorialRunner = proxyHudObject.AddComponent<ProxyCombatHudTutorialRunner>();
+            tutorialRunner.Configure(null, targetResolver, overlayPresenter, tutorialObserver);
+            screenPresenter.ConfigureProxyCombatHudTutorial(tutorialRunner);
+
+            InvokeActionScreenCueHandlerForTest(screenPresenter, "HandleSummonBlockOpportunityOpened");
+
+            Assert.IsTrue(tutorialRunner.IsRunning);
+            Assert.AreEqual("partner_skill_button", tutorialRunner.ActiveMappingId);
+            Assert.AreEqual(ProxyCombatHudInputPolicy.AllowAll, tutorialRunner.ActiveInputPolicy);
+            Assert.AreEqual(1, screenPresenter.ProxyTutorialOpportunityCueRequestCount);
+            Assert.AreEqual("partner_skill_button", screenPresenter.LastProxyTutorialMappingId);
+
+            InvokeActionScreenCueHandlerForTest(screenPresenter, "HandleSummonFollowupWindowOpened", 2);
+
+            Assert.IsTrue(tutorialRunner.IsRunning);
+            Assert.AreEqual("signature_skill_primary", tutorialRunner.ActiveMappingId);
+            Assert.AreEqual(ProxyCombatHudInputPolicy.GateRequestedInput, tutorialRunner.ActiveInputPolicy);
+            Assert.AreEqual(1, screenPresenter.ProxyTutorialFollowupCueRequestCount);
+            Assert.AreEqual("signature_skill_primary", screenPresenter.LastProxyTutorialMappingId);
+            Assert.That(overlayPresenter.RuntimeGuideBodyText, Does.Contain("LV2"));
+
+            InvokeActionScreenCueHandlerForTest(screenPresenter, "HandleSummonFollowupMissed");
+
+            Assert.IsTrue(tutorialRunner.IsRunning);
+            Assert.AreEqual("boss_poise_endure_bar", tutorialRunner.ActiveMappingId);
+            Assert.AreEqual(ProxyCombatHudInputPolicy.ObserveOnly, tutorialRunner.ActiveInputPolicy);
+            Assert.AreEqual(1, screenPresenter.ProxyTutorialMissCueRequestCount);
+            Assert.AreEqual("boss_poise_endure_bar", screenPresenter.LastProxyTutorialMappingId);
+
+            tutorialRunner.Tick(0.66f);
+
+            Assert.IsFalse(tutorialRunner.IsRunning);
+            Assert.AreEqual(ProxyCombatHudCompletionKind.DurationElapsed, tutorialRunner.LastCompletionReason);
+
+            Object.DestroyImmediate(proxyHudObject);
             Object.DestroyImmediate(presenterObject);
         }
 
@@ -4052,6 +4100,19 @@ namespace DimensionBrawl.Tests
             Assert.IsNotNull(phaseMethod);
 
             phaseMethod.Invoke(presenter, new object[] { previousPhase, currentPhase });
+        }
+
+        private static void InvokeActionScreenCueHandlerForTest(
+            ActionScreenCuePresenter presenter,
+            string handlerName,
+            params object[] arguments)
+        {
+            System.Reflection.MethodInfo method = typeof(ActionScreenCuePresenter).GetMethod(
+                handlerName,
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(method);
+
+            method.Invoke(presenter, arguments);
         }
 
         private static void InvokePocketCameraBridgeHandlerForTest(
