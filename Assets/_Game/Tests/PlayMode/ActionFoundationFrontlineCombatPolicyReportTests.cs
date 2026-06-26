@@ -121,6 +121,18 @@ namespace DimensionBrawl.Tests
                     ignoredRecovery.PlayerDamageTaken,
                     blockedRecovery.PlayerDamageTaken,
                     "Fresh counter recovery should reduce the physical body-rush cost compared with ignoring the counter.");
+                Assert.GreaterOrEqual(
+                    blockedRecovery.CounterWaveFinalWindowRouteScale,
+                    0.84f,
+                    "Fresh counter recovery should unlock at least the unstable final-punish window instead of staying critical-compressed.");
+                Assert.GreaterOrEqual(
+                    blockedRecovery.SkillProjectileHits,
+                    2,
+                    "Fresh counter recovery should convert the boss-screen block into a real Skill1 punish, not a single clipped projectile.");
+                Assert.GreaterOrEqual(
+                    blockedRecovery.BossDamageTaken,
+                    intended.BossDamageTaken,
+                    "Counter recovery should not pay off weaker than the clean follow-up after the player supplies the fresh summon answer.");
             }
             finally
             {
@@ -791,6 +803,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Boss-screen branch: boss releases {blockedFollowup.BossPressureSummonReleases}, blocks {blockedFollowup.BossPressureScreenBlocks}, Skill1 projectiles blocked {blockedFollowup.SkillProjectilesBlockedByBossScreen}, boss-blocked follow-up `{blockedFollowup.BossBlockedSkill1Followup}`.");
             builder.AppendLine($"- Boss-screen ignored branch: `{ignoredRecovery.ResultKind}` for {FormatSeconds(ignoredRecovery.ElapsedSeconds)} with enemy clashes {ignoredRecovery.EnemyFrontlineClashes}, body hits {ignoredRecovery.EnemyFrontlineBodyHits}, and player damage {ignoredRecovery.PlayerDamageTaken:0.0}.");
             builder.AppendLine($"- Boss-screen recovery branch: `{blockedRecovery.ResultKind}` keeps source `{blockedRecovery.CounterWaveSource}`, opens final window `{blockedRecovery.CounterWaveFinalWindowState}`, and lands {blockedRecovery.SkillProjectileHits} Skill1 hits after a fresh summon answer.");
+            builder.AppendLine($"- Counter payoff split: clean follow-up {intended.BossDamageTaken:0.0} boss damage versus boss-screen recovery {blockedRecovery.BossDamageTaken:0.0} at final-window scale x{blockedRecovery.CounterWaveFinalWindowRouteScale:0.00}.");
             int maxEnemyFrontlines = ResolveMaxEnemyFrontlines(results);
             builder.AppendLine(ignoredRecovery.EnemyFrontlineBodyHits > 0
                 ? $"- Enemy frontline body cost is active: ignored boss-screen pressure produced {ignoredRecovery.EnemyFrontlineBodyHits} body hits while the recovered branch converts the same pressure into summon clashes."
