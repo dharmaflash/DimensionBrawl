@@ -451,6 +451,12 @@ namespace DimensionBrawl.Tests
             Assert.Greater(screenCuePresenter.CounterWaveAnswerCueRequestCount, counterAnswerCueCountBeforeAlly);
             Assert.Greater(screenCuePresenter.FollowupCueRequestCount, followupCueCountBeforeAlly);
             Assert.AreEqual("ally_hold", screenCuePresenter.LastCounterWaveAnswer);
+            Assert.AreEqual(
+                stageProfile.UnstableCounterWaveFinalWindowScale,
+                screenCuePresenter.LastFollowupWindowRouteScale,
+                0.001f);
+            Assert.AreEqual("Followup.Window.Compressed", screenCuePresenter.LastCueId);
+            Assert.Greater(screenCuePresenter.LastCueIntensity, 0.82f);
             Assert.Greater(
                 pocketVfxCueBridge.CounterWaveStabilizedCueRequestCount,
                 counterStabilizedVfxCueCountBeforeAlly);
@@ -659,6 +665,8 @@ namespace DimensionBrawl.Tests
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("decision:confirm(followup_window)"));
             Assert.AreEqual(followupWindowCueCountBefore + 1, cameraCueDriver.SummonFollowupWindowCueRequestCount);
             Assert.AreEqual(followupWindowVfxCountBefore + 1, pocketVfxCueBridge.FollowupWindowCueRequestCount);
+            Assert.AreEqual(1f, screenCuePresenter.LastFollowupWindowRouteScale, 0.001f);
+            Assert.AreEqual("Followup.Window", screenCuePresenter.LastCueId);
             Assert.IsTrue(energyLadder.CanSpend);
 
             targetSelector.NotifyTargetContact(bossHealth);

@@ -130,6 +130,7 @@ namespace DimensionBrawl.Presentation
         private BossBarragePocketReviewOwner.RouteStabilityBand lastFrontlineStabilityBand =
             BossBarragePocketReviewOwner.RouteStabilityBand.Stable;
         private float lastFrontlineStability01 = 1f;
+        private float lastFollowupWindowRouteScale = 1f;
         private SummonEnergyRiskBand lastEnergyRiskBand = SummonEnergyRiskBand.BackSafety;
 
         public bool ShowScreenCues => showScreenCues;
@@ -179,6 +180,7 @@ namespace DimensionBrawl.Presentation
         public string LastCounterWaveAnswer => lastCounterWaveAnswer;
         public BossBarragePocketReviewOwner.RouteStabilityBand LastFrontlineStabilityBand => lastFrontlineStabilityBand;
         public float LastFrontlineStability01 => lastFrontlineStability01;
+        public float LastFollowupWindowRouteScale => lastFollowupWindowRouteScale;
         public SummonEnergyRiskBand LastEnergyRiskBand => lastEnergyRiskBand;
 
         public void SetScreenCuesVisible(bool visible)
@@ -476,7 +478,17 @@ namespace DimensionBrawl.Presentation
 
         private void HandleSummonFollowupWindowOpened(int tier)
         {
-            RequestScreenCue("Followup.Window", followupWindowColor, 0.24f, ResolveTierIntensity(tier, 0.82f), ScreenCueCategory.Followup);
+            lastFollowupWindowRouteScale = pocketReviewOwner != null
+                ? Mathf.Clamp(pocketReviewOwner.LastCounterWaveFinalWindowRouteScale, 0.1f, 1f)
+                : 1f;
+            bool compressedWindow = lastFollowupWindowRouteScale < 0.999f;
+            float compression01 = 1f - lastFollowupWindowRouteScale;
+            string cueId = compressedWindow ? "Followup.Window.Compressed" : "Followup.Window";
+            float duration = compressedWindow
+                ? Mathf.Lerp(0.16f, 0.24f, lastFollowupWindowRouteScale)
+                : 0.24f;
+            float intensity = ResolveTierIntensity(tier, 0.82f) + compression01 * 0.42f;
+            RequestScreenCue(cueId, followupWindowColor, duration, intensity, ScreenCueCategory.Followup);
         }
 
         private void HandleSummonFollowupHitConfirmed(int tier, float damage)
