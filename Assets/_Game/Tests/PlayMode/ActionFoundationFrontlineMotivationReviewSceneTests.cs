@@ -88,6 +88,10 @@ namespace DimensionBrawl.Tests
             Assert.Greater(stageProfile.CloseProbeRouteDrainPerSecond, 0f);
             Assert.Greater(stageProfile.CounterWaveRouteDrainPerSecond, stageProfile.CloseProbeRouteDrainPerSecond);
             Assert.Greater(stageProfile.CounterWaveStabilizeRouteBonus01, 0f);
+            Assert.Greater(stageProfile.CounterWaveEntryRoutePenalty01, 0f);
+            Assert.Greater(
+                stageProfile.CounterWaveStabilizeRouteBonus01,
+                stageProfile.CounterWaveEntryRoutePenalty01);
             Assert.That(stageProfile.CounterWaveStabilizedCue, Does.Contain("held"));
             Assert.GreaterOrEqual(stageProfile.BeatCount, 6);
             Assert.GreaterOrEqual(stageProfile.PressureSlotCount, 6);
@@ -353,12 +357,19 @@ namespace DimensionBrawl.Tests
             int counterCueCountBeforeEnemy = screenCuePresenter.CounterWaveCueRequestCount;
             int counterVfxCueCountBeforeEnemy = pocketVfxCueBridge.CounterWaveCueRequestCount;
             int counterCameraCueCountBeforeEnemy = cameraCueDriver.CounterWaveCueRequestCount;
+            float stabilityBeforeCounterWave = pocketOwner.RouteStability01;
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.IsCounterWaveCompletionRecorded);
             Assert.AreEqual("recorded", pocketOwner.CounterWaveRecordState);
             Assert.AreEqual(BossBarragePocketReviewOwner.CounterWaveSource.EnemyFrontlineBody, pocketOwner.CounterWaveObservedSource);
             Assert.AreEqual("enemy_body", pocketOwner.CounterWaveSourceReadout);
+            Assert.AreEqual(stageProfile.CounterWaveEntryRoutePenalty01, pocketOwner.LastCounterWaveEntryPenalty, 0.001f);
+            Assert.AreEqual(
+                stabilityBeforeCounterWave - stageProfile.CounterWaveEntryRoutePenalty01,
+                pocketOwner.RouteStability01,
+                0.001f);
+            Assert.Less(pocketOwner.RouteStability01, stabilityBeforeCounterWave);
             Assert.IsFalse(pocketOwner.IsCounterWaveStabilized);
             Assert.AreEqual("pending", pocketOwner.CounterWaveAnswerState);
             Assert.AreEqual("awaiting", pocketOwner.CounterWaveAnswerReadout);

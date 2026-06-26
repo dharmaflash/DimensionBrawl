@@ -32,6 +32,7 @@ MonoBehaviour:
   closeProbeDefeatRouteBonus01: 0.12
   summonBlockRouteBonus01: 0.18
   followupHitRouteBonus01: 0.2
+  counterWaveEntryRoutePenalty01: 0.1
   counterWaveStabilizeRouteBonus01: 0.14
   objectiveStepCount: 3
   stepPrefix: Route

@@ -139,6 +139,7 @@ namespace DimensionBrawl.Test
         private bool counterWaveStabilized;
         private bool counterWaveFinalWindowOpened;
         private CounterWaveSource counterWaveSource;
+        private float lastCounterWaveEntryPenalty;
         private float lastCounterWaveStabilityBonus;
         private float lastCounterWaveFinalWindowDuration;
         private int bossPressureSummonReleasesAtReset;
@@ -179,6 +180,7 @@ namespace DimensionBrawl.Test
         public string CounterWaveRecordState => ResolveCounterWaveRecordState();
         public string CounterWaveAnswerState => ResolveCounterWaveAnswerState();
         public string CounterWaveAnswerReadout => ResolveCounterWaveAnswerReadout();
+        public float LastCounterWaveEntryPenalty => lastCounterWaveEntryPenalty;
         public float LastCounterWaveStabilityBonus => lastCounterWaveStabilityBonus;
         public string CounterWaveFinalWindowState => ResolveCounterWaveFinalWindowState();
         public string CounterWaveFinalWindowReadout => ResolveCounterWaveFinalWindowReadout();
@@ -426,6 +428,7 @@ namespace DimensionBrawl.Test
             counterWaveStabilized = false;
             counterWaveFinalWindowOpened = false;
             counterWaveSource = CounterWaveSource.None;
+            lastCounterWaveEntryPenalty = 0f;
             lastCounterWaveStabilityBonus = 0f;
             lastCounterWaveFinalWindowDuration = 0f;
             bossPressureSummonReleasesAtReset = GetBossPressureSummonReleaseCount();
@@ -752,8 +755,15 @@ namespace DimensionBrawl.Test
             counterWaveSource = source == CounterWaveSource.None ? CounterWaveSource.EnemyFrontlineBody : source;
             if (!wasObserved)
             {
+                ApplyCounterWaveEntryRoutePenalty();
                 CounterWaveObserved?.Invoke(counterWaveSource);
             }
+        }
+
+        private void ApplyCounterWaveEntryRoutePenalty()
+        {
+            lastCounterWaveEntryPenalty = ResolveCounterWaveEntryRoutePenalty01();
+            RemoveRouteStability(lastCounterWaveEntryPenalty);
         }
 
         private void CaptureCounterWaveAnswer()
@@ -928,6 +938,17 @@ namespace DimensionBrawl.Test
             PublishRouteStabilityBandChangeIfNeeded();
         }
 
+        private void RemoveRouteStability(float amount01)
+        {
+            if (!IsRouteStabilityActive || amount01 <= 0f)
+            {
+                return;
+            }
+
+            routeStability01 = Mathf.Clamp01(routeStability01 - amount01);
+            PublishRouteStabilityBandChangeIfNeeded();
+        }
+
         private void PublishRouteStabilityBandChangeIfNeeded()
         {
             if (!IsRouteStabilityActive)
@@ -1051,6 +1072,11 @@ namespace DimensionBrawl.Test
         private float ResolveFollowupHitRouteBonus01()
         {
             return stageProfile != null ? stageProfile.FollowupHitRouteBonus01 : 0f;
+        }
+
+        private float ResolveCounterWaveEntryRoutePenalty01()
+        {
+            return stageProfile != null ? stageProfile.CounterWaveEntryRoutePenalty01 : 0f;
         }
 
         private float ResolveCounterWaveStabilizeRouteBonus01()
