@@ -32,17 +32,20 @@ namespace DimensionBrawl.Tests
         private const string JsonPath = "C:/tmp/DimensionBrawl-FrontlineCombatPolicyReport.json";
         private const float PressureWindowSeconds = 3f;
         private const float ReliefPressureWindowPeakRatio = 0.35f;
+        private const float DelayedPunishInputSeconds = 1.1f;
 
         private enum PolicyKind
         {
             NoSummonNoFire,
             GunOnly,
             IntendedRoute,
+            IntendedDelayedFollowup,
             LateSummon,
             MissedFollowupCounterRecovery,
             BossScreenBlockedFollowup,
             BossScreenIgnoredNoRecovery,
-            BossScreenBlockCounterRecovery
+            BossScreenBlockCounterRecovery,
+            BossScreenDelayedCounterRecovery
         }
 
         [UnityTest]
@@ -59,11 +62,13 @@ namespace DimensionBrawl.Tests
                     PolicyKind.NoSummonNoFire,
                     PolicyKind.GunOnly,
                     PolicyKind.IntendedRoute,
+                    PolicyKind.IntendedDelayedFollowup,
                     PolicyKind.LateSummon,
                     PolicyKind.MissedFollowupCounterRecovery,
                     PolicyKind.BossScreenBlockedFollowup,
                     PolicyKind.BossScreenIgnoredNoRecovery,
-                    PolicyKind.BossScreenBlockCounterRecovery
+                    PolicyKind.BossScreenBlockCounterRecovery,
+                    PolicyKind.BossScreenDelayedCounterRecovery
                 })
                 {
                     EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
@@ -78,12 +83,14 @@ namespace DimensionBrawl.Tests
                 WriteReports(results);
 
                 PolicyMetrics intended = RequireResult(results, PolicyKind.IntendedRoute);
+                PolicyMetrics delayedIntended = RequireResult(results, PolicyKind.IntendedDelayedFollowup);
                 PolicyMetrics noSummon = RequireResult(results, PolicyKind.NoSummonNoFire);
                 PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
                 PolicyMetrics counterRecovery = RequireResult(results, PolicyKind.MissedFollowupCounterRecovery);
                 PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
                 PolicyMetrics ignoredRecovery = RequireResult(results, PolicyKind.BossScreenIgnoredNoRecovery);
                 PolicyMetrics blockedRecovery = RequireResult(results, PolicyKind.BossScreenBlockCounterRecovery);
+                PolicyMetrics delayedBlockedRecovery = RequireResult(results, PolicyKind.BossScreenDelayedCounterRecovery);
                 Assert.IsTrue(File.Exists(ReportPath), "Frontline combat policy report should be written.");
                 Assert.IsTrue(File.Exists(JsonPath), "Frontline combat policy JSON should be written.");
                 Assert.Greater(intended.SummonBlocks, 0, "The intended route must prove summon interception changes the run.");
@@ -142,6 +149,30 @@ namespace DimensionBrawl.Tests
                     "CounterRecoveryClear",
                     blockedRecovery.ResultKind,
                     "Boss-screen blocks should become recoverable when the player rebuilds the summon answer.");
+                Assert.AreEqual(
+                    "CleanFollowupClear",
+                    delayedIntended.ResultKind,
+                    "A delayed but still-in-window Skill1 should prove the clean route is not only an instant script.");
+                Assert.GreaterOrEqual(
+                    delayedIntended.FollowupHitWindowDelaySeconds,
+                    DelayedPunishInputSeconds - 0.15f,
+                    "The delayed clean route should actually wait inside the follow-up window before hitting.");
+                Assert.Greater(
+                    delayedIntended.FollowupWindowRemainingAtFirstHitSeconds,
+                    0.35f,
+                    "The delayed clean route should still have visible follow-up window margin when Skill1 lands.");
+                Assert.AreEqual(
+                    "CounterRecoveryClear",
+                    delayedBlockedRecovery.ResultKind,
+                    "A delayed final Skill1 should prove counter recovery has a usable punish window, not only an instant script.");
+                Assert.GreaterOrEqual(
+                    delayedBlockedRecovery.FollowupHitWindowDelaySeconds,
+                    DelayedPunishInputSeconds - 0.15f,
+                    "The delayed counter route should actually wait inside the final follow-up window before hitting.");
+                Assert.Greater(
+                    delayedBlockedRecovery.FollowupWindowRemainingAtFirstHitSeconds,
+                    0.35f,
+                    "The delayed counter route should still have final follow-up window margin when Skill1 lands.");
                 Assert.AreEqual(
                     "boss_screen",
                     blockedRecovery.CounterWaveSource,
@@ -425,6 +456,9 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.IntendedRoute:
                     yield return RunIntendedRoute(context);
                     break;
+                case PolicyKind.IntendedDelayedFollowup:
+                    yield return RunIntendedDelayedFollowup(context);
+                    break;
                 case PolicyKind.LateSummon:
                     yield return RunLateSummon(context);
                     break;
@@ -439,6 +473,9 @@ namespace DimensionBrawl.Tests
                     break;
                 case PolicyKind.BossScreenBlockCounterRecovery:
                     yield return RunBossScreenBlockCounterRecovery(context);
+                    break;
+                case PolicyKind.BossScreenDelayedCounterRecovery:
+                    yield return RunBossScreenDelayedCounterRecovery(context);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -471,6 +508,16 @@ namespace DimensionBrawl.Tests
             yield return DefeatCloseThreatWithBasicFire(context);
             yield return ChargeEnergyToTier(context, 1, 14f);
             yield return UseSummonAndBlockNextBossWave(context);
+            yield return ConfirmSkill1Followup(context);
+            yield return Advance(context, 1.0f);
+        }
+
+        private static IEnumerator RunIntendedDelayedFollowup(CombatPolicyContext context)
+        {
+            yield return DefeatCloseThreatWithBasicFire(context);
+            yield return ChargeEnergyToTier(context, 1, 14f);
+            yield return UseSummonAndBlockNextBossWave(context);
+            yield return DelayInsideFollowupWindow(context, DelayedPunishInputSeconds);
             yield return ConfirmSkill1Followup(context);
             yield return Advance(context, 1.0f);
         }
@@ -532,6 +579,19 @@ namespace DimensionBrawl.Tests
             yield return ReleaseBossScreenAndBlockSkill1Followup(context);
             yield return AnswerCounterWaveWithFreshSummon(context);
             yield return WaitForCounterFinalWindow(context, 3f);
+            yield return ConfirmSkill1Followup(context);
+            yield return Advance(context, 1.0f);
+        }
+
+        private static IEnumerator RunBossScreenDelayedCounterRecovery(CombatPolicyContext context)
+        {
+            yield return DefeatCloseThreatWithBasicFire(context);
+            yield return ChargeEnergyToTier(context, 1, 14f);
+            yield return UseSummonAndBlockNextBossWave(context);
+            yield return ReleaseBossScreenAndBlockSkill1Followup(context);
+            yield return AnswerCounterWaveWithFreshSummon(context);
+            yield return WaitForCounterFinalWindow(context, 3f);
+            yield return DelayInsideFollowupWindow(context, DelayedPunishInputSeconds);
             yield return ConfirmSkill1Followup(context);
             yield return Advance(context, 1.0f);
         }
@@ -669,6 +729,19 @@ namespace DimensionBrawl.Tests
                 context.PocketOwner.SummonFollowupWindowRemainingSeconds,
                 context.Metrics.LastSummonFollowupWindowDuration);
             yield return Advance(context, waitSeconds + 0.1f);
+            context.PocketOwner.Tick(0f);
+            context.Sample();
+        }
+
+        private static IEnumerator DelayInsideFollowupWindow(CombatPolicyContext context, float waitSeconds)
+        {
+            if (!context.PocketOwner.IsSummonFollowupWindowActive)
+            {
+                context.Metrics.Notes.Add("delayed punish requested without an active follow-up window");
+                yield break;
+            }
+
+            yield return Advance(context, Mathf.Max(0f, waitSeconds));
             context.PocketOwner.Tick(0f);
             context.Sample();
         }
@@ -942,7 +1015,7 @@ namespace DimensionBrawl.Tests
                 builder.Append(" | ");
                 builder.Append(FormatSeconds(result.FollowupWindowToSkillUseSeconds));
                 builder.Append(" | ");
-                builder.Append(FormatSeconds(result.FollowupWindowToHitSeconds));
+                builder.Append(FormatSeconds(result.FollowupHitWindowDelaySeconds));
                 builder.Append(" | ");
                 builder.Append(FormatSeconds(result.BlockToFollowupHitSeconds));
                 builder.Append(" | ");
@@ -957,6 +1030,32 @@ namespace DimensionBrawl.Tests
                 builder.Append(FormatSeconds(result.CounterStableToFinalWindowSeconds));
                 builder.Append(" | ");
                 builder.Append(FormatSeconds(result.FinalWindowToHitSeconds));
+                builder.AppendLine(" |");
+            }
+
+            builder.AppendLine();
+            builder.AppendLine("## Punish Window Margin");
+            builder.AppendLine("| Policy | First window | Hit window | Hit delay | Remaining at hit | Used share | Final scale | Result |");
+            builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---|");
+            for (int i = 0; i < results.Count; i++)
+            {
+                PolicyMetrics result = results[i];
+                builder.Append("| ");
+                builder.Append(result.Policy);
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.FirstFollowupWindowDurationSeconds));
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.FollowupWindowDurationAtFirstHitSeconds));
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.FollowupWindowToHitSeconds));
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.FollowupWindowRemainingAtFirstHitSeconds));
+                builder.Append(" | ");
+                builder.Append(FormatOptionalPercent01(result.FollowupHitWindowUsedShare01));
+                builder.Append(" | ");
+                builder.Append($"x{result.CounterWaveFinalWindowRouteScale:0.00}");
+                builder.Append(" | ");
+                builder.Append(EscapeTable(result.ResultKind));
                 builder.AppendLine(" |");
             }
 
@@ -1174,6 +1273,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine();
             builder.AppendLine("## Read");
             PolicyMetrics intended = RequireResult(results, PolicyKind.IntendedRoute);
+            PolicyMetrics delayedIntended = RequireResult(results, PolicyKind.IntendedDelayedFollowup);
             PolicyMetrics noSummon = RequireResult(results, PolicyKind.NoSummonNoFire);
             PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
             PolicyMetrics late = RequireResult(results, PolicyKind.LateSummon);
@@ -1181,12 +1281,14 @@ namespace DimensionBrawl.Tests
             PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
             PolicyMetrics ignoredRecovery = RequireResult(results, PolicyKind.BossScreenIgnoredNoRecovery);
             PolicyMetrics blockedRecovery = RequireResult(results, PolicyKind.BossScreenBlockCounterRecovery);
+            PolicyMetrics delayedBlockedRecovery = RequireResult(results, PolicyKind.BossScreenDelayedCounterRecovery);
             builder.AppendLine($"- Intended route prevented {Mathf.Max(0f, noSummon.PlayerDamageTaken - intended.PlayerDamageTaken):0.0} player damage versus no-action pressure.");
             builder.AppendLine($"- Gun-only dealt {gunOnly.BossDamageTaken:0.0} boss damage but ended as `{gunOnly.ResultKind}` because the route contract still needs summon pressure blocking.");
             builder.AppendLine($"- Skill1 punish split: gun-only boss damage {gunOnly.BossDamageTaken:0.0}, intended follow-up boss damage {intended.BossDamageTaken:0.0}.");
             builder.AppendLine($"- Late summon ended as `{late.ResultKind}` with {late.PlayerDamageTaken:0.0} damage taken, so the report can compare timing quality without changing the scene.");
             builder.AppendLine($"- Intended route currently reads as `{ResolveRouteShape(intended)}`: follow-up window {FormatSeconds(intended.FirstFollowupWindowAtSeconds)}, counter {FormatSeconds(intended.FirstCounterWaveAtSeconds)}, Skill1 hit {FormatSeconds(intended.FirstFollowupHitAtSeconds)}.");
             builder.AppendLine($"- Lock/unlock cadence: intended block->window {FormatSeconds(intended.BlockToFollowupWindowSeconds)}, window->hit {FormatSeconds(intended.FollowupWindowToHitSeconds)}; boss-screen recovery answer pulse {blockedRecovery.CounterWaveAnswerEnergyPulse:0}, counter->answer {FormatSeconds(blockedRecovery.CounterTriggerToAnswerSeconds)}, answer->stable {FormatSeconds(blockedRecovery.CounterAnswerToStableSeconds)}, stable->final {FormatSeconds(blockedRecovery.CounterStableToFinalWindowSeconds)}, final->hit {FormatSeconds(blockedRecovery.FinalWindowToHitSeconds)}.");
+            builder.AppendLine($"- Punish window tolerance: delayed clean hit after {FormatSeconds(delayedIntended.FollowupHitWindowDelaySeconds)} with {FormatSeconds(delayedIntended.FollowupWindowRemainingAtFirstHitSeconds)} remaining; delayed boss-screen recovery hit after {FormatSeconds(delayedBlockedRecovery.FollowupHitWindowDelaySeconds)} with {FormatSeconds(delayedBlockedRecovery.FollowupWindowRemainingAtFirstHitSeconds)} remaining.");
             builder.AppendLine($"- Route stability split: no-action {FormatPercent01(noSummon.RouteStability01)} final / {FormatPercent01(noSummon.MinRouteStability01)} min, gun-only {FormatPercent01(gunOnly.RouteStability01)} / {FormatPercent01(gunOnly.MinRouteStability01)}, intended {FormatPercent01(intended.RouteStability01)} / {FormatPercent01(intended.MinRouteStability01)}.");
             builder.AppendLine($"- Unanswered hit penalty split: no-action {FormatPercent01(noSummon.TotalUnansweredBossHitRoutePenalty01)} x{noSummon.UnansweredBossHitRoutePenaltyCount}, gun-only {FormatPercent01(gunOnly.TotalUnansweredBossHitRoutePenalty01)} x{gunOnly.UnansweredBossHitRoutePenaltyCount}, late {FormatPercent01(late.TotalUnansweredBossHitRoutePenalty01)} x{late.UnansweredBossHitRoutePenaltyCount}.");
             builder.AppendLine($"- Frontline exposure split: no-action enemy-only {FormatSeconds(noSummon.EnemyOnlyFrontlineSeconds)}, gun-only enemy-only {FormatSeconds(gunOnly.EnemyOnlyFrontlineSeconds)}, intended ally-only {FormatSeconds(intended.AllyOnlyFrontlineSeconds)} / contested {FormatSeconds(intended.ContestedFrontlineSeconds)}.");
@@ -1283,6 +1385,11 @@ namespace DimensionBrawl.Tests
             return $"{Mathf.Clamp01(value) * 100f:0}%";
         }
 
+        private static string FormatOptionalPercent01(float value)
+        {
+            return value >= 0f ? FormatPercent01(value) : "-";
+        }
+
         private static float ResolveAverage(float total, float elapsedSeconds)
         {
             return elapsedSeconds > 0f ? total / elapsedSeconds : 0f;
@@ -1335,6 +1442,14 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"counterAnswerToStableSeconds\": {JsonNullableSeconds(result.CounterAnswerToStableSeconds)},");
                 builder.AppendLine($"      \"counterStableToFinalWindowSeconds\": {JsonNullableSeconds(result.CounterStableToFinalWindowSeconds)},");
                 builder.AppendLine($"      \"finalWindowToHitSeconds\": {JsonNullableSeconds(result.FinalWindowToHitSeconds)},");
+                builder.AppendLine($"      \"firstFollowupWindowDurationSeconds\": {JsonNullableSeconds(result.FirstFollowupWindowDurationSeconds)},");
+                builder.AppendLine($"      \"lastFollowupWindowAtSeconds\": {JsonNullableSeconds(result.LastFollowupWindowAtSeconds)},");
+                builder.AppendLine($"      \"lastFollowupWindowDurationSeconds\": {JsonNullableSeconds(result.LastFollowupWindowDurationSeconds)},");
+                builder.AppendLine($"      \"followupWindowAtFirstHitSeconds\": {JsonNullableSeconds(result.FollowupWindowAtFirstHitSeconds)},");
+                builder.AppendLine($"      \"followupWindowDurationAtFirstHitSeconds\": {JsonNullableSeconds(result.FollowupWindowDurationAtFirstHitSeconds)},");
+                builder.AppendLine($"      \"followupHitWindowDelaySeconds\": {JsonNullableSeconds(result.FollowupHitWindowDelaySeconds)},");
+                builder.AppendLine($"      \"followupWindowRemainingAtFirstHitSeconds\": {JsonNullableSeconds(result.FollowupWindowRemainingAtFirstHitSeconds)},");
+                builder.AppendLine($"      \"followupHitWindowUsedShare01\": {JsonNullableSeconds(result.FollowupHitWindowUsedShare01)},");
                 builder.AppendLine($"      \"maxEnemyFrontlineCount\": {result.MaxEnemyFrontlineCount},");
                 builder.AppendLine($"      \"maxAllyFrontlineCount\": {result.MaxAllyFrontlineCount},");
                 builder.AppendLine($"      \"routeDrainAccumulated01\": {result.RouteDrainAccumulated01:0.###},");
@@ -1976,6 +2091,11 @@ namespace DimensionBrawl.Tests
                 int requiredWindowCount = Mathf.Max(
                     0,
                     Mathf.CeilToInt(Metrics.ElapsedSeconds / PressureWindowSeconds));
+                if (Metrics.IsClearResult)
+                {
+                    requiredWindowCount++;
+                }
+
                 while (pressureWindowBurden.Count < requiredWindowCount)
                 {
                     pressureWindowBurden.Add(0f);
@@ -2383,10 +2503,6 @@ namespace DimensionBrawl.Tests
             public void Complete()
             {
                 Sample();
-                CompletePressureShape();
-                Metrics.PlayerHealthRemaining = PlayerHealth.CurrentHealth;
-                Metrics.BossHealthRemaining = BossHealth.CurrentHealth;
-                Metrics.CloseThreatHealthRemaining = CloseThreatHealth.CurrentHealth;
                 Metrics.ResultKind = PocketOwner.HasCommittedResultRecord
                     ? PocketOwner.LastResultRecord.ResultKind.ToString()
                     : PocketOwner.IsCleared
@@ -2394,6 +2510,10 @@ namespace DimensionBrawl.Tests
                         : PocketOwner.IsFailed
                             ? PocketOwner.FailureReason.ToString()
                             : "Running";
+                CompletePressureShape();
+                Metrics.PlayerHealthRemaining = PlayerHealth.CurrentHealth;
+                Metrics.BossHealthRemaining = BossHealth.CurrentHealth;
+                Metrics.CloseThreatHealthRemaining = CloseThreatHealth.CurrentHealth;
 
                 PlayerHealth.Damaged -= OnPlayerDamaged;
                 BossHealth.Damaged -= OnBossDamaged;
@@ -2498,9 +2618,12 @@ namespace DimensionBrawl.Tests
             {
                 Metrics.FollowupWindowOpenCount++;
                 Metrics.HighestFollowupWindowTier = Mathf.Max(Metrics.HighestFollowupWindowTier, tier);
+                Metrics.LastFollowupWindowAtSeconds = Metrics.ElapsedSeconds;
+                Metrics.LastFollowupWindowDurationSeconds = PocketOwner.LastSummonFollowupWindowDuration;
                 if (Metrics.FirstFollowupWindowAtSeconds < 0f)
                 {
                     Metrics.FirstFollowupWindowAtSeconds = Metrics.ElapsedSeconds;
+                    Metrics.FirstFollowupWindowDurationSeconds = PocketOwner.LastSummonFollowupWindowDuration;
                 }
 
                 Metrics.LastSummonFollowupWindowDuration = PocketOwner.LastSummonFollowupWindowDuration;
@@ -2514,6 +2637,11 @@ namespace DimensionBrawl.Tests
                 if (Metrics.FirstFollowupHitAtSeconds < 0f)
                 {
                     Metrics.FirstFollowupHitAtSeconds = Metrics.ElapsedSeconds;
+                    Metrics.FollowupWindowAtFirstHitSeconds = Metrics.LastFollowupWindowAtSeconds;
+                    Metrics.FollowupWindowDurationAtFirstHitSeconds =
+                        Metrics.LastFollowupWindowDurationSeconds;
+                    Metrics.FollowupWindowRemainingAtFirstHitSeconds =
+                        Metrics.ResolveFollowupWindowRemainingAt(Metrics.ElapsedSeconds);
                 }
             }
 
@@ -2571,6 +2699,10 @@ namespace DimensionBrawl.Tests
 
             public PolicyKind Policy { get; }
             public string ResultKind { get; set; } = "Running";
+            public bool IsClearResult =>
+                ResultKind == "CleanFollowupClear"
+                || ResultKind == "CounterRecoveryClear"
+                || ResultKind == "ClearedNoRecord";
             public float ElapsedSeconds { get; set; }
             public float PlayerHealthStart { get; set; }
             public float PlayerHealthRemaining { get; set; }
@@ -2616,6 +2748,13 @@ namespace DimensionBrawl.Tests
                 ResolveTimingDelta(FirstFollowupWindowAtSeconds, FirstFollowupHitAtSeconds);
             public float BlockToFollowupHitSeconds =>
                 ResolveTimingDelta(FirstSummonBlockAtSeconds, FirstFollowupHitAtSeconds);
+            public float FollowupHitWindowDelaySeconds =>
+                ResolveTimingDelta(FollowupWindowAtFirstHitSeconds, FirstFollowupHitAtSeconds);
+            public float FollowupHitWindowUsedShare01 =>
+                FollowupWindowDurationAtFirstHitSeconds > 0f
+                    && FollowupHitWindowDelaySeconds >= 0f
+                    ? Mathf.Clamp01(FollowupHitWindowDelaySeconds / FollowupWindowDurationAtFirstHitSeconds)
+                    : -1f;
             public float BossScreenReleaseToBlockSeconds =>
                 ResolveTimingDelta(FirstBossPressureReleaseAtSeconds, FirstBossPressureScreenBlockAtSeconds);
             public float CounterTriggerToAnswerSeconds =>
@@ -2751,6 +2890,12 @@ namespace DimensionBrawl.Tests
             public float FirstFollowupWindowAtSeconds { get; set; } = -1f;
             public float FirstFollowupHitAtSeconds { get; set; } = -1f;
             public float FirstFollowupMissAtSeconds { get; set; } = -1f;
+            public float FirstFollowupWindowDurationSeconds { get; set; } = -1f;
+            public float LastFollowupWindowAtSeconds { get; set; } = -1f;
+            public float LastFollowupWindowDurationSeconds { get; set; } = -1f;
+            public float FollowupWindowAtFirstHitSeconds { get; set; } = -1f;
+            public float FollowupWindowDurationAtFirstHitSeconds { get; set; } = -1f;
+            public float FollowupWindowRemainingAtFirstHitSeconds { get; set; } = -1f;
             public float SummonFollowupWindowRemainingSeconds { get; set; }
             public float SummonFollowupEnergyPulse { get; set; }
             public float LastSummonFollowupWindowDuration { get; set; }
@@ -2783,6 +2928,20 @@ namespace DimensionBrawl.Tests
                 }
 
                 return endSeconds - startSeconds;
+            }
+
+            public float ResolveFollowupWindowRemainingAt(float elapsedSeconds)
+            {
+                if (LastFollowupWindowAtSeconds < 0f
+                    || LastFollowupWindowDurationSeconds <= 0f
+                    || elapsedSeconds < LastFollowupWindowAtSeconds)
+                {
+                    return -1f;
+                }
+
+                return Mathf.Max(
+                    0f,
+                    LastFollowupWindowDurationSeconds - (elapsedSeconds - LastFollowupWindowAtSeconds));
             }
         }
     }
