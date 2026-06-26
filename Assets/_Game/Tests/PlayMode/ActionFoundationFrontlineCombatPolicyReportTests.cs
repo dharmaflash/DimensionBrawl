@@ -247,6 +247,7 @@ namespace DimensionBrawl.Tests
             yield return ChargeEnergyToTier(context, 1, 14f);
             yield return UseSummonAndBlockNextBossWave(context);
             yield return LetFollowupWindowExpire(context);
+            yield return AnswerCounterWaveWithFreshSummon(context);
             yield return WaitForCounterFinalWindow(context, 3f);
             yield return ConfirmSkill1Followup(context);
             yield return Advance(context, 1.0f);
@@ -396,6 +397,25 @@ namespace DimensionBrawl.Tests
             yield return Advance(context, waitSeconds + 0.1f);
             context.PocketOwner.Tick(0f);
             context.Sample();
+        }
+
+        private static IEnumerator AnswerCounterWaveWithFreshSummon(CombatPolicyContext context)
+        {
+            if (context.EnergyLadder.AvailableTier <= 0)
+            {
+                yield return ChargeEnergyToTier(context, 1, 8f);
+            }
+
+            if (!context.SummonSlot1Action.TryUseSummonSlot1())
+            {
+                context.Metrics.Notes.Add($"counter summon blocked: {context.SummonSlot1Action.LastUseBlockedReason}");
+                yield break;
+            }
+
+            context.Metrics.SummonUses++;
+            context.PocketOwner.Tick(0f);
+            context.Sample();
+            yield return null;
         }
 
         private static IEnumerator ReleaseBossScreenAndBlockSkill1Followup(CombatPolicyContext context)

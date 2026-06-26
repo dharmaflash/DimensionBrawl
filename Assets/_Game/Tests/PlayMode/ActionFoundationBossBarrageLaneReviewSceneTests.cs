@@ -3194,7 +3194,7 @@ namespace DimensionBrawl.Tests
                 "A summon pressure block should create the follow-up opening, but the pocket should not clear until Skill1 actually hits the boss/proxy.");
             Assert.IsFalse(pocketOwner.IsSummonPressureBreakActive);
             Assert.IsTrue(emitter.IsFiringEnabled);
-            Assert.That(pocketOwner.ObjectiveCue, Does.Contain("Follow-up missed"));
+            Assert.That(pocketOwner.ObjectiveCue, Does.Contain("Counter pressure entered"));
 
             Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
             SummonPressureScreen retryScreen = RequireActiveAllyPressureScreen();
@@ -4444,6 +4444,10 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(
                 pocketOwner.BossBlockedSkill1Followup,
                 "A boss summon pressure screen blocking the follow-up shot should be a readable pocket state, not a silent generic miss.");
+            Assert.AreEqual(
+                BossBarragePocketReviewOwner.CounterWaveSource.BossScreenBlock,
+                pocketOwner.CounterWaveObservedSource);
+            Assert.AreEqual("boss_screen", pocketOwner.CounterWaveSourceReadout);
             Assert.AreEqual(1, pocketOwner.BossPressureBlocksDuringSummonFollowup);
             Assert.IsFalse(
                 pocketOwner.IsSummonFollowupWindowActive,
@@ -4451,6 +4455,13 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(
                 pocketOwner.IsSummonPressureBreakActive,
                 "A blocked follow-up shot should close only the response window, not erase the remaining pressure-break pacing.");
+            Assert.Greater(
+                pocketOwner.CounterWaveAllyHoldRequiredSeconds,
+                0f,
+                "A boss-screen block should require a readable counter-wave hold instead of collapsing into an instant recovery.");
+            Assert.IsFalse(
+                pocketOwner.IsCounterWaveFinalWindowOpened,
+                "A boss-screen block should not open the recovery follow-up window in the same sample that records the block.");
             Assert.IsFalse(pocketOwner.Skill1FollowupHitConfirmed);
             Assert.IsFalse(pocketOwner.IsCleared);
             Assert.That(pocketOwner.ObjectiveCue, Does.Contain("Boss screen blocked"));

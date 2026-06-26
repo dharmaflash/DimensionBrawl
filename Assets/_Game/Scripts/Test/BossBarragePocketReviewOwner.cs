@@ -185,6 +185,7 @@ namespace DimensionBrawl.Test
 
         [Header("Follow-up Result")]
         [SerializeField] private bool requireSkill1FollowupHitToClear = true;
+        [SerializeField, Min(0f)] private float counterWaveAllyHoldSeconds = 0.45f;
 
         [Header("Frontline Stage Review")]
         [SerializeField] private FrontlineWaveStageProfile stageProfile;
@@ -232,6 +233,7 @@ namespace DimensionBrawl.Test
         private RouteFailureReason failureReason;
         private CombatHealth subscribedPlayerHealth;
         private CombatHealth subscribedBossHealth;
+        private BossSummonPressureAction subscribedBossSummonPressureAction;
         private bool followupMissedNotified;
         private bool bossBlockedSkill1Followup;
         private bool counterWaveObserved;
@@ -246,6 +248,7 @@ namespace DimensionBrawl.Test
         private float totalUnansweredBossHitRoutePenalty;
         private int unansweredBossHitRoutePenaltyCount;
         private float counterWaveAllyHoldTimer;
+        private int summonUsesAtCounterWaveStart;
         private bool counterWaveAllyHoldInterrupted;
         private int bossPressureSummonReleasesAtReset;
         private int announcedStageBeatIndex;
@@ -432,6 +435,11 @@ namespace DimensionBrawl.Test
 
                 if (counterWaveObserved && !counterWaveStabilized)
                 {
+                    if (bossBlockedSkill1Followup)
+                    {
+                        return $"{ResolveFollowupBlockedCue()}: {ResolveObjectiveSummonAnswerLabel()}";
+                    }
+
                     return $"{ResolveCounterWaveCue()}: {ResolveObjectiveSummonAnswerLabel()}";
                 }
 
@@ -448,9 +456,7 @@ namespace DimensionBrawl.Test
                     {
                         if (bossBlockedSkill1Followup)
                         {
-                            return ResolveStageText(
-                                stageProfile != null ? stageProfile.FollowupBlockedCue : null,
-                                "Boss screen absorbed the follow-up; rebuild the summon answer");
+                            return ResolveFollowupBlockedCue();
                         }
 
                         return ResolveStageText(
@@ -487,7 +493,7 @@ namespace DimensionBrawl.Test
                     return energyLadder != null && !energyLadder.CanSpend
                         ? $"{ResolveStageText(stageProfile != null ? stageProfile.SummonChargeCue : null, "Regain EN, then block boss curtain")}: {ResolveObjectiveSummonAnswerLabel()}"
                         : bossBlockedSkill1Followup
-                            ? $"{ResolveStageText(stageProfile != null ? stageProfile.FollowupBlockedCue : null, "Boss screen blocked Skill1; rebuild the summon answer")}: {ResolveObjectiveSummonAnswerLabel()}"
+                            ? $"{ResolveFollowupBlockedCue()}: {ResolveObjectiveSummonAnswerLabel()}"
                             : $"{ResolveStageText(stageProfile != null ? stageProfile.FollowupMissedCue : null, "Follow-up missed; block boss fire again")}: {ResolveObjectiveSummonAnswerLabel()}";
                 }
 
@@ -532,6 +538,7 @@ namespace DimensionBrawl.Test
             BossPressureActionDirector newBossPressureActionDirector = null,
             BossBasicFireEmitter newBossBasicFireEmitter = null)
         {
+            UnsubscribeBossSummonPressureAction();
             playerHealth = newPlayerHealth;
             closeThreatHealth = newCloseThreatHealth;
             bossHealth = newBossHealth;
@@ -547,6 +554,7 @@ namespace DimensionBrawl.Test
             ResetPocket();
             SubscribePlayerHealth();
             SubscribeBossHealth();
+            SubscribeBossSummonPressureAction();
         }
 
         public void ResetPocket()
@@ -580,6 +588,7 @@ namespace DimensionBrawl.Test
             lastCounterWaveFinalWindowDuration = 0f;
             lastCounterWaveFinalWindowRouteScale = 1f;
             counterWaveAllyHoldTimer = 0f;
+            summonUsesAtCounterWaveStart = 0;
             counterWaveAllyHoldInterrupted = false;
             bossPressureSummonReleasesAtReset = GetBossPressureSummonReleaseCount();
             highestSkillTier = 0;
@@ -616,12 +625,14 @@ namespace DimensionBrawl.Test
             ResetPocket();
             SubscribePlayerHealth();
             SubscribeBossHealth();
+            SubscribeBossSummonPressureAction();
         }
 
         private void OnDisable()
         {
             UnsubscribePlayerHealth();
             UnsubscribeBossHealth();
+            UnsubscribeBossSummonPressureAction();
         }
 
         private void Update()
@@ -870,6 +881,7 @@ namespace DimensionBrawl.Test
 
         private void CaptureBossBlockedFollowup()
         {
+            int currentBossPressureBlockCount = GetBossPressureScreenBlockCount();
             if (!pressurePacing.IsSummonFollowupWindowActive
                 || !usedSkill1DuringSummonFollowup
                 || skill1FollowupHitConfirmed)
@@ -879,13 +891,32 @@ namespace DimensionBrawl.Test
 
             int blocksAfterWindowStart = Mathf.Max(
                 0,
-                GetBossPressureScreenBlockCount() - bossPressureBlocksAtSummonBreakStart);
+                currentBossPressureBlockCount - bossPressureBlocksAtSummonBreakStart);
             if (blocksAfterWindowStart <= bossPressureBlocksConsumedDuringFollowup)
             {
                 return;
             }
 
-            bossPressureBlocksConsumedDuringFollowup = blocksAfterWindowStart;
+            RecordBossScreenBlockedFollowup(blocksAfterWindowStart);
+        }
+
+        private void RecordBossScreenBlockedFollowup(int pressureBlockCount)
+        {
+            if (!pressurePacing.IsSummonFollowupWindowActive
+                || skill1FollowupHitConfirmed
+                || bossBlockedSkill1Followup
+                || (!usedSkill1DuringSummonFollowup && GetSkillUseCount() <= skillUsesAtSummonBreakStart))
+            {
+                return;
+            }
+
+            usedSkill1 = true;
+            usedSkill1DuringSummonFollowup = true;
+            int spentTier = skill1Action != null ? skill1Action.LastSpentTier : 0;
+            highestSkillTier = Mathf.Max(highestSkillTier, spentTier);
+            highestSummonFollowupSkillTier = Mathf.Max(highestSummonFollowupSkillTier, spentTier);
+            observedSkillUseCount = Mathf.Max(observedSkillUseCount, GetSkillUseCount());
+            bossPressureBlocksConsumedDuringFollowup = Mathf.Max(1, pressureBlockCount);
             bossBlockedSkill1Followup = true;
             pressurePacing.EndSummonFollowupWindow();
             NotifySummonFollowupMissedOnce(CounterWaveSource.BossScreenBlock);
@@ -944,6 +975,7 @@ namespace DimensionBrawl.Test
             if (!wasObserved)
             {
                 counterWaveAllyHoldTimer = 0f;
+                summonUsesAtCounterWaveStart = GetSummonUseCount();
                 counterWaveAllyHoldInterrupted = false;
                 ApplyCounterWaveEntryRoutePenalty();
                 CounterWaveObserved?.Invoke(counterWaveSource);
@@ -963,7 +995,7 @@ namespace DimensionBrawl.Test
                 return;
             }
 
-            if (ActiveAllyFrontlineProxyCount <= 0)
+            if (!HasCounterWaveAllyAnswer())
             {
                 if (counterWaveAllyHoldTimer > 0f)
                 {
@@ -1024,6 +1056,12 @@ namespace DimensionBrawl.Test
             GrantSummonFollowupEnergyPulse(followupEnergyPulse);
             ApplyRunningBarragePacing();
             SummonFollowupWindowOpened?.Invoke(resolvedTier);
+        }
+
+        private bool HasCounterWaveAllyAnswer()
+        {
+            return ActiveAllyFrontlineProxyCount > 0
+                && GetSummonUseCount() > summonUsesAtCounterWaveStart;
         }
 
         private void ClearPocket()
@@ -1382,7 +1420,9 @@ namespace DimensionBrawl.Test
 
         private float ResolveCounterWaveAllyHoldSeconds()
         {
-            return stageProfile != null ? stageProfile.CounterWaveAllyHoldSeconds : 0f;
+            return stageProfile != null
+                ? stageProfile.CounterWaveAllyHoldSeconds
+                : Mathf.Max(0f, counterWaveAllyHoldSeconds);
         }
 
         private float ResolveCounterWaveFinalWindowRouteScale()
@@ -1462,6 +1502,54 @@ namespace DimensionBrawl.Test
             return pressureAction != null ? pressureAction.TotalReleaseCount : 0;
         }
 
+        private void SubscribeBossSummonPressureAction()
+        {
+            BossSummonPressureAction pressureAction = bossPressureActionDirector != null
+                ? bossPressureActionDirector.SummonPressureAction
+                : null;
+            if (subscribedBossSummonPressureAction == pressureAction)
+            {
+                return;
+            }
+
+            UnsubscribeBossSummonPressureAction();
+            if (pressureAction == null)
+            {
+                return;
+            }
+
+            subscribedBossSummonPressureAction = pressureAction;
+            subscribedBossSummonPressureAction.PressureSummonIntercepted += OnBossPressureSummonIntercepted;
+        }
+
+        private void UnsubscribeBossSummonPressureAction()
+        {
+            if (subscribedBossSummonPressureAction == null)
+            {
+                return;
+            }
+
+            subscribedBossSummonPressureAction.PressureSummonIntercepted -= OnBossPressureSummonIntercepted;
+            subscribedBossSummonPressureAction = null;
+        }
+
+        private void OnBossPressureSummonIntercepted(BossSummonPressureAction action, int tier)
+        {
+            if (state != PocketState.Running)
+            {
+                return;
+            }
+
+            int currentBossPressureBlockCount = GetBossPressureScreenBlockCount();
+            int blocksAfterWindowStart = Mathf.Max(
+                0,
+                currentBossPressureBlockCount - bossPressureBlocksAtSummonBreakStart);
+            RecordBossScreenBlockedFollowup(
+                Mathf.Max(
+                    blocksAfterWindowStart,
+                    bossPressureBlocksConsumedDuringFollowup + 1));
+        }
+
         private string ResolveFollowupReadyCue()
         {
             string summonTierLabel = ResolveSummonTierLabel(lastSummonPressureBreakTier);
@@ -1474,6 +1562,13 @@ namespace DimensionBrawl.Test
             }
 
             return $"{cue}: Skill1 LV{energyLadder.AvailableTier} during {summonTierLabel} window";
+        }
+
+        private string ResolveFollowupBlockedCue()
+        {
+            return ResolveStageText(
+                stageProfile != null ? stageProfile.FollowupBlockedCue : null,
+                "Boss screen blocked Skill1; rebuild the summon answer");
         }
 
         private string ResolveCounterWaveCue()
@@ -1746,7 +1841,7 @@ namespace DimensionBrawl.Test
                     return "ally_hold";
                 }
 
-                if (ActiveAllyFrontlineProxyCount > 0)
+                if (HasCounterWaveAllyAnswer())
                 {
                     return "ally_holding";
                 }
@@ -1843,7 +1938,7 @@ namespace DimensionBrawl.Test
                     return "interrupted";
                 }
 
-                return ActiveAllyFrontlineProxyCount > 0
+                return HasCounterWaveAllyAnswer()
                     ? $"holding_{CounterWaveAllyHoldProgress01 * 100f:0}%"
                     : "awaiting";
             }
@@ -1937,7 +2032,7 @@ namespace DimensionBrawl.Test
                     return counterWaveFinalWindowOpened ? "final_window" : "counter_held";
                 }
 
-                return ActiveAllyFrontlineProxyCount > 0 ? "ally_holding" : "answer_counter";
+                return HasCounterWaveAllyAnswer() ? "ally_holding" : "answer_counter";
             }
 
             if (pressurePacing.IsSummonFollowupWindowActive || usedSkill1DuringSummonFollowup)
