@@ -149,7 +149,42 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(
                     markdown.Contains("NIKKE stage-result runtime"),
                     "The report should keep stage result/reward boundaries explicit instead of drifting into balance-only tuning.");
+                Assert.IsTrue(
+                    markdown.Contains("## Stage Result Hook Contract"),
+                    "The report should expose clean/counter/fail result hooks before route details.");
                 Assert.Greater(intended.SummonBlocks, 0, "The intended route must prove summon interception changes the run.");
+                Assert.AreEqual(
+                    0,
+                    noSummon.ResultRecords,
+                    "A short no-action route should not fabricate a clear or payout result while still running.");
+                Assert.AreEqual(
+                    0,
+                    gunOnly.ResultRecords,
+                    "A short gun-only route should not fabricate a clear or payout result while still running.");
+                AssertStageResultHook(
+                    noSummonSurvival,
+                    "PlayerDownFail",
+                    "Failure analysis logged",
+                    "protect HP",
+                    "No-summon survival should commit a failure-analysis hook, not a reward payout.");
+                AssertStageResultHook(
+                    gunOnlySurvival,
+                    "PlayerDownFail",
+                    "Failure analysis logged",
+                    "protect HP",
+                    "Gun-only survival should commit a failure-analysis hook, not a reward payout.");
+                AssertStageResultHook(
+                    forwardRiskPhysicalSummonPunish,
+                    "CleanFollowupClear",
+                    "Clean survival logged",
+                    "counter pressure",
+                    "The physical clean route should commit the clean survival hook.");
+                AssertStageResultHook(
+                    blockedRecovery,
+                    "CounterRecoveryClear",
+                    "Counter recovery logged",
+                    "earlier",
+                    "The boss-screen recovery route should commit the counter-recovery hook.");
                 Assert.AreEqual(
                     "PlayerDownFail",
                     noSummonSurvival.ResultKind,
@@ -1664,6 +1699,8 @@ namespace DimensionBrawl.Tests
             }
 
             builder.AppendLine();
+            AppendStageResultHookContract(builder, results);
+            builder.AppendLine();
             builder.AppendLine("## Route Evidence");
             builder.AppendLine("| Policy | Proof | Follow-up | Counter | Counter answer | Final window | Result record |");
             builder.AppendLine("|---|---|---|---|---|---|---|");
@@ -2129,6 +2166,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Forward-risk physical summon block: blocks {forwardRiskPhysicalSummonBlock.SummonBlocks}, player hits {forwardRiskPhysicalSummonBlock.PhysicalBarragePlayerHits}/{forwardRiskPhysicalSummonBlock.PhysicalBarrageTrackedProjectileCount}, damage {forwardRiskPhysicalSummonBlock.PhysicalBarragePlayerDamage:0.0}, block->window {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)}.");
             builder.AppendLine($"- Forward-risk physical summon punish: `{forwardRiskPhysicalSummonPunish.ResultKind}` with blocks {forwardRiskPhysicalSummonPunish.SummonBlocks}, player hits {forwardRiskPhysicalSummonPunish.PhysicalBarragePlayerHits}/{forwardRiskPhysicalSummonPunish.PhysicalBarrageTrackedProjectileCount}, Skill1 hits {forwardRiskPhysicalSummonPunish.SkillProjectileHits}, boss damage {forwardRiskPhysicalSummonPunish.BossDamageTaken:0.0}, window->hit {FormatSeconds(forwardRiskPhysicalSummonPunish.FollowupWindowToHitSeconds)}.");
             builder.AppendLine($"- Boss damage attribution: physical block-only player/summon boss damage {forwardRiskPhysicalSummonBlock.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonBlock.BossDamageFromAllySummon:0.0}; physical punish player/summon boss damage {forwardRiskPhysicalSummonPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonPunish.BossDamageFromAllySummon:0.0}, player share {FormatPercent01(forwardRiskPhysicalSummonPunish.BossDamagePlayerShare01)}.");
+            builder.AppendLine($"- Stage result hooks: no-summon fail `{ResolveResultHookClass(noSummonSurvival)}` / gun-only fail `{ResolveResultHookClass(gunOnlySurvival)}`; clean physical `{ResolveResultHookClass(forwardRiskPhysicalSummonPunish)}`; boss-screen recovery `{ResolveResultHookClass(blockedRecovery)}`. All committed hooks remain review-only analysis records, not payout/progression grants.");
             builder.AppendLine($"- Unanswered hit penalty split: no-action {FormatPercent01(noSummon.TotalUnansweredBossHitRoutePenalty01)} x{noSummon.UnansweredBossHitRoutePenaltyCount}, gun-only {FormatPercent01(gunOnly.TotalUnansweredBossHitRoutePenalty01)} x{gunOnly.UnansweredBossHitRoutePenaltyCount}, late {FormatPercent01(late.TotalUnansweredBossHitRoutePenalty01)} x{late.UnansweredBossHitRoutePenaltyCount}.");
             builder.AppendLine($"- Frontline exposure split: no-action enemy-only {FormatSeconds(noSummon.EnemyOnlyFrontlineSeconds)}, gun-only enemy-only {FormatSeconds(gunOnly.EnemyOnlyFrontlineSeconds)}, intended ally-only {FormatSeconds(intended.AllyOnlyFrontlineSeconds)} / contested {FormatSeconds(intended.ContestedFrontlineSeconds)}.");
             builder.AppendLine($"- ArkData effective pressure shape: no-action peak/top3 {FormatPercent01(noSummon.PeakPressureWindowShare01)}/{FormatPercent01(noSummon.Top3PressureWindowShare01)}, intended {FormatPercent01(intended.PeakPressureWindowShare01)}/{FormatPercent01(intended.Top3PressureWindowShare01)} with relief {FormatSeconds(intended.TimeToNextReliefWindowSeconds)}, ignored boss-screen unanswered burden {FormatPercent01(ignoredRecovery.UnansweredPressureBurdenShare01)} versus intended {FormatPercent01(intended.UnansweredPressureBurdenShare01)}.");
@@ -2217,6 +2255,38 @@ namespace DimensionBrawl.Tests
                 $"| Physical clean route reference | {FormatGateStatus(forwardRiskPhysicalSummonPunish.IsClearResult)} | physical summon-punish clears in {FormatSeconds(forwardRiskPhysicalSummonPunish.ElapsedSeconds)} with {forwardRiskPhysicalSummonPunish.PlayerDamageTaken:0.0} HP lost versus intended route {FormatSeconds(intended.ElapsedSeconds)} / {intended.PlayerDamageTaken:0.0} HP lost |");
         }
 
+        private static void AppendStageResultHookContract(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results)
+        {
+            builder.AppendLine("## Stage Result Hook Contract");
+            builder.AppendLine("| Policy | Commit | Stage state | Hook class | Reward hook | Next objective | Boundary |");
+            builder.AppendLine("|---|---:|---|---|---|---|---|");
+            for (int i = 0; i < results.Count; i++)
+            {
+                PolicyMetrics result = results[i];
+                builder.Append("| ");
+                builder.Append(result.Policy);
+                builder.Append(" | ");
+                builder.Append(result.ResultRecords > 0
+                    ? $"{result.ResultRecords} @ {FormatSeconds(result.ResultRecordElapsedSeconds)}"
+                    : "pending");
+                builder.Append(" | ");
+                builder.Append(ResolveResultStageState(result));
+                builder.Append(" | ");
+                builder.Append(ResolveResultHookClass(result));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(ResolveCoverageValue(result.ResultRecordRewardHook)));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(ResolveCoverageValue(result.ResultRecordNextObjective)));
+                builder.Append(" | ");
+                builder.Append(IsReviewOnlyResultHook(result)
+                    ? "review-only analysis"
+                    : result.ResultRecords > 0 ? "review" : "no committed result");
+                builder.AppendLine(" |");
+            }
+        }
+
         private static void AppendArkDataCoverageSummary(
             StringBuilder builder,
             IReadOnlyList<PolicyMetrics> results)
@@ -2250,7 +2320,11 @@ namespace DimensionBrawl.Tests
             bool stageResultMeasured = noSummonSurvival.ResultKind == "PlayerDownFail"
                 && gunOnlySurvival.ResultKind == "PlayerDownFail"
                 && forwardRiskPhysicalSummonPunish.IsClearResult
-                && forwardRiskPhysicalSummonPunish.ResultRecords > 0;
+                && blockedRecovery.ResultKind == "CounterRecoveryClear"
+                && HasSingleReviewOnlyResultHook(noSummonSurvival)
+                && HasSingleReviewOnlyResultHook(gunOnlySurvival)
+                && HasSingleReviewOnlyResultHook(forwardRiskPhysicalSummonPunish)
+                && HasSingleReviewOnlyResultHook(blockedRecovery);
             bool pressureSlotMeasured = forwardRiskEnergy.EnergyTier1DurationSeconds >= 0f
                 && backlineEnergy.EnergyTier1DurationSeconds >= 0f
                 && forwardRiskEnergy.EnergyTier1DurationSeconds < backlineEnergy.EnergyTier1DurationSeconds
@@ -2283,7 +2357,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 "| NIKKE stage-result runtime | "
                 + $"{FormatCoverageStatus(stageResultMeasured, "PARTIAL")} | "
-                + $"bad routes reach HP fail at {FormatSeconds(noSummonSurvival.FirstPlayerDownAtSeconds)} / {FormatSeconds(gunOnlySurvival.FirstPlayerDownAtSeconds)}; clean physical route commits {forwardRiskPhysicalSummonPunish.ResultRecords} result record; reward hook `{EscapeTable(ResolveCoverageValue(forwardRiskPhysicalSummonPunish.ResultRecordRewardHook))}` | "
+                + $"bad routes commit fail hooks at {FormatSeconds(noSummonSurvival.FirstPlayerDownAtSeconds)} / {FormatSeconds(gunOnlySurvival.FirstPlayerDownAtSeconds)}; clean physical `{ResolveResultHookClass(forwardRiskPhysicalSummonPunish)}`; boss-screen recovery `{ResolveResultHookClass(blockedRecovery)}` | "
                 + "Reward/item persistence and campaign clear are intentionally not implemented in this V1 combat slice. |");
             builder.AppendLine(
                 "| Stage pressure-slot discipline | "
@@ -2372,6 +2446,73 @@ namespace DimensionBrawl.Tests
             return $"{result.ResultRecordRouteLabel} "
                 + $"{FormatPercent01(result.ResultRecordRouteStability01)} "
                 + $"{result.ResultRecordDecision}";
+        }
+
+        private static string ResolveResultStageState(PolicyMetrics result)
+        {
+            if (result.ResultRecords <= 0)
+            {
+                return "pending";
+            }
+
+            if (result.ResultKind == "PlayerDownFail")
+            {
+                return "fail";
+            }
+
+            return result.IsClearResult ? "clear" : "recorded";
+        }
+
+        private static string ResolveResultHookClass(PolicyMetrics result)
+        {
+            if (result.ResultRecords <= 0)
+            {
+                return "pending";
+            }
+
+            switch (result.ResultKind)
+            {
+                case "CleanFollowupClear":
+                    return "clean_survival";
+                case "CounterRecoveryClear":
+                    return "counter_recovery";
+                case "PlayerDownFail":
+                    return "failure_analysis";
+                default:
+                    return result.ResultKind;
+            }
+        }
+
+        private static bool HasSingleReviewOnlyResultHook(PolicyMetrics result)
+        {
+            return result.ResultRecords == 1 && IsReviewOnlyResultHook(result);
+        }
+
+        private static bool IsReviewOnlyResultHook(PolicyMetrics result)
+        {
+            return result.ResultRecords > 0
+                && ContainsOrdinalIgnoreCase(result.ResultRecordRewardHook, "logged")
+                && !ContainsProgressionPayoutLanguage(result.ResultRecordRewardHook)
+                && !ContainsProgressionPayoutLanguage(result.ResultRecordNextObjective);
+        }
+
+        private static bool ContainsProgressionPayoutLanguage(string value)
+        {
+            return ContainsOrdinalIgnoreCase(value, "CommandExp")
+                || ContainsOrdinalIgnoreCase(value, "TacticChip")
+                || ContainsOrdinalIgnoreCase(value, "SummonCore")
+                || ContainsOrdinalIgnoreCase(value, "StyleMedal")
+                || ContainsOrdinalIgnoreCase(value, "currency")
+                || ContainsOrdinalIgnoreCase(value, "inventory")
+                || ContainsOrdinalIgnoreCase(value, "permanent")
+                || ContainsOrdinalIgnoreCase(value, "progression grant")
+                || ContainsOrdinalIgnoreCase(value, "reward_id")
+                || ContainsOrdinalIgnoreCase(value, "item_id");
+        }
+
+        private static bool ContainsOrdinalIgnoreCase(string value, string pattern)
+        {
+            return (value ?? string.Empty).IndexOf(pattern, System.StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
         private static string FormatSeconds(float seconds)
@@ -2650,6 +2791,9 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"resultRecordProofReadout\": \"{JsonEscape(result.ResultRecordProofReadout)}\",");
                 builder.AppendLine($"      \"resultRecordDecision\": \"{JsonEscape(result.ResultRecordDecision)}\",");
                 builder.AppendLine($"      \"resultRecordCounterWaveSource\": \"{JsonEscape(result.ResultRecordCounterWaveSource)}\",");
+                builder.AppendLine($"      \"resultRecordStageState\": \"{JsonEscape(ResolveResultStageState(result))}\",");
+                builder.AppendLine($"      \"resultRecordHookClass\": \"{JsonEscape(ResolveResultHookClass(result))}\",");
+                builder.AppendLine($"      \"resultRecordReviewOnly\": {JsonBool(IsReviewOnlyResultHook(result))},");
                 builder.AppendLine($"      \"routeDecision\": \"{JsonEscape(result.RouteDecision)}\",");
                 builder.AppendLine($"      \"completionReadout\": \"{JsonEscape(result.CompletionReadout)}\"");
                 builder.Append("    }");
@@ -2706,6 +2850,20 @@ namespace DimensionBrawl.Tests
 
             Assert.Fail($"Missing policy result {policy}.");
             return null;
+        }
+
+        private static void AssertStageResultHook(
+            PolicyMetrics result,
+            string expectedResultKind,
+            string expectedRewardHookText,
+            string expectedNextObjectiveText,
+            string message)
+        {
+            Assert.AreEqual(1, result.ResultRecords, message);
+            Assert.AreEqual(expectedResultKind, result.ResultKind, message);
+            Assert.That(result.ResultRecordRewardHook, Does.Contain(expectedRewardHookText), message);
+            Assert.That(result.ResultRecordNextObjective, Does.Contain(expectedNextObjectiveText), message);
+            Assert.IsTrue(IsReviewOnlyResultHook(result), message);
         }
 
         private static GameObject RequireRoot(string objectName)
