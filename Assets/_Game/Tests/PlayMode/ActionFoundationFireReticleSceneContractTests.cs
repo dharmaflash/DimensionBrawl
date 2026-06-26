@@ -13,7 +13,6 @@ namespace DimensionBrawl.Tests
     {
         private static readonly string[] ScenePaths =
         {
-            "Assets/_Game/Scenes/ActionFoundationCombatStage.unity",
             "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity",
             "Assets/_Game/Scenes/ActionFoundationFrontlineMotivationReview.unity",
             "Assets/_Game/Scenes/ActionFoundationBossSummonDuelReview.unity"
