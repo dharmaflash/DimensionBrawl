@@ -33,11 +33,16 @@ namespace DimensionBrawl.Tests
         private const float PressureWindowSeconds = 3f;
         private const float ReliefPressureWindowPeakRatio = 0.35f;
         private const float DelayedPunishInputSeconds = 1.1f;
+        private const float BacklineEnergyProbeForwardRisk01 = 0.12f;
+        private const float ForwardEnergyProbeForwardRisk01 = 0.88f;
+        private const float EnergyProbeMaxSeconds = 13f;
 
         private enum PolicyKind
         {
             NoSummonNoFire,
             GunOnly,
+            BacklineEnergyProbe,
+            ForwardRiskEnergyProbe,
             IntendedRoute,
             IntendedDelayedFollowup,
             LateSummon,
@@ -61,6 +66,8 @@ namespace DimensionBrawl.Tests
                 {
                     PolicyKind.NoSummonNoFire,
                     PolicyKind.GunOnly,
+                    PolicyKind.BacklineEnergyProbe,
+                    PolicyKind.ForwardRiskEnergyProbe,
                     PolicyKind.IntendedRoute,
                     PolicyKind.IntendedDelayedFollowup,
                     PolicyKind.LateSummon,
@@ -86,6 +93,8 @@ namespace DimensionBrawl.Tests
                 PolicyMetrics delayedIntended = RequireResult(results, PolicyKind.IntendedDelayedFollowup);
                 PolicyMetrics noSummon = RequireResult(results, PolicyKind.NoSummonNoFire);
                 PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
+                PolicyMetrics backlineEnergy = RequireResult(results, PolicyKind.BacklineEnergyProbe);
+                PolicyMetrics forwardRiskEnergy = RequireResult(results, PolicyKind.ForwardRiskEnergyProbe);
                 PolicyMetrics counterRecovery = RequireResult(results, PolicyKind.MissedFollowupCounterRecovery);
                 PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
                 PolicyMetrics ignoredRecovery = RequireResult(results, PolicyKind.BossScreenIgnoredNoRecovery);
@@ -114,6 +123,30 @@ namespace DimensionBrawl.Tests
                     noSummon.PressureBurdenSeconds,
                     0f,
                     "The report should record ArkData-style pressure burden before judging route feel.");
+                Assert.GreaterOrEqual(
+                    backlineEnergy.EnergyTier1ReadyAtSeconds,
+                    0f,
+                    "The backline energy probe should prove LV1 still eventually becomes available.");
+                Assert.GreaterOrEqual(
+                    forwardRiskEnergy.EnergyTier1ReadyAtSeconds,
+                    0f,
+                    "The forward-risk energy probe should prove LV1 becomes available.");
+                Assert.Less(
+                    forwardRiskEnergy.EnergyTier1DurationSeconds,
+                    backlineEnergy.EnergyTier1DurationSeconds * 0.6f,
+                    "Forward-risk positioning should materially accelerate LV1 readiness versus backline safety.");
+                Assert.Greater(
+                    forwardRiskEnergy.AverageEnergyGainMultiplier,
+                    backlineEnergy.AverageEnergyGainMultiplier + 0.75f,
+                    "The energy probe should expose a clear gain-multiplier split between safety and forward risk.");
+                Assert.Greater(
+                    backlineEnergy.BackSafetyBandSeconds,
+                    1f,
+                    "The backline probe should spend measurable time in the BackSafety band.");
+                Assert.Greater(
+                    forwardRiskEnergy.ForwardRiskBandSeconds,
+                    1f,
+                    "The forward probe should spend measurable time in the ForwardRisk band.");
                 Assert.GreaterOrEqual(
                     noSummon.Top3PressureWindowShare01,
                     noSummon.PeakPressureWindowShare01,
@@ -453,6 +486,12 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.GunOnly:
                     yield return RunGunOnly(context);
                     break;
+                case PolicyKind.BacklineEnergyProbe:
+                    yield return RunEnergyRiskProbe(context, BacklineEnergyProbeForwardRisk01);
+                    break;
+                case PolicyKind.ForwardRiskEnergyProbe:
+                    yield return RunEnergyRiskProbe(context, ForwardEnergyProbeForwardRisk01);
+                    break;
                 case PolicyKind.IntendedRoute:
                     yield return RunIntendedRoute(context);
                     break;
@@ -500,6 +539,29 @@ namespace DimensionBrawl.Tests
                 yield return FireBasicAt(context, context.BossHealth, context.BossCollider);
                 yield return ApplyBossWave(context, BossWaveAnswer.PlayerTakesHit);
                 yield return Advance(context, 1.35f);
+            }
+        }
+
+        private static IEnumerator RunEnergyRiskProbe(
+            CombatPolicyContext context,
+            float forwardRisk01)
+        {
+            MovePlayerToForwardRisk(context, forwardRisk01);
+            context.EnergyLadder.ResetLadder();
+            context.Metrics.EnergyProbeTargetForwardRisk01 = Mathf.Clamp01(forwardRisk01);
+            context.Metrics.EnergyProbeStartAtSeconds = context.Metrics.ElapsedSeconds;
+            context.Sample();
+
+            float start = context.Metrics.ElapsedSeconds;
+            while (context.EnergyLadder.AvailableTier < 1
+                && context.Metrics.ElapsedSeconds - start < EnergyProbeMaxSeconds)
+            {
+                yield return Advance(context, 0.1f);
+            }
+
+            if (context.EnergyLadder.AvailableTier < 1)
+            {
+                context.Metrics.Notes.Add("energy probe did not reach LV1");
             }
         }
 
@@ -661,6 +723,19 @@ namespace DimensionBrawl.Tests
             {
                 context.Metrics.Notes.Add($"energy tier {tier} not ready");
             }
+        }
+
+        private static void MovePlayerToForwardRisk(CombatPolicyContext context, float forwardRisk01)
+        {
+            float laneZ = Mathf.Lerp(
+                context.LaneSpace.BackLimitZ,
+                context.LaneSpace.ForwardBoundaryZ,
+                Mathf.Clamp01(forwardRisk01));
+            context.Player.transform.position = context.LaneSpace.GetLaneWorldPoint(
+                0f,
+                laneZ,
+                context.Player.transform.position.y);
+            Physics.SyncTransforms();
         }
 
         private static IEnumerator UseSummonAndBlockNextBossWave(CombatPolicyContext context)
@@ -1060,6 +1135,35 @@ namespace DimensionBrawl.Tests
             }
 
             builder.AppendLine();
+            builder.AppendLine("## Forward-Risk Energy Split");
+            builder.AppendLine("| Policy | Target risk | LV1 ready | Avg risk | Avg gain | Band seconds B/M/F | End tier/fill | Last band |");
+            builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---|");
+            for (int i = 0; i < results.Count; i++)
+            {
+                PolicyMetrics result = results[i];
+                builder.Append("| ");
+                builder.Append(result.Policy);
+                builder.Append(" | ");
+                builder.Append(FormatOptionalPercent01(result.EnergyProbeTargetForwardRisk01));
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.EnergyTier1DurationSeconds));
+                builder.Append(" | ");
+                builder.Append(FormatPercent01(result.AverageEnergyForwardRisk01));
+                builder.Append(" | ");
+                builder.Append($"x{result.AverageEnergyGainMultiplier:0.00}");
+                builder.Append(" | ");
+                builder.Append(
+                    $"{FormatSeconds(result.BackSafetyBandSeconds)}/"
+                    + $"{FormatSeconds(result.MidChargeBandSeconds)}/"
+                    + $"{FormatSeconds(result.ForwardRiskBandSeconds)}");
+                builder.Append(" | ");
+                builder.Append($"LV{result.EnergyAvailableTier}/{FormatPercent01(result.EnergyFillRatio)}");
+                builder.Append(" | ");
+                builder.Append(EscapeTable(result.LastEnergyRiskBand));
+                builder.AppendLine(" |");
+            }
+
+            builder.AppendLine();
             builder.AppendLine("## Pressure Exposure");
             builder.AppendLine("| Policy | Drain used | Hit penalty | Avg drain/s | Peak drain/s | Avg slot | Avg front scale | Enemy-only | Contested | Ally-only | Last front |");
             builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|");
@@ -1276,6 +1380,8 @@ namespace DimensionBrawl.Tests
             PolicyMetrics delayedIntended = RequireResult(results, PolicyKind.IntendedDelayedFollowup);
             PolicyMetrics noSummon = RequireResult(results, PolicyKind.NoSummonNoFire);
             PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
+            PolicyMetrics backlineEnergy = RequireResult(results, PolicyKind.BacklineEnergyProbe);
+            PolicyMetrics forwardRiskEnergy = RequireResult(results, PolicyKind.ForwardRiskEnergyProbe);
             PolicyMetrics late = RequireResult(results, PolicyKind.LateSummon);
             PolicyMetrics counterRecovery = RequireResult(results, PolicyKind.MissedFollowupCounterRecovery);
             PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
@@ -1289,6 +1395,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Intended route currently reads as `{ResolveRouteShape(intended)}`: follow-up window {FormatSeconds(intended.FirstFollowupWindowAtSeconds)}, counter {FormatSeconds(intended.FirstCounterWaveAtSeconds)}, Skill1 hit {FormatSeconds(intended.FirstFollowupHitAtSeconds)}.");
             builder.AppendLine($"- Lock/unlock cadence: intended block->window {FormatSeconds(intended.BlockToFollowupWindowSeconds)}, window->hit {FormatSeconds(intended.FollowupWindowToHitSeconds)}; boss-screen recovery answer pulse {blockedRecovery.CounterWaveAnswerEnergyPulse:0}, counter->answer {FormatSeconds(blockedRecovery.CounterTriggerToAnswerSeconds)}, answer->stable {FormatSeconds(blockedRecovery.CounterAnswerToStableSeconds)}, stable->final {FormatSeconds(blockedRecovery.CounterStableToFinalWindowSeconds)}, final->hit {FormatSeconds(blockedRecovery.FinalWindowToHitSeconds)}.");
             builder.AppendLine($"- Punish window tolerance: delayed clean hit after {FormatSeconds(delayedIntended.FollowupHitWindowDelaySeconds)} with {FormatSeconds(delayedIntended.FollowupWindowRemainingAtFirstHitSeconds)} remaining; delayed boss-screen recovery hit after {FormatSeconds(delayedBlockedRecovery.FollowupHitWindowDelaySeconds)} with {FormatSeconds(delayedBlockedRecovery.FollowupWindowRemainingAtFirstHitSeconds)} remaining.");
+            builder.AppendLine($"- Forward-risk EN split: backline LV1 {FormatSeconds(backlineEnergy.EnergyTier1DurationSeconds)} at x{backlineEnergy.AverageEnergyGainMultiplier:0.00}, forward-risk LV1 {FormatSeconds(forwardRiskEnergy.EnergyTier1DurationSeconds)} at x{forwardRiskEnergy.AverageEnergyGainMultiplier:0.00}; forward route is {ResolveEnergySpeedup(backlineEnergy, forwardRiskEnergy):0.0}x faster.");
             builder.AppendLine($"- Route stability split: no-action {FormatPercent01(noSummon.RouteStability01)} final / {FormatPercent01(noSummon.MinRouteStability01)} min, gun-only {FormatPercent01(gunOnly.RouteStability01)} / {FormatPercent01(gunOnly.MinRouteStability01)}, intended {FormatPercent01(intended.RouteStability01)} / {FormatPercent01(intended.MinRouteStability01)}.");
             builder.AppendLine($"- Unanswered hit penalty split: no-action {FormatPercent01(noSummon.TotalUnansweredBossHitRoutePenalty01)} x{noSummon.UnansweredBossHitRoutePenaltyCount}, gun-only {FormatPercent01(gunOnly.TotalUnansweredBossHitRoutePenalty01)} x{gunOnly.UnansweredBossHitRoutePenaltyCount}, late {FormatPercent01(late.TotalUnansweredBossHitRoutePenalty01)} x{late.UnansweredBossHitRoutePenaltyCount}.");
             builder.AppendLine($"- Frontline exposure split: no-action enemy-only {FormatSeconds(noSummon.EnemyOnlyFrontlineSeconds)}, gun-only enemy-only {FormatSeconds(gunOnly.EnemyOnlyFrontlineSeconds)}, intended ally-only {FormatSeconds(intended.AllyOnlyFrontlineSeconds)} / contested {FormatSeconds(intended.ContestedFrontlineSeconds)}.");
@@ -1395,6 +1502,13 @@ namespace DimensionBrawl.Tests
             return elapsedSeconds > 0f ? total / elapsedSeconds : 0f;
         }
 
+        private static float ResolveEnergySpeedup(PolicyMetrics slow, PolicyMetrics fast)
+        {
+            return slow.EnergyTier1DurationSeconds > 0f && fast.EnergyTier1DurationSeconds > 0f
+                ? slow.EnergyTier1DurationSeconds / fast.EnergyTier1DurationSeconds
+                : 0f;
+        }
+
         private static string BuildJson(IReadOnlyList<PolicyMetrics> results)
         {
             StringBuilder builder = new StringBuilder();
@@ -1464,6 +1578,21 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"contestedFrontlineSeconds\": {result.ContestedFrontlineSeconds:0.###},");
                 builder.AppendLine($"      \"allyOnlyFrontlineSeconds\": {result.AllyOnlyFrontlineSeconds:0.###},");
                 builder.AppendLine($"      \"frontlinePresenceReadout\": \"{JsonEscape(result.FrontlinePresenceReadout)}\",");
+                builder.AppendLine($"      \"energyProbeTargetForwardRisk01\": {JsonNullableSeconds(result.EnergyProbeTargetForwardRisk01)},");
+                builder.AppendLine($"      \"energyProbeStartAtSeconds\": {JsonNullableSeconds(result.EnergyProbeStartAtSeconds)},");
+                builder.AppendLine($"      \"energyTier1ReadyAtSeconds\": {JsonNullableSeconds(result.EnergyTier1ReadyAtSeconds)},");
+                builder.AppendLine($"      \"energyTier1DurationSeconds\": {JsonNullableSeconds(result.EnergyTier1DurationSeconds)},");
+                builder.AppendLine($"      \"energyChargingTier\": {result.EnergyChargingTier},");
+                builder.AppendLine($"      \"energyAvailableTier\": {result.EnergyAvailableTier},");
+                builder.AppendLine($"      \"energyFillRatio\": {result.EnergyFillRatio:0.###},");
+                builder.AppendLine($"      \"averageEnergyForwardRisk01\": {result.AverageEnergyForwardRisk01:0.###},");
+                builder.AppendLine($"      \"averageEnergyGainMultiplier\": {result.AverageEnergyGainMultiplier:0.###},");
+                builder.AppendLine($"      \"backSafetyBandSeconds\": {result.BackSafetyBandSeconds:0.###},");
+                builder.AppendLine($"      \"midChargeBandSeconds\": {result.MidChargeBandSeconds:0.###},");
+                builder.AppendLine($"      \"forwardRiskBandSeconds\": {result.ForwardRiskBandSeconds:0.###},");
+                builder.AppendLine($"      \"lastEnergyForwardRisk01\": {result.LastEnergyForwardRisk01:0.###},");
+                builder.AppendLine($"      \"lastEnergyGainMultiplier\": {result.LastEnergyGainMultiplier:0.###},");
+                builder.AppendLine($"      \"lastEnergyRiskBand\": \"{JsonEscape(result.LastEnergyRiskBand)}\",");
                 builder.AppendLine($"      \"pressureWindowSeconds\": {result.PressureWindowSeconds:0.###},");
                 builder.AppendLine($"      \"pressureBurdenSeconds\": {result.PressureBurdenSeconds:0.###},");
                 builder.AppendLine($"      \"pressureWindowCount\": {result.PressureWindowCount},");
@@ -1965,6 +2094,17 @@ namespace DimensionBrawl.Tests
                 Metrics.MaxRouteStabilityDrainPerSecond = Mathf.Max(
                     Metrics.MaxRouteStabilityDrainPerSecond,
                     PocketOwner.CurrentRouteStabilityDrainPerSecond);
+                Metrics.EnergyChargingTier = EnergyLadder.ChargingTier;
+                Metrics.EnergyAvailableTier = EnergyLadder.AvailableTier;
+                Metrics.EnergyFillRatio = EnergyLadder.CurrentTierFillRatio;
+                Metrics.LastEnergyForwardRisk01 = EnergyLadder.CurrentForwardRisk01;
+                Metrics.LastEnergyGainMultiplier = EnergyLadder.CurrentGainMultiplier;
+                Metrics.LastEnergyRiskBand = EnergyLadder.CurrentRiskBand.ToString();
+                if (EnergyLadder.AvailableTier >= 1 && Metrics.EnergyTier1ReadyAtSeconds < 0f)
+                {
+                    Metrics.EnergyTier1ReadyAtSeconds = Metrics.ElapsedSeconds;
+                }
+
                 SampleFrontlineClashCost();
                 SampleFrontlineHitReactionPresentation();
                 SampleFollowupPresentationBridge();
@@ -1977,6 +2117,22 @@ namespace DimensionBrawl.Tests
                 Metrics.RouteDrainAccumulated01 += PocketOwner.CurrentRouteStabilityDrainPerSecond * deltaTime;
                 Metrics.RoutePressureWeightSeconds += PocketOwner.CurrentRoutePressureWeight * deltaTime;
                 Metrics.FrontlinePresenceScaleSeconds += PocketOwner.CurrentFrontlinePresenceDrainScale * deltaTime;
+                Metrics.EnergySampleSeconds += deltaTime;
+                Metrics.EnergyForwardRiskSeconds += EnergyLadder.CurrentForwardRisk01 * deltaTime;
+                Metrics.EnergyGainMultiplierSeconds += EnergyLadder.CurrentGainMultiplier * deltaTime;
+                switch (EnergyLadder.CurrentRiskBand)
+                {
+                    case SummonEnergyRiskBand.BackSafety:
+                        Metrics.BackSafetyBandSeconds += deltaTime;
+                        break;
+                    case SummonEnergyRiskBand.MidCharge:
+                        Metrics.MidChargeBandSeconds += deltaTime;
+                        break;
+                    case SummonEnergyRiskBand.ForwardRisk:
+                        Metrics.ForwardRiskBandSeconds += deltaTime;
+                        break;
+                }
+
                 SamplePressureShape(deltaTime, enemyFrontlineCount, allyFrontlineCount);
                 if (allyFrontlineCount > 0 && enemyFrontlineCount > 0)
                 {
@@ -2780,6 +2936,27 @@ namespace DimensionBrawl.Tests
             public float ContestedFrontlineSeconds { get; set; }
             public float AllyOnlyFrontlineSeconds { get; set; }
             public string FrontlinePresenceReadout { get; set; } = "pressure x1.00 open";
+            public float EnergyProbeTargetForwardRisk01 { get; set; } = -1f;
+            public float EnergyProbeStartAtSeconds { get; set; } = -1f;
+            public float EnergyTier1ReadyAtSeconds { get; set; } = -1f;
+            public float EnergyTier1DurationSeconds =>
+                ResolveTimingDelta(EnergyProbeStartAtSeconds, EnergyTier1ReadyAtSeconds);
+            public int EnergyChargingTier { get; set; }
+            public int EnergyAvailableTier { get; set; }
+            public float EnergyFillRatio { get; set; }
+            public float LastEnergyForwardRisk01 { get; set; }
+            public float LastEnergyGainMultiplier { get; set; }
+            public string LastEnergyRiskBand { get; set; } = "Unknown";
+            public float EnergySampleSeconds { get; set; }
+            public float EnergyForwardRiskSeconds { get; set; }
+            public float EnergyGainMultiplierSeconds { get; set; }
+            public float BackSafetyBandSeconds { get; set; }
+            public float MidChargeBandSeconds { get; set; }
+            public float ForwardRiskBandSeconds { get; set; }
+            public float AverageEnergyForwardRisk01 =>
+                EnergySampleSeconds > 0f ? EnergyForwardRiskSeconds / EnergySampleSeconds : 0f;
+            public float AverageEnergyGainMultiplier =>
+                EnergySampleSeconds > 0f ? EnergyGainMultiplierSeconds / EnergySampleSeconds : 0f;
             public float PressureWindowSeconds { get; set; }
             public float PressureBurdenSeconds { get; set; }
             public int PressureWindowCount { get; set; }
