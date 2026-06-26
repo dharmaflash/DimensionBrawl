@@ -70,6 +70,7 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField] private string waveSlotPattern = "CloseProbe -> LineProjectile -> ScreenCurtain -> FrontlineBody -> CoreExpose";
         [SerializeField] private string spawnFamilyPattern = "Drop | Dash | Jump | Normal";
         [SerializeField] private string observerLoop = "condition gate -> combat observer -> completion record -> reward/state hook";
+        [SerializeField] private string routeEvidencePattern = "trigger -> target -> payload -> cue -> log";
         [SerializeField] private string rewardHook = "Review-only result hook; no payout or progression grant.";
 
         [Header("Route Stability")]
@@ -153,6 +154,7 @@ namespace DimensionBrawl.LevelDesign
         public string WaveSlotPattern => waveSlotPattern;
         public string SpawnFamilyPattern => spawnFamilyPattern;
         public string ObserverLoop => observerLoop;
+        public string RouteEvidencePattern => routeEvidencePattern;
         public string RewardHook => rewardHook;
         public float RouteStabilityStart01 => Mathf.Clamp01(routeStabilityStart01);
         public float CloseProbeRouteDrainPerSecond => Mathf.Max(0f, closeProbeRouteDrainPerSecond);

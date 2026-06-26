@@ -229,6 +229,7 @@ namespace DimensionBrawl.Editor
                 serializedObject,
                 "observerLoop",
                 "condition gate -> combat observer -> completion record -> reward/state hook");
+            SetString(serializedObject, "routeEvidencePattern", "trigger -> target -> payload -> cue -> log");
             SetString(serializedObject, "rewardHook", "Review-only route record; no payout or progression grant.");
             SetFloat(serializedObject, "routeStabilityStart01", 0.62f);
             SetFloat(serializedObject, "closeProbeRouteDrainPerSecond", 0.045f);
@@ -398,7 +399,7 @@ namespace DimensionBrawl.Editor
         private static void ConfigureSourceReferences(SerializedObject serializedObject)
         {
             SerializedProperty sources = RequireProperty(serializedObject, "sourceReferences");
-            sources.arraySize = 4;
+            sources.arraySize = 5;
             ConfigureSourceReference(
                 sources.GetArrayElementAtIndex(0),
                 "NIKKE.StageWaveJoin",
@@ -416,6 +417,11 @@ namespace DimensionBrawl.Editor
                 "Local completion should be driven by combat observer events and idempotent completion records.");
             ConfigureSourceReference(
                 sources.GetArrayElementAtIndex(3),
+                "CombatPayload.EventEffectContract",
+                "ArkData/CombatPayload_ApplyData_2026-06-25/docs/combat_payload_family_guide.md",
+                "Combat action evidence should connect trigger condition, target selector, payload/effect, presentation feedback, and state/log commit.");
+            ConfigureSourceReference(
+                sources.GetArrayElementAtIndex(4),
                 "Project.FrontlineWaveSpec",
                 "Assets/_Game/DesignDocs/ACTION_FOUNDATION_FRONTLINE_WAVE_STAGE_SPEC.md",
                 "Canonical local adaptation: fixed rear boss, player line lock, summon-first frontline agency, review-only result hook.");

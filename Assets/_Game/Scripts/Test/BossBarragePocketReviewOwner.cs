@@ -213,6 +213,10 @@ namespace DimensionBrawl.Test
         public string RouteDecisionState => ResolveRouteDecisionState();
         public string RouteDecisionReadout => ResolveRouteDecisionReadout();
         public string CompletionRecordReadout => ResolveCompletionRecordReadout();
+        public int RouteProofStepCount => 4;
+        public int CompletedRouteProofStepCount => ResolveCompletedRouteProofStepCount();
+        public string RouteProofState => ResolveRouteProofState();
+        public string RouteProofReadout => ResolveRouteProofReadout();
         public bool IsSkill1FollowupClearCountdownActive => state == PocketState.Running
             && skill1FollowupHitConfirmed
             && skill1FollowupClearTimer > 0f;
@@ -1415,12 +1419,140 @@ namespace DimensionBrawl.Test
                 + $"counter:{CounterWaveRecordState}({CounterWaveSourceReadout}) "
                 + $"counter_answer:{CounterWaveAnswerState}({CounterWaveAnswerReadout}) "
                 + $"counter_window:{CounterWaveFinalWindowState}({CounterWaveFinalWindowReadout}) "
-                + $"decision:{RouteDecisionState}({RouteDecisionReadout})";
+                + $"decision:{RouteDecisionState}({RouteDecisionReadout}) "
+                + $"proof:{RouteProofState}({RouteProofReadout})";
         }
 
         private static string ResolveRecordState(bool completed)
         {
             return completed ? "recorded" : "pending";
+        }
+
+        private int ResolveCompletedRouteProofStepCount()
+        {
+            int completed = 0;
+            if (ResolveRouteProofTriggerReadout() != "pending")
+            {
+                completed++;
+            }
+
+            string targetReadout = ResolveRouteProofTargetReadout();
+            if (targetReadout == "boss_curtain" || targetReadout == "ally_hold")
+            {
+                completed++;
+            }
+
+            if (skill1FollowupHitConfirmed)
+            {
+                completed++;
+            }
+
+            if (state == PocketState.Cleared)
+            {
+                completed++;
+            }
+
+            return Mathf.Clamp(completed, 0, RouteProofStepCount);
+        }
+
+        private string ResolveRouteProofState()
+        {
+            if (state == PocketState.Cleared)
+            {
+                return "committed";
+            }
+
+            if (state == PocketState.Failed)
+            {
+                return "failed";
+            }
+
+            if (skill1FollowupHitConfirmed)
+            {
+                return "log_pending";
+            }
+
+            string targetReadout = ResolveRouteProofTargetReadout();
+            if (targetReadout == "boss_curtain" || targetReadout == "ally_hold")
+            {
+                return "payload_pending";
+            }
+
+            return ResolveRouteProofTriggerReadout() != "pending" ? "target_pending" : "pending";
+        }
+
+        private string ResolveRouteProofReadout()
+        {
+            return $"{CompletedRouteProofStepCount}/{RouteProofStepCount} "
+                + $"trigger:{ResolveRouteProofTriggerReadout()} "
+                + $"target:{ResolveRouteProofTargetReadout()} "
+                + $"payload:{ResolveRouteProofPayloadReadout()} "
+                + $"log:{ResolveRouteProofLogReadout()}";
+        }
+
+        private string ResolveRouteProofTriggerReadout()
+        {
+            if (counterWaveObserved)
+            {
+                return "counter_wave";
+            }
+
+            return closeThreatDefeated ? "close_probe" : "pending";
+        }
+
+        private string ResolveRouteProofTargetReadout()
+        {
+            if (counterWaveObserved)
+            {
+                if (counterWaveStabilized)
+                {
+                    return "ally_hold";
+                }
+
+                if (ActiveAllyFrontlineProxyCount > 0)
+                {
+                    return "ally_holding";
+                }
+
+                return counterWaveAllyHoldInterrupted ? "interrupted" : "ally_needed";
+            }
+
+            if (blockedBossPressureWithSummon)
+            {
+                return "boss_curtain";
+            }
+
+            return closeThreatDefeated ? "summon_needed" : "pending";
+        }
+
+        private string ResolveRouteProofPayloadReadout()
+        {
+            if (skill1FollowupHitConfirmed)
+            {
+                return IsCounterRecoveryRoute() ? "final_skill" : "skill1_confirm";
+            }
+
+            if (counterWaveFinalWindowOpened)
+            {
+                return "final_window";
+            }
+
+            if (pressurePacing.IsSummonFollowupWindowActive)
+            {
+                return "window_open";
+            }
+
+            return "pending";
+        }
+
+        private string ResolveRouteProofLogReadout()
+        {
+            if (state == PocketState.Cleared)
+            {
+                return "committed";
+            }
+
+            return state == PocketState.Failed ? "failed" : "pending";
         }
 
         private string ResolveCounterWaveRecordState()

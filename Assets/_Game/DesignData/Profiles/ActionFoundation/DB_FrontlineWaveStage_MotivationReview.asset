@@ -24,6 +24,7 @@ MonoBehaviour:
   spawnFamilyPattern: Drop | Dash | Jump | Normal
   observerLoop: condition gate -> combat observer -> completion record -> reward/state
     hook
+  routeEvidencePattern: trigger -> target -> payload -> cue -> log
   rewardHook: Review-only route record; no payout or progression grant.
   routeStabilityStart01: 0.62
   closeProbeRouteDrainPerSecond: 0.045
@@ -178,6 +179,10 @@ MonoBehaviour:
     sourcePath: ArkData/TutorialSystem_ApplyData_2026-06-24/normalized_enhanced/tutorial_runner_contract.json
     localTakeaway: Local completion should be driven by combat observer events and
       idempotent completion records.
+  - sourceId: CombatPayload.EventEffectContract
+    sourcePath: ArkData/CombatPayload_ApplyData_2026-06-25/docs/combat_payload_family_guide.md
+    localTakeaway: Combat action evidence should connect trigger condition, target
+      selector, payload/effect, presentation feedback, and state/log commit.
   - sourceId: Project.FrontlineWaveSpec
     sourcePath: Assets/_Game/DesignDocs/ACTION_FOUNDATION_FRONTLINE_WAVE_STAGE_SPEC.md
     localTakeaway: 'Canonical local adaptation: fixed rear boss, player line lock,

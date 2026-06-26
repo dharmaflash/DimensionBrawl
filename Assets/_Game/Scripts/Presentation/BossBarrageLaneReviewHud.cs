@@ -1519,7 +1519,7 @@ namespace DimensionBrawl.Presentation
 
         private string ResolveRouteRecordLine()
         {
-            return $"Route Record: {ResolveRouteRecordSummary()}";
+            return $"Route Record: {ResolveRouteRecordSummary()} | Evidence {ResolveRouteEvidencePatternText(ActiveStageProfile)}";
         }
 
         private string ResolveRouteStabilityLine()
@@ -1586,7 +1586,7 @@ namespace DimensionBrawl.Presentation
         {
             return pocketReviewOwner != null
                 ? pocketReviewOwner.CompletionRecordReadout
-                : "close:pending summon:pending followup:pending counter:pending(none) counter_answer:pending(none) counter_window:pending(none) decision:build_route(hold_line)";
+                : "close:pending summon:pending followup:pending counter:pending(none) counter_answer:pending(none) counter_window:pending(none) decision:build_route(hold_line) proof:pending(0/4 trigger:pending target:pending payload:pending log:pending)";
         }
 
         private string ResolveRouteStabilityText()
@@ -1674,6 +1674,11 @@ namespace DimensionBrawl.Presentation
         private static string ResolveStageText(string profileText, string fallback)
         {
             return string.IsNullOrWhiteSpace(profileText) ? fallback : profileText;
+        }
+
+        private static string ResolveRouteEvidencePatternText(FrontlineWaveStageProfile profile)
+        {
+            return ResolveStageText(profile?.RouteEvidencePattern, "trigger -> target -> payload -> cue -> log");
         }
 
         private void DrawCombatResourceBars()
