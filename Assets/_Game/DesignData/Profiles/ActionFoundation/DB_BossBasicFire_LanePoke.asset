@@ -21,6 +21,8 @@ MonoBehaviour:
   projectileSpeed: 11.5
   projectileLifetimeSeconds: 5.2
   projectileRadius: 0.22
+  damageResponsePolicy: 2
+  controlLockPolicy: 0
   backlineHalfSpread: 1.45
   forwardHalfSpread: 0.48
   spawnLateralFollowRatio: 0.2

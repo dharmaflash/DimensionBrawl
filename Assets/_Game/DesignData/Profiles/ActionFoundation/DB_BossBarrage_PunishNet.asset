@@ -35,6 +35,8 @@ MonoBehaviour:
   projectileSpeed: 12.4
   projectileLifetimeSeconds: 5.2
   projectileRadius: 0.29
+  damageResponsePolicy: 2
+  controlLockPolicy: 0
   targetingRule: 0
   laneCenterLateralRatio: 0
   lateralShape: 3
