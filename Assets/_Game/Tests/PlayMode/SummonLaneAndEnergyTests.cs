@@ -1582,8 +1582,25 @@ namespace DimensionBrawl.Tests
                 Vector3.zero,
                 Vector3.back,
                 0f,
-                DamageResponsePolicy.FlashOnly)));
+                DamageResponsePolicy.Default,
+                CombatControlLockPolicy.None)));
             Assert.AreEqual(2, presenter.DamageFlashCount);
+            Assert.AreEqual(
+                1,
+                presenter.AnimatorHitTriggerCount,
+                "Default-looking pressure damage should not play a full-body hit animation unless it also declares action lock.");
+            Assert.AreEqual(DamageResponsePolicy.Default, presenter.LastDamageResponsePolicy);
+            Assert.AreEqual(CombatControlLockPolicy.None, presenter.LastDamageControlLockPolicy);
+
+            Assert.IsTrue(victimHealth.TryApplyDamage(new DamageInfo(
+                sourceHealth,
+                DamageTeam.Enemy,
+                12f,
+                Vector3.zero,
+                Vector3.back,
+                0f,
+                DamageResponsePolicy.FlashOnly)));
+            Assert.AreEqual(3, presenter.DamageFlashCount);
             Assert.AreEqual(
                 1,
                 presenter.AnimatorHitTriggerCount,
@@ -1599,7 +1616,7 @@ namespace DimensionBrawl.Tests
                 DamageResponsePolicy.DamageOnly,
                 CombatControlLockPolicy.None)));
             Assert.AreEqual(
-                2,
+                3,
                 presenter.DamageFlashCount,
                 "Damage-only policy should stay out of presentation hooks.");
             Assert.AreEqual(1, presenter.AnimatorHitTriggerCount);

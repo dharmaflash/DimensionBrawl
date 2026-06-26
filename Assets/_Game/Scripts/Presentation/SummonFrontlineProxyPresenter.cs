@@ -517,7 +517,7 @@ namespace DimensionBrawl.Presentation
 
         private static bool ShouldPlayHitAnimation(DamageInfo damageInfo)
         {
-            return DamageResponsePolicyUtility.PlaysFullBodyHitAnimation(damageInfo.ResponsePolicy);
+            return DamageResponsePolicyUtility.PlaysFullBodyHitAnimation(damageInfo);
         }
 
         private float ResolveDamageCuePolicyScale(DamageInfo damageInfo)

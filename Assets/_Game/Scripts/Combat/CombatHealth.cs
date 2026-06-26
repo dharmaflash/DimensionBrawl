@@ -37,12 +37,20 @@ namespace DimensionBrawl.Combat
             return responsePolicy != DamageResponsePolicy.DamageOnly;
         }
 
-        public static bool PlaysFullBodyHitAnimation(DamageResponsePolicy responsePolicy)
+        public static bool PlaysFullBodyHitAnimation(DamageInfo damageInfo)
         {
-            return responsePolicy == DamageResponsePolicy.Default
+            return PlaysFullBodyHitAnimation(damageInfo.ResponsePolicy, damageInfo.ControlLockPolicy);
+        }
+
+        public static bool PlaysFullBodyHitAnimation(
+            DamageResponsePolicy responsePolicy,
+            CombatControlLockPolicy controlLockPolicy)
+        {
+            return InterruptsAction(controlLockPolicy)
+                && (responsePolicy == DamageResponsePolicy.Default
                 || responsePolicy == DamageResponsePolicy.Stagger
                 || responsePolicy == DamageResponsePolicy.Break
-                || responsePolicy == DamageResponsePolicy.Knockdown;
+                || responsePolicy == DamageResponsePolicy.Knockdown);
         }
 
         public static bool InterruptsAction(CombatControlLockPolicy controlLockPolicy)
