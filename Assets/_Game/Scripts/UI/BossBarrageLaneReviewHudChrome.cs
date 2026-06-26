@@ -81,6 +81,7 @@ namespace DimensionBrawl.UI
         public static void DrawPlayerResourcePanel(
             Rect rect,
             string title,
+            string survivalCueText,
             string hpText,
             float hpFill,
             Color hpFillColor,
@@ -94,7 +95,19 @@ namespace DimensionBrawl.UI
             titleLabelStyle.fontSize = Mathf.RoundToInt(Mathf.Clamp(rect.height * 0.22f, 15f, 20f));
             leftLabelStyle.fontSize = Mathf.RoundToInt(Mathf.Clamp(rect.height * 0.16f, 11f, 15f));
 
-            GUI.Label(new Rect(rect.x + 18f, rect.y + 9f, rect.width - 36f, 24f), title, titleLabelStyle);
+            GUI.Label(new Rect(rect.x + 18f, rect.y + 9f, rect.width * 0.42f, 24f), title, titleLabelStyle);
+            smallCenterLabelStyle.alignment = TextAnchor.MiddleRight;
+            smallCenterLabelStyle.fontSize = Mathf.RoundToInt(Mathf.Clamp(rect.height * 0.14f, 10f, 13f));
+            bool urgentSurvivalCue = !string.IsNullOrWhiteSpace(survivalCueText)
+                && survivalCueText.StartsWith("Critical", System.StringComparison.Ordinal);
+            smallCenterLabelStyle.normal.textColor = urgentSurvivalCue
+                ? new Color(1f, 0.42f, 0.26f, 0.96f)
+                : energyReady
+                    ? GoldColor
+                    : MutedTextColor;
+            GUI.Label(new Rect(rect.x + rect.width * 0.45f, rect.y + 10f, rect.width * 0.49f, 20f), survivalCueText, smallCenterLabelStyle);
+            smallCenterLabelStyle.alignment = TextAnchor.MiddleCenter;
+            smallCenterLabelStyle.normal.textColor = TextColor;
             GUI.Label(new Rect(rect.x + 18f, rect.y + 32f, rect.width * 0.42f, 18f), hpText, leftLabelStyle);
             GUI.Label(new Rect(rect.x + rect.width * 0.58f, rect.y + 32f, rect.width * 0.38f, 18f), energyText, leftLabelStyle);
 

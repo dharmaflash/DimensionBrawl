@@ -442,6 +442,8 @@ namespace DimensionBrawl.Tests
             playerHealth.ConfigureTeam(DamageTeam.Player);
             playerHealth.ConfigureMaxHealth(100f);
             playerHealth.TryApplyDamage(new DamageInfo(null, DamageTeam.Enemy, 42f, Vector3.zero, Vector3.back, 0f));
+            SummonEnergyLadder energy = playerObject.AddComponent<SummonEnergyLadder>();
+            energy.GrantCurrentTierEnergy(100f);
 
             GameObject hudObject = new GameObject("Hud");
             BossBarrageLaneReviewHud hud = hudObject.AddComponent<BossBarrageLaneReviewHud>();
@@ -449,6 +451,7 @@ namespace DimensionBrawl.Tests
                 playerHealth,
                 null,
                 null,
+                energy,
                 null,
                 null,
                 null,
@@ -461,10 +464,12 @@ namespace DimensionBrawl.Tests
                 null);
 
             StringAssert.Contains("HP 58/100 pressured", hud.PlayerSurvivalReadout);
+            Assert.AreEqual("HP: summon LV1", hud.PlayerSurvivalCueReadout);
 
             playerHealth.TryApplyDamage(new DamageInfo(null, DamageTeam.Enemy, 30f, Vector3.zero, Vector3.back, 0f));
 
             StringAssert.Contains("critical", hud.PlayerSurvivalReadout);
+            Assert.AreEqual("Critical: summon LV1", hud.PlayerSurvivalCueReadout);
 
             Object.DestroyImmediate(hudObject);
             Object.DestroyImmediate(playerObject);

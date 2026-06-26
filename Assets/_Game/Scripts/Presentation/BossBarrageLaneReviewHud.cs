@@ -94,6 +94,7 @@ namespace DimensionBrawl.Presentation
         public string CompactCombatCueReadout => ResolveCompactCombatCueLine();
         public string CompactFrontlineCueReadout => ResolveCompactFrontlineCueLine();
         public string PlayerSurvivalReadout => ResolvePlayerSurvivalReadout().Line;
+        public string PlayerSurvivalCueReadout => ResolvePlayerSurvivalCueText();
         public bool ShouldShowResultBanner => TryResolveResultBanner(out _, out _, out _);
         public string ResultBannerTitle => TryResolveResultBanner(out string title, out _, out _) ? title : string.Empty;
         public string ResultBannerDetail => TryResolveResultBanner(out _, out string detail, out _) ? detail : string.Empty;
@@ -238,6 +239,7 @@ namespace DimensionBrawl.Presentation
             BossBarrageLaneReviewHudChrome.DrawPlayerResourcePanel(
                 layout.PlayerPanelRect,
                 playerDisplayName,
+                ResolvePlayerSurvivalCueText(),
                 playerSurvivalReadout.Line,
                 ResolveHealthFill01(playerHealth),
                 playerSurvivalReadout.FillColor,
@@ -382,6 +384,55 @@ namespace DimensionBrawl.Presentation
         private CombatResourceReadout ResolvePlayerSurvivalReadout()
         {
             return CombatResourceReadout.FromSurvivalHealth("HP", playerHealth, playerHealthColor);
+        }
+
+        private string ResolvePlayerSurvivalCueText()
+        {
+            string state = CombatResourceReadout.ResolveSurvivalStateText(playerHealth);
+            if (state == "missing")
+            {
+                return "HP -";
+            }
+
+            if (state == "down")
+            {
+                return "HP down";
+            }
+
+            if (bossBarrageEmitter != null && bossBarrageEmitter.IsWindupActive)
+            {
+                return state == "critical" ? "Critical: dodge" : "HP: dodge";
+            }
+
+            if (bossPressureActionDirector != null
+                && bossPressureActionDirector.IsPlayerSummonResponseWindowActive)
+            {
+                return state == "critical" ? "Critical: summon" : "HP: summon answer";
+            }
+
+            BossBarrageFrontlineReadout pressureReadout = BossBarrageLaneReviewHudText.ResolveFrontlineProxyReadout();
+            if (pressureReadout.EnemyCount > pressureReadout.AllyCount)
+            {
+                if (energyLadder != null && energyLadder.CanSpend)
+                {
+                    return $"HP: summon LV{energyLadder.AvailableTier}";
+                }
+
+                return "HP: clear pressure";
+            }
+
+            if (energyLadder != null && energyLadder.CanSpend)
+            {
+                string prefix = state == "critical" ? "Critical" : "HP";
+                return $"{prefix}: summon LV{energyLadder.AvailableTier}";
+            }
+
+            if (state == "critical")
+            {
+                return "Critical: survive";
+            }
+
+            return state == "pressured" ? "HP: build EN" : "HP stable";
         }
 
         private string ResolveEnergyValueText()
