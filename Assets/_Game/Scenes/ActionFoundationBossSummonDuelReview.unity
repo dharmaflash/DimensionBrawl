@@ -21259,7 +21259,8 @@ MonoBehaviour:
   summonSlot3Action: {fileID: 4014}
   bossBarrageEmitter: {fileID: 1827966293}
   bossPressureActionDirector: {fileID: 1827966298}
-  pocketReviewOwner: {fileID: 478344401}
+  pocketReviewOwner: {fileID: 0}
+  duelReviewOwner: {fileID: 30034942}
   showScreenCues: 1
   maxFullScreenAlpha: 0.1
   maxEdgeAlpha: 0.26

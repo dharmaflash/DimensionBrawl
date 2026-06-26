@@ -59,6 +59,7 @@ namespace DimensionBrawl.Tests
             ActionCameraController cameraController = RequireObject<ActionCameraController>();
             BossBarrageLaneReviewHud reviewHud = RequireObject<BossBarrageLaneReviewHud>();
             BossBarrageLaneReviewMobileHud mobileHud = RequireObject<BossBarrageLaneReviewMobileHud>();
+            ActionScreenCuePresenter screenCuePresenter = RequireObject<ActionScreenCuePresenter>();
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             CombatVfxCuePlayer playerCuePlayer =
                 RequireComponent<CombatVfxCuePlayer>(player.gameObject, "player combat VFX cue player");
@@ -100,6 +101,11 @@ namespace DimensionBrawl.Tests
             StringAssert.Contains("Cost", reviewHud.FrontlineTuningReadout);
             StringAssert.Contains("A0", reviewHud.FrontlineTuningReadout);
             StringAssert.Contains("E", reviewHud.FrontlineTuningReadout);
+            StringAssert.Contains("Duel Build", reviewHud.CompactObjectiveReadout);
+            StringAssert.Contains(duelOwner.CompactObjectiveCue, reviewHud.CompactObjectiveReadout);
+            StringAssert.Contains("Reason:", reviewHud.RouteIncentiveReadout);
+            StringAssert.Contains(duelOwner.RouteIncentiveCue, reviewHud.RouteIncentiveReadout);
+            StringAssert.Contains(duelOwner.CompactObjectiveCue, reviewHud.CompactCombatCueReadout);
 
             Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(duelOwner, "energyLadder"));
             Assert.AreSame(skill1Action, GetObjectReference<PlayerSkill1Action>(duelOwner, "skill1Action"));
@@ -209,6 +215,9 @@ namespace DimensionBrawl.Tests
                 expectPressureScreen: true);
 
             Assert.AreSame(duelOwner, GetObjectReference<BossSummonDuelReviewOwner>(reviewHud, "duelReviewOwner"));
+            Assert.IsNull(GetObjectReference<BossBarragePocketReviewOwner>(screenCuePresenter, "pocketReviewOwner"));
+            Assert.AreSame(duelOwner, GetObjectReference<BossSummonDuelReviewOwner>(screenCuePresenter, "duelReviewOwner"));
+            Assert.AreEqual(BossSummonDuelReviewOwner.DuelPhase.BuildPressure, screenCuePresenter.LastDuelPhase);
             Assert.AreSame(bossBasicFireEmitter, GetObjectReference<BossBasicFireEmitter>(reviewHud, "bossBasicFireEmitter"));
             Assert.IsTrue(
                 targetSelector.IncludesActiveHostileSummons,

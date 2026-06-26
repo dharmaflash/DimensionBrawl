@@ -4,6 +4,7 @@ using DimensionBrawl.Enemies;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
+using DimensionBrawl.Test;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -468,6 +469,42 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(2, presenter.CueRequestCount);
             Assert.AreEqual(2, presenter.FollowupCueRequestCount);
             Assert.AreEqual(2, presenter.SuppressedCueRequestCount);
+
+            Object.DestroyImmediate(presenterObject);
+        }
+
+        [Test]
+        public void ActionScreenCuePresenterRoutesDuelPhaseChangesByCombatPriority()
+        {
+            GameObject presenterObject = new GameObject("DuelScreenCuePresenter");
+            ActionScreenCuePresenter presenter = presenterObject.AddComponent<ActionScreenCuePresenter>();
+
+            InvokeDuelPhaseCueForTest(
+                presenter,
+                BossSummonDuelReviewOwner.DuelPhase.BuildPressure,
+                BossSummonDuelReviewOwner.DuelPhase.SummonExchange);
+            Assert.AreEqual("Duel.SummonExchange", presenter.LastCueId);
+            Assert.AreEqual(1, presenter.DuelPhaseCueRequestCount);
+            Assert.AreEqual(1, presenter.FrontlineCueRequestCount);
+            Assert.AreEqual(BossSummonDuelReviewOwner.DuelPhase.SummonExchange, presenter.LastDuelPhase);
+
+            InvokeDuelPhaseCueForTest(
+                presenter,
+                BossSummonDuelReviewOwner.DuelPhase.SummonExchange,
+                BossSummonDuelReviewOwner.DuelPhase.SkillResponse);
+            Assert.AreEqual("Duel.SkillResponse", presenter.LastCueId);
+            Assert.AreEqual(2, presenter.DuelPhaseCueRequestCount);
+            Assert.AreEqual(1, presenter.FollowupCueRequestCount);
+            Assert.AreEqual(BossSummonDuelReviewOwner.DuelPhase.SkillResponse, presenter.LastDuelPhase);
+
+            InvokeDuelPhaseCueForTest(
+                presenter,
+                BossSummonDuelReviewOwner.DuelPhase.SkillResponse,
+                BossSummonDuelReviewOwner.DuelPhase.Cleared);
+            Assert.AreEqual("Duel.Cleared", presenter.LastCueId);
+            Assert.AreEqual(3, presenter.DuelPhaseCueRequestCount);
+            Assert.AreEqual(1, presenter.ResultCueRequestCount);
+            Assert.AreEqual(BossSummonDuelReviewOwner.DuelPhase.Cleared, presenter.LastDuelPhase);
 
             Object.DestroyImmediate(presenterObject);
         }
@@ -3350,6 +3387,19 @@ namespace DimensionBrawl.Tests
             requestMethod.Invoke(
                 presenter,
                 new object[] { cueId, color, durationSeconds, intensity, category });
+        }
+
+        private static void InvokeDuelPhaseCueForTest(
+            ActionScreenCuePresenter presenter,
+            BossSummonDuelReviewOwner.DuelPhase previousPhase,
+            BossSummonDuelReviewOwner.DuelPhase currentPhase)
+        {
+            System.Reflection.MethodInfo phaseMethod = typeof(ActionScreenCuePresenter).GetMethod(
+                "HandleDuelPhaseChanged",
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(phaseMethod);
+
+            phaseMethod.Invoke(presenter, new object[] { previousPhase, currentPhase });
         }
 
         private static CombatVfxCueProfile CreatePressureScreenCueProfile(GameObject prefab)

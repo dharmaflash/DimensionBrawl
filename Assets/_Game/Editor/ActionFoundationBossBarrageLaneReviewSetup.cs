@@ -1474,6 +1474,10 @@ namespace DimensionBrawl.Editor
             SetObjectReference(reviewHud, "closeThreatHealth", null);
             SetObjectReference(reviewHud, "pocketReviewOwner", null);
             SetObjectReference(reviewHud, "duelReviewOwner", duelOwner);
+            ActionScreenCuePresenter screenCuePresenter =
+                RequireComponent<ActionScreenCuePresenter>(RequireRoot(scene, HudRootName), "action screen cue presenter");
+            SetObjectReference(screenCuePresenter, "pocketReviewOwner", null);
+            SetObjectReference(screenCuePresenter, "duelReviewOwner", duelOwner);
 
             if (!EditorSceneManager.SaveScene(scene, DuelReviewScenePath))
             {
@@ -1511,6 +1515,8 @@ namespace DimensionBrawl.Editor
             GameObject duelOwnerRoot = RequireRoot(scene, DuelOwnerRootName);
             BossSummonDuelReviewOwner duelOwner =
                 RequireComponent<BossSummonDuelReviewOwner>(duelOwnerRoot, "boss summon duel owner");
+            ActionScreenCuePresenter screenCuePresenter =
+                RequireComponent<ActionScreenCuePresenter>(RequireRoot(scene, HudRootName), "action screen cue presenter");
 
             GameObject clearMarker = EnsureResultMarker(
                 duelOwnerRoot.transform,
@@ -1539,6 +1545,8 @@ namespace DimensionBrawl.Editor
                 bossSummonPressureAction,
                 clearMarker,
                 failMarker);
+            SetObjectReference(screenCuePresenter, "pocketReviewOwner", null);
+            SetObjectReference(screenCuePresenter, "duelReviewOwner", duelOwner);
 
             if (!EditorSceneManager.SaveScene(scene, DuelReviewScenePath))
             {
@@ -1611,6 +1619,8 @@ namespace DimensionBrawl.Editor
             GameObject failMarker = RequireChild(duelOwner.transform, DuelFailMarkerName).gameObject;
             BossBarrageLaneReviewHud reviewHud =
                 RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(scene, HudRootName), "boss barrage review HUD");
+            ActionScreenCuePresenter screenCuePresenter =
+                RequireComponent<ActionScreenCuePresenter>(RequireRoot(scene, HudRootName), "action screen cue presenter");
 
             if (closeThreat.activeSelf)
             {
@@ -1650,6 +1660,20 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(reviewHud, "summonSlot3Action", summonSlot3Action);
             ValidateObjectReference(reviewHud, "pocketReviewOwner", null);
             ValidateObjectReference(reviewHud, "duelReviewOwner", duelOwner);
+            ValidateObjectReference(screenCuePresenter, "pocketReviewOwner", null);
+            ValidateObjectReference(screenCuePresenter, "duelReviewOwner", duelOwner);
+            ValidateStringContains(
+                reviewHud.CompactObjectiveReadout,
+                duelOwner.CompactObjectiveCue,
+                "duel compact objective readout");
+            ValidateStringContains(
+                reviewHud.RouteIncentiveReadout,
+                duelOwner.RouteIncentiveCue,
+                "duel route incentive readout");
+            ValidateStringContains(
+                reviewHud.CompactCombatCueReadout,
+                duelOwner.CompactObjectiveCue,
+                "duel compact combat cue readout");
         }
 
         private static void ApplySkillGrammar(
@@ -5451,6 +5475,7 @@ namespace DimensionBrawl.Editor
                 bossBarrageEmitter,
                 bossPressureActionDirector,
                 pocketOwner);
+            SetObjectReference(screenCuePresenter, "duelReviewOwner", null);
             SetBool(screenCuePresenter, "showScreenCues", true);
             SetFloat(screenCuePresenter, "maxFullScreenAlpha", 0.10f);
             SetFloat(screenCuePresenter, "maxEdgeAlpha", 0.26f);
@@ -9357,6 +9382,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(presenter, "bossBarrageEmitter", bossBarrageEmitter);
             ValidateObjectReference(presenter, "bossPressureActionDirector", bossPressureActionDirector);
             ValidateObjectReference(presenter, "pocketReviewOwner", pocketOwner);
+            ValidateObjectReference(presenter, "duelReviewOwner", null);
             ValidateBool(presenter, "showScreenCues", true);
             ValidateFloat(presenter, "maxFullScreenAlpha", 0.10f);
             ValidateFloat(presenter, "maxEdgeAlpha", 0.26f);

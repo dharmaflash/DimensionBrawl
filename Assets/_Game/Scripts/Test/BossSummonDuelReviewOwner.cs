@@ -1,3 +1,4 @@
+using System;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
 using UnityEngine;
@@ -112,6 +113,10 @@ namespace DimensionBrawl.Test
         private int lastObservedSummonSlot2DefeatedUseCount;
         private int lastObservedSummonSlot3DefeatedUseCount;
         private int lastObservedBossSummonDefeatCount;
+        private DuelPhase lastObservedPhase;
+        private bool hasObservedPhase;
+
+        public event Action<DuelPhase, DuelPhase> DuelPhaseChanged;
 
         public bool IsCleared => cleared;
         public bool IsFailed => failed;
@@ -159,6 +164,116 @@ namespace DimensionBrawl.Test
         public int RequiredSkill1ResponseUses => requiredSkill1ResponseUses;
         public float RequiredSkill1ResponseDamage => requiredSkill1ResponseDamage;
         public float RequiredBossDamage => requiredBossDamage;
+        public string CompactObjectiveCue
+        {
+            get
+            {
+                if (cleared)
+                {
+                    return "Duel clear: boss opening secured";
+                }
+
+                if (failed)
+                {
+                    return "Survive first: rebuild EN from safety";
+                }
+
+                if (observedBossPressureActions < requiredBossPressureActions)
+                {
+                    return "Build EN while boss cost rises";
+                }
+
+                if (observedBossSkillPatterns < requiredBossSkillPatterns)
+                {
+                    return "Read one boss pattern before summon";
+                }
+
+                if (observedBossSummonPressureActions < requiredBossSummonPressureActions
+                    || observedBossSummonReleases < requiredBossSummonReleases)
+                {
+                    return "Bait the boss summon screen";
+                }
+
+                if (observedBossPressureBlocks < requiredBossPressureBlocks)
+                {
+                    return "Shoot the boss screen once";
+                }
+
+                if (observedPlayerSummonUses < requiredPlayerSummonUses)
+                {
+                    return "Call S1, then create a second summon";
+                }
+
+                if (observedSupportSummonUses < requiredSupportSummonUses)
+                {
+                    return "Add S2 Arrow or S3 Tank";
+                }
+
+                if (observedBossResponsesToPlayerSummons < requiredBossResponsesToPlayerSummons)
+                {
+                    return "Hold a summon until boss replies";
+                }
+
+                if (observedAllyPressureBlocks < requiredAllyPressureBlocks)
+                {
+                    return "Block boss fire with shield or tank";
+                }
+
+                if (observedSummonClashes < requiredSummonClashes)
+                {
+                    return "Let ally and boss bodies clash";
+                }
+
+                if (observedSummonActorDefeats < requiredSummonActorDefeats)
+                {
+                    return "Break one frontline body";
+                }
+
+                if (observedBossRepressureAfterSummonDefeat < requiredBossRepressureAfterSummonDefeat
+                    || ObservedFrontlineLoopCycles < requiredFrontlineLoopCycles)
+                {
+                    return "Let boss repressure after defeat";
+                }
+
+                if (!HasMetSkillResponseGoal())
+                {
+                    return "Answer the opening with Skill1";
+                }
+
+                return "Push boss HP to finish the duel";
+            }
+        }
+        public string RouteIncentiveCue
+        {
+            get
+            {
+                if (cleared)
+                {
+                    return "Reward: summon control created a real boss damage opening.";
+                }
+
+                if (failed)
+                {
+                    return "Failure: HP fell before the summon loop stabilized.";
+                }
+
+                switch (CurrentPhase)
+                {
+                    case DuelPhase.BuildPressure:
+                        return "Reason: forward risk speeds EN, but HP still decides the pocket.";
+                    case DuelPhase.BossPressureAction:
+                        return "Reason: boss cost must become visible pressure before the answer matters.";
+                    case DuelPhase.SummonExchange:
+                        return "Reason: summons should remove or block pressure, not just add hidden damage.";
+                    case DuelPhase.BossResponse:
+                        return "Reason: holding a summon invites the boss answer that creates the next read.";
+                    case DuelPhase.SkillResponse:
+                        return "Reason: Skill1 confirms the opening earned by the summon exchange.";
+                    default:
+                        return "Reason: finish with boss damage after the frontline loop is proven.";
+                }
+            }
+        }
 
         public DuelPhase CurrentPhase
         {
@@ -337,6 +452,7 @@ namespace DimensionBrawl.Test
         {
             ApplyWarmStartOnce();
             SetMarkers();
+            RefreshDuelPhaseSignal(invokeInitial: true);
         }
 
         private void OnDisable()
@@ -362,7 +478,10 @@ namespace DimensionBrawl.Test
             if (HasMetReviewGoals())
             {
                 EnterCleared();
+                return;
             }
+
+            RefreshDuelPhaseSignal();
         }
 
         public void Configure(
@@ -439,6 +558,7 @@ namespace DimensionBrawl.Test
             lastObservedSummonSlot2DefeatedUseCount = 0;
             lastObservedSummonSlot3DefeatedUseCount = 0;
             lastObservedBossSummonDefeatCount = 0;
+            hasObservedPhase = false;
             warmStartApplied = false;
             SetReviewSystemsEnabled(true);
             SetMarkers();
@@ -595,6 +715,7 @@ namespace DimensionBrawl.Test
             cleared = true;
             SetReviewSystemsEnabled(false);
             SetMarkers();
+            RefreshDuelPhaseSignal();
         }
 
         private void EnterFailed()
@@ -607,6 +728,32 @@ namespace DimensionBrawl.Test
             failed = true;
             SetReviewSystemsEnabled(false);
             SetMarkers();
+            RefreshDuelPhaseSignal();
+        }
+
+        private void RefreshDuelPhaseSignal(bool invokeInitial = false)
+        {
+            DuelPhase currentPhase = CurrentPhase;
+            if (!hasObservedPhase)
+            {
+                hasObservedPhase = true;
+                lastObservedPhase = currentPhase;
+                if (invokeInitial)
+                {
+                    DuelPhaseChanged?.Invoke(currentPhase, currentPhase);
+                }
+
+                return;
+            }
+
+            if (currentPhase == lastObservedPhase)
+            {
+                return;
+            }
+
+            DuelPhase previousPhase = lastObservedPhase;
+            lastObservedPhase = currentPhase;
+            DuelPhaseChanged?.Invoke(previousPhase, currentPhase);
         }
 
         private void SetReviewSystemsEnabled(bool enabled)

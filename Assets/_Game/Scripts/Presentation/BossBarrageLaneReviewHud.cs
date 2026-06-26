@@ -647,17 +647,7 @@ namespace DimensionBrawl.Presentation
         {
             if (duelReviewOwner != null)
             {
-                if (duelReviewOwner.IsCleared)
-                {
-                    return "Goal: Duel cleared";
-                }
-
-                if (duelReviewOwner.IsFailed)
-                {
-                    return "Goal: Duel failed";
-                }
-
-                return "Goal: Win summon duel";
+                return $"Duel {ResolveCompactDuelPhaseLabel()}: {duelReviewOwner.CompactObjectiveCue}";
             }
 
             if (pocketReviewOwner == null)
@@ -728,6 +718,11 @@ namespace DimensionBrawl.Presentation
 
         private string ResolveCompactRouteIncentiveLine()
         {
+            if (duelReviewOwner != null)
+            {
+                return duelReviewOwner.RouteIncentiveCue;
+            }
+
             if (pocketReviewOwner == null)
             {
                 return string.Empty;
@@ -946,7 +941,7 @@ namespace DimensionBrawl.Presentation
         {
             if (duelReviewOwner != null)
             {
-                return $"Phase: {BossBarrageLaneReviewHudText.ResolveCompactPhaseLabel(duelReviewOwner.CurrentPhase.ToString())}";
+                return $"Phase: {ResolveCompactDuelPhaseLabel()}";
             }
 
             if (pocketReviewOwner == null)
@@ -964,6 +959,11 @@ namespace DimensionBrawl.Presentation
 
         private string ResolveCompactPrimaryCombatCueText()
         {
+            if (duelReviewOwner != null)
+            {
+                return duelReviewOwner.CompactObjectiveCue;
+            }
+
             if (bossPressureActionDirector != null
                 && bossPressureActionDirector.IsPlayerSummonResponseWindowActive)
             {
@@ -1244,6 +1244,27 @@ namespace DimensionBrawl.Presentation
         private string ResolveDuelProgressLine()
         {
             return duelReviewOwner != null ? duelReviewOwner.ProgressLine : string.Empty;
+        }
+
+        private string ResolveCompactDuelPhaseLabel()
+        {
+            if (duelReviewOwner == null)
+            {
+                return "-";
+            }
+
+            return duelReviewOwner.CurrentPhase switch
+            {
+                BossSummonDuelReviewOwner.DuelPhase.BuildPressure => "Build",
+                BossSummonDuelReviewOwner.DuelPhase.BossPressureAction => "Boss",
+                BossSummonDuelReviewOwner.DuelPhase.SummonExchange => "Summon",
+                BossSummonDuelReviewOwner.DuelPhase.BossResponse => "Reply",
+                BossSummonDuelReviewOwner.DuelPhase.SkillResponse => "Skill",
+                BossSummonDuelReviewOwner.DuelPhase.CounterDamage => "Damage",
+                BossSummonDuelReviewOwner.DuelPhase.Cleared => "Clear",
+                BossSummonDuelReviewOwner.DuelPhase.Failed => "Fail",
+                _ => duelReviewOwner.CurrentPhase.ToString()
+            };
         }
 
         private string ResolveSummonTierLabel(int tier)

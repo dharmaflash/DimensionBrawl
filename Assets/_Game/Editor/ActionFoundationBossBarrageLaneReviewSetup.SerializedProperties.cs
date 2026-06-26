@@ -353,6 +353,16 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static void ValidateStringContains(string actual, string expected, string label)
+        {
+            if (string.IsNullOrWhiteSpace(expected)
+                || string.IsNullOrWhiteSpace(actual)
+                || !actual.Contains(expected, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException($"{label} should contain '{expected}', found '{actual}'.");
+            }
+        }
+
         private static void ValidateFloat(UnityEngine.Object target, string propertyName, float expected)
         {
             float actual = RequireProperty(new SerializedObject(target), propertyName).floatValue;
