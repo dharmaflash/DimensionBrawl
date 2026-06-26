@@ -1057,6 +1057,49 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void CombatAiPatternProfileDefaultsToNonLockingFlashDamage()
+        {
+            EnemyPatternProfile profile = ScriptableObject.CreateInstance<EnemyPatternProfile>();
+
+            Assert.AreEqual(DamageResponsePolicy.FlashOnly, profile.DamageResponsePolicy);
+            Assert.AreEqual(CombatControlLockPolicy.None, profile.ControlLockPolicy);
+
+            Object.DestroyImmediate(profile);
+        }
+
+        [Test]
+        public void CombatAiPatternProfileCanDeclareCommittedActionLock()
+        {
+            EnemyPatternProfile profile = ScriptableObject.CreateInstance<EnemyPatternProfile>();
+            SerializedObject serializedObject = new SerializedObject(profile);
+            serializedObject.FindProperty("damageResponsePolicy").enumValueIndex = (int)DamageResponsePolicy.Stagger;
+            serializedObject.FindProperty("controlLockPolicy").enumValueIndex =
+                (int)CombatControlLockPolicy.InterruptAction;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+
+            Assert.AreEqual(DamageResponsePolicy.Stagger, profile.DamageResponsePolicy);
+            Assert.AreEqual(CombatControlLockPolicy.InterruptAction, profile.ControlLockPolicy);
+
+            Object.DestroyImmediate(profile);
+        }
+
+        [Test]
+        public void CombatAiPatternProfileInfersLegacyCommittedAttackPolicy()
+        {
+            EnemyPatternProfile profile = ScriptableObject.CreateInstance<EnemyPatternProfile>();
+            SerializedObject serializedObject = new SerializedObject(profile);
+            serializedObject.FindProperty("damage").floatValue = 30f;
+            serializedObject.FindProperty("damageResponsePolicy").enumValueIndex = (int)DamageResponsePolicy.Default;
+            serializedObject.FindProperty("controlLockPolicy").enumValueIndex = (int)CombatControlLockPolicy.None;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+
+            Assert.AreEqual(DamageResponsePolicy.Stagger, profile.DamageResponsePolicy);
+            Assert.AreEqual(CombatControlLockPolicy.InterruptAction, profile.ControlLockPolicy);
+
+            Object.DestroyImmediate(profile);
+        }
+
+        [Test]
         public void SummonFrontlineClashDamagesHostileSummonsAndHoldsAdvance()
         {
             GameObject allyObject = new GameObject("AllySummonActor");

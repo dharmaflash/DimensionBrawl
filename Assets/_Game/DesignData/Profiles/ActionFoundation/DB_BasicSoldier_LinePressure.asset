@@ -28,6 +28,8 @@ MonoBehaviour:
   recoverySeconds: 0.58
   damage: 18
   hitStopSeconds: 0.035
+  damageResponsePolicy: 2
+  controlLockPolicy: 0
   attackShape: 1
   attackHalfWidth: 0.38
   attackHalfAngleDegrees: 16

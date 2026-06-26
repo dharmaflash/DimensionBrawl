@@ -201,7 +201,9 @@ namespace DimensionBrawl.Editor
                 string.Empty,
                 "AttackGuardBreak",
                 "HitHeavy",
-                "Death");
+                "Death",
+                damageResponsePolicy: DamageResponsePolicy.Stagger,
+                controlLockPolicy: CombatControlLockPolicy.InterruptAction);
 
             ConfigureCombatAiPatternDeck(
                 generalDeck,
@@ -567,7 +569,9 @@ namespace DimensionBrawl.Editor
             string prepareTrigger,
             string attackTrigger,
             string hitTrigger,
-            string deathTrigger)
+            string deathTrigger,
+            DamageResponsePolicy damageResponsePolicy = DamageResponsePolicy.FlashOnly,
+            CombatControlLockPolicy controlLockPolicy = CombatControlLockPolicy.None)
         {
             SerializedObject serializedObject = new SerializedObject(profile);
             SetString(serializedObject, "actorTypeId", actorTypeId);
@@ -590,6 +594,8 @@ namespace DimensionBrawl.Editor
             SetFloat(serializedObject, "recoverySeconds", recoverySeconds);
             SetFloat(serializedObject, "damage", damage);
             SetFloat(serializedObject, "hitStopSeconds", hitStopSeconds);
+            SetEnum(serializedObject, "damageResponsePolicy", (int)damageResponsePolicy);
+            SetEnum(serializedObject, "controlLockPolicy", (int)controlLockPolicy);
             SetFloat(serializedObject, "hitReactionSeconds", hitReactionSeconds);
             SetFloat(serializedObject, "knockbackSpeed", knockbackSpeed);
             SetFloat(serializedObject, "recoveryRetreatSpeed", recoveryRetreatSpeed);

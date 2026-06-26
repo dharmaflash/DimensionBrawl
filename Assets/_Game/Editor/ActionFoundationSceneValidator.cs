@@ -405,7 +405,9 @@ namespace DimensionBrawl.Editor
                 string.Empty,
                 "AttackCombo2",
                 "Hit",
-                "Death");
+                "Death",
+                DamageResponsePolicy.Stagger,
+                CombatControlLockPolicy.InterruptAction);
             ValidateCombatAiPatternProfile(
                 enemyHeavyWindupPatternProfile,
                 "SciFiSoldier.Basic",
@@ -447,7 +449,9 @@ namespace DimensionBrawl.Editor
                 string.Empty,
                 "AttackHeavy",
                 "HitHeavy",
-                "Death");
+                "Death",
+                DamageResponsePolicy.Stagger,
+                CombatControlLockPolicy.InterruptAction);
             ValidateCombatAiPatternProfile(
                 enemyLinePressurePatternProfile,
                 "SciFiSoldier.Basic",
@@ -1588,7 +1592,9 @@ namespace DimensionBrawl.Editor
             string prepareTrigger = "",
             string attackTrigger = "Attack",
             string hitTrigger = "Hit",
-            string deathTrigger = "Death")
+            string deathTrigger = "Death",
+            DamageResponsePolicy damageResponsePolicy = DamageResponsePolicy.FlashOnly,
+            CombatControlLockPolicy controlLockPolicy = CombatControlLockPolicy.None)
         {
             ValidateString(profile, "actorTypeId", actorTypeId);
             ValidateString(profile, "patternId", patternId);
@@ -1607,6 +1613,8 @@ namespace DimensionBrawl.Editor
             ValidateFloat(profile, "recoverySeconds", recoverySeconds);
             ValidateFloat(profile, "damage", damage);
             ValidateFloat(profile, "hitStopSeconds", hitStopSeconds);
+            ValidateEnum(profile, "damageResponsePolicy", (int)damageResponsePolicy);
+            ValidateEnum(profile, "controlLockPolicy", (int)controlLockPolicy);
             ValidateFloat(profile, "hitReactionSeconds", hitReactionSeconds);
             ValidateFloat(profile, "knockbackSpeed", knockbackSpeed);
             ValidateFloat(profile, "recoveryRetreatSpeed", recoveryRetreatSpeed);

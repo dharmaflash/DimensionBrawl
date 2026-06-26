@@ -657,7 +657,9 @@ namespace DimensionBrawl.Editor
                 "MoveSpeed",
                 "AttackCombo2",
                 "Hit",
-                "Death");
+                "Death",
+                damageResponsePolicy: DamageResponsePolicy.Stagger,
+                controlLockPolicy: CombatControlLockPolicy.InterruptAction);
             ConfigureEnemyPatternProfile(
                 enemyHeavyWindupPatternProfile,
                 "SciFiSoldier.Basic",
@@ -699,7 +701,9 @@ namespace DimensionBrawl.Editor
                 "MoveSpeed",
                 "AttackHeavy",
                 "HitHeavy",
-                "Death");
+                "Death",
+                damageResponsePolicy: DamageResponsePolicy.Stagger,
+                controlLockPolicy: CombatControlLockPolicy.InterruptAction);
             ConfigureEnemyPatternProfile(
                 enemyLinePressurePatternProfile,
                 "SciFiSoldier.Basic",
@@ -896,7 +900,9 @@ namespace DimensionBrawl.Editor
             string attackTrigger,
             string hitTrigger,
             string deathTrigger,
-            string prepareTrigger = "")
+            string prepareTrigger = "",
+            DamageResponsePolicy damageResponsePolicy = DamageResponsePolicy.FlashOnly,
+            CombatControlLockPolicy controlLockPolicy = CombatControlLockPolicy.None)
         {
             SerializedObject serializedObject = new SerializedObject(profile);
             SetString(serializedObject, "actorTypeId", actorTypeId);
@@ -916,6 +922,8 @@ namespace DimensionBrawl.Editor
             SetFloat(serializedObject, "recoverySeconds", recoverySeconds);
             SetFloat(serializedObject, "damage", damage);
             SetFloat(serializedObject, "hitStopSeconds", hitStopSeconds);
+            SetEnum(serializedObject, "damageResponsePolicy", (int)damageResponsePolicy);
+            SetEnum(serializedObject, "controlLockPolicy", (int)controlLockPolicy);
             SetFloat(serializedObject, "hitReactionSeconds", hitReactionSeconds);
             SetFloat(serializedObject, "knockbackSpeed", knockbackSpeed);
             SetFloat(serializedObject, "recoveryRetreatSpeed", recoveryRetreatSpeed);

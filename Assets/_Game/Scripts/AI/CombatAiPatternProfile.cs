@@ -1,3 +1,4 @@
+using DimensionBrawl.Combat;
 using UnityEngine;
 
 namespace DimensionBrawl.AI
@@ -34,6 +35,8 @@ namespace DimensionBrawl.AI
         [SerializeField, Min(0f)] private float recoverySeconds = 0.45f;
         [SerializeField, Min(0f)] private float damage = 15f;
         [SerializeField, Min(0f)] private float hitStopSeconds = 0.03f;
+        [SerializeField] private DamageResponsePolicy damageResponsePolicy = DamageResponsePolicy.FlashOnly;
+        [SerializeField] private CombatControlLockPolicy controlLockPolicy = CombatControlLockPolicy.None;
 
         [Header("Attack Shape")]
         [SerializeField] private CombatAiAttackShape attackShape = CombatAiAttackShape.MeleeArc;
@@ -121,6 +124,8 @@ namespace DimensionBrawl.AI
         public float RecoverySeconds => recoverySeconds;
         public float Damage => damage;
         public float HitStopSeconds => hitStopSeconds;
+        public DamageResponsePolicy DamageResponsePolicy => ResolveDamageResponsePolicy(this);
+        public CombatControlLockPolicy ControlLockPolicy => ResolveControlLockPolicy(this);
         public CombatAiAttackShape AttackShape => attackShape;
         public float AttackHalfWidth => attackHalfWidth;
         public float AttackHalfAngleDegrees => attackHalfAngleDegrees;
@@ -149,5 +154,47 @@ namespace DimensionBrawl.AI
         public string AttackTrigger => attackTrigger;
         public string HitTrigger => hitTrigger;
         public string DeathTrigger => deathTrigger;
+
+        public static DamageResponsePolicy ResolveDamageResponsePolicy(CombatAiPatternProfile profile)
+        {
+            if (profile == null)
+            {
+                return DamageResponsePolicy.FlashOnly;
+            }
+
+            if (profile.damageResponsePolicy != DamageResponsePolicy.Default)
+            {
+                return profile.damageResponsePolicy;
+            }
+
+            return IsCommittedAttack(profile)
+                ? DamageResponsePolicy.Stagger
+                : DamageResponsePolicy.FlashOnly;
+        }
+
+        public static CombatControlLockPolicy ResolveControlLockPolicy(CombatAiPatternProfile profile)
+        {
+            if (profile == null)
+            {
+                return CombatControlLockPolicy.None;
+            }
+
+            if (profile.controlLockPolicy != CombatControlLockPolicy.None)
+            {
+                return profile.controlLockPolicy;
+            }
+
+            return profile.damageResponsePolicy == DamageResponsePolicy.Default && IsCommittedAttack(profile)
+                ? CombatControlLockPolicy.InterruptAction
+                : CombatControlLockPolicy.None;
+        }
+
+        private static bool IsCommittedAttack(CombatAiPatternProfile profile)
+        {
+            return profile.damage >= 22f
+                || profile.activeLungeSpeed > 0.5f
+                || profile.windupThreatLevel >= 1.2f
+                || string.Equals(profile.patternId, "GuardBreak", System.StringComparison.OrdinalIgnoreCase);
+        }
     }
 }

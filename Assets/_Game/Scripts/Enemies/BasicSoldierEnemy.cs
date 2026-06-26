@@ -133,6 +133,12 @@ namespace DimensionBrawl.Enemies
         private float ActiveRecoverySeconds => patternProfile != null ? patternProfile.RecoverySeconds : recoverySeconds;
         private float ActiveDamage => patternProfile != null ? patternProfile.Damage : damage;
         private float ActiveHitStopSeconds => patternProfile != null ? patternProfile.HitStopSeconds : hitStopSeconds;
+        private DamageResponsePolicy ActiveDamageResponsePolicy => patternProfile != null
+            ? patternProfile.DamageResponsePolicy
+            : ResolveLocalDamageResponsePolicy();
+        private CombatControlLockPolicy ActiveControlLockPolicy => patternProfile != null
+            ? patternProfile.ControlLockPolicy
+            : ResolveLocalControlLockPolicy();
         private CombatAiAttackShape ActiveAttackShape => patternProfile != null ? patternProfile.AttackShape : attackShape;
         private float ActiveAttackHalfWidth => patternProfile != null ? patternProfile.AttackHalfWidth : attackHalfWidth;
         private float ActiveAttackHalfAngleDegrees => patternProfile != null ? patternProfile.AttackHalfAngleDegrees : attackHalfAngleDegrees;
@@ -452,9 +458,25 @@ namespace DimensionBrawl.Enemies
                 ActiveDamage,
                 target.position,
                 direction,
-                ActiveHitStopSeconds);
+                ActiveHitStopSeconds,
+                ActiveDamageResponsePolicy,
+                ActiveControlLockPolicy);
 
             targetHealth.TryApplyDamage(damageInfo);
+        }
+
+        private DamageResponsePolicy ResolveLocalDamageResponsePolicy()
+        {
+            return damage >= 22f || activeLungeSpeed > 0.5f
+                ? DamageResponsePolicy.Stagger
+                : DamageResponsePolicy.FlashOnly;
+        }
+
+        private CombatControlLockPolicy ResolveLocalControlLockPolicy()
+        {
+            return damage >= 22f || activeLungeSpeed > 0.5f
+                ? CombatControlLockPolicy.InterruptAction
+                : CombatControlLockPolicy.None;
         }
 
         private void HandleDamaged(DamageInfo damageInfo)
