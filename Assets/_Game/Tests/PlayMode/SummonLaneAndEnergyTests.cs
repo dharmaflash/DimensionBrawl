@@ -425,6 +425,58 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void EnemyCombatVfxCueDriverSoftensNonLockingPressureDamage()
+        {
+            GameObject enemyObject = new GameObject("Enemy");
+            GameObject damageCuePrefab = new GameObject("EnemyHitCuePrefab");
+            CombatVfxCueProfile cueProfile = null;
+            try
+            {
+                CombatHealth enemyHealth = enemyObject.AddComponent<CombatHealth>();
+                enemyHealth.ConfigureTeam(DamageTeam.Enemy);
+                enemyHealth.ResetHealthToFull();
+
+                CombatVfxCuePlayer cuePlayer = enemyObject.AddComponent<CombatVfxCuePlayer>();
+                cueProfile = CreateSummonDamageVfxCueProfile(damageCuePrefab);
+                ConfigureCombatVfxCuePlayer(cuePlayer, cueProfile);
+
+                EnemyCombatVfxCueDriver driver = enemyObject.AddComponent<EnemyCombatVfxCueDriver>();
+
+                Assert.IsTrue(enemyHealth.TryApplyDamage(new DamageInfo(
+                    null,
+                    DamageTeam.Player,
+                    18f,
+                    enemyObject.transform.position,
+                    Vector3.forward,
+                    0f,
+                    DamageResponsePolicy.FlashOnly,
+                    CombatControlLockPolicy.None)));
+
+                float expectedIntensity = driver.DamageCueIntensity * driver.PressureDamageCueScale;
+                Transform damageCue = enemyObject.transform.Find(damageCuePrefab.name);
+
+                Assert.AreEqual(1, driver.DamageVfxCueRequestCount);
+                Assert.AreEqual(DamageResponsePolicy.FlashOnly, driver.LastDamageResponsePolicy);
+                Assert.AreEqual(CombatControlLockPolicy.None, driver.LastDamageControlLockPolicy);
+                Assert.IsFalse(driver.LastDamageCueInterruptedAction);
+                Assert.AreEqual(driver.PressureDamageCueScale, driver.LastDamageCuePolicyScale, 0.001f);
+                Assert.AreEqual(expectedIntensity, driver.LastDamageCueIntensity, 0.001f);
+                Assert.IsNotNull(damageCue);
+                Assert.AreEqual(expectedIntensity, damageCue.localScale.x, 0.001f);
+            }
+            finally
+            {
+                if (cueProfile != null)
+                {
+                    Object.DestroyImmediate(cueProfile);
+                }
+
+                Object.DestroyImmediate(damageCuePrefab);
+                Object.DestroyImmediate(enemyObject);
+            }
+        }
+
+        [Test]
         public void EnergyRewardPulseCarriesOverflowIntoHigherTierReadiness()
         {
             GameObject playerObject = new GameObject("Player");

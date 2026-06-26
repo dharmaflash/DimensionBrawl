@@ -172,6 +172,8 @@ namespace DimensionBrawl.Editor
             SetObjectReference(vfxCueDriver, "health", health);
             SetObjectReference(vfxCueDriver, "cuePlayer", cuePlayer);
             SetObjectReference(vfxCueDriver, "cueAnchor", root.transform);
+            SetFloat(vfxCueDriver, "damageCueIntensity", 1f);
+            SetFloat(vfxCueDriver, "pressureDamageCueScale", 0.66f);
             SetPatternCueOverrides(vfxCueDriver);
             SetEliteCueOverrides(vfxCueDriver);
 
@@ -489,6 +491,8 @@ namespace DimensionBrawl.Editor
                 ValidateObjectReference(vfxCueDriver, "health", health);
                 ValidateObjectReference(vfxCueDriver, "cuePlayer", cuePlayer);
                 ValidateObjectReference(vfxCueDriver, "cueAnchor", prefabRoot.transform);
+                ValidateFloat(vfxCueDriver, "damageCueIntensity", 1f);
+                ValidateFloat(vfxCueDriver, "pressureDamageCueScale", 0.66f);
                 ValidatePatternCueOverrides(vfxCueDriver);
                 ActionFoundationEnemyRoleVisualSetup.Validate(
                     prefabRoot,
@@ -1032,9 +1036,26 @@ namespace DimensionBrawl.Editor
             RequireProperty(property, propertyName).enumValueIndex = value;
         }
 
+        private static void SetFloat(UnityEngine.Object target, string propertyName, float value)
+        {
+            SerializedObject serializedObject = new SerializedObject(target);
+            RequireProperty(serializedObject, propertyName).floatValue = value;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(target);
+        }
+
         private static void SetFloat(SerializedProperty property, string propertyName, float value)
         {
             RequireProperty(property, propertyName).floatValue = value;
+        }
+
+        private static void ValidateFloat(UnityEngine.Object target, string propertyName, float expected)
+        {
+            float actual = RequireProperty(new SerializedObject(target), propertyName).floatValue;
+            if (!Mathf.Approximately(actual, expected))
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected}, found {actual}.");
+            }
         }
 
         private static SerializedProperty RequireProperty(SerializedObject serializedObject, string propertyName)

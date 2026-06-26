@@ -1098,6 +1098,8 @@ namespace DimensionBrawl.Tests
                 Assert.AreSame(soldier, vfxDriverObject.FindProperty("agentSource").objectReferenceValue, "VFX driver should listen to the local soldier.");
                 Assert.AreSame(health, vfxDriverObject.FindProperty("health").objectReferenceValue, "VFX driver should listen to the local health.");
                 Assert.AreSame(cuePlayer, vfxDriverObject.FindProperty("cuePlayer").objectReferenceValue, "VFX driver should play through the local cue player.");
+                Assert.AreEqual(1f, vfxCueDriver.DamageCueIntensity, 0.001f, "VFX driver should keep committed-damage hit cues at baseline intensity.");
+                Assert.AreEqual(0.66f, vfxCueDriver.PressureDamageCueScale, 0.001f, "VFX driver should soften non-locking pressure damage cues.");
             }
             finally
             {
@@ -1177,6 +1179,8 @@ namespace DimensionBrawl.Tests
                 Assert.AreSame(soldier, vfxDriverObject.FindProperty("agentSource").objectReferenceValue, "VFX driver should listen to the local soldier.");
                 Assert.AreSame(health, vfxDriverObject.FindProperty("health").objectReferenceValue, "VFX driver should listen to the local health.");
                 Assert.AreSame(cuePlayer, vfxDriverObject.FindProperty("cuePlayer").objectReferenceValue, "VFX driver should play through the local cue player.");
+                Assert.AreEqual(1f, vfxCueDriver.DamageCueIntensity, 0.001f, "VFX driver should keep committed-damage hit cues at baseline intensity.");
+                Assert.AreEqual(0.66f, vfxCueDriver.PressureDamageCueScale, 0.001f, "VFX driver should soften non-locking pressure damage cues.");
 
                 CombatEnemyArchetypeProfile rangedArchetype =
                     AssetDatabase.LoadAssetAtPath<CombatEnemyArchetypeProfile>(EnemyArchetypeRootPath + "/DB_Archetype_SciFiSoldier_Ranged.asset");
@@ -2386,6 +2390,8 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(soldier, serializedObject.FindProperty("agentSource").objectReferenceValue, $"{soldier.name} VFX driver should listen to its local AI agent.");
             Assert.AreSame(soldier.SelfHealth, serializedObject.FindProperty("health").objectReferenceValue, $"{soldier.name} VFX driver should listen to its local health.");
             Assert.AreSame(cuePlayer, serializedObject.FindProperty("cuePlayer").objectReferenceValue, $"{soldier.name} VFX driver should play through the local cue player.");
+            Assert.AreEqual(1f, driver.DamageCueIntensity, 0.001f, $"{soldier.name} enemy hit VFX should keep committed-damage intensity at baseline.");
+            Assert.AreEqual(0.66f, driver.PressureDamageCueScale, 0.001f, $"{soldier.name} enemy hit VFX should soften non-locking pressure damage.");
             Assert.AreEqual(8, serializedObject.FindProperty("patternCueOverrides").arraySize, $"{soldier.name} should carry pattern-profile VFX cue mappings for all authored general/elite attack profiles.");
             Assert.AreEqual(5, serializedObject.FindProperty("eliteCueOverrides").arraySize, $"{soldier.name} should carry elite-signal VFX cue mappings for future shared enemy/summon trait reads.");
 

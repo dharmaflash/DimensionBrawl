@@ -14,10 +14,27 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private CombatVfxCuePlayer cuePlayer;
         [SerializeField] private Transform cueAnchor;
         [SerializeField] private EnemyElitePatternController elitePatternController;
+        [SerializeField, Min(0f)] private float damageCueIntensity = 1f;
+        [SerializeField, Range(0.1f, 1f)] private float pressureDamageCueScale = 0.66f;
         [SerializeField] private CombatPatternVfxCueOverride[] patternCueOverrides = Array.Empty<CombatPatternVfxCueOverride>();
         [SerializeField] private CombatEliteVfxCueOverride[] eliteCueOverrides = Array.Empty<CombatEliteVfxCueOverride>();
 
         private ICombatAiAgent agent;
+        private int damageVfxCueRequestCount;
+        private float lastDamageCueIntensity;
+        private float lastDamageCuePolicyScale = 1f;
+        private DamageResponsePolicy lastDamageResponsePolicy = DamageResponsePolicy.Default;
+        private CombatControlLockPolicy lastDamageControlLockPolicy = CombatControlLockPolicy.InterruptAction;
+        private bool lastDamageCueInterruptedAction;
+
+        public int DamageVfxCueRequestCount => damageVfxCueRequestCount;
+        public float DamageCueIntensity => damageCueIntensity;
+        public float PressureDamageCueScale => pressureDamageCueScale;
+        public float LastDamageCueIntensity => lastDamageCueIntensity;
+        public float LastDamageCuePolicyScale => lastDamageCuePolicyScale;
+        public DamageResponsePolicy LastDamageResponsePolicy => lastDamageResponsePolicy;
+        public CombatControlLockPolicy LastDamageControlLockPolicy => lastDamageControlLockPolicy;
+        public bool LastDamageCueInterruptedAction => lastDamageCueInterruptedAction;
 
         private void Awake()
         {
@@ -104,7 +121,19 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
-            Play(CombatVfxCueId.EnemyHit, damageInfo.Direction, 1f);
+            float policyScale = ResolveDamageCuePolicyScale(damageInfo);
+            float intensity = damageCueIntensity * policyScale;
+            bool interruptsAction = DamageResponsePolicyUtility.InterruptsAction(damageInfo.ControlLockPolicy);
+            lastDamageCueIntensity = intensity;
+            lastDamageCuePolicyScale = policyScale;
+            lastDamageResponsePolicy = damageInfo.ResponsePolicy;
+            lastDamageControlLockPolicy = damageInfo.ControlLockPolicy;
+            lastDamageCueInterruptedAction = interruptsAction;
+
+            if (Play(CombatVfxCueId.EnemyHit, damageInfo.Direction, intensity))
+            {
+                damageVfxCueRequestCount++;
+            }
         }
 
         private void HandleDied()
@@ -120,14 +149,21 @@ namespace DimensionBrawl.Presentation
                 intensity);
         }
 
-        private void Play(CombatVfxCueId cueId, Vector3 direction, float intensity)
+        private float ResolveDamageCuePolicyScale(DamageInfo damageInfo)
+        {
+            return DamageResponsePolicyUtility.InterruptsAction(damageInfo.ControlLockPolicy)
+                ? 1f
+                : Mathf.Clamp(pressureDamageCueScale, 0.1f, 1f);
+        }
+
+        private bool Play(CombatVfxCueId cueId, Vector3 direction, float intensity)
         {
             if (cuePlayer == null)
             {
-                return;
+                return false;
             }
 
-            cuePlayer.PlayCue(cueId, cueAnchor != null ? cueAnchor : transform, direction, intensity);
+            return cuePlayer.PlayCue(cueId, cueAnchor != null ? cueAnchor : transform, direction, intensity);
         }
 
         private void ResolveAgent()

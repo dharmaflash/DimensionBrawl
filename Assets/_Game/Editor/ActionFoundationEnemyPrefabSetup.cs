@@ -311,6 +311,8 @@ namespace DimensionBrawl.Editor
                 SetObjectReference(vfxCueDriver, "cuePlayer", cuePlayer);
                 SetObjectReference(vfxCueDriver, "cueAnchor", root.transform);
                 SetObjectReference(vfxCueDriver, "elitePatternController", eliteController);
+                SetFloat(vfxCueDriver, "damageCueIntensity", 1f);
+                SetFloat(vfxCueDriver, "pressureDamageCueScale", 0.66f);
             }
         }
 
@@ -413,6 +415,8 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(vfxCueDriver, "health", health);
             ValidateObjectReference(vfxCueDriver, "cuePlayer", cuePlayer);
             ValidateObjectReference(vfxCueDriver, "cueAnchor", root.transform);
+            ValidateFloat(vfxCueDriver, "damageCueIntensity", 1f);
+            ValidateFloat(vfxCueDriver, "pressureDamageCueScale", 0.66f);
 
             if (expectedDeck != null)
             {
@@ -685,6 +689,14 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(target);
         }
 
+        private static void SetFloat(UnityEngine.Object target, string propertyName, float value)
+        {
+            var serializedObject = new SerializedObject(target);
+            RequireProperty(serializedObject, propertyName).floatValue = value;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(target);
+        }
+
         private static void ValidateObjectReference(UnityEngine.Object target, string propertyName, UnityEngine.Object expected)
         {
             UnityEngine.Object actual = RequireProperty(new SerializedObject(target), propertyName).objectReferenceValue;
@@ -713,6 +725,15 @@ namespace DimensionBrawl.Editor
                     string actualName = actual != null ? actual.name : "null";
                     throw new InvalidOperationException($"{target.name}.{propertyName}[{i}] expected {expectedName}, found {actualName}.");
                 }
+            }
+        }
+
+        private static void ValidateFloat(UnityEngine.Object target, string propertyName, float expected)
+        {
+            float actual = RequireProperty(new SerializedObject(target), propertyName).floatValue;
+            if (!Mathf.Approximately(actual, expected))
+            {
+                throw new InvalidOperationException($"{target.name}.{propertyName} expected {expected}, found {actual}.");
             }
         }
 

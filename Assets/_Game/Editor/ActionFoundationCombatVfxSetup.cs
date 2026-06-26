@@ -427,6 +427,8 @@ namespace DimensionBrawl.Editor
             SetObjectReference(driver, "cuePlayer", cuePlayer);
             SetObjectReference(driver, "cueAnchor", anchor);
             SetObjectReference(driver, "elitePatternController", eliteController);
+            SetFloat(driver, "damageCueIntensity", 1f);
+            SetFloat(driver, "pressureDamageCueScale", 0.66f);
             SetPatternCueOverrides(driver);
             SetEliteCueOverrides(driver);
             ConfigureThreatTelegraphVisual(soldier);
@@ -516,6 +518,9 @@ namespace DimensionBrawl.Editor
             {
                 throw new InvalidOperationException($"{soldier.name} VFX driver should reference local CombatHealth.");
             }
+
+            ValidateFloat(driver, "damageCueIntensity", 1f);
+            ValidateFloat(driver, "pressureDamageCueScale", 0.66f);
 
             if (serializedObject.FindProperty("patternCueOverrides").arraySize != 8)
             {
@@ -1841,6 +1846,17 @@ namespace DimensionBrawl.Editor
             property.floatValue = value;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(target);
+        }
+
+        private static void ValidateFloat(UnityEngine.Object target, string propertyName, float expected)
+        {
+            SerializedObject serializedObject = new SerializedObject(target);
+            SerializedProperty property = RequireProperty(serializedObject, propertyName);
+            if (!Mathf.Approximately(property.floatValue, expected))
+            {
+                throw new InvalidOperationException(
+                    $"{target.name}.{propertyName} expected {expected}, found {property.floatValue}.");
+            }
         }
 
         private static void SetRelativeEnum<TEnum>(SerializedProperty property, string propertyName, TEnum value) where TEnum : Enum
