@@ -103,6 +103,14 @@ namespace DimensionBrawl.Tests
                     ignoredRecovery.UnansweredPressureBurdenShare01,
                     intended.UnansweredPressureBurdenShare01,
                     "Ignoring boss-screen pressure should carry a larger unanswered pressure burden than the intended route.");
+                Assert.GreaterOrEqual(
+                    intended.TimeToNextReliefWindowSeconds,
+                    0f,
+                    "A clean summon answer should create a measurable effective pressure relief window.");
+                Assert.GreaterOrEqual(
+                    blockedRecovery.TimeToNextReliefWindowSeconds,
+                    0f,
+                    "A recovered boss-screen route should expose its post-answer relief window after the final punish.");
                 Assert.AreEqual(
                     "CounterRecoveryClear",
                     counterRecovery.ResultKind,
@@ -888,8 +896,8 @@ namespace DimensionBrawl.Tests
             }
 
             builder.AppendLine();
-            builder.AppendLine("## ArkData Pressure Shape");
-            builder.AppendLine("| Policy | Window | Peak share | Top3 share | Peak at | Relief gap | Dominant burden | Unanswered/answered | Windows |");
+            builder.AppendLine("## ArkData Effective Pressure Shape");
+            builder.AppendLine("| Policy | Window | Peak share | Top3 share | Peak at | Relief gap | Dominant burden | Unanswered/answered | Effective windows |");
             builder.AppendLine("|---|---:|---:|---:|---:|---:|---|---:|---|");
             for (int i = 0; i < results.Count; i++)
             {
@@ -1084,7 +1092,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Route stability split: no-action {FormatPercent01(noSummon.RouteStability01)} final / {FormatPercent01(noSummon.MinRouteStability01)} min, gun-only {FormatPercent01(gunOnly.RouteStability01)} / {FormatPercent01(gunOnly.MinRouteStability01)}, intended {FormatPercent01(intended.RouteStability01)} / {FormatPercent01(intended.MinRouteStability01)}.");
             builder.AppendLine($"- Unanswered hit penalty split: no-action {FormatPercent01(noSummon.TotalUnansweredBossHitRoutePenalty01)} x{noSummon.UnansweredBossHitRoutePenaltyCount}, gun-only {FormatPercent01(gunOnly.TotalUnansweredBossHitRoutePenalty01)} x{gunOnly.UnansweredBossHitRoutePenaltyCount}, late {FormatPercent01(late.TotalUnansweredBossHitRoutePenalty01)} x{late.UnansweredBossHitRoutePenaltyCount}.");
             builder.AppendLine($"- Frontline exposure split: no-action enemy-only {FormatSeconds(noSummon.EnemyOnlyFrontlineSeconds)}, gun-only enemy-only {FormatSeconds(gunOnly.EnemyOnlyFrontlineSeconds)}, intended ally-only {FormatSeconds(intended.AllyOnlyFrontlineSeconds)} / contested {FormatSeconds(intended.ContestedFrontlineSeconds)}.");
-            builder.AppendLine($"- ArkData pressure shape: no-action peak/top3 {FormatPercent01(noSummon.PeakPressureWindowShare01)}/{FormatPercent01(noSummon.Top3PressureWindowShare01)}, intended {FormatPercent01(intended.PeakPressureWindowShare01)}/{FormatPercent01(intended.Top3PressureWindowShare01)}, ignored boss-screen unanswered burden {FormatPercent01(ignoredRecovery.UnansweredPressureBurdenShare01)} versus intended {FormatPercent01(intended.UnansweredPressureBurdenShare01)}.");
+            builder.AppendLine($"- ArkData effective pressure shape: no-action peak/top3 {FormatPercent01(noSummon.PeakPressureWindowShare01)}/{FormatPercent01(noSummon.Top3PressureWindowShare01)}, intended {FormatPercent01(intended.PeakPressureWindowShare01)}/{FormatPercent01(intended.Top3PressureWindowShare01)} with relief {FormatSeconds(intended.TimeToNextReliefWindowSeconds)}, ignored boss-screen unanswered burden {FormatPercent01(ignoredRecovery.UnansweredPressureBurdenShare01)} versus intended {FormatPercent01(intended.UnansweredPressureBurdenShare01)}.");
             builder.AppendLine($"- Enemy pressure actor cost: no-action clashes {noSummon.EnemyFrontlineClashes} / body hits {noSummon.EnemyFrontlineBodyHits} / clash damage {noSummon.EnemyFrontlineClashDamage:0.0}; intended route clashes {intended.EnemyFrontlineClashes} / body hits {intended.EnemyFrontlineBodyHits}.");
             builder.AppendLine($"- Hit reaction split: boss-screen recovery produced {blockedRecovery.TotalSummonDamageFlashes} summon damage flashes, {blockedRecovery.TotalSummonFullBodyHitReactions} full-body hit reactions, and {blockedRecovery.TotalNonLockingSummonDamageCues} non-locking damage cues.");
             builder.AppendLine($"- Damage response split: gun-only boss chip {gunOnly.BossNonLockingDamageEvents}/{gunOnly.BossLockingDamageEvents} non-lock/lock, intended Skill1 boss hits {intended.BossNonLockingDamageEvents}/{intended.BossLockingDamageEvents}, boss-screen recovery {blockedRecovery.BossNonLockingDamageEvents}/{blockedRecovery.BossLockingDamageEvents}.");
@@ -1748,8 +1756,7 @@ namespace DimensionBrawl.Tests
 
             private void SamplePressureShape(float deltaTime, int enemyFrontlineCount, int allyFrontlineCount)
             {
-                float pressureBurden = Mathf.Max(0f, PocketOwner.CurrentRoutePressureWeight)
-                    * Mathf.Max(0f, PocketOwner.CurrentFrontlinePresenceDrainScale)
+                float pressureBurden = Mathf.Max(0f, PocketOwner.CurrentRouteStabilityDrainPerSecond)
                     * deltaTime;
                 if (pressureBurden <= 0f)
                 {
@@ -1788,6 +1795,7 @@ namespace DimensionBrawl.Tests
 
             private void CompletePressureShape()
             {
+                EnsurePressureWindowCoverage();
                 Metrics.PressureWindowSeconds = PressureWindowSeconds;
                 Metrics.PressureWindowCount = pressureWindowBurden.Count;
                 Metrics.PressureWindowReadout = BuildPressureWindowReadout();
@@ -1838,6 +1846,17 @@ namespace DimensionBrawl.Tests
                 }
 
                 return -1f;
+            }
+
+            private void EnsurePressureWindowCoverage()
+            {
+                int requiredWindowCount = Mathf.Max(
+                    0,
+                    Mathf.CeilToInt(Metrics.ElapsedSeconds / PressureWindowSeconds));
+                while (pressureWindowBurden.Count < requiredWindowCount)
+                {
+                    pressureWindowBurden.Add(0f);
+                }
             }
 
             private void ResolveDominantPressureBurden()
