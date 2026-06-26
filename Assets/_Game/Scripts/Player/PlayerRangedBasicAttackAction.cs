@@ -44,6 +44,8 @@ namespace DimensionBrawl.Player
         [SerializeField, Min(0f)] private float spawnForwardOffset = 0.85f;
         [SerializeField, Min(0f)] private float spawnHeight = 1.12f;
         [SerializeField, Min(0f)] private float targetHeight = 1.0f;
+        [SerializeField] private bool stabilizeDirectTargetAimHeight = true;
+        [SerializeField, Min(0f)] private float directTargetAimHeightTolerance = 0.35f;
         [SerializeField, Min(0f)] private float facingHoldSeconds = 0.16f;
         [SerializeField] private bool requestFacingOnFire;
         [SerializeField] private bool snapFacingOnFire = true;
@@ -683,7 +685,7 @@ namespace DimensionBrawl.Player
             if (TryResolveCameraAimHit(ray, out Vector3 hitPoint, out CombatHealth hitTargetHealth))
             {
                 directTargetHealth = hitTargetHealth;
-                return hitPoint;
+                return ResolveDirectTargetAimPoint(hitTargetHealth, hitPoint);
             }
 
             float fallbackDistance = Mathf.Max(cameraAimFallbackDistance, cameraAimRaycastDistance);
@@ -751,6 +753,81 @@ namespace DimensionBrawl.Player
             }
 
             return false;
+        }
+
+        private Vector3 ResolveDirectTargetAimPoint(CombatHealth targetHealth, Vector3 hitPoint)
+        {
+            if (!stabilizeDirectTargetAimHeight || targetHealth == null)
+            {
+                return hitPoint;
+            }
+
+            if (!TryResolveStableTargetAimY(targetHealth, out float stableY))
+            {
+                return hitPoint;
+            }
+
+            if (Mathf.Abs(hitPoint.y - stableY) <= directTargetAimHeightTolerance)
+            {
+                return hitPoint;
+            }
+
+            return new Vector3(hitPoint.x, stableY, hitPoint.z);
+        }
+
+        private static bool TryResolveStableTargetAimY(CombatHealth targetHealth, out float stableY)
+        {
+            stableY = default;
+            if (targetHealth == null)
+            {
+                return false;
+            }
+
+            Collider rootCollider = targetHealth.GetComponent<Collider>();
+            if (IsUsableAimHeightCollider(rootCollider, targetHealth))
+            {
+                stableY = rootCollider.bounds.center.y;
+                return true;
+            }
+
+            Collider[] colliders = targetHealth.GetComponentsInChildren<Collider>();
+            Bounds bounds = default;
+            bool hasBounds = false;
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider collider = colliders[i];
+                if (!IsUsableAimHeightCollider(collider, targetHealth))
+                {
+                    continue;
+                }
+
+                if (!hasBounds)
+                {
+                    bounds = collider.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(collider.bounds);
+                }
+            }
+
+            if (!hasBounds)
+            {
+                return false;
+            }
+
+            stableY = bounds.center.y;
+            return true;
+        }
+
+        private static bool IsUsableAimHeightCollider(Collider collider, CombatHealth targetHealth)
+        {
+            return collider != null
+                && collider.enabled
+                && collider.gameObject.activeInHierarchy
+                && collider.GetComponentInParent<SummonPressureScreen>() == null
+                && ResolveHitCombatHealth(collider) == targetHealth;
         }
 
         private Vector2 ResolveAimViewportPoint()

@@ -840,6 +840,78 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator FrontlineBossDirectAimKeepsPreviewHeightStableOnHighChildCollider()
+        {
+            EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
+            yield return null;
+
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            PlayerCombatModeController combatModeController =
+                RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
+            PlayerRangedAimController aimController =
+                RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
+            PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            GameObject bossRoot = RequireRoot(BossRootName);
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
+            Collider bossRootCollider = RequireComponent<Collider>(bossRoot, "boss root collider");
+
+            combatModeController.SetRangedMode();
+            aimController.SetAimHeld(true);
+            aimController.SetAimInput(Vector2.zero);
+            SetField(rangedBasicAttackAction, "useFixedCenterAimViewport", false);
+            SetField(rangedBasicAttackAction, "aimInputViewportOffsetY", 0.45f);
+            rangedBasicAttackAction.ClearAimInput();
+            rangedBasicAttackAction.SetAimInput(Vector2.up);
+            player.transform.position =
+                laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
+            targetSelector.NotifyTargetContact(bossHealth);
+            targetSelector.RefreshTarget();
+            Physics.SyncTransforms();
+            yield return WaitSeconds(0.25f);
+
+            float stableBodyY = bossRootCollider.bounds.center.y;
+            Vector2 elevatedViewportPoint = new Vector2(0.5f, 0.95f);
+            Assert.IsTrue(cameraController.TryGetViewportAimRay(elevatedViewportPoint, out Ray elevatedRay));
+            Vector3 highHitPoint = elevatedRay.GetPoint(12f);
+            Assert.Greater(
+                highHitPoint.y,
+                stableBodyY + 0.7f,
+                "The test collider must sit on an elevated aim ray to reproduce the boss aim jump.");
+            GameObject highHitProxy = new GameObject("FrontlineBossAimHighHitProxy");
+            highHitProxy.transform.SetParent(bossRoot.transform, worldPositionStays: true);
+            highHitProxy.transform.position = highHitPoint;
+            BoxCollider highHitCollider = highHitProxy.AddComponent<BoxCollider>();
+            highHitCollider.size = new Vector3(2.4f, 2.4f, 2.4f);
+            Physics.SyncTransforms();
+            yield return null;
+
+            Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewWorldPoint(out Vector3 previewWorldPoint));
+            Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out Vector3 previewDirection));
+            Assert.AreSame(bossHealth, rangedBasicAttackAction.AimAssistTargetHealth);
+            Assert.Less(
+                Mathf.Abs(previewWorldPoint.y - stableBodyY),
+                0.18f,
+                "Direct boss aim should use the stable body hit height instead of jumping to a high child collider.");
+            Assert.Less(
+                previewWorldPoint.y,
+                highHitCollider.bounds.center.y - 0.45f,
+                "The preview point should stay below the forced high collider hit.");
+            Assert.IsTrue(rangedBasicAttackAction.TryFire());
+            LaneActionProjectile playerProjectile = RequireActivePlayerRangedProjectile();
+            Assert.Less(
+                Vector3.Angle(playerProjectile.TravelDirection, previewDirection),
+                0.5f,
+                "The fired projectile should match the stabilized boss aim preview.");
+
+            UnityEngine.Object.Destroy(highHitProxy);
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator FrontlineGuidedPlayerActionFlowClearsAsCleanRoute()
         {
             EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));

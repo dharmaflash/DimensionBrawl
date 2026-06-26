@@ -1320,6 +1320,8 @@ MonoBehaviour:
   spawnForwardOffset: 0.85
   spawnHeight: 1.12
   targetHeight: 1.1
+  stabilizeDirectTargetAimHeight: 1
+  directTargetAimHeightTolerance: 0.35
   facingHoldSeconds: 0.16
   requestFacingOnFire: 0
   snapFacingOnFire: 0
