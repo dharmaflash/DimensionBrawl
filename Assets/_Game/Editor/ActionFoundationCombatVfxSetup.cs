@@ -390,6 +390,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(driver, "damageAnchor", attackAnchor);
             SetEnum(driver, "damagedCueId", (int)CombatVfxCueId.PlayerDamaged);
             SetEnum(driver, "criticalCueId", (int)CombatVfxCueId.PlayerCritical);
+            SetFloat(driver, "pressureDamageCueScale", 0.62f);
             if (rangedBasicAttackAction != null)
             {
                 PlayerRangedBasicVfxCueDriver rangedDriver =

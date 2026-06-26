@@ -1136,6 +1136,7 @@ MonoBehaviour:
   damagedCueId: 37
   criticalCueId: 38
   damagedCueIntensity: 1
+  pressureDamageCueScale: 0.62
   criticalHealthRatio: 0.35
   criticalCueIntensity: 1.18
 --- !u!114 &4010

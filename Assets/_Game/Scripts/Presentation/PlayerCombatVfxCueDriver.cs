@@ -16,6 +16,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private CombatVfxCueId damagedCueId = CombatVfxCueId.PlayerDamaged;
         [SerializeField] private CombatVfxCueId criticalCueId = CombatVfxCueId.PlayerCritical;
         [SerializeField, Min(0f)] private float damagedCueIntensity = 1f;
+        [SerializeField, Range(0.1f, 1f)] private float pressureDamageCueScale = 0.62f;
         [SerializeField, Range(0.05f, 0.95f)] private float criticalHealthRatio = 0.35f;
         [SerializeField, Min(0f)] private float criticalCueIntensity = 1.18f;
 
@@ -24,6 +25,11 @@ namespace DimensionBrawl.Presentation
         private bool criticalCuePlayed;
         private int damageVfxCueRequestCount;
         private int criticalVfxCueRequestCount;
+        private float lastDamageCueIntensity;
+        private float lastDamageCuePolicyScale = 1f;
+        private DamageResponsePolicy lastDamageResponsePolicy = DamageResponsePolicy.Default;
+        private CombatControlLockPolicy lastDamageControlLockPolicy = CombatControlLockPolicy.InterruptAction;
+        private bool lastDamageCueInterruptedAction;
 
         public CombatHealth PlayerHealth => playerHealth;
         public Transform DamageAnchor => damageAnchor != null ? damageAnchor : attackAnchor;
@@ -31,6 +37,12 @@ namespace DimensionBrawl.Presentation
         public CombatVfxCueId CriticalCueId => criticalCueId;
         public int DamageVfxCueRequestCount => damageVfxCueRequestCount;
         public int CriticalVfxCueRequestCount => criticalVfxCueRequestCount;
+        public float PressureDamageCueScale => pressureDamageCueScale;
+        public float LastDamageCueIntensity => lastDamageCueIntensity;
+        public float LastDamageCuePolicyScale => lastDamageCuePolicyScale;
+        public DamageResponsePolicy LastDamageResponsePolicy => lastDamageResponsePolicy;
+        public CombatControlLockPolicy LastDamageControlLockPolicy => lastDamageControlLockPolicy;
+        public bool LastDamageCueInterruptedAction => lastDamageCueInterruptedAction;
 
         public void ConfigureDamageFeedback(CombatHealth newPlayerHealth, Transform newDamageAnchor)
         {
@@ -147,8 +159,16 @@ namespace DimensionBrawl.Presentation
             float damageScale = playerHealth != null && playerHealth.MaxHealth > 0f
                 ? Mathf.Clamp01(damageInfo.Amount / playerHealth.MaxHealth)
                 : 0f;
+            float policyScale = ResolveDamageCuePolicyScale(damageInfo);
+            float intensity = (damagedCueIntensity + damageScale * 0.35f) * policyScale;
+            bool interruptsAction = DamageResponsePolicyUtility.InterruptsAction(damageInfo.ControlLockPolicy);
+            lastDamageCueIntensity = intensity;
+            lastDamageCuePolicyScale = policyScale;
+            lastDamageResponsePolicy = damageInfo.ResponsePolicy;
+            lastDamageControlLockPolicy = damageInfo.ControlLockPolicy;
+            lastDamageCueInterruptedAction = interruptsAction;
 
-            if (Play(damagedCueId, DamageAnchor, damageInfo.Direction, damagedCueIntensity + damageScale * 0.35f))
+            if (Play(damagedCueId, DamageAnchor, damageInfo.Direction, intensity))
             {
                 damageVfxCueRequestCount++;
             }
@@ -169,6 +189,13 @@ namespace DimensionBrawl.Presentation
                 criticalVfxCueRequestCount++;
                 criticalCuePlayed = true;
             }
+        }
+
+        private float ResolveDamageCuePolicyScale(DamageInfo damageInfo)
+        {
+            return DamageResponsePolicyUtility.InterruptsAction(damageInfo.ControlLockPolicy)
+                ? 1f
+                : Mathf.Clamp(pressureDamageCueScale, 0.1f, 1f);
         }
 
         private void HandlePlayerDied()

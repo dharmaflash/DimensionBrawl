@@ -5068,6 +5068,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(driver, "damageAnchor", attackAnchor);
             SetEnum(driver, "damagedCueId", (int)CombatVfxCueId.PlayerDamaged);
             SetEnum(driver, "criticalCueId", (int)CombatVfxCueId.PlayerCritical);
+            SetFloat(driver, "pressureDamageCueScale", 0.62f);
             EditorUtility.SetDirty(player);
             EditorUtility.SetDirty(driver);
         }
@@ -5223,6 +5224,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(driver, "damageAnchor", attackAnchor);
             ValidateEnum(driver, "damagedCueId", (int)CombatVfxCueId.PlayerDamaged);
             ValidateEnum(driver, "criticalCueId", (int)CombatVfxCueId.PlayerCritical);
+            ValidateFloat(driver, "pressureDamageCueScale", 0.62f);
         }
 
         private static void ValidateSummonEnergyVfxCuePresenter(

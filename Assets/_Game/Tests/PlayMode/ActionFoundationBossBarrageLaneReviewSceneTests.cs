@@ -354,6 +354,7 @@ namespace DimensionBrawl.Tests
                 GetObjectReference<Transform>(playerVfxCueDriver, "damageAnchor"));
             Assert.AreEqual(CombatVfxCueId.PlayerDamaged, GetEnum<CombatVfxCueId>(playerVfxCueDriver, "damagedCueId"));
             Assert.AreEqual(CombatVfxCueId.PlayerCritical, GetEnum<CombatVfxCueId>(playerVfxCueDriver, "criticalCueId"));
+            Assert.AreEqual(0.62f, playerVfxCueDriver.PressureDamageCueScale, 0.001f);
             Assert.AreEqual(CombatVfxCueId.PlayerRangedMuzzleFlash, GetEnum<CombatVfxCueId>(rangedBasicVfxCueDriver, "muzzleFlashCueId"));
             Assert.AreEqual(1f, GetFloat(rangedBasicVfxCueDriver, "muzzleFlashIntensity"), 0.001f);
             Assert.AreEqual(CombatVfxCueId.PlayerRangedProjectileImpact, GetEnum<CombatVfxCueId>(rangedBasicVfxCueDriver, "impactCueId"));

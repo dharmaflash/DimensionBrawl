@@ -332,6 +332,11 @@ namespace DimensionBrawl.Tests
 
                 Assert.AreEqual(1, driver.DamageVfxCueRequestCount);
                 Assert.AreEqual(0, driver.CriticalVfxCueRequestCount);
+                Assert.AreEqual(DamageResponsePolicy.Default, driver.LastDamageResponsePolicy);
+                Assert.AreEqual(CombatControlLockPolicy.InterruptAction, driver.LastDamageControlLockPolicy);
+                Assert.IsTrue(driver.LastDamageCueInterruptedAction);
+                Assert.AreEqual(1f, driver.LastDamageCuePolicyScale, 0.001f);
+                Assert.AreEqual(1.14f, driver.LastDamageCueIntensity, 0.001f);
                 Assert.IsNotNull(
                     playerObject.transform.Find(damagedCuePrefab.name),
                     "Player damage should spawn an authored world VFX cue, not only flash the screen.");
@@ -349,6 +354,62 @@ namespace DimensionBrawl.Tests
                 Assert.IsNotNull(
                     playerObject.transform.Find(criticalCuePrefab.name),
                     "Crossing the critical health threshold should spawn a stronger player-state VFX cue.");
+            }
+            finally
+            {
+                if (cueProfile != null)
+                {
+                    Object.DestroyImmediate(cueProfile);
+                }
+
+                Object.DestroyImmediate(criticalCuePrefab);
+                Object.DestroyImmediate(damagedCuePrefab);
+                Object.DestroyImmediate(playerObject);
+            }
+        }
+
+        [Test]
+        public void PlayerCombatVfxCueDriverSoftensNonLockingPressureDamage()
+        {
+            GameObject playerObject = new GameObject("Player");
+            GameObject damagedCuePrefab = new GameObject("PlayerDamagedCuePrefab");
+            GameObject criticalCuePrefab = new GameObject("PlayerCriticalCuePrefab");
+            CombatVfxCueProfile cueProfile = null;
+            try
+            {
+                CombatHealth playerHealth = playerObject.AddComponent<CombatHealth>();
+                playerHealth.ConfigureTeam(DamageTeam.Player);
+                playerHealth.ConfigureMaxHealth(100f);
+
+                CombatVfxCuePlayer cuePlayer = playerObject.AddComponent<CombatVfxCuePlayer>();
+                cueProfile = CreatePlayerDamageVfxCueProfile(damagedCuePrefab, criticalCuePrefab);
+                ConfigureCombatVfxCuePlayer(cuePlayer, cueProfile);
+
+                PlayerCombatVfxCueDriver driver = playerObject.AddComponent<PlayerCombatVfxCueDriver>();
+                driver.ConfigureDamageFeedback(playerHealth, playerObject.transform);
+
+                Assert.IsTrue(playerHealth.TryApplyDamage(new DamageInfo(
+                    null,
+                    DamageTeam.Enemy,
+                    40f,
+                    playerObject.transform.position,
+                    Vector3.back,
+                    0f,
+                    DamageResponsePolicy.FlashOnly,
+                    CombatControlLockPolicy.None)));
+
+                float expectedIntensity = (1f + 0.4f * 0.35f) * driver.PressureDamageCueScale;
+                Transform damageCue = playerObject.transform.Find(damagedCuePrefab.name);
+
+                Assert.AreEqual(1, driver.DamageVfxCueRequestCount);
+                Assert.AreEqual(0, driver.CriticalVfxCueRequestCount);
+                Assert.AreEqual(DamageResponsePolicy.FlashOnly, driver.LastDamageResponsePolicy);
+                Assert.AreEqual(CombatControlLockPolicy.None, driver.LastDamageControlLockPolicy);
+                Assert.IsFalse(driver.LastDamageCueInterruptedAction);
+                Assert.AreEqual(driver.PressureDamageCueScale, driver.LastDamageCuePolicyScale, 0.001f);
+                Assert.AreEqual(expectedIntensity, driver.LastDamageCueIntensity, 0.001f);
+                Assert.IsNotNull(damageCue);
+                Assert.AreEqual(expectedIntensity, damageCue.localScale.x, 0.001f);
             }
             finally
             {
