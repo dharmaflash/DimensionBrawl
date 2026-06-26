@@ -38,6 +38,7 @@ namespace DimensionBrawl.Tests
         private const float EnergyProbeMaxSeconds = 13f;
         private const float BarrageShapeProbeNearRadius = 1.25f;
         private const int BarrageShapePreviewCapacity = 16;
+        private const float PhysicalBarrageProbeFlightSeconds = 3.4f;
 
         private enum PolicyKind
         {
@@ -47,6 +48,8 @@ namespace DimensionBrawl.Tests
             ForwardRiskEnergyProbe,
             BacklineBarrageProbe,
             ForwardRiskBarrageProbe,
+            BacklinePhysicalBarrageProbe,
+            ForwardRiskPhysicalBarrageProbe,
             IntendedRoute,
             IntendedDelayedFollowup,
             LateSummon,
@@ -74,6 +77,8 @@ namespace DimensionBrawl.Tests
                     PolicyKind.ForwardRiskEnergyProbe,
                     PolicyKind.BacklineBarrageProbe,
                     PolicyKind.ForwardRiskBarrageProbe,
+                    PolicyKind.BacklinePhysicalBarrageProbe,
+                    PolicyKind.ForwardRiskPhysicalBarrageProbe,
                     PolicyKind.IntendedRoute,
                     PolicyKind.IntendedDelayedFollowup,
                     PolicyKind.LateSummon,
@@ -103,6 +108,12 @@ namespace DimensionBrawl.Tests
                 PolicyMetrics forwardRiskEnergy = RequireResult(results, PolicyKind.ForwardRiskEnergyProbe);
                 PolicyMetrics backlineBarrage = RequireResult(results, PolicyKind.BacklineBarrageProbe);
                 PolicyMetrics forwardRiskBarrage = RequireResult(results, PolicyKind.ForwardRiskBarrageProbe);
+                PolicyMetrics backlinePhysicalBarrage = RequireResult(
+                    results,
+                    PolicyKind.BacklinePhysicalBarrageProbe);
+                PolicyMetrics forwardRiskPhysicalBarrage = RequireResult(
+                    results,
+                    PolicyKind.ForwardRiskPhysicalBarrageProbe);
                 PolicyMetrics counterRecovery = RequireResult(results, PolicyKind.MissedFollowupCounterRecovery);
                 PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
                 PolicyMetrics ignoredRecovery = RequireResult(results, PolicyKind.BossScreenIgnoredNoRecovery);
@@ -179,6 +190,22 @@ namespace DimensionBrawl.Tests
                     forwardRiskBarrage.BarrageShapeThreatDensity,
                     backlineBarrage.BarrageShapeThreatDensity,
                     "Forward-risk barrage pressure should increase spatial threat density.");
+                Assert.Greater(
+                    backlinePhysicalBarrage.PhysicalBarrageProjectilesSpawned,
+                    0,
+                    "The backline physical barrage probe should spawn real boss projectiles.");
+                Assert.AreEqual(
+                    backlinePhysicalBarrage.PhysicalBarrageProjectilesSpawned,
+                    forwardRiskPhysicalBarrage.PhysicalBarrageProjectilesSpawned,
+                    "Backline and forward physical barrage probes should compare the same authored wave count.");
+                Assert.Greater(
+                    forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits,
+                    backlinePhysicalBarrage.PhysicalBarragePlayerHits,
+                    "Forward-risk barrage pressure should translate preview compression into real projectile hit pressure.");
+                Assert.Greater(
+                    forwardRiskPhysicalBarrage.PhysicalBarragePlayerDamage,
+                    backlinePhysicalBarrage.PhysicalBarragePlayerDamage,
+                    "Forward-risk barrage pressure should carry a larger physical HP cost than backline safety.");
                 Assert.GreaterOrEqual(
                     noSummon.Top3PressureWindowShare01,
                     noSummon.PeakPressureWindowShare01,
@@ -530,6 +557,12 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.ForwardRiskBarrageProbe:
                     yield return RunBarrageShapeProbe(context, ForwardEnergyProbeForwardRisk01);
                     break;
+                case PolicyKind.BacklinePhysicalBarrageProbe:
+                    yield return RunPhysicalBarrageProbe(context, BacklineEnergyProbeForwardRisk01);
+                    break;
+                case PolicyKind.ForwardRiskPhysicalBarrageProbe:
+                    yield return RunPhysicalBarrageProbe(context, ForwardEnergyProbeForwardRisk01);
+                    break;
                 case PolicyKind.IntendedRoute:
                     yield return RunIntendedRoute(context);
                     break;
@@ -612,6 +645,16 @@ namespace DimensionBrawl.Tests
             context.Sample();
             RecordBarrageShapeProbe(context);
             yield return null;
+        }
+
+        private static IEnumerator RunPhysicalBarrageProbe(
+            CombatPolicyContext context,
+            float forwardRisk01)
+        {
+            MovePlayerToForwardRisk(context, forwardRisk01);
+            context.Metrics.PhysicalBarrageProbeTargetForwardRisk01 = Mathf.Clamp01(forwardRisk01);
+            context.Sample();
+            yield return ApplyPhysicalBossBarrage(context, PhysicalBarrageProbeFlightSeconds);
         }
 
         private static IEnumerator RunIntendedRoute(CombatPolicyContext context)
@@ -845,6 +888,75 @@ namespace DimensionBrawl.Tests
                 $"{context.Metrics.BarrageShapePatternId} {nearCount}/{count} near "
                 + $"avgLat {context.Metrics.BarrageShapeAverageLateralGap:0.00} "
                 + $"density {context.Metrics.BarrageShapeThreatDensity:0.00}";
+        }
+
+        private static IEnumerator ApplyPhysicalBossBarrage(
+            CombatPolicyContext context,
+            float flightSeconds)
+        {
+            BossBarragePatternProfile pattern = context.BossEmitter.CurrentPattern;
+            float healthBefore = context.PlayerHealth.CurrentHealth;
+            if (!context.BossEmitter.BeginWindup())
+            {
+                context.Metrics.Notes.Add("physical barrage probe windup unavailable");
+                yield break;
+            }
+
+            context.Metrics.PhysicalBarragePatternId = pattern != null ? pattern.PatternId : "unknown";
+            context.Metrics.PhysicalBarragePendingForwardRisk01 = context.BossEmitter.PendingForwardRisk01;
+            int spawned = context.BossEmitter.FirePendingWave();
+            context.Metrics.BossWaves++;
+            context.Metrics.BossProjectilesSpawned += spawned;
+            context.Metrics.PhysicalBarrageWaves++;
+            context.Metrics.PhysicalBarrageProjectilesSpawned += spawned;
+
+            BossBarrageProjectile[] projectiles = FindActiveBossProjectiles();
+            context.Metrics.PhysicalBarrageTrackedProjectileCount += projectiles.Length;
+            Physics.SyncTransforms();
+            yield return Advance(context, flightSeconds);
+            Physics.SyncTransforms();
+
+            int inactiveAfterFlight = 0;
+            int playerImpactAttempts = 0;
+            int playerHits = 0;
+            for (int i = 0; i < projectiles.Length; i++)
+            {
+                BossBarrageProjectile projectile = projectiles[i];
+                if (projectile == null)
+                {
+                    continue;
+                }
+
+                if (!projectile.IsActive)
+                {
+                    inactiveAfterFlight++;
+                }
+
+                if (projectile.LastImpactTargetHealth != context.PlayerHealth)
+                {
+                    continue;
+                }
+
+                playerImpactAttempts++;
+                if (projectile.LastImpactResult == ProjectileImpactResult.AppliedDamage)
+                {
+                    playerHits++;
+                }
+            }
+
+            float playerDamage = Mathf.Max(0f, healthBefore - context.PlayerHealth.CurrentHealth);
+            context.Metrics.PhysicalBarrageInactiveAfterFlight += inactiveAfterFlight;
+            context.Metrics.PhysicalBarragePlayerImpactAttempts += playerImpactAttempts;
+            context.Metrics.PhysicalBarragePlayerHits += playerHits;
+            context.Metrics.PhysicalBarragePlayerDamage += playerDamage;
+            context.Metrics.BossProjectilesHitPlayer += playerHits;
+            context.Metrics.PhysicalBarrageReadout =
+                $"{context.Metrics.PhysicalBarragePatternId} hits {playerHits}/{projectiles.Length} "
+                + $"damage {playerDamage:0.0} inactive {inactiveAfterFlight}";
+
+            DeactivateActiveBossProjectiles();
+            context.PocketOwner.Tick(0f);
+            context.Sample();
         }
 
         private static IEnumerator UseSummonAndBlockNextBossWave(CombatPolicyContext context)
@@ -1305,6 +1417,40 @@ namespace DimensionBrawl.Tests
             }
 
             builder.AppendLine();
+            builder.AppendLine("## Forward-Risk Physical Barrage");
+            builder.AppendLine("| Policy | Target risk | Pending risk | Pattern | Waves | Spawned | Tracked | Inactive | Player attempts | Player hits | Player dmg | Readout |");
+            builder.AppendLine("|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---|");
+            for (int i = 0; i < results.Count; i++)
+            {
+                PolicyMetrics result = results[i];
+                builder.Append("| ");
+                builder.Append(result.Policy);
+                builder.Append(" | ");
+                builder.Append(FormatOptionalPercent01(result.PhysicalBarrageProbeTargetForwardRisk01));
+                builder.Append(" | ");
+                builder.Append(FormatOptionalPercent01(result.PhysicalBarragePendingForwardRisk01));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(result.PhysicalBarragePatternId));
+                builder.Append(" | ");
+                builder.Append(result.PhysicalBarrageWaves);
+                builder.Append(" | ");
+                builder.Append(result.PhysicalBarrageProjectilesSpawned);
+                builder.Append(" | ");
+                builder.Append(result.PhysicalBarrageTrackedProjectileCount);
+                builder.Append(" | ");
+                builder.Append(result.PhysicalBarrageInactiveAfterFlight);
+                builder.Append(" | ");
+                builder.Append(result.PhysicalBarragePlayerImpactAttempts);
+                builder.Append(" | ");
+                builder.Append(result.PhysicalBarragePlayerHits);
+                builder.Append(" | ");
+                builder.Append(result.PhysicalBarragePlayerDamage.ToString("0.0"));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(result.PhysicalBarrageReadout));
+                builder.AppendLine(" |");
+            }
+
+            builder.AppendLine();
             builder.AppendLine("## Pressure Exposure");
             builder.AppendLine("| Policy | Drain used | Hit penalty | Avg drain/s | Peak drain/s | Avg slot | Avg front scale | Enemy-only | Contested | Ally-only | Last front |");
             builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|");
@@ -1525,6 +1671,12 @@ namespace DimensionBrawl.Tests
             PolicyMetrics forwardRiskEnergy = RequireResult(results, PolicyKind.ForwardRiskEnergyProbe);
             PolicyMetrics backlineBarrage = RequireResult(results, PolicyKind.BacklineBarrageProbe);
             PolicyMetrics forwardRiskBarrage = RequireResult(results, PolicyKind.ForwardRiskBarrageProbe);
+            PolicyMetrics backlinePhysicalBarrage = RequireResult(
+                results,
+                PolicyKind.BacklinePhysicalBarrageProbe);
+            PolicyMetrics forwardRiskPhysicalBarrage = RequireResult(
+                results,
+                PolicyKind.ForwardRiskPhysicalBarrageProbe);
             PolicyMetrics late = RequireResult(results, PolicyKind.LateSummon);
             PolicyMetrics counterRecovery = RequireResult(results, PolicyKind.MissedFollowupCounterRecovery);
             PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
@@ -1546,6 +1698,7 @@ namespace DimensionBrawl.Tests
             }
 
             builder.AppendLine($"- Route stability split: no-action {FormatPercent01(noSummon.RouteStability01)} final / {FormatPercent01(noSummon.MinRouteStability01)} min, gun-only {FormatPercent01(gunOnly.RouteStability01)} / {FormatPercent01(gunOnly.MinRouteStability01)}, intended {FormatPercent01(intended.RouteStability01)} / {FormatPercent01(intended.MinRouteStability01)}.");
+            builder.AppendLine($"- Forward-risk physical barrage: backline hits {backlinePhysicalBarrage.PhysicalBarragePlayerHits}/{backlinePhysicalBarrage.PhysicalBarrageTrackedProjectileCount}, damage {backlinePhysicalBarrage.PhysicalBarragePlayerDamage:0.0}; forward hits {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}, damage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerDamage:0.0}.");
             builder.AppendLine($"- Unanswered hit penalty split: no-action {FormatPercent01(noSummon.TotalUnansweredBossHitRoutePenalty01)} x{noSummon.UnansweredBossHitRoutePenaltyCount}, gun-only {FormatPercent01(gunOnly.TotalUnansweredBossHitRoutePenalty01)} x{gunOnly.UnansweredBossHitRoutePenaltyCount}, late {FormatPercent01(late.TotalUnansweredBossHitRoutePenalty01)} x{late.UnansweredBossHitRoutePenaltyCount}.");
             builder.AppendLine($"- Frontline exposure split: no-action enemy-only {FormatSeconds(noSummon.EnemyOnlyFrontlineSeconds)}, gun-only enemy-only {FormatSeconds(gunOnly.EnemyOnlyFrontlineSeconds)}, intended ally-only {FormatSeconds(intended.AllyOnlyFrontlineSeconds)} / contested {FormatSeconds(intended.ContestedFrontlineSeconds)}.");
             builder.AppendLine($"- ArkData effective pressure shape: no-action peak/top3 {FormatPercent01(noSummon.PeakPressureWindowShare01)}/{FormatPercent01(noSummon.Top3PressureWindowShare01)}, intended {FormatPercent01(intended.PeakPressureWindowShare01)}/{FormatPercent01(intended.Top3PressureWindowShare01)} with relief {FormatSeconds(intended.TimeToNextReliefWindowSeconds)}, ignored boss-screen unanswered burden {FormatPercent01(ignoredRecovery.UnansweredPressureBurdenShare01)} versus intended {FormatPercent01(intended.UnansweredPressureBurdenShare01)}.");
@@ -1759,6 +1912,18 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"barrageShapeNearestLaneDistance\": {JsonNullableSeconds(result.BarrageShapeNearestLaneDistance)},");
                 builder.AppendLine($"      \"barrageShapeThreatDensity\": {result.BarrageShapeThreatDensity:0.###},");
                 builder.AppendLine($"      \"barrageShapeReadout\": \"{JsonEscape(result.BarrageShapeReadout)}\",");
+                builder.AppendLine($"      \"physicalBarrageProbeTargetForwardRisk01\": {JsonNullableSeconds(result.PhysicalBarrageProbeTargetForwardRisk01)},");
+                builder.AppendLine($"      \"physicalBarragePendingForwardRisk01\": {JsonNullableSeconds(result.PhysicalBarragePendingForwardRisk01)},");
+                builder.AppendLine($"      \"physicalBarragePatternId\": \"{JsonEscape(result.PhysicalBarragePatternId)}\",");
+                builder.AppendLine($"      \"physicalBarrageFlightSeconds\": {PhysicalBarrageProbeFlightSeconds:0.###},");
+                builder.AppendLine($"      \"physicalBarrageWaves\": {result.PhysicalBarrageWaves},");
+                builder.AppendLine($"      \"physicalBarrageProjectilesSpawned\": {result.PhysicalBarrageProjectilesSpawned},");
+                builder.AppendLine($"      \"physicalBarrageTrackedProjectileCount\": {result.PhysicalBarrageTrackedProjectileCount},");
+                builder.AppendLine($"      \"physicalBarrageInactiveAfterFlight\": {result.PhysicalBarrageInactiveAfterFlight},");
+                builder.AppendLine($"      \"physicalBarragePlayerImpactAttempts\": {result.PhysicalBarragePlayerImpactAttempts},");
+                builder.AppendLine($"      \"physicalBarragePlayerHits\": {result.PhysicalBarragePlayerHits},");
+                builder.AppendLine($"      \"physicalBarragePlayerDamage\": {result.PhysicalBarragePlayerDamage:0.###},");
+                builder.AppendLine($"      \"physicalBarrageReadout\": \"{JsonEscape(result.PhysicalBarrageReadout)}\",");
                 builder.AppendLine($"      \"pressureWindowSeconds\": {result.PressureWindowSeconds:0.###},");
                 builder.AppendLine($"      \"pressureBurdenSeconds\": {result.PressureBurdenSeconds:0.###},");
                 builder.AppendLine($"      \"pressureWindowCount\": {result.PressureWindowCount},");
@@ -3134,6 +3299,17 @@ namespace DimensionBrawl.Tests
             public float BarrageShapeNearestLaneDistance { get; set; } = -1f;
             public float BarrageShapeThreatDensity { get; set; } = -1f;
             public string BarrageShapeReadout { get; set; } = "none";
+            public float PhysicalBarrageProbeTargetForwardRisk01 { get; set; } = -1f;
+            public float PhysicalBarragePendingForwardRisk01 { get; set; } = -1f;
+            public string PhysicalBarragePatternId { get; set; } = "-";
+            public int PhysicalBarrageWaves { get; set; }
+            public int PhysicalBarrageProjectilesSpawned { get; set; }
+            public int PhysicalBarrageTrackedProjectileCount { get; set; }
+            public int PhysicalBarrageInactiveAfterFlight { get; set; }
+            public int PhysicalBarragePlayerImpactAttempts { get; set; }
+            public int PhysicalBarragePlayerHits { get; set; }
+            public float PhysicalBarragePlayerDamage { get; set; }
+            public string PhysicalBarrageReadout { get; set; } = "none";
             public float PressureWindowSeconds { get; set; }
             public float PressureBurdenSeconds { get; set; }
             public int PressureWindowCount { get; set; }

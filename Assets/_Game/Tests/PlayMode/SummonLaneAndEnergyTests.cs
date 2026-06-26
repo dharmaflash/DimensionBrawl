@@ -3443,7 +3443,7 @@ namespace DimensionBrawl.Tests
             var serializedObject = new SerializedObject(pattern);
             serializedObject.FindProperty("lateralShape").enumValueIndex = (int)BossBarrageLateralShape.LinePressure;
             serializedObject.FindProperty("backlineHalfSpread").floatValue = 4f;
-            serializedObject.FindProperty("forwardHalfSpread").floatValue = 1.4f;
+            serializedObject.FindProperty("forwardHalfSpread").floatValue = 0f;
             serializedObject.FindProperty("linePressureDirection").floatValue = 1f;
             serializedObject.FindProperty("linePressureCenterRatio").floatValue = 0.72f;
             serializedObject.FindProperty("linePressureHalfSpreadRatio").floatValue = 0.08f;
@@ -3470,8 +3470,8 @@ namespace DimensionBrawl.Tests
                 "Forward-risk LinePressure should commit its rail closer to the player lane than the backline.");
             Assert.Less(
                 new Vector2(secondForwardOffset, pattern.GetTargetDepthOffset(1, 4, 1f)).magnitude,
-                1.25f,
-                "Forward-risk LinePressure should create a near-body dodge tax while backline play keeps the rail wider.");
+                0.75f,
+                "Forward-risk LinePressure should create a physical dodge tax while backline play keeps the rail wider.");
             Assert.Greater(
                 Mathf.Abs(backlineDepth),
                 Mathf.Abs(forwardDepth),
