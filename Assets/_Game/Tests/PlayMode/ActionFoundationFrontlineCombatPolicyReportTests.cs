@@ -1557,6 +1557,8 @@ namespace DimensionBrawl.Tests
             builder.AppendLine("- Trigger -> target -> effect -> status/presentation: follow-up windows, Skill1 hit confirms, boss-screen blocks, counter-wave observation, ally hold, and result records are emitted as measured route evidence.");
             builder.AppendLine("- QTE/state lock-unlock: summon block opens the follow-up window; missed or blocked follow-up can lock the route into counter pressure; ally hold can unlock the final recovery window.");
             builder.AppendLine();
+            AppendStructuralGateSummary(builder, results);
+            builder.AppendLine();
             builder.AppendLine("| Policy | Result | Sim s | HP lost | Boss dmg | Stability | Min stability | Boss waves | Player hits | Summons | Blocks | Skill1 hits | Fronts A/E | Route shape | Decision |");
             builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---|");
             for (int i = 0; i < results.Count; i++)
@@ -2100,6 +2102,66 @@ namespace DimensionBrawl.Tests
             }
 
             return builder.ToString();
+        }
+
+        private static void AppendStructuralGateSummary(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results)
+        {
+            PolicyMetrics noSummon = RequireResult(results, PolicyKind.NoSummonNoFire);
+            PolicyMetrics noSummonSurvival = RequireResult(results, PolicyKind.NoSummonSurvivalLimit);
+            PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
+            PolicyMetrics gunOnlySurvival = RequireResult(results, PolicyKind.GunOnlySurvivalLimit);
+            PolicyMetrics forwardRiskPhysicalBarrage = RequireResult(
+                results,
+                PolicyKind.ForwardRiskPhysicalBarrageProbe);
+            PolicyMetrics forwardRiskPhysicalSummonPunish = RequireResult(
+                results,
+                PolicyKind.ForwardRiskPhysicalSummonPunishProbe);
+            PolicyMetrics intended = RequireResult(results, PolicyKind.IntendedRoute);
+            PolicyMetrics ignoredRecovery = RequireResult(results, PolicyKind.BossScreenIgnoredNoRecovery);
+            PolicyMetrics blockedRecovery = RequireResult(results, PolicyKind.BossScreenBlockCounterRecovery);
+
+            bool axis1Pass = noSummonSurvival.ResultKind == "PlayerDownFail"
+                && gunOnlySurvival.ResultKind == "PlayerDownFail"
+                && noSummonSurvival.FirstPlayerDownAtSeconds >= 0f
+                && gunOnlySurvival.FirstPlayerDownAtSeconds >= 0f
+                && gunOnlySurvival.FirstBossDownAtSeconds < 0f;
+            bool axis2Pass = forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits > 0
+                && forwardRiskPhysicalSummonPunish.SummonBlocks > 0
+                && forwardRiskPhysicalSummonPunish.PhysicalBarragePlayerHits == 0
+                && forwardRiskPhysicalSummonPunish.ResultKind == "CleanFollowupClear"
+                && forwardRiskPhysicalSummonPunish.SkillProjectileHits > 0;
+            bool axis3Pass = noSummon.PlayerNonLockingDamageEvents > 0
+                && noSummon.PlayerLockingDamageEvents == 0
+                && gunOnly.BossNonLockingDamageEvents > 0
+                && gunOnly.BossLockingDamageEvents == 0
+                && forwardRiskPhysicalSummonPunish.BossLockingDamageEvents > 0
+                && forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests > 0
+                && forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests > 0
+                && forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests > 0;
+            bool axis4Pass = noSummon.EnemyFrontlineBodyHits > 0
+                && ignoredRecovery.EnemyFrontlineBodyHits > blockedRecovery.EnemyFrontlineBodyHits
+                && ignoredRecovery.PlayerDamageTaken > blockedRecovery.PlayerDamageTaken;
+
+            builder.AppendLine("## Structural Gate Summary");
+            builder.AppendLine("| Axis | Status | Evidence |");
+            builder.AppendLine("|---|---|---|");
+            builder.AppendLine(
+                $"| 1. Bad routes lose state/HP | {FormatGateStatus(axis1Pass)} | no-summon down {FormatSeconds(noSummonSurvival.FirstPlayerDownAtSeconds)}, gun-only down {FormatSeconds(gunOnlySurvival.FirstPlayerDownAtSeconds)}, gun-only boss down {FormatSeconds(gunOnlySurvival.FirstBossDownAtSeconds)} |");
+            builder.AppendLine(
+                $"| 2. Block -> window -> Skill1 loop | {FormatGateStatus(axis2Pass)} | unblocked forward hits {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; physical punish blocks {forwardRiskPhysicalSummonPunish.SummonBlocks}, player hits {forwardRiskPhysicalSummonPunish.PhysicalBarragePlayerHits}/{forwardRiskPhysicalSummonPunish.PhysicalBarrageTrackedProjectileCount}, Skill1 hits {forwardRiskPhysicalSummonPunish.SkillProjectileHits}, `{forwardRiskPhysicalSummonPunish.ResultKind}` |");
+            builder.AppendLine(
+                $"| 3. Hit response and presentation | {FormatGateStatus(axis3Pass)} | player routine hits {noSummon.PlayerNonLockingDamageEvents}/{noSummon.PlayerLockingDamageEvents} non-lock/lock; gun boss chip {gunOnly.BossNonLockingDamageEvents}/{gunOnly.BossLockingDamageEvents}; physical punish boss lock {forwardRiskPhysicalSummonPunish.BossLockingDamageEvents}, hit cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests} |");
+            builder.AppendLine(
+                $"| 4. Enemy pressure actor cost | {FormatGateStatus(axis4Pass)} | no-action body hits {noSummon.EnemyFrontlineBodyHits}; ignored boss-screen body hits {ignoredRecovery.EnemyFrontlineBodyHits}, damage {ignoredRecovery.PlayerDamageTaken:0.0}; recovery body hits {blockedRecovery.EnemyFrontlineBodyHits}, damage {blockedRecovery.PlayerDamageTaken:0.0} |");
+            builder.AppendLine(
+                $"| Physical clean route reference | {FormatGateStatus(forwardRiskPhysicalSummonPunish.IsClearResult)} | physical summon-punish clears in {FormatSeconds(forwardRiskPhysicalSummonPunish.ElapsedSeconds)} with {forwardRiskPhysicalSummonPunish.PlayerDamageTaken:0.0} HP lost versus intended route {FormatSeconds(intended.ElapsedSeconds)} / {intended.PlayerDamageTaken:0.0} HP lost |");
+        }
+
+        private static string FormatGateStatus(bool passed)
+        {
+            return passed ? "PASS" : "REVIEW";
         }
 
         private static string ResolveRouteShape(PolicyMetrics result)
