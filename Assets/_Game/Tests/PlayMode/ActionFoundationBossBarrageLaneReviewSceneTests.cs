@@ -1198,7 +1198,9 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(InputSystemKeyQ, GetEnumIndex(mobileHud, "keyboardPeekLeftKey"));
             Assert.AreEqual(InputSystemKeyE, GetEnumIndex(mobileHud, "keyboardPeekRightKey"));
             Assert.IsTrue(GetBool(mobileHud, "keyboardPeekRequiresActiveAim"));
-            Assert.IsFalse(GetBool(mobileHud, "fireAimReticleUsesScreenCenter"));
+            Assert.IsTrue(
+                GetBool(mobileHud, "fireAimReticleUsesScreenCenter"),
+                "The fire reticle should stay at the input crosshair height when target assist is acquired.");
             Assert.AreEqual(0.08f, GetFloat(mobileHud, "lookAimDragDeadZone"), 0.001f);
             Assert.AreEqual(230f, GetFloat(mobileHud, "lookAimDragRadius"), 0.001f);
             Assert.AreEqual(30f, GetFloat(mobileHud, "lookAimKnobSize"), 0.001f);

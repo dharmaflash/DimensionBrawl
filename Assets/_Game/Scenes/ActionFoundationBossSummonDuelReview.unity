@@ -21359,7 +21359,7 @@ MonoBehaviour:
   lookAimKnobSize: 30
   lookAimScreenMinX: 0
   showFireAimReticle: 1
-  fireAimReticleUsesScreenCenter: 0
+  fireAimReticleUsesScreenCenter: 1
   fireAimReticleSize: 34
   fireAimReticleGap: 9
   fireAimReticleThickness: 2

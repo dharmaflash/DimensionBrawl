@@ -228,6 +228,9 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(summonSlot3Action, GetObjectReference<PlayerSupportSummonSlotAction>(mobileHud, "summonSlot3Action"));
             Assert.AreEqual("SummonSlot2", mobileHud.SummonSlot2ActionName);
             Assert.AreEqual("SummonSlot3", mobileHud.SummonSlot3ActionName);
+            Assert.IsTrue(
+                GetBool(mobileHud, "fireAimReticleUsesScreenCenter"),
+                "The duel review fire reticle should stay at the input crosshair height when target assist is acquired.");
         }
 
         [UnityTest]
@@ -885,6 +888,14 @@ namespace DimensionBrawl.Tests
             SerializedProperty property = serializedObject.FindProperty(propertyName);
             Assert.IsNotNull(property, $"{target.name} is missing serialized property {propertyName}.");
             return property.floatValue;
+        }
+
+        private static bool GetBool(Object target, string propertyName)
+        {
+            SerializedObject serializedObject = new SerializedObject(target);
+            SerializedProperty property = serializedObject.FindProperty(propertyName);
+            Assert.IsNotNull(property, $"{target.name} is missing serialized property {propertyName}.");
+            return property.boolValue;
         }
 
         private static Vector3 GetVector3(Object target, string propertyName)
