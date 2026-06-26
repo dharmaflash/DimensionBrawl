@@ -957,12 +957,15 @@ namespace DimensionBrawl.Test
 
             if (requireSkill1FollowupHitToClear && !skill1FollowupHitConfirmed)
             {
-                if (pressurePacing.IsSummonFollowupWindowActive)
+                bool isCounterWaveRecoveryPending = counterWaveObserved && !counterWaveStabilized;
+                if (pressurePacing.IsSummonFollowupWindowActive && !isCounterWaveRecoveryPending)
                 {
                     return 0f;
                 }
 
-                float pressureBreakScale = pressurePacing.IsSummonPressureBreakActive ? 0.35f : 1f;
+                float pressureBreakScale = pressurePacing.IsSummonPressureBreakActive && !isCounterWaveRecoveryPending
+                    ? 0.35f
+                    : 1f;
                 return stageProfile.CounterWaveRouteDrainPerSecond
                     * pressureBreakScale
                     * ResolveCurrentRoutePressureWeight()

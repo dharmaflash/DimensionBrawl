@@ -431,6 +431,10 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(0f, pocketOwner.CounterWaveAllyHoldElapsedSeconds, 0.001f);
             Assert.AreEqual(0f, pocketOwner.CounterWaveAllyHoldProgress01, 0.001f);
             Assert.AreEqual(stageProfile.CounterWaveAllyHoldSeconds, pocketOwner.CounterWaveAllyHoldRemainingSeconds, 0.001f);
+            Assert.Greater(
+                pocketOwner.CurrentRouteStabilityDrainPerSecond,
+                0f,
+                "Counter wave recovery should keep route pressure active even if the previous follow-up relief window is still open.");
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter_answer:pending(holding_0%)"));
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("decision:recovery_needed(ally_holding)"));
             Assert.That(reviewHud.CompactObjectiveReadout, Does.Contain("Hold counter wave 0.5s"));
@@ -446,6 +450,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("holding_50%", pocketOwner.CounterWaveAnswerReadout);
             Assert.That(pocketOwner.CounterWaveAllyHoldProgress01, Is.InRange(0.49f, 0.51f));
             Assert.Greater(pocketOwner.CounterWaveAllyHoldRemainingSeconds, 0f);
+            Assert.Less(pocketOwner.RouteStability01, unstableStabilityBeforeAnswer);
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter_answer:pending(holding_50%)"));
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("decision:recovery_needed(ally_holding)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter_answer:pending(holding_50%)"));
@@ -466,10 +471,9 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(stageProfile.UnstableCounterWaveFinalWindowScale, pocketOwner.LastCounterWaveFinalWindowRouteScale, 0.001f);
             Assert.Less(pocketOwner.LastCounterWaveFinalWindowRouteScale, 1f);
             Assert.Greater(pocketOwner.RouteStability01, stabilityBeforeHoldComplete);
-            Assert.AreEqual(
-                unstableStabilityBeforeAnswer + stageProfile.CounterWaveStabilizeRouteBonus01,
+            Assert.Less(
                 pocketOwner.RouteStability01,
-                0.001f);
+                unstableStabilityBeforeAnswer + stageProfile.CounterWaveStabilizeRouteBonus01);
             Assert.Greater(pocketOwner.LastCounterWaveFinalWindowDuration, 0f);
             Assert.IsTrue(pocketOwner.IsSummonFollowupWindowActive);
             Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.SummonFollowup, pocketOwner.CurrentPhase);
@@ -528,7 +532,7 @@ namespace DimensionBrawl.Tests
             Assert.That(overlayHud.ResultNextObjectiveReadout, Does.Contain("earlier"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Counter recovery"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Record B: Counter recovery"));
-            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("stability 58%"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("stability 56%"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("followup:recorded"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter_window:opened(final_followup)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("decision:recovery_clear(counter_recovery)"));
