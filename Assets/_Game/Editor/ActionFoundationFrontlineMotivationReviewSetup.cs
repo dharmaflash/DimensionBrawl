@@ -237,6 +237,7 @@ namespace DimensionBrawl.Editor
             SetFloat(serializedObject, "closeProbeDefeatRouteBonus01", 0.12f);
             SetFloat(serializedObject, "summonBlockRouteBonus01", 0.18f);
             SetFloat(serializedObject, "followupHitRouteBonus01", 0.20f);
+            SetFloat(serializedObject, "counterWaveEntryRoutePenalty01", 0.10f);
             SetFloat(serializedObject, "counterWaveStabilizeRouteBonus01", 0.14f);
             SetInt(serializedObject, "objectiveStepCount", 3);
             SetString(serializedObject, "stepPrefix", "Route");
@@ -289,6 +290,50 @@ namespace DimensionBrawl.Editor
                 serializedObject,
                 "routeCollapseFailDetail",
                 "Route stability collapsed before the frontline could stabilize");
+            SetString(
+                serializedObject,
+                "cleanRouteRewardHook",
+                "Clean route logged: summon screen created a Skill1 confirm before the counter wave arrived.");
+            SetString(
+                serializedObject,
+                "counterRecoveryRewardHook",
+                "Counter recovery logged: summon restored a broken frontline and reopened the final strike window.");
+            SetString(
+                serializedObject,
+                "failedRouteRewardHook",
+                "Failure analysis logged: route stability fell before the frontline answer was complete.");
+            SetString(
+                serializedObject,
+                "cleanRouteNextObjective",
+                "Next run: keep the route clean by confirming before the counter wave enters.");
+            SetString(
+                serializedObject,
+                "counterRecoveryNextObjective",
+                "Next run: answer the counter wave earlier so recovery becomes a clean summon route.");
+            SetString(
+                serializedObject,
+                "failedRouteNextObjective",
+                "Next run: stop the close probe, build forward EN, then spend summon on the visible curtain.");
+            SetString(
+                serializedObject,
+                "openingRecordPreview",
+                "Record preview: stop close probe, block curtain, confirm Skill1.");
+            SetString(
+                serializedObject,
+                "summonRecordPreview",
+                "Record preview: summon block opens the Skill1 route record.");
+            SetString(
+                serializedObject,
+                "cleanFollowupRecordPreview",
+                "Record preview: Skill1 now secures clean route before counter wave.");
+            SetString(
+                serializedObject,
+                "counterRecoveryRecordPreview",
+                "Record preview: hold counter wave to reopen final follow-up.");
+            SetString(
+                serializedObject,
+                "collapseWarningRecordPreview",
+                "Record warning: line collapse logs failure analysis, not boss progress.");
 
             ConfigureBeats(serializedObject);
             ConfigurePressureSlots(serializedObject);
