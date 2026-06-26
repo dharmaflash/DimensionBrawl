@@ -36,6 +36,8 @@ namespace DimensionBrawl.Tests
         private const float BacklineEnergyProbeForwardRisk01 = 0.12f;
         private const float ForwardEnergyProbeForwardRisk01 = 0.88f;
         private const float EnergyProbeMaxSeconds = 13f;
+        private const float BarrageShapeProbeNearRadius = 1.25f;
+        private const int BarrageShapePreviewCapacity = 16;
 
         private enum PolicyKind
         {
@@ -43,6 +45,8 @@ namespace DimensionBrawl.Tests
             GunOnly,
             BacklineEnergyProbe,
             ForwardRiskEnergyProbe,
+            BacklineBarrageProbe,
+            ForwardRiskBarrageProbe,
             IntendedRoute,
             IntendedDelayedFollowup,
             LateSummon,
@@ -68,6 +72,8 @@ namespace DimensionBrawl.Tests
                     PolicyKind.GunOnly,
                     PolicyKind.BacklineEnergyProbe,
                     PolicyKind.ForwardRiskEnergyProbe,
+                    PolicyKind.BacklineBarrageProbe,
+                    PolicyKind.ForwardRiskBarrageProbe,
                     PolicyKind.IntendedRoute,
                     PolicyKind.IntendedDelayedFollowup,
                     PolicyKind.LateSummon,
@@ -95,6 +101,8 @@ namespace DimensionBrawl.Tests
                 PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
                 PolicyMetrics backlineEnergy = RequireResult(results, PolicyKind.BacklineEnergyProbe);
                 PolicyMetrics forwardRiskEnergy = RequireResult(results, PolicyKind.ForwardRiskEnergyProbe);
+                PolicyMetrics backlineBarrage = RequireResult(results, PolicyKind.BacklineBarrageProbe);
+                PolicyMetrics forwardRiskBarrage = RequireResult(results, PolicyKind.ForwardRiskBarrageProbe);
                 PolicyMetrics counterRecovery = RequireResult(results, PolicyKind.MissedFollowupCounterRecovery);
                 PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
                 PolicyMetrics ignoredRecovery = RequireResult(results, PolicyKind.BossScreenIgnoredNoRecovery);
@@ -147,6 +155,26 @@ namespace DimensionBrawl.Tests
                     forwardRiskEnergy.ForwardRiskBandSeconds,
                     1f,
                     "The forward probe should spend measurable time in the ForwardRisk band.");
+                Assert.Greater(
+                    backlineBarrage.BarrageShapeProjectileCount,
+                    0,
+                    "The backline barrage probe should read the current boss barrage target preview.");
+                Assert.AreEqual(
+                    backlineBarrage.BarrageShapeProjectileCount,
+                    forwardRiskBarrage.BarrageShapeProjectileCount,
+                    "Backline and forward barrage probes should compare the same authored wave count.");
+                Assert.Less(
+                    forwardRiskBarrage.BarrageShapeAverageLateralGap,
+                    backlineBarrage.BarrageShapeAverageLateralGap,
+                    "Forward-risk barrage pressure should reduce the average lateral gap versus backline safety.");
+                Assert.Less(
+                    forwardRiskBarrage.BarrageShapeNearestLaneDistance,
+                    backlineBarrage.BarrageShapeNearestLaneDistance,
+                    "Forward-risk barrage pressure should move the closest lane pressure nearer to the player.");
+                Assert.Greater(
+                    forwardRiskBarrage.BarrageShapeThreatDensity,
+                    backlineBarrage.BarrageShapeThreatDensity,
+                    "Forward-risk barrage pressure should increase spatial threat density.");
                 Assert.GreaterOrEqual(
                     noSummon.Top3PressureWindowShare01,
                     noSummon.PeakPressureWindowShare01,
@@ -492,6 +520,12 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.ForwardRiskEnergyProbe:
                     yield return RunEnergyRiskProbe(context, ForwardEnergyProbeForwardRisk01);
                     break;
+                case PolicyKind.BacklineBarrageProbe:
+                    yield return RunBarrageShapeProbe(context, BacklineEnergyProbeForwardRisk01);
+                    break;
+                case PolicyKind.ForwardRiskBarrageProbe:
+                    yield return RunBarrageShapeProbe(context, ForwardEnergyProbeForwardRisk01);
+                    break;
                 case PolicyKind.IntendedRoute:
                     yield return RunIntendedRoute(context);
                     break;
@@ -563,6 +597,17 @@ namespace DimensionBrawl.Tests
             {
                 context.Metrics.Notes.Add("energy probe did not reach LV1");
             }
+        }
+
+        private static IEnumerator RunBarrageShapeProbe(
+            CombatPolicyContext context,
+            float forwardRisk01)
+        {
+            MovePlayerToForwardRisk(context, forwardRisk01);
+            context.Metrics.BarrageShapeProbeTargetForwardRisk01 = Mathf.Clamp01(forwardRisk01);
+            context.Sample();
+            RecordBarrageShapeProbe(context);
+            yield return null;
         }
 
         private static IEnumerator RunIntendedRoute(CombatPolicyContext context)
@@ -736,6 +781,66 @@ namespace DimensionBrawl.Tests
                 laneZ,
                 context.Player.transform.position.y);
             Physics.SyncTransforms();
+        }
+
+        private static void RecordBarrageShapeProbe(CombatPolicyContext context)
+        {
+            BossBarragePatternProfile pattern = context.BossEmitter.CurrentPattern;
+            if (!context.BossEmitter.BeginWindup())
+            {
+                context.Metrics.Notes.Add("barrage shape probe windup unavailable");
+                return;
+            }
+
+            Vector2[] targets = new Vector2[BarrageShapePreviewCapacity];
+            int count = context.BossEmitter.BuildPendingLaneTargetPreview(targets);
+            context.Metrics.BarrageShapePatternId = pattern != null ? pattern.PatternId : "unknown";
+            context.Metrics.BarrageShapePendingForwardRisk01 = context.BossEmitter.PendingForwardRisk01;
+            context.Metrics.BarrageShapeProjectileCount = count;
+            if (count <= 0)
+            {
+                context.Metrics.Notes.Add("barrage shape probe target preview empty");
+                return;
+            }
+
+            Vector2 playerLanePoint = context.LaneSpace.GetLaneCoordinates(context.Player.transform.position);
+            float nearestDistance = float.MaxValue;
+            float lateralGapTotal = 0f;
+            float depthGapTotal = 0f;
+            float laneDistanceTotal = 0f;
+            float densityTotal = 0f;
+            int nearCount = 0;
+            for (int i = 0; i < count; i++)
+            {
+                Vector2 delta = targets[i] - playerLanePoint;
+                float lateralGap = Mathf.Abs(delta.x);
+                float depthGap = Mathf.Abs(delta.y);
+                float laneDistance = delta.magnitude;
+                lateralGapTotal += lateralGap;
+                depthGapTotal += depthGap;
+                laneDistanceTotal += laneDistance;
+                nearestDistance = Mathf.Min(nearestDistance, laneDistance);
+                if (laneDistance <= BarrageShapeProbeNearRadius)
+                {
+                    nearCount++;
+                }
+
+                densityTotal += 1f / Mathf.Max(0.1f, laneDistance + 0.35f);
+            }
+
+            float safeCount = Mathf.Max(1, count);
+            context.Metrics.BarrageShapeNearProjectileCount = nearCount;
+            context.Metrics.BarrageShapeNearestLaneDistance = nearestDistance < float.MaxValue
+                ? nearestDistance
+                : -1f;
+            context.Metrics.BarrageShapeAverageLateralGap = lateralGapTotal / safeCount;
+            context.Metrics.BarrageShapeAverageDepthGap = depthGapTotal / safeCount;
+            context.Metrics.BarrageShapeAverageLaneDistance = laneDistanceTotal / safeCount;
+            context.Metrics.BarrageShapeThreatDensity = densityTotal / safeCount;
+            context.Metrics.BarrageShapeReadout =
+                $"{context.Metrics.BarrageShapePatternId} {nearCount}/{count} near "
+                + $"avgLat {context.Metrics.BarrageShapeAverageLateralGap:0.00} "
+                + $"density {context.Metrics.BarrageShapeThreatDensity:0.00}";
         }
 
         private static IEnumerator UseSummonAndBlockNextBossWave(CombatPolicyContext context)
@@ -1164,6 +1269,38 @@ namespace DimensionBrawl.Tests
             }
 
             builder.AppendLine();
+            builder.AppendLine("## Forward-Risk Barrage Shape");
+            builder.AppendLine("| Policy | Target risk | Pending risk | Pattern | Projectiles | Near radius | Avg lateral gap | Avg depth gap | Nearest | Density | Readout |");
+            builder.AppendLine("|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---|");
+            for (int i = 0; i < results.Count; i++)
+            {
+                PolicyMetrics result = results[i];
+                builder.Append("| ");
+                builder.Append(result.Policy);
+                builder.Append(" | ");
+                builder.Append(FormatOptionalPercent01(result.BarrageShapeProbeTargetForwardRisk01));
+                builder.Append(" | ");
+                builder.Append(FormatOptionalPercent01(result.BarrageShapePendingForwardRisk01));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(result.BarrageShapePatternId));
+                builder.Append(" | ");
+                builder.Append(result.BarrageShapeProjectileCount);
+                builder.Append(" | ");
+                builder.Append($"{result.BarrageShapeNearProjectileCount}/{BarrageShapeProbeNearRadius:0.00}");
+                builder.Append(" | ");
+                builder.Append(FormatOptionalDistance(result.BarrageShapeAverageLateralGap));
+                builder.Append(" | ");
+                builder.Append(FormatOptionalDistance(result.BarrageShapeAverageDepthGap));
+                builder.Append(" | ");
+                builder.Append(FormatOptionalDistance(result.BarrageShapeNearestLaneDistance));
+                builder.Append(" | ");
+                builder.Append(FormatOptionalDistance(result.BarrageShapeThreatDensity));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(result.BarrageShapeReadout));
+                builder.AppendLine(" |");
+            }
+
+            builder.AppendLine();
             builder.AppendLine("## Pressure Exposure");
             builder.AppendLine("| Policy | Drain used | Hit penalty | Avg drain/s | Peak drain/s | Avg slot | Avg front scale | Enemy-only | Contested | Ally-only | Last front |");
             builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|");
@@ -1382,6 +1519,8 @@ namespace DimensionBrawl.Tests
             PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
             PolicyMetrics backlineEnergy = RequireResult(results, PolicyKind.BacklineEnergyProbe);
             PolicyMetrics forwardRiskEnergy = RequireResult(results, PolicyKind.ForwardRiskEnergyProbe);
+            PolicyMetrics backlineBarrage = RequireResult(results, PolicyKind.BacklineBarrageProbe);
+            PolicyMetrics forwardRiskBarrage = RequireResult(results, PolicyKind.ForwardRiskBarrageProbe);
             PolicyMetrics late = RequireResult(results, PolicyKind.LateSummon);
             PolicyMetrics counterRecovery = RequireResult(results, PolicyKind.MissedFollowupCounterRecovery);
             PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
@@ -1396,6 +1535,12 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Lock/unlock cadence: intended block->window {FormatSeconds(intended.BlockToFollowupWindowSeconds)}, window->hit {FormatSeconds(intended.FollowupWindowToHitSeconds)}; boss-screen recovery answer pulse {blockedRecovery.CounterWaveAnswerEnergyPulse:0}, counter->answer {FormatSeconds(blockedRecovery.CounterTriggerToAnswerSeconds)}, answer->stable {FormatSeconds(blockedRecovery.CounterAnswerToStableSeconds)}, stable->final {FormatSeconds(blockedRecovery.CounterStableToFinalWindowSeconds)}, final->hit {FormatSeconds(blockedRecovery.FinalWindowToHitSeconds)}.");
             builder.AppendLine($"- Punish window tolerance: delayed clean hit after {FormatSeconds(delayedIntended.FollowupHitWindowDelaySeconds)} with {FormatSeconds(delayedIntended.FollowupWindowRemainingAtFirstHitSeconds)} remaining; delayed boss-screen recovery hit after {FormatSeconds(delayedBlockedRecovery.FollowupHitWindowDelaySeconds)} with {FormatSeconds(delayedBlockedRecovery.FollowupWindowRemainingAtFirstHitSeconds)} remaining.");
             builder.AppendLine($"- Forward-risk EN split: backline LV1 {FormatSeconds(backlineEnergy.EnergyTier1DurationSeconds)} at x{backlineEnergy.AverageEnergyGainMultiplier:0.00}, forward-risk LV1 {FormatSeconds(forwardRiskEnergy.EnergyTier1DurationSeconds)} at x{forwardRiskEnergy.AverageEnergyGainMultiplier:0.00}; forward route is {ResolveEnergySpeedup(backlineEnergy, forwardRiskEnergy):0.0}x faster.");
+            builder.AppendLine($"- Forward-risk barrage shape: backline `{backlineBarrage.BarrageShapePatternId}` near-body {backlineBarrage.BarrageShapeNearProjectileCount}/{backlineBarrage.BarrageShapeProjectileCount}, avg lateral gap {backlineBarrage.BarrageShapeAverageLateralGap:0.00}, nearest {backlineBarrage.BarrageShapeNearestLaneDistance:0.00}, density {backlineBarrage.BarrageShapeThreatDensity:0.00}; forward near-body {forwardRiskBarrage.BarrageShapeNearProjectileCount}/{forwardRiskBarrage.BarrageShapeProjectileCount}, avg lateral gap {forwardRiskBarrage.BarrageShapeAverageLateralGap:0.00}, nearest {forwardRiskBarrage.BarrageShapeNearestLaneDistance:0.00}, density {forwardRiskBarrage.BarrageShapeThreatDensity:0.00}.");
+            if (forwardRiskBarrage.BarrageShapeNearProjectileCount <= backlineBarrage.BarrageShapeNearProjectileCount)
+            {
+                builder.AppendLine("- Forward-risk barrage compression is measurable, but near-body projectile count did not rise; direct position-specific hit danger remains a follow-up gap.");
+            }
+
             builder.AppendLine($"- Route stability split: no-action {FormatPercent01(noSummon.RouteStability01)} final / {FormatPercent01(noSummon.MinRouteStability01)} min, gun-only {FormatPercent01(gunOnly.RouteStability01)} / {FormatPercent01(gunOnly.MinRouteStability01)}, intended {FormatPercent01(intended.RouteStability01)} / {FormatPercent01(intended.MinRouteStability01)}.");
             builder.AppendLine($"- Unanswered hit penalty split: no-action {FormatPercent01(noSummon.TotalUnansweredBossHitRoutePenalty01)} x{noSummon.UnansweredBossHitRoutePenaltyCount}, gun-only {FormatPercent01(gunOnly.TotalUnansweredBossHitRoutePenalty01)} x{gunOnly.UnansweredBossHitRoutePenaltyCount}, late {FormatPercent01(late.TotalUnansweredBossHitRoutePenalty01)} x{late.UnansweredBossHitRoutePenaltyCount}.");
             builder.AppendLine($"- Frontline exposure split: no-action enemy-only {FormatSeconds(noSummon.EnemyOnlyFrontlineSeconds)}, gun-only enemy-only {FormatSeconds(gunOnly.EnemyOnlyFrontlineSeconds)}, intended ally-only {FormatSeconds(intended.AllyOnlyFrontlineSeconds)} / contested {FormatSeconds(intended.ContestedFrontlineSeconds)}.");
@@ -1497,6 +1642,11 @@ namespace DimensionBrawl.Tests
             return value >= 0f ? FormatPercent01(value) : "-";
         }
 
+        private static string FormatOptionalDistance(float value)
+        {
+            return value >= 0f ? value.ToString("0.00") : "-";
+        }
+
         private static float ResolveAverage(float total, float elapsedSeconds)
         {
             return elapsedSeconds > 0f ? total / elapsedSeconds : 0f;
@@ -1593,6 +1743,18 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"lastEnergyForwardRisk01\": {result.LastEnergyForwardRisk01:0.###},");
                 builder.AppendLine($"      \"lastEnergyGainMultiplier\": {result.LastEnergyGainMultiplier:0.###},");
                 builder.AppendLine($"      \"lastEnergyRiskBand\": \"{JsonEscape(result.LastEnergyRiskBand)}\",");
+                builder.AppendLine($"      \"barrageShapeProbeTargetForwardRisk01\": {JsonNullableSeconds(result.BarrageShapeProbeTargetForwardRisk01)},");
+                builder.AppendLine($"      \"barrageShapePendingForwardRisk01\": {JsonNullableSeconds(result.BarrageShapePendingForwardRisk01)},");
+                builder.AppendLine($"      \"barrageShapePatternId\": \"{JsonEscape(result.BarrageShapePatternId)}\",");
+                builder.AppendLine($"      \"barrageShapeProjectileCount\": {result.BarrageShapeProjectileCount},");
+                builder.AppendLine($"      \"barrageShapeNearProjectileCount\": {result.BarrageShapeNearProjectileCount},");
+                builder.AppendLine($"      \"barrageShapeNearRadius\": {BarrageShapeProbeNearRadius:0.###},");
+                builder.AppendLine($"      \"barrageShapeAverageLateralGap\": {result.BarrageShapeAverageLateralGap:0.###},");
+                builder.AppendLine($"      \"barrageShapeAverageDepthGap\": {result.BarrageShapeAverageDepthGap:0.###},");
+                builder.AppendLine($"      \"barrageShapeAverageLaneDistance\": {result.BarrageShapeAverageLaneDistance:0.###},");
+                builder.AppendLine($"      \"barrageShapeNearestLaneDistance\": {JsonNullableSeconds(result.BarrageShapeNearestLaneDistance)},");
+                builder.AppendLine($"      \"barrageShapeThreatDensity\": {result.BarrageShapeThreatDensity:0.###},");
+                builder.AppendLine($"      \"barrageShapeReadout\": \"{JsonEscape(result.BarrageShapeReadout)}\",");
                 builder.AppendLine($"      \"pressureWindowSeconds\": {result.PressureWindowSeconds:0.###},");
                 builder.AppendLine($"      \"pressureBurdenSeconds\": {result.PressureBurdenSeconds:0.###},");
                 builder.AppendLine($"      \"pressureWindowCount\": {result.PressureWindowCount},");
@@ -2957,6 +3119,17 @@ namespace DimensionBrawl.Tests
                 EnergySampleSeconds > 0f ? EnergyForwardRiskSeconds / EnergySampleSeconds : 0f;
             public float AverageEnergyGainMultiplier =>
                 EnergySampleSeconds > 0f ? EnergyGainMultiplierSeconds / EnergySampleSeconds : 0f;
+            public float BarrageShapeProbeTargetForwardRisk01 { get; set; } = -1f;
+            public float BarrageShapePendingForwardRisk01 { get; set; } = -1f;
+            public string BarrageShapePatternId { get; set; } = "-";
+            public int BarrageShapeProjectileCount { get; set; }
+            public int BarrageShapeNearProjectileCount { get; set; }
+            public float BarrageShapeAverageLateralGap { get; set; } = -1f;
+            public float BarrageShapeAverageDepthGap { get; set; } = -1f;
+            public float BarrageShapeAverageLaneDistance { get; set; } = -1f;
+            public float BarrageShapeNearestLaneDistance { get; set; } = -1f;
+            public float BarrageShapeThreatDensity { get; set; } = -1f;
+            public string BarrageShapeReadout { get; set; } = "none";
             public float PressureWindowSeconds { get; set; }
             public float PressureBurdenSeconds { get; set; }
             public int PressureWindowCount { get; set; }
