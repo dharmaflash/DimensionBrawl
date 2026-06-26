@@ -927,6 +927,7 @@ namespace DimensionBrawl.Editor
                 cinematicCueProfile);
             ConfigurePocketCueBridges(
                 pocketOwner,
+                summonSlot1Action,
                 RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver"),
                 RequireComponent<ActionCinematicCueDirector>(cameraController.gameObject, "action cinematic cue director"),
                 RequireComponent<PlayerCombatVfxCueDriver>(player.gameObject, "player combat VFX cue driver"),
@@ -1258,6 +1259,7 @@ namespace DimensionBrawl.Editor
                 bossPressureActionDirector);
             ValidatePocketCueBridges(
                 pocketOwner,
+                summonSlot1Action,
                 actionCameraCueDriver,
                 cinematicCueDirector,
                 playerVfxCueDriver,
@@ -5342,6 +5344,7 @@ namespace DimensionBrawl.Editor
 
         private static void ConfigurePocketCueBridges(
             BossBarragePocketReviewOwner pocketOwner,
+            PlayerSummonSlot1Action summonSlot1Action,
             ActionCameraCueDriver cameraCueDriver,
             ActionCinematicCueDirector cinematicCueDirector,
             PlayerCombatVfxCueDriver playerVfxCueDriver,
@@ -5349,9 +5352,10 @@ namespace DimensionBrawl.Editor
             Transform directionTarget)
         {
             BossBarragePocketCameraCueBridge cameraBridge =
-                EnsureComponent<BossBarragePocketCameraCueBridge>(pocketOwner.gameObject);
+            EnsureComponent<BossBarragePocketCameraCueBridge>(pocketOwner.gameObject);
             SetBehaviourEnabled(cameraBridge, false);
             SetObjectReference(cameraBridge, "pocketReviewOwner", pocketOwner);
+            SetObjectReference(cameraBridge, "summonSlot1Action", summonSlot1Action);
             SetObjectReference(cameraBridge, "cameraCueDriver", cameraCueDriver);
             SetObjectReference(cameraBridge, "cinematicCueDirector", cinematicCueDirector);
 
@@ -9214,6 +9218,7 @@ namespace DimensionBrawl.Editor
 
         private static void ValidatePocketCueBridges(
             BossBarragePocketReviewOwner owner,
+            PlayerSummonSlot1Action summonSlot1Action,
             ActionCameraCueDriver cameraCueDriver,
             ActionCinematicCueDirector cinematicCueDirector,
             PlayerCombatVfxCueDriver playerVfxCueDriver,
@@ -9221,9 +9226,10 @@ namespace DimensionBrawl.Editor
             Transform directionTarget)
         {
             BossBarragePocketCameraCueBridge cameraBridge =
-                RequireComponent<BossBarragePocketCameraCueBridge>(owner.gameObject, "pocket camera cue bridge");
+            RequireComponent<BossBarragePocketCameraCueBridge>(owner.gameObject, "pocket camera cue bridge");
             ValidateBehaviourEnabled(cameraBridge, false);
             ValidateObjectReference(cameraBridge, "pocketReviewOwner", owner);
+            ValidateObjectReference(cameraBridge, "summonSlot1Action", summonSlot1Action);
             ValidateObjectReference(cameraBridge, "cameraCueDriver", cameraCueDriver);
             ValidateObjectReference(cameraBridge, "cinematicCueDirector", cinematicCueDirector);
 

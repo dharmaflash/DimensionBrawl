@@ -431,6 +431,11 @@ namespace DimensionBrawl.Presentation
 
         private void HandleSummonPressureBlocked(int tier)
         {
+            RequestSummonPressureBlockCue(tier);
+        }
+
+        public void RequestSummonPressureBlockCue(int tier)
+        {
             ActionCameraCueProfile.CameraCue cue = ActiveSummonPressureBlockCue;
             if (RequestCue(cue, ResolvePlanarDirection(), ResolveTierScale(tier, cue)))
             {

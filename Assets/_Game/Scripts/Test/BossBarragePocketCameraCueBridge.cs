@@ -1,3 +1,4 @@
+using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using UnityEngine;
 
@@ -6,10 +7,12 @@ namespace DimensionBrawl.Test
     public sealed class BossBarragePocketCameraCueBridge : MonoBehaviour
     {
         [SerializeField] private BossBarragePocketReviewOwner pocketReviewOwner;
+        [SerializeField] private PlayerSummonSlot1Action summonSlot1Action;
         [SerializeField] private ActionCameraCueDriver cameraCueDriver;
         [SerializeField] private ActionCinematicCueDirector cinematicCueDirector;
 
         public BossBarragePocketReviewOwner PocketReviewOwner => pocketReviewOwner;
+        public PlayerSummonSlot1Action SummonSlot1Action => summonSlot1Action;
         public ActionCameraCueDriver CameraCueDriver => cameraCueDriver;
         public ActionCinematicCueDirector CinematicCueDirector => cinematicCueDirector;
 
@@ -19,40 +22,66 @@ namespace DimensionBrawl.Test
             {
                 pocketReviewOwner = GetComponent<BossBarragePocketReviewOwner>();
             }
+
+            if (summonSlot1Action == null)
+            {
+                ResolveSummonSlot1Action();
+            }
         }
 
         private void OnEnable()
         {
-            if (pocketReviewOwner == null)
+            ResolveSummonSlot1Action();
+
+            if (pocketReviewOwner != null)
             {
-                return;
+                pocketReviewOwner.SummonBlockOpportunityOpened += HandleSummonBlockOpportunityOpened;
+                pocketReviewOwner.SummonFollowupWindowOpened += HandleSummonFollowupWindowOpened;
+                pocketReviewOwner.SummonFollowupHitConfirmed += HandleSummonFollowupHitConfirmed;
+                pocketReviewOwner.SummonFollowupMissed += HandleSummonFollowupMissed;
+                pocketReviewOwner.CounterWaveObserved += HandleCounterWaveObserved;
+                pocketReviewOwner.CounterWaveStabilized += HandleCounterWaveStabilized;
+                pocketReviewOwner.PocketCleared += HandlePocketCleared;
+                pocketReviewOwner.PocketFailed += HandlePocketFailed;
             }
 
-            pocketReviewOwner.SummonBlockOpportunityOpened += HandleSummonBlockOpportunityOpened;
-            pocketReviewOwner.SummonFollowupWindowOpened += HandleSummonFollowupWindowOpened;
-            pocketReviewOwner.SummonFollowupHitConfirmed += HandleSummonFollowupHitConfirmed;
-            pocketReviewOwner.SummonFollowupMissed += HandleSummonFollowupMissed;
-            pocketReviewOwner.CounterWaveObserved += HandleCounterWaveObserved;
-            pocketReviewOwner.CounterWaveStabilized += HandleCounterWaveStabilized;
-            pocketReviewOwner.PocketCleared += HandlePocketCleared;
-            pocketReviewOwner.PocketFailed += HandlePocketFailed;
+            if (summonSlot1Action != null)
+            {
+                summonSlot1Action.SummonPressureBlocked += HandleSummonPressureBlocked;
+            }
         }
 
         private void OnDisable()
         {
-            if (pocketReviewOwner == null)
+            if (pocketReviewOwner != null)
             {
-                return;
+                pocketReviewOwner.SummonBlockOpportunityOpened -= HandleSummonBlockOpportunityOpened;
+                pocketReviewOwner.SummonFollowupWindowOpened -= HandleSummonFollowupWindowOpened;
+                pocketReviewOwner.SummonFollowupHitConfirmed -= HandleSummonFollowupHitConfirmed;
+                pocketReviewOwner.SummonFollowupMissed -= HandleSummonFollowupMissed;
+                pocketReviewOwner.CounterWaveObserved -= HandleCounterWaveObserved;
+                pocketReviewOwner.CounterWaveStabilized -= HandleCounterWaveStabilized;
+                pocketReviewOwner.PocketCleared -= HandlePocketCleared;
+                pocketReviewOwner.PocketFailed -= HandlePocketFailed;
             }
 
-            pocketReviewOwner.SummonBlockOpportunityOpened -= HandleSummonBlockOpportunityOpened;
-            pocketReviewOwner.SummonFollowupWindowOpened -= HandleSummonFollowupWindowOpened;
-            pocketReviewOwner.SummonFollowupHitConfirmed -= HandleSummonFollowupHitConfirmed;
-            pocketReviewOwner.SummonFollowupMissed -= HandleSummonFollowupMissed;
-            pocketReviewOwner.CounterWaveObserved -= HandleCounterWaveObserved;
-            pocketReviewOwner.CounterWaveStabilized -= HandleCounterWaveStabilized;
-            pocketReviewOwner.PocketCleared -= HandlePocketCleared;
-            pocketReviewOwner.PocketFailed -= HandlePocketFailed;
+            if (summonSlot1Action != null)
+            {
+                summonSlot1Action.SummonPressureBlocked -= HandleSummonPressureBlocked;
+            }
+        }
+
+        private void HandleSummonPressureBlocked(int tier)
+        {
+            cameraCueDriver?.RequestSummonPressureBlockCue(tier);
+        }
+
+        private void ResolveSummonSlot1Action()
+        {
+            if (summonSlot1Action == null)
+            {
+                summonSlot1Action = FindFirstObjectByType<PlayerSummonSlot1Action>(FindObjectsInactive.Include);
+            }
         }
 
         private void HandleSummonBlockOpportunityOpened()

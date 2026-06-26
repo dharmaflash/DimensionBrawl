@@ -323,6 +323,18 @@ namespace DimensionBrawl.Tests
                     forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds,
                     0.35f,
                     "A physical summon block should still unlock the follow-up window as one combat beat.");
+                Assert.GreaterOrEqual(
+                    forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests,
+                    forwardRiskPhysicalSummonBlock.SummonBlocks,
+                    "A physical summon block should request a camera cue for each block so the block itself reads.");
+                Assert.GreaterOrEqual(
+                    forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes,
+                    forwardRiskPhysicalSummonBlock.SummonBlocks,
+                    "A physical summon block should flash the pressure screen for each intercept.");
+                Assert.GreaterOrEqual(
+                    forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests,
+                    forwardRiskPhysicalSummonBlock.SummonBlocks,
+                    "A physical summon block should request the reviewed intercept VFX cue for each block.");
                 Assert.Greater(
                     forwardRiskPhysicalSummonNoPunish.FollowupMissCount,
                     0,
@@ -388,6 +400,18 @@ namespace DimensionBrawl.Tests
                     "CleanFollowupClear",
                     forwardRiskPhysicalSummonPunish.ResultKind,
                     "A physical summon-punish route should close the block -> follow-up -> Skill1 loop as a clean route.");
+                Assert.GreaterOrEqual(
+                    forwardRiskPhysicalSummonPunish.SummonPressureBlockCameraCueRequests,
+                    forwardRiskPhysicalSummonPunish.SummonBlocks,
+                    "The physical summon-punish route should preserve block camera reads before the Skill1 confirm.");
+                Assert.GreaterOrEqual(
+                    forwardRiskPhysicalSummonPunish.SummonPressureScreenInterceptFlashes,
+                    forwardRiskPhysicalSummonPunish.SummonBlocks,
+                    "The physical summon-punish route should preserve pressure-screen intercept flashes before the Skill1 confirm.");
+                Assert.GreaterOrEqual(
+                    forwardRiskPhysicalSummonPunish.SummonPressureScreenInterceptVfxCueRequests,
+                    forwardRiskPhysicalSummonPunish.SummonBlocks,
+                    "The physical summon-punish route should preserve pressure-screen intercept VFX before the Skill1 confirm.");
                 Assert.LessOrEqual(
                     forwardRiskPhysicalSummonPunish.FollowupWindowToHitSeconds,
                     1.25f,
@@ -2091,6 +2115,36 @@ namespace DimensionBrawl.Tests
             }
 
             builder.AppendLine();
+            builder.AppendLine("## Summon Block Presentation Bridge");
+            builder.AppendLine("| Policy | Blocks | Camera block/opportunity | Screen opportunity | Pressure-screen flash/VFX | Activation VFX | Showing max | Last block tier | Block->window | Result |");
+            builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---:|---:|---|");
+            for (int i = 0; i < results.Count; i++)
+            {
+                PolicyMetrics result = results[i];
+                builder.Append("| ");
+                builder.Append(result.Policy);
+                builder.Append(" | ");
+                builder.Append(result.SummonBlocks);
+                builder.Append(" | ");
+                builder.Append($"{result.SummonPressureBlockCameraCueRequests}/{result.SummonBlockOpportunityCameraCueRequests}");
+                builder.Append(" | ");
+                builder.Append(result.FollowupBlockOpportunityScreenCueRequests);
+                builder.Append(" | ");
+                builder.Append($"{result.SummonPressureScreenInterceptFlashes}/{result.SummonPressureScreenInterceptVfxCueRequests}");
+                builder.Append(" | ");
+                builder.Append(result.SummonPressureScreenActivationVfxCueRequests);
+                builder.Append(" | ");
+                builder.Append(result.MaxShowingSummonPressureScreenPresenters);
+                builder.Append(" | ");
+                builder.Append(result.LastSummonPressureBlockCameraTier);
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.BlockToFollowupWindowSeconds));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(result.ResultKind));
+                builder.AppendLine(" |");
+            }
+
+            builder.AppendLine();
             builder.AppendLine("## Follow-up Presentation Bridge");
             builder.AppendLine("| Policy | Screen window/hit/miss | Camera window/hit/miss | VFX window/hit/miss | Hit tier cam/vfx | Hit dmg cam/vfx | Last follow-up screen |");
             builder.AppendLine("|---|---:|---:|---:|---:|---:|---|");
@@ -2215,7 +2269,7 @@ namespace DimensionBrawl.Tests
 
             builder.AppendLine($"- Route stability split: no-action {FormatPercent01(noSummon.RouteStability01)} final / {FormatPercent01(noSummon.MinRouteStability01)} min, gun-only {FormatPercent01(gunOnly.RouteStability01)} / {FormatPercent01(gunOnly.MinRouteStability01)}, intended {FormatPercent01(intended.RouteStability01)} / {FormatPercent01(intended.MinRouteStability01)}.");
             builder.AppendLine($"- Forward-risk physical barrage: backline hits {backlinePhysicalBarrage.PhysicalBarragePlayerHits}/{backlinePhysicalBarrage.PhysicalBarrageTrackedProjectileCount}, damage {backlinePhysicalBarrage.PhysicalBarragePlayerDamage:0.0}; forward hits {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}, damage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerDamage:0.0}.");
-            builder.AppendLine($"- Forward-risk physical summon block: blocks {forwardRiskPhysicalSummonBlock.SummonBlocks}, player hits {forwardRiskPhysicalSummonBlock.PhysicalBarragePlayerHits}/{forwardRiskPhysicalSummonBlock.PhysicalBarrageTrackedProjectileCount}, damage {forwardRiskPhysicalSummonBlock.PhysicalBarragePlayerDamage:0.0}, block->window {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)}.");
+            builder.AppendLine($"- Forward-risk physical summon block: blocks {forwardRiskPhysicalSummonBlock.SummonBlocks}, player hits {forwardRiskPhysicalSummonBlock.PhysicalBarragePlayerHits}/{forwardRiskPhysicalSummonBlock.PhysicalBarrageTrackedProjectileCount}, damage {forwardRiskPhysicalSummonBlock.PhysicalBarragePlayerDamage:0.0}, block->window {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)}, block camera/flash/VFX {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}.");
             builder.AppendLine($"- Forward-risk physical no-punish: follow-up misses {forwardRiskPhysicalSummonNoPunish.FollowupMissCount}, counter waves {forwardRiskPhysicalSummonNoPunish.CounterWaves}, result `{forwardRiskPhysicalSummonNoPunish.ResultKind}`, unanswered burden {FormatPercent01(forwardRiskPhysicalSummonNoPunish.UnansweredPressureBurdenShare01)}, boss damage player/summon {forwardRiskPhysicalSummonNoPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonNoPunish.BossDamageFromAllySummon:0.0}.");
             builder.AppendLine($"- Forward-risk physical summon punish: `{forwardRiskPhysicalSummonPunish.ResultKind}` with blocks {forwardRiskPhysicalSummonPunish.SummonBlocks}, player hits {forwardRiskPhysicalSummonPunish.PhysicalBarragePlayerHits}/{forwardRiskPhysicalSummonPunish.PhysicalBarrageTrackedProjectileCount}, Skill1 hits {forwardRiskPhysicalSummonPunish.SkillProjectileHits}, boss damage {forwardRiskPhysicalSummonPunish.BossDamageTaken:0.0}, window->hit {FormatSeconds(forwardRiskPhysicalSummonPunish.FollowupWindowToHitSeconds)}.");
             builder.AppendLine($"- Boss damage attribution: physical block-only player/summon boss damage {forwardRiskPhysicalSummonBlock.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonBlock.BossDamageFromAllySummon:0.0}; physical punish player/summon boss damage {forwardRiskPhysicalSummonPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonPunish.BossDamageFromAllySummon:0.0}, player share {FormatPercent01(forwardRiskPhysicalSummonPunish.BossDamagePlayerShare01)}.");
@@ -2264,6 +2318,9 @@ namespace DimensionBrawl.Tests
             PolicyMetrics forwardRiskPhysicalBarrage = RequireResult(
                 results,
                 PolicyKind.ForwardRiskPhysicalBarrageProbe);
+            PolicyMetrics forwardRiskPhysicalSummonBlock = RequireResult(
+                results,
+                PolicyKind.ForwardRiskPhysicalSummonBlockProbe);
             PolicyMetrics forwardRiskPhysicalSummonNoPunish = RequireResult(
                 results,
                 PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe);
@@ -2284,6 +2341,12 @@ namespace DimensionBrawl.Tests
                 && forwardRiskPhysicalSummonNoPunish.CounterWaves > 0
                 && !forwardRiskPhysicalSummonNoPunish.IsClearResult
                 && forwardRiskPhysicalSummonPunish.SummonBlocks > 0
+                && forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests
+                    >= forwardRiskPhysicalSummonBlock.SummonBlocks
+                && forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes
+                    >= forwardRiskPhysicalSummonBlock.SummonBlocks
+                && forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests
+                    >= forwardRiskPhysicalSummonBlock.SummonBlocks
                 && forwardRiskPhysicalSummonPunish.PhysicalBarragePlayerHits == 0
                 && forwardRiskPhysicalSummonPunish.ResultKind == "CleanFollowupClear"
                 && forwardRiskPhysicalSummonPunish.SkillProjectileHits > 0;
@@ -2305,7 +2368,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 $"| 1. Bad routes lose state/HP | {FormatGateStatus(axis1Pass)} | no-summon down {FormatSeconds(noSummonSurvival.FirstPlayerDownAtSeconds)}, gun-only down {FormatSeconds(gunOnlySurvival.FirstPlayerDownAtSeconds)}, gun-only boss down {FormatSeconds(gunOnlySurvival.FirstBossDownAtSeconds)} |");
             builder.AppendLine(
-                $"| 2. Block -> window -> Skill1 loop | {FormatGateStatus(axis2Pass)} | unblocked forward hits {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; no-punish misses {forwardRiskPhysicalSummonNoPunish.FollowupMissCount}, counters {forwardRiskPhysicalSummonNoPunish.CounterWaves}, result `{forwardRiskPhysicalSummonNoPunish.ResultKind}`; physical punish blocks {forwardRiskPhysicalSummonPunish.SummonBlocks}, Skill1 hits {forwardRiskPhysicalSummonPunish.SkillProjectileHits}, `{forwardRiskPhysicalSummonPunish.ResultKind}` |");
+                $"| 2. Block -> window -> Skill1 loop | {FormatGateStatus(axis2Pass)} | unblocked forward hits {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; block presentation cam/flash/VFX {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}; no-punish misses {forwardRiskPhysicalSummonNoPunish.FollowupMissCount}, counters {forwardRiskPhysicalSummonNoPunish.CounterWaves}, result `{forwardRiskPhysicalSummonNoPunish.ResultKind}`; physical punish blocks {forwardRiskPhysicalSummonPunish.SummonBlocks}, Skill1 hits {forwardRiskPhysicalSummonPunish.SkillProjectileHits}, `{forwardRiskPhysicalSummonPunish.ResultKind}` |");
             builder.AppendLine(
                 $"| 3. Hit response and presentation | {FormatGateStatus(axis3Pass)} | player routine hits {noSummon.PlayerNonLockingDamageEvents}/{noSummon.PlayerLockingDamageEvents} non-lock/lock; gun boss chip {gunOnly.BossNonLockingDamageEvents}/{gunOnly.BossLockingDamageEvents}; physical punish boss lock {forwardRiskPhysicalSummonPunish.BossLockingDamageEvents}, hit cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests} |");
             builder.AppendLine(
@@ -2438,6 +2501,12 @@ namespace DimensionBrawl.Tests
             bool combatPayloadMeasured = forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits > 0
                 && forwardRiskPhysicalSummonBlock.SummonBlocks > 0
                 && forwardRiskPhysicalSummonBlock.PhysicalBarragePlayerHits == 0
+                && forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests
+                    >= forwardRiskPhysicalSummonBlock.SummonBlocks
+                && forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes
+                    >= forwardRiskPhysicalSummonBlock.SummonBlocks
+                && forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests
+                    >= forwardRiskPhysicalSummonBlock.SummonBlocks
                 && forwardRiskPhysicalSummonNoPunish.FollowupMissCount > 0
                 && !forwardRiskPhysicalSummonNoPunish.IsClearResult
                 && forwardRiskPhysicalSummonPunish.SkillProjectileHits > 0
@@ -2474,7 +2543,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 "| CombatPayload runtime pipeline | "
                 + $"{FormatCoverageStatus(combatPayloadMeasured)} | "
-                + $"Target->Hit: forward barrage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; Block->Status: {forwardRiskPhysicalSummonBlock.SummonBlocks} blocks and {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)} to window; NoHit->Counter: miss {forwardRiskPhysicalSummonNoPunish.FollowupMissCount} / counter {forwardRiskPhysicalSummonNoPunish.CounterWaves}; Skill1 Hit->Presentation: {forwardRiskPhysicalSummonPunish.SkillProjectileHits} hits with cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests}; payoff source player/summon {forwardRiskPhysicalSummonPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonPunish.BossDamageFromAllySummon:0.0} | "
+                + $"Target->Hit: forward barrage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; Block->Status/Presentation: {forwardRiskPhysicalSummonBlock.SummonBlocks} blocks, {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)} to window, cues {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}; NoHit->Counter: miss {forwardRiskPhysicalSummonNoPunish.FollowupMissCount} / counter {forwardRiskPhysicalSummonNoPunish.CounterWaves}; Skill1 Hit->Presentation: {forwardRiskPhysicalSummonPunish.SkillProjectileHits} hits with cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests}; payoff source player/summon {forwardRiskPhysicalSummonPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonPunish.BossDamageFromAllySummon:0.0} | "
                 + "Candidate labels stay local test evidence, not fake universal opcodes. |");
             builder.AppendLine(
                 "| PGR state-lock and hit-response grammar | "
@@ -2814,6 +2883,13 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"closeThreatNonLockingDamageEvents\": {result.CloseThreatNonLockingDamageEvents},");
                 builder.AppendLine($"      \"closeThreatLockingDamageEvents\": {result.CloseThreatLockingDamageEvents},");
                 builder.AppendLine($"      \"closeThreatFullBodyEligibleDamageEvents\": {result.CloseThreatFullBodyEligibleDamageEvents},");
+                builder.AppendLine($"      \"summonPressureBlockCameraCueRequests\": {result.SummonPressureBlockCameraCueRequests},");
+                builder.AppendLine($"      \"lastSummonPressureBlockCameraTier\": {result.LastSummonPressureBlockCameraTier},");
+                builder.AppendLine($"      \"summonBlockOpportunityCameraCueRequests\": {result.SummonBlockOpportunityCameraCueRequests},");
+                builder.AppendLine($"      \"summonPressureScreenActivationVfxCueRequests\": {result.SummonPressureScreenActivationVfxCueRequests},");
+                builder.AppendLine($"      \"summonPressureScreenInterceptFlashes\": {result.SummonPressureScreenInterceptFlashes},");
+                builder.AppendLine($"      \"summonPressureScreenInterceptVfxCueRequests\": {result.SummonPressureScreenInterceptVfxCueRequests},");
+                builder.AppendLine($"      \"maxShowingSummonPressureScreenPresenters\": {result.MaxShowingSummonPressureScreenPresenters},");
                 builder.AppendLine($"      \"followupBlockOpportunityScreenCueRequests\": {result.FollowupBlockOpportunityScreenCueRequests},");
                 builder.AppendLine($"      \"followupWindowScreenCueRequests\": {result.FollowupWindowScreenCueRequests},");
                 builder.AppendLine($"      \"followupHitScreenCueRequests\": {result.FollowupHitScreenCueRequests},");
@@ -3311,6 +3387,7 @@ namespace DimensionBrawl.Tests
 
                 SampleFrontlineClashCost();
                 SampleFrontlineHitReactionPresentation();
+                SampleSummonBlockPresentationBridge();
                 SampleFollowupPresentationBridge();
 
                 if (deltaTime <= 0f)
@@ -3736,6 +3813,54 @@ namespace DimensionBrawl.Tests
             private int observedCinematicPlayCount;
             private int observedSequenceBridgePlayCount;
 
+            private void SampleSummonBlockPresentationBridge()
+            {
+                Metrics.SummonPressureBlockCameraCueRequests =
+                    CameraCueDriver.SummonPressureBlockCueRequestCount;
+                Metrics.LastSummonPressureBlockCameraTier =
+                    CameraCueDriver.LastSummonPressureBlockTier;
+                Metrics.SummonBlockOpportunityCameraCueRequests =
+                    CameraCueDriver.SummonBlockOpportunityCueRequestCount;
+
+                SummonPressureScreenPresenter[] presenters =
+                    Object.FindObjectsByType<SummonPressureScreenPresenter>(
+                        FindObjectsInactive.Include,
+                        FindObjectsSortMode.None);
+                int activationVfxRequests = 0;
+                int interceptFlashes = 0;
+                int interceptVfxRequests = 0;
+                int showingPresenters = 0;
+                for (int i = 0; i < presenters.Length; i++)
+                {
+                    SummonPressureScreenPresenter presenter = presenters[i];
+                    if (presenter == null)
+                    {
+                        continue;
+                    }
+
+                    activationVfxRequests += presenter.ActivationVfxCueRequestCount;
+                    interceptFlashes += presenter.InterceptFlashCount;
+                    interceptVfxRequests += presenter.InterceptVfxCueRequestCount;
+                    if (presenter.IsShowing)
+                    {
+                        showingPresenters++;
+                    }
+                }
+
+                Metrics.SummonPressureScreenActivationVfxCueRequests = Mathf.Max(
+                    Metrics.SummonPressureScreenActivationVfxCueRequests,
+                    activationVfxRequests);
+                Metrics.SummonPressureScreenInterceptFlashes = Mathf.Max(
+                    Metrics.SummonPressureScreenInterceptFlashes,
+                    interceptFlashes);
+                Metrics.SummonPressureScreenInterceptVfxCueRequests = Mathf.Max(
+                    Metrics.SummonPressureScreenInterceptVfxCueRequests,
+                    interceptVfxRequests);
+                Metrics.MaxShowingSummonPressureScreenPresenters = Mathf.Max(
+                    Metrics.MaxShowingSummonPressureScreenPresenters,
+                    showingPresenters);
+            }
+
             private void SampleFollowupPresentationBridge()
             {
                 Metrics.FollowupWindowCameraCueRequests = CameraCueDriver.SummonFollowupWindowCueRequestCount;
@@ -4116,6 +4241,13 @@ namespace DimensionBrawl.Tests
             public int HighestBossPressureScreenBlockTier { get; set; }
             public int MaxBossPressureActiveScreenCount { get; set; }
             public int BossPressureActiveScreenRemainingIntercepts { get; set; }
+            public int SummonPressureBlockCameraCueRequests { get; set; }
+            public int LastSummonPressureBlockCameraTier { get; set; }
+            public int SummonBlockOpportunityCameraCueRequests { get; set; }
+            public int SummonPressureScreenActivationVfxCueRequests { get; set; }
+            public int SummonPressureScreenInterceptFlashes { get; set; }
+            public int SummonPressureScreenInterceptVfxCueRequests { get; set; }
+            public int MaxShowingSummonPressureScreenPresenters { get; set; }
             public float FirstSummonUseAtSeconds { get; set; } = -1f;
             public float FirstSummonBlockAtSeconds { get; set; } = -1f;
             public float FirstBossPressureReleaseAtSeconds { get; set; } = -1f;

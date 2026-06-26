@@ -3771,6 +3771,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Test.BossBarragePocketCameraCueBridge
   pocketReviewOwner: {fileID: 132563471}
+  summonSlot1Action: {fileID: 4014}
   cameraCueDriver: {fileID: 1005}
   cinematicCueDirector: {fileID: 1008}
 --- !u!1 &145531460
