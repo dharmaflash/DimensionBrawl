@@ -87,6 +87,18 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(File.Exists(ReportPath), "Frontline combat policy report should be written.");
                 Assert.IsTrue(File.Exists(JsonPath), "Frontline combat policy JSON should be written.");
                 Assert.Greater(intended.SummonBlocks, 0, "The intended route must prove summon interception changes the run.");
+                Assert.GreaterOrEqual(
+                    intended.BlockToFollowupWindowSeconds,
+                    0f,
+                    "The report should expose the summon block -> follow-up window cadence.");
+                Assert.LessOrEqual(
+                    intended.BlockToFollowupWindowSeconds,
+                    0.35f,
+                    "A clean summon block should unlock the follow-up window quickly enough to read as one combat beat.");
+                Assert.GreaterOrEqual(
+                    intended.FollowupWindowToHitSeconds,
+                    0f,
+                    "The report should expose the follow-up window -> Skill1 punish cadence.");
                 Assert.Greater(
                     noSummon.PlayerDamageTaken,
                     intended.PlayerDamageTaken,
@@ -154,6 +166,34 @@ namespace DimensionBrawl.Tests
                     blockedRecovery.SkillProjectileHits,
                     2,
                     "Fresh counter recovery should convert the boss-screen block into a real Skill1 punish, not a single clipped projectile.");
+                Assert.GreaterOrEqual(
+                    blockedRecovery.CounterTriggerToAnswerSeconds,
+                    0f,
+                    "The recovered boss-screen branch should expose the counter trigger -> fresh summon answer cadence.");
+                Assert.LessOrEqual(
+                    blockedRecovery.CounterTriggerToAnswerSeconds,
+                    0.5f,
+                    "Counter pressure should unlock the fresh summon answer promptly instead of waiting on passive recharge.");
+                Assert.LessOrEqual(
+                    counterRecovery.CounterTriggerToAnswerSeconds,
+                    0.5f,
+                    "Missed follow-up recovery should also expose an immediate summon answer after the counter trigger.");
+                Assert.GreaterOrEqual(
+                    blockedRecovery.CounterWaveAnswerEnergyPulse,
+                    100f,
+                    "The recovered boss-screen branch should prove the counter trigger grants a summon-answer resource pulse.");
+                Assert.GreaterOrEqual(
+                    blockedRecovery.CounterAnswerToStableSeconds,
+                    0f,
+                    "The recovered boss-screen branch should expose the fresh summon answer -> stabilized cadence.");
+                Assert.GreaterOrEqual(
+                    blockedRecovery.CounterStableToFinalWindowSeconds,
+                    0f,
+                    "The recovered boss-screen branch should expose the stabilize -> final punish window cadence.");
+                Assert.GreaterOrEqual(
+                    blockedRecovery.FinalWindowToHitSeconds,
+                    0f,
+                    "The recovered boss-screen branch should expose the final window -> Skill1 punish cadence.");
                 Assert.GreaterOrEqual(
                     blockedRecovery.BossDamageTaken,
                     intended.BossDamageTaken,
@@ -576,7 +616,7 @@ namespace DimensionBrawl.Tests
                 yield break;
             }
 
-            context.Metrics.SummonUses++;
+            RecordSummonUse(context, false);
             yield return Advance(context, 0.2f);
             yield return ApplyBossWave(context, BossWaveAnswer.SummonScreen);
             context.PocketOwner.Tick(0f);
@@ -604,7 +644,7 @@ namespace DimensionBrawl.Tests
                 yield break;
             }
 
-            context.Metrics.SkillUses++;
+            RecordSkillUse(context);
             LaneActionProjectile[] projectiles = FindActivePlayerProjectiles();
             for (int i = 0; i < projectiles.Length; i++)
             {
@@ -646,7 +686,7 @@ namespace DimensionBrawl.Tests
                 yield break;
             }
 
-            context.Metrics.SummonUses++;
+            RecordSummonUse(context, true);
             context.PocketOwner.Tick(0f);
             context.Sample();
             yield return null;
@@ -680,7 +720,7 @@ namespace DimensionBrawl.Tests
                 yield break;
             }
 
-            context.Metrics.SkillUses++;
+            RecordSkillUse(context);
             context.PocketOwner.Tick(0f);
 
             LaneActionProjectile[] projectiles = FindActivePlayerProjectiles();
@@ -699,6 +739,29 @@ namespace DimensionBrawl.Tests
             context.PocketOwner.Tick(0f);
             context.Sample();
             yield return null;
+        }
+
+        private static void RecordSummonUse(CombatPolicyContext context, bool isCounterAnswer)
+        {
+            context.Metrics.SummonUses++;
+            if (context.Metrics.FirstSummonUseAtSeconds < 0f)
+            {
+                context.Metrics.FirstSummonUseAtSeconds = context.Metrics.ElapsedSeconds;
+            }
+
+            if (isCounterAnswer && context.Metrics.FirstCounterAnswerSummonAtSeconds < 0f)
+            {
+                context.Metrics.FirstCounterAnswerSummonAtSeconds = context.Metrics.ElapsedSeconds;
+            }
+        }
+
+        private static void RecordSkillUse(CombatPolicyContext context)
+        {
+            context.Metrics.SkillUses++;
+            if (context.Metrics.FirstSkill1UseAtSeconds < 0f)
+            {
+                context.Metrics.FirstSkill1UseAtSeconds = context.Metrics.ElapsedSeconds;
+            }
         }
 
         private static IEnumerator WaitForCounterFinalWindow(
@@ -860,6 +923,40 @@ namespace DimensionBrawl.Tests
                     + $"{FormatSeconds(result.CounterWaveFinalWindowSeconds)} x{result.CounterWaveFinalWindowRouteScale:0.00}"));
                 builder.Append(" | ");
                 builder.Append(EscapeTable(ResolveResultRecordReadout(result)));
+                builder.AppendLine(" |");
+            }
+
+            builder.AppendLine();
+            builder.AppendLine("## Lock/Unlock Cadence");
+            builder.AppendLine("| Policy | Summon->block | Block->window | Window->Skill1 | Window->hit | Block->hit | Boss release->screen | Answer pulse | Counter->answer | Answer->stable | Stable->final | Final->hit |");
+            builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|");
+            for (int i = 0; i < results.Count; i++)
+            {
+                PolicyMetrics result = results[i];
+                builder.Append("| ");
+                builder.Append(result.Policy);
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.SummonUseToBlockSeconds));
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.BlockToFollowupWindowSeconds));
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.FollowupWindowToSkillUseSeconds));
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.FollowupWindowToHitSeconds));
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.BlockToFollowupHitSeconds));
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.BossScreenReleaseToBlockSeconds));
+                builder.Append(" | ");
+                builder.Append(result.CounterWaveAnswerEnergyPulse.ToString("0"));
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.CounterTriggerToAnswerSeconds));
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.CounterAnswerToStableSeconds));
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.CounterStableToFinalWindowSeconds));
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.FinalWindowToHitSeconds));
                 builder.AppendLine(" |");
             }
 
@@ -1089,6 +1186,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Skill1 punish split: gun-only boss damage {gunOnly.BossDamageTaken:0.0}, intended follow-up boss damage {intended.BossDamageTaken:0.0}.");
             builder.AppendLine($"- Late summon ended as `{late.ResultKind}` with {late.PlayerDamageTaken:0.0} damage taken, so the report can compare timing quality without changing the scene.");
             builder.AppendLine($"- Intended route currently reads as `{ResolveRouteShape(intended)}`: follow-up window {FormatSeconds(intended.FirstFollowupWindowAtSeconds)}, counter {FormatSeconds(intended.FirstCounterWaveAtSeconds)}, Skill1 hit {FormatSeconds(intended.FirstFollowupHitAtSeconds)}.");
+            builder.AppendLine($"- Lock/unlock cadence: intended block->window {FormatSeconds(intended.BlockToFollowupWindowSeconds)}, window->hit {FormatSeconds(intended.FollowupWindowToHitSeconds)}; boss-screen recovery answer pulse {blockedRecovery.CounterWaveAnswerEnergyPulse:0}, counter->answer {FormatSeconds(blockedRecovery.CounterTriggerToAnswerSeconds)}, answer->stable {FormatSeconds(blockedRecovery.CounterAnswerToStableSeconds)}, stable->final {FormatSeconds(blockedRecovery.CounterStableToFinalWindowSeconds)}, final->hit {FormatSeconds(blockedRecovery.FinalWindowToHitSeconds)}.");
             builder.AppendLine($"- Route stability split: no-action {FormatPercent01(noSummon.RouteStability01)} final / {FormatPercent01(noSummon.MinRouteStability01)} min, gun-only {FormatPercent01(gunOnly.RouteStability01)} / {FormatPercent01(gunOnly.MinRouteStability01)}, intended {FormatPercent01(intended.RouteStability01)} / {FormatPercent01(intended.MinRouteStability01)}.");
             builder.AppendLine($"- Unanswered hit penalty split: no-action {FormatPercent01(noSummon.TotalUnansweredBossHitRoutePenalty01)} x{noSummon.UnansweredBossHitRoutePenaltyCount}, gun-only {FormatPercent01(gunOnly.TotalUnansweredBossHitRoutePenalty01)} x{gunOnly.UnansweredBossHitRoutePenaltyCount}, late {FormatPercent01(late.TotalUnansweredBossHitRoutePenalty01)} x{late.UnansweredBossHitRoutePenaltyCount}.");
             builder.AppendLine($"- Frontline exposure split: no-action enemy-only {FormatSeconds(noSummon.EnemyOnlyFrontlineSeconds)}, gun-only enemy-only {FormatSeconds(gunOnly.EnemyOnlyFrontlineSeconds)}, intended ally-only {FormatSeconds(intended.AllyOnlyFrontlineSeconds)} / contested {FormatSeconds(intended.ContestedFrontlineSeconds)}.");
@@ -1220,6 +1318,23 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"bossPressureScreenBlocks\": {result.BossPressureScreenBlocks},");
                 builder.AppendLine($"      \"maxBossPressureActiveScreenCount\": {result.MaxBossPressureActiveScreenCount},");
                 builder.AppendLine($"      \"bossPressureActiveScreenRemainingIntercepts\": {result.BossPressureActiveScreenRemainingIntercepts},");
+                builder.AppendLine($"      \"firstSummonUseAtSeconds\": {JsonNullableSeconds(result.FirstSummonUseAtSeconds)},");
+                builder.AppendLine($"      \"firstSummonBlockAtSeconds\": {JsonNullableSeconds(result.FirstSummonBlockAtSeconds)},");
+                builder.AppendLine($"      \"firstBossPressureReleaseAtSeconds\": {JsonNullableSeconds(result.FirstBossPressureReleaseAtSeconds)},");
+                builder.AppendLine($"      \"firstBossPressureScreenBlockAtSeconds\": {JsonNullableSeconds(result.FirstBossPressureScreenBlockAtSeconds)},");
+                builder.AppendLine($"      \"firstSkill1UseAtSeconds\": {JsonNullableSeconds(result.FirstSkill1UseAtSeconds)},");
+                builder.AppendLine($"      \"firstCounterAnswerSummonAtSeconds\": {JsonNullableSeconds(result.FirstCounterAnswerSummonAtSeconds)},");
+                builder.AppendLine($"      \"firstCounterFinalWindowAtSeconds\": {JsonNullableSeconds(result.FirstCounterFinalWindowAtSeconds)},");
+                builder.AppendLine($"      \"summonUseToBlockSeconds\": {JsonNullableSeconds(result.SummonUseToBlockSeconds)},");
+                builder.AppendLine($"      \"blockToFollowupWindowSeconds\": {JsonNullableSeconds(result.BlockToFollowupWindowSeconds)},");
+                builder.AppendLine($"      \"followupWindowToSkillUseSeconds\": {JsonNullableSeconds(result.FollowupWindowToSkillUseSeconds)},");
+                builder.AppendLine($"      \"followupWindowToHitSeconds\": {JsonNullableSeconds(result.FollowupWindowToHitSeconds)},");
+                builder.AppendLine($"      \"blockToFollowupHitSeconds\": {JsonNullableSeconds(result.BlockToFollowupHitSeconds)},");
+                builder.AppendLine($"      \"bossScreenReleaseToBlockSeconds\": {JsonNullableSeconds(result.BossScreenReleaseToBlockSeconds)},");
+                builder.AppendLine($"      \"counterTriggerToAnswerSeconds\": {JsonNullableSeconds(result.CounterTriggerToAnswerSeconds)},");
+                builder.AppendLine($"      \"counterAnswerToStableSeconds\": {JsonNullableSeconds(result.CounterAnswerToStableSeconds)},");
+                builder.AppendLine($"      \"counterStableToFinalWindowSeconds\": {JsonNullableSeconds(result.CounterStableToFinalWindowSeconds)},");
+                builder.AppendLine($"      \"finalWindowToHitSeconds\": {JsonNullableSeconds(result.FinalWindowToHitSeconds)},");
                 builder.AppendLine($"      \"maxEnemyFrontlineCount\": {result.MaxEnemyFrontlineCount},");
                 builder.AppendLine($"      \"maxAllyFrontlineCount\": {result.MaxAllyFrontlineCount},");
                 builder.AppendLine($"      \"routeDrainAccumulated01\": {result.RouteDrainAccumulated01:0.###},");
@@ -1329,6 +1444,7 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"counterWaveAllyHoldRequiredSeconds\": {result.CounterWaveAllyHoldRequiredSeconds:0.###},");
                 builder.AppendLine($"      \"counterWaveAllyHoldElapsedSeconds\": {result.CounterWaveAllyHoldElapsedSeconds:0.###},");
                 builder.AppendLine($"      \"counterWaveAllyHoldProgress01\": {result.CounterWaveAllyHoldProgress01:0.###},");
+                builder.AppendLine($"      \"counterWaveAnswerEnergyPulse\": {result.CounterWaveAnswerEnergyPulse:0.###},");
                 builder.AppendLine($"      \"firstCounterWaveAtSeconds\": {JsonNullableSeconds(result.FirstCounterWaveAtSeconds)},");
                 builder.AppendLine($"      \"firstCounterStabilizedAtSeconds\": {JsonNullableSeconds(result.FirstCounterStabilizedAtSeconds)},");
                 builder.AppendLine($"      \"followupWindowOpenCount\": {result.FollowupWindowOpenCount},");
@@ -1686,6 +1802,12 @@ namespace DimensionBrawl.Tests
                 Metrics.CounterWaveAnswerReadout = PocketOwner.CounterWaveAnswerReadout;
                 Metrics.CounterWaveFinalWindowState = PocketOwner.CounterWaveFinalWindowState;
                 Metrics.CounterWaveFinalWindowReadout = PocketOwner.CounterWaveFinalWindowReadout;
+                if (PocketOwner.IsCounterWaveFinalWindowOpened
+                    && Metrics.FirstCounterFinalWindowAtSeconds < 0f)
+                {
+                    Metrics.FirstCounterFinalWindowAtSeconds = Metrics.ElapsedSeconds;
+                }
+
                 Metrics.CounterWaveEntryPenalty01 = PocketOwner.LastCounterWaveEntryPenalty;
                 Metrics.CounterWaveStabilityBonus01 = PocketOwner.LastCounterWaveStabilityBonus;
                 Metrics.CounterWaveFinalWindowSeconds = PocketOwner.LastCounterWaveFinalWindowDuration;
@@ -1693,6 +1815,7 @@ namespace DimensionBrawl.Tests
                 Metrics.CounterWaveAllyHoldRequiredSeconds = PocketOwner.CounterWaveAllyHoldRequiredSeconds;
                 Metrics.CounterWaveAllyHoldElapsedSeconds = PocketOwner.CounterWaveAllyHoldElapsedSeconds;
                 Metrics.CounterWaveAllyHoldProgress01 = PocketOwner.CounterWaveAllyHoldProgress01;
+                Metrics.CounterWaveAnswerEnergyPulse = PocketOwner.LastCounterWaveAnswerEnergyPulse;
                 Metrics.UnansweredBossHitRoutePenaltyCount = PocketOwner.UnansweredBossHitRoutePenaltyCount;
                 Metrics.LastUnansweredBossHitRoutePenalty01 = PocketOwner.LastUnansweredBossHitRoutePenalty;
                 Metrics.TotalUnansweredBossHitRoutePenalty01 = PocketOwner.TotalUnansweredBossHitRoutePenalty;
@@ -2341,6 +2464,10 @@ namespace DimensionBrawl.Tests
             {
                 Metrics.SummonBlocks++;
                 Metrics.HighestSummonBlockTier = Mathf.Max(Metrics.HighestSummonBlockTier, tier);
+                if (Metrics.FirstSummonBlockAtSeconds < 0f)
+                {
+                    Metrics.FirstSummonBlockAtSeconds = Metrics.ElapsedSeconds;
+                }
             }
 
             private void OnBossPressureSummonReleased(BossSummonPressureAction action, int tier)
@@ -2349,6 +2476,10 @@ namespace DimensionBrawl.Tests
                 Metrics.HighestBossPressureSummonTier = Mathf.Max(
                     Metrics.HighestBossPressureSummonTier,
                     tier);
+                if (Metrics.FirstBossPressureReleaseAtSeconds < 0f)
+                {
+                    Metrics.FirstBossPressureReleaseAtSeconds = Metrics.ElapsedSeconds;
+                }
             }
 
             private void OnBossPressureSummonIntercepted(BossSummonPressureAction action, int tier)
@@ -2357,6 +2488,10 @@ namespace DimensionBrawl.Tests
                 Metrics.HighestBossPressureScreenBlockTier = Mathf.Max(
                     Metrics.HighestBossPressureScreenBlockTier,
                     tier);
+                if (Metrics.FirstBossPressureScreenBlockAtSeconds < 0f)
+                {
+                    Metrics.FirstBossPressureScreenBlockAtSeconds = Metrics.ElapsedSeconds;
+                }
             }
 
             private void OnSummonFollowupWindowOpened(int tier)
@@ -2464,6 +2599,33 @@ namespace DimensionBrawl.Tests
             public int HighestBossPressureScreenBlockTier { get; set; }
             public int MaxBossPressureActiveScreenCount { get; set; }
             public int BossPressureActiveScreenRemainingIntercepts { get; set; }
+            public float FirstSummonUseAtSeconds { get; set; } = -1f;
+            public float FirstSummonBlockAtSeconds { get; set; } = -1f;
+            public float FirstBossPressureReleaseAtSeconds { get; set; } = -1f;
+            public float FirstBossPressureScreenBlockAtSeconds { get; set; } = -1f;
+            public float FirstSkill1UseAtSeconds { get; set; } = -1f;
+            public float FirstCounterAnswerSummonAtSeconds { get; set; } = -1f;
+            public float FirstCounterFinalWindowAtSeconds { get; set; } = -1f;
+            public float SummonUseToBlockSeconds =>
+                ResolveTimingDelta(FirstSummonUseAtSeconds, FirstSummonBlockAtSeconds);
+            public float BlockToFollowupWindowSeconds =>
+                ResolveTimingDelta(FirstSummonBlockAtSeconds, FirstFollowupWindowAtSeconds);
+            public float FollowupWindowToSkillUseSeconds =>
+                ResolveTimingDelta(FirstFollowupWindowAtSeconds, FirstSkill1UseAtSeconds);
+            public float FollowupWindowToHitSeconds =>
+                ResolveTimingDelta(FirstFollowupWindowAtSeconds, FirstFollowupHitAtSeconds);
+            public float BlockToFollowupHitSeconds =>
+                ResolveTimingDelta(FirstSummonBlockAtSeconds, FirstFollowupHitAtSeconds);
+            public float BossScreenReleaseToBlockSeconds =>
+                ResolveTimingDelta(FirstBossPressureReleaseAtSeconds, FirstBossPressureScreenBlockAtSeconds);
+            public float CounterTriggerToAnswerSeconds =>
+                ResolveTimingDelta(FirstCounterWaveAtSeconds, FirstCounterAnswerSummonAtSeconds);
+            public float CounterAnswerToStableSeconds =>
+                ResolveTimingDelta(FirstCounterAnswerSummonAtSeconds, FirstCounterStabilizedAtSeconds);
+            public float CounterStableToFinalWindowSeconds =>
+                ResolveTimingDelta(FirstCounterStabilizedAtSeconds, FirstCounterFinalWindowAtSeconds);
+            public float FinalWindowToHitSeconds =>
+                ResolveTimingDelta(FirstCounterFinalWindowAtSeconds, FirstFollowupHitAtSeconds);
             public int CounterWaves { get; set; }
             public int ResultRecords { get; set; }
             public int MaxEnemyFrontlineCount { get; set; }
@@ -2576,6 +2738,7 @@ namespace DimensionBrawl.Tests
             public float CounterWaveAllyHoldRequiredSeconds { get; set; }
             public float CounterWaveAllyHoldElapsedSeconds { get; set; }
             public float CounterWaveAllyHoldProgress01 { get; set; }
+            public float CounterWaveAnswerEnergyPulse { get; set; }
             public int CounterStabilizedCount { get; set; }
             public float FirstCounterWaveAtSeconds { get; set; } = -1f;
             public float FirstCounterStabilizedAtSeconds { get; set; } = -1f;
@@ -2611,6 +2774,16 @@ namespace DimensionBrawl.Tests
             public string RouteDecision { get; set; } = "unknown";
             public string CompletionReadout { get; set; } = string.Empty;
             public List<string> Notes { get; } = new List<string>();
+
+            private static float ResolveTimingDelta(float startSeconds, float endSeconds)
+            {
+                if (startSeconds < 0f || endSeconds < 0f || endSeconds < startSeconds)
+                {
+                    return -1f;
+                }
+
+                return endSeconds - startSeconds;
+            }
         }
     }
 }

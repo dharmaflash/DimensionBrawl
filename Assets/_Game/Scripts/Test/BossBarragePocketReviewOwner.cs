@@ -182,6 +182,7 @@ namespace DimensionBrawl.Test
         [SerializeField, Min(0f)] private float summonFollowupWindowTierThreeBonusSeconds = 0.75f;
         [SerializeField, Min(0f)] private float summonFollowupEnergyPulseTierTwo = 185f;
         [SerializeField, Min(0f)] private float summonFollowupEnergyPulseTierThree = 240f;
+        [SerializeField, Min(0f)] private float counterWaveAnswerEnergyPulse;
 
         [Header("Follow-up Result")]
         [SerializeField] private bool requireSkill1FollowupHitToClear = true;
@@ -239,11 +240,13 @@ namespace DimensionBrawl.Test
         private bool counterWaveObserved;
         private bool counterWaveStabilized;
         private bool counterWaveFinalWindowOpened;
+        private bool grantedCounterWaveAnswerEnergyPulse;
         private CounterWaveSource counterWaveSource;
         private float lastCounterWaveEntryPenalty;
         private float lastCounterWaveStabilityBonus;
         private float lastCounterWaveFinalWindowDuration;
         private float lastCounterWaveFinalWindowRouteScale = 1f;
+        private float lastCounterWaveAnswerEnergyPulse;
         private float lastUnansweredBossHitRoutePenalty;
         private float totalUnansweredBossHitRoutePenalty;
         private int unansweredBossHitRoutePenaltyCount;
@@ -362,6 +365,7 @@ namespace DimensionBrawl.Test
         public float SummonFollowupEnergyPulse => lastGrantedSummonFollowupEnergyPulse > 0f
             ? lastGrantedSummonFollowupEnergyPulse
             : ResolveSummonFollowupEnergyPulse(1);
+        public float LastCounterWaveAnswerEnergyPulse => lastCounterWaveAnswerEnergyPulse;
         public bool RequireSkill1FollowupHitToClear => requireSkill1FollowupHitToClear;
         public int PressureBlocksAfterCloseThreatDefeated => CountPressureBlocksAfterCloseThreatDefeated();
         public int HighestSkillTier => highestSkillTier;
@@ -582,11 +586,13 @@ namespace DimensionBrawl.Test
             counterWaveObserved = false;
             counterWaveStabilized = false;
             counterWaveFinalWindowOpened = false;
+            grantedCounterWaveAnswerEnergyPulse = false;
             counterWaveSource = CounterWaveSource.None;
             lastCounterWaveEntryPenalty = 0f;
             lastCounterWaveStabilityBonus = 0f;
             lastCounterWaveFinalWindowDuration = 0f;
             lastCounterWaveFinalWindowRouteScale = 1f;
+            lastCounterWaveAnswerEnergyPulse = 0f;
             counterWaveAllyHoldTimer = 0f;
             summonUsesAtCounterWaveStart = 0;
             counterWaveAllyHoldInterrupted = false;
@@ -978,6 +984,7 @@ namespace DimensionBrawl.Test
                 summonUsesAtCounterWaveStart = GetSummonUseCount();
                 counterWaveAllyHoldInterrupted = false;
                 ApplyCounterWaveEntryRoutePenalty();
+                GrantCounterWaveAnswerEnergyPulse();
                 CounterWaveObserved?.Invoke(counterWaveSource);
             }
         }
@@ -1159,6 +1166,21 @@ namespace DimensionBrawl.Test
             energyLadder.GrantCurrentTierEnergy(energyAmount);
             grantedSummonFollowupEnergy = true;
             lastGrantedSummonFollowupEnergyPulse = energyAmount;
+        }
+
+        private void GrantCounterWaveAnswerEnergyPulse()
+        {
+            float energyAmount = ResolveCounterWaveAnswerEnergyPulse();
+            if (grantedCounterWaveAnswerEnergyPulse
+                || energyLadder == null
+                || energyAmount <= 0f)
+            {
+                return;
+            }
+
+            energyLadder.GrantCurrentTierEnergy(energyAmount);
+            grantedCounterWaveAnswerEnergyPulse = true;
+            lastCounterWaveAnswerEnergyPulse = energyAmount;
         }
 
         private void TickRouteStability(float deltaTime)
@@ -1708,6 +1730,15 @@ namespace DimensionBrawl.Test
                 _ => summonFollowupEnergyPulse
             };
             return stagePulseOverride > 0f ? Mathf.Max(defaultPulse, stagePulseOverride) : defaultPulse;
+        }
+
+        private float ResolveCounterWaveAnswerEnergyPulse()
+        {
+            float stagePulseOverride =
+                stageProfile != null ? stageProfile.CounterWaveAnswerEnergyPulseOverride : 0f;
+            return stagePulseOverride > 0f
+                ? stagePulseOverride
+                : Mathf.Max(0f, counterWaveAnswerEnergyPulse);
         }
 
         private int ResolveCompletedObjectiveStepCount()
