@@ -45,7 +45,7 @@ The current setup is intentionally conservative: the whole `Assets/Chibi_angel` 
 - The current local player shell in Assets/_Game/Prefabs/Player/Player.prefab uses Assets/CombatGirlsCharacterPack/CombatGirl_Shield/Prefab/CombatGirls_Sword_Shield.prefab as the temporary runtime visual on this PC only.
 - Assets/CombatGirlsCharacterPack remains ignored / local-only during phase-1 stabilization, so it is not yet the shared runtime dependency baseline for fresh clones.
 - The active placeholder player should prefer the CombatGirls asset's native animation set for runtime presentation on this PC, with project gameplay scripts adapting to that shell instead of forcing the older temporary KAWAII clip contract.
-- BattlePrototypeBuilder may keep a local CombatGirls-first path as long as it still retains a tracked fallback for shared clones.
+- The old BattlePrototypeBuilder path has been retired. Current combat scene setup should use authored `_Game` prefabs/scenes plus narrow ActionFoundation validation or reapply tools, not a full prototype scene/player/UI generator.
 
 Later, we can split it into:
 
