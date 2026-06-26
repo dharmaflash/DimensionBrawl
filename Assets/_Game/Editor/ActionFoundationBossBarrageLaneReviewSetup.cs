@@ -8592,6 +8592,7 @@ namespace DimensionBrawl.Editor
             ValidateEnum(actorPresenter, "clashCueId", (int)CombatVfxCueId.EliteShieldSignal);
             ValidateEnum(actorPresenter, "damageCueId", (int)CombatVfxCueId.EnemyHit);
             ValidateEnum(actorPresenter, "deathCueId", (int)CombatVfxCueId.EnemyDeath);
+            ValidateFloat(actorPresenter, "pressureDamageCueScale", 0.64f);
             ValidateAnimatorParameter(
                 animator,
                 SummonActorMoveSpeedParameter,

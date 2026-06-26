@@ -1504,6 +1504,71 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void SummonFrontlineProxyPresenterSoftensNonLockingDamageVfx()
+        {
+            GameObject victimObject = new GameObject("VictimSummonProxy");
+            GameObject damageCuePrefab = new GameObject("SummonDamageCuePrefab");
+            CombatVfxCueProfile cueProfile = null;
+            try
+            {
+                CombatHealth victimHealth = victimObject.AddComponent<CombatHealth>();
+                victimHealth.ConfigureTeam(DamageTeam.AllySummon);
+                victimHealth.ResetHealthToFull();
+                SummonFrontlineProxy victimProxy = victimObject.AddComponent<SummonFrontlineProxy>();
+                victimProxy.ConfigureHealth(victimHealth);
+
+                GameObject pulseObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+                pulseObject.name = "TierPulseCore";
+                pulseObject.transform.SetParent(victimObject.transform, worldPositionStays: false);
+                Collider pulseCollider = pulseObject.GetComponent<Collider>();
+                Object.DestroyImmediate(pulseCollider);
+                Renderer pulseRenderer = pulseObject.GetComponent<Renderer>();
+
+                CombatVfxCuePlayer cuePlayer = victimObject.AddComponent<CombatVfxCuePlayer>();
+                cueProfile = CreateSummonDamageVfxCueProfile(damageCuePrefab);
+                ConfigureCombatVfxCuePlayer(cuePlayer, cueProfile);
+
+                SummonFrontlineProxyPresenter presenter = victimObject.AddComponent<SummonFrontlineProxyPresenter>();
+                presenter.ConfigurePresentation(victimProxy, pulseObject.transform, new[] { pulseRenderer });
+                presenter.ConfigureVfxCuePlayer(cuePlayer, victimObject.transform, null);
+                victimProxy.Activate(Vector3.zero, Vector3.forward, 1, 0f, 1f, 2f, 2f, 120f, 1f);
+                presenter.RefreshNow();
+
+                Assert.IsTrue(victimHealth.TryApplyDamage(new DamageInfo(
+                    null,
+                    DamageTeam.Enemy,
+                    12f,
+                    Vector3.zero,
+                    Vector3.back,
+                    0f,
+                    DamageResponsePolicy.FlashOnly,
+                    CombatControlLockPolicy.None)));
+
+                Transform damageCue = victimObject.transform.Find(damageCuePrefab.name);
+                float expectedIntensity = 0.9f * presenter.PressureDamageCueScale;
+
+                Assert.AreEqual(1, presenter.DamageVfxCueRequestCount);
+                Assert.AreEqual(DamageResponsePolicy.FlashOnly, presenter.LastDamageResponsePolicy);
+                Assert.AreEqual(CombatControlLockPolicy.None, presenter.LastDamageControlLockPolicy);
+                Assert.IsFalse(presenter.LastDamageCueInterruptedAction);
+                Assert.AreEqual(presenter.PressureDamageCueScale, presenter.LastDamageCuePolicyScale, 0.001f);
+                Assert.AreEqual(expectedIntensity, presenter.LastDamageCueIntensity, 0.001f);
+                Assert.IsNotNull(damageCue);
+                Assert.AreEqual(expectedIntensity, damageCue.localScale.x, 0.001f);
+            }
+            finally
+            {
+                if (cueProfile != null)
+                {
+                    Object.DestroyImmediate(cueProfile);
+                }
+
+                Object.DestroyImmediate(damageCuePrefab);
+                Object.DestroyImmediate(victimObject);
+            }
+        }
+
+        [Test]
         public void DamageModificationPreservesDamageResponseAndControlLockPolicies()
         {
             GameObject victimObject = new GameObject("PolicyPreservingVictim");
@@ -3813,6 +3878,17 @@ namespace DimensionBrawl.Tests
             cues.arraySize = 2;
             ConfigureCue(cues.GetArrayElementAtIndex(0), CombatVfxCueId.PlayerDamaged, damagedPrefab);
             ConfigureCue(cues.GetArrayElementAtIndex(1), CombatVfxCueId.PlayerCritical, criticalPrefab);
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            return profile;
+        }
+
+        private static CombatVfxCueProfile CreateSummonDamageVfxCueProfile(GameObject damagePrefab)
+        {
+            CombatVfxCueProfile profile = ScriptableObject.CreateInstance<CombatVfxCueProfile>();
+            SerializedObject serializedObject = new SerializedObject(profile);
+            SerializedProperty cues = serializedObject.FindProperty("cues");
+            cues.arraySize = 1;
+            ConfigureCue(cues.GetArrayElementAtIndex(0), CombatVfxCueId.EnemyHit, damagePrefab);
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             return profile;
         }

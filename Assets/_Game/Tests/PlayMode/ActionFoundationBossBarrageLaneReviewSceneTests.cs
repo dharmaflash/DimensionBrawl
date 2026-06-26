@@ -5932,6 +5932,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(CombatVfxCueId.EliteShieldSignal, presenter.ClashCueId);
             Assert.AreEqual(CombatVfxCueId.EnemyHit, presenter.DamageCueId);
             Assert.AreEqual(CombatVfxCueId.EnemyDeath, presenter.DeathCueId);
+            Assert.AreEqual(0.64f, presenter.PressureDamageCueScale, 0.001f);
             AssertAnimatorParameter(animator, presenter.MoveSpeedParameter, AnimatorControllerParameterType.Float);
             AssertAnimatorParameter(animator, presenter.SpawnTrigger, AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(animator, presenter.AttackTrigger, AnimatorControllerParameterType.Trigger);

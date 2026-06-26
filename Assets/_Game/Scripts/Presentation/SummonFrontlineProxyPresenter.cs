@@ -36,6 +36,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0f)] private float attackCueIntensity = 0.9f;
         [SerializeField, Min(0f)] private float clashCueIntensity = 1.0f;
         [SerializeField, Min(0f)] private float damageCueIntensity = 0.9f;
+        [SerializeField, Range(0.1f, 1f)] private float pressureDamageCueScale = 0.64f;
         [SerializeField, Min(0f)] private float deathCueIntensity = 1.05f;
         [SerializeField, Min(0f)] private float tierCueIntensityStep = 0.1f;
 
@@ -93,6 +94,11 @@ namespace DimensionBrawl.Presentation
         private int clashVfxCueRequestCount;
         private int damageVfxCueRequestCount;
         private int deathVfxCueRequestCount;
+        private float lastDamageCueIntensity;
+        private float lastDamageCuePolicyScale = 1f;
+        private DamageResponsePolicy lastDamageResponsePolicy = DamageResponsePolicy.Default;
+        private CombatControlLockPolicy lastDamageControlLockPolicy = CombatControlLockPolicy.InterruptAction;
+        private bool lastDamageCueInterruptedAction;
 
         public SummonFrontlineProxy Proxy => proxy;
         public SummonFrontlineClash Clash => clash;
@@ -132,6 +138,12 @@ namespace DimensionBrawl.Presentation
         public int ClashVfxCueRequestCount => clashVfxCueRequestCount;
         public int DamageVfxCueRequestCount => damageVfxCueRequestCount;
         public int DeathVfxCueRequestCount => deathVfxCueRequestCount;
+        public float PressureDamageCueScale => pressureDamageCueScale;
+        public float LastDamageCueIntensity => lastDamageCueIntensity;
+        public float LastDamageCuePolicyScale => lastDamageCuePolicyScale;
+        public DamageResponsePolicy LastDamageResponsePolicy => lastDamageResponsePolicy;
+        public CombatControlLockPolicy LastDamageControlLockPolicy => lastDamageControlLockPolicy;
+        public bool LastDamageCueInterruptedAction => lastDamageCueInterruptedAction;
 
         private void Awake()
         {
@@ -482,7 +494,15 @@ namespace DimensionBrawl.Presentation
 
             damageFlashTimer = Mathf.Max(damageFlashTimer, damageFlashSeconds);
             damageFlashCount++;
-            if (PlayVfxCue(damageCueId, Mathf.Max(lastObservedTier, 1), damageCueIntensity))
+            float policyScale = ResolveDamageCuePolicyScale(damageInfo);
+            bool interruptsAction = DamageResponsePolicyUtility.InterruptsAction(damageInfo.ControlLockPolicy);
+            float damageIntensity = ResolveTieredCueIntensity(damageCueIntensity, Mathf.Max(lastObservedTier, 1)) * policyScale;
+            lastDamageCueIntensity = damageIntensity;
+            lastDamageCuePolicyScale = policyScale;
+            lastDamageResponsePolicy = damageInfo.ResponsePolicy;
+            lastDamageControlLockPolicy = damageInfo.ControlLockPolicy;
+            lastDamageCueInterruptedAction = interruptsAction;
+            if (PlayVfxCue(damageCueId, damageIntensity))
             {
                 damageVfxCueRequestCount++;
             }
@@ -498,6 +518,13 @@ namespace DimensionBrawl.Presentation
         private static bool ShouldPlayHitAnimation(DamageInfo damageInfo)
         {
             return DamageResponsePolicyUtility.PlaysFullBodyHitAnimation(damageInfo.ResponsePolicy);
+        }
+
+        private float ResolveDamageCuePolicyScale(DamageInfo damageInfo)
+        {
+            return DamageResponsePolicyUtility.InterruptsAction(damageInfo.ControlLockPolicy)
+                ? 1f
+                : Mathf.Clamp(pressureDamageCueScale, 0.1f, 1f);
         }
 
         private void HandleDied()
@@ -555,8 +582,24 @@ namespace DimensionBrawl.Presentation
             }
 
             Transform anchor = vfxAnchor != null ? vfxAnchor : transform;
-            float intensity = baseIntensity + Mathf.Max(0, tier - 1) * tierCueIntensityStep;
+            return resolvedCuePlayer.PlayCue(cueId, anchor, ResolveVfxDirection(anchor), ResolveTieredCueIntensity(baseIntensity, tier));
+        }
+
+        private bool PlayVfxCue(CombatVfxCueId cueId, float intensity)
+        {
+            CombatVfxCuePlayer resolvedCuePlayer = ResolveCuePlayer();
+            if (resolvedCuePlayer == null)
+            {
+                return false;
+            }
+
+            Transform anchor = vfxAnchor != null ? vfxAnchor : transform;
             return resolvedCuePlayer.PlayCue(cueId, anchor, ResolveVfxDirection(anchor), intensity);
+        }
+
+        private float ResolveTieredCueIntensity(float baseIntensity, int tier)
+        {
+            return baseIntensity + Mathf.Max(0, tier - 1) * tierCueIntensityStep;
         }
 
         private CombatVfxCuePlayer ResolveCuePlayer()

@@ -282,6 +282,7 @@ MonoBehaviour:
   attackCueIntensity: 0.9
   clashCueIntensity: 1
   damageCueIntensity: 0.9
+  pressureDamageCueScale: 0.64
   deathCueIntensity: 1.05
   tierCueIntensityStep: 0.1
   tierOneColor: {r: 0.24, g: 1, b: 0.78, a: 0.78}
