@@ -155,7 +155,7 @@ namespace DimensionBrawl.Tests
                 reviewHud.RouteRecordReadout,
                 Does.Contain("proof:pending(0/4 trigger:pending threat:pending answer:pending log:pending)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Evidence trigger -> threat -> answer -> cue -> log"));
-            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Review-only survival record"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("No payout or progression grant"));
             Assert.That(reviewHud.RouteIncentiveReadout, Does.Contain("stop close probe"));
             Assert.That(reviewHud.RouteIncentiveReadout, Does.Contain("confirm Skill1"));
             Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("pressure 62%"));
@@ -208,7 +208,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("PRESSURE BROKEN", reviewHud.ResultBannerTitle);
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Summon opening confirmed"));
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Survive 3/3"));
-            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Record S"));
+            Assert.That(reviewHud.ResultBannerDetail, Does.Not.Contain("Record"));
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("42.0/90.0s"));
             Assert.That(reviewHud.ResultBannerDetail, Does.Not.Contain("BOSS CLEAR"));
             Assert.AreEqual("PRESSURE BROKEN", overlayHud.ResultTitleReadout);
@@ -274,7 +274,7 @@ namespace DimensionBrawl.Tests
             Assert.That(screenCuePresenter.LastCueId, Does.Contain("FrontlineStability.Critical"));
             Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("critical"));
             Assert.That(reviewHud.RouteIncentiveReadout, Does.Contain("HP is the fail state"));
-            Assert.That(reviewHud.RouteIncentiveReadout, Does.Contain("improve the clear"));
+            Assert.That(reviewHud.RouteIncentiveReadout, Does.Contain("pressure is critical"));
         }
 
         [UnityTest]
@@ -596,8 +596,7 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Counter pressure held"));
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("final follow-up"));
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Counter recovery"));
-            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Record B"));
-            Assert.That(reviewHud.ResultBannerDetail, Does.Not.Contain("Record S"));
+            Assert.That(reviewHud.ResultBannerDetail, Does.Not.Contain("Record"));
             Assert.That(overlayHud.ResultSummaryReadout, Does.Contain("Counter pressure held"));
             Assert.That(overlayHud.ResultRewardReadout, Does.Contain("Counter recovery logged"));
             Assert.That(overlayHud.ResultNextObjectiveReadout, Does.Contain("earlier"));

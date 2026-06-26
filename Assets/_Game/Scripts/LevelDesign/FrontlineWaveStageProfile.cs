@@ -71,7 +71,7 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField] private string spawnFamilyPattern = "Drop | Dash | Jump | Normal";
         [SerializeField] private string observerLoop = "condition gate -> combat observer -> completion record -> reward/state hook";
         [SerializeField] private string routeEvidencePattern = "trigger -> threat -> answer -> cue -> log";
-        [SerializeField] private string rewardHook = "Review-only result hook; no payout or progression grant.";
+        [SerializeField] private string rewardHook = "No payout or progression grant.";
 
         [Header("Pressure Control")]
         [SerializeField, Range(0f, 1f)] private float routeStabilityStart01 = 0.62f;
@@ -129,15 +129,15 @@ namespace DimensionBrawl.LevelDesign
 
         [Header("In-Match Motivation Copy")]
         [TextArea, SerializeField] private string openingRecordPreview =
-            "Record preview: stop close probe, block curtain, confirm Skill1.";
+            "Stop close probe, block curtain, then confirm Skill1.";
         [TextArea, SerializeField] private string summonRecordPreview =
-            "Record preview: summon block opens the Skill1 answer.";
+            "Summon cover opens the Skill1 answer.";
         [TextArea, SerializeField] private string cleanFollowupRecordPreview =
-            "Record preview: Skill1 secures HP-safe clear before counter pressure.";
+            "Skill1 can secure HP-safe clear before counter pressure.";
         [TextArea, SerializeField] private string counterRecoveryRecordPreview =
-            "Record preview: hold counter pressure to reopen final follow-up.";
+            "Keep summon pressure held to reopen final follow-up.";
         [TextArea, SerializeField] private string collapseWarningRecordPreview =
-            "Pressure warning: HP is the fail state; stabilize pressure to improve the clear.";
+            "HP is the fail state; pressure is critical.";
 
         [Header("Review Evidence")]
         [SerializeField] private StageBeat[] beats = Array.Empty<StageBeat>();

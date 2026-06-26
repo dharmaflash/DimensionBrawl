@@ -354,9 +354,6 @@ namespace DimensionBrawl.UI
                 ResolveResultLine("Survival", ResolveResultRouteLabel()),
                 bodyStyle);
             GUILayout.Label(
-                ResolveResultLine("Analysis", ResolveResultRewardHook()),
-                bodyStyle);
-            GUILayout.Label(
                 ResolveResultLine("Next", ResolveResultNextObjective()),
                 bodyStyle);
             GUILayout.Space(18f);
@@ -511,7 +508,7 @@ namespace DimensionBrawl.UI
 
             return ResolveStageText(
                 profile?.RewardHook,
-                "Review-only survival record; no payout or progression grant.");
+                "No payout or progression grant.");
         }
 
         private string ResolveResultNextObjective()

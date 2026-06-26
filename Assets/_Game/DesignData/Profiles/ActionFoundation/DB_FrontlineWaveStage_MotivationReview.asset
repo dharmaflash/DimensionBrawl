@@ -25,7 +25,7 @@ MonoBehaviour:
   observerLoop: condition gate -> combat observer -> completion record -> reward/state
     hook
   routeEvidencePattern: trigger -> threat -> answer -> cue -> log
-  rewardHook: Review-only survival record; no payout or progression grant.
+  rewardHook: No payout or progression grant.
   routeStabilityStart01: 0.62
   closeProbeRouteDrainPerSecond: 0.045
   summonAnswerRouteDrainPerSecond: 0.06
@@ -76,15 +76,11 @@ MonoBehaviour:
     becomes a clean survival answer.'
   failedRouteNextObjective: 'Next run: protect HP first, then spend summon on the
     visible curtain.'
-  openingRecordPreview: 'Record preview: stop close probe, block curtain, confirm
-    Skill1.'
-  summonRecordPreview: 'Record preview: summon block opens the Skill1 answer.'
-  cleanFollowupRecordPreview: 'Record preview: Skill1 secures HP-safe clear before
-    counter pressure.'
-  counterRecoveryRecordPreview: 'Record preview: hold counter pressure to reopen
-    final follow-up.'
-  collapseWarningRecordPreview: 'Pressure warning: HP is the fail state; stabilize
-    pressure to improve the clear.'
+  openingRecordPreview: Stop close probe, block curtain, then confirm Skill1.
+  summonRecordPreview: Summon cover opens the Skill1 answer.
+  cleanFollowupRecordPreview: Skill1 can secure HP-safe clear before counter pressure.
+  counterRecoveryRecordPreview: Keep summon pressure held to reopen final follow-up.
+  collapseWarningRecordPreview: HP is the fail state; pressure is critical.
   beats:
   - beatId: B0.MatchRead
     label: Match Read

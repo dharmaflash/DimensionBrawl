@@ -338,9 +338,6 @@ namespace DimensionBrawl.Presentation
         private void DrawCompactCombatCues()
         {
             GUILayout.Label(ResolveCompactObjectiveLine(), labelStyle);
-            GUILayout.Label(ResolveCompactStageBeatLine(), labelStyle);
-            GUILayout.Label(ResolveCompactRouteIncentiveLine(), labelStyle);
-            GUILayout.Label(ResolveCompactPhaseLine(), labelStyle);
             GUILayout.Label(ResolveCompactCombatCueLine(), labelStyle);
             GUILayout.Label(ResolveCompactFrontlineCueLine(), labelStyle);
 
@@ -643,7 +640,7 @@ namespace DimensionBrawl.Presentation
                 return $"Boss: {bossBarrageEmitter.CurrentPattern.PatternId}";
             }
 
-            return "Cue: Hold lane";
+            return "Cue: Protect HP";
         }
 
         private string ResolveCompactObjectiveLine()
@@ -746,7 +743,7 @@ namespace DimensionBrawl.Presentation
 
             if (pocketReviewOwner.IsCleared)
             {
-                return $"Record sealed: {ResolveClearedPocketRouteType()}";
+                return $"Pressure answer complete: {ResolveClearedPocketRouteType()}";
             }
 
             if (pocketReviewOwner.IsRouteStabilityActive
@@ -754,14 +751,14 @@ namespace DimensionBrawl.Presentation
             {
                 return ResolveStageText(
                     profile?.CollapseWarningRecordPreview,
-                    "Pressure warning: HP is the fail state; stabilize pressure to improve the clear.");
+                    "HP is the fail state; pressure is critical.");
             }
 
             if (pocketReviewOwner.IsCounterWaveCompletionRecorded && !pocketReviewOwner.Skill1FollowupHitConfirmed)
             {
                 return ResolveStageText(
                     profile?.CounterRecoveryRecordPreview,
-                    "Record preview: hold counter pressure to reopen final follow-up.");
+                    "Keep summon pressure held to reopen final follow-up.");
             }
 
             if (pocketReviewOwner.IsSummonFollowupWindowActive
@@ -770,7 +767,7 @@ namespace DimensionBrawl.Presentation
             {
                 return ResolveStageText(
                     profile?.CleanFollowupRecordPreview,
-                    "Record preview: Skill1 secures HP-safe clear before counter pressure.");
+                    "Skill1 can secure HP-safe clear before counter pressure.");
             }
 
             if (pocketReviewOwner.IsAwaitingSummonPressureBlock
@@ -779,12 +776,12 @@ namespace DimensionBrawl.Presentation
             {
                 return ResolveStageText(
                     profile?.SummonRecordPreview,
-                    "Record preview: summon block opens the Skill1 answer.");
+                    "Summon cover opens the Skill1 answer.");
             }
 
             return ResolveStageText(
                 profile?.OpeningRecordPreview,
-                "Record preview: stop close probe, block curtain, confirm Skill1.");
+                "Stop close probe, block curtain, then confirm Skill1.");
         }
 
         private string ResolveStageBriefingLine()
@@ -996,7 +993,7 @@ namespace DimensionBrawl.Presentation
                 return $"Boss: {BossBarrageLaneReviewHudText.ShortenPatternId(bossBarrageEmitter.CurrentPattern.PatternId)}";
             }
 
-            return "Hold lane";
+            return "Protect HP";
         }
 
         private string ResolveCompactFireText()
@@ -1510,11 +1507,12 @@ namespace DimensionBrawl.Presentation
         {
             if (pocketReviewOwner == null)
             {
-                return "Survival - | Record -";
+                return "Survival -";
             }
 
             string prefix = ResolveStageText(ActiveStageProfile?.StepPrefix, "Survive");
-            return $"{prefix} {ResolvePocketProgressText()} | {ResolveRouteRecordSummary()}";
+            float targetSeconds = Mathf.Max(1f, ActiveStageProfile != null ? ActiveStageProfile.TargetDurationSeconds : 90f);
+            return $"{prefix} {ResolvePocketProgressText()} | {pocketReviewOwner.ResultElapsedSeconds:0.0}/{targetSeconds:0.0}s";
         }
 
         private string ResolveRouteRecordLine()
@@ -1544,7 +1542,7 @@ namespace DimensionBrawl.Presentation
 
             if (!pocketReviewOwner.IsCleared)
             {
-                string hook = ResolveStageText(profile?.RewardHook, "Review-only survival record");
+                string hook = ResolveStageText(profile?.RewardHook, "No payout or progression grant.");
                 return $"Pending {ResolvePocketProgressText()} {ResolveRouteStabilityText()} target {targetSeconds:0}s | {ResolveCompletionRecordText()} | {hook}";
             }
 

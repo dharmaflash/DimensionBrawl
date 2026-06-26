@@ -230,7 +230,7 @@ namespace DimensionBrawl.Editor
                 "observerLoop",
                 "condition gate -> combat observer -> completion record -> reward/state hook");
             SetString(serializedObject, "routeEvidencePattern", "trigger -> threat -> answer -> cue -> log");
-            SetString(serializedObject, "rewardHook", "Review-only survival record; no payout or progression grant.");
+            SetString(serializedObject, "rewardHook", "No payout or progression grant.");
             SetFloat(serializedObject, "routeStabilityStart01", 0.62f);
             SetFloat(serializedObject, "closeProbeRouteDrainPerSecond", 0.045f);
             SetFloat(serializedObject, "summonAnswerRouteDrainPerSecond", 0.06f);
@@ -321,23 +321,23 @@ namespace DimensionBrawl.Editor
             SetString(
                 serializedObject,
                 "openingRecordPreview",
-                "Record preview: stop close probe, block curtain, confirm Skill1.");
+                "Stop close probe, block curtain, then confirm Skill1.");
             SetString(
                 serializedObject,
                 "summonRecordPreview",
-                "Record preview: summon block opens the Skill1 answer.");
+                "Summon cover opens the Skill1 answer.");
             SetString(
                 serializedObject,
                 "cleanFollowupRecordPreview",
-                "Record preview: Skill1 secures HP-safe clear before counter pressure.");
+                "Skill1 can secure HP-safe clear before counter pressure.");
             SetString(
                 serializedObject,
                 "counterRecoveryRecordPreview",
-                "Record preview: hold counter pressure to reopen final follow-up.");
+                "Keep summon pressure held to reopen final follow-up.");
             SetString(
                 serializedObject,
                 "collapseWarningRecordPreview",
-                "Pressure warning: HP is the fail state; stabilize pressure to improve the clear.");
+                "HP is the fail state; pressure is critical.");
 
             ConfigureBeats(serializedObject);
             ConfigurePressureSlots(serializedObject);
