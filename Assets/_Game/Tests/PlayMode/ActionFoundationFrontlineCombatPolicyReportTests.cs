@@ -139,6 +139,16 @@ namespace DimensionBrawl.Tests
                 PolicyMetrics delayedBlockedRecovery = RequireResult(results, PolicyKind.BossScreenDelayedCounterRecovery);
                 Assert.IsTrue(File.Exists(ReportPath), "Frontline combat policy report should be written.");
                 Assert.IsTrue(File.Exists(JsonPath), "Frontline combat policy JSON should be written.");
+                string markdown = File.ReadAllText(ReportPath);
+                Assert.IsTrue(
+                    markdown.Contains("## ArkData Coverage Summary"),
+                    "The report should keep the ArkData comparison premise visible before detailed metrics.");
+                Assert.IsTrue(
+                    markdown.Contains("CombatPayload runtime pipeline"),
+                    "The report should map policy metrics back to the Trigger -> Target -> Effect -> Status/Presentation contract.");
+                Assert.IsTrue(
+                    markdown.Contains("NIKKE stage-result runtime"),
+                    "The report should keep stage result/reward boundaries explicit instead of drifting into balance-only tuning.");
                 Assert.Greater(intended.SummonBlocks, 0, "The intended route must prove summon interception changes the run.");
                 Assert.AreEqual(
                     "PlayerDownFail",
@@ -1553,9 +1563,11 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"Scene: `{ScenePath}`");
             builder.AppendLine();
             builder.AppendLine("## ArkData Read");
-            builder.AppendLine("- Stage/wave/pressure: each policy is one route through the same Frontline stage shell, so unanswered pressure, direct fire, intended summon, and late summon can be compared without changing the scene.");
+            builder.AppendLine("- Stage/runtime/pressure: each policy is one route through the same Frontline stage shell, so unanswered pressure, direct fire, intended summon, and late summon can be compared without changing the scene.");
             builder.AppendLine("- Trigger -> target -> effect -> status/presentation: follow-up windows, Skill1 hit confirms, boss-screen blocks, counter-wave observation, ally hold, and result records are emitted as measured route evidence.");
             builder.AppendLine("- QTE/state lock-unlock: summon block opens the follow-up window; missed or blocked follow-up can lock the route into counter pressure; ally hold can unlock the final recovery window.");
+            builder.AppendLine();
+            AppendArkDataCoverageSummary(builder, results);
             builder.AppendLine();
             AppendStructuralGateSummary(builder, results);
             builder.AppendLine();
@@ -2159,9 +2171,109 @@ namespace DimensionBrawl.Tests
                 $"| Physical clean route reference | {FormatGateStatus(forwardRiskPhysicalSummonPunish.IsClearResult)} | physical summon-punish clears in {FormatSeconds(forwardRiskPhysicalSummonPunish.ElapsedSeconds)} with {forwardRiskPhysicalSummonPunish.PlayerDamageTaken:0.0} HP lost versus intended route {FormatSeconds(intended.ElapsedSeconds)} / {intended.PlayerDamageTaken:0.0} HP lost |");
         }
 
+        private static void AppendArkDataCoverageSummary(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results)
+        {
+            PolicyMetrics noSummon = RequireResult(results, PolicyKind.NoSummonNoFire);
+            PolicyMetrics noSummonSurvival = RequireResult(results, PolicyKind.NoSummonSurvivalLimit);
+            PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
+            PolicyMetrics gunOnlySurvival = RequireResult(results, PolicyKind.GunOnlySurvivalLimit);
+            PolicyMetrics backlineEnergy = RequireResult(results, PolicyKind.BacklineEnergyProbe);
+            PolicyMetrics forwardRiskEnergy = RequireResult(results, PolicyKind.ForwardRiskEnergyProbe);
+            PolicyMetrics backlinePhysicalBarrage = RequireResult(
+                results,
+                PolicyKind.BacklinePhysicalBarrageProbe);
+            PolicyMetrics forwardRiskPhysicalBarrage = RequireResult(
+                results,
+                PolicyKind.ForwardRiskPhysicalBarrageProbe);
+            PolicyMetrics forwardRiskPhysicalSummonBlock = RequireResult(
+                results,
+                PolicyKind.ForwardRiskPhysicalSummonBlockProbe);
+            PolicyMetrics forwardRiskPhysicalSummonPunish = RequireResult(
+                results,
+                PolicyKind.ForwardRiskPhysicalSummonPunishProbe);
+            PolicyMetrics intended = RequireResult(results, PolicyKind.IntendedRoute);
+            PolicyMetrics delayedIntended = RequireResult(results, PolicyKind.IntendedDelayedFollowup);
+            PolicyMetrics ignoredRecovery = RequireResult(results, PolicyKind.BossScreenIgnoredNoRecovery);
+            PolicyMetrics blockedRecovery = RequireResult(results, PolicyKind.BossScreenBlockCounterRecovery);
+            PolicyMetrics delayedBlockedRecovery = RequireResult(
+                results,
+                PolicyKind.BossScreenDelayedCounterRecovery);
+
+            bool stageResultMeasured = noSummonSurvival.ResultKind == "PlayerDownFail"
+                && gunOnlySurvival.ResultKind == "PlayerDownFail"
+                && forwardRiskPhysicalSummonPunish.IsClearResult
+                && forwardRiskPhysicalSummonPunish.ResultRecords > 0;
+            bool pressureSlotMeasured = forwardRiskEnergy.EnergyTier1DurationSeconds >= 0f
+                && backlineEnergy.EnergyTier1DurationSeconds >= 0f
+                && forwardRiskEnergy.EnergyTier1DurationSeconds < backlineEnergy.EnergyTier1DurationSeconds
+                && forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits > backlinePhysicalBarrage.PhysicalBarragePlayerHits
+                && ignoredRecovery.UnansweredPressureBurdenShare01 > intended.UnansweredPressureBurdenShare01;
+            bool combatPayloadMeasured = forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits > 0
+                && forwardRiskPhysicalSummonBlock.SummonBlocks > 0
+                && forwardRiskPhysicalSummonBlock.PhysicalBarragePlayerHits == 0
+                && forwardRiskPhysicalSummonPunish.SkillProjectileHits > 0
+                && forwardRiskPhysicalSummonPunish.BossLockingDamageEvents > 0
+                && forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests > 0
+                && forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests > 0
+                && forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests > 0;
+            bool pgrStateMeasured = intended.BlockToFollowupWindowSeconds >= 0f
+                && intended.BlockToFollowupWindowSeconds <= 0.35f
+                && blockedRecovery.CounterWaveAnswerEnergyPulse > 0f
+                && blockedRecovery.CounterTriggerToAnswerSeconds >= 0f
+                && blockedRecovery.CounterTriggerToAnswerSeconds <= 0.35f
+                && delayedIntended.FollowupWindowRemainingAtFirstHitSeconds > 0f
+                && delayedBlockedRecovery.FollowupWindowRemainingAtFirstHitSeconds > 0f
+                && noSummon.PlayerLockingDamageEvents == 0
+                && gunOnly.BossLockingDamageEvents == 0
+                && forwardRiskPhysicalSummonPunish.BossLockingDamageEvents > 0;
+            bool v1ScopeHeld = forwardRiskPhysicalSummonPunish.FollowupHitCinematicCueRequests == 0
+                && forwardRiskPhysicalSummonPunish.FollowupHitSequenceBridgeRequests == 0;
+
+            builder.AppendLine("## ArkData Coverage Summary");
+            builder.AppendLine("| Reference lens | Status | Current evidence | Boundary kept |");
+            builder.AppendLine("|---|---|---|---|");
+            builder.AppendLine(
+                "| NIKKE stage-result runtime | "
+                + $"{FormatCoverageStatus(stageResultMeasured, "PARTIAL")} | "
+                + $"bad routes reach HP fail at {FormatSeconds(noSummonSurvival.FirstPlayerDownAtSeconds)} / {FormatSeconds(gunOnlySurvival.FirstPlayerDownAtSeconds)}; clean physical route commits {forwardRiskPhysicalSummonPunish.ResultRecords} result record; reward hook `{EscapeTable(ResolveCoverageValue(forwardRiskPhysicalSummonPunish.ResultRecordRewardHook))}` | "
+                + "Reward/item persistence and campaign clear are intentionally not implemented in this V1 combat slice. |");
+            builder.AppendLine(
+                "| Stage pressure-slot discipline | "
+                + $"{FormatCoverageStatus(pressureSlotMeasured)} | "
+                + $"forward-risk LV1 {FormatSeconds(forwardRiskEnergy.EnergyTier1DurationSeconds)} vs backline {FormatSeconds(backlineEnergy.EnergyTier1DurationSeconds)}; physical barrage hits {backlinePhysicalBarrage.PhysicalBarragePlayerHits}->{forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}; ignored burden {FormatPercent01(ignoredRecovery.UnansweredPressureBurdenShare01)} vs intended {FormatPercent01(intended.UnansweredPressureBurdenShare01)} | "
+                + "No new wave manager or generated stage; all policies use the same authored scene/profile pocket. |");
+            builder.AppendLine(
+                "| CombatPayload runtime pipeline | "
+                + $"{FormatCoverageStatus(combatPayloadMeasured)} | "
+                + $"Target->Hit: forward barrage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; Block->Status: {forwardRiskPhysicalSummonBlock.SummonBlocks} blocks and {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)} to window; Skill1 Hit->Presentation: {forwardRiskPhysicalSummonPunish.SkillProjectileHits} hits with cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests} | "
+                + "Candidate labels stay local test evidence, not fake universal opcodes. |");
+            builder.AppendLine(
+                "| PGR state-lock and hit-response grammar | "
+                + $"{FormatCoverageStatus(pgrStateMeasured)} | "
+                + $"block->window {FormatSeconds(intended.BlockToFollowupWindowSeconds)}; counter answer pulse {blockedRecovery.CounterWaveAnswerEnergyPulse:0}; delayed clean/recovery margins {FormatSeconds(delayedIntended.FollowupWindowRemainingAtFirstHitSeconds)} / {FormatSeconds(delayedBlockedRecovery.FollowupWindowRemainingAtFirstHitSeconds)}; routine lock counts {noSummon.PlayerLockingDamageEvents}/{gunOnly.BossLockingDamageEvents}, punish boss locks {forwardRiskPhysicalSummonPunish.BossLockingDamageEvents} | "
+                + "Use lock/unlock and response tiers only; do not import tutorial HUD flow as the solution. |");
+            builder.AppendLine(
+                "| V1 scope guardrail | "
+                + $"{FormatCoverageStatus(v1ScopeHeld)} | "
+                + $"report scene `{ScenePath}`; cinematic director/sequence hit counts {forwardRiskPhysicalSummonPunish.FollowupHitCinematicCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitSequenceBridgeRequests}; physical clean route still clears `{forwardRiskPhysicalSummonPunish.ResultKind}` | "
+                + "No new canonical scene, broad VFX/audio restoration, roster, reward economy, or stage-select work. |");
+        }
+
         private static string FormatGateStatus(bool passed)
         {
             return passed ? "PASS" : "REVIEW";
+        }
+
+        private static string FormatCoverageStatus(bool passed, string passLabel = "PASS")
+        {
+            return passed ? passLabel : "REVIEW";
+        }
+
+        private static string ResolveCoverageValue(string value)
+        {
+            return string.IsNullOrWhiteSpace(value) ? "empty" : value;
         }
 
         private static string ResolveRouteShape(PolicyMetrics result)
