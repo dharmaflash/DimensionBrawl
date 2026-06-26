@@ -76,6 +76,7 @@ namespace DimensionBrawl.Tests
 
                 PolicyMetrics intended = RequireResult(results, PolicyKind.IntendedRoute);
                 PolicyMetrics noSummon = RequireResult(results, PolicyKind.NoSummonNoFire);
+                PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
                 PolicyMetrics counterRecovery = RequireResult(results, PolicyKind.MissedFollowupCounterRecovery);
                 PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
                 PolicyMetrics ignoredRecovery = RequireResult(results, PolicyKind.BossScreenIgnoredNoRecovery);
@@ -154,6 +155,34 @@ namespace DimensionBrawl.Tests
                     0,
                     ignoredRecovery.TotalSummonFullBodyHitReactions,
                     "Ignored pressure may cost HP, but minor summon clashes should not spam full-body hit reactions.");
+                Assert.Greater(
+                    noSummon.PlayerNonLockingDamageEvents,
+                    0,
+                    "Unanswered boss/projectile/body pressure should damage the player without declaring routine control lock.");
+                Assert.AreEqual(
+                    0,
+                    noSummon.PlayerLockingDamageEvents,
+                    "Routine pressure should not turn every player hit into a locking reaction.");
+                Assert.Greater(
+                    gunOnly.BossNonLockingDamageEvents,
+                    0,
+                    "Gun-only boss chip should stay readable as non-locking damage.");
+                Assert.AreEqual(
+                    0,
+                    gunOnly.BossLockingDamageEvents,
+                    "Gun-only chip should not masquerade as a major punish hit.");
+                Assert.Greater(
+                    intended.BossLockingDamageEvents,
+                    0,
+                    "Skill1 follow-up should register as a true locking/major hit event.");
+                Assert.GreaterOrEqual(
+                    blockedRecovery.BossLockingDamageEvents,
+                    intended.BossLockingDamageEvents,
+                    "Counter recovery final punish should preserve at least the clean route's major-hit read.");
+                Assert.AreEqual(
+                    blockedRecovery.BossLockingDamageEvents,
+                    blockedRecovery.BossFullBodyEligibleDamageEvents,
+                    "Boss punish locking damage should remain full-body-eligible unless a softer major-hit profile is introduced.");
             }
             finally
             {
@@ -806,6 +835,24 @@ namespace DimensionBrawl.Tests
             }
 
             builder.AppendLine();
+            builder.AppendLine("## Damage Response Policy");
+            builder.AppendLine("| Policy | Player non-lock/lock/full | Boss non-lock/lock/full | Close non-lock/lock/full |");
+            builder.AppendLine("|---|---:|---:|---:|");
+            for (int i = 0; i < results.Count; i++)
+            {
+                PolicyMetrics result = results[i];
+                builder.Append("| ");
+                builder.Append(result.Policy);
+                builder.Append(" | ");
+                builder.Append($"{result.PlayerNonLockingDamageEvents}/{result.PlayerLockingDamageEvents}/{result.PlayerFullBodyEligibleDamageEvents}");
+                builder.Append(" | ");
+                builder.Append($"{result.BossNonLockingDamageEvents}/{result.BossLockingDamageEvents}/{result.BossFullBodyEligibleDamageEvents}");
+                builder.Append(" | ");
+                builder.Append($"{result.CloseThreatNonLockingDamageEvents}/{result.CloseThreatLockingDamageEvents}/{result.CloseThreatFullBodyEligibleDamageEvents}");
+                builder.AppendLine(" |");
+            }
+
+            builder.AppendLine();
             builder.AppendLine("## Boss Pressure Screen");
             builder.AppendLine("| Policy | Boss releases | Boss screen blocks | Skill1 blocked | Max screens | Remaining blocks | Boss blocked follow-up |");
             builder.AppendLine("|---|---:|---:|---:|---:|---:|---|");
@@ -849,6 +896,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Frontline exposure split: no-action enemy-only {FormatSeconds(noSummon.EnemyOnlyFrontlineSeconds)}, gun-only enemy-only {FormatSeconds(gunOnly.EnemyOnlyFrontlineSeconds)}, intended ally-only {FormatSeconds(intended.AllyOnlyFrontlineSeconds)} / contested {FormatSeconds(intended.ContestedFrontlineSeconds)}.");
             builder.AppendLine($"- Enemy pressure actor cost: no-action clashes {noSummon.EnemyFrontlineClashes} / body hits {noSummon.EnemyFrontlineBodyHits} / clash damage {noSummon.EnemyFrontlineClashDamage:0.0}; intended route clashes {intended.EnemyFrontlineClashes} / body hits {intended.EnemyFrontlineBodyHits}.");
             builder.AppendLine($"- Hit reaction split: boss-screen recovery produced {blockedRecovery.TotalSummonDamageFlashes} summon damage flashes, {blockedRecovery.TotalSummonFullBodyHitReactions} full-body hit reactions, and {blockedRecovery.TotalNonLockingSummonDamageCues} non-locking damage cues.");
+            builder.AppendLine($"- Damage response split: gun-only boss chip {gunOnly.BossNonLockingDamageEvents}/{gunOnly.BossLockingDamageEvents} non-lock/lock, intended Skill1 boss hits {intended.BossNonLockingDamageEvents}/{intended.BossLockingDamageEvents}, boss-screen recovery {blockedRecovery.BossNonLockingDamageEvents}/{blockedRecovery.BossLockingDamageEvents}.");
             builder.AppendLine($"- Missed follow-up branch: `{counterRecovery.ResultKind}` with counter source `{counterRecovery.CounterWaveSource}`, final window `{counterRecovery.CounterWaveFinalWindowState}`, and Skill1 hits {counterRecovery.SkillProjectileHits}.");
             builder.AppendLine($"- Boss-screen branch: boss releases {blockedFollowup.BossPressureSummonReleases}, blocks {blockedFollowup.BossPressureScreenBlocks}, Skill1 projectiles blocked {blockedFollowup.SkillProjectilesBlockedByBossScreen}, boss-blocked follow-up `{blockedFollowup.BossBlockedSkill1Followup}`.");
             builder.AppendLine($"- Boss-screen ignored branch: `{ignoredRecovery.ResultKind}` for {FormatSeconds(ignoredRecovery.ElapsedSeconds)} with enemy clashes {ignoredRecovery.EnemyFrontlineClashes}, body hits {ignoredRecovery.EnemyFrontlineBodyHits}, and player damage {ignoredRecovery.PlayerDamageTaken:0.0}.");
@@ -1006,6 +1054,15 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"allySummonSuppressedHitReactions\": {result.AllySummonSuppressedHitReactions},");
                 builder.AppendLine($"      \"allySummonNonLockingDamageCues\": {result.AllySummonNonLockingDamageCues},");
                 builder.AppendLine($"      \"allySummonLockingDamageCues\": {result.AllySummonLockingDamageCues},");
+                builder.AppendLine($"      \"playerNonLockingDamageEvents\": {result.PlayerNonLockingDamageEvents},");
+                builder.AppendLine($"      \"playerLockingDamageEvents\": {result.PlayerLockingDamageEvents},");
+                builder.AppendLine($"      \"playerFullBodyEligibleDamageEvents\": {result.PlayerFullBodyEligibleDamageEvents},");
+                builder.AppendLine($"      \"bossNonLockingDamageEvents\": {result.BossNonLockingDamageEvents},");
+                builder.AppendLine($"      \"bossLockingDamageEvents\": {result.BossLockingDamageEvents},");
+                builder.AppendLine($"      \"bossFullBodyEligibleDamageEvents\": {result.BossFullBodyEligibleDamageEvents},");
+                builder.AppendLine($"      \"closeThreatNonLockingDamageEvents\": {result.CloseThreatNonLockingDamageEvents},");
+                builder.AppendLine($"      \"closeThreatLockingDamageEvents\": {result.CloseThreatLockingDamageEvents},");
+                builder.AppendLine($"      \"closeThreatFullBodyEligibleDamageEvents\": {result.CloseThreatFullBodyEligibleDamageEvents},");
                 builder.AppendLine($"      \"routeShape\": \"{JsonEscape(ResolveRouteShape(result))}\",");
                 builder.AppendLine($"      \"routeStability01\": {result.RouteStability01:0.###},");
                 builder.AppendLine($"      \"minRouteStability01\": {result.MinRouteStability01:0.###},");
@@ -1673,16 +1730,52 @@ namespace DimensionBrawl.Tests
             private void OnPlayerDamaged(DamageInfo damageInfo)
             {
                 Metrics.PlayerDamageTaken += damageInfo.Amount;
+                RecordDamageResponse(
+                    damageInfo,
+                    () => Metrics.PlayerNonLockingDamageEvents++,
+                    () => Metrics.PlayerLockingDamageEvents++,
+                    () => Metrics.PlayerFullBodyEligibleDamageEvents++);
             }
 
             private void OnBossDamaged(DamageInfo damageInfo)
             {
                 Metrics.BossDamageTaken += damageInfo.Amount;
+                RecordDamageResponse(
+                    damageInfo,
+                    () => Metrics.BossNonLockingDamageEvents++,
+                    () => Metrics.BossLockingDamageEvents++,
+                    () => Metrics.BossFullBodyEligibleDamageEvents++);
             }
 
             private void OnCloseThreatDamaged(DamageInfo damageInfo)
             {
                 Metrics.CloseThreatDamageTaken += damageInfo.Amount;
+                RecordDamageResponse(
+                    damageInfo,
+                    () => Metrics.CloseThreatNonLockingDamageEvents++,
+                    () => Metrics.CloseThreatLockingDamageEvents++,
+                    () => Metrics.CloseThreatFullBodyEligibleDamageEvents++);
+            }
+
+            private static void RecordDamageResponse(
+                DamageInfo damageInfo,
+                Action recordNonLocking,
+                Action recordLocking,
+                Action recordFullBodyEligible)
+            {
+                if (DamageResponsePolicyUtility.InterruptsAction(damageInfo.ControlLockPolicy))
+                {
+                    recordLocking();
+                }
+                else
+                {
+                    recordNonLocking();
+                }
+
+                if (DamageResponsePolicyUtility.PlaysFullBodyHitAnimation(damageInfo))
+                {
+                    recordFullBodyEligible();
+                }
             }
 
             private void OnSummonPressureBlocked(int tier)
@@ -1855,6 +1948,15 @@ namespace DimensionBrawl.Tests
                 EnemySummonFullBodyHitReactions + AllySummonFullBodyHitReactions;
             public int TotalNonLockingSummonDamageCues =>
                 EnemySummonNonLockingDamageCues + AllySummonNonLockingDamageCues;
+            public int PlayerNonLockingDamageEvents { get; set; }
+            public int PlayerLockingDamageEvents { get; set; }
+            public int PlayerFullBodyEligibleDamageEvents { get; set; }
+            public int BossNonLockingDamageEvents { get; set; }
+            public int BossLockingDamageEvents { get; set; }
+            public int BossFullBodyEligibleDamageEvents { get; set; }
+            public int CloseThreatNonLockingDamageEvents { get; set; }
+            public int CloseThreatLockingDamageEvents { get; set; }
+            public int CloseThreatFullBodyEligibleDamageEvents { get; set; }
             public float RouteStability01 { get; set; }
             public float MinRouteStability01 { get; set; } = 1f;
             public string RouteStabilityBand { get; set; } = "Unknown";
