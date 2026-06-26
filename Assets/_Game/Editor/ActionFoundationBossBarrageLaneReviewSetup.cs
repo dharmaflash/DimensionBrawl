@@ -5486,6 +5486,8 @@ namespace DimensionBrawl.Editor
             SetFloat(screenCuePresenter, "maxDamageVignetteAlpha", 0.42f);
             SetFloat(screenCuePresenter, "maxDamageFlashAlpha", 0.11f);
             SetFloat(screenCuePresenter, "damageVignetteSeconds", 0.34f);
+            SetFloat(screenCuePresenter, "pressureDamageFeedbackScale", 0.58f);
+            SetFloat(screenCuePresenter, "controlLockDamageExtraSeconds", 0.10f);
             SetFloat(screenCuePresenter, "heavyDamageExtraSeconds", 0.14f);
             SetFloat(screenCuePresenter, "heavyDamageHealthRatio", 0.26f);
             SetFloat(screenCuePresenter, "criticalHealthThreshold", 0.32f);
@@ -9393,6 +9395,8 @@ namespace DimensionBrawl.Editor
             ValidateFloat(presenter, "maxDamageVignetteAlpha", 0.42f);
             ValidateFloat(presenter, "maxDamageFlashAlpha", 0.11f);
             ValidateFloat(presenter, "damageVignetteSeconds", 0.34f);
+            ValidateFloat(presenter, "pressureDamageFeedbackScale", 0.58f);
+            ValidateFloat(presenter, "controlLockDamageExtraSeconds", 0.10f);
             ValidateFloat(presenter, "heavyDamageExtraSeconds", 0.14f);
             ValidateFloat(presenter, "heavyDamageHealthRatio", 0.26f);
             ValidateFloat(presenter, "criticalHealthThreshold", 0.32f);

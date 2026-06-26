@@ -242,7 +242,58 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(presenter.HasActiveDamageFeedback);
                 Assert.Greater(presenter.LastDamageFeedbackIntensity, 0.5f);
                 Assert.Greater(presenter.LastDamageFeedbackDuration, presenter.DamageVignetteSeconds);
+                Assert.AreEqual(DamageResponsePolicy.Default, presenter.LastDamageResponsePolicy);
+                Assert.AreEqual(CombatControlLockPolicy.InterruptAction, presenter.LastDamageControlLockPolicy);
+                Assert.IsTrue(presenter.LastDamageFeedbackInterruptedAction);
+                Assert.AreEqual(1f, presenter.LastDamageFeedbackPolicyScale, 0.001f);
                 Assert.Greater(presenter.LastDamageScreenDirection.y, 0.9f);
+            }
+            finally
+            {
+                Object.DestroyImmediate(presenterObject);
+                Object.DestroyImmediate(playerObject);
+            }
+        }
+
+        [Test]
+        public void ActionScreenCuePresenterSoftensPressureDamageWithoutControlLock()
+        {
+            GameObject playerObject = new GameObject("Player");
+            GameObject presenterObject = new GameObject("ScreenCuePresenter");
+            try
+            {
+                CombatHealth playerHealth = playerObject.AddComponent<CombatHealth>();
+                playerHealth.ConfigureTeam(DamageTeam.Player);
+                playerHealth.ConfigureMaxHealth(120f);
+
+                ActionScreenCuePresenter presenter = presenterObject.AddComponent<ActionScreenCuePresenter>();
+                presenter.Configure(null, playerHealth, null, null, null, null, null, null, null, null, null);
+
+                Assert.IsTrue(playerHealth.TryApplyDamage(new DamageInfo(
+                    null,
+                    DamageTeam.Enemy,
+                    36f,
+                    playerObject.transform.position,
+                    Vector3.back,
+                    0f,
+                    DamageResponsePolicy.FlashOnly,
+                    CombatControlLockPolicy.None)));
+
+                float expectedDuration =
+                    (presenter.DamageVignetteSeconds + presenter.HeavyDamageExtraSeconds)
+                    * presenter.PressureDamageFeedbackScale;
+                float expectedIntensity = Mathf.Clamp01((0.54f + 0.30f) * presenter.PressureDamageFeedbackScale);
+
+                Assert.AreEqual("Player.Damaged", presenter.LastCueId);
+                Assert.AreEqual(1, presenter.PlayerDamageCueRequestCount);
+                Assert.AreEqual(1, presenter.DamageFeedbackRequestCount);
+                Assert.AreEqual(DamageResponsePolicy.FlashOnly, presenter.LastDamageResponsePolicy);
+                Assert.AreEqual(CombatControlLockPolicy.None, presenter.LastDamageControlLockPolicy);
+                Assert.IsFalse(presenter.LastDamageFeedbackInterruptedAction);
+                Assert.AreEqual(presenter.PressureDamageFeedbackScale, presenter.LastDamageFeedbackPolicyScale, 0.001f);
+                Assert.AreEqual(expectedDuration, presenter.LastDamageFeedbackDuration, 0.001f);
+                Assert.AreEqual(expectedIntensity, presenter.LastDamageFeedbackIntensity, 0.001f);
+                Assert.Less(presenter.LastDamageFeedbackDuration, presenter.DamageVignetteSeconds);
             }
             finally
             {

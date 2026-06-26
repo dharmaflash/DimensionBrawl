@@ -43,6 +43,8 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Range(0f, 0.65f)] private float maxDamageVignetteAlpha = 0.42f;
         [SerializeField, Range(0f, 0.3f)] private float maxDamageFlashAlpha = 0.11f;
         [SerializeField, Min(0.01f)] private float damageVignetteSeconds = 0.34f;
+        [SerializeField, Range(0.1f, 1f)] private float pressureDamageFeedbackScale = 0.58f;
+        [SerializeField, Min(0f)] private float controlLockDamageExtraSeconds = 0.10f;
         [SerializeField, Min(0f)] private float heavyDamageExtraSeconds = 0.14f;
         [SerializeField, Range(0.01f, 1f)] private float heavyDamageHealthRatio = 0.26f;
         [SerializeField, Range(0f, 0.45f)] private float criticalHealthThreshold = 0.32f;
@@ -122,6 +124,10 @@ namespace DimensionBrawl.Presentation
         private float lastCueIntensity;
         private float lastDamageFeedbackIntensity;
         private float lastDamageFeedbackDuration;
+        private float lastDamageFeedbackPolicyScale = 1f;
+        private DamageResponsePolicy lastDamageResponsePolicy = DamageResponsePolicy.Default;
+        private CombatControlLockPolicy lastDamageControlLockPolicy = CombatControlLockPolicy.InterruptAction;
+        private bool lastDamageFeedbackInterruptedAction;
         private Vector2 lastDamageScreenDirection = Vector2.zero;
         private int lastEnergyCueTier;
         private int lastFrontlineBeatIndex = -1;
@@ -146,6 +152,8 @@ namespace DimensionBrawl.Presentation
         public float MaxDamageVignetteAlpha => maxDamageVignetteAlpha;
         public float MaxDamageFlashAlpha => maxDamageFlashAlpha;
         public float DamageVignetteSeconds => damageVignetteSeconds;
+        public float PressureDamageFeedbackScale => pressureDamageFeedbackScale;
+        public float ControlLockDamageExtraSeconds => controlLockDamageExtraSeconds;
         public float HeavyDamageExtraSeconds => heavyDamageExtraSeconds;
         public float HeavyDamageHealthRatio => heavyDamageHealthRatio;
         public float CriticalHealthThreshold => criticalHealthThreshold;
@@ -176,6 +184,10 @@ namespace DimensionBrawl.Presentation
         public float LastCueIntensity => lastCueIntensity;
         public float LastDamageFeedbackIntensity => lastDamageFeedbackIntensity;
         public float LastDamageFeedbackDuration => lastDamageFeedbackDuration;
+        public float LastDamageFeedbackPolicyScale => lastDamageFeedbackPolicyScale;
+        public DamageResponsePolicy LastDamageResponsePolicy => lastDamageResponsePolicy;
+        public CombatControlLockPolicy LastDamageControlLockPolicy => lastDamageControlLockPolicy;
+        public bool LastDamageFeedbackInterruptedAction => lastDamageFeedbackInterruptedAction;
         public Vector2 LastDamageScreenDirection => lastDamageScreenDirection;
         public int LastEnergyCueTier => lastEnergyCueTier;
         public int LastFrontlineBeatIndex => lastFrontlineBeatIndex;
@@ -316,11 +328,17 @@ namespace DimensionBrawl.Presentation
             float healthScale = playerHealth != null && playerHealth.MaxHealth > 0f
                 ? Mathf.Clamp01(damageInfo.Amount / playerHealth.MaxHealth)
                 : 0f;
+            float policyScale = ResolveDamageFeedbackPolicyScale(damageInfo);
+            bool interruptsAction = DamageResponsePolicyUtility.InterruptsAction(damageInfo.ControlLockPolicy);
+            lastDamageResponsePolicy = damageInfo.ResponsePolicy;
+            lastDamageControlLockPolicy = damageInfo.ControlLockPolicy;
+            lastDamageFeedbackInterruptedAction = interruptsAction;
+            lastDamageFeedbackPolicyScale = policyScale;
             RequestScreenCue(
                 "Player.Damaged",
                 damagedColor,
-                0.20f,
-                0.74f + healthScale * 0.42f,
+                0.20f * policyScale,
+                (0.74f + healthScale * 0.42f) * policyScale,
                 ScreenCueCategory.Player);
             RequestDamageFeedback(damageInfo, healthScale);
         }
@@ -608,16 +626,32 @@ namespace DimensionBrawl.Presentation
             float healthDanger01 = playerHealth != null
                 ? Mathf.Clamp01((criticalHealthThreshold - playerHealth.HealthRatio) / Mathf.Max(0.01f, criticalHealthThreshold))
                 : 0f;
-            float safeDuration = damageVignetteSeconds + heavyDamageExtraSeconds * Mathf.Max(heavyDamage01, healthDanger01);
+            float policyScale = ResolveDamageFeedbackPolicyScale(damageInfo);
+            bool interruptsAction = DamageResponsePolicyUtility.InterruptsAction(damageInfo.ControlLockPolicy);
+            float controlLockExtraSeconds = interruptsAction ? controlLockDamageExtraSeconds : 0f;
+            float safeDuration =
+                (damageVignetteSeconds + heavyDamageExtraSeconds * Mathf.Max(heavyDamage01, healthDanger01)) * policyScale
+                + controlLockExtraSeconds;
             damageFeedbackDuration = Mathf.Max(0.01f, safeDuration);
             damageFeedbackTimer = damageFeedbackDuration;
-            damageFeedbackIntensity = Mathf.Clamp01(0.54f + heavyDamage01 * 0.30f + healthDanger01 * 0.24f);
+            damageFeedbackIntensity = Mathf.Clamp01((0.54f + heavyDamage01 * 0.30f + healthDanger01 * 0.24f) * policyScale);
             damageScreenDirection = ResolveDamageScreenDirection(damageInfo.Direction);
             criticalHealthPulseTimer = Mathf.Max(criticalHealthPulseTimer, criticalHealthPulseSeconds * healthDanger01);
             damageFeedbackRequestCount++;
+            lastDamageResponsePolicy = damageInfo.ResponsePolicy;
+            lastDamageControlLockPolicy = damageInfo.ControlLockPolicy;
+            lastDamageFeedbackInterruptedAction = interruptsAction;
+            lastDamageFeedbackPolicyScale = policyScale;
             lastDamageFeedbackIntensity = damageFeedbackIntensity;
             lastDamageFeedbackDuration = damageFeedbackDuration;
             lastDamageScreenDirection = damageScreenDirection;
+        }
+
+        private float ResolveDamageFeedbackPolicyScale(DamageInfo damageInfo)
+        {
+            return DamageResponsePolicyUtility.InterruptsAction(damageInfo.ControlLockPolicy)
+                ? 1f
+                : Mathf.Clamp(pressureDamageFeedbackScale, 0.1f, 1f);
         }
 
         private bool ShouldSuppressScreenCue(ScreenCueCategory category)

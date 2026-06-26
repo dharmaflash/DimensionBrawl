@@ -1165,6 +1165,8 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(0.42f, screenCuePresenter.MaxDamageVignetteAlpha, 0.001f);
             Assert.AreEqual(0.11f, screenCuePresenter.MaxDamageFlashAlpha, 0.001f);
             Assert.AreEqual(0.34f, screenCuePresenter.DamageVignetteSeconds, 0.001f);
+            Assert.AreEqual(0.58f, screenCuePresenter.PressureDamageFeedbackScale, 0.001f);
+            Assert.AreEqual(0.10f, screenCuePresenter.ControlLockDamageExtraSeconds, 0.001f);
             Assert.AreEqual(0.14f, screenCuePresenter.HeavyDamageExtraSeconds, 0.001f);
             Assert.AreEqual(0.26f, screenCuePresenter.HeavyDamageHealthRatio, 0.001f);
             Assert.AreEqual(0.32f, screenCuePresenter.CriticalHealthThreshold, 0.001f);

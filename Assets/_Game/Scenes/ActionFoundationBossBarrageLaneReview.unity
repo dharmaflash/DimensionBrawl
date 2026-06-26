@@ -10615,6 +10615,8 @@ MonoBehaviour:
   maxDamageVignetteAlpha: 0.42
   maxDamageFlashAlpha: 0.11
   damageVignetteSeconds: 0.34
+  pressureDamageFeedbackScale: 0.58
+  controlLockDamageExtraSeconds: 0.1
   heavyDamageExtraSeconds: 0.14
   heavyDamageHealthRatio: 0.26
   criticalHealthThreshold: 0.32

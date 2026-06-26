@@ -21265,6 +21265,20 @@ MonoBehaviour:
   maxFullScreenAlpha: 0.1
   maxEdgeAlpha: 0.26
   edgeThickness: 104
+  useDamageScreenFeedback: 1
+  maxDamageVignetteAlpha: 0.42
+  maxDamageFlashAlpha: 0.11
+  damageVignetteSeconds: 0.34
+  pressureDamageFeedbackScale: 0.58
+  controlLockDamageExtraSeconds: 0.1
+  heavyDamageExtraSeconds: 0.14
+  heavyDamageHealthRatio: 0.26
+  criticalHealthThreshold: 0.32
+  criticalHealthPulseAlpha: 0.13
+  criticalHealthPulseSeconds: 0.9
+  criticalHealthPulseRate: 2.3
+  damageDirectionAccentAlpha: 0.24
+  damageDirectionAccentThickness: 178
   dodgeColor: {r: 0.18, g: 0.92, b: 1, a: 1}
   rangedFireColor: {r: 0.48, g: 0.95, b: 1, a: 1}
   hitColor: {r: 1, g: 0.92, b: 0.46, a: 1}
