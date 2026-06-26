@@ -5560,7 +5560,6 @@ namespace DimensionBrawl.Editor
             SetObjectReference(proxyTutorialRunner, "targetResolver", proxyTargetResolver);
             SetObjectReference(proxyTutorialRunner, "overlayPresenter", proxyOverlayPresenter);
             SetObjectReference(proxyTutorialRunner, "combatObserver", proxyTutorialObserver);
-            SetBool(proxyTutorialRunner, "playTutorialOverlayOnEnable", false);
             SetBool(proxyTutorialRunner, "startFirstStepOnEnable", true);
             SetBool(proxyTutorialRunner, "autoAdvanceOnCompletion", true);
 
@@ -9568,7 +9567,6 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(tutorialRunner, "targetResolver", targetResolver);
             ValidateObjectReference(tutorialRunner, "overlayPresenter", overlayPresenter);
             ValidateObjectReference(tutorialRunner, "combatObserver", tutorialObserver);
-            ValidateBool(tutorialRunner, "playTutorialOverlayOnEnable", false);
             ValidateBool(tutorialRunner, "startFirstStepOnEnable", true);
             ValidateBool(tutorialRunner, "autoAdvanceOnCompletion", true);
             if (!overlayPresenter.HasCanvasOverlay)

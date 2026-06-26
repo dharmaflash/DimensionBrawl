@@ -17,7 +17,6 @@ namespace DimensionBrawl.UI
 
         [Header("Playback")]
         [SerializeField] private bool useDefaultP0MappingsWhenCatalogMissing = true;
-        [SerializeField] private bool playTutorialOverlayOnEnable;
         [SerializeField] private bool startFirstStepOnEnable;
         [SerializeField] private bool autoAdvanceOnCompletion;
 
@@ -46,7 +45,6 @@ namespace DimensionBrawl.UI
         public ProxyCombatHudInputEvent LastRejectedInput => lastRejectedInput;
         public ProxyCombatHudInputEvent LastAcceptedInput => lastAcceptedInput;
         public ProxyCombatHudInputPolicy ActiveInputPolicy => activeInputPolicy;
-        public bool PlayTutorialOverlayOnEnable => playTutorialOverlayOnEnable;
         public bool AutoAdvanceOnCompletion => autoAdvanceOnCompletion;
 
         private void Awake()
@@ -70,7 +68,7 @@ namespace DimensionBrawl.UI
         private void OnEnable()
         {
             SubscribeObserver();
-            if (playTutorialOverlayOnEnable && startFirstStepOnEnable && tutorialSteps.Length > 0)
+            if (startFirstStepOnEnable && tutorialSteps.Length > 0)
             {
                 StartStepAt(0);
             }

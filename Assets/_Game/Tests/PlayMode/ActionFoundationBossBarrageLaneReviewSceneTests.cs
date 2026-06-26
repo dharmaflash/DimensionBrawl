@@ -1155,8 +1155,6 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(mobileHud, proxyTargetSurface.ScreenRectProvider);
             Assert.AreSame(proxyTargetResolver, GetObjectReference<ProxyCombatHudTargetResolver>(proxyTutorialRunner, "targetResolver"));
             Assert.AreSame(proxyTutorialObserver, GetObjectReference<ProxyCombatHudTutorialObserver>(proxyTutorialRunner, "combatObserver"));
-            Assert.IsFalse(proxyTutorialRunner.PlayTutorialOverlayOnEnable);
-            Assert.IsFalse(proxyTutorialRunner.IsRunning);
             Assert.IsTrue(proxyTutorialRunner.AutoAdvanceOnCompletion);
             Assert.IsTrue(proxyTargetResolver.TryResolve(
                 "Hud.BasicAttackButton",
@@ -1294,8 +1292,6 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(tutorialRunner, inputBridge.TutorialRunner);
             Assert.AreSame(targetResolver, GetObjectReference<ProxyCombatHudTargetResolver>(tutorialRunner, "targetResolver"));
             Assert.AreSame(tutorialObserver, GetObjectReference<ProxyCombatHudTutorialObserver>(tutorialRunner, "combatObserver"));
-            Assert.IsFalse(tutorialRunner.PlayTutorialOverlayOnEnable);
-            Assert.IsFalse(tutorialRunner.IsRunning);
             Assert.IsTrue(tutorialRunner.AutoAdvanceOnCompletion);
             Assert.IsTrue(targetResolver.TryResolve(
                 "Hud.BasicAttackButton",
