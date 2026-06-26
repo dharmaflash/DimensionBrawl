@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using DimensionBrawl.UI;
 using DimensionBrawl.Player;
 using NUnit.Framework;
@@ -143,6 +144,39 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void TargetSurfacePublishesCanvasProxyTargetsForScreenRectProviders()
+        {
+            ProxyTutorialHarness harness = CreateHarness("TargetSurfaceRunner");
+            try
+            {
+                Canvas canvas = harness.Root.AddComponent<Canvas>();
+                canvas.renderMode = RenderMode.ScreenSpaceOverlay;
+                ProxyScreenRectProvider provider = harness.Root.AddComponent<ProxyScreenRectProvider>();
+                provider.SetRect("Hud.PartyPortraitSlots[1]", new Rect(100f, 220f, 96f, 64f));
+                ProxyCombatHudTargetSurface surface = harness.Root.AddComponent<ProxyCombatHudTargetSurface>();
+                surface.Configure(harness.Resolver, provider, canvas);
+                surface.RebuildDefaultTargets();
+                surface.SyncTargetRects();
+
+                Assert.IsTrue(harness.Resolver.TryResolve(
+                    "Hud.PartyPortraitSlots[1]",
+                    out System.Collections.Generic.IReadOnlyList<RectTransform> targets));
+                Assert.AreEqual(1, targets.Count);
+
+                Assert.IsTrue(harness.Runner.BeginMapping("character_switch_slot_1", "Call support QTE."));
+
+                Assert.IsTrue(harness.Presenter.Visible);
+                Assert.IsFalse(harness.Presenter.LastTextOnlyFallback);
+                Assert.AreEqual(1, harness.Presenter.LastTargetCount);
+                Assert.AreEqual("QTE READY", harness.Presenter.LastPromptLabel);
+            }
+            finally
+            {
+                Object.DestroyImmediate(harness.Root);
+            }
+        }
+
+        [Test]
         public void RunnerRequiresMatchingSwitchSlotCompletion()
         {
             ProxyTutorialHarness harness = CreateHarness("SwitchSlotRunner");
@@ -237,6 +271,40 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void PlayerActionObserverBridgeCompletesCoreCombatHudSteps()
+        {
+            ProxyTutorialHarness harness = CreateHarness("PlayerActionObserverRunner");
+            try
+            {
+                ProxyCombatHudPlayerActionObserverBridge bridge =
+                    harness.Root.AddComponent<ProxyCombatHudPlayerActionObserverBridge>();
+                bridge.Configure(harness.Observer, null, null, null);
+
+                Assert.IsTrue(harness.Runner.BeginMapping("basic_attack_primary", "Fire once."));
+                bridge.NotifyRangedBasicFireStarted();
+                Assert.IsFalse(harness.Runner.IsRunning);
+                Assert.AreEqual("basic_attack_primary", harness.Runner.LastCompletedMappingId);
+                Assert.AreEqual(ProxyCombatHudCompletionKind.BasicAttackAccepted, harness.Runner.LastCompletionReason);
+
+                Assert.IsTrue(harness.Runner.BeginMapping("dodge_matrix_primary", "Dodge once."));
+                bridge.NotifyDodgeStarted();
+                Assert.IsFalse(harness.Runner.IsRunning);
+                Assert.AreEqual("dodge_matrix_primary", harness.Runner.LastCompletedMappingId);
+                Assert.AreEqual(ProxyCombatHudCompletionKind.DodgeOrMatrixAccepted, harness.Runner.LastCompletionReason);
+
+                Assert.IsTrue(harness.Runner.BeginMapping("signature_skill_primary", "Cast skill."));
+                bridge.NotifySkill1Used(2);
+                Assert.IsFalse(harness.Runner.IsRunning);
+                Assert.AreEqual("signature_skill_primary", harness.Runner.LastCompletedMappingId);
+                Assert.AreEqual(ProxyCombatHudCompletionKind.SignatureSkillCast, harness.Runner.LastCompletionReason);
+            }
+            finally
+            {
+                Object.DestroyImmediate(harness.Root);
+            }
+        }
+
+        [Test]
         public void SummonQteObserverBridgeCompletesPortraitQteAndPartnerSkillSteps()
         {
             ProxyTutorialHarness harness = CreateHarness("SummonQteObserverRunner");
@@ -301,6 +369,21 @@ namespace DimensionBrawl.Tests
             RectTransform rectTransform = targetObject.AddComponent<RectTransform>();
             rectTransform.sizeDelta = new Vector2(64f, 64f);
             return rectTransform;
+        }
+
+        private sealed class ProxyScreenRectProvider : MonoBehaviour, IProxyCombatHudScreenRectProvider
+        {
+            private readonly Dictionary<string, Rect> rects = new Dictionary<string, Rect>();
+
+            public void SetRect(string proxyHudObject, Rect rect)
+            {
+                rects[proxyHudObject] = rect;
+            }
+
+            public bool TryGetProxyHudScreenRect(string proxyHudObject, out Rect screenRect)
+            {
+                return rects.TryGetValue(proxyHudObject, out screenRect);
+            }
         }
 
         private sealed class ProxyTutorialHarness

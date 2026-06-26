@@ -18,6 +18,7 @@ namespace DimensionBrawl.UI
         [Header("Playback")]
         [SerializeField] private bool useDefaultP0MappingsWhenCatalogMissing = true;
         [SerializeField] private bool startFirstStepOnEnable;
+        [SerializeField] private bool autoAdvanceOnCompletion;
 
         private PgrCombatHudProxyMapping activeMapping;
         private ProxyCombatHudTutorialStep activeStep;
@@ -44,6 +45,7 @@ namespace DimensionBrawl.UI
         public ProxyCombatHudInputEvent LastRejectedInput => lastRejectedInput;
         public ProxyCombatHudInputEvent LastAcceptedInput => lastAcceptedInput;
         public ProxyCombatHudInputPolicy ActiveInputPolicy => activeInputPolicy;
+        public bool AutoAdvanceOnCompletion => autoAdvanceOnCompletion;
 
         private void Awake()
         {
@@ -285,6 +287,10 @@ namespace DimensionBrawl.UI
             }
 
             PgrCombatHudProxyMapping completedMapping = activeMapping;
+            int nextStepIndex = activeStepIndex + 1;
+            bool shouldAutoAdvance = autoAdvanceOnCompletion
+                && activeStepIndex >= 0
+                && nextStepIndex < tutorialSteps.Length;
             running = false;
             hasActiveMapping = false;
             completedStepCount++;
@@ -292,6 +298,11 @@ namespace DimensionBrawl.UI
             lastCompletionReason = reason;
             overlayPresenter?.Hide();
             StepCompleted?.Invoke(completedMapping, reason);
+
+            if (shouldAutoAdvance)
+            {
+                StartStepAt(nextStepIndex);
+            }
         }
 
         private void SubscribeObserver()
