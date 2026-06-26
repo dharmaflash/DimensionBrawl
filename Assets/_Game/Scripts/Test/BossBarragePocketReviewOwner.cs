@@ -142,6 +142,7 @@ namespace DimensionBrawl.Test
         private float lastCounterWaveEntryPenalty;
         private float lastCounterWaveStabilityBonus;
         private float lastCounterWaveFinalWindowDuration;
+        private float lastCounterWaveFinalWindowRouteScale = 1f;
         private int bossPressureSummonReleasesAtReset;
         private int announcedStageBeatIndex;
         private RouteStabilityBand announcedRouteStabilityBand;
@@ -185,6 +186,7 @@ namespace DimensionBrawl.Test
         public string CounterWaveFinalWindowState => ResolveCounterWaveFinalWindowState();
         public string CounterWaveFinalWindowReadout => ResolveCounterWaveFinalWindowReadout();
         public float LastCounterWaveFinalWindowDuration => lastCounterWaveFinalWindowDuration;
+        public float LastCounterWaveFinalWindowRouteScale => lastCounterWaveFinalWindowRouteScale;
         public string RouteDecisionState => ResolveRouteDecisionState();
         public string RouteDecisionReadout => ResolveRouteDecisionReadout();
         public string CompletionRecordReadout => ResolveCompletionRecordReadout();
@@ -431,6 +433,7 @@ namespace DimensionBrawl.Test
             lastCounterWaveEntryPenalty = 0f;
             lastCounterWaveStabilityBonus = 0f;
             lastCounterWaveFinalWindowDuration = 0f;
+            lastCounterWaveFinalWindowRouteScale = 1f;
             bossPressureSummonReleasesAtReset = GetBossPressureSummonReleaseCount();
             highestSkillTier = 0;
             highestSummonTier = 0;
@@ -788,7 +791,9 @@ namespace DimensionBrawl.Test
             }
 
             int resolvedTier = Mathf.Clamp(ResolveObjectiveSummonTier(), 1, 3);
-            float followupWindowSeconds = ResolveSummonFollowupWindowSeconds(resolvedTier);
+            lastCounterWaveFinalWindowRouteScale = ResolveCounterWaveFinalWindowRouteScale();
+            float followupWindowSeconds =
+                ResolveSummonFollowupWindowSeconds(resolvedTier) * lastCounterWaveFinalWindowRouteScale;
             float followupEnergyPulse = ResolveSummonFollowupEnergyPulse(resolvedTier);
             skillUsesAtSummonBreakStart = GetSkillUseCount();
             grantedSummonFollowupEnergy = false;
@@ -1082,6 +1087,25 @@ namespace DimensionBrawl.Test
         private float ResolveCounterWaveStabilizeRouteBonus01()
         {
             return stageProfile != null ? stageProfile.CounterWaveStabilizeRouteBonus01 : 0f;
+        }
+
+        private float ResolveCounterWaveFinalWindowRouteScale()
+        {
+            if (!IsRouteStabilityActive)
+            {
+                return 1f;
+            }
+
+            return CurrentRouteStabilityBand switch
+            {
+                RouteStabilityBand.Critical => stageProfile != null
+                    ? stageProfile.CriticalCounterWaveFinalWindowScale
+                    : 0.65f,
+                RouteStabilityBand.Unstable => stageProfile != null
+                    ? stageProfile.UnstableCounterWaveFinalWindowScale
+                    : 0.85f,
+                _ => 1f
+            };
         }
 
         private int ResolveCurrentPressureSlotIndex()

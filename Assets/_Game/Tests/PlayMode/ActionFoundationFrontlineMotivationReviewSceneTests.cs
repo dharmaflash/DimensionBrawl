@@ -92,6 +92,8 @@ namespace DimensionBrawl.Tests
             Assert.Greater(
                 stageProfile.CounterWaveStabilizeRouteBonus01,
                 stageProfile.CounterWaveEntryRoutePenalty01);
+            Assert.That(stageProfile.UnstableCounterWaveFinalWindowScale, Is.InRange(0.5f, 0.95f));
+            Assert.Less(stageProfile.CriticalCounterWaveFinalWindowScale, stageProfile.UnstableCounterWaveFinalWindowScale);
             Assert.That(stageProfile.CounterWaveStabilizedCue, Does.Contain("held"));
             Assert.GreaterOrEqual(stageProfile.BeatCount, 6);
             Assert.GreaterOrEqual(stageProfile.PressureSlotCount, 6);
@@ -402,6 +404,8 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(1, cameraCueDriver.LastCounterWaveTier);
 
             float stabilityBeforeAnswer = pocketOwner.RouteStability01;
+            SetField(pocketOwner, "routeStability01", 0.24f);
+            float unstableStabilityBeforeAnswer = pocketOwner.RouteStability01;
             TickEnergyToTier(energyLadder, 1, 0.25f);
             int summonUseCountBeforeCounterAnswer = summonSlot1Action.TotalUseCount;
             Assert.IsTrue(
@@ -423,10 +427,17 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("opened", pocketOwner.CounterWaveFinalWindowState);
             Assert.AreEqual("final_followup", pocketOwner.CounterWaveFinalWindowReadout);
             Assert.AreEqual(stageProfile.CounterWaveStabilizeRouteBonus01, pocketOwner.LastCounterWaveStabilityBonus, 0.001f);
+            Assert.AreEqual(stageProfile.UnstableCounterWaveFinalWindowScale, pocketOwner.LastCounterWaveFinalWindowRouteScale, 0.001f);
+            Assert.Less(pocketOwner.LastCounterWaveFinalWindowRouteScale, 1f);
+            Assert.AreEqual(
+                unstableStabilityBeforeAnswer + stageProfile.CounterWaveStabilizeRouteBonus01,
+                pocketOwner.RouteStability01,
+                0.001f);
             Assert.Greater(pocketOwner.LastCounterWaveFinalWindowDuration, 0f);
             Assert.IsTrue(pocketOwner.IsSummonFollowupWindowActive);
             Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.SummonFollowup, pocketOwner.CurrentPhase);
-            Assert.Greater(pocketOwner.RouteStability01, stabilityBeforeAnswer);
+            Assert.Greater(pocketOwner.RouteStability01, unstableStabilityBeforeAnswer);
+            Assert.Less(pocketOwner.RouteStability01, stabilityBeforeAnswer);
             Assert.That(pocketOwner.ObjectiveCue, Does.Contain("Confirm"));
             Assert.That(reviewHud.CompactObjectiveReadout, Does.Contain("route window"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("Follow-Up Window"));

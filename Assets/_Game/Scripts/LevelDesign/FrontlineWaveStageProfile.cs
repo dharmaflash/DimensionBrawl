@@ -82,6 +82,8 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField, Range(0f, 1f)] private float followupHitRouteBonus01 = 0.20f;
         [SerializeField, Range(0f, 1f)] private float counterWaveEntryRoutePenalty01 = 0.10f;
         [SerializeField, Range(0f, 1f)] private float counterWaveStabilizeRouteBonus01 = 0.14f;
+        [SerializeField, Range(0.1f, 1f)] private float unstableCounterWaveFinalWindowScale = 0.85f;
+        [SerializeField, Range(0.1f, 1f)] private float criticalCounterWaveFinalWindowScale = 0.65f;
 
         [Header("Objective Copy")]
         [SerializeField, Min(1)] private int objectiveStepCount = 3;
@@ -160,6 +162,8 @@ namespace DimensionBrawl.LevelDesign
         public float FollowupHitRouteBonus01 => Mathf.Clamp01(followupHitRouteBonus01);
         public float CounterWaveEntryRoutePenalty01 => Mathf.Clamp01(counterWaveEntryRoutePenalty01);
         public float CounterWaveStabilizeRouteBonus01 => Mathf.Clamp01(counterWaveStabilizeRouteBonus01);
+        public float UnstableCounterWaveFinalWindowScale => Mathf.Clamp(unstableCounterWaveFinalWindowScale, 0.1f, 1f);
+        public float CriticalCounterWaveFinalWindowScale => Mathf.Clamp(criticalCounterWaveFinalWindowScale, 0.1f, 1f);
         public int ObjectiveStepCount => Mathf.Max(1, objectiveStepCount);
         public string StepPrefix => string.IsNullOrWhiteSpace(stepPrefix) ? "Route" : stepPrefix;
         public string PreThreatChargeCue => preThreatChargeCue;
