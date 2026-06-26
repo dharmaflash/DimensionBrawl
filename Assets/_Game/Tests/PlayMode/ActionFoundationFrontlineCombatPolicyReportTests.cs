@@ -40,6 +40,7 @@ namespace DimensionBrawl.Tests
         private const int BarrageShapePreviewCapacity = 16;
         private const float PhysicalBarrageProbeFlightSeconds = 3.4f;
         private const float PhysicalSkill1ProbeFlightSeconds = 2.2f;
+        private const float PhysicalNoPunishObservationSeconds = 8f;
         private const float SurvivalLimitProbeMaxSeconds = 45f;
 
         private enum PolicyKind
@@ -55,6 +56,7 @@ namespace DimensionBrawl.Tests
             BacklinePhysicalBarrageProbe,
             ForwardRiskPhysicalBarrageProbe,
             ForwardRiskPhysicalSummonBlockProbe,
+            ForwardRiskPhysicalSummonNoPunishProbe,
             ForwardRiskPhysicalSummonPunishProbe,
             IntendedRoute,
             IntendedDelayedFollowup,
@@ -88,6 +90,7 @@ namespace DimensionBrawl.Tests
                     PolicyKind.BacklinePhysicalBarrageProbe,
                     PolicyKind.ForwardRiskPhysicalBarrageProbe,
                     PolicyKind.ForwardRiskPhysicalSummonBlockProbe,
+                    PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe,
                     PolicyKind.ForwardRiskPhysicalSummonPunishProbe,
                     PolicyKind.IntendedRoute,
                     PolicyKind.IntendedDelayedFollowup,
@@ -129,6 +132,9 @@ namespace DimensionBrawl.Tests
                 PolicyMetrics forwardRiskPhysicalSummonBlock = RequireResult(
                     results,
                     PolicyKind.ForwardRiskPhysicalSummonBlockProbe);
+                PolicyMetrics forwardRiskPhysicalSummonNoPunish = RequireResult(
+                    results,
+                    PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe);
                 PolicyMetrics forwardRiskPhysicalSummonPunish = RequireResult(
                     results,
                     PolicyKind.ForwardRiskPhysicalSummonPunishProbe);
@@ -317,6 +323,34 @@ namespace DimensionBrawl.Tests
                     forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds,
                     0.35f,
                     "A physical summon block should still unlock the follow-up window as one combat beat.");
+                Assert.Greater(
+                    forwardRiskPhysicalSummonNoPunish.FollowupMissCount,
+                    0,
+                    "A physical summon block without Skill1 should eventually miss the opened follow-up window.");
+                Assert.Greater(
+                    forwardRiskPhysicalSummonNoPunish.CounterWaves,
+                    0,
+                    "A missed physical follow-up should enter counter pressure instead of silently succeeding.");
+                Assert.AreEqual(
+                    0,
+                    forwardRiskPhysicalSummonNoPunish.SkillProjectileHits,
+                    "The no-punish probe should not record a Skill1 hit.");
+                Assert.AreEqual(
+                    0f,
+                    forwardRiskPhysicalSummonNoPunish.BossDamageFromPlayer,
+                    0.01f,
+                    "The no-punish probe should not attribute boss payoff to the player.");
+                Assert.IsFalse(
+                    forwardRiskPhysicalSummonNoPunish.IsClearResult,
+                    "A summon block without the player-authored Skill1 confirm should not clear.");
+                Assert.AreEqual(
+                    0,
+                    forwardRiskPhysicalSummonNoPunish.ResultRecords,
+                    "A summon block without Skill1 should not commit a clean/counter/fail result during the observation window.");
+                Assert.Greater(
+                    forwardRiskPhysicalSummonNoPunish.UnansweredPressureBurdenShare01,
+                    forwardRiskPhysicalSummonPunish.UnansweredPressureBurdenShare01,
+                    "Leaving the physical follow-up unconfirmed should carry more unanswered pressure burden than the clean punish route.");
                 Assert.Greater(
                     forwardRiskPhysicalSummonPunish.SummonBlocks,
                     0,
@@ -724,6 +758,9 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.ForwardRiskPhysicalSummonBlockProbe:
                     yield return RunPhysicalSummonBlockProbe(context, ForwardEnergyProbeForwardRisk01);
                     break;
+                case PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe:
+                    yield return RunPhysicalSummonNoPunishProbe(context, ForwardEnergyProbeForwardRisk01);
+                    break;
                 case PolicyKind.ForwardRiskPhysicalSummonPunishProbe:
                     yield return RunPhysicalSummonPunishProbe(context, ForwardEnergyProbeForwardRisk01);
                     break;
@@ -884,6 +921,16 @@ namespace DimensionBrawl.Tests
             }
 
             yield return ApplyPhysicalBossBarrage(context, PhysicalBarrageProbeFlightSeconds);
+        }
+
+        private static IEnumerator RunPhysicalSummonNoPunishProbe(
+            CombatPolicyContext context,
+            float forwardRisk01)
+        {
+            yield return RunPhysicalSummonBlockProbe(context, forwardRisk01);
+            yield return Advance(context, PhysicalNoPunishObservationSeconds);
+            context.PocketOwner.Tick(0f);
+            context.Sample();
         }
 
         private static IEnumerator RunPhysicalSummonPunishProbe(
@@ -1787,6 +1834,8 @@ namespace DimensionBrawl.Tests
             }
 
             builder.AppendLine();
+            AppendUnconfirmedFollowupCost(builder, results);
+            builder.AppendLine();
             builder.AppendLine("## Forward-Risk Energy Split");
             builder.AppendLine("| Policy | Target risk | LV1 ready | Avg risk | Avg gain | Band seconds B/M/F | End tier/fill | Last band |");
             builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---|");
@@ -2137,6 +2186,9 @@ namespace DimensionBrawl.Tests
             PolicyMetrics forwardRiskPhysicalSummonBlock = RequireResult(
                 results,
                 PolicyKind.ForwardRiskPhysicalSummonBlockProbe);
+            PolicyMetrics forwardRiskPhysicalSummonNoPunish = RequireResult(
+                results,
+                PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe);
             PolicyMetrics forwardRiskPhysicalSummonPunish = RequireResult(
                 results,
                 PolicyKind.ForwardRiskPhysicalSummonPunishProbe);
@@ -2164,6 +2216,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Route stability split: no-action {FormatPercent01(noSummon.RouteStability01)} final / {FormatPercent01(noSummon.MinRouteStability01)} min, gun-only {FormatPercent01(gunOnly.RouteStability01)} / {FormatPercent01(gunOnly.MinRouteStability01)}, intended {FormatPercent01(intended.RouteStability01)} / {FormatPercent01(intended.MinRouteStability01)}.");
             builder.AppendLine($"- Forward-risk physical barrage: backline hits {backlinePhysicalBarrage.PhysicalBarragePlayerHits}/{backlinePhysicalBarrage.PhysicalBarrageTrackedProjectileCount}, damage {backlinePhysicalBarrage.PhysicalBarragePlayerDamage:0.0}; forward hits {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}, damage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerDamage:0.0}.");
             builder.AppendLine($"- Forward-risk physical summon block: blocks {forwardRiskPhysicalSummonBlock.SummonBlocks}, player hits {forwardRiskPhysicalSummonBlock.PhysicalBarragePlayerHits}/{forwardRiskPhysicalSummonBlock.PhysicalBarrageTrackedProjectileCount}, damage {forwardRiskPhysicalSummonBlock.PhysicalBarragePlayerDamage:0.0}, block->window {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)}.");
+            builder.AppendLine($"- Forward-risk physical no-punish: follow-up misses {forwardRiskPhysicalSummonNoPunish.FollowupMissCount}, counter waves {forwardRiskPhysicalSummonNoPunish.CounterWaves}, result `{forwardRiskPhysicalSummonNoPunish.ResultKind}`, unanswered burden {FormatPercent01(forwardRiskPhysicalSummonNoPunish.UnansweredPressureBurdenShare01)}, boss damage player/summon {forwardRiskPhysicalSummonNoPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonNoPunish.BossDamageFromAllySummon:0.0}.");
             builder.AppendLine($"- Forward-risk physical summon punish: `{forwardRiskPhysicalSummonPunish.ResultKind}` with blocks {forwardRiskPhysicalSummonPunish.SummonBlocks}, player hits {forwardRiskPhysicalSummonPunish.PhysicalBarragePlayerHits}/{forwardRiskPhysicalSummonPunish.PhysicalBarrageTrackedProjectileCount}, Skill1 hits {forwardRiskPhysicalSummonPunish.SkillProjectileHits}, boss damage {forwardRiskPhysicalSummonPunish.BossDamageTaken:0.0}, window->hit {FormatSeconds(forwardRiskPhysicalSummonPunish.FollowupWindowToHitSeconds)}.");
             builder.AppendLine($"- Boss damage attribution: physical block-only player/summon boss damage {forwardRiskPhysicalSummonBlock.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonBlock.BossDamageFromAllySummon:0.0}; physical punish player/summon boss damage {forwardRiskPhysicalSummonPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonPunish.BossDamageFromAllySummon:0.0}, player share {FormatPercent01(forwardRiskPhysicalSummonPunish.BossDamagePlayerShare01)}.");
             builder.AppendLine($"- Stage result hooks: no-summon fail `{ResolveResultHookClass(noSummonSurvival)}` / gun-only fail `{ResolveResultHookClass(gunOnlySurvival)}`; clean physical `{ResolveResultHookClass(forwardRiskPhysicalSummonPunish)}`; boss-screen recovery `{ResolveResultHookClass(blockedRecovery)}`. All committed hooks remain review-only analysis records, not payout/progression grants.");
@@ -2211,6 +2264,9 @@ namespace DimensionBrawl.Tests
             PolicyMetrics forwardRiskPhysicalBarrage = RequireResult(
                 results,
                 PolicyKind.ForwardRiskPhysicalBarrageProbe);
+            PolicyMetrics forwardRiskPhysicalSummonNoPunish = RequireResult(
+                results,
+                PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe);
             PolicyMetrics forwardRiskPhysicalSummonPunish = RequireResult(
                 results,
                 PolicyKind.ForwardRiskPhysicalSummonPunishProbe);
@@ -2224,6 +2280,9 @@ namespace DimensionBrawl.Tests
                 && gunOnlySurvival.FirstPlayerDownAtSeconds >= 0f
                 && gunOnlySurvival.FirstBossDownAtSeconds < 0f;
             bool axis2Pass = forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits > 0
+                && forwardRiskPhysicalSummonNoPunish.FollowupMissCount > 0
+                && forwardRiskPhysicalSummonNoPunish.CounterWaves > 0
+                && !forwardRiskPhysicalSummonNoPunish.IsClearResult
                 && forwardRiskPhysicalSummonPunish.SummonBlocks > 0
                 && forwardRiskPhysicalSummonPunish.PhysicalBarragePlayerHits == 0
                 && forwardRiskPhysicalSummonPunish.ResultKind == "CleanFollowupClear"
@@ -2246,7 +2305,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 $"| 1. Bad routes lose state/HP | {FormatGateStatus(axis1Pass)} | no-summon down {FormatSeconds(noSummonSurvival.FirstPlayerDownAtSeconds)}, gun-only down {FormatSeconds(gunOnlySurvival.FirstPlayerDownAtSeconds)}, gun-only boss down {FormatSeconds(gunOnlySurvival.FirstBossDownAtSeconds)} |");
             builder.AppendLine(
-                $"| 2. Block -> window -> Skill1 loop | {FormatGateStatus(axis2Pass)} | unblocked forward hits {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; physical punish blocks {forwardRiskPhysicalSummonPunish.SummonBlocks}, player hits {forwardRiskPhysicalSummonPunish.PhysicalBarragePlayerHits}/{forwardRiskPhysicalSummonPunish.PhysicalBarrageTrackedProjectileCount}, Skill1 hits {forwardRiskPhysicalSummonPunish.SkillProjectileHits}, `{forwardRiskPhysicalSummonPunish.ResultKind}` |");
+                $"| 2. Block -> window -> Skill1 loop | {FormatGateStatus(axis2Pass)} | unblocked forward hits {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; no-punish misses {forwardRiskPhysicalSummonNoPunish.FollowupMissCount}, counters {forwardRiskPhysicalSummonNoPunish.CounterWaves}, result `{forwardRiskPhysicalSummonNoPunish.ResultKind}`; physical punish blocks {forwardRiskPhysicalSummonPunish.SummonBlocks}, Skill1 hits {forwardRiskPhysicalSummonPunish.SkillProjectileHits}, `{forwardRiskPhysicalSummonPunish.ResultKind}` |");
             builder.AppendLine(
                 $"| 3. Hit response and presentation | {FormatGateStatus(axis3Pass)} | player routine hits {noSummon.PlayerNonLockingDamageEvents}/{noSummon.PlayerLockingDamageEvents} non-lock/lock; gun boss chip {gunOnly.BossNonLockingDamageEvents}/{gunOnly.BossLockingDamageEvents}; physical punish boss lock {forwardRiskPhysicalSummonPunish.BossLockingDamageEvents}, hit cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests} |");
             builder.AppendLine(
@@ -2287,6 +2346,49 @@ namespace DimensionBrawl.Tests
             }
         }
 
+        private static void AppendUnconfirmedFollowupCost(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results)
+        {
+            builder.AppendLine("## Unconfirmed Follow-up Cost");
+            builder.AppendLine("| Policy | Result | Follow-up hit/miss | Counter waves | Unanswered burden | Boss dmg player/summon | Skill1 hits | Result records |");
+            builder.AppendLine("|---|---|---:|---:|---:|---:|---:|---:|");
+            AppendUnconfirmedFollowupCostRow(
+                builder,
+                RequireResult(results, PolicyKind.ForwardRiskPhysicalSummonBlockProbe));
+            AppendUnconfirmedFollowupCostRow(
+                builder,
+                RequireResult(results, PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe));
+            AppendUnconfirmedFollowupCostRow(
+                builder,
+                RequireResult(results, PolicyKind.ForwardRiskPhysicalSummonPunishProbe));
+        }
+
+        private static void AppendUnconfirmedFollowupCostRow(
+            StringBuilder builder,
+            PolicyMetrics result)
+        {
+            builder.Append("| ");
+            builder.Append(result.Policy);
+            builder.Append(" | ");
+            builder.Append(EscapeTable(result.ResultKind));
+            builder.Append(" | ");
+            builder.Append(result.FollowupHitCount);
+            builder.Append("/");
+            builder.Append(result.FollowupMissCount);
+            builder.Append(" | ");
+            builder.Append(result.CounterWaves);
+            builder.Append(" | ");
+            builder.Append(FormatPercent01(result.UnansweredPressureBurdenShare01));
+            builder.Append(" | ");
+            builder.Append($"{result.BossDamageFromPlayer:0.0}/{result.BossDamageFromAllySummon:0.0}");
+            builder.Append(" | ");
+            builder.Append(result.SkillProjectileHits);
+            builder.Append(" | ");
+            builder.Append(result.ResultRecords);
+            builder.AppendLine(" |");
+        }
+
         private static void AppendArkDataCoverageSummary(
             StringBuilder builder,
             IReadOnlyList<PolicyMetrics> results)
@@ -2306,6 +2408,9 @@ namespace DimensionBrawl.Tests
             PolicyMetrics forwardRiskPhysicalSummonBlock = RequireResult(
                 results,
                 PolicyKind.ForwardRiskPhysicalSummonBlockProbe);
+            PolicyMetrics forwardRiskPhysicalSummonNoPunish = RequireResult(
+                results,
+                PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe);
             PolicyMetrics forwardRiskPhysicalSummonPunish = RequireResult(
                 results,
                 PolicyKind.ForwardRiskPhysicalSummonPunishProbe);
@@ -2333,6 +2438,8 @@ namespace DimensionBrawl.Tests
             bool combatPayloadMeasured = forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits > 0
                 && forwardRiskPhysicalSummonBlock.SummonBlocks > 0
                 && forwardRiskPhysicalSummonBlock.PhysicalBarragePlayerHits == 0
+                && forwardRiskPhysicalSummonNoPunish.FollowupMissCount > 0
+                && !forwardRiskPhysicalSummonNoPunish.IsClearResult
                 && forwardRiskPhysicalSummonPunish.SkillProjectileHits > 0
                 && forwardRiskPhysicalSummonPunish.BossLockingDamageEvents > 0
                 && forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests > 0
@@ -2367,7 +2474,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 "| CombatPayload runtime pipeline | "
                 + $"{FormatCoverageStatus(combatPayloadMeasured)} | "
-                + $"Target->Hit: forward barrage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; Block->Status: {forwardRiskPhysicalSummonBlock.SummonBlocks} blocks and {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)} to window; Skill1 Hit->Presentation: {forwardRiskPhysicalSummonPunish.SkillProjectileHits} hits with cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests}; payoff source player/summon {forwardRiskPhysicalSummonPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonPunish.BossDamageFromAllySummon:0.0} | "
+                + $"Target->Hit: forward barrage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; Block->Status: {forwardRiskPhysicalSummonBlock.SummonBlocks} blocks and {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)} to window; NoHit->Counter: miss {forwardRiskPhysicalSummonNoPunish.FollowupMissCount} / counter {forwardRiskPhysicalSummonNoPunish.CounterWaves}; Skill1 Hit->Presentation: {forwardRiskPhysicalSummonPunish.SkillProjectileHits} hits with cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests}; payoff source player/summon {forwardRiskPhysicalSummonPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonPunish.BossDamageFromAllySummon:0.0} | "
                 + "Candidate labels stay local test evidence, not fake universal opcodes. |");
             builder.AppendLine(
                 "| PGR state-lock and hit-response grammar | "
