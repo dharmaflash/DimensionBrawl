@@ -40,11 +40,14 @@ namespace DimensionBrawl.Tests
         private const int BarrageShapePreviewCapacity = 16;
         private const float PhysicalBarrageProbeFlightSeconds = 3.4f;
         private const float PhysicalSkill1ProbeFlightSeconds = 2.2f;
+        private const float SurvivalLimitProbeMaxSeconds = 45f;
 
         private enum PolicyKind
         {
             NoSummonNoFire,
             GunOnly,
+            NoSummonSurvivalLimit,
+            GunOnlySurvivalLimit,
             BacklineEnergyProbe,
             ForwardRiskEnergyProbe,
             BacklineBarrageProbe,
@@ -76,6 +79,8 @@ namespace DimensionBrawl.Tests
                 {
                     PolicyKind.NoSummonNoFire,
                     PolicyKind.GunOnly,
+                    PolicyKind.NoSummonSurvivalLimit,
+                    PolicyKind.GunOnlySurvivalLimit,
                     PolicyKind.BacklineEnergyProbe,
                     PolicyKind.ForwardRiskEnergyProbe,
                     PolicyKind.BacklineBarrageProbe,
@@ -109,6 +114,8 @@ namespace DimensionBrawl.Tests
                 PolicyMetrics delayedIntended = RequireResult(results, PolicyKind.IntendedDelayedFollowup);
                 PolicyMetrics noSummon = RequireResult(results, PolicyKind.NoSummonNoFire);
                 PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
+                PolicyMetrics noSummonSurvival = RequireResult(results, PolicyKind.NoSummonSurvivalLimit);
+                PolicyMetrics gunOnlySurvival = RequireResult(results, PolicyKind.GunOnlySurvivalLimit);
                 PolicyMetrics backlineEnergy = RequireResult(results, PolicyKind.BacklineEnergyProbe);
                 PolicyMetrics forwardRiskEnergy = RequireResult(results, PolicyKind.ForwardRiskEnergyProbe);
                 PolicyMetrics backlineBarrage = RequireResult(results, PolicyKind.BacklineBarrageProbe);
@@ -133,6 +140,34 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(File.Exists(ReportPath), "Frontline combat policy report should be written.");
                 Assert.IsTrue(File.Exists(JsonPath), "Frontline combat policy JSON should be written.");
                 Assert.Greater(intended.SummonBlocks, 0, "The intended route must prove summon interception changes the run.");
+                Assert.AreEqual(
+                    "PlayerDownFail",
+                    noSummonSurvival.ResultKind,
+                    "Long no-summon survival should eventually end through the canonical HP fail state.");
+                Assert.GreaterOrEqual(
+                    noSummonSurvival.FirstPlayerDownAtSeconds,
+                    0f,
+                    "Long no-summon survival should report the player-down time.");
+                Assert.LessOrEqual(
+                    noSummonSurvival.FirstPlayerDownAtSeconds,
+                    SurvivalLimitProbeMaxSeconds,
+                    "Long no-summon survival should fail before the survival probe cap.");
+                Assert.AreEqual(
+                    "PlayerDownFail",
+                    gunOnlySurvival.ResultKind,
+                    "Long gun-only survival should fail before basic shots can replace the summon route.");
+                Assert.GreaterOrEqual(
+                    gunOnlySurvival.FirstPlayerDownAtSeconds,
+                    0f,
+                    "Long gun-only survival should report the player-down time.");
+                Assert.Less(
+                    gunOnlySurvival.FirstBossDownAtSeconds,
+                    0f,
+                    "Gun-only pressure should not defeat the boss before the player fails.");
+                Assert.Less(
+                    gunOnlySurvival.FirstPlayerDownAtSeconds,
+                    SurvivalLimitProbeMaxSeconds,
+                    "Long gun-only survival should fail before the survival probe cap.");
                 Assert.GreaterOrEqual(
                     intended.BlockToFollowupWindowSeconds,
                     0f,
@@ -596,6 +631,12 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.GunOnly:
                     yield return RunGunOnly(context);
                     break;
+                case PolicyKind.NoSummonSurvivalLimit:
+                    yield return RunNoSummonSurvivalLimit(context);
+                    break;
+                case PolicyKind.GunOnlySurvivalLimit:
+                    yield return RunGunOnlySurvivalLimit(context);
+                    break;
                 case PolicyKind.BacklineEnergyProbe:
                     yield return RunEnergyRiskProbe(context, BacklineEnergyProbeForwardRisk01);
                     break;
@@ -665,6 +706,37 @@ namespace DimensionBrawl.Tests
             for (int i = 0; i < 5 && context.PlayerHealth.IsAlive; i++)
             {
                 yield return FireBasicAt(context, context.BossHealth, context.BossCollider);
+                yield return ApplyBossWave(context, BossWaveAnswer.PlayerTakesHit);
+                yield return Advance(context, 1.35f);
+            }
+        }
+
+        private static IEnumerator RunNoSummonSurvivalLimit(CombatPolicyContext context)
+        {
+            context.Metrics.SurvivalProbeMaxSeconds = SurvivalLimitProbeMaxSeconds;
+            while (context.PlayerHealth.IsAlive
+                && context.BossHealth.IsAlive
+                && context.Metrics.ElapsedSeconds < SurvivalLimitProbeMaxSeconds)
+            {
+                yield return ApplyBossWave(context, BossWaveAnswer.PlayerTakesHit);
+                yield return Advance(context, 2.25f);
+            }
+        }
+
+        private static IEnumerator RunGunOnlySurvivalLimit(CombatPolicyContext context)
+        {
+            context.Metrics.SurvivalProbeMaxSeconds = SurvivalLimitProbeMaxSeconds;
+            yield return DefeatCloseThreatWithBasicFire(context);
+            while (context.PlayerHealth.IsAlive
+                && context.BossHealth.IsAlive
+                && context.Metrics.ElapsedSeconds < SurvivalLimitProbeMaxSeconds)
+            {
+                yield return FireBasicAt(context, context.BossHealth, context.BossCollider);
+                if (!context.BossHealth.IsAlive)
+                {
+                    break;
+                }
+
                 yield return ApplyBossWave(context, BossWaveAnswer.PlayerTakesHit);
                 yield return Advance(context, 1.35f);
             }
@@ -1526,6 +1598,37 @@ namespace DimensionBrawl.Tests
             }
 
             builder.AppendLine();
+            builder.AppendLine("## Long Survival Limit");
+            builder.AppendLine("| Policy | Cap | Player down | Boss down | HP lost | Boss dmg | Result | Decision |");
+            builder.AppendLine("|---|---:|---:|---:|---:|---:|---|---|");
+            for (int i = 0; i < results.Count; i++)
+            {
+                PolicyMetrics result = results[i];
+                if (result.SurvivalProbeMaxSeconds <= 0f)
+                {
+                    continue;
+                }
+
+                builder.Append("| ");
+                builder.Append(result.Policy);
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.SurvivalProbeMaxSeconds));
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.FirstPlayerDownAtSeconds));
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.FirstBossDownAtSeconds));
+                builder.Append(" | ");
+                builder.Append(result.PlayerDamageTaken.ToString("0.0"));
+                builder.Append(" | ");
+                builder.Append(result.BossDamageTaken.ToString("0.0"));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(result.ResultKind));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(result.RouteDecision));
+                builder.AppendLine(" |");
+            }
+
+            builder.AppendLine();
             builder.AppendLine("## Route Evidence");
             builder.AppendLine("| Policy | Proof | Follow-up | Counter | Counter answer | Final window | Result record |");
             builder.AppendLine("|---|---|---|---|---|---|---|");
@@ -1923,6 +2026,8 @@ namespace DimensionBrawl.Tests
             PolicyMetrics delayedIntended = RequireResult(results, PolicyKind.IntendedDelayedFollowup);
             PolicyMetrics noSummon = RequireResult(results, PolicyKind.NoSummonNoFire);
             PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
+            PolicyMetrics noSummonSurvival = RequireResult(results, PolicyKind.NoSummonSurvivalLimit);
+            PolicyMetrics gunOnlySurvival = RequireResult(results, PolicyKind.GunOnlySurvivalLimit);
             PolicyMetrics backlineEnergy = RequireResult(results, PolicyKind.BacklineEnergyProbe);
             PolicyMetrics forwardRiskEnergy = RequireResult(results, PolicyKind.ForwardRiskEnergyProbe);
             PolicyMetrics backlineBarrage = RequireResult(results, PolicyKind.BacklineBarrageProbe);
@@ -1947,6 +2052,7 @@ namespace DimensionBrawl.Tests
             PolicyMetrics delayedBlockedRecovery = RequireResult(results, PolicyKind.BossScreenDelayedCounterRecovery);
             builder.AppendLine($"- Intended route prevented {Mathf.Max(0f, noSummon.PlayerDamageTaken - intended.PlayerDamageTaken):0.0} player damage versus no-action pressure.");
             builder.AppendLine($"- Gun-only dealt {gunOnly.BossDamageTaken:0.0} boss damage but ended as `{gunOnly.ResultKind}` because the route contract still needs summon pressure blocking.");
+            builder.AppendLine($"- Long survival limit: no-summon player down {FormatSeconds(noSummonSurvival.FirstPlayerDownAtSeconds)} / boss down {FormatSeconds(noSummonSurvival.FirstBossDownAtSeconds)}; gun-only player down {FormatSeconds(gunOnlySurvival.FirstPlayerDownAtSeconds)} / boss down {FormatSeconds(gunOnlySurvival.FirstBossDownAtSeconds)}.");
             builder.AppendLine($"- Skill1 punish split: gun-only boss damage {gunOnly.BossDamageTaken:0.0}, intended follow-up boss damage {intended.BossDamageTaken:0.0}.");
             builder.AppendLine($"- Late summon ended as `{late.ResultKind}` with {late.PlayerDamageTaken:0.0} damage taken, so the report can compare timing quality without changing the scene.");
             builder.AppendLine($"- Intended route currently reads as `{ResolveRouteShape(intended)}`: follow-up window {FormatSeconds(intended.FirstFollowupWindowAtSeconds)}, counter {FormatSeconds(intended.FirstCounterWaveAtSeconds)}, Skill1 hit {FormatSeconds(intended.FirstFollowupHitAtSeconds)}.");
@@ -2095,7 +2201,10 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"elapsedSeconds\": {result.ElapsedSeconds:0.###},");
                 builder.AppendLine($"      \"playerHealthRemaining\": {result.PlayerHealthRemaining:0.###},");
                 builder.AppendLine($"      \"playerDamageTaken\": {result.PlayerDamageTaken:0.###},");
+                builder.AppendLine($"      \"firstPlayerDownAtSeconds\": {JsonNullableSeconds(result.FirstPlayerDownAtSeconds)},");
                 builder.AppendLine($"      \"bossDamageTaken\": {result.BossDamageTaken:0.###},");
+                builder.AppendLine($"      \"firstBossDownAtSeconds\": {JsonNullableSeconds(result.FirstBossDownAtSeconds)},");
+                builder.AppendLine($"      \"survivalProbeMaxSeconds\": {JsonNullableSeconds(result.SurvivalProbeMaxSeconds)},");
                 builder.AppendLine($"      \"closeThreatBasicHits\": {result.CloseThreatBasicHits},");
                 builder.AppendLine($"      \"bossBasicHits\": {result.BossBasicHits},");
                 builder.AppendLine($"      \"bossWaves\": {result.BossWaves},");
@@ -2626,6 +2735,16 @@ namespace DimensionBrawl.Tests
                 Metrics.PlayerHealthRemaining = PlayerHealth.CurrentHealth;
                 Metrics.BossHealthRemaining = BossHealth.CurrentHealth;
                 Metrics.CloseThreatHealthRemaining = CloseThreatHealth.CurrentHealth;
+                if (!PlayerHealth.IsAlive && Metrics.FirstPlayerDownAtSeconds < 0f)
+                {
+                    Metrics.FirstPlayerDownAtSeconds = Metrics.ElapsedSeconds;
+                }
+
+                if (!BossHealth.IsAlive && Metrics.FirstBossDownAtSeconds < 0f)
+                {
+                    Metrics.FirstBossDownAtSeconds = Metrics.ElapsedSeconds;
+                }
+
                 Metrics.RouteDecision = $"{PocketOwner.RouteDecisionState}({PocketOwner.RouteDecisionReadout})";
                 Metrics.CompletionReadout = PocketOwner.CompletionRecordReadout;
                 Metrics.RouteStability01 = PocketOwner.RouteStability01;
@@ -3458,12 +3577,15 @@ namespace DimensionBrawl.Tests
             public float PlayerHealthStart { get; set; }
             public float PlayerHealthRemaining { get; set; }
             public float PlayerDamageTaken { get; set; }
+            public float FirstPlayerDownAtSeconds { get; set; } = -1f;
             public float BossHealthStart { get; set; }
             public float BossHealthRemaining { get; set; }
             public float BossDamageTaken { get; set; }
+            public float FirstBossDownAtSeconds { get; set; } = -1f;
             public float CloseThreatHealthStart { get; set; }
             public float CloseThreatHealthRemaining { get; set; }
             public float CloseThreatDamageTaken { get; set; }
+            public float SurvivalProbeMaxSeconds { get; set; }
             public int BasicShots { get; set; }
             public int CloseThreatBasicHits { get; set; }
             public int BossBasicHits { get; set; }
