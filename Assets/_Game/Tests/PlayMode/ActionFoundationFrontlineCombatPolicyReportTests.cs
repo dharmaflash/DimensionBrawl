@@ -39,6 +39,7 @@ namespace DimensionBrawl.Tests
         private const float BarrageShapeProbeNearRadius = 1.25f;
         private const int BarrageShapePreviewCapacity = 16;
         private const float PhysicalBarrageProbeFlightSeconds = 3.4f;
+        private const float PhysicalSkill1ProbeFlightSeconds = 2.2f;
 
         private enum PolicyKind
         {
@@ -51,6 +52,7 @@ namespace DimensionBrawl.Tests
             BacklinePhysicalBarrageProbe,
             ForwardRiskPhysicalBarrageProbe,
             ForwardRiskPhysicalSummonBlockProbe,
+            ForwardRiskPhysicalSummonPunishProbe,
             IntendedRoute,
             IntendedDelayedFollowup,
             LateSummon,
@@ -81,6 +83,7 @@ namespace DimensionBrawl.Tests
                     PolicyKind.BacklinePhysicalBarrageProbe,
                     PolicyKind.ForwardRiskPhysicalBarrageProbe,
                     PolicyKind.ForwardRiskPhysicalSummonBlockProbe,
+                    PolicyKind.ForwardRiskPhysicalSummonPunishProbe,
                     PolicyKind.IntendedRoute,
                     PolicyKind.IntendedDelayedFollowup,
                     PolicyKind.LateSummon,
@@ -119,6 +122,9 @@ namespace DimensionBrawl.Tests
                 PolicyMetrics forwardRiskPhysicalSummonBlock = RequireResult(
                     results,
                     PolicyKind.ForwardRiskPhysicalSummonBlockProbe);
+                PolicyMetrics forwardRiskPhysicalSummonPunish = RequireResult(
+                    results,
+                    PolicyKind.ForwardRiskPhysicalSummonPunishProbe);
                 PolicyMetrics counterRecovery = RequireResult(results, PolicyKind.MissedFollowupCounterRecovery);
                 PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
                 PolicyMetrics ignoredRecovery = RequireResult(results, PolicyKind.BossScreenIgnoredNoRecovery);
@@ -231,6 +237,26 @@ namespace DimensionBrawl.Tests
                     forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds,
                     0.35f,
                     "A physical summon block should still unlock the follow-up window as one combat beat.");
+                Assert.Greater(
+                    forwardRiskPhysicalSummonPunish.SummonBlocks,
+                    0,
+                    "A physical summon-punish probe should still intercept real incoming boss projectiles.");
+                Assert.Less(
+                    forwardRiskPhysicalSummonPunish.PhysicalBarragePlayerHits,
+                    forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits,
+                    "A physical summon-punish route should reduce the forward-risk projectile hit count before the punish.");
+                Assert.Greater(
+                    forwardRiskPhysicalSummonPunish.SkillProjectileHits,
+                    0,
+                    "A physical summon-punish route should let a real Skill1 projectile hit the boss.");
+                Assert.AreEqual(
+                    "CleanFollowupClear",
+                    forwardRiskPhysicalSummonPunish.ResultKind,
+                    "A physical summon-punish route should close the block -> follow-up -> Skill1 loop as a clean route.");
+                Assert.LessOrEqual(
+                    forwardRiskPhysicalSummonPunish.FollowupWindowToHitSeconds,
+                    1.25f,
+                    "A physical summon-punish route should turn the block window into a prompt Skill1 hit.");
                 Assert.GreaterOrEqual(
                     noSummon.Top3PressureWindowShare01,
                     noSummon.PeakPressureWindowShare01,
@@ -591,6 +617,9 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.ForwardRiskPhysicalSummonBlockProbe:
                     yield return RunPhysicalSummonBlockProbe(context, ForwardEnergyProbeForwardRisk01);
                     break;
+                case PolicyKind.ForwardRiskPhysicalSummonPunishProbe:
+                    yield return RunPhysicalSummonPunishProbe(context, ForwardEnergyProbeForwardRisk01);
+                    break;
                 case PolicyKind.IntendedRoute:
                     yield return RunIntendedRoute(context);
                     break;
@@ -717,6 +746,40 @@ namespace DimensionBrawl.Tests
             }
 
             yield return ApplyPhysicalBossBarrage(context, PhysicalBarrageProbeFlightSeconds);
+        }
+
+        private static IEnumerator RunPhysicalSummonPunishProbe(
+            CombatPolicyContext context,
+            float forwardRisk01)
+        {
+            BossBarragePatternProfile physicalPattern = context.BossEmitter.CurrentPattern;
+            context.BossEmitter.SetFiringEnabled(false);
+            DeactivateActiveBossProjectiles();
+            yield return DefeatCloseThreatWithBasicFire(context);
+            MovePlayerToForwardRisk(context, forwardRisk01);
+            context.Metrics.PhysicalBarrageProbeTargetForwardRisk01 = Mathf.Clamp01(forwardRisk01);
+            context.Sample();
+            yield return ChargeEnergyToTier(context, 1, EnergyProbeMaxSeconds);
+
+            if (!context.SummonSlot1Action.TryUseSummonSlot1())
+            {
+                context.Metrics.Notes.Add($"physical summon punish blocked: {context.SummonSlot1Action.LastUseBlockedReason}");
+                yield break;
+            }
+
+            RecordSummonUse(context, false);
+            context.PocketOwner.Tick(0f);
+            context.Sample();
+            yield return Advance(context, 0.2f);
+            DeactivateActiveBossProjectiles();
+            context.BossEmitter.SetFiringEnabled(false);
+            context.BossEmitter.SetFiringEnabled(true);
+            if (!context.BossEmitter.QueuePriorityPattern(physicalPattern, 1))
+            {
+                context.Metrics.Notes.Add("physical summon punish priority barrage unavailable");
+            }
+
+            yield return ApplyPhysicalBossBarrageAndPunish(context, PhysicalBarrageProbeFlightSeconds);
         }
 
         private static IEnumerator RunIntendedRoute(CombatPolicyContext context)
@@ -978,10 +1041,132 @@ namespace DimensionBrawl.Tests
             yield return Advance(context, flightSeconds);
             Physics.SyncTransforms();
 
+            RecordPhysicalBossBarrageResults(context, projectiles, healthBefore);
+            DeactivateActiveBossProjectiles();
+            context.PocketOwner.Tick(0f);
+            context.Sample();
+        }
+
+        private static IEnumerator ApplyPhysicalBossBarrageAndPunish(
+            CombatPolicyContext context,
+            float flightSeconds)
+        {
+            BossBarragePatternProfile pattern = context.BossEmitter.CurrentPattern;
+            float healthBefore = context.PlayerHealth.CurrentHealth;
+            if (!context.BossEmitter.BeginWindup())
+            {
+                context.Metrics.Notes.Add("physical punish barrage windup unavailable");
+                yield break;
+            }
+
+            context.Metrics.PhysicalBarragePatternId = pattern != null ? pattern.PatternId : "unknown";
+            context.Metrics.PhysicalBarragePendingForwardRisk01 = context.BossEmitter.PendingForwardRisk01;
+            int spawned = context.BossEmitter.FirePendingWave();
+            context.Metrics.BossWaves++;
+            context.Metrics.BossProjectilesSpawned += spawned;
+            context.Metrics.PhysicalBarrageWaves++;
+            context.Metrics.PhysicalBarrageProjectilesSpawned += spawned;
+
+            BossBarrageProjectile[] bossProjectiles = FindActiveBossProjectiles();
+            context.Metrics.PhysicalBarrageTrackedProjectileCount += bossProjectiles.Length;
+            Physics.SyncTransforms();
+
+            float start = context.Metrics.ElapsedSeconds;
+            while (!context.PocketOwner.IsSummonFollowupWindowActive
+                && context.Metrics.ElapsedSeconds - start < Mathf.Min(1.0f, flightSeconds))
+            {
+                yield return Advance(context, 0.05f);
+            }
+
+            if (!context.PocketOwner.IsSummonFollowupWindowActive)
+            {
+                context.Metrics.Notes.Add("physical summon punish window did not open before Skill1");
+            }
+            else
+            {
+                yield return ConfirmSkill1FollowupPhysically(context, PhysicalSkill1ProbeFlightSeconds);
+            }
+
+            float elapsedSinceBarrage = context.Metrics.ElapsedSeconds - start;
+            if (elapsedSinceBarrage < flightSeconds)
+            {
+                yield return Advance(context, flightSeconds - elapsedSinceBarrage);
+            }
+
+            Physics.SyncTransforms();
+            RecordPhysicalBossBarrageResults(context, bossProjectiles, healthBefore);
+            DeactivateActiveBossProjectiles();
+            context.PocketOwner.Tick(0f);
+            context.Sample();
+        }
+
+        private static IEnumerator ConfirmSkill1FollowupPhysically(
+            CombatPolicyContext context,
+            float flightSeconds)
+        {
+            if (context.EnergyLadder.AvailableTier <= 0)
+            {
+                yield return ChargeEnergyToTier(context, 1, 8f);
+            }
+
+            context.TargetSelector.NotifyTargetContact(context.BossHealth);
+            context.TargetSelector.RefreshTarget();
+            if (!context.Skill1Action.TryUseSkill1())
+            {
+                context.Metrics.Notes.Add($"physical skill1 blocked: {context.Skill1Action.LastUseBlockedReason}");
+                yield break;
+            }
+
+            RecordSkillUse(context);
+            LaneActionProjectile[] projectiles = FindActivePlayerProjectiles();
+            if (projectiles.Length == 0)
+            {
+                context.Metrics.Notes.Add("physical skill1 produced no tracked projectile");
+            }
+
+            float start = context.Metrics.ElapsedSeconds;
+            while (AnyLaneProjectileActive(projectiles)
+                && context.Metrics.ElapsedSeconds - start < flightSeconds)
+            {
+                yield return Advance(context, 0.05f);
+            }
+
+            int hits = 0;
+            for (int i = 0; i < projectiles.Length; i++)
+            {
+                LaneActionProjectile projectile = projectiles[i];
+                if (projectile != null
+                    && projectile.LastImpactTargetHealth == context.BossHealth
+                    && projectile.LastImpactResult == ProjectileImpactResult.AppliedDamage)
+                {
+                    hits++;
+                }
+            }
+
+            context.Metrics.SkillProjectileHits += hits;
+            if (hits <= 0)
+            {
+                context.Metrics.Notes.Add("physical skill1 did not hit boss");
+            }
+
+            context.PocketOwner.Tick(0f);
+            context.Sample();
+            float clearDelay = GetFloat(context.PocketOwner, "skill1FollowupClearDelaySeconds") + 0.05f;
+            context.PocketOwner.Tick(clearDelay);
+            context.Metrics.ElapsedSeconds += clearDelay;
+            context.Sample();
+            yield return null;
+        }
+
+        private static void RecordPhysicalBossBarrageResults(
+            CombatPolicyContext context,
+            IReadOnlyList<BossBarrageProjectile> projectiles,
+            float healthBefore)
+        {
             int inactiveAfterFlight = 0;
             int playerImpactAttempts = 0;
             int playerHits = 0;
-            for (int i = 0; i < projectiles.Length; i++)
+            for (int i = 0; i < projectiles.Count; i++)
             {
                 BossBarrageProjectile projectile = projectiles[i];
                 if (projectile == null)
@@ -1013,12 +1198,21 @@ namespace DimensionBrawl.Tests
             context.Metrics.PhysicalBarragePlayerDamage += playerDamage;
             context.Metrics.BossProjectilesHitPlayer += playerHits;
             context.Metrics.PhysicalBarrageReadout =
-                $"{context.Metrics.PhysicalBarragePatternId} hits {playerHits}/{projectiles.Length} "
+                $"{context.Metrics.PhysicalBarragePatternId} hits {playerHits}/{projectiles.Count} "
                 + $"damage {playerDamage:0.0} inactive {inactiveAfterFlight}";
+        }
 
-            DeactivateActiveBossProjectiles();
-            context.PocketOwner.Tick(0f);
-            context.Sample();
+        private static bool AnyLaneProjectileActive(IReadOnlyList<LaneActionProjectile> projectiles)
+        {
+            for (int i = 0; i < projectiles.Count; i++)
+            {
+                if (projectiles[i] != null && projectiles[i].IsActive)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static IEnumerator UseSummonAndBlockNextBossWave(CombatPolicyContext context)
@@ -1742,6 +1936,9 @@ namespace DimensionBrawl.Tests
             PolicyMetrics forwardRiskPhysicalSummonBlock = RequireResult(
                 results,
                 PolicyKind.ForwardRiskPhysicalSummonBlockProbe);
+            PolicyMetrics forwardRiskPhysicalSummonPunish = RequireResult(
+                results,
+                PolicyKind.ForwardRiskPhysicalSummonPunishProbe);
             PolicyMetrics late = RequireResult(results, PolicyKind.LateSummon);
             PolicyMetrics counterRecovery = RequireResult(results, PolicyKind.MissedFollowupCounterRecovery);
             PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
@@ -1765,6 +1962,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Route stability split: no-action {FormatPercent01(noSummon.RouteStability01)} final / {FormatPercent01(noSummon.MinRouteStability01)} min, gun-only {FormatPercent01(gunOnly.RouteStability01)} / {FormatPercent01(gunOnly.MinRouteStability01)}, intended {FormatPercent01(intended.RouteStability01)} / {FormatPercent01(intended.MinRouteStability01)}.");
             builder.AppendLine($"- Forward-risk physical barrage: backline hits {backlinePhysicalBarrage.PhysicalBarragePlayerHits}/{backlinePhysicalBarrage.PhysicalBarrageTrackedProjectileCount}, damage {backlinePhysicalBarrage.PhysicalBarragePlayerDamage:0.0}; forward hits {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}, damage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerDamage:0.0}.");
             builder.AppendLine($"- Forward-risk physical summon block: blocks {forwardRiskPhysicalSummonBlock.SummonBlocks}, player hits {forwardRiskPhysicalSummonBlock.PhysicalBarragePlayerHits}/{forwardRiskPhysicalSummonBlock.PhysicalBarrageTrackedProjectileCount}, damage {forwardRiskPhysicalSummonBlock.PhysicalBarragePlayerDamage:0.0}, block->window {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)}.");
+            builder.AppendLine($"- Forward-risk physical summon punish: `{forwardRiskPhysicalSummonPunish.ResultKind}` with blocks {forwardRiskPhysicalSummonPunish.SummonBlocks}, player hits {forwardRiskPhysicalSummonPunish.PhysicalBarragePlayerHits}/{forwardRiskPhysicalSummonPunish.PhysicalBarrageTrackedProjectileCount}, Skill1 hits {forwardRiskPhysicalSummonPunish.SkillProjectileHits}, boss damage {forwardRiskPhysicalSummonPunish.BossDamageTaken:0.0}, window->hit {FormatSeconds(forwardRiskPhysicalSummonPunish.FollowupWindowToHitSeconds)}.");
             builder.AppendLine($"- Unanswered hit penalty split: no-action {FormatPercent01(noSummon.TotalUnansweredBossHitRoutePenalty01)} x{noSummon.UnansweredBossHitRoutePenaltyCount}, gun-only {FormatPercent01(gunOnly.TotalUnansweredBossHitRoutePenalty01)} x{gunOnly.UnansweredBossHitRoutePenaltyCount}, late {FormatPercent01(late.TotalUnansweredBossHitRoutePenalty01)} x{late.UnansweredBossHitRoutePenaltyCount}.");
             builder.AppendLine($"- Frontline exposure split: no-action enemy-only {FormatSeconds(noSummon.EnemyOnlyFrontlineSeconds)}, gun-only enemy-only {FormatSeconds(gunOnly.EnemyOnlyFrontlineSeconds)}, intended ally-only {FormatSeconds(intended.AllyOnlyFrontlineSeconds)} / contested {FormatSeconds(intended.ContestedFrontlineSeconds)}.");
             builder.AppendLine($"- ArkData effective pressure shape: no-action peak/top3 {FormatPercent01(noSummon.PeakPressureWindowShare01)}/{FormatPercent01(noSummon.Top3PressureWindowShare01)}, intended {FormatPercent01(intended.PeakPressureWindowShare01)}/{FormatPercent01(intended.Top3PressureWindowShare01)} with relief {FormatSeconds(intended.TimeToNextReliefWindowSeconds)}, ignored boss-screen unanswered burden {FormatPercent01(ignoredRecovery.UnansweredPressureBurdenShare01)} versus intended {FormatPercent01(intended.UnansweredPressureBurdenShare01)}.");
