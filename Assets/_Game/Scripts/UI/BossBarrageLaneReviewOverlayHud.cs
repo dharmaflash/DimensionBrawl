@@ -351,7 +351,7 @@ namespace DimensionBrawl.UI
                     $"{pocketReviewOwner.CompletedObjectiveStepCount}/{pocketReviewOwner.ObjectiveStepCount}"),
                 bodyStyle);
             GUILayout.Label(
-                ResolveResultLine("Route", ResolveResultRouteLabel()),
+                ResolveResultLine("Survival", ResolveResultRouteLabel()),
                 bodyStyle);
             GUILayout.Label(
                 ResolveResultLine("Analysis", ResolveResultRewardHook()),
@@ -423,12 +423,12 @@ namespace DimensionBrawl.UI
 
             if (pocketReviewOwner.IsCleared)
             {
-                return ResolveStageText(profile?.ClearTitle, "FRONTLINE STABILIZED");
+                return ResolveStageText(profile?.ClearTitle, "PRESSURE BROKEN");
             }
 
             if (pocketReviewOwner.IsFailed)
             {
-                return ResolveStageText(profile?.FailTitle, "LINE COLLAPSED");
+                return ResolveStageText(profile?.FailTitle, "PLAYER DOWN");
             }
 
             return string.Empty;
@@ -448,19 +448,19 @@ namespace DimensionBrawl.UI
                 {
                     return ResolveStageText(
                         profile?.ClearCounterDetail,
-                        "Counter wave held; final follow-up confirmed");
+                        "Counter pressure held; final follow-up confirmed");
                 }
 
                 if (pocketReviewOwner.Skill1FollowupHitConfirmed)
                 {
                     return ResolveStageText(
                         profile?.ClearFollowupDetail,
-                        "Summon route analyzed; Skill1 follow-up confirmed");
+                        "Summon opening confirmed; Skill1 follow-up landed");
                 }
 
                 return ResolveStageText(
                     profile?.ClearPressureDetail,
-                    "Boss curtain suppressed; frontline route recorded");
+                    "Boss curtain suppressed; survival answer recorded");
             }
 
             if (pocketReviewOwner.IsFailed)
@@ -469,12 +469,12 @@ namespace DimensionBrawl.UI
                 {
                     return ResolveStageText(
                         profile?.RouteCollapseFailDetail,
-                        "Route stability collapsed before the frontline could stabilize");
+                        "Pressure control hit zero, but HP survival remains the fail state");
                 }
 
                 return ResolveStageText(
                     profile?.FailDetail,
-                    "Player down before the frontline route could stabilize");
+                    "Player HP reached zero before the boss pressure was answered");
             }
 
             return string.Empty;
@@ -492,26 +492,26 @@ namespace DimensionBrawl.UI
             {
                 return ResolveStageText(
                     profile?.FailedRouteRewardHook,
-                    "Failure analysis logged: route stability fell before the frontline answer was complete.");
+                    "Failure analysis logged: player HP reached zero before the answer was complete.");
             }
 
             if (IsCounterRecoveryClear())
             {
                 return ResolveStageText(
                     profile?.CounterRecoveryRewardHook,
-                    "Counter recovery logged: summon restored a broken frontline and reopened the final strike window.");
+                    "Counter recovery logged: summon absorbed pressure and reopened the final strike window.");
             }
 
             if (pocketReviewOwner.IsCleared && pocketReviewOwner.Skill1FollowupHitConfirmed)
             {
                 return ResolveStageText(
                     profile?.CleanRouteRewardHook,
-                    "Clean route logged: summon screen created a Skill1 confirm before the counter wave arrived.");
+                    "Clean survival logged: summon cover created a Skill1 confirm before counter pressure arrived.");
             }
 
             return ResolveStageText(
                 profile?.RewardHook,
-                "Review-only route record; no payout or progression grant.");
+                "Review-only survival record; no payout or progression grant.");
         }
 
         private string ResolveResultNextObjective()
@@ -526,21 +526,21 @@ namespace DimensionBrawl.UI
             {
                 return ResolveStageText(
                     profile?.FailedRouteNextObjective,
-                    "Next run: stop the close probe, build forward EN, then spend summon on the visible curtain.");
+                    "Next run: protect HP first, then spend summon on the visible curtain.");
             }
 
             if (IsCounterRecoveryClear())
             {
                 return ResolveStageText(
                     profile?.CounterRecoveryNextObjective,
-                    "Next run: answer the counter wave earlier so recovery becomes a clean summon route.");
+                    "Next run: answer counter pressure earlier so recovery becomes a clean survival answer.");
             }
 
             if (pocketReviewOwner.IsCleared)
             {
                 return ResolveStageText(
                     profile?.CleanRouteNextObjective,
-                    "Next run: keep the route clean by confirming before the counter wave enters.");
+                    "Next run: keep HP clean by confirming before counter pressure enters.");
             }
 
             return string.Empty;
@@ -556,7 +556,7 @@ namespace DimensionBrawl.UI
             if (pocketReviewOwner.IsFailed)
             {
                 return pocketReviewOwner.FailedFromRouteStabilityCollapse
-                    ? "Route stability collapse"
+                    ? "Pressure control zero"
                     : "Player down";
             }
 

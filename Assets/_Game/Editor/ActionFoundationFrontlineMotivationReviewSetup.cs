@@ -211,26 +211,26 @@ namespace DimensionBrawl.Editor
 
             SerializedObject serializedObject = new SerializedObject(profile);
             SetString(serializedObject, "stageId", "FRONTLINE-MOTIVATION-REVIEW-01");
-            SetString(serializedObject, "displayName", "Frontline Motivation Review");
-            SetString(serializedObject, "stageEpisodeLabel", "EP 03 Frontline Stabilization");
-            SetString(serializedObject, "objectiveBadgeLabel", "ROUTE");
+            SetString(serializedObject, "displayName", "HP Pressure Review");
+            SetString(serializedObject, "stageEpisodeLabel", "EP 03 Survival Pressure");
+            SetString(serializedObject, "objectiveBadgeLabel", "HP");
             SetString(
                 serializedObject,
                 "combatPromise",
-                "Bodies stay split; waves and summons contest the line");
-            SetString(serializedObject, "entryCue", "Hold line; prove summon route");
+                "Survive boss pressure; summons buy the opening");
+            SetString(serializedObject, "entryCue", "Stay alive; block boss pressure, then confirm Skill1");
             SetFloat(serializedObject, "targetDurationSeconds", 90f);
             SetString(
                 serializedObject,
                 "waveSlotPattern",
-                "CloseProbe -> LineProjectile -> ScreenCurtain -> FrontlineBody -> CoreExpose");
+                "CloseProbe -> AimShot -> ScreenCurtain -> BodyRush -> CoreExpose");
             SetString(serializedObject, "spawnFamilyPattern", "Drop | Dash | Jump | Normal");
             SetString(
                 serializedObject,
                 "observerLoop",
                 "condition gate -> combat observer -> completion record -> reward/state hook");
-            SetString(serializedObject, "routeEvidencePattern", "trigger -> target -> payload -> cue -> log");
-            SetString(serializedObject, "rewardHook", "Review-only route record; no payout or progression grant.");
+            SetString(serializedObject, "routeEvidencePattern", "trigger -> threat -> answer -> cue -> log");
+            SetString(serializedObject, "rewardHook", "Review-only survival record; no payout or progression grant.");
             SetFloat(serializedObject, "routeStabilityStart01", 0.62f);
             SetFloat(serializedObject, "closeProbeRouteDrainPerSecond", 0.045f);
             SetFloat(serializedObject, "summonAnswerRouteDrainPerSecond", 0.06f);
@@ -244,11 +244,11 @@ namespace DimensionBrawl.Editor
             SetFloat(serializedObject, "unstableCounterWaveFinalWindowScale", 0.85f);
             SetFloat(serializedObject, "criticalCounterWaveFinalWindowScale", 0.65f);
             SetInt(serializedObject, "objectiveStepCount", 3);
-            SetString(serializedObject, "stepPrefix", "Route");
+            SetString(serializedObject, "stepPrefix", "Survive");
             SetString(
                 serializedObject,
                 "preThreatChargeCue",
-                "Hold the player line, build EN, then stop the close probe");
+                "Keep HP safe, build EN, then stop the close probe");
             SetString(
                 serializedObject,
                 "preThreatReadyCue",
@@ -260,11 +260,11 @@ namespace DimensionBrawl.Editor
             SetString(
                 serializedObject,
                 "summonReadyCue",
-                "Send SummonSlot1 across the line to block boss curtain");
-            SetString(serializedObject, "summonOpportunityCue", "Summon route is open");
+                "Spend SummonSlot1 to block boss curtain");
+            SetString(serializedObject, "summonOpportunityCue", "Summon cover is open");
             SetString(serializedObject, "followupReadyCue", "Confirm the summon opening with Skill1");
             SetString(serializedObject, "followupFiredCue", "Skill1 committed into the summon opening");
-            SetString(serializedObject, "followupHitCue", "Summon route analyzed; Skill1 hit confirmed");
+            SetString(serializedObject, "followupHitCue", "Summon opening confirmed; Skill1 hit logged");
             SetString(
                 serializedObject,
                 "followupBlockedCue",
@@ -277,47 +277,47 @@ namespace DimensionBrawl.Editor
             SetString(
                 serializedObject,
                 "counterWaveCue",
-                "Counter wave entered the line; hold frontline and answer with summon");
+                "Counter pressure entered; keep HP safe and answer with summon");
             SetString(
                 serializedObject,
                 "counterWaveStabilizedCue",
-                "Counter wave held by summon; rebuild the route opening");
-            SetString(serializedObject, "clearObjectiveCue", "Frontline stabilized; summon route secured");
-            SetString(serializedObject, "failObjectiveCue", "Player line collapsed before route stabilization");
-            SetString(serializedObject, "clearTitle", "FRONTLINE STABILIZED");
-            SetString(serializedObject, "clearFollowupDetail", "Summon route analyzed; Skill1 follow-up confirmed");
-            SetString(serializedObject, "clearCounterDetail", "Counter wave held; final follow-up confirmed");
-            SetString(serializedObject, "clearPressureDetail", "Boss curtain suppressed; frontline route recorded");
-            SetString(serializedObject, "failTitle", "LINE COLLAPSED");
-            SetString(serializedObject, "failDetail", "Player down before the frontline route could stabilize");
+                "Counter pressure held by summon; final strike window reopened");
+            SetString(serializedObject, "clearObjectiveCue", "Boss pressure broken; player HP survived");
+            SetString(serializedObject, "failObjectiveCue", "Player HP reached zero before the answer completed");
+            SetString(serializedObject, "clearTitle", "PRESSURE BROKEN");
+            SetString(serializedObject, "clearFollowupDetail", "Summon opening confirmed; Skill1 follow-up landed");
+            SetString(serializedObject, "clearCounterDetail", "Counter pressure held; final follow-up confirmed");
+            SetString(serializedObject, "clearPressureDetail", "Boss curtain suppressed; survival answer recorded");
+            SetString(serializedObject, "failTitle", "PLAYER DOWN");
+            SetString(serializedObject, "failDetail", "Player HP reached zero before the boss pressure was answered");
             SetString(
                 serializedObject,
                 "routeCollapseFailDetail",
-                "Route stability collapsed before the frontline could stabilize");
+                "Pressure control hit zero, but HP survival remains the fail state");
             SetString(
                 serializedObject,
                 "cleanRouteRewardHook",
-                "Clean route logged: summon screen created a Skill1 confirm before the counter wave arrived.");
+                "Clean survival logged: summon cover created a Skill1 confirm before counter pressure arrived.");
             SetString(
                 serializedObject,
                 "counterRecoveryRewardHook",
-                "Counter recovery logged: summon restored a broken frontline and reopened the final strike window.");
+                "Counter recovery logged: summon absorbed pressure and reopened the final strike window.");
             SetString(
                 serializedObject,
                 "failedRouteRewardHook",
-                "Failure analysis logged: route stability fell before the frontline answer was complete.");
+                "Failure analysis logged: player HP reached zero before the answer was complete.");
             SetString(
                 serializedObject,
                 "cleanRouteNextObjective",
-                "Next run: keep the route clean by confirming before the counter wave enters.");
+                "Next run: keep HP clean by confirming before counter pressure enters.");
             SetString(
                 serializedObject,
                 "counterRecoveryNextObjective",
-                "Next run: answer the counter wave earlier so recovery becomes a clean summon route.");
+                "Next run: answer counter pressure earlier so recovery becomes a clean survival answer.");
             SetString(
                 serializedObject,
                 "failedRouteNextObjective",
-                "Next run: stop the close probe, build forward EN, then spend summon on the visible curtain.");
+                "Next run: protect HP first, then spend summon on the visible curtain.");
             SetString(
                 serializedObject,
                 "openingRecordPreview",
@@ -325,19 +325,19 @@ namespace DimensionBrawl.Editor
             SetString(
                 serializedObject,
                 "summonRecordPreview",
-                "Record preview: summon block opens the Skill1 route record.");
+                "Record preview: summon block opens the Skill1 answer.");
             SetString(
                 serializedObject,
                 "cleanFollowupRecordPreview",
-                "Record preview: Skill1 now secures clean route before counter wave.");
+                "Record preview: Skill1 secures HP-safe clear before counter pressure.");
             SetString(
                 serializedObject,
                 "counterRecoveryRecordPreview",
-                "Record preview: hold counter wave to reopen final follow-up.");
+                "Record preview: hold counter pressure to reopen final follow-up.");
             SetString(
                 serializedObject,
                 "collapseWarningRecordPreview",
-                "Record warning: line collapse logs failure analysis, not boss progress.");
+                "Pressure warning: HP is the fail state; stabilize pressure to improve the clear.");
 
             ConfigureBeats(serializedObject);
             ConfigurePressureSlots(serializedObject);
@@ -356,8 +356,8 @@ namespace DimensionBrawl.Editor
                 beats.GetArrayElementAtIndex(0),
                 "B0.MatchRead",
                 "Match Read",
-                "Read the uncrossable player line and the rear boss curtain.",
-                "stage_started + player_line_guarded",
+                "Read the player HP threat and the rear boss curtain.",
+                "stage_started + hp_threat_read",
                 "Project spec beat 0; NIKKE stage row carries time, theme, scenario, wave, reward hooks.");
             ConfigureBeat(
                 beats.GetArrayElementAtIndex(1),
@@ -377,7 +377,7 @@ namespace DimensionBrawl.Editor
                 beats.GetArrayElementAtIndex(3),
                 "B3.Followup",
                 "Follow-Up Window",
-                "Confirm the summon route with Skill1 after the curtain is suppressed.",
+                "Confirm the Skill1 punish after the curtain is suppressed.",
                 "skill1_used_during_followup + boss_damage",
                 "Combat payload model: action -> target -> hit event -> presentation feedback.");
             ConfigureBeat(
@@ -386,13 +386,13 @@ namespace DimensionBrawl.Editor
                 "Enemy Counter Wave",
                 "If the follow-up is missed, the boss screen returns and asks for another summon answer.",
                 "followup_missed_or_blocked",
-                "NIKKE ScreenCurtain/FrontlineBody pressure slot adaptation from stage-wave slots.");
+                "NIKKE ScreenCurtain/BodyRush pressure slot adaptation from stage-wave slots.");
             ConfigureBeat(
                 beats.GetArrayElementAtIndex(5),
                 "B5.Result",
                 "Suppression Result",
-                "Record frontline stabilization, not boss HP death.",
-                "route_record_committed",
+                "Record HP survival under pressure, not boss HP death.",
+                "survival_record_committed",
                 "Tutorial contract: completion record -> reward/state hook; review-only, no payout.");
         }
 
@@ -422,9 +422,9 @@ namespace DimensionBrawl.Editor
                 "Combat action evidence should connect trigger condition, target selector, payload/effect, presentation feedback, and state/log commit.");
             ConfigureSourceReference(
                 sources.GetArrayElementAtIndex(4),
-                "Project.FrontlineWaveSpec",
+                "Project.PressureSurvivalSpec",
                 "Assets/_Game/DesignDocs/ACTION_FOUNDATION_FRONTLINE_WAVE_STAGE_SPEC.md",
-                "Canonical local adaptation: fixed rear boss, player line lock, summon-first frontline agency, review-only result hook.");
+                "Canonical local adaptation: fixed rear boss, HP survival fail state, summon-first pressure answer, review-only result hook.");
         }
 
         private static void ConfigurePressureSlots(SerializedObject serializedObject)
@@ -438,7 +438,7 @@ namespace DimensionBrawl.Editor
                 "Normal",
                 "rear_boss_fixed",
                 "Read the fixed boss curtain before committing resources.",
-                "stage_started + player_line_guarded",
+                "stage_started + hp_threat_read",
                 0.25f);
             ConfigurePressureSlot(
                 slots.GetArrayElementAtIndex(1),
@@ -446,7 +446,7 @@ namespace DimensionBrawl.Editor
                 "CloseProbe",
                 "Drop|Dash|Jump",
                 "path_grd_tutorial_001|path_grd_close_small",
-                "Local defense must stop the close probe before route stability bleeds out.",
+                "Local defense must stop the close probe before HP pressure stacks.",
                 "close_probe_defeated",
                 1f);
             ConfigurePressureSlot(
@@ -464,16 +464,16 @@ namespace DimensionBrawl.Editor
                 "CoreExpose",
                 "Normal",
                 "boss_core_followup_window",
-                "Skill1 confirms the summon opening while the route is exposed.",
+                "Skill1 confirms the summon opening while the boss is exposed.",
                 "skill1_used_during_followup + boss_damage",
                 0.55f);
             ConfigurePressureSlot(
                 slots.GetArrayElementAtIndex(4),
-                "S4.FrontlineBody.JumpDash",
-                "FrontlineBody",
+                "S4.BodyRush.JumpDash",
+                "BodyRush",
                 "Jump|Dash",
                 "path_grd_tutorial_002|path_grd_tutorial_003",
-                "A missed follow-up returns body pressure and drains route stability faster.",
+                "A missed follow-up returns body pressure and makes HP control harder.",
                 "followup_missed_or_blocked",
                 1.35f);
             ConfigurePressureSlot(
@@ -482,8 +482,8 @@ namespace DimensionBrawl.Editor
                 "RecordHook",
                 "Normal",
                 "completion_record",
-                "Commit the observed route result without granting progression rewards.",
-                "route_record_committed",
+                "Commit the observed survival result without granting progression rewards.",
+                "survival_record_committed",
                 0f);
         }
 

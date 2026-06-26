@@ -303,14 +303,14 @@ namespace DimensionBrawl.Test
                 {
                     return ResolveStageText(
                         stageProfile != null ? stageProfile.ClearObjectiveCue : null,
-                        "Frontline stabilized; summon route secured");
+                        "Boss pressure broken; player HP survived");
                 }
 
                 if (state == PocketState.Failed)
                 {
                     return ResolveStageText(
                         stageProfile != null ? stageProfile.FailObjectiveCue : null,
-                        "Player line collapsed before route stabilization");
+                        "Player HP reached zero before the answer completed");
                 }
 
                 if (counterWaveObserved && !counterWaveStabilized)
@@ -324,7 +324,7 @@ namespace DimensionBrawl.Test
                     {
                         return ResolveStageText(
                             stageProfile != null ? stageProfile.FollowupHitCue : null,
-                            "Summon route analyzed; Skill1 hit confirmed");
+                            "Summon opening confirmed; Skill1 hit logged");
                     }
 
                     if (usedSkill1DuringSummonFollowup)
@@ -383,13 +383,13 @@ namespace DimensionBrawl.Test
 
                     return energyLadder != null && !energyLadder.CanSpend
                         ? $"{ResolveStageText(stageProfile != null ? stageProfile.SummonChargeCue : null, "Build EN for SummonSlot1; boss curtain is returning")}: {ResolveObjectiveSummonAnswerLabel()}"
-                        : $"{ResolveStageText(stageProfile != null ? stageProfile.SummonReadyCue : null, "Send SummonSlot1 across the line to block boss curtain")}: {ResolveObjectiveSummonAnswerLabel()}";
+                        : $"{ResolveStageText(stageProfile != null ? stageProfile.SummonReadyCue : null, "Spend SummonSlot1 to block boss curtain")}: {ResolveObjectiveSummonAnswerLabel()}";
                 }
 
                 return energyLadder != null && !energyLadder.CanSpend
                     ? ResolveStageText(
                         stageProfile != null ? stageProfile.PreThreatChargeCue : null,
-                        "Build EN while holding the player line, then stop the close probe")
+                        "Keep HP safe, build EN, then stop the close probe")
                     : $"{ResolveStageText(stageProfile != null ? stageProfile.PreThreatReadyCue : null, "Stop the close probe and prepare the summon answer")}: {ResolveObjectiveSummonAnswerLabel()}";
             }
         }
@@ -525,12 +525,6 @@ namespace DimensionBrawl.Test
             CaptureCounterWaveAnswer(deltaTime);
             TickSkill1FollowupClearTimer(deltaTime);
             TickRouteStability(deltaTime);
-            if (IsRouteStabilityActive && routeStability01 <= 0f)
-            {
-                FailPocket(RouteFailureReason.RouteStabilityCollapsed);
-                PublishStageBeatChangeIfNeeded();
-                return;
-            }
 
             if (CanClearPocket())
             {
@@ -1054,7 +1048,14 @@ namespace DimensionBrawl.Test
                     : enemyCount > 0
                         ? "enemy"
                         : "open";
-            return $"frontline x{ResolveFrontlinePresenceDrainScale(allyCount, enemyCount):0.00} {state}";
+            string pressureState = state switch
+            {
+                "contest" => "contested",
+                "ally" => "covered",
+                "enemy" => "pressed",
+                _ => "open"
+            };
+            return $"pressure x{ResolveFrontlinePresenceDrainScale(allyCount, enemyCount):0.00} {pressureState}";
         }
 
         private float ResolveFrontlinePresenceDrainScale()
@@ -1246,14 +1247,14 @@ namespace DimensionBrawl.Test
         {
             return ResolveStageText(
                 stageProfile != null ? stageProfile.CounterWaveCue : null,
-                "Counter wave entered the line; hold frontline and answer with summon");
+                "Counter pressure entered; keep HP safe and answer with summon");
         }
 
         private string ResolveCounterWaveStabilizedCue()
         {
             return ResolveStageText(
                 stageProfile != null ? stageProfile.CounterWaveStabilizedCue : null,
-                "Counter wave held by summon; rebuild the route opening");
+                "Counter pressure held by summon; final strike window reopened");
         }
 
         private string ResolveSummonBlockOpportunityCue()
@@ -1475,18 +1476,18 @@ namespace DimensionBrawl.Test
             string targetReadout = ResolveRouteProofTargetReadout();
             if (targetReadout == "boss_curtain" || targetReadout == "ally_hold")
             {
-                return "payload_pending";
+                return "answer_pending";
             }
 
-            return ResolveRouteProofTriggerReadout() != "pending" ? "target_pending" : "pending";
+            return ResolveRouteProofTriggerReadout() != "pending" ? "threat_pending" : "pending";
         }
 
         private string ResolveRouteProofReadout()
         {
             return $"{CompletedRouteProofStepCount}/{RouteProofStepCount} "
                 + $"trigger:{ResolveRouteProofTriggerReadout()} "
-                + $"target:{ResolveRouteProofTargetReadout()} "
-                + $"payload:{ResolveRouteProofPayloadReadout()} "
+                + $"threat:{ResolveRouteProofTargetReadout()} "
+                + $"answer:{ResolveRouteProofPayloadReadout()} "
                 + $"log:{ResolveRouteProofLogReadout()}";
         }
 
@@ -1676,7 +1677,7 @@ namespace DimensionBrawl.Test
                 return IsAwaitingSummonPressureBlock ? "summon_now" : "prepare_summon";
             }
 
-            return "build_route";
+            return "survive";
         }
 
         private string ResolveRouteDecisionReadout()
@@ -1689,7 +1690,7 @@ namespace DimensionBrawl.Test
             if (state == PocketState.Failed)
             {
                 return failureReason == RouteFailureReason.RouteStabilityCollapsed
-                    ? "route_collapse"
+                    ? "pressure_zero"
                     : "player_down";
             }
 
@@ -1725,7 +1726,7 @@ namespace DimensionBrawl.Test
                 return IsSummonBlockOpportunityCueActive ? "cue_window" : "build_en";
             }
 
-            return "hold_line";
+            return "keep_hp";
         }
 
         private bool IsCounterRecoveryRoute()

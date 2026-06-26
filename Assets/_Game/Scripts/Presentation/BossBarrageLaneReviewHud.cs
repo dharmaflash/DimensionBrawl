@@ -670,29 +670,29 @@ namespace DimensionBrawl.Presentation
 
             if (pocketReviewOwner.IsCleared)
             {
-                return $"Goal: Frontline stabilized {ResolvePocketProgressText()}";
+                return $"Goal: HP survived {ResolvePocketProgressText()}";
             }
 
             if (pocketReviewOwner.IsFailed)
             {
-                return $"Goal: Line collapsed {ResolvePocketProgressText()}";
+                return $"Goal: Player down {ResolvePocketProgressText()}";
             }
 
             if (pocketReviewOwner.IsCounterWaveCompletionRecorded
                 && !pocketReviewOwner.IsCounterWaveStabilized
                 && !pocketReviewOwner.Skill1FollowupHitConfirmed)
             {
-                return $"{ResolvePocketStepPrefix()}: Hold counter wave {pocketReviewOwner.CounterWaveAllyHoldRemainingSeconds:0.0}s";
+                return $"{ResolvePocketStepPrefix()}: Hold counter pressure {pocketReviewOwner.CounterWaveAllyHoldRemainingSeconds:0.0}s";
             }
 
             if (pocketReviewOwner.IsSkill1FollowupClearCountdownActive)
             {
-                return $"{ResolvePocketStepPrefix()}: Confirm summon route {pocketReviewOwner.Skill1FollowupClearRemainingSeconds:0.0}s";
+                return $"{ResolvePocketStepPrefix()}: Confirm Skill1 {pocketReviewOwner.Skill1FollowupClearRemainingSeconds:0.0}s";
             }
 
             if (pocketReviewOwner.IsSummonFollowupWindowActive)
             {
-                return $"{ResolvePocketStepPrefix()}: {ResolveCompactSkillFollowupText()} route window {pocketReviewOwner.SummonFollowupWindowRemainingSeconds:0.0}s";
+                return $"{ResolvePocketStepPrefix()}: {ResolveCompactSkillFollowupText()} window {pocketReviewOwner.SummonFollowupWindowRemainingSeconds:0.0}s";
             }
 
             if (pocketReviewOwner.IsSummonPressureBreakActive)
@@ -703,13 +703,13 @@ namespace DimensionBrawl.Presentation
             if (pocketReviewOwner.IsCounterWaveCompletionRecorded && !pocketReviewOwner.Skill1FollowupHitConfirmed)
             {
                 return pocketReviewOwner.IsCounterWaveStabilized
-                    ? $"{ResolvePocketStepPrefix()}: Counter held"
-                    : $"{ResolvePocketStepPrefix()}: Hold counter wave {pocketReviewOwner.CounterWaveAllyHoldRemainingSeconds:0.0}s";
+                    ? $"{ResolvePocketStepPrefix()}: Pressure held"
+                    : $"{ResolvePocketStepPrefix()}: Hold counter pressure {pocketReviewOwner.CounterWaveAllyHoldRemainingSeconds:0.0}s";
             }
 
             if (pocketReviewOwner.IsSummonBlockOpportunityCueActive)
             {
-                return $"{ResolvePocketStepPrefix()}: Open summon route {pocketReviewOwner.SummonBlockOpportunityRemainingSeconds:0.0}s";
+                return $"{ResolvePocketStepPrefix()}: Open summon cover {pocketReviewOwner.SummonBlockOpportunityRemainingSeconds:0.0}s";
             }
 
             if (pocketReviewOwner.IsAwaitingSummonPressureBlock)
@@ -720,12 +720,12 @@ namespace DimensionBrawl.Presentation
             if (pocketReviewOwner.CloseThreatDefeated)
             {
                 return energyLadder != null && !energyLadder.CanSpend
-                    ? $"{ResolvePocketStepPrefix()}: Build EN for summon route"
+                    ? $"{ResolvePocketStepPrefix()}: Build EN for summon cover"
                     : $"{ResolvePocketStepPrefix()}: {ResolveCompactSummonBlockText()}";
             }
 
             return energyLadder != null && !energyLadder.CanSpend
-                ? $"{ResolvePocketStepPrefix()}: Hold line for EN"
+                ? $"{ResolvePocketStepPrefix()}: Protect HP for EN"
                 : $"{ResolvePocketStepPrefix()}: Stop close probe";
         }
 
@@ -740,8 +740,8 @@ namespace DimensionBrawl.Presentation
             if (pocketReviewOwner.IsFailed)
             {
                 return ResolveStageText(
-                    profile?.CollapseWarningRecordPreview,
-                    "Record warning: line collapse logs failure analysis, not boss progress.");
+                    profile?.FailedRouteRewardHook,
+                    "Failure analysis logged: player HP reached zero before the answer was complete.");
             }
 
             if (pocketReviewOwner.IsCleared)
@@ -754,14 +754,14 @@ namespace DimensionBrawl.Presentation
             {
                 return ResolveStageText(
                     profile?.CollapseWarningRecordPreview,
-                    "Record warning: line collapse logs failure analysis, not boss progress.");
+                    "Pressure warning: HP is the fail state; stabilize pressure to improve the clear.");
             }
 
             if (pocketReviewOwner.IsCounterWaveCompletionRecorded && !pocketReviewOwner.Skill1FollowupHitConfirmed)
             {
                 return ResolveStageText(
                     profile?.CounterRecoveryRecordPreview,
-                    "Record preview: hold counter wave to reopen final follow-up.");
+                    "Record preview: hold counter pressure to reopen final follow-up.");
             }
 
             if (pocketReviewOwner.IsSummonFollowupWindowActive
@@ -770,7 +770,7 @@ namespace DimensionBrawl.Presentation
             {
                 return ResolveStageText(
                     profile?.CleanFollowupRecordPreview,
-                    "Record preview: Skill1 now secures clean route before counter wave.");
+                    "Record preview: Skill1 secures HP-safe clear before counter pressure.");
             }
 
             if (pocketReviewOwner.IsAwaitingSummonPressureBlock
@@ -779,7 +779,7 @@ namespace DimensionBrawl.Presentation
             {
                 return ResolveStageText(
                     profile?.SummonRecordPreview,
-                    "Record preview: summon block opens the Skill1 route record.");
+                    "Record preview: summon block opens the Skill1 answer.");
             }
 
             return ResolveStageText(
@@ -795,9 +795,9 @@ namespace DimensionBrawl.Presentation
                 return "Stage Briefing -";
             }
 
-            string displayName = ResolveStageText(profile.DisplayName, "Frontline Review");
-            string promise = ResolveStageText(profile.CombatPromise, "Bodies split; summons contest the line");
-            string entryCue = ResolveStageText(profile.EntryCue, "Hold line; prove summon route");
+            string displayName = ResolveStageText(profile.DisplayName, "HP Pressure Review");
+            string promise = ResolveStageText(profile.CombatPromise, "Survive boss pressure; summons buy the opening");
+            string entryCue = ResolveStageText(profile.EntryCue, "Stay alive; block boss pressure, then confirm Skill1");
             return $"{displayName}: {promise} | {entryCue}";
         }
 
@@ -809,7 +809,7 @@ namespace DimensionBrawl.Presentation
                 return string.Empty;
             }
 
-            return ResolveStageText(profile.EntryCue, "Hold line; prove summon route");
+            return ResolveStageText(profile.EntryCue, "Stay alive; block boss pressure, then confirm Skill1");
         }
 
         private string ResolveStageBeatLine()
@@ -1052,14 +1052,14 @@ namespace DimensionBrawl.Presentation
         private string ResolveFrontlineCueLine()
         {
             BossBarrageFrontlineReadout readout = BossBarrageLaneReviewHudText.ResolveFrontlineProxyReadout();
-            return $"Frontline {readout.State} A{readout.AllyCount} {readout.AllyHealthText} / "
+            return $"Pressure {readout.State} A{readout.AllyCount} {readout.AllyHealthText} / "
                 + $"E{readout.EnemyCount} {readout.EnemyHealthText}   {ResolvePlayerSummonCueText()}";
         }
 
         private string ResolveCompactFrontlineCueLine()
         {
             BossBarrageFrontlineReadout readout = BossBarrageLaneReviewHudText.ResolveFrontlineProxyReadout();
-            return $"Front {readout.State}: {ResolveCompactRouteStabilityText()} A{readout.AllyCount} {readout.AllyHealthText} / "
+            return $"Pressure {readout.State}: {ResolveCompactRouteStabilityText()} A{readout.AllyCount} {readout.AllyHealthText} / "
                 + $"E{readout.EnemyCount} {readout.EnemyHealthText} | {ResolveCompactSummonText()}";
         }
 
@@ -1101,7 +1101,7 @@ namespace DimensionBrawl.Presentation
                     : $"player build LV{energyLadder.ChargingTier} {energyLadder.CurrentTierFillRatio * 100f:0}%"
                 : "player -";
             string boss = ResolveBossLoopReadout();
-            return $"Loop {loop}   frontline {readout.State} "
+            return $"Loop {loop}   pressure {readout.State} "
                 + $"{ResolveRouteStabilityText()}   "
                 + $"ally {readout.AllyCount} hp {readout.AllyHealthText} "
                 + $"enemy {readout.EnemyCount} hp {readout.EnemyHealthText}   "
@@ -1486,10 +1486,10 @@ namespace DimensionBrawl.Presentation
             if (pocketReviewOwner.IsCleared)
             {
                 FrontlineWaveStageProfile activeProfile = ActiveStageProfile;
-                title = ResolveStageText(activeProfile?.ClearTitle, "FRONTLINE STABILIZED");
+                title = ResolveStageText(activeProfile?.ClearTitle, "PRESSURE BROKEN");
                 detail = pocketReviewOwner.Skill1FollowupHitConfirmed
-                    ? $"{ResolveStageText(ResolvePocketClearFollowupDetail(activeProfile), "Summon route analyzed; Skill1 follow-up confirmed")} ({pocketReviewOwner.Skill1FollowupDamage:0}) | {ResolvePocketResultSuffix()}"
-                    : $"{ResolveStageText(activeProfile?.ClearPressureDetail, "Boss curtain suppressed; frontline route recorded")} | {ResolvePocketResultSuffix()}";
+                    ? $"{ResolveStageText(ResolvePocketClearFollowupDetail(activeProfile), "Summon opening confirmed; Skill1 follow-up landed")} ({pocketReviewOwner.Skill1FollowupDamage:0}) | {ResolvePocketResultSuffix()}"
+                    : $"{ResolveStageText(activeProfile?.ClearPressureDetail, "Boss curtain suppressed; survival answer recorded")} | {ResolvePocketResultSuffix()}";
                 backColor = resultClearBackColor;
                 return true;
             }
@@ -1497,7 +1497,7 @@ namespace DimensionBrawl.Presentation
             if (pocketReviewOwner.IsFailed)
             {
                 FrontlineWaveStageProfile activeProfile = ActiveStageProfile;
-                title = ResolveStageText(activeProfile?.FailTitle, "LINE COLLAPSED");
+                title = ResolveStageText(activeProfile?.FailTitle, "PLAYER DOWN");
                 detail = $"{ResolvePocketFailDetail(activeProfile)} | {ResolvePocketResultSuffix()}";
                 backColor = resultFailBackColor;
                 return true;
@@ -1510,21 +1510,21 @@ namespace DimensionBrawl.Presentation
         {
             if (pocketReviewOwner == null)
             {
-                return "Route - | Record -";
+                return "Survival - | Record -";
             }
 
-            string prefix = ResolveStageText(ActiveStageProfile?.StepPrefix, "Route");
+            string prefix = ResolveStageText(ActiveStageProfile?.StepPrefix, "Survive");
             return $"{prefix} {ResolvePocketProgressText()} | {ResolveRouteRecordSummary()}";
         }
 
         private string ResolveRouteRecordLine()
         {
-            return $"Route Record: {ResolveRouteRecordSummary()} | Evidence {ResolveRouteEvidencePatternText(ActiveStageProfile)}";
+            return $"Survival Record: {ResolveRouteRecordSummary()} | Evidence {ResolveRouteEvidencePatternText(ActiveStageProfile)}";
         }
 
         private string ResolveRouteStabilityLine()
         {
-            return $"Route Stability: {ResolveRouteStabilityText()}";
+            return $"Pressure Control: {ResolveRouteStabilityText()}";
         }
 
         private string ResolveRouteRecordSummary()
@@ -1544,7 +1544,7 @@ namespace DimensionBrawl.Presentation
 
             if (!pocketReviewOwner.IsCleared)
             {
-                string hook = ResolveStageText(profile?.RewardHook, "Review-only route record");
+                string hook = ResolveStageText(profile?.RewardHook, "Review-only survival record");
                 return $"Pending {ResolvePocketProgressText()} {ResolveRouteStabilityText()} target {targetSeconds:0}s | {ResolveCompletionRecordText()} | {hook}";
             }
 
@@ -1586,7 +1586,7 @@ namespace DimensionBrawl.Presentation
         {
             return pocketReviewOwner != null
                 ? pocketReviewOwner.CompletionRecordReadout
-                : "close:pending summon:pending followup:pending counter:pending(none) counter_answer:pending(none) counter_window:pending(none) decision:build_route(hold_line) proof:pending(0/4 trigger:pending target:pending payload:pending log:pending)";
+                : "close:pending summon:pending followup:pending counter:pending(none) counter_answer:pending(none) counter_window:pending(none) decision:survive(keep_hp) proof:pending(0/4 trigger:pending threat:pending answer:pending log:pending)";
         }
 
         private string ResolveRouteStabilityText()
@@ -1597,18 +1597,18 @@ namespace DimensionBrawl.Presentation
             }
 
             string band = pocketReviewOwner.CurrentRouteStabilityBand.ToString().ToLowerInvariant();
-            return $"stability {pocketReviewOwner.RouteStabilityPercent:0}% {band} {pocketReviewOwner.FrontlinePresenceReadout}";
+            return $"pressure {pocketReviewOwner.RouteStabilityPercent:0}% {band} {pocketReviewOwner.FrontlinePresenceReadout}";
         }
 
         private string ResolveCompactRouteStabilityText()
         {
             if (pocketReviewOwner == null || !pocketReviewOwner.IsRouteStabilityActive)
             {
-                return "Route -";
+                return "Pressure -";
             }
 
             string band = pocketReviewOwner.CurrentRouteStabilityBand.ToString().ToLowerInvariant();
-            return $"Route {pocketReviewOwner.RouteStabilityPercent:0}% {band} {pocketReviewOwner.FrontlinePresenceReadout}";
+            return $"Pressure {pocketReviewOwner.RouteStabilityPercent:0}% {band} {pocketReviewOwner.FrontlinePresenceReadout}";
         }
 
         private string ResolveRouteRecordGrade(float targetSeconds)
@@ -1648,12 +1648,12 @@ namespace DimensionBrawl.Presentation
             {
                 return ResolveStageText(
                     activeProfile?.RouteCollapseFailDetail,
-                    "Route stability collapsed before the frontline could stabilize");
+                    "Pressure control hit zero, but HP survival remains the fail state");
             }
 
             return ResolveStageText(
                 activeProfile?.FailDetail,
-                "Player down before the frontline route could stabilize");
+                "Player HP reached zero before the boss pressure was answered");
         }
 
         private string ResolvePocketFailureReasonText()
@@ -1665,7 +1665,7 @@ namespace DimensionBrawl.Presentation
 
             return pocketReviewOwner.FailureReason switch
             {
-                BossBarragePocketReviewOwner.RouteFailureReason.RouteStabilityCollapsed => "reason route collapse",
+                BossBarragePocketReviewOwner.RouteFailureReason.RouteStabilityCollapsed => "reason pressure zero",
                 BossBarragePocketReviewOwner.RouteFailureReason.PlayerDown => "reason player down",
                 _ => "reason failed"
             };
@@ -1678,7 +1678,7 @@ namespace DimensionBrawl.Presentation
 
         private static string ResolveRouteEvidencePatternText(FrontlineWaveStageProfile profile)
         {
-            return ResolveStageText(profile?.RouteEvidencePattern, "trigger -> target -> payload -> cue -> log");
+            return ResolveStageText(profile?.RouteEvidencePattern, "trigger -> threat -> answer -> cue -> log");
         }
 
         private void DrawCombatResourceBars()

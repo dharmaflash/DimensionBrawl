@@ -73,20 +73,20 @@ namespace DimensionBrawl.Tests
                 AssetDatabase.LoadAssetAtPath<FrontlineWaveStageProfile>(StageProfilePath);
             Assert.NotNull(stageProfile);
             Assert.AreEqual("FRONTLINE-MOTIVATION-REVIEW-01", stageProfile.StageId);
-            Assert.That(stageProfile.CombatPromise, Does.Contain("Bodies stay split"));
-            Assert.That(stageProfile.EntryCue, Does.Contain("summon route"));
-            Assert.That(stageProfile.CounterWaveCue, Does.Contain("Counter wave"));
+            Assert.That(stageProfile.CombatPromise, Does.Contain("Survive boss pressure"));
+            Assert.That(stageProfile.EntryCue, Does.Contain("Stay alive"));
+            Assert.That(stageProfile.CounterWaveCue, Does.Contain("Counter pressure"));
             Assert.AreEqual(90f, stageProfile.TargetDurationSeconds);
             Assert.AreEqual(0.62f, stageProfile.RouteStabilityStart01, 0.001f);
-            Assert.That(stageProfile.RouteCollapseFailDetail, Does.Contain("Route stability collapsed"));
-            Assert.That(stageProfile.CleanRouteRewardHook, Does.Contain("Clean route"));
+            Assert.That(stageProfile.RouteCollapseFailDetail, Does.Contain("HP survival remains the fail state"));
+            Assert.That(stageProfile.CleanRouteRewardHook, Does.Contain("Clean survival"));
             Assert.That(stageProfile.CounterRecoveryRewardHook, Does.Contain("Counter recovery"));
             Assert.That(stageProfile.FailedRouteNextObjective, Does.Contain("visible curtain"));
             Assert.That(stageProfile.OpeningRecordPreview, Does.Contain("stop close probe"));
             Assert.That(stageProfile.CounterRecoveryRecordPreview, Does.Contain("final follow-up"));
-            Assert.That(stageProfile.CollapseWarningRecordPreview, Does.Contain("failure analysis"));
+            Assert.That(stageProfile.CollapseWarningRecordPreview, Does.Contain("HP is the fail state"));
             Assert.That(stageProfile.RouteEvidencePattern, Does.Contain("trigger"));
-            Assert.That(stageProfile.RouteEvidencePattern, Does.Contain("payload"));
+            Assert.That(stageProfile.RouteEvidencePattern, Does.Contain("answer"));
             Assert.That(stageProfile.RouteEvidencePattern, Does.Contain("log"));
             Assert.Greater(stageProfile.CloseProbeRouteDrainPerSecond, 0f);
             Assert.Greater(stageProfile.CounterWaveRouteDrainPerSecond, stageProfile.CloseProbeRouteDrainPerSecond);
@@ -127,14 +127,14 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("ActionFoundationFrontlineMotivationReview", overlayHud.RetrySceneName);
             Assert.AreEqual(ScenePath, overlayHud.RetryScenePath);
 
-            Assert.That(reviewHud.StageBriefingReadout, Does.Contain("Bodies stay split"));
-            Assert.That(reviewHud.StageBriefingReadout, Does.Contain("Hold line"));
-            Assert.That(reviewHud.CompactStageBriefingReadout, Does.Contain("summon route"));
-            Assert.That(reviewHud.CompactObjectiveReadout, Does.Contain("Route 1/3"));
+            Assert.That(reviewHud.StageBriefingReadout, Does.Contain("Survive boss pressure"));
+            Assert.That(reviewHud.StageBriefingReadout, Does.Contain("Stay alive"));
+            Assert.That(reviewHud.CompactStageBriefingReadout, Does.Contain("Stay alive"));
+            Assert.That(reviewHud.CompactObjectiveReadout, Does.Contain("Survive 1/3"));
             Assert.That(reviewHud.CompactObjectiveReadout, Does.Not.Contain("Boss"));
-            Assert.That(pocketOwner.ObjectiveCue, Does.Contain("line").IgnoreCase);
+            Assert.That(pocketOwner.ObjectiveCue, Does.Contain("HP").IgnoreCase);
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Pending 0/3"));
-            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("stability 62%"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("pressure 62%"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("target 90"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("close:pending"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("summon:pending"));
@@ -142,23 +142,23 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter:pending(none)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter_answer:pending(none)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter_window:pending(none)"));
-            Assert.AreEqual("build_route", pocketOwner.RouteDecisionState);
-            Assert.AreEqual("hold_line", pocketOwner.RouteDecisionReadout);
-            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("decision:build_route(hold_line)"));
+            Assert.AreEqual("survive", pocketOwner.RouteDecisionState);
+            Assert.AreEqual("keep_hp", pocketOwner.RouteDecisionReadout);
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("decision:survive(keep_hp)"));
             Assert.AreEqual(4, pocketOwner.RouteProofStepCount);
             Assert.AreEqual(0, pocketOwner.CompletedRouteProofStepCount);
             Assert.AreEqual("pending", pocketOwner.RouteProofState);
             Assert.That(
                 pocketOwner.RouteProofReadout,
-                Does.Contain("0/4 trigger:pending target:pending payload:pending log:pending"));
+                Does.Contain("0/4 trigger:pending threat:pending answer:pending log:pending"));
             Assert.That(
                 reviewHud.RouteRecordReadout,
-                Does.Contain("proof:pending(0/4 trigger:pending target:pending payload:pending log:pending)"));
-            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Evidence trigger -> target -> payload -> cue -> log"));
-            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Review-only route record"));
+                Does.Contain("proof:pending(0/4 trigger:pending threat:pending answer:pending log:pending)"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Evidence trigger -> threat -> answer -> cue -> log"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Review-only survival record"));
             Assert.That(reviewHud.RouteIncentiveReadout, Does.Contain("stop close probe"));
             Assert.That(reviewHud.RouteIncentiveReadout, Does.Contain("confirm Skill1"));
-            Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("stability 62%"));
+            Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("pressure 62%"));
             int frontlineCueCountBeforeProbe = screenCuePresenter.FrontlineCueRequestCount;
             pocketOwner.Tick(0.6f);
             Assert.AreEqual(1, pocketOwner.CurrentStageBeatIndex);
@@ -181,7 +181,7 @@ namespace DimensionBrawl.Tests
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("decision:summon_now(boss_curtain)"));
             Assert.That(
                 pocketOwner.CompletionRecordReadout,
-                Does.Contain("proof:target_pending(1/4 trigger:close_probe target:summon_needed payload:pending log:pending)"));
+                Does.Contain("proof:threat_pending(1/4 trigger:close_probe threat:summon_needed answer:pending log:pending)"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("First Summon Need"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("summon_slot1_used"));
             Assert.That(reviewHud.PressureSlotReadout, Does.Contain("ScreenCurtain"));
@@ -192,9 +192,9 @@ namespace DimensionBrawl.Tests
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("decision:confirm(summon_opening)"));
             Assert.That(
                 pocketOwner.CompletionRecordReadout,
-                Does.Contain("proof:payload_pending(2/4 trigger:close_probe target:boss_curtain payload:pending log:pending)"));
+                Does.Contain("proof:answer_pending(2/4 trigger:close_probe threat:boss_curtain answer:pending log:pending)"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("Enemy Counter Wave"));
-            Assert.That(reviewHud.PressureSlotReadout, Does.Contain("FrontlineBody"));
+            Assert.That(reviewHud.PressureSlotReadout, Does.Contain("BodyRush"));
 
             ForcePocketState(pocketOwner, "Cleared");
             SetField(pocketOwner, "closeThreatDefeated", true);
@@ -205,16 +205,16 @@ namespace DimensionBrawl.Tests
             SetField(pocketOwner, "resultElapsedSeconds", 42f);
 
             Assert.IsTrue(reviewHud.ShouldShowResultBanner);
-            Assert.AreEqual("FRONTLINE STABILIZED", reviewHud.ResultBannerTitle);
-            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Summon route analyzed"));
-            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Route 3/3"));
+            Assert.AreEqual("PRESSURE BROKEN", reviewHud.ResultBannerTitle);
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Summon opening confirmed"));
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Survive 3/3"));
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Record S"));
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("42.0/90.0s"));
             Assert.That(reviewHud.ResultBannerDetail, Does.Not.Contain("BOSS CLEAR"));
-            Assert.AreEqual("FRONTLINE STABILIZED", overlayHud.ResultTitleReadout);
-            Assert.That(overlayHud.ResultSummaryReadout, Does.Contain("Summon route analyzed"));
-            Assert.That(overlayHud.ResultRewardReadout, Does.Contain("Clean route logged"));
-            Assert.That(overlayHud.ResultNextObjectiveReadout, Does.Contain("counter wave"));
+            Assert.AreEqual("PRESSURE BROKEN", overlayHud.ResultTitleReadout);
+            Assert.That(overlayHud.ResultSummaryReadout, Does.Contain("Summon opening confirmed"));
+            Assert.That(overlayHud.ResultRewardReadout, Does.Contain("Clean survival logged"));
+            Assert.That(overlayHud.ResultNextObjectiveReadout, Does.Contain("counter pressure"));
             Assert.That(overlayHud.ResultTitleReadout, Does.Not.Contain("BOSS CLEAR"));
             Assert.That(overlayHud.ResultSummaryReadout, Does.Not.Contain("Boss pressure answered"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Summon follow-up"));
@@ -227,9 +227,9 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("decision:clean_clear(clean_followup)"));
             Assert.That(
                 reviewHud.RouteRecordReadout,
-                Does.Contain("proof:committed(4/4 trigger:close_probe target:boss_curtain payload:skill1_confirm log:committed)"));
+                Does.Contain("proof:committed(4/4 trigger:close_probe threat:boss_curtain answer:skill1_confirm log:committed)"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("Suppression Result"));
-            Assert.That(reviewHud.StageBeatReadout, Does.Contain("route_record_committed"));
+            Assert.That(reviewHud.StageBeatReadout, Does.Contain("survival_record_committed"));
         }
 
         [UnityTest]
@@ -273,8 +273,8 @@ namespace DimensionBrawl.Tests
                 screenCuePresenter.LastFrontlineStabilityBand);
             Assert.That(screenCuePresenter.LastCueId, Does.Contain("FrontlineStability.Critical"));
             Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("critical"));
-            Assert.That(reviewHud.RouteIncentiveReadout, Does.Contain("line collapse"));
-            Assert.That(reviewHud.RouteIncentiveReadout, Does.Contain("failure analysis"));
+            Assert.That(reviewHud.RouteIncentiveReadout, Does.Contain("HP is the fail state"));
+            Assert.That(reviewHud.RouteIncentiveReadout, Does.Contain("improve the clear"));
         }
 
         [UnityTest]
@@ -291,7 +291,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(0, pocketOwner.ActiveAllyFrontlineProxyCount);
             Assert.AreEqual(0, pocketOwner.ActiveEnemyFrontlineProxyCount);
             Assert.AreEqual(1f, pocketOwner.CurrentFrontlinePresenceDrainScale, 0.001f);
-            Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("frontline x1.00 open"));
+            Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("pressure x1.00 open"));
             float openDrain = pocketOwner.CurrentRouteStabilityDrainPerSecond;
             Assert.Greater(openDrain, 0f);
 
@@ -300,20 +300,20 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(0, pocketOwner.ActiveEnemyFrontlineProxyCount);
             Assert.AreEqual(0.70f, pocketOwner.CurrentFrontlinePresenceDrainScale, 0.001f);
             Assert.Less(pocketOwner.CurrentRouteStabilityDrainPerSecond, openDrain);
-            Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("frontline x0.70 ally"));
+            Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("pressure x0.70 covered"));
 
             SummonFrontlineProxy enemyProxy = CreateActiveFrontlineProxy("Test_Enemy_FrontlineProxy", DamageTeam.Enemy);
             Assert.AreEqual(1, pocketOwner.ActiveAllyFrontlineProxyCount);
             Assert.AreEqual(1, pocketOwner.ActiveEnemyFrontlineProxyCount);
             Assert.AreEqual(0.85f, pocketOwner.CurrentFrontlinePresenceDrainScale, 0.001f);
-            Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("frontline x0.85 contest"));
+            Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("pressure x0.85 contested"));
 
             allyProxy.Deactivate(SummonFrontlineProxyExitReason.Recalled);
             Assert.AreEqual(0, pocketOwner.ActiveAllyFrontlineProxyCount);
             Assert.AreEqual(1, pocketOwner.ActiveEnemyFrontlineProxyCount);
             Assert.AreEqual(1.20f, pocketOwner.CurrentFrontlinePresenceDrainScale, 0.001f);
             Assert.Greater(pocketOwner.CurrentRouteStabilityDrainPerSecond, openDrain);
-            Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("frontline x1.20 enemy"));
+            Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("pressure x1.20 pressed"));
 
             enemyProxy.Deactivate(SummonFrontlineProxyExitReason.Recalled);
         }
@@ -405,20 +405,20 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("pending", pocketOwner.CounterWaveFinalWindowState);
             Assert.AreEqual("awaiting_answer", pocketOwner.CounterWaveFinalWindowReadout);
             Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.CounterWave, pocketOwner.CurrentPhase);
-            Assert.That(pocketOwner.ObjectiveCue, Does.Contain("Counter wave"));
-            Assert.That(reviewHud.CompactObjectiveReadout, Does.Contain("Hold counter wave"));
+            Assert.That(pocketOwner.ObjectiveCue, Does.Contain("Counter pressure"));
+            Assert.That(reviewHud.CompactObjectiveReadout, Does.Contain("Hold counter pressure"));
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter:recorded(enemy_body)"));
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter_answer:pending(awaiting)"));
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter_window:pending(awaiting_answer)"));
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("decision:recovery_needed(answer_counter)"));
             Assert.That(
                 pocketOwner.CompletionRecordReadout,
-                Does.Contain("proof:target_pending(1/4 trigger:counter_wave target:ally_needed payload:window_open log:pending)"));
+                Does.Contain("proof:threat_pending(1/4 trigger:counter_wave threat:ally_needed answer:window_open log:pending)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter:recorded(enemy_body)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter_answer:pending(awaiting)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter_window:pending(awaiting_answer)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("decision:recovery_needed(answer_counter)"));
-            Assert.That(reviewHud.RouteIncentiveReadout, Does.Contain("counter wave"));
+            Assert.That(reviewHud.RouteIncentiveReadout, Does.Contain("counter pressure"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("Enemy Counter Wave"));
             Assert.Greater(screenCuePresenter.CounterWaveCueRequestCount, counterCueCountBeforeEnemy);
             Assert.AreEqual(
@@ -465,7 +465,7 @@ namespace DimensionBrawl.Tests
                 "Counter wave recovery should keep route pressure active even if the previous follow-up relief window is still open.");
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter_answer:pending(holding_0%)"));
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("decision:recovery_needed(ally_holding)"));
-            Assert.That(reviewHud.CompactObjectiveReadout, Does.Contain("Hold counter wave 0.5s"));
+            Assert.That(reviewHud.CompactObjectiveReadout, Does.Contain("Hold counter pressure 0.5s"));
             Assert.AreEqual(counterAnswerCueCountBeforeAlly, screenCuePresenter.CounterWaveAnswerCueRequestCount);
             Assert.AreEqual(counterStabilizedVfxCueCountBeforeAlly, pocketVfxCueBridge.CounterWaveStabilizedCueRequestCount);
             Assert.AreEqual(counterStabilizedCameraCueCountBeforeAlly, cameraCueDriver.CounterWaveStabilizedCueRequestCount);
@@ -501,7 +501,7 @@ namespace DimensionBrawl.Tests
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("decision:recovery_needed(answer_counter)"));
             Assert.That(
                 pocketOwner.CompletionRecordReadout,
-                Does.Contain("proof:target_pending(1/4 trigger:counter_wave target:interrupted payload:window_open log:pending)"));
+                Does.Contain("proof:threat_pending(1/4 trigger:counter_wave threat:interrupted answer:window_open log:pending)"));
             Assert.AreEqual(counterAnswerCueCountBeforeAlly, screenCuePresenter.CounterWaveAnswerCueRequestCount);
             Assert.AreEqual(counterStabilizedVfxCueCountBeforeAlly, pocketVfxCueBridge.CounterWaveStabilizedCueRequestCount);
             Assert.AreEqual(counterStabilizedCameraCueCountBeforeAlly, cameraCueDriver.CounterWaveStabilizedCueRequestCount);
@@ -548,14 +548,14 @@ namespace DimensionBrawl.Tests
             Assert.Greater(pocketOwner.RouteStability01, unstableStabilityBeforeAnswer);
             Assert.Less(pocketOwner.RouteStability01, stabilityBeforeAnswer);
             Assert.That(pocketOwner.ObjectiveCue, Does.Contain("Confirm"));
-            Assert.That(reviewHud.CompactObjectiveReadout, Does.Contain("route window"));
+            Assert.That(reviewHud.CompactObjectiveReadout, Does.Contain("window"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("Follow-Up Window"));
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter_answer:stabilized(ally_hold)"));
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter_window:opened(final_followup)"));
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("decision:recovered(final_window)"));
             Assert.That(
                 pocketOwner.CompletionRecordReadout,
-                Does.Contain("proof:payload_pending(2/4 trigger:counter_wave target:ally_hold payload:final_window log:pending)"));
+                Does.Contain("proof:answer_pending(2/4 trigger:counter_wave threat:ally_hold answer:final_window log:pending)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter_answer:stabilized(ally_hold)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter_window:opened(final_followup)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("decision:recovered(final_window)"));
@@ -592,24 +592,24 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(pocketOwner.Skill1FollowupHitConfirmed);
             Assert.IsTrue(pocketOwner.IsCleared);
             Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.Cleared, pocketOwner.CurrentPhase);
-            Assert.That(reviewHud.ResultBannerTitle, Does.Contain("FRONTLINE STABILIZED"));
-            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Counter wave held"));
+            Assert.That(reviewHud.ResultBannerTitle, Does.Contain("PRESSURE BROKEN"));
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Counter pressure held"));
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("final follow-up"));
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Counter recovery"));
             Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Record B"));
             Assert.That(reviewHud.ResultBannerDetail, Does.Not.Contain("Record S"));
-            Assert.That(overlayHud.ResultSummaryReadout, Does.Contain("Counter wave held"));
+            Assert.That(overlayHud.ResultSummaryReadout, Does.Contain("Counter pressure held"));
             Assert.That(overlayHud.ResultRewardReadout, Does.Contain("Counter recovery logged"));
             Assert.That(overlayHud.ResultNextObjectiveReadout, Does.Contain("earlier"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Counter recovery"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Record B: Counter recovery"));
-            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("stability 54%"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("pressure 54%"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("followup:recorded"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter_window:opened(final_followup)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("decision:recovery_clear(counter_recovery)"));
             Assert.That(
                 reviewHud.RouteRecordReadout,
-                Does.Contain("proof:committed(4/4 trigger:counter_wave target:ally_hold payload:final_skill log:committed)"));
+                Does.Contain("proof:committed(4/4 trigger:counter_wave threat:ally_hold answer:final_skill log:committed)"));
             Assert.That(reviewHud.RouteIncentiveReadout, Does.Contain("Counter recovery"));
 
             enemyProxy.Deactivate(SummonFrontlineProxyExitReason.Recalled);
@@ -656,7 +656,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("pending", pocketOwner.CounterWaveFinalWindowState);
             Assert.AreEqual("awaiting_answer", pocketOwner.CounterWaveFinalWindowReadout);
             Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.CounterWave, pocketOwner.CurrentPhase);
-            Assert.That(reviewHud.CompactObjectiveReadout, Does.Contain("Hold counter wave"));
+            Assert.That(reviewHud.CompactObjectiveReadout, Does.Contain("Hold counter pressure"));
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter:recorded(boss_summon)"));
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter_answer:pending(awaiting)"));
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter_window:pending(awaiting_answer)"));
@@ -812,7 +812,7 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Summon follow-up"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("decision:clean_clear(clean_followup)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter:avoided(none)"));
-            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Summon route analyzed"));
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Summon opening confirmed"));
 
             if (closeThreatEnemy != null)
             {
@@ -821,7 +821,7 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator FrontlineRouteStabilityCollapseFailsRouteWithoutPlayerDefeat()
+        public IEnumerator FrontlineRouteStabilityZeroDoesNotFailWhilePlayerHealthSurvives()
         {
             EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
             yield return null;
@@ -841,26 +841,18 @@ namespace DimensionBrawl.Tests
             SetField(pocketOwner, "routeStability01", 0.02f);
             pocketOwner.Tick(1f);
 
-            Assert.IsTrue(pocketOwner.IsFailed);
-            Assert.IsTrue(pocketOwner.FailedFromRouteStabilityCollapse);
-            Assert.AreEqual(
-                BossBarragePocketReviewOwner.RouteFailureReason.RouteStabilityCollapsed,
-                pocketOwner.FailureReason);
-            Assert.IsTrue(playerHealth.IsAlive, "Route collapse should be a frontline failure, not a hidden HP defeat.");
-            Assert.AreEqual("LINE COLLAPSED", reviewHud.ResultBannerTitle);
-            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Route stability collapsed"));
-            Assert.That(reviewHud.ResultBannerDetail, Does.Not.Contain("Player down"));
-            Assert.AreEqual("LINE COLLAPSED", overlayHud.ResultTitleReadout);
-            Assert.That(overlayHud.ResultSummaryReadout, Does.Contain("Route stability collapsed"));
-            Assert.That(overlayHud.ResultRewardReadout, Does.Contain("Failure analysis logged"));
-            Assert.That(overlayHud.ResultNextObjectiveReadout, Does.Contain("visible curtain"));
-            Assert.That(overlayHud.ResultTitleReadout, Does.Not.Contain("MISSION FAILED"));
-            Assert.That(reviewHud.RouteIncentiveReadout, Does.Contain("line collapse"));
-            Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("stability 0%"));
-            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Incomplete 0/3"));
-            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("reason route collapse"));
+            Assert.IsTrue(pocketOwner.IsRunning);
+            Assert.IsFalse(pocketOwner.IsFailed);
+            Assert.IsFalse(pocketOwner.FailedFromRouteStabilityCollapse);
+            Assert.AreEqual(BossBarragePocketReviewOwner.RouteFailureReason.None, pocketOwner.FailureReason);
+            Assert.IsTrue(playerHealth.IsAlive, "HP, not route stability, should be the actual fail state.");
+            Assert.IsFalse(reviewHud.ShouldShowResultBanner);
+            Assert.AreEqual(string.Empty, overlayHud.ResultTitleReadout);
+            Assert.That(reviewHud.RouteIncentiveReadout, Does.Contain("HP is the fail state"));
+            Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("pressure 0%"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Pending 0/3"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("close:pending"));
-            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("decision:failed(route_collapse)"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("decision:survive(keep_hp)"));
         }
 
         [UnityTest]
@@ -890,12 +882,12 @@ namespace DimensionBrawl.Tests
 
             Assert.IsTrue(pocketOwner.IsFailed);
             Assert.AreEqual(BossBarragePocketReviewOwner.RouteFailureReason.PlayerDown, pocketOwner.FailureReason);
-            Assert.AreEqual("LINE COLLAPSED", reviewHud.ResultBannerTitle);
-            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Player down"));
-            Assert.AreEqual("LINE COLLAPSED", overlayHud.ResultTitleReadout);
-            Assert.That(overlayHud.ResultSummaryReadout, Does.Contain("Player down"));
+            Assert.AreEqual("PLAYER DOWN", reviewHud.ResultBannerTitle);
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Player HP reached zero"));
+            Assert.AreEqual("PLAYER DOWN", overlayHud.ResultTitleReadout);
+            Assert.That(overlayHud.ResultSummaryReadout, Does.Contain("Player HP reached zero"));
             Assert.That(overlayHud.ResultRewardReadout, Does.Contain("Failure analysis logged"));
-            Assert.That(reviewHud.RouteIncentiveReadout, Does.Contain("failure analysis"));
+            Assert.That(reviewHud.RouteIncentiveReadout, Does.Contain("Failure analysis"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("reason player down"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("decision:failed(player_down)"));
         }

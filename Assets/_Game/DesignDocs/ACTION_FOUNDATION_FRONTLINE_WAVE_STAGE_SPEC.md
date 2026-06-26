@@ -77,9 +77,9 @@ NIKKE wave data does not just say "spawn enemies." It preserves wave indices, sp
 For this review pocket, every pressure slot should be typed:
 
 - `CloseProbe`: enters or threatens the player side
-- `LineProjectile`: crosses the contested line as dodge/fire pressure
+- `AimShot`: tests dodge/fire spacing while HP is under pressure
 - `ScreenCurtain`: asks for summon screen or timing answer
-- `FrontlineBody`: can clash with summon body
+- `BodyRush`: returns body pressure if the player misses the punish window
 - `BackPressure`: pressures from boss side and is hard to solve with body movement
 - `CoreExpose`: short follow-up target after the wave answer
 
@@ -113,9 +113,9 @@ The NIKKE LostSector/runtime bridge data is useful because it separates static s
 
 For DimensionBrawl, even in review form, make clear what changes after the pocket:
 
-- `frontline stabilized`
+- `HP survived`
 - `wave suppressed`
-- `summon route analyzed`
+- `summon answer analyzed`
 - `pressure source exposed`
 
 This can be mock text now. It should still be a named state, not just `BOSS CLEAR`.
@@ -303,7 +303,7 @@ Pressure:
 - light boss projectile pattern
 - one close or mid probe threat on player side
 - spawn/read family: `Normal` plus one `Dash` or `Drop` equivalent
-- slot roles: `LineProjectile` and `CloseProbe`
+- slot roles: `AimShot` and `CloseProbe`
 
 Player action:
 
@@ -386,7 +386,7 @@ Pressure:
 - enemy summon/probe body
 - side clamp or line pressure pattern
 - spawn/read family: `Dash`, `Calling`, or `ObjectCreate` equivalent
-- slot roles: `FrontlineBody` plus `LineProjectile`
+- slot roles: `BodyRush` plus `AimShot`
 
 Player action:
 
@@ -455,20 +455,20 @@ Use result language that confirms what changed in the match.
 Clear examples:
 
 - `WAVE SUPPRESSED`
-- `FRONTLINE STABILIZED`
-- `RIFT PRESSURE BROKEN`
-- `SUMMON ROUTE SECURED`
+- `PRESSURE BROKEN`
+- `HP SURVIVED`
+- `SUMMON ANSWER CONFIRMED`
 
 Detail examples:
 
 - `Summon screen blocked the boss curtain. Skill1 confirmed the opening.`
-- `The frontline held through two pressure waves.`
-- `Cross-line pressure route analyzed.`
+- `The player survived the boss pressure and reopened the punish.`
+- `HP-safe pressure answer recorded.`
 
 Fail examples:
 
-- `LINE COLLAPSED`
-- `Pressure wave reached player zone.`
+- `PLAYER DOWN`
+- `Player HP reached zero before the pressure answer completed.`
 - `Summon screen missed the boss curtain.`
 
 ## Mechanics Mapping
@@ -521,13 +521,13 @@ Before implementing code, represent the next review pocket in this shape, even i
 Fields:
 
 - `stageId`: `AF_BarrageWave_001`
-- `displayName`: `Rift Wave Suppression`
-- `combatPromise`: player and boss bodies stay separated while waves, projectiles, and summons contest the line
-- `entryCue`: hold the line and read the first wave
-- `successResult`: wave suppressed / frontline stabilized
-- `failResult`: line collapsed / pressure reached player side
-- `mockRewardHook`: summon route analysis complete
-- `waveGroupId`: `AF_WaveGroup_BarrageLine_001`
+- `displayName`: `HP Pressure Review`
+- `combatPromise`: survive boss pressure; summons buy the opening
+- `entryCue`: stay alive, block boss pressure, then confirm Skill1
+- `successResult`: pressure broken / HP survived
+- `failResult`: player HP reached zero
+- `mockRewardHook`: survival answer analysis complete
+- `waveGroupId`: `AF_WaveGroup_BarragePressure_001`
 
 ### Wave Group
 
@@ -558,7 +558,7 @@ Example:
 waveIndex: 2
 wavePurpose: First summon-needed pressure
 primaryPressureSlot: ScreenCurtain
-secondaryPressureSlot: LineProjectile
+secondaryPressureSlot: AimShot
 playerAnswer: dodge/read while charging EN
 summonAnswer: SummonSlot1 pressure screen intercepts curtain
 successOpens: Skill1 follow-up window
@@ -568,10 +568,10 @@ successOpens: Skill1 follow-up window
 
 Fields:
 
-- `slotRole`: CloseProbe / LineProjectile / ScreenCurtain / FrontlineBody / BackPressure / CoreExpose
+- `slotRole`: CloseProbe / AimShot / ScreenCurtain / BodyRush / BackPressure / CoreExpose
 - `spawnRead`: Normal / Dash / Drop / Jump equivalent
 - `fireRead`: Instant / ProjectileCurve / Range / Barrier / Calling equivalent
-- `targetPriority`: player, summon, frontline, boss/core
+- `targetPriority`: player HP, summon, pressure source, boss/core
 - `answerType`: dodge, fire, summon screen, summon clash, Skill1 follow-up
 - `resultCue`: what visibly changes when answered
 
@@ -599,13 +599,13 @@ Use this as the concrete first implementation target.
 - summon answer: `SummonSlot1` screen intercepts or body-holds the curtain
 - result cue: pressure break VFX and follow-up objective
 
-### Wave 3: Frontline Counter
+### Wave 3: Counter Pressure
 
-- `slotRole`: `FrontlineBody`
+- `slotRole`: `BodyRush`
 - `spawnRead`: `Dash` or `Calling`
 - `fireRead`: `Range` or `ObjectCreate`
-- player answer: do not overcommit; keep firing and dodge line pressure
-- summon answer: summon body clashes or holds contested line
+- player answer: do not overcommit; keep HP safe while firing
+- summon answer: summon body absorbs the returning pressure
 - result cue: core or boss-side pressure source exposes briefly
 
 ### Final Window: Core Expose
@@ -819,31 +819,31 @@ The profile uses the ArkData references as structural evidence only:
 
 Local review beats are locked as:
 
-1. Match read: player and boss bodies stay separated by the contested line.
+1. Match read: player HP is the real fail state while the boss curtain pressures from range.
 2. Close probe: local defense stops the first close threat.
 3. First summon need: `SummonSlot1` answers the boss curtain because the player cannot cross.
-4. Follow-up window: `Skill1` confirms the route after summon pressure suppression.
-5. Counter wave: missed follow-up returns boss pressure instead of silently failing.
-6. Suppression result: result copy records `frontline stabilized` / `summon route analyzed`, not boss HP death.
+4. Follow-up window: `Skill1` confirms the punish after summon pressure suppression.
+5. Counter pressure: missed follow-up returns boss pressure instead of silently failing.
+6. Suppression result: result copy records `pressure broken` / `HP survived`, not boss HP death.
 
-Route stability is now part of the review-scene contract:
+Pressure control is now part of the review-scene contract:
 
-- The profile carries a route-stability budget derived from the same 90-second stage shell and wave-slot read.
-- The profile also carries six structured pressure slots (`BackPressure`, `CloseProbe`, `ScreenCurtain`, `CoreExpose`, `FrontlineBody`, `RecordHook`) derived from NIKKE spawn family/path slot grammar and mapped to local review beats.
-- The profile carries a compact combat promise and entry cue, and the premium HUD objective panel must surface them before the beat line so the player sees why the route matters, not just which button to press next.
-- CloseProbe, SummonNeed, and CounterWave beats drain route stability until the player answers the local objective.
-- Close-threat defeat, `SummonSlot1` pressure block, and confirmed `Skill1` follow-up restore stability.
-- Active frontline proxies must affect route pressure: ally presence reduces drain, contested presence softens it, and enemy-only presence increases it.
-- If stability collapses, the pocket fails as `LINE COLLAPSED` even when player HP remains, so the match is not reducible to HP trading or button timing.
-- Route stability must warn before collapse with `stable` / `unstable` / `critical` bands and frontline screen cues, so the player feels the line being lost before the failure banner.
-- The HUD and route record must show the active pressure slot, stability, route progress, and target time.
-- The premium HUD objective panel must also surface an in-match record preview (`stop close probe -> summon block -> Skill1`, counter recovery, or line-collapse warning) so the player sees the route quality being built before the result overlay.
+- The profile carries a pressure-control budget derived from the same 90-second stage shell and wave-slot read.
+- The profile also carries six structured pressure slots (`BackPressure`, `CloseProbe`, `ScreenCurtain`, `CoreExpose`, `BodyRush`, `RecordHook`) derived from NIKKE spawn family/path slot grammar and mapped to local review beats.
+- The profile carries a compact combat promise and entry cue, and the premium HUD objective panel must surface them before the beat line so the player sees why surviving the pressure matters, not just which button to press next.
+- CloseProbe, SummonNeed, and CounterPressure beats drain pressure control until the player answers the local objective.
+- Close-threat defeat, `SummonSlot1` pressure block, and confirmed `Skill1` follow-up restore pressure control.
+- Active summon-pressure proxies must affect pressure control: ally presence reduces drain, contested presence softens it, and enemy-only presence increases it.
+- Pressure control reaching zero must not fail the pocket by itself. It is a warning and route-quality signal; only player HP reaching zero fails the run.
+- Pressure control must warn with `stable` / `unstable` / `critical` bands and pressure screen cues, so the player feels survival quality dropping before any HP failure.
+- The HUD and survival record must show the active pressure slot, pressure control, survival progress, and target time.
+- The premium HUD objective panel must also surface an in-match record preview (`stop close probe -> summon block -> Skill1`, counter recovery, or HP-fail warning) so the player sees the survival answer being built before the result overlay.
 - The route record must also expose the observer-completion snapshot (`close`, `summon`, `followup` as `pending`/`recorded`) so the pocket follows the PGR-style condition gate -> combat observer -> completion record chain instead of ending as loose debug text.
 - The route record must distinguish the optional counter-wave branch and source: clean follow-up marks `counter:avoided(none)`, while observed enemy frontline body pressure and boss summon release mark `counter:recorded(enemy_body)` or `counter:recorded(boss_summon)`.
-- Observing counter-wave pressure must apply a one-time route-stability entry penalty before ongoing drain, so missed follow-up/boss-screen block/enemy-body pressure damages the line immediately instead of reading as a harmless extra prompt.
-- The route record must separately show the counter-wave answer: after observed counter pressure, ally summon/frontline presence marks `counter_answer:stabilized(ally_hold)` and restores a small route-stability bonus; clean follow-up keeps `counter_answer:not_needed(clean_followup)`.
+- Observing counter pressure must apply a one-time pressure-control entry penalty before ongoing drain, so missed follow-up/boss-screen block/enemy-body pressure reads as rising survival danger instead of a harmless extra prompt.
+- The route record must separately show the counter-pressure answer: after observed counter pressure, ally summon presence marks `counter_answer:stabilized(ally_hold)` and restores a small pressure-control bonus; clean follow-up keeps `counter_answer:not_needed(clean_followup)`.
 - A stabilized counter wave must open the final follow-up window and record it as `counter_window:opened(final_followup)`, matching the Beat 4 success state instead of leaving the player in a dead-end hold state.
-- That final follow-up window must scale down when the route is still unstable/critical after stabilization, so late recovery remains possible but physically tighter than a clean route.
+- That final follow-up window must scale down when pressure control is still unstable/critical after stabilization, so late recovery remains possible but physically tighter than a clean answer.
 - A scaled-down final follow-up window must use a distinct compressed follow-up screen cue, so the tighter recovery is visible without adding a new HUD panel.
 - A clear reached through that stabilized counter path must name the result as `Counter recovery` and use dedicated counter-clear copy, so the route reward recognizes the player's recovery decision instead of flattening it into the clean summon follow-up.
 - Route record grade must not rank only by raw clear time: clean follow-up can earn `Record S`, while counter recovery is capped by route quality/window compression so the result motivates a cleaner next run.
