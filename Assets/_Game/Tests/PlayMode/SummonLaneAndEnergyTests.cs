@@ -1626,6 +1626,95 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void SummonFrontlineProxyPresenterBudgetsRepeatedFullBodyHitReactions()
+        {
+            GameObject victimObject = new GameObject("VictimSummonProxy");
+            CombatHealth victimHealth = victimObject.AddComponent<CombatHealth>();
+            victimHealth.ConfigureTeam(DamageTeam.AllySummon);
+            victimHealth.ResetHealthToFull();
+            SummonFrontlineProxy victimProxy = victimObject.AddComponent<SummonFrontlineProxy>();
+            victimProxy.ConfigureHealth(victimHealth);
+
+            GameObject pulseObject = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            pulseObject.name = "TierPulseCore";
+            pulseObject.transform.SetParent(victimObject.transform, worldPositionStays: false);
+            Collider pulseCollider = pulseObject.GetComponent<Collider>();
+            Object.DestroyImmediate(pulseCollider);
+            Renderer pulseRenderer = pulseObject.GetComponent<Renderer>();
+            GameObject visualObject = new GameObject("SummonSlot1Visual_ShieldBreakerElite");
+            visualObject.transform.SetParent(victimObject.transform, worldPositionStays: false);
+            Animator animator = visualObject.AddComponent<Animator>();
+            animator.runtimeAnimatorController =
+                AssetDatabase.LoadAssetAtPath<RuntimeAnimatorController>(ShieldBreakerEliteAnimatorControllerPath);
+            Assert.IsNotNull(animator.runtimeAnimatorController);
+
+            SummonFrontlineProxyPresenter presenter = victimObject.AddComponent<SummonFrontlineProxyPresenter>();
+            presenter.ConfigurePresentation(victimProxy, pulseObject.transform, new[] { pulseRenderer });
+            presenter.ConfigureAnimator(animator);
+            victimProxy.Activate(Vector3.zero, Vector3.forward, 1, 0f, 1f, 2f, 2f, 120f, 1f);
+            presenter.RefreshNow();
+
+            GameObject sourceObject = new GameObject("EnemySummonProxy");
+            CombatHealth sourceHealth = sourceObject.AddComponent<CombatHealth>();
+            sourceHealth.ConfigureTeam(DamageTeam.Enemy);
+            sourceHealth.ResetHealthToFull();
+
+            Assert.IsTrue(victimHealth.TryApplyDamage(new DamageInfo(
+                sourceHealth,
+                DamageTeam.Enemy,
+                10f,
+                Vector3.zero,
+                Vector3.back,
+                0f,
+                DamageResponsePolicy.Stagger,
+                CombatControlLockPolicy.InterruptAction)));
+            Assert.AreEqual(1, presenter.DamageFlashCount);
+            Assert.AreEqual(1, presenter.AnimatorHitTriggerCount);
+            Assert.AreEqual(0, presenter.SuppressedAnimatorHitTriggerCount);
+            Assert.IsFalse(presenter.LastFullBodyHitReactionSuppressed);
+
+            Assert.IsTrue(victimHealth.TryApplyDamage(new DamageInfo(
+                sourceHealth,
+                DamageTeam.Enemy,
+                10f,
+                Vector3.zero,
+                Vector3.back,
+                0f,
+                DamageResponsePolicy.Stagger,
+                CombatControlLockPolicy.InterruptAction)));
+            Assert.AreEqual(
+                2,
+                presenter.DamageFlashCount,
+                "Repeated hits should remain readable through flash/VFX feedback.");
+            Assert.AreEqual(
+                1,
+                presenter.AnimatorHitTriggerCount,
+                "Routine repeated hits should not keep forcing the summon back into full-body hit animation.");
+            Assert.AreEqual(1, presenter.SuppressedAnimatorHitTriggerCount);
+            Assert.IsTrue(presenter.LastFullBodyHitReactionSuppressed);
+
+            Assert.IsTrue(victimHealth.TryApplyDamage(new DamageInfo(
+                sourceHealth,
+                DamageTeam.Enemy,
+                10f,
+                Vector3.zero,
+                Vector3.back,
+                0f,
+                DamageResponsePolicy.Break,
+                CombatControlLockPolicy.HardLock)));
+            Assert.AreEqual(3, presenter.DamageFlashCount);
+            Assert.AreEqual(
+                2,
+                presenter.AnimatorHitTriggerCount,
+                "Major authored reactions should still cut through the routine hit reaction budget.");
+            Assert.AreEqual(1, presenter.SuppressedAnimatorHitTriggerCount);
+            Assert.IsFalse(presenter.LastFullBodyHitReactionSuppressed);
+
+            Object.DestroyImmediate(sourceObject);
+            Object.DestroyImmediate(victimObject);
+        }
+
+        [Test]
         public void SummonFrontlineProxyPresenterSoftensNonLockingDamageVfx()
         {
             GameObject victimObject = new GameObject("VictimSummonProxy");

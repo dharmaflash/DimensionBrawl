@@ -54,6 +54,8 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0f)] private float attackFlashSeconds = 0.12f;
         [SerializeField, Min(0f)] private float damageFlashSeconds = 0.16f;
         [SerializeField, Min(0f)] private float deathFlashSeconds = 0.22f;
+        [SerializeField, Min(0f)] private float fullBodyHitReactionCooldownSeconds = 0.42f;
+        [SerializeField] private bool heavyHitReactionBypassesCooldown = true;
         [SerializeField, Range(0.2f, 1f)] private float impactFlashProgress = 0.86f;
         [SerializeField, Min(0.01f)] private float pulseSpeed = 8f;
         [SerializeField, Min(0f)] private float pulseScale = 0.08f;
@@ -87,6 +89,7 @@ namespace DimensionBrawl.Presentation
         private int animatorSpawnTriggerCount;
         private int animatorAttackTriggerCount;
         private int animatorHitTriggerCount;
+        private int suppressedAnimatorHitTriggerCount;
         private int animatorDeathTriggerCount;
         private int animatorMoveSpeedSetCount;
         private int entryVfxCueRequestCount;
@@ -99,6 +102,8 @@ namespace DimensionBrawl.Presentation
         private DamageResponsePolicy lastDamageResponsePolicy = DamageResponsePolicy.Default;
         private CombatControlLockPolicy lastDamageControlLockPolicy = CombatControlLockPolicy.InterruptAction;
         private bool lastDamageCueInterruptedAction;
+        private bool lastFullBodyHitReactionSuppressed;
+        private float nextFullBodyHitReactionTime;
 
         public SummonFrontlineProxy Proxy => proxy;
         public SummonFrontlineClash Clash => clash;
@@ -131,6 +136,7 @@ namespace DimensionBrawl.Presentation
         public int AnimatorSpawnTriggerCount => animatorSpawnTriggerCount;
         public int AnimatorAttackTriggerCount => animatorAttackTriggerCount;
         public int AnimatorHitTriggerCount => animatorHitTriggerCount;
+        public int SuppressedAnimatorHitTriggerCount => suppressedAnimatorHitTriggerCount;
         public int AnimatorDeathTriggerCount => animatorDeathTriggerCount;
         public int AnimatorMoveSpeedSetCount => animatorMoveSpeedSetCount;
         public int EntryVfxCueRequestCount => entryVfxCueRequestCount;
@@ -139,11 +145,13 @@ namespace DimensionBrawl.Presentation
         public int DamageVfxCueRequestCount => damageVfxCueRequestCount;
         public int DeathVfxCueRequestCount => deathVfxCueRequestCount;
         public float PressureDamageCueScale => pressureDamageCueScale;
+        public float FullBodyHitReactionCooldownSeconds => fullBodyHitReactionCooldownSeconds;
         public float LastDamageCueIntensity => lastDamageCueIntensity;
         public float LastDamageCuePolicyScale => lastDamageCuePolicyScale;
         public DamageResponsePolicy LastDamageResponsePolicy => lastDamageResponsePolicy;
         public CombatControlLockPolicy LastDamageControlLockPolicy => lastDamageControlLockPolicy;
         public bool LastDamageCueInterruptedAction => lastDamageCueInterruptedAction;
+        public bool LastFullBodyHitReactionSuppressed => lastFullBodyHitReactionSuppressed;
 
         private void Awake()
         {
@@ -487,6 +495,7 @@ namespace DimensionBrawl.Presentation
 
         private void HandleDamaged(DamageInfo damageInfo)
         {
+            lastFullBodyHitReactionSuppressed = false;
             if (!DamageResponsePolicyUtility.PlaysDamagePresentation(damageInfo.ResponsePolicy))
             {
                 return;
@@ -507,7 +516,7 @@ namespace DimensionBrawl.Presentation
                 damageVfxCueRequestCount++;
             }
 
-            if (ShouldPlayHitAnimation(damageInfo) && TriggerAnimator(hitTrigger))
+            if (TryConsumeFullBodyHitReaction(damageInfo) && TriggerAnimator(hitTrigger))
             {
                 animatorHitTriggerCount++;
             }
@@ -515,9 +524,32 @@ namespace DimensionBrawl.Presentation
             RefreshNow();
         }
 
-        private static bool ShouldPlayHitAnimation(DamageInfo damageInfo)
+        private bool TryConsumeFullBodyHitReaction(DamageInfo damageInfo)
         {
-            return DamageResponsePolicyUtility.PlaysFullBodyHitAnimation(damageInfo);
+            if (!DamageResponsePolicyUtility.PlaysFullBodyHitAnimation(damageInfo))
+            {
+                return false;
+            }
+
+            bool bypassesCooldown = heavyHitReactionBypassesCooldown
+                && (damageInfo.ControlLockPolicy == CombatControlLockPolicy.HardLock
+                    || IsHeavyFullBodyHitReaction(damageInfo.ResponsePolicy));
+            float now = Time.time;
+            if (!bypassesCooldown && now < nextFullBodyHitReactionTime)
+            {
+                suppressedAnimatorHitTriggerCount++;
+                lastFullBodyHitReactionSuppressed = true;
+                return false;
+            }
+
+            nextFullBodyHitReactionTime = now + Mathf.Max(0f, fullBodyHitReactionCooldownSeconds);
+            return true;
+        }
+
+        private static bool IsHeavyFullBodyHitReaction(DamageResponsePolicy responsePolicy)
+        {
+            return responsePolicy == DamageResponsePolicy.Break
+                || responsePolicy == DamageResponsePolicy.Knockdown;
         }
 
         private float ResolveDamageCuePolicyScale(DamageInfo damageInfo)
