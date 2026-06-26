@@ -1,0 +1,218 @@
+using DimensionBrawl.UI;
+using NUnit.Framework;
+using UnityEngine;
+
+namespace DimensionBrawl.Tests
+{
+    public sealed class ProxyCombatHudTutorialRunnerTests
+    {
+        [Test]
+        public void DefaultP0MappingsResolvePgrTargetsThroughProxyHudObjects()
+        {
+            Assert.IsTrue(PgrCombatHudProxyMappingCatalog.TryResolveDefaultP0(
+                "AttackButton",
+                "15",
+                out PgrCombatHudProxyMapping attackMapping));
+            Assert.AreEqual("Hud.BasicAttackButton", attackMapping.ProxyHudObject);
+            Assert.AreEqual(ProxyCombatHudInputKind.BasicAttackPressed, attackMapping.ProxyInputEvent.Kind);
+            Assert.AreEqual(ProxyCombatHudCompletionKind.BasicAttackAccepted, attackMapping.ProxyCompletionKind);
+
+            Assert.IsTrue(PgrCombatHudProxyMappingCatalog.TryResolveDefaultP0(
+                "PanelBallBox/TopThreeBalls",
+                "1|2|3",
+                out PgrCombatHudProxyMapping threePingMapping));
+            Assert.AreEqual("Hud.SignalOrbGroup.TopThree", threePingMapping.ProxyHudObject);
+            Assert.IsTrue(threePingMapping.IsGroupTarget);
+            Assert.AreEqual(3, threePingMapping.ProxyInputEvent.SequenceLength);
+            Assert.AreEqual(ProxyCombatHudCompletionKind.ThreePingAccepted, threePingMapping.ProxyCompletionKind);
+
+            Assert.IsTrue(PgrCombatHudProxyMappingCatalog.TryResolveDefaultP0(
+                "HpTopBossTemplate/HpTopNormalTemplateList/Endure",
+                "(none)",
+                out PgrCombatHudProxyMapping bossPoiseMapping));
+            Assert.AreEqual("Hud.BossPoiseBar", bossPoiseMapping.ProxyHudObject);
+            Assert.IsFalse(bossPoiseMapping.HasInput);
+            Assert.AreEqual(ProxyCombatHudCompletionKind.DurationOrReadAck, bossPoiseMapping.ProxyCompletionKind);
+        }
+
+        [Test]
+        public void RunnerKeepsThreePingAsGroupedHudTargetAndCompletesOnObserver()
+        {
+            ProxyTutorialHarness harness = CreateHarness("ThreePingRunner");
+            try
+            {
+                RectTransform orb0 = CreateRectTransform("Orb0", harness.Root.transform);
+                RectTransform orb1 = CreateRectTransform("Orb1", harness.Root.transform);
+                RectTransform orb2 = CreateRectTransform("Orb2", harness.Root.transform);
+                harness.Resolver.RegisterTargetGroup("Hud.SignalOrbGroup.TopThree", orb0, orb1, orb2);
+
+                Assert.IsTrue(harness.Runner.BeginMapping("signal_orb_three_ping", "Ping three adjacent orbs."));
+
+                Assert.IsTrue(harness.Runner.IsRunning);
+                Assert.AreEqual("signal_orb_three_ping", harness.Runner.ActiveMappingId);
+                Assert.AreEqual(ProxyCombatHudInputPolicy.GateRequestedInput, harness.Runner.ActiveInputPolicy);
+                Assert.IsTrue(harness.Presenter.Visible);
+                Assert.AreEqual(3, harness.Presenter.LastTargetCount);
+                Assert.AreEqual("Hud.SignalOrbGroup.TopThree", harness.Presenter.LastProxyHudObject);
+
+                Assert.IsFalse(harness.Runner.TryAcceptInput(ProxyCombatHudInputEvent.Dodge()));
+                Assert.AreEqual(ProxyCombatHudInputKind.DodgePressed, harness.Runner.LastRejectedInput.Kind);
+
+                Assert.IsTrue(harness.Runner.TryAcceptInput(ProxyCombatHudInputEvent.SignalOrbSequence(0, 1, 2)));
+                Assert.IsTrue(harness.Runner.IsRunning, "Accepted input should not finish until combat observer confirms the ping.");
+
+                harness.Observer.NotifyThreePingAccepted();
+
+                Assert.IsFalse(harness.Runner.IsRunning);
+                Assert.IsFalse(harness.Presenter.Visible);
+                Assert.AreEqual("signal_orb_three_ping", harness.Runner.LastCompletedMappingId);
+                Assert.AreEqual(ProxyCombatHudCompletionKind.ThreePingAccepted, harness.Runner.LastCompletionReason);
+            }
+            finally
+            {
+                Object.DestroyImmediate(harness.Root);
+            }
+        }
+
+        [Test]
+        public void RunnerSupportsDurationAndReadAckForExplainOnlyTargets()
+        {
+            ProxyTutorialHarness harness = CreateHarness("ReadAckRunner");
+            try
+            {
+                Assert.IsTrue(harness.Runner.BeginMapping(
+                    "boss_poise_endure_bar",
+                    "Watch the boss poise bar.",
+                    durationSeconds: 0.5f));
+
+                Assert.AreEqual(ProxyCombatHudInputPolicy.ObserveOnly, harness.Runner.ActiveInputPolicy);
+                Assert.IsTrue(harness.Runner.TryAcceptInput(ProxyCombatHudInputEvent.BasicAttack()));
+                harness.Runner.Tick(0.49f);
+                Assert.IsTrue(harness.Runner.IsRunning);
+                harness.Runner.Tick(0.02f);
+                Assert.IsFalse(harness.Runner.IsRunning);
+                Assert.AreEqual(ProxyCombatHudCompletionKind.DurationElapsed, harness.Runner.LastCompletionReason);
+
+                Assert.IsTrue(harness.Runner.BeginMapping(
+                    "boss_poise_endure_bar",
+                    "Read the boss poise bar.",
+                    durationSeconds: 10f));
+
+                Assert.IsTrue(harness.Runner.TryAcceptInput(ProxyCombatHudInputEvent.ReadAck()));
+
+                Assert.IsFalse(harness.Runner.IsRunning);
+                Assert.AreEqual(ProxyCombatHudCompletionKind.ReadAcknowledged, harness.Runner.LastCompletionReason);
+            }
+            finally
+            {
+                Object.DestroyImmediate(harness.Root);
+            }
+        }
+
+        [Test]
+        public void RunnerRequiresMatchingSwitchSlotCompletion()
+        {
+            ProxyTutorialHarness harness = CreateHarness("SwitchSlotRunner");
+            try
+            {
+                Assert.IsTrue(harness.Runner.BeginMapping("character_switch_slot_1", "Switch to slot one."));
+
+                Assert.IsFalse(harness.Runner.TryAcceptInput(ProxyCombatHudInputEvent.SwitchOrQte(2)));
+                harness.Observer.NotifyCharacterSwitchOrQteAccepted(2);
+                Assert.IsTrue(harness.Runner.IsRunning);
+
+                harness.Observer.NotifyCharacterSwitchOrQteAccepted(1);
+
+                Assert.IsFalse(harness.Runner.IsRunning);
+                Assert.AreEqual("character_switch_slot_1", harness.Runner.LastCompletedMappingId);
+                Assert.AreEqual(ProxyCombatHudCompletionKind.CharacterSwitchOrQteAccepted, harness.Runner.LastCompletionReason);
+            }
+            finally
+            {
+                Object.DestroyImmediate(harness.Root);
+            }
+        }
+
+        [Test]
+        public void InputBridgeRouterUsesDataBindingsBeforeDispatch()
+        {
+            ProxyTutorialHarness harness = CreateHarness("InputBridgeRunner");
+            try
+            {
+                ProxyCombatHudInputBridgeRouter router = harness.Root.AddComponent<ProxyCombatHudInputBridgeRouter>();
+                router.Configure(
+                    harness.Runner,
+                    new[]
+                    {
+                        new ProxyCombatHudInputBridgeRouter.ActionBinding(
+                            CombatHudActionId.BasicAttack,
+                            ProxyCombatHudInputEvent.BasicAttack()),
+                        new ProxyCombatHudInputBridgeRouter.ActionBinding(
+                            CombatHudActionId.Dodge,
+                            ProxyCombatHudInputEvent.Dodge())
+                    });
+
+                Assert.IsTrue(harness.Runner.BeginMapping("basic_attack_primary", "Tap attack."));
+
+                Assert.IsFalse(router.TryAcceptAction(CombatHudActionId.Dodge));
+                Assert.IsTrue(harness.Runner.IsRunning);
+
+                Assert.IsTrue(router.TryAcceptAction(CombatHudActionId.BasicAttack));
+                Assert.IsTrue(harness.Runner.IsRunning);
+
+                harness.Observer.NotifyBasicAttackAccepted();
+
+                Assert.IsFalse(harness.Runner.IsRunning);
+                Assert.AreEqual(ProxyCombatHudCompletionKind.BasicAttackAccepted, harness.Runner.LastCompletionReason);
+            }
+            finally
+            {
+                Object.DestroyImmediate(harness.Root);
+            }
+        }
+
+        private static ProxyTutorialHarness CreateHarness(string name)
+        {
+            GameObject root = new GameObject(name);
+            ProxyCombatHudTargetResolver resolver = root.AddComponent<ProxyCombatHudTargetResolver>();
+            ProxyCombatHudOverlayPresenter presenter = root.AddComponent<ProxyCombatHudOverlayPresenter>();
+            ProxyCombatHudTutorialObserver observer = root.AddComponent<ProxyCombatHudTutorialObserver>();
+            ProxyCombatHudTutorialRunner runner = root.AddComponent<ProxyCombatHudTutorialRunner>();
+            runner.Configure(null, resolver, presenter, observer);
+
+            return new ProxyTutorialHarness(root, resolver, presenter, observer, runner);
+        }
+
+        private static RectTransform CreateRectTransform(string name, Transform parent)
+        {
+            GameObject targetObject = new GameObject(name);
+            targetObject.transform.SetParent(parent, worldPositionStays: false);
+            RectTransform rectTransform = targetObject.AddComponent<RectTransform>();
+            rectTransform.sizeDelta = new Vector2(64f, 64f);
+            return rectTransform;
+        }
+
+        private sealed class ProxyTutorialHarness
+        {
+            public ProxyTutorialHarness(
+                GameObject root,
+                ProxyCombatHudTargetResolver resolver,
+                ProxyCombatHudOverlayPresenter presenter,
+                ProxyCombatHudTutorialObserver observer,
+                ProxyCombatHudTutorialRunner runner)
+            {
+                Root = root;
+                Resolver = resolver;
+                Presenter = presenter;
+                Observer = observer;
+                Runner = runner;
+            }
+
+            public GameObject Root { get; }
+            public ProxyCombatHudTargetResolver Resolver { get; }
+            public ProxyCombatHudOverlayPresenter Presenter { get; }
+            public ProxyCombatHudTutorialObserver Observer { get; }
+            public ProxyCombatHudTutorialRunner Runner { get; }
+        }
+    }
+}

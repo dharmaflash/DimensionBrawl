@@ -13,9 +13,18 @@ namespace DimensionBrawl.UI
     public sealed class CombatHudInputBridge : MonoBehaviour
     {
         [SerializeField] private CombatHudPresenter presenter;
+        [SerializeField] private ProxyCombatHudInputBridgeRouter tutorialInputRouter;
         [SerializeField] private CombatHudActionEvent actionRequested = new CombatHudActionEvent();
 
         public event Action<CombatHudActionId> ActionRequested;
+
+        private void Awake()
+        {
+            if (tutorialInputRouter == null)
+            {
+                tutorialInputRouter = GetComponent<ProxyCombatHudInputBridgeRouter>();
+            }
+        }
 
         public void RequestBasicAttack()
         {
@@ -57,8 +66,13 @@ namespace DimensionBrawl.UI
             RequestAction(CombatHudActionId.Pause);
         }
 
-        public void RequestAction(CombatHudActionId actionId)
+        public bool RequestAction(CombatHudActionId actionId)
         {
+            if (tutorialInputRouter != null && !tutorialInputRouter.TryAcceptAction(actionId))
+            {
+                return false;
+            }
+
             ActionRequested?.Invoke(actionId);
             actionRequested.Invoke(actionId);
 
@@ -66,6 +80,8 @@ namespace DimensionBrawl.UI
             {
                 presenter.SetActionFeedback(actionId);
             }
+
+            return true;
         }
     }
 }
