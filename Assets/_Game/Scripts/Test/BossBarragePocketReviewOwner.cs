@@ -888,10 +888,11 @@ namespace DimensionBrawl.Test
             bossPressureBlocksConsumedDuringFollowup = blocksAfterWindowStart;
             bossBlockedSkill1Followup = true;
             pressurePacing.EndSummonFollowupWindow();
-            NotifySummonFollowupMissedOnce();
+            NotifySummonFollowupMissedOnce(CounterWaveSource.BossScreenBlock);
         }
 
-        private void NotifySummonFollowupMissedOnce()
+        private void NotifySummonFollowupMissedOnce(
+            CounterWaveSource source = CounterWaveSource.FollowupMissed)
         {
             if (followupMissedNotified)
             {
@@ -899,7 +900,7 @@ namespace DimensionBrawl.Test
             }
 
             followupMissedNotified = true;
-            ObserveCounterWave(CounterWaveSource.FollowupMissed);
+            ObserveCounterWave(source);
             SummonFollowupMissed?.Invoke();
         }
 

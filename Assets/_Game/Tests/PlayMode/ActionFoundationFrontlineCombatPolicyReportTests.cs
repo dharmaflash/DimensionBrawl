@@ -34,7 +34,9 @@ namespace DimensionBrawl.Tests
             NoSummonNoFire,
             GunOnly,
             IntendedRoute,
-            LateSummon
+            LateSummon,
+            MissedFollowupCounterRecovery,
+            BossScreenBlockedFollowup
         }
 
         [UnityTest]
@@ -51,7 +53,9 @@ namespace DimensionBrawl.Tests
                     PolicyKind.NoSummonNoFire,
                     PolicyKind.GunOnly,
                     PolicyKind.IntendedRoute,
-                    PolicyKind.LateSummon
+                    PolicyKind.LateSummon,
+                    PolicyKind.MissedFollowupCounterRecovery,
+                    PolicyKind.BossScreenBlockedFollowup
                 })
                 {
                     EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
@@ -67,6 +71,8 @@ namespace DimensionBrawl.Tests
 
                 PolicyMetrics intended = RequireResult(results, PolicyKind.IntendedRoute);
                 PolicyMetrics noSummon = RequireResult(results, PolicyKind.NoSummonNoFire);
+                PolicyMetrics counterRecovery = RequireResult(results, PolicyKind.MissedFollowupCounterRecovery);
+                PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
                 Assert.IsTrue(File.Exists(ReportPath), "Frontline combat policy report should be written.");
                 Assert.IsTrue(File.Exists(JsonPath), "Frontline combat policy JSON should be written.");
                 Assert.Greater(intended.SummonBlocks, 0, "The intended route must prove summon interception changes the run.");
@@ -74,6 +80,21 @@ namespace DimensionBrawl.Tests
                     noSummon.PlayerDamageTaken,
                     intended.PlayerDamageTaken,
                     "The report should distinguish unanswered boss pressure from the intended summon answer.");
+                Assert.AreEqual(
+                    "CounterRecoveryClear",
+                    counterRecovery.ResultKind,
+                    "Missing the first follow-up should still prove the counter recovery route can be stabilized and cleared.");
+                Assert.AreEqual(
+                    "boss_screen",
+                    blockedFollowup.CounterWaveSource,
+                    "Boss-screen blocks must stay separated from generic follow-up misses.");
+                Assert.Greater(
+                    blockedFollowup.SkillProjectilesBlockedByBossScreen,
+                    0,
+                    "The boss-screen branch must prove enemy pressure can block Skill1 projectiles.");
+                Assert.IsTrue(
+                    blockedFollowup.BossBlockedSkill1Followup,
+                    "The boss-screen branch must latch the blocked follow-up as a route state.");
             }
             finally
             {
@@ -103,6 +124,8 @@ namespace DimensionBrawl.Tests
             GameObject bossRoot = RequireRoot(BossRootName);
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
             BossBarrageEmitter bossEmitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            BossSummonPressureAction bossSummonPressureAction =
+                RequireComponent<BossSummonPressureAction>(bossRoot, "boss summon pressure action");
 
             GameObject closeThreatRoot = RequireRoot(CloseThreatRootName);
             CombatHealth closeThreatHealth =
@@ -134,6 +157,7 @@ namespace DimensionBrawl.Tests
                 targetSelector,
                 laneSpace,
                 bossEmitter,
+                bossSummonPressureAction,
                 pocketOwner,
                 RequireComponent<CombatHealth>(player.gameObject, "player health"),
                 bossHealth,
@@ -158,6 +182,12 @@ namespace DimensionBrawl.Tests
                     break;
                 case PolicyKind.LateSummon:
                     yield return RunLateSummon(context);
+                    break;
+                case PolicyKind.MissedFollowupCounterRecovery:
+                    yield return RunMissedFollowupCounterRecovery(context);
+                    break;
+                case PolicyKind.BossScreenBlockedFollowup:
+                    yield return RunBossScreenBlockedFollowup(context);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -209,6 +239,27 @@ namespace DimensionBrawl.Tests
                 yield return ConfirmSkill1Followup(context);
                 yield return Advance(context, 1.0f);
             }
+        }
+
+        private static IEnumerator RunMissedFollowupCounterRecovery(CombatPolicyContext context)
+        {
+            yield return DefeatCloseThreatWithBasicFire(context);
+            yield return ChargeEnergyToTier(context, 1, 14f);
+            yield return UseSummonAndBlockNextBossWave(context);
+            yield return LetFollowupWindowExpire(context);
+            yield return WaitForCounterFinalWindow(context, 3f);
+            yield return ConfirmSkill1Followup(context);
+            yield return Advance(context, 1.0f);
+        }
+
+        private static IEnumerator RunBossScreenBlockedFollowup(CombatPolicyContext context)
+        {
+            yield return DefeatCloseThreatWithBasicFire(context);
+            yield return ChargeEnergyToTier(context, 1, 14f);
+            yield return UseSummonAndBlockNextBossWave(context);
+            yield return ReleaseBossScreenAndBlockSkill1Followup(context);
+            yield return WaitForCounterFinalWindow(context, 2f);
+            yield return Advance(context, 0.25f);
         }
 
         private static IEnumerator DefeatCloseThreatWithBasicFire(CombatPolicyContext context)
@@ -337,6 +388,66 @@ namespace DimensionBrawl.Tests
             yield return null;
         }
 
+        private static IEnumerator LetFollowupWindowExpire(CombatPolicyContext context)
+        {
+            float waitSeconds = Mathf.Max(
+                context.PocketOwner.SummonFollowupWindowRemainingSeconds,
+                context.Metrics.LastSummonFollowupWindowDuration);
+            yield return Advance(context, waitSeconds + 0.1f);
+            context.PocketOwner.Tick(0f);
+            context.Sample();
+        }
+
+        private static IEnumerator ReleaseBossScreenAndBlockSkill1Followup(CombatPolicyContext context)
+        {
+            if (!context.BossSummonPressureAction.TryReleasePressureSummon(1))
+            {
+                context.Metrics.Notes.Add("boss summon pressure release blocked");
+                yield break;
+            }
+
+            SummonPressureScreen enemyScreen = FindActiveEnemyPressureScreen();
+            if (enemyScreen == null)
+            {
+                context.Metrics.Notes.Add("enemy pressure screen missing for Skill1 block");
+                yield break;
+            }
+
+            if (context.EnergyLadder.AvailableTier <= 0)
+            {
+                yield return ChargeEnergyToTier(context, 1, 8f);
+            }
+
+            context.TargetSelector.NotifyTargetContact(context.BossHealth);
+            context.TargetSelector.RefreshTarget();
+            if (!context.Skill1Action.TryUseSkill1())
+            {
+                context.Metrics.Notes.Add($"skill1 blocked before boss screen: {context.Skill1Action.LastUseBlockedReason}");
+                yield break;
+            }
+
+            context.Metrics.SkillUses++;
+            context.PocketOwner.Tick(0f);
+            yield return null;
+
+            LaneActionProjectile[] projectiles = FindActivePlayerProjectiles();
+            for (int i = 0; i < projectiles.Length; i++)
+            {
+                if (enemyScreen.IsActive && enemyScreen.TryIntercept(projectiles[i]))
+                {
+                    context.Metrics.SkillProjectilesBlockedByBossScreen++;
+                }
+                else if (projectiles[i].TryApplyImpact(context.BossCollider, projectiles[i].transform.position))
+                {
+                    context.Metrics.SkillProjectileHits++;
+                }
+            }
+
+            context.PocketOwner.Tick(0f);
+            context.Sample();
+            yield return null;
+        }
+
         private static IEnumerator WaitForCounterFinalWindow(
             CombatPolicyContext context,
             float maxSeconds)
@@ -430,8 +541,8 @@ namespace DimensionBrawl.Tests
             builder.AppendLine();
             builder.AppendLine("## ArkData Read");
             builder.AppendLine("- Stage/wave/pressure: each policy is one route through the same Frontline stage shell, so unanswered pressure, direct fire, intended summon, and late summon can be compared without changing the scene.");
-            builder.AppendLine("- Trigger -> target -> effect -> status/presentation: follow-up windows, Skill1 hit confirms, counter-wave observation, ally hold, and result records are emitted as measured route evidence.");
-            builder.AppendLine("- QTE/state lock-unlock: summon block opens the follow-up window, counter pressure can lock the clean route, ally hold can unlock the final recovery window.");
+            builder.AppendLine("- Trigger -> target -> effect -> status/presentation: follow-up windows, Skill1 hit confirms, boss-screen blocks, counter-wave observation, ally hold, and result records are emitted as measured route evidence.");
+            builder.AppendLine("- QTE/state lock-unlock: summon block opens the follow-up window; missed or blocked follow-up can lock the route into counter pressure; ally hold can unlock the final recovery window.");
             builder.AppendLine();
             builder.AppendLine("| Policy | Result | Sim s | HP lost | Boss dmg | Stability | Min stability | Boss waves | Player hits | Summons | Blocks | Skill1 hits | Fronts A/E | Route shape | Decision |");
             builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---|");
@@ -532,11 +643,37 @@ namespace DimensionBrawl.Tests
             }
 
             builder.AppendLine();
+            builder.AppendLine("## Boss Pressure Screen");
+            builder.AppendLine("| Policy | Boss releases | Boss screen blocks | Skill1 blocked | Max screens | Remaining blocks | Boss blocked follow-up |");
+            builder.AppendLine("|---|---:|---:|---:|---:|---:|---|");
+            for (int i = 0; i < results.Count; i++)
+            {
+                PolicyMetrics result = results[i];
+                builder.Append("| ");
+                builder.Append(result.Policy);
+                builder.Append(" | ");
+                builder.Append(result.BossPressureSummonReleases);
+                builder.Append(" | ");
+                builder.Append(result.BossPressureScreenBlocks);
+                builder.Append(" | ");
+                builder.Append(result.SkillProjectilesBlockedByBossScreen);
+                builder.Append(" | ");
+                builder.Append(result.MaxBossPressureActiveScreenCount);
+                builder.Append(" | ");
+                builder.Append(result.BossPressureActiveScreenRemainingIntercepts);
+                builder.Append(" | ");
+                builder.Append(result.BossBlockedSkill1Followup ? "yes" : "no");
+                builder.AppendLine(" |");
+            }
+
+            builder.AppendLine();
             builder.AppendLine("## Read");
             PolicyMetrics intended = RequireResult(results, PolicyKind.IntendedRoute);
             PolicyMetrics noSummon = RequireResult(results, PolicyKind.NoSummonNoFire);
             PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
             PolicyMetrics late = RequireResult(results, PolicyKind.LateSummon);
+            PolicyMetrics counterRecovery = RequireResult(results, PolicyKind.MissedFollowupCounterRecovery);
+            PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
             builder.AppendLine($"- Intended route prevented {Mathf.Max(0f, noSummon.PlayerDamageTaken - intended.PlayerDamageTaken):0.0} player damage versus no-action pressure.");
             builder.AppendLine($"- Gun-only dealt {gunOnly.BossDamageTaken:0.0} boss damage but ended as `{gunOnly.ResultKind}` because the route contract still needs summon pressure blocking.");
             builder.AppendLine($"- Skill1 punish split: gun-only boss damage {gunOnly.BossDamageTaken:0.0}, intended follow-up boss damage {intended.BossDamageTaken:0.0}.");
@@ -545,6 +682,8 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Route stability split: no-action {FormatPercent01(noSummon.RouteStability01)} final / {FormatPercent01(noSummon.MinRouteStability01)} min, gun-only {FormatPercent01(gunOnly.RouteStability01)} / {FormatPercent01(gunOnly.MinRouteStability01)}, intended {FormatPercent01(intended.RouteStability01)} / {FormatPercent01(intended.MinRouteStability01)}.");
             builder.AppendLine($"- Unanswered hit penalty split: no-action {FormatPercent01(noSummon.TotalUnansweredBossHitRoutePenalty01)} x{noSummon.UnansweredBossHitRoutePenaltyCount}, gun-only {FormatPercent01(gunOnly.TotalUnansweredBossHitRoutePenalty01)} x{gunOnly.UnansweredBossHitRoutePenaltyCount}, late {FormatPercent01(late.TotalUnansweredBossHitRoutePenalty01)} x{late.UnansweredBossHitRoutePenaltyCount}.");
             builder.AppendLine($"- Frontline exposure split: no-action enemy-only {FormatSeconds(noSummon.EnemyOnlyFrontlineSeconds)}, gun-only enemy-only {FormatSeconds(gunOnly.EnemyOnlyFrontlineSeconds)}, intended ally-only {FormatSeconds(intended.AllyOnlyFrontlineSeconds)} / contested {FormatSeconds(intended.ContestedFrontlineSeconds)}.");
+            builder.AppendLine($"- Missed follow-up branch: `{counterRecovery.ResultKind}` with counter source `{counterRecovery.CounterWaveSource}`, final window `{counterRecovery.CounterWaveFinalWindowState}`, and Skill1 hits {counterRecovery.SkillProjectileHits}.");
+            builder.AppendLine($"- Boss-screen branch: boss releases {blockedFollowup.BossPressureSummonReleases}, blocks {blockedFollowup.BossPressureScreenBlocks}, Skill1 projectiles blocked {blockedFollowup.SkillProjectilesBlockedByBossScreen}, boss-blocked follow-up `{blockedFollowup.BossBlockedSkill1Followup}`.");
             int maxEnemyFrontlines = ResolveMaxEnemyFrontlines(results);
             builder.AppendLine(maxEnemyFrontlines > 0
                 ? $"- Enemy frontline pressure is measured: max enemy frontlines {maxEnemyFrontlines}, enemy-only exposure, and hit penalty now separate unanswered pressure from clean summon cover."
@@ -655,6 +794,11 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"summonBlocks\": {result.SummonBlocks},");
                 builder.AppendLine($"      \"skillUses\": {result.SkillUses},");
                 builder.AppendLine($"      \"skillProjectileHits\": {result.SkillProjectileHits},");
+                builder.AppendLine($"      \"skillProjectilesBlockedByBossScreen\": {result.SkillProjectilesBlockedByBossScreen},");
+                builder.AppendLine($"      \"bossPressureSummonReleases\": {result.BossPressureSummonReleases},");
+                builder.AppendLine($"      \"bossPressureScreenBlocks\": {result.BossPressureScreenBlocks},");
+                builder.AppendLine($"      \"maxBossPressureActiveScreenCount\": {result.MaxBossPressureActiveScreenCount},");
+                builder.AppendLine($"      \"bossPressureActiveScreenRemainingIntercepts\": {result.BossPressureActiveScreenRemainingIntercepts},");
                 builder.AppendLine($"      \"maxEnemyFrontlineCount\": {result.MaxEnemyFrontlineCount},");
                 builder.AppendLine($"      \"maxAllyFrontlineCount\": {result.MaxAllyFrontlineCount},");
                 builder.AppendLine($"      \"routeDrainAccumulated01\": {result.RouteDrainAccumulated01:0.###},");
@@ -858,6 +1002,22 @@ namespace DimensionBrawl.Tests
             return null;
         }
 
+        private static SummonPressureScreen FindActiveEnemyPressureScreen()
+        {
+            SummonPressureScreen[] screens = Object.FindObjectsByType<SummonPressureScreen>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < screens.Length; i++)
+            {
+                if (screens[i].IsActive && screens[i].OwnerTeam == DamageTeam.Enemy)
+                {
+                    return screens[i];
+                }
+            }
+
+            return null;
+        }
+
         private static BossBarrageProjectile FindFirstActiveBossProjectile()
         {
             BossBarrageProjectile[] projectiles = FindActiveBossProjectiles();
@@ -915,6 +1075,7 @@ namespace DimensionBrawl.Tests
                 PlayerCombatTargetSelector targetSelector,
                 SummonLaneSpace laneSpace,
                 BossBarrageEmitter bossEmitter,
+                BossSummonPressureAction bossSummonPressureAction,
                 BossBarragePocketReviewOwner pocketOwner,
                 CombatHealth playerHealth,
                 CombatHealth bossHealth,
@@ -932,6 +1093,7 @@ namespace DimensionBrawl.Tests
                 TargetSelector = targetSelector;
                 LaneSpace = laneSpace;
                 BossEmitter = bossEmitter;
+                BossSummonPressureAction = bossSummonPressureAction;
                 PocketOwner = pocketOwner;
                 PlayerHealth = playerHealth;
                 BossHealth = bossHealth;
@@ -948,6 +1110,8 @@ namespace DimensionBrawl.Tests
                 BossHealth.Damaged += OnBossDamaged;
                 CloseThreatHealth.Damaged += OnCloseThreatDamaged;
                 SummonSlot1Action.SummonPressureBlocked += OnSummonPressureBlocked;
+                BossSummonPressureAction.PressureSummonReleased += OnBossPressureSummonReleased;
+                BossSummonPressureAction.PressureSummonIntercepted += OnBossPressureSummonIntercepted;
                 PocketOwner.SummonFollowupWindowOpened += OnSummonFollowupWindowOpened;
                 PocketOwner.SummonFollowupHitConfirmed += OnSummonFollowupHitConfirmed;
                 PocketOwner.SummonFollowupMissed += OnSummonFollowupMissed;
@@ -965,6 +1129,7 @@ namespace DimensionBrawl.Tests
             public PlayerCombatTargetSelector TargetSelector { get; }
             public SummonLaneSpace LaneSpace { get; }
             public BossBarrageEmitter BossEmitter { get; }
+            public BossSummonPressureAction BossSummonPressureAction { get; }
             public BossBarragePocketReviewOwner PocketOwner { get; }
             public CombatHealth PlayerHealth { get; }
             public CombatHealth BossHealth { get; }
@@ -1010,9 +1175,15 @@ namespace DimensionBrawl.Tests
                 Metrics.HighestSummonFollowupSkillTier = PocketOwner.HighestSummonFollowupSkillTier;
                 Metrics.HighestSkill1FollowupHitTier = PocketOwner.HighestSkill1FollowupHitTier;
                 Metrics.Skill1FollowupDamage = PocketOwner.Skill1FollowupDamage;
-                Metrics.BossBlockedSkill1Followup = PocketOwner.BossBlockedSkill1Followup;
-                Metrics.BossPressureBlocksDuringSummonFollowup =
-                    PocketOwner.BossPressureBlocksDuringSummonFollowup;
+                Metrics.BossBlockedSkill1Followup |= PocketOwner.BossBlockedSkill1Followup;
+                Metrics.BossPressureBlocksDuringSummonFollowup = Mathf.Max(
+                    Metrics.BossPressureBlocksDuringSummonFollowup,
+                    PocketOwner.BossPressureBlocksDuringSummonFollowup);
+                Metrics.MaxBossPressureActiveScreenCount = Mathf.Max(
+                    Metrics.MaxBossPressureActiveScreenCount,
+                    BossSummonPressureAction.ActivePressureScreenCount);
+                Metrics.BossPressureActiveScreenRemainingIntercepts =
+                    BossSummonPressureAction.ActivePressureScreenRemainingIntercepts;
                 Metrics.CleanFollowupConfirmed = PocketOwner.Skill1FollowupHitConfirmed
                     && !PocketOwner.IsCounterWaveCompletionRecorded;
                 Metrics.CounterRecoveryConfirmed = PocketOwner.IsCounterWaveStabilized
@@ -1070,6 +1241,8 @@ namespace DimensionBrawl.Tests
                 BossHealth.Damaged -= OnBossDamaged;
                 CloseThreatHealth.Damaged -= OnCloseThreatDamaged;
                 SummonSlot1Action.SummonPressureBlocked -= OnSummonPressureBlocked;
+                BossSummonPressureAction.PressureSummonReleased -= OnBossPressureSummonReleased;
+                BossSummonPressureAction.PressureSummonIntercepted -= OnBossPressureSummonIntercepted;
                 PocketOwner.SummonFollowupWindowOpened -= OnSummonFollowupWindowOpened;
                 PocketOwner.SummonFollowupHitConfirmed -= OnSummonFollowupHitConfirmed;
                 PocketOwner.SummonFollowupMissed -= OnSummonFollowupMissed;
@@ -1097,6 +1270,22 @@ namespace DimensionBrawl.Tests
             {
                 Metrics.SummonBlocks++;
                 Metrics.HighestSummonBlockTier = Mathf.Max(Metrics.HighestSummonBlockTier, tier);
+            }
+
+            private void OnBossPressureSummonReleased(BossSummonPressureAction action, int tier)
+            {
+                Metrics.BossPressureSummonReleases++;
+                Metrics.HighestBossPressureSummonTier = Mathf.Max(
+                    Metrics.HighestBossPressureSummonTier,
+                    tier);
+            }
+
+            private void OnBossPressureSummonIntercepted(BossSummonPressureAction action, int tier)
+            {
+                Metrics.BossPressureScreenBlocks++;
+                Metrics.HighestBossPressureScreenBlockTier = Mathf.Max(
+                    Metrics.HighestBossPressureScreenBlockTier,
+                    tier);
             }
 
             private void OnSummonFollowupWindowOpened(int tier)
@@ -1197,6 +1386,13 @@ namespace DimensionBrawl.Tests
             public int HighestSummonBlockTier { get; set; }
             public int SkillUses { get; set; }
             public int SkillProjectileHits { get; set; }
+            public int SkillProjectilesBlockedByBossScreen { get; set; }
+            public int BossPressureSummonReleases { get; set; }
+            public int HighestBossPressureSummonTier { get; set; }
+            public int BossPressureScreenBlocks { get; set; }
+            public int HighestBossPressureScreenBlockTier { get; set; }
+            public int MaxBossPressureActiveScreenCount { get; set; }
+            public int BossPressureActiveScreenRemainingIntercepts { get; set; }
             public int CounterWaves { get; set; }
             public int ResultRecords { get; set; }
             public int MaxEnemyFrontlineCount { get; set; }
