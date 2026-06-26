@@ -213,6 +213,32 @@ namespace DimensionBrawl.Presentation
             finisherScale = 1.1f
         };
 
+        [Tooltip("Pocket clear result cue. A short stable widen so the completed response loop reads after the follow-up hit.")]
+        [SerializeField] private ActionCameraCueProfile.CameraCue pocketClearCue = new ActionCameraCueProfile.CameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, 0.06f, -0.18f),
+            planarDirectionOffset = 0.04f,
+            fieldOfViewDelta = 1.4f,
+            cameraDistanceDelta = -0.18f,
+            focusHeightDelta = 0.05f,
+            durationSeconds = 0.32f,
+            finisherScale = 1.15f
+        };
+
+        [Tooltip("Pocket fail result cue. Pulls back slightly as boss pressure returns, without becoming a cinematic lock.")]
+        [SerializeField] private ActionCameraCueProfile.CameraCue pocketFailCue = new ActionCameraCueProfile.CameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, -0.04f, -0.12f),
+            planarDirectionOffset = -0.06f,
+            fieldOfViewDelta = 1.6f,
+            cameraDistanceDelta = -0.18f,
+            focusHeightDelta = -0.02f,
+            durationSeconds = 0.34f,
+            finisherScale = 1.05f
+        };
+
         private int summonPressureBlockCueRequestCount;
         private int lastSummonPressureBlockTier;
         private int summonBlockOpportunityCueRequestCount;
@@ -221,10 +247,14 @@ namespace DimensionBrawl.Presentation
         private int summonFollowupMissedCueRequestCount;
         private int counterWaveCueRequestCount;
         private int counterWaveStabilizedCueRequestCount;
+        private int pocketClearCueRequestCount;
+        private int pocketFailCueRequestCount;
         private int lastSummonFollowupWindowTier;
         private int lastSummonFollowupHitTier;
         private int lastCounterWaveTier;
         private int lastCounterWaveStabilizedTier;
+        private int lastPocketClearTier;
+        private int lastPocketFailTier;
         private float lastSummonFollowupHitDamage;
 
         public ActionCameraCueProfile CueProfile => cueProfile;
@@ -237,10 +267,14 @@ namespace DimensionBrawl.Presentation
         public int SummonFollowupMissedCueRequestCount => summonFollowupMissedCueRequestCount;
         public int CounterWaveCueRequestCount => counterWaveCueRequestCount;
         public int CounterWaveStabilizedCueRequestCount => counterWaveStabilizedCueRequestCount;
+        public int PocketClearCueRequestCount => pocketClearCueRequestCount;
+        public int PocketFailCueRequestCount => pocketFailCueRequestCount;
         public int LastSummonFollowupWindowTier => lastSummonFollowupWindowTier;
         public int LastSummonFollowupHitTier => lastSummonFollowupHitTier;
         public int LastCounterWaveTier => lastCounterWaveTier;
         public int LastCounterWaveStabilizedTier => lastCounterWaveStabilizedTier;
+        public int LastPocketClearTier => lastPocketClearTier;
+        public int LastPocketFailTier => lastPocketFailTier;
         public float LastSummonFollowupHitDamage => lastSummonFollowupHitDamage;
 
         private ActionCameraCueProfile.CameraCue ActiveRunStartCue => cueProfile != null ? cueProfile.RunStartCue : runStartCue;
@@ -265,6 +299,10 @@ namespace DimensionBrawl.Presentation
             cueProfile != null ? cueProfile.CounterWaveCue : counterWaveCue;
         private ActionCameraCueProfile.CameraCue ActiveCounterWaveStabilizedCue =>
             cueProfile != null ? cueProfile.CounterWaveStabilizedCue : counterWaveStabilizedCue;
+        private ActionCameraCueProfile.CameraCue ActivePocketClearCue =>
+            cueProfile != null ? cueProfile.PocketClearCue : pocketClearCue;
+        private ActionCameraCueProfile.CameraCue ActivePocketFailCue =>
+            cueProfile != null ? cueProfile.PocketFailCue : pocketFailCue;
 
         private void Awake()
         {
@@ -457,6 +495,28 @@ namespace DimensionBrawl.Presentation
             {
                 counterWaveStabilizedCueRequestCount++;
                 lastCounterWaveStabilizedTier = resolvedTier;
+            }
+        }
+
+        public void RequestPocketClearCue(int tier)
+        {
+            int resolvedTier = Mathf.Clamp(tier, 1, 3);
+            ActionCameraCueProfile.CameraCue cue = ActivePocketClearCue;
+            if (RequestCue(cue, ResolvePlanarDirection(), ResolveTierScale(resolvedTier, cue)))
+            {
+                pocketClearCueRequestCount++;
+                lastPocketClearTier = resolvedTier;
+            }
+        }
+
+        public void RequestPocketFailCue(int tier)
+        {
+            int resolvedTier = Mathf.Clamp(tier, 1, 3);
+            ActionCameraCueProfile.CameraCue cue = ActivePocketFailCue;
+            if (RequestCue(cue, -ResolvePlanarDirection(), ResolveTierScale(resolvedTier, cue)))
+            {
+                pocketFailCueRequestCount++;
+                lastPocketFailTier = resolvedTier;
             }
         }
 

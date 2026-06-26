@@ -1305,6 +1305,8 @@ namespace DimensionBrawl.Editor
             ValidateCameraCueProfile(profile, "summonFollowupWindowCue", new Vector3(0f, 0.05f, -0.14f), 0.04f, 1.6f, -0.16f, 0.03f, 0.22f, 1.2f);
             ValidateCameraCueProfile(profile, "summonFollowupHitCue", new Vector3(0f, 0.04f, 0.16f), 0.08f, -2.4f, 0.18f, 0.02f, 0.20f, 1.3f);
             ValidateCameraCueProfile(profile, "summonFollowupMissedCue", new Vector3(0f, -0.02f, -0.08f), -0.02f, 0.8f, -0.08f, -0.02f, 0.18f, 1f);
+            ValidateCameraCueProfile(profile, "pocketClearCue", new Vector3(0f, 0.06f, -0.18f), 0.04f, 1.4f, -0.18f, 0.05f, 0.32f, 1.15f);
+            ValidateCameraCueProfile(profile, "pocketFailCue", new Vector3(0f, -0.04f, -0.12f), -0.06f, 1.6f, -0.18f, -0.02f, 0.34f, 1.05f);
         }
 
         private static void ValidatePlayerTargetSelector(

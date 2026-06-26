@@ -107,11 +107,13 @@ namespace DimensionBrawl.Test
 
         private void HandlePocketCleared()
         {
+            cameraCueDriver?.RequestPocketClearCue(3);
             RequestCinematic(ActionCinematicCueProfile.CueKind.PocketClear, 3);
         }
 
         private void HandlePocketFailed()
         {
+            cameraCueDriver?.RequestPocketFailCue(1);
             RequestCinematic(ActionCinematicCueProfile.CueKind.PocketFail, 1);
         }
 

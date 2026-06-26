@@ -147,3 +147,21 @@ MonoBehaviour:
     focusHeightDelta: 0.03
     durationSeconds: 0.18
     finisherScale: 1.1
+  pocketClearCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.06, z: -0.18}
+    planarDirectionOffset: 0.04
+    fieldOfViewDelta: 1.4
+    cameraDistanceDelta: -0.18
+    focusHeightDelta: 0.05
+    durationSeconds: 0.32
+    finisherScale: 1.15
+  pocketFailCue:
+    enabled: 1
+    localOffset: {x: 0, y: -0.04, z: -0.12}
+    planarDirectionOffset: -0.06
+    fieldOfViewDelta: 1.6
+    cameraDistanceDelta: -0.18
+    focusHeightDelta: -0.02
+    durationSeconds: 0.34
+    finisherScale: 1.05

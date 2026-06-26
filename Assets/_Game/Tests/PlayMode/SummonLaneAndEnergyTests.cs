@@ -730,6 +730,59 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void ActionCameraCueDriverRoutesPocketResultCues()
+        {
+            GameObject cameraObject = new GameObject("PocketResultCamera");
+            cameraObject.AddComponent<Camera>();
+            ActionCameraController cameraController = cameraObject.AddComponent<ActionCameraController>();
+            ActionCameraCueDriver cueDriver = cameraObject.AddComponent<ActionCameraCueDriver>();
+
+            cueDriver.RequestPocketClearCue(3);
+
+            Assert.AreEqual(1, cueDriver.PocketClearCueRequestCount);
+            Assert.AreEqual(3, cueDriver.LastPocketClearTier);
+            Assert.IsTrue(cameraController.HasActiveCue, "Pocket clear should leave a short action-camera result cue.");
+
+            cueDriver.RequestPocketFailCue(1);
+
+            Assert.AreEqual(1, cueDriver.PocketFailCueRequestCount);
+            Assert.AreEqual(1, cueDriver.LastPocketFailTier);
+            Assert.IsTrue(cameraController.HasActiveCue, "Pocket failure should also leave a short action-camera result cue.");
+
+            Object.DestroyImmediate(cameraObject);
+        }
+
+        [Test]
+        public void BossBarragePocketCameraCueBridgeRoutesPocketResultCameraCues()
+        {
+            GameObject cameraObject = new GameObject("PocketResultBridgeCamera");
+            cameraObject.AddComponent<Camera>();
+            ActionCameraController cameraController = cameraObject.AddComponent<ActionCameraController>();
+            ActionCameraCueDriver cueDriver = cameraObject.AddComponent<ActionCameraCueDriver>();
+            GameObject bridgeObject = new GameObject("PocketResultBridge");
+            BossBarragePocketCameraCueBridge bridge = bridgeObject.AddComponent<BossBarragePocketCameraCueBridge>();
+
+            SerializedObject serializedBridge = new SerializedObject(bridge);
+            serializedBridge.FindProperty("cameraCueDriver").objectReferenceValue = cueDriver;
+            serializedBridge.ApplyModifiedPropertiesWithoutUndo();
+
+            InvokePocketCameraBridgeHandlerForTest(bridge, "HandlePocketCleared");
+
+            Assert.AreEqual(1, cueDriver.PocketClearCueRequestCount);
+            Assert.AreEqual(3, cueDriver.LastPocketClearTier);
+            Assert.IsTrue(cameraController.HasActiveCue, "Pocket clear bridge should request the action-camera result cue.");
+
+            InvokePocketCameraBridgeHandlerForTest(bridge, "HandlePocketFailed");
+
+            Assert.AreEqual(1, cueDriver.PocketFailCueRequestCount);
+            Assert.AreEqual(1, cueDriver.LastPocketFailTier);
+            Assert.IsTrue(cameraController.HasActiveCue, "Pocket failure bridge should request the action-camera result cue.");
+
+            Object.DestroyImmediate(bridgeObject);
+            Object.DestroyImmediate(cameraObject);
+        }
+
+        [Test]
         public void SummonFrontlineProxyReportsLifetimeAndDefeatExitReasons()
         {
             GameObject proxyObject = new GameObject("SummonProxy");
@@ -3893,6 +3946,18 @@ namespace DimensionBrawl.Tests
             Assert.IsNotNull(phaseMethod);
 
             phaseMethod.Invoke(presenter, new object[] { previousPhase, currentPhase });
+        }
+
+        private static void InvokePocketCameraBridgeHandlerForTest(
+            BossBarragePocketCameraCueBridge bridge,
+            string handlerName)
+        {
+            System.Reflection.MethodInfo method = typeof(BossBarragePocketCameraCueBridge).GetMethod(
+                handlerName,
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(method);
+
+            method.Invoke(bridge, null);
         }
 
         private static CombatVfxCueProfile CreatePressureScreenCueProfile(GameObject prefab)

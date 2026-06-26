@@ -200,6 +200,30 @@ namespace DimensionBrawl.Presentation
             finisherScale = 1.1f
         };
 
+        [SerializeField] private CameraCue pocketClearCue = new CameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, 0.06f, -0.18f),
+            planarDirectionOffset = 0.04f,
+            fieldOfViewDelta = 1.4f,
+            cameraDistanceDelta = -0.18f,
+            focusHeightDelta = 0.05f,
+            durationSeconds = 0.32f,
+            finisherScale = 1.15f
+        };
+
+        [SerializeField] private CameraCue pocketFailCue = new CameraCue
+        {
+            enabled = true,
+            localOffset = new Vector3(0f, -0.04f, -0.12f),
+            planarDirectionOffset = -0.06f,
+            fieldOfViewDelta = 1.6f,
+            cameraDistanceDelta = -0.18f,
+            focusHeightDelta = -0.02f,
+            durationSeconds = 0.34f,
+            finisherScale = 1.05f
+        };
+
         public CameraCue RunStartCue => runStartCue;
         public CameraCue StopSettleCue => stopSettleCue;
         public CameraCue SharpTurnCue => sharpTurnCue;
@@ -215,5 +239,7 @@ namespace DimensionBrawl.Presentation
         public CameraCue SummonFollowupMissedCue => summonFollowupMissedCue;
         public CameraCue CounterWaveCue => counterWaveCue;
         public CameraCue CounterWaveStabilizedCue => counterWaveStabilizedCue;
+        public CameraCue PocketClearCue => pocketClearCue;
+        public CameraCue PocketFailCue => pocketFailCue;
     }
 }
