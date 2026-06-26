@@ -239,6 +239,7 @@ namespace DimensionBrawl.Editor
             SetFloat(serializedObject, "followupHitRouteBonus01", 0.20f);
             SetFloat(serializedObject, "counterWaveEntryRoutePenalty01", 0.10f);
             SetFloat(serializedObject, "counterWaveStabilizeRouteBonus01", 0.14f);
+            SetFloat(serializedObject, "counterWaveAllyHoldSeconds", 0.45f);
             SetFloat(serializedObject, "unstableCounterWaveFinalWindowScale", 0.85f);
             SetFloat(serializedObject, "criticalCounterWaveFinalWindowScale", 0.65f);
             SetInt(serializedObject, "objectiveStepCount", 3);

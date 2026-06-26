@@ -88,6 +88,7 @@ namespace DimensionBrawl.Tests
             Assert.Greater(stageProfile.CloseProbeRouteDrainPerSecond, 0f);
             Assert.Greater(stageProfile.CounterWaveRouteDrainPerSecond, stageProfile.CloseProbeRouteDrainPerSecond);
             Assert.Greater(stageProfile.CounterWaveStabilizeRouteBonus01, 0f);
+            Assert.That(stageProfile.CounterWaveAllyHoldSeconds, Is.InRange(0.25f, 0.75f));
             Assert.Greater(stageProfile.CounterWaveEntryRoutePenalty01, 0f);
             Assert.Greater(
                 stageProfile.CounterWaveStabilizeRouteBonus01,
@@ -420,15 +421,51 @@ namespace DimensionBrawl.Tests
             pocketOwner.Tick(0f);
 
             Assert.Greater(pocketOwner.ActiveAllyFrontlineProxyCount, 0);
+            Assert.IsFalse(pocketOwner.IsCounterWaveStabilized);
+            Assert.IsFalse(pocketOwner.IsCounterWaveFinalWindowOpened);
+            Assert.AreEqual("pending", pocketOwner.CounterWaveAnswerState);
+            Assert.AreEqual("holding_0%", pocketOwner.CounterWaveAnswerReadout);
+            Assert.AreEqual("pending", pocketOwner.CounterWaveFinalWindowState);
+            Assert.AreEqual("awaiting_answer", pocketOwner.CounterWaveFinalWindowReadout);
+            Assert.AreEqual(stageProfile.CounterWaveAllyHoldSeconds, pocketOwner.CounterWaveAllyHoldRequiredSeconds, 0.001f);
+            Assert.AreEqual(0f, pocketOwner.CounterWaveAllyHoldElapsedSeconds, 0.001f);
+            Assert.AreEqual(0f, pocketOwner.CounterWaveAllyHoldProgress01, 0.001f);
+            Assert.AreEqual(stageProfile.CounterWaveAllyHoldSeconds, pocketOwner.CounterWaveAllyHoldRemainingSeconds, 0.001f);
+            Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter_answer:pending(holding_0%)"));
+            Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("decision:recovery_needed(ally_holding)"));
+            Assert.That(reviewHud.CompactObjectiveReadout, Does.Contain("Hold counter wave 0.5s"));
+            Assert.AreEqual(counterAnswerCueCountBeforeAlly, screenCuePresenter.CounterWaveAnswerCueRequestCount);
+            Assert.AreEqual(counterStabilizedVfxCueCountBeforeAlly, pocketVfxCueBridge.CounterWaveStabilizedCueRequestCount);
+            Assert.AreEqual(counterStabilizedCameraCueCountBeforeAlly, cameraCueDriver.CounterWaveStabilizedCueRequestCount);
+
+            pocketOwner.Tick(stageProfile.CounterWaveAllyHoldSeconds * 0.5f);
+
+            Assert.IsFalse(pocketOwner.IsCounterWaveStabilized);
+            Assert.IsFalse(pocketOwner.IsCounterWaveFinalWindowOpened);
+            Assert.AreEqual("pending", pocketOwner.CounterWaveAnswerState);
+            Assert.AreEqual("holding_50%", pocketOwner.CounterWaveAnswerReadout);
+            Assert.That(pocketOwner.CounterWaveAllyHoldProgress01, Is.InRange(0.49f, 0.51f));
+            Assert.Greater(pocketOwner.CounterWaveAllyHoldRemainingSeconds, 0f);
+            Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter_answer:pending(holding_50%)"));
+            Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("decision:recovery_needed(ally_holding)"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter_answer:pending(holding_50%)"));
+            Assert.AreEqual(counterAnswerCueCountBeforeAlly, screenCuePresenter.CounterWaveAnswerCueRequestCount);
+
+            float stabilityBeforeHoldComplete = pocketOwner.RouteStability01;
+            pocketOwner.Tick(stageProfile.CounterWaveAllyHoldSeconds * 0.5f + 0.01f);
+
             Assert.IsTrue(pocketOwner.IsCounterWaveStabilized);
             Assert.IsTrue(pocketOwner.IsCounterWaveFinalWindowOpened);
             Assert.AreEqual("stabilized", pocketOwner.CounterWaveAnswerState);
             Assert.AreEqual("ally_hold", pocketOwner.CounterWaveAnswerReadout);
             Assert.AreEqual("opened", pocketOwner.CounterWaveFinalWindowState);
             Assert.AreEqual("final_followup", pocketOwner.CounterWaveFinalWindowReadout);
+            Assert.AreEqual(1f, pocketOwner.CounterWaveAllyHoldProgress01, 0.001f);
+            Assert.AreEqual(0f, pocketOwner.CounterWaveAllyHoldRemainingSeconds, 0.001f);
             Assert.AreEqual(stageProfile.CounterWaveStabilizeRouteBonus01, pocketOwner.LastCounterWaveStabilityBonus, 0.001f);
             Assert.AreEqual(stageProfile.UnstableCounterWaveFinalWindowScale, pocketOwner.LastCounterWaveFinalWindowRouteScale, 0.001f);
             Assert.Less(pocketOwner.LastCounterWaveFinalWindowRouteScale, 1f);
+            Assert.Greater(pocketOwner.RouteStability01, stabilityBeforeHoldComplete);
             Assert.AreEqual(
                 unstableStabilityBeforeAnswer + stageProfile.CounterWaveStabilizeRouteBonus01,
                 pocketOwner.RouteStability01,

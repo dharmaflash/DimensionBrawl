@@ -34,6 +34,7 @@ MonoBehaviour:
   followupHitRouteBonus01: 0.2
   counterWaveEntryRoutePenalty01: 0.1
   counterWaveStabilizeRouteBonus01: 0.14
+  counterWaveAllyHoldSeconds: 0.45
   unstableCounterWaveFinalWindowScale: 0.85
   criticalCounterWaveFinalWindowScale: 0.65
   objectiveStepCount: 3

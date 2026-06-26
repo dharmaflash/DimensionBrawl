@@ -143,6 +143,7 @@ namespace DimensionBrawl.Test
         private float lastCounterWaveStabilityBonus;
         private float lastCounterWaveFinalWindowDuration;
         private float lastCounterWaveFinalWindowRouteScale = 1f;
+        private float counterWaveAllyHoldTimer;
         private int bossPressureSummonReleasesAtReset;
         private int announcedStageBeatIndex;
         private RouteStabilityBand announcedRouteStabilityBand;
@@ -187,6 +188,26 @@ namespace DimensionBrawl.Test
         public string CounterWaveFinalWindowReadout => ResolveCounterWaveFinalWindowReadout();
         public float LastCounterWaveFinalWindowDuration => lastCounterWaveFinalWindowDuration;
         public float LastCounterWaveFinalWindowRouteScale => lastCounterWaveFinalWindowRouteScale;
+        public float CounterWaveAllyHoldRequiredSeconds => ResolveCounterWaveAllyHoldSeconds();
+        public float CounterWaveAllyHoldElapsedSeconds => Mathf.Max(0f, counterWaveAllyHoldTimer);
+        public float CounterWaveAllyHoldRemainingSeconds => counterWaveObserved && !counterWaveStabilized
+            ? Mathf.Max(0f, CounterWaveAllyHoldRequiredSeconds - CounterWaveAllyHoldElapsedSeconds)
+            : 0f;
+        public float CounterWaveAllyHoldProgress01
+        {
+            get
+            {
+                if (!counterWaveObserved)
+                {
+                    return 0f;
+                }
+
+                float requiredSeconds = CounterWaveAllyHoldRequiredSeconds;
+                return requiredSeconds <= 0f
+                    ? 1f
+                    : Mathf.Clamp01(CounterWaveAllyHoldElapsedSeconds / requiredSeconds);
+            }
+        }
         public string RouteDecisionState => ResolveRouteDecisionState();
         public string RouteDecisionReadout => ResolveRouteDecisionReadout();
         public string CompletionRecordReadout => ResolveCompletionRecordReadout();
@@ -434,6 +455,7 @@ namespace DimensionBrawl.Test
             lastCounterWaveStabilityBonus = 0f;
             lastCounterWaveFinalWindowDuration = 0f;
             lastCounterWaveFinalWindowRouteScale = 1f;
+            counterWaveAllyHoldTimer = 0f;
             bossPressureSummonReleasesAtReset = GetBossPressureSummonReleaseCount();
             highestSkillTier = 0;
             highestSummonTier = 0;
@@ -493,7 +515,7 @@ namespace DimensionBrawl.Test
             CaptureBossBlockedFollowup();
             UpdatePressurePacing(deltaTime);
             CaptureCounterWavePressure();
-            CaptureCounterWaveAnswer();
+            CaptureCounterWaveAnswer(deltaTime);
             TickSkill1FollowupClearTimer(deltaTime);
             TickRouteStability(deltaTime);
             if (IsRouteStabilityActive && routeStability01 <= 0f)
@@ -758,6 +780,7 @@ namespace DimensionBrawl.Test
             counterWaveSource = source == CounterWaveSource.None ? CounterWaveSource.EnemyFrontlineBody : source;
             if (!wasObserved)
             {
+                counterWaveAllyHoldTimer = 0f;
                 ApplyCounterWaveEntryRoutePenalty();
                 CounterWaveObserved?.Invoke(counterWaveSource);
             }
@@ -769,11 +792,29 @@ namespace DimensionBrawl.Test
             RemoveRouteStability(lastCounterWaveEntryPenalty);
         }
 
-        private void CaptureCounterWaveAnswer()
+        private void CaptureCounterWaveAnswer(float deltaTime)
         {
-            if (!counterWaveObserved || counterWaveStabilized || ActiveAllyFrontlineProxyCount <= 0)
+            if (!counterWaveObserved || counterWaveStabilized)
             {
                 return;
+            }
+
+            if (ActiveAllyFrontlineProxyCount <= 0)
+            {
+                counterWaveAllyHoldTimer = 0f;
+                return;
+            }
+
+            float requiredSeconds = ResolveCounterWaveAllyHoldSeconds();
+            if (requiredSeconds > 0f)
+            {
+                counterWaveAllyHoldTimer = Mathf.Min(
+                    requiredSeconds,
+                    counterWaveAllyHoldTimer + Mathf.Max(0f, deltaTime));
+                if (counterWaveAllyHoldTimer < requiredSeconds)
+                {
+                    return;
+                }
             }
 
             counterWaveStabilized = true;
@@ -1086,6 +1127,11 @@ namespace DimensionBrawl.Test
         private float ResolveCounterWaveStabilizeRouteBonus01()
         {
             return stageProfile != null ? stageProfile.CounterWaveStabilizeRouteBonus01 : 0f;
+        }
+
+        private float ResolveCounterWaveAllyHoldSeconds()
+        {
+            return stageProfile != null ? stageProfile.CounterWaveAllyHoldSeconds : 0f;
         }
 
         private float ResolveCounterWaveFinalWindowRouteScale()
@@ -1410,7 +1456,9 @@ namespace DimensionBrawl.Test
 
             if (IsCounterWaveCompletionRecorded)
             {
-                return "awaiting";
+                return ActiveAllyFrontlineProxyCount > 0
+                    ? $"holding_{CounterWaveAllyHoldProgress01 * 100f:0}%"
+                    : "awaiting";
             }
 
             return IsFollowupCompletionRecorded ? "clean_followup" : "none";
@@ -1502,7 +1550,7 @@ namespace DimensionBrawl.Test
                     return counterWaveFinalWindowOpened ? "final_window" : "counter_held";
                 }
 
-                return "answer_counter";
+                return ActiveAllyFrontlineProxyCount > 0 ? "ally_holding" : "answer_counter";
             }
 
             if (pressurePacing.IsSummonFollowupWindowActive || usedSkill1DuringSummonFollowup)

@@ -682,7 +682,7 @@ namespace DimensionBrawl.Presentation
                 && !pocketReviewOwner.IsCounterWaveStabilized
                 && !pocketReviewOwner.Skill1FollowupHitConfirmed)
             {
-                return $"{ResolvePocketStepPrefix()}: Hold counter wave";
+                return $"{ResolvePocketStepPrefix()}: Hold counter wave {pocketReviewOwner.CounterWaveAllyHoldRemainingSeconds:0.0}s";
             }
 
             if (pocketReviewOwner.IsSkill1FollowupClearCountdownActive)
@@ -704,7 +704,7 @@ namespace DimensionBrawl.Presentation
             {
                 return pocketReviewOwner.IsCounterWaveStabilized
                     ? $"{ResolvePocketStepPrefix()}: Counter held"
-                    : $"{ResolvePocketStepPrefix()}: Hold counter wave";
+                    : $"{ResolvePocketStepPrefix()}: Hold counter wave {pocketReviewOwner.CounterWaveAllyHoldRemainingSeconds:0.0}s";
             }
 
             if (pocketReviewOwner.IsSummonBlockOpportunityCueActive)
