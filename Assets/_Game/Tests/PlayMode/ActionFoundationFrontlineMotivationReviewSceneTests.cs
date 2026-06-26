@@ -744,6 +744,102 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator FrontlineRangedBasicSoftAssistBendsNearCenterFireTowardCloseThreat()
+        {
+            EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
+            yield return null;
+
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            PlayerCombatModeController combatModeController =
+                RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
+            PlayerRangedAimController aimController =
+                RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
+            PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            GameObject closeThreatRoot = RequireRoot(CloseThreatRootName);
+            CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreatRoot, "close threat health");
+            Collider closeThreatCollider = RequireCombatHitCollider(closeThreatRoot, closeThreatHealth, "close threat");
+            BasicSoldierEnemy closeThreatEnemy = closeThreatRoot.GetComponent<BasicSoldierEnemy>();
+
+            if (closeThreatEnemy != null)
+            {
+                closeThreatEnemy.enabled = false;
+            }
+
+            combatModeController.SetRangedMode();
+            aimController.SetAimHeld(true);
+            aimController.SetAimInput(Vector2.zero);
+            rangedBasicAttackAction.ClearAimInput();
+            player.transform.position =
+                laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
+            Physics.SyncTransforms();
+            yield return WaitSeconds(0.25f);
+
+            Vector3 aimPlanarDirection = Vector3.ProjectOnPlane(cameraController.transform.forward, Vector3.up);
+            if (aimPlanarDirection.sqrMagnitude <= 0.0001f)
+            {
+                aimPlanarDirection = cameraController.GetAimPlanarForward();
+            }
+
+            aimPlanarDirection.Normalize();
+            Vector3 aimRight = Vector3.Cross(Vector3.up, aimPlanarDirection).normalized;
+            Vector3 closeThreatPosition =
+                player.transform.position + aimPlanarDirection * 4.6f + aimRight * 1.1f;
+            closeThreatPosition.y = closeThreatRoot.transform.position.y;
+            closeThreatRoot.transform.SetPositionAndRotation(
+                closeThreatPosition,
+                Quaternion.LookRotation(-aimPlanarDirection, Vector3.up));
+            closeThreatHealth.ResetHealthToFull();
+            targetSelector.NotifyTargetContact(closeThreatHealth);
+            targetSelector.RefreshTarget();
+            Physics.SyncTransforms();
+            yield return null;
+
+            Assert.IsTrue(
+                GetBool(rangedBasicAttackAction, "useAimAssist"),
+                "The frontline motivation scene should keep ranged soft aim assist enabled.");
+            Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out Vector3 previewDirection));
+            Assert.IsTrue(
+                rangedBasicAttackAction.HasAimAssistTarget,
+                "A near-center close threat should be captured by ranged soft aim assist instead of requiring pixel-perfect center aim.");
+            Assert.AreSame(closeThreatHealth, rangedBasicAttackAction.AimAssistTargetHealth);
+
+            Vector3 targetAimPoint =
+                closeThreatHealth.transform.position + Vector3.up * GetFloat(rangedBasicAttackAction, "targetHeight");
+            Vector3 expectedTargetDirection =
+                (targetAimPoint - rangedBasicAttackAction.FireOrigin.position).normalized;
+            Assert.Less(
+                Vector3.Angle(previewDirection, expectedTargetDirection),
+                6f,
+                "The preview direction should bend toward the close threat once aim assist has a target.");
+            Assert.IsTrue(rangedBasicAttackAction.TryGetAimAssistPreviewViewportPoint(out Vector2 assistViewportPoint));
+            Assert.IsTrue(cameraController.TryWorldToViewportPoint(targetAimPoint, out Vector3 targetViewportPoint));
+            Assert.Less(
+                Vector2.Distance(assistViewportPoint, new Vector2(targetViewportPoint.x, targetViewportPoint.y)),
+                0.08f,
+                "The assist reticle point should describe the same assisted target as the fired projectile.");
+
+            Assert.IsTrue(rangedBasicAttackAction.TryFire());
+            LaneActionProjectile playerProjectile = RequireActivePlayerRangedProjectile();
+            Assert.Less(
+                Vector3.Angle(playerProjectile.TravelDirection, expectedTargetDirection),
+                6f,
+                "The fired projectile should use the assisted close-threat direction.");
+            Assert.IsTrue(
+                closeThreatCollider.bounds.IntersectRay(
+                    new Ray(playerProjectile.transform.position, playerProjectile.TravelDirection)),
+                "The assisted projectile ray should intersect the close threat bounds.");
+
+            if (closeThreatEnemy != null)
+            {
+                closeThreatEnemy.enabled = true;
+            }
+        }
+
+        [UnityTest]
         public IEnumerator FrontlineGuidedPlayerActionFlowClearsAsCleanRoute()
         {
             EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
@@ -1254,6 +1350,12 @@ namespace DimensionBrawl.Tests
         {
             FieldInfo field = RequireField(target.GetType(), fieldName);
             return (float)field.GetValue(target);
+        }
+
+        private static bool GetBool(UnityEngine.Object target, string fieldName)
+        {
+            FieldInfo field = RequireField(target.GetType(), fieldName);
+            return (bool)field.GetValue(target);
         }
 
         private static FieldInfo RequireField(Type type, string fieldName)

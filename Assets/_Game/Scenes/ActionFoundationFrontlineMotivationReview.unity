@@ -1337,12 +1337,12 @@ MonoBehaviour:
   aimInputViewportOffsetX: 0.39
   aimInputViewportOffsetY: 0.2
   useStableAimOrigin: 1
-  useAimAssist: 0
+  useAimAssist: 1
   disableAimAssistWithManualInput: 0
   aimAssistDistance: 30
-  hipAimAssistAngleDegrees: 14
-  aimedAimAssistAngleDegrees: 14
-  aimAssistMaxTurnDegrees: 14
+  hipAimAssistAngleDegrees: 18
+  aimedAimAssistAngleDegrees: 18
+  aimAssistMaxTurnDegrees: 45
   driveCameraAimAssist: 0
   cameraAimAssistStrengthScale: 1
   cameraAimAssistMinStrength: 0.05

@@ -543,14 +543,15 @@ namespace DimensionBrawl.Player
                 rawAimDirection,
                 directViewportTargetHealth);
 
-            if (hasViewportAimPoint && (!HasAimAssistTarget || directViewportTargetHealth != null))
+            bool hasSoftAimAssist = HasAimAssistTarget && directViewportTargetHealth == null;
+            if (hasViewportAimPoint && !hasSoftAimAssist)
             {
                 resolvedDirection = ResolveFireTravelDirection(rawViewportAimPoint - spawnPosition, resolvedDirection);
             }
 
             cachedFirePreviewDirection = resolvedDirection;
             cachedFirePreviewSpawnPosition = spawnPosition;
-            cachedFirePreviewAimPoint = hasViewportAimPoint
+            cachedFirePreviewAimPoint = hasViewportAimPoint && !hasSoftAimAssist
                 ? rawViewportAimPoint
                 : ResolveFirePreviewAimPoint(spawnPosition, resolvedDirection);
         }
