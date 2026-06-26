@@ -332,22 +332,6 @@ namespace DimensionBrawl.Tests
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "action screen cue presenter");
             BossBarrageLaneReviewOverlayHud overlayHud =
                 RequireComponent<BossBarrageLaneReviewOverlayHud>(RequireRoot(HudRootName), "boss barrage overlay HUD");
-            ProxyCombatHudTargetResolver proxyTargetResolver =
-                RequireComponent<ProxyCombatHudTargetResolver>(RequireRoot(HudRootName), "proxy combat HUD target resolver");
-            ProxyCombatHudTargetSurface proxyTargetSurface =
-                RequireComponent<ProxyCombatHudTargetSurface>(RequireRoot(HudRootName), "proxy combat HUD target surface");
-            ProxyCombatHudTutorialRunner proxyTutorialRunner =
-                RequireComponent<ProxyCombatHudTutorialRunner>(RequireRoot(HudRootName), "proxy combat HUD tutorial runner");
-            ProxyCombatHudTutorialObserver proxyTutorialObserver =
-                RequireComponent<ProxyCombatHudTutorialObserver>(RequireRoot(HudRootName), "proxy combat HUD tutorial observer");
-            ProxyCombatHudInputBridgeRouter proxyInputBridge =
-                RequireComponent<ProxyCombatHudInputBridgeRouter>(RequireRoot(HudRootName), "proxy combat HUD input bridge");
-            ProxyCombatHudSummonQteObserverBridge proxySummonBridge =
-                RequireComponent<ProxyCombatHudSummonQteObserverBridge>(RequireRoot(HudRootName), "proxy combat HUD summon QTE bridge");
-            ProxyCombatHudPlayerActionObserverBridge proxyPlayerActionBridge =
-                RequireComponent<ProxyCombatHudPlayerActionObserverBridge>(
-                    RequireRoot(HudRootName),
-                    "proxy combat HUD player action bridge");
             BossBarrageLaneTelegraphPresenter telegraphPresenter =
                 RequireComponent<BossBarrageLaneTelegraphPresenter>(
                     RequireRoot(BossTelegraphRootName),
@@ -1149,33 +1133,6 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(mobileHud, "summonSlot1Action"));
             Assert.AreEqual(0.42f, GetFloat(mobileHud, "summonButtonGroupCenterY01"), 0.001f);
             Assert.AreEqual(1.05f, GetFloat(mobileHud, "summonButtonGapMultiplier"), 0.001f);
-            Assert.AreSame(proxyInputBridge, GetObjectReference<ProxyCombatHudInputBridgeRouter>(mobileHud, "inputBridgeRouter"));
-            Assert.AreSame(proxyTutorialRunner, proxyInputBridge.TutorialRunner);
-            Assert.AreSame(proxyTargetResolver, proxyTargetSurface.TargetResolver);
-            Assert.AreSame(mobileHud, proxyTargetSurface.ScreenRectProvider);
-            Assert.AreSame(proxyTargetResolver, GetObjectReference<ProxyCombatHudTargetResolver>(proxyTutorialRunner, "targetResolver"));
-            Assert.AreSame(proxyTutorialObserver, GetObjectReference<ProxyCombatHudTutorialObserver>(proxyTutorialRunner, "combatObserver"));
-            Assert.IsTrue(proxyTutorialRunner.AutoAdvanceOnCompletion);
-            Assert.IsTrue(proxyTargetResolver.TryResolve(
-                "Hud.BasicAttackButton",
-                out IReadOnlyList<RectTransform> basicAttackTargets));
-            Assert.GreaterOrEqual(basicAttackTargets.Count, 1);
-            Assert.IsTrue(proxyTargetResolver.TryResolve(
-                "Hud.PartyPortraitSlots[1]",
-                out IReadOnlyList<RectTransform> qteTargets));
-            Assert.GreaterOrEqual(qteTargets.Count, 1);
-            Assert.AreSame(proxyTutorialObserver, proxySummonBridge.TutorialObserver);
-            Assert.AreSame(summonSlot1Action, proxySummonBridge.SummonSlot1Action);
-            Assert.AreSame(
-                GetObjectReference<PlayerSupportSummonSlotAction>(mobileHud, "summonSlot2Action"),
-                proxySummonBridge.SummonSlot2Action);
-            Assert.AreSame(
-                GetObjectReference<PlayerSupportSummonSlotAction>(mobileHud, "summonSlot3Action"),
-                proxySummonBridge.SummonSlot3Action);
-            Assert.AreSame(proxyTutorialObserver, proxyPlayerActionBridge.TutorialObserver);
-            Assert.AreSame(rangedBasicAttackAction, proxyPlayerActionBridge.RangedBasicAttackAction);
-            Assert.AreSame(playerActionController, proxyPlayerActionBridge.ActionController);
-            Assert.AreSame(skill1Action, proxyPlayerActionBridge.Skill1Action);
             Assert.AreSame(pocketOwner, overlayHud.PocketReviewOwner);
             Assert.AreSame(reviewHud, overlayHud.ReviewHud);
             Assert.AreSame(mobileHud, overlayHud.MobileHud);
@@ -1257,52 +1214,6 @@ namespace DimensionBrawl.Tests
             Assert.Greater(GetFloat(mobileHud, "fireAimAssistReticleMaxOffset"), 0f);
 
             yield return null;
-        }
-
-        [UnityTest]
-        public IEnumerator ProxyCombatHudTutorialTargetsReviewHudButtons()
-        {
-            yield return null;
-
-            GameObject hudRoot = RequireRoot(HudRootName);
-            BossBarrageLaneReviewMobileHud mobileHud =
-                RequireComponent<BossBarrageLaneReviewMobileHud>(hudRoot, "boss barrage mobile HUD");
-            ProxyCombatHudTargetResolver targetResolver =
-                RequireComponent<ProxyCombatHudTargetResolver>(hudRoot, "proxy combat HUD target resolver");
-            ProxyCombatHudTargetSurface targetSurface =
-                RequireComponent<ProxyCombatHudTargetSurface>(hudRoot, "proxy combat HUD target surface");
-            ProxyCombatHudTutorialRunner tutorialRunner =
-                RequireComponent<ProxyCombatHudTutorialRunner>(hudRoot, "proxy combat HUD tutorial runner");
-            ProxyCombatHudTutorialObserver tutorialObserver =
-                RequireComponent<ProxyCombatHudTutorialObserver>(hudRoot, "proxy combat HUD tutorial observer");
-            ProxyCombatHudInputBridgeRouter inputBridge =
-                RequireComponent<ProxyCombatHudInputBridgeRouter>(hudRoot, "proxy combat HUD input bridge");
-            ProxyCombatHudSummonQteObserverBridge summonBridge =
-                RequireComponent<ProxyCombatHudSummonQteObserverBridge>(hudRoot, "proxy combat HUD summon QTE bridge");
-            ProxyCombatHudPlayerActionObserverBridge playerActionBridge =
-                RequireComponent<ProxyCombatHudPlayerActionObserverBridge>(hudRoot, "proxy combat HUD player action bridge");
-
-            Assert.IsTrue(mobileHud.TryGetProxyHudScreenRect("Hud.BasicAttackButton", out Rect basicRect));
-            Assert.Greater(basicRect.width, 0f);
-            Assert.Greater(basicRect.height, 0f);
-            targetSurface.SyncTargetRects();
-
-            Assert.AreSame(targetResolver, targetSurface.TargetResolver);
-            Assert.AreSame(mobileHud, targetSurface.ScreenRectProvider);
-            Assert.AreSame(tutorialRunner, inputBridge.TutorialRunner);
-            Assert.AreSame(targetResolver, GetObjectReference<ProxyCombatHudTargetResolver>(tutorialRunner, "targetResolver"));
-            Assert.AreSame(tutorialObserver, GetObjectReference<ProxyCombatHudTutorialObserver>(tutorialRunner, "combatObserver"));
-            Assert.IsTrue(tutorialRunner.AutoAdvanceOnCompletion);
-            Assert.IsTrue(targetResolver.TryResolve(
-                "Hud.BasicAttackButton",
-                out IReadOnlyList<RectTransform> basicTargets));
-            Assert.GreaterOrEqual(basicTargets.Count, 1);
-            Assert.IsTrue(targetResolver.TryResolve(
-                "Hud.PartyPortraitSlots[1]",
-                out IReadOnlyList<RectTransform> qteTargets));
-            Assert.GreaterOrEqual(qteTargets.Count, 1);
-            Assert.AreSame(tutorialObserver, summonBridge.TutorialObserver);
-            Assert.AreSame(tutorialObserver, playerActionBridge.TutorialObserver);
         }
 
         [UnityTest]

@@ -8,7 +8,7 @@ namespace DimensionBrawl.UI
     // Review-only mobile controls for the boss barrage lane slice; production HUD should be authored separately.
     [DefaultExecutionOrder(-50)]
     [DisallowMultipleComponent]
-    public sealed class BossBarrageLaneReviewMobileHud : MonoBehaviour, IProxyCombatHudScreenRectProvider
+    public sealed class BossBarrageLaneReviewMobileHud : MonoBehaviour
     {
         [Header("References")]
         [SerializeField] private PlayerMovementController movement;
@@ -21,7 +21,6 @@ namespace DimensionBrawl.UI
         [SerializeField] private PlayerSupportSummonSlotAction summonSlot2Action;
         [SerializeField] private PlayerSupportSummonSlotAction summonSlot3Action;
         [SerializeField] private SummonEnergyLadder energyLadder;
-        [SerializeField] private ProxyCombatHudInputBridgeRouter inputBridgeRouter;
 
         [Header("Canonical Actions")]
         [SerializeField] private string moveActionName = "Move";
@@ -160,8 +159,7 @@ namespace DimensionBrawl.UI
             PlayerSummonSlot1Action newSummonSlot1Action,
             SummonEnergyLadder newEnergyLadder = null,
             PlayerSupportSummonSlotAction newSummonSlot2Action = null,
-            PlayerSupportSummonSlotAction newSummonSlot3Action = null,
-            ProxyCombatHudInputBridgeRouter newInputBridgeRouter = null)
+            PlayerSupportSummonSlotAction newSummonSlot3Action = null)
         {
             movement = newMovement;
             actionController = newActionController;
@@ -173,7 +171,6 @@ namespace DimensionBrawl.UI
             energyLadder = newEnergyLadder;
             summonSlot2Action = newSummonSlot2Action;
             summonSlot3Action = newSummonSlot3Action;
-            inputBridgeRouter = newInputBridgeRouter;
         }
 
         private void Awake()
@@ -227,11 +224,6 @@ namespace DimensionBrawl.UI
             {
                 energyLadder = movement.GetComponent<SummonEnergyLadder>();
             }
-
-            if (inputBridgeRouter == null)
-            {
-                inputBridgeRouter = GetComponent<ProxyCombatHudInputBridgeRouter>();
-            }
         }
 
         private void OnDisable()
@@ -282,7 +274,7 @@ namespace DimensionBrawl.UI
                     rangedBasicAttackAction?.SetFireHeld(basicHeld);
                 }
 
-                if (basicPressed && TryAcceptProxyAction(CombatHudActionId.BasicAttack))
+                if (basicPressed)
                 {
                     rangedBasicAttackAction?.QueueFire();
                 }
@@ -294,14 +286,14 @@ namespace DimensionBrawl.UI
                     rangedBasicAttackAction?.SetFireHeld(false);
                 }
 
-                if (basicPressed && TryAcceptProxyAction(CombatHudActionId.BasicAttack))
+                if (basicPressed)
                 {
                     actionController?.QueueBasicAttack();
                 }
             }
             previousBasicHeld = basicHeld;
 
-            if (IsPressed(dodgeRect) && TryAcceptProxyAction(CombatHudActionId.Dodge))
+            if (IsPressed(dodgeRect))
             {
                 actionController?.QueueDodge();
             }
@@ -311,64 +303,25 @@ namespace DimensionBrawl.UI
                 combatModeController?.QueueCombatModeSwap();
             }
 
-            if (IsPressed(skillRect) && TryAcceptProxyAction(CombatHudActionId.Skill1))
+            if (IsPressed(skillRect))
             {
                 skill1Action?.QueueSkill1();
             }
 
-            if (IsPressed(summonSlot1Rect) && TryAcceptProxyAction(CombatHudActionId.SummonSlot1))
+            if (IsPressed(summonSlot1Rect))
             {
                 summonSlot1Action?.QueueSummonSlot1();
             }
 
-            if (IsPressed(summonSlot2Rect) && TryAcceptProxyAction(CombatHudActionId.SummonSlot2))
+            if (IsPressed(summonSlot2Rect))
             {
                 summonSlot2Action?.QueueSummon();
             }
 
-            if (IsPressed(summonSlot3Rect) && TryAcceptProxyAction(CombatHudActionId.SummonSlot3))
+            if (IsPressed(summonSlot3Rect))
             {
                 summonSlot3Action?.QueueSummon();
             }
-        }
-
-        public bool TryGetProxyHudScreenRect(string proxyHudObject, out Rect screenRect)
-        {
-            screenRect = default;
-            if (!showHud || string.IsNullOrWhiteSpace(proxyHudObject))
-            {
-                return false;
-            }
-
-            BuildLayout();
-            switch (proxyHudObject)
-            {
-                case "Hud.BasicAttackButton":
-                    screenRect = basicRect;
-                    return true;
-                case "Hud.DodgeButton":
-                    screenRect = dodgeRect;
-                    return true;
-                case "Hud.SignatureSkillButton":
-                    screenRect = skillRect;
-                    return true;
-                case "Hud.PartnerSkillButton":
-                    screenRect = summonSlot1Rect;
-                    return true;
-                case "Hud.PartyPortraitSlots[1]":
-                    screenRect = summonSlot2Rect;
-                    return true;
-                case "Hud.PartyPortraitSlots[2]":
-                    screenRect = summonSlot3Rect;
-                    return true;
-                default:
-                    return false;
-            }
-        }
-
-        private bool TryAcceptProxyAction(CombatHudActionId actionId)
-        {
-            return inputBridgeRouter == null || inputBridgeRouter.TryAcceptAction(actionId);
         }
 
         private void ReleaseHudControls()

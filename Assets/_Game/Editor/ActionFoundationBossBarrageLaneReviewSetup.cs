@@ -1004,24 +1004,6 @@ namespace DimensionBrawl.Editor
                 RequireComponent<BossBarrageLaneReviewMobileHud>(RequireRoot(scene, HudRootName), "boss barrage mobile review HUD");
             ActionScreenCuePresenter screenCuePresenter =
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(scene, HudRootName), "action screen cue presenter");
-            ProxyCombatHudTargetResolver proxyTargetResolver =
-                RequireComponent<ProxyCombatHudTargetResolver>(RequireRoot(scene, HudRootName), "proxy combat HUD target resolver");
-            ProxyCombatHudTargetSurface proxyTargetSurface =
-                RequireComponent<ProxyCombatHudTargetSurface>(RequireRoot(scene, HudRootName), "proxy combat HUD target surface");
-            ProxyCombatHudOverlayPresenter proxyOverlayPresenter =
-                RequireComponent<ProxyCombatHudOverlayPresenter>(RequireRoot(scene, HudRootName), "proxy combat HUD overlay presenter");
-            ProxyCombatHudTutorialObserver proxyTutorialObserver =
-                RequireComponent<ProxyCombatHudTutorialObserver>(RequireRoot(scene, HudRootName), "proxy combat HUD tutorial observer");
-            ProxyCombatHudTutorialRunner proxyTutorialRunner =
-                RequireComponent<ProxyCombatHudTutorialRunner>(RequireRoot(scene, HudRootName), "proxy combat HUD tutorial runner");
-            ProxyCombatHudInputBridgeRouter proxyInputBridge =
-                RequireComponent<ProxyCombatHudInputBridgeRouter>(RequireRoot(scene, HudRootName), "proxy combat HUD input bridge");
-            ProxyCombatHudSummonQteObserverBridge proxySummonBridge =
-                RequireComponent<ProxyCombatHudSummonQteObserverBridge>(RequireRoot(scene, HudRootName), "proxy combat HUD summon QTE bridge");
-            ProxyCombatHudPlayerActionObserverBridge proxyPlayerActionBridge =
-                RequireComponent<ProxyCombatHudPlayerActionObserverBridge>(
-                    RequireRoot(scene, HudRootName),
-                    "proxy combat HUD player action bridge");
             ActionCameraCueDriver actionCameraCueDriver =
                 RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
             ActionCinematicCueDirector cinematicCueDirector =
@@ -1328,22 +1310,6 @@ namespace DimensionBrawl.Editor
                 emitter,
                 bossPressureActionDirector,
                 pocketOwner);
-            ValidateProxyCombatHudTutorial(
-                proxyTargetResolver,
-                proxyTargetSurface,
-                proxyOverlayPresenter,
-                proxyTutorialObserver,
-                proxyTutorialRunner,
-                proxyInputBridge,
-                proxySummonBridge,
-                proxyPlayerActionBridge,
-                mobileHud,
-                summonSlot1Action,
-                summonSlot2Action,
-                summonSlot3Action,
-                rangedBasicAttackAction,
-                playerActionController,
-                skill1Action);
             ValidateFixedRearCamera(cameraController, player.transform, laneSpace.transform);
             ValidateSummonForwardSpace(laneSpace);
             ValidateSummonPresentationCandidateProfiles();
@@ -5535,65 +5501,6 @@ namespace DimensionBrawl.Editor
             SetFloat(screenCuePresenter, "damageDirectionAccentAlpha", 0.24f);
             SetFloat(screenCuePresenter, "damageDirectionAccentThickness", 178f);
 
-            Canvas proxyCanvas = hudRoot.GetComponent<Canvas>();
-            if (proxyCanvas == null)
-            {
-                proxyCanvas = hudRoot.AddComponent<Canvas>();
-            }
-
-            proxyCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            proxyCanvas.sortingOrder = 100;
-
-            ProxyCombatHudTargetResolver proxyTargetResolver = hudRoot.AddComponent<ProxyCombatHudTargetResolver>();
-            ProxyCombatHudOverlayPresenter proxyOverlayPresenter = hudRoot.AddComponent<ProxyCombatHudOverlayPresenter>();
-            ProxyCombatHudTutorialObserver proxyTutorialObserver = hudRoot.AddComponent<ProxyCombatHudTutorialObserver>();
-            ProxyCombatHudTutorialRunner proxyTutorialRunner = hudRoot.AddComponent<ProxyCombatHudTutorialRunner>();
-            ProxyCombatHudInputBridgeRouter proxyInputBridge = hudRoot.AddComponent<ProxyCombatHudInputBridgeRouter>();
-            ProxyCombatHudTargetSurface proxyTargetSurface = hudRoot.AddComponent<ProxyCombatHudTargetSurface>();
-            ProxyCombatHudSummonQteObserverBridge proxySummonBridge =
-                hudRoot.AddComponent<ProxyCombatHudSummonQteObserverBridge>();
-            ProxyCombatHudPlayerActionObserverBridge proxyPlayerActionBridge =
-                hudRoot.AddComponent<ProxyCombatHudPlayerActionObserverBridge>();
-
-            proxyTutorialRunner.Configure(null, proxyTargetResolver, proxyOverlayPresenter, proxyTutorialObserver);
-            proxyTutorialRunner.ConfigureSteps(CreateBossBarrageProxyHudTutorialSteps());
-            SetObjectReference(proxyTutorialRunner, "targetResolver", proxyTargetResolver);
-            SetObjectReference(proxyTutorialRunner, "overlayPresenter", proxyOverlayPresenter);
-            SetObjectReference(proxyTutorialRunner, "combatObserver", proxyTutorialObserver);
-            SetBool(proxyTutorialRunner, "startFirstStepOnEnable", true);
-            SetBool(proxyTutorialRunner, "autoAdvanceOnCompletion", true);
-
-            proxyInputBridge.Configure(proxyTutorialRunner, null);
-            SetObjectReference(proxyInputBridge, "tutorialRunner", proxyTutorialRunner);
-            SetObjectReference(mobileHud, "inputBridgeRouter", proxyInputBridge);
-
-            proxyTargetSurface.Configure(proxyTargetResolver, mobileHud, proxyCanvas);
-            proxyTargetSurface.RebuildDefaultTargets();
-            SetObjectReference(proxyTargetSurface, "targetResolver", proxyTargetResolver);
-            SetObjectReference(proxyTargetSurface, "screenRectProvider", mobileHud);
-            SetObjectReference(proxyTargetSurface, "canvas", proxyCanvas);
-            SetObjectReference(proxyTargetSurface, "targetRoot", proxyTargetSurface.TargetRoot);
-
-            proxySummonBridge.Configure(
-                proxyTutorialObserver,
-                summonSlot1Action,
-                summonSlot2Action,
-                summonSlot3Action);
-            SetObjectReference(proxySummonBridge, "tutorialObserver", proxyTutorialObserver);
-            SetObjectReference(proxySummonBridge, "summonSlot1Action", summonSlot1Action);
-            SetObjectReference(proxySummonBridge, "summonSlot2Action", summonSlot2Action);
-            SetObjectReference(proxySummonBridge, "summonSlot3Action", summonSlot3Action);
-
-            proxyPlayerActionBridge.Configure(
-                proxyTutorialObserver,
-                rangedBasicAttackAction,
-                player.GetComponent<PlayerActionController>(),
-                skill1Action);
-            SetObjectReference(proxyPlayerActionBridge, "tutorialObserver", proxyTutorialObserver);
-            SetObjectReference(proxyPlayerActionBridge, "rangedBasicAttackAction", rangedBasicAttackAction);
-            SetObjectReference(proxyPlayerActionBridge, "actionController", player.GetComponent<PlayerActionController>());
-            SetObjectReference(proxyPlayerActionBridge, "skill1Action", skill1Action);
-
             BossBarrageLaneReviewOverlayHud overlayHud = hudRoot.AddComponent<BossBarrageLaneReviewOverlayHud>();
             overlayHud.Configure(
                 pocketOwner,
@@ -5605,47 +5512,7 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(hud);
             EditorUtility.SetDirty(mobileHud);
             EditorUtility.SetDirty(screenCuePresenter);
-            EditorUtility.SetDirty(proxyCanvas);
-            EditorUtility.SetDirty(proxyTargetResolver);
-            EditorUtility.SetDirty(proxyOverlayPresenter);
-            EditorUtility.SetDirty(proxyTutorialObserver);
-            EditorUtility.SetDirty(proxyTutorialRunner);
-            EditorUtility.SetDirty(proxyInputBridge);
-            EditorUtility.SetDirty(proxyTargetSurface);
-            EditorUtility.SetDirty(proxySummonBridge);
-            EditorUtility.SetDirty(proxyPlayerActionBridge);
             EditorUtility.SetDirty(overlayHud);
-        }
-
-        private static ProxyCombatHudTutorialStep[] CreateBossBarrageProxyHudTutorialSteps()
-        {
-            return new[]
-            {
-                ProxyCombatHudTutorialStep.ForMappingId(
-                    "basic_attack_primary",
-                    "Fire into the boss lane to build energy and force a visible response.",
-                    inputPolicy: ProxyCombatHudInputPolicy.AllowAll),
-                ProxyCombatHudTutorialStep.ForMappingId(
-                    "dodge_matrix_primary",
-                    "Dodge through a warning lane to keep HP pressure under control.",
-                    inputPolicy: ProxyCombatHudInputPolicy.AllowAll),
-                ProxyCombatHudTutorialStep.ForMappingId(
-                    "signature_skill_primary",
-                    "Spend energy on SKILL when the boss poise window opens.",
-                    inputPolicy: ProxyCombatHudInputPolicy.AllowAll),
-                ProxyCombatHudTutorialStep.ForMappingId(
-                    "partner_skill_button",
-                    "Call S1 SHIELD to answer boss pressure with support.",
-                    inputPolicy: ProxyCombatHudInputPolicy.AllowAll),
-                ProxyCombatHudTutorialStep.ForMappingId(
-                    "character_switch_slot_1",
-                    "Trigger S2 ARROW as a QTE-style ranged support call.",
-                    inputPolicy: ProxyCombatHudInputPolicy.AllowAll),
-                ProxyCombatHudTutorialStep.ForMappingId(
-                    "character_switch_slot_2",
-                    "Trigger S3 TANK as a QTE-style frontline answer.",
-                    inputPolicy: ProxyCombatHudInputPolicy.AllowAll)
-            };
         }
 
         private static void ConfigureOverlayRoutes(BossBarrageLaneReviewOverlayHud overlayHud)
@@ -9543,144 +9410,6 @@ namespace DimensionBrawl.Editor
             ValidateFloat(presenter, "criticalHealthPulseRate", 2.3f);
             ValidateFloat(presenter, "damageDirectionAccentAlpha", 0.24f);
             ValidateFloat(presenter, "damageDirectionAccentThickness", 178f);
-        }
-
-        private static void ValidateProxyCombatHudTutorial(
-            ProxyCombatHudTargetResolver targetResolver,
-            ProxyCombatHudTargetSurface targetSurface,
-            ProxyCombatHudOverlayPresenter overlayPresenter,
-            ProxyCombatHudTutorialObserver tutorialObserver,
-            ProxyCombatHudTutorialRunner tutorialRunner,
-            ProxyCombatHudInputBridgeRouter inputBridge,
-            ProxyCombatHudSummonQteObserverBridge summonBridge,
-            ProxyCombatHudPlayerActionObserverBridge playerActionBridge,
-            BossBarrageLaneReviewMobileHud mobileHud,
-            PlayerSummonSlot1Action summonSlot1Action,
-            PlayerSupportSummonSlotAction summonSlot2Action,
-            PlayerSupportSummonSlotAction summonSlot3Action,
-            PlayerRangedBasicAttackAction rangedBasicAttackAction,
-            PlayerActionController actionController,
-            PlayerSkill1Action skill1Action)
-        {
-            ValidateObjectReference(tutorialRunner, "targetResolver", targetResolver);
-            ValidateObjectReference(tutorialRunner, "overlayPresenter", overlayPresenter);
-            ValidateObjectReference(tutorialRunner, "combatObserver", tutorialObserver);
-            ValidateBool(tutorialRunner, "startFirstStepOnEnable", true);
-            ValidateBool(tutorialRunner, "autoAdvanceOnCompletion", true);
-            ValidateProxyTutorialStep(tutorialRunner, 0, "basic_attack_primary");
-            ValidateProxyTutorialStep(tutorialRunner, 1, "dodge_matrix_primary");
-            ValidateProxyTutorialStep(tutorialRunner, 2, "signature_skill_primary");
-            ValidateProxyTutorialStep(tutorialRunner, 3, "partner_skill_button");
-            ValidateProxyTutorialStep(tutorialRunner, 4, "character_switch_slot_1");
-            ValidateProxyTutorialStep(tutorialRunner, 5, "character_switch_slot_2");
-
-            ValidateObjectReference(inputBridge, "tutorialRunner", tutorialRunner);
-            ValidateObjectReference(mobileHud, "inputBridgeRouter", inputBridge);
-
-            ValidateObjectReference(targetSurface, "targetResolver", targetResolver);
-            ValidateObjectReference(targetSurface, "screenRectProvider", mobileHud);
-            ValidateObjectReference(targetSurface, "canvas", targetSurface.GetComponent<Canvas>());
-            ValidateAssignedObjectReference(targetSurface, "targetRoot");
-            ValidateProxyHudTargetAnchor(targetSurface, targetResolver, "Hud.BasicAttackButton");
-            ValidateProxyHudTargetAnchor(targetSurface, targetResolver, "Hud.DodgeButton");
-            ValidateProxyHudTargetAnchor(targetSurface, targetResolver, "Hud.SignatureSkillButton");
-            ValidateProxyHudTargetAnchor(targetSurface, targetResolver, "Hud.PartnerSkillButton");
-            ValidateProxyHudTargetAnchor(targetSurface, targetResolver, "Hud.PartyPortraitSlots[1]");
-            ValidateProxyHudTargetAnchor(targetSurface, targetResolver, "Hud.PartyPortraitSlots[2]");
-
-            ValidateObjectReference(summonBridge, "tutorialObserver", tutorialObserver);
-            ValidateObjectReference(summonBridge, "summonSlot1Action", summonSlot1Action);
-            ValidateObjectReference(summonBridge, "summonSlot2Action", summonSlot2Action);
-            ValidateObjectReference(summonBridge, "summonSlot3Action", summonSlot3Action);
-            ValidateBool(summonBridge, "primarySummonReportsPartnerSkill", true);
-            ValidateInt(summonBridge, "summonSlot2QteIndex", 1);
-            ValidateInt(summonBridge, "summonSlot3QteIndex", 2);
-
-            ValidateObjectReference(playerActionBridge, "tutorialObserver", tutorialObserver);
-            ValidateObjectReference(playerActionBridge, "rangedBasicAttackAction", rangedBasicAttackAction);
-            ValidateObjectReference(playerActionBridge, "actionController", actionController);
-            ValidateObjectReference(playerActionBridge, "skill1Action", skill1Action);
-        }
-
-        private static void ValidateProxyTutorialStep(
-            ProxyCombatHudTutorialRunner tutorialRunner,
-            int index,
-            string expectedMappingId)
-        {
-            SerializedProperty steps = RequireProperty(new SerializedObject(tutorialRunner), "tutorialSteps");
-            if (!steps.isArray || steps.arraySize <= index)
-            {
-                throw new InvalidOperationException($"{tutorialRunner.name}.tutorialSteps should contain index {index}.");
-            }
-
-            SerializedProperty step = steps.GetArrayElementAtIndex(index);
-            SerializedProperty mappingId = RequireRelativeProperty(step, "mappingId");
-            if (!string.Equals(mappingId.stringValue, expectedMappingId, StringComparison.Ordinal))
-            {
-                throw new InvalidOperationException(
-                    $"{tutorialRunner.name}.tutorialSteps[{index}].mappingId expected {expectedMappingId}, found {mappingId.stringValue}.");
-            }
-
-            bool enabled = RequireRelativeProperty(step, "enabled").boolValue;
-            if (!enabled)
-            {
-                throw new InvalidOperationException($"{tutorialRunner.name}.tutorialSteps[{index}] should be enabled.");
-            }
-
-            int inputPolicy = RequireRelativeProperty(step, "inputPolicy").intValue;
-            if (inputPolicy != (int)ProxyCombatHudInputPolicy.AllowAll)
-            {
-                throw new InvalidOperationException(
-                    $"{tutorialRunner.name}.tutorialSteps[{index}].inputPolicy expected AllowAll, found {inputPolicy}.");
-            }
-        }
-
-        private static void ValidateProxyHudTargetAnchor(
-            ProxyCombatHudTargetSurface targetSurface,
-            ProxyCombatHudTargetResolver targetResolver,
-            string proxyHudObject)
-        {
-            RectTransform anchor = FindProxyHudTargetAnchor(targetSurface, proxyHudObject);
-            if (anchor == null)
-            {
-                throw new InvalidOperationException($"{targetSurface.name} is missing proxy target anchor {proxyHudObject}.");
-            }
-
-            if (!targetResolver.TryResolve(proxyHudObject, out IReadOnlyList<RectTransform> targets) || targets.Count == 0)
-            {
-                throw new InvalidOperationException($"{targetResolver.name} should resolve {proxyHudObject}.");
-            }
-
-            bool containsAnchor = false;
-            for (int i = 0; i < targets.Count; i++)
-            {
-                containsAnchor |= targets[i] == anchor;
-            }
-
-            if (!containsAnchor)
-            {
-                throw new InvalidOperationException($"{targetResolver.name} should resolve {proxyHudObject} to {anchor.name}.");
-            }
-        }
-
-        private static RectTransform FindProxyHudTargetAnchor(
-            ProxyCombatHudTargetSurface targetSurface,
-            string proxyHudObject)
-        {
-            SerializedProperty anchors = RequireProperty(new SerializedObject(targetSurface), "targetAnchors");
-            for (int i = 0; i < anchors.arraySize; i++)
-            {
-                SerializedProperty anchor = anchors.GetArrayElementAtIndex(i);
-                string actualProxyHudObject = RequireRelativeProperty(anchor, "proxyHudObject").stringValue;
-                if (!string.Equals(actualProxyHudObject, proxyHudObject, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                return RequireRelativeProperty(anchor, "target").objectReferenceValue as RectTransform;
-            }
-
-            return null;
         }
 
         private static void ConfigureArenaInfluenceTargets(Scene scene, Transform player, params Transform[] influenceTargets)

@@ -66,7 +66,7 @@ namespace DimensionBrawl.UI
     }
 
     [DisallowMultipleComponent]
-    public sealed partial class ProxyCombatHudSummonQteObserverBridge : MonoBehaviour
+    public sealed class ProxyCombatHudSummonQteObserverBridge : MonoBehaviour
     {
         [Header("References")]
         [SerializeField] private ProxyCombatHudTutorialObserver tutorialObserver;
@@ -256,120 +256,6 @@ namespace DimensionBrawl.UI
                     summonSlot3Action = action;
                 }
             }
-        }
-    }
-
-    [DisallowMultipleComponent]
-    public sealed partial class ProxyCombatHudPlayerActionObserverBridge : MonoBehaviour
-    {
-        [Header("References")]
-        [SerializeField] private ProxyCombatHudTutorialObserver tutorialObserver;
-        [SerializeField] private PlayerRangedBasicAttackAction rangedBasicAttackAction;
-        [SerializeField] private PlayerActionController actionController;
-        [SerializeField] private PlayerSkill1Action skill1Action;
-
-        private bool subscribed;
-
-        public ProxyCombatHudTutorialObserver TutorialObserver => tutorialObserver;
-        public PlayerRangedBasicAttackAction RangedBasicAttackAction => rangedBasicAttackAction;
-        public PlayerActionController ActionController => actionController;
-        public PlayerSkill1Action Skill1Action => skill1Action;
-
-        private void Awake()
-        {
-            tutorialObserver ??= GetComponent<ProxyCombatHudTutorialObserver>();
-            rangedBasicAttackAction ??= GetComponent<PlayerRangedBasicAttackAction>();
-            actionController ??= GetComponent<PlayerActionController>();
-            skill1Action ??= GetComponent<PlayerSkill1Action>();
-        }
-
-        private void OnEnable()
-        {
-            Subscribe();
-        }
-
-        private void OnDisable()
-        {
-            Unsubscribe();
-        }
-
-        public void Configure(
-            ProxyCombatHudTutorialObserver newTutorialObserver,
-            PlayerRangedBasicAttackAction newRangedBasicAttackAction,
-            PlayerActionController newActionController,
-            PlayerSkill1Action newSkill1Action)
-        {
-            Unsubscribe();
-            tutorialObserver = newTutorialObserver;
-            rangedBasicAttackAction = newRangedBasicAttackAction;
-            actionController = newActionController;
-            skill1Action = newSkill1Action;
-            Subscribe();
-        }
-
-        public void NotifyRangedBasicFireStarted()
-        {
-            tutorialObserver?.NotifyBasicAttackAccepted();
-        }
-
-        public void NotifyDodgeStarted()
-        {
-            tutorialObserver?.NotifyDodgeOrMatrixAccepted();
-        }
-
-        public void NotifySkill1Used(int tier)
-        {
-            tutorialObserver?.NotifySignatureSkillCast();
-        }
-
-        private void Subscribe()
-        {
-            if (subscribed)
-            {
-                return;
-            }
-
-            if (rangedBasicAttackAction != null)
-            {
-                rangedBasicAttackAction.RangedFireStarted += NotifyRangedBasicFireStarted;
-            }
-
-            if (actionController != null)
-            {
-                actionController.DodgeStarted += NotifyDodgeStarted;
-            }
-
-            if (skill1Action != null)
-            {
-                skill1Action.Skill1Used += NotifySkill1Used;
-            }
-
-            subscribed = true;
-        }
-
-        private void Unsubscribe()
-        {
-            if (!subscribed)
-            {
-                return;
-            }
-
-            if (rangedBasicAttackAction != null)
-            {
-                rangedBasicAttackAction.RangedFireStarted -= NotifyRangedBasicFireStarted;
-            }
-
-            if (actionController != null)
-            {
-                actionController.DodgeStarted -= NotifyDodgeStarted;
-            }
-
-            if (skill1Action != null)
-            {
-                skill1Action.Skill1Used -= NotifySkill1Used;
-            }
-
-            subscribed = false;
         }
     }
 }
