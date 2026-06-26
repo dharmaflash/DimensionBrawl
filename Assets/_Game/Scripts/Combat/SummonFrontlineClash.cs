@@ -165,8 +165,8 @@ namespace DimensionBrawl.Combat
                 other.ClosestPoint(transform.position),
                 ResolveHitDirection(otherHealth, otherProxy),
                 0f,
-                ResolveResponsePolicy(targetKind),
-                ResolveControlLockPolicy(targetKind));
+                ResolveResponsePolicy(targetKind, otherHealth),
+                ResolveControlLockPolicy(targetKind, otherHealth));
 
             if (otherHealth.TryApplyDamage(damageInfo))
             {
@@ -262,16 +262,20 @@ namespace DimensionBrawl.Combat
             return amount;
         }
 
-        private static DamageResponsePolicy ResolveResponsePolicy(SummonFrontlineClashTargetKind targetKind)
+        private static DamageResponsePolicy ResolveResponsePolicy(
+            SummonFrontlineClashTargetKind targetKind,
+            CombatHealth targetHealth)
         {
-            return targetKind == SummonFrontlineClashTargetKind.HostileSummon
+            return targetKind == SummonFrontlineClashTargetKind.HostileSummon || IsPlayerBody(targetHealth)
                 ? DamageResponsePolicy.FlashOnly
                 : DamageResponsePolicy.Default;
         }
 
-        private static CombatControlLockPolicy ResolveControlLockPolicy(SummonFrontlineClashTargetKind targetKind)
+        private static CombatControlLockPolicy ResolveControlLockPolicy(
+            SummonFrontlineClashTargetKind targetKind,
+            CombatHealth targetHealth)
         {
-            return targetKind == SummonFrontlineClashTargetKind.HostileSummon
+            return targetKind == SummonFrontlineClashTargetKind.HostileSummon || IsPlayerBody(targetHealth)
                 ? CombatControlLockPolicy.None
                 : CombatControlLockPolicy.InterruptAction;
         }

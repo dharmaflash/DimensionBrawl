@@ -1527,11 +1527,16 @@ namespace DimensionBrawl.Tests
             CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
             bossHealth.ConfigureTeam(DamageTeam.Enemy);
             bossHealth.ResetHealthToFull();
+            DamageInfo? bossDamageInfo = null;
+            bossHealth.Damaged += damageInfo => bossDamageInfo = damageInfo;
 
             allyProxy.Activate(Vector3.zero, Vector3.forward, 1, 0f, 1f, Vector3.forward * 4f, 3f);
 
             Assert.IsTrue(allyClash.TryProcessClash(bossCollider));
             Assert.Less(bossHealth.CurrentHealth, bossHealth.MaxHealth);
+            Assert.IsTrue(bossDamageInfo.HasValue);
+            Assert.AreEqual(DamageResponsePolicy.Default, bossDamageInfo.Value.ResponsePolicy);
+            Assert.AreEqual(CombatControlLockPolicy.InterruptAction, bossDamageInfo.Value.ControlLockPolicy);
             Assert.IsTrue(allyProxy.IsAdvanceHeld);
             Assert.IsTrue(allyClash.IsClashing);
             Assert.AreEqual(1, allyClash.TotalClashCount);
@@ -1566,12 +1571,17 @@ namespace DimensionBrawl.Tests
             CombatHealth playerHealth = playerObject.AddComponent<CombatHealth>();
             playerHealth.ConfigureTeam(DamageTeam.Player);
             playerHealth.ConfigureMaxHealth(120f);
+            DamageInfo? playerDamageInfo = null;
+            playerHealth.Damaged += damageInfo => playerDamageInfo = damageInfo;
 
             enemyProxy.Activate(Vector3.zero, Vector3.forward, 1, 0f, 1f, Vector3.forward * 4f, 3f);
 
             Assert.IsTrue(enemyClash.TryProcessClash(playerCollider));
             Assert.IsTrue(playerHealth.IsAlive);
             Assert.AreEqual(116f, playerHealth.CurrentHealth, 0.001f);
+            Assert.IsTrue(playerDamageInfo.HasValue);
+            Assert.AreEqual(DamageResponsePolicy.FlashOnly, playerDamageInfo.Value.ResponsePolicy);
+            Assert.AreEqual(CombatControlLockPolicy.None, playerDamageInfo.Value.ControlLockPolicy);
             Assert.AreEqual(4f, enemyClash.LastDamageAmount, 0.001f);
             Assert.AreEqual(SummonFrontlineClashTargetKind.HostileBody, enemyClash.LastTargetKind);
 
