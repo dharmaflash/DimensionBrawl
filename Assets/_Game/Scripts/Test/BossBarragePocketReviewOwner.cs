@@ -115,6 +115,32 @@ namespace DimensionBrawl.Test
             public string NextObjective { get; }
         }
 
+        public readonly struct RouteDecisionSnapshot
+        {
+            public RouteDecisionSnapshot(
+                string state,
+                string readout,
+                string incentiveCue,
+                ReviewPhase phase,
+                int stageBeatIndex,
+                string completionReadout)
+            {
+                State = state ?? string.Empty;
+                Readout = readout ?? string.Empty;
+                IncentiveCue = incentiveCue ?? string.Empty;
+                Phase = phase;
+                StageBeatIndex = stageBeatIndex;
+                CompletionReadout = completionReadout ?? string.Empty;
+            }
+
+            public string State { get; }
+            public string Readout { get; }
+            public string IncentiveCue { get; }
+            public ReviewPhase Phase { get; }
+            public int StageBeatIndex { get; }
+            public string CompletionReadout { get; }
+        }
+
         private enum PocketState
         {
             Running,
@@ -222,6 +248,8 @@ namespace DimensionBrawl.Test
         private RouteStabilityBand announcedRouteStabilityBand;
         private RouteResultRecord lastResultRecord;
         private int resultRecordCommitCount;
+        private RouteDecisionSnapshot lastRouteDecisionSnapshot;
+        private int routeDecisionChangeCount;
 
         public event Action<int> SummonFollowupWindowOpened;
         public event Action<int, float> SummonFollowupHitConfirmed;
@@ -234,6 +262,7 @@ namespace DimensionBrawl.Test
         public event Action<int> StageBeatChanged;
         public event Action<RouteStabilityBand, float> RouteStabilityBandChanged;
         public event Action<RouteResultRecord> ResultRecordCommitted;
+        public event Action<RouteDecisionSnapshot> RouteDecisionChanged;
 
         public bool IsRunning => state == PocketState.Running;
         public bool IsCleared => state == PocketState.Cleared;
@@ -288,6 +317,8 @@ namespace DimensionBrawl.Test
         public string RouteDecisionState => ResolveRouteDecisionState();
         public string RouteDecisionReadout => ResolveRouteDecisionReadout();
         public string RouteIncentiveCue => ResolveRouteIncentiveCue();
+        public RouteDecisionSnapshot LastRouteDecisionSnapshot => lastRouteDecisionSnapshot;
+        public int RouteDecisionChangeCount => routeDecisionChangeCount;
         public string CompletionRecordReadout => ResolveCompletionRecordReadout();
         public RouteResultRecord LastResultRecord => lastResultRecord;
         public bool HasCommittedResultRecord => lastResultRecord.IsCommitted;
@@ -556,10 +587,12 @@ namespace DimensionBrawl.Test
             resultElapsedSeconds = 0f;
             routeStability01 = ResolveRouteStabilityStart01();
             failureReason = RouteFailureReason.None;
+            lastResultRecord = default;
             announcedStageBeatIndex = ResolveCurrentStageBeatIndex();
             announcedRouteStabilityBand = CurrentRouteStabilityBand;
-            lastResultRecord = default;
             resultRecordCommitCount = 0;
+            lastRouteDecisionSnapshot = BuildRouteDecisionSnapshot();
+            routeDecisionChangeCount = 0;
             SetBarrageEnabled(true);
             SetEnergyGainEnabled(true);
             SetBossPressureCostGainEnabled(true);
@@ -595,6 +628,7 @@ namespace DimensionBrawl.Test
             if (playerHealth != null && !playerHealth.IsAlive)
             {
                 FailPocket(RouteFailureReason.PlayerDown);
+                PublishRouteDecisionChangeIfNeeded();
                 PublishStageBeatChangeIfNeeded();
                 return;
             }
@@ -612,6 +646,7 @@ namespace DimensionBrawl.Test
                 ClearPocket();
             }
 
+            PublishRouteDecisionChangeIfNeeded();
             PublishStageBeatChangeIfNeeded();
         }
 
@@ -1134,6 +1169,39 @@ namespace DimensionBrawl.Test
 
             announcedRouteStabilityBand = currentBand;
             RouteStabilityBandChanged?.Invoke(currentBand, RouteStability01);
+        }
+
+        private void PublishRouteDecisionChangeIfNeeded()
+        {
+            RouteDecisionSnapshot current = BuildRouteDecisionSnapshot();
+            if (IsSameRouteDecision(current, lastRouteDecisionSnapshot))
+            {
+                return;
+            }
+
+            lastRouteDecisionSnapshot = current;
+            routeDecisionChangeCount++;
+            RouteDecisionChanged?.Invoke(current);
+        }
+
+        private RouteDecisionSnapshot BuildRouteDecisionSnapshot()
+        {
+            return new RouteDecisionSnapshot(
+                ResolveRouteDecisionState(),
+                ResolveRouteDecisionReadout(),
+                ResolveRouteIncentiveCue(),
+                CurrentPhase,
+                ResolveCurrentStageBeatIndex(),
+                CompletionRecordReadout);
+        }
+
+        private static bool IsSameRouteDecision(
+            RouteDecisionSnapshot first,
+            RouteDecisionSnapshot second)
+        {
+            return string.Equals(first.State, second.State, StringComparison.Ordinal)
+                && string.Equals(first.Readout, second.Readout, StringComparison.Ordinal)
+                && string.Equals(first.IncentiveCue, second.IncentiveCue, StringComparison.Ordinal);
         }
 
         private static RouteStabilityBand ResolveRouteStabilityBand(float stability01)

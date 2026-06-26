@@ -144,6 +144,11 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter_window:pending(none)"));
             Assert.AreEqual("survive", pocketOwner.RouteDecisionState);
             Assert.AreEqual("keep_hp", pocketOwner.RouteDecisionReadout);
+            Assert.AreEqual(0, pocketOwner.RouteDecisionChangeCount);
+            Assert.AreEqual("survive", pocketOwner.LastRouteDecisionSnapshot.State);
+            Assert.AreEqual("keep_hp", pocketOwner.LastRouteDecisionSnapshot.Readout);
+            Assert.AreEqual(pocketOwner.RouteIncentiveCue, pocketOwner.LastRouteDecisionSnapshot.IncentiveCue);
+            Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.ThreatDefense, pocketOwner.LastRouteDecisionSnapshot.Phase);
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("decision:survive(keep_hp)"));
             Assert.AreEqual(4, pocketOwner.RouteProofStepCount);
             Assert.AreEqual(0, pocketOwner.CompletedRouteProofStepCount);
@@ -250,6 +255,13 @@ namespace DimensionBrawl.Tests
 
             Assert.AreEqual(BossBarragePocketReviewOwner.RouteStabilityBand.Stable, pocketOwner.CurrentRouteStabilityBand);
             Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("stable"));
+            int routeDecisionEventCount = 0;
+            BossBarragePocketReviewOwner.RouteDecisionSnapshot lastRouteDecisionEvent = default;
+            pocketOwner.RouteDecisionChanged += snapshot =>
+            {
+                routeDecisionEventCount++;
+                lastRouteDecisionEvent = snapshot;
+            };
 
             SetField(pocketOwner, "routeStability01", 0.4005f);
             int stabilityCueCountBeforeUnstable = screenCuePresenter.FrontlineStabilityCueRequestCount;
@@ -276,6 +288,11 @@ namespace DimensionBrawl.Tests
                 screenCuePresenter.LastFrontlineStabilityBand);
             Assert.That(screenCuePresenter.LastCueId, Does.Contain("FrontlineStability.Critical"));
             Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("critical"));
+            Assert.AreEqual(1, routeDecisionEventCount);
+            Assert.AreEqual("survive", lastRouteDecisionEvent.State);
+            Assert.AreEqual("keep_hp", lastRouteDecisionEvent.Readout);
+            Assert.That(lastRouteDecisionEvent.IncentiveCue, Does.Contain("HP is the fail state"));
+            Assert.That(lastRouteDecisionEvent.CompletionReadout, Does.Contain("decision:survive(keep_hp)"));
             Assert.That(reviewHud.RouteIncentiveReadout, Does.Contain("HP is the fail state"));
             Assert.That(reviewHud.RouteIncentiveReadout, Does.Contain("pressure is critical"));
         }
@@ -389,6 +406,9 @@ namespace DimensionBrawl.Tests
             int counterVfxCueCountBeforeEnemy = pocketVfxCueBridge.CounterWaveCueRequestCount;
             int counterCameraCueCountBeforeEnemy = cameraCueDriver.CounterWaveCueRequestCount;
             float stabilityBeforeCounterWave = pocketOwner.RouteStability01;
+            int routeDecisionCountBeforeCounter = pocketOwner.RouteDecisionChangeCount;
+            BossBarragePocketReviewOwner.RouteDecisionSnapshot lastRouteDecisionEvent = default;
+            pocketOwner.RouteDecisionChanged += snapshot => lastRouteDecisionEvent = snapshot;
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.IsCounterWaveCompletionRecorded);
@@ -421,6 +441,10 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter_answer:pending(awaiting)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter_window:pending(awaiting_answer)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("decision:recovery_needed(answer_counter)"));
+            Assert.Greater(pocketOwner.RouteDecisionChangeCount, routeDecisionCountBeforeCounter);
+            Assert.AreEqual("recovery_needed", lastRouteDecisionEvent.State);
+            Assert.AreEqual("answer_counter", lastRouteDecisionEvent.Readout);
+            Assert.That(lastRouteDecisionEvent.IncentiveCue, Does.Contain("counter pressure"));
             Assert.AreEqual(pocketOwner.RouteIncentiveCue, reviewHud.RouteIncentiveReadout);
             Assert.That(reviewHud.RouteIncentiveReadout, Does.Contain("counter pressure"));
             Assert.That(reviewHud.StageBeatReadout, Does.Contain("Enemy Counter Wave"));
@@ -529,6 +553,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(counterAnswerCueCountBeforeAlly, screenCuePresenter.CounterWaveAnswerCueRequestCount);
 
             float stabilityBeforeHoldComplete = pocketOwner.RouteStability01;
+            int routeDecisionCountBeforeRecovered = pocketOwner.RouteDecisionChangeCount;
             pocketOwner.Tick(stageProfile.CounterWaveAllyHoldSeconds * 0.5f + 0.01f);
 
             Assert.IsTrue(pocketOwner.IsCounterWaveStabilized);
@@ -563,6 +588,10 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter_answer:stabilized(ally_hold)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter_window:opened(final_followup)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("decision:recovered(final_window)"));
+            Assert.Greater(pocketOwner.RouteDecisionChangeCount, routeDecisionCountBeforeRecovered);
+            Assert.AreEqual("recovered", lastRouteDecisionEvent.State);
+            Assert.AreEqual("final_window", lastRouteDecisionEvent.Readout);
+            Assert.That(lastRouteDecisionEvent.IncentiveCue, Does.Contain("final follow-up"));
             Assert.AreEqual(pocketOwner.RouteIncentiveCue, reviewHud.RouteIncentiveReadout);
             Assert.That(reviewHud.RouteIncentiveReadout, Does.Contain("final follow-up"));
             Assert.Greater(screenCuePresenter.CounterWaveAnswerCueRequestCount, counterAnswerCueCountBeforeAlly);
@@ -948,11 +977,14 @@ namespace DimensionBrawl.Tests
 
             int failRecordEventCount = 0;
             BossBarragePocketReviewOwner.RouteResultRecord failEventRecord = default;
+            int routeDecisionCountBeforeFail = pocketOwner.RouteDecisionChangeCount;
+            BossBarragePocketReviewOwner.RouteDecisionSnapshot failDecisionEvent = default;
             pocketOwner.ResultRecordCommitted += record =>
             {
                 failRecordEventCount++;
                 failEventRecord = record;
             };
+            pocketOwner.RouteDecisionChanged += snapshot => failDecisionEvent = snapshot;
             playerHealth.TryApplyDamage(new DamageInfo(
                 null,
                 DamageTeam.Enemy,
@@ -970,6 +1002,10 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(
                 BossBarragePocketReviewOwner.RouteResultKind.PlayerDownFail,
                 pocketOwner.LastResultRecord.ResultKind);
+            Assert.Greater(pocketOwner.RouteDecisionChangeCount, routeDecisionCountBeforeFail);
+            Assert.AreEqual("failed", failDecisionEvent.State);
+            Assert.AreEqual("player_down", failDecisionEvent.Readout);
+            Assert.That(failDecisionEvent.IncentiveCue, Does.Contain("Failure analysis"));
             Assert.IsFalse(pocketOwner.LastResultRecord.IsClear);
             Assert.AreEqual(
                 BossBarragePocketReviewOwner.RouteFailureReason.PlayerDown,
