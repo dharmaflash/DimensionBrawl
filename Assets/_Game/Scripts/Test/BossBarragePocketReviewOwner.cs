@@ -230,6 +230,7 @@ namespace DimensionBrawl.Test
         private float resultElapsedSeconds;
         private float routeStability01 = 1f;
         private RouteFailureReason failureReason;
+        private CombatHealth subscribedPlayerHealth;
         private CombatHealth subscribedBossHealth;
         private bool followupMissedNotified;
         private bool bossBlockedSkill1Followup;
@@ -241,6 +242,9 @@ namespace DimensionBrawl.Test
         private float lastCounterWaveStabilityBonus;
         private float lastCounterWaveFinalWindowDuration;
         private float lastCounterWaveFinalWindowRouteScale = 1f;
+        private float lastUnansweredBossHitRoutePenalty;
+        private float totalUnansweredBossHitRoutePenalty;
+        private int unansweredBossHitRoutePenaltyCount;
         private float counterWaveAllyHoldTimer;
         private bool counterWaveAllyHoldInterrupted;
         private int bossPressureSummonReleasesAtReset;
@@ -377,6 +381,9 @@ namespace DimensionBrawl.Test
         public float RouteStability01 => IsRouteStabilityActive ? Mathf.Clamp01(routeStability01) : 1f;
         public float RouteStabilityPercent => RouteStability01 * 100f;
         public RouteStabilityBand CurrentRouteStabilityBand => ResolveRouteStabilityBand(RouteStability01);
+        public int UnansweredBossHitRoutePenaltyCount => unansweredBossHitRoutePenaltyCount;
+        public float LastUnansweredBossHitRoutePenalty => lastUnansweredBossHitRoutePenalty;
+        public float TotalUnansweredBossHitRoutePenalty => totalUnansweredBossHitRoutePenalty;
         public float CurrentRouteStabilityDrainPerSecond => IsRouteStabilityActive && state == PocketState.Running
             ? ResolveRouteStabilityDrainPerSecond()
             : 0f;
@@ -538,6 +545,7 @@ namespace DimensionBrawl.Test
             clearMarker = newClearMarker;
             failMarker = newFailMarker;
             ResetPocket();
+            SubscribePlayerHealth();
             SubscribeBossHealth();
         }
 
@@ -587,6 +595,9 @@ namespace DimensionBrawl.Test
             resultElapsedSeconds = 0f;
             routeStability01 = ResolveRouteStabilityStart01();
             failureReason = RouteFailureReason.None;
+            lastUnansweredBossHitRoutePenalty = 0f;
+            totalUnansweredBossHitRoutePenalty = 0f;
+            unansweredBossHitRoutePenaltyCount = 0;
             lastResultRecord = default;
             announcedStageBeatIndex = ResolveCurrentStageBeatIndex();
             announcedRouteStabilityBand = CurrentRouteStabilityBand;
@@ -603,11 +614,13 @@ namespace DimensionBrawl.Test
         private void OnEnable()
         {
             ResetPocket();
+            SubscribePlayerHealth();
             SubscribeBossHealth();
         }
 
         private void OnDisable()
         {
+            UnsubscribePlayerHealth();
             UnsubscribeBossHealth();
         }
 
@@ -708,6 +721,29 @@ namespace DimensionBrawl.Test
             }
 
             return skill1FollowupHitConfirmed && skill1FollowupClearTimer <= 0f;
+        }
+
+        private void OnPlayerDamaged(DamageInfo damageInfo)
+        {
+            if (state != PocketState.Running
+                || !IsRouteStabilityActive
+                || damageInfo.Amount <= 0f
+                || !CombatTeamUtility.AreHostile(DamageTeam.Player, damageInfo.SourceTeam)
+                || skill1FollowupHitConfirmed)
+            {
+                return;
+            }
+
+            float penalty = ResolveUnansweredBossHitRoutePenalty01();
+            if (penalty <= 0f)
+            {
+                return;
+            }
+
+            lastUnansweredBossHitRoutePenalty = penalty;
+            totalUnansweredBossHitRoutePenalty += penalty;
+            unansweredBossHitRoutePenaltyCount++;
+            RemoveRouteStability(penalty);
         }
 
         private void OnBossDamaged(DamageInfo damageInfo)
@@ -1329,6 +1365,11 @@ namespace DimensionBrawl.Test
         private float ResolveCounterWaveEntryRoutePenalty01()
         {
             return stageProfile != null ? stageProfile.CounterWaveEntryRoutePenalty01 : 0f;
+        }
+
+        private float ResolveUnansweredBossHitRoutePenalty01()
+        {
+            return stageProfile != null ? stageProfile.UnansweredBossHitRoutePenalty01 : 0f;
         }
 
         private float ResolveCounterWaveStabilizeRouteBonus01()
@@ -2159,6 +2200,34 @@ namespace DimensionBrawl.Test
 
             subscribedBossHealth = bossHealth;
             subscribedBossHealth.Damaged += OnBossDamaged;
+        }
+
+        private void SubscribePlayerHealth()
+        {
+            if (subscribedPlayerHealth == playerHealth)
+            {
+                return;
+            }
+
+            UnsubscribePlayerHealth();
+            if (playerHealth == null)
+            {
+                return;
+            }
+
+            subscribedPlayerHealth = playerHealth;
+            subscribedPlayerHealth.Damaged += OnPlayerDamaged;
+        }
+
+        private void UnsubscribePlayerHealth()
+        {
+            if (subscribedPlayerHealth == null)
+            {
+                return;
+            }
+
+            subscribedPlayerHealth.Damaged -= OnPlayerDamaged;
+            subscribedPlayerHealth = null;
         }
 
         private void UnsubscribeBossHealth()

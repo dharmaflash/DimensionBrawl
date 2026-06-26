@@ -33,6 +33,7 @@ MonoBehaviour:
   closeProbeDefeatRouteBonus01: 0.12
   summonBlockRouteBonus01: 0.18
   followupHitRouteBonus01: 0.2
+  unansweredBossHitRoutePenalty01: 0.08
   counterWaveEntryRoutePenalty01: 0.1
   counterWaveStabilizeRouteBonus01: 0.14
   counterWaveAllyHoldSeconds: 0.45

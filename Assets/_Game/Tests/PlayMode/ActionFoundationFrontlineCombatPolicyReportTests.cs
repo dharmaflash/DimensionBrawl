@@ -409,7 +409,7 @@ namespace DimensionBrawl.Tests
                 float deltaTime = Mathf.Max(0.001f, Time.deltaTime);
                 remaining -= deltaTime;
                 context.Metrics.ElapsedSeconds += deltaTime;
-                context.Sample();
+                context.Sample(deltaTime);
             }
         }
 
@@ -500,6 +500,38 @@ namespace DimensionBrawl.Tests
             }
 
             builder.AppendLine();
+            builder.AppendLine("## Pressure Exposure");
+            builder.AppendLine("| Policy | Drain used | Hit penalty | Avg drain/s | Peak drain/s | Avg slot | Avg front scale | Enemy-only | Contested | Ally-only | Last front |");
+            builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|");
+            for (int i = 0; i < results.Count; i++)
+            {
+                PolicyMetrics result = results[i];
+                builder.Append("| ");
+                builder.Append(result.Policy);
+                builder.Append(" | ");
+                builder.Append(FormatPercent01(result.RouteDrainAccumulated01));
+                builder.Append(" | ");
+                builder.Append($"{FormatPercent01(result.TotalUnansweredBossHitRoutePenalty01)} x{result.UnansweredBossHitRoutePenaltyCount}");
+                builder.Append(" | ");
+                builder.Append($"{ResolveAverage(result.RouteDrainAccumulated01, result.ElapsedSeconds):0.000}");
+                builder.Append(" | ");
+                builder.Append($"{result.MaxRouteStabilityDrainPerSecond:0.000}");
+                builder.Append(" | ");
+                builder.Append($"{ResolveAverage(result.RoutePressureWeightSeconds, result.ElapsedSeconds):0.00}");
+                builder.Append(" | ");
+                builder.Append($"{ResolveAverage(result.FrontlinePresenceScaleSeconds, result.ElapsedSeconds):0.00}");
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.EnemyOnlyFrontlineSeconds));
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.ContestedFrontlineSeconds));
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.AllyOnlyFrontlineSeconds));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(result.FrontlinePresenceReadout));
+                builder.AppendLine(" |");
+            }
+
+            builder.AppendLine();
             builder.AppendLine("## Read");
             PolicyMetrics intended = RequireResult(results, PolicyKind.IntendedRoute);
             PolicyMetrics noSummon = RequireResult(results, PolicyKind.NoSummonNoFire);
@@ -510,7 +542,12 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Late summon ended as `{late.ResultKind}` with {late.PlayerDamageTaken:0.0} damage taken, so the report can compare timing quality without changing the scene.");
             builder.AppendLine($"- Intended route currently reads as `{ResolveRouteShape(intended)}`: follow-up window {FormatSeconds(intended.FirstFollowupWindowAtSeconds)}, counter {FormatSeconds(intended.FirstCounterWaveAtSeconds)}, Skill1 hit {FormatSeconds(intended.FirstFollowupHitAtSeconds)}.");
             builder.AppendLine($"- Route stability split: no-action {FormatPercent01(noSummon.RouteStability01)} final / {FormatPercent01(noSummon.MinRouteStability01)} min, gun-only {FormatPercent01(gunOnly.RouteStability01)} / {FormatPercent01(gunOnly.MinRouteStability01)}, intended {FormatPercent01(intended.RouteStability01)} / {FormatPercent01(intended.MinRouteStability01)}.");
-            builder.AppendLine($"- Enemy frontline max count across policies was {ResolveMaxEnemyFrontlines(results)}; if this stays 0, enemy summon contact is not yet a real measured pressure source in this slice.");
+            builder.AppendLine($"- Unanswered hit penalty split: no-action {FormatPercent01(noSummon.TotalUnansweredBossHitRoutePenalty01)} x{noSummon.UnansweredBossHitRoutePenaltyCount}, gun-only {FormatPercent01(gunOnly.TotalUnansweredBossHitRoutePenalty01)} x{gunOnly.UnansweredBossHitRoutePenaltyCount}, late {FormatPercent01(late.TotalUnansweredBossHitRoutePenalty01)} x{late.UnansweredBossHitRoutePenaltyCount}.");
+            builder.AppendLine($"- Frontline exposure split: no-action enemy-only {FormatSeconds(noSummon.EnemyOnlyFrontlineSeconds)}, gun-only enemy-only {FormatSeconds(gunOnly.EnemyOnlyFrontlineSeconds)}, intended ally-only {FormatSeconds(intended.AllyOnlyFrontlineSeconds)} / contested {FormatSeconds(intended.ContestedFrontlineSeconds)}.");
+            int maxEnemyFrontlines = ResolveMaxEnemyFrontlines(results);
+            builder.AppendLine(maxEnemyFrontlines > 0
+                ? $"- Enemy frontline pressure is measured: max enemy frontlines {maxEnemyFrontlines}, enemy-only exposure, and hit penalty now separate unanswered pressure from clean summon cover."
+                : "- Enemy frontline max count stayed 0; enemy summon contact is not yet a real measured pressure source in this slice.");
             builder.AppendLine();
             builder.AppendLine("## Notes");
             for (int i = 0; i < results.Count; i++)
@@ -586,6 +623,11 @@ namespace DimensionBrawl.Tests
             return $"{Mathf.Clamp01(value) * 100f:0}%";
         }
 
+        private static float ResolveAverage(float total, float elapsedSeconds)
+        {
+            return elapsedSeconds > 0f ? total / elapsedSeconds : 0f;
+        }
+
         private static string BuildJson(IReadOnlyList<PolicyMetrics> results)
         {
             StringBuilder builder = new StringBuilder();
@@ -613,6 +655,18 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"skillProjectileHits\": {result.SkillProjectileHits},");
                 builder.AppendLine($"      \"maxEnemyFrontlineCount\": {result.MaxEnemyFrontlineCount},");
                 builder.AppendLine($"      \"maxAllyFrontlineCount\": {result.MaxAllyFrontlineCount},");
+                builder.AppendLine($"      \"routeDrainAccumulated01\": {result.RouteDrainAccumulated01:0.###},");
+                builder.AppendLine($"      \"unansweredBossHitRoutePenaltyCount\": {result.UnansweredBossHitRoutePenaltyCount},");
+                builder.AppendLine($"      \"lastUnansweredBossHitRoutePenalty01\": {result.LastUnansweredBossHitRoutePenalty01:0.###},");
+                builder.AppendLine($"      \"totalUnansweredBossHitRoutePenalty01\": {result.TotalUnansweredBossHitRoutePenalty01:0.###},");
+                builder.AppendLine($"      \"averageRouteDrainPerSecond\": {ResolveAverage(result.RouteDrainAccumulated01, result.ElapsedSeconds):0.###},");
+                builder.AppendLine($"      \"maxRouteStabilityDrainPerSecond\": {result.MaxRouteStabilityDrainPerSecond:0.###},");
+                builder.AppendLine($"      \"averageRoutePressureWeight\": {ResolveAverage(result.RoutePressureWeightSeconds, result.ElapsedSeconds):0.###},");
+                builder.AppendLine($"      \"averageFrontlinePresenceDrainScale\": {ResolveAverage(result.FrontlinePresenceScaleSeconds, result.ElapsedSeconds):0.###},");
+                builder.AppendLine($"      \"enemyOnlyFrontlineSeconds\": {result.EnemyOnlyFrontlineSeconds:0.###},");
+                builder.AppendLine($"      \"contestedFrontlineSeconds\": {result.ContestedFrontlineSeconds:0.###},");
+                builder.AppendLine($"      \"allyOnlyFrontlineSeconds\": {result.AllyOnlyFrontlineSeconds:0.###},");
+                builder.AppendLine($"      \"frontlinePresenceReadout\": \"{JsonEscape(result.FrontlinePresenceReadout)}\",");
                 builder.AppendLine($"      \"routeShape\": \"{JsonEscape(ResolveRouteShape(result))}\",");
                 builder.AppendLine($"      \"routeStability01\": {result.RouteStability01:0.###},");
                 builder.AppendLine($"      \"minRouteStability01\": {result.MinRouteStability01:0.###},");
@@ -918,7 +972,7 @@ namespace DimensionBrawl.Tests
             public Collider CloseThreatCollider { get; }
             public PolicyMetrics Metrics { get; }
 
-            public void Sample()
+            public void Sample(float deltaTime = 0f)
             {
                 Metrics.PlayerHealthRemaining = PlayerHealth.CurrentHealth;
                 Metrics.BossHealthRemaining = BossHealth.CurrentHealth;
@@ -945,6 +999,9 @@ namespace DimensionBrawl.Tests
                 Metrics.CounterWaveAllyHoldRequiredSeconds = PocketOwner.CounterWaveAllyHoldRequiredSeconds;
                 Metrics.CounterWaveAllyHoldElapsedSeconds = PocketOwner.CounterWaveAllyHoldElapsedSeconds;
                 Metrics.CounterWaveAllyHoldProgress01 = PocketOwner.CounterWaveAllyHoldProgress01;
+                Metrics.UnansweredBossHitRoutePenaltyCount = PocketOwner.UnansweredBossHitRoutePenaltyCount;
+                Metrics.LastUnansweredBossHitRoutePenalty01 = PocketOwner.LastUnansweredBossHitRoutePenalty;
+                Metrics.TotalUnansweredBossHitRoutePenalty01 = PocketOwner.TotalUnansweredBossHitRoutePenalty;
                 Metrics.SummonFollowupWindowRemainingSeconds = PocketOwner.SummonFollowupWindowRemainingSeconds;
                 Metrics.SummonFollowupEnergyPulse = PocketOwner.SummonFollowupEnergyPulse;
                 Metrics.LastSummonFollowupWindowDuration = PocketOwner.LastSummonFollowupWindowDuration;
@@ -958,12 +1015,39 @@ namespace DimensionBrawl.Tests
                     && !PocketOwner.IsCounterWaveCompletionRecorded;
                 Metrics.CounterRecoveryConfirmed = PocketOwner.IsCounterWaveStabilized
                     || PocketOwner.IsCounterWaveFinalWindowOpened;
+                int enemyFrontlineCount = PocketOwner.ActiveEnemyFrontlineProxyCount;
+                int allyFrontlineCount = PocketOwner.ActiveAllyFrontlineProxyCount;
                 Metrics.MaxEnemyFrontlineCount = Mathf.Max(
                     Metrics.MaxEnemyFrontlineCount,
-                    PocketOwner.ActiveEnemyFrontlineProxyCount);
+                    enemyFrontlineCount);
                 Metrics.MaxAllyFrontlineCount = Mathf.Max(
                     Metrics.MaxAllyFrontlineCount,
-                    PocketOwner.ActiveAllyFrontlineProxyCount);
+                    allyFrontlineCount);
+                Metrics.FrontlinePresenceReadout = PocketOwner.FrontlinePresenceReadout;
+                Metrics.MaxRouteStabilityDrainPerSecond = Mathf.Max(
+                    Metrics.MaxRouteStabilityDrainPerSecond,
+                    PocketOwner.CurrentRouteStabilityDrainPerSecond);
+
+                if (deltaTime <= 0f)
+                {
+                    return;
+                }
+
+                Metrics.RouteDrainAccumulated01 += PocketOwner.CurrentRouteStabilityDrainPerSecond * deltaTime;
+                Metrics.RoutePressureWeightSeconds += PocketOwner.CurrentRoutePressureWeight * deltaTime;
+                Metrics.FrontlinePresenceScaleSeconds += PocketOwner.CurrentFrontlinePresenceDrainScale * deltaTime;
+                if (allyFrontlineCount > 0 && enemyFrontlineCount > 0)
+                {
+                    Metrics.ContestedFrontlineSeconds += deltaTime;
+                }
+                else if (enemyFrontlineCount > 0)
+                {
+                    Metrics.EnemyOnlyFrontlineSeconds += deltaTime;
+                }
+                else if (allyFrontlineCount > 0)
+                {
+                    Metrics.AllyOnlyFrontlineSeconds += deltaTime;
+                }
             }
 
             public void Complete()
@@ -1115,6 +1199,17 @@ namespace DimensionBrawl.Tests
             public int ResultRecords { get; set; }
             public int MaxEnemyFrontlineCount { get; set; }
             public int MaxAllyFrontlineCount { get; set; }
+            public float RouteDrainAccumulated01 { get; set; }
+            public int UnansweredBossHitRoutePenaltyCount { get; set; }
+            public float LastUnansweredBossHitRoutePenalty01 { get; set; }
+            public float TotalUnansweredBossHitRoutePenalty01 { get; set; }
+            public float MaxRouteStabilityDrainPerSecond { get; set; }
+            public float RoutePressureWeightSeconds { get; set; }
+            public float FrontlinePresenceScaleSeconds { get; set; }
+            public float EnemyOnlyFrontlineSeconds { get; set; }
+            public float ContestedFrontlineSeconds { get; set; }
+            public float AllyOnlyFrontlineSeconds { get; set; }
+            public string FrontlinePresenceReadout { get; set; } = "pressure x1.00 open";
             public float RouteStability01 { get; set; }
             public float MinRouteStability01 { get; set; } = 1f;
             public string RouteStabilityBand { get; set; } = "Unknown";

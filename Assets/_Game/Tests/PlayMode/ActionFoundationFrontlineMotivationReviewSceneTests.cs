@@ -92,6 +92,7 @@ namespace DimensionBrawl.Tests
             Assert.Greater(stageProfile.CounterWaveRouteDrainPerSecond, stageProfile.CloseProbeRouteDrainPerSecond);
             Assert.Greater(stageProfile.CounterWaveStabilizeRouteBonus01, 0f);
             Assert.That(stageProfile.CounterWaveAllyHoldSeconds, Is.InRange(0.25f, 0.75f));
+            Assert.That(stageProfile.UnansweredBossHitRoutePenalty01, Is.InRange(0.04f, 0.12f));
             Assert.Greater(stageProfile.CounterWaveEntryRoutePenalty01, 0f);
             Assert.Greater(
                 stageProfile.CounterWaveStabilizeRouteBonus01,
@@ -336,6 +337,46 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.RouteStabilityReadout, Does.Contain("pressure x1.20 pressed"));
 
             enemyProxy.Deactivate(SummonFrontlineProxyExitReason.Recalled);
+        }
+
+        [UnityTest]
+        public IEnumerator FrontlineEnemyHitConsumesUnansweredBossRoutePenalty()
+        {
+            EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
+            yield return null;
+
+            FrontlineWaveStageProfile stageProfile =
+                AssetDatabase.LoadAssetAtPath<FrontlineWaveStageProfile>(StageProfilePath);
+            Assert.NotNull(stageProfile);
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket owner");
+            PlayerMovementController player = UnityEngine.Object.FindFirstObjectByType<PlayerMovementController>();
+            Assert.NotNull(player, "Frontline hit penalty test needs the scene player.");
+            CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
+
+            float stabilityBeforeHit = pocketOwner.RouteStability01;
+            Assert.AreEqual(0, pocketOwner.UnansweredBossHitRoutePenaltyCount);
+            Assert.IsTrue(playerHealth.TryApplyDamage(new DamageInfo(
+                null,
+                DamageTeam.Enemy,
+                1f,
+                player.transform.position,
+                Vector3.back,
+                0f)));
+
+            Assert.AreEqual(1, pocketOwner.UnansweredBossHitRoutePenaltyCount);
+            Assert.AreEqual(
+                stageProfile.UnansweredBossHitRoutePenalty01,
+                pocketOwner.LastUnansweredBossHitRoutePenalty,
+                0.001f);
+            Assert.AreEqual(
+                stageProfile.UnansweredBossHitRoutePenalty01,
+                pocketOwner.TotalUnansweredBossHitRoutePenalty,
+                0.001f);
+            Assert.AreEqual(
+                Mathf.Max(0f, stabilityBeforeHit - stageProfile.UnansweredBossHitRoutePenalty01),
+                pocketOwner.RouteStability01,
+                0.001f);
         }
 
         [UnityTest]

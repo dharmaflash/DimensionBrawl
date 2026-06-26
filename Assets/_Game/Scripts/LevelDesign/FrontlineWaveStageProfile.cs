@@ -81,6 +81,7 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField, Range(0f, 1f)] private float closeProbeDefeatRouteBonus01 = 0.12f;
         [SerializeField, Range(0f, 1f)] private float summonBlockRouteBonus01 = 0.18f;
         [SerializeField, Range(0f, 1f)] private float followupHitRouteBonus01 = 0.20f;
+        [SerializeField, Range(0f, 1f)] private float unansweredBossHitRoutePenalty01 = 0.08f;
         [SerializeField, Range(0f, 1f)] private float counterWaveEntryRoutePenalty01 = 0.10f;
         [SerializeField, Range(0f, 1f)] private float counterWaveStabilizeRouteBonus01 = 0.14f;
         [SerializeField, Min(0f)] private float counterWaveAllyHoldSeconds = 0.45f;
@@ -163,6 +164,7 @@ namespace DimensionBrawl.LevelDesign
         public float CloseProbeDefeatRouteBonus01 => Mathf.Clamp01(closeProbeDefeatRouteBonus01);
         public float SummonBlockRouteBonus01 => Mathf.Clamp01(summonBlockRouteBonus01);
         public float FollowupHitRouteBonus01 => Mathf.Clamp01(followupHitRouteBonus01);
+        public float UnansweredBossHitRoutePenalty01 => Mathf.Clamp01(unansweredBossHitRoutePenalty01);
         public float CounterWaveEntryRoutePenalty01 => Mathf.Clamp01(counterWaveEntryRoutePenalty01);
         public float CounterWaveStabilizeRouteBonus01 => Mathf.Clamp01(counterWaveStabilizeRouteBonus01);
         public float CounterWaveAllyHoldSeconds => Mathf.Max(0f, counterWaveAllyHoldSeconds);
