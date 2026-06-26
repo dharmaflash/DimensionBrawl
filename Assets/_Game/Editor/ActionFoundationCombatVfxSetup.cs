@@ -866,18 +866,70 @@ namespace DimensionBrawl.Editor
 
         private static void EnsureReviewedCombatCueAudioBanks()
         {
+            PromoteReviewedAudioClips(PlayerRangedProjectileImpactSourceClipPaths, PlayerRangedProjectileImpactClipPaths);
+            PromoteReviewedAudioClips(EliteSummonSignalSourceClipPaths, EliteSummonSignalClipPaths);
+            PromoteReviewedAudioClips(SummonBlockOpportunitySourceClipPaths, SummonBlockOpportunityClipPaths);
+            PromoteReviewedAudioClips(SummonFollowupWindowSourceClipPaths, SummonFollowupWindowClipPaths);
+
             StripReviewedCueAudio(
                 PrefabRoot + "/DB_VFX_PlayerRangedProjectileImpact.prefab",
                 PlayerRangedProjectileImpactAudioName);
+            AttachReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_PlayerRangedProjectileImpact.prefab",
+                PlayerRangedProjectileImpactAudioName,
+                PlayerRangedProjectileImpactClipPaths,
+                0.52f,
+                0.98f,
+                1.05f,
+                0.92f,
+                1.04f,
+                0.18f,
+                132);
+
             StripReviewedCueAudio(
                 PrefabRoot + "/DB_VFX_EliteSummonSignal.prefab",
                 EliteSummonSignalAudioName);
+            AttachReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_EliteSummonSignal.prefab",
+                EliteSummonSignalAudioName,
+                EliteSummonSignalClipPaths,
+                0.44f,
+                0.97f,
+                1.04f,
+                0.9f,
+                1.03f,
+                0.22f,
+                134);
+
             StripReviewedCueAudio(
                 PrefabRoot + "/DB_VFX_SummonBlockOpportunity.prefab",
                 SummonBlockOpportunityAudioName);
+            AttachReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_SummonBlockOpportunity.prefab",
+                SummonBlockOpportunityAudioName,
+                SummonBlockOpportunityClipPaths,
+                0.52f,
+                0.98f,
+                1.06f,
+                0.9f,
+                1.05f,
+                0.2f,
+                132);
+
             StripReviewedCueAudio(
                 PrefabRoot + "/DB_VFX_SummonFollowupWindow.prefab",
                 SummonFollowupWindowAudioName);
+            AttachReviewedCueAudio(
+                PrefabRoot + "/DB_VFX_SummonFollowupWindow.prefab",
+                SummonFollowupWindowAudioName,
+                SummonFollowupWindowClipPaths,
+                0.4f,
+                0.99f,
+                1.06f,
+                0.9f,
+                1.04f,
+                0.16f,
+                136);
         }
 
         private static void StripReviewedCueAudio(string prefabPath, string childName)

@@ -940,7 +940,7 @@ namespace DimensionBrawl.Editor
             ConfigureArenaInfluenceTargets(scene, player.transform, bossProxy.transform, closeThreat.transform);
             CreateLaneMarkers(scene, laneSpace);
             CreateLaneAmbientVfx(scene, laneSpace);
-            RemoveLaneAmbientAudio(scene);
+            CreateLaneAmbientAudio(scene, laneSpace);
             ConfigureBossBarrageLaneReviewFootstepAudio(scene);
             CreateBossBarrageTelegraphMarkers(scene, laneSpace, bossBarrageEmitter);
             // Keep the serialized default aligned with the ranged starting mode after all visual swaps are rebuilt.
@@ -1393,7 +1393,8 @@ namespace DimensionBrawl.Editor
         private static void RefreshBossBarrageLaneReviewAmbientAudio()
         {
             Scene scene = EditorSceneManager.OpenScene(ReviewScenePath, OpenSceneMode.Single);
-            RemoveLaneAmbientAudio(scene);
+            SummonLaneSpace laneSpace = RequireObject<SummonLaneSpace>(scene, "summon lane space");
+            CreateLaneAmbientAudio(scene, laneSpace);
             ValidateLaneAmbientAudio(scene);
 
             if (!EditorSceneManager.SaveScene(scene, ReviewScenePath))
@@ -3870,6 +3871,7 @@ namespace DimensionBrawl.Editor
 
         private static void CreateLaneAmbientAudio(Scene scene, SummonLaneSpace laneSpace)
         {
+            RemoveLaneAmbientAudio(scene);
             GameObject root = CreateRoot(scene, AmbientAudioRootName);
             float backZ = laneSpace.BackLimitZ;
             float forwardZ = laneSpace.ForwardBoundaryZ;
@@ -7099,11 +7101,11 @@ namespace DimensionBrawl.Editor
 
         private static void ValidateLaneAmbientAudio(Scene scene)
         {
-            if (FindRoot(scene, AmbientAudioRootName) != null)
-            {
-                throw new InvalidOperationException(
-                    "Boss barrage lane review scene should not carry ambient audio in the stripped-audio pass.");
-            }
+            Transform root = RequireRoot(scene, AmbientAudioRootName).transform;
+            ValidateAmbientAudio(root, "AmbientAudio_ArenaStormBed", AmbientArenaStormClipPath, 0f, 0.05f, 0.07f);
+            ValidateAmbientAudio(root, "AmbientAudio_LaneEnergyHum", AmbientLaneEnergyHumClipPath, 0.25f, 0.06f, 0.09f);
+            ValidateAmbientAudio(root, "AmbientAudio_LeftRailDustFlow", AmbientRailDustFlowClipPath, 0.45f, 0.03f, 0.055f);
+            ValidateAmbientAudio(root, "AmbientAudio_RightRailDustFlow", AmbientRailDustFlowClipPath, 0.45f, 0.03f, 0.055f);
         }
 
         private static void ValidateAmbientAudio(
