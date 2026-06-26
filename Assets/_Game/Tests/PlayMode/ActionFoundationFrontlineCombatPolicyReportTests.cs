@@ -36,7 +36,8 @@ namespace DimensionBrawl.Tests
             IntendedRoute,
             LateSummon,
             MissedFollowupCounterRecovery,
-            BossScreenBlockedFollowup
+            BossScreenBlockedFollowup,
+            BossScreenBlockCounterRecovery
         }
 
         [UnityTest]
@@ -55,7 +56,8 @@ namespace DimensionBrawl.Tests
                     PolicyKind.IntendedRoute,
                     PolicyKind.LateSummon,
                     PolicyKind.MissedFollowupCounterRecovery,
-                    PolicyKind.BossScreenBlockedFollowup
+                    PolicyKind.BossScreenBlockedFollowup,
+                    PolicyKind.BossScreenBlockCounterRecovery
                 })
                 {
                     EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
@@ -73,6 +75,7 @@ namespace DimensionBrawl.Tests
                 PolicyMetrics noSummon = RequireResult(results, PolicyKind.NoSummonNoFire);
                 PolicyMetrics counterRecovery = RequireResult(results, PolicyKind.MissedFollowupCounterRecovery);
                 PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
+                PolicyMetrics blockedRecovery = RequireResult(results, PolicyKind.BossScreenBlockCounterRecovery);
                 Assert.IsTrue(File.Exists(ReportPath), "Frontline combat policy report should be written.");
                 Assert.IsTrue(File.Exists(JsonPath), "Frontline combat policy JSON should be written.");
                 Assert.Greater(intended.SummonBlocks, 0, "The intended route must prove summon interception changes the run.");
@@ -95,6 +98,18 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(
                     blockedFollowup.BossBlockedSkill1Followup,
                     "The boss-screen branch must latch the blocked follow-up as a route state.");
+                Assert.AreEqual(
+                    "CounterRecoveryClear",
+                    blockedRecovery.ResultKind,
+                    "Boss-screen blocks should become recoverable when the player rebuilds the summon answer.");
+                Assert.AreEqual(
+                    "boss_screen",
+                    blockedRecovery.CounterWaveSource,
+                    "The recovered boss-screen branch must preserve the original trigger source.");
+                Assert.Greater(
+                    blockedRecovery.SkillProjectilesBlockedByBossScreen,
+                    0,
+                    "Recovered boss-screen runs must still prove the block happened before recovery.");
             }
             finally
             {
@@ -189,6 +204,9 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.BossScreenBlockedFollowup:
                     yield return RunBossScreenBlockedFollowup(context);
                     break;
+                case PolicyKind.BossScreenBlockCounterRecovery:
+                    yield return RunBossScreenBlockCounterRecovery(context);
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
@@ -261,6 +279,18 @@ namespace DimensionBrawl.Tests
             yield return ReleaseBossScreenAndBlockSkill1Followup(context);
             yield return WaitForCounterFinalWindow(context, 2f);
             yield return Advance(context, 0.25f);
+        }
+
+        private static IEnumerator RunBossScreenBlockCounterRecovery(CombatPolicyContext context)
+        {
+            yield return DefeatCloseThreatWithBasicFire(context);
+            yield return ChargeEnergyToTier(context, 1, 14f);
+            yield return UseSummonAndBlockNextBossWave(context);
+            yield return ReleaseBossScreenAndBlockSkill1Followup(context);
+            yield return AnswerCounterWaveWithFreshSummon(context);
+            yield return WaitForCounterFinalWindow(context, 3f);
+            yield return ConfirmSkill1Followup(context);
+            yield return Advance(context, 1.0f);
         }
 
         private static IEnumerator DefeatCloseThreatWithBasicFire(CombatPolicyContext context)
@@ -694,6 +724,7 @@ namespace DimensionBrawl.Tests
             PolicyMetrics late = RequireResult(results, PolicyKind.LateSummon);
             PolicyMetrics counterRecovery = RequireResult(results, PolicyKind.MissedFollowupCounterRecovery);
             PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
+            PolicyMetrics blockedRecovery = RequireResult(results, PolicyKind.BossScreenBlockCounterRecovery);
             builder.AppendLine($"- Intended route prevented {Mathf.Max(0f, noSummon.PlayerDamageTaken - intended.PlayerDamageTaken):0.0} player damage versus no-action pressure.");
             builder.AppendLine($"- Gun-only dealt {gunOnly.BossDamageTaken:0.0} boss damage but ended as `{gunOnly.ResultKind}` because the route contract still needs summon pressure blocking.");
             builder.AppendLine($"- Skill1 punish split: gun-only boss damage {gunOnly.BossDamageTaken:0.0}, intended follow-up boss damage {intended.BossDamageTaken:0.0}.");
@@ -704,6 +735,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Frontline exposure split: no-action enemy-only {FormatSeconds(noSummon.EnemyOnlyFrontlineSeconds)}, gun-only enemy-only {FormatSeconds(gunOnly.EnemyOnlyFrontlineSeconds)}, intended ally-only {FormatSeconds(intended.AllyOnlyFrontlineSeconds)} / contested {FormatSeconds(intended.ContestedFrontlineSeconds)}.");
             builder.AppendLine($"- Missed follow-up branch: `{counterRecovery.ResultKind}` with counter source `{counterRecovery.CounterWaveSource}`, final window `{counterRecovery.CounterWaveFinalWindowState}`, and Skill1 hits {counterRecovery.SkillProjectileHits}.");
             builder.AppendLine($"- Boss-screen branch: boss releases {blockedFollowup.BossPressureSummonReleases}, blocks {blockedFollowup.BossPressureScreenBlocks}, Skill1 projectiles blocked {blockedFollowup.SkillProjectilesBlockedByBossScreen}, boss-blocked follow-up `{blockedFollowup.BossBlockedSkill1Followup}`.");
+            builder.AppendLine($"- Boss-screen recovery branch: `{blockedRecovery.ResultKind}` keeps source `{blockedRecovery.CounterWaveSource}`, opens final window `{blockedRecovery.CounterWaveFinalWindowState}`, and lands {blockedRecovery.SkillProjectileHits} Skill1 hits after a fresh summon answer.");
             int maxEnemyFrontlines = ResolveMaxEnemyFrontlines(results);
             builder.AppendLine(maxEnemyFrontlines > 0
                 ? $"- Enemy frontline pressure is measured: max enemy frontlines {maxEnemyFrontlines}, enemy-only exposure, and hit penalty now separate unanswered pressure from clean summon cover."
