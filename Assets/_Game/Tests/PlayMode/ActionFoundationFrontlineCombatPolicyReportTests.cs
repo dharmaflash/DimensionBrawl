@@ -30,6 +30,8 @@ namespace DimensionBrawl.Tests
         private const string CloseThreatRootName = "BossBarrageLaneReview_CloseThreat_ClosePunish";
         private const string ReportPath = "C:/tmp/DimensionBrawl-FrontlineCombatPolicyReport.md";
         private const string JsonPath = "C:/tmp/DimensionBrawl-FrontlineCombatPolicyReport.json";
+        private const float PressureWindowSeconds = 3f;
+        private const float ReliefPressureWindowPeakRatio = 0.35f;
 
         private enum PolicyKind
         {
@@ -89,6 +91,18 @@ namespace DimensionBrawl.Tests
                     noSummon.PlayerDamageTaken,
                     intended.PlayerDamageTaken,
                     "The report should distinguish unanswered boss pressure from the intended summon answer.");
+                Assert.Greater(
+                    noSummon.PressureBurdenSeconds,
+                    0f,
+                    "The report should record ArkData-style pressure burden before judging route feel.");
+                Assert.GreaterOrEqual(
+                    noSummon.Top3PressureWindowShare01,
+                    noSummon.PeakPressureWindowShare01,
+                    "Top pressure windows should include the peak pressure window.");
+                Assert.Greater(
+                    ignoredRecovery.UnansweredPressureBurdenShare01,
+                    intended.UnansweredPressureBurdenShare01,
+                    "Ignoring boss-screen pressure should carry a larger unanswered pressure burden than the intended route.");
                 Assert.AreEqual(
                     "CounterRecoveryClear",
                     counterRecovery.ResultKind,
@@ -874,6 +888,36 @@ namespace DimensionBrawl.Tests
             }
 
             builder.AppendLine();
+            builder.AppendLine("## ArkData Pressure Shape");
+            builder.AppendLine("| Policy | Window | Peak share | Top3 share | Peak at | Relief gap | Dominant burden | Unanswered/answered | Windows |");
+            builder.AppendLine("|---|---:|---:|---:|---:|---:|---|---:|---|");
+            for (int i = 0; i < results.Count; i++)
+            {
+                PolicyMetrics result = results[i];
+                builder.Append("| ");
+                builder.Append(result.Policy);
+                builder.Append(" | ");
+                builder.Append($"{result.PressureWindowSeconds:0.0}s");
+                builder.Append(" | ");
+                builder.Append(FormatPercent01(result.PeakPressureWindowShare01));
+                builder.Append(" | ");
+                builder.Append(FormatPercent01(result.Top3PressureWindowShare01));
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.PeakPressureWindowStartSeconds));
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.TimeToNextReliefWindowSeconds));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(
+                    $"{result.DominantPressureBurdenState} {FormatPercent01(result.DominantPressureBurdenShare01)}"));
+                builder.Append(" | ");
+                builder.Append(
+                    $"{FormatPercent01(result.UnansweredPressureBurdenShare01)}/{FormatPercent01(result.AnsweredPressureBurdenShare01)}");
+                builder.Append(" | ");
+                builder.Append(EscapeTable(result.PressureWindowReadout));
+                builder.AppendLine(" |");
+            }
+
+            builder.AppendLine();
             builder.AppendLine("## Frontline Clash Cost");
             builder.AppendLine("| Policy | Enemy clashes | Enemy body hits | Enemy summon hits | Enemy clash dmg | Enemy engaged max | Ally clashes | Ally summon hits | Ally engaged max |");
             builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---:|---:|");
@@ -1040,6 +1084,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Route stability split: no-action {FormatPercent01(noSummon.RouteStability01)} final / {FormatPercent01(noSummon.MinRouteStability01)} min, gun-only {FormatPercent01(gunOnly.RouteStability01)} / {FormatPercent01(gunOnly.MinRouteStability01)}, intended {FormatPercent01(intended.RouteStability01)} / {FormatPercent01(intended.MinRouteStability01)}.");
             builder.AppendLine($"- Unanswered hit penalty split: no-action {FormatPercent01(noSummon.TotalUnansweredBossHitRoutePenalty01)} x{noSummon.UnansweredBossHitRoutePenaltyCount}, gun-only {FormatPercent01(gunOnly.TotalUnansweredBossHitRoutePenalty01)} x{gunOnly.UnansweredBossHitRoutePenaltyCount}, late {FormatPercent01(late.TotalUnansweredBossHitRoutePenalty01)} x{late.UnansweredBossHitRoutePenaltyCount}.");
             builder.AppendLine($"- Frontline exposure split: no-action enemy-only {FormatSeconds(noSummon.EnemyOnlyFrontlineSeconds)}, gun-only enemy-only {FormatSeconds(gunOnly.EnemyOnlyFrontlineSeconds)}, intended ally-only {FormatSeconds(intended.AllyOnlyFrontlineSeconds)} / contested {FormatSeconds(intended.ContestedFrontlineSeconds)}.");
+            builder.AppendLine($"- ArkData pressure shape: no-action peak/top3 {FormatPercent01(noSummon.PeakPressureWindowShare01)}/{FormatPercent01(noSummon.Top3PressureWindowShare01)}, intended {FormatPercent01(intended.PeakPressureWindowShare01)}/{FormatPercent01(intended.Top3PressureWindowShare01)}, ignored boss-screen unanswered burden {FormatPercent01(ignoredRecovery.UnansweredPressureBurdenShare01)} versus intended {FormatPercent01(intended.UnansweredPressureBurdenShare01)}.");
             builder.AppendLine($"- Enemy pressure actor cost: no-action clashes {noSummon.EnemyFrontlineClashes} / body hits {noSummon.EnemyFrontlineBodyHits} / clash damage {noSummon.EnemyFrontlineClashDamage:0.0}; intended route clashes {intended.EnemyFrontlineClashes} / body hits {intended.EnemyFrontlineBodyHits}.");
             builder.AppendLine($"- Hit reaction split: boss-screen recovery produced {blockedRecovery.TotalSummonDamageFlashes} summon damage flashes, {blockedRecovery.TotalSummonFullBodyHitReactions} full-body hit reactions, and {blockedRecovery.TotalNonLockingSummonDamageCues} non-locking damage cues.");
             builder.AppendLine($"- Damage response split: gun-only boss chip {gunOnly.BossNonLockingDamageEvents}/{gunOnly.BossLockingDamageEvents} non-lock/lock, intended Skill1 boss hits {intended.BossNonLockingDamageEvents}/{intended.BossLockingDamageEvents}, boss-screen recovery {blockedRecovery.BossNonLockingDamageEvents}/{blockedRecovery.BossLockingDamageEvents}.");
@@ -1181,6 +1226,18 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"contestedFrontlineSeconds\": {result.ContestedFrontlineSeconds:0.###},");
                 builder.AppendLine($"      \"allyOnlyFrontlineSeconds\": {result.AllyOnlyFrontlineSeconds:0.###},");
                 builder.AppendLine($"      \"frontlinePresenceReadout\": \"{JsonEscape(result.FrontlinePresenceReadout)}\",");
+                builder.AppendLine($"      \"pressureWindowSeconds\": {result.PressureWindowSeconds:0.###},");
+                builder.AppendLine($"      \"pressureBurdenSeconds\": {result.PressureBurdenSeconds:0.###},");
+                builder.AppendLine($"      \"pressureWindowCount\": {result.PressureWindowCount},");
+                builder.AppendLine($"      \"peakPressureWindowShare01\": {result.PeakPressureWindowShare01:0.###},");
+                builder.AppendLine($"      \"top3PressureWindowShare01\": {result.Top3PressureWindowShare01:0.###},");
+                builder.AppendLine($"      \"peakPressureWindowStartSeconds\": {JsonNullableSeconds(result.PeakPressureWindowStartSeconds)},");
+                builder.AppendLine($"      \"timeToNextReliefWindowSeconds\": {JsonNullableSeconds(result.TimeToNextReliefWindowSeconds)},");
+                builder.AppendLine($"      \"dominantPressureBurdenState\": \"{JsonEscape(result.DominantPressureBurdenState)}\",");
+                builder.AppendLine($"      \"dominantPressureBurdenShare01\": {result.DominantPressureBurdenShare01:0.###},");
+                builder.AppendLine($"      \"unansweredPressureBurdenShare01\": {result.UnansweredPressureBurdenShare01:0.###},");
+                builder.AppendLine($"      \"answeredPressureBurdenShare01\": {result.AnsweredPressureBurdenShare01:0.###},");
+                builder.AppendLine($"      \"pressureWindowReadout\": \"{JsonEscape(result.PressureWindowReadout)}\",");
                 builder.AppendLine($"      \"enemyFrontlineClashes\": {result.EnemyFrontlineClashes},");
                 builder.AppendLine($"      \"enemyFrontlineBodyHits\": {result.EnemyFrontlineBodyHits},");
                 builder.AppendLine($"      \"enemyFrontlineSummonHits\": {result.EnemyFrontlineSummonHits},");
@@ -1502,6 +1559,11 @@ namespace DimensionBrawl.Tests
                 new Dictionary<int, int>();
             private readonly Dictionary<int, int> observedSuppressedSummonAnimatorHitCounts =
                 new Dictionary<int, int>();
+            private readonly List<float> pressureWindowBurden = new List<float>();
+            private float openPressureBurden;
+            private float enemyOnlyPressureBurden;
+            private float contestedPressureBurden;
+            private float allyOnlyPressureBurden;
 
             public CombatPolicyContext(
                 PolicyKind policy,
@@ -1669,6 +1731,7 @@ namespace DimensionBrawl.Tests
                 Metrics.RouteDrainAccumulated01 += PocketOwner.CurrentRouteStabilityDrainPerSecond * deltaTime;
                 Metrics.RoutePressureWeightSeconds += PocketOwner.CurrentRoutePressureWeight * deltaTime;
                 Metrics.FrontlinePresenceScaleSeconds += PocketOwner.CurrentFrontlinePresenceDrainScale * deltaTime;
+                SamplePressureShape(deltaTime, enemyFrontlineCount, allyFrontlineCount);
                 if (allyFrontlineCount > 0 && enemyFrontlineCount > 0)
                 {
                     Metrics.ContestedFrontlineSeconds += deltaTime;
@@ -1681,6 +1744,154 @@ namespace DimensionBrawl.Tests
                 {
                     Metrics.AllyOnlyFrontlineSeconds += deltaTime;
                 }
+            }
+
+            private void SamplePressureShape(float deltaTime, int enemyFrontlineCount, int allyFrontlineCount)
+            {
+                float pressureBurden = Mathf.Max(0f, PocketOwner.CurrentRoutePressureWeight)
+                    * Mathf.Max(0f, PocketOwner.CurrentFrontlinePresenceDrainScale)
+                    * deltaTime;
+                if (pressureBurden <= 0f)
+                {
+                    return;
+                }
+
+                float sampleMidpointSeconds = Mathf.Max(0f, Metrics.ElapsedSeconds - deltaTime * 0.5f);
+                int windowIndex = Mathf.Max(
+                    0,
+                    Mathf.FloorToInt(sampleMidpointSeconds / PressureWindowSeconds));
+                while (pressureWindowBurden.Count <= windowIndex)
+                {
+                    pressureWindowBurden.Add(0f);
+                }
+
+                pressureWindowBurden[windowIndex] += pressureBurden;
+                Metrics.PressureBurdenSeconds += pressureBurden;
+
+                if (allyFrontlineCount > 0 && enemyFrontlineCount > 0)
+                {
+                    contestedPressureBurden += pressureBurden;
+                }
+                else if (enemyFrontlineCount > 0)
+                {
+                    enemyOnlyPressureBurden += pressureBurden;
+                }
+                else if (allyFrontlineCount > 0)
+                {
+                    allyOnlyPressureBurden += pressureBurden;
+                }
+                else
+                {
+                    openPressureBurden += pressureBurden;
+                }
+            }
+
+            private void CompletePressureShape()
+            {
+                Metrics.PressureWindowSeconds = PressureWindowSeconds;
+                Metrics.PressureWindowCount = pressureWindowBurden.Count;
+                Metrics.PressureWindowReadout = BuildPressureWindowReadout();
+                if (Metrics.PressureBurdenSeconds <= 0f || pressureWindowBurden.Count == 0)
+                {
+                    Metrics.DominantPressureBurdenState = "none";
+                    return;
+                }
+
+                int peakWindowIndex = 0;
+                float peakWindowBurden = pressureWindowBurden[0];
+                for (int i = 1; i < pressureWindowBurden.Count; i++)
+                {
+                    if (pressureWindowBurden[i] > peakWindowBurden)
+                    {
+                        peakWindowBurden = pressureWindowBurden[i];
+                        peakWindowIndex = i;
+                    }
+                }
+
+                List<float> sortedWindows = new List<float>(pressureWindowBurden);
+                sortedWindows.Sort((left, right) => right.CompareTo(left));
+                float top3Burden = 0f;
+                int topWindowCount = Mathf.Min(3, sortedWindows.Count);
+                for (int i = 0; i < topWindowCount; i++)
+                {
+                    top3Burden += sortedWindows[i];
+                }
+
+                Metrics.PeakPressureWindowShare01 = peakWindowBurden / Metrics.PressureBurdenSeconds;
+                Metrics.Top3PressureWindowShare01 = Mathf.Clamp01(top3Burden / Metrics.PressureBurdenSeconds);
+                Metrics.PeakPressureWindowStartSeconds = peakWindowIndex * PressureWindowSeconds;
+                Metrics.TimeToNextReliefWindowSeconds = ResolveReliefAfterPeakSeconds(
+                    peakWindowIndex,
+                    peakWindowBurden);
+                ResolveDominantPressureBurden();
+            }
+
+            private float ResolveReliefAfterPeakSeconds(int peakWindowIndex, float peakWindowBurden)
+            {
+                float reliefThreshold = peakWindowBurden * ReliefPressureWindowPeakRatio;
+                for (int i = peakWindowIndex + 1; i < pressureWindowBurden.Count; i++)
+                {
+                    if (pressureWindowBurden[i] <= reliefThreshold)
+                    {
+                        return (i - peakWindowIndex) * PressureWindowSeconds;
+                    }
+                }
+
+                return -1f;
+            }
+
+            private void ResolveDominantPressureBurden()
+            {
+                string dominantState = "open";
+                float dominantBurden = openPressureBurden;
+                if (enemyOnlyPressureBurden > dominantBurden)
+                {
+                    dominantState = "enemy_only";
+                    dominantBurden = enemyOnlyPressureBurden;
+                }
+
+                if (contestedPressureBurden > dominantBurden)
+                {
+                    dominantState = "contested";
+                    dominantBurden = contestedPressureBurden;
+                }
+
+                if (allyOnlyPressureBurden > dominantBurden)
+                {
+                    dominantState = "ally_only";
+                    dominantBurden = allyOnlyPressureBurden;
+                }
+
+                float totalBurden = Metrics.PressureBurdenSeconds;
+                float unansweredBurden = enemyOnlyPressureBurden + contestedPressureBurden * 0.5f;
+                float answeredBurden = allyOnlyPressureBurden + contestedPressureBurden * 0.5f;
+                Metrics.DominantPressureBurdenState = dominantState;
+                Metrics.DominantPressureBurdenShare01 = dominantBurden / totalBurden;
+                Metrics.UnansweredPressureBurdenShare01 = unansweredBurden / totalBurden;
+                Metrics.AnsweredPressureBurdenShare01 = answeredBurden / totalBurden;
+            }
+
+            private string BuildPressureWindowReadout()
+            {
+                if (pressureWindowBurden.Count == 0)
+                {
+                    return "none";
+                }
+
+                StringBuilder builder = new StringBuilder();
+                for (int i = 0; i < pressureWindowBurden.Count; i++)
+                {
+                    if (i > 0)
+                    {
+                        builder.Append("; ");
+                    }
+
+                    float start = i * PressureWindowSeconds;
+                    float end = start + PressureWindowSeconds;
+                    builder.Append($"{start:0.0}-{end:0.0}s:{pressureWindowBurden[i]:0.00}");
+                }
+
+                return builder.ToString();
             }
 
             private void SampleFrontlineClashCost()
@@ -2030,6 +2241,7 @@ namespace DimensionBrawl.Tests
             public void Complete()
             {
                 Sample();
+                CompletePressureShape();
                 Metrics.PlayerHealthRemaining = PlayerHealth.CurrentHealth;
                 Metrics.BossHealthRemaining = BossHealth.CurrentHealth;
                 Metrics.CloseThreatHealthRemaining = CloseThreatHealth.CurrentHealth;
@@ -2248,6 +2460,18 @@ namespace DimensionBrawl.Tests
             public float ContestedFrontlineSeconds { get; set; }
             public float AllyOnlyFrontlineSeconds { get; set; }
             public string FrontlinePresenceReadout { get; set; } = "pressure x1.00 open";
+            public float PressureWindowSeconds { get; set; }
+            public float PressureBurdenSeconds { get; set; }
+            public int PressureWindowCount { get; set; }
+            public float PeakPressureWindowShare01 { get; set; }
+            public float Top3PressureWindowShare01 { get; set; }
+            public float PeakPressureWindowStartSeconds { get; set; } = -1f;
+            public float TimeToNextReliefWindowSeconds { get; set; } = -1f;
+            public string DominantPressureBurdenState { get; set; } = "none";
+            public float DominantPressureBurdenShare01 { get; set; }
+            public float UnansweredPressureBurdenShare01 { get; set; }
+            public float AnsweredPressureBurdenShare01 { get; set; }
+            public string PressureWindowReadout { get; set; } = "none";
             public int EnemyFrontlineClashes { get; set; }
             public int EnemyFrontlineBodyHits { get; set; }
             public int EnemyFrontlineSummonHits { get; set; }
