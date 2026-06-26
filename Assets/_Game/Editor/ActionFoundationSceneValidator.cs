@@ -1265,11 +1265,11 @@ namespace DimensionBrawl.Editor
         private static void ValidatePlayerActionProfile(PlayerActionProfile profile)
         {
             ValidateArraySize(profile, "basicCombo", 5);
-            ValidateAttackStep(profile, "basicCombo", 0, "Attack1", 0.12f, 0.08f, 0.28f, 0.10f, 0.06f, 20f, 0.55f, 1.35f, 0.03f);
-            ValidateAttackStep(profile, "basicCombo", 1, "Attack2", 0.14f, 0.09f, 0.32f, 0.10f, 0.08f, 24f, 0.60f, 1.45f, 0.03f);
-            ValidateAttackStep(profile, "basicCombo", 2, "Attack3", 0.16f, 0.10f, 0.30f, 0.12f, 0.10f, 34f, 0.70f, 1.55f, 0.04f);
-            ValidateAttackStep(profile, "basicCombo", 3, "Attack4", 0.17f, 0.10f, 0.34f, 0.12f, 0.12f, 40f, 0.72f, 1.62f, 0.05f);
-            ValidateAttackStep(profile, "basicCombo", 4, "Attack5", 0.20f, 0.12f, 0.46f, 0.12f, 0.14f, 56f, 0.82f, 1.75f, 0.05f);
+            ValidateAttackStep(profile, "basicCombo", 0, "Attack1", 0.12f, 0.08f, 0.28f, 0.10f, 0.06f, 20f, 0.55f, 1.35f, 0.03f, DamageResponsePolicy.FlashOnly, CombatControlLockPolicy.None);
+            ValidateAttackStep(profile, "basicCombo", 1, "Attack2", 0.14f, 0.09f, 0.32f, 0.10f, 0.08f, 24f, 0.60f, 1.45f, 0.03f, DamageResponsePolicy.FlashOnly, CombatControlLockPolicy.None);
+            ValidateAttackStep(profile, "basicCombo", 2, "Attack3", 0.16f, 0.10f, 0.30f, 0.12f, 0.10f, 34f, 0.70f, 1.55f, 0.04f, DamageResponsePolicy.FlashOnly, CombatControlLockPolicy.None);
+            ValidateAttackStep(profile, "basicCombo", 3, "Attack4", 0.17f, 0.10f, 0.34f, 0.12f, 0.12f, 40f, 0.72f, 1.62f, 0.05f, DamageResponsePolicy.FlashOnly, CombatControlLockPolicy.None);
+            ValidateAttackStep(profile, "basicCombo", 4, "Attack5", 0.20f, 0.12f, 0.46f, 0.12f, 0.14f, 56f, 0.82f, 1.75f, 0.05f, DamageResponsePolicy.Stagger, CombatControlLockPolicy.InterruptAction);
             ValidateFloat(profile, "comboResetSeconds", 0.75f);
             ValidateFloat(profile, "comboQueueOpenAfterSeconds", 0.10f);
             ValidateFloat(profile, "comboChainRecoveryRatio", 0.45f);
@@ -1713,7 +1713,9 @@ namespace DimensionBrawl.Editor
             float damage,
             float hitRadius,
             float hitDistance,
-            float hitStopSeconds)
+            float hitStopSeconds,
+            DamageResponsePolicy responsePolicy,
+            CombatControlLockPolicy controlLockPolicy)
         {
             SerializedProperty property = FindProperty(target, propertyName);
             if (!property.isArray || property.arraySize <= index)
@@ -1732,6 +1734,8 @@ namespace DimensionBrawl.Editor
             ValidateRelativeFloat(target, step, "hitRadius", hitRadius);
             ValidateRelativeFloat(target, step, "hitDistance", hitDistance);
             ValidateRelativeFloat(target, step, "hitStopSeconds", hitStopSeconds);
+            ValidateRelativeEnum(target, step, "responsePolicy", (int)responsePolicy);
+            ValidateRelativeEnum(target, step, "controlLockPolicy", (int)controlLockPolicy);
         }
 
         private static void ValidateFloat(UnityEngine.Object target, string propertyName, float expected)
@@ -1838,6 +1842,15 @@ namespace DimensionBrawl.Editor
             if (!Mathf.Approximately(property.floatValue, expected))
             {
                 throw new InvalidOperationException($"{target.name}.{owner.propertyPath}.{propertyName} expected {expected}, found {property.floatValue}.");
+            }
+        }
+
+        private static void ValidateRelativeEnum(UnityEngine.Object target, SerializedProperty owner, string propertyName, int expected)
+        {
+            SerializedProperty property = owner.FindPropertyRelative(propertyName);
+            if (property.enumValueIndex != expected)
+            {
+                throw new InvalidOperationException($"{target.name}.{owner.propertyPath}.{propertyName} expected enum {expected}, found {property.enumValueIndex}.");
             }
         }
 

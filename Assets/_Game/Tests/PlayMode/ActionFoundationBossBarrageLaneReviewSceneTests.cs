@@ -557,7 +557,17 @@ namespace DimensionBrawl.Tests
             AssertLaneAmbientVfx(RequireRoot(AmbientVfxRootName));
             AssertLaneAmbientAudio(RequireRoot(AmbientAudioRootName));
             AssertBossBarrageLaneReviewFootstepAudio(player, closeThreatRoot, bossRoot);
-            Assert.AreSame(LoadAsset<PlayerActionProfile>(LocalDefenseProfilePath), playerActionController.ActionProfile);
+            PlayerActionProfile localDefenseProfile = LoadAsset<PlayerActionProfile>(LocalDefenseProfilePath);
+            SerializedProperty localDefenseCombo = RequireProperty(new SerializedObject(localDefenseProfile), "basicCombo");
+            Assert.AreEqual(1, localDefenseCombo.arraySize);
+            SerializedProperty localDefenseStep = localDefenseCombo.GetArrayElementAtIndex(0);
+            Assert.AreEqual(
+                (int)DamageResponsePolicy.Stagger,
+                localDefenseStep.FindPropertyRelative("responsePolicy").enumValueIndex);
+            Assert.AreEqual(
+                (int)CombatControlLockPolicy.InterruptAction,
+                localDefenseStep.FindPropertyRelative("controlLockPolicy").enumValueIndex);
+            Assert.AreSame(localDefenseProfile, playerActionController.ActionProfile);
             Assert.IsTrue(combatModeController.IsRangedMode, "Review scene should start in the ranged channel.");
             Assert.AreSame(playerActionController, GetObjectReference<PlayerActionController>(combatModeController, "actionController"));
             Assert.AreSame(player, GetObjectReference<PlayerMovementController>(combatModeController, "movementController"));

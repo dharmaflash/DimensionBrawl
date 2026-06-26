@@ -1,4 +1,5 @@
 using System;
+using DimensionBrawl.Combat;
 using UnityEngine;
 
 namespace DimensionBrawl.Player
@@ -21,6 +22,37 @@ namespace DimensionBrawl.Player
             public float hitRadius;
             public float hitDistance;
             public float hitStopSeconds;
+            public DamageResponsePolicy responsePolicy;
+            public CombatControlLockPolicy controlLockPolicy;
+        }
+
+        public static DamageResponsePolicy ResolveResponsePolicy(AttackStep step, int stepIndex, int comboLength)
+        {
+            if (step.responsePolicy != DamageResponsePolicy.Default)
+            {
+                return step.responsePolicy;
+            }
+
+            return IsFinisherStep(stepIndex, comboLength)
+                ? DamageResponsePolicy.Stagger
+                : DamageResponsePolicy.FlashOnly;
+        }
+
+        public static CombatControlLockPolicy ResolveControlLockPolicy(AttackStep step, int stepIndex, int comboLength)
+        {
+            if (step.controlLockPolicy != CombatControlLockPolicy.None)
+            {
+                return step.controlLockPolicy;
+            }
+
+            return step.responsePolicy == DamageResponsePolicy.Default && IsFinisherStep(stepIndex, comboLength)
+                ? CombatControlLockPolicy.InterruptAction
+                : CombatControlLockPolicy.None;
+        }
+
+        private static bool IsFinisherStep(int stepIndex, int comboLength)
+        {
+            return comboLength <= 1 || stepIndex >= Mathf.Max(0, comboLength - 1);
         }
 
         [Header("Basic Attack")]
@@ -39,7 +71,9 @@ namespace DimensionBrawl.Player
                 damage = 20f,
                 hitRadius = 0.55f,
                 hitDistance = 1.35f,
-                hitStopSeconds = 0.03f
+                hitStopSeconds = 0.03f,
+                responsePolicy = DamageResponsePolicy.FlashOnly,
+                controlLockPolicy = CombatControlLockPolicy.None
             },
             new AttackStep
             {
@@ -54,7 +88,9 @@ namespace DimensionBrawl.Player
                 damage = 24f,
                 hitRadius = 0.6f,
                 hitDistance = 1.45f,
-                hitStopSeconds = 0.03f
+                hitStopSeconds = 0.03f,
+                responsePolicy = DamageResponsePolicy.FlashOnly,
+                controlLockPolicy = CombatControlLockPolicy.None
             },
             new AttackStep
             {
@@ -69,7 +105,9 @@ namespace DimensionBrawl.Player
                 damage = 34f,
                 hitRadius = 0.7f,
                 hitDistance = 1.55f,
-                hitStopSeconds = 0.04f
+                hitStopSeconds = 0.04f,
+                responsePolicy = DamageResponsePolicy.FlashOnly,
+                controlLockPolicy = CombatControlLockPolicy.None
             },
             new AttackStep
             {
@@ -84,7 +122,9 @@ namespace DimensionBrawl.Player
                 damage = 40f,
                 hitRadius = 0.72f,
                 hitDistance = 1.62f,
-                hitStopSeconds = 0.05f
+                hitStopSeconds = 0.05f,
+                responsePolicy = DamageResponsePolicy.FlashOnly,
+                controlLockPolicy = CombatControlLockPolicy.None
             },
             new AttackStep
             {
@@ -99,7 +139,9 @@ namespace DimensionBrawl.Player
                 damage = 56f,
                 hitRadius = 0.82f,
                 hitDistance = 1.75f,
-                hitStopSeconds = 0.05f
+                hitStopSeconds = 0.05f,
+                responsePolicy = DamageResponsePolicy.Stagger,
+                controlLockPolicy = CombatControlLockPolicy.InterruptAction
             }
         };
 

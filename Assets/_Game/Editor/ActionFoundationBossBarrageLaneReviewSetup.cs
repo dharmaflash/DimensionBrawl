@@ -2200,6 +2200,8 @@ namespace DimensionBrawl.Editor
             RequireRelativeProperty(step, "hitRadius").floatValue = 0.78f;
             RequireRelativeProperty(step, "hitDistance").floatValue = 1.65f;
             RequireRelativeProperty(step, "hitStopSeconds").floatValue = 0f;
+            RequireRelativeProperty(step, "responsePolicy").enumValueIndex = (int)DamageResponsePolicy.Stagger;
+            RequireRelativeProperty(step, "controlLockPolicy").enumValueIndex = (int)CombatControlLockPolicy.InterruptAction;
 
             RequireProperty(serializedObject, "comboResetSeconds").floatValue = 0.32f;
             RequireProperty(serializedObject, "comboQueueOpenAfterSeconds").floatValue = 0.12f;

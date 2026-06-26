@@ -1002,6 +1002,61 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void PlayerActionProfileTreatsUnsetBasicHitsAsNonLockingUntilFinisher()
+        {
+            PlayerActionProfile.AttackStep legacyStep = default;
+
+            Assert.AreEqual(
+                DamageResponsePolicy.FlashOnly,
+                PlayerActionProfile.ResolveResponsePolicy(legacyStep, 0, 5));
+            Assert.AreEqual(
+                CombatControlLockPolicy.None,
+                PlayerActionProfile.ResolveControlLockPolicy(legacyStep, 0, 5));
+
+            Assert.AreEqual(
+                DamageResponsePolicy.Stagger,
+                PlayerActionProfile.ResolveResponsePolicy(legacyStep, 4, 5));
+            Assert.AreEqual(
+                CombatControlLockPolicy.InterruptAction,
+                PlayerActionProfile.ResolveControlLockPolicy(legacyStep, 4, 5));
+
+            Assert.AreEqual(
+                DamageResponsePolicy.Stagger,
+                PlayerActionProfile.ResolveResponsePolicy(legacyStep, 0, 1));
+            Assert.AreEqual(
+                CombatControlLockPolicy.InterruptAction,
+                PlayerActionProfile.ResolveControlLockPolicy(legacyStep, 0, 1));
+        }
+
+        [Test]
+        public void PlayerActionProfileDefaultComboTagsOnlyFinisherAsInterrupt()
+        {
+            PlayerActionProfile profile = ScriptableObject.CreateInstance<PlayerActionProfile>();
+            PlayerActionProfile.AttackStep[] combo = profile.BasicCombo;
+
+            Assert.AreEqual(5, combo.Length);
+            for (int i = 0; i < combo.Length - 1; i++)
+            {
+                Assert.AreEqual(DamageResponsePolicy.FlashOnly, combo[i].responsePolicy);
+                Assert.AreEqual(CombatControlLockPolicy.None, combo[i].controlLockPolicy);
+                Assert.AreEqual(DamageResponsePolicy.FlashOnly, PlayerActionProfile.ResolveResponsePolicy(combo[i], i, combo.Length));
+                Assert.AreEqual(CombatControlLockPolicy.None, PlayerActionProfile.ResolveControlLockPolicy(combo[i], i, combo.Length));
+            }
+
+            PlayerActionProfile.AttackStep finisher = combo[combo.Length - 1];
+            Assert.AreEqual(DamageResponsePolicy.Stagger, finisher.responsePolicy);
+            Assert.AreEqual(CombatControlLockPolicy.InterruptAction, finisher.controlLockPolicy);
+            Assert.AreEqual(
+                DamageResponsePolicy.Stagger,
+                PlayerActionProfile.ResolveResponsePolicy(finisher, combo.Length - 1, combo.Length));
+            Assert.AreEqual(
+                CombatControlLockPolicy.InterruptAction,
+                PlayerActionProfile.ResolveControlLockPolicy(finisher, combo.Length - 1, combo.Length));
+
+            Object.DestroyImmediate(profile);
+        }
+
+        [Test]
         public void SummonFrontlineClashDamagesHostileSummonsAndHoldsAdvance()
         {
             GameObject allyObject = new GameObject("AllySummonActor");

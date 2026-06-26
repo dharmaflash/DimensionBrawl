@@ -25,6 +25,8 @@ MonoBehaviour:
     hitRadius: 0.55
     hitDistance: 1.35
     hitStopSeconds: 0.03
+    responsePolicy: 2
+    controlLockPolicy: 0
   - animationTrigger: Attack2
     startupSeconds: 0.14
     activeSeconds: 0.09
@@ -37,6 +39,8 @@ MonoBehaviour:
     hitRadius: 0.6
     hitDistance: 1.45
     hitStopSeconds: 0.03
+    responsePolicy: 2
+    controlLockPolicy: 0
   - animationTrigger: Attack3
     startupSeconds: 0.16
     activeSeconds: 0.1
@@ -49,6 +53,8 @@ MonoBehaviour:
     hitRadius: 0.7
     hitDistance: 1.55
     hitStopSeconds: 0.04
+    responsePolicy: 2
+    controlLockPolicy: 0
   - animationTrigger: Attack4
     startupSeconds: 0.17
     activeSeconds: 0.1
@@ -61,6 +67,8 @@ MonoBehaviour:
     hitRadius: 0.72
     hitDistance: 1.62
     hitStopSeconds: 0.05
+    responsePolicy: 2
+    controlLockPolicy: 0
   - animationTrigger: Attack5
     startupSeconds: 0.2
     activeSeconds: 0.12
@@ -73,6 +81,8 @@ MonoBehaviour:
     hitRadius: 0.82
     hitDistance: 1.75
     hitStopSeconds: 0.05
+    responsePolicy: 4
+    controlLockPolicy: 1
   comboResetSeconds: 0.75
   comboQueueOpenAfterSeconds: 0.1
   comboChainRecoveryRatio: 0.45

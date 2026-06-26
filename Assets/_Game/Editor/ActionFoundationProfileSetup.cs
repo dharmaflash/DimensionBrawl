@@ -811,11 +811,11 @@ namespace DimensionBrawl.Editor
             SerializedObject serializedObject = new SerializedObject(profile);
             SerializedProperty combo = serializedObject.FindProperty("basicCombo");
             combo.arraySize = 5;
-            SetAttackStep(combo.GetArrayElementAtIndex(0), "Attack1", 0.12f, 0.08f, 0.28f, 0.10f, 0.06f, 20f, 0.55f, 1.35f, 0.03f);
-            SetAttackStep(combo.GetArrayElementAtIndex(1), "Attack2", 0.14f, 0.09f, 0.32f, 0.10f, 0.08f, 24f, 0.60f, 1.45f, 0.03f);
-            SetAttackStep(combo.GetArrayElementAtIndex(2), "Attack3", 0.16f, 0.10f, 0.30f, 0.12f, 0.10f, 34f, 0.70f, 1.55f, 0.04f);
-            SetAttackStep(combo.GetArrayElementAtIndex(3), "Attack4", 0.17f, 0.10f, 0.34f, 0.12f, 0.12f, 40f, 0.72f, 1.62f, 0.05f);
-            SetAttackStep(combo.GetArrayElementAtIndex(4), "Attack5", 0.20f, 0.12f, 0.46f, 0.12f, 0.14f, 56f, 0.82f, 1.75f, 0.05f);
+            SetAttackStep(combo.GetArrayElementAtIndex(0), "Attack1", 0.12f, 0.08f, 0.28f, 0.10f, 0.06f, 20f, 0.55f, 1.35f, 0.03f, DamageResponsePolicy.FlashOnly, CombatControlLockPolicy.None);
+            SetAttackStep(combo.GetArrayElementAtIndex(1), "Attack2", 0.14f, 0.09f, 0.32f, 0.10f, 0.08f, 24f, 0.60f, 1.45f, 0.03f, DamageResponsePolicy.FlashOnly, CombatControlLockPolicy.None);
+            SetAttackStep(combo.GetArrayElementAtIndex(2), "Attack3", 0.16f, 0.10f, 0.30f, 0.12f, 0.10f, 34f, 0.70f, 1.55f, 0.04f, DamageResponsePolicy.FlashOnly, CombatControlLockPolicy.None);
+            SetAttackStep(combo.GetArrayElementAtIndex(3), "Attack4", 0.17f, 0.10f, 0.34f, 0.12f, 0.12f, 40f, 0.72f, 1.62f, 0.05f, DamageResponsePolicy.FlashOnly, CombatControlLockPolicy.None);
+            SetAttackStep(combo.GetArrayElementAtIndex(4), "Attack5", 0.20f, 0.12f, 0.46f, 0.12f, 0.14f, 56f, 0.82f, 1.75f, 0.05f, DamageResponsePolicy.Stagger, CombatControlLockPolicy.InterruptAction);
             SetFloat(serializedObject, "comboResetSeconds", 0.75f);
             SetFloat(serializedObject, "comboQueueOpenAfterSeconds", 0.10f);
             SetFloat(serializedObject, "comboChainRecoveryRatio", 0.45f);
@@ -1052,7 +1052,9 @@ namespace DimensionBrawl.Editor
             float damage,
             float hitRadius,
             float hitDistance,
-            float hitStopSeconds)
+            float hitStopSeconds,
+            DamageResponsePolicy responsePolicy,
+            CombatControlLockPolicy controlLockPolicy)
         {
             SetRelativeString(step, "animationTrigger", animationTrigger);
             SetRelativeFloat(step, "startupSeconds", startupSeconds);
@@ -1064,6 +1066,8 @@ namespace DimensionBrawl.Editor
             SetRelativeFloat(step, "hitRadius", hitRadius);
             SetRelativeFloat(step, "hitDistance", hitDistance);
             SetRelativeFloat(step, "hitStopSeconds", hitStopSeconds);
+            SetRelativeEnum(step, "responsePolicy", (int)responsePolicy);
+            SetRelativeEnum(step, "controlLockPolicy", (int)controlLockPolicy);
         }
 
         private static void SetCameraCue(
@@ -1273,6 +1277,12 @@ namespace DimensionBrawl.Editor
         {
             SerializedProperty property = owner.FindPropertyRelative(propertyName);
             property.floatValue = value;
+        }
+
+        private static void SetRelativeEnum(SerializedProperty owner, string propertyName, int value)
+        {
+            SerializedProperty property = owner.FindPropertyRelative(propertyName);
+            property.enumValueIndex = value;
         }
 
         private static void SetRelativeString(SerializedProperty owner, string propertyName, string value)

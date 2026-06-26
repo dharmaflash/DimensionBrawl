@@ -25,6 +25,8 @@ MonoBehaviour:
     hitRadius: 0.78
     hitDistance: 1.65
     hitStopSeconds: 0
+    responsePolicy: 4
+    controlLockPolicy: 1
   comboResetSeconds: 0.32
   comboQueueOpenAfterSeconds: 0.12
   comboChainRecoveryRatio: 1

@@ -49,7 +49,9 @@ namespace DimensionBrawl.Player
                 damage = 20f,
                 hitRadius = 0.55f,
                 hitDistance = 1.35f,
-                hitStopSeconds = 0.03f
+                hitStopSeconds = 0.03f,
+                responsePolicy = DamageResponsePolicy.FlashOnly,
+                controlLockPolicy = CombatControlLockPolicy.None
             },
             new PlayerActionProfile.AttackStep
             {
@@ -62,7 +64,9 @@ namespace DimensionBrawl.Player
                 damage = 24f,
                 hitRadius = 0.6f,
                 hitDistance = 1.45f,
-                hitStopSeconds = 0.03f
+                hitStopSeconds = 0.03f,
+                responsePolicy = DamageResponsePolicy.FlashOnly,
+                controlLockPolicy = CombatControlLockPolicy.None
             },
             new PlayerActionProfile.AttackStep
             {
@@ -75,7 +79,9 @@ namespace DimensionBrawl.Player
                 damage = 34f,
                 hitRadius = 0.7f,
                 hitDistance = 1.55f,
-                hitStopSeconds = 0.04f
+                hitStopSeconds = 0.04f,
+                responsePolicy = DamageResponsePolicy.FlashOnly,
+                controlLockPolicy = CombatControlLockPolicy.None
             },
             new PlayerActionProfile.AttackStep
             {
@@ -88,7 +94,9 @@ namespace DimensionBrawl.Player
                 damage = 40f,
                 hitRadius = 0.72f,
                 hitDistance = 1.62f,
-                hitStopSeconds = 0.05f
+                hitStopSeconds = 0.05f,
+                responsePolicy = DamageResponsePolicy.FlashOnly,
+                controlLockPolicy = CombatControlLockPolicy.None
             },
             new PlayerActionProfile.AttackStep
             {
@@ -101,7 +109,9 @@ namespace DimensionBrawl.Player
                 damage = 56f,
                 hitRadius = 0.82f,
                 hitDistance = 1.75f,
-                hitStopSeconds = 0.05f
+                hitStopSeconds = 0.05f,
+                responsePolicy = DamageResponsePolicy.Stagger,
+                controlLockPolicy = CombatControlLockPolicy.InterruptAction
             }
         };
 
@@ -412,7 +422,9 @@ namespace DimensionBrawl.Player
                     step.damage,
                     hitCenter,
                     hitDirection.sqrMagnitude > 0f ? hitDirection : direction,
-                    step.hitStopSeconds);
+                    step.hitStopSeconds,
+                    PlayerActionProfile.ResolveResponsePolicy(step, comboIndex, ActiveBasicComboLength),
+                    PlayerActionProfile.ResolveControlLockPolicy(step, comboIndex, ActiveBasicComboLength));
 
                 if (targetHealth.TryApplyDamage(damageInfo))
                 {
@@ -624,7 +636,9 @@ namespace DimensionBrawl.Player
                     damage = 10f,
                     hitRadius = 0.5f,
                     hitDistance = 1.2f,
-                    hitStopSeconds = 0.03f
+                    hitStopSeconds = 0.03f,
+                    responsePolicy = DamageResponsePolicy.Stagger,
+                    controlLockPolicy = CombatControlLockPolicy.InterruptAction
                 };
             }
 
