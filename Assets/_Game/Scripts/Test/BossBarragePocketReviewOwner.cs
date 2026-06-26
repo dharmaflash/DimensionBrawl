@@ -287,6 +287,7 @@ namespace DimensionBrawl.Test
         }
         public string RouteDecisionState => ResolveRouteDecisionState();
         public string RouteDecisionReadout => ResolveRouteDecisionReadout();
+        public string RouteIncentiveCue => ResolveRouteIncentiveCue();
         public string CompletionRecordReadout => ResolveCompletionRecordReadout();
         public RouteResultRecord LastResultRecord => lastResultRecord;
         public bool HasCommittedResultRecord => lastResultRecord.IsCommitted;
@@ -1840,6 +1841,64 @@ namespace DimensionBrawl.Test
             }
 
             return "keep_hp";
+        }
+
+        private string ResolveRouteIncentiveCue()
+        {
+            if (lastResultRecord.IsCommitted)
+            {
+                return lastResultRecord.IsClear
+                    ? $"Pressure answer complete: {lastResultRecord.RouteLabel}"
+                    : lastResultRecord.RewardHook;
+            }
+
+            if (state == PocketState.Failed)
+            {
+                return ResolveStageText(
+                    stageProfile != null ? stageProfile.FailedRouteRewardHook : null,
+                    "Failure analysis logged: player HP reached zero before the answer was complete.");
+            }
+
+            if (state == PocketState.Cleared)
+            {
+                return $"Pressure answer complete: {ResolveRouteResultLabel(ResolveRouteResultKind())}";
+            }
+
+            if (IsRouteStabilityActive && CurrentRouteStabilityBand == RouteStabilityBand.Critical)
+            {
+                return ResolveStageText(
+                    stageProfile != null ? stageProfile.CollapseWarningRecordPreview : null,
+                    "HP is the fail state; pressure is critical.");
+            }
+
+            if (counterWaveObserved && !skill1FollowupHitConfirmed)
+            {
+                return ResolveStageText(
+                    stageProfile != null ? stageProfile.CounterRecoveryRecordPreview : null,
+                    "Keep summon pressure held to reopen final follow-up.");
+            }
+
+            if (pressurePacing.IsSummonFollowupWindowActive
+                || IsSkill1FollowupClearCountdownActive
+                || pressurePacing.IsSummonPressureBreakActive)
+            {
+                return ResolveStageText(
+                    stageProfile != null ? stageProfile.CleanFollowupRecordPreview : null,
+                    "Skill1 can secure HP-safe clear before counter pressure.");
+            }
+
+            if (IsAwaitingSummonPressureBlock
+                || IsSummonBlockOpportunityCueActive
+                || closeThreatDefeated)
+            {
+                return ResolveStageText(
+                    stageProfile != null ? stageProfile.SummonRecordPreview : null,
+                    "Summon cover opens the Skill1 answer.");
+            }
+
+            return ResolveStageText(
+                stageProfile != null ? stageProfile.OpeningRecordPreview : null,
+                "Stop close probe, block curtain, then confirm Skill1.");
         }
 
         private bool IsCounterRecoveryRoute()

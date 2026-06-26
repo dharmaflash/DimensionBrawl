@@ -777,55 +777,7 @@ namespace DimensionBrawl.Presentation
                 return string.Empty;
             }
 
-            FrontlineWaveStageProfile profile = ActiveStageProfile;
-            if (pocketReviewOwner.IsFailed)
-            {
-                return ResolveStageText(
-                    profile?.FailedRouteRewardHook,
-                    "Failure analysis logged: player HP reached zero before the answer was complete.");
-            }
-
-            if (pocketReviewOwner.IsCleared)
-            {
-                return $"Pressure answer complete: {ResolveClearedPocketRouteType()}";
-            }
-
-            if (pocketReviewOwner.IsRouteStabilityActive
-                && pocketReviewOwner.CurrentRouteStabilityBand == BossBarragePocketReviewOwner.RouteStabilityBand.Critical)
-            {
-                return ResolveStageText(
-                    profile?.CollapseWarningRecordPreview,
-                    "HP is the fail state; pressure is critical.");
-            }
-
-            if (pocketReviewOwner.IsCounterWaveCompletionRecorded && !pocketReviewOwner.Skill1FollowupHitConfirmed)
-            {
-                return ResolveStageText(
-                    profile?.CounterRecoveryRecordPreview,
-                    "Keep summon pressure held to reopen final follow-up.");
-            }
-
-            if (pocketReviewOwner.IsSummonFollowupWindowActive
-                || pocketReviewOwner.IsSkill1FollowupClearCountdownActive
-                || pocketReviewOwner.IsSummonPressureBreakActive)
-            {
-                return ResolveStageText(
-                    profile?.CleanFollowupRecordPreview,
-                    "Skill1 can secure HP-safe clear before counter pressure.");
-            }
-
-            if (pocketReviewOwner.IsAwaitingSummonPressureBlock
-                || pocketReviewOwner.IsSummonBlockOpportunityCueActive
-                || pocketReviewOwner.CloseThreatDefeated)
-            {
-                return ResolveStageText(
-                    profile?.SummonRecordPreview,
-                    "Summon cover opens the Skill1 answer.");
-            }
-
-            return ResolveStageText(
-                profile?.OpeningRecordPreview,
-                "Stop close probe, block curtain, then confirm Skill1.");
+            return pocketReviewOwner.RouteIncentiveCue;
         }
 
         private string ResolveStageBriefingLine()
