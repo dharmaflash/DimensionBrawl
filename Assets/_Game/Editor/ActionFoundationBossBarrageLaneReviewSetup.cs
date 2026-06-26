@@ -2004,7 +2004,7 @@ namespace DimensionBrawl.Editor
             RequireProperty(serializedObject, "projectileLifetimeSeconds").floatValue = 5.1f;
             RequireProperty(serializedObject, "projectileRadius").floatValue = 0.3f;
             RequireProperty(serializedObject, "backlineHalfSpread").floatValue = 4.0f;
-            RequireProperty(serializedObject, "forwardHalfSpread").floatValue = 3.0f;
+            RequireProperty(serializedObject, "forwardHalfSpread").floatValue = 1.4f;
             RequireProperty(serializedObject, "linePressureDirection").floatValue = 1f;
             RequireProperty(serializedObject, "linePressureCenterRatio").floatValue = 0.72f;
             RequireProperty(serializedObject, "linePressureHalfSpreadRatio").floatValue = 0.08f;

@@ -3443,7 +3443,7 @@ namespace DimensionBrawl.Tests
             var serializedObject = new SerializedObject(pattern);
             serializedObject.FindProperty("lateralShape").enumValueIndex = (int)BossBarrageLateralShape.LinePressure;
             serializedObject.FindProperty("backlineHalfSpread").floatValue = 4f;
-            serializedObject.FindProperty("forwardHalfSpread").floatValue = 3f;
+            serializedObject.FindProperty("forwardHalfSpread").floatValue = 1.4f;
             serializedObject.FindProperty("linePressureDirection").floatValue = 1f;
             serializedObject.FindProperty("linePressureCenterRatio").floatValue = 0.72f;
             serializedObject.FindProperty("linePressureHalfSpreadRatio").floatValue = 0.08f;
@@ -3453,6 +3453,8 @@ namespace DimensionBrawl.Tests
 
             float firstOffset = pattern.GetLateralOffset(0, 4, 0f);
             float lastOffset = pattern.GetLateralOffset(3, 4, 0f);
+            float firstForwardOffset = pattern.GetLateralOffset(0, 4, 1f);
+            float secondForwardOffset = pattern.GetLateralOffset(1, 4, 1f);
             float backlineDepth = pattern.GetTargetDepthOffset(3, 4, 0f);
             float forwardDepth = pattern.GetTargetDepthOffset(3, 4, 1f);
 
@@ -3462,6 +3464,14 @@ namespace DimensionBrawl.Tests
                 Mathf.Abs(lastOffset - firstOffset),
                 pattern.EvaluateHalfSpread(0f),
                 "LinePressure should read as a narrow lane instead of a full spread.");
+            Assert.Less(
+                Mathf.Abs(firstForwardOffset),
+                Mathf.Abs(firstOffset),
+                "Forward-risk LinePressure should commit its rail closer to the player lane than the backline.");
+            Assert.Less(
+                new Vector2(secondForwardOffset, pattern.GetTargetDepthOffset(1, 4, 1f)).magnitude,
+                1.25f,
+                "Forward-risk LinePressure should create a near-body dodge tax while backline play keeps the rail wider.");
             Assert.Greater(
                 Mathf.Abs(backlineDepth),
                 Mathf.Abs(forwardDepth),

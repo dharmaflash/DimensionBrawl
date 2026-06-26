@@ -40,7 +40,7 @@ MonoBehaviour:
   laneCenterLateralRatio: 0
   lateralShape: 4
   backlineHalfSpread: 4
-  forwardHalfSpread: 3
+  forwardHalfSpread: 1.4
   twinColumnInnerSpreadRatio: 0.38
   sideClampDirection: -1
   sideClampCrossReachRatio: 0.28

@@ -163,6 +163,10 @@ namespace DimensionBrawl.Tests
                     backlineBarrage.BarrageShapeProjectileCount,
                     forwardRiskBarrage.BarrageShapeProjectileCount,
                     "Backline and forward barrage probes should compare the same authored wave count.");
+                Assert.Greater(
+                    forwardRiskBarrage.BarrageShapeNearProjectileCount,
+                    backlineBarrage.BarrageShapeNearProjectileCount,
+                    "Forward-risk barrage pressure should create more near-body projectile pressure than backline safety.");
                 Assert.Less(
                     forwardRiskBarrage.BarrageShapeAverageLateralGap,
                     backlineBarrage.BarrageShapeAverageLateralGap,
