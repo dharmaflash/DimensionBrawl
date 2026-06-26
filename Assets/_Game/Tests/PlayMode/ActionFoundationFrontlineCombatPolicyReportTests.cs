@@ -37,6 +37,7 @@ namespace DimensionBrawl.Tests
             LateSummon,
             MissedFollowupCounterRecovery,
             BossScreenBlockedFollowup,
+            BossScreenIgnoredNoRecovery,
             BossScreenBlockCounterRecovery
         }
 
@@ -57,6 +58,7 @@ namespace DimensionBrawl.Tests
                     PolicyKind.LateSummon,
                     PolicyKind.MissedFollowupCounterRecovery,
                     PolicyKind.BossScreenBlockedFollowup,
+                    PolicyKind.BossScreenIgnoredNoRecovery,
                     PolicyKind.BossScreenBlockCounterRecovery
                 })
                 {
@@ -75,6 +77,7 @@ namespace DimensionBrawl.Tests
                 PolicyMetrics noSummon = RequireResult(results, PolicyKind.NoSummonNoFire);
                 PolicyMetrics counterRecovery = RequireResult(results, PolicyKind.MissedFollowupCounterRecovery);
                 PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
+                PolicyMetrics ignoredRecovery = RequireResult(results, PolicyKind.BossScreenIgnoredNoRecovery);
                 PolicyMetrics blockedRecovery = RequireResult(results, PolicyKind.BossScreenBlockCounterRecovery);
                 Assert.IsTrue(File.Exists(ReportPath), "Frontline combat policy report should be written.");
                 Assert.IsTrue(File.Exists(JsonPath), "Frontline combat policy JSON should be written.");
@@ -110,6 +113,14 @@ namespace DimensionBrawl.Tests
                     blockedRecovery.SkillProjectilesBlockedByBossScreen,
                     0,
                     "Recovered boss-screen runs must still prove the block happened before recovery.");
+                Assert.Greater(
+                    ignoredRecovery.EnemyFrontlineBodyHits,
+                    0,
+                    "Ignoring boss-screen counter pressure should now produce enemy body-contact cost.");
+                Assert.Greater(
+                    ignoredRecovery.PlayerDamageTaken,
+                    blockedRecovery.PlayerDamageTaken,
+                    "Fresh counter recovery should reduce the physical body-rush cost compared with ignoring the counter.");
             }
             finally
             {
@@ -204,6 +215,9 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.BossScreenBlockedFollowup:
                     yield return RunBossScreenBlockedFollowup(context);
                     break;
+                case PolicyKind.BossScreenIgnoredNoRecovery:
+                    yield return RunBossScreenIgnoredNoRecovery(context);
+                    break;
                 case PolicyKind.BossScreenBlockCounterRecovery:
                     yield return RunBossScreenBlockCounterRecovery(context);
                     break;
@@ -279,6 +293,16 @@ namespace DimensionBrawl.Tests
             yield return ReleaseBossScreenAndBlockSkill1Followup(context);
             yield return WaitForCounterFinalWindow(context, 2f);
             yield return Advance(context, 0.25f);
+        }
+
+        private static IEnumerator RunBossScreenIgnoredNoRecovery(CombatPolicyContext context)
+        {
+            yield return DefeatCloseThreatWithBasicFire(context);
+            yield return ChargeEnergyToTier(context, 1, 14f);
+            yield return UseSummonAndBlockNextBossWave(context);
+            yield return ReleaseBossScreenAndBlockSkill1Followup(context);
+            yield return WaitForCounterFinalWindow(context, 2f);
+            yield return Advance(context, 8f);
         }
 
         private static IEnumerator RunBossScreenBlockCounterRecovery(CombatPolicyContext context)
@@ -693,6 +717,34 @@ namespace DimensionBrawl.Tests
             }
 
             builder.AppendLine();
+            builder.AppendLine("## Frontline Clash Cost");
+            builder.AppendLine("| Policy | Enemy clashes | Enemy body hits | Enemy summon hits | Enemy clash dmg | Enemy engaged max | Ally clashes | Ally summon hits | Ally engaged max |");
+            builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---:|---:|");
+            for (int i = 0; i < results.Count; i++)
+            {
+                PolicyMetrics result = results[i];
+                builder.Append("| ");
+                builder.Append(result.Policy);
+                builder.Append(" | ");
+                builder.Append(result.EnemyFrontlineClashes);
+                builder.Append(" | ");
+                builder.Append(result.EnemyFrontlineBodyHits);
+                builder.Append(" | ");
+                builder.Append(result.EnemyFrontlineSummonHits);
+                builder.Append(" | ");
+                builder.Append(result.EnemyFrontlineClashDamage.ToString("0.0"));
+                builder.Append(" | ");
+                builder.Append(result.MaxEnemyFrontlineEngagedCount);
+                builder.Append(" | ");
+                builder.Append(result.AllyFrontlineClashes);
+                builder.Append(" | ");
+                builder.Append(result.AllyFrontlineSummonHits);
+                builder.Append(" | ");
+                builder.Append(result.MaxAllyFrontlineEngagedCount);
+                builder.AppendLine(" |");
+            }
+
+            builder.AppendLine();
             builder.AppendLine("## Boss Pressure Screen");
             builder.AppendLine("| Policy | Boss releases | Boss screen blocks | Skill1 blocked | Max screens | Remaining blocks | Boss blocked follow-up |");
             builder.AppendLine("|---|---:|---:|---:|---:|---:|---|");
@@ -724,6 +776,7 @@ namespace DimensionBrawl.Tests
             PolicyMetrics late = RequireResult(results, PolicyKind.LateSummon);
             PolicyMetrics counterRecovery = RequireResult(results, PolicyKind.MissedFollowupCounterRecovery);
             PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
+            PolicyMetrics ignoredRecovery = RequireResult(results, PolicyKind.BossScreenIgnoredNoRecovery);
             PolicyMetrics blockedRecovery = RequireResult(results, PolicyKind.BossScreenBlockCounterRecovery);
             builder.AppendLine($"- Intended route prevented {Mathf.Max(0f, noSummon.PlayerDamageTaken - intended.PlayerDamageTaken):0.0} player damage versus no-action pressure.");
             builder.AppendLine($"- Gun-only dealt {gunOnly.BossDamageTaken:0.0} boss damage but ended as `{gunOnly.ResultKind}` because the route contract still needs summon pressure blocking.");
@@ -733,13 +786,15 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Route stability split: no-action {FormatPercent01(noSummon.RouteStability01)} final / {FormatPercent01(noSummon.MinRouteStability01)} min, gun-only {FormatPercent01(gunOnly.RouteStability01)} / {FormatPercent01(gunOnly.MinRouteStability01)}, intended {FormatPercent01(intended.RouteStability01)} / {FormatPercent01(intended.MinRouteStability01)}.");
             builder.AppendLine($"- Unanswered hit penalty split: no-action {FormatPercent01(noSummon.TotalUnansweredBossHitRoutePenalty01)} x{noSummon.UnansweredBossHitRoutePenaltyCount}, gun-only {FormatPercent01(gunOnly.TotalUnansweredBossHitRoutePenalty01)} x{gunOnly.UnansweredBossHitRoutePenaltyCount}, late {FormatPercent01(late.TotalUnansweredBossHitRoutePenalty01)} x{late.UnansweredBossHitRoutePenaltyCount}.");
             builder.AppendLine($"- Frontline exposure split: no-action enemy-only {FormatSeconds(noSummon.EnemyOnlyFrontlineSeconds)}, gun-only enemy-only {FormatSeconds(gunOnly.EnemyOnlyFrontlineSeconds)}, intended ally-only {FormatSeconds(intended.AllyOnlyFrontlineSeconds)} / contested {FormatSeconds(intended.ContestedFrontlineSeconds)}.");
+            builder.AppendLine($"- Enemy pressure actor cost: no-action clashes {noSummon.EnemyFrontlineClashes} / body hits {noSummon.EnemyFrontlineBodyHits} / clash damage {noSummon.EnemyFrontlineClashDamage:0.0}; intended route clashes {intended.EnemyFrontlineClashes} / body hits {intended.EnemyFrontlineBodyHits}.");
             builder.AppendLine($"- Missed follow-up branch: `{counterRecovery.ResultKind}` with counter source `{counterRecovery.CounterWaveSource}`, final window `{counterRecovery.CounterWaveFinalWindowState}`, and Skill1 hits {counterRecovery.SkillProjectileHits}.");
             builder.AppendLine($"- Boss-screen branch: boss releases {blockedFollowup.BossPressureSummonReleases}, blocks {blockedFollowup.BossPressureScreenBlocks}, Skill1 projectiles blocked {blockedFollowup.SkillProjectilesBlockedByBossScreen}, boss-blocked follow-up `{blockedFollowup.BossBlockedSkill1Followup}`.");
+            builder.AppendLine($"- Boss-screen ignored branch: `{ignoredRecovery.ResultKind}` for {FormatSeconds(ignoredRecovery.ElapsedSeconds)} with enemy clashes {ignoredRecovery.EnemyFrontlineClashes}, body hits {ignoredRecovery.EnemyFrontlineBodyHits}, and player damage {ignoredRecovery.PlayerDamageTaken:0.0}.");
             builder.AppendLine($"- Boss-screen recovery branch: `{blockedRecovery.ResultKind}` keeps source `{blockedRecovery.CounterWaveSource}`, opens final window `{blockedRecovery.CounterWaveFinalWindowState}`, and lands {blockedRecovery.SkillProjectileHits} Skill1 hits after a fresh summon answer.");
             int maxEnemyFrontlines = ResolveMaxEnemyFrontlines(results);
-            builder.AppendLine(maxEnemyFrontlines > 0
-                ? $"- Enemy frontline pressure is measured: max enemy frontlines {maxEnemyFrontlines}, enemy-only exposure, and hit penalty now separate unanswered pressure from clean summon cover."
-                : "- Enemy frontline max count stayed 0; enemy summon contact is not yet a real measured pressure source in this slice.");
+            builder.AppendLine(ignoredRecovery.EnemyFrontlineBodyHits > 0
+                ? $"- Enemy frontline body cost is active: ignored boss-screen pressure produced {ignoredRecovery.EnemyFrontlineBodyHits} body hits while the recovered branch converts the same pressure into summon clashes."
+                : $"- Enemy frontline presence is measured (max enemy frontlines {maxEnemyFrontlines}), but ignored boss-screen pressure still produced 0 body hits; this remains an axis-4 combat-grammar gap.");
             builder.AppendLine();
             builder.AppendLine("## Notes");
             for (int i = 0; i < results.Count; i++)
@@ -865,6 +920,19 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"contestedFrontlineSeconds\": {result.ContestedFrontlineSeconds:0.###},");
                 builder.AppendLine($"      \"allyOnlyFrontlineSeconds\": {result.AllyOnlyFrontlineSeconds:0.###},");
                 builder.AppendLine($"      \"frontlinePresenceReadout\": \"{JsonEscape(result.FrontlinePresenceReadout)}\",");
+                builder.AppendLine($"      \"enemyFrontlineClashes\": {result.EnemyFrontlineClashes},");
+                builder.AppendLine($"      \"enemyFrontlineBodyHits\": {result.EnemyFrontlineBodyHits},");
+                builder.AppendLine($"      \"enemyFrontlineSummonHits\": {result.EnemyFrontlineSummonHits},");
+                builder.AppendLine($"      \"enemyFrontlineClashDamage\": {result.EnemyFrontlineClashDamage:0.###},");
+                builder.AppendLine($"      \"enemyFrontlineBodyDamage\": {result.EnemyFrontlineBodyDamage:0.###},");
+                builder.AppendLine($"      \"maxEnemyFrontlineEngagedCount\": {result.MaxEnemyFrontlineEngagedCount},");
+                builder.AppendLine($"      \"maxEnemyFrontlineAttackingCount\": {result.MaxEnemyFrontlineAttackingCount},");
+                builder.AppendLine($"      \"allyFrontlineClashes\": {result.AllyFrontlineClashes},");
+                builder.AppendLine($"      \"allyFrontlineBodyHits\": {result.AllyFrontlineBodyHits},");
+                builder.AppendLine($"      \"allyFrontlineSummonHits\": {result.AllyFrontlineSummonHits},");
+                builder.AppendLine($"      \"allyFrontlineClashDamage\": {result.AllyFrontlineClashDamage:0.###},");
+                builder.AppendLine($"      \"maxAllyFrontlineEngagedCount\": {result.MaxAllyFrontlineEngagedCount},");
+                builder.AppendLine($"      \"maxAllyFrontlineAttackingCount\": {result.MaxAllyFrontlineAttackingCount},");
                 builder.AppendLine($"      \"routeShape\": \"{JsonEscape(ResolveRouteShape(result))}\",");
                 builder.AppendLine($"      \"routeStability01\": {result.RouteStability01:0.###},");
                 builder.AppendLine($"      \"minRouteStability01\": {result.MinRouteStability01:0.###},");
@@ -1117,6 +1185,9 @@ namespace DimensionBrawl.Tests
 
         private sealed class CombatPolicyContext
         {
+            private readonly Dictionary<int, int> observedFrontlineClashCounts =
+                new Dictionary<int, int>();
+
             public CombatPolicyContext(
                 PolicyKind policy,
                 PlayerMovementController player,
@@ -1252,6 +1323,7 @@ namespace DimensionBrawl.Tests
                 Metrics.MaxRouteStabilityDrainPerSecond = Mathf.Max(
                     Metrics.MaxRouteStabilityDrainPerSecond,
                     PocketOwner.CurrentRouteStabilityDrainPerSecond);
+                SampleFrontlineClashCost();
 
                 if (deltaTime <= 0f)
                 {
@@ -1273,6 +1345,119 @@ namespace DimensionBrawl.Tests
                 {
                     Metrics.AllyOnlyFrontlineSeconds += deltaTime;
                 }
+            }
+
+            private void SampleFrontlineClashCost()
+            {
+                int enemyEngagedCount = 0;
+                int enemyAttackingCount = 0;
+                int allyEngagedCount = 0;
+                int allyAttackingCount = 0;
+                int proxyCount = SummonFrontlineProxy.ActiveRegisteredProxyCount;
+                for (int i = 0; i < proxyCount; i++)
+                {
+                    if (!SummonFrontlineProxy.TryGetActiveRegisteredProxy(i, out SummonFrontlineProxy proxy)
+                        || proxy == null
+                        || !proxy.IsActive)
+                    {
+                        continue;
+                    }
+
+                    DamageTeam team = proxy.Health != null ? proxy.Health.Team : DamageTeam.Neutral;
+                    bool enemyProxy = team == DamageTeam.Enemy;
+                    bool allyProxy = CombatTeamUtility.IsPlayerSide(team);
+                    bool engaged = proxy.IsAdvanceHeld
+                        || proxy.CurrentState == SummonFrontlineProxyState.Engaging
+                        || proxy.CurrentState == SummonFrontlineProxyState.Attacking;
+                    bool attacking = proxy.CurrentState == SummonFrontlineProxyState.Attacking;
+
+                    if (enemyProxy)
+                    {
+                        if (engaged)
+                        {
+                            enemyEngagedCount++;
+                        }
+
+                        if (attacking)
+                        {
+                            enemyAttackingCount++;
+                        }
+                    }
+                    else if (allyProxy)
+                    {
+                        if (engaged)
+                        {
+                            allyEngagedCount++;
+                        }
+
+                        if (attacking)
+                        {
+                            allyAttackingCount++;
+                        }
+                    }
+
+                    SummonFrontlineClash clash = proxy.GetComponent<SummonFrontlineClash>();
+                    if (clash == null)
+                    {
+                        continue;
+                    }
+
+                    int key = proxy.GetInstanceID();
+                    int currentCount = clash.TotalClashCount;
+                    if (!observedFrontlineClashCounts.TryGetValue(key, out int previousCount))
+                    {
+                        observedFrontlineClashCounts[key] = currentCount;
+                        continue;
+                    }
+
+                    if (currentCount > previousCount)
+                    {
+                        int delta = currentCount - previousCount;
+                        float damage = clash.LastDamageAmount * delta;
+                        if (enemyProxy)
+                        {
+                            Metrics.EnemyFrontlineClashes += delta;
+                            Metrics.EnemyFrontlineClashDamage += damage;
+                            if (clash.LastTargetKind == SummonFrontlineClashTargetKind.HostileBody)
+                            {
+                                Metrics.EnemyFrontlineBodyHits += delta;
+                                Metrics.EnemyFrontlineBodyDamage += damage;
+                            }
+                            else if (clash.LastTargetKind == SummonFrontlineClashTargetKind.HostileSummon)
+                            {
+                                Metrics.EnemyFrontlineSummonHits += delta;
+                            }
+                        }
+                        else if (allyProxy)
+                        {
+                            Metrics.AllyFrontlineClashes += delta;
+                            Metrics.AllyFrontlineClashDamage += damage;
+                            if (clash.LastTargetKind == SummonFrontlineClashTargetKind.HostileBody)
+                            {
+                                Metrics.AllyFrontlineBodyHits += delta;
+                            }
+                            else if (clash.LastTargetKind == SummonFrontlineClashTargetKind.HostileSummon)
+                            {
+                                Metrics.AllyFrontlineSummonHits += delta;
+                            }
+                        }
+                    }
+
+                    observedFrontlineClashCounts[key] = currentCount;
+                }
+
+                Metrics.MaxEnemyFrontlineEngagedCount = Mathf.Max(
+                    Metrics.MaxEnemyFrontlineEngagedCount,
+                    enemyEngagedCount);
+                Metrics.MaxEnemyFrontlineAttackingCount = Mathf.Max(
+                    Metrics.MaxEnemyFrontlineAttackingCount,
+                    enemyAttackingCount);
+                Metrics.MaxAllyFrontlineEngagedCount = Mathf.Max(
+                    Metrics.MaxAllyFrontlineEngagedCount,
+                    allyEngagedCount);
+                Metrics.MaxAllyFrontlineAttackingCount = Mathf.Max(
+                    Metrics.MaxAllyFrontlineAttackingCount,
+                    allyAttackingCount);
             }
 
             public void Complete()
@@ -1460,6 +1645,19 @@ namespace DimensionBrawl.Tests
             public float ContestedFrontlineSeconds { get; set; }
             public float AllyOnlyFrontlineSeconds { get; set; }
             public string FrontlinePresenceReadout { get; set; } = "pressure x1.00 open";
+            public int EnemyFrontlineClashes { get; set; }
+            public int EnemyFrontlineBodyHits { get; set; }
+            public int EnemyFrontlineSummonHits { get; set; }
+            public float EnemyFrontlineClashDamage { get; set; }
+            public float EnemyFrontlineBodyDamage { get; set; }
+            public int MaxEnemyFrontlineEngagedCount { get; set; }
+            public int MaxEnemyFrontlineAttackingCount { get; set; }
+            public int AllyFrontlineClashes { get; set; }
+            public int AllyFrontlineBodyHits { get; set; }
+            public int AllyFrontlineSummonHits { get; set; }
+            public float AllyFrontlineClashDamage { get; set; }
+            public int MaxAllyFrontlineEngagedCount { get; set; }
+            public int MaxAllyFrontlineAttackingCount { get; set; }
             public float RouteStability01 { get; set; }
             public float MinRouteStability01 { get; set; } = 1f;
             public string RouteStabilityBand { get; set; } = "Unknown";

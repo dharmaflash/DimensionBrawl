@@ -21,10 +21,10 @@ MonoBehaviour:
     ActorScale: 2.07
     ActorRoleId: EscortProbe
     ActorMaxHealth: 220
-    ActorMoveSpeed: 1.35
+    ActorMoveSpeed: 2.35
     ActorAdvanceDistance: 2.4
     ActorAdvanceSeconds: 1.4
-    ActorEngageRadius: 0.95
+    ActorEngageRadius: 1.25
     ActorAttackDamagePerSecond: 32
     ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 2
@@ -37,10 +37,10 @@ MonoBehaviour:
     ActorScale: 2.52
     ActorRoleId: PressureScreen
     ActorMaxHealth: 320
-    ActorMoveSpeed: 1.42
+    ActorMoveSpeed: 2.15
     ActorAdvanceDistance: 3.8
     ActorAdvanceSeconds: 1.85
-    ActorEngageRadius: 1.05
+    ActorEngageRadius: 1.35
     ActorAttackDamagePerSecond: 44
     ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 4
@@ -53,10 +53,10 @@ MonoBehaviour:
     ActorScale: 3.06
     ActorRoleId: ClampGuard
     ActorMaxHealth: 460
-    ActorMoveSpeed: 1.48
+    ActorMoveSpeed: 1.95
     ActorAdvanceDistance: 5.2
     ActorAdvanceSeconds: 2.35
-    ActorEngageRadius: 1.18
+    ActorEngageRadius: 1.5
     ActorAttackDamagePerSecond: 58
     ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 7

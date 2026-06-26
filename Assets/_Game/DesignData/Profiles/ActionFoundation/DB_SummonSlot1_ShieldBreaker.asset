@@ -24,7 +24,7 @@ MonoBehaviour:
     TargetHeight: 1.35
     CueScale: 0.46
     CueLifetimeSeconds: 0.36
-    ActorLifetimeSeconds: 0
+    ActorLifetimeSeconds: 4.4
     ActorScale: 2.025
     ActorRoleId: ShieldBreaker
     ActorMaxHealth: 230
@@ -52,7 +52,7 @@ MonoBehaviour:
     TargetHeight: 1.35
     CueScale: 0.51
     CueLifetimeSeconds: 0.36
-    ActorLifetimeSeconds: 0
+    ActorLifetimeSeconds: 5.2
     ActorScale: 2.43
     ActorRoleId: ShieldBreaker
     ActorMaxHealth: 300
@@ -80,7 +80,7 @@ MonoBehaviour:
     TargetHeight: 1.35
     CueScale: 0.56
     CueLifetimeSeconds: 0.36
-    ActorLifetimeSeconds: 0
+    ActorLifetimeSeconds: 6.2
     ActorScale: 2.88
     ActorRoleId: ShieldBreaker
     ActorMaxHealth: 380
@@ -109,7 +109,7 @@ MonoBehaviour:
     StageRole: Mid-tier exchange that starts converting a successful block into forward
       damage.
     PlayerUse: Hold forward-risk long enough for LV2 when the barrage is readable.
-    SummonRead: Wider screen, four-shot block budget, two assist bolts, and a persistent
+    SummonRead: Wider screen, four-shot block budget, two assist bolts, and a timed
       frontline push.
   - TierLabel: LV3 Break Window
     StageRole: High-risk payoff that should visibly win the pressure exchange and

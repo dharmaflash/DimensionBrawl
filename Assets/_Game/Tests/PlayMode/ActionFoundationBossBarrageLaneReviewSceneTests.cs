@@ -1090,7 +1090,7 @@ namespace DimensionBrawl.Tests
                 "LV2 Frontline Push",
                 "Mid-tier exchange that starts converting a successful block into forward damage.",
                 "Hold forward-risk long enough for LV2 when the barrage is readable.",
-                "Wider screen, four-shot block budget, two assist bolts, and a persistent frontline push.");
+                "Wider screen, four-shot block budget, two assist bolts, and a timed frontline push.");
             AssertSummonSlotReadout(
                 summonSlot1Profile,
                 3,

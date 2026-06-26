@@ -93,7 +93,7 @@ namespace DimensionBrawl.Tests
             StringAssert.Contains("repressure", duelOwner.ProgressLine);
             StringAssert.Contains("loopCycle", duelOwner.ProgressLine);
             StringAssert.Contains("Loop", reviewHud.FrontlineLoopReadout);
-            StringAssert.Contains("frontline", reviewHud.FrontlineLoopReadout);
+            StringAssert.Contains("pressure", reviewHud.FrontlineLoopReadout);
             StringAssert.Contains("player", reviewHud.FrontlineLoopReadout);
             StringAssert.Contains("boss", reviewHud.FrontlineLoopReadout);
             StringAssert.Contains("Tune", reviewHud.FrontlineTuningReadout);
@@ -523,10 +523,10 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(3, slot3Tiers.Length);
             float[] slot2ExpectedHealth = { 160f, 190f, 225f };
             float[] slot2ExpectedMoveSpeed = { 1.35f, 1.42f, 1.5f };
-            float[] slot2ExpectedDps = { 20f, 24f, 28f };
+            float[] slot2ExpectedDps = { 30f, 44f, 58f };
             float[] slot3ExpectedHealth = { 360f, 430f, 520f };
             float[] slot3ExpectedMoveSpeed = { 1.15f, 1.2f, 1.25f };
-            float[] slot3ExpectedDps = { 24f, 32f, 42f };
+            float[] slot3ExpectedDps = { 32f, 46f, 62f };
             int[] slot3ExpectedScreens = { 2, 4, 7 };
             for (int i = 0; i < slot2Tiers.Length; i++)
             {
@@ -577,7 +577,7 @@ namespace DimensionBrawl.Tests
             BossSummonPressureAction.BossSummonTierSettings[] tiers = profile.CopyTierSettings();
             string[] expectedRoles = { "EscortProbe", "PressureScreen", "ClampGuard" };
             float[] expectedHealth = { 220f, 320f, 460f };
-            float[] expectedMoveSpeed = { 1.35f, 1.42f, 1.48f };
+            float[] expectedMoveSpeed = { 2.35f, 2.15f, 1.95f };
             float[] expectedDps = { 32f, 44f, 58f };
             int[] expectedScreens = { 2, 4, 7 };
 
@@ -592,8 +592,8 @@ namespace DimensionBrawl.Tests
                 Assert.AreEqual(expectedScreens[i], tiers[i].ScreenIntercepts);
                 Assert.LessOrEqual(
                     tiers[i].ActorMoveSpeed,
-                    1.5f,
-                    "Boss pressure summons should walk into the player side instead of snapping like a projectile.");
+                    2.4f,
+                    "Boss pressure summons should rush into the player side while staying slower than a projectile snap.");
 
                 if (i == 0)
                 {
