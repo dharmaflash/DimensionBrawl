@@ -1,4 +1,5 @@
 using DimensionBrawl.UI;
+using DimensionBrawl.Player;
 using NUnit.Framework;
 using UnityEngine;
 
@@ -54,6 +55,9 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(harness.Presenter.Visible);
                 Assert.AreEqual(3, harness.Presenter.LastTargetCount);
                 Assert.AreEqual("Hud.SignalOrbGroup.TopThree", harness.Presenter.LastProxyHudObject);
+                Assert.AreEqual("combat-signal-orb-ping", harness.Presenter.LastCueProfileId);
+                Assert.AreEqual("3-PING", harness.Presenter.LastPromptLabel);
+                Assert.Greater(harness.Presenter.LastAccentColor.a, 0.8f);
 
                 Assert.IsFalse(harness.Runner.TryAcceptInput(ProxyCombatHudInputEvent.Dodge()));
                 Assert.AreEqual(ProxyCombatHudInputKind.DodgePressed, harness.Runner.LastRejectedInput.Kind);
@@ -102,6 +106,35 @@ namespace DimensionBrawl.Tests
 
                 Assert.IsFalse(harness.Runner.IsRunning);
                 Assert.AreEqual(ProxyCombatHudCompletionKind.ReadAcknowledged, harness.Runner.LastCompletionReason);
+            }
+            finally
+            {
+                Object.DestroyImmediate(harness.Root);
+            }
+        }
+
+        [Test]
+        public void PresenterResolvesSubcultureGuideCuesFromPgrMappings()
+        {
+            ProxyTutorialHarness harness = CreateHarness("VisualCueRunner");
+            try
+            {
+                Assert.IsTrue(harness.Runner.BeginMapping("character_switch_slot_1", "Call in the support QTE."));
+
+                Assert.IsTrue(harness.Presenter.Visible);
+                Assert.IsTrue(harness.Presenter.LastTextOnlyFallback);
+                Assert.AreEqual("combat-character-switch-qte", harness.Presenter.LastCueProfileId);
+                Assert.AreEqual("QTE READY", harness.Presenter.LastPromptLabel);
+                Assert.Greater(harness.Presenter.LastAccentColor.a, 0.8f);
+
+                Assert.IsTrue(harness.Runner.BeginMapping(
+                    "boss_poise_endure_bar",
+                    "Watch the boss poise bar.",
+                    durationSeconds: 0.5f));
+
+                Assert.AreEqual("combat-boss-hp-poise-rage", harness.Presenter.LastCueProfileId);
+                Assert.AreEqual("READ", harness.Presenter.LastPromptLabel);
+                Assert.IsTrue(harness.Presenter.LastTextOnlyFallback);
             }
             finally
             {
@@ -164,6 +197,84 @@ namespace DimensionBrawl.Tests
 
                 Assert.IsFalse(harness.Runner.IsRunning);
                 Assert.AreEqual(ProxyCombatHudCompletionKind.BasicAttackAccepted, harness.Runner.LastCompletionReason);
+            }
+            finally
+            {
+                Object.DestroyImmediate(harness.Root);
+            }
+        }
+
+        [Test]
+        public void InputBridgeRouterDefaultsTranslateSummonButtonsToLocalQteGrammar()
+        {
+            ProxyTutorialHarness harness = CreateHarness("SummonInputBridgeRunner");
+            try
+            {
+                ProxyCombatHudInputBridgeRouter router = harness.Root.AddComponent<ProxyCombatHudInputBridgeRouter>();
+                router.Configure(harness.Runner, null);
+
+                Assert.IsTrue(router.TryResolveInputEvent(
+                    CombatHudActionId.SummonSlot1,
+                    out ProxyCombatHudInputEvent primarySummonEvent));
+                Assert.AreEqual(ProxyCombatHudInputKind.PartnerSkillPressed, primarySummonEvent.Kind);
+
+                Assert.IsTrue(router.TryResolveInputEvent(
+                    CombatHudActionId.SummonSlot2,
+                    out ProxyCombatHudInputEvent slot2Event));
+                Assert.AreEqual(ProxyCombatHudInputKind.SwitchOrQtePressed, slot2Event.Kind);
+                Assert.AreEqual(1, slot2Event.PrimaryIndex);
+
+                Assert.IsTrue(router.TryResolveInputEvent(
+                    CombatHudActionId.SummonSlot3,
+                    out ProxyCombatHudInputEvent slot3Event));
+                Assert.AreEqual(ProxyCombatHudInputKind.SwitchOrQtePressed, slot3Event.Kind);
+                Assert.AreEqual(2, slot3Event.PrimaryIndex);
+            }
+            finally
+            {
+                Object.DestroyImmediate(harness.Root);
+            }
+        }
+
+        [Test]
+        public void SummonQteObserverBridgeCompletesPortraitQteAndPartnerSkillSteps()
+        {
+            ProxyTutorialHarness harness = CreateHarness("SummonQteObserverRunner");
+            try
+            {
+                PlayerSummonSlot1Action summonSlot1Action = harness.Root.AddComponent<PlayerSummonSlot1Action>();
+                PlayerSupportSummonSlotAction summonSlot2Action = harness.Root.AddComponent<PlayerSupportSummonSlotAction>();
+                PlayerSupportSummonSlotAction summonSlot3Action = harness.Root.AddComponent<PlayerSupportSummonSlotAction>();
+                ProxyCombatHudSummonQteObserverBridge bridge =
+                    harness.Root.AddComponent<ProxyCombatHudSummonQteObserverBridge>();
+                bridge.Configure(
+                    harness.Observer,
+                    summonSlot1Action,
+                    summonSlot2Action,
+                    summonSlot3Action);
+
+                Assert.IsTrue(harness.Runner.BeginMapping("character_switch_slot_1", "Call the first support QTE."));
+
+                bridge.NotifySupportSummonUsed(summonSlot3Action, 1);
+                Assert.IsTrue(harness.Runner.IsRunning);
+
+                bridge.NotifySupportSummonUsed(summonSlot2Action, 2);
+
+                Assert.IsFalse(harness.Runner.IsRunning);
+                Assert.AreEqual("character_switch_slot_1", harness.Runner.LastCompletedMappingId);
+                Assert.AreEqual(ProxyCombatHudCompletionKind.CharacterSwitchOrQteAccepted, harness.Runner.LastCompletionReason);
+                Assert.AreEqual(1, bridge.LastCompletionIndex);
+                Assert.AreEqual(2, bridge.LastReportedTier);
+
+                Assert.IsTrue(harness.Runner.BeginMapping("partner_skill_button", "Call primary support."));
+
+                bridge.NotifyPrimarySummonUsed(3);
+
+                Assert.IsFalse(harness.Runner.IsRunning);
+                Assert.AreEqual("partner_skill_button", harness.Runner.LastCompletedMappingId);
+                Assert.AreEqual(ProxyCombatHudCompletionKind.PartnerSkillAccepted, harness.Runner.LastCompletionReason);
+                Assert.AreEqual(ProxyCombatHudCompletionKind.PartnerSkillAccepted, bridge.LastCompletionKind);
+                Assert.AreEqual(3, bridge.LastReportedTier);
             }
             finally
             {

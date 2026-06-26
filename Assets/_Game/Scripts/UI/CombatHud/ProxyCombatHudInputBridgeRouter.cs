@@ -31,7 +31,10 @@ namespace DimensionBrawl.UI
             new ActionBinding(CombatHudActionId.BasicAttack, ProxyCombatHudInputEvent.BasicAttack()),
             new ActionBinding(CombatHudActionId.Dodge, ProxyCombatHudInputEvent.Dodge()),
             new ActionBinding(CombatHudActionId.Skill1, ProxyCombatHudInputEvent.SignatureSkill()),
-            new ActionBinding(CombatHudActionId.Ultimate, ProxyCombatHudInputEvent.SignatureSkill())
+            new ActionBinding(CombatHudActionId.Ultimate, ProxyCombatHudInputEvent.SignatureSkill()),
+            new ActionBinding(CombatHudActionId.SummonSlot1, ProxyCombatHudInputEvent.PartnerSkill()),
+            new ActionBinding(CombatHudActionId.SummonSlot2, ProxyCombatHudInputEvent.SwitchOrQte(1)),
+            new ActionBinding(CombatHudActionId.SummonSlot3, ProxyCombatHudInputEvent.SwitchOrQte(2))
         };
 
         public ProxyCombatHudTutorialRunner TutorialRunner => tutorialRunner;
