@@ -50,6 +50,7 @@ namespace DimensionBrawl.Tests
             ForwardRiskBarrageProbe,
             BacklinePhysicalBarrageProbe,
             ForwardRiskPhysicalBarrageProbe,
+            ForwardRiskPhysicalSummonBlockProbe,
             IntendedRoute,
             IntendedDelayedFollowup,
             LateSummon,
@@ -79,6 +80,7 @@ namespace DimensionBrawl.Tests
                     PolicyKind.ForwardRiskBarrageProbe,
                     PolicyKind.BacklinePhysicalBarrageProbe,
                     PolicyKind.ForwardRiskPhysicalBarrageProbe,
+                    PolicyKind.ForwardRiskPhysicalSummonBlockProbe,
                     PolicyKind.IntendedRoute,
                     PolicyKind.IntendedDelayedFollowup,
                     PolicyKind.LateSummon,
@@ -114,6 +116,9 @@ namespace DimensionBrawl.Tests
                 PolicyMetrics forwardRiskPhysicalBarrage = RequireResult(
                     results,
                     PolicyKind.ForwardRiskPhysicalBarrageProbe);
+                PolicyMetrics forwardRiskPhysicalSummonBlock = RequireResult(
+                    results,
+                    PolicyKind.ForwardRiskPhysicalSummonBlockProbe);
                 PolicyMetrics counterRecovery = RequireResult(results, PolicyKind.MissedFollowupCounterRecovery);
                 PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
                 PolicyMetrics ignoredRecovery = RequireResult(results, PolicyKind.BossScreenIgnoredNoRecovery);
@@ -206,6 +211,26 @@ namespace DimensionBrawl.Tests
                     forwardRiskPhysicalBarrage.PhysicalBarragePlayerDamage,
                     backlinePhysicalBarrage.PhysicalBarragePlayerDamage,
                     "Forward-risk barrage pressure should carry a larger physical HP cost than backline safety.");
+                Assert.Greater(
+                    forwardRiskPhysicalSummonBlock.SummonBlocks,
+                    0,
+                    "A physical summon-block probe should intercept real incoming boss projectiles.");
+                Assert.Less(
+                    forwardRiskPhysicalSummonBlock.PhysicalBarragePlayerHits,
+                    forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits,
+                    "A physical summon answer should reduce the forward-risk projectile hit count.");
+                Assert.Less(
+                    forwardRiskPhysicalSummonBlock.PhysicalBarragePlayerDamage,
+                    forwardRiskPhysicalBarrage.PhysicalBarragePlayerDamage,
+                    "A physical summon answer should reduce the forward-risk HP cost.");
+                Assert.GreaterOrEqual(
+                    forwardRiskPhysicalSummonBlock.FirstFollowupWindowAtSeconds,
+                    0f,
+                    "A physical summon block should open the follow-up window through the runtime intercept path.");
+                Assert.LessOrEqual(
+                    forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds,
+                    0.35f,
+                    "A physical summon block should still unlock the follow-up window as one combat beat.");
                 Assert.GreaterOrEqual(
                     noSummon.Top3PressureWindowShare01,
                     noSummon.PeakPressureWindowShare01,
@@ -563,6 +588,9 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.ForwardRiskPhysicalBarrageProbe:
                     yield return RunPhysicalBarrageProbe(context, ForwardEnergyProbeForwardRisk01);
                     break;
+                case PolicyKind.ForwardRiskPhysicalSummonBlockProbe:
+                    yield return RunPhysicalSummonBlockProbe(context, ForwardEnergyProbeForwardRisk01);
+                    break;
                 case PolicyKind.IntendedRoute:
                     yield return RunIntendedRoute(context);
                     break;
@@ -654,6 +682,40 @@ namespace DimensionBrawl.Tests
             MovePlayerToForwardRisk(context, forwardRisk01);
             context.Metrics.PhysicalBarrageProbeTargetForwardRisk01 = Mathf.Clamp01(forwardRisk01);
             context.Sample();
+            yield return ApplyPhysicalBossBarrage(context, PhysicalBarrageProbeFlightSeconds);
+        }
+
+        private static IEnumerator RunPhysicalSummonBlockProbe(
+            CombatPolicyContext context,
+            float forwardRisk01)
+        {
+            BossBarragePatternProfile physicalPattern = context.BossEmitter.CurrentPattern;
+            context.BossEmitter.SetFiringEnabled(false);
+            DeactivateActiveBossProjectiles();
+            yield return DefeatCloseThreatWithBasicFire(context);
+            MovePlayerToForwardRisk(context, forwardRisk01);
+            context.Metrics.PhysicalBarrageProbeTargetForwardRisk01 = Mathf.Clamp01(forwardRisk01);
+            context.Sample();
+            yield return ChargeEnergyToTier(context, 1, EnergyProbeMaxSeconds);
+
+            if (!context.SummonSlot1Action.TryUseSummonSlot1())
+            {
+                context.Metrics.Notes.Add($"physical summon blocked: {context.SummonSlot1Action.LastUseBlockedReason}");
+                yield break;
+            }
+
+            RecordSummonUse(context, false);
+            context.PocketOwner.Tick(0f);
+            context.Sample();
+            yield return Advance(context, 0.2f);
+            DeactivateActiveBossProjectiles();
+            context.BossEmitter.SetFiringEnabled(false);
+            context.BossEmitter.SetFiringEnabled(true);
+            if (!context.BossEmitter.QueuePriorityPattern(physicalPattern, 1))
+            {
+                context.Metrics.Notes.Add("physical summon block priority barrage unavailable");
+            }
+
             yield return ApplyPhysicalBossBarrage(context, PhysicalBarrageProbeFlightSeconds);
         }
 
@@ -1677,6 +1739,9 @@ namespace DimensionBrawl.Tests
             PolicyMetrics forwardRiskPhysicalBarrage = RequireResult(
                 results,
                 PolicyKind.ForwardRiskPhysicalBarrageProbe);
+            PolicyMetrics forwardRiskPhysicalSummonBlock = RequireResult(
+                results,
+                PolicyKind.ForwardRiskPhysicalSummonBlockProbe);
             PolicyMetrics late = RequireResult(results, PolicyKind.LateSummon);
             PolicyMetrics counterRecovery = RequireResult(results, PolicyKind.MissedFollowupCounterRecovery);
             PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
@@ -1699,6 +1764,7 @@ namespace DimensionBrawl.Tests
 
             builder.AppendLine($"- Route stability split: no-action {FormatPercent01(noSummon.RouteStability01)} final / {FormatPercent01(noSummon.MinRouteStability01)} min, gun-only {FormatPercent01(gunOnly.RouteStability01)} / {FormatPercent01(gunOnly.MinRouteStability01)}, intended {FormatPercent01(intended.RouteStability01)} / {FormatPercent01(intended.MinRouteStability01)}.");
             builder.AppendLine($"- Forward-risk physical barrage: backline hits {backlinePhysicalBarrage.PhysicalBarragePlayerHits}/{backlinePhysicalBarrage.PhysicalBarrageTrackedProjectileCount}, damage {backlinePhysicalBarrage.PhysicalBarragePlayerDamage:0.0}; forward hits {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}, damage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerDamage:0.0}.");
+            builder.AppendLine($"- Forward-risk physical summon block: blocks {forwardRiskPhysicalSummonBlock.SummonBlocks}, player hits {forwardRiskPhysicalSummonBlock.PhysicalBarragePlayerHits}/{forwardRiskPhysicalSummonBlock.PhysicalBarrageTrackedProjectileCount}, damage {forwardRiskPhysicalSummonBlock.PhysicalBarragePlayerDamage:0.0}, block->window {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)}.");
             builder.AppendLine($"- Unanswered hit penalty split: no-action {FormatPercent01(noSummon.TotalUnansweredBossHitRoutePenalty01)} x{noSummon.UnansweredBossHitRoutePenaltyCount}, gun-only {FormatPercent01(gunOnly.TotalUnansweredBossHitRoutePenalty01)} x{gunOnly.UnansweredBossHitRoutePenaltyCount}, late {FormatPercent01(late.TotalUnansweredBossHitRoutePenalty01)} x{late.UnansweredBossHitRoutePenaltyCount}.");
             builder.AppendLine($"- Frontline exposure split: no-action enemy-only {FormatSeconds(noSummon.EnemyOnlyFrontlineSeconds)}, gun-only enemy-only {FormatSeconds(gunOnly.EnemyOnlyFrontlineSeconds)}, intended ally-only {FormatSeconds(intended.AllyOnlyFrontlineSeconds)} / contested {FormatSeconds(intended.ContestedFrontlineSeconds)}.");
             builder.AppendLine($"- ArkData effective pressure shape: no-action peak/top3 {FormatPercent01(noSummon.PeakPressureWindowShare01)}/{FormatPercent01(noSummon.Top3PressureWindowShare01)}, intended {FormatPercent01(intended.PeakPressureWindowShare01)}/{FormatPercent01(intended.Top3PressureWindowShare01)} with relief {FormatSeconds(intended.TimeToNextReliefWindowSeconds)}, ignored boss-screen unanswered burden {FormatPercent01(ignoredRecovery.UnansweredPressureBurdenShare01)} versus intended {FormatPercent01(intended.UnansweredPressureBurdenShare01)}.");
