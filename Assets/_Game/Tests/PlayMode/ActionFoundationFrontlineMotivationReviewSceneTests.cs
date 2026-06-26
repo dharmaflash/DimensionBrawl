@@ -456,6 +456,43 @@ namespace DimensionBrawl.Tests
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter_answer:pending(holding_50%)"));
             Assert.AreEqual(counterAnswerCueCountBeforeAlly, screenCuePresenter.CounterWaveAnswerCueRequestCount);
 
+            float stabilityAfterInterruptedHalfHold = pocketOwner.RouteStability01;
+            DeactivateActiveFrontlineProxies(DamageTeam.AllySummon);
+            pocketOwner.Tick(0f);
+
+            Assert.AreEqual(0, pocketOwner.ActiveAllyFrontlineProxyCount);
+            Assert.IsTrue(pocketOwner.WasCounterWaveAllyHoldInterrupted);
+            Assert.IsFalse(pocketOwner.IsCounterWaveStabilized);
+            Assert.IsFalse(pocketOwner.IsCounterWaveFinalWindowOpened);
+            Assert.AreEqual("pending", pocketOwner.CounterWaveAnswerState);
+            Assert.AreEqual("interrupted", pocketOwner.CounterWaveAnswerReadout);
+            Assert.AreEqual(0f, pocketOwner.CounterWaveAllyHoldElapsedSeconds, 0.001f);
+            Assert.AreEqual(0f, pocketOwner.CounterWaveAllyHoldProgress01, 0.001f);
+            Assert.AreEqual(stageProfile.CounterWaveAllyHoldSeconds, pocketOwner.CounterWaveAllyHoldRemainingSeconds, 0.001f);
+            Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("counter_answer:pending(interrupted)"));
+            Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("decision:recovery_needed(answer_counter)"));
+            Assert.AreEqual(counterAnswerCueCountBeforeAlly, screenCuePresenter.CounterWaveAnswerCueRequestCount);
+            Assert.AreEqual(counterStabilizedVfxCueCountBeforeAlly, pocketVfxCueBridge.CounterWaveStabilizedCueRequestCount);
+            Assert.AreEqual(counterStabilizedCameraCueCountBeforeAlly, cameraCueDriver.CounterWaveStabilizedCueRequestCount);
+
+            TickEnergyToTier(energyLadder, 1, 0.25f);
+            Assert.IsTrue(
+                summonSlot1Action.TryUseSummonSlot1(),
+                "Interrupted counter recovery should require a fresh SummonSlot1 frontline hold.");
+            pocketOwner.Tick(0f);
+
+            Assert.Greater(pocketOwner.ActiveAllyFrontlineProxyCount, 0);
+            Assert.IsFalse(pocketOwner.WasCounterWaveAllyHoldInterrupted);
+            Assert.AreEqual("holding_0%", pocketOwner.CounterWaveAnswerReadout);
+
+            pocketOwner.Tick(stageProfile.CounterWaveAllyHoldSeconds * 0.5f);
+
+            Assert.IsFalse(pocketOwner.IsCounterWaveStabilized);
+            Assert.AreEqual("holding_50%", pocketOwner.CounterWaveAnswerReadout);
+            Assert.That(pocketOwner.CounterWaveAllyHoldProgress01, Is.InRange(0.49f, 0.51f));
+            Assert.Less(pocketOwner.RouteStability01, stabilityAfterInterruptedHalfHold);
+            Assert.AreEqual(counterAnswerCueCountBeforeAlly, screenCuePresenter.CounterWaveAnswerCueRequestCount);
+
             float stabilityBeforeHoldComplete = pocketOwner.RouteStability01;
             pocketOwner.Tick(stageProfile.CounterWaveAllyHoldSeconds * 0.5f + 0.01f);
 
@@ -532,7 +569,7 @@ namespace DimensionBrawl.Tests
             Assert.That(overlayHud.ResultNextObjectiveReadout, Does.Contain("earlier"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Counter recovery"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("Record B: Counter recovery"));
-            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("stability 56%"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("stability 54%"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("followup:recorded"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("counter_window:opened(final_followup)"));
             Assert.That(reviewHud.RouteRecordReadout, Does.Contain("decision:recovery_clear(counter_recovery)"));

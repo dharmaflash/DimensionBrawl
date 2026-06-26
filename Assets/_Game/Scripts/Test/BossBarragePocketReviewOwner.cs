@@ -144,6 +144,7 @@ namespace DimensionBrawl.Test
         private float lastCounterWaveFinalWindowDuration;
         private float lastCounterWaveFinalWindowRouteScale = 1f;
         private float counterWaveAllyHoldTimer;
+        private bool counterWaveAllyHoldInterrupted;
         private int bossPressureSummonReleasesAtReset;
         private int announcedStageBeatIndex;
         private RouteStabilityBand announcedRouteStabilityBand;
@@ -193,6 +194,7 @@ namespace DimensionBrawl.Test
         public float CounterWaveAllyHoldRemainingSeconds => counterWaveObserved && !counterWaveStabilized
             ? Mathf.Max(0f, CounterWaveAllyHoldRequiredSeconds - CounterWaveAllyHoldElapsedSeconds)
             : 0f;
+        public bool WasCounterWaveAllyHoldInterrupted => counterWaveAllyHoldInterrupted;
         public float CounterWaveAllyHoldProgress01
         {
             get
@@ -456,6 +458,7 @@ namespace DimensionBrawl.Test
             lastCounterWaveFinalWindowDuration = 0f;
             lastCounterWaveFinalWindowRouteScale = 1f;
             counterWaveAllyHoldTimer = 0f;
+            counterWaveAllyHoldInterrupted = false;
             bossPressureSummonReleasesAtReset = GetBossPressureSummonReleaseCount();
             highestSkillTier = 0;
             highestSummonTier = 0;
@@ -781,6 +784,7 @@ namespace DimensionBrawl.Test
             if (!wasObserved)
             {
                 counterWaveAllyHoldTimer = 0f;
+                counterWaveAllyHoldInterrupted = false;
                 ApplyCounterWaveEntryRoutePenalty();
                 CounterWaveObserved?.Invoke(counterWaveSource);
             }
@@ -801,10 +805,16 @@ namespace DimensionBrawl.Test
 
             if (ActiveAllyFrontlineProxyCount <= 0)
             {
+                if (counterWaveAllyHoldTimer > 0f)
+                {
+                    counterWaveAllyHoldInterrupted = true;
+                }
+
                 counterWaveAllyHoldTimer = 0f;
                 return;
             }
 
+            counterWaveAllyHoldInterrupted = false;
             float requiredSeconds = ResolveCounterWaveAllyHoldSeconds();
             if (requiredSeconds > 0f)
             {
@@ -1459,6 +1469,11 @@ namespace DimensionBrawl.Test
 
             if (IsCounterWaveCompletionRecorded)
             {
+                if (counterWaveAllyHoldInterrupted)
+                {
+                    return "interrupted";
+                }
+
                 return ActiveAllyFrontlineProxyCount > 0
                     ? $"holding_{CounterWaveAllyHoldProgress01 * 100f:0}%"
                     : "awaiting";
