@@ -748,8 +748,10 @@ namespace DimensionBrawl.Test
 
         private void OnBossDamaged(DamageInfo damageInfo)
         {
+            bool acceptsFollowupDamage = pressurePacing.IsSummonFollowupWindowActive
+                || (skill1FollowupHitConfirmed && skill1FollowupClearTimer > 0f);
             if (state != PocketState.Running
-                || !pressurePacing.IsSummonFollowupWindowActive
+                || !acceptsFollowupDamage
                 || damageInfo.SourceTeam != DamageTeam.Player
                 || GetSkillUseCount() <= skillUsesAtSummonBreakStart)
             {
@@ -1596,17 +1598,20 @@ namespace DimensionBrawl.Test
 
         private float ResolveSummonFollowupEnergyPulse(int tier)
         {
+            float stagePulseOverride = stageProfile != null ? stageProfile.CleanFollowupEnergyPulseOverride : 0f;
             if (summonPressureBlockOpportunity != null)
             {
-                return summonPressureBlockOpportunity.ResolveFollowupEnergyPulse(tier);
+                float opportunityPulse = summonPressureBlockOpportunity.ResolveFollowupEnergyPulse(tier);
+                return stagePulseOverride > 0f ? Mathf.Max(opportunityPulse, stagePulseOverride) : opportunityPulse;
             }
 
-            return tier switch
+            float defaultPulse = tier switch
             {
                 3 => summonFollowupEnergyPulseTierThree,
                 2 => summonFollowupEnergyPulseTierTwo,
                 _ => summonFollowupEnergyPulse
             };
+            return stagePulseOverride > 0f ? Mathf.Max(defaultPulse, stagePulseOverride) : defaultPulse;
         }
 
         private int ResolveCompletedObjectiveStepCount()

@@ -39,6 +39,7 @@ MonoBehaviour:
   counterWaveAllyHoldSeconds: 0.45
   unstableCounterWaveFinalWindowScale: 0.85
   criticalCounterWaveFinalWindowScale: 0.65
+  cleanFollowupEnergyPulseOverride: 205
   objectiveStepCount: 3
   stepPrefix: Survive
   preThreatChargeCue: Keep HP safe, build EN, then stop the close probe

@@ -87,6 +87,7 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField, Min(0f)] private float counterWaveAllyHoldSeconds = 0.45f;
         [SerializeField, Range(0.1f, 1f)] private float unstableCounterWaveFinalWindowScale = 0.85f;
         [SerializeField, Range(0.1f, 1f)] private float criticalCounterWaveFinalWindowScale = 0.65f;
+        [SerializeField, Min(0f)] private float cleanFollowupEnergyPulseOverride;
 
         [Header("Objective Copy")]
         [SerializeField, Min(1)] private int objectiveStepCount = 3;
@@ -170,6 +171,7 @@ namespace DimensionBrawl.LevelDesign
         public float CounterWaveAllyHoldSeconds => Mathf.Max(0f, counterWaveAllyHoldSeconds);
         public float UnstableCounterWaveFinalWindowScale => Mathf.Clamp(unstableCounterWaveFinalWindowScale, 0.1f, 1f);
         public float CriticalCounterWaveFinalWindowScale => Mathf.Clamp(criticalCounterWaveFinalWindowScale, 0.1f, 1f);
+        public float CleanFollowupEnergyPulseOverride => Mathf.Max(0f, cleanFollowupEnergyPulseOverride);
         public int ObjectiveStepCount => Mathf.Max(1, objectiveStepCount);
         public string StepPrefix => string.IsNullOrWhiteSpace(stepPrefix) ? "Survive" : stepPrefix;
         public string PreThreatChargeCue => preThreatChargeCue;

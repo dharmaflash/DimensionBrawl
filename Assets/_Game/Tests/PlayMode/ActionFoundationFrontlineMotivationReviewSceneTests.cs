@@ -93,6 +93,7 @@ namespace DimensionBrawl.Tests
             Assert.Greater(stageProfile.CounterWaveStabilizeRouteBonus01, 0f);
             Assert.That(stageProfile.CounterWaveAllyHoldSeconds, Is.InRange(0.25f, 0.75f));
             Assert.That(stageProfile.UnansweredBossHitRoutePenalty01, Is.InRange(0.04f, 0.12f));
+            Assert.That(stageProfile.CleanFollowupEnergyPulseOverride, Is.InRange(200f, 240f));
             Assert.Greater(stageProfile.CounterWaveEntryRoutePenalty01, 0f);
             Assert.Greater(
                 stageProfile.CounterWaveStabilizeRouteBonus01,
@@ -1019,6 +1020,9 @@ namespace DimensionBrawl.Tests
             EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
             yield return null;
 
+            FrontlineWaveStageProfile stageProfile =
+                AssetDatabase.LoadAssetAtPath<FrontlineWaveStageProfile>(StageProfilePath);
+            Assert.NotNull(stageProfile);
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             PlayerCombatModeController combatModeController =
                 RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
@@ -1125,13 +1129,22 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(1f, screenCuePresenter.LastFollowupWindowRouteScale, 0.001f);
             Assert.AreEqual("Followup.Window", screenCuePresenter.LastCueId);
             Assert.IsTrue(energyLadder.CanSpend);
+            Assert.AreEqual(
+                stageProfile.CleanFollowupEnergyPulseOverride,
+                pocketOwner.SummonFollowupEnergyPulse,
+                0.001f);
+            Assert.AreEqual(2, energyLadder.AvailableTier);
 
             targetSelector.NotifyTargetContact(bossHealth);
             targetSelector.RefreshTarget();
             Assert.IsTrue(skill1Action.TryUseSkill1());
-            LaneActionProjectile followupProjectile = RequireActivePlayerSkillProjectile();
-            Assert.IsTrue(followupProjectile.TryApplyImpact(bossHitCollider, followupProjectile.transform.position));
+            Assert.AreEqual(2, skill1Action.LastSpentTier);
+            Assert.AreEqual(2, skill1Action.LastFiredProjectileCount);
+            Assert.AreEqual(2, ApplyActivePlayerSkillProjectiles(bossHitCollider));
             pocketOwner.Tick(0f);
+            Assert.AreEqual(2, pocketOwner.HighestSummonFollowupSkillTier);
+            Assert.AreEqual(2, pocketOwner.HighestSkill1FollowupHitTier);
+            Assert.GreaterOrEqual(pocketOwner.Skill1FollowupDamage, 200f);
 
             int cleanRecordEventCount = 0;
             BossBarragePocketReviewOwner.RouteResultRecord cleanEventRecord = default;
@@ -1378,6 +1391,25 @@ namespace DimensionBrawl.Tests
 
             Assert.Fail("Expected an active Player Skill1 projectile.");
             return null;
+        }
+
+        private static int ApplyActivePlayerSkillProjectiles(Collider hitCollider)
+        {
+            LaneActionProjectile[] projectiles = UnityEngine.Object.FindObjectsByType<LaneActionProjectile>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            int hitCount = 0;
+            for (int i = 0; i < projectiles.Length; i++)
+            {
+                if (projectiles[i].IsActive
+                    && projectiles[i].SourceTeam == DamageTeam.Player
+                    && projectiles[i].TryApplyImpact(hitCollider, projectiles[i].transform.position))
+                {
+                    hitCount++;
+                }
+            }
+
+            return hitCount;
         }
 
         private static LaneActionProjectile RequireActivePlayerRangedProjectile()

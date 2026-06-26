@@ -539,6 +539,7 @@ namespace DimensionBrawl.Tests
             PolicyMetrics late = RequireResult(results, PolicyKind.LateSummon);
             builder.AppendLine($"- Intended route prevented {Mathf.Max(0f, noSummon.PlayerDamageTaken - intended.PlayerDamageTaken):0.0} player damage versus no-action pressure.");
             builder.AppendLine($"- Gun-only dealt {gunOnly.BossDamageTaken:0.0} boss damage but ended as `{gunOnly.ResultKind}` because the route contract still needs summon pressure blocking.");
+            builder.AppendLine($"- Skill1 punish split: gun-only boss damage {gunOnly.BossDamageTaken:0.0}, intended follow-up boss damage {intended.BossDamageTaken:0.0}.");
             builder.AppendLine($"- Late summon ended as `{late.ResultKind}` with {late.PlayerDamageTaken:0.0} damage taken, so the report can compare timing quality without changing the scene.");
             builder.AppendLine($"- Intended route currently reads as `{ResolveRouteShape(intended)}`: follow-up window {FormatSeconds(intended.FirstFollowupWindowAtSeconds)}, counter {FormatSeconds(intended.FirstCounterWaveAtSeconds)}, Skill1 hit {FormatSeconds(intended.FirstFollowupHitAtSeconds)}.");
             builder.AppendLine($"- Route stability split: no-action {FormatPercent01(noSummon.RouteStability01)} final / {FormatPercent01(noSummon.MinRouteStability01)} min, gun-only {FormatPercent01(gunOnly.RouteStability01)} / {FormatPercent01(gunOnly.MinRouteStability01)}, intended {FormatPercent01(intended.RouteStability01)} / {FormatPercent01(intended.MinRouteStability01)}.");
@@ -588,7 +589,8 @@ namespace DimensionBrawl.Tests
                 + $"hit:{FormatSeconds(result.FirstFollowupHitAtSeconds)} "
                 + $"miss:{FormatSeconds(result.FirstFollowupMissAtSeconds)} "
                 + $"windows:{result.FollowupWindowOpenCount} hits:{result.FollowupHitCount} "
-                + $"tier:{result.HighestFollowupHitTier} dmg:{result.FollowupHitDamage:0.0}";
+                + $"tier:{result.HighestFollowupHitTier} "
+                + $"dmg:{Mathf.Max(result.FollowupHitDamage, result.Skill1FollowupDamage):0.0}";
         }
 
         private static string ResolveCounterTiming(PolicyMetrics result)
