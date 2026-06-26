@@ -164,7 +164,8 @@ namespace DimensionBrawl.Combat
                 damageAmount,
                 other.ClosestPoint(transform.position),
                 ResolveHitDirection(otherHealth, otherProxy),
-                0f);
+                0f,
+                ResolveHitReaction(targetKind));
 
             if (otherHealth.TryApplyDamage(damageInfo))
             {
@@ -258,6 +259,13 @@ namespace DimensionBrawl.Combat
             }
 
             return amount;
+        }
+
+        private static DamageHitReaction ResolveHitReaction(SummonFrontlineClashTargetKind targetKind)
+        {
+            return targetKind == SummonFrontlineClashTargetKind.HostileSummon
+                ? DamageHitReaction.SuppressHitAnimation
+                : DamageHitReaction.Default;
         }
 
         private static bool IsPlayerBody(CombatHealth targetHealth)

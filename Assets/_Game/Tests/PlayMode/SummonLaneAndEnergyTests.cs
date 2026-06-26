@@ -895,6 +895,8 @@ namespace DimensionBrawl.Tests
             CombatHealth enemyHealth = enemyObject.AddComponent<CombatHealth>();
             enemyHealth.ConfigureTeam(DamageTeam.Enemy);
             enemyHealth.ResetHealthToFull();
+            DamageInfo? enemyDamageInfo = null;
+            enemyHealth.Damaged += damageInfo => enemyDamageInfo = damageInfo;
             SummonFrontlineProxy enemyProxy = enemyObject.AddComponent<SummonFrontlineProxy>();
             enemyProxy.ConfigureHealth(enemyHealth);
 
@@ -903,6 +905,11 @@ namespace DimensionBrawl.Tests
 
             Assert.IsTrue(allyClash.TryProcessClash(enemyCollider));
             Assert.Less(enemyHealth.CurrentHealth, enemyHealth.MaxHealth);
+            Assert.IsTrue(enemyDamageInfo.HasValue);
+            Assert.AreEqual(
+                DamageHitReaction.SuppressHitAnimation,
+                enemyDamageInfo.Value.HitReaction,
+                "Summon clash damage should explicitly mark that clash/attack feedback handles the contact read.");
             Assert.IsTrue(allyProxy.IsAdvanceHeld);
             Assert.IsTrue(enemyProxy.IsAdvanceHeld);
             Assert.IsTrue(allyClash.IsClashing);
@@ -1006,7 +1013,7 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
-        public void SummonFrontlineProxyPresenterSuppressesHitTriggerForSummonClashDamage()
+        public void SummonFrontlineProxyPresenterHonorsDamageHitReactionPolicy()
         {
             GameObject victimObject = new GameObject("VictimSummonProxy");
             CombatHealth victimHealth = victimObject.AddComponent<CombatHealth>();
@@ -1050,9 +1057,23 @@ namespace DimensionBrawl.Tests
                 0f)));
             Assert.AreEqual(1, presenter.DamageFlashCount);
             Assert.AreEqual(
-                0,
+                1,
                 presenter.AnimatorHitTriggerCount,
-                "Summon-vs-summon clash damage should use clash/attack feedback instead of making both actors spam the same hit reaction.");
+                "A summon source should still trigger the normal hit animation unless the damage explicitly suppresses it.");
+
+            Assert.IsTrue(victimHealth.TryApplyDamage(new DamageInfo(
+                sourceHealth,
+                DamageTeam.Enemy,
+                12f,
+                Vector3.zero,
+                Vector3.back,
+                0f,
+                DamageHitReaction.SuppressHitAnimation)));
+            Assert.AreEqual(2, presenter.DamageFlashCount);
+            Assert.AreEqual(
+                1,
+                presenter.AnimatorHitTriggerCount,
+                "Hit animation suppression should come from DamageInfo policy instead of presenter-side source type checks.");
 
             Object.DestroyImmediate(sourceObject);
             Object.DestroyImmediate(victimObject);

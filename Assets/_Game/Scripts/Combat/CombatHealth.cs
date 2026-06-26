@@ -12,6 +12,12 @@ namespace DimensionBrawl.Combat
         AllySummon = 3
     }
 
+    public enum DamageHitReaction
+    {
+        Default = 0,
+        SuppressHitAnimation = 1
+    }
+
     public static class CombatTeamUtility
     {
         public static bool AreAllied(DamageTeam first, DamageTeam second)
@@ -50,7 +56,8 @@ namespace DimensionBrawl.Combat
             float amount,
             Vector3 point,
             Vector3 direction,
-            float hitStopSeconds)
+            float hitStopSeconds,
+            DamageHitReaction hitReaction = DamageHitReaction.Default)
         {
             Source = source;
             SourceTeam = sourceTeam;
@@ -58,6 +65,7 @@ namespace DimensionBrawl.Combat
             Point = point;
             Direction = direction;
             HitStopSeconds = hitStopSeconds;
+            HitReaction = hitReaction;
         }
 
         public CombatHealth Source { get; }
@@ -66,6 +74,7 @@ namespace DimensionBrawl.Combat
         public Vector3 Point { get; }
         public Vector3 Direction { get; }
         public float HitStopSeconds { get; }
+        public DamageHitReaction HitReaction { get; }
     }
 
     public sealed class DamageModificationContext
@@ -97,7 +106,8 @@ namespace DimensionBrawl.Combat
                 ModifiedAmount,
                 DamageInfo.Point,
                 DamageInfo.Direction,
-                DamageInfo.HitStopSeconds);
+                DamageInfo.HitStopSeconds,
+                DamageInfo.HitReaction);
         }
     }
 
