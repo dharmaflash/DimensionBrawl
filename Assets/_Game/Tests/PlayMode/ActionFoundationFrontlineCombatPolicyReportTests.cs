@@ -10,6 +10,7 @@ using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.Test;
+using DimensionBrawl.UI;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -354,6 +355,9 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("## Summon Slot Readiness/Cooldown Matrix"),
                     "The report should distinguish shared EN cost lockout from per-slot cooldown lockout before UI/coaster polish.");
                 Assert.IsTrue(
+                    markdown.Contains("## Summon HUD Readiness Readout Matrix"),
+                    "The report should prove the review HUD/coaster readout follows shared EN cost and per-slot cooldown gates.");
+                Assert.IsTrue(
                     markdown.Contains("## Enemy Pressure Tactical Cost Matrix"),
                     "The report should prove enemy pressure actors create unattended tactical cost, not timer-only bookkeeping.");
                 Assert.IsTrue(
@@ -370,6 +374,9 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(
                     json.Contains("\"summonSlotReadinessCooldownMatrix\""),
                     "The JSON report should expose summon readiness/cooldown evidence for follow-up batch comparisons.");
+                Assert.IsTrue(
+                    json.Contains("\"summonHudReadinessReadoutMatrix\""),
+                    "The JSON report should expose HUD/coaster readiness readouts for follow-up batch comparisons.");
                 AssertSummonRosterIdentityAudit(results);
                 AssertSupportSummonRouteIdentity(forwardRiskSlot2Marksman, forwardRiskSlot3Vanguard);
                 AssertSharedManaSupportComboBranch(forwardRiskSlot2Combo, forwardRiskSlot3Blocked);
@@ -378,6 +385,11 @@ namespace DimensionBrawl.Tests
                     forwardRiskSlot2DelayedRecovery,
                     forwardRiskSlot3DelayedRecovery);
                 AssertSummonSlotReadinessCooldownMatrix(
+                    forwardRiskSlot2Combo,
+                    forwardRiskSlot3Blocked,
+                    forwardRiskSlot2DelayedRecovery,
+                    forwardRiskSlot3DelayedRecovery);
+                AssertSummonHudReadinessReadoutMatrix(
                     forwardRiskSlot2Combo,
                     forwardRiskSlot3Blocked,
                     forwardRiskSlot2DelayedRecovery,
@@ -2056,6 +2068,7 @@ namespace DimensionBrawl.Tests
             context.Metrics.SupportComboSupportCooldownBeforeSlot1 = supportAction.SlotCooldownRemaining;
             context.Metrics.SupportComboSlot1CooldownBeforeAttempt =
                 context.SummonSlot1Action.SlotCooldownRemaining;
+            RecordSupportComboHudBeforeSlot1(context, supportAction);
             context.Metrics.SupportComboSlot1Attempted = true;
             int slot1ScreensBefore = context.SummonSlot1Action.ActivePressureScreenCount;
             bool slot1Used = context.SummonSlot1Action.TryUseSummonSlot1();
@@ -2251,6 +2264,7 @@ namespace DimensionBrawl.Tests
             context.Metrics.SupportComboSlot1CooldownBeforeAttempt =
                 context.SummonSlot1Action.SlotCooldownRemaining;
             context.Metrics.SupportComboPlayerDamageBeforeSlot1 = context.Metrics.PlayerDamageTaken;
+            RecordSupportComboHudBeforeSlot1(context, supportAction);
             if (!context.EnergyLadder.CanSpendMana(context.SummonSlot1Action.RequiredSummonMana))
             {
                 context.Metrics.Notes.Add($"{supportAction.SlotActionName} delayed combo did not recover Slot1 mana");
@@ -3343,6 +3357,43 @@ namespace DimensionBrawl.Tests
             context.Metrics.SupportSummonActorHealthRatio = action.LastSummonActorHealthRatio;
         }
 
+        private static void RecordSupportComboHudBeforeSlot1(
+            CombatPolicyContext context,
+            PlayerSupportSummonSlotAction supportAction)
+        {
+            if (supportAction == null)
+            {
+                return;
+            }
+
+            context.Metrics.SupportComboHudSupportLabelBeforeSlot1 =
+                BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
+                    supportAction,
+                    ResolveSupportHudSlotLabel(supportAction),
+                    "NEXT",
+                    context.EnergyLadder);
+            context.Metrics.SupportComboHudSupportFillBeforeSlot1 =
+                BossBarrageLaneReviewMobileHudLabels.ResolveSupportSummonFill01(
+                    context.EnergyLadder,
+                    supportAction);
+            context.Metrics.SupportComboHudSlot1LabelBeforeAttempt =
+                BossBarrageLaneReviewMobileHudLabels.BuildPrimarySummonLabel(
+                    "S1 SHIELD",
+                    context.EnergyLadder,
+                    context.SummonSlot1Action);
+            context.Metrics.SupportComboHudSlot1FillBeforeAttempt =
+                BossBarrageLaneReviewMobileHudLabels.ResolvePrimarySummonFill01(
+                    context.EnergyLadder,
+                    context.SummonSlot1Action);
+        }
+
+        private static string ResolveSupportHudSlotLabel(PlayerSupportSummonSlotAction supportAction)
+        {
+            return supportAction != null && supportAction.SlotActionName == "SummonSlot3"
+                ? "S3 TANK"
+                : "S2 ARROW";
+        }
+
         private static void RecordSkillUse(CombatPolicyContext context)
         {
             context.Metrics.SkillUses++;
@@ -3470,6 +3521,8 @@ namespace DimensionBrawl.Tests
             AppendSupportDecisionMatrixSummary(builder, results, repeatabilityResults);
             builder.AppendLine();
             AppendSummonSlotReadinessCooldownMatrix(builder, results);
+            builder.AppendLine();
+            AppendSummonHudReadinessReadoutMatrix(builder, results);
             builder.AppendLine();
             AppendStageResultMotivationMatrix(builder, results);
             builder.AppendLine();
@@ -5077,6 +5130,86 @@ namespace DimensionBrawl.Tests
                         : "Slot3 delayed branch did not reopen Slot1";
                 default:
                     return "not a summon readiness branch";
+            }
+        }
+
+        private static void AppendSummonHudReadinessReadoutMatrix(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results)
+        {
+            builder.AppendLine("## Summon HUD Readiness Readout Matrix");
+            builder.AppendLine("- ArkData/Blue Archive lens: the review HUD/coaster readout should expose the same shared EN bank and per-slot cooldown gates that the route simulation proves.");
+            builder.AppendLine("| Choice | Support HUD before Slot1 | Slot1 HUD before attempt | Support pulse | Slot1 pulse | Read |");
+            builder.AppendLine("|---|---|---|---:|---:|---|");
+            AppendSummonHudReadinessReadoutRow(
+                builder,
+                "Slot2 full-bank combo",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute));
+            AppendSummonHudReadinessReadoutRow(
+                builder,
+                "Slot3 immediate lockout",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute));
+            AppendSummonHudReadinessReadoutRow(
+                builder,
+                "Slot2 delayed recovery",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute));
+            AppendSummonHudReadinessReadoutRow(
+                builder,
+                "Slot3 delayed recovery",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute));
+        }
+
+        private static void AppendSummonHudReadinessReadoutRow(
+            StringBuilder builder,
+            string choice,
+            PolicyMetrics result)
+        {
+            builder.Append("| ");
+            builder.Append(EscapeTable(choice));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatHudLabelAndFill(
+                result.SupportComboHudSupportLabelBeforeSlot1,
+                result.SupportComboHudSupportFillBeforeSlot1)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatHudLabelAndFill(
+                result.SupportComboHudSlot1LabelBeforeAttempt,
+                result.SupportComboHudSlot1FillBeforeAttempt)));
+            builder.Append(" | ");
+            builder.Append(FormatReadyPulse(result.SupportComboHudSupportFillBeforeSlot1));
+            builder.Append(" | ");
+            builder.Append(FormatReadyPulse(result.SupportComboHudSlot1FillBeforeAttempt));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveSummonHudReadinessRead(result)));
+            builder.AppendLine(" |");
+        }
+
+        private static string FormatHudLabelAndFill(string label, float fill01)
+        {
+            string normalizedLabel = string.IsNullOrWhiteSpace(label)
+                ? "missing"
+                : label.Replace("\r\n", " / ").Replace("\n", " / ");
+            return $"{normalizedLabel} ({fill01:0.00})";
+        }
+
+        private static string FormatReadyPulse(float fill01)
+        {
+            return fill01 >= 0.995f ? "ON" : "off";
+        }
+
+        private static string ResolveSummonHudReadinessRead(PolicyMetrics result)
+        {
+            switch (result.Policy)
+            {
+                case PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute:
+                    return "Slot2 shows cooldown while Slot1 coaster is ready";
+                case PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute:
+                    return "Slot3 shows cooldown but Slot1 coaster is empty, proving resource lockout";
+                case PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute:
+                    return "Slot2 is resource-gated again while Slot1 coaster reopens";
+                case PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute:
+                    return "Slot3 is resource-gated again while Slot1 coaster reopens";
+                default:
+                    return "not a HUD readiness branch";
             }
         }
 
@@ -7558,6 +7691,65 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(slot3DelayedRecovery.SupportComboSlot1Used);
         }
 
+        private static void AssertSummonHudReadinessReadoutMatrix(
+            PolicyMetrics slot2Combo,
+            PolicyMetrics slot3Blocked,
+            PolicyMetrics slot2DelayedRecovery,
+            PolicyMetrics slot3DelayedRecovery)
+        {
+            Assert.That(
+                slot2Combo.SupportComboHudSupportLabelBeforeSlot1,
+                Does.Contain("CD"),
+                "Slot2 should visibly read as cooling down while the full-bank combo preserves Slot1.");
+            Assert.That(
+                slot2Combo.SupportComboHudSlot1LabelBeforeAttempt,
+                Does.Contain("READY LV1"),
+                "Slot1 should visibly read ready while Slot2's own cooldown is still active.");
+            Assert.Less(
+                slot2Combo.SupportComboHudSupportFillBeforeSlot1,
+                0.995f,
+                "Slot2's cooling-down coaster should not pulse as ready.");
+            Assert.GreaterOrEqual(
+                slot2Combo.SupportComboHudSlot1FillBeforeAttempt,
+                0.995f,
+                "Slot1's preserved main answer should pulse as ready.");
+
+            Assert.That(
+                slot3Blocked.SupportComboHudSupportLabelBeforeSlot1,
+                Does.Contain("CD"),
+                "Slot3 should show its own cooldown immediately after the vanguard spend.");
+            Assert.That(
+                slot3Blocked.SupportComboHudSlot1LabelBeforeAttempt,
+                Does.Not.Contain("CD"),
+                "Slot1 should not look globally cooled down after Slot3 fires.");
+            Assert.Less(
+                slot3Blocked.SupportComboHudSlot1FillBeforeAttempt,
+                0.05f,
+                "Slot3 immediate lockout should leave Slot1's coaster empty because shared EN was spent.");
+
+            Assert.That(
+                slot2DelayedRecovery.SupportComboHudSupportLabelBeforeSlot1,
+                Does.Contain("NEED 200 EN"),
+                "Slot2 delayed recovery should show the marksman slot as resource-gated again before Slot1 fires.");
+            Assert.That(
+                slot2DelayedRecovery.SupportComboHudSlot1LabelBeforeAttempt,
+                Does.Contain("READY LV1"));
+            Assert.GreaterOrEqual(
+                slot2DelayedRecovery.SupportComboHudSlot1FillBeforeAttempt,
+                0.995f);
+
+            Assert.That(
+                slot3DelayedRecovery.SupportComboHudSupportLabelBeforeSlot1,
+                Does.Contain("NEED 300 EN"),
+                "Slot3 delayed recovery should show the vanguard slot as high-cost resource-gated before Slot1 fires.");
+            Assert.That(
+                slot3DelayedRecovery.SupportComboHudSlot1LabelBeforeAttempt,
+                Does.Contain("READY LV1"));
+            Assert.GreaterOrEqual(
+                slot3DelayedRecovery.SupportComboHudSlot1FillBeforeAttempt,
+                0.995f);
+        }
+
         private static SummonRosterAuditRow[] BuildSummonRosterAuditRows(IReadOnlyList<PolicyMetrics> results)
         {
             float[] sharedCosts = ResolveSharedSummonTierCosts(results);
@@ -8268,6 +8460,28 @@ namespace DimensionBrawl.Tests
                 RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute),
                 false);
             builder.AppendLine("  ],");
+            builder.AppendLine("  \"summonHudReadinessReadoutMatrix\": [");
+            AppendJsonSummonHudReadinessReadoutRow(
+                builder,
+                "Slot2 full-bank combo",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute),
+                true);
+            AppendJsonSummonHudReadinessReadoutRow(
+                builder,
+                "Slot3 immediate lockout",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute),
+                true);
+            AppendJsonSummonHudReadinessReadoutRow(
+                builder,
+                "Slot2 delayed recovery",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute),
+                true);
+            AppendJsonSummonHudReadinessReadoutRow(
+                builder,
+                "Slot3 delayed recovery",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute),
+                false);
+            builder.AppendLine("  ],");
             builder.AppendLine("  \"repeatability\": [");
             for (int i = 0; i < repeatabilityResults.Count; i++)
             {
@@ -8347,6 +8561,26 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"      \"result\": \"{JsonEscape(result.ResultKind)}\",");
             builder.AppendLine($"      \"firstUnresolvedBeat\": \"{JsonEscape(ResolveFirstUnresolvedBeat(result))}\",");
             builder.AppendLine($"      \"readout\": \"{JsonEscape(ResolveSummonSlotReadinessCooldownRead(result))}\"");
+            builder.Append("    }");
+            builder.AppendLine(appendComma ? "," : string.Empty);
+        }
+
+        private static void AppendJsonSummonHudReadinessReadoutRow(
+            StringBuilder builder,
+            string choice,
+            PolicyMetrics result,
+            bool appendComma)
+        {
+            builder.AppendLine("    {");
+            builder.AppendLine($"      \"choice\": \"{JsonEscape(choice)}\",");
+            builder.AppendLine($"      \"policy\": \"{result.Policy}\",");
+            builder.AppendLine($"      \"supportLabelBeforeSlot1\": \"{JsonEscape(result.SupportComboHudSupportLabelBeforeSlot1)}\",");
+            builder.AppendLine($"      \"supportFillBeforeSlot1\": {result.SupportComboHudSupportFillBeforeSlot1:0.###},");
+            builder.AppendLine($"      \"supportReadyPulseBeforeSlot1\": {JsonBool(result.SupportComboHudSupportFillBeforeSlot1 >= 0.995f)},");
+            builder.AppendLine($"      \"slot1LabelBeforeAttempt\": \"{JsonEscape(result.SupportComboHudSlot1LabelBeforeAttempt)}\",");
+            builder.AppendLine($"      \"slot1FillBeforeAttempt\": {result.SupportComboHudSlot1FillBeforeAttempt:0.###},");
+            builder.AppendLine($"      \"slot1ReadyPulseBeforeAttempt\": {JsonBool(result.SupportComboHudSlot1FillBeforeAttempt >= 0.995f)},");
+            builder.AppendLine($"      \"readout\": \"{JsonEscape(ResolveSummonHudReadinessRead(result))}\"");
             builder.Append("    }");
             builder.AppendLine(appendComma ? "," : string.Empty);
         }
@@ -9053,7 +9287,9 @@ namespace DimensionBrawl.Tests
         {
             return (value ?? string.Empty)
                 .Replace("\\", "\\\\")
-                .Replace("\"", "\\\"");
+                .Replace("\"", "\\\"")
+                .Replace("\r", "\\r")
+                .Replace("\n", "\\n");
         }
 
         private static PolicyMetrics RequireResult(IReadOnlyList<PolicyMetrics> results, PolicyKind policy)
@@ -10620,6 +10856,10 @@ namespace DimensionBrawl.Tests
             public float SupportComboSlot1CooldownAfterAttempt { get; set; } = -1f;
             public float SupportComboSlot1ReadyDelaySeconds { get; set; } = -1f;
             public float SupportComboPlayerDamageBeforeSlot1 { get; set; } = -1f;
+            public string SupportComboHudSupportLabelBeforeSlot1 { get; set; } = string.Empty;
+            public float SupportComboHudSupportFillBeforeSlot1 { get; set; } = -1f;
+            public string SupportComboHudSlot1LabelBeforeAttempt { get; set; } = string.Empty;
+            public float SupportComboHudSlot1FillBeforeAttempt { get; set; } = -1f;
             public bool SupportComboSlot1Attempted { get; set; }
             public bool SupportComboSlot1Used { get; set; }
             public string SupportComboSlot1BlockedReason { get; set; } = string.Empty;
