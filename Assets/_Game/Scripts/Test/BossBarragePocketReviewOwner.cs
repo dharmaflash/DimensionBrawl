@@ -73,7 +73,9 @@ namespace DimensionBrawl.Test
                 string summary,
                 string routeLabel,
                 string rewardHook,
-                string nextObjective)
+                string nextObjective,
+                string resultTokenId,
+                string nextStateHookId)
             {
                 IsCommitted = isCommitted;
                 ResultKind = resultKind;
@@ -93,6 +95,8 @@ namespace DimensionBrawl.Test
                 RouteLabel = routeLabel ?? string.Empty;
                 RewardHook = rewardHook ?? string.Empty;
                 NextObjective = nextObjective ?? string.Empty;
+                ResultTokenId = resultTokenId ?? string.Empty;
+                NextStateHookId = nextStateHookId ?? string.Empty;
             }
 
             public bool IsCommitted { get; }
@@ -113,6 +117,8 @@ namespace DimensionBrawl.Test
             public string RouteLabel { get; }
             public string RewardHook { get; }
             public string NextObjective { get; }
+            public string ResultTokenId { get; }
+            public string NextStateHookId { get; }
         }
 
         public readonly struct RouteDecisionSnapshot
@@ -1216,7 +1222,9 @@ namespace DimensionBrawl.Test
                 ResolveRouteResultSummary(resultKind),
                 ResolveRouteResultLabel(resultKind),
                 ResolveRouteResultRewardHook(resultKind),
-                ResolveRouteResultNextObjective(resultKind));
+                ResolveRouteResultNextObjective(resultKind),
+                ResolveRouteResultTokenId(resultKind),
+                ResolveRouteResultNextStateHookId(resultKind));
             resultRecordCommitCount++;
             ResultRecordCommitted?.Invoke(lastResultRecord);
         }
@@ -2434,6 +2442,38 @@ namespace DimensionBrawl.Test
             };
         }
 
+        private string ResolveRouteResultTokenId(RouteResultKind resultKind)
+        {
+            return resultKind switch
+            {
+                RouteResultKind.PlayerDownFail or RouteResultKind.PressureControlFail =>
+                    "review.failure.hp_pressure",
+                RouteResultKind.CounterRecoveryClear =>
+                    "review.clear.counter_recovery",
+                RouteResultKind.CleanFollowupClear =>
+                    ResolveCleanFollowupTokenId(),
+                RouteResultKind.PressureSuppressionClear =>
+                    "review.clear.pressure_suppression",
+                _ => "review.pending"
+            };
+        }
+
+        private string ResolveRouteResultNextStateHookId(RouteResultKind resultKind)
+        {
+            return resultKind switch
+            {
+                RouteResultKind.PlayerDownFail or RouteResultKind.PressureControlFail =>
+                    "next.practice.hp_protection",
+                RouteResultKind.CounterRecoveryClear =>
+                    "next.practice.counter_answer_timing",
+                RouteResultKind.CleanFollowupClear =>
+                    ResolveCleanFollowupNextStateHookId(),
+                RouteResultKind.PressureSuppressionClear =>
+                    "next.practice.clean_followup_confirm",
+                _ => string.Empty
+            };
+        }
+
         private string ResolveCleanFollowupResultLabel()
         {
             if (lastSupportSummonUseSlotId == "SummonSlot2")
@@ -2483,6 +2523,21 @@ namespace DimensionBrawl.Test
                 "Clean survival logged: summon cover created a Skill1 confirm before counter pressure arrived.");
         }
 
+        private string ResolveCleanFollowupTokenId()
+        {
+            if (lastSupportSummonUseSlotId == "SummonSlot2")
+            {
+                return "review.clear.marksman_combo";
+            }
+
+            if (lastSupportSummonUseSlotId == "SummonSlot3")
+            {
+                return "review.clear.vanguard_payoff";
+            }
+
+            return "review.clear.clean_followup";
+        }
+
         private string ResolveCleanFollowupNextObjective()
         {
             if (lastSupportSummonUseSlotId == "SummonSlot2")
@@ -2498,6 +2553,21 @@ namespace DimensionBrawl.Test
             return ResolveStageText(
                 stageProfile != null ? stageProfile.CleanRouteNextObjective : null,
                 "Next run: keep HP clean by confirming before counter pressure enters.");
+        }
+
+        private string ResolveCleanFollowupNextStateHookId()
+        {
+            if (lastSupportSummonUseSlotId == "SummonSlot2")
+            {
+                return "next.practice.slot2_full_bank_combo";
+            }
+
+            if (lastSupportSummonUseSlotId == "SummonSlot3")
+            {
+                return "next.practice.slot3_vanguard_payoff";
+            }
+
+            return "next.practice.clean_followup_confirm";
         }
 
         private int ResolveCurrentStageBeatIndex()

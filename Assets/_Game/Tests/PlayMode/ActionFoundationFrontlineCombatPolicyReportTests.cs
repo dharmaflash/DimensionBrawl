@@ -5243,8 +5243,8 @@ namespace DimensionBrawl.Tests
 
             builder.AppendLine("## Stage Result Motivation Matrix");
             builder.AppendLine("- NIKKE stage-result lens: route outcomes should produce distinct next-run motivation while staying review-only in this V1 slice.");
-            builder.AppendLine("| Outcome | Policy | Hook class | Route label | Result copy | Next-run motivation | Overlay motivation | Boundary |");
-            builder.AppendLine("|---|---|---|---|---|---|---|---|");
+            builder.AppendLine("| Outcome | Policy | Hook class | Result token | Next state hook | Route label | Result copy | Next-run motivation | Overlay motivation | Boundary |");
+            builder.AppendLine("|---|---|---|---|---|---|---|---|---|---|");
             AppendStageResultMotivationRow(
                 builder,
                 "Unanswered fail",
@@ -5289,6 +5289,10 @@ namespace DimensionBrawl.Tests
             builder.Append(EscapeTable(result.Policy.ToString()));
             builder.Append(" | ");
             builder.Append(EscapeTable(ResolveResultHookClass(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveCoverageValue(result.ResultRecordTokenId)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveCoverageValue(result.ResultRecordNextStateHookId)));
             builder.Append(" | ");
             builder.Append(EscapeTable(ResolveCoverageValue(result.ResultRecordRouteLabel)));
             builder.Append(" | ");
@@ -7394,6 +7398,30 @@ namespace DimensionBrawl.Tests
                 vanguardClear.ResultRecordNextObjective,
                 Does.Contain("Slot3"),
                 "Vanguard support clear should preserve the Slot3 route motivation.");
+            AssertResultToken(
+                noSummonFail,
+                "review.failure.hp_pressure",
+                "next.practice.hp_protection");
+            AssertResultToken(
+                gunOnlyFail,
+                "review.failure.hp_pressure",
+                "next.practice.hp_protection");
+            AssertResultToken(
+                cleanPhysical,
+                "review.clear.clean_followup",
+                "next.practice.clean_followup_confirm");
+            AssertResultToken(
+                counterRecovery,
+                "review.clear.counter_recovery",
+                "next.practice.counter_answer_timing");
+            AssertResultToken(
+                marksmanClear,
+                "review.clear.marksman_combo",
+                "next.practice.slot2_full_bank_combo");
+            AssertResultToken(
+                vanguardClear,
+                "review.clear.vanguard_payoff",
+                "next.practice.slot3_vanguard_payoff");
             Assert.IsTrue(IsReviewOnlyResultHook(noSummonFail));
             Assert.IsTrue(IsReviewOnlyResultHook(gunOnlyFail));
             Assert.IsTrue(IsReviewOnlyResultHook(cleanPhysical));
@@ -7407,6 +7435,27 @@ namespace DimensionBrawl.Tests
             AssertResultOverlayMatchesRecord(counterRecovery);
             AssertResultOverlayMatchesRecord(marksmanClear);
             AssertResultOverlayMatchesRecord(vanguardClear);
+        }
+
+        private static void AssertResultToken(
+            PolicyMetrics result,
+            string expectedTokenId,
+            string expectedNextStateHookId)
+        {
+            Assert.AreEqual(
+                expectedTokenId,
+                result.ResultRecordTokenId,
+                $"{result.Policy} should commit a review-only result token instead of a payout id.");
+            Assert.AreEqual(
+                expectedNextStateHookId,
+                result.ResultRecordNextStateHookId,
+                $"{result.Policy} should commit a next-state practice hook.");
+            Assert.IsFalse(
+                ContainsProgressionPayoutLanguage(result.ResultRecordTokenId),
+                $"{result.Policy} result token must not masquerade as a payout.");
+            Assert.IsFalse(
+                ContainsProgressionPayoutLanguage(result.ResultRecordNextStateHookId),
+                $"{result.Policy} next-state hook must not masquerade as a payout.");
         }
 
         private static void AssertResultOverlayMatchesRecord(PolicyMetrics result)
@@ -8484,6 +8533,8 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"resultRecordSummary\": \"{JsonEscape(result.ResultRecordSummary)}\",");
                 builder.AppendLine($"      \"resultRecordRewardHook\": \"{JsonEscape(result.ResultRecordRewardHook)}\",");
                 builder.AppendLine($"      \"resultRecordNextObjective\": \"{JsonEscape(result.ResultRecordNextObjective)}\",");
+                builder.AppendLine($"      \"resultRecordTokenId\": \"{JsonEscape(result.ResultRecordTokenId)}\",");
+                builder.AppendLine($"      \"resultRecordNextStateHookId\": \"{JsonEscape(result.ResultRecordNextStateHookId)}\",");
                 builder.AppendLine($"      \"resultRecordProofReadout\": \"{JsonEscape(result.ResultRecordProofReadout)}\",");
                 builder.AppendLine($"      \"resultRecordDecision\": \"{JsonEscape(result.ResultRecordDecision)}\",");
                 builder.AppendLine($"      \"resultRecordCounterWaveSource\": \"{JsonEscape(result.ResultRecordCounterWaveSource)}\",");
@@ -10816,6 +10867,8 @@ namespace DimensionBrawl.Tests
                 Metrics.ResultRecordSummary = record.Summary;
                 Metrics.ResultRecordRewardHook = record.RewardHook;
                 Metrics.ResultRecordNextObjective = record.NextObjective;
+                Metrics.ResultRecordTokenId = record.ResultTokenId;
+                Metrics.ResultRecordNextStateHookId = record.NextStateHookId;
                 Metrics.ResultRecordProofReadout = record.ProofReadout;
                 Metrics.ResultRecordDecision = $"{record.DecisionState}({record.DecisionReadout})";
                 Metrics.ResultRecordCounterWaveSource = record.CounterWaveSource.ToString();
@@ -11261,6 +11314,8 @@ namespace DimensionBrawl.Tests
             public string ResultRecordSummary { get; set; } = string.Empty;
             public string ResultRecordRewardHook { get; set; } = string.Empty;
             public string ResultRecordNextObjective { get; set; } = string.Empty;
+            public string ResultRecordTokenId { get; set; } = string.Empty;
+            public string ResultRecordNextStateHookId { get; set; } = string.Empty;
             public string ResultRecordProofReadout { get; set; } = string.Empty;
             public string ResultRecordDecision { get; set; } = string.Empty;
             public string ResultRecordCounterWaveSource { get; set; } = "None";
