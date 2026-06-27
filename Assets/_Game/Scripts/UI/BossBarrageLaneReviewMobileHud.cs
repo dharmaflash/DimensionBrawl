@@ -1017,7 +1017,9 @@ namespace DimensionBrawl.UI
                     summonSlot1Action),
                 IsHeld(summonSlot1Rect),
                 pending: summonSlot1Action == null,
-                ResolveSummonFill01(summonSlot1Action != null),
+                BossBarrageLaneReviewMobileHudLabels.ResolvePrimarySummonFill01(
+                    energyLadder,
+                    summonSlot1Action),
                 summonSlot1AccentColor);
             BossBarrageLaneReviewHudChrome.DrawSummonSlot(
                 summonSlot2Rect,
@@ -1028,7 +1030,9 @@ namespace DimensionBrawl.UI
                     energyLadder),
                 IsHeld(summonSlot2Rect),
                 pending: summonSlot2Action == null,
-                ResolveSummonFill01(summonSlot2Action != null),
+                BossBarrageLaneReviewMobileHudLabels.ResolveSupportSummonFill01(
+                    energyLadder,
+                    summonSlot2Action),
                 summonSlot2AccentColor);
             BossBarrageLaneReviewHudChrome.DrawSummonSlot(
                 summonSlot3Rect,
@@ -1039,7 +1043,9 @@ namespace DimensionBrawl.UI
                     energyLadder),
                 IsHeld(summonSlot3Rect),
                 pending: summonSlot3Action == null,
-                ResolveSummonFill01(summonSlot3Action != null),
+                BossBarrageLaneReviewMobileHudLabels.ResolveSupportSummonFill01(
+                    energyLadder,
+                    summonSlot3Action),
                 summonSlot3AccentColor);
         }
 
@@ -1217,16 +1223,6 @@ namespace DimensionBrawl.UI
             }
 
             return fireAccentColor;
-        }
-
-        private float ResolveSummonFill01(bool hasAction)
-        {
-            if (!hasAction || energyLadder == null)
-            {
-                return 0f;
-            }
-
-            return energyLadder.CanSpend ? 1f : energyLadder.CurrentTierFillRatio;
         }
 
         private static Texture2D MakeTexture(Color color)

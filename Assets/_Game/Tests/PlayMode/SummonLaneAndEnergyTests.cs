@@ -5,6 +5,7 @@ using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.Test;
+using DimensionBrawl.UI;
 using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
@@ -134,6 +135,113 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(200f, energy.CurrentMana, 0.001f);
 
             Object.DestroyImmediate(playerObject);
+        }
+
+        [Test]
+        public void MobileHudSummonReadoutsSeparateSharedManaCostAndSlotCooldown()
+        {
+            GameObject playerObject = new GameObject("Player");
+            try
+            {
+                SummonEnergyLadder energy = playerObject.AddComponent<SummonEnergyLadder>();
+                PlayerSummonSlot1Action slot1 = playerObject.AddComponent<PlayerSummonSlot1Action>();
+                PlayerSupportSummonSlotAction slot2 = playerObject.AddComponent<PlayerSupportSummonSlotAction>();
+                PlayerSupportSummonSlotAction slot3 = playerObject.AddComponent<PlayerSupportSummonSlotAction>();
+                slot1.ConfigureRequiredSummonMana(100f);
+                slot1.ConfigureSlotCooldown(1.25f);
+                slot2.ConfigureRequiredSummonMana(200f);
+                slot2.ConfigureMinimumSummonTier(2);
+                slot2.ConfigureSlotCooldown(1.5f);
+                slot3.ConfigureRequiredSummonMana(300f);
+                slot3.ConfigureMinimumSummonTier(3);
+                slot3.ConfigureSlotCooldown(1.5f);
+
+                energy.GrantCurrentTierEnergy(100f);
+
+                StringAssert.Contains(
+                    "READY LV1",
+                    BossBarrageLaneReviewMobileHudLabels.BuildPrimarySummonLabel(
+                        "S1 SHIELD",
+                        energy,
+                        slot1));
+                StringAssert.Contains(
+                    "NEED 200 EN",
+                    BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
+                        slot2,
+                        "S2 ARROW",
+                        "NEXT",
+                        energy));
+                StringAssert.Contains(
+                    "NEED 300 EN",
+                    BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
+                        slot3,
+                        "S3 TANK",
+                        "NEXT",
+                        energy));
+                Assert.AreEqual(
+                    1f,
+                    BossBarrageLaneReviewMobileHudLabels.ResolvePrimarySummonFill01(energy, slot1),
+                    0.001f);
+                Assert.AreEqual(
+                    0.5f,
+                    BossBarrageLaneReviewMobileHudLabels.ResolveSupportSummonFill01(energy, slot2),
+                    0.001f);
+                Assert.AreEqual(
+                    1f / 3f,
+                    BossBarrageLaneReviewMobileHudLabels.ResolveSupportSummonFill01(energy, slot3),
+                    0.001f);
+
+                energy.GrantCurrentTierEnergy(100f);
+
+                StringAssert.Contains(
+                    "READY LV2",
+                    BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
+                        slot2,
+                        "S2 ARROW",
+                        "NEXT",
+                        energy));
+                StringAssert.Contains(
+                    "NEED 300 EN",
+                    BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
+                        slot3,
+                        "S3 TANK",
+                        "NEXT",
+                        energy));
+                Assert.AreEqual(
+                    1f,
+                    BossBarrageLaneReviewMobileHudLabels.ResolveSupportSummonFill01(energy, slot2),
+                    0.001f);
+                Assert.AreEqual(
+                    2f / 3f,
+                    BossBarrageLaneReviewMobileHudLabels.ResolveSupportSummonFill01(energy, slot3),
+                    0.001f);
+
+                SetPrivateInstanceField(slot2, "slotCooldownRemaining", 0.8f);
+
+                StringAssert.Contains(
+                    "CD 0.8s",
+                    BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
+                        slot2,
+                        "S2 ARROW",
+                        "NEXT",
+                        energy));
+                Assert.AreEqual(
+                    1f - 0.8f / 1.5f,
+                    BossBarrageLaneReviewMobileHudLabels.ResolveSupportSummonFill01(energy, slot2),
+                    0.001f);
+                StringAssert.Contains(
+                    "NEED 300 EN",
+                    BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
+                        slot3,
+                        "S3 TANK",
+                        "NEXT",
+                        energy),
+                    "Slot2 cooldown must not make Slot3 look globally locked or ready.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(playerObject);
+            }
         }
 
         [Test]
@@ -4156,6 +4264,15 @@ namespace DimensionBrawl.Tests
             Assert.IsNotNull(method);
 
             method.Invoke(bridge, null);
+        }
+
+        private static void SetPrivateInstanceField<T>(object target, string fieldName, T value)
+        {
+            System.Reflection.FieldInfo field = target.GetType().GetField(
+                fieldName,
+                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+            Assert.IsNotNull(field, $"{target.GetType().Name}.{fieldName} should exist.");
+            field.SetValue(target, value);
         }
 
         private static CombatVfxCueProfile CreatePressureScreenCueProfile(GameObject prefab)

@@ -4,23 +4,29 @@ using UnityEngine;
 
 namespace DimensionBrawl.UI
 {
-    internal static class BossBarrageLaneReviewMobileHudLabels
+    public static class BossBarrageLaneReviewMobileHudLabels
     {
         public static string BuildPrimarySummonLabel(
             string slotLabel,
             SummonEnergyLadder energyLadder,
             PlayerSummonSlot1Action summonSlot1Action)
         {
-            int availableTier = energyLadder != null ? energyLadder.AvailableTier : 0;
-            if (availableTier > 0)
+            if (summonSlot1Action != null && summonSlot1Action.IsSlotOnCooldown)
             {
-                string tierName = TryGetPrimarySummonTierShortName(summonSlot1Action, availableTier);
-                return $"{slotLabel}\nREADY LV{availableTier} {tierName}".TrimEnd();
+                return BuildCooldownLabel(slotLabel, summonSlot1Action.SlotCooldownRemaining);
             }
 
             if (energyLadder == null)
             {
                 return $"{slotLabel}\nREADY?";
+            }
+
+            int availableTier = energyLadder.AvailableTier;
+            float requiredMana = summonSlot1Action != null ? summonSlot1Action.RequiredSummonMana : 1f;
+            if (availableTier > 0 && energyLadder.CanSpendMana(requiredMana))
+            {
+                string tierName = TryGetPrimarySummonTierShortName(summonSlot1Action, availableTier);
+                return $"{slotLabel}\nREADY LV{availableTier} {tierName}".TrimEnd();
             }
 
             return BuildChargingLabel(slotLabel, energyLadder);
@@ -37,11 +43,9 @@ namespace DimensionBrawl.UI
                 return $"{slotLabel}\n{lockedSummonLabel}";
             }
 
-            int availableTier = energyLadder != null ? energyLadder.AvailableTier : 0;
-            if (availableTier > 0)
+            if (supportAction.IsSlotOnCooldown)
             {
-                string tierName = TryGetSupportSummonTierShortName(supportAction, availableTier);
-                return $"{slotLabel}\nREADY LV{availableTier} {tierName}".TrimEnd();
+                return BuildCooldownLabel(slotLabel, supportAction.SlotCooldownRemaining);
             }
 
             if (energyLadder == null)
@@ -49,7 +53,94 @@ namespace DimensionBrawl.UI
                 return $"{slotLabel}\nREADY?";
             }
 
-            return BuildChargingLabel(slotLabel, energyLadder);
+            int availableTier = energyLadder.AvailableTier;
+            if (availableTier >= supportAction.MinimumSummonTier
+                && energyLadder.CanSpendMana(supportAction.RequiredSummonMana))
+            {
+                string tierName = TryGetSupportSummonTierShortName(supportAction, availableTier);
+                return $"{slotLabel}\nREADY LV{availableTier} {tierName}".TrimEnd();
+            }
+
+            return BuildRequiredManaLabel(slotLabel, supportAction.RequiredSummonMana);
+        }
+
+        public static float ResolvePrimarySummonFill01(
+            SummonEnergyLadder energyLadder,
+            PlayerSummonSlot1Action summonSlot1Action)
+        {
+            if (summonSlot1Action == null || energyLadder == null)
+            {
+                return 0f;
+            }
+
+            if (summonSlot1Action.IsSlotOnCooldown)
+            {
+                return ResolveCooldownFill01(
+                    summonSlot1Action.SlotCooldownRemaining,
+                    summonSlot1Action.SlotCooldownSeconds);
+            }
+
+            if (energyLadder.CanSpendMana(summonSlot1Action.RequiredSummonMana))
+            {
+                return 1f;
+            }
+
+            return ResolveManaFill01(energyLadder, summonSlot1Action.RequiredSummonMana);
+        }
+
+        public static float ResolveSupportSummonFill01(
+            SummonEnergyLadder energyLadder,
+            PlayerSupportSummonSlotAction supportAction)
+        {
+            if (supportAction == null || energyLadder == null)
+            {
+                return 0f;
+            }
+
+            if (supportAction.IsSlotOnCooldown)
+            {
+                return ResolveCooldownFill01(
+                    supportAction.SlotCooldownRemaining,
+                    supportAction.SlotCooldownSeconds);
+            }
+
+            if (energyLadder.AvailableTier >= supportAction.MinimumSummonTier
+                && energyLadder.CanSpendMana(supportAction.RequiredSummonMana))
+            {
+                return 1f;
+            }
+
+            return ResolveManaFill01(energyLadder, supportAction.RequiredSummonMana);
+        }
+
+        private static string BuildRequiredManaLabel(string slotLabel, float requiredMana)
+        {
+            return $"{slotLabel}\nNEED {Mathf.Max(1f, requiredMana):0} EN";
+        }
+
+        private static string BuildCooldownLabel(string slotLabel, float cooldownRemaining)
+        {
+            return $"{slotLabel}\nCD {Mathf.Max(0f, cooldownRemaining):0.0}s";
+        }
+
+        private static float ResolveManaFill01(SummonEnergyLadder energyLadder, float requiredMana)
+        {
+            if (energyLadder == null)
+            {
+                return 0f;
+            }
+
+            return Mathf.Clamp01(energyLadder.CurrentMana / Mathf.Max(1f, requiredMana));
+        }
+
+        private static float ResolveCooldownFill01(float cooldownRemaining, float cooldownSeconds)
+        {
+            if (cooldownSeconds <= 0f)
+            {
+                return 1f;
+            }
+
+            return Mathf.Clamp01(1f - Mathf.Max(0f, cooldownRemaining) / cooldownSeconds);
         }
 
         private static string BuildChargingLabel(string slotLabel, SummonEnergyLadder energyLadder)
