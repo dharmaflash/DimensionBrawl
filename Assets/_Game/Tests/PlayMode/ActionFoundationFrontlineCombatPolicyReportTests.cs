@@ -422,6 +422,7 @@ namespace DimensionBrawl.Tests
                     noSummonSurvival,
                     gunOnlySurvival,
                     forwardRiskPhysicalSummonPunish,
+                    forwardRiskTier3Decision,
                     blockedRecovery,
                     forwardRiskSlot2Combo,
                     forwardRiskSlot3Delayed);
@@ -599,6 +600,21 @@ namespace DimensionBrawl.Tests
                     "PRESSURE BROKEN",
                     "Skill1",
                     "The physical clean route result should name the pressure break and Skill1 confirm.");
+                AssertStageResultHook(
+                    forwardRiskTier3Decision,
+                    "CleanFollowupClear",
+                    "LV3 suppress logged",
+                    "LV3",
+                    "The LV3 direct suppress route should commit a high-tier suppress payoff hook.");
+                AssertStageResultCopy(
+                    forwardRiskTier3Decision,
+                    "PRESSURE BROKEN",
+                    "High-tier summon",
+                    "The LV3 direct suppress result should name the high-tier boss-screen break.");
+                Assert.AreEqual(
+                    "high_tier_suppress_clear",
+                    ResolveResultHookClass(forwardRiskTier3Decision),
+                    "The LV3 direct suppress route should stay distinguishable from a generic clean route.");
                 AssertStageResultHook(
                     forwardRiskSlot2Combo,
                     "CleanFollowupClear",
@@ -4421,6 +4437,7 @@ namespace DimensionBrawl.Tests
             PolicyMetrics forwardRiskPhysicalSummonPunish = RequireResult(
                 results,
                 PolicyKind.ForwardRiskPhysicalSummonPunishProbe);
+            PolicyMetrics highTierSuppress = RequireResult(results, PolicyKind.ForwardRiskTier3DecisionRoute);
             PolicyMetrics intended = RequireResult(results, PolicyKind.IntendedRoute);
             PolicyMetrics ignoredRecovery = RequireResult(results, PolicyKind.BossScreenIgnoredNoRecovery);
             PolicyMetrics blockedRecovery = RequireResult(results, PolicyKind.BossScreenBlockCounterRecovery);
@@ -5403,6 +5420,7 @@ namespace DimensionBrawl.Tests
             PolicyMetrics noSummonFail = RequireResult(results, PolicyKind.NoSummonSurvivalLimit);
             PolicyMetrics gunOnlyFail = RequireResult(results, PolicyKind.GunOnlySurvivalLimit);
             PolicyMetrics cleanPhysical = RequireResult(results, PolicyKind.ForwardRiskPhysicalSummonPunishProbe);
+            PolicyMetrics highTierSuppress = RequireResult(results, PolicyKind.ForwardRiskTier3DecisionRoute);
             PolicyMetrics counterRecovery = RequireResult(results, PolicyKind.BossScreenBlockCounterRecovery);
             PolicyMetrics marksmanClear = RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute);
             PolicyMetrics vanguardClear = RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedSlot1Route);
@@ -5426,6 +5444,11 @@ namespace DimensionBrawl.Tests
                 "Clean summon confirm",
                 cleanPhysical,
                 "clean clear reinforces block -> Skill1 before counter pressure");
+            AppendStageResultMotivationRow(
+                builder,
+                "LV3 suppress clear",
+                highTierSuppress,
+                "high-risk wait names the direct boss-screen suppress payoff");
             AppendStageResultMotivationRow(
                 builder,
                 "Counter recovery",
@@ -6436,6 +6459,7 @@ namespace DimensionBrawl.Tests
             PolicyMetrics forwardRiskPhysicalSummonPunish = RequireResult(
                 results,
                 PolicyKind.ForwardRiskPhysicalSummonPunishProbe);
+            PolicyMetrics highTierSuppress = RequireResult(results, PolicyKind.ForwardRiskTier3DecisionRoute);
             PolicyMetrics intended = RequireResult(results, PolicyKind.IntendedRoute);
             PolicyMetrics delayedIntended = RequireResult(results, PolicyKind.IntendedDelayedFollowup);
             PolicyMetrics ignoredRecovery = RequireResult(results, PolicyKind.BossScreenIgnoredNoRecovery);
@@ -6447,26 +6471,31 @@ namespace DimensionBrawl.Tests
             bool stageResultMeasured = noSummonSurvival.ResultKind == "PlayerDownFail"
                 && gunOnlySurvival.ResultKind == "PlayerDownFail"
                 && forwardRiskPhysicalSummonPunish.IsClearResult
+                && highTierSuppress.IsClearResult
                 && physicalCloseChain.IsClearResult
                 && blockedRecovery.ResultKind == "CounterRecoveryClear"
                 && HasSingleReviewOnlyResultHook(noSummonSurvival)
                 && HasSingleReviewOnlyResultHook(gunOnlySurvival)
                 && HasSingleReviewOnlyResultHook(forwardRiskPhysicalSummonPunish)
+                && HasSingleReviewOnlyResultHook(highTierSuppress)
                 && HasSingleReviewOnlyResultHook(physicalCloseChain)
                 && HasSingleReviewOnlyResultHook(blockedRecovery)
                 && IsStageResultCopy(noSummonSurvival)
                 && IsStageResultCopy(gunOnlySurvival)
                 && IsStageResultCopy(forwardRiskPhysicalSummonPunish)
+                && IsStageResultCopy(highTierSuppress)
                 && IsStageResultCopy(physicalCloseChain)
                 && IsStageResultCopy(blockedRecovery)
                 && !string.IsNullOrWhiteSpace(noSummonSurvival.ResultRecordTokenId)
                 && !string.IsNullOrWhiteSpace(gunOnlySurvival.ResultRecordTokenId)
                 && !string.IsNullOrWhiteSpace(forwardRiskPhysicalSummonPunish.ResultRecordTokenId)
+                && !string.IsNullOrWhiteSpace(highTierSuppress.ResultRecordTokenId)
                 && !string.IsNullOrWhiteSpace(physicalCloseChain.ResultRecordTokenId)
                 && !string.IsNullOrWhiteSpace(blockedRecovery.ResultRecordTokenId)
                 && !string.IsNullOrWhiteSpace(noSummonSurvival.ResultRecordNextStateHookId)
                 && !string.IsNullOrWhiteSpace(gunOnlySurvival.ResultRecordNextStateHookId)
                 && !string.IsNullOrWhiteSpace(forwardRiskPhysicalSummonPunish.ResultRecordNextStateHookId)
+                && !string.IsNullOrWhiteSpace(highTierSuppress.ResultRecordNextStateHookId)
                 && !string.IsNullOrWhiteSpace(physicalCloseChain.ResultRecordNextStateHookId)
                 && !string.IsNullOrWhiteSpace(blockedRecovery.ResultRecordNextStateHookId);
             bool pressureSlotMeasured = forwardRiskEnergy.EnergyTier1DurationSeconds >= 0f
@@ -6562,7 +6591,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 "| NIKKE stage-result runtime | "
                 + $"{FormatCoverageStatus(stageResultMeasured, "PARTIAL")} | "
-                + $"bad routes commit fail hooks at {FormatSeconds(noSummonSurvival.FirstPlayerDownAtSeconds)} / {FormatSeconds(gunOnlySurvival.FirstPlayerDownAtSeconds)} with copy `{noSummonSurvival.ResultRecordTitle}`/`{gunOnlySurvival.ResultRecordTitle}` and token `{noSummonSurvival.ResultRecordTokenId}->{noSummonSurvival.ResultRecordNextStateHookId}`; clean physical `{ResolveResultHookClass(forwardRiskPhysicalSummonPunish)}` token `{forwardRiskPhysicalSummonPunish.ResultRecordTokenId}->{forwardRiskPhysicalSummonPunish.ResultRecordNextStateHookId}`; live close-chain `{ResolveResultHookClass(physicalCloseChain)}`; boss-screen recovery `{ResolveResultHookClass(blockedRecovery)}` token `{blockedRecovery.ResultRecordTokenId}->{blockedRecovery.ResultRecordNextStateHookId}` | "
+                + $"bad routes commit fail hooks at {FormatSeconds(noSummonSurvival.FirstPlayerDownAtSeconds)} / {FormatSeconds(gunOnlySurvival.FirstPlayerDownAtSeconds)} with copy `{noSummonSurvival.ResultRecordTitle}`/`{gunOnlySurvival.ResultRecordTitle}` and token `{noSummonSurvival.ResultRecordTokenId}->{noSummonSurvival.ResultRecordNextStateHookId}`; clean physical `{ResolveResultHookClass(forwardRiskPhysicalSummonPunish)}` token `{forwardRiskPhysicalSummonPunish.ResultRecordTokenId}->{forwardRiskPhysicalSummonPunish.ResultRecordNextStateHookId}`; LV3 suppress `{ResolveResultHookClass(highTierSuppress)}` token `{highTierSuppress.ResultRecordTokenId}->{highTierSuppress.ResultRecordNextStateHookId}`; live close-chain `{ResolveResultHookClass(physicalCloseChain)}`; boss-screen recovery `{ResolveResultHookClass(blockedRecovery)}` token `{blockedRecovery.ResultRecordTokenId}->{blockedRecovery.ResultRecordNextStateHookId}` | "
                 + "Reward/item persistence and campaign clear are intentionally not implemented in this V1 combat slice. |");
             builder.AppendLine(
                 "| Stage pressure-slot discipline | "
@@ -7079,6 +7108,11 @@ namespace DimensionBrawl.Tests
                     if (result.SupportSummonSlotId == "SummonSlot3")
                     {
                         return "support_vanguard_clear";
+                    }
+
+                    if (result.ResultRecordTokenId == "review.clear.lv3_suppress")
+                    {
+                        return "high_tier_suppress_clear";
                     }
 
                     return "clean_survival";
@@ -7603,6 +7637,7 @@ namespace DimensionBrawl.Tests
             PolicyMetrics noSummonFail,
             PolicyMetrics gunOnlyFail,
             PolicyMetrics cleanPhysical,
+            PolicyMetrics highTierSuppress,
             PolicyMetrics counterRecovery,
             PolicyMetrics marksmanClear,
             PolicyMetrics vanguardClear)
@@ -7619,6 +7654,10 @@ namespace DimensionBrawl.Tests
                 "clean_survival",
                 ResolveResultHookClass(cleanPhysical),
                 "Clean physical punish should stay a clean-survival result hook.");
+            Assert.AreEqual(
+                "high_tier_suppress_clear",
+                ResolveResultHookClass(highTierSuppress),
+                "LV3 direct suppress should stay distinguishable from generic clean survival.");
             Assert.AreEqual(
                 "counter_recovery",
                 ResolveResultHookClass(counterRecovery),
@@ -7644,6 +7683,10 @@ namespace DimensionBrawl.Tests
                 Does.Contain("counter pressure"),
                 "Clean clear motivation should reinforce confirming before counter pressure.");
             Assert.That(
+                highTierSuppress.ResultRecordNextObjective,
+                Does.Contain("LV3"),
+                "LV3 direct suppress motivation should preserve the high-risk wait decision.");
+            Assert.That(
                 counterRecovery.ResultRecordNextObjective,
                 Does.Contain("earlier"),
                 "Recovery motivation should point to answering counter pressure earlier.");
@@ -7668,6 +7711,10 @@ namespace DimensionBrawl.Tests
                 "review.clear.clean_followup",
                 "next.practice.clean_followup_confirm");
             AssertResultToken(
+                highTierSuppress,
+                "review.clear.lv3_suppress",
+                "next.practice.lv3_suppress_timing");
+            AssertResultToken(
                 counterRecovery,
                 "review.clear.counter_recovery",
                 "next.practice.counter_answer_timing");
@@ -7682,6 +7729,7 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(IsReviewOnlyResultHook(noSummonFail));
             Assert.IsTrue(IsReviewOnlyResultHook(gunOnlyFail));
             Assert.IsTrue(IsReviewOnlyResultHook(cleanPhysical));
+            Assert.IsTrue(IsReviewOnlyResultHook(highTierSuppress));
             Assert.IsTrue(IsReviewOnlyResultHook(counterRecovery));
             Assert.IsTrue(IsReviewOnlyResultHook(marksmanClear));
             Assert.IsTrue(IsReviewOnlyResultHook(vanguardClear));
@@ -7689,6 +7737,7 @@ namespace DimensionBrawl.Tests
             AssertResultOverlayMatchesRecord(noSummonFail);
             AssertResultOverlayMatchesRecord(gunOnlyFail);
             AssertResultOverlayMatchesRecord(cleanPhysical);
+            AssertResultOverlayMatchesRecord(highTierSuppress);
             AssertResultOverlayMatchesRecord(counterRecovery);
             AssertResultOverlayMatchesRecord(marksmanClear);
             AssertResultOverlayMatchesRecord(vanguardClear);

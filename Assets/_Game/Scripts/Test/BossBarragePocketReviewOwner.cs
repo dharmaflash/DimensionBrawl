@@ -199,6 +199,7 @@ namespace DimensionBrawl.Test
         [Header("Follow-up Result")]
         [SerializeField] private bool requireSkill1FollowupHitToClear = true;
         [SerializeField, Min(0f)] private float counterWaveAllyHoldSeconds = 0.45f;
+        [SerializeField, Min(0f)] private float summonFollowupSkillImpactGraceSeconds = 0.75f;
 
         [Header("Frontline Stage Review")]
         [SerializeField] private FrontlineWaveStageProfile stageProfile;
@@ -221,6 +222,9 @@ namespace DimensionBrawl.Test
         private bool blockedBossPressureWithSummon;
         private bool grantedSummonFollowupEnergy;
         private bool usedSkill1DuringSummonFollowup;
+        private bool followupSkillImpactPending;
+        private bool followupSkillImpactGraceStarted;
+        private float followupSkillImpactGraceTimer;
         private bool skill1FollowupHitConfirmed;
         private float skill1FollowupDamage;
         private float skill1FollowupClearTimer;
@@ -714,6 +718,7 @@ namespace DimensionBrawl.Test
             CaptureCloseThreatDefeat();
             CaptureBossBlockedFollowup();
             UpdatePressurePacing(deltaTime);
+            TickFollowupSkillImpactGrace(deltaTime);
             CaptureCounterWavePressure();
             CaptureCounterWaveAnswer(deltaTime);
             TickSkill1FollowupClearTimer(deltaTime);
@@ -739,6 +744,7 @@ namespace DimensionBrawl.Test
                     && currentSkillUseCount > skillUsesAtSummonBreakStart)
                 {
                     usedSkill1DuringSummonFollowup = true;
+                    followupSkillImpactPending = true;
                     highestSummonFollowupSkillTier = Mathf.Max(
                         highestSummonFollowupSkillTier,
                         skill1Action.LastSpentTier);
@@ -815,9 +821,12 @@ namespace DimensionBrawl.Test
         private void OnBossDamaged(DamageInfo damageInfo)
         {
             bool acceptsFollowupDamage = pressurePacing.IsSummonFollowupWindowActive
+                || IsFollowupSkillImpactGraceActive()
                 || (skill1FollowupHitConfirmed && skill1FollowupClearTimer > 0f);
             if (state != PocketState.Running
                 || !acceptsFollowupDamage
+                || bossBlockedSkill1Followup
+                || followupMissedNotified
                 || damageInfo.SourceTeam != DamageTeam.Player
                 || GetSkillUseCount() <= skillUsesAtSummonBreakStart)
             {
@@ -835,6 +844,9 @@ namespace DimensionBrawl.Test
             {
                 AddRouteStability(ResolveFollowupHitRouteBonus01());
                 skill1FollowupClearTimer = skill1FollowupClearDelaySeconds;
+                followupSkillImpactPending = false;
+                followupSkillImpactGraceStarted = false;
+                followupSkillImpactGraceTimer = 0f;
                 pressurePacing.EndSummonFollowupWindow();
                 SummonFollowupHitConfirmed?.Invoke(spentTier, damageInfo.Amount);
             }
@@ -883,6 +895,9 @@ namespace DimensionBrawl.Test
             skillUsesAtSummonBreakStart = GetSkillUseCount();
             grantedSummonFollowupEnergy = false;
             usedSkill1DuringSummonFollowup = false;
+            followupSkillImpactPending = false;
+            followupSkillImpactGraceStarted = false;
+            followupSkillImpactGraceTimer = 0f;
             skill1FollowupHitConfirmed = false;
             bossBlockedSkill1Followup = false;
             bossScreenSuppressedByFollowup = false;
@@ -911,6 +926,20 @@ namespace DimensionBrawl.Test
             ApplyRunningBarragePacing();
         }
 
+        private void TickFollowupSkillImpactGrace(float deltaTime)
+        {
+            if (followupSkillImpactGraceTimer <= 0f
+                || pressurePacing.IsSummonFollowupWindowActive
+                || skill1FollowupHitConfirmed)
+            {
+                return;
+            }
+
+            followupSkillImpactGraceTimer = Mathf.Max(
+                0f,
+                followupSkillImpactGraceTimer - Mathf.Max(0f, deltaTime));
+        }
+
         private void TickSkill1FollowupClearTimer(float deltaTime)
         {
             if (!skill1FollowupHitConfirmed || skill1FollowupClearTimer <= 0f)
@@ -923,16 +952,58 @@ namespace DimensionBrawl.Test
 
         private void CaptureFollowupMiss(bool wasFollowupWindowActive)
         {
-            if (!wasFollowupWindowActive
-                || pressurePacing.IsSummonFollowupWindowActive
-                || !requireSkill1FollowupHitToClear
+            if (!requireSkill1FollowupHitToClear
                 || skill1FollowupHitConfirmed
                 || followupMissedNotified)
             {
                 return;
             }
 
+            bool followupWindowClosedThisTick =
+                wasFollowupWindowActive && !pressurePacing.IsSummonFollowupWindowActive;
+            bool pendingImpactGraceExpired =
+                followupSkillImpactPending
+                && !pressurePacing.IsSummonFollowupWindowActive
+                && followupSkillImpactGraceTimer <= 0f;
+            if (!followupWindowClosedThisTick && !pendingImpactGraceExpired)
+            {
+                return;
+            }
+
+            if (StartOrKeepFollowupSkillImpactGrace())
+            {
+                return;
+            }
+
             NotifySummonFollowupMissedOnce();
+        }
+
+        private bool StartOrKeepFollowupSkillImpactGrace()
+        {
+            if (!followupSkillImpactPending
+                || bossBlockedSkill1Followup
+                || skill1FollowupHitConfirmed
+                || pressurePacing.IsSummonFollowupWindowActive)
+            {
+                return false;
+            }
+
+            if (!followupSkillImpactGraceStarted)
+            {
+                followupSkillImpactGraceTimer = summonFollowupSkillImpactGraceSeconds;
+                followupSkillImpactGraceStarted = true;
+            }
+
+            return followupSkillImpactGraceTimer > 0f;
+        }
+
+        private bool IsFollowupSkillImpactGraceActive()
+        {
+            return followupSkillImpactPending
+                && !skill1FollowupHitConfirmed
+                && !bossBlockedSkill1Followup
+                && !followupMissedNotified
+                && followupSkillImpactGraceTimer > 0f;
         }
 
         private void CaptureBossBlockedFollowup()
@@ -974,6 +1045,9 @@ namespace DimensionBrawl.Test
             observedSkillUseCount = Mathf.Max(observedSkillUseCount, GetSkillUseCount());
             bossPressureBlocksConsumedDuringFollowup = Mathf.Max(1, pressureBlockCount);
             bossBlockedSkill1Followup = true;
+            followupSkillImpactPending = false;
+            followupSkillImpactGraceStarted = false;
+            followupSkillImpactGraceTimer = 0f;
             pressurePacing.EndSummonFollowupWindow();
             NotifySummonFollowupMissedOnce(CounterWaveSource.BossScreenBlock);
         }
@@ -1029,6 +1103,9 @@ namespace DimensionBrawl.Test
             }
 
             followupMissedNotified = true;
+            followupSkillImpactPending = false;
+            followupSkillImpactGraceStarted = false;
+            followupSkillImpactGraceTimer = 0f;
             ObserveCounterWave(source);
             SummonFollowupMissed?.Invoke();
         }
@@ -1140,6 +1217,9 @@ namespace DimensionBrawl.Test
             skillUsesAtSummonBreakStart = GetSkillUseCount();
             grantedSummonFollowupEnergy = false;
             usedSkill1DuringSummonFollowup = false;
+            followupSkillImpactPending = false;
+            followupSkillImpactGraceStarted = false;
+            followupSkillImpactGraceTimer = 0f;
             skill1FollowupHitConfirmed = false;
             bossBlockedSkill1Followup = false;
             bossScreenSuppressedByFollowup = false;
@@ -2486,6 +2566,11 @@ namespace DimensionBrawl.Test
                 return $"Clean LV{lastSupportSummonUseTier} vanguard follow-up";
             }
 
+            if (IsDirectHighTierSuppressCleanFollowup())
+            {
+                return $"Clean LV{highestBossScreenSuppressSummonTier} suppress follow-up";
+            }
+
             return "Clean summon follow-up";
         }
 
@@ -2499,6 +2584,11 @@ namespace DimensionBrawl.Test
             if (lastSupportSummonUseSlotId == "SummonSlot3")
             {
                 return "Vanguard hold carried into boss-screen suppression; Skill1 follow-up landed";
+            }
+
+            if (IsDirectHighTierSuppressCleanFollowup())
+            {
+                return "High-tier summon broke the boss screen; Skill1 follow-up landed";
             }
 
             return ResolveStageText(
@@ -2518,6 +2608,11 @@ namespace DimensionBrawl.Test
                 return "Vanguard payoff logged: high-cost line hold converted into a direct boss-screen break.";
             }
 
+            if (IsDirectHighTierSuppressCleanFollowup())
+            {
+                return "LV3 suppress logged: high-tier summon broke the boss screen before counter pressure.";
+            }
+
             return ResolveStageText(
                 stageProfile != null ? stageProfile.CleanRouteRewardHook : null,
                 "Clean survival logged: summon cover created a Skill1 confirm before counter pressure arrived.");
@@ -2535,6 +2630,11 @@ namespace DimensionBrawl.Test
                 return "review.clear.vanguard_payoff";
             }
 
+            if (IsDirectHighTierSuppressCleanFollowup())
+            {
+                return "review.clear.lv3_suppress";
+            }
+
             return "review.clear.clean_followup";
         }
 
@@ -2548,6 +2648,11 @@ namespace DimensionBrawl.Test
             if (lastSupportSummonUseSlotId == "SummonSlot3")
             {
                 return "Next run: commit Slot3 when line safety is worth the delayed main answer.";
+            }
+
+            if (IsDirectHighTierSuppressCleanFollowup())
+            {
+                return "Next run: wait for LV3 only when HP can pay for the direct boss-screen suppress.";
             }
 
             return ResolveStageText(
@@ -2567,7 +2672,20 @@ namespace DimensionBrawl.Test
                 return "next.practice.slot3_vanguard_payoff";
             }
 
+            if (IsDirectHighTierSuppressCleanFollowup())
+            {
+                return "next.practice.lv3_suppress_timing";
+            }
+
             return "next.practice.clean_followup_confirm";
+        }
+
+        private bool IsDirectHighTierSuppressCleanFollowup()
+        {
+            return string.IsNullOrEmpty(lastSupportSummonUseSlotId)
+                && bossScreenSuppressedByFollowup
+                && highestBossScreenSuppressSummonTier >= Mathf.Clamp(bossScreenSuppressMinimumSummonTier, 1, 3)
+                && lastSummonPressureBreakTier >= Mathf.Clamp(bossScreenSuppressMinimumSummonTier, 1, 3);
         }
 
         private int ResolveCurrentStageBeatIndex()
