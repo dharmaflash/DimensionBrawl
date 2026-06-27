@@ -3555,6 +3555,10 @@ namespace DimensionBrawl.Tests
             PolicyMetrics forwardRiskTier1Recovery = RequireResult(results, PolicyKind.ForwardRiskTier1RecoveryRoute);
             PolicyMetrics forwardRiskTier2Recovery = RequireResult(results, PolicyKind.ForwardRiskTier2RecoveryRoute);
             PolicyMetrics forwardRiskTier3Recovery = RequireResult(results, PolicyKind.ForwardRiskTier3RecoveryRoute);
+            PolicyMetrics forwardRiskSlot2Marksman =
+                RequireResult(results, PolicyKind.ForwardRiskSlot2MarksmanRoute);
+            PolicyMetrics forwardRiskSlot3Vanguard =
+                RequireResult(results, PolicyKind.ForwardRiskSlot3VanguardRoute);
             PolicyMetrics late = RequireResult(results, PolicyKind.LateSummon);
             PolicyMetrics counterRecovery = RequireResult(results, PolicyKind.MissedFollowupCounterRecovery);
             PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
@@ -3577,6 +3581,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Punish window tolerance: delayed clean hit after {FormatSeconds(delayedIntended.FollowupHitWindowDelaySeconds)} with {FormatSeconds(delayedIntended.FollowupWindowRemainingAtFirstHitSeconds)} remaining; delayed boss-screen recovery hit after {FormatSeconds(delayedBlockedRecovery.FollowupHitWindowDelaySeconds)} with {FormatSeconds(delayedBlockedRecovery.FollowupWindowRemainingAtFirstHitSeconds)} remaining.");
             builder.AppendLine($"- Forward-risk EN split: backline LV1 {FormatSeconds(backlineEnergy.EnergyTier1DurationSeconds)} at x{backlineEnergy.AverageEnergyGainMultiplier:0.00}, forward-risk LV1 {FormatSeconds(forwardRiskEnergy.EnergyTier1DurationSeconds)} at x{forwardRiskEnergy.AverageEnergyGainMultiplier:0.00}; forward route is {ResolveEnergySpeedup(backlineEnergy, forwardRiskEnergy):0.0}x faster.");
             builder.AppendLine($"- EN spend branch: direct LV1/LV2/LV3 results `{forwardRiskTier1Decision.ResultKind}`/`{forwardRiskTier2Decision.ResultKind}`/`{forwardRiskTier3Decision.ResultKind}` with first unresolved `{ResolveFirstUnresolvedBeat(forwardRiskTier1Decision)}`/`{ResolveFirstUnresolvedBeat(forwardRiskTier2Decision)}`/`{ResolveFirstUnresolvedBeat(forwardRiskTier3Decision)}`; recovery results `{forwardRiskTier1Recovery.ResultKind}`/`{forwardRiskTier2Recovery.ResultKind}`/`{forwardRiskTier3Recovery.ResultKind}` with HP lost {forwardRiskTier1Recovery.PlayerDamageTaken:0.0}/{forwardRiskTier2Recovery.PlayerDamageTaken:0.0}/{forwardRiskTier3Recovery.PlayerDamageTaken:0.0}.");
+            builder.AppendLine($"- Support answer split: Slot2 `{ResolveSupportAnswerBeat(forwardRiskSlot2Marksman)}` leaves `{ResolveFirstUnresolvedBeat(forwardRiskSlot2Marksman)}` after {forwardRiskSlot2Marksman.SupportSummonProjectileEnemySummonHits} enemy-frontline hits and {forwardRiskSlot2Marksman.PhysicalBarragePlayerHits}/{forwardRiskSlot2Marksman.PhysicalBarrageTrackedProjectileCount} physical player hits; Slot3 `{ResolveSupportAnswerBeat(forwardRiskSlot3Vanguard)}` leaves `{ResolveFirstUnresolvedBeat(forwardRiskSlot3Vanguard)}` after {forwardRiskSlot3Vanguard.SupportSummonBlocks} blocks and {forwardRiskSlot3Vanguard.PhysicalBarragePlayerHits}/{forwardRiskSlot3Vanguard.PhysicalBarrageTrackedProjectileCount} physical player hits.");
             builder.AppendLine($"- Energy presentation bridge: forward-risk energy screen/VFX F/R/S {forwardRiskEnergy.ForwardRiskEnergyScreenCueRequests}/{forwardRiskEnergy.EnergyReadyScreenCueRequests}/{forwardRiskEnergy.EnergySpendScreenCueRequests} and {forwardRiskEnergy.ForwardRiskEnergyVfxCueRequests}/{forwardRiskEnergy.EnergyReadyVfxCueRequests}/{forwardRiskEnergy.EnergySpendVfxCueRequests}; boss-screen recovery ready/spend screen {blockedRecovery.EnergyReadyScreenCueRequests}/{blockedRecovery.EnergySpendScreenCueRequests}, VFX {blockedRecovery.EnergyReadyVfxCueRequests}/{blockedRecovery.EnergySpendVfxCueRequests}.");
             builder.AppendLine($"- Forward-risk barrage shape: backline `{backlineBarrage.BarrageShapePatternId}` near-body {backlineBarrage.BarrageShapeNearProjectileCount}/{backlineBarrage.BarrageShapeProjectileCount}, avg lateral gap {backlineBarrage.BarrageShapeAverageLateralGap:0.00}, nearest {backlineBarrage.BarrageShapeNearestLaneDistance:0.00}, density {backlineBarrage.BarrageShapeThreatDensity:0.00}; forward near-body {forwardRiskBarrage.BarrageShapeNearProjectileCount}/{forwardRiskBarrage.BarrageShapeProjectileCount}, avg lateral gap {forwardRiskBarrage.BarrageShapeAverageLateralGap:0.00}, nearest {forwardRiskBarrage.BarrageShapeNearestLaneDistance:0.00}, density {forwardRiskBarrage.BarrageShapeThreatDensity:0.00}.");
             if (forwardRiskBarrage.BarrageShapeNearProjectileCount <= backlineBarrage.BarrageShapeNearProjectileCount)
@@ -3842,8 +3847,8 @@ namespace DimensionBrawl.Tests
             IReadOnlyList<PolicyMetrics> results)
         {
             builder.AppendLine("## Stage/Wave Beat Map");
-            builder.AppendLine("| Policy | CloseProbe | ScreenCurtain | Follow-up | CounterPressure | Result hook | First unresolved | Stage judgement |");
-            builder.AppendLine("|---|---|---|---|---|---|---|---|");
+            builder.AppendLine("| Policy | CloseProbe | ScreenCurtain | SupportAnswer | Follow-up | CounterPressure | Result hook | First unresolved | Stage judgement |");
+            builder.AppendLine("|---|---|---|---|---|---|---|---|---|");
             for (int i = 0; i < results.Count; i++)
             {
                 PolicyMetrics result = results[i];
@@ -3853,6 +3858,8 @@ namespace DimensionBrawl.Tests
                 builder.Append(ResolveCloseProbeBeat(result));
                 builder.Append(" | ");
                 builder.Append(ResolveScreenCurtainBeat(result));
+                builder.Append(" | ");
+                builder.Append(ResolveSupportAnswerBeat(result));
                 builder.Append(" | ");
                 builder.Append(ResolveFollowupBeat(result));
                 builder.Append(" | ");
@@ -4682,6 +4689,8 @@ namespace DimensionBrawl.Tests
             PolicyMetrics prematureSkill1 = RequireResult(results, PolicyKind.PrematureSkill1NoSummon);
             PolicyMetrics noPunish = RequireResult(results, PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe);
             PolicyMetrics physicalPunish = RequireResult(results, PolicyKind.ForwardRiskPhysicalSummonPunishProbe);
+            PolicyMetrics marksman = RequireResult(results, PolicyKind.ForwardRiskSlot2MarksmanRoute);
+            PolicyMetrics vanguard = RequireResult(results, PolicyKind.ForwardRiskSlot3VanguardRoute);
             PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
             PolicyMetrics blockedRecovery = RequireResult(results, PolicyKind.BossScreenBlockCounterRecovery);
 
@@ -4718,6 +4727,22 @@ namespace DimensionBrawl.Tests
                 ResolveFirstUnresolvedBeat(physicalPunish),
                 "Physical summon punish should complete the clean stage beat chain.");
             Assert.AreEqual(
+                "SUPPRESS_ENEMY_FRONT",
+                ResolveSupportAnswerBeat(marksman),
+                "Slot2 should classify as a support answer that suppresses hostile frontline pressure.");
+            Assert.AreEqual(
+                "ScreenCurtain",
+                ResolveFirstUnresolvedBeat(marksman),
+                "Slot2 marksman should remain a partial support answer, not a main screen-curtain solution.");
+            Assert.AreEqual(
+                "HOLD_PHYSICAL_LINE",
+                ResolveSupportAnswerBeat(vanguard),
+                "Slot3 should classify as a support answer that holds the physical barrage line.");
+            Assert.AreEqual(
+                "ScreenCurtain",
+                ResolveFirstUnresolvedBeat(vanguard),
+                "Slot3 vanguard should remain a partial support answer until the main boss curtain is solved.");
+            Assert.AreEqual(
                 "CounterAnswer",
                 ResolveFirstUnresolvedBeat(blockedFollowup),
                 "A boss-screen-blocked follow-up should classify the next missing beat as the counter answer.");
@@ -4749,6 +4774,8 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.ForwardRiskTier1RecoveryRoute:
                 case PolicyKind.ForwardRiskTier2RecoveryRoute:
                 case PolicyKind.ForwardRiskTier3RecoveryRoute:
+                case PolicyKind.ForwardRiskSlot2MarksmanRoute:
+                case PolicyKind.ForwardRiskSlot3VanguardRoute:
                 case PolicyKind.IntendedRoute:
                 case PolicyKind.IntendedDelayedFollowup:
                 case PolicyKind.LateSummon:
@@ -4790,6 +4817,40 @@ namespace DimensionBrawl.Tests
             }
 
             return result.ResultKind == "PlayerDownFail" ? "FAILED" : "PENDING";
+        }
+
+        private static string ResolveSupportAnswerBeat(PolicyMetrics result)
+        {
+            if (!IsStageRoutePolicy(result.Policy))
+            {
+                return "N/A";
+            }
+
+            if (result.Policy == PolicyKind.ForwardRiskSlot2MarksmanRoute)
+            {
+                if (result.SupportSummonProjectileEnemySummonHits > 0)
+                {
+                    return "SUPPRESS_ENEMY_FRONT";
+                }
+
+                return result.SupportSummonProjectileBossHits > 0
+                    ? "SUPPORT_FIRE"
+                    : result.SupportSummonProjectileHits > 0
+                        ? "PARTIAL_FIRE"
+                        : "MISS";
+            }
+
+            if (result.Policy == PolicyKind.ForwardRiskSlot3VanguardRoute)
+            {
+                if (result.SupportSummonBlocks > 0 && result.PhysicalBarragePlayerHits == 0)
+                {
+                    return "HOLD_PHYSICAL_LINE";
+                }
+
+                return result.SupportSummonBlocks > 0 ? "PARTIAL_HOLD" : "MISS";
+            }
+
+            return "-";
         }
 
         private static string ResolveFollowupBeat(PolicyMetrics result)
@@ -4918,6 +4979,7 @@ namespace DimensionBrawl.Tests
         {
             return $"close={ResolveCloseProbeBeat(result)}; "
                 + $"curtain={ResolveScreenCurtainBeat(result)}; "
+                + $"support={ResolveSupportAnswerBeat(result)}; "
                 + $"followup={ResolveFollowupBeat(result)}; "
                 + $"counter={ResolveCounterPressureBeat(result)}; "
                 + $"result={ResolveResultHookBeat(result)}";
