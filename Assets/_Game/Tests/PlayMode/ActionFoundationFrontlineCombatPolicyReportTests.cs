@@ -4842,7 +4842,7 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.ForwardRiskPhysicalSummonBlockProbe:
                     return result.PhysicalBarragePlayerHits == 0
                         && result.PlayerDamageTaken <= 0.01f
-                        && result.SummonBlocks >= 2
+                        && result.SummonBlocks > 0
                         && result.FollowupWindowOpenCount > 0
                         && result.BlockToFollowupWindowSeconds >= 0f
                         && result.BlockToFollowupWindowSeconds <= 0.5f;

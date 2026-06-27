@@ -4745,7 +4745,11 @@ namespace DimensionBrawl.Tests
                 "A boss-screen block should not open the recovery follow-up window in the same sample that records the block.");
             Assert.IsFalse(pocketOwner.Skill1FollowupHitConfirmed);
             Assert.IsFalse(pocketOwner.IsCleared);
-            Assert.That(pocketOwner.ObjectiveCue, Does.Contain("Boss screen blocked"));
+            Assert.That(pocketOwner.ObjectiveCue, Does.Contain("Boss screen absorbed the follow-up"));
+            Assert.That(
+                pocketOwner.ObjectiveCue,
+                Does.Contain("rebuild the summon answer"),
+                "The blocked follow-up cue should point at the current counter-answer state, not stale generic block copy.");
             Assert.AreEqual(
                 followupMissedCueCountBefore + 1,
                 cameraCueDriver.SummonFollowupMissedCueRequestCount,
@@ -4769,6 +4773,196 @@ namespace DimensionBrawl.Tests
                 followupMissedVfxCueCountBefore + 1,
                 pocketVfxCueBridge.FollowupMissedCueRequestCount,
                 "The later follow-up timeout should not duplicate the already-read boss-screen block VFX cue.");
+        }
+
+        [UnityTest]
+        public IEnumerator PocketBossScreenBlockCounterRecoveryClearsWithFreshSummonAnswer()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
+            SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
+            PlayerSummonSlot1Action summonSlot1Action =
+                RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            GameObject bossRoot = RequireRoot(BossRootName);
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            BossPressureActionDirector bossPressureActionDirector =
+                RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
+            BossSummonPressureAction bossSummonPressureAction =
+                RequireComponent<BossSummonPressureAction>(bossRoot, "boss summon pressure action");
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
+            Collider bossHitCollider = RequireCombatHitCollider(bossRoot, bossHealth, "boss proxy");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            ActionCameraCueDriver cameraCueDriver =
+                RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
+            BossBarragePocketVfxCueBridge pocketVfxCueBridge =
+                RequireComponent<BossBarragePocketVfxCueBridge>(
+                    RequireRoot(PocketOwnerRootName),
+                    "pocket VFX cue bridge");
+            ActionScreenCuePresenter screenCuePresenter =
+                RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "action screen cue presenter");
+            CombatHealth closeThreatHealth =
+                RequireComponent<CombatHealth>(RequireRoot(CloseThreatRootName), "close threat health");
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            FrontlineWaveStageProfile stageProfile = LoadAsset<FrontlineWaveStageProfile>(StageProfilePath);
+
+            Assert.AreSame(
+                bossSummonPressureAction,
+                bossPressureActionDirector.SummonPressureAction,
+                "The manual recovery contract should read the same authored boss summon pressure action as the failure branch.");
+
+            FillEnergyToTier(energyLadder, 1);
+            Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
+            closeThreatHealth.TryApplyDamage(new DamageInfo(
+                playerHealth,
+                DamageTeam.Player,
+                closeThreatHealth.MaxHealth + 10f,
+                closeThreatHealth.transform.position,
+                Vector3.forward,
+                0f));
+
+            yield return null;
+
+            SummonPressureScreen allyScreen = RequireActiveAllyPressureScreen();
+            Assert.IsTrue(emitter.BeginWindup());
+            Assert.Greater(emitter.FirePendingWave(), 0);
+            BossBarrageProjectile bossProjectile = RequireActiveBossProjectile();
+            Assert.IsTrue(allyScreen.TryIntercept(bossProjectile));
+            pocketOwner.Tick(0f);
+
+            Assert.IsTrue(pocketOwner.IsSummonFollowupWindowActive);
+            Assert.IsTrue(energyLadder.CanSpend);
+
+            int counterWaveCameraCueCountBefore = cameraCueDriver.CounterWaveCueRequestCount;
+            int counterWaveScreenCueCountBefore = screenCuePresenter.CounterWaveCueRequestCount;
+            int counterWaveVfxCueCountBefore = pocketVfxCueBridge.CounterWaveCueRequestCount;
+            int followupMissedCueCountBefore = cameraCueDriver.SummonFollowupMissedCueRequestCount;
+            int followupMissedVfxCueCountBefore = pocketVfxCueBridge.FollowupMissedCueRequestCount;
+            Assert.IsTrue(
+                bossSummonPressureAction.TryReleasePressureSummon(1),
+                "The boss screen should be releasable as the enemy-side block before the recovery answer.");
+            SummonPressureScreen enemyScreen = RequireActiveEnemyPressureScreen();
+            targetSelector.NotifyTargetContact(bossHealth);
+            targetSelector.RefreshTarget();
+            Assert.IsTrue(skill1Action.TryUseSkill1());
+            LaneActionProjectile blockedFollowupProjectile = RequireActivePlayerSkillProjectile();
+            Assert.IsTrue(enemyScreen.TryIntercept(blockedFollowupProjectile));
+            pocketOwner.Tick(0f);
+
+            Assert.IsTrue(pocketOwner.BossBlockedSkill1Followup);
+            Assert.AreEqual(
+                BossBarragePocketReviewOwner.CounterWaveSource.BossScreenBlock,
+                pocketOwner.CounterWaveObservedSource);
+            Assert.AreEqual("boss_screen", pocketOwner.CounterWaveSourceReadout);
+            Assert.IsFalse(pocketOwner.IsCounterWaveFinalWindowOpened);
+            Assert.AreEqual(
+                followupMissedCueCountBefore + 1,
+                cameraCueDriver.SummonFollowupMissedCueRequestCount);
+            Assert.AreEqual(
+                followupMissedVfxCueCountBefore + 1,
+                pocketVfxCueBridge.FollowupMissedCueRequestCount);
+            Assert.AreEqual(
+                counterWaveCameraCueCountBefore + 1,
+                cameraCueDriver.CounterWaveCueRequestCount,
+                "The boss-screen block should expose the counter wave through the existing camera cue bridge.");
+            Assert.AreEqual(
+                counterWaveScreenCueCountBefore + 1,
+                screenCuePresenter.CounterWaveCueRequestCount,
+                "The boss-screen block should expose the counter wave through the existing screen cue bridge.");
+            Assert.AreEqual(
+                counterWaveVfxCueCountBefore + 1,
+                pocketVfxCueBridge.CounterWaveCueRequestCount,
+                "The boss-screen block should expose the counter wave through the existing in-world VFX bridge.");
+            Assert.That(
+                pocketOwner.LastCounterWaveAnswerEnergyPulse,
+                Is.EqualTo(stageProfile.CounterWaveAnswerEnergyPulseOverride).Within(0.001f),
+                "The recovery answer should be opened by the stage-profile counter pulse, not passive refarming.");
+            Assert.IsTrue(
+                energyLadder.CanSpend,
+                "The counter-answer pulse should make a fresh SummonSlot1 answer immediately available.");
+
+            int summonUseCountBeforeCounterAnswer = summonSlot1Action.TotalUseCount;
+            int counterAnswerCameraCueCountBefore = cameraCueDriver.CounterWaveStabilizedCueRequestCount;
+            int counterAnswerScreenCueCountBefore = screenCuePresenter.CounterWaveAnswerCueRequestCount;
+            int counterAnswerVfxCueCountBefore = pocketVfxCueBridge.CounterWaveStabilizedCueRequestCount;
+            Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
+            Assert.Greater(
+                summonSlot1Action.TotalUseCount,
+                summonUseCountBeforeCounterAnswer,
+                "Counter recovery should require a fresh summon use after the boss-screen block, not stale cover.");
+            Assert.Greater(
+                pocketOwner.CounterWaveAllyHoldRequiredSeconds,
+                0f,
+                "The manual recovery branch should still read as a short hold state before reopening the final window.");
+
+            pocketOwner.Tick(pocketOwner.CounterWaveAllyHoldRequiredSeconds + 0.05f);
+
+            Assert.IsTrue(pocketOwner.IsCounterWaveStabilized);
+            Assert.AreEqual("stabilized", pocketOwner.CounterWaveAnswerState);
+            Assert.AreEqual("ally_hold", pocketOwner.CounterWaveAnswerReadout);
+            Assert.IsTrue(pocketOwner.IsCounterWaveFinalWindowOpened);
+            Assert.AreEqual("opened", pocketOwner.CounterWaveFinalWindowState);
+            Assert.AreEqual("final_followup", pocketOwner.CounterWaveFinalWindowReadout);
+            Assert.AreEqual(
+                counterAnswerCameraCueCountBefore + 1,
+                cameraCueDriver.CounterWaveStabilizedCueRequestCount,
+                "The fresh summon answer should request the existing stabilized camera cue.");
+            Assert.AreEqual(
+                counterAnswerScreenCueCountBefore + 1,
+                screenCuePresenter.CounterWaveAnswerCueRequestCount,
+                "The fresh summon answer should request the existing counter-answer screen cue.");
+            Assert.AreEqual(
+                counterAnswerVfxCueCountBefore + 1,
+                pocketVfxCueBridge.CounterWaveStabilizedCueRequestCount,
+                "The fresh summon answer should request the existing stabilized in-world cue.");
+            Assert.IsTrue(
+                pocketOwner.IsSummonFollowupWindowActive,
+                "The stabilized counter answer should reopen the final Skill1 window.");
+            Assert.IsTrue(
+                energyLadder.CanSpend,
+                "The final counter window should be actionable without waiting for another passive EN cycle.");
+
+            int followupHitCueCountBefore = cameraCueDriver.SummonFollowupHitCueRequestCount;
+            int followupHitVfxCueCountBefore = pocketVfxCueBridge.FollowupHitCueRequestCount;
+            float bossHealthBeforeFinalFollowup = bossHealth.CurrentHealth;
+            targetSelector.NotifyTargetContact(bossHealth);
+            targetSelector.RefreshTarget();
+            Assert.IsTrue(skill1Action.TryUseSkill1());
+            LaneActionProjectile finalFollowupProjectile = RequireActivePlayerSkillProjectile();
+            Assert.IsTrue(
+                finalFollowupProjectile.TryApplyImpact(bossHitCollider, finalFollowupProjectile.transform.position),
+                "The recovered final Skill1 should still resolve as a real boss hit in the authored scene.");
+            pocketOwner.Tick(0f);
+
+            Assert.IsTrue(pocketOwner.UsedSkill1DuringSummonFollowup);
+            Assert.IsTrue(pocketOwner.Skill1FollowupHitConfirmed);
+            Assert.Less(bossHealth.CurrentHealth, bossHealthBeforeFinalFollowup);
+            Assert.AreEqual(
+                followupHitCueCountBefore + 1,
+                cameraCueDriver.SummonFollowupHitCueRequestCount);
+            Assert.AreEqual(
+                followupHitVfxCueCountBefore + 1,
+                pocketVfxCueBridge.FollowupHitCueRequestCount);
+            Assert.AreEqual("Followup.Hit", screenCuePresenter.LastCueId);
+
+            int resultCueCountBeforeClear = screenCuePresenter.ResultCueRequestCount;
+            pocketOwner.Tick(GetFloat(pocketOwner, "skill1FollowupClearDelaySeconds") + 0.05f);
+
+            Assert.IsTrue(pocketOwner.IsCleared);
+            Assert.AreEqual(resultCueCountBeforeClear + 1, screenCuePresenter.ResultCueRequestCount);
+            Assert.IsTrue(pocketOwner.HasCommittedResultRecord);
+            BossBarragePocketReviewOwner.RouteResultRecord result = pocketOwner.LastResultRecord;
+            Assert.AreEqual(BossBarragePocketReviewOwner.RouteResultKind.CounterRecoveryClear, result.ResultKind);
+            Assert.IsTrue(result.IsClear);
+            Assert.AreEqual(
+                BossBarragePocketReviewOwner.CounterWaveSource.BossScreenBlock,
+                result.CounterWaveSource);
+            Assert.AreEqual("PRESSURE BROKEN", result.Title);
+            Assert.That(result.Summary, Does.Contain("Counter pressure held"));
+            Assert.AreEqual("Counter recovery", result.RouteLabel);
+            Assert.That(result.RewardHook, Does.Contain("Counter recovery logged"));
         }
 
         private static GameObject RequireRoot(string rootName)
