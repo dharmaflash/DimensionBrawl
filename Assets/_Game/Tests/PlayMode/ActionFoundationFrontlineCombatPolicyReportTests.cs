@@ -36,6 +36,7 @@ namespace DimensionBrawl.Tests
         private const float BacklineEnergyProbeForwardRisk01 = 0.12f;
         private const float ForwardEnergyProbeForwardRisk01 = 0.88f;
         private const float EnergyProbeMaxSeconds = 13f;
+        private const float EnergyTierLadderProbeMaxSeconds = 36f;
         private const float BarrageShapeProbeNearRadius = 1.25f;
         private const int BarrageShapePreviewCapacity = 16;
         private const float PhysicalBarrageProbeFlightSeconds = 3.4f;
@@ -61,6 +62,8 @@ namespace DimensionBrawl.Tests
             PrematureSkill1NoSummon,
             BacklineEnergyProbe,
             ForwardRiskEnergyProbe,
+            BacklineEnergyTierLadderProbe,
+            ForwardRiskEnergyTierLadderProbe,
             BacklineBarrageProbe,
             ForwardRiskBarrageProbe,
             BacklinePhysicalBarrageProbe,
@@ -92,6 +95,8 @@ namespace DimensionBrawl.Tests
             PolicyKind.PrematureSkill1NoSummon,
             PolicyKind.BacklineEnergyProbe,
             PolicyKind.ForwardRiskEnergyProbe,
+            PolicyKind.BacklineEnergyTierLadderProbe,
+            PolicyKind.ForwardRiskEnergyTierLadderProbe,
             PolicyKind.BacklineBarrageProbe,
             PolicyKind.ForwardRiskBarrageProbe,
             PolicyKind.BacklinePhysicalBarrageProbe,
@@ -169,6 +174,10 @@ namespace DimensionBrawl.Tests
                 PolicyMetrics prematureSkill1 = RequireResult(results, PolicyKind.PrematureSkill1NoSummon);
                 PolicyMetrics backlineEnergy = RequireResult(results, PolicyKind.BacklineEnergyProbe);
                 PolicyMetrics forwardRiskEnergy = RequireResult(results, PolicyKind.ForwardRiskEnergyProbe);
+                PolicyMetrics backlineEnergyTierLadder =
+                    RequireResult(results, PolicyKind.BacklineEnergyTierLadderProbe);
+                PolicyMetrics forwardRiskEnergyTierLadder =
+                    RequireResult(results, PolicyKind.ForwardRiskEnergyTierLadderProbe);
                 PolicyMetrics backlineBarrage = RequireResult(results, PolicyKind.BacklineBarrageProbe);
                 PolicyMetrics forwardRiskBarrage = RequireResult(results, PolicyKind.ForwardRiskBarrageProbe);
                 PolicyMetrics backlinePhysicalBarrage = RequireResult(
@@ -513,6 +522,38 @@ namespace DimensionBrawl.Tests
                     forwardRiskEnergy.EnergyReadyVfxCueRequests,
                     0,
                     "The forward-risk energy probe should request an energy-ready VFX cue when LV1 becomes available.");
+                Assert.AreEqual(
+                    3,
+                    backlineEnergyTierLadder.EnergyProbeTargetTier,
+                    "The backline tier ladder probe should explicitly wait for LV3.");
+                Assert.AreEqual(
+                    3,
+                    forwardRiskEnergyTierLadder.EnergyProbeTargetTier,
+                    "The forward-risk tier ladder probe should explicitly wait for LV3.");
+                Assert.GreaterOrEqual(
+                    backlineEnergyTierLadder.EnergyTier3ReadyAtSeconds,
+                    0f,
+                    "Backline waiting should prove whether LV3 can be reached without forward-risk positioning.");
+                Assert.GreaterOrEqual(
+                    forwardRiskEnergyTierLadder.EnergyTier2ReadyAtSeconds,
+                    0f,
+                    "Forward-risk waiting should at least expose the LV2 decision point before judging LV3.");
+                Assert.Less(
+                    forwardRiskEnergyTierLadder.EnergyTier1DurationSeconds,
+                    backlineEnergyTierLadder.EnergyTier1DurationSeconds,
+                    "The tier ladder probe should keep LV1 faster at forward risk than backline safety.");
+                Assert.Less(
+                    forwardRiskEnergyTierLadder.EnergyTier2DurationSeconds,
+                    backlineEnergyTierLadder.EnergyTier2DurationSeconds,
+                    "The tier ladder probe should keep LV2 faster at forward risk than backline safety.");
+                Assert.Greater(
+                    forwardRiskEnergyTierLadder.EnergyProbePlayerDamagePerSecond,
+                    backlineEnergyTierLadder.EnergyProbePlayerDamagePerSecond + 2f,
+                    "Waiting at forward risk should compress the HP cost into a much higher damage rate than backline waiting.");
+                Assert.IsTrue(
+                    forwardRiskEnergyTierLadder.EnergyTier3ReadyAtSeconds >= 0f
+                    || forwardRiskEnergyTierLadder.FirstPlayerDownAtSeconds >= 0f,
+                    "The forward-risk tier ladder probe should report either LV3 readiness or player-down while waiting.");
                 Assert.Greater(
                     backlineBarrage.BarrageShapeProjectileCount,
                     0,
@@ -1134,6 +1175,20 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.ForwardRiskEnergyProbe:
                     yield return RunEnergyRiskProbe(context, ForwardEnergyProbeForwardRisk01);
                     break;
+                case PolicyKind.BacklineEnergyTierLadderProbe:
+                    yield return RunEnergyRiskProbe(
+                        context,
+                        BacklineEnergyProbeForwardRisk01,
+                        targetTier: 3,
+                        maxSeconds: EnergyTierLadderProbeMaxSeconds);
+                    break;
+                case PolicyKind.ForwardRiskEnergyTierLadderProbe:
+                    yield return RunEnergyRiskProbe(
+                        context,
+                        ForwardEnergyProbeForwardRisk01,
+                        targetTier: 3,
+                        maxSeconds: EnergyTierLadderProbeMaxSeconds);
+                    break;
                 case PolicyKind.BacklineBarrageProbe:
                     yield return RunBarrageShapeProbe(context, BacklineEnergyProbeForwardRisk01);
                     break;
@@ -1396,24 +1451,28 @@ namespace DimensionBrawl.Tests
 
         private static IEnumerator RunEnergyRiskProbe(
             CombatPolicyContext context,
-            float forwardRisk01)
+            float forwardRisk01,
+            int targetTier = 1,
+            float maxSeconds = EnergyProbeMaxSeconds)
         {
             MovePlayerToForwardRisk(context, forwardRisk01);
             context.EnergyLadder.ResetLadder();
             context.Metrics.EnergyProbeTargetForwardRisk01 = Mathf.Clamp01(forwardRisk01);
+            context.Metrics.EnergyProbeTargetTier = Mathf.Clamp(targetTier, 1, 3);
             context.Metrics.EnergyProbeStartAtSeconds = context.Metrics.ElapsedSeconds;
             context.Sample();
 
             float start = context.Metrics.ElapsedSeconds;
-            while (context.EnergyLadder.AvailableTier < 1
-                && context.Metrics.ElapsedSeconds - start < EnergyProbeMaxSeconds)
+            while (context.EnergyLadder.AvailableTier < context.Metrics.EnergyProbeTargetTier
+                && context.PlayerHealth.IsAlive
+                && context.Metrics.ElapsedSeconds - start < maxSeconds)
             {
                 yield return Advance(context, 0.1f);
             }
 
-            if (context.EnergyLadder.AvailableTier < 1)
+            if (context.EnergyLadder.AvailableTier < context.Metrics.EnergyProbeTargetTier)
             {
-                context.Metrics.Notes.Add("energy probe did not reach LV1");
+                context.Metrics.Notes.Add($"energy probe did not reach LV{context.Metrics.EnergyProbeTargetTier}");
             }
         }
 
@@ -2622,8 +2681,8 @@ namespace DimensionBrawl.Tests
             AppendUnconfirmedFollowupCost(builder, results);
             builder.AppendLine();
             builder.AppendLine("## Forward-Risk Energy Split");
-            builder.AppendLine("| Policy | Target risk | LV1 ready | Avg risk | Avg gain | Band seconds B/M/F | End tier/fill | Last band |");
-            builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---|");
+            builder.AppendLine("| Policy | Target risk | Target tier | LV1 | LV2 | LV3 | Player down | HP lost | HP/s | Avg risk | Avg gain | Band seconds B/M/F | End tier/fill | Last band |");
+            builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|");
             for (int i = 0; i < results.Count; i++)
             {
                 PolicyMetrics result = results[i];
@@ -2632,7 +2691,19 @@ namespace DimensionBrawl.Tests
                 builder.Append(" | ");
                 builder.Append(FormatOptionalPercent01(result.EnergyProbeTargetForwardRisk01));
                 builder.Append(" | ");
+                builder.Append(FormatEnergyProbeTargetTier(result));
+                builder.Append(" | ");
                 builder.Append(FormatSeconds(result.EnergyTier1DurationSeconds));
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.EnergyTier2DurationSeconds));
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.EnergyTier3DurationSeconds));
+                builder.Append(" | ");
+                builder.Append(FormatSeconds(result.FirstPlayerDownAtSeconds));
+                builder.Append(" | ");
+                builder.Append(result.PlayerDamageTaken.ToString("0.0"));
+                builder.Append(" | ");
+                builder.Append(result.EnergyProbePlayerDamagePerSecond.ToString("0.0"));
                 builder.Append(" | ");
                 builder.Append(FormatPercent01(result.AverageEnergyForwardRisk01));
                 builder.Append(" | ");
@@ -2649,6 +2720,8 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine(" |");
             }
 
+            builder.AppendLine();
+            AppendEnergyTierDecisionPressure(builder, results);
             builder.AppendLine();
             builder.AppendLine("## Energy Presentation Bridge");
             builder.AppendLine("| Policy | Energy screen total F/R/S | Energy VFX F/R/S | Last screen tier | Last VFX ready/spend tier | Counter answer pulse | Result |");
@@ -3629,6 +3702,79 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(" |");
         }
 
+        private static void AppendEnergyTierDecisionPressure(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results)
+        {
+            builder.AppendLine("## EN Tier Decision Pressure");
+            builder.AppendLine("| Policy | Target risk | Target tier | LV1 | LV2 | LV3 | Player down | HP lost | HP/s | Avg gain | Band seconds B/M/F | Read |");
+            builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|");
+            AppendEnergyTierDecisionRow(builder, RequireResult(results, PolicyKind.BacklineEnergyProbe));
+            AppendEnergyTierDecisionRow(builder, RequireResult(results, PolicyKind.ForwardRiskEnergyProbe));
+            AppendEnergyTierDecisionRow(builder, RequireResult(results, PolicyKind.BacklineEnergyTierLadderProbe));
+            AppendEnergyTierDecisionRow(builder, RequireResult(results, PolicyKind.ForwardRiskEnergyTierLadderProbe));
+        }
+
+        private static void AppendEnergyTierDecisionRow(StringBuilder builder, PolicyMetrics result)
+        {
+            builder.Append("| ");
+            builder.Append(result.Policy);
+            builder.Append(" | ");
+            builder.Append(FormatOptionalPercent01(result.EnergyProbeTargetForwardRisk01));
+            builder.Append(" | ");
+            builder.Append(FormatEnergyProbeTargetTier(result));
+            builder.Append(" | ");
+            builder.Append(FormatSeconds(result.EnergyTier1DurationSeconds));
+            builder.Append(" | ");
+            builder.Append(FormatSeconds(result.EnergyTier2DurationSeconds));
+            builder.Append(" | ");
+            builder.Append(FormatSeconds(result.EnergyTier3DurationSeconds));
+            builder.Append(" | ");
+            builder.Append(FormatSeconds(result.FirstPlayerDownAtSeconds));
+            builder.Append(" | ");
+            builder.Append(result.PlayerDamageTaken.ToString("0.0"));
+            builder.Append(" | ");
+            builder.Append(result.EnergyProbePlayerDamagePerSecond.ToString("0.0"));
+            builder.Append(" | ");
+            builder.Append($"x{result.AverageEnergyGainMultiplier:0.00}");
+            builder.Append(" | ");
+            builder.Append(
+                $"{FormatSeconds(result.BackSafetyBandSeconds)}/"
+                + $"{FormatSeconds(result.MidChargeBandSeconds)}/"
+                + $"{FormatSeconds(result.ForwardRiskBandSeconds)}");
+            builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveEnergyTierDecisionRead(result)));
+            builder.AppendLine(" |");
+        }
+
+        private static string ResolveEnergyTierDecisionRead(PolicyMetrics result)
+        {
+            if (result.FirstPlayerDownAtSeconds >= 0f
+                && result.EnergyTier3ReadyAtSeconds < 0f)
+            {
+                return "wait-for-LV3 failed before cap";
+            }
+
+            if (result.EnergyTier3ReadyAtSeconds >= 0f
+                && result.EnergyProbePlayerDamagePerSecond >= 3f)
+            {
+                return "higher tier reachable with high HP/s pressure";
+            }
+
+            if (result.EnergyTier3ReadyAtSeconds >= 0f
+                && result.PlayerDamageTaken > 0f)
+            {
+                return "higher tier reachable with HP cost";
+            }
+
+            if (result.EnergyTier3ReadyAtSeconds >= 0f)
+            {
+                return "higher tier reachable safely but slowly";
+            }
+
+            return "measurement only";
+        }
+
         private static void AppendUnconfirmedFollowupCost(
             StringBuilder builder,
             IReadOnlyList<PolicyMetrics> results)
@@ -4322,6 +4468,11 @@ namespace DimensionBrawl.Tests
             return value >= 0f ? FormatPercent01(value) : "-";
         }
 
+        private static string FormatEnergyProbeTargetTier(PolicyMetrics result)
+        {
+            return result.EnergyProbeTargetTier > 0 ? result.EnergyProbeTargetTier.ToString() : "-";
+        }
+
         private static string FormatOptionalDistance(float value)
         {
             return value >= 0f ? value.ToString("0.00") : "-";
@@ -4441,9 +4592,16 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"allyOnlyFrontlineSeconds\": {result.AllyOnlyFrontlineSeconds:0.###},");
                 builder.AppendLine($"      \"frontlinePresenceReadout\": \"{JsonEscape(result.FrontlinePresenceReadout)}\",");
                 builder.AppendLine($"      \"energyProbeTargetForwardRisk01\": {JsonNullableSeconds(result.EnergyProbeTargetForwardRisk01)},");
+                builder.AppendLine($"      \"energyProbeTargetTier\": {result.EnergyProbeTargetTier},");
                 builder.AppendLine($"      \"energyProbeStartAtSeconds\": {JsonNullableSeconds(result.EnergyProbeStartAtSeconds)},");
                 builder.AppendLine($"      \"energyTier1ReadyAtSeconds\": {JsonNullableSeconds(result.EnergyTier1ReadyAtSeconds)},");
+                builder.AppendLine($"      \"energyTier2ReadyAtSeconds\": {JsonNullableSeconds(result.EnergyTier2ReadyAtSeconds)},");
+                builder.AppendLine($"      \"energyTier3ReadyAtSeconds\": {JsonNullableSeconds(result.EnergyTier3ReadyAtSeconds)},");
                 builder.AppendLine($"      \"energyTier1DurationSeconds\": {JsonNullableSeconds(result.EnergyTier1DurationSeconds)},");
+                builder.AppendLine($"      \"energyTier2DurationSeconds\": {JsonNullableSeconds(result.EnergyTier2DurationSeconds)},");
+                builder.AppendLine($"      \"energyTier3DurationSeconds\": {JsonNullableSeconds(result.EnergyTier3DurationSeconds)},");
+                builder.AppendLine($"      \"energyProbeElapsedSeconds\": {JsonNullableSeconds(result.EnergyProbeElapsedSeconds)},");
+                builder.AppendLine($"      \"energyProbePlayerDamagePerSecond\": {result.EnergyProbePlayerDamagePerSecond:0.###},");
                 builder.AppendLine($"      \"energyChargingTier\": {result.EnergyChargingTier},");
                 builder.AppendLine($"      \"energyAvailableTier\": {result.EnergyAvailableTier},");
                 builder.AppendLine($"      \"energyFillRatio\": {result.EnergyFillRatio:0.###},");
@@ -5408,6 +5566,14 @@ namespace DimensionBrawl.Tests
                 if (EnergyLadder.AvailableTier >= 1 && Metrics.EnergyTier1ReadyAtSeconds < 0f)
                 {
                     Metrics.EnergyTier1ReadyAtSeconds = Metrics.ElapsedSeconds;
+                }
+                if (EnergyLadder.AvailableTier >= 2 && Metrics.EnergyTier2ReadyAtSeconds < 0f)
+                {
+                    Metrics.EnergyTier2ReadyAtSeconds = Metrics.ElapsedSeconds;
+                }
+                if (EnergyLadder.AvailableTier >= 3 && Metrics.EnergyTier3ReadyAtSeconds < 0f)
+                {
+                    Metrics.EnergyTier3ReadyAtSeconds = Metrics.ElapsedSeconds;
                 }
 
                 SampleFrontlineClashCost();
@@ -6424,10 +6590,21 @@ namespace DimensionBrawl.Tests
             public float AllyOnlyFrontlineSeconds { get; set; }
             public string FrontlinePresenceReadout { get; set; } = "pressure x1.00 open";
             public float EnergyProbeTargetForwardRisk01 { get; set; } = -1f;
+            public int EnergyProbeTargetTier { get; set; }
             public float EnergyProbeStartAtSeconds { get; set; } = -1f;
             public float EnergyTier1ReadyAtSeconds { get; set; } = -1f;
+            public float EnergyTier2ReadyAtSeconds { get; set; } = -1f;
+            public float EnergyTier3ReadyAtSeconds { get; set; } = -1f;
             public float EnergyTier1DurationSeconds =>
                 ResolveTimingDelta(EnergyProbeStartAtSeconds, EnergyTier1ReadyAtSeconds);
+            public float EnergyTier2DurationSeconds =>
+                ResolveTimingDelta(EnergyProbeStartAtSeconds, EnergyTier2ReadyAtSeconds);
+            public float EnergyTier3DurationSeconds =>
+                ResolveTimingDelta(EnergyProbeStartAtSeconds, EnergyTier3ReadyAtSeconds);
+            public float EnergyProbeElapsedSeconds =>
+                EnergyProbeStartAtSeconds >= 0f ? Mathf.Max(0f, ElapsedSeconds - EnergyProbeStartAtSeconds) : -1f;
+            public float EnergyProbePlayerDamagePerSecond =>
+                EnergyProbeElapsedSeconds > 0f ? PlayerDamageTaken / EnergyProbeElapsedSeconds : 0f;
             public int EnergyChargingTier { get; set; }
             public int EnergyAvailableTier { get; set; }
             public float EnergyFillRatio { get; set; }
