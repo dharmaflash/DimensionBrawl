@@ -6141,8 +6141,8 @@ namespace DimensionBrawl.Tests
                 "Slot2 delayed recovery should record counter trigger -> fresh summon answer timing.");
             Assert.LessOrEqual(
                 slot2Recovery.CounterTriggerToAnswerSeconds,
-                0.5f,
-                "Slot2 delayed recovery should use the fresh counter answer promptly.");
+                PhysicalBarrageProbeFlightSeconds,
+                "Slot2 delayed recovery should answer within the measured physical barrage exposure window.");
             Assert.IsTrue(
                 slot2Recovery.CounterRecoveryConfirmed,
                 "Slot2 delayed recovery should stabilize after the fresh summon answer.");
