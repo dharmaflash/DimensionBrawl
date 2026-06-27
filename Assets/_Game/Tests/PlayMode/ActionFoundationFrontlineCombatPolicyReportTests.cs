@@ -341,6 +341,9 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("## Support Decision Matrix"),
                     "The report should compare summon choices as combat decisions, not only isolated policy rows.");
                 Assert.IsTrue(
+                    markdown.Contains("## Enemy Pressure Tactical Cost Matrix"),
+                    "The report should prove enemy pressure actors create unattended tactical cost, not timer-only bookkeeping.");
+                Assert.IsTrue(
                     markdown.Contains("## Skill Gate Contract"),
                     "The report should prove raw Skill1 hits are not the same as state-gated follow-up commits.");
                 AssertStageWaveBeatMap(results);
@@ -355,6 +358,12 @@ namespace DimensionBrawl.Tests
                 AssertSharedManaDelayedCounterRecoveryBranch(
                     forwardRiskSlot2DelayedRecovery,
                     forwardRiskSlot3DelayedRecovery);
+                AssertEnemyPressureTacticalCost(
+                    noSummon,
+                    forwardRiskPhysicalSummonNoPunish,
+                    ignoredRecovery,
+                    blockedRecovery,
+                    forwardRiskPhysicalSummonPunish);
                 AssertSupportDecisionTimingVerdicts(
                     forwardRiskTier1Recovery,
                     forwardRiskSlot2Combo,
@@ -3338,6 +3347,8 @@ namespace DimensionBrawl.Tests
             builder.AppendLine();
             AppendStructuralGateSummary(builder, results);
             builder.AppendLine();
+            AppendEnemyPressureTacticalCostMatrix(builder, results);
+            builder.AppendLine();
             AppendSupportDecisionMatrixSummary(builder, results);
             builder.AppendLine();
             AppendPolicyRepeatabilityGate(builder, repeatabilityResults);
@@ -4282,8 +4293,12 @@ namespace DimensionBrawl.Tests
                 && forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests > 0
                 && forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests > 0;
             bool axis4Pass = noSummon.EnemyFrontlineBodyHits > 0
+                && forwardRiskPhysicalSummonNoPunish.EnemyFrontlineBodyHits > 0
                 && ignoredRecovery.EnemyFrontlineBodyHits > blockedRecovery.EnemyFrontlineBodyHits
-                && ignoredRecovery.PlayerDamageTaken > blockedRecovery.PlayerDamageTaken;
+                && ignoredRecovery.PlayerDamageTaken > blockedRecovery.PlayerDamageTaken
+                && blockedRecovery.EnemyFrontlineBodyHits == 0
+                && blockedRecovery.EnemyFrontlineSummonHits > 0
+                && forwardRiskPhysicalSummonPunish.EnemyFrontlineBodyHits == 0;
 
             builder.AppendLine("## Structural Gate Summary");
             builder.AppendLine("| Axis | Status | Evidence |");
@@ -4295,9 +4310,83 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 $"| 3. Hit response and presentation | {FormatGateStatus(axis3Pass)} | player routine hits {noSummon.PlayerNonLockingDamageEvents}/{noSummon.PlayerLockingDamageEvents} non-lock/lock with damage cues {noSummon.PlayerDamageScreenCueRequests}/{noSummon.PlayerDamageFeedbackRequests}; clean route damage cues {forwardRiskPhysicalSummonPunish.PlayerDamageScreenCueRequests}/{forwardRiskPhysicalSummonPunish.PlayerDamageFeedbackRequests}; gun boss chip {gunOnly.BossNonLockingDamageEvents}/{gunOnly.BossLockingDamageEvents}; physical punish boss lock {forwardRiskPhysicalSummonPunish.BossLockingDamageEvents}, hit cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests} |");
             builder.AppendLine(
-                $"| 4. Enemy pressure actor cost | {FormatGateStatus(axis4Pass)} | no-action body hits {noSummon.EnemyFrontlineBodyHits}; ignored boss-screen body hits {ignoredRecovery.EnemyFrontlineBodyHits}, damage {ignoredRecovery.PlayerDamageTaken:0.0}; recovery body hits {blockedRecovery.EnemyFrontlineBodyHits}, damage {blockedRecovery.PlayerDamageTaken:0.0} |");
+                $"| 4. Enemy pressure actor cost | {FormatGateStatus(axis4Pass)} | no-action body hits {noSummon.EnemyFrontlineBodyHits}; no-punish body hits {forwardRiskPhysicalSummonNoPunish.EnemyFrontlineBodyHits}, damage {forwardRiskPhysicalSummonNoPunish.PlayerDamageTaken:0.0}; ignored boss-screen body hits {ignoredRecovery.EnemyFrontlineBodyHits}, damage {ignoredRecovery.PlayerDamageTaken:0.0}; recovery body/summon hits {blockedRecovery.EnemyFrontlineBodyHits}/{blockedRecovery.EnemyFrontlineSummonHits}, damage {blockedRecovery.PlayerDamageTaken:0.0}; clean punish body hits {forwardRiskPhysicalSummonPunish.EnemyFrontlineBodyHits} |");
             builder.AppendLine(
                 $"| Physical clean route reference | {FormatGateStatus(forwardRiskPhysicalSummonPunish.IsClearResult)} | physical summon-punish clears in {FormatSeconds(forwardRiskPhysicalSummonPunish.ElapsedSeconds)} with {forwardRiskPhysicalSummonPunish.PlayerDamageTaken:0.0} HP lost versus intended route {FormatSeconds(intended.ElapsedSeconds)} / {intended.PlayerDamageTaken:0.0} HP lost |");
+        }
+
+        private static void AppendEnemyPressureTacticalCostMatrix(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results)
+        {
+            PolicyMetrics noSummon = RequireResult(results, PolicyKind.NoSummonNoFire);
+            PolicyMetrics noPunish = RequireResult(results, PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe);
+            PolicyMetrics ignoredRecovery = RequireResult(results, PolicyKind.BossScreenIgnoredNoRecovery);
+            PolicyMetrics blockedRecovery = RequireResult(results, PolicyKind.BossScreenBlockCounterRecovery);
+            PolicyMetrics physicalPunish = RequireResult(results, PolicyKind.ForwardRiskPhysicalSummonPunishProbe);
+
+            builder.AppendLine("## Enemy Pressure Tactical Cost Matrix");
+            builder.AppendLine("- ArkData lens: enemy pressure actors should create a readable unattended cost path, then change target/status when answered by summon structure.");
+            builder.AppendLine("| Scenario | Tactical state | Enemy body hits | Enemy summon hits | Enemy clashes | Player damage | Unanswered burden | Result | Read |");
+            builder.AppendLine("|---|---|---:|---:|---:|---:|---:|---|---|");
+            AppendEnemyPressureTacticalCostRow(
+                builder,
+                "No action",
+                "unattended actor reaches body",
+                noSummon,
+                "body pressure is live without being instant death");
+            AppendEnemyPressureTacticalCostRow(
+                builder,
+                "Block but no punish",
+                "answer started, punish missed",
+                noPunish,
+                "opened state relocks into enemy pressure if Skill1 is skipped");
+            AppendEnemyPressureTacticalCostRow(
+                builder,
+                "Ignore boss-screen counter",
+                "partial answer left unresolved",
+                ignoredRecovery,
+                "enemy pressure keeps taxing HP and route stability");
+            AppendEnemyPressureTacticalCostRow(
+                builder,
+                "Counter recovery",
+                "fresh summon redirects pressure",
+                blockedRecovery,
+                "body cost converts into summon clash and clear route");
+            AppendEnemyPressureTacticalCostRow(
+                builder,
+                "Clean physical punish",
+                "pressure answered before actor cost",
+                physicalPunish,
+                "confirmed Skill1 prevents unattended actor cost");
+        }
+
+        private static void AppendEnemyPressureTacticalCostRow(
+            StringBuilder builder,
+            string scenario,
+            string tacticalState,
+            PolicyMetrics result,
+            string read)
+        {
+            builder.Append("| ");
+            builder.Append(EscapeTable(scenario));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(tacticalState));
+            builder.Append(" | ");
+            builder.Append(result.EnemyFrontlineBodyHits);
+            builder.Append(" | ");
+            builder.Append(result.EnemyFrontlineSummonHits);
+            builder.Append(" | ");
+            builder.Append(result.EnemyFrontlineClashes);
+            builder.Append(" | ");
+            builder.Append(result.PlayerDamageTaken.ToString("0.0"));
+            builder.Append(" | ");
+            builder.Append(FormatPercent01(result.UnansweredPressureBurdenShare01));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(result.ResultKind));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(read));
+            builder.AppendLine(" |");
         }
 
         private static void AppendSupportDecisionMatrixSummary(
@@ -6221,6 +6310,52 @@ namespace DimensionBrawl.Tests
                 marksman.SupportSummonProjectileBossHits + marksman.SupportSummonProjectileEnemySummonHits,
                 0,
                 "Slot2 marksman fire should hit the boss lane or suppress hostile frontline summons.");
+        }
+
+        private static void AssertEnemyPressureTacticalCost(
+            PolicyMetrics noSummon,
+            PolicyMetrics noPunish,
+            PolicyMetrics ignoredRecovery,
+            PolicyMetrics blockedRecovery,
+            PolicyMetrics physicalPunish)
+        {
+            Assert.Greater(
+                noSummon.EnemyFrontlineBodyHits,
+                0,
+                "No-action should prove unattended enemy pressure reaches the player body instead of staying timer-only.");
+            Assert.Greater(
+                noPunish.EnemyFrontlineBodyHits,
+                0,
+                "A summon block without Skill1 punish should relock into enemy pressure body cost.");
+            Assert.Greater(
+                noPunish.PlayerDamageTaken,
+                physicalPunish.PlayerDamageTaken,
+                "Skipping the punish should cost HP compared with the clean physical punish route.");
+            Assert.Greater(
+                ignoredRecovery.EnemyFrontlineBodyHits,
+                blockedRecovery.EnemyFrontlineBodyHits,
+                "Ignoring boss-screen counter pressure should leave more enemy body cost than answering recovery.");
+            Assert.Greater(
+                ignoredRecovery.PlayerDamageTaken,
+                blockedRecovery.PlayerDamageTaken,
+                "Ignoring boss-screen counter pressure should cost HP while recovery protects HP.");
+            Assert.AreEqual(
+                0,
+                blockedRecovery.EnemyFrontlineBodyHits,
+                "Counter recovery should prevent enemy frontline body hits.");
+            Assert.Greater(
+                blockedRecovery.EnemyFrontlineSummonHits,
+                0,
+                "Counter recovery should redirect enemy pressure into summon clashes, not delete the actor cost silently.");
+            Assert.AreEqual(
+                0,
+                physicalPunish.EnemyFrontlineBodyHits,
+                "Clean physical punish should prevent unattended enemy frontline body cost.");
+            Assert.AreEqual(
+                0f,
+                physicalPunish.PlayerDamageTaken,
+                0.001f,
+                "Clean physical punish should preserve HP while closing the pressure route.");
         }
 
         private static void AssertSharedManaSupportComboBranch(
