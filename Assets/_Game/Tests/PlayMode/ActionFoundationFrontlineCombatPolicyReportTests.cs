@@ -184,6 +184,9 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(
                     markdown.Contains("## Stage/Wave Beat Map"),
                     "The report should classify each route by the ArkData-style stage/wave beat it reaches.");
+                Assert.IsTrue(
+                    markdown.Contains("## Player Damage Presentation Bridge"),
+                    "The report should prove player damage presentation instead of inferring it from HP loss.");
                 AssertStageWaveBeatMap(results);
                 Assert.Greater(intended.SummonBlocks, 0, "The intended route must prove summon interception changes the run.");
                 Assert.AreEqual(
@@ -582,10 +585,33 @@ namespace DimensionBrawl.Tests
                     noSummon.PlayerNonLockingDamageEvents,
                     0,
                     "Unanswered boss/projectile/body pressure should damage the player without declaring routine control lock.");
+                Assert.Greater(
+                    noSummon.PlayerDamageScreenCueRequests,
+                    0,
+                    "Unanswered player damage should request the existing Player.Damaged screen cue.");
+                Assert.Greater(
+                    noSummon.PlayerDamageFeedbackRequests,
+                    0,
+                    "Unanswered player damage should request the existing damage-vignette feedback.");
+                Assert.IsFalse(
+                    noSummon.LastPlayerDamageFeedbackInterruptedAction,
+                    "Routine player pressure feedback should not read as an action-interrupting lock.");
                 Assert.AreEqual(
                     0,
                     noSummon.PlayerLockingDamageEvents,
                     "Routine pressure should not turn every player hit into a locking reaction.");
+                Assert.Greater(
+                    ignoredRecovery.PlayerDamageScreenCueRequests,
+                    blockedRecovery.PlayerDamageScreenCueRequests,
+                    "Ignoring counter pressure should show more player damage screen cues than the recovered route.");
+                Assert.AreEqual(
+                    0,
+                    forwardRiskPhysicalSummonPunish.PlayerDamageScreenCueRequests,
+                    "The clean physical summon-punish route should not leak player damage screen cues.");
+                Assert.AreEqual(
+                    0,
+                    forwardRiskPhysicalSummonPunish.PlayerDamageFeedbackRequests,
+                    "The clean physical summon-punish route should not leak damage-vignette feedback.");
                 Assert.Greater(
                     gunOnly.BossNonLockingDamageEvents,
                     0,
@@ -2173,6 +2199,36 @@ namespace DimensionBrawl.Tests
             }
 
             builder.AppendLine();
+            builder.AppendLine("## Player Damage Presentation Bridge");
+            builder.AppendLine("| Policy | HP lost | Player non-lock/lock/full | Screen/feedback cues | Last policy/control | Feedback intensity/duration/scale | Interrupts action | Result |");
+            builder.AppendLine("|---|---:|---:|---:|---|---:|---|---|");
+            for (int i = 0; i < results.Count; i++)
+            {
+                PolicyMetrics result = results[i];
+                builder.Append("| ");
+                builder.Append(result.Policy);
+                builder.Append(" | ");
+                builder.Append($"{result.PlayerDamageTaken:0.0}");
+                builder.Append(" | ");
+                builder.Append($"{result.PlayerNonLockingDamageEvents}/{result.PlayerLockingDamageEvents}/{result.PlayerFullBodyEligibleDamageEvents}");
+                builder.Append(" | ");
+                builder.Append($"{result.PlayerDamageScreenCueRequests}/{result.PlayerDamageFeedbackRequests}");
+                builder.Append(" | ");
+                builder.Append(EscapeTable(
+                    $"{result.LastPlayerDamageResponsePolicy}/{result.LastPlayerDamageControlLockPolicy}"));
+                builder.Append(" | ");
+                builder.Append(
+                    $"{result.LastPlayerDamageFeedbackIntensity:0.00}/"
+                    + $"{result.LastPlayerDamageFeedbackDuration:0.00}/"
+                    + $"{result.LastPlayerDamageFeedbackPolicyScale:0.00}");
+                builder.Append(" | ");
+                builder.Append(result.LastPlayerDamageFeedbackInterruptedAction ? "yes" : "no");
+                builder.Append(" | ");
+                builder.Append(EscapeTable(result.ResultKind));
+                builder.AppendLine(" |");
+            }
+
+            builder.AppendLine();
             builder.AppendLine("## Summon Block Presentation Bridge");
             builder.AppendLine("| Policy | Blocks | Camera block/opportunity | Screen opportunity | Pressure-screen flash/VFX | Activation VFX | Showing max | Last block tier | Block->window | Result |");
             builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---:|---:|---|");
@@ -2470,6 +2526,10 @@ namespace DimensionBrawl.Tests
                 && forwardRiskPhysicalSummonPunish.SkillProjectileHits > 0;
             bool axis3Pass = noSummon.PlayerNonLockingDamageEvents > 0
                 && noSummon.PlayerLockingDamageEvents == 0
+                && noSummon.PlayerDamageScreenCueRequests > 0
+                && noSummon.PlayerDamageFeedbackRequests > 0
+                && !noSummon.LastPlayerDamageFeedbackInterruptedAction
+                && forwardRiskPhysicalSummonPunish.PlayerDamageScreenCueRequests == 0
                 && gunOnly.BossNonLockingDamageEvents > 0
                 && gunOnly.BossLockingDamageEvents == 0
                 && forwardRiskPhysicalSummonPunish.BossLockingDamageEvents > 0
@@ -2488,7 +2548,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 $"| 2. Block -> window -> Skill1 loop | {FormatGateStatus(axis2Pass)} | unblocked forward hits {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; block presentation cam/flash/VFX {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}; no-punish misses {forwardRiskPhysicalSummonNoPunish.FollowupMissCount}, counters {forwardRiskPhysicalSummonNoPunish.CounterWaves}, result `{forwardRiskPhysicalSummonNoPunish.ResultKind}`; physical punish blocks {forwardRiskPhysicalSummonPunish.SummonBlocks}, Skill1 hits {forwardRiskPhysicalSummonPunish.SkillProjectileHits}, `{forwardRiskPhysicalSummonPunish.ResultKind}` |");
             builder.AppendLine(
-                $"| 3. Hit response and presentation | {FormatGateStatus(axis3Pass)} | player routine hits {noSummon.PlayerNonLockingDamageEvents}/{noSummon.PlayerLockingDamageEvents} non-lock/lock; gun boss chip {gunOnly.BossNonLockingDamageEvents}/{gunOnly.BossLockingDamageEvents}; physical punish boss lock {forwardRiskPhysicalSummonPunish.BossLockingDamageEvents}, hit cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests} |");
+                $"| 3. Hit response and presentation | {FormatGateStatus(axis3Pass)} | player routine hits {noSummon.PlayerNonLockingDamageEvents}/{noSummon.PlayerLockingDamageEvents} non-lock/lock with damage cues {noSummon.PlayerDamageScreenCueRequests}/{noSummon.PlayerDamageFeedbackRequests}; clean route damage cues {forwardRiskPhysicalSummonPunish.PlayerDamageScreenCueRequests}/{forwardRiskPhysicalSummonPunish.PlayerDamageFeedbackRequests}; gun boss chip {gunOnly.BossNonLockingDamageEvents}/{gunOnly.BossLockingDamageEvents}; physical punish boss lock {forwardRiskPhysicalSummonPunish.BossLockingDamageEvents}, hit cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests} |");
             builder.AppendLine(
                 $"| 4. Enemy pressure actor cost | {FormatGateStatus(axis4Pass)} | no-action body hits {noSummon.EnemyFrontlineBodyHits}; ignored boss-screen body hits {ignoredRecovery.EnemyFrontlineBodyHits}, damage {ignoredRecovery.PlayerDamageTaken:0.0}; recovery body hits {blockedRecovery.EnemyFrontlineBodyHits}, damage {blockedRecovery.PlayerDamageTaken:0.0} |");
             builder.AppendLine(
@@ -2647,6 +2707,9 @@ namespace DimensionBrawl.Tests
                 && forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits > backlinePhysicalBarrage.PhysicalBarragePlayerHits
                 && ignoredRecovery.UnansweredPressureBurdenShare01 > intended.UnansweredPressureBurdenShare01;
             bool combatPayloadMeasured = forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits > 0
+                && noSummon.PlayerDamageScreenCueRequests > 0
+                && noSummon.PlayerDamageFeedbackRequests > 0
+                && forwardRiskPhysicalSummonPunish.PlayerDamageScreenCueRequests == 0
                 && forwardRiskPhysicalSummonBlock.SummonBlocks > 0
                 && forwardRiskPhysicalSummonBlock.PhysicalBarragePlayerHits == 0
                 && forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests
@@ -2670,6 +2733,7 @@ namespace DimensionBrawl.Tests
                 && delayedIntended.FollowupWindowRemainingAtFirstHitSeconds > 0f
                 && delayedBlockedRecovery.FollowupWindowRemainingAtFirstHitSeconds > 0f
                 && noSummon.PlayerLockingDamageEvents == 0
+                && !noSummon.LastPlayerDamageFeedbackInterruptedAction
                 && gunOnly.BossLockingDamageEvents == 0
                 && forwardRiskPhysicalSummonPunish.BossLockingDamageEvents > 0
                 && forwardRiskPhysicalSummonPunish.FollowupHitCinematicCueRequests > 0
@@ -2694,12 +2758,12 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 "| CombatPayload runtime pipeline | "
                 + $"{FormatCoverageStatus(combatPayloadMeasured)} | "
-                + $"Target->Hit: forward barrage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; Block->Status/Presentation: {forwardRiskPhysicalSummonBlock.SummonBlocks} blocks, {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)} to window, cues {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}; NoHit->Counter: miss {forwardRiskPhysicalSummonNoPunish.FollowupMissCount} / counter {forwardRiskPhysicalSummonNoPunish.CounterWaves}; Skill1 Hit->Presentation: {forwardRiskPhysicalSummonPunish.SkillProjectileHits} hits with cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests}; payoff source player/summon {forwardRiskPhysicalSummonPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonPunish.BossDamageFromAllySummon:0.0} | "
+                + $"Target->Hit: forward barrage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; Player Hit->Presentation: routine damage cues {noSummon.PlayerDamageScreenCueRequests}/{noSummon.PlayerDamageFeedbackRequests}, clean route {forwardRiskPhysicalSummonPunish.PlayerDamageScreenCueRequests}/{forwardRiskPhysicalSummonPunish.PlayerDamageFeedbackRequests}; Block->Status/Presentation: {forwardRiskPhysicalSummonBlock.SummonBlocks} blocks, {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)} to window, cues {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}; NoHit->Counter: miss {forwardRiskPhysicalSummonNoPunish.FollowupMissCount} / counter {forwardRiskPhysicalSummonNoPunish.CounterWaves}; Skill1 Hit->Presentation: {forwardRiskPhysicalSummonPunish.SkillProjectileHits} hits with cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests}; payoff source player/summon {forwardRiskPhysicalSummonPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonPunish.BossDamageFromAllySummon:0.0} | "
                 + "Candidate labels stay local test evidence, not fake universal opcodes. |");
             builder.AppendLine(
                 "| PGR state-lock and hit-response grammar | "
                 + $"{FormatCoverageStatus(pgrStateMeasured)} | "
-                + $"block->window {FormatSeconds(intended.BlockToFollowupWindowSeconds)}; counter answer pulse {blockedRecovery.CounterWaveAnswerEnergyPulse:0}; delayed clean/recovery margins {FormatSeconds(delayedIntended.FollowupWindowRemainingAtFirstHitSeconds)} / {FormatSeconds(delayedBlockedRecovery.FollowupWindowRemainingAtFirstHitSeconds)}; routine lock counts {noSummon.PlayerLockingDamageEvents}/{gunOnly.BossLockingDamageEvents}, punish boss locks {forwardRiskPhysicalSummonPunish.BossLockingDamageEvents}, micro-cine hit/frame {forwardRiskPhysicalSummonPunish.FollowupHitCinematicCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCinematicFrameOverlayCount} | "
+                + $"block->window {FormatSeconds(intended.BlockToFollowupWindowSeconds)}; counter answer pulse {blockedRecovery.CounterWaveAnswerEnergyPulse:0}; delayed clean/recovery margins {FormatSeconds(delayedIntended.FollowupWindowRemainingAtFirstHitSeconds)} / {FormatSeconds(delayedBlockedRecovery.FollowupWindowRemainingAtFirstHitSeconds)}; routine lock counts {noSummon.PlayerLockingDamageEvents}/{gunOnly.BossLockingDamageEvents}, player feedback interrupt {noSummon.LastPlayerDamageFeedbackInterruptedAction}; punish boss locks {forwardRiskPhysicalSummonPunish.BossLockingDamageEvents}, micro-cine hit/frame {forwardRiskPhysicalSummonPunish.FollowupHitCinematicCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCinematicFrameOverlayCount} | "
                 + "Use lock/unlock and response tiers only; do not import tutorial HUD flow as the solution. |");
             builder.AppendLine(
                 "| V1 scope guardrail | "
@@ -3266,6 +3330,14 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"playerNonLockingDamageEvents\": {result.PlayerNonLockingDamageEvents},");
                 builder.AppendLine($"      \"playerLockingDamageEvents\": {result.PlayerLockingDamageEvents},");
                 builder.AppendLine($"      \"playerFullBodyEligibleDamageEvents\": {result.PlayerFullBodyEligibleDamageEvents},");
+                builder.AppendLine($"      \"playerDamageScreenCueRequests\": {result.PlayerDamageScreenCueRequests},");
+                builder.AppendLine($"      \"playerDamageFeedbackRequests\": {result.PlayerDamageFeedbackRequests},");
+                builder.AppendLine($"      \"lastPlayerDamageFeedbackIntensity\": {result.LastPlayerDamageFeedbackIntensity:0.###},");
+                builder.AppendLine($"      \"lastPlayerDamageFeedbackDuration\": {result.LastPlayerDamageFeedbackDuration:0.###},");
+                builder.AppendLine($"      \"lastPlayerDamageFeedbackPolicyScale\": {result.LastPlayerDamageFeedbackPolicyScale:0.###},");
+                builder.AppendLine($"      \"lastPlayerDamageResponsePolicy\": \"{JsonEscape(result.LastPlayerDamageResponsePolicy)}\",");
+                builder.AppendLine($"      \"lastPlayerDamageControlLockPolicy\": \"{JsonEscape(result.LastPlayerDamageControlLockPolicy)}\",");
+                builder.AppendLine($"      \"lastPlayerDamageFeedbackInterruptedAction\": {result.LastPlayerDamageFeedbackInterruptedAction.ToString().ToLowerInvariant()},");
                 builder.AppendLine($"      \"bossNonLockingDamageEvents\": {result.BossNonLockingDamageEvents},");
                 builder.AppendLine($"      \"bossLockingDamageEvents\": {result.BossLockingDamageEvents},");
                 builder.AppendLine($"      \"bossFullBodyEligibleDamageEvents\": {result.BossFullBodyEligibleDamageEvents},");
@@ -3910,6 +3982,8 @@ namespace DimensionBrawl.Tests
                 Metrics.CloseThreatHealthStart = closeThreatHealth.CurrentHealth;
                 observedScreenCueRequestCount = screenCuePresenter.CueRequestCount;
                 observedScreenFollowupCueRequestCount = screenCuePresenter.FollowupCueRequestCount;
+                observedScreenPlayerDamageCueRequestCount = screenCuePresenter.PlayerDamageCueRequestCount;
+                observedDamageFeedbackRequestCount = screenCuePresenter.DamageFeedbackRequestCount;
                 observedCinematicPlayCount = cinematicCueDirector.TotalPlayCount;
                 observedSequenceBridgePlayCount = cinematicSequenceBridge.TotalPlayCount;
 
@@ -4042,6 +4116,7 @@ namespace DimensionBrawl.Tests
 
                 SampleFrontlineClashCost();
                 SampleFrontlineHitReactionPresentation();
+                SamplePlayerDamagePresentationBridge();
                 SampleSummonBlockPresentationBridge();
                 SampleFollowupPresentationBridge();
 
@@ -4465,8 +4540,41 @@ namespace DimensionBrawl.Tests
 
             private int observedScreenCueRequestCount;
             private int observedScreenFollowupCueRequestCount;
+            private int observedScreenPlayerDamageCueRequestCount;
+            private int observedDamageFeedbackRequestCount;
             private int observedCinematicPlayCount;
             private int observedSequenceBridgePlayCount;
+
+            private void SamplePlayerDamagePresentationBridge()
+            {
+                int playerDamageCueDelta = Mathf.Max(
+                    0,
+                    ScreenCuePresenter.PlayerDamageCueRequestCount
+                    - observedScreenPlayerDamageCueRequestCount);
+                int damageFeedbackDelta = Mathf.Max(
+                    0,
+                    ScreenCuePresenter.DamageFeedbackRequestCount
+                    - observedDamageFeedbackRequestCount);
+                Metrics.PlayerDamageScreenCueRequests = playerDamageCueDelta;
+                Metrics.PlayerDamageFeedbackRequests = damageFeedbackDelta;
+                if (playerDamageCueDelta <= 0 && damageFeedbackDelta <= 0)
+                {
+                    return;
+                }
+
+                Metrics.LastPlayerDamageFeedbackIntensity =
+                    ScreenCuePresenter.LastDamageFeedbackIntensity;
+                Metrics.LastPlayerDamageFeedbackDuration =
+                    ScreenCuePresenter.LastDamageFeedbackDuration;
+                Metrics.LastPlayerDamageFeedbackPolicyScale =
+                    ScreenCuePresenter.LastDamageFeedbackPolicyScale;
+                Metrics.LastPlayerDamageResponsePolicy =
+                    ScreenCuePresenter.LastDamageResponsePolicy.ToString();
+                Metrics.LastPlayerDamageControlLockPolicy =
+                    ScreenCuePresenter.LastDamageControlLockPolicy.ToString();
+                Metrics.LastPlayerDamageFeedbackInterruptedAction =
+                    ScreenCuePresenter.LastDamageFeedbackInterruptedAction;
+            }
 
             private void SampleSummonBlockPresentationBridge()
             {
@@ -5019,6 +5127,14 @@ namespace DimensionBrawl.Tests
             public int PlayerNonLockingDamageEvents { get; set; }
             public int PlayerLockingDamageEvents { get; set; }
             public int PlayerFullBodyEligibleDamageEvents { get; set; }
+            public int PlayerDamageScreenCueRequests { get; set; }
+            public int PlayerDamageFeedbackRequests { get; set; }
+            public float LastPlayerDamageFeedbackIntensity { get; set; }
+            public float LastPlayerDamageFeedbackDuration { get; set; }
+            public float LastPlayerDamageFeedbackPolicyScale { get; set; } = 1f;
+            public string LastPlayerDamageResponsePolicy { get; set; } = "None";
+            public string LastPlayerDamageControlLockPolicy { get; set; } = "None";
+            public bool LastPlayerDamageFeedbackInterruptedAction { get; set; }
             public int BossNonLockingDamageEvents { get; set; }
             public int BossLockingDamageEvents { get; set; }
             public int BossFullBodyEligibleDamageEvents { get; set; }
