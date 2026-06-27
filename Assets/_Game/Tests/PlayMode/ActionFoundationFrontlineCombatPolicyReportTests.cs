@@ -361,6 +361,9 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("## Enemy Pressure Tactical Cost Matrix"),
                     "The report should prove enemy pressure actors create unattended tactical cost, not timer-only bookkeeping.");
                 Assert.IsTrue(
+                    markdown.Contains("## Physical Pressure Conversion Matrix"),
+                    "The report should summarize physical pressure conversion before broader feel or balance changes.");
+                Assert.IsTrue(
                     markdown.Contains("## Combat Decision Signal Matrix"),
                     "The report should connect combat decisions to cue/readout evidence before UI or balance changes.");
                 Assert.IsTrue(
@@ -400,6 +403,7 @@ namespace DimensionBrawl.Tests
                     ignoredRecovery,
                     blockedRecovery,
                     forwardRiskPhysicalSummonPunish);
+                AssertPhysicalPressureConversionRepeatability(repeatabilityResults);
                 AssertCombatDecisionSignalMatrix(
                     forwardRiskEnergy,
                     noSummon,
@@ -3531,6 +3535,8 @@ namespace DimensionBrawl.Tests
             builder.AppendLine();
             AppendEnemyPressureTacticalCostMatrix(builder, results);
             builder.AppendLine();
+            AppendPhysicalPressureConversionMatrix(builder, results, repeatabilityResults);
+            builder.AppendLine();
             AppendCombatDecisionSignalMatrix(builder, results, repeatabilityResults);
             builder.AppendLine();
             AppendSupportDecisionMatrixSummary(builder, results, repeatabilityResults);
@@ -4577,6 +4583,166 @@ namespace DimensionBrawl.Tests
             builder.Append(" | ");
             builder.Append(EscapeTable(read));
             builder.AppendLine(" |");
+        }
+
+        private static void AppendPhysicalPressureConversionMatrix(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults)
+        {
+            PolicyMetrics backline = RequireResult(results, PolicyKind.BacklinePhysicalBarrageProbe);
+            PolicyMetrics forward = RequireResult(results, PolicyKind.ForwardRiskPhysicalBarrageProbe);
+            PolicyMetrics block = RequireResult(results, PolicyKind.ForwardRiskPhysicalSummonBlockProbe);
+            PolicyMetrics noPunish = RequireResult(results, PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe);
+            PolicyMetrics punish = RequireResult(results, PolicyKind.ForwardRiskPhysicalSummonPunishProbe);
+
+            builder.AppendLine("## Physical Pressure Conversion Matrix");
+            builder.AppendLine("- ArkData/CombatPayload/PGR lens: forward physical pressure must become a measured Target/Hit cost, then convert through summon block into a lock/unlock state branch.");
+            builder.AppendLine("| Beat | Policy | Target/Hit read | Conversion state | Player cost | Boss payoff | Repeat floor | Verdict |");
+            builder.AppendLine("|---|---|---|---|---|---|---|---|");
+            AppendPhysicalPressureConversionRow(
+                builder,
+                "Backline safety",
+                backline,
+                $"risk {FormatOptionalPercent01(backline.PhysicalBarrageProbeTargetForwardRisk01)}, {backline.PhysicalBarragePatternId}",
+                $"hits {backline.PhysicalBarragePlayerHits}/{backline.PhysicalBarrageTrackedProjectileCount}",
+                $"damage {backline.PhysicalBarragePlayerDamage:0.0}",
+                "none",
+                FormatPhysicalPressureRepeatSignal(repeatabilityResults, backline.Policy),
+                "safe lane stays safe");
+            AppendPhysicalPressureConversionRow(
+                builder,
+                "Forward danger floor",
+                forward,
+                $"risk {FormatOptionalPercent01(forward.PhysicalBarrageProbeTargetForwardRisk01)}, {forward.PhysicalBarragePatternId}",
+                $"hits {forward.PhysicalBarragePlayerHits}/{forward.PhysicalBarrageTrackedProjectileCount}",
+                $"damage {forward.PhysicalBarragePlayerDamage:0.0}",
+                "none",
+                FormatPhysicalPressureRepeatSignal(repeatabilityResults, forward.Policy),
+                "forward read has real HP cost");
+            AppendPhysicalPressureConversionRow(
+                builder,
+                "Summon converts hit",
+                block,
+                $"incoming {block.PhysicalBarrageTrackedProjectileCount}",
+                $"blocks {block.SummonBlocks}, window {FormatSeconds(block.BlockToFollowupWindowSeconds)}",
+                $"hits {block.PhysicalBarragePlayerHits}, damage {block.PhysicalBarragePlayerDamage:0.0}",
+                $"ally {block.BossDamageFromAllySummon:0.0}",
+                FormatPhysicalPressureRepeatSignal(repeatabilityResults, block.Policy),
+                "block opens state instead of only deleting damage");
+            AppendPhysicalPressureConversionRow(
+                builder,
+                "Window unconfirmed",
+                noPunish,
+                $"window {FormatSeconds(noPunish.FirstFollowupWindowAtSeconds)}",
+                $"miss {noPunish.FollowupMissCount}, counter {noPunish.CounterWaves}",
+                $"body {noPunish.EnemyFrontlineBodyHits}, damage {noPunish.PlayerDamageTaken:0.0}",
+                $"player {noPunish.BossDamageFromPlayer:0.0}, ally {noPunish.BossDamageFromAllySummon:0.0}",
+                FormatPhysicalPressureRepeatSignal(repeatabilityResults, noPunish.Policy),
+                "unconfirmed window relocks into counter pressure");
+            AppendPhysicalPressureConversionRow(
+                builder,
+                "Skill1 confirms",
+                punish,
+                $"window {FormatSeconds(punish.FirstFollowupWindowDurationSeconds)}",
+                $"Skill1 {punish.SkillProjectileHits}, {punish.ResultKind}",
+                $"hits {punish.PhysicalBarragePlayerHits}, damage {punish.PlayerDamageTaken:0.0}",
+                $"player {punish.BossDamageFromPlayer:0.0}, ally {punish.BossDamageFromAllySummon:0.0}, share {FormatPercent01(punish.BossDamagePlayerShare01)}",
+                FormatPhysicalPressureRepeatSignal(repeatabilityResults, punish.Policy),
+                "player-authored punish completes the pressure slot");
+        }
+
+        private static void AppendPhysicalPressureConversionRow(
+            StringBuilder builder,
+            string beat,
+            PolicyMetrics result,
+            string targetHitRead,
+            string conversionState,
+            string playerCost,
+            string bossPayoff,
+            string repeatFloor,
+            string verdict)
+        {
+            builder.Append("| ");
+            builder.Append(EscapeTable(beat));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(result.Policy.ToString()));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(targetHitRead));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(conversionState));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(playerCost));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(bossPayoff));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(repeatFloor));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(verdict));
+            builder.AppendLine(" |");
+        }
+
+        private static string FormatPhysicalPressureRepeatSignal(
+            IReadOnlyList<PolicyMetrics> repeatabilityResults,
+            PolicyKind policy)
+        {
+            if (CountPolicyResults(repeatabilityResults, policy) <= 0)
+            {
+                return "not repeated";
+            }
+
+            switch (policy)
+            {
+                case PolicyKind.BacklinePhysicalBarrageProbe:
+                case PolicyKind.ForwardRiskPhysicalBarrageProbe:
+                    return "hits "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.PhysicalBarragePlayerHits),
+                            MaxMetric(repeatabilityResults, policy, result => result.PhysicalBarragePlayerHits))
+                        + "; dmg "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.PhysicalBarragePlayerDamage),
+                            MaxMetric(repeatabilityResults, policy, result => result.PhysicalBarragePlayerDamage));
+                case PolicyKind.ForwardRiskPhysicalSummonBlockProbe:
+                    return "blocks "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.SummonBlocks),
+                            MaxMetric(repeatabilityResults, policy, result => result.SummonBlocks))
+                        + "; hits "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.PhysicalBarragePlayerHits),
+                            MaxMetric(repeatabilityResults, policy, result => result.PhysicalBarragePlayerHits))
+                        + "; dmg "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.PhysicalBarragePlayerDamage),
+                            MaxMetric(repeatabilityResults, policy, result => result.PhysicalBarragePlayerDamage));
+                case PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe:
+                    return "miss "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.FollowupMissCount),
+                            MaxMetric(repeatabilityResults, policy, result => result.FollowupMissCount))
+                        + "; counter "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.CounterWaves),
+                            MaxMetric(repeatabilityResults, policy, result => result.CounterWaves))
+                        + "; body "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.EnemyFrontlineBodyHits),
+                            MaxMetric(repeatabilityResults, policy, result => result.EnemyFrontlineBodyHits));
+                case PolicyKind.ForwardRiskPhysicalSummonPunishProbe:
+                    return "Skill1 "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.SkillProjectileHits),
+                            MaxMetric(repeatabilityResults, policy, result => result.SkillProjectileHits))
+                        + "; HP "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.PlayerDamageTaken),
+                            MaxMetric(repeatabilityResults, policy, result => result.PlayerDamageTaken))
+                        + "; result "
+                        + BuildResultKindSet(repeatabilityResults, policy);
+                default:
+                    return "runs " + CountPolicyResults(repeatabilityResults, policy);
+            }
         }
 
         private static void AppendCombatDecisionSignalMatrix(
@@ -7269,6 +7435,87 @@ namespace DimensionBrawl.Tests
                 "CleanFollowupClear/Complete",
                 ResolveCombatDecisionSignalState(cleanPunish),
                 "Clean punish should read as complete at the decision layer.");
+        }
+
+        private static void AssertPhysicalPressureConversionRepeatability(
+            IReadOnlyList<PolicyMetrics> repeatabilityResults)
+        {
+            Assert.AreEqual(
+                RepeatabilityProbeRuns,
+                CountPolicyResults(repeatabilityResults, PolicyKind.BacklinePhysicalBarrageProbe),
+                "Physical conversion repeatability should include the backline safety reference.");
+            Assert.LessOrEqual(
+                MaxMetric(repeatabilityResults, PolicyKind.BacklinePhysicalBarrageProbe, result => result.PhysicalBarragePlayerHits),
+                0f,
+                "Repeated backline physical samples should keep projectile hits off the player.");
+            Assert.LessOrEqual(
+                MaxMetric(repeatabilityResults, PolicyKind.BacklinePhysicalBarrageProbe, result => result.PhysicalBarragePlayerDamage),
+                0.01f,
+                "Repeated backline physical samples should preserve the safe-lane damage floor.");
+
+            Assert.AreEqual(
+                RepeatabilityProbeRuns,
+                CountPolicyResults(repeatabilityResults, PolicyKind.ForwardRiskPhysicalBarrageProbe),
+                "Physical conversion repeatability should include the forward danger reference.");
+            Assert.GreaterOrEqual(
+                MinMetric(repeatabilityResults, PolicyKind.ForwardRiskPhysicalBarrageProbe, result => result.PhysicalBarragePlayerHits),
+                3f,
+                "Repeated forward physical samples should keep a real danger floor.");
+            Assert.Greater(
+                MinMetric(repeatabilityResults, PolicyKind.ForwardRiskPhysicalBarrageProbe, result => result.PhysicalBarragePlayerDamage),
+                0f,
+                "Repeated forward physical samples should convert the preview slot into HP cost.");
+
+            Assert.AreEqual(
+                RepeatabilityProbeRuns,
+                CountPolicyResults(repeatabilityResults, PolicyKind.ForwardRiskPhysicalSummonBlockProbe),
+                "Physical conversion repeatability should include the summon block branch.");
+            Assert.Greater(
+                MinMetric(repeatabilityResults, PolicyKind.ForwardRiskPhysicalSummonBlockProbe, result => result.SummonBlocks),
+                0f,
+                "Repeated summon block samples should intercept physical pressure.");
+            Assert.LessOrEqual(
+                MaxMetric(repeatabilityResults, PolicyKind.ForwardRiskPhysicalSummonBlockProbe, result => result.PhysicalBarragePlayerHits),
+                0f,
+                "Repeated summon block samples should convert physical hits away from the player.");
+            Assert.LessOrEqual(
+                MaxMetric(repeatabilityResults, PolicyKind.ForwardRiskPhysicalSummonBlockProbe, result => result.PhysicalBarragePlayerDamage),
+                0.01f,
+                "Repeated summon block samples should remove physical HP leak before the opened state.");
+
+            Assert.AreEqual(
+                RepeatabilityProbeRuns,
+                CountPolicyResults(repeatabilityResults, PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe),
+                "Physical conversion repeatability should include the unconfirmed-window branch.");
+            Assert.Greater(
+                MinMetric(repeatabilityResults, PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe, result => result.FollowupMissCount),
+                0f,
+                "Repeated unconfirmed-window samples should miss the follow-up state.");
+            Assert.Greater(
+                MinMetric(repeatabilityResults, PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe, result => result.CounterWaves),
+                0f,
+                "Repeated unconfirmed-window samples should relock into counter pressure.");
+            Assert.LessOrEqual(
+                MaxMetric(repeatabilityResults, PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe, result => result.IsClearResult ? 1f : 0f),
+                0f,
+                "Repeated unconfirmed-window samples should not fabricate a clear result.");
+
+            Assert.AreEqual(
+                RepeatabilityProbeRuns,
+                CountPolicyResults(repeatabilityResults, PolicyKind.ForwardRiskPhysicalSummonPunishProbe),
+                "Physical conversion repeatability should include the Skill1 confirm branch.");
+            Assert.Greater(
+                MinMetric(repeatabilityResults, PolicyKind.ForwardRiskPhysicalSummonPunishProbe, result => result.SkillProjectileHits),
+                0f,
+                "Repeated Skill1 confirm samples should land the player-authored punish.");
+            Assert.LessOrEqual(
+                MaxMetric(repeatabilityResults, PolicyKind.ForwardRiskPhysicalSummonPunishProbe, result => result.PlayerDamageTaken),
+                0.01f,
+                "Repeated Skill1 confirm samples should keep player HP clean.");
+            Assert.Greater(
+                MinMetric(repeatabilityResults, PolicyKind.ForwardRiskPhysicalSummonPunishProbe, result => result.IsClearResult ? 1f : 0f),
+                0f,
+                "Repeated Skill1 confirm samples should complete the clean physical route.");
         }
 
         private static void AssertCombatDecisionSignalRepeatability(
