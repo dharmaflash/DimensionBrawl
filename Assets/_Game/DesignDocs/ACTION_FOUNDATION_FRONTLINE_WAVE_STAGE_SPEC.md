@@ -901,3 +901,26 @@ Boundary:
 - This is a feedback bridge for an already verified combat payoff, not final ready-cost UI.
 - The three summon slots still need later mana-cost/effect identity work so they stop reading as interchangeable.
 - Blue Archive-style ready feedback remains relevant to motivation, but it should arrive after the resource contract and unit identity are authored enough for the feedback to mean something.
+
+## 2026-06-27 Policy Report Lock: Summon Roster Mana/Effect Identity Audit
+
+This checkpoint keeps the summon-roster concern inside the same structural premise as the earlier EN-tier work. The question is not "what number should each summon cost?" yet; it is whether the current data proves separate cost, role, target/effect, and stage-read identity the way ArkData-style combat rows do.
+
+Checkpoint evidence:
+
+- The policy report now writes a `Summon Roster Mana/Effect Identity Audit` section and matching JSON, using the three authored `SummonSlotActionProfile` assets instead of inferred UI labels.
+- Focused PlayMode `RosterAudit-4` passed after the runner waited through the real physical barrage flight window before judging follow-up confirmation.
+- Cost verdict is `CHECK`: all three summon slots still read the shared `SummonEnergyLadder` as tier costs `100/100/100`, so there is no slot-specific summon mana contract yet.
+- Effect verdict is `PASS`: `SummonSlot1.ShieldBreaker` owns screen/counter opening, `SummonSlot2.BacklineMarksman` owns high volley damage with no screen budget, and `SummonSlot3.VanguardCommander` owns high HP plus screen holding.
+
+Interpretation:
+
+- ArkData lesson: roster slots should preserve resource and role differences as data, not collapse into one generic summon button with three labels.
+- CombatPayload lesson: the current effect payloads are differentiated, but the cost/resource trigger is still shared.
+- PGR/Blue Archive-style motivation lesson: ready feedback matters only after the underlying resource and combat-state choice means something.
+
+Boundary:
+
+- This is an audit and measurement lock, not final roster balance.
+- Do not introduce final coaster UI, icons, audio, reward hooks, roster inventory, rarity, or a broad summon manager to solve this.
+- The next roster pass should first decide and simulate a narrow per-slot summon-mana/resource contract, then judge whether it creates route separation before presentation polish.

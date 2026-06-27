@@ -11,6 +11,7 @@ using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.Test;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -30,6 +31,12 @@ namespace DimensionBrawl.Tests
         private const string CloseThreatRootName = "BossBarrageLaneReview_CloseThreat_ClosePunish";
         private const string ReportPath = "C:/tmp/DimensionBrawl-FrontlineCombatPolicyReport.md";
         private const string JsonPath = "C:/tmp/DimensionBrawl-FrontlineCombatPolicyReport.json";
+        private const string SummonSlot1ActionProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonSlot1_ShieldBreaker.asset";
+        private const string SummonSlot2ActionProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonSlot2_BacklineMarksman.asset";
+        private const string SummonSlot3ActionProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonSlot3_VanguardCommander.asset";
         private const float PressureWindowSeconds = 3f;
         private const float ReliefPressureWindowPeakRatio = 0.35f;
         private const float DelayedPunishInputSeconds = 1.1f;
@@ -274,6 +281,9 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("## Energy Presentation Bridge"),
                     "The report should prove summon energy presentation instead of inferring it from resource numbers.");
                 Assert.IsTrue(
+                    markdown.Contains("## Summon Roster Mana/Effect Identity Audit"),
+                    "The report should preserve the summon roster mana/effect identity gap instead of drifting into generic tier balancing.");
+                Assert.IsTrue(
                     markdown.Contains("## EN Spend Decision Route"),
                     "The report should connect EN tier waiting to the actual summon -> Skill1 route, not stop at resource timing.");
                 Assert.IsTrue(
@@ -283,6 +293,11 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("## Skill Gate Contract"),
                     "The report should prove raw Skill1 hits are not the same as state-gated follow-up commits.");
                 AssertStageWaveBeatMap(results);
+                string json = File.ReadAllText(JsonPath);
+                Assert.IsTrue(
+                    json.Contains("\"summonRosterIdentityAudit\""),
+                    "The JSON report should expose the roster identity audit for follow-up batch comparisons.");
+                AssertSummonRosterIdentityAudit(results);
                 Assert.Greater(intended.SummonBlocks, 0, "The intended route must prove summon interception changes the run.");
                 Assert.AreEqual(
                     0,
@@ -1641,6 +1656,11 @@ namespace DimensionBrawl.Tests
                 yield break;
             }
 
+            if (targetTier >= 3 && context.Metrics.BossScreenSuppressedByFollowup)
+            {
+                yield break;
+            }
+
             if (!context.PocketOwner.IsCounterWaveCompletionRecorded)
             {
                 context.Metrics.Notes.Add("tier recovery requested without counter wave");
@@ -2211,7 +2231,7 @@ namespace DimensionBrawl.Tests
 
             float start = context.Metrics.ElapsedSeconds;
             while (!context.PocketOwner.IsSummonFollowupWindowActive
-                && context.Metrics.ElapsedSeconds - start < Mathf.Min(1.0f, flightSeconds))
+                && context.Metrics.ElapsedSeconds - start < flightSeconds)
             {
                 yield return Advance(context, 0.05f);
             }
@@ -2898,6 +2918,8 @@ namespace DimensionBrawl.Tests
             AppendEnergySpendDecisionRoute(builder, results);
             builder.AppendLine();
             AppendEnergySpendRecoveryRoute(builder, results);
+            builder.AppendLine();
+            AppendSummonRosterIdentityAudit(builder, results);
             builder.AppendLine();
             builder.AppendLine("## Energy Presentation Bridge");
             builder.AppendLine("| Policy | Energy screen total F/R/S | Energy VFX F/R/S | Last screen tier | Last VFX ready/spend tier | Counter answer pulse | Result |");
@@ -4056,6 +4078,44 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(" |");
         }
 
+        private static void AppendSummonRosterIdentityAudit(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results)
+        {
+            SummonRosterAuditRow[] rows = BuildSummonRosterAuditRows(results);
+            builder.AppendLine("## Summon Roster Mana/Effect Identity Audit");
+            builder.AppendLine("- ArkData lens: roster slots should preserve cost, role, target/effect, and stage-read differences instead of collapsing into one generic summon button.");
+            builder.AppendLine($"- Cost verdict: {ResolveSummonRosterCostVerdict(rows)}");
+            builder.AppendLine($"- Effect verdict: {ResolveSummonRosterEffectVerdict(rows)}");
+            builder.AppendLine("| Slot | Action id | Cost source | Tier costs | Role ids | Volley dmg | Screen | Actor HP | Counter dmg | Read |");
+            builder.AppendLine("|---|---|---|---:|---|---:|---:|---:|---:|---|");
+            for (int i = 0; i < rows.Length; i++)
+            {
+                SummonRosterAuditRow row = rows[i];
+                builder.Append("| ");
+                builder.Append(EscapeTable(row.Slot));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(row.ActionId));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(row.CostSource));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(FormatTierFloatReadout(row.TierCosts)));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(FormatTierStringReadout(row.RoleIds)));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(FormatTierFloatReadout(row.VolleyDamage)));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(FormatTierIntReadout(row.ScreenIntercepts)));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(FormatTierFloatReadout(row.ActorHealth)));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(FormatTierFloatReadout(row.CounterDamage)));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(row.Readout));
+                builder.AppendLine(" |");
+            }
+        }
+
         private static float ResolveEnergyTargetDuration(PolicyMetrics result)
         {
             return result.EnergyProbeTargetTier switch
@@ -4807,6 +4867,240 @@ namespace DimensionBrawl.Tests
             return (value ?? string.Empty).IndexOf(pattern, System.StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
+        private static void AssertSummonRosterIdentityAudit(IReadOnlyList<PolicyMetrics> results)
+        {
+            SummonRosterAuditRow[] rows = BuildSummonRosterAuditRows(results);
+            Assert.AreEqual(3, rows.Length, "The roster audit should cover all three summon slots.");
+            Assert.That(
+                ResolveSummonRosterCostVerdict(rows),
+                Does.Contain("CHECK"),
+                "The current roster audit should keep the missing slot-specific summon mana cost visible.");
+            Assert.That(
+                ResolveSummonRosterEffectVerdict(rows),
+                Does.Contain("PASS"),
+                "The current roster audit should prove profile effect budgets are not identical.");
+
+            for (int tierIndex = 0; tierIndex < 3; tierIndex++)
+            {
+                Assert.AreEqual(
+                    rows[0].TierCosts[tierIndex],
+                    rows[1].TierCosts[tierIndex],
+                    0.001f,
+                    $"SummonSlot2 tier {tierIndex + 1} should currently share the same summon mana cost source as SummonSlot1.");
+                Assert.AreEqual(
+                    rows[0].TierCosts[tierIndex],
+                    rows[2].TierCosts[tierIndex],
+                    0.001f,
+                    $"SummonSlot3 tier {tierIndex + 1} should currently share the same summon mana cost source as SummonSlot1.");
+                Assert.Greater(
+                    rows[1].VolleyDamage[tierIndex],
+                    rows[0].VolleyDamage[tierIndex],
+                    $"SummonSlot2 tier {tierIndex + 1} should preserve the marksman burst budget.");
+                Assert.AreEqual(
+                    0,
+                    rows[1].ScreenIntercepts[tierIndex],
+                    $"SummonSlot2 tier {tierIndex + 1} should not hide a shield-screen identity.");
+                Assert.Greater(
+                    rows[2].ActorHealth[tierIndex],
+                    rows[0].ActorHealth[tierIndex],
+                    $"SummonSlot3 tier {tierIndex + 1} should preserve the vanguard health budget.");
+                Assert.Greater(
+                    rows[0].ActorHealth[tierIndex],
+                    rows[1].ActorHealth[tierIndex],
+                    $"SummonSlot1 tier {tierIndex + 1} should remain tougher than the marksman.");
+            }
+        }
+
+        private static SummonRosterAuditRow[] BuildSummonRosterAuditRows(IReadOnlyList<PolicyMetrics> results)
+        {
+            float[] sharedCosts = ResolveSharedSummonTierCosts(results);
+            return new[]
+            {
+                BuildSummonRosterAuditRow(
+                    "SummonSlot1",
+                    SummonSlot1ActionProfilePath,
+                    "shared SummonEnergyLadder",
+                    sharedCosts,
+                    "breaker screen/counter; mana still shared"),
+                BuildSummonRosterAuditRow(
+                    "SummonSlot2",
+                    SummonSlot2ActionProfilePath,
+                    "shared SummonEnergyLadder",
+                    sharedCosts,
+                    "marksman volley; no screen; mana still shared"),
+                BuildSummonRosterAuditRow(
+                    "SummonSlot3",
+                    SummonSlot3ActionProfilePath,
+                    "shared SummonEnergyLadder",
+                    sharedCosts,
+                    "vanguard health/screen; mana still shared")
+            };
+        }
+
+        private static SummonRosterAuditRow BuildSummonRosterAuditRow(
+            string slot,
+            string assetPath,
+            string costSource,
+            float[] tierCosts,
+            string readout)
+        {
+            SummonSlotActionProfile profile =
+                AssetDatabase.LoadAssetAtPath<SummonSlotActionProfile>(assetPath);
+            Assert.NotNull(profile, $"Missing summon slot profile at {assetPath}.");
+            PlayerSummonSlot1Action.SummonTierSettings[] settings = profile.CopyTierSettings();
+            Assert.GreaterOrEqual(settings.Length, 3, $"{slot} should expose three tier settings.");
+
+            float[] volleyDamage = new float[3];
+            int[] screenIntercepts = new int[3];
+            float[] actorHealth = new float[3];
+            float[] counterDamage = new float[3];
+            string[] roleIds = new string[3];
+            for (int i = 0; i < 3; i++)
+            {
+                PlayerSummonSlot1Action.SummonTierSettings tier = settings[i];
+                tier.Normalize();
+                volleyDamage[i] = tier.Damage * tier.ProjectileCount;
+                screenIntercepts[i] = tier.ScreenIntercepts;
+                actorHealth[i] = tier.ActorMaxHealth;
+                counterDamage[i] = tier.CounterDamage;
+                roleIds[i] = tier.ActorRoleId;
+            }
+
+            return new SummonRosterAuditRow(
+                slot,
+                profile.ActionId,
+                costSource,
+                CopyFirstThree(tierCosts),
+                roleIds,
+                volleyDamage,
+                screenIntercepts,
+                actorHealth,
+                counterDamage,
+                readout);
+        }
+
+        private static float[] ResolveSharedSummonTierCosts(IReadOnlyList<PolicyMetrics> results)
+        {
+            for (int i = 0; i < results.Count; i++)
+            {
+                PolicyMetrics result = results[i];
+                if (result.SummonManaCostTier1 > 0f
+                    && result.SummonManaCostTier2 > 0f
+                    && result.SummonManaCostTier3 > 0f)
+                {
+                    return new[]
+                    {
+                        result.SummonManaCostTier1,
+                        result.SummonManaCostTier2,
+                        result.SummonManaCostTier3
+                    };
+                }
+            }
+
+            return new[] { 0f, 0f, 0f };
+        }
+
+        private static string ResolveSummonRosterCostVerdict(SummonRosterAuditRow[] rows)
+        {
+            if (rows.Length < 3)
+            {
+                return "REVIEW roster rows missing";
+            }
+
+            bool sharedCosts = true;
+            for (int i = 1; i < rows.Length; i++)
+            {
+                for (int tier = 0; tier < 3; tier++)
+                {
+                    sharedCosts &= Mathf.Abs(rows[0].TierCosts[tier] - rows[i].TierCosts[tier]) <= 0.001f;
+                }
+            }
+
+            return sharedCosts
+                ? "CHECK shared ladder costs; no slot-specific summon mana yet"
+                : "PASS slot-specific summon mana cost split exists";
+        }
+
+        private static string ResolveSummonRosterEffectVerdict(SummonRosterAuditRow[] rows)
+        {
+            if (rows.Length < 3)
+            {
+                return "REVIEW roster rows missing";
+            }
+
+            bool effectSplit = true;
+            for (int tier = 0; tier < 3; tier++)
+            {
+                effectSplit &= rows[1].VolleyDamage[tier] > rows[0].VolleyDamage[tier];
+                effectSplit &= rows[1].ScreenIntercepts[tier] == 0;
+                effectSplit &= rows[2].ActorHealth[tier] > rows[0].ActorHealth[tier];
+                effectSplit &= rows[0].ActorHealth[tier] > rows[1].ActorHealth[tier];
+            }
+
+            return effectSplit
+                ? "PASS profile effect budgets split damage/screen/health roles"
+                : "REVIEW effect budgets still read interchangeable";
+        }
+
+        private static float[] CopyFirstThree(float[] values)
+        {
+            float[] copy = new float[3];
+            for (int i = 0; i < copy.Length; i++)
+            {
+                copy[i] = values != null && values.Length > i ? values[i] : 0f;
+            }
+
+            return copy;
+        }
+
+        private static string FormatTierFloatReadout(float[] values)
+        {
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < 3; i++)
+            {
+                if (i > 0)
+                {
+                    builder.Append("/");
+                }
+
+                builder.Append(values != null && values.Length > i ? values[i].ToString("0.#") : "-");
+            }
+
+            return builder.ToString();
+        }
+
+        private static string FormatTierIntReadout(int[] values)
+        {
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < 3; i++)
+            {
+                if (i > 0)
+                {
+                    builder.Append("/");
+                }
+
+                builder.Append(values != null && values.Length > i ? values[i].ToString() : "-");
+            }
+
+            return builder.ToString();
+        }
+
+        private static string FormatTierStringReadout(string[] values)
+        {
+            StringBuilder builder = new StringBuilder();
+            for (int i = 0; i < 3; i++)
+            {
+                if (i > 0)
+                {
+                    builder.Append("/");
+                }
+
+                builder.Append(values != null && values.Length > i ? values[i] : "-");
+            }
+
+            return builder.ToString();
+        }
+
         private static string FormatSeconds(float seconds)
         {
             return seconds >= 0f ? $"{seconds:0.0}s" : "-";
@@ -4951,6 +5245,9 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"energyTier1ReadyAtSeconds\": {JsonNullableSeconds(result.EnergyTier1ReadyAtSeconds)},");
                 builder.AppendLine($"      \"energyTier2ReadyAtSeconds\": {JsonNullableSeconds(result.EnergyTier2ReadyAtSeconds)},");
                 builder.AppendLine($"      \"energyTier3ReadyAtSeconds\": {JsonNullableSeconds(result.EnergyTier3ReadyAtSeconds)},");
+                builder.AppendLine($"      \"summonManaCostTier1\": {result.SummonManaCostTier1:0.###},");
+                builder.AppendLine($"      \"summonManaCostTier2\": {result.SummonManaCostTier2:0.###},");
+                builder.AppendLine($"      \"summonManaCostTier3\": {result.SummonManaCostTier3:0.###},");
                 builder.AppendLine($"      \"energyTier1DurationSeconds\": {JsonNullableSeconds(result.EnergyTier1DurationSeconds)},");
                 builder.AppendLine($"      \"energyTier2DurationSeconds\": {JsonNullableSeconds(result.EnergyTier2DurationSeconds)},");
                 builder.AppendLine($"      \"energyTier3DurationSeconds\": {JsonNullableSeconds(result.EnergyTier3DurationSeconds)},");
@@ -5177,6 +5474,27 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"completionReadout\": \"{JsonEscape(result.CompletionReadout)}\"");
                 builder.Append("    }");
                 builder.AppendLine(i + 1 < results.Count ? "," : string.Empty);
+            }
+
+            builder.AppendLine("  ],");
+            builder.AppendLine("  \"summonRosterIdentityAudit\": [");
+            SummonRosterAuditRow[] rosterRows = BuildSummonRosterAuditRows(results);
+            for (int i = 0; i < rosterRows.Length; i++)
+            {
+                SummonRosterAuditRow row = rosterRows[i];
+                builder.AppendLine("    {");
+                builder.AppendLine($"      \"slot\": \"{JsonEscape(row.Slot)}\",");
+                builder.AppendLine($"      \"actionId\": \"{JsonEscape(row.ActionId)}\",");
+                builder.AppendLine($"      \"costSource\": \"{JsonEscape(row.CostSource)}\",");
+                builder.AppendLine($"      \"tierCosts\": \"{JsonEscape(FormatTierFloatReadout(row.TierCosts))}\",");
+                builder.AppendLine($"      \"roleIds\": \"{JsonEscape(FormatTierStringReadout(row.RoleIds))}\",");
+                builder.AppendLine($"      \"volleyDamage\": \"{JsonEscape(FormatTierFloatReadout(row.VolleyDamage))}\",");
+                builder.AppendLine($"      \"screenIntercepts\": \"{JsonEscape(FormatTierIntReadout(row.ScreenIntercepts))}\",");
+                builder.AppendLine($"      \"actorHealth\": \"{JsonEscape(FormatTierFloatReadout(row.ActorHealth))}\",");
+                builder.AppendLine($"      \"counterDamage\": \"{JsonEscape(FormatTierFloatReadout(row.CounterDamage))}\",");
+                builder.AppendLine($"      \"readout\": \"{JsonEscape(row.Readout)}\"");
+                builder.Append("    }");
+                builder.AppendLine(i + 1 < rosterRows.Length ? "," : string.Empty);
             }
 
             builder.AppendLine("  ],");
@@ -6052,6 +6370,9 @@ namespace DimensionBrawl.Tests
                 Metrics.PlayerHealthStart = playerHealth.CurrentHealth;
                 Metrics.BossHealthStart = bossHealth.CurrentHealth;
                 Metrics.CloseThreatHealthStart = closeThreatHealth.CurrentHealth;
+                Metrics.SummonManaCostTier1 = GetFloat(energyLadder, "levelOneEnergy");
+                Metrics.SummonManaCostTier2 = GetFloat(energyLadder, "levelTwoEnergy");
+                Metrics.SummonManaCostTier3 = GetFloat(energyLadder, "levelThreeEnergy");
                 observedScreenCueRequestCount = screenCuePresenter.CueRequestCount;
                 observedScreenFollowupCueRequestCount = screenCuePresenter.FollowupCueRequestCount;
                 observedScreenPlayerDamageCueRequestCount = screenCuePresenter.PlayerDamageCueRequestCount;
@@ -7090,6 +7411,44 @@ namespace DimensionBrawl.Tests
             }
         }
 
+        private sealed class SummonRosterAuditRow
+        {
+            public SummonRosterAuditRow(
+                string slot,
+                string actionId,
+                string costSource,
+                float[] tierCosts,
+                string[] roleIds,
+                float[] volleyDamage,
+                int[] screenIntercepts,
+                float[] actorHealth,
+                float[] counterDamage,
+                string readout)
+            {
+                Slot = slot;
+                ActionId = actionId;
+                CostSource = costSource;
+                TierCosts = tierCosts;
+                RoleIds = roleIds;
+                VolleyDamage = volleyDamage;
+                ScreenIntercepts = screenIntercepts;
+                ActorHealth = actorHealth;
+                CounterDamage = counterDamage;
+                Readout = readout;
+            }
+
+            public string Slot { get; }
+            public string ActionId { get; }
+            public string CostSource { get; }
+            public float[] TierCosts { get; }
+            public string[] RoleIds { get; }
+            public float[] VolleyDamage { get; }
+            public int[] ScreenIntercepts { get; }
+            public float[] ActorHealth { get; }
+            public float[] CounterDamage { get; }
+            public string Readout { get; }
+        }
+
         private sealed class PolicyMetrics
         {
             public PolicyMetrics(PolicyKind policy)
@@ -7235,6 +7594,9 @@ namespace DimensionBrawl.Tests
             public float EnergyTier1ReadyAtSeconds { get; set; } = -1f;
             public float EnergyTier2ReadyAtSeconds { get; set; } = -1f;
             public float EnergyTier3ReadyAtSeconds { get; set; } = -1f;
+            public float SummonManaCostTier1 { get; set; }
+            public float SummonManaCostTier2 { get; set; }
+            public float SummonManaCostTier3 { get; set; }
             public float EnergyTier1DurationSeconds =>
                 ResolveTimingDelta(EnergyProbeStartAtSeconds, EnergyTier1ReadyAtSeconds);
             public float EnergyTier2DurationSeconds =>
