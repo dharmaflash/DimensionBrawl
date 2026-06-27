@@ -48,6 +48,7 @@ namespace DimensionBrawl.Tests
         {
             NoSummonNoFire,
             GunOnly,
+            BossTunnelVisionIgnoresCloseProbe,
             NoSummonSurvivalLimit,
             GunOnlySurvivalLimit,
             PrematureSkill1NoSummon,
@@ -74,6 +75,7 @@ namespace DimensionBrawl.Tests
         {
             PolicyKind.NoSummonNoFire,
             PolicyKind.GunOnly,
+            PolicyKind.BossTunnelVisionIgnoresCloseProbe,
             PolicyKind.NoSummonSurvivalLimit,
             PolicyKind.GunOnlySurvivalLimit,
             PolicyKind.PrematureSkill1NoSummon,
@@ -100,6 +102,7 @@ namespace DimensionBrawl.Tests
         {
             PolicyKind.NoSummonSurvivalLimit,
             PolicyKind.GunOnlySurvivalLimit,
+            PolicyKind.BossTunnelVisionIgnoresCloseProbe,
             PolicyKind.PrematureSkill1NoSummon,
             PolicyKind.BacklinePhysicalBarrageProbe,
             PolicyKind.ForwardRiskPhysicalBarrageProbe,
@@ -139,6 +142,7 @@ namespace DimensionBrawl.Tests
                 PolicyMetrics delayedIntended = RequireResult(results, PolicyKind.IntendedDelayedFollowup);
                 PolicyMetrics noSummon = RequireResult(results, PolicyKind.NoSummonNoFire);
                 PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
+                PolicyMetrics bossTunnel = RequireResult(results, PolicyKind.BossTunnelVisionIgnoresCloseProbe);
                 PolicyMetrics noSummonSurvival = RequireResult(results, PolicyKind.NoSummonSurvivalLimit);
                 PolicyMetrics gunOnlySurvival = RequireResult(results, PolicyKind.GunOnlySurvivalLimit);
                 PolicyMetrics prematureSkill1 = RequireResult(results, PolicyKind.PrematureSkill1NoSummon);
@@ -189,6 +193,9 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("## Stage/Wave Beat Map"),
                     "The report should classify each route by the ArkData-style stage/wave beat it reaches.");
                 Assert.IsTrue(
+                    markdown.Contains("## Target Priority Contract"),
+                    "The report should prove boss tunnel vision is not the same as clearing the close-probe target.");
+                Assert.IsTrue(
                     markdown.Contains("## Player Damage Presentation Bridge"),
                     "The report should prove player damage presentation instead of inferring it from HP loss.");
                 Assert.IsTrue(
@@ -210,6 +217,22 @@ namespace DimensionBrawl.Tests
                     0,
                     gunOnly.ResultRecords,
                     "A short gun-only route should not fabricate a clear or payout result while still running.");
+                Assert.Greater(
+                    bossTunnel.BossBasicHits,
+                    0,
+                    "The boss tunnel-vision policy should prove the player can spend basic fire on the boss.");
+                Assert.AreEqual(
+                    0,
+                    bossTunnel.CloseThreatBasicHits,
+                    "The boss tunnel-vision policy should leave the close probe unresolved.");
+                Assert.AreEqual(
+                    "CloseProbe",
+                    ResolveFirstUnresolvedBeat(bossTunnel),
+                    "Boss tunnel vision should stall at the first target-priority beat, not at the summon curtain.");
+                Assert.AreEqual(
+                    0,
+                    bossTunnel.ResultRecords,
+                    "Boss tunnel vision should not fabricate a stage result hook.");
                 Assert.Greater(
                     prematureSkill1.SkillUses,
                     0,
@@ -936,6 +959,9 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.GunOnly:
                     yield return RunGunOnly(context);
                     break;
+                case PolicyKind.BossTunnelVisionIgnoresCloseProbe:
+                    yield return RunBossTunnelVisionIgnoresCloseProbe(context);
+                    break;
                 case PolicyKind.NoSummonSurvivalLimit:
                     yield return RunNoSummonSurvivalLimit(context);
                     break;
@@ -1019,6 +1045,16 @@ namespace DimensionBrawl.Tests
                 yield return FireBasicAt(context, context.BossHealth, context.BossCollider);
                 yield return ApplyBossWave(context, BossWaveAnswer.PlayerTakesHit);
                 yield return Advance(context, 1.35f);
+            }
+        }
+
+        private static IEnumerator RunBossTunnelVisionIgnoresCloseProbe(CombatPolicyContext context)
+        {
+            for (int i = 0; i < 4 && context.PlayerHealth.IsAlive; i++)
+            {
+                yield return FireBasicAt(context, context.BossHealth, context.BossCollider);
+                yield return ApplyBossWave(context, BossWaveAnswer.PlayerTakesHit);
+                yield return Advance(context, 1.0f);
             }
         }
 
@@ -1993,6 +2029,8 @@ namespace DimensionBrawl.Tests
             builder.AppendLine();
             AppendStageWaveBeatMap(builder, results);
             builder.AppendLine();
+            AppendTargetPriorityContract(builder, results);
+            builder.AppendLine();
             AppendSkillGateContract(builder, results);
             builder.AppendLine();
             builder.AppendLine("## Route Evidence");
@@ -2538,6 +2576,7 @@ namespace DimensionBrawl.Tests
             PolicyMetrics delayedIntended = RequireResult(results, PolicyKind.IntendedDelayedFollowup);
             PolicyMetrics noSummon = RequireResult(results, PolicyKind.NoSummonNoFire);
             PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
+            PolicyMetrics bossTunnel = RequireResult(results, PolicyKind.BossTunnelVisionIgnoresCloseProbe);
             PolicyMetrics noSummonSurvival = RequireResult(results, PolicyKind.NoSummonSurvivalLimit);
             PolicyMetrics gunOnlySurvival = RequireResult(results, PolicyKind.GunOnlySurvivalLimit);
             PolicyMetrics prematureSkill1 = RequireResult(results, PolicyKind.PrematureSkill1NoSummon);
@@ -2568,6 +2607,7 @@ namespace DimensionBrawl.Tests
             PolicyMetrics delayedBlockedRecovery = RequireResult(results, PolicyKind.BossScreenDelayedCounterRecovery);
             builder.AppendLine($"- Intended route prevented {Mathf.Max(0f, noSummon.PlayerDamageTaken - intended.PlayerDamageTaken):0.0} player damage versus no-action pressure.");
             builder.AppendLine($"- Gun-only dealt {gunOnly.BossDamageTaken:0.0} boss damage but ended as `{gunOnly.ResultKind}` because the route contract still needs summon pressure blocking.");
+            builder.AppendLine($"- Target priority split: boss tunnel vision landed boss basic hits {bossTunnel.BossBasicHits} while close-probe hits stayed {bossTunnel.CloseThreatBasicHits}; first unresolved beat `{ResolveFirstUnresolvedBeat(bossTunnel)}`.");
             builder.AppendLine($"- Long survival limit: no-summon player down {FormatSeconds(noSummonSurvival.FirstPlayerDownAtSeconds)} / boss down {FormatSeconds(noSummonSurvival.FirstBossDownAtSeconds)}; gun-only player down {FormatSeconds(gunOnlySurvival.FirstPlayerDownAtSeconds)} / boss down {FormatSeconds(gunOnlySurvival.FirstBossDownAtSeconds)}.");
             builder.AppendLine($"- Skill1 punish split: gun-only boss damage {gunOnly.BossDamageTaken:0.0}, intended follow-up boss damage {intended.BossDamageTaken:0.0}.");
             builder.AppendLine($"- Skill gate split: premature Skill1 use/hit {prematureSkill1.SkillUses}/{prematureSkill1.SkillProjectileHits}, boss damage {prematureSkill1.BossDamageFromPlayer:0.0}, follow-up/result {prematureSkill1.FollowupHitCount}/{prematureSkill1.ResultRecords}, unresolved beat `{ResolveFirstUnresolvedBeat(prematureSkill1)}`.");
@@ -2691,6 +2731,7 @@ namespace DimensionBrawl.Tests
             PolicyMetrics noSummon = RequireResult(results, PolicyKind.NoSummonNoFire);
             PolicyMetrics noSummonSurvival = RequireResult(results, PolicyKind.NoSummonSurvivalLimit);
             PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
+            PolicyMetrics bossTunnel = RequireResult(results, PolicyKind.BossTunnelVisionIgnoresCloseProbe);
             PolicyMetrics gunOnlySurvival = RequireResult(results, PolicyKind.GunOnlySurvivalLimit);
             PolicyMetrics prematureSkill1 = RequireResult(results, PolicyKind.PrematureSkill1NoSummon);
             PolicyMetrics forwardRiskPhysicalBarrage = RequireResult(
@@ -2711,6 +2752,10 @@ namespace DimensionBrawl.Tests
 
             bool axis1Pass = noSummonSurvival.ResultKind == "PlayerDownFail"
                 && gunOnlySurvival.ResultKind == "PlayerDownFail"
+                && bossTunnel.BossBasicHits > 0
+                && bossTunnel.CloseThreatBasicHits == 0
+                && ResolveFirstUnresolvedBeat(bossTunnel) == "CloseProbe"
+                && bossTunnel.ResultRecords == 0
                 && noSummonSurvival.FirstPlayerDownAtSeconds >= 0f
                 && gunOnlySurvival.FirstPlayerDownAtSeconds >= 0f
                 && gunOnlySurvival.FirstBossDownAtSeconds < 0f;
@@ -2762,7 +2807,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine("| Axis | Status | Evidence |");
             builder.AppendLine("|---|---|---|");
             builder.AppendLine(
-                $"| 1. Bad routes lose state/HP | {FormatGateStatus(axis1Pass)} | no-summon down {FormatSeconds(noSummonSurvival.FirstPlayerDownAtSeconds)}, gun-only down {FormatSeconds(gunOnlySurvival.FirstPlayerDownAtSeconds)}, gun-only boss down {FormatSeconds(gunOnlySurvival.FirstBossDownAtSeconds)} |");
+                $"| 1. Bad routes lose state/HP | {FormatGateStatus(axis1Pass)} | no-summon down {FormatSeconds(noSummonSurvival.FirstPlayerDownAtSeconds)}, gun-only down {FormatSeconds(gunOnlySurvival.FirstPlayerDownAtSeconds)}, boss tunnel close/boss hits {bossTunnel.CloseThreatBasicHits}/{bossTunnel.BossBasicHits} unresolved `{ResolveFirstUnresolvedBeat(bossTunnel)}`, gun-only boss down {FormatSeconds(gunOnlySurvival.FirstBossDownAtSeconds)} |");
             builder.AppendLine(
                 $"| 2. Block -> window -> Skill1 loop | {FormatGateStatus(axis2Pass)} | unblocked forward hits {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; premature Skill1 use/hit {prematureSkill1.SkillUses}/{prematureSkill1.SkillProjectileHits} but follow-up/result {prematureSkill1.FollowupHitCount}/{prematureSkill1.ResultRecords}; block presentation cam/flash/VFX {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}; no-punish misses {forwardRiskPhysicalSummonNoPunish.FollowupMissCount}, counters {forwardRiskPhysicalSummonNoPunish.CounterWaves}, counter cues {forwardRiskPhysicalSummonNoPunish.CounterWaveScreenCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveCameraCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveVfxCueRequests}, result `{forwardRiskPhysicalSummonNoPunish.ResultKind}`; recovery answer cues {blockedRecovery.CounterWaveAnswerScreenCueRequests}/{blockedRecovery.CounterWaveStabilizedCameraCueRequests}/{blockedRecovery.CounterWaveStabilizedVfxCueRequests}, energy ready/spend {blockedRecovery.EnergyReadyScreenCueRequests}/{blockedRecovery.EnergySpendScreenCueRequests} screen and {blockedRecovery.EnergyReadyVfxCueRequests}/{blockedRecovery.EnergySpendVfxCueRequests} VFX; physical punish blocks {forwardRiskPhysicalSummonPunish.SummonBlocks}, Skill1 hits {forwardRiskPhysicalSummonPunish.SkillProjectileHits}, `{forwardRiskPhysicalSummonPunish.ResultKind}` |");
             builder.AppendLine(
@@ -2833,6 +2878,61 @@ namespace DimensionBrawl.Tests
                 builder.Append(EscapeTable(ResolveStageWaveJudgement(result)));
                 builder.AppendLine(" |");
             }
+        }
+
+        private static void AppendTargetPriorityContract(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results)
+        {
+            builder.AppendLine("## Target Priority Contract");
+            builder.AppendLine("| Policy | Basic shots | Close hits/dmg/HP | Boss hits/dmg | First unresolved | Result records | Target read |");
+            builder.AppendLine("|---|---:|---:|---:|---|---:|---|");
+            AppendTargetPriorityRow(
+                builder,
+                RequireResult(results, PolicyKind.BossTunnelVisionIgnoresCloseProbe));
+            AppendTargetPriorityRow(builder, RequireResult(results, PolicyKind.GunOnly));
+            AppendTargetPriorityRow(builder, RequireResult(results, PolicyKind.PrematureSkill1NoSummon));
+            AppendTargetPriorityRow(builder, RequireResult(results, PolicyKind.IntendedRoute));
+        }
+
+        private static void AppendTargetPriorityRow(StringBuilder builder, PolicyMetrics result)
+        {
+            builder.Append("| ");
+            builder.Append(result.Policy);
+            builder.Append(" | ");
+            builder.Append(result.BasicShots);
+            builder.Append(" | ");
+            builder.Append(
+                $"{result.CloseThreatBasicHits}/{result.CloseThreatDamageTaken:0.0}/{result.CloseThreatHealthRemaining:0.0}");
+            builder.Append(" | ");
+            builder.Append($"{result.BossBasicHits}/{result.BossDamageFromPlayer:0.0}");
+            builder.Append(" | ");
+            builder.Append(ResolveFirstUnresolvedBeat(result));
+            builder.Append(" | ");
+            builder.Append(result.ResultRecords);
+            builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveTargetPriorityRead(result)));
+            builder.AppendLine(" |");
+        }
+
+        private static string ResolveTargetPriorityRead(PolicyMetrics result)
+        {
+            if (result.Policy == PolicyKind.BossTunnelVisionIgnoresCloseProbe)
+            {
+                return "boss chip before close-probe clear";
+            }
+
+            if (result.CloseThreatBasicHits > 0 && result.BossBasicHits > 0)
+            {
+                return "close probe first, then boss chip";
+            }
+
+            if (result.CloseThreatBasicHits > 0 && result.FollowupHitCount > 0)
+            {
+                return "close probe first, then state-gated punish";
+            }
+
+            return result.CloseThreatBasicHits > 0 ? "close probe answered" : "close probe unresolved";
         }
 
         private static void AppendSkillGateContract(
@@ -2920,6 +3020,7 @@ namespace DimensionBrawl.Tests
             PolicyMetrics noSummon = RequireResult(results, PolicyKind.NoSummonNoFire);
             PolicyMetrics noSummonSurvival = RequireResult(results, PolicyKind.NoSummonSurvivalLimit);
             PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
+            PolicyMetrics bossTunnel = RequireResult(results, PolicyKind.BossTunnelVisionIgnoresCloseProbe);
             PolicyMetrics gunOnlySurvival = RequireResult(results, PolicyKind.GunOnlySurvivalLimit);
             PolicyMetrics prematureSkill1 = RequireResult(results, PolicyKind.PrematureSkill1NoSummon);
             PolicyMetrics backlineEnergy = RequireResult(results, PolicyKind.BacklineEnergyProbe);
@@ -2965,6 +3066,9 @@ namespace DimensionBrawl.Tests
                 && forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits > backlinePhysicalBarrage.PhysicalBarragePlayerHits
                 && ignoredRecovery.UnansweredPressureBurdenShare01 > intended.UnansweredPressureBurdenShare01;
             bool combatPayloadMeasured = forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits > 0
+                && bossTunnel.BossBasicHits > 0
+                && bossTunnel.CloseThreatBasicHits == 0
+                && ResolveFirstUnresolvedBeat(bossTunnel) == "CloseProbe"
                 && noSummon.PlayerDamageScreenCueRequests > 0
                 && noSummon.PlayerDamageFeedbackRequests > 0
                 && prematureSkill1.SkillUses > 0
@@ -3034,7 +3138,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 "| CombatPayload runtime pipeline | "
                 + $"{FormatCoverageStatus(combatPayloadMeasured)} | "
-                + $"Target->Hit: forward barrage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; Resource/Skill gate: premature Skill1 use/hit {prematureSkill1.SkillUses}/{prematureSkill1.SkillProjectileHits} with follow-up/result {prematureSkill1.FollowupHitCount}/{prematureSkill1.ResultRecords}; Player Hit->Presentation: routine damage cues {noSummon.PlayerDamageScreenCueRequests}/{noSummon.PlayerDamageFeedbackRequests}, clean route {forwardRiskPhysicalSummonPunish.PlayerDamageScreenCueRequests}/{forwardRiskPhysicalSummonPunish.PlayerDamageFeedbackRequests}; Block->Status/Presentation: {forwardRiskPhysicalSummonBlock.SummonBlocks} blocks, {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)} to window, cues {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}; NoHit->Counter/Presentation: miss {forwardRiskPhysicalSummonNoPunish.FollowupMissCount} / counter {forwardRiskPhysicalSummonNoPunish.CounterWaves}, cues {forwardRiskPhysicalSummonNoPunish.CounterWaveScreenCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveCameraCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveVfxCueRequests}; Skill1 Hit->Presentation: {forwardRiskPhysicalSummonPunish.SkillProjectileHits} hits with cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests}; payoff source player/summon {forwardRiskPhysicalSummonPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonPunish.BossDamageFromAllySummon:0.0} | "
+                + $"Target selection: boss tunnel close/boss hits {bossTunnel.CloseThreatBasicHits}/{bossTunnel.BossBasicHits} unresolved {ResolveFirstUnresolvedBeat(bossTunnel)}; Target->Hit: forward barrage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; Resource/Skill gate: premature Skill1 use/hit {prematureSkill1.SkillUses}/{prematureSkill1.SkillProjectileHits} with follow-up/result {prematureSkill1.FollowupHitCount}/{prematureSkill1.ResultRecords}; Player Hit->Presentation: routine damage cues {noSummon.PlayerDamageScreenCueRequests}/{noSummon.PlayerDamageFeedbackRequests}, clean route {forwardRiskPhysicalSummonPunish.PlayerDamageScreenCueRequests}/{forwardRiskPhysicalSummonPunish.PlayerDamageFeedbackRequests}; Block->Status/Presentation: {forwardRiskPhysicalSummonBlock.SummonBlocks} blocks, {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)} to window, cues {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}; NoHit->Counter/Presentation: miss {forwardRiskPhysicalSummonNoPunish.FollowupMissCount} / counter {forwardRiskPhysicalSummonNoPunish.CounterWaves}, cues {forwardRiskPhysicalSummonNoPunish.CounterWaveScreenCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveCameraCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveVfxCueRequests}; Skill1 Hit->Presentation: {forwardRiskPhysicalSummonPunish.SkillProjectileHits} hits with cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests}; payoff source player/summon {forwardRiskPhysicalSummonPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonPunish.BossDamageFromAllySummon:0.0} | "
                 + "Candidate labels stay local test evidence, not fake universal opcodes. |");
             builder.AppendLine(
                 "| PGR state-lock and hit-response grammar | "
@@ -3065,6 +3169,7 @@ namespace DimensionBrawl.Tests
 
         private static void AssertStageWaveBeatMap(IReadOnlyList<PolicyMetrics> results)
         {
+            PolicyMetrics bossTunnel = RequireResult(results, PolicyKind.BossTunnelVisionIgnoresCloseProbe);
             PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
             PolicyMetrics prematureSkill1 = RequireResult(results, PolicyKind.PrematureSkill1NoSummon);
             PolicyMetrics noPunish = RequireResult(results, PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe);
@@ -3072,6 +3177,10 @@ namespace DimensionBrawl.Tests
             PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
             PolicyMetrics blockedRecovery = RequireResult(results, PolicyKind.BossScreenBlockCounterRecovery);
 
+            Assert.AreEqual(
+                "CloseProbe",
+                ResolveFirstUnresolvedBeat(bossTunnel),
+                "Boss tunnel vision should be classified as stopping before the close-probe target priority beat is answered.");
             Assert.AreEqual(
                 "ScreenCurtain",
                 ResolveFirstUnresolvedBeat(gunOnly),
@@ -3104,6 +3213,7 @@ namespace DimensionBrawl.Tests
             {
                 case PolicyKind.NoSummonNoFire:
                 case PolicyKind.GunOnly:
+                case PolicyKind.BossTunnelVisionIgnoresCloseProbe:
                 case PolicyKind.NoSummonSurvivalLimit:
                 case PolicyKind.GunOnlySurvivalLimit:
                 case PolicyKind.PrematureSkill1NoSummon:
@@ -3483,6 +3593,8 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"firstBossDownAtSeconds\": {JsonNullableSeconds(result.FirstBossDownAtSeconds)},");
                 builder.AppendLine($"      \"survivalProbeMaxSeconds\": {JsonNullableSeconds(result.SurvivalProbeMaxSeconds)},");
                 builder.AppendLine($"      \"closeThreatBasicHits\": {result.CloseThreatBasicHits},");
+                builder.AppendLine($"      \"closeThreatDamageTaken\": {result.CloseThreatDamageTaken:0.###},");
+                builder.AppendLine($"      \"closeThreatHealthRemaining\": {result.CloseThreatHealthRemaining:0.###},");
                 builder.AppendLine($"      \"bossBasicHits\": {result.BossBasicHits},");
                 builder.AppendLine($"      \"bossWaves\": {result.BossWaves},");
                 builder.AppendLine($"      \"bossProjectilesSpawned\": {result.BossProjectilesSpawned},");
@@ -3865,6 +3977,15 @@ namespace DimensionBrawl.Tests
                         && result.FirstPlayerDownAtSeconds >= 0f
                         && result.FirstPlayerDownAtSeconds <= SurvivalLimitProbeMaxSeconds
                         && result.FirstBossDownAtSeconds < 0f;
+                case PolicyKind.BossTunnelVisionIgnoresCloseProbe:
+                    return !result.IsClearResult
+                        && result.BasicShots > 0
+                        && result.BossBasicHits > 0
+                        && result.CloseThreatBasicHits == 0
+                        && result.BossDamageFromPlayer > 0f
+                        && result.PlayerDamageTaken > 0f
+                        && result.ResultRecords == 0
+                        && ResolveFirstUnresolvedBeat(result) == "CloseProbe";
                 case PolicyKind.PrematureSkill1NoSummon:
                     return !result.IsClearResult
                         && result.SkillUses > 0
