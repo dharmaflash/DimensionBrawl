@@ -307,6 +307,10 @@ namespace DimensionBrawl.Combat
                 Mathf.Lerp(pendingTargetLanePoint.x, targetLateralX, 0.35f),
                 laneSpace.BossProxyZ,
                 activePattern.SpawnHeight);
+            spawnPoint = ResolveSourceClearedSpawnPoint(
+                spawnPoint,
+                targetPoint,
+                activePattern.ProjectileRadius);
             Vector3 direction = targetPoint - spawnPoint;
             projectile.transform.SetPositionAndRotation(
                 spawnPoint,
@@ -329,6 +333,107 @@ namespace DimensionBrawl.Combat
                 activePattern.DamageResponsePolicy,
                 activePattern.ControlLockPolicy);
             return true;
+        }
+
+        private Vector3 ResolveSourceClearedSpawnPoint(Vector3 spawnPoint, Vector3 targetPoint, float projectileRadius)
+        {
+            Collider[] sourceColliders = ResolveSourceBodyColliders();
+            if (sourceColliders.Length == 0)
+            {
+                return spawnPoint;
+            }
+
+            Vector3 direction = targetPoint - spawnPoint;
+            if (direction.sqrMagnitude <= 0.0001f)
+            {
+                return spawnPoint;
+            }
+
+            Vector3 forward = direction.normalized;
+            float radius = Mathf.Max(0.05f, projectileRadius);
+            Vector3 resolvedSpawnPoint = spawnPoint;
+            float sourceRadius = ResolveSourceColliderMaxExtent(sourceColliders);
+            if (sourceHealth != null && sourceRadius > 0f)
+            {
+                float minimumForwardDistance = sourceRadius + radius + 0.05f;
+                float currentForwardDistance = Vector3.Dot(
+                    resolvedSpawnPoint - sourceHealth.transform.position,
+                    forward);
+                if (currentForwardDistance < minimumForwardDistance)
+                {
+                    resolvedSpawnPoint += forward * (minimumForwardDistance - currentForwardDistance);
+                }
+            }
+
+            float stepDistance = Mathf.Max(0.05f, radius * 0.5f);
+            float maxDistance = Mathf.Max(2.5f, radius * 6f);
+            for (float distance = 0f; distance <= maxDistance; distance += stepDistance)
+            {
+                Vector3 candidate = resolvedSpawnPoint + forward * distance;
+                if (!OverlapsAnySourceCollider(candidate, radius, sourceColliders))
+                {
+                    return candidate;
+                }
+            }
+
+            return resolvedSpawnPoint + forward * maxDistance;
+        }
+
+        private static float ResolveSourceColliderMaxExtent(IReadOnlyList<Collider> sourceColliders)
+        {
+            float maxExtent = 0f;
+            for (int i = 0; i < sourceColliders.Count; i++)
+            {
+                Collider sourceCollider = sourceColliders[i];
+                if (sourceCollider == null)
+                {
+                    continue;
+                }
+
+                Vector3 extents = sourceCollider.bounds.extents;
+                maxExtent = Mathf.Max(maxExtent, Mathf.Abs(extents.x), Mathf.Abs(extents.y), Mathf.Abs(extents.z));
+            }
+
+            return maxExtent;
+        }
+
+        private static bool OverlapsAnySourceCollider(
+            Vector3 position,
+            float radius,
+            IReadOnlyList<Collider> sourceColliders)
+        {
+            float radiusSquared = radius * radius;
+            for (int i = 0; i < sourceColliders.Count; i++)
+            {
+                Collider sourceCollider = sourceColliders[i];
+                if (sourceCollider == null || !sourceCollider.enabled)
+                {
+                    continue;
+                }
+
+                if (sourceCollider.bounds.SqrDistance(position) <= radiusSquared)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private Collider[] ResolveSourceBodyColliders()
+        {
+            if (sourceHealth == null)
+            {
+                return Array.Empty<Collider>();
+            }
+
+            Collider[] colliders = sourceHealth.GetComponents<Collider>();
+            if (colliders != null && colliders.Length > 0)
+            {
+                return colliders;
+            }
+
+            return sourceHealth.GetComponentsInChildren<Collider>();
         }
 
         private BossBarragePatternProfile ResolveActivePattern()

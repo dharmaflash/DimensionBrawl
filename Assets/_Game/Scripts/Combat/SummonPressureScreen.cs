@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace DimensionBrawl.Combat
@@ -8,6 +9,8 @@ namespace DimensionBrawl.Combat
     [RequireComponent(typeof(Rigidbody))]
     public sealed class SummonPressureScreen : MonoBehaviour
     {
+        private static readonly List<SummonPressureScreen> ActiveScreens = new List<SummonPressureScreen>(16);
+
         [SerializeField] private DamageTeam ownerTeam = DamageTeam.AllySummon;
         [SerializeField, Min(0)] private int defaultMaxIntercepts = 2;
         [SerializeField, Min(0.05f)] private float defaultLifetimeSeconds = 1.2f;
@@ -78,8 +81,13 @@ namespace DimensionBrawl.Combat
             screenCollider.enabled = active;
             if (active)
             {
+                RegisterActiveScreen();
                 Activated?.Invoke(this);
                 ScanForOverlappingProjectiles();
+            }
+            else
+            {
+                UnregisterActiveScreen();
             }
         }
 
@@ -157,6 +165,7 @@ namespace DimensionBrawl.Combat
             bool wasActive = active;
             active = false;
             remainingLifetime = 0f;
+            UnregisterActiveScreen();
             if (screenCollider != null)
             {
                 screenCollider.enabled = false;
@@ -171,6 +180,89 @@ namespace DimensionBrawl.Combat
         private void Update()
         {
             Tick(Time.deltaTime);
+        }
+
+        private void OnDisable()
+        {
+            UnregisterActiveScreen();
+        }
+
+        private void OnDestroy()
+        {
+            UnregisterActiveScreen();
+        }
+
+        public static bool TryInterceptAnyOverlapping(
+            BossBarrageProjectile projectile,
+            Vector3 impactPoint,
+            float extraRadius = 0f)
+        {
+            if (projectile == null || !projectile.IsActive)
+            {
+                return false;
+            }
+
+            if (TryInterceptAnyOverlapping(
+                ActiveScreens,
+                projectile,
+                impactPoint,
+                extraRadius,
+                pruneInactive: true))
+            {
+                return true;
+            }
+
+            SummonPressureScreen[] sceneScreens = FindObjectsByType<SummonPressureScreen>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            return TryInterceptAnyOverlapping(
+                sceneScreens,
+                projectile,
+                impactPoint,
+                extraRadius,
+                pruneInactive: false);
+        }
+
+        private static bool TryInterceptAnyOverlapping(
+            IList<SummonPressureScreen> screens,
+            BossBarrageProjectile projectile,
+            Vector3 impactPoint,
+            float extraRadius,
+            bool pruneInactive)
+        {
+            for (int i = screens.Count - 1; i >= 0; i--)
+            {
+                SummonPressureScreen screen = screens[i];
+                if (screen == null || !screen.IsActive)
+                {
+                    if (pruneInactive)
+                    {
+                        screens.RemoveAt(i);
+                    }
+
+                    continue;
+                }
+
+                if (!CombatTeamUtility.AreHostile(screen.OwnerTeam, projectile.SourceTeam))
+                {
+                    continue;
+                }
+
+                float distance = Vector3.Distance(screen.transform.position, impactPoint);
+                float radius = screen.ActiveRadius + Mathf.Max(0f, extraRadius);
+                bool inRange = distance * distance <= radius * radius;
+                if (!inRange)
+                {
+                    continue;
+                }
+
+                if (screen.TryIntercept(projectile))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private void OnTriggerEnter(Collider other)
@@ -266,6 +358,19 @@ namespace DimensionBrawl.Combat
             {
                 overlapBuffer = new Collider[safeSize];
             }
+        }
+
+        private void RegisterActiveScreen()
+        {
+            if (!ActiveScreens.Contains(this))
+            {
+                ActiveScreens.Add(this);
+            }
+        }
+
+        private void UnregisterActiveScreen()
+        {
+            ActiveScreens.Remove(this);
         }
     }
 }

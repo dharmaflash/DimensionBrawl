@@ -3688,6 +3688,230 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator PocketPhysicalLinePressureSummonBlockClearsThroughRealProjectilePath()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            PlayerCombatModeController combatModeController =
+                RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
+            PlayerRangedAimController aimController =
+                RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
+            PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
+            CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
+            SummonEnergyLadder energyLadder =
+                RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
+            PlayerSummonSlot1Action summonSlot1Action =
+                RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            ActionCameraCueDriver cameraCueDriver =
+                RequireComponent<ActionCameraCueDriver>(cameraController.gameObject, "action camera cue driver");
+            BossBarragePocketVfxCueBridge pocketVfxCueBridge =
+                RequireComponent<BossBarragePocketVfxCueBridge>(
+                    RequireRoot(PocketOwnerRootName),
+                    "pocket VFX cue bridge");
+            ActionScreenCuePresenter screenCuePresenter =
+                RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "action screen cue presenter");
+            GameObject bossRoot = RequireRoot(BossRootName);
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
+            GameObject closeThreatRoot = RequireRoot(CloseThreatRootName);
+            CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreatRoot, "close threat health");
+            Collider closeThreatCollider = RequireCombatHitCollider(closeThreatRoot, closeThreatHealth, "close threat");
+            BasicSoldierEnemy closeThreatEnemy = closeThreatRoot.GetComponent<BasicSoldierEnemy>();
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            BossBarragePatternProfile linePressurePattern =
+                LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath);
+
+            emitter.SetFiringEnabled(false);
+            if (closeThreatEnemy != null)
+            {
+                closeThreatEnemy.enabled = false;
+            }
+
+            combatModeController.SetRangedMode();
+            aimController.SetAimHeld(true);
+            float physicalProbeLaneZ = Mathf.Lerp(laneSpace.BackLimitZ, laneSpace.ForwardBoundaryZ, 0.88f);
+            player.transform.position = laneSpace.GetLaneWorldPoint(
+                0f,
+                physicalProbeLaneZ,
+                player.transform.position.y);
+            Physics.SyncTransforms();
+            Assert.That(
+                laneSpace.EvaluateForwardRisk01(player.transform.position),
+                Is.InRange(0.87f, 0.89f),
+                "The physical block contract should mirror the policy report's forward-risk lane where LinePressure becomes a real body threat.");
+
+            targetSelector.NotifyTargetContact(closeThreatHealth);
+            targetSelector.RefreshTarget();
+            yield return WaitSeconds(0.22f);
+
+            int closeThreatShotCount = 0;
+            float fireIntervalSeconds = GetFloat(rangedBasicAttackAction, "fireIntervalSeconds");
+            while (closeThreatHealth.IsAlive && closeThreatShotCount < 10)
+            {
+                Assert.IsTrue(
+                    rangedBasicAttackAction.TryFire(),
+                    "The physical block contract should answer the close probe through the authored ranged-basic path.");
+                LaneActionProjectile closeThreatShot = RequireActivePlayerRangedProjectile();
+                Assert.IsTrue(
+                    closeThreatShot.TryApplyImpact(closeThreatCollider, closeThreatShot.transform.position),
+                    "Ranged basic fire should resolve the close threat before the physical LinePressure wave.");
+                closeThreatShotCount++;
+
+                if (closeThreatHealth.IsAlive)
+                {
+                    yield return WaitSeconds(fireIntervalSeconds + 0.02f);
+                }
+            }
+
+            Assert.IsFalse(closeThreatHealth.IsAlive, "The physical route should clear the close probe before summon pressure.");
+            pocketOwner.Tick(0f);
+            Assert.IsTrue(pocketOwner.CloseThreatDefeated);
+            float reliefWaitStartTime = Time.time;
+            while (pocketOwner.IsPressureReliefActive && Time.time - reliefWaitStartTime < 3.5f)
+            {
+                emitter.SetFiringEnabled(false);
+                yield return null;
+            }
+
+            emitter.SetFiringEnabled(false);
+            Assert.IsFalse(
+                pocketOwner.IsPressureReliefActive,
+                "The physical LinePressure contract should fire after the close-probe relief beat, not during the temporary barrage pause.");
+
+            FillEnergyToTier(energyLadder, 1);
+            Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
+            Assert.Greater(summonSlot1Action.ActivePressureScreenCount, 0);
+            SummonPressureScreen activeScreen = RequireActiveAllyPressureScreen();
+            SummonFrontlineProxy activeSummonActor = RequireActiveSummonActorForPressureScreen(activeScreen);
+            yield return null;
+            Physics.SyncTransforms();
+
+            int blockCueCountBefore = cameraCueDriver.SummonPressureBlockCueRequestCount;
+            int blockFlashCountBefore = activeScreen.InterceptedProjectiles;
+            int followupWindowCueCountBefore = cameraCueDriver.SummonFollowupWindowCueRequestCount;
+            int followupWindowVfxCountBefore = pocketVfxCueBridge.FollowupWindowCueRequestCount;
+            float playerHealthBeforeBarrage = playerHealth.CurrentHealth;
+            emitter.SetFiringEnabled(true);
+            Assert.IsTrue(
+                emitter.QueuePriorityPattern(linePressurePattern, 1),
+                "The manual scene should be able to queue the same authored LinePressure wave used by the policy report.");
+            Assert.IsTrue(emitter.BeginWindup());
+            int firedCount = emitter.FirePendingWave();
+            BossBarrageProjectile[] bossProjectiles = FindActiveBossProjectiles(linePressurePattern.ProjectileMaterial);
+            int activeLineProjectilesAfterFire = CountActiveBossProjectiles(bossProjectiles);
+            string projectileReadoutAfterFire = BuildBossProjectileLaneReadout(laneSpace, bossProjectiles, activeScreen);
+            Assert.AreEqual(linePressurePattern.ProjectilesPerWave, firedCount);
+            Assert.AreEqual(
+                firedCount,
+                bossProjectiles.Length,
+                "The physical block test should track the full authored LinePressure volley.");
+
+            float physicalWaitStartTime = Time.time;
+            float firstProjectileInactiveElapsed = -1f;
+            bool screenActiveAtFirstProjectileInactive = false;
+            float screenLifeAtFirstProjectileInactive = -1f;
+            int screenInterceptsAtFirstProjectileInactive = -1;
+            Vector3 actorPositionAtFirstProjectileInactive = Vector3.zero;
+            Vector3 screenPositionAtFirstProjectileInactive = Vector3.zero;
+            while (!pocketOwner.IsSummonFollowupWindowActive
+                && AnyBossProjectileActive(bossProjectiles)
+                && Time.time - physicalWaitStartTime < 3.4f)
+            {
+                if (firstProjectileInactiveElapsed < 0f)
+                {
+                    for (int i = 0; i < bossProjectiles.Length; i++)
+                    {
+                        if (bossProjectiles[i] != null && !bossProjectiles[i].IsActive)
+                        {
+                            firstProjectileInactiveElapsed = Time.time - physicalWaitStartTime;
+                            screenActiveAtFirstProjectileInactive = activeScreen.IsActive;
+                            screenLifeAtFirstProjectileInactive = activeScreen.RemainingLifetimeSeconds;
+                            screenInterceptsAtFirstProjectileInactive = activeScreen.InterceptedProjectiles;
+                            actorPositionAtFirstProjectileInactive = activeSummonActor.transform.position;
+                            screenPositionAtFirstProjectileInactive = activeScreen.transform.position;
+                            break;
+                        }
+                    }
+                }
+
+                yield return null;
+            }
+
+            float physicalWaitElapsed = Time.time - physicalWaitStartTime;
+            Physics.SyncTransforms();
+            pocketOwner.Tick(0f);
+
+            int physicalIntercepts = activeScreen.InterceptedProjectiles - blockFlashCountBefore;
+            float physicalDamageTaken = playerHealthBeforeBarrage - playerHealth.CurrentHealth;
+            Vector2 summonActorLane = laneSpace.GetLaneCoordinates(activeSummonActor.transform.position);
+            Vector2 screenLane = laneSpace.GetLaneCoordinates(activeScreen.transform.position);
+            Vector2 playerLaneAfterBarrage = laneSpace.GetLaneCoordinates(player.transform.position);
+            string projectileReadout = BuildBossProjectileLaneReadout(laneSpace, bossProjectiles, activeScreen);
+            Assert.GreaterOrEqual(
+                physicalIntercepts,
+                2,
+                "The summon screen should physically intercept the LinePressure volley instead of relying on a direct test hook. "
+                + $"intercepts={physicalIntercepts}, total={summonSlot1Action.TotalPressureScreenInterceptCount}, "
+                + $"screenActive={activeScreen.IsActive}, remaining={activeScreen.RemainingIntercepts}, damage={physicalDamageTaken:0.0}, "
+                + $"wait={physicalWaitElapsed:0.00}, blocked={pocketOwner.BlockedBossPressureWithSummon}, window={pocketOwner.IsSummonFollowupWindowActive}, "
+                + $"afterFireActive={activeLineProjectilesAfterFire}, afterFire={projectileReadoutAfterFire}, "
+                + $"firstInactive={firstProjectileInactiveElapsed:0.00}, screenAtFirstInactive={screenActiveAtFirstProjectileInactive}, "
+                + $"screenLifeAtFirstInactive={screenLifeAtFirstProjectileInactive:0.00}, interceptsAtFirstInactive={screenInterceptsAtFirstProjectileInactive}, "
+                + $"actorAtFirstInactive={FormatVector3(actorPositionAtFirstProjectileInactive)}, "
+                + $"screenAtFirstInactivePos={FormatVector3(screenPositionAtFirstProjectileInactive)}, "
+                + $"screenOwner={activeScreen.OwnerTeam}, "
+                + $"actorPos={FormatVector3(activeSummonActor.transform.position)}, screenPos={FormatVector3(activeScreen.transform.position)}, "
+                + $"actorLane=({summonActorLane.x:0.00},{summonActorLane.y:0.00}), screenLane=({screenLane.x:0.00},{screenLane.y:0.00}), "
+                + $"screenRadius={activeScreen.ActiveRadius:0.00}, screenLife={activeScreen.RemainingLifetimeSeconds:0.00}, "
+                + $"playerLane=({playerLaneAfterBarrage.x:0.00},{playerLaneAfterBarrage.y:0.00}), "
+                + $"projectiles={projectileReadout}.");
+            Assert.AreEqual(
+                playerHealthBeforeBarrage,
+                playerHealth.CurrentHealth,
+                0.001f,
+                "The same forward-risk LinePressure wave should deal no player damage once the summon screen answers it.");
+            Assert.IsTrue(pocketOwner.BlockedBossPressureWithSummon);
+            Assert.IsTrue(pocketOwner.IsSummonFollowupWindowActive);
+            Assert.GreaterOrEqual(
+                cameraCueDriver.SummonPressureBlockCueRequestCount - blockCueCountBefore,
+                activeScreen.InterceptedProjectiles - blockFlashCountBefore);
+            Assert.AreEqual(
+                followupWindowCueCountBefore + 1,
+                cameraCueDriver.SummonFollowupWindowCueRequestCount);
+            Assert.AreEqual(
+                followupWindowVfxCountBefore + 1,
+                pocketVfxCueBridge.FollowupWindowCueRequestCount);
+
+            targetSelector.NotifyTargetContact(bossHealth);
+            targetSelector.RefreshTarget();
+            Assert.IsTrue(skill1Action.TryUseSkill1());
+            LaneActionProjectile followupProjectile = RequireActivePlayerSkillProjectile();
+            yield return WaitForProjectileInactive(followupProjectile, 2.2f);
+            pocketOwner.Tick(0f);
+
+            Assert.AreSame(bossHealth, followupProjectile.LastImpactTargetHealth);
+            Assert.AreEqual(ProjectileImpactResult.AppliedDamage, followupProjectile.LastImpactResult);
+            Assert.IsTrue(pocketOwner.UsedSkill1DuringSummonFollowup);
+            Assert.IsTrue(pocketOwner.Skill1FollowupHitConfirmed);
+            Assert.AreEqual("Followup.Hit", screenCuePresenter.LastCueId);
+
+            int resultCueCountBeforeClear = screenCuePresenter.ResultCueRequestCount;
+            pocketOwner.Tick(GetFloat(pocketOwner, "skill1FollowupClearDelaySeconds") + 0.05f);
+            Assert.IsTrue(pocketOwner.IsCleared);
+            Assert.AreEqual(resultCueCountBeforeClear + 1, screenCuePresenter.ResultCueRequestCount);
+
+            if (closeThreatEnemy != null)
+            {
+                closeThreatEnemy.enabled = true;
+            }
+        }
+
+        [UnityTest]
         public IEnumerator RangedBasicFireReachesBossAndContributesVisibleDamage()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
@@ -5462,6 +5686,116 @@ namespace DimensionBrawl.Tests
             return null;
         }
 
+        private static BossBarrageProjectile[] FindActiveBossProjectiles(Material material = null)
+        {
+            BossBarrageProjectile[] bossProjectiles = Object.FindObjectsByType<BossBarrageProjectile>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            List<BossBarrageProjectile> activeProjectiles = new List<BossBarrageProjectile>(bossProjectiles.Length);
+            for (int i = 0; i < bossProjectiles.Length; i++)
+            {
+                if (bossProjectiles[i] != null
+                    && bossProjectiles[i].IsActive
+                    && bossProjectiles[i].SourceTeam == DamageTeam.Enemy
+                    && (material == null || bossProjectiles[i].LastPresentationMaterial == material))
+                {
+                    activeProjectiles.Add(bossProjectiles[i]);
+                }
+            }
+
+            return activeProjectiles.ToArray();
+        }
+
+        private static bool AnyBossProjectileActive(IReadOnlyList<BossBarrageProjectile> projectiles)
+        {
+            if (projectiles == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < projectiles.Count; i++)
+            {
+                if (projectiles[i] != null && projectiles[i].IsActive)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static int CountActiveBossProjectiles(IReadOnlyList<BossBarrageProjectile> projectiles)
+        {
+            if (projectiles == null)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            for (int i = 0; i < projectiles.Count; i++)
+            {
+                if (projectiles[i] != null && projectiles[i].IsActive)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static string BuildBossProjectileLaneReadout(
+            SummonLaneSpace laneSpace,
+            IReadOnlyList<BossBarrageProjectile> projectiles,
+            SummonPressureScreen referenceScreen = null)
+        {
+            if (laneSpace == null || projectiles == null || projectiles.Count == 0)
+            {
+                return "none";
+            }
+
+            List<string> parts = new List<string>(projectiles.Count);
+            for (int i = 0; i < projectiles.Count; i++)
+            {
+                BossBarrageProjectile projectile = projectiles[i];
+                if (projectile == null)
+                {
+                    parts.Add("null");
+                    continue;
+                }
+
+                Vector2 lanePoint = laneSpace.GetLaneCoordinates(projectile.transform.position);
+                string targetName = projectile.LastImpactTargetHealth != null
+                    ? projectile.LastImpactTargetHealth.name
+                    : "none";
+                string proxyName = projectile.LastImpactTargetProxy != null
+                    ? projectile.LastImpactTargetProxy.name
+                    : "none";
+                SummonPressureScreen proxyScreen = projectile.LastImpactTargetProxy != null
+                    ? projectile.LastImpactTargetProxy.PressureScreen
+                    : null;
+                string proxyScreenReadout = proxyScreen != null
+                    ? $"{proxyScreen.OwnerTeam}/{proxyScreen.IsActive}/{Vector3.Distance(proxyScreen.transform.position, projectile.transform.position):0.00}"
+                    : "none";
+                float screenDistance = referenceScreen != null
+                    ? Vector3.Distance(referenceScreen.transform.position, projectile.transform.position)
+                    : -1f;
+                parts.Add(
+                    $"{i}:active={projectile.IsActive},impact={projectile.LastImpactResult},"
+                    + $"source={projectile.SourceTeam},"
+                    + $"target={targetName},proxy={proxyName},"
+                    + $"proxyScreen={proxyScreenReadout},"
+                    + $"pos={FormatVector3(projectile.transform.position)},"
+                    + $"screenDist={screenDistance:0.00},lane=({lanePoint.x:0.00},{lanePoint.y:0.00})");
+            }
+
+            return string.Join("; ", parts);
+        }
+
+        private static string FormatVector3(Vector3 value)
+        {
+            return $"({value.x:0.00},{value.y:0.00},{value.z:0.00})";
+        }
+
         private static T LoadAsset<T>(string assetPath) where T : Object
         {
             Assert.IsFalse(assetPath.Contains("/_Imported/"), $"{assetPath} must not point at raw imported assets.");
@@ -6427,6 +6761,18 @@ namespace DimensionBrawl.Tests
         {
             float remaining = seconds;
             while (remaining > 0f)
+            {
+                yield return null;
+                remaining -= Time.deltaTime;
+            }
+        }
+
+        private static IEnumerator WaitForProjectileInactive(
+            LaneActionProjectile projectile,
+            float timeoutSeconds)
+        {
+            float remaining = timeoutSeconds;
+            while (projectile != null && projectile.IsActive && remaining > 0f)
             {
                 yield return null;
                 remaining -= Time.deltaTime;

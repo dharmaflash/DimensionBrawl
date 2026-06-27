@@ -121,6 +121,11 @@ namespace DimensionBrawl.Combat
             }
 
             transform.position += travelDirection * speed * deltaTime;
+            if (SummonPressureScreen.TryInterceptAnyOverlapping(this, transform.position, ResolveWorldColliderRadius()))
+            {
+                return;
+            }
+
             remainingLifetime -= deltaTime;
             if (remainingLifetime <= 0f)
             {
@@ -140,6 +145,11 @@ namespace DimensionBrawl.Combat
             {
                 SetLastImpact(ProjectileImpactResult.IgnoredPressureScreen, null, null);
                 return false;
+            }
+
+            if (SummonPressureScreen.TryInterceptAnyOverlapping(this, impactPoint, ResolveWorldColliderRadius()))
+            {
+                return true;
             }
 
             SummonFrontlineProxy targetProxy = hitCollider.GetComponentInParent<SummonFrontlineProxy>();
@@ -227,6 +237,18 @@ namespace DimensionBrawl.Combat
         private void OnTriggerEnter(Collider other)
         {
             TryApplyImpact(other, transform.position);
+        }
+
+        private float ResolveWorldColliderRadius()
+        {
+            if (triggerCollider is SphereCollider sphereCollider)
+            {
+                Vector3 scale = sphereCollider.transform.lossyScale;
+                float maxScale = Mathf.Max(Mathf.Abs(scale.x), Mathf.Max(Mathf.Abs(scale.y), Mathf.Abs(scale.z)));
+                return sphereCollider.radius * Mathf.Max(0.05f, maxScale);
+            }
+
+            return 0f;
         }
 
         private void EnsurePhysicsComponents()

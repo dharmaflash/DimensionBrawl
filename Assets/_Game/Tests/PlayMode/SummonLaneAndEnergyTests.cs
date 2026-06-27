@@ -1220,6 +1220,56 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void BossBarrageProjectileGivesActivePressureScreenPriorityOverSummonBody()
+        {
+            GameObject actorObject = new GameObject("ScreenedAllySummonActor");
+            SphereCollider bodyCollider = actorObject.AddComponent<SphereCollider>();
+            CombatHealth actorHealth = actorObject.AddComponent<CombatHealth>();
+            actorHealth.ConfigureTeam(DamageTeam.AllySummon);
+            actorHealth.ResetHealthToFull();
+            SummonFrontlineProxy proxy = actorObject.AddComponent<SummonFrontlineProxy>();
+            proxy.ConfigureHealth(actorHealth);
+
+            GameObject screenObject = new GameObject("AllyPressureScreen");
+            screenObject.transform.SetParent(actorObject.transform, worldPositionStays: false);
+            screenObject.AddComponent<SphereCollider>();
+            screenObject.AddComponent<Rigidbody>();
+            SummonPressureScreen pressureScreen = screenObject.AddComponent<SummonPressureScreen>();
+            proxy.ConfigurePresentation(null, pressureScreen);
+            proxy.Activate(Vector3.zero, Vector3.forward, 1, 2f, 1f, 1f, 0.1f);
+            pressureScreen.Activate(DamageTeam.AllySummon, 1, 1f, 1f);
+
+            GameObject projectileObject = new GameObject("BossProjectile");
+            projectileObject.AddComponent<SphereCollider>();
+            projectileObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile projectile = projectileObject.AddComponent<BossBarrageProjectile>();
+            projectile.Configure(null, DamageTeam.Enemy, 999f, Vector3.back, 0f, 1f, 0.2f);
+
+            Assert.IsTrue(
+                projectile.TryApplyImpact(bodyCollider, Vector3.zero),
+                "A covered summon body hit should be consumed by the active pressure screen first.");
+            Assert.AreEqual(1, pressureScreen.InterceptedProjectiles);
+            Assert.AreEqual(1f, actorHealth.HealthRatio, 0.001f);
+            Assert.IsTrue(proxy.IsActive);
+            Assert.IsFalse(projectile.IsActive);
+
+            screenObject.transform.localPosition = Vector3.forward * 5f;
+            pressureScreen.Activate(DamageTeam.AllySummon, 1, 1f, 1f);
+            projectileObject.SetActive(true);
+            projectile.Configure(null, DamageTeam.Enemy, 999f, Vector3.back, 0f, 1f, 0.2f);
+
+            Assert.IsTrue(
+                projectile.TryApplyImpact(bodyCollider, Vector3.zero),
+                "Outside the pressure-screen radius, the summon body should still take boss projectile damage.");
+            Assert.AreEqual(ProjectileImpactResult.AppliedDamage, projectile.LastImpactResult);
+            Assert.AreSame(proxy, projectile.LastImpactTargetProxy);
+            Assert.IsFalse(proxy.IsActive);
+
+            Object.DestroyImmediate(projectileObject);
+            Object.DestroyImmediate(actorObject);
+        }
+
+        [Test]
         public void BossBarrageProjectileDefaultsToNonLockingFlashDamage()
         {
             GameObject targetObject = new GameObject("BossProjectilePolicyTarget");

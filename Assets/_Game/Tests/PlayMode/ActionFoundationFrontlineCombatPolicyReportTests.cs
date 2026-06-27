@@ -1446,10 +1446,11 @@ namespace DimensionBrawl.Tests
             context.BossEmitter.SetFiringEnabled(false);
             DeactivateActiveBossProjectiles();
             yield return DefeatCloseThreatWithBasicFire(context);
+            yield return WaitForCloseThreatReliefEnd(context, 3.5f);
             MovePlayerToForwardRisk(context, forwardRisk01);
             context.Metrics.PhysicalBarrageProbeTargetForwardRisk01 = Mathf.Clamp01(forwardRisk01);
+            GrantEnergyToTier(context, 1);
             context.Sample();
-            yield return ChargeEnergyToTier(context, 1, EnergyProbeMaxSeconds);
 
             if (!context.SummonSlot1Action.TryUseSummonSlot1())
             {
@@ -1490,10 +1491,11 @@ namespace DimensionBrawl.Tests
             context.BossEmitter.SetFiringEnabled(false);
             DeactivateActiveBossProjectiles();
             yield return DefeatCloseThreatWithBasicFire(context);
+            yield return WaitForCloseThreatReliefEnd(context, 3.5f);
             MovePlayerToForwardRisk(context, forwardRisk01);
             context.Metrics.PhysicalBarrageProbeTargetForwardRisk01 = Mathf.Clamp01(forwardRisk01);
+            GrantEnergyToTier(context, 1);
             context.Sample();
-            yield return ChargeEnergyToTier(context, 1, EnergyProbeMaxSeconds);
 
             if (!context.SummonSlot1Action.TryUseSummonSlot1())
             {
@@ -1674,6 +1676,31 @@ namespace DimensionBrawl.Tests
             {
                 context.Metrics.Notes.Add($"energy tier {tier} not ready");
             }
+        }
+
+        private static void GrantEnergyToTier(CombatPolicyContext context, int tier)
+        {
+            int guard = 0;
+            while (context.EnergyLadder.AvailableTier < tier && guard++ < 4)
+            {
+                context.EnergyLadder.GrantCurrentTierEnergy(
+                    Mathf.Max(1f, context.EnergyLadder.CurrentTierTarget + 1f));
+            }
+        }
+
+        private static IEnumerator WaitForCloseThreatReliefEnd(CombatPolicyContext context, float maxSeconds)
+        {
+            float start = context.Metrics.ElapsedSeconds;
+            while (context.PocketOwner.IsPressureReliefActive
+                && context.Metrics.ElapsedSeconds - start < maxSeconds)
+            {
+                context.BossEmitter.SetFiringEnabled(false);
+                DeactivateActiveBossProjectiles();
+                yield return Advance(context, 0.05f);
+            }
+
+            context.BossEmitter.SetFiringEnabled(false);
+            DeactivateActiveBossProjectiles();
         }
 
         private static void MovePlayerToForwardRisk(CombatPolicyContext context, float forwardRisk01)
@@ -1921,7 +1948,7 @@ namespace DimensionBrawl.Tests
             context.Metrics.PhysicalBarrageWaves++;
             context.Metrics.PhysicalBarrageProjectilesSpawned += spawned;
 
-            BossBarrageProjectile[] projectiles = FindActiveBossProjectiles();
+            BossBarrageProjectile[] projectiles = FindActiveBossProjectiles(pattern != null ? pattern.ProjectileMaterial : null);
             context.Metrics.PhysicalBarrageTrackedProjectileCount += projectiles.Length;
             Physics.SyncTransforms();
             yield return Advance(context, flightSeconds);
@@ -1953,7 +1980,7 @@ namespace DimensionBrawl.Tests
             context.Metrics.PhysicalBarrageWaves++;
             context.Metrics.PhysicalBarrageProjectilesSpawned += spawned;
 
-            BossBarrageProjectile[] bossProjectiles = FindActiveBossProjectiles();
+            BossBarrageProjectile[] bossProjectiles = FindActiveBossProjectiles(pattern != null ? pattern.ProjectileMaterial : null);
             context.Metrics.PhysicalBarrageTrackedProjectileCount += bossProjectiles.Length;
             Physics.SyncTransforms();
 
@@ -5140,7 +5167,7 @@ namespace DimensionBrawl.Tests
             return projectiles.Length > 0 ? projectiles[0] : null;
         }
 
-        private static BossBarrageProjectile[] FindActiveBossProjectiles()
+        private static BossBarrageProjectile[] FindActiveBossProjectiles(Material material = null)
         {
             BossBarrageProjectile[] projectiles = Object.FindObjectsByType<BossBarrageProjectile>(
                 FindObjectsInactive.Exclude,
@@ -5148,7 +5175,8 @@ namespace DimensionBrawl.Tests
             List<BossBarrageProjectile> active = new List<BossBarrageProjectile>();
             for (int i = 0; i < projectiles.Length; i++)
             {
-                if (projectiles[i].IsActive)
+                if (projectiles[i].IsActive
+                    && (material == null || projectiles[i].LastPresentationMaterial == material))
                 {
                     active.Add(projectiles[i]);
                 }
