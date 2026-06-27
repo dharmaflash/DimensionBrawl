@@ -535,6 +535,36 @@ namespace DimensionBrawl.Tests
                     "PRESSURE BROKEN",
                     "Skill1",
                     "The physical clean route result should name the pressure break and Skill1 confirm.");
+                AssertStageResultHook(
+                    forwardRiskSlot2Combo,
+                    "CleanFollowupClear",
+                    "Marksman combo logged",
+                    "Slot2",
+                    "The Slot2 full-bank combo should commit a marksman-specific support payoff hook.");
+                AssertStageResultCopy(
+                    forwardRiskSlot2Combo,
+                    "PRESSURE BROKEN",
+                    "Marksman support",
+                    "The Slot2 full-bank combo result should name the marksman support payoff.");
+                Assert.AreEqual(
+                    "support_marksman_clear",
+                    ResolveResultHookClass(forwardRiskSlot2Combo),
+                    "The Slot2 full-bank combo result hook class should stay distinguishable from a generic clean route.");
+                AssertStageResultHook(
+                    forwardRiskSlot3Delayed,
+                    "CleanFollowupClear",
+                    "Vanguard payoff logged",
+                    "Slot3",
+                    "The Slot3 delayed payoff should commit a vanguard-specific support payoff hook.");
+                AssertStageResultCopy(
+                    forwardRiskSlot3Delayed,
+                    "PRESSURE BROKEN",
+                    "Vanguard hold",
+                    "The Slot3 delayed payoff result should name the vanguard hold payoff.");
+                Assert.AreEqual(
+                    "support_vanguard_clear",
+                    ResolveResultHookClass(forwardRiskSlot3Delayed),
+                    "The Slot3 delayed payoff result hook class should stay distinguishable from a generic clean route.");
                 AssertStageResultCopy(
                     physicalCloseChain,
                     "PRESSURE BROKEN",
@@ -6011,6 +6041,16 @@ namespace DimensionBrawl.Tests
             switch (result.ResultKind)
             {
                 case "CleanFollowupClear":
+                    if (result.SupportSummonSlotId == "SummonSlot2")
+                    {
+                        return "support_marksman_clear";
+                    }
+
+                    if (result.SupportSummonSlotId == "SummonSlot3")
+                    {
+                        return "support_vanguard_clear";
+                    }
+
                     return "clean_survival";
                 case "CounterRecoveryClear":
                     return "counter_recovery";

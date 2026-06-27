@@ -250,6 +250,8 @@ namespace DimensionBrawl.Test
         private int highestBossScreenSuppressSummonTier;
         private int vanguardAssistSuppressTier;
         private float vanguardAssistSuppressTimer;
+        private string lastSupportSummonUseSlotId;
+        private int lastSupportSummonUseTier;
         private bool counterWaveObserved;
         private bool counterWaveStabilized;
         private bool counterWaveFinalWindowOpened;
@@ -648,6 +650,8 @@ namespace DimensionBrawl.Test
             lastUnansweredBossHitRoutePenalty = 0f;
             totalUnansweredBossHitRoutePenalty = 0f;
             unansweredBossHitRoutePenaltyCount = 0;
+            lastSupportSummonUseSlotId = string.Empty;
+            lastSupportSummonUseTier = 0;
             lastResultRecord = default;
             announcedStageBeatIndex = ResolveCurrentStageBeatIndex();
             announcedRouteStabilityBand = CurrentRouteStabilityBand;
@@ -1660,12 +1664,14 @@ namespace DimensionBrawl.Test
             if (summonSlot2Action != null)
             {
                 subscribedSummonSlot2Action = summonSlot2Action;
+                subscribedSummonSlot2Action.SummonUsed += OnSupportSummonUsed;
                 subscribedSummonSlot2Action.SummonPressureBlocked += OnSupportSummonPressureBlocked;
             }
 
             if (summonSlot3Action != null)
             {
                 subscribedSummonSlot3Action = summonSlot3Action;
+                subscribedSummonSlot3Action.SummonUsed += OnSupportSummonUsed;
                 subscribedSummonSlot3Action.SummonPressureBlocked += OnSupportSummonPressureBlocked;
             }
         }
@@ -1674,15 +1680,28 @@ namespace DimensionBrawl.Test
         {
             if (subscribedSummonSlot2Action != null)
             {
+                subscribedSummonSlot2Action.SummonUsed -= OnSupportSummonUsed;
                 subscribedSummonSlot2Action.SummonPressureBlocked -= OnSupportSummonPressureBlocked;
                 subscribedSummonSlot2Action = null;
             }
 
             if (subscribedSummonSlot3Action != null)
             {
+                subscribedSummonSlot3Action.SummonUsed -= OnSupportSummonUsed;
                 subscribedSummonSlot3Action.SummonPressureBlocked -= OnSupportSummonPressureBlocked;
                 subscribedSummonSlot3Action = null;
             }
+        }
+
+        private void OnSupportSummonUsed(PlayerSupportSummonSlotAction action, int tier)
+        {
+            if (state != PocketState.Running || action == null)
+            {
+                return;
+            }
+
+            lastSupportSummonUseSlotId = action.SlotActionName ?? string.Empty;
+            lastSupportSummonUseTier = Mathf.Clamp(tier, 1, 3);
         }
 
         private void OnBossPressureSummonIntercepted(BossSummonPressureAction action, int tier)
@@ -2334,7 +2353,7 @@ namespace DimensionBrawl.Test
         {
             return resultKind switch
             {
-                RouteResultKind.CleanFollowupClear => "Clean summon follow-up",
+                RouteResultKind.CleanFollowupClear => ResolveCleanFollowupResultLabel(),
                 RouteResultKind.CounterRecoveryClear => "Counter recovery",
                 RouteResultKind.PressureSuppressionClear => "Pressure suppression",
                 RouteResultKind.PressureControlFail => "Pressure control zero",
@@ -2366,9 +2385,7 @@ namespace DimensionBrawl.Test
                 RouteResultKind.CounterRecoveryClear => ResolveStageText(
                     stageProfile != null ? stageProfile.ClearCounterDetail : null,
                     "Counter pressure held; final follow-up confirmed"),
-                RouteResultKind.CleanFollowupClear => ResolveStageText(
-                    stageProfile != null ? stageProfile.ClearFollowupDetail : null,
-                    "Summon opening confirmed; Skill1 follow-up landed"),
+                RouteResultKind.CleanFollowupClear => ResolveCleanFollowupResultSummary(),
                 RouteResultKind.PressureSuppressionClear => ResolveStageText(
                     stageProfile != null ? stageProfile.ClearPressureDetail : null,
                     "Boss curtain suppressed; survival answer recorded"),
@@ -2392,9 +2409,7 @@ namespace DimensionBrawl.Test
                 RouteResultKind.CounterRecoveryClear => ResolveStageText(
                     stageProfile != null ? stageProfile.CounterRecoveryRewardHook : null,
                     "Counter recovery logged: summon absorbed pressure and reopened the final strike window."),
-                RouteResultKind.CleanFollowupClear => ResolveStageText(
-                    stageProfile != null ? stageProfile.CleanRouteRewardHook : null,
-                    "Clean survival logged: summon cover created a Skill1 confirm before counter pressure arrived."),
+                RouteResultKind.CleanFollowupClear => ResolveCleanFollowupRewardHook(),
                 _ => ResolveStageText(
                     stageProfile != null ? stageProfile.RewardHook : null,
                     "No payout or progression grant.")
@@ -2411,11 +2426,78 @@ namespace DimensionBrawl.Test
                 RouteResultKind.CounterRecoveryClear => ResolveStageText(
                     stageProfile != null ? stageProfile.CounterRecoveryNextObjective : null,
                     "Next run: answer counter pressure earlier so recovery becomes a clean survival answer."),
-                RouteResultKind.CleanFollowupClear or RouteResultKind.PressureSuppressionClear => ResolveStageText(
+                RouteResultKind.CleanFollowupClear => ResolveCleanFollowupNextObjective(),
+                RouteResultKind.PressureSuppressionClear => ResolveStageText(
                     stageProfile != null ? stageProfile.CleanRouteNextObjective : null,
                     "Next run: keep HP clean by confirming before counter pressure enters."),
                 _ => string.Empty
             };
+        }
+
+        private string ResolveCleanFollowupResultLabel()
+        {
+            if (lastSupportSummonUseSlotId == "SummonSlot2")
+            {
+                return $"Clean LV{lastSupportSummonUseTier} marksman follow-up";
+            }
+
+            if (lastSupportSummonUseSlotId == "SummonSlot3")
+            {
+                return $"Clean LV{lastSupportSummonUseTier} vanguard follow-up";
+            }
+
+            return "Clean summon follow-up";
+        }
+
+        private string ResolveCleanFollowupResultSummary()
+        {
+            if (lastSupportSummonUseSlotId == "SummonSlot2")
+            {
+                return "Marksman support suppressed the frontline; Slot1 preserved the Skill1 confirm";
+            }
+
+            if (lastSupportSummonUseSlotId == "SummonSlot3")
+            {
+                return "Vanguard hold carried into boss-screen suppression; Skill1 follow-up landed";
+            }
+
+            return ResolveStageText(
+                stageProfile != null ? stageProfile.ClearFollowupDetail : null,
+                "Summon opening confirmed; Skill1 follow-up landed");
+        }
+
+        private string ResolveCleanFollowupRewardHook()
+        {
+            if (lastSupportSummonUseSlotId == "SummonSlot2")
+            {
+                return "Marksman combo logged: support fire preserved the main-answer summon.";
+            }
+
+            if (lastSupportSummonUseSlotId == "SummonSlot3")
+            {
+                return "Vanguard payoff logged: high-cost line hold converted into a direct boss-screen break.";
+            }
+
+            return ResolveStageText(
+                stageProfile != null ? stageProfile.CleanRouteRewardHook : null,
+                "Clean survival logged: summon cover created a Skill1 confirm before counter pressure arrived.");
+        }
+
+        private string ResolveCleanFollowupNextObjective()
+        {
+            if (lastSupportSummonUseSlotId == "SummonSlot2")
+            {
+                return "Next run: spend Slot2 from a full bank when preserving Slot1 matters.";
+            }
+
+            if (lastSupportSummonUseSlotId == "SummonSlot3")
+            {
+                return "Next run: commit Slot3 when line safety is worth the delayed main answer.";
+            }
+
+            return ResolveStageText(
+                stageProfile != null ? stageProfile.CleanRouteNextObjective : null,
+                "Next run: keep HP clean by confirming before counter pressure enters.");
         }
 
         private int ResolveCurrentStageBeatIndex()
