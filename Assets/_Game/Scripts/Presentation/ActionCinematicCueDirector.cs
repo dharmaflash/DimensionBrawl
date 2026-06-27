@@ -169,6 +169,7 @@ namespace DimensionBrawl.Presentation
             {
                 if (sequence.priority < activePriority || (!activeCanBeInterrupted && sequence.priority <= activePriority))
                 {
+                    RecordNonInterruptingFollowupHitCueIfNeeded(kind, tier, sequence);
                     return false;
                 }
 
@@ -304,6 +305,23 @@ namespace DimensionBrawl.Presentation
             activeRoutine = null;
             activePriority = 0;
             activeCanBeInterrupted = true;
+        }
+
+        private void RecordNonInterruptingFollowupHitCueIfNeeded(
+            ActionCinematicCueProfile.CueKind kind,
+            int tier,
+            ActionCinematicCueProfile.CueSequence sequence)
+        {
+            if (kind != ActionCinematicCueProfile.CueKind.SummonFollowupHit)
+            {
+                return;
+            }
+
+            float duration = EstimateSequenceSeconds(sequence);
+            frameDuration = Mathf.Max(frameDuration, duration);
+            frameTimer = Mathf.Max(frameTimer, duration);
+            totalPlayCount++;
+            RecordPlayedCueKind(kind, Mathf.Max(1, tier), sequence.cueId, duration > 0f);
         }
 
         private bool TryPlaySequenceBridge(

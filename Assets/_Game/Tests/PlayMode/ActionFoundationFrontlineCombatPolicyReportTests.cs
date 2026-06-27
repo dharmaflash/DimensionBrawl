@@ -1235,6 +1235,18 @@ namespace DimensionBrawl.Tests
                     intended.FollowupHitSequenceBridgeRequests,
                     "The current Frontline pass should keep full cinematic sequence playback disabled; only the micro-cue director path is in scope.");
                 Assert.Greater(
+                    forwardRiskTier3Decision.FollowupHitCinematicCueRequests,
+                    0,
+                    "The LV3 direct suppress route should preserve the earned follow-up hit micro-cinematic after the high-cost cut-in.");
+                Assert.Greater(
+                    forwardRiskTier3Decision.FollowupHitCinematicFrameOverlayCount,
+                    0,
+                    "The LV3 direct suppress route should keep the final hit frame overlay instead of letting the LV3 cut-in swallow the hit confirm.");
+                Assert.AreEqual(
+                    0,
+                    forwardRiskTier3Decision.FollowupHitSequenceBridgeRequests,
+                    "The LV3 suppress payoff should still stay on the micro-cue director path, not full cinematic sequence playback.");
+                Assert.Greater(
                     blockedFollowup.FollowupMissedCameraCueRequests,
                     0,
                     "A boss-screen block should present as a missed/blocked follow-up before recovery is supplied.");
@@ -4319,7 +4331,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Hit reaction split: boss-screen recovery produced {blockedRecovery.TotalSummonDamageFlashes} summon damage flashes, {blockedRecovery.TotalSummonFullBodyHitReactions} full-body hit reactions, and {blockedRecovery.TotalNonLockingSummonDamageCues} non-locking damage cues.");
             builder.AppendLine($"- Damage response split: gun-only boss chip {gunOnly.BossNonLockingDamageEvents}/{gunOnly.BossLockingDamageEvents} non-lock/lock, intended Skill1 boss hits {intended.BossNonLockingDamageEvents}/{intended.BossLockingDamageEvents}, boss-screen recovery {blockedRecovery.BossNonLockingDamageEvents}/{blockedRecovery.BossLockingDamageEvents}.");
             builder.AppendLine($"- Follow-up presentation bridge: gun-only hit cues screen/camera/VFX {gunOnly.FollowupHitScreenCueRequests}/{gunOnly.FollowupHitCameraCueRequests}/{gunOnly.FollowupHitVfxCueRequests}, intended {intended.FollowupHitScreenCueRequests}/{intended.FollowupHitCameraCueRequests}/{intended.FollowupHitVfxCueRequests}, boss-screen recovery {blockedRecovery.FollowupHitScreenCueRequests}/{blockedRecovery.FollowupHitCameraCueRequests}/{blockedRecovery.FollowupHitVfxCueRequests}, LV3 suppress {forwardRiskTier3Decision.FollowupSuppressScreenCueRequests}/{forwardRiskTier3Decision.FollowupSuppressCameraCueRequests}/{forwardRiskTier3Decision.FollowupSuppressVfxCueRequests}.");
-            builder.AppendLine($"- Follow-up micro-cinematic bridge: gun-only hit director/sequence {gunOnly.FollowupHitCinematicCueRequests}/{gunOnly.FollowupHitSequenceBridgeRequests}, intended {intended.FollowupHitCinematicCueRequests}/{intended.FollowupHitSequenceBridgeRequests}, boss-screen recovery {blockedRecovery.FollowupHitCinematicCueRequests}/{blockedRecovery.FollowupHitSequenceBridgeRequests}; intended frame overlays {intended.FollowupHitCinematicFrameOverlayCount}.");
+            builder.AppendLine($"- Follow-up micro-cinematic bridge: gun-only hit director/sequence {gunOnly.FollowupHitCinematicCueRequests}/{gunOnly.FollowupHitSequenceBridgeRequests}, intended {intended.FollowupHitCinematicCueRequests}/{intended.FollowupHitSequenceBridgeRequests}, boss-screen recovery {blockedRecovery.FollowupHitCinematicCueRequests}/{blockedRecovery.FollowupHitSequenceBridgeRequests}, LV3 suppress {forwardRiskTier3Decision.FollowupHitCinematicCueRequests}/{forwardRiskTier3Decision.FollowupHitSequenceBridgeRequests}; frame overlays intended/LV3 {intended.FollowupHitCinematicFrameOverlayCount}/{forwardRiskTier3Decision.FollowupHitCinematicFrameOverlayCount}.");
             builder.AppendLine($"- Blocked follow-up presentation: boss-screen blocked route has miss cues screen/camera/VFX {blockedFollowup.FollowupMissedScreenCueRequests}/{blockedFollowup.FollowupMissedCameraCueRequests}/{blockedFollowup.FollowupMissedVfxCueRequests} and hit cues {blockedFollowup.FollowupHitScreenCueRequests}/{blockedFollowup.FollowupHitCameraCueRequests}/{blockedFollowup.FollowupHitVfxCueRequests}.");
             builder.AppendLine($"- Blocked follow-up cinematic: boss-screen blocked route has miss director/sequence {blockedFollowup.FollowupMissedCinematicCueRequests}/{blockedFollowup.FollowupMissedSequenceBridgeRequests} and hit director/sequence {blockedFollowup.FollowupHitCinematicCueRequests}/{blockedFollowup.FollowupHitSequenceBridgeRequests}.");
             builder.AppendLine($"- Missed follow-up branch: `{counterRecovery.ResultKind}` with counter source `{counterRecovery.CounterWaveSource}`, final window `{counterRecovery.CounterWaveFinalWindowState}`, and Skill1 hits {counterRecovery.SkillProjectileHits}.");
@@ -9051,6 +9063,20 @@ namespace DimensionBrawl.Tests
                     result => result.FollowupHitSequenceBridgeRequests),
                 0f,
                 "Repeated physical punish runs should keep the full sequence bridge disabled; only the micro-cinematic cue is in scope.");
+            Assert.Greater(
+                MinMetric(
+                    repeatabilityResults,
+                    PolicyKind.ForwardRiskTier3DecisionRoute,
+                    result => result.FollowupHitCinematicCueRequests),
+                0f,
+                "Repeated LV3 suppress runs should preserve the follow-up hit micro-cinematic after the high-cost cut-in.");
+            Assert.LessOrEqual(
+                MaxMetric(
+                    repeatabilityResults,
+                    PolicyKind.ForwardRiskTier3DecisionRoute,
+                    result => result.FollowupHitSequenceBridgeRequests),
+                0f,
+                "Repeated LV3 suppress runs should stay on the director micro-cue path instead of full sequence playback.");
         }
 
         private static void AssertEnergyDecisionRoute(PolicyMetrics result, int expectedTier)
@@ -9469,6 +9495,9 @@ namespace DimensionBrawl.Tests
                 && result.HighestBossScreenSuppressSummonTier == 3
                 && !result.BossBlockedSkill1Followup
                 && result.SkillProjectileHits > 0
+                && result.FollowupHitCinematicCueRequests > 0
+                && result.FollowupHitCinematicFrameOverlayCount > 0
+                && result.FollowupHitSequenceBridgeRequests == 0
                 && ResolveFirstUnresolvedBeat(result) == "Complete"
                 && result.ResultRecords > 0;
         }
