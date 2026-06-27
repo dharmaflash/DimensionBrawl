@@ -344,6 +344,9 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("## Enemy Pressure Tactical Cost Matrix"),
                     "The report should prove enemy pressure actors create unattended tactical cost, not timer-only bookkeeping.");
                 Assert.IsTrue(
+                    markdown.Contains("## Combat Decision Signal Matrix"),
+                    "The report should connect combat decisions to cue/readout evidence before UI or balance changes.");
+                Assert.IsTrue(
                     markdown.Contains("## Skill Gate Contract"),
                     "The report should prove raw Skill1 hits are not the same as state-gated follow-up commits.");
                 AssertStageWaveBeatMap(results);
@@ -362,6 +365,13 @@ namespace DimensionBrawl.Tests
                     noSummon,
                     forwardRiskPhysicalSummonNoPunish,
                     ignoredRecovery,
+                    blockedRecovery,
+                    forwardRiskPhysicalSummonPunish);
+                AssertCombatDecisionSignalMatrix(
+                    forwardRiskEnergy,
+                    noSummon,
+                    forwardRiskPhysicalSummonBlock,
+                    forwardRiskPhysicalSummonNoPunish,
                     blockedRecovery,
                     forwardRiskPhysicalSummonPunish);
                 AssertSupportDecisionTimingVerdicts(
@@ -3349,6 +3359,8 @@ namespace DimensionBrawl.Tests
             builder.AppendLine();
             AppendEnemyPressureTacticalCostMatrix(builder, results);
             builder.AppendLine();
+            AppendCombatDecisionSignalMatrix(builder, results);
+            builder.AppendLine();
             AppendSupportDecisionMatrixSummary(builder, results);
             builder.AppendLine();
             AppendPolicyRepeatabilityGate(builder, repeatabilityResults);
@@ -4387,6 +4399,127 @@ namespace DimensionBrawl.Tests
             builder.Append(" | ");
             builder.Append(EscapeTable(read));
             builder.AppendLine(" |");
+        }
+
+        private static void AppendCombatDecisionSignalMatrix(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results)
+        {
+            PolicyMetrics forwardRiskEnergy = RequireResult(results, PolicyKind.ForwardRiskEnergyProbe);
+            PolicyMetrics noSummon = RequireResult(results, PolicyKind.NoSummonNoFire);
+            PolicyMetrics block = RequireResult(results, PolicyKind.ForwardRiskPhysicalSummonBlockProbe);
+            PolicyMetrics noPunish = RequireResult(results, PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe);
+            PolicyMetrics recovery = RequireResult(results, PolicyKind.BossScreenBlockCounterRecovery);
+            PolicyMetrics cleanPunish = RequireResult(results, PolicyKind.ForwardRiskPhysicalSummonPunishProbe);
+
+            builder.AppendLine("## Combat Decision Signal Matrix");
+            builder.AppendLine("- ArkData/CombatPayload/PGR lens: each route decision should expose a target/status/presentation signal before the result row judges it.");
+            builder.AppendLine("| Decision beat | Policy | Pre-action signal | Post-action readout | Cue/readout counts | Result | Guardrail |");
+            builder.AppendLine("|---|---|---|---|---|---|---|");
+            AppendCombatDecisionSignalRow(
+                builder,
+                "Risk for EN",
+                forwardRiskEnergy,
+                $"ForwardRisk band {FormatSeconds(forwardRiskEnergy.ForwardRiskBandSeconds)}",
+                $"LV1 ready {FormatSeconds(forwardRiskEnergy.EnergyTier1DurationSeconds)}, HP {forwardRiskEnergy.PlayerDamageTaken:0.0}",
+                FormatEnergyDecisionSignal(forwardRiskEnergy),
+                "resource readiness is measured before final coaster/UI feedback");
+            AppendCombatDecisionSignalRow(
+                builder,
+                "Ignore pressure",
+                noSummon,
+                "no summon answer",
+                $"body hits {noSummon.EnemyFrontlineBodyHits}, HP {noSummon.PlayerDamageTaken:0.0}",
+                $"player damage {noSummon.PlayerDamageScreenCueRequests}/{noSummon.PlayerDamageFeedbackRequests}",
+                "unanswered pressure must hurt without becoming instant death proof");
+            AppendCombatDecisionSignalRow(
+                builder,
+                "Summon into barrage",
+                block,
+                $"physical barrage {block.PhysicalBarrageTrackedProjectileCount} tracked",
+                $"blocks {block.SummonBlocks}, window {FormatSeconds(block.BlockToFollowupWindowSeconds)}",
+                FormatBlockDecisionSignal(block),
+                "block must create a readable window, not only remove damage");
+            AppendCombatDecisionSignalRow(
+                builder,
+                "Skip Skill1 punish",
+                noPunish,
+                $"window open {FormatSeconds(noPunish.FirstFollowupWindowAtSeconds)}",
+                $"miss {noPunish.FollowupMissCount}, counter {noPunish.CounterWaves}, body hits {noPunish.EnemyFrontlineBodyHits}",
+                FormatMissCounterDecisionSignal(noPunish),
+                "missed punish should relock into counter pressure");
+            AppendCombatDecisionSignalRow(
+                builder,
+                "Answer counter",
+                recovery,
+                $"counter source {recovery.LastCounterWaveSource}",
+                $"pulse {recovery.CounterWaveAnswerEnergyPulse:0}, stable {FormatSeconds(recovery.CounterAnswerToStableSeconds)}, hit {FormatSeconds(recovery.FinalWindowToHitSeconds)}",
+                FormatCounterAnswerDecisionSignal(recovery),
+                "fresh summon answer should unlock recovery through measured state beats");
+            AppendCombatDecisionSignalRow(
+                builder,
+                "Confirm Skill1",
+                cleanPunish,
+                $"follow-up window {FormatSeconds(cleanPunish.FirstFollowupWindowDurationSeconds)}",
+                $"boss damage {cleanPunish.BossDamageFromPlayer:0.0}, HP leak {cleanPunish.PlayerDamageTaken:0.0}",
+                FormatFollowupHitDecisionSignal(cleanPunish),
+                "clean payoff should read through hit cues and no player damage leak");
+        }
+
+        private static void AppendCombatDecisionSignalRow(
+            StringBuilder builder,
+            string decisionBeat,
+            PolicyMetrics result,
+            string preActionSignal,
+            string postActionReadout,
+            string cueCounts,
+            string guardrail)
+        {
+            builder.Append("| ");
+            builder.Append(EscapeTable(decisionBeat));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(result.Policy.ToString()));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(preActionSignal));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(postActionReadout));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(cueCounts));
+            builder.Append(" | ");
+            builder.Append(EscapeTable($"{result.ResultKind}/{ResolveFirstUnresolvedBeat(result)}"));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(guardrail));
+            builder.AppendLine(" |");
+        }
+
+        private static string FormatEnergyDecisionSignal(PolicyMetrics result)
+        {
+            return $"EN screen F/R/S {result.ForwardRiskEnergyScreenCueRequests}/{result.EnergyReadyScreenCueRequests}/{result.EnergySpendScreenCueRequests}; "
+                + $"VFX {result.ForwardRiskEnergyVfxCueRequests}/{result.EnergyReadyVfxCueRequests}/{result.EnergySpendVfxCueRequests}";
+        }
+
+        private static string FormatBlockDecisionSignal(PolicyMetrics result)
+        {
+            return $"block cam/flash/VFX {result.SummonPressureBlockCameraCueRequests}/{result.SummonPressureScreenInterceptFlashes}/{result.SummonPressureScreenInterceptVfxCueRequests}; "
+                + $"window screen/cam/VFX {result.FollowupWindowScreenCueRequests}/{result.FollowupWindowCameraCueRequests}/{result.FollowupWindowVfxCueRequests}";
+        }
+
+        private static string FormatMissCounterDecisionSignal(PolicyMetrics result)
+        {
+            return $"miss screen/cam/VFX {result.FollowupMissedScreenCueRequests}/{result.FollowupMissedCameraCueRequests}/{result.FollowupMissedVfxCueRequests}; "
+                + $"counter screen/cam/VFX {result.CounterWaveScreenCueRequests}/{result.CounterWaveCameraCueRequests}/{result.CounterWaveVfxCueRequests}";
+        }
+
+        private static string FormatCounterAnswerDecisionSignal(PolicyMetrics result)
+        {
+            return $"answer screen/cam/VFX {result.CounterWaveAnswerScreenCueRequests}/{result.CounterWaveStabilizedCameraCueRequests}/{result.CounterWaveStabilizedVfxCueRequests}; "
+                + $"EN ready/spend {result.EnergyReadyScreenCueRequests}/{result.EnergySpendScreenCueRequests}";
+        }
+
+        private static string FormatFollowupHitDecisionSignal(PolicyMetrics result)
+        {
+            return $"hit screen/cam/VFX {result.FollowupHitScreenCueRequests}/{result.FollowupHitCameraCueRequests}/{result.FollowupHitVfxCueRequests}; "
+                + $"cine/frame {result.FollowupHitCinematicCueRequests}/{result.FollowupHitCinematicFrameOverlayCount}";
         }
 
         private static void AppendSupportDecisionMatrixSummary(
@@ -6356,6 +6489,120 @@ namespace DimensionBrawl.Tests
                 physicalPunish.PlayerDamageTaken,
                 0.001f,
                 "Clean physical punish should preserve HP while closing the pressure route.");
+        }
+
+        private static void AssertCombatDecisionSignalMatrix(
+            PolicyMetrics forwardRiskEnergy,
+            PolicyMetrics noSummon,
+            PolicyMetrics block,
+            PolicyMetrics noPunish,
+            PolicyMetrics recovery,
+            PolicyMetrics cleanPunish)
+        {
+            Assert.Greater(
+                forwardRiskEnergy.ForwardRiskEnergyScreenCueRequests,
+                0,
+                "Forward-risk EN should expose the risk-band screen signal before UI/coaster polish.");
+            Assert.Greater(
+                forwardRiskEnergy.EnergyReadyScreenCueRequests,
+                0,
+                "Forward-risk EN should expose a ready screen signal before UI/coaster polish.");
+            Assert.Greater(
+                forwardRiskEnergy.ForwardRiskEnergyVfxCueRequests,
+                0,
+                "Forward-risk EN should expose the risk-band VFX signal before UI/coaster polish.");
+            Assert.Greater(
+                forwardRiskEnergy.EnergyReadyVfxCueRequests,
+                0,
+                "Forward-risk EN should expose the ready VFX signal before UI/coaster polish.");
+            Assert.Greater(
+                noSummon.EnemyFrontlineBodyHits,
+                0,
+                "Ignoring pressure should expose body-hit cost as the decision signal.");
+            Assert.Greater(
+                noSummon.PlayerDamageScreenCueRequests,
+                0,
+                "Ignoring pressure should expose player damage screen cues as the post-action readout.");
+            Assert.GreaterOrEqual(
+                block.SummonPressureBlockCameraCueRequests,
+                block.SummonBlocks,
+                "A summon block decision should expose camera cues for the intercepted pressure.");
+            Assert.GreaterOrEqual(
+                block.SummonPressureScreenInterceptFlashes,
+                block.SummonBlocks,
+                "A summon block decision should expose pressure-screen intercept flashes.");
+            Assert.GreaterOrEqual(
+                block.SummonPressureScreenInterceptVfxCueRequests,
+                block.SummonBlocks,
+                "A summon block decision should expose intercept VFX cues.");
+            Assert.Greater(
+                block.FollowupWindowScreenCueRequests,
+                0,
+                "A summon block decision should expose the follow-up window screen cue.");
+            Assert.Greater(
+                block.FollowupWindowCameraCueRequests,
+                0,
+                "A summon block decision should expose the follow-up window camera cue.");
+            Assert.Greater(
+                block.FollowupWindowVfxCueRequests,
+                0,
+                "A summon block decision should expose the follow-up window VFX cue.");
+            Assert.Greater(
+                noPunish.FollowupMissedScreenCueRequests,
+                0,
+                "Skipping Skill1 should expose a missed follow-up screen cue.");
+            Assert.Greater(
+                noPunish.CounterWaveScreenCueRequests,
+                0,
+                "Skipping Skill1 should expose the counter-wave screen cue.");
+            Assert.Greater(
+                noPunish.EnemyFrontlineBodyHits,
+                cleanPunish.EnemyFrontlineBodyHits,
+                "Skipping Skill1 should leave more enemy body cost than the clean punish route.");
+            Assert.Greater(
+                recovery.CounterWaveAnswerScreenCueRequests,
+                0,
+                "Counter recovery should expose the fresh-answer screen cue.");
+            Assert.Greater(
+                recovery.CounterWaveStabilizedCameraCueRequests,
+                0,
+                "Counter recovery should expose the stabilized camera cue.");
+            Assert.Greater(
+                recovery.CounterWaveStabilizedVfxCueRequests,
+                0,
+                "Counter recovery should expose the stabilized VFX cue.");
+            Assert.Greater(
+                recovery.EnergyReadyScreenCueRequests,
+                0,
+                "Counter recovery should show the answer-ready energy signal.");
+            Assert.Greater(
+                recovery.EnergySpendScreenCueRequests,
+                0,
+                "Counter recovery should show the answer-spend energy signal.");
+            Assert.Greater(
+                recovery.FollowupHitScreenCueRequests,
+                0,
+                "Counter recovery should close through a follow-up hit cue, not only a result record.");
+            Assert.Greater(
+                cleanPunish.FollowupHitScreenCueRequests,
+                0,
+                "Clean punish should expose the follow-up hit screen cue.");
+            Assert.Greater(
+                cleanPunish.FollowupHitCameraCueRequests,
+                0,
+                "Clean punish should expose the follow-up hit camera cue.");
+            Assert.Greater(
+                cleanPunish.FollowupHitVfxCueRequests,
+                0,
+                "Clean punish should expose the follow-up hit VFX cue.");
+            Assert.AreEqual(
+                0,
+                cleanPunish.PlayerDamageScreenCueRequests,
+                "Clean punish should not leak player-damage presentation into the payoff signal.");
+            Assert.AreEqual(
+                "CleanFollowupClear",
+                cleanPunish.ResultKind,
+                "Clean punish should end as the clean follow-up clear when the decision signals line up.");
         }
 
         private static void AssertSharedManaSupportComboBranch(
