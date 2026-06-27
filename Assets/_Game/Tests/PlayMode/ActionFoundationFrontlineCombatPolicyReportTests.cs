@@ -295,6 +295,9 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("## Stage Result Hook Contract"),
                     "The report should expose clean/counter/fail result hooks before route details.");
                 Assert.IsTrue(
+                    markdown.Contains("## Stage Result Motivation Matrix"),
+                    "The report should summarize stage-result motivation hooks before reward economy work.");
+                Assert.IsTrue(
                     markdown.Contains("Result copy"),
                     "The report should expose result copy so stage hooks do not collapse into reward-only logging.");
                 Assert.IsTrue(
@@ -380,6 +383,13 @@ namespace DimensionBrawl.Tests
                     forwardRiskSlot2DelayedRecovery,
                     forwardRiskSlot3Blocked,
                     forwardRiskSlot3DelayedRecovery);
+                AssertStageResultMotivationMatrix(
+                    noSummonSurvival,
+                    gunOnlySurvival,
+                    forwardRiskPhysicalSummonPunish,
+                    blockedRecovery,
+                    forwardRiskSlot2Combo,
+                    forwardRiskSlot3Delayed);
                 Assert.Greater(intended.SummonBlocks, 0, "The intended route must prove summon interception changes the run.");
                 Assert.AreEqual(
                     0,
@@ -3363,6 +3373,8 @@ namespace DimensionBrawl.Tests
             builder.AppendLine();
             AppendSupportDecisionMatrixSummary(builder, results);
             builder.AppendLine();
+            AppendStageResultMotivationMatrix(builder, results);
+            builder.AppendLine();
             AppendPolicyRepeatabilityGate(builder, repeatabilityResults);
             builder.AppendLine();
             builder.AppendLine("| Policy | Result | Sim s | HP lost | Boss dmg | Stability | Min stability | Boss waves | Player hits | Summons | Blocks | Skill1 hits | Fronts A/E | Route shape | Decision |");
@@ -4715,6 +4727,76 @@ namespace DimensionBrawl.Tests
                 default:
                     return "not evaluated";
             }
+        }
+
+        private static void AppendStageResultMotivationMatrix(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results)
+        {
+            PolicyMetrics noSummonFail = RequireResult(results, PolicyKind.NoSummonSurvivalLimit);
+            PolicyMetrics gunOnlyFail = RequireResult(results, PolicyKind.GunOnlySurvivalLimit);
+            PolicyMetrics cleanPhysical = RequireResult(results, PolicyKind.ForwardRiskPhysicalSummonPunishProbe);
+            PolicyMetrics counterRecovery = RequireResult(results, PolicyKind.BossScreenBlockCounterRecovery);
+            PolicyMetrics marksmanClear = RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute);
+            PolicyMetrics vanguardClear = RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedSlot1Route);
+
+            builder.AppendLine("## Stage Result Motivation Matrix");
+            builder.AppendLine("- NIKKE stage-result lens: route outcomes should produce distinct next-run motivation while staying review-only in this V1 slice.");
+            builder.AppendLine("| Outcome | Policy | Hook class | Route label | Result copy | Next-run motivation | Boundary |");
+            builder.AppendLine("|---|---|---|---|---|---|---|");
+            AppendStageResultMotivationRow(
+                builder,
+                "Unanswered fail",
+                noSummonFail,
+                "failure names HP pressure and points back to summon protection");
+            AppendStageResultMotivationRow(
+                builder,
+                "Gun-only fail",
+                gunOnlyFail,
+                "failure rejects boss-chip tunnel vision");
+            AppendStageResultMotivationRow(
+                builder,
+                "Clean summon confirm",
+                cleanPhysical,
+                "clean clear reinforces block -> Skill1 before counter pressure");
+            AppendStageResultMotivationRow(
+                builder,
+                "Counter recovery",
+                counterRecovery,
+                "recovery clear reinforces answering the counter earlier next time");
+            AppendStageResultMotivationRow(
+                builder,
+                "Marksman support clear",
+                marksmanClear,
+                "support clear names Slot2 preserving the main-answer summon");
+            AppendStageResultMotivationRow(
+                builder,
+                "Vanguard support clear",
+                vanguardClear,
+                "support clear names Slot3 converting line hold into boss-screen break");
+        }
+
+        private static void AppendStageResultMotivationRow(
+            StringBuilder builder,
+            string outcome,
+            PolicyMetrics result,
+            string motivationRead)
+        {
+            builder.Append("| ");
+            builder.Append(EscapeTable(outcome));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(result.Policy.ToString()));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveResultHookClass(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveCoverageValue(result.ResultRecordRouteLabel)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveResultCopyReadout(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable($"{ResolveCoverageValue(result.ResultRecordNextObjective)} ({motivationRead})"));
+            builder.Append(" | ");
+            builder.Append(IsReviewOnlyResultHook(result) ? "review-only analysis" : "invalid or missing");
+            builder.AppendLine(" |");
         }
 
         private static void AppendStageResultHookContract(
@@ -6660,6 +6742,70 @@ namespace DimensionBrawl.Tests
                 "CleanFollowupClear/Complete",
                 ResolveCombatDecisionSignalState(cleanPunish),
                 "Clean punish should read as complete at the decision layer.");
+        }
+
+        private static void AssertStageResultMotivationMatrix(
+            PolicyMetrics noSummonFail,
+            PolicyMetrics gunOnlyFail,
+            PolicyMetrics cleanPhysical,
+            PolicyMetrics counterRecovery,
+            PolicyMetrics marksmanClear,
+            PolicyMetrics vanguardClear)
+        {
+            Assert.AreEqual(
+                "failure_analysis",
+                ResolveResultHookClass(noSummonFail),
+                "No-summon survival should stay a failure-analysis result hook.");
+            Assert.AreEqual(
+                "failure_analysis",
+                ResolveResultHookClass(gunOnlyFail),
+                "Gun-only survival should stay a failure-analysis result hook.");
+            Assert.AreEqual(
+                "clean_survival",
+                ResolveResultHookClass(cleanPhysical),
+                "Clean physical punish should stay a clean-survival result hook.");
+            Assert.AreEqual(
+                "counter_recovery",
+                ResolveResultHookClass(counterRecovery),
+                "Boss-screen recovery should stay a counter-recovery result hook.");
+            Assert.AreEqual(
+                "support_marksman_clear",
+                ResolveResultHookClass(marksmanClear),
+                "Slot2 full-bank clear should stay marksman-specific at the result hook.");
+            Assert.AreEqual(
+                "support_vanguard_clear",
+                ResolveResultHookClass(vanguardClear),
+                "Slot3 delayed clear should stay vanguard-specific at the result hook.");
+            Assert.That(
+                noSummonFail.ResultRecordNextObjective,
+                Does.Contain("protect HP"),
+                "Failure motivation should point to HP protection, not a generic reward payout.");
+            Assert.That(
+                gunOnlyFail.ResultRecordNextObjective,
+                Does.Contain("protect HP"),
+                "Gun-only failure motivation should point away from boss-chip tunnel vision.");
+            Assert.That(
+                cleanPhysical.ResultRecordNextObjective,
+                Does.Contain("counter pressure"),
+                "Clean clear motivation should reinforce confirming before counter pressure.");
+            Assert.That(
+                counterRecovery.ResultRecordNextObjective,
+                Does.Contain("earlier"),
+                "Recovery motivation should point to answering counter pressure earlier.");
+            Assert.That(
+                marksmanClear.ResultRecordNextObjective,
+                Does.Contain("Slot2"),
+                "Marksman support clear should preserve the Slot2 route motivation.");
+            Assert.That(
+                vanguardClear.ResultRecordNextObjective,
+                Does.Contain("Slot3"),
+                "Vanguard support clear should preserve the Slot3 route motivation.");
+            Assert.IsTrue(IsReviewOnlyResultHook(noSummonFail));
+            Assert.IsTrue(IsReviewOnlyResultHook(gunOnlyFail));
+            Assert.IsTrue(IsReviewOnlyResultHook(cleanPhysical));
+            Assert.IsTrue(IsReviewOnlyResultHook(counterRecovery));
+            Assert.IsTrue(IsReviewOnlyResultHook(marksmanClear));
+            Assert.IsTrue(IsReviewOnlyResultHook(vanguardClear));
         }
 
         private static void AssertSharedManaSupportComboBranch(
