@@ -4414,7 +4414,7 @@ namespace DimensionBrawl.Tests
 
             builder.AppendLine("## Combat Decision Signal Matrix");
             builder.AppendLine("- ArkData/CombatPayload/PGR lens: each route decision should expose a target/status/presentation signal before the result row judges it.");
-            builder.AppendLine("| Decision beat | Policy | Pre-action signal | Post-action readout | Cue/readout counts | Result | Guardrail |");
+            builder.AppendLine("| Decision beat | Policy | Pre-action signal | Post-action readout | Cue/readout counts | Decision state | Guardrail |");
             builder.AppendLine("|---|---|---|---|---|---|---|");
             AppendCombatDecisionSignalRow(
                 builder,
@@ -4486,10 +4486,43 @@ namespace DimensionBrawl.Tests
             builder.Append(" | ");
             builder.Append(EscapeTable(cueCounts));
             builder.Append(" | ");
-            builder.Append(EscapeTable($"{result.ResultKind}/{ResolveFirstUnresolvedBeat(result)}"));
+            builder.Append(EscapeTable(ResolveCombatDecisionSignalState(result)));
             builder.Append(" | ");
             builder.Append(EscapeTable(guardrail));
             builder.AppendLine(" |");
+        }
+
+        private static string ResolveCombatDecisionSignalState(PolicyMetrics result)
+        {
+            switch (result.Policy)
+            {
+                case PolicyKind.ForwardRiskEnergyProbe:
+                    return result.EnergyTier1ReadyAtSeconds >= 0f && result.EnergyReadyScreenCueRequests > 0
+                        ? $"{result.ResultKind}/ENReady"
+                        : $"{result.ResultKind}/ENPending";
+                case PolicyKind.NoSummonNoFire:
+                    return result.EnemyFrontlineBodyHits > 0 && result.PlayerDamageScreenCueRequests > 0
+                        ? $"{result.ResultKind}/BodyPressure"
+                        : $"{result.ResultKind}/{ResolveFirstUnresolvedBeat(result)}";
+                case PolicyKind.ForwardRiskPhysicalSummonBlockProbe:
+                    return result.SummonBlocks > 0 && result.FollowupWindowOpenCount > 0
+                        ? $"{result.ResultKind}/FollowupReady"
+                        : $"{result.ResultKind}/{ResolveFirstUnresolvedBeat(result)}";
+                case PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe:
+                    return result.FollowupMissCount > 0 && result.CounterWaves > 0
+                        ? $"{result.ResultKind}/CounterAnswer"
+                        : $"{result.ResultKind}/{ResolveFirstUnresolvedBeat(result)}";
+                case PolicyKind.BossScreenBlockCounterRecovery:
+                    return result.CounterRecoveryConfirmed
+                        ? $"{result.ResultKind}/CounterRecovered"
+                        : $"{result.ResultKind}/{ResolveFirstUnresolvedBeat(result)}";
+                case PolicyKind.ForwardRiskPhysicalSummonPunishProbe:
+                    return result.ResultKind == "CleanFollowupClear"
+                        ? $"{result.ResultKind}/Complete"
+                        : $"{result.ResultKind}/{ResolveFirstUnresolvedBeat(result)}";
+                default:
+                    return $"{result.ResultKind}/{ResolveFirstUnresolvedBeat(result)}";
+            }
         }
 
         private static string FormatEnergyDecisionSignal(PolicyMetrics result)
@@ -6603,6 +6636,30 @@ namespace DimensionBrawl.Tests
                 "CleanFollowupClear",
                 cleanPunish.ResultKind,
                 "Clean punish should end as the clean follow-up clear when the decision signals line up.");
+            Assert.AreEqual(
+                "Running/ENReady",
+                ResolveCombatDecisionSignalState(forwardRiskEnergy),
+                "Forward-risk EN should read as a resource-ready decision state, not only a running probe.");
+            Assert.AreEqual(
+                "Running/BodyPressure",
+                ResolveCombatDecisionSignalState(noSummon),
+                "Ignoring pressure should read as body pressure at the decision layer.");
+            Assert.AreEqual(
+                "Running/FollowupReady",
+                ResolveCombatDecisionSignalState(block),
+                "Summon block should read as follow-up-ready at the decision layer.");
+            Assert.AreEqual(
+                "Running/CounterAnswer",
+                ResolveCombatDecisionSignalState(noPunish),
+                "Skipping Skill1 should read as counter-answer needed once the miss has relocked the route.");
+            Assert.AreEqual(
+                "CounterRecoveryClear/CounterRecovered",
+                ResolveCombatDecisionSignalState(recovery),
+                "Counter recovery should read as a recovered counter-answer state.");
+            Assert.AreEqual(
+                "CleanFollowupClear/Complete",
+                ResolveCombatDecisionSignalState(cleanPunish),
+                "Clean punish should read as complete at the decision layer.");
         }
 
         private static void AssertSharedManaSupportComboBranch(
