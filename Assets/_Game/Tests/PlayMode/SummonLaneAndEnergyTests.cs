@@ -105,6 +105,38 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void EnergyLadderCanSpendSummonCostWithoutResettingSharedManaBank()
+        {
+            GameObject playerObject = new GameObject("Player");
+            SummonEnergyLadder energy = playerObject.AddComponent<SummonEnergyLadder>();
+
+            energy.GrantCurrentTierEnergy(300f);
+
+            Assert.AreEqual(3, energy.AvailableTier);
+            Assert.AreEqual(300f, energy.CurrentMana, 0.001f);
+            int changeCount = 0;
+            int spentEventTier = 0;
+            energy.EnergyChanged += () => changeCount++;
+            energy.EnergySpent += tier => spentEventTier = tier;
+
+            Assert.IsTrue(energy.TrySpend(100f, out int spentTier));
+            Assert.AreEqual(3, spentTier, "The action still sees the banked tier available at the moment of spend.");
+            Assert.AreEqual(1, changeCount, "Shared mana spend should notify presentation/fill listeners.");
+            Assert.AreEqual(3, spentEventTier, "Shared mana spend should still emit the spend tier for ready/spend cues.");
+            Assert.AreEqual(200f, energy.CurrentMana, 0.001f);
+            Assert.AreEqual(2, energy.AvailableTier, "Spending a 100-cost summon from a full bank should leave LV2 mana ready.");
+            Assert.AreEqual(3, energy.ChargingTier);
+            Assert.AreEqual(0f, energy.CurrentTierEnergy, 0.001f);
+
+            Assert.IsFalse(energy.TrySpend(300f, out int blockedTier));
+            Assert.AreEqual(0, blockedTier);
+            Assert.AreEqual(1, changeCount, "A blocked spend should not emit a new energy change.");
+            Assert.AreEqual(200f, energy.CurrentMana, 0.001f);
+
+            Object.DestroyImmediate(playerObject);
+        }
+
+        [Test]
         public void SummonEnergyVfxCuePresenterPlaysForwardRiskReadyAndSpendReads()
         {
             GameObject laneObject = new GameObject("Lane");

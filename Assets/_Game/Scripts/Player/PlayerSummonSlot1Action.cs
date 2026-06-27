@@ -116,6 +116,9 @@ namespace DimensionBrawl.Player
         [Header("Summon Cost")]
         [SerializeField, Min(1f)] private float requiredSummonMana = 100f;
 
+        [Header("Slot Cooldown")]
+        [SerializeField, Min(0f)] private float slotCooldownSeconds = 1.25f;
+
         [Header("Tier Tuning")]
         [SerializeField] private SummonSlotActionProfile summonActionProfile;
         [SerializeField] private SummonTierSettings[] tierSettings = CreateDefaultTierSettings();
@@ -127,6 +130,7 @@ namespace DimensionBrawl.Player
         private int totalUseCount;
         private float blockedHintTimer;
         private string lastBlockedReason;
+        private float slotCooldownRemaining;
         private bool cinematicInputLocked;
 
         public int LastSpentTier => lastSpentTier;
@@ -166,6 +170,9 @@ namespace DimensionBrawl.Player
         public SummonSlotActionProfile SummonActionProfile => summonActionProfile;
         public bool HasSummonActionProfile => summonActionProfile != null;
         public float RequiredSummonMana => Mathf.Max(1f, requiredSummonMana);
+        public float SlotCooldownSeconds => Mathf.Max(0f, slotCooldownSeconds);
+        public float SlotCooldownRemaining => slotCooldownRemaining;
+        public bool IsSlotOnCooldown => slotCooldownRemaining > 0f;
         public bool ShowUseBlockedHint => blockedHintTimer > 0f;
         public string LastUseBlockedReason => lastBlockedReason;
         internal int MaxActiveSummonActors => Mathf.Max(1, maxActiveSummonActors);
@@ -216,6 +223,7 @@ namespace DimensionBrawl.Player
             entryForwardOffset = Mathf.Max(0f, entryForwardOffset);
             actorEntryCatchupSecondsPerMeter = Mathf.Max(0f, actorEntryCatchupSecondsPerMeter);
             requiredSummonMana = Mathf.Max(1f, requiredSummonMana);
+            slotCooldownSeconds = Mathf.Max(0f, slotCooldownSeconds);
             maxActiveSummonActors = Mathf.Max(1, maxActiveSummonActors);
         }
 
@@ -302,6 +310,17 @@ namespace DimensionBrawl.Player
             requiredSummonMana = Mathf.Max(1f, requiredMana);
         }
 
+        public void ConfigureSlotCooldown(float cooldownSeconds)
+        {
+            slotCooldownSeconds = Mathf.Max(0f, cooldownSeconds);
+            slotCooldownRemaining = Mathf.Min(slotCooldownRemaining, slotCooldownSeconds);
+        }
+
+        public void ClearSlotCooldown()
+        {
+            slotCooldownRemaining = 0f;
+        }
+
         public bool TryGetTierReadout(int tier, out SummonSlotActionProfile.SummonTierReadout readout)
         {
             if (summonActionProfile == null)
@@ -340,14 +359,21 @@ namespace DimensionBrawl.Player
                 return false;
             }
 
-            if (!energyLadder.TrySpend(out int spentTier))
+            if (IsSlotOnCooldown)
             {
-                SetUseBlocked("EN not ready");
+                SetUseBlocked($"Cooldown {slotCooldownRemaining:0.0}s");
+                return false;
+            }
+
+            if (!energyLadder.TrySpend(RequiredSummonMana, out int spentTier))
+            {
+                SetUseBlocked($"Requires {RequiredSummonMana:0} EN");
                 return false;
             }
 
             lastSpentTier = Mathf.Clamp(spentTier, 1, 3);
             totalUseCount++;
+            slotCooldownRemaining = SlotCooldownSeconds;
             blockedHintTimer = 0f;
             lastBlockedReason = null;
             EnsureExecutionRuntime();
@@ -388,6 +414,11 @@ namespace DimensionBrawl.Player
 
         private void TickFeedback(float deltaTime)
         {
+            if (slotCooldownRemaining > 0f)
+            {
+                slotCooldownRemaining = Mathf.Max(0f, slotCooldownRemaining - deltaTime);
+            }
+
             if (blockedHintTimer <= 0f)
             {
                 return;

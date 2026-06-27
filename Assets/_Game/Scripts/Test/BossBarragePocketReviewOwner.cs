@@ -1226,6 +1226,7 @@ namespace DimensionBrawl.Test
             }
 
             energyLadder.GrantCurrentTierEnergy(energyAmount);
+            summonSlot1Action?.ClearSlotCooldown();
             grantedCounterWaveAnswerEnergyPulse = true;
             lastCounterWaveAnswerEnergyPulse = energyAmount;
         }

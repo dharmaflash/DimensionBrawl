@@ -40,6 +40,7 @@ namespace DimensionBrawl.Combat
         private int chargingTier = 1;
         private int availableTier;
         private float currentTierEnergy;
+        private float currentMana;
         private float currentForwardRisk01 = 0.5f;
         private float currentGainMultiplier = 1f;
 
@@ -53,11 +54,14 @@ namespace DimensionBrawl.Combat
         public float CurrentTierEnergy => currentTierEnergy;
         public float CurrentTierTarget => GetTierTarget(chargingTier);
         public float CurrentTierFillRatio => CurrentTierTarget > 0f ? Mathf.Clamp01(currentTierEnergy / CurrentTierTarget) : 0f;
+        public float CurrentMana => currentMana;
+        public float MaxMana => levelOneEnergy + levelTwoEnergy + levelThreeEnergy;
+        public float CurrentManaFillRatio => MaxMana > 0f ? Mathf.Clamp01(currentMana / MaxMana) : 0f;
         public float CurrentForwardRisk01 => currentForwardRisk01;
         public float CurrentGainMultiplier => currentGainMultiplier;
         public SummonEnergyRiskBand CurrentRiskBand => EvaluateRiskBand(currentForwardRisk01);
         public bool CanSpend => availableTier > 0;
-        public bool IsCapped => availableTier >= MaxTier && chargingTier >= MaxTier && CurrentTierFillRatio >= 1f;
+        public bool IsCapped => currentMana >= MaxMana - 0.001f;
 
         private void OnValidate()
         {
@@ -88,6 +92,27 @@ namespace DimensionBrawl.Combat
             return true;
         }
 
+        public bool CanSpendMana(float requiredMana)
+        {
+            return currentMana + 0.001f >= Mathf.Max(1f, requiredMana);
+        }
+
+        public bool TrySpend(float requiredMana, out int spentTier)
+        {
+            requiredMana = Mathf.Max(1f, requiredMana);
+            spentTier = availableTier;
+            if (spentTier <= 0 || !CanSpendMana(requiredMana))
+            {
+                spentTier = 0;
+                return false;
+            }
+
+            SetCurrentMana(currentMana - requiredMana);
+            EnergyChanged?.Invoke();
+            EnergySpent?.Invoke(spentTier);
+            return true;
+        }
+
         public void GrantCurrentTierEnergy(float energyAmount)
         {
             if (energyAmount <= 0f || IsCapped)
@@ -103,6 +128,7 @@ namespace DimensionBrawl.Combat
             chargingTier = 1;
             availableTier = 0;
             currentTierEnergy = 0f;
+            currentMana = 0f;
             currentForwardRisk01 = Mathf.Clamp01(fallbackForwardRisk01);
             currentGainMultiplier = Mathf.Max(0f, forwardRiskGainCurve.Evaluate(currentForwardRisk01));
             EnergyChanged?.Invoke();
@@ -138,33 +164,28 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
-            float remainingEnergy = energyAmount;
-            while (remainingEnergy > 0f && !IsCapped)
+            float previousMana = currentMana;
+            float nextMana = Mathf.Min(MaxMana, currentMana + energyAmount);
+            SetCurrentMana(nextMana);
+
+            for (int tier = 1; tier <= MaxTier; tier++)
             {
-                float target = CurrentTierTarget;
-                float missingEnergy = Mathf.Max(0f, target - currentTierEnergy);
-                if (remainingEnergy < missingEnergy)
+                float threshold = GetCumulativeTierTarget(tier);
+                if (previousMana < threshold && nextMana >= threshold)
                 {
-                    currentTierEnergy += remainingEnergy;
-                    remainingEnergy = 0f;
-                    break;
+                    TierAvailable?.Invoke(tier);
                 }
-
-                currentTierEnergy = target;
-                remainingEnergy -= missingEnergy;
-                availableTier = chargingTier;
-                TierAvailable?.Invoke(availableTier);
-
-                if (chargingTier >= MaxTier)
-                {
-                    break;
-                }
-
-                chargingTier++;
-                currentTierEnergy = 0f;
             }
 
             EnergyChanged?.Invoke();
+        }
+
+        private void SetCurrentMana(float nextMana)
+        {
+            currentMana = Mathf.Clamp(nextMana, 0f, MaxMana);
+            availableTier = ResolveAvailableTier(currentMana);
+            chargingTier = ResolveChargingTier(currentMana, availableTier);
+            currentTierEnergy = ResolveCurrentTierEnergy(currentMana, chargingTier);
         }
 
         private void Update()
@@ -206,6 +227,53 @@ namespace DimensionBrawl.Combat
                 2 => levelTwoEnergy,
                 _ => levelThreeEnergy
             };
+        }
+
+        private float GetCumulativeTierTarget(int tier)
+        {
+            return tier switch
+            {
+                1 => levelOneEnergy,
+                2 => levelOneEnergy + levelTwoEnergy,
+                _ => MaxMana
+            };
+        }
+
+        private int ResolveAvailableTier(float mana)
+        {
+            if (mana >= MaxMana - 0.001f)
+            {
+                return MaxTier;
+            }
+
+            if (mana >= levelOneEnergy + levelTwoEnergy - 0.001f)
+            {
+                return 2;
+            }
+
+            return mana >= levelOneEnergy - 0.001f ? 1 : 0;
+        }
+
+        private int ResolveChargingTier(float mana, int resolvedAvailableTier)
+        {
+            if (resolvedAvailableTier >= MaxTier)
+            {
+                return MaxTier;
+            }
+
+            return Mathf.Clamp(resolvedAvailableTier + 1, 1, MaxTier);
+        }
+
+        private float ResolveCurrentTierEnergy(float mana, int resolvedChargingTier)
+        {
+            float previousTierTotal = resolvedChargingTier switch
+            {
+                1 => 0f,
+                2 => levelOneEnergy,
+                _ => levelOneEnergy + levelTwoEnergy
+            };
+
+            return Mathf.Clamp(mana - previousTierTotal, 0f, GetTierTarget(resolvedChargingTier));
         }
     }
 }

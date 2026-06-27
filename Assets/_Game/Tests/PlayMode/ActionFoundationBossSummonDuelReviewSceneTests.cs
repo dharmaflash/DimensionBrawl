@@ -427,6 +427,50 @@ namespace DimensionBrawl.Tests
             StringAssert.Contains("loopCycle", duelOwner.ProgressLine);
         }
 
+        [UnityTest]
+        public IEnumerator DuelReviewSummonSlotsSpendSharedManaWithoutStartingGlobalCooldown()
+        {
+            yield return null;
+
+            SummonEnergyLadder energyLadder = RequireObject<SummonEnergyLadder>();
+            PlayerSummonSlot1Action summonSlot1Action = RequireObject<PlayerSummonSlot1Action>();
+            PlayerSupportSummonSlotAction summonSlot2Action = RequireSupportSummonAction("SummonSlot2");
+            PlayerSupportSummonSlotAction summonSlot3Action = RequireSupportSummonAction("SummonSlot3");
+
+            energyLadder.SetGainEnabled(false);
+            summonSlot1Action.ConfigureSlotCooldown(5f);
+            summonSlot2Action.ConfigureSlotCooldown(5f);
+            summonSlot3Action.ConfigureSlotCooldown(5f);
+            GrantEnergyToTier(energyLadder, 3);
+
+            Assert.AreEqual(300f, energyLadder.CurrentMana, 0.001f);
+            Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
+            Assert.AreEqual(200f, energyLadder.CurrentMana, 0.001f);
+            Assert.AreEqual(2, energyLadder.AvailableTier);
+            Assert.IsTrue(summonSlot1Action.IsSlotOnCooldown);
+            Assert.IsFalse(
+                summonSlot2Action.IsSlotOnCooldown,
+                "Using Slot1 should not start Slot2 cooldown in the shared-mana EX-style selection model.");
+            Assert.IsFalse(
+                summonSlot3Action.IsSlotOnCooldown,
+                "Using Slot1 should not start Slot3 cooldown in the shared-mana EX-style selection model.");
+
+            Assert.IsTrue(summonSlot2Action.TryUseSummon());
+            Assert.AreEqual(0f, energyLadder.CurrentMana, 0.001f);
+            Assert.AreEqual(0, energyLadder.AvailableTier);
+            Assert.IsTrue(summonSlot2Action.IsSlotOnCooldown);
+            Assert.IsFalse(summonSlot3Action.IsSlotOnCooldown);
+
+            Assert.IsFalse(summonSlot3Action.TryUseSummon());
+            Assert.AreEqual("Requires LV3 EN", summonSlot3Action.LastUseBlockedReason);
+            Assert.IsFalse(
+                summonSlot3Action.IsSlotOnCooldown,
+                "A failed high-cost summon should not start its independent slot cooldown.");
+
+            Assert.IsFalse(summonSlot1Action.TryUseSummonSlot1());
+            StringAssert.Contains("Cooldown", summonSlot1Action.LastUseBlockedReason);
+        }
+
         private static IEnumerator QueueBossRepressureAfterDefeat(
             BossPressureActionDirector bossPressureActionDirector,
             BossBarrageEmitter bossBarrageEmitter,
