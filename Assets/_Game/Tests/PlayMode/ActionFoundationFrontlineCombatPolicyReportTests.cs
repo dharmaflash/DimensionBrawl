@@ -355,6 +355,12 @@ namespace DimensionBrawl.Tests
                 AssertSharedManaDelayedCounterRecoveryBranch(
                     forwardRiskSlot2DelayedRecovery,
                     forwardRiskSlot3DelayedRecovery);
+                AssertSupportDecisionTimingVerdicts(
+                    forwardRiskTier1Recovery,
+                    forwardRiskSlot2Combo,
+                    forwardRiskSlot2DelayedRecovery,
+                    forwardRiskSlot3Blocked,
+                    forwardRiskSlot3DelayedRecovery);
                 Assert.Greater(intended.SummonBlocks, 0, "The intended route must prove summon interception changes the run.");
                 Assert.AreEqual(
                     0,
@@ -1969,6 +1975,7 @@ namespace DimensionBrawl.Tests
 
             context.Metrics.SupportComboManaBeforeSlot1 = context.EnergyLadder.CurrentMana;
             context.Metrics.SupportComboSlot1Attempted = true;
+            int slot1ScreensBefore = context.SummonSlot1Action.ActivePressureScreenCount;
             bool slot1Used = context.SummonSlot1Action.TryUseSummonSlot1();
             context.Metrics.SupportComboSlot1Used = slot1Used;
             context.Metrics.SupportComboSlot1BlockedReason =
@@ -1980,7 +1987,10 @@ namespace DimensionBrawl.Tests
                 RecordSummonUse(context, false);
                 context.PocketOwner.Tick(0f);
                 context.Sample();
-                yield return WaitForActiveAllyPressureScreen(context, $"{supportAction.SlotActionName} combo Slot1");
+                yield return WaitForNewSlot1PressureScreen(
+                    context,
+                    slot1ScreensBefore,
+                    $"{supportAction.SlotActionName} combo Slot1");
                 RecordSupportSummonSnapshot(context, supportAction);
                 DeactivateActiveBossProjectiles();
                 context.BossEmitter.SetFiringEnabled(false);
@@ -1990,7 +2000,12 @@ namespace DimensionBrawl.Tests
                     context.Metrics.Notes.Add($"{supportAction.SlotActionName} combo priority barrage unavailable");
                 }
 
-                yield return ApplyPhysicalBossBarrageAndPunish(context, PhysicalBarrageProbeFlightSeconds);
+                int followupWindowsBeforeBarrage = context.Metrics.FollowupWindowOpenCount;
+                yield return ApplyPhysicalBossBarrageAndPunish(
+                    context,
+                    PhysicalBarrageProbeFlightSeconds,
+                    followupWindowsBeforeBarrage,
+                    $"{supportAction.SlotActionName} combo Slot1");
                 yield break;
             }
 
@@ -2160,6 +2175,7 @@ namespace DimensionBrawl.Tests
             }
 
             context.Metrics.SupportComboSlot1Attempted = true;
+            int slot1ScreensBefore = context.SummonSlot1Action.ActivePressureScreenCount;
             bool slot1Used = context.SummonSlot1Action.TryUseSummonSlot1();
             context.Metrics.SupportComboSlot1Used = slot1Used;
             context.Metrics.SupportComboSlot1BlockedReason =
@@ -2175,7 +2191,10 @@ namespace DimensionBrawl.Tests
             RecordSummonUse(context, false);
             context.PocketOwner.Tick(0f);
             context.Sample();
-            yield return WaitForActiveAllyPressureScreen(context, $"{supportAction.SlotActionName} delayed combo Slot1");
+            yield return WaitForNewSlot1PressureScreen(
+                context,
+                slot1ScreensBefore,
+                $"{supportAction.SlotActionName} delayed combo Slot1");
             RecordSupportSummonSnapshot(context, supportAction);
             DeactivateActiveBossProjectiles();
             context.BossEmitter.SetFiringEnabled(false);
@@ -2185,7 +2204,12 @@ namespace DimensionBrawl.Tests
                 context.Metrics.Notes.Add($"{supportAction.SlotActionName} delayed combo priority barrage unavailable");
             }
 
-            yield return ApplyPhysicalBossBarrageAndPunish(context, PhysicalBarrageProbeFlightSeconds);
+            int followupWindowsBeforeBarrage = context.Metrics.FollowupWindowOpenCount;
+            yield return ApplyPhysicalBossBarrageAndPunish(
+                context,
+                PhysicalBarrageProbeFlightSeconds,
+                followupWindowsBeforeBarrage,
+                $"{supportAction.SlotActionName} delayed combo Slot1");
             if (!continueCounterRecovery)
             {
                 yield break;
@@ -2735,7 +2759,9 @@ namespace DimensionBrawl.Tests
 
         private static IEnumerator ApplyPhysicalBossBarrageAndPunish(
             CombatPolicyContext context,
-            float flightSeconds)
+            float flightSeconds,
+            int requiredFollowupWindowCountBeforeBarrage = -1,
+            string notePrefix = "physical summon punish")
         {
             BossBarragePatternProfile pattern = context.BossEmitter.CurrentPattern;
             float healthBefore = context.PlayerHealth.CurrentHealth;
@@ -2758,15 +2784,15 @@ namespace DimensionBrawl.Tests
             Physics.SyncTransforms();
 
             float start = context.Metrics.ElapsedSeconds;
-            while (!context.PocketOwner.IsSummonFollowupWindowActive
+            while (!HasRequiredFollowupWindow(context, requiredFollowupWindowCountBeforeBarrage)
                 && context.Metrics.ElapsedSeconds - start < flightSeconds)
             {
                 yield return Advance(context, 0.05f);
             }
 
-            if (!context.PocketOwner.IsSummonFollowupWindowActive)
+            if (!HasRequiredFollowupWindow(context, requiredFollowupWindowCountBeforeBarrage))
             {
-                context.Metrics.Notes.Add("physical summon punish window did not open before Skill1");
+                context.Metrics.Notes.Add($"{notePrefix} follow-up window did not open before Skill1");
             }
             else
             {
@@ -2784,6 +2810,19 @@ namespace DimensionBrawl.Tests
             DeactivateActiveBossProjectiles();
             context.PocketOwner.Tick(0f);
             context.Sample();
+        }
+
+        private static bool HasRequiredFollowupWindow(
+            CombatPolicyContext context,
+            int requiredFollowupWindowCountBeforeBarrage)
+        {
+            if (!context.PocketOwner.IsSummonFollowupWindowActive)
+            {
+                return false;
+            }
+
+            return requiredFollowupWindowCountBeforeBarrage < 0
+                || context.Metrics.FollowupWindowOpenCount > requiredFollowupWindowCountBeforeBarrage;
         }
 
         private static IEnumerator ConfirmSkill1FollowupPhysically(
@@ -4237,8 +4276,8 @@ namespace DimensionBrawl.Tests
         {
             builder.AppendLine("## Support Decision Matrix");
             builder.AppendLine("- ArkData/Blue Archive lens: support choice should read as cost, exposure, answer, and recovery-state tradeoff before UI/coaster feedback.");
-            builder.AppendLine("| Choice | Cost path | Support effect | HP before main | Physical hits | Slot1 state | Recovery burden | Boss suppress | Result | Read |");
-            builder.AppendLine("|---|---|---|---:|---:|---|---|---:|---|---|");
+            builder.AppendLine("| Choice | Cost path | Support effect | HP before main | Physical hits | Slot1 state | Recovery burden | Boss suppress | Result | Timing verdict | Read |");
+            builder.AppendLine("|---|---|---|---:|---:|---|---|---:|---|---|---|");
             AppendSupportDecisionMatrixRow(
                 builder,
                 "Slot1 LV1 recovery",
@@ -4262,7 +4301,7 @@ namespace DimensionBrawl.Tests
                 "marksman suppresses enemy frontline",
                 RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute),
                 "Slot1 reopens",
-                "tempo support buys a later recovery close");
+                "early marksman spend still needs counter recovery");
             AppendSupportDecisionMatrixRow(
                 builder,
                 "Slot3 immediate lockout",
@@ -4278,7 +4317,7 @@ namespace DimensionBrawl.Tests
                 "vanguard holds physical line",
                 RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute),
                 "Slot1 reopens",
-                "high-cost hold survives into a stable recovery close");
+                "vanguard assist suppresses boss screen for the confirm");
             PolicyMetrics slot1Recovery = RequireResult(results, PolicyKind.ForwardRiskTier1RecoveryRoute);
             PolicyMetrics slot2Combo = RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute);
             PolicyMetrics slot2DelayedRecovery =
@@ -4293,7 +4332,7 @@ namespace DimensionBrawl.Tests
                 + $"Slot2 full-bank pays {FormatSupportDecisionHpDelta(slot1Recovery, slot2Combo)} HP for no recovery burden and `{slot2Combo.ResultKind}`; "
                 + $"Slot3 immediate stays `{slot3Immediate.ResultKind}/{ResolveFirstUnresolvedBeat(slot3Immediate)}` despite line hold; "
                 + $"Slot3 delayed pays {FormatSupportDecisionHpDelta(slot1Recovery, slot3DelayedRecovery)} HP for `{slot3DelayedRecovery.ResultKind}` with suppress {FormatSupportDecisionBossSuppress(slot3DelayedRecovery)}. "
-                + "If this still feels samey in play, the next structural target is a clearer route payoff, not final UI polish.");
+                + "Decision: preserve Slot2 full-bank as the intended marksman combo and treat Slot2 LV2 delayed as mistimed, not a route to buff blindly.");
         }
 
         private static void AppendSupportDecisionMatrixRow(
@@ -4323,6 +4362,8 @@ namespace DimensionBrawl.Tests
             builder.Append(FormatSupportDecisionBossSuppress(result));
             builder.Append(" | ");
             builder.Append(EscapeTable($"{result.ResultKind}/{ResolveFirstUnresolvedBeat(result)}"));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveSupportDecisionTimingVerdict(result)));
             builder.Append(" | ");
             builder.Append(EscapeTable(read));
             builder.AppendLine(" |");
@@ -4362,6 +4403,33 @@ namespace DimensionBrawl.Tests
         private static string FormatSupportDecisionBossSuppress(PolicyMetrics result)
         {
             return $"{result.BossPressureScreensSuppressedByFollowup}/{result.HighestBossScreenSuppressSummonTier}";
+        }
+
+        private static string ResolveSupportDecisionTimingVerdict(PolicyMetrics result)
+        {
+            switch (result.Policy)
+            {
+                case PolicyKind.ForwardRiskTier1RecoveryRoute:
+                    return "emergency baseline";
+                case PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute:
+                    return ResolveFirstUnresolvedBeat(result) == "Complete" && result.CounterWaves <= 0
+                        ? "intended marksman combo"
+                        : "marksman combo incomplete";
+                case PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute:
+                    return result.CounterRecoveryConfirmed
+                        ? "mistimed LV2 spend"
+                        : "delayed marksman unresolved";
+                case PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute:
+                    return result.SupportComboSlot1Attempted && !result.SupportComboSlot1Used
+                        ? "resource lockout"
+                        : "vanguard lockout unresolved";
+                case PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute:
+                    return result.BossScreenSuppressedByFollowup
+                        ? "intended vanguard payoff"
+                        : "vanguard recovery branch";
+                default:
+                    return "not evaluated";
+            }
         }
 
         private static void AppendStageResultHookContract(
@@ -6324,6 +6392,39 @@ namespace DimensionBrawl.Tests
             }
         }
 
+        private static void AssertSupportDecisionTimingVerdicts(
+            PolicyMetrics slot1Recovery,
+            PolicyMetrics slot2Combo,
+            PolicyMetrics slot2DelayedRecovery,
+            PolicyMetrics slot3Blocked,
+            PolicyMetrics slot3DelayedRecovery)
+        {
+            Assert.AreEqual(
+                "emergency baseline",
+                ResolveSupportDecisionTimingVerdict(slot1Recovery),
+                "Slot1 should remain the cheap emergency baseline, not the roster payoff target.");
+            Assert.AreEqual(
+                "intended marksman combo",
+                ResolveSupportDecisionTimingVerdict(slot2Combo),
+                "Slot2 should read as intended when it preserves enough shared mana for the Slot1 answer.");
+            Assert.AreEqual(
+                "mistimed LV2 spend",
+                ResolveSupportDecisionTimingVerdict(slot2DelayedRecovery),
+                "Slot2-at-LV2 delayed recovery should be classified as a mistimed tempo spend, not buffed into every route.");
+            Assert.Greater(
+                ResolveSupportDecisionHpBeforeMain(slot2DelayedRecovery),
+                ResolveSupportDecisionHpBeforeMain(slot1Recovery),
+                "The mistimed Slot2 delayed branch should visibly cost more HP than the emergency Slot1 baseline.");
+            Assert.AreEqual(
+                "resource lockout",
+                ResolveSupportDecisionTimingVerdict(slot3Blocked),
+                "Slot3 immediate should preserve the high-cost bank-spend lockout read.");
+            Assert.AreEqual(
+                "intended vanguard payoff",
+                ResolveSupportDecisionTimingVerdict(slot3DelayedRecovery),
+                "Slot3 delayed should preserve its high-cost boss-screen suppress payoff.");
+        }
+
         private static SummonRosterAuditRow[] BuildSummonRosterAuditRows(IReadOnlyList<PolicyMetrics> results)
         {
             float[] sharedCosts = ResolveSharedSummonTierCosts(results);
@@ -7865,6 +7966,26 @@ namespace DimensionBrawl.Tests
             if (FindActiveAllyPressureScreen() == null)
             {
                 context.Metrics.Notes.Add($"{notePrefix} ally pressure screen did not become active before barrage");
+            }
+        }
+
+        private static IEnumerator WaitForNewSlot1PressureScreen(
+            CombatPolicyContext context,
+            int activeScreenCountBeforeUse,
+            string notePrefix)
+        {
+            float start = context.Metrics.ElapsedSeconds;
+            while (context.SummonSlot1Action.ActivePressureScreenCount <= activeScreenCountBeforeUse
+                && context.Metrics.ElapsedSeconds - start < 0.6f)
+            {
+                yield return Advance(context, 0.05f);
+                context.PocketOwner.Tick(0f);
+                context.Sample();
+            }
+
+            if (context.SummonSlot1Action.ActivePressureScreenCount <= activeScreenCountBeforeUse)
+            {
+                context.Metrics.Notes.Add($"{notePrefix} pressure screen did not become active before barrage");
             }
         }
 
