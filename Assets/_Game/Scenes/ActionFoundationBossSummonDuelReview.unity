@@ -1292,6 +1292,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerSupportSummonSlotAction
   slotActionName: SummonSlot3
+  requiredSummonMana: 300
   minimumSummonTier: 3
   summonAction: {fileID: 0}
   useKeyboardWhenActionMissing: 1
@@ -1333,6 +1334,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerSupportSummonSlotAction
   slotActionName: SummonSlot2
+  requiredSummonMana: 200
   minimumSummonTier: 2
   summonAction: {fileID: 0}
   useKeyboardWhenActionMissing: 1
@@ -1397,6 +1399,7 @@ MonoBehaviour:
   entryForwardOffset: 1.35
   actorEntryCatchupSecondsPerMeter: 0.55
   useBlockedHintSeconds: 0.75
+  requiredSummonMana: 100
   summonActionProfile: {fileID: 11400000, guid: ea0ac980cb10498e92d7f0dcf1ddf9e7, type: 2}
   tierSettings:
   - Damage: 78

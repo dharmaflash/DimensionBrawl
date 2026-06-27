@@ -123,6 +123,11 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(
                 bossSummonPressureAction,
                 GetObjectReference<BossSummonPressureAction>(duelOwner, "bossSummonPressureAction"));
+            Assert.AreEqual(
+                100f,
+                summonSlot1Action.RequiredSummonMana,
+                0.001f,
+                "SummonSlot1 should expose its explicit LV1 emergency summon mana cost.");
 
             Assert.IsTrue(
                 bossPressureActionDirector.HoldForNextTierActionWhenGateAllows,
@@ -495,6 +500,11 @@ namespace DimensionBrawl.Tests
                 expectedActionName == "SummonSlot3" ? 3 : 2,
                 action.MinimumSummonTier,
                 $"{expectedActionName} should preserve its slot-specific summon mana tier contract.");
+            Assert.AreEqual(
+                expectedActionName == "SummonSlot3" ? 300f : 200f,
+                action.RequiredSummonMana,
+                0.001f,
+                $"{expectedActionName} should expose an explicit per-summon mana cost, not only an inferred tier gate.");
             Assert.AreEqual(
                 1.35f,
                 GetFloat(action, "entryForwardOffset"),

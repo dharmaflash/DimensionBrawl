@@ -113,6 +113,9 @@ namespace DimensionBrawl.Player
         [Header("Failure Feedback")]
         [SerializeField, Min(0f)] private float useBlockedHintSeconds = 0.75f;
 
+        [Header("Summon Cost")]
+        [SerializeField, Min(1f)] private float requiredSummonMana = 100f;
+
         [Header("Tier Tuning")]
         [SerializeField] private SummonSlotActionProfile summonActionProfile;
         [SerializeField] private SummonTierSettings[] tierSettings = CreateDefaultTierSettings();
@@ -162,6 +165,7 @@ namespace DimensionBrawl.Player
             : SummonFrontlineProxyExitReason.None;
         public SummonSlotActionProfile SummonActionProfile => summonActionProfile;
         public bool HasSummonActionProfile => summonActionProfile != null;
+        public float RequiredSummonMana => Mathf.Max(1f, requiredSummonMana);
         public bool ShowUseBlockedHint => blockedHintTimer > 0f;
         public string LastUseBlockedReason => lastBlockedReason;
         internal int MaxActiveSummonActors => Mathf.Max(1, maxActiveSummonActors);
@@ -211,6 +215,7 @@ namespace DimensionBrawl.Player
 
             entryForwardOffset = Mathf.Max(0f, entryForwardOffset);
             actorEntryCatchupSecondsPerMeter = Mathf.Max(0f, actorEntryCatchupSecondsPerMeter);
+            requiredSummonMana = Mathf.Max(1f, requiredSummonMana);
             maxActiveSummonActors = Mathf.Max(1, maxActiveSummonActors);
         }
 
@@ -290,6 +295,11 @@ namespace DimensionBrawl.Player
         {
             summonActionProfile = newSummonActionProfile;
             ApplySummonActionProfile();
+        }
+
+        public void ConfigureRequiredSummonMana(float requiredMana)
+        {
+            requiredSummonMana = Mathf.Max(1f, requiredMana);
         }
 
         public bool TryGetTierReadout(int tier, out SummonSlotActionProfile.SummonTierReadout readout)

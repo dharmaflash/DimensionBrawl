@@ -4888,6 +4888,9 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(1, rows[0].MinimumTier, "SummonSlot1 should stay the LV1 emergency answer.");
             Assert.AreEqual(2, rows[1].MinimumTier, "SummonSlot2 should require the LV2 marksman mana gate.");
             Assert.AreEqual(3, rows[2].MinimumTier, "SummonSlot3 should require the LV3 vanguard mana gate.");
+            Assert.AreEqual(100f, rows[0].RequiredMana, 0.001f);
+            Assert.AreEqual(200f, rows[1].RequiredMana, 0.001f);
+            Assert.AreEqual(300f, rows[2].RequiredMana, 0.001f);
             Assert.Less(rows[0].RequiredMana, rows[1].RequiredMana);
             Assert.Less(rows[1].RequiredMana, rows[2].RequiredMana);
 
@@ -4918,28 +4921,39 @@ namespace DimensionBrawl.Tests
             int slot1MinimumTier = 1;
             int slot2MinimumTier = ResolveSupportSummonMinimumTier("SummonSlot2", 2);
             int slot3MinimumTier = ResolveSupportSummonMinimumTier("SummonSlot3", 3);
+            float slot1RequiredMana =
+                ResolveSummonSlot1RequiredMana(ResolveCumulativeSummonMana(sharedCosts, slot1MinimumTier));
+            float slot2RequiredMana = ResolveSupportSummonRequiredMana(
+                "SummonSlot2",
+                ResolveCumulativeSummonMana(sharedCosts, slot2MinimumTier));
+            float slot3RequiredMana = ResolveSupportSummonRequiredMana(
+                "SummonSlot3",
+                ResolveCumulativeSummonMana(sharedCosts, slot3MinimumTier));
             return new[]
             {
                 BuildSummonRosterAuditRow(
                     "SummonSlot1",
                     SummonSlot1ActionProfilePath,
-                    "shared SummonEnergyLadder + slot minimum tier gate",
+                    "explicit requiredSummonMana + shared SummonEnergyLadder spend gate",
                     sharedCosts,
                     slot1MinimumTier,
+                    slot1RequiredMana,
                     "breaker screen/counter; LV1 emergency answer"),
                 BuildSummonRosterAuditRow(
                     "SummonSlot2",
                     SummonSlot2ActionProfilePath,
-                    "shared SummonEnergyLadder + slot minimum tier gate",
+                    "explicit requiredSummonMana + shared SummonEnergyLadder spend gate",
                     sharedCosts,
                     slot2MinimumTier,
+                    slot2RequiredMana,
                     "marksman volley; no screen; LV2 cost gate"),
                 BuildSummonRosterAuditRow(
                     "SummonSlot3",
                     SummonSlot3ActionProfilePath,
-                    "shared SummonEnergyLadder + slot minimum tier gate",
+                    "explicit requiredSummonMana + shared SummonEnergyLadder spend gate",
                     sharedCosts,
                     slot3MinimumTier,
+                    slot3RequiredMana,
                     "vanguard health/screen; LV3 cost gate")
             };
         }
@@ -4950,6 +4964,7 @@ namespace DimensionBrawl.Tests
             string costSource,
             float[] tierCosts,
             int minimumTier,
+            float requiredMana,
             string readout)
         {
             SummonSlotActionProfile profile =
@@ -4980,7 +4995,7 @@ namespace DimensionBrawl.Tests
                 costSource,
                 CopyFirstThree(tierCosts),
                 Mathf.Clamp(minimumTier, 1, 3),
-                ResolveCumulativeSummonMana(tierCosts, minimumTier),
+                Mathf.Max(0f, requiredMana),
                 roleIds,
                 volleyDamage,
                 screenIntercepts,
@@ -5027,6 +5042,30 @@ namespace DimensionBrawl.Tests
             return Mathf.Clamp(fallbackTier, 1, 3);
         }
 
+        private static float ResolveSummonSlot1RequiredMana(float fallbackMana)
+        {
+            PlayerSummonSlot1Action action =
+                Object.FindFirstObjectByType<PlayerSummonSlot1Action>(FindObjectsInactive.Include);
+            return action != null ? action.RequiredSummonMana : Mathf.Max(0f, fallbackMana);
+        }
+
+        private static float ResolveSupportSummonRequiredMana(string slotActionName, float fallbackMana)
+        {
+            PlayerSupportSummonSlotAction[] actions = Object.FindObjectsByType<PlayerSupportSummonSlotAction>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < actions.Length; i++)
+            {
+                PlayerSupportSummonSlotAction action = actions[i];
+                if (action != null && string.Equals(action.SlotActionName, slotActionName, StringComparison.Ordinal))
+                {
+                    return action.RequiredSummonMana;
+                }
+            }
+
+            return Mathf.Max(0f, fallbackMana);
+        }
+
         private static float ResolveCumulativeSummonMana(float[] tierCosts, int minimumTier)
         {
             int clampedTier = Mathf.Clamp(minimumTier, 1, 3);
@@ -5054,8 +5093,8 @@ namespace DimensionBrawl.Tests
                 && rows[2].RequiredMana > rows[1].RequiredMana;
 
             return tierSplit && manaSplit
-                ? "PASS slot-specific summon mana gates split LV1/LV2/LV3"
-                : "CHECK shared ladder still collapses summon mana gates";
+                ? "PASS explicit per-summon mana costs split 100/200/300"
+                : "CHECK shared ladder still collapses summon mana costs";
         }
 
         private static string ResolveSummonRosterEffectVerdict(SummonRosterAuditRow[] rows)

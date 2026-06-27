@@ -43,6 +43,7 @@ namespace DimensionBrawl.Player
         [SerializeField, Min(0f)] private float actorEntryCatchupSecondsPerMeter = 0.55f;
 
         [Header("Support Cadence")]
+        [SerializeField, Min(1f)] private float requiredSummonMana = 100f;
         [SerializeField, Range(1, 3)] private int minimumSummonTier = 1;
         [SerializeField, Min(0f)] private float firstVolleyDelaySeconds = 0.08f;
         [SerializeField, Min(0.1f)] private float volleyIntervalSeconds = 0.85f;
@@ -66,6 +67,7 @@ namespace DimensionBrawl.Player
         private int totalPressureScreenInterceptCount;
 
         public string SlotActionName => slotActionName;
+        public float RequiredSummonMana => Mathf.Max(1f, requiredSummonMana);
         public int MinimumSummonTier => Mathf.Clamp(minimumSummonTier, 1, 3);
         public int LastSpentTier => lastSpentTier;
         public int TotalUseCount => totalUseCount;
@@ -122,6 +124,7 @@ namespace DimensionBrawl.Player
             laneOffset.y = Mathf.Clamp(laneOffset.y, -4f, 8f);
             entryForwardOffset = Mathf.Max(0f, entryForwardOffset);
             actorEntryCatchupSecondsPerMeter = Mathf.Max(0f, actorEntryCatchupSecondsPerMeter);
+            requiredSummonMana = Mathf.Max(1f, requiredSummonMana);
             minimumSummonTier = Mathf.Clamp(minimumSummonTier, 1, 3);
             firstVolleyDelaySeconds = Mathf.Max(0f, firstVolleyDelaySeconds);
             volleyIntervalSeconds = Mathf.Max(0.1f, volleyIntervalSeconds);
@@ -206,6 +209,11 @@ namespace DimensionBrawl.Player
         public void ConfigureMinimumSummonTier(int minimumTier)
         {
             minimumSummonTier = Mathf.Clamp(minimumTier, 1, 3);
+        }
+
+        public void ConfigureRequiredSummonMana(float requiredMana)
+        {
+            requiredSummonMana = Mathf.Max(1f, requiredMana);
         }
 
         public bool TryGetTierReadout(int tier, out SummonSlotActionProfile.SummonTierReadout readout)

@@ -948,3 +948,21 @@ Boundary:
 - Do not treat this as final balance. It proves separate unlock gates, not final cooldowns, rarity, upgrade cost, or UI polish.
 - Do not add final ready UI, icons, audio, reward hooks, inventory, or a broad summon manager before route metrics show the new cost gates create better player decisions.
 - The next measured pass should ask whether LV2 marksman and LV3 vanguard choices create distinct route outcomes, not merely whether their buttons unlock at different times.
+
+## 2026-06-27 Policy Report Lock: Explicit Per-Summon Mana Costs
+
+The user clarification tightened the wording: the three summonable units should not merely infer cost from EN tier gates; each summon action should expose its own required mana. This is still a narrow resource/data contract, not a new economy or final UI pass.
+
+Checkpoint evidence:
+
+- `PlayerSummonSlot1Action` and `PlayerSupportSummonSlotAction` now expose `requiredSummonMana`.
+- Canonical review scenes author Slot1/Slot2/Slot3 as `100/200/300`.
+- The roster audit now reads the explicit action value for `Required mana` while still showing the shared ladder tier targets as `100/100/100`.
+- Focused policy report `ExplicitSummonMana-1` passed with cost verdict `PASS explicit per-summon mana costs split 100/200/300`.
+- Focused Duel PlayMode `ExplicitSummonMana-1` passed, preserving the runtime LV1 block and LV2/LV3 support summon flow.
+
+Boundary:
+
+- This corrects the resource trigger data behind future ready feedback.
+- It does not introduce Blue Archive-style coaster UI, final icon/audio feedback, reward economy, roster inventory, or a broad summon manager.
+- The next measured pass should use this cost identity to test whether Slot2 and Slot3 create distinct route outcomes, not stop at the fact that the costs are now visible.
