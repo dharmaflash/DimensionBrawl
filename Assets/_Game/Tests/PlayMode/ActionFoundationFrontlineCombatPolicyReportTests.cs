@@ -4271,6 +4271,21 @@ namespace DimensionBrawl.Tests
                 RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute),
                 "Slot1 reopens",
                 "high-cost hold survives into a stable recovery close");
+            PolicyMetrics slot1Recovery = RequireResult(results, PolicyKind.ForwardRiskTier1RecoveryRoute);
+            PolicyMetrics slot2Combo = RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute);
+            PolicyMetrics slot2DelayedRecovery =
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute);
+            PolicyMetrics slot3Immediate = RequireResult(results, PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute);
+            PolicyMetrics slot3DelayedRecovery =
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute);
+            builder.AppendLine();
+            builder.AppendLine(
+                "- Dominance read: "
+                + $"Slot2 delayed recovery matches Slot1's recovery result but costs more and shifts HP by {FormatSupportDecisionHpDelta(slot1Recovery, slot2DelayedRecovery)}; "
+                + $"Slot2 full-bank pays {FormatSupportDecisionHpDelta(slot1Recovery, slot2Combo)} HP for no recovery burden and `{slot2Combo.ResultKind}`; "
+                + $"Slot3 immediate stays `{slot3Immediate.ResultKind}/{ResolveFirstUnresolvedBeat(slot3Immediate)}` despite line hold; "
+                + $"Slot3 delayed recovery pays {FormatSupportDecisionHpDelta(slot1Recovery, slot3DelayedRecovery)} HP for stable `{slot3DelayedRecovery.ResultKind}`. "
+                + "If this still feels samey in play, the next structural target is a clearer route payoff, not final UI polish.");
         }
 
         private static void AppendSupportDecisionMatrixRow(
@@ -4305,12 +4320,23 @@ namespace DimensionBrawl.Tests
 
         private static string FormatSupportDecisionHpBeforeMain(PolicyMetrics result)
         {
-            if (result.SupportComboPlayerDamageBeforeSlot1 >= 0f)
-            {
-                return result.SupportComboPlayerDamageBeforeSlot1.ToString("0.0");
-            }
+            return ResolveSupportDecisionHpBeforeMain(result).ToString("0.0");
+        }
 
-            return result.PlayerDamageTaken.ToString("0.0");
+        private static string FormatSupportDecisionHpDelta(
+            PolicyMetrics baseline,
+            PolicyMetrics candidate)
+        {
+            float delta = ResolveSupportDecisionHpBeforeMain(candidate)
+                - ResolveSupportDecisionHpBeforeMain(baseline);
+            return delta >= 0f ? $"+{delta:0.0}" : delta.ToString("0.0");
+        }
+
+        private static float ResolveSupportDecisionHpBeforeMain(PolicyMetrics result)
+        {
+            return result.SupportComboPlayerDamageBeforeSlot1 >= 0f
+                ? result.SupportComboPlayerDamageBeforeSlot1
+                : result.PlayerDamageTaken;
         }
 
         private static string FormatSupportDecisionRecoveryBurden(PolicyMetrics result)
