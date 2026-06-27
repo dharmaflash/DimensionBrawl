@@ -42,6 +42,7 @@ namespace DimensionBrawl.Tests
         private const float PhysicalSkill1ProbeFlightSeconds = 2.2f;
         private const float PhysicalNoPunishObservationSeconds = 8f;
         private const float SurvivalLimitProbeMaxSeconds = 45f;
+        private const int RepeatabilityProbeRuns = 3;
 
         private enum PolicyKind
         {
@@ -68,50 +69,68 @@ namespace DimensionBrawl.Tests
             BossScreenDelayedCounterRecovery
         }
 
+        private static readonly PolicyKind[] ReportPolicyOrder =
+        {
+            PolicyKind.NoSummonNoFire,
+            PolicyKind.GunOnly,
+            PolicyKind.NoSummonSurvivalLimit,
+            PolicyKind.GunOnlySurvivalLimit,
+            PolicyKind.BacklineEnergyProbe,
+            PolicyKind.ForwardRiskEnergyProbe,
+            PolicyKind.BacklineBarrageProbe,
+            PolicyKind.ForwardRiskBarrageProbe,
+            PolicyKind.BacklinePhysicalBarrageProbe,
+            PolicyKind.ForwardRiskPhysicalBarrageProbe,
+            PolicyKind.ForwardRiskPhysicalSummonBlockProbe,
+            PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe,
+            PolicyKind.ForwardRiskPhysicalSummonPunishProbe,
+            PolicyKind.IntendedRoute,
+            PolicyKind.IntendedDelayedFollowup,
+            PolicyKind.LateSummon,
+            PolicyKind.MissedFollowupCounterRecovery,
+            PolicyKind.BossScreenBlockedFollowup,
+            PolicyKind.BossScreenIgnoredNoRecovery,
+            PolicyKind.BossScreenBlockCounterRecovery,
+            PolicyKind.BossScreenDelayedCounterRecovery
+        };
+
+        private static readonly PolicyKind[] RepeatabilityPolicyOrder =
+        {
+            PolicyKind.NoSummonSurvivalLimit,
+            PolicyKind.GunOnlySurvivalLimit,
+            PolicyKind.BacklinePhysicalBarrageProbe,
+            PolicyKind.ForwardRiskPhysicalBarrageProbe,
+            PolicyKind.ForwardRiskPhysicalSummonBlockProbe,
+            PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe,
+            PolicyKind.ForwardRiskPhysicalSummonPunishProbe,
+            PolicyKind.BossScreenIgnoredNoRecovery,
+            PolicyKind.BossScreenBlockCounterRecovery
+        };
+
         [UnityTest]
         public IEnumerator WritesFrontlineCombatPolicyReport()
         {
             float previousTimeScale = Time.timeScale;
             Time.timeScale = 8f;
             List<PolicyMetrics> results = new List<PolicyMetrics>();
+            List<PolicyMetrics> repeatabilityResults = new List<PolicyMetrics>();
 
             try
             {
-                foreach (PolicyKind policy in new[]
+                for (int i = 0; i < ReportPolicyOrder.Length; i++)
                 {
-                    PolicyKind.NoSummonNoFire,
-                    PolicyKind.GunOnly,
-                    PolicyKind.NoSummonSurvivalLimit,
-                    PolicyKind.GunOnlySurvivalLimit,
-                    PolicyKind.BacklineEnergyProbe,
-                    PolicyKind.ForwardRiskEnergyProbe,
-                    PolicyKind.BacklineBarrageProbe,
-                    PolicyKind.ForwardRiskBarrageProbe,
-                    PolicyKind.BacklinePhysicalBarrageProbe,
-                    PolicyKind.ForwardRiskPhysicalBarrageProbe,
-                    PolicyKind.ForwardRiskPhysicalSummonBlockProbe,
-                    PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe,
-                    PolicyKind.ForwardRiskPhysicalSummonPunishProbe,
-                    PolicyKind.IntendedRoute,
-                    PolicyKind.IntendedDelayedFollowup,
-                    PolicyKind.LateSummon,
-                    PolicyKind.MissedFollowupCounterRecovery,
-                    PolicyKind.BossScreenBlockedFollowup,
-                    PolicyKind.BossScreenIgnoredNoRecovery,
-                    PolicyKind.BossScreenBlockCounterRecovery,
-                    PolicyKind.BossScreenDelayedCounterRecovery
-                })
-                {
-                    EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
-                    yield return null;
-
-                    CombatPolicyContext context = BuildContext(policy);
-                    yield return RunPolicy(context);
-                    context.Complete();
-                    results.Add(context.Metrics);
+                    yield return RunPolicySample(ReportPolicyOrder[i], results);
                 }
 
-                WriteReports(results);
+                for (int repeatIndex = 0; repeatIndex < RepeatabilityProbeRuns; repeatIndex++)
+                {
+                    for (int i = 0; i < RepeatabilityPolicyOrder.Length; i++)
+                    {
+                        yield return RunPolicySample(RepeatabilityPolicyOrder[i], repeatabilityResults);
+                    }
+                }
+
+                WriteReports(results, repeatabilityResults);
 
                 PolicyMetrics intended = RequireResult(results, PolicyKind.IntendedRoute);
                 PolicyMetrics delayedIntended = RequireResult(results, PolicyKind.IntendedDelayedFollowup);
@@ -158,6 +177,10 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(
                     markdown.Contains("## Stage Result Hook Contract"),
                     "The report should expose clean/counter/fail result hooks before route details.");
+                Assert.IsTrue(
+                    markdown.Contains("## Policy Repeatability Gate"),
+                    "The report should include repeated-run evidence before detailed policy tables.");
+                AssertRepeatabilityGate(repeatabilityResults);
                 Assert.Greater(intended.SummonBlocks, 0, "The intended route must prove summon interception changes the run.");
                 Assert.AreEqual(
                     0,
@@ -668,6 +691,17 @@ namespace DimensionBrawl.Tests
             {
                 Time.timeScale = previousTimeScale;
             }
+        }
+
+        private static IEnumerator RunPolicySample(PolicyKind policy, List<PolicyMetrics> destination)
+        {
+            EditorSceneManager.LoadSceneInPlayMode(ScenePath, new LoadSceneParameters(LoadSceneMode.Single));
+            yield return null;
+
+            CombatPolicyContext context = BuildContext(policy);
+            yield return RunPolicy(context);
+            context.Complete();
+            destination.Add(context.Metrics);
         }
 
         private static CombatPolicyContext BuildContext(PolicyKind policy)
@@ -1686,14 +1720,18 @@ namespace DimensionBrawl.Tests
             }
         }
 
-        private static void WriteReports(IReadOnlyList<PolicyMetrics> results)
+        private static void WriteReports(
+            IReadOnlyList<PolicyMetrics> results,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults)
         {
             Directory.CreateDirectory(Path.GetDirectoryName(ReportPath));
-            File.WriteAllText(ReportPath, BuildMarkdown(results), Encoding.UTF8);
-            File.WriteAllText(JsonPath, BuildJson(results), Encoding.UTF8);
+            File.WriteAllText(ReportPath, BuildMarkdown(results, repeatabilityResults), Encoding.UTF8);
+            File.WriteAllText(JsonPath, BuildJson(results, repeatabilityResults), Encoding.UTF8);
         }
 
-        private static string BuildMarkdown(IReadOnlyList<PolicyMetrics> results)
+        private static string BuildMarkdown(
+            IReadOnlyList<PolicyMetrics> results,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults)
         {
             StringBuilder builder = new StringBuilder();
             builder.AppendLine("# DimensionBrawl Frontline Combat Policy Report");
@@ -1709,6 +1747,8 @@ namespace DimensionBrawl.Tests
             AppendArkDataCoverageSummary(builder, results);
             builder.AppendLine();
             AppendStructuralGateSummary(builder, results);
+            builder.AppendLine();
+            AppendPolicyRepeatabilityGate(builder, repeatabilityResults);
             builder.AppendLine();
             builder.AppendLine("| Policy | Result | Sim s | HP lost | Boss dmg | Stability | Min stability | Boss waves | Player hits | Summons | Blocks | Skill1 hits | Fronts A/E | Route shape | Decision |");
             builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---|");
@@ -2319,6 +2359,66 @@ namespace DimensionBrawl.Tests
             return builder.ToString();
         }
 
+        private static void AppendPolicyRepeatabilityGate(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults)
+        {
+            builder.AppendLine("## Policy Repeatability Gate");
+            builder.AppendLine($"Repeated sample count: `{RepeatabilityProbeRuns}` per selected policy. This gate checks structural direction, not exact identical numbers.");
+            builder.AppendLine("| Policy | Runs | Result set | HP lost min/avg/max | Boss dmg min/avg/max | Player hits min/max | Blocks min/max | Skill1 min/max | Micro hit min/max | Seq hit min/max | Verdict |");
+            builder.AppendLine("|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---|");
+            for (int i = 0; i < RepeatabilityPolicyOrder.Length; i++)
+            {
+                AppendPolicyRepeatabilityRow(builder, repeatabilityResults, RepeatabilityPolicyOrder[i]);
+            }
+        }
+
+        private static void AppendPolicyRepeatabilityRow(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults,
+            PolicyKind policy)
+        {
+            builder.Append("| ");
+            builder.Append(policy);
+            builder.Append(" | ");
+            builder.Append(CountPolicyResults(repeatabilityResults, policy));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(BuildResultKindSet(repeatabilityResults, policy)));
+            builder.Append(" | ");
+            builder.Append(FormatMinAverageMax(
+                MinMetric(repeatabilityResults, policy, result => result.PlayerDamageTaken),
+                AverageMetric(repeatabilityResults, policy, result => result.PlayerDamageTaken),
+                MaxMetric(repeatabilityResults, policy, result => result.PlayerDamageTaken)));
+            builder.Append(" | ");
+            builder.Append(FormatMinAverageMax(
+                MinMetric(repeatabilityResults, policy, result => result.BossDamageTaken),
+                AverageMetric(repeatabilityResults, policy, result => result.BossDamageTaken),
+                MaxMetric(repeatabilityResults, policy, result => result.BossDamageTaken)));
+            builder.Append(" | ");
+            builder.Append(FormatMinMax(
+                MinMetric(repeatabilityResults, policy, result => result.PhysicalBarragePlayerHits),
+                MaxMetric(repeatabilityResults, policy, result => result.PhysicalBarragePlayerHits)));
+            builder.Append(" | ");
+            builder.Append(FormatMinMax(
+                MinMetric(repeatabilityResults, policy, result => result.SummonBlocks),
+                MaxMetric(repeatabilityResults, policy, result => result.SummonBlocks)));
+            builder.Append(" | ");
+            builder.Append(FormatMinMax(
+                MinMetric(repeatabilityResults, policy, result => result.SkillProjectileHits),
+                MaxMetric(repeatabilityResults, policy, result => result.SkillProjectileHits)));
+            builder.Append(" | ");
+            builder.Append(FormatMinMax(
+                MinMetric(repeatabilityResults, policy, result => result.FollowupHitCinematicCueRequests),
+                MaxMetric(repeatabilityResults, policy, result => result.FollowupHitCinematicCueRequests)));
+            builder.Append(" | ");
+            builder.Append(FormatMinMax(
+                MinMetric(repeatabilityResults, policy, result => result.FollowupHitSequenceBridgeRequests),
+                MaxMetric(repeatabilityResults, policy, result => result.FollowupHitSequenceBridgeRequests)));
+            builder.Append(" | ");
+            builder.Append(ResolveRepeatabilityVerdict(repeatabilityResults, policy));
+            builder.AppendLine(" |");
+        }
+
         private static void AppendStructuralGateSummary(
             StringBuilder builder,
             IReadOnlyList<PolicyMetrics> results)
@@ -2738,7 +2838,9 @@ namespace DimensionBrawl.Tests
                 : 0f;
         }
 
-        private static string BuildJson(IReadOnlyList<PolicyMetrics> results)
+        private static string BuildJson(
+            IReadOnlyList<PolicyMetrics> results,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults)
         {
             StringBuilder builder = new StringBuilder();
             builder.AppendLine("{");
@@ -2998,9 +3100,272 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine(i + 1 < results.Count ? "," : string.Empty);
             }
 
+            builder.AppendLine("  ],");
+            builder.AppendLine("  \"repeatability\": [");
+            for (int i = 0; i < repeatabilityResults.Count; i++)
+            {
+                PolicyMetrics result = repeatabilityResults[i];
+                builder.AppendLine("    {");
+                builder.AppendLine($"      \"policy\": \"{result.Policy}\",");
+                builder.AppendLine($"      \"resultKind\": \"{JsonEscape(result.ResultKind)}\",");
+                builder.AppendLine($"      \"elapsedSeconds\": {result.ElapsedSeconds:0.###},");
+                builder.AppendLine($"      \"playerDamageTaken\": {result.PlayerDamageTaken:0.###},");
+                builder.AppendLine($"      \"bossDamageTaken\": {result.BossDamageTaken:0.###},");
+                builder.AppendLine($"      \"bossDamagePlayerShare01\": {result.BossDamagePlayerShare01:0.###},");
+                builder.AppendLine($"      \"physicalBarragePlayerHits\": {result.PhysicalBarragePlayerHits},");
+                builder.AppendLine($"      \"physicalBarrageTrackedProjectileCount\": {result.PhysicalBarrageTrackedProjectileCount},");
+                builder.AppendLine($"      \"physicalBarragePlayerDamage\": {result.PhysicalBarragePlayerDamage:0.###},");
+                builder.AppendLine($"      \"summonBlocks\": {result.SummonBlocks},");
+                builder.AppendLine($"      \"skillProjectileHits\": {result.SkillProjectileHits},");
+                builder.AppendLine($"      \"followupHitCount\": {result.FollowupHitCount},");
+                builder.AppendLine($"      \"followupMissCount\": {result.FollowupMissCount},");
+                builder.AppendLine($"      \"counterWaves\": {result.CounterWaves},");
+                builder.AppendLine($"      \"unansweredPressureBurdenShare01\": {result.UnansweredPressureBurdenShare01:0.###},");
+                builder.AppendLine($"      \"followupHitCinematicCueRequests\": {result.FollowupHitCinematicCueRequests},");
+                builder.AppendLine($"      \"followupHitSequenceBridgeRequests\": {result.FollowupHitSequenceBridgeRequests},");
+                builder.AppendLine($"      \"firstPlayerDownAtSeconds\": {JsonNullableSeconds(result.FirstPlayerDownAtSeconds)},");
+                builder.AppendLine($"      \"firstBossDownAtSeconds\": {JsonNullableSeconds(result.FirstBossDownAtSeconds)},");
+                builder.AppendLine($"      \"enemyFrontlineBodyHits\": {result.EnemyFrontlineBodyHits},");
+                builder.AppendLine($"      \"resultRecords\": {result.ResultRecords},");
+                builder.AppendLine($"      \"verdict\": \"{JsonEscape(ResolveRepeatabilityVerdict(repeatabilityResults, result.Policy))}\"");
+                builder.Append("    }");
+                builder.AppendLine(i + 1 < repeatabilityResults.Count ? "," : string.Empty);
+            }
+
             builder.AppendLine("  ]");
             builder.AppendLine("}");
             return builder.ToString();
+        }
+
+        private static void AssertRepeatabilityGate(IReadOnlyList<PolicyMetrics> repeatabilityResults)
+        {
+            for (int i = 0; i < RepeatabilityPolicyOrder.Length; i++)
+            {
+                PolicyKind policy = RepeatabilityPolicyOrder[i];
+                Assert.AreEqual(
+                    RepeatabilityProbeRuns,
+                    CountPolicyResults(repeatabilityResults, policy),
+                    $"Repeatability policy {policy} should have the expected repeated run count.");
+                Assert.IsTrue(
+                    IsRepeatabilityPassForPolicy(repeatabilityResults, policy),
+                    $"Repeatability policy {policy} should preserve the expected structural outcome. Results: {BuildResultKindSet(repeatabilityResults, policy)}");
+            }
+
+            Assert.LessOrEqual(
+                MaxMetric(
+                    repeatabilityResults,
+                    PolicyKind.ForwardRiskPhysicalSummonPunishProbe,
+                    result => result.FollowupHitSequenceBridgeRequests),
+                0f,
+                "Repeated physical punish runs should keep the full sequence bridge disabled; only the micro-cinematic cue is in scope.");
+        }
+
+        private static string ResolveRepeatabilityVerdict(
+            IReadOnlyList<PolicyMetrics> repeatabilityResults,
+            PolicyKind policy)
+        {
+            if (CountPolicyResults(repeatabilityResults, policy) != RepeatabilityProbeRuns)
+            {
+                return "FAIL missing runs";
+            }
+
+            return IsRepeatabilityPassForPolicy(repeatabilityResults, policy) ? "PASS" : "CHECK";
+        }
+
+        private static bool IsRepeatabilityPassForPolicy(
+            IReadOnlyList<PolicyMetrics> repeatabilityResults,
+            PolicyKind policy)
+        {
+            int seen = 0;
+            float ignoredBossScreenDamageMin = MinMetric(
+                repeatabilityResults,
+                PolicyKind.BossScreenIgnoredNoRecovery,
+                result => result.PlayerDamageTaken);
+
+            for (int i = 0; i < repeatabilityResults.Count; i++)
+            {
+                PolicyMetrics result = repeatabilityResults[i];
+                if (result.Policy != policy)
+                {
+                    continue;
+                }
+
+                seen++;
+                if (!IsRepeatabilitySamplePass(result, ignoredBossScreenDamageMin))
+                {
+                    return false;
+                }
+            }
+
+            return seen == RepeatabilityProbeRuns;
+        }
+
+        private static bool IsRepeatabilitySamplePass(
+            PolicyMetrics result,
+            float ignoredBossScreenDamageMin)
+        {
+            switch (result.Policy)
+            {
+                case PolicyKind.NoSummonSurvivalLimit:
+                    return result.ResultKind == "PlayerDownFail"
+                        && result.FirstPlayerDownAtSeconds >= 0f
+                        && result.FirstPlayerDownAtSeconds <= SurvivalLimitProbeMaxSeconds;
+                case PolicyKind.GunOnlySurvivalLimit:
+                    return result.ResultKind == "PlayerDownFail"
+                        && result.FirstPlayerDownAtSeconds >= 0f
+                        && result.FirstPlayerDownAtSeconds <= SurvivalLimitProbeMaxSeconds
+                        && result.FirstBossDownAtSeconds < 0f;
+                case PolicyKind.BacklinePhysicalBarrageProbe:
+                    return result.PhysicalBarragePlayerHits == 0
+                        && result.PhysicalBarragePlayerDamage <= 0.01f;
+                case PolicyKind.ForwardRiskPhysicalBarrageProbe:
+                    return result.PhysicalBarragePlayerHits >= 3
+                        && result.PhysicalBarragePlayerDamage > 0f;
+                case PolicyKind.ForwardRiskPhysicalSummonBlockProbe:
+                    return result.PhysicalBarragePlayerHits == 0
+                        && result.PlayerDamageTaken <= 0.01f
+                        && result.SummonBlocks >= 2
+                        && result.FollowupWindowOpenCount > 0
+                        && result.BlockToFollowupWindowSeconds >= 0f
+                        && result.BlockToFollowupWindowSeconds <= 0.5f;
+                case PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe:
+                    return !result.IsClearResult
+                        && result.FollowupMissCount > 0
+                        && result.CounterWaves > 0
+                        && result.SkillProjectileHits == 0
+                        && result.ResultRecords == 0
+                        && result.UnansweredPressureBurdenShare01 >= 0.5f;
+                case PolicyKind.ForwardRiskPhysicalSummonPunishProbe:
+                    return result.ResultKind == "CleanFollowupClear"
+                        && result.PhysicalBarragePlayerHits == 0
+                        && result.SummonBlocks >= 2
+                        && result.SkillProjectileHits >= 2
+                        && result.FollowupHitCinematicCueRequests > 0
+                        && result.FollowupHitSequenceBridgeRequests == 0
+                        && result.BossDamagePlayerShare01 >= 0.68f;
+                case PolicyKind.BossScreenIgnoredNoRecovery:
+                    return !result.IsClearResult
+                        && result.EnemyFrontlineBodyHits > 0
+                        && result.PlayerDamageTaken > 0f
+                        && result.ResultRecords == 0;
+                case PolicyKind.BossScreenBlockCounterRecovery:
+                    return result.ResultKind == "CounterRecoveryClear"
+                        && result.SkillProjectileHits >= 2
+                        && result.FollowupHitCinematicCueRequests > 0
+                        && result.FollowupHitSequenceBridgeRequests == 0
+                        && ignoredBossScreenDamageMin > 0f
+                        && result.PlayerDamageTaken < ignoredBossScreenDamageMin;
+                default:
+                    return false;
+            }
+        }
+
+        private static int CountPolicyResults(IReadOnlyList<PolicyMetrics> results, PolicyKind policy)
+        {
+            int count = 0;
+            for (int i = 0; i < results.Count; i++)
+            {
+                if (results[i].Policy == policy)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static string BuildResultKindSet(IReadOnlyList<PolicyMetrics> results, PolicyKind policy)
+        {
+            List<string> values = new List<string>();
+            HashSet<string> seen = new HashSet<string>();
+            for (int i = 0; i < results.Count; i++)
+            {
+                if (results[i].Policy != policy)
+                {
+                    continue;
+                }
+
+                string value = string.IsNullOrEmpty(results[i].ResultKind) ? "-" : results[i].ResultKind;
+                if (seen.Add(value))
+                {
+                    values.Add(value);
+                }
+            }
+
+            return values.Count > 0 ? string.Join(",", values) : "-";
+        }
+
+        private static float MinMetric(
+            IReadOnlyList<PolicyMetrics> results,
+            PolicyKind policy,
+            Func<PolicyMetrics, float> selector)
+        {
+            bool found = false;
+            float min = float.PositiveInfinity;
+            for (int i = 0; i < results.Count; i++)
+            {
+                if (results[i].Policy != policy)
+                {
+                    continue;
+                }
+
+                found = true;
+                min = Mathf.Min(min, selector(results[i]));
+            }
+
+            return found ? min : -1f;
+        }
+
+        private static float MaxMetric(
+            IReadOnlyList<PolicyMetrics> results,
+            PolicyKind policy,
+            Func<PolicyMetrics, float> selector)
+        {
+            bool found = false;
+            float max = float.NegativeInfinity;
+            for (int i = 0; i < results.Count; i++)
+            {
+                if (results[i].Policy != policy)
+                {
+                    continue;
+                }
+
+                found = true;
+                max = Mathf.Max(max, selector(results[i]));
+            }
+
+            return found ? max : -1f;
+        }
+
+        private static float AverageMetric(
+            IReadOnlyList<PolicyMetrics> results,
+            PolicyKind policy,
+            Func<PolicyMetrics, float> selector)
+        {
+            int count = 0;
+            float sum = 0f;
+            for (int i = 0; i < results.Count; i++)
+            {
+                if (results[i].Policy != policy)
+                {
+                    continue;
+                }
+
+                count++;
+                sum += selector(results[i]);
+            }
+
+            return count > 0 ? sum / count : -1f;
+        }
+
+        private static string FormatMinAverageMax(float min, float average, float max)
+        {
+            return min >= 0f ? $"{min:0.#}/{average:0.#}/{max:0.#}" : "-";
+        }
+
+        private static string FormatMinMax(float min, float max)
+        {
+            return min >= 0f ? $"{min:0.#}/{max:0.#}" : "-";
         }
 
         private static string JsonNullableSeconds(float seconds)
