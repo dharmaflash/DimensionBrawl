@@ -9,7 +9,8 @@ namespace DimensionBrawl.Combat
         None = 0,
         LifetimeExpired = 1,
         Defeated = 2,
-        Recalled = 3
+        Recalled = 3,
+        Suppressed = 4
     }
 
     public enum SummonFrontlineProxyState

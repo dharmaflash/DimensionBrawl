@@ -75,6 +75,9 @@ namespace DimensionBrawl.Combat
         private int lastPressureScreenInterceptCount;
         private int lastPressureScreenInterceptTier;
         private int totalPressureScreenInterceptCount;
+        private int lastPressureScreenSuppressTier;
+        private int totalPressureScreenSuppressCount;
+        private int totalPressureActorSuppressCount;
         private int totalSummonActorDefeatCount;
         private Vector3 lastSummonActorPosition;
         private SummonFrontlineProxy lastSummonActor;
@@ -88,6 +91,9 @@ namespace DimensionBrawl.Combat
         public int LastPressureScreenInterceptCount => lastPressureScreenInterceptCount;
         public int LastPressureScreenInterceptTier => lastPressureScreenInterceptTier;
         public int TotalPressureScreenInterceptCount => totalPressureScreenInterceptCount;
+        public int LastPressureScreenSuppressTier => lastPressureScreenSuppressTier;
+        public int TotalPressureScreenSuppressCount => totalPressureScreenSuppressCount;
+        public int TotalPressureActorSuppressCount => totalPressureActorSuppressCount;
         public int TotalSummonActorDefeatCount => totalSummonActorDefeatCount;
         public Vector3 LastSummonActorPosition => lastSummonActorPosition;
         public SummonFrontlineProxy LastSummonActor => lastSummonActor;
@@ -264,6 +270,41 @@ namespace DimensionBrawl.Combat
             lastSummonActor = actor;
             PressureSummonReleased?.Invoke(this, resolvedTier);
             return true;
+        }
+
+        public int SuppressActivePressureScreens(int tier)
+        {
+            int resolvedTier = Mathf.Clamp(tier, 1, 3);
+            int suppressedScreens = 0;
+            int suppressedActors = 0;
+            summonActorPool.ForEach(actor =>
+            {
+                if (actor == null
+                    || !actor.IsActive
+                    || actor.ActiveTier <= 0)
+                {
+                    return;
+                }
+
+                if (actor.PressureScreen != null && actor.PressureScreen.IsActive)
+                {
+                    actor.PressureScreen.Deactivate();
+                    suppressedScreens++;
+                }
+
+                actor.Deactivate(SummonFrontlineProxyExitReason.Suppressed);
+                suppressedActors++;
+            });
+
+            if (suppressedScreens <= 0 && suppressedActors <= 0)
+            {
+                return 0;
+            }
+
+            lastPressureScreenSuppressTier = resolvedTier;
+            totalPressureScreenSuppressCount += suppressedScreens;
+            totalPressureActorSuppressCount += suppressedActors;
+            return suppressedScreens + suppressedActors;
         }
 
         private void ConfigureActorVfx(SummonFrontlineProxy actor)

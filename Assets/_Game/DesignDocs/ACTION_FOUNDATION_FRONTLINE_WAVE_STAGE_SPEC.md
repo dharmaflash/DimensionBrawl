@@ -853,3 +853,27 @@ Pressure control is now part of the review-scene contract:
 - When counter pressure is observed, the review phase and compact objective must read as counter-wave/frontline-hold work instead of falling back to generic summon-block text.
 
 The profile is review-only. It must not grant rewards, unlock progression, replace the stage-select flow, or become a general combat manager.
+
+## 2026-06-27 Policy Report Lock: High-Tier Summon Payoff
+
+The current long-running goal stays focused on ArkData-grounded combat structure, not narrow stat balancing. The reference comparison says the local slice is still missing a CombatPayload-like chain where a costly summon choice changes a live pressure row, opens a target/hit state, and records a distinct route result. Do not drift into UI polish, roster expansion, reward economy, or broad manager work before this chain is repeatedly measured.
+
+Checkpoint evidence:
+
+- Screen-only suppress attempt failed: the report recorded a boss-screen suppress marker, but `ForwardRiskTier3DecisionRoute` still had `Skill1` hits `0` and stalled at follow-up confirm. This proved the pressure screen alone is not the gameplay target; the active pressure actor/body row also has to be resolved.
+- Row suppress correction passed: LV3 summon follow-up now suppresses the active boss pressure screen and its pressure actor before Skill1 resolves.
+- Batch PlayMode repeatability passed twice with `ActionFoundationFrontlineCombatPolicyReportTests.WritesFrontlineCombatPolicyReport`.
+- Latest report values: LV1/LV2 direct routes remain `Running` with `Skill1` hits `0`; LV3 direct route reaches `CleanFollowupClear`, `Suppress 2/3`, `Skill1 2/1`, boss damage `104.0`, HP lost `70.9`.
+- Recovery branch stays meaningful for lower tiers: LV1/LV2 recovery routes still reach `CounterRecoveryClear` after a fresh ally answer, while LV3 no longer needs that branch because it converts the boss curtain directly.
+
+Interpretation:
+
+- ArkData stage/wave lesson: the same authored pocket now has distinct route rows for low-tier spend, high-tier risk, and recovery, instead of one generic summon answer.
+- CombatPayload lesson: LV3 spend now closes `Trigger -> Target -> Effect -> Status/Hit` by converting the boss pressure row into a direct hit window.
+- PGR state-lock lesson: low-tier spend can enter counter recovery, while high-tier spend unlocks a direct punish state before counter pressure starts.
+
+Boundary:
+
+- This is an EN-tier/high-risk payoff checkpoint, not final summon roster identity.
+- Later, individual summon mana costs and effects must diverge so the three summon slots do not read as the same unit with the same cost. That belongs after this structural loop remains stable.
+- Blue Archive-style ready-cost feedback can affect motivation, but it should be treated as presentation/readability after the resource and combat-state contract exists. Do not use ready UI as a substitute for a real combat payoff.

@@ -595,10 +595,10 @@ namespace DimensionBrawl.Tests
                     "The forward-risk tier ladder probe should report either LV3 readiness or player-down while waiting.");
                 AssertEnergyDecisionRoute(forwardRiskTier1Decision, 1);
                 AssertEnergyDecisionRoute(forwardRiskTier2Decision, 2);
-                AssertEnergyDecisionRoute(forwardRiskTier3Decision, 3);
+                AssertEnergyDirectPayoffRoute(forwardRiskTier3Decision);
                 AssertEnergyRecoveryRoute(forwardRiskTier1Recovery, 1);
                 AssertEnergyRecoveryRoute(forwardRiskTier2Recovery, 2);
-                AssertEnergyRecoveryRoute(forwardRiskTier3Recovery, 3);
+                AssertEnergyDirectPayoffRoute(forwardRiskTier3Recovery);
                 Assert.Less(
                     forwardRiskTier1Decision.EnergyTier1DurationSeconds,
                     forwardRiskTier2Decision.EnergyTier2DurationSeconds,
@@ -3963,8 +3963,8 @@ namespace DimensionBrawl.Tests
             IReadOnlyList<PolicyMetrics> results)
         {
             builder.AppendLine("## EN Spend Decision Route");
-            builder.AppendLine("| Policy | Target tier | Ready at | HP lost | HP/s | Summon tier | Skill tier/hits | Window | Pulse | Result | Read |");
-            builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---|");
+            builder.AppendLine("| Policy | Target tier | Ready at | HP lost | HP/s | Summon tier | Skill tier/hits | Window | Pulse | Suppress | Result | Read |");
+            builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---|");
             AppendEnergySpendDecisionRouteRow(
                 builder,
                 RequireResult(results, PolicyKind.ForwardRiskTier1DecisionRoute));
@@ -3997,6 +3997,8 @@ namespace DimensionBrawl.Tests
             builder.Append(" | ");
             builder.Append(result.SummonFollowupEnergyPulse.ToString("0"));
             builder.Append(" | ");
+            builder.Append($"{result.BossPressureScreensSuppressedByFollowup}/{result.HighestBossScreenSuppressSummonTier}");
+            builder.Append(" | ");
             builder.Append(EscapeTable(result.ResultKind));
             builder.Append(" | ");
             builder.Append(EscapeTable(ResolveEnergySpendDecisionRead(result)));
@@ -4008,8 +4010,8 @@ namespace DimensionBrawl.Tests
             IReadOnlyList<PolicyMetrics> results)
         {
             builder.AppendLine("## EN Spend Recovery Route");
-            builder.AppendLine("| Policy | Target tier | Ready at | HP lost | Summon tier | Summons | Skill tier/hits | Counter->answer | Answer->stable | Final->hit | Boss dmg P/S | Result | Read |");
-            builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---|");
+            builder.AppendLine("| Policy | Target tier | Ready at | HP lost | Summon tier | Summons | Skill tier/hits | Suppress | Counter->answer | Answer->stable | Final->hit | Boss dmg P/S | Result | Read |");
+            builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---|");
             AppendEnergySpendRecoveryRouteRow(
                 builder,
                 RequireResult(results, PolicyKind.ForwardRiskTier1RecoveryRoute));
@@ -4037,6 +4039,8 @@ namespace DimensionBrawl.Tests
             builder.Append(result.SummonUses);
             builder.Append(" | ");
             builder.Append($"{result.HighestSkill1SpentTier}/{result.SkillProjectileHits}");
+            builder.Append(" | ");
+            builder.Append($"{result.BossPressureScreensSuppressedByFollowup}/{result.HighestBossScreenSuppressSummonTier}");
             builder.Append(" | ");
             builder.Append(FormatSeconds(result.CounterTriggerToAnswerSeconds));
             builder.Append(" | ");
@@ -4083,6 +4087,11 @@ namespace DimensionBrawl.Tests
             if (result.ResultKind == "CounterRecoveryClear")
             {
                 return "boss screen recovered after fresh answer";
+            }
+
+            if (result.ResultKind == "CleanFollowupClear" && result.BossScreenSuppressedByFollowup)
+            {
+                return "LV3 suppresses boss screen; direct payoff";
             }
 
             if (result.ResultKind != "CleanFollowupClear")
@@ -5051,6 +5060,9 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"summonPressureScreenInterceptFlashes\": {result.SummonPressureScreenInterceptFlashes},");
                 builder.AppendLine($"      \"summonPressureScreenInterceptVfxCueRequests\": {result.SummonPressureScreenInterceptVfxCueRequests},");
                 builder.AppendLine($"      \"maxShowingSummonPressureScreenPresenters\": {result.MaxShowingSummonPressureScreenPresenters},");
+                builder.AppendLine($"      \"bossScreenSuppressedByFollowup\": {JsonBool(result.BossScreenSuppressedByFollowup)},");
+                builder.AppendLine($"      \"bossPressureScreensSuppressedByFollowup\": {result.BossPressureScreensSuppressedByFollowup},");
+                builder.AppendLine($"      \"highestBossScreenSuppressSummonTier\": {result.HighestBossScreenSuppressSummonTier},");
                 builder.AppendLine($"      \"counterWaveScreenCueRequests\": {result.CounterWaveScreenCueRequests},");
                 builder.AppendLine($"      \"counterWaveAnswerScreenCueRequests\": {result.CounterWaveAnswerScreenCueRequests},");
                 builder.AppendLine($"      \"lastCounterWaveScreenSource\": \"{JsonEscape(result.LastCounterWaveScreenSource)}\",");
@@ -5331,6 +5343,52 @@ namespace DimensionBrawl.Tests
                 $"{result.Policy} should commit the recovered result hook.");
         }
 
+        private static void AssertEnergyDirectPayoffRoute(PolicyMetrics result)
+        {
+            Assert.AreEqual(
+                3,
+                result.EnergyProbeTargetTier,
+                $"{result.Policy} should wait for LV3 before proving the direct high-tier payoff branch.");
+            Assert.GreaterOrEqual(
+                ResolveEnergyTargetDuration(result),
+                0f,
+                $"{result.Policy} should record LV3 ready time.");
+            Assert.AreEqual(
+                3,
+                result.HighestSummonSpentTier,
+                $"{result.Policy} should spend SummonSlot1 at LV3.");
+            Assert.IsTrue(
+                result.BossScreenSuppressedByFollowup,
+                $"{result.Policy} should suppress the active boss screen instead of being blocked by it.");
+            Assert.Greater(
+                result.BossPressureScreensSuppressedByFollowup,
+                0,
+                $"{result.Policy} should record at least one suppressed boss pressure screen.");
+            Assert.AreEqual(
+                3,
+                result.HighestBossScreenSuppressSummonTier,
+                $"{result.Policy} should attribute the suppress effect to the LV3 summon follow-up window.");
+            Assert.IsFalse(
+                result.BossBlockedSkill1Followup,
+                $"{result.Policy} should not create a boss-screen blocked branch after LV3 suppression.");
+            Assert.Greater(
+                result.SkillProjectileHits,
+                0,
+                $"{result.Policy} should land Skill1 directly after suppressing the boss screen.");
+            Assert.AreEqual(
+                "CleanFollowupClear",
+                result.ResultKind,
+                $"{result.Policy} should close as a direct clean follow-up payoff.");
+            Assert.AreEqual(
+                "Complete",
+                ResolveFirstUnresolvedBeat(result),
+                $"{result.Policy} should complete the stage beat after direct high-tier payoff.");
+            Assert.Greater(
+                result.ResultRecords,
+                0,
+                $"{result.Policy} should commit the direct payoff result hook.");
+        }
+
         private static string ResolveRepeatabilityVerdict(
             IReadOnlyList<PolicyMetrics> repeatabilityResults,
             PolicyKind policy)
@@ -5482,13 +5540,13 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.ForwardRiskTier2DecisionRoute:
                     return IsEnergyDecisionRouteRepeatabilityPass(result, 2);
                 case PolicyKind.ForwardRiskTier3DecisionRoute:
-                    return IsEnergyDecisionRouteRepeatabilityPass(result, 3);
+                    return IsEnergyDirectPayoffRouteRepeatabilityPass(result);
                 case PolicyKind.ForwardRiskTier1RecoveryRoute:
                     return IsEnergyRecoveryRouteRepeatabilityPass(result, 1);
                 case PolicyKind.ForwardRiskTier2RecoveryRoute:
                     return IsEnergyRecoveryRouteRepeatabilityPass(result, 2);
                 case PolicyKind.ForwardRiskTier3RecoveryRoute:
-                    return IsEnergyRecoveryRouteRepeatabilityPass(result, 3);
+                    return IsEnergyDirectPayoffRouteRepeatabilityPass(result);
                 case PolicyKind.BossScreenIgnoredNoRecovery:
                     return !result.IsClearResult
                         && result.EnemyFrontlineBodyHits > 0
@@ -5537,6 +5595,23 @@ namespace DimensionBrawl.Tests
                 && result.FirstCounterWaveAtSeconds >= 0f
                 && result.FirstCounterAnswerSummonAtSeconds >= result.FirstCounterWaveAtSeconds
                 && result.CounterRecoveryConfirmed
+                && ResolveFirstUnresolvedBeat(result) == "Complete"
+                && result.ResultRecords > 0;
+        }
+
+        private static bool IsEnergyDirectPayoffRouteRepeatabilityPass(PolicyMetrics result)
+        {
+            return result.ResultKind == "CleanFollowupClear"
+                && result.EnergyProbeTargetTier == 3
+                && ResolveEnergyTargetDuration(result) >= 0f
+                && result.HighestSummonSpentTier == 3
+                && result.PhysicalBarragePlayerHits == 0
+                && result.SummonBlocks > 0
+                && result.BossScreenSuppressedByFollowup
+                && result.BossPressureScreensSuppressedByFollowup > 0
+                && result.HighestBossScreenSuppressSummonTier == 3
+                && !result.BossBlockedSkill1Followup
+                && result.SkillProjectileHits > 0
                 && ResolveFirstUnresolvedBeat(result) == "Complete"
                 && result.ResultRecords > 0;
         }
@@ -6060,6 +6135,13 @@ namespace DimensionBrawl.Tests
                 Metrics.BossPressureBlocksDuringSummonFollowup = Mathf.Max(
                     Metrics.BossPressureBlocksDuringSummonFollowup,
                     PocketOwner.BossPressureBlocksDuringSummonFollowup);
+                Metrics.BossScreenSuppressedByFollowup |= PocketOwner.BossScreenSuppressedByFollowup;
+                Metrics.BossPressureScreensSuppressedByFollowup = Mathf.Max(
+                    Metrics.BossPressureScreensSuppressedByFollowup,
+                    PocketOwner.BossPressureScreensSuppressedByFollowup);
+                Metrics.HighestBossScreenSuppressSummonTier = Mathf.Max(
+                    Metrics.HighestBossScreenSuppressSummonTier,
+                    PocketOwner.HighestBossScreenSuppressSummonTier);
                 Metrics.MaxBossPressureActiveScreenCount = Mathf.Max(
                     Metrics.MaxBossPressureActiveScreenCount,
                     BossSummonPressureAction.ActivePressureScreenCount);
@@ -7311,6 +7393,9 @@ namespace DimensionBrawl.Tests
             public float Skill1FollowupDamage { get; set; }
             public bool BossBlockedSkill1Followup { get; set; }
             public int BossPressureBlocksDuringSummonFollowup { get; set; }
+            public bool BossScreenSuppressedByFollowup { get; set; }
+            public int BossPressureScreensSuppressedByFollowup { get; set; }
+            public int HighestBossScreenSuppressSummonTier { get; set; }
             public bool CleanFollowupConfirmed { get; set; }
             public bool CounterRecoveryConfirmed { get; set; }
             public float ResultRecordElapsedSeconds { get; set; }

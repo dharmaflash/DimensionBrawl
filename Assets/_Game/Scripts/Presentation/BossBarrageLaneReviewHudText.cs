@@ -243,6 +243,7 @@ namespace DimensionBrawl.Presentation
                 SummonFrontlineProxyExitReason.LifetimeExpired => "time",
                 SummonFrontlineProxyExitReason.Defeated => "defeated",
                 SummonFrontlineProxyExitReason.Recalled => "recalled",
+                SummonFrontlineProxyExitReason.Suppressed => "suppressed",
                 _ => "-"
             };
         }
