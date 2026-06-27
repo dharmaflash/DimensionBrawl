@@ -240,6 +240,7 @@ namespace DimensionBrawl.Player
                     0.16f,
                     0.24f,
                     settings.ActorEngageRadius);
+                clash.ConfigureHostileBodyDamage(1f, 0f);
             }
 
             private void OnPressureScreenIntercepted(SummonPressureScreen screen, BossBarrageProjectile projectile)

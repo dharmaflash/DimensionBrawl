@@ -24,6 +24,8 @@ namespace DimensionBrawl.Combat
         [SerializeField, Min(0f)] private float engageCenterHeight = 0.9f;
         [SerializeField, Range(0f, 1f)] private float playerBodyDamageMultiplier = 0.12f;
         [SerializeField, Min(0f)] private float playerBodyMaxDamagePerHit = 4f;
+        [SerializeField, Range(0f, 1f)] private float hostileBodyDamageMultiplier = 1f;
+        [SerializeField, Min(0f)] private float hostileBodyMaxDamagePerHit;
         [SerializeField] private LayerMask contactLayers = Physics.DefaultRaycastLayers;
         [SerializeField] private bool prioritizeHostileSummons = true;
 
@@ -46,11 +48,19 @@ namespace DimensionBrawl.Combat
         public float ContactDamageIntervalSeconds => contactDamageIntervalSeconds;
         public float PlayerBodyDamageMultiplier => playerBodyDamageMultiplier;
         public float PlayerBodyMaxDamagePerHit => playerBodyMaxDamagePerHit;
+        public float HostileBodyDamageMultiplier => hostileBodyDamageMultiplier;
+        public float HostileBodyMaxDamagePerHit => hostileBodyMaxDamagePerHit;
         public float EngageRadius => engageRadius;
 
         private void Awake()
         {
             ResolveReferences();
+        }
+
+        private void OnValidate()
+        {
+            hostileBodyDamageMultiplier = Mathf.Clamp01(hostileBodyDamageMultiplier);
+            hostileBodyMaxDamagePerHit = Mathf.Max(0f, hostileBodyMaxDamagePerHit);
         }
 
         private void OnEnable()
@@ -102,6 +112,12 @@ namespace DimensionBrawl.Combat
         {
             playerBodyDamageMultiplier = Mathf.Clamp01(damageMultiplier);
             playerBodyMaxDamagePerHit = Mathf.Max(0f, maxDamagePerHit);
+        }
+
+        public void ConfigureHostileBodyDamage(float damageMultiplier, float maxDamagePerHit)
+        {
+            hostileBodyDamageMultiplier = Mathf.Clamp01(damageMultiplier);
+            hostileBodyMaxDamagePerHit = Mathf.Max(0f, maxDamagePerHit);
         }
 
         public void Tick(float deltaTime)
@@ -256,6 +272,14 @@ namespace DimensionBrawl.Combat
                 if (playerBodyMaxDamagePerHit > 0f)
                 {
                     amount = Mathf.Min(amount, playerBodyMaxDamagePerHit);
+                }
+            }
+            else if (targetKind == SummonFrontlineClashTargetKind.HostileBody)
+            {
+                amount *= Mathf.Clamp01(hostileBodyDamageMultiplier);
+                if (hostileBodyMaxDamagePerHit > 0f)
+                {
+                    amount = Mathf.Min(amount, hostileBodyMaxDamagePerHit);
                 }
             }
 

@@ -1122,7 +1122,7 @@ namespace DimensionBrawl.Editor
                 false,
                 0.1f,
                 0.78f,
-                3);
+                2);
             ValidateSupportSummonSlotAction(
                 summonSlot3Action,
                 "SummonSlot3",
@@ -5638,7 +5638,7 @@ namespace DimensionBrawl.Editor
             SetInt(summonSlot2Action, "maxActiveSummonActors", 1);
             SetFloat(summonSlot2Action, "entryForwardOffset", 1.35f);
             SetFloat(summonSlot2Action, "actorEntryCatchupSecondsPerMeter", 0.55f);
-            summonSlot2Action.ConfigureSupportCadence(0.1f, 0.78f, 3);
+            summonSlot2Action.ConfigureSupportCadence(0.1f, 0.78f, 2);
             summonSlot2Action.ConfigureReferences(
                 energyLadder,
                 playerHealth,

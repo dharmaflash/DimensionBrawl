@@ -290,6 +290,11 @@ namespace DimensionBrawl.Player
                 0.16f,
                 0.24f,
                 settings.ActorEngageRadius);
+            clash.ConfigureHostileBodyDamage(1f, 0f);
+            if (string.Equals(settings.ActorRoleId, "BacklineMarksman", System.StringComparison.Ordinal))
+            {
+                clash.ConfigureHostileBodyDamage(0f, 0f);
+            }
         }
 
         private void OnPressureScreenIntercepted(SummonPressureScreen screen, BossBarrageProjectile projectile)

@@ -4797,7 +4797,7 @@ namespace DimensionBrawl.Tests
                 "- Dominance read: "
                 + $"Slot2 delayed recovery matches Slot1's recovery result but costs more and shifts HP by {FormatSupportDecisionHpDelta(slot1Recovery, slot2DelayedRecovery)}; "
                 + $"Slot2 full-bank pays {FormatSupportDecisionHpDelta(slot1Recovery, slot2Combo)} HP for no recovery burden and `{slot2Combo.ResultKind}` in {FormatSeconds(slot2Combo.ElapsedSeconds)} / {slot2Combo.BossDamageTaken:0.0} boss damage; "
-                + $"Slot2 delayed takes {FormatSeconds(slot2DelayedRecovery.ElapsedSeconds)} / {slot2DelayedRecovery.BossDamageTaken:0.0} boss damage with recovery burden; "
+                + $"Slot2 delayed takes {FormatSeconds(slot2DelayedRecovery.ElapsedSeconds)} / {slot2DelayedRecovery.BossDamageTaken:0.0} boss damage with recovery burden and stays capped at the Slot1 recovery baseline {slot1Recovery.BossDamageTaken:0.0}; "
                 + $"Slot3 immediate stays `{slot3Immediate.ResultKind}/{ResolveFirstUnresolvedBeat(slot3Immediate)}` despite line hold; "
                 + $"Slot3 delayed pays {FormatSupportDecisionHpDelta(slot1Recovery, slot3DelayedRecovery)} HP for `{slot3DelayedRecovery.ResultKind}` in {FormatSeconds(slot3DelayedRecovery.ElapsedSeconds)} / {slot3DelayedRecovery.BossDamageTaken:0.0} boss damage with suppress {FormatSupportDecisionBossSuppress(slot3DelayedRecovery)}. "
                 + "Decision: preserve Slot2 full-bank as the intended marksman combo and treat Slot2 LV2 delayed as mistimed, not a route to buff blindly.");
@@ -4923,7 +4923,7 @@ namespace DimensionBrawl.Tests
                         : "marksman payoff incomplete";
                 case PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute:
                     return result.CounterRecoveryConfirmed
-                        ? "high damage, recovery burden"
+                        ? "recovery baseline, burden"
                         : "delayed marksman payoff unresolved";
                 case PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute:
                     return result.IsClearResult
@@ -7357,6 +7357,14 @@ namespace DimensionBrawl.Tests
                 ResolveSupportDecisionHpBeforeMain(slot2DelayedRecovery),
                 ResolveSupportDecisionHpBeforeMain(slot1Recovery),
                 "The mistimed Slot2 delayed branch should visibly cost more HP than the emergency Slot1 baseline.");
+            Assert.LessOrEqual(
+                slot2DelayedRecovery.BossDamageTaken,
+                slot1Recovery.BossDamageTaken + 0.5f,
+                "The mistimed Slot2 delayed branch should not exceed the emergency recovery baseline through passive marksman body damage.");
+            Assert.LessOrEqual(
+                slot2DelayedRecovery.BossDamageFromAllySummon,
+                slot1Recovery.BossDamageFromAllySummon + 0.5f,
+                "Slot2 delayed recovery should not add extra ally-summon boss leak beyond the fresh recovery answer.");
             Assert.AreEqual(
                 "resource lockout",
                 ResolveSupportDecisionTimingVerdict(slot3Blocked),

@@ -1709,7 +1709,7 @@ MonoBehaviour:
   actorEntryCatchupSecondsPerMeter: 0.55
   firstVolleyDelaySeconds: 0.1
   volleyIntervalSeconds: 0.78
-  maxVolleyCount: 3
+  maxVolleyCount: 2
   maxActiveSummonActors: 1
   summonActionProfile: {fileID: 11400000, guid: 5784354a50ccc314eab97b19cdb7aeb9, type: 2}
   useBlockedHintSeconds: 0.75
