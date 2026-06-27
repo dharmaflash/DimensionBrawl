@@ -18,6 +18,16 @@ This pass is not a concrete balance-only pass.
 
 The target is structural combat feel proven through repeated batch simulations. Each change must answer an ArkData-grounded missing piece, then show measurable separation between poor policies and the intended route.
 
+## 2026-06-27 Reread Correction
+
+The user's correction was not "avoid one named mistake"; it was "do not lose the premise and get attached to whatever looks fixable." Balance values, VFX, cleanup, scene routing, and test rewrites are only valid when they serve the stage/wave/result structure and the combat-state grammar below.
+
+The one-match user flow recovered from the prior thread is:
+
+`dodge/fire to read pressure -> local close threat creates a first beat -> summon crosses the line to solve pressure the player cannot directly solve -> Skill1 confirms the opened state -> result names the stabilized pressure`
+
+Current next work must therefore ask whether the playable pocket still lacks a structural decision, state transition, or result proof. Do not reduce the pass to "make numbers feel better" unless the report first proves which structural decision or state transition those numbers serve.
+
 ## ArkData Comparison Lens
 
 - NIKKE-like stage data: stage -> wave group -> pressure slots -> spawn/path/range counts -> scenario/result/reward hooks. Use this as data discipline, not copied numbers.
