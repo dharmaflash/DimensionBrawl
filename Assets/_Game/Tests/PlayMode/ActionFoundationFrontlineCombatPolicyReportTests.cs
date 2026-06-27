@@ -190,6 +190,9 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(
                     markdown.Contains("## Counter Wave Presentation Bridge"),
                     "The report should prove counter-wave presentation instead of inferring it from follow-up misses.");
+                Assert.IsTrue(
+                    markdown.Contains("## Energy Presentation Bridge"),
+                    "The report should prove summon energy presentation instead of inferring it from resource numbers.");
                 AssertStageWaveBeatMap(results);
                 Assert.Greater(intended.SummonBlocks, 0, "The intended route must prove summon interception changes the run.");
                 Assert.AreEqual(
@@ -296,6 +299,22 @@ namespace DimensionBrawl.Tests
                     forwardRiskEnergy.ForwardRiskBandSeconds,
                     1f,
                     "The forward probe should spend measurable time in the ForwardRisk band.");
+                Assert.Greater(
+                    forwardRiskEnergy.ForwardRiskEnergyScreenCueRequests,
+                    0,
+                    "The forward-risk energy probe should request the existing forward-risk screen cue.");
+                Assert.Greater(
+                    forwardRiskEnergy.ForwardRiskEnergyVfxCueRequests,
+                    0,
+                    "The forward-risk energy probe should request the existing forward-risk VFX cue.");
+                Assert.Greater(
+                    forwardRiskEnergy.EnergyReadyScreenCueRequests,
+                    0,
+                    "The forward-risk energy probe should request an energy-ready screen cue when LV1 becomes available.");
+                Assert.Greater(
+                    forwardRiskEnergy.EnergyReadyVfxCueRequests,
+                    0,
+                    "The forward-risk energy probe should request an energy-ready VFX cue when LV1 becomes available.");
                 Assert.Greater(
                     backlineBarrage.BarrageShapeProjectileCount,
                     0,
@@ -565,6 +584,22 @@ namespace DimensionBrawl.Tests
                     100f,
                     "The recovered boss-screen branch should prove the counter trigger grants a summon-answer resource pulse.");
                 Assert.Greater(
+                    blockedRecovery.EnergyReadyScreenCueRequests,
+                    0,
+                    "A counter answer pulse should be accompanied by an energy-ready screen cue.");
+                Assert.Greater(
+                    blockedRecovery.EnergyReadyVfxCueRequests,
+                    0,
+                    "A counter answer pulse should be accompanied by an energy-ready VFX cue.");
+                Assert.Greater(
+                    blockedRecovery.EnergySpendScreenCueRequests,
+                    0,
+                    "A recovered route should present the summon-answer energy spend on screen.");
+                Assert.Greater(
+                    blockedRecovery.EnergySpendVfxCueRequests,
+                    0,
+                    "A recovered route should present the summon-answer energy spend through VFX.");
+                Assert.Greater(
                     blockedRecovery.CounterWaveAnswerScreenCueRequests,
                     0,
                     "A stabilized counter recovery should request the existing counter-answer screen cue.");
@@ -776,6 +811,10 @@ namespace DimensionBrawl.Tests
                 RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic action");
             SummonEnergyLadder energyLadder =
                 RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            SummonEnergyVfxCuePresenter energyVfxCuePresenter =
+                RequireComponent<SummonEnergyVfxCuePresenter>(
+                    player.gameObject,
+                    "summon energy VFX cue presenter");
             PlayerSkill1Action skill1Action =
                 RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
@@ -834,6 +873,7 @@ namespace DimensionBrawl.Tests
                 skill1Action,
                 summonSlot1Action,
                 energyLadder,
+                energyVfxCuePresenter,
                 targetSelector,
                 laneSpace,
                 bossEmitter,
@@ -2004,6 +2044,37 @@ namespace DimensionBrawl.Tests
             }
 
             builder.AppendLine();
+            builder.AppendLine("## Energy Presentation Bridge");
+            builder.AppendLine("| Policy | Energy screen total F/R/S | Energy VFX F/R/S | Last screen tier | Last VFX ready/spend tier | Counter answer pulse | Result |");
+            builder.AppendLine("|---|---:|---:|---:|---:|---:|---|");
+            for (int i = 0; i < results.Count; i++)
+            {
+                PolicyMetrics result = results[i];
+                builder.Append("| ");
+                builder.Append(result.Policy);
+                builder.Append(" | ");
+                builder.Append(
+                    $"{result.EnergyScreenCueRequests} "
+                    + $"{result.ForwardRiskEnergyScreenCueRequests}/"
+                    + $"{result.EnergyReadyScreenCueRequests}/"
+                    + $"{result.EnergySpendScreenCueRequests}");
+                builder.Append(" | ");
+                builder.Append(
+                    $"{result.ForwardRiskEnergyVfxCueRequests}/"
+                    + $"{result.EnergyReadyVfxCueRequests}/"
+                    + $"{result.EnergySpendVfxCueRequests}");
+                builder.Append(" | ");
+                builder.Append(result.LastEnergyScreenCueTier);
+                builder.Append(" | ");
+                builder.Append($"{result.LastEnergyReadyVfxTier}/{result.LastEnergySpendVfxTier}");
+                builder.Append(" | ");
+                builder.Append(result.CounterWaveAnswerEnergyPulse.ToString("0"));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(result.ResultKind));
+                builder.AppendLine(" |");
+            }
+
+            builder.AppendLine();
             builder.AppendLine("## Forward-Risk Barrage Shape");
             builder.AppendLine("| Policy | Target risk | Pending risk | Pattern | Projectiles | Near radius | Avg lateral gap | Avg depth gap | Nearest | Density | Readout |");
             builder.AppendLine("|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---|");
@@ -2435,6 +2506,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Lock/unlock cadence: intended block->window {FormatSeconds(intended.BlockToFollowupWindowSeconds)}, window->hit {FormatSeconds(intended.FollowupWindowToHitSeconds)}; boss-screen recovery answer pulse {blockedRecovery.CounterWaveAnswerEnergyPulse:0}, counter->answer {FormatSeconds(blockedRecovery.CounterTriggerToAnswerSeconds)}, answer->stable {FormatSeconds(blockedRecovery.CounterAnswerToStableSeconds)}, stable->final {FormatSeconds(blockedRecovery.CounterStableToFinalWindowSeconds)}, final->hit {FormatSeconds(blockedRecovery.FinalWindowToHitSeconds)}.");
             builder.AppendLine($"- Punish window tolerance: delayed clean hit after {FormatSeconds(delayedIntended.FollowupHitWindowDelaySeconds)} with {FormatSeconds(delayedIntended.FollowupWindowRemainingAtFirstHitSeconds)} remaining; delayed boss-screen recovery hit after {FormatSeconds(delayedBlockedRecovery.FollowupHitWindowDelaySeconds)} with {FormatSeconds(delayedBlockedRecovery.FollowupWindowRemainingAtFirstHitSeconds)} remaining.");
             builder.AppendLine($"- Forward-risk EN split: backline LV1 {FormatSeconds(backlineEnergy.EnergyTier1DurationSeconds)} at x{backlineEnergy.AverageEnergyGainMultiplier:0.00}, forward-risk LV1 {FormatSeconds(forwardRiskEnergy.EnergyTier1DurationSeconds)} at x{forwardRiskEnergy.AverageEnergyGainMultiplier:0.00}; forward route is {ResolveEnergySpeedup(backlineEnergy, forwardRiskEnergy):0.0}x faster.");
+            builder.AppendLine($"- Energy presentation bridge: forward-risk energy screen/VFX F/R/S {forwardRiskEnergy.ForwardRiskEnergyScreenCueRequests}/{forwardRiskEnergy.EnergyReadyScreenCueRequests}/{forwardRiskEnergy.EnergySpendScreenCueRequests} and {forwardRiskEnergy.ForwardRiskEnergyVfxCueRequests}/{forwardRiskEnergy.EnergyReadyVfxCueRequests}/{forwardRiskEnergy.EnergySpendVfxCueRequests}; boss-screen recovery ready/spend screen {blockedRecovery.EnergyReadyScreenCueRequests}/{blockedRecovery.EnergySpendScreenCueRequests}, VFX {blockedRecovery.EnergyReadyVfxCueRequests}/{blockedRecovery.EnergySpendVfxCueRequests}.");
             builder.AppendLine($"- Forward-risk barrage shape: backline `{backlineBarrage.BarrageShapePatternId}` near-body {backlineBarrage.BarrageShapeNearProjectileCount}/{backlineBarrage.BarrageShapeProjectileCount}, avg lateral gap {backlineBarrage.BarrageShapeAverageLateralGap:0.00}, nearest {backlineBarrage.BarrageShapeNearestLaneDistance:0.00}, density {backlineBarrage.BarrageShapeThreatDensity:0.00}; forward near-body {forwardRiskBarrage.BarrageShapeNearProjectileCount}/{forwardRiskBarrage.BarrageShapeProjectileCount}, avg lateral gap {forwardRiskBarrage.BarrageShapeAverageLateralGap:0.00}, nearest {forwardRiskBarrage.BarrageShapeNearestLaneDistance:0.00}, density {forwardRiskBarrage.BarrageShapeThreatDensity:0.00}.");
             if (forwardRiskBarrage.BarrageShapeNearProjectileCount <= backlineBarrage.BarrageShapeNearProjectileCount)
             {
@@ -2588,6 +2660,10 @@ namespace DimensionBrawl.Tests
                 && blockedRecovery.CounterWaveAnswerScreenCueRequests > 0
                 && blockedRecovery.CounterWaveStabilizedCameraCueRequests > 0
                 && blockedRecovery.CounterWaveStabilizedVfxCueRequests > 0
+                && blockedRecovery.EnergyReadyScreenCueRequests > 0
+                && blockedRecovery.EnergyReadyVfxCueRequests > 0
+                && blockedRecovery.EnergySpendScreenCueRequests > 0
+                && blockedRecovery.EnergySpendVfxCueRequests > 0
                 && forwardRiskPhysicalSummonPunish.PhysicalBarragePlayerHits == 0
                 && forwardRiskPhysicalSummonPunish.ResultKind == "CleanFollowupClear"
                 && forwardRiskPhysicalSummonPunish.SkillProjectileHits > 0;
@@ -2613,7 +2689,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 $"| 1. Bad routes lose state/HP | {FormatGateStatus(axis1Pass)} | no-summon down {FormatSeconds(noSummonSurvival.FirstPlayerDownAtSeconds)}, gun-only down {FormatSeconds(gunOnlySurvival.FirstPlayerDownAtSeconds)}, gun-only boss down {FormatSeconds(gunOnlySurvival.FirstBossDownAtSeconds)} |");
             builder.AppendLine(
-                $"| 2. Block -> window -> Skill1 loop | {FormatGateStatus(axis2Pass)} | unblocked forward hits {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; block presentation cam/flash/VFX {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}; no-punish misses {forwardRiskPhysicalSummonNoPunish.FollowupMissCount}, counters {forwardRiskPhysicalSummonNoPunish.CounterWaves}, counter cues {forwardRiskPhysicalSummonNoPunish.CounterWaveScreenCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveCameraCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveVfxCueRequests}, result `{forwardRiskPhysicalSummonNoPunish.ResultKind}`; recovery answer cues {blockedRecovery.CounterWaveAnswerScreenCueRequests}/{blockedRecovery.CounterWaveStabilizedCameraCueRequests}/{blockedRecovery.CounterWaveStabilizedVfxCueRequests}; physical punish blocks {forwardRiskPhysicalSummonPunish.SummonBlocks}, Skill1 hits {forwardRiskPhysicalSummonPunish.SkillProjectileHits}, `{forwardRiskPhysicalSummonPunish.ResultKind}` |");
+                $"| 2. Block -> window -> Skill1 loop | {FormatGateStatus(axis2Pass)} | unblocked forward hits {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; block presentation cam/flash/VFX {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}; no-punish misses {forwardRiskPhysicalSummonNoPunish.FollowupMissCount}, counters {forwardRiskPhysicalSummonNoPunish.CounterWaves}, counter cues {forwardRiskPhysicalSummonNoPunish.CounterWaveScreenCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveCameraCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveVfxCueRequests}, result `{forwardRiskPhysicalSummonNoPunish.ResultKind}`; recovery answer cues {blockedRecovery.CounterWaveAnswerScreenCueRequests}/{blockedRecovery.CounterWaveStabilizedCameraCueRequests}/{blockedRecovery.CounterWaveStabilizedVfxCueRequests}, energy ready/spend {blockedRecovery.EnergyReadyScreenCueRequests}/{blockedRecovery.EnergySpendScreenCueRequests} screen and {blockedRecovery.EnergyReadyVfxCueRequests}/{blockedRecovery.EnergySpendVfxCueRequests} VFX; physical punish blocks {forwardRiskPhysicalSummonPunish.SummonBlocks}, Skill1 hits {forwardRiskPhysicalSummonPunish.SkillProjectileHits}, `{forwardRiskPhysicalSummonPunish.ResultKind}` |");
             builder.AppendLine(
                 $"| 3. Hit response and presentation | {FormatGateStatus(axis3Pass)} | player routine hits {noSummon.PlayerNonLockingDamageEvents}/{noSummon.PlayerLockingDamageEvents} non-lock/lock with damage cues {noSummon.PlayerDamageScreenCueRequests}/{noSummon.PlayerDamageFeedbackRequests}; clean route damage cues {forwardRiskPhysicalSummonPunish.PlayerDamageScreenCueRequests}/{forwardRiskPhysicalSummonPunish.PlayerDamageFeedbackRequests}; gun boss chip {gunOnly.BossNonLockingDamageEvents}/{gunOnly.BossLockingDamageEvents}; physical punish boss lock {forwardRiskPhysicalSummonPunish.BossLockingDamageEvents}, hit cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests} |");
             builder.AppendLine(
@@ -2771,6 +2847,10 @@ namespace DimensionBrawl.Tests
             bool pressureSlotMeasured = forwardRiskEnergy.EnergyTier1DurationSeconds >= 0f
                 && backlineEnergy.EnergyTier1DurationSeconds >= 0f
                 && forwardRiskEnergy.EnergyTier1DurationSeconds < backlineEnergy.EnergyTier1DurationSeconds
+                && forwardRiskEnergy.ForwardRiskEnergyScreenCueRequests > 0
+                && forwardRiskEnergy.ForwardRiskEnergyVfxCueRequests > 0
+                && forwardRiskEnergy.EnergyReadyScreenCueRequests > 0
+                && forwardRiskEnergy.EnergyReadyVfxCueRequests > 0
                 && forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits > backlinePhysicalBarrage.PhysicalBarragePlayerHits
                 && ignoredRecovery.UnansweredPressureBurdenShare01 > intended.UnansweredPressureBurdenShare01;
             bool combatPayloadMeasured = forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits > 0
@@ -2808,6 +2888,10 @@ namespace DimensionBrawl.Tests
                 && blockedRecovery.CounterWaveAnswerScreenCueRequests > 0
                 && blockedRecovery.CounterWaveStabilizedCameraCueRequests > 0
                 && blockedRecovery.CounterWaveStabilizedVfxCueRequests > 0
+                && blockedRecovery.EnergyReadyScreenCueRequests > 0
+                && blockedRecovery.EnergyReadyVfxCueRequests > 0
+                && blockedRecovery.EnergySpendScreenCueRequests > 0
+                && blockedRecovery.EnergySpendVfxCueRequests > 0
                 && forwardRiskPhysicalSummonPunish.BossLockingDamageEvents > 0
                 && forwardRiskPhysicalSummonPunish.FollowupHitCinematicCueRequests > 0
                 && forwardRiskPhysicalSummonPunish.FollowupHitCinematicFrameOverlayCount > 0
@@ -2826,7 +2910,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 "| Stage pressure-slot discipline | "
                 + $"{FormatCoverageStatus(pressureSlotMeasured)} | "
-                + $"forward-risk LV1 {FormatSeconds(forwardRiskEnergy.EnergyTier1DurationSeconds)} vs backline {FormatSeconds(backlineEnergy.EnergyTier1DurationSeconds)}; physical barrage hits {backlinePhysicalBarrage.PhysicalBarragePlayerHits}->{forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}; ignored burden {FormatPercent01(ignoredRecovery.UnansweredPressureBurdenShare01)} vs intended {FormatPercent01(intended.UnansweredPressureBurdenShare01)} | "
+                + $"forward-risk LV1 {FormatSeconds(forwardRiskEnergy.EnergyTier1DurationSeconds)} vs backline {FormatSeconds(backlineEnergy.EnergyTier1DurationSeconds)}; energy cues screen/VFX F/R/S {forwardRiskEnergy.ForwardRiskEnergyScreenCueRequests}/{forwardRiskEnergy.EnergyReadyScreenCueRequests}/{forwardRiskEnergy.EnergySpendScreenCueRequests} and {forwardRiskEnergy.ForwardRiskEnergyVfxCueRequests}/{forwardRiskEnergy.EnergyReadyVfxCueRequests}/{forwardRiskEnergy.EnergySpendVfxCueRequests}; physical barrage hits {backlinePhysicalBarrage.PhysicalBarragePlayerHits}->{forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}; ignored burden {FormatPercent01(ignoredRecovery.UnansweredPressureBurdenShare01)} vs intended {FormatPercent01(intended.UnansweredPressureBurdenShare01)} | "
                 + "No new wave manager or generated stage; all policies use the same authored scene/profile pocket. |");
             builder.AppendLine(
                 "| CombatPayload runtime pipeline | "
@@ -2836,7 +2920,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 "| PGR state-lock and hit-response grammar | "
                 + $"{FormatCoverageStatus(pgrStateMeasured)} | "
-                + $"block->window {FormatSeconds(intended.BlockToFollowupWindowSeconds)}; counter answer pulse {blockedRecovery.CounterWaveAnswerEnergyPulse:0} with answer cues {blockedRecovery.CounterWaveAnswerScreenCueRequests}/{blockedRecovery.CounterWaveStabilizedCameraCueRequests}/{blockedRecovery.CounterWaveStabilizedVfxCueRequests}; delayed clean/recovery margins {FormatSeconds(delayedIntended.FollowupWindowRemainingAtFirstHitSeconds)} / {FormatSeconds(delayedBlockedRecovery.FollowupWindowRemainingAtFirstHitSeconds)}; routine lock counts {noSummon.PlayerLockingDamageEvents}/{gunOnly.BossLockingDamageEvents}, player feedback interrupt {noSummon.LastPlayerDamageFeedbackInterruptedAction}; punish boss locks {forwardRiskPhysicalSummonPunish.BossLockingDamageEvents}, micro-cine hit/frame {forwardRiskPhysicalSummonPunish.FollowupHitCinematicCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCinematicFrameOverlayCount} | "
+                + $"block->window {FormatSeconds(intended.BlockToFollowupWindowSeconds)}; counter answer pulse {blockedRecovery.CounterWaveAnswerEnergyPulse:0} with answer cues {blockedRecovery.CounterWaveAnswerScreenCueRequests}/{blockedRecovery.CounterWaveStabilizedCameraCueRequests}/{blockedRecovery.CounterWaveStabilizedVfxCueRequests} and energy ready/spend {blockedRecovery.EnergyReadyScreenCueRequests}/{blockedRecovery.EnergySpendScreenCueRequests} screen, {blockedRecovery.EnergyReadyVfxCueRequests}/{blockedRecovery.EnergySpendVfxCueRequests} VFX; delayed clean/recovery margins {FormatSeconds(delayedIntended.FollowupWindowRemainingAtFirstHitSeconds)} / {FormatSeconds(delayedBlockedRecovery.FollowupWindowRemainingAtFirstHitSeconds)}; routine lock counts {noSummon.PlayerLockingDamageEvents}/{gunOnly.BossLockingDamageEvents}, player feedback interrupt {noSummon.LastPlayerDamageFeedbackInterruptedAction}; punish boss locks {forwardRiskPhysicalSummonPunish.BossLockingDamageEvents}, micro-cine hit/frame {forwardRiskPhysicalSummonPunish.FollowupHitCinematicCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCinematicFrameOverlayCount} | "
                 + "Use lock/unlock and response tiers only; do not import tutorial HUD flow as the solution. |");
             builder.AppendLine(
                 "| V1 scope guardrail | "
@@ -3341,6 +3425,16 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"lastEnergyForwardRisk01\": {result.LastEnergyForwardRisk01:0.###},");
                 builder.AppendLine($"      \"lastEnergyGainMultiplier\": {result.LastEnergyGainMultiplier:0.###},");
                 builder.AppendLine($"      \"lastEnergyRiskBand\": \"{JsonEscape(result.LastEnergyRiskBand)}\",");
+                builder.AppendLine($"      \"energyScreenCueRequests\": {result.EnergyScreenCueRequests},");
+                builder.AppendLine($"      \"forwardRiskEnergyScreenCueRequests\": {result.ForwardRiskEnergyScreenCueRequests},");
+                builder.AppendLine($"      \"energyReadyScreenCueRequests\": {result.EnergyReadyScreenCueRequests},");
+                builder.AppendLine($"      \"energySpendScreenCueRequests\": {result.EnergySpendScreenCueRequests},");
+                builder.AppendLine($"      \"lastEnergyScreenCueTier\": {result.LastEnergyScreenCueTier},");
+                builder.AppendLine($"      \"forwardRiskEnergyVfxCueRequests\": {result.ForwardRiskEnergyVfxCueRequests},");
+                builder.AppendLine($"      \"energyReadyVfxCueRequests\": {result.EnergyReadyVfxCueRequests},");
+                builder.AppendLine($"      \"energySpendVfxCueRequests\": {result.EnergySpendVfxCueRequests},");
+                builder.AppendLine($"      \"lastEnergyReadyVfxTier\": {result.LastEnergyReadyVfxTier},");
+                builder.AppendLine($"      \"lastEnergySpendVfxTier\": {result.LastEnergySpendVfxTier},");
                 builder.AppendLine($"      \"barrageShapeProbeTargetForwardRisk01\": {JsonNullableSeconds(result.BarrageShapeProbeTargetForwardRisk01)},");
                 builder.AppendLine($"      \"barrageShapePendingForwardRisk01\": {JsonNullableSeconds(result.BarrageShapePendingForwardRisk01)},");
                 builder.AppendLine($"      \"barrageShapePatternId\": \"{JsonEscape(result.BarrageShapePatternId)}\",");
@@ -4021,6 +4115,7 @@ namespace DimensionBrawl.Tests
                 PlayerSkill1Action skill1Action,
                 PlayerSummonSlot1Action summonSlot1Action,
                 SummonEnergyLadder energyLadder,
+                SummonEnergyVfxCuePresenter energyVfxCuePresenter,
                 PlayerCombatTargetSelector targetSelector,
                 SummonLaneSpace laneSpace,
                 BossBarrageEmitter bossEmitter,
@@ -4044,6 +4139,7 @@ namespace DimensionBrawl.Tests
                 Skill1Action = skill1Action;
                 SummonSlot1Action = summonSlot1Action;
                 EnergyLadder = energyLadder;
+                EnergyVfxCuePresenter = energyVfxCuePresenter;
                 TargetSelector = targetSelector;
                 LaneSpace = laneSpace;
                 BossEmitter = bossEmitter;
@@ -4091,6 +4187,7 @@ namespace DimensionBrawl.Tests
             public PlayerSkill1Action Skill1Action { get; }
             public PlayerSummonSlot1Action SummonSlot1Action { get; }
             public SummonEnergyLadder EnergyLadder { get; }
+            public SummonEnergyVfxCuePresenter EnergyVfxCuePresenter { get; }
             public PlayerCombatTargetSelector TargetSelector { get; }
             public SummonLaneSpace LaneSpace { get; }
             public BossBarrageEmitter BossEmitter { get; }
@@ -4201,6 +4298,7 @@ namespace DimensionBrawl.Tests
                 SampleFrontlineClashCost();
                 SampleFrontlineHitReactionPresentation();
                 SamplePlayerDamagePresentationBridge();
+                SampleEnergyPresentationBridge();
                 SampleSummonBlockPresentationBridge();
                 SampleCounterWavePresentationBridge();
                 SampleFollowupPresentationBridge();
@@ -4659,6 +4757,31 @@ namespace DimensionBrawl.Tests
                     ScreenCuePresenter.LastDamageControlLockPolicy.ToString();
                 Metrics.LastPlayerDamageFeedbackInterruptedAction =
                     ScreenCuePresenter.LastDamageFeedbackInterruptedAction;
+            }
+
+            private void SampleEnergyPresentationBridge()
+            {
+                Metrics.EnergyScreenCueRequests =
+                    ScreenCuePresenter.EnergyCueRequestCount;
+                Metrics.ForwardRiskEnergyScreenCueRequests =
+                    ScreenCuePresenter.ForwardRiskCueRequestCount;
+                Metrics.EnergyReadyScreenCueRequests =
+                    ScreenCuePresenter.EnergyReadyCueRequestCount;
+                Metrics.EnergySpendScreenCueRequests =
+                    ScreenCuePresenter.EnergySpendCueRequestCount;
+                Metrics.LastEnergyScreenCueTier =
+                    ScreenCuePresenter.LastEnergyCueTier;
+
+                Metrics.ForwardRiskEnergyVfxCueRequests =
+                    EnergyVfxCuePresenter.ForwardRiskCueRequestCount;
+                Metrics.EnergyReadyVfxCueRequests =
+                    EnergyVfxCuePresenter.TierReadyCueRequestCount;
+                Metrics.EnergySpendVfxCueRequests =
+                    EnergyVfxCuePresenter.SpendCueRequestCount;
+                Metrics.LastEnergyReadyVfxTier =
+                    EnergyVfxCuePresenter.LastReadyTier;
+                Metrics.LastEnergySpendVfxTier =
+                    EnergyVfxCuePresenter.LastSpentTier;
             }
 
             private void SampleSummonBlockPresentationBridge()
@@ -5182,6 +5305,16 @@ namespace DimensionBrawl.Tests
             public float BackSafetyBandSeconds { get; set; }
             public float MidChargeBandSeconds { get; set; }
             public float ForwardRiskBandSeconds { get; set; }
+            public int EnergyScreenCueRequests { get; set; }
+            public int ForwardRiskEnergyScreenCueRequests { get; set; }
+            public int EnergyReadyScreenCueRequests { get; set; }
+            public int EnergySpendScreenCueRequests { get; set; }
+            public int LastEnergyScreenCueTier { get; set; }
+            public int ForwardRiskEnergyVfxCueRequests { get; set; }
+            public int EnergyReadyVfxCueRequests { get; set; }
+            public int EnergySpendVfxCueRequests { get; set; }
+            public int LastEnergyReadyVfxTier { get; set; }
+            public int LastEnergySpendVfxTier { get; set; }
             public float AverageEnergyForwardRisk01 =>
                 EnergySampleSeconds > 0f ? EnergyForwardRiskSeconds / EnergySampleSeconds : 0f;
             public float AverageEnergyGainMultiplier =>
