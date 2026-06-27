@@ -2433,7 +2433,7 @@ namespace DimensionBrawl.Tests
             yield return ChargeEnergyToTier(context, 1, 14f);
             yield return UseSummonAndBlockNextBossWave(context);
             yield return ReleaseBossScreenAndBlockSkill1Followup(context);
-            yield return WaitForCounterFinalWindow(context, 2f);
+            yield return WaitForCounterFinalWindow(context, 2f, expectWindowBeforeSkill1: false);
             yield return Advance(context, 0.25f);
         }
 
@@ -2443,7 +2443,7 @@ namespace DimensionBrawl.Tests
             yield return ChargeEnergyToTier(context, 1, 14f);
             yield return UseSummonAndBlockNextBossWave(context);
             yield return ReleaseBossScreenAndBlockSkill1Followup(context);
-            yield return WaitForCounterFinalWindow(context, 2f);
+            yield return WaitForCounterFinalWindow(context, 2f, expectWindowBeforeSkill1: false);
             yield return Advance(context, 8f);
         }
 
@@ -2935,7 +2935,7 @@ namespace DimensionBrawl.Tests
             context.Metrics.SkillProjectileHits += hits;
             if (hits <= 0)
             {
-                context.Metrics.Notes.Add("physical skill1 did not hit boss");
+                context.Metrics.Notes.Add(ResolvePhysicalSkill1NoHitNote(context));
             }
 
             context.PocketOwner.Tick(0f);
@@ -2945,6 +2945,27 @@ namespace DimensionBrawl.Tests
             context.Metrics.ElapsedSeconds += clearDelay;
             context.Sample();
             yield return null;
+        }
+
+        private static string ResolvePhysicalSkill1NoHitNote(CombatPolicyContext context)
+        {
+            if (context.Metrics.BossScreenSuppressedByFollowup)
+            {
+                return "physical Skill1 suppressed boss screen instead of direct boss hit";
+            }
+
+            if (context.Metrics.BossBlockedSkill1Followup
+                || context.Metrics.SkillProjectilesBlockedByBossScreen > 0)
+            {
+                return "physical Skill1 intercepted by boss screen; counter answer required";
+            }
+
+            if (context.Metrics.CounterWaves > 0 || context.PocketOwner.IsCounterWaveCompletionRecorded)
+            {
+                return "physical Skill1 miss transferred to counter answer";
+            }
+
+            return "physical skill1 did not hit boss";
         }
 
         private static void RecordPhysicalBossBarrageResults(
@@ -3270,7 +3291,8 @@ namespace DimensionBrawl.Tests
 
         private static IEnumerator WaitForCounterFinalWindow(
             CombatPolicyContext context,
-            float maxSeconds)
+            float maxSeconds,
+            bool expectWindowBeforeSkill1 = true)
         {
             float start = context.Metrics.ElapsedSeconds;
             while (!context.PocketOwner.IsCounterWaveFinalWindowOpened
@@ -3281,7 +3303,10 @@ namespace DimensionBrawl.Tests
 
             if (!context.PocketOwner.IsCounterWaveFinalWindowOpened)
             {
-                context.Metrics.Notes.Add("counter final window did not open before Skill1");
+                context.Metrics.Notes.Add(
+                    expectWindowBeforeSkill1
+                        ? "counter final window did not open before Skill1"
+                        : "counter final window pending until fresh summon answer");
             }
         }
 
