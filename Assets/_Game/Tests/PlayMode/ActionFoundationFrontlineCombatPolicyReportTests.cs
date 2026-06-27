@@ -178,6 +178,8 @@ namespace DimensionBrawl.Tests
             PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute,
             PolicyKind.ForwardRiskSlot2ThenDelayedSlot1Route,
             PolicyKind.ForwardRiskSlot3ThenDelayedSlot1Route,
+            PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute,
+            PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute,
             PolicyKind.BossScreenIgnoredNoRecovery,
             PolicyKind.BossScreenBlockCounterRecovery
         };
@@ -3374,7 +3376,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine();
             AppendCombatDecisionSignalMatrix(builder, results, repeatabilityResults);
             builder.AppendLine();
-            AppendSupportDecisionMatrixSummary(builder, results);
+            AppendSupportDecisionMatrixSummary(builder, results, repeatabilityResults);
             builder.AppendLine();
             AppendStageResultMotivationMatrix(builder, results);
             builder.AppendLine();
@@ -4664,18 +4666,20 @@ namespace DimensionBrawl.Tests
 
         private static void AppendSupportDecisionMatrixSummary(
             StringBuilder builder,
-            IReadOnlyList<PolicyMetrics> results)
+            IReadOnlyList<PolicyMetrics> results,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults)
         {
             builder.AppendLine("## Support Decision Matrix");
             builder.AppendLine("- ArkData/Blue Archive lens: support choice should read as cost, exposure, answer, and recovery-state tradeoff before UI/coaster feedback.");
-            builder.AppendLine("| Choice | Cost path | Support effect | HP before main | Physical hits | Slot1 state | Recovery burden | Boss suppress | Result | Timing verdict | Read |");
-            builder.AppendLine("|---|---|---|---:|---:|---|---|---:|---|---|---|");
+            builder.AppendLine("| Choice | Cost path | Support effect | HP before main | Physical hits | Slot1 state | Recovery burden | Boss suppress | Result | Repeat signal | Timing verdict | Read |");
+            builder.AppendLine("|---|---|---|---:|---:|---|---|---:|---|---|---|---|");
             AppendSupportDecisionMatrixRow(
                 builder,
                 "Slot1 LV1 recovery",
                 "100",
                 "screen/counter opener",
                 RequireResult(results, PolicyKind.ForwardRiskTier1RecoveryRoute),
+                repeatabilityResults,
                 "immediate Slot1",
                 "baseline emergency answer");
             AppendSupportDecisionMatrixRow(
@@ -4684,6 +4688,7 @@ namespace DimensionBrawl.Tests
                 "200 -> 100",
                 "marksman suppresses enemy frontline",
                 RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute),
+                repeatabilityResults,
                 "Slot1 preserved",
                 "low-cost support keeps enough EN for the main answer");
             AppendSupportDecisionMatrixRow(
@@ -4692,6 +4697,7 @@ namespace DimensionBrawl.Tests
                 "200 -> recharge -> 100",
                 "marksman suppresses enemy frontline",
                 RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute),
+                repeatabilityResults,
                 "Slot1 reopens",
                 "early marksman spend still needs counter recovery");
             AppendSupportDecisionMatrixRow(
@@ -4700,6 +4706,7 @@ namespace DimensionBrawl.Tests
                 "300 -> 0",
                 "vanguard holds physical line",
                 RequireResult(results, PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute),
+                repeatabilityResults,
                 "Slot1 blocked",
                 "high-cost hold spends the immediate main-answer turn");
             AppendSupportDecisionMatrixRow(
@@ -4708,6 +4715,7 @@ namespace DimensionBrawl.Tests
                 "300 -> recharge -> 100",
                 "vanguard holds physical line",
                 RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute),
+                repeatabilityResults,
                 "Slot1 reopens",
                 "vanguard assist suppresses boss screen for the confirm");
             PolicyMetrics slot1Recovery = RequireResult(results, PolicyKind.ForwardRiskTier1RecoveryRoute);
@@ -4733,6 +4741,7 @@ namespace DimensionBrawl.Tests
             string costPath,
             string supportEffect,
             PolicyMetrics result,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults,
             string slot1State,
             string read)
         {
@@ -4755,10 +4764,38 @@ namespace DimensionBrawl.Tests
             builder.Append(" | ");
             builder.Append(EscapeTable($"{result.ResultKind}/{ResolveFirstUnresolvedBeat(result)}"));
             builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportDecisionRepeatSignal(repeatabilityResults, result.Policy)));
+            builder.Append(" | ");
             builder.Append(EscapeTable(ResolveSupportDecisionTimingVerdict(result)));
             builder.Append(" | ");
             builder.Append(EscapeTable(read));
             builder.AppendLine(" |");
+        }
+
+        private static string FormatSupportDecisionRepeatSignal(
+            IReadOnlyList<PolicyMetrics> repeatabilityResults,
+            PolicyKind policy)
+        {
+            if (CountPolicyResults(repeatabilityResults, policy) <= 0)
+            {
+                return "not repeated";
+            }
+
+            return BuildResultKindSet(repeatabilityResults, policy)
+                + " "
+                + ResolveRepeatabilityVerdict(repeatabilityResults, policy)
+                + "; HP "
+                + FormatMinMax(
+                    MinMetric(repeatabilityResults, policy, result => ResolveSupportDecisionHpBeforeMain(result)),
+                    MaxMetric(repeatabilityResults, policy, result => ResolveSupportDecisionHpBeforeMain(result)))
+                + "; skill1 "
+                + FormatMinMax(
+                    MinMetric(repeatabilityResults, policy, result => result.SkillProjectileHits),
+                    MaxMetric(repeatabilityResults, policy, result => result.SkillProjectileHits))
+                + "; suppress "
+                + FormatMinMax(
+                    MinMetric(repeatabilityResults, policy, result => result.BossPressureScreensSuppressedByFollowup),
+                    MaxMetric(repeatabilityResults, policy, result => result.BossPressureScreensSuppressedByFollowup));
         }
 
         private static string FormatSupportDecisionHpBeforeMain(PolicyMetrics result)
@@ -8335,6 +8372,10 @@ namespace DimensionBrawl.Tests
                     return IsSupportDelayedSlot1RouteRepeatabilityPass(result, "SummonSlot2", 2);
                 case PolicyKind.ForwardRiskSlot3ThenDelayedSlot1Route:
                     return IsSupportDelayedSlot1RouteRepeatabilityPass(result, "SummonSlot3", 3);
+                case PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute:
+                    return IsSupportDelayedRecoveryRouteRepeatabilityPass(result, "SummonSlot2", 2, false);
+                case PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute:
+                    return IsSupportDelayedRecoveryRouteRepeatabilityPass(result, "SummonSlot3", 3, true);
                 case PolicyKind.BossScreenIgnoredNoRecovery:
                     return !result.IsClearResult
                         && result.EnemyFrontlineBodyHits > 0
@@ -8479,6 +8520,45 @@ namespace DimensionBrawl.Tests
                 && ResolveFirstUnresolvedBeat(result) == "Complete"
                 && result.ResultRecords > 0;
             return counterAnswerBranch || directClearBranch;
+        }
+
+        private static bool IsSupportDelayedRecoveryRouteRepeatabilityPass(
+            PolicyMetrics result,
+            string expectedSlotId,
+            int expectedTargetTier,
+            bool expectBossScreenSuppress)
+        {
+            bool coreReopen = result.SupportSummonSlotId == expectedSlotId
+                && result.SupportSummonSpentTier == expectedTargetTier
+                && result.SupportComboManaAfterSupport + 0.001f < result.SupportComboSlot1RequiredMana
+                && result.SupportComboSlot1ReadyDelaySeconds >= 0f
+                && result.SupportComboManaBeforeSlot1 >= result.SupportComboSlot1RequiredMana - 0.001f
+                && result.SupportComboSlot1Attempted
+                && result.SupportComboSlot1Used
+                && result.SummonUses >= 2
+                && result.SummonBlocks > 0
+                && result.PhysicalBarragePlayerHits == 0
+                && ResolveFirstUnresolvedBeat(result) == "Complete"
+                && result.ResultRecords > 0;
+            if (!coreReopen)
+            {
+                return false;
+            }
+
+            if (expectBossScreenSuppress)
+            {
+                return result.ResultKind == "CleanFollowupClear"
+                    && result.BossScreenSuppressedByFollowup
+                    && result.BossPressureScreensSuppressedByFollowup > 0
+                    && result.HighestBossScreenSuppressSummonTier == expectedTargetTier
+                    && result.SkillProjectileHits > 0;
+            }
+
+            return result.ResultKind == "CounterRecoveryClear"
+                && result.CounterRecoveryConfirmed
+                && result.CounterWaves > 0
+                && !result.BossScreenSuppressedByFollowup
+                && result.SkillProjectileHits > 0;
         }
 
         private static int CountPolicyResults(IReadOnlyList<PolicyMetrics> results, PolicyKind policy)
