@@ -349,6 +349,9 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("## Support Decision Matrix"),
                     "The report should compare summon choices as combat decisions, not only isolated policy rows.");
                 Assert.IsTrue(
+                    markdown.Contains("## Support Stage-Slot Timeline Matrix"),
+                    "The report should expose support choices as ordered stage slots, not only balance rows.");
+                Assert.IsTrue(
                     markdown.Contains("Payoff verdict"),
                     "The support decision read should compare clear time and boss damage before tuning support routes.");
                 Assert.IsTrue(
@@ -374,6 +377,9 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(
                     json.Contains("\"summonRosterIdentityAudit\""),
                     "The JSON report should expose the roster identity audit for follow-up batch comparisons.");
+                Assert.IsTrue(
+                    json.Contains("\"supportStageSlotTimelineMatrix\""),
+                    "The JSON report should expose support route stage-slot timeline evidence for follow-up batch comparisons.");
                 Assert.IsTrue(
                     json.Contains("\"summonSlotReadinessCooldownMatrix\""),
                     "The JSON report should expose summon readiness/cooldown evidence for follow-up batch comparisons.");
@@ -414,6 +420,11 @@ namespace DimensionBrawl.Tests
                 AssertCombatDecisionSignalRepeatability(repeatabilityResults);
                 AssertSupportDecisionTimingVerdicts(
                     forwardRiskTier1Recovery,
+                    forwardRiskSlot2Combo,
+                    forwardRiskSlot2DelayedRecovery,
+                    forwardRiskSlot3Blocked,
+                    forwardRiskSlot3DelayedRecovery);
+                AssertSupportStageSlotTimelineMatrix(
                     forwardRiskSlot2Combo,
                     forwardRiskSlot2DelayedRecovery,
                     forwardRiskSlot3Blocked,
@@ -3569,6 +3580,8 @@ namespace DimensionBrawl.Tests
             builder.AppendLine();
             AppendSupportDecisionMatrixSummary(builder, results, repeatabilityResults);
             builder.AppendLine();
+            AppendSupportStageSlotTimelineMatrix(builder, results, repeatabilityResults);
+            builder.AppendLine();
             AppendSummonSlotReadinessCooldownMatrix(builder, results);
             builder.AppendLine();
             AppendSummonHudReadinessReadoutMatrix(builder, results);
@@ -5249,6 +5262,163 @@ namespace DimensionBrawl.Tests
                     return result.BossScreenSuppressedByFollowup
                         ? "intended vanguard payoff"
                         : "vanguard recovery branch";
+                default:
+                    return "not evaluated";
+            }
+        }
+
+        private static void AppendSupportStageSlotTimelineMatrix(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults)
+        {
+            builder.AppendLine("## Support Stage-Slot Timeline Matrix");
+            builder.AppendLine("- ArkData/NIKKE lens: support summons should read as ordered pressure slots, not isolated balance rows.");
+            builder.AppendLine("| Route | Support slot | Support effect slot | Main-answer gate | Relock/payoff slot | Result hook | Repeat stage read | Decision read |");
+            builder.AppendLine("|---|---|---|---|---|---|---|---|");
+            AppendSupportStageSlotTimelineRow(
+                builder,
+                "Slot2 full-bank combo",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute),
+                repeatabilityResults);
+            AppendSupportStageSlotTimelineRow(
+                builder,
+                "Slot2 delayed recovery",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute),
+                repeatabilityResults);
+            AppendSupportStageSlotTimelineRow(
+                builder,
+                "Slot3 immediate lockout",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute),
+                repeatabilityResults);
+            AppendSupportStageSlotTimelineRow(
+                builder,
+                "Slot3 delayed payoff",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute),
+                repeatabilityResults);
+        }
+
+        private static void AppendSupportStageSlotTimelineRow(
+            StringBuilder builder,
+            string route,
+            PolicyMetrics result,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults)
+        {
+            builder.Append("| ");
+            builder.Append(EscapeTable(route));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportStageSupportSlot(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportStageEffectSlot(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportStageMainAnswerGate(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportStageRelockPayoffSlot(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveResultHookClass(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportStageRepeatRead(repeatabilityResults, result.Policy)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveSupportStageDecisionRead(result)));
+            builder.AppendLine(" |");
+        }
+
+        private static string FormatSupportStageSupportSlot(PolicyMetrics result)
+        {
+            return $"{result.SupportSummonSlotId} cost {result.SupportSummonRequiredMana:0} -> mana {result.SupportComboManaAfterSupport:0.#}";
+        }
+
+        private static string FormatSupportStageEffectSlot(PolicyMetrics result)
+        {
+            if (result.SupportSummonSlotId == "SummonSlot2")
+            {
+                return $"marksman hits E/B {result.SupportSummonProjectileEnemySummonHits}/{result.SupportSummonProjectileBossHits}";
+            }
+
+            if (result.SupportSummonSlotId == "SummonSlot3")
+            {
+                return $"vanguard blocks {result.SupportSummonBlocks}, body hits {result.PhysicalBarragePlayerHits}/{result.PhysicalBarrageTrackedProjectileCount}";
+            }
+
+            return "support effect not measured";
+        }
+
+        private static string FormatSupportStageMainAnswerGate(PolicyMetrics result)
+        {
+            if (result.SupportComboSlot1Used)
+            {
+                string delay = result.SupportComboSlot1ReadyDelaySeconds >= 0f
+                    ? FormatSeconds(result.SupportComboSlot1ReadyDelaySeconds)
+                    : "immediate";
+                return $"Slot1 used after {delay}, mana {result.SupportComboManaBeforeSlot1:0.#}";
+            }
+
+            if (result.SupportComboSlot1Attempted)
+            {
+                return $"Slot1 blocked: {result.SupportComboSlot1BlockedReason}";
+            }
+
+            return "Slot1 not attempted";
+        }
+
+        private static string FormatSupportStageRelockPayoffSlot(PolicyMetrics result)
+        {
+            if (result.BossScreenSuppressedByFollowup)
+            {
+                return $"boss-screen suppress {FormatSupportDecisionBossSuppress(result)}";
+            }
+
+            if (result.CounterWaves > 0)
+            {
+                return $"counter relock {result.CounterWaves}, answer {FormatSeconds(result.CounterTriggerToAnswerSeconds)}";
+            }
+
+            if (result.IsClearResult)
+            {
+                return $"clean hit {result.SkillProjectileHits}";
+            }
+
+            return $"unresolved {ResolveFirstUnresolvedBeat(result)}";
+        }
+
+        private static string FormatSupportStageRepeatRead(
+            IReadOnlyList<PolicyMetrics> repeatabilityResults,
+            PolicyKind policy)
+        {
+            if (CountPolicyResults(repeatabilityResults, policy) <= 0)
+            {
+                return "not repeated";
+            }
+
+            return BuildResultKindSet(repeatabilityResults, policy)
+                + " "
+                + ResolveRepeatabilityVerdict(repeatabilityResults, policy)
+                + "; Slot1 "
+                + FormatMinMax(
+                    MinMetric(repeatabilityResults, policy, result => result.SupportComboSlot1Used ? 1f : 0f),
+                    MaxMetric(repeatabilityResults, policy, result => result.SupportComboSlot1Used ? 1f : 0f))
+                + "; counter "
+                + FormatMinMax(
+                    MinMetric(repeatabilityResults, policy, result => result.CounterWaves),
+                    MaxMetric(repeatabilityResults, policy, result => result.CounterWaves))
+                + "; suppress "
+                + FormatMinMax(
+                    MinMetric(repeatabilityResults, policy, result => result.BossPressureScreensSuppressedByFollowup),
+                    MaxMetric(repeatabilityResults, policy, result => result.BossPressureScreensSuppressedByFollowup));
+        }
+
+        private static string ResolveSupportStageDecisionRead(PolicyMetrics result)
+        {
+            switch (result.Policy)
+            {
+                case PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute:
+                    return "full-bank Slot2 preserves the main-answer slot";
+                case PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute:
+                    return "early Slot2 buys tempo but relocks into counter recovery";
+                case PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute:
+                    return "Slot3 spends the main-answer slot for line safety";
+                case PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute:
+                    return "delayed Slot3 converts line hold into boss-screen payoff";
                 default:
                     return "not evaluated";
             }
@@ -8056,6 +8226,83 @@ namespace DimensionBrawl.Tests
                 "Slot3 delayed should preserve its high-cost boss-screen suppress payoff.");
         }
 
+        private static void AssertSupportStageSlotTimelineMatrix(
+            PolicyMetrics slot2Combo,
+            PolicyMetrics slot2DelayedRecovery,
+            PolicyMetrics slot3Blocked,
+            PolicyMetrics slot3DelayedRecovery)
+        {
+            Assert.AreEqual(
+                "SummonSlot2",
+                slot2Combo.SupportSummonSlotId,
+                "The support timeline should keep the full-bank combo on the Slot2 marksman branch.");
+            Assert.GreaterOrEqual(
+                slot2Combo.SupportComboManaAfterSupport,
+                slot2Combo.SupportComboSlot1RequiredMana - 0.001f,
+                "The Slot2 full-bank timeline should preserve the immediate main-answer slot.");
+            Assert.IsTrue(
+                slot2Combo.SupportComboSlot1Used,
+                "The Slot2 full-bank timeline should spend Slot1 after the marksman support beat.");
+            Assert.AreEqual(
+                0,
+                slot2Combo.CounterWaves,
+                "The Slot2 full-bank timeline should stay a clean no-relock route.");
+            Assert.AreEqual(
+                "support_marksman_clear",
+                ResolveResultHookClass(slot2Combo),
+                "The Slot2 full-bank timeline should end in the marksman-specific result hook.");
+
+            Assert.AreEqual(
+                "SummonSlot2",
+                slot2DelayedRecovery.SupportSummonSlotId,
+                "The delayed recovery timeline should still be the Slot2 marksman branch.");
+            Assert.Less(
+                slot2DelayedRecovery.SupportComboManaAfterSupport,
+                slot2DelayedRecovery.SupportComboSlot1RequiredMana,
+                "The early Slot2 timeline should spend the shared bank before the main answer is payable.");
+            Assert.IsTrue(
+                slot2DelayedRecovery.SupportComboSlot1Used,
+                "The early Slot2 timeline should recharge into Slot1 instead of staying a dead input.");
+            Assert.Greater(
+                slot2DelayedRecovery.CounterWaves,
+                0,
+                "The early Slot2 timeline should visibly relock into counter pressure.");
+            Assert.IsTrue(
+                slot2DelayedRecovery.CounterRecoveryConfirmed,
+                "The early Slot2 timeline should prove the recovery slot closes only after the fresh answer.");
+
+            Assert.AreEqual(
+                "SummonSlot3",
+                slot3Blocked.SupportSummonSlotId,
+                "The immediate lockout timeline should stay on the Slot3 vanguard branch.");
+            Assert.Less(
+                slot3Blocked.SupportComboManaAfterSupport,
+                slot3Blocked.SupportComboSlot1RequiredMana,
+                "The Slot3 immediate timeline should spend the main-answer resource slot.");
+            Assert.IsFalse(
+                slot3Blocked.SupportComboSlot1Used,
+                "The Slot3 immediate timeline should not pretend Slot1 was available.");
+            Assert.AreEqual(
+                "ScreenCurtain",
+                ResolveFirstUnresolvedBeat(slot3Blocked),
+                "The Slot3 immediate timeline should leave the screen-curtain beat unresolved.");
+
+            Assert.AreEqual(
+                "SummonSlot3",
+                slot3DelayedRecovery.SupportSummonSlotId,
+                "The delayed payoff timeline should stay on the Slot3 vanguard branch.");
+            Assert.IsTrue(
+                slot3DelayedRecovery.SupportComboSlot1Used,
+                "The delayed Slot3 timeline should recharge into the main-answer slot.");
+            Assert.IsTrue(
+                slot3DelayedRecovery.BossScreenSuppressedByFollowup,
+                "The delayed Slot3 timeline should convert line hold into the boss-screen suppress payoff.");
+            Assert.AreEqual(
+                "support_vanguard_clear",
+                ResolveResultHookClass(slot3DelayedRecovery),
+                "The delayed Slot3 timeline should end in the vanguard-specific result hook.");
+        }
+
         private static void AssertSummonSlotReadinessCooldownMatrix(
             PolicyMetrics slot2Combo,
             PolicyMetrics slot3Blocked,
@@ -8894,6 +9141,28 @@ namespace DimensionBrawl.Tests
             }
 
             builder.AppendLine("  ],");
+            builder.AppendLine("  \"supportStageSlotTimelineMatrix\": [");
+            AppendJsonSupportStageSlotTimelineRow(
+                builder,
+                "Slot2 full-bank combo",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute),
+                true);
+            AppendJsonSupportStageSlotTimelineRow(
+                builder,
+                "Slot2 delayed recovery",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute),
+                true);
+            AppendJsonSupportStageSlotTimelineRow(
+                builder,
+                "Slot3 immediate lockout",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute),
+                true);
+            AppendJsonSupportStageSlotTimelineRow(
+                builder,
+                "Slot3 delayed payoff",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute),
+                false);
+            builder.AppendLine("  ],");
             builder.AppendLine("  \"summonSlotReadinessCooldownMatrix\": [");
             AppendJsonSummonSlotReadinessCooldownRow(
                 builder,
@@ -9017,6 +9286,29 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"      \"result\": \"{JsonEscape(result.ResultKind)}\",");
             builder.AppendLine($"      \"firstUnresolvedBeat\": \"{JsonEscape(ResolveFirstUnresolvedBeat(result))}\",");
             builder.AppendLine($"      \"readout\": \"{JsonEscape(ResolveSummonSlotReadinessCooldownRead(result))}\"");
+            builder.Append("    }");
+            builder.AppendLine(appendComma ? "," : string.Empty);
+        }
+
+        private static void AppendJsonSupportStageSlotTimelineRow(
+            StringBuilder builder,
+            string route,
+            PolicyMetrics result,
+            bool appendComma)
+        {
+            builder.AppendLine("    {");
+            builder.AppendLine($"      \"route\": \"{JsonEscape(route)}\",");
+            builder.AppendLine($"      \"policy\": \"{result.Policy}\",");
+            builder.AppendLine($"      \"supportSlot\": \"{JsonEscape(result.SupportSummonSlotId)}\",");
+            builder.AppendLine($"      \"supportRequiredMana\": {result.SupportSummonRequiredMana:0.###},");
+            builder.AppendLine($"      \"manaAfterSupport\": {result.SupportComboManaAfterSupport:0.###},");
+            builder.AppendLine($"      \"supportEffectSlot\": \"{JsonEscape(FormatSupportStageEffectSlot(result))}\",");
+            builder.AppendLine($"      \"mainAnswerGate\": \"{JsonEscape(FormatSupportStageMainAnswerGate(result))}\",");
+            builder.AppendLine($"      \"relockPayoffSlot\": \"{JsonEscape(FormatSupportStageRelockPayoffSlot(result))}\",");
+            builder.AppendLine($"      \"resultHookClass\": \"{JsonEscape(ResolveResultHookClass(result))}\",");
+            builder.AppendLine($"      \"result\": \"{JsonEscape(result.ResultKind)}\",");
+            builder.AppendLine($"      \"firstUnresolvedBeat\": \"{JsonEscape(ResolveFirstUnresolvedBeat(result))}\",");
+            builder.AppendLine($"      \"decisionRead\": \"{JsonEscape(ResolveSupportStageDecisionRead(result))}\"");
             builder.Append("    }");
             builder.AppendLine(appendComma ? "," : string.Empty);
         }
