@@ -40,6 +40,7 @@ namespace DimensionBrawl.Tests
         private const int BarrageShapePreviewCapacity = 16;
         private const float PhysicalBarrageProbeFlightSeconds = 3.4f;
         private const float CloseProbePhysicalFireFlightSeconds = 1.2f;
+        private const float CloseProbeScreenCurtainObservationSeconds = 6f;
         private const float PhysicalSkill1ProbeFlightSeconds = 2.2f;
         private const float PhysicalNoPunishObservationSeconds = 8f;
         private const float SurvivalLimitProbeMaxSeconds = 45f;
@@ -52,6 +53,7 @@ namespace DimensionBrawl.Tests
             GunOnly,
             CloseProbeSelectorBiasProbe,
             CloseProbePhysicalFireProbe,
+            CloseProbePhysicalThenScreenCurtainProbe,
             BossTunnelVisionIgnoresCloseProbe,
             NoSummonSurvivalLimit,
             GunOnlySurvivalLimit,
@@ -81,6 +83,7 @@ namespace DimensionBrawl.Tests
             PolicyKind.GunOnly,
             PolicyKind.CloseProbeSelectorBiasProbe,
             PolicyKind.CloseProbePhysicalFireProbe,
+            PolicyKind.CloseProbePhysicalThenScreenCurtainProbe,
             PolicyKind.BossTunnelVisionIgnoresCloseProbe,
             PolicyKind.NoSummonSurvivalLimit,
             PolicyKind.GunOnlySurvivalLimit,
@@ -110,6 +113,7 @@ namespace DimensionBrawl.Tests
             PolicyKind.GunOnlySurvivalLimit,
             PolicyKind.CloseProbeSelectorBiasProbe,
             PolicyKind.CloseProbePhysicalFireProbe,
+            PolicyKind.CloseProbePhysicalThenScreenCurtainProbe,
             PolicyKind.BossTunnelVisionIgnoresCloseProbe,
             PolicyKind.PrematureSkill1NoSummon,
             PolicyKind.BacklinePhysicalBarrageProbe,
@@ -152,6 +156,8 @@ namespace DimensionBrawl.Tests
                 PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
                 PolicyMetrics selectorProbe = RequireResult(results, PolicyKind.CloseProbeSelectorBiasProbe);
                 PolicyMetrics physicalCloseFire = RequireResult(results, PolicyKind.CloseProbePhysicalFireProbe);
+                PolicyMetrics physicalCloseCurtain =
+                    RequireResult(results, PolicyKind.CloseProbePhysicalThenScreenCurtainProbe);
                 PolicyMetrics bossTunnel = RequireResult(results, PolicyKind.BossTunnelVisionIgnoresCloseProbe);
                 PolicyMetrics noSummonSurvival = RequireResult(results, PolicyKind.NoSummonSurvivalLimit);
                 PolicyMetrics gunOnlySurvival = RequireResult(results, PolicyKind.GunOnlySurvivalLimit);
@@ -259,6 +265,26 @@ namespace DimensionBrawl.Tests
                     physicalCloseFire.BossDamageFromPlayer,
                     0.01f,
                     "Physical close-fire should not drift into a boss DPS route.");
+                Assert.LessOrEqual(
+                    physicalCloseCurtain.CloseThreatHealthRemaining,
+                    0.01f,
+                    "The close-to-curtain probe should begin from the same physical close-probe answer.");
+                Assert.Greater(
+                    physicalCloseCurtain.BossPressureSummonReleases,
+                    0,
+                    "A physical close-probe answer should advance into the summon-needed screen-curtain pressure slot.");
+                Assert.Greater(
+                    physicalCloseCurtain.MaxBossPressureActiveScreenCount,
+                    0,
+                    "The post-close screen curtain should exist as a real pressure screen, not only a stage label.");
+                Assert.AreEqual(
+                    "ScreenCurtain",
+                    ResolveFirstUnresolvedBeat(physicalCloseCurtain),
+                    "After the physical close answer, the first unresolved beat should become the screen curtain.");
+                Assert.AreEqual(
+                    0,
+                    physicalCloseCurtain.ResultRecords,
+                    "The close-to-curtain probe should not fabricate a committed result before the summon answer.");
                 Assert.Greater(
                     bossTunnel.BossBasicHits,
                     0,
@@ -1027,6 +1053,9 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.CloseProbePhysicalFireProbe:
                     yield return RunCloseProbePhysicalFireProbe(context);
                     break;
+                case PolicyKind.CloseProbePhysicalThenScreenCurtainProbe:
+                    yield return RunCloseProbePhysicalThenScreenCurtainProbe(context);
+                    break;
                 case PolicyKind.BossTunnelVisionIgnoresCloseProbe:
                     yield return RunBossTunnelVisionIgnoresCloseProbe(context);
                     break;
@@ -1129,7 +1158,44 @@ namespace DimensionBrawl.Tests
             DeactivateActiveBossProjectiles();
             DeactivateActivePlayerProjectiles();
             RecordCloseProbeSelectorSnapshot(context);
+            yield return FireCloseProbePhysicalShots(context);
+        }
 
+        private static IEnumerator RunCloseProbePhysicalThenScreenCurtainProbe(CombatPolicyContext context)
+        {
+            context.BossEmitter.SetFiringEnabled(false);
+            DeactivateActiveBossProjectiles();
+            DeactivateActivePlayerProjectiles();
+            RecordCloseProbeSelectorSnapshot(context);
+            yield return FireCloseProbePhysicalShots(context);
+
+            if (context.CloseThreatHealth.IsAlive)
+            {
+                yield break;
+            }
+
+            float start = context.Metrics.ElapsedSeconds;
+            while (context.PlayerHealth.IsAlive
+                && context.Metrics.ElapsedSeconds - start < CloseProbeScreenCurtainObservationSeconds)
+            {
+                yield return Advance(context, 0.1f);
+                context.PocketOwner.Tick(0f);
+                context.Sample();
+                if (context.Metrics.BossPressureSummonReleases > 0
+                    && context.Metrics.MaxBossPressureActiveScreenCount > 0)
+                {
+                    break;
+                }
+            }
+
+            if (context.Metrics.BossPressureSummonReleases <= 0)
+            {
+                context.Metrics.Notes.Add("post-close screen curtain did not release");
+            }
+        }
+
+        private static IEnumerator FireCloseProbePhysicalShots(CombatPolicyContext context)
+        {
             int shots = 0;
             while (context.CloseThreatHealth.IsAlive && shots < CloseProbePhysicalFireMaxShots)
             {
@@ -2864,6 +2930,8 @@ namespace DimensionBrawl.Tests
             PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
             PolicyMetrics selectorProbe = RequireResult(results, PolicyKind.CloseProbeSelectorBiasProbe);
             PolicyMetrics physicalCloseFire = RequireResult(results, PolicyKind.CloseProbePhysicalFireProbe);
+            PolicyMetrics physicalCloseCurtain =
+                RequireResult(results, PolicyKind.CloseProbePhysicalThenScreenCurtainProbe);
             PolicyMetrics bossTunnel = RequireResult(results, PolicyKind.BossTunnelVisionIgnoresCloseProbe);
             PolicyMetrics noSummonSurvival = RequireResult(results, PolicyKind.NoSummonSurvivalLimit);
             PolicyMetrics gunOnlySurvival = RequireResult(results, PolicyKind.GunOnlySurvivalLimit);
@@ -2897,6 +2965,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Gun-only dealt {gunOnly.BossDamageTaken:0.0} boss damage but ended as `{gunOnly.ResultKind}` because the route contract still needs summon pressure blocking.");
             builder.AppendLine($"- Local-defense selector probe: candidates {selectorProbe.SelectorCandidateCount}, default `{selectorProbe.SelectorDefaultTarget}`, attack aim `{selectorProbe.SelectorAttackAimTarget}`, close/boss distance {FormatOptionalDistance(selectorProbe.SelectorCloseDistance)}/{FormatOptionalDistance(selectorProbe.SelectorBossDistance)}.");
             builder.AppendLine($"- Local-defense physical fire: shots {physicalCloseFire.BasicShots}, close projectile hits {physicalCloseFire.CloseThreatPhysicalProjectileHits}/{physicalCloseFire.CloseThreatPhysicalProjectileImpactAttempts}, close HP {physicalCloseFire.CloseThreatHealthRemaining:0.0}, boss damage {physicalCloseFire.BossDamageFromPlayer:0.0}.");
+            builder.AppendLine($"- Close-to-curtain transition: physical close HP {physicalCloseCurtain.CloseThreatHealthRemaining:0.0}, boss releases {physicalCloseCurtain.BossPressureSummonReleases}, max screens {physicalCloseCurtain.MaxBossPressureActiveScreenCount}, first unresolved `{ResolveFirstUnresolvedBeat(physicalCloseCurtain)}`.");
             builder.AppendLine($"- Target priority split: boss tunnel vision landed boss basic hits {bossTunnel.BossBasicHits} while close-probe hits stayed {bossTunnel.CloseThreatBasicHits}; first unresolved beat `{ResolveFirstUnresolvedBeat(bossTunnel)}`.");
             builder.AppendLine($"- Long survival limit: no-summon player down {FormatSeconds(noSummonSurvival.FirstPlayerDownAtSeconds)} / boss down {FormatSeconds(noSummonSurvival.FirstBossDownAtSeconds)}; gun-only player down {FormatSeconds(gunOnlySurvival.FirstPlayerDownAtSeconds)} / boss down {FormatSeconds(gunOnlySurvival.FirstBossDownAtSeconds)}.");
             builder.AppendLine($"- Skill1 punish split: gun-only boss damage {gunOnly.BossDamageTaken:0.0}, intended follow-up boss damage {intended.BossDamageTaken:0.0}.");
@@ -3023,6 +3092,8 @@ namespace DimensionBrawl.Tests
             PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
             PolicyMetrics selectorProbe = RequireResult(results, PolicyKind.CloseProbeSelectorBiasProbe);
             PolicyMetrics physicalCloseFire = RequireResult(results, PolicyKind.CloseProbePhysicalFireProbe);
+            PolicyMetrics physicalCloseCurtain =
+                RequireResult(results, PolicyKind.CloseProbePhysicalThenScreenCurtainProbe);
             PolicyMetrics bossTunnel = RequireResult(results, PolicyKind.BossTunnelVisionIgnoresCloseProbe);
             PolicyMetrics gunOnlySurvival = RequireResult(results, PolicyKind.GunOnlySurvivalLimit);
             PolicyMetrics prematureSkill1 = RequireResult(results, PolicyKind.PrematureSkill1NoSummon);
@@ -3050,6 +3121,10 @@ namespace DimensionBrawl.Tests
                 && physicalCloseFire.CloseThreatPhysicalProjectileHits > 0
                 && physicalCloseFire.CloseThreatHealthRemaining <= 0.01f
                 && physicalCloseFire.BossDamageFromPlayer <= 0.01f
+                && physicalCloseCurtain.CloseThreatHealthRemaining <= 0.01f
+                && physicalCloseCurtain.BossPressureSummonReleases > 0
+                && physicalCloseCurtain.MaxBossPressureActiveScreenCount > 0
+                && ResolveFirstUnresolvedBeat(physicalCloseCurtain) == "ScreenCurtain"
                 && bossTunnel.BossBasicHits > 0
                 && bossTunnel.CloseThreatBasicHits == 0
                 && ResolveFirstUnresolvedBeat(bossTunnel) == "CloseProbe"
@@ -3105,7 +3180,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine("| Axis | Status | Evidence |");
             builder.AppendLine("|---|---|---|");
             builder.AppendLine(
-                $"| 1. Bad routes lose state/HP | {FormatGateStatus(axis1Pass)} | no-summon down {FormatSeconds(noSummonSurvival.FirstPlayerDownAtSeconds)}, gun-only down {FormatSeconds(gunOnlySurvival.FirstPlayerDownAtSeconds)}, selector default/aim `{selectorProbe.SelectorDefaultTarget}`/`{selectorProbe.SelectorAttackAimTarget}`, physical close hits {physicalCloseFire.CloseThreatPhysicalProjectileHits}/{physicalCloseFire.CloseThreatPhysicalProjectileImpactAttempts} HP {physicalCloseFire.CloseThreatHealthRemaining:0.0} boss dmg {physicalCloseFire.BossDamageFromPlayer:0.0}, boss tunnel close/boss hits {bossTunnel.CloseThreatBasicHits}/{bossTunnel.BossBasicHits} unresolved `{ResolveFirstUnresolvedBeat(bossTunnel)}`, gun-only boss down {FormatSeconds(gunOnlySurvival.FirstBossDownAtSeconds)} |");
+                $"| 1. Bad routes lose state/HP | {FormatGateStatus(axis1Pass)} | no-summon down {FormatSeconds(noSummonSurvival.FirstPlayerDownAtSeconds)}, gun-only down {FormatSeconds(gunOnlySurvival.FirstPlayerDownAtSeconds)}, selector default/aim `{selectorProbe.SelectorDefaultTarget}`/`{selectorProbe.SelectorAttackAimTarget}`, physical close hits {physicalCloseFire.CloseThreatPhysicalProjectileHits}/{physicalCloseFire.CloseThreatPhysicalProjectileImpactAttempts} HP {physicalCloseFire.CloseThreatHealthRemaining:0.0} boss dmg {physicalCloseFire.BossDamageFromPlayer:0.0}, close->curtain releases {physicalCloseCurtain.BossPressureSummonReleases} screens {physicalCloseCurtain.MaxBossPressureActiveScreenCount}, boss tunnel close/boss hits {bossTunnel.CloseThreatBasicHits}/{bossTunnel.BossBasicHits} unresolved `{ResolveFirstUnresolvedBeat(bossTunnel)}`, gun-only boss down {FormatSeconds(gunOnlySurvival.FirstBossDownAtSeconds)} |");
             builder.AppendLine(
                 $"| 2. Block -> window -> Skill1 loop | {FormatGateStatus(axis2Pass)} | unblocked forward hits {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; premature Skill1 use/hit {prematureSkill1.SkillUses}/{prematureSkill1.SkillProjectileHits} but follow-up/result {prematureSkill1.FollowupHitCount}/{prematureSkill1.ResultRecords}; block presentation cam/flash/VFX {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}; no-punish misses {forwardRiskPhysicalSummonNoPunish.FollowupMissCount}, counters {forwardRiskPhysicalSummonNoPunish.CounterWaves}, counter cues {forwardRiskPhysicalSummonNoPunish.CounterWaveScreenCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveCameraCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveVfxCueRequests}, result `{forwardRiskPhysicalSummonNoPunish.ResultKind}`; recovery answer cues {blockedRecovery.CounterWaveAnswerScreenCueRequests}/{blockedRecovery.CounterWaveStabilizedCameraCueRequests}/{blockedRecovery.CounterWaveStabilizedVfxCueRequests}, energy ready/spend {blockedRecovery.EnergyReadyScreenCueRequests}/{blockedRecovery.EnergySpendScreenCueRequests} screen and {blockedRecovery.EnergyReadyVfxCueRequests}/{blockedRecovery.EnergySpendVfxCueRequests} VFX; physical punish blocks {forwardRiskPhysicalSummonPunish.SummonBlocks}, Skill1 hits {forwardRiskPhysicalSummonPunish.SkillProjectileHits}, `{forwardRiskPhysicalSummonPunish.ResultKind}` |");
             builder.AppendLine(
@@ -3251,6 +3326,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine("| Policy | Basic shots | Close hits/dmg/HP | Close response N/L/F | Boss hits/dmg | First unresolved | Result records | Target read |");
             builder.AppendLine("|---|---:|---:|---:|---:|---|---:|---|");
             AppendTargetPriorityRow(builder, RequireResult(results, PolicyKind.CloseProbePhysicalFireProbe));
+            AppendTargetPriorityRow(builder, RequireResult(results, PolicyKind.CloseProbePhysicalThenScreenCurtainProbe));
             AppendTargetPriorityRow(
                 builder,
                 RequireResult(results, PolicyKind.BossTunnelVisionIgnoresCloseProbe));
@@ -3287,6 +3363,13 @@ namespace DimensionBrawl.Tests
             if (result.Policy == PolicyKind.CloseProbePhysicalFireProbe)
             {
                 return ResolvePhysicalCloseFireRead(result);
+            }
+
+            if (result.Policy == PolicyKind.CloseProbePhysicalThenScreenCurtainProbe)
+            {
+                return result.BossPressureSummonReleases > 0 && result.MaxBossPressureActiveScreenCount > 0
+                    ? "physical close clear advanced to screen curtain"
+                    : "physical close clear did not advance pressure slot";
             }
 
             if (result.Policy == PolicyKind.BossTunnelVisionIgnoresCloseProbe)
@@ -3430,6 +3513,8 @@ namespace DimensionBrawl.Tests
             PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
             PolicyMetrics selectorProbe = RequireResult(results, PolicyKind.CloseProbeSelectorBiasProbe);
             PolicyMetrics physicalCloseFire = RequireResult(results, PolicyKind.CloseProbePhysicalFireProbe);
+            PolicyMetrics physicalCloseCurtain =
+                RequireResult(results, PolicyKind.CloseProbePhysicalThenScreenCurtainProbe);
             PolicyMetrics bossTunnel = RequireResult(results, PolicyKind.BossTunnelVisionIgnoresCloseProbe);
             PolicyMetrics gunOnlySurvival = RequireResult(results, PolicyKind.GunOnlySurvivalLimit);
             PolicyMetrics prematureSkill1 = RequireResult(results, PolicyKind.PrematureSkill1NoSummon);
@@ -3482,6 +3567,8 @@ namespace DimensionBrawl.Tests
                 && physicalCloseFire.CloseThreatPhysicalProjectileHits > 0
                 && physicalCloseFire.CloseThreatHealthRemaining <= 0.01f
                 && physicalCloseFire.BossDamageFromPlayer <= 0.01f
+                && physicalCloseCurtain.BossPressureSummonReleases > 0
+                && physicalCloseCurtain.MaxBossPressureActiveScreenCount > 0
                 && bossTunnel.BossBasicHits > 0
                 && bossTunnel.CloseThreatBasicHits == 0
                 && ResolveFirstUnresolvedBeat(bossTunnel) == "CloseProbe"
@@ -3559,7 +3646,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 "| CombatPayload runtime pipeline | "
                 + $"{FormatCoverageStatus(combatPayloadMeasured)} | "
-                + $"Target selection: selector default/aim `{selectorProbe.SelectorDefaultTarget}`/`{selectorProbe.SelectorAttackAimTarget}`, physical close fire hits {physicalCloseFire.CloseThreatPhysicalProjectileHits}/{physicalCloseFire.CloseThreatPhysicalProjectileImpactAttempts} with boss damage {physicalCloseFire.BossDamageFromPlayer:0.0}, boss tunnel close/boss hits {bossTunnel.CloseThreatBasicHits}/{bossTunnel.BossBasicHits} unresolved {ResolveFirstUnresolvedBeat(bossTunnel)}; Close Target->Effect/Status: hits/damage/HP {gunOnly.CloseThreatBasicHits}/{gunOnly.CloseThreatDamageTaken:0.0}/{gunOnly.CloseThreatHealthRemaining:0.0}, response {gunOnly.CloseThreatNonLockingDamageEvents}/{gunOnly.CloseThreatLockingDamageEvents}/{gunOnly.CloseThreatFullBodyEligibleDamageEvents}; Target->Hit: forward barrage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; Resource/Skill gate: premature Skill1 use/hit {prematureSkill1.SkillUses}/{prematureSkill1.SkillProjectileHits} with follow-up/result {prematureSkill1.FollowupHitCount}/{prematureSkill1.ResultRecords}; Player Hit->Presentation: routine damage cues {noSummon.PlayerDamageScreenCueRequests}/{noSummon.PlayerDamageFeedbackRequests}, clean route {forwardRiskPhysicalSummonPunish.PlayerDamageScreenCueRequests}/{forwardRiskPhysicalSummonPunish.PlayerDamageFeedbackRequests}; Block->Status/Presentation: {forwardRiskPhysicalSummonBlock.SummonBlocks} blocks, {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)} to window, cues {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}; NoHit->Counter/Presentation: miss {forwardRiskPhysicalSummonNoPunish.FollowupMissCount} / counter {forwardRiskPhysicalSummonNoPunish.CounterWaves}, cues {forwardRiskPhysicalSummonNoPunish.CounterWaveScreenCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveCameraCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveVfxCueRequests}; Skill1 Hit->Presentation: {forwardRiskPhysicalSummonPunish.SkillProjectileHits} hits with cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests}; payoff source player/summon {forwardRiskPhysicalSummonPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonPunish.BossDamageFromAllySummon:0.0} | "
+                + $"Target selection: selector default/aim `{selectorProbe.SelectorDefaultTarget}`/`{selectorProbe.SelectorAttackAimTarget}`, physical close fire hits {physicalCloseFire.CloseThreatPhysicalProjectileHits}/{physicalCloseFire.CloseThreatPhysicalProjectileImpactAttempts} with boss damage {physicalCloseFire.BossDamageFromPlayer:0.0}, close->curtain releases/screens {physicalCloseCurtain.BossPressureSummonReleases}/{physicalCloseCurtain.MaxBossPressureActiveScreenCount}, boss tunnel close/boss hits {bossTunnel.CloseThreatBasicHits}/{bossTunnel.BossBasicHits} unresolved {ResolveFirstUnresolvedBeat(bossTunnel)}; Close Target->Effect/Status: hits/damage/HP {gunOnly.CloseThreatBasicHits}/{gunOnly.CloseThreatDamageTaken:0.0}/{gunOnly.CloseThreatHealthRemaining:0.0}, response {gunOnly.CloseThreatNonLockingDamageEvents}/{gunOnly.CloseThreatLockingDamageEvents}/{gunOnly.CloseThreatFullBodyEligibleDamageEvents}; Target->Hit: forward barrage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; Resource/Skill gate: premature Skill1 use/hit {prematureSkill1.SkillUses}/{prematureSkill1.SkillProjectileHits} with follow-up/result {prematureSkill1.FollowupHitCount}/{prematureSkill1.ResultRecords}; Player Hit->Presentation: routine damage cues {noSummon.PlayerDamageScreenCueRequests}/{noSummon.PlayerDamageFeedbackRequests}, clean route {forwardRiskPhysicalSummonPunish.PlayerDamageScreenCueRequests}/{forwardRiskPhysicalSummonPunish.PlayerDamageFeedbackRequests}; Block->Status/Presentation: {forwardRiskPhysicalSummonBlock.SummonBlocks} blocks, {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)} to window, cues {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}; NoHit->Counter/Presentation: miss {forwardRiskPhysicalSummonNoPunish.FollowupMissCount} / counter {forwardRiskPhysicalSummonNoPunish.CounterWaves}, cues {forwardRiskPhysicalSummonNoPunish.CounterWaveScreenCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveCameraCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveVfxCueRequests}; Skill1 Hit->Presentation: {forwardRiskPhysicalSummonPunish.SkillProjectileHits} hits with cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests}; payoff source player/summon {forwardRiskPhysicalSummonPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonPunish.BossDamageFromAllySummon:0.0} | "
                 + "Candidate labels stay local test evidence, not fake universal opcodes. |");
             builder.AppendLine(
                 "| PGR state-lock and hit-response grammar | "
@@ -3590,6 +3677,8 @@ namespace DimensionBrawl.Tests
 
         private static void AssertStageWaveBeatMap(IReadOnlyList<PolicyMetrics> results)
         {
+            PolicyMetrics closeCurtain =
+                RequireResult(results, PolicyKind.CloseProbePhysicalThenScreenCurtainProbe);
             PolicyMetrics bossTunnel = RequireResult(results, PolicyKind.BossTunnelVisionIgnoresCloseProbe);
             PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
             PolicyMetrics prematureSkill1 = RequireResult(results, PolicyKind.PrematureSkill1NoSummon);
@@ -3598,6 +3687,14 @@ namespace DimensionBrawl.Tests
             PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
             PolicyMetrics blockedRecovery = RequireResult(results, PolicyKind.BossScreenBlockCounterRecovery);
 
+            Assert.AreEqual(
+                "ScreenCurtain",
+                ResolveFirstUnresolvedBeat(closeCurtain),
+                "After a physical close-probe answer, the stage beat should advance to the screen curtain.");
+            Assert.That(
+                ResolveStageWaveJudgement(closeCurtain),
+                Does.Contain("ScreenCurtain"),
+                "The physical close-to-curtain probe should stall at the next pressure slot, not at the close target.");
             Assert.AreEqual(
                 "CloseProbe",
                 ResolveFirstUnresolvedBeat(bossTunnel),
@@ -3635,6 +3732,7 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.NoSummonNoFire:
                 case PolicyKind.GunOnly:
                 case PolicyKind.CloseProbePhysicalFireProbe:
+                case PolicyKind.CloseProbePhysicalThenScreenCurtainProbe:
                 case PolicyKind.BossTunnelVisionIgnoresCloseProbe:
                 case PolicyKind.NoSummonSurvivalLimit:
                 case PolicyKind.GunOnlySurvivalLimit:
@@ -4437,6 +4535,16 @@ namespace DimensionBrawl.Tests
                         && result.CloseThreatNonLockingDamageEvents > 0
                         && result.CloseThreatLockingDamageEvents == 0
                         && result.CloseThreatFullBodyEligibleDamageEvents == 0
+                        && result.BossDamageFromPlayer <= 0.01f;
+                case PolicyKind.CloseProbePhysicalThenScreenCurtainProbe:
+                    return !result.IsClearResult
+                        && result.SelectorDefaultTarget == "CloseProbe"
+                        && result.CloseThreatPhysicalProjectileHits > 0
+                        && result.CloseThreatHealthRemaining <= 0.01f
+                        && result.BossPressureSummonReleases > 0
+                        && result.MaxBossPressureActiveScreenCount > 0
+                        && ResolveFirstUnresolvedBeat(result) == "ScreenCurtain"
+                        && result.ResultRecords == 0
                         && result.BossDamageFromPlayer <= 0.01f;
                 case PolicyKind.BossTunnelVisionIgnoresCloseProbe:
                     return !result.IsClearResult
