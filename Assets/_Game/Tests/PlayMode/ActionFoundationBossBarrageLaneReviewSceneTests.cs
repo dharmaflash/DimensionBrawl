@@ -23,6 +23,8 @@ namespace DimensionBrawl.Tests
     public sealed class ActionFoundationBossBarrageLaneReviewSceneTests
     {
         private const string ScenePath = "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity";
+        private const string StageProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_FrontlineWaveStage_MotivationReview.asset";
         private const float ReviewBossMaxHealth = 980f;
         private const float Skill1VisibleBossHpShiftRatio = 0.08f;
         private const string PatternProfilePath =
@@ -245,6 +247,59 @@ namespace DimensionBrawl.Tests
         public IEnumerator ResetTimeScale()
         {
             Time.timeScale = 1f;
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator BossBarrageLaneReviewScenePreservesFrontlineStageProfileParity()
+        {
+            FrontlineWaveStageProfile stageProfile = LoadAsset<FrontlineWaveStageProfile>(StageProfilePath);
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            BossBarrageLaneReviewHud reviewHud =
+                RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "boss barrage HUD");
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            ActionCinematicCueDirector cinematicCueDirector =
+                RequireComponent<ActionCinematicCueDirector>(
+                    cameraController.gameObject,
+                    "action cinematic cue director");
+            BossBarragePocketCameraCueBridge pocketCameraCueBridge =
+                RequireComponent<BossBarragePocketCameraCueBridge>(
+                    RequireRoot(PocketOwnerRootName),
+                    "pocket camera cue bridge");
+
+            Assert.AreSame(stageProfile, pocketOwner.StageProfile);
+            Assert.AreSame(stageProfile, reviewHud.StageProfileForReview);
+            Assert.AreSame(stageProfile, GetObjectReference<FrontlineWaveStageProfile>(pocketOwner, "stageProfile"));
+            Assert.AreSame(stageProfile, GetObjectReference<FrontlineWaveStageProfile>(reviewHud, "stageProfile"));
+            Assert.AreEqual("FRONTLINE-MOTIVATION-REVIEW-01", stageProfile.StageId);
+            Assert.AreEqual(3, stageProfile.ObjectiveStepCount);
+            Assert.AreEqual("Survive", stageProfile.StepPrefix);
+            Assert.AreEqual(0.62f, stageProfile.RouteStabilityStart01, 0.001f);
+            Assert.AreEqual(0.22f, stageProfile.CounterWaveStabilizeRouteBonus01, 0.001f);
+            Assert.AreEqual(105f, stageProfile.CounterWaveAnswerEnergyPulseOverride, 0.001f);
+            Assert.GreaterOrEqual(stageProfile.BeatCount, 6);
+            Assert.GreaterOrEqual(stageProfile.PressureSlotCount, 6);
+            Assert.GreaterOrEqual(stageProfile.SourceReferenceCount, 5);
+            Assert.AreEqual(stageProfile.ObjectiveStepCount, pocketOwner.ObjectiveStepCount);
+            Assert.IsTrue(pocketOwner.IsRouteStabilityActive);
+            Assert.AreEqual(stageProfile.RouteStabilityStart01, pocketOwner.RouteStability01, 0.001f);
+            Assert.That(reviewHud.StageBriefingReadout, Does.Contain("Survive boss pressure"));
+            Assert.That(reviewHud.CompactStageBriefingReadout, Does.Contain("Stay alive"));
+            Assert.That(reviewHud.CompactObjectiveReadout, Does.StartWith("Survive 1/3"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("pressure 62%"));
+            Assert.That(reviewHud.RouteRecordReadout, Does.Contain("target 90"));
+
+            Assert.IsTrue(pocketCameraCueBridge.enabled);
+            Assert.AreSame(pocketOwner, pocketCameraCueBridge.PocketReviewOwner);
+            Assert.AreSame(cinematicCueDirector, pocketCameraCueBridge.CinematicCueDirector);
+            Assert.IsTrue(GetBool(cinematicCueDirector, "allowCuePlayback"));
+            Assert.IsFalse(GetBool(cinematicCueDirector, "allowSequenceBridgePlayback"));
+            Assert.IsTrue(cinematicCueDirector.DrawCinematicBars);
+            ActionCinematicSequenceBridge sequenceBridge =
+                GetObjectReference<ActionCinematicSequenceBridge>(cinematicCueDirector, "sequenceBridge");
+            Assert.IsFalse(sequenceBridge.enabled);
+
             yield return null;
         }
 
@@ -1122,7 +1177,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(string.Empty, reviewHud.ResultBannerTitle);
             Assert.That(
                 reviewHud.CompactObjectiveReadout,
-                Does.StartWith("Step 1/3"),
+                Does.StartWith("Survive 1/3"),
                 "The compact review objective should expose a stage-style checklist instead of a flat debug goal.");
             Assert.AreSame(player, GetObjectReference<PlayerMovementController>(mobileHud, "movement"));
             Assert.AreSame(playerActionController, GetObjectReference<PlayerActionController>(mobileHud, "actionController"));
@@ -3043,7 +3098,7 @@ namespace DimensionBrawl.Tests
                 "The compact HUD goal should preserve the summon tier answer during the block-opportunity cue.");
             Assert.That(
                 reviewHud.CompactObjectiveReadout,
-                Does.StartWith("Step 2/3"),
+                Does.StartWith("Survive 2/3"),
                 "After the close threat falls, the compact HUD should advance to the summon-block checklist step.");
 
             pocketOwner.Tick(1.34f);
@@ -3255,6 +3310,7 @@ namespace DimensionBrawl.Tests
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "action screen cue presenter");
             BossBarrageLaneReviewHud reviewHud =
                 RequireComponent<BossBarrageLaneReviewHud>(RequireRoot(HudRootName), "boss barrage HUD");
+            FrontlineWaveStageProfile stageProfile = LoadAsset<FrontlineWaveStageProfile>(StageProfilePath);
 
             FillEnergyToTier(energyLadder, 1);
             Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
@@ -3296,8 +3352,8 @@ namespace DimensionBrawl.Tests
                 "The summon follow-up objective should preserve which tier of SummonSlot1 created the opening.");
             Assert.That(
                 reviewHud.CompactObjectiveReadout,
-                Does.Contain("Skill1 LV1"),
-                "The compact HUD goal should name the follow-up Skill tier instead of only saying Fire Skill1.");
+                Does.Contain("Skill1 LV2"),
+                "The compact HUD goal should name the stage-profile follow-up Skill tier instead of only saying Fire Skill1.");
             Assert.That(
                 pocketOwner.SummonPressureBreakRemainingSeconds,
                 Is.EqualTo(3.25f).Within(0.001f),
@@ -3332,12 +3388,12 @@ namespace DimensionBrawl.Tests
                 "The summon pressure break should pulse enough EN to make the short follow-up window actionable.");
             Assert.That(
                 pocketOwner.SummonFollowupEnergyPulse,
-                Is.EqualTo(125f).Within(0.001f),
-                "The first follow-up reward should match the documented LV1 review-pulse tuning.");
+                Is.EqualTo(stageProfile.CleanFollowupEnergyPulseOverride).Within(0.001f),
+                "The first follow-up reward should match the frontline stage profile clean-pulse tuning.");
             Assert.IsTrue(
                 energyLadder.CanSpend,
                 "After a correct summon block, the EN reward pulse should reopen at least LV1 for a follow-up choice.");
-            Assert.AreEqual(1, energyLadder.AvailableTier);
+            Assert.AreEqual(2, energyLadder.AvailableTier);
 
             float bossHealthBeforeFollowup = bossHealth.CurrentHealth;
             int cinematicCueCountBeforeHit = cinematicCueDirector.TotalPlayCount;
@@ -3353,9 +3409,9 @@ namespace DimensionBrawl.Tests
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.UsedSkill1DuringSummonFollowup);
-            Assert.AreEqual(1, pocketOwner.HighestSummonFollowupSkillTier);
+            Assert.AreEqual(2, pocketOwner.HighestSummonFollowupSkillTier);
             Assert.IsTrue(pocketOwner.Skill1FollowupHitConfirmed);
-            Assert.AreEqual(1, pocketOwner.HighestSkill1FollowupHitTier);
+            Assert.AreEqual(2, pocketOwner.HighestSkill1FollowupHitTier);
             Assert.GreaterOrEqual(
                 pocketOwner.Skill1FollowupDamage / bossHealth.MaxHealth,
                 Skill1VisibleBossHpShiftRatio,
@@ -3364,7 +3420,7 @@ namespace DimensionBrawl.Tests
                 followupHitCueCountBefore + 1,
                 cameraCueDriver.SummonFollowupHitCueRequestCount,
                 "A confirmed Skill1 boss hit should produce the follow-up hit camera cue.");
-            Assert.AreEqual(1, cameraCueDriver.LastSummonFollowupHitTier);
+            Assert.AreEqual(2, cameraCueDriver.LastSummonFollowupHitTier);
             Assert.AreEqual(
                 cinematicCueCountBeforeHit + 1,
                 cinematicCueDirector.TotalPlayCount,
@@ -3378,7 +3434,7 @@ namespace DimensionBrawl.Tests
                 followupHitVfxCueCountBefore + 1,
                 pocketVfxCueBridge.FollowupHitCueRequestCount,
                 "A confirmed Skill1 boss hit should also produce a follow-up hit VFX cue.");
-            Assert.AreEqual(1, pocketVfxCueBridge.LastFollowupHitTier);
+            Assert.AreEqual(2, pocketVfxCueBridge.LastFollowupHitTier);
             Assert.GreaterOrEqual(
                 pocketVfxCueBridge.LastFollowupHitDamage / bossHealth.MaxHealth,
                 Skill1VisibleBossHpShiftRatio);

@@ -45,6 +45,8 @@ namespace DimensionBrawl.Editor
             ActionFoundationProfileSetup.ProfileRoot + "/DB_BossBarrage_LinePressure.asset";
         public const string BossBasicFireProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_BossBasicFire_LanePoke.asset";
+        public const string StageProfilePath =
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_FrontlineWaveStage_MotivationReview.asset";
         public const string ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossBarrageProjectile_NeedleLock.prefab";
         private const string BossBarrageProjectileTrailMaterialPath =
@@ -823,6 +825,7 @@ namespace DimensionBrawl.Editor
                 RequireComponent<BossPressureActionDirector>(bossProxy, "boss pressure action director");
             BossSummonPressureAction bossSummonPressureAction =
                 RequireComponent<BossSummonPressureAction>(bossProxy, "boss summon pressure action");
+            FrontlineWaveStageProfile stageProfile = LoadAsset<FrontlineWaveStageProfile>(StageProfilePath);
             BossBarragePocketReviewOwner pocketOwner = CreatePocketOwner(
                 scene,
                 playerHealth,
@@ -833,6 +836,7 @@ namespace DimensionBrawl.Editor
                 summonSlot1Action,
                 bossBarrageEmitter,
                 bossBasicFireEmitter,
+                stageProfile,
                 bossPressureCost,
                 bossPressureActionDirector,
                 laneSpace);
@@ -909,6 +913,7 @@ namespace DimensionBrawl.Editor
                 bossBarrageEmitter,
                 bossBasicFireEmitter,
                 pocketOwner,
+                stageProfile,
                 bossPressureCost,
                 RequireComponent<BossPressurePositionController>(bossBarrageEmitter.gameObject, "boss pressure position controller"),
                 bossPressureActionDirector,
@@ -977,6 +982,7 @@ namespace DimensionBrawl.Editor
                 RequireComponent<BossPressureActionDirector>(bossProxy, "boss pressure action director");
             BossSummonPressureAction bossSummonPressureAction =
                 RequireComponent<BossSummonPressureAction>(bossProxy, "boss summon pressure action");
+            FrontlineWaveStageProfile stageProfile = LoadAsset<FrontlineWaveStageProfile>(StageProfilePath);
             BossPressurePositionController bossPressurePosition =
                 RequireComponent<BossPressurePositionController>(bossProxy, "boss pressure position controller");
             CombatHealth bossHealth = RequireComponent<CombatHealth>(bossProxy, "boss proxy health");
@@ -1255,6 +1261,7 @@ namespace DimensionBrawl.Editor
                 summonSlot1Action,
                 emitter,
                 bossBasicFireEmitter,
+                stageProfile,
                 bossPressureCost,
                 bossPressureActionDirector);
             ValidatePocketCueBridges(
@@ -1281,6 +1288,7 @@ namespace DimensionBrawl.Editor
                 emitter,
                 bossBasicFireEmitter,
                 pocketOwner,
+                stageProfile,
                 bossPressureCost,
                 bossPressurePosition,
                 bossPressureActionDirector,
@@ -5263,6 +5271,7 @@ namespace DimensionBrawl.Editor
             PlayerSummonSlot1Action summonSlot1Action,
             BossBarrageEmitter bossBarrageEmitter,
             BossBasicFireEmitter bossBasicFireEmitter,
+            FrontlineWaveStageProfile stageProfile,
             BossPressureCostLadder bossPressureCost,
             BossPressureActionDirector bossPressureActionDirector,
             SummonLaneSpace laneSpace)
@@ -5297,6 +5306,8 @@ namespace DimensionBrawl.Editor
                 owner,
                 "summonPressureBlockOpportunity",
                 LoadAsset<SummonOpportunityWindowProfile>(SummonOpportunityProfilePath));
+            SetObjectReference(owner, "stageProfile", stageProfile);
+            owner.AssignStageProfileForReview(stageProfile);
             SetFloat(owner, "skill1FollowupClearDelaySeconds", 0.75f);
             EditorUtility.SetDirty(owner);
             return owner;
@@ -5396,6 +5407,7 @@ namespace DimensionBrawl.Editor
             BossBarrageEmitter bossBarrageEmitter,
             BossBasicFireEmitter bossBasicFireEmitter,
             BossBarragePocketReviewOwner pocketOwner,
+            FrontlineWaveStageProfile stageProfile,
             BossPressureCostLadder bossPressureCost,
             BossPressurePositionController bossPressurePosition,
             BossPressureActionDirector bossPressureActionDirector,
@@ -5426,8 +5438,12 @@ namespace DimensionBrawl.Editor
                 bossBasicFireEmitter);
             SetObjectReference(hud, "bossBasicFireEmitter", bossBasicFireEmitter);
             SetObjectReference(hud, "duelReviewOwner", null);
+            SetObjectReference(hud, "stageProfile", stageProfile);
+            hud.AssignStageProfileForReview(stageProfile);
             SetBool(hud, "showCenterReticle", false);
             SetBool(hud, "showResultBanner", true);
+            SetString(hud, "stageEpisodeLabel", stageProfile.StageEpisodeLabel);
+            SetString(hud, "objectiveBadgeLabel", stageProfile.ObjectiveBadgeLabel);
             SetFloat(hud, "resultBannerWidth", 540f);
             SetFloat(hud, "resultBannerHeight", 82f);
             SetFloat(hud, "resultBannerBottomOffset", 112f);
@@ -9069,6 +9085,7 @@ namespace DimensionBrawl.Editor
             PlayerSummonSlot1Action summonSlot1Action,
             BossBarrageEmitter bossBarrageEmitter,
             BossBasicFireEmitter bossBasicFireEmitter,
+            FrontlineWaveStageProfile stageProfile,
             BossPressureCostLadder bossPressureCost,
             BossPressureActionDirector bossPressureActionDirector)
         {
@@ -9080,6 +9097,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(owner, "summonSlot1Action", summonSlot1Action);
             ValidateObjectReference(owner, "bossBarrageEmitter", bossBarrageEmitter);
             ValidateObjectReference(owner, "bossBasicFireEmitter", bossBasicFireEmitter);
+            ValidateObjectReference(owner, "stageProfile", stageProfile);
             ValidateObjectReference(owner, "bossPressureCostLadder", bossPressureCost);
             ValidateObjectReference(owner, "bossPressureActionDirector", bossPressureActionDirector);
             ValidateObjectReference(
@@ -9091,6 +9109,16 @@ namespace DimensionBrawl.Editor
             ValidateBool(owner, "stopBossPressureCostOnEnd", true);
             ValidateBool(owner, "stopBossPressureActionsOnEnd", true);
             ValidateBool(owner, "stopEnergyGainOnEnd", true);
+            if (owner.StageProfile != stageProfile)
+            {
+                throw new InvalidOperationException($"{owner.name}.StageProfile is not bound to {stageProfile.name}.");
+            }
+
+            if (owner.ObjectiveStepCount != stageProfile.ObjectiveStepCount)
+            {
+                throw new InvalidOperationException("Pocket owner objective count does not match the frontline stage profile.");
+            }
+
             ValidateFloat(owner, "skill1FollowupClearDelaySeconds", 0.75f);
             ValidateAssignedObjectReference(owner, "clearMarker");
             ValidateAssignedObjectReference(owner, "failMarker");
@@ -9276,6 +9304,7 @@ namespace DimensionBrawl.Editor
             BossBarrageEmitter bossBarrageEmitter,
             BossBasicFireEmitter bossBasicFireEmitter,
             BossBarragePocketReviewOwner pocketOwner,
+            FrontlineWaveStageProfile stageProfile,
             BossPressureCostLadder bossPressureCost,
             BossPressurePositionController bossPressurePosition,
             BossPressureActionDirector bossPressureActionDirector,
@@ -9304,8 +9333,16 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(hud, "bossSummonPressureAction", bossSummonPressureAction);
             ValidateObjectReference(hud, "pocketReviewOwner", pocketOwner);
             ValidateObjectReference(hud, "duelReviewOwner", null);
+            ValidateObjectReference(hud, "stageProfile", stageProfile);
+            if (hud.StageProfileForReview != stageProfile)
+            {
+                throw new InvalidOperationException($"{hud.name}.StageProfileForReview is not bound to {stageProfile.name}.");
+            }
+
             ValidateBool(hud, "showCenterReticle", false);
             ValidateBool(hud, "showResultBanner", true);
+            ValidateString(hud, "stageEpisodeLabel", stageProfile.StageEpisodeLabel);
+            ValidateString(hud, "objectiveBadgeLabel", stageProfile.ObjectiveBadgeLabel);
             ValidateFloat(hud, "resultBannerWidth", 540f);
             ValidateFloat(hud, "resultBannerHeight", 82f);
             ValidateFloat(hud, "resultBannerBottomOffset", 112f);
