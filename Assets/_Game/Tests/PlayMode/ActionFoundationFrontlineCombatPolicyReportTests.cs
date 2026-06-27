@@ -6292,7 +6292,17 @@ namespace DimensionBrawl.Tests
                 && IsStageResultCopy(gunOnlySurvival)
                 && IsStageResultCopy(forwardRiskPhysicalSummonPunish)
                 && IsStageResultCopy(physicalCloseChain)
-                && IsStageResultCopy(blockedRecovery);
+                && IsStageResultCopy(blockedRecovery)
+                && !string.IsNullOrWhiteSpace(noSummonSurvival.ResultRecordTokenId)
+                && !string.IsNullOrWhiteSpace(gunOnlySurvival.ResultRecordTokenId)
+                && !string.IsNullOrWhiteSpace(forwardRiskPhysicalSummonPunish.ResultRecordTokenId)
+                && !string.IsNullOrWhiteSpace(physicalCloseChain.ResultRecordTokenId)
+                && !string.IsNullOrWhiteSpace(blockedRecovery.ResultRecordTokenId)
+                && !string.IsNullOrWhiteSpace(noSummonSurvival.ResultRecordNextStateHookId)
+                && !string.IsNullOrWhiteSpace(gunOnlySurvival.ResultRecordNextStateHookId)
+                && !string.IsNullOrWhiteSpace(forwardRiskPhysicalSummonPunish.ResultRecordNextStateHookId)
+                && !string.IsNullOrWhiteSpace(physicalCloseChain.ResultRecordNextStateHookId)
+                && !string.IsNullOrWhiteSpace(blockedRecovery.ResultRecordNextStateHookId);
             bool pressureSlotMeasured = forwardRiskEnergy.EnergyTier1DurationSeconds >= 0f
                 && backlineEnergy.EnergyTier1DurationSeconds >= 0f
                 && forwardRiskEnergy.EnergyTier1DurationSeconds < backlineEnergy.EnergyTier1DurationSeconds
@@ -6386,7 +6396,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 "| NIKKE stage-result runtime | "
                 + $"{FormatCoverageStatus(stageResultMeasured, "PARTIAL")} | "
-                + $"bad routes commit fail hooks at {FormatSeconds(noSummonSurvival.FirstPlayerDownAtSeconds)} / {FormatSeconds(gunOnlySurvival.FirstPlayerDownAtSeconds)} with copy `{noSummonSurvival.ResultRecordTitle}`/`{gunOnlySurvival.ResultRecordTitle}`; clean physical `{ResolveResultHookClass(forwardRiskPhysicalSummonPunish)}` copy `{forwardRiskPhysicalSummonPunish.ResultRecordTitle}`; live close-chain `{ResolveResultHookClass(physicalCloseChain)}`; boss-screen recovery `{ResolveResultHookClass(blockedRecovery)}` copy `{blockedRecovery.ResultRecordRouteLabel}` | "
+                + $"bad routes commit fail hooks at {FormatSeconds(noSummonSurvival.FirstPlayerDownAtSeconds)} / {FormatSeconds(gunOnlySurvival.FirstPlayerDownAtSeconds)} with copy `{noSummonSurvival.ResultRecordTitle}`/`{gunOnlySurvival.ResultRecordTitle}` and token `{noSummonSurvival.ResultRecordTokenId}->{noSummonSurvival.ResultRecordNextStateHookId}`; clean physical `{ResolveResultHookClass(forwardRiskPhysicalSummonPunish)}` token `{forwardRiskPhysicalSummonPunish.ResultRecordTokenId}->{forwardRiskPhysicalSummonPunish.ResultRecordNextStateHookId}`; live close-chain `{ResolveResultHookClass(physicalCloseChain)}`; boss-screen recovery `{ResolveResultHookClass(blockedRecovery)}` token `{blockedRecovery.ResultRecordTokenId}->{blockedRecovery.ResultRecordNextStateHookId}` | "
                 + "Reward/item persistence and campaign clear are intentionally not implemented in this V1 combat slice. |");
             builder.AppendLine(
                 "| Stage pressure-slot discipline | "
