@@ -67,6 +67,9 @@ namespace DimensionBrawl.Tests
             ForwardRiskTier1DecisionRoute,
             ForwardRiskTier2DecisionRoute,
             ForwardRiskTier3DecisionRoute,
+            ForwardRiskTier1RecoveryRoute,
+            ForwardRiskTier2RecoveryRoute,
+            ForwardRiskTier3RecoveryRoute,
             BacklineBarrageProbe,
             ForwardRiskBarrageProbe,
             BacklinePhysicalBarrageProbe,
@@ -103,6 +106,9 @@ namespace DimensionBrawl.Tests
             PolicyKind.ForwardRiskTier1DecisionRoute,
             PolicyKind.ForwardRiskTier2DecisionRoute,
             PolicyKind.ForwardRiskTier3DecisionRoute,
+            PolicyKind.ForwardRiskTier1RecoveryRoute,
+            PolicyKind.ForwardRiskTier2RecoveryRoute,
+            PolicyKind.ForwardRiskTier3RecoveryRoute,
             PolicyKind.BacklineBarrageProbe,
             PolicyKind.ForwardRiskBarrageProbe,
             PolicyKind.BacklinePhysicalBarrageProbe,
@@ -138,6 +144,9 @@ namespace DimensionBrawl.Tests
             PolicyKind.ForwardRiskTier1DecisionRoute,
             PolicyKind.ForwardRiskTier2DecisionRoute,
             PolicyKind.ForwardRiskTier3DecisionRoute,
+            PolicyKind.ForwardRiskTier1RecoveryRoute,
+            PolicyKind.ForwardRiskTier2RecoveryRoute,
+            PolicyKind.ForwardRiskTier3RecoveryRoute,
             PolicyKind.BossScreenIgnoredNoRecovery,
             PolicyKind.BossScreenBlockCounterRecovery
         };
@@ -196,6 +205,12 @@ namespace DimensionBrawl.Tests
                     RequireResult(results, PolicyKind.ForwardRiskTier2DecisionRoute);
                 PolicyMetrics forwardRiskTier3Decision =
                     RequireResult(results, PolicyKind.ForwardRiskTier3DecisionRoute);
+                PolicyMetrics forwardRiskTier1Recovery =
+                    RequireResult(results, PolicyKind.ForwardRiskTier1RecoveryRoute);
+                PolicyMetrics forwardRiskTier2Recovery =
+                    RequireResult(results, PolicyKind.ForwardRiskTier2RecoveryRoute);
+                PolicyMetrics forwardRiskTier3Recovery =
+                    RequireResult(results, PolicyKind.ForwardRiskTier3RecoveryRoute);
                 PolicyMetrics backlineBarrage = RequireResult(results, PolicyKind.BacklineBarrageProbe);
                 PolicyMetrics forwardRiskBarrage = RequireResult(results, PolicyKind.ForwardRiskBarrageProbe);
                 PolicyMetrics backlinePhysicalBarrage = RequireResult(
@@ -261,6 +276,9 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(
                     markdown.Contains("## EN Spend Decision Route"),
                     "The report should connect EN tier waiting to the actual summon -> Skill1 route, not stop at resource timing.");
+                Assert.IsTrue(
+                    markdown.Contains("## EN Spend Recovery Route"),
+                    "The report should prove whether a boss-screen-blocked EN spend branch closes through counter recovery.");
                 Assert.IsTrue(
                     markdown.Contains("## Skill Gate Contract"),
                     "The report should prove raw Skill1 hits are not the same as state-gated follow-up commits.");
@@ -578,6 +596,9 @@ namespace DimensionBrawl.Tests
                 AssertEnergyDecisionRoute(forwardRiskTier1Decision, 1);
                 AssertEnergyDecisionRoute(forwardRiskTier2Decision, 2);
                 AssertEnergyDecisionRoute(forwardRiskTier3Decision, 3);
+                AssertEnergyRecoveryRoute(forwardRiskTier1Recovery, 1);
+                AssertEnergyRecoveryRoute(forwardRiskTier2Recovery, 2);
+                AssertEnergyRecoveryRoute(forwardRiskTier3Recovery, 3);
                 Assert.Less(
                     forwardRiskTier1Decision.EnergyTier1DurationSeconds,
                     forwardRiskTier2Decision.EnergyTier2DurationSeconds,
@@ -1231,13 +1252,22 @@ namespace DimensionBrawl.Tests
                         maxSeconds: EnergyTierLadderProbeMaxSeconds);
                     break;
                 case PolicyKind.ForwardRiskTier1DecisionRoute:
-                    yield return RunForwardRiskTierDecisionRoute(context, 1);
+                    yield return RunForwardRiskTierDecisionRoute(context, 1, false);
                     break;
                 case PolicyKind.ForwardRiskTier2DecisionRoute:
-                    yield return RunForwardRiskTierDecisionRoute(context, 2);
+                    yield return RunForwardRiskTierDecisionRoute(context, 2, false);
                     break;
                 case PolicyKind.ForwardRiskTier3DecisionRoute:
-                    yield return RunForwardRiskTierDecisionRoute(context, 3);
+                    yield return RunForwardRiskTierDecisionRoute(context, 3, false);
+                    break;
+                case PolicyKind.ForwardRiskTier1RecoveryRoute:
+                    yield return RunForwardRiskTierDecisionRoute(context, 1, true);
+                    break;
+                case PolicyKind.ForwardRiskTier2RecoveryRoute:
+                    yield return RunForwardRiskTierDecisionRoute(context, 2, true);
+                    break;
+                case PolicyKind.ForwardRiskTier3RecoveryRoute:
+                    yield return RunForwardRiskTierDecisionRoute(context, 3, true);
                     break;
                 case PolicyKind.BacklineBarrageProbe:
                     yield return RunBarrageShapeProbe(context, BacklineEnergyProbeForwardRisk01);
@@ -1539,7 +1569,8 @@ namespace DimensionBrawl.Tests
 
         private static IEnumerator RunForwardRiskTierDecisionRoute(
             CombatPolicyContext context,
-            int targetTier)
+            int targetTier,
+            bool recoverAfterBossScreenBlock)
         {
             BossBarragePatternProfile physicalPattern = context.BossEmitter.CurrentPattern;
             context.BossEmitter.SetFiringEnabled(false);
@@ -1595,7 +1626,7 @@ namespace DimensionBrawl.Tests
             RecordSummonUse(context, false);
             context.PocketOwner.Tick(0f);
             context.Sample();
-            yield return Advance(context, 0.2f);
+            yield return WaitForActiveAllyPressureScreen(context, "physical summon block");
             DeactivateActiveBossProjectiles();
             context.BossEmitter.SetFiringEnabled(false);
             context.BossEmitter.SetFiringEnabled(true);
@@ -1605,6 +1636,21 @@ namespace DimensionBrawl.Tests
             }
 
             yield return ApplyPhysicalBossBarrageAndPunish(context, PhysicalBarrageProbeFlightSeconds);
+            if (!recoverAfterBossScreenBlock)
+            {
+                yield break;
+            }
+
+            if (!context.PocketOwner.IsCounterWaveCompletionRecorded)
+            {
+                context.Metrics.Notes.Add("tier recovery requested without counter wave");
+                yield break;
+            }
+
+            yield return AnswerCounterWaveWithFreshSummon(context);
+            yield return WaitForCounterFinalWindow(context, 3f);
+            yield return ConfirmSkill1Followup(context);
+            yield return Advance(context, 1.0f);
         }
 
         private static IEnumerator RunPhysicalBarrageProbe(
@@ -1640,7 +1686,7 @@ namespace DimensionBrawl.Tests
             RecordSummonUse(context, false);
             context.PocketOwner.Tick(0f);
             context.Sample();
-            yield return Advance(context, 0.2f);
+            yield return WaitForActiveAllyPressureScreen(context, "physical summon punish");
             DeactivateActiveBossProjectiles();
             context.BossEmitter.SetFiringEnabled(false);
             context.BossEmitter.SetFiringEnabled(true);
@@ -1685,7 +1731,7 @@ namespace DimensionBrawl.Tests
             RecordSummonUse(context, false);
             context.PocketOwner.Tick(0f);
             context.Sample();
-            yield return Advance(context, 0.2f);
+            yield return WaitForActiveAllyPressureScreen(context, "tier decision");
             DeactivateActiveBossProjectiles();
             context.BossEmitter.SetFiringEnabled(false);
             context.BossEmitter.SetFiringEnabled(true);
@@ -2851,6 +2897,8 @@ namespace DimensionBrawl.Tests
             builder.AppendLine();
             AppendEnergySpendDecisionRoute(builder, results);
             builder.AppendLine();
+            AppendEnergySpendRecoveryRoute(builder, results);
+            builder.AppendLine();
             builder.AppendLine("## Energy Presentation Bridge");
             builder.AppendLine("| Policy | Energy screen total F/R/S | Energy VFX F/R/S | Last screen tier | Last VFX ready/spend tier | Counter answer pulse | Result |");
             builder.AppendLine("|---|---:|---:|---:|---:|---:|---|");
@@ -3306,6 +3354,12 @@ namespace DimensionBrawl.Tests
             PolicyMetrics forwardRiskPhysicalSummonPunish = RequireResult(
                 results,
                 PolicyKind.ForwardRiskPhysicalSummonPunishProbe);
+            PolicyMetrics forwardRiskTier1Decision = RequireResult(results, PolicyKind.ForwardRiskTier1DecisionRoute);
+            PolicyMetrics forwardRiskTier2Decision = RequireResult(results, PolicyKind.ForwardRiskTier2DecisionRoute);
+            PolicyMetrics forwardRiskTier3Decision = RequireResult(results, PolicyKind.ForwardRiskTier3DecisionRoute);
+            PolicyMetrics forwardRiskTier1Recovery = RequireResult(results, PolicyKind.ForwardRiskTier1RecoveryRoute);
+            PolicyMetrics forwardRiskTier2Recovery = RequireResult(results, PolicyKind.ForwardRiskTier2RecoveryRoute);
+            PolicyMetrics forwardRiskTier3Recovery = RequireResult(results, PolicyKind.ForwardRiskTier3RecoveryRoute);
             PolicyMetrics late = RequireResult(results, PolicyKind.LateSummon);
             PolicyMetrics counterRecovery = RequireResult(results, PolicyKind.MissedFollowupCounterRecovery);
             PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
@@ -3327,6 +3381,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Lock/unlock cadence: intended block->window {FormatSeconds(intended.BlockToFollowupWindowSeconds)}, window->hit {FormatSeconds(intended.FollowupWindowToHitSeconds)}; boss-screen recovery answer pulse {blockedRecovery.CounterWaveAnswerEnergyPulse:0}, counter->answer {FormatSeconds(blockedRecovery.CounterTriggerToAnswerSeconds)}, answer->stable {FormatSeconds(blockedRecovery.CounterAnswerToStableSeconds)}, stable->final {FormatSeconds(blockedRecovery.CounterStableToFinalWindowSeconds)}, final->hit {FormatSeconds(blockedRecovery.FinalWindowToHitSeconds)}.");
             builder.AppendLine($"- Punish window tolerance: delayed clean hit after {FormatSeconds(delayedIntended.FollowupHitWindowDelaySeconds)} with {FormatSeconds(delayedIntended.FollowupWindowRemainingAtFirstHitSeconds)} remaining; delayed boss-screen recovery hit after {FormatSeconds(delayedBlockedRecovery.FollowupHitWindowDelaySeconds)} with {FormatSeconds(delayedBlockedRecovery.FollowupWindowRemainingAtFirstHitSeconds)} remaining.");
             builder.AppendLine($"- Forward-risk EN split: backline LV1 {FormatSeconds(backlineEnergy.EnergyTier1DurationSeconds)} at x{backlineEnergy.AverageEnergyGainMultiplier:0.00}, forward-risk LV1 {FormatSeconds(forwardRiskEnergy.EnergyTier1DurationSeconds)} at x{forwardRiskEnergy.AverageEnergyGainMultiplier:0.00}; forward route is {ResolveEnergySpeedup(backlineEnergy, forwardRiskEnergy):0.0}x faster.");
+            builder.AppendLine($"- EN spend branch: direct LV1/LV2/LV3 results `{forwardRiskTier1Decision.ResultKind}`/`{forwardRiskTier2Decision.ResultKind}`/`{forwardRiskTier3Decision.ResultKind}` with first unresolved `{ResolveFirstUnresolvedBeat(forwardRiskTier1Decision)}`/`{ResolveFirstUnresolvedBeat(forwardRiskTier2Decision)}`/`{ResolveFirstUnresolvedBeat(forwardRiskTier3Decision)}`; recovery results `{forwardRiskTier1Recovery.ResultKind}`/`{forwardRiskTier2Recovery.ResultKind}`/`{forwardRiskTier3Recovery.ResultKind}` with HP lost {forwardRiskTier1Recovery.PlayerDamageTaken:0.0}/{forwardRiskTier2Recovery.PlayerDamageTaken:0.0}/{forwardRiskTier3Recovery.PlayerDamageTaken:0.0}.");
             builder.AppendLine($"- Energy presentation bridge: forward-risk energy screen/VFX F/R/S {forwardRiskEnergy.ForwardRiskEnergyScreenCueRequests}/{forwardRiskEnergy.EnergyReadyScreenCueRequests}/{forwardRiskEnergy.EnergySpendScreenCueRequests} and {forwardRiskEnergy.ForwardRiskEnergyVfxCueRequests}/{forwardRiskEnergy.EnergyReadyVfxCueRequests}/{forwardRiskEnergy.EnergySpendVfxCueRequests}; boss-screen recovery ready/spend screen {blockedRecovery.EnergyReadyScreenCueRequests}/{blockedRecovery.EnergySpendScreenCueRequests}, VFX {blockedRecovery.EnergyReadyVfxCueRequests}/{blockedRecovery.EnergySpendVfxCueRequests}.");
             builder.AppendLine($"- Forward-risk barrage shape: backline `{backlineBarrage.BarrageShapePatternId}` near-body {backlineBarrage.BarrageShapeNearProjectileCount}/{backlineBarrage.BarrageShapeProjectileCount}, avg lateral gap {backlineBarrage.BarrageShapeAverageLateralGap:0.00}, nearest {backlineBarrage.BarrageShapeNearestLaneDistance:0.00}, density {backlineBarrage.BarrageShapeThreatDensity:0.00}; forward near-body {forwardRiskBarrage.BarrageShapeNearProjectileCount}/{forwardRiskBarrage.BarrageShapeProjectileCount}, avg lateral gap {forwardRiskBarrage.BarrageShapeAverageLateralGap:0.00}, nearest {forwardRiskBarrage.BarrageShapeNearestLaneDistance:0.00}, density {forwardRiskBarrage.BarrageShapeThreatDensity:0.00}.");
             if (forwardRiskBarrage.BarrageShapeNearProjectileCount <= backlineBarrage.BarrageShapeNearProjectileCount)
@@ -3948,6 +4003,55 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(" |");
         }
 
+        private static void AppendEnergySpendRecoveryRoute(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results)
+        {
+            builder.AppendLine("## EN Spend Recovery Route");
+            builder.AppendLine("| Policy | Target tier | Ready at | HP lost | Summon tier | Summons | Skill tier/hits | Counter->answer | Answer->stable | Final->hit | Boss dmg P/S | Result | Read |");
+            builder.AppendLine("|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---|");
+            AppendEnergySpendRecoveryRouteRow(
+                builder,
+                RequireResult(results, PolicyKind.ForwardRiskTier1RecoveryRoute));
+            AppendEnergySpendRecoveryRouteRow(
+                builder,
+                RequireResult(results, PolicyKind.ForwardRiskTier2RecoveryRoute));
+            AppendEnergySpendRecoveryRouteRow(
+                builder,
+                RequireResult(results, PolicyKind.ForwardRiskTier3RecoveryRoute));
+        }
+
+        private static void AppendEnergySpendRecoveryRouteRow(StringBuilder builder, PolicyMetrics result)
+        {
+            builder.Append("| ");
+            builder.Append(result.Policy);
+            builder.Append(" | ");
+            builder.Append(FormatEnergyProbeTargetTier(result));
+            builder.Append(" | ");
+            builder.Append(FormatSeconds(ResolveEnergyTargetDuration(result)));
+            builder.Append(" | ");
+            builder.Append(result.PlayerDamageTaken.ToString("0.0"));
+            builder.Append(" | ");
+            builder.Append(result.HighestSummonSpentTier);
+            builder.Append(" | ");
+            builder.Append(result.SummonUses);
+            builder.Append(" | ");
+            builder.Append($"{result.HighestSkill1SpentTier}/{result.SkillProjectileHits}");
+            builder.Append(" | ");
+            builder.Append(FormatSeconds(result.CounterTriggerToAnswerSeconds));
+            builder.Append(" | ");
+            builder.Append(FormatSeconds(result.CounterAnswerToStableSeconds));
+            builder.Append(" | ");
+            builder.Append(FormatSeconds(result.FinalWindowToHitSeconds));
+            builder.Append(" | ");
+            builder.Append($"{result.BossDamageFromPlayer:0.0}/{result.BossDamageFromAllySummon:0.0}");
+            builder.Append(" | ");
+            builder.Append(EscapeTable(result.ResultKind));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveEnergySpendDecisionRead(result)));
+            builder.AppendLine(" |");
+        }
+
         private static float ResolveEnergyTargetDuration(PolicyMetrics result)
         {
             return result.EnergyProbeTargetTier switch
@@ -3974,6 +4078,11 @@ namespace DimensionBrawl.Tests
             if (result.FirstPlayerDownAtSeconds >= 0f)
             {
                 return "wait failed before answer";
+            }
+
+            if (result.ResultKind == "CounterRecoveryClear")
+            {
+                return "boss screen recovered after fresh answer";
             }
 
             if (result.ResultKind != "CleanFollowupClear")
@@ -4307,6 +4416,9 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.ForwardRiskTier1DecisionRoute:
                 case PolicyKind.ForwardRiskTier2DecisionRoute:
                 case PolicyKind.ForwardRiskTier3DecisionRoute:
+                case PolicyKind.ForwardRiskTier1RecoveryRoute:
+                case PolicyKind.ForwardRiskTier2RecoveryRoute:
+                case PolicyKind.ForwardRiskTier3RecoveryRoute:
                 case PolicyKind.IntendedRoute:
                 case PolicyKind.IntendedDelayedFollowup:
                 case PolicyKind.LateSummon:
@@ -5161,6 +5273,64 @@ namespace DimensionBrawl.Tests
                 $"{result.Policy} should remain unresolved instead of fabricating a clean result after a boss-screen block.");
         }
 
+        private static void AssertEnergyRecoveryRoute(PolicyMetrics result, int expectedTier)
+        {
+            Assert.AreEqual(
+                expectedTier,
+                result.EnergyProbeTargetTier,
+                $"{result.Policy} should explicitly wait for the expected EN tier before spending.");
+            Assert.GreaterOrEqual(
+                ResolveEnergyTargetDuration(result),
+                0f,
+                $"{result.Policy} should record the target-tier ready time.");
+            Assert.AreEqual(
+                expectedTier,
+                result.HighestSummonSpentTier,
+                $"{result.Policy} should spend the opening summon at the target tier before recovery.");
+            Assert.GreaterOrEqual(
+                result.SummonUses,
+                2,
+                $"{result.Policy} should use a fresh second summon to answer the counter branch.");
+            Assert.GreaterOrEqual(
+                result.FirstCounterWaveAtSeconds,
+                0f,
+                $"{result.Policy} should record the boss-screen counter wave timing.");
+            Assert.Greater(
+                result.FirstCounterAnswerSummonAtSeconds,
+                -0.01f,
+                $"{result.Policy} should record the fresh counter answer summon timing.");
+            Assert.GreaterOrEqual(
+                result.FirstCounterAnswerSummonAtSeconds,
+                result.FirstCounterWaveAtSeconds,
+                $"{result.Policy} should not answer before the boss-screen counter wave is observed.");
+            Assert.IsTrue(
+                result.BossBlockedSkill1Followup,
+                $"{result.Policy} should still prove the first Skill1 was blocked by boss-screen pressure.");
+            Assert.Greater(
+                result.CounterWaves,
+                0,
+                $"{result.Policy} should expose the counter wave before recovery.");
+            Assert.IsTrue(
+                result.CounterRecoveryConfirmed,
+                $"{result.Policy} should stabilize the counter branch after the fresh summon answer.");
+            Assert.Greater(
+                result.SkillProjectileHits,
+                0,
+                $"{result.Policy} should land the final Skill1 after the counter answer.");
+            Assert.AreEqual(
+                "CounterRecoveryClear",
+                result.ResultKind,
+                $"{result.Policy} should close as a counter recovery result, not a clean direct payoff.");
+            Assert.AreEqual(
+                "Complete",
+                ResolveFirstUnresolvedBeat(result),
+                $"{result.Policy} should complete the stage beat after counter recovery.");
+            Assert.Greater(
+                result.ResultRecords,
+                0,
+                $"{result.Policy} should commit the recovered result hook.");
+        }
+
         private static string ResolveRepeatabilityVerdict(
             IReadOnlyList<PolicyMetrics> repeatabilityResults,
             PolicyKind policy)
@@ -5313,6 +5483,12 @@ namespace DimensionBrawl.Tests
                     return IsEnergyDecisionRouteRepeatabilityPass(result, 2);
                 case PolicyKind.ForwardRiskTier3DecisionRoute:
                     return IsEnergyDecisionRouteRepeatabilityPass(result, 3);
+                case PolicyKind.ForwardRiskTier1RecoveryRoute:
+                    return IsEnergyRecoveryRouteRepeatabilityPass(result, 1);
+                case PolicyKind.ForwardRiskTier2RecoveryRoute:
+                    return IsEnergyRecoveryRouteRepeatabilityPass(result, 2);
+                case PolicyKind.ForwardRiskTier3RecoveryRoute:
+                    return IsEnergyRecoveryRouteRepeatabilityPass(result, 3);
                 case PolicyKind.BossScreenIgnoredNoRecovery:
                     return !result.IsClearResult
                         && result.EnemyFrontlineBodyHits > 0
@@ -5345,6 +5521,24 @@ namespace DimensionBrawl.Tests
                 && result.CounterWaves > 0
                 && ResolveFirstUnresolvedBeat(result) == "CounterAnswer"
                 && result.ResultRecords == 0;
+        }
+
+        private static bool IsEnergyRecoveryRouteRepeatabilityPass(PolicyMetrics result, int expectedTier)
+        {
+            return result.ResultKind == "CounterRecoveryClear"
+                && result.EnergyProbeTargetTier == expectedTier
+                && ResolveEnergyTargetDuration(result) >= 0f
+                && result.HighestSummonSpentTier == expectedTier
+                && result.SummonUses >= 2
+                && result.PhysicalBarragePlayerHits == 0
+                && result.BossBlockedSkill1Followup
+                && result.SkillProjectileHits > 0
+                && result.CounterWaves > 0
+                && result.FirstCounterWaveAtSeconds >= 0f
+                && result.FirstCounterAnswerSummonAtSeconds >= result.FirstCounterWaveAtSeconds
+                && result.CounterRecoveryConfirmed
+                && ResolveFirstUnresolvedBeat(result) == "Complete"
+                && result.ResultRecords > 0;
         }
 
         private static int CountPolicyResults(IReadOnlyList<PolicyMetrics> results, PolicyKind policy)
@@ -5612,6 +5806,25 @@ namespace DimensionBrawl.Tests
             }
 
             return null;
+        }
+
+        private static IEnumerator WaitForActiveAllyPressureScreen(
+            CombatPolicyContext context,
+            string notePrefix)
+        {
+            float start = context.Metrics.ElapsedSeconds;
+            while (FindActiveAllyPressureScreen() == null
+                && context.Metrics.ElapsedSeconds - start < 0.6f)
+            {
+                yield return Advance(context, 0.05f);
+                context.PocketOwner.Tick(0f);
+                context.Sample();
+            }
+
+            if (FindActiveAllyPressureScreen() == null)
+            {
+                context.Metrics.Notes.Add($"{notePrefix} ally pressure screen did not become active before barrage");
+            }
         }
 
         private static SummonPressureScreen FindActiveEnemyPressureScreen()
