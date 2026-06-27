@@ -338,6 +338,9 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("## Shared Mana Delayed Counter Recovery Branch"),
                     "The report should prove whether delayed support branches close through counter recovery.");
                 Assert.IsTrue(
+                    markdown.Contains("## Support Decision Matrix"),
+                    "The report should compare summon choices as combat decisions, not only isolated policy rows.");
+                Assert.IsTrue(
                     markdown.Contains("## Skill Gate Contract"),
                     "The report should prove raw Skill1 hits are not the same as state-gated follow-up commits.");
                 AssertStageWaveBeatMap(results);
@@ -3258,6 +3261,8 @@ namespace DimensionBrawl.Tests
             builder.AppendLine();
             AppendStructuralGateSummary(builder, results);
             builder.AppendLine();
+            AppendSupportDecisionMatrixSummary(builder, results);
+            builder.AppendLine();
             AppendPolicyRepeatabilityGate(builder, repeatabilityResults);
             builder.AppendLine();
             builder.AppendLine("| Policy | Result | Sim s | HP lost | Boss dmg | Stability | Min stability | Boss waves | Player hits | Summons | Blocks | Skill1 hits | Fronts A/E | Route shape | Decision |");
@@ -4216,6 +4221,106 @@ namespace DimensionBrawl.Tests
                 $"| 4. Enemy pressure actor cost | {FormatGateStatus(axis4Pass)} | no-action body hits {noSummon.EnemyFrontlineBodyHits}; ignored boss-screen body hits {ignoredRecovery.EnemyFrontlineBodyHits}, damage {ignoredRecovery.PlayerDamageTaken:0.0}; recovery body hits {blockedRecovery.EnemyFrontlineBodyHits}, damage {blockedRecovery.PlayerDamageTaken:0.0} |");
             builder.AppendLine(
                 $"| Physical clean route reference | {FormatGateStatus(forwardRiskPhysicalSummonPunish.IsClearResult)} | physical summon-punish clears in {FormatSeconds(forwardRiskPhysicalSummonPunish.ElapsedSeconds)} with {forwardRiskPhysicalSummonPunish.PlayerDamageTaken:0.0} HP lost versus intended route {FormatSeconds(intended.ElapsedSeconds)} / {intended.PlayerDamageTaken:0.0} HP lost |");
+        }
+
+        private static void AppendSupportDecisionMatrixSummary(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results)
+        {
+            builder.AppendLine("## Support Decision Matrix");
+            builder.AppendLine("- ArkData/Blue Archive lens: support choice should read as cost, exposure, answer, and recovery-state tradeoff before UI/coaster feedback.");
+            builder.AppendLine("| Choice | Cost path | Support effect | HP before main | Physical hits | Slot1 state | Recovery burden | Result | Read |");
+            builder.AppendLine("|---|---|---|---:|---:|---|---|---|---|");
+            AppendSupportDecisionMatrixRow(
+                builder,
+                "Slot1 LV1 recovery",
+                "100",
+                "screen/counter opener",
+                RequireResult(results, PolicyKind.ForwardRiskTier1RecoveryRoute),
+                "immediate Slot1",
+                "baseline emergency answer");
+            AppendSupportDecisionMatrixRow(
+                builder,
+                "Slot2 full-bank combo",
+                "200 -> 100",
+                "marksman suppresses enemy frontline",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute),
+                "Slot1 preserved",
+                "low-cost support keeps enough EN for the main answer");
+            AppendSupportDecisionMatrixRow(
+                builder,
+                "Slot2 delayed recovery",
+                "200 -> recharge -> 100",
+                "marksman suppresses enemy frontline",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute),
+                "Slot1 reopens",
+                "tempo support buys a later recovery close");
+            AppendSupportDecisionMatrixRow(
+                builder,
+                "Slot3 immediate lockout",
+                "300 -> 0",
+                "vanguard holds physical line",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute),
+                "Slot1 blocked",
+                "high-cost hold spends the immediate main-answer turn");
+            AppendSupportDecisionMatrixRow(
+                builder,
+                "Slot3 delayed recovery",
+                "300 -> recharge -> 100",
+                "vanguard holds physical line",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute),
+                "Slot1 reopens",
+                "high-cost hold survives into a stable recovery close");
+        }
+
+        private static void AppendSupportDecisionMatrixRow(
+            StringBuilder builder,
+            string choice,
+            string costPath,
+            string supportEffect,
+            PolicyMetrics result,
+            string slot1State,
+            string read)
+        {
+            builder.Append("| ");
+            builder.Append(EscapeTable(choice));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(costPath));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(supportEffect));
+            builder.Append(" | ");
+            builder.Append(FormatSupportDecisionHpBeforeMain(result));
+            builder.Append(" | ");
+            builder.Append($"{result.PhysicalBarragePlayerHits}/{result.PhysicalBarrageTrackedProjectileCount}");
+            builder.Append(" | ");
+            builder.Append(EscapeTable(slot1State));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportDecisionRecoveryBurden(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable($"{result.ResultKind}/{ResolveFirstUnresolvedBeat(result)}"));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(read));
+            builder.AppendLine(" |");
+        }
+
+        private static string FormatSupportDecisionHpBeforeMain(PolicyMetrics result)
+        {
+            if (result.SupportComboPlayerDamageBeforeSlot1 >= 0f)
+            {
+                return result.SupportComboPlayerDamageBeforeSlot1.ToString("0.0");
+            }
+
+            return result.PlayerDamageTaken.ToString("0.0");
+        }
+
+        private static string FormatSupportDecisionRecoveryBurden(PolicyMetrics result)
+        {
+            if (result.CounterWaves <= 0)
+            {
+                return "none";
+            }
+
+            return $"counter {FormatSeconds(result.CounterTriggerToAnswerSeconds)} -> hit {FormatSeconds(result.FinalWindowToHitSeconds)}";
         }
 
         private static void AppendStageResultHookContract(
