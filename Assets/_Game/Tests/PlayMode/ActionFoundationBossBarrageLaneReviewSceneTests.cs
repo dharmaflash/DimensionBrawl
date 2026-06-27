@@ -3926,10 +3926,12 @@ namespace DimensionBrawl.Tests
                 screenCuePresenter.HasActiveCue,
                 "Pocket failure should keep a readable defeat edge cue long enough for a short mobile capture.");
             Assert.IsTrue(reviewHud.ShouldShowResultBanner);
-            Assert.AreEqual("MISSION FAILED", reviewHud.ResultBannerTitle);
-            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Player down"));
-            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Checks"));
-            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Time"));
+            Assert.AreEqual("PLAYER DOWN", reviewHud.ResultBannerTitle);
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Player HP reached zero"));
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Survive"));
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("/90.0s"));
+            Assert.That(reviewHud.ResultBannerDetail, Does.Not.Contain("MISSION FAILED"));
+            Assert.That(reviewHud.ResultBannerDetail, Does.Not.Contain("BOSS CLEAR"));
             float energyAfterFail = energyLadder.CurrentTierEnergy;
             energyLadder.Tick(1f);
             Assert.AreEqual(
