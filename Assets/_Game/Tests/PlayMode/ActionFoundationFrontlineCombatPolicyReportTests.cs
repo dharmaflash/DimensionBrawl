@@ -348,6 +348,9 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("## Support Decision Matrix"),
                     "The report should compare summon choices as combat decisions, not only isolated policy rows.");
                 Assert.IsTrue(
+                    markdown.Contains("Payoff verdict"),
+                    "The support decision read should compare clear time and boss damage before tuning support routes.");
+                Assert.IsTrue(
                     markdown.Contains("## Enemy Pressure Tactical Cost Matrix"),
                     "The report should prove enemy pressure actors create unattended tactical cost, not timer-only bookkeeping.");
                 Assert.IsTrue(
@@ -2273,7 +2276,8 @@ namespace DimensionBrawl.Tests
                 context,
                 PhysicalBarrageProbeFlightSeconds,
                 followupWindowsBeforeBarrage,
-                $"{supportAction.SlotActionName} delayed combo Slot1");
+                $"{supportAction.SlotActionName} delayed combo Slot1",
+                ensureEnemyPressureScreenBeforeSkill1: supportAction.MinimumSummonTier >= 3);
             if (!continueCounterRecovery)
             {
                 yield break;
@@ -2825,7 +2829,8 @@ namespace DimensionBrawl.Tests
             CombatPolicyContext context,
             float flightSeconds,
             int requiredFollowupWindowCountBeforeBarrage = -1,
-            string notePrefix = "physical summon punish")
+            string notePrefix = "physical summon punish",
+            bool ensureEnemyPressureScreenBeforeSkill1 = false)
         {
             BossBarragePatternProfile pattern = context.BossEmitter.CurrentPattern;
             float healthBefore = context.PlayerHealth.CurrentHealth;
@@ -2860,6 +2865,11 @@ namespace DimensionBrawl.Tests
             }
             else
             {
+                if (ensureEnemyPressureScreenBeforeSkill1)
+                {
+                    yield return EnsureActiveEnemyPressureScreenBeforeSkill1(context, notePrefix);
+                }
+
                 yield return ConfirmSkill1FollowupPhysically(context, PhysicalSkill1ProbeFlightSeconds);
             }
 
@@ -2945,6 +2955,38 @@ namespace DimensionBrawl.Tests
             context.Metrics.ElapsedSeconds += clearDelay;
             context.Sample();
             yield return null;
+        }
+
+        private static IEnumerator EnsureActiveEnemyPressureScreenBeforeSkill1(
+            CombatPolicyContext context,
+            string notePrefix)
+        {
+            if (FindActiveEnemyPressureScreen() != null)
+            {
+                yield break;
+            }
+
+            if (!context.BossSummonPressureAction.TryReleasePressureSummon(1))
+            {
+                context.Metrics.Notes.Add($"{notePrefix} boss screen unavailable before Skill1");
+                yield break;
+            }
+
+            context.PocketOwner.Tick(0f);
+            context.Sample();
+            float start = context.Metrics.ElapsedSeconds;
+            while (FindActiveEnemyPressureScreen() == null
+                && context.Metrics.ElapsedSeconds - start < 0.6f)
+            {
+                yield return Advance(context, 0.05f);
+                context.PocketOwner.Tick(0f);
+                context.Sample();
+            }
+
+            if (FindActiveEnemyPressureScreen() == null)
+            {
+                context.Metrics.Notes.Add($"{notePrefix} boss screen did not become active before Skill1");
+            }
         }
 
         private static string ResolvePhysicalSkill1NoHitNote(CombatPolicyContext context)
@@ -4696,8 +4738,8 @@ namespace DimensionBrawl.Tests
         {
             builder.AppendLine("## Support Decision Matrix");
             builder.AppendLine("- ArkData/Blue Archive lens: support choice should read as cost, exposure, answer, and recovery-state tradeoff before UI/coaster feedback.");
-            builder.AppendLine("| Choice | Cost path | Support effect | HP before main | Physical hits | Slot1 state | Recovery burden | Boss suppress | Result | Repeat signal | Timing verdict | Read |");
-            builder.AppendLine("|---|---|---|---:|---:|---|---|---:|---|---|---|---|");
+            builder.AppendLine("| Choice | Cost path | Support effect | HP before main | Physical hits | Slot1 state | Recovery burden | Boss suppress | Time/dmg | Result | Repeat signal | Timing verdict | Payoff verdict | Read |");
+            builder.AppendLine("|---|---|---|---:|---:|---|---|---:|---:|---|---|---|---|---|");
             AppendSupportDecisionMatrixRow(
                 builder,
                 "Slot1 LV1 recovery",
@@ -4754,9 +4796,10 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 "- Dominance read: "
                 + $"Slot2 delayed recovery matches Slot1's recovery result but costs more and shifts HP by {FormatSupportDecisionHpDelta(slot1Recovery, slot2DelayedRecovery)}; "
-                + $"Slot2 full-bank pays {FormatSupportDecisionHpDelta(slot1Recovery, slot2Combo)} HP for no recovery burden and `{slot2Combo.ResultKind}`; "
+                + $"Slot2 full-bank pays {FormatSupportDecisionHpDelta(slot1Recovery, slot2Combo)} HP for no recovery burden and `{slot2Combo.ResultKind}` in {FormatSeconds(slot2Combo.ElapsedSeconds)} / {slot2Combo.BossDamageTaken:0.0} boss damage; "
+                + $"Slot2 delayed takes {FormatSeconds(slot2DelayedRecovery.ElapsedSeconds)} / {slot2DelayedRecovery.BossDamageTaken:0.0} boss damage with recovery burden; "
                 + $"Slot3 immediate stays `{slot3Immediate.ResultKind}/{ResolveFirstUnresolvedBeat(slot3Immediate)}` despite line hold; "
-                + $"Slot3 delayed pays {FormatSupportDecisionHpDelta(slot1Recovery, slot3DelayedRecovery)} HP for `{slot3DelayedRecovery.ResultKind}` with suppress {FormatSupportDecisionBossSuppress(slot3DelayedRecovery)}. "
+                + $"Slot3 delayed pays {FormatSupportDecisionHpDelta(slot1Recovery, slot3DelayedRecovery)} HP for `{slot3DelayedRecovery.ResultKind}` in {FormatSeconds(slot3DelayedRecovery.ElapsedSeconds)} / {slot3DelayedRecovery.BossDamageTaken:0.0} boss damage with suppress {FormatSupportDecisionBossSuppress(slot3DelayedRecovery)}. "
                 + "Decision: preserve Slot2 full-bank as the intended marksman combo and treat Slot2 LV2 delayed as mistimed, not a route to buff blindly.");
         }
 
@@ -4787,11 +4830,15 @@ namespace DimensionBrawl.Tests
             builder.Append(" | ");
             builder.Append(FormatSupportDecisionBossSuppress(result));
             builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportDecisionTimeDamage(result)));
+            builder.Append(" | ");
             builder.Append(EscapeTable($"{result.ResultKind}/{ResolveFirstUnresolvedBeat(result)}"));
             builder.Append(" | ");
             builder.Append(EscapeTable(FormatSupportDecisionRepeatSignal(repeatabilityResults, result.Policy)));
             builder.Append(" | ");
             builder.Append(EscapeTable(ResolveSupportDecisionTimingVerdict(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveSupportDecisionPayoffVerdict(result)));
             builder.Append(" | ");
             builder.Append(EscapeTable(read));
             builder.AppendLine(" |");
@@ -4857,6 +4904,38 @@ namespace DimensionBrawl.Tests
         private static string FormatSupportDecisionBossSuppress(PolicyMetrics result)
         {
             return $"{result.BossPressureScreensSuppressedByFollowup}/{result.HighestBossScreenSuppressSummonTier}";
+        }
+
+        private static string FormatSupportDecisionTimeDamage(PolicyMetrics result)
+        {
+            return $"{FormatSeconds(result.ElapsedSeconds)} / {result.BossDamageTaken:0.0}";
+        }
+
+        private static string ResolveSupportDecisionPayoffVerdict(PolicyMetrics result)
+        {
+            switch (result.Policy)
+            {
+                case PolicyKind.ForwardRiskTier1RecoveryRoute:
+                    return "baseline recovery payoff";
+                case PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute:
+                    return result.IsClearResult && result.CounterWaves <= 0
+                        ? "clean payoff, no recovery burden"
+                        : "marksman payoff incomplete";
+                case PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute:
+                    return result.CounterRecoveryConfirmed
+                        ? "high damage, recovery burden"
+                        : "delayed marksman payoff unresolved";
+                case PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute:
+                    return result.IsClearResult
+                        ? "unexpected vanguard clear"
+                        : "no payoff until recharge";
+                case PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute:
+                    return result.BossScreenSuppressedByFollowup
+                        ? "boss-screen suppress payoff"
+                        : "vanguard payoff unresolved";
+                default:
+                    return "not evaluated";
+            }
         }
 
         private static string ResolveSupportDecisionTimingVerdict(PolicyMetrics result)
