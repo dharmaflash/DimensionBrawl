@@ -877,3 +877,27 @@ Boundary:
 - This is an EN-tier/high-risk payoff checkpoint, not final summon roster identity.
 - Later, individual summon mana costs and effects must diverge so the three summon slots do not read as the same unit with the same cost. That belongs after this structural loop remains stable.
 - Blue Archive-style ready-cost feedback can affect motivation, but it should be treated as presentation/readability after the resource and combat-state contract exists. Do not use ready UI as a substitute for a real combat payoff.
+
+## 2026-06-27 Policy Report Lock: LV3 Suppress Presentation Bridge
+
+The LV3 row-suppress checkpoint proved a real direct payoff, but the next risk was that the player would only see a hidden state change. The missing ArkData/CombatPayload piece was not a new tutorial panel or final resource UI; it was the `Presentation` leg of `Trigger -> Target -> Effect -> Status/Hit -> Presentation` for the same LV3 pressure-row conversion.
+
+Checkpoint evidence:
+
+- The suppress presentation pass reused existing screen, camera, cinematic, and VFX bridges. No new assets, roster rules, reward grants, or stage manager work were introduced.
+- `BossScreenSuppressedByFollowupConfirmed` now exposes the high-tier suppress event from the pocket owner so presentation bridges can react to the same combat-state proof used by the report.
+- The policy report now records follow-up suppress screen/camera/VFX cue requests separately from follow-up window/hit/miss cues.
+- Batch PlayMode repeatability passed twice with `ActionFoundationFrontlineCombatPolicyReportTests.WritesFrontlineCombatPolicyReport`.
+- Latest report values still keep LV1/LV2 direct routes `Running`, while LV3 direct route reaches `CleanFollowupClear`, `Suppress 2/3`, and follow-up suppress `screen/camera/VFX` reads `1/1/1`.
+
+Interpretation:
+
+- ArkData stage/wave lesson: the high-cost route now resolves a pressure row and emits its own readable state transition instead of hiding behind generic HUD text.
+- CombatPayload lesson: LV3 spend now reaches the presentation bridge after status/hit confirmation.
+- PGR presentation lesson: the state unlock has a tactile cue path, but it remains tied to the combat-state event rather than becoming a separate prompt system.
+
+Boundary:
+
+- This is a feedback bridge for an already verified combat payoff, not final ready-cost UI.
+- The three summon slots still need later mana-cost/effect identity work so they stop reading as interchangeable.
+- Blue Archive-style ready feedback remains relevant to motivation, but it should arrive after the resource contract and unit identity are authored enough for the feedback to mean something.

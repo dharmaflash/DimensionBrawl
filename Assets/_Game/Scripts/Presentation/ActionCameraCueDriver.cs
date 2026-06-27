@@ -245,12 +245,14 @@ namespace DimensionBrawl.Presentation
         private int summonFollowupWindowCueRequestCount;
         private int summonFollowupHitCueRequestCount;
         private int summonFollowupMissedCueRequestCount;
+        private int bossScreenSuppressCueRequestCount;
         private int counterWaveCueRequestCount;
         private int counterWaveStabilizedCueRequestCount;
         private int pocketClearCueRequestCount;
         private int pocketFailCueRequestCount;
         private int lastSummonFollowupWindowTier;
         private int lastSummonFollowupHitTier;
+        private int lastBossScreenSuppressTier;
         private int lastCounterWaveTier;
         private int lastCounterWaveStabilizedTier;
         private int lastPocketClearTier;
@@ -265,12 +267,14 @@ namespace DimensionBrawl.Presentation
         public int SummonFollowupWindowCueRequestCount => summonFollowupWindowCueRequestCount;
         public int SummonFollowupHitCueRequestCount => summonFollowupHitCueRequestCount;
         public int SummonFollowupMissedCueRequestCount => summonFollowupMissedCueRequestCount;
+        public int BossScreenSuppressCueRequestCount => bossScreenSuppressCueRequestCount;
         public int CounterWaveCueRequestCount => counterWaveCueRequestCount;
         public int CounterWaveStabilizedCueRequestCount => counterWaveStabilizedCueRequestCount;
         public int PocketClearCueRequestCount => pocketClearCueRequestCount;
         public int PocketFailCueRequestCount => pocketFailCueRequestCount;
         public int LastSummonFollowupWindowTier => lastSummonFollowupWindowTier;
         public int LastSummonFollowupHitTier => lastSummonFollowupHitTier;
+        public int LastBossScreenSuppressTier => lastBossScreenSuppressTier;
         public int LastCounterWaveTier => lastCounterWaveTier;
         public int LastCounterWaveStabilizedTier => lastCounterWaveStabilizedTier;
         public int LastPocketClearTier => lastPocketClearTier;
@@ -478,6 +482,17 @@ namespace DimensionBrawl.Presentation
             if (RequestCue(ActiveSummonFollowupMissedCue, -ResolvePlanarDirection(), 1f))
             {
                 summonFollowupMissedCueRequestCount++;
+            }
+        }
+
+        public void RequestBossScreenSuppressCue(int tier)
+        {
+            int resolvedTier = Mathf.Clamp(tier, 1, 3);
+            ActionCameraCueProfile.CameraCue cue = ActiveSummonFollowupWindowCue;
+            if (RequestCue(cue, ResolvePlanarDirection(), ResolveTierScale(resolvedTier, cue)))
+            {
+                bossScreenSuppressCueRequestCount++;
+                lastBossScreenSuppressTier = resolvedTier;
             }
         }
 

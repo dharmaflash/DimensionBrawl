@@ -3246,7 +3246,7 @@ namespace DimensionBrawl.Tests
 
             builder.AppendLine();
             builder.AppendLine("## Follow-up Presentation Bridge");
-            builder.AppendLine("| Policy | Screen window/hit/miss | Camera window/hit/miss | VFX window/hit/miss | Hit tier cam/vfx | Hit dmg cam/vfx | Last follow-up screen |");
+            builder.AppendLine("| Policy | Screen window/hit/miss/suppress | Camera window/hit/miss/suppress | VFX window/hit/miss/suppress | Hit tier cam/vfx | Hit dmg cam/vfx | Last follow-up screen |");
             builder.AppendLine("|---|---:|---:|---:|---:|---:|---|");
             for (int i = 0; i < results.Count; i++)
             {
@@ -3254,11 +3254,11 @@ namespace DimensionBrawl.Tests
                 builder.Append("| ");
                 builder.Append(result.Policy);
                 builder.Append(" | ");
-                builder.Append($"{result.FollowupWindowScreenCueRequests}/{result.FollowupHitScreenCueRequests}/{result.FollowupMissedScreenCueRequests}");
+                builder.Append($"{result.FollowupWindowScreenCueRequests}/{result.FollowupHitScreenCueRequests}/{result.FollowupMissedScreenCueRequests}/{result.FollowupSuppressScreenCueRequests}");
                 builder.Append(" | ");
-                builder.Append($"{result.FollowupWindowCameraCueRequests}/{result.FollowupHitCameraCueRequests}/{result.FollowupMissedCameraCueRequests}");
+                builder.Append($"{result.FollowupWindowCameraCueRequests}/{result.FollowupHitCameraCueRequests}/{result.FollowupMissedCameraCueRequests}/{result.FollowupSuppressCameraCueRequests}");
                 builder.Append(" | ");
-                builder.Append($"{result.FollowupWindowVfxCueRequests}/{result.FollowupHitVfxCueRequests}/{result.FollowupMissedVfxCueRequests}");
+                builder.Append($"{result.FollowupWindowVfxCueRequests}/{result.FollowupHitVfxCueRequests}/{result.FollowupMissedVfxCueRequests}/{result.FollowupSuppressVfxCueRequests}");
                 builder.Append(" | ");
                 builder.Append($"{result.LastFollowupHitCameraTier}/{result.LastFollowupHitVfxTier}");
                 builder.Append(" | ");
@@ -3403,7 +3403,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Enemy pressure actor cost: no-action clashes {noSummon.EnemyFrontlineClashes} / body hits {noSummon.EnemyFrontlineBodyHits} / clash damage {noSummon.EnemyFrontlineClashDamage:0.0}; intended route clashes {intended.EnemyFrontlineClashes} / body hits {intended.EnemyFrontlineBodyHits}.");
             builder.AppendLine($"- Hit reaction split: boss-screen recovery produced {blockedRecovery.TotalSummonDamageFlashes} summon damage flashes, {blockedRecovery.TotalSummonFullBodyHitReactions} full-body hit reactions, and {blockedRecovery.TotalNonLockingSummonDamageCues} non-locking damage cues.");
             builder.AppendLine($"- Damage response split: gun-only boss chip {gunOnly.BossNonLockingDamageEvents}/{gunOnly.BossLockingDamageEvents} non-lock/lock, intended Skill1 boss hits {intended.BossNonLockingDamageEvents}/{intended.BossLockingDamageEvents}, boss-screen recovery {blockedRecovery.BossNonLockingDamageEvents}/{blockedRecovery.BossLockingDamageEvents}.");
-            builder.AppendLine($"- Follow-up presentation bridge: gun-only hit cues screen/camera/VFX {gunOnly.FollowupHitScreenCueRequests}/{gunOnly.FollowupHitCameraCueRequests}/{gunOnly.FollowupHitVfxCueRequests}, intended {intended.FollowupHitScreenCueRequests}/{intended.FollowupHitCameraCueRequests}/{intended.FollowupHitVfxCueRequests}, boss-screen recovery {blockedRecovery.FollowupHitScreenCueRequests}/{blockedRecovery.FollowupHitCameraCueRequests}/{blockedRecovery.FollowupHitVfxCueRequests}.");
+            builder.AppendLine($"- Follow-up presentation bridge: gun-only hit cues screen/camera/VFX {gunOnly.FollowupHitScreenCueRequests}/{gunOnly.FollowupHitCameraCueRequests}/{gunOnly.FollowupHitVfxCueRequests}, intended {intended.FollowupHitScreenCueRequests}/{intended.FollowupHitCameraCueRequests}/{intended.FollowupHitVfxCueRequests}, boss-screen recovery {blockedRecovery.FollowupHitScreenCueRequests}/{blockedRecovery.FollowupHitCameraCueRequests}/{blockedRecovery.FollowupHitVfxCueRequests}, LV3 suppress {forwardRiskTier3Decision.FollowupSuppressScreenCueRequests}/{forwardRiskTier3Decision.FollowupSuppressCameraCueRequests}/{forwardRiskTier3Decision.FollowupSuppressVfxCueRequests}.");
             builder.AppendLine($"- Follow-up micro-cinematic bridge: gun-only hit director/sequence {gunOnly.FollowupHitCinematicCueRequests}/{gunOnly.FollowupHitSequenceBridgeRequests}, intended {intended.FollowupHitCinematicCueRequests}/{intended.FollowupHitSequenceBridgeRequests}, boss-screen recovery {blockedRecovery.FollowupHitCinematicCueRequests}/{blockedRecovery.FollowupHitSequenceBridgeRequests}; intended frame overlays {intended.FollowupHitCinematicFrameOverlayCount}.");
             builder.AppendLine($"- Blocked follow-up presentation: boss-screen blocked route has miss cues screen/camera/VFX {blockedFollowup.FollowupMissedScreenCueRequests}/{blockedFollowup.FollowupMissedCameraCueRequests}/{blockedFollowup.FollowupMissedVfxCueRequests} and hit cues {blockedFollowup.FollowupHitScreenCueRequests}/{blockedFollowup.FollowupHitCameraCueRequests}/{blockedFollowup.FollowupHitVfxCueRequests}.");
             builder.AppendLine($"- Blocked follow-up cinematic: boss-screen blocked route has miss director/sequence {blockedFollowup.FollowupMissedCinematicCueRequests}/{blockedFollowup.FollowupMissedSequenceBridgeRequests} and hit director/sequence {blockedFollowup.FollowupHitCinematicCueRequests}/{blockedFollowup.FollowupHitSequenceBridgeRequests}.");
@@ -5078,6 +5078,7 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"followupWindowScreenCueRequests\": {result.FollowupWindowScreenCueRequests},");
                 builder.AppendLine($"      \"followupHitScreenCueRequests\": {result.FollowupHitScreenCueRequests},");
                 builder.AppendLine($"      \"followupMissedScreenCueRequests\": {result.FollowupMissedScreenCueRequests},");
+                builder.AppendLine($"      \"followupSuppressScreenCueRequests\": {result.FollowupSuppressScreenCueRequests},");
                 builder.AppendLine($"      \"lastFollowupScreenCueId\": \"{JsonEscape(result.LastFollowupScreenCueId)}\",");
                 builder.AppendLine($"      \"lastFollowupScreenCueIntensity\": {result.LastFollowupScreenCueIntensity:0.###},");
                 builder.AppendLine($"      \"lastFollowupHitScreenCueIntensity\": {result.LastFollowupHitScreenCueIntensity:0.###},");
@@ -5085,13 +5086,17 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"followupWindowCameraCueRequests\": {result.FollowupWindowCameraCueRequests},");
                 builder.AppendLine($"      \"followupHitCameraCueRequests\": {result.FollowupHitCameraCueRequests},");
                 builder.AppendLine($"      \"followupMissedCameraCueRequests\": {result.FollowupMissedCameraCueRequests},");
+                builder.AppendLine($"      \"followupSuppressCameraCueRequests\": {result.FollowupSuppressCameraCueRequests},");
                 builder.AppendLine($"      \"lastFollowupHitCameraTier\": {result.LastFollowupHitCameraTier},");
                 builder.AppendLine($"      \"lastFollowupHitCameraDamage\": {result.LastFollowupHitCameraDamage:0.###},");
+                builder.AppendLine($"      \"lastFollowupSuppressCameraTier\": {result.LastFollowupSuppressCameraTier},");
                 builder.AppendLine($"      \"followupWindowVfxCueRequests\": {result.FollowupWindowVfxCueRequests},");
                 builder.AppendLine($"      \"followupHitVfxCueRequests\": {result.FollowupHitVfxCueRequests},");
                 builder.AppendLine($"      \"followupMissedVfxCueRequests\": {result.FollowupMissedVfxCueRequests},");
+                builder.AppendLine($"      \"followupSuppressVfxCueRequests\": {result.FollowupSuppressVfxCueRequests},");
                 builder.AppendLine($"      \"lastFollowupHitVfxTier\": {result.LastFollowupHitVfxTier},");
                 builder.AppendLine($"      \"lastFollowupHitVfxDamage\": {result.LastFollowupHitVfxDamage:0.###},");
+                builder.AppendLine($"      \"lastFollowupSuppressVfxTier\": {result.LastFollowupSuppressVfxTier},");
                 builder.AppendLine($"      \"followupWindowCinematicCueRequests\": {result.FollowupWindowCinematicCueRequests},");
                 builder.AppendLine($"      \"followupHitCinematicCueRequests\": {result.FollowupHitCinematicCueRequests},");
                 builder.AppendLine($"      \"followupMissedCinematicCueRequests\": {result.FollowupMissedCinematicCueRequests},");
@@ -5364,6 +5369,18 @@ namespace DimensionBrawl.Tests
                 result.BossPressureScreensSuppressedByFollowup,
                 0,
                 $"{result.Policy} should record at least one suppressed boss pressure screen.");
+            Assert.Greater(
+                result.FollowupSuppressScreenCueRequests,
+                0,
+                $"{result.Policy} should request a screen cue for the high-tier boss-screen suppress.");
+            Assert.Greater(
+                result.FollowupSuppressCameraCueRequests,
+                0,
+                $"{result.Policy} should request a camera cue for the high-tier boss-screen suppress.");
+            Assert.Greater(
+                result.FollowupSuppressVfxCueRequests,
+                0,
+                $"{result.Policy} should request a VFX cue for the high-tier boss-screen suppress.");
             Assert.AreEqual(
                 3,
                 result.HighestBossScreenSuppressSummonTier,
@@ -5609,6 +5626,9 @@ namespace DimensionBrawl.Tests
                 && result.SummonBlocks > 0
                 && result.BossScreenSuppressedByFollowup
                 && result.BossPressureScreensSuppressedByFollowup > 0
+                && result.FollowupSuppressScreenCueRequests > 0
+                && result.FollowupSuppressCameraCueRequests > 0
+                && result.FollowupSuppressVfxCueRequests > 0
                 && result.HighestBossScreenSuppressSummonTier == 3
                 && !result.BossBlockedSkill1Followup
                 && result.SkillProjectileHits > 0
@@ -6752,14 +6772,20 @@ namespace DimensionBrawl.Tests
                 Metrics.FollowupWindowCameraCueRequests = CameraCueDriver.SummonFollowupWindowCueRequestCount;
                 Metrics.FollowupHitCameraCueRequests = CameraCueDriver.SummonFollowupHitCueRequestCount;
                 Metrics.FollowupMissedCameraCueRequests = CameraCueDriver.SummonFollowupMissedCueRequestCount;
+                Metrics.FollowupSuppressCameraCueRequests = CameraCueDriver.BossScreenSuppressCueRequestCount;
                 Metrics.LastFollowupHitCameraTier = CameraCueDriver.LastSummonFollowupHitTier;
                 Metrics.LastFollowupHitCameraDamage = CameraCueDriver.LastSummonFollowupHitDamage;
+                Metrics.LastFollowupSuppressCameraTier = CameraCueDriver.LastBossScreenSuppressTier;
 
                 Metrics.FollowupWindowVfxCueRequests = PocketVfxCueBridge.FollowupWindowCueRequestCount;
                 Metrics.FollowupHitVfxCueRequests = PocketVfxCueBridge.FollowupHitCueRequestCount;
                 Metrics.FollowupMissedVfxCueRequests = PocketVfxCueBridge.FollowupMissedCueRequestCount;
+                Metrics.FollowupSuppressVfxCueRequests = PocketVfxCueBridge.BossScreenSuppressCueRequestCount;
                 Metrics.LastFollowupHitVfxTier = PocketVfxCueBridge.LastFollowupHitTier;
                 Metrics.LastFollowupHitVfxDamage = PocketVfxCueBridge.LastFollowupHitDamage;
+                Metrics.LastFollowupSuppressVfxTier = PocketVfxCueBridge.LastBossScreenSuppressTier;
+                Metrics.FollowupSuppressScreenCueRequests =
+                    ScreenCuePresenter.FollowupSuppressCueRequestCount;
 
                 int cueDelta = ScreenCuePresenter.CueRequestCount - observedScreenCueRequestCount;
                 int followupDelta = ScreenCuePresenter.FollowupCueRequestCount - observedScreenFollowupCueRequestCount;
@@ -6783,6 +6809,12 @@ namespace DimensionBrawl.Tests
                     else if (cueId == "Followup.BlockOpportunity")
                     {
                         Metrics.FollowupBlockOpportunityScreenCueRequests += resolvedDelta;
+                    }
+                    else if (cueId == "Followup.Suppress")
+                    {
+                        Metrics.FollowupSuppressScreenCueRequests = Mathf.Max(
+                            Metrics.FollowupSuppressScreenCueRequests,
+                            resolvedDelta);
                     }
 
                     Metrics.LastFollowupScreenCueId = cueId;
@@ -7322,6 +7354,7 @@ namespace DimensionBrawl.Tests
             public int FollowupWindowScreenCueRequests { get; set; }
             public int FollowupHitScreenCueRequests { get; set; }
             public int FollowupMissedScreenCueRequests { get; set; }
+            public int FollowupSuppressScreenCueRequests { get; set; }
             public string LastFollowupScreenCueId { get; set; } = string.Empty;
             public float LastFollowupScreenCueIntensity { get; set; }
             public float LastFollowupHitScreenCueIntensity { get; set; }
@@ -7329,13 +7362,17 @@ namespace DimensionBrawl.Tests
             public int FollowupWindowCameraCueRequests { get; set; }
             public int FollowupHitCameraCueRequests { get; set; }
             public int FollowupMissedCameraCueRequests { get; set; }
+            public int FollowupSuppressCameraCueRequests { get; set; }
             public int LastFollowupHitCameraTier { get; set; }
             public float LastFollowupHitCameraDamage { get; set; }
+            public int LastFollowupSuppressCameraTier { get; set; }
             public int FollowupWindowVfxCueRequests { get; set; }
             public int FollowupHitVfxCueRequests { get; set; }
             public int FollowupMissedVfxCueRequests { get; set; }
+            public int FollowupSuppressVfxCueRequests { get; set; }
             public int LastFollowupHitVfxTier { get; set; }
             public float LastFollowupHitVfxDamage { get; set; }
+            public int LastFollowupSuppressVfxTier { get; set; }
             public int FollowupWindowCinematicCueRequests { get; set; }
             public int FollowupHitCinematicCueRequests { get; set; }
             public int FollowupMissedCinematicCueRequests { get; set; }

@@ -11,6 +11,7 @@ namespace DimensionBrawl.Test
         [SerializeField] private Transform followupWindowAnchor;
         [SerializeField] private Transform followupHitAnchor;
         [SerializeField] private Transform followupMissedAnchor;
+        [SerializeField] private Transform bossScreenSuppressAnchor;
         [SerializeField] private Transform counterWaveAnchor;
         [SerializeField] private Transform counterWaveStabilizedAnchor;
         [SerializeField] private Transform pocketClearAnchor;
@@ -22,10 +23,12 @@ namespace DimensionBrawl.Test
         [SerializeField, Min(0f)] private float windowIntensity = 1.15f;
         [SerializeField, Min(0f)] private float hitIntensity = 1.18f;
         [SerializeField, Min(0f)] private float missedIntensity = 0.85f;
+        [SerializeField, Min(0f)] private float bossScreenSuppressIntensity = 1.12f;
         [SerializeField, Min(0f)] private float counterWaveIntensity = 0.94f;
         [SerializeField, Min(0f)] private float counterWaveStabilizedIntensity = 0.88f;
         [SerializeField, Min(0f)] private float pocketClearIntensity = 0.92f;
         [SerializeField, Min(0f)] private float pocketFailIntensity = 1.02f;
+        [SerializeField] private CombatVfxCueId bossScreenSuppressCueId = CombatVfxCueId.EliteArmorBreakSignal;
         [SerializeField] private CombatVfxCueId counterWaveCueId = CombatVfxCueId.EnemyLinePressureActive;
         [SerializeField] private CombatVfxCueId counterWaveStabilizedCueId = CombatVfxCueId.EliteShieldSignal;
         [SerializeField] private CombatVfxCueId pocketFailAccentCueId = CombatVfxCueId.EnemyClosePunishActive;
@@ -36,6 +39,7 @@ namespace DimensionBrawl.Test
         private int followupWindowCueRequestCount;
         private int followupHitCueRequestCount;
         private int followupMissedCueRequestCount;
+        private int bossScreenSuppressCueRequestCount;
         private int counterWaveCueRequestCount;
         private int counterWaveStabilizedCueRequestCount;
         private int pocketClearCueRequestCount;
@@ -43,6 +47,7 @@ namespace DimensionBrawl.Test
         private int pocketFailAccentCueRequestCount;
         private int lastFollowupWindowTier;
         private int lastFollowupHitTier;
+        private int lastBossScreenSuppressTier;
         private float lastFollowupHitDamage;
         private BossBarragePocketReviewOwner.CounterWaveSource lastCounterWaveSource =
             BossBarragePocketReviewOwner.CounterWaveSource.None;
@@ -52,6 +57,7 @@ namespace DimensionBrawl.Test
         public Transform FollowupWindowAnchor => followupWindowAnchor;
         public Transform FollowupHitAnchor => followupHitAnchor;
         public Transform FollowupMissedAnchor => followupMissedAnchor;
+        public Transform BossScreenSuppressAnchor => bossScreenSuppressAnchor != null ? bossScreenSuppressAnchor : FollowupHitAnchor;
         public Transform CounterWaveAnchor => counterWaveAnchor != null ? counterWaveAnchor : FollowupMissedAnchor;
         public Transform CounterWaveStabilizedAnchor => counterWaveStabilizedAnchor != null ? counterWaveStabilizedAnchor : FollowupWindowAnchor;
         public Transform PocketClearAnchor => pocketClearAnchor != null ? pocketClearAnchor : followupHitAnchor;
@@ -61,6 +67,7 @@ namespace DimensionBrawl.Test
         public int FollowupWindowCueRequestCount => followupWindowCueRequestCount;
         public int FollowupHitCueRequestCount => followupHitCueRequestCount;
         public int FollowupMissedCueRequestCount => followupMissedCueRequestCount;
+        public int BossScreenSuppressCueRequestCount => bossScreenSuppressCueRequestCount;
         public int CounterWaveCueRequestCount => counterWaveCueRequestCount;
         public int CounterWaveStabilizedCueRequestCount => counterWaveStabilizedCueRequestCount;
         public int PocketClearCueRequestCount => pocketClearCueRequestCount;
@@ -68,11 +75,14 @@ namespace DimensionBrawl.Test
         public int PocketFailAccentCueRequestCount => pocketFailAccentCueRequestCount;
         public int LastFollowupWindowTier => lastFollowupWindowTier;
         public int LastFollowupHitTier => lastFollowupHitTier;
+        public int LastBossScreenSuppressTier => lastBossScreenSuppressTier;
         public float LastFollowupHitDamage => lastFollowupHitDamage;
         public BossBarragePocketReviewOwner.CounterWaveSource LastCounterWaveSource => lastCounterWaveSource;
         public CombatVfxCueId CounterWaveCueId => counterWaveCueId;
         public CombatVfxCueId CounterWaveStabilizedCueId => counterWaveStabilizedCueId;
+        public CombatVfxCueId BossScreenSuppressCueId => bossScreenSuppressCueId;
         public float HitIntensity => hitIntensity;
+        public float BossScreenSuppressIntensity => bossScreenSuppressIntensity;
         public float CounterWaveIntensity => counterWaveIntensity;
         public float CounterWaveStabilizedIntensity => counterWaveStabilizedIntensity;
         public float PocketClearIntensity => pocketClearIntensity;
@@ -98,6 +108,7 @@ namespace DimensionBrawl.Test
             pocketReviewOwner.SummonFollowupWindowOpened += HandleSummonFollowupWindowOpened;
             pocketReviewOwner.SummonFollowupHitConfirmed += HandleSummonFollowupHitConfirmed;
             pocketReviewOwner.SummonFollowupMissed += HandleSummonFollowupMissed;
+            pocketReviewOwner.BossScreenSuppressedByFollowupConfirmed += HandleBossScreenSuppressedByFollowupConfirmed;
             pocketReviewOwner.SummonBlockOpportunityOpened += HandleSummonBlockOpportunityOpened;
             pocketReviewOwner.CounterWaveObserved += HandleCounterWaveObserved;
             pocketReviewOwner.CounterWaveStabilized += HandleCounterWaveStabilized;
@@ -115,6 +126,7 @@ namespace DimensionBrawl.Test
             pocketReviewOwner.SummonFollowupWindowOpened -= HandleSummonFollowupWindowOpened;
             pocketReviewOwner.SummonFollowupHitConfirmed -= HandleSummonFollowupHitConfirmed;
             pocketReviewOwner.SummonFollowupMissed -= HandleSummonFollowupMissed;
+            pocketReviewOwner.BossScreenSuppressedByFollowupConfirmed -= HandleBossScreenSuppressedByFollowupConfirmed;
             pocketReviewOwner.SummonBlockOpportunityOpened -= HandleSummonBlockOpportunityOpened;
             pocketReviewOwner.CounterWaveObserved -= HandleCounterWaveObserved;
             pocketReviewOwner.CounterWaveStabilized -= HandleCounterWaveStabilized;
@@ -154,6 +166,18 @@ namespace DimensionBrawl.Test
             if (Play(CombatVfxCueId.SummonFollowupMissed, followupMissedAnchor, 1, missedIntensity))
             {
                 followupMissedCueRequestCount++;
+            }
+        }
+
+        private void HandleBossScreenSuppressedByFollowupConfirmed(int tier, int suppressedCount)
+        {
+            int resolvedTier = Mathf.Clamp(tier, 1, 3);
+            float suppressedScale = Mathf.Clamp01(suppressedCount / 3f);
+            float intensity = bossScreenSuppressIntensity + suppressedScale * 0.18f;
+            if (Play(bossScreenSuppressCueId, BossScreenSuppressAnchor, resolvedTier, intensity))
+            {
+                bossScreenSuppressCueRequestCount++;
+                lastBossScreenSuppressTier = resolvedTier;
             }
         }
 

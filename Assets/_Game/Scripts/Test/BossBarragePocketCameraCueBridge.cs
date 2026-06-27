@@ -11,10 +11,13 @@ namespace DimensionBrawl.Test
         [SerializeField] private ActionCameraCueDriver cameraCueDriver;
         [SerializeField] private ActionCinematicCueDirector cinematicCueDirector;
 
+        private int bossScreenSuppressCueRequestCount;
+
         public BossBarragePocketReviewOwner PocketReviewOwner => pocketReviewOwner;
         public PlayerSummonSlot1Action SummonSlot1Action => summonSlot1Action;
         public ActionCameraCueDriver CameraCueDriver => cameraCueDriver;
         public ActionCinematicCueDirector CinematicCueDirector => cinematicCueDirector;
+        public int BossScreenSuppressCueRequestCount => bossScreenSuppressCueRequestCount;
 
         private void Awake()
         {
@@ -39,6 +42,7 @@ namespace DimensionBrawl.Test
                 pocketReviewOwner.SummonFollowupWindowOpened += HandleSummonFollowupWindowOpened;
                 pocketReviewOwner.SummonFollowupHitConfirmed += HandleSummonFollowupHitConfirmed;
                 pocketReviewOwner.SummonFollowupMissed += HandleSummonFollowupMissed;
+                pocketReviewOwner.BossScreenSuppressedByFollowupConfirmed += HandleBossScreenSuppressedByFollowupConfirmed;
                 pocketReviewOwner.CounterWaveObserved += HandleCounterWaveObserved;
                 pocketReviewOwner.CounterWaveStabilized += HandleCounterWaveStabilized;
                 pocketReviewOwner.PocketCleared += HandlePocketCleared;
@@ -59,6 +63,7 @@ namespace DimensionBrawl.Test
                 pocketReviewOwner.SummonFollowupWindowOpened -= HandleSummonFollowupWindowOpened;
                 pocketReviewOwner.SummonFollowupHitConfirmed -= HandleSummonFollowupHitConfirmed;
                 pocketReviewOwner.SummonFollowupMissed -= HandleSummonFollowupMissed;
+                pocketReviewOwner.BossScreenSuppressedByFollowupConfirmed -= HandleBossScreenSuppressedByFollowupConfirmed;
                 pocketReviewOwner.CounterWaveObserved -= HandleCounterWaveObserved;
                 pocketReviewOwner.CounterWaveStabilized -= HandleCounterWaveStabilized;
                 pocketReviewOwner.PocketCleared -= HandlePocketCleared;
@@ -122,6 +127,17 @@ namespace DimensionBrawl.Test
             }
 
             RequestCinematic(ActionCinematicCueProfile.CueKind.SummonRecall, 2);
+        }
+
+        private void HandleBossScreenSuppressedByFollowupConfirmed(int tier, int suppressedCount)
+        {
+            if (cameraCueDriver != null)
+            {
+                cameraCueDriver.RequestBossScreenSuppressCue(tier);
+                bossScreenSuppressCueRequestCount++;
+            }
+
+            RequestCinematic(ActionCinematicCueProfile.CueKind.BossPressureBreak, tier);
         }
 
         private void HandleCounterWaveObserved(BossBarragePocketReviewOwner.CounterWaveSource source)

@@ -268,6 +268,7 @@ namespace DimensionBrawl.Test
         public event Action<int> SummonFollowupWindowOpened;
         public event Action<int, float> SummonFollowupHitConfirmed;
         public event Action SummonFollowupMissed;
+        public event Action<int, int> BossScreenSuppressedByFollowupConfirmed;
         public event Action SummonBlockOpportunityOpened;
         public event Action<CounterWaveSource> CounterWaveObserved;
         public event Action CounterWaveStabilized;
@@ -970,6 +971,7 @@ namespace DimensionBrawl.Test
             highestBossScreenSuppressSummonTier = Mathf.Max(
                 highestBossScreenSuppressSummonTier,
                 lastSummonPressureBreakTier);
+            BossScreenSuppressedByFollowupConfirmed?.Invoke(lastSummonPressureBreakTier, suppressed);
         }
 
         private void NotifySummonFollowupMissedOnce(

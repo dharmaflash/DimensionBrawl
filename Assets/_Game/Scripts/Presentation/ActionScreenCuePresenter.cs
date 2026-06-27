@@ -107,6 +107,7 @@ namespace DimensionBrawl.Presentation
         private int bossCueRequestCount;
         private int frontlineCueRequestCount;
         private int followupCueRequestCount;
+        private int followupSuppressCueRequestCount;
         private int resultCueRequestCount;
         private int playerDamageCueRequestCount;
         private int energyCueRequestCount;
@@ -167,6 +168,7 @@ namespace DimensionBrawl.Presentation
         public int BossCueRequestCount => bossCueRequestCount;
         public int FrontlineCueRequestCount => frontlineCueRequestCount;
         public int FollowupCueRequestCount => followupCueRequestCount;
+        public int FollowupSuppressCueRequestCount => followupSuppressCueRequestCount;
         public int ResultCueRequestCount => resultCueRequestCount;
         public int PlayerDamageCueRequestCount => playerDamageCueRequestCount;
         public int EnergyCueRequestCount => energyCueRequestCount;
@@ -537,6 +539,18 @@ namespace DimensionBrawl.Presentation
             RequestScreenCue("Followup.Missed", followupMissedColor, 0.18f, 0.52f, ScreenCueCategory.Followup);
         }
 
+        private void HandleBossScreenSuppressedByFollowupConfirmed(int tier, int suppressedCount)
+        {
+            followupSuppressCueRequestCount++;
+            float suppressedScale = Mathf.Clamp01(suppressedCount / 3f);
+            RequestScreenCue(
+                "Followup.Suppress",
+                followupHitColor,
+                0.22f,
+                ResolveTierIntensity(tier, 0.94f) + suppressedScale * 0.16f,
+                ScreenCueCategory.Followup);
+        }
+
         private void HandlePocketCleared()
         {
             RequestScreenCue("Pocket.Cleared", pocketClearColor, 0.78f, 0.92f, ScreenCueCategory.Result);
@@ -832,6 +846,7 @@ namespace DimensionBrawl.Presentation
                 pocketReviewOwner.SummonFollowupWindowOpened += HandleSummonFollowupWindowOpened;
                 pocketReviewOwner.SummonFollowupHitConfirmed += HandleSummonFollowupHitConfirmed;
                 pocketReviewOwner.SummonFollowupMissed += HandleSummonFollowupMissed;
+                pocketReviewOwner.BossScreenSuppressedByFollowupConfirmed += HandleBossScreenSuppressedByFollowupConfirmed;
                 pocketReviewOwner.PocketCleared += HandlePocketCleared;
                 pocketReviewOwner.PocketFailed += HandlePocketFailed;
             }
@@ -905,6 +920,7 @@ namespace DimensionBrawl.Presentation
                 pocketReviewOwner.SummonFollowupWindowOpened -= HandleSummonFollowupWindowOpened;
                 pocketReviewOwner.SummonFollowupHitConfirmed -= HandleSummonFollowupHitConfirmed;
                 pocketReviewOwner.SummonFollowupMissed -= HandleSummonFollowupMissed;
+                pocketReviewOwner.BossScreenSuppressedByFollowupConfirmed -= HandleBossScreenSuppressedByFollowupConfirmed;
                 pocketReviewOwner.PocketCleared -= HandlePocketCleared;
                 pocketReviewOwner.PocketFailed -= HandlePocketFailed;
             }
