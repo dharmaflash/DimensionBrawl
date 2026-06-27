@@ -50,6 +50,7 @@ namespace DimensionBrawl.Tests
             GunOnly,
             NoSummonSurvivalLimit,
             GunOnlySurvivalLimit,
+            PrematureSkill1NoSummon,
             BacklineEnergyProbe,
             ForwardRiskEnergyProbe,
             BacklineBarrageProbe,
@@ -75,6 +76,7 @@ namespace DimensionBrawl.Tests
             PolicyKind.GunOnly,
             PolicyKind.NoSummonSurvivalLimit,
             PolicyKind.GunOnlySurvivalLimit,
+            PolicyKind.PrematureSkill1NoSummon,
             PolicyKind.BacklineEnergyProbe,
             PolicyKind.ForwardRiskEnergyProbe,
             PolicyKind.BacklineBarrageProbe,
@@ -98,6 +100,7 @@ namespace DimensionBrawl.Tests
         {
             PolicyKind.NoSummonSurvivalLimit,
             PolicyKind.GunOnlySurvivalLimit,
+            PolicyKind.PrematureSkill1NoSummon,
             PolicyKind.BacklinePhysicalBarrageProbe,
             PolicyKind.ForwardRiskPhysicalBarrageProbe,
             PolicyKind.ForwardRiskPhysicalSummonBlockProbe,
@@ -138,6 +141,7 @@ namespace DimensionBrawl.Tests
                 PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
                 PolicyMetrics noSummonSurvival = RequireResult(results, PolicyKind.NoSummonSurvivalLimit);
                 PolicyMetrics gunOnlySurvival = RequireResult(results, PolicyKind.GunOnlySurvivalLimit);
+                PolicyMetrics prematureSkill1 = RequireResult(results, PolicyKind.PrematureSkill1NoSummon);
                 PolicyMetrics backlineEnergy = RequireResult(results, PolicyKind.BacklineEnergyProbe);
                 PolicyMetrics forwardRiskEnergy = RequireResult(results, PolicyKind.ForwardRiskEnergyProbe);
                 PolicyMetrics backlineBarrage = RequireResult(results, PolicyKind.BacklineBarrageProbe);
@@ -193,6 +197,9 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(
                     markdown.Contains("## Energy Presentation Bridge"),
                     "The report should prove summon energy presentation instead of inferring it from resource numbers.");
+                Assert.IsTrue(
+                    markdown.Contains("## Skill Gate Contract"),
+                    "The report should prove raw Skill1 hits are not the same as state-gated follow-up commits.");
                 AssertStageWaveBeatMap(results);
                 Assert.Greater(intended.SummonBlocks, 0, "The intended route must prove summon interception changes the run.");
                 Assert.AreEqual(
@@ -203,6 +210,29 @@ namespace DimensionBrawl.Tests
                     0,
                     gunOnly.ResultRecords,
                     "A short gun-only route should not fabricate a clear or payout result while still running.");
+                Assert.Greater(
+                    prematureSkill1.SkillUses,
+                    0,
+                    "The premature Skill1 probe should spend the resource and fire the skill before a summon answer.");
+                Assert.Greater(
+                    prematureSkill1.SkillProjectileHits,
+                    0,
+                    "The premature Skill1 probe should prove that raw projectile damage alone is not enough to commit the route.");
+                Assert.AreEqual(
+                    0,
+                    prematureSkill1.FollowupHitCount,
+                    "A Skill1 fired without the summon-opened state must not be counted as a follow-up hit.");
+                Assert.AreEqual(
+                    0,
+                    prematureSkill1.FollowupHitScreenCueRequests,
+                    "A Skill1 fired without the summon-opened state must not request Followup.Hit presentation.");
+                Assert.AreEqual(
+                    0,
+                    prematureSkill1.ResultRecords,
+                    "A Skill1 fired without the summon-opened state must not commit the stage result hook.");
+                Assert.IsFalse(
+                    prematureSkill1.IsClearResult,
+                    "A Skill1 fired without the summon-opened state must remain a stalled route, not a clean clear.");
                 AssertStageResultHook(
                     noSummonSurvival,
                     "PlayerDownFail",
@@ -912,6 +942,9 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.GunOnlySurvivalLimit:
                     yield return RunGunOnlySurvivalLimit(context);
                     break;
+                case PolicyKind.PrematureSkill1NoSummon:
+                    yield return RunPrematureSkill1NoSummon(context);
+                    break;
                 case PolicyKind.BacklineEnergyProbe:
                     yield return RunEnergyRiskProbe(context, BacklineEnergyProbeForwardRisk01);
                     break;
@@ -1018,6 +1051,35 @@ namespace DimensionBrawl.Tests
                 yield return ApplyBossWave(context, BossWaveAnswer.PlayerTakesHit);
                 yield return Advance(context, 1.35f);
             }
+        }
+
+        private static IEnumerator RunPrematureSkill1NoSummon(CombatPolicyContext context)
+        {
+            yield return DefeatCloseThreatWithBasicFire(context);
+            yield return ChargeEnergyToTier(context, 1, 14f);
+
+            context.TargetSelector.NotifyTargetContact(context.BossHealth);
+            context.TargetSelector.RefreshTarget();
+            if (!context.Skill1Action.TryUseSkill1())
+            {
+                context.Metrics.Notes.Add($"premature skill1 blocked: {context.Skill1Action.LastUseBlockedReason}");
+                yield break;
+            }
+
+            RecordSkillUse(context);
+            LaneActionProjectile[] projectiles = FindActivePlayerProjectiles();
+            for (int i = 0; i < projectiles.Length; i++)
+            {
+                if (projectiles[i].TryApplyImpact(context.BossCollider, projectiles[i].transform.position))
+                {
+                    context.Metrics.SkillProjectileHits++;
+                }
+            }
+
+            context.PocketOwner.Tick(0f);
+            context.Sample();
+            yield return ApplyBossWave(context, BossWaveAnswer.PlayerTakesHit);
+            yield return Advance(context, 1.0f);
         }
 
         private static IEnumerator RunEnergyRiskProbe(
@@ -1931,6 +1993,8 @@ namespace DimensionBrawl.Tests
             builder.AppendLine();
             AppendStageWaveBeatMap(builder, results);
             builder.AppendLine();
+            AppendSkillGateContract(builder, results);
+            builder.AppendLine();
             builder.AppendLine("## Route Evidence");
             builder.AppendLine("| Policy | Proof | Follow-up | Counter | Counter answer | Final window | Result record |");
             builder.AppendLine("|---|---|---|---|---|---|---|");
@@ -2476,6 +2540,7 @@ namespace DimensionBrawl.Tests
             PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
             PolicyMetrics noSummonSurvival = RequireResult(results, PolicyKind.NoSummonSurvivalLimit);
             PolicyMetrics gunOnlySurvival = RequireResult(results, PolicyKind.GunOnlySurvivalLimit);
+            PolicyMetrics prematureSkill1 = RequireResult(results, PolicyKind.PrematureSkill1NoSummon);
             PolicyMetrics backlineEnergy = RequireResult(results, PolicyKind.BacklineEnergyProbe);
             PolicyMetrics forwardRiskEnergy = RequireResult(results, PolicyKind.ForwardRiskEnergyProbe);
             PolicyMetrics backlineBarrage = RequireResult(results, PolicyKind.BacklineBarrageProbe);
@@ -2505,6 +2570,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Gun-only dealt {gunOnly.BossDamageTaken:0.0} boss damage but ended as `{gunOnly.ResultKind}` because the route contract still needs summon pressure blocking.");
             builder.AppendLine($"- Long survival limit: no-summon player down {FormatSeconds(noSummonSurvival.FirstPlayerDownAtSeconds)} / boss down {FormatSeconds(noSummonSurvival.FirstBossDownAtSeconds)}; gun-only player down {FormatSeconds(gunOnlySurvival.FirstPlayerDownAtSeconds)} / boss down {FormatSeconds(gunOnlySurvival.FirstBossDownAtSeconds)}.");
             builder.AppendLine($"- Skill1 punish split: gun-only boss damage {gunOnly.BossDamageTaken:0.0}, intended follow-up boss damage {intended.BossDamageTaken:0.0}.");
+            builder.AppendLine($"- Skill gate split: premature Skill1 use/hit {prematureSkill1.SkillUses}/{prematureSkill1.SkillProjectileHits}, boss damage {prematureSkill1.BossDamageFromPlayer:0.0}, follow-up/result {prematureSkill1.FollowupHitCount}/{prematureSkill1.ResultRecords}, unresolved beat `{ResolveFirstUnresolvedBeat(prematureSkill1)}`.");
             builder.AppendLine($"- Late summon ended as `{late.ResultKind}` with {late.PlayerDamageTaken:0.0} damage taken, so the report can compare timing quality without changing the scene.");
             builder.AppendLine($"- Intended route currently reads as `{ResolveRouteShape(intended)}`: follow-up window {FormatSeconds(intended.FirstFollowupWindowAtSeconds)}, counter {FormatSeconds(intended.FirstCounterWaveAtSeconds)}, Skill1 hit {FormatSeconds(intended.FirstFollowupHitAtSeconds)}.");
             builder.AppendLine($"- Lock/unlock cadence: intended block->window {FormatSeconds(intended.BlockToFollowupWindowSeconds)}, window->hit {FormatSeconds(intended.FollowupWindowToHitSeconds)}; boss-screen recovery answer pulse {blockedRecovery.CounterWaveAnswerEnergyPulse:0}, counter->answer {FormatSeconds(blockedRecovery.CounterTriggerToAnswerSeconds)}, answer->stable {FormatSeconds(blockedRecovery.CounterAnswerToStableSeconds)}, stable->final {FormatSeconds(blockedRecovery.CounterStableToFinalWindowSeconds)}, final->hit {FormatSeconds(blockedRecovery.FinalWindowToHitSeconds)}.");
@@ -2626,6 +2692,7 @@ namespace DimensionBrawl.Tests
             PolicyMetrics noSummonSurvival = RequireResult(results, PolicyKind.NoSummonSurvivalLimit);
             PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
             PolicyMetrics gunOnlySurvival = RequireResult(results, PolicyKind.GunOnlySurvivalLimit);
+            PolicyMetrics prematureSkill1 = RequireResult(results, PolicyKind.PrematureSkill1NoSummon);
             PolicyMetrics forwardRiskPhysicalBarrage = RequireResult(
                 results,
                 PolicyKind.ForwardRiskPhysicalBarrageProbe);
@@ -2648,6 +2715,10 @@ namespace DimensionBrawl.Tests
                 && gunOnlySurvival.FirstPlayerDownAtSeconds >= 0f
                 && gunOnlySurvival.FirstBossDownAtSeconds < 0f;
             bool axis2Pass = forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits > 0
+                && prematureSkill1.SkillUses > 0
+                && prematureSkill1.SkillProjectileHits > 0
+                && prematureSkill1.FollowupHitCount == 0
+                && prematureSkill1.ResultRecords == 0
                 && forwardRiskPhysicalSummonNoPunish.FollowupMissCount > 0
                 && forwardRiskPhysicalSummonNoPunish.CounterWaves > 0
                 && !forwardRiskPhysicalSummonNoPunish.IsClearResult
@@ -2693,7 +2764,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 $"| 1. Bad routes lose state/HP | {FormatGateStatus(axis1Pass)} | no-summon down {FormatSeconds(noSummonSurvival.FirstPlayerDownAtSeconds)}, gun-only down {FormatSeconds(gunOnlySurvival.FirstPlayerDownAtSeconds)}, gun-only boss down {FormatSeconds(gunOnlySurvival.FirstBossDownAtSeconds)} |");
             builder.AppendLine(
-                $"| 2. Block -> window -> Skill1 loop | {FormatGateStatus(axis2Pass)} | unblocked forward hits {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; block presentation cam/flash/VFX {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}; no-punish misses {forwardRiskPhysicalSummonNoPunish.FollowupMissCount}, counters {forwardRiskPhysicalSummonNoPunish.CounterWaves}, counter cues {forwardRiskPhysicalSummonNoPunish.CounterWaveScreenCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveCameraCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveVfxCueRequests}, result `{forwardRiskPhysicalSummonNoPunish.ResultKind}`; recovery answer cues {blockedRecovery.CounterWaveAnswerScreenCueRequests}/{blockedRecovery.CounterWaveStabilizedCameraCueRequests}/{blockedRecovery.CounterWaveStabilizedVfxCueRequests}, energy ready/spend {blockedRecovery.EnergyReadyScreenCueRequests}/{blockedRecovery.EnergySpendScreenCueRequests} screen and {blockedRecovery.EnergyReadyVfxCueRequests}/{blockedRecovery.EnergySpendVfxCueRequests} VFX; physical punish blocks {forwardRiskPhysicalSummonPunish.SummonBlocks}, Skill1 hits {forwardRiskPhysicalSummonPunish.SkillProjectileHits}, `{forwardRiskPhysicalSummonPunish.ResultKind}` |");
+                $"| 2. Block -> window -> Skill1 loop | {FormatGateStatus(axis2Pass)} | unblocked forward hits {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; premature Skill1 use/hit {prematureSkill1.SkillUses}/{prematureSkill1.SkillProjectileHits} but follow-up/result {prematureSkill1.FollowupHitCount}/{prematureSkill1.ResultRecords}; block presentation cam/flash/VFX {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}; no-punish misses {forwardRiskPhysicalSummonNoPunish.FollowupMissCount}, counters {forwardRiskPhysicalSummonNoPunish.CounterWaves}, counter cues {forwardRiskPhysicalSummonNoPunish.CounterWaveScreenCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveCameraCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveVfxCueRequests}, result `{forwardRiskPhysicalSummonNoPunish.ResultKind}`; recovery answer cues {blockedRecovery.CounterWaveAnswerScreenCueRequests}/{blockedRecovery.CounterWaveStabilizedCameraCueRequests}/{blockedRecovery.CounterWaveStabilizedVfxCueRequests}, energy ready/spend {blockedRecovery.EnergyReadyScreenCueRequests}/{blockedRecovery.EnergySpendScreenCueRequests} screen and {blockedRecovery.EnergyReadyVfxCueRequests}/{blockedRecovery.EnergySpendVfxCueRequests} VFX; physical punish blocks {forwardRiskPhysicalSummonPunish.SummonBlocks}, Skill1 hits {forwardRiskPhysicalSummonPunish.SkillProjectileHits}, `{forwardRiskPhysicalSummonPunish.ResultKind}` |");
             builder.AppendLine(
                 $"| 3. Hit response and presentation | {FormatGateStatus(axis3Pass)} | player routine hits {noSummon.PlayerNonLockingDamageEvents}/{noSummon.PlayerLockingDamageEvents} non-lock/lock with damage cues {noSummon.PlayerDamageScreenCueRequests}/{noSummon.PlayerDamageFeedbackRequests}; clean route damage cues {forwardRiskPhysicalSummonPunish.PlayerDamageScreenCueRequests}/{forwardRiskPhysicalSummonPunish.PlayerDamageFeedbackRequests}; gun boss chip {gunOnly.BossNonLockingDamageEvents}/{gunOnly.BossLockingDamageEvents}; physical punish boss lock {forwardRiskPhysicalSummonPunish.BossLockingDamageEvents}, hit cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests} |");
             builder.AppendLine(
@@ -2764,6 +2835,41 @@ namespace DimensionBrawl.Tests
             }
         }
 
+        private static void AppendSkillGateContract(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results)
+        {
+            builder.AppendLine("## Skill Gate Contract");
+            builder.AppendLine("| Policy | Skill use/hit | Boss dmg player/summon | Follow-up hit | Follow-up cues screen/camera/VFX | Result records | Stage gate read |");
+            builder.AppendLine("|---|---:|---:|---:|---:|---:|---|");
+            AppendSkillGateRow(builder, RequireResult(results, PolicyKind.PrematureSkill1NoSummon));
+            AppendSkillGateRow(builder, RequireResult(results, PolicyKind.ForwardRiskPhysicalSummonPunishProbe));
+            AppendSkillGateRow(builder, RequireResult(results, PolicyKind.IntendedRoute));
+            AppendSkillGateRow(builder, RequireResult(results, PolicyKind.BossScreenBlockCounterRecovery));
+        }
+
+        private static void AppendSkillGateRow(StringBuilder builder, PolicyMetrics result)
+        {
+            builder.Append("| ");
+            builder.Append(result.Policy);
+            builder.Append(" | ");
+            builder.Append($"{result.SkillUses}/{result.SkillProjectileHits}");
+            builder.Append(" | ");
+            builder.Append($"{result.BossDamageFromPlayer:0.0}/{result.BossDamageFromAllySummon:0.0}");
+            builder.Append(" | ");
+            builder.Append(result.FollowupHitCount);
+            builder.Append(" | ");
+            builder.Append($"{result.FollowupHitScreenCueRequests}/{result.FollowupHitCameraCueRequests}/{result.FollowupHitVfxCueRequests}");
+            builder.Append(" | ");
+            builder.Append(result.ResultRecords);
+            builder.Append(" | ");
+            builder.Append(EscapeTable(
+                result.FollowupHitCount > 0
+                    ? "state-gated follow-up commit"
+                    : $"raw Skill1 only; unresolved {ResolveFirstUnresolvedBeat(result)}"));
+            builder.AppendLine(" |");
+        }
+
         private static void AppendUnconfirmedFollowupCost(
             StringBuilder builder,
             IReadOnlyList<PolicyMetrics> results)
@@ -2815,6 +2921,7 @@ namespace DimensionBrawl.Tests
             PolicyMetrics noSummonSurvival = RequireResult(results, PolicyKind.NoSummonSurvivalLimit);
             PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
             PolicyMetrics gunOnlySurvival = RequireResult(results, PolicyKind.GunOnlySurvivalLimit);
+            PolicyMetrics prematureSkill1 = RequireResult(results, PolicyKind.PrematureSkill1NoSummon);
             PolicyMetrics backlineEnergy = RequireResult(results, PolicyKind.BacklineEnergyProbe);
             PolicyMetrics forwardRiskEnergy = RequireResult(results, PolicyKind.ForwardRiskEnergyProbe);
             PolicyMetrics backlinePhysicalBarrage = RequireResult(
@@ -2860,6 +2967,11 @@ namespace DimensionBrawl.Tests
             bool combatPayloadMeasured = forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits > 0
                 && noSummon.PlayerDamageScreenCueRequests > 0
                 && noSummon.PlayerDamageFeedbackRequests > 0
+                && prematureSkill1.SkillUses > 0
+                && prematureSkill1.SkillProjectileHits > 0
+                && prematureSkill1.FollowupHitCount == 0
+                && prematureSkill1.FollowupHitScreenCueRequests == 0
+                && prematureSkill1.ResultRecords == 0
                 && forwardRiskPhysicalSummonPunish.PlayerDamageScreenCueRequests == 0
                 && forwardRiskPhysicalSummonBlock.SummonBlocks > 0
                 && forwardRiskPhysicalSummonBlock.PhysicalBarragePlayerHits == 0
@@ -2881,6 +2993,9 @@ namespace DimensionBrawl.Tests
                 && forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests > 0;
             bool pgrStateMeasured = intended.BlockToFollowupWindowSeconds >= 0f
                 && intended.BlockToFollowupWindowSeconds <= 0.35f
+                && prematureSkill1.SkillUses > 0
+                && prematureSkill1.FollowupHitCount == 0
+                && prematureSkill1.FollowupHitCinematicCueRequests == 0
                 && blockedRecovery.CounterWaveAnswerEnergyPulse > 0f
                 && blockedRecovery.CounterTriggerToAnswerSeconds >= 0f
                 && blockedRecovery.CounterTriggerToAnswerSeconds <= 0.35f
@@ -2919,12 +3034,12 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 "| CombatPayload runtime pipeline | "
                 + $"{FormatCoverageStatus(combatPayloadMeasured)} | "
-                + $"Target->Hit: forward barrage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; Player Hit->Presentation: routine damage cues {noSummon.PlayerDamageScreenCueRequests}/{noSummon.PlayerDamageFeedbackRequests}, clean route {forwardRiskPhysicalSummonPunish.PlayerDamageScreenCueRequests}/{forwardRiskPhysicalSummonPunish.PlayerDamageFeedbackRequests}; Block->Status/Presentation: {forwardRiskPhysicalSummonBlock.SummonBlocks} blocks, {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)} to window, cues {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}; NoHit->Counter/Presentation: miss {forwardRiskPhysicalSummonNoPunish.FollowupMissCount} / counter {forwardRiskPhysicalSummonNoPunish.CounterWaves}, cues {forwardRiskPhysicalSummonNoPunish.CounterWaveScreenCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveCameraCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveVfxCueRequests}; Skill1 Hit->Presentation: {forwardRiskPhysicalSummonPunish.SkillProjectileHits} hits with cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests}; payoff source player/summon {forwardRiskPhysicalSummonPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonPunish.BossDamageFromAllySummon:0.0} | "
+                + $"Target->Hit: forward barrage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; Resource/Skill gate: premature Skill1 use/hit {prematureSkill1.SkillUses}/{prematureSkill1.SkillProjectileHits} with follow-up/result {prematureSkill1.FollowupHitCount}/{prematureSkill1.ResultRecords}; Player Hit->Presentation: routine damage cues {noSummon.PlayerDamageScreenCueRequests}/{noSummon.PlayerDamageFeedbackRequests}, clean route {forwardRiskPhysicalSummonPunish.PlayerDamageScreenCueRequests}/{forwardRiskPhysicalSummonPunish.PlayerDamageFeedbackRequests}; Block->Status/Presentation: {forwardRiskPhysicalSummonBlock.SummonBlocks} blocks, {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)} to window, cues {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}; NoHit->Counter/Presentation: miss {forwardRiskPhysicalSummonNoPunish.FollowupMissCount} / counter {forwardRiskPhysicalSummonNoPunish.CounterWaves}, cues {forwardRiskPhysicalSummonNoPunish.CounterWaveScreenCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveCameraCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveVfxCueRequests}; Skill1 Hit->Presentation: {forwardRiskPhysicalSummonPunish.SkillProjectileHits} hits with cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests}; payoff source player/summon {forwardRiskPhysicalSummonPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonPunish.BossDamageFromAllySummon:0.0} | "
                 + "Candidate labels stay local test evidence, not fake universal opcodes. |");
             builder.AppendLine(
                 "| PGR state-lock and hit-response grammar | "
                 + $"{FormatCoverageStatus(pgrStateMeasured)} | "
-                + $"block->window {FormatSeconds(intended.BlockToFollowupWindowSeconds)}; counter answer pulse {blockedRecovery.CounterWaveAnswerEnergyPulse:0} with answer cues {blockedRecovery.CounterWaveAnswerScreenCueRequests}/{blockedRecovery.CounterWaveStabilizedCameraCueRequests}/{blockedRecovery.CounterWaveStabilizedVfxCueRequests} and energy ready/spend {blockedRecovery.EnergyReadyScreenCueRequests}/{blockedRecovery.EnergySpendScreenCueRequests} screen, {blockedRecovery.EnergyReadyVfxCueRequests}/{blockedRecovery.EnergySpendVfxCueRequests} VFX; delayed clean/recovery margins {FormatSeconds(delayedIntended.FollowupWindowRemainingAtFirstHitSeconds)} / {FormatSeconds(delayedBlockedRecovery.FollowupWindowRemainingAtFirstHitSeconds)}; routine lock counts {noSummon.PlayerLockingDamageEvents}/{gunOnly.BossLockingDamageEvents}, player feedback interrupt {noSummon.LastPlayerDamageFeedbackInterruptedAction}; punish boss locks {forwardRiskPhysicalSummonPunish.BossLockingDamageEvents}, micro-cine hit/frame {forwardRiskPhysicalSummonPunish.FollowupHitCinematicCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCinematicFrameOverlayCount} | "
+                + $"premature Skill1 hit/follow-up {prematureSkill1.SkillProjectileHits}/{prematureSkill1.FollowupHitCount}; block->window {FormatSeconds(intended.BlockToFollowupWindowSeconds)}; counter answer pulse {blockedRecovery.CounterWaveAnswerEnergyPulse:0} with answer cues {blockedRecovery.CounterWaveAnswerScreenCueRequests}/{blockedRecovery.CounterWaveStabilizedCameraCueRequests}/{blockedRecovery.CounterWaveStabilizedVfxCueRequests} and energy ready/spend {blockedRecovery.EnergyReadyScreenCueRequests}/{blockedRecovery.EnergySpendScreenCueRequests} screen, {blockedRecovery.EnergyReadyVfxCueRequests}/{blockedRecovery.EnergySpendVfxCueRequests} VFX; delayed clean/recovery margins {FormatSeconds(delayedIntended.FollowupWindowRemainingAtFirstHitSeconds)} / {FormatSeconds(delayedBlockedRecovery.FollowupWindowRemainingAtFirstHitSeconds)}; routine lock counts {noSummon.PlayerLockingDamageEvents}/{gunOnly.BossLockingDamageEvents}, player feedback interrupt {noSummon.LastPlayerDamageFeedbackInterruptedAction}; punish boss locks {forwardRiskPhysicalSummonPunish.BossLockingDamageEvents}, micro-cine hit/frame {forwardRiskPhysicalSummonPunish.FollowupHitCinematicCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCinematicFrameOverlayCount} | "
                 + "Use lock/unlock and response tiers only; do not import tutorial HUD flow as the solution. |");
             builder.AppendLine(
                 "| V1 scope guardrail | "
@@ -2951,6 +3066,7 @@ namespace DimensionBrawl.Tests
         private static void AssertStageWaveBeatMap(IReadOnlyList<PolicyMetrics> results)
         {
             PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
+            PolicyMetrics prematureSkill1 = RequireResult(results, PolicyKind.PrematureSkill1NoSummon);
             PolicyMetrics noPunish = RequireResult(results, PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe);
             PolicyMetrics physicalPunish = RequireResult(results, PolicyKind.ForwardRiskPhysicalSummonPunishProbe);
             PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
@@ -2960,6 +3076,10 @@ namespace DimensionBrawl.Tests
                 "ScreenCurtain",
                 ResolveFirstUnresolvedBeat(gunOnly),
                 "Gun-only should be classified as stopping at the summon-needed screen curtain beat.");
+            Assert.AreEqual(
+                "ScreenCurtain",
+                ResolveFirstUnresolvedBeat(prematureSkill1),
+                "A premature Skill1 hit should still be classified as stopping at the summon-needed screen curtain beat.");
             Assert.AreEqual(
                 "FollowupConfirm",
                 ResolveFirstUnresolvedBeat(noPunish),
@@ -2986,6 +3106,7 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.GunOnly:
                 case PolicyKind.NoSummonSurvivalLimit:
                 case PolicyKind.GunOnlySurvivalLimit:
+                case PolicyKind.PrematureSkill1NoSummon:
                 case PolicyKind.ForwardRiskPhysicalSummonBlockProbe:
                 case PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe:
                 case PolicyKind.ForwardRiskPhysicalSummonPunishProbe:
@@ -3744,6 +3865,15 @@ namespace DimensionBrawl.Tests
                         && result.FirstPlayerDownAtSeconds >= 0f
                         && result.FirstPlayerDownAtSeconds <= SurvivalLimitProbeMaxSeconds
                         && result.FirstBossDownAtSeconds < 0f;
+                case PolicyKind.PrematureSkill1NoSummon:
+                    return !result.IsClearResult
+                        && result.SkillUses > 0
+                        && result.SkillProjectileHits > 0
+                        && result.FollowupHitCount == 0
+                        && result.FollowupHitScreenCueRequests == 0
+                        && result.FollowupHitCinematicCueRequests == 0
+                        && result.ResultRecords == 0
+                        && ResolveFirstUnresolvedBeat(result) == "ScreenCurtain";
                 case PolicyKind.BacklinePhysicalBarrageProbe:
                     return result.PhysicalBarragePlayerHits == 0
                         && result.PhysicalBarragePlayerDamage <= 0.01f;
