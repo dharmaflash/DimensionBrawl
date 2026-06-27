@@ -187,6 +187,9 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(
                     markdown.Contains("## Player Damage Presentation Bridge"),
                     "The report should prove player damage presentation instead of inferring it from HP loss.");
+                Assert.IsTrue(
+                    markdown.Contains("## Counter Wave Presentation Bridge"),
+                    "The report should prove counter-wave presentation instead of inferring it from follow-up misses.");
                 AssertStageWaveBeatMap(results);
                 Assert.Greater(intended.SummonBlocks, 0, "The intended route must prove summon interception changes the run.");
                 Assert.AreEqual(
@@ -373,6 +376,18 @@ namespace DimensionBrawl.Tests
                     forwardRiskPhysicalSummonNoPunish.CounterWaves,
                     0,
                     "A missed physical follow-up should enter counter pressure instead of silently succeeding.");
+                Assert.Greater(
+                    forwardRiskPhysicalSummonNoPunish.CounterWaveScreenCueRequests,
+                    0,
+                    "A missed physical follow-up should request the existing counter-wave screen cue.");
+                Assert.Greater(
+                    forwardRiskPhysicalSummonNoPunish.CounterWaveCameraCueRequests,
+                    0,
+                    "A missed physical follow-up should request the existing counter-wave camera cue.");
+                Assert.Greater(
+                    forwardRiskPhysicalSummonNoPunish.CounterWaveVfxCueRequests,
+                    0,
+                    "A missed physical follow-up should request the existing counter-wave VFX cue.");
                 Assert.AreEqual(
                     0,
                     forwardRiskPhysicalSummonNoPunish.SkillProjectileHits,
@@ -430,6 +445,10 @@ namespace DimensionBrawl.Tests
                     "CleanFollowupClear",
                     forwardRiskPhysicalSummonPunish.ResultKind,
                     "A physical summon-punish route should close the block -> follow-up -> Skill1 loop as a clean route.");
+                Assert.AreEqual(
+                    0,
+                    forwardRiskPhysicalSummonPunish.CounterWaveScreenCueRequests,
+                    "A clean physical summon-punish route should not request counter-wave presentation.");
                 Assert.GreaterOrEqual(
                     forwardRiskPhysicalSummonPunish.SummonPressureBlockCameraCueRequests,
                     forwardRiskPhysicalSummonPunish.SummonBlocks,
@@ -545,6 +564,18 @@ namespace DimensionBrawl.Tests
                     blockedRecovery.CounterWaveAnswerEnergyPulse,
                     100f,
                     "The recovered boss-screen branch should prove the counter trigger grants a summon-answer resource pulse.");
+                Assert.Greater(
+                    blockedRecovery.CounterWaveAnswerScreenCueRequests,
+                    0,
+                    "A stabilized counter recovery should request the existing counter-answer screen cue.");
+                Assert.Greater(
+                    blockedRecovery.CounterWaveStabilizedCameraCueRequests,
+                    0,
+                    "A stabilized counter recovery should request the existing counter-answer camera cue.");
+                Assert.Greater(
+                    blockedRecovery.CounterWaveStabilizedVfxCueRequests,
+                    0,
+                    "A stabilized counter recovery should request the existing counter-answer VFX cue.");
                 Assert.GreaterOrEqual(
                     blockedRecovery.CounterAnswerToStableSeconds,
                     0f,
@@ -2259,6 +2290,35 @@ namespace DimensionBrawl.Tests
             }
 
             builder.AppendLine();
+            builder.AppendLine("## Counter Wave Presentation Bridge");
+            builder.AppendLine("| Policy | Counter waves | Screen wave/answer | Camera wave/stable | VFX wave/stable | Last screen source/answer | Last camera tiers | Last VFX source | Result |");
+            builder.AppendLine("|---|---:|---:|---:|---:|---|---:|---|---|");
+            for (int i = 0; i < results.Count; i++)
+            {
+                PolicyMetrics result = results[i];
+                builder.Append("| ");
+                builder.Append(result.Policy);
+                builder.Append(" | ");
+                builder.Append(result.CounterWaves);
+                builder.Append(" | ");
+                builder.Append($"{result.CounterWaveScreenCueRequests}/{result.CounterWaveAnswerScreenCueRequests}");
+                builder.Append(" | ");
+                builder.Append($"{result.CounterWaveCameraCueRequests}/{result.CounterWaveStabilizedCameraCueRequests}");
+                builder.Append(" | ");
+                builder.Append($"{result.CounterWaveVfxCueRequests}/{result.CounterWaveStabilizedVfxCueRequests}");
+                builder.Append(" | ");
+                builder.Append(EscapeTable(
+                    $"{result.LastCounterWaveScreenSource}/{result.LastCounterWaveScreenAnswer}"));
+                builder.Append(" | ");
+                builder.Append($"{result.LastCounterWaveCameraTier}/{result.LastCounterWaveStabilizedCameraTier}");
+                builder.Append(" | ");
+                builder.Append(EscapeTable(result.LastCounterWaveVfxSource));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(result.ResultKind));
+                builder.AppendLine(" |");
+            }
+
+            builder.AppendLine();
             builder.AppendLine("## Follow-up Presentation Bridge");
             builder.AppendLine("| Policy | Screen window/hit/miss | Camera window/hit/miss | VFX window/hit/miss | Hit tier cam/vfx | Hit dmg cam/vfx | Last follow-up screen |");
             builder.AppendLine("|---|---:|---:|---:|---:|---:|---|");
@@ -2385,6 +2445,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Forward-risk physical barrage: backline hits {backlinePhysicalBarrage.PhysicalBarragePlayerHits}/{backlinePhysicalBarrage.PhysicalBarrageTrackedProjectileCount}, damage {backlinePhysicalBarrage.PhysicalBarragePlayerDamage:0.0}; forward hits {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}, damage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerDamage:0.0}.");
             builder.AppendLine($"- Forward-risk physical summon block: blocks {forwardRiskPhysicalSummonBlock.SummonBlocks}, player hits {forwardRiskPhysicalSummonBlock.PhysicalBarragePlayerHits}/{forwardRiskPhysicalSummonBlock.PhysicalBarrageTrackedProjectileCount}, damage {forwardRiskPhysicalSummonBlock.PhysicalBarragePlayerDamage:0.0}, block->window {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)}, block camera/flash/VFX {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}.");
             builder.AppendLine($"- Forward-risk physical no-punish: follow-up misses {forwardRiskPhysicalSummonNoPunish.FollowupMissCount}, counter waves {forwardRiskPhysicalSummonNoPunish.CounterWaves}, result `{forwardRiskPhysicalSummonNoPunish.ResultKind}`, unanswered burden {FormatPercent01(forwardRiskPhysicalSummonNoPunish.UnansweredPressureBurdenShare01)}, boss damage player/summon {forwardRiskPhysicalSummonNoPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonNoPunish.BossDamageFromAllySummon:0.0}.");
+            builder.AppendLine($"- Counter-wave presentation bridge: physical no-punish wave cues screen/camera/VFX {forwardRiskPhysicalSummonNoPunish.CounterWaveScreenCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveCameraCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveVfxCueRequests}; boss-screen recovery answer cues screen/camera/VFX {blockedRecovery.CounterWaveAnswerScreenCueRequests}/{blockedRecovery.CounterWaveStabilizedCameraCueRequests}/{blockedRecovery.CounterWaveStabilizedVfxCueRequests}.");
             builder.AppendLine($"- Forward-risk physical summon punish: `{forwardRiskPhysicalSummonPunish.ResultKind}` with blocks {forwardRiskPhysicalSummonPunish.SummonBlocks}, player hits {forwardRiskPhysicalSummonPunish.PhysicalBarragePlayerHits}/{forwardRiskPhysicalSummonPunish.PhysicalBarrageTrackedProjectileCount}, Skill1 hits {forwardRiskPhysicalSummonPunish.SkillProjectileHits}, boss damage {forwardRiskPhysicalSummonPunish.BossDamageTaken:0.0}, window->hit {FormatSeconds(forwardRiskPhysicalSummonPunish.FollowupWindowToHitSeconds)}.");
             builder.AppendLine($"- Boss damage attribution: physical block-only player/summon boss damage {forwardRiskPhysicalSummonBlock.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonBlock.BossDamageFromAllySummon:0.0}; physical punish player/summon boss damage {forwardRiskPhysicalSummonPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonPunish.BossDamageFromAllySummon:0.0}, player share {FormatPercent01(forwardRiskPhysicalSummonPunish.BossDamagePlayerShare01)}.");
             builder.AppendLine($"- Stage result hooks: no-summon fail `{ResolveResultHookClass(noSummonSurvival)}` / gun-only fail `{ResolveResultHookClass(gunOnlySurvival)}`; clean physical `{ResolveResultHookClass(forwardRiskPhysicalSummonPunish)}`; boss-screen recovery `{ResolveResultHookClass(blockedRecovery)}`. All committed hooks remain review-only analysis records, not payout/progression grants.");
@@ -2521,6 +2582,12 @@ namespace DimensionBrawl.Tests
                     >= forwardRiskPhysicalSummonBlock.SummonBlocks
                 && forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests
                     >= forwardRiskPhysicalSummonBlock.SummonBlocks
+                && forwardRiskPhysicalSummonNoPunish.CounterWaveScreenCueRequests > 0
+                && forwardRiskPhysicalSummonNoPunish.CounterWaveCameraCueRequests > 0
+                && forwardRiskPhysicalSummonNoPunish.CounterWaveVfxCueRequests > 0
+                && blockedRecovery.CounterWaveAnswerScreenCueRequests > 0
+                && blockedRecovery.CounterWaveStabilizedCameraCueRequests > 0
+                && blockedRecovery.CounterWaveStabilizedVfxCueRequests > 0
                 && forwardRiskPhysicalSummonPunish.PhysicalBarragePlayerHits == 0
                 && forwardRiskPhysicalSummonPunish.ResultKind == "CleanFollowupClear"
                 && forwardRiskPhysicalSummonPunish.SkillProjectileHits > 0;
@@ -2546,7 +2613,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 $"| 1. Bad routes lose state/HP | {FormatGateStatus(axis1Pass)} | no-summon down {FormatSeconds(noSummonSurvival.FirstPlayerDownAtSeconds)}, gun-only down {FormatSeconds(gunOnlySurvival.FirstPlayerDownAtSeconds)}, gun-only boss down {FormatSeconds(gunOnlySurvival.FirstBossDownAtSeconds)} |");
             builder.AppendLine(
-                $"| 2. Block -> window -> Skill1 loop | {FormatGateStatus(axis2Pass)} | unblocked forward hits {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; block presentation cam/flash/VFX {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}; no-punish misses {forwardRiskPhysicalSummonNoPunish.FollowupMissCount}, counters {forwardRiskPhysicalSummonNoPunish.CounterWaves}, result `{forwardRiskPhysicalSummonNoPunish.ResultKind}`; physical punish blocks {forwardRiskPhysicalSummonPunish.SummonBlocks}, Skill1 hits {forwardRiskPhysicalSummonPunish.SkillProjectileHits}, `{forwardRiskPhysicalSummonPunish.ResultKind}` |");
+                $"| 2. Block -> window -> Skill1 loop | {FormatGateStatus(axis2Pass)} | unblocked forward hits {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; block presentation cam/flash/VFX {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}; no-punish misses {forwardRiskPhysicalSummonNoPunish.FollowupMissCount}, counters {forwardRiskPhysicalSummonNoPunish.CounterWaves}, counter cues {forwardRiskPhysicalSummonNoPunish.CounterWaveScreenCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveCameraCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveVfxCueRequests}, result `{forwardRiskPhysicalSummonNoPunish.ResultKind}`; recovery answer cues {blockedRecovery.CounterWaveAnswerScreenCueRequests}/{blockedRecovery.CounterWaveStabilizedCameraCueRequests}/{blockedRecovery.CounterWaveStabilizedVfxCueRequests}; physical punish blocks {forwardRiskPhysicalSummonPunish.SummonBlocks}, Skill1 hits {forwardRiskPhysicalSummonPunish.SkillProjectileHits}, `{forwardRiskPhysicalSummonPunish.ResultKind}` |");
             builder.AppendLine(
                 $"| 3. Hit response and presentation | {FormatGateStatus(axis3Pass)} | player routine hits {noSummon.PlayerNonLockingDamageEvents}/{noSummon.PlayerLockingDamageEvents} non-lock/lock with damage cues {noSummon.PlayerDamageScreenCueRequests}/{noSummon.PlayerDamageFeedbackRequests}; clean route damage cues {forwardRiskPhysicalSummonPunish.PlayerDamageScreenCueRequests}/{forwardRiskPhysicalSummonPunish.PlayerDamageFeedbackRequests}; gun boss chip {gunOnly.BossNonLockingDamageEvents}/{gunOnly.BossLockingDamageEvents}; physical punish boss lock {forwardRiskPhysicalSummonPunish.BossLockingDamageEvents}, hit cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests} |");
             builder.AppendLine(
@@ -2719,6 +2786,9 @@ namespace DimensionBrawl.Tests
                 && forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests
                     >= forwardRiskPhysicalSummonBlock.SummonBlocks
                 && forwardRiskPhysicalSummonNoPunish.FollowupMissCount > 0
+                && forwardRiskPhysicalSummonNoPunish.CounterWaveScreenCueRequests > 0
+                && forwardRiskPhysicalSummonNoPunish.CounterWaveCameraCueRequests > 0
+                && forwardRiskPhysicalSummonNoPunish.CounterWaveVfxCueRequests > 0
                 && !forwardRiskPhysicalSummonNoPunish.IsClearResult
                 && forwardRiskPhysicalSummonPunish.SkillProjectileHits > 0
                 && forwardRiskPhysicalSummonPunish.BossLockingDamageEvents > 0
@@ -2735,6 +2805,9 @@ namespace DimensionBrawl.Tests
                 && noSummon.PlayerLockingDamageEvents == 0
                 && !noSummon.LastPlayerDamageFeedbackInterruptedAction
                 && gunOnly.BossLockingDamageEvents == 0
+                && blockedRecovery.CounterWaveAnswerScreenCueRequests > 0
+                && blockedRecovery.CounterWaveStabilizedCameraCueRequests > 0
+                && blockedRecovery.CounterWaveStabilizedVfxCueRequests > 0
                 && forwardRiskPhysicalSummonPunish.BossLockingDamageEvents > 0
                 && forwardRiskPhysicalSummonPunish.FollowupHitCinematicCueRequests > 0
                 && forwardRiskPhysicalSummonPunish.FollowupHitCinematicFrameOverlayCount > 0
@@ -2758,12 +2831,12 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 "| CombatPayload runtime pipeline | "
                 + $"{FormatCoverageStatus(combatPayloadMeasured)} | "
-                + $"Target->Hit: forward barrage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; Player Hit->Presentation: routine damage cues {noSummon.PlayerDamageScreenCueRequests}/{noSummon.PlayerDamageFeedbackRequests}, clean route {forwardRiskPhysicalSummonPunish.PlayerDamageScreenCueRequests}/{forwardRiskPhysicalSummonPunish.PlayerDamageFeedbackRequests}; Block->Status/Presentation: {forwardRiskPhysicalSummonBlock.SummonBlocks} blocks, {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)} to window, cues {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}; NoHit->Counter: miss {forwardRiskPhysicalSummonNoPunish.FollowupMissCount} / counter {forwardRiskPhysicalSummonNoPunish.CounterWaves}; Skill1 Hit->Presentation: {forwardRiskPhysicalSummonPunish.SkillProjectileHits} hits with cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests}; payoff source player/summon {forwardRiskPhysicalSummonPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonPunish.BossDamageFromAllySummon:0.0} | "
+                + $"Target->Hit: forward barrage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; Player Hit->Presentation: routine damage cues {noSummon.PlayerDamageScreenCueRequests}/{noSummon.PlayerDamageFeedbackRequests}, clean route {forwardRiskPhysicalSummonPunish.PlayerDamageScreenCueRequests}/{forwardRiskPhysicalSummonPunish.PlayerDamageFeedbackRequests}; Block->Status/Presentation: {forwardRiskPhysicalSummonBlock.SummonBlocks} blocks, {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)} to window, cues {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}; NoHit->Counter/Presentation: miss {forwardRiskPhysicalSummonNoPunish.FollowupMissCount} / counter {forwardRiskPhysicalSummonNoPunish.CounterWaves}, cues {forwardRiskPhysicalSummonNoPunish.CounterWaveScreenCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveCameraCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveVfxCueRequests}; Skill1 Hit->Presentation: {forwardRiskPhysicalSummonPunish.SkillProjectileHits} hits with cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests}; payoff source player/summon {forwardRiskPhysicalSummonPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonPunish.BossDamageFromAllySummon:0.0} | "
                 + "Candidate labels stay local test evidence, not fake universal opcodes. |");
             builder.AppendLine(
                 "| PGR state-lock and hit-response grammar | "
                 + $"{FormatCoverageStatus(pgrStateMeasured)} | "
-                + $"block->window {FormatSeconds(intended.BlockToFollowupWindowSeconds)}; counter answer pulse {blockedRecovery.CounterWaveAnswerEnergyPulse:0}; delayed clean/recovery margins {FormatSeconds(delayedIntended.FollowupWindowRemainingAtFirstHitSeconds)} / {FormatSeconds(delayedBlockedRecovery.FollowupWindowRemainingAtFirstHitSeconds)}; routine lock counts {noSummon.PlayerLockingDamageEvents}/{gunOnly.BossLockingDamageEvents}, player feedback interrupt {noSummon.LastPlayerDamageFeedbackInterruptedAction}; punish boss locks {forwardRiskPhysicalSummonPunish.BossLockingDamageEvents}, micro-cine hit/frame {forwardRiskPhysicalSummonPunish.FollowupHitCinematicCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCinematicFrameOverlayCount} | "
+                + $"block->window {FormatSeconds(intended.BlockToFollowupWindowSeconds)}; counter answer pulse {blockedRecovery.CounterWaveAnswerEnergyPulse:0} with answer cues {blockedRecovery.CounterWaveAnswerScreenCueRequests}/{blockedRecovery.CounterWaveStabilizedCameraCueRequests}/{blockedRecovery.CounterWaveStabilizedVfxCueRequests}; delayed clean/recovery margins {FormatSeconds(delayedIntended.FollowupWindowRemainingAtFirstHitSeconds)} / {FormatSeconds(delayedBlockedRecovery.FollowupWindowRemainingAtFirstHitSeconds)}; routine lock counts {noSummon.PlayerLockingDamageEvents}/{gunOnly.BossLockingDamageEvents}, player feedback interrupt {noSummon.LastPlayerDamageFeedbackInterruptedAction}; punish boss locks {forwardRiskPhysicalSummonPunish.BossLockingDamageEvents}, micro-cine hit/frame {forwardRiskPhysicalSummonPunish.FollowupHitCinematicCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCinematicFrameOverlayCount} | "
                 + "Use lock/unlock and response tiers only; do not import tutorial HUD flow as the solution. |");
             builder.AppendLine(
                 "| V1 scope guardrail | "
@@ -3351,6 +3424,17 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"summonPressureScreenInterceptFlashes\": {result.SummonPressureScreenInterceptFlashes},");
                 builder.AppendLine($"      \"summonPressureScreenInterceptVfxCueRequests\": {result.SummonPressureScreenInterceptVfxCueRequests},");
                 builder.AppendLine($"      \"maxShowingSummonPressureScreenPresenters\": {result.MaxShowingSummonPressureScreenPresenters},");
+                builder.AppendLine($"      \"counterWaveScreenCueRequests\": {result.CounterWaveScreenCueRequests},");
+                builder.AppendLine($"      \"counterWaveAnswerScreenCueRequests\": {result.CounterWaveAnswerScreenCueRequests},");
+                builder.AppendLine($"      \"lastCounterWaveScreenSource\": \"{JsonEscape(result.LastCounterWaveScreenSource)}\",");
+                builder.AppendLine($"      \"lastCounterWaveScreenAnswer\": \"{JsonEscape(result.LastCounterWaveScreenAnswer)}\",");
+                builder.AppendLine($"      \"counterWaveCameraCueRequests\": {result.CounterWaveCameraCueRequests},");
+                builder.AppendLine($"      \"counterWaveStabilizedCameraCueRequests\": {result.CounterWaveStabilizedCameraCueRequests},");
+                builder.AppendLine($"      \"lastCounterWaveCameraTier\": {result.LastCounterWaveCameraTier},");
+                builder.AppendLine($"      \"lastCounterWaveStabilizedCameraTier\": {result.LastCounterWaveStabilizedCameraTier},");
+                builder.AppendLine($"      \"counterWaveVfxCueRequests\": {result.CounterWaveVfxCueRequests},");
+                builder.AppendLine($"      \"counterWaveStabilizedVfxCueRequests\": {result.CounterWaveStabilizedVfxCueRequests},");
+                builder.AppendLine($"      \"lastCounterWaveVfxSource\": \"{JsonEscape(result.LastCounterWaveVfxSource)}\",");
                 builder.AppendLine($"      \"followupBlockOpportunityScreenCueRequests\": {result.FollowupBlockOpportunityScreenCueRequests},");
                 builder.AppendLine($"      \"followupWindowScreenCueRequests\": {result.FollowupWindowScreenCueRequests},");
                 builder.AppendLine($"      \"followupHitScreenCueRequests\": {result.FollowupHitScreenCueRequests},");
@@ -4118,6 +4202,7 @@ namespace DimensionBrawl.Tests
                 SampleFrontlineHitReactionPresentation();
                 SamplePlayerDamagePresentationBridge();
                 SampleSummonBlockPresentationBridge();
+                SampleCounterWavePresentationBridge();
                 SampleFollowupPresentationBridge();
 
                 if (deltaTime <= 0f)
@@ -4624,6 +4709,34 @@ namespace DimensionBrawl.Tests
                     showingPresenters);
             }
 
+            private void SampleCounterWavePresentationBridge()
+            {
+                Metrics.CounterWaveScreenCueRequests =
+                    ScreenCuePresenter.CounterWaveCueRequestCount;
+                Metrics.CounterWaveAnswerScreenCueRequests =
+                    ScreenCuePresenter.CounterWaveAnswerCueRequestCount;
+                Metrics.LastCounterWaveScreenSource =
+                    ScreenCuePresenter.LastCounterWaveSource.ToString();
+                Metrics.LastCounterWaveScreenAnswer =
+                    ScreenCuePresenter.LastCounterWaveAnswer ?? string.Empty;
+
+                Metrics.CounterWaveCameraCueRequests =
+                    CameraCueDriver.CounterWaveCueRequestCount;
+                Metrics.CounterWaveStabilizedCameraCueRequests =
+                    CameraCueDriver.CounterWaveStabilizedCueRequestCount;
+                Metrics.LastCounterWaveCameraTier =
+                    CameraCueDriver.LastCounterWaveTier;
+                Metrics.LastCounterWaveStabilizedCameraTier =
+                    CameraCueDriver.LastCounterWaveStabilizedTier;
+
+                Metrics.CounterWaveVfxCueRequests =
+                    PocketVfxCueBridge.CounterWaveCueRequestCount;
+                Metrics.CounterWaveStabilizedVfxCueRequests =
+                    PocketVfxCueBridge.CounterWaveStabilizedCueRequestCount;
+                Metrics.LastCounterWaveVfxSource =
+                    PocketVfxCueBridge.LastCounterWaveSource.ToString();
+            }
+
             private void SampleFollowupPresentationBridge()
             {
                 Metrics.FollowupWindowCameraCueRequests = CameraCueDriver.SummonFollowupWindowCueRequestCount;
@@ -4992,6 +5105,17 @@ namespace DimensionBrawl.Tests
             public int SummonPressureScreenInterceptFlashes { get; set; }
             public int SummonPressureScreenInterceptVfxCueRequests { get; set; }
             public int MaxShowingSummonPressureScreenPresenters { get; set; }
+            public int CounterWaveScreenCueRequests { get; set; }
+            public int CounterWaveAnswerScreenCueRequests { get; set; }
+            public string LastCounterWaveScreenSource { get; set; } = "None";
+            public string LastCounterWaveScreenAnswer { get; set; } = string.Empty;
+            public int CounterWaveCameraCueRequests { get; set; }
+            public int CounterWaveStabilizedCameraCueRequests { get; set; }
+            public int LastCounterWaveCameraTier { get; set; }
+            public int LastCounterWaveStabilizedCameraTier { get; set; }
+            public int CounterWaveVfxCueRequests { get; set; }
+            public int CounterWaveStabilizedVfxCueRequests { get; set; }
+            public string LastCounterWaveVfxSource { get; set; } = "None";
             public float FirstSummonUseAtSeconds { get; set; } = -1f;
             public float FirstSummonBlockAtSeconds { get; set; } = -1f;
             public float FirstBossPressureReleaseAtSeconds { get; set; } = -1f;
