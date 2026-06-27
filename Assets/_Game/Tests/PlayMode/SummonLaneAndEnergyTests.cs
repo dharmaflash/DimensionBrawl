@@ -245,6 +245,81 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void ReviewHudSummonReadoutShowsSlotCostsAndCooldowns()
+        {
+            GameObject playerObject = new GameObject("Player");
+            GameObject hudObject = new GameObject("Hud");
+            try
+            {
+                SummonEnergyLadder energy = playerObject.AddComponent<SummonEnergyLadder>();
+                PlayerSummonSlot1Action slot1 = playerObject.AddComponent<PlayerSummonSlot1Action>();
+                PlayerSupportSummonSlotAction slot2 = playerObject.AddComponent<PlayerSupportSummonSlotAction>();
+                PlayerSupportSummonSlotAction slot3 = playerObject.AddComponent<PlayerSupportSummonSlotAction>();
+                slot1.ConfigureRequiredSummonMana(100f);
+                slot1.ConfigureSlotCooldown(1.25f);
+                slot2.ConfigureRequiredSummonMana(200f);
+                slot2.ConfigureMinimumSummonTier(2);
+                slot2.ConfigureSlotCooldown(1.5f);
+                slot3.ConfigureRequiredSummonMana(300f);
+                slot3.ConfigureMinimumSummonTier(3);
+                slot3.ConfigureSlotCooldown(1.5f);
+
+                BossBarrageLaneReviewHud hud = hudObject.AddComponent<BossBarrageLaneReviewHud>();
+                hud.Configure(
+                    newPlayerHealth: null,
+                    newCloseThreatHealth: null,
+                    newBossHealth: null,
+                    newEnergyLadder: energy,
+                    newLaneSpace: null,
+                    newPlayer: null,
+                    newCombatModeController: null,
+                    newRangedAimController: null,
+                    newRangedBasicAttackAction: null,
+                    newSkill1Action: null,
+                    newSummonSlot1Action: slot1,
+                    newBossBarrageEmitter: null,
+                    newPocketReviewOwner: null,
+                    newBossPressureCostLadder: null,
+                    newBossPressurePositionController: null,
+                    newBossPressureActionDirector: null,
+                    newBossSummonPressureAction: null,
+                    newSummonSlot2Action: slot2,
+                    newSummonSlot3Action: slot3);
+
+                energy.GrantCurrentTierEnergy(100f);
+
+                StringAssert.Contains("S1 ready LV1", hud.SummonReadinessReadout);
+                StringAssert.Contains("S2 need 200 EN", hud.SummonReadinessReadout);
+                StringAssert.Contains("S3 need 300 EN", hud.SummonReadinessReadout);
+
+                energy.GrantCurrentTierEnergy(100f);
+
+                StringAssert.Contains("S1 ready LV2", hud.SummonReadinessReadout);
+                StringAssert.Contains("S2 ready LV2", hud.SummonReadinessReadout);
+                StringAssert.Contains("S3 need 300 EN", hud.SummonReadinessReadout);
+
+                SetPrivateInstanceField(slot2, "slotCooldownRemaining", 0.8f);
+
+                StringAssert.Contains("S2 CD 0.8s", hud.SummonReadinessReadout);
+                StringAssert.Contains("S1 ready LV2", hud.SummonReadinessReadout);
+                StringAssert.Contains("S3 need 300 EN", hud.SummonReadinessReadout);
+
+                energy.ResetLadder();
+                energy.GrantCurrentTierEnergy(300f);
+                Assert.IsTrue(energy.TrySpend(300f, out _));
+                SetPrivateInstanceField(slot3, "slotCooldownRemaining", 1.5f);
+
+                StringAssert.Contains("S1 LV1 0%", hud.SummonReadinessReadout);
+                StringAssert.Contains("S3 CD 1.5s", hud.SummonReadinessReadout);
+            }
+            finally
+            {
+                Object.DestroyImmediate(hudObject);
+                Object.DestroyImmediate(playerObject);
+            }
+        }
+
+        [Test]
         public void SummonEnergyVfxCuePresenterPlaysForwardRiskReadyAndSpendReads()
         {
             GameObject laneObject = new GameObject("Lane");

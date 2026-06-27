@@ -93,6 +93,7 @@ namespace DimensionBrawl.Presentation
         public string RouteIncentiveReadout => ResolveCompactRouteIncentiveLine();
         public string CompactCombatCueReadout => ResolveCompactCombatCueLine();
         public string CompactFrontlineCueReadout => ResolveCompactFrontlineCueLine();
+        public string SummonReadinessReadout => ResolveCompactSummonText();
         public string PlayerSurvivalReadout => ResolvePlayerSurvivalReadout().Line;
         public string PlayerSurvivalCueReadout => ResolvePlayerSurvivalCueText();
         public bool ShouldShowResultBanner => TryResolveResultBanner(out _, out _, out _);
@@ -415,7 +416,7 @@ namespace DimensionBrawl.Presentation
             {
                 if (energyLadder != null && energyLadder.CanSpend)
                 {
-                    return $"HP: summon LV{energyLadder.AvailableTier}";
+                    return $"HP: {ResolvePrimarySummonCueName()} LV{energyLadder.AvailableTier}";
                 }
 
                 return "HP: clear pressure";
@@ -424,7 +425,7 @@ namespace DimensionBrawl.Presentation
             if (energyLadder != null && energyLadder.CanSpend)
             {
                 string prefix = state == "critical" ? "Critical" : "HP";
-                return $"{prefix}: summon LV{energyLadder.AvailableTier}";
+                return $"{prefix}: {ResolvePrimarySummonCueName()} LV{energyLadder.AvailableTier}";
             }
 
             if (state == "critical")
@@ -444,7 +445,7 @@ namespace DimensionBrawl.Presentation
 
             if (energyLadder.CanSpend)
             {
-                return $"Summon ready LV{energyLadder.AvailableTier}";
+                return $"{ResolvePrimarySummonCueName()} ready LV{energyLadder.AvailableTier}";
             }
 
             return $"Cost LV{energyLadder.ChargingTier} {energyLadder.CurrentTierEnergy:0}/{energyLadder.CurrentTierTarget:0}";
@@ -1068,9 +1069,13 @@ namespace DimensionBrawl.Presentation
                 return "S1 -";
             }
 
-            return energyLadder.CanSpend
-                ? $"S1 ready LV{energyLadder.AvailableTier}"
-                : $"S1 LV{energyLadder.ChargingTier} {energyLadder.CurrentTierFillRatio * 100f:0}%";
+            string primary = ResolvePrimarySummonCompactText();
+            if (summonSlot2Action == null && summonSlot3Action == null)
+            {
+                return primary;
+            }
+
+            return $"{primary} | {ResolveSupportSummonCompactText(summonSlot2Action, "S2")} | {ResolveSupportSummonCompactText(summonSlot3Action, "S3")}";
         }
 
         private string ResolvePlayerSummonCueText()
@@ -1080,9 +1085,7 @@ namespace DimensionBrawl.Presentation
                 return "Summon -";
             }
 
-            return energyLadder.CanSpend
-                ? $"Summon ready LV{energyLadder.AvailableTier}"
-                : $"Summon charge LV{energyLadder.ChargingTier} {energyLadder.CurrentTierFillRatio * 100f:0}%";
+            return $"Summon {ResolveCompactSummonText()}";
         }
 
         private string ResolveFrontlineLoopLine()
@@ -1094,9 +1097,7 @@ namespace DimensionBrawl.Presentation
                     ? pocketReviewOwner.CurrentPhase.ToString()
                     : "-";
             string player = energyLadder != null
-                ? energyLadder.CanSpend
-                    ? $"player ready LV{energyLadder.AvailableTier}"
-                    : $"player build LV{energyLadder.ChargingTier} {energyLadder.CurrentTierFillRatio * 100f:0}%"
+                ? $"player {ResolveCompactSummonText()}"
                 : "player -";
             string boss = ResolveBossLoopReadout();
             return $"Loop {loop}   pressure {readout.State} "
@@ -1121,6 +1122,58 @@ namespace DimensionBrawl.Presentation
 
             string ready = energyLadder.CanSpend ? $" ready LV{energyLadder.AvailableTier}" : string.Empty;
             return $"LV{energyLadder.ChargingTier} {energyLadder.CurrentTierEnergy:0}/{energyLadder.CurrentTierTarget:0}{ready}";
+        }
+
+        private string ResolvePrimarySummonCueName()
+        {
+            return summonSlot1Action != null ? "S1" : "summon";
+        }
+
+        private string ResolvePrimarySummonCompactText()
+        {
+            if (summonSlot1Action != null && summonSlot1Action.IsSlotOnCooldown)
+            {
+                return $"S1 CD {summonSlot1Action.SlotCooldownRemaining:0.0}s";
+            }
+
+            if (energyLadder == null)
+            {
+                return "S1 -";
+            }
+
+            float requiredMana = summonSlot1Action != null ? summonSlot1Action.RequiredSummonMana : 1f;
+            if (energyLadder.CanSpendMana(requiredMana))
+            {
+                return $"S1 ready LV{energyLadder.AvailableTier}";
+            }
+
+            return $"S1 LV{energyLadder.ChargingTier} {energyLadder.CurrentTierFillRatio * 100f:0}%";
+        }
+
+        private string ResolveSupportSummonCompactText(PlayerSupportSummonSlotAction supportAction, string slotLabel)
+        {
+            if (supportAction == null)
+            {
+                return $"{slotLabel} NEXT";
+            }
+
+            if (supportAction.IsSlotOnCooldown)
+            {
+                return $"{slotLabel} CD {supportAction.SlotCooldownRemaining:0.0}s";
+            }
+
+            if (energyLadder == null)
+            {
+                return $"{slotLabel} -";
+            }
+
+            if (energyLadder.AvailableTier >= supportAction.MinimumSummonTier
+                && energyLadder.CanSpendMana(supportAction.RequiredSummonMana))
+            {
+                return $"{slotLabel} ready LV{energyLadder.AvailableTier}";
+            }
+
+            return $"{slotLabel} need {supportAction.RequiredSummonMana:0} EN";
         }
 
         private string ResolveBossCostTuningText()
