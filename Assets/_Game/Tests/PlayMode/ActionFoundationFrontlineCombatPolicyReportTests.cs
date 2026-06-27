@@ -1223,6 +1223,14 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossBarragePocketReviewOwner>(
                     RequireRoot(PocketOwnerRootName),
                     "pocket review owner");
+            Assert.AreSame(
+                summonSlot2Action,
+                GetObjectReference<PlayerSupportSummonSlotAction>(pocketOwner, "summonSlot2Action"),
+                "Pocket owner should serialize SummonSlot2 so manual scene and policy evidence use the same support action source.");
+            Assert.AreSame(
+                summonSlot3Action,
+                GetObjectReference<PlayerSupportSummonSlotAction>(pocketOwner, "summonSlot3Action"),
+                "Pocket owner should serialize SummonSlot3 so vanguard assist payoff is not test-only wiring.");
             BossBarragePocketVfxCueBridge pocketVfxCueBridge =
                 RequireComponent<BossBarragePocketVfxCueBridge>(
                     RequireRoot(PocketOwnerRootName),
@@ -4229,8 +4237,8 @@ namespace DimensionBrawl.Tests
         {
             builder.AppendLine("## Support Decision Matrix");
             builder.AppendLine("- ArkData/Blue Archive lens: support choice should read as cost, exposure, answer, and recovery-state tradeoff before UI/coaster feedback.");
-            builder.AppendLine("| Choice | Cost path | Support effect | HP before main | Physical hits | Slot1 state | Recovery burden | Result | Read |");
-            builder.AppendLine("|---|---|---|---:|---:|---|---|---|---|");
+            builder.AppendLine("| Choice | Cost path | Support effect | HP before main | Physical hits | Slot1 state | Recovery burden | Boss suppress | Result | Read |");
+            builder.AppendLine("|---|---|---|---:|---:|---|---|---:|---|---|");
             AppendSupportDecisionMatrixRow(
                 builder,
                 "Slot1 LV1 recovery",
@@ -4284,7 +4292,7 @@ namespace DimensionBrawl.Tests
                 + $"Slot2 delayed recovery matches Slot1's recovery result but costs more and shifts HP by {FormatSupportDecisionHpDelta(slot1Recovery, slot2DelayedRecovery)}; "
                 + $"Slot2 full-bank pays {FormatSupportDecisionHpDelta(slot1Recovery, slot2Combo)} HP for no recovery burden and `{slot2Combo.ResultKind}`; "
                 + $"Slot3 immediate stays `{slot3Immediate.ResultKind}/{ResolveFirstUnresolvedBeat(slot3Immediate)}` despite line hold; "
-                + $"Slot3 delayed recovery pays {FormatSupportDecisionHpDelta(slot1Recovery, slot3DelayedRecovery)} HP for stable `{slot3DelayedRecovery.ResultKind}`. "
+                + $"Slot3 delayed pays {FormatSupportDecisionHpDelta(slot1Recovery, slot3DelayedRecovery)} HP for `{slot3DelayedRecovery.ResultKind}` with suppress {FormatSupportDecisionBossSuppress(slot3DelayedRecovery)}. "
                 + "If this still feels samey in play, the next structural target is a clearer route payoff, not final UI polish.");
         }
 
@@ -4311,6 +4319,8 @@ namespace DimensionBrawl.Tests
             builder.Append(EscapeTable(slot1State));
             builder.Append(" | ");
             builder.Append(EscapeTable(FormatSupportDecisionRecoveryBurden(result)));
+            builder.Append(" | ");
+            builder.Append(FormatSupportDecisionBossSuppress(result));
             builder.Append(" | ");
             builder.Append(EscapeTable($"{result.ResultKind}/{ResolveFirstUnresolvedBeat(result)}"));
             builder.Append(" | ");
@@ -4347,6 +4357,11 @@ namespace DimensionBrawl.Tests
             }
 
             return $"counter {FormatSeconds(result.CounterTriggerToAnswerSeconds)} -> hit {FormatSeconds(result.FinalWindowToHitSeconds)}";
+        }
+
+        private static string FormatSupportDecisionBossSuppress(PolicyMetrics result)
+        {
+            return $"{result.BossPressureScreensSuppressedByFollowup}/{result.HighestBossScreenSuppressSummonTier}";
         }
 
         private static void AppendStageResultHookContract(
@@ -5054,8 +5069,8 @@ namespace DimensionBrawl.Tests
         {
             builder.AppendLine("## Shared Mana Delayed Counter Recovery Branch");
             builder.AppendLine("- PGR lens: a delayed main answer that is caught by boss-screen pressure should relock into a fresh summon answer, not silently fail.");
-            builder.AppendLine("| Policy | Support | Target tier | Slot1 ready delay | HP before Slot1 | Counter->answer | Answer->stable | Final->hit | Skill1 hits | Result records | First unresolved | Result | Read |");
-            builder.AppendLine("|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---|---|---|");
+            builder.AppendLine("| Policy | Support | Target tier | Slot1 ready delay | HP before Slot1 | Counter->answer | Answer->stable | Final->hit | Skill1 hits | Boss suppress | Result records | First unresolved | Result | Read |");
+            builder.AppendLine("|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|---|---|");
             AppendSharedManaDelayedCounterRecoveryBranchRow(
                 builder,
                 RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute));
@@ -5087,6 +5102,8 @@ namespace DimensionBrawl.Tests
             builder.Append(" | ");
             builder.Append(result.SkillProjectileHits);
             builder.Append(" | ");
+            builder.Append($"{result.BossPressureScreensSuppressedByFollowup}/{result.HighestBossScreenSuppressSummonTier}");
+            builder.Append(" | ");
             builder.Append(result.ResultRecords);
             builder.Append(" | ");
             builder.Append(EscapeTable(ResolveFirstUnresolvedBeat(result)));
@@ -5099,6 +5116,11 @@ namespace DimensionBrawl.Tests
 
         private static string ResolveSharedManaDelayedCounterRecoveryRead(PolicyMetrics result)
         {
+            if (ResolveFirstUnresolvedBeat(result) == "Complete" && result.BossScreenSuppressedByFollowup)
+            {
+                return "vanguard assist lets the delayed main answer suppress boss screen directly";
+            }
+
             if (ResolveFirstUnresolvedBeat(result) == "Complete" && result.CounterRecoveryConfirmed)
             {
                 return "delayed branch relocks into counter recovery and commits the result";
@@ -7902,6 +7924,14 @@ namespace DimensionBrawl.Tests
             return (float)field.GetValue(target);
         }
 
+        private static T GetObjectReference<T>(Object target, string fieldName)
+            where T : Object
+        {
+            FieldInfo field = target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.NotNull(field, $"{target.GetType().Name} is missing private field {fieldName}.");
+            return field.GetValue(target) as T;
+        }
+
         private enum BossWaveAnswer
         {
             PlayerTakesHit,
@@ -7983,6 +8013,7 @@ namespace DimensionBrawl.Tests
                 Metrics.SummonManaCostTier1 = GetFloat(energyLadder, "levelOneEnergy");
                 Metrics.SummonManaCostTier2 = GetFloat(energyLadder, "levelTwoEnergy");
                 Metrics.SummonManaCostTier3 = GetFloat(energyLadder, "levelThreeEnergy");
+                PocketOwner.ConfigureSupportSummonActions(summonSlot2Action, summonSlot3Action);
                 observedScreenCueRequestCount = screenCuePresenter.CueRequestCount;
                 observedScreenFollowupCueRequestCount = screenCuePresenter.FollowupCueRequestCount;
                 observedScreenPlayerDamageCueRequestCount = screenCuePresenter.PlayerDamageCueRequestCount;

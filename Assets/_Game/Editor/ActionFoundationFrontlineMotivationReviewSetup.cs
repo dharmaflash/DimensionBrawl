@@ -1,6 +1,7 @@
 using System;
 using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
+using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
 using DimensionBrawl.Test;
 using DimensionBrawl.UI;
@@ -57,8 +58,13 @@ namespace DimensionBrawl.Editor
                 RequireComponentOnRoot<BossBarrageLaneReviewOverlayHud>(HudRootName);
             BossBarragePocketCameraCueBridge cameraCueBridge =
                 RequireComponentOnRoot<BossBarragePocketCameraCueBridge>(PocketOwnerRootName);
+            PlayerSupportSummonSlotAction summonSlot2Action = RequireSupportSummonSlotAction("SummonSlot2");
+            PlayerSupportSummonSlotAction summonSlot3Action = RequireSupportSummonSlotAction("SummonSlot3");
 
             SetObjectReference(pocketOwner, "stageProfile", profile);
+            pocketOwner.ConfigureSupportSummonActions(summonSlot2Action, summonSlot3Action);
+            SetObjectReference(pocketOwner, "summonSlot2Action", summonSlot2Action);
+            SetObjectReference(pocketOwner, "summonSlot3Action", summonSlot3Action);
             SetObjectReference(hud, "stageProfile", profile);
             cameraCueBridge.enabled = true;
             pocketOwner.AssignStageProfileForReview(profile);
@@ -122,7 +128,11 @@ namespace DimensionBrawl.Editor
                 RequireComponentOnRoot<BossBarrageLaneReviewOverlayHud>(HudRootName);
             BossBarragePocketCameraCueBridge cameraCueBridge =
                 RequireComponentOnRoot<BossBarragePocketCameraCueBridge>(PocketOwnerRootName);
+            PlayerSupportSummonSlotAction summonSlot2Action = RequireSupportSummonSlotAction("SummonSlot2");
+            PlayerSupportSummonSlotAction summonSlot3Action = RequireSupportSummonSlotAction("SummonSlot3");
             ValidateObjectReference(pocketOwner, "stageProfile", profile);
+            ValidateObjectReference(pocketOwner, "summonSlot2Action", summonSlot2Action);
+            ValidateObjectReference(pocketOwner, "summonSlot3Action", summonSlot3Action);
             ValidateObjectReference(hud, "stageProfile", profile);
             ValidateString(overlayHud, "retryScenePath", ScenePath);
             if (pocketOwner.ObjectiveStepCount != profile.ObjectiveStepCount)
@@ -147,7 +157,11 @@ namespace DimensionBrawl.Editor
             BossSummonPressureAction bossSummonPressureAction = RequireObject<BossSummonPressureAction>();
             BossBarragePocketCameraCueBridge cameraCueBridge =
                 RequireComponentOnRoot<BossBarragePocketCameraCueBridge>(PocketOwnerRootName);
+            PlayerSupportSummonSlotAction summonSlot2Action = RequireSupportSummonSlotAction("SummonSlot2");
+            PlayerSupportSummonSlotAction summonSlot3Action = RequireSupportSummonSlotAction("SummonSlot3");
             ValidateObjectReference(pocketOwner, "stageProfile", profile);
+            ValidateObjectReference(pocketOwner, "summonSlot2Action", summonSlot2Action);
+            ValidateObjectReference(pocketOwner, "summonSlot3Action", summonSlot3Action);
             ValidateObjectReference(hud, "stageProfile", profile);
             ValidateObjectReference(pocketOwner, "bossPressureActionDirector", bossPressureActionDirector);
             ValidateObjectReference(hud, "bossPressureActionDirector", bossPressureActionDirector);
@@ -566,6 +580,22 @@ namespace DimensionBrawl.Editor
             }
 
             return matches[0];
+        }
+
+        private static PlayerSupportSummonSlotAction RequireSupportSummonSlotAction(string slotActionName)
+        {
+            PlayerSupportSummonSlotAction[] matches = UnityEngine.Object.FindObjectsByType<PlayerSupportSummonSlotAction>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < matches.Length; i++)
+            {
+                if (matches[i] != null && matches[i].SlotActionName == slotActionName)
+                {
+                    return matches[i];
+                }
+            }
+
+            throw new InvalidOperationException($"Scene is missing support summon action {slotActionName}.");
         }
 
         private static T RequireComponentOnRoot<T>(string rootName) where T : Component

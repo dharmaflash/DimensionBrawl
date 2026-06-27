@@ -157,6 +157,8 @@ namespace DimensionBrawl.Test
         [Header("Player Actions")]
         [SerializeField] private PlayerSkill1Action skill1Action;
         [SerializeField] private PlayerSummonSlot1Action summonSlot1Action;
+        [SerializeField] private PlayerSupportSummonSlotAction summonSlot2Action;
+        [SerializeField] private PlayerSupportSummonSlotAction summonSlot3Action;
 
         [Header("Pressure")]
         [SerializeField] private BossBarrageEmitter bossBarrageEmitter;
@@ -184,6 +186,9 @@ namespace DimensionBrawl.Test
         [SerializeField, Min(0f)] private float summonFollowupEnergyPulseTierThree = 240f;
         [SerializeField, Min(0f)] private float counterWaveAnswerEnergyPulse;
         [SerializeField, Range(1, 3)] private int bossScreenSuppressMinimumSummonTier = 3;
+        [SerializeField] private bool allowVanguardAssistToSuppressBossScreen = true;
+        [SerializeField, Min(0f)] private float vanguardAssistSuppressSeconds = 8f;
+        [SerializeField, Range(1, 3)] private int vanguardAssistSuppressMinimumTier = 3;
 
         [Header("Follow-up Result")]
         [SerializeField] private bool requireSkill1FollowupHitToClear = true;
@@ -236,11 +241,15 @@ namespace DimensionBrawl.Test
         private CombatHealth subscribedPlayerHealth;
         private CombatHealth subscribedBossHealth;
         private BossSummonPressureAction subscribedBossSummonPressureAction;
+        private PlayerSupportSummonSlotAction subscribedSummonSlot2Action;
+        private PlayerSupportSummonSlotAction subscribedSummonSlot3Action;
         private bool followupMissedNotified;
         private bool bossBlockedSkill1Followup;
         private bool bossScreenSuppressedByFollowup;
         private int bossPressureScreensSuppressedByFollowup;
         private int highestBossScreenSuppressSummonTier;
+        private int vanguardAssistSuppressTier;
+        private float vanguardAssistSuppressTimer;
         private bool counterWaveObserved;
         private bool counterWaveStabilized;
         private bool counterWaveFinalWindowOpened;
@@ -350,6 +359,8 @@ namespace DimensionBrawl.Test
         public bool BossScreenSuppressedByFollowup => bossScreenSuppressedByFollowup;
         public int BossPressureScreensSuppressedByFollowup => bossPressureScreensSuppressedByFollowup;
         public int HighestBossScreenSuppressSummonTier => highestBossScreenSuppressSummonTier;
+        public int VanguardAssistSuppressTier => vanguardAssistSuppressTimer > 0f ? vanguardAssistSuppressTier : 0;
+        public float VanguardAssistSuppressRemainingSeconds => vanguardAssistSuppressTimer;
         public SummonOpportunityWindowProfile SummonPressureBlockOpportunity => summonPressureBlockOpportunity;
         public bool HasSummonPressureBlockOpportunity => summonPressureBlockOpportunity != null;
         public bool IsPressureReliefActive => pressurePacing.IsCloseThreatReliefActive;
@@ -567,6 +578,17 @@ namespace DimensionBrawl.Test
             SubscribePlayerHealth();
             SubscribeBossHealth();
             SubscribeBossSummonPressureAction();
+            SubscribeSupportSummonActions();
+        }
+
+        public void ConfigureSupportSummonActions(
+            PlayerSupportSummonSlotAction newSummonSlot2Action,
+            PlayerSupportSummonSlotAction newSummonSlot3Action)
+        {
+            UnsubscribeSupportSummonActions();
+            summonSlot2Action = newSummonSlot2Action;
+            summonSlot3Action = newSummonSlot3Action;
+            SubscribeSupportSummonActions();
         }
 
         public void ResetPocket()
@@ -594,6 +616,8 @@ namespace DimensionBrawl.Test
             bossScreenSuppressedByFollowup = false;
             bossPressureScreensSuppressedByFollowup = 0;
             highestBossScreenSuppressSummonTier = 0;
+            vanguardAssistSuppressTier = 0;
+            vanguardAssistSuppressTimer = 0f;
             counterWaveObserved = false;
             counterWaveStabilized = false;
             counterWaveFinalWindowOpened = false;
@@ -643,6 +667,7 @@ namespace DimensionBrawl.Test
             SubscribePlayerHealth();
             SubscribeBossHealth();
             SubscribeBossSummonPressureAction();
+            SubscribeSupportSummonActions();
         }
 
         private void OnDisable()
@@ -650,6 +675,7 @@ namespace DimensionBrawl.Test
             UnsubscribePlayerHealth();
             UnsubscribeBossHealth();
             UnsubscribeBossSummonPressureAction();
+            UnsubscribeSupportSummonActions();
         }
 
         private void Update()
@@ -665,6 +691,7 @@ namespace DimensionBrawl.Test
             }
 
             elapsedSeconds += Mathf.Max(0f, deltaTime);
+            TickVanguardAssistSuppress(deltaTime);
             CaptureActionUse();
             if (playerHealth != null && !playerHealth.IsAlive)
             {
@@ -943,11 +970,12 @@ namespace DimensionBrawl.Test
 
         private void TrySuppressBossScreenForHighTierFollowup()
         {
+            int suppressTier = ResolveFollowupBossScreenSuppressTier();
             if (bossScreenSuppressedByFollowup
                 || bossBlockedSkill1Followup
                 || skill1FollowupHitConfirmed
                 || !pressurePacing.IsSummonFollowupWindowActive
-                || lastSummonPressureBreakTier < Mathf.Clamp(bossScreenSuppressMinimumSummonTier, 1, 3))
+                || suppressTier < Mathf.Clamp(bossScreenSuppressMinimumSummonTier, 1, 3))
             {
                 return;
             }
@@ -960,7 +988,7 @@ namespace DimensionBrawl.Test
                 return;
             }
 
-            int suppressed = pressureAction.SuppressActivePressureScreens(lastSummonPressureBreakTier);
+            int suppressed = pressureAction.SuppressActivePressureScreens(suppressTier);
             if (suppressed <= 0)
             {
                 return;
@@ -970,8 +998,16 @@ namespace DimensionBrawl.Test
             bossPressureScreensSuppressedByFollowup += suppressed;
             highestBossScreenSuppressSummonTier = Mathf.Max(
                 highestBossScreenSuppressSummonTier,
-                lastSummonPressureBreakTier);
-            BossScreenSuppressedByFollowupConfirmed?.Invoke(lastSummonPressureBreakTier, suppressed);
+                suppressTier);
+            vanguardAssistSuppressTier = 0;
+            vanguardAssistSuppressTimer = 0f;
+            BossScreenSuppressedByFollowupConfirmed?.Invoke(suppressTier, suppressed);
+        }
+
+        private int ResolveFollowupBossScreenSuppressTier()
+        {
+            int supportAssistTier = vanguardAssistSuppressTimer > 0f ? vanguardAssistSuppressTier : 0;
+            return Mathf.Max(lastSummonPressureBreakTier, supportAssistTier);
         }
 
         private void NotifySummonFollowupMissedOnce(
@@ -1572,6 +1608,21 @@ namespace DimensionBrawl.Test
             return pressureAction != null ? pressureAction.TotalReleaseCount : 0;
         }
 
+        private void TickVanguardAssistSuppress(float deltaTime)
+        {
+            if (vanguardAssistSuppressTimer <= 0f)
+            {
+                vanguardAssistSuppressTier = 0;
+                return;
+            }
+
+            vanguardAssistSuppressTimer = Mathf.Max(0f, vanguardAssistSuppressTimer - Mathf.Max(0f, deltaTime));
+            if (vanguardAssistSuppressTimer <= 0f)
+            {
+                vanguardAssistSuppressTier = 0;
+            }
+        }
+
         private void SubscribeBossSummonPressureAction()
         {
             BossSummonPressureAction pressureAction = bossPressureActionDirector != null
@@ -1603,6 +1654,37 @@ namespace DimensionBrawl.Test
             subscribedBossSummonPressureAction = null;
         }
 
+        private void SubscribeSupportSummonActions()
+        {
+            UnsubscribeSupportSummonActions();
+            if (summonSlot2Action != null)
+            {
+                subscribedSummonSlot2Action = summonSlot2Action;
+                subscribedSummonSlot2Action.SummonPressureBlocked += OnSupportSummonPressureBlocked;
+            }
+
+            if (summonSlot3Action != null)
+            {
+                subscribedSummonSlot3Action = summonSlot3Action;
+                subscribedSummonSlot3Action.SummonPressureBlocked += OnSupportSummonPressureBlocked;
+            }
+        }
+
+        private void UnsubscribeSupportSummonActions()
+        {
+            if (subscribedSummonSlot2Action != null)
+            {
+                subscribedSummonSlot2Action.SummonPressureBlocked -= OnSupportSummonPressureBlocked;
+                subscribedSummonSlot2Action = null;
+            }
+
+            if (subscribedSummonSlot3Action != null)
+            {
+                subscribedSummonSlot3Action.SummonPressureBlocked -= OnSupportSummonPressureBlocked;
+                subscribedSummonSlot3Action = null;
+            }
+        }
+
         private void OnBossPressureSummonIntercepted(BossSummonPressureAction action, int tier)
         {
             if (state != PocketState.Running)
@@ -1618,6 +1700,28 @@ namespace DimensionBrawl.Test
                 Mathf.Max(
                     blocksAfterWindowStart,
                     bossPressureBlocksConsumedDuringFollowup + 1));
+        }
+
+        private void OnSupportSummonPressureBlocked(PlayerSupportSummonSlotAction action, int tier)
+        {
+            if (state != PocketState.Running
+                || !allowVanguardAssistToSuppressBossScreen
+                || action == null
+                || action != summonSlot3Action)
+            {
+                return;
+            }
+
+            int resolvedTier = Mathf.Clamp(tier, 1, 3);
+            if (resolvedTier < Mathf.Clamp(vanguardAssistSuppressMinimumTier, 1, 3))
+            {
+                return;
+            }
+
+            vanguardAssistSuppressTier = Mathf.Max(vanguardAssistSuppressTier, resolvedTier);
+            vanguardAssistSuppressTimer = Mathf.Max(
+                vanguardAssistSuppressTimer,
+                Mathf.Max(0f, vanguardAssistSuppressSeconds));
         }
 
         private string ResolveFollowupReadyCue()

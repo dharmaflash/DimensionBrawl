@@ -834,6 +834,8 @@ namespace DimensionBrawl.Editor
                 energyLadder,
                 skill1Action,
                 summonSlot1Action,
+                summonSlot2Action,
+                summonSlot3Action,
                 bossBarrageEmitter,
                 bossBasicFireEmitter,
                 stageProfile,
@@ -1263,6 +1265,8 @@ namespace DimensionBrawl.Editor
                 energyLadder,
                 skill1Action,
                 summonSlot1Action,
+                summonSlot2Action,
+                summonSlot3Action,
                 emitter,
                 bossBasicFireEmitter,
                 stageProfile,
@@ -5273,6 +5277,8 @@ namespace DimensionBrawl.Editor
             SummonEnergyLadder energyLadder,
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
+            PlayerSupportSummonSlotAction summonSlot2Action,
+            PlayerSupportSummonSlotAction summonSlot3Action,
             BossBarrageEmitter bossBarrageEmitter,
             BossBasicFireEmitter bossBasicFireEmitter,
             FrontlineWaveStageProfile stageProfile,
@@ -5306,6 +5312,9 @@ namespace DimensionBrawl.Editor
                 bossPressureActionDirector,
                 bossBasicFireEmitter);
             SetObjectReference(owner, "bossBasicFireEmitter", bossBasicFireEmitter);
+            owner.ConfigureSupportSummonActions(summonSlot2Action, summonSlot3Action);
+            SetObjectReference(owner, "summonSlot2Action", summonSlot2Action);
+            SetObjectReference(owner, "summonSlot3Action", summonSlot3Action);
             SetObjectReference(
                 owner,
                 "summonPressureBlockOpportunity",
@@ -9097,6 +9106,8 @@ namespace DimensionBrawl.Editor
             SummonEnergyLadder energyLadder,
             PlayerSkill1Action skill1Action,
             PlayerSummonSlot1Action summonSlot1Action,
+            PlayerSupportSummonSlotAction summonSlot2Action,
+            PlayerSupportSummonSlotAction summonSlot3Action,
             BossBarrageEmitter bossBarrageEmitter,
             BossBasicFireEmitter bossBasicFireEmitter,
             FrontlineWaveStageProfile stageProfile,
@@ -9109,6 +9120,8 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(owner, "energyLadder", energyLadder);
             ValidateObjectReference(owner, "skill1Action", skill1Action);
             ValidateObjectReference(owner, "summonSlot1Action", summonSlot1Action);
+            ValidateObjectReference(owner, "summonSlot2Action", summonSlot2Action);
+            ValidateObjectReference(owner, "summonSlot3Action", summonSlot3Action);
             ValidateObjectReference(owner, "bossBarrageEmitter", bossBarrageEmitter);
             ValidateObjectReference(owner, "bossBasicFireEmitter", bossBasicFireEmitter);
             ValidateObjectReference(owner, "stageProfile", stageProfile);

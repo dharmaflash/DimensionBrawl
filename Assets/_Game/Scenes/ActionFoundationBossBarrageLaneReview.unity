@@ -3684,6 +3684,8 @@ MonoBehaviour:
   energyLadder: {fileID: 4016}
   skill1Action: {fileID: 4015}
   summonSlot1Action: {fileID: 4014}
+  summonSlot2Action: {fileID: 4018}
+  summonSlot3Action: {fileID: 4017}
   bossBarrageEmitter: {fileID: 1426401970}
   bossBasicFireEmitter: {fileID: 1426401976}
   bossPressureCostLadder: {fileID: 1426401975}
