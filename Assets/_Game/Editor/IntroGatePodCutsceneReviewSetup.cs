@@ -98,6 +98,38 @@ namespace DimensionBrawl.Editor
         private const string CameraName = "Main Camera";
         private const string ThreatAnchorName = "IntroGatePodReview_ThreatAnchor";
         private const string FirstPersonViewMarkerName = "IntroGatePodReview_FirstPersonViewMarker";
+        private const string OlympusInvasionLookdevScenePath =
+            "Assets/_Game/Scenes/Lookdev/OlympusCorridorInvasionLookdev.unity";
+        private const string OlympusUpperStairSetRootName = "IntroGatePodReview_OlympusUpperStairSet";
+        private const string OlympusApproachCorridorSetRootName = "IntroGatePodReview_OlympusApproachCorridorSet";
+        private const string OlympusMeshesSourceRootName = "Meshes";
+        private const float OlympusUpperSourceMinX = 7.4f;
+        private const float OlympusUpperRendererCenterMinX = 3.0f;
+        private const float OlympusUpperPlacementScale = 0.92f;
+        private const float OlympusApproachSourceMinX = -5.0f;
+        private const float OlympusApproachSourceMaxX = 8.15f;
+        private const float OlympusApproachSourceSideMaxAbsZ = 8.5f;
+
+        private static readonly Vector3 OlympusUpperSourceGateCenter = new Vector3(14.8f, 2.65f, 0f);
+        private static readonly Vector3 OlympusUpperIntroGateTarget = new Vector3(0f, 2.50f, 8.20f);
+
+        private static readonly string[] OlympusUpperSourceRootNames =
+        {
+            "Meshes",
+            "OlympusCorridor_BlueRiftSanctuary",
+            "OlympusCorridor_InvasionFxLighting"
+        };
+
+        private static readonly string[] OlympusUpperOverlapPlaceholderNames =
+        {
+            "IntroGatePodReview_LeftTemplePier",
+            "IntroGatePodReview_RightTemplePier",
+            "IntroGatePodReview_HeavenTrimL",
+            "IntroGatePodReview_HeavenTrimR",
+            "IntroGatePodReview_BreachBackPlate",
+            "IntroGatePodReview_InvasionSlashA",
+            "IntroGatePodReview_InvasionSlashB"
+        };
 
         private const string MaterialRoot = "Assets/_Game/Art/Environment/UnityChan/Gate/Materials";
         private const string TextureRoot = "Assets/_Game/Art/Environment/UnityChan/Gate/Textures";
@@ -214,6 +246,36 @@ namespace DimensionBrawl.Editor
             BackupExistingReviewAuthoringFiles("batch-polish");
             PolishExistingInvasionBridge();
             CaptureReviewSamples();
+            ValidateReviewScene();
+        }
+
+        [MenuItem("DimensionBrawl/Cinematics/Apply Olympus Upper Stair Set To Existing Intro GatePod")]
+        public static void ApplyOlympusUpperStairSetToExistingIntroGatePodMenu()
+        {
+            BackupExistingReviewAuthoringFiles("manual-olympus-upper-stair");
+            ApplyOlympusUpperStairSetToExistingIntroGatePod();
+            Debug.Log("Applied Olympus upper stair set to the existing intro GatePod review scene.");
+        }
+
+        public static void RunBatchApplyOlympusUpperStairSetToExistingIntroGatePod()
+        {
+            BackupExistingReviewAuthoringFiles("batch-olympus-upper-stair");
+            ApplyOlympusUpperStairSetToExistingIntroGatePod();
+            ValidateReviewScene();
+        }
+
+        [MenuItem("DimensionBrawl/Cinematics/Apply Olympus Approach Corridor Set To Existing Intro GatePod")]
+        public static void ApplyOlympusApproachCorridorSetToExistingIntroGatePodMenu()
+        {
+            BackupExistingReviewAuthoringFiles("manual-olympus-approach-corridor");
+            ApplyOlympusApproachCorridorSetToExistingIntroGatePod();
+            Debug.Log("Applied Olympus approach corridor set to the existing intro GatePod review scene.");
+        }
+
+        public static void RunBatchApplyOlympusApproachCorridorSetToExistingIntroGatePod()
+        {
+            BackupExistingReviewAuthoringFiles("batch-olympus-approach-corridor");
+            ApplyOlympusApproachCorridorSetToExistingIntroGatePod();
             ValidateReviewScene();
         }
 
@@ -356,6 +418,439 @@ namespace DimensionBrawl.Editor
             EditorSceneManager.SaveScene(scene);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+        }
+
+        private static void ApplyOlympusUpperStairSetToExistingIntroGatePod()
+        {
+            AssetDatabase.Refresh();
+            Scene introScene = EditorSceneManager.OpenScene(ReviewScenePath, OpenSceneMode.Single);
+            GameObject introRoot = FindRootOrDescendant(introScene, SceneRootName)
+                ?? throw new InvalidOperationException($"Missing {SceneRootName} in existing review scene.");
+
+            GameObject existingPlacement = FindRootOrDescendant(introScene, OlympusUpperStairSetRootName);
+            if (existingPlacement != null)
+            {
+                UnityEngine.Object.DestroyImmediate(existingPlacement);
+            }
+
+            Scene sourceScene = default;
+            bool sourceOpened = false;
+            int copiedRootCount = 0;
+            int prunedObjectCount = 0;
+            int disabledPlaceholderCount = 0;
+            try
+            {
+                sourceScene = EditorSceneManager.OpenScene(OlympusInvasionLookdevScenePath, OpenSceneMode.Additive);
+                sourceOpened = true;
+
+                GameObject placementRoot = new GameObject(OlympusUpperStairSetRootName);
+                SceneManager.MoveGameObjectToScene(placementRoot, introScene);
+                placementRoot.transform.SetParent(introRoot.transform, worldPositionStays: false);
+                placementRoot.transform.localPosition = Vector3.zero;
+                placementRoot.transform.localRotation = Quaternion.identity;
+                placementRoot.transform.localScale = Vector3.one;
+
+                copiedRootCount = CopyOlympusUpperStairSourceRoots(sourceScene, introScene, placementRoot.transform, out prunedObjectCount);
+                if (copiedRootCount == 0)
+                {
+                    throw new InvalidOperationException(
+                        $"No supported Olympus source roots were copied from {OlympusInvasionLookdevScenePath}.");
+                }
+
+                ApplyOlympusUpperStairPlacementTransform(placementRoot.transform);
+                disabledPlaceholderCount = DisableOlympusUpperOverlapPlaceholders(introScene);
+
+                EditorUtility.SetDirty(placementRoot);
+                EditorSceneManager.MarkSceneDirty(introScene);
+                EditorSceneManager.SaveScene(introScene);
+                AssetDatabase.SaveAssets();
+            }
+            finally
+            {
+                if (sourceOpened && sourceScene.IsValid())
+                {
+                    EditorSceneManager.CloseScene(sourceScene, removeScene: true);
+                }
+
+                AssetDatabase.Refresh();
+            }
+
+            Debug.Log(
+                $"Applied {OlympusUpperStairSetRootName}: copied roots={copiedRootCount}, " +
+                $"pruned upper-crop objects={prunedObjectCount}, disabled placeholders={disabledPlaceholderCount}.");
+        }
+
+        private static int CopyOlympusUpperStairSourceRoots(
+            Scene sourceScene,
+            Scene targetScene,
+            Transform placementRoot,
+            out int prunedObjectCount)
+        {
+            int copiedRootCount = 0;
+            prunedObjectCount = 0;
+            for (int i = 0; i < OlympusUpperSourceRootNames.Length; i++)
+            {
+                string sourceRootName = OlympusUpperSourceRootNames[i];
+                GameObject sourceRoot = FindRootOrDescendant(sourceScene, sourceRootName);
+                if (sourceRoot == null)
+                {
+                    if (string.Equals(sourceRootName, "OlympusCorridor_InvasionFxLighting", StringComparison.Ordinal))
+                    {
+                        continue;
+                    }
+
+                    throw new InvalidOperationException(
+                        $"Missing required Olympus source root `{sourceRootName}` in {OlympusInvasionLookdevScenePath}.");
+                }
+
+                GameObject copy = UnityEngine.Object.Instantiate(sourceRoot);
+                copy.name = sourceRoot.name;
+                SceneManager.MoveGameObjectToScene(copy, targetScene);
+                copy.transform.SetParent(placementRoot, worldPositionStays: true);
+                RemoveCopiedOlympusSceneOnlyComponents(copy);
+                prunedObjectCount += PruneOlympusUpperStairCopy(copy);
+                copiedRootCount++;
+            }
+
+            return copiedRootCount;
+        }
+
+        private static void ApplyOlympusUpperStairPlacementTransform(Transform placementRoot)
+        {
+            Quaternion rotation = Quaternion.Euler(0f, -90f, 0f);
+            Vector3 scale = Vector3.one * OlympusUpperPlacementScale;
+            placementRoot.localScale = scale;
+            placementRoot.rotation = rotation;
+            placementRoot.position = OlympusUpperIntroGateTarget
+                - (rotation * Vector3.Scale(OlympusUpperSourceGateCenter, scale));
+        }
+
+        private static void RemoveCopiedOlympusSceneOnlyComponents(GameObject root)
+        {
+            Camera[] cameras = root.GetComponentsInChildren<Camera>(includeInactive: true);
+            for (int i = cameras.Length - 1; i >= 0; i--)
+            {
+                if (cameras[i] != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(cameras[i].gameObject);
+                }
+            }
+
+            AudioListener[] listeners = root.GetComponentsInChildren<AudioListener>(includeInactive: true);
+            for (int i = listeners.Length - 1; i >= 0; i--)
+            {
+                if (listeners[i] != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(listeners[i]);
+                }
+            }
+
+            AudioSource[] audioSources = root.GetComponentsInChildren<AudioSource>(includeInactive: true);
+            for (int i = audioSources.Length - 1; i >= 0; i--)
+            {
+                if (audioSources[i] != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(audioSources[i]);
+                }
+            }
+
+            Collider[] colliders = root.GetComponentsInChildren<Collider>(includeInactive: true);
+            for (int i = colliders.Length - 1; i >= 0; i--)
+            {
+                if (colliders[i] != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(colliders[i]);
+                }
+            }
+        }
+
+        private static int PruneOlympusUpperStairCopy(GameObject root)
+        {
+            HashSet<GameObject> objectsToRemove = new HashSet<GameObject>();
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(includeInactive: true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null || !ShouldKeepOlympusUpperRenderer(renderer))
+                {
+                    AddObjectForRemoval(objectsToRemove, renderer != null ? renderer.gameObject : null, root);
+                }
+            }
+
+            Light[] lights = root.GetComponentsInChildren<Light>(includeInactive: true);
+            for (int i = 0; i < lights.Length; i++)
+            {
+                Light light = lights[i];
+                if (light == null)
+                {
+                    continue;
+                }
+
+                if (light.type != LightType.Directional && light.transform.position.x < OlympusUpperSourceMinX)
+                {
+                    AddObjectForRemoval(objectsToRemove, light.gameObject, root);
+                    continue;
+                }
+
+                light.shadows = LightShadows.None;
+                light.bounceIntensity = 0f;
+                EditorUtility.SetDirty(light);
+            }
+
+            ParticleSystem[] particleSystems = root.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            for (int i = 0; i < particleSystems.Length; i++)
+            {
+                ParticleSystem particleSystem = particleSystems[i];
+                if (particleSystem != null && particleSystem.transform.position.x < OlympusUpperSourceMinX)
+                {
+                    AddObjectForRemoval(objectsToRemove, particleSystem.gameObject, root);
+                }
+            }
+
+            Component[] components = root.GetComponentsInChildren<Component>(includeInactive: true);
+            for (int i = 0; i < components.Length; i++)
+            {
+                Component component = components[i];
+                if (component == null)
+                {
+                    continue;
+                }
+
+                Type componentType = component.GetType();
+                if (componentType.Name == "DecalProjector"
+                    && component.transform.position.x < OlympusUpperSourceMinX)
+                {
+                    AddObjectForRemoval(objectsToRemove, component.gameObject, root);
+                }
+            }
+
+            int removedCount = 0;
+            foreach (GameObject objectToRemove in objectsToRemove)
+            {
+                if (objectToRemove == null)
+                {
+                    continue;
+                }
+
+                UnityEngine.Object.DestroyImmediate(objectToRemove);
+                removedCount++;
+            }
+
+            removedCount += PruneEmptyTransformChildren(root.transform);
+            return removedCount;
+        }
+
+        private static bool ShouldKeepOlympusUpperRenderer(Renderer renderer)
+        {
+            if (renderer is ParticleSystemRenderer)
+            {
+                return renderer.transform.position.x >= OlympusUpperSourceMinX;
+            }
+
+            Bounds bounds = renderer.bounds;
+            return bounds.max.x >= OlympusUpperSourceMinX
+                && bounds.center.x >= OlympusUpperRendererCenterMinX;
+        }
+
+        private static void AddObjectForRemoval(HashSet<GameObject> objectsToRemove, GameObject target, GameObject root)
+        {
+            if (target == null || target == root)
+            {
+                return;
+            }
+
+            objectsToRemove.Add(target);
+        }
+
+        private static int PruneEmptyTransformChildren(Transform parent)
+        {
+            int removedCount = 0;
+            for (int i = parent.childCount - 1; i >= 0; i--)
+            {
+                Transform child = parent.GetChild(i);
+                removedCount += PruneEmptyTransformChildren(child);
+                if (child.childCount == 0 && HasOnlyTransformComponent(child.gameObject))
+                {
+                    UnityEngine.Object.DestroyImmediate(child.gameObject);
+                    removedCount++;
+                }
+            }
+
+            return removedCount;
+        }
+
+        private static bool HasOnlyTransformComponent(GameObject target)
+        {
+            Component[] components = target.GetComponents<Component>();
+            for (int i = 0; i < components.Length; i++)
+            {
+                Component component = components[i];
+                if (component != null && !(component is Transform))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static int DisableOlympusUpperOverlapPlaceholders(Scene scene)
+        {
+            int disabledCount = 0;
+            for (int i = 0; i < OlympusUpperOverlapPlaceholderNames.Length; i++)
+            {
+                GameObject placeholder = FindRootOrDescendant(scene, OlympusUpperOverlapPlaceholderNames[i]);
+                if (placeholder == null || !placeholder.activeSelf)
+                {
+                    continue;
+                }
+
+                placeholder.SetActive(false);
+                EditorUtility.SetDirty(placeholder);
+                disabledCount++;
+            }
+
+            return disabledCount;
+        }
+
+        private static void ApplyOlympusApproachCorridorSetToExistingIntroGatePod()
+        {
+            AssetDatabase.Refresh();
+            Scene introScene = EditorSceneManager.OpenScene(ReviewScenePath, OpenSceneMode.Single);
+            GameObject introRoot = FindRootOrDescendant(introScene, SceneRootName)
+                ?? throw new InvalidOperationException($"Missing {SceneRootName} in existing review scene.");
+            GameObject upperSet = FindRootOrDescendant(introScene, OlympusUpperStairSetRootName)
+                ?? throw new InvalidOperationException($"Missing {OlympusUpperStairSetRootName}; apply or keep the upper stair set before approach placement.");
+
+            GameObject existingPlacement = FindRootOrDescendant(introScene, OlympusApproachCorridorSetRootName);
+            if (existingPlacement != null)
+            {
+                UnityEngine.Object.DestroyImmediate(existingPlacement);
+            }
+
+            HashSet<string> existingUpperRendererNames = CollectRendererObjectNames(upperSet);
+            Scene sourceScene = default;
+            bool sourceOpened = false;
+            int copiedRootCount = 0;
+            int prunedObjectCount = 0;
+            int remainingRendererCount = 0;
+            try
+            {
+                sourceScene = EditorSceneManager.OpenScene(OlympusInvasionLookdevScenePath, OpenSceneMode.Additive);
+                sourceOpened = true;
+
+                GameObject placementRoot = new GameObject(OlympusApproachCorridorSetRootName);
+                SceneManager.MoveGameObjectToScene(placementRoot, introScene);
+                placementRoot.transform.SetParent(introRoot.transform, worldPositionStays: false);
+                CopyLocalTransform(upperSet.transform, placementRoot.transform);
+
+                GameObject sourceMeshes = FindRootOrDescendant(sourceScene, OlympusMeshesSourceRootName)
+                    ?? throw new InvalidOperationException(
+                        $"Missing required Olympus source root `{OlympusMeshesSourceRootName}` in {OlympusInvasionLookdevScenePath}.");
+                GameObject copy = UnityEngine.Object.Instantiate(sourceMeshes);
+                copy.name = OlympusMeshesSourceRootName;
+                SceneManager.MoveGameObjectToScene(copy, introScene);
+                copy.transform.SetParent(placementRoot.transform, worldPositionStays: true);
+                RemoveCopiedOlympusSceneOnlyComponents(copy);
+                prunedObjectCount += PruneOlympusApproachCorridorCopy(copy, existingUpperRendererNames);
+                copiedRootCount++;
+                remainingRendererCount = copy.GetComponentsInChildren<Renderer>(includeInactive: true).Length;
+
+                if (remainingRendererCount == 0)
+                {
+                    throw new InvalidOperationException("Olympus approach corridor placement produced no renderers after pruning.");
+                }
+
+                EditorUtility.SetDirty(placementRoot);
+                EditorSceneManager.MarkSceneDirty(introScene);
+                EditorSceneManager.SaveScene(introScene);
+                AssetDatabase.SaveAssets();
+            }
+            finally
+            {
+                if (sourceOpened && sourceScene.IsValid())
+                {
+                    EditorSceneManager.CloseScene(sourceScene, removeScene: true);
+                }
+
+                AssetDatabase.Refresh();
+            }
+
+            Debug.Log(
+                $"Applied {OlympusApproachCorridorSetRootName}: copied roots={copiedRootCount}, " +
+                $"pruned approach objects={prunedObjectCount}, remaining renderers={remainingRendererCount}, " +
+                $"aligned to {OlympusUpperStairSetRootName}.");
+        }
+
+        private static void CopyLocalTransform(Transform source, Transform target)
+        {
+            target.localPosition = source.localPosition;
+            target.localRotation = source.localRotation;
+            target.localScale = source.localScale;
+        }
+
+        private static HashSet<string> CollectRendererObjectNames(GameObject root)
+        {
+            HashSet<string> names = new HashSet<string>(StringComparer.Ordinal);
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(includeInactive: true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer != null && !string.IsNullOrWhiteSpace(renderer.gameObject.name))
+                {
+                    names.Add(renderer.gameObject.name);
+                }
+            }
+
+            return names;
+        }
+
+        private static int PruneOlympusApproachCorridorCopy(
+            GameObject root,
+            HashSet<string> existingUpperRendererNames)
+        {
+            HashSet<GameObject> objectsToRemove = new HashSet<GameObject>();
+            Renderer[] renderers = root.GetComponentsInChildren<Renderer>(includeInactive: true);
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                if (existingUpperRendererNames.Contains(renderer.gameObject.name)
+                    || !ShouldKeepOlympusApproachRenderer(renderer))
+                {
+                    AddObjectForRemoval(objectsToRemove, renderer.gameObject, root);
+                }
+            }
+
+            int removedCount = 0;
+            foreach (GameObject objectToRemove in objectsToRemove)
+            {
+                if (objectToRemove == null)
+                {
+                    continue;
+                }
+
+                UnityEngine.Object.DestroyImmediate(objectToRemove);
+                removedCount++;
+            }
+
+            removedCount += PruneEmptyTransformChildren(root.transform);
+            return removedCount;
+        }
+
+        private static bool ShouldKeepOlympusApproachRenderer(Renderer renderer)
+        {
+            Bounds bounds = renderer.bounds;
+            bool overlapsApproachX = bounds.max.x >= OlympusApproachSourceMinX
+                && bounds.min.x <= OlympusApproachSourceMaxX
+                && bounds.center.x <= OlympusApproachSourceMaxX;
+            bool overlapsCorridorWidth = bounds.max.z >= -OlympusApproachSourceSideMaxAbsZ
+                && bounds.min.z <= OlympusApproachSourceSideMaxAbsZ;
+            return overlapsApproachX && overlapsCorridorWidth;
         }
 
         private static void EnsureExistingCinemachineShots(Scene scene, CinematicSequenceProfile profile)
@@ -1911,7 +2406,7 @@ namespace DimensionBrawl.Editor
             camera.nearClipPlane = 0.03f;
             camera.farClipPlane = 150f;
             camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = new Color(0.08f, 0.09f, 0.12f, 1f);
+            camera.backgroundColor = new Color(0.56f, 0.68f, 0.76f, 1f);
             cameraObject.AddComponent<AudioListener>();
             cameraObject.tag = "MainCamera";
 
