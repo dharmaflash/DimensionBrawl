@@ -167,6 +167,7 @@ namespace DimensionBrawl.Tests
             PolicyKind.ForwardRiskPhysicalSummonBlockProbe,
             PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe,
             PolicyKind.ForwardRiskPhysicalSummonPunishProbe,
+            PolicyKind.IntendedRoute,
             PolicyKind.ForwardRiskTier1DecisionRoute,
             PolicyKind.ForwardRiskTier2DecisionRoute,
             PolicyKind.ForwardRiskTier3DecisionRoute,
@@ -352,6 +353,9 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("## Support Stage-Slot Timeline Matrix"),
                     "The report should expose support choices as ordered stage slots, not only balance rows.");
                 Assert.IsTrue(
+                    markdown.Contains("## Route Motivation/Dominance Matrix"),
+                    "The report should compare clear-route motivation before tuning one fastest route into every answer.");
+                Assert.IsTrue(
                     markdown.Contains("Payoff verdict"),
                     "The support decision read should compare clear time and boss damage before tuning support routes.");
                 Assert.IsTrue(
@@ -380,6 +384,9 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(
                     json.Contains("\"supportStageSlotTimelineMatrix\""),
                     "The JSON report should expose support route stage-slot timeline evidence for follow-up batch comparisons.");
+                Assert.IsTrue(
+                    json.Contains("\"routeMotivationDominanceMatrix\""),
+                    "The JSON report should expose clear-route dominance evidence for follow-up batch comparisons.");
                 Assert.IsTrue(
                     json.Contains("\"summonSlotReadinessCooldownMatrix\""),
                     "The JSON report should expose summon readiness/cooldown evidence for follow-up batch comparisons.");
@@ -437,6 +444,13 @@ namespace DimensionBrawl.Tests
                     blockedRecovery,
                     forwardRiskSlot2Combo,
                     forwardRiskSlot3Delayed);
+                AssertRouteMotivationDominanceMatrix(
+                    intended,
+                    forwardRiskPhysicalSummonPunish,
+                    forwardRiskTier3Decision,
+                    blockedRecovery,
+                    forwardRiskSlot2Combo,
+                    forwardRiskSlot3DelayedRecovery);
                 Assert.Greater(intended.SummonBlocks, 0, "The intended route must prove summon interception changes the run.");
                 Assert.AreEqual(
                     0,
@@ -3572,6 +3586,8 @@ namespace DimensionBrawl.Tests
             builder.AppendLine();
             AppendStructuralGateSummary(builder, results);
             builder.AppendLine();
+            AppendRouteMotivationDominanceMatrix(builder, results, repeatabilityResults);
+            builder.AppendLine();
             AppendEnemyPressureTacticalCostMatrix(builder, results);
             builder.AppendLine();
             AppendPhysicalPressureConversionMatrix(builder, results, repeatabilityResults);
@@ -4551,6 +4567,181 @@ namespace DimensionBrawl.Tests
                 $"| 4. Enemy pressure actor cost | {FormatGateStatus(axis4Pass)} | no-action body hits {noSummon.EnemyFrontlineBodyHits}; no-punish body hits {forwardRiskPhysicalSummonNoPunish.EnemyFrontlineBodyHits}, damage {forwardRiskPhysicalSummonNoPunish.PlayerDamageTaken:0.0}; ignored boss-screen body hits {ignoredRecovery.EnemyFrontlineBodyHits}, damage {ignoredRecovery.PlayerDamageTaken:0.0}; recovery body/summon hits {blockedRecovery.EnemyFrontlineBodyHits}/{blockedRecovery.EnemyFrontlineSummonHits}, damage {blockedRecovery.PlayerDamageTaken:0.0}; clean punish body hits {forwardRiskPhysicalSummonPunish.EnemyFrontlineBodyHits} |");
             builder.AppendLine(
                 $"| Physical clean route reference | {FormatGateStatus(forwardRiskPhysicalSummonPunish.IsClearResult)} | physical summon-punish clears in {FormatSeconds(forwardRiskPhysicalSummonPunish.ElapsedSeconds)} with {forwardRiskPhysicalSummonPunish.PlayerDamageTaken:0.0} HP lost versus intended route {FormatSeconds(intended.ElapsedSeconds)} / {intended.PlayerDamageTaken:0.0} HP lost |");
+        }
+
+        private static void AppendRouteMotivationDominanceMatrix(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults)
+        {
+            PolicyMetrics physicalPunish = RequireResult(results, PolicyKind.ForwardRiskPhysicalSummonPunishProbe);
+            PolicyMetrics intended = RequireResult(results, PolicyKind.IntendedRoute);
+            PolicyMetrics counterRecovery = RequireResult(results, PolicyKind.BossScreenBlockCounterRecovery);
+            PolicyMetrics highTierSuppress = RequireResult(results, PolicyKind.ForwardRiskTier3DecisionRoute);
+            PolicyMetrics marksmanCombo = RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute);
+            PolicyMetrics vanguardPayoff =
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute);
+
+            builder.AppendLine("## Route Motivation/Dominance Matrix");
+            builder.AppendLine("- ArkData/NIKKE lens: clear routes should expose distinct route motivation, not collapse into one fastest clear or one generic reward row.");
+            builder.AppendLine("| Route role | Policy | Cost/risk | Payoff | Result hook | Repeat signal | Decision read |");
+            builder.AppendLine("|---|---|---|---|---|---|---|");
+            AppendRouteMotivationDominanceRow(
+                builder,
+                "Fast execution reference",
+                physicalPunish,
+                FormatRouteMotivationRepeatSignal(repeatabilityResults, physicalPunish.Policy));
+            AppendRouteMotivationDominanceRow(
+                builder,
+                "Guided clean loop",
+                intended,
+                FormatRouteMotivationRepeatSignal(repeatabilityResults, intended.Policy));
+            AppendRouteMotivationDominanceRow(
+                builder,
+                "Counter recovery safety",
+                counterRecovery,
+                FormatRouteMotivationRepeatSignal(repeatabilityResults, counterRecovery.Policy));
+            AppendRouteMotivationDominanceRow(
+                builder,
+                "High-tier suppress payoff",
+                highTierSuppress,
+                FormatRouteMotivationRepeatSignal(repeatabilityResults, highTierSuppress.Policy));
+            AppendRouteMotivationDominanceRow(
+                builder,
+                "Slot2 full-bank support",
+                marksmanCombo,
+                FormatRouteMotivationRepeatSignal(repeatabilityResults, marksmanCombo.Policy));
+            AppendRouteMotivationDominanceRow(
+                builder,
+                "Slot3 delayed line-hold",
+                vanguardPayoff,
+                FormatRouteMotivationRepeatSignal(repeatabilityResults, vanguardPayoff.Policy));
+            builder.Append("- Dominance read: ");
+            builder.AppendLine(BuildRouteMotivationDominanceRead(
+                physicalPunish,
+                intended,
+                counterRecovery,
+                highTierSuppress,
+                marksmanCombo,
+                vanguardPayoff));
+        }
+
+        private static void AppendRouteMotivationDominanceRow(
+            StringBuilder builder,
+            string routeRole,
+            PolicyMetrics result,
+            string repeatSignal)
+        {
+            builder.Append("| ");
+            builder.Append(EscapeTable(routeRole));
+            builder.Append(" | ");
+            builder.Append(result.Policy);
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatRouteMotivationCostRisk(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatRouteMotivationPayoff(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveResultHookClass(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(repeatSignal));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveRouteMotivationDecisionRead(result)));
+            builder.AppendLine(" |");
+        }
+
+        private static string FormatRouteMotivationCostRisk(PolicyMetrics result)
+        {
+            switch (result.Policy)
+            {
+                case PolicyKind.ForwardRiskPhysicalSummonPunishProbe:
+                    return $"forward risk {FormatOptionalPercent01(result.PhysicalBarrageProbeTargetForwardRisk01)}, "
+                        + $"HP {result.PlayerDamageTaken:0.0}, blocks {result.SummonBlocks}";
+                case PolicyKind.IntendedRoute:
+                    return $"close hits {result.CloseThreatBasicHits}, "
+                        + $"charge {FormatSeconds(ResolveEnergyTargetDuration(result))}, HP {result.PlayerDamageTaken:0.0}";
+                case PolicyKind.BossScreenBlockCounterRecovery:
+                    return $"counter {result.CounterWaves}, answer {FormatSeconds(result.CounterTriggerToAnswerSeconds)}, "
+                        + $"HP {result.PlayerDamageTaken:0.0}";
+                case PolicyKind.ForwardRiskTier3DecisionRoute:
+                    return $"tier {result.HighestSummonSpentTier}, HP {result.PlayerDamageTaken:0.0}, "
+                        + $"suppress {FormatSupportDecisionBossSuppress(result)}";
+                case PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute:
+                    return $"cost {result.SupportSummonRequiredMana:0}, mana after {result.SupportComboManaAfterSupport:0.#}, "
+                        + $"HP {result.PlayerDamageTaken:0.0}";
+                case PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute:
+                    return $"cost {result.SupportSummonRequiredMana:0}, Slot1 wait {FormatSeconds(result.SupportComboSlot1ReadyDelaySeconds)}, "
+                        + $"HP {result.PlayerDamageTaken:0.0}";
+                default:
+                    return $"HP {result.PlayerDamageTaken:0.0}, blocks {result.SummonBlocks}";
+            }
+        }
+
+        private static string FormatRouteMotivationPayoff(PolicyMetrics result)
+        {
+            return $"{FormatSeconds(result.ElapsedSeconds)}, boss {result.BossDamageTaken:0.0} "
+                + $"(player/ally {result.BossDamageFromPlayer:0.0}/{result.BossDamageFromAllySummon:0.0})";
+        }
+
+        private static string FormatRouteMotivationRepeatSignal(
+            IReadOnlyList<PolicyMetrics> repeatabilityResults,
+            PolicyKind policy)
+        {
+            if (CountPolicyResults(repeatabilityResults, policy) <= 0)
+            {
+                return "not repeated";
+            }
+
+            return BuildResultKindSet(repeatabilityResults, policy)
+                + " "
+                + ResolveRepeatabilityVerdict(repeatabilityResults, policy)
+                + "; time "
+                + FormatMinMax(
+                    MinMetric(repeatabilityResults, policy, result => result.ElapsedSeconds),
+                    MaxMetric(repeatabilityResults, policy, result => result.ElapsedSeconds))
+                + "s; HP "
+                + FormatMinMax(
+                    MinMetric(repeatabilityResults, policy, result => result.PlayerDamageTaken),
+                    MaxMetric(repeatabilityResults, policy, result => result.PlayerDamageTaken))
+                + "; boss "
+                + FormatMinMax(
+                    MinMetric(repeatabilityResults, policy, result => result.BossDamageTaken),
+                    MaxMetric(repeatabilityResults, policy, result => result.BossDamageTaken));
+        }
+
+        private static string ResolveRouteMotivationDecisionRead(PolicyMetrics result)
+        {
+            switch (result.Policy)
+            {
+                case PolicyKind.ForwardRiskPhysicalSummonPunishProbe:
+                    return "fastest only when the block-punish is clean";
+                case PolicyKind.IntendedRoute:
+                    return "baseline teaches close probe -> summon -> Skill1";
+                case PolicyKind.BossScreenBlockCounterRecovery:
+                    return "missed/blocked confirm can recover through counter answer";
+                case PolicyKind.ForwardRiskTier3DecisionRoute:
+                    return "HP-costly wait buys direct boss-screen suppress";
+                case PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute:
+                    return "full-bank support preserves Slot1 and adds marksman payoff";
+                case PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute:
+                    return "high-cost line hold converts into boss-screen payoff";
+                default:
+                    return "not evaluated";
+            }
+        }
+
+        private static string BuildRouteMotivationDominanceRead(
+            PolicyMetrics physicalPunish,
+            PolicyMetrics intended,
+            PolicyMetrics counterRecovery,
+            PolicyMetrics highTierSuppress,
+            PolicyMetrics marksmanCombo,
+            PolicyMetrics vanguardPayoff)
+        {
+            return $"physical punish is fastest at {FormatSeconds(physicalPunish.ElapsedSeconds)} "
+                + $"versus guided {FormatSeconds(intended.ElapsedSeconds)} and recovery {FormatSeconds(counterRecovery.ElapsedSeconds)}; "
+                + $"the slower HP-cost routes keep separate hooks `{ResolveResultHookClass(highTierSuppress)}`, "
+                + $"`{ResolveResultHookClass(marksmanCombo)}`, and `{ResolveResultHookClass(vanguardPayoff)}`. "
+                + "Decision: preserve route identities and tune only when a route loses its cost/payoff reason.";
         }
 
         private static void AppendEnemyPressureTacticalCostMatrix(
@@ -7925,6 +8116,105 @@ namespace DimensionBrawl.Tests
             AssertResultOverlayMatchesRecord(vanguardClear);
         }
 
+        private static void AssertRouteMotivationDominanceMatrix(
+            PolicyMetrics intended,
+            PolicyMetrics physicalPunish,
+            PolicyMetrics highTierSuppress,
+            PolicyMetrics counterRecovery,
+            PolicyMetrics marksmanCombo,
+            PolicyMetrics vanguardPayoff)
+        {
+            Assert.AreEqual(
+                "CleanFollowupClear",
+                physicalPunish.ResultKind,
+                "The fast physical route should still clear through the state-gated follow-up.");
+            Assert.Less(
+                physicalPunish.ElapsedSeconds,
+                intended.ElapsedSeconds,
+                "The dominance matrix should expose that the physical block-punish is the fastest reference route.");
+            Assert.Greater(
+                physicalPunish.SummonBlocks,
+                0,
+                "The fast route should remain a summon-conversion route, not pure boss chip.");
+            Assert.AreEqual(
+                "clean_survival",
+                ResolveResultHookClass(physicalPunish),
+                "The fast route should stay the generic clean-survival hook, not consume support or high-tier motivation.");
+
+            Assert.AreEqual(
+                "CleanFollowupClear",
+                intended.ResultKind,
+                "The guided route should still complete as the clean baseline loop.");
+            Assert.Greater(
+                intended.CloseThreatBasicHits,
+                0,
+                "The guided route should keep the close-probe beat before the summon answer.");
+            Assert.Greater(
+                intended.SummonBlocks,
+                0,
+                "The guided route should keep summon interception as its state transition.");
+            Assert.AreEqual(
+                "clean_survival",
+                ResolveResultHookClass(intended),
+                "The guided route should remain the baseline clean-survival result hook.");
+
+            Assert.AreEqual(
+                "CounterRecoveryClear",
+                counterRecovery.ResultKind,
+                "Counter recovery should remain separate from clean follow-up routes.");
+            Assert.Greater(
+                counterRecovery.CounterWaves,
+                0,
+                "Counter recovery should keep the relock evidence that motivates earlier answers.");
+            Assert.AreEqual(
+                "counter_recovery",
+                ResolveResultHookClass(counterRecovery),
+                "Counter recovery should keep its recovery-specific result hook.");
+
+            Assert.AreEqual(
+                "high_tier_suppress_clear",
+                ResolveResultHookClass(highTierSuppress),
+                "LV3 suppress should keep its own result motivation instead of collapsing into generic clean survival.");
+            Assert.Greater(
+                highTierSuppress.PlayerDamageTaken,
+                intended.PlayerDamageTaken,
+                "LV3 suppress should still show the HP cost of waiting for the higher-tier answer.");
+            Assert.Greater(
+                highTierSuppress.BossPressureScreensSuppressedByFollowup,
+                0,
+                "LV3 suppress should prove the direct boss-screen suppress payoff.");
+
+            Assert.AreEqual(
+                "support_marksman_clear",
+                ResolveResultHookClass(marksmanCombo),
+                "Slot2 full-bank combo should keep the marksman-specific route motivation.");
+            Assert.Greater(
+                marksmanCombo.SupportSummonProjectileEnemySummonHits,
+                0,
+                "Slot2 support should keep its enemy-frontline suppress effect.");
+            Assert.Greater(
+                marksmanCombo.SupportComboManaAfterSupport,
+                marksmanCombo.SupportComboSlot1RequiredMana - 0.001f,
+                "Slot2 full-bank support should preserve the main-answer slot.");
+
+            Assert.AreEqual(
+                "support_vanguard_clear",
+                ResolveResultHookClass(vanguardPayoff),
+                "Slot3 delayed payoff should keep the vanguard-specific route motivation.");
+            Assert.Greater(
+                vanguardPayoff.SupportSummonBlocks,
+                0,
+                "Slot3 support should keep the line-hold effect.");
+            Assert.Greater(
+                vanguardPayoff.BossPressureScreensSuppressedByFollowup,
+                0,
+                "Slot3 delayed payoff should preserve the boss-screen suppress payoff.");
+            Assert.Greater(
+                vanguardPayoff.ElapsedSeconds,
+                marksmanCombo.ElapsedSeconds,
+                "Slot3 vanguard payoff should remain the slower high-cost line-hold branch, not a hidden Slot2 replacement.");
+        }
+
         private static void AssertResultToken(
             PolicyMetrics result,
             string expectedTokenId,
@@ -9141,6 +9431,44 @@ namespace DimensionBrawl.Tests
             }
 
             builder.AppendLine("  ],");
+            builder.AppendLine("  \"routeMotivationDominanceMatrix\": [");
+            AppendJsonRouteMotivationDominanceRow(
+                builder,
+                "Fast execution reference",
+                RequireResult(results, PolicyKind.ForwardRiskPhysicalSummonPunishProbe),
+                repeatabilityResults,
+                true);
+            AppendJsonRouteMotivationDominanceRow(
+                builder,
+                "Guided clean loop",
+                RequireResult(results, PolicyKind.IntendedRoute),
+                repeatabilityResults,
+                true);
+            AppendJsonRouteMotivationDominanceRow(
+                builder,
+                "Counter recovery safety",
+                RequireResult(results, PolicyKind.BossScreenBlockCounterRecovery),
+                repeatabilityResults,
+                true);
+            AppendJsonRouteMotivationDominanceRow(
+                builder,
+                "High-tier suppress payoff",
+                RequireResult(results, PolicyKind.ForwardRiskTier3DecisionRoute),
+                repeatabilityResults,
+                true);
+            AppendJsonRouteMotivationDominanceRow(
+                builder,
+                "Slot2 full-bank support",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute),
+                repeatabilityResults,
+                true);
+            AppendJsonRouteMotivationDominanceRow(
+                builder,
+                "Slot3 delayed line-hold",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute),
+                repeatabilityResults,
+                false);
+            builder.AppendLine("  ],");
             builder.AppendLine("  \"supportStageSlotTimelineMatrix\": [");
             AppendJsonSupportStageSlotTimelineRow(
                 builder,
@@ -9261,6 +9589,34 @@ namespace DimensionBrawl.Tests
             builder.AppendLine("  ]");
             builder.AppendLine("}");
             return builder.ToString();
+        }
+
+        private static void AppendJsonRouteMotivationDominanceRow(
+            StringBuilder builder,
+            string routeRole,
+            PolicyMetrics result,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults,
+            bool appendComma)
+        {
+            builder.AppendLine("    {");
+            builder.AppendLine($"      \"routeRole\": \"{JsonEscape(routeRole)}\",");
+            builder.AppendLine($"      \"policy\": \"{result.Policy}\",");
+            builder.AppendLine($"      \"costRisk\": \"{JsonEscape(FormatRouteMotivationCostRisk(result))}\",");
+            builder.AppendLine($"      \"payoff\": \"{JsonEscape(FormatRouteMotivationPayoff(result))}\",");
+            builder.AppendLine($"      \"resultHook\": \"{JsonEscape(ResolveResultHookClass(result))}\",");
+            builder.AppendLine($"      \"repeatSignal\": \"{JsonEscape(FormatRouteMotivationRepeatSignal(repeatabilityResults, result.Policy))}\",");
+            builder.AppendLine($"      \"decisionRead\": \"{JsonEscape(ResolveRouteMotivationDecisionRead(result))}\",");
+            builder.AppendLine($"      \"elapsedSeconds\": {result.ElapsedSeconds:0.###},");
+            builder.AppendLine($"      \"playerDamageTaken\": {result.PlayerDamageTaken:0.###},");
+            builder.AppendLine($"      \"bossDamageTaken\": {result.BossDamageTaken:0.###},");
+            builder.AppendLine($"      \"bossDamageFromPlayer\": {result.BossDamageFromPlayer:0.###},");
+            builder.AppendLine($"      \"bossDamageFromAllySummon\": {result.BossDamageFromAllySummon:0.###},");
+            builder.AppendLine($"      \"summonBlocks\": {result.SummonBlocks},");
+            builder.AppendLine($"      \"counterWaves\": {result.CounterWaves},");
+            builder.AppendLine($"      \"bossPressureScreensSuppressedByFollowup\": {result.BossPressureScreensSuppressedByFollowup},");
+            builder.AppendLine($"      \"supportSummonSlotId\": \"{JsonEscape(result.SupportSummonSlotId)}\"");
+            builder.Append("    }");
+            builder.AppendLine(appendComma ? "," : string.Empty);
         }
 
         private static void AppendJsonSummonSlotReadinessCooldownRow(
@@ -9699,6 +10055,15 @@ namespace DimensionBrawl.Tests
                         && result.FollowupHitCinematicCueRequests > 0
                         && result.FollowupHitSequenceBridgeRequests == 0
                         && result.BossDamagePlayerShare01 >= 0.72f;
+                case PolicyKind.IntendedRoute:
+                    return result.ResultKind == "CleanFollowupClear"
+                        && result.CloseThreatBasicHits > 0
+                        && result.CloseThreatHealthRemaining <= 0.01f
+                        && result.SummonBlocks > 0
+                        && result.SkillProjectileHits > 0
+                        && result.FollowupHitCinematicCueRequests > 0
+                        && result.PlayerDamageTaken <= 0.01f
+                        && ResolveFirstUnresolvedBeat(result) == "Complete";
                 case PolicyKind.ForwardRiskTier1DecisionRoute:
                     return IsEnergyDecisionRouteRepeatabilityPass(result, 1);
                 case PolicyKind.ForwardRiskTier2DecisionRoute:
