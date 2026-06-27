@@ -234,6 +234,26 @@ namespace DimensionBrawl.Tests
                     bossTunnel.ResultRecords,
                     "Boss tunnel vision should not fabricate a stage result hook.");
                 Assert.Greater(
+                    gunOnly.CloseThreatBasicHits,
+                    0,
+                    "Gun-only should first prove the close probe can be answered with local-defense fire.");
+                Assert.LessOrEqual(
+                    gunOnly.CloseThreatHealthRemaining,
+                    0.01f,
+                    "Gun-only should defeat the close probe before moving on to boss chip.");
+                Assert.Greater(
+                    gunOnly.CloseThreatNonLockingDamageEvents,
+                    0,
+                    "Close-probe local-defense hits should produce readable damage events.");
+                Assert.AreEqual(
+                    0,
+                    gunOnly.CloseThreatLockingDamageEvents,
+                    "Close-probe local-defense fire should not masquerade as a major locking punish.");
+                Assert.AreEqual(
+                    0,
+                    gunOnly.CloseThreatFullBodyEligibleDamageEvents,
+                    "Close-probe local-defense fire should stay out of the full-body major-hit lane.");
+                Assert.Greater(
                     prematureSkill1.SkillUses,
                     0,
                     "The premature Skill1 probe should spend the resource and fire the skill before a summon answer.");
@@ -2885,8 +2905,8 @@ namespace DimensionBrawl.Tests
             IReadOnlyList<PolicyMetrics> results)
         {
             builder.AppendLine("## Target Priority Contract");
-            builder.AppendLine("| Policy | Basic shots | Close hits/dmg/HP | Boss hits/dmg | First unresolved | Result records | Target read |");
-            builder.AppendLine("|---|---:|---:|---:|---|---:|---|");
+            builder.AppendLine("| Policy | Basic shots | Close hits/dmg/HP | Close response N/L/F | Boss hits/dmg | First unresolved | Result records | Target read |");
+            builder.AppendLine("|---|---:|---:|---:|---:|---|---:|---|");
             AppendTargetPriorityRow(
                 builder,
                 RequireResult(results, PolicyKind.BossTunnelVisionIgnoresCloseProbe));
@@ -2904,6 +2924,9 @@ namespace DimensionBrawl.Tests
             builder.Append(" | ");
             builder.Append(
                 $"{result.CloseThreatBasicHits}/{result.CloseThreatDamageTaken:0.0}/{result.CloseThreatHealthRemaining:0.0}");
+            builder.Append(" | ");
+            builder.Append(
+                $"{result.CloseThreatNonLockingDamageEvents}/{result.CloseThreatLockingDamageEvents}/{result.CloseThreatFullBodyEligibleDamageEvents}");
             builder.Append(" | ");
             builder.Append($"{result.BossBasicHits}/{result.BossDamageFromPlayer:0.0}");
             builder.Append(" | ");
@@ -3069,6 +3092,11 @@ namespace DimensionBrawl.Tests
                 && bossTunnel.BossBasicHits > 0
                 && bossTunnel.CloseThreatBasicHits == 0
                 && ResolveFirstUnresolvedBeat(bossTunnel) == "CloseProbe"
+                && gunOnly.CloseThreatBasicHits > 0
+                && gunOnly.CloseThreatHealthRemaining <= 0.01f
+                && gunOnly.CloseThreatNonLockingDamageEvents > 0
+                && gunOnly.CloseThreatLockingDamageEvents == 0
+                && gunOnly.CloseThreatFullBodyEligibleDamageEvents == 0
                 && noSummon.PlayerDamageScreenCueRequests > 0
                 && noSummon.PlayerDamageFeedbackRequests > 0
                 && prematureSkill1.SkillUses > 0
@@ -3138,7 +3166,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 "| CombatPayload runtime pipeline | "
                 + $"{FormatCoverageStatus(combatPayloadMeasured)} | "
-                + $"Target selection: boss tunnel close/boss hits {bossTunnel.CloseThreatBasicHits}/{bossTunnel.BossBasicHits} unresolved {ResolveFirstUnresolvedBeat(bossTunnel)}; Target->Hit: forward barrage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; Resource/Skill gate: premature Skill1 use/hit {prematureSkill1.SkillUses}/{prematureSkill1.SkillProjectileHits} with follow-up/result {prematureSkill1.FollowupHitCount}/{prematureSkill1.ResultRecords}; Player Hit->Presentation: routine damage cues {noSummon.PlayerDamageScreenCueRequests}/{noSummon.PlayerDamageFeedbackRequests}, clean route {forwardRiskPhysicalSummonPunish.PlayerDamageScreenCueRequests}/{forwardRiskPhysicalSummonPunish.PlayerDamageFeedbackRequests}; Block->Status/Presentation: {forwardRiskPhysicalSummonBlock.SummonBlocks} blocks, {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)} to window, cues {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}; NoHit->Counter/Presentation: miss {forwardRiskPhysicalSummonNoPunish.FollowupMissCount} / counter {forwardRiskPhysicalSummonNoPunish.CounterWaves}, cues {forwardRiskPhysicalSummonNoPunish.CounterWaveScreenCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveCameraCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveVfxCueRequests}; Skill1 Hit->Presentation: {forwardRiskPhysicalSummonPunish.SkillProjectileHits} hits with cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests}; payoff source player/summon {forwardRiskPhysicalSummonPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonPunish.BossDamageFromAllySummon:0.0} | "
+                + $"Target selection: boss tunnel close/boss hits {bossTunnel.CloseThreatBasicHits}/{bossTunnel.BossBasicHits} unresolved {ResolveFirstUnresolvedBeat(bossTunnel)}; Close Target->Effect/Status: hits/damage/HP {gunOnly.CloseThreatBasicHits}/{gunOnly.CloseThreatDamageTaken:0.0}/{gunOnly.CloseThreatHealthRemaining:0.0}, response {gunOnly.CloseThreatNonLockingDamageEvents}/{gunOnly.CloseThreatLockingDamageEvents}/{gunOnly.CloseThreatFullBodyEligibleDamageEvents}; Target->Hit: forward barrage {forwardRiskPhysicalBarrage.PhysicalBarragePlayerHits}/{forwardRiskPhysicalBarrage.PhysicalBarrageTrackedProjectileCount}; Resource/Skill gate: premature Skill1 use/hit {prematureSkill1.SkillUses}/{prematureSkill1.SkillProjectileHits} with follow-up/result {prematureSkill1.FollowupHitCount}/{prematureSkill1.ResultRecords}; Player Hit->Presentation: routine damage cues {noSummon.PlayerDamageScreenCueRequests}/{noSummon.PlayerDamageFeedbackRequests}, clean route {forwardRiskPhysicalSummonPunish.PlayerDamageScreenCueRequests}/{forwardRiskPhysicalSummonPunish.PlayerDamageFeedbackRequests}; Block->Status/Presentation: {forwardRiskPhysicalSummonBlock.SummonBlocks} blocks, {FormatSeconds(forwardRiskPhysicalSummonBlock.BlockToFollowupWindowSeconds)} to window, cues {forwardRiskPhysicalSummonBlock.SummonPressureBlockCameraCueRequests}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptFlashes}/{forwardRiskPhysicalSummonBlock.SummonPressureScreenInterceptVfxCueRequests}; NoHit->Counter/Presentation: miss {forwardRiskPhysicalSummonNoPunish.FollowupMissCount} / counter {forwardRiskPhysicalSummonNoPunish.CounterWaves}, cues {forwardRiskPhysicalSummonNoPunish.CounterWaveScreenCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveCameraCueRequests}/{forwardRiskPhysicalSummonNoPunish.CounterWaveVfxCueRequests}; Skill1 Hit->Presentation: {forwardRiskPhysicalSummonPunish.SkillProjectileHits} hits with cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests}; payoff source player/summon {forwardRiskPhysicalSummonPunish.BossDamageFromPlayer:0.0}/{forwardRiskPhysicalSummonPunish.BossDamageFromAllySummon:0.0} | "
                 + "Candidate labels stay local test evidence, not fake universal opcodes. |");
             builder.AppendLine(
                 "| PGR state-lock and hit-response grammar | "
@@ -3976,6 +4004,11 @@ namespace DimensionBrawl.Tests
                     return result.ResultKind == "PlayerDownFail"
                         && result.FirstPlayerDownAtSeconds >= 0f
                         && result.FirstPlayerDownAtSeconds <= SurvivalLimitProbeMaxSeconds
+                        && result.CloseThreatBasicHits > 0
+                        && result.CloseThreatHealthRemaining <= 0.01f
+                        && result.CloseThreatNonLockingDamageEvents > 0
+                        && result.CloseThreatLockingDamageEvents == 0
+                        && result.CloseThreatFullBodyEligibleDamageEvents == 0
                         && result.FirstBossDownAtSeconds < 0f;
                 case PolicyKind.BossTunnelVisionIgnoresCloseProbe:
                     return !result.IsClearResult
@@ -3988,6 +4021,11 @@ namespace DimensionBrawl.Tests
                         && ResolveFirstUnresolvedBeat(result) == "CloseProbe";
                 case PolicyKind.PrematureSkill1NoSummon:
                     return !result.IsClearResult
+                        && result.CloseThreatBasicHits > 0
+                        && result.CloseThreatHealthRemaining <= 0.01f
+                        && result.CloseThreatNonLockingDamageEvents > 0
+                        && result.CloseThreatLockingDamageEvents == 0
+                        && result.CloseThreatFullBodyEligibleDamageEvents == 0
                         && result.SkillUses > 0
                         && result.SkillProjectileHits > 0
                         && result.FollowupHitCount == 0
