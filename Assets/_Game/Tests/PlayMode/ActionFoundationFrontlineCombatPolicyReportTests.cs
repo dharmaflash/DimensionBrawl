@@ -1349,6 +1349,10 @@ namespace DimensionBrawl.Tests
                 RequireComponent<BossBarrageLaneReviewHud>(
                     hudRoot,
                     "boss barrage review HUD");
+            BossBarrageLaneReviewOverlayHud reviewOverlayHud =
+                RequireComponent<BossBarrageLaneReviewOverlayHud>(
+                    hudRoot,
+                    "boss barrage review overlay HUD");
 
             combatModeController.SetRangedMode();
             aimController.SetAimHeld(true);
@@ -1377,6 +1381,7 @@ namespace DimensionBrawl.Tests
                 cinematicSequenceBridge,
                 screenCuePresenter,
                 reviewHud,
+                reviewOverlayHud,
                 RequireComponent<CombatHealth>(player.gameObject, "player health"),
                 bossHealth,
                 closeThreatHealth,
@@ -5238,8 +5243,8 @@ namespace DimensionBrawl.Tests
 
             builder.AppendLine("## Stage Result Motivation Matrix");
             builder.AppendLine("- NIKKE stage-result lens: route outcomes should produce distinct next-run motivation while staying review-only in this V1 slice.");
-            builder.AppendLine("| Outcome | Policy | Hook class | Route label | Result copy | Next-run motivation | Boundary |");
-            builder.AppendLine("|---|---|---|---|---|---|---|");
+            builder.AppendLine("| Outcome | Policy | Hook class | Route label | Result copy | Next-run motivation | Overlay motivation | Boundary |");
+            builder.AppendLine("|---|---|---|---|---|---|---|---|");
             AppendStageResultMotivationRow(
                 builder,
                 "Unanswered fail",
@@ -5291,8 +5296,20 @@ namespace DimensionBrawl.Tests
             builder.Append(" | ");
             builder.Append(EscapeTable($"{ResolveCoverageValue(result.ResultRecordNextObjective)} ({motivationRead})"));
             builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveResultOverlayMotivationReadout(result)));
+            builder.Append(" | ");
             builder.Append(IsReviewOnlyResultHook(result) ? "review-only analysis" : "invalid or missing");
             builder.AppendLine(" |");
+        }
+
+        private static string ResolveResultOverlayMotivationReadout(PolicyMetrics result)
+        {
+            if (result.ResultRecords <= 0)
+            {
+                return "pending";
+            }
+
+            return $"Reward: {ResolveCoverageValue(result.ResultOverlayRewardHook)}; Next: {ResolveCoverageValue(result.ResultOverlayNextObjective)}";
         }
 
         private static void AppendStageResultHookContract(
@@ -7383,6 +7400,43 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(IsReviewOnlyResultHook(counterRecovery));
             Assert.IsTrue(IsReviewOnlyResultHook(marksmanClear));
             Assert.IsTrue(IsReviewOnlyResultHook(vanguardClear));
+
+            AssertResultOverlayMatchesRecord(noSummonFail);
+            AssertResultOverlayMatchesRecord(gunOnlyFail);
+            AssertResultOverlayMatchesRecord(cleanPhysical);
+            AssertResultOverlayMatchesRecord(counterRecovery);
+            AssertResultOverlayMatchesRecord(marksmanClear);
+            AssertResultOverlayMatchesRecord(vanguardClear);
+        }
+
+        private static void AssertResultOverlayMatchesRecord(PolicyMetrics result)
+        {
+            Assert.AreEqual(
+                result.ResultRecordTitle,
+                result.ResultOverlayTitle,
+                $"{result.Policy} should surface the committed result title through the review overlay.");
+            Assert.AreEqual(
+                result.ResultRecordSummary,
+                result.ResultOverlaySummary,
+                $"{result.Policy} should surface the committed result summary through the review overlay.");
+            Assert.AreEqual(
+                result.ResultRecordRouteLabel,
+                result.ResultOverlayRoute,
+                $"{result.Policy} should surface the committed route label through the review overlay.");
+            Assert.AreEqual(
+                result.ResultRecordRewardHook,
+                result.ResultOverlayRewardHook,
+                $"{result.Policy} should surface the reward/state hook through the review overlay.");
+            Assert.AreEqual(
+                result.ResultRecordNextObjective,
+                result.ResultOverlayNextObjective,
+                $"{result.Policy} should surface the next-run objective through the review overlay.");
+            Assert.IsFalse(
+                ContainsProgressionPayoutLanguage(result.ResultOverlayRewardHook),
+                $"{result.Policy} overlay reward hook should remain review-only until reward economy is in scope.");
+            Assert.IsFalse(
+                ContainsProgressionPayoutLanguage(result.ResultOverlayNextObjective),
+                $"{result.Policy} overlay next objective should not masquerade as a payout.");
         }
 
         private static void AssertSharedManaSupportComboBranch(
@@ -8436,6 +8490,11 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"resultRecordStageState\": \"{JsonEscape(ResolveResultStageState(result))}\",");
                 builder.AppendLine($"      \"resultRecordHookClass\": \"{JsonEscape(ResolveResultHookClass(result))}\",");
                 builder.AppendLine($"      \"resultRecordReviewOnly\": {JsonBool(IsReviewOnlyResultHook(result))},");
+                builder.AppendLine($"      \"resultOverlayTitle\": \"{JsonEscape(result.ResultOverlayTitle)}\",");
+                builder.AppendLine($"      \"resultOverlaySummary\": \"{JsonEscape(result.ResultOverlaySummary)}\",");
+                builder.AppendLine($"      \"resultOverlayRoute\": \"{JsonEscape(result.ResultOverlayRoute)}\",");
+                builder.AppendLine($"      \"resultOverlayRewardHook\": \"{JsonEscape(result.ResultOverlayRewardHook)}\",");
+                builder.AppendLine($"      \"resultOverlayNextObjective\": \"{JsonEscape(result.ResultOverlayNextObjective)}\",");
                 builder.AppendLine($"      \"routeDecision\": \"{JsonEscape(result.RouteDecision)}\",");
                 builder.AppendLine($"      \"completionReadout\": \"{JsonEscape(result.CompletionReadout)}\"");
                 builder.Append("    }");
@@ -9611,6 +9670,7 @@ namespace DimensionBrawl.Tests
                 ActionCinematicSequenceBridge cinematicSequenceBridge,
                 ActionScreenCuePresenter screenCuePresenter,
                 BossBarrageLaneReviewHud reviewHud,
+                BossBarrageLaneReviewOverlayHud reviewOverlayHud,
                 CombatHealth playerHealth,
                 CombatHealth bossHealth,
                 CombatHealth closeThreatHealth,
@@ -9638,6 +9698,7 @@ namespace DimensionBrawl.Tests
                 CinematicSequenceBridge = cinematicSequenceBridge;
                 ScreenCuePresenter = screenCuePresenter;
                 ReviewHud = reviewHud;
+                ReviewOverlayHud = reviewOverlayHud;
                 PlayerHealth = playerHealth;
                 BossHealth = bossHealth;
                 CloseThreatHealth = closeThreatHealth;
@@ -9697,6 +9758,7 @@ namespace DimensionBrawl.Tests
             public ActionCinematicSequenceBridge CinematicSequenceBridge { get; }
             public ActionScreenCuePresenter ScreenCuePresenter { get; }
             public BossBarrageLaneReviewHud ReviewHud { get; }
+            public BossBarrageLaneReviewOverlayHud ReviewOverlayHud { get; }
             public CombatHealth PlayerHealth { get; }
             public CombatHealth BossHealth { get; }
             public CombatHealth CloseThreatHealth { get; }
@@ -10757,6 +10819,14 @@ namespace DimensionBrawl.Tests
                 Metrics.ResultRecordProofReadout = record.ProofReadout;
                 Metrics.ResultRecordDecision = $"{record.DecisionState}({record.DecisionReadout})";
                 Metrics.ResultRecordCounterWaveSource = record.CounterWaveSource.ToString();
+                if (ReviewOverlayHud != null)
+                {
+                    Metrics.ResultOverlayTitle = ReviewOverlayHud.ResultTitleReadout;
+                    Metrics.ResultOverlaySummary = ReviewOverlayHud.ResultSummaryReadout;
+                    Metrics.ResultOverlayRoute = ReviewOverlayHud.ResultRouteReadout;
+                    Metrics.ResultOverlayRewardHook = ReviewOverlayHud.ResultRewardReadout;
+                    Metrics.ResultOverlayNextObjective = ReviewOverlayHud.ResultNextObjectiveReadout;
+                }
             }
         }
 
@@ -11194,6 +11264,11 @@ namespace DimensionBrawl.Tests
             public string ResultRecordProofReadout { get; set; } = string.Empty;
             public string ResultRecordDecision { get; set; } = string.Empty;
             public string ResultRecordCounterWaveSource { get; set; } = "None";
+            public string ResultOverlayTitle { get; set; } = string.Empty;
+            public string ResultOverlaySummary { get; set; } = string.Empty;
+            public string ResultOverlayRoute { get; set; } = string.Empty;
+            public string ResultOverlayRewardHook { get; set; } = string.Empty;
+            public string ResultOverlayNextObjective { get; set; } = string.Empty;
             public string RouteDecision { get; set; } = "unknown";
             public string CompletionReadout { get; set; } = string.Empty;
             public List<string> Notes { get; } = new List<string>();
