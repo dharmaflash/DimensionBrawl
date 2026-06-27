@@ -151,6 +151,8 @@ namespace DimensionBrawl.Tests
 
         private static readonly PolicyKind[] RepeatabilityPolicyOrder =
         {
+            PolicyKind.ForwardRiskEnergyProbe,
+            PolicyKind.NoSummonNoFire,
             PolicyKind.NoSummonSurvivalLimit,
             PolicyKind.GunOnlySurvivalLimit,
             PolicyKind.CloseProbeSelectorBiasProbe,
@@ -4526,6 +4528,32 @@ namespace DimensionBrawl.Tests
 
             switch (policy)
             {
+                case PolicyKind.ForwardRiskEnergyProbe:
+                    return "LV1 "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.EnergyTier1DurationSeconds),
+                            MaxMetric(repeatabilityResults, policy, result => result.EnergyTier1DurationSeconds))
+                        + "s; HP "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.PlayerDamageTaken),
+                            MaxMetric(repeatabilityResults, policy, result => result.PlayerDamageTaken))
+                        + "; ready "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.EnergyReadyScreenCueRequests),
+                            MaxMetric(repeatabilityResults, policy, result => result.EnergyReadyScreenCueRequests));
+                case PolicyKind.NoSummonNoFire:
+                    return "body "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.EnemyFrontlineBodyHits),
+                            MaxMetric(repeatabilityResults, policy, result => result.EnemyFrontlineBodyHits))
+                        + "; HP "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.PlayerDamageTaken),
+                            MaxMetric(repeatabilityResults, policy, result => result.PlayerDamageTaken))
+                        + "; damage cues "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.PlayerDamageScreenCueRequests),
+                            MaxMetric(repeatabilityResults, policy, result => result.PlayerDamageScreenCueRequests));
                 case PolicyKind.ForwardRiskPhysicalSummonBlockProbe:
                     return "blocks "
                         + FormatMinMax(
@@ -6816,6 +6844,46 @@ namespace DimensionBrawl.Tests
         {
             Assert.AreEqual(
                 RepeatabilityProbeRuns,
+                CountPolicyResults(repeatabilityResults, PolicyKind.ForwardRiskEnergyProbe),
+                "Decision-signal repeatability should include the forward-risk EN decision.");
+            Assert.Greater(
+                MinMetric(repeatabilityResults, PolicyKind.ForwardRiskEnergyProbe, result => result.EnergyTier1DurationSeconds),
+                0f,
+                "Repeated forward-risk EN samples should all reach LV1 readiness.");
+            Assert.LessOrEqual(
+                MaxMetric(repeatabilityResults, PolicyKind.ForwardRiskEnergyProbe, result => result.EnergyTier1DurationSeconds),
+                EnergyProbeMaxSeconds,
+                "Repeated forward-risk EN samples should reach LV1 inside the probe window.");
+            Assert.Greater(
+                MinMetric(repeatabilityResults, PolicyKind.ForwardRiskEnergyProbe, result => result.ForwardRiskEnergyScreenCueRequests),
+                0f,
+                "Repeated forward-risk EN samples should all expose the risk-band cue.");
+            Assert.Greater(
+                MinMetric(repeatabilityResults, PolicyKind.ForwardRiskEnergyProbe, result => result.EnergyReadyScreenCueRequests),
+                0f,
+                "Repeated forward-risk EN samples should all expose the ready cue.");
+            Assert.Greater(
+                MinMetric(repeatabilityResults, PolicyKind.ForwardRiskEnergyProbe, result => result.PlayerDamageTaken),
+                0f,
+                "Repeated forward-risk EN samples should preserve the risk-for-resource HP exposure.");
+            Assert.AreEqual(
+                RepeatabilityProbeRuns,
+                CountPolicyResults(repeatabilityResults, PolicyKind.NoSummonNoFire),
+                "Decision-signal repeatability should include the ignore-pressure decision.");
+            Assert.Greater(
+                MinMetric(repeatabilityResults, PolicyKind.NoSummonNoFire, result => result.EnemyFrontlineBodyHits),
+                0f,
+                "Repeated ignore-pressure samples should all expose enemy body-hit cost.");
+            Assert.Greater(
+                MinMetric(repeatabilityResults, PolicyKind.NoSummonNoFire, result => result.PlayerDamageTaken),
+                0f,
+                "Repeated ignore-pressure samples should all cost player HP.");
+            Assert.Greater(
+                MinMetric(repeatabilityResults, PolicyKind.NoSummonNoFire, result => result.PlayerDamageScreenCueRequests),
+                0f,
+                "Repeated ignore-pressure samples should all expose player damage cues.");
+            Assert.AreEqual(
+                RepeatabilityProbeRuns,
                 CountPolicyResults(repeatabilityResults, PolicyKind.ForwardRiskPhysicalSummonBlockProbe),
                 "Decision-signal repeatability should include the summon block route.");
             Assert.Greater(
@@ -8128,6 +8196,21 @@ namespace DimensionBrawl.Tests
         {
             switch (result.Policy)
             {
+                case PolicyKind.ForwardRiskEnergyProbe:
+                    return result.ResultKind == "Running"
+                        && result.EnergyProbeTargetTier == 1
+                        && result.EnergyTier1DurationSeconds > 0f
+                        && result.EnergyTier1DurationSeconds <= EnergyProbeMaxSeconds
+                        && result.ForwardRiskEnergyScreenCueRequests > 0
+                        && result.EnergyReadyScreenCueRequests > 0
+                        && result.PlayerDamageTaken > 0f;
+                case PolicyKind.NoSummonNoFire:
+                    return !result.IsClearResult
+                        && result.EnemyFrontlineBodyHits > 0
+                        && result.PlayerDamageTaken > 0f
+                        && result.PlayerDamageScreenCueRequests > 0
+                        && result.PlayerDamageFeedbackRequests > 0
+                        && result.ResultRecords == 0;
                 case PolicyKind.NoSummonSurvivalLimit:
                     return result.ResultKind == "PlayerDownFail"
                         && result.FirstPlayerDownAtSeconds >= 0f
