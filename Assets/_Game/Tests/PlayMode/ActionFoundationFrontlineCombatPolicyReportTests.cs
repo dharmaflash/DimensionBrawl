@@ -181,6 +181,10 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("## Policy Repeatability Gate"),
                     "The report should include repeated-run evidence before detailed policy tables.");
                 AssertRepeatabilityGate(repeatabilityResults);
+                Assert.IsTrue(
+                    markdown.Contains("## Stage/Wave Beat Map"),
+                    "The report should classify each route by the ArkData-style stage/wave beat it reaches.");
+                AssertStageWaveBeatMap(results);
                 Assert.Greater(intended.SummonBlocks, 0, "The intended route must prove summon interception changes the run.");
                 Assert.AreEqual(
                     0,
@@ -1824,6 +1828,8 @@ namespace DimensionBrawl.Tests
             builder.AppendLine();
             AppendStageResultHookContract(builder, results);
             builder.AppendLine();
+            AppendStageWaveBeatMap(builder, results);
+            builder.AppendLine();
             builder.AppendLine("## Route Evidence");
             builder.AppendLine("| Policy | Proof | Follow-up | Counter | Counter answer | Final window | Result record |");
             builder.AppendLine("|---|---|---|---|---|---|---|");
@@ -2521,6 +2527,36 @@ namespace DimensionBrawl.Tests
             }
         }
 
+        private static void AppendStageWaveBeatMap(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results)
+        {
+            builder.AppendLine("## Stage/Wave Beat Map");
+            builder.AppendLine("| Policy | CloseProbe | ScreenCurtain | Follow-up | CounterPressure | Result hook | First unresolved | Stage judgement |");
+            builder.AppendLine("|---|---|---|---|---|---|---|---|");
+            for (int i = 0; i < results.Count; i++)
+            {
+                PolicyMetrics result = results[i];
+                builder.Append("| ");
+                builder.Append(result.Policy);
+                builder.Append(" | ");
+                builder.Append(ResolveCloseProbeBeat(result));
+                builder.Append(" | ");
+                builder.Append(ResolveScreenCurtainBeat(result));
+                builder.Append(" | ");
+                builder.Append(ResolveFollowupBeat(result));
+                builder.Append(" | ");
+                builder.Append(ResolveCounterPressureBeat(result));
+                builder.Append(" | ");
+                builder.Append(ResolveResultHookBeat(result));
+                builder.Append(" | ");
+                builder.Append(ResolveFirstUnresolvedBeat(result));
+                builder.Append(" | ");
+                builder.Append(EscapeTable(ResolveStageWaveJudgement(result)));
+                builder.AppendLine(" |");
+            }
+        }
+
         private static void AppendUnconfirmedFollowupCost(
             StringBuilder builder,
             IReadOnlyList<PolicyMetrics> results)
@@ -2685,6 +2721,242 @@ namespace DimensionBrawl.Tests
         private static string ResolveCoverageValue(string value)
         {
             return string.IsNullOrWhiteSpace(value) ? "empty" : value;
+        }
+
+        private static void AssertStageWaveBeatMap(IReadOnlyList<PolicyMetrics> results)
+        {
+            PolicyMetrics gunOnly = RequireResult(results, PolicyKind.GunOnly);
+            PolicyMetrics noPunish = RequireResult(results, PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe);
+            PolicyMetrics physicalPunish = RequireResult(results, PolicyKind.ForwardRiskPhysicalSummonPunishProbe);
+            PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
+            PolicyMetrics blockedRecovery = RequireResult(results, PolicyKind.BossScreenBlockCounterRecovery);
+
+            Assert.AreEqual(
+                "ScreenCurtain",
+                ResolveFirstUnresolvedBeat(gunOnly),
+                "Gun-only should be classified as stopping at the summon-needed screen curtain beat.");
+            Assert.AreEqual(
+                "FollowupConfirm",
+                ResolveFirstUnresolvedBeat(noPunish),
+                "Physical summon block without Skill1 should be classified as an unconfirmed follow-up beat.");
+            Assert.AreEqual(
+                "Complete",
+                ResolveFirstUnresolvedBeat(physicalPunish),
+                "Physical summon punish should complete the clean stage beat chain.");
+            Assert.AreEqual(
+                "CounterAnswer",
+                ResolveFirstUnresolvedBeat(blockedFollowup),
+                "A boss-screen-blocked follow-up should classify the next missing beat as the counter answer.");
+            Assert.AreEqual(
+                "Complete",
+                ResolveFirstUnresolvedBeat(blockedRecovery),
+                "Boss-screen recovery should complete through the counter-answer beat.");
+        }
+
+        private static bool IsStageRoutePolicy(PolicyKind policy)
+        {
+            switch (policy)
+            {
+                case PolicyKind.NoSummonNoFire:
+                case PolicyKind.GunOnly:
+                case PolicyKind.NoSummonSurvivalLimit:
+                case PolicyKind.GunOnlySurvivalLimit:
+                case PolicyKind.ForwardRiskPhysicalSummonBlockProbe:
+                case PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe:
+                case PolicyKind.ForwardRiskPhysicalSummonPunishProbe:
+                case PolicyKind.IntendedRoute:
+                case PolicyKind.IntendedDelayedFollowup:
+                case PolicyKind.LateSummon:
+                case PolicyKind.MissedFollowupCounterRecovery:
+                case PolicyKind.BossScreenBlockedFollowup:
+                case PolicyKind.BossScreenIgnoredNoRecovery:
+                case PolicyKind.BossScreenBlockCounterRecovery:
+                case PolicyKind.BossScreenDelayedCounterRecovery:
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static string ResolveCloseProbeBeat(PolicyMetrics result)
+        {
+            if (!IsStageRoutePolicy(result.Policy))
+            {
+                return "N/A";
+            }
+
+            return result.CloseThreatBasicHits > 0 ? "PASS" : "MISS";
+        }
+
+        private static string ResolveScreenCurtainBeat(PolicyMetrics result)
+        {
+            if (!IsStageRoutePolicy(result.Policy))
+            {
+                return "N/A";
+            }
+
+            if (result.SummonBlocks > 0 && result.FollowupWindowOpenCount > 0)
+            {
+                return "PASS";
+            }
+
+            return result.ResultKind == "PlayerDownFail" ? "FAILED" : "PENDING";
+        }
+
+        private static string ResolveFollowupBeat(PolicyMetrics result)
+        {
+            if (!IsStageRoutePolicy(result.Policy))
+            {
+                return "N/A";
+            }
+
+            if (result.FollowupHitCount > 0 && result.SkillProjectileHits > 0)
+            {
+                return "PASS";
+            }
+
+            if (result.BossBlockedSkill1Followup)
+            {
+                return "BLOCKED";
+            }
+
+            if (result.FollowupMissCount > 0)
+            {
+                return "MISS";
+            }
+
+            return result.ResultKind == "PlayerDownFail" ? "FAILED" : "PENDING";
+        }
+
+        private static string ResolveCounterPressureBeat(PolicyMetrics result)
+        {
+            if (!IsStageRoutePolicy(result.Policy))
+            {
+                return "N/A";
+            }
+
+            if (result.CounterRecoveryConfirmed)
+            {
+                return "RECOVERED";
+            }
+
+            if (result.CounterWaves > 0)
+            {
+                return "PENDING";
+            }
+
+            if (result.IsClearResult && result.FollowupHitCount > 0)
+            {
+                return "AVOIDED";
+            }
+
+            return "-";
+        }
+
+        private static string ResolveResultHookBeat(PolicyMetrics result)
+        {
+            if (!IsStageRoutePolicy(result.Policy))
+            {
+                return "N/A";
+            }
+
+            if (result.ResultKind == "PlayerDownFail")
+            {
+                return "FAIL";
+            }
+
+            if (result.ResultKind == "CleanFollowupClear")
+            {
+                return "CLEAN";
+            }
+
+            if (result.ResultKind == "CounterRecoveryClear")
+            {
+                return "RECOVERY";
+            }
+
+            return result.ResultRecords > 0 ? "RECORDED" : "PENDING";
+        }
+
+        private static string ResolveFirstUnresolvedBeat(PolicyMetrics result)
+        {
+            if (!IsStageRoutePolicy(result.Policy))
+            {
+                return "probe-only";
+            }
+
+            if (ResolveCloseProbeBeat(result) != "PASS")
+            {
+                return result.ResultKind == "PlayerDownFail" ? "HPFailBeforeCloseProbe" : "CloseProbe";
+            }
+
+            if (ResolveScreenCurtainBeat(result) != "PASS")
+            {
+                return result.ResultKind == "PlayerDownFail" ? "HPFailBeforeScreenCurtain" : "ScreenCurtain";
+            }
+
+            string followup = ResolveFollowupBeat(result);
+            if (followup == "MISS")
+            {
+                return "FollowupConfirm";
+            }
+
+            if (followup == "BLOCKED")
+            {
+                return "CounterAnswer";
+            }
+
+            if (followup != "PASS")
+            {
+                return "FollowupConfirm";
+            }
+
+            string counter = ResolveCounterPressureBeat(result);
+            if (counter == "PENDING")
+            {
+                return "CounterAnswer";
+            }
+
+            if (ResolveResultHookBeat(result) == "PENDING")
+            {
+                return "ResultHook";
+            }
+
+            return "Complete";
+        }
+
+        private static string ResolveStageWaveBeatOutcome(PolicyMetrics result)
+        {
+            return $"close={ResolveCloseProbeBeat(result)}; "
+                + $"curtain={ResolveScreenCurtainBeat(result)}; "
+                + $"followup={ResolveFollowupBeat(result)}; "
+                + $"counter={ResolveCounterPressureBeat(result)}; "
+                + $"result={ResolveResultHookBeat(result)}";
+        }
+
+        private static string ResolveStageWaveJudgement(PolicyMetrics result)
+        {
+            string unresolved = ResolveFirstUnresolvedBeat(result);
+            if (unresolved == "probe-only")
+            {
+                return "measurement probe";
+            }
+
+            if (unresolved == "Complete")
+            {
+                return result.ResultKind == "CounterRecoveryClear"
+                    ? "counter route complete"
+                    : result.ResultKind == "CleanFollowupClear"
+                        ? "clean route complete"
+                        : "stage route complete";
+            }
+
+            if (result.ResultKind == "PlayerDownFail")
+            {
+                return $"failed at {unresolved}";
+            }
+
+            return $"stalled at {unresolved}";
         }
 
         private static string ResolveRouteShape(PolicyMetrics result)
@@ -3037,6 +3309,9 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"lastFollowupHitSequenceTier\": {result.LastFollowupHitSequenceTier},");
                 builder.AppendLine($"      \"lastFollowupHitSequenceProfile\": \"{JsonEscape(result.LastFollowupHitSequenceProfile)}\",");
                 builder.AppendLine($"      \"routeShape\": \"{JsonEscape(ResolveRouteShape(result))}\",");
+                builder.AppendLine($"      \"stageWaveBeatOutcome\": \"{JsonEscape(ResolveStageWaveBeatOutcome(result))}\",");
+                builder.AppendLine($"      \"stageWaveFirstUnresolvedBeat\": \"{JsonEscape(ResolveFirstUnresolvedBeat(result))}\",");
+                builder.AppendLine($"      \"stageWaveJudgement\": \"{JsonEscape(ResolveStageWaveJudgement(result))}\",");
                 builder.AppendLine($"      \"routeStability01\": {result.RouteStability01:0.###},");
                 builder.AppendLine($"      \"minRouteStability01\": {result.MinRouteStability01:0.###},");
                 builder.AppendLine($"      \"routeStabilityBand\": \"{JsonEscape(result.RouteStabilityBand)}\",");
