@@ -81,6 +81,8 @@ namespace DimensionBrawl.Tests
             ForwardRiskSlot3VanguardRoute,
             ForwardRiskSlot2ThenSlot1ComboRoute,
             ForwardRiskSlot3ThenSlot1BlockedRoute,
+            ForwardRiskSlot2ThenDelayedSlot1Route,
+            ForwardRiskSlot3ThenDelayedSlot1Route,
             BacklineBarrageProbe,
             ForwardRiskBarrageProbe,
             BacklinePhysicalBarrageProbe,
@@ -124,6 +126,8 @@ namespace DimensionBrawl.Tests
             PolicyKind.ForwardRiskSlot3VanguardRoute,
             PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute,
             PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute,
+            PolicyKind.ForwardRiskSlot2ThenDelayedSlot1Route,
+            PolicyKind.ForwardRiskSlot3ThenDelayedSlot1Route,
             PolicyKind.BacklineBarrageProbe,
             PolicyKind.ForwardRiskBarrageProbe,
             PolicyKind.BacklinePhysicalBarrageProbe,
@@ -166,6 +170,8 @@ namespace DimensionBrawl.Tests
             PolicyKind.ForwardRiskSlot3VanguardRoute,
             PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute,
             PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute,
+            PolicyKind.ForwardRiskSlot2ThenDelayedSlot1Route,
+            PolicyKind.ForwardRiskSlot3ThenDelayedSlot1Route,
             PolicyKind.BossScreenIgnoredNoRecovery,
             PolicyKind.BossScreenBlockCounterRecovery
         };
@@ -239,6 +245,10 @@ namespace DimensionBrawl.Tests
                     RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute);
                 PolicyMetrics forwardRiskSlot3Blocked =
                     RequireResult(results, PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute);
+                PolicyMetrics forwardRiskSlot2Delayed =
+                    RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedSlot1Route);
+                PolicyMetrics forwardRiskSlot3Delayed =
+                    RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedSlot1Route);
                 PolicyMetrics backlineBarrage = RequireResult(results, PolicyKind.BacklineBarrageProbe);
                 PolicyMetrics forwardRiskBarrage = RequireResult(results, PolicyKind.ForwardRiskBarrageProbe);
                 PolicyMetrics backlinePhysicalBarrage = RequireResult(
@@ -314,6 +324,9 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("## Shared Mana Support Combo Branch"),
                     "The report should prove whether support summon cost preserves or consumes the next main answer.");
                 Assert.IsTrue(
+                    markdown.Contains("## Shared Mana Delayed Main Answer Branch"),
+                    "The report should prove whether early support spend can recharge into the next main answer.");
+                Assert.IsTrue(
                     markdown.Contains("## Skill Gate Contract"),
                     "The report should prove raw Skill1 hits are not the same as state-gated follow-up commits.");
                 AssertStageWaveBeatMap(results);
@@ -324,6 +337,7 @@ namespace DimensionBrawl.Tests
                 AssertSummonRosterIdentityAudit(results);
                 AssertSupportSummonRouteIdentity(forwardRiskSlot2Marksman, forwardRiskSlot3Vanguard);
                 AssertSharedManaSupportComboBranch(forwardRiskSlot2Combo, forwardRiskSlot3Blocked);
+                AssertSharedManaDelayedMainAnswerBranch(forwardRiskSlot2Delayed, forwardRiskSlot3Delayed);
                 Assert.Greater(intended.SummonBlocks, 0, "The intended route must prove summon interception changes the run.");
                 Assert.AreEqual(
                     0,
@@ -1328,6 +1342,12 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute:
                     yield return RunForwardRiskSupportThenSlot1ComboRoute(context, context.SummonSlot3Action);
                     break;
+                case PolicyKind.ForwardRiskSlot2ThenDelayedSlot1Route:
+                    yield return RunForwardRiskSupportThenDelayedSlot1Route(context, context.SummonSlot2Action, 2);
+                    break;
+                case PolicyKind.ForwardRiskSlot3ThenDelayedSlot1Route:
+                    yield return RunForwardRiskSupportThenDelayedSlot1Route(context, context.SummonSlot3Action, 3);
+                    break;
                 case PolicyKind.BacklineBarrageProbe:
                     yield return RunBarrageShapeProbe(context, BacklineEnergyProbeForwardRisk01);
                     break;
@@ -1976,6 +1996,156 @@ namespace DimensionBrawl.Tests
             RecordSupportSummonSnapshot(context, supportAction);
             context.PocketOwner.Tick(0f);
             context.Sample();
+        }
+
+        private static IEnumerator RunForwardRiskSupportThenDelayedSlot1Route(
+            CombatPolicyContext context,
+            PlayerSupportSummonSlotAction supportAction,
+            int targetTier)
+        {
+            BossBarragePatternProfile physicalPattern = context.BossEmitter.CurrentPattern;
+            context.BossEmitter.SetFiringEnabled(false);
+            DeactivateActiveBossProjectiles();
+            DeactivateActivePlayerProjectiles();
+            RecordCloseProbeSelectorSnapshot(context);
+            yield return FireCloseProbePhysicalShots(context);
+
+            if (context.CloseThreatHealth.IsAlive)
+            {
+                yield break;
+            }
+
+            yield return WaitForCloseThreatReliefEnd(context, 3.5f);
+            MovePlayerToForwardRisk(context, ForwardEnergyProbeForwardRisk01);
+            context.EnergyLadder.ResetLadder();
+            context.Metrics.EnergyProbeTargetForwardRisk01 = ForwardEnergyProbeForwardRisk01;
+            context.Metrics.EnergyProbeTargetTier = Mathf.Clamp(targetTier, 1, 3);
+            context.Metrics.EnergyProbeStartAtSeconds = context.Metrics.ElapsedSeconds;
+            context.Metrics.PhysicalBarrageProbeTargetForwardRisk01 = ForwardEnergyProbeForwardRisk01;
+            context.Metrics.SupportSummonSlotId = supportAction.SlotActionName;
+            context.Metrics.SupportSummonRequiredMana = supportAction.RequiredSummonMana;
+            context.Metrics.SupportComboSlot1RequiredMana = context.SummonSlot1Action.RequiredSummonMana;
+            context.Sample();
+
+            context.BossEmitter.SetFiringEnabled(true);
+            float chargeStart = context.Metrics.ElapsedSeconds;
+            while (context.EnergyLadder.AvailableTier < context.Metrics.EnergyProbeTargetTier
+                && context.PlayerHealth.IsAlive
+                && context.Metrics.ElapsedSeconds - chargeStart < EnergyTierLadderProbeMaxSeconds)
+            {
+                yield return Advance(context, 0.1f);
+                context.PocketOwner.Tick(0f);
+                context.Sample();
+            }
+
+            context.BossEmitter.SetFiringEnabled(false);
+            DeactivateActiveBossProjectiles();
+            if (context.EnergyLadder.AvailableTier < context.Metrics.EnergyProbeTargetTier)
+            {
+                context.Metrics.Notes.Add(
+                    $"{supportAction.SlotActionName} delayed combo did not reach LV{context.Metrics.EnergyProbeTargetTier}");
+                yield break;
+            }
+
+            if (!context.PlayerHealth.IsAlive)
+            {
+                yield break;
+            }
+
+            if (!supportAction.TryUseSummon())
+            {
+                context.Metrics.Notes.Add(
+                    $"{supportAction.SlotActionName} delayed combo summon blocked: {supportAction.LastUseBlockedReason}");
+                yield break;
+            }
+
+            RecordSupportSummonUse(context, supportAction);
+            context.Metrics.SupportComboManaAfterSupport = context.EnergyLadder.CurrentMana;
+            context.PocketOwner.Tick(0f);
+            context.Sample();
+
+            float actorWaitStart = context.Metrics.ElapsedSeconds;
+            while (supportAction.ActiveSummonActorCount <= 0
+                && context.Metrics.ElapsedSeconds - actorWaitStart < 1f)
+            {
+                yield return Advance(context, 0.05f);
+                context.PocketOwner.Tick(0f);
+                context.Sample();
+            }
+
+            if (supportAction.ActiveSummonActorCount <= 0)
+            {
+                context.Metrics.Notes.Add($"{supportAction.SlotActionName} delayed combo did not spawn a support actor");
+                yield break;
+            }
+
+            if (supportAction.MinimumSummonTier >= 3)
+            {
+                yield return WaitForActiveAllyPressureScreen(context, $"{supportAction.SlotActionName} delayed combo");
+            }
+            else
+            {
+                yield return Advance(context, 0.65f);
+            }
+
+            RecordSupportSummonSnapshot(context, supportAction);
+            context.PocketOwner.Tick(0f);
+            context.Sample();
+
+            float slot1WaitStart = context.Metrics.ElapsedSeconds;
+            context.BossEmitter.SetFiringEnabled(true);
+            while (!context.EnergyLadder.CanSpendMana(context.SummonSlot1Action.RequiredSummonMana)
+                && context.PlayerHealth.IsAlive
+                && context.Metrics.ElapsedSeconds - slot1WaitStart < EnergyTierLadderProbeMaxSeconds)
+            {
+                yield return Advance(context, 0.1f);
+                context.PocketOwner.Tick(0f);
+                context.Sample();
+            }
+
+            context.BossEmitter.SetFiringEnabled(false);
+            DeactivateActiveBossProjectiles();
+            context.Metrics.SupportComboSlot1ReadyDelaySeconds = context.Metrics.ElapsedSeconds - slot1WaitStart;
+            context.Metrics.SupportComboManaBeforeSlot1 = context.EnergyLadder.CurrentMana;
+            context.Metrics.SupportComboPlayerDamageBeforeSlot1 = context.Metrics.PlayerDamageTaken;
+            if (!context.EnergyLadder.CanSpendMana(context.SummonSlot1Action.RequiredSummonMana))
+            {
+                context.Metrics.Notes.Add($"{supportAction.SlotActionName} delayed combo did not recover Slot1 mana");
+                yield break;
+            }
+
+            if (!context.PlayerHealth.IsAlive)
+            {
+                yield break;
+            }
+
+            context.Metrics.SupportComboSlot1Attempted = true;
+            bool slot1Used = context.SummonSlot1Action.TryUseSummonSlot1();
+            context.Metrics.SupportComboSlot1Used = slot1Used;
+            context.Metrics.SupportComboSlot1BlockedReason =
+                slot1Used ? string.Empty : context.SummonSlot1Action.LastUseBlockedReason ?? string.Empty;
+            context.Metrics.SupportComboManaAfterSlot1 = context.EnergyLadder.CurrentMana;
+            if (!slot1Used)
+            {
+                context.PocketOwner.Tick(0f);
+                context.Sample();
+                yield break;
+            }
+
+            RecordSummonUse(context, false);
+            context.PocketOwner.Tick(0f);
+            context.Sample();
+            yield return WaitForActiveAllyPressureScreen(context, $"{supportAction.SlotActionName} delayed combo Slot1");
+            RecordSupportSummonSnapshot(context, supportAction);
+            DeactivateActiveBossProjectiles();
+            context.BossEmitter.SetFiringEnabled(false);
+            context.BossEmitter.SetFiringEnabled(true);
+            if (!context.BossEmitter.QueuePriorityPattern(physicalPattern, 1))
+            {
+                context.Metrics.Notes.Add($"{supportAction.SlotActionName} delayed combo priority barrage unavailable");
+            }
+
+            yield return ApplyPhysicalBossBarrageAndPunish(context, PhysicalBarrageProbeFlightSeconds);
         }
 
         private static IEnumerator RunPhysicalBarrageProbe(
@@ -3271,6 +3441,8 @@ namespace DimensionBrawl.Tests
             builder.AppendLine();
             AppendSharedManaSupportComboBranch(builder, results);
             builder.AppendLine();
+            AppendSharedManaDelayedMainAnswerBranch(builder, results);
+            builder.AppendLine();
             AppendSummonRosterIdentityAudit(builder, results);
             builder.AppendLine();
             builder.AppendLine("## Energy Presentation Bridge");
@@ -3742,6 +3914,10 @@ namespace DimensionBrawl.Tests
                 RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute);
             PolicyMetrics forwardRiskSlot3Blocked =
                 RequireResult(results, PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute);
+            PolicyMetrics forwardRiskSlot2Delayed =
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedSlot1Route);
+            PolicyMetrics forwardRiskSlot3Delayed =
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedSlot1Route);
             PolicyMetrics late = RequireResult(results, PolicyKind.LateSummon);
             PolicyMetrics counterRecovery = RequireResult(results, PolicyKind.MissedFollowupCounterRecovery);
             PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
@@ -3766,6 +3942,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- EN spend branch: direct LV1/LV2/LV3 results `{forwardRiskTier1Decision.ResultKind}`/`{forwardRiskTier2Decision.ResultKind}`/`{forwardRiskTier3Decision.ResultKind}` with first unresolved `{ResolveFirstUnresolvedBeat(forwardRiskTier1Decision)}`/`{ResolveFirstUnresolvedBeat(forwardRiskTier2Decision)}`/`{ResolveFirstUnresolvedBeat(forwardRiskTier3Decision)}`; recovery results `{forwardRiskTier1Recovery.ResultKind}`/`{forwardRiskTier2Recovery.ResultKind}`/`{forwardRiskTier3Recovery.ResultKind}` with HP lost {forwardRiskTier1Recovery.PlayerDamageTaken:0.0}/{forwardRiskTier2Recovery.PlayerDamageTaken:0.0}/{forwardRiskTier3Recovery.PlayerDamageTaken:0.0}.");
             builder.AppendLine($"- Support answer split: Slot2 `{ResolveSupportAnswerBeat(forwardRiskSlot2Marksman)}` leaves `{ResolveFirstUnresolvedBeat(forwardRiskSlot2Marksman)}` after {forwardRiskSlot2Marksman.SupportSummonProjectileEnemySummonHits} enemy-frontline hits and {forwardRiskSlot2Marksman.PhysicalBarragePlayerHits}/{forwardRiskSlot2Marksman.PhysicalBarrageTrackedProjectileCount} physical player hits; Slot3 `{ResolveSupportAnswerBeat(forwardRiskSlot3Vanguard)}` leaves `{ResolveFirstUnresolvedBeat(forwardRiskSlot3Vanguard)}` after {forwardRiskSlot3Vanguard.SupportSummonBlocks} blocks and {forwardRiskSlot3Vanguard.PhysicalBarragePlayerHits}/{forwardRiskSlot3Vanguard.PhysicalBarrageTrackedProjectileCount} physical player hits.");
             builder.AppendLine($"- Shared-mana combo split: Slot2 leaves {forwardRiskSlot2Combo.SupportComboManaAfterSupport:0.#} EN after support, reaches {forwardRiskSlot2Combo.SupportComboManaBeforeSlot1:0.#} EN before Slot1, and Slot1 use `{forwardRiskSlot2Combo.SupportComboSlot1Used}` -> `{forwardRiskSlot2Combo.ResultKind}` / `{ResolveFirstUnresolvedBeat(forwardRiskSlot2Combo)}`; Slot3 leaves {forwardRiskSlot3Blocked.SupportComboManaAfterSupport:0.#} EN and Slot1 use `{forwardRiskSlot3Blocked.SupportComboSlot1Used}` ({forwardRiskSlot3Blocked.SupportComboSlot1BlockedReason}) -> `{ResolveFirstUnresolvedBeat(forwardRiskSlot3Blocked)}`.");
+            builder.AppendLine($"- Delayed main-answer split: Slot2 early spend reopens Slot1 after {FormatSeconds(forwardRiskSlot2Delayed.SupportComboSlot1ReadyDelaySeconds)} with HP lost {forwardRiskSlot2Delayed.SupportComboPlayerDamageBeforeSlot1:0.0} before Slot1 and result `{forwardRiskSlot2Delayed.ResultKind}` / `{ResolveFirstUnresolvedBeat(forwardRiskSlot2Delayed)}`; Slot3 early spend reopens Slot1 after {FormatSeconds(forwardRiskSlot3Delayed.SupportComboSlot1ReadyDelaySeconds)} with HP lost {forwardRiskSlot3Delayed.SupportComboPlayerDamageBeforeSlot1:0.0} before Slot1 and result `{forwardRiskSlot3Delayed.ResultKind}` / `{ResolveFirstUnresolvedBeat(forwardRiskSlot3Delayed)}`.");
             builder.AppendLine($"- Energy presentation bridge: forward-risk energy screen/VFX F/R/S {forwardRiskEnergy.ForwardRiskEnergyScreenCueRequests}/{forwardRiskEnergy.EnergyReadyScreenCueRequests}/{forwardRiskEnergy.EnergySpendScreenCueRequests} and {forwardRiskEnergy.ForwardRiskEnergyVfxCueRequests}/{forwardRiskEnergy.EnergyReadyVfxCueRequests}/{forwardRiskEnergy.EnergySpendVfxCueRequests}; boss-screen recovery ready/spend screen {blockedRecovery.EnergyReadyScreenCueRequests}/{blockedRecovery.EnergySpendScreenCueRequests}, VFX {blockedRecovery.EnergyReadyVfxCueRequests}/{blockedRecovery.EnergySpendVfxCueRequests}.");
             builder.AppendLine($"- Forward-risk barrage shape: backline `{backlineBarrage.BarrageShapePatternId}` near-body {backlineBarrage.BarrageShapeNearProjectileCount}/{backlineBarrage.BarrageShapeProjectileCount}, avg lateral gap {backlineBarrage.BarrageShapeAverageLateralGap:0.00}, nearest {backlineBarrage.BarrageShapeNearestLaneDistance:0.00}, density {backlineBarrage.BarrageShapeThreatDensity:0.00}; forward near-body {forwardRiskBarrage.BarrageShapeNearProjectileCount}/{forwardRiskBarrage.BarrageShapeProjectileCount}, avg lateral gap {forwardRiskBarrage.BarrageShapeAverageLateralGap:0.00}, nearest {forwardRiskBarrage.BarrageShapeNearestLaneDistance:0.00}, density {forwardRiskBarrage.BarrageShapeThreatDensity:0.00}.");
             if (forwardRiskBarrage.BarrageShapeNearProjectileCount <= backlineBarrage.BarrageShapeNearProjectileCount)
@@ -4607,6 +4784,90 @@ namespace DimensionBrawl.Tests
             return "not a shared-mana combo branch";
         }
 
+        private static void AppendSharedManaDelayedMainAnswerBranch(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results)
+        {
+            builder.AppendLine("## Shared Mana Delayed Main Answer Branch");
+            builder.AppendLine("- Blue Archive EX lens: an early lower-cost support spend should show whether its tempo buys enough time to recharge into the next main answer.");
+            builder.AppendLine("| Policy | Support | Target tier | Mana after support | Slot1 ready delay | HP before Slot1 | Mana before/after Slot1 | Slot1 use/block | Support hits/blocks | Physical hits | Skill1 hits | First unresolved | Result | Read |");
+            builder.AppendLine("|---|---|---:|---:|---:|---:|---:|---|---:|---:|---:|---|---|---|");
+            AppendSharedManaDelayedMainAnswerBranchRow(
+                builder,
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedSlot1Route));
+            AppendSharedManaDelayedMainAnswerBranchRow(
+                builder,
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedSlot1Route));
+        }
+
+        private static void AppendSharedManaDelayedMainAnswerBranchRow(StringBuilder builder, PolicyMetrics result)
+        {
+            string slot1State = result.SupportComboSlot1Used
+                ? "used"
+                : result.SupportComboSlot1Attempted
+                    ? $"blocked:{result.SupportComboSlot1BlockedReason}"
+                    : "not attempted";
+
+            builder.Append("| ");
+            builder.Append(result.Policy);
+            builder.Append(" | ");
+            builder.Append(EscapeTable(result.SupportSummonSlotId));
+            builder.Append(" | ");
+            builder.Append(result.EnergyProbeTargetTier);
+            builder.Append(" | ");
+            builder.Append(result.SupportComboManaAfterSupport.ToString("0.#"));
+            builder.Append(" | ");
+            builder.Append(FormatSeconds(result.SupportComboSlot1ReadyDelaySeconds));
+            builder.Append(" | ");
+            builder.Append(result.SupportComboPlayerDamageBeforeSlot1.ToString("0.0"));
+            builder.Append(" | ");
+            builder.Append($"{result.SupportComboManaBeforeSlot1:0.#}/{result.SupportComboManaAfterSlot1:0.#}");
+            builder.Append(" | ");
+            builder.Append(EscapeTable(slot1State));
+            builder.Append(" | ");
+            builder.Append($"{result.SupportSummonProjectileEnemySummonHits}/{result.SupportSummonBlocks}");
+            builder.Append(" | ");
+            builder.Append($"{result.PhysicalBarragePlayerHits}/{result.PhysicalBarrageTrackedProjectileCount}");
+            builder.Append(" | ");
+            builder.Append(result.SkillProjectileHits);
+            builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveFirstUnresolvedBeat(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(result.ResultKind));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveSharedManaDelayedMainAnswerRead(result)));
+            builder.AppendLine(" |");
+        }
+
+        private static string ResolveSharedManaDelayedMainAnswerRead(PolicyMetrics result)
+        {
+            if (result.Policy == PolicyKind.ForwardRiskSlot2ThenDelayedSlot1Route)
+            {
+                if (result.SupportComboSlot1Used && ResolveFirstUnresolvedBeat(result) == "Complete")
+                {
+                    return "Slot2 buys early support tempo, then recharges into Slot1 confirm";
+                }
+
+                return result.SupportComboSlot1Used
+                    ? "Slot2 recharged into Slot1, then exposed the counter-answer recovery branch"
+                    : "Slot2 early spend did not reach the delayed main answer";
+            }
+
+            if (result.Policy == PolicyKind.ForwardRiskSlot3ThenDelayedSlot1Route)
+            {
+                if (result.SupportComboSlot1Used && ResolveFirstUnresolvedBeat(result) == "Complete")
+                {
+                    return "Slot3 spends the bank, holds the line, then recharges into Slot1 confirm";
+                }
+
+                return result.SupportComboSlot1Used
+                    ? "Slot3 recharged into Slot1, then exposed the counter-answer recovery branch"
+                    : "Slot3 did not reopen Slot1 after the bank spend";
+            }
+
+            return "not a delayed main-answer branch";
+        }
+
         private static void AppendSummonRosterIdentityAudit(
             StringBuilder builder,
             IReadOnlyList<PolicyMetrics> results)
@@ -4959,6 +5220,8 @@ namespace DimensionBrawl.Tests
             PolicyMetrics vanguard = RequireResult(results, PolicyKind.ForwardRiskSlot3VanguardRoute);
             PolicyMetrics slot2Combo = RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute);
             PolicyMetrics slot3Blocked = RequireResult(results, PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute);
+            PolicyMetrics slot2Delayed = RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedSlot1Route);
+            PolicyMetrics slot3Delayed = RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedSlot1Route);
             PolicyMetrics blockedFollowup = RequireResult(results, PolicyKind.BossScreenBlockedFollowup);
             PolicyMetrics blockedRecovery = RequireResult(results, PolicyKind.BossScreenBlockCounterRecovery);
 
@@ -5020,6 +5283,14 @@ namespace DimensionBrawl.Tests
                 "Slot3 should spend the shared mana bank and leave the immediate Slot1 screen-curtain answer locked out.");
             Assert.AreEqual(
                 "CounterAnswer",
+                ResolveFirstUnresolvedBeat(slot2Delayed),
+                "Slot2 spent at LV2 should recharge into Slot1, then expose the boss-screen counter answer.");
+            Assert.That(
+                ResolveFirstUnresolvedBeat(slot3Delayed),
+                Is.EqualTo("Complete").Or.EqualTo("CounterAnswer"),
+                "Slot3 spent at LV3 should either close through its high-cost hold or expose the same counter answer.");
+            Assert.AreEqual(
+                "CounterAnswer",
                 ResolveFirstUnresolvedBeat(blockedFollowup),
                 "A boss-screen-blocked follow-up should classify the next missing beat as the counter answer.");
             Assert.AreEqual(
@@ -5054,6 +5325,8 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.ForwardRiskSlot3VanguardRoute:
                 case PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute:
                 case PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute:
+                case PolicyKind.ForwardRiskSlot2ThenDelayedSlot1Route:
+                case PolicyKind.ForwardRiskSlot3ThenDelayedSlot1Route:
                 case PolicyKind.IntendedRoute:
                 case PolicyKind.IntendedDelayedFollowup:
                 case PolicyKind.LateSummon:
@@ -5613,6 +5886,100 @@ namespace DimensionBrawl.Tests
                 "Slot3's high-cost hold should remain a partial answer, not a forced clear.");
         }
 
+        private static void AssertSharedManaDelayedMainAnswerBranch(
+            PolicyMetrics slot2Delayed,
+            PolicyMetrics slot3Delayed)
+        {
+            Assert.AreEqual("SummonSlot2", slot2Delayed.SupportSummonSlotId);
+            Assert.AreEqual("SummonSlot3", slot3Delayed.SupportSummonSlotId);
+            Assert.AreEqual("BacklineMarksman", slot2Delayed.SupportSummonActorRoleId);
+            Assert.AreEqual("VanguardCommander", slot3Delayed.SupportSummonActorRoleId);
+            Assert.AreEqual(2, slot2Delayed.EnergyProbeTargetTier);
+            Assert.AreEqual(3, slot3Delayed.EnergyProbeTargetTier);
+            Assert.AreEqual(200f, slot2Delayed.SupportSummonRequiredMana, 0.001f);
+            Assert.AreEqual(300f, slot3Delayed.SupportSummonRequiredMana, 0.001f);
+            Assert.Less(
+                slot2Delayed.SupportComboManaAfterSupport,
+                slot2Delayed.SupportComboSlot1RequiredMana,
+                "Slot2-at-LV2 should spend the early support answer before the immediate Slot1 answer is payable.");
+            Assert.Less(
+                slot3Delayed.SupportComboManaAfterSupport,
+                slot3Delayed.SupportComboSlot1RequiredMana,
+                "Slot3-at-LV3 should spend the bank before the delayed Slot1 answer reopens.");
+            Assert.GreaterOrEqual(
+                slot2Delayed.SupportComboSlot1ReadyDelaySeconds,
+                0f,
+                "Slot2 delayed branch should measure the recharge exposure before Slot1.");
+            Assert.GreaterOrEqual(
+                slot3Delayed.SupportComboSlot1ReadyDelaySeconds,
+                0f,
+                "Slot3 delayed branch should measure the recharge exposure before Slot1.");
+            Assert.GreaterOrEqual(
+                slot2Delayed.SupportComboManaBeforeSlot1,
+                slot2Delayed.SupportComboSlot1RequiredMana - 0.001f,
+                "Slot2 delayed branch should actually reopen the Slot1 answer.");
+            Assert.GreaterOrEqual(
+                slot3Delayed.SupportComboManaBeforeSlot1,
+                slot3Delayed.SupportComboSlot1RequiredMana - 0.001f,
+                "Slot3 delayed branch should actually reopen the Slot1 answer.");
+            Assert.IsTrue(slot2Delayed.SupportComboSlot1Attempted);
+            Assert.IsTrue(slot2Delayed.SupportComboSlot1Used);
+            Assert.IsTrue(slot3Delayed.SupportComboSlot1Attempted);
+            Assert.IsTrue(slot3Delayed.SupportComboSlot1Used);
+            Assert.Greater(
+                slot2Delayed.SupportSummonProjectileEnemySummonHits,
+                0,
+                "Slot2 delayed branch should retain the marksman tempo proof before the main answer.");
+            Assert.Greater(
+                slot3Delayed.SupportSummonBlocks,
+                0,
+                "Slot3 delayed branch should retain the vanguard line-hold proof before the main answer.");
+            Assert.AreEqual(
+                0,
+                slot2Delayed.PhysicalBarragePlayerHits,
+                "Slot2 delayed branch should convert the final physical barrage through Slot1 instead of leaking player hits.");
+            Assert.AreEqual(
+                0,
+                slot3Delayed.PhysicalBarragePlayerHits,
+                "Slot3 delayed branch should convert the final physical barrage through Slot1 instead of leaking player hits.");
+            Assert.Greater(slot2Delayed.SkillUses, 0);
+            Assert.Greater(slot3Delayed.SkillUses, 0);
+            Assert.IsTrue(
+                slot2Delayed.BossBlockedSkill1Followup,
+                "Slot2 delayed branch should reveal that the late Slot1 confirmation is blocked by boss screen pressure.");
+            Assert.Greater(slot2Delayed.CounterWaves, 0);
+            Assert.Greater(slot2Delayed.CounterWaveAnswerEnergyPulse, 0f);
+            Assert.AreEqual(0, slot2Delayed.ResultRecords);
+            Assert.AreEqual(
+                "CounterAnswer",
+                ResolveFirstUnresolvedBeat(slot2Delayed),
+                "Slot2 delayed support should recharge into Slot1 but still require the counter-answer recovery branch.");
+            if (ResolveFirstUnresolvedBeat(slot3Delayed) == "Complete")
+            {
+                Assert.Greater(
+                    slot3Delayed.SkillProjectileHits,
+                    0,
+                    "Slot3 delayed direct branch should close through real Skill1 projectile hits.");
+                Assert.Greater(
+                    slot3Delayed.ResultRecords,
+                    0,
+                    "Slot3 delayed direct branch should commit a clean result when it beats the boss-screen timing.");
+            }
+            else
+            {
+                Assert.IsTrue(
+                    slot3Delayed.BossBlockedSkill1Followup,
+                    "Slot3 delayed branch should expose the counter answer when the boss screen catches the late Slot1 confirm.");
+                Assert.Greater(slot3Delayed.CounterWaves, 0);
+                Assert.Greater(slot3Delayed.CounterWaveAnswerEnergyPulse, 0f);
+                Assert.AreEqual(0, slot3Delayed.ResultRecords);
+                Assert.AreEqual(
+                    "CounterAnswer",
+                    ResolveFirstUnresolvedBeat(slot3Delayed),
+                    "Slot3 delayed support should remain legible as a counter-answer branch when it does not directly clear.");
+            }
+        }
+
         private static SummonRosterAuditRow[] BuildSummonRosterAuditRows(IReadOnlyList<PolicyMetrics> results)
         {
             float[] sharedCosts = ResolveSharedSummonTierCosts(results);
@@ -5987,6 +6354,8 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"supportComboSlot1Used\": {JsonBool(result.SupportComboSlot1Used)},");
                 builder.AppendLine($"      \"supportComboSlot1BlockedReason\": \"{JsonEscape(result.SupportComboSlot1BlockedReason)}\",");
                 builder.AppendLine($"      \"supportComboManaAfterSlot1\": {result.SupportComboManaAfterSlot1:0.###},");
+                builder.AppendLine($"      \"supportComboSlot1ReadyDelaySeconds\": {JsonNullableSeconds(result.SupportComboSlot1ReadyDelaySeconds)},");
+                builder.AppendLine($"      \"supportComboPlayerDamageBeforeSlot1\": {result.SupportComboPlayerDamageBeforeSlot1:0.###},");
                 builder.AppendLine($"      \"skillUses\": {result.SkillUses},");
                 builder.AppendLine($"      \"skillProjectileHits\": {result.SkillProjectileHits},");
                 builder.AppendLine($"      \"skillProjectilesBlockedByBossScreen\": {result.SkillProjectilesBlockedByBossScreen},");
@@ -6322,6 +6691,8 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"supportComboSlot1Used\": {JsonBool(result.SupportComboSlot1Used)},");
                 builder.AppendLine($"      \"supportComboSlot1BlockedReason\": \"{JsonEscape(result.SupportComboSlot1BlockedReason)}\",");
                 builder.AppendLine($"      \"supportComboManaAfterSlot1\": {result.SupportComboManaAfterSlot1:0.###},");
+                builder.AppendLine($"      \"supportComboSlot1ReadyDelaySeconds\": {JsonNullableSeconds(result.SupportComboSlot1ReadyDelaySeconds)},");
+                builder.AppendLine($"      \"supportComboPlayerDamageBeforeSlot1\": {result.SupportComboPlayerDamageBeforeSlot1:0.###},");
                 builder.AppendLine($"      \"skillProjectileHits\": {result.SkillProjectileHits},");
                 builder.AppendLine($"      \"followupHitCount\": {result.FollowupHitCount},");
                 builder.AppendLine($"      \"followupMissCount\": {result.FollowupMissCount},");
@@ -6699,6 +7070,10 @@ namespace DimensionBrawl.Tests
                     return IsSupportSlot2ComboRouteRepeatabilityPass(result);
                 case PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute:
                     return IsSupportSlot3BlockedComboRouteRepeatabilityPass(result);
+                case PolicyKind.ForwardRiskSlot2ThenDelayedSlot1Route:
+                    return IsSupportDelayedSlot1RouteRepeatabilityPass(result, "SummonSlot2", 2);
+                case PolicyKind.ForwardRiskSlot3ThenDelayedSlot1Route:
+                    return IsSupportDelayedSlot1RouteRepeatabilityPass(result, "SummonSlot3", 3);
                 case PolicyKind.BossScreenIgnoredNoRecovery:
                     return !result.IsClearResult
                         && result.EnemyFrontlineBodyHits > 0
@@ -6819,6 +7194,41 @@ namespace DimensionBrawl.Tests
                 && result.PhysicalBarragePlayerHits == 0
                 && result.SkillProjectileHits == 0
                 && ResolveFirstUnresolvedBeat(result) == "ScreenCurtain";
+        }
+
+        private static bool IsSupportDelayedSlot1RouteRepeatabilityPass(
+            PolicyMetrics result,
+            string expectedSlotId,
+            int expectedTargetTier)
+        {
+            bool coreReopen = result.SupportSummonSlotId == expectedSlotId
+                && result.EnergyProbeTargetTier == expectedTargetTier
+                && result.SupportSummonSpentTier == expectedTargetTier
+                && result.SupportComboManaAfterSupport + 0.001f < result.SupportComboSlot1RequiredMana
+                && result.SupportComboSlot1ReadyDelaySeconds >= 0f
+                && result.SupportComboManaBeforeSlot1 >= result.SupportComboSlot1RequiredMana - 0.001f
+                && result.SupportComboSlot1Attempted
+                && result.SupportComboSlot1Used
+                && result.SummonUses >= 2
+                && result.SummonBlocks > 0
+                && result.PhysicalBarragePlayerHits == 0
+                && result.SkillUses > 0;
+            if (!coreReopen)
+            {
+                return false;
+            }
+
+            bool counterAnswerBranch = result.BossBlockedSkill1Followup
+                && result.CounterWaves > 0
+                && result.CounterWaveAnswerEnergyPulse > 0f
+                && ResolveFirstUnresolvedBeat(result) == "CounterAnswer"
+                && result.ResultRecords == 0;
+            bool directClearBranch = expectedTargetTier >= 3
+                && result.ResultKind == "CleanFollowupClear"
+                && result.SkillProjectileHits > 0
+                && ResolveFirstUnresolvedBeat(result) == "Complete"
+                && result.ResultRecords > 0;
+            return counterAnswerBranch || directClearBranch;
         }
 
         private static int CountPolicyResults(IReadOnlyList<PolicyMetrics> results, PolicyKind policy)
@@ -8490,6 +8900,8 @@ namespace DimensionBrawl.Tests
             public float SupportComboManaAfterSupport { get; set; } = -1f;
             public float SupportComboManaBeforeSlot1 { get; set; } = -1f;
             public float SupportComboManaAfterSlot1 { get; set; } = -1f;
+            public float SupportComboSlot1ReadyDelaySeconds { get; set; } = -1f;
+            public float SupportComboPlayerDamageBeforeSlot1 { get; set; } = -1f;
             public bool SupportComboSlot1Attempted { get; set; }
             public bool SupportComboSlot1Used { get; set; }
             public string SupportComboSlot1BlockedReason { get; set; } = string.Empty;
