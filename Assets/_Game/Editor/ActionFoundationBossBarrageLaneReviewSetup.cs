@@ -3413,7 +3413,7 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"Could not instantiate close-threat prefab {ActionFoundationEnemyPrefabSetup.MeleeSoldierPrefabPath}.");
             }
 
-            Vector3 position = laneSpace.GetLaneWorldPoint(-1.35f, -2.65f, 0f);
+            Vector3 position = laneSpace.GetLaneWorldPoint(-0.35f, -2.65f, 0f);
             Vector3 toPlayer = Vector3.ProjectOnPlane(player.position - position, Vector3.up);
             if (toPlayer.sqrMagnitude <= 0.0001f)
             {

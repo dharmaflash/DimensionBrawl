@@ -1753,7 +1753,7 @@ namespace DimensionBrawl.Tests
             aimPlanarDirection.Normalize();
             Vector3 aimRight = Vector3.Cross(Vector3.up, aimPlanarDirection).normalized;
             Vector3 closeThreatPosition =
-                player.transform.position + aimPlanarDirection * 4.6f + aimRight * 0.35f;
+                player.transform.position + aimPlanarDirection * 4.6f + aimRight * 1.35f;
             closeThreatPosition.y = closeThreatRoot.transform.position.y;
             closeThreatRoot.transform.SetPositionAndRotation(
                 closeThreatPosition,
@@ -1827,7 +1827,7 @@ namespace DimensionBrawl.Tests
             initialAimForward.Normalize();
             Vector3 aimRight = Vector3.Cross(Vector3.up, initialAimForward).normalized;
             Vector3 closeThreatPosition =
-                player.transform.position + initialAimForward * 4.6f + aimRight * 0.45f;
+                player.transform.position + initialAimForward * 4.6f + aimRight * 1.35f;
             closeThreatPosition.y = closeThreatRoot.transform.position.y;
             closeThreatRoot.transform.SetPositionAndRotation(
                 closeThreatPosition,
@@ -2004,7 +2004,7 @@ namespace DimensionBrawl.Tests
             aimPlanarDirection.Normalize();
             Vector3 aimRight = Vector3.Cross(Vector3.up, aimPlanarDirection).normalized;
             Vector3 closeThreatPosition =
-                player.transform.position + aimPlanarDirection * 4.6f + aimRight * 0.35f;
+                player.transform.position + aimPlanarDirection * 4.6f + aimRight * 1.35f;
             closeThreatPosition.y = closeThreatRoot.transform.position.y;
             closeThreatRoot.transform.SetPositionAndRotation(
                 closeThreatPosition,
