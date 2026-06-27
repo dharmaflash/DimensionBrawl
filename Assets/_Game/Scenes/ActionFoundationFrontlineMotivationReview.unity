@@ -1448,7 +1448,7 @@ MonoBehaviour:
   useBlockedHintSeconds: 0.75
   summonActionProfile: {fileID: 11400000, guid: ea0ac980cb10498e92d7f0dcf1ddf9e7, type: 2}
   tierSettings:
-  - Damage: 56
+  - Damage: 48
     ProjectileSpeed: 17
     LifetimeSeconds: 2.4
     Radius: 0.34
@@ -1466,17 +1466,17 @@ MonoBehaviour:
     ActorAdvanceDistance: 2.2
     ActorAdvanceSeconds: 1.62
     ActorEngageRadius: 0.95
-    ActorAttackDamagePerSecond: 24
+    ActorAttackDamagePerSecond: 22
     ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 2
     ScreenRadius: 1.47
     ScreenLifetimeSeconds: 2.4
-    CounterDamage: 17.92
+    CounterDamage: 15.36
     CounterProjectileSpeed: 19
     CounterLifetimeSeconds: 1.45
     CounterRadius: 0.238
     CounterTargetHeight: 1.35
-  - Damage: 72
+  - Damage: 63
     ProjectileSpeed: 18.5
     LifetimeSeconds: 2.65
     Radius: 0.38
@@ -1494,17 +1494,17 @@ MonoBehaviour:
     ActorAdvanceDistance: 3
     ActorAdvanceSeconds: 1.9
     ActorEngageRadius: 1.05
-    ActorAttackDamagePerSecond: 32
+    ActorAttackDamagePerSecond: 28
     ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 4
     ScreenRadius: 1.79
     ScreenLifetimeSeconds: 3.2
-    CounterDamage: 23.04
+    CounterDamage: 20.16
     CounterProjectileSpeed: 20.5
     CounterLifetimeSeconds: 1.45
     CounterRadius: 0.266
     CounterTargetHeight: 1.35
-  - Damage: 92
+  - Damage: 83
     ProjectileSpeed: 20
     LifetimeSeconds: 2.9
     Radius: 0.42
@@ -1522,12 +1522,12 @@ MonoBehaviour:
     ActorAdvanceDistance: 4
     ActorAdvanceSeconds: 2.25
     ActorEngageRadius: 1.15
-    ActorAttackDamagePerSecond: 42
+    ActorAttackDamagePerSecond: 38
     ActorAttackIntervalSeconds: 0.35
     ScreenIntercepts: 7
     ScreenRadius: 2.27
     ScreenLifetimeSeconds: 4
-    CounterDamage: 29.44
+    CounterDamage: 26.56
     CounterProjectileSpeed: 22
     CounterLifetimeSeconds: 1.45
     CounterRadius: 0.294

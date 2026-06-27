@@ -456,9 +456,13 @@ namespace DimensionBrawl.Tests
                     forwardRiskPhysicalSummonBlock.BossDamageFromAllySummon,
                     forwardRiskPhysicalSummonPunish.BossDamageFromPlayer,
                     "The summon block-only route should not deal as much boss damage as the player-authored Skill1 payoff.");
+                Assert.LessOrEqual(
+                    forwardRiskPhysicalSummonBlock.BossDamageFromAllySummon,
+                    forwardRiskPhysicalSummonPunish.BossDamageFromPlayer * 0.60f,
+                    "The summon block-only route should stay visibly below the committed player-authored Skill1 payoff.");
                 Assert.GreaterOrEqual(
                     forwardRiskPhysicalSummonPunish.BossDamagePlayerShare01,
-                    0.68f,
+                    0.72f,
                     "After a successful block, boss payoff should read primarily as the player's Skill1 punish, not summon auto-DPS.");
                 Assert.AreEqual(
                     "CleanFollowupClear",
@@ -3767,7 +3771,7 @@ namespace DimensionBrawl.Tests
                         && result.SkillProjectileHits >= 2
                         && result.FollowupHitCinematicCueRequests > 0
                         && result.FollowupHitSequenceBridgeRequests == 0
-                        && result.BossDamagePlayerShare01 >= 0.68f;
+                        && result.BossDamagePlayerShare01 >= 0.72f;
                 case PolicyKind.BossScreenIgnoredNoRecovery:
                     return !result.IsClearResult
                         && result.EnemyFrontlineBodyHits > 0
