@@ -202,7 +202,7 @@ MonoBehaviour:
     enabled: 1
     cueId: boss_pressure_break_reframe
     tier: 1
-    priority: 65
+    priority: 76
     canBeInterrupted: 1
     movementLockSeconds: 0.18
     inputLockSeconds: 0.24
@@ -252,7 +252,7 @@ MonoBehaviour:
     enabled: 1
     cueId: summon_followup_hit_confirm
     tier: 1
-    priority: 72
+    priority: 78
     canBeInterrupted: 1
     movementLockSeconds: 0.12
     inputLockSeconds: 0.18
@@ -361,7 +361,7 @@ MonoBehaviour:
     enabled: 1
     cueId: summon_recall_collapse_micro
     tier: 1
-    priority: 70
+    priority: 77
     canBeInterrupted: 1
     movementLockSeconds: 0.22
     inputLockSeconds: 0.3
@@ -420,7 +420,7 @@ MonoBehaviour:
     enabled: 1
     cueId: pocket_result_clear_bridge
     tier: 1
-    priority: 75
+    priority: 80
     canBeInterrupted: 0
     movementLockSeconds: 0.3
     inputLockSeconds: 0.42
@@ -470,7 +470,7 @@ MonoBehaviour:
     enabled: 1
     cueId: pocket_result_fail_bridge
     tier: 1
-    priority: 75
+    priority: 80
     canBeInterrupted: 0
     movementLockSeconds: 0.24
     inputLockSeconds: 0.34

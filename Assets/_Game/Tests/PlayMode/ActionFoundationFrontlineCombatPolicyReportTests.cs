@@ -611,14 +611,18 @@ namespace DimensionBrawl.Tests
                     intended.FollowupHitScreenCueRequests,
                     0,
                     "A clean Skill1 follow-up punish should request the Followup.Hit screen cue before result copy takes over.");
-                Assert.AreEqual(
-                    0,
+                Assert.Greater(
                     intended.FollowupHitCinematicCueRequests,
-                    "The current canonical Frontline pass keeps cinematic playback disabled; follow-up hit feel must be judged through the verified screen/camera/VFX bridge until a dedicated cinematic pass changes setup.");
+                    0,
+                    "A clean Skill1 follow-up punish should now request the reviewed micro-cinematic follow-up hit director cue.");
+                Assert.Greater(
+                    intended.FollowupHitCinematicFrameOverlayCount,
+                    0,
+                    "A clean Skill1 follow-up punish should activate the short frame overlay while the micro-cinematic cue is playing.");
                 Assert.AreEqual(
                     0,
                     intended.FollowupHitSequenceBridgeRequests,
-                    "The current canonical Frontline pass should not silently rely on disabled cinematic sequence playback.");
+                    "The current Frontline pass should keep full cinematic sequence playback disabled; only the micro-cue director path is in scope.");
                 Assert.Greater(
                     blockedFollowup.FollowupMissedCameraCueRequests,
                     0,
@@ -632,6 +636,10 @@ namespace DimensionBrawl.Tests
                     blockedFollowup.FollowupHitCinematicCueRequests,
                     "A blocked boss-screen follow-up should not masquerade as a landed hit cinematic.");
                 Assert.Greater(
+                    blockedFollowup.FollowupMissedCinematicCueRequests,
+                    0,
+                    "A blocked boss-screen follow-up should now request the reviewed micro-cinematic miss/recall cue.");
+                Assert.Greater(
                     blockedRecovery.FollowupHitCameraCueRequests,
                     0,
                     "Counter recovery should still request a follow-up hit camera cue after the fresh summon answer.");
@@ -643,14 +651,18 @@ namespace DimensionBrawl.Tests
                     blockedRecovery.FollowupHitScreenCueRequests,
                     0,
                     "Counter recovery should still request a Followup.Hit screen cue after the fresh summon answer.");
-                Assert.AreEqual(
-                    0,
+                Assert.Greater(
                     blockedRecovery.FollowupHitCinematicCueRequests,
-                    "Counter recovery should not claim cinematic follow-up hit playback while the canonical scene keeps that path disabled.");
+                    0,
+                    "Counter recovery should request the reviewed micro-cinematic follow-up hit director cue after the fresh summon answer.");
+                Assert.Greater(
+                    blockedRecovery.FollowupHitCinematicFrameOverlayCount,
+                    0,
+                    "Counter recovery follow-up hit should activate the short frame overlay without requiring a full sequence bridge.");
                 Assert.AreEqual(
                     0,
                     blockedRecovery.FollowupHitSequenceBridgeRequests,
-                    "Counter recovery should not claim sequence bridge playback while the canonical scene keeps that path disabled.");
+                    "Counter recovery should keep full sequence bridge playback disabled while the micro-cue director path is active.");
             }
             finally
             {
@@ -2281,7 +2293,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Hit reaction split: boss-screen recovery produced {blockedRecovery.TotalSummonDamageFlashes} summon damage flashes, {blockedRecovery.TotalSummonFullBodyHitReactions} full-body hit reactions, and {blockedRecovery.TotalNonLockingSummonDamageCues} non-locking damage cues.");
             builder.AppendLine($"- Damage response split: gun-only boss chip {gunOnly.BossNonLockingDamageEvents}/{gunOnly.BossLockingDamageEvents} non-lock/lock, intended Skill1 boss hits {intended.BossNonLockingDamageEvents}/{intended.BossLockingDamageEvents}, boss-screen recovery {blockedRecovery.BossNonLockingDamageEvents}/{blockedRecovery.BossLockingDamageEvents}.");
             builder.AppendLine($"- Follow-up presentation bridge: gun-only hit cues screen/camera/VFX {gunOnly.FollowupHitScreenCueRequests}/{gunOnly.FollowupHitCameraCueRequests}/{gunOnly.FollowupHitVfxCueRequests}, intended {intended.FollowupHitScreenCueRequests}/{intended.FollowupHitCameraCueRequests}/{intended.FollowupHitVfxCueRequests}, boss-screen recovery {blockedRecovery.FollowupHitScreenCueRequests}/{blockedRecovery.FollowupHitCameraCueRequests}/{blockedRecovery.FollowupHitVfxCueRequests}.");
-            builder.AppendLine($"- Follow-up cinematic bridge is currently disabled by canonical scene setup: gun-only hit director/sequence {gunOnly.FollowupHitCinematicCueRequests}/{gunOnly.FollowupHitSequenceBridgeRequests}, intended {intended.FollowupHitCinematicCueRequests}/{intended.FollowupHitSequenceBridgeRequests}, boss-screen recovery {blockedRecovery.FollowupHitCinematicCueRequests}/{blockedRecovery.FollowupHitSequenceBridgeRequests}; intended frame overlays {intended.FollowupHitCinematicFrameOverlayCount}.");
+            builder.AppendLine($"- Follow-up micro-cinematic bridge: gun-only hit director/sequence {gunOnly.FollowupHitCinematicCueRequests}/{gunOnly.FollowupHitSequenceBridgeRequests}, intended {intended.FollowupHitCinematicCueRequests}/{intended.FollowupHitSequenceBridgeRequests}, boss-screen recovery {blockedRecovery.FollowupHitCinematicCueRequests}/{blockedRecovery.FollowupHitSequenceBridgeRequests}; intended frame overlays {intended.FollowupHitCinematicFrameOverlayCount}.");
             builder.AppendLine($"- Blocked follow-up presentation: boss-screen blocked route has miss cues screen/camera/VFX {blockedFollowup.FollowupMissedScreenCueRequests}/{blockedFollowup.FollowupMissedCameraCueRequests}/{blockedFollowup.FollowupMissedVfxCueRequests} and hit cues {blockedFollowup.FollowupHitScreenCueRequests}/{blockedFollowup.FollowupHitCameraCueRequests}/{blockedFollowup.FollowupHitVfxCueRequests}.");
             builder.AppendLine($"- Blocked follow-up cinematic: boss-screen blocked route has miss director/sequence {blockedFollowup.FollowupMissedCinematicCueRequests}/{blockedFollowup.FollowupMissedSequenceBridgeRequests} and hit director/sequence {blockedFollowup.FollowupHitCinematicCueRequests}/{blockedFollowup.FollowupHitSequenceBridgeRequests}.");
             builder.AppendLine($"- Missed follow-up branch: `{counterRecovery.ResultKind}` with counter source `{counterRecovery.CounterWaveSource}`, final window `{counterRecovery.CounterWaveFinalWindowState}`, and Skill1 hits {counterRecovery.SkillProjectileHits}.");
@@ -2523,8 +2535,11 @@ namespace DimensionBrawl.Tests
                 && delayedBlockedRecovery.FollowupWindowRemainingAtFirstHitSeconds > 0f
                 && noSummon.PlayerLockingDamageEvents == 0
                 && gunOnly.BossLockingDamageEvents == 0
-                && forwardRiskPhysicalSummonPunish.BossLockingDamageEvents > 0;
-            bool v1ScopeHeld = forwardRiskPhysicalSummonPunish.FollowupHitCinematicCueRequests == 0
+                && forwardRiskPhysicalSummonPunish.BossLockingDamageEvents > 0
+                && forwardRiskPhysicalSummonPunish.FollowupHitCinematicCueRequests > 0
+                && forwardRiskPhysicalSummonPunish.FollowupHitCinematicFrameOverlayCount > 0
+                && forwardRiskPhysicalSummonPunish.FollowupHitSequenceBridgeRequests == 0;
+            bool v1ScopeHeld = forwardRiskPhysicalSummonPunish.FollowupHitCinematicCueRequests > 0
                 && forwardRiskPhysicalSummonPunish.FollowupHitSequenceBridgeRequests == 0;
 
             builder.AppendLine("## ArkData Coverage Summary");
@@ -2548,13 +2563,13 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 "| PGR state-lock and hit-response grammar | "
                 + $"{FormatCoverageStatus(pgrStateMeasured)} | "
-                + $"block->window {FormatSeconds(intended.BlockToFollowupWindowSeconds)}; counter answer pulse {blockedRecovery.CounterWaveAnswerEnergyPulse:0}; delayed clean/recovery margins {FormatSeconds(delayedIntended.FollowupWindowRemainingAtFirstHitSeconds)} / {FormatSeconds(delayedBlockedRecovery.FollowupWindowRemainingAtFirstHitSeconds)}; routine lock counts {noSummon.PlayerLockingDamageEvents}/{gunOnly.BossLockingDamageEvents}, punish boss locks {forwardRiskPhysicalSummonPunish.BossLockingDamageEvents} | "
+                + $"block->window {FormatSeconds(intended.BlockToFollowupWindowSeconds)}; counter answer pulse {blockedRecovery.CounterWaveAnswerEnergyPulse:0}; delayed clean/recovery margins {FormatSeconds(delayedIntended.FollowupWindowRemainingAtFirstHitSeconds)} / {FormatSeconds(delayedBlockedRecovery.FollowupWindowRemainingAtFirstHitSeconds)}; routine lock counts {noSummon.PlayerLockingDamageEvents}/{gunOnly.BossLockingDamageEvents}, punish boss locks {forwardRiskPhysicalSummonPunish.BossLockingDamageEvents}, micro-cine hit/frame {forwardRiskPhysicalSummonPunish.FollowupHitCinematicCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCinematicFrameOverlayCount} | "
                 + "Use lock/unlock and response tiers only; do not import tutorial HUD flow as the solution. |");
             builder.AppendLine(
                 "| V1 scope guardrail | "
                 + $"{FormatCoverageStatus(v1ScopeHeld)} | "
-                + $"report scene `{ScenePath}`; cinematic director/sequence hit counts {forwardRiskPhysicalSummonPunish.FollowupHitCinematicCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitSequenceBridgeRequests}; physical clean route still clears `{forwardRiskPhysicalSummonPunish.ResultKind}` | "
-                + "No new canonical scene, broad VFX/audio restoration, roster, reward economy, or stage-select work. |");
+                + $"report scene `{ScenePath}`; micro-cinematic director/sequence hit counts {forwardRiskPhysicalSummonPunish.FollowupHitCinematicCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitSequenceBridgeRequests}; physical clean route still clears `{forwardRiskPhysicalSummonPunish.ResultKind}` | "
+                + "No new canonical scene, full sequence playback, broad VFX/audio restoration, roster, reward economy, or stage-select work. |");
         }
 
         private static string FormatGateStatus(bool passed)
@@ -3907,15 +3922,24 @@ namespace DimensionBrawl.Tests
                 observedScreenCueRequestCount = ScreenCuePresenter.CueRequestCount;
                 observedScreenFollowupCueRequestCount = ScreenCuePresenter.FollowupCueRequestCount;
 
-                int cinematicDelta = CinematicCueDirector.TotalPlayCount - observedCinematicPlayCount;
-                if (cinematicDelta > 0)
+                Metrics.FollowupWindowCinematicCueRequests = Mathf.Max(
+                    Metrics.FollowupWindowCinematicCueRequests,
+                    CinematicCueDirector.BossPressureBreakPlayCount);
+                Metrics.FollowupHitCinematicCueRequests = Mathf.Max(
+                    Metrics.FollowupHitCinematicCueRequests,
+                    CinematicCueDirector.SummonFollowupHitPlayCount);
+                Metrics.FollowupHitCinematicFrameOverlayCount = Mathf.Max(
+                    Metrics.FollowupHitCinematicFrameOverlayCount,
+                    CinematicCueDirector.SummonFollowupHitFrameOverlayCount);
+                Metrics.FollowupMissedCinematicCueRequests = Mathf.Max(
+                    Metrics.FollowupMissedCinematicCueRequests,
+                    CinematicCueDirector.SummonRecallPlayCount);
+                if (CinematicCueDirector.SummonFollowupHitPlayCount > 0)
                 {
-                    RecordCinematicCue(
-                        CinematicCueDirector.LastPlayedKind,
-                        CinematicCueDirector.LastPlayedTier,
-                        CinematicCueDirector.LastPlayedCueId,
-                        cinematicDelta,
-                        CinematicCueDirector.HasActiveFrameOverlay);
+                    Metrics.LastFollowupHitCinematicTier =
+                        CinematicCueDirector.LastSummonFollowupHitTier;
+                    Metrics.LastFollowupHitCinematicCueId =
+                        CinematicCueDirector.LastSummonFollowupHitCueId ?? string.Empty;
                 }
 
                 observedCinematicPlayCount = CinematicCueDirector.TotalPlayCount;
@@ -3933,34 +3957,6 @@ namespace DimensionBrawl.Tests
                 }
 
                 observedSequenceBridgePlayCount = CinematicSequenceBridge.TotalPlayCount;
-            }
-
-            private void RecordCinematicCue(
-                ActionCinematicCueProfile.CueKind cueKind,
-                int tier,
-                string cueId,
-                int count,
-                bool frameOverlayActive)
-            {
-                switch (cueKind)
-                {
-                    case ActionCinematicCueProfile.CueKind.BossPressureBreak:
-                        Metrics.FollowupWindowCinematicCueRequests += count;
-                        break;
-                    case ActionCinematicCueProfile.CueKind.SummonFollowupHit:
-                        Metrics.FollowupHitCinematicCueRequests += count;
-                        Metrics.LastFollowupHitCinematicTier = tier;
-                        Metrics.LastFollowupHitCinematicCueId = cueId ?? string.Empty;
-                        if (frameOverlayActive)
-                        {
-                            Metrics.FollowupHitCinematicFrameOverlayCount += count;
-                        }
-
-                        break;
-                    case ActionCinematicCueProfile.CueKind.SummonRecall:
-                        Metrics.FollowupMissedCinematicCueRequests += count;
-                        break;
-                }
             }
 
             private void RecordSequenceBridgeCue(

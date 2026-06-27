@@ -5944,7 +5944,7 @@ namespace DimensionBrawl.Editor
         {
             ActionCinematicCueDirector cueDirector =
                 EnsureComponent<ActionCinematicCueDirector>(cameraController.gameObject);
-            SetBehaviourEnabled(cueDirector, false);
+            SetBehaviourEnabled(cueDirector, true);
             SetObjectReference(cueDirector, "cueProfile", cinematicCueProfile);
             SetObjectReference(cueDirector, "cameraController", cameraController);
             SetObjectReference(cueDirector, "cueSpace", cueSpace);
@@ -5969,10 +5969,10 @@ namespace DimensionBrawl.Editor
                     cameraController,
                     cinematicSequenceRunner);
             SetObjectReference(cueDirector, "sequenceBridge", sequenceBridge);
-            SetBool(cueDirector, "allowCuePlayback", false);
+            SetBool(cueDirector, "allowCuePlayback", true);
             SetBool(cueDirector, "allowSequenceBridgePlayback", false);
             SetBool(cueDirector, "useUnscaledClock", true);
-            SetBool(cueDirector, "drawCinematicBars", false);
+            SetBool(cueDirector, "drawCinematicBars", true);
             SetFloat(cueDirector, "maxBarScreenRatio", 0.085f);
             SetFloat(cueDirector, "maxBarAlpha", 0.62f);
             EditorUtility.SetDirty(cueDirector);
@@ -6274,7 +6274,7 @@ namespace DimensionBrawl.Editor
         {
             ActionCinematicCueProfile profile =
                 LoadAsset<ActionCinematicCueProfile>(ActionFoundationProfileSetup.CinematicCueProfilePath);
-            ValidateBehaviourEnabled(cueDirector, false);
+            ValidateBehaviourEnabled(cueDirector, true);
             ValidateObjectReference(cueDirector, "cueProfile", profile);
             ValidateObjectReference(cueDirector, "cameraController", cameraController);
             ValidateObjectReference(cueDirector, "cueSpace", cueSpace);
@@ -6295,8 +6295,9 @@ namespace DimensionBrawl.Editor
                     cueDirector.gameObject,
                     "build-resubmission action cinematic sequence bridge");
             ValidateObjectReference(cueDirector, "sequenceBridge", sequenceBridge);
-            ValidateBool(cueDirector, "allowCuePlayback", false);
+            ValidateBool(cueDirector, "allowCuePlayback", true);
             ValidateBool(cueDirector, "allowSequenceBridgePlayback", false);
+            ValidateBool(cueDirector, "drawCinematicBars", true);
             ValidateBehaviourEnabled(cinematicSequenceRunner, false);
             ValidateObjectReference(
                 cinematicSequenceRunner,
@@ -6384,7 +6385,7 @@ namespace DimensionBrawl.Editor
             }
 
             ValidateBool(cueDirector, "useUnscaledClock", true);
-            ValidateBool(cueDirector, "drawCinematicBars", false);
+            ValidateBool(cueDirector, "drawCinematicBars", true);
             ValidateFloat(cueDirector, "maxBarScreenRatio", 0.085f);
             ValidateFloat(cueDirector, "maxBarAlpha", 0.62f);
             ValidateCinematicCueContract(

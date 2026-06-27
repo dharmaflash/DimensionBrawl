@@ -282,7 +282,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 95c5c904e05ee3d43ba6d3da070c39eb, type: 3}
   m_Name: 
@@ -478,7 +478,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1f8914b1dea82eb41afc515bc541ffc5, type: 3}
   m_Name: 
@@ -495,10 +495,10 @@ MonoBehaviour:
   vfxAnchor: {fileID: 4001}
   cueAnimator: {fileID: 7073178709513095078}
   sequenceBridge: {fileID: 1009}
-  allowCuePlayback: 0
+  allowCuePlayback: 1
   allowSequenceBridgePlayback: 0
   useUnscaledClock: 1
-  drawCinematicBars: 0
+  drawCinematicBars: 1
   maxBarScreenRatio: 0.085
   maxBarAlpha: 0.62
 --- !u!114 &1009

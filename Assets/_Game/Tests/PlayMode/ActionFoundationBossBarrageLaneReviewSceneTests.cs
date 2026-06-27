@@ -980,7 +980,7 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(playerCuePlayer, GetObjectReference<CombatVfxCuePlayer>(cinematicCueDirector, "cuePlayer"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(cinematicCueDirector, "vfxAnchor"));
             Assert.AreSame(rangedAnimator, GetObjectReference<Animator>(cinematicCueDirector, "cueAnimator"));
-            Assert.IsFalse(cinematicCueDirector.DrawCinematicBars);
+            Assert.IsTrue(cinematicCueDirector.DrawCinematicBars);
             ActionCinematicCueProfile.CueSequence summonEntry = cinematicCueDirector.CueProfile.SummonEntry;
             Assert.AreEqual(ActionCinematicCueProfile.CueTier.MicroCinematic, summonEntry.tier);
             Assert.AreEqual(ActionCinematicCueProfile.GameplayReturnTargetId, summonEntry.returnTargetId);
@@ -3276,14 +3276,13 @@ namespace DimensionBrawl.Tests
             SummonPressureScreen activeScreen = RequireActiveAllyPressureScreen();
             Assert.IsTrue(emitter.BeginWindup());
             Assert.Greater(emitter.FirePendingWave(), 0);
-            BossBarrageProjectile bossProjectile = RequireActiveBossProjectile();
-            Assert.IsTrue(activeScreen.TryIntercept(bossProjectile));
-
             int followupWindowCueCountBefore = cameraCueDriver.SummonFollowupWindowCueRequestCount;
             int followupHitCueCountBefore = cameraCueDriver.SummonFollowupHitCueRequestCount;
             int followupWindowVfxCueCountBefore = pocketVfxCueBridge.FollowupWindowCueRequestCount;
             int followupHitVfxCueCountBefore = pocketVfxCueBridge.FollowupHitCueRequestCount;
             int cinematicCueCountBeforeWindow = cinematicCueDirector.TotalPlayCount;
+            BossBarrageProjectile bossProjectile = RequireActiveBossProjectile();
+            Assert.IsTrue(activeScreen.TryIntercept(bossProjectile));
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.IsRunning);
@@ -3451,10 +3450,10 @@ namespace DimensionBrawl.Tests
                 screenCuePresenter.HasActiveCue,
                 "Pocket clear should keep a readable result edge cue long enough for a short mobile capture.");
             Assert.IsTrue(reviewHud.ShouldShowResultBanner);
-            Assert.AreEqual("BOSS CLEAR", reviewHud.ResultBannerTitle);
-            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Skill1 follow-up confirmed"));
-            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Checks 3/3"));
-            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Time"));
+            Assert.AreEqual("PRESSURE BROKEN", reviewHud.ResultBannerTitle);
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Skill1 follow-up landed"));
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("Survive 3/3"));
+            Assert.That(reviewHud.ResultBannerDetail, Does.Contain("/90.0s"));
             Assert.That(reviewHud.CompactObjectiveReadout, Does.Contain("3/3"));
             Assert.IsFalse(pocketOwner.IsSummonPressureBreakActive);
             float energyAfterClear = energyLadder.CurrentTierEnergy;

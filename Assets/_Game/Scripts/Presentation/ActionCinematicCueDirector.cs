@@ -44,9 +44,15 @@ namespace DimensionBrawl.Presentation
         private int totalSignalCount;
         private int animatorTriggerRequestCount;
         private int vfxCueRequestCount;
+        private int bossPressureBreakPlayCount;
+        private int summonFollowupHitPlayCount;
+        private int summonFollowupHitFrameOverlayCount;
+        private int summonRecallPlayCount;
         private ActionCinematicCueProfile.CueKind lastPlayedKind;
         private int lastPlayedTier;
         private string lastPlayedCueId;
+        private int lastSummonFollowupHitTier;
+        private string lastSummonFollowupHitCueId;
         private string lastSignalId;
         private string lastAnimatorTrigger;
         private CombatVfxCueId lastVfxCueId;
@@ -67,9 +73,15 @@ namespace DimensionBrawl.Presentation
         public int TotalSignalCount => totalSignalCount;
         public int AnimatorTriggerRequestCount => animatorTriggerRequestCount;
         public int VfxCueRequestCount => vfxCueRequestCount;
+        public int BossPressureBreakPlayCount => bossPressureBreakPlayCount;
+        public int SummonFollowupHitPlayCount => summonFollowupHitPlayCount;
+        public int SummonFollowupHitFrameOverlayCount => summonFollowupHitFrameOverlayCount;
+        public int SummonRecallPlayCount => summonRecallPlayCount;
         public ActionCinematicCueProfile.CueKind LastPlayedKind => lastPlayedKind;
         public int LastPlayedTier => lastPlayedTier;
         public string LastPlayedCueId => lastPlayedCueId;
+        public int LastSummonFollowupHitTier => lastSummonFollowupHitTier;
+        public string LastSummonFollowupHitCueId => lastSummonFollowupHitCueId;
         public string LastSignalId => lastSignalId;
         public string LastAnimatorTrigger => lastAnimatorTrigger;
         public CombatVfxCueId LastVfxCueId => lastVfxCueId;
@@ -173,8 +185,36 @@ namespace DimensionBrawl.Presentation
             totalPlayCount++;
             frameDuration = EstimateSequenceSeconds(sequence);
             frameTimer = frameDuration;
+            RecordPlayedCueKind(kind, lastPlayedTier, lastPlayedCueId, frameDuration > 0f);
             activeRoutine = StartCoroutine(PlaySequence(sequence, lastPlayedTier, planarDirection));
             return true;
+        }
+
+        private void RecordPlayedCueKind(
+            ActionCinematicCueProfile.CueKind kind,
+            int tier,
+            string cueId,
+            bool frameOverlayActive)
+        {
+            switch (kind)
+            {
+                case ActionCinematicCueProfile.CueKind.BossPressureBreak:
+                    bossPressureBreakPlayCount++;
+                    break;
+                case ActionCinematicCueProfile.CueKind.SummonFollowupHit:
+                    summonFollowupHitPlayCount++;
+                    lastSummonFollowupHitTier = tier;
+                    lastSummonFollowupHitCueId = cueId ?? string.Empty;
+                    if (frameOverlayActive)
+                    {
+                        summonFollowupHitFrameOverlayCount++;
+                    }
+
+                    break;
+                case ActionCinematicCueProfile.CueKind.SummonRecall:
+                    summonRecallPlayCount++;
+                    break;
+            }
         }
 
         private IEnumerator PlaySequence(
