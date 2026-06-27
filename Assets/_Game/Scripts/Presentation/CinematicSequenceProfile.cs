@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using DimensionBrawl.LevelDesign;
 using UnityEngine;
 
 namespace DimensionBrawl.Presentation
@@ -425,6 +426,14 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private bool canSkip;
         [SerializeField] private bool useUnscaledClock = true;
 
+        [Header("Stage Context")]
+        [SerializeField] private bool requiresStageDefinition;
+        [SerializeField] private StageDefinitionProfile stageDefinition;
+        [SerializeField] private string stageHandoffId;
+        [SerializeField] private string stageAnchorId;
+        [SerializeField] private string stageRuntimeStateId;
+        [TextArea, SerializeField] private string stageContextNote;
+
         [Header("Cues")]
         [SerializeField] private CameraCue[] cameraCues = Array.Empty<CameraCue>();
         [SerializeField] private ActorCue[] actorCues = Array.Empty<ActorCue>();
@@ -443,6 +452,16 @@ namespace DimensionBrawl.Presentation
         public bool HideHud => hideHud;
         public bool CanSkip => canSkip;
         public bool UseUnscaledClock => useUnscaledClock;
+        public bool RequiresStageDefinition => requiresStageDefinition;
+        public StageDefinitionProfile StageDefinition => stageDefinition;
+        public string StageHandoffId => stageHandoffId;
+        public string StageAnchorId => stageAnchorId;
+        public string StageRuntimeStateId => stageRuntimeStateId;
+        public string StageContextNote => stageContextNote;
+        public bool HasStageContext =>
+            stageDefinition != null
+            && !string.IsNullOrWhiteSpace(stageHandoffId)
+            && !string.IsNullOrWhiteSpace(stageAnchorId);
         public CameraCue[] CameraCues => cameraCues ?? Array.Empty<CameraCue>();
         public ActorCue[] ActorCues => actorCues ?? Array.Empty<ActorCue>();
         public VfxCue[] VfxCues => vfxCues ?? Array.Empty<VfxCue>();
@@ -523,6 +542,22 @@ namespace DimensionBrawl.Presentation
             gameplayHandoff = newGameplayHandoff;
         }
 
+        public void ConfigureStageContext(
+            StageDefinitionProfile newStageDefinition,
+            string newStageHandoffId,
+            string newStageAnchorId,
+            string newStageRuntimeStateId,
+            string newStageContextNote,
+            bool newRequiresStageDefinition = true)
+        {
+            stageDefinition = newStageDefinition;
+            stageHandoffId = newStageHandoffId ?? string.Empty;
+            stageAnchorId = newStageAnchorId ?? string.Empty;
+            stageRuntimeStateId = newStageRuntimeStateId ?? string.Empty;
+            stageContextNote = newStageContextNote ?? string.Empty;
+            requiresStageDefinition = newRequiresStageDefinition;
+        }
+
         public void CollectValidationIssues(List<string> issues)
         {
             if (issues == null)
@@ -548,6 +583,29 @@ namespace DimensionBrawl.Presentation
             if (gameplayHandoff.Enabled && string.IsNullOrWhiteSpace(gameplayHandoff.TargetId))
             {
                 issues.Add($"{name}: gameplay handoff has no target id.");
+            }
+
+            if (requiresStageDefinition)
+            {
+                if (stageDefinition == null)
+                {
+                    issues.Add($"{name}: requires a stage definition but none is assigned.");
+                }
+
+                if (string.IsNullOrWhiteSpace(stageHandoffId))
+                {
+                    issues.Add($"{name}: requires a stage handoff id but none is assigned.");
+                }
+
+                if (string.IsNullOrWhiteSpace(stageAnchorId))
+                {
+                    issues.Add($"{name}: requires a stage anchor id but none is assigned.");
+                }
+            }
+            else if (stageDefinition != null
+                && (string.IsNullOrWhiteSpace(stageHandoffId) || string.IsNullOrWhiteSpace(stageAnchorId)))
+            {
+                issues.Add($"{name}: has a stage definition but no complete stage handoff/anchor context.");
             }
 
             CameraCue[] resolvedCameraCues = CameraCues;

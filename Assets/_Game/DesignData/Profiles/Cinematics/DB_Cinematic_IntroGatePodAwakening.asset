@@ -26,6 +26,13 @@ MonoBehaviour:
   hideHud: 1
   canSkip: 1
   useUnscaledClock: 1
+  requiresStageDefinition: 1
+  stageDefinition: {fileID: 11400000, guid: 881aec1ce51982145825d2ce2944d918, type: 2}
+  stageHandoffId: intro-to-stage
+  stageAnchorId: IntroCutscene_End_PlayerHandoffAnchor
+  stageRuntimeStateId: state-intro-handoff
+  stageContextNote: Intro ends in the shared Olympus corridor and feeds the boss-entrance-ready
+    stage state.
   cameraCues:
   - enabled: 1
     cueId: src_c01_capsule_left_dolly

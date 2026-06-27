@@ -24,6 +24,13 @@ MonoBehaviour:
   hideHud: 0
   canSkip: 0
   useUnscaledClock: 1
+  requiresStageDefinition: 1
+  stageDefinition: {fileID: 11400000, guid: 881aec1ce51982145825d2ce2944d918, type: 2}
+  stageHandoffId: combat-start
+  stageAnchorId: Gameplay_CombatStartAnchor
+  stageRuntimeStateId: position-player-start
+  stageContextNote: Gameplay handoff returns to the same corridor map without changing
+    stage scene.
   cameraCues:
   - enabled: 1
     cueId: combat_ready_rear_match

@@ -1,0 +1,189 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd83a106a8ee78e45919f10ddb386e62, type: 3}
+  m_Name: DB_Stage_OlympusCorridorIntroCombat
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.StageDefinitionProfile
+  stageId: OLYMPUS-CORRIDOR-INTRO-COMBAT-01
+  displayName: Olympus Corridor Invasion
+  chapterId: OLYMPUS-INVASION
+  previousStageId: 
+  nextStageId: OLYMPUS-CORRIDOR-BOSS-CLEAR-01
+  mapScenePath: Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity
+  mapRootName: OlympusCorridorStageRoot
+  mapContentRootName: OlympusCorridorStageMap
+  mapScale: {x: 1.5, y: 1.5, z: 1.5}
+  layoutId: OLYMPUS_CORRIDOR_LONG_01
+  scenePrefabSource: Assets/_Game/Scenes/Lookdev/OlympusCorridorInvasionLookdev.unity
+  objective: Intro cutscene, boss entrance, and combat start share the Olympus corridor
+    map, anchor set, and runtime state vocabulary.
+  clearCondition: Boss defeated or corridor exit state reached; reward payout and
+    combat balance are intentionally out of scope.
+  excludedScope: No enemy damage tuning, skill balance, reward payout, generated
+    fake geometry, or final NavMesh bake in this definition.
+  anchors:
+  - anchorId: Player_LeftShoulderCameraAnchor
+    groupId: CombatSpawnAnchors
+    expectedPosition: {x: -16.5, y: 1.8, z: -4.65}
+    expectedEuler: {x: 0, y: 82, z: 0}
+    purpose: Player camera/start read for intro handoff and combat entry.
+  - anchorId: Boss_CenterLaneAnchor
+    groupId: CombatSpawnAnchors
+    expectedPosition: {x: 15.3, y: 0, z: 0}
+    expectedEuler: {x: 0, y: 0, z: 0}
+    purpose: Boss center spawn and reveal focus.
+  - anchorId: Add_LeftLaneAnchor
+    groupId: CombatSpawnAnchors
+    expectedPosition: {x: 13.35, y: 0, z: -1.875}
+    expectedEuler: {x: 0, y: 0, z: 0}
+    purpose: Left add spawn lane.
+  - anchorId: Add_RightLaneAnchor
+    groupId: CombatSpawnAnchors
+    expectedPosition: {x: 13.35, y: 0, z: 1.875}
+    expectedEuler: {x: 0, y: 0, z: 0}
+    purpose: Right add spawn lane.
+  - anchorId: Rift_BackdropAnchor
+    groupId: CombatSpawnAnchors
+    expectedPosition: {x: 22.2, y: 3.975, z: 0}
+    expectedEuler: {x: 0, y: 0, z: 0}
+    purpose: Far rift/backdrop spatial reference.
+  - anchorId: IntroCutscene_End_PlayerHandoffAnchor
+    groupId: CutsceneHandoffAnchors
+    expectedPosition: {x: -16.5, y: 1.8, z: -4.65}
+    expectedEuler: {x: 0, y: 82, z: 0}
+    purpose: Intro cutscene exits into this player-side view.
+  - anchorId: BossEntrance_BossRevealAnchor
+    groupId: CutsceneHandoffAnchors
+    expectedPosition: {x: 15.3, y: 1.6, z: 0}
+    expectedEuler: {x: 0, y: 0, z: 0}
+    purpose: Boss entrance reveal look/actor anchor.
+  - anchorId: Gameplay_CombatStartAnchor
+    groupId: CutsceneHandoffAnchors
+    expectedPosition: {x: -16.5, y: 0, z: -4.65}
+    expectedEuler: {x: 0, y: 82, z: 0}
+    purpose: Gameplay camera/input unlock handoff.
+  - anchorId: StageSpawner_PlayerStart
+    groupId: RuntimeStateAnchors
+    expectedPosition: {x: -16.5, y: 0, z: -4.65}
+    expectedEuler: {x: 0, y: 82, z: 0}
+    purpose: Runtime PositionId for player start.
+  - anchorId: StageSpawner_BossCenter
+    groupId: RuntimeStateAnchors
+    expectedPosition: {x: 15.3, y: 0, z: 0}
+    expectedEuler: {x: 0, y: 0, z: 0}
+    purpose: Runtime PositionId for boss center.
+  - anchorId: StageClear_CorridorExit
+    groupId: RuntimeStateAnchors
+    expectedPosition: {x: 27, y: 0, z: 0}
+    expectedEuler: {x: 0, y: 0, z: 0}
+    purpose: Runtime clear/exit state hook.
+  spawns:
+  - spawnId: player-start
+    spawnKind: 0
+    positionId: 1001
+    anchorId: StageSpawner_PlayerStart
+    payloadId: PlayerParty
+    count: 1
+    delaySeconds: 0
+    note: Player spawn is a stage position, not a balance value.
+  - spawnId: boss-center
+    spawnKind: 1
+    positionId: 2001
+    anchorId: StageSpawner_BossCenter
+    payloadId: BossEntranceCandidate
+    count: 1
+    delaySeconds: 0
+    note: Boss actor spawns through boss entrance cutscene.
+  - spawnId: add-left
+    spawnKind: 2
+    positionId: 2101
+    anchorId: Add_LeftLaneAnchor
+    payloadId: OlympusAdd.Left
+    count: 1
+    delaySeconds: 0
+    note: Add payload is placeholder identity only.
+  - spawnId: add-right
+    spawnKind: 2
+    positionId: 2102
+    anchorId: Add_RightLaneAnchor
+    payloadId: OlympusAdd.Right
+    count: 1
+    delaySeconds: 0
+    note: Add payload is placeholder identity only.
+  - spawnId: rift-backdrop
+    spawnKind: 3
+    positionId: 3001
+    anchorId: Rift_BackdropAnchor
+    payloadId: OlympusRiftBackdrop
+    count: 1
+    delaySeconds: 0
+    note: Far rift visual context anchor.
+  cutsceneHandoffs:
+  - handoffId: intro-to-stage
+    anchorId: IntroCutscene_End_PlayerHandoffAnchor
+    cinematicProfileId: DB_Cinematic_IntroGatePodAwakening
+    timelineAssetPath: Assets/_Game/DesignData/Timelines/Cinematics/DB_Timeline_IntroGatePodAwakening.playable
+    nextEventId: boss-entrance-ready
+    purpose: Intro cutscene should end in the same shared corridor stage.
+  - handoffId: boss-entrance
+    anchorId: BossEntrance_BossRevealAnchor
+    cinematicProfileId: DB_Cinematic_BossIntro
+    timelineAssetPath: 
+    nextEventId: combat-start-ready
+    purpose: Boss entrance reveal uses the shared stage anchor.
+  - handoffId: combat-start
+    anchorId: Gameplay_CombatStartAnchor
+    cinematicProfileId: DB_Cinematic_GameplayHandoff
+    timelineAssetPath: 
+    nextEventId: unlock-input
+    purpose: Gameplay handoff happens without changing map scene.
+  runtimeStates:
+  - stateId: position-player-start
+    stateKind: 0
+    positionId: 1001
+    anchorId: StageSpawner_PlayerStart
+    conditionId: stage-open
+    note: PGR/NIKKE-style lightweight stage position record.
+  - stateId: position-boss-center
+    stateKind: 0
+    positionId: 2001
+    anchorId: StageSpawner_BossCenter
+    conditionId: boss-entrance-ready
+    note: Boss PositionId remains separate from combat tuning.
+  - stateId: state-intro-handoff
+    stateKind: 1
+    positionId: 4001
+    anchorId: IntroCutscene_End_PlayerHandoffAnchor
+    conditionId: intro-complete
+    note: Intro completion state feeds boss entrance staging.
+  - stateId: state-stage-clear
+    stateKind: 2
+    positionId: 9001
+    anchorId: StageClear_CorridorExit
+    conditionId: boss-defeated
+    note: Clear state hook; reward payout remains out of scope.
+  sourceReferences:
+  - sourceId: ark-pgr-stage-layout
+    sourcePath: arkdata:PGR_Tutorial_Stage_Data_2026-06-19
+    localTakeaway: Use shared scene/layout definitions and lightweight stage records
+      instead of duplicating full scenes per logical stage.
+  - sourceId: ark-nikke-stagespawner
+    sourcePath: arkdata:NIKKE_LostSectorStageRuntime_ApplyData_2026-06-26
+    localTakeaway: Use StageSpawner/PositionId/ClearedStages naming as the runtime
+      state vocabulary.
+  - sourceId: ark-hi3-stage-context
+    sourcePath: arkdata:HI3_CombatCutscene_ApplyData_2026-06-26
+    localTakeaway: Use HI3 for camera/stage-context and combat presentation vocabulary,
+      not geometry recovery.
+  - sourceId: local-olympus-lookdev
+    sourcePath: Assets/_Game/Scenes/Lookdev/OlympusCorridorInvasionLookdev.unity
+    localTakeaway: Use the current promoted Olympus corridor lookdev as the real
+      geometry source.

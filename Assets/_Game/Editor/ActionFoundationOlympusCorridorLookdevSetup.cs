@@ -18,6 +18,8 @@ namespace DimensionBrawl.Editor
         private const string TargetScenePath = SceneRoot + "/OlympusCorridorLookdev.unity";
         private const string DenseTargetScenePath = SceneRoot + "/OlympusCorridorDenseLookdev.unity";
         private const string InvasionTargetScenePath = SceneRoot + "/OlympusCorridorInvasionLookdev.unity";
+        private const string StageSceneRoot = "Assets/_Game/Scenes";
+        private const string StageTargetScenePath = StageSceneRoot + "/OlympusCorridorInvasionStage.unity";
         private const string ArtRoot = "Assets/_Game/Art/Environment/OlympusCorridor";
         private const string ProfileRoot = ArtRoot + "/Profiles";
         private const string MaterialRoot = ArtRoot + "/Materials";
@@ -73,14 +75,23 @@ namespace DimensionBrawl.Editor
         private const string InvasionSmokeBillboardsRootName = "InvasionSmokeBillboards";
         private const string PromotedUniFireSmokeVfxRootName = "PromotedUniFireSmokeVfx";
         private const string CombatAnchorsName = "OlympusCorridor_CombatReadAnchors";
+        private const string StageRootName = "OlympusCorridorStageRoot";
+        private const string StageMapRootName = "OlympusCorridorStageMap";
+        private const string StageAnchorsName = "OlympusCorridorStageAnchors";
+        private const string StageCombatAnchorsName = "CombatSpawnAnchors";
+        private const string StageCutsceneAnchorsName = "CutsceneHandoffAnchors";
+        private const string StageRuntimeAnchorsName = "RuntimeStateAnchors";
+        private const string StagePreviewCameraName = "OlympusCorridorStage_PreviewCamera";
         private const string PreviewFileName = "olympus-corridor-lookdev-preview.png";
         private const string ClosePreviewFileName = "olympus-corridor-lookdev-close-preview.png";
         private const string HighPreviewFileName = "olympus-corridor-lookdev-high-preview.png";
         private const string DensePreviewFileName = "olympus-corridor-dense-lookdev-preview.png";
         private const string InvasionPreviewFileName = "olympus-corridor-invasion-lookdev-preview.png";
+        private const string StagePreviewFileName = "olympus-corridor-invasion-stage-preview.png";
         private const string InvasionPlayPreviewFileName = "olympus-corridor-invasion-play-preview.png";
         private const string InvasionPlayPreviewPendingKey = "DimensionBrawl.OlympusCorridor.InvasionPlayPreviewPending";
         private const float InvasionPlayPreviewWarmupSeconds = 3.0f;
+        private const float StageMapScale = 1.5f;
         private const bool EnableInvasionFireVisuals = true;
         private static double invasionPlayPreviewCaptureStartTime;
         [MenuItem("DimensionBrawl/Reapply Olympus Corridor Lookdev")]
@@ -344,6 +355,152 @@ namespace DimensionBrawl.Editor
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
             AssetDatabase.SaveAssets();
+        }
+
+        [MenuItem("DimensionBrawl/Rebuild Olympus Corridor Invasion Stage")]
+        public static void RebuildOlympusCorridorInvasionStageMenu()
+        {
+            RebuildOlympusCorridorInvasionStage();
+            Debug.Log("Rebuilt Olympus corridor invasion stage scene.");
+        }
+
+        public static void RebuildOlympusCorridorInvasionStage()
+        {
+            EnsureFolder(StageSceneRoot);
+            EnsureLookdevSceneExists(InvasionTargetScenePath);
+
+            Scene stageScene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            Scene sourceScene = default;
+            bool sourceSceneOpened = false;
+
+            try
+            {
+                sourceScene = EditorSceneManager.OpenScene(InvasionTargetScenePath, OpenSceneMode.Additive);
+                sourceSceneOpened = true;
+                RequireRoot(sourceScene, InvasionLookdevRootName);
+
+                SceneManager.SetActiveScene(stageScene);
+
+                GameObject stageRoot = new GameObject(StageRootName);
+                SceneManager.MoveGameObjectToScene(stageRoot, stageScene);
+
+                GameObject stageMapRoot = CreateChild(
+                    stageRoot.transform,
+                    StageMapRootName,
+                    Vector3.zero,
+                    Quaternion.identity,
+                    Vector3.one * StageMapScale);
+
+                foreach (GameObject sourceRoot in sourceScene.GetRootGameObjects())
+                {
+                    GameObject copy = UnityEngine.Object.Instantiate(sourceRoot);
+                    copy.name = sourceRoot.name;
+                    SceneManager.MoveGameObjectToScene(copy, stageScene);
+                    copy.transform.SetParent(stageMapRoot.transform, worldPositionStays: false);
+                }
+
+                DisableCopiedStageCameras(stageMapRoot.transform);
+                ConfigureStageAnchors(stageRoot.transform);
+                ConfigureStagePreviewCamera(stageRoot.transform);
+                ConfigureSceneAtmosphere(stageScene);
+
+                EditorUtility.SetDirty(stageRoot);
+                EditorSceneManager.MarkSceneDirty(stageScene);
+                if (!EditorSceneManager.SaveScene(stageScene, StageTargetScenePath))
+                {
+                    throw new InvalidOperationException($"Failed to save Olympus corridor invasion stage scene: {StageTargetScenePath}");
+                }
+            }
+            finally
+            {
+                if (sourceSceneOpened && sourceScene.IsValid())
+                {
+                    EditorSceneManager.CloseScene(sourceScene, removeScene: true);
+                }
+            }
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+        }
+
+        [MenuItem("DimensionBrawl/Validate Olympus Corridor Invasion Stage")]
+        public static void ValidateOlympusCorridorInvasionStageMenu()
+        {
+            ValidateOlympusCorridorInvasionStage();
+            Debug.Log("Olympus corridor invasion stage validation passed.");
+        }
+
+        public static void ValidateOlympusCorridorInvasionStage()
+        {
+            if (!AssetDatabase.LoadAssetAtPath<SceneAsset>(StageTargetScenePath))
+            {
+                throw new InvalidOperationException($"Missing Olympus corridor invasion stage scene: {StageTargetScenePath}");
+            }
+
+            Scene scene = EditorSceneManager.OpenScene(StageTargetScenePath, OpenSceneMode.Single);
+            GameObject stageRoot = RequireRoot(scene, StageRootName);
+            Transform stageMapRoot = RequireChild(stageRoot.transform, StageMapRootName);
+
+            if (Mathf.Abs(stageMapRoot.localScale.x - StageMapScale) > 0.001f
+                || Mathf.Abs(stageMapRoot.localScale.y - StageMapScale) > 0.001f
+                || Mathf.Abs(stageMapRoot.localScale.z - StageMapScale) > 0.001f)
+            {
+                throw new InvalidOperationException($"Olympus corridor stage map root must stay uniformly scaled to {StageMapScale}.");
+            }
+
+            RequireChild(stageMapRoot, InvasionLookdevRootName);
+
+            int rendererCount = CountEnabledRenderersInScene(scene.GetRootGameObjects());
+            if (rendererCount < 80)
+            {
+                throw new InvalidOperationException($"Olympus corridor stage should preserve the invasion map renderer set. Found {rendererCount} enabled renderers.");
+            }
+
+            foreach (Camera camera in stageMapRoot.GetComponentsInChildren<Camera>(includeInactive: true))
+            {
+                if (camera.enabled)
+                {
+                    throw new InvalidOperationException($"Copied lookdev camera should be disabled in stage map root: {camera.name}");
+                }
+            }
+
+            Camera previewCamera = RequireComponent<Camera>(RequireChild(stageRoot.transform, StagePreviewCameraName).gameObject);
+            if (!previewCamera.enabled)
+            {
+                throw new InvalidOperationException("Stage preview camera should remain enabled for editor review.");
+            }
+
+            Transform anchorsRoot = RequireChild(stageRoot.transform, StageAnchorsName);
+            Transform combatAnchors = RequireChild(anchorsRoot, StageCombatAnchorsName);
+            Transform cutsceneAnchors = RequireChild(anchorsRoot, StageCutsceneAnchorsName);
+            Transform runtimeAnchors = RequireChild(anchorsRoot, StageRuntimeAnchorsName);
+
+            RequireChild(combatAnchors, "Player_LeftShoulderCameraAnchor");
+            RequireChild(combatAnchors, "Boss_CenterLaneAnchor");
+            RequireChild(combatAnchors, "Add_LeftLaneAnchor");
+            RequireChild(combatAnchors, "Add_RightLaneAnchor");
+            RequireChild(combatAnchors, "Rift_BackdropAnchor");
+            RequireChild(cutsceneAnchors, "IntroCutscene_End_PlayerHandoffAnchor");
+            RequireChild(cutsceneAnchors, "BossEntrance_BossRevealAnchor");
+            RequireChild(cutsceneAnchors, "Gameplay_CombatStartAnchor");
+            RequireChild(runtimeAnchors, "StageSpawner_PlayerStart");
+            RequireChild(runtimeAnchors, "StageSpawner_BossCenter");
+            RequireChild(runtimeAnchors, "StageClear_CorridorExit");
+        }
+
+        [MenuItem("DimensionBrawl/Render Olympus Corridor Invasion Stage Preview")]
+        public static void RenderOlympusCorridorInvasionStagePreviewMenu()
+        {
+            string previewPath = RenderOlympusCorridorInvasionStagePreview();
+            Debug.Log($"Rendered Olympus corridor invasion stage preview: {previewPath}");
+        }
+
+        public static string RenderOlympusCorridorInvasionStagePreview()
+        {
+            Scene scene = EditorSceneManager.OpenScene(StageTargetScenePath, OpenSceneMode.Single);
+            GameObject stageRoot = RequireRoot(scene, StageRootName);
+            Camera camera = RequireComponent<Camera>(RequireChild(stageRoot.transform, StagePreviewCameraName).gameObject);
+            return RenderPreview(camera, StagePreviewFileName);
         }
 
         [MenuItem("DimensionBrawl/Apply Promoted UNI Fire VFX To Olympus Invasion")]
@@ -1252,6 +1409,73 @@ namespace DimensionBrawl.Editor
 
             EditorUtility.SetDirty(root);
         }
+
+        private static void DisableCopiedStageCameras(Transform stageMapRoot)
+        {
+            foreach (Camera camera in stageMapRoot.GetComponentsInChildren<Camera>(includeInactive: true))
+            {
+                camera.enabled = false;
+                EditorUtility.SetDirty(camera);
+            }
+
+            foreach (AudioListener audioListener in stageMapRoot.GetComponentsInChildren<AudioListener>(includeInactive: true))
+            {
+                audioListener.enabled = false;
+                EditorUtility.SetDirty(audioListener);
+            }
+        }
+
+        private static void ConfigureStagePreviewCamera(Transform root)
+        {
+            GameObject cameraObject = CreateChild(
+                root,
+                StagePreviewCameraName,
+                new Vector3(-14.7f, 4.28f, 0f),
+                Quaternion.Euler(12.5f, 90f, 0f),
+                Vector3.one);
+
+            Camera camera = cameraObject.AddComponent<Camera>();
+            camera.fieldOfView = 66f;
+            camera.nearClipPlane = 0.05f;
+            camera.farClipPlane = 330f;
+            camera.allowHDR = true;
+            camera.allowMSAA = true;
+            camera.clearFlags = CameraClearFlags.Skybox;
+            camera.depth = 20f;
+
+            UniversalAdditionalCameraData cameraData = camera.GetUniversalAdditionalCameraData();
+            cameraData.renderPostProcessing = true;
+            cameraData.antialiasing = AntialiasingMode.FastApproximateAntialiasing;
+            cameraData.antialiasingQuality = AntialiasingQuality.High;
+
+            EditorUtility.SetDirty(camera);
+            EditorUtility.SetDirty(cameraData);
+        }
+
+        private static void ConfigureStageAnchors(Transform root)
+        {
+            GameObject anchorsRoot = CreateChild(root, StageAnchorsName, Vector3.zero, Quaternion.identity, Vector3.one);
+            Transform combatAnchors = CreateChild(anchorsRoot.transform, StageCombatAnchorsName, Vector3.zero, Quaternion.identity, Vector3.one).transform;
+            Transform cutsceneAnchors = CreateChild(anchorsRoot.transform, StageCutsceneAnchorsName, Vector3.zero, Quaternion.identity, Vector3.one).transform;
+            Transform runtimeAnchors = CreateChild(anchorsRoot.transform, StageRuntimeAnchorsName, Vector3.zero, Quaternion.identity, Vector3.one).transform;
+
+            CreateChild(combatAnchors, "Player_LeftShoulderCameraAnchor", new Vector3(-16.5f, 1.8f, -4.65f), Quaternion.Euler(0f, 82f, 0f), Vector3.one);
+            CreateChild(combatAnchors, "Boss_CenterLaneAnchor", new Vector3(15.3f, 0f, 0f), Quaternion.identity, Vector3.one);
+            CreateChild(combatAnchors, "Add_LeftLaneAnchor", new Vector3(13.35f, 0f, -1.875f), Quaternion.identity, Vector3.one);
+            CreateChild(combatAnchors, "Add_RightLaneAnchor", new Vector3(13.35f, 0f, 1.875f), Quaternion.identity, Vector3.one);
+            CreateChild(combatAnchors, "Rift_BackdropAnchor", new Vector3(22.2f, 3.975f, 0f), Quaternion.identity, Vector3.one);
+
+            CreateChild(cutsceneAnchors, "IntroCutscene_End_PlayerHandoffAnchor", new Vector3(-16.5f, 1.8f, -4.65f), Quaternion.Euler(0f, 82f, 0f), Vector3.one);
+            CreateChild(cutsceneAnchors, "BossEntrance_BossRevealAnchor", new Vector3(15.3f, 1.6f, 0f), Quaternion.identity, Vector3.one);
+            CreateChild(cutsceneAnchors, "Gameplay_CombatStartAnchor", new Vector3(-16.5f, 0f, -4.65f), Quaternion.Euler(0f, 82f, 0f), Vector3.one);
+
+            CreateChild(runtimeAnchors, "StageSpawner_PlayerStart", new Vector3(-16.5f, 0f, -4.65f), Quaternion.Euler(0f, 82f, 0f), Vector3.one);
+            CreateChild(runtimeAnchors, "StageSpawner_BossCenter", new Vector3(15.3f, 0f, 0f), Quaternion.identity, Vector3.one);
+            CreateChild(runtimeAnchors, "StageClear_CorridorExit", new Vector3(27f, 0f, 0f), Quaternion.identity, Vector3.one);
+
+            EditorUtility.SetDirty(anchorsRoot);
+        }
+
         private static void ConfigureDenseLookdevRoot(Scene scene)
         {
             RemoveRoot(scene, DenseLookdevRootName);
