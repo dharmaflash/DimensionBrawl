@@ -377,6 +377,7 @@ namespace DimensionBrawl.Tests
                     forwardRiskPhysicalSummonNoPunish,
                     blockedRecovery,
                     forwardRiskPhysicalSummonPunish);
+                AssertCombatDecisionSignalRepeatability(repeatabilityResults);
                 AssertSupportDecisionTimingVerdicts(
                     forwardRiskTier1Recovery,
                     forwardRiskSlot2Combo,
@@ -3369,7 +3370,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine();
             AppendEnemyPressureTacticalCostMatrix(builder, results);
             builder.AppendLine();
-            AppendCombatDecisionSignalMatrix(builder, results);
+            AppendCombatDecisionSignalMatrix(builder, results, repeatabilityResults);
             builder.AppendLine();
             AppendSupportDecisionMatrixSummary(builder, results);
             builder.AppendLine();
@@ -4415,7 +4416,8 @@ namespace DimensionBrawl.Tests
 
         private static void AppendCombatDecisionSignalMatrix(
             StringBuilder builder,
-            IReadOnlyList<PolicyMetrics> results)
+            IReadOnlyList<PolicyMetrics> results,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults)
         {
             PolicyMetrics forwardRiskEnergy = RequireResult(results, PolicyKind.ForwardRiskEnergyProbe);
             PolicyMetrics noSummon = RequireResult(results, PolicyKind.NoSummonNoFire);
@@ -4426,8 +4428,8 @@ namespace DimensionBrawl.Tests
 
             builder.AppendLine("## Combat Decision Signal Matrix");
             builder.AppendLine("- ArkData/CombatPayload/PGR lens: each route decision should expose a target/status/presentation signal before the result row judges it.");
-            builder.AppendLine("| Decision beat | Policy | Pre-action signal | Post-action readout | Cue/readout counts | Decision state | Guardrail |");
-            builder.AppendLine("|---|---|---|---|---|---|---|");
+            builder.AppendLine("| Decision beat | Policy | Pre-action signal | Post-action readout | Cue/readout counts | Repeat signal | Decision state | Guardrail |");
+            builder.AppendLine("|---|---|---|---|---|---|---|---|");
             AppendCombatDecisionSignalRow(
                 builder,
                 "Risk for EN",
@@ -4435,6 +4437,7 @@ namespace DimensionBrawl.Tests
                 $"ForwardRisk band {FormatSeconds(forwardRiskEnergy.ForwardRiskBandSeconds)}",
                 $"LV1 ready {FormatSeconds(forwardRiskEnergy.EnergyTier1DurationSeconds)}, HP {forwardRiskEnergy.PlayerDamageTaken:0.0}",
                 FormatEnergyDecisionSignal(forwardRiskEnergy),
+                FormatCombatDecisionRepeatSignal(repeatabilityResults, forwardRiskEnergy.Policy),
                 "resource readiness is measured before final coaster/UI feedback");
             AppendCombatDecisionSignalRow(
                 builder,
@@ -4443,6 +4446,7 @@ namespace DimensionBrawl.Tests
                 "no summon answer",
                 $"body hits {noSummon.EnemyFrontlineBodyHits}, HP {noSummon.PlayerDamageTaken:0.0}",
                 $"player damage {noSummon.PlayerDamageScreenCueRequests}/{noSummon.PlayerDamageFeedbackRequests}",
+                FormatCombatDecisionRepeatSignal(repeatabilityResults, noSummon.Policy),
                 "unanswered pressure must hurt without becoming instant death proof");
             AppendCombatDecisionSignalRow(
                 builder,
@@ -4451,6 +4455,7 @@ namespace DimensionBrawl.Tests
                 $"physical barrage {block.PhysicalBarrageTrackedProjectileCount} tracked",
                 $"blocks {block.SummonBlocks}, window {FormatSeconds(block.BlockToFollowupWindowSeconds)}",
                 FormatBlockDecisionSignal(block),
+                FormatCombatDecisionRepeatSignal(repeatabilityResults, block.Policy),
                 "block must create a readable window, not only remove damage");
             AppendCombatDecisionSignalRow(
                 builder,
@@ -4459,6 +4464,7 @@ namespace DimensionBrawl.Tests
                 $"window open {FormatSeconds(noPunish.FirstFollowupWindowAtSeconds)}",
                 $"miss {noPunish.FollowupMissCount}, counter {noPunish.CounterWaves}, body hits {noPunish.EnemyFrontlineBodyHits}",
                 FormatMissCounterDecisionSignal(noPunish),
+                FormatCombatDecisionRepeatSignal(repeatabilityResults, noPunish.Policy),
                 "missed punish should relock into counter pressure");
             AppendCombatDecisionSignalRow(
                 builder,
@@ -4467,6 +4473,7 @@ namespace DimensionBrawl.Tests
                 $"counter source {recovery.LastCounterWaveSource}",
                 $"pulse {recovery.CounterWaveAnswerEnergyPulse:0}, stable {FormatSeconds(recovery.CounterAnswerToStableSeconds)}, hit {FormatSeconds(recovery.FinalWindowToHitSeconds)}",
                 FormatCounterAnswerDecisionSignal(recovery),
+                FormatCombatDecisionRepeatSignal(repeatabilityResults, recovery.Policy),
                 "fresh summon answer should unlock recovery through measured state beats");
             AppendCombatDecisionSignalRow(
                 builder,
@@ -4475,6 +4482,7 @@ namespace DimensionBrawl.Tests
                 $"follow-up window {FormatSeconds(cleanPunish.FirstFollowupWindowDurationSeconds)}",
                 $"boss damage {cleanPunish.BossDamageFromPlayer:0.0}, HP leak {cleanPunish.PlayerDamageTaken:0.0}",
                 FormatFollowupHitDecisionSignal(cleanPunish),
+                FormatCombatDecisionRepeatSignal(repeatabilityResults, cleanPunish.Policy),
                 "clean payoff should read through hit cues and no player damage leak");
         }
 
@@ -4485,6 +4493,7 @@ namespace DimensionBrawl.Tests
             string preActionSignal,
             string postActionReadout,
             string cueCounts,
+            string repeatSignal,
             string guardrail)
         {
             builder.Append("| ");
@@ -4498,10 +4507,68 @@ namespace DimensionBrawl.Tests
             builder.Append(" | ");
             builder.Append(EscapeTable(cueCounts));
             builder.Append(" | ");
+            builder.Append(EscapeTable(repeatSignal));
+            builder.Append(" | ");
             builder.Append(EscapeTable(ResolveCombatDecisionSignalState(result)));
             builder.Append(" | ");
             builder.Append(EscapeTable(guardrail));
             builder.AppendLine(" |");
+        }
+
+        private static string FormatCombatDecisionRepeatSignal(
+            IReadOnlyList<PolicyMetrics> repeatabilityResults,
+            PolicyKind policy)
+        {
+            if (CountPolicyResults(repeatabilityResults, policy) <= 0)
+            {
+                return "not repeated";
+            }
+
+            switch (policy)
+            {
+                case PolicyKind.ForwardRiskPhysicalSummonBlockProbe:
+                    return "blocks "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.SummonBlocks),
+                            MaxMetric(repeatabilityResults, policy, result => result.SummonBlocks))
+                        + "; hits "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.PhysicalBarragePlayerHits),
+                            MaxMetric(repeatabilityResults, policy, result => result.PhysicalBarragePlayerHits));
+                case PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe:
+                    return "miss "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.FollowupMissCount),
+                            MaxMetric(repeatabilityResults, policy, result => result.FollowupMissCount))
+                        + "; counter "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.CounterWaves),
+                            MaxMetric(repeatabilityResults, policy, result => result.CounterWaves))
+                        + "; body "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.EnemyFrontlineBodyHits),
+                            MaxMetric(repeatabilityResults, policy, result => result.EnemyFrontlineBodyHits));
+                case PolicyKind.BossScreenBlockCounterRecovery:
+                    return "answer cue "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.CounterWaveAnswerScreenCueRequests),
+                            MaxMetric(repeatabilityResults, policy, result => result.CounterWaveAnswerScreenCueRequests))
+                        + "; skill1 "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.SkillProjectileHits),
+                            MaxMetric(repeatabilityResults, policy, result => result.SkillProjectileHits));
+                case PolicyKind.ForwardRiskPhysicalSummonPunishProbe:
+                    return "skill1 "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.SkillProjectileHits),
+                            MaxMetric(repeatabilityResults, policy, result => result.SkillProjectileHits))
+                        + "; HP "
+                        + FormatMinMax(
+                            MinMetric(repeatabilityResults, policy, result => result.PlayerDamageTaken),
+                            MaxMetric(repeatabilityResults, policy, result => result.PlayerDamageTaken));
+                default:
+                    return "runs " + CountPolicyResults(repeatabilityResults, policy);
+            }
         }
 
         private static string ResolveCombatDecisionSignalState(PolicyMetrics result)
@@ -6742,6 +6809,47 @@ namespace DimensionBrawl.Tests
                 "CleanFollowupClear/Complete",
                 ResolveCombatDecisionSignalState(cleanPunish),
                 "Clean punish should read as complete at the decision layer.");
+        }
+
+        private static void AssertCombatDecisionSignalRepeatability(
+            IReadOnlyList<PolicyMetrics> repeatabilityResults)
+        {
+            Assert.AreEqual(
+                RepeatabilityProbeRuns,
+                CountPolicyResults(repeatabilityResults, PolicyKind.ForwardRiskPhysicalSummonBlockProbe),
+                "Decision-signal repeatability should include the summon block route.");
+            Assert.Greater(
+                MinMetric(repeatabilityResults, PolicyKind.ForwardRiskPhysicalSummonBlockProbe, result => result.SummonBlocks),
+                0f,
+                "Repeated summon block samples should all produce real block signals.");
+            Assert.AreEqual(
+                0f,
+                MaxMetric(repeatabilityResults, PolicyKind.ForwardRiskPhysicalSummonBlockProbe, result => result.PhysicalBarragePlayerHits),
+                "Repeated summon block samples should keep physical barrage hits off the player.");
+            Assert.Greater(
+                MinMetric(repeatabilityResults, PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe, result => result.FollowupMissCount),
+                0f,
+                "Repeated no-punish samples should all miss the follow-up window.");
+            Assert.Greater(
+                MinMetric(repeatabilityResults, PolicyKind.ForwardRiskPhysicalSummonNoPunishProbe, result => result.CounterWaves),
+                0f,
+                "Repeated no-punish samples should all enter counter pressure.");
+            Assert.Greater(
+                MinMetric(repeatabilityResults, PolicyKind.BossScreenBlockCounterRecovery, result => result.CounterWaveAnswerScreenCueRequests),
+                0f,
+                "Repeated counter-recovery samples should all show the answer cue.");
+            Assert.Greater(
+                MinMetric(repeatabilityResults, PolicyKind.BossScreenBlockCounterRecovery, result => result.SkillProjectileHits),
+                0f,
+                "Repeated counter-recovery samples should all close with Skill1 hits.");
+            Assert.Greater(
+                MinMetric(repeatabilityResults, PolicyKind.ForwardRiskPhysicalSummonPunishProbe, result => result.SkillProjectileHits),
+                0f,
+                "Repeated clean punish samples should all land Skill1.");
+            Assert.AreEqual(
+                0f,
+                MaxMetric(repeatabilityResults, PolicyKind.ForwardRiskPhysicalSummonPunishProbe, result => result.PlayerDamageTaken),
+                "Repeated clean punish samples should keep player HP clean.");
         }
 
         private static void AssertStageResultMotivationMatrix(
