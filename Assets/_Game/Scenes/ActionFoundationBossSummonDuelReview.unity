@@ -1292,6 +1292,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerSupportSummonSlotAction
   slotActionName: SummonSlot3
+  minimumSummonTier: 3
   summonAction: {fileID: 0}
   useKeyboardWhenActionMissing: 1
   keyboardTestKey: 43
@@ -1332,6 +1333,7 @@ MonoBehaviour:
   m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerSupportSummonSlotAction
   slotActionName: SummonSlot2
+  minimumSummonTier: 2
   summonAction: {fileID: 0}
   useKeyboardWhenActionMissing: 1
   keyboardTestKey: 42

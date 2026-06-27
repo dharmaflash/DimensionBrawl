@@ -924,3 +924,27 @@ Boundary:
 - This is an audit and measurement lock, not final roster balance.
 - Do not introduce final coaster UI, icons, audio, reward hooks, roster inventory, rarity, or a broad summon manager to solve this.
 - The next roster pass should first decide and simulate a narrow per-slot summon-mana/resource contract, then judge whether it creates route separation before presentation polish.
+
+## 2026-06-27 Policy Report Lock: Slot-Specific Summon Mana Gates
+
+The audit found the missing cost identity, so this checkpoint introduces only the smallest resource contract needed to prove different summon costs: support summon actions now carry a `minimumSummonTier`. This keeps one shared EN ladder but makes each slot open at a different authored mana gate.
+
+Checkpoint evidence:
+
+- `SummonSlot1` remains the LV1 emergency shield/counter answer.
+- `SummonSlot2.BacklineMarksman` requires LV2 and is blocked at LV1 with `Requires LV2 EN` in the focused Duel PlayMode test.
+- `SummonSlot3.VanguardCommander` requires LV3 and keeps the high-HP/screen vanguard role.
+- Focused policy report `SlotManaGate-2` passed. The roster audit now records cost verdict `PASS`, required mana `100/200/300`, shared tier targets `100/100/100`, and effect verdict `PASS`.
+- Focused Duel PlayMode `SlotManaGate-4` passed, proving the runtime action gate in the authored support-summon scene, not only the report table.
+
+Interpretation:
+
+- ArkData lesson: the roster now has a data-visible resource gate per slot without inventing a production roster/economy.
+- CombatPayload lesson: `resource_cost_check` now differs before `Target -> Effect`, while existing effect payloads stay separated.
+- PGR/Blue Archive-style motivation lesson: future ready/coaster feedback now has a real cost state to present, but the feedback is still not the source of the combat motive.
+
+Boundary:
+
+- Do not treat this as final balance. It proves separate unlock gates, not final cooldowns, rarity, upgrade cost, or UI polish.
+- Do not add final ready UI, icons, audio, reward hooks, inventory, or a broad summon manager before route metrics show the new cost gates create better player decisions.
+- The next measured pass should ask whether LV2 marksman and LV3 vanguard choices create distinct route outcomes, not merely whether their buttons unlock at different times.

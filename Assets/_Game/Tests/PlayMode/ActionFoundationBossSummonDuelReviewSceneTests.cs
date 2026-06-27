@@ -254,15 +254,22 @@ namespace DimensionBrawl.Tests
 
             energyLadder.SetGainEnabled(false);
             GrantEnergyToTier(energyLadder, 1);
+            Assert.IsFalse(
+                summonSlot2Action.TryUseSummon(),
+                "SummonSlot2 should wait for its LV2 mana contract instead of spending the emergency LV1 summon tier.");
+            Assert.AreEqual("Requires LV2 EN", summonSlot2Action.LastUseBlockedReason);
+            Assert.AreEqual(1, energyLadder.AvailableTier);
+
+            GrantEnergyToTier(energyLadder, 2);
             Assert.IsTrue(summonSlot2Action.TryUseSummon());
-            Assert.AreEqual(1, summonSlot2Action.LastSpentTier);
+            Assert.AreEqual(2, summonSlot2Action.LastSpentTier);
             Assert.AreEqual(1, summonSlot2Action.TotalUseCount);
             Assert.AreEqual(1, duelOwner.ObservedPlayerSummonUses);
             Assert.AreEqual(1, duelOwner.ObservedSupportSummonUses);
             Assert.IsTrue(
                 bossPressureActionDirector.IsPlayerSummonResponseWindowActive,
                 "Support summon use should open a narrow boss response window for barrage/summon-pressure answers.");
-            Assert.AreEqual(1, bossPressureActionDirector.LastObservedPlayerSummonTier);
+            Assert.AreEqual(2, bossPressureActionDirector.LastObservedPlayerSummonTier);
             Assert.AreEqual("BacklineMarksman", summonSlot2Action.LastSummonActorRoleId);
             Assert.Greater(summonSlot2Action.ActiveSummonActorCount, 0);
             Assert.IsTrue(
@@ -273,9 +280,9 @@ namespace DimensionBrawl.Tests
                 float.IsPositiveInfinity(summonSlot2Action.LastSummonActorRemainingLifetimeSeconds),
                 "S2 is a normal body-bearing summon and should persist until defeated or recalled, not expire as a short effect.");
             Assert.AreEqual(SummonFrontlineProxyExitReason.None, summonSlot2Action.LastSummonActorExitReason);
-            SummonFrontlineProxy slot2Proxy = RequireActiveSummonProxy(DamageTeam.AllySummon, 1.35f, "S2");
-            AssertActiveSummonPresenterUsesCombatVfx(slot2Proxy, playerCuePlayer, 1, "S2");
-            AssertSummonProxyIsMarching(slot2Proxy, 1.35f, "S2");
+            SummonFrontlineProxy slot2Proxy = RequireActiveSummonProxy(DamageTeam.AllySummon, 1.42f, "S2");
+            AssertActiveSummonPresenterUsesCombatVfx(slot2Proxy, playerCuePlayer, 2, "S2");
+            AssertSummonProxyIsMarching(slot2Proxy, 1.42f, "S2");
             float slot2EntryProgress = slot2Proxy.AdvanceProgress01;
             yield return new WaitForSeconds(0.15f);
             AssertSummonProxyAdvancedWithoutSnapping(slot2Proxy, slot2EntryProgress, "S2");
@@ -322,7 +329,7 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(
                 bossSummonPressureAction.LastSummonActorHasHealth,
                 "Boss summon pressure should also release a damageable frontline actor for summon-vs-summon exchange.");
-            StringAssert.Contains("frontline", reviewHud.FrontlineLoopReadout);
+            StringAssert.Contains("pressure", reviewHud.FrontlineLoopReadout);
             StringAssert.Contains("ally", reviewHud.FrontlineLoopReadout);
             StringAssert.Contains("enemy", reviewHud.FrontlineLoopReadout);
             StringAssert.Contains("Tune", reviewHud.FrontlineTuningReadout);
@@ -340,7 +347,7 @@ namespace DimensionBrawl.Tests
             Assert.IsNotNull(enemyProxy, "Boss summon pressure should expose the latest released summon actor.");
             Assert.AreEqual(DamageTeam.Enemy, enemyProxy.Health.Team);
             AssertActiveSummonPresenterUsesCombatVfx(enemyProxy, playerCuePlayer, 2, "boss summon");
-            AssertSummonProxyIsMarching(enemyProxy, 1.42f, "boss summon");
+            AssertSummonProxyIsMarching(enemyProxy, 2.15f, "boss summon");
             float enemyEntryProgress = enemyProxy.AdvanceProgress01;
             yield return new WaitForSeconds(0.15f);
             AssertSummonProxyAdvancedWithoutSnapping(enemyProxy, enemyEntryProgress, "boss summon");
@@ -380,8 +387,8 @@ namespace DimensionBrawl.Tests
                 "first loop");
 
             Assert.IsTrue(bossSummonPressureAction.TryReleasePressureSummon(1));
-            SummonFrontlineProxy secondEnemyProxy = RequireActiveSummonProxy(DamageTeam.Enemy, 1.35f, "second boss summon");
-            AssertSummonProxyIsMarching(secondEnemyProxy, 1.35f, "second boss summon");
+            SummonFrontlineProxy secondEnemyProxy = RequireActiveSummonProxy(DamageTeam.Enemy, 2.35f, "second boss summon");
+            AssertSummonProxyIsMarching(secondEnemyProxy, 2.35f, "second boss summon");
             CombatHealth secondEnemySummonHealth = secondEnemyProxy.Health;
             Assert.IsTrue(
                 secondEnemySummonHealth.TryApplyDamage(new DamageInfo(
@@ -484,6 +491,10 @@ namespace DimensionBrawl.Tests
         {
             Assert.AreEqual(expectedActionName, action.SlotActionName);
             Assert.IsTrue(action.HasRequiredPresentation);
+            Assert.AreEqual(
+                expectedActionName == "SummonSlot3" ? 3 : 2,
+                action.MinimumSummonTier,
+                $"{expectedActionName} should preserve its slot-specific summon mana tier contract.");
             Assert.AreEqual(
                 1.35f,
                 GetFloat(action, "entryForwardOffset"),

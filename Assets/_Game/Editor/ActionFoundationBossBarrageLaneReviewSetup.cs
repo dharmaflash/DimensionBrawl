@@ -1114,6 +1114,7 @@ namespace DimensionBrawl.Editor
                 SummonSlot2ActorPrefabPath,
                 SummonSlot2ActorVisualName,
                 SummonSlot2ActionProfilePath,
+                2,
                 160f,
                 false,
                 0.1f,
@@ -1131,6 +1132,7 @@ namespace DimensionBrawl.Editor
                 SummonSlot3ActorPrefabPath,
                 SummonSlot3ActorVisualName,
                 SummonSlot3ActionProfilePath,
+                3,
                 360f,
                 true,
                 0.15f,
@@ -5619,6 +5621,7 @@ namespace DimensionBrawl.Editor
 
             PlayerSupportSummonSlotAction summonSlot2Action = EnsureSupportSummonSlotAction(playerRoot, "SummonSlot2");
             summonSlot2Action.ConfigureSlot("SummonSlot2", Key.Digit2, new Vector2(-1.55f, 0.35f));
+            summonSlot2Action.ConfigureMinimumSummonTier(2);
             SetInt(summonSlot2Action, "maxActiveSummonActors", 1);
             SetFloat(summonSlot2Action, "entryForwardOffset", 1.35f);
             SetFloat(summonSlot2Action, "actorEntryCatchupSecondsPerMeter", 0.55f);
@@ -5643,6 +5646,7 @@ namespace DimensionBrawl.Editor
 
             PlayerSupportSummonSlotAction summonSlot3Action = EnsureSupportSummonSlotAction(playerRoot, "SummonSlot3");
             summonSlot3Action.ConfigureSlot("SummonSlot3", Key.Digit3, new Vector2(1.55f, 0.55f));
+            summonSlot3Action.ConfigureMinimumSummonTier(3);
             SetInt(summonSlot3Action, "maxActiveSummonActors", 1);
             SetFloat(summonSlot3Action, "entryForwardOffset", 1.35f);
             SetFloat(summonSlot3Action, "actorEntryCatchupSecondsPerMeter", 0.55f);
@@ -7423,6 +7427,7 @@ namespace DimensionBrawl.Editor
             string actorPrefabPath,
             string actorVisualName,
             string actionProfilePath,
+            int expectedMinimumSummonTier,
             float expectedMaxHealth,
             bool expectPressureScreen,
             float firstVolleyDelaySeconds,
@@ -7450,6 +7455,7 @@ namespace DimensionBrawl.Editor
                 "combatVfxCuePlayer",
                 RequireComponent<CombatVfxCuePlayer>(action.gameObject, "player combat VFX cue player"));
             ValidateEnum(action, "sourceTeam", (int)DamageTeam.AllySummon);
+            ValidateInt(action, "minimumSummonTier", expectedMinimumSummonTier);
             ValidateInt(action, "maxActiveSummonActors", 1);
             ValidateFloat(action, "entryForwardOffset", 1.35f);
             ValidateFloatAtLeast(action, "actorEntryCatchupSecondsPerMeter", 0.3f);

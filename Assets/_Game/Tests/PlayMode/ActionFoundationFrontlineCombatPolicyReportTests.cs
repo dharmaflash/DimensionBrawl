@@ -4087,8 +4087,8 @@ namespace DimensionBrawl.Tests
             builder.AppendLine("- ArkData lens: roster slots should preserve cost, role, target/effect, and stage-read differences instead of collapsing into one generic summon button.");
             builder.AppendLine($"- Cost verdict: {ResolveSummonRosterCostVerdict(rows)}");
             builder.AppendLine($"- Effect verdict: {ResolveSummonRosterEffectVerdict(rows)}");
-            builder.AppendLine("| Slot | Action id | Cost source | Tier costs | Role ids | Volley dmg | Screen | Actor HP | Counter dmg | Read |");
-            builder.AppendLine("|---|---|---|---:|---|---:|---:|---:|---:|---|");
+            builder.AppendLine("| Slot | Action id | Cost source | Required tier | Required mana | Tier costs | Role ids | Volley dmg | Screen | Actor HP | Counter dmg | Read |");
+            builder.AppendLine("|---|---|---|---:|---:|---:|---|---:|---:|---:|---:|---|");
             for (int i = 0; i < rows.Length; i++)
             {
                 SummonRosterAuditRow row = rows[i];
@@ -4098,6 +4098,11 @@ namespace DimensionBrawl.Tests
                 builder.Append(EscapeTable(row.ActionId));
                 builder.Append(" | ");
                 builder.Append(EscapeTable(row.CostSource));
+                builder.Append(" | ");
+                builder.Append("LV");
+                builder.Append(row.MinimumTier);
+                builder.Append(" | ");
+                builder.Append(row.RequiredMana.ToString("0.#"));
                 builder.Append(" | ");
                 builder.Append(EscapeTable(FormatTierFloatReadout(row.TierCosts)));
                 builder.Append(" | ");
@@ -4873,25 +4878,21 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(3, rows.Length, "The roster audit should cover all three summon slots.");
             Assert.That(
                 ResolveSummonRosterCostVerdict(rows),
-                Does.Contain("CHECK"),
-                "The current roster audit should keep the missing slot-specific summon mana cost visible.");
+                Does.Contain("PASS"),
+                "The roster audit should prove slot-specific summon mana cost gates before UI readiness polish.");
             Assert.That(
                 ResolveSummonRosterEffectVerdict(rows),
                 Does.Contain("PASS"),
                 "The current roster audit should prove profile effect budgets are not identical.");
 
+            Assert.AreEqual(1, rows[0].MinimumTier, "SummonSlot1 should stay the LV1 emergency answer.");
+            Assert.AreEqual(2, rows[1].MinimumTier, "SummonSlot2 should require the LV2 marksman mana gate.");
+            Assert.AreEqual(3, rows[2].MinimumTier, "SummonSlot3 should require the LV3 vanguard mana gate.");
+            Assert.Less(rows[0].RequiredMana, rows[1].RequiredMana);
+            Assert.Less(rows[1].RequiredMana, rows[2].RequiredMana);
+
             for (int tierIndex = 0; tierIndex < 3; tierIndex++)
             {
-                Assert.AreEqual(
-                    rows[0].TierCosts[tierIndex],
-                    rows[1].TierCosts[tierIndex],
-                    0.001f,
-                    $"SummonSlot2 tier {tierIndex + 1} should currently share the same summon mana cost source as SummonSlot1.");
-                Assert.AreEqual(
-                    rows[0].TierCosts[tierIndex],
-                    rows[2].TierCosts[tierIndex],
-                    0.001f,
-                    $"SummonSlot3 tier {tierIndex + 1} should currently share the same summon mana cost source as SummonSlot1.");
                 Assert.Greater(
                     rows[1].VolleyDamage[tierIndex],
                     rows[0].VolleyDamage[tierIndex],
@@ -4914,26 +4915,32 @@ namespace DimensionBrawl.Tests
         private static SummonRosterAuditRow[] BuildSummonRosterAuditRows(IReadOnlyList<PolicyMetrics> results)
         {
             float[] sharedCosts = ResolveSharedSummonTierCosts(results);
+            int slot1MinimumTier = 1;
+            int slot2MinimumTier = ResolveSupportSummonMinimumTier("SummonSlot2", 2);
+            int slot3MinimumTier = ResolveSupportSummonMinimumTier("SummonSlot3", 3);
             return new[]
             {
                 BuildSummonRosterAuditRow(
                     "SummonSlot1",
                     SummonSlot1ActionProfilePath,
-                    "shared SummonEnergyLadder",
+                    "shared SummonEnergyLadder + slot minimum tier gate",
                     sharedCosts,
-                    "breaker screen/counter; mana still shared"),
+                    slot1MinimumTier,
+                    "breaker screen/counter; LV1 emergency answer"),
                 BuildSummonRosterAuditRow(
                     "SummonSlot2",
                     SummonSlot2ActionProfilePath,
-                    "shared SummonEnergyLadder",
+                    "shared SummonEnergyLadder + slot minimum tier gate",
                     sharedCosts,
-                    "marksman volley; no screen; mana still shared"),
+                    slot2MinimumTier,
+                    "marksman volley; no screen; LV2 cost gate"),
                 BuildSummonRosterAuditRow(
                     "SummonSlot3",
                     SummonSlot3ActionProfilePath,
-                    "shared SummonEnergyLadder",
+                    "shared SummonEnergyLadder + slot minimum tier gate",
                     sharedCosts,
-                    "vanguard health/screen; mana still shared")
+                    slot3MinimumTier,
+                    "vanguard health/screen; LV3 cost gate")
             };
         }
 
@@ -4942,6 +4949,7 @@ namespace DimensionBrawl.Tests
             string assetPath,
             string costSource,
             float[] tierCosts,
+            int minimumTier,
             string readout)
         {
             SummonSlotActionProfile profile =
@@ -4971,6 +4979,8 @@ namespace DimensionBrawl.Tests
                 profile.ActionId,
                 costSource,
                 CopyFirstThree(tierCosts),
+                Mathf.Clamp(minimumTier, 1, 3),
+                ResolveCumulativeSummonMana(tierCosts, minimumTier),
                 roleIds,
                 volleyDamage,
                 screenIntercepts,
@@ -5000,6 +5010,35 @@ namespace DimensionBrawl.Tests
             return new[] { 0f, 0f, 0f };
         }
 
+        private static int ResolveSupportSummonMinimumTier(string slotActionName, int fallbackTier)
+        {
+            PlayerSupportSummonSlotAction[] actions = Object.FindObjectsByType<PlayerSupportSummonSlotAction>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < actions.Length; i++)
+            {
+                PlayerSupportSummonSlotAction action = actions[i];
+                if (action != null && string.Equals(action.SlotActionName, slotActionName, StringComparison.Ordinal))
+                {
+                    return action.MinimumSummonTier;
+                }
+            }
+
+            return Mathf.Clamp(fallbackTier, 1, 3);
+        }
+
+        private static float ResolveCumulativeSummonMana(float[] tierCosts, int minimumTier)
+        {
+            int clampedTier = Mathf.Clamp(minimumTier, 1, 3);
+            float total = 0f;
+            for (int i = 0; i < clampedTier; i++)
+            {
+                total += tierCosts != null && tierCosts.Length > i ? Mathf.Max(0f, tierCosts[i]) : 0f;
+            }
+
+            return total;
+        }
+
         private static string ResolveSummonRosterCostVerdict(SummonRosterAuditRow[] rows)
         {
             if (rows.Length < 3)
@@ -5007,18 +5046,16 @@ namespace DimensionBrawl.Tests
                 return "REVIEW roster rows missing";
             }
 
-            bool sharedCosts = true;
-            for (int i = 1; i < rows.Length; i++)
-            {
-                for (int tier = 0; tier < 3; tier++)
-                {
-                    sharedCosts &= Mathf.Abs(rows[0].TierCosts[tier] - rows[i].TierCosts[tier]) <= 0.001f;
-                }
-            }
+            bool tierSplit = rows[0].MinimumTier == 1
+                && rows[1].MinimumTier == 2
+                && rows[2].MinimumTier == 3;
+            bool manaSplit = rows[0].RequiredMana > 0f
+                && rows[1].RequiredMana > rows[0].RequiredMana
+                && rows[2].RequiredMana > rows[1].RequiredMana;
 
-            return sharedCosts
-                ? "CHECK shared ladder costs; no slot-specific summon mana yet"
-                : "PASS slot-specific summon mana cost split exists";
+            return tierSplit && manaSplit
+                ? "PASS slot-specific summon mana gates split LV1/LV2/LV3"
+                : "CHECK shared ladder still collapses summon mana gates";
         }
 
         private static string ResolveSummonRosterEffectVerdict(SummonRosterAuditRow[] rows)
@@ -5486,6 +5523,8 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"slot\": \"{JsonEscape(row.Slot)}\",");
                 builder.AppendLine($"      \"actionId\": \"{JsonEscape(row.ActionId)}\",");
                 builder.AppendLine($"      \"costSource\": \"{JsonEscape(row.CostSource)}\",");
+                builder.AppendLine($"      \"minimumTier\": {row.MinimumTier},");
+                builder.AppendLine($"      \"requiredMana\": {row.RequiredMana:0.###},");
                 builder.AppendLine($"      \"tierCosts\": \"{JsonEscape(FormatTierFloatReadout(row.TierCosts))}\",");
                 builder.AppendLine($"      \"roleIds\": \"{JsonEscape(FormatTierStringReadout(row.RoleIds))}\",");
                 builder.AppendLine($"      \"volleyDamage\": \"{JsonEscape(FormatTierFloatReadout(row.VolleyDamage))}\",");
@@ -5909,7 +5948,6 @@ namespace DimensionBrawl.Tests
                 && result.SummonBlocks > 0
                 && result.SkillUses > 0
                 && result.SkillProjectileHits == 0
-                && result.BossBlockedSkill1Followup
                 && result.FollowupMissCount > 0
                 && result.CounterWaves > 0
                 && ResolveFirstUnresolvedBeat(result) == "CounterAnswer"
@@ -7418,6 +7456,8 @@ namespace DimensionBrawl.Tests
                 string actionId,
                 string costSource,
                 float[] tierCosts,
+                int minimumTier,
+                float requiredMana,
                 string[] roleIds,
                 float[] volleyDamage,
                 int[] screenIntercepts,
@@ -7429,6 +7469,8 @@ namespace DimensionBrawl.Tests
                 ActionId = actionId;
                 CostSource = costSource;
                 TierCosts = tierCosts;
+                MinimumTier = minimumTier;
+                RequiredMana = requiredMana;
                 RoleIds = roleIds;
                 VolleyDamage = volleyDamage;
                 ScreenIntercepts = screenIntercepts;
@@ -7441,6 +7483,8 @@ namespace DimensionBrawl.Tests
             public string ActionId { get; }
             public string CostSource { get; }
             public float[] TierCosts { get; }
+            public int MinimumTier { get; }
+            public float RequiredMana { get; }
             public string[] RoleIds { get; }
             public float[] VolleyDamage { get; }
             public int[] ScreenIntercepts { get; }

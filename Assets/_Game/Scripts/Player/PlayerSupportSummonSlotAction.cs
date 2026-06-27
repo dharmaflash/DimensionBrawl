@@ -43,6 +43,7 @@ namespace DimensionBrawl.Player
         [SerializeField, Min(0f)] private float actorEntryCatchupSecondsPerMeter = 0.55f;
 
         [Header("Support Cadence")]
+        [SerializeField, Range(1, 3)] private int minimumSummonTier = 1;
         [SerializeField, Min(0f)] private float firstVolleyDelaySeconds = 0.08f;
         [SerializeField, Min(0.1f)] private float volleyIntervalSeconds = 0.85f;
         [SerializeField, Min(1)] private int maxVolleyCount = 4;
@@ -65,6 +66,7 @@ namespace DimensionBrawl.Player
         private int totalPressureScreenInterceptCount;
 
         public string SlotActionName => slotActionName;
+        public int MinimumSummonTier => Mathf.Clamp(minimumSummonTier, 1, 3);
         public int LastSpentTier => lastSpentTier;
         public int TotalUseCount => totalUseCount;
         public int LastPressureScreenInterceptTier => lastPressureScreenInterceptTier;
@@ -120,6 +122,7 @@ namespace DimensionBrawl.Player
             laneOffset.y = Mathf.Clamp(laneOffset.y, -4f, 8f);
             entryForwardOffset = Mathf.Max(0f, entryForwardOffset);
             actorEntryCatchupSecondsPerMeter = Mathf.Max(0f, actorEntryCatchupSecondsPerMeter);
+            minimumSummonTier = Mathf.Clamp(minimumSummonTier, 1, 3);
             firstVolleyDelaySeconds = Mathf.Max(0f, firstVolleyDelaySeconds);
             volleyIntervalSeconds = Mathf.Max(0.1f, volleyIntervalSeconds);
             maxVolleyCount = Mathf.Max(1, maxVolleyCount);
@@ -200,6 +203,11 @@ namespace DimensionBrawl.Player
             maxVolleyCount = Mathf.Max(1, volleyCount);
         }
 
+        public void ConfigureMinimumSummonTier(int minimumTier)
+        {
+            minimumSummonTier = Mathf.Clamp(minimumTier, 1, 3);
+        }
+
         public bool TryGetTierReadout(int tier, out SummonSlotActionProfile.SummonTierReadout readout)
         {
             if (summonActionProfile == null)
@@ -230,7 +238,14 @@ namespace DimensionBrawl.Player
                 return false;
             }
 
-            if (!TryResolveTierSettings(energyLadder.AvailableTier, out PlayerSummonSlot1Action.SummonTierSettings tierSettings))
+            int availableTier = energyLadder.AvailableTier;
+            if (availableTier < MinimumSummonTier)
+            {
+                SetUseBlocked($"Requires LV{MinimumSummonTier} EN");
+                return false;
+            }
+
+            if (!TryResolveTierSettings(availableTier, out PlayerSummonSlot1Action.SummonTierSettings tierSettings))
             {
                 SetUseBlocked("Summon profile missing");
                 return false;
