@@ -75,6 +75,7 @@ namespace DimensionBrawl.Player
         public void Detach()
         {
             UnsubscribePressureScreens();
+            UnsubscribeProjectileDamageApplied();
         }
 
         public void FireTier(int tier, PlayerSummonSlot1Action.SummonTierSettings settings)
@@ -351,6 +352,29 @@ namespace DimensionBrawl.Player
                 settings.ProjectileSpeed,
                 settings.LifetimeSeconds,
                 settings.Radius);
+            projectile.DamageApplied -= OnProjectileDamageApplied;
+            projectile.DamageApplied += OnProjectileDamageApplied;
+        }
+
+        private void OnProjectileDamageApplied(
+            LaneActionProjectile projectile,
+            CombatHealth targetHealth,
+            Vector3 impactPoint,
+            Vector3 impactDirection)
+        {
+            owner.NotifySummonProjectileDamageApplied(projectile, targetHealth, impactPoint, impactDirection);
+        }
+
+        private void UnsubscribeProjectileDamageApplied()
+        {
+            for (int i = 0; i < projectiles.Count; i++)
+            {
+                LaneActionProjectile projectile = projectiles[i];
+                if (projectile != null)
+                {
+                    projectile.DamageApplied -= OnProjectileDamageApplied;
+                }
+            }
         }
 
         private IEnumerator RunPersistentVolley(

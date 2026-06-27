@@ -77,6 +77,8 @@ namespace DimensionBrawl.Tests
             ForwardRiskTier1RecoveryRoute,
             ForwardRiskTier2RecoveryRoute,
             ForwardRiskTier3RecoveryRoute,
+            ForwardRiskSlot2MarksmanRoute,
+            ForwardRiskSlot3VanguardRoute,
             BacklineBarrageProbe,
             ForwardRiskBarrageProbe,
             BacklinePhysicalBarrageProbe,
@@ -116,6 +118,8 @@ namespace DimensionBrawl.Tests
             PolicyKind.ForwardRiskTier1RecoveryRoute,
             PolicyKind.ForwardRiskTier2RecoveryRoute,
             PolicyKind.ForwardRiskTier3RecoveryRoute,
+            PolicyKind.ForwardRiskSlot2MarksmanRoute,
+            PolicyKind.ForwardRiskSlot3VanguardRoute,
             PolicyKind.BacklineBarrageProbe,
             PolicyKind.ForwardRiskBarrageProbe,
             PolicyKind.BacklinePhysicalBarrageProbe,
@@ -154,11 +158,14 @@ namespace DimensionBrawl.Tests
             PolicyKind.ForwardRiskTier1RecoveryRoute,
             PolicyKind.ForwardRiskTier2RecoveryRoute,
             PolicyKind.ForwardRiskTier3RecoveryRoute,
+            PolicyKind.ForwardRiskSlot2MarksmanRoute,
+            PolicyKind.ForwardRiskSlot3VanguardRoute,
             PolicyKind.BossScreenIgnoredNoRecovery,
             PolicyKind.BossScreenBlockCounterRecovery
         };
 
         [UnityTest]
+        [Timeout(360000)]
         public IEnumerator WritesFrontlineCombatPolicyReport()
         {
             float previousTimeScale = Time.timeScale;
@@ -218,6 +225,10 @@ namespace DimensionBrawl.Tests
                     RequireResult(results, PolicyKind.ForwardRiskTier2RecoveryRoute);
                 PolicyMetrics forwardRiskTier3Recovery =
                     RequireResult(results, PolicyKind.ForwardRiskTier3RecoveryRoute);
+                PolicyMetrics forwardRiskSlot2Marksman =
+                    RequireResult(results, PolicyKind.ForwardRiskSlot2MarksmanRoute);
+                PolicyMetrics forwardRiskSlot3Vanguard =
+                    RequireResult(results, PolicyKind.ForwardRiskSlot3VanguardRoute);
                 PolicyMetrics backlineBarrage = RequireResult(results, PolicyKind.BacklineBarrageProbe);
                 PolicyMetrics forwardRiskBarrage = RequireResult(results, PolicyKind.ForwardRiskBarrageProbe);
                 PolicyMetrics backlinePhysicalBarrage = RequireResult(
@@ -298,6 +309,7 @@ namespace DimensionBrawl.Tests
                     json.Contains("\"summonRosterIdentityAudit\""),
                     "The JSON report should expose the roster identity audit for follow-up batch comparisons.");
                 AssertSummonRosterIdentityAudit(results);
+                AssertSupportSummonRouteIdentity(forwardRiskSlot2Marksman, forwardRiskSlot3Vanguard);
                 Assert.Greater(intended.SummonBlocks, 0, "The intended route must prove summon interception changes the run.");
                 Assert.AreEqual(
                     0,
@@ -1139,6 +1151,10 @@ namespace DimensionBrawl.Tests
                 RequireComponent<PlayerSkill1Action>(player.gameObject, "Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            PlayerSupportSummonSlotAction summonSlot2Action =
+                RequireSupportSummonAction(player.gameObject, "SummonSlot2");
+            PlayerSupportSummonSlotAction summonSlot3Action =
+                RequireSupportSummonAction(player.gameObject, "SummonSlot3");
             PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
             SummonLaneSpace laneSpace =
                 RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "summon lane space");
@@ -1192,6 +1208,8 @@ namespace DimensionBrawl.Tests
                 rangedBasicAttack,
                 skill1Action,
                 summonSlot1Action,
+                summonSlot2Action,
+                summonSlot3Action,
                 energyLadder,
                 energyVfxCuePresenter,
                 targetSelector,
@@ -1283,6 +1301,12 @@ namespace DimensionBrawl.Tests
                     break;
                 case PolicyKind.ForwardRiskTier3RecoveryRoute:
                     yield return RunForwardRiskTierDecisionRoute(context, 3, true);
+                    break;
+                case PolicyKind.ForwardRiskSlot2MarksmanRoute:
+                    yield return RunForwardRiskSupportSummonRoute(context, context.SummonSlot2Action, 2);
+                    break;
+                case PolicyKind.ForwardRiskSlot3VanguardRoute:
+                    yield return RunForwardRiskSupportSummonRoute(context, context.SummonSlot3Action, 3);
                     break;
                 case PolicyKind.BacklineBarrageProbe:
                     yield return RunBarrageShapeProbe(context, BacklineEnergyProbeForwardRisk01);
@@ -1671,6 +1695,110 @@ namespace DimensionBrawl.Tests
             yield return WaitForCounterFinalWindow(context, 3f);
             yield return ConfirmSkill1Followup(context);
             yield return Advance(context, 1.0f);
+        }
+
+        private static IEnumerator RunForwardRiskSupportSummonRoute(
+            CombatPolicyContext context,
+            PlayerSupportSummonSlotAction supportAction,
+            int targetTier)
+        {
+            BossBarragePatternProfile physicalPattern = context.BossEmitter.CurrentPattern;
+            context.BossEmitter.SetFiringEnabled(false);
+            DeactivateActiveBossProjectiles();
+            DeactivateActivePlayerProjectiles();
+            RecordCloseProbeSelectorSnapshot(context);
+            yield return FireCloseProbePhysicalShots(context);
+
+            if (context.CloseThreatHealth.IsAlive)
+            {
+                yield break;
+            }
+
+            yield return WaitForCloseThreatReliefEnd(context, 3.5f);
+            MovePlayerToForwardRisk(context, ForwardEnergyProbeForwardRisk01);
+            context.EnergyLadder.ResetLadder();
+            context.Metrics.EnergyProbeTargetForwardRisk01 = ForwardEnergyProbeForwardRisk01;
+            context.Metrics.EnergyProbeTargetTier = Mathf.Clamp(targetTier, 1, 3);
+            context.Metrics.EnergyProbeStartAtSeconds = context.Metrics.ElapsedSeconds;
+            context.Metrics.PhysicalBarrageProbeTargetForwardRisk01 = ForwardEnergyProbeForwardRisk01;
+            context.Metrics.SupportSummonSlotId = supportAction.SlotActionName;
+            context.Metrics.SupportSummonRequiredMana = supportAction.RequiredSummonMana;
+            context.Sample();
+
+            context.BossEmitter.SetFiringEnabled(true);
+            float start = context.Metrics.ElapsedSeconds;
+            while (context.EnergyLadder.AvailableTier < context.Metrics.EnergyProbeTargetTier
+                && context.PlayerHealth.IsAlive
+                && context.Metrics.ElapsedSeconds - start < EnergyTierLadderProbeMaxSeconds)
+            {
+                yield return Advance(context, 0.1f);
+                context.PocketOwner.Tick(0f);
+                context.Sample();
+            }
+
+            context.BossEmitter.SetFiringEnabled(false);
+            DeactivateActiveBossProjectiles();
+            if (context.EnergyLadder.AvailableTier < context.Metrics.EnergyProbeTargetTier)
+            {
+                context.Metrics.Notes.Add(
+                    $"{supportAction.SlotActionName} route did not reach LV{context.Metrics.EnergyProbeTargetTier}");
+                yield break;
+            }
+
+            if (!context.PlayerHealth.IsAlive)
+            {
+                yield break;
+            }
+
+            if (!supportAction.TryUseSummon())
+            {
+                context.Metrics.Notes.Add(
+                    $"{supportAction.SlotActionName} summon blocked: {supportAction.LastUseBlockedReason}");
+                yield break;
+            }
+
+            RecordSupportSummonUse(context, supportAction);
+            context.PocketOwner.Tick(0f);
+            context.Sample();
+
+            float actorWaitStart = context.Metrics.ElapsedSeconds;
+            while (supportAction.ActiveSummonActorCount <= 0
+                && context.Metrics.ElapsedSeconds - actorWaitStart < 1f)
+            {
+                yield return Advance(context, 0.05f);
+                context.PocketOwner.Tick(0f);
+                context.Sample();
+            }
+
+            if (supportAction.ActiveSummonActorCount <= 0)
+            {
+                context.Metrics.Notes.Add($"{supportAction.SlotActionName} did not spawn a support actor");
+                yield break;
+            }
+
+            if (supportAction.MinimumSummonTier >= 3)
+            {
+                yield return WaitForActiveAllyPressureScreen(context, $"{supportAction.SlotActionName} route");
+            }
+            else
+            {
+                yield return Advance(context, 0.35f);
+            }
+
+            RecordSupportSummonSnapshot(context, supportAction);
+            DeactivateActiveBossProjectiles();
+            context.BossEmitter.SetFiringEnabled(false);
+            context.BossEmitter.SetFiringEnabled(true);
+            if (!context.BossEmitter.QueuePriorityPattern(physicalPattern, 1))
+            {
+                context.Metrics.Notes.Add($"{supportAction.SlotActionName} priority barrage unavailable");
+            }
+
+            yield return ApplyPhysicalBossBarrage(context, PhysicalBarrageProbeFlightSeconds);
+            yield return Advance(context, 1.25f);
+            RecordSupportSummonSnapshot(context, supportAction);
+            context.PocketOwner.Tick(0f);
+            context.Sample();
         }
 
         private static IEnumerator RunPhysicalBarrageProbe(
@@ -2582,6 +2710,49 @@ namespace DimensionBrawl.Tests
             }
         }
 
+        private static void RecordSupportSummonUse(
+            CombatPolicyContext context,
+            PlayerSupportSummonSlotAction action)
+        {
+            context.Metrics.SummonUses++;
+            context.Metrics.HighestSummonSpentTier = Mathf.Max(
+                context.Metrics.HighestSummonSpentTier,
+                action.LastSpentTier);
+            if (context.Metrics.FirstSummonUseAtSeconds < 0f)
+            {
+                context.Metrics.FirstSummonUseAtSeconds = context.Metrics.ElapsedSeconds;
+            }
+
+            RecordSupportSummonSnapshot(context, action);
+        }
+
+        private static void RecordSupportSummonSnapshot(
+            CombatPolicyContext context,
+            PlayerSupportSummonSlotAction action)
+        {
+            if (action == null)
+            {
+                return;
+            }
+
+            context.Metrics.SupportSummonSlotId = action.SlotActionName;
+            context.Metrics.SupportSummonRequiredMana = action.RequiredSummonMana;
+            context.Metrics.SupportSummonSpentTier = Mathf.Max(
+                context.Metrics.SupportSummonSpentTier,
+                action.LastSpentTier);
+            context.Metrics.SupportSummonActorRoleId = action.LastSummonActorRoleId ?? string.Empty;
+            context.Metrics.SupportSummonVolleyWaves = Mathf.Max(
+                context.Metrics.SupportSummonVolleyWaves,
+                action.TotalVolleyWaveCount);
+            context.Metrics.SupportSummonBlocks = Mathf.Max(
+                context.Metrics.SupportSummonBlocks,
+                action.TotalPressureScreenInterceptCount);
+            context.Metrics.SupportSummonMaxActiveActors = Mathf.Max(
+                context.Metrics.SupportSummonMaxActiveActors,
+                action.ActiveSummonActorCount);
+            context.Metrics.SupportSummonActorHealthRatio = action.LastSummonActorHealthRatio;
+        }
+
         private static void RecordSkillUse(CombatPolicyContext context)
         {
             context.Metrics.SkillUses++;
@@ -2918,6 +3089,8 @@ namespace DimensionBrawl.Tests
             AppendEnergySpendDecisionRoute(builder, results);
             builder.AppendLine();
             AppendEnergySpendRecoveryRoute(builder, results);
+            builder.AppendLine();
+            AppendSupportSummonRouteIdentity(builder, results);
             builder.AppendLine();
             AppendSummonRosterIdentityAudit(builder, results);
             builder.AppendLine();
@@ -3458,8 +3631,8 @@ namespace DimensionBrawl.Tests
         {
             builder.AppendLine("## Policy Repeatability Gate");
             builder.AppendLine($"Repeated sample count: `{RepeatabilityProbeRuns}` per selected policy. This gate checks structural direction, not exact identical numbers.");
-            builder.AppendLine("| Policy | Runs | Result set | HP lost min/avg/max | Boss dmg min/avg/max | Player hits min/max | Blocks min/max | Skill1 min/max | Micro hit min/max | Seq hit min/max | Verdict |");
-            builder.AppendLine("|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---|");
+            builder.AppendLine("| Policy | Runs | Result set | HP lost min/avg/max | Boss dmg min/avg/max | Player hits min/max | Blocks min/max | Support proj min/max | Skill1 min/max | Micro hit min/max | Seq hit min/max | Verdict |");
+            builder.AppendLine("|---|---:|---|---:|---:|---:|---:|---:|---:|---:|---:|---|");
             for (int i = 0; i < RepeatabilityPolicyOrder.Length; i++)
             {
                 AppendPolicyRepeatabilityRow(builder, repeatabilityResults, RepeatabilityPolicyOrder[i]);
@@ -3495,6 +3668,10 @@ namespace DimensionBrawl.Tests
             builder.Append(FormatMinMax(
                 MinMetric(repeatabilityResults, policy, result => result.SummonBlocks),
                 MaxMetric(repeatabilityResults, policy, result => result.SummonBlocks)));
+            builder.Append(" | ");
+            builder.Append(FormatMinMax(
+                MinMetric(repeatabilityResults, policy, result => result.SupportSummonProjectileHits),
+                MaxMetric(repeatabilityResults, policy, result => result.SupportSummonProjectileHits)));
             builder.Append(" | ");
             builder.Append(FormatMinMax(
                 MinMetric(repeatabilityResults, policy, result => result.SkillProjectileHits),
@@ -4076,6 +4253,85 @@ namespace DimensionBrawl.Tests
             builder.Append(" | ");
             builder.Append(EscapeTable(ResolveEnergySpendDecisionRead(result)));
             builder.AppendLine(" |");
+        }
+
+        private static void AppendSupportSummonRouteIdentity(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results)
+        {
+            builder.AppendLine("## Support Summon Route Identity");
+            builder.AppendLine("- ArkData lens: the same forward-risk pressure slot is answered by different roster rows, so cost and effect identity must show as route-outcome separation before UI polish.");
+            builder.AppendLine("| Policy | Slot | Mana | Spent tier | Role | Volley waves | Blocks | Projectile hits B/S/Body | Physical hits/dmg | Boss dmg P/S | Ally clash/body | Actor max/HP | Result | Read |");
+            builder.AppendLine("|---|---|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|---|---|");
+            AppendSupportSummonRouteIdentityRow(
+                builder,
+                RequireResult(results, PolicyKind.ForwardRiskSlot2MarksmanRoute));
+            AppendSupportSummonRouteIdentityRow(
+                builder,
+                RequireResult(results, PolicyKind.ForwardRiskSlot3VanguardRoute));
+        }
+
+        private static void AppendSupportSummonRouteIdentityRow(StringBuilder builder, PolicyMetrics result)
+        {
+            builder.Append("| ");
+            builder.Append(result.Policy);
+            builder.Append(" | ");
+            builder.Append(EscapeTable(result.SupportSummonSlotId));
+            builder.Append(" | ");
+            builder.Append(result.SupportSummonRequiredMana.ToString("0.#"));
+            builder.Append(" | ");
+            builder.Append(result.SupportSummonSpentTier);
+            builder.Append(" | ");
+            builder.Append(EscapeTable(result.SupportSummonActorRoleId));
+            builder.Append(" | ");
+            builder.Append(result.SupportSummonVolleyWaves);
+            builder.Append(" | ");
+            builder.Append(result.SupportSummonBlocks);
+            builder.Append(" | ");
+            builder.Append(
+                $"{result.SupportSummonProjectileBossHits}/{result.SupportSummonProjectileEnemySummonHits}/{result.SupportSummonProjectileEnemyBodyHits}");
+            builder.Append(" | ");
+            builder.Append($"{result.PhysicalBarragePlayerHits}/{result.PhysicalBarragePlayerDamage:0.0}");
+            builder.Append(" | ");
+            builder.Append($"{result.BossDamageFromPlayer:0.0}/{result.BossDamageFromAllySummon:0.0}");
+            builder.Append(" | ");
+            builder.Append($"{result.AllyFrontlineClashes}/{result.AllyFrontlineBodyHits}");
+            builder.Append(" | ");
+            builder.Append($"{result.SupportSummonMaxActiveActors}/{FormatPercent01(result.SupportSummonActorHealthRatio)}");
+            builder.Append(" | ");
+            builder.Append(EscapeTable(result.ResultKind));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveSupportSummonRouteRead(result)));
+            builder.AppendLine(" |");
+        }
+
+        private static string ResolveSupportSummonRouteRead(PolicyMetrics result)
+        {
+            if (result.Policy == PolicyKind.ForwardRiskSlot2MarksmanRoute)
+            {
+                if (result.SupportSummonBlocks > 0)
+                {
+                    return "marksman identity contaminated by screen block";
+                }
+
+                if (result.SupportSummonProjectileBossHits > 0)
+                {
+                    return "marksman contributes boss-lane fire but leaves physical pressure";
+                }
+
+                return result.SupportSummonProjectileEnemySummonHits > 0
+                    ? "marksman suppresses enemy frontline but leaves physical pressure"
+                    : "marksman did not produce target-confirmed pressure";
+            }
+
+            if (result.Policy == PolicyKind.ForwardRiskSlot3VanguardRoute)
+            {
+                return result.SupportSummonBlocks > 0
+                    ? "vanguard spends more mana to hold the barrage line"
+                    : "vanguard did not prove screen hold";
+            }
+
+            return "not a support-summon route";
         }
 
         private static void AppendSummonRosterIdentityAudit(
@@ -4915,6 +5171,42 @@ namespace DimensionBrawl.Tests
             }
         }
 
+        private static void AssertSupportSummonRouteIdentity(
+            PolicyMetrics marksman,
+            PolicyMetrics vanguard)
+        {
+            Assert.AreEqual("SummonSlot2", marksman.SupportSummonSlotId);
+            Assert.AreEqual("SummonSlot3", vanguard.SupportSummonSlotId);
+            Assert.AreEqual(200f, marksman.SupportSummonRequiredMana, 0.001f);
+            Assert.AreEqual(300f, vanguard.SupportSummonRequiredMana, 0.001f);
+            Assert.AreEqual(2, marksman.SupportSummonSpentTier);
+            Assert.AreEqual(3, vanguard.SupportSummonSpentTier);
+            Assert.AreEqual("BacklineMarksman", marksman.SupportSummonActorRoleId);
+            Assert.AreEqual("VanguardCommander", vanguard.SupportSummonActorRoleId);
+            Assert.Greater(marksman.SupportSummonVolleyWaves, 0);
+            Assert.Greater(vanguard.SupportSummonVolleyWaves, 0);
+            Assert.AreEqual(
+                0,
+                marksman.SupportSummonBlocks,
+                "Slot2 should remain a marksman route without secretly gaining a pressure screen.");
+            Assert.Greater(
+                vanguard.SupportSummonBlocks,
+                0,
+                "Slot3 should prove its higher-cost vanguard route by blocking physical pressure.");
+            Assert.Greater(
+                marksman.PhysicalBarragePlayerHits,
+                vanguard.PhysicalBarragePlayerHits,
+                "Slot2 should leave more physical barrage risk than the vanguard screen route.");
+            Assert.Greater(
+                marksman.SupportSummonProjectileHits,
+                0,
+                "Slot2 should prove the marksman route contributes target-confirmed summon fire.");
+            Assert.Greater(
+                marksman.SupportSummonProjectileBossHits + marksman.SupportSummonProjectileEnemySummonHits,
+                0,
+                "Slot2 marksman fire should hit the boss lane or suppress hostile frontline summons.");
+        }
+
         private static SummonRosterAuditRow[] BuildSummonRosterAuditRows(IReadOnlyList<PolicyMetrics> results)
         {
             float[] sharedCosts = ResolveSharedSummonTierCosts(results);
@@ -5269,6 +5561,19 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"bossProjectilesHitPlayer\": {result.BossProjectilesHitPlayer},");
                 builder.AppendLine($"      \"summonUses\": {result.SummonUses},");
                 builder.AppendLine($"      \"summonBlocks\": {result.SummonBlocks},");
+                builder.AppendLine($"      \"supportSummonSlotId\": \"{JsonEscape(result.SupportSummonSlotId)}\",");
+                builder.AppendLine($"      \"supportSummonRequiredMana\": {result.SupportSummonRequiredMana:0.###},");
+                builder.AppendLine($"      \"supportSummonSpentTier\": {result.SupportSummonSpentTier},");
+                builder.AppendLine($"      \"supportSummonActorRoleId\": \"{JsonEscape(result.SupportSummonActorRoleId)}\",");
+                builder.AppendLine($"      \"supportSummonVolleyWaves\": {result.SupportSummonVolleyWaves},");
+                builder.AppendLine($"      \"supportSummonBlocks\": {result.SupportSummonBlocks},");
+                builder.AppendLine($"      \"supportSummonMaxActiveActors\": {result.SupportSummonMaxActiveActors},");
+                builder.AppendLine($"      \"supportSummonActorHealthRatio\": {result.SupportSummonActorHealthRatio:0.###},");
+                builder.AppendLine($"      \"supportSummonProjectileHits\": {result.SupportSummonProjectileHits},");
+                builder.AppendLine($"      \"supportSummonProjectileBossHits\": {result.SupportSummonProjectileBossHits},");
+                builder.AppendLine($"      \"supportSummonProjectileEnemySummonHits\": {result.SupportSummonProjectileEnemySummonHits},");
+                builder.AppendLine($"      \"supportSummonProjectileEnemyBodyHits\": {result.SupportSummonProjectileEnemyBodyHits},");
+                builder.AppendLine($"      \"supportSummonProjectileOtherHits\": {result.SupportSummonProjectileOtherHits},");
                 builder.AppendLine($"      \"skillUses\": {result.SkillUses},");
                 builder.AppendLine($"      \"skillProjectileHits\": {result.SkillProjectileHits},");
                 builder.AppendLine($"      \"skillProjectilesBlockedByBossScreen\": {result.SkillProjectilesBlockedByBossScreen},");
@@ -5591,6 +5896,14 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"physicalBarrageTrackedProjectileCount\": {result.PhysicalBarrageTrackedProjectileCount},");
                 builder.AppendLine($"      \"physicalBarragePlayerDamage\": {result.PhysicalBarragePlayerDamage:0.###},");
                 builder.AppendLine($"      \"summonBlocks\": {result.SummonBlocks},");
+                builder.AppendLine($"      \"supportSummonSlotId\": \"{JsonEscape(result.SupportSummonSlotId)}\",");
+                builder.AppendLine($"      \"supportSummonBlocks\": {result.SupportSummonBlocks},");
+                builder.AppendLine($"      \"supportSummonRequiredMana\": {result.SupportSummonRequiredMana:0.###},");
+                builder.AppendLine($"      \"supportSummonSpentTier\": {result.SupportSummonSpentTier},");
+                builder.AppendLine($"      \"supportSummonProjectileHits\": {result.SupportSummonProjectileHits},");
+                builder.AppendLine($"      \"supportSummonProjectileBossHits\": {result.SupportSummonProjectileBossHits},");
+                builder.AppendLine($"      \"supportSummonProjectileEnemySummonHits\": {result.SupportSummonProjectileEnemySummonHits},");
+                builder.AppendLine($"      \"supportSummonProjectileEnemyBodyHits\": {result.SupportSummonProjectileEnemyBodyHits},");
                 builder.AppendLine($"      \"skillProjectileHits\": {result.SkillProjectileHits},");
                 builder.AppendLine($"      \"followupHitCount\": {result.FollowupHitCount},");
                 builder.AppendLine($"      \"followupMissCount\": {result.FollowupMissCount},");
@@ -5960,6 +6273,10 @@ namespace DimensionBrawl.Tests
                     return IsEnergyRecoveryRouteRepeatabilityPass(result, 2);
                 case PolicyKind.ForwardRiskTier3RecoveryRoute:
                     return IsEnergyDirectPayoffRouteRepeatabilityPass(result);
+                case PolicyKind.ForwardRiskSlot2MarksmanRoute:
+                    return IsSupportMarksmanRouteRepeatabilityPass(result);
+                case PolicyKind.ForwardRiskSlot3VanguardRoute:
+                    return IsSupportVanguardRouteRepeatabilityPass(result);
                 case PolicyKind.BossScreenIgnoredNoRecovery:
                     return !result.IsClearResult
                         && result.EnemyFrontlineBodyHits > 0
@@ -6029,6 +6346,29 @@ namespace DimensionBrawl.Tests
                 && result.SkillProjectileHits > 0
                 && ResolveFirstUnresolvedBeat(result) == "Complete"
                 && result.ResultRecords > 0;
+        }
+
+        private static bool IsSupportMarksmanRouteRepeatabilityPass(PolicyMetrics result)
+        {
+            return result.SupportSummonSlotId == "SummonSlot2"
+                && result.SupportSummonRequiredMana >= 199f
+                && result.SupportSummonSpentTier == 2
+                && result.SupportSummonActorRoleId == "BacklineMarksman"
+                && result.SupportSummonVolleyWaves > 0
+                && result.SupportSummonBlocks == 0
+                && result.SupportSummonProjectileHits > 0
+                && result.SupportSummonProjectileBossHits + result.SupportSummonProjectileEnemySummonHits > 0;
+        }
+
+        private static bool IsSupportVanguardRouteRepeatabilityPass(PolicyMetrics result)
+        {
+            return result.SupportSummonSlotId == "SummonSlot3"
+                && result.SupportSummonRequiredMana >= 299f
+                && result.SupportSummonSpentTier == 3
+                && result.SupportSummonActorRoleId == "VanguardCommander"
+                && result.SupportSummonVolleyWaves > 0
+                && result.SupportSummonBlocks > 0
+                && result.PhysicalBarragePlayerHits == 0;
         }
 
         private static int CountPolicyResults(IReadOnlyList<PolicyMetrics> results, PolicyKind policy)
@@ -6226,6 +6566,24 @@ namespace DimensionBrawl.Tests
             return component;
         }
 
+        private static PlayerSupportSummonSlotAction RequireSupportSummonAction(
+            GameObject gameObject,
+            string slotActionName)
+        {
+            PlayerSupportSummonSlotAction[] actions = gameObject.GetComponents<PlayerSupportSummonSlotAction>();
+            for (int i = 0; i < actions.Length; i++)
+            {
+                PlayerSupportSummonSlotAction action = actions[i];
+                if (action != null && string.Equals(action.SlotActionName, slotActionName, StringComparison.Ordinal))
+                {
+                    return action;
+                }
+            }
+
+            Assert.Fail($"{gameObject.name} is missing support summon action {slotActionName}.");
+            return null;
+        }
+
         private static T RequireObject<T>() where T : Component
         {
             T[] found = Object.FindObjectsByType<T>(
@@ -6401,6 +6759,8 @@ namespace DimensionBrawl.Tests
                 PlayerRangedBasicAttackAction rangedBasicAttack,
                 PlayerSkill1Action skill1Action,
                 PlayerSummonSlot1Action summonSlot1Action,
+                PlayerSupportSummonSlotAction summonSlot2Action,
+                PlayerSupportSummonSlotAction summonSlot3Action,
                 SummonEnergyLadder energyLadder,
                 SummonEnergyVfxCuePresenter energyVfxCuePresenter,
                 PlayerCombatTargetSelector targetSelector,
@@ -6425,6 +6785,8 @@ namespace DimensionBrawl.Tests
                 RangedBasicAttack = rangedBasicAttack;
                 Skill1Action = skill1Action;
                 SummonSlot1Action = summonSlot1Action;
+                SummonSlot2Action = summonSlot2Action;
+                SummonSlot3Action = summonSlot3Action;
                 EnergyLadder = energyLadder;
                 EnergyVfxCuePresenter = energyVfxCuePresenter;
                 TargetSelector = targetSelector;
@@ -6461,6 +6823,10 @@ namespace DimensionBrawl.Tests
                 BossHealth.Damaged += OnBossDamaged;
                 CloseThreatHealth.Damaged += OnCloseThreatDamaged;
                 SummonSlot1Action.SummonPressureBlocked += OnSummonPressureBlocked;
+                SummonSlot2Action.SummonPressureBlocked += OnSupportSummonPressureBlocked;
+                SummonSlot3Action.SummonPressureBlocked += OnSupportSummonPressureBlocked;
+                SummonSlot2Action.SummonProjectileDamageApplied += OnSupportSummonProjectileDamageApplied;
+                SummonSlot3Action.SummonProjectileDamageApplied += OnSupportSummonProjectileDamageApplied;
                 BossSummonPressureAction.PressureSummonReleased += OnBossPressureSummonReleased;
                 BossSummonPressureAction.PressureSummonIntercepted += OnBossPressureSummonIntercepted;
                 PocketOwner.SummonFollowupWindowOpened += OnSummonFollowupWindowOpened;
@@ -6476,6 +6842,8 @@ namespace DimensionBrawl.Tests
             public PlayerRangedBasicAttackAction RangedBasicAttack { get; }
             public PlayerSkill1Action Skill1Action { get; }
             public PlayerSummonSlot1Action SummonSlot1Action { get; }
+            public PlayerSupportSummonSlotAction SummonSlot2Action { get; }
+            public PlayerSupportSummonSlotAction SummonSlot3Action { get; }
             public SummonEnergyLadder EnergyLadder { get; }
             public SummonEnergyVfxCuePresenter EnergyVfxCuePresenter { get; }
             public PlayerCombatTargetSelector TargetSelector { get; }
@@ -7301,6 +7669,10 @@ namespace DimensionBrawl.Tests
                 BossHealth.Damaged -= OnBossDamaged;
                 CloseThreatHealth.Damaged -= OnCloseThreatDamaged;
                 SummonSlot1Action.SummonPressureBlocked -= OnSummonPressureBlocked;
+                SummonSlot2Action.SummonPressureBlocked -= OnSupportSummonPressureBlocked;
+                SummonSlot3Action.SummonPressureBlocked -= OnSupportSummonPressureBlocked;
+                SummonSlot2Action.SummonProjectileDamageApplied -= OnSupportSummonProjectileDamageApplied;
+                SummonSlot3Action.SummonProjectileDamageApplied -= OnSupportSummonProjectileDamageApplied;
                 BossSummonPressureAction.PressureSummonReleased -= OnBossPressureSummonReleased;
                 BossSummonPressureAction.PressureSummonIntercepted -= OnBossPressureSummonIntercepted;
                 PocketOwner.SummonFollowupWindowOpened -= OnSummonFollowupWindowOpened;
@@ -7386,6 +7758,65 @@ namespace DimensionBrawl.Tests
                 {
                     Metrics.FirstSummonBlockAtSeconds = Metrics.ElapsedSeconds;
                 }
+            }
+
+            private void OnSupportSummonPressureBlocked(PlayerSupportSummonSlotAction action, int tier)
+            {
+                Metrics.SummonBlocks++;
+                Metrics.SupportSummonBlocks++;
+                Metrics.HighestSummonBlockTier = Mathf.Max(Metrics.HighestSummonBlockTier, tier);
+                if (action != null)
+                {
+                    Metrics.SupportSummonSlotId = action.SlotActionName;
+                    Metrics.SupportSummonSpentTier = Mathf.Max(Metrics.SupportSummonSpentTier, action.LastSpentTier);
+                    Metrics.SupportSummonRequiredMana = action.RequiredSummonMana;
+                    Metrics.SupportSummonActorRoleId = action.LastSummonActorRoleId;
+                }
+
+                if (Metrics.FirstSummonBlockAtSeconds < 0f)
+                {
+                    Metrics.FirstSummonBlockAtSeconds = Metrics.ElapsedSeconds;
+                }
+            }
+
+            private void OnSupportSummonProjectileDamageApplied(
+                PlayerSupportSummonSlotAction action,
+                LaneActionProjectile projectile,
+                CombatHealth targetHealth,
+                Vector3 impactPoint,
+                Vector3 impactDirection)
+            {
+                if (action != null)
+                {
+                    Metrics.SupportSummonSlotId = action.SlotActionName;
+                    Metrics.SupportSummonSpentTier = Mathf.Max(Metrics.SupportSummonSpentTier, action.LastSpentTier);
+                    Metrics.SupportSummonRequiredMana = action.RequiredSummonMana;
+                    Metrics.SupportSummonActorRoleId = action.LastSummonActorRoleId;
+                }
+
+                Metrics.SupportSummonProjectileHits++;
+                if (targetHealth == BossHealth)
+                {
+                    Metrics.SupportSummonProjectileBossHits++;
+                    return;
+                }
+
+                if (targetHealth != null && targetHealth.Team == DamageTeam.Enemy)
+                {
+                    SummonFrontlineProxy targetProxy = targetHealth.GetComponentInParent<SummonFrontlineProxy>();
+                    if (targetProxy != null)
+                    {
+                        Metrics.SupportSummonProjectileEnemySummonHits++;
+                    }
+                    else
+                    {
+                        Metrics.SupportSummonProjectileEnemyBodyHits++;
+                    }
+
+                    return;
+                }
+
+                Metrics.SupportSummonProjectileOtherHits++;
             }
 
             private void OnBossPressureSummonReleased(BossSummonPressureAction action, int tier)
@@ -7592,6 +8023,19 @@ namespace DimensionBrawl.Tests
             public int BossProjectilesHitPlayer { get; set; }
             public int SummonUses { get; set; }
             public int SummonBlocks { get; set; }
+            public string SupportSummonSlotId { get; set; } = string.Empty;
+            public float SupportSummonRequiredMana { get; set; }
+            public int SupportSummonSpentTier { get; set; }
+            public string SupportSummonActorRoleId { get; set; } = string.Empty;
+            public int SupportSummonVolleyWaves { get; set; }
+            public int SupportSummonBlocks { get; set; }
+            public int SupportSummonMaxActiveActors { get; set; }
+            public float SupportSummonActorHealthRatio { get; set; }
+            public int SupportSummonProjectileHits { get; set; }
+            public int SupportSummonProjectileBossHits { get; set; }
+            public int SupportSummonProjectileEnemySummonHits { get; set; }
+            public int SupportSummonProjectileEnemyBodyHits { get; set; }
+            public int SupportSummonProjectileOtherHits { get; set; }
             public int HighestSummonBlockTier { get; set; }
             public int SkillUses { get; set; }
             public int SkillProjectileHits { get; set; }

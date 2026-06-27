@@ -107,6 +107,7 @@ namespace DimensionBrawl.Player
 
         public event Action<PlayerSupportSummonSlotAction, int> SummonUsed;
         public event Action<PlayerSupportSummonSlotAction, int> SummonPressureBlocked;
+        public event Action<PlayerSupportSummonSlotAction, LaneActionProjectile, CombatHealth, Vector3, Vector3> SummonProjectileDamageApplied;
 
         private SupportSummonSlotExecutor Executor => executor ??= new SupportSummonSlotExecutor(this);
 
@@ -315,6 +316,15 @@ namespace DimensionBrawl.Player
             lastPressureScreenInterceptTier = Mathf.Clamp(tier, 1, 3);
             totalPressureScreenInterceptCount++;
             SummonPressureBlocked?.Invoke(this, lastPressureScreenInterceptTier);
+        }
+
+        internal void NotifySummonProjectileDamageApplied(
+            LaneActionProjectile projectile,
+            CombatHealth targetHealth,
+            Vector3 impactPoint,
+            Vector3 impactDirection)
+        {
+            SummonProjectileDamageApplied?.Invoke(this, projectile, targetHealth, impactPoint, impactDirection);
         }
 
         internal float ResolveEntryLaneZ(float playerLaneZ)

@@ -966,3 +966,27 @@ Boundary:
 - This corrects the resource trigger data behind future ready feedback.
 - It does not introduce Blue Archive-style coaster UI, final icon/audio feedback, reward economy, roster inventory, or a broad summon manager.
 - The next measured pass should use this cost identity to test whether Slot2 and Slot3 create distinct route outcomes, not stop at the fact that the costs are now visible.
+
+## 2026-06-27 Policy Report Lock: Support Summon Route Identity
+
+The explicit per-summon mana contract now feeds a route-outcome comparison instead of stopping at cost labels. The missing CombatPayload piece was target-confirmed support summon fire: the report must say what each support summon hit, not only whether the boss HP changed.
+
+Checkpoint evidence:
+
+- `PlayerSupportSummonSlotAction` now exposes support projectile damage events from `SupportSummonSlotExecutor`, allowing the policy report to classify support summon projectile hits as boss, enemy summon, enemy body, or other.
+- `ActionFoundationFrontlineCombatPolicyReportTests` now runs `ForwardRiskSlot2MarksmanRoute` and `ForwardRiskSlot3VanguardRoute` under the same forward-risk pressure and physical `LinePressure` follow-up.
+- Focused PlayMode `SupportProjectileTargets-3` passed with one real test run.
+- Latest repeatability: Slot2 is `PASS` across 3 runs with mana `200`, tier `2`, support projectile hits `6/6`, enemy-summon projectile hits `6/6`, blocks `0/0`, and physical player hits `4/4`.
+- Latest repeatability: Slot3 is `PASS` across 3 runs with mana `300`, tier `3`, support projectile hits `4/4`, enemy-summon projectile hits `4/4`, blocks `7/7`, and physical player hits `0/0`.
+
+Interpretation:
+
+- ArkData lesson: the same pressure row can now compare different roster answers as separate stage-route rows instead of treating all summons as the same button.
+- CombatPayload lesson: Slot2 proves `Target -> Hit` against enemy frontline summons while leaving projectile pressure unresolved; Slot3 proves `Block/Status` against the physical line while also contributing frontline hits.
+- PGR/Blue Archive-style motivation lesson: ready/cost feedback will only matter if the button meaning is this distinct. Slot2 asks "suppress the enemy frontline but accept risk"; Slot3 asks "pay more to hold the line."
+
+Boundary:
+
+- This is a measurement and route-identity checkpoint, not final balance.
+- Do not turn this into final coaster UI, icons, audio, roster inventory, rarity, upgrade economy, or a broad summon manager.
+- The next measured pass should decide whether the Slot2 suppressor path needs a clearer tactical payoff or whether the stage should make the Slot2 physical-risk tradeoff more readable.
