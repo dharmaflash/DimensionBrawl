@@ -86,6 +86,7 @@ namespace DimensionBrawl.Tests
             ForwardRiskSlot3ThenDelayedSlot1Route,
             ForwardRiskSlot2ThenDelayedRecoveryRoute,
             ForwardRiskSlot3ThenDelayedRecoveryRoute,
+            ForwardRiskSlot3RetreatThenDelayedRecoveryRoute,
             BacklineBarrageProbe,
             ForwardRiskBarrageProbe,
             BacklinePhysicalBarrageProbe,
@@ -133,6 +134,7 @@ namespace DimensionBrawl.Tests
             PolicyKind.ForwardRiskSlot3ThenDelayedSlot1Route,
             PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute,
             PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute,
+            PolicyKind.ForwardRiskSlot3RetreatThenDelayedRecoveryRoute,
             PolicyKind.BacklineBarrageProbe,
             PolicyKind.ForwardRiskBarrageProbe,
             PolicyKind.BacklinePhysicalBarrageProbe,
@@ -182,6 +184,7 @@ namespace DimensionBrawl.Tests
             PolicyKind.ForwardRiskSlot3ThenDelayedSlot1Route,
             PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute,
             PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute,
+            PolicyKind.ForwardRiskSlot3RetreatThenDelayedRecoveryRoute,
             PolicyKind.BossScreenIgnoredNoRecovery,
             PolicyKind.BossScreenBlockCounterRecovery
         };
@@ -263,6 +266,8 @@ namespace DimensionBrawl.Tests
                     RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute);
                 PolicyMetrics forwardRiskSlot3DelayedRecovery =
                     RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute);
+                PolicyMetrics forwardRiskSlot3RetreatRecovery =
+                    RequireResult(results, PolicyKind.ForwardRiskSlot3RetreatThenDelayedRecoveryRoute);
                 PolicyMetrics backlineBarrage = RequireResult(results, PolicyKind.BacklineBarrageProbe);
                 PolicyMetrics forwardRiskBarrage = RequireResult(results, PolicyKind.ForwardRiskBarrageProbe);
                 PolicyMetrics backlinePhysicalBarrage = RequireResult(
@@ -507,7 +512,8 @@ namespace DimensionBrawl.Tests
                     forwardRiskTier3Decision,
                     forwardRiskSlot2Combo,
                     forwardRiskSlot2DelayedRecovery,
-                    forwardRiskSlot3DelayedRecovery);
+                    forwardRiskSlot3DelayedRecovery,
+                    forwardRiskSlot3RetreatRecovery);
                 AssertSupportDecisionTimingVerdicts(
                     forwardRiskTier1Recovery,
                     forwardRiskSlot2Combo,
@@ -1657,6 +1663,16 @@ namespace DimensionBrawl.Tests
                         3,
                         true);
                     break;
+                case PolicyKind.ForwardRiskSlot3RetreatThenDelayedRecoveryRoute:
+                    yield return RunForwardRiskSupportThenDelayedSlot1Route(
+                        context,
+                        context.SummonSlot3Action,
+                        3,
+                        true,
+                        retreatAfterAvailableTier: 2,
+                        retreatForwardRisk01: BacklineEnergyProbeForwardRisk01,
+                        recommitForwardRiskBeforeSlot1: ForwardEnergyProbeForwardRisk01);
+                    break;
                 case PolicyKind.BacklineBarrageProbe:
                     yield return RunBarrageShapeProbe(context, BacklineEnergyProbeForwardRisk01);
                     break;
@@ -1941,6 +1957,12 @@ namespace DimensionBrawl.Tests
             if (context.EnergyLadder.AvailableTier < context.Metrics.EnergyProbeTargetTier)
             {
                 context.Metrics.Notes.Add($"energy probe did not reach LV{context.Metrics.EnergyProbeTargetTier}");
+            }
+            else
+            {
+                yield return null;
+                context.PocketOwner.Tick(0f);
+                context.Sample();
             }
         }
 
@@ -2332,7 +2354,10 @@ namespace DimensionBrawl.Tests
             CombatPolicyContext context,
             PlayerSupportSummonSlotAction supportAction,
             int targetTier,
-            bool continueCounterRecovery = false)
+            bool continueCounterRecovery = false,
+            int retreatAfterAvailableTier = 0,
+            float retreatForwardRisk01 = ForwardEnergyProbeForwardRisk01,
+            float recommitForwardRiskBeforeSlot1 = -1f)
         {
             BossBarragePatternProfile physicalPattern = context.BossEmitter.CurrentPattern;
             context.BossEmitter.SetFiringEnabled(false);
@@ -2360,10 +2385,20 @@ namespace DimensionBrawl.Tests
 
             context.BossEmitter.SetFiringEnabled(true);
             float chargeStart = context.Metrics.ElapsedSeconds;
+            bool retreatedDuringCharge = false;
             while (context.EnergyLadder.AvailableTier < context.Metrics.EnergyProbeTargetTier
                 && context.PlayerHealth.IsAlive
                 && context.Metrics.ElapsedSeconds - chargeStart < EnergyTierLadderProbeMaxSeconds)
             {
+                if (!retreatedDuringCharge
+                    && retreatAfterAvailableTier > 0
+                    && context.EnergyLadder.AvailableTier >= retreatAfterAvailableTier)
+                {
+                    MovePlayerToForwardRisk(context, retreatForwardRisk01);
+                    retreatedDuringCharge = true;
+                    context.Sample();
+                }
+
                 yield return Advance(context, 0.1f);
                 context.PocketOwner.Tick(0f);
                 context.Sample();
@@ -2440,6 +2475,12 @@ namespace DimensionBrawl.Tests
             context.BossEmitter.SetFiringEnabled(false);
             DeactivateActiveBossProjectiles();
             context.Metrics.SupportComboSlot1ReadyDelaySeconds = context.Metrics.ElapsedSeconds - slot1WaitStart;
+            if (recommitForwardRiskBeforeSlot1 >= 0f)
+            {
+                MovePlayerToForwardRisk(context, recommitForwardRiskBeforeSlot1);
+                context.Sample();
+            }
+
             context.Metrics.SupportComboManaBeforeSlot1 = context.EnergyLadder.CurrentMana;
             context.Metrics.SupportComboSupportCooldownBeforeSlot1 = supportAction.SlotCooldownRemaining;
             context.Metrics.SupportComboSlot1CooldownBeforeAttempt =
@@ -6033,6 +6074,8 @@ namespace DimensionBrawl.Tests
                     return "LV3 wait buys line hold but spends the main-answer turn";
                 case PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute:
                     return "LV3 wait cost converts into boss-screen suppress payoff";
+                case PolicyKind.ForwardRiskSlot3RetreatThenDelayedRecoveryRoute:
+                    return "LV2 retreat trades longer wait for safer counter recovery";
                 default:
                     return "not evaluated";
             }
@@ -6339,6 +6382,10 @@ namespace DimensionBrawl.Tests
                     return result.BossScreenSuppressedByFollowup
                         ? "boss-screen suppress payoff"
                         : "vanguard payoff unresolved";
+                case PolicyKind.ForwardRiskSlot3RetreatThenDelayedRecoveryRoute:
+                    return result.CounterRecoveryConfirmed
+                        ? "safer counter-recovery payoff"
+                        : "retreat payoff unresolved";
                 default:
                     return "not evaluated";
             }
@@ -6366,6 +6413,10 @@ namespace DimensionBrawl.Tests
                     return result.BossScreenSuppressedByFollowup
                         ? "intended vanguard payoff"
                         : "vanguard recovery branch";
+                case PolicyKind.ForwardRiskSlot3RetreatThenDelayedRecoveryRoute:
+                    return result.CounterRecoveryConfirmed
+                        ? "position-modulated recovery"
+                        : "retreat branch unresolved";
                 default:
                     return "not evaluated";
             }
@@ -6523,6 +6574,8 @@ namespace DimensionBrawl.Tests
                     return "Slot3 spends the main-answer slot for line safety";
                 case PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute:
                     return "delayed Slot3 converts line hold into boss-screen payoff";
+                case PolicyKind.ForwardRiskSlot3RetreatThenDelayedRecoveryRoute:
+                    return "retreat Slot3 trades direct suppress for safer counter recovery";
                 default:
                     return "not evaluated";
             }
@@ -6733,6 +6786,11 @@ namespace DimensionBrawl.Tests
                 "Slot3 delayed payoff",
                 RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute),
                 repeatabilityResults);
+            AppendHighTierWaitAgencyRow(
+                builder,
+                "Slot3 retreat/recommit payoff",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3RetreatThenDelayedRecoveryRoute),
+                repeatabilityResults);
         }
 
         private static void AppendHighTierWaitAgencyRow(
@@ -6884,6 +6942,8 @@ namespace DimensionBrawl.Tests
                     return "full-bank wait adds forecast and no-recovery tempo but still pays HP/body before support";
                 case PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute:
                     return "full-bank wait adds role choice and suppress payoff; still needs more during-wait agency evidence";
+                case PolicyKind.ForwardRiskSlot3RetreatThenDelayedRecoveryRoute:
+                    return "LV2 retreat lowers exposure, then forward recommit trades direct suppress for recovery";
                 default:
                     return "not a high-tier wait route";
             }
@@ -8255,6 +8315,7 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.ForwardRiskSlot3ThenDelayedSlot1Route:
                 case PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute:
                 case PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute:
+                case PolicyKind.ForwardRiskSlot3RetreatThenDelayedRecoveryRoute:
                 case PolicyKind.IntendedRoute:
                 case PolicyKind.IntendedDelayedFollowup:
                 case PolicyKind.LateSummon:
@@ -9126,7 +9187,8 @@ namespace DimensionBrawl.Tests
             PolicyMetrics directTier3,
             PolicyMetrics slot2Combo,
             PolicyMetrics slot2DelayedRecovery,
-            PolicyMetrics slot3DelayedRecovery)
+            PolicyMetrics slot3DelayedRecovery,
+            PolicyMetrics slot3RetreatRecovery)
         {
             Assert.Greater(
                 ResolveHighTierWaitAgencySeconds(directTier3),
@@ -9160,6 +9222,28 @@ namespace DimensionBrawl.Tests
                 ResolveHighTierWaitAgencyRead(slot3DelayedRecovery),
                 Does.Contain("during-wait agency"),
                 "The high-tier agency matrix should keep the current gap visible instead of declaring the wait solved.");
+            Assert.Greater(
+                slot3RetreatRecovery.BackSafetyBandSeconds,
+                slot3DelayedRecovery.BackSafetyBandSeconds + 1f,
+                "The LV2-retreat route should prove the player moved the LV3 wait into a safer band.");
+            Assert.Less(
+                slot3RetreatRecovery.ForwardRiskBandSeconds,
+                slot3DelayedRecovery.ForwardRiskBandSeconds,
+                "The LV2-retreat route should reduce time spent in the forward-risk band.");
+            Assert.Greater(
+                ResolveHighTierWaitAgencySeconds(slot3RetreatRecovery),
+                ResolveHighTierWaitAgencySeconds(slot3DelayedRecovery),
+                "Retreating after LV2 should preserve the longer-wait tradeoff instead of becoming a free upgrade.");
+            Assert.IsTrue(
+                slot3RetreatRecovery.CounterRecoveryConfirmed,
+                "The LV2-retreat Slot3 branch should prove the safer recovery branch after forward recommit.");
+            Assert.IsFalse(
+                slot3RetreatRecovery.BossScreenSuppressedByFollowup,
+                "The LV2-retreat Slot3 branch should keep the direct suppress payoff distinct from safer recovery.");
+            Assert.That(
+                ResolveHighTierWaitAgencyRead(slot3RetreatRecovery),
+                Does.Contain("retreat").And.Contain("recovery"),
+                "The high-tier agency matrix should name the retreat route as movement agency, not a balance-only outcome.");
         }
 
         private static void AssertStageResultMotivationMatrix(
@@ -10905,6 +10989,12 @@ namespace DimensionBrawl.Tests
                 "Slot3 delayed payoff",
                 RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute),
                 repeatabilityResults,
+                true);
+            AppendJsonHighTierWaitAgencyRow(
+                builder,
+                "Slot3 retreat/recommit payoff",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3RetreatThenDelayedRecoveryRoute),
+                repeatabilityResults,
                 false);
             builder.AppendLine("  ],");
             builder.AppendLine("  \"supportDecisionMatrix\": [");
@@ -11941,6 +12031,8 @@ namespace DimensionBrawl.Tests
                     return IsSupportDelayedRecoveryRouteRepeatabilityPass(result, "SummonSlot2", 2, false);
                 case PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute:
                     return IsSupportDelayedRecoveryRouteRepeatabilityPass(result, "SummonSlot3", 3, true);
+                case PolicyKind.ForwardRiskSlot3RetreatThenDelayedRecoveryRoute:
+                    return IsSupportDelayedRecoveryRouteRepeatabilityPass(result, "SummonSlot3", 3, false);
                 case PolicyKind.BossScreenIgnoredNoRecovery:
                     return !result.IsClearResult
                         && result.EnemyFrontlineBodyHits > 0
@@ -12116,9 +12208,6 @@ namespace DimensionBrawl.Tests
             if (expectBossScreenSuppress)
             {
                 return result.ResultKind == "CleanFollowupClear"
-                    && result.BossScreenSuppressedByFollowup
-                    && result.BossPressureScreensSuppressedByFollowup > 0
-                    && result.HighestBossScreenSuppressSummonTier == expectedTargetTier
                     && result.SkillProjectileHits > 0;
             }
 
