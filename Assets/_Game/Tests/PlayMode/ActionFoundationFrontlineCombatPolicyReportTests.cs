@@ -362,6 +362,12 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("HP before main min/avg/max"),
                     "The support decision matrix should expose repeated HP-before-main bands for route comparison.");
                 Assert.IsTrue(
+                    markdown.Contains("## Support Payoff Vector Matrix"),
+                    "The report should split support payoff into damage, prevention, and relock vectors before tuning summon roles.");
+                Assert.IsTrue(
+                    markdown.Contains("damage route, no relock"),
+                    "The support payoff vector should keep Slot2's marksman payoff distinct from Slot3's prevention payoff.");
+                Assert.IsTrue(
                     markdown.Contains("## Support Stage-Slot Timeline Matrix"),
                     "The report should expose support choices as ordered stage slots, not only balance rows.");
                 Assert.IsTrue(
@@ -415,6 +421,9 @@ namespace DimensionBrawl.Tests
                     json.Contains("\"supportDecisionMatrix\""),
                     "The JSON report should expose support decision repeat-band evidence for follow-up batch comparisons.");
                 Assert.IsTrue(
+                    json.Contains("\"supportPayoffVectorMatrix\""),
+                    "The JSON report should expose support payoff vectors for automated damage/prevention comparison.");
+                Assert.IsTrue(
                     json.Contains("\"samplePayoff\""),
                     "The JSON route dominance evidence should label the single sample payoff explicitly.");
                 Assert.IsTrue(
@@ -460,6 +469,11 @@ namespace DimensionBrawl.Tests
                 AssertCombatDecisionSignalRepeatability(repeatabilityResults);
                 AssertSupportDecisionTimingVerdicts(
                     forwardRiskTier1Recovery,
+                    forwardRiskSlot2Combo,
+                    forwardRiskSlot2DelayedRecovery,
+                    forwardRiskSlot3Blocked,
+                    forwardRiskSlot3DelayedRecovery);
+                AssertSupportPayoffVectorMatrix(
                     forwardRiskSlot2Combo,
                     forwardRiskSlot2DelayedRecovery,
                     forwardRiskSlot3Blocked,
@@ -3629,6 +3643,8 @@ namespace DimensionBrawl.Tests
             builder.AppendLine();
             AppendSupportDecisionMatrixSummary(builder, results, repeatabilityResults);
             builder.AppendLine();
+            AppendSupportPayoffVectorMatrix(builder, results, repeatabilityResults);
+            builder.AppendLine();
             AppendSupportStageSlotTimelineMatrix(builder, results, repeatabilityResults);
             builder.AppendLine();
             AppendSummonSlotReadinessCooldownMatrix(builder, results);
@@ -5473,6 +5489,153 @@ namespace DimensionBrawl.Tests
         private static string FormatSupportDecisionTimeDamage(PolicyMetrics result)
         {
             return $"{FormatSeconds(result.ElapsedSeconds)} / {result.BossDamageTaken:0.0}";
+        }
+
+        private static void AppendSupportPayoffVectorMatrix(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults)
+        {
+            builder.AppendLine("## Support Payoff Vector Matrix");
+            builder.AppendLine("- ArkData/CombatPayload lens: support payoff should separate damage, prevention, and relock cost instead of treating every slot as a damage race.");
+            builder.AppendLine("| Choice | Policy | Sample damage vector | Prevention vector | Relock cost | Repeat damage band | Repeat prevention band | Payoff read |");
+            builder.AppendLine("|---|---|---|---|---|---|---|---|");
+            AppendSupportPayoffVectorRow(
+                builder,
+                "Slot1 LV1 recovery",
+                RequireResult(results, PolicyKind.ForwardRiskTier1RecoveryRoute),
+                repeatabilityResults);
+            AppendSupportPayoffVectorRow(
+                builder,
+                "Slot2 full-bank combo",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute),
+                repeatabilityResults);
+            AppendSupportPayoffVectorRow(
+                builder,
+                "Slot2 delayed recovery",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute),
+                repeatabilityResults);
+            AppendSupportPayoffVectorRow(
+                builder,
+                "Slot3 immediate lockout",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute),
+                repeatabilityResults);
+            AppendSupportPayoffVectorRow(
+                builder,
+                "Slot3 delayed recovery",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute),
+                repeatabilityResults);
+        }
+
+        private static void AppendSupportPayoffVectorRow(
+            StringBuilder builder,
+            string choice,
+            PolicyMetrics result,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults)
+        {
+            builder.Append("| ");
+            builder.Append(EscapeTable(choice));
+            builder.Append(" | ");
+            builder.Append(result.Policy);
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportPayoffDamageVector(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportPayoffPreventionVector(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportPayoffRelockCost(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportPayoffRepeatDamageBand(repeatabilityResults, result.Policy)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportPayoffRepeatPreventionBand(repeatabilityResults, result.Policy)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveSupportPayoffVectorRead(result)));
+            builder.AppendLine(" |");
+        }
+
+        private static string FormatSupportPayoffDamageVector(PolicyMetrics result)
+        {
+            return $"boss {result.BossDamageTaken:0.0}, player/ally {result.BossDamageFromPlayer:0.0}/{result.BossDamageFromAllySummon:0.0}";
+        }
+
+        private static string FormatSupportPayoffPreventionVector(PolicyMetrics result)
+        {
+            return $"blocks {result.SupportSummonBlocks}, support hits E/B {result.SupportSummonProjectileEnemySummonHits}/{result.SupportSummonProjectileBossHits}, physical hits {result.PhysicalBarragePlayerHits}/{result.PhysicalBarrageTrackedProjectileCount}, suppress {FormatSupportDecisionBossSuppress(result)}";
+        }
+
+        private static string FormatSupportPayoffRelockCost(PolicyMetrics result)
+        {
+            return $"counter {result.CounterWaves}, body hits {result.EnemyFrontlineBodyHits}, unresolved {ResolveFirstUnresolvedBeat(result)}";
+        }
+
+        private static string FormatSupportPayoffRepeatDamageBand(
+            IReadOnlyList<PolicyMetrics> repeatabilityResults,
+            PolicyKind policy)
+        {
+            if (CountPolicyResults(repeatabilityResults, policy) <= 0)
+            {
+                return "not repeated";
+            }
+
+            return "boss "
+                + FormatMinAverageMax(
+                    MinMetric(repeatabilityResults, policy, result => result.BossDamageTaken),
+                    AverageMetric(repeatabilityResults, policy, result => result.BossDamageTaken),
+                    MaxMetric(repeatabilityResults, policy, result => result.BossDamageTaken))
+                + "; ally "
+                + FormatMinAverageMax(
+                    MinMetric(repeatabilityResults, policy, result => result.BossDamageFromAllySummon),
+                    AverageMetric(repeatabilityResults, policy, result => result.BossDamageFromAllySummon),
+                    MaxMetric(repeatabilityResults, policy, result => result.BossDamageFromAllySummon));
+        }
+
+        private static string FormatSupportPayoffRepeatPreventionBand(
+            IReadOnlyList<PolicyMetrics> repeatabilityResults,
+            PolicyKind policy)
+        {
+            if (CountPolicyResults(repeatabilityResults, policy) <= 0)
+            {
+                return "not repeated";
+            }
+
+            return "support hits E "
+                + FormatMinAverageMax(
+                    MinMetric(repeatabilityResults, policy, result => result.SupportSummonProjectileEnemySummonHits),
+                    AverageMetric(repeatabilityResults, policy, result => result.SupportSummonProjectileEnemySummonHits),
+                    MaxMetric(repeatabilityResults, policy, result => result.SupportSummonProjectileEnemySummonHits))
+                + "; blocks "
+                + FormatMinAverageMax(
+                    MinMetric(repeatabilityResults, policy, result => result.SupportSummonBlocks),
+                    AverageMetric(repeatabilityResults, policy, result => result.SupportSummonBlocks),
+                    MaxMetric(repeatabilityResults, policy, result => result.SupportSummonBlocks))
+                + "; suppress "
+                + FormatMinAverageMax(
+                    MinMetric(repeatabilityResults, policy, result => result.BossPressureScreensSuppressedByFollowup),
+                    AverageMetric(repeatabilityResults, policy, result => result.BossPressureScreensSuppressedByFollowup),
+                    MaxMetric(repeatabilityResults, policy, result => result.BossPressureScreensSuppressedByFollowup))
+                + "; counter "
+                + FormatMinAverageMax(
+                    MinMetric(repeatabilityResults, policy, result => result.CounterWaves),
+                    AverageMetric(repeatabilityResults, policy, result => result.CounterWaves),
+                    MaxMetric(repeatabilityResults, policy, result => result.CounterWaves));
+        }
+
+        private static string ResolveSupportPayoffVectorRead(PolicyMetrics result)
+        {
+            switch (result.Policy)
+            {
+                case PolicyKind.ForwardRiskTier1RecoveryRoute:
+                    return "baseline recovery damage";
+                case PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute:
+                    return "damage route, no relock";
+                case PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute:
+                    return "damage recovered through relock";
+                case PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute:
+                    return "prevention-only until recharge";
+                case PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute:
+                    return "prevention route, boss-screen suppress";
+                default:
+                    return "unclassified support payoff";
+            }
         }
 
         private static string ResolveSupportDecisionPayoffVerdict(PolicyMetrics result)
@@ -8612,6 +8775,46 @@ namespace DimensionBrawl.Tests
                 "Slot3 delayed should preserve its high-cost boss-screen suppress payoff.");
         }
 
+        private static void AssertSupportPayoffVectorMatrix(
+            PolicyMetrics slot2Combo,
+            PolicyMetrics slot2DelayedRecovery,
+            PolicyMetrics slot3Blocked,
+            PolicyMetrics slot3DelayedRecovery)
+        {
+            Assert.Greater(
+                slot2Combo.BossDamageFromAllySummon,
+                0f,
+                "Slot2 full-bank should keep a marksman damage contribution, not become only a prevention route.");
+            Assert.AreEqual(
+                0,
+                slot2Combo.CounterWaves,
+                "Slot2 full-bank should stay the no-relock support damage route.");
+            Assert.Greater(
+                slot2DelayedRecovery.CounterWaves,
+                0,
+                "Slot2 delayed should remain distinguishable as a recovery/relock branch.");
+            Assert.Greater(
+                slot3Blocked.SupportSummonBlocks,
+                0,
+                "Slot3 immediate should prove vanguard line prevention even when it spends the main-answer slot.");
+            Assert.AreEqual(
+                "ScreenCurtain",
+                ResolveFirstUnresolvedBeat(slot3Blocked),
+                "Slot3 immediate should still show that prevention alone is not the clear payoff.");
+            Assert.Greater(
+                slot3DelayedRecovery.BossPressureScreensSuppressedByFollowup,
+                slot2Combo.BossPressureScreensSuppressedByFollowup,
+                "Slot3 delayed should keep the vanguard-specific boss-screen suppress payoff.");
+            Assert.Less(
+                slot3DelayedRecovery.BossDamageTaken,
+                slot2DelayedRecovery.BossDamageTaken,
+                "Slot3 delayed should not be judged as a pure damage replacement for the recovery route.");
+            Assert.AreEqual(
+                "support_vanguard_clear",
+                ResolveResultHookClass(slot3DelayedRecovery),
+                "Slot3 delayed should keep its prevention payoff result hook.");
+        }
+
         private static void AssertSupportStageSlotTimelineMatrix(
             PolicyMetrics slot2Combo,
             PolicyMetrics slot2DelayedRecovery,
@@ -9607,6 +9810,38 @@ namespace DimensionBrawl.Tests
                 repeatabilityResults,
                 false);
             builder.AppendLine("  ],");
+            builder.AppendLine("  \"supportPayoffVectorMatrix\": [");
+            AppendJsonSupportPayoffVectorRow(
+                builder,
+                "Slot1 LV1 recovery",
+                RequireResult(results, PolicyKind.ForwardRiskTier1RecoveryRoute),
+                repeatabilityResults,
+                true);
+            AppendJsonSupportPayoffVectorRow(
+                builder,
+                "Slot2 full-bank combo",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute),
+                repeatabilityResults,
+                true);
+            AppendJsonSupportPayoffVectorRow(
+                builder,
+                "Slot2 delayed recovery",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute),
+                repeatabilityResults,
+                true);
+            AppendJsonSupportPayoffVectorRow(
+                builder,
+                "Slot3 immediate lockout",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute),
+                repeatabilityResults,
+                true);
+            AppendJsonSupportPayoffVectorRow(
+                builder,
+                "Slot3 delayed recovery",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute),
+                repeatabilityResults,
+                false);
+            builder.AppendLine("  ],");
             builder.AppendLine("  \"supportStageSlotTimelineMatrix\": [");
             AppendJsonSupportStageSlotTimelineRow(
                 builder,
@@ -9807,6 +10042,42 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"      \"resultHookClass\": \"{JsonEscape(ResolveResultHookClass(result))}\",");
             builder.AppendLine($"      \"timingVerdict\": \"{JsonEscape(ResolveSupportDecisionTimingVerdict(result))}\",");
             builder.AppendLine($"      \"payoffVerdict\": \"{JsonEscape(ResolveSupportDecisionPayoffVerdict(result))}\"");
+            builder.Append("    }");
+            builder.AppendLine(appendComma ? "," : string.Empty);
+        }
+
+        private static void AppendJsonSupportPayoffVectorRow(
+            StringBuilder builder,
+            string choice,
+            PolicyMetrics result,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults,
+            bool appendComma)
+        {
+            PolicyKind policy = result.Policy;
+            builder.AppendLine("    {");
+            builder.AppendLine($"      \"choice\": \"{JsonEscape(choice)}\",");
+            builder.AppendLine($"      \"policy\": \"{policy}\",");
+            builder.AppendLine($"      \"sampleDamageVector\": \"{JsonEscape(FormatSupportPayoffDamageVector(result))}\",");
+            builder.AppendLine($"      \"samplePreventionVector\": \"{JsonEscape(FormatSupportPayoffPreventionVector(result))}\",");
+            builder.AppendLine($"      \"sampleRelockCost\": \"{JsonEscape(FormatSupportPayoffRelockCost(result))}\",");
+            builder.AppendLine($"      \"repeatDamageBand\": \"{JsonEscape(FormatSupportPayoffRepeatDamageBand(repeatabilityResults, policy))}\",");
+            builder.AppendLine($"      \"repeatPreventionBand\": \"{JsonEscape(FormatSupportPayoffRepeatPreventionBand(repeatabilityResults, policy))}\",");
+            builder.AppendLine($"      \"payoffRead\": \"{JsonEscape(ResolveSupportPayoffVectorRead(result))}\",");
+            builder.AppendLine($"      \"bossDamageTaken\": {result.BossDamageTaken:0.###},");
+            builder.AppendLine($"      \"bossDamageFromPlayer\": {result.BossDamageFromPlayer:0.###},");
+            builder.AppendLine($"      \"bossDamageFromAllySummon\": {result.BossDamageFromAllySummon:0.###},");
+            builder.AppendLine($"      \"supportSummonBlocks\": {result.SupportSummonBlocks},");
+            builder.AppendLine($"      \"supportSummonProjectileEnemySummonHits\": {result.SupportSummonProjectileEnemySummonHits},");
+            builder.AppendLine($"      \"supportSummonProjectileBossHits\": {result.SupportSummonProjectileBossHits},");
+            builder.AppendLine($"      \"enemyFrontlineBodyHits\": {result.EnemyFrontlineBodyHits},");
+            builder.AppendLine($"      \"bossPressureScreensSuppressedByFollowup\": {result.BossPressureScreensSuppressedByFollowup},");
+            builder.AppendLine($"      \"counterWaves\": {result.CounterWaves},");
+            builder.AppendLine($"      \"repeatBossDamageAverage\": {JsonNullableMetric(AverageMetric(repeatabilityResults, policy, repeated => repeated.BossDamageTaken))},");
+            builder.AppendLine($"      \"repeatAllyBossDamageAverage\": {JsonNullableMetric(AverageMetric(repeatabilityResults, policy, repeated => repeated.BossDamageFromAllySummon))},");
+            builder.AppendLine($"      \"repeatSupportEnemyHitsAverage\": {JsonNullableMetric(AverageMetric(repeatabilityResults, policy, repeated => repeated.SupportSummonProjectileEnemySummonHits))},");
+            builder.AppendLine($"      \"repeatSupportBlocksAverage\": {JsonNullableMetric(AverageMetric(repeatabilityResults, policy, repeated => repeated.SupportSummonBlocks))},");
+            builder.AppendLine($"      \"repeatBossSuppressAverage\": {JsonNullableMetric(AverageMetric(repeatabilityResults, policy, repeated => repeated.BossPressureScreensSuppressedByFollowup))},");
+            builder.AppendLine($"      \"repeatCounterWavesAverage\": {JsonNullableMetric(AverageMetric(repeatabilityResults, policy, repeated => repeated.CounterWaves))}");
             builder.Append("    }");
             builder.AppendLine(appendComma ? "," : string.Empty);
         }
