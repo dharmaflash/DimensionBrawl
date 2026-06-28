@@ -27,11 +27,11 @@ MonoBehaviour:
     note: Local UI shell version label.
   - key: ui.login.status
     domain: Login
-    value: 로컬 신호 연결
+    value: "로컬 신호 연결"
     note: Local UI shell status label.
   - key: ui.lobby.primary_cta
     domain: Lobby
-    value: 차원 안정화
+    value: "차원 안정화"
     note: Primary route into mission prep.
   - key: ui.lobby.guide_name
     domain: Lobby
@@ -39,36 +39,40 @@ MonoBehaviour:
     note: Temporary guide speaker label.
   - key: ui.lobby.guide_default
     domain: Lobby
-    value: 신호가 안정되면 작전 경로를 선택해 주세요.
+    value: "신호가 안정되면 작전 경로를 선택해 주세요."
     note: Default guide line.
+  - key: ui.lobby.operation_entry
+    domain: Lobby
+    value: "작전 경로 확인. 챕터 맵으로 이동합니다."
+    note: Short lobby beat before opening the stage-select route.
   - key: ui.lobby.guide_return_combat
     domain: Lobby
-    value: 전투 HUD 신호를 회수했습니다. 다음 경로를 대기합니다.
+    value: "전투 신호를 회수했습니다. 다음 경로를 대기합니다."
     note: Mock return-from-combat signboard line.
   - key: ui.lobby.guide_reward_mock
     domain: Lobby
-    value: 분석 대기 신호가 있습니다. 결과 화면에서 확인해 주세요.
+    value: "분석 대기 신호가 있습니다. 결과 화면에서 확인해 주세요."
     note: Mock reward signboard line.
   - key: ui.lobby.guide_summon_ready_mock
     domain: Lobby
-    value: 지원 슬롯 신호가 준비되었습니다. 실제 호출은 아직 대기 중입니다.
+    value: "지원 슬롯 신호가 준비되었습니다. 실제 호출은 아직 대기 중입니다."
     note: Mock summon-ready signboard line.
   - key: ui.lobby.guide_retry_prompt
     domain: Lobby
-    value: 경로를 다시 확인하고 재진입해 주세요.
+    value: "경로를 다시 확인하고 재진입해 주세요."
     note: Mock retry signboard line.
   - key: ui.lobby.guide_character_tapped
     domain: Lobby
-    value: 다음 지시를 기다리고 있습니다.
+    value: "다음 지시를 기다리고 있습니다."
     note: Character tap signboard line.
   - key: ui.stage.title
     domain: StageSelect
-    value: 차원 균열의 징후
+    value: "차원 균열의 징후"
     note: UI-only stage display name.
   - key: ui.stage.start
     domain: StageSelect
-    value: 작전 시작
-    note: Starts HUD test route only.
+    value: "작전 시작"
+    note: Starts the configured combat route only.
   - key: ui.combat.objective
     domain: CombatHud
     value: 균열 표식으로 접근
@@ -87,7 +91,7 @@ MonoBehaviour:
     note: No real settings persistence.
   - key: ui.common.back
     domain: Common
-    value: 뒤로가기
+    value: "뒤로가기"
     note: Navigation label.
   - key: ui.common.disabled
     domain: Common
@@ -107,19 +111,19 @@ MonoBehaviour:
     note: Accessibility narration placeholder.
   - key: ui.login.start.narration
     domain: Login
-    value: 로비로 진입합니다.
+    value: "로비로 진입합니다."
     note: Narration placeholder.
   - key: ui.lobby.primary_cta.narration
     domain: Lobby
-    value: 작전 준비 화면을 엽니다.
+    value: "작전 준비 화면을 엽니다."
     note: Narration placeholder.
   - key: ui.stage.start.narration
     domain: StageSelect
-    value: 작전 구역으로 진입합니다.
+    value: "작전 구역으로 진입합니다."
     note: Narration placeholder.
   - key: ui.stage.back.narration
     domain: StageSelect
-    value: 로비로 돌아갑니다.
+    value: "로비로 돌아갑니다."
     note: Narration placeholder.
   - key: ui.combat.basic_attack
     domain: CombatHud

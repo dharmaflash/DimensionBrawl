@@ -3,6 +3,9 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 namespace DimensionBrawl.UI
 {
@@ -40,6 +43,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private UIScrollRectMotionPresenter chapterScrollMotion;
         [SerializeField] private StageFocusEntry[] stageFocusEntries = Array.Empty<StageFocusEntry>();
         [SerializeField] private bool focusSelectedStageOnEnable = true;
+        [SerializeField] private bool backWithEscape = true;
         [SerializeField, Min(0f)] private float focusDelaySeconds = 0.02f;
         [SerializeField, Min(0f)] private float initialFocusDurationSeconds = 0.18f;
         [SerializeField, Min(0f)] private float selectedFocusDurationSeconds = 0.3f;
@@ -85,6 +89,14 @@ namespace DimensionBrawl.UI
             }
         }
 
+        private void Update()
+        {
+            if (backWithEscape && WasBackPressedThisFrame())
+            {
+                HandleBackClicked();
+            }
+        }
+
         public void SelectStage(string stageId)
         {
             if (string.IsNullOrWhiteSpace(stageId))
@@ -109,6 +121,11 @@ namespace DimensionBrawl.UI
 
         public void HandleBackClicked()
         {
+            if (router != null && router.IsRouting)
+            {
+                return;
+            }
+
             backRequested.Invoke();
 
             if (router != null)
@@ -223,6 +240,22 @@ namespace DimensionBrawl.UI
             {
                 target.text = value;
             }
+        }
+
+        private static bool WasBackPressedThisFrame()
+        {
+#if ENABLE_INPUT_SYSTEM
+            if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+            {
+                return true;
+            }
+#endif
+
+#if ENABLE_LEGACY_INPUT_MANAGER
+            return Input.GetKeyDown(KeyCode.Escape);
+#else
+            return false;
+#endif
         }
     }
 }

@@ -14,22 +14,37 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UILoadingCardDeck
   cards:
   - id: title_ambient_start
-    title: Signal Wake
-    description: The test title fades into the lobby without account or server ownership.
+    title: 신호 기동
+    description: 타이틀에서 로비로 진입하며 로컬 UI 상태를 준비합니다.
+    backgroundSprite: {fileID: 21300000, guid: 85b874a381914e4a8c1e44211fa298c3, type: 3}
     weight: 5
   - id: lobby_primary_cta_anchor
-    title: 차원 안정화 대기
-    description: 로비에서 감지된 균열 신호가 작전 준비 단계로 이어집니다.
+    title: 작전 연결
+    description: 로비 입력을 잠그고 챕터 경로로 전환합니다.
+    backgroundSprite: {fileID: 21300000, guid: 85b874a381914e4a8c1e44211fa298c3, type: 3}
     weight: 4
   - id: stage_card_expand
     title: 작전 브리핑
-    description: 균열 신호와 권장 지원 정보를 확인합니다.
+    description: 선택한 작전의 목표, 위협, 권장 지원 정보를 확인합니다.
+    backgroundSprite: {fileID: 21300000, guid: 85b874a381914e4a8c1e44211fa298c3, type: 3}
+    weight: 4
+  - id: loading_story_v1_training_route
+    title: 균열 신호
+    description: 하층 세계의 경계면에 얕은 균열이 퍼지고 있습니다. 신호를 따라 진입 지점을 고정하세요.
+    backgroundSprite: {fileID: 21300000, guid: 85b874a381914e4a8c1e44211fa298c3, type: 3}
+    weight: 4
+  - id: loading_story_v1_retry_route
+    title: 뒤틀린 거리
+    description: 이전 경로는 불안정하지만 남은 신호가 재진입 경로를 안내합니다.
+    backgroundSprite: {fileID: 21300000, guid: 85b874a381914e4a8c1e44211fa298c3, type: 3}
     weight: 4
   - id: stage_to_combat_mood_bridge
     title: 차원 진입
-    description: 흔들리는 균열을 지나 작전 구역으로 진입합니다.
+    description: 작전 경로를 고정했습니다. 전투 구역으로 진입합니다.
+    backgroundSprite: {fileID: 21300000, guid: 85b874a381914e4a8c1e44211fa298c3, type: 3}
     weight: 4
   - id: combat_start_banner
-    title: HUD 준비
-    description: 목표, 지원 슬롯, 결과 신호를 동기화합니다.
+    title: 전투 동기화
+    description: 목표와 지원 상태를 전투 루프에 맞춰 동기화합니다.
+    backgroundSprite: {fileID: 21300000, guid: 85b874a381914e4a8c1e44211fa298c3, type: 3}
     weight: 4
