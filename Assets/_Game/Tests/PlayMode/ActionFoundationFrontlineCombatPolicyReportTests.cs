@@ -394,6 +394,9 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("## Route Motivation/Dominance Matrix"),
                     "The report should compare clear-route motivation before tuning one fastest route into every answer.");
                 Assert.IsTrue(
+                    markdown.Contains("High-tier movement agency"),
+                    "The structural gate summary should keep the high-tier movement choice visible before detailed tables.");
+                Assert.IsTrue(
                     markdown.Contains("| Route role | Policy | Cost/risk | Sample payoff | Result hook | Repeat band | Decision read |"),
                     "The route dominance matrix should separate one sample payoff from the repeated evidence band.");
                 Assert.IsTrue(
@@ -402,6 +405,9 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(
                     markdown.Contains("Guided clean loop | IntendedRoute | close hits"),
                     "The route dominance matrix should keep the guided clean loop visible.");
+                Assert.IsTrue(
+                    markdown.Contains("Slot3 retreat recovery | ForwardRiskSlot3RetreatThenDelayedRecoveryRoute"),
+                    "The route dominance matrix should compare Slot3 hold-front payoff against the retreat/recommit recovery route.");
                 Assert.IsFalse(
                     markdown.Contains("Guided clean loop | IntendedRoute | close hits 6, charge -"),
                     "The guided clean loop cost read should expose summon/block timing instead of a missing generic charge field.");
@@ -440,6 +446,9 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(
                     json.Contains("\"routeMotivationDominanceMatrix\""),
                     "The JSON report should expose clear-route dominance evidence for follow-up batch comparisons.");
+                Assert.IsTrue(
+                    json.Contains("\"routeRole\": \"Slot3 retreat recovery\""),
+                    "The JSON route dominance evidence should expose the Slot3 retreat/recommit agency branch.");
                 Assert.IsTrue(
                     json.Contains("\"highTierWaitAgencyMatrix\""),
                     "The JSON report should expose high-tier wait agency evidence for follow-up batch comparisons.");
@@ -562,7 +571,8 @@ namespace DimensionBrawl.Tests
                     forwardRiskTier3Decision,
                     blockedRecovery,
                     forwardRiskSlot2Combo,
-                    forwardRiskSlot3DelayedRecovery);
+                    forwardRiskSlot3DelayedRecovery,
+                    forwardRiskSlot3RetreatRecovery);
                 Assert.Greater(intended.SummonBlocks, 0, "The intended route must prove summon interception changes the run.");
                 Assert.AreEqual(
                     0,
@@ -4677,6 +4687,10 @@ namespace DimensionBrawl.Tests
                 results,
                 PolicyKind.ForwardRiskPhysicalSummonPunishProbe);
             PolicyMetrics highTierSuppress = RequireResult(results, PolicyKind.ForwardRiskTier3DecisionRoute);
+            PolicyMetrics slot3DelayedPayoff =
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute);
+            PolicyMetrics slot3RetreatRecovery =
+                RequireResult(results, PolicyKind.ForwardRiskSlot3RetreatThenDelayedRecoveryRoute);
             PolicyMetrics intended = RequireResult(results, PolicyKind.IntendedRoute);
             PolicyMetrics ignoredRecovery = RequireResult(results, PolicyKind.BossScreenIgnoredNoRecovery);
             PolicyMetrics blockedRecovery = RequireResult(results, PolicyKind.BossScreenBlockCounterRecovery);
@@ -4751,6 +4765,13 @@ namespace DimensionBrawl.Tests
                 && blockedRecovery.EnemyFrontlineBodyHits == 0
                 && blockedRecovery.EnemyFrontlineSummonHits > 0
                 && forwardRiskPhysicalSummonPunish.EnemyFrontlineBodyHits == 0;
+            bool highTierAgencyPass = slot3DelayedPayoff.BossScreenSuppressedByFollowup
+                && slot3RetreatRecovery.CounterRecoveryConfirmed
+                && !slot3RetreatRecovery.BossScreenSuppressedByFollowup
+                && slot3RetreatRecovery.PlayerDamageTaken < slot3DelayedPayoff.PlayerDamageTaken
+                && slot3RetreatRecovery.BackSafetyBandSeconds > slot3DelayedPayoff.BackSafetyBandSeconds + 1f
+                && ResolveHighTierWaitAgencySeconds(slot3RetreatRecovery)
+                    > ResolveHighTierWaitAgencySeconds(slot3DelayedPayoff);
 
             builder.AppendLine("## Structural Gate Summary");
             builder.AppendLine("| Axis | Status | Evidence |");
@@ -4763,6 +4784,8 @@ namespace DimensionBrawl.Tests
                 $"| 3. Hit response and presentation | {FormatGateStatus(axis3Pass)} | player routine hits {noSummon.PlayerNonLockingDamageEvents}/{noSummon.PlayerLockingDamageEvents} non-lock/lock with damage cues {noSummon.PlayerDamageScreenCueRequests}/{noSummon.PlayerDamageFeedbackRequests}; clean route damage cues {forwardRiskPhysicalSummonPunish.PlayerDamageScreenCueRequests}/{forwardRiskPhysicalSummonPunish.PlayerDamageFeedbackRequests}; gun boss chip {gunOnly.BossNonLockingDamageEvents}/{gunOnly.BossLockingDamageEvents}; physical punish boss lock {forwardRiskPhysicalSummonPunish.BossLockingDamageEvents}, hit cues {forwardRiskPhysicalSummonPunish.FollowupHitScreenCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitCameraCueRequests}/{forwardRiskPhysicalSummonPunish.FollowupHitVfxCueRequests} |");
             builder.AppendLine(
                 $"| 4. Enemy pressure actor cost | {FormatGateStatus(axis4Pass)} | no-action body hits {noSummon.EnemyFrontlineBodyHits}; no-punish body hits {forwardRiskPhysicalSummonNoPunish.EnemyFrontlineBodyHits}, damage {forwardRiskPhysicalSummonNoPunish.PlayerDamageTaken:0.0}; ignored boss-screen body hits {ignoredRecovery.EnemyFrontlineBodyHits}, damage {ignoredRecovery.PlayerDamageTaken:0.0}; recovery body/summon hits {blockedRecovery.EnemyFrontlineBodyHits}/{blockedRecovery.EnemyFrontlineSummonHits}, damage {blockedRecovery.PlayerDamageTaken:0.0}; clean punish body hits {forwardRiskPhysicalSummonPunish.EnemyFrontlineBodyHits} |");
+            builder.AppendLine(
+                $"| High-tier movement agency | {FormatGateStatus(highTierAgencyPass)} | hold-front Slot3 wait {FormatSeconds(ResolveHighTierWaitAgencySeconds(slot3DelayedPayoff))}, HP {slot3DelayedPayoff.PlayerDamageTaken:0.0}, suppress {FormatSupportDecisionBossSuppress(slot3DelayedPayoff)}, hook `{ResolveResultHookClass(slot3DelayedPayoff)}`; retreat/recommit wait {FormatSeconds(ResolveHighTierWaitAgencySeconds(slot3RetreatRecovery))}, HP {slot3RetreatRecovery.PlayerDamageTaken:0.0}, back/forward bands {FormatSeconds(slot3RetreatRecovery.BackSafetyBandSeconds)}/{FormatSeconds(slot3RetreatRecovery.ForwardRiskBandSeconds)}, hook `{ResolveResultHookClass(slot3RetreatRecovery)}` |");
             builder.AppendLine(
                 $"| Physical clean route reference | {FormatGateStatus(forwardRiskPhysicalSummonPunish.IsClearResult)} | physical summon-punish clears in {FormatSeconds(forwardRiskPhysicalSummonPunish.ElapsedSeconds)} with {forwardRiskPhysicalSummonPunish.PlayerDamageTaken:0.0} HP lost versus intended route {FormatSeconds(intended.ElapsedSeconds)} / {intended.PlayerDamageTaken:0.0} HP lost |");
         }
@@ -4779,6 +4802,8 @@ namespace DimensionBrawl.Tests
             PolicyMetrics marksmanCombo = RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute);
             PolicyMetrics vanguardPayoff =
                 RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute);
+            PolicyMetrics vanguardRetreatRecovery =
+                RequireResult(results, PolicyKind.ForwardRiskSlot3RetreatThenDelayedRecoveryRoute);
 
             builder.AppendLine("## Route Motivation/Dominance Matrix");
             builder.AppendLine("- ArkData/NIKKE lens: clear routes should expose distinct route motivation, not collapse into one fastest clear or one generic reward row.");
@@ -4814,6 +4839,11 @@ namespace DimensionBrawl.Tests
                 "Slot3 delayed line-hold",
                 vanguardPayoff,
                 FormatRouteMotivationRepeatSignal(repeatabilityResults, vanguardPayoff.Policy));
+            AppendRouteMotivationDominanceRow(
+                builder,
+                "Slot3 retreat recovery",
+                vanguardRetreatRecovery,
+                FormatRouteMotivationRepeatSignal(repeatabilityResults, vanguardRetreatRecovery.Policy));
             builder.Append("- Dominance read: ");
             builder.AppendLine(BuildRouteMotivationDominanceRead(
                 physicalPunish,
@@ -4821,7 +4851,8 @@ namespace DimensionBrawl.Tests
                 counterRecovery,
                 highTierSuppress,
                 marksmanCombo,
-                vanguardPayoff));
+                vanguardPayoff,
+                vanguardRetreatRecovery));
         }
 
         private static void AppendRouteMotivationDominanceRow(
@@ -4871,6 +4902,10 @@ namespace DimensionBrawl.Tests
                         + $"HP {result.PlayerDamageTaken:0.0}";
                 case PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute:
                     return $"cost {result.SupportSummonRequiredMana:0}, Slot1 wait {FormatSeconds(result.SupportComboSlot1ReadyDelaySeconds)}, "
+                        + $"HP {result.PlayerDamageTaken:0.0}";
+                case PolicyKind.ForwardRiskSlot3RetreatThenDelayedRecoveryRoute:
+                    return $"cost {result.SupportSummonRequiredMana:0}, retreat wait {FormatSeconds(ResolveHighTierWaitAgencySeconds(result))}, "
+                        + $"back/forward {FormatSeconds(result.BackSafetyBandSeconds)}/{FormatSeconds(result.ForwardRiskBandSeconds)}, "
                         + $"HP {result.PlayerDamageTaken:0.0}";
                 default:
                     return $"HP {result.PlayerDamageTaken:0.0}, blocks {result.SummonBlocks}";
@@ -4928,6 +4963,8 @@ namespace DimensionBrawl.Tests
                     return "full-bank support preserves Slot1 and adds marksman payoff";
                 case PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute:
                     return "high-cost line hold converts into boss-screen payoff";
+                case PolicyKind.ForwardRiskSlot3RetreatThenDelayedRecoveryRoute:
+                    return "retreat reduces HP exposure but gives up direct suppress for counter recovery";
                 default:
                     return "not evaluated";
             }
@@ -4939,12 +4976,16 @@ namespace DimensionBrawl.Tests
             PolicyMetrics counterRecovery,
             PolicyMetrics highTierSuppress,
             PolicyMetrics marksmanCombo,
-            PolicyMetrics vanguardPayoff)
+            PolicyMetrics vanguardPayoff,
+            PolicyMetrics vanguardRetreatRecovery)
         {
             return $"physical punish is fastest at {FormatSeconds(physicalPunish.ElapsedSeconds)} "
                 + $"versus guided {FormatSeconds(intended.ElapsedSeconds)} and recovery {FormatSeconds(counterRecovery.ElapsedSeconds)}; "
                 + $"the slower HP-cost routes keep separate hooks `{ResolveResultHookClass(highTierSuppress)}`, "
                 + $"`{ResolveResultHookClass(marksmanCombo)}`, and `{ResolveResultHookClass(vanguardPayoff)}`. "
+                + $"Slot3 hold-front versus retreat is a movement trade: {vanguardPayoff.PlayerDamageTaken:0.0} HP / "
+                + $"`{ResolveResultHookClass(vanguardPayoff)}` against {vanguardRetreatRecovery.PlayerDamageTaken:0.0} HP / "
+                + $"`{ResolveResultHookClass(vanguardRetreatRecovery)}`. "
                 + "Decision: preserve route identities and tune only when a route loses its cost/payoff reason.";
         }
 
@@ -9362,7 +9403,8 @@ namespace DimensionBrawl.Tests
             PolicyMetrics highTierSuppress,
             PolicyMetrics counterRecovery,
             PolicyMetrics marksmanCombo,
-            PolicyMetrics vanguardPayoff)
+            PolicyMetrics vanguardPayoff,
+            PolicyMetrics vanguardRetreatRecovery)
         {
             Assert.AreEqual(
                 "CleanFollowupClear",
@@ -9465,6 +9507,28 @@ namespace DimensionBrawl.Tests
                 vanguardPayoff.ElapsedSeconds,
                 marksmanCombo.ElapsedSeconds,
                 "Slot3 vanguard payoff should remain the slower high-cost line-hold branch, not a hidden Slot2 replacement.");
+            Assert.AreEqual(
+                "CounterRecoveryClear",
+                vanguardRetreatRecovery.ResultKind,
+                "Slot3 retreat/recommit should close as a recovery branch, not as the direct vanguard payoff.");
+            Assert.AreEqual(
+                "counter_recovery",
+                ResolveResultHookClass(vanguardRetreatRecovery),
+                "Slot3 retreat/recommit should keep the recovery-specific result hook.");
+            Assert.IsTrue(
+                vanguardRetreatRecovery.CounterRecoveryConfirmed,
+                "Slot3 retreat/recommit should prove the safer counter-recovery payoff.");
+            Assert.IsFalse(
+                vanguardRetreatRecovery.BossScreenSuppressedByFollowup,
+                "Slot3 retreat/recommit should give up the direct boss-screen suppress payoff.");
+            Assert.Less(
+                vanguardRetreatRecovery.PlayerDamageTaken,
+                vanguardPayoff.PlayerDamageTaken,
+                "Slot3 retreat/recommit should reduce HP exposure compared with holding front for the suppress payoff.");
+            Assert.Greater(
+                vanguardRetreatRecovery.BackSafetyBandSeconds,
+                vanguardPayoff.BackSafetyBandSeconds + 1f,
+                "Slot3 retreat/recommit should prove a movement-band decision, not only a delayed spend.");
         }
 
         private static void AssertResultToken(
@@ -10956,6 +11020,12 @@ namespace DimensionBrawl.Tests
                 builder,
                 "Slot3 delayed line-hold",
                 RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute),
+                repeatabilityResults,
+                true);
+            AppendJsonRouteMotivationDominanceRow(
+                builder,
+                "Slot3 retreat recovery",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3RetreatThenDelayedRecoveryRoute),
                 repeatabilityResults,
                 false);
             builder.AppendLine("  ],");
