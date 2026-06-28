@@ -362,6 +362,12 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("## Route Motivation/Dominance Matrix"),
                     "The report should compare clear-route motivation before tuning one fastest route into every answer.");
                 Assert.IsTrue(
+                    markdown.Contains("Guided clean loop | IntendedRoute | close hits"),
+                    "The route dominance matrix should keep the guided clean loop visible.");
+                Assert.IsFalse(
+                    markdown.Contains("Guided clean loop | IntendedRoute | close hits 6, charge -"),
+                    "The guided clean loop cost read should expose summon/block timing instead of a missing generic charge field.");
+                Assert.IsTrue(
                     markdown.Contains("Payoff verdict"),
                     "The support decision read should compare clear time and boss damage before tuning support routes.");
                 Assert.IsTrue(
@@ -4664,7 +4670,10 @@ namespace DimensionBrawl.Tests
                         + $"HP {result.PlayerDamageTaken:0.0}, blocks {result.SummonBlocks}";
                 case PolicyKind.IntendedRoute:
                     return $"close hits {result.CloseThreatBasicHits}, "
-                        + $"charge {FormatSeconds(ResolveEnergyTargetDuration(result))}, HP {result.PlayerDamageTaken:0.0}";
+                        + $"summon at {FormatSeconds(result.FirstSummonUseAtSeconds)}, "
+                        + $"block {FormatSeconds(result.SummonUseToBlockSeconds)}, "
+                        + $"window {FormatSeconds(result.BlockToFollowupWindowSeconds)}, "
+                        + $"HP {result.PlayerDamageTaken:0.0}";
                 case PolicyKind.BossScreenBlockCounterRecovery:
                     return $"counter {result.CounterWaves}, answer {FormatSeconds(result.CounterTriggerToAnswerSeconds)}, "
                         + $"HP {result.PlayerDamageTaken:0.0}";
@@ -8172,6 +8181,18 @@ namespace DimensionBrawl.Tests
                 intended.SummonBlocks,
                 0,
                 "The guided route should keep summon interception as its state transition.");
+            Assert.GreaterOrEqual(
+                intended.FirstSummonUseAtSeconds,
+                0f,
+                "The guided route should expose when the summon answer was spent.");
+            Assert.GreaterOrEqual(
+                intended.SummonUseToBlockSeconds,
+                0f,
+                "The guided route should expose summon spend -> block timing.");
+            Assert.GreaterOrEqual(
+                intended.BlockToFollowupWindowSeconds,
+                0f,
+                "The guided route should expose block -> follow-up window timing.");
             Assert.AreEqual(
                 "clean_survival",
                 ResolveResultHookClass(intended),
