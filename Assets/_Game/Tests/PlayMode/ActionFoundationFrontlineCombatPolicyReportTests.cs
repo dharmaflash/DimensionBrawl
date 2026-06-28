@@ -298,6 +298,12 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("NIKKE stage-result runtime"),
                     "The report should keep stage result/reward boundaries explicit instead of drifting into balance-only tuning.");
                 Assert.IsTrue(
+                    markdown.Contains("support marksman `support_marksman_clear`"),
+                    "The ArkData summary should keep support route result hooks visible at the top level.");
+                Assert.IsTrue(
+                    markdown.Contains("support vanguard `support_vanguard_clear`"),
+                    "The ArkData summary should keep high-cost support payoff hooks visible at the top level.");
+                Assert.IsTrue(
                     markdown.Contains("## Stage Result Hook Contract"),
                     "The report should expose clean/counter/fail result hooks before route details.");
                 Assert.IsTrue(
@@ -6833,6 +6839,9 @@ namespace DimensionBrawl.Tests
                 results,
                 PolicyKind.ForwardRiskPhysicalSummonPunishProbe);
             PolicyMetrics highTierSuppress = RequireResult(results, PolicyKind.ForwardRiskTier3DecisionRoute);
+            PolicyMetrics marksmanClear = RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute);
+            PolicyMetrics vanguardClear =
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute);
             PolicyMetrics intended = RequireResult(results, PolicyKind.IntendedRoute);
             PolicyMetrics delayedIntended = RequireResult(results, PolicyKind.IntendedDelayedFollowup);
             PolicyMetrics ignoredRecovery = RequireResult(results, PolicyKind.BossScreenIgnoredNoRecovery);
@@ -6845,30 +6854,40 @@ namespace DimensionBrawl.Tests
                 && gunOnlySurvival.ResultKind == "PlayerDownFail"
                 && forwardRiskPhysicalSummonPunish.IsClearResult
                 && highTierSuppress.IsClearResult
+                && marksmanClear.IsClearResult
+                && vanguardClear.IsClearResult
                 && physicalCloseChain.IsClearResult
                 && blockedRecovery.ResultKind == "CounterRecoveryClear"
                 && HasSingleReviewOnlyResultHook(noSummonSurvival)
                 && HasSingleReviewOnlyResultHook(gunOnlySurvival)
                 && HasSingleReviewOnlyResultHook(forwardRiskPhysicalSummonPunish)
                 && HasSingleReviewOnlyResultHook(highTierSuppress)
+                && HasSingleReviewOnlyResultHook(marksmanClear)
+                && HasSingleReviewOnlyResultHook(vanguardClear)
                 && HasSingleReviewOnlyResultHook(physicalCloseChain)
                 && HasSingleReviewOnlyResultHook(blockedRecovery)
                 && IsStageResultCopy(noSummonSurvival)
                 && IsStageResultCopy(gunOnlySurvival)
                 && IsStageResultCopy(forwardRiskPhysicalSummonPunish)
                 && IsStageResultCopy(highTierSuppress)
+                && IsStageResultCopy(marksmanClear)
+                && IsStageResultCopy(vanguardClear)
                 && IsStageResultCopy(physicalCloseChain)
                 && IsStageResultCopy(blockedRecovery)
                 && !string.IsNullOrWhiteSpace(noSummonSurvival.ResultRecordTokenId)
                 && !string.IsNullOrWhiteSpace(gunOnlySurvival.ResultRecordTokenId)
                 && !string.IsNullOrWhiteSpace(forwardRiskPhysicalSummonPunish.ResultRecordTokenId)
                 && !string.IsNullOrWhiteSpace(highTierSuppress.ResultRecordTokenId)
+                && !string.IsNullOrWhiteSpace(marksmanClear.ResultRecordTokenId)
+                && !string.IsNullOrWhiteSpace(vanguardClear.ResultRecordTokenId)
                 && !string.IsNullOrWhiteSpace(physicalCloseChain.ResultRecordTokenId)
                 && !string.IsNullOrWhiteSpace(blockedRecovery.ResultRecordTokenId)
                 && !string.IsNullOrWhiteSpace(noSummonSurvival.ResultRecordNextStateHookId)
                 && !string.IsNullOrWhiteSpace(gunOnlySurvival.ResultRecordNextStateHookId)
                 && !string.IsNullOrWhiteSpace(forwardRiskPhysicalSummonPunish.ResultRecordNextStateHookId)
                 && !string.IsNullOrWhiteSpace(highTierSuppress.ResultRecordNextStateHookId)
+                && !string.IsNullOrWhiteSpace(marksmanClear.ResultRecordNextStateHookId)
+                && !string.IsNullOrWhiteSpace(vanguardClear.ResultRecordNextStateHookId)
                 && !string.IsNullOrWhiteSpace(physicalCloseChain.ResultRecordNextStateHookId)
                 && !string.IsNullOrWhiteSpace(blockedRecovery.ResultRecordNextStateHookId);
             bool pressureSlotMeasured = forwardRiskEnergy.EnergyTier1DurationSeconds >= 0f
@@ -6964,7 +6983,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 "| NIKKE stage-result runtime | "
                 + $"{FormatCoverageStatus(stageResultMeasured, "PARTIAL")} | "
-                + $"bad routes commit fail hooks at {FormatSeconds(noSummonSurvival.FirstPlayerDownAtSeconds)} / {FormatSeconds(gunOnlySurvival.FirstPlayerDownAtSeconds)} with copy `{noSummonSurvival.ResultRecordTitle}`/`{gunOnlySurvival.ResultRecordTitle}` and token `{noSummonSurvival.ResultRecordTokenId}->{noSummonSurvival.ResultRecordNextStateHookId}`; clean physical `{ResolveResultHookClass(forwardRiskPhysicalSummonPunish)}` token `{forwardRiskPhysicalSummonPunish.ResultRecordTokenId}->{forwardRiskPhysicalSummonPunish.ResultRecordNextStateHookId}`; LV3 suppress `{ResolveResultHookClass(highTierSuppress)}` token `{highTierSuppress.ResultRecordTokenId}->{highTierSuppress.ResultRecordNextStateHookId}`; live close-chain `{ResolveResultHookClass(physicalCloseChain)}`; boss-screen recovery `{ResolveResultHookClass(blockedRecovery)}` token `{blockedRecovery.ResultRecordTokenId}->{blockedRecovery.ResultRecordNextStateHookId}` | "
+                + $"bad routes commit fail hooks at {FormatSeconds(noSummonSurvival.FirstPlayerDownAtSeconds)} / {FormatSeconds(gunOnlySurvival.FirstPlayerDownAtSeconds)} with copy `{noSummonSurvival.ResultRecordTitle}`/`{gunOnlySurvival.ResultRecordTitle}` and token `{noSummonSurvival.ResultRecordTokenId}->{noSummonSurvival.ResultRecordNextStateHookId}`; clean physical `{ResolveResultHookClass(forwardRiskPhysicalSummonPunish)}` token `{forwardRiskPhysicalSummonPunish.ResultRecordTokenId}->{forwardRiskPhysicalSummonPunish.ResultRecordNextStateHookId}`; LV3 suppress `{ResolveResultHookClass(highTierSuppress)}` token `{highTierSuppress.ResultRecordTokenId}->{highTierSuppress.ResultRecordNextStateHookId}`; support marksman `{ResolveResultHookClass(marksmanClear)}` token `{marksmanClear.ResultRecordTokenId}->{marksmanClear.ResultRecordNextStateHookId}`; support vanguard `{ResolveResultHookClass(vanguardClear)}` token `{vanguardClear.ResultRecordTokenId}->{vanguardClear.ResultRecordNextStateHookId}`; live close-chain `{ResolveResultHookClass(physicalCloseChain)}`; boss-screen recovery `{ResolveResultHookClass(blockedRecovery)}` token `{blockedRecovery.ResultRecordTokenId}->{blockedRecovery.ResultRecordNextStateHookId}` | "
                 + "Reward/item persistence and campaign clear are intentionally not implemented in this V1 combat slice. |");
             builder.AppendLine(
                 "| Stage pressure-slot discipline | "
