@@ -2583,7 +2583,7 @@ namespace DimensionBrawl.Test
 
             if (lastSupportSummonUseSlotId == "SummonSlot3")
             {
-                return "Vanguard hold carried into boss-screen suppression; Skill1 follow-up landed";
+                return "LV3 wait paid off: Vanguard hold carried into boss-screen suppression; Skill1 follow-up landed";
             }
 
             if (IsDirectHighTierSuppressCleanFollowup())
@@ -2605,7 +2605,7 @@ namespace DimensionBrawl.Test
 
             if (lastSupportSummonUseSlotId == "SummonSlot3")
             {
-                return "Vanguard payoff logged: high-cost line hold converted into a direct boss-screen break.";
+                return "Vanguard payoff logged: LV3 wait exposure converted into a direct boss-screen break.";
             }
 
             if (IsDirectHighTierSuppressCleanFollowup())
@@ -2647,7 +2647,7 @@ namespace DimensionBrawl.Test
 
             if (lastSupportSummonUseSlotId == "SummonSlot3")
             {
-                return "Next run: commit Slot3 when line safety is worth the delayed main answer.";
+                return "Next run: commit Slot3 only when the LV3 wait cost is worth line safety and the delayed main answer.";
             }
 
             if (IsDirectHighTierSuppressCleanFollowup())

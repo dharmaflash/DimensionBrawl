@@ -717,12 +717,12 @@ namespace DimensionBrawl.Tests
                     forwardRiskSlot3Delayed,
                     "CleanFollowupClear",
                     "Vanguard payoff logged",
-                    "Slot3",
+                    "LV3 wait cost",
                     "The Slot3 delayed payoff should commit a vanguard-specific support payoff hook.");
                 AssertStageResultCopy(
                     forwardRiskSlot3Delayed,
                     "PRESSURE BROKEN",
-                    "Vanguard hold",
+                    "LV3 wait",
                     "The Slot3 delayed payoff result should name the vanguard hold payoff.");
                 Assert.AreEqual(
                     "support_vanguard_clear",
