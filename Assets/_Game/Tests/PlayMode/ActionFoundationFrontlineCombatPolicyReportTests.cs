@@ -377,6 +377,9 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("## Support Upgrade Delta Matrix"),
                     "The report should expose the marginal LV2-to-LV3 wait cost before changing support payoff tuning.");
                 Assert.IsTrue(
+                    markdown.Contains("## Support Upgrade Decision Readout Matrix"),
+                    "The report should connect visible summon readouts to measured LV2/LV3 tradeoffs before HUD polish.");
+                Assert.IsTrue(
                     markdown.Contains("## Support Stage-Slot Timeline Matrix"),
                     "The report should expose support choices as ordered stage slots, not only balance rows.");
                 Assert.IsTrue(
@@ -441,6 +444,9 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(
                     json.Contains("\"supportUpgradeDeltaMatrix\""),
                     "The JSON report should expose marginal support upgrade costs for automated LV2/LV3 route comparisons.");
+                Assert.IsTrue(
+                    json.Contains("\"supportUpgradeDecisionReadoutMatrix\""),
+                    "The JSON report should expose support upgrade readout evidence for automated LV2/LV3 choice comparisons.");
                 Assert.IsTrue(
                     json.Contains("\"samplePayoff\""),
                     "The JSON route dominance evidence should label the single sample payoff explicitly.");
@@ -507,6 +513,10 @@ namespace DimensionBrawl.Tests
                     forwardRiskSlot3Blocked,
                     forwardRiskSlot3DelayedRecovery);
                 AssertSupportUpgradeDeltaMatrix(
+                    forwardRiskSlot2Combo,
+                    forwardRiskSlot2DelayedRecovery,
+                    forwardRiskSlot3DelayedRecovery);
+                AssertSupportUpgradeDecisionReadoutMatrix(
                     forwardRiskSlot2Combo,
                     forwardRiskSlot2DelayedRecovery,
                     forwardRiskSlot3DelayedRecovery);
@@ -3713,6 +3723,8 @@ namespace DimensionBrawl.Tests
             builder.AppendLine();
             AppendSupportUpgradeDeltaMatrix(builder, results, repeatabilityResults);
             builder.AppendLine();
+            AppendSupportUpgradeDecisionReadoutMatrix(builder, results, repeatabilityResults);
+            builder.AppendLine();
             AppendSupportStageSlotTimelineMatrix(builder, results, repeatabilityResults);
             builder.AppendLine();
             AppendSummonSlotReadinessCooldownMatrix(builder, results);
@@ -6157,6 +6169,112 @@ namespace DimensionBrawl.Tests
             }
 
             return "unclassified support upgrade delta";
+        }
+
+        private static void AppendSupportUpgradeDecisionReadoutMatrix(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults)
+        {
+            PolicyMetrics slot2DelayedRecovery =
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute);
+            builder.AppendLine("## Support Upgrade Decision Readout Matrix");
+            builder.AppendLine("- ArkData/Blue Archive lens: the visible EX-like slot readout must be judged against the measured LV2-now/LV3-later trade, not only against static cost labels.");
+            builder.AppendLine("| Decision | Current visible state | Upgrade visible state | Measured extra cost | Measured payoff shift | Repeat check | Read |");
+            builder.AppendLine("|---|---|---|---|---|---|---|");
+            AppendSupportUpgradeDecisionReadoutRow(
+                builder,
+                "Bank Slot2 to full LV3",
+                "Slot2 LV2 now",
+                slot2DelayedRecovery,
+                "Slot2 full-bank",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute),
+                repeatabilityResults);
+            AppendSupportUpgradeDecisionReadoutRow(
+                builder,
+                "Upgrade from Slot2 LV2 to Slot3 LV3",
+                "Slot2 LV2 now",
+                slot2DelayedRecovery,
+                "Slot3 LV3 payoff",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute),
+                repeatabilityResults);
+        }
+
+        private static void AppendSupportUpgradeDecisionReadoutRow(
+            StringBuilder builder,
+            string decision,
+            string fromChoice,
+            PolicyMetrics from,
+            string toChoice,
+            PolicyMetrics to,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults)
+        {
+            builder.Append("| ");
+            builder.Append(EscapeTable(decision));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportUpgradeDecisionHudState(fromChoice, from)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportUpgradeDecisionHudState(toChoice, to)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportUpgradeDecisionMeasuredCost(from, to)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportUpgradeDecisionMeasuredPayoff(from, to)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportUpgradeRepeatDelta(repeatabilityResults, from.Policy, to.Policy)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveSupportUpgradeDecisionReadoutRead(from, to)));
+            builder.AppendLine(" |");
+        }
+
+        private static string FormatSupportUpgradeDecisionHudState(string choice, PolicyMetrics result)
+        {
+            return choice
+                + ": support "
+                + FormatHudLabelAndFill(
+                    result.SupportComboHudSupportLabelBeforeSlot1,
+                    result.SupportComboHudSupportFillBeforeSlot1)
+                + "; Slot1 "
+                + FormatHudLabelAndFill(
+                    result.SupportComboHudSlot1LabelBeforeAttempt,
+                    result.SupportComboHudSlot1FillBeforeAttempt)
+                + "; overlay "
+                + ResolveCoverageValue(result.SupportComboOverlayHudReadoutBeforeSlot1);
+        }
+
+        private static string FormatSupportUpgradeDecisionMeasuredCost(PolicyMetrics from, PolicyMetrics to)
+        {
+            return "wait "
+                + FormatSignedSeconds(ResolveSupportWaitDeltaSeconds(from, to))
+                + "; body "
+                + FormatSignedMetric(ResolveSupportPreSupportBodyDelta(from, to))
+                + "; HP "
+                + FormatSignedMetric(ResolveSupportPreSupportDamageDelta(from, to));
+        }
+
+        private static string FormatSupportUpgradeDecisionMeasuredPayoff(PolicyMetrics from, PolicyMetrics to)
+        {
+            return ResolveSupportDecisionPayoffVerdict(from)
+                + " -> "
+                + ResolveSupportDecisionPayoffVerdict(to)
+                + "; "
+                + FormatSupportUpgradeMainAnswerDelta(from, to);
+        }
+
+        private static string ResolveSupportUpgradeDecisionReadoutRead(PolicyMetrics from, PolicyMetrics to)
+        {
+            if (from.Policy == PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute
+                && to.Policy == PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute)
+            {
+                return "visible readout proves independent slots; measured delta says holding buys no-recovery tempo";
+            }
+
+            if (from.Policy == PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute
+                && to.Policy == PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute)
+            {
+                return "visible readout names the 300 EN gate; measured delta says holding buys boss-screen suppress, not a universal upgrade";
+            }
+
+            return "unclassified support upgrade readout";
         }
 
         private static string FormatSignedSeconds(float value)
@@ -9490,6 +9608,37 @@ namespace DimensionBrawl.Tests
                 "The Slot3 LV3 delta should end in the vanguard boss-screen suppress payoff.");
         }
 
+        private static void AssertSupportUpgradeDecisionReadoutMatrix(
+            PolicyMetrics slot2Combo,
+            PolicyMetrics slot2DelayedRecovery,
+            PolicyMetrics slot3DelayedRecovery)
+        {
+            Assert.That(
+                FormatSupportUpgradeDecisionHudState("Slot2 LV2 now", slot2DelayedRecovery),
+                Does.Contain("S2 need 200 EN").And.Contain("S3 need 300 EN"),
+                "The current Slot2 readout should show the visible resource gates that frame the hold/spend choice.");
+            Assert.That(
+                FormatSupportUpgradeDecisionHudState("Slot3 LV3 payoff", slot3DelayedRecovery),
+                Does.Contain("S3").And.Contain("need 300 EN"),
+                "The Slot3 payoff readout should preserve the high-cost gate instead of reading as a generic upgrade.");
+            Assert.That(
+                FormatSupportUpgradeDecisionMeasuredCost(slot2DelayedRecovery, slot2Combo),
+                Does.Contain("wait +").And.Contain("HP +"),
+                "Banking Slot2 should keep its measured wait and HP tax visible beside the readout.");
+            Assert.That(
+                FormatSupportUpgradeDecisionMeasuredCost(slot2DelayedRecovery, slot3DelayedRecovery),
+                Does.Contain("wait +").And.Contain("HP +"),
+                "Upgrading to Slot3 should keep its measured wait and HP tax visible beside the readout.");
+            Assert.That(
+                ResolveSupportUpgradeDecisionReadoutRead(slot2DelayedRecovery, slot2Combo),
+                Does.Contain("no-recovery tempo"),
+                "The Slot2 full-bank read should say what the extra wait buys.");
+            Assert.That(
+                ResolveSupportUpgradeDecisionReadoutRead(slot2DelayedRecovery, slot3DelayedRecovery),
+                Does.Contain("boss-screen suppress"),
+                "The Slot3 LV3 read should say what the extra wait buys without making it a universal upgrade.");
+        }
+
         private static void AssertSupportStageSlotTimelineMatrix(
             PolicyMetrics slot2Combo,
             PolicyMetrics slot2DelayedRecovery,
@@ -10599,6 +10748,26 @@ namespace DimensionBrawl.Tests
                 repeatabilityResults,
                 false);
             builder.AppendLine("  ],");
+            builder.AppendLine("  \"supportUpgradeDecisionReadoutMatrix\": [");
+            AppendJsonSupportUpgradeDecisionReadoutRow(
+                builder,
+                "Bank Slot2 to full LV3",
+                "Slot2 LV2 now",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute),
+                "Slot2 full-bank",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute),
+                repeatabilityResults,
+                true);
+            AppendJsonSupportUpgradeDecisionReadoutRow(
+                builder,
+                "Upgrade from Slot2 LV2 to Slot3 LV3",
+                "Slot2 LV2 now",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute),
+                "Slot3 LV3 payoff",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute),
+                repeatabilityResults,
+                false);
+            builder.AppendLine("  ],");
             builder.AppendLine("  \"supportStageSlotTimelineMatrix\": [");
             AppendJsonSupportStageSlotTimelineRow(
                 builder,
@@ -10928,6 +11097,32 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"      \"repeatExtraBodyHitsBeforeSupportAverage\": {JsonSignedMetric(ResolveAverageSupportUpgradeDelta(repeatabilityResults, from.Policy, to.Policy, result => result.SupportBodyHitsBeforeSupport))},");
             builder.AppendLine($"      \"repeatExtraDamageBeforeSupportAverage\": {JsonSignedMetric(ResolveAverageSupportUpgradeDelta(repeatabilityResults, from.Policy, to.Policy, result => result.SupportDamageBeforeSupport))},");
             builder.AppendLine($"      \"readout\": \"{JsonEscape(ResolveSupportUpgradeDeltaRead(from, to))}\"");
+            builder.Append("    }");
+            builder.AppendLine(appendComma ? "," : string.Empty);
+        }
+
+        private static void AppendJsonSupportUpgradeDecisionReadoutRow(
+            StringBuilder builder,
+            string decision,
+            string fromChoice,
+            PolicyMetrics from,
+            string toChoice,
+            PolicyMetrics to,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults,
+            bool appendComma)
+        {
+            builder.AppendLine("    {");
+            builder.AppendLine($"      \"decision\": \"{JsonEscape(decision)}\",");
+            builder.AppendLine($"      \"fromChoice\": \"{JsonEscape(fromChoice)}\",");
+            builder.AppendLine($"      \"fromPolicy\": \"{from.Policy}\",");
+            builder.AppendLine($"      \"fromVisibleState\": \"{JsonEscape(FormatSupportUpgradeDecisionHudState(fromChoice, from))}\",");
+            builder.AppendLine($"      \"toChoice\": \"{JsonEscape(toChoice)}\",");
+            builder.AppendLine($"      \"toPolicy\": \"{to.Policy}\",");
+            builder.AppendLine($"      \"toVisibleState\": \"{JsonEscape(FormatSupportUpgradeDecisionHudState(toChoice, to))}\",");
+            builder.AppendLine($"      \"measuredExtraCost\": \"{JsonEscape(FormatSupportUpgradeDecisionMeasuredCost(from, to))}\",");
+            builder.AppendLine($"      \"measuredPayoffShift\": \"{JsonEscape(FormatSupportUpgradeDecisionMeasuredPayoff(from, to))}\",");
+            builder.AppendLine($"      \"repeatDelta\": \"{JsonEscape(FormatSupportUpgradeRepeatDelta(repeatabilityResults, from.Policy, to.Policy))}\",");
+            builder.AppendLine($"      \"decisionReadout\": \"{JsonEscape(ResolveSupportUpgradeDecisionReadoutRead(from, to))}\"");
             builder.Append("    }");
             builder.AppendLine(appendComma ? "," : string.Empty);
         }
