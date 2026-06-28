@@ -362,6 +362,12 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("## Route Motivation/Dominance Matrix"),
                     "The report should compare clear-route motivation before tuning one fastest route into every answer.");
                 Assert.IsTrue(
+                    markdown.Contains("| Route role | Policy | Cost/risk | Sample payoff | Result hook | Repeat band | Decision read |"),
+                    "The route dominance matrix should separate one sample payoff from the repeated evidence band.");
+                Assert.IsTrue(
+                    markdown.Contains("boss min/avg/max"),
+                    "The route dominance matrix should expose repeat boss-damage bands before balance decisions.");
+                Assert.IsTrue(
                     markdown.Contains("Guided clean loop | IntendedRoute | close hits"),
                     "The route dominance matrix should keep the guided clean loop visible.");
                 Assert.IsFalse(
@@ -399,6 +405,12 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(
                     json.Contains("\"routeMotivationDominanceMatrix\""),
                     "The JSON report should expose clear-route dominance evidence for follow-up batch comparisons.");
+                Assert.IsTrue(
+                    json.Contains("\"samplePayoff\""),
+                    "The JSON route dominance evidence should label the single sample payoff explicitly.");
+                Assert.IsTrue(
+                    json.Contains("\"repeatBossDamageAverage\""),
+                    "The JSON route dominance evidence should expose repeat boss-damage averages for automated comparisons.");
                 Assert.IsTrue(
                     json.Contains("\"summonSlotReadinessCooldownMatrix\""),
                     "The JSON report should expose summon readiness/cooldown evidence for follow-up batch comparisons.");
@@ -4596,7 +4608,7 @@ namespace DimensionBrawl.Tests
 
             builder.AppendLine("## Route Motivation/Dominance Matrix");
             builder.AppendLine("- ArkData/NIKKE lens: clear routes should expose distinct route motivation, not collapse into one fastest clear or one generic reward row.");
-            builder.AppendLine("| Route role | Policy | Cost/risk | Payoff | Result hook | Repeat signal | Decision read |");
+            builder.AppendLine("| Route role | Policy | Cost/risk | Sample payoff | Result hook | Repeat band | Decision read |");
             builder.AppendLine("|---|---|---|---|---|---|---|");
             AppendRouteMotivationDominanceRow(
                 builder,
@@ -4709,17 +4721,20 @@ namespace DimensionBrawl.Tests
             return BuildResultKindSet(repeatabilityResults, policy)
                 + " "
                 + ResolveRepeatabilityVerdict(repeatabilityResults, policy)
-                + "; time "
-                + FormatMinMax(
+                + "; time min/avg/max "
+                + FormatMinAverageMax(
                     MinMetric(repeatabilityResults, policy, result => result.ElapsedSeconds),
+                    AverageMetric(repeatabilityResults, policy, result => result.ElapsedSeconds),
                     MaxMetric(repeatabilityResults, policy, result => result.ElapsedSeconds))
-                + "s; HP "
-                + FormatMinMax(
+                + "s; HP min/avg/max "
+                + FormatMinAverageMax(
                     MinMetric(repeatabilityResults, policy, result => result.PlayerDamageTaken),
+                    AverageMetric(repeatabilityResults, policy, result => result.PlayerDamageTaken),
                     MaxMetric(repeatabilityResults, policy, result => result.PlayerDamageTaken))
-                + "; boss "
-                + FormatMinMax(
+                + "; boss min/avg/max "
+                + FormatMinAverageMax(
                     MinMetric(repeatabilityResults, policy, result => result.BossDamageTaken),
+                    AverageMetric(repeatabilityResults, policy, result => result.BossDamageTaken),
                     MaxMetric(repeatabilityResults, policy, result => result.BossDamageTaken));
         }
 
@@ -9638,13 +9653,26 @@ namespace DimensionBrawl.Tests
             IReadOnlyList<PolicyMetrics> repeatabilityResults,
             bool appendComma)
         {
+            PolicyKind policy = result.Policy;
             builder.AppendLine("    {");
             builder.AppendLine($"      \"routeRole\": \"{JsonEscape(routeRole)}\",");
-            builder.AppendLine($"      \"policy\": \"{result.Policy}\",");
+            builder.AppendLine($"      \"policy\": \"{policy}\",");
             builder.AppendLine($"      \"costRisk\": \"{JsonEscape(FormatRouteMotivationCostRisk(result))}\",");
+            builder.AppendLine($"      \"samplePayoff\": \"{JsonEscape(FormatRouteMotivationPayoff(result))}\",");
             builder.AppendLine($"      \"payoff\": \"{JsonEscape(FormatRouteMotivationPayoff(result))}\",");
             builder.AppendLine($"      \"resultHook\": \"{JsonEscape(ResolveResultHookClass(result))}\",");
-            builder.AppendLine($"      \"repeatSignal\": \"{JsonEscape(FormatRouteMotivationRepeatSignal(repeatabilityResults, result.Policy))}\",");
+            builder.AppendLine($"      \"repeatSignal\": \"{JsonEscape(FormatRouteMotivationRepeatSignal(repeatabilityResults, policy))}\",");
+            builder.AppendLine($"      \"repeatRuns\": {CountPolicyResults(repeatabilityResults, policy)},");
+            builder.AppendLine($"      \"repeatVerdict\": \"{JsonEscape(ResolveRepeatabilityVerdict(repeatabilityResults, policy))}\",");
+            builder.AppendLine($"      \"repeatElapsedSecondsMin\": {JsonNullableMetric(MinMetric(repeatabilityResults, policy, repeated => repeated.ElapsedSeconds))},");
+            builder.AppendLine($"      \"repeatElapsedSecondsAverage\": {JsonNullableMetric(AverageMetric(repeatabilityResults, policy, repeated => repeated.ElapsedSeconds))},");
+            builder.AppendLine($"      \"repeatElapsedSecondsMax\": {JsonNullableMetric(MaxMetric(repeatabilityResults, policy, repeated => repeated.ElapsedSeconds))},");
+            builder.AppendLine($"      \"repeatPlayerDamageMin\": {JsonNullableMetric(MinMetric(repeatabilityResults, policy, repeated => repeated.PlayerDamageTaken))},");
+            builder.AppendLine($"      \"repeatPlayerDamageAverage\": {JsonNullableMetric(AverageMetric(repeatabilityResults, policy, repeated => repeated.PlayerDamageTaken))},");
+            builder.AppendLine($"      \"repeatPlayerDamageMax\": {JsonNullableMetric(MaxMetric(repeatabilityResults, policy, repeated => repeated.PlayerDamageTaken))},");
+            builder.AppendLine($"      \"repeatBossDamageMin\": {JsonNullableMetric(MinMetric(repeatabilityResults, policy, repeated => repeated.BossDamageTaken))},");
+            builder.AppendLine($"      \"repeatBossDamageAverage\": {JsonNullableMetric(AverageMetric(repeatabilityResults, policy, repeated => repeated.BossDamageTaken))},");
+            builder.AppendLine($"      \"repeatBossDamageMax\": {JsonNullableMetric(MaxMetric(repeatabilityResults, policy, repeated => repeated.BossDamageTaken))},");
             builder.AppendLine($"      \"decisionRead\": \"{JsonEscape(ResolveRouteMotivationDecisionRead(result))}\",");
             builder.AppendLine($"      \"elapsedSeconds\": {result.ElapsedSeconds:0.###},");
             builder.AppendLine($"      \"playerDamageTaken\": {result.PlayerDamageTaken:0.###},");
@@ -10431,6 +10459,11 @@ namespace DimensionBrawl.Tests
         private static string JsonNullableSeconds(float seconds)
         {
             return seconds >= 0f ? seconds.ToString("0.###") : "null";
+        }
+
+        private static string JsonNullableMetric(float value)
+        {
+            return value >= 0f ? value.ToString("0.###") : "null";
         }
 
         private static string JsonBool(bool value)
