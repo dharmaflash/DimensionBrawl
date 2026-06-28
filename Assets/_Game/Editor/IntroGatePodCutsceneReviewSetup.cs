@@ -131,6 +131,12 @@ namespace DimensionBrawl.Editor
         private const string CameraName = "Main Camera";
         private const string ThreatAnchorName = "IntroGatePodReview_ThreatAnchor";
         private const string FirstPersonViewMarkerName = "IntroGatePodReview_FirstPersonViewMarker";
+        private static readonly Vector3 LockedFirstPersonInoriRootPosition = new Vector3(-3.902f, -0.443f, -0.556f);
+        private static readonly Quaternion LockedFirstPersonInoriRootRotation = new Quaternion(
+            -0.038747344f,
+            0.560228f,
+            0.0618996f,
+            0.8251132f);
         private const string OlympusInvasionLookdevScenePath =
             "Assets/_Game/Scenes/Lookdev/OlympusCorridorInvasionLookdev.unity";
         private const string OlympusUpperStairSetRootName = "IntroGatePodReview_OlympusUpperStairSet";
@@ -2849,10 +2855,9 @@ namespace DimensionBrawl.Editor
                 return;
             }
 
-            Quaternion bodyRotation = ResolveFirstPersonBodyRotation();
             inori.transform.SetLocalPositionAndRotation(
-                ResolveFirstPersonBodyRootPosition(bodyRotation),
-                bodyRotation);
+                LockedFirstPersonInoriRootPosition,
+                LockedFirstPersonInoriRootRotation);
 
             if (animator == null)
             {
@@ -2861,7 +2866,6 @@ namespace DimensionBrawl.Editor
             }
 
             SampleInoriBodyState(animator, IntroLookAtHandsStateName, 0.38f);
-            AlignInoriHandsToFirstPersonView(inori, animator);
             SampleInoriBodyState(animator, IntroLookAtHandsStateName, 0.38f);
             EditorUtility.SetDirty(inori);
             EditorUtility.SetDirty(animator);
