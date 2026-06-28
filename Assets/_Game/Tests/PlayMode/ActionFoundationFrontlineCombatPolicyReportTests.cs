@@ -419,6 +419,9 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("## Combat Decision Signal Matrix"),
                     "The report should connect combat decisions to cue/readout evidence before UI or balance changes.");
                 Assert.IsTrue(
+                    markdown.Contains("## High-Tier Wait Agency Matrix"),
+                    "The report should expose whether high-tier waiting is active choice pressure or passive exposure.");
+                Assert.IsTrue(
                     markdown.Contains("## Skill Gate Contract"),
                     "The report should prove raw Skill1 hits are not the same as state-gated follow-up commits.");
                 AssertStageWaveBeatMap(results);
@@ -432,6 +435,9 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(
                     json.Contains("\"routeMotivationDominanceMatrix\""),
                     "The JSON report should expose clear-route dominance evidence for follow-up batch comparisons.");
+                Assert.IsTrue(
+                    json.Contains("\"highTierWaitAgencyMatrix\""),
+                    "The JSON report should expose high-tier wait agency evidence for follow-up batch comparisons.");
                 Assert.IsTrue(
                     json.Contains("\"supportDecisionMatrix\""),
                     "The JSON report should expose support decision repeat-band evidence for follow-up batch comparisons.");
@@ -497,6 +503,11 @@ namespace DimensionBrawl.Tests
                     blockedRecovery,
                     forwardRiskPhysicalSummonPunish);
                 AssertCombatDecisionSignalRepeatability(repeatabilityResults);
+                AssertHighTierWaitAgencyMatrix(
+                    forwardRiskTier3Decision,
+                    forwardRiskSlot2Combo,
+                    forwardRiskSlot2DelayedRecovery,
+                    forwardRiskSlot3DelayedRecovery);
                 AssertSupportDecisionTimingVerdicts(
                     forwardRiskTier1Recovery,
                     forwardRiskSlot2Combo,
@@ -3728,6 +3739,8 @@ namespace DimensionBrawl.Tests
             builder.AppendLine();
             AppendCombatDecisionSignalMatrix(builder, results, repeatabilityResults);
             builder.AppendLine();
+            AppendHighTierWaitAgencyMatrix(builder, results, repeatabilityResults);
+            builder.AppendLine();
             AppendSupportDecisionMatrixSummary(builder, results, repeatabilityResults);
             builder.AppendLine();
             AppendSupportPayoffVectorMatrix(builder, results, repeatabilityResults);
@@ -6686,6 +6699,196 @@ namespace DimensionBrawl.Tests
             }
         }
 
+        private static void AppendHighTierWaitAgencyMatrix(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults)
+        {
+            builder.AppendLine("## High-Tier Wait Agency Matrix");
+            builder.AppendLine("- ArkData/CombatPayload lens: high-tier waits should expose whether the player is making an active pressure-slot choice or only paying passive HP/body exposure before the spend.");
+            builder.AppendLine("| Wait route | Target | Wait exposure | Pressure cost | Visible signal before spend | Payoff after spend | Repeat check | Agency read |");
+            builder.AppendLine("|---|---|---|---|---|---|---|---|");
+            AppendHighTierWaitAgencyRow(
+                builder,
+                "LV3 measurement wait",
+                RequireResult(results, PolicyKind.ForwardRiskEnergyTierLadderProbe),
+                repeatabilityResults);
+            AppendHighTierWaitAgencyRow(
+                builder,
+                "Direct LV3 suppress",
+                RequireResult(results, PolicyKind.ForwardRiskTier3DecisionRoute),
+                repeatabilityResults);
+            AppendHighTierWaitAgencyRow(
+                builder,
+                "Slot2 LV2 now",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute),
+                repeatabilityResults);
+            AppendHighTierWaitAgencyRow(
+                builder,
+                "Slot2 full-bank",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute),
+                repeatabilityResults);
+            AppendHighTierWaitAgencyRow(
+                builder,
+                "Slot3 delayed payoff",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute),
+                repeatabilityResults);
+        }
+
+        private static void AppendHighTierWaitAgencyRow(
+            StringBuilder builder,
+            string waitRoute,
+            PolicyMetrics result,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults)
+        {
+            builder.Append("| ");
+            builder.Append(EscapeTable(waitRoute));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatHighTierWaitAgencyTarget(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatHighTierWaitAgencyExposure(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatHighTierWaitAgencyPressureCost(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatHighTierWaitAgencySignal(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatHighTierWaitAgencyPayoff(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatHighTierWaitAgencyRepeat(repeatabilityResults, result.Policy)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveHighTierWaitAgencyRead(result)));
+            builder.AppendLine(" |");
+        }
+
+        private static string FormatHighTierWaitAgencyTarget(PolicyMetrics result)
+        {
+            if (!string.IsNullOrWhiteSpace(result.SupportSummonSlotId))
+            {
+                return FormatSupportWaitExposureTarget(result);
+            }
+
+            return result.EnergyProbeTargetTier > 0
+                ? $"LV{result.EnergyProbeTargetTier}"
+                : "energy measurement";
+        }
+
+        private static string FormatHighTierWaitAgencyExposure(PolicyMetrics result)
+        {
+            return "wait "
+                + FormatSeconds(ResolveHighTierWaitAgencySeconds(result))
+                + "; HP "
+                + ResolveHighTierWaitAgencyDamage(result).ToString("0.#")
+                + "; HP/s "
+                + ResolveHighTierWaitAgencyDamagePerSecond(result).ToString("0.0");
+        }
+
+        private static string FormatHighTierWaitAgencyPressureCost(PolicyMetrics result)
+        {
+            if (!string.IsNullOrWhiteSpace(result.SupportSummonSlotId))
+            {
+                return "body "
+                    + result.SupportBodyHitsBeforeSupport
+                    + "; player hits "
+                    + result.BossProjectilesHitPlayer;
+            }
+
+            return "player hits "
+                + result.BossProjectilesHitPlayer
+                + "; boss waves "
+                + result.BossWaves;
+        }
+
+        private static string FormatHighTierWaitAgencySignal(PolicyMetrics result)
+        {
+            string forecast = ResolveCoverageValue(result.SupportChoiceForecastReadoutBeforeSupport);
+            string energy =
+                $"energy screen F/R/S {result.ForwardRiskEnergyScreenCueRequests}/{result.EnergyReadyScreenCueRequests}/{result.EnergySpendScreenCueRequests}";
+            return string.IsNullOrWhiteSpace(result.SupportChoiceForecastReadoutBeforeSupport)
+                ? energy
+                : $"{forecast}; {energy}";
+        }
+
+        private static string FormatHighTierWaitAgencyPayoff(PolicyMetrics result)
+        {
+            return ResolveResultHookClass(result)
+                + "; "
+                + ResolveSupportDecisionPayoffVerdict(result)
+                + "; boss "
+                + result.BossDamageTaken.ToString("0.#");
+        }
+
+        private static string FormatHighTierWaitAgencyRepeat(
+            IReadOnlyList<PolicyMetrics> repeatabilityResults,
+            PolicyKind policy)
+        {
+            if (CountPolicyResults(repeatabilityResults, policy) <= 0)
+            {
+                return "not repeated";
+            }
+
+            return "wait "
+                + FormatMinAverageMax(
+                    MinMetric(repeatabilityResults, policy, ResolveHighTierWaitAgencySeconds),
+                    AverageMetric(repeatabilityResults, policy, ResolveHighTierWaitAgencySeconds),
+                    MaxMetric(repeatabilityResults, policy, ResolveHighTierWaitAgencySeconds))
+                + "; HP "
+                + FormatMinAverageMax(
+                    MinMetric(repeatabilityResults, policy, ResolveHighTierWaitAgencyDamage),
+                    AverageMetric(repeatabilityResults, policy, ResolveHighTierWaitAgencyDamage),
+                    MaxMetric(repeatabilityResults, policy, ResolveHighTierWaitAgencyDamage));
+        }
+
+        private static float ResolveHighTierWaitAgencySeconds(PolicyMetrics result)
+        {
+            if (!string.IsNullOrWhiteSpace(result.SupportSummonSlotId))
+            {
+                return ResolveSupportWaitExposureSeconds(result);
+            }
+
+            float targetDuration = ResolveEnergyTargetDuration(result);
+            if (targetDuration >= 0f)
+            {
+                return targetDuration;
+            }
+
+            return result.EnergyTier3DurationSeconds >= 0f
+                ? result.EnergyTier3DurationSeconds
+                : result.EnergyProbeElapsedSeconds;
+        }
+
+        private static float ResolveHighTierWaitAgencyDamage(PolicyMetrics result)
+        {
+            return !string.IsNullOrWhiteSpace(result.SupportSummonSlotId)
+                && result.SupportDamageBeforeSupport >= 0f
+                    ? result.SupportDamageBeforeSupport
+                    : result.PlayerDamageTaken;
+        }
+
+        private static float ResolveHighTierWaitAgencyDamagePerSecond(PolicyMetrics result)
+        {
+            float waitSeconds = ResolveHighTierWaitAgencySeconds(result);
+            return waitSeconds > 0f ? ResolveHighTierWaitAgencyDamage(result) / waitSeconds : 0f;
+        }
+
+        private static string ResolveHighTierWaitAgencyRead(PolicyMetrics result)
+        {
+            switch (result.Policy)
+            {
+                case PolicyKind.ForwardRiskEnergyTierLadderProbe:
+                    return "measurement proves LV3 reachability but has no spend/payoff agency";
+                case PolicyKind.ForwardRiskTier3DecisionRoute:
+                    return "risk-position wait buys direct suppress; agency before spend is mostly positioning and cues";
+                case PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute:
+                    return "LV2-now lowers wait exposure but accepts recovery burden";
+                case PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute:
+                    return "full-bank wait adds forecast and no-recovery tempo but still pays HP/body before support";
+                case PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute:
+                    return "full-bank wait adds role choice and suppress payoff; still needs more during-wait agency evidence";
+                default:
+                    return "not a high-tier wait route";
+            }
+        }
+
         private static void AppendStageResultMotivationMatrix(
             StringBuilder builder,
             IReadOnlyList<PolicyMetrics> results)
@@ -8919,6 +9122,46 @@ namespace DimensionBrawl.Tests
                 "Repeated clean punish samples should keep player HP clean.");
         }
 
+        private static void AssertHighTierWaitAgencyMatrix(
+            PolicyMetrics directTier3,
+            PolicyMetrics slot2Combo,
+            PolicyMetrics slot2DelayedRecovery,
+            PolicyMetrics slot3DelayedRecovery)
+        {
+            Assert.Greater(
+                ResolveHighTierWaitAgencySeconds(directTier3),
+                0f,
+                "Direct LV3 suppress should expose a measurable wait before spend.");
+            Assert.Greater(
+                ResolveHighTierWaitAgencyDamage(directTier3),
+                0f,
+                "Direct LV3 suppress should keep the HP tax visible beside the payoff.");
+            Assert.That(
+                ResolveHighTierWaitAgencyRead(directTier3),
+                Does.Contain("risk-position"),
+                "Direct LV3 should read as risk-positioning before spend, not as a free upgrade.");
+            Assert.That(
+                slot2DelayedRecovery.SupportChoiceForecastReadoutBeforeSupport,
+                Does.Contain("S2 ready now").And.Contain("hold 300 EN"),
+                "The LV2-now route should expose the live decision to stop waiting or hold for LV3.");
+            Assert.That(
+                slot2Combo.SupportChoiceForecastReadoutBeforeSupport,
+                Does.Contain("S2 ready for tempo").And.Contain("S3 ready for suppress"),
+                "The full-bank Slot2 route should keep both role choices visible at spend time.");
+            Assert.That(
+                slot3DelayedRecovery.SupportChoiceForecastReadoutBeforeSupport,
+                Does.Contain("S3 ready for suppress").And.Contain("Slot1 recharge"),
+                "The Slot3 delayed payoff should keep the suppress role and delayed main-answer cost visible.");
+            Assert.Greater(
+                ResolveHighTierWaitAgencyDamage(slot3DelayedRecovery),
+                ResolveHighTierWaitAgencyDamage(slot2DelayedRecovery),
+                "Holding for Slot3 should preserve the extra HP exposure compared with the LV2-now branch.");
+            Assert.That(
+                ResolveHighTierWaitAgencyRead(slot3DelayedRecovery),
+                Does.Contain("during-wait agency"),
+                "The high-tier agency matrix should keep the current gap visible instead of declaring the wait solved.");
+        }
+
         private static void AssertStageResultMotivationMatrix(
             PolicyMetrics noSummonFail,
             PolicyMetrics gunOnlyFail,
@@ -10632,6 +10875,38 @@ namespace DimensionBrawl.Tests
                 repeatabilityResults,
                 false);
             builder.AppendLine("  ],");
+            builder.AppendLine("  \"highTierWaitAgencyMatrix\": [");
+            AppendJsonHighTierWaitAgencyRow(
+                builder,
+                "LV3 measurement wait",
+                RequireResult(results, PolicyKind.ForwardRiskEnergyTierLadderProbe),
+                repeatabilityResults,
+                true);
+            AppendJsonHighTierWaitAgencyRow(
+                builder,
+                "Direct LV3 suppress",
+                RequireResult(results, PolicyKind.ForwardRiskTier3DecisionRoute),
+                repeatabilityResults,
+                true);
+            AppendJsonHighTierWaitAgencyRow(
+                builder,
+                "Slot2 LV2 now",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute),
+                repeatabilityResults,
+                true);
+            AppendJsonHighTierWaitAgencyRow(
+                builder,
+                "Slot2 full-bank",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute),
+                repeatabilityResults,
+                true);
+            AppendJsonHighTierWaitAgencyRow(
+                builder,
+                "Slot3 delayed payoff",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute),
+                repeatabilityResults,
+                false);
+            builder.AppendLine("  ],");
             builder.AppendLine("  \"supportDecisionMatrix\": [");
             AppendJsonSupportDecisionMatrixRow(
                 builder,
@@ -10998,6 +11273,29 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"      \"resultHookClass\": \"{JsonEscape(ResolveResultHookClass(result))}\",");
             builder.AppendLine($"      \"timingVerdict\": \"{JsonEscape(ResolveSupportDecisionTimingVerdict(result))}\",");
             builder.AppendLine($"      \"payoffVerdict\": \"{JsonEscape(ResolveSupportDecisionPayoffVerdict(result))}\"");
+            builder.Append("    }");
+            builder.AppendLine(appendComma ? "," : string.Empty);
+        }
+
+        private static void AppendJsonHighTierWaitAgencyRow(
+            StringBuilder builder,
+            string waitRoute,
+            PolicyMetrics result,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults,
+            bool appendComma)
+        {
+            builder.AppendLine("    {");
+            builder.AppendLine($"      \"waitRoute\": \"{JsonEscape(waitRoute)}\",");
+            builder.AppendLine($"      \"policy\": \"{result.Policy}\",");
+            builder.AppendLine($"      \"target\": \"{JsonEscape(FormatHighTierWaitAgencyTarget(result))}\",");
+            builder.AppendLine($"      \"waitSeconds\": {JsonNullableMetric(ResolveHighTierWaitAgencySeconds(result))},");
+            builder.AppendLine($"      \"waitDamage\": {JsonNullableMetric(ResolveHighTierWaitAgencyDamage(result))},");
+            builder.AppendLine($"      \"waitDamagePerSecond\": {ResolveHighTierWaitAgencyDamagePerSecond(result):0.###},");
+            builder.AppendLine($"      \"pressureCost\": \"{JsonEscape(FormatHighTierWaitAgencyPressureCost(result))}\",");
+            builder.AppendLine($"      \"visibleSignalBeforeSpend\": \"{JsonEscape(FormatHighTierWaitAgencySignal(result))}\",");
+            builder.AppendLine($"      \"payoffAfterSpend\": \"{JsonEscape(FormatHighTierWaitAgencyPayoff(result))}\",");
+            builder.AppendLine($"      \"repeatCheck\": \"{JsonEscape(FormatHighTierWaitAgencyRepeat(repeatabilityResults, result.Policy))}\",");
+            builder.AppendLine($"      \"agencyRead\": \"{JsonEscape(ResolveHighTierWaitAgencyRead(result))}\"");
             builder.Append("    }");
             builder.AppendLine(appendComma ? "," : string.Empty);
         }
