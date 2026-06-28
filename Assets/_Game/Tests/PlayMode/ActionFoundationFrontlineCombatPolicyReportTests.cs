@@ -356,6 +356,12 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("## Support Decision Matrix"),
                     "The report should compare summon choices as combat decisions, not only isolated policy rows.");
                 Assert.IsTrue(
+                    markdown.Contains("| Choice | Cost path | Support effect | HP before main | Physical hits | Slot1 state | Recovery burden | Boss suppress | Sample time/dmg | Result | Repeat band | Timing verdict | Payoff verdict | Read |"),
+                    "The support decision matrix should separate sampled time/damage from repeated route bands.");
+                Assert.IsTrue(
+                    markdown.Contains("HP before main min/avg/max"),
+                    "The support decision matrix should expose repeated HP-before-main bands for route comparison.");
+                Assert.IsTrue(
                     markdown.Contains("## Support Stage-Slot Timeline Matrix"),
                     "The report should expose support choices as ordered stage slots, not only balance rows.");
                 Assert.IsTrue(
@@ -405,6 +411,9 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(
                     json.Contains("\"routeMotivationDominanceMatrix\""),
                     "The JSON report should expose clear-route dominance evidence for follow-up batch comparisons.");
+                Assert.IsTrue(
+                    json.Contains("\"supportDecisionMatrix\""),
+                    "The JSON report should expose support decision repeat-band evidence for follow-up batch comparisons.");
                 Assert.IsTrue(
                     json.Contains("\"samplePayoff\""),
                     "The JSON route dominance evidence should label the single sample payoff explicitly.");
@@ -5261,7 +5270,7 @@ namespace DimensionBrawl.Tests
         {
             builder.AppendLine("## Support Decision Matrix");
             builder.AppendLine("- ArkData/Blue Archive lens: support choice should read as cost, exposure, answer, and recovery-state tradeoff before UI/coaster feedback.");
-            builder.AppendLine("| Choice | Cost path | Support effect | HP before main | Physical hits | Slot1 state | Recovery burden | Boss suppress | Time/dmg | Result | Repeat signal | Timing verdict | Payoff verdict | Read |");
+            builder.AppendLine("| Choice | Cost path | Support effect | HP before main | Physical hits | Slot1 state | Recovery burden | Boss suppress | Sample time/dmg | Result | Repeat band | Timing verdict | Payoff verdict | Read |");
             builder.AppendLine("|---|---|---|---:|---:|---|---|---:|---:|---|---|---|---|---|");
             AppendSupportDecisionMatrixRow(
                 builder,
@@ -5319,10 +5328,10 @@ namespace DimensionBrawl.Tests
             builder.AppendLine(
                 "- Dominance read: "
                 + $"Slot2 delayed recovery matches Slot1's recovery result but costs more and shifts HP by {FormatSupportDecisionHpDelta(slot1Recovery, slot2DelayedRecovery)}; "
-                + $"Slot2 full-bank pays {FormatSupportDecisionHpDelta(slot1Recovery, slot2Combo)} HP for no recovery burden and `{slot2Combo.ResultKind}` in {FormatSeconds(slot2Combo.ElapsedSeconds)} / {slot2Combo.BossDamageTaken:0.0} boss damage; "
-                + $"Slot2 delayed takes {FormatSeconds(slot2DelayedRecovery.ElapsedSeconds)} / {slot2DelayedRecovery.BossDamageTaken:0.0} boss damage with recovery burden and stays capped at the Slot1 recovery baseline {slot1Recovery.BossDamageTaken:0.0}; "
+                + $"Slot2 full-bank pays {FormatSupportDecisionHpDelta(slot1Recovery, slot2Combo)} HP for no recovery burden and `{slot2Combo.ResultKind}` with repeat {FormatSupportDecisionRepeatTimeDamageBand(repeatabilityResults, slot2Combo.Policy)}; "
+                + $"Slot2 delayed has recovery burden and stays capped against the Slot1 recovery repeat band {FormatSupportDecisionRepeatTimeDamageBand(repeatabilityResults, slot1Recovery.Policy)} versus its own {FormatSupportDecisionRepeatTimeDamageBand(repeatabilityResults, slot2DelayedRecovery.Policy)}; "
                 + $"Slot3 immediate stays `{slot3Immediate.ResultKind}/{ResolveFirstUnresolvedBeat(slot3Immediate)}` despite line hold; "
-                + $"Slot3 delayed pays {FormatSupportDecisionHpDelta(slot1Recovery, slot3DelayedRecovery)} HP for `{slot3DelayedRecovery.ResultKind}` in {FormatSeconds(slot3DelayedRecovery.ElapsedSeconds)} / {slot3DelayedRecovery.BossDamageTaken:0.0} boss damage with suppress {FormatSupportDecisionBossSuppress(slot3DelayedRecovery)}. "
+                + $"Slot3 delayed pays {FormatSupportDecisionHpDelta(slot1Recovery, slot3DelayedRecovery)} HP for `{slot3DelayedRecovery.ResultKind}` with repeat {FormatSupportDecisionRepeatTimeDamageBand(repeatabilityResults, slot3DelayedRecovery.Policy)} and suppress {FormatSupportDecisionBossSuppress(slot3DelayedRecovery)}. "
                 + "Decision: preserve Slot2 full-bank as the intended marksman combo and treat Slot2 LV2 delayed as mistimed, not a route to buff blindly.");
         }
 
@@ -5379,18 +5388,50 @@ namespace DimensionBrawl.Tests
             return BuildResultKindSet(repeatabilityResults, policy)
                 + " "
                 + ResolveRepeatabilityVerdict(repeatabilityResults, policy)
-                + "; HP "
-                + FormatMinMax(
+                + "; time min/avg/max "
+                + FormatMinAverageMax(
+                    MinMetric(repeatabilityResults, policy, result => result.ElapsedSeconds),
+                    AverageMetric(repeatabilityResults, policy, result => result.ElapsedSeconds),
+                    MaxMetric(repeatabilityResults, policy, result => result.ElapsedSeconds))
+                + "s; HP before main min/avg/max "
+                + FormatMinAverageMax(
                     MinMetric(repeatabilityResults, policy, result => ResolveSupportDecisionHpBeforeMain(result)),
+                    AverageMetric(repeatabilityResults, policy, result => ResolveSupportDecisionHpBeforeMain(result)),
                     MaxMetric(repeatabilityResults, policy, result => ResolveSupportDecisionHpBeforeMain(result)))
-                + "; skill1 "
+                + "; boss min/avg/max "
+                + FormatMinAverageMax(
+                    MinMetric(repeatabilityResults, policy, result => result.BossDamageTaken),
+                    AverageMetric(repeatabilityResults, policy, result => result.BossDamageTaken),
+                    MaxMetric(repeatabilityResults, policy, result => result.BossDamageTaken))
+                + "; skill1 min/max "
                 + FormatMinMax(
                     MinMetric(repeatabilityResults, policy, result => result.SkillProjectileHits),
                     MaxMetric(repeatabilityResults, policy, result => result.SkillProjectileHits))
-                + "; suppress "
+                + "; suppress min/max "
                 + FormatMinMax(
                     MinMetric(repeatabilityResults, policy, result => result.BossPressureScreensSuppressedByFollowup),
                     MaxMetric(repeatabilityResults, policy, result => result.BossPressureScreensSuppressedByFollowup));
+        }
+
+        private static string FormatSupportDecisionRepeatTimeDamageBand(
+            IReadOnlyList<PolicyMetrics> repeatabilityResults,
+            PolicyKind policy)
+        {
+            if (CountPolicyResults(repeatabilityResults, policy) <= 0)
+            {
+                return "not repeated";
+            }
+
+            return "time "
+                + FormatMinAverageMax(
+                    MinMetric(repeatabilityResults, policy, result => result.ElapsedSeconds),
+                    AverageMetric(repeatabilityResults, policy, result => result.ElapsedSeconds),
+                    MaxMetric(repeatabilityResults, policy, result => result.ElapsedSeconds))
+                + "s / boss "
+                + FormatMinAverageMax(
+                    MinMetric(repeatabilityResults, policy, result => result.BossDamageTaken),
+                    AverageMetric(repeatabilityResults, policy, result => result.BossDamageTaken),
+                    MaxMetric(repeatabilityResults, policy, result => result.BossDamageTaken));
         }
 
         private static string FormatSupportDecisionHpBeforeMain(PolicyMetrics result)
@@ -9524,6 +9565,48 @@ namespace DimensionBrawl.Tests
                 repeatabilityResults,
                 false);
             builder.AppendLine("  ],");
+            builder.AppendLine("  \"supportDecisionMatrix\": [");
+            AppendJsonSupportDecisionMatrixRow(
+                builder,
+                "Slot1 LV1 recovery",
+                "100",
+                "screen/counter opener",
+                RequireResult(results, PolicyKind.ForwardRiskTier1RecoveryRoute),
+                repeatabilityResults,
+                true);
+            AppendJsonSupportDecisionMatrixRow(
+                builder,
+                "Slot2 full-bank combo",
+                "200 -> 100",
+                "marksman suppresses enemy frontline",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute),
+                repeatabilityResults,
+                true);
+            AppendJsonSupportDecisionMatrixRow(
+                builder,
+                "Slot2 delayed recovery",
+                "200 -> recharge -> 100",
+                "marksman suppresses enemy frontline",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute),
+                repeatabilityResults,
+                true);
+            AppendJsonSupportDecisionMatrixRow(
+                builder,
+                "Slot3 immediate lockout",
+                "300 -> 0",
+                "vanguard holds physical line",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute),
+                repeatabilityResults,
+                true);
+            AppendJsonSupportDecisionMatrixRow(
+                builder,
+                "Slot3 delayed recovery",
+                "300 -> recharge -> 100",
+                "vanguard holds physical line",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute),
+                repeatabilityResults,
+                false);
+            builder.AppendLine("  ],");
             builder.AppendLine("  \"supportStageSlotTimelineMatrix\": [");
             AppendJsonSupportStageSlotTimelineRow(
                 builder,
@@ -9683,6 +9766,47 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"      \"counterWaves\": {result.CounterWaves},");
             builder.AppendLine($"      \"bossPressureScreensSuppressedByFollowup\": {result.BossPressureScreensSuppressedByFollowup},");
             builder.AppendLine($"      \"supportSummonSlotId\": \"{JsonEscape(result.SupportSummonSlotId)}\"");
+            builder.Append("    }");
+            builder.AppendLine(appendComma ? "," : string.Empty);
+        }
+
+        private static void AppendJsonSupportDecisionMatrixRow(
+            StringBuilder builder,
+            string choice,
+            string costPath,
+            string supportEffect,
+            PolicyMetrics result,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults,
+            bool appendComma)
+        {
+            PolicyKind policy = result.Policy;
+            builder.AppendLine("    {");
+            builder.AppendLine($"      \"choice\": \"{JsonEscape(choice)}\",");
+            builder.AppendLine($"      \"policy\": \"{policy}\",");
+            builder.AppendLine($"      \"costPath\": \"{JsonEscape(costPath)}\",");
+            builder.AppendLine($"      \"supportEffect\": \"{JsonEscape(supportEffect)}\",");
+            builder.AppendLine($"      \"sampleTimeDamage\": \"{JsonEscape(FormatSupportDecisionTimeDamage(result))}\",");
+            builder.AppendLine($"      \"repeatSignal\": \"{JsonEscape(FormatSupportDecisionRepeatSignal(repeatabilityResults, policy))}\",");
+            builder.AppendLine($"      \"repeatRuns\": {CountPolicyResults(repeatabilityResults, policy)},");
+            builder.AppendLine($"      \"repeatVerdict\": \"{JsonEscape(ResolveRepeatabilityVerdict(repeatabilityResults, policy))}\",");
+            builder.AppendLine($"      \"repeatElapsedSecondsMin\": {JsonNullableMetric(MinMetric(repeatabilityResults, policy, repeated => repeated.ElapsedSeconds))},");
+            builder.AppendLine($"      \"repeatElapsedSecondsAverage\": {JsonNullableMetric(AverageMetric(repeatabilityResults, policy, repeated => repeated.ElapsedSeconds))},");
+            builder.AppendLine($"      \"repeatElapsedSecondsMax\": {JsonNullableMetric(MaxMetric(repeatabilityResults, policy, repeated => repeated.ElapsedSeconds))},");
+            builder.AppendLine($"      \"repeatHpBeforeMainMin\": {JsonNullableMetric(MinMetric(repeatabilityResults, policy, repeated => ResolveSupportDecisionHpBeforeMain(repeated)))},");
+            builder.AppendLine($"      \"repeatHpBeforeMainAverage\": {JsonNullableMetric(AverageMetric(repeatabilityResults, policy, repeated => ResolveSupportDecisionHpBeforeMain(repeated)))},");
+            builder.AppendLine($"      \"repeatHpBeforeMainMax\": {JsonNullableMetric(MaxMetric(repeatabilityResults, policy, repeated => ResolveSupportDecisionHpBeforeMain(repeated)))},");
+            builder.AppendLine($"      \"repeatBossDamageMin\": {JsonNullableMetric(MinMetric(repeatabilityResults, policy, repeated => repeated.BossDamageTaken))},");
+            builder.AppendLine($"      \"repeatBossDamageAverage\": {JsonNullableMetric(AverageMetric(repeatabilityResults, policy, repeated => repeated.BossDamageTaken))},");
+            builder.AppendLine($"      \"repeatBossDamageMax\": {JsonNullableMetric(MaxMetric(repeatabilityResults, policy, repeated => repeated.BossDamageTaken))},");
+            builder.AppendLine($"      \"hpBeforeMain\": {ResolveSupportDecisionHpBeforeMain(result):0.###},");
+            builder.AppendLine($"      \"physicalBarragePlayerHits\": {result.PhysicalBarragePlayerHits},");
+            builder.AppendLine($"      \"physicalBarrageTrackedProjectileCount\": {result.PhysicalBarrageTrackedProjectileCount},");
+            builder.AppendLine($"      \"bossSuppress\": \"{JsonEscape(FormatSupportDecisionBossSuppress(result))}\",");
+            builder.AppendLine($"      \"result\": \"{JsonEscape(result.ResultKind)}\",");
+            builder.AppendLine($"      \"firstUnresolvedBeat\": \"{JsonEscape(ResolveFirstUnresolvedBeat(result))}\",");
+            builder.AppendLine($"      \"resultHookClass\": \"{JsonEscape(ResolveResultHookClass(result))}\",");
+            builder.AppendLine($"      \"timingVerdict\": \"{JsonEscape(ResolveSupportDecisionTimingVerdict(result))}\",");
+            builder.AppendLine($"      \"payoffVerdict\": \"{JsonEscape(ResolveSupportDecisionPayoffVerdict(result))}\"");
             builder.Append("    }");
             builder.AppendLine(appendComma ? "," : string.Empty);
         }
