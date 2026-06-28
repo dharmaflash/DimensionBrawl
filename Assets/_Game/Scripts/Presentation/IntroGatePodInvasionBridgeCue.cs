@@ -329,7 +329,8 @@ namespace DimensionBrawl.Presentation
                     root.gameObject.SetActive(active);
                 }
 
-                float moveEndSeconds = cue.AttackStartSeconds > cue.StartSeconds
+                bool hasAttackState = !string.IsNullOrWhiteSpace(cue.AttackStateName);
+                float moveEndSeconds = hasAttackState && cue.AttackStartSeconds > cue.StartSeconds
                     ? cue.AttackStartSeconds
                     : cue.EndSeconds;
                 float normalized = Mathf.InverseLerp(cue.StartSeconds, moveEndSeconds, elapsedSeconds);

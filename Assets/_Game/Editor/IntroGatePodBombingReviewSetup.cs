@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using DimensionBrawl.LevelDesign;
+using DimensionBrawl.Presentation;
 using Unity.Cinemachine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -19,6 +21,18 @@ namespace DimensionBrawl.Editor
         private const string ReviewScenePath = "Assets/_Game/Scenes/IntroGatePodBombingReview.unity";
         private const string TimelinePath =
             "Assets/_Game/DesignData/Timelines/Cinematics/DB_Timeline_IntroGatePodBombingReview.playable";
+        private const string OlympusStageScenePath = "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity";
+        private const string AwakeningReviewScenePath = "Assets/_Game/Scenes/IntroGatePodCutsceneReview.unity";
+        private const string AwakeningTimelinePath =
+            "Assets/_Game/DesignData/Timelines/Cinematics/DB_Timeline_IntroGatePodAwakening.playable";
+        private const string OlympusCombinedTimelinePath =
+            "Assets/_Game/DesignData/Timelines/Cinematics/DB_Timeline_IntroGatePodAwakening_OlympusBombingPrelude.playable";
+        private const string AwakeningProfilePath =
+            "Assets/_Game/DesignData/Profiles/Cinematics/DB_Cinematic_IntroGatePodAwakening.asset";
+        private const string OlympusCombinedProfilePath =
+            "Assets/_Game/DesignData/Profiles/Cinematics/DB_Cinematic_IntroGatePodAwakening_OlympusBombingPrelude.asset";
+        private const string OlympusStageDefinitionPath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_Stage_OlympusCorridorIntroCombat.asset";
         private const string AnimationRoot =
             "Assets/_Game/DesignData/Animations/Cinematics/IntroGatePodBombingReview";
         private const string ModelRoot = "Assets/_Game/Art/Models/ActionFoundation/IntroGatePodBombingReview";
@@ -108,9 +122,29 @@ namespace DimensionBrawl.Editor
         private const string AerialBomb3PrefabPath = VfxPrefabRoot + "/PF_BombingReview_AerialBomb3.prefab";
 
         private const string RootName = "IntroGatePodBombingReview";
+        private const string OlympusPreludeRootName = "IntroGatePodBombingPrelude_Olympus";
         private const string AircraftRootName = "BombingReview_AircraftFormation";
         private const string BombDropRootName = "BombingReview_BombDrop";
         private const string ImpactRootName = "BombingReview_ImpactChain";
+        private const string TargetZoneName = "BombingReview_TargetZone";
+        private const string TargetDeckName = "BombingReview_TargetDeck_Main";
+        private const string BombingPreludeTargetZoneTrackName = "Bombing Prelude Target Zone Active";
+        private const string ProceduralFireCorePrefix = "BombImpact_ProceduralFireCore";
+        private const string ShockRingName = "GroundShockRing";
+        private const string ProceduralExplosionCoreMaterialPath =
+            MaterialRoot + "/AF_BombingReview_ExplosionCore.mat";
+        private const string ProceduralShockRingMaterialPath =
+            MaterialRoot + "/AF_BombingReview_ShockRing.mat";
+        private const string ProceduralSmokeMaterialPath =
+            MaterialRoot + "/AF_BombingReview_Smoke.mat";
+        private const string AftermathScorchPatchPrefix = "AftermathScorchPatch";
+        private const string AftershockTransitionShakeTrackName = "Bombing Prelude Aftershock Transition Shake";
+        private const string HandoffTransitionShakeTrackName = "Bombing Prelude Handoff Transition Shake";
+        private const string AftershockTransitionShakeClipName = "AC_OlympusBombingPrelude_AftershockTransitionShake";
+        private const string HandoffTransitionShakeClipName = "AC_OlympusBombingPrelude_HandoffTransitionShake";
+        private const string AftershockShotName = "cm_06_aftershock";
+        private const string HandoffShotName = "cm_07_smoke_handoff";
+        private const float OlympusCommandoHoldUntilSeconds = (863f / 30f) + 0.12f;
         private const string SmokeRootName = "BombingReview_AftermathSmoke";
         private const string CameraRootName = "BombingReview_CinemachineShots";
         private const string MainCameraName = "BombingReview_MainCamera";
@@ -122,6 +156,7 @@ namespace DimensionBrawl.Editor
         private const string ReportPath = "C:/tmp/DimensionBrawl-IntroGatePodBombingReview.md";
         private const string ExplosionAuditPath = "C:/tmp/DimensionBrawl-BombingReview-ExplosionAssetAudit.md";
         private const string CoordinateAuditPath = "C:/tmp/DimensionBrawl-BombingReview-FormationCoordinateAudit.md";
+        private const string OlympusMergeReportPath = "C:/tmp/DimensionBrawl-IntroGatePodBombingPreludeMerge.md";
         private const float BomberLeadEntryEndSeconds = 1.05f;
         private const float LeftEscortJoinStartSeconds = 0.95f;
         private const float LeftEscortJoinEndSeconds = 3.25f;
@@ -169,6 +204,50 @@ namespace DimensionBrawl.Editor
             ValidateBombingReviewTimeline(writeReport: true, renderCaptures: false, runCoordinateAudit: true);
         }
 
+        [MenuItem("Tools/DimensionBrawl/Intro GatePod/Merge Bombing Review Into Olympus Intro")]
+        public static void MergeBombingReviewIntoOlympusIntroMenu()
+        {
+            MergeBombingReviewIntoOlympusIntro(writeReport: true);
+        }
+
+        public static void RunBatchMergeBombingReviewIntoOlympusIntro()
+        {
+            MergeBombingReviewIntoOlympusIntro(writeReport: true);
+        }
+
+        [MenuItem("Tools/DimensionBrawl/Intro GatePod/Remove Olympus Bombing Prelude Target Plane")]
+        public static void RemoveOlympusBombingPreludeTargetPlaneMenu()
+        {
+            RemoveOlympusBombingPreludeTargetPlane(writeReport: true);
+        }
+
+        public static void RunBatchRemoveOlympusBombingPreludeTargetPlane()
+        {
+            RemoveOlympusBombingPreludeTargetPlane(writeReport: true);
+        }
+
+        [MenuItem("Tools/DimensionBrawl/Intro GatePod/Remove Procedural Explosion Materials")]
+        public static void RemoveProceduralExplosionMaterialsMenu()
+        {
+            RemoveProceduralExplosionMaterials(writeReport: true);
+        }
+
+        public static void RunBatchRemoveProceduralExplosionMaterials()
+        {
+            RemoveProceduralExplosionMaterials(writeReport: true);
+        }
+
+        [MenuItem("Tools/DimensionBrawl/Intro GatePod/Add Olympus Bombing Transition Camera Shake")]
+        public static void AddOlympusBombingTransitionCameraShakeMenu()
+        {
+            AddOlympusBombingTransitionCameraShake(writeReport: true);
+        }
+
+        public static void RunBatchAddOlympusBombingTransitionCameraShake()
+        {
+            AddOlympusBombingTransitionCameraShake(writeReport: true);
+        }
+
         private static void CreateBombingReviewTimeline()
         {
             PromoteSourceAssets();
@@ -204,43 +283,17 @@ namespace DimensionBrawl.Editor
                 0.18f,
                 0.0f);
             ConfigureTransparentMaterial(cloudMaterial, alpha: 0.5f);
-            Material deckMaterial = LoadOrCreateLitMaterial(
-                MaterialRoot + "/AF_BombingReview_TargetDeck.mat",
-                new Color(0.23f, 0.25f, 0.28f, 1f),
-                new Color(0.0f, 0.0f, 0.0f, 1f),
-                0.36f,
-                0.18f);
-            Material explosionMaterial = LoadOrCreateUnlitMaterial(
-                MaterialRoot + "/AF_BombingReview_ExplosionCore.mat",
-                new Color(1f, 0.46f, 0.10f, 0.92f),
-                new Color(5.5f, 1.2f, 0.18f, 1f),
-                transparent: true);
-            Material smokeMaterial = LoadOrCreateLitMaterial(
-                MaterialRoot + "/AF_BombingReview_Smoke.mat",
-                new Color(0.07f, 0.075f, 0.08f, 0.36f),
-                Color.black,
-                0.04f,
-                0f);
-            ConfigureTransparentMaterial(smokeMaterial, alpha: 0.36f);
-            Material shockRingMaterial = LoadOrCreateUnlitMaterial(
-                MaterialRoot + "/AF_BombingReview_ShockRing.mat",
-                new Color(1f, 0.72f, 0.24f, 0.42f),
-                new Color(3f, 1.4f, 0.28f, 1f),
-                transparent: true);
-
             CreateLighting(root.transform);
-            Transform targetRoot = CreateEnvironment(
+            CreateEnvironment(
                 root.transform,
                 skyMaterial,
                 cloudMaterial,
-                deckMaterial,
                 out Transform cloudRoot);
 
             Transform aircraftRoot = CreateAircraftFormation(root.transform, aircraftMaterial);
-            Transform bombDropRoot = CreateBombDrop(root.transform, bombMaterial, explosionMaterial);
-            Transform impactRoot = CreateImpactChain(root.transform, explosionMaterial, smokeMaterial, shockRingMaterial);
-            Transform smokeRoot = CreateAftermathSmoke(root.transform, smokeMaterial);
-            targetRoot.gameObject.SetActive(false);
+            Transform bombDropRoot = CreateBombDrop(root.transform, bombMaterial);
+            Transform impactRoot = CreateImpactChain(root.transform);
+            Transform smokeRoot = CreateAftermathSmoke(root.transform);
             bombDropRoot.gameObject.SetActive(false);
             impactRoot.gameObject.SetActive(false);
             smokeRoot.gameObject.SetActive(false);
@@ -256,7 +309,6 @@ namespace DimensionBrawl.Editor
                 shots,
                 aircraftRoot,
                 cloudRoot,
-                targetRoot,
                 bombDropRoot,
                 impactRoot,
                 smokeRoot,
@@ -265,6 +317,1536 @@ namespace DimensionBrawl.Editor
             EditorSceneManager.SaveScene(scene, ReviewScenePath);
             EditorUtility.SetDirty(director);
             AssetDatabase.SaveAssets();
+        }
+
+        private static void MergeBombingReviewIntoOlympusIntro(bool writeReport)
+        {
+            AssetDatabase.Refresh();
+            ValidateBombingReviewTimeline(writeReport: true, renderCaptures: false, runCoordinateAudit: true);
+
+            TimelineAsset sourceTimeline = LoadRequired<TimelineAsset>(AwakeningTimelinePath);
+            CinematicSequenceProfile combinedProfile = CreateShiftedOlympusProfile();
+            TimelineAsset combinedTimeline = CreateShiftedOlympusTimeline(sourceTimeline);
+
+            Scene stageScene = EditorSceneManager.OpenScene(OlympusStageScenePath, OpenSceneMode.Single);
+            Scene sourceScene = default;
+            try
+            {
+                sourceScene = EditorSceneManager.OpenScene(AwakeningReviewScenePath, OpenSceneMode.Additive);
+
+                Transform runtimeRoot = RequireObjectInScene(stageScene, "IntroGatePodPortPayload_CutsceneRuntime").transform;
+                Transform visualRoot = RequireObjectInScene(stageScene, "IntroGatePodPortPayload_Visuals").transform;
+                Camera stageCamera = RequireComponentByObjectName<Camera>(runtimeRoot, "Main Camera");
+                CinemachineBrain brain = stageCamera.GetComponent<CinemachineBrain>()
+                    ?? throw new InvalidOperationException("Olympus intro runtime camera is missing CinemachineBrain.");
+                PlayableDirector director = RequireComponentByObjectName<PlayableDirector>(
+                    runtimeRoot,
+                    "IntroGatePodReview_TimelineDirector");
+
+                GameObject oldPrelude = FindObjectInScene(stageScene, OlympusPreludeRootName);
+                if (oldPrelude != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(oldPrelude);
+                }
+
+                BombingPreludeSceneBindings prelude =
+                    CreateBombingPreludeSceneBindings(stageScene, brain, stageCamera);
+
+                combinedTimeline = LoadRequired<TimelineAsset>(OlympusCombinedTimelinePath);
+                director.playableAsset = combinedTimeline;
+                director.playOnAwake = true;
+                director.timeUpdateMode = DirectorUpdateMode.UnscaledGameTime;
+                director.extrapolationMode = DirectorWrapMode.Hold;
+
+                IntroGatePodCinemachineShotPlayer.Shot[] shiftedShots =
+                    RebindShiftedAwakeningRuntime(sourceScene, runtimeRoot, visualRoot, brain, director, combinedProfile);
+                RebindShiftedAwakeningTimelineTracks(combinedTimeline, director, runtimeRoot, visualRoot, brain, shiftedShots);
+                AddBombingPreludeTracks(combinedTimeline, director, brain, prelude);
+                UpdateOlympusStageDefinitionForBombingPrelude();
+
+                director.time = 0d;
+                director.Evaluate();
+                EditorUtility.SetDirty(director);
+                EditorSceneManager.MarkSceneDirty(stageScene);
+                EditorSceneManager.SaveScene(stageScene);
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+                combinedProfile = LoadRequired<CinematicSequenceProfile>(OlympusCombinedProfilePath);
+                combinedTimeline = LoadRequired<TimelineAsset>(OlympusCombinedTimelinePath);
+
+                List<string> issues = ValidateOlympusBombingPreludeMerge(
+                    stageScene,
+                    director,
+                    combinedTimeline,
+                    combinedProfile,
+                    prelude.Root);
+                if (writeReport)
+                {
+                    WriteOlympusMergeReport(issues, combinedTimeline, combinedProfile);
+                }
+
+                if (issues.Count > 0)
+                {
+                    throw new InvalidOperationException(
+                        "Olympus bombing prelude merge validation failed:\n" + string.Join("\n", issues));
+                }
+            }
+            finally
+            {
+                if (sourceScene.IsValid() && sourceScene.isLoaded)
+                {
+                    EditorSceneManager.CloseScene(sourceScene, removeScene: true);
+                }
+            }
+        }
+
+        private static void RemoveOlympusBombingPreludeTargetPlane(bool writeReport)
+        {
+            AssetDatabase.Refresh();
+            Scene stageScene = EditorSceneManager.OpenScene(OlympusStageScenePath, OpenSceneMode.Single);
+            GameObject preludeRoot = FindObjectInScene(stageScene, OlympusPreludeRootName)
+                ?? throw new InvalidOperationException($"Missing `{OlympusPreludeRootName}` in Olympus stage scene.");
+
+            Transform targetDeck = FindDescendantOrSelf(preludeRoot.transform, TargetDeckName);
+            Transform targetZone = FindDescendantOrSelf(preludeRoot.transform, TargetZoneName);
+            if (targetZone != null)
+            {
+                UnityEngine.Object.DestroyImmediate(targetZone.gameObject);
+            }
+            else if (targetDeck != null)
+            {
+                UnityEngine.Object.DestroyImmediate(targetDeck.gameObject);
+            }
+
+            TimelineAsset combinedTimeline = LoadRequired<TimelineAsset>(OlympusCombinedTimelinePath);
+            PlayableDirector director = FindComponentInScene<PlayableDirector>(stageScene)
+                ?? throw new InvalidOperationException("Missing Olympus intro PlayableDirector.");
+            director.playableAsset = combinedTimeline;
+            RemoveTimelineTrack(combinedTimeline, BombingPreludeTargetZoneTrackName, director);
+
+            director.time = 0d;
+            director.Evaluate();
+            EditorUtility.SetDirty(director);
+            EditorUtility.SetDirty(combinedTimeline);
+            EditorSceneManager.MarkSceneDirty(stageScene);
+            EditorSceneManager.SaveScene(stageScene);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            CinematicSequenceProfile combinedProfile = LoadRequired<CinematicSequenceProfile>(OlympusCombinedProfilePath);
+            combinedTimeline = LoadRequired<TimelineAsset>(OlympusCombinedTimelinePath);
+            List<string> issues = ValidateOlympusBombingPreludeMerge(
+                stageScene,
+                director,
+                combinedTimeline,
+                combinedProfile,
+                preludeRoot);
+            if (writeReport)
+            {
+                WriteOlympusMergeReport(issues, combinedTimeline, combinedProfile);
+            }
+
+            if (issues.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    "Olympus bombing prelude target-plane removal validation failed:\n" + string.Join("\n", issues));
+            }
+        }
+
+        private static void RemoveProceduralExplosionMaterials(bool writeReport)
+        {
+            AssetDatabase.Refresh();
+            Scene stageScene = EditorSceneManager.OpenScene(OlympusStageScenePath, OpenSceneMode.Single);
+            GameObject preludeRoot = FindObjectInScene(stageScene, OlympusPreludeRootName)
+                ?? throw new InvalidOperationException($"Missing `{OlympusPreludeRootName}` in Olympus stage scene.");
+            RemoveProceduralExplosionObjects(preludeRoot.transform);
+            EditorSceneManager.MarkSceneDirty(stageScene);
+            EditorSceneManager.SaveScene(stageScene);
+
+            Scene reviewScene = EditorSceneManager.OpenScene(ReviewScenePath, OpenSceneMode.Single);
+            GameObject reviewRoot = FindObjectInScene(reviewScene, RootName);
+            if (reviewRoot != null)
+            {
+                RemoveProceduralExplosionObjects(reviewRoot.transform);
+                EditorSceneManager.MarkSceneDirty(reviewScene);
+                EditorSceneManager.SaveScene(reviewScene);
+            }
+
+            DeleteAssetIfExists(ProceduralExplosionCoreMaterialPath);
+            DeleteAssetIfExists(ProceduralShockRingMaterialPath);
+            DeleteAssetIfExists(ProceduralSmokeMaterialPath);
+            DeleteAssetIfExists(ShockRingMeshPath);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            stageScene = EditorSceneManager.OpenScene(OlympusStageScenePath, OpenSceneMode.Single);
+            preludeRoot = FindObjectInScene(stageScene, OlympusPreludeRootName)
+                ?? throw new InvalidOperationException($"Missing `{OlympusPreludeRootName}` in Olympus stage scene after cleanup.");
+            PlayableDirector director = FindComponentInScene<PlayableDirector>(stageScene)
+                ?? throw new InvalidOperationException("Missing Olympus intro PlayableDirector.");
+            TimelineAsset combinedTimeline = LoadRequired<TimelineAsset>(OlympusCombinedTimelinePath);
+            CinematicSequenceProfile combinedProfile = LoadRequired<CinematicSequenceProfile>(OlympusCombinedProfilePath);
+            director.playableAsset = combinedTimeline;
+            List<string> issues = ValidateOlympusBombingPreludeMerge(
+                stageScene,
+                director,
+                combinedTimeline,
+                combinedProfile,
+                preludeRoot);
+            ValidateProceduralExplosionMaterialsRemoved(preludeRoot.transform, issues);
+            if (writeReport)
+            {
+                WriteOlympusMergeReport(issues, combinedTimeline, combinedProfile);
+            }
+
+            if (issues.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    "Procedural bombing-prelude explosion cleanup validation failed:\n" + string.Join("\n", issues));
+            }
+        }
+
+        private static void AddOlympusBombingTransitionCameraShake(bool writeReport)
+        {
+            AssetDatabase.Refresh();
+            Scene stageScene = EditorSceneManager.OpenScene(OlympusStageScenePath, OpenSceneMode.Single);
+            GameObject preludeRoot = FindObjectInScene(stageScene, OlympusPreludeRootName)
+                ?? throw new InvalidOperationException($"Missing `{OlympusPreludeRootName}` in Olympus stage scene.");
+            Transform aftershockShot = RequireDescendantOrSelf(preludeRoot.transform, AftershockShotName);
+            Transform handoffShot = RequireDescendantOrSelf(preludeRoot.transform, HandoffShotName);
+            Animator aftershockAnimator = EnsureTimelineAnimator(aftershockShot.gameObject);
+            Animator handoffAnimator = EnsureTimelineAnimator(handoffShot.gameObject);
+
+            TimelineAsset combinedTimeline = LoadRequired<TimelineAsset>(OlympusCombinedTimelinePath);
+            PlayableDirector director = FindComponentInScene<PlayableDirector>(stageScene)
+                ?? throw new InvalidOperationException("Missing Olympus intro PlayableDirector.");
+            director.playableAsset = combinedTimeline;
+            RemoveTimelineTrack(combinedTimeline, AftershockTransitionShakeTrackName, director);
+            RemoveTimelineTrack(combinedTimeline, HandoffTransitionShakeTrackName, director);
+            AddBombingTransitionCameraShakeTracks(
+                combinedTimeline,
+                director,
+                aftershockShot,
+                aftershockAnimator,
+                handoffShot,
+                handoffAnimator);
+
+            director.time = 0d;
+            director.Evaluate();
+            EditorUtility.SetDirty(director);
+            EditorUtility.SetDirty(combinedTimeline);
+            EditorSceneManager.MarkSceneDirty(stageScene);
+            EditorSceneManager.SaveScene(stageScene);
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            combinedTimeline = LoadRequired<TimelineAsset>(OlympusCombinedTimelinePath);
+            CinematicSequenceProfile combinedProfile = LoadRequired<CinematicSequenceProfile>(OlympusCombinedProfilePath);
+            List<string> issues = ValidateOlympusBombingPreludeMerge(
+                stageScene,
+                director,
+                combinedTimeline,
+                combinedProfile,
+                preludeRoot);
+            if (writeReport)
+            {
+                WriteOlympusMergeReport(issues, combinedTimeline, combinedProfile);
+            }
+
+            if (issues.Count > 0)
+            {
+                throw new InvalidOperationException(
+                    "Olympus bombing transition camera-shake validation failed:\n" + string.Join("\n", issues));
+            }
+        }
+
+        private static CinematicSequenceProfile CreateShiftedOlympusProfile()
+        {
+            EnsureFolder(PathParent(OlympusCombinedProfilePath));
+            if (AssetDatabase.LoadAssetAtPath<CinematicSequenceProfile>(OlympusCombinedProfilePath) != null)
+            {
+                AssetDatabase.DeleteAsset(OlympusCombinedProfilePath);
+            }
+
+            if (!AssetDatabase.CopyAsset(AwakeningProfilePath, OlympusCombinedProfilePath))
+            {
+                throw new InvalidOperationException(
+                    $"Failed to copy `{AwakeningProfilePath}` to `{OlympusCombinedProfilePath}`.");
+            }
+
+            CinematicSequenceProfile profile = LoadRequired<CinematicSequenceProfile>(OlympusCombinedProfilePath);
+            profile.name = Path.GetFileNameWithoutExtension(OlympusCombinedProfilePath);
+            SerializedObject serialized = new SerializedObject(profile);
+            RequireProperty(serialized, "sequenceId").stringValue =
+                Path.GetFileNameWithoutExtension(OlympusCombinedProfilePath);
+            RequireProperty(serialized, "displayName").stringValue =
+                "Intro GatePod Awakening - Olympus Bombing Prelude";
+            RequireProperty(serialized, "reviewerIntent").stringValue =
+                "Olympus stage runtime intro with the validated BombingReview airstrike prepended before the protected GatePod awakening beats.";
+            RequireProperty(serialized, "authoredDurationSeconds").floatValue += TimelineDurationSeconds;
+            AddOffsetToCueStartTimes(RequireProperty(serialized, "cameraCues"), TimelineDurationSeconds);
+            AddOffsetToCueStartTimes(RequireProperty(serialized, "actorCues"), TimelineDurationSeconds);
+            AddOffsetToCueStartTimes(RequireProperty(serialized, "vfxCues"), TimelineDurationSeconds);
+            AddOffsetToCueStartTimes(RequireProperty(serialized, "tutorialCues"), TimelineDurationSeconds);
+            SerializedProperty handoff = RequireProperty(serialized, "gameplayHandoff");
+            SerializedProperty handoffStart = handoff.FindPropertyRelative("startSeconds");
+            if (handoffStart != null)
+            {
+                handoffStart.floatValue += TimelineDurationSeconds;
+            }
+
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(profile);
+            AssetDatabase.SaveAssets();
+            return profile;
+        }
+
+        private static TimelineAsset CreateShiftedOlympusTimeline(TimelineAsset sourceTimeline)
+        {
+            EnsureFolder(PathParent(OlympusCombinedTimelinePath));
+            if (AssetDatabase.LoadAssetAtPath<TimelineAsset>(OlympusCombinedTimelinePath) != null)
+            {
+                AssetDatabase.DeleteAsset(OlympusCombinedTimelinePath);
+            }
+
+            if (!AssetDatabase.CopyAsset(AwakeningTimelinePath, OlympusCombinedTimelinePath))
+            {
+                throw new InvalidOperationException(
+                    $"Failed to copy `{AwakeningTimelinePath}` to `{OlympusCombinedTimelinePath}`.");
+            }
+
+            TimelineAsset timeline = LoadRequired<TimelineAsset>(OlympusCombinedTimelinePath);
+            timeline.name = Path.GetFileNameWithoutExtension(OlympusCombinedTimelinePath);
+            timeline.durationMode = TimelineAsset.DurationMode.FixedLength;
+            timeline.fixedDuration = sourceTimeline.fixedDuration + TimelineDurationSeconds;
+            timeline.editorSettings.frameRate = 30d;
+            ShiftTimelineClips(timeline, TimelineDurationSeconds);
+            EditorUtility.SetDirty(timeline);
+            AssetDatabase.SaveAssets();
+            return timeline;
+        }
+
+        private static BombingPreludeSceneBindings CreateBombingPreludeSceneBindings(
+            Scene scene,
+            CinemachineBrain brain,
+            Camera stageCamera)
+        {
+            GameObject rootObject = new GameObject(OlympusPreludeRootName);
+            SceneManager.MoveGameObjectToScene(rootObject, scene);
+            Transform root = rootObject.transform;
+            root.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+            root.localScale = Vector3.one;
+
+            Material aircraftMaterial = LoadOrCreateTextureMaterial(
+                MaterialRoot + "/AF_BombingReview_Aircraft.mat",
+                AircraftTexturePath,
+                new Color(0.72f, 0.82f, 0.94f, 1f),
+                new Color(0.06f, 0.16f, 0.32f, 1f),
+                0.44f,
+                0.28f);
+            Material bombMaterial = LoadOrCreateLitMaterial(
+                MaterialRoot + "/AF_BombingReview_Bomb.mat",
+                new Color(0.08f, 0.09f, 0.105f, 1f),
+                Color.black,
+                0.52f,
+                0.62f);
+            Material cloudMaterial = LoadOrCreateLitMaterial(
+                MaterialRoot + "/AF_BombingReview_Cloud.mat",
+                new Color(0.86f, 0.88f, 0.83f, 0.5f),
+                new Color(0.16f, 0.17f, 0.15f, 1f),
+                0.18f,
+                0.0f);
+            ConfigureTransparentMaterial(cloudMaterial, alpha: 0.5f);
+            CreateLighting(root);
+            CreateEnvironment(root, null, cloudMaterial, out Transform cloudRoot);
+            Transform aircraftRoot = CreateAircraftFormation(root, aircraftMaterial);
+            Transform bombDropRoot = CreateBombDrop(root, bombMaterial);
+            Transform impactRoot = CreateImpactChain(root);
+            Transform smokeRoot = CreateAftermathSmoke(root);
+            bombDropRoot.gameObject.SetActive(false);
+            impactRoot.gameObject.SetActive(false);
+            smokeRoot.gameObject.SetActive(false);
+
+            TransitionOverlayBindings transitionOverlay = CreateTransitionOverlay(scene, root, stageCamera);
+            CameraShot[] shots = CreateCinemachineShots(root, aircraftRoot, bombDropRoot, brain);
+            return new BombingPreludeSceneBindings(
+                rootObject,
+                shots,
+                aircraftRoot,
+                cloudRoot,
+                bombDropRoot,
+                impactRoot,
+                smokeRoot,
+                transitionOverlay);
+        }
+
+        private static IntroGatePodCinemachineShotPlayer.Shot[] RebindShiftedAwakeningRuntime(
+            Scene sourceScene,
+            Transform runtimeRoot,
+            Transform visualRoot,
+            CinemachineBrain brain,
+            PlayableDirector director,
+            CinematicSequenceProfile combinedProfile)
+        {
+            IntroGatePodCinemachineShotPlayer sourceShotPlayer =
+                FindComponentInScene<IntroGatePodCinemachineShotPlayer>(sourceScene)
+                ?? throw new InvalidOperationException("Missing source IntroGatePodCinemachineShotPlayer.");
+            IntroGatePodCinemachineShotPlayer targetShotPlayer =
+                RequireComponentByObjectName<IntroGatePodCinemachineShotPlayer>(
+                    runtimeRoot,
+                    "IntroGatePodReview_CinemachineShotPlayer");
+            IntroGatePodCinemachineShotPlayer.Shot[] sourceShots = sourceShotPlayer.Shots;
+            IntroGatePodCinemachineShotPlayer.Shot[] targetShots =
+                new IntroGatePodCinemachineShotPlayer.Shot[sourceShots.Length];
+            for (int i = 0; i < sourceShots.Length; i++)
+            {
+                IntroGatePodCinemachineShotPlayer.Shot sourceShot = sourceShots[i];
+                CinemachineCamera targetCamera =
+                    RequireComponentByObjectName<CinemachineCamera>(runtimeRoot, sourceShot.Camera.name);
+                targetCamera.Priority = 0;
+                targetCamera.gameObject.SetActive(true);
+                targetShots[i] = new IntroGatePodCinemachineShotPlayer.Shot(
+                    sourceShot.ShotId,
+                    sourceShot.StartSeconds + TimelineDurationSeconds,
+                    targetCamera,
+                    sourceShot.BlendStyle,
+                    sourceShot.BlendSeconds);
+                EditorUtility.SetDirty(targetCamera);
+            }
+
+            targetShotPlayer.Configure(brain, targetShots, false, true);
+            targetShotPlayer.enabled = false;
+            for (int i = 0; i < targetShots.Length; i++)
+            {
+                if (targetShots[i].Camera != null)
+                {
+                    targetShots[i].Camera.Priority = 0;
+                    EditorUtility.SetDirty(targetShots[i].Camera);
+                }
+            }
+
+            RebindShiftedCueDirector(sourceScene, runtimeRoot);
+            RebindShiftedFirstPersonMask(sourceScene, runtimeRoot, visualRoot, director);
+            RebindRunnerProfile(runtimeRoot, visualRoot, combinedProfile);
+            RebindShiftedInvasionBridge(sourceScene, runtimeRoot, visualRoot, director);
+            return targetShots;
+        }
+
+        private static void RebindShiftedAwakeningTimelineTracks(
+            TimelineAsset timeline,
+            PlayableDirector director,
+            Transform runtimeRoot,
+            Transform visualRoot,
+            CinemachineBrain brain,
+            IntroGatePodCinemachineShotPlayer.Shot[] shiftedShots)
+        {
+            CinemachineTrack cameraTrack = FindTimelineTrack<CinemachineTrack>(timeline, "Cinemachine Shots")
+                ?? throw new InvalidOperationException("Combined Timeline is missing the shifted Cinemachine Shots track.");
+            director.SetGenericBinding(cameraTrack, brain);
+            BindCinemachineTimelineClips(director, cameraTrack, shiftedShots);
+
+            AnimationTrack openingDollyTrack = FindTimelineTrack<AnimationTrack>(timeline, "Opening Dolly")
+                ?? throw new InvalidOperationException("Combined Timeline is missing the shifted Opening Dolly track.");
+            CinemachineSplineDolly openingDolly = ResolveOpeningDolly(shiftedShots);
+            Animator openingAnimator = openingDolly.GetComponent<Animator>()
+                ?? throw new InvalidOperationException("Shifted opening dolly camera is missing Animator.");
+            director.SetGenericBinding(openingDollyTrack, openingAnimator);
+
+            AnimationTrack inoriBodyTrack = FindTimelineTrack<AnimationTrack>(timeline, "Inori Body")
+                ?? throw new InvalidOperationException("Combined Timeline is missing the shifted Inori Body track.");
+            director.SetGenericBinding(inoriBodyTrack, RequireVisualInoriAnimator(visualRoot));
+
+            AudioTrack voiceTrack = FindTimelineTrack<AudioTrack>(timeline, "Voice")
+                ?? throw new InvalidOperationException("Combined Timeline is missing the shifted Voice track.");
+            director.SetGenericBinding(
+                voiceTrack,
+                RequireComponentByObjectName<AudioSource>(runtimeRoot, "IntroGatePodReview_VoiceTimelineAudio"));
+
+            AudioTrack bgmTrack = FindTimelineTrack<AudioTrack>(timeline, "BGM")
+                ?? throw new InvalidOperationException("Combined Timeline is missing the shifted BGM track.");
+            director.SetGenericBinding(
+                bgmTrack,
+                RequireComponentByObjectName<AudioSource>(runtimeRoot, "IntroGatePodReview_BgmTimelineAudio"));
+
+            IntroGatePodFadeTrack fadeTrack = FindTimelineTrack<IntroGatePodFadeTrack>(timeline, "Fade")
+                ?? throw new InvalidOperationException("Combined Timeline is missing the shifted Fade track.");
+            IntroGatePodTimelineFadeOverlay fadeOverlay =
+                RequireComponentByObjectName<IntroGatePodTimelineFadeOverlay>(
+                    runtimeRoot,
+                    "IntroGatePodReview_TimelineFadeOverlay");
+            director.SetGenericBinding(fadeTrack, fadeOverlay);
+            fadeOverlay.enabled = true;
+            EditorUtility.SetDirty(fadeOverlay);
+        }
+
+        private static void AddBombingPreludeTracks(
+            TimelineAsset timeline,
+            PlayableDirector director,
+            CinemachineBrain brain,
+            BombingPreludeSceneBindings prelude)
+        {
+            CreateActivationTrack(timeline, director, "Bombing Prelude Root Active", prelude.Root, 0f, TimelineDurationSeconds);
+            CreateCinemachineTrack(timeline, director, brain, prelude.Shots, "Bombing Prelude Cinemachine Shots", "bombing_prelude");
+            CreateAnimationTrack(
+                timeline,
+                director,
+                "Bombing Prelude Aircraft Formation Move",
+                prelude.AircraftRoot.GetComponent<Animator>(),
+                CreateFormationRootMoveClip("AC_OlympusBombingPrelude_AircraftFormationMove"));
+            CreateAnimationTrack(
+                timeline,
+                director,
+                "Bombing Prelude Bomber Lead Entry",
+                RequireChildAnimator(prelude.AircraftRoot, "Bomber_Leader"),
+                CreateAircraftJoinClip(
+                    "AC_OlympusBombingPrelude_BomberLeadEntry",
+                    0f,
+                    BomberLeadEntryEndSeconds,
+                    new Vector3(0f, -0.08f, -4.25f),
+                    Vector3.zero,
+                    -1.6f,
+                    0.45f));
+            CreateAnimationTrack(
+                timeline,
+                director,
+                "Bombing Prelude Left Escort Join",
+                RequireChildAnimator(prelude.AircraftRoot, "Jet_Escort_Left"),
+                CreateAircraftJoinClip(
+                    "AC_OlympusBombingPrelude_LeftEscortJoin",
+                    LeftEscortJoinStartSeconds,
+                    LeftEscortJoinEndSeconds,
+                    new Vector3(-16.8f, -0.48f, -8.20f),
+                    new Vector3(-FormationWingX, FormationWingY, FormationWingZ),
+                    13.5f,
+                    1.0f));
+            CreateAnimationTrack(
+                timeline,
+                director,
+                "Bombing Prelude Right Escort Join",
+                RequireChildAnimator(prelude.AircraftRoot, "Jet_Escort_Right"),
+                CreateAircraftJoinClip(
+                    "AC_OlympusBombingPrelude_RightEscortJoin",
+                    RightEscortJoinStartSeconds,
+                    RightEscortJoinEndSeconds,
+                    new Vector3(16.8f, -0.50f, -8.70f),
+                    new Vector3(FormationWingX, FormationWingY, FormationWingZ),
+                    -13.5f,
+                    -1.0f));
+            CreateAnimationTrack(
+                timeline,
+                director,
+                "Bombing Prelude Bomb Drop Move",
+                prelude.BombDropRoot.GetComponent<Animator>(),
+                CreateBombDropClip("AC_OlympusBombingPrelude_BombDropMove"));
+            CreateAnimationTrack(
+                timeline,
+                director,
+                "Bombing Prelude Impact Camera Recoil",
+                prelude.Shots[4].Animator,
+                CreateRecoilClip(
+                    "AC_OlympusBombingPrelude_ImpactCameraRecoil",
+                    prelude.Shots[4].Camera.transform.localPosition,
+                    6.24f));
+            AddBombingTransitionCameraShakeTracks(
+                timeline,
+                director,
+                prelude.Shots[5].Camera.transform,
+                prelude.Shots[5].Animator,
+                prelude.Shots[6].Camera.transform,
+                prelude.Shots[6].Animator);
+            CreateActivationTrack(timeline, director, "Bombing Prelude Cloud Deck Active", prelude.CloudRoot.gameObject, 0f, 5.48f);
+            CreateActivationTrack(timeline, director, "Bombing Prelude Bombs Active", prelude.BombDropRoot.gameObject, BombReleaseStartSeconds, 2.42f);
+            CreateActivationTrack(timeline, director, "Bombing Prelude Impact Chain Active", prelude.ImpactRoot.gameObject, 6.10f, 2.52f);
+            CreateActivationTrack(timeline, director, "Bombing Prelude Impact Burst 01 Active", RequireChild(prelude.ImpactRoot, "ImpactBurst_01"), 6.22f, 1.72f);
+            CreateActivationTrack(timeline, director, "Bombing Prelude Impact Burst 02 Active", RequireChild(prelude.ImpactRoot, "ImpactBurst_02"), 6.52f, 1.74f);
+            CreateActivationTrack(timeline, director, "Bombing Prelude Impact Burst 03 Active", RequireChild(prelude.ImpactRoot, "ImpactBurst_03"), 6.82f, 1.76f);
+            CreateActivationTrack(timeline, director, "Bombing Prelude Impact Burst 04 Active", RequireChild(prelude.ImpactRoot, "ImpactBurst_04"), 7.12f, 1.78f);
+            CreateActivationTrack(timeline, director, "Bombing Prelude Aftermath Smoke Active", prelude.SmokeRoot.gameObject, 7.38f, 1.42f);
+            CreateAnimationTrack(
+                timeline,
+                director,
+                "Bombing Prelude Black Screen Transition",
+                prelude.TransitionOverlay.CurtainAnimator,
+                CreateCanvasGroupAlphaClip(
+                    "AC_OlympusBombingPrelude_BlackScreenTransition",
+                    (0.00f, 0.52f),
+                    (0.08f, 0.28f),
+                    (0.24f, 0.00f),
+                    (8.18f, 0.00f),
+                    (8.44f, 0.40f),
+                    (8.80f, 0.90f)));
+            EditorUtility.SetDirty(timeline);
+        }
+
+        private static void AddBombingTransitionCameraShakeTracks(
+            TimelineAsset timeline,
+            PlayableDirector director,
+            Transform aftershockShot,
+            Animator aftershockAnimator,
+            Transform handoffShot,
+            Animator handoffAnimator)
+        {
+            CreateAnimationTrack(
+                timeline,
+                director,
+                AftershockTransitionShakeTrackName,
+                aftershockAnimator,
+                CreateTransitionCameraShakeClip(
+                    AftershockTransitionShakeClipName,
+                    aftershockShot.localPosition,
+                    (7.88f, aftershockShot.localPosition),
+                    (7.97f, aftershockShot.localPosition + new Vector3(0.18f, 0.10f, -0.09f)),
+                    (8.07f, aftershockShot.localPosition + new Vector3(-0.13f, -0.07f, 0.06f)),
+                    (8.19f, aftershockShot.localPosition + new Vector3(0.09f, 0.05f, -0.04f)),
+                    (8.31f, aftershockShot.localPosition + new Vector3(-0.045f, -0.025f, 0.025f)),
+                    (8.36f, aftershockShot.localPosition)));
+            CreateAnimationTrack(
+                timeline,
+                director,
+                HandoffTransitionShakeTrackName,
+                handoffAnimator,
+                CreateTransitionCameraShakeClip(
+                    HandoffTransitionShakeClipName,
+                    handoffShot.localPosition,
+                    (8.36f, handoffShot.localPosition),
+                    (8.42f, handoffShot.localPosition + new Vector3(-0.12f, 0.065f, -0.045f)),
+                    (8.50f, handoffShot.localPosition + new Vector3(0.085f, -0.045f, 0.035f)),
+                    (8.59f, handoffShot.localPosition + new Vector3(-0.055f, 0.028f, -0.022f)),
+                    (8.70f, handoffShot.localPosition + new Vector3(0.024f, -0.012f, 0.010f)),
+                    (TimelineDurationSeconds, handoffShot.localPosition)));
+        }
+
+        private static void RebindShiftedCueDirector(Scene sourceScene, Transform runtimeRoot)
+        {
+            IntroGatePodCutsceneCueDirector sourceCueDirector =
+                FindComponentInScene<IntroGatePodCutsceneCueDirector>(sourceScene)
+                ?? throw new InvalidOperationException("Missing source IntroGatePodCutsceneCueDirector.");
+            IntroGatePodCutsceneCueDirector targetCueDirector =
+                RequireComponentByObjectName<IntroGatePodCutsceneCueDirector>(
+                    runtimeRoot,
+                    "IntroGatePodReview_CueDirector");
+
+            IntroGatePodCutsceneCueDirector.DollyCue[] sourceDollyCues = sourceCueDirector.DollyCues;
+            IntroGatePodCutsceneCueDirector.DollyCue[] shiftedDollyCues =
+                new IntroGatePodCutsceneCueDirector.DollyCue[sourceDollyCues.Length];
+            for (int i = 0; i < sourceDollyCues.Length; i++)
+            {
+                IntroGatePodCutsceneCueDirector.DollyCue cue = sourceDollyCues[i];
+                CinemachineSplineDolly targetDolly = cue.Dolly != null
+                    ? RequireComponentByObjectName<CinemachineSplineDolly>(runtimeRoot, cue.Dolly.gameObject.name)
+                    : null;
+                shiftedDollyCues[i] = new IntroGatePodCutsceneCueDirector.DollyCue(
+                    cue.CueId,
+                    cue.StartSeconds + TimelineDurationSeconds,
+                    cue.DurationSeconds,
+                    targetDolly,
+                    cue.FromPosition,
+                    cue.ToPosition);
+            }
+
+            IntroGatePodCutsceneCueDirector.VoiceCue[] sourceVoiceCues = sourceCueDirector.VoiceCues;
+            IntroGatePodCutsceneCueDirector.VoiceCue[] shiftedVoiceCues =
+                new IntroGatePodCutsceneCueDirector.VoiceCue[sourceVoiceCues.Length];
+            for (int i = 0; i < sourceVoiceCues.Length; i++)
+            {
+                IntroGatePodCutsceneCueDirector.VoiceCue cue = sourceVoiceCues[i];
+                AudioSource targetSource = cue.AudioSource != null
+                    ? RequireComponentByObjectName<AudioSource>(runtimeRoot, cue.AudioSource.name)
+                    : null;
+                shiftedVoiceCues[i] = new IntroGatePodCutsceneCueDirector.VoiceCue(
+                    cue.CueId,
+                    cue.StartSeconds + TimelineDurationSeconds,
+                    targetSource);
+            }
+
+            IntroGatePodCutsceneCueDirector.FadeCue[] sourceFadeCues = sourceCueDirector.FadeCues;
+            IntroGatePodCutsceneCueDirector.FadeCue[] shiftedFadeCues =
+                new IntroGatePodCutsceneCueDirector.FadeCue[sourceFadeCues.Length];
+            for (int i = 0; i < sourceFadeCues.Length; i++)
+            {
+                IntroGatePodCutsceneCueDirector.FadeCue cue = sourceFadeCues[i];
+                shiftedFadeCues[i] = new IntroGatePodCutsceneCueDirector.FadeCue(
+                    cue.CueId,
+                    cue.StartSeconds + TimelineDurationSeconds,
+                    cue.DurationSeconds,
+                    cue.FromAlpha,
+                    cue.ToAlpha);
+            }
+
+            targetCueDirector.Configure(shiftedDollyCues, shiftedVoiceCues, shiftedFadeCues, false, true);
+            targetCueDirector.enabled = true;
+            EditorUtility.SetDirty(targetCueDirector);
+        }
+
+        private static void RebindShiftedFirstPersonMask(
+            Scene sourceScene,
+            Transform runtimeRoot,
+            Transform visualRoot,
+            PlayableDirector director)
+        {
+            IntroGatePodFirstPersonRendererMask sourceMask =
+                FindComponentInScene<IntroGatePodFirstPersonRendererMask>(sourceScene)
+                ?? throw new InvalidOperationException("Missing source IntroGatePodFirstPersonRendererMask.");
+            IntroGatePodFirstPersonRendererMask targetMask =
+                RequireComponentByObjectName<IntroGatePodFirstPersonRendererMask>(
+                    runtimeRoot,
+                    "IntroGatePodReview_FirstPersonRendererMask");
+            SerializedObject sourceSerialized = new SerializedObject(sourceMask);
+            targetMask.Configure(
+                director,
+                ResolveFirstPersonHiddenRenderers(RequireVisualInori(visualRoot)),
+                GetFloat(sourceSerialized, "hideStartSeconds") + TimelineDurationSeconds,
+                GetFloat(sourceSerialized, "hideEndSeconds") + TimelineDurationSeconds);
+            targetMask.enabled = true;
+            EditorUtility.SetDirty(targetMask);
+        }
+
+        private static void RebindRunnerProfile(
+            Transform runtimeRoot,
+            Transform visualRoot,
+            CinematicSequenceProfile combinedProfile)
+        {
+            CinematicSequenceRunner runner =
+                RequireComponentByObjectName<CinematicSequenceRunner>(runtimeRoot, "IntroGatePodReview_Runner");
+            SerializedObject serializedRunner = new SerializedObject(runner);
+            RequireProperty(serializedRunner, "sequenceProfile").objectReferenceValue = combinedProfile;
+            RequireProperty(serializedRunner, "cueSpace").objectReferenceValue = RequireVisualInori(visualRoot).transform;
+            serializedRunner.ApplyModifiedPropertiesWithoutUndo();
+            runner.enabled = true;
+            EditorUtility.SetDirty(runner);
+        }
+
+        private static void RebindShiftedInvasionBridge(
+            Scene sourceScene,
+            Transform runtimeRoot,
+            Transform visualRoot,
+            PlayableDirector director)
+        {
+            IntroGatePodInvasionBridgeCue sourceBridge =
+                FindComponentInScene<IntroGatePodInvasionBridgeCue>(sourceScene)
+                ?? throw new InvalidOperationException("Missing source IntroGatePodInvasionBridgeCue.");
+            IntroGatePodInvasionBridgeCue targetBridge =
+                FindComponentByObjectName<IntroGatePodInvasionBridgeCue>(visualRoot, "IntroGatePodReview_InvasionBridge")
+                ?? throw new InvalidOperationException("Missing target IntroGatePodReview_InvasionBridge.");
+
+            IntroGatePodInvasionBridgeCue.CommandoCue[] sourceCommandos = sourceBridge.Commandos;
+            IntroGatePodInvasionBridgeCue.CommandoCue[] shiftedCommandos =
+                new IntroGatePodInvasionBridgeCue.CommandoCue[sourceCommandos.Length];
+            for (int i = 0; i < sourceCommandos.Length; i++)
+            {
+                IntroGatePodInvasionBridgeCue.CommandoCue cue = sourceCommandos[i];
+                Transform targetRoot = RequireDescendantOrSelf(visualRoot, cue.Root.name);
+                Animator targetAnimator = targetRoot.GetComponentInChildren<Animator>(includeInactive: true);
+                float shiftedStartSeconds = cue.StartSeconds + TimelineDurationSeconds;
+                float shiftedEndSeconds = cue.EndSeconds + TimelineDurationSeconds;
+                float extendedEndSeconds = Mathf.Max(shiftedEndSeconds, OlympusCommandoHoldUntilSeconds + (i * 0.04f));
+                float shiftedAttackStartSeconds = string.IsNullOrWhiteSpace(cue.AttackStateName)
+                    ? extendedEndSeconds
+                    : cue.AttackStartSeconds + TimelineDurationSeconds;
+                float shiftedHitStartSeconds = string.IsNullOrWhiteSpace(cue.HitStateName)
+                    ? extendedEndSeconds
+                    : cue.HitStartSeconds + TimelineDurationSeconds;
+                Vector3 shiftedEndLocalPosition = string.IsNullOrWhiteSpace(cue.AttackStateName)
+                    ? ExtrapolateCommandoEndLocalPosition(
+                        cue.StartLocalPosition,
+                        cue.EndLocalPosition,
+                        shiftedStartSeconds,
+                        shiftedEndSeconds,
+                        extendedEndSeconds)
+                    : cue.EndLocalPosition;
+                shiftedCommandos[i] = new IntroGatePodInvasionBridgeCue.CommandoCue(
+                    targetRoot,
+                    targetAnimator,
+                    cue.RunStateName,
+                    cue.AttackStateName,
+                    cue.HitStateName,
+                    shiftedStartSeconds,
+                    shiftedAttackStartSeconds,
+                    shiftedHitStartSeconds,
+                    extendedEndSeconds,
+                    cue.StartLocalPosition,
+                    shiftedEndLocalPosition,
+                    cue.HitLocalPositionOffset,
+                    cue.LocalEulerAngles,
+                    cue.NormalizedTimeOffset);
+            }
+
+            IntroGatePodInvasionBridgeCue.TimedObjectCue[] sourceTimedObjects = sourceBridge.TimedObjects;
+            IntroGatePodInvasionBridgeCue.TimedObjectCue[] shiftedTimedObjects =
+                new IntroGatePodInvasionBridgeCue.TimedObjectCue[sourceTimedObjects.Length];
+            for (int i = 0; i < sourceTimedObjects.Length; i++)
+            {
+                IntroGatePodInvasionBridgeCue.TimedObjectCue cue = sourceTimedObjects[i];
+                Transform targetRoot = RequireDescendantOrSelf(visualRoot, cue.Root.name);
+                shiftedTimedObjects[i] = new IntroGatePodInvasionBridgeCue.TimedObjectCue(
+                    targetRoot,
+                    cue.StartSeconds + TimelineDurationSeconds,
+                    cue.EndSeconds + TimelineDurationSeconds,
+                    cue.StartLocalPosition,
+                    cue.EndLocalPosition,
+                    cue.LocalEulerAngles,
+                    cue.StartLocalScale,
+                    cue.EndLocalScale,
+                    cue.PulseScale,
+                    cue.PulseScaleAmplitude);
+            }
+
+            SerializedObject sourceSerialized = new SerializedObject(sourceBridge);
+            GameObject targetExplosionRoot = sourceBridge.ExplosionRoot != null
+                ? RequireDescendantOrSelf(visualRoot, sourceBridge.ExplosionRoot.name).gameObject
+                : null;
+            Light targetExplosionLight = targetExplosionRoot != null
+                ? targetExplosionRoot.GetComponentInChildren<Light>(includeInactive: true)
+                : null;
+            targetBridge.Configure(
+                director,
+                shiftedCommandos,
+                targetExplosionRoot,
+                targetExplosionLight,
+                GetFloat(sourceSerialized, "explosionStartSeconds") + TimelineDurationSeconds,
+                GetFloat(sourceSerialized, "explosionDurationSeconds"),
+                GetVector3(sourceSerialized, "explosionRestScale"),
+                GetVector3(sourceSerialized, "explosionPeakScale"),
+                GetFloat(sourceSerialized, "explosionPeakLightIntensity"));
+            targetBridge.ConfigureTimedObjects(
+                shiftedTimedObjects,
+                ReadShiftedFloatArray(sourceSerialized, "impactCueSeconds", TimelineDurationSeconds));
+            targetBridge.ConfigurePresentation(
+                RequireComponentByObjectName<Camera>(runtimeRoot, "Main Camera"),
+                RequireComponentByObjectName<CanvasGroup>(runtimeRoot, "IntroGatePodReview_InvasionImpactFlash"),
+                RequireComponentByObjectName<CanvasGroup>(runtimeRoot, "IntroGatePodReview_InvasionWarningSweep"),
+                GetFloat(sourceSerialized, "explosionAfterSmokeSeconds"),
+                GetFloat(sourceSerialized, "warningSweepLeadSeconds"),
+                GetFloat(sourceSerialized, "warningSweepDurationSeconds"),
+                GetFloat(sourceSerialized, "impactFlashPeakAlpha"),
+                GetVector3(sourceSerialized, "cameraShakePositionAmplitude"),
+                GetVector3(sourceSerialized, "cameraShakeEulerAmplitude"),
+                GetFloat(sourceSerialized, "cameraShakeDurationSeconds"));
+            targetBridge.enabled = true;
+            targetBridge.Sample(0f);
+            EditorUtility.SetDirty(targetBridge);
+        }
+
+        private static void BindCinemachineTimelineClips(
+            PlayableDirector director,
+            CinemachineTrack track,
+            IntroGatePodCinemachineShotPlayer.Shot[] shots)
+        {
+            int clipIndex = 0;
+            foreach (TimelineClip clip in track.GetClips())
+            {
+                CinemachineShot shotAsset = clip.asset as CinemachineShot;
+                if (shotAsset == null)
+                {
+                    continue;
+                }
+
+                CinemachineCamera camera = FindShotCamera(shots, clip.displayName);
+                if (camera == null && clipIndex < shots.Length)
+                {
+                    camera = shots[clipIndex].Camera;
+                }
+
+                if (camera == null)
+                {
+                    throw new InvalidOperationException(
+                        $"Timeline Cinemachine clip `{clip.displayName}` has no target camera binding.");
+                }
+
+                PropertyName exposedName = shotAsset.VirtualCamera.exposedName;
+                if (string.IsNullOrWhiteSpace(exposedName.ToString()))
+                {
+                    exposedName = new PropertyName($"cm_olympus_{clipIndex + 1:00}_{SanitizeAssetName(clip.displayName)}");
+                    shotAsset.VirtualCamera.exposedName = exposedName;
+                    EditorUtility.SetDirty(shotAsset);
+                }
+
+                director.SetReferenceValue(exposedName, camera);
+                clipIndex++;
+            }
+        }
+
+        private static Vector3 ExtrapolateCommandoEndLocalPosition(
+            Vector3 startLocalPosition,
+            Vector3 authoredEndLocalPosition,
+            float startSeconds,
+            float authoredEndSeconds,
+            float extendedEndSeconds)
+        {
+            float authoredDuration = Mathf.Max(0.01f, authoredEndSeconds - startSeconds);
+            float extendedDuration = Mathf.Max(authoredDuration, extendedEndSeconds - startSeconds);
+            return startLocalPosition + ((authoredEndLocalPosition - startLocalPosition) * (extendedDuration / authoredDuration));
+        }
+
+        private static CinemachineCamera FindShotCamera(
+            IntroGatePodCinemachineShotPlayer.Shot[] shots,
+            string shotId)
+        {
+            for (int i = 0; i < shots.Length; i++)
+            {
+                if (string.Equals(shots[i].ShotId, shotId, StringComparison.Ordinal))
+                {
+                    return shots[i].Camera;
+                }
+            }
+
+            return null;
+        }
+
+        private static CinemachineSplineDolly ResolveOpeningDolly(
+            IntroGatePodCinemachineShotPlayer.Shot[] shots)
+        {
+            for (int i = 0; i < shots.Length; i++)
+            {
+                if (!string.Equals(shots[i].ShotId, "src_c01_capsule_left_dolly", StringComparison.Ordinal)
+                    || shots[i].Camera == null)
+                {
+                    continue;
+                }
+
+                CinemachineSplineDolly dolly = shots[i].Camera.GetComponent<CinemachineSplineDolly>();
+                if (dolly != null)
+                {
+                    return dolly;
+                }
+            }
+
+            throw new InvalidOperationException("Shifted awakening opening shot is missing CinemachineSplineDolly.");
+        }
+
+        private static void UpdateOlympusStageDefinitionForBombingPrelude()
+        {
+            StageDefinitionProfile profile = LoadRequired<StageDefinitionProfile>(OlympusStageDefinitionPath);
+            SerializedObject serialized = new SerializedObject(profile);
+            SerializedProperty handoffs = RequireProperty(serialized, "cutsceneHandoffs");
+            bool updated = false;
+            for (int i = 0; i < handoffs.arraySize; i++)
+            {
+                SerializedProperty handoff = handoffs.GetArrayElementAtIndex(i);
+                SerializedProperty handoffId = handoff.FindPropertyRelative("handoffId");
+                if (handoffId == null || !string.Equals(handoffId.stringValue, "intro-to-stage", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                handoff.FindPropertyRelative("cinematicProfileId").stringValue =
+                    Path.GetFileNameWithoutExtension(OlympusCombinedProfilePath);
+                handoff.FindPropertyRelative("timelineAssetPath").stringValue = OlympusCombinedTimelinePath;
+                updated = true;
+            }
+
+            if (!updated)
+            {
+                throw new InvalidOperationException("Stage definition is missing intro-to-stage handoff.");
+            }
+
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(profile);
+        }
+
+        private static List<string> ValidateOlympusBombingPreludeMerge(
+            Scene stageScene,
+            PlayableDirector director,
+            TimelineAsset timeline,
+            CinematicSequenceProfile profile,
+            GameObject preludeRoot)
+        {
+            List<string> issues = new List<string>();
+            if (director.playableAsset != timeline)
+            {
+                issues.Add("Olympus intro PlayableDirector is not bound to the bombing-prelude combined Timeline.");
+            }
+
+            if (profile == null || !string.Equals(
+                    profile.SequenceId,
+                    Path.GetFileNameWithoutExtension(OlympusCombinedProfilePath),
+                    StringComparison.Ordinal))
+            {
+                issues.Add("Combined cinematic profile has the wrong sequence id.");
+            }
+
+            if (Math.Abs(timeline.fixedDuration - (LoadRequired<TimelineAsset>(AwakeningTimelinePath).fixedDuration + TimelineDurationSeconds)) > 0.01d)
+            {
+                issues.Add("Combined Timeline duration does not equal BombingReview duration plus protected awakening duration.");
+            }
+
+            RequireTrack<CinemachineTrack>(timeline, "Bombing Prelude Cinemachine Shots", issues);
+            RequireTrack<ActivationTrack>(timeline, "Bombing Prelude Root Active", issues);
+            if (FindTimelineTrack<ActivationTrack>(timeline, BombingPreludeTargetZoneTrackName) != null)
+            {
+                issues.Add("Bombing prelude still contains the removed target-plane activation track.");
+            }
+
+            CinemachineTrack shiftedCameraTrack = RequireTrack<CinemachineTrack>(timeline, "Cinemachine Shots", issues);
+            if (shiftedCameraTrack != null)
+            {
+                foreach (TimelineClip clip in shiftedCameraTrack.GetClips())
+                {
+                    if (clip.start < TimelineDurationSeconds - 0.01d)
+                    {
+                        issues.Add($"Shifted awakening camera clip `{clip.displayName}` starts before the bombing prelude ends.");
+                    }
+                }
+            }
+
+            if (preludeRoot == null)
+            {
+                issues.Add("Missing Olympus bombing prelude scene root.");
+            }
+            else
+            {
+                if (preludeRoot.GetComponentInChildren<Camera>(includeInactive: true) != null)
+                {
+                    issues.Add("Bombing prelude must not add a second scene Camera; it should use the Olympus intro camera Brain.");
+                }
+
+                if (FindDescendantOrSelf(preludeRoot.transform, AircraftRootName) == null)
+                {
+                    issues.Add("Bombing prelude is missing aircraft formation root.");
+                }
+
+                if (FindDescendantOrSelf(preludeRoot.transform, BombDropRootName) == null)
+                {
+                    issues.Add("Bombing prelude is missing bomb drop root.");
+                }
+
+                if (FindDescendantContaining(preludeRoot.transform, "Distort") != null)
+                {
+                    issues.Add("Bombing prelude still contains a Distort object.");
+                }
+
+                if (FindDescendantOrSelf(preludeRoot.transform, TargetZoneName) != null
+                    || FindDescendantOrSelf(preludeRoot.transform, TargetDeckName) != null)
+                {
+                    issues.Add("Bombing prelude still contains the removed target-plane object.");
+                }
+
+                ValidateProceduralExplosionMaterialsRemoved(preludeRoot.transform, issues);
+                ValidateBombingTransitionCameraShake(timeline, preludeRoot.transform, issues);
+            }
+
+            StageDefinitionProfile stageProfile = LoadRequired<StageDefinitionProfile>(OlympusStageDefinitionPath);
+            bool hasCombinedHandoff = false;
+            for (int i = 0; i < stageProfile.CutsceneHandoffCount; i++)
+            {
+                StageDefinitionProfile.CutsceneHandoffRef handoff = stageProfile.GetCutsceneHandoff(i);
+                if (string.Equals(handoff.HandoffId, "intro-to-stage", StringComparison.Ordinal))
+                {
+                    hasCombinedHandoff =
+                        string.Equals(handoff.TimelineAssetPath, OlympusCombinedTimelinePath, StringComparison.Ordinal)
+                        && string.Equals(
+                            handoff.CinematicProfileId,
+                            Path.GetFileNameWithoutExtension(OlympusCombinedProfilePath),
+                            StringComparison.Ordinal);
+                }
+            }
+
+            if (!hasCombinedHandoff)
+            {
+                issues.Add("Stage definition intro-to-stage handoff is not pointed at the combined bombing-prelude profile/timeline.");
+            }
+
+            ValidateShiftedRuntimeTiming(stageScene, issues);
+            ValidateNoImportedDependencies(
+                new[]
+                {
+                    OlympusCombinedTimelinePath,
+                    OlympusCombinedProfilePath,
+                    MaterialRoot,
+                    MeshRoot,
+                    ModelRoot,
+                    TextureRoot,
+                    VfxRoot
+                },
+                issues);
+            ValidatePreludeCoordinates(director, preludeRoot, issues);
+            return issues;
+        }
+
+        private static void ValidateShiftedRuntimeTiming(Scene stageScene, List<string> issues)
+        {
+            IntroGatePodFirstPersonRendererMask mask =
+                FindComponentInScene<IntroGatePodFirstPersonRendererMask>(stageScene);
+            if (mask != null)
+            {
+                SerializedObject serializedMask = new SerializedObject(mask);
+                if (GetFloat(serializedMask, "hideStartSeconds") < TimelineDurationSeconds - 0.01f)
+                {
+                    issues.Add("First-person renderer mask still starts before the bombing prelude ends.");
+                }
+            }
+
+            IntroGatePodInvasionBridgeCue bridge =
+                FindComponentInScene<IntroGatePodInvasionBridgeCue>(stageScene);
+            if (bridge != null)
+            {
+                SerializedObject serializedBridge = new SerializedObject(bridge);
+                if (GetFloat(serializedBridge, "explosionStartSeconds") < TimelineDurationSeconds - 0.01f)
+                {
+                    issues.Add("Invasion bridge explosion still starts before the bombing prelude ends.");
+                }
+            }
+        }
+
+        private static void ValidatePreludeCoordinates(
+            PlayableDirector director,
+            GameObject preludeRoot,
+            List<string> issues)
+        {
+            if (preludeRoot == null)
+            {
+                return;
+            }
+
+            director.time = 3.95d;
+            director.Evaluate();
+            Transform aircraftRoot = FindDescendantOrSelf(preludeRoot.transform, AircraftRootName);
+            Transform bombRoot = FindDescendantOrSelf(preludeRoot.transform, BombDropRootName);
+            Transform bomber = aircraftRoot != null ? aircraftRoot.Find("Bomber_Leader") : null;
+            Transform left = aircraftRoot != null ? aircraftRoot.Find("Jet_Escort_Left") : null;
+            Transform right = aircraftRoot != null ? aircraftRoot.Find("Jet_Escort_Right") : null;
+            if (aircraftRoot == null || bombRoot == null || bomber == null || left == null || right == null)
+            {
+                issues.Add("Could not sample bombing prelude formation coordinates from the Olympus combined Timeline.");
+                return;
+            }
+
+            float leftDistance = Vector3.Distance(left.localPosition, bomber.localPosition);
+            float rightDistance = Vector3.Distance(right.localPosition, bomber.localPosition);
+            if (leftDistance < MinimumAircraftSeparation || rightDistance < MinimumAircraftSeparation)
+            {
+                issues.Add("Bombing prelude formation spacing collapsed after Olympus merge.");
+            }
+
+            if (bombRoot.position.y >= aircraftRoot.position.y)
+            {
+                issues.Add("Bombing prelude bombs are not below the aircraft at release sample.");
+            }
+
+            director.time = TimelineDurationSeconds + 0.05d;
+            director.Evaluate();
+            if (preludeRoot.activeSelf)
+            {
+                issues.Add("Bombing prelude root remains active after the protected awakening timeline starts.");
+            }
+
+            director.time = 0d;
+            director.Evaluate();
+        }
+
+        private static void WriteOlympusMergeReport(
+            List<string> issues,
+            TimelineAsset timeline,
+            CinematicSequenceProfile profile)
+        {
+            StringBuilder builder = new StringBuilder();
+            builder.AppendLine("# Intro GatePod Olympus Bombing Prelude Merge");
+            builder.AppendLine();
+            builder.AppendLine(issues.Count == 0 ? "Status: PASS" : "Status: FAIL");
+            builder.AppendLine();
+            builder.AppendLine($"- Stage scene: `{OlympusStageScenePath}`");
+            builder.AppendLine($"- Combined Timeline: `{OlympusCombinedTimelinePath}`");
+            builder.AppendLine($"- Combined profile: `{OlympusCombinedProfilePath}`");
+            builder.AppendLine($"- Prepended BombingReview duration: `{TimelineDurationSeconds:0.00}s`");
+            builder.AppendLine($"- Combined Timeline duration: `{timeline.fixedDuration:0.###}s`");
+            builder.AppendLine($"- Combined profile estimated duration: `{profile.EstimatedDurationSeconds:0.###}s`");
+            builder.AppendLine("- Existing GatePod awakening clips are shifted as a block after the bombing prelude.");
+            builder.AppendLine("- Captures were intentionally not rendered; this pass validates Timeline bindings and transform coordinates.");
+            if (issues.Count > 0)
+            {
+                builder.AppendLine();
+                builder.AppendLine("## Issues");
+                for (int i = 0; i < issues.Count; i++)
+                {
+                    builder.AppendLine($"- {issues[i]}");
+                }
+            }
+
+            Directory.CreateDirectory(Path.GetDirectoryName(OlympusMergeReportPath) ?? "C:/tmp");
+            File.WriteAllText(OlympusMergeReportPath, builder.ToString(), Encoding.UTF8);
+        }
+
+        private static void RemoveProceduralExplosionObjects(Transform root)
+        {
+            DestroyDescendantsMatching(
+                root,
+                transform =>
+                    transform.name.StartsWith(ProceduralFireCorePrefix, StringComparison.Ordinal)
+                    || string.Equals(transform.name, ShockRingName, StringComparison.Ordinal)
+                    || transform.name.StartsWith(AftermathScorchPatchPrefix, StringComparison.Ordinal));
+        }
+
+        private static int DestroyDescendantsMatching(
+            Transform root,
+            Predicate<Transform> predicate)
+        {
+            List<GameObject> matches = new List<GameObject>();
+            CollectDescendantsMatching(root, predicate, matches);
+            for (int i = 0; i < matches.Count; i++)
+            {
+                UnityEngine.Object.DestroyImmediate(matches[i]);
+            }
+
+            return matches.Count;
+        }
+
+        private static void CollectDescendantsMatching(
+            Transform current,
+            Predicate<Transform> predicate,
+            List<GameObject> matches)
+        {
+            for (int i = 0; i < current.childCount; i++)
+            {
+                Transform child = current.GetChild(i);
+                if (predicate(child))
+                {
+                    matches.Add(child.gameObject);
+                    continue;
+                }
+
+                CollectDescendantsMatching(child, predicate, matches);
+            }
+        }
+
+        private static void DeleteAssetIfExists(string assetPath)
+        {
+            UnityEngine.Object asset = AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(assetPath);
+            if (asset == null)
+            {
+                return;
+            }
+
+            if (!AssetDatabase.DeleteAsset(assetPath))
+            {
+                throw new InvalidOperationException($"Failed to delete generated asset `{assetPath}`.");
+            }
+        }
+
+        private static void ValidateProceduralExplosionMaterialsRemoved(
+            Transform preludeRoot,
+            List<string> issues)
+        {
+            if (FindDescendantContaining(preludeRoot, ProceduralFireCorePrefix) != null)
+            {
+                issues.Add("Bombing prelude still contains procedural fire-core geometry.");
+            }
+
+            if (FindDescendantOrSelf(preludeRoot, ShockRingName) != null)
+            {
+                issues.Add("Bombing prelude still contains procedural shock-ring geometry.");
+            }
+
+            if (FindDescendantContaining(preludeRoot, AftermathScorchPatchPrefix) != null)
+            {
+                issues.Add("Bombing prelude still contains procedural scorch-patch geometry.");
+            }
+
+            string[] deletedAssetPaths =
+            {
+                ProceduralExplosionCoreMaterialPath,
+                ProceduralShockRingMaterialPath,
+                ProceduralSmokeMaterialPath,
+                ShockRingMeshPath
+            };
+            for (int i = 0; i < deletedAssetPaths.Length; i++)
+            {
+                if (AssetDatabase.LoadAssetAtPath<UnityEngine.Object>(deletedAssetPaths[i]) != null)
+                {
+                    issues.Add($"Generated procedural explosion asset still exists: `{deletedAssetPaths[i]}`.");
+                }
+            }
+        }
+
+        private static void ValidateBombingTransitionCameraShake(
+            TimelineAsset timeline,
+            Transform preludeRoot,
+            List<string> issues)
+        {
+            RequireTrack<AnimationTrack>(timeline, AftershockTransitionShakeTrackName, issues);
+            RequireTrack<AnimationTrack>(timeline, HandoffTransitionShakeTrackName, issues);
+            Transform aftershockShot = FindDescendantOrSelf(preludeRoot, AftershockShotName);
+            Transform handoffShot = FindDescendantOrSelf(preludeRoot, HandoffShotName);
+            if (aftershockShot == null)
+            {
+                issues.Add($"Bombing transition camera shake is missing `{AftershockShotName}`.");
+            }
+            else if (aftershockShot.GetComponent<Animator>() == null)
+            {
+                issues.Add($"Bombing transition camera shake target `{AftershockShotName}` has no Animator.");
+            }
+
+            if (handoffShot == null)
+            {
+                issues.Add($"Bombing transition camera shake is missing `{HandoffShotName}`.");
+            }
+            else if (handoffShot.GetComponent<Animator>() == null)
+            {
+                issues.Add($"Bombing transition camera shake target `{HandoffShotName}` has no Animator.");
+            }
+        }
+
+        private static void AddOffsetToCueStartTimes(SerializedProperty array, float offsetSeconds)
+        {
+            for (int i = 0; i < array.arraySize; i++)
+            {
+                SerializedProperty start = array.GetArrayElementAtIndex(i).FindPropertyRelative("startSeconds");
+                if (start != null)
+                {
+                    start.floatValue += offsetSeconds;
+                }
+            }
+        }
+
+        private static void ShiftTimelineClips(TimelineAsset timeline, float offsetSeconds)
+        {
+            foreach (TrackAsset track in timeline.GetOutputTracks())
+            {
+                if (track == null)
+                {
+                    continue;
+                }
+
+                foreach (TimelineClip clip in track.GetClips())
+                {
+                    clip.start += offsetSeconds;
+                }
+
+                EditorUtility.SetDirty(track);
+            }
+        }
+
+        private static bool RemoveTimelineTrack(
+            TimelineAsset timeline,
+            string trackName,
+            PlayableDirector director)
+        {
+            List<TrackAsset> matches = new List<TrackAsset>();
+            foreach (TrackAsset track in timeline.GetOutputTracks())
+            {
+                if (track != null && string.Equals(track.name, trackName, StringComparison.Ordinal))
+                {
+                    matches.Add(track);
+                }
+            }
+
+            for (int i = 0; i < matches.Count; i++)
+            {
+                if (director != null)
+                {
+                    director.ClearGenericBinding(matches[i]);
+                }
+
+                timeline.DeleteTrack(matches[i]);
+            }
+
+            if (matches.Count > 0)
+            {
+                EditorUtility.SetDirty(timeline);
+            }
+
+            return matches.Count > 0;
+        }
+
+        private static float[] ReadShiftedFloatArray(
+            SerializedObject serializedObject,
+            string propertyName,
+            float offsetSeconds)
+        {
+            SerializedProperty property = RequireProperty(serializedObject, propertyName);
+            float[] values = new float[property.arraySize];
+            for (int i = 0; i < property.arraySize; i++)
+            {
+                values[i] = property.GetArrayElementAtIndex(i).floatValue + offsetSeconds;
+            }
+
+            return values;
+        }
+
+        private static void ValidateNoImportedDependencies(string[] assetPaths, List<string> issues)
+        {
+            foreach (string dependency in AssetDatabase.GetDependencies(assetPaths, recursive: true))
+            {
+                string normalized = dependency.Replace('\\', '/');
+                if (normalized.Contains("/_Imported/", StringComparison.Ordinal))
+                {
+                    issues.Add($"Combined Olympus bombing-prelude dependency points at raw imported asset: {dependency}");
+                }
+            }
+        }
+
+        private static T LoadRequired<T>(string assetPath)
+            where T : UnityEngine.Object
+        {
+            T asset = AssetDatabase.LoadAssetAtPath<T>(assetPath);
+            if (asset == null)
+            {
+                throw new InvalidOperationException($"Missing required asset at `{assetPath}`.");
+            }
+
+            return asset;
+        }
+
+        private static SerializedProperty RequireProperty(SerializedObject serializedObject, string propertyName)
+        {
+            SerializedProperty property = serializedObject.FindProperty(propertyName);
+            if (property == null)
+            {
+                throw new InvalidOperationException(
+                    $"{serializedObject.targetObject.GetType().Name} is missing serialized property `{propertyName}`.");
+            }
+
+            return property;
+        }
+
+        private static float GetFloat(SerializedObject serializedObject, string propertyName)
+        {
+            return RequireProperty(serializedObject, propertyName).floatValue;
+        }
+
+        private static Vector3 GetVector3(SerializedObject serializedObject, string propertyName)
+        {
+            return RequireProperty(serializedObject, propertyName).vector3Value;
+        }
+
+        private static GameObject RequireObjectInScene(Scene scene, string objectName)
+        {
+            GameObject gameObject = FindObjectInScene(scene, objectName);
+            if (gameObject == null)
+            {
+                throw new InvalidOperationException($"Scene `{scene.name}` is missing `{objectName}`.");
+            }
+
+            return gameObject;
+        }
+
+        private static T RequireComponentByObjectName<T>(Transform root, string objectName)
+            where T : Component
+        {
+            T component = FindComponentByObjectName<T>(root, objectName);
+            if (component == null)
+            {
+                throw new InvalidOperationException($"{root.name} is missing {typeof(T).Name} on `{objectName}`.");
+            }
+
+            return component;
+        }
+
+        private static T FindComponentByObjectName<T>(Transform root, string objectName)
+            where T : Component
+        {
+            Transform target = FindDescendantOrSelf(root, objectName);
+            return target != null ? target.GetComponent<T>() : null;
+        }
+
+        private static Transform RequireDescendantOrSelf(Transform root, string objectName)
+        {
+            Transform target = FindDescendantOrSelf(root, objectName);
+            if (target == null)
+            {
+                throw new InvalidOperationException($"{root.name} is missing descendant `{objectName}`.");
+            }
+
+            return target;
+        }
+
+        private static Transform FindDescendantOrSelf(Transform root, string objectName)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            if (string.Equals(root.name, objectName, StringComparison.Ordinal))
+            {
+                return root;
+            }
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform found = FindDescendantOrSelf(root.GetChild(i), objectName);
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+
+            return null;
+        }
+
+        private static Transform FindDescendantContaining(Transform root, string nameFragment)
+        {
+            if (root == null || string.IsNullOrWhiteSpace(nameFragment))
+            {
+                return null;
+            }
+
+            if (root.name.IndexOf(nameFragment, StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                return root;
+            }
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform found = FindDescendantContaining(root.GetChild(i), nameFragment);
+                if (found != null)
+                {
+                    return found;
+                }
+            }
+
+            return null;
+        }
+
+        private static GameObject RequireVisualInori(Transform visualRoot)
+        {
+            return RequireDescendantOrSelf(visualRoot, "IntroGatePodReview_Inori").gameObject;
+        }
+
+        private static Animator RequireVisualInoriAnimator(Transform visualRoot)
+        {
+            Animator animator = RequireVisualInori(visualRoot).GetComponentInChildren<Animator>(includeInactive: true);
+            if (animator == null)
+            {
+                throw new InvalidOperationException("Copied Olympus intro Inori visual is missing an Animator.");
+            }
+
+            return animator;
+        }
+
+        private static Renderer[] ResolveFirstPersonHiddenRenderers(GameObject inori)
+        {
+            Renderer[] renderers = inori.GetComponentsInChildren<Renderer>(includeInactive: true);
+            List<Renderer> hidden = new List<Renderer>();
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                for (Transform current = renderer.transform; current != null; current = current.parent)
+                {
+                    string name = current.name;
+                    if (name.IndexOf("Hair", StringComparison.OrdinalIgnoreCase) >= 0
+                        || name.IndexOf("Head", StringComparison.OrdinalIgnoreCase) >= 0
+                        || name.IndexOf("Face", StringComparison.OrdinalIgnoreCase) >= 0
+                        || name.IndexOf("Eye", StringComparison.OrdinalIgnoreCase) >= 0
+                        || name.IndexOf("Brow", StringComparison.OrdinalIgnoreCase) >= 0
+                        || name.IndexOf("Mouth", StringComparison.OrdinalIgnoreCase) >= 0)
+                    {
+                        hidden.Add(renderer);
+                        break;
+                    }
+
+                    if (string.Equals(current.name, "IntroGatePodReview_Inori", StringComparison.Ordinal))
+                    {
+                        break;
+                    }
+                }
+            }
+
+            return hidden.ToArray();
         }
 
         private static void PromoteSourceAssets()
@@ -288,7 +1870,6 @@ namespace DimensionBrawl.Editor
                 BombMaterialPath,
                 SourceSciFiBombBaseTexturePath,
                 new Color(0.42f, 0.42f, 0.38f, 1f));
-            EnsureShockRingMesh();
             PromoteParticleEffectPrefab(
                 SourceVefectsExplosion03PrefabPath,
                 VefectsExplosion03PrefabPath,
@@ -1057,7 +2638,6 @@ namespace DimensionBrawl.Editor
             Transform root,
             Material skyMaterial,
             Material cloudMaterial,
-            Material deckMaterial,
             out Transform cloudRoot)
         {
             cloudRoot = new GameObject("BombingReview_CloudDeck").transform;
@@ -1110,16 +2690,7 @@ namespace DimensionBrawl.Editor
                 }
             }
 
-            Transform targetRoot = new GameObject("BombingReview_TargetZone").transform;
-            targetRoot.SetParent(root, worldPositionStays: false);
-            CreatePanel(
-                targetRoot,
-                "BombingReview_TargetDeck_Main",
-                new Vector3(0f, 0f, 6.5f),
-                Quaternion.identity,
-                new Vector3(21f, 0.18f, 12f),
-                deckMaterial);
-            return targetRoot;
+            return cloudRoot;
         }
 
         private static Transform CreateAircraftFormation(Transform root, Material aircraftMaterial)
@@ -1182,8 +2753,7 @@ namespace DimensionBrawl.Editor
 
         private static Transform CreateBombDrop(
             Transform root,
-            Material bombMaterial,
-            Material trailMaterial)
+            Material bombMaterial)
         {
             Transform bombRoot = new GameObject(BombDropRootName).transform;
             bombRoot.SetParent(root, worldPositionStays: false);
@@ -1240,11 +2810,7 @@ namespace DimensionBrawl.Editor
             return bombRoot;
         }
 
-        private static Transform CreateImpactChain(
-            Transform root,
-            Material explosionMaterial,
-            Material smokeMaterial,
-            Material shockRingMaterial)
+        private static Transform CreateImpactChain(Transform root)
         {
             Transform impactRoot = new GameObject(ImpactRootName).transform;
             impactRoot.SetParent(root, worldPositionStays: false);
@@ -1261,13 +2827,6 @@ namespace DimensionBrawl.Editor
                 Transform burst = new GameObject($"ImpactBurst_{i + 1:00}").transform;
                 burst.SetParent(impactRoot, worldPositionStays: false);
                 burst.localPosition = impacts[i];
-                CreateSphere(
-                    burst,
-                    $"BombImpact_ProceduralFireCore_{i + 1:00}",
-                    new Vector3(0f, 0.68f, 0f),
-                    Quaternion.identity,
-                    new Vector3(1.65f + i * 0.22f, 1.05f + i * 0.14f, 1.45f + i * 0.18f),
-                    explosionMaterial);
                 InstantiateGameOwnedVfx(
                     AirstrikeBombExplosionPrefabPath,
                     burst,
@@ -1282,13 +2841,12 @@ namespace DimensionBrawl.Editor
                     new Vector3(-0.18f, 0.16f, 0.14f),
                     Quaternion.Euler(0f, i * 47f, 0f),
                     Vector3.one * (0.34f + i * 0.04f));
-                CreateShockRing(burst, "GroundShockRing", shockRingMaterial, 1.8f + i * 0.35f);
             }
 
             return impactRoot;
         }
 
-        private static Transform CreateAftermathSmoke(Transform root, Material smokeMaterial)
+        private static Transform CreateAftermathSmoke(Transform root)
         {
             Transform smokeRoot = new GameObject(SmokeRootName).transform;
             smokeRoot.SetParent(root, worldPositionStays: false);
@@ -1301,13 +2859,6 @@ namespace DimensionBrawl.Editor
             };
             for (int i = 0; i < smokePositions.Length; i++)
             {
-                CreateSphere(
-                    smokeRoot,
-                    $"AftermathScorchPatch_{i + 1:00}",
-                    smokePositions[i],
-                    Quaternion.Euler(0f, i * 27f, 0f),
-                    new Vector3(3.4f + i * 0.35f, 0.08f, 2.1f + i * 0.24f),
-                    smokeMaterial);
                 InstantiateGameOwnedVfx(
                     UniLongSmokePrefabPath,
                     smokeRoot,
@@ -1596,7 +3147,6 @@ namespace DimensionBrawl.Editor
             CameraShot[] shots,
             Transform aircraftRoot,
             Transform cloudRoot,
-            Transform targetRoot,
             Transform bombDropRoot,
             Transform impactRoot,
             Transform smokeRoot,
@@ -1684,7 +3234,6 @@ namespace DimensionBrawl.Editor
                 shots[4].Animator,
                 CreateRecoilClip("AC_ImpactCameraRecoil", shots[4].Camera.transform.localPosition, 6.24f));
             CreateActivationTrack(timeline, director, "Cloud Deck Active", cloudRoot.gameObject, 0f, 5.48f);
-            CreateActivationTrack(timeline, director, "Target Zone Active", targetRoot.gameObject, 5.62f, 3.18f);
             CreateActivationTrack(timeline, director, "Bombs Active", bombDropRoot.gameObject, BombReleaseStartSeconds, 2.42f);
             CreateActivationTrack(timeline, director, "Impact Chain Active", impactRoot.gameObject, 6.10f, 2.52f);
             CreateActivationTrack(timeline, director, "Impact Burst 01 Active", RequireChild(impactRoot, "ImpactBurst_01"), 6.22f, 1.72f);
@@ -1718,7 +3267,18 @@ namespace DimensionBrawl.Editor
             CinemachineBrain brain,
             CameraShot[] shots)
         {
-            CinemachineTrack track = timeline.CreateTrack<CinemachineTrack>("Cinemachine Shots");
+            CreateCinemachineTrack(timeline, director, brain, shots, "Cinemachine Shots", "cm");
+        }
+
+        private static void CreateCinemachineTrack(
+            TimelineAsset timeline,
+            PlayableDirector director,
+            CinemachineBrain brain,
+            CameraShot[] shots,
+            string trackName,
+            string exposedPrefix)
+        {
+            CinemachineTrack track = timeline.CreateTrack<CinemachineTrack>(trackName);
             track.TrackPriority = 200;
             director.SetGenericBinding(track, brain);
             for (int i = 0; i < shots.Length; i++)
@@ -1740,7 +3300,7 @@ namespace DimensionBrawl.Editor
                 }
 
                 shotAsset.DisplayName = shots[i].ShotId;
-                PropertyName exposedName = new PropertyName($"cm_{i + 1:00}_{shots[i].ShotId}");
+                PropertyName exposedName = new PropertyName($"{exposedPrefix}_{i + 1:00}_{shots[i].ShotId}");
                 shotAsset.VirtualCamera.exposedName = exposedName;
                 director.SetReferenceValue(exposedName, shots[i].Camera);
                 EditorUtility.SetDirty(shotAsset);
@@ -2049,6 +3609,31 @@ namespace DimensionBrawl.Editor
                 clip,
                 "m_LocalPosition.z",
                 Keyed(baseLocalPosition.z, (impact, baseLocalPosition.z - 0.24f), (impact + 0.18f, baseLocalPosition.z + 0.11f), (impact + 0.35f, baseLocalPosition.z)));
+            EditorUtility.SetDirty(clip);
+            return clip;
+        }
+
+        private static AnimationClip CreateTransitionCameraShakeClip(
+            string clipName,
+            Vector3 baseLocalPosition,
+            params (float Time, Vector3 Position)[] keys)
+        {
+            AnimationClip clip = CreateOrReplaceAnimationClip(clipName);
+            clip.frameRate = 30f;
+            clip.wrapMode = WrapMode.ClampForever;
+            List<(float Time, float Value)> xKeys = new List<(float Time, float Value)>();
+            List<(float Time, float Value)> yKeys = new List<(float Time, float Value)>();
+            List<(float Time, float Value)> zKeys = new List<(float Time, float Value)>();
+            for (int i = 0; i < keys.Length; i++)
+            {
+                xKeys.Add((keys[i].Time, keys[i].Position.x));
+                yKeys.Add((keys[i].Time, keys[i].Position.y));
+                zKeys.Add((keys[i].Time, keys[i].Position.z));
+            }
+
+            SetCurve(clip, "m_LocalPosition.x", Keyed(baseLocalPosition.x, xKeys.ToArray()));
+            SetCurve(clip, "m_LocalPosition.y", Keyed(baseLocalPosition.y, yKeys.ToArray()));
+            SetCurve(clip, "m_LocalPosition.z", Keyed(baseLocalPosition.z, zKeys.ToArray()));
             EditorUtility.SetDirty(clip);
             return clip;
         }
@@ -2651,7 +4236,6 @@ namespace DimensionBrawl.Editor
                 RequireTrack<AnimationTrack>(timeline, "Impact Camera Recoil", issues);
                 RequireTrack<AnimationTrack>(timeline, "Black Screen Transition", issues);
                 RequireTrack<ActivationTrack>(timeline, "Cloud Deck Active", issues);
-                RequireTrack<ActivationTrack>(timeline, "Target Zone Active", issues);
                 RequireTrack<ActivationTrack>(timeline, "Bombs Active", issues);
                 RequireTrack<ActivationTrack>(timeline, "Impact Chain Active", issues);
                 RequireTrack<ActivationTrack>(timeline, "Impact Burst 01 Active", issues);
@@ -3251,6 +4835,11 @@ namespace DimensionBrawl.Editor
         {
             foreach (TrackAsset track in timeline.GetOutputTracks())
             {
+                if (track == null)
+                {
+                    continue;
+                }
+
                 if (track is T typed && string.Equals(track.name, trackName, StringComparison.Ordinal))
                 {
                     return typed;
@@ -3411,6 +5000,38 @@ namespace DimensionBrawl.Editor
             }
 
             public readonly Animator CurtainAnimator;
+        }
+
+        private readonly struct BombingPreludeSceneBindings
+        {
+            public BombingPreludeSceneBindings(
+                GameObject root,
+                CameraShot[] shots,
+                Transform aircraftRoot,
+                Transform cloudRoot,
+                Transform bombDropRoot,
+                Transform impactRoot,
+                Transform smokeRoot,
+                TransitionOverlayBindings transitionOverlay)
+            {
+                Root = root;
+                Shots = shots;
+                AircraftRoot = aircraftRoot;
+                CloudRoot = cloudRoot;
+                BombDropRoot = bombDropRoot;
+                ImpactRoot = impactRoot;
+                SmokeRoot = smokeRoot;
+                TransitionOverlay = transitionOverlay;
+            }
+
+            public readonly GameObject Root;
+            public readonly CameraShot[] Shots;
+            public readonly Transform AircraftRoot;
+            public readonly Transform CloudRoot;
+            public readonly Transform BombDropRoot;
+            public readonly Transform ImpactRoot;
+            public readonly Transform SmokeRoot;
+            public readonly TransitionOverlayBindings TransitionOverlay;
         }
 
         private enum QuaternionComponent

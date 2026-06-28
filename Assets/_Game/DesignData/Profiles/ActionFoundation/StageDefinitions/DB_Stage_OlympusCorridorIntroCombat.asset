@@ -129,8 +129,8 @@ MonoBehaviour:
   cutsceneHandoffs:
   - handoffId: intro-to-stage
     anchorId: IntroCutscene_End_PlayerHandoffAnchor
-    cinematicProfileId: DB_Cinematic_IntroGatePodAwakening
-    timelineAssetPath: Assets/_Game/DesignData/Timelines/Cinematics/DB_Timeline_IntroGatePodAwakening.playable
+    cinematicProfileId: DB_Cinematic_IntroGatePodAwakening_OlympusBombingPrelude
+    timelineAssetPath: Assets/_Game/DesignData/Timelines/Cinematics/DB_Timeline_IntroGatePodAwakening_OlympusBombingPrelude.playable
     nextEventId: boss-entrance-ready
     purpose: Intro cutscene should end in the same shared corridor stage.
   - handoffId: boss-entrance
