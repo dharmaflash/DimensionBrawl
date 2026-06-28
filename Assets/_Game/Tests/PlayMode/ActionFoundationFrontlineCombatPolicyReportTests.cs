@@ -380,6 +380,9 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("## Support Upgrade Decision Readout Matrix"),
                     "The report should connect visible summon readouts to measured LV2/LV3 tradeoffs before HUD polish.");
                 Assert.IsTrue(
+                    markdown.Contains("S2 ready for tempo"),
+                    "The support upgrade readout should include the live route-incentive forecast for full-bank choices.");
+                Assert.IsTrue(
                     markdown.Contains("## Support Stage-Slot Timeline Matrix"),
                     "The report should expose support choices as ordered stage slots, not only balance rows.");
                 Assert.IsTrue(
@@ -447,6 +450,9 @@ namespace DimensionBrawl.Tests
                 Assert.IsTrue(
                     json.Contains("\"supportUpgradeDecisionReadoutMatrix\""),
                     "The JSON report should expose support upgrade readout evidence for automated LV2/LV3 choice comparisons.");
+                Assert.IsTrue(
+                    json.Contains("\"supportChoiceForecastReadoutBeforeSupport\""),
+                    "The JSON report should expose the live route-incentive forecast before support spend.");
                 Assert.IsTrue(
                     json.Contains("\"samplePayoff\""),
                     "The JSON route dominance evidence should label the single sample payoff explicitly.");
@@ -2083,6 +2089,7 @@ namespace DimensionBrawl.Tests
             }
 
             RecordSupportBodyCostBeforeSupport(context);
+            RecordSupportChoiceForecastBeforeSupport(context);
             if (!supportAction.TryUseSummon())
             {
                 context.Metrics.Notes.Add(
@@ -2187,6 +2194,7 @@ namespace DimensionBrawl.Tests
             }
 
             RecordSupportBodyCostBeforeSupport(context);
+            RecordSupportChoiceForecastBeforeSupport(context);
             if (!supportAction.TryUseSummon())
             {
                 context.Metrics.Notes.Add(
@@ -2365,6 +2373,7 @@ namespace DimensionBrawl.Tests
             }
 
             RecordSupportBodyCostBeforeSupport(context);
+            RecordSupportChoiceForecastBeforeSupport(context);
             if (!supportAction.TryUseSummon())
             {
                 context.Metrics.Notes.Add(
@@ -3524,6 +3533,12 @@ namespace DimensionBrawl.Tests
             context.Metrics.SupportBodyHitsBeforeSupport = context.Metrics.EnemyFrontlineBodyHits;
             context.Metrics.SupportDamageBeforeSupport = context.Metrics.PlayerDamageTaken;
             RecordSupportBodyCostFinal(context);
+        }
+
+        private static void RecordSupportChoiceForecastBeforeSupport(CombatPolicyContext context)
+        {
+            context.Metrics.SupportChoiceForecastReadoutBeforeSupport =
+                context.PocketOwner != null ? context.PocketOwner.RouteIncentiveCue : string.Empty;
         }
 
         private static void RecordSupportBodyCostBeforeMainAnswer(CombatPolicyContext context)
@@ -6238,7 +6253,9 @@ namespace DimensionBrawl.Tests
                     result.SupportComboHudSlot1LabelBeforeAttempt,
                     result.SupportComboHudSlot1FillBeforeAttempt)
                 + "; overlay "
-                + ResolveCoverageValue(result.SupportComboOverlayHudReadoutBeforeSlot1);
+                + ResolveCoverageValue(result.SupportComboOverlayHudReadoutBeforeSlot1)
+                + "; forecast "
+                + ResolveCoverageValue(result.SupportChoiceForecastReadoutBeforeSupport);
         }
 
         private static string FormatSupportUpgradeDecisionMeasuredCost(PolicyMetrics from, PolicyMetrics to)
@@ -9618,9 +9635,21 @@ namespace DimensionBrawl.Tests
                 Does.Contain("S2 need 200 EN").And.Contain("S3 need 300 EN"),
                 "The current Slot2 readout should show the visible resource gates that frame the hold/spend choice.");
             Assert.That(
+                slot2DelayedRecovery.SupportChoiceForecastReadoutBeforeSupport,
+                Does.Contain("S2 ready now").And.Contain("hold 300 EN").And.Contain("S3 suppress"),
+                "The live route incentive should forecast the LV2-now versus LV3-later support trade before the support spend.");
+            Assert.That(
+                slot2Combo.SupportChoiceForecastReadoutBeforeSupport,
+                Does.Contain("S2 ready for tempo").And.Contain("S3 ready for suppress"),
+                "At a full bank, the live route incentive should keep both support choices visible instead of making S3 a universal upgrade.");
+            Assert.That(
                 FormatSupportUpgradeDecisionHudState("Slot3 LV3 payoff", slot3DelayedRecovery),
                 Does.Contain("S3").And.Contain("need 300 EN"),
                 "The Slot3 payoff readout should preserve the high-cost gate instead of reading as a generic upgrade.");
+            Assert.That(
+                slot3DelayedRecovery.SupportChoiceForecastReadoutBeforeSupport,
+                Does.Contain("S2 ready for tempo").And.Contain("S3 ready for suppress").And.Contain("Slot1 recharge"),
+                "The live Slot3 forecast should say the full-bank choice is between tempo and suppress payoff.");
             Assert.That(
                 FormatSupportUpgradeDecisionMeasuredCost(slot2DelayedRecovery, slot2Combo),
                 Does.Contain("wait +").And.Contain("HP +"),
@@ -10225,6 +10254,7 @@ namespace DimensionBrawl.Tests
                 builder.AppendLine($"      \"summonBlocks\": {result.SummonBlocks},");
                 builder.AppendLine($"      \"supportSummonSlotId\": \"{JsonEscape(result.SupportSummonSlotId)}\",");
                 builder.AppendLine($"      \"supportSummonRequiredMana\": {result.SupportSummonRequiredMana:0.###},");
+                builder.AppendLine($"      \"supportChoiceForecastReadoutBeforeSupport\": \"{JsonEscape(result.SupportChoiceForecastReadoutBeforeSupport)}\",");
                 builder.AppendLine($"      \"supportSummonCooldownSeconds\": {result.SupportSummonCooldownSeconds:0.###},");
                 builder.AppendLine($"      \"supportSummonSpentTier\": {result.SupportSummonSpentTier},");
                 builder.AppendLine($"      \"supportSummonActorRoleId\": \"{JsonEscape(result.SupportSummonActorRoleId)}\",");
@@ -11116,9 +11146,11 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"      \"fromChoice\": \"{JsonEscape(fromChoice)}\",");
             builder.AppendLine($"      \"fromPolicy\": \"{from.Policy}\",");
             builder.AppendLine($"      \"fromVisibleState\": \"{JsonEscape(FormatSupportUpgradeDecisionHudState(fromChoice, from))}\",");
+            builder.AppendLine($"      \"fromForecastBeforeSupport\": \"{JsonEscape(from.SupportChoiceForecastReadoutBeforeSupport)}\",");
             builder.AppendLine($"      \"toChoice\": \"{JsonEscape(toChoice)}\",");
             builder.AppendLine($"      \"toPolicy\": \"{to.Policy}\",");
             builder.AppendLine($"      \"toVisibleState\": \"{JsonEscape(FormatSupportUpgradeDecisionHudState(toChoice, to))}\",");
+            builder.AppendLine($"      \"toForecastBeforeSupport\": \"{JsonEscape(to.SupportChoiceForecastReadoutBeforeSupport)}\",");
             builder.AppendLine($"      \"measuredExtraCost\": \"{JsonEscape(FormatSupportUpgradeDecisionMeasuredCost(from, to))}\",");
             builder.AppendLine($"      \"measuredPayoffShift\": \"{JsonEscape(FormatSupportUpgradeDecisionMeasuredPayoff(from, to))}\",");
             builder.AppendLine($"      \"repeatDelta\": \"{JsonEscape(FormatSupportUpgradeRepeatDelta(repeatabilityResults, from.Policy, to.Policy))}\",");
@@ -13511,6 +13543,7 @@ namespace DimensionBrawl.Tests
             public int SummonBlocks { get; set; }
             public string SupportSummonSlotId { get; set; } = string.Empty;
             public float SupportSummonRequiredMana { get; set; }
+            public string SupportChoiceForecastReadoutBeforeSupport { get; set; } = string.Empty;
             public float SupportSummonCooldownSeconds { get; set; }
             public int SupportSummonSpentTier { get; set; }
             public string SupportSummonActorRoleId { get; set; } = string.Empty;

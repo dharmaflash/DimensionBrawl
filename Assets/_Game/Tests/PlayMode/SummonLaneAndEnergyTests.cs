@@ -320,6 +320,47 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void RouteIncentiveForecastsSupportHoldTradeoff()
+        {
+            GameObject playerObject = new GameObject("Player");
+            GameObject ownerObject = new GameObject("PocketOwner");
+            try
+            {
+                SummonEnergyLadder energy = playerObject.AddComponent<SummonEnergyLadder>();
+                PlayerSupportSummonSlotAction slot2 = playerObject.AddComponent<PlayerSupportSummonSlotAction>();
+                PlayerSupportSummonSlotAction slot3 = playerObject.AddComponent<PlayerSupportSummonSlotAction>();
+                slot2.ConfigureRequiredSummonMana(200f);
+                slot2.ConfigureMinimumSummonTier(2);
+                slot3.ConfigureRequiredSummonMana(300f);
+                slot3.ConfigureMinimumSummonTier(3);
+
+                BossBarragePocketReviewOwner owner = ownerObject.AddComponent<BossBarragePocketReviewOwner>();
+                SetPrivateInstanceField(owner, "energyLadder", energy);
+                SetPrivateInstanceField(owner, "summonSlot2Action", slot2);
+                SetPrivateInstanceField(owner, "summonSlot3Action", slot3);
+                SetPrivateInstanceField(owner, "closeThreatDefeated", true);
+
+                energy.GrantCurrentTierEnergy(200f);
+
+                Assert.That(owner.RouteIncentiveCue, Does.Contain("Summon cover"));
+                Assert.That(owner.RouteIncentiveCue, Does.Contain("S2 ready now"));
+                Assert.That(owner.RouteIncentiveCue, Does.Contain("hold 300 EN"));
+                Assert.That(owner.RouteIncentiveCue, Does.Contain("S3 suppress"));
+
+                energy.GrantCurrentTierEnergy(100f);
+
+                Assert.That(owner.RouteIncentiveCue, Does.Contain("S2 ready for tempo"));
+                Assert.That(owner.RouteIncentiveCue, Does.Contain("S3 ready for suppress"));
+                Assert.That(owner.RouteIncentiveCue, Does.Contain("Slot1 recharge"));
+            }
+            finally
+            {
+                Object.DestroyImmediate(ownerObject);
+                Object.DestroyImmediate(playerObject);
+            }
+        }
+
+        [Test]
         public void SummonEnergyVfxCuePresenterPlaysForwardRiskReadyAndSpendReads()
         {
             GameObject laneObject = new GameObject("Lane");

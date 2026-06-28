@@ -2373,9 +2373,10 @@ namespace DimensionBrawl.Test
 
             if (IsRouteStabilityActive && CurrentRouteStabilityBand == RouteStabilityBand.Critical)
             {
-                return ResolveStageText(
-                    stageProfile != null ? stageProfile.CollapseWarningRecordPreview : null,
-                    "HP is the fail state; pressure is critical.");
+                return AppendSupportChoiceForecast(
+                    ResolveStageText(
+                        stageProfile != null ? stageProfile.CollapseWarningRecordPreview : null,
+                        "HP is the fail state; pressure is critical."));
             }
 
             if (counterWaveObserved && !skill1FollowupHitConfirmed)
@@ -2398,14 +2399,64 @@ namespace DimensionBrawl.Test
                 || IsSummonBlockOpportunityCueActive
                 || closeThreatDefeated)
             {
-                return ResolveStageText(
-                    stageProfile != null ? stageProfile.SummonRecordPreview : null,
-                    "Summon cover opens the Skill1 answer.");
+                return AppendSupportChoiceForecast(
+                    ResolveStageText(
+                        stageProfile != null ? stageProfile.SummonRecordPreview : null,
+                        "Summon cover opens the Skill1 answer."));
             }
 
             return ResolveStageText(
                 stageProfile != null ? stageProfile.OpeningRecordPreview : null,
                 "Stop close probe, block curtain, then confirm Skill1.");
+        }
+
+        private string AppendSupportChoiceForecast(string baseCue)
+        {
+            string forecast = ResolveSupportChoiceForecastCue();
+            return string.IsNullOrWhiteSpace(forecast)
+                ? baseCue
+                : $"{baseCue} {forecast}";
+        }
+
+        private string ResolveSupportChoiceForecastCue()
+        {
+            if (energyLadder == null || summonSlot2Action == null || summonSlot3Action == null)
+            {
+                return string.Empty;
+            }
+
+            bool slot2Ready = IsSupportSummonReady(summonSlot2Action);
+            bool slot3Ready = IsSupportSummonReady(summonSlot3Action);
+            if (slot2Ready && slot3Ready)
+            {
+                return "S2 ready for tempo; S3 ready for suppress; leave time for Slot1 recharge.";
+            }
+
+            if (slot3Ready)
+            {
+                return "S3 ready: suppress payoff; leave time for Slot1 recharge.";
+            }
+
+            if (slot2Ready)
+            {
+                return "S2 ready now; hold 300 EN only for S3 suppress.";
+            }
+
+            if (energyLadder.CurrentMana > 0f)
+            {
+                return $"Build EN: S2 {summonSlot2Action.RequiredSummonMana:0} tempo / S3 {summonSlot3Action.RequiredSummonMana:0} suppress.";
+            }
+
+            return string.Empty;
+        }
+
+        private bool IsSupportSummonReady(PlayerSupportSummonSlotAction supportAction)
+        {
+            return supportAction != null
+                && !supportAction.IsSlotOnCooldown
+                && energyLadder != null
+                && energyLadder.AvailableTier >= supportAction.MinimumSummonTier
+                && energyLadder.CanSpendMana(supportAction.RequiredSummonMana);
         }
 
         private bool IsCounterRecoveryRoute()
