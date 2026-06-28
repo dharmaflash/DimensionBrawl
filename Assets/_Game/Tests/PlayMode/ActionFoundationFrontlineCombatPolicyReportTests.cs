@@ -368,6 +368,9 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("damage route, no relock"),
                     "The support payoff vector should keep Slot2's marksman payoff distinct from Slot3's prevention payoff.");
                 Assert.IsTrue(
+                    markdown.Contains("## Support Body-Cost Phase Matrix"),
+                    "The report should reveal whether support route body cost is paid before or after the support summon.");
+                Assert.IsTrue(
                     markdown.Contains("## Support Stage-Slot Timeline Matrix"),
                     "The report should expose support choices as ordered stage slots, not only balance rows.");
                 Assert.IsTrue(
@@ -424,6 +427,9 @@ namespace DimensionBrawl.Tests
                     json.Contains("\"supportPayoffVectorMatrix\""),
                     "The JSON report should expose support payoff vectors for automated damage/prevention comparison.");
                 Assert.IsTrue(
+                    json.Contains("\"supportBodyCostPhaseMatrix\""),
+                    "The JSON report should expose support body-cost phases for automated before/after support comparison.");
+                Assert.IsTrue(
                     json.Contains("\"samplePayoff\""),
                     "The JSON route dominance evidence should label the single sample payoff explicitly.");
                 Assert.IsTrue(
@@ -474,6 +480,11 @@ namespace DimensionBrawl.Tests
                     forwardRiskSlot3Blocked,
                     forwardRiskSlot3DelayedRecovery);
                 AssertSupportPayoffVectorMatrix(
+                    forwardRiskSlot2Combo,
+                    forwardRiskSlot2DelayedRecovery,
+                    forwardRiskSlot3Blocked,
+                    forwardRiskSlot3DelayedRecovery);
+                AssertSupportBodyCostPhaseMatrix(
                     forwardRiskSlot2Combo,
                     forwardRiskSlot2DelayedRecovery,
                     forwardRiskSlot3Blocked,
@@ -2040,6 +2051,7 @@ namespace DimensionBrawl.Tests
                 yield break;
             }
 
+            RecordSupportBodyCostBeforeSupport(context);
             if (!supportAction.TryUseSummon())
             {
                 context.Metrics.Notes.Add(
@@ -2143,6 +2155,7 @@ namespace DimensionBrawl.Tests
                 yield break;
             }
 
+            RecordSupportBodyCostBeforeSupport(context);
             if (!supportAction.TryUseSummon())
             {
                 context.Metrics.Notes.Add(
@@ -2184,6 +2197,7 @@ namespace DimensionBrawl.Tests
             context.Metrics.SupportComboSlot1CooldownBeforeAttempt =
                 context.SummonSlot1Action.SlotCooldownRemaining;
             RecordSupportComboHudBeforeSlot1(context, supportAction);
+            RecordSupportBodyCostBeforeMainAnswer(context);
             context.Metrics.SupportComboSlot1Attempted = true;
             int slot1ScreensBefore = context.SummonSlot1Action.ActivePressureScreenCount;
             bool slot1Used = context.SummonSlot1Action.TryUseSummonSlot1();
@@ -2319,6 +2333,7 @@ namespace DimensionBrawl.Tests
                 yield break;
             }
 
+            RecordSupportBodyCostBeforeSupport(context);
             if (!supportAction.TryUseSummon())
             {
                 context.Metrics.Notes.Add(
@@ -2380,6 +2395,7 @@ namespace DimensionBrawl.Tests
                 context.SummonSlot1Action.SlotCooldownRemaining;
             context.Metrics.SupportComboPlayerDamageBeforeSlot1 = context.Metrics.PlayerDamageTaken;
             RecordSupportComboHudBeforeSlot1(context, supportAction);
+            RecordSupportBodyCostBeforeMainAnswer(context);
             if (!context.EnergyLadder.CanSpendMana(context.SummonSlot1Action.RequiredSummonMana))
             {
                 context.Metrics.Notes.Add($"{supportAction.SlotActionName} delayed combo did not recover Slot1 mana");
@@ -3472,6 +3488,31 @@ namespace DimensionBrawl.Tests
             context.Metrics.SupportSummonActorHealthRatio = action.LastSummonActorHealthRatio;
         }
 
+        private static void RecordSupportBodyCostBeforeSupport(CombatPolicyContext context)
+        {
+            context.Metrics.SupportBodyHitsBeforeSupport = context.Metrics.EnemyFrontlineBodyHits;
+            context.Metrics.SupportDamageBeforeSupport = context.Metrics.PlayerDamageTaken;
+            RecordSupportBodyCostFinal(context);
+        }
+
+        private static void RecordSupportBodyCostBeforeMainAnswer(CombatPolicyContext context)
+        {
+            context.Metrics.SupportBodyHitsBeforeMainAnswer = context.Metrics.EnemyFrontlineBodyHits;
+            context.Metrics.SupportDamageBeforeMainAnswer = context.Metrics.PlayerDamageTaken;
+            RecordSupportBodyCostFinal(context);
+        }
+
+        private static void RecordSupportBodyCostFinal(CombatPolicyContext context)
+        {
+            if (context.Metrics.SupportBodyHitsBeforeSupport < 0)
+            {
+                return;
+            }
+
+            context.Metrics.SupportBodyHitsFinal = context.Metrics.EnemyFrontlineBodyHits;
+            context.Metrics.SupportDamageFinal = context.Metrics.PlayerDamageTaken;
+        }
+
         private static void RecordSupportComboHudBeforeSlot1(
             CombatPolicyContext context,
             PlayerSupportSummonSlotAction supportAction)
@@ -3644,6 +3685,8 @@ namespace DimensionBrawl.Tests
             AppendSupportDecisionMatrixSummary(builder, results, repeatabilityResults);
             builder.AppendLine();
             AppendSupportPayoffVectorMatrix(builder, results, repeatabilityResults);
+            builder.AppendLine();
+            AppendSupportBodyCostPhaseMatrix(builder, results, repeatabilityResults);
             builder.AppendLine();
             AppendSupportStageSlotTimelineMatrix(builder, results, repeatabilityResults);
             builder.AppendLine();
@@ -5636,6 +5679,136 @@ namespace DimensionBrawl.Tests
                 default:
                     return "unclassified support payoff";
             }
+        }
+
+        private static void AppendSupportBodyCostPhaseMatrix(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults)
+        {
+            builder.AppendLine("## Support Body-Cost Phase Matrix");
+            builder.AppendLine("- ArkData/NIKKE lens: support route cost should name which stage slot paid the body-pressure tax before changing vanguard tuning.");
+            builder.AppendLine("| Choice | Policy | Body hits phase | Player damage phase | Post-support delta | Repeat final body | Repeat post-support delta | Read |");
+            builder.AppendLine("|---|---|---|---|---:|---|---|---|");
+            AppendSupportBodyCostPhaseRow(
+                builder,
+                "Slot2 full-bank combo",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute),
+                repeatabilityResults);
+            AppendSupportBodyCostPhaseRow(
+                builder,
+                "Slot2 delayed recovery",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute),
+                repeatabilityResults);
+            AppendSupportBodyCostPhaseRow(
+                builder,
+                "Slot3 immediate lockout",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute),
+                repeatabilityResults);
+            AppendSupportBodyCostPhaseRow(
+                builder,
+                "Slot3 delayed recovery",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute),
+                repeatabilityResults);
+        }
+
+        private static void AppendSupportBodyCostPhaseRow(
+            StringBuilder builder,
+            string choice,
+            PolicyMetrics result,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults)
+        {
+            builder.Append("| ");
+            builder.Append(EscapeTable(choice));
+            builder.Append(" | ");
+            builder.Append(result.Policy);
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportBodyHitPhase(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportDamagePhase(result)));
+            builder.Append(" | ");
+            builder.Append(FormatSupportBodyCostDelta(result));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportBodyCostRepeatFinalBody(repeatabilityResults, result.Policy)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportBodyCostRepeatPostSupportDelta(repeatabilityResults, result.Policy)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveSupportBodyCostPhaseRead(result)));
+            builder.AppendLine(" |");
+        }
+
+        private static string FormatSupportBodyHitPhase(PolicyMetrics result)
+        {
+            return "before support "
+                + FormatOptionalInt(result.SupportBodyHitsBeforeSupport)
+                + " -> before Slot1 "
+                + FormatOptionalInt(result.SupportBodyHitsBeforeMainAnswer)
+                + " -> final "
+                + FormatOptionalInt(result.SupportBodyHitsFinal);
+        }
+
+        private static string FormatSupportDamagePhase(PolicyMetrics result)
+        {
+            return "before support "
+                + FormatOptionalFloat(result.SupportDamageBeforeSupport)
+                + " -> before Slot1 "
+                + FormatOptionalFloat(result.SupportDamageBeforeMainAnswer)
+                + " -> final "
+                + FormatOptionalFloat(result.SupportDamageFinal);
+        }
+
+        private static string FormatSupportBodyCostDelta(PolicyMetrics result)
+        {
+            float delta = ResolveSupportBodyHitsAfterSupportDelta(result);
+            return delta >= 0f ? delta.ToString("0.#") : "-";
+        }
+
+        private static string FormatSupportBodyCostRepeatFinalBody(
+            IReadOnlyList<PolicyMetrics> repeatabilityResults,
+            PolicyKind policy)
+        {
+            return FormatMinAverageMax(
+                MinMetric(repeatabilityResults, policy, result => result.SupportBodyHitsFinal),
+                AverageMetric(repeatabilityResults, policy, result => result.SupportBodyHitsFinal),
+                MaxMetric(repeatabilityResults, policy, result => result.SupportBodyHitsFinal));
+        }
+
+        private static string FormatSupportBodyCostRepeatPostSupportDelta(
+            IReadOnlyList<PolicyMetrics> repeatabilityResults,
+            PolicyKind policy)
+        {
+            return FormatMinAverageMax(
+                MinMetric(repeatabilityResults, policy, ResolveSupportBodyHitsAfterSupportDelta),
+                AverageMetric(repeatabilityResults, policy, ResolveSupportBodyHitsAfterSupportDelta),
+                MaxMetric(repeatabilityResults, policy, ResolveSupportBodyHitsAfterSupportDelta));
+        }
+
+        private static float ResolveSupportBodyHitsAfterSupportDelta(PolicyMetrics result)
+        {
+            return result.SupportBodyHitsBeforeSupport >= 0 && result.SupportBodyHitsFinal >= 0
+                ? result.SupportBodyHitsFinal - result.SupportBodyHitsBeforeSupport
+                : -1f;
+        }
+
+        private static string ResolveSupportBodyCostPhaseRead(PolicyMetrics result)
+        {
+            if (result.SupportBodyHitsBeforeSupport < 0)
+            {
+                return "not measured";
+            }
+
+            float postSupportDelta = ResolveSupportBodyHitsAfterSupportDelta(result);
+            if (postSupportDelta <= 0f)
+            {
+                return "body cost paid before support";
+            }
+
+            if (result.SupportSummonSlotId == "SummonSlot3" && result.SupportSummonBlocks > 0)
+            {
+                return "vanguard still leaks body cost after support";
+            }
+
+            return "support phase still leaks body cost";
         }
 
         private static string ResolveSupportDecisionPayoffVerdict(PolicyMetrics result)
@@ -8815,6 +8988,50 @@ namespace DimensionBrawl.Tests
                 "Slot3 delayed should keep its prevention payoff result hook.");
         }
 
+        private static void AssertSupportBodyCostPhaseMatrix(
+            PolicyMetrics slot2Combo,
+            PolicyMetrics slot2DelayedRecovery,
+            PolicyMetrics slot3Blocked,
+            PolicyMetrics slot3DelayedRecovery)
+        {
+            AssertSupportBodyCostPhaseMeasured(slot2Combo);
+            AssertSupportBodyCostPhaseMeasured(slot2DelayedRecovery);
+            AssertSupportBodyCostPhaseMeasured(slot3Blocked);
+            AssertSupportBodyCostPhaseMeasured(slot3DelayedRecovery);
+            Assert.GreaterOrEqual(
+                slot3DelayedRecovery.SupportBodyHitsBeforeMainAnswer,
+                slot3DelayedRecovery.SupportBodyHitsBeforeSupport,
+                "Slot3 delayed phase read should show whether body pressure accumulates during the recharge wait.");
+            Assert.GreaterOrEqual(
+                slot3DelayedRecovery.SupportBodyHitsFinal,
+                slot3DelayedRecovery.SupportBodyHitsBeforeMainAnswer,
+                "Slot3 delayed final phase should include any body-pressure leak after the main answer.");
+        }
+
+        private static void AssertSupportBodyCostPhaseMeasured(PolicyMetrics result)
+        {
+            Assert.GreaterOrEqual(
+                result.SupportBodyHitsBeforeSupport,
+                0,
+                $"{result.Policy} should record body hits before the support summon is spent.");
+            Assert.GreaterOrEqual(
+                result.SupportBodyHitsBeforeMainAnswer,
+                result.SupportBodyHitsBeforeSupport,
+                $"{result.Policy} should record body hits before the main answer without moving backward.");
+            Assert.GreaterOrEqual(
+                result.SupportBodyHitsFinal,
+                result.SupportBodyHitsBeforeMainAnswer,
+                $"{result.Policy} should record final body hits after the route has resolved.");
+            Assert.GreaterOrEqual(
+                result.SupportDamageBeforeSupport,
+                0f,
+                $"{result.Policy} should record player damage before support is spent.");
+            Assert.GreaterOrEqual(
+                result.SupportDamageFinal,
+                result.SupportDamageBeforeSupport,
+                $"{result.Policy} should record final player damage without moving backward.");
+        }
+
         private static void AssertSupportStageSlotTimelineMatrix(
             PolicyMetrics slot2Combo,
             PolicyMetrics slot2DelayedRecovery,
@@ -9320,6 +9537,16 @@ namespace DimensionBrawl.Tests
         private static string FormatOptionalDistance(float value)
         {
             return value >= 0f ? value.ToString("0.00") : "-";
+        }
+
+        private static string FormatOptionalInt(int value)
+        {
+            return value >= 0 ? value.ToString() : "-";
+        }
+
+        private static string FormatOptionalFloat(float value)
+        {
+            return value >= 0f ? value.ToString("0.0") : "-";
         }
 
         private static float ResolveAverage(float total, float elapsedSeconds)
@@ -9842,6 +10069,32 @@ namespace DimensionBrawl.Tests
                 repeatabilityResults,
                 false);
             builder.AppendLine("  ],");
+            builder.AppendLine("  \"supportBodyCostPhaseMatrix\": [");
+            AppendJsonSupportBodyCostPhaseRow(
+                builder,
+                "Slot2 full-bank combo",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute),
+                repeatabilityResults,
+                true);
+            AppendJsonSupportBodyCostPhaseRow(
+                builder,
+                "Slot2 delayed recovery",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute),
+                repeatabilityResults,
+                true);
+            AppendJsonSupportBodyCostPhaseRow(
+                builder,
+                "Slot3 immediate lockout",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute),
+                repeatabilityResults,
+                true);
+            AppendJsonSupportBodyCostPhaseRow(
+                builder,
+                "Slot3 delayed recovery",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute),
+                repeatabilityResults,
+                false);
+            builder.AppendLine("  ],");
             builder.AppendLine("  \"supportStageSlotTimelineMatrix\": [");
             AppendJsonSupportStageSlotTimelineRow(
                 builder,
@@ -10078,6 +10331,32 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"      \"repeatSupportBlocksAverage\": {JsonNullableMetric(AverageMetric(repeatabilityResults, policy, repeated => repeated.SupportSummonBlocks))},");
             builder.AppendLine($"      \"repeatBossSuppressAverage\": {JsonNullableMetric(AverageMetric(repeatabilityResults, policy, repeated => repeated.BossPressureScreensSuppressedByFollowup))},");
             builder.AppendLine($"      \"repeatCounterWavesAverage\": {JsonNullableMetric(AverageMetric(repeatabilityResults, policy, repeated => repeated.CounterWaves))}");
+            builder.Append("    }");
+            builder.AppendLine(appendComma ? "," : string.Empty);
+        }
+
+        private static void AppendJsonSupportBodyCostPhaseRow(
+            StringBuilder builder,
+            string choice,
+            PolicyMetrics result,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults,
+            bool appendComma)
+        {
+            PolicyKind policy = result.Policy;
+            builder.AppendLine("    {");
+            builder.AppendLine($"      \"choice\": \"{JsonEscape(choice)}\",");
+            builder.AppendLine($"      \"policy\": \"{policy}\",");
+            builder.AppendLine($"      \"bodyHitsBeforeSupport\": {JsonNullableMetric(result.SupportBodyHitsBeforeSupport)},");
+            builder.AppendLine($"      \"bodyHitsBeforeMainAnswer\": {JsonNullableMetric(result.SupportBodyHitsBeforeMainAnswer)},");
+            builder.AppendLine($"      \"bodyHitsFinal\": {JsonNullableMetric(result.SupportBodyHitsFinal)},");
+            builder.AppendLine($"      \"bodyHitsAfterSupportDelta\": {JsonNullableMetric(ResolveSupportBodyHitsAfterSupportDelta(result))},");
+            builder.AppendLine($"      \"damageBeforeSupport\": {JsonNullableMetric(result.SupportDamageBeforeSupport)},");
+            builder.AppendLine($"      \"damageBeforeMainAnswer\": {JsonNullableMetric(result.SupportDamageBeforeMainAnswer)},");
+            builder.AppendLine($"      \"damageFinal\": {JsonNullableMetric(result.SupportDamageFinal)},");
+            builder.AppendLine($"      \"repeatBodyHitsFinalAverage\": {JsonNullableMetric(AverageMetric(repeatabilityResults, policy, repeated => repeated.SupportBodyHitsFinal))},");
+            builder.AppendLine($"      \"repeatBodyHitsAfterSupportDeltaAverage\": {JsonNullableMetric(AverageMetric(repeatabilityResults, policy, ResolveSupportBodyHitsAfterSupportDelta))},");
+            builder.AppendLine($"      \"repeatDamageFinalAverage\": {JsonNullableMetric(AverageMetric(repeatabilityResults, policy, repeated => repeated.SupportDamageFinal))},");
+            builder.AppendLine($"      \"phaseRead\": \"{JsonEscape(ResolveSupportBodyCostPhaseRead(result))}\"");
             builder.Append("    }");
             builder.AppendLine(appendComma ? "," : string.Empty);
         }
@@ -11383,6 +11662,7 @@ namespace DimensionBrawl.Tests
                 }
 
                 SampleFrontlineClashCost();
+                RecordSupportBodyCostFinal(this);
                 SampleFrontlineHitReactionPresentation();
                 SamplePlayerDamagePresentationBridge();
                 SampleEnergyPresentationBridge();
@@ -12476,6 +12756,12 @@ namespace DimensionBrawl.Tests
             public string SupportComboHudSlot1LabelBeforeAttempt { get; set; } = string.Empty;
             public float SupportComboHudSlot1FillBeforeAttempt { get; set; } = -1f;
             public string SupportComboOverlayHudReadoutBeforeSlot1 { get; set; } = string.Empty;
+            public int SupportBodyHitsBeforeSupport { get; set; } = -1;
+            public int SupportBodyHitsBeforeMainAnswer { get; set; } = -1;
+            public int SupportBodyHitsFinal { get; set; } = -1;
+            public float SupportDamageBeforeSupport { get; set; } = -1f;
+            public float SupportDamageBeforeMainAnswer { get; set; } = -1f;
+            public float SupportDamageFinal { get; set; } = -1f;
             public bool SupportComboSlot1Attempted { get; set; }
             public bool SupportComboSlot1Used { get; set; }
             public string SupportComboSlot1BlockedReason { get; set; } = string.Empty;
