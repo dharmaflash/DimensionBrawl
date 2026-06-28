@@ -371,6 +371,9 @@ namespace DimensionBrawl.Tests
                     markdown.Contains("## Support Body-Cost Phase Matrix"),
                     "The report should reveal whether support route body cost is paid before or after the support summon.");
                 Assert.IsTrue(
+                    markdown.Contains("## Support Wait Exposure Matrix"),
+                    "The report should expose LV2/LV3 wait exposure before changing support payoff tuning.");
+                Assert.IsTrue(
                     markdown.Contains("## Support Stage-Slot Timeline Matrix"),
                     "The report should expose support choices as ordered stage slots, not only balance rows.");
                 Assert.IsTrue(
@@ -430,6 +433,9 @@ namespace DimensionBrawl.Tests
                     json.Contains("\"supportBodyCostPhaseMatrix\""),
                     "The JSON report should expose support body-cost phases for automated before/after support comparison.");
                 Assert.IsTrue(
+                    json.Contains("\"supportWaitExposureMatrix\""),
+                    "The JSON report should expose support wait/exposure costs for automated LV2/LV3 route comparisons.");
+                Assert.IsTrue(
                     json.Contains("\"samplePayoff\""),
                     "The JSON route dominance evidence should label the single sample payoff explicitly.");
                 Assert.IsTrue(
@@ -485,6 +491,11 @@ namespace DimensionBrawl.Tests
                     forwardRiskSlot3Blocked,
                     forwardRiskSlot3DelayedRecovery);
                 AssertSupportBodyCostPhaseMatrix(
+                    forwardRiskSlot2Combo,
+                    forwardRiskSlot2DelayedRecovery,
+                    forwardRiskSlot3Blocked,
+                    forwardRiskSlot3DelayedRecovery);
+                AssertSupportWaitExposureMatrix(
                     forwardRiskSlot2Combo,
                     forwardRiskSlot2DelayedRecovery,
                     forwardRiskSlot3Blocked,
@@ -3688,6 +3699,8 @@ namespace DimensionBrawl.Tests
             builder.AppendLine();
             AppendSupportBodyCostPhaseMatrix(builder, results, repeatabilityResults);
             builder.AppendLine();
+            AppendSupportWaitExposureMatrix(builder, results, repeatabilityResults);
+            builder.AppendLine();
             AppendSupportStageSlotTimelineMatrix(builder, results, repeatabilityResults);
             builder.AppendLine();
             AppendSummonSlotReadinessCooldownMatrix(builder, results);
@@ -5809,6 +5822,168 @@ namespace DimensionBrawl.Tests
             }
 
             return "support phase still leaks body cost";
+        }
+
+        private static void AppendSupportWaitExposureMatrix(
+            StringBuilder builder,
+            IReadOnlyList<PolicyMetrics> results,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults)
+        {
+            builder.AppendLine("## Support Wait Exposure Matrix");
+            builder.AppendLine("- ArkData/Blue Archive lens: support-slot cost should expose how long the player stays under pressure before the LV2/LV3 answer is available.");
+            builder.AppendLine("| Choice | Policy | Target/cost | Wait to support | Pre-support cost | Main-answer gate | Payoff | Repeat wait band | Repeat pre-support cost | Read |");
+            builder.AppendLine("|---|---|---|---:|---|---|---|---|---|---|");
+            AppendSupportWaitExposureRow(
+                builder,
+                "Slot2 full-bank combo",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute),
+                repeatabilityResults);
+            AppendSupportWaitExposureRow(
+                builder,
+                "Slot2 delayed recovery",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute),
+                repeatabilityResults);
+            AppendSupportWaitExposureRow(
+                builder,
+                "Slot3 immediate lockout",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute),
+                repeatabilityResults);
+            AppendSupportWaitExposureRow(
+                builder,
+                "Slot3 delayed payoff",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute),
+                repeatabilityResults);
+        }
+
+        private static void AppendSupportWaitExposureRow(
+            StringBuilder builder,
+            string choice,
+            PolicyMetrics result,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults)
+        {
+            builder.Append("| ");
+            builder.Append(EscapeTable(choice));
+            builder.Append(" | ");
+            builder.Append(result.Policy);
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportWaitExposureTarget(result)));
+            builder.Append(" | ");
+            builder.Append(FormatSeconds(ResolveSupportWaitExposureSeconds(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportWaitExposureCost(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportWaitExposureMainAnswerGate(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveSupportDecisionPayoffVerdict(result)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportWaitExposureRepeatBand(repeatabilityResults, result.Policy)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(FormatSupportWaitExposureRepeatCostBand(repeatabilityResults, result.Policy)));
+            builder.Append(" | ");
+            builder.Append(EscapeTable(ResolveSupportWaitExposureRead(result)));
+            builder.AppendLine(" |");
+        }
+
+        private static string FormatSupportWaitExposureTarget(PolicyMetrics result)
+        {
+            int targetTier = ResolveSupportWaitExposureTargetTier(result);
+            return $"{result.SupportSummonSlotId} LV{targetTier} / {result.SupportSummonRequiredMana:0} EN";
+        }
+
+        private static int ResolveSupportWaitExposureTargetTier(PolicyMetrics result)
+        {
+            return result.EnergyProbeTargetTier > 0
+                ? result.EnergyProbeTargetTier
+                : result.SupportSummonSpentTier;
+        }
+
+        private static float ResolveSupportWaitExposureSeconds(PolicyMetrics result)
+        {
+            return result.EnergyProbeStartAtSeconds >= 0f && result.FirstSummonUseAtSeconds >= 0f
+                ? Mathf.Max(0f, result.FirstSummonUseAtSeconds - result.EnergyProbeStartAtSeconds)
+                : -1f;
+        }
+
+        private static string FormatSupportWaitExposureCost(PolicyMetrics result)
+        {
+            return "body "
+                + FormatOptionalInt(result.SupportBodyHitsBeforeSupport)
+                + "; HP "
+                + FormatOptionalFloat(result.SupportDamageBeforeSupport);
+        }
+
+        private static string FormatSupportWaitExposureMainAnswerGate(PolicyMetrics result)
+        {
+            if (result.SupportComboSlot1Attempted && !result.SupportComboSlot1Used)
+            {
+                return "Slot1 blocked: " + result.SupportComboSlot1BlockedReason;
+            }
+
+            if (result.SupportComboSlot1ReadyDelaySeconds > 0.05f)
+            {
+                return "Slot1 ready after " + FormatSeconds(result.SupportComboSlot1ReadyDelaySeconds);
+            }
+
+            if (result.SupportComboSlot1Used)
+            {
+                return "Slot1 preserved";
+            }
+
+            return "Slot1 pending";
+        }
+
+        private static string FormatSupportWaitExposureRepeatBand(
+            IReadOnlyList<PolicyMetrics> repeatabilityResults,
+            PolicyKind policy)
+        {
+            if (CountPolicyResults(repeatabilityResults, policy) <= 0)
+            {
+                return "not repeated";
+            }
+
+            return FormatMinAverageMax(
+                MinMetric(repeatabilityResults, policy, ResolveSupportWaitExposureSeconds),
+                AverageMetric(repeatabilityResults, policy, ResolveSupportWaitExposureSeconds),
+                MaxMetric(repeatabilityResults, policy, ResolveSupportWaitExposureSeconds))
+                + "s";
+        }
+
+        private static string FormatSupportWaitExposureRepeatCostBand(
+            IReadOnlyList<PolicyMetrics> repeatabilityResults,
+            PolicyKind policy)
+        {
+            if (CountPolicyResults(repeatabilityResults, policy) <= 0)
+            {
+                return "not repeated";
+            }
+
+            return "body "
+                + FormatMinAverageMax(
+                    MinMetric(repeatabilityResults, policy, result => result.SupportBodyHitsBeforeSupport),
+                    AverageMetric(repeatabilityResults, policy, result => result.SupportBodyHitsBeforeSupport),
+                    MaxMetric(repeatabilityResults, policy, result => result.SupportBodyHitsBeforeSupport))
+                + "; HP "
+                + FormatMinAverageMax(
+                    MinMetric(repeatabilityResults, policy, result => result.SupportDamageBeforeSupport),
+                    AverageMetric(repeatabilityResults, policy, result => result.SupportDamageBeforeSupport),
+                    MaxMetric(repeatabilityResults, policy, result => result.SupportDamageBeforeSupport));
+        }
+
+        private static string ResolveSupportWaitExposureRead(PolicyMetrics result)
+        {
+            switch (result.Policy)
+            {
+                case PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute:
+                    return "full-bank wait buys the no-recovery marksman combo";
+                case PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute:
+                    return "LV2 spend lowers wait cost but still relocks into recovery";
+                case PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute:
+                    return "LV3 wait buys line hold but spends the main-answer turn";
+                case PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute:
+                    return "LV3 wait cost converts into boss-screen suppress payoff";
+                default:
+                    return "not evaluated";
+            }
         }
 
         private static string ResolveSupportDecisionPayoffVerdict(PolicyMetrics result)
@@ -9032,6 +9207,67 @@ namespace DimensionBrawl.Tests
                 $"{result.Policy} should record final player damage without moving backward.");
         }
 
+        private static void AssertSupportWaitExposureMatrix(
+            PolicyMetrics slot2Combo,
+            PolicyMetrics slot2DelayedRecovery,
+            PolicyMetrics slot3Blocked,
+            PolicyMetrics slot3DelayedRecovery)
+        {
+            AssertSupportWaitExposureMeasured(slot2Combo);
+            AssertSupportWaitExposureMeasured(slot2DelayedRecovery);
+            AssertSupportWaitExposureMeasured(slot3Blocked);
+            AssertSupportWaitExposureMeasured(slot3DelayedRecovery);
+            Assert.AreEqual(
+                2,
+                ResolveSupportWaitExposureTargetTier(slot2DelayedRecovery),
+                "Slot2 delayed wait exposure should remain the LV2 support choice.");
+            Assert.AreEqual(
+                3,
+                ResolveSupportWaitExposureTargetTier(slot3DelayedRecovery),
+                "Slot3 delayed wait exposure should remain the LV3 support choice.");
+            Assert.AreEqual(
+                300f,
+                slot3DelayedRecovery.SupportSummonRequiredMana,
+                0.001f,
+                "Slot3 delayed wait exposure should preserve the 300 EN vanguard cost.");
+            Assert.Greater(
+                ResolveSupportWaitExposureSeconds(slot3DelayedRecovery),
+                ResolveSupportWaitExposureSeconds(slot2DelayedRecovery),
+                "Slot3 delayed should visibly pay more pre-support wait exposure than the LV2 marksman branch.");
+            Assert.GreaterOrEqual(
+                slot3DelayedRecovery.SupportDamageBeforeSupport,
+                slot2DelayedRecovery.SupportDamageBeforeSupport,
+                "Slot3 delayed should show the vanguard cost is paid before the support appears, not after.");
+            Assert.AreEqual(
+                "support_vanguard_clear",
+                ResolveResultHookClass(slot3DelayedRecovery),
+                "Slot3 delayed wait exposure should end in the vanguard payoff hook.");
+            Assert.AreEqual(
+                "resource lockout",
+                ResolveSupportDecisionTimingVerdict(slot3Blocked),
+                "Slot3 immediate should remain a resource lockout when LV3 is spent before the main answer.");
+        }
+
+        private static void AssertSupportWaitExposureMeasured(PolicyMetrics result)
+        {
+            Assert.GreaterOrEqual(
+                ResolveSupportWaitExposureSeconds(result),
+                0f,
+                $"{result.Policy} should record wait time from energy probe start to support spend.");
+            Assert.Greater(
+                result.SupportSummonRequiredMana,
+                0f,
+                $"{result.Policy} should record a support summon mana cost.");
+            Assert.GreaterOrEqual(
+                result.SupportBodyHitsBeforeSupport,
+                0,
+                $"{result.Policy} should record body hits before support spend for wait-exposure comparison.");
+            Assert.GreaterOrEqual(
+                result.SupportDamageBeforeSupport,
+                0f,
+                $"{result.Policy} should record player damage before support spend for wait-exposure comparison.");
+        }
+
         private static void AssertSupportStageSlotTimelineMatrix(
             PolicyMetrics slot2Combo,
             PolicyMetrics slot2DelayedRecovery,
@@ -10095,6 +10331,32 @@ namespace DimensionBrawl.Tests
                 repeatabilityResults,
                 false);
             builder.AppendLine("  ],");
+            builder.AppendLine("  \"supportWaitExposureMatrix\": [");
+            AppendJsonSupportWaitExposureRow(
+                builder,
+                "Slot2 full-bank combo",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenSlot1ComboRoute),
+                repeatabilityResults,
+                true);
+            AppendJsonSupportWaitExposureRow(
+                builder,
+                "Slot2 delayed recovery",
+                RequireResult(results, PolicyKind.ForwardRiskSlot2ThenDelayedRecoveryRoute),
+                repeatabilityResults,
+                true);
+            AppendJsonSupportWaitExposureRow(
+                builder,
+                "Slot3 immediate lockout",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute),
+                repeatabilityResults,
+                true);
+            AppendJsonSupportWaitExposureRow(
+                builder,
+                "Slot3 delayed payoff",
+                RequireResult(results, PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute),
+                repeatabilityResults,
+                false);
+            builder.AppendLine("  ],");
             builder.AppendLine("  \"supportStageSlotTimelineMatrix\": [");
             AppendJsonSupportStageSlotTimelineRow(
                 builder,
@@ -10357,6 +10619,39 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"      \"repeatBodyHitsAfterSupportDeltaAverage\": {JsonNullableMetric(AverageMetric(repeatabilityResults, policy, ResolveSupportBodyHitsAfterSupportDelta))},");
             builder.AppendLine($"      \"repeatDamageFinalAverage\": {JsonNullableMetric(AverageMetric(repeatabilityResults, policy, repeated => repeated.SupportDamageFinal))},");
             builder.AppendLine($"      \"phaseRead\": \"{JsonEscape(ResolveSupportBodyCostPhaseRead(result))}\"");
+            builder.Append("    }");
+            builder.AppendLine(appendComma ? "," : string.Empty);
+        }
+
+        private static void AppendJsonSupportWaitExposureRow(
+            StringBuilder builder,
+            string choice,
+            PolicyMetrics result,
+            IReadOnlyList<PolicyMetrics> repeatabilityResults,
+            bool appendComma)
+        {
+            PolicyKind policy = result.Policy;
+            builder.AppendLine("    {");
+            builder.AppendLine($"      \"choice\": \"{JsonEscape(choice)}\",");
+            builder.AppendLine($"      \"policy\": \"{policy}\",");
+            builder.AppendLine($"      \"supportSlot\": \"{JsonEscape(result.SupportSummonSlotId)}\",");
+            builder.AppendLine($"      \"targetTier\": {ResolveSupportWaitExposureTargetTier(result)},");
+            builder.AppendLine($"      \"requiredMana\": {result.SupportSummonRequiredMana:0.###},");
+            builder.AppendLine($"      \"waitToSupportSeconds\": {JsonNullableMetric(ResolveSupportWaitExposureSeconds(result))},");
+            builder.AppendLine($"      \"bodyHitsBeforeSupport\": {JsonNullableMetric(result.SupportBodyHitsBeforeSupport)},");
+            builder.AppendLine($"      \"damageBeforeSupport\": {JsonNullableMetric(result.SupportDamageBeforeSupport)},");
+            builder.AppendLine($"      \"mainAnswerDelaySeconds\": {JsonNullableMetric(result.SupportComboSlot1ReadyDelaySeconds)},");
+            builder.AppendLine($"      \"mainAnswerGate\": \"{JsonEscape(FormatSupportWaitExposureMainAnswerGate(result))}\",");
+            builder.AppendLine($"      \"payoffVerdict\": \"{JsonEscape(ResolveSupportDecisionPayoffVerdict(result))}\",");
+            builder.AppendLine($"      \"resultHookClass\": \"{JsonEscape(ResolveResultHookClass(result))}\",");
+            builder.AppendLine($"      \"result\": \"{JsonEscape(result.ResultKind)}\",");
+            builder.AppendLine($"      \"firstUnresolvedBeat\": \"{JsonEscape(ResolveFirstUnresolvedBeat(result))}\",");
+            builder.AppendLine($"      \"repeatWaitSecondsMin\": {JsonNullableMetric(MinMetric(repeatabilityResults, policy, ResolveSupportWaitExposureSeconds))},");
+            builder.AppendLine($"      \"repeatWaitSecondsAverage\": {JsonNullableMetric(AverageMetric(repeatabilityResults, policy, ResolveSupportWaitExposureSeconds))},");
+            builder.AppendLine($"      \"repeatWaitSecondsMax\": {JsonNullableMetric(MaxMetric(repeatabilityResults, policy, ResolveSupportWaitExposureSeconds))},");
+            builder.AppendLine($"      \"repeatBodyHitsBeforeSupportAverage\": {JsonNullableMetric(AverageMetric(repeatabilityResults, policy, repeated => repeated.SupportBodyHitsBeforeSupport))},");
+            builder.AppendLine($"      \"repeatDamageBeforeSupportAverage\": {JsonNullableMetric(AverageMetric(repeatabilityResults, policy, repeated => repeated.SupportDamageBeforeSupport))},");
+            builder.AppendLine($"      \"readout\": \"{JsonEscape(ResolveSupportWaitExposureRead(result))}\"");
             builder.Append("    }");
             builder.AppendLine(appendComma ? "," : string.Empty);
         }
