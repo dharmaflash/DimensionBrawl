@@ -2,6 +2,7 @@ Shader "DimensionBrawl/UI/FirstPersonGlitchOverlay"
 {
     Properties
     {
+        [PerRendererData] _MainTex ("Sprite Texture", 2D) = "white" {}
         _Tint ("Tint", Color) = (0.58, 0.92, 1.0, 1.0)
         _Alpha ("Alpha", Range(0, 1)) = 0
         _NoiseStrength ("Noise Strength", Range(0, 2)) = 1
@@ -49,6 +50,7 @@ Shader "DimensionBrawl/UI/FirstPersonGlitchOverlay"
             };
 
             fixed4 _Tint;
+            sampler2D _MainTex;
             float _Alpha;
             float _NoiseStrength;
             float _ScanlineStrength;
@@ -74,6 +76,7 @@ Shader "DimensionBrawl/UI/FirstPersonGlitchOverlay"
             fixed4 frag(v2f i) : SV_Target
             {
                 float2 uv = i.uv;
+                fixed4 sprite = tex2D(_MainTex, uv) * i.color;
                 float coarseNoise = Hash21(floor(float2(uv.x * 220.0 + _Phase * 9.0, uv.y * 120.0)));
                 float fineNoise = Hash21(floor(float2(uv.x * 840.0, uv.y * 420.0 + _Phase * 31.0)));
                 float scan = pow(saturate(sin((uv.y + _Phase * 0.071) * 960.0) * 0.5 + 0.5), 10.0);
@@ -90,8 +93,8 @@ Shader "DimensionBrawl/UI/FirstPersonGlitchOverlay"
                     + brokenLines
                     + jitter;
                 float alpha = saturate(signal) * saturate(_Alpha) * (0.35 + centerFalloff * 0.35 + sideFalloff * 0.30);
-                fixed3 color = _Tint.rgb + (fineNoise * 0.18);
-                return fixed4(color * i.color.rgb, alpha * i.color.a);
+                fixed3 color = (_Tint.rgb + (fineNoise * 0.18)) * sprite.rgb;
+                return fixed4(color, alpha * sprite.a);
             }
             ENDCG
         }

@@ -157,6 +157,7 @@ namespace DimensionBrawl.Presentation
 
         [Header("Commandos")]
         [SerializeField] private CommandoCue[] commandos = Array.Empty<CommandoCue>();
+        [SerializeField, Min(0f)] private float commandoStrideBobHeight = 0f;
 
         [Header("Timed Objects")]
         [SerializeField] private TimedObjectCue[] timedObjects = Array.Empty<TimedObjectCue>();
@@ -338,7 +339,9 @@ namespace DimensionBrawl.Presentation
                 bool hitActive = active
                     && !string.IsNullOrWhiteSpace(cue.HitStateName)
                     && elapsedSeconds >= cue.HitStartSeconds;
-                float strideBob = active && !hitActive ? Mathf.Abs(Mathf.Sin(runCycle * Mathf.PI * 2f)) * 0.026f : 0f;
+                float strideBob = active && !hitActive && commandoStrideBobHeight > 0f
+                    ? Mathf.Abs(Mathf.Sin(runCycle * Mathf.PI * 2f)) * commandoStrideBobHeight
+                    : 0f;
                 Vector3 hitOffset = hitActive
                     ? cue.HitLocalPositionOffset * Mathf.SmoothStep(
                         0f,

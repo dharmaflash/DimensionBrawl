@@ -1,3 +1,4 @@
+using System;
 using DimensionBrawl.Combat;
 using UnityEngine;
 
@@ -46,6 +47,18 @@ namespace DimensionBrawl.AI
             currentTarget = currentTargetHealth != null ? currentTargetHealth.transform : null;
             nextRetargetTime = Time.time + retargetIntervalSeconds;
             return currentTargetHealth != null;
+        }
+
+        public void ConfigureTargetCandidates(CombatHealth[] candidates, bool refreshNow = true)
+        {
+            targetCandidates = candidates ?? Array.Empty<CombatHealth>();
+            currentTargetHealth = null;
+            currentTarget = null;
+            nextRetargetTime = 0f;
+            if (refreshNow && isActiveAndEnabled)
+            {
+                RefreshTarget();
+            }
         }
 
         private void Awake()

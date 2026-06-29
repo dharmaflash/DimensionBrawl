@@ -35,6 +35,7 @@ namespace DimensionBrawl.Editor
         private const string BossIntroProfilePath = CinematicProfileRoot + "/DB_Cinematic_BossIntro.asset";
         private const string GameplayHandoffProfilePath = CinematicProfileRoot + "/DB_Cinematic_GameplayHandoff.asset";
         private const float StageScale = 1.5f;
+        private const float OlympusCorridorGameplayYawDegrees = 90f;
 
         private static readonly string[] IntroGatePodPayloadSourceNames =
         {
@@ -65,15 +66,15 @@ namespace DimensionBrawl.Editor
 
         private static readonly AnchorSpec[] AnchorSpecs =
         {
-            new("Player_LeftShoulderCameraAnchor", CombatAnchorsName, new Vector3(-51.402f, 9.785f, -0.411f), new Vector3(0f, 82f, 0f), "Player camera/start read for intro handoff and combat entry."),
+            new("Player_LeftShoulderCameraAnchor", CombatAnchorsName, new Vector3(-51.402f, 9.785f, -0.411f), new Vector3(0f, OlympusCorridorGameplayYawDegrees, 0f), "Player camera/start read for intro handoff and combat entry."),
             new("Boss_CenterLaneAnchor", CombatAnchorsName, new Vector3(15.3f, 0f, 0f), Vector3.zero, "Boss center spawn and reveal focus."),
             new("Add_LeftLaneAnchor", CombatAnchorsName, new Vector3(13.35f, 0f, -1.875f), Vector3.zero, "Left add spawn lane."),
             new("Add_RightLaneAnchor", CombatAnchorsName, new Vector3(13.35f, 0f, 1.875f), Vector3.zero, "Right add spawn lane."),
             new("Rift_BackdropAnchor", CombatAnchorsName, new Vector3(22.2f, 3.975f, 0f), Vector3.zero, "Far rift/backdrop spatial reference."),
-            new("IntroCutscene_End_PlayerHandoffAnchor", CutsceneAnchorsName, new Vector3(-51.402f, 9.785f, -0.411f), new Vector3(0f, 82f, 0f), "Intro cutscene exits into this player-side view."),
+            new("IntroCutscene_End_PlayerHandoffAnchor", CutsceneAnchorsName, new Vector3(-51.402f, 9.785f, -0.411f), new Vector3(0f, OlympusCorridorGameplayYawDegrees, 0f), "Intro cutscene exits into this player-side view."),
             new("BossEntrance_BossRevealAnchor", CutsceneAnchorsName, new Vector3(15.3f, 1.6f, 0f), Vector3.zero, "Boss entrance reveal look/actor anchor."),
-            new("Gameplay_CombatStartAnchor", CutsceneAnchorsName, new Vector3(-51.402f, 7.985f, -0.411f), new Vector3(0f, 82f, 0f), "Gameplay camera/input unlock handoff."),
-            new("StageSpawner_PlayerStart", RuntimeAnchorsName, new Vector3(-51.402f, 7.985f, -0.411f), new Vector3(0f, 82f, 0f), "Runtime PositionId for player start."),
+            new("Gameplay_CombatStartAnchor", CutsceneAnchorsName, new Vector3(-51.402f, 7.985f, -0.411f), new Vector3(0f, OlympusCorridorGameplayYawDegrees, 0f), "Gameplay camera/input unlock handoff."),
+            new("StageSpawner_PlayerStart", RuntimeAnchorsName, new Vector3(-51.402f, 7.985f, -0.411f), new Vector3(0f, OlympusCorridorGameplayYawDegrees, 0f), "Runtime PositionId for player start."),
             new("StageSpawner_BossCenter", RuntimeAnchorsName, new Vector3(15.3f, 0f, 0f), Vector3.zero, "Runtime PositionId for boss center."),
             new("StageClear_CorridorExit", RuntimeAnchorsName, new Vector3(27f, 0f, 0f), Vector3.zero, "Runtime clear/exit state hook.")
         };
@@ -390,6 +391,7 @@ namespace DimensionBrawl.Editor
                 AnchorSpec spec = AnchorSpecs[i];
                 Transform group = RequireChild(stageAnchors, spec.GroupId);
                 Transform anchor = RequireChild(group, spec.AnchorId);
+                ConfigureAnchorTransform(anchor, spec);
                 StageAnchorPoint point = GetOrAddComponent<StageAnchorPoint>(anchor.gameObject);
                 ConfigureAnchorPoint(point, spec);
                 points[i] = point;
@@ -1062,6 +1064,14 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(point);
         }
 
+        private static void ConfigureAnchorTransform(Transform anchor, AnchorSpec spec)
+        {
+            anchor.localPosition = spec.Position;
+            anchor.localRotation = Quaternion.Euler(spec.Euler);
+            anchor.localScale = Vector3.one;
+            EditorUtility.SetDirty(anchor);
+        }
+
         private static StageAnchorUsageKind ResolveUsageKind(AnchorSpec spec)
         {
             if (string.Equals(spec.GroupId, CombatAnchorsName, StringComparison.Ordinal))
@@ -1221,6 +1231,11 @@ namespace DimensionBrawl.Editor
             if (Vector3.Distance(sceneAnchor.localPosition, anchor.ExpectedPosition) > 0.05f)
             {
                 throw new InvalidOperationException($"{profile.StageId}/{anchor.AnchorId} position does not match scene anchor.");
+            }
+
+            if (Quaternion.Angle(sceneAnchor.localRotation, Quaternion.Euler(anchor.ExpectedEuler)) > 0.25f)
+            {
+                throw new InvalidOperationException($"{profile.StageId}/{anchor.AnchorId} rotation does not match scene anchor.");
             }
 
             StageAnchorPoint point = sceneAnchor.GetComponent<StageAnchorPoint>();

@@ -185,6 +185,64 @@ namespace DimensionBrawl.Presentation
             threat = newThreat;
         }
 
+        public void PrimeFromHandoffPose(Transform handoffPose)
+        {
+            if (handoffPose == null)
+            {
+                return;
+            }
+
+            PrimeFromHandoffPose(handoffPose.position, handoffPose.rotation, null);
+        }
+
+        public void PrimeFromHandoffCamera(Camera handoffCamera)
+        {
+            if (handoffCamera == null)
+            {
+                return;
+            }
+
+            PrimeFromHandoffPose(
+                handoffCamera.transform.position,
+                handoffCamera.transform.rotation,
+                handoffCamera.fieldOfView);
+        }
+
+        private void PrimeFromHandoffPose(
+            Vector3 handoffPosition,
+            Quaternion handoffRotation,
+            float? handoffFieldOfView)
+        {
+            transform.SetPositionAndRotation(handoffPosition, handoffRotation);
+            if (handoffFieldOfView.HasValue)
+            {
+                Camera camera = ResolveControlledCamera();
+                if (camera != null)
+                {
+                    camera.fieldOfView = handoffFieldOfView.Value;
+                    baseFieldOfView = handoffFieldOfView.Value;
+                }
+            }
+
+            followVelocity = Vector3.zero;
+            cueOffset = Vector3.zero;
+            cueFieldOfViewDelta = 0f;
+            cueCameraDistanceDelta = 0f;
+            cueFocusHeightDelta = 0f;
+            cueTimer = 0f;
+            cueDuration = 0f;
+            orbitInitialized = false;
+            aimTargetWeight = 0f;
+            aimWeight = 0f;
+            aimOrbitInput = Vector2.zero;
+            aimYawOffsetDegrees = 0f;
+            hasAimAssistYawTarget = false;
+            requestedAimAssistYawTargetDegrees = 0f;
+            requestedAimAssistStrength01 = 0f;
+            aimAssistYawOffsetDegrees = 0f;
+            wasAimFollowActive = false;
+        }
+
         public void RequestCue(Vector3 additiveOffset)
         {
             RequestCue(additiveOffset, defaultCueSeconds);

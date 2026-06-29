@@ -35,6 +35,7 @@ namespace DimensionBrawl.UI
 
         [Header("Display")]
         [SerializeField] private bool showHud = true;
+        [SerializeField, Range(0f, 1f)] private float hudOpacity = 1f;
         [SerializeField, Min(40f)] private float buttonSize = 168f;
         [SerializeField, Min(0f)] private float buttonGap = 38f;
         [SerializeField, Min(0f)] private float margin = 72f;
@@ -143,10 +144,16 @@ namespace DimensionBrawl.UI
         public bool IsReviewLookAimActive => hudLookAimActive;
         public bool WasBasicFireHeldLastFrame => previousBasicHeld;
         public float HudScale => scale;
+        public float HudOpacity => hudOpacity;
 
         public void SetHudScale(float value)
         {
             scale = Mathf.Clamp(value, 0.5f, 2f);
+        }
+
+        public void SetHudOpacity(float opacity)
+        {
+            hudOpacity = Mathf.Clamp01(opacity);
         }
 
         public void Configure(
@@ -233,7 +240,7 @@ namespace DimensionBrawl.UI
 
         private void Update()
         {
-            if (!showHud)
+            if (!showHud || hudOpacity <= 0.001f)
             {
                 ReleaseHudControls();
                 return;
@@ -337,11 +344,18 @@ namespace DimensionBrawl.UI
 
         private void OnGUI()
         {
-            if (!showHud)
+            if (!showHud || hudOpacity <= 0.001f)
             {
                 return;
             }
 
+            Color previousGuiColor = GUI.color;
+            Color previousContentColor = GUI.contentColor;
+            Color previousBackgroundColor = GUI.backgroundColor;
+            float previousChromeOpacity = BossBarrageLaneReviewHudChrome.BeginOpacity(hudOpacity);
+            GUI.color = WithHudOpacity(previousGuiColor);
+            GUI.contentColor = WithHudOpacity(previousContentColor);
+            GUI.backgroundColor = WithHudOpacity(previousBackgroundColor);
             BuildLayout();
             EnsureStyles();
             DrawMoveJoystick();
@@ -352,6 +366,10 @@ namespace DimensionBrawl.UI
             DrawButton(swapRect, "SWAP", false);
             DrawButton(skillRect, "SKILL", false);
             DrawSummonButtons();
+            BossBarrageLaneReviewHudChrome.EndOpacity(previousChromeOpacity);
+            GUI.color = previousGuiColor;
+            GUI.contentColor = previousContentColor;
+            GUI.backgroundColor = previousBackgroundColor;
         }
 
         private Vector2 ResolveMoveInput()
@@ -1102,12 +1120,18 @@ namespace DimensionBrawl.UI
             float thickness = fireAimReticleThickness * resolvedScale * (1f + fireAimAssistThicknessBoost * assistStrength);
 
             Color previousColor = GUI.color;
-            GUI.color = Color.Lerp(fireAimReticleColor, fireAimAssistReticleColor, assistStrength);
+            GUI.color = WithHudOpacity(Color.Lerp(fireAimReticleColor, fireAimAssistReticleColor, assistStrength));
             DrawReticleSegment(new Rect(center.x - gap - size, center.y - thickness * 0.5f, size, thickness));
             DrawReticleSegment(new Rect(center.x + gap, center.y - thickness * 0.5f, size, thickness));
             DrawReticleSegment(new Rect(center.x - thickness * 0.5f, center.y - gap - size, thickness, size));
             DrawReticleSegment(new Rect(center.x - thickness * 0.5f, center.y + gap, thickness, size));
             GUI.color = previousColor;
+        }
+
+        private Color WithHudOpacity(Color color)
+        {
+            color.a *= hudOpacity;
+            return color;
         }
 
         private bool IsRangedAimReticleVisible()

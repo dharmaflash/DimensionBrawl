@@ -19,6 +19,19 @@ namespace DimensionBrawl.UI
         private static GUIStyle smallCenterLabelStyle;
         private static GUIStyle leftLabelStyle;
         private static GUIStyle titleLabelStyle;
+        private static float drawOpacity = 1f;
+
+        public static float BeginOpacity(float opacity)
+        {
+            float previous = drawOpacity;
+            drawOpacity = Mathf.Clamp01(opacity);
+            return previous;
+        }
+
+        public static void EndOpacity(float previousOpacity)
+        {
+            drawOpacity = Mathf.Clamp01(previousOpacity);
+        }
 
         public static void DrawObjectivePanel(
             Rect rect,
@@ -296,7 +309,7 @@ namespace DimensionBrawl.UI
             EnsureTextures();
             Texture2D resolvedTexture = texture != null ? texture : circleTexture;
             Color previous = GUI.color;
-            GUI.color = color;
+            GUI.color = WithOpacity(color);
             GUI.DrawTexture(rect, resolvedTexture, ScaleMode.StretchToFill);
             GUI.color = previous;
         }
@@ -304,9 +317,15 @@ namespace DimensionBrawl.UI
         private static void DrawSolid(Rect rect, Color color)
         {
             Color previous = GUI.color;
-            GUI.color = color;
+            GUI.color = WithOpacity(color);
             GUI.DrawTexture(rect, Texture2D.whiteTexture, ScaleMode.StretchToFill);
             GUI.color = previous;
+        }
+
+        private static Color WithOpacity(Color color)
+        {
+            color.a *= drawOpacity;
+            return color;
         }
 
         private static Rect Inflate(Rect rect, float amount)

@@ -57,6 +57,7 @@ namespace DimensionBrawl.Editor
         private const string GameplayCombatStartAnchorName = "Gameplay_CombatStartAnchor";
         private const string StageSpawnerPlayerStartName = "StageSpawner_PlayerStart";
         private const string GameplayHandoffPortName = "GameplayHandoffPort";
+        private const float OlympusCorridorGameplayYawDegrees = 90f;
         private const string ReportPath = "C:/tmp/DimensionBrawl-IntroGatePodPlayerRevealCamera.md";
 
         private const double RevealDurationSeconds = 7.5000005d;
@@ -104,7 +105,7 @@ namespace DimensionBrawl.Editor
             double authoredEndSeconds = revealEndSeconds + TimelineTailSeconds;
 
             Vector3 revealFootOrigin = podBaseReadability.position;
-            Quaternion revealFacingRotation = ResolveFlatRotation(corridorFacingAnchor);
+            Quaternion revealFacingRotation = Quaternion.Euler(0f, OlympusCorridorGameplayYawDegrees, 0f);
             Vector3 handoffCameraPosition = revealFootOrigin + (Vector3.up * HandoffCameraHeight);
             TransformSnapshot originalInoriPlacement = TransformSnapshot.Capture(inoriPlacement);
             Transform combatStartVisualPlacement = EnsureCombatStartVisual(

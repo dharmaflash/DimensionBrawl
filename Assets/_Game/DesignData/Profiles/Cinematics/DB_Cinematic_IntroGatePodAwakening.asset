@@ -171,9 +171,9 @@ MonoBehaviour:
     durationSeconds: 0
     clip: {fileID: 0}
     avatarMask: {fileID: 0}
-    animatorStateName:
-    animatorTriggerName:
-    faceStateName:
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: 
     socketPath: InoriRifle
     requireSocket: 1
     controllerOverride: {fileID: 0}
@@ -187,9 +187,9 @@ MonoBehaviour:
     clip: {fileID: 0}
     avatarMask: {fileID: 0}
     animatorStateName: CIN_IntroLookAtHands
-    animatorTriggerName:
-    faceStateName:
-    socketPath:
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
     requireSocket: 0
     controllerOverride: {fileID: 0}
     objectActive: 1
@@ -201,10 +201,10 @@ MonoBehaviour:
     durationSeconds: 1.5
     clip: {fileID: 0}
     avatarMask: {fileID: 0}
-    animatorStateName:
-    animatorTriggerName:
+    animatorStateName: 
+    animatorTriggerName: 
     faceStateName: Surprised
-    socketPath:
+    socketPath: 
     requireSocket: 0
     controllerOverride: {fileID: 0}
     objectActive: 1
@@ -216,10 +216,10 @@ MonoBehaviour:
     durationSeconds: 2.6
     clip: {fileID: 0}
     avatarMask: {fileID: 0}
-    animatorStateName:
-    animatorTriggerName:
+    animatorStateName: 
+    animatorTriggerName: 
     faceStateName: Confused
-    socketPath:
+    socketPath: 
     requireSocket: 0
     controllerOverride: {fileID: 0}
     objectActive: 1
@@ -232,9 +232,9 @@ MonoBehaviour:
     clip: {fileID: 0}
     avatarMask: {fileID: 0}
     animatorStateName: CIN_IntroSurprised
-    animatorTriggerName:
-    faceStateName:
-    socketPath:
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
     requireSocket: 0
     controllerOverride: {fileID: 0}
     objectActive: 1
@@ -247,9 +247,9 @@ MonoBehaviour:
     clip: {fileID: 0}
     avatarMask: {fileID: 0}
     animatorStateName: CIN_IntroPickUp
-    animatorTriggerName:
-    faceStateName:
-    socketPath:
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
     requireSocket: 0
     controllerOverride: {fileID: 0}
     objectActive: 1
@@ -261,9 +261,9 @@ MonoBehaviour:
     durationSeconds: 0
     clip: {fileID: 0}
     avatarMask: {fileID: 0}
-    animatorStateName:
-    animatorTriggerName:
-    faceStateName:
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: 
     socketPath: IntroGatePodReview_FloorRifle
     requireSocket: 1
     controllerOverride: {fileID: 0}
@@ -276,9 +276,9 @@ MonoBehaviour:
     durationSeconds: 0
     clip: {fileID: 0}
     avatarMask: {fileID: 0}
-    animatorStateName:
-    animatorTriggerName:
-    faceStateName:
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: 
     socketPath: InoriRifle
     requireSocket: 1
     controllerOverride: {fileID: 0}
@@ -292,9 +292,9 @@ MonoBehaviour:
     clip: {fileID: 0}
     avatarMask: {fileID: 0}
     animatorStateName: CIN_CombatReady
-    animatorTriggerName:
-    faceStateName:
-    socketPath:
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
     requireSocket: 0
     controllerOverride: {fileID: 0}
     objectActive: 1
@@ -306,10 +306,10 @@ MonoBehaviour:
     durationSeconds: 3.1
     clip: {fileID: 0}
     avatarMask: {fileID: 0}
-    animatorStateName:
-    animatorTriggerName:
+    animatorStateName: 
+    animatorTriggerName: 
     faceStateName: Angry
-    socketPath:
+    socketPath: 
     requireSocket: 0
     controllerOverride: {fileID: 0}
     objectActive: 1
