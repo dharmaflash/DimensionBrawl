@@ -32,7 +32,7 @@ MonoBehaviour:
   anchors:
   - anchorId: Player_LeftShoulderCameraAnchor
     groupId: CombatSpawnAnchors
-    expectedPosition: {x: -16.5, y: 1.8, z: -4.65}
+    expectedPosition: {x: -51.402077, y: 9.785, z: -0.4110782}
     expectedEuler: {x: 0, y: 82, z: 0}
     purpose: Player camera/start read for intro handoff and combat entry.
   - anchorId: Boss_CenterLaneAnchor
@@ -57,7 +57,7 @@ MonoBehaviour:
     purpose: Far rift/backdrop spatial reference.
   - anchorId: IntroCutscene_End_PlayerHandoffAnchor
     groupId: CutsceneHandoffAnchors
-    expectedPosition: {x: -16.5, y: 1.8, z: -4.65}
+    expectedPosition: {x: -51.402077, y: 9.785, z: -0.4110782}
     expectedEuler: {x: 0, y: 82, z: 0}
     purpose: Intro cutscene exits into this player-side view.
   - anchorId: BossEntrance_BossRevealAnchor
@@ -67,12 +67,12 @@ MonoBehaviour:
     purpose: Boss entrance reveal look/actor anchor.
   - anchorId: Gameplay_CombatStartAnchor
     groupId: CutsceneHandoffAnchors
-    expectedPosition: {x: -16.5, y: 0, z: -4.65}
+    expectedPosition: {x: -51.402077, y: 7.9849997, z: -0.4110782}
     expectedEuler: {x: 0, y: 82, z: 0}
     purpose: Gameplay camera/input unlock handoff.
   - anchorId: StageSpawner_PlayerStart
     groupId: RuntimeStateAnchors
-    expectedPosition: {x: -16.5, y: 0, z: -4.65}
+    expectedPosition: {x: -51.402077, y: 7.9849997, z: -0.4110782}
     expectedEuler: {x: 0, y: 82, z: 0}
     purpose: Runtime PositionId for player start.
   - anchorId: StageSpawner_BossCenter

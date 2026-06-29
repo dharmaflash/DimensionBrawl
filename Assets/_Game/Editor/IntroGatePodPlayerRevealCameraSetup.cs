@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Presentation;
 using Unity.Cinemachine;
 using UnityEditor;
@@ -19,25 +20,50 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/DesignData/Timelines/Cinematics/DB_Timeline_IntroGatePodAwakening_OlympusBombingPrelude.playable";
         private const string OlympusCombinedProfilePath =
             "Assets/_Game/DesignData/Profiles/Cinematics/DB_Cinematic_IntroGatePodAwakening_OlympusBombingPrelude.asset";
+        private const string StageDefinitionProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/StageDefinitions/DB_Stage_OlympusCorridorIntroCombat.asset";
         private const string RinaCameraClipPath =
             "Assets/_Imported/Reference/ZZZ_RinaLoopKit/Generated/Rina_QuestStart_OriginalExtracted.anim";
+        private const string CombatStartReadyEnterClipPath =
+            "Assets/_Game/Art/Animations/Cinematics/Inori/KawaiiP0/CIN_BossIntroReady.fbx";
+        private const string CombatReadyClipPath =
+            "Assets/_Game/Art/Animations/Cinematics/Inori/KawaiiP0/CIN_CombatReady.fbx";
         private const string RevealRigRootName = "IntroGatePodReview_PlayerRevealCameraRig";
         private const string RevealCameraName = "CM_03_src_c10_player_reveal_rina_quest_start";
         private const string RevealShotId = "src_c10_player_reveal_rina_quest_start";
         private const string RevealAnimationTrackName = "Player Reveal Rina Camera Motion";
         private const string ObsoleteRevealPlacementTrackName = "Player Reveal PodBase Placement";
+        private const string ObsoleteCombatStartPlacementTrackName = "Player Combat Start PodBase Placement";
+        private const string CombatStartVisualPlacementName = "IntroGatePodReview_CombatStartInoriPlacement";
+        private const string CombatStartVisualActivationTrackName = "Combat Start Inori Active";
+        private const string CombatStartVisualBodyTrackName = "Combat Start Inori Body";
+        private const string InoriBodyTrackName = "Inori Body";
+        private const string CombatStartReadyEnterClipName = "combat_start_ready_enter";
+        private const string CombatStartReadySettleClipName = "combat_start_ready_settle";
+        private const string CombatStartReadyEnterCueId = "combat_start_ready_enter";
+        private const string CombatStartReadySettleCueId = "combat_start_ready_settle";
+        private const string CombatStartReadyEnterStateName = "CIN_BossIntroReady";
+        private const string CombatReadyStateName = "CIN_CombatReady";
         private const string CinemachineTrackName = "Cinemachine Shots";
         private const string CombatReadyActorCueId = "combat_ready_handoff";
         private const string CombatReadyTimelineClipName = "combat_ready_handoff";
         private const string LastCommandoShotId = "src_c09_commando_bridge_push_past";
         private const string InoriObjectName = "IntroGatePodReview_Inori";
+        private const string InoriPlacementObjectName = "IntroGatePodReview_InoriPlacement";
         private const string PodBaseReadabilityObjectName = "IntroGatePodReview_PodBaseReadability";
         private const string CorridorFacingAnchorName = "IntroCutscene_End_PlayerHandoffAnchor";
         private const string ShotPlayerObjectName = "IntroGatePodReview_CinemachineShotPlayer";
+        private const string PlayerCameraAnchorName = "Player_LeftShoulderCameraAnchor";
+        private const string GameplayCombatStartAnchorName = "Gameplay_CombatStartAnchor";
+        private const string StageSpawnerPlayerStartName = "StageSpawner_PlayerStart";
+        private const string GameplayHandoffPortName = "GameplayHandoffPort";
         private const string ReportPath = "C:/tmp/DimensionBrawl-IntroGatePodPlayerRevealCamera.md";
 
         private const double RevealDurationSeconds = 7.5000005d;
         private const double TimelineTailSeconds = 0.65d;
+        private const double CombatStartReadyEnterDurationSeconds = 1.25d;
+        private const double FirstPersonPlacementValidationSeconds = 18.5d;
+        private const float HandoffCameraHeight = 1.8f;
         private const float RevealFieldOfView = 60.001953f;
         private const float ViewportMargin = 0.035f;
 
@@ -58,14 +84,20 @@ namespace DimensionBrawl.Editor
             Scene scene = EditorSceneManager.OpenScene(OlympusStageScenePath, OpenSceneMode.Single);
             TimelineAsset timeline = LoadRequired<TimelineAsset>(OlympusCombinedTimelinePath);
             AnimationClip rinaClip = LoadRequired<AnimationClip>(RinaCameraClipPath);
+            AnimationClip combatStartReadyEnterClip = LoadAnimationClip(CombatStartReadyEnterClipPath, CombatStartReadyEnterStateName);
+            AnimationClip combatReadyClip = LoadAnimationClip(CombatReadyClipPath, CombatReadyStateName);
             CinematicSequenceProfile profile = LoadRequired<CinematicSequenceProfile>(OlympusCombinedProfilePath);
+            StageDefinitionProfile stageDefinition = LoadRequired<StageDefinitionProfile>(StageDefinitionProfilePath);
             PlayableDirector director = FindDirectorBoundToTimeline(scene, timeline)
                 ?? throw new InvalidOperationException("Could not find the Olympus combined Timeline director.");
             Transform inori = RequireObjectInScene(scene, InoriObjectName).transform;
+            Transform inoriPlacement = RequireObjectInScene(scene, InoriPlacementObjectName).transform;
             Transform podBaseReadability = RequireObjectInScene(scene, PodBaseReadabilityObjectName).transform;
             Transform corridorFacingAnchor = RequireObjectInScene(scene, CorridorFacingAnchorName).transform;
             CinemachineBrain brain = FindComponentInScene<CinemachineBrain>(scene)
                 ?? throw new InvalidOperationException("Could not find CinemachineBrain in Olympus scene.");
+            Animator inoriBodyAnimator = inori.GetComponentInChildren<Animator>(includeInactive: true)
+                ?? throw new InvalidOperationException($"`{InoriObjectName}` is missing a body Animator.");
 
             double revealStartSeconds = FindClipEnd(timeline, LastCommandoShotId);
             double revealEndSeconds = revealStartSeconds + RevealDurationSeconds;
@@ -73,6 +105,22 @@ namespace DimensionBrawl.Editor
 
             Vector3 revealFootOrigin = podBaseReadability.position;
             Quaternion revealFacingRotation = ResolveFlatRotation(corridorFacingAnchor);
+            Vector3 handoffCameraPosition = revealFootOrigin + (Vector3.up * HandoffCameraHeight);
+            TransformSnapshot originalInoriPlacement = TransformSnapshot.Capture(inoriPlacement);
+            Transform combatStartVisualPlacement = EnsureCombatStartVisual(
+                scene,
+                inoriPlacement,
+                inori,
+                revealFootOrigin,
+                revealFacingRotation);
+            Transform combatStartVisualInori = FindChildRecursive(combatStartVisualPlacement, InoriObjectName)
+                ?? throw new InvalidOperationException($"`{CombatStartVisualPlacementName}` is missing `{InoriObjectName}`.");
+            Animator combatStartVisualAnimator = combatStartVisualInori.GetComponent<Animator>()
+                ?? combatStartVisualInori.GetComponentInChildren<Animator>(includeInactive: true)
+                ?? throw new InvalidOperationException($"`{CombatStartVisualPlacementName}` is missing an Animator.");
+
+            ApplyCombatStartAnchors(scene, revealFootOrigin, handoffCameraPosition, revealFacingRotation);
+            UpdateStageDefinitionContract(stageDefinition, revealFootOrigin, handoffCameraPosition, revealFacingRotation.eulerAngles);
 
             Transform revealRoot = EnsureRevealRoot(scene);
             CinemachineCamera revealCamera = EnsureRevealCamera(revealRoot);
@@ -83,18 +131,39 @@ namespace DimensionBrawl.Editor
             AddOrUpdateCinemachineClip(timeline, director, brain, revealCamera, revealStartSeconds);
             AddOrUpdateAnimationTrack(timeline, director, revealAnimator, rinaClip, revealStartSeconds);
             RemoveTimelineTrack(timeline, ObsoleteRevealPlacementTrackName, director);
+            RemoveTimelineTrack(timeline, ObsoleteCombatStartPlacementTrackName, director);
+            AddOrUpdateActivationTrack(
+                timeline,
+                director,
+                CombatStartVisualActivationTrackName,
+                combatStartVisualPlacement.gameObject,
+                revealStartSeconds,
+                RevealDurationSeconds + TimelineTailSeconds);
+            AddOrUpdateCombatStartVisualBodyClips(
+                timeline,
+                director,
+                combatStartVisualAnimator,
+                combatReadyClip,
+                combatStartReadyEnterClip,
+                revealStartSeconds,
+                revealEndSeconds);
             UpdateShotPlayer(scene, brain, revealCamera, revealStartSeconds);
-            ExtendCombatReadyTimelineClip(timeline, revealEndSeconds);
             ExtendLetterboxTimelineClip(timeline, authoredEndSeconds);
             UpdateProfile(profile, revealStartSeconds, revealEndSeconds, authoredEndSeconds);
 
             timeline.durationMode = TimelineAsset.DurationMode.FixedLength;
             timeline.fixedDuration = authoredEndSeconds;
 
-            director.time = revealStartSeconds;
-            director.Evaluate();
-
             List<string> issues = ValidateCameraAnchor(revealRoot, podBaseReadability.position, revealFacingRotation);
+            ValidateCombatStartPlacement(
+                issues,
+                director,
+                inoriPlacement,
+                combatStartVisualInori,
+                originalInoriPlacement,
+                revealFootOrigin,
+                revealStartSeconds);
+            originalInoriPlacement.Apply(inoriPlacement);
             rinaClip.SampleAnimation(revealCamera.gameObject, 0f);
             if (Math.Abs(timeline.fixedDuration - authoredEndSeconds) > 0.01d)
             {
@@ -104,8 +173,12 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(revealRoot.gameObject);
             EditorUtility.SetDirty(revealCamera);
             EditorUtility.SetDirty(revealAnimator);
+            EditorUtility.SetDirty(combatStartVisualPlacement.gameObject);
+            EditorUtility.SetDirty(combatStartVisualAnimator);
+            EditorUtility.SetDirty(inoriBodyAnimator);
             EditorUtility.SetDirty(timeline);
             EditorUtility.SetDirty(profile);
+            EditorUtility.SetDirty(stageDefinition);
             EditorUtility.SetDirty(director);
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
@@ -246,6 +319,60 @@ namespace DimensionBrawl.Editor
             return visible / (float)points.Length;
         }
 
+        private static void ApplyCombatStartAnchors(
+            Scene scene,
+            Vector3 playerStartPosition,
+            Vector3 cameraAnchorPosition,
+            Quaternion facingRotation)
+        {
+            SetSceneObjectPose(scene, PlayerCameraAnchorName, cameraAnchorPosition, facingRotation);
+            SetSceneObjectPose(scene, CorridorFacingAnchorName, cameraAnchorPosition, facingRotation);
+            SetSceneObjectPose(scene, GameplayCombatStartAnchorName, playerStartPosition, facingRotation);
+            SetSceneObjectPose(scene, StageSpawnerPlayerStartName, playerStartPosition, facingRotation);
+            SetSceneObjectPose(scene, GameplayHandoffPortName, playerStartPosition, facingRotation);
+        }
+
+        private static void SetSceneObjectPose(Scene scene, string objectName, Vector3 position, Quaternion rotation)
+        {
+            Transform transform = RequireObjectInScene(scene, objectName).transform;
+            transform.SetPositionAndRotation(position, rotation);
+            transform.localScale = Vector3.one;
+            EditorUtility.SetDirty(transform);
+            EditorUtility.SetDirty(transform.gameObject);
+        }
+
+        private static Transform EnsureCombatStartVisual(
+            Scene scene,
+            Transform sourcePlacement,
+            Transform sourcePlayer,
+            Vector3 targetFootPosition,
+            Quaternion targetRotation)
+        {
+            GameObject existing = FindObjectInScene(scene, CombatStartVisualPlacementName);
+            if (existing != null)
+            {
+                UnityEngine.Object.DestroyImmediate(existing);
+            }
+
+            GameObject visualObject = UnityEngine.Object.Instantiate(sourcePlacement.gameObject);
+            visualObject.name = CombatStartVisualPlacementName;
+            SceneManager.MoveGameObjectToScene(visualObject, scene);
+            visualObject.SetActive(false);
+
+            Transform visualPlacement = visualObject.transform;
+            Transform visualPlayer = FindChildRecursive(visualPlacement, sourcePlayer.name)
+                ?? throw new InvalidOperationException($"Duplicated combat-start visual is missing `{sourcePlayer.name}`.");
+            visualPlacement.SetPositionAndRotation(targetFootPosition, targetRotation);
+            visualPlacement.localScale = sourcePlacement.localScale;
+
+            Vector3 footDelta = targetFootPosition - ResolvePlayerFootOrigin(visualPlayer);
+            visualPlacement.position += footDelta;
+            visualObject.SetActive(false);
+
+            EditorUtility.SetDirty(visualObject);
+            return visualPlacement;
+        }
+
         private static void AddOrUpdateCinemachineClip(
             TimelineAsset timeline,
             PlayableDirector director,
@@ -295,6 +422,7 @@ namespace DimensionBrawl.Editor
             clip.displayName = clipAsset.name;
             clip.start = startSeconds;
             clip.duration = RevealDurationSeconds;
+            SetTimelineClipExtrapolation(clip, TimelineClip.ClipExtrapolation.None);
 
             AnimationPlayableAsset playableAsset = clip.asset as AnimationPlayableAsset;
             if (playableAsset != null)
@@ -306,6 +434,125 @@ namespace DimensionBrawl.Editor
             }
 
             EditorUtility.SetDirty(track);
+        }
+
+        private static void SetTimelineClipExtrapolation(
+            TimelineClip timelineClip,
+            TimelineClip.ClipExtrapolation extrapolation)
+        {
+            if (timelineClip == null)
+            {
+                return;
+            }
+
+            const System.Reflection.BindingFlags Flags =
+                System.Reflection.BindingFlags.Instance
+                | System.Reflection.BindingFlags.NonPublic;
+            typeof(TimelineClip).GetField("m_PreExtrapolationMode", Flags)?.SetValue(
+                timelineClip,
+                extrapolation);
+            typeof(TimelineClip).GetField("m_PostExtrapolationMode", Flags)?.SetValue(
+                timelineClip,
+                extrapolation);
+        }
+
+        private static void AddOrUpdateActivationTrack(
+            TimelineAsset timeline,
+            PlayableDirector director,
+            string trackName,
+            GameObject target,
+            double startSeconds,
+            double durationSeconds)
+        {
+            RemoveTimelineTrack(timeline, trackName, director);
+
+            ActivationTrack track = timeline.CreateTrack<ActivationTrack>(trackName);
+            director.SetGenericBinding(track, target);
+            TimelineClip clip = track.CreateDefaultClip();
+            clip.displayName = trackName;
+            clip.start = startSeconds;
+            clip.duration = durationSeconds;
+            SetTimelineClipExtrapolation(clip, TimelineClip.ClipExtrapolation.None);
+            track.postPlaybackState = ActivationTrack.PostPlaybackState.Inactive;
+            EditorUtility.SetDirty(track);
+        }
+
+        private static void AddOrUpdateCombatStartVisualBodyClips(
+            TimelineAsset timeline,
+            PlayableDirector director,
+            Animator animator,
+            AnimationClip combatReadyClip,
+            AnimationClip readyEnterClip,
+            double revealStartSeconds,
+            double revealEndSeconds)
+        {
+            RemoveTimelineTrack(timeline, CombatStartVisualBodyTrackName, director);
+
+            AnimationTrack track = timeline.CreateTrack<AnimationTrack>(CombatStartVisualBodyTrackName);
+            track.trackOffset = TrackOffset.Auto;
+            director.SetGenericBinding(track, animator);
+
+            CreateAnimationClip(
+                track,
+                readyEnterClip,
+                CombatStartReadyEnterClipName,
+                revealStartSeconds,
+                CombatStartReadyEnterDurationSeconds,
+                0.12d,
+                0.16d);
+
+            double settleStart = revealStartSeconds + Math.Max(0.2d, CombatStartReadyEnterDurationSeconds - 0.18d);
+            CreateAnimationClip(
+                track,
+                combatReadyClip,
+                CombatStartReadySettleClipName,
+                settleStart,
+                Math.Max(0.1d, revealEndSeconds - settleStart),
+                0.2d,
+                0d);
+
+            EditorUtility.SetDirty(track);
+        }
+
+        private static TimelineClip CreateAnimationClip(
+            AnimationTrack track,
+            AnimationClip clipAsset,
+            string displayName,
+            double startSeconds,
+            double durationSeconds,
+            double easeInSeconds = 0d,
+            double easeOutSeconds = 0d)
+        {
+            TimelineClip clip = track.CreateClip(clipAsset);
+            clip.displayName = displayName;
+            clip.start = startSeconds;
+            clip.duration = durationSeconds;
+            clip.easeInDuration = easeInSeconds;
+            clip.easeOutDuration = easeOutSeconds;
+
+            AnimationPlayableAsset playableAsset = clip.asset as AnimationPlayableAsset;
+            if (playableAsset != null)
+            {
+                playableAsset.removeStartOffset = false;
+                playableAsset.applyFootIK = true;
+                playableAsset.loop = AnimationPlayableAsset.LoopMode.Off;
+                EditorUtility.SetDirty(playableAsset);
+            }
+
+            return clip;
+        }
+
+        private static double TryFindClipStart(TrackAsset track, string displayName, double fallback)
+        {
+            foreach (TimelineClip clip in track.GetClips())
+            {
+                if (string.Equals(clip.displayName, displayName, StringComparison.Ordinal))
+                {
+                    return clip.start;
+                }
+            }
+
+            return fallback;
         }
 
         private static void UpdateShotPlayer(
@@ -416,13 +663,88 @@ namespace DimensionBrawl.Editor
             if (combatCue != null)
             {
                 float startSeconds = combatCue.FindPropertyRelative("startSeconds").floatValue;
-                SetFloat(combatCue, "durationSeconds", Mathf.Max(0.01f, (float)revealEndSeconds - startSeconds));
+                SetFloat(combatCue, "durationSeconds", Mathf.Max(0.01f, (float)revealStartSeconds - startSeconds));
             }
+
+            SetActorBodyStateCue(
+                actorCues,
+                CombatStartReadyEnterCueId,
+                (float)revealStartSeconds,
+                (float)CombatStartReadyEnterDurationSeconds,
+                CombatStartReadyEnterStateName);
+            SetActorBodyStateCue(
+                actorCues,
+                CombatStartReadySettleCueId,
+                (float)(revealStartSeconds + Math.Max(0.2d, CombatStartReadyEnterDurationSeconds - 0.18d)),
+                Mathf.Max(0.1f, (float)(revealEndSeconds - (revealStartSeconds + Math.Max(0.2d, CombatStartReadyEnterDurationSeconds - 0.18d)))),
+                CombatReadyStateName);
 
             SerializedProperty gameplayHandoff = RequireProperty(serialized, "gameplayHandoff");
             SetFloat(gameplayHandoff, "startSeconds", (float)revealEndSeconds);
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(profile);
+        }
+
+        private static void SetActorBodyStateCue(
+            SerializedProperty actorCues,
+            string cueId,
+            float startSeconds,
+            float durationSeconds,
+            string animatorStateName)
+        {
+            SerializedProperty cue = FindArrayElementByString(actorCues, "cueId", cueId);
+            if (cue == null)
+            {
+                int index = actorCues.arraySize;
+                actorCues.InsertArrayElementAtIndex(index);
+                cue = actorCues.GetArrayElementAtIndex(index);
+            }
+
+            SetBool(cue, "enabled", true);
+            SetString(cue, "cueId", cueId);
+            SetInt(cue, "role", 0);
+            SetInt(cue, "cueKind", 0);
+            SetFloat(cue, "startSeconds", startSeconds);
+            SetFloat(cue, "durationSeconds", durationSeconds);
+            SetObject(cue, "clip", null);
+            SetObject(cue, "avatarMask", null);
+            SetString(cue, "animatorStateName", animatorStateName);
+            SetString(cue, "animatorTriggerName", string.Empty);
+            SetString(cue, "faceStateName", string.Empty);
+            SetString(cue, "socketPath", string.Empty);
+            SetBool(cue, "requireSocket", false);
+            SetObject(cue, "controllerOverride", null);
+            SetBool(cue, "objectActive", true);
+        }
+
+        private static void UpdateStageDefinitionContract(
+            StageDefinitionProfile stageDefinition,
+            Vector3 playerStartPosition,
+            Vector3 cameraAnchorPosition,
+            Vector3 facingEuler)
+        {
+            SerializedObject serialized = new SerializedObject(stageDefinition);
+            SerializedProperty anchors = RequireProperty(serialized, "anchors");
+
+            SetAnchorExpected(anchors, PlayerCameraAnchorName, cameraAnchorPosition, facingEuler);
+            SetAnchorExpected(anchors, CorridorFacingAnchorName, cameraAnchorPosition, facingEuler);
+            SetAnchorExpected(anchors, GameplayCombatStartAnchorName, playerStartPosition, facingEuler);
+            SetAnchorExpected(anchors, StageSpawnerPlayerStartName, playerStartPosition, facingEuler);
+
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(stageDefinition);
+        }
+
+        private static void SetAnchorExpected(
+            SerializedProperty anchors,
+            string anchorId,
+            Vector3 expectedPosition,
+            Vector3 expectedEuler)
+        {
+            SerializedProperty anchor = FindArrayElementByString(anchors, "anchorId", anchorId)
+                ?? throw new InvalidOperationException($"Stage definition is missing anchor `{anchorId}`.");
+            SetVector3(anchor, "expectedPosition", expectedPosition);
+            SetVector3(anchor, "expectedEuler", expectedEuler);
         }
 
         private static List<string> ValidateFraming(
@@ -476,6 +798,38 @@ namespace DimensionBrawl.Editor
             }
 
             return issues;
+        }
+
+        private static void ValidateCombatStartPlacement(
+            List<string> issues,
+            PlayableDirector director,
+            Transform placement,
+            Transform player,
+            TransformSnapshot originalPlacement,
+            Vector3 expectedFootPosition,
+            double revealStartSeconds)
+        {
+            originalPlacement.Apply(placement);
+            director.time = Math.Min(FirstPersonPlacementValidationSeconds, Math.Max(0d, revealStartSeconds - 0.2d));
+            director.Evaluate();
+            float preRevealDrift = Vector3.Distance(placement.localPosition, originalPlacement.LocalPosition);
+            float preRevealRotationDrift = Quaternion.Angle(placement.localRotation, originalPlacement.LocalRotation);
+            if (preRevealDrift > 0.01f || preRevealRotationDrift > 0.5f)
+            {
+                issues.Add(
+                    $"First-person Inori placement drifted before combat-start relocation. positionDrift={preRevealDrift:0.###}m, rotationDrift={preRevealRotationDrift:0.###}deg.");
+            }
+
+            originalPlacement.Apply(placement);
+            director.time = revealStartSeconds + 0.15d;
+            director.Evaluate();
+            Vector3 actualFootPosition = ResolvePlayerFootOrigin(player);
+            float distance = Vector3.Distance(actualFootPosition, expectedFootPosition);
+            if (distance > 0.08f)
+            {
+                issues.Add(
+                    $"Combat-start placement did not move player to PodBaseReadability. actualFoot=`{FormatVector(actualFootPosition)}`, expected=`{FormatVector(expectedFootPosition)}`, distance={distance:0.###}m.");
+            }
         }
 
         private static void ValidatePoint(
@@ -729,6 +1083,21 @@ namespace DimensionBrawl.Editor
             return asset;
         }
 
+        private static AnimationClip LoadAnimationClip(string assetPath, string clipName)
+        {
+            UnityEngine.Object[] assets = AssetDatabase.LoadAllAssetsAtPath(assetPath);
+            for (int i = 0; i < assets.Length; i++)
+            {
+                if (assets[i] is AnimationClip clip
+                    && string.Equals(clip.name, clipName, StringComparison.Ordinal))
+                {
+                    return clip;
+                }
+            }
+
+            throw new InvalidOperationException($"Missing animation clip `{clipName}` in `{assetPath}`.");
+        }
+
         private static PlayableDirector FindDirectorBoundToTimeline(Scene scene, TimelineAsset timeline)
         {
             foreach (GameObject root in scene.GetRootGameObjects())
@@ -758,6 +1127,19 @@ namespace DimensionBrawl.Editor
             }
 
             return null;
+        }
+
+        private static Animator EnsureAnimator(Transform transform)
+        {
+            Animator animator = transform.GetComponent<Animator>();
+            if (animator == null)
+            {
+                animator = transform.gameObject.AddComponent<Animator>();
+            }
+
+            animator.applyRootMotion = false;
+            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+            return animator;
         }
 
         private static GameObject RequireObjectInScene(Scene scene, string objectName)
@@ -869,6 +1251,11 @@ namespace DimensionBrawl.Editor
             parent.FindPropertyRelative(propertyName).vector3Value = value;
         }
 
+        private static void SetObject(SerializedProperty parent, string propertyName, UnityEngine.Object value)
+        {
+            parent.FindPropertyRelative(propertyName).objectReferenceValue = value;
+        }
+
         private static string FormatVector(Vector3 value)
         {
             return $"{value.x:0.###}, {value.y:0.###}, {value.z:0.###}";
@@ -886,6 +1273,37 @@ namespace DimensionBrawl.Editor
             public readonly Vector3 Foot;
             public readonly Vector3 Chest;
             public readonly Vector3 Head;
+        }
+
+        private readonly struct TransformSnapshot
+        {
+            public TransformSnapshot(Vector3 localPosition, Quaternion localRotation, Vector3 localScale)
+            {
+                LocalPosition = localPosition;
+                LocalRotation = localRotation;
+                LocalScale = localScale;
+            }
+
+            public readonly Vector3 LocalPosition;
+            public readonly Quaternion LocalRotation;
+            public readonly Vector3 LocalScale;
+
+            public static TransformSnapshot Capture(Transform transform)
+            {
+                return new TransformSnapshot(transform.localPosition, transform.localRotation, transform.localScale);
+            }
+
+            public TransformSnapshot WithLocalPosition(Vector3 localPosition)
+            {
+                return new TransformSnapshot(localPosition, LocalRotation, LocalScale);
+            }
+
+            public void Apply(Transform transform)
+            {
+                transform.localPosition = LocalPosition;
+                transform.localRotation = LocalRotation;
+                transform.localScale = LocalScale;
+            }
         }
 
         private sealed class CameraSampler : IDisposable

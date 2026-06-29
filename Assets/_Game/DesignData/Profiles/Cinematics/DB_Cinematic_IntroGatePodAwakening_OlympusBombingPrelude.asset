@@ -302,7 +302,7 @@ MonoBehaviour:
     role: 0
     cueKind: 0
     startSeconds: 21.983334
-    durationSeconds: 13.941021
+    durationSeconds: 6.441021
     clip: {fileID: 0}
     avatarMask: {fileID: 0}
     animatorStateName: CIN_CombatReady
@@ -323,6 +323,36 @@ MonoBehaviour:
     animatorStateName: 
     animatorTriggerName: 
     faceStateName: Angry
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: combat_start_ready_enter
+    role: 0
+    cueKind: 0
+    startSeconds: 28.424355
+    durationSeconds: 1.25
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_BossIntroReady
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: combat_start_ready_settle
+    role: 0
+    cueKind: 0
+    startSeconds: 29.494354
+    durationSeconds: 6.4300003
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_CombatReady
+    animatorTriggerName: 
+    faceStateName: 
     socketPath: 
     requireSocket: 0
     controllerOverride: {fileID: 0}
