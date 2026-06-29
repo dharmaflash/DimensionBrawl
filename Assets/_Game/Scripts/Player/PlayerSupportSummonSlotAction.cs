@@ -8,6 +8,35 @@ using UnityEngine.InputSystem;
 
 namespace DimensionBrawl.Player
 {
+    public readonly struct SupportSummonVolleyPresentationEvent
+    {
+        public SupportSummonVolleyPresentationEvent(
+            int tier,
+            string actorRoleId,
+            Transform sourceAnchor,
+            Vector3 sourcePosition,
+            Vector3 targetPosition,
+            Vector3 planarDirection,
+            int projectileCount)
+        {
+            Tier = Mathf.Clamp(tier, 1, 3);
+            ActorRoleId = actorRoleId ?? string.Empty;
+            SourceAnchor = sourceAnchor;
+            SourcePosition = sourcePosition;
+            TargetPosition = targetPosition;
+            PlanarDirection = planarDirection;
+            ProjectileCount = Mathf.Max(1, projectileCount);
+        }
+
+        public int Tier { get; }
+        public string ActorRoleId { get; }
+        public Transform SourceAnchor { get; }
+        public Vector3 SourcePosition { get; }
+        public Vector3 TargetPosition { get; }
+        public Vector3 PlanarDirection { get; }
+        public int ProjectileCount { get; }
+    }
+
     public sealed class PlayerSupportSummonSlotAction : MonoBehaviour
     {
         [Header("Input")]
@@ -112,6 +141,7 @@ namespace DimensionBrawl.Player
 
         public event Action<PlayerSupportSummonSlotAction, int> SummonUsed;
         public event Action<PlayerSupportSummonSlotAction, int> SummonPressureBlocked;
+        public event Action<PlayerSupportSummonSlotAction, SupportSummonVolleyPresentationEvent> SummonVolleyFired;
         public event Action<PlayerSupportSummonSlotAction, LaneActionProjectile, CombatHealth, Vector3, Vector3> SummonProjectileDamageApplied;
 
         private SupportSummonSlotExecutor Executor => executor ??= new SupportSummonSlotExecutor(this);
@@ -335,6 +365,11 @@ namespace DimensionBrawl.Player
             lastPressureScreenInterceptTier = Mathf.Clamp(tier, 1, 3);
             totalPressureScreenInterceptCount++;
             SummonPressureBlocked?.Invoke(this, lastPressureScreenInterceptTier);
+        }
+
+        internal void NotifySummonVolleyFired(SupportSummonVolleyPresentationEvent volleyEvent)
+        {
+            SummonVolleyFired?.Invoke(this, volleyEvent);
         }
 
         internal void NotifySummonProjectileDamageApplied(

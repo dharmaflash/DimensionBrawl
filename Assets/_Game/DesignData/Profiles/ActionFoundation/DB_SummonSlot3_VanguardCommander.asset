@@ -105,17 +105,17 @@ MonoBehaviour:
     PlayerUse: Spend if the player is cornered near the backline and needs breathing
       room.
     SummonRead: FinalStandCommander enters right of the lane and pushes toward the
-      frontline with a body-and-screen block.
+      frontline with a body-and-shield-hit block.
   - TierLabel: LV2 Hold Line
     StageRole: Tankier frontline actor that can absorb a small boss curtain before
       counterfire.
     PlayerUse: Hold EN when the next boss pressure wave is readable but dense.
-    SummonRead: FinalStandCommander advances until contested, holds a four-hit screen,
-      then fires two heavy bolts.
+    SummonRead: FinalStandCommander advances until contested, flashes a four-hit
+      shield screen, then fires two heavy counters.
   - TierLabel: LV3 Break Wall
     StageRole: High-cost vanguard actor and screen for stabilizing a bad exchange
       and forcing a counter window.
     PlayerUse: Save for the committed boss pattern that would otherwise push the
       player back.
-    SummonRead: FinalStandCommander drives into the frontline with a seven-hit screen
-      and heavy three-shot response.
+    SummonRead: FinalStandCommander drives into the frontline with a seven-hit shield
+      wall and heavy three-shot response.

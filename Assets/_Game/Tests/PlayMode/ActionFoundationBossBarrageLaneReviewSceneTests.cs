@@ -2739,6 +2739,16 @@ namespace DimensionBrawl.Tests
                 RequireSupportSummonAction(player.gameObject, "SummonSlot2");
             PlayerSupportSummonSlotAction summonSlot3Action =
                 RequireSupportSummonAction(player.gameObject, "SummonSlot3");
+            SupportSummonPresentationCueDriver supportSummonCueDriver =
+                RequireComponent<SupportSummonPresentationCueDriver>(
+                    player.gameObject,
+                    "support summon presentation cue driver");
+            Assert.AreSame(summonSlot2Action, supportSummonCueDriver.SummonAction);
+            Assert.AreSame(playerCuePlayer, supportSummonCueDriver.CuePlayer);
+            Assert.IsNotNull(supportSummonCueDriver.FallbackAnchor);
+            Assert.AreEqual(CombatVfxCueId.SummonSlot2BeamLock, supportSummonCueDriver.SummonUseCueId);
+            Assert.AreEqual(CombatVfxCueId.SummonSlot2BeamFire, supportSummonCueDriver.VolleyCueId);
+            Assert.AreEqual(CombatVfxCueId.SummonSlot2BeamHit, supportSummonCueDriver.ImpactCueId);
 
             GameObject summonSlot2ActorPrefab = LoadAsset<GameObject>(SummonSlot2ActorPrefabPath);
             GameObject summonSlot3ActorPrefab = LoadAsset<GameObject>(SummonSlot3ActorPrefabPath);
@@ -2796,7 +2806,7 @@ namespace DimensionBrawl.Tests
 
             FillEnergyToTier(energyLadder, 2);
             Assert.IsTrue(summonSlot2Action.TryUseSummon());
-            yield return null;
+            yield return new WaitForSeconds(0.18f);
 
             SummonFrontlineProxy marksmanActor = RequireActiveSummonActorWithVisual(SummonSlot2ActorVisualName);
             SummonFrontlineProxyPresenter marksmanPresenter =
@@ -2813,6 +2823,14 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(
                 marksmanActor.PressureScreen != null && marksmanActor.PressureScreen.IsActive,
                 "SummonSlot2 is the review marksman slot; it should read through actor aura and volleys, not a shield screen.");
+            Assert.Greater(
+                supportSummonCueDriver.SummonUseCueRequestCount,
+                0,
+                "SummonSlot2 should request a beam-lock cue on successful use before the volley reads.");
+            Assert.Greater(
+                supportSummonCueDriver.VolleyCueRequestCount,
+                0,
+                "SummonSlot2 should request a beam-fire cue on its actual volley wave, not rely only on the bolt prefab.");
 
             FillEnergyToTier(energyLadder, 3);
             Assert.IsTrue(summonSlot3Action.TryUseSummon());
@@ -2840,6 +2858,12 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(
                 playerCuePlayer,
                 GetObjectReference<CombatVfxCuePlayer>(vanguardScreenPresenter, "cuePlayer"));
+            Assert.AreEqual(
+                CombatVfxCueId.SummonSlot3ShieldRaise,
+                GetEnum<CombatVfxCueId>(vanguardScreenPresenter, "activationCueId"));
+            Assert.AreEqual(
+                CombatVfxCueId.SummonSlot3ShieldHit,
+                GetEnum<CombatVfxCueId>(vanguardScreenPresenter, "interceptCueId"));
             Assert.Greater(
                 vanguardScreenPresenter.ActivationVfxCueRequestCount,
                 0,
@@ -5502,6 +5526,31 @@ namespace DimensionBrawl.Tests
                 "summon block opportunity MagicMissiles pressure storm overlay");
             AssertCombatCueAssetOverlay(
                 profile,
+                CombatVfxCueId.SummonSlot2BeamLock,
+                "CueAssetVfx_MagicMissilesArcaneBeamLock",
+                "summon slot2 beam lock MagicMissiles arcane circle overlay");
+            AssertCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.SummonSlot2BeamFire,
+                "CueAssetVfx_MagicMissilesArcaneBeamCharge",
+                "summon slot2 beam fire MagicMissiles arcane charge overlay");
+            AssertCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.SummonSlot2BeamHit,
+                "CueAssetVfx_MagicMissilesArcaneBeamHit",
+                "summon slot2 beam hit MagicMissiles arcane impact overlay");
+            AssertCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.SummonSlot3ShieldRaise,
+                "CueAssetVfx_MagicMissilesHolyShieldRaise",
+                "summon slot3 shield raise MagicMissiles holy circle overlay");
+            AssertCombatCueAssetOverlay(
+                profile,
+                CombatVfxCueId.SummonSlot3ShieldHit,
+                "CueAssetVfx_MagicMissilesHolyShieldHit",
+                "summon slot3 shield hit MagicMissiles holy impact overlay");
+            AssertCombatCueAssetOverlay(
+                profile,
                 CombatVfxCueId.SummonFollowupWindow,
                 "CueAssetVfx_MagicMissilesFollowupCircle",
                 "summon follow-up window MagicMissiles circle overlay");
@@ -5540,6 +5589,26 @@ namespace DimensionBrawl.Tests
                 CombatVfxCueId.SummonBlockOpportunity,
                 CombatVfxCueId.SummonFollowupWindow,
                 "summon block and follow-up window need separate visual reads");
+            AssertDistinctCombatCuePrefabs(
+                profile,
+                CombatVfxCueId.SummonSlot2BeamLock,
+                CombatVfxCueId.SummonSlot2BeamFire,
+                "summon marksman beam lock and fire should use separate cue prefabs");
+            AssertDistinctCombatCuePrefabs(
+                profile,
+                CombatVfxCueId.SummonSlot2BeamFire,
+                CombatVfxCueId.SummonSlot2BeamHit,
+                "summon marksman beam fire and hit should use separate cue prefabs");
+            AssertDistinctCombatCuePrefabs(
+                profile,
+                CombatVfxCueId.SummonSlot3ShieldRaise,
+                CombatVfxCueId.SummonSlot3ShieldHit,
+                "vanguard shield raise and hit should use separate cue prefabs");
+            AssertDistinctCombatCuePrefabs(
+                profile,
+                CombatVfxCueId.SummonBlockOpportunity,
+                CombatVfxCueId.SummonSlot3ShieldHit,
+                "vanguard shield hit should not reuse the generic block opportunity cue");
             AssertCombatCueHasReviewedAudioBank(
                 profile,
                 CombatVfxCueId.PlayerRangedProjectileImpact,

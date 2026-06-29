@@ -44,7 +44,12 @@ namespace DimensionBrawl.Presentation
         PocketCleared,
         PocketFailed,
         PlayerDamaged,
-        PlayerCritical
+        PlayerCritical,
+        SummonSlot2BeamFire,
+        SummonSlot2BeamHit,
+        SummonSlot3ShieldHit,
+        SummonSlot2BeamLock,
+        SummonSlot3ShieldRaise
     }
 
     [CreateAssetMenu(menuName = "DimensionBrawl/Presentation/Combat VFX Cue Profile", fileName = "DB_CombatVfxCueProfile")]

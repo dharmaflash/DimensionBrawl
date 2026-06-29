@@ -113,10 +113,12 @@ namespace DimensionBrawl.Player
         }
 
         private void FireProjectiles(
+            Transform sourceAnchor,
             Vector3 spawnBase,
             float entryX,
             float targetZ,
             Vector3 facingDirection,
+            int tier,
             PlayerSummonSlot1Action.SummonTierSettings settings)
         {
             int projectileCount = Mathf.Max(1, settings.ProjectileCount);
@@ -128,6 +130,15 @@ namespace DimensionBrawl.Player
                 Vector3 targetPosition = ResolveBattlefieldPoint(entryX + offset, targetZ, settings.TargetHeight);
                 SpawnProjectile(spawnPosition, targetPosition, settings);
             }
+
+            owner.NotifySummonVolleyFired(new SupportSummonVolleyPresentationEvent(
+                tier,
+                settings.ActorRoleId,
+                sourceAnchor,
+                spawnBase,
+                ResolveBattlefieldPoint(entryX, targetZ, settings.TargetHeight),
+                facingDirection,
+                projectileCount));
         }
 
         private Vector2 ResolveTargetLaneCoordinates(Vector2 fallback)
@@ -402,7 +413,14 @@ namespace DimensionBrawl.Player
                 Vector3 spawnBase = actor.ProjectileOrigin.position;
                 Vector3 targetPosition = ResolveBattlefieldPoint(targetLane.x, targetLane.y, settings.TargetHeight);
                 Vector3 facingDirection = ResolvePlanarDirection(targetPosition - spawnBase);
-                FireProjectiles(spawnBase, targetLane.x, targetLane.y, facingDirection, settings);
+                FireProjectiles(
+                    actor.ProjectileOrigin,
+                    spawnBase,
+                    targetLane.x,
+                    targetLane.y,
+                    facingDirection,
+                    actor.ActiveTier,
+                    settings);
                 firedCount++;
                 lastVolleyWaveCount = firedCount;
                 totalVolleyWaveCount++;

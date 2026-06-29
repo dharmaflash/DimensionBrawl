@@ -138,6 +138,11 @@ namespace DimensionBrawl.Tests
             AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.EliteSummonSignal);
             AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.SummonFollowupWindow);
             AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.SummonBlockOpportunity);
+            AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.SummonSlot2BeamLock);
+            AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.SummonSlot2BeamFire);
+            AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.SummonSlot2BeamHit);
+            AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.SummonSlot3ShieldRaise);
+            AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.SummonSlot3ShieldHit);
             AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.PocketCleared);
             AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.SummonFollowupMissed);
             AssertCueHasNoAuthoredAudio(profile, CombatVfxCueId.PocketFailed);

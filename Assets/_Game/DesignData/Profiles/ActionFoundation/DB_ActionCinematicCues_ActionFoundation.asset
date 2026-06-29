@@ -115,7 +115,7 @@ MonoBehaviour:
     - enabled: 1
       delaySeconds: 0.1
       signalId: summon_spawn_signal
-      animatorTrigger:
+      animatorTrigger: 
       requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 27
@@ -124,7 +124,7 @@ MonoBehaviour:
     - enabled: 1
       delaySeconds: 0.42
       signalId: summon_landing_signal
-      animatorTrigger:
+      animatorTrigger: 
       requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 32
@@ -192,7 +192,7 @@ MonoBehaviour:
     - enabled: 1
       delaySeconds: 0.58
       signalId: ultimate_impact_signal
-      animatorTrigger:
+      animatorTrigger: 
       requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 30
@@ -242,7 +242,7 @@ MonoBehaviour:
     - enabled: 1
       delaySeconds: 0.1
       signalId: pressure_break_signal
-      animatorTrigger:
+      animatorTrigger: 
       requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 29
@@ -292,7 +292,7 @@ MonoBehaviour:
     - enabled: 1
       delaySeconds: 0.08
       signalId: followup_hit_signal
-      animatorTrigger:
+      animatorTrigger: 
       requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 30
@@ -342,7 +342,7 @@ MonoBehaviour:
     - enabled: 1
       delaySeconds: 0.1
       signalId: summon_empower_transfer_signal
-      animatorTrigger:
+      animatorTrigger: 
       requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 26
@@ -351,7 +351,7 @@ MonoBehaviour:
     - enabled: 1
       delaySeconds: 0.42
       signalId: summon_empower_guard_signal
-      animatorTrigger:
+      animatorTrigger: 
       requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 24
@@ -401,7 +401,7 @@ MonoBehaviour:
     - enabled: 1
       delaySeconds: 0.08
       signalId: summon_recall_collapse_signal
-      animatorTrigger:
+      animatorTrigger: 
       requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 32
@@ -410,7 +410,7 @@ MonoBehaviour:
     - enabled: 1
       delaySeconds: 0.52
       signalId: summon_recall_exit_signal
-      animatorTrigger:
+      animatorTrigger: 
       requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 35
@@ -460,7 +460,7 @@ MonoBehaviour:
     - enabled: 1
       delaySeconds: 0.12
       signalId: pocket_clear_signal
-      animatorTrigger:
+      animatorTrigger: 
       requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 35
@@ -501,7 +501,7 @@ MonoBehaviour:
     - enabled: 1
       delaySeconds: 0.08
       signalId: pocket_fail_signal
-      animatorTrigger:
+      animatorTrigger: 
       requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 36
@@ -542,7 +542,7 @@ MonoBehaviour:
     - enabled: 1
       delaySeconds: 0.1
       signalId: boss_intro_reveal_signal
-      animatorTrigger:
+      animatorTrigger: 
       requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 26
@@ -551,7 +551,7 @@ MonoBehaviour:
     - enabled: 1
       delaySeconds: 0.36
       signalId: boss_intro_answer_signal
-      animatorTrigger:
+      animatorTrigger: 
       requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 33
@@ -592,7 +592,7 @@ MonoBehaviour:
     - enabled: 1
       delaySeconds: 0.05
       signalId: phase_transition_swap_signal
-      animatorTrigger:
+      animatorTrigger: 
       requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 28
@@ -601,7 +601,7 @@ MonoBehaviour:
     - enabled: 1
       delaySeconds: 0.32
       signalId: phase_transition_counter_signal
-      animatorTrigger:
+      animatorTrigger: 
       requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 33
@@ -642,7 +642,7 @@ MonoBehaviour:
     - enabled: 1
       delaySeconds: 0.1
       signalId: dialogue_reaction_focus_signal
-      animatorTrigger:
+      animatorTrigger: 
       requireAnimatorTrigger: 0
       playVfx: 1
       vfxCueId: 26
