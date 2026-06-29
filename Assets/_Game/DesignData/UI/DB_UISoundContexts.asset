@@ -14,36 +14,42 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.UISoundContextCatalog
   contexts:
   - id: Title
+    clip: {fileID: 0}
     description: Title ambient loop placeholder
     volume: 0.8
     fadeCrossSeconds: 0.65
     loop: 1
     loopIntervalSeconds: 0
   - id: Lobby
+    clip: {fileID: 0}
     description: Lobby home loop placeholder
     volume: 0.75
     fadeCrossSeconds: 0.7
     loop: 1
     loopIntervalSeconds: 0
   - id: StageSelect
+    clip: {fileID: 0}
     description: Mission prep loop placeholder
     volume: 0.7
     fadeCrossSeconds: 0.55
     loop: 1
     loopIntervalSeconds: 0
   - id: Combat
+    clip: {fileID: 0}
     description: Combat HUD handoff placeholder
     volume: 0.8
     fadeCrossSeconds: 0.5
     loop: 1
     loopIntervalSeconds: 0
   - id: ResultWin
+    clip: {fileID: 0}
     description: Future result win context data only
     volume: 0.8
     fadeCrossSeconds: 0.45
     loop: 0
     loopIntervalSeconds: 0
   - id: ResultFail
+    clip: {fileID: 0}
     description: Future result fail context data only
     volume: 0.75
     fadeCrossSeconds: 0.35

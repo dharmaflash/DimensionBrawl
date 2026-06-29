@@ -893,6 +893,7 @@ namespace DimensionBrawl.Editor
             ValidateSceneFlowNotice(scenePath, roots, router, toastIds);
 
             ValidateScenePresentation(scenePath, roots, routeIds);
+            ValidateSceneBgm(scenePath, roots, routeIds);
             ValidateSceneRouteButtons(scenePath, roots, routeIds);
             ValidateSceneRouteInteractableGates(scenePath, roots, router);
             ValidateSceneSpecificPresenter(scenePath, roots, routeIds, textKeys);
@@ -1019,6 +1020,50 @@ namespace DimensionBrawl.Editor
             if (TryGetExpectedRouteForScene(scenePath, out UIRouteId expectedRoute) && routeId != expectedRoute)
             {
                 throw new InvalidOperationException($"{scenePath} presentation route must be {expectedRoute}, found {routeId}.");
+            }
+        }
+
+        private static void ValidateSceneBgm(string scenePath, GameObject[] roots, HashSet<UIRouteId> routeIds)
+        {
+            if (!TryGetExpectedRouteForScene(scenePath, out UIRouteId expectedRoute)
+                || (expectedRoute != UIRouteId.Login && expectedRoute != UIRouteId.Lobby))
+            {
+                return;
+            }
+
+            UISceneBgmPlayer player = RequireSingleSceneComponent<UISceneBgmPlayer>(scenePath, roots);
+            SerializedObject serializedObject = new SerializedObject(player);
+            RequireObjectReferencePath(serializedObject, "screenCatalog", ScreenCatalogPath, $"{scenePath}.UISceneBgmPlayer.screenCatalog");
+            RequireObjectReferencePath(serializedObject, "soundContextCatalog", SoundContextCatalogPath, $"{scenePath}.UISceneBgmPlayer.soundContextCatalog");
+            RequireObjectReference(serializedObject, "source", $"{scenePath}.UISceneBgmPlayer.source");
+            RequireKnownRoute(routeIds, (UIRouteId)serializedObject.FindProperty("routeId").intValue, $"{scenePath}.UISceneBgmPlayer.routeId");
+
+            UIRouteId routeId = (UIRouteId)serializedObject.FindProperty("routeId").intValue;
+            if (routeId != expectedRoute)
+            {
+                throw new InvalidOperationException($"{scenePath}.UISceneBgmPlayer.routeId must be {expectedRoute}, found {routeId}.");
+            }
+
+            AudioSource source = serializedObject.FindProperty("source").objectReferenceValue as AudioSource;
+            if (source == null)
+            {
+                throw new InvalidOperationException($"{scenePath}.UISceneBgmPlayer.source must reference an AudioSource.");
+            }
+
+            if (source.playOnAwake)
+            {
+                throw new InvalidOperationException($"{scenePath}.UISceneBgmPlayer AudioSource.playOnAwake must be disabled.");
+            }
+
+            if (source.spatialBlend > 0.001f)
+            {
+                throw new InvalidOperationException($"{scenePath}.UISceneBgmPlayer AudioSource must be 2D audio.");
+            }
+
+            AudioListener[] listeners = GetComponentsInScene<AudioListener>(roots);
+            if (listeners.Length != 1)
+            {
+                throw new InvalidOperationException($"{scenePath} must contain exactly one AudioListener for UI BGM; found {listeners.Length}.");
             }
         }
 
