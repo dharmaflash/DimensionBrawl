@@ -27,10 +27,10 @@ MonoBehaviour:
     matchWidthOrHeight: 0.5
     edgeInset: 32
     safeAreaMode: 10
-  - id: WideAndroidDebug
+  - id: WideLandscape
     breakpoint: 20
     minimumResolution: {x: 2560, y: 1080}
     referenceResolution: {x: 2400, y: 1080}
-    matchWidthOrHeight: 0.45
-    edgeInset: 40
+    matchWidthOrHeight: 0.5
+    edgeInset: 0
     safeAreaMode: 10

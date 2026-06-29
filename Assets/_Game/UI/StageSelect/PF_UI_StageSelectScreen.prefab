@@ -7082,7 +7082,7 @@ MonoBehaviour:
   - stageId: story_v1_retry_route
     stageTarget: {fileID: 3429909270802771737}
     chapterTarget: {fileID: 3270446934943518692}
-  focusSelectedStageOnEnable: 1
+  focusSelectedStageOnEnable: 0
   focusDelaySeconds: 0.02
   initialFocusDurationSeconds: 0.18
   selectedFocusDurationSeconds: 0.3
