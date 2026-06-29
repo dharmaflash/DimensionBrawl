@@ -17,7 +17,7 @@ MonoBehaviour:
   category: 0
   reviewerIntent: Olympus stage runtime intro with the validated BombingReview airstrike
     prepended before the protected GatePod awakening beats.
-  authoredDurationSeconds: 29.074356
+  authoredDurationSeconds: 36.574356
   priority: 92
   lockMovement: 1
   lockInput: 1
@@ -160,6 +160,22 @@ MonoBehaviour:
     cameraLocalPosition: {x: -1.06, y: 0.34, z: 1.02}
     lookAtLocalPosition: {x: 0.32, y: 0.68, z: 2.42}
     fieldOfView: 56
+  - enabled: 1
+    cueId: src_c10_player_reveal_rina_quest_start
+    purpose: 2
+    blendKind: 2
+    startSeconds: 28.424355
+    durationSeconds: 7.5000005
+    localOffset: {x: 0, y: 0, z: 0}
+    planarDirectionOffset: 0
+    fieldOfViewDelta: 0
+    cameraDistanceDelta: 0
+    focusHeightDelta: 0
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 0, y: 1.35, z: -3}
+    lookAtLocalPosition: {x: 0, y: 1.18, z: 0}
+    fieldOfView: 60.001953
   actorCues:
   - enabled: 1
     cueId: hide_attached_rifle_at_wake
@@ -286,7 +302,7 @@ MonoBehaviour:
     role: 0
     cueKind: 0
     startSeconds: 21.983334
-    durationSeconds: 6.4410214
+    durationSeconds: 13.941021
     clip: {fileID: 0}
     avatarMask: {fileID: 0}
     animatorStateName: CIN_CombatReady
@@ -316,7 +332,7 @@ MonoBehaviour:
   gameplayHandoff:
     enabled: 1
     returnMode: 2
-    startSeconds: 28.424355
+    startSeconds: 35.924355
     targetId: first_stage_intro_gatepod
     inputReleaseDelaySeconds: 0.05
     restoreHud: 1
