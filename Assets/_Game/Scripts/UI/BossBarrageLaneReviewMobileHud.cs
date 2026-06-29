@@ -35,6 +35,7 @@ namespace DimensionBrawl.UI
 
         [Header("Display")]
         [SerializeField] private bool showHud = true;
+        [SerializeField] private bool drawHudVisuals = true;
         [SerializeField, Min(40f)] private float buttonSize = 168f;
         [SerializeField, Min(0f)] private float buttonGap = 38f;
         [SerializeField, Min(0f)] private float margin = 72f;
@@ -337,7 +338,7 @@ namespace DimensionBrawl.UI
 
         private void OnGUI()
         {
-            if (!showHud)
+            if (!showHud || !drawHudVisuals)
             {
                 return;
             }

@@ -9,13 +9,20 @@ namespace DimensionBrawl.UI
     {
     }
 
+    [Serializable]
+    public sealed class CombatHudActionHoldEvent : UnityEvent<CombatHudActionId, bool>
+    {
+    }
+
     [DisallowMultipleComponent]
     public sealed class CombatHudInputBridge : MonoBehaviour
     {
         [SerializeField] private CombatHudPresenter presenter;
         [SerializeField] private CombatHudActionEvent actionRequested = new CombatHudActionEvent();
+        [SerializeField] private CombatHudActionHoldEvent actionHoldChanged = new CombatHudActionHoldEvent();
 
         public event Action<CombatHudActionId> ActionRequested;
+        public event Action<CombatHudActionId, bool> ActionHoldChanged;
 
         public void RequestBasicAttack()
         {
@@ -66,6 +73,12 @@ namespace DimensionBrawl.UI
             {
                 presenter.SetActionFeedback(actionId);
             }
+        }
+
+        public void SetActionHeld(CombatHudActionId actionId, bool held)
+        {
+            ActionHoldChanged?.Invoke(actionId, held);
+            actionHoldChanged.Invoke(actionId, held);
         }
     }
 }

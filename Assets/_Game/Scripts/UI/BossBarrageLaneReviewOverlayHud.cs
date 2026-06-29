@@ -39,6 +39,7 @@ namespace DimensionBrawl.UI
 
         [Header("Display")]
         [SerializeField] private bool showOverlay = true;
+        [SerializeField] private bool drawIdleButton = true;
         [SerializeField, Min(1f)] private float pauseButtonSize = 72f;
         [SerializeField, Min(0f)] private float edgeInset = 32f;
         [SerializeField, Min(1f)] private float panelWidth = 560f;
@@ -236,7 +237,10 @@ namespace DimensionBrawl.UI
             }
             else
             {
-                DrawPauseButton();
+                if (drawIdleButton)
+                {
+                    DrawPauseButton();
+                }
             }
 
             GUI.depth = previousDepth;

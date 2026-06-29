@@ -5541,6 +5541,23 @@ namespace DimensionBrawl.Editor
                 mobileHud,
                 screenCuePresenter);
             ConfigureOverlayRoutes(overlayHud);
+            SetBool(hud, "showHud", false);
+            SetBool(mobileHud, "drawHudVisuals", false);
+            SetBool(overlayHud, "drawIdleButton", false);
+            CreateCombatHudCanvas(
+                scene,
+                playerHealth,
+                bossHealth,
+                energyLadder,
+                player.GetComponent<PlayerActionController>(),
+                combatModeController,
+                rangedBasicAttackAction,
+                skill1Action,
+                summonSlot1Action,
+                summonSlot2Action,
+                summonSlot3Action,
+                pocketOwner,
+                overlayHud);
             // Touch/reticle composition is review-scene HUD tuning. Keep it Inspector-authored.
             EditorUtility.SetDirty(hud);
             EditorUtility.SetDirty(mobileHud);
