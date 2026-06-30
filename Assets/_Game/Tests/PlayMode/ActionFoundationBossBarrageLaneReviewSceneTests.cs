@@ -99,14 +99,14 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonPresentation_BossAuraCaptain.asset";
         private const string ShieldBreakerEliteRoleCandidateProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyRoleCandidates/DB_RoleCandidate_ShieldBreakerElite.asset";
-        private const string BacklineShooterRoleCandidateProfilePath =
-            "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyRoleCandidates/DB_RoleCandidate_BacklineShooter.asset";
+        private const string LineCasterRoleCandidateProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyRoleCandidates/DB_RoleCandidate_LineCaster.asset";
         private const string FinalStandCommanderEliteRoleCandidateProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyRoleCandidates/DB_RoleCandidate_FinalStandCommanderElite.asset";
         private const string AuraCaptainEliteRoleCandidateProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyRoleCandidates/DB_RoleCandidate_AuraCaptainElite.asset";
         private const string SummonSlot1ActorVisualName = "SummonSlot1Visual_ShieldBreakerElite";
-        private const string SummonSlot2ActorVisualName = "SummonSlot2Visual_BacklineShooter";
+        private const string SummonSlot2ActorVisualName = "SummonSlot2Visual_CommandoRifleman";
         private const string SummonSlot3ActorVisualName = "SummonSlot3Visual_FinalStandCommanderElite";
         private const string BossSummonPressureActorVisualName = "BossSummonPressureVisual_AuraCaptainElite";
         private const string SummonActorMoveSpeedParameter = "MoveSpeed";
@@ -2776,8 +2776,8 @@ namespace DimensionBrawl.Tests
                 expectPressureScreen: false,
                 SummonSlot2PresentationCandidateProfilePath,
                 "PlayerSummon.BacklineMarksman",
-                BacklineShooterRoleCandidateProfilePath,
-                "SciFiSoldier.BacklineShooter",
+                LineCasterRoleCandidateProfilePath,
+                "SciFiSoldier.LineCaster",
                 "SummonSlot2 marksman actor prefab");
             AssertSupportSummonActorPrefab(
                 summonSlot3ActorPrefab,

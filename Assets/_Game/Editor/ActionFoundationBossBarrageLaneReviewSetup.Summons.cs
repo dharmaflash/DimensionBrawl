@@ -57,16 +57,16 @@ namespace DimensionBrawl.Editor
             ConfigureSummonPresentationCandidateProfile(
                 LoadOrCreateSummonPresentationCandidateProfile(SummonSlot2PresentationCandidateProfilePath),
                 "PlayerSummon.BacklineMarksman",
-                "Player Summon - Backline Marksman",
+                "Player Summon - Commando Marksman",
                 SummonPresentationSide.PlayerSummon,
                 SummonSlot2ActorPrefabPath,
-                ActionFoundationEnemyRoleCandidateSetup.BacklineShooterCandidateProfilePath,
+                ActionFoundationEnemyRoleCandidateSetup.LineCasterCandidateProfilePath,
                 SummonSlot2ActorVisualName,
                 SummonSlot2ActorVisualRoleId,
                 vfxCueProfile,
-                "Promoted BacklineShooter role Animator stands in for the second ally summon ranged-support read.",
-                "Magic-circle entry, marksman proxy, narrow assist volleys, and light pulse distinguish it from the shield slot.",
-                "Replace the actor prefab or promoted visual source after a dedicated ranged ally summon model is reviewed.");
+                "Promoted SciFiSoldier_01 Commando rifleman Animator stands in for the second ally summon ranged-support read.",
+                "Magic-circle entry, Commando marksman proxy, narrow assist volleys, and light pulse distinguish it from the shield slot.",
+                "Keep this on the SciFi Commando line until a dedicated ranged ally summon model is reviewed.");
 
             ConfigureSummonPresentationCandidateProfile(
                 LoadOrCreateSummonPresentationCandidateProfile(SummonSlot3PresentationCandidateProfilePath),
@@ -444,11 +444,11 @@ namespace DimensionBrawl.Editor
                 SummonSlot2ActorMaterialPath,
                 SummonSlot2ActorPulseMaterialPath,
                 SummonSlot2ActorVisualRoleId,
-                ActionFoundationEnemyRoleCandidateSetup.BacklineShooterPrefabPath,
+                ActionFoundationEnemyRoleCandidateSetup.LineCasterPrefabPath,
                 SummonSlot2ActorVisualName,
-                new Vector3(-0.1f, -0.04f, -0.08f),
-                new Vector3(0f, -12f, 0f),
-                new Vector3(0.58f, 0.58f, 0.58f),
+                new Vector3(-0.06f, -0.04f, -0.08f),
+                new Vector3(0f, -8f, 0f),
+                new Vector3(0.64f, 0.64f, 0.64f),
                 new Color(0.74f, 0.9f, 1f, 0.76f),
                 160f,
                 0.78f,
@@ -1232,17 +1232,17 @@ namespace DimensionBrawl.Editor
                         "LV1 Cover Shot",
                         "Quick ranged support that adds two clean bolts without blocking boss pressure.",
                         "Spend when the boss is open but the shield slot is not needed yet.",
-                        "BacklineShooter enters left of the player lane, advances toward the boss lane, and fires a narrow cover pair."),
+                        "Commando rifleman enters left of the player lane, advances toward the boss lane, and fires a narrow cover pair."),
                     CreateSummonReadout(
                         "LV2 Focus Volley",
                         "Mid-tier support that pressures the boss lane with a wider three-shot answer.",
                         "Hold EN when you can stay forward long enough for a stronger punish.",
-                        "BacklineShooter keeps a side-lane advance toward the boss and fires a three-bolt focused volley."),
+                        "Commando rifleman keeps a side-lane advance toward the boss and fires a three-bolt focused volley."),
                     CreateSummonReadout(
                         "LV3 Marksman Burst",
                         "High-tier ranged support for a clear boss punish window after surviving pressure.",
                         "Use when the next exchange should convert defense into visible boss damage.",
-                        "BacklineShooter stays alive long enough to send repeated four-bolt volleys across the contested lane.")
+                        "Commando rifleman stays alive long enough to send repeated four-bolt volleys across the contested lane.")
                 });
 
             ConfigureSummonSlotActionProfile(

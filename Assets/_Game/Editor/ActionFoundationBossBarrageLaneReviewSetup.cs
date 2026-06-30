@@ -106,11 +106,11 @@ namespace DimensionBrawl.Editor
         public const string BossSummonPressurePresentationCandidateProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonPresentation_BossAuraCaptain.asset";
         private const string SummonSlot1ActorVisualName = "SummonSlot1Visual_ShieldBreakerElite";
-        private const string SummonSlot2ActorVisualName = "SummonSlot2Visual_BacklineShooter";
+        private const string SummonSlot2ActorVisualName = "SummonSlot2Visual_CommandoRifleman";
         private const string SummonSlot3ActorVisualName = "SummonSlot3Visual_FinalStandCommanderElite";
         private const string BossSummonPressureActorVisualName = "BossSummonPressureVisual_AuraCaptainElite";
         private const string SummonSlot1ActorVisualRoleId = "SciFiSoldier.Elite.ShieldBreaker";
-        private const string SummonSlot2ActorVisualRoleId = "SciFiSoldier.BacklineShooter";
+        private const string SummonSlot2ActorVisualRoleId = "SciFiSoldier.LineCaster";
         private const string SummonSlot3ActorVisualRoleId = "SciFiSoldier.Elite.FinalStandCommander";
         private const string BossSummonPressureActorVisualRoleId = "SciFiSoldier.Elite.AuraCaptain";
         private const string SummonActorMoveSpeedParameter = "MoveSpeed";
@@ -7550,7 +7550,7 @@ namespace DimensionBrawl.Editor
                     "LV1 Cover Shot",
                     "Quick ranged support that adds two clean bolts without blocking boss pressure.",
                     "Spend when the boss is open but the shield slot is not needed yet.",
-                    "BacklineShooter enters left of the player lane, advances toward the boss lane, and fires a narrow cover pair.");
+                    "Commando rifleman enters left of the player lane, advances toward the boss lane, and fires a narrow cover pair.");
                 ValidateSummonSlotTier(
                     profile,
                     1,
@@ -7570,7 +7570,7 @@ namespace DimensionBrawl.Editor
                     "LV2 Focus Volley",
                     "Mid-tier support that pressures the boss lane with a wider three-shot answer.",
                     "Hold EN when you can stay forward long enough for a stronger punish.",
-                    "BacklineShooter keeps a side-lane advance toward the boss and fires a three-bolt focused volley.");
+                    "Commando rifleman keeps a side-lane advance toward the boss and fires a three-bolt focused volley.");
                 ValidateSummonSlotTier(
                     profile,
                     2,
@@ -7590,7 +7590,7 @@ namespace DimensionBrawl.Editor
                     "LV3 Marksman Burst",
                     "High-tier ranged support for a clear boss punish window after surviving pressure.",
                     "Use when the next exchange should convert defense into visible boss damage.",
-                    "BacklineShooter stays alive long enough to send repeated four-bolt volleys across the contested lane.");
+                    "Commando rifleman stays alive long enough to send repeated four-bolt volleys across the contested lane.");
                 ValidateSummonSlotTier(
                     profile,
                     3,
