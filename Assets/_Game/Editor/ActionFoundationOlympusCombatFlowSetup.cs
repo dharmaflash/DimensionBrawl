@@ -47,6 +47,8 @@ namespace DimensionBrawl.Editor
         private const string SourcePlayerRootName = "Player_CombatGirl_ActionFoundation";
         private const string SourceMainCameraRootName = "Main Camera";
         private const string SourceHudRootName = "BossBarrageLaneReview_DebugHud";
+        private const string SourceCombatHudCanvasRootName = "BossBarrageLaneReview_CombatHudCanvas";
+        private const string SourceCombatHudEventSystemRootName = "BossBarrageLaneReview_CombatHudEventSystem";
         private const string SourceCombatVfxRootName = "ActionFoundation_CombatVfxPool";
         private const string SourceArenaVfxRootName = "ActionFoundation_ArenaVfx";
         private const string SourceArenaGridRootName = "ActionFoundation_ArenaGrid";
@@ -778,6 +780,16 @@ namespace DimensionBrawl.Editor
             for (int i = 0; i < importedRoots.Count; i++)
             {
                 GameObject root = importedRoots[i];
+                if (IsNonSpatialImportedRoot(root.name))
+                {
+                    root.transform.SetParent(packageRoot, worldPositionStays: false);
+                    root.transform.localPosition = Vector3.zero;
+                    root.transform.localRotation = Quaternion.identity;
+                    root.transform.localScale = Vector3.one;
+                    EditorUtility.SetDirty(root);
+                    continue;
+                }
+
                 Vector3 sourceOffset = root.transform.position - SourcePlayerStartPosition;
                 Vector3 mappedPosition = targetPosition + targetRotation * sourceOffset;
                 Quaternion mappedRotation = targetRotation * root.transform.rotation;
@@ -785,6 +797,12 @@ namespace DimensionBrawl.Editor
                 root.transform.SetParent(packageRoot, worldPositionStays: true);
                 EditorUtility.SetDirty(root);
             }
+        }
+
+        private static bool IsNonSpatialImportedRoot(string rootName)
+        {
+            return string.Equals(rootName, SourceCombatHudCanvasRootName, StringComparison.Ordinal)
+                || string.Equals(rootName, SourceCombatHudEventSystemRootName, StringComparison.Ordinal);
         }
 
         private static void RenameCombatCamera(List<GameObject> importedRoots)
@@ -1576,6 +1594,8 @@ namespace DimensionBrawl.Editor
             return FilterExisting(
                 RequireChildObject(packageRoot, CombatCameraName),
                 FindDirectChildObject(packageRoot, SourceHudRootName),
+                FindDirectChildObject(packageRoot, SourceCombatHudCanvasRootName),
+                FindDirectChildObject(packageRoot, SourceCombatHudEventSystemRootName),
                 FindDirectChildObject(packageRoot, SourceCombatVfxRootName));
         }
 
@@ -1609,6 +1629,8 @@ namespace DimensionBrawl.Editor
                 || string.Equals(rootName, CombatCameraName, StringComparison.Ordinal)
                 || string.Equals(rootName, SourceCombatVfxRootName, StringComparison.Ordinal)
                 || string.Equals(rootName, SourceHudRootName, StringComparison.Ordinal)
+                || string.Equals(rootName, SourceCombatHudCanvasRootName, StringComparison.Ordinal)
+                || string.Equals(rootName, SourceCombatHudEventSystemRootName, StringComparison.Ordinal)
                 || string.Equals(rootName, SourceArenaVfxRootName, StringComparison.Ordinal)
                 || string.Equals(rootName, SourceArenaGridRootName, StringComparison.Ordinal)
                 || string.Equals(rootName, IntroSwordGateRootName, StringComparison.Ordinal)

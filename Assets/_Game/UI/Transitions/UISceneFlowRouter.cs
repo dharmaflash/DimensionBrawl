@@ -28,6 +28,42 @@ namespace DimensionBrawl.UI
 
         public bool RequestRoute(UIRouteId routeId)
         {
+            if (!CanStartRoute(routeId))
+            {
+                return false;
+            }
+
+            if (!TryResolveRoute(routeId, out UIScreenRouteTable.Route route))
+            {
+                return false;
+            }
+
+            StartCoroutine(RouteRoutine(route));
+            return true;
+        }
+
+        public bool RequestRouteWithScene(
+            UIRouteId routeId,
+            string sceneName,
+            string scenePath,
+            string loadingCardId = null)
+        {
+            if (!CanStartRoute(routeId))
+            {
+                return false;
+            }
+
+            if (!TryResolveRoute(routeId, out UIScreenRouteTable.Route route))
+            {
+                return false;
+            }
+
+            StartCoroutine(RouteRoutine(route.WithScene(sceneName, scenePath, loadingCardId)));
+            return true;
+        }
+
+        private bool CanStartRoute(UIRouteId routeId)
+        {
             if (routeId == UIRouteId.None)
             {
                 NotifyRouteRejected(routeId, UIRouteRejectReason.InvalidRoute);
@@ -40,30 +76,34 @@ namespace DimensionBrawl.UI
                 return false;
             }
 
-            StartCoroutine(RouteRoutine(routeId));
             return true;
         }
 
-        private IEnumerator RouteRoutine(UIRouteId routeId)
+        private bool TryResolveRoute(UIRouteId routeId, out UIScreenRouteTable.Route route)
+        {
+            route = default;
+            if (routeTable == null || !routeTable.TryGetRoute(routeId, out route))
+            {
+                Debug.LogWarning($"UI route is not configured: {routeId}", this);
+                NotifyRouteRejected(routeId, UIRouteRejectReason.RouteMissing);
+                SetState(routeId, string.Empty, UISceneFlowPhase.Failed, 0f, "Route missing", false);
+                return false;
+            }
+
+            return true;
+        }
+
+        private IEnumerator RouteRoutine(UIScreenRouteTable.Route route)
         {
             isRouting = true;
             routeLoadFailed = false;
-            SetState(routeId, string.Empty, UISceneFlowPhase.Preparing, 0f, "Preparing", true);
-
-            if (routeTable == null || !routeTable.TryGetRoute(routeId, out UIScreenRouteTable.Route route))
-            {
-                Debug.LogWarning($"UI route is not configured: {routeId}", this);
-                isRouting = false;
-                NotifyRouteRejected(routeId, UIRouteRejectReason.RouteMissing);
-                SetState(routeId, string.Empty, UISceneFlowPhase.Failed, 0f, "Route missing", false);
-                yield break;
-            }
+            SetRouteState(route, UISceneFlowPhase.Preparing, 0f, "Preparing", true);
 
             if (routeLoader == null)
             {
                 Debug.LogWarning("UI scene route loader is not configured.", this);
                 isRouting = false;
-                NotifyRouteRejected(routeId, UIRouteRejectReason.RouteLoaderMissing);
+                NotifyRouteRejected(route.RouteId, UIRouteRejectReason.RouteLoaderMissing);
                 SetRouteState(route, UISceneFlowPhase.Failed, 0f, "Route loader missing", false);
                 yield break;
             }

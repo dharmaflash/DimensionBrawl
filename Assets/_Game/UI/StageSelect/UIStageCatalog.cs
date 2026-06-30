@@ -1,4 +1,6 @@
 using System;
+using System.IO;
+using DimensionBrawl.LevelDesign;
 using UnityEngine;
 
 namespace DimensionBrawl.UI
@@ -15,6 +17,7 @@ namespace DimensionBrawl.UI
             [SerializeField] private string threatTags;
             [SerializeField] private string recommendedSummonRole;
             [SerializeField] private string mockRewardPreview;
+            [SerializeField] private StageDefinitionProfile stageDefinition;
             [SerializeField] private string loadingCardId;
 
             public string Id => id;
@@ -23,10 +26,26 @@ namespace DimensionBrawl.UI
             public string ThreatTags => threatTags;
             public string RecommendedSummonRole => recommendedSummonRole;
             public string MockRewardPreview => mockRewardPreview;
+            public StageDefinitionProfile StageDefinition => stageDefinition;
+            public string ScenePath => stageDefinition != null ? stageDefinition.MapScenePath : string.Empty;
+            public string SceneName => ResolveSceneName(ScenePath);
+            public bool HasSceneRoute => !string.IsNullOrWhiteSpace(ScenePath);
             public string LoadingCardId => loadingCardId;
         }
 
         [SerializeField] private StageEntry[] stages = Array.Empty<StageEntry>();
+
+        public int StageCount => stages != null ? stages.Length : 0;
+
+        public StageEntry GetStage(int index)
+        {
+            if (stages == null || index < 0 || index >= stages.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(index));
+            }
+
+            return stages[index];
+        }
 
         public bool TryGetStage(string id, out StageEntry stage)
         {
@@ -51,7 +70,7 @@ namespace DimensionBrawl.UI
 
         public bool TryGetFirstStage(out StageEntry stage)
         {
-            if (stages.Length > 0)
+            if (stages != null && stages.Length > 0)
             {
                 stage = stages[0];
                 return true;
@@ -59,6 +78,16 @@ namespace DimensionBrawl.UI
 
             stage = default;
             return false;
+        }
+
+        private static string ResolveSceneName(string scenePath)
+        {
+            if (string.IsNullOrWhiteSpace(scenePath))
+            {
+                return string.Empty;
+            }
+
+            return Path.GetFileNameWithoutExtension(scenePath.Replace('\\', '/'));
         }
     }
 }

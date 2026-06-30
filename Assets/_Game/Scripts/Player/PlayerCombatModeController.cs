@@ -183,7 +183,10 @@ namespace DimensionBrawl.Player
 
             activeAnimator.runtimeAnimatorController = targetController;
             activeAnimator.Rebind();
-            activeAnimator.Update(0f);
+            if (activeAnimator.isActiveAndEnabled)
+            {
+                activeAnimator.Update(0f);
+            }
         }
 
         private void RoutePresentationAnimator(Animator activeAnimator, PlayerCombatMode combatMode)

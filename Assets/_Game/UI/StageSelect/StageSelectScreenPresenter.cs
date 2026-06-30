@@ -115,6 +115,16 @@ namespace DimensionBrawl.UI
 
             if (router != null)
             {
+                if (TryResolveSelectedStage(out UIStageCatalog.StageEntry stage) && stage.HasSceneRoute)
+                {
+                    router.RequestRouteWithScene(
+                        startRoute,
+                        stage.SceneName,
+                        stage.ScenePath,
+                        stage.LoadingCardId);
+                    return;
+                }
+
                 router.RequestRoute(startRoute);
             }
         }

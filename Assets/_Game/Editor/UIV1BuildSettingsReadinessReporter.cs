@@ -9,6 +9,7 @@ namespace DimensionBrawl.Editor
     public static class UIV1BuildSettingsReadinessReporter
     {
         private const string RouteTablePath = "Assets/_Game/DesignData/UI/DB_UIRouteTable.asset";
+        private const string StageCatalogPath = "Assets/_Game/DesignData/UI/DB_UIStageCatalog.asset";
 
         [MenuItem("DimensionBrawl/UI V1/Report Build Settings Readiness")]
         public static void ReportMenu()
@@ -30,7 +31,7 @@ namespace DimensionBrawl.Editor
                 throw new System.InvalidOperationException($"UI V1 build settings apply could not find route table at {RouteTablePath}.");
             }
 
-            List<RouteScene> routeScenes = CollectRouteScenes(routeTable);
+            List<RouteScene> routeScenes = CollectBuildRouteScenes(routeTable);
             if (routeScenes.Count == 0)
             {
                 throw new System.InvalidOperationException("UI V1 route table must contain at least one buildable route scene.");
@@ -62,7 +63,7 @@ namespace DimensionBrawl.Editor
                 return;
             }
 
-            List<RouteScene> routeScenes = CollectRouteScenes(routeTable);
+            List<RouteScene> routeScenes = CollectBuildRouteScenes(routeTable);
             HashSet<string> enabledBuildScenes = CollectEnabledBuildScenes();
             string firstEnabledBuildScene = GetFirstEnabledBuildScene();
             List<RouteScene> missingScenes = new List<RouteScene>();
@@ -111,6 +112,14 @@ namespace DimensionBrawl.Editor
             Debug.LogWarning(builder.ToString());
         }
 
+        private static List<RouteScene> CollectBuildRouteScenes(UIScreenRouteTable routeTable)
+        {
+            List<RouteScene> routeScenes = CollectRouteScenes(routeTable);
+            UIStageCatalog stageCatalog = AssetDatabase.LoadAssetAtPath<UIStageCatalog>(StageCatalogPath);
+            AddStageCatalogScenes(routeScenes, stageCatalog);
+            return routeScenes;
+        }
+
         private static List<RouteScene> CollectRouteScenes(UIScreenRouteTable routeTable)
         {
             SerializedObject serializedObject = new SerializedObject(routeTable);
@@ -130,11 +139,42 @@ namespace DimensionBrawl.Editor
 
                 if (routeId != UIRouteId.None && !string.IsNullOrWhiteSpace(scenePath))
                 {
-                    routeScenes.Add(new RouteScene(routeId, scenePath.Replace('\\', '/')));
+                    AddUniqueRouteScene(routeScenes, routeId, scenePath);
                 }
             }
 
             return routeScenes;
+        }
+
+        private static void AddStageCatalogScenes(List<RouteScene> routeScenes, UIStageCatalog stageCatalog)
+        {
+            if (stageCatalog == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < stageCatalog.StageCount; i++)
+            {
+                UIStageCatalog.StageEntry stage = stageCatalog.GetStage(i);
+                if (stage.HasSceneRoute)
+                {
+                    AddUniqueRouteScene(routeScenes, UIRouteId.CombatHud, stage.ScenePath);
+                }
+            }
+        }
+
+        private static void AddUniqueRouteScene(List<RouteScene> routeScenes, UIRouteId routeId, string scenePath)
+        {
+            string normalizedPath = scenePath.Replace('\\', '/');
+            for (int i = 0; i < routeScenes.Count; i++)
+            {
+                if (string.Equals(routeScenes[i].ScenePath, normalizedPath, System.StringComparison.Ordinal))
+                {
+                    return;
+                }
+            }
+
+            routeScenes.Add(new RouteScene(routeId, normalizedPath));
         }
 
         private static HashSet<string> CollectEnabledBuildScenes()

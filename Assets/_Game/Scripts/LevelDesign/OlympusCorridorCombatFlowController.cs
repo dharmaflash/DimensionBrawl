@@ -105,7 +105,11 @@ namespace DimensionBrawl.LevelDesign
         {
             UnregisterIntroDirectorStoppedHandler();
             introDirector = newIntroDirector;
-            RegisterIntroDirectorStoppedHandler();
+            if (Application.isPlaying && isActiveAndEnabled)
+            {
+                RegisterIntroDirectorStoppedHandler();
+            }
+
             introHandoffSeconds = System.Math.Max(0d, newIntroHandoffSeconds);
             introCamerasToDisable = newIntroCamerasToDisable ?? System.Array.Empty<Camera>();
             introAudioListenersToDisable = newIntroAudioListenersToDisable ?? System.Array.Empty<AudioListener>();
@@ -142,11 +146,21 @@ namespace DimensionBrawl.LevelDesign
 
         private void Awake()
         {
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+
             PrepareInitialState();
         }
 
         private void OnEnable()
         {
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+
             RegisterIntroDirectorStoppedHandler();
             PrepareInitialState();
         }
@@ -158,6 +172,11 @@ namespace DimensionBrawl.LevelDesign
 
         private void Update()
         {
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+
             UpdateHudReveal();
             UpdateIntroDirectorPlaybackObservation();
 
@@ -244,7 +263,7 @@ namespace DimensionBrawl.LevelDesign
             SetObjectsActive(corridorCombatRoots, false);
             SetObjectsActive(corridorBoundsRoots, false);
             SetCollidersEnabled(stairBlockers, true);
-            targetSelector?.ConfigureTargetCandidates(introSwordEnemies);
+            ConfigureTargetCandidates(introSwordEnemies);
         }
 
         private void StopIntroDirectorForHandoff()
@@ -276,6 +295,11 @@ namespace DimensionBrawl.LevelDesign
 
         private void HandleIntroDirectorStopped(PlayableDirector stoppedDirector)
         {
+            if (!Application.isPlaying || stoppedDirector != introDirector)
+            {
+                return;
+            }
+
             observedIntroDirectorPlayback = true;
             HandleIntroDirectorCompleted();
         }
@@ -285,7 +309,21 @@ namespace DimensionBrawl.LevelDesign
             if (phase == FlowPhase.WaitingForIntroHandoff)
             {
                 BeginIntroSwordGate();
+                return;
             }
+
+            if (phase == FlowPhase.IntroSwordGate)
+            {
+                ReassertIntroSwordGateVisibility();
+            }
+        }
+
+        private void ReassertIntroSwordGateVisibility()
+        {
+            SetObjectsActive(handoffRoots, true);
+            SetObjectActive(player != null ? player.gameObject : null, true);
+            SetObjectActive(introSwordGateRoot, true);
+            SetCombatHealthRootsActive(introSwordEnemies, true);
         }
 
         private void UpdateIntroDirectorPlaybackObservation()
@@ -320,7 +358,7 @@ namespace DimensionBrawl.LevelDesign
             phase = FlowPhase.WaitingForStairEntry;
             SetBehavioursEnabled(introSwordEnemyGameplayBehaviours, false);
             SetCollidersEnabled(stairBlockers, false);
-            targetSelector?.ConfigureTargetCandidates(System.Array.Empty<CombatHealth>());
+            ConfigureTargetCandidates(System.Array.Empty<CombatHealth>());
         }
 
         private void BeginCorridorCombat()
@@ -331,7 +369,15 @@ namespace DimensionBrawl.LevelDesign
             SetObjectsActive(corridorBoundsRoots, true);
             SetCollidersEnabled(stairBlockers, false);
             SetSwordGateMode(false);
-            targetSelector?.ConfigureTargetCandidates(corridorTargets);
+            ConfigureTargetCandidates(corridorTargets);
+        }
+
+        private void ConfigureTargetCandidates(CombatHealth[] candidates)
+        {
+            if (targetSelector != null)
+            {
+                targetSelector.ConfigureTargetCandidates(candidates);
+            }
         }
 
         private void UpdateHudReveal()

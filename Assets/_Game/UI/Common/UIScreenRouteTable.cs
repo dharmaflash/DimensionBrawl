@@ -17,6 +17,24 @@ namespace DimensionBrawl.UI
             [SerializeField] private bool useAsyncLoading;
             [SerializeField, Min(0f)] private float minimumLoadingSeconds;
 
+            public Route(
+                UIRouteId routeId,
+                string sceneName,
+                string scenePath,
+                string transitionId,
+                string loadingCardId,
+                bool useAsyncLoading,
+                float minimumLoadingSeconds)
+            {
+                this.routeId = routeId;
+                this.sceneName = sceneName;
+                this.scenePath = scenePath;
+                this.transitionId = transitionId;
+                this.loadingCardId = loadingCardId;
+                this.useAsyncLoading = useAsyncLoading;
+                this.minimumLoadingSeconds = Mathf.Max(0f, minimumLoadingSeconds);
+            }
+
             public UIRouteId RouteId => routeId;
             public string SceneName => sceneName;
             public string ScenePath => scenePath;
@@ -25,6 +43,18 @@ namespace DimensionBrawl.UI
             public bool HasLoadingCard => !string.IsNullOrWhiteSpace(loadingCardId);
             public bool UseAsyncLoading => useAsyncLoading;
             public float MinimumLoadingSeconds => minimumLoadingSeconds;
+
+            public Route WithScene(string newSceneName, string newScenePath, string newLoadingCardId = null)
+            {
+                return new Route(
+                    routeId,
+                    string.IsNullOrWhiteSpace(newSceneName) ? sceneName : newSceneName,
+                    string.IsNullOrWhiteSpace(newScenePath) ? scenePath : newScenePath,
+                    transitionId,
+                    newLoadingCardId ?? loadingCardId,
+                    useAsyncLoading,
+                    minimumLoadingSeconds);
+            }
         }
 
         [SerializeField] private Route[] routes = Array.Empty<Route>();
