@@ -118,17 +118,60 @@ namespace DimensionBrawl.Player
                     tier,
                     settings,
                     actorAdvanceSeconds);
-                Vector3 projectileSpawnBase = actor != null
-                    ? actor.ProjectileOrigin.position
-                    : ResolveBattlefieldPoint(playerLane.x, entryZ, settings.EntryHeight + 0.7f);
-                Vector3 right = ResolveRight(actorFacing);
+                if (actor != null)
+                {
+                    owner.StartCoroutine(RunDelayedSlamVolley(actor, targetLane, settings, actorAdvanceSeconds));
+                    return;
+                }
 
+                Vector3 projectileSpawnBase = ResolveBattlefieldPoint(playerLane.x, entryZ, settings.EntryHeight + 0.7f);
+                FireProjectileVolley(projectileSpawnBase, targetLane.x, targetZ, actorFacing, settings);
+            }
+
+            private IEnumerator RunDelayedSlamVolley(
+                SummonFrontlineProxy actor,
+                Vector2 fallbackTargetLane,
+                SummonTierSettings settings,
+                float actorAdvanceSeconds)
+            {
+                float actualAdvanceSeconds = actor.ActiveMoveSpeed > 0f
+                    ? Vector3.Distance(actor.AdvanceStartPosition, actor.AdvanceTargetPosition) / actor.ActiveMoveSpeed
+                    : actorAdvanceSeconds;
+                float delaySeconds = Mathf.Clamp(actualAdvanceSeconds * 0.72f, 0.18f, 0.62f);
+                if (delaySeconds > 0f)
+                {
+                    yield return new WaitForSeconds(delaySeconds);
+                }
+
+                if (actor == null || !actor.IsActive)
+                {
+                    yield break;
+                }
+
+                Vector2 targetLane = ResolveTargetLaneCoordinates(fallbackTargetLane);
+                Vector3 spawnBase = actor.ProjectileOrigin.position;
+                Vector3 targetPosition = ResolveBattlefieldPoint(targetLane.x, targetLane.y, settings.TargetHeight);
+                Vector3 facingDirection = ResolvePlanarDirection(targetPosition - spawnBase);
+                actor.FaceTowards(targetPosition);
+                actor.NotifyAttackPerformed(0.46f);
+                FireProjectileVolley(spawnBase, targetLane.x, targetLane.y, facingDirection, settings);
+            }
+
+            private void FireProjectileVolley(
+                Vector3 spawnBase,
+                float targetLaneX,
+                float targetLaneZ,
+                Vector3 facingDirection,
+                SummonTierSettings settings)
+            {
+                int projectileCount = Mathf.Max(1, settings.ProjectileCount);
+                Vector3 right = ResolveRight(facingDirection);
                 for (int i = 0; i < projectileCount; i++)
                 {
                     float targetOffset = ResolveOffset(i, projectileCount, settings.LateralReach);
-                    float targetX = targetLane.x + targetOffset;
-                    Vector3 spawnPosition = projectileSpawnBase + right * (targetOffset * 0.22f);
-                    Vector3 targetPosition = ResolveBattlefieldPoint(targetX, targetZ, settings.TargetHeight);
+                    float targetX = targetLaneX + targetOffset;
+                    Vector3 spawnPosition = spawnBase + right * (targetOffset * 0.22f);
+                    Vector3 targetPosition = ResolveBattlefieldPoint(targetX, targetLaneZ, settings.TargetHeight);
                     Vector3 direction = ResolvePlanarDirection(targetPosition - spawnPosition);
 
                     LaneActionProjectile projectile = GetProjectile();

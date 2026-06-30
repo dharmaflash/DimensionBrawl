@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 74239a1a1d687a249b10f3a4b4f8a84a, type: 3}
+  m_Name: DB_SummonPresentation_PlayerFireDragon
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.SummonPresentationCandidateProfile
+  candidateId: PlayerSummon.FireDragon
+  displayName: Player Summon - Fire Dragon Breath
+  side: 0
+  actorPrefab: {fileID: 2711879856745684854, guid: ee94eabc7ff7a0f4492db6205daf7efa, type: 3}
+  visualSourceAsset: {fileID: 919132149155446097, guid: ca9b7e33c3773344299b76decb3f17a3, type: 3}
+  visualChildName: SummonSlot3Visual_FireDragon
+  sourceRoleId: SciFiSoldier.Elite.FinalStandCommander
+  animatorController: {fileID: 9100000, guid: e7a48e72c87b9c642a8780165cf3893e, type: 2}
+  vfxCueProfile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
+  animationRead: Game-owned proxy dragon uses the FinalStand controller contract
+    until the VolcanoDragon_PBR model is promoted.
+  vfxRead: Magic-circle entry, airborne body, wing silhouette, orange breath beam,
+    and wide fire volleys distinguish it from S1/S2.
+  replacementPlan: Promote VolcanoDragon_PBR and FireBeam/FlameThrower VFX into `_Game`
+    before replacing this proxy visual.
+  ownershipNotes: Presentation candidate only; runtime cost, tier, projectile, and
+    screen values remain in gameplay profiles.

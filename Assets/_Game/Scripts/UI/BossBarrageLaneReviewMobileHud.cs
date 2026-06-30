@@ -50,9 +50,9 @@ namespace DimensionBrawl.UI
         [SerializeField] private Color heldButtonColor = new Color(0.18f, 0.84f, 1f, 0.72f);
         [SerializeField] private Color pendingButtonColor = new Color(0.04f, 0.08f, 0.11f, 0.44f);
         [SerializeField] private Color actionTextColor = Color.white;
-        [SerializeField] private string summonSlot1Label = "S1 SHIELD";
-        [SerializeField] private string summonSlot2Label = "S2 ARROW";
-        [SerializeField] private string summonSlot3Label = "S3 TANK";
+        [SerializeField] private string summonSlot1Label = "S1 SLAM";
+        [SerializeField] private string summonSlot2Label = "S2 LASER";
+        [SerializeField] private string summonSlot3Label = "S3 DRAGON";
         [SerializeField] private string lockedSummonLabel = "NEXT";
 
         [Header("Chrome")]

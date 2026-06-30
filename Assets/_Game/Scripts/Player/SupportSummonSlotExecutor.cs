@@ -291,7 +291,9 @@ namespace DimensionBrawl.Player
                 0.24f,
                 settings.ActorEngageRadius);
             clash.ConfigureHostileBodyDamage(1f, 0f);
-            if (string.Equals(settings.ActorRoleId, "BacklineMarksman", System.StringComparison.Ordinal))
+            if (string.Equals(settings.ActorRoleId, "BacklineMarksman", System.StringComparison.Ordinal)
+                || string.Equals(settings.ActorRoleId, "LaserSoldier", System.StringComparison.Ordinal)
+                || string.Equals(settings.ActorRoleId, "FireDragon", System.StringComparison.Ordinal))
             {
                 clash.ConfigureHostileBodyDamage(0f, 0f);
             }
@@ -402,6 +404,8 @@ namespace DimensionBrawl.Player
                 Vector3 spawnBase = actor.ProjectileOrigin.position;
                 Vector3 targetPosition = ResolveBattlefieldPoint(targetLane.x, targetLane.y, settings.TargetHeight);
                 Vector3 facingDirection = ResolvePlanarDirection(targetPosition - spawnBase);
+                actor.FaceTowards(targetPosition);
+                actor.NotifyAttackPerformed(Mathf.Clamp(owner.VolleyIntervalSeconds * 0.42f, 0.18f, 0.36f));
                 FireProjectiles(spawnBase, targetLane.x, targetLane.y, facingDirection, settings);
                 firedCount++;
                 lastVolleyWaveCount = firedCount;

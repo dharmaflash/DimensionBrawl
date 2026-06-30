@@ -1,0 +1,121 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2c09f3d5d2d4a9ca1671a60e75091f2, type: 3}
+  m_Name: DB_SummonSlot3_FireDragon
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.SummonSlotActionProfile
+  actionId: SummonSlot3.FireDragon
+  tierSettings:
+  - Damage: 74
+    ProjectileSpeed: 21
+    LifetimeSeconds: 1.35
+    Radius: 0.44
+    ProjectileCount: 2
+    LateralReach: 1.8
+    EntryHeight: 0.18
+    TargetHeight: 1.35
+    CueScale: 0.51
+    CueLifetimeSeconds: 0.36
+    ActorLifetimeSeconds: 0
+    ActorScale: 2.42
+    ActorRoleId: FireDragon
+    ActorMaxHealth: 520
+    ActorMoveSpeed: 3.8
+    ActorAdvanceDistance: 1.55
+    ActorAdvanceSeconds: 1.3925
+    ActorEngageRadius: 1.28
+    ActorAttackDamagePerSecond: 44
+    ActorAttackIntervalSeconds: 0.38
+    ScreenIntercepts: 0
+    ScreenRadius: 1.15
+    ScreenLifetimeSeconds: 0.2
+    CounterDamage: 23.68
+    CounterProjectileSpeed: 23
+    CounterLifetimeSeconds: 1.45
+    CounterRadius: 0.308
+    CounterTargetHeight: 1.35
+  - Damage: 98
+    ProjectileSpeed: 23
+    LifetimeSeconds: 1.5
+    Radius: 0.52
+    ProjectileCount: 3
+    LateralReach: 3
+    EntryHeight: 0.18
+    TargetHeight: 1.35
+    CueScale: 0.56
+    CueLifetimeSeconds: 0.36
+    ActorLifetimeSeconds: 0
+    ActorScale: 2.72
+    ActorRoleId: FireDragon
+    ActorMaxHealth: 620
+    ActorMoveSpeed: 4.2
+    ActorAdvanceDistance: 1.8
+    ActorAdvanceSeconds: 1.48
+    ActorEngageRadius: 1.38
+    ActorAttackDamagePerSecond: 64
+    ActorAttackIntervalSeconds: 0.34
+    ScreenIntercepts: 0
+    ScreenRadius: 1.15
+    ScreenLifetimeSeconds: 0.2
+    CounterDamage: 31.359999
+    CounterProjectileSpeed: 25
+    CounterLifetimeSeconds: 1.45
+    CounterRadius: 0.364
+    CounterTargetHeight: 1.35
+  - Damage: 132
+    ProjectileSpeed: 25
+    LifetimeSeconds: 1.65
+    Radius: 0.62
+    ProjectileCount: 4
+    LateralReach: 4.4
+    EntryHeight: 0.18
+    TargetHeight: 1.35
+    CueScale: 0.61
+    CueLifetimeSeconds: 0.36
+    ActorLifetimeSeconds: 0
+    ActorScale: 3.06
+    ActorRoleId: FireDragon
+    ActorMaxHealth: 760
+    ActorMoveSpeed: 4.6
+    ActorAdvanceDistance: 2.05
+    ActorAdvanceSeconds: 1.5675
+    ActorEngageRadius: 1.52
+    ActorAttackDamagePerSecond: 88
+    ActorAttackIntervalSeconds: 0.3
+    ScreenIntercepts: 0
+    ScreenRadius: 1.15
+    ScreenLifetimeSeconds: 0.2
+    CounterDamage: 42.239998
+    CounterProjectileSpeed: 27
+    CounterLifetimeSeconds: 1.45
+    CounterRadius: 0.434
+    CounterTargetHeight: 1.35
+  tierReadouts:
+  - TierLabel: LV1 Fire Breath
+    StageRole: Expensive-feeling ranged summon that trades safety for a wide flame
+      lane.
+    PlayerUse: Spend only when the boss is committed and the player can live without
+      a blocker.
+    SummonRead: Fire dragon hovers above the lane and breathes two broad fire chunks
+      from a visible orange beam.
+  - TierLabel: LV2 Furnace Sweep
+    StageRole: Mid-tier dragon breath covers a wider lane and rewards a longer punish
+      read.
+    PlayerUse: Hold EN when the boss will remain exposed after the first breath tick.
+    SummonRead: Larger hovering dragon, three fire chunks, wider lateral spread,
+      and a stronger breath beam.
+  - TierLabel: LV3 Inferno Beam
+    StageRole: High-risk high-return dragon that should visibly dominate a punish
+      window.
+    PlayerUse: Save for the long boss recovery where raw damage matters more than
+      defense.
+    SummonRead: Largest hover silhouette, four wide fire chunks, long orange breath
+      beam, and heavy sustained burn pressure.

@@ -1,37 +1,5 @@
 %YAML 1.1
 %TAG !u! tag:unity3d.com,2011:
---- !u!1 &76535356739553504
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2280076078926733892}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ L Calf
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2280076078926733892
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 76535356739553504}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.0000000011094808, y: 0.0000000075993185, z: 0.09983888, w: 0.99500364}
-  m_LocalPosition: {x: -0.50105995, y: 0, z: -0.000000038146972}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 6065915013815018578}
-  m_Father: {fileID: 687127356163337472}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &78232937113701473
 GameObject:
   m_ObjectHideFlags: 0
@@ -51,6 +19,8 @@ GameObject:
   - component: {fileID: 3252584719484518424}
   - component: {fileID: 1468321651076263994}
   - component: {fileID: 191494895522243731}
+  - component: {fileID: 8466228837573255478}
+  - component: {fileID: 3826839064137271345}
   m_Layer: 0
   m_Name: PF_SummonSlot1Actor_Proxy
   m_TagString: Untagged
@@ -76,8 +46,9 @@ Transform:
   - {fileID: 505624062231468394}
   - {fileID: 6635102646728915177}
   - {fileID: 2057559276140512832}
-  - {fileID: 3234949254500980379}
   - {fileID: 6733543716718372370}
+  - {fileID: 5651369910686418689}
+  - {fileID: 3216465604265984389}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &7899913059057069571
@@ -258,7 +229,7 @@ MonoBehaviour:
   proxy: {fileID: 2545721826767157788}
   clash: {fileID: 1468321651076263994}
   health: {fileID: 0}
-  animator: {fileID: 8070216392158891661}
+  animator: {fileID: 291556680786603886}
   moveSpeedParameter: MoveSpeed
   spawnTrigger: EliteSummonPackage
   attackTrigger: Attack
@@ -382,6 +353,229 @@ MonoBehaviour:
   - {fileID: 8086798479083741158}
   fullFillLocalScale: {x: 0.7, y: 0.045, z: 0.04}
   fullFillLocalPosition: {x: 0, y: 0, z: -0.024}
+--- !u!114 &8466228837573255478
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 78232937113701473}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a46575487f0c5b04fae4acbe03da3b39, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.SummonProxyVisualMotionPresenter
+  proxy: {fileID: 2545721826767157788}
+  motionRoot: {fileID: 5651369910686418689}
+  airborneHeight: 0
+  jumpArcHeight: 1.65
+  tierArcHeightStep: 0.34
+  arcStartProgress: 0
+  arcEndProgress: 0.88
+  landingSettleSeconds: 0.12
+  landingDip: 0.14
+--- !u!114 &3826839064137271345
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 78232937113701473}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 16b3e06b0ca94b7439a6e21da0747c50, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.SummonAttackBeamPresenter
+  proxy: {fileID: 2545721826767157788}
+  beamRoot: {fileID: 3216465604265984389}
+  beamRenderers:
+  - {fileID: 8495816971412494037}
+  tierOneColor: {r: 1, g: 0.78, b: 0.28, a: 0.62}
+  tierTwoColor: {r: 1, g: 0.92, b: 0.42, a: 0.72}
+  tierThreeColor: {r: 1, g: 0.55, b: 0.18, a: 0.82}
+  tierScaleStep: 0.24
+  pulseScale: 0.12
+  pulseSpeed: 20
+--- !u!1 &149389719373328691
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3216465604265984389}
+  - component: {fileID: 8783526159427216039}
+  - component: {fileID: 8495816971412494037}
+  m_Layer: 0
+  m_Name: SlamImpactBurst
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &3216465604265984389
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 149389719373328691}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.7071068, y: 0, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0.06, z: 0.48}
+  m_LocalScale: {x: 2.4, y: 0.035, z: 2.4}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6794172203611637624}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &8783526159427216039
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 149389719373328691}
+  m_Mesh: {fileID: 4300000, guid: c89b8d1a0daafe249b7c143d5c4641d3, type: 2}
+--- !u!23 &8495816971412494037
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 149389719373328691}
+  m_Enabled: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
+  m_DynamicOccludee: 0
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 0e41eaaf6976c8d46b0b991b4a967588, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &154206120764227433
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4001683470926439752}
+  - component: {fileID: 2336635400478927383}
+  - component: {fileID: 3922776686994822719}
+  m_Layer: 0
+  m_Name: SK_TherionideWeapon_Action
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4001683470926439752
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 154206120764227433}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.0000002539287, y: 0.00000037932526, z: 0.70710653, w: 0.70710707}
+  m_LocalPosition: {x: 0.0000038146973, y: 0.000003967285, z: 0.0000020599364}
+  m_LocalScale: {x: 26.888628, y: 26.888624, z: 26.888622}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4443367394514035321}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &2336635400478927383
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 154206120764227433}
+  m_Mesh: {fileID: -1009733393847169542, guid: a8aeab87c31728449b2ad21164d319fc, type: 3}
+--- !u!23 &3922776686994822719
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 154206120764227433}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 107ad1ba2508ece49ad040f020898b39, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1 &363932309770917681
 GameObject:
   m_ObjectHideFlags: 0
@@ -415,7 +609,7 @@ Transform:
   - {fileID: 5379521863821175023}
   m_Father: {fileID: 6794172203611637624}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &423819286252972701
+--- !u!1 &429208709320652604
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -423,29 +617,29 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7059818294439645562}
+  - component: {fileID: 6292916355902451086}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ R Finger0
+  m_Name: root
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &7059818294439645562
+--- !u!4 &6292916355902451086
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 423819286252972701}
+  m_GameObject: {fileID: 429208709320652604}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.63554406, y: 0.4408557, z: 0.13977917, w: 0.6182167}
-  m_LocalPosition: {x: -0.05044571, y: 0.030020751, z: 0.04979204}
+  m_LocalRotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: -0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 726711215545743097}
-  m_Father: {fileID: 4304737946914807141}
+  - {fileID: 4130403737994157353}
+  m_Father: {fileID: 5651369910686418689}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &432913733097622144
 GameObject:
@@ -636,7 +830,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 6794172203611637624}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &565890578346368491
+--- !u!1 &655449313577652195
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -644,124 +838,31 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 4590911319641593749}
+  - component: {fileID: 4368060526118108781}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ L Toe0
+  m_Name: Therionide_ L Foot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &4590911319641593749
+--- !u!4 &4368060526118108781
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 565890578346368491}
+  m_GameObject: {fileID: 655449313577652195}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.000000015798134, y: 0.000000015812006, z: -0.7071068, w: 0.7071068}
-  m_LocalPosition: {x: -0.16884467, y: 0.22783393, z: 0.014674453}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 6065915013815018578}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &569878712592060455
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1584143645405833506}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ R Toe0
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1584143645405833506
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 569878712592060455}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.000000015805508, y: -0.000000015804632, z: -0.7071068, w: 0.7071068}
-  m_LocalPosition: {x: -0.16884467, y: 0.22783393, z: -0.014674415}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1846232989491100255}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &624527766089557446
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 5142487877775491676}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ Ponytail1
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &5142487877775491676
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 624527766089557446}
-  serializedVersion: 2
-  m_LocalRotation: {x: 1.3225928e-12, y: 0.0000023413422, z: -0.84415317, w: 0.5361021}
-  m_LocalPosition: {x: -0.05376053, y: 0.018964844, z: 0.00000009542789}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 6776648836312014475}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &688226848089803720
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1438459375474251259}
-  m_Layer: 0
-  m_Name: root
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1438459375474251259
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 688226848089803720}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0.7071068, y: 0, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -0, y: 0, z: 0}
+  m_LocalRotation: {x: -0.03053146, y: 0.024632666, z: -0.12208998, w: 0.9917435}
+  m_LocalPosition: {x: -0.4783102, y: -0.000000009536743, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 4183618021254999579}
-  m_Father: {fileID: 3234949254500980379}
+  - {fileID: 5519762161946255896}
+  m_Father: {fileID: 8587081426637687001}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1062130044006937401
+--- !u!1 &919181907787520327
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -769,31 +870,31 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 8798118237977305203}
+  - component: {fileID: 3869599949658054882}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ R Finger11
+  m_Name: Therionide_ L Finger0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &8798118237977305203
+--- !u!4 &3869599949658054882
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1062130044006937401}
+  m_GameObject: {fileID: 919181907787520327}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.000000007344191, y: 0.0000000012545988, z: -0.16838938, w: 0.9857206}
-  m_LocalPosition: {x: -0.054167707, y: 0, z: -0.000000038146972}
+  m_LocalRotation: {x: 0.5154974, y: -0.39425814, z: -0.051802572, w: 0.7590385}
+  m_LocalPosition: {x: -0.048089027, y: 0.030613098, z: -0.090792924}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 4253364863531029925}
-  m_Father: {fileID: 7771919810786034350}
+  - {fileID: 5083849792135083440}
+  m_Father: {fileID: 113066371574292172}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1175100644911237733
+--- !u!1 &939915498677191278
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -801,31 +902,31 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 9080564554765428243}
+  - component: {fileID: 9222545048321550940}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ L Forearm
+  m_Name: TherionideWeapon_Root
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &9080564554765428243
+--- !u!4 &9222545048321550940
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1175100644911237733}
+  m_GameObject: {fileID: 939915498677191278}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.000000010541777, y: 0.000000012900647, z: 0.2196583, w: 0.9755769}
-  m_LocalPosition: {x: -0.4405316, y: 0, z: 0}
+  m_LocalRotation: {x: 0.49027345, y: 0.49480227, z: 0.58680123, w: 0.41287664}
+  m_LocalPosition: {x: -0.2191542, y: 0.065441966, z: 0.02786251}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1945132449732032922}
-  m_Father: {fileID: 1364003638546819954}
+  - {fileID: 4443367394514035321}
+  m_Father: {fileID: 7932487634434980775}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1209397767164622757
+--- !u!1 &971083438196946276
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -833,65 +934,30 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 5485569497373762701}
+  - component: {fileID: 6480041488629473246}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ Pelvis
+  m_Name: Therionide_ L Finger02
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &5485569497373762701
+--- !u!4 &6480041488629473246
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1209397767164622757}
+  m_GameObject: {fileID: 971083438196946276}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.5, y: 0.5, z: 0.4999993, w: 0.5000007}
-  m_LocalPosition: {x: -0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 687127356163337472}
-  - {fileID: 6546472683974801609}
-  - {fileID: 32564872657181377}
-  - {fileID: 4973361604525381460}
-  m_Father: {fileID: 4183618021254999579}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1469392971870023854
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 5734494212204585391}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ R Finger02
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &5734494212204585391
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1469392971870023854}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.000000014860238, y: -0.0000000011035869, z: -0.07406046, w: 0.9972538}
-  m_LocalPosition: {x: -0.059269693, y: 0, z: 0.00000030517577}
+  m_LocalRotation: {x: 0.000000008729693, y: 0.0000000064784658, z: -0.11640221, w: 0.9932022}
+  m_LocalPosition: {x: -0.07231247, y: -0.000000076293944, z: -0.000000076293944}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 726711215545743097}
+  m_Father: {fileID: 5083849792135083440}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1726254764207010545
+--- !u!1 &1198947244000240492
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -899,61 +965,280 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 3346835925680302936}
+  - component: {fileID: 9092683378055315372}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ L Finger12
+  m_Name: Therionide_ L Thigh
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &3346835925680302936
+--- !u!4 &9092683378055315372
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1726254764207010545}
+  m_GameObject: {fileID: 1198947244000240492}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.0000000193671, y: -0.0000000052317755, z: -0.116402164, w: 0.9932022}
-  m_LocalPosition: {x: -0.05416767, y: 0.00000015258789, z: -0.000000019073486}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 7868908013045537984}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1919611916798066837
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 726711215545743097}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ R Finger01
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &726711215545743097
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1919611916798066837}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0.000000044590237, y: 0.0000000031799845, z: -0.071135044, w: 0.9974667}
-  m_LocalPosition: {x: -0.059269637, y: 0.000000038146972, z: 0}
+  m_LocalRotation: {x: -0.29352215, y: 0.9440189, z: 0.060618613, w: 0.13783512}
+  m_LocalPosition: {x: 0.00000022888183, y: 0.00000030517577, z: 0.16274847}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 5734494212204585391}
-  m_Father: {fileID: 7059818294439645562}
+  - {fileID: 8587081426637687001}
+  m_Father: {fileID: 3853277885899635521}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1376539459769756351
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6463232149939425051}
+  m_Layer: 0
+  m_Name: Therionide_ R Finger2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6463232149939425051
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1376539459769756351}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.000074782816, y: -0.0081603, z: -0.039485086, w: 0.9991869}
+  m_LocalPosition: {x: -0.18636516, y: -0.001802063, z: -0.074987106}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 8821573013480416107}
+  m_Father: {fileID: 7932487634434980775}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1522226844704104117
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3754421514243598000}
+  m_Layer: 0
+  m_Name: Therionide_ L Finger11
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3754421514243598000
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1522226844704104117}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.000000017517117, y: -0.0000000054485896, z: -0.116402194, w: 0.9932022}
+  m_LocalPosition: {x: -0.09833477, y: -0.00000015258789, z: 0.000000114440915}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 8893644746907012221}
+  m_Father: {fileID: 4809712149739049809}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1536549635316348277
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 552885060835282980}
+  m_Layer: 0
+  m_Name: Therionide_ L Finger2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &552885060835282980
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1536549635316348277}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.00007476951, y: 0.008160254, z: -0.03948511, w: 0.9991869}
+  m_LocalPosition: {x: -0.1863652, y: -0.0018019103, z: 0.074987106}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2571663352501138003}
+  m_Father: {fileID: 113066371574292172}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1602126541067278582
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2571663352501138003}
+  m_Layer: 0
+  m_Name: Therionide_ L Finger21
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2571663352501138003
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1602126541067278582}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.000000019528715, y: -0.000000008169677, z: -0.21756144, w: 0.9760466}
+  m_LocalPosition: {x: -0.09164398, y: 0, z: -0.000000076293944}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 7006940414444534704}
+  m_Father: {fileID: 552885060835282980}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1714182347027388123
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4547619944987135689}
+  m_Layer: 0
+  m_Name: TherionideWeapon_Idle
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4547619944987135689
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1714182347027388123}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.25367793, y: -0.16146788, z: -0.7028973, w: 0.6446015}
+  m_LocalPosition: {x: -0.60687315, y: -0.26640087, z: -0.46920395}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 6100782405214969820}
+  m_Father: {fileID: 5018999795007495004}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1908552128253540677
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3220229589004132419}
+  - component: {fileID: 1520523274001054763}
+  - component: {fileID: 4322970278918729876}
+  m_Layer: 0
+  m_Name: SM_laderBladeHorizontal2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3220229589004132419
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1908552128253540677}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.5000001, y: -0.49999994, z: 0.49999964, w: 0.5000003}
+  m_LocalPosition: {x: 0.077049635, y: 0.0000045776364, z: 0.0000022125244}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 9137366549862559999}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &1520523274001054763
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1908552128253540677}
+  m_Mesh: {fileID: 8862131902642908187, guid: a8aeab87c31728449b2ad21164d319fc, type: 3}
+--- !u!23 &4322970278918729876
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1908552128253540677}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 092d711a0c0792840a855a780cd208a1, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1 &2030809065764155300
 GameObject:
   m_ObjectHideFlags: 0
@@ -994,7 +1279,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2030809065764155300}
-  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 4300000, guid: baeaff6af209552428e19ba369e703e0, type: 2}
 --- !u!23 &8086798479083741158
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1044,7 +1329,7 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &2522147159783026969
+--- !u!1 &2127095549981379750
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1052,31 +1337,217 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 4183618021254999579}
+  - component: {fileID: 5519762161946255896}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_
+  m_Name: Therionide_ L Toe0
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &4183618021254999579
+--- !u!4 &5519762161946255896
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2522147159783026969}
+  m_GameObject: {fileID: 2127095549981379750}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.00000002239052, y: -0.000000001317053, z: 0.70710564, w: 0.7071079}
-  m_LocalPosition: {x: -0, y: 0, z: 1.0671154}
+  m_LocalRotation: {x: 0.000000019941552, y: -0.000000011668586, z: -0.7071068, w: 0.7071068}
+  m_LocalPosition: {x: -0.18593422, y: 0.20415989, z: 0.000000038146972}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4368060526118108781}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2171560486893713378
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3706575921133531253}
+  m_Layer: 0
+  m_Name: Therionide_ R Toe0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3706575921133531253
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2171560486893713378}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.000000018696491, y: 0.00000002345036, z: -0.7071068, w: 0.7071068}
+  m_LocalPosition: {x: -0.18593422, y: 0.20415987, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7437184891935188198}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2208783927667643265
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1395970748910130387}
+  - component: {fileID: 6554165938412152630}
+  - component: {fileID: 7380667011557690584}
+  m_Layer: 0
+  m_Name: SM_laderBladeVertical
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1395970748910130387
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2208783927667643265}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.5000002, y: -0.4999998, z: 0.4999999, w: 0.5000001}
+  m_LocalPosition: {x: 0.0047842404, y: 0.0000051879883, z: 0.0000020599364}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3045968701924877252}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &6554165938412152630
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2208783927667643265}
+  m_Mesh: {fileID: -7154456186485177115, guid: a8aeab87c31728449b2ad21164d319fc, type: 3}
+--- !u!23 &7380667011557690584
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2208783927667643265}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 092d711a0c0792840a855a780cd208a1, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &2372714531643335317
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8893644746907012221}
+  m_Layer: 0
+  m_Name: Therionide_ L Finger12
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8893644746907012221
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2372714531643335317}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.000000037433292, y: -6.3635397e-10, z: -0.11640222, w: 0.99320215}
+  m_LocalPosition: {x: -0.06695411, y: 0.000000076293944, z: 0.000000038146972}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 3754421514243598000}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2376121246944534997
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7932487634434980775}
+  m_Layer: 0
+  m_Name: Therionide_ R Hand
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7932487634434980775
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2376121246944534997}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.5539955, y: -0.032750312, z: -0.021855589, w: 0.8315881}
+  m_LocalPosition: {x: -0.36759704, y: 0.000000038146972, z: 0.00000015258789}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 5485569497373762701}
-  m_Father: {fileID: 1438459375474251259}
+  - {fileID: 6123942053439681569}
+  - {fileID: 4388464979496256209}
+  - {fileID: 6463232149939425051}
+  - {fileID: 9222545048321550940}
+  m_Father: {fileID: 4490198211279905109}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2532773207806473833
+--- !u!1 &2552064361990463084
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1084,37 +1555,227 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 5906702657982355545}
-  - component: {fileID: 2913512724366595640}
+  - component: {fileID: 3045968701924877252}
   m_Layer: 0
-  m_Name: SK_SciFiHeavyBattleArmor
+  m_Name: TherionideWeapon_LaserBladeVertical
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &5906702657982355545
+--- !u!4 &3045968701924877252
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2532773207806473833}
+  m_GameObject: {fileID: 2552064361990463084}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.0000002533197, y: 0.000000022351689, z: 0.00000022351745, w: 1}
+  m_LocalPosition: {x: -1.8743318, y: -0.00000030517577, z: 0.0000005340576}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1395970748910130387}
+  m_Father: {fileID: 4443367394514035321}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2632471653871951315
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4388464979496256209}
+  m_Layer: 0
+  m_Name: Therionide_ R Finger1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4388464979496256209
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2632471653871951315}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.0029498397, y: 0.07093755, z: -0.03585349, w: 0.99683183}
+  m_LocalPosition: {x: -0.19806682, y: -0.010850372, z: 0.031836357}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 4526228044903424556}
+  m_Father: {fileID: 7932487634434980775}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2904051974481834278
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7437184891935188198}
+  m_Layer: 0
+  m_Name: Therionide_ R Foot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7437184891935188198
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2904051974481834278}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.03053144, y: -0.024632782, z: -0.122091115, w: 0.9917433}
+  m_LocalPosition: {x: -0.47831035, y: 0.000000019073486, z: -0.000000038146972}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 3706575921133531253}
+  m_Father: {fileID: 387823987612338102}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3093129534829345576
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 185298193747230796}
+  m_Layer: 0
+  m_Name: Therionide_ L Clavicle
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &185298193747230796
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3093129534829345576}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.7071077, y: 0.00028154056, z: -0.70710576, w: 0.00028154135}
+  m_LocalPosition: {x: -0.20530197, y: 0.019561615, z: 0.12368286}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 4020124155108572683}
+  m_Father: {fileID: 5018999795007495004}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3176562095896024793
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5664403376818449243}
+  m_Layer: 0
+  m_Name: Therionide_ R Finger02
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5664403376818449243
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3176562095896024793}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.000000046264354, y: 0.000000022708779, z: -0.116402194, w: 0.9932022}
+  m_LocalPosition: {x: -0.07231247, y: -0.000000038146972, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4998421815466146462}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3311187431669322471
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4167941670773621128}
+  m_Layer: 0
+  m_Name: Therionide_EyelidLowerLeft
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4167941670773621128
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3311187431669322471}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.7697684, y: -0.61536247, z: 0.10593995, w: -0.13252343}
+  m_LocalPosition: {x: -0.19616744, y: 0.18628715, z: 0.06586257}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1043077749055189358}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &3537703047212295508
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 299460953227886486}
+  - component: {fileID: 1100253824855014143}
+  m_Layer: 0
+  m_Name: SK_Therionide
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &299460953227886486
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3537703047212295508}
   serializedVersion: 2
   m_LocalRotation: {x: 0.000000021855694, y: 0, z: -0, w: 1}
   m_LocalPosition: {x: -0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 3234949254500980379}
+  m_Father: {fileID: 5651369910686418689}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!137 &2913512724366595640
+--- !u!137 &1100253824855014143
 SkinnedMeshRenderer:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2532773207806473833}
+  m_GameObject: {fileID: 3537703047212295508}
   m_Enabled: 1
   m_CastShadows: 1
   m_ReceiveShadows: 1
@@ -1133,7 +1794,8 @@ SkinnedMeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: f29c7e89ea315ea4dabef3a4bc118f2c, type: 2}
+  - {fileID: 2100000, guid: 0255be73d66f3ee459de3004bf4252e8, type: 2}
+  - {fileID: 2100000, guid: f9700c23d77019b4c99faf663122c4f4, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -1160,49 +1822,60 @@ SkinnedMeshRenderer:
   m_Quality: 0
   m_UpdateWhenOffscreen: 0
   m_SkinnedMotionVectors: 1
-  m_Mesh: {fileID: 6121310422266669006, guid: ec34f7926b6d82f488661bbad190e30d, type: 3}
+  m_Mesh: {fileID: 6272213439156788440, guid: a8aeab87c31728449b2ad21164d319fc, type: 3}
   m_Bones:
-  - {fileID: 3225007999069780947}
-  - {fileID: 6880601094336279041}
-  - {fileID: 32564872657181377}
-  - {fileID: 3690738137670400971}
-  - {fileID: 1584143645405833506}
-  - {fileID: 6546472683974801609}
-  - {fileID: 4304737946914807141}
-  - {fileID: 3302679937715836277}
-  - {fileID: 1846232989491100255}
-  - {fileID: 4253364863531029925}
-  - {fileID: 8798118237977305203}
-  - {fileID: 5734494212204585391}
-  - {fileID: 7771919810786034350}
-  - {fileID: 726711215545743097}
-  - {fileID: 7059818294439645562}
-  - {fileID: 3618817652803859970}
-  - {fileID: 5634012748387596865}
-  - {fileID: 5142487877775491676}
-  - {fileID: 5485569497373762701}
-  - {fileID: 346884739945783420}
-  - {fileID: 8099416740897821473}
-  - {fileID: 687127356163337472}
-  - {fileID: 1364003638546819954}
-  - {fileID: 2280076078926733892}
-  - {fileID: 6065915013815018578}
-  - {fileID: 4590911319641593749}
-  - {fileID: 9080564554765428243}
-  - {fileID: 1945132449732032922}
-  - {fileID: 6706960244610408314}
-  - {fileID: 660425694696693628}
-  - {fileID: 4060655944054273961}
-  - {fileID: 6917273267527291817}
-  - {fileID: 7868908013045537984}
-  - {fileID: 3346835925680302936}
+  - {fileID: 5018999795007495004}
+  - {fileID: 1043077749055189358}
+  - {fileID: 3221356902807229275}
+  - {fileID: 965192570897557278}
+  - {fileID: 8333102737840755701}
+  - {fileID: 7031880976692691014}
+  - {fileID: 185298193747230796}
+  - {fileID: 3724084471797933915}
+  - {fileID: 4020124155108572683}
+  - {fileID: 3734943279292157064}
+  - {fileID: 9032528277051777805}
+  - {fileID: 9092683378055315372}
+  - {fileID: 3853277885899635521}
+  - {fileID: 7437184891935188198}
+  - {fileID: 8534337074975923332}
+  - {fileID: 8821573013480416107}
+  - {fileID: 7690929378116900028}
+  - {fileID: 4526228044903424556}
+  - {fileID: 6463232149939425051}
+  - {fileID: 5664403376818449243}
+  - {fileID: 4490198211279905109}
+  - {fileID: 7932487634434980775}
+  - {fileID: 3706575921133531253}
+  - {fileID: 4167941670773621128}
+  - {fileID: 4438609753172137207}
+  - {fileID: 7494911866142517306}
+  - {fileID: 2622070806406054415}
+  - {fileID: 6554319987733738750}
+  - {fileID: 387823987612338102}
+  - {fileID: 8587081426637687001}
+  - {fileID: 4368060526118108781}
+  - {fileID: 5519762161946255896}
+  - {fileID: 113066371574292172}
+  - {fileID: 3869599949658054882}
+  - {fileID: 6123942053439681569}
+  - {fileID: 4809712149739049809}
+  - {fileID: 4388464979496256209}
+  - {fileID: 552885060835282980}
+  - {fileID: 3754421514243598000}
+  - {fileID: 2571663352501138003}
+  - {fileID: 7006940414444534704}
+  - {fileID: 8893644746907012221}
+  - {fileID: 5083849792135083440}
+  - {fileID: 4998421815466146462}
+  - {fileID: 6480041488629473246}
   m_BlendShapeWeights: []
-  m_RootBone: {fileID: 5485569497373762701}
+  m_RootBone: {fileID: 3853277885899635521}
   m_AABB:
-    m_Center: {x: 0.042421043, y: 0.01110667, z: -0.0000020861626}
-    m_Extent: {x: 1.0221417, y: 0.42192674, z: 1.1462216}
+    m_Center: {x: -0.05640757, y: 0.1305942, z: -0.027825773}
+    m_Extent: {x: 1.3706003, y: 0.9112055, z: 1.1622627}
   m_DirtyAABB: 0
---- !u!1 &2746936137996414485
+--- !u!1 &3569027369875679128
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1210,33 +1883,31 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 3225007999069780947}
+  - component: {fileID: 6554319987733738750}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ Spine2
+  m_Name: Therionide_ L Forearm
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &3225007999069780947
+--- !u!4 &6554319987733738750
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2746936137996414485}
+  m_GameObject: {fileID: 3569027369875679128}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.000000003728248, y: -0.000000003722323, z: -1.1641531e-10, w: 1}
-  m_LocalPosition: {x: -0.12876678, y: -0.00021316923, z: -5.928291e-10}
+  m_LocalRotation: {x: 0, y: 0, z: 0.4122194, w: 0.91108465}
+  m_LocalPosition: {x: -0.5730268, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 8099416740897821473}
-  - {fileID: 346884739945783420}
-  - {fileID: 3618817652803859970}
-  m_Father: {fileID: 6880601094336279041}
+  - {fileID: 113066371574292172}
+  m_Father: {fileID: 4020124155108572683}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &3026728000477633856
+--- !u!1 &3570316438124561834
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1244,95 +1915,30 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 4973361604525381460}
+  - component: {fileID: 2622070806406054415}
   m_Layer: 0
-  m_Name: RefPos_GatllinGun_Idle
+  m_Name: Therionide_EyelidUpperRight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &4973361604525381460
+--- !u!4 &2622070806406054415
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3026728000477633856}
+  m_GameObject: {fileID: 3570316438124561834}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.2652764, y: 0.25091535, z: -0.6766662, w: 0.6393691}
-  m_LocalPosition: {x: -0.18537566, y: -0.38884833, z: -0.37266907}
-  m_LocalScale: {x: 1.000001, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 5485569497373762701}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &3155892779865988184
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4304737946914807141}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ R Hand
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &4304737946914807141
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3155892779865988184}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.7239527, y: -0.07516665, z: 0.02048442, w: 0.68543625}
-  m_LocalPosition: {x: -0.33630037, y: 0.000000019073486, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 7059818294439645562}
-  - {fileID: 7771919810786034350}
-  - {fileID: 7499967092887340239}
-  m_Father: {fileID: 3302679937715836277}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &3409366613322054263
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 4253364863531029925}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ R Finger12
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &4253364863531029925
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3409366613322054263}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.0000000221998, y: -0.0000000026017921, z: -0.11640221, w: 0.9932022}
-  m_LocalPosition: {x: -0.054167632, y: 0, z: -0.000000019073486}
+  m_LocalRotation: {x: -0.1570829, y: 0.070241064, z: -0.40211698, w: 0.8992737}
+  m_LocalPosition: {x: -0.19717452, y: 0.18558219, z: -0.06599976}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 8798118237977305203}
+  m_Father: {fileID: 1043077749055189358}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &3753136902587537752
+--- !u!1 &3722870594284348599
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1340,31 +1946,31 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 687127356163337472}
+  - component: {fileID: 4526228044903424556}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ L Thigh
+  m_Name: Therionide_ R Finger11
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &687127356163337472
+--- !u!4 &4526228044903424556
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3753136902587537752}
+  m_GameObject: {fileID: 3722870594284348599}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.015117804, y: 0.9968577, z: -0.008935806, w: 0.07724221}
-  m_LocalPosition: {x: 0.00000022888183, y: 0.00000031487707, z: 0.19341783}
+  m_LocalRotation: {x: -0.000000017950743, y: -0.000000009148554, z: -0.11640223, w: 0.99320215}
+  m_LocalPosition: {x: -0.09833477, y: 0.00000015258789, z: -0.000000038146972}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 2280076078926733892}
-  m_Father: {fileID: 5485569497373762701}
+  - {fileID: 7690929378116900028}
+  m_Father: {fileID: 4388464979496256209}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &4033115064565281086
+--- !u!1 &4140786266741302433
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1372,55 +1978,188 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 3234949254500980379}
-  - component: {fileID: 8070216392158891661}
+  - component: {fileID: 387823987612338102}
   m_Layer: 0
-  m_Name: SummonSlot1Visual_ShieldBreakerElite
+  m_Name: Therionide_ R Calf
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &3234949254500980379
+--- !u!4 &387823987612338102
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4033115064565281086}
+  m_GameObject: {fileID: 4140786266741302433}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.04, z: -0.08}
-  m_LocalScale: {x: 0.62, y: 0.62, z: 0.62}
+  m_LocalRotation: {x: 0.000000012156119, y: -0.000000011392301, z: 0.3468169, w: 0.9379329}
+  m_LocalPosition: {x: -0.5949814, y: -0.000000038146972, z: 0.000000038146972}
+  m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 1438459375474251259}
-  - {fileID: 5906702657982355545}
-  m_Father: {fileID: 6794172203611637624}
+  - {fileID: 7437184891935188198}
+  m_Father: {fileID: 9032528277051777805}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!95 &8070216392158891661
-Animator:
-  serializedVersion: 7
+--- !u!1 &4161371551364964147
+GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4033115064565281086}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4130403737994157353}
+  m_Layer: 0
+  m_Name: Therionide_
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4130403737994157353
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4161371551364964147}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.061628357, y: -0.061628476, z: 0.7044155, w: 0.7044166}
+  m_LocalPosition: {x: -0, y: 0.191, z: 1.1899999}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 3853277885899635521}
+  m_Father: {fileID: 6292916355902451086}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &4181747071680278282
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 9137366549862559999}
+  m_Layer: 0
+  m_Name: TherionideWeapon_LaserBladesHorizontal
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &9137366549862559999
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4181747071680278282}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.0000002533197, y: 0.000000022351689, z: 0.00000022351745, w: 1}
+  m_LocalPosition: {x: -1.616131, y: 0, z: 0.0000003814697}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 7469071312739250954}
+  - {fileID: 3220229589004132419}
+  - {fileID: 6214305781409955181}
+  - {fileID: 4472152887103571359}
+  m_Father: {fileID: 4443367394514035321}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &4188139446472539637
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6100782405214969820}
+  - component: {fileID: 8250816052392605324}
+  - component: {fileID: 2591213629804615884}
+  m_Layer: 0
+  m_Name: SM_TherionideWeapon_Idle
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6100782405214969820
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4188139446472539637}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.0000003901433, y: 0.000000013300352, z: -0.000000026600679, w: 1}
+  m_LocalPosition: {x: -0.00000015258789, y: 0.0000021362305, z: 0.0000044250487}
+  m_LocalScale: {x: 26.888622, y: 26.888626, z: 26.888622}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 4547619944987135689}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &8250816052392605324
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4188139446472539637}
+  m_Mesh: {fileID: -8074100826561420824, guid: a8aeab87c31728449b2ad21164d319fc, type: 3}
+--- !u!23 &2591213629804615884
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4188139446472539637}
   m_Enabled: 1
-  m_Avatar: {fileID: 9000000, guid: ec34f7926b6d82f488661bbad190e30d, type: 3}
-  m_Controller: {fileID: 9100000, guid: 6c9d6cd483a475b4995cfdb17101ea5b, type: 2}
-  m_CullingMode: 0
-  m_UpdateMode: 0
-  m_ApplyRootMotion: 0
-  m_LinearVelocityBlending: 0
-  m_StabilizeFeet: 0
-  m_AnimatePhysics: 0
-  m_WarningMessage:
-  m_HasTransformHierarchy: 1
-  m_AllowConstantClipSamplingOptimization: 1
-  m_KeepAnimatorStateOnDisable: 0
-  m_WriteDefaultValuesOnDisable: 0
---- !u!1 &4793675544737159100
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 107ad1ba2508ece49ad040f020898b39, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &4286818060148090324
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1428,31 +2167,89 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7771919810786034350}
+  - component: {fileID: 4472152887103571359}
+  - component: {fileID: 7787106077037180523}
+  - component: {fileID: 2486128203266035359}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ R Finger1
+  m_Name: SM_laderBladeHorizontal4
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &7771919810786034350
+--- !u!4 &4472152887103571359
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4793675544737159100}
+  m_GameObject: {fileID: 4286818060148090324}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.0003977858, y: 0.000017447574, z: -0.043818705, w: 0.9990395}
-  m_LocalPosition: {x: -0.1711304, y: -0.0066969297, z: -0.0000053215026}
+  m_LocalRotation: {x: -0.5000001, y: -0.49999994, z: 0.49999964, w: 0.5000003}
+  m_LocalPosition: {x: -0.25341675, y: 0.0000048828124, z: 0.000002670288}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 8798118237977305203}
-  m_Father: {fileID: 4304737946914807141}
+  m_Children: []
+  m_Father: {fileID: 9137366549862559999}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &5279930369245736880
+--- !u!33 &7787106077037180523
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4286818060148090324}
+  m_Mesh: {fileID: -6216768956209527977, guid: a8aeab87c31728449b2ad21164d319fc, type: 3}
+--- !u!23 &2486128203266035359
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4286818060148090324}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 092d711a0c0792840a855a780cd208a1, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &4322533581117031776
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1460,31 +2257,30 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 4060655944054273961}
+  - component: {fileID: 8534337074975923332}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ L Finger0
+  m_Name: Therionide_ R Finger22
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &4060655944054273961
+--- !u!4 &8534337074975923332
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5279930369245736880}
+  m_GameObject: {fileID: 4322533581117031776}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.63554406, y: -0.44085568, z: 0.13977915, w: 0.6182167}
-  m_LocalPosition: {x: -0.05044571, y: 0.030020751, z: -0.04979204}
+  m_LocalRotation: {x: -0.0000000018608284, y: -2.5076138e-10, z: -0.11640221, w: 0.9932022}
+  m_LocalPosition: {x: -0.06326996, y: -0.000000076293944, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 6706960244610408314}
-  m_Father: {fileID: 1945132449732032922}
+  m_Children: []
+  m_Father: {fileID: 8821573013480416107}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &5647042998610400104
+--- !u!1 &4718979328208919367
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1492,31 +2288,31 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 3618817652803859970}
+  - component: {fileID: 9032528277051777805}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ R Clavicle
+  m_Name: Therionide_ R Thigh
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &3618817652803859970
+--- !u!4 &9032528277051777805
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5647042998610400104}
+  m_GameObject: {fileID: 4718979328208919367}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.6941137, y: 0.03164709, z: 0.71854264, w: 0.030019158}
-  m_LocalPosition: {x: -0.20474608, y: -0.0303668, z: -0.103691146}
+  m_LocalRotation: {x: -0.29352322, y: 0.94401824, z: -0.0606193, w: -0.13783698}
+  m_LocalPosition: {x: -0.00000022888183, y: -0.00000015258789, z: -0.16274847}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 3690738137670400971}
-  m_Father: {fileID: 3225007999069780947}
+  - {fileID: 387823987612338102}
+  m_Father: {fileID: 3853277885899635521}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &5807398525787422286
+--- !u!1 &4925555926963849365
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1524,30 +2320,187 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 7868908013045537984}
+  - component: {fileID: 1043077749055189358}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ L Finger11
+  m_Name: Therionide_ Head
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &7868908013045537984
+--- !u!4 &1043077749055189358
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5807398525787422286}
+  m_GameObject: {fileID: 4925555926963849365}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.000000013433783, y: -0.000000009853388, z: -0.16838938, w: 0.9857206}
-  m_LocalPosition: {x: -0.05416767, y: 0, z: 0.000000019073486}
+  m_LocalRotation: {x: 0.00000002726345, y: -0.0000002366751, z: 0.08755309, w: 0.9961599}
+  m_LocalPosition: {x: -0.13821243, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 3346835925680302936}
-  m_Father: {fileID: 660425694696693628}
+  - {fileID: 4167941670773621128}
+  - {fileID: 4438609753172137207}
+  - {fileID: 7494911866142517306}
+  - {fileID: 2622070806406054415}
+  - {fileID: 965192570897557278}
+  m_Father: {fileID: 8333102737840755701}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &5188907025535293545
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7494911866142517306}
+  m_Layer: 0
+  m_Name: Therionide_EyelidUpperLeft
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7494911866142517306
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5188907025535293545}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.8992734, y: -0.40211698, z: 0.07024129, w: -0.15708454}
+  m_LocalPosition: {x: -0.19717468, y: 0.1855819, z: 0.06586257}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1043077749055189358}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &5640245268374618581
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8821573013480416107}
+  m_Layer: 0
+  m_Name: Therionide_ R Finger21
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8821573013480416107
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5640245268374618581}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.00000001495901, y: 0.0000000061969083, z: -0.21756142, w: 0.9760466}
+  m_LocalPosition: {x: -0.09164398, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 8534337074975923332}
+  m_Father: {fileID: 6463232149939425051}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &6023702368434960799
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6214305781409955181}
+  - component: {fileID: 7096464890124241577}
+  - component: {fileID: 3698811324836372895}
+  m_Layer: 0
+  m_Name: SM_laderBladeHorizontal3
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6214305781409955181
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6023702368434960799}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.5000001, y: -0.49999994, z: 0.49999964, w: 0.5000003}
+  m_LocalPosition: {x: -0.08689773, y: 0.0000048828124, z: 0.0000025177}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 9137366549862559999}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &7096464890124241577
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6023702368434960799}
+  m_Mesh: {fileID: 1887770867586406523, guid: a8aeab87c31728449b2ad21164d319fc, type: 3}
+--- !u!23 &3698811324836372895
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6023702368434960799}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 092d711a0c0792840a855a780cd208a1, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1 &6170882508299509705
 GameObject:
   m_ObjectHideFlags: 0
@@ -1588,7 +2541,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6170882508299509705}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 4300000, guid: f0ad67ef49f191644881f46846bb001b, type: 2}
 --- !u!23 &671226193858547171
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1638,7 +2591,7 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &6195785725167321641
+--- !u!1 &6225763662414279874
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1646,31 +2599,30 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1364003638546819954}
+  - component: {fileID: 7006940414444534704}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ L UpperArm
+  m_Name: Therionide_ L Finger22
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &1364003638546819954
+--- !u!4 &7006940414444534704
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6195785725167321641}
+  m_GameObject: {fileID: 6225763662414279874}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.038180433, y: -0.32617444, z: 0.083085395, w: 0.9408769}
-  m_LocalPosition: {x: -0.17359741, y: 0.000000011920928, z: -0.00000015258789}
+  m_LocalRotation: {x: 0.000000029610453, y: -0.0000000142538275, z: -0.116402194, w: 0.9932022}
+  m_LocalPosition: {x: -0.06326996, y: 0.000000076293944, z: 0.000000076293944}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 9080564554765428243}
-  m_Father: {fileID: 8099416740897821473}
+  m_Children: []
+  m_Father: {fileID: 2571663352501138003}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &6202411154601252665
+--- !u!1 &6306648769110995713
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1678,29 +2630,61 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 6546472683974801609}
+  - component: {fileID: 3221356902807229275}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ R Thigh
+  m_Name: Therionide_ Spine1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &6546472683974801609
+--- !u!4 &3221356902807229275
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6202411154601252665}
+  m_GameObject: {fileID: 6306648769110995713}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.015117142, y: 0.9968576, z: 0.0089344615, w: -0.07724366}
-  m_LocalPosition: {x: -0.00000022888183, y: -0.00000022158689, z: -0.19341783}
+  m_LocalRotation: {x: -0.000000029785781, y: -2.565057e-10, z: -0.000000007450581, w: 1}
+  m_LocalPosition: {x: -0.14371765, y: -0.00018470763, z: -5.012407e-10}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 5634012748387596865}
-  m_Father: {fileID: 5485569497373762701}
+  - {fileID: 5018999795007495004}
+  m_Father: {fileID: 3734943279292157064}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &6453950542836001990
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8333102737840755701}
+  m_Layer: 0
+  m_Name: Therionide_ Neck
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8333102737840755701
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6453950542836001990}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.0000000062190364, y: 0.0000008320824, z: -0.3007058, w: 0.953717}
+  m_LocalPosition: {x: -0.2640782, y: 0.04517269, z: -0.00000008820425}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1043077749055189358}
+  m_Father: {fileID: 5018999795007495004}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6495497791770437091
 GameObject:
@@ -1742,7 +2726,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6495497791770437091}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 4300000, guid: f0ad67ef49f191644881f46846bb001b, type: 2}
 --- !u!23 &1593275826050662354
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1792,7 +2776,7 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &6511565694988469115
+--- !u!1 &6591373187328140888
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1800,31 +2784,31 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 32564872657181377}
+  - component: {fileID: 7031880976692691014}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ Spine
+  m_Name: Therionide_ R Clavicle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &32564872657181377
+--- !u!4 &7031880976692691014
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6511565694988469115}
+  m_GameObject: {fileID: 6591373187328140888}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.000002088401, y: 0.00000069739724, z: -0.0003981595, w: 0.99999994}
-  m_LocalPosition: {x: -0.1344905, y: -0.00010241124, z: 0.0000001876567}
+  m_LocalRotation: {x: 0.7071077, y: 0.00028154056, z: 0.70710576, w: -0.00028154135}
+  m_LocalPosition: {x: -0.20530197, y: 0.0195623, z: -0.123682745}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 6880601094336279041}
-  m_Father: {fileID: 5485569497373762701}
+  - {fileID: 3724084471797933915}
+  m_Father: {fileID: 5018999795007495004}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &6934775650306436278
+--- !u!1 &6618645860090491553
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1832,32 +2816,30 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 1945132449732032922}
+  - component: {fileID: 4438609753172137207}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ L Hand
+  m_Name: Therionide_EyelidLowerRight
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &1945132449732032922
+--- !u!4 &4438609753172137207
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6934775650306436278}
+  m_GameObject: {fileID: 6618645860090491553}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.7239527, y: 0.07516661, z: 0.020484393, w: 0.6854363}
-  m_LocalPosition: {x: -0.33630037, y: -0.000000019073486, z: -0.00000015258789}
+  m_LocalRotation: {x: -0.13252161, y: 0.10594046, z: -0.61536294, w: 0.7697683}
+  m_LocalPosition: {x: -0.19616714, y: 0.18628746, z: -0.06599976}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 4060655944054273961}
-  - {fileID: 660425694696693628}
-  m_Father: {fileID: 9080564554765428243}
+  m_Children: []
+  m_Father: {fileID: 1043077749055189358}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &7053572234208564681
+--- !u!1 &6692911215389551401
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1865,31 +2847,30 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 5634012748387596865}
+  - component: {fileID: 965192570897557278}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ R Calf
+  m_Name: Therionide_Jaw
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &5634012748387596865
+--- !u!4 &965192570897557278
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7053572234208564681}
+  m_GameObject: {fileID: 6692911215389551401}
   serializedVersion: 2
-  m_LocalRotation: {x: 7.4384543e-10, y: -0.0000000074133557, z: 0.09983725, w: 0.9950038}
-  m_LocalPosition: {x: -0.5010598, y: 0, z: 0}
+  m_LocalRotation: {x: -0.5513078, y: 0.83430195, z: 0.00000028523243, w: 0.0000008641063}
+  m_LocalPosition: {x: -0.08634033, y: 0.08265175, z: 0.00000015258789}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1846232989491100255}
-  m_Father: {fileID: 6546472683974801609}
+  m_Children: []
+  m_Father: {fileID: 1043077749055189358}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &7112993230967123525
+--- !u!1 &6699910333947003140
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -1897,30 +2878,187 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 3690738137670400971}
+  - component: {fileID: 4490198211279905109}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ R UpperArm
+  m_Name: Therionide_ R Forearm
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &3690738137670400971
+--- !u!4 &4490198211279905109
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7112993230967123525}
+  m_GameObject: {fileID: 6699910333947003140}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.038810212, y: 0.32646272, z: 0.081562445, w: 0.9408844}
-  m_LocalPosition: {x: -0.17359741, y: 0.0000000047683715, z: 0.00000015258789}
+  m_LocalRotation: {x: -0.00000003458611, y: -0.00000003200386, z: 0.4122194, w: 0.9110846}
+  m_LocalPosition: {x: -0.573027, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 3302679937715836277}
-  m_Father: {fileID: 3618817652803859970}
+  - {fileID: 7932487634434980775}
+  m_Father: {fileID: 3724084471797933915}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &6833557847510500142
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6123942053439681569}
+  m_Layer: 0
+  m_Name: Therionide_ R Finger0
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6123942053439681569
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6833557847510500142}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.5154973, y: 0.39425814, z: -0.051802658, w: 0.75903857}
+  m_LocalPosition: {x: -0.048088986, y: 0.030613098, z: 0.09079284}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 4998421815466146462}
+  m_Father: {fileID: 7932487634434980775}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7228699317201208266
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5018999795007495004}
+  m_Layer: 0
+  m_Name: Therionide_ Spine2
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5018999795007495004
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7228699317201208266}
+  serializedVersion: 2
+  m_LocalRotation: {x: -7.2347454e-11, y: -4.65775e-10, z: 0.000000014901161, w: 1}
+  m_LocalPosition: {x: -0.23193039, y: -0.0002600479, z: -7.2112016e-10}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 185298193747230796}
+  - {fileID: 8333102737840755701}
+  - {fileID: 7031880976692691014}
+  - {fileID: 4547619944987135689}
+  m_Father: {fileID: 3221356902807229275}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &7280246568127029818
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7469071312739250954}
+  - component: {fileID: 2145930904721471353}
+  - component: {fileID: 1498009337377842302}
+  m_Layer: 0
+  m_Name: SM_laderBladeHorizontal1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7469071312739250954
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7280246568127029818}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.5000001, y: -0.49999994, z: 0.49999964, w: 0.5000003}
+  m_LocalPosition: {x: 0.23959365, y: 0.0000041198728, z: 0.0000025177}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 9137366549862559999}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!33 &2145930904721471353
+MeshFilter:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7280246568127029818}
+  m_Mesh: {fileID: 1699947135346669573, guid: a8aeab87c31728449b2ad21164d319fc, type: 3}
+--- !u!23 &1498009337377842302
+MeshRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7280246568127029818}
+  m_Enabled: 1
+  m_CastShadows: 1
+  m_ReceiveShadows: 1
+  m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
+  m_MotionVectors: 1
+  m_LightProbeUsage: 1
+  m_ReflectionProbeUsage: 1
+  m_RayTracingMode: 2
+  m_RayTraceProcedural: 0
+  m_RayTracingAccelStructBuildFlagsOverride: 0
+  m_RayTracingAccelStructBuildFlags: 1
+  m_SmallMeshCulling: 1
+  m_ForceMeshLod: -1
+  m_MeshLodSelectionBias: 0
+  m_RenderingLayerMask: 1
+  m_RendererPriority: 0
+  m_Materials:
+  - {fileID: 2100000, guid: 092d711a0c0792840a855a780cd208a1, type: 2}
+  m_StaticBatchInfo:
+    firstSubMesh: 0
+    subMeshCount: 0
+  m_StaticBatchRoot: {fileID: 0}
+  m_ProbeAnchor: {fileID: 0}
+  m_LightProbeVolumeOverride: {fileID: 0}
+  m_ScaleInLightmap: 1
+  m_ReceiveGI: 1
+  m_PreserveUVs: 0
+  m_IgnoreNormalsForChartDetection: 0
+  m_ImportantGI: 0
+  m_StitchLightmapSeams: 1
+  m_SelectedEditorRenderState: 3
+  m_MinimumChartSize: 4
+  m_AutoUVMaxDistance: 0.5
+  m_AutoUVMaxAngle: 89
+  m_LightmapParameters: {fileID: 0}
+  m_GlobalIlluminationMeshLod: 0
+  m_SortingLayerID: 0
+  m_SortingLayer: 0
+  m_SortingOrder: 0
+  m_MaskInteraction: 0
+  m_AdditionalVertexStreams: {fileID: 0}
 --- !u!1 &7315933520160013466
 GameObject:
   m_ObjectHideFlags: 0
@@ -2024,7 +3162,7 @@ MonoBehaviour:
   interceptLayers:
     serializedVersion: 2
     m_Bits: 4294967295
---- !u!1 &7346658600752496115
+--- !u!1 &7345999156306333210
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2032,221 +3170,30 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 6706960244610408314}
+  - component: {fileID: 7690929378116900028}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ L Finger01
+  m_Name: Therionide_ R Finger12
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &6706960244610408314
+--- !u!4 &7690929378116900028
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7346658600752496115}
+  m_GameObject: {fileID: 7345999156306333210}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.000000028666829, y: -0.000000016983403, z: -0.07113506, w: 0.9974667}
-  m_LocalPosition: {x: -0.059269655, y: -0.000000076293944, z: -0.00000015258789}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 6917273267527291817}
-  m_Father: {fileID: 4060655944054273961}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &7532137605660019005
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 8099416740897821473}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ L Clavicle
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &8099416740897821473
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7532137605660019005}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0.6941136, y: -0.031649075, z: 0.7185426, w: 0.030021094}
-  m_LocalPosition: {x: -0.20474608, y: -0.030367378, z: 0.103690974}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1364003638546819954}
-  m_Father: {fileID: 3225007999069780947}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &8405571702802920621
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1846232989491100255}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ R Foot
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1846232989491100255
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8405571702802920621}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.009409116, y: -0.0063740974, z: -0.1141842, w: 0.9933946}
-  m_LocalPosition: {x: -0.40002555, y: -0.000000009536743, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1584143645405833506}
-  m_Father: {fileID: 5634012748387596865}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &8445991656511574798
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 660425694696693628}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ L Finger1
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &660425694696693628
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8445991656511574798}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0.00039777832, y: -0.000017447903, z: -0.04381871, w: 0.9990395}
-  m_LocalPosition: {x: -0.17113037, y: -0.0066969297, z: 0.000005302429}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 7868908013045537984}
-  m_Father: {fileID: 1945132449732032922}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &8473558840585571480
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 7499967092887340239}
-  m_Layer: 0
-  m_Name: RefPos_GatllinGun_Action
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &7499967092887340239
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8473558840585571480}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0.37196878, y: 0.5902832, z: 0.5572685, w: -0.45017418}
-  m_LocalPosition: {x: -0.21415126, y: 0.06080078, z: 0.040414065}
-  m_LocalScale: {x: 1, y: 0.999999, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 4304737946914807141}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &8492344827245897979
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6880601094336279041}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ Spine1
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6880601094336279041
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8492344827245897979}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.0000000037401864, y: -4.626859e-10, z: 1.7305314e-18, w: 1}
-  m_LocalPosition: {x: -0.12867896, y: -0.000102533624, z: -2.8515387e-10}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 3225007999069780947}
-  m_Father: {fileID: 32564872657181377}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &8576796246741141896
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 6917273267527291817}
-  m_Layer: 0
-  m_Name: HeavyBattleArmor_ L Finger02
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &6917273267527291817
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8576796246741141896}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.000000015963826, y: 0.00000001375665, z: -0.07406049, w: 0.9972538}
-  m_LocalPosition: {x: -0.0592696, y: 0, z: 0}
+  m_LocalRotation: {x: -0.0000000037576933, y: 0.000000007941973, z: -0.116402246, w: 0.99320215}
+  m_LocalPosition: {x: -0.06695411, y: 0, z: 0.000000038146972}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 6706960244610408314}
+  m_Father: {fileID: 4526228044903424556}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &8621038785310908928
+--- !u!1 &7360540553087373458
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2254,31 +3201,33 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 6776648836312014475}
+  - component: {fileID: 3853277885899635521}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ Head
+  m_Name: Therionide_ Pelvis
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &6776648836312014475
+--- !u!4 &3853277885899635521
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8621038785310908928}
+  m_GameObject: {fileID: 7360540553087373458}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.000000007152921, y: -0.000000083595985, z: 0.031938672, w: 0.99948984}
-  m_LocalPosition: {x: -0.09264648, y: 0, z: 0}
+  m_LocalRotation: {x: -0.5, y: 0.5, z: 0.4999993, w: 0.5000007}
+  m_LocalPosition: {x: -0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 5142487877775491676}
-  m_Father: {fileID: 346884739945783420}
+  - {fileID: 9092683378055315372}
+  - {fileID: 9032528277051777805}
+  - {fileID: 3734943279292157064}
+  m_Father: {fileID: 4130403737994157353}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &8637422039089098412
+--- !u!1 &7882257164968809041
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2286,31 +3235,33 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 3302679937715836277}
+  - component: {fileID: 4443367394514035321}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ R Forearm
+  m_Name: TherionideWeapon_main
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &3302679937715836277
+--- !u!4 &4443367394514035321
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8637422039089098412}
+  m_GameObject: {fileID: 7882257164968809041}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.000000023910177, y: -0.00000004060479, z: 0.20888135, w: 0.977941}
-  m_LocalPosition: {x: -0.44053176, y: 0.000000009536743, z: 0.00000015258789}
+  m_LocalRotation: {x: 0.000000007902629, y: -0.0000002239051, z: -0.7071067, w: 0.7071068}
+  m_LocalPosition: {x: -0, y: 0.000000114440915, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 4304737946914807141}
-  m_Father: {fileID: 3690738137670400971}
+  - {fileID: 4001683470926439752}
+  - {fileID: 9137366549862559999}
+  - {fileID: 3045968701924877252}
+  m_Father: {fileID: 9222545048321550940}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &8640367793307566412
+--- !u!1 &8173816178557133981
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2318,31 +3269,31 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 346884739945783420}
+  - component: {fileID: 4809712149739049809}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ Neck
+  m_Name: Therionide_ L Finger1
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &346884739945783420
+--- !u!4 &4809712149739049809
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8640367793307566412}
+  m_GameObject: {fileID: 8173816178557133981}
   serializedVersion: 2
-  m_LocalRotation: {x: -1.01970705e-13, y: 0.00000020671361, z: -0.074528985, w: 0.99721885}
-  m_LocalPosition: {x: -0.26668212, y: -0.037445597, z: -4.1737167e-10}
+  m_LocalRotation: {x: -0.002949825, y: -0.070937544, z: -0.035853498, w: 0.99683183}
+  m_LocalPosition: {x: -0.19806693, y: -0.010850219, z: -0.031836472}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 6776648836312014475}
-  m_Father: {fileID: 3225007999069780947}
+  - {fileID: 3754421514243598000}
+  m_Father: {fileID: 113066371574292172}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &8646489095307979026
+--- !u!1 &8211061952637327724
 GameObject:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -2350,29 +3301,279 @@ GameObject:
   m_PrefabAsset: {fileID: 0}
   serializedVersion: 6
   m_Component:
-  - component: {fileID: 6065915013815018578}
+  - component: {fileID: 3734943279292157064}
   m_Layer: 0
-  m_Name: HeavyBattleArmor_ L Foot
+  m_Name: Therionide_ Spine
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!4 &6065915013815018578
+--- !u!4 &3734943279292157064
 Transform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8646489095307979026}
+  m_GameObject: {fileID: 8211061952637327724}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.009409093, y: 0.006374021, z: -0.1141866, w: 0.9933943}
-  m_LocalPosition: {x: -0.4000257, y: 0, z: -0.000000038146972}
+  m_LocalRotation: {x: -0.0000020851346, y: 0.0000006983308, z: -0.00039815903, w: 0.99999994}
+  m_LocalPosition: {x: -0.20268615, y: -0.00011440277, z: 0.00000028124458}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 4590911319641593749}
-  m_Father: {fileID: 2280076078926733892}
+  - {fileID: 3221356902807229275}
+  m_Father: {fileID: 3853277885899635521}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &8294056487382658576
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4998421815466146462}
+  m_Layer: 0
+  m_Name: Therionide_ R Finger01
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4998421815466146462
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8294056487382658576}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.000000019482554, y: 0.00000000978491, z: -0.116402216, w: 0.9932022}
+  m_LocalPosition: {x: -0.09999038, y: -0.000000076293944, z: -0.000000076293944}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 5664403376818449243}
+  m_Father: {fileID: 6123942053439681569}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &8337416925391919764
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5651369910686418689}
+  - component: {fileID: 291556680786603886}
+  m_Layer: 0
+  m_Name: SummonSlot1Visual_LungeChaserBruiser
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5651369910686418689
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8337416925391919764}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -0.04, z: -0.08}
+  m_LocalScale: {x: 0.78, y: 0.78, z: 0.78}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 6292916355902451086}
+  - {fileID: 299460953227886486}
+  m_Father: {fileID: 6794172203611637624}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!95 &291556680786603886
+Animator:
+  serializedVersion: 7
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8337416925391919764}
+  m_Enabled: 1
+  m_Avatar: {fileID: 9000000, guid: a8aeab87c31728449b2ad21164d319fc, type: 3}
+  m_Controller: {fileID: 9100000, guid: 8cf1b962f7860cd4db7073e7843c4dbb, type: 2}
+  m_CullingMode: 0
+  m_UpdateMode: 0
+  m_ApplyRootMotion: 0
+  m_LinearVelocityBlending: 0
+  m_StabilizeFeet: 0
+  m_AnimatePhysics: 0
+  m_WarningMessage:
+  m_HasTransformHierarchy: 1
+  m_AllowConstantClipSamplingOptimization: 1
+  m_KeepAnimatorStateOnDisable: 0
+  m_WriteDefaultValuesOnDisable: 0
+--- !u!1 &8501630863924344150
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4020124155108572683}
+  m_Layer: 0
+  m_Name: Therionide_ L UpperArm
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4020124155108572683
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8501630863924344150}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.11073367, y: -0.38919368, z: 0.05236474, w: 0.91297555}
+  m_LocalPosition: {x: -0.217381, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 6554319987733738750}
+  m_Father: {fileID: 185298193747230796}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &8522367652276132247
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 5083849792135083440}
+  m_Layer: 0
+  m_Name: Therionide_ L Finger01
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &5083849792135083440
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8522367652276132247}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.000000006590397, y: -0.00000001577554, z: -0.11640221, w: 0.9932022}
+  m_LocalPosition: {x: -0.09999054, y: 0.000000038146972, z: 0.000000076293944}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 6480041488629473246}
+  m_Father: {fileID: 3869599949658054882}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &8640042372890667200
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3724084471797933915}
+  m_Layer: 0
+  m_Name: Therionide_ R UpperArm
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3724084471797933915
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8640042372890667200}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.110733755, y: 0.38919368, z: 0.05236481, w: 0.9129755}
+  m_LocalPosition: {x: -0.21738106, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 4490198211279905109}
+  m_Father: {fileID: 7031880976692691014}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &8690724419693027756
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8587081426637687001}
+  m_Layer: 0
+  m_Name: Therionide_ L Calf
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &8587081426637687001
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8690724419693027756}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.000000009572119, y: -0.000000004404179, z: 0.34681466, w: 0.9379337}
+  m_LocalPosition: {x: -0.5949815, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 4368060526118108781}
+  m_Father: {fileID: 9092683378055315372}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &8740507510221850387
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 113066371574292172}
+  m_Layer: 0
+  m_Name: Therionide_ L Hand
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &113066371574292172
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8740507510221850387}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0.55399543, y: 0.0327503, z: -0.021855555, w: 0.83158815}
+  m_LocalPosition: {x: -0.36759704, y: 0, z: -0.00000030517577}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 3869599949658054882}
+  - {fileID: 4809712149739049809}
+  - {fileID: 552885060835282980}
+  m_Father: {fileID: 6554319987733738750}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &8957721155865665546
 GameObject:
@@ -2414,7 +3615,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8957721155865665546}
-  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 4300000, guid: baeaff6af209552428e19ba369e703e0, type: 2}
 --- !u!23 &8415725664759507627
 MeshRenderer:
   m_ObjectHideFlags: 0
