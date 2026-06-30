@@ -3798,7 +3798,7 @@ MonoBehaviour:
   moveSpeedParameter: MoveSpeed
   spawnTrigger: EliteSummonPackage
   attackTrigger: Attack
-  hitTrigger: Hit
+  hitTrigger:
   deathTrigger: Death
   animatorMoveSpeedScale: 1
   pulseRoot: {fileID: 3753305637982622612}
@@ -3819,6 +3819,8 @@ MonoBehaviour:
   pressureDamageCueScale: 0.64
   deathCueIntensity: 1.05
   tierCueIntensityStep: 0.1
+  playDamageVfx: 0
+  renderDamageFeedback: 0
   tierOneColor: {r: 1, g: 0.32, b: 0.55, a: 0.82}
   tierTwoColor: {r: 1, g: 0.62, b: 0.24, a: 0.92}
   tierThreeColor: {r: 1, g: 0.22, b: 0.9, a: 1}
@@ -3831,7 +3833,7 @@ MonoBehaviour:
   impactFlashSeconds: 0.2
   clashFlashSeconds: 0.14
   attackFlashSeconds: 0.12
-  damageFlashSeconds: 0.16
+  damageFlashSeconds: 0
   deathFlashSeconds: 0.22
   fullBodyHitReactionCooldownSeconds: 0.42
   heavyHitReactionBypassesCooldown: 1
@@ -3843,7 +3845,7 @@ MonoBehaviour:
   flashScale: 0.24
   clashFlashScale: 0.18
   attackFlashScale: 0.14
-  damageFlashScale: 0.18
+  damageFlashScale: 0
   deathFlashScale: 0.28
 --- !u!114 &7918965066423916655
 MonoBehaviour:

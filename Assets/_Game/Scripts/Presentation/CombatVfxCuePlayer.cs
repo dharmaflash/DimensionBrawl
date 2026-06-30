@@ -86,11 +86,12 @@ namespace DimensionBrawl.Presentation
             float resolvedAudioScale = audioIntensity >= 0f ? Mathf.Max(0f, audioIntensity) : scale;
             instanceTransform.localScale = cue.LocalScale * Mathf.Max(0.001f, scale);
             instance.SetActive(true);
-            PlayEffects(instance, resolvedAudioScale);
+            float audioTailSeconds = PlayEffects(instance, resolvedAudioScale);
 
-            if (cue.LifetimeSeconds > 0f)
+            float releaseSeconds = Mathf.Max(cue.LifetimeSeconds, audioTailSeconds);
+            if (releaseSeconds > 0f)
             {
-                StartCoroutine(ReleaseAfterSeconds(instance, cue.LifetimeSeconds));
+                StartCoroutine(ReleaseAfterSeconds(instance, releaseSeconds));
             }
 
             return true;
@@ -204,8 +205,9 @@ namespace DimensionBrawl.Presentation
             GetPool(prefab).Enqueue(instance);
         }
 
-        private static void PlayEffects(GameObject instance, float audioScale)
+        private static float PlayEffects(GameObject instance, float audioScale)
         {
+            float audioTailSeconds = 0f;
             CombatVfxCueVisual[] cueVisuals = instance.GetComponentsInChildren<CombatVfxCueVisual>(includeInactive: true);
             for (int i = 0; i < cueVisuals.Length; i++)
             {
@@ -238,6 +240,7 @@ namespace DimensionBrawl.Presentation
 
                 randomizedSources ??= new HashSet<AudioSource>();
                 randomizedSources.Add(audioRandomizer.Source);
+                audioTailSeconds = Mathf.Max(audioTailSeconds, audioRandomizer.LastPlayedClipDurationSeconds);
             }
 
             AudioSource[] audioSources = instance.GetComponentsInChildren<AudioSource>(includeInactive: true);
@@ -256,7 +259,14 @@ namespace DimensionBrawl.Presentation
 
                 audioSource.Stop();
                 audioSource.Play();
+                if (audioSource.clip != null)
+                {
+                    float pitch = Mathf.Abs(audioSource.pitch) > 0.001f ? Mathf.Abs(audioSource.pitch) : 1f;
+                    audioTailSeconds = Mathf.Max(audioTailSeconds, audioSource.clip.length / pitch);
+                }
             }
+
+            return audioTailSeconds;
         }
 
         private static void StopEffects(GameObject instance)

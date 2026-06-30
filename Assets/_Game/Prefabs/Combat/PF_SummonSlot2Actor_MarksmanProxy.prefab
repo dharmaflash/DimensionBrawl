@@ -332,7 +332,7 @@ Animator:
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
-  m_WarningMessage: 
+  m_WarningMessage:
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -1111,7 +1111,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21bf0d309e067a49a6c5b0bbd7aac05, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.MovementFootstepAudioPresenter
   source: {fileID: 1090097219181209260}
   trackedTransform: {fileID: 7094919846060945429}
@@ -2455,7 +2455,7 @@ GameObject:
   - component: {fileID: 3865225494408010337}
   - component: {fileID: 5730452138290530981}
   - component: {fileID: 1204449651909265962}
-  - component: {fileID: 7906669296640848323}
+  - component: {fileID: 3344270660112524094}
   m_Layer: 0
   m_Name: PF_SummonSlot2Actor_MarksmanProxy
   m_TagString: Untagged
@@ -2550,7 +2550,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6aac67f59f569014494be0476679f301, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.SummonFrontlineProxy
   projectileOrigin: {fileID: 8401646742091694591}
   pressureScreen: {fileID: 0}
@@ -2570,7 +2570,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 293a97ae51b245cdb6a1cc62b37c45b0, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.SummonFrontlineProxyPresenter
   proxy: {fileID: 3019733875376920206}
   clash: {fileID: 5730452138290530981}
@@ -2579,7 +2579,7 @@ MonoBehaviour:
   moveSpeedParameter: MoveSpeed
   spawnTrigger: EliteSummonPackage
   attackTrigger: Attack
-  hitTrigger: Hit
+  hitTrigger:
   deathTrigger: Death
   animatorMoveSpeedScale: 1
   pulseRoot: {fileID: 1142136056642889932}
@@ -2600,6 +2600,8 @@ MonoBehaviour:
   pressureDamageCueScale: 0.64
   deathCueIntensity: 1.05
   tierCueIntensityStep: 0.1
+  playDamageVfx: 0
+  renderDamageFeedback: 0
   tierOneColor: {r: 0.74, g: 0.9, b: 1, a: 0.76}
   tierTwoColor: {r: 0.805, g: 0.92499995, b: 1, a: 0.82}
   tierThreeColor: {r: 0.857, g: 0.84599996, b: 0.649, a: 0.868}
@@ -2612,7 +2614,7 @@ MonoBehaviour:
   impactFlashSeconds: 0.18
   clashFlashSeconds: 0.14
   attackFlashSeconds: 0.12
-  damageFlashSeconds: 0.16
+  damageFlashSeconds: 0
   deathFlashSeconds: 0.22
   fullBodyHitReactionCooldownSeconds: 0.42
   heavyHitReactionBypassesCooldown: 1
@@ -2624,7 +2626,7 @@ MonoBehaviour:
   flashScale: 0.18
   clashFlashScale: 0.14
   attackFlashScale: 0.14
-  damageFlashScale: 0.18
+  damageFlashScale: 0
   deathFlashScale: 0.28
 --- !u!114 &4302775834767430666
 MonoBehaviour:
@@ -2636,7 +2638,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.CombatHealth
   team: 3
   maxHealth: 160
@@ -2684,7 +2686,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0f8e54a6c924c4a91a87f5df2698a67, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.SummonFrontlineClash
   proxy: {fileID: 3019733875376920206}
   health: {fileID: 4302775834767430666}
@@ -2713,7 +2715,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 957864eb97e83ad448073486f7d84e2f, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.SummonFrontlineHealthBarPresenter
   proxy: {fileID: 3019733875376920206}
   health: {fileID: 4302775834767430666}
@@ -2724,7 +2726,7 @@ MonoBehaviour:
   - {fileID: 1013559773981479449}
   fullFillLocalScale: {x: 0.66099995, y: 0.045, z: 0.04}
   fullFillLocalPosition: {x: 0, y: 0, z: -0.024}
---- !u!135 &7906669296640848323
+--- !u!135 &3344270660112524094
 SphereCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

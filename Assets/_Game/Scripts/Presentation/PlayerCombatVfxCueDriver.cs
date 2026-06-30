@@ -19,6 +19,8 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Range(0.1f, 1f)] private float pressureDamageCueScale = 0.62f;
         [SerializeField, Range(0.05f, 0.95f)] private float criticalHealthRatio = 0.35f;
         [SerializeField, Min(0f)] private float criticalCueIntensity = 1.18f;
+        [SerializeField] private bool playDamageVfx;
+        [SerializeField] private bool playCriticalVfx;
 
         private bool actionSubscribed;
         private bool healthSubscribed;
@@ -38,6 +40,8 @@ namespace DimensionBrawl.Presentation
         public int DamageVfxCueRequestCount => damageVfxCueRequestCount;
         public int CriticalVfxCueRequestCount => criticalVfxCueRequestCount;
         public float PressureDamageCueScale => pressureDamageCueScale;
+        public bool PlayDamageVfx => playDamageVfx;
+        public bool PlayCriticalVfx => playCriticalVfx;
         public float LastDamageCueIntensity => lastDamageCueIntensity;
         public float LastDamageCuePolicyScale => lastDamageCuePolicyScale;
         public DamageResponsePolicy LastDamageResponsePolicy => lastDamageResponsePolicy;
@@ -168,7 +172,7 @@ namespace DimensionBrawl.Presentation
             lastDamageControlLockPolicy = damageInfo.ControlLockPolicy;
             lastDamageCueInterruptedAction = interruptsAction;
 
-            if (Play(damagedCueId, DamageAnchor, damageInfo.Direction, intensity))
+            if (playDamageVfx && Play(damagedCueId, DamageAnchor, damageInfo.Direction, intensity))
             {
                 damageVfxCueRequestCount++;
             }
@@ -179,7 +183,7 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
-            if (criticalCuePlayed)
+            if (criticalCuePlayed || !playCriticalVfx)
             {
                 return;
             }
@@ -200,7 +204,7 @@ namespace DimensionBrawl.Presentation
 
         private void HandlePlayerDied()
         {
-            if (criticalCuePlayed)
+            if (criticalCuePlayed || !playCriticalVfx)
             {
                 return;
             }

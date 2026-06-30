@@ -80,8 +80,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private Key keyboardPeekRightKey = Key.E;
         [SerializeField] private bool keyboardPeekRequiresActiveAim = true;
         [SerializeField, Range(0f, 1f)] private float lookAimDragDeadZone = 0.08f;
-        [SerializeField, Min(8f)] private float lookAimDragRadius = 230f;
-        [SerializeField, Min(8f)] private float lookAimKnobSize = 30f;
+        [SerializeField, Min(0.0001f)] private float lookAimDragSensitivity = 0.00435f;
         [SerializeField, Range(0f, 1f)] private float lookAimScreenMinX;
 
         [Header("Review Reticle")]
@@ -126,8 +125,8 @@ namespace DimensionBrawl.UI
         private bool lookPointerUsesMouse;
         private bool lookPointerUsesRightMouse;
         private int lookPointerTouchId = -1;
-        private Vector2 lookPointerStartGuiPoint;
         private Vector2 lookPointerCurrentGuiPoint;
+        private Vector2 lookAimRawInput;
         private Vector2 lookAimInput;
         private bool hudLookAimActive;
 
@@ -360,7 +359,6 @@ namespace DimensionBrawl.UI
             EnsureStyles();
             DrawMoveJoystick();
             DrawButton(basicRect, combatModeController != null && combatModeController.IsMeleeMode ? "SLASH" : "FIRE", firePointerHeld);
-            DrawLookAimGuide();
             DrawFireAimReticle();
             DrawButton(dodgeRect, "DODGE", IsHeld(dodgeRect));
             DrawButton(swapRect, "SWAP", false);
@@ -823,14 +821,17 @@ namespace DimensionBrawl.UI
             lookPointerUsesMouse = usesMouse;
             lookPointerUsesRightMouse = usesRightMouse;
             lookPointerTouchId = touchId;
-            lookPointerStartGuiPoint = point;
+            lookPointerCurrentGuiPoint = point;
+            lookAimRawInput = Vector2.zero;
+            lookAimInput = Vector2.zero;
             UpdateLookPointer(point);
         }
 
         private void UpdateLookPointer(Vector2 point)
         {
+            Vector2 delta = point - lookPointerCurrentGuiPoint;
             lookPointerCurrentGuiPoint = point;
-            lookAimInput = ResolveDragAimInput(lookPointerStartGuiPoint, lookPointerCurrentGuiPoint);
+            lookAimInput = ResolveDragAimInput(delta);
         }
 
         private void ClearLookPointerState()
@@ -839,8 +840,8 @@ namespace DimensionBrawl.UI
             lookPointerUsesMouse = false;
             lookPointerUsesRightMouse = false;
             lookPointerTouchId = -1;
-            lookPointerStartGuiPoint = Vector2.zero;
             lookPointerCurrentGuiPoint = Vector2.zero;
+            lookAimRawInput = Vector2.zero;
             lookAimInput = Vector2.zero;
         }
 
@@ -888,12 +889,15 @@ namespace DimensionBrawl.UI
             hudLookAimActive = false;
         }
 
-        private Vector2 ResolveDragAimInput(Vector2 startGuiPoint, Vector2 currentGuiPoint)
+        private Vector2 ResolveDragAimInput(Vector2 guiDelta)
         {
-            float radius = Mathf.Max(1f, lookAimDragRadius * ResolveScale());
-            Vector2 delta = currentGuiPoint - startGuiPoint;
-            Vector2 input = Vector2.ClampMagnitude(new Vector2(delta.x, -delta.y) / radius, 1f);
-            return input.sqrMagnitude >= lookAimDragDeadZone * lookAimDragDeadZone ? input : Vector2.zero;
+            float sensitivity = Mathf.Max(0.0001f, lookAimDragSensitivity) / Mathf.Max(0.01f, ResolveScale());
+            lookAimRawInput = Vector2.ClampMagnitude(
+                lookAimRawInput + new Vector2(guiDelta.x, -guiDelta.y) * sensitivity,
+                1f);
+            return lookAimRawInput.sqrMagnitude >= lookAimDragDeadZone * lookAimDragDeadZone
+                ? lookAimRawInput
+                : Vector2.zero;
         }
 
         private Vector2 ResolveKeyboardPeekAimInput()
@@ -1067,34 +1071,6 @@ namespace DimensionBrawl.UI
                 summonSlot3AccentColor);
         }
 
-        private void DrawLookAimGuide()
-        {
-            if (!TryGetAimGuide(out Vector2 startGuiPoint, out Vector2 input))
-            {
-                return;
-            }
-
-            float resolvedScale = ResolveScale();
-            float radius = lookAimDragRadius * resolvedScale;
-            float knobSize = lookAimKnobSize * resolvedScale;
-            BossBarrageLaneReviewHudChrome.DrawAimGuide(startGuiPoint, input, radius, knobSize);
-        }
-
-        private bool TryGetAimGuide(out Vector2 startGuiPoint, out Vector2 input)
-        {
-            bool hasLookAim = lookPointerHeld && lookAimInput.sqrMagnitude > 0.0001f;
-            if (hasLookAim)
-            {
-                startGuiPoint = lookPointerStartGuiPoint;
-                input = lookAimInput;
-                return true;
-            }
-
-            startGuiPoint = Vector2.zero;
-            input = Vector2.zero;
-            return false;
-        }
-
         private void DrawFireAimReticle()
         {
             if (!showFireAimReticle || !IsRangedAimReticleVisible())
@@ -1114,18 +1090,36 @@ namespace DimensionBrawl.UI
             Vector2 assistCenter = rawCenter;
             bool hasAssistPoint = fireAimReticleFollowsAssist
                 && TryResolveFireAimAssistGuiPoint(rawCenter, resolvedScale, out assistCenter);
-            Vector2 center = hasAssistPoint ? assistCenter : rawCenter;
             float size = fireAimReticleSize * resolvedScale * (1f + fireAimAssistSizeBoost * assistStrength);
             float gap = fireAimReticleGap * resolvedScale * (1f - fireAimAssistGapTighten * assistStrength);
             float thickness = fireAimReticleThickness * resolvedScale * (1f + fireAimAssistThicknessBoost * assistStrength);
 
             Color previousColor = GUI.color;
-            GUI.color = WithHudOpacity(Color.Lerp(fireAimReticleColor, fireAimAssistReticleColor, assistStrength));
+            DrawFireAimReticleAt(
+                rawCenter,
+                fireAimReticleSize * resolvedScale,
+                fireAimReticleGap * resolvedScale,
+                fireAimReticleThickness * resolvedScale,
+                fireAimReticleColor);
+            if (hasAssistPoint)
+            {
+                DrawFireAimReticleAt(assistCenter, size, gap, thickness, fireAimAssistReticleColor);
+            }
+            else if (assistStrength > 0f)
+            {
+                DrawFireAimReticleAt(rawCenter, size, gap, thickness, Color.Lerp(fireAimReticleColor, fireAimAssistReticleColor, assistStrength));
+            }
+
+            GUI.color = previousColor;
+        }
+
+        private void DrawFireAimReticleAt(Vector2 center, float size, float gap, float thickness, Color color)
+        {
+            GUI.color = WithHudOpacity(color);
             DrawReticleSegment(new Rect(center.x - gap - size, center.y - thickness * 0.5f, size, thickness));
             DrawReticleSegment(new Rect(center.x + gap, center.y - thickness * 0.5f, size, thickness));
             DrawReticleSegment(new Rect(center.x - thickness * 0.5f, center.y - gap - size, thickness, size));
             DrawReticleSegment(new Rect(center.x - thickness * 0.5f, center.y + gap, thickness, size));
-            GUI.color = previousColor;
         }
 
         private Color WithHudOpacity(Color color)

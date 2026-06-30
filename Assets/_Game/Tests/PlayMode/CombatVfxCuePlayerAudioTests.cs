@@ -113,6 +113,59 @@ namespace DimensionBrawl.Tests
             }
         }
 
+        [UnityTest]
+        public IEnumerator CombatVfxCuePlayerKeepsRandomizedAudioTailAliveAfterVisualLifetime()
+        {
+            GameObject owner = new GameObject("CombatVfxCuePlayerAudioTailTestOwner");
+            GameObject prefab = new GameObject("CombatVfxCuePlayerAudioTailTestPrefab");
+            AudioClip clip = AudioClip.Create("CombatVfxCuePlayerAudioTailClip", 44100, 1, 44100, false);
+            try
+            {
+                owner.AddComponent<AudioListener>();
+                GameObject audioObject = new GameObject("RandomAudioCue");
+                audioObject.transform.SetParent(prefab.transform, worldPositionStays: false);
+                AudioSource source = audioObject.AddComponent<AudioSource>();
+                source.playOnAwake = false;
+                source.loop = false;
+                source.spatialBlend = 0f;
+                CombatVfxCueAudioRandomizer randomizer = audioObject.AddComponent<CombatVfxCueAudioRandomizer>();
+                randomizer.Configure(source, new[] { clip }, 0.68f, 1f, 1f, 1f, 1f);
+
+                CombatVfxCueProfile profile = CreateSingleCueProfile(
+                    prefab,
+                    lifetimeSeconds: 0.05f);
+                CombatVfxCuePlayer cuePlayer = owner.AddComponent<CombatVfxCuePlayer>();
+                SetObjectReference(cuePlayer, "profile", profile);
+
+                cuePlayer.PlayCue(CombatVfxCueId.PlayerRangedMuzzleFlash, owner.transform, Vector3.forward);
+                yield return null;
+
+                Transform instance = owner.transform.Find(prefab.name);
+                Assert.IsNotNull(instance, "Parented combat cue instance should be spawned under the anchor.");
+                AudioSource playedSource = instance.GetComponentInChildren<AudioSource>(true);
+                Assert.IsTrue(playedSource.isPlaying, "The randomized audio tail should start playing.");
+
+                yield return new WaitForSeconds(0.08f);
+
+                Assert.IsTrue(
+                    instance.gameObject.activeSelf,
+                    "Combat cue pooling should keep randomized audio tails alive instead of cutting them at the short visual lifetime.");
+                Assert.IsTrue(playedSource.isPlaying, "The reviewed SFX tail should not be abruptly stopped while still audible.");
+
+                yield return new WaitForSeconds(1.05f);
+
+                Assert.IsFalse(
+                    instance.gameObject.activeSelf,
+                    "The cue instance should return to the pool after the audio tail has had time to finish.");
+            }
+            finally
+            {
+                Object.Destroy(owner);
+                Object.Destroy(prefab);
+                Object.Destroy(clip);
+            }
+        }
+
         [Test]
         public void CombatVfxCuePlayerHandlesSuppressedAuthoredCueWithoutSpawningVisual()
         {
@@ -254,7 +307,8 @@ namespace DimensionBrawl.Tests
         private static CombatVfxCueProfile CreateSingleCueProfile(
             GameObject prefab,
             CombatVfxCueId cueId = CombatVfxCueId.PlayerRangedMuzzleFlash,
-            CombatVfxCuePlaybackMode playbackMode = CombatVfxCuePlaybackMode.AllAuthoredCues)
+            CombatVfxCuePlaybackMode playbackMode = CombatVfxCuePlaybackMode.AllAuthoredCues,
+            float lifetimeSeconds = 0.5f)
         {
             CombatVfxCueProfile profile = ScriptableObject.CreateInstance<CombatVfxCueProfile>();
             SerializedObject serializedObject = new SerializedObject(profile);
@@ -268,7 +322,7 @@ namespace DimensionBrawl.Tests
             cue.FindPropertyRelative("localPositionOffset").vector3Value = Vector3.zero;
             cue.FindPropertyRelative("localEulerOffset").vector3Value = Vector3.zero;
             cue.FindPropertyRelative("localScale").vector3Value = Vector3.one;
-            cue.FindPropertyRelative("lifetimeSeconds").floatValue = 0.5f;
+            cue.FindPropertyRelative("lifetimeSeconds").floatValue = lifetimeSeconds;
             cue.FindPropertyRelative("prewarmCount").intValue = 0;
             cue.FindPropertyRelative("parentToAnchor").boolValue = true;
             cue.FindPropertyRelative("alignForwardToDirection").boolValue = false;

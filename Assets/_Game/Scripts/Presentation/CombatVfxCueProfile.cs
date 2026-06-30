@@ -66,8 +66,7 @@ namespace DimensionBrawl.Presentation
             switch (playbackMode)
             {
                 case CombatVfxCuePlaybackMode.PlayerRangedOnly:
-                    return cueId == CombatVfxCueId.PlayerRangedMuzzleFlash
-                        || cueId == CombatVfxCueId.PlayerRangedProjectileImpact;
+                    return cueId == CombatVfxCueId.PlayerRangedMuzzleFlash;
                 default:
                     return true;
             }

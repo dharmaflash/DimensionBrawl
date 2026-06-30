@@ -326,7 +326,6 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
-            playerDamageCueRequestCount++;
             float healthScale = playerHealth != null && playerHealth.MaxHealth > 0f
                 ? Mathf.Clamp01(damageInfo.Amount / playerHealth.MaxHealth)
                 : 0f;
@@ -336,6 +335,12 @@ namespace DimensionBrawl.Presentation
             lastDamageControlLockPolicy = damageInfo.ControlLockPolicy;
             lastDamageFeedbackInterruptedAction = interruptsAction;
             lastDamageFeedbackPolicyScale = policyScale;
+            if (!useDamageScreenFeedback)
+            {
+                return;
+            }
+
+            playerDamageCueRequestCount++;
             RequestScreenCue(
                 "Player.Damaged",
                 damagedColor,

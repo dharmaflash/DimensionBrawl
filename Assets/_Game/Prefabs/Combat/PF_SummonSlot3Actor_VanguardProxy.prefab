@@ -816,7 +816,7 @@ GameObject:
   - component: {fileID: 5647496645834492196}
   - component: {fileID: 5877954264430729663}
   - component: {fileID: 7454227791480244498}
-  - component: {fileID: 7784757834127087787}
+  - component: {fileID: 6307165009573841479}
   m_Layer: 0
   m_Name: PF_SummonSlot3Actor_VanguardProxy
   m_TagString: Untagged
@@ -942,7 +942,7 @@ MonoBehaviour:
   moveSpeedParameter: MoveSpeed
   spawnTrigger: EliteSummonPackage
   attackTrigger: Attack
-  hitTrigger: Hit
+  hitTrigger:
   deathTrigger: Death
   animatorMoveSpeedScale: 1
   pulseRoot: {fileID: 6763829464389042324}
@@ -963,6 +963,8 @@ MonoBehaviour:
   pressureDamageCueScale: 0.64
   deathCueIntensity: 1.05
   tierCueIntensityStep: 0.1
+  playDamageVfx: 0
+  renderDamageFeedback: 0
   tierOneColor: {r: 1, g: 0.74, b: 0.32, a: 0.82}
   tierTwoColor: {r: 1, g: 0.805, b: 0.49, a: 0.865}
   tierThreeColor: {r: 1, g: 0.758, b: 0.275, a: 0.901}
@@ -975,7 +977,7 @@ MonoBehaviour:
   impactFlashSeconds: 0.18
   clashFlashSeconds: 0.14
   attackFlashSeconds: 0.12
-  damageFlashSeconds: 0.16
+  damageFlashSeconds: 0
   deathFlashSeconds: 0.22
   fullBodyHitReactionCooldownSeconds: 0.42
   heavyHitReactionBypassesCooldown: 1
@@ -987,7 +989,7 @@ MonoBehaviour:
   flashScale: 0.18
   clashFlashScale: 0.14
   attackFlashScale: 0.14
-  damageFlashScale: 0.18
+  damageFlashScale: 0
   deathFlashScale: 0.28
 --- !u!114 &2168765931106797276
 MonoBehaviour:
@@ -1125,7 +1127,7 @@ MonoBehaviour:
   - {fileID: 1632515791223808935}
   fullFillLocalScale: {x: 1.0409999, y: 0.045, z: 0.04}
   fullFillLocalPosition: {x: 0, y: 0, z: -0.024}
---- !u!135 &7784757834127087787
+--- !u!135 &6307165009573841479
 SphereCollider:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}

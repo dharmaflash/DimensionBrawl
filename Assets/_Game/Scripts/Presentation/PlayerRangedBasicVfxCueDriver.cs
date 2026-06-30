@@ -14,12 +14,15 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private CombatVfxCueId muzzleFlashCueId = CombatVfxCueId.PlayerRangedMuzzleFlash;
         [SerializeField, Min(0f)] private float muzzleFlashIntensity = 1f;
         [SerializeField, Min(0f)] private float muzzleFlashAudioIntensity = 1f;
+        [SerializeField] private bool playImpactVfx;
         [SerializeField] private CombatVfxCueId impactCueId = CombatVfxCueId.PlayerRangedProjectileImpact;
         [SerializeField, Min(0f)] private float impactIntensity = 1f;
         [SerializeField, Min(0f)] private float impactAudioIntensity = 0.56f;
 
         private readonly HashSet<LaneActionProjectile> watchedProjectiles = new HashSet<LaneActionProjectile>();
         private bool subscribed;
+
+        public bool PlayImpactVfx => playImpactVfx;
 
         private void Awake()
         {
@@ -124,7 +127,7 @@ namespace DimensionBrawl.Presentation
             Vector3 impactPoint,
             Vector3 impactDirection)
         {
-            if (cuePlayer == null || projectile == null)
+            if (cuePlayer == null || projectile == null || !playImpactVfx)
             {
                 return;
             }

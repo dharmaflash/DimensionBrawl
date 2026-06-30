@@ -191,17 +191,6 @@ namespace DimensionBrawl.UI
             GUI.Label(new Rect(rect.x + diskSize + 18f, rect.y + 8f, rect.width - diskSize - 24f, rect.height - 16f), label, leftLabelStyle);
         }
 
-        public static void DrawAimGuide(Vector2 startGuiPoint, Vector2 input, float radius, float knobSize)
-        {
-            Rect baseRect = RectFromCenter(startGuiPoint, radius * 0.52f);
-            DrawCircle(baseRect, new Color(0.46f, 0.9f, 1f, 0.08f), circleTexture);
-            DrawCircle(baseRect, new Color(0.46f, 0.9f, 1f, 0.28f), ringTexture);
-            Vector2 knobCenter = startGuiPoint + new Vector2(input.x, -input.y) * radius;
-            Rect knobRect = RectFromCenter(knobCenter, knobSize);
-            DrawCircle(Inflate(knobRect, 7f), new Color(0.46f, 0.9f, 1f, 0.22f), softCircleTexture);
-            DrawCircle(knobRect, new Color(0.46f, 0.9f, 1f, 0.72f), circleTexture);
-        }
-
         private static void DrawPanel(Rect rect, Color accent)
         {
             DrawSolid(rect, PanelBackColor);

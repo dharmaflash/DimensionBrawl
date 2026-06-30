@@ -331,8 +331,6 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageSummonRouteWisp.mat";
         private const string AmbientArenaStormClipPath =
             "Assets/_Game/Art/Audio/Ambience/DB_AMB_BossBarrage_ArenaStorm.mp3";
-        private const string AmbientLaneEnergyHumClipPath =
-            "Assets/_Game/Art/Audio/Ambience/DB_AMB_BossBarrage_LaneEnergyHum.wav";
         private const string AmbientRailDustFlowClipPath =
             "Assets/_Game/Art/Audio/Ambience/DB_AMB_BossBarrage_RailDustFlow.wav";
         private static readonly string[] PlayerFootstepClipPaths =
@@ -364,6 +362,8 @@ namespace DimensionBrawl.Editor
         private const float CameraAimFieldOfViewDelta = -5.5f;
         private const float CameraAimBlendInSpeed = 14f;
         private const float CameraAimBlendOutSpeed = 18f;
+        private const float CameraAimYawLimitDegrees = 45f;
+        private const float CameraAimPitchLimitDegrees = 16f;
         private static readonly string[] RequiredBossPatternCueIds =
         {
             "NeedleLock",
@@ -992,6 +992,7 @@ namespace DimensionBrawl.Editor
             ValidateBossProxyVisual(bossProxy);
             GameObject closeThreat = RequireRoot(scene, CloseThreatRootName);
             CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreat, "close threat health");
+            ValidateSuppressedCombatHitFeedback(scene);
             PlayerCombatModeController combatModeController =
                 RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
             PlayerRangedAimController rangedAimController =
@@ -1368,7 +1369,6 @@ namespace DimensionBrawl.Editor
             ValidateNoImportedAssetReference(BossPressureHorizonMaterialPath);
             ValidateNoImportedAssetReference(SummonRouteWispMaterialPath);
             ValidateNoImportedAssetReference(AmbientArenaStormClipPath);
-            ValidateNoImportedAssetReference(AmbientLaneEnergyHumClipPath);
             ValidateNoImportedAssetReference(AmbientRailDustFlowClipPath);
             ValidateNoImportedAssetReferences(PlayerFootstepClipPaths);
             ValidateNoImportedAssetReferences(ArmoredFootstepClipPaths);
@@ -3876,16 +3876,6 @@ namespace DimensionBrawl.Editor
                 0.98f);
             CreateAmbientAudioSource(
                 root.transform,
-                "AmbientAudio_LaneEnergyHum",
-                LoadAsset<AudioClip>(AmbientLaneEnergyHumClipPath),
-                laneSpace.GetLaneWorldPoint(0f, Mathf.Lerp(backZ, forwardZ, 0.76f), 0.45f),
-                0.075f,
-                0.38f,
-                6f,
-                48f,
-                1.02f);
-            CreateAmbientAudioSource(
-                root.transform,
                 "AmbientAudio_LeftRailDustFlow",
                 LoadAsset<AudioClip>(AmbientRailDustFlowClipPath),
                 laneSpace.GetLaneWorldPoint(-laneSpace.HalfWidth * 0.72f, Mathf.Lerp(backZ, forwardZ, 0.42f), 0.25f),
@@ -5066,6 +5056,7 @@ namespace DimensionBrawl.Editor
             SetEnum(driver, "muzzleFlashCueId", (int)CombatVfxCueId.PlayerRangedMuzzleFlash);
             SetFloat(driver, "muzzleFlashIntensity", 1f);
             SetFloat(driver, "muzzleFlashAudioIntensity", 1f);
+            SetBool(driver, "playImpactVfx", false);
             SetEnum(driver, "impactCueId", (int)CombatVfxCueId.PlayerRangedProjectileImpact);
             SetFloat(driver, "impactIntensity", 1f);
             SetFloat(driver, "impactAudioIntensity", 0.56f);
@@ -5093,6 +5084,8 @@ namespace DimensionBrawl.Editor
             SetEnum(driver, "damagedCueId", (int)CombatVfxCueId.PlayerDamaged);
             SetEnum(driver, "criticalCueId", (int)CombatVfxCueId.PlayerCritical);
             SetFloat(driver, "pressureDamageCueScale", 0.62f);
+            SetBool(driver, "playDamageVfx", false);
+            SetBool(driver, "playCriticalVfx", false);
             EditorUtility.SetDirty(player);
             EditorUtility.SetDirty(driver);
         }
@@ -5229,6 +5222,7 @@ namespace DimensionBrawl.Editor
             ValidateEnum(driver, "muzzleFlashCueId", (int)CombatVfxCueId.PlayerRangedMuzzleFlash);
             ValidateFloat(driver, "muzzleFlashIntensity", 1f);
             ValidateFloat(driver, "muzzleFlashAudioIntensity", 1f);
+            ValidateBool(driver, "playImpactVfx", false);
             ValidateEnum(driver, "impactCueId", (int)CombatVfxCueId.PlayerRangedProjectileImpact);
             ValidateFloat(driver, "impactIntensity", 1f);
             ValidateFloat(driver, "impactAudioIntensity", 0.56f);
@@ -5249,6 +5243,8 @@ namespace DimensionBrawl.Editor
             ValidateEnum(driver, "damagedCueId", (int)CombatVfxCueId.PlayerDamaged);
             ValidateEnum(driver, "criticalCueId", (int)CombatVfxCueId.PlayerCritical);
             ValidateFloat(driver, "pressureDamageCueScale", 0.62f);
+            ValidateBool(driver, "playDamageVfx", false);
+            ValidateBool(driver, "playCriticalVfx", false);
         }
 
         private static void ValidateSummonEnergyVfxCuePresenter(
@@ -5501,8 +5497,9 @@ namespace DimensionBrawl.Editor
             SetEnum(mobileHud, "keyboardPeekLeftKey", (int)Key.Q);
             SetEnum(mobileHud, "keyboardPeekRightKey", (int)Key.E);
             SetBool(mobileHud, "keyboardPeekRequiresActiveAim", true);
+            SetFloat(mobileHud, "lookAimDragSensitivity", 0.00435f);
             SetBool(mobileHud, "fireAimReticleUsesScreenCenter", true);
-            SetBool(mobileHud, "fireAimReticleFollowsAssist", false);
+            SetBool(mobileHud, "fireAimReticleFollowsAssist", true);
             SetFloat(mobileHud, "fireAimAssistReticleMaxOffset", 96f);
 
             ActionScreenCuePresenter screenCuePresenter = hudRoot.AddComponent<ActionScreenCuePresenter>();
@@ -5831,7 +5828,11 @@ namespace DimensionBrawl.Editor
             SetFloat(cameraController, "aimFieldOfViewDelta", CameraAimFieldOfViewDelta);
             SetFloat(cameraController, "aimBlendInSpeed", CameraAimBlendInSpeed);
             SetFloat(cameraController, "aimBlendOutSpeed", CameraAimBlendOutSpeed);
+            SetBool(cameraController, "aimOrbitUsesInput", true);
             SetBool(cameraController, "aimOrbitRotatesCameraPosition", true);
+            SetFloat(cameraController, "aimOrbitYawLimitDegrees", CameraAimYawLimitDegrees);
+            SetBool(cameraController, "aimOrbitUsesPitchInput", true);
+            SetFloat(cameraController, "aimOrbitPitchLimitDegrees", CameraAimPitchLimitDegrees);
             SetBool(cameraController, "aimAssistUsesYawTarget", false);
             SetFloat(cameraController, "aimAssistMaxYawBlend", 0.85f);
             SetFloat(cameraController, "aimAssistYawSpeedDegrees", 420f);
@@ -5905,7 +5906,9 @@ namespace DimensionBrawl.Editor
             SetFloat(rangedBasicAttackAction, "movingFacingSuppressSpeed", 0.08f);
             SetBool(rangedBasicAttackAction, "useFixedCenterAimViewport", true);
             SetBool(rangedBasicAttackAction, "useStableAimOrigin", true);
-            SetBool(rangedBasicAttackAction, "useAimAssist", false);
+            SetBool(rangedBasicAttackAction, "cameraAimIgnoresNonTargetHits", true);
+            SetBool(rangedBasicAttackAction, "stabilizeDirectTargetAimHeight", false);
+            SetBool(rangedBasicAttackAction, "useAimAssist", true);
             SetBool(rangedBasicAttackAction, "disableAimAssistWithManualInput", false);
             SetBool(rangedBasicAttackAction, "driveCameraAimAssist", false);
             SetFloat(rangedBasicAttackAction, "damage", PlayerRangedBasicDamage);
@@ -6010,7 +6013,7 @@ namespace DimensionBrawl.Editor
             SetBool(cueDirector, "allowCuePlayback", true);
             SetBool(cueDirector, "allowSequenceBridgePlayback", false);
             SetBool(cueDirector, "useUnscaledClock", true);
-            SetBool(cueDirector, "drawCinematicBars", true);
+            SetBool(cueDirector, "drawCinematicBars", false);
             SetFloat(cueDirector, "maxBarScreenRatio", 0.085f);
             SetFloat(cueDirector, "maxBarAlpha", 0.62f);
             EditorUtility.SetDirty(cueDirector);
@@ -6201,6 +6204,11 @@ namespace DimensionBrawl.Editor
             ValidateBool(cameraController, "useFixedRearYaw", true);
             ValidateObjectReference(cameraController, "fixedRearYawReference", rearYawReference);
             ValidateBool(cameraController, "useDeviceFallbackWhenActionMissing", false);
+            ValidateBool(cameraController, "aimOrbitUsesInput", true);
+            ValidateBool(cameraController, "aimOrbitRotatesCameraPosition", true);
+            ValidateFloat(cameraController, "aimOrbitYawLimitDegrees", CameraAimYawLimitDegrees);
+            ValidateBool(cameraController, "aimOrbitUsesPitchInput", true);
+            ValidateFloat(cameraController, "aimOrbitPitchLimitDegrees", CameraAimPitchLimitDegrees);
             ValidateBool(cameraController, "aimAssistUsesYawTarget", false);
             ValidateFloat(cameraController, "aimAssistMaxYawBlend", 0.85f);
             ValidateFloat(cameraController, "aimAssistYawSpeedDegrees", 420f);
@@ -6257,7 +6265,9 @@ namespace DimensionBrawl.Editor
             ValidateFloat(rangedBasicAttackAction, "movingFacingSuppressSpeed", 0.08f);
             ValidateBool(rangedBasicAttackAction, "useFixedCenterAimViewport", true);
             ValidateBool(rangedBasicAttackAction, "useStableAimOrigin", true);
-            ValidateBool(rangedBasicAttackAction, "useAimAssist", false);
+            ValidateBool(rangedBasicAttackAction, "cameraAimIgnoresNonTargetHits", true);
+            ValidateBool(rangedBasicAttackAction, "stabilizeDirectTargetAimHeight", false);
+            ValidateBool(rangedBasicAttackAction, "useAimAssist", true);
             ValidateBool(rangedBasicAttackAction, "disableAimAssistWithManualInput", false);
             ValidateBool(rangedBasicAttackAction, "driveCameraAimAssist", false);
             ValidateFloat(rangedBasicAttackAction, "damage", PlayerRangedBasicDamage);
@@ -6335,7 +6345,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(cueDirector, "sequenceBridge", sequenceBridge);
             ValidateBool(cueDirector, "allowCuePlayback", true);
             ValidateBool(cueDirector, "allowSequenceBridgePlayback", false);
-            ValidateBool(cueDirector, "drawCinematicBars", true);
+            ValidateBool(cueDirector, "drawCinematicBars", false);
             ValidateBehaviourEnabled(cinematicSequenceRunner, false);
             ValidateObjectReference(
                 cinematicSequenceRunner,
@@ -6423,7 +6433,7 @@ namespace DimensionBrawl.Editor
             }
 
             ValidateBool(cueDirector, "useUnscaledClock", true);
-            ValidateBool(cueDirector, "drawCinematicBars", true);
+            ValidateBool(cueDirector, "drawCinematicBars", false);
             ValidateFloat(cueDirector, "maxBarScreenRatio", 0.085f);
             ValidateFloat(cueDirector, "maxBarAlpha", 0.62f);
             ValidateCinematicCueContract(
@@ -6860,6 +6870,21 @@ namespace DimensionBrawl.Editor
         {
             CombatVfxCueProfile profile =
                 LoadAsset<CombatVfxCueProfile>(ActionFoundationCombatVfxSetup.CombatVfxCueProfilePath);
+            if (profile.PlaybackMode != CombatVfxCuePlaybackMode.PlayerRangedOnly)
+            {
+                throw new InvalidOperationException("Combat VFX cue profile should stay in cleanup playback mode.");
+            }
+
+            if (!profile.AllowsPlayback(CombatVfxCueId.PlayerRangedMuzzleFlash))
+            {
+                throw new InvalidOperationException("Player ranged muzzle flash should stay enabled as the only reviewed gun VFX cue.");
+            }
+
+            if (profile.AllowsPlayback(CombatVfxCueId.PlayerRangedProjectileImpact))
+            {
+                throw new InvalidOperationException("Player ranged projectile impact VFX should stay suppressed during the cleanup pass.");
+            }
+
             ValidateCombatCueAssetOverlay(
                 profile,
                 CombatVfxCueId.PlayerRangedProjectileImpact,
@@ -7047,13 +7072,30 @@ namespace DimensionBrawl.Editor
             }
         }
 
+        private static void ValidateSuppressedCombatHitFeedback(Scene scene)
+        {
+            GameObject[] rootObjects = scene.GetRootGameObjects();
+            for (int i = 0; i < rootObjects.Length; i++)
+            {
+                CombatHitFeedback[] hitFeedbacks =
+                    rootObjects[i].GetComponentsInChildren<CombatHitFeedback>(includeInactive: true);
+                for (int j = 0; j < hitFeedbacks.Length; j++)
+                {
+                    ValidateBool(hitFeedbacks[j], "renderHitFeedback", false);
+                }
+            }
+        }
+
         private static void ValidateLaneAmbientAudio(Scene scene)
         {
             Transform root = RequireRoot(scene, AmbientAudioRootName).transform;
             ValidateAmbientAudio(root, "AmbientAudio_ArenaStormBed", AmbientArenaStormClipPath, 0f, 0.05f, 0.07f);
-            ValidateAmbientAudio(root, "AmbientAudio_LaneEnergyHum", AmbientLaneEnergyHumClipPath, 0.25f, 0.06f, 0.09f);
             ValidateAmbientAudio(root, "AmbientAudio_LeftRailDustFlow", AmbientRailDustFlowClipPath, 0.45f, 0.03f, 0.055f);
             ValidateAmbientAudio(root, "AmbientAudio_RightRailDustFlow", AmbientRailDustFlowClipPath, 0.45f, 0.03f, 0.055f);
+            if (root.Find("AmbientAudio_LaneEnergyHum") != null)
+            {
+                throw new InvalidOperationException("AmbientAudio_LaneEnergyHum uses a clipped review hum and should not be present in the review loop bed.");
+            }
         }
 
         private static void ValidateAmbientAudio(
@@ -8640,9 +8682,13 @@ namespace DimensionBrawl.Editor
             SetString(actorPresenter, "moveSpeedParameter", SummonActorMoveSpeedParameter);
             SetString(actorPresenter, "spawnTrigger", SummonActorSpawnTrigger);
             SetString(actorPresenter, "attackTrigger", SummonActorAttackTrigger);
-            SetString(actorPresenter, "hitTrigger", SummonActorHitTrigger);
+            SetString(actorPresenter, "hitTrigger", string.Empty);
             SetString(actorPresenter, "deathTrigger", SummonActorDeathTrigger);
             SetFloat(actorPresenter, "animatorMoveSpeedScale", 1f);
+            SetBool(actorPresenter, "playDamageVfx", false);
+            SetBool(actorPresenter, "renderDamageFeedback", false);
+            SetFloat(actorPresenter, "damageFlashSeconds", 0f);
+            SetFloat(actorPresenter, "damageFlashScale", 0f);
         }
 
         private static void ValidatePulseOnlyActorRenderers(
@@ -8681,7 +8727,7 @@ namespace DimensionBrawl.Editor
             ValidateString(actorPresenter, "moveSpeedParameter", SummonActorMoveSpeedParameter);
             ValidateString(actorPresenter, "spawnTrigger", SummonActorSpawnTrigger);
             ValidateString(actorPresenter, "attackTrigger", SummonActorAttackTrigger);
-            ValidateString(actorPresenter, "hitTrigger", SummonActorHitTrigger);
+            ValidateString(actorPresenter, "hitTrigger", string.Empty);
             ValidateString(actorPresenter, "deathTrigger", SummonActorDeathTrigger);
             ValidateFloat(actorPresenter, "animatorMoveSpeedScale", 1f);
             ValidateEnum(actorPresenter, "entryCueId", (int)CombatVfxCueId.EliteSummonSignal);
@@ -8690,6 +8736,10 @@ namespace DimensionBrawl.Editor
             ValidateEnum(actorPresenter, "damageCueId", (int)CombatVfxCueId.EnemyHit);
             ValidateEnum(actorPresenter, "deathCueId", (int)CombatVfxCueId.EnemyDeath);
             ValidateFloat(actorPresenter, "pressureDamageCueScale", 0.64f);
+            ValidateBool(actorPresenter, "playDamageVfx", false);
+            ValidateBool(actorPresenter, "renderDamageFeedback", false);
+            ValidateFloat(actorPresenter, "damageFlashSeconds", 0f);
+            ValidateFloat(actorPresenter, "damageFlashScale", 0f);
             ValidateAnimatorParameter(
                 animator,
                 SummonActorMoveSpeedParameter,
@@ -8705,11 +8755,6 @@ namespace DimensionBrawl.Editor
                 SummonActorAttackTrigger,
                 AnimatorControllerParameterType.Trigger,
                 $"{label} attack read");
-            ValidateAnimatorParameter(
-                animator,
-                SummonActorHitTrigger,
-                AnimatorControllerParameterType.Trigger,
-                $"{label} hit read");
             ValidateAnimatorParameter(
                 animator,
                 SummonActorDeathTrigger,
@@ -9483,8 +9528,9 @@ namespace DimensionBrawl.Editor
             ValidateEnum(hud, "keyboardPeekLeftKey", (int)Key.Q);
             ValidateEnum(hud, "keyboardPeekRightKey", (int)Key.E);
             ValidateBool(hud, "keyboardPeekRequiresActiveAim", true);
+            ValidateFloat(hud, "lookAimDragSensitivity", 0.00435f);
             ValidateBool(hud, "fireAimReticleUsesScreenCenter", true);
-            ValidateBool(hud, "fireAimReticleFollowsAssist", false);
+            ValidateBool(hud, "fireAimReticleFollowsAssist", true);
             ValidateFloat(hud, "fireAimAssistReticleMaxOffset", 96f);
         }
 

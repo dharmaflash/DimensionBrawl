@@ -72,6 +72,8 @@ namespace DimensionBrawl.Presentation
         [Tooltip("Moves the shoulder camera position with aim peek so the player stays anchored like a linked TPS rig.")]
         [SerializeField] private bool aimOrbitRotatesCameraPosition;
         [SerializeField, Range(0f, 90f)] private float aimOrbitYawLimitDegrees = 45f;
+        [SerializeField] private bool aimOrbitUsesPitchInput = true;
+        [SerializeField, Range(0f, 45f)] private float aimOrbitPitchLimitDegrees = 16f;
         [SerializeField, Min(0f)] private float aimOrbitYawSpeedDegrees = 360f;
         [SerializeField, Min(0f)] private float aimOrbitReturnSpeedDegrees = 420f;
 
@@ -96,6 +98,7 @@ namespace DimensionBrawl.Presentation
         private float aimWeight;
         private Vector2 aimOrbitInput;
         private float aimYawOffsetDegrees;
+        private float aimPitchOffsetDegrees;
         private bool hasAimAssistYawTarget;
         private float requestedAimAssistYawTargetDegrees;
         private float requestedAimAssistStrength01;
@@ -107,8 +110,10 @@ namespace DimensionBrawl.Presentation
         public float AimWeight => aimWeight;
         public Vector2 AimOrbitInput => aimOrbitInput;
         public float AimYawOffsetDegrees => aimYawOffsetDegrees;
+        public float AimPitchOffsetDegrees => aimPitchOffsetDegrees;
         public float AimAssistYawOffsetDegrees => aimAssistYawOffsetDegrees;
         public float TotalAimYawOffsetDegrees => ResolveTotalAimYawOffset();
+        public float TotalAimPitchOffsetDegrees => ResolveTotalAimPitchOffset();
         public float OrbitYawDegrees => orbitYawDegrees;
         public Transform Target => target;
         public Transform Threat => threat;
@@ -236,6 +241,7 @@ namespace DimensionBrawl.Presentation
             aimWeight = 0f;
             aimOrbitInput = Vector2.zero;
             aimYawOffsetDegrees = 0f;
+            aimPitchOffsetDegrees = 0f;
             hasAimAssistYawTarget = false;
             requestedAimAssistYawTargetDegrees = 0f;
             requestedAimAssistStrength01 = 0f;
@@ -293,9 +299,10 @@ namespace DimensionBrawl.Presentation
 
             float cueWeight = UpdateCueWeight(deltaTime);
             UpdateAimWeight(deltaTime);
-            UpdateAimYawOffset(deltaTime);
+            UpdateAimOrbitOffsets(deltaTime);
             UpdateAimAssistYawOffset(deltaTime);
             float totalAimYawOffsetDegrees = ResolveTotalAimYawOffset();
+            float totalAimPitchOffsetDegrees = ResolveTotalAimPitchOffset();
             Quaternion baseRotation = Quaternion.Euler(
                 0f,
                 NormalizeYaw(orbitYawDegrees),
@@ -333,6 +340,8 @@ namespace DimensionBrawl.Presentation
                     + cueOffset * cueWeight;
                 focus = RotateFocusAroundAnchor(desiredPosition, aimFocus, totalAimYawOffsetDegrees * aimWeight);
             }
+
+            focus = RotateFocusPitchAroundAnchor(desiredPosition, focus, totalAimPitchOffsetDegrees * aimWeight);
             UpdateFieldOfView(deltaTime, cueWeight);
 
             bool aimFollowActive = aimWeight > 0.5f;
@@ -394,6 +403,7 @@ namespace DimensionBrawl.Presentation
             DisableActionIfOwned(orbitAction, enabledOrbitAction);
             aimOrbitInput = Vector2.zero;
             aimYawOffsetDegrees = 0f;
+            aimPitchOffsetDegrees = 0f;
             hasAimAssistYawTarget = false;
             requestedAimAssistYawTargetDegrees = 0f;
             requestedAimAssistStrength01 = 0f;
@@ -585,6 +595,30 @@ namespace DimensionBrawl.Presentation
             return anchor + rotatedPlanarFocus + verticalFocus;
         }
 
+        private static Vector3 RotateFocusPitchAroundAnchor(Vector3 anchor, Vector3 focus, float pitchDegrees)
+        {
+            if (Mathf.Approximately(pitchDegrees, 0f))
+            {
+                return focus;
+            }
+
+            Vector3 localFocus = focus - anchor;
+            Vector3 planarFocus = Vector3.ProjectOnPlane(localFocus, Vector3.up);
+            if (planarFocus.sqrMagnitude <= 0.0001f)
+            {
+                return focus;
+            }
+
+            Vector3 rightAxis = Vector3.Cross(Vector3.up, planarFocus.normalized);
+            if (rightAxis.sqrMagnitude <= 0.0001f)
+            {
+                return focus;
+            }
+
+            Vector3 pitchedFocus = Quaternion.AngleAxis(-pitchDegrees, rightAxis.normalized) * localFocus;
+            return anchor + pitchedFocus;
+        }
+
         private float UpdateCueWeight(float deltaTime)
         {
             if (cueTimer <= 0f)
@@ -610,29 +644,42 @@ namespace DimensionBrawl.Presentation
             aimWeight = Mathf.Lerp(aimWeight, aimTargetWeight, step);
         }
 
-        private void UpdateAimYawOffset(float deltaTime)
+        private void UpdateAimOrbitOffsets(float deltaTime)
         {
-            float targetOffset = 0f;
+            float targetYawOffset = 0f;
+            float targetPitchOffset = 0f;
             Vector2 aimInput = ApplyDeadZone(aimOrbitInput);
-            bool holdsCurrentYaw = false;
+            bool holdsCurrentOffset = false;
             if (aimOrbitUsesInput && aimTargetWeight > 0f && aimOrbitYawLimitDegrees > 0f)
             {
-                holdsCurrentYaw = aimOrbitHoldsYawUntilAimEnds && aimInput.sqrMagnitude <= 0f;
-                targetOffset = holdsCurrentYaw ? aimYawOffsetDegrees : aimInput.x * aimOrbitYawLimitDegrees;
+                holdsCurrentOffset = aimOrbitHoldsYawUntilAimEnds && aimInput.sqrMagnitude <= 0f;
+                targetYawOffset = holdsCurrentOffset ? aimYawOffsetDegrees : aimInput.x * aimOrbitYawLimitDegrees;
             }
 
-            float speed = Mathf.Approximately(targetOffset, 0f) && !holdsCurrentYaw
-                ? aimOrbitReturnSpeedDegrees
-                : aimOrbitYawSpeedDegrees;
+            if (aimOrbitUsesInput && aimOrbitUsesPitchInput && aimTargetWeight > 0f && aimOrbitPitchLimitDegrees > 0f)
+            {
+                targetPitchOffset = holdsCurrentOffset ? aimPitchOffsetDegrees : aimInput.y * aimOrbitPitchLimitDegrees;
+            }
+
+            bool shouldReturnToCenter =
+                Mathf.Approximately(targetYawOffset, 0f)
+                && Mathf.Approximately(targetPitchOffset, 0f)
+                && !holdsCurrentOffset;
+            float speed = shouldReturnToCenter ? aimOrbitReturnSpeedDegrees : aimOrbitYawSpeedDegrees;
             if (speed <= 0f)
             {
-                aimYawOffsetDegrees = targetOffset;
+                aimYawOffsetDegrees = targetYawOffset;
+                aimPitchOffsetDegrees = targetPitchOffset;
                 return;
             }
 
             aimYawOffsetDegrees = Mathf.MoveTowards(
                 aimYawOffsetDegrees,
-                targetOffset,
+                targetYawOffset,
+                speed * deltaTime);
+            aimPitchOffsetDegrees = Mathf.MoveTowards(
+                aimPitchOffsetDegrees,
+                targetPitchOffset,
                 speed * deltaTime);
         }
 
@@ -678,6 +725,14 @@ namespace DimensionBrawl.Presentation
                 aimYawOffsetDegrees + aimAssistYawOffsetDegrees,
                 -aimOrbitYawLimitDegrees,
                 aimOrbitYawLimitDegrees);
+        }
+
+        private float ResolveTotalAimPitchOffset()
+        {
+            return Mathf.Clamp(
+                aimPitchOffsetDegrees,
+                -aimOrbitPitchLimitDegrees,
+                aimOrbitPitchLimitDegrees);
         }
 
         private void UpdateFieldOfView(float deltaTime, float cueWeight)

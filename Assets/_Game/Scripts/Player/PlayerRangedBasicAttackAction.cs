@@ -62,6 +62,7 @@ namespace DimensionBrawl.Player
         [SerializeField] private bool preserveVerticalAim = true;
         [SerializeField, Min(1f)] private float cameraAimFallbackDistance = 32f;
         [SerializeField, Min(1f)] private float cameraAimRaycastDistance = 96f;
+        [SerializeField] private bool cameraAimIgnoresNonTargetHits;
         [SerializeField, Range(0f, 0.49f)] private float aimInputViewportOffsetX = 0.39f;
         [SerializeField, Range(0f, 0.49f)] private float aimInputViewportOffsetY = 0.20f;
         [SerializeField] private bool useStableAimOrigin = true;
@@ -189,6 +190,7 @@ namespace DimensionBrawl.Player
                 return false;
             }
 
+            InvalidateFirePreviewCache();
             ResolveFirePreview(out Vector3 direction, out Vector3 spawnPosition, out _);
             LastResolvedFireDirection = direction;
             projectile.transform.SetParent(projectileRoot, worldPositionStays: true);
@@ -706,8 +708,16 @@ namespace DimensionBrawl.Player
             directTargetHealth = null;
             if (TryResolveCameraAimHit(ray, out Vector3 hitPoint, out CombatHealth hitTargetHealth))
             {
-                directTargetHealth = hitTargetHealth;
-                return ResolveDirectTargetAimPoint(hitTargetHealth, hitPoint);
+                if (hitTargetHealth != null)
+                {
+                    directTargetHealth = hitTargetHealth;
+                    return ResolveDirectTargetAimPoint(hitTargetHealth, hitPoint);
+                }
+
+                if (!cameraAimIgnoresNonTargetHits)
+                {
+                    return hitPoint;
+                }
             }
 
             float fallbackDistance = Mathf.Max(cameraAimFallbackDistance, cameraAimRaycastDistance);
@@ -1043,14 +1053,19 @@ namespace DimensionBrawl.Player
                 return pressed;
             }
 
-            return !suppressDeviceFallbackThisFrame
-                && (IsKeyboardPressed()
+            bool keyboardPressed = IsKeyboardPressed();
+            if (suppressDeviceFallbackThisFrame)
+            {
+                return keyboardPressed;
+            }
+
+            return keyboardPressed
                 || (allowMouseFireFallback
-                    && Mouse.current != null
-                    && Mouse.current.leftButton.wasPressedThisFrame)
+                && Mouse.current != null
+                && Mouse.current.leftButton.wasPressedThisFrame)
                 || (Gamepad.current != null
-                    && (Gamepad.current.rightTrigger.wasPressedThisFrame
-                        || Gamepad.current.buttonWest.wasPressedThisFrame)));
+                && (Gamepad.current.rightTrigger.wasPressedThisFrame
+                    || Gamepad.current.buttonWest.wasPressedThisFrame));
         }
 
         private bool ReadFireHeld()
@@ -1066,12 +1081,17 @@ namespace DimensionBrawl.Player
                 return held;
             }
 
-            return !suppressDeviceFallbackThisFrame
-                && (IsKeyboardHeld()
+            bool keyboardHeld = IsKeyboardHeld();
+            if (suppressDeviceFallbackThisFrame)
+            {
+                return keyboardHeld;
+            }
+
+            return keyboardHeld
                 || (allowMouseFireFallback
-                    && Mouse.current != null
-                    && Mouse.current.leftButton.isPressed)
-                || (Gamepad.current != null && Gamepad.current.rightTrigger.ReadValue() > 0.5f));
+                && Mouse.current != null
+                && Mouse.current.leftButton.isPressed)
+                || (Gamepad.current != null && Gamepad.current.rightTrigger.ReadValue() > 0.5f);
         }
 
         private bool IsKeyboardHeld()
