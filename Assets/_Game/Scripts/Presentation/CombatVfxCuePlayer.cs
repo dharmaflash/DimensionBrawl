@@ -52,6 +52,11 @@ namespace DimensionBrawl.Presentation
                 return false;
             }
 
+            if (!profile.AllowsPlayback(cueId))
+            {
+                return true;
+            }
+
             GameObject instance = GetInstance(cue.Prefab);
             Transform instanceTransform = instance.transform;
             Transform parent = cue.ParentToAnchor ? anchor : null;
@@ -131,7 +136,7 @@ namespace DimensionBrawl.Presentation
             for (int i = 0; i < System.Enum.GetValues(typeof(CombatVfxCueId)).Length; i++)
             {
                 CombatVfxCueId cueId = (CombatVfxCueId)i;
-                if (!profile.TryGetCue(cueId, out CombatVfxCue cue) || cue.PrewarmCount <= 0)
+                if (!profile.AllowsPlayback(cueId) || !profile.TryGetCue(cueId, out CombatVfxCue cue) || cue.PrewarmCount <= 0)
                 {
                     continue;
                 }

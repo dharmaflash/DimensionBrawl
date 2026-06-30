@@ -164429,11 +164429,11 @@ MonoBehaviour:
   bossPressureActionDirector: {fileID: 1426401973}
   pocketReviewOwner: {fileID: 132563471}
   duelReviewOwner: {fileID: 0}
-  showScreenCues: 1
+  showScreenCues: 0
   maxFullScreenAlpha: 0.1
   maxEdgeAlpha: 0.26
   edgeThickness: 104
-  useDamageScreenFeedback: 1
+  useDamageScreenFeedback: 0
   maxDamageVignetteAlpha: 0.42
   maxDamageFlashAlpha: 0.11
   damageVignetteSeconds: 0.34

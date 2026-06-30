@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e16c578e3a084ac39af43ca38d06cb1f, type: 3}
   m_Name: DB_CombatVfxCues_ActionFoundation
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CombatVfxCueProfile
+  playbackMode: 1
   cues:
   - cueId: 0
     prefab: {fileID: 4276843767647921526, guid: 26495e0c94f51a843ba6ecb00d7f789e, type: 3}

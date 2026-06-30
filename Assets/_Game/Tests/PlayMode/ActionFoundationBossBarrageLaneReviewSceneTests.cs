@@ -1213,11 +1213,11 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(screenCuePresenter, "bossBarrageEmitter"));
             Assert.AreSame(bossPressureActionDirector, GetObjectReference<BossPressureActionDirector>(screenCuePresenter, "bossPressureActionDirector"));
             Assert.AreSame(pocketOwner, GetObjectReference<BossBarragePocketReviewOwner>(screenCuePresenter, "pocketReviewOwner"));
-            Assert.IsTrue(screenCuePresenter.ShowScreenCues);
+            Assert.IsFalse(screenCuePresenter.ShowScreenCues);
             Assert.AreEqual(0.10f, screenCuePresenter.MaxFullScreenAlpha, 0.001f);
             Assert.AreEqual(0.26f, screenCuePresenter.MaxEdgeAlpha, 0.001f);
             Assert.AreEqual(104f, screenCuePresenter.EdgeThickness, 0.001f);
-            Assert.IsTrue(screenCuePresenter.UseDamageScreenFeedback);
+            Assert.IsFalse(screenCuePresenter.UseDamageScreenFeedback);
             Assert.AreEqual(0.42f, screenCuePresenter.MaxDamageVignetteAlpha, 0.001f);
             Assert.AreEqual(0.11f, screenCuePresenter.MaxDamageFlashAlpha, 0.001f);
             Assert.AreEqual(0.34f, screenCuePresenter.DamageVignetteSeconds, 0.001f);

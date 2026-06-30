@@ -114,6 +114,33 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void CombatVfxCuePlayerHandlesSuppressedAuthoredCueWithoutSpawningVisual()
+        {
+            GameObject owner = new GameObject("CombatVfxCuePlayerSuppressedCueTestOwner");
+            GameObject prefab = new GameObject("CombatVfxCuePlayerSuppressedCueTestPrefab");
+            CombatVfxCueProfile profile = CreateSingleCueProfile(
+                prefab,
+                CombatVfxCueId.EnemyHit,
+                CombatVfxCuePlaybackMode.PlayerRangedOnly);
+            try
+            {
+                CombatVfxCuePlayer cuePlayer = owner.AddComponent<CombatVfxCuePlayer>();
+                SetObjectReference(cuePlayer, "profile", profile);
+
+                bool handled = cuePlayer.PlayCue(CombatVfxCueId.EnemyHit, owner.transform, Vector3.forward);
+
+                Assert.IsTrue(handled, "Suppressed authored cues should still be treated as handled so presentation request counters remain stable.");
+                Assert.IsNull(owner.transform.Find(prefab.name), "Suppressed cues should not instantiate a visual object.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(owner);
+                Object.DestroyImmediate(prefab);
+                Object.DestroyImmediate(profile);
+            }
+        }
+
+        [Test]
         public void PlayerRangedMuzzleCueUsesReviewedGunshotSfxBank()
         {
             CombatVfxCueProfile profile = AssetDatabase.LoadAssetAtPath<CombatVfxCueProfile>(CombatVfxCueProfilePath);
@@ -224,15 +251,19 @@ namespace DimensionBrawl.Tests
             AssertProjectilePrefabHasNoAuthoredAudio(SummonSlot3ProjectilePrefabPath);
         }
 
-        private static CombatVfxCueProfile CreateSingleCueProfile(GameObject prefab)
+        private static CombatVfxCueProfile CreateSingleCueProfile(
+            GameObject prefab,
+            CombatVfxCueId cueId = CombatVfxCueId.PlayerRangedMuzzleFlash,
+            CombatVfxCuePlaybackMode playbackMode = CombatVfxCuePlaybackMode.AllAuthoredCues)
         {
             CombatVfxCueProfile profile = ScriptableObject.CreateInstance<CombatVfxCueProfile>();
             SerializedObject serializedObject = new SerializedObject(profile);
+            serializedObject.FindProperty("playbackMode").enumValueIndex = (int)playbackMode;
             SerializedProperty cues = serializedObject.FindProperty("cues");
             cues.arraySize = 1;
 
             SerializedProperty cue = cues.GetArrayElementAtIndex(0);
-            cue.FindPropertyRelative("cueId").enumValueIndex = (int)CombatVfxCueId.PlayerRangedMuzzleFlash;
+            cue.FindPropertyRelative("cueId").enumValueIndex = (int)cueId;
             cue.FindPropertyRelative("prefab").objectReferenceValue = prefab;
             cue.FindPropertyRelative("localPositionOffset").vector3Value = Vector3.zero;
             cue.FindPropertyRelative("localEulerOffset").vector3Value = Vector3.zero;

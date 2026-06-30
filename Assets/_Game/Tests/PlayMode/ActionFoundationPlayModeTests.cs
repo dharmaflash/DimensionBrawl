@@ -1434,6 +1434,24 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void CombatVfxCueProfileOnlyPlaysPlayerRangedCuesDuringCleanupPass()
+        {
+            CombatVfxCueProfile profile = LoadCombatVfxCueProfile();
+
+            Assert.AreEqual(
+                CombatVfxCuePlaybackMode.PlayerRangedOnly,
+                profile.PlaybackMode,
+                "The shared ActionFoundation combat VFX profile should keep authored cue data but only play reviewed player ranged VFX in the cleanup pass.");
+
+            foreach (CombatVfxCueId cueId in System.Enum.GetValues(typeof(CombatVfxCueId)))
+            {
+                bool shouldPlay = cueId == CombatVfxCueId.PlayerRangedMuzzleFlash
+                    || cueId == CombatVfxCueId.PlayerRangedProjectileImpact;
+                Assert.AreEqual(shouldPlay, profile.AllowsPlayback(cueId), $"{cueId} playback policy should stay explicit.");
+            }
+        }
+
+        [Test]
         public void RangedSoldierProjectileCuesUseVisualTravelOnly()
         {
             CombatVfxCueProfile profile = LoadCombatVfxCueProfile();

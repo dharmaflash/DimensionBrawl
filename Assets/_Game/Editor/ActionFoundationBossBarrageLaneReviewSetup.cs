@@ -5515,11 +5515,11 @@ namespace DimensionBrawl.Editor
                 bossPressureActionDirector,
                 pocketOwner);
             SetObjectReference(screenCuePresenter, "duelReviewOwner", null);
-            SetBool(screenCuePresenter, "showScreenCues", true);
+            SetBool(screenCuePresenter, "showScreenCues", false);
             SetFloat(screenCuePresenter, "maxFullScreenAlpha", 0.10f);
             SetFloat(screenCuePresenter, "maxEdgeAlpha", 0.26f);
             SetFloat(screenCuePresenter, "edgeThickness", 104f);
-            SetBool(screenCuePresenter, "useDamageScreenFeedback", true);
+            SetBool(screenCuePresenter, "useDamageScreenFeedback", false);
             SetFloat(screenCuePresenter, "maxDamageVignetteAlpha", 0.42f);
             SetFloat(screenCuePresenter, "maxDamageFlashAlpha", 0.11f);
             SetFloat(screenCuePresenter, "damageVignetteSeconds", 0.34f);
@@ -9463,11 +9463,11 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(presenter, "bossPressureActionDirector", bossPressureActionDirector);
             ValidateObjectReference(presenter, "pocketReviewOwner", pocketOwner);
             ValidateObjectReference(presenter, "duelReviewOwner", null);
-            ValidateBool(presenter, "showScreenCues", true);
+            ValidateBool(presenter, "showScreenCues", false);
             ValidateFloat(presenter, "maxFullScreenAlpha", 0.10f);
             ValidateFloat(presenter, "maxEdgeAlpha", 0.26f);
             ValidateFloat(presenter, "edgeThickness", 104f);
-            ValidateBool(presenter, "useDamageScreenFeedback", true);
+            ValidateBool(presenter, "useDamageScreenFeedback", false);
             ValidateFloat(presenter, "maxDamageVignetteAlpha", 0.42f);
             ValidateFloat(presenter, "maxDamageFlashAlpha", 0.11f);
             ValidateFloat(presenter, "damageVignetteSeconds", 0.34f);
