@@ -16,7 +16,8 @@ namespace DimensionBrawl.LevelDesign
             WaitingForIntroHandoff,
             IntroSwordGate,
             WaitingForStairEntry,
-            CorridorCombat
+            CorridorCombat,
+            StageCleared
         }
 
         [Header("Intro Handoff")]
@@ -51,6 +52,7 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField] private GameObject[] corridorCombatRoots = System.Array.Empty<GameObject>();
         [SerializeField] private GameObject[] corridorBoundsRoots = System.Array.Empty<GameObject>();
         [SerializeField] private CombatHealth[] corridorTargets = System.Array.Empty<CombatHealth>();
+        [SerializeField] private CombatHealth[] corridorClearTargets = System.Array.Empty<CombatHealth>();
 
         [Header("Player")]
         [SerializeField] private PlayerMovementController player;
@@ -69,7 +71,9 @@ namespace DimensionBrawl.LevelDesign
         private bool observedIntroDirectorPlayback;
 
         public bool IntroGateCleared => CountAlive(introSwordEnemies) == 0;
+        public bool CorridorCleared => HasAny(corridorClearTargets) && CountAlive(corridorClearTargets) == 0;
         public bool CorridorCombatStarted => phase == FlowPhase.CorridorCombat;
+        public bool StageCleared => phase == FlowPhase.StageCleared;
 
         public void Configure(
             PlayableDirector newIntroDirector,
@@ -91,6 +95,7 @@ namespace DimensionBrawl.LevelDesign
             GameObject[] newCorridorCombatRoots,
             GameObject[] newCorridorBoundsRoots,
             CombatHealth[] newCorridorTargets,
+            CombatHealth[] newCorridorClearTargets,
             PlayerMovementController newPlayer,
             PlayerCombatModeController newCombatModeController,
             PlayerCombatTargetSelector newTargetSelector,
@@ -104,6 +109,8 @@ namespace DimensionBrawl.LevelDesign
             float newHudRevealDurationSeconds)
         {
             UnregisterIntroDirectorStoppedHandler();
+            UnregisterIntroSwordEnemyHandlers();
+            UnregisterCorridorClearTargetHandlers();
             introDirector = newIntroDirector;
             if (Application.isPlaying && isActiveAndEnabled)
             {
@@ -131,6 +138,7 @@ namespace DimensionBrawl.LevelDesign
             corridorCombatRoots = newCorridorCombatRoots ?? System.Array.Empty<GameObject>();
             corridorBoundsRoots = newCorridorBoundsRoots ?? System.Array.Empty<GameObject>();
             corridorTargets = newCorridorTargets ?? System.Array.Empty<CombatHealth>();
+            corridorClearTargets = newCorridorClearTargets ?? System.Array.Empty<CombatHealth>();
             player = newPlayer;
             combatModeController = newCombatModeController;
             targetSelector = newTargetSelector;
@@ -168,6 +176,8 @@ namespace DimensionBrawl.LevelDesign
         private void OnDisable()
         {
             UnregisterIntroDirectorStoppedHandler();
+            UnregisterIntroSwordEnemyHandlers();
+            UnregisterCorridorClearTargetHandlers();
         }
 
         private void Update()
@@ -195,12 +205,22 @@ namespace DimensionBrawl.LevelDesign
                     }
                     break;
                 case FlowPhase.WaitingForStairEntry:
+                    ReleasePlayerMovementLocksForGameplay();
+                    SetPlayerLaneConstraintEnabled(false);
                     if (IsPlayerInsideStairTrigger())
                     {
                         BeginCorridorCombat();
                     }
                     break;
                 case FlowPhase.CorridorCombat:
+                    if (CorridorCleared)
+                    {
+                        BeginStageCleared();
+                    }
+                    break;
+                case FlowPhase.StageCleared:
+                    ReleasePlayerMovementLocksForGameplay();
+                    SetPlayerLaneConstraintEnabled(false);
                     break;
             }
         }
@@ -222,6 +242,7 @@ namespace DimensionBrawl.LevelDesign
             SetObjectsActive(corridorCombatRoots, false);
             SetObjectsActive(corridorBoundsRoots, false);
             SetCollidersEnabled(stairBlockers, true);
+            SetPlayerLaneConstraintEnabled(true);
         }
 
         private bool IsIntroHandoffReady()
@@ -254,16 +275,21 @@ namespace DimensionBrawl.LevelDesign
             SetHudOpacity(0f);
             hudRevealTimer = -hudRevealDelaySeconds;
             SetObjectsActive(handoffRoots, true);
+            SetObjectActive(introSwordGateRoot, true);
             SetObjectActive(player != null ? player.gameObject : null, true);
+            ReleasePlayerMovementLocksForGameplay();
+            SetPlayerLaneConstraintEnabled(true);
             SetSwordGateMode(true);
             SnapPlayerToHandoffGround();
-            SetObjectActive(introSwordGateRoot, true);
             SetCombatHealthRootsActive(introSwordEnemies, true);
+            SetCombatHealthRootCollidersEnabled(introSwordEnemies, true);
             SetBehavioursEnabled(introSwordEnemyGameplayBehaviours, true);
+            RegisterIntroSwordEnemyHandlers();
             SetObjectsActive(corridorCombatRoots, false);
             SetObjectsActive(corridorBoundsRoots, false);
             SetCollidersEnabled(stairBlockers, true);
             ConfigureTargetCandidates(introSwordEnemies);
+            TryAdvanceFromIntroSwordGate();
         }
 
         private void StopIntroDirectorForHandoff()
@@ -324,6 +350,8 @@ namespace DimensionBrawl.LevelDesign
             SetObjectActive(player != null ? player.gameObject : null, true);
             SetObjectActive(introSwordGateRoot, true);
             SetCombatHealthRootsActive(introSwordEnemies, true);
+            SetCombatHealthRootCollidersEnabled(introSwordEnemies, true);
+            TryAdvanceFromIntroSwordGate();
         }
 
         private void UpdateIntroDirectorPlaybackObservation()
@@ -356,20 +384,143 @@ namespace DimensionBrawl.LevelDesign
         private void BeginWaitingForStairEntry()
         {
             phase = FlowPhase.WaitingForStairEntry;
+            UnregisterIntroSwordEnemyHandlers();
             SetBehavioursEnabled(introSwordEnemyGameplayBehaviours, false);
+            SetCombatHealthRootCollidersEnabled(introSwordEnemies, false);
             SetCollidersEnabled(stairBlockers, false);
+            ReleasePlayerMovementLocksForGameplay();
+            SetPlayerLaneConstraintEnabled(false);
             ConfigureTargetCandidates(System.Array.Empty<CombatHealth>());
         }
 
         private void BeginCorridorCombat()
         {
             phase = FlowPhase.CorridorCombat;
+            UnregisterIntroSwordEnemyHandlers();
+            SetCombatHealthRootCollidersEnabled(introSwordEnemies, false);
             SetObjectsActive(alwaysDisabledRoots, false);
             SetObjectsActive(corridorCombatRoots, true);
             SetObjectsActive(corridorBoundsRoots, true);
             SetCollidersEnabled(stairBlockers, false);
+            ReleasePlayerMovementLocksForGameplay();
+            SetPlayerLaneConstraintEnabled(false);
             SetSwordGateMode(false);
             ConfigureTargetCandidates(corridorTargets);
+            RegisterCorridorClearTargetHandlers();
+            TryAdvanceFromCorridorCombat();
+        }
+
+        private void BeginStageCleared()
+        {
+            phase = FlowPhase.StageCleared;
+            UnregisterCorridorClearTargetHandlers();
+            SetObjectsActive(corridorBoundsRoots, false);
+            SetCollidersEnabled(stairBlockers, false);
+            ReleasePlayerMovementLocksForGameplay();
+            SetPlayerLaneConstraintEnabled(false);
+            SetCombatHealthRootCollidersEnabled(corridorTargets, false);
+            SetCombatHealthRootCollidersEnabled(corridorClearTargets, false);
+            ConfigureTargetCandidates(System.Array.Empty<CombatHealth>());
+        }
+
+        private void RegisterIntroSwordEnemyHandlers()
+        {
+            if (introSwordEnemies == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < introSwordEnemies.Length; i++)
+            {
+                CombatHealth health = introSwordEnemies[i];
+                if (health == null)
+                {
+                    continue;
+                }
+
+                health.Died -= HandleIntroSwordEnemyDied;
+                health.Died += HandleIntroSwordEnemyDied;
+            }
+        }
+
+        private void UnregisterIntroSwordEnemyHandlers()
+        {
+            if (introSwordEnemies == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < introSwordEnemies.Length; i++)
+            {
+                CombatHealth health = introSwordEnemies[i];
+                if (health != null)
+                {
+                    health.Died -= HandleIntroSwordEnemyDied;
+                }
+            }
+        }
+
+        private void HandleIntroSwordEnemyDied()
+        {
+            TryAdvanceFromIntroSwordGate();
+        }
+
+        private void RegisterCorridorClearTargetHandlers()
+        {
+            if (corridorClearTargets == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < corridorClearTargets.Length; i++)
+            {
+                CombatHealth health = corridorClearTargets[i];
+                if (health == null)
+                {
+                    continue;
+                }
+
+                health.Died -= HandleCorridorClearTargetDied;
+                health.Died += HandleCorridorClearTargetDied;
+            }
+        }
+
+        private void UnregisterCorridorClearTargetHandlers()
+        {
+            if (corridorClearTargets == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < corridorClearTargets.Length; i++)
+            {
+                CombatHealth health = corridorClearTargets[i];
+                if (health != null)
+                {
+                    health.Died -= HandleCorridorClearTargetDied;
+                }
+            }
+        }
+
+        private void HandleCorridorClearTargetDied()
+        {
+            TryAdvanceFromCorridorCombat();
+        }
+
+        private void TryAdvanceFromIntroSwordGate()
+        {
+            if (phase == FlowPhase.IntroSwordGate && IntroGateCleared)
+            {
+                BeginWaitingForStairEntry();
+            }
+        }
+
+        private void TryAdvanceFromCorridorCombat()
+        {
+            if (phase == FlowPhase.CorridorCombat && CorridorCleared)
+            {
+                BeginStageCleared();
+            }
         }
 
         private void ConfigureTargetCandidates(CombatHealth[] candidates)
@@ -378,6 +529,34 @@ namespace DimensionBrawl.LevelDesign
             {
                 targetSelector.ConfigureTargetCandidates(candidates);
             }
+        }
+
+        private void SetPlayerLaneConstraintEnabled(bool enabled)
+        {
+            if (player != null)
+            {
+                player.SetLaneConstraintEnabled(enabled);
+            }
+        }
+
+        private void ReleasePlayerMovementLocksForGameplay()
+        {
+            if (player == null)
+            {
+                return;
+            }
+
+            player.enabled = true;
+            CharacterController characterController = player.GetComponent<CharacterController>();
+            if (characterController != null)
+            {
+                characterController.enabled = true;
+            }
+
+            player.ClearCinematicMoveInputSpeedScale();
+            player.ClearActionMoveInputSpeedScale();
+            player.SetMoveInput(Vector2.zero);
+            player.SetLookInput(Vector2.zero);
         }
 
         private void UpdateHudReveal()
@@ -654,13 +833,33 @@ namespace DimensionBrawl.LevelDesign
             int count = 0;
             for (int i = 0; i < healths.Length; i++)
             {
-                if (healths[i] != null && healths[i].IsAlive)
+                if (healths[i] != null
+                    && healths[i].gameObject.activeInHierarchy
+                    && healths[i].IsAlive)
                 {
                     count++;
                 }
             }
 
             return count;
+        }
+
+        private static bool HasAny(CombatHealth[] healths)
+        {
+            if (healths == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < healths.Length; i++)
+            {
+                if (healths[i] != null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void SetObjectsActive(GameObject[] objects, bool active)
@@ -744,6 +943,32 @@ namespace DimensionBrawl.LevelDesign
                 if (healths[i] != null)
                 {
                     SetObjectActive(healths[i].gameObject, active);
+                }
+            }
+        }
+
+        private static void SetCombatHealthRootCollidersEnabled(CombatHealth[] healths, bool enabled)
+        {
+            if (healths == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < healths.Length; i++)
+            {
+                CombatHealth health = healths[i];
+                if (health == null)
+                {
+                    continue;
+                }
+
+                Collider[] colliders = health.GetComponentsInChildren<Collider>(includeInactive: true);
+                for (int colliderIndex = 0; colliderIndex < colliders.Length; colliderIndex++)
+                {
+                    if (colliders[colliderIndex] != null)
+                    {
+                        colliders[colliderIndex].enabled = enabled;
+                    }
                 }
             }
         }
