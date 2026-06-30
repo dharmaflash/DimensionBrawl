@@ -42,12 +42,13 @@ namespace DimensionBrawl.UI
                 return;
             }
 
-            if (sendHoldState)
+            if (!sendHoldState)
             {
-                pointerHeld = true;
-                inputBridge?.SetActionHeld(actionId, true);
+                return;
             }
 
+            pointerHeld = true;
+            inputBridge?.SetActionHeld(actionId, true);
             inputBridge?.RequestAction(actionId);
         }
 

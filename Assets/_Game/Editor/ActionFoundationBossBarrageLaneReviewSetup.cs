@@ -5453,7 +5453,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(hud, "duelReviewOwner", null);
             SetObjectReference(hud, "stageProfile", stageProfile);
             hud.AssignStageProfileForReview(stageProfile);
-            SetBool(hud, "showCenterReticle", false);
+            SetBool(hud, "showCenterReticle", true);
             SetBool(hud, "showResultBanner", true);
             SetString(hud, "stageEpisodeLabel", stageProfile.StageEpisodeLabel);
             SetString(hud, "objectiveBadgeLabel", stageProfile.ObjectiveBadgeLabel);
@@ -9479,7 +9479,7 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"{hud.name}.StageProfileForReview is not bound to {stageProfile.name}.");
             }
 
-            ValidateBool(hud, "showCenterReticle", false);
+            ValidateBool(hud, "showCenterReticle", true);
             ValidateBool(hud, "showResultBanner", true);
             ValidateString(hud, "stageEpisodeLabel", stageProfile.StageEpisodeLabel);
             ValidateString(hud, "objectiveBadgeLabel", stageProfile.ObjectiveBadgeLabel);

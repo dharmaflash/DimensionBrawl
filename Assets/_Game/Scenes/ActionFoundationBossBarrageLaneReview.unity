@@ -11771,7 +11771,7 @@ MonoBehaviour:
   width: 390
   height: 230
   margin: 18
-  showCenterReticle: 0
+  showCenterReticle: 1
   usePremiumCompactHud: 1
   stageEpisodeLabel: EP 03 Survival Pressure
   objectiveBadgeLabel: HP

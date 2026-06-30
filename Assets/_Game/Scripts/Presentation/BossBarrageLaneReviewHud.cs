@@ -185,8 +185,14 @@ namespace DimensionBrawl.Presentation
 
         private void OnGUI()
         {
-            if (!showHud || hudOpacity <= 0.001f)
+            if (hudOpacity <= 0.001f)
             {
+                return;
+            }
+
+            if (!showHud)
+            {
+                DrawReticleIfNeeded();
                 return;
             }
 

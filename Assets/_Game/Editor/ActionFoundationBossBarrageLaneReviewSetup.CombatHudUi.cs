@@ -85,6 +85,7 @@ namespace DimensionBrawl.Editor
             if (reviewHud != null)
             {
                 SetBool(reviewHud, "showHud", false);
+                SetBool(reviewHud, "showCenterReticle", true);
             }
 
             BossBarrageLaneReviewMobileHud mobileHud = hudRoot.GetComponent<BossBarrageLaneReviewMobileHud>();
