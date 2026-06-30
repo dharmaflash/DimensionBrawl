@@ -1123,12 +1123,6 @@ namespace DimensionBrawl.Editor
                 0.1f,
                 0.78f,
                 2);
-            ValidateSupportSummonPresentationCueDriver(
-                RequireComponent<SupportSummonPresentationCueDriver>(
-                    player.gameObject,
-                    "support summon presentation cue driver"),
-                summonSlot2Action,
-                playerCuePlayer);
             ValidateSupportSummonSlotAction(
                 summonSlot3Action,
                 "SummonSlot3",
@@ -2407,51 +2401,6 @@ namespace DimensionBrawl.Editor
                 Vector3.zero,
                 Vector3.one * 0.78f,
                 loopParticles: true);
-            EnsureCombatCueAssetOverlay(
-                profile,
-                CombatVfxCueId.SummonSlot2BeamLock,
-                "CueAssetVfx_MagicMissilesArcaneBeamLock",
-                ImportedMagicMissilesArcaneCirclePrefabPath,
-                new Vector3(0f, 0.08f, 0.02f),
-                Vector3.zero,
-                Vector3.one * 0.58f,
-                loopParticles: true);
-            EnsureCombatCueAssetOverlay(
-                profile,
-                CombatVfxCueId.SummonSlot2BeamFire,
-                "CueAssetVfx_MagicMissilesArcaneBeamCharge",
-                ImportedMagicMissilesArcaneImpactPrefabPath,
-                new Vector3(0f, 0f, 0.2f),
-                Vector3.zero,
-                Vector3.one * 0.34f,
-                loopParticles: false);
-            EnsureCombatCueAssetOverlay(
-                profile,
-                CombatVfxCueId.SummonSlot2BeamHit,
-                "CueAssetVfx_MagicMissilesArcaneBeamHit",
-                ImportedMagicMissilesArcaneImpactPrefabPath,
-                new Vector3(0f, 0.08f, 0f),
-                Vector3.zero,
-                Vector3.one * 0.42f,
-                loopParticles: false);
-            EnsureCombatCueAssetOverlay(
-                profile,
-                CombatVfxCueId.SummonSlot3ShieldRaise,
-                "CueAssetVfx_MagicMissilesHolyShieldRaise",
-                ImportedMagicMissilesShieldCirclePrefabPath,
-                new Vector3(0f, 0.06f, 0f),
-                Vector3.zero,
-                Vector3.one * 0.62f,
-                loopParticles: true);
-            EnsureCombatCueAssetOverlay(
-                profile,
-                CombatVfxCueId.SummonSlot3ShieldHit,
-                "CueAssetVfx_MagicMissilesHolyShieldHit",
-                ImportedMagicMissilesHolyImpactPrefabPath,
-                new Vector3(0f, 0.08f, 0f),
-                Vector3.zero,
-                Vector3.one * 0.48f,
-                loopParticles: false);
             EnsureCombatCueAssetOverlay(
                 profile,
                 CombatVfxCueId.SummonFollowupWindow,
@@ -5281,27 +5230,6 @@ namespace DimensionBrawl.Editor
             ValidateFloat(driver, "impactAudioIntensity", 0.56f);
         }
 
-        private static void ValidateSupportSummonPresentationCueDriver(
-            SupportSummonPresentationCueDriver driver,
-            PlayerSupportSummonSlotAction summonSlot2Action,
-            CombatVfxCuePlayer cuePlayer)
-        {
-            ValidateObjectReference(driver, "summonAction", summonSlot2Action);
-            ValidateObjectReference(driver, "cuePlayer", cuePlayer);
-            RequireReferencedObject<Transform>(driver, "fallbackAnchor");
-            ValidateString(driver, "requiredSlotActionName", "SummonSlot2");
-            ValidateString(driver, "requiredActorRoleId", "BacklineMarksman");
-            ValidateEnum(driver, "summonUseCueId", (int)CombatVfxCueId.SummonSlot2BeamLock);
-            ValidateEnum(driver, "volleyCueId", (int)CombatVfxCueId.SummonSlot2BeamFire);
-            ValidateEnum(driver, "impactCueId", (int)CombatVfxCueId.SummonSlot2BeamHit);
-            ValidateFloat(driver, "summonUseCueIntensity", 0.88f);
-            ValidateFloat(driver, "summonUseCueAudioIntensity", 0.52f);
-            ValidateFloat(driver, "volleyCueIntensity", 0.96f);
-            ValidateFloat(driver, "volleyCueAudioIntensity", 0.68f);
-            ValidateFloat(driver, "impactCueIntensity", 1.02f);
-            ValidateFloat(driver, "impactCueAudioIntensity", 0.58f);
-        }
-
         private static void ValidatePlayerCombatVfxCueDriver(
             PlayerCombatVfxCueDriver driver,
             PlayerActionController actionController,
@@ -5728,30 +5656,6 @@ namespace DimensionBrawl.Editor
             summonSlot2Action.ConfigureSummonActionProfile(
                 LoadAsset<SummonSlotActionProfile>(SummonSlot2ActionProfilePath));
             EditorUtility.SetDirty(summonSlot2Action);
-
-            Transform supportVfxFallbackAnchor =
-                EnsureChild(playerRoot.transform, "SupportSummon_CombatVfx_FallbackAnchor");
-            supportVfxFallbackAnchor.localPosition = new Vector3(0f, 1.05f, 0.72f);
-            supportVfxFallbackAnchor.localRotation = Quaternion.identity;
-            supportVfxFallbackAnchor.localScale = Vector3.one;
-            SupportSummonPresentationCueDriver supportSummonCueDriver =
-                EnsureComponent<SupportSummonPresentationCueDriver>(playerRoot);
-            SetObjectReference(supportSummonCueDriver, "summonAction", summonSlot2Action);
-            SetObjectReference(supportSummonCueDriver, "cuePlayer", playerCuePlayer);
-            SetObjectReference(supportSummonCueDriver, "fallbackAnchor", supportVfxFallbackAnchor);
-            SetString(supportSummonCueDriver, "requiredSlotActionName", "SummonSlot2");
-            SetString(supportSummonCueDriver, "requiredActorRoleId", "BacklineMarksman");
-            SetEnum(supportSummonCueDriver, "summonUseCueId", (int)CombatVfxCueId.SummonSlot2BeamLock);
-            SetEnum(supportSummonCueDriver, "volleyCueId", (int)CombatVfxCueId.SummonSlot2BeamFire);
-            SetEnum(supportSummonCueDriver, "impactCueId", (int)CombatVfxCueId.SummonSlot2BeamHit);
-            SetFloat(supportSummonCueDriver, "summonUseCueIntensity", 0.88f);
-            SetFloat(supportSummonCueDriver, "summonUseCueAudioIntensity", 0.52f);
-            SetFloat(supportSummonCueDriver, "volleyCueIntensity", 0.96f);
-            SetFloat(supportSummonCueDriver, "volleyCueAudioIntensity", 0.68f);
-            SetFloat(supportSummonCueDriver, "impactCueIntensity", 1.02f);
-            SetFloat(supportSummonCueDriver, "impactCueAudioIntensity", 0.58f);
-            EditorUtility.SetDirty(supportVfxFallbackAnchor);
-            EditorUtility.SetDirty(supportSummonCueDriver);
 
             PlayerSupportSummonSlotAction summonSlot3Action = EnsureSupportSummonSlotAction(playerRoot, "SummonSlot3");
             summonSlot3Action.ConfigureSlot("SummonSlot3", Key.Digit3, new Vector2(1.55f, 0.55f));
@@ -6975,31 +6879,6 @@ namespace DimensionBrawl.Editor
                 "summon block opportunity MagicMissiles pressure storm overlay");
             ValidateCombatCueAssetOverlay(
                 profile,
-                CombatVfxCueId.SummonSlot2BeamLock,
-                "CueAssetVfx_MagicMissilesArcaneBeamLock",
-                "summon slot2 beam lock MagicMissiles arcane circle overlay");
-            ValidateCombatCueAssetOverlay(
-                profile,
-                CombatVfxCueId.SummonSlot2BeamFire,
-                "CueAssetVfx_MagicMissilesArcaneBeamCharge",
-                "summon slot2 beam fire MagicMissiles arcane charge overlay");
-            ValidateCombatCueAssetOverlay(
-                profile,
-                CombatVfxCueId.SummonSlot2BeamHit,
-                "CueAssetVfx_MagicMissilesArcaneBeamHit",
-                "summon slot2 beam hit MagicMissiles arcane impact overlay");
-            ValidateCombatCueAssetOverlay(
-                profile,
-                CombatVfxCueId.SummonSlot3ShieldRaise,
-                "CueAssetVfx_MagicMissilesHolyShieldRaise",
-                "summon slot3 shield raise MagicMissiles holy circle overlay");
-            ValidateCombatCueAssetOverlay(
-                profile,
-                CombatVfxCueId.SummonSlot3ShieldHit,
-                "CueAssetVfx_MagicMissilesHolyShieldHit",
-                "summon slot3 shield hit MagicMissiles holy impact overlay");
-            ValidateCombatCueAssetOverlay(
-                profile,
                 CombatVfxCueId.SummonFollowupWindow,
                 "CueAssetVfx_MagicMissilesFollowupCircle",
                 "summon follow-up window MagicMissiles circle overlay");
@@ -7423,7 +7302,7 @@ namespace DimensionBrawl.Editor
                 expectedActorMaxHealth: 230f,
                 expectedActorMoveSpeed: 1.45f,
                 expectedActorEngageRadius: 0.95f,
-                expectedActorAttackDamagePerSecond: 24f,
+                expectedActorAttackDamagePerSecond: 22f,
                 expectedActorAttackIntervalSeconds: 0.35f,
                 expectedActorLifetimeSeconds: 4.4f,
                 expectedActorAdvanceDistance: 2.2f,
@@ -7436,7 +7315,7 @@ namespace DimensionBrawl.Editor
                 expectedActorMaxHealth: 300f,
                 expectedActorMoveSpeed: 1.6f,
                 expectedActorEngageRadius: 1.05f,
-                expectedActorAttackDamagePerSecond: 32f,
+                expectedActorAttackDamagePerSecond: 28f,
                 expectedActorAttackIntervalSeconds: 0.35f,
                 expectedActorLifetimeSeconds: 5.2f,
                 expectedActorAdvanceDistance: 3.0f,
@@ -7449,7 +7328,7 @@ namespace DimensionBrawl.Editor
                 expectedActorMaxHealth: 380f,
                 expectedActorMoveSpeed: 1.7f,
                 expectedActorEngageRadius: 1.15f,
-                expectedActorAttackDamagePerSecond: 42f,
+                expectedActorAttackDamagePerSecond: 38f,
                 expectedActorAttackIntervalSeconds: 0.35f,
                 expectedActorLifetimeSeconds: 6.2f,
                 expectedActorAdvanceDistance: 4.0f,
@@ -7669,9 +7548,9 @@ namespace DimensionBrawl.Editor
                     profile,
                     1,
                     "LV1 Cover Shot",
-                    "Quick ranged support that adds a clean beam-marked pair without blocking boss pressure.",
+                    "Quick ranged support that adds two clean bolts without blocking boss pressure.",
                     "Spend when the boss is open but the shield slot is not needed yet.",
-                    "BacklineShooter enters left of the player lane, advances toward the boss lane, and fires a narrow beam cover pair.");
+                    "BacklineShooter enters left of the player lane, advances toward the boss lane, and fires a narrow cover pair.");
                 ValidateSummonSlotTier(
                     profile,
                     1,
@@ -7689,9 +7568,9 @@ namespace DimensionBrawl.Editor
                     profile,
                     2,
                     "LV2 Focus Volley",
-                    "Mid-tier support that pressures the boss lane with a wider beam-focused answer.",
+                    "Mid-tier support that pressures the boss lane with a wider three-shot answer.",
                     "Hold EN when you can stay forward long enough for a stronger punish.",
-                    "BacklineShooter keeps a side-lane advance toward the boss and fires a three-lane focus beam volley.");
+                    "BacklineShooter keeps a side-lane advance toward the boss and fires a three-bolt focused volley.");
                 ValidateSummonSlotTier(
                     profile,
                     2,
@@ -7711,7 +7590,7 @@ namespace DimensionBrawl.Editor
                     "LV3 Marksman Burst",
                     "High-tier ranged support for a clear boss punish window after surviving pressure.",
                     "Use when the next exchange should convert defense into visible boss damage.",
-                    "BacklineShooter stays alive long enough to send repeated four-line beam bursts across the contested lane.");
+                    "BacklineShooter stays alive long enough to send repeated four-bolt volleys across the contested lane.");
                 ValidateSummonSlotTier(
                     profile,
                     3,
@@ -7736,7 +7615,7 @@ namespace DimensionBrawl.Editor
                     "LV1 Body Block",
                     "Short vanguard entry that brings an actual guard screen before answering once.",
                     "Spend if the player is cornered near the backline and needs breathing room.",
-                    "FinalStandCommander enters right of the lane and pushes toward the frontline with a body-and-shield-hit block.");
+                    "FinalStandCommander enters right of the lane and pushes toward the frontline with a body-and-screen block.");
                 ValidateSummonSlotTier(
                     profile,
                     1,
@@ -7756,7 +7635,7 @@ namespace DimensionBrawl.Editor
                     "LV2 Hold Line",
                     "Tankier frontline actor that can absorb a small boss curtain before counterfire.",
                     "Hold EN when the next boss pressure wave is readable but dense.",
-                    "FinalStandCommander advances until contested, flashes a four-hit shield screen, then fires two heavy counters.");
+                    "FinalStandCommander advances until contested, holds a four-hit screen, then fires two heavy bolts.");
                 ValidateSummonSlotTier(
                     profile,
                     2,
@@ -7776,7 +7655,7 @@ namespace DimensionBrawl.Editor
                     "LV3 Break Wall",
                     "High-cost vanguard actor and screen for stabilizing a bad exchange and forcing a counter window.",
                     "Save for the committed boss pattern that would otherwise push the player back.",
-                    "FinalStandCommander drives into the frontline with a seven-hit shield wall and heavy three-shot response.");
+                    "FinalStandCommander drives into the frontline with a seven-hit screen and heavy three-shot response.");
                 ValidateSummonSlotTier(
                     profile,
                     3,
@@ -7854,10 +7733,6 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(screenPresenter, "pressureScreen", pressureScreen);
             ValidateObjectReference(screenPresenter, "visualRoot", pressureScreenVisual);
             ValidateArrayReference(screenPresenter, "screenRenderers", 0, pressureScreenRenderer);
-            ValidateEnum(screenPresenter, "activationCueId", (int)CombatVfxCueId.SummonSlot3ShieldRaise);
-            ValidateEnum(screenPresenter, "interceptCueId", (int)CombatVfxCueId.SummonSlot3ShieldHit);
-            ValidateFloat(screenPresenter, "activationCueIntensity", 0.66f);
-            ValidateFloat(screenPresenter, "interceptCueIntensity", 0.74f);
         }
 
         private static void ValidateBossPressureLoop(

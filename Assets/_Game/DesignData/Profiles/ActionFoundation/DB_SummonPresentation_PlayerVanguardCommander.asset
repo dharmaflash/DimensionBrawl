@@ -23,8 +23,8 @@ MonoBehaviour:
   vfxCueProfile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
   animationRead: Promoted FinalStandCommanderElite role Animator stands in for the
     third ally summon vanguard read.
-  vfxRead: Magic-circle entry, heavier proxy scale, short advance, shield-hit cue,
-    and high-impact line hold distinguish it from S1/S2.
+  vfxRead: Magic-circle entry, heavier proxy scale, short advance, and high-impact
+    volley distinguish it from S1/S2.
   replacementPlan: Replace the actor prefab or promoted visual source after a dedicated
     tank/vanguard ally summon model is reviewed.
   ownershipNotes: Presentation candidate only; runtime cost, tier, projectile, and

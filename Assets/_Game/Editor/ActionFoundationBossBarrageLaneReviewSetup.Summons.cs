@@ -65,7 +65,7 @@ namespace DimensionBrawl.Editor
                 SummonSlot2ActorVisualRoleId,
                 vfxCueProfile,
                 "Promoted BacklineShooter role Animator stands in for the second ally summon ranged-support read.",
-                "Magic-circle entry, marksman proxy, narrow assist volleys, beam-fire cue, beam-hit cue, and light pulse distinguish it from the shield slot.",
+                "Magic-circle entry, marksman proxy, narrow assist volleys, and light pulse distinguish it from the shield slot.",
                 "Replace the actor prefab or promoted visual source after a dedicated ranged ally summon model is reviewed.");
 
             ConfigureSummonPresentationCandidateProfile(
@@ -79,7 +79,7 @@ namespace DimensionBrawl.Editor
                 SummonSlot3ActorVisualRoleId,
                 vfxCueProfile,
                 "Promoted FinalStandCommanderElite role Animator stands in for the third ally summon vanguard read.",
-                "Magic-circle entry, heavier proxy scale, short advance, shield-hit cue, and high-impact line hold distinguish it from S1/S2.",
+                "Magic-circle entry, heavier proxy scale, short advance, and high-impact volley distinguish it from S1/S2.",
                 "Replace the actor prefab or promoted visual source after a dedicated tank/vanguard ally summon model is reviewed.");
 
             ConfigureSummonPresentationCandidateProfile(
@@ -730,10 +730,7 @@ namespace DimensionBrawl.Editor
             SetColor(screenPresenter, "interceptColor", new Color(1f, 0.96f, 0.78f, 0.16f));
             SetFloat(screenPresenter, "visualRadiusScale", 0.18f);
             SetFloat(screenPresenter, "activationCueIntensity", 0.48f);
-            SetEnum(screenPresenter, "activationCueId", (int)CombatVfxCueId.SummonSlot3ShieldRaise);
-            SetEnum(screenPresenter, "interceptCueId", (int)CombatVfxCueId.SummonSlot3ShieldHit);
-            SetFloat(screenPresenter, "activationCueIntensity", 0.66f);
-            SetFloat(screenPresenter, "interceptCueIntensity", 0.74f);
+            SetFloat(screenPresenter, "interceptCueIntensity", 0.58f);
             SetFloat(screenPresenter, "tierCueIntensityStep", 0.08f);
             SetFloat(screenPresenter, "activationFlashSeconds", 0.08f);
             SetFloat(screenPresenter, "interceptFlashSeconds", 0.12f);
@@ -1233,19 +1230,19 @@ namespace DimensionBrawl.Editor
                 {
                     CreateSummonReadout(
                         "LV1 Cover Shot",
-                        "Quick ranged support that adds a clean beam-marked pair without blocking boss pressure.",
+                        "Quick ranged support that adds two clean bolts without blocking boss pressure.",
                         "Spend when the boss is open but the shield slot is not needed yet.",
-                        "BacklineShooter enters left of the player lane, advances toward the boss lane, and fires a narrow beam cover pair."),
+                        "BacklineShooter enters left of the player lane, advances toward the boss lane, and fires a narrow cover pair."),
                     CreateSummonReadout(
                         "LV2 Focus Volley",
-                        "Mid-tier support that pressures the boss lane with a wider beam-focused answer.",
+                        "Mid-tier support that pressures the boss lane with a wider three-shot answer.",
                         "Hold EN when you can stay forward long enough for a stronger punish.",
-                        "BacklineShooter keeps a side-lane advance toward the boss and fires a three-lane focus beam volley."),
+                        "BacklineShooter keeps a side-lane advance toward the boss and fires a three-bolt focused volley."),
                     CreateSummonReadout(
                         "LV3 Marksman Burst",
                         "High-tier ranged support for a clear boss punish window after surviving pressure.",
                         "Use when the next exchange should convert defense into visible boss damage.",
-                        "BacklineShooter stays alive long enough to send repeated four-line beam bursts across the contested lane.")
+                        "BacklineShooter stays alive long enough to send repeated four-bolt volleys across the contested lane.")
                 });
 
             ConfigureSummonSlotActionProfile(
@@ -1263,17 +1260,17 @@ namespace DimensionBrawl.Editor
                         "LV1 Body Block",
                         "Short vanguard entry that brings an actual guard screen before answering once.",
                         "Spend if the player is cornered near the backline and needs breathing room.",
-                        "FinalStandCommander enters right of the lane and pushes toward the frontline with a body-and-shield-hit block."),
+                        "FinalStandCommander enters right of the lane and pushes toward the frontline with a body-and-screen block."),
                     CreateSummonReadout(
                         "LV2 Hold Line",
                         "Tankier frontline actor that can absorb a small boss curtain before counterfire.",
                         "Hold EN when the next boss pressure wave is readable but dense.",
-                        "FinalStandCommander advances until contested, flashes a four-hit shield screen, then fires two heavy counters."),
+                        "FinalStandCommander advances until contested, holds a four-hit screen, then fires two heavy bolts."),
                     CreateSummonReadout(
                         "LV3 Break Wall",
                         "High-cost vanguard actor and screen for stabilizing a bad exchange and forcing a counter window.",
                         "Save for the committed boss pattern that would otherwise push the player back.",
-                        "FinalStandCommander drives into the frontline with a seven-hit shield wall and heavy three-shot response.")
+                        "FinalStandCommander drives into the frontline with a seven-hit screen and heavy three-shot response.")
                 });
 
             AssetDatabase.SaveAssets();

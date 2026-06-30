@@ -23,8 +23,8 @@ MonoBehaviour:
   vfxCueProfile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
   animationRead: Promoted BacklineShooter role Animator stands in for the second
     ally summon ranged-support read.
-  vfxRead: Magic-circle entry, marksman proxy, narrow assist volleys, beam-fire cue,
-    beam-hit cue, and light pulse distinguish it from the shield slot.
+  vfxRead: Magic-circle entry, marksman proxy, narrow assist volleys, and light pulse
+    distinguish it from the shield slot.
   replacementPlan: Replace the actor prefab or promoted visual source after a dedicated
     ranged ally summon model is reviewed.
   ownershipNotes: Presentation candidate only; runtime cost, tier, projectile, and

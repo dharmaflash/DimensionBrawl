@@ -346,51 +346,6 @@ MonoBehaviour:
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 0
-  - cueId: 42
-    prefab: {fileID: 5135507386489135341, guid: 0a25369b71ad935449db9b52f238b1b7, type: 3}
-    localPositionOffset: {x: 0, y: 0.12, z: 0.18}
-    localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 0.72, y: 0.48, z: 0.72}
-    lifetimeSeconds: 0.42
-    prewarmCount: 0
-    parentToAnchor: 1
-    alignForwardToDirection: 0
-  - cueId: 39
-    prefab: {fileID: 5793090922902098766, guid: 6c961177f4633b245be59e9da66bb426, type: 3}
-    localPositionOffset: {x: 0, y: 0, z: 0}
-    localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 1, y: 1, z: 1}
-    lifetimeSeconds: 0.34
-    prewarmCount: 0
-    parentToAnchor: 0
-    alignForwardToDirection: 1
-  - cueId: 40
-    prefab: {fileID: 4886810942728664495, guid: 72ff671106d88a248ae798fe1b4d7b91, type: 3}
-    localPositionOffset: {x: 0, y: 0, z: 0}
-    localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 1.05, y: 0.92, z: 1.05}
-    lifetimeSeconds: 0.38
-    prewarmCount: 0
-    parentToAnchor: 0
-    alignForwardToDirection: 1
-  - cueId: 43
-    prefab: {fileID: 8529073007300686242, guid: 730907568f60e3d4cbb4d6ae8193a0f3, type: 3}
-    localPositionOffset: {x: 0, y: 0, z: 0}
-    localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 0.72, y: 0.46, z: 0.72}
-    lifetimeSeconds: 0.46
-    prewarmCount: 0
-    parentToAnchor: 1
-    alignForwardToDirection: 0
-  - cueId: 41
-    prefab: {fileID: 9209143128348592460, guid: 1508eac7f39d9054ab4ea77659cc24db, type: 3}
-    localPositionOffset: {x: 0, y: 0, z: 0}
-    localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 0.82, y: 0.58, z: 0.82}
-    lifetimeSeconds: 0.34
-    prewarmCount: 0
-    parentToAnchor: 1
-    alignForwardToDirection: 0
   - cueId: 35
     prefab: {fileID: 464807569203744432, guid: 53d43299e6d21114790ecfb628981f4f, type: 3}
     localPositionOffset: {x: 0, y: 0.42, z: 0}
