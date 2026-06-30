@@ -5,6 +5,8 @@ using System.IO;
 using System.Reflection;
 using System.Text;
 using DimensionBrawl.Combat;
+using DimensionBrawl.Presentation;
+using DimensionBrawl.UI;
 using UnityEngine;
 using UnityEngine.Playables;
 using UnityEngine.SceneManagement;
@@ -59,6 +61,8 @@ namespace DimensionBrawl.LevelDesign
             PlayableDirector director = GetField<PlayableDirector>(flow, "introDirector");
             Player.PlayerMovementController player = GetField<Player.PlayerMovementController>(flow, "player");
             Transform stairTriggerCenter = GetField<Transform>(flow, "stairTriggerCenter");
+            OlympusCorridorTutorialDirector tutorialDirector =
+                GetField<OlympusCorridorTutorialDirector>(flow, "tutorialDirector");
             CombatHealth[] introEnemies = GetField<CombatHealth[]>(flow, "introSwordEnemies");
             CombatHealth[] corridorTargets = GetField<CombatHealth[]>(flow, "corridorTargets");
             CombatHealth[] corridorClearTargets = GetField<CombatHealth[]>(flow, "corridorClearTargets");
@@ -82,18 +86,57 @@ namespace DimensionBrawl.LevelDesign
                 yield break;
             }
 
-            bool introDamageApplied = ApplyLethalDamageToAll(introEnemies, DamageTeam.Player);
-            report.AppendLine($"introDamageApplied={introDamageApplied}");
-            yield return WaitFor(
-                () => flow.IntroGateCleared,
-                deadline,
-                "intro gate cleared from CombatHealth.Died events",
-                report,
-                result);
-            if (result.Failed)
+            bool tutorialPath = flow.TutorialRunning
+                || flow.TutorialCompleted
+                || (tutorialDirector != null && tutorialDirector.TutorialEnabled);
+            bool preCorridorGateSatisfied;
+            bool introDamageApplied = false;
+            if (tutorialPath)
             {
-                Finish(false, report, result.FailureReason);
-                yield break;
+                if (tutorialDirector == null)
+                {
+                    tutorialDirector = GetField<OlympusCorridorTutorialDirector>(flow, "tutorialDirector");
+                }
+
+                report.AppendLine("tutorialPath=True");
+                report.AppendLine(
+                    $"tutorialBeforeInputs running={flow.TutorialRunning} completed={flow.TutorialCompleted} step={tutorialDirector?.CurrentStepId}");
+                yield return CompleteTutorialWithRuntimeInputs(
+                    flow,
+                    tutorialDirector,
+                    player,
+                    introEnemies,
+                    deadline,
+                    report,
+                    result);
+                if (result.Failed)
+                {
+                    Finish(false, report, result.FailureReason);
+                    yield break;
+                }
+
+                preCorridorGateSatisfied = flow.TutorialCompleted;
+                report.AppendLine(
+                    $"tutorialAfterInputs running={flow.TutorialRunning} completed={flow.TutorialCompleted} step={tutorialDirector?.CurrentStepId}");
+            }
+            else
+            {
+                report.AppendLine("tutorialPath=False");
+                introDamageApplied = ApplyLethalDamageToAll(introEnemies, DamageTeam.Player);
+                report.AppendLine($"introDamageApplied={introDamageApplied}");
+                yield return WaitFor(
+                    () => flow.IntroGateCleared,
+                    deadline,
+                    "intro gate cleared from CombatHealth.Died events",
+                    report,
+                    result);
+                if (result.Failed)
+                {
+                    Finish(false, report, result.FailureReason);
+                    yield break;
+                }
+
+                preCorridorGateSatisfied = introDamageApplied && flow.IntroGateCleared;
             }
 
             report.AppendLine($"laneConstraintAfterIntroClear={player.LaneConstraintEnabled}");
@@ -180,8 +223,7 @@ namespace DimensionBrawl.LevelDesign
             }
 
             bool passed =
-                introDamageApplied
-                && flow.IntroGateCleared
+                preCorridorGateSatisfied
                 && flow.StageCleared
                 && clearDamageApplied
                 && corridorClearTargetsAliveAfterClear == 0
@@ -254,6 +296,513 @@ namespace DimensionBrawl.LevelDesign
                 $"{targetObjectName}InputTraversal",
                 report,
                 result);
+        }
+
+        private static IEnumerator CompleteTutorialWithRuntimeInputs(
+            OlympusCorridorCombatFlowController flow,
+            OlympusCorridorTutorialDirector tutorialDirector,
+            Player.PlayerMovementController player,
+            CombatHealth[] tutorialTargets,
+            float deadline,
+            StringBuilder report,
+            ProbeResult result)
+        {
+            if (tutorialDirector == null)
+            {
+                result.Fail("Missing tutorial director for tutorial path.");
+                yield break;
+            }
+
+            if (player == null)
+            {
+                result.Fail("Missing player for tutorial path.");
+                yield break;
+            }
+
+            Player.PlayerActionController actionController = player.GetComponent<Player.PlayerActionController>();
+            Player.PlayerCombatModeController combatModeController =
+                player.GetComponent<Player.PlayerCombatModeController>();
+            Player.PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                player.GetComponent<Player.PlayerRangedBasicAttackAction>();
+            GameObject combatHudRoot = FindSceneObject("BossBarrageLaneReview_CombatHudCanvas")
+                ?? FindSceneObject("PF_UI_CombatHud");
+            BossBarrageLaneReviewMobileHud mobileHud = FindFirst<BossBarrageLaneReviewMobileHud>();
+            OlympusTutorialOverlayPresenter overlayPresenter = FindFirst<OlympusTutorialOverlayPresenter>();
+            if (actionController == null)
+            {
+                result.Fail("Missing PlayerActionController for tutorial path.");
+                yield break;
+            }
+
+            if (combatModeController == null)
+            {
+                result.Fail("Missing PlayerCombatModeController for tutorial path.");
+                yield break;
+            }
+
+            yield return null;
+            AppendTutorialUiDiagnostics("tutorialUi_Melee", tutorialDirector, combatHudRoot, mobileHud, overlayPresenter, report);
+
+            yield return QueueBasicAttackUntilStep(
+                flow,
+                tutorialDirector,
+                actionController,
+                "Move",
+                deadline,
+                report,
+                result);
+            if (result.Failed || flow.TutorialCompleted)
+            {
+                yield break;
+            }
+
+            yield return null;
+            AppendTutorialUiDiagnostics("tutorialUi_Move", tutorialDirector, combatHudRoot, mobileHud, overlayPresenter, report);
+
+            Vector3 tutorialMoveTarget = player.transform.position
+                + Vector3.ProjectOnPlane(player.transform.right, Vector3.up).normalized * 2f;
+            yield return MovePlayerWithInputToPosition(
+                player,
+                tutorialMoveTarget,
+                deadline,
+                "tutorialMoveInput",
+                report,
+                result);
+            if (result.Failed)
+            {
+                yield break;
+            }
+
+            yield return WaitFor(
+                () => tutorialDirector.CurrentStepId == "SwapToRanged" || flow.TutorialCompleted,
+                deadline,
+                "tutorial advanced to swap step from movement input",
+                report,
+                result);
+            if (result.Failed || flow.TutorialCompleted)
+            {
+                yield break;
+            }
+
+            yield return null;
+            AppendTutorialUiDiagnostics("tutorialUi_SwapToRanged", tutorialDirector, combatHudRoot, mobileHud, overlayPresenter, report);
+
+            yield return QueueSwapUntilStep(
+                flow,
+                tutorialDirector,
+                combatModeController,
+                "Fire",
+                deadline,
+                report,
+                result);
+            if (result.Failed || flow.TutorialCompleted)
+            {
+                yield break;
+            }
+
+            yield return null;
+            AppendTutorialUiDiagnostics("tutorialUi_Fire", tutorialDirector, combatHudRoot, mobileHud, overlayPresenter, report);
+            AppendTutorialFireDiagnostics("tutorialFireBeforeInput", player, rangedBasicAttackAction, tutorialTargets, report);
+
+            yield return QueueFireUntilStep(
+                flow,
+                tutorialDirector,
+                rangedBasicAttackAction,
+                player,
+                tutorialTargets,
+                "Dodge",
+                deadline,
+                report,
+                result);
+            if (result.Failed || flow.TutorialCompleted)
+            {
+                yield break;
+            }
+
+            yield return null;
+            AppendTutorialUiDiagnostics("tutorialUi_Dodge", tutorialDirector, combatHudRoot, mobileHud, overlayPresenter, report);
+
+            int dodgeQueueFrames = 0;
+            while (tutorialDirector.CurrentStepId != "ClearTargets" && !flow.TutorialCompleted)
+            {
+                if (Time.realtimeSinceStartup > deadline)
+                {
+                    result.Fail("Timed out advancing tutorial dodge step to clear-targets step.");
+                    yield break;
+                }
+
+                actionController.QueueDodge();
+                dodgeQueueFrames++;
+                yield return null;
+            }
+
+            report.AppendLine($"tutorialDodgeQueuedFrames={dodgeQueueFrames}");
+            int tutorialTargetsAliveAfterDodge = CountActiveAlive(tutorialTargets);
+            report.AppendLine($"tutorialTargetsAliveAfterDodge={tutorialTargetsAliveAfterDodge}");
+            if (flow.TutorialCompleted && tutorialTargetsAliveAfterDodge > 0)
+            {
+                result.Fail("Tutorial completed while tutorial targets were still alive.");
+                yield break;
+            }
+
+            if (!flow.TutorialCompleted)
+            {
+                yield return null;
+                AppendTutorialUiDiagnostics("tutorialUi_ClearTargets", tutorialDirector, combatHudRoot, mobileHud, overlayPresenter, report);
+                int tutorialTargetsAliveBeforeClear = CountActiveAlive(tutorialTargets);
+                bool tutorialClearDamageApplied = ApplyLethalDamageToAll(tutorialTargets, DamageTeam.Player);
+                report.AppendLine($"tutorialTargetsAliveBeforeClear={tutorialTargetsAliveBeforeClear}");
+                report.AppendLine($"tutorialClearDamageApplied={tutorialClearDamageApplied}");
+
+                yield return WaitFor(
+                    () => flow.TutorialCompleted,
+                    deadline,
+                    "tutorial completed after all tutorial targets defeated",
+                    report,
+                    result);
+                if (result.Failed)
+                {
+                    yield break;
+                }
+            }
+
+            report.AppendLine("tutorial completed from runtime inputs=True");
+        }
+
+        private static IEnumerator QueueBasicAttackUntilStep(
+            OlympusCorridorCombatFlowController flow,
+            OlympusCorridorTutorialDirector tutorialDirector,
+            Player.PlayerActionController actionController,
+            string expectedStep,
+            float deadline,
+            StringBuilder report,
+            ProbeResult result)
+        {
+            int frames = 0;
+            while (tutorialDirector.CurrentStepId != expectedStep && !flow.TutorialCompleted)
+            {
+                if (Time.realtimeSinceStartup > deadline)
+                {
+                    result.Fail($"Timed out waiting for tutorial step {expectedStep} from basic attack.");
+                    yield break;
+                }
+
+                actionController.QueueBasicAttack();
+                frames++;
+                yield return null;
+            }
+
+            report.AppendLine($"tutorialMeleeQueuedFrames={frames}");
+            report.AppendLine($"tutorial advanced to {expectedStep} step from melee input=True");
+        }
+
+        private static IEnumerator QueueSwapUntilStep(
+            OlympusCorridorCombatFlowController flow,
+            OlympusCorridorTutorialDirector tutorialDirector,
+            Player.PlayerCombatModeController combatModeController,
+            string expectedStep,
+            float deadline,
+            StringBuilder report,
+            ProbeResult result)
+        {
+            int frames = 0;
+            while (tutorialDirector.CurrentStepId != expectedStep && !flow.TutorialCompleted)
+            {
+                if (Time.realtimeSinceStartup > deadline)
+                {
+                    result.Fail($"Timed out waiting for tutorial step {expectedStep} from swap input.");
+                    yield break;
+                }
+
+                combatModeController.QueueCombatModeSwap();
+                frames++;
+                yield return null;
+            }
+
+            report.AppendLine($"tutorialSwapQueuedFrames={frames}");
+            report.AppendLine($"tutorial advanced to {expectedStep} step from swap input=True");
+        }
+
+        private static IEnumerator QueueFireUntilStep(
+            OlympusCorridorCombatFlowController flow,
+            OlympusCorridorTutorialDirector tutorialDirector,
+            Player.PlayerRangedBasicAttackAction rangedBasicAttackAction,
+            Player.PlayerMovementController player,
+            CombatHealth[] tutorialTargets,
+            string expectedStep,
+            float deadline,
+            StringBuilder report,
+            ProbeResult result)
+        {
+            if (rangedBasicAttackAction == null)
+            {
+                result.Fail("Missing PlayerRangedBasicAttackAction for tutorial fire step.");
+                yield break;
+            }
+
+            int frames = 0;
+            while (tutorialDirector.CurrentStepId != expectedStep && !flow.TutorialCompleted)
+            {
+                if (Time.realtimeSinceStartup > deadline)
+                {
+                    AppendTutorialFireDiagnostics(
+                        "tutorialFireTimeout",
+                        player,
+                        rangedBasicAttackAction,
+                        tutorialTargets,
+                        report);
+                    result.Fail($"Timed out waiting for tutorial step {expectedStep} from fire input.");
+                    yield break;
+                }
+
+                rangedBasicAttackAction.QueueFire();
+                frames++;
+                yield return null;
+            }
+
+            report.AppendLine($"tutorialFireQueuedFrames={frames}");
+            report.AppendLine($"tutorial advanced to {expectedStep} step from fire input=True");
+        }
+
+        private static void AppendTutorialFireDiagnostics(
+            string label,
+            Player.PlayerMovementController player,
+            Player.PlayerRangedBasicAttackAction rangedBasicAttackAction,
+            CombatHealth[] tutorialTargets,
+            StringBuilder report)
+        {
+            if (rangedBasicAttackAction == null)
+            {
+                report.AppendLine($"{label}RangedAction=<null>");
+                return;
+            }
+
+            report.AppendLine(
+                $"{label}RangedActionEnabled={rangedBasicAttackAction.enabled} gameObjectActive={rangedBasicAttackAction.gameObject.activeInHierarchy}");
+            report.AppendLine(
+                $"{label}FireReady={rangedBasicAttackAction.IsFireReady} cooldown={rangedBasicAttackAction.FireCooldownRemaining:0.###} blocked='{rangedBasicAttackAction.LastUseBlockedReason}' activeProjectiles={rangedBasicAttackAction.ActiveProjectileCount}");
+            report.AppendLine(
+                $"{label}AimPreviewActive={rangedBasicAttackAction.IsAimPreviewActive} hasAimAssist={rangedBasicAttackAction.HasAimAssistTarget} aimAssistTarget={GetHierarchyPath(rangedBasicAttackAction.AimAssistTargetHealth != null ? rangedBasicAttackAction.AimAssistTargetHealth.transform : null)}");
+            if (rangedBasicAttackAction.TryGetAimPreviewDirection(out Vector3 aimDirection))
+            {
+                report.AppendLine($"{label}AimDirection={FormatVector3(aimDirection)}");
+            }
+
+            if (rangedBasicAttackAction.TryGetAimPreviewWorldPoint(out Vector3 aimPoint))
+            {
+                report.AppendLine($"{label}AimPoint={FormatVector3(aimPoint)}");
+            }
+
+            Transform fireOrigin = rangedBasicAttackAction.FireOrigin;
+            report.AppendLine(
+                $"{label}FireOrigin={(fireOrigin != null ? FormatVector3(fireOrigin.position) : "<null>")}");
+            if (player != null)
+            {
+                Player.PlayerCombatModeController combatModeController =
+                    player.GetComponent<Player.PlayerCombatModeController>();
+                report.AppendLine(
+                    $"{label}CombatMode={(combatModeController != null ? combatModeController.CurrentMode.ToString() : "<null>")} isRanged={combatModeController != null && combatModeController.IsRangedMode}");
+                report.AppendLine($"{label}PlayerPosition={FormatVector3(player.transform.position)}");
+            }
+
+            if (tutorialTargets == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < tutorialTargets.Length; i++)
+            {
+                CombatHealth target = tutorialTargets[i];
+                if (target == null)
+                {
+                    report.AppendLine($"{label}Target{i}=<null>");
+                    continue;
+                }
+
+                float playerDistance = player != null
+                    ? Vector3.Distance(
+                        Vector3.ProjectOnPlane(target.transform.position, Vector3.up),
+                        Vector3.ProjectOnPlane(player.transform.position, Vector3.up))
+                    : -1f;
+                report.AppendLine(
+                    $"{label}Target{i} alive={target.IsAlive} active={target.gameObject.activeInHierarchy} hp={target.CurrentHealth:0.###}/{target.MaxHealth:0.###} pos={FormatVector3(target.transform.position)} planarPlayerDistance={playerDistance:0.###}");
+            }
+        }
+
+        private static void AppendTutorialUiDiagnostics(
+            string label,
+            OlympusCorridorTutorialDirector tutorialDirector,
+            GameObject combatHudRoot,
+            BossBarrageLaneReviewMobileHud mobileHud,
+            OlympusTutorialOverlayPresenter overlayPresenter,
+            StringBuilder report)
+        {
+            report.AppendLine($"{label}Screen={Screen.width}x{Screen.height}");
+            report.AppendLine($"{label}Step={tutorialDirector?.CurrentStepId ?? "<null>"}");
+            if (combatHudRoot == null)
+            {
+                report.AppendLine($"{label}CombatHud=<null>");
+            }
+            else
+            {
+                AppendCombatHudRect(label, "Move", combatHudRoot, "MoveJoystickRing", report);
+                AppendCombatHudRect(label, "Basic", combatHudRoot, "BasicAttackButton", report);
+                AppendCombatHudRect(label, "Dodge", combatHudRoot, "DodgeButton", report);
+                AppendCombatHudRect(label, "Swap", combatHudRoot, "UltimateButton", report);
+            }
+
+            if (mobileHud == null)
+            {
+                report.AppendLine($"{label}MobileHud=<null>");
+            }
+            else
+            {
+                report.AppendLine(
+                    $"{label}MobileHudMoveRect={FormatRect(mobileHud.MoveJoystickGuiRect)} anchor={FormatVector2(mobileHud.MoveJoystickScreenAnchor)}");
+                report.AppendLine(
+                    $"{label}MobileHudBasicRect={FormatRect(mobileHud.BasicButtonGuiRect)} anchor={FormatVector2(mobileHud.BasicButtonScreenAnchor)}");
+                report.AppendLine(
+                    $"{label}MobileHudDodgeRect={FormatRect(mobileHud.DodgeButtonGuiRect)} anchor={FormatVector2(mobileHud.DodgeButtonScreenAnchor)}");
+                report.AppendLine(
+                    $"{label}MobileHudSwapRect={FormatRect(mobileHud.SwapButtonGuiRect)} anchor={FormatVector2(mobileHud.SwapButtonScreenAnchor)}");
+            }
+
+            if (overlayPresenter == null)
+            {
+                report.AppendLine($"{label}Overlay=<null>");
+                return;
+            }
+
+            Vector2 overlayCenter = overlayPresenter.CurrentFocusCenterGuiPoint;
+            report.AppendLine(
+                $"{label}Overlay visible={overlayPresenter.Visible} kind={overlayPresenter.CurrentFocusKind} anchor={FormatVector2(overlayPresenter.CurrentFocusAnchor)} center={FormatVector2(overlayCenter)} markerRect={FormatRect(overlayPresenter.CurrentFocusMarkerGuiRect)} dialogueRect={FormatRect(overlayPresenter.CurrentDialoguePanelGuiRect)}");
+
+            if (TryResolveCombatHudRectForFocus(
+                    combatHudRoot,
+                    overlayPresenter.CurrentFocusKind,
+                    out Rect combatHudRect))
+            {
+                float combatHudDistance = Vector2.Distance(overlayCenter, combatHudRect.center);
+                report.AppendLine(
+                    $"{label}OverlayToCombatHudDistance={combatHudDistance:0.###} combatHudCenter={FormatVector2(combatHudRect.center)}");
+            }
+            else
+            {
+                report.AppendLine($"{label}OverlayToCombatHudDistance=<n/a>");
+            }
+
+            if (TryResolveMobileHudRectForFocus(
+                    mobileHud,
+                    overlayPresenter.CurrentFocusKind,
+                    out Rect mobileHudRect))
+            {
+                float mobileHudDistance = Vector2.Distance(overlayCenter, mobileHudRect.center);
+                report.AppendLine(
+                    $"{label}OverlayToMobileHudDistance={mobileHudDistance:0.###} mobileHudCenter={FormatVector2(mobileHudRect.center)}");
+            }
+            else
+            {
+                report.AppendLine($"{label}OverlayToMobileHudDistance=<n/a>");
+            }
+        }
+
+        private static void AppendCombatHudRect(
+            string label,
+            string rectLabel,
+            GameObject combatHudRoot,
+            string objectName,
+            StringBuilder report)
+        {
+            bool found = TryGetCombatHudGuiRect(combatHudRoot, objectName, out Rect rect);
+            if (found)
+            {
+                report.AppendLine(
+                    $"{label}CombatHud{rectLabel}Rect={FormatRect(rect)} anchor={FormatVector2(ToScreenAnchor(rect.center))}");
+            }
+            else
+            {
+                report.AppendLine($"{label}CombatHud{rectLabel}Rect=<missing>");
+            }
+        }
+
+        private static bool TryResolveCombatHudRectForFocus(
+            GameObject combatHudRoot,
+            OlympusTutorialOverlayPresenter.FocusKind focusKind,
+            out Rect rect)
+        {
+            if (combatHudRoot == null)
+            {
+                rect = default;
+                return false;
+            }
+
+            string objectName = ResolveCombatHudObjectName(focusKind);
+            if (string.IsNullOrWhiteSpace(objectName))
+            {
+                rect = default;
+                return false;
+            }
+
+            return TryGetCombatHudGuiRect(combatHudRoot, objectName, out rect);
+        }
+
+        private static string ResolveCombatHudObjectName(OlympusTutorialOverlayPresenter.FocusKind focusKind)
+        {
+            switch (focusKind)
+            {
+                case OlympusTutorialOverlayPresenter.FocusKind.MeleeAttack:
+                case OlympusTutorialOverlayPresenter.FocusKind.RangedAttack:
+                    return "BasicAttackButton";
+                case OlympusTutorialOverlayPresenter.FocusKind.Dodge:
+                    return "DodgeButton";
+                case OlympusTutorialOverlayPresenter.FocusKind.MoveStick:
+                    return "MoveJoystickRing";
+                case OlympusTutorialOverlayPresenter.FocusKind.SwapMode:
+                    return "UltimateButton";
+                default:
+                    return null;
+            }
+        }
+
+        private static bool TryGetCombatHudGuiRect(GameObject combatHudRoot, string objectName, out Rect rect)
+        {
+            GameObject target = combatHudRoot != null
+                ? FindDescendantOrSelf(combatHudRoot, objectName)
+                : FindSceneObject(objectName);
+            RectTransform rectTransform = target != null ? target.GetComponent<RectTransform>() : null;
+            return TryGetGuiRect(rectTransform, out rect);
+        }
+
+        private static bool TryResolveMobileHudRectForFocus(
+            BossBarrageLaneReviewMobileHud mobileHud,
+            OlympusTutorialOverlayPresenter.FocusKind focusKind,
+            out Rect rect)
+        {
+            if (mobileHud == null)
+            {
+                rect = default;
+                return false;
+            }
+
+            switch (focusKind)
+            {
+                case OlympusTutorialOverlayPresenter.FocusKind.MeleeAttack:
+                case OlympusTutorialOverlayPresenter.FocusKind.RangedAttack:
+                    rect = mobileHud.BasicButtonGuiRect;
+                    return true;
+                case OlympusTutorialOverlayPresenter.FocusKind.Dodge:
+                    rect = mobileHud.DodgeButtonGuiRect;
+                    return true;
+                case OlympusTutorialOverlayPresenter.FocusKind.MoveStick:
+                    rect = mobileHud.MoveJoystickGuiRect;
+                    return true;
+                case OlympusTutorialOverlayPresenter.FocusKind.SwapMode:
+                    rect = mobileHud.SwapButtonGuiRect;
+                    return true;
+                default:
+                    rect = default;
+                    return false;
+            }
         }
 
         private static IEnumerator MovePlayerWithInputToPosition(
@@ -644,6 +1193,57 @@ namespace DimensionBrawl.LevelDesign
         private static string FormatVector3(Vector3 value)
         {
             return $"({value.x:0.###}, {value.y:0.###}, {value.z:0.###})";
+        }
+
+        private static string FormatVector2(Vector2 value)
+        {
+            return $"({value.x:0.###}, {value.y:0.###})";
+        }
+
+        private static string FormatRect(Rect value)
+        {
+            return $"(x={value.x:0.###}, y={value.y:0.###}, w={value.width:0.###}, h={value.height:0.###})";
+        }
+
+        private static Vector2 ToScreenAnchor(Vector2 guiPoint)
+        {
+            if (Screen.width <= 0 || Screen.height <= 0)
+            {
+                return Vector2.zero;
+            }
+
+            return new Vector2(
+                Mathf.Clamp01(guiPoint.x / Screen.width),
+                Mathf.Clamp01(1f - guiPoint.y / Screen.height));
+        }
+
+        private static bool TryGetGuiRect(RectTransform rectTransform, out Rect rect)
+        {
+            if (rectTransform == null || Screen.width <= 0 || Screen.height <= 0)
+            {
+                rect = default;
+                return false;
+            }
+
+            Canvas canvas = rectTransform.GetComponentInParent<Canvas>();
+            Camera camera = canvas != null && canvas.renderMode != RenderMode.ScreenSpaceOverlay
+                ? canvas.worldCamera
+                : null;
+            Vector3[] corners = new Vector3[4];
+            rectTransform.GetWorldCorners(corners);
+
+            Vector2 min = new Vector2(float.PositiveInfinity, float.PositiveInfinity);
+            Vector2 max = new Vector2(float.NegativeInfinity, float.NegativeInfinity);
+            for (int i = 0; i < corners.Length; i++)
+            {
+                Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(camera, corners[i]);
+                Vector2 guiPoint = new Vector2(screenPoint.x, Screen.height - screenPoint.y);
+                min = Vector2.Min(min, guiPoint);
+                max = Vector2.Max(max, guiPoint);
+            }
+
+            rect = Rect.MinMaxRect(min.x, min.y, max.x, max.y);
+            return rect.width > 0.01f && rect.height > 0.01f;
         }
 
         private static string GetHierarchyPath(Transform transform)

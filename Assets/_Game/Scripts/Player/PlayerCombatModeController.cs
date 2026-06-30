@@ -112,11 +112,13 @@ namespace DimensionBrawl.Player
 
         public void SetRangedMode()
         {
+            queuedSwap = false;
             SetCombatMode(PlayerCombatMode.Ranged);
         }
 
         public void SetMeleeMode()
         {
+            queuedSwap = false;
             SetCombatMode(PlayerCombatMode.Melee);
         }
 

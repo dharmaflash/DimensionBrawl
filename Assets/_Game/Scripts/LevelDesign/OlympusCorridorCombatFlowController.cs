@@ -14,6 +14,7 @@ namespace DimensionBrawl.LevelDesign
         private enum FlowPhase
         {
             WaitingForIntroHandoff,
+            Tutorial,
             IntroSwordGate,
             WaitingForStairEntry,
             CorridorCombat,
@@ -39,6 +40,10 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField] private Behaviour[] introSwordEnemyGameplayBehaviours =
             System.Array.Empty<Behaviour>();
         [SerializeField] private Collider[] stairBlockers = System.Array.Empty<Collider>();
+
+        [Header("Tutorial")]
+        [SerializeField] private bool runTutorialAfterIntroHandoff = true;
+        [SerializeField] private OlympusCorridorTutorialDirector tutorialDirector;
 
         [Header("Handoff UI Reveal")]
         [SerializeField] private BossBarrageLaneReviewHud reviewHud;
@@ -71,6 +76,10 @@ namespace DimensionBrawl.LevelDesign
         private bool observedIntroDirectorPlayback;
 
         public bool IntroGateCleared => CountAlive(introSwordEnemies) == 0;
+        public bool TutorialRunning => phase == FlowPhase.Tutorial
+            && tutorialDirector != null
+            && tutorialDirector.IsRunning;
+        public bool TutorialCompleted => tutorialDirector != null && tutorialDirector.IsCompleted;
         public bool CorridorCleared => HasAny(corridorClearTargets) && CountAlive(corridorClearTargets) == 0;
         public bool CorridorCombatStarted => phase == FlowPhase.CorridorCombat;
         public bool StageCleared => phase == FlowPhase.StageCleared;
@@ -176,6 +185,7 @@ namespace DimensionBrawl.LevelDesign
         private void OnDisable()
         {
             UnregisterIntroDirectorStoppedHandler();
+            UnregisterTutorialCompletedHandler();
             UnregisterIntroSwordEnemyHandlers();
             UnregisterCorridorClearTargetHandlers();
         }
@@ -195,7 +205,13 @@ namespace DimensionBrawl.LevelDesign
                 case FlowPhase.WaitingForIntroHandoff:
                     if (IsIntroHandoffReady() || HasIntroDirectorStoppedAfterObservedPlayback())
                     {
-                        BeginIntroSwordGate();
+                        BeginPostIntroHandoffGameplay();
+                    }
+                    break;
+                case FlowPhase.Tutorial:
+                    if (tutorialDirector == null || tutorialDirector.IsCompleted)
+                    {
+                        BeginWaitingForStairEntry();
                     }
                     break;
                 case FlowPhase.IntroSwordGate:
@@ -292,6 +308,75 @@ namespace DimensionBrawl.LevelDesign
             TryAdvanceFromIntroSwordGate();
         }
 
+        private void BeginTutorial()
+        {
+            OlympusCorridorTutorialDirector director = ResolveTutorialDirector();
+            if (director == null || !director.TutorialEnabled)
+            {
+                BeginIntroSwordGate();
+                return;
+            }
+
+            phase = FlowPhase.Tutorial;
+            PrimeCombatCameraHandoff();
+            StopIntroDirectorForHandoff();
+            SetCamerasEnabled(introCamerasToDisable, false);
+            SetAudioListenersEnabled(introAudioListenersToDisable, false);
+            SetBehavioursEnabled(cutsceneBehavioursToDisableOnHandoff, false);
+            SetObjectsActive(cutsceneRootsToDisableOnHandoff, false);
+            SetObjectsActive(alwaysDisabledRoots, false);
+            SetHudOpacity(0f);
+            hudRevealTimer = -hudRevealDelaySeconds;
+            SetObjectsActive(handoffRoots, true);
+            SetObjectActive(introSwordGateRoot, true);
+            SetObjectActive(player != null ? player.gameObject : null, true);
+            ReleasePlayerMovementLocksForGameplay();
+            SetPlayerLaneConstraintEnabled(false);
+            SetSwordGateMode(false);
+            SnapPlayerToHandoffGround();
+            SetCombatHealthRootsActive(introSwordEnemies, true);
+            SetCombatHealthRootCollidersEnabled(introSwordEnemies, true);
+            SetBehavioursEnabled(introSwordEnemyGameplayBehaviours, false);
+            UnregisterIntroSwordEnemyHandlers();
+            SetObjectsActive(corridorCombatRoots, false);
+            SetObjectsActive(corridorBoundsRoots, false);
+            SetCollidersEnabled(stairBlockers, true);
+            ConfigureTargetCandidates(System.Array.Empty<CombatHealth>());
+
+            director.BindRuntimeContext(
+                player,
+                combatModeController,
+                targetSelector,
+                player != null ? player.GetComponent<PlayerActionController>() : null,
+                rangedBasicAttackAction,
+                skill1Action,
+                summonSlot1Action,
+                supportSummonActions,
+                mobileHud,
+                ResolveTutorialPromptPresenter(),
+                introSwordEnemies,
+                introSwordEnemyGameplayBehaviours,
+                stairBlockers);
+            RegisterTutorialCompletedHandler();
+            director.BeginTutorial();
+
+            if (director.IsCompleted)
+            {
+                BeginWaitingForStairEntry();
+            }
+        }
+
+        private void BeginPostIntroHandoffGameplay()
+        {
+            if (ShouldRunTutorial())
+            {
+                BeginTutorial();
+                return;
+            }
+
+            BeginIntroSwordGate();
+        }
+
         private void StopIntroDirectorForHandoff()
         {
             if (introDirector == null || introDirector.state != PlayState.Playing)
@@ -334,7 +419,7 @@ namespace DimensionBrawl.LevelDesign
         {
             if (phase == FlowPhase.WaitingForIntroHandoff)
             {
-                BeginIntroSwordGate();
+                BeginPostIntroHandoffGameplay();
                 return;
             }
 
@@ -384,6 +469,12 @@ namespace DimensionBrawl.LevelDesign
         private void BeginWaitingForStairEntry()
         {
             phase = FlowPhase.WaitingForStairEntry;
+            UnregisterTutorialCompletedHandler();
+            if (tutorialDirector != null && tutorialDirector.IsRunning)
+            {
+                tutorialDirector.CancelTutorial();
+            }
+
             UnregisterIntroSwordEnemyHandlers();
             SetBehavioursEnabled(introSwordEnemyGameplayBehaviours, false);
             SetCombatHealthRootCollidersEnabled(introSwordEnemies, false);
@@ -396,6 +487,7 @@ namespace DimensionBrawl.LevelDesign
         private void BeginCorridorCombat()
         {
             phase = FlowPhase.CorridorCombat;
+            tutorialDirector?.HideGuide();
             UnregisterIntroSwordEnemyHandlers();
             SetCombatHealthRootCollidersEnabled(introSwordEnemies, false);
             SetObjectsActive(alwaysDisabledRoots, false);
@@ -512,6 +604,65 @@ namespace DimensionBrawl.LevelDesign
             if (phase == FlowPhase.IntroSwordGate && IntroGateCleared)
             {
                 BeginWaitingForStairEntry();
+            }
+        }
+
+        private void HandleTutorialCompleted()
+        {
+            if (phase == FlowPhase.Tutorial)
+            {
+                BeginWaitingForStairEntry();
+            }
+        }
+
+        private bool ShouldRunTutorial()
+        {
+            OlympusCorridorTutorialDirector director = ResolveTutorialDirector();
+            return runTutorialAfterIntroHandoff
+                && director != null
+                && director.TutorialEnabled;
+        }
+
+        private OlympusCorridorTutorialDirector ResolveTutorialDirector()
+        {
+            if (tutorialDirector == null)
+            {
+                tutorialDirector = GetComponent<OlympusCorridorTutorialDirector>();
+            }
+
+            if (tutorialDirector == null && runTutorialAfterIntroHandoff && Application.isPlaying)
+            {
+                tutorialDirector = gameObject.AddComponent<OlympusCorridorTutorialDirector>();
+            }
+
+            return tutorialDirector;
+        }
+
+        private CinematicTutorialPromptPresenter ResolveTutorialPromptPresenter()
+        {
+            CinematicTutorialPromptPresenter[] presenters =
+                Object.FindObjectsByType<CinematicTutorialPromptPresenter>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+            return presenters.Length > 0 ? presenters[0] : null;
+        }
+
+        private void RegisterTutorialCompletedHandler()
+        {
+            if (tutorialDirector == null)
+            {
+                return;
+            }
+
+            tutorialDirector.Completed -= HandleTutorialCompleted;
+            tutorialDirector.Completed += HandleTutorialCompleted;
+        }
+
+        private void UnregisterTutorialCompletedHandler()
+        {
+            if (tutorialDirector != null)
+            {
+                tutorialDirector.Completed -= HandleTutorialCompleted;
             }
         }
 

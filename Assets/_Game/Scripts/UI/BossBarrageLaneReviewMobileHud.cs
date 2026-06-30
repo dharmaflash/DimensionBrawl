@@ -138,6 +138,15 @@ namespace DimensionBrawl.UI
         public string SummonSlot1ActionName => summonSlot1ActionName;
         public string SummonSlot2ActionName => summonSlot2ActionName;
         public string SummonSlot3ActionName => summonSlot3ActionName;
+        public Rect MoveJoystickGuiRect => ResolveCurrentGuiRect(ref moveJoystickRect);
+        public Rect MoveJoystickTouchGuiRect => ResolveCurrentGuiRect(ref moveJoystickTouchRect);
+        public Rect BasicButtonGuiRect => ResolveCurrentGuiRect(ref basicRect);
+        public Rect DodgeButtonGuiRect => ResolveCurrentGuiRect(ref dodgeRect);
+        public Rect SwapButtonGuiRect => ResolveCurrentGuiRect(ref swapRect);
+        public Vector2 MoveJoystickScreenAnchor => ToScreenAnchor(MoveJoystickGuiRect.center);
+        public Vector2 BasicButtonScreenAnchor => ToScreenAnchor(BasicButtonGuiRect.center);
+        public Vector2 DodgeButtonScreenAnchor => ToScreenAnchor(DodgeButtonGuiRect.center);
+        public Vector2 SwapButtonScreenAnchor => ToScreenAnchor(SwapButtonGuiRect.center);
         public string RangedAimActionName => rangedAimActionName;
         public string WeaponSwapActionName => weaponSwapActionName;
         public bool HasActiveReviewPointerInput => movePointerHeld || firePointerHeld || lookPointerHeld;
@@ -413,6 +422,24 @@ namespace DimensionBrawl.UI
             summonSlot1Rect = new Rect(summonX, summonY, summonWidth, summonHeight);
             summonSlot2Rect = new Rect(summonX, summonY + summonHeight + summonGap, summonWidth, summonHeight);
             summonSlot3Rect = new Rect(summonX, summonY + (summonHeight + summonGap) * 2f, summonWidth, summonHeight);
+        }
+
+        private Rect ResolveCurrentGuiRect(ref Rect rect)
+        {
+            BuildLayout();
+            return rect;
+        }
+
+        private static Vector2 ToScreenAnchor(Vector2 guiPoint)
+        {
+            if (Screen.width <= 0 || Screen.height <= 0)
+            {
+                return Vector2.zero;
+            }
+
+            return new Vector2(
+                Mathf.Clamp01(guiPoint.x / Screen.width),
+                Mathf.Clamp01(1f - guiPoint.y / Screen.height));
         }
 
         private float ResolveScale()

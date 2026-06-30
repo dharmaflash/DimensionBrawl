@@ -26,6 +26,8 @@ namespace DimensionBrawl.Combat
         [SerializeField] private bool alignVisualToDirection = true;
         [SerializeField] private bool allowVerticalTravel;
 
+        private readonly RaycastHit[] sweepHits = new RaycastHit[16];
+        private readonly Collider[] overlapHits = new Collider[16];
         private Collider triggerCollider;
         private Rigidbody projectileRigidbody;
         private CombatHealth sourceHealth;
@@ -112,12 +114,75 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
-            transform.position += travelDirection * speed * deltaTime;
+            Vector3 startPosition = transform.position;
+            Vector3 travelDelta = travelDirection * speed * deltaTime;
+            if (TryApplyTravelImpacts(startPosition, travelDelta))
+            {
+                return;
+            }
+
+            transform.position = startPosition + travelDelta;
             remainingLifetime -= deltaTime;
             if (remainingLifetime <= 0f)
             {
                 Deactivate();
             }
+        }
+
+        private bool TryApplyTravelImpacts(Vector3 startPosition, Vector3 travelDelta)
+        {
+            float radius = ResolveCurrentRadius();
+            float distance = travelDelta.magnitude;
+            if (distance > 0.0001f)
+            {
+                Vector3 direction = travelDelta / distance;
+                int hitCount = Physics.SphereCastNonAlloc(
+                    startPosition,
+                    radius,
+                    direction,
+                    sweepHits,
+                    distance,
+                    Physics.DefaultRaycastLayers,
+                    QueryTriggerInteraction.Collide);
+                for (int i = 0; i < hitCount; i++)
+                {
+                    RaycastHit hit = sweepHits[i];
+                    if (hit.collider != null && TryApplyImpact(hit.collider, hit.point) && !active)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            Vector3 endPosition = startPosition + travelDelta;
+            int overlapCount = Physics.OverlapSphereNonAlloc(
+                endPosition,
+                radius,
+                overlapHits,
+                Physics.DefaultRaycastLayers,
+                QueryTriggerInteraction.Collide);
+            for (int i = 0; i < overlapCount; i++)
+            {
+                Collider hitCollider = overlapHits[i];
+                if (hitCollider != null && TryApplyImpact(hitCollider, endPosition) && !active)
+                {
+                    return true;
+                }
+            }
+
+            return !active;
+        }
+
+        private float ResolveCurrentRadius()
+        {
+            if (triggerCollider is SphereCollider sphereCollider)
+            {
+                Vector3 lossyScale = sphereCollider.transform.lossyScale;
+                float maxScale = Mathf.Max(Mathf.Abs(lossyScale.x), Mathf.Abs(lossyScale.y), Mathf.Abs(lossyScale.z));
+                return Mathf.Max(0.01f, sphereCollider.radius * maxScale);
+            }
+
+            return 0.1f;
         }
 
         public bool TryApplyImpact(Collider hitCollider, Vector3 impactPoint)

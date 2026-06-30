@@ -188,6 +188,14 @@ namespace DimensionBrawl.Editor
             EditorApplication.isPlaying = true;
         }
 
+        public static void RunBatchPlayModeValidateCurrentOlympusCorridorCombatFlow()
+        {
+            AssetDatabase.Refresh();
+            EditorSceneManager.OpenScene(StageScenePath, OpenSceneMode.Single);
+            ActionFoundationOlympusCombatFlowPlayModeBatch.Start(PlayModeValidationResultPath, 90f);
+            EditorApplication.isPlaying = true;
+        }
+
         internal static void ConfigurePlayModeValidationProbe(Scene scene)
         {
             GameObject existing = FindRootOrDescendant(scene, PlayModeValidationProbeName);
@@ -2146,7 +2154,9 @@ namespace DimensionBrawl.Editor
                 FindDirectChildObject(packageRoot, SourceHudRootName),
                 FindDirectChildObject(packageRoot, SourceCombatHudCanvasRootName),
                 FindDirectChildObject(packageRoot, SourceCombatHudEventSystemRootName),
-                FindDirectChildObject(packageRoot, SourceCombatVfxRootName));
+                FindDirectChildObject(packageRoot, SourceCombatVfxRootName),
+                FindDirectChildObject(packageRoot, SourceProjectilePoolRootName),
+                FindDirectChildObject(packageRoot, SourceActionCuePoolRootName));
         }
 
         private static GameObject[] ResolveAlwaysDisabledRoots(Transform packageRoot)
