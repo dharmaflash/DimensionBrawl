@@ -1252,6 +1252,7 @@ namespace DimensionBrawl.Editor
                     "boss barrage lane telegraph presenter"),
                 emitter,
                 laneSpace);
+            ValidateSuppressedSceneVfxRoot(scene, MarkerRootName);
             ValidateLaneAmbientVfx(scene);
             ValidateLaneAmbientAudio(scene);
             ValidateBossBarrageLaneReviewFootstepAudio(scene);
@@ -3653,6 +3654,7 @@ namespace DimensionBrawl.Editor
         private static void CreateLaneMarkers(Scene scene, SummonLaneSpace laneSpace)
         {
             GameObject markerRoot = CreateRoot(scene, MarkerRootName);
+            markerRoot.SetActive(false);
             Material railMaterial = LoadOrCreateMaterial(LaneRailMaterialPath, new Color(0.15f, 0.72f, 1f, 1f));
             Material boundaryMaterial = LoadOrCreateMaterial(PlayerBoundaryMaterialPath, new Color(1f, 0.18f, 0.65f, 1f));
             Material summonMaterial = LoadOrCreateMaterial(SummonBoundaryMaterialPath, new Color(0.25f, 1f, 0.65f, 1f));
@@ -3703,6 +3705,7 @@ namespace DimensionBrawl.Editor
             BossBarrageEmitter bossBarrageEmitter)
         {
             GameObject root = CreateRoot(scene, BossTelegraphRootName);
+            root.SetActive(false);
             Material material = LoadOrCreateTransparentMaterial(
                 BossTelegraphMaterialPath,
                 new Color(1f, 0.62f, 0.18f, 0.56f));
@@ -3731,6 +3734,7 @@ namespace DimensionBrawl.Editor
         private static void CreateLaneAmbientVfx(Scene scene, SummonLaneSpace laneSpace)
         {
             GameObject root = CreateRoot(scene, AmbientVfxRootName);
+            root.SetActive(false);
             Material flowMaterial = LoadOrCreateTransparentMaterial(
                 LaneAmbientFlowMaterialPath,
                 new Color(0.22f, 0.88f, 1f, 0.28f));
@@ -5497,7 +5501,7 @@ namespace DimensionBrawl.Editor
             SetEnum(mobileHud, "keyboardPeekLeftKey", (int)Key.Q);
             SetEnum(mobileHud, "keyboardPeekRightKey", (int)Key.E);
             SetBool(mobileHud, "keyboardPeekRequiresActiveAim", true);
-            SetBool(mobileHud, "fireAimReticleUsesScreenCenter", false);
+            SetBool(mobileHud, "fireAimReticleUsesScreenCenter", true);
             SetBool(mobileHud, "fireAimReticleFollowsAssist", false);
             SetFloat(mobileHud, "fireAimAssistReticleMaxOffset", 96f);
 
@@ -6645,6 +6649,11 @@ namespace DimensionBrawl.Editor
             BossBarrageEmitter bossBarrageEmitter,
             SummonLaneSpace laneSpace)
         {
+            if (presenter.gameObject.activeSelf)
+            {
+                throw new InvalidOperationException("Boss barrage telegraph marker root should stay inactive during the VFX cleanup pass.");
+            }
+
             ValidateObjectReference(presenter, "bossBarrageEmitter", bossBarrageEmitter);
             ValidateObjectReference(presenter, "laneSpace", laneSpace);
             ValidateAssignedObjectReference(presenter, "markerRoot");
@@ -6792,10 +6801,9 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException("summon entry cue should hide its collision/repair root renderer.");
             }
 
-            ValidatePromotedParticleVfx(
+            ValidateSuppressedTemporaryVfx(
                 entryCuePrefab.transform.Find("SummonEntryVfx_MagicMissilesArcaneCircle"),
-                "summon entry MagicMissiles circle",
-                2);
+                "summon entry MagicMissiles circle");
         }
 
         private static void ValidateSummonActorVfx(
@@ -6809,23 +6817,43 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"{label} is missing {pulseRootName}.");
             }
 
-            ValidatePromotedParticleVfx(
+            ValidateSuppressedTemporaryVfx(
                 actorPrefab.transform.Find("SummonPulseVfx_MagicMissilesPulse"),
-                $"{label} MagicMissiles pulse",
-                1);
-            ValidatePromotedParticleVfx(
+                $"{label} MagicMissiles pulse");
+            ValidateSuppressedTemporaryVfx(
                 FindChildWithPrefix(actorPrefab.transform, "SummonStateVfx_"),
-                $"{label} MagicMissiles state aura",
-                1);
+                $"{label} MagicMissiles state aura");
             if (!expectPressureScreen)
             {
                 return;
             }
 
-            ValidatePromotedParticleVfx(
+            ValidateSuppressedTemporaryVfx(
                 actorPrefab.transform.Find("SummonShieldVfx_MagicMissilesShieldCircle"),
-                $"{label} MagicMissiles shield circle",
-                2);
+                $"{label} MagicMissiles shield circle");
+        }
+
+        private static void ValidateSuppressedTemporaryVfx(Transform root, string label)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            if (root.gameObject.activeSelf)
+            {
+                throw new InvalidOperationException($"{label} should not be active in the gameplay cleanup pass.");
+            }
+
+            ParticleSystem[] particleSystems = root.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
+            for (int i = 0; i < particleSystems.Length; i++)
+            {
+                ParticleSystem.MainModule main = particleSystems[i].main;
+                if (main.playOnAwake)
+                {
+                    throw new InvalidOperationException($"{label} particle systems should not play on awake.");
+                }
+            }
         }
 
         private static void ValidateBossBarrageCombatCueAssetOverlays()
@@ -6996,6 +7024,11 @@ namespace DimensionBrawl.Editor
         private static void ValidateLaneAmbientVfx(Scene scene)
         {
             Transform root = RequireRoot(scene, AmbientVfxRootName).transform;
+            if (root.gameObject.activeSelf)
+            {
+                throw new InvalidOperationException("Lane ambient VFX root should stay inactive during the VFX cleanup pass.");
+            }
+
             ValidateAmbientVisual(root, "AmbientFlow_LeftRail_00", LaneAmbientFlowMaterialPath, expectMotion: true, expectFloating: false);
             ValidateAmbientVisual(root, "AmbientFlow_RightRail_00", LaneAmbientFlowMaterialPath, expectMotion: true, expectFloating: false);
             ValidateAmbientVisual(root, "AmbientDepthTick_00", LaneAmbientFlowMaterialPath, expectMotion: false, expectFloating: false);
@@ -7003,6 +7036,15 @@ namespace DimensionBrawl.Editor
             ValidateAmbientVisual(root, "BossPressureHorizon_Curtain", BossPressureHorizonMaterialPath, expectMotion: true, expectFloating: false);
             ValidateAmbientVisual(root, "SummonRouteWisp_00", SummonRouteWispMaterialPath, expectMotion: false, expectFloating: true);
             ValidateAmbientVisual(root, "SummonRouteWisp_03", SummonRouteWispMaterialPath, expectMotion: false, expectFloating: true);
+        }
+
+        private static void ValidateSuppressedSceneVfxRoot(Scene scene, string rootName)
+        {
+            GameObject root = RequireRoot(scene, rootName);
+            if (root.activeSelf)
+            {
+                throw new InvalidOperationException($"{rootName} should stay inactive during the VFX cleanup pass.");
+            }
         }
 
         private static void ValidateLaneAmbientAudio(Scene scene)
@@ -7401,9 +7443,11 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(presenter, "pressureScreen", pressureScreen);
             ValidateObjectReference(presenter, "visualRoot", pressureScreenVisual);
             ValidateArrayReference(presenter, "screenRenderers", 0, pressureScreenRenderer);
+            ValidateBool(presenter, "renderVisuals", false);
             ValidateObjectReference(actorPresenter, "proxy", summonActorPrefab);
             ValidateObjectReference(actorPresenter, "clash", summonClash);
             ValidateObjectReference(actorPresenter, "pulseRoot", tierPulseCore);
+            ValidateBool(actorPresenter, "renderPulseVisuals", false);
             Transform summonActorVisual = ValidateSummonActorRoleVisual(
                 summonActorPrefab.gameObject,
                 SummonSlot1ActorVisualName);
@@ -7502,6 +7546,7 @@ namespace DimensionBrawl.Editor
 
             ValidateObjectReference(actorPresenter, "proxy", actorPrefab);
             ValidateObjectReference(actorPresenter, "pulseRoot", pulseCore);
+            ValidateBool(actorPresenter, "renderPulseVisuals", false);
             ValidateObjectReference(actorPrefab, "health", actorHealth);
             ValidateObjectReference(actorClash, "proxy", actorPrefab);
             ValidateObjectReference(actorClash, "health", actorHealth);
@@ -7733,6 +7778,11 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(screenPresenter, "pressureScreen", pressureScreen);
             ValidateObjectReference(screenPresenter, "visualRoot", pressureScreenVisual);
             ValidateArrayReference(screenPresenter, "screenRenderers", 0, pressureScreenRenderer);
+            ValidateBool(screenPresenter, "renderVisuals", false);
+            if (pressureScreenVisual.gameObject.activeSelf || pressureScreenRenderer.enabled)
+            {
+                throw new InvalidOperationException($"{slotActionName} PressureScreenVisual should stay inactive during the VFX cleanup pass.");
+            }
         }
 
         private static void ValidateBossPressureLoop(
@@ -7890,6 +7940,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(bossSummonActorPresenter, "proxy", bossSummonActorPrefab);
             ValidateObjectReference(bossSummonActorPresenter, "clash", bossSummonClash);
             ValidateObjectReference(bossSummonActorPresenter, "pulseRoot", tierPressureCore);
+            ValidateBool(bossSummonActorPresenter, "renderPulseVisuals", false);
             ValidateObjectReference(bossSummonActorPrefab, "health", bossSummonHealth);
             ValidateObjectReference(bossSummonClash, "proxy", bossSummonActorPrefab);
             ValidateObjectReference(bossSummonClash, "health", bossSummonHealth);
@@ -9432,7 +9483,7 @@ namespace DimensionBrawl.Editor
             ValidateEnum(hud, "keyboardPeekLeftKey", (int)Key.Q);
             ValidateEnum(hud, "keyboardPeekRightKey", (int)Key.E);
             ValidateBool(hud, "keyboardPeekRequiresActiveAim", true);
-            ValidateBool(hud, "fireAimReticleUsesScreenCenter", false);
+            ValidateBool(hud, "fireAimReticleUsesScreenCenter", true);
             ValidateBool(hud, "fireAimReticleFollowsAssist", false);
             ValidateFloat(hud, "fireAimAssistReticleMaxOffset", 96f);
         }

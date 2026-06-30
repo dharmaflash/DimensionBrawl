@@ -4060,7 +4060,8 @@ namespace DimensionBrawl.Tests
 
             screen.Activate(DamageTeam.AllySummon, 1, 1.25f, 1f, 3);
             Assert.IsTrue(presenter.IsShowing);
-            Assert.IsTrue(visualObject.activeSelf);
+            Assert.IsFalse(presenter.RenderVisuals);
+            Assert.IsFalse(visualObject.activeSelf);
             Assert.AreEqual(
                 1,
                 presenter.ActivationVfxCueRequestCount,
@@ -4088,10 +4089,10 @@ namespace DimensionBrawl.Tests
                 1,
                 presenter.InterceptVfxCueRequestCount,
                 "Pressure-screen intercepts should layer an in-world block cue so absorbed boss fire reads as an authored effect.");
-            Assert.Greater(
+            Assert.Less(
                 (visualObject.transform.localPosition - visualLocalPositionBeforeIntercept).sqrMagnitude,
                 0.0001f,
-                "The pressure screen visual should briefly punch on intercept so the boss-fire block reads in world space.");
+                "The pressure screen gameplay should remain active while the temporary screen visual stays inert.");
 
             screen.Activate(DamageTeam.AllySummon, 1, 1.25f, 1f);
             screen.Deactivate();

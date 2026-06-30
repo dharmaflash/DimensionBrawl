@@ -59,6 +59,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Range(0.2f, 1f)] private float impactFlashProgress = 0.86f;
         [SerializeField, Min(0.01f)] private float pulseSpeed = 8f;
         [SerializeField, Min(0f)] private float pulseScale = 0.08f;
+        [SerializeField] private bool renderPulseVisuals;
         [SerializeField, Min(0f)] private float tierScaleStep = 0.18f;
         [SerializeField, Min(0f)] private float flashScale = 0.22f;
         [SerializeField, Min(0f)] private float clashFlashScale = 0.16f;
@@ -152,6 +153,7 @@ namespace DimensionBrawl.Presentation
         public CombatControlLockPolicy LastDamageControlLockPolicy => lastDamageControlLockPolicy;
         public bool LastDamageCueInterruptedAction => lastDamageCueInterruptedAction;
         public bool LastFullBodyHitReactionSuppressed => lastFullBodyHitReactionSuppressed;
+        public bool RenderPulseVisuals => renderPulseVisuals;
 
         private void Awake()
         {
@@ -323,7 +325,7 @@ namespace DimensionBrawl.Presentation
             color = Color.Lerp(color, deathFlashColor, deathFlash);
             ApplyColor(color);
 
-            if (pulseRoot == null)
+            if (pulseRoot == null || !renderPulseVisuals)
             {
                 return;
             }
@@ -432,9 +434,10 @@ namespace DimensionBrawl.Presentation
 
         private void SetPulseVisible(bool value)
         {
-            if (pulseRoot != null && pulseRoot.gameObject.activeSelf != value)
+            bool shouldRender = value && renderPulseVisuals;
+            if (pulseRoot != null && pulseRoot.gameObject.activeSelf != shouldRender)
             {
-                pulseRoot.gameObject.SetActive(value);
+                pulseRoot.gameObject.SetActive(shouldRender);
             }
         }
 

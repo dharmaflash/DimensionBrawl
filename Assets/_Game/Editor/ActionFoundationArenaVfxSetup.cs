@@ -53,6 +53,7 @@ namespace DimensionBrawl.Editor
 
             Transform[] influenceTargets = CreateDynamicInfluenceTargets(root.transform);
             CreateReferenceTrainingSpace(root.transform, materials, influenceTargets);
+            root.SetActive(false);
             ClearGeneratedLightingData(scene);
 
             EditorUtility.SetDirty(root);

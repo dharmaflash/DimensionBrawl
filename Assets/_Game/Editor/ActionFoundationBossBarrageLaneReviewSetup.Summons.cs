@@ -313,9 +313,11 @@ namespace DimensionBrawl.Editor
                 visualFilter.sharedMesh = LoadPrimitiveMesh(PrimitiveType.Sphere);
                 MeshRenderer visualRenderer = EnsureComponent<MeshRenderer>(pressureScreenVisual.gameObject);
                 visualRenderer.sharedMaterial = pressureScreenMaterial;
+                visualRenderer.enabled = false;
                 visualRenderer.shadowCastingMode = ShadowCastingMode.Off;
                 visualRenderer.receiveShadows = false;
                 visualRenderer.allowOcclusionWhenDynamic = false;
+                pressureScreenVisual.gameObject.SetActive(false);
                 Collider visualCollider = pressureScreenVisual.GetComponent<Collider>();
                 if (visualCollider != null)
                 {
@@ -326,6 +328,7 @@ namespace DimensionBrawl.Editor
                 SetObjectReference(presenter, "pressureScreen", pressureScreen);
                 SetObjectReference(presenter, "visualRoot", pressureScreenVisual);
                 SetObjectReferenceArray(presenter, "screenRenderers", new UnityEngine.Object[] { visualRenderer });
+                SetBool(presenter, "renderVisuals", false);
                 SetColor(presenter, "activeColor", new Color(0.22f, 1f, 0.82f, 0.09f));
                 SetColor(presenter, "tierTwoColor", new Color(0.38f, 0.74f, 1f, 0.10f));
                 SetColor(presenter, "tierThreeColor", new Color(1f, 0.76f, 0.24f, 0.12f));
@@ -352,6 +355,7 @@ namespace DimensionBrawl.Editor
                 pulseRenderer.shadowCastingMode = ShadowCastingMode.Off;
                 pulseRenderer.receiveShadows = false;
                 pulseRenderer.allowOcclusionWhenDynamic = false;
+                tierPulseCore.gameObject.SetActive(false);
                 Collider pulseCollider = tierPulseCore.GetComponent<Collider>();
                 if (pulseCollider != null)
                 {
@@ -402,6 +406,7 @@ namespace DimensionBrawl.Editor
                     actorPresenter,
                     "actorRenderers",
                     BuildPulseRendererReferenceArray(pulseRenderer));
+                SetBool(actorPresenter, "renderPulseVisuals", false);
                 SetColor(actorPresenter, "tierOneColor", new Color(0.24f, 1f, 0.78f, 0.78f));
                 SetColor(actorPresenter, "tierTwoColor", new Color(0.38f, 0.74f, 1f, 0.9f));
                 SetColor(actorPresenter, "tierThreeColor", new Color(1f, 0.76f, 0.24f, 1f));
@@ -585,6 +590,7 @@ namespace DimensionBrawl.Editor
                 pulseRenderer.shadowCastingMode = ShadowCastingMode.Off;
                 pulseRenderer.receiveShadows = false;
                 pulseRenderer.allowOcclusionWhenDynamic = false;
+                tierPulseCore.gameObject.SetActive(false);
                 Collider pulseCollider = tierPulseCore.GetComponent<Collider>();
                 if (pulseCollider != null)
                 {
@@ -643,6 +649,7 @@ namespace DimensionBrawl.Editor
                     actorPresenter,
                     "actorRenderers",
                     BuildPulseRendererReferenceArray(pulseRenderer));
+                SetBool(actorPresenter, "renderPulseVisuals", false);
                 SetColor(actorPresenter, "tierOneColor", pulseColor);
                 SetColor(actorPresenter, "tierTwoColor", Color.Lerp(pulseColor, Color.white, 0.25f));
                 SetColor(actorPresenter, "tierThreeColor", Color.Lerp(pulseColor, new Color(1f, 0.78f, 0.22f, 1f), 0.45f));
@@ -710,9 +717,11 @@ namespace DimensionBrawl.Editor
             visualFilter.sharedMesh = LoadPrimitiveMesh(PrimitiveType.Sphere);
             MeshRenderer visualRenderer = EnsureComponent<MeshRenderer>(pressureScreenVisual.gameObject);
             visualRenderer.sharedMaterial = pressureScreenMaterial;
+            visualRenderer.enabled = false;
             visualRenderer.shadowCastingMode = ShadowCastingMode.Off;
             visualRenderer.receiveShadows = false;
             visualRenderer.allowOcclusionWhenDynamic = false;
+            pressureScreenVisual.gameObject.SetActive(false);
             Collider visualCollider = pressureScreenVisual.GetComponent<Collider>();
             if (visualCollider != null)
             {
@@ -724,6 +733,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(screenPresenter, "pressureScreen", pressureScreen);
             SetObjectReference(screenPresenter, "visualRoot", pressureScreenVisual);
             SetObjectReferenceArray(screenPresenter, "screenRenderers", new UnityEngine.Object[] { visualRenderer });
+            SetBool(screenPresenter, "renderVisuals", false);
             SetColor(screenPresenter, "activeColor", pressureScreenColor);
             SetColor(screenPresenter, "tierTwoColor", new Color(1f, 0.805f, 0.49f, 0.10f));
             SetColor(screenPresenter, "tierThreeColor", new Color(1f, 0.758f, 0.275f, 0.12f));
@@ -845,9 +855,11 @@ namespace DimensionBrawl.Editor
                 visualFilter.sharedMesh = LoadPrimitiveMesh(PrimitiveType.Sphere);
                 MeshRenderer visualRenderer = EnsureComponent<MeshRenderer>(pressureScreenVisual.gameObject);
                 visualRenderer.sharedMaterial = pressureScreenMaterial;
+                visualRenderer.enabled = false;
                 visualRenderer.shadowCastingMode = ShadowCastingMode.Off;
                 visualRenderer.receiveShadows = false;
                 visualRenderer.allowOcclusionWhenDynamic = false;
+                pressureScreenVisual.gameObject.SetActive(false);
                 Collider visualCollider = pressureScreenVisual.GetComponent<Collider>();
                 if (visualCollider != null)
                 {
@@ -858,6 +870,7 @@ namespace DimensionBrawl.Editor
                 SetObjectReference(presenter, "pressureScreen", pressureScreen);
                 SetObjectReference(presenter, "visualRoot", pressureScreenVisual);
                 SetObjectReferenceArray(presenter, "screenRenderers", new UnityEngine.Object[] { visualRenderer });
+                SetBool(presenter, "renderVisuals", false);
                 SetColor(presenter, "activeColor", new Color(1f, 0.22f, 0.55f, 0.09f));
                 SetColor(presenter, "tierTwoColor", new Color(1f, 0.62f, 0.24f, 0.10f));
                 SetColor(presenter, "tierThreeColor", new Color(1f, 0.22f, 0.9f, 0.12f));
@@ -884,6 +897,7 @@ namespace DimensionBrawl.Editor
                 pulseRenderer.shadowCastingMode = ShadowCastingMode.Off;
                 pulseRenderer.receiveShadows = false;
                 pulseRenderer.allowOcclusionWhenDynamic = false;
+                tierPulseCore.gameObject.SetActive(false);
                 Collider pulseCollider = tierPulseCore.GetComponent<Collider>();
                 if (pulseCollider != null)
                 {
@@ -934,6 +948,7 @@ namespace DimensionBrawl.Editor
                     actorPresenter,
                     "actorRenderers",
                     BuildPulseRendererReferenceArray(pulseRenderer));
+                SetBool(actorPresenter, "renderPulseVisuals", false);
                 SetColor(actorPresenter, "tierOneColor", new Color(1f, 0.32f, 0.55f, 0.82f));
                 SetColor(actorPresenter, "tierTwoColor", new Color(1f, 0.62f, 0.24f, 0.92f));
                 SetColor(actorPresenter, "tierThreeColor", new Color(1f, 0.22f, 0.9f, 1f));
@@ -972,16 +987,6 @@ namespace DimensionBrawl.Editor
         {
             const string VisualPrefix = "SummonEntryVfx_";
             RemoveChildrenWithPrefix(cueRoot.transform, VisualPrefix);
-
-            AttachPromotedVfxPrefab(
-                cueRoot.transform,
-                VisualPrefix + "MagicMissilesArcaneCircle",
-                ImportedMagicMissilesArcaneCirclePrefabPath,
-                new Vector3(0f, 0.08f, 0f),
-                Vector3.zero,
-                new Vector3(0.24f, 0.24f, 0.24f),
-                loopParticles: true,
-                playOnAwake: true);
             EditorUtility.SetDirty(cueRoot);
         }
 
@@ -994,17 +999,6 @@ namespace DimensionBrawl.Editor
         {
             const string VisualPrefix = "SummonShieldVfx_";
             RemoveChildrenWithPrefix(actorRoot.transform, VisualPrefix);
-
-            float clampedRadius = Mathf.Max(0.4f, radius);
-            AttachPromotedVfxPrefab(
-                actorRoot.transform,
-                VisualPrefix + "MagicMissilesShieldCircle",
-                ImportedMagicMissilesShieldCirclePrefabPath,
-                screenCenter + new Vector3(0f, 0f, Mathf.Sign(forwardSign) * 0.08f),
-                new Vector3(90f, 0f, 0f),
-                Vector3.one * (clampedRadius * 0.48f),
-                loopParticles: true,
-                playOnAwake: true);
             EditorUtility.SetDirty(actorRoot);
         }
 
@@ -1017,25 +1011,6 @@ namespace DimensionBrawl.Editor
         {
             const string VisualPrefix = "SummonPulseVfx_";
             RemoveChildrenWithPrefix(actorRoot.transform, VisualPrefix);
-
-            Transform pulseRoot = actorRoot.transform.Find(pulseRootName);
-            if (pulseRoot == null)
-            {
-                return;
-            }
-
-            float direction = Mathf.Sign(forwardSign);
-            Vector3 pulseCenter = pulseRoot.localPosition;
-            float clampedRadius = Mathf.Max(0.28f, radius);
-            AttachPromotedVfxPrefab(
-                actorRoot.transform,
-                VisualPrefix + "MagicMissilesPulse",
-                ImportedMagicMissilesPulsePrefabPath,
-                pulseCenter + new Vector3(0f, 0f, direction * 0.08f),
-                Vector3.zero,
-                Vector3.one * Mathf.Max(0.34f, clampedRadius * 0.82f),
-                loopParticles: true,
-                playOnAwake: true);
             EditorUtility.SetDirty(actorRoot);
         }
 
@@ -1048,16 +1023,6 @@ namespace DimensionBrawl.Editor
         {
             const string VisualPrefix = "SummonStateVfx_";
             RemoveChildrenWithPrefix(actorRoot.transform, VisualPrefix);
-
-            AttachPromotedVfxPrefab(
-                actorRoot.transform,
-                VisualPrefix + stateName,
-                sourcePrefabPath,
-                localPosition,
-                Vector3.zero,
-                localScale,
-                loopParticles: true,
-                playOnAwake: true);
             EditorUtility.SetDirty(actorRoot);
         }
 

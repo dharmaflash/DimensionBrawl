@@ -148,6 +148,8 @@ namespace DimensionBrawl.Tests
         private const string ActionCuePoolRootName = "BossBarrageLaneReview_ActionCuePool";
         private const string SummonActorPoolRootName = "BossBarrageLaneReview_SummonActorPool";
         private const string PocketOwnerRootName = "BossBarrageLaneReview_PocketOwner";
+        private const string ArenaVfxRootName = "ActionFoundation_ArenaVfx";
+        private const string MarkerRootName = "BossBarrageLaneReview_Markers";
         private const string BossTelegraphRootName = "BossBarrageLaneReview_BossBarrageTelegraphMarkers";
         private const string AmbientVfxRootName = "BossBarrageLaneReview_AmbientVfx";
         private const string AmbientAudioRootName = "BossBarrageLaneReview_AmbientAudio";
@@ -610,6 +612,10 @@ namespace DimensionBrawl.Tests
                 telegraphPresenter.MarkerCount,
                 9,
                 "Boss barrage lane telegraphs must be authored world markers, not HUD-only warning text.");
+            Assert.IsFalse(RequireRoot(ArenaVfxRootName).activeSelf, "Arena dressing VFX should stay disabled during gameplay cleanup.");
+            Assert.IsFalse(RequireRoot(MarkerRootName).activeSelf, "Lane marker VFX should stay disabled during gameplay cleanup.");
+            Assert.IsFalse(RequireRoot(BossTelegraphRootName).activeSelf, "Boss telegraph marker VFX should stay disabled during gameplay cleanup.");
+            Assert.IsFalse(RequireRoot(AmbientVfxRootName).activeSelf, "Ambient lane VFX should stay disabled during gameplay cleanup.");
             AssertLaneAmbientVfx(RequireRoot(AmbientVfxRootName));
             AssertLaneAmbientAudio(RequireRoot(AmbientAudioRootName));
             AssertBossBarrageLaneReviewFootstepAudio(player, closeThreatRoot, bossRoot);
@@ -842,12 +848,18 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(summonPressureScreen, summonActorPrefab.PressureScreen);
             Assert.AreSame(summonPressureScreen, summonPressureScreenPresenter.PressureScreen);
             Assert.Greater(summonPressureScreenPresenter.RendererCount, 0);
+            Assert.IsFalse(
+                summonPressureScreenPresenter.RenderVisuals,
+                "Summon pressure screen gameplay remains active, but the temporary screen visual should stay disabled.");
             AssertSummonActorVfx(
                 summonActorPrefabObject,
                 expectPressureScreen: true,
                 label: "SummonSlot1 actor prefab");
             Assert.AreSame(summonActorPrefab, summonActorPresenter.Proxy);
             Assert.IsNotNull(summonActorPresenter.PulseRoot);
+            Assert.IsFalse(
+                summonActorPresenter.RenderPulseVisuals,
+                "Summon actor gameplay remains active, but the temporary tier pulse should stay disabled.");
             Assert.AreEqual(
                 1,
                 summonActorPresenter.RendererCount,
@@ -5355,10 +5367,9 @@ namespace DimensionBrawl.Tests
             MeshRenderer rootRenderer = entryCuePrefab.GetComponent<MeshRenderer>();
             Assert.IsNotNull(rootRenderer, "summon entry cue should keep its root renderer for editor repair.");
             Assert.IsFalse(rootRenderer.enabled, "summon entry cue should hide its primitive root.");
-            AssertPromotedParticleVfx(
+            AssertSuppressedTemporaryVfx(
                 entryCuePrefab.transform.Find("SummonEntryVfx_MagicMissilesArcaneCircle"),
-                "summon entry MagicMissiles circle",
-                2);
+                "summon entry MagicMissiles circle");
         }
 
         private static void AssertSupportSummonSceneBinding(
@@ -5432,23 +5443,30 @@ namespace DimensionBrawl.Tests
 
         private static void AssertSummonActorVfx(GameObject actorPrefab, bool expectPressureScreen, string label)
         {
-            AssertPromotedParticleVfx(
+            AssertSuppressedTemporaryVfx(
                 actorPrefab.transform.Find("SummonPulseVfx_MagicMissilesPulse"),
-                $"{label} MagicMissiles pulse",
-                1);
-            AssertPromotedParticleVfx(
+                $"{label} MagicMissiles pulse");
+            AssertSuppressedTemporaryVfx(
                 FindChildWithPrefix(actorPrefab.transform, "SummonStateVfx_"),
-                $"{label} MagicMissiles state aura",
-                1);
+                $"{label} MagicMissiles state aura");
             if (!expectPressureScreen)
             {
                 return;
             }
 
-            AssertPromotedParticleVfx(
+            AssertSuppressedTemporaryVfx(
                 actorPrefab.transform.Find("SummonShieldVfx_MagicMissilesShieldCircle"),
-                $"{label} MagicMissiles shield circle",
-                2);
+                $"{label} MagicMissiles shield circle");
+        }
+
+        private static void AssertSuppressedTemporaryVfx(Transform root, string label)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            Assert.IsFalse(root.gameObject.activeSelf, $"{label} should not be active during the gameplay VFX cleanup pass.");
         }
 
         private static void AssertBossBarrageCombatCueAssetOverlays()
