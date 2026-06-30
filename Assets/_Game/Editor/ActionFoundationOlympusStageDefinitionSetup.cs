@@ -35,6 +35,7 @@ namespace DimensionBrawl.Editor
         private const string BossIntroProfilePath = CinematicProfileRoot + "/DB_Cinematic_BossIntro.asset";
         private const string GameplayHandoffProfilePath = CinematicProfileRoot + "/DB_Cinematic_GameplayHandoff.asset";
         private const float StageScale = 1.5f;
+        private const float OlympusCorridorGameplayYawDegrees = 90f;
 
         private static readonly string[] IntroGatePodPayloadSourceNames =
         {
@@ -65,15 +66,15 @@ namespace DimensionBrawl.Editor
 
         private static readonly AnchorSpec[] AnchorSpecs =
         {
-            new("Player_LeftShoulderCameraAnchor", CombatAnchorsName, new Vector3(-16.5f, 1.8f, -4.65f), new Vector3(0f, 82f, 0f), "Player camera/start read for intro handoff and combat entry."),
+            new("Player_LeftShoulderCameraAnchor", CombatAnchorsName, new Vector3(-51.402f, 9.785f, -0.411f), new Vector3(0f, OlympusCorridorGameplayYawDegrees, 0f), "Player camera/start read for intro handoff and combat entry."),
             new("Boss_CenterLaneAnchor", CombatAnchorsName, new Vector3(15.3f, 0f, 0f), Vector3.zero, "Boss center spawn and reveal focus."),
             new("Add_LeftLaneAnchor", CombatAnchorsName, new Vector3(13.35f, 0f, -1.875f), Vector3.zero, "Left add spawn lane."),
             new("Add_RightLaneAnchor", CombatAnchorsName, new Vector3(13.35f, 0f, 1.875f), Vector3.zero, "Right add spawn lane."),
             new("Rift_BackdropAnchor", CombatAnchorsName, new Vector3(22.2f, 3.975f, 0f), Vector3.zero, "Far rift/backdrop spatial reference."),
-            new("IntroCutscene_End_PlayerHandoffAnchor", CutsceneAnchorsName, new Vector3(-16.5f, 1.8f, -4.65f), new Vector3(0f, 82f, 0f), "Intro cutscene exits into this player-side view."),
+            new("IntroCutscene_End_PlayerHandoffAnchor", CutsceneAnchorsName, new Vector3(-51.402f, 9.785f, -0.411f), new Vector3(0f, OlympusCorridorGameplayYawDegrees, 0f), "Intro cutscene exits into this player-side view."),
             new("BossEntrance_BossRevealAnchor", CutsceneAnchorsName, new Vector3(15.3f, 1.6f, 0f), Vector3.zero, "Boss entrance reveal look/actor anchor."),
-            new("Gameplay_CombatStartAnchor", CutsceneAnchorsName, new Vector3(-16.5f, 0f, -4.65f), new Vector3(0f, 82f, 0f), "Gameplay camera/input unlock handoff."),
-            new("StageSpawner_PlayerStart", RuntimeAnchorsName, new Vector3(-16.5f, 0f, -4.65f), new Vector3(0f, 82f, 0f), "Runtime PositionId for player start."),
+            new("Gameplay_CombatStartAnchor", CutsceneAnchorsName, new Vector3(-51.402f, 7.985f, -0.411f), new Vector3(0f, OlympusCorridorGameplayYawDegrees, 0f), "Gameplay camera/input unlock handoff."),
+            new("StageSpawner_PlayerStart", RuntimeAnchorsName, new Vector3(-51.402f, 7.985f, -0.411f), new Vector3(0f, OlympusCorridorGameplayYawDegrees, 0f), "Runtime PositionId for player start."),
             new("StageSpawner_BossCenter", RuntimeAnchorsName, new Vector3(15.3f, 0f, 0f), Vector3.zero, "Runtime PositionId for boss center."),
             new("StageClear_CorridorExit", RuntimeAnchorsName, new Vector3(27f, 0f, 0f), Vector3.zero, "Runtime clear/exit state hook.")
         };
@@ -131,7 +132,7 @@ namespace DimensionBrawl.Editor
                 "combat-start",
                 "Gameplay_CombatStartAnchor",
                 "position-player-start",
-                new Vector3(-16.5f, 0f, -4.65f),
+                new Vector3(-51.402f, 7.985f, -0.411f),
                 new Vector3(0f, 82f, 0f),
                 "Input and camera unlock port after cutscenes. Combat balance and spawn pacing stay outside this port.")
         };
@@ -345,59 +346,6 @@ namespace DimensionBrawl.Editor
             ValidateOlympusCorridorStageDefinition(profile);
         }
 
-        [MenuItem("DimensionBrawl/Refresh Intro GatePod Invasion Bridge On Olympus Stage")]
-        public static void RefreshIntroGatePodInvasionBridgeOnOlympusStageMenu()
-        {
-            RefreshIntroGatePodInvasionBridgeOnOlympusStage();
-            Debug.Log("Refreshed intro GatePod invasion bridge on the Olympus corridor stage without replacing the manual visual payload root.");
-        }
-
-        public static void RefreshIntroGatePodInvasionBridgeOnOlympusStage()
-        {
-            if (!AssetDatabase.LoadAssetAtPath<SceneAsset>(IntroGatePodReviewScenePath))
-            {
-                throw new InvalidOperationException($"Missing intro GatePod review scene: {IntroGatePodReviewScenePath}");
-            }
-
-            StageDefinitionProfile profile = LoadRequired<StageDefinitionProfile>(DefinitionPath);
-            Scene stageScene = EditorSceneManager.OpenScene(profile.MapScenePath, OpenSceneMode.Single);
-            GameObject stageRoot = RequireRoot(stageScene, profile.MapRootName);
-            Transform introPayloadRoot = RequireIntroPortPayloadRoot(stageRoot.transform);
-            Transform visualRoot = RequireChild(introPayloadRoot, IntroGatePodGeneratedPayloadRootName);
-
-            Scene sourceScene = default;
-            bool sourceSceneOpened = false;
-            try
-            {
-                sourceScene = EditorSceneManager.OpenScene(IntroGatePodReviewScenePath, OpenSceneMode.Additive);
-                sourceSceneOpened = true;
-                GameObject sourceBridge = FindRootOrDescendant(sourceScene, "IntroGatePodReview_InvasionBridge")
-                    ?? throw new InvalidOperationException("Missing source IntroGatePodReview_InvasionBridge.");
-
-                RemoveChild(visualRoot, "IntroGatePodReview_InvasionBridge");
-                GameObject copy = UnityEngine.Object.Instantiate(sourceBridge);
-                copy.name = sourceBridge.name;
-                SceneManager.MoveGameObjectToScene(copy, stageScene);
-                copy.transform.SetParent(visualRoot, worldPositionStays: false);
-                DisableCopiedIntroPayloadDrivers(copy);
-                EditorUtility.SetDirty(copy);
-            }
-            finally
-            {
-                if (sourceSceneOpened && sourceScene.IsValid())
-                {
-                    EditorSceneManager.CloseScene(sourceScene, removeScene: true);
-                }
-            }
-
-            EditorUtility.SetDirty(visualRoot);
-            EditorSceneManager.MarkSceneDirty(stageScene);
-            EditorSceneManager.SaveScene(stageScene);
-            AssetDatabase.SaveAssets();
-
-            ApplyIntroGatePodCutsceneRuntimeToOlympusStage();
-        }
-
         private static void ValidateOlympusCorridorStageDefinition(StageDefinitionProfile profile)
         {
             ValidateProfileFields(profile);
@@ -443,6 +391,7 @@ namespace DimensionBrawl.Editor
                 AnchorSpec spec = AnchorSpecs[i];
                 Transform group = RequireChild(stageAnchors, spec.GroupId);
                 Transform anchor = RequireChild(group, spec.AnchorId);
+                ConfigureAnchorTransform(anchor, spec);
                 StageAnchorPoint point = GetOrAddComponent<StageAnchorPoint>(anchor.gameObject);
                 ConfigureAnchorPoint(point, spec);
                 points[i] = point;
@@ -963,15 +912,10 @@ namespace DimensionBrawl.Editor
                     targetRoot,
                     targetAnimator,
                     sourceCue.RunStateName,
-                    sourceCue.AttackStateName,
-                    sourceCue.HitStateName,
                     sourceCue.StartSeconds,
-                    sourceCue.AttackStartSeconds,
-                    sourceCue.HitStartSeconds,
                     sourceCue.EndSeconds,
                     sourceCue.StartLocalPosition,
                     sourceCue.EndLocalPosition,
-                    sourceCue.HitLocalPositionOffset,
                     sourceCue.LocalEulerAngles,
                     sourceCue.NormalizedTimeOffset);
             }
@@ -993,9 +937,6 @@ namespace DimensionBrawl.Editor
                 GetVector3(sourceSerialized, "explosionRestScale"),
                 GetVector3(sourceSerialized, "explosionPeakScale"),
                 GetFloat(sourceSerialized, "explosionPeakLightIntensity"));
-            targetBridge.ConfigureTimedObjects(
-                RebindIntroTimedObjects(sourceBridge.TimedObjects, visualRoot),
-                GetFloatArray(sourceSerialized, "impactCueSeconds"));
             targetBridge.ConfigurePresentation(
                 runtimeCamera,
                 RequireComponentByObjectName<CanvasGroup>(runtimeRoot, "IntroGatePodReview_InvasionImpactFlash"),
@@ -1010,42 +951,6 @@ namespace DimensionBrawl.Editor
             targetBridge.enabled = true;
             targetBridge.Sample(0f);
             EditorUtility.SetDirty(targetBridge);
-        }
-
-        private static IntroGatePodInvasionBridgeCue.TimedObjectCue[] RebindIntroTimedObjects(
-            IntroGatePodInvasionBridgeCue.TimedObjectCue[] sourceTimedObjects,
-            Transform visualRoot)
-        {
-            if (sourceTimedObjects == null || sourceTimedObjects.Length == 0)
-            {
-                return Array.Empty<IntroGatePodInvasionBridgeCue.TimedObjectCue>();
-            }
-
-            IntroGatePodInvasionBridgeCue.TimedObjectCue[] targetTimedObjects =
-                new IntroGatePodInvasionBridgeCue.TimedObjectCue[sourceTimedObjects.Length];
-            for (int i = 0; i < sourceTimedObjects.Length; i++)
-            {
-                IntroGatePodInvasionBridgeCue.TimedObjectCue sourceCue = sourceTimedObjects[i];
-                if (sourceCue.Root == null)
-                {
-                    throw new InvalidOperationException("Intro GatePod source timed object cue has no root.");
-                }
-
-                Transform targetRoot = RequireDescendantOrSelf(visualRoot, sourceCue.Root.name);
-                targetTimedObjects[i] = new IntroGatePodInvasionBridgeCue.TimedObjectCue(
-                    targetRoot,
-                    sourceCue.StartSeconds,
-                    sourceCue.EndSeconds,
-                    sourceCue.StartLocalPosition,
-                    sourceCue.EndLocalPosition,
-                    sourceCue.LocalEulerAngles,
-                    sourceCue.StartLocalScale,
-                    sourceCue.EndLocalScale,
-                    sourceCue.PulseScale,
-                    sourceCue.PulseScaleAmplitude);
-            }
-
-            return targetTimedObjects;
         }
 
         private static void EnableIntroVisualPresentationDrivers(Transform visualRoot)
@@ -1121,8 +1026,7 @@ namespace DimensionBrawl.Editor
                 FindComponentByObjectName<IntroGatePodInvasionBridgeCue>(visualRoot, "IntroGatePodReview_InvasionBridge")
                 ?? throw new InvalidOperationException("Intro GatePod visual bridge cue is missing.");
             if (!invasionBridge.enabled
-                || invasionBridge.Commandos.Length < 6
-                || invasionBridge.TimedObjects.Length < 10
+                || invasionBridge.Commandos.Length < 3
                 || invasionBridge.ExplosionRoot == null)
             {
                 throw new InvalidOperationException("Intro GatePod visual bridge cue is not runtime-ready.");
@@ -1158,6 +1062,14 @@ namespace DimensionBrawl.Editor
             SetString(serialized, "purpose", spec.Purpose);
             serialized.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(point);
+        }
+
+        private static void ConfigureAnchorTransform(Transform anchor, AnchorSpec spec)
+        {
+            anchor.localPosition = spec.Position;
+            anchor.localRotation = Quaternion.Euler(spec.Euler);
+            anchor.localScale = Vector3.one;
+            EditorUtility.SetDirty(anchor);
         }
 
         private static StageAnchorUsageKind ResolveUsageKind(AnchorSpec spec)
@@ -1319,6 +1231,11 @@ namespace DimensionBrawl.Editor
             if (Vector3.Distance(sceneAnchor.localPosition, anchor.ExpectedPosition) > 0.05f)
             {
                 throw new InvalidOperationException($"{profile.StageId}/{anchor.AnchorId} position does not match scene anchor.");
+            }
+
+            if (Quaternion.Angle(sceneAnchor.localRotation, Quaternion.Euler(anchor.ExpectedEuler)) > 0.25f)
+            {
+                throw new InvalidOperationException($"{profile.StageId}/{anchor.AnchorId} rotation does not match scene anchor.");
             }
 
             StageAnchorPoint point = sceneAnchor.GetComponent<StageAnchorPoint>();
@@ -1709,18 +1626,6 @@ namespace DimensionBrawl.Editor
         private static Vector3 GetVector3(SerializedObject serializedObject, string propertyName)
         {
             return RequireProperty(serializedObject, propertyName).vector3Value;
-        }
-
-        private static float[] GetFloatArray(SerializedObject serializedObject, string propertyName)
-        {
-            SerializedProperty property = RequireProperty(serializedObject, propertyName);
-            float[] values = new float[property.arraySize];
-            for (int i = 0; i < property.arraySize; i++)
-            {
-                values[i] = property.GetArrayElementAtIndex(i).floatValue;
-            }
-
-            return values;
         }
 
         private static SerializedProperty RequireProperty(SerializedObject serializedObject, string propertyName)

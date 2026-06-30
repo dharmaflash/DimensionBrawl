@@ -103,18 +103,18 @@ MonoBehaviour:
     StageRole: Quick ranged support that adds two clean bolts without blocking boss
       pressure.
     PlayerUse: Spend when the boss is open but the shield slot is not needed yet.
-    SummonRead: BacklineShooter enters left of the player lane, advances toward the
-      boss lane, and fires a narrow cover pair.
+    SummonRead: Commando rifleman enters left of the player lane, advances toward
+      the boss lane, and fires a narrow cover pair.
   - TierLabel: LV2 Focus Volley
     StageRole: Mid-tier support that pressures the boss lane with a wider three-shot
       answer.
     PlayerUse: Hold EN when you can stay forward long enough for a stronger punish.
-    SummonRead: BacklineShooter keeps a side-lane advance toward the boss and fires
+    SummonRead: Commando rifleman keeps a side-lane advance toward the boss and fires
       a three-bolt focused volley.
   - TierLabel: LV3 Marksman Burst
     StageRole: High-tier ranged support for a clear boss punish window after surviving
       pressure.
     PlayerUse: Use when the next exchange should convert defense into visible boss
       damage.
-    SummonRead: BacklineShooter stays alive long enough to send repeated four-bolt
+    SummonRead: Commando rifleman stays alive long enough to send repeated four-bolt
       volleys across the contested lane.

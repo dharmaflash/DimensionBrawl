@@ -11,6 +11,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private Renderer[] flashRenderers;
 
         [Header("Flash")]
+        [SerializeField] private bool renderHitFeedback;
         [SerializeField] private bool applyIdleColorOnEnable = true;
         [SerializeField] private Color idleColor = new Color(0.3f, 0.85f, 1f);
         [Tooltip("First-pass visible feedback value. The combat timing source only gives stagger/hit-stop ranges, so this remains Inspector-visible.")]
@@ -20,6 +21,8 @@ namespace DimensionBrawl.Presentation
 
         private MaterialPropertyBlock propertyBlock;
         private Coroutine flashRoutine;
+
+        public bool RenderHitFeedback => renderHitFeedback;
 
         private void Awake()
         {
@@ -33,7 +36,7 @@ namespace DimensionBrawl.Presentation
 
         private void OnEnable()
         {
-            if (health == null)
+            if (health == null || !renderHitFeedback)
             {
                 return;
             }
@@ -64,6 +67,11 @@ namespace DimensionBrawl.Presentation
 
         private void HandleDamaged(DamageInfo damageInfo)
         {
+            if (!renderHitFeedback)
+            {
+                return;
+            }
+
             if (!DamageResponsePolicyUtility.PlaysDamagePresentation(damageInfo.ResponsePolicy))
             {
                 return;
@@ -79,6 +87,11 @@ namespace DimensionBrawl.Presentation
 
         private void HandleDied()
         {
+            if (!renderHitFeedback)
+            {
+                return;
+            }
+
             if (flashRoutine != null)
             {
                 StopCoroutine(flashRoutine);

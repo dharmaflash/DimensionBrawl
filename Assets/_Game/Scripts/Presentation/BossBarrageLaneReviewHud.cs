@@ -38,6 +38,7 @@ namespace DimensionBrawl.Presentation
 
         [Header("Display")]
         [SerializeField] private bool showHud = true;
+        [SerializeField, Range(0f, 1f)] private float hudOpacity = 1f;
         [SerializeField] private bool showDetailedTelemetry;
         [SerializeField, Min(1f)] private float width = 390f;
         [SerializeField, Min(1f)] private float height = 230f;
@@ -96,6 +97,7 @@ namespace DimensionBrawl.Presentation
         public string SummonReadinessReadout => ResolveCompactSummonText();
         public string PlayerSurvivalReadout => ResolvePlayerSurvivalReadout().Line;
         public string PlayerSurvivalCueReadout => ResolvePlayerSurvivalCueText();
+        public float HudOpacity => hudOpacity;
         public bool ShouldShowResultBanner => TryResolveResultBanner(out _, out _, out _);
         public string ResultBannerTitle => TryResolveResultBanner(out string title, out _, out _) ? title : string.Empty;
         public string ResultBannerDetail => TryResolveResultBanner(out _, out string detail, out _) ? detail : string.Empty;
@@ -129,6 +131,11 @@ namespace DimensionBrawl.Presentation
         public void SetDetailedTelemetryVisible(bool visible)
         {
             showDetailedTelemetry = visible;
+        }
+
+        public void SetHudOpacity(float opacity)
+        {
+            hudOpacity = Mathf.Clamp01(opacity);
         }
 
         public void Configure(
@@ -178,11 +185,18 @@ namespace DimensionBrawl.Presentation
 
         private void OnGUI()
         {
-            if (!showHud)
+            if (!showHud || hudOpacity <= 0.001f)
             {
                 return;
             }
 
+            Color previousGuiColor = GUI.color;
+            Color previousContentColor = GUI.contentColor;
+            Color previousBackgroundColor = GUI.backgroundColor;
+            float previousChromeOpacity = BossBarrageLaneReviewHudChrome.BeginOpacity(hudOpacity);
+            GUI.color = WithHudOpacity(previousGuiColor);
+            GUI.contentColor = WithHudOpacity(previousContentColor);
+            GUI.backgroundColor = WithHudOpacity(previousBackgroundColor);
             GUI.depth = -1000;
             Matrix4x4 previousMatrix = GUI.matrix;
             float uiScale = ResolveUiScale();
@@ -213,6 +227,10 @@ namespace DimensionBrawl.Presentation
             DrawResultBanner(uiScale);
             GUI.matrix = previousMatrix;
             DrawReticleIfNeeded();
+            BossBarrageLaneReviewHudChrome.EndOpacity(previousChromeOpacity);
+            GUI.color = previousGuiColor;
+            GUI.contentColor = previousContentColor;
+            GUI.backgroundColor = previousBackgroundColor;
         }
 
         private void DrawPremiumCompactHud(float uiScale)
@@ -1511,9 +1529,9 @@ namespace DimensionBrawl.Presentation
             Rect rect = new Rect(x, y, bannerWidth, bannerHeight);
 
             Color previousColor = GUI.color;
-            GUI.color = backColor;
+            GUI.color = WithHudOpacity(backColor);
             GUI.DrawTexture(rect, Texture2D.whiteTexture);
-            GUI.color = resultBannerTextColor;
+            GUI.color = WithHudOpacity(resultBannerTextColor);
             GUI.Label(new Rect(rect.x + 12f, rect.y + 9f, rect.width - 24f, 34f), title, resultBannerTitleStyle);
             GUI.Label(new Rect(rect.x + 18f, rect.y + 45f, rect.width - 36f, rect.height - 48f), detail, resultBannerDetailStyle);
             GUI.color = previousColor;
@@ -1775,16 +1793,16 @@ namespace DimensionBrawl.Presentation
         {
             Rect rect = GUILayoutUtility.GetRect(1f, resourceBarHeight, GUILayout.ExpandWidth(true));
             Color previousColor = GUI.color;
-            GUI.color = resourceBarBackColor;
+            GUI.color = WithHudOpacity(resourceBarBackColor);
             GUI.DrawTexture(rect, Texture2D.whiteTexture);
 
             Rect fillRect = rect;
             fillRect.width *= readout.Fill01;
-            GUI.color = readout.FillColor;
+            GUI.color = WithHudOpacity(readout.FillColor);
             GUI.DrawTexture(fillRect, Texture2D.whiteTexture);
 
             resourceBarStyle.normal.textColor = readout.IsReady ? resourceReadyTextColor : resourceTextColor;
-            GUI.color = Color.white;
+            GUI.color = WithHudOpacity(Color.white);
             GUI.Label(rect, readout.Line, resourceBarStyle);
             GUI.color = previousColor;
 
@@ -1830,9 +1848,9 @@ namespace DimensionBrawl.Presentation
             float length = aiming ? 18f : 10f;
             float thickness = aiming ? 3f : 2f;
             Color previousColor = GUI.color;
-            GUI.color = aiming
+            GUI.color = WithHudOpacity(aiming
                 ? new Color(0.42f, 0.95f, 1f, 0.92f)
-                : new Color(1f, 1f, 1f, 0.42f);
+                : new Color(1f, 1f, 1f, 0.42f));
 
             GUI.DrawTexture(new Rect(centerX - gap - length, centerY - thickness * 0.5f, length, thickness), Texture2D.whiteTexture);
             GUI.DrawTexture(new Rect(centerX + gap, centerY - thickness * 0.5f, length, thickness), Texture2D.whiteTexture);
@@ -1840,6 +1858,12 @@ namespace DimensionBrawl.Presentation
             GUI.DrawTexture(new Rect(centerX - thickness * 0.5f, centerY + gap, thickness, length), Texture2D.whiteTexture);
             GUI.DrawTexture(new Rect(centerX - thickness * 0.5f, centerY - thickness * 0.5f, thickness, thickness), Texture2D.whiteTexture);
             GUI.color = previousColor;
+        }
+
+        private Color WithHudOpacity(Color color)
+        {
+            color.a *= hudOpacity;
+            return color;
         }
     }
 }

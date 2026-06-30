@@ -22,6 +22,7 @@ namespace DimensionBrawl.Presentation
         public float MaximumPitch => maximumPitch;
         public float MinimumVolumeMultiplier => minimumVolumeMultiplier;
         public float MaximumVolumeMultiplier => maximumVolumeMultiplier;
+        public float LastPlayedClipDurationSeconds { get; private set; }
 
         private void Reset()
         {
@@ -63,6 +64,7 @@ namespace DimensionBrawl.Presentation
         {
             if (source == null || !source.enabled || !source.gameObject.activeInHierarchy || clips == null || clips.Length == 0)
             {
+                LastPlayedClipDurationSeconds = 0f;
                 return false;
             }
 
@@ -70,6 +72,7 @@ namespace DimensionBrawl.Presentation
             AudioClip clip = clips[clipIndex];
             if (clip == null)
             {
+                LastPlayedClipDurationSeconds = 0f;
                 return false;
             }
 
@@ -80,6 +83,7 @@ namespace DimensionBrawl.Presentation
                 * Mathf.Max(0f, volumeScale)
                 * Random.Range(minimumVolumeMultiplier, maximumVolumeMultiplier);
             source.pitch = Random.Range(minimumPitch, maximumPitch);
+            LastPlayedClipDurationSeconds = source.pitch > 0.001f ? clip.length / source.pitch : clip.length;
             source.Play();
             return true;
         }

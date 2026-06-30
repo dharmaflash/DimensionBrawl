@@ -16,6 +16,8 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private EnemyElitePatternController elitePatternController;
         [SerializeField, Min(0f)] private float damageCueIntensity = 1f;
         [SerializeField, Range(0.1f, 1f)] private float pressureDamageCueScale = 0.66f;
+        [SerializeField] private bool playDamageVfx;
+        [SerializeField] private bool playDeathVfx;
         [SerializeField] private CombatPatternVfxCueOverride[] patternCueOverrides = Array.Empty<CombatPatternVfxCueOverride>();
         [SerializeField] private CombatEliteVfxCueOverride[] eliteCueOverrides = Array.Empty<CombatEliteVfxCueOverride>();
 
@@ -30,6 +32,8 @@ namespace DimensionBrawl.Presentation
         public int DamageVfxCueRequestCount => damageVfxCueRequestCount;
         public float DamageCueIntensity => damageCueIntensity;
         public float PressureDamageCueScale => pressureDamageCueScale;
+        public bool PlayDamageVfx => playDamageVfx;
+        public bool PlayDeathVfx => playDeathVfx;
         public float LastDamageCueIntensity => lastDamageCueIntensity;
         public float LastDamageCuePolicyScale => lastDamageCuePolicyScale;
         public DamageResponsePolicy LastDamageResponsePolicy => lastDamageResponsePolicy;
@@ -130,7 +134,7 @@ namespace DimensionBrawl.Presentation
             lastDamageControlLockPolicy = damageInfo.ControlLockPolicy;
             lastDamageCueInterruptedAction = interruptsAction;
 
-            if (Play(CombatVfxCueId.EnemyHit, damageInfo.Direction, intensity))
+            if (playDamageVfx && Play(CombatVfxCueId.EnemyHit, damageInfo.Direction, intensity))
             {
                 damageVfxCueRequestCount++;
             }
@@ -138,7 +142,10 @@ namespace DimensionBrawl.Presentation
 
         private void HandleDied()
         {
-            Play(CombatVfxCueId.EnemyDeath, ResolveThreatDirection(), 1f);
+            if (playDeathVfx)
+            {
+                Play(CombatVfxCueId.EnemyDeath, ResolveThreatDirection(), 1f);
+            }
         }
 
         private void HandleEliteSignalTriggered(CombatAiElitePatternProfile profile)

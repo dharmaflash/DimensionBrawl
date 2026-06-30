@@ -99,14 +99,14 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonPresentation_BossAuraCaptain.asset";
         private const string ShieldBreakerEliteRoleCandidateProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyRoleCandidates/DB_RoleCandidate_ShieldBreakerElite.asset";
-        private const string BacklineShooterRoleCandidateProfilePath =
-            "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyRoleCandidates/DB_RoleCandidate_BacklineShooter.asset";
+        private const string LineCasterRoleCandidateProfilePath =
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyRoleCandidates/DB_RoleCandidate_LineCaster.asset";
         private const string FinalStandCommanderEliteRoleCandidateProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyRoleCandidates/DB_RoleCandidate_FinalStandCommanderElite.asset";
         private const string AuraCaptainEliteRoleCandidateProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/EnemyRoleCandidates/DB_RoleCandidate_AuraCaptainElite.asset";
         private const string SummonSlot1ActorVisualName = "SummonSlot1Visual_ShieldBreakerElite";
-        private const string SummonSlot2ActorVisualName = "SummonSlot2Visual_BacklineShooter";
+        private const string SummonSlot2ActorVisualName = "SummonSlot2Visual_CommandoRifleman";
         private const string SummonSlot3ActorVisualName = "SummonSlot3Visual_FinalStandCommanderElite";
         private const string BossSummonPressureActorVisualName = "BossSummonPressureVisual_AuraCaptainElite";
         private const string SummonActorMoveSpeedParameter = "MoveSpeed";
@@ -148,6 +148,8 @@ namespace DimensionBrawl.Tests
         private const string ActionCuePoolRootName = "BossBarrageLaneReview_ActionCuePool";
         private const string SummonActorPoolRootName = "BossBarrageLaneReview_SummonActorPool";
         private const string PocketOwnerRootName = "BossBarrageLaneReview_PocketOwner";
+        private const string ArenaVfxRootName = "ActionFoundation_ArenaVfx";
+        private const string MarkerRootName = "BossBarrageLaneReview_Markers";
         private const string BossTelegraphRootName = "BossBarrageLaneReview_BossBarrageTelegraphMarkers";
         private const string AmbientVfxRootName = "BossBarrageLaneReview_AmbientVfx";
         private const string AmbientAudioRootName = "BossBarrageLaneReview_AmbientAudio";
@@ -160,8 +162,6 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossBarrageSummonRouteWisp.mat";
         private const string AmbientArenaStormClipPath =
             "Assets/_Game/Art/Audio/Ambience/DB_AMB_BossBarrage_ArenaStorm.mp3";
-        private const string AmbientLaneEnergyHumClipPath =
-            "Assets/_Game/Art/Audio/Ambience/DB_AMB_BossBarrage_LaneEnergyHum.wav";
         private const string AmbientRailDustFlowClipPath =
             "Assets/_Game/Art/Audio/Ambience/DB_AMB_BossBarrage_RailDustFlow.wav";
         private const string PlayerFootstepAudioName = "ReviewedFootstepAudio_Player";
@@ -295,7 +295,7 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(cinematicCueDirector, pocketCameraCueBridge.CinematicCueDirector);
             Assert.IsTrue(GetBool(cinematicCueDirector, "allowCuePlayback"));
             Assert.IsFalse(GetBool(cinematicCueDirector, "allowSequenceBridgePlayback"));
-            Assert.IsTrue(cinematicCueDirector.DrawCinematicBars);
+            Assert.IsFalse(cinematicCueDirector.DrawCinematicBars);
             ActionCinematicSequenceBridge sequenceBridge =
                 GetObjectReference<ActionCinematicSequenceBridge>(cinematicCueDirector, "sequenceBridge");
             Assert.IsFalse(sequenceBridge.enabled);
@@ -325,6 +325,7 @@ namespace DimensionBrawl.Tests
             AssertBossHumanoidVisual(bossRoot);
             GameObject closeThreatRoot = RequireRoot(CloseThreatRootName);
             CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreatRoot, "close threat health");
+            AssertSuppressedCombatHitFeedback();
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
             BossBasicFireEmitter bossBasicFireEmitter =
                 RequireComponent<BossBasicFireEmitter>(bossRoot, "boss basic fire emitter");
@@ -410,8 +411,11 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(CombatVfxCueId.PlayerDamaged, GetEnum<CombatVfxCueId>(playerVfxCueDriver, "damagedCueId"));
             Assert.AreEqual(CombatVfxCueId.PlayerCritical, GetEnum<CombatVfxCueId>(playerVfxCueDriver, "criticalCueId"));
             Assert.AreEqual(0.62f, playerVfxCueDriver.PressureDamageCueScale, 0.001f);
+            Assert.IsFalse(playerVfxCueDriver.PlayDamageVfx);
+            Assert.IsFalse(playerVfxCueDriver.PlayCriticalVfx);
             Assert.AreEqual(CombatVfxCueId.PlayerRangedMuzzleFlash, GetEnum<CombatVfxCueId>(rangedBasicVfxCueDriver, "muzzleFlashCueId"));
             Assert.AreEqual(1f, GetFloat(rangedBasicVfxCueDriver, "muzzleFlashIntensity"), 0.001f);
+            Assert.IsFalse(rangedBasicVfxCueDriver.PlayImpactVfx);
             Assert.AreEqual(CombatVfxCueId.PlayerRangedProjectileImpact, GetEnum<CombatVfxCueId>(rangedBasicVfxCueDriver, "impactCueId"));
             Assert.AreEqual(1f, GetFloat(rangedBasicVfxCueDriver, "impactIntensity"), 0.001f);
             Assert.AreSame(energyLadder, energyVfxCuePresenter.EnergyLadder);
@@ -610,6 +614,10 @@ namespace DimensionBrawl.Tests
                 telegraphPresenter.MarkerCount,
                 9,
                 "Boss barrage lane telegraphs must be authored world markers, not HUD-only warning text.");
+            Assert.IsFalse(RequireRoot(ArenaVfxRootName).activeSelf, "Arena dressing VFX should stay disabled during gameplay cleanup.");
+            Assert.IsFalse(RequireRoot(MarkerRootName).activeSelf, "Lane marker VFX should stay disabled during gameplay cleanup.");
+            Assert.IsFalse(RequireRoot(BossTelegraphRootName).activeSelf, "Boss telegraph marker VFX should stay disabled during gameplay cleanup.");
+            Assert.IsFalse(RequireRoot(AmbientVfxRootName).activeSelf, "Ambient lane VFX should stay disabled during gameplay cleanup.");
             AssertLaneAmbientVfx(RequireRoot(AmbientVfxRootName));
             AssertLaneAmbientAudio(RequireRoot(AmbientAudioRootName));
             AssertBossBarrageLaneReviewFootstepAudio(player, closeThreatRoot, bossRoot);
@@ -670,6 +678,11 @@ namespace DimensionBrawl.Tests
             AssertSingleCharacterCombatModeVisual(rangedVisualRoot, rangedAnimator, rangedWeaponRoot, meleeWeaponRoot);
             Assert.AreSame(combatModeController, GetObjectReference<PlayerCombatModeController>(rangedAimController, "combatModeController"));
             Assert.AreSame(cameraController, GetObjectReference<ActionCameraController>(rangedAimController, "cameraController"));
+            Assert.IsTrue(GetBool(cameraController, "aimOrbitUsesInput"));
+            Assert.IsTrue(GetBool(cameraController, "aimOrbitRotatesCameraPosition"));
+            Assert.AreEqual(45f, GetFloat(cameraController, "aimOrbitYawLimitDegrees"), 0.001f);
+            Assert.IsTrue(GetBool(cameraController, "aimOrbitUsesPitchInput"));
+            Assert.AreEqual(16f, GetFloat(cameraController, "aimOrbitPitchLimitDegrees"), 0.001f);
             Assert.AreSame(player, GetObjectReference<PlayerMovementController>(rangedAimController, "movement"));
             Assert.AreSame(rangedAnimator, GetObjectReference<Animator>(rangedAimController, "animator"));
             Assert.IsTrue(GetBool(rangedAimController, "faceCameraForwardWhileAiming"));
@@ -693,11 +706,13 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(GetBool(rangedBasicAttackAction, "aimFromCameraViewport"));
             Assert.IsTrue(GetBool(rangedBasicAttackAction, "useFixedCenterAimViewport"));
             Assert.IsTrue(GetBool(rangedBasicAttackAction, "preserveVerticalAim"));
+            Assert.IsTrue(GetBool(rangedBasicAttackAction, "cameraAimIgnoresNonTargetHits"));
+            Assert.IsFalse(GetBool(rangedBasicAttackAction, "stabilizeDirectTargetAimHeight"));
             Assert.AreEqual(32f, GetFloat(rangedBasicAttackAction, "cameraAimFallbackDistance"), 0.001f);
             Assert.AreEqual(0.39f, GetFloat(rangedBasicAttackAction, "aimInputViewportOffsetX"), 0.001f);
             Assert.AreEqual(0.20f, GetFloat(rangedBasicAttackAction, "aimInputViewportOffsetY"), 0.001f);
             Assert.IsTrue(GetBool(rangedBasicAttackAction, "useStableAimOrigin"));
-            Assert.IsFalse(GetBool(rangedBasicAttackAction, "useAimAssist"));
+            Assert.IsTrue(GetBool(rangedBasicAttackAction, "useAimAssist"));
             Assert.IsFalse(GetBool(rangedBasicAttackAction, "disableAimAssistWithManualInput"));
             Assert.IsFalse(GetBool(rangedBasicAttackAction, "requestFacingOnFire"));
             Assert.AreEqual(14f, GetFloat(rangedBasicAttackAction, "damage"), 0.001f);
@@ -716,7 +731,7 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(rangedBasicProjectilePrefab, GetObjectReference<GameObject>(rangedBasicAttackAction, "projectilePrefabObject"));
             Assert.IsTrue(
                 rangedBasicProjectilePrefab.GetComponent<LaneActionProjectile>().AllowsVerticalTravel,
-                "Player basic ranged fire should allow vertical travel when the center camera ray carries height.");
+                "Player basic ranged fire should allow vertical travel when the resolved camera ray carries height.");
             MeshRenderer rangedBasicRootRenderer = rangedBasicProjectilePrefab.GetComponent<MeshRenderer>();
             Assert.IsNotNull(
                 rangedBasicRootRenderer,
@@ -842,12 +857,18 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(summonPressureScreen, summonActorPrefab.PressureScreen);
             Assert.AreSame(summonPressureScreen, summonPressureScreenPresenter.PressureScreen);
             Assert.Greater(summonPressureScreenPresenter.RendererCount, 0);
+            Assert.IsFalse(
+                summonPressureScreenPresenter.RenderVisuals,
+                "Summon pressure screen gameplay remains active, but the temporary screen visual should stay disabled.");
             AssertSummonActorVfx(
                 summonActorPrefabObject,
                 expectPressureScreen: true,
                 label: "SummonSlot1 actor prefab");
             Assert.AreSame(summonActorPrefab, summonActorPresenter.Proxy);
             Assert.IsNotNull(summonActorPresenter.PulseRoot);
+            Assert.IsFalse(
+                summonActorPresenter.RenderPulseVisuals,
+                "Summon actor gameplay remains active, but the temporary tier pulse should stay disabled.");
             Assert.AreEqual(
                 1,
                 summonActorPresenter.RendererCount,
@@ -1035,7 +1056,7 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(playerCuePlayer, GetObjectReference<CombatVfxCuePlayer>(cinematicCueDirector, "cuePlayer"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(cinematicCueDirector, "vfxAnchor"));
             Assert.AreSame(rangedAnimator, GetObjectReference<Animator>(cinematicCueDirector, "cueAnimator"));
-            Assert.IsTrue(cinematicCueDirector.DrawCinematicBars);
+            Assert.IsFalse(cinematicCueDirector.DrawCinematicBars);
             ActionCinematicCueProfile.CueSequence summonEntry = cinematicCueDirector.CueProfile.SummonEntry;
             Assert.AreEqual(ActionCinematicCueProfile.CueTier.MicroCinematic, summonEntry.tier);
             Assert.AreEqual(ActionCinematicCueProfile.GameplayReturnTargetId, summonEntry.returnTargetId);
@@ -1213,11 +1234,11 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(emitter, GetObjectReference<BossBarrageEmitter>(screenCuePresenter, "bossBarrageEmitter"));
             Assert.AreSame(bossPressureActionDirector, GetObjectReference<BossPressureActionDirector>(screenCuePresenter, "bossPressureActionDirector"));
             Assert.AreSame(pocketOwner, GetObjectReference<BossBarragePocketReviewOwner>(screenCuePresenter, "pocketReviewOwner"));
-            Assert.IsTrue(screenCuePresenter.ShowScreenCues);
+            Assert.IsFalse(screenCuePresenter.ShowScreenCues);
             Assert.AreEqual(0.10f, screenCuePresenter.MaxFullScreenAlpha, 0.001f);
             Assert.AreEqual(0.26f, screenCuePresenter.MaxEdgeAlpha, 0.001f);
             Assert.AreEqual(104f, screenCuePresenter.EdgeThickness, 0.001f);
-            Assert.IsTrue(screenCuePresenter.UseDamageScreenFeedback);
+            Assert.IsFalse(screenCuePresenter.UseDamageScreenFeedback);
             Assert.AreEqual(0.42f, screenCuePresenter.MaxDamageVignetteAlpha, 0.001f);
             Assert.AreEqual(0.11f, screenCuePresenter.MaxDamageFlashAlpha, 0.001f);
             Assert.AreEqual(0.34f, screenCuePresenter.DamageVignetteSeconds, 0.001f);
@@ -1255,10 +1276,12 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(GetBool(mobileHud, "keyboardPeekRequiresActiveAim"));
             Assert.IsTrue(
                 GetBool(mobileHud, "fireAimReticleUsesScreenCenter"),
-                "The fire reticle should stay at the input crosshair height when target assist is acquired.");
+                "The fire reticle should stay centered while aim input rotates the camera.");
             Assert.AreEqual(0.08f, GetFloat(mobileHud, "lookAimDragDeadZone"), 0.001f);
-            Assert.AreEqual(230f, GetFloat(mobileHud, "lookAimDragRadius"), 0.001f);
-            Assert.AreEqual(30f, GetFloat(mobileHud, "lookAimKnobSize"), 0.001f);
+            Assert.AreEqual(0.00435f, GetFloat(mobileHud, "lookAimDragSensitivity"), 0.00001f);
+            AssertNoPrivateField<BossBarrageLaneReviewMobileHud>("lookAimDragRadius");
+            AssertNoPrivateField<BossBarrageLaneReviewMobileHud>("lookAimKnobSize");
+            AssertNoPrivateField<BossBarrageLaneReviewMobileHud>("lookPointerStartGuiPoint");
             Assert.AreEqual(0f, GetFloat(mobileHud, "lookAimScreenMinX"), 0.001f);
             Assert.IsTrue(GetBool(mobileHud, "showFireAimReticle"));
             Assert.Greater(GetFloat(mobileHud, "fireAimReticleSize"), 0f);
@@ -1267,7 +1290,7 @@ namespace DimensionBrawl.Tests
             Assert.Greater(GetFloat(mobileHud, "fireAimAssistGapTighten"), 0f);
             Assert.Greater(GetFloat(mobileHud, "fireAimAssistSizeBoost"), 0f);
             Assert.Greater(GetFloat(mobileHud, "fireAimAssistThicknessBoost"), 0f);
-            Assert.IsFalse(GetBool(mobileHud, "fireAimReticleFollowsAssist"));
+            Assert.IsTrue(GetBool(mobileHud, "fireAimReticleFollowsAssist"));
             Assert.Greater(GetFloat(mobileHud, "fireAimAssistReticleMaxOffset"), 0f);
 
             yield return null;
@@ -1709,12 +1732,40 @@ namespace DimensionBrawl.Tests
             yield return WaitSeconds(0.35f);
             Assert.That(cameraController.AimYawOffsetDegrees, Is.InRange(-45.01f, -30f));
 
+            aimController.SetAimInput(Vector2.up);
+            yield return WaitSeconds(0.35f);
+            Assert.AreEqual(1f, cameraController.AimOrbitInput.y, 0.001f);
+            Assert.That(
+                cameraController.AimPitchOffsetDegrees,
+                Is.InRange(10f, 16.01f),
+                "Vertical aim input should pitch the camera center line upward instead of moving the reticle off center.");
+
+            float heldUpPitch = cameraController.AimPitchOffsetDegrees;
+            aimController.SetAimInput(Vector2.zero);
+            yield return WaitSeconds(0.22f);
+            Assert.AreEqual(
+                heldUpPitch,
+                cameraController.AimPitchOffsetDegrees,
+                1.5f,
+                "Aim camera pitch should hold while ranged aim/fire remains active.");
+
+            aimController.SetAimInput(Vector2.down);
+            yield return WaitSeconds(0.35f);
+            Assert.That(
+                cameraController.AimPitchOffsetDegrees,
+                Is.InRange(-16.01f, -10f),
+                "Downward aim input should pitch the camera center line downward.");
+
             aimController.SetAimHeld(false);
             yield return WaitSeconds(0.22f);
             Assert.Less(
                 Mathf.Abs(cameraController.AimYawOffsetDegrees),
                 1f,
                 "Aim camera peek should recenter when aim mode ends.");
+            Assert.Less(
+                Mathf.Abs(cameraController.AimPitchOffsetDegrees),
+                1f,
+                "Aim camera pitch should recenter when aim mode ends.");
         }
 
         [UnityTest]
@@ -1768,7 +1819,7 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out _));
             Assert.IsFalse(
                 rangedBasicAttackAction.HasAimAssistTarget,
-                "The resolved aim solution should not silently pull bullets toward an off-center close threat.");
+                "Targets outside the authored assist cone should not silently pull bullets.");
 
             aimController.SetAimInput(Vector2.right);
 
@@ -1839,9 +1890,6 @@ namespace DimensionBrawl.Tests
             yield return null;
 
             Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out _));
-            Assert.IsFalse(
-                rangedBasicAttackAction.HasAimAssistTarget,
-                "Soft ranged fire assist should stay disabled while the review scene uses direct preview aiming.");
             Assert.That(cameraController.AimOrbitInput.x, Is.EqualTo(0f).Within(0.001f));
 
             Vector3 initialCameraTargetDirection =
@@ -1865,6 +1913,96 @@ namespace DimensionBrawl.Tests
                 0.5f,
                 "The center aim axis should stay stable while FIRE is held.");
             Assert.That(cameraController.AimOrbitInput.x, Is.EqualTo(0f).Within(0.001f));
+
+            rangedBasicAttackAction.SetFireHeld(false);
+            rangedBasicAttackAction.ClearAimInput();
+            aimController.SetAimInput(Vector2.zero);
+            if (closeThreatEnemy != null)
+            {
+                closeThreatEnemy.enabled = true;
+            }
+
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator RangedBasicFireSoftAssistsNearCenterThreatWithoutPullingCamera()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            PlayerCombatModeController combatModeController =
+                RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
+            PlayerRangedAimController aimController =
+                RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
+            PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            GameObject closeThreatRoot = RequireRoot(CloseThreatRootName);
+            CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreatRoot, "close threat health");
+            BasicSoldierEnemy closeThreatEnemy = closeThreatRoot.GetComponent<BasicSoldierEnemy>();
+
+            combatModeController.SetRangedMode();
+            aimController.SetAimHeld(true);
+            aimController.SetAimInput(Vector2.zero);
+            rangedBasicAttackAction.ClearAimInput();
+            if (closeThreatEnemy != null)
+            {
+                closeThreatEnemy.enabled = false;
+            }
+
+            player.transform.position =
+                laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
+            Physics.SyncTransforms();
+            yield return WaitSeconds(0.22f);
+
+            Vector3 cameraForward = Vector3.ProjectOnPlane(cameraController.transform.forward, Vector3.up);
+            Assert.Greater(cameraForward.sqrMagnitude, 0.0001f);
+            cameraForward.Normalize();
+            Vector3 cameraRight = Vector3.Cross(Vector3.up, cameraForward).normalized;
+            Vector3 cameraPlanarOrigin = Vector3.ProjectOnPlane(cameraController.transform.position, Vector3.up);
+            Vector3 closeThreatPosition =
+                cameraPlanarOrigin + cameraForward * 5.4f + cameraRight * 1.1f;
+            closeThreatPosition.y = closeThreatRoot.transform.position.y;
+            closeThreatRoot.transform.SetPositionAndRotation(
+                closeThreatPosition,
+                Quaternion.LookRotation(-cameraForward, Vector3.up));
+            closeThreatHealth.ResetHealthToFull();
+            targetSelector.NotifyTargetContact(closeThreatHealth);
+            targetSelector.RefreshTarget();
+            Physics.SyncTransforms();
+            yield return null;
+
+            Quaternion cameraRotationBefore = cameraController.transform.rotation;
+            Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out Vector3 assistedPreviewDirection));
+            Vector3 rawDirection = rangedBasicAttackAction.LastRawAimDirection;
+            Assert.IsTrue(
+                rangedBasicAttackAction.HasAimAssistTarget,
+                "A near-center threat inside the authored assist cone should activate soft ranged fire assist.");
+            Assert.Greater(rangedBasicAttackAction.AimAssistStrength01, 0.05f);
+            Assert.Greater(
+                Vector3.Angle(rawDirection, assistedPreviewDirection),
+                0.5f,
+                "Soft assist should bend the projectile direction without changing the camera aim input.");
+
+            Assert.IsTrue(rangedBasicAttackAction.TryFire());
+            LaneActionProjectile playerProjectile = RequireActivePlayerRangedProjectile();
+            Assert.Less(
+                Vector3.Angle(playerProjectile.TravelDirection, assistedPreviewDirection),
+                0.5f,
+                "The fired projectile should use the assisted preview direction.");
+
+            rangedBasicAttackAction.SetFireHeld(true);
+            yield return WaitSeconds(0.18f);
+
+            Assert.Less(
+                Mathf.Abs(cameraController.AimAssistYawOffsetDegrees),
+                0.05f,
+                "Projectile assist should not request camera aim assist in the review scene.");
+            Assert.Less(
+                Quaternion.Angle(cameraRotationBefore, cameraController.transform.rotation),
+                0.5f,
+                "Soft projectile assist should not pull the center camera aim axis.");
 
             rangedBasicAttackAction.SetFireHeld(false);
             rangedBasicAttackAction.ClearAimInput();
@@ -1953,10 +2091,67 @@ namespace DimensionBrawl.Tests
                 Vector3.Angle(playerProjectile.TravelDirection, previewDirection),
                 0.5f,
                 "The actual basic-fire projectile should use the same direction as the aim preview reticle.");
+            Assert.Less(
+                DistanceFromRayToPoint(
+                    playerProjectile.transform.position,
+                    playerProjectile.TravelDirection,
+                    previewWorldPoint),
+                GetFloat(rangedBasicAttackAction, "projectileRadius") + 0.05f,
+                "The fired projectile should converge from the muzzle into the center camera aim point.");
             Assert.Greater(
-                Vector3.Dot(playerProjectile.TravelDirection, Vector3.right),
-                0.2f,
-                "Look/TargetBias should steer the aim camera, then basic fire should use the center camera ray.");
+                Vector3.Dot(playerProjectile.TravelDirection, Vector3.forward),
+                0.7f,
+                "Center-ray aim should stay in the forward lane instead of becoming a side-only shot.");
+
+            aimController.SetAimInput(Vector2.zero);
+            rangedBasicAttackAction.ClearAimInput();
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator RangedBasicFireUsesCenterCameraRayAfterLeftAimPeek()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            PlayerCombatModeController combatModeController =
+                RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
+            PlayerRangedAimController aimController =
+                RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
+            PlayerRangedBasicAttackAction rangedBasicAttackAction =
+                RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
+            PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
+            ActionCameraController cameraController = RequireObject<ActionCameraController>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            GameObject bossRoot = RequireRoot(BossRootName);
+            CombatHealth bossHealth = RequireComponent<CombatHealth>(bossRoot, "boss health");
+
+            combatModeController.SetRangedMode();
+            aimController.SetAimHeld(true);
+            player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
+            targetSelector.NotifyTargetContact(bossHealth);
+            targetSelector.RefreshTarget();
+            aimController.SetAimInput(Vector2.left);
+            rangedBasicAttackAction.SetAimInput(Vector2.left);
+            Physics.SyncTransforms();
+            yield return WaitSeconds(0.35f);
+
+            Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewViewportPoint(out Vector2 viewportPoint));
+            Assert.AreEqual(0.5f, viewportPoint.x, 0.01f);
+            Assert.AreEqual(0.5f, viewportPoint.y, 0.01f);
+            Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewWorldPoint(out Vector3 previewWorldPoint));
+            Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out Vector3 previewDirection));
+            Assert.IsTrue(rangedBasicAttackAction.TryFire());
+            LaneActionProjectile playerProjectile = RequireActivePlayerRangedProjectile();
+            Assert.Less(
+                Vector3.Angle(playerProjectile.TravelDirection, previewDirection),
+                0.5f,
+                "The actual basic-fire projectile should use the same direction as the aim preview reticle.");
+            Assert.Less(
+                DistanceFromRayToPoint(
+                    playerProjectile.transform.position,
+                    playerProjectile.TravelDirection,
+                    previewWorldPoint),
+                GetFloat(rangedBasicAttackAction, "projectileRadius") + 0.05f,
+                "Left aim peek should still converge from the muzzle into the center camera aim point.");
             Assert.Greater(
                 Vector3.Dot(playerProjectile.TravelDirection, Vector3.forward),
                 0.7f,
@@ -2068,27 +2263,39 @@ namespace DimensionBrawl.Tests
             rangedBasicAttackAction.SetAimInput(new Vector2(0.65f, 0.15f));
             Physics.SyncTransforms();
             yield return WaitSeconds(0.22f);
+            aimController.SetAimInput(Vector2.zero);
+            rangedBasicAttackAction.ClearAimInput();
+            yield return null;
 
             Vector3 originalFireOriginLocalPosition = fireOrigin.localPosition;
             Quaternion originalFireOriginLocalRotation = fireOrigin.localRotation;
-            Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out Vector3 initialPreviewDirection));
+            Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewWorldPoint(out Vector3 initialPreviewWorldPoint));
 
             fireOrigin.localPosition = originalFireOriginLocalPosition + new Vector3(0.35f, -0.16f, 0.22f);
             fireOrigin.localRotation = originalFireOriginLocalRotation * Quaternion.Euler(0f, 22f, -18f);
             Physics.SyncTransforms();
+            yield return null;
 
             Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewDirection(out Vector3 shiftedPreviewDirection));
+            Assert.IsTrue(rangedBasicAttackAction.TryGetAimPreviewWorldPoint(out Vector3 shiftedPreviewWorldPoint));
             Assert.Less(
-                Vector3.Angle(initialPreviewDirection, shiftedPreviewDirection),
+                Vector3.Distance(initialPreviewWorldPoint, shiftedPreviewWorldPoint),
                 0.5f,
-                "Center camera-ray aim should stay stable when the animated muzzle moves between frames.");
+                "The center camera aim point should stay stable when the animated muzzle moves between frames.");
             Assert.IsTrue(rangedBasicAttackAction.TryFire());
 
             LaneActionProjectile playerProjectile = RequireActivePlayerRangedProjectile();
             Assert.Less(
-                Vector3.Angle(playerProjectile.TravelDirection, initialPreviewDirection),
+                Vector3.Angle(playerProjectile.TravelDirection, shiftedPreviewDirection),
                 0.5f,
-                "The fired projectile should follow the stable center aim direction instead of the current muzzle wobble.");
+                "The fired projectile should use the preview direction resolved from the current muzzle.");
+            Assert.Less(
+                DistanceFromRayToPoint(
+                    playerProjectile.transform.position,
+                    playerProjectile.TravelDirection,
+                    shiftedPreviewWorldPoint),
+                GetFloat(rangedBasicAttackAction, "projectileRadius") + 0.05f,
+                "The fired projectile should converge from the shifted muzzle into the center camera aim point.");
 
             fireOrigin.localPosition = originalFireOriginLocalPosition;
             fireOrigin.localRotation = originalFireOriginLocalRotation;
@@ -2695,10 +2902,14 @@ namespace DimensionBrawl.Tests
                 0f)));
             activeActorPresenter.RefreshNow();
 
-            Assert.Greater(
-                activeActorPresenter.DamageVfxCueRequestCount,
+            Assert.AreEqual(
                 damageVfxCueCountBefore,
-                "SummonSlot1 actor damage should request a promoted hit VFX cue, not only flash material color.");
+                activeActorPresenter.DamageVfxCueRequestCount,
+                "SummonSlot1 actor damage should not request a hit VFX cue during the temporary VFX cleanup pass.");
+            Assert.IsFalse(activeActorPresenter.PlayDamageVfx);
+            Assert.IsFalse(activeActorPresenter.RenderDamageFeedback);
+            Assert.AreEqual(0, activeActorPresenter.DamageFlashCount);
+            Assert.AreEqual(0, activeActorPresenter.AnimatorHitTriggerCount);
             Assert.AreEqual(CombatVfxCueId.EnemyHit, activeActorPresenter.DamageCueId);
 
             Assert.IsTrue(activeActor.Health.TryApplyDamage(new DamageInfo(
@@ -2776,8 +2987,8 @@ namespace DimensionBrawl.Tests
                 expectPressureScreen: false,
                 SummonSlot2PresentationCandidateProfilePath,
                 "PlayerSummon.BacklineMarksman",
-                BacklineShooterRoleCandidateProfilePath,
-                "SciFiSoldier.BacklineShooter",
+                LineCasterRoleCandidateProfilePath,
+                "SciFiSoldier.LineCaster",
                 "SummonSlot2 marksman actor prefab");
             AssertSupportSummonActorPrefab(
                 summonSlot3ActorPrefab,
@@ -5355,10 +5566,9 @@ namespace DimensionBrawl.Tests
             MeshRenderer rootRenderer = entryCuePrefab.GetComponent<MeshRenderer>();
             Assert.IsNotNull(rootRenderer, "summon entry cue should keep its root renderer for editor repair.");
             Assert.IsFalse(rootRenderer.enabled, "summon entry cue should hide its primitive root.");
-            AssertPromotedParticleVfx(
+            AssertSuppressedTemporaryVfx(
                 entryCuePrefab.transform.Find("SummonEntryVfx_MagicMissilesArcaneCircle"),
-                "summon entry MagicMissiles circle",
-                2);
+                "summon entry MagicMissiles circle");
         }
 
         private static void AssertSupportSummonSceneBinding(
@@ -5432,29 +5642,54 @@ namespace DimensionBrawl.Tests
 
         private static void AssertSummonActorVfx(GameObject actorPrefab, bool expectPressureScreen, string label)
         {
-            AssertPromotedParticleVfx(
+            AssertSuppressedTemporaryVfx(
                 actorPrefab.transform.Find("SummonPulseVfx_MagicMissilesPulse"),
-                $"{label} MagicMissiles pulse",
-                1);
-            AssertPromotedParticleVfx(
+                $"{label} MagicMissiles pulse");
+            AssertSuppressedTemporaryVfx(
                 FindChildWithPrefix(actorPrefab.transform, "SummonStateVfx_"),
-                $"{label} MagicMissiles state aura",
-                1);
+                $"{label} MagicMissiles state aura");
             if (!expectPressureScreen)
             {
                 return;
             }
 
-            AssertPromotedParticleVfx(
+            AssertSuppressedTemporaryVfx(
                 actorPrefab.transform.Find("SummonShieldVfx_MagicMissilesShieldCircle"),
-                $"{label} MagicMissiles shield circle",
-                2);
+                $"{label} MagicMissiles shield circle");
+        }
+
+        private static void AssertSuppressedTemporaryVfx(Transform root, string label)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            Assert.IsFalse(root.gameObject.activeSelf, $"{label} should not be active during the gameplay VFX cleanup pass.");
+        }
+
+        private static void AssertSuppressedCombatHitFeedback()
+        {
+            CombatHitFeedback[] hitFeedbacks = Object.FindObjectsByType<CombatHitFeedback>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < hitFeedbacks.Length; i++)
+            {
+                Assert.IsFalse(
+                    hitFeedbacks[i].RenderHitFeedback,
+                    $"{hitFeedbacks[i].name} hit feedback should stay suppressed during the temporary VFX cleanup pass.");
+            }
         }
 
         private static void AssertBossBarrageCombatCueAssetOverlays()
         {
             CombatVfxCueProfile profile = LoadAsset<CombatVfxCueProfile>(
                 "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_CombatVfxCues_ActionFoundation.asset");
+            Assert.AreEqual(CombatVfxCuePlaybackMode.PlayerRangedOnly, profile.PlaybackMode);
+            Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.PlayerRangedMuzzleFlash));
+            Assert.IsFalse(
+                profile.AllowsPlayback(CombatVfxCueId.PlayerRangedProjectileImpact),
+                "Player ranged projectile impact VFX should stay suppressed during the cleanup pass.");
             AssertCombatCueAssetOverlay(
                 profile,
                 CombatVfxCueId.PlayerRangedProjectileImpact,
@@ -6523,7 +6758,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(SummonActorMoveSpeedParameter, presenter.MoveSpeedParameter);
             Assert.AreEqual(SummonActorSpawnTrigger, presenter.SpawnTrigger);
             Assert.AreEqual(SummonActorAttackTrigger, presenter.AttackTrigger);
-            Assert.AreEqual(SummonActorHitTrigger, presenter.HitTrigger);
+            Assert.AreEqual(string.Empty, presenter.HitTrigger);
             Assert.AreEqual(SummonActorDeathTrigger, presenter.DeathTrigger);
             Assert.AreEqual(CombatVfxCueId.EliteSummonSignal, presenter.EntryCueId);
             Assert.AreEqual(CombatVfxCueId.EnemyAttackActive, presenter.AttackCueId);
@@ -6531,10 +6766,11 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(CombatVfxCueId.EnemyHit, presenter.DamageCueId);
             Assert.AreEqual(CombatVfxCueId.EnemyDeath, presenter.DeathCueId);
             Assert.AreEqual(0.64f, presenter.PressureDamageCueScale, 0.001f);
+            Assert.IsFalse(presenter.PlayDamageVfx);
+            Assert.IsFalse(presenter.RenderDamageFeedback);
             AssertAnimatorParameter(animator, presenter.MoveSpeedParameter, AnimatorControllerParameterType.Float);
             AssertAnimatorParameter(animator, presenter.SpawnTrigger, AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(animator, presenter.AttackTrigger, AnimatorControllerParameterType.Trigger);
-            AssertAnimatorParameter(animator, presenter.HitTrigger, AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(animator, presenter.DeathTrigger, AnimatorControllerParameterType.Trigger);
         }
 
@@ -6714,11 +6950,13 @@ namespace DimensionBrawl.Tests
         private static void AssertLaneAmbientAudio(GameObject root)
         {
             AudioSource[] sources = root.GetComponentsInChildren<AudioSource>(true);
-            Assert.AreEqual(4, sources.Length, "Lane ambient audio should stay a small, explicit loop bed.");
+            Assert.AreEqual(3, sources.Length, "Lane ambient audio should stay a small, explicit loop bed without the clipped energy hum.");
             AssertAmbientAudio(root.transform, "AmbientAudio_ArenaStormBed", AmbientArenaStormClipPath, 0f, 0.05f, 0.07f);
-            AssertAmbientAudio(root.transform, "AmbientAudio_LaneEnergyHum", AmbientLaneEnergyHumClipPath, 0.25f, 0.06f, 0.09f);
             AssertAmbientAudio(root.transform, "AmbientAudio_LeftRailDustFlow", AmbientRailDustFlowClipPath, 0.45f, 0.03f, 0.055f);
             AssertAmbientAudio(root.transform, "AmbientAudio_RightRailDustFlow", AmbientRailDustFlowClipPath, 0.45f, 0.03f, 0.055f);
+            Assert.IsNull(
+                root.transform.Find("AmbientAudio_LaneEnergyHum"),
+                "The clipped LaneEnergyHum loop should stay out of the review scene ambience.");
         }
 
         private static void AssertAmbientAudio(
@@ -6982,6 +7220,17 @@ namespace DimensionBrawl.Tests
             float projectedDistance = Mathf.Max(0f, Vector3.Dot(toCenter, direction));
             Vector3 closestPointOnRay = rayOrigin + direction * projectedDistance;
             return Mathf.Sqrt(bounds.SqrDistance(closestPointOnRay));
+        }
+
+        private static float DistanceFromRayToPoint(Vector3 rayOrigin, Vector3 rayDirection, Vector3 point)
+        {
+            Vector3 direction = rayDirection.sqrMagnitude > 0.0001f
+                ? rayDirection.normalized
+                : Vector3.forward;
+            Vector3 toPoint = point - rayOrigin;
+            float projectedDistance = Mathf.Max(0f, Vector3.Dot(toPoint, direction));
+            Vector3 closestPointOnRay = rayOrigin + direction * projectedDistance;
+            return Vector3.Distance(closestPointOnRay, point);
         }
 
         private static FieldInfo RequirePrivateField(object target, string fieldName)

@@ -39,6 +39,8 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Range(0.1f, 1f)] private float pressureDamageCueScale = 0.64f;
         [SerializeField, Min(0f)] private float deathCueIntensity = 1.05f;
         [SerializeField, Min(0f)] private float tierCueIntensityStep = 0.1f;
+        [SerializeField] private bool playDamageVfx;
+        [SerializeField] private bool renderDamageFeedback;
 
         [SerializeField] private Color tierOneColor = new Color(0.24f, 1f, 0.78f, 0.78f);
         [SerializeField] private Color tierTwoColor = new Color(0.38f, 0.74f, 1f, 0.9f);
@@ -59,6 +61,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Range(0.2f, 1f)] private float impactFlashProgress = 0.86f;
         [SerializeField, Min(0.01f)] private float pulseSpeed = 8f;
         [SerializeField, Min(0f)] private float pulseScale = 0.08f;
+        [SerializeField] private bool renderPulseVisuals;
         [SerializeField, Min(0f)] private float tierScaleStep = 0.18f;
         [SerializeField, Min(0f)] private float flashScale = 0.22f;
         [SerializeField, Min(0f)] private float clashFlashScale = 0.16f;
@@ -145,6 +148,8 @@ namespace DimensionBrawl.Presentation
         public int DamageVfxCueRequestCount => damageVfxCueRequestCount;
         public int DeathVfxCueRequestCount => deathVfxCueRequestCount;
         public float PressureDamageCueScale => pressureDamageCueScale;
+        public bool PlayDamageVfx => playDamageVfx;
+        public bool RenderDamageFeedback => renderDamageFeedback;
         public float FullBodyHitReactionCooldownSeconds => fullBodyHitReactionCooldownSeconds;
         public float LastDamageCueIntensity => lastDamageCueIntensity;
         public float LastDamageCuePolicyScale => lastDamageCuePolicyScale;
@@ -152,6 +157,7 @@ namespace DimensionBrawl.Presentation
         public CombatControlLockPolicy LastDamageControlLockPolicy => lastDamageControlLockPolicy;
         public bool LastDamageCueInterruptedAction => lastDamageCueInterruptedAction;
         public bool LastFullBodyHitReactionSuppressed => lastFullBodyHitReactionSuppressed;
+        public bool RenderPulseVisuals => renderPulseVisuals;
 
         private void Awake()
         {
@@ -323,7 +329,7 @@ namespace DimensionBrawl.Presentation
             color = Color.Lerp(color, deathFlashColor, deathFlash);
             ApplyColor(color);
 
-            if (pulseRoot == null)
+            if (pulseRoot == null || !renderPulseVisuals)
             {
                 return;
             }
@@ -432,9 +438,10 @@ namespace DimensionBrawl.Presentation
 
         private void SetPulseVisible(bool value)
         {
-            if (pulseRoot != null && pulseRoot.gameObject.activeSelf != value)
+            bool shouldRender = value && renderPulseVisuals;
+            if (pulseRoot != null && pulseRoot.gameObject.activeSelf != shouldRender)
             {
-                pulseRoot.gameObject.SetActive(value);
+                pulseRoot.gameObject.SetActive(shouldRender);
             }
         }
 
@@ -501,8 +508,6 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
-            damageFlashTimer = Mathf.Max(damageFlashTimer, damageFlashSeconds);
-            damageFlashCount++;
             float policyScale = ResolveDamageCuePolicyScale(damageInfo);
             bool interruptsAction = DamageResponsePolicyUtility.InterruptsAction(damageInfo.ControlLockPolicy);
             float damageIntensity = ResolveTieredCueIntensity(damageCueIntensity, Mathf.Max(lastObservedTier, 1)) * policyScale;
@@ -511,12 +516,18 @@ namespace DimensionBrawl.Presentation
             lastDamageResponsePolicy = damageInfo.ResponsePolicy;
             lastDamageControlLockPolicy = damageInfo.ControlLockPolicy;
             lastDamageCueInterruptedAction = interruptsAction;
-            if (PlayVfxCue(damageCueId, damageIntensity))
+            if (playDamageVfx && PlayVfxCue(damageCueId, damageIntensity))
             {
                 damageVfxCueRequestCount++;
             }
 
-            if (TryConsumeFullBodyHitReaction(damageInfo) && TriggerAnimator(hitTrigger))
+            if (renderDamageFeedback)
+            {
+                damageFlashTimer = Mathf.Max(damageFlashTimer, damageFlashSeconds);
+                damageFlashCount++;
+            }
+
+            if (renderDamageFeedback && TryConsumeFullBodyHitReaction(damageInfo) && TriggerAnimator(hitTrigger))
             {
                 animatorHitTriggerCount++;
             }

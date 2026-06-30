@@ -404,6 +404,7 @@ namespace DimensionBrawl.Editor
                 SetEnum(rangedDriver, "muzzleFlashCueId", (int)CombatVfxCueId.PlayerRangedMuzzleFlash);
                 SetFloat(rangedDriver, "muzzleFlashIntensity", 1f);
                 SetFloat(rangedDriver, "muzzleFlashAudioIntensity", 1f);
+                SetBool(rangedDriver, "playImpactVfx", false);
                 SetEnum(rangedDriver, "impactCueId", (int)CombatVfxCueId.PlayerRangedProjectileImpact);
                 SetFloat(rangedDriver, "impactIntensity", 1f);
                 SetFloat(rangedDriver, "impactAudioIntensity", 0.56f);
@@ -1896,6 +1897,15 @@ namespace DimensionBrawl.Editor
             SerializedObject serializedObject = new SerializedObject(target);
             SerializedProperty property = RequireProperty(serializedObject, propertyName);
             property.floatValue = value;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            EditorUtility.SetDirty(target);
+        }
+
+        private static void SetBool(UnityEngine.Object target, string propertyName, bool value)
+        {
+            SerializedObject serializedObject = new SerializedObject(target);
+            SerializedProperty property = RequireProperty(serializedObject, propertyName);
+            property.boolValue = value;
             serializedObject.ApplyModifiedPropertiesWithoutUndo();
             EditorUtility.SetDirty(target);
         }

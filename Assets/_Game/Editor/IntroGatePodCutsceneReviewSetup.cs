@@ -30,12 +30,9 @@ namespace DimensionBrawl.Editor
         public const string LeftScanCapturePath = "C:/tmp/DimensionBrawl-IntroGatePod-03-ScanLeft.png";
         public const string RightScanCapturePath = "C:/tmp/DimensionBrawl-IntroGatePod-04-ScanRight.png";
         public const string HandsCapturePath = "C:/tmp/DimensionBrawl-IntroGatePod-05-LookDownHands.png";
-        public const string AirRaidCapturePath = "C:/tmp/DimensionBrawl-IntroGatePod-06-AirRaidWide.png";
-        public const string PortalBreachCapturePath = "C:/tmp/DimensionBrawl-IntroGatePod-07-PortalBreach.png";
-        public const string SoldierSurgeCapturePath = "C:/tmp/DimensionBrawl-IntroGatePod-08-SoldierSurge.png";
-        public const string ProtagonistKickCapturePath = "C:/tmp/DimensionBrawl-IntroGatePod-09-ProtagonistInterrupt.png";
-        public const string SwordReadyCapturePath = "C:/tmp/DimensionBrawl-IntroGatePod-10-SwordReady.png";
-        public const string RinaBackViewCapturePath = "C:/tmp/DimensionBrawl-IntroGatePod-11-RinaBackView.png";
+        public const string CommandoLegsCapturePath = "C:/tmp/DimensionBrawl-IntroGatePod-06-CommandoLegs.png";
+        public const string HeavenExplosionCapturePath = "C:/tmp/DimensionBrawl-IntroGatePod-07-HeavenExplosion.png";
+        public const string CommandoPushCapturePath = "C:/tmp/DimensionBrawl-IntroGatePod-08-CommandoPush.png";
         public const string SampleDebugPath = "C:/tmp/DimensionBrawl-IntroGatePod-SampleDebug.md";
 
         private const string GateModelPath = "Assets/_Game/Art/Environment/UnityChan/Gate/gate.fbx";
@@ -48,33 +45,6 @@ namespace DimensionBrawl.Editor
         private const string SciFiCommandoControllerPath =
             "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/SciFiSoldier01/DB_SciFiSoldier01_GeneralDeck.controller";
         private const string SciFiCommandoRunStateName = "RunForward";
-        private const string SciFiCommandoAttackStateName = "Attack";
-        private const string SciFiCommandoAttackHeavyStateName = "AttackHeavy";
-        private const string SciFiCommandoHitStateName = "Hit";
-        private const string SciFiCommandoHitHeavyStateName = "HitHeavy";
-        private const string SpecialSkillsEffectsRoot = "Assets/_Imported/SpecialSkillsEffectsPack";
-        private const string AirstrikePrefabPath =
-            SpecialSkillsEffectsRoot + "/AllEffects/EffectsSet_1(NotScriptBased)/Effects/Effect_41_Airstrike/Effect_41_Airstrike.prefab";
-        private const string AirstrikeBombExplosionPrefabPath =
-            SpecialSkillsEffectsRoot + "/AllEffects/EffectsSet_1(NotScriptBased)/Effects/Effect_41_Airstrike/Effect_41_Base/Effect_41_BombExplosion.prefab";
-        private const string AirstrikeBulletExplosionPrefabPath =
-            SpecialSkillsEffectsRoot + "/AllEffects/EffectsSet_1(NotScriptBased)/Effects/Effect_41_Airstrike/Effect_41_Base/Effect_41_BulletExplosion.prefab";
-        private const string OrbitalStrikePrefabPath =
-            SpecialSkillsEffectsRoot + "/AllEffects/EffectsSet_1(NotScriptBased)/Effects/Effect_03_OrbitalStrike/Effect_03_OrbitalStrike.prefab";
-        private const string SpaceWarpPortalPrefabPath =
-            SpecialSkillsEffectsRoot + "/AllEffects/EffectsSet_1(NotScriptBased)/Effects/Effect_16_SpaceWarpPortal/Effect_16_SpaceWarpPortal.prefab";
-        private const string GroundSlashPrefabPath =
-            SpecialSkillsEffectsRoot + "/AllEffects/EffectsSet_1(NotScriptBased)/Effects/Effect_08_GroundSlash/Effect_08_GroundSlash.prefab";
-        private const string MadnessSlashPrefabPath =
-            SpecialSkillsEffectsRoot + "/AllEffects/EffectsSet_1(NotScriptBased)/Effects/Effect_36_MadnessSlash/Effect_36_MadnessSlash.prefab";
-        private const string JetModelPath = SpecialSkillsEffectsRoot + "/Models/Jet_04.fbx";
-        private const string BomberModelPath = SpecialSkillsEffectsRoot + "/Models/Bomber_02.fbx";
-        private const string BombModelPath = SpecialSkillsEffectsRoot + "/Models/Bomb_01.fbx";
-        private const string UavModelPath = SpecialSkillsEffectsRoot + "/Models/UAV_01.fbx";
-        private const string RinaCameraRigPrefabPath =
-            "Assets/_Imported/Reference/ZZZ_RinaLoopKit/CameraSceneOnlyExtract/Rina_QuestStart_MainCameraRig.prefab";
-        private const string RinaCameraClipPath =
-            "Assets/_Imported/Reference/ZZZ_RinaLoopKit/Generated/Rina_QuestStart_OriginalExtracted.anim";
         private const string UniGasFirePrefabPath =
             "Assets/_Game/Art/VFX/UNI VFX/Realistic Explosions, Fire & Smoke/Prefabs/UNI_Gas_Fire.prefab";
         private const string UniLongSmokePrefabPath =
@@ -122,10 +92,7 @@ namespace DimensionBrawl.Editor
         private const string OpeningDollySplineName = "IntroGatePodReview_OpeningCapsuleDollySpline";
         private const string IntroLookAtHandsStateName = "CIN_IntroLookAtHands";
         private const string CombatReadyStateName = "CIN_CombatReady";
-        private const string SwordChargeStateName = "CIN_SwordCharge";
-        private const string SwordReadyStateName = "CIN_TwinSwordIdle";
         private const string RifleName = "InoriRifle";
-        private const string InoriSwordName = "InoriSword";
         private const string FloorRifleName = "IntroGatePodReview_FloorRifle";
         private const string FloorSwordName = "IntroGatePodReview_FloorSword";
         private const string CameraName = "Main Camera";
@@ -178,8 +145,6 @@ namespace DimensionBrawl.Editor
             MaterialRoot + "/DB_GatePodReview_UniSmokeBillboard.mat";
         private const string InvasionSparkBillboardMaterialPath =
             MaterialRoot + "/DB_GatePodReview_UniSparkBillboard.mat";
-        private const string InvasionPortalFallbackMaterialPath =
-            MaterialRoot + "/DB_GatePodReview_PortalFallback.mat";
         private const string PodAlbedoTexturePath = TextureRoot + "/pods.psd";
         private const string PodEmissionTexturePath = TextureRoot + "/pods_L.psd";
         private const string VoiceRoot = "Assets/_Game/Art/Audio/Voice/Cinematics/IntroGatePod";
@@ -201,16 +166,10 @@ namespace DimensionBrawl.Editor
         private const float ScanSideHoldSeconds = 1.55f;
         private const float HandLookHoldLeadSeconds = 1.45f;
         private const float InvasionBridgeHandLookHoldSeconds = 1.75f;
-        private const float InvasionAirstrikeOffsetSeconds = 1.367f;
-        private const float InvasionPortalOffsetSeconds = 3.317f;
-        private const float InvasionSoldierOffsetSeconds = 5.217f;
-        private const float InvasionKickOffsetSeconds = 8.017f;
-        private const float InvasionSwordOffsetSeconds = 10.417f;
-        private const float InvasionRinaFeetOffsetSeconds = 13.217f;
-        private const float InvasionRinaUpperOffsetSeconds = 15.617f;
-        private const float InvasionRinaBackOffsetSeconds = 18.217f;
-        private const float InvasionHandoffOffsetSeconds = 20.717f;
+        private const float InvasionBridgeRunDurationSeconds = 4.35f;
+        private const float InvasionBridgeExplosionOffsetSeconds = 2.35f;
         private const float InvasionBridgeExplosionDurationSeconds = 1.25f;
+        private const float InvasionBridgePushShotOffsetSeconds = 3.45f;
 
         private static readonly Vector3 FirstPersonViewMarkerPosition =
             new Vector3(-4.02049f, 0.9818602f, -0.5965308f);
@@ -348,8 +307,6 @@ namespace DimensionBrawl.Editor
             CreateWeaponFloorProps(scene, inori.transform);
             GameObject rifle = CreateInoriRifle(scene, inori.transform, inoriAnimator);
             rifle.SetActive(false);
-            GameObject sword = CreateInoriSword(scene, inori.transform);
-            sword.SetActive(false);
 
             ActionCameraController cameraController = CreateReviewCamera(scene, inori.transform, threatAnchor);
             IntroGatePodCinemachineShotPlayer shotPlayer = CreateCinemachineShots(
@@ -1432,20 +1389,14 @@ namespace DimensionBrawl.Editor
             float scanLeftStartSeconds = ResolveScanCameraStartSeconds(voiceThreeStartSeconds);
             float scanRightStartSeconds = ResolveScanRightCameraStartSeconds(scanLeftStartSeconds);
             float handLookStartSeconds = ResolveHandLookCameraStartSeconds(scanRightStartSeconds);
-            float airstrikeStartSeconds = ResolveInvasionAirstrikeStartSeconds();
-            float portalStartSeconds = ResolveInvasionPortalStartSeconds();
-            float soldierStartSeconds = ResolveInvasionSoldierStartSeconds();
-            float kickStartSeconds = ResolveInvasionKickStartSeconds();
-            float swordStartSeconds = ResolveInvasionSwordStartSeconds();
-            float rinaFeetStartSeconds = ResolveInvasionRinaFeetStartSeconds();
-            float rinaUpperStartSeconds = ResolveInvasionRinaUpperStartSeconds();
-            float rinaBackStartSeconds = ResolveInvasionRinaBackStartSeconds();
+            float invasionExplosionStartSeconds = ResolveInvasionExplosionStartSeconds(voiceThreeStartSeconds);
+            float invasionPushStartSeconds = ResolveInvasionPushShotStartSeconds(voiceThreeStartSeconds);
 
             profile.Configure(
                 "intro_gatepod_awakening",
                 "Intro GatePod Awakening",
                 CinematicSequenceProfile.SequenceCategory.IntroAwakening,
-                "Source-referenced GatePod awakening pass that preserves the capsule/first-person awakening, then uses ArkData-derived short action clusters for air raids, staggered portals, soldier surge, protagonist interruption, sword resolve, and a Rina QuestStart-derived back-view handoff.",
+                "Source-referenced GatePod awakening pass using The Phantom Knowledge C01/C03/C04 camera timing, Fader timing, Cinemachine cameras, a Spline Dolly opening move, and a next-scene invasion bridge where voice 3 plays over Commando lower-body running and a heaven-background explosion.",
                 introDurationSeconds,
                 92,
                 true,
@@ -1501,105 +1452,48 @@ namespace DimensionBrawl.Editor
                         ResolveFirstPersonViewHandsLookAt(),
                         58f),
                     ShotCamera(
-                        "ark_c07_heaven_air_raid_wide",
+                        "src_c07_commando_bridge_legs_run",
                         CinematicSequenceProfile.ShotPurpose.ThreatDirection,
                         CinematicSequenceProfile.CameraBlendKind.Cut,
                         voiceThreeStartSeconds,
-                        airstrikeStartSeconds - voiceThreeStartSeconds,
-                        new Vector3(0.00f, 2.62f, -2.30f),
-                        new Vector3(0.04f, 1.42f, 6.85f),
-                        55f),
+                        invasionExplosionStartSeconds - voiceThreeStartSeconds,
+                        new Vector3(0.38f, 0.18f, 3.38f),
+                        new Vector3(0.28f, 0.31f, 4.30f),
+                        39f),
                     ShotCamera(
-                        "ark_c08_airstrike_impact_chain",
+                        "src_c08_heaven_background_explosion",
                         CinematicSequenceProfile.ShotPurpose.NewInformation,
                         CinematicSequenceProfile.CameraBlendKind.Reframe,
-                        airstrikeStartSeconds,
-                        portalStartSeconds - airstrikeStartSeconds,
-                        new Vector3(-3.20f, 1.45f, 4.20f),
-                        new Vector3(-0.82f, 1.36f, 7.25f),
+                        invasionExplosionStartSeconds,
+                        invasionPushStartSeconds - invasionExplosionStartSeconds,
+                        new Vector3(-3.25f, 1.36f, 5.05f),
+                        new Vector3(-1.02f, 1.60f, 7.24f),
                         38f),
                     ShotCamera(
-                        "ark_c09_portal_breach_stagger",
+                        "src_c09_commando_bridge_push_past",
                         CinematicSequenceProfile.ShotPurpose.ThreatDirection,
-                        CinematicSequenceProfile.CameraBlendKind.Reframe,
-                        portalStartSeconds,
-                        soldierStartSeconds - portalStartSeconds,
-                        new Vector3(3.40f, 1.05f, 3.55f),
-                        new Vector3(0.10f, 1.18f, 6.30f),
-                        44f),
-                    ShotCamera(
-                        "ark_c10_soldier_surge_attack",
-                        CinematicSequenceProfile.ShotPurpose.ThreatDirection,
-                        CinematicSequenceProfile.CameraBlendKind.Cut,
-                        soldierStartSeconds,
-                        kickStartSeconds - soldierStartSeconds,
-                        new Vector3(0.65f, 0.62f, 2.10f),
-                        new Vector3(0.05f, 0.92f, 4.90f),
-                        52f),
-                    ShotCamera(
-                        "ark_c11_inori_interrupt_kick",
-                        CinematicSequenceProfile.ShotPurpose.CharacterAction,
-                        CinematicSequenceProfile.CameraBlendKind.Cut,
-                        kickStartSeconds,
-                        swordStartSeconds - kickStartSeconds,
-                        new Vector3(-0.95f, 0.35f, 0.85f),
-                        new Vector3(0.18f, 0.64f, 2.30f),
-                        58f),
-                    ShotCamera(
-                        "ark_c12_sword_claim_resolve",
-                        CinematicSequenceProfile.ShotPurpose.MechanicConnection,
-                        CinematicSequenceProfile.CameraBlendKind.Reframe,
-                        swordStartSeconds,
-                        rinaFeetStartSeconds - swordStartSeconds,
-                        new Vector3(-1.20f, 0.55f, 0.35f),
-                        new Vector3(-0.25f, 0.62f, 1.00f),
-                        48f),
-                    ShotCamera(
-                        "ark_c13_rina_feet_entry",
-                        CinematicSequenceProfile.ShotPurpose.CharacterAction,
-                        CinematicSequenceProfile.CameraBlendKind.Reframe,
-                        rinaFeetStartSeconds,
-                        rinaUpperStartSeconds - rinaFeetStartSeconds,
-                        new Vector3(-1.68f, 0.24f, 0.38f),
-                        new Vector3(-0.08f, 0.56f, 1.10f),
-                        60f),
-                    ShotCamera(
-                        "ark_c14_rina_upper_pass",
-                        CinematicSequenceProfile.ShotPurpose.EmotionChange,
-                        CinematicSequenceProfile.CameraBlendKind.Reframe,
-                        rinaUpperStartSeconds,
-                        rinaBackStartSeconds - rinaUpperStartSeconds,
-                        new Vector3(-2.15f, 1.15f, 0.15f),
-                        new Vector3(0.00f, 1.26f, 1.45f),
-                        56f),
-                    ShotCamera(
-                        "ark_c15_rina_backview_takeover",
-                        CinematicSequenceProfile.ShotPurpose.GameplayHandoff,
-                        CinematicSequenceProfile.CameraBlendKind.GameplayMatch,
-                        rinaBackStartSeconds,
-                        introGameplayHandoffSeconds - rinaBackStartSeconds,
-                        new Vector3(0.00f, 1.18f, -3.85f),
-                        new Vector3(0.00f, 1.20f, 1.35f),
-                        52f)
+                        CinematicSequenceProfile.CameraBlendKind.PushIn,
+                        invasionPushStartSeconds,
+                        introGameplayHandoffSeconds - invasionPushStartSeconds,
+                        new Vector3(-1.06f, 0.34f, 1.02f),
+                        new Vector3(0.32f, 0.68f, 2.42f),
+                        56f)
                 },
                 new[]
                 {
                     WeaponVisibility("hide_attached_rifle_at_wake", 0f, RifleName, false),
-                    WeaponVisibility("hide_attached_sword_at_wake", 0f, InoriSwordName, false),
-                    WeaponVisibility("hide_floor_rifle_at_wake", 0f, FloorRifleName, false),
                     Body("wake_confused_hands", handLookStartSeconds, 2.25f, IntroLookAtHandsStateName),
                     Face("wake_first_surprise", 0.58f, 1.5f, "Surprised"),
                     Face("scan_confused", 2.15f, 2.6f, "Confused"),
                     Body("body_reveal_surprise", 3.10f, 2.1f, "CIN_IntroSurprised"),
-                    Body("protagonist_interrupt_silhouette", kickStartSeconds, 2.15f, SwordChargeStateName),
-                    Body("sword_claim_motion", swordStartSeconds, 1.95f, "CIN_IntroPickUp"),
-                    WeaponVisibility("hide_floor_sword_after_claim", swordStartSeconds + 1.30f, FloorSwordName, false),
-                    WeaponVisibility("show_attached_sword_for_handoff", swordStartSeconds + 1.32f, InoriSwordName, true),
+                    Body("weapon_pickup_motion", 8.20f, 2.0f, "CIN_IntroPickUp"),
+                    WeaponVisibility("hide_floor_rifle_after_pickup", 10.20f, FloorRifleName, false),
+                    WeaponVisibility("show_attached_rifle_for_handoff", 10.22f, RifleName, true),
                     Body(
-                        "sword_ready_handoff",
-                        swordStartSeconds + 2.00f,
-                        Mathf.Max(0.45f, introGameplayHandoffSeconds - swordStartSeconds - 2.00f),
-                        SwordReadyStateName),
+                        "combat_ready_handoff",
+                        handLookStartSeconds + 2.35f,
+                        Mathf.Max(0.45f, introGameplayHandoffSeconds - handLookStartSeconds - 2.35f),
+                        CombatReadyStateName),
                     Face("resolve_after_alarm", 10.48f, 3.1f, "Angry")
                 },
                 Array.Empty<CinematicSequenceProfile.VfxCue>(),
@@ -1741,58 +1635,23 @@ namespace DimensionBrawl.Editor
 
         private static float ResolveInvasionExplosionStartSeconds(float invasionBridgeStartSeconds)
         {
-            return invasionBridgeStartSeconds + InvasionAirstrikeOffsetSeconds;
+            return invasionBridgeStartSeconds + InvasionBridgeExplosionOffsetSeconds;
         }
 
         private static float ResolveInvasionPushShotStartSeconds(float invasionBridgeStartSeconds)
         {
-            return invasionBridgeStartSeconds + InvasionKickOffsetSeconds;
-        }
-
-        private static float ResolveInvasionAirstrikeStartSeconds()
-        {
-            return ResolveInvasionBridgeStartSeconds() + InvasionAirstrikeOffsetSeconds;
-        }
-
-        private static float ResolveInvasionPortalStartSeconds()
-        {
-            return ResolveInvasionBridgeStartSeconds() + InvasionPortalOffsetSeconds;
-        }
-
-        private static float ResolveInvasionSoldierStartSeconds()
-        {
-            return ResolveInvasionBridgeStartSeconds() + InvasionSoldierOffsetSeconds;
-        }
-
-        private static float ResolveInvasionKickStartSeconds()
-        {
-            return ResolveInvasionBridgeStartSeconds() + InvasionKickOffsetSeconds;
-        }
-
-        private static float ResolveInvasionSwordStartSeconds()
-        {
-            return ResolveInvasionBridgeStartSeconds() + InvasionSwordOffsetSeconds;
-        }
-
-        private static float ResolveInvasionRinaFeetStartSeconds()
-        {
-            return ResolveInvasionBridgeStartSeconds() + InvasionRinaFeetOffsetSeconds;
-        }
-
-        private static float ResolveInvasionRinaUpperStartSeconds()
-        {
-            return ResolveInvasionBridgeStartSeconds() + InvasionRinaUpperOffsetSeconds;
-        }
-
-        private static float ResolveInvasionRinaBackStartSeconds()
-        {
-            return ResolveInvasionBridgeStartSeconds() + InvasionRinaBackOffsetSeconds;
+            return invasionBridgeStartSeconds + InvasionBridgePushShotOffsetSeconds;
         }
 
         private static float ResolveIntroGameplayHandoffSeconds()
         {
             float invasionBridgeStartSeconds = ResolveInvasionBridgeStartSeconds();
-            return Mathf.Max(FallbackIntroGameplayHandoffSeconds, invasionBridgeStartSeconds + InvasionHandoffOffsetSeconds);
+            return Mathf.Max(
+                FallbackIntroGameplayHandoffSeconds,
+                invasionBridgeStartSeconds
+                + Mathf.Max(
+                    InvasionBridgeRunDurationSeconds,
+                    ResolveAudioClipLengthSeconds(VoiceThreePath, 3.267f) + 0.85f));
         }
 
         private static float ResolveIntroDurationSeconds()
@@ -1948,25 +1807,19 @@ namespace DimensionBrawl.Editor
                 new Color(1.4f, 0.12f, 0.18f, 1f),
                 0.62f,
                 0.0f);
-            Material portalFallback = LoadOrCreateMaterial(
-                InvasionPortalFallbackMaterialPath,
-                new Color(0.10f, 0.92f, 1.00f, 1f),
-                new Color(0.42f, 2.40f, 3.10f, 1f),
-                0.40f,
-                0.0f);
             CreatePanelCube(
                 bridgeRoot.transform,
                 "IntroGatePodReview_CommandoBridgeDeck",
                 new Vector3(0f, 0.015f, 5.15f),
                 Quaternion.identity,
-                new Vector3(6.85f, 0.035f, 5.25f),
+                new Vector3(4.45f, 0.035f, 4.35f),
                 floor);
             CreatePanelCube(
                 bridgeRoot.transform,
                 "IntroGatePodReview_CommandoBridgeWarningLine",
                 new Vector3(0f, 0.055f, 4.05f),
                 Quaternion.identity,
-                new Vector3(5.85f, 0.022f, 0.055f),
+                new Vector3(3.70f, 0.022f, 0.055f),
                 warning);
 
             GameObject commandoGroup = new GameObject(InvasionCommandoGroupName);
@@ -1974,362 +1827,37 @@ namespace DimensionBrawl.Editor
             commandoGroup.transform.SetParent(bridgeRoot.transform, worldPositionStays: false);
 
             float startSeconds = ResolveInvasionBridgeStartSeconds();
-            float airstrikeStartSeconds = ResolveInvasionAirstrikeStartSeconds();
-            float portalStartSeconds = ResolveInvasionPortalStartSeconds();
-            float soldierStartSeconds = ResolveInvasionSoldierStartSeconds();
-            float kickStartSeconds = ResolveInvasionKickStartSeconds();
-            float swordStartSeconds = ResolveInvasionSwordStartSeconds();
-            float endSeconds = ResolveIntroGameplayHandoffSeconds();
+            float endSeconds = startSeconds + InvasionBridgeRunDurationSeconds;
             IntroGatePodInvasionBridgeCue.CommandoCue[] commandos =
             {
                 CreateCommandoCue(
                     scene,
                     commandoGroup.transform,
                     1,
-                    new Vector3(-2.35f, 0.02f, 6.45f),
-                    new Vector3(-0.78f, 0.02f, 3.10f),
+                    new Vector3(-0.72f, 0.02f, 5.85f),
+                    new Vector3(-0.42f, 0.02f, 1.82f),
                     0.00f,
-                    soldierStartSeconds,
-                    kickStartSeconds + 1.10f,
-                    soldierStartSeconds + 1.02f,
-                    kickStartSeconds + 0.24f,
-                    SciFiCommandoAttackStateName,
-                    SciFiCommandoHitHeavyStateName,
-                    new Vector3(-0.55f, 0.00f, -0.45f),
-                    196f,
-                    0.82f),
+                    startSeconds,
+                    endSeconds),
                 CreateCommandoCue(
                     scene,
                     commandoGroup.transform,
                     2,
-                    new Vector3(-0.35f, 0.02f, 6.85f),
-                    new Vector3(-0.12f, 0.02f, 2.78f),
+                    new Vector3(0.40f, 0.02f, 6.15f),
+                    new Vector3(0.20f, 0.02f, 2.08f),
                     0.37f,
-                    soldierStartSeconds + 0.12f,
-                    endSeconds,
-                    soldierStartSeconds + 1.28f,
-                    endSeconds,
-                    SciFiCommandoAttackHeavyStateName,
-                    string.Empty,
-                    Vector3.zero,
-                    181f,
-                    0.88f),
+                    startSeconds + 0.10f,
+                    endSeconds + 0.12f),
                 CreateCommandoCue(
                     scene,
                     commandoGroup.transform,
                     3,
-                    new Vector3(1.78f, 0.02f, 6.28f),
-                    new Vector3(0.82f, 0.02f, 3.06f),
+                    new Vector3(1.08f, 0.02f, 5.55f),
+                    new Vector3(0.82f, 0.02f, 1.55f),
                     0.68f,
-                    soldierStartSeconds + 0.30f,
-                    kickStartSeconds + 1.30f,
-                    soldierStartSeconds + 1.35f,
-                    kickStartSeconds + 0.38f,
-                    SciFiCommandoAttackStateName,
-                    SciFiCommandoHitStateName,
-                    new Vector3(0.48f, 0.00f, -0.58f),
-                    166f,
-                    0.80f),
-                CreateCommandoCue(
-                    scene,
-                    commandoGroup.transform,
-                    4,
-                    new Vector3(2.88f, 0.02f, 6.95f),
-                    new Vector3(1.52f, 0.02f, 3.72f),
-                    0.16f,
-                    soldierStartSeconds + 0.56f,
-                    endSeconds,
-                    soldierStartSeconds + 1.62f,
-                    endSeconds,
-                    SciFiCommandoAttackHeavyStateName,
-                    string.Empty,
-                    Vector3.zero,
-                    154f,
-                    0.84f),
-                CreateCommandoCue(
-                    scene,
-                    commandoGroup.transform,
-                    5,
-                    new Vector3(-3.05f, 0.02f, 7.18f),
-                    new Vector3(-1.42f, 0.02f, 4.12f),
-                    0.55f,
-                    soldierStartSeconds + 0.82f,
-                    endSeconds,
-                    soldierStartSeconds + 1.90f,
-                    endSeconds,
-                    SciFiCommandoAttackStateName,
-                    string.Empty,
-                    Vector3.zero,
-                    207f,
-                    0.78f),
-                CreateCommandoCue(
-                    scene,
-                    commandoGroup.transform,
-                    6,
-                    new Vector3(0.58f, 0.02f, 7.55f),
-                    new Vector3(0.42f, 0.02f, 4.45f),
-                    0.83f,
-                    soldierStartSeconds + 0.96f,
-                    endSeconds,
-                    soldierStartSeconds + 2.08f,
-                    endSeconds,
-                    SciFiCommandoAttackHeavyStateName,
-                    string.Empty,
-                    Vector3.zero,
-                    177f,
-                    0.92f)
+                    startSeconds + 0.24f,
+                    endSeconds + 0.22f)
             };
-
-            List<IntroGatePodInvasionBridgeCue.TimedObjectCue> timedObjects = new List<IntroGatePodInvasionBridgeCue.TimedObjectCue>();
-            AddInvasionHeroPresentationActor(
-                scene,
-                bridgeRoot.transform,
-                timedObjects,
-                "IntroGatePodReview_InvasionHero_Interrupt",
-                SwordChargeStateName,
-                0.18f,
-                kickStartSeconds - 0.12f,
-                swordStartSeconds + 0.12f,
-                new Vector3(-0.24f, 0.02f, 1.10f),
-                new Vector3(0.10f, 0.02f, 1.62f),
-                new Vector3(0f, 8f, 0f),
-                Vector3.one * 0.94f,
-                Vector3.one * 0.94f);
-            AddInvasionHeroPresentationActor(
-                scene,
-                bridgeRoot.transform,
-                timedObjects,
-                "IntroGatePodReview_InvasionHero_SwordReady",
-                SwordReadyStateName,
-                0.20f,
-                swordStartSeconds + 0.10f,
-                endSeconds,
-                new Vector3(0.12f, 0.02f, 1.42f),
-                new Vector3(0.00f, 0.02f, 1.18f),
-                new Vector3(0f, 0f, 0f),
-                Vector3.one * 0.96f,
-                Vector3.one * 0.96f);
-            AddTimedPrefab(
-                scene,
-                bridgeRoot.transform,
-                timedObjects,
-                JetModelPath,
-                "IntroGatePodReview_AirRaid_JetA",
-                startSeconds,
-                airstrikeStartSeconds + 1.15f,
-                new Vector3(-6.40f, 3.35f, 8.35f),
-                new Vector3(4.85f, 2.82f, 6.25f),
-                new Vector3(2f, 104f, -8f),
-                Vector3.one * 0.14f,
-                Vector3.one * 0.14f);
-            AddTimedPrefab(
-                scene,
-                bridgeRoot.transform,
-                timedObjects,
-                BomberModelPath,
-                "IntroGatePodReview_AirRaid_BomberB",
-                startSeconds + 0.35f,
-                airstrikeStartSeconds + 1.55f,
-                new Vector3(5.80f, 3.58f, 8.75f),
-                new Vector3(-4.10f, 3.05f, 6.65f),
-                new Vector3(-4f, -74f, 5f),
-                Vector3.one * 0.15f,
-                Vector3.one * 0.15f);
-            AddTimedPrefab(
-                scene,
-                bridgeRoot.transform,
-                timedObjects,
-                UavModelPath,
-                "IntroGatePodReview_AirRaid_UavC",
-                startSeconds + 0.55f,
-                airstrikeStartSeconds + 2.05f,
-                new Vector3(-3.45f, 2.42f, 7.35f),
-                new Vector3(2.65f, 2.10f, 5.75f),
-                new Vector3(0f, 116f, 0f),
-                Vector3.one * 0.12f,
-                Vector3.one * 0.12f);
-            AddTimedPrefab(
-                scene,
-                bridgeRoot.transform,
-                timedObjects,
-                BombModelPath,
-                "IntroGatePodReview_AirRaid_FallingBomb",
-                airstrikeStartSeconds - 0.42f,
-                airstrikeStartSeconds + 0.18f,
-                new Vector3(-1.85f, 2.22f, 6.92f),
-                new Vector3(-1.20f, 0.28f, 6.40f),
-                new Vector3(68f, 12f, -22f),
-                Vector3.one * 0.25f,
-                Vector3.one * 0.34f);
-            AddTimedPrefab(
-                scene,
-                bridgeRoot.transform,
-                timedObjects,
-                AirstrikePrefabPath,
-                "IntroGatePodReview_Airstrike_Streaks",
-                airstrikeStartSeconds - 0.18f,
-                portalStartSeconds + 0.18f,
-                new Vector3(-0.18f, 0.18f, 6.20f),
-                new Vector3(0.18f, 0.18f, 5.72f),
-                new Vector3(0f, -8f, 0f),
-                Vector3.one * 0.62f,
-                Vector3.one * 0.72f);
-            AddTimedPrefab(
-                scene,
-                bridgeRoot.transform,
-                timedObjects,
-                AirstrikeBombExplosionPrefabPath,
-                "IntroGatePodReview_Airstrike_BombImpactA",
-                airstrikeStartSeconds,
-                airstrikeStartSeconds + 1.15f,
-                new Vector3(-1.20f, 0.14f, 6.40f),
-                new Vector3(-1.20f, 0.14f, 6.40f),
-                Vector3.zero,
-                Vector3.one * 0.20f,
-                Vector3.one * 1.18f,
-                true,
-                0.12f);
-            AddTimedPrefab(
-                scene,
-                bridgeRoot.transform,
-                timedObjects,
-                AirstrikeBulletExplosionPrefabPath,
-                "IntroGatePodReview_Airstrike_BulletImpactB",
-                airstrikeStartSeconds + 0.58f,
-                airstrikeStartSeconds + 1.58f,
-                new Vector3(2.15f, 0.14f, 5.12f),
-                new Vector3(2.15f, 0.14f, 5.12f),
-                Vector3.zero,
-                Vector3.one * 0.18f,
-                Vector3.one * 0.86f,
-                true,
-                0.10f);
-            AddTimedPrefab(
-                scene,
-                bridgeRoot.transform,
-                timedObjects,
-                OrbitalStrikePrefabPath,
-                "IntroGatePodReview_Airstrike_OrbitalC",
-                airstrikeStartSeconds + 0.92f,
-                portalStartSeconds + 0.35f,
-                new Vector3(3.10f, 0.10f, 7.18f),
-                new Vector3(3.10f, 0.10f, 7.18f),
-                Vector3.zero,
-                Vector3.one * 0.38f,
-                Vector3.one * 0.92f,
-                true,
-                0.10f);
-            AddTimedPrefab(
-                scene,
-                bridgeRoot.transform,
-                timedObjects,
-                SpaceWarpPortalPrefabPath,
-                "IntroGatePodReview_Portal_LeftBreach",
-                portalStartSeconds,
-                endSeconds,
-                new Vector3(-2.70f, 1.02f, 6.62f),
-                new Vector3(-2.70f, 1.02f, 6.62f),
-                new Vector3(0f, 12f, 0f),
-                new Vector3(1.05f, 1.28f, 1.05f),
-                new Vector3(1.05f, 1.28f, 1.05f),
-                true,
-                0.08f);
-            AddPortalFallbackRing(
-                scene,
-                bridgeRoot.transform,
-                timedObjects,
-                portalFallback,
-                "IntroGatePodReview_PortalFallback_LeftBreach",
-                portalStartSeconds,
-                endSeconds,
-                new Vector3(-2.70f, 1.02f, 6.56f),
-                new Vector3(0f, 12f, 0f),
-                new Vector3(1.10f, 1.28f, 1.10f),
-                new Vector3(1.10f, 1.28f, 1.10f));
-            AddTimedPrefab(
-                scene,
-                bridgeRoot.transform,
-                timedObjects,
-                SpaceWarpPortalPrefabPath,
-                "IntroGatePodReview_Portal_CenterBreach",
-                portalStartSeconds + 0.28f,
-                endSeconds,
-                new Vector3(0.10f, 1.12f, 6.98f),
-                new Vector3(0.10f, 1.12f, 6.98f),
-                Vector3.zero,
-                new Vector3(1.22f, 1.48f, 1.22f),
-                new Vector3(1.22f, 1.48f, 1.22f),
-                true,
-                0.10f);
-            AddPortalFallbackRing(
-                scene,
-                bridgeRoot.transform,
-                timedObjects,
-                portalFallback,
-                "IntroGatePodReview_PortalFallback_CenterBreach",
-                portalStartSeconds + 0.28f,
-                endSeconds,
-                new Vector3(0.10f, 1.12f, 6.92f),
-                Vector3.zero,
-                new Vector3(1.24f, 1.48f, 1.24f),
-                new Vector3(1.24f, 1.48f, 1.24f));
-            AddTimedPrefab(
-                scene,
-                bridgeRoot.transform,
-                timedObjects,
-                SpaceWarpPortalPrefabPath,
-                "IntroGatePodReview_Portal_RightBreach",
-                portalStartSeconds + 0.56f,
-                endSeconds,
-                new Vector3(2.68f, 1.03f, 6.72f),
-                new Vector3(2.68f, 1.03f, 6.72f),
-                new Vector3(0f, -12f, 0f),
-                new Vector3(1.05f, 1.30f, 1.05f),
-                new Vector3(1.05f, 1.30f, 1.05f),
-                true,
-                0.08f);
-            AddPortalFallbackRing(
-                scene,
-                bridgeRoot.transform,
-                timedObjects,
-                portalFallback,
-                "IntroGatePodReview_PortalFallback_RightBreach",
-                portalStartSeconds + 0.56f,
-                endSeconds,
-                new Vector3(2.68f, 1.03f, 6.66f),
-                new Vector3(0f, -12f, 0f),
-                new Vector3(1.10f, 1.30f, 1.10f),
-                new Vector3(1.10f, 1.30f, 1.10f));
-            AddTimedPrefab(
-                scene,
-                bridgeRoot.transform,
-                timedObjects,
-                MadnessSlashPrefabPath,
-                "IntroGatePodReview_Interrupt_MeleeSlash",
-                kickStartSeconds - 0.05f,
-                kickStartSeconds + 1.24f,
-                new Vector3(-0.84f, 0.36f, 3.05f),
-                new Vector3(-0.52f, 0.46f, 3.18f),
-                new Vector3(0f, 28f, -8f),
-                Vector3.one * 0.20f,
-                Vector3.one * 0.46f,
-                true,
-                0.12f);
-            AddTimedPrefab(
-                scene,
-                bridgeRoot.transform,
-                timedObjects,
-                GroundSlashPrefabPath,
-                "IntroGatePodReview_Sword_GroundSlash",
-                swordStartSeconds + 0.52f,
-                swordStartSeconds + 2.10f,
-                new Vector3(0.35f, 0.08f, 2.72f),
-                new Vector3(1.05f, 0.08f, 3.28f),
-                new Vector3(0f, 18f, 0f),
-                Vector3.one * 0.24f,
-                Vector3.one * 0.78f,
-                true,
-                0.10f);
 
             GameObject explosionRoot = CreateInvasionExplosion(scene, bridgeRoot.transform);
             Light explosionLight = explosionRoot.GetComponentInChildren<Light>(includeInactive: true);
@@ -2345,18 +1873,6 @@ namespace DimensionBrawl.Editor
                 Vector3.one * 0.10f,
                 new Vector3(1.18f, 0.78f, 1.18f),
                 8.6f);
-            cue.ConfigureTimedObjects(
-                timedObjects.ToArray(),
-                new[]
-                {
-                    airstrikeStartSeconds,
-                    airstrikeStartSeconds + 0.58f,
-                    airstrikeStartSeconds + 0.92f,
-                    portalStartSeconds,
-                    soldierStartSeconds + 0.45f,
-                    kickStartSeconds + 0.18f,
-                    swordStartSeconds + 0.68f
-                });
             InvasionScreenEffectBindings screenEffects =
                 CreateInvasionScreenEffectOverlay(scene, parent);
             cue.ConfigurePresentation(
@@ -2383,14 +1899,7 @@ namespace DimensionBrawl.Editor
             Vector3 endLocalPosition,
             float normalizedTimeOffset,
             float startSeconds,
-            float endSeconds,
-            float attackStartSeconds,
-            float hitStartSeconds,
-            string attackStateName,
-            string hitStateName,
-            Vector3 hitLocalPositionOffset,
-            float yawDegrees,
-            float scale)
+            float endSeconds)
         {
             GameObject prefab = LoadAsset<GameObject>(SciFiCommandoPrefabPath);
             GameObject actor = PrefabUtility.InstantiatePrefab(prefab, parent) as GameObject;
@@ -2401,8 +1910,8 @@ namespace DimensionBrawl.Editor
 
             actor.name = $"IntroGatePodReview_Commando_{index:00}";
             actor.transform.localPosition = startLocalPosition;
-            actor.transform.localRotation = Quaternion.Euler(0f, yawDegrees, 0f);
-            actor.transform.localScale = Vector3.one * scale;
+            actor.transform.localRotation = Quaternion.Euler(0f, 180f, 0f);
+            actor.transform.localScale = Vector3.one * (index == 2 ? 0.88f : 0.82f);
 
             DisableCutsceneActorGameplay(actor);
             Animator animator = actor.GetComponentInChildren<Animator>(includeInactive: true);
@@ -2428,172 +1937,12 @@ namespace DimensionBrawl.Editor
                 actor.transform,
                 animator,
                 SciFiCommandoRunStateName,
-                attackStateName,
-                hitStateName,
                 startSeconds,
-                attackStartSeconds,
-                hitStartSeconds,
                 endSeconds,
                 startLocalPosition,
                 endLocalPosition,
-                hitLocalPositionOffset,
-                new Vector3(0f, yawDegrees, 0f),
+                new Vector3(0f, 180f, 0f),
                 normalizedTimeOffset);
-        }
-
-        private static void AddInvasionHeroPresentationActor(
-            Scene scene,
-            Transform parent,
-            List<IntroGatePodInvasionBridgeCue.TimedObjectCue> timedObjects,
-            string objectName,
-            string bodyStateName,
-            float normalizedTime,
-            float startSeconds,
-            float endSeconds,
-            Vector3 startLocalPosition,
-            Vector3 endLocalPosition,
-            Vector3 localEulerAngles,
-            Vector3 startLocalScale,
-            Vector3 endLocalScale)
-        {
-            GameObject sourcePrefab = LoadAsset<GameObject>(ActionFoundationInoriPlayerVisualAssetSetup.SourcePrefabPath);
-            GameObject actor = PrefabUtility.InstantiatePrefab(sourcePrefab, scene) as GameObject;
-            if (actor == null)
-            {
-                throw new InvalidOperationException("Failed to instantiate Inori source prefab for invasion presentation actor.");
-            }
-
-            PrefabUtility.UnpackPrefabInstance(
-                actor,
-                PrefabUnpackMode.Completely,
-                InteractionMode.AutomatedAction);
-            actor.name = objectName;
-            actor.transform.SetParent(parent, worldPositionStays: false);
-            actor.transform.localPosition = startLocalPosition;
-            actor.transform.localRotation = Quaternion.Euler(localEulerAngles);
-            actor.transform.localScale = startLocalScale;
-
-            Animator animator = actor.GetComponentInChildren<Animator>(includeInactive: true)
-                ?? actor.AddComponent<Animator>();
-            animator.runtimeAnimatorController = LoadAsset<RuntimeAnimatorController>(
-                BuildResubmissionCinematicAnimationSetup.CinematicControllerPath);
-            animator.avatar = ActionFoundationInoriPlayerVisualAssetSetup.LoadPromotedAvatar();
-            animator.applyRootMotion = false;
-            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-            AssignInoriPromotedMaterials(actor);
-            DisableCutsceneActorGameplay(actor);
-            SampleInoriBodyState(animator, bodyStateName, normalizedTime);
-
-            GameObject sword = CreateInoriSword(scene, actor.transform);
-            sword.SetActive(true);
-
-            actor.SetActive(false);
-            timedObjects.Add(
-                new IntroGatePodInvasionBridgeCue.TimedObjectCue(
-                    actor.transform,
-                    startSeconds,
-                    endSeconds,
-                    startLocalPosition,
-                    endLocalPosition,
-                    localEulerAngles,
-                    startLocalScale,
-                    endLocalScale));
-            EditorUtility.SetDirty(actor);
-            EditorUtility.SetDirty(animator);
-        }
-
-        private static void AddPortalFallbackRing(
-            Scene scene,
-            Transform parent,
-            List<IntroGatePodInvasionBridgeCue.TimedObjectCue> timedObjects,
-            Material material,
-            string objectName,
-            float startSeconds,
-            float endSeconds,
-            Vector3 localPosition,
-            Vector3 localEulerAngles,
-            Vector3 startLocalScale,
-            Vector3 endLocalScale)
-        {
-            GameObject root = new GameObject(objectName);
-            SceneManager.MoveGameObjectToScene(root, scene);
-            root.transform.SetParent(parent, worldPositionStays: false);
-            root.transform.localPosition = localPosition;
-            root.transform.localRotation = Quaternion.Euler(localEulerAngles);
-            root.transform.localScale = startLocalScale;
-
-            CreatePanelCube(root.transform, $"{objectName}_Top", new Vector3(0f, 0.62f, 0f), Quaternion.identity, new Vector3(0.78f, 0.055f, 0.045f), material);
-            CreatePanelCube(root.transform, $"{objectName}_Bottom", new Vector3(0f, -0.62f, 0f), Quaternion.identity, new Vector3(0.78f, 0.055f, 0.045f), material);
-            CreatePanelCube(root.transform, $"{objectName}_Left", new Vector3(-0.48f, 0f, 0f), Quaternion.identity, new Vector3(0.055f, 0.98f, 0.045f), material);
-            CreatePanelCube(root.transform, $"{objectName}_Right", new Vector3(0.48f, 0f, 0f), Quaternion.identity, new Vector3(0.055f, 0.98f, 0.045f), material);
-            CreatePanelCube(root.transform, $"{objectName}_TopLeft", new Vector3(-0.34f, 0.43f, 0f), Quaternion.Euler(0f, 0f, -42f), new Vector3(0.055f, 0.55f, 0.045f), material);
-            CreatePanelCube(root.transform, $"{objectName}_TopRight", new Vector3(0.34f, 0.43f, 0f), Quaternion.Euler(0f, 0f, 42f), new Vector3(0.055f, 0.55f, 0.045f), material);
-            CreatePanelCube(root.transform, $"{objectName}_BottomLeft", new Vector3(-0.34f, -0.43f, 0f), Quaternion.Euler(0f, 0f, 42f), new Vector3(0.055f, 0.55f, 0.045f), material);
-            CreatePanelCube(root.transform, $"{objectName}_BottomRight", new Vector3(0.34f, -0.43f, 0f), Quaternion.Euler(0f, 0f, -42f), new Vector3(0.055f, 0.55f, 0.045f), material);
-
-            root.SetActive(false);
-            timedObjects.Add(
-                new IntroGatePodInvasionBridgeCue.TimedObjectCue(
-                    root.transform,
-                    startSeconds,
-                    endSeconds,
-                    localPosition,
-                    localPosition,
-                    localEulerAngles,
-                    startLocalScale,
-                    endLocalScale,
-                    true,
-                    0.06f));
-            EditorUtility.SetDirty(root);
-        }
-
-        private static void AddTimedPrefab(
-            Scene scene,
-            Transform parent,
-            List<IntroGatePodInvasionBridgeCue.TimedObjectCue> timedObjects,
-            string prefabPath,
-            string objectName,
-            float startSeconds,
-            float endSeconds,
-            Vector3 startLocalPosition,
-            Vector3 endLocalPosition,
-            Vector3 localEulerAngles,
-            Vector3 startLocalScale,
-            Vector3 endLocalScale,
-            bool pulseScale = false,
-            float pulseScaleAmplitude = 0f)
-        {
-            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-            if (prefab == null)
-            {
-                return;
-            }
-
-            GameObject instance = PrefabUtility.InstantiatePrefab(prefab, scene) as GameObject;
-            if (instance == null)
-            {
-                return;
-            }
-
-            instance.name = objectName;
-            instance.transform.SetParent(parent, worldPositionStays: false);
-            instance.transform.localPosition = startLocalPosition;
-            instance.transform.localRotation = Quaternion.Euler(localEulerAngles);
-            instance.transform.localScale = startLocalScale;
-            instance.SetActive(false);
-            timedObjects.Add(
-                new IntroGatePodInvasionBridgeCue.TimedObjectCue(
-                    instance.transform,
-                    startSeconds,
-                    endSeconds,
-                    startLocalPosition,
-                    endLocalPosition,
-                    localEulerAngles,
-                    startLocalScale,
-                    endLocalScale,
-                    pulseScale,
-                    pulseScaleAmplitude));
-            EditorUtility.SetDirty(instance);
         }
 
         private static void DisableCutsceneActorGameplay(GameObject actor)
@@ -2948,23 +2297,6 @@ namespace DimensionBrawl.Editor
             sword.transform.localScale = Vector3.one * 0.95f;
         }
 
-        private static GameObject CreateInoriSword(Scene scene, Transform inoriRoot)
-        {
-            Transform targetRightHand = FindLikelyRightHand(inoriRoot);
-            if (targetRightHand == null)
-            {
-                throw new InvalidOperationException("Cannot attach intro sword: Inori right hand is missing.");
-            }
-
-            GameObject sword = InstantiateModelPrefab(SwordModelPath, scene, InoriSwordName);
-            sword.transform.SetParent(targetRightHand, worldPositionStays: false);
-            sword.transform.localPosition = new Vector3(0.035f, 0.065f, 0.015f);
-            sword.transform.localRotation = Quaternion.Euler(82f, -12f, -94f);
-            sword.transform.localScale = Vector3.one * 0.88f;
-            EditorUtility.SetDirty(sword);
-            return sword;
-        }
-
         private static GameObject CreateInoriRifle(Scene scene, Transform inoriRoot, Animator inoriAnimator)
         {
             GameObject sourcePrefab = LoadAsset<GameObject>(RifleGirlSourcePrefabPath);
@@ -3127,23 +2459,10 @@ namespace DimensionBrawl.Editor
 
                 Vector3 position = cue.CameraLocalPosition;
                 Vector3 lookAt = cue.LookAtLocalPosition;
-                float fieldOfView = cue.FieldOfView;
                 if (string.Equals(cue.CueId, OpeningDollyCueId, StringComparison.Ordinal))
                 {
                     position = ToVector3(openingDollySpline.EvaluatePosition(0f));
                     lookAt = openingLookAt;
-                }
-                else if (TryResolveRinaCameraPose(
-                    scene,
-                    camerasRoot.transform,
-                    cue.CueId,
-                    out Vector3 rinaPosition,
-                    out Vector3 rinaLookAt,
-                    out float rinaFieldOfView))
-                {
-                    position = rinaPosition;
-                    lookAt = rinaLookAt;
-                    fieldOfView = rinaFieldOfView;
                 }
 
                 cameraObject.transform.SetPositionAndRotation(position, ResolveLookRotation(position, lookAt));
@@ -3157,7 +2476,7 @@ namespace DimensionBrawl.Editor
                 virtualCamera.LookAt = lookAtObject.transform;
                 LensSettings lens = LensSettings.Default;
                 lens.ModeOverride = LensSettings.OverrideModes.Perspective;
-                lens.FieldOfView = fieldOfView > 0f ? fieldOfView : 36f;
+                lens.FieldOfView = cue.FieldOfView > 0f ? cue.FieldOfView : 36f;
                 lens.NearClipPlane = 0.03f;
                 lens.FarClipPlane = 150f;
                 virtualCamera.Lens = lens;
@@ -3200,112 +2519,6 @@ namespace DimensionBrawl.Editor
             shotPlayer.enabled = false;
             EditorUtility.SetDirty(shotPlayer);
             return shotPlayer;
-        }
-
-        private static bool TryResolveRinaCameraPose(
-            Scene scene,
-            Transform parent,
-            string cueId,
-            out Vector3 position,
-            out Vector3 lookAt,
-            out float fieldOfView)
-        {
-            position = Vector3.zero;
-            lookAt = Vector3.forward;
-            fieldOfView = 0f;
-
-            if (!TryResolveRinaSampleTime(cueId, out float sampleTime))
-            {
-                return false;
-            }
-
-            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(RinaCameraRigPrefabPath);
-            AnimationClip clip = AssetDatabase.LoadAssetAtPath<AnimationClip>(RinaCameraClipPath);
-            if (prefab == null || clip == null)
-            {
-                return false;
-            }
-
-            GameObject rig = null;
-            try
-            {
-                rig = PrefabUtility.InstantiatePrefab(prefab, scene) as GameObject;
-                if (rig == null)
-                {
-                    return false;
-                }
-
-                rig.name = $"IntroGatePodReview_RinaSample_{SanitizeObjectName(cueId)}";
-                rig.hideFlags = HideFlags.HideAndDontSave;
-                rig.transform.SetParent(parent, worldPositionStays: false);
-                rig.transform.localPosition = Vector3.zero;
-                rig.transform.localRotation = Quaternion.identity;
-                rig.transform.localScale = Vector3.one;
-                clip.SampleAnimation(rig, Mathf.Clamp(sampleTime, 0f, clip.length));
-
-                Camera sourceCamera = rig.GetComponentInChildren<Camera>(includeInactive: true);
-                if (sourceCamera == null)
-                {
-                    return false;
-                }
-
-                Vector3 sourcePosition = sourceCamera.transform.position;
-                Vector3 sourceForward = sourceCamera.transform.forward;
-                if (sourceForward.sqrMagnitude < 0.0001f)
-                {
-                    sourceForward = Vector3.forward;
-                }
-
-                position = new Vector3(sourcePosition.x * 0.78f, sourcePosition.y + 0.18f, sourcePosition.z + 1.02f);
-                lookAt = position + (sourceForward.normalized * 4.2f);
-                fieldOfView = Mathf.Clamp(sourceCamera.fieldOfView, 44f, 62f);
-
-                if (string.Equals(cueId, "ark_c14_rina_upper_pass", StringComparison.Ordinal))
-                {
-                    lookAt.y = Mathf.Min(lookAt.y, 1.38f);
-                }
-                else if (string.Equals(cueId, "ark_c15_rina_backview_takeover", StringComparison.Ordinal))
-                {
-                    Vector3 gameplayPosition = new Vector3(0.00f, 1.18f, -3.85f);
-                    Vector3 gameplayLookAt = new Vector3(0.00f, 1.20f, 1.35f);
-                    position = Vector3.Lerp(position, gameplayPosition, 0.62f);
-                    lookAt = Vector3.Lerp(lookAt, gameplayLookAt, 0.62f);
-                    fieldOfView = Mathf.Lerp(fieldOfView, 52f, 0.62f);
-                }
-
-                return true;
-            }
-            finally
-            {
-                if (rig != null)
-                {
-                    UnityEngine.Object.DestroyImmediate(rig);
-                }
-            }
-        }
-
-        private static bool TryResolveRinaSampleTime(string cueId, out float sampleTime)
-        {
-            if (string.Equals(cueId, "ark_c13_rina_feet_entry", StringComparison.Ordinal))
-            {
-                sampleTime = 0.00f;
-                return true;
-            }
-
-            if (string.Equals(cueId, "ark_c14_rina_upper_pass", StringComparison.Ordinal))
-            {
-                sampleTime = 3.70f;
-                return true;
-            }
-
-            if (string.Equals(cueId, "ark_c15_rina_backview_takeover", StringComparison.Ordinal))
-            {
-                sampleTime = 7.50f;
-                return true;
-            }
-
-            sampleTime = 0f;
-            return false;
         }
 
         private static PlayableDirector CreateTimelineDirector(
@@ -4208,12 +3421,9 @@ namespace DimensionBrawl.Editor
             CaptureSample(runner, shotPlayer, cueDirector, rendererMask, invasionBridgeCue, profile, camera, scanLeftStartSeconds + 0.95f, LeftScanCapturePath);
             CaptureSample(runner, shotPlayer, cueDirector, rendererMask, invasionBridgeCue, profile, camera, scanRightStartSeconds + 0.95f, RightScanCapturePath);
             CaptureSample(runner, shotPlayer, cueDirector, rendererMask, invasionBridgeCue, profile, camera, handLookStartSeconds + 0.85f, HandsCapturePath);
-            CaptureSample(runner, shotPlayer, cueDirector, rendererMask, invasionBridgeCue, profile, camera, voiceThreeStartSeconds + 0.82f, AirRaidCapturePath);
-            CaptureSample(runner, shotPlayer, cueDirector, rendererMask, invasionBridgeCue, profile, camera, ResolveInvasionPortalStartSeconds() + 0.52f, PortalBreachCapturePath);
-            CaptureSample(runner, shotPlayer, cueDirector, rendererMask, invasionBridgeCue, profile, camera, ResolveInvasionSoldierStartSeconds() + 1.15f, SoldierSurgeCapturePath);
-            CaptureSample(runner, shotPlayer, cueDirector, rendererMask, invasionBridgeCue, profile, camera, ResolveInvasionKickStartSeconds() + 0.36f, ProtagonistKickCapturePath);
-            CaptureSample(runner, shotPlayer, cueDirector, rendererMask, invasionBridgeCue, profile, camera, ResolveInvasionSwordStartSeconds() + 1.18f, SwordReadyCapturePath);
-            CaptureSample(runner, shotPlayer, cueDirector, rendererMask, invasionBridgeCue, profile, camera, ResolveInvasionRinaBackStartSeconds() + 1.20f, RinaBackViewCapturePath);
+            CaptureSample(runner, shotPlayer, cueDirector, rendererMask, invasionBridgeCue, profile, camera, voiceThreeStartSeconds + 1.05f, CommandoLegsCapturePath);
+            CaptureSample(runner, shotPlayer, cueDirector, rendererMask, invasionBridgeCue, profile, camera, ResolveInvasionExplosionStartSeconds(voiceThreeStartSeconds) + 0.45f, HeavenExplosionCapturePath);
+            CaptureSample(runner, shotPlayer, cueDirector, rendererMask, invasionBridgeCue, profile, camera, ResolveInvasionPushShotStartSeconds(voiceThreeStartSeconds) + 0.35f, CommandoPushCapturePath);
             ApplyProfileSample(runner, profile, 0.1f);
             ApplyCinemachineSample(shotPlayer, cueDirector, camera, 0.1f);
             rendererMask?.ApplyForReview(0.1f);
@@ -4493,18 +3703,13 @@ namespace DimensionBrawl.Editor
                 FindComponentInScene<IntroGatePodInvasionBridgeCue>(scene);
             if (invasionBridgeCue == null)
             {
-                issues.Add("Missing invasion bridge cue for ArkData-derived invasion expansion.");
+                issues.Add("Missing invasion bridge cue for voice 3 Commando run and background explosion.");
             }
             else
             {
-                if (invasionBridgeCue.Commandos.Length < 6)
+                if (invasionBridgeCue.Commandos.Length < 3)
                 {
-                    issues.Add("Invasion bridge cue should bind at least six staggered masked sci-fi soldiers.");
-                }
-
-                if (invasionBridgeCue.TimedObjects.Length < 10)
-                {
-                    issues.Add("Invasion bridge cue should bind timed air-raid, portal, and melee effect objects.");
+                    issues.Add("Invasion bridge cue should bind three Commando runners.");
                 }
 
                 if (invasionBridgeCue.ExplosionRoot == null)
@@ -4575,12 +3780,12 @@ namespace DimensionBrawl.Editor
                 {
                     if (CountTimelineClips(inoriBodyTrack) < 2)
                     {
-                        issues.Add("Timeline Inori Body track must contain the wake and sword-ready authored body clips.");
+                        issues.Add("Timeline Inori Body track must contain the wake and combat-ready authored body clips.");
                     }
                     else if (!HasTimelineClip(inoriBodyTrack, "wake_confused_hands")
-                        || !HasTimelineClip(inoriBodyTrack, "sword_ready_handoff"))
+                        || !HasTimelineClip(inoriBodyTrack, "combat_ready_handoff"))
                     {
-                        issues.Add("Timeline Inori Body track is missing wake_confused_hands or sword_ready_handoff.");
+                        issues.Add("Timeline Inori Body track is missing wake_confused_hands or combat_ready_handoff.");
                     }
 
                     if (director != null && director.GetGenericBinding(inoriBodyTrack) == null)
@@ -4807,22 +4012,17 @@ namespace DimensionBrawl.Editor
             float scanLeftStartSeconds = ResolveScanCameraStartSeconds(voiceThreeStartSeconds);
             float scanRightStartSeconds = ResolveScanRightCameraStartSeconds(scanLeftStartSeconds);
             float handLookStartSeconds = ResolveHandLookCameraStartSeconds(scanRightStartSeconds);
-            float airstrikeStartSeconds = ResolveInvasionAirstrikeStartSeconds();
-            float portalStartSeconds = ResolveInvasionPortalStartSeconds();
-            float soldierStartSeconds = ResolveInvasionSoldierStartSeconds();
-            float kickStartSeconds = ResolveInvasionKickStartSeconds();
-            float swordStartSeconds = ResolveInvasionSwordStartSeconds();
-            float rinaBackStartSeconds = ResolveInvasionRinaBackStartSeconds();
+            float invasionExplosionStartSeconds = ResolveInvasionExplosionStartSeconds(voiceThreeStartSeconds);
+            float invasionPushStartSeconds = ResolveInvasionPushShotStartSeconds(voiceThreeStartSeconds);
             builder.AppendLine("- Source reference: The Phantom Knowledge `GeneralTimeline_nD 2.playable` first section: Fader 0.0-2.0, C01 camera 0.0-3.0667, original voice 01 at 5.3667, C03 at 6.1, C04 at 8.1333.");
             builder.AppendLine($"- Current pass timing: opening fade 0.0-2.0, pre-POV blackout {SourceC03CameraStartSeconds - FirstPersonBlackoutLeadSeconds:0.000}-{SourceC03CameraStartSeconds:0.000}, capsule-inside POV at 6.1, voice 0 at {voiceZeroStartSeconds:0.000} for {voiceZeroLengthSeconds:0.000}s, voice 1 at {voiceOneStartSeconds:0.000} for {voiceOneLengthSeconds:0.000}s, voice 2 at {voiceTwoStartSeconds:0.000} for {voiceTwoLengthSeconds:0.000}s, left scan at {scanLeftStartSeconds:0.000}, right scan at {scanRightStartSeconds:0.000}, hand look-down at {handLookStartSeconds:0.000}, voice 3 at {voiceThreeStartSeconds:0.000} for {voiceThreeLengthSeconds:0.000}s.");
-            builder.AppendLine($"- ArkData invasion beats: heaven-wide alarm starts at {voiceThreeStartSeconds:0.000}, airstrike impact at {airstrikeStartSeconds:0.000}, portal breach at {portalStartSeconds:0.000}, soldier surge at {soldierStartSeconds:0.000}, protagonist interrupt at {kickStartSeconds:0.000}, sword resolve at {swordStartSeconds:0.000}, Rina-derived back-view takeover at {rinaBackStartSeconds:0.000}.");
-            builder.AppendLine($"- Invasion actors: six promoted `{SciFiCommandoPrefabPath}` instances are used as presentation-only masked sci-fi soldiers with staggered run/attack/hit phases; gameplay MonoBehaviours are disabled for the cutscene scene.");
-            builder.AppendLine($"- Invasion assets: `{AirstrikePrefabPath}`, `{SpaceWarpPortalPrefabPath}`, `{AirstrikeBombExplosionPrefabPath}`, `{GroundSlashPrefabPath}`, `{SwordModelPath}`, and Rina rig `{RinaCameraRigPrefabPath}`.");
+            builder.AppendLine($"- Voice 3 invasion bridge: Commando lower-body run starts at {voiceThreeStartSeconds:0.000}, heaven-background explosion starts at {invasionExplosionStartSeconds:0.000}, final Commando push shot starts at {invasionPushStartSeconds:0.000}.");
+            builder.AppendLine($"- Invasion actors: three promoted `{SciFiCommandoPrefabPath}` instances are used as presentation-only Commando runners; gameplay MonoBehaviours are disabled for the cutscene scene.");
             builder.AppendLine("- Camera package: Cinemachine 3.x `CinemachineBrain`, Timeline `CinemachineTrack`, editable child `CinemachineCamera` shot objects, `CinemachineHardLookAt`, and `CinemachineSplineDolly` for the opening capsule move.");
             builder.AppendLine("- Capsule POV: first-person cameras use the user-authored view marker `IntroGatePodReview_FirstPersonViewMarker`; the sequence now goes eye-open -> left scan -> right scan -> look down at hands while Inori remains active for animation review.");
             builder.AppendLine("- Timeline tracks: `Cinemachine Shots`, `Opening Dolly`, `Inori Body`, `Voice`, `BGM`, and CanvasGroup-driven `Fade`; `IntroGatePodReview_InoriPlacement` is adjusted directly as a scene object.");
             builder.AppendLine("- Inori material rule: all Inori renderer slots must resolve to promoted `DB_Inori_*` materials.");
-            builder.AppendLine($"- Captures: `{OpeningCapturePath}`, `{RevealCapturePath}`, `{LeftScanCapturePath}`, `{RightScanCapturePath}`, `{HandsCapturePath}`, `{AirRaidCapturePath}`, `{PortalBreachCapturePath}`, `{SoldierSurgeCapturePath}`, `{ProtagonistKickCapturePath}`, `{SwordReadyCapturePath}`, `{RinaBackViewCapturePath}`.");
+            builder.AppendLine($"- Captures: `{OpeningCapturePath}`, `{RevealCapturePath}`, `{LeftScanCapturePath}`, `{RightScanCapturePath}`, `{HandsCapturePath}`, `{CommandoLegsCapturePath}`, `{HeavenExplosionCapturePath}`, `{CommandoPushCapturePath}`.");
             builder.AppendLine();
             if (issues.Count == 0)
             {
@@ -4871,7 +4071,6 @@ namespace DimensionBrawl.Editor
         private static bool IsReviewWeaponRenderer(Transform transform)
         {
             return HasAncestorOrSelf(transform, RifleName)
-                || HasAncestorOrSelf(transform, InoriSwordName)
                 || HasAncestorOrSelf(transform, FloorRifleName)
                 || HasAncestorOrSelf(transform, FloorSwordName);
         }

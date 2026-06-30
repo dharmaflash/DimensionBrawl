@@ -586,16 +586,16 @@ namespace DimensionBrawl.Tests
                     Vector3.back,
                     0f)));
 
-                Assert.AreEqual(1, driver.DamageVfxCueRequestCount);
+                Assert.AreEqual(0, driver.DamageVfxCueRequestCount);
                 Assert.AreEqual(0, driver.CriticalVfxCueRequestCount);
                 Assert.AreEqual(DamageResponsePolicy.Default, driver.LastDamageResponsePolicy);
                 Assert.AreEqual(CombatControlLockPolicy.InterruptAction, driver.LastDamageControlLockPolicy);
                 Assert.IsTrue(driver.LastDamageCueInterruptedAction);
                 Assert.AreEqual(1f, driver.LastDamageCuePolicyScale, 0.001f);
                 Assert.AreEqual(1.14f, driver.LastDamageCueIntensity, 0.001f);
-                Assert.IsNotNull(
+                Assert.IsNull(
                     playerObject.transform.Find(damagedCuePrefab.name),
-                    "Player damage should spawn an authored world VFX cue, not only flash the screen.");
+                    "Player damage VFX should stay suppressed during the temporary VFX cleanup pass.");
 
                 Assert.IsTrue(playerHealth.TryApplyDamage(new DamageInfo(
                     null,
@@ -605,11 +605,11 @@ namespace DimensionBrawl.Tests
                     Vector3.back,
                     0f)));
 
-                Assert.AreEqual(2, driver.DamageVfxCueRequestCount);
-                Assert.AreEqual(1, driver.CriticalVfxCueRequestCount);
-                Assert.IsNotNull(
+                Assert.AreEqual(0, driver.DamageVfxCueRequestCount);
+                Assert.AreEqual(0, driver.CriticalVfxCueRequestCount);
+                Assert.IsNull(
                     playerObject.transform.Find(criticalCuePrefab.name),
-                    "Crossing the critical health threshold should spawn a stronger player-state VFX cue.");
+                    "Critical player damage VFX should stay suppressed during the temporary VFX cleanup pass.");
             }
             finally
             {
@@ -657,15 +657,14 @@ namespace DimensionBrawl.Tests
                 float expectedIntensity = (1f + 0.4f * 0.35f) * driver.PressureDamageCueScale;
                 Transform damageCue = playerObject.transform.Find(damagedCuePrefab.name);
 
-                Assert.AreEqual(1, driver.DamageVfxCueRequestCount);
+                Assert.AreEqual(0, driver.DamageVfxCueRequestCount);
                 Assert.AreEqual(0, driver.CriticalVfxCueRequestCount);
                 Assert.AreEqual(DamageResponsePolicy.FlashOnly, driver.LastDamageResponsePolicy);
                 Assert.AreEqual(CombatControlLockPolicy.None, driver.LastDamageControlLockPolicy);
                 Assert.IsFalse(driver.LastDamageCueInterruptedAction);
                 Assert.AreEqual(driver.PressureDamageCueScale, driver.LastDamageCuePolicyScale, 0.001f);
                 Assert.AreEqual(expectedIntensity, driver.LastDamageCueIntensity, 0.001f);
-                Assert.IsNotNull(damageCue);
-                Assert.AreEqual(expectedIntensity, damageCue.localScale.x, 0.001f);
+                Assert.IsNull(damageCue);
             }
             finally
             {
@@ -711,14 +710,13 @@ namespace DimensionBrawl.Tests
                 float expectedIntensity = driver.DamageCueIntensity * driver.PressureDamageCueScale;
                 Transform damageCue = enemyObject.transform.Find(damageCuePrefab.name);
 
-                Assert.AreEqual(1, driver.DamageVfxCueRequestCount);
+                Assert.AreEqual(0, driver.DamageVfxCueRequestCount);
                 Assert.AreEqual(DamageResponsePolicy.FlashOnly, driver.LastDamageResponsePolicy);
                 Assert.AreEqual(CombatControlLockPolicy.None, driver.LastDamageControlLockPolicy);
                 Assert.IsFalse(driver.LastDamageCueInterruptedAction);
                 Assert.AreEqual(driver.PressureDamageCueScale, driver.LastDamageCuePolicyScale, 0.001f);
                 Assert.AreEqual(expectedIntensity, driver.LastDamageCueIntensity, 0.001f);
-                Assert.IsNotNull(damageCue);
-                Assert.AreEqual(expectedIntensity, damageCue.localScale.x, 0.001f);
+                Assert.IsNull(damageCue);
             }
             finally
             {
@@ -1805,8 +1803,8 @@ namespace DimensionBrawl.Tests
                 Vector3.zero,
                 Vector3.back,
                 0f)));
-            Assert.AreEqual(1, presenter.DamageFlashCount);
-            Assert.AreEqual(1, presenter.AnimatorHitTriggerCount);
+            Assert.AreEqual(0, presenter.DamageFlashCount);
+            Assert.AreEqual(0, presenter.AnimatorHitTriggerCount);
 
             Assert.IsTrue(health.TryApplyDamage(new DamageInfo(
                 null,
@@ -1875,11 +1873,11 @@ namespace DimensionBrawl.Tests
                 Vector3.zero,
                 Vector3.back,
                 0f)));
-            Assert.AreEqual(1, presenter.DamageFlashCount);
+            Assert.AreEqual(0, presenter.DamageFlashCount);
             Assert.AreEqual(
-                1,
+                0,
                 presenter.AnimatorHitTriggerCount,
-                "Default damage should still trigger the legacy full-body hit animation.");
+                "Default damage should not trigger temporary hit animation feedback during cleanup.");
 
             Assert.IsTrue(victimHealth.TryApplyDamage(new DamageInfo(
                 sourceHealth,
@@ -1890,9 +1888,9 @@ namespace DimensionBrawl.Tests
                 0f,
                 DamageResponsePolicy.Default,
                 CombatControlLockPolicy.None)));
-            Assert.AreEqual(2, presenter.DamageFlashCount);
+            Assert.AreEqual(0, presenter.DamageFlashCount);
             Assert.AreEqual(
-                1,
+                0,
                 presenter.AnimatorHitTriggerCount,
                 "Default-looking pressure damage should not play a full-body hit animation unless it also declares action lock.");
             Assert.AreEqual(DamageResponsePolicy.Default, presenter.LastDamageResponsePolicy);
@@ -1906,9 +1904,9 @@ namespace DimensionBrawl.Tests
                 Vector3.back,
                 0f,
                 DamageResponsePolicy.FlashOnly)));
-            Assert.AreEqual(3, presenter.DamageFlashCount);
+            Assert.AreEqual(0, presenter.DamageFlashCount);
             Assert.AreEqual(
-                1,
+                0,
                 presenter.AnimatorHitTriggerCount,
                 "Flash-only damage should keep readability without forcing a full-body hit animation.");
 
@@ -1922,10 +1920,10 @@ namespace DimensionBrawl.Tests
                 DamageResponsePolicy.DamageOnly,
                 CombatControlLockPolicy.None)));
             Assert.AreEqual(
-                3,
+                0,
                 presenter.DamageFlashCount,
                 "Damage-only policy should stay out of presentation hooks.");
-            Assert.AreEqual(1, presenter.AnimatorHitTriggerCount);
+            Assert.AreEqual(0, presenter.AnimatorHitTriggerCount);
 
             Object.DestroyImmediate(sourceObject);
             Object.DestroyImmediate(victimObject);
@@ -1974,8 +1972,8 @@ namespace DimensionBrawl.Tests
                 0f,
                 DamageResponsePolicy.Stagger,
                 CombatControlLockPolicy.InterruptAction)));
-            Assert.AreEqual(1, presenter.DamageFlashCount);
-            Assert.AreEqual(1, presenter.AnimatorHitTriggerCount);
+            Assert.AreEqual(0, presenter.DamageFlashCount);
+            Assert.AreEqual(0, presenter.AnimatorHitTriggerCount);
             Assert.AreEqual(0, presenter.SuppressedAnimatorHitTriggerCount);
             Assert.IsFalse(presenter.LastFullBodyHitReactionSuppressed);
 
@@ -1989,15 +1987,15 @@ namespace DimensionBrawl.Tests
                 DamageResponsePolicy.Stagger,
                 CombatControlLockPolicy.InterruptAction)));
             Assert.AreEqual(
-                2,
+                0,
                 presenter.DamageFlashCount,
-                "Repeated hits should remain readable through flash/VFX feedback.");
+                "Repeated hits should not render temporary damage flash feedback during cleanup.");
             Assert.AreEqual(
-                1,
+                0,
                 presenter.AnimatorHitTriggerCount,
                 "Routine repeated hits should not keep forcing the summon back into full-body hit animation.");
-            Assert.AreEqual(1, presenter.SuppressedAnimatorHitTriggerCount);
-            Assert.IsTrue(presenter.LastFullBodyHitReactionSuppressed);
+            Assert.AreEqual(0, presenter.SuppressedAnimatorHitTriggerCount);
+            Assert.IsFalse(presenter.LastFullBodyHitReactionSuppressed);
 
             Assert.IsTrue(victimHealth.TryApplyDamage(new DamageInfo(
                 sourceHealth,
@@ -2008,12 +2006,12 @@ namespace DimensionBrawl.Tests
                 0f,
                 DamageResponsePolicy.Break,
                 CombatControlLockPolicy.HardLock)));
-            Assert.AreEqual(3, presenter.DamageFlashCount);
+            Assert.AreEqual(0, presenter.DamageFlashCount);
             Assert.AreEqual(
-                2,
+                0,
                 presenter.AnimatorHitTriggerCount,
-                "Major authored reactions should still cut through the routine hit reaction budget.");
-            Assert.AreEqual(1, presenter.SuppressedAnimatorHitTriggerCount);
+                "Major authored reactions should not cut through while temporary hit animation feedback is suppressed.");
+            Assert.AreEqual(0, presenter.SuppressedAnimatorHitTriggerCount);
             Assert.IsFalse(presenter.LastFullBodyHitReactionSuppressed);
 
             Object.DestroyImmediate(sourceObject);
@@ -2064,14 +2062,13 @@ namespace DimensionBrawl.Tests
                 Transform damageCue = victimObject.transform.Find(damageCuePrefab.name);
                 float expectedIntensity = 0.9f * presenter.PressureDamageCueScale;
 
-                Assert.AreEqual(1, presenter.DamageVfxCueRequestCount);
+                Assert.AreEqual(0, presenter.DamageVfxCueRequestCount);
                 Assert.AreEqual(DamageResponsePolicy.FlashOnly, presenter.LastDamageResponsePolicy);
                 Assert.AreEqual(CombatControlLockPolicy.None, presenter.LastDamageControlLockPolicy);
                 Assert.IsFalse(presenter.LastDamageCueInterruptedAction);
                 Assert.AreEqual(presenter.PressureDamageCueScale, presenter.LastDamageCuePolicyScale, 0.001f);
                 Assert.AreEqual(expectedIntensity, presenter.LastDamageCueIntensity, 0.001f);
-                Assert.IsNotNull(damageCue);
-                Assert.AreEqual(expectedIntensity, damageCue.localScale.x, 0.001f);
+                Assert.IsNull(damageCue);
             }
             finally
             {
@@ -4060,7 +4057,8 @@ namespace DimensionBrawl.Tests
 
             screen.Activate(DamageTeam.AllySummon, 1, 1.25f, 1f, 3);
             Assert.IsTrue(presenter.IsShowing);
-            Assert.IsTrue(visualObject.activeSelf);
+            Assert.IsFalse(presenter.RenderVisuals);
+            Assert.IsFalse(visualObject.activeSelf);
             Assert.AreEqual(
                 1,
                 presenter.ActivationVfxCueRequestCount,
@@ -4088,10 +4086,10 @@ namespace DimensionBrawl.Tests
                 1,
                 presenter.InterceptVfxCueRequestCount,
                 "Pressure-screen intercepts should layer an in-world block cue so absorbed boss fire reads as an authored effect.");
-            Assert.Greater(
+            Assert.Less(
                 (visualObject.transform.localPosition - visualLocalPositionBeforeIntercept).sqrMagnitude,
                 0.0001f,
-                "The pressure screen visual should briefly punch on intercept so the boss-fire block reads in world space.");
+                "The pressure screen gameplay should remain active while the temporary screen visual stays inert.");
 
             screen.Activate(DamageTeam.AllySummon, 1, 1.25f, 1f);
             screen.Deactivate();

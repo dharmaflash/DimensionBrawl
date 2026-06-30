@@ -147,6 +147,17 @@ namespace DimensionBrawl.Player
             nextRetargetTime = Time.time + Mathf.Max(retargetIntervalSeconds, contactStickinessSeconds);
         }
 
+        public void ConfigureTargetCandidates(CombatHealth[] candidates, bool refreshNow = true)
+        {
+            targetCandidates = candidates ?? Array.Empty<CombatHealth>();
+            SetCurrentTarget(null);
+            nextRetargetTime = 0f;
+            if (refreshNow && isActiveAndEnabled)
+            {
+                RefreshTarget();
+            }
+        }
+
         private void Awake()
         {
             if (selfHealth == null)

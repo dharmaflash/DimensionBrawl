@@ -1,0 +1,370 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6198cb8366640314588780649f505e38, type: 3}
+  m_Name: DB_Cinematic_IntroGatePodAwakening_OlympusBombingPrelude
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.CinematicSequenceProfile
+  sequenceId: DB_Cinematic_IntroGatePodAwakening_OlympusBombingPrelude
+  displayName: Intro GatePod Awakening - Olympus Bombing Prelude
+  category: 0
+  reviewerIntent: Olympus stage runtime intro with the validated BombingReview airstrike
+    prepended before the protected GatePod awakening beats.
+  authoredDurationSeconds: 36.574356
+  priority: 92
+  lockMovement: 1
+  lockInput: 1
+  hideHud: 1
+  canSkip: 1
+  useUnscaledClock: 1
+  requiresStageDefinition: 1
+  stageDefinition: {fileID: 11400000, guid: 881aec1ce51982145825d2ce2944d918, type: 2}
+  stageHandoffId: intro-to-stage
+  stageAnchorId: IntroCutscene_End_PlayerHandoffAnchor
+  stageRuntimeStateId: state-intro-handoff
+  stageContextNote: Intro ends in the shared Olympus corridor and feeds the boss-entrance-ready
+    stage state.
+  cameraCues:
+  - enabled: 1
+    cueId: src_c01_capsule_left_dolly
+    purpose: 0
+    blendKind: 1
+    startSeconds: 8.5
+    durationSeconds: 6.1
+    localOffset: {x: 0, y: 0, z: 0}
+    planarDirectionOffset: 0
+    fieldOfViewDelta: 0
+    cameraDistanceDelta: 0
+    focusHeightDelta: 0
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 2.35, y: 1.75, z: -7.1}
+    lookAtLocalPosition: {x: 0, y: 1.64, z: -0.92}
+    fieldOfView: 31.2
+  - enabled: 1
+    cueId: src_c03_first_person_eye_open
+    purpose: 5
+    blendKind: 0
+    startSeconds: 14.599999
+    durationSeconds: 2.0333333
+    localOffset: {x: 0, y: 0, z: 0}
+    planarDirectionOffset: 0
+    fieldOfViewDelta: 0
+    cameraDistanceDelta: 0
+    focusHeightDelta: 0
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: -4.02049, y: 0.9818602, z: -0.5965308}
+    lookAtLocalPosition: {x: 0.17133188, y: 0.7399797, z: -0.49590826}
+    fieldOfView: 46
+  - enabled: 1
+    cueId: src_c04_first_person_scan_left
+    purpose: 2
+    blendKind: 4
+    startSeconds: 16.633335
+    durationSeconds: 1.5500002
+    localOffset: {x: 0, y: 0, z: 0}
+    planarDirectionOffset: 0
+    fieldOfViewDelta: 0
+    cameraDistanceDelta: 0
+    focusHeightDelta: 0
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: -4.02049, y: 0.9818602, z: -0.5965308}
+    lookAtLocalPosition: {x: 1.6256719, y: 1.248319, z: 1.9509875}
+    fieldOfView: 48
+  - enabled: 1
+    cueId: src_c05_first_person_scan_right
+    purpose: 2
+    blendKind: 4
+    startSeconds: 18.183334
+    durationSeconds: 1.4499998
+    localOffset: {x: 0, y: 0, z: 0}
+    planarDirectionOffset: 0
+    fieldOfViewDelta: 0
+    cameraDistanceDelta: 0
+    focusHeightDelta: 0
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: -4.02049, y: 0.9818602, z: -0.5965308}
+    lookAtLocalPosition: {x: 1.7833624, y: 1.0830262, z: -2.7748485}
+    fieldOfView: 48
+  - enabled: 1
+    cueId: src_c06_first_person_look_down_hands
+    purpose: 5
+    blendKind: 4
+    startSeconds: 19.633335
+    durationSeconds: 1.75
+    localOffset: {x: 0, y: 0, z: 0}
+    planarDirectionOffset: 0
+    fieldOfViewDelta: 0
+    cameraDistanceDelta: 0
+    focusHeightDelta: 0
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: -4.02049, y: 0.9818602, z: -0.5965308}
+    lookAtLocalPosition: {x: -3.5402253, y: 0.23420912, z: -0.6350167}
+    fieldOfView: 58
+  - enabled: 1
+    cueId: src_c07_commando_bridge_legs_run
+    purpose: 2
+    blendKind: 0
+    startSeconds: 21.383335
+    durationSeconds: 2.3500004
+    localOffset: {x: 0, y: 0, z: 0}
+    planarDirectionOffset: 0
+    fieldOfViewDelta: 0
+    cameraDistanceDelta: 0
+    focusHeightDelta: 0
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 0.38, y: 0.18, z: 3.38}
+    lookAtLocalPosition: {x: 0.28, y: 0.31, z: 4.3}
+    fieldOfView: 39
+  - enabled: 1
+    cueId: src_c08_heaven_background_explosion
+    purpose: 0
+    blendKind: 4
+    startSeconds: 23.733334
+    durationSeconds: 1.1000004
+    localOffset: {x: 0, y: 0, z: 0}
+    planarDirectionOffset: 0
+    fieldOfViewDelta: 0
+    cameraDistanceDelta: 0
+    focusHeightDelta: 0
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: -3.25, y: 1.36, z: 5.05}
+    lookAtLocalPosition: {x: -1.02, y: 1.6, z: 7.24}
+    fieldOfView: 38
+  - enabled: 1
+    cueId: src_c09_commando_bridge_push_past
+    purpose: 2
+    blendKind: 2
+    startSeconds: 24.833336
+    durationSeconds: 3.5910206
+    localOffset: {x: 0, y: 0, z: 0}
+    planarDirectionOffset: 0
+    fieldOfViewDelta: 0
+    cameraDistanceDelta: 0
+    focusHeightDelta: 0
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: -1.06, y: 0.34, z: 1.02}
+    lookAtLocalPosition: {x: 0.32, y: 0.68, z: 2.42}
+    fieldOfView: 56
+  - enabled: 1
+    cueId: src_c10_player_reveal_rina_quest_start
+    purpose: 2
+    blendKind: 2
+    startSeconds: 28.424355
+    durationSeconds: 7.5000005
+    localOffset: {x: 0, y: 0, z: 0}
+    planarDirectionOffset: 0
+    fieldOfViewDelta: 0
+    cameraDistanceDelta: 0
+    focusHeightDelta: 0
+    impulseScale: 1
+    driveCameraPose: 1
+    cameraLocalPosition: {x: 0, y: 1.35, z: -3}
+    lookAtLocalPosition: {x: 0, y: 1.18, z: 0}
+    fieldOfView: 60.001953
+  actorCues:
+  - enabled: 1
+    cueId: hide_attached_rifle_at_wake
+    role: 0
+    cueKind: 5
+    startSeconds: 8.5
+    durationSeconds: 0
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: InoriRifle
+    requireSocket: 1
+    controllerOverride: {fileID: 0}
+    objectActive: 0
+  - enabled: 1
+    cueId: wake_confused_hands
+    role: 0
+    cueKind: 0
+    startSeconds: 19.633335
+    durationSeconds: 2.25
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_IntroLookAtHands
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: wake_first_surprise
+    role: 0
+    cueKind: 2
+    startSeconds: 9.08
+    durationSeconds: 1.5
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: Surprised
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: scan_confused
+    role: 0
+    cueKind: 2
+    startSeconds: 10.650001
+    durationSeconds: 2.6
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: Confused
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: body_reveal_surprise
+    role: 0
+    cueKind: 0
+    startSeconds: 11.599999
+    durationSeconds: 2.1
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_IntroSurprised
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: weapon_pickup_motion
+    role: 0
+    cueKind: 0
+    startSeconds: 16.7
+    durationSeconds: 2
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_IntroPickUp
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: hide_floor_rifle_after_pickup
+    role: 0
+    cueKind: 5
+    startSeconds: 18.7
+    durationSeconds: 0
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: IntroGatePodReview_FloorRifle
+    requireSocket: 1
+    controllerOverride: {fileID: 0}
+    objectActive: 0
+  - enabled: 1
+    cueId: show_attached_rifle_for_handoff
+    role: 0
+    cueKind: 5
+    startSeconds: 18.720001
+    durationSeconds: 0
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: InoriRifle
+    requireSocket: 1
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: combat_ready_handoff
+    role: 0
+    cueKind: 0
+    startSeconds: 21.983334
+    durationSeconds: 6.441021
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_CombatReady
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: resolve_after_alarm
+    role: 0
+    cueKind: 2
+    startSeconds: 18.98
+    durationSeconds: 3.1
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: 
+    animatorTriggerName: 
+    faceStateName: Angry
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: combat_start_ready_enter
+    role: 0
+    cueKind: 0
+    startSeconds: 28.424355
+    durationSeconds: 1.25
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_BossIntroReady
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  - enabled: 1
+    cueId: combat_start_ready_settle
+    role: 0
+    cueKind: 0
+    startSeconds: 29.494354
+    durationSeconds: 6.4300003
+    clip: {fileID: 0}
+    avatarMask: {fileID: 0}
+    animatorStateName: CIN_CombatReady
+    animatorTriggerName: 
+    faceStateName: 
+    socketPath: 
+    requireSocket: 0
+    controllerOverride: {fileID: 0}
+    objectActive: 1
+  vfxCues: []
+  tutorialCues: []
+  gameplayHandoff:
+    enabled: 1
+    returnMode: 2
+    startSeconds: 35.924355
+    targetId: first_stage_intro_gatepod
+    inputReleaseDelaySeconds: 0.05
+    restoreHud: 1
+    restoreTimeScale: 1
+    restoreCamera: 0

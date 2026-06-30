@@ -47,10 +47,30 @@ namespace DimensionBrawl.Presentation
         PlayerCritical
     }
 
+    public enum CombatVfxCuePlaybackMode
+    {
+        AllAuthoredCues,
+        PlayerRangedOnly
+    }
+
     [CreateAssetMenu(menuName = "DimensionBrawl/Presentation/Combat VFX Cue Profile", fileName = "DB_CombatVfxCueProfile")]
     public sealed class CombatVfxCueProfile : ScriptableObject
     {
+        [SerializeField] private CombatVfxCuePlaybackMode playbackMode = CombatVfxCuePlaybackMode.AllAuthoredCues;
         [SerializeField] private CombatVfxCue[] cues = Array.Empty<CombatVfxCue>();
+
+        public CombatVfxCuePlaybackMode PlaybackMode => playbackMode;
+
+        public bool AllowsPlayback(CombatVfxCueId cueId)
+        {
+            switch (playbackMode)
+            {
+                case CombatVfxCuePlaybackMode.PlayerRangedOnly:
+                    return cueId == CombatVfxCueId.PlayerRangedMuzzleFlash;
+                default:
+                    return true;
+            }
+        }
 
         public bool TryGetCue(CombatVfxCueId cueId, out CombatVfxCue cue)
         {

@@ -12,6 +12,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private SummonPressureScreen pressureScreen;
         [SerializeField] private Transform visualRoot;
         [SerializeField] private Renderer[] screenRenderers = System.Array.Empty<Renderer>();
+        [SerializeField] private bool renderVisuals;
         [SerializeField] private Color activeColor = new Color(0.22f, 1f, 0.82f, 0.09f);
         [SerializeField] private Color tierTwoColor = new Color(0.38f, 0.74f, 1f, 0.10f);
         [SerializeField] private Color tierThreeColor = new Color(1f, 0.76f, 0.24f, 0.12f);
@@ -59,6 +60,7 @@ namespace DimensionBrawl.Presentation
         public int InterceptVfxCueRequestCount => interceptVfxCueRequestCount;
         public int LastObservedTier => lastObservedTier;
         public float VisualRadiusScale => visualRadiusScale;
+        public bool RenderVisuals => renderVisuals;
 
         private void Awake()
         {
@@ -217,7 +219,7 @@ namespace DimensionBrawl.Presentation
 
         private void RefreshVisual()
         {
-            if (!showing || visualRoot == null)
+            if (!showing || visualRoot == null || !renderVisuals)
             {
                 return;
             }
@@ -385,12 +387,13 @@ namespace DimensionBrawl.Presentation
         private void SetShowing(bool value)
         {
             showing = value;
+            bool shouldRender = value && renderVisuals;
             if (visualRoot != null
                 && visualRoot != transform
                 && visualRoot.gameObject != gameObject
-                && visualRoot.gameObject.activeSelf != value)
+                && visualRoot.gameObject.activeSelf != shouldRender)
             {
-                visualRoot.gameObject.SetActive(value);
+                visualRoot.gameObject.SetActive(shouldRender);
             }
         }
 

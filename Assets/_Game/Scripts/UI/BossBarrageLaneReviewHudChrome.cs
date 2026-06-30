@@ -19,6 +19,19 @@ namespace DimensionBrawl.UI
         private static GUIStyle smallCenterLabelStyle;
         private static GUIStyle leftLabelStyle;
         private static GUIStyle titleLabelStyle;
+        private static float drawOpacity = 1f;
+
+        public static float BeginOpacity(float opacity)
+        {
+            float previous = drawOpacity;
+            drawOpacity = Mathf.Clamp01(opacity);
+            return previous;
+        }
+
+        public static void EndOpacity(float previousOpacity)
+        {
+            drawOpacity = Mathf.Clamp01(previousOpacity);
+        }
 
         public static void DrawObjectivePanel(
             Rect rect,
@@ -178,17 +191,6 @@ namespace DimensionBrawl.UI
             GUI.Label(new Rect(rect.x + diskSize + 18f, rect.y + 8f, rect.width - diskSize - 24f, rect.height - 16f), label, leftLabelStyle);
         }
 
-        public static void DrawAimGuide(Vector2 startGuiPoint, Vector2 input, float radius, float knobSize)
-        {
-            Rect baseRect = RectFromCenter(startGuiPoint, radius * 0.52f);
-            DrawCircle(baseRect, new Color(0.46f, 0.9f, 1f, 0.08f), circleTexture);
-            DrawCircle(baseRect, new Color(0.46f, 0.9f, 1f, 0.28f), ringTexture);
-            Vector2 knobCenter = startGuiPoint + new Vector2(input.x, -input.y) * radius;
-            Rect knobRect = RectFromCenter(knobCenter, knobSize);
-            DrawCircle(Inflate(knobRect, 7f), new Color(0.46f, 0.9f, 1f, 0.22f), softCircleTexture);
-            DrawCircle(knobRect, new Color(0.46f, 0.9f, 1f, 0.72f), circleTexture);
-        }
-
         private static void DrawPanel(Rect rect, Color accent)
         {
             DrawSolid(rect, PanelBackColor);
@@ -296,7 +298,7 @@ namespace DimensionBrawl.UI
             EnsureTextures();
             Texture2D resolvedTexture = texture != null ? texture : circleTexture;
             Color previous = GUI.color;
-            GUI.color = color;
+            GUI.color = WithOpacity(color);
             GUI.DrawTexture(rect, resolvedTexture, ScaleMode.StretchToFill);
             GUI.color = previous;
         }
@@ -304,9 +306,15 @@ namespace DimensionBrawl.UI
         private static void DrawSolid(Rect rect, Color color)
         {
             Color previous = GUI.color;
-            GUI.color = color;
+            GUI.color = WithOpacity(color);
             GUI.DrawTexture(rect, Texture2D.whiteTexture, ScaleMode.StretchToFill);
             GUI.color = previous;
+        }
+
+        private static Color WithOpacity(Color color)
+        {
+            color.a *= drawOpacity;
+            return color;
         }
 
         private static Rect Inflate(Rect rect, float amount)
