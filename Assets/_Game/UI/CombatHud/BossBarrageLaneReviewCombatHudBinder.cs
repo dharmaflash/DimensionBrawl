@@ -12,6 +12,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private CombatHudPresenter hudPresenter;
         [SerializeField] private CombatHudInputBridge inputBridge;
         [SerializeField] private BossBarrageLaneReviewOverlayHud overlayHud;
+        [SerializeField] private bool useSingleSummonPresentation = true;
 
         [Header("Combat State")]
         [SerializeField] private BossBarragePocketReviewOwner pocketReviewOwner;
@@ -114,11 +115,20 @@ namespace DimensionBrawl.UI
 
         private void UpdateSummonReadouts()
         {
+            hudPresenter.SetSummonSlotVisible(CombatHudActionId.SummonSlot1, true);
             hudPresenter.SetSummonSlotState(
                 CombatHudActionId.SummonSlot1,
-                "S1",
+                "SUMMON",
                 ResolvePrimarySummonState(),
                 IsPrimarySummonReady());
+            bool showSupportSummonSlots = !useSingleSummonPresentation;
+            hudPresenter.SetSummonSlotVisible(CombatHudActionId.SummonSlot2, showSupportSummonSlots);
+            hudPresenter.SetSummonSlotVisible(CombatHudActionId.SummonSlot3, showSupportSummonSlots);
+            if (!showSupportSummonSlots)
+            {
+                return;
+            }
+
             hudPresenter.SetSummonSlotState(
                 CombatHudActionId.SummonSlot2,
                 "S2",

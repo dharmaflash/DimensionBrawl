@@ -54,8 +54,34 @@ namespace DimensionBrawl.UI
 
             public CombatHudActionId ActionId => actionId;
 
+            public void SetVisible(bool visible)
+            {
+                if (labelText != null)
+                {
+                    labelText.gameObject.SetActive(visible);
+                }
+
+                if (stateText != null)
+                {
+                    stateText.gameObject.SetActive(visible);
+                }
+
+                if (cooldownFill != null)
+                {
+                    cooldownFill.gameObject.SetActive(visible);
+                }
+
+                if (canvasGroup != null)
+                {
+                    canvasGroup.alpha = visible ? canvasGroup.alpha : 0f;
+                    canvasGroup.interactable = visible && canvasGroup.interactable;
+                    canvasGroup.blocksRaycasts = visible && canvasGroup.blocksRaycasts;
+                }
+            }
+
             public void SetState(string label, string state, bool enabled)
             {
+                SetVisible(true);
                 if (labelText != null)
                 {
                     labelText.text = label;
@@ -191,6 +217,12 @@ namespace DimensionBrawl.UI
         {
             SummonSlotBinding slot = FindSummonSlot(actionId);
             slot?.SetState(label, state, enabled);
+        }
+
+        public void SetSummonSlotVisible(CombatHudActionId actionId, bool visible)
+        {
+            SummonSlotBinding slot = FindSummonSlot(actionId);
+            slot?.SetVisible(visible);
         }
 
         public void SetActionFeedback(CombatHudActionId actionId)

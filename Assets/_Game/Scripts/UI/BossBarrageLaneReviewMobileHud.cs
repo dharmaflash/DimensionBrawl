@@ -36,6 +36,7 @@ namespace DimensionBrawl.UI
         [Header("Display")]
         [SerializeField] private bool showHud = true;
         [SerializeField] private bool drawHudVisuals = true;
+        [SerializeField] private bool useSingleSummonButton = true;
         [SerializeField, Range(0f, 1f)] private float hudOpacity = 1f;
         [SerializeField, Min(40f)] private float buttonSize = 168f;
         [SerializeField, Min(0f)] private float buttonGap = 38f;
@@ -50,7 +51,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private Color heldButtonColor = new Color(0.18f, 0.84f, 1f, 0.72f);
         [SerializeField] private Color pendingButtonColor = new Color(0.04f, 0.08f, 0.11f, 0.44f);
         [SerializeField] private Color actionTextColor = Color.white;
-        [SerializeField] private string summonSlot1Label = "S1 SLAM";
+        [SerializeField] private string summonSlot1Label = "SUMMON";
         [SerializeField] private string summonSlot2Label = "S2 LASER";
         [SerializeField] private string summonSlot3Label = "S3 DRAGON";
         [SerializeField] private string lockedSummonLabel = "NEXT";
@@ -143,6 +144,9 @@ namespace DimensionBrawl.UI
         public Rect BasicButtonGuiRect => ResolveCurrentGuiRect(ref basicRect);
         public Rect DodgeButtonGuiRect => ResolveCurrentGuiRect(ref dodgeRect);
         public Rect SwapButtonGuiRect => ResolveCurrentGuiRect(ref swapRect);
+        public Rect SummonSlot1GuiRect => ResolveCurrentGuiRect(ref summonSlot1Rect);
+        public Rect SummonSlot2GuiRect => ResolveCurrentGuiRect(ref summonSlot2Rect);
+        public Rect SummonSlot3GuiRect => ResolveCurrentGuiRect(ref summonSlot3Rect);
         public Vector2 MoveJoystickScreenAnchor => ToScreenAnchor(MoveJoystickGuiRect.center);
         public Vector2 BasicButtonScreenAnchor => ToScreenAnchor(BasicButtonGuiRect.center);
         public Vector2 DodgeButtonScreenAnchor => ToScreenAnchor(DodgeButtonGuiRect.center);
@@ -154,6 +158,7 @@ namespace DimensionBrawl.UI
         public bool WasBasicFireHeldLastFrame => previousBasicHeld;
         public float HudScale => scale;
         public float HudOpacity => hudOpacity;
+        public bool UseSingleSummonButton => useSingleSummonButton;
 
         public void SetHudScale(float value)
         {
@@ -272,8 +277,7 @@ namespace DimensionBrawl.UI
                 || IsHeld(swapRect)
                 || IsHeld(skillRect)
                 || IsHeld(summonSlot1Rect)
-                || IsHeld(summonSlot2Rect)
-                || IsHeld(summonSlot3Rect);
+                || AreSupportSummonButtonsVisible() && (IsHeld(summonSlot2Rect) || IsHeld(summonSlot3Rect));
 
             if (anyHudHeld)
             {
@@ -333,12 +337,12 @@ namespace DimensionBrawl.UI
                 summonSlot1Action?.QueueSummonSlot1();
             }
 
-            if (IsPressed(summonSlot2Rect))
+            if (AreSupportSummonButtonsVisible() && IsPressed(summonSlot2Rect))
             {
                 summonSlot2Action?.QueueSummon();
             }
 
-            if (IsPressed(summonSlot3Rect))
+            if (AreSupportSummonButtonsVisible() && IsPressed(summonSlot3Rect))
             {
                 summonSlot3Action?.QueueSummon();
             }
@@ -427,18 +431,24 @@ namespace DimensionBrawl.UI
             swapRect = new Rect(secondaryX, upperY, size, size);
             skillRect = new Rect(secondaryX, bottomY, size, size);
 
-            float summonWidth = size * 1.55f;
+            bool showSupportSummonButtons = AreSupportSummonButtonsVisible();
+            float summonWidth = showSupportSummonButtons ? size * 1.55f : size * 1.72f;
             float summonHeight = size * 0.72f;
             float summonGap = Mathf.Max(gap * summonButtonGapMultiplier, minimumButtonGap);
-            float summonGroupHeight = summonHeight * 3f + summonGap * 2f;
+            int summonButtonCount = showSupportSummonButtons ? 3 : 1;
+            float summonGroupHeight = summonHeight * summonButtonCount + summonGap * Mathf.Max(0, summonButtonCount - 1);
             float desiredSummonY = Screen.height * summonButtonGroupCenterY01 - summonGroupHeight * 0.5f;
             float actionClusterTopY = Mathf.Min(upperY, bottomY);
             float maxSummonY = actionClusterTopY - gap - summonGroupHeight;
             float summonY = Mathf.Clamp(desiredSummonY, edge, Mathf.Max(edge, maxSummonY));
             float summonX = Screen.width - edge - summonWidth;
             summonSlot1Rect = new Rect(summonX, summonY, summonWidth, summonHeight);
-            summonSlot2Rect = new Rect(summonX, summonY + summonHeight + summonGap, summonWidth, summonHeight);
-            summonSlot3Rect = new Rect(summonX, summonY + (summonHeight + summonGap) * 2f, summonWidth, summonHeight);
+            summonSlot2Rect = showSupportSummonButtons
+                ? new Rect(summonX, summonY + summonHeight + summonGap, summonWidth, summonHeight)
+                : Rect.zero;
+            summonSlot3Rect = showSupportSummonButtons
+                ? new Rect(summonX, summonY + (summonHeight + summonGap) * 2f, summonWidth, summonHeight)
+                : Rect.zero;
         }
 
         private Rect ResolveCurrentGuiRect(ref Rect rect)
@@ -1006,8 +1016,7 @@ namespace DimensionBrawl.UI
                 || swapRect.Contains(point)
                 || skillRect.Contains(point)
                 || summonSlot1Rect.Contains(point)
-                || summonSlot2Rect.Contains(point)
-                || summonSlot3Rect.Contains(point);
+                || AreSupportSummonButtonsVisible() && (summonSlot2Rect.Contains(point) || summonSlot3Rect.Contains(point));
         }
 
         private bool IsHeld(Rect rect)
@@ -1088,6 +1097,11 @@ namespace DimensionBrawl.UI
                     energyLadder,
                     summonSlot1Action),
                 summonSlot1AccentColor);
+            if (!AreSupportSummonButtonsVisible())
+            {
+                return;
+            }
+
             BossBarrageLaneReviewHudChrome.DrawSummonSlot(
                 summonSlot2Rect,
                 BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
@@ -1114,6 +1128,11 @@ namespace DimensionBrawl.UI
                     energyLadder,
                     summonSlot3Action),
                 summonSlot3AccentColor);
+        }
+
+        private bool AreSupportSummonButtonsVisible()
+        {
+            return !useSingleSummonButton;
         }
 
         private void DrawFireAimReticle()

@@ -265,6 +265,31 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void MobileHudDefaultsToSingleSummonButtonLayout()
+        {
+            GameObject hudObject = new GameObject("MobileHud");
+            try
+            {
+                BossBarrageLaneReviewMobileHud hud = hudObject.AddComponent<BossBarrageLaneReviewMobileHud>();
+
+                Assert.IsTrue(hud.UseSingleSummonButton);
+                Assert.Greater(hud.SummonSlot1GuiRect.width, 0f);
+                Assert.AreEqual(Rect.zero, hud.SummonSlot2GuiRect);
+                Assert.AreEqual(Rect.zero, hud.SummonSlot3GuiRect);
+
+                SetPrivateInstanceField(hud, "useSingleSummonButton", false);
+
+                Assert.IsFalse(hud.UseSingleSummonButton);
+                Assert.Greater(hud.SummonSlot2GuiRect.width, 0f);
+                Assert.Greater(hud.SummonSlot3GuiRect.width, 0f);
+            }
+            finally
+            {
+                Object.DestroyImmediate(hudObject);
+            }
+        }
+
+        [Test]
         public void ReviewHudSummonReadoutShowsSlotCostsAndCooldowns()
         {
             GameObject playerObject = new GameObject("Player");
