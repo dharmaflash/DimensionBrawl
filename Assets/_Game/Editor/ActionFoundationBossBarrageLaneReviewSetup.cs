@@ -774,6 +774,9 @@ namespace DimensionBrawl.Editor
             SetObjectReference(energyLadder, "laneSpace", laneSpace);
             SetObjectReference(energyLadder, "trackedPlayer", player.transform);
             SetFloat(energyLadder, "baseEnergyPerSecond", 9.0f);
+            SetFloat(energyLadder, "backSafetyGainScale", 0.45f);
+            SetFloat(energyLadder, "midChargeGainScale", 0.9f);
+            SetFloat(energyLadder, "forwardRiskGainScale", 1.75f);
 
             GameObject projectileRoot = CreateRoot(scene, ProjectilePoolRootName);
             GameObject actionCueRoot = CreateRoot(scene, ActionCuePoolRootName);
@@ -1121,6 +1124,9 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(energyLadder, "laneSpace", laneSpace);
             ValidateObjectReference(energyLadder, "trackedPlayer", player.transform);
             ValidateFloat(energyLadder, "baseEnergyPerSecond", 9.0f);
+            ValidateFloat(energyLadder, "backSafetyGainScale", 0.45f);
+            ValidateFloat(energyLadder, "midChargeGainScale", 0.9f);
+            ValidateFloat(energyLadder, "forwardRiskGainScale", 1.75f);
             ValidatePlayerEnergyActions(skill1Action, summonSlot1Action, energyLadder, playerHealth, targetSelector, bossHealth, laneSpace);
             ValidateSupportSummonSlotAction(
                 summonSlot2Action,

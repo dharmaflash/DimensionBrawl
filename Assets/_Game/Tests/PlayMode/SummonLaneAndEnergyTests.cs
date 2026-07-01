@@ -56,16 +56,36 @@ namespace DimensionBrawl.Tests
             playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.BackLimitZ);
             energy.Tick(1f);
             float backlineEnergy = energy.CurrentTierEnergy;
+            float backlineGainMultiplier = energy.CurrentGainMultiplier;
+            SummonEnergyRiskBand backlineRiskBand = energy.CurrentRiskBand;
 
             energy.ResetLadder();
             playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.ForwardBoundaryZ);
             energy.Tick(1f);
             float forwardEnergy = energy.CurrentTierEnergy;
+            float forwardGainMultiplier = energy.CurrentGainMultiplier;
+            SummonEnergyRiskBand forwardRiskBand = energy.CurrentRiskBand;
 
             Assert.Greater(
                 forwardEnergy,
-                backlineEnergy,
-                "Forward-risk positioning should charge summon energy faster than the backline.");
+                backlineEnergy * 8f,
+                "Forward-risk positioning should charge summon energy dramatically faster than the backline.");
+            Assert.AreEqual(
+                SummonEnergyRiskBand.BackSafety,
+                backlineRiskBand,
+                "Backline positioning should be classified as safe, slow EN farming.");
+            Assert.AreEqual(
+                SummonEnergyRiskBand.ForwardRisk,
+                forwardRiskBand,
+                "Forward boundary positioning should be classified as the high-gain risk band.");
+            Assert.Less(
+                backlineGainMultiplier,
+                0.35f,
+                "Backline EN gain should be slow enough that hiding does not refill summons quickly.");
+            Assert.Greater(
+                forwardGainMultiplier,
+                2.5f,
+                "Forward-risk EN gain should be visually obvious within a short demo beat.");
 
             energy.Tick(20f);
             Assert.GreaterOrEqual(energy.AvailableTier, 1, "The EN ladder should expose at least LV1 after enough gain.");

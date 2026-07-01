@@ -812,6 +812,9 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(laneSpace, GetObjectReference<SummonLaneSpace>(energyLadder, "laneSpace"));
             Assert.AreSame(player.transform, GetObjectReference<Transform>(energyLadder, "trackedPlayer"));
             Assert.AreEqual(9.0f, GetFloat(energyLadder, "baseEnergyPerSecond"), 0.001f);
+            Assert.AreEqual(0.45f, GetFloat(energyLadder, "backSafetyGainScale"), 0.001f);
+            Assert.AreEqual(0.9f, GetFloat(energyLadder, "midChargeGainScale"), 0.001f);
+            Assert.AreEqual(1.75f, GetFloat(energyLadder, "forwardRiskGainScale"), 0.001f);
             Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(skill1Action, "energyLadder"));
             Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(skill1Action, "sourceHealth"));
             Assert.AreSame(targetSelector, GetObjectReference<PlayerCombatTargetSelector>(skill1Action, "targetSelector"));

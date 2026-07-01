@@ -96,7 +96,7 @@ namespace DimensionBrawl.UI
                 float target = Mathf.Max(1f, energyLadder.CurrentTierTarget);
                 float current = energyLadder.CanSpend ? target : energyLadder.CurrentTierEnergy;
                 hudPresenter.SetResource(current, target);
-                hudPresenter.SetInputMode(energyLadder.CanSpend ? $"EN LV{energyLadder.AvailableTier}" : $"EN LV{energyLadder.ChargingTier}");
+                hudPresenter.SetInputMode(ResolveEnergyInputModeLabel());
             }
 
             hudPresenter.SetActionFeedbackText(ResolveCombatModeLabel());
@@ -221,6 +221,23 @@ namespace DimensionBrawl.UI
             }
 
             return combatModeController != null && combatModeController.IsMeleeMode ? "Melee" : "Ranged";
+        }
+
+        private string ResolveEnergyInputModeLabel()
+        {
+            if (energyLadder == null)
+            {
+                return "EN";
+            }
+
+            string band = energyLadder.CurrentRiskBand switch
+            {
+                SummonEnergyRiskBand.ForwardRisk => "FRONT",
+                SummonEnergyRiskBand.MidCharge => "MID",
+                _ => "BACK"
+            };
+            string tier = energyLadder.CanSpend ? $"READY LV{energyLadder.AvailableTier}" : $"EN LV{energyLadder.ChargingTier}";
+            return $"{band} {tier} x{energyLadder.CurrentGainMultiplier:0.0}";
         }
 
         private bool IsPrimarySummonReady()
