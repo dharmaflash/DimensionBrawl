@@ -80,10 +80,10 @@ namespace DimensionBrawl.Tests
 
             energyLadder.GrantCurrentTierEnergy(100f);
             Assert.IsTrue(summonSlot1.TryUseSummonSlot1(), "SummonSlot1 should spend LV1 energy for a visible actor/state read.");
-            energyLadder.GrantCurrentTierEnergy(200f);
-            Assert.IsTrue(summonSlot2.TryUseSummon(), "SummonSlot2 should spend LV2 energy for a visible marksman actor/volley read.");
-            energyLadder.GrantCurrentTierEnergy(300f);
-            Assert.IsTrue(summonSlot3.TryUseSummon(), "SummonSlot3 should spend LV3 energy for a visible vanguard actor/screen read.");
+            energyLadder.GrantCurrentTierEnergy(100f);
+            Assert.IsTrue(summonSlot2.TryUseSummon(), "SummonSlot2 should spend LV1 energy for a visible laser soldier actor/volley read.");
+            energyLadder.GrantCurrentTierEnergy(100f);
+            Assert.IsTrue(summonSlot3.TryUseSummon(), "SummonSlot3 should spend LV1 energy for a visible fire dragon actor/breath read.");
 
             if (bossSummonPressure != null)
             {
@@ -108,11 +108,11 @@ namespace DimensionBrawl.Tests
             Assert.Greater(
                 summonSlot2.ActiveSummonActorCount + summonSlot2.ActiveProjectileCount,
                 0,
-                "The smoke frame should include the promoted SummonSlot2 marksman actor or volley, not only the shield slot.");
+                "The smoke frame should include the promoted SummonSlot2 laser soldier actor or volley, not only the shield slot.");
             Assert.Greater(
                 summonSlot3.ActiveSummonActorCount + summonSlot3.ActiveProjectileCount,
                 0,
-                "The smoke frame should include the promoted SummonSlot3 vanguard actor or volley, not only the shield slot.");
+                "The smoke frame should include the promoted SummonSlot3 fire dragon actor or breath volley, not only the shield slot.");
             Assert.GreaterOrEqual(
                 CountSummonActorStateVfxRequests(),
                 bossSummonPressure != null ? 4 : 3,

@@ -20,7 +20,7 @@ namespace DimensionBrawl.Tests
         private const string SummonActorMoveSpeedParameter = "MoveSpeed";
         private const string SummonActorSpawnTrigger = "EliteSummonPackage";
         private const string SummonActorAttackTrigger = "Attack";
-        private const string SummonActorHitTrigger = "Hit";
+        private const string SummonActorHitTrigger = "";
         private const string SummonActorDeathTrigger = "Death";
 
         [UnitySetUp]
@@ -207,12 +207,12 @@ namespace DimensionBrawl.Tests
                 summonSlot3ActorPrefab,
                 DamageTeam.AllySummon,
                 "SummonSlot3 actor prefab",
-                expectPressureScreen: true);
+                expectPressureScreen: false);
             AssertSupportSummonRoleProfiles(summonSlot2Action, summonSlot3Action);
             Assert.Less(
                 summonSlot2ActorPrefab.GetComponent<CombatHealth>().MaxHealth,
                 summonSlot3ActorPrefab.GetComponent<CombatHealth>().MaxHealth,
-                "S2 should stay the fragile ranged-support body while S3 owns the tankier frontline role.");
+                "S2 should stay the fragile ranged-support body while S3 owns the sturdier fire dragon role.");
             AssertSummonActorPrefabContract(
                 GetObjectReference<GameObject>(bossSummonPressureAction, "summonActorPrefabObject"),
                 DamageTeam.Enemy,
@@ -259,23 +259,16 @@ namespace DimensionBrawl.Tests
 
             energyLadder.SetGainEnabled(false);
             GrantEnergyToTier(energyLadder, 1);
-            Assert.IsFalse(
-                summonSlot2Action.TryUseSummon(),
-                "SummonSlot2 should wait for its LV2 mana contract instead of spending the emergency LV1 summon tier.");
-            Assert.AreEqual("Requires LV2 EN", summonSlot2Action.LastUseBlockedReason);
-            Assert.AreEqual(1, energyLadder.AvailableTier);
-
-            GrantEnergyToTier(energyLadder, 2);
             Assert.IsTrue(summonSlot2Action.TryUseSummon());
-            Assert.AreEqual(2, summonSlot2Action.LastSpentTier);
+            Assert.AreEqual(1, summonSlot2Action.LastSpentTier);
             Assert.AreEqual(1, summonSlot2Action.TotalUseCount);
             Assert.AreEqual(1, duelOwner.ObservedPlayerSummonUses);
             Assert.AreEqual(1, duelOwner.ObservedSupportSummonUses);
             Assert.IsTrue(
                 bossPressureActionDirector.IsPlayerSummonResponseWindowActive,
                 "Support summon use should open a narrow boss response window for barrage/summon-pressure answers.");
-            Assert.AreEqual(2, bossPressureActionDirector.LastObservedPlayerSummonTier);
-            Assert.AreEqual("BacklineMarksman", summonSlot2Action.LastSummonActorRoleId);
+            Assert.AreEqual(1, bossPressureActionDirector.LastObservedPlayerSummonTier);
+            Assert.AreEqual("LaserSoldier", summonSlot2Action.LastSummonActorRoleId);
             Assert.Greater(summonSlot2Action.ActiveSummonActorCount, 0);
             Assert.IsTrue(
                 summonSlot2Action.LastSummonActorHasHealth,
@@ -285,9 +278,9 @@ namespace DimensionBrawl.Tests
                 float.IsPositiveInfinity(summonSlot2Action.LastSummonActorRemainingLifetimeSeconds),
                 "S2 is a normal body-bearing summon and should persist until defeated or recalled, not expire as a short effect.");
             Assert.AreEqual(SummonFrontlineProxyExitReason.None, summonSlot2Action.LastSummonActorExitReason);
-            SummonFrontlineProxy slot2Proxy = RequireActiveSummonProxy(DamageTeam.AllySummon, 1.42f, "S2");
-            AssertActiveSummonPresenterUsesCombatVfx(slot2Proxy, playerCuePlayer, 2, "S2");
-            AssertSummonProxyIsMarching(slot2Proxy, 1.42f, "S2");
+            SummonFrontlineProxy slot2Proxy = RequireActiveSummonProxy(DamageTeam.AllySummon, 4.6f, "S2");
+            AssertActiveSummonPresenterUsesCombatVfx(slot2Proxy, playerCuePlayer, 1, "S2");
+            AssertSummonProxyIsMarching(slot2Proxy, 4.6f, "S2");
             float slot2EntryProgress = slot2Proxy.AdvanceProgress01;
             yield return new WaitForSeconds(0.15f);
             AssertSummonProxyAdvancedWithoutSnapping(slot2Proxy, slot2EntryProgress, "S2");
@@ -300,11 +293,11 @@ namespace DimensionBrawl.Tests
                 1,
                 "S2 should expose its repeated support-volley behavior for HUD and review tests.");
 
-            GrantEnergyToTier(energyLadder, 3);
+            GrantEnergyToTier(energyLadder, 1);
             Assert.IsTrue(summonSlot3Action.TryUseSummon());
-            Assert.AreEqual(3, summonSlot3Action.LastSpentTier);
+            Assert.AreEqual(1, summonSlot3Action.LastSpentTier);
             Assert.AreEqual(1, summonSlot3Action.TotalUseCount);
-            Assert.AreEqual("VanguardCommander", summonSlot3Action.LastSummonActorRoleId);
+            Assert.AreEqual("FireDragon", summonSlot3Action.LastSummonActorRoleId);
             Assert.Greater(summonSlot3Action.ActiveSummonActorCount, 0);
             Assert.IsTrue(
                 summonSlot3Action.LastSummonActorHasHealth,
@@ -314,20 +307,20 @@ namespace DimensionBrawl.Tests
                 float.IsPositiveInfinity(summonSlot3Action.LastSummonActorRemainingLifetimeSeconds),
                 "S3 is a normal body-bearing summon and should persist until defeated or recalled, not expire as a short effect.");
             Assert.AreEqual(SummonFrontlineProxyExitReason.None, summonSlot3Action.LastSummonActorExitReason);
-            SummonFrontlineProxy slot3Proxy = RequireActiveSummonProxy(DamageTeam.AllySummon, 1.25f, "S3");
-            AssertActiveSummonPresenterUsesCombatVfx(slot3Proxy, playerCuePlayer, 3, "S3");
-            AssertSummonProxyIsMarching(slot3Proxy, 1.25f, "S3");
+            SummonFrontlineProxy slot3Proxy = RequireActiveSummonProxy(DamageTeam.AllySummon, 3.8f, "S3");
+            AssertActiveSummonPresenterUsesCombatVfx(slot3Proxy, playerCuePlayer, 1, "S3");
+            AssertSummonProxyIsMarching(slot3Proxy, 3.8f, "S3");
             float slot3EntryProgress = slot3Proxy.AdvanceProgress01;
             yield return new WaitForSeconds(0.15f);
             AssertSummonProxyAdvancedWithoutSnapping(slot3Proxy, slot3EntryProgress, "S3");
             Assert.Greater(
                 summonSlot3Action.ActiveProjectileCount,
                 0,
-                "S3 should read as a vanguard support summon with a visible projectile response, not only a button state.");
+                "S3 should read as a fire dragon support summon with a visible breath response, not only a button state.");
             Assert.GreaterOrEqual(
                 summonSlot3Action.LastVolleyWaveCount,
                 1,
-                "S3 should expose its slower vanguard counter-volley behavior for HUD and review tests.");
+                "S3 should expose its heavier fire-breath volley behavior for HUD and review tests.");
 
             Assert.IsTrue(bossSummonPressureAction.TryReleasePressureSummon(2));
             Assert.Greater(bossSummonPressureAction.ActiveSummonActorCount, 0);
@@ -456,16 +449,17 @@ namespace DimensionBrawl.Tests
                 "Using Slot1 should not start Slot3 cooldown in the shared-mana EX-style selection model.");
 
             Assert.IsTrue(summonSlot2Action.TryUseSummon());
-            Assert.AreEqual(0f, energyLadder.CurrentMana, 0.001f);
-            Assert.AreEqual(0, energyLadder.AvailableTier);
+            Assert.AreEqual(100f, energyLadder.CurrentMana, 0.001f);
+            Assert.AreEqual(1, energyLadder.AvailableTier);
             Assert.IsTrue(summonSlot2Action.IsSlotOnCooldown);
             Assert.IsFalse(summonSlot3Action.IsSlotOnCooldown);
 
-            Assert.IsFalse(summonSlot3Action.TryUseSummon());
-            Assert.AreEqual("Requires LV3 EN", summonSlot3Action.LastUseBlockedReason);
-            Assert.IsFalse(
+            Assert.IsTrue(summonSlot3Action.TryUseSummon());
+            Assert.AreEqual(0f, energyLadder.CurrentMana, 0.001f);
+            Assert.AreEqual(0, energyLadder.AvailableTier);
+            Assert.IsTrue(
                 summonSlot3Action.IsSlotOnCooldown,
-                "A failed high-cost summon should not start its independent slot cooldown.");
+                "A successful fire dragon summon should start only its independent slot cooldown.");
 
             Assert.IsFalse(summonSlot1Action.TryUseSummonSlot1());
             StringAssert.Contains("Cooldown", summonSlot1Action.LastUseBlockedReason);
@@ -541,14 +535,14 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(expectedActionName, action.SlotActionName);
             Assert.IsTrue(action.HasRequiredPresentation);
             Assert.AreEqual(
-                expectedActionName == "SummonSlot3" ? 3 : 2,
+                1,
                 action.MinimumSummonTier,
-                $"{expectedActionName} should preserve its slot-specific summon mana tier contract.");
+                $"{expectedActionName} should be available from the LV1 summon tier and distinguish itself through behavior.");
             Assert.AreEqual(
-                expectedActionName == "SummonSlot3" ? 300f : 200f,
+                100f,
                 action.RequiredSummonMana,
                 0.001f,
-                $"{expectedActionName} should expose an explicit per-summon mana cost, not only an inferred tier gate.");
+                $"{expectedActionName} should expose the shared LV1 summon cost, not only an inferred tier gate.");
             Assert.AreEqual(
                 1.35f,
                 GetFloat(action, "entryForwardOffset"),
@@ -556,7 +550,7 @@ namespace DimensionBrawl.Tests
                 $"{expectedActionName} should enter in front of the player body before crossing into summon space.");
             Assert.GreaterOrEqual(
                 GetFloat(action, "actorEntryCatchupSecondsPerMeter"),
-                0.3f,
+                0.1f,
                 $"{expectedActionName} should march across the corridor instead of snapping from entry to target.");
             Assert.AreEqual(
                 1,
@@ -582,59 +576,61 @@ namespace DimensionBrawl.Tests
             PlayerSummonSlot1Action.SummonTierSettings[] slot2Tiers = slot2Profile.CopyTierSettings();
             PlayerSummonSlot1Action.SummonTierSettings[] slot3Tiers = slot3Profile.CopyTierSettings();
 
-            Assert.AreEqual("SummonSlot2.BacklineMarksman", slot2Profile.ActionId);
-            Assert.AreEqual("SummonSlot3.VanguardCommander", slot3Profile.ActionId);
+            Assert.AreEqual("SummonSlot2.LaserSoldier", slot2Profile.ActionId);
+            Assert.AreEqual("SummonSlot3.FireDragon", slot3Profile.ActionId);
             Assert.AreEqual(3, slot2Tiers.Length);
             Assert.AreEqual(3, slot3Tiers.Length);
-            float[] slot2ExpectedHealth = { 160f, 190f, 225f };
-            float[] slot2ExpectedMoveSpeed = { 1.35f, 1.42f, 1.5f };
-            float[] slot2ExpectedDps = { 30f, 44f, 58f };
-            float[] slot3ExpectedHealth = { 360f, 430f, 520f };
-            float[] slot3ExpectedMoveSpeed = { 1.15f, 1.2f, 1.25f };
-            float[] slot3ExpectedDps = { 32f, 46f, 62f };
-            int[] slot3ExpectedScreens = { 2, 4, 7 };
+            float[] slot2ExpectedHealth = { 180f, 215f, 255f };
+            float[] slot2ExpectedMoveSpeed = { 4.6f, 5.1f, 5.6f };
+            float[] slot2ExpectedDps = { 32f, 46f, 62f };
+            float[] slot3ExpectedHealth = { 520f, 620f, 760f };
+            float[] slot3ExpectedMoveSpeed = { 3.8f, 4.2f, 4.6f };
+            float[] slot3ExpectedDps = { 44f, 64f, 88f };
             for (int i = 0; i < slot2Tiers.Length; i++)
             {
-                Assert.AreEqual("BacklineMarksman", slot2Tiers[i].ActorRoleId);
+                Assert.AreEqual("LaserSoldier", slot2Tiers[i].ActorRoleId);
                 Assert.AreEqual(0f, slot2Tiers[i].ActorLifetimeSeconds, 0.001f);
                 Assert.AreEqual(slot2ExpectedHealth[i], slot2Tiers[i].ActorMaxHealth, 0.001f);
                 Assert.AreEqual(slot2ExpectedMoveSpeed[i], slot2Tiers[i].ActorMoveSpeed, 0.001f);
                 Assert.AreEqual(slot2ExpectedDps[i], slot2Tiers[i].ActorAttackDamagePerSecond, 0.001f);
                 Assert.AreEqual(0, slot2Tiers[i].ScreenIntercepts);
-                Assert.AreEqual("VanguardCommander", slot3Tiers[i].ActorRoleId);
+                Assert.AreEqual("FireDragon", slot3Tiers[i].ActorRoleId);
                 Assert.AreEqual(0f, slot3Tiers[i].ActorLifetimeSeconds, 0.001f);
                 Assert.AreEqual(slot3ExpectedHealth[i], slot3Tiers[i].ActorMaxHealth, 0.001f);
                 Assert.AreEqual(slot3ExpectedMoveSpeed[i], slot3Tiers[i].ActorMoveSpeed, 0.001f);
                 Assert.AreEqual(slot3ExpectedDps[i], slot3Tiers[i].ActorAttackDamagePerSecond, 0.001f);
-                Assert.AreEqual(slot3ExpectedScreens[i], slot3Tiers[i].ScreenIntercepts);
-                Assert.Greater(slot3Tiers[i].ScreenIntercepts, 0);
+                Assert.AreEqual(0, slot3Tiers[i].ScreenIntercepts);
                 Assert.Greater(slot3Tiers[i].ActorMaxHealth, slot2Tiers[i].ActorMaxHealth);
                 Assert.Greater(
                     slot2Tiers[i].ActorMoveSpeed,
                     slot3Tiers[i].ActorMoveSpeed,
-                    "S2 should keep the smaller/faster marksman read while S3 advances like a heavier frontline body.");
+                    "S2 should keep the smaller/faster laser soldier read while S3 advances like a heavier hovering dragon.");
                 Assert.Greater(
                     slot3Tiers[i].ActorAttackDamagePerSecond,
                     slot2Tiers[i].ActorAttackDamagePerSecond,
-                    "S3 should win sustained body trades through HP and clash DPS instead of only projectile count.");
+                    "S3 should win sustained body trades through HP and fire-breath DPS instead of a shield screen.");
                 Assert.LessOrEqual(
                     slot2Tiers[i].ActorMoveSpeed,
-                    1.5f,
-                    "Support summons should still march across the lane instead of snapping forward.");
+                    5.6f,
+                    "Laser soldier should stay within the reviewed fast-support movement budget.");
                 Assert.LessOrEqual(
                     slot3Tiers[i].ActorMoveSpeed,
-                    1.25f,
-                    "Vanguard support should visibly trudge forward as the heavier body.");
+                    4.6f,
+                    "Fire dragon should remain slower than the laser soldier while still entering quickly enough to read.");
                 Assert.GreaterOrEqual(
-                    slot2Tiers[i].ProjectileCount,
                     slot3Tiers[i].ProjectileCount,
-                    "S2 should keep the frequent marksman volley identity while S3 spends more budget on body/screen.");
+                    slot2Tiers[i].ProjectileCount,
+                    "Fire dragon should throw heavier breath volleys while the laser soldier stays narrow and quick.");
+                Assert.Greater(
+                    slot3Tiers[i].LateralReach,
+                    slot2Tiers[i].LateralReach,
+                    "Fire dragon breath should cover more lane width than the laser soldier beam.");
             }
 
             Assert.Less(
                 GetFloat(summonSlot2Action, "volleyIntervalSeconds"),
                 GetFloat(summonSlot3Action, "volleyIntervalSeconds"),
-                "S2 should cycle its support shots faster than the slower vanguard counter-volley.");
+                "S2 should cycle its laser shots faster than the heavier fire dragon breath volley.");
         }
 
         private static void AssertBossSummonPressureRoleProfile(BossSummonPressureProfile profile)
@@ -858,7 +854,10 @@ namespace DimensionBrawl.Tests
             AssertAnimatorParameter(animator, presenter.MoveSpeedParameter, AnimatorControllerParameterType.Float);
             AssertAnimatorParameter(animator, presenter.SpawnTrigger, AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(animator, presenter.AttackTrigger, AnimatorControllerParameterType.Trigger);
-            AssertAnimatorParameter(animator, presenter.HitTrigger, AnimatorControllerParameterType.Trigger);
+            if (!string.IsNullOrEmpty(presenter.HitTrigger))
+            {
+                AssertAnimatorParameter(animator, presenter.HitTrigger, AnimatorControllerParameterType.Trigger);
+            }
             AssertAnimatorParameter(animator, presenter.DeathTrigger, AnimatorControllerParameterType.Trigger);
         }
 
