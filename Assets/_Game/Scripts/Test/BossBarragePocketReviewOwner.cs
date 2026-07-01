@@ -764,10 +764,12 @@ namespace DimensionBrawl.Test
             if (summonSlot1Action != null && currentSummonUseCount > observedSummonUseCount)
             {
                 usedSummonSlot1 = true;
-                highestSummonTier = Mathf.Max(highestSummonTier, summonSlot1Action.LastSpentTier);
+                int spentSummonTier = Mathf.Clamp(summonSlot1Action.LastSpentTier, 1, 3);
+                highestSummonTier = Mathf.Max(highestSummonTier, spentSummonTier);
+                bossPressureActionDirector?.NotifyPlayerSummonFrontlineCreated(spentSummonTier);
                 if (ShouldStartVanguardAssistFollowupFromSlot1())
                 {
-                    int assistTier = Mathf.Max(vanguardAssistSuppressTier, summonSlot1Action.LastSpentTier);
+                    int assistTier = Mathf.Max(vanguardAssistSuppressTier, spentSummonTier);
                     blockedBossPressureWithSummon = true;
                     highestSummonPressureTier = Mathf.Max(highestSummonPressureTier, assistTier);
                     StartSummonPressureBreak(assistTier);

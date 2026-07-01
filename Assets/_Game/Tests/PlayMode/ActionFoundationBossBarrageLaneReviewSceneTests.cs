@@ -599,11 +599,11 @@ namespace DimensionBrawl.Tests
                 BossPressureActionKind.SummonPressure,
                 2,
                 "SummonSlot1PressureBlock",
-                "LV2 summon-pressure exchange that tests whether the player can answer boss fire with a frontline summon screen.",
-                "Hold forward-risk only long enough to charge EN, then create space for the summon block.",
-                "Spend SummonSlot1 to place a pressure screen and intercept the boss curtain.",
-                true,
-                0.22f,
+                "LV2 summon-pressure exchange that answers the player's heavy SUMMON with an immediate boss-side body screen.",
+                "Spend SUMMON deliberately; expect the boss to answer with a visible pressure body before the punish window opens.",
+                "The player summon should clash with the boss screen, break the curtain, and reopen ranged punish time.",
+                false,
+                0f,
                 1f,
                 true,
                 2);
@@ -5306,6 +5306,63 @@ namespace DimensionBrawl.Tests
                 presenterBlockVfxCountBefore + 1,
                 presenter.InterceptVfxCueRequestCount,
                 "Boss summon pressure intercepts should layer the same promoted in-world block cue as ally screens.");
+            yield return null;
+        }
+
+        [UnityTest]
+        public IEnumerator PlayerHeavySummonOpensGuaranteedBossSummonResponse()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            SummonEnergyLadder energyLadder = RequireComponent<SummonEnergyLadder>(player.gameObject, "summon energy ladder");
+            PlayerSummonSlot1Action summonSlot1Action =
+                RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "SummonSlot1 action");
+            BossBarragePocketReviewOwner pocketOwner =
+                RequireComponent<BossBarragePocketReviewOwner>(RequireRoot(PocketOwnerRootName), "pocket review owner");
+            GameObject bossRoot = RequireRoot(BossRootName);
+            BossPressureCostLadder bossPressureCost =
+                RequireComponent<BossPressureCostLadder>(bossRoot, "boss pressure cost ladder");
+            BossPressureActionDirector bossPressureActionDirector =
+                RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
+            BossSummonPressureAction bossSummonPressureAction =
+                RequireComponent<BossSummonPressureAction>(bossRoot, "boss summon pressure action");
+
+            bossPressureActionDirector.SetActionsEnabled(false);
+            player.transform.position = laneSpace.GetLaneWorldPoint(
+                0f,
+                laneSpace.BackLimitZ + 0.25f,
+                player.transform.position.y);
+            Physics.SyncTransforms();
+            Assert.Less(
+                bossPressureActionDirector.CurrentPlayerForwardRisk01,
+                0.22f,
+                "This contract should not depend on the old forward-risk gate once the player spends the heavy SUMMON.");
+
+            FillEnergyToTier(energyLadder, 2);
+            Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
+            pocketOwner.Tick(0f);
+
+            Assert.AreEqual(2, summonSlot1Action.LastSpentTier);
+            Assert.AreEqual(2, bossPressureActionDirector.LastObservedPlayerSummonTier);
+            Assert.IsTrue(
+                bossPressureActionDirector.IsPlayerSummonResponseWindowActive,
+                "Pocket review should notify the boss director immediately when the player spends the heavy SUMMON.");
+
+            bossPressureCost.ResetLadder();
+            bossPressureCost.GrantCurrentTierCost(200f);
+            bossPressureActionDirector.SetActionsEnabled(true);
+
+            Assert.IsTrue(
+                bossPressureActionDirector.TryQueueBestAvailableAction(),
+                "The opened player-summon window should let the boss answer with its authored summon pressure.");
+            Assert.AreEqual(BossPressureActionKind.SummonPressure, bossPressureActionDirector.LastActionKind);
+            Assert.IsTrue(bossPressureActionDirector.LastActionRespondedToPlayerSummon);
+            Assert.AreEqual(2, bossPressureActionDirector.LastPlayerSummonResponseTier);
+            Assert.AreEqual(2, bossSummonPressureAction.LastReleasedTier);
+            Assert.AreSame(
+                LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath),
+                bossPressureActionDirector.LastQueuedPattern);
+
             yield return null;
         }
 

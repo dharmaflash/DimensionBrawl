@@ -8760,14 +8760,14 @@ MonoBehaviour:
     QueuedWaves: 1
     MinimumIntervalSeconds: 4.2
     ResponseId: SummonSlot1PressureBlock
-    StageLoopRole: LV2 summon-pressure exchange that tests whether the player can
-      answer boss fire with a frontline summon screen.
-    PlayerAnswer: Hold forward-risk only long enough to charge EN, then create space
-      for the summon block.
-    SummonAnswer: Spend SummonSlot1 to place a pressure screen and intercept the
-      boss curtain.
-    UsePlayerForwardRiskGate: 1
-    MinimumPlayerForwardRisk01: 0.22
+    StageLoopRole: LV2 summon-pressure exchange that answers the player's heavy SUMMON
+      with an immediate boss-side body screen.
+    PlayerAnswer: Spend SUMMON deliberately; expect the boss to answer with a visible
+      pressure body before the punish window opens.
+    SummonAnswer: The player summon should clash with the boss screen, break the curtain,
+      and reopen ranged punish time.
+    UsePlayerForwardRiskGate: 0
+    MinimumPlayerForwardRisk01: 0
     MaximumPlayerForwardRisk01: 1
     UsePlayerSummonResponseGate: 1
     MinimumPlayerSummonTier: 2
