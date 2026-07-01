@@ -94,7 +94,7 @@ namespace DimensionBrawl.Tests
             Assert.That(stageProfile.CounterWaveAllyHoldSeconds, Is.InRange(0.25f, 0.75f));
             Assert.That(stageProfile.UnansweredBossHitRoutePenalty01, Is.InRange(0.04f, 0.12f));
             Assert.That(stageProfile.CleanFollowupEnergyPulseOverride, Is.InRange(200f, 240f));
-            Assert.That(stageProfile.CounterWaveAnswerEnergyPulseOverride, Is.InRange(100f, 140f));
+            Assert.That(stageProfile.CounterWaveAnswerEnergyPulseOverride, Is.InRange(200f, 220f));
             Assert.Greater(stageProfile.CounterWaveEntryRoutePenalty01, 0f);
             Assert.Greater(
                 stageProfile.CounterWaveStabilizeRouteBonus01,
@@ -427,7 +427,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("none", pocketOwner.CounterWaveFinalWindowReadout);
 
             SetField(pocketOwner, "closeThreatDefeated", true);
-            TickEnergyToTier(energyLadder, 1, 0.25f);
+            TickEnergyToTier(energyLadder, 2, 0.25f);
             Assert.IsTrue(
                 summonSlot1Action.TryUseSummonSlot1(),
                 "Counter recovery setup should still enter through the real SummonSlot1 action.");
@@ -511,7 +511,7 @@ namespace DimensionBrawl.Tests
             float stabilityBeforeAnswer = pocketOwner.RouteStability01;
             SetField(pocketOwner, "routeStability01", 0.24f);
             float unstableStabilityBeforeAnswer = pocketOwner.RouteStability01;
-            TickEnergyToTier(energyLadder, 1, 0.25f);
+            TickEnergyToTier(energyLadder, 2, 0.25f);
             int summonUseCountBeforeCounterAnswer = summonSlot1Action.TotalUseCount;
             Assert.IsTrue(
                 summonSlot1Action.TryUseSummonSlot1(),
@@ -582,7 +582,8 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(counterStabilizedVfxCueCountBeforeAlly, pocketVfxCueBridge.CounterWaveStabilizedCueRequestCount);
             Assert.AreEqual(counterStabilizedCameraCueCountBeforeAlly, cameraCueDriver.CounterWaveStabilizedCueRequestCount);
 
-            TickEnergyToTier(energyLadder, 1, 0.25f);
+            TickEnergyToTier(energyLadder, 2, 0.25f);
+            SetField(summonSlot1Action, "slotCooldownRemaining", 0f);
             Assert.IsTrue(
                 summonSlot1Action.TryUseSummonSlot1(),
                 "Interrupted counter recovery should require a fresh SummonSlot1 frontline hold.");
@@ -1110,7 +1111,7 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(pocketOwner.IsSummonBlockOpportunityCueActive);
             Assert.That(pocketOwner.CompletionRecordReadout, Does.Contain("decision:prepare_summon(cue_window)"));
 
-            float energyReadySeconds = TickEnergyToTier(energyLadder, 1, 0.25f);
+            float energyReadySeconds = TickEnergyToTier(energyLadder, 2, 0.25f);
             float reliefSeconds = pocketOwner.PressureReliefRemainingSeconds + 0.02f;
             pocketOwner.Tick(reliefSeconds);
             Assert.IsTrue(pocketOwner.IsAwaitingSummonPressureBlock);
@@ -1139,17 +1140,17 @@ namespace DimensionBrawl.Tests
                 stageProfile.CleanFollowupEnergyPulseOverride,
                 pocketOwner.SummonFollowupEnergyPulse,
                 0.001f);
-            Assert.AreEqual(2, energyLadder.AvailableTier);
+            Assert.AreEqual(3, energyLadder.AvailableTier);
 
             targetSelector.NotifyTargetContact(bossHealth);
             targetSelector.RefreshTarget();
             Assert.IsTrue(skill1Action.TryUseSkill1());
-            Assert.AreEqual(2, skill1Action.LastSpentTier);
-            Assert.AreEqual(2, skill1Action.LastFiredProjectileCount);
-            Assert.AreEqual(2, ApplyActivePlayerSkillProjectiles(bossHitCollider));
+            Assert.AreEqual(3, skill1Action.LastSpentTier);
+            Assert.AreEqual(3, skill1Action.LastFiredProjectileCount);
+            Assert.AreEqual(3, ApplyActivePlayerSkillProjectiles(bossHitCollider));
             pocketOwner.Tick(0f);
-            Assert.AreEqual(2, pocketOwner.HighestSummonFollowupSkillTier);
-            Assert.AreEqual(2, pocketOwner.HighestSkill1FollowupHitTier);
+            Assert.AreEqual(3, pocketOwner.HighestSummonFollowupSkillTier);
+            Assert.AreEqual(3, pocketOwner.HighestSkill1FollowupHitTier);
             Assert.GreaterOrEqual(pocketOwner.Skill1FollowupDamage, 200f);
 
             int cleanRecordEventCount = 0;
@@ -1167,7 +1168,7 @@ namespace DimensionBrawl.Tests
                 + energyReadySeconds
                 + reliefSeconds
                 + GetFloat(pocketOwner, "skill1FollowupClearDelaySeconds");
-            Assert.That(guidedSuccessSeconds, Is.InRange(8f, 12.8f));
+            Assert.That(guidedSuccessSeconds, Is.InRange(14f, 22f));
             Assert.IsTrue(pocketOwner.IsCleared);
             Assert.AreEqual(BossBarragePocketReviewOwner.ReviewPhase.Cleared, pocketOwner.CurrentPhase);
             Assert.IsTrue(pocketOwner.HasCommittedResultRecord);

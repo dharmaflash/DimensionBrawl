@@ -426,6 +426,7 @@ namespace DimensionBrawl.Combat
                 0.16f,
                 0.24f,
                 settings.ActorEngageRadius);
+            clash.ConfigurePlayerBodyDamage(0.32f, 7.5f);
         }
 
         private Vector3 ResolveFacingDirection(Vector3 entryPosition, Vector3 targetPosition)
@@ -564,16 +565,16 @@ namespace DimensionBrawl.Combat
                     ActorLifetimeSeconds = 0f,
                     ActorScale = 2.07f,
                     ActorRoleId = "EscortProbe",
-                    ActorMaxHealth = 220f,
-                    ActorMoveSpeed = 1.35f,
+                    ActorMaxHealth = 560f,
+                    ActorMoveSpeed = 3.2f,
                     ActorAdvanceDistance = 2.4f,
                     ActorAdvanceSeconds = 1.4f,
-                    ActorEngageRadius = 0.95f,
-                    ActorAttackDamagePerSecond = 32f,
-                    ActorAttackIntervalSeconds = 0.35f,
-                    ScreenIntercepts = 2,
+                    ActorEngageRadius = 1.25f,
+                    ActorAttackDamagePerSecond = 42f,
+                    ActorAttackIntervalSeconds = 0.78f,
+                    ScreenIntercepts = 3,
                     ScreenRadius = 1.2f,
-                    ScreenLifetimeSeconds = 2.6f
+                    ScreenLifetimeSeconds = 3.2f
                 },
                 new BossSummonTierSettings
                 {
@@ -583,16 +584,16 @@ namespace DimensionBrawl.Combat
                     ActorLifetimeSeconds = 0f,
                     ActorScale = 2.52f,
                     ActorRoleId = "PressureScreen",
-                    ActorMaxHealth = 320f,
-                    ActorMoveSpeed = 1.42f,
+                    ActorMaxHealth = 820f,
+                    ActorMoveSpeed = 3.6f,
                     ActorAdvanceDistance = 3.8f,
                     ActorAdvanceSeconds = 1.85f,
-                    ActorEngageRadius = 1.05f,
-                    ActorAttackDamagePerSecond = 44f,
-                    ActorAttackIntervalSeconds = 0.35f,
-                    ScreenIntercepts = 4,
+                    ActorEngageRadius = 1.35f,
+                    ActorAttackDamagePerSecond = 62f,
+                    ActorAttackIntervalSeconds = 0.84f,
+                    ScreenIntercepts = 5,
                     ScreenRadius = 1.55f,
-                    ScreenLifetimeSeconds = 3.4f
+                    ScreenLifetimeSeconds = 4.0f
                 },
                 new BossSummonTierSettings
                 {
@@ -602,16 +603,16 @@ namespace DimensionBrawl.Combat
                     ActorLifetimeSeconds = 0f,
                     ActorScale = 3.06f,
                     ActorRoleId = "ClampGuard",
-                    ActorMaxHealth = 460f,
-                    ActorMoveSpeed = 1.48f,
+                    ActorMaxHealth = 1180f,
+                    ActorMoveSpeed = 4.0f,
                     ActorAdvanceDistance = 5.2f,
                     ActorAdvanceSeconds = 2.35f,
-                    ActorEngageRadius = 1.18f,
-                    ActorAttackDamagePerSecond = 58f,
-                    ActorAttackIntervalSeconds = 0.35f,
-                    ScreenIntercepts = 7,
+                    ActorEngageRadius = 1.5f,
+                    ActorAttackDamagePerSecond = 88f,
+                    ActorAttackIntervalSeconds = 0.9f,
+                    ScreenIntercepts = 8,
                     ScreenRadius = 1.95f,
-                    ScreenLifetimeSeconds = 4.2f
+                    ScreenLifetimeSeconds = 4.8f
                 }
             };
         }

@@ -234,6 +234,7 @@ namespace DimensionBrawl.Editor
                 EnsureComponent<BossBarrageLaneReviewCombatHudBinder>(canvasRoot);
             CombatHudPresenter presenter = canvasRoot.GetComponentInChildren<CombatHudPresenter>(includeInactive: true);
             CombatHudInputBridge inputBridge = canvasRoot.GetComponentInChildren<CombatHudInputBridge>(includeInactive: true);
+            ConfigureCombatHudPresenterRuntimeReferences(canvasRoot, presenter);
             SetObjectReference(binder, "hudPresenter", presenter);
             SetObjectReference(binder, "inputBridge", inputBridge);
             SetObjectReference(binder, "overlayHud", overlayHud);
@@ -258,14 +259,27 @@ namespace DimensionBrawl.Editor
             ConfigureCombatHudInputComponents(
                 canvasRoot,
                 inputBridge,
-                playerHealth != null ? playerHealth.GetComponent<PlayerMovementController>() : null);
+                playerHealth != null ? playerHealth.GetComponent<PlayerMovementController>() : null,
+                combatModeController,
+                playerHealth != null ? playerHealth.GetComponent<PlayerRangedAimController>() : null,
+                rangedBasicAttackAction);
+            ConfigureCombatHudOverlayInputLocks(canvasRoot, overlayHud);
         }
 
         private static void ConfigureCombatHudInputComponents(
             GameObject canvasRoot,
             CombatHudInputBridge inputBridge,
-            PlayerMovementController movementController)
+            PlayerMovementController movementController,
+            PlayerCombatModeController combatModeController,
+            PlayerRangedAimController aimController,
+            PlayerRangedBasicAttackAction rangedBasicAttackAction)
         {
+            ConfigureCombatHudAimDragInput(
+                canvasRoot,
+                movementController,
+                combatModeController,
+                aimController,
+                rangedBasicAttackAction);
             ConfigureCombatHudVirtualJoystick(canvasRoot, movementController);
             ConfigureCombatHudPointerAction(
                 canvasRoot,
@@ -309,6 +323,101 @@ namespace DimensionBrawl.Editor
                 "SummonSlot3Button",
                 CombatHudActionId.SummonSlot3,
                 sendHoldState: false);
+        }
+
+        private static void ConfigureCombatHudPresenterRuntimeReferences(
+            GameObject canvasRoot,
+            CombatHudPresenter presenter)
+        {
+            if (presenter == null)
+            {
+                return;
+            }
+
+            Image bossHpFill = FindHudDescendant(canvasRoot.transform, "BossHpFill")?.GetComponent<Image>();
+            if (bossHpFill != null)
+            {
+                bossHpFill.type = Image.Type.Filled;
+                bossHpFill.fillMethod = Image.FillMethod.Horizontal;
+                bossHpFill.fillOrigin = (int)Image.OriginHorizontal.Left;
+                bossHpFill.fillAmount = 1f;
+                MarkComponentDirty(bossHpFill);
+            }
+
+            SetObjectReference(presenter, "bossHealthFill", bossHpFill);
+            SetObjectReference(presenter, "bossHealthText", FindHudDescendant(canvasRoot.transform, "ActionFeedback")?.GetComponent<Text>());
+            MarkComponentDirty(presenter);
+        }
+
+        private static void ConfigureCombatHudAimDragInput(
+            GameObject canvasRoot,
+            PlayerMovementController movementController,
+            PlayerCombatModeController combatModeController,
+            PlayerRangedAimController aimController,
+            PlayerRangedBasicAttackAction rangedBasicAttackAction)
+        {
+            Transform hudInstance = canvasRoot.transform.Find("PF_UI_CombatHud");
+            Transform parent = hudInstance != null ? hudInstance : canvasRoot.transform;
+            Transform aimArea = parent.Find("AimDragArea");
+            if (aimArea == null)
+            {
+                aimArea = new GameObject("AimDragArea", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image)).transform;
+                aimArea.SetParent(parent, worldPositionStays: false);
+            }
+
+            RectTransform rectTransform = aimArea.GetComponent<RectTransform>();
+            Stretch(rectTransform);
+            aimArea.SetAsFirstSibling();
+
+            Image image = aimArea.GetComponent<Image>();
+            image.color = Color.clear;
+            image.raycastTarget = true;
+            MarkComponentDirty(image);
+
+            CombatHudAimDragInput aimDragInput = EnsureComponent<CombatHudAimDragInput>(aimArea.gameObject);
+            aimDragInput.Configure(
+                movementController,
+                combatModeController,
+                aimController,
+                rangedBasicAttackAction);
+            SetBehaviourEnabled(aimDragInput, true);
+            MarkComponentDirty(aimDragInput);
+            EditorUtility.SetDirty(aimArea.gameObject);
+        }
+
+        private static void ConfigureCombatHudOverlayInputLocks(
+            GameObject canvasRoot,
+            BossBarrageLaneReviewOverlayHud overlayHud)
+        {
+            if (overlayHud == null)
+            {
+                return;
+            }
+
+            List<Behaviour> inputLocks = new List<Behaviour>();
+            AddUniqueInputLock(inputLocks, canvasRoot.GetComponentInChildren<CombatHudInputBridge>(includeInactive: true));
+            AddUniqueInputLocks(inputLocks, canvasRoot.GetComponentsInChildren<CombatHudAimDragInput>(includeInactive: true));
+            AddUniqueInputLocks(inputLocks, canvasRoot.GetComponentsInChildren<CombatHudVirtualJoystick>(includeInactive: true));
+            AddUniqueInputLocks(inputLocks, canvasRoot.GetComponentsInChildren<CombatHudPointerActionInput>(includeInactive: true));
+            SetObjectReferenceArray(overlayHud, "inputLockBehaviours", inputLocks.ToArray());
+        }
+
+        private static void AddUniqueInputLocks<T>(List<Behaviour> inputLocks, T[] behaviours) where T : Behaviour
+        {
+            for (int i = 0; i < behaviours.Length; i++)
+            {
+                AddUniqueInputLock(inputLocks, behaviours[i]);
+            }
+        }
+
+        private static void AddUniqueInputLock(List<Behaviour> inputLocks, Behaviour behaviour)
+        {
+            if (behaviour == null || inputLocks.Contains(behaviour))
+            {
+                return;
+            }
+
+            inputLocks.Add(behaviour);
         }
 
         private static void ConfigureCombatHudVirtualJoystick(

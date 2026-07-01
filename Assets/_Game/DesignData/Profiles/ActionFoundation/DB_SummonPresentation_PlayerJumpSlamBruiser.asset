@@ -16,16 +16,16 @@ MonoBehaviour:
   displayName: Player Summon - Jump Slam Bruiser
   side: 0
   actorPrefab: {fileID: 78232937113701473, guid: 89b4fd244a67b614d96b87c855f7b102, type: 3}
-  visualSourceAsset: {fileID: 919132149155446097, guid: a8aeab87c31728449b2ad21164d319fc, type: 3}
-  visualChildName: SummonSlot1Visual_LungeChaserBruiser
-  sourceRoleId: SciFiSoldier.LungeChaser
-  animatorController: {fileID: 9100000, guid: 8cf1b962f7860cd4db7073e7843c4dbb, type: 2}
+  visualSourceAsset: {fileID: 919132149155446097, guid: ec34f7926b6d82f488661bbad190e30d, type: 3}
+  visualChildName: SummonSlot1Visual_ShieldBreakerElite
+  sourceRoleId: SciFiSoldier.Elite.ShieldBreaker
+  animatorController: {fileID: 9100000, guid: 6c9d6cd483a475b4995cfdb17101ea5b, type: 2}
   vfxCueProfile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
-  animationRead: Promoted LungeChaser Therionide Animator stands in for a far jump,
-    arm slam, and lingering melee pressure read.
+  animationRead: Promoted ShieldBreakerElite heavy armor Animator stands in for a
+    far jump, arm slam, and lingering melee pressure read.
   vfxRead: Magic-circle entry, high arc, landing pulse, short shock screen, and slam
     shockwave separate it from ranged summons.
-  replacementPlan: Replace only the visual child after a dedicated ally bruiser model
-    is reviewed; keep the jump-slam timing contract.
+  replacementPlan: Keep the bulky sci-fi helmet body as the reviewed ally bruiser
+    unless a dedicated ally model is approved.
   ownershipNotes: Presentation candidate only; runtime cost, tier, projectile, and
     screen values remain in gameplay profiles.

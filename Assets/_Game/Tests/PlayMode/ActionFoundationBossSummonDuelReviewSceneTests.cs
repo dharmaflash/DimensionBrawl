@@ -84,7 +84,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(150f, GetFloat(duelOwner, "startingPlayerEnergy"), 0.001f);
             Assert.AreEqual(150f, GetFloat(duelOwner, "startingBossCost"), 0.001f);
             Assert.AreEqual(220f, duelOwner.RequiredBossDamage, 0.001f);
-            Assert.AreEqual(16.5f, GetFloat(energyLadder, "baseEnergyPerSecond"), 0.001f);
+            Assert.AreEqual(9.0f, GetFloat(energyLadder, "baseEnergyPerSecond"), 0.001f);
             StringAssert.Contains("bossSP", duelOwner.ProgressLine);
             StringAssert.Contains("support", duelOwner.ProgressLine);
             StringAssert.Contains("bossReply", duelOwner.ProgressLine);
@@ -124,16 +124,16 @@ namespace DimensionBrawl.Tests
                 bossSummonPressureAction,
                 GetObjectReference<BossSummonPressureAction>(duelOwner, "bossSummonPressureAction"));
             Assert.AreEqual(
-                100f,
+                200f,
                 summonSlot1Action.RequiredSummonMana,
                 0.001f,
-                "SummonSlot1 should expose its explicit LV1 emergency summon mana cost.");
+                "SummonSlot1 should expose its explicit mid-cost slam summon mana cost.");
 
             Assert.IsTrue(
                 bossPressureActionDirector.HoldForNextTierActionWhenGateAllows,
                 "Duel review should let the boss bank LV1 pressure into a visible LV2 summon-pressure exchange.");
             AssertVector3(
-                new Vector3(0.75f, 0.88f, 3.12f),
+                new Vector3(0.45f, 0.88f, 2.72f),
                 GetVector3(cameraController, "aimCameraOffset"),
                 "Boss summon duel aim camera offset should keep the reviewed inspector framing.");
             Assert.AreEqual(4, bossPressureActionDirector.ActionSlotCount);
@@ -156,7 +156,7 @@ namespace DimensionBrawl.Tests
                 2,
                 "SummonSlot1PressureBlock",
                 true,
-                1);
+                2);
             AssertBossPressureSlot(
                 bossPressureActionDirector,
                 3,
@@ -180,8 +180,8 @@ namespace DimensionBrawl.Tests
                 DamageTeam.AllySummon,
                 "SummonSlot1 actor prefab",
                 expectPressureScreen: true);
-            AssertSupportSummonAction(summonSlot2Action, "SummonSlot2");
-            AssertSupportSummonAction(summonSlot3Action, "SummonSlot3");
+            AssertSupportSummonAction(summonSlot2Action, "SummonSlot2", 1, 100f);
+            AssertSupportSummonAction(summonSlot3Action, "SummonSlot3", 3, 300f);
             Assert.AreSame(
                 playerCuePlayer,
                 GetObjectReference<CombatVfxCuePlayer>(summonSlot1Action, "combatVfxCuePlayer"));
@@ -278,12 +278,13 @@ namespace DimensionBrawl.Tests
                 float.IsPositiveInfinity(summonSlot2Action.LastSummonActorRemainingLifetimeSeconds),
                 "S2 is a normal body-bearing summon and should persist until defeated or recalled, not expire as a short effect.");
             Assert.AreEqual(SummonFrontlineProxyExitReason.None, summonSlot2Action.LastSummonActorExitReason);
-            SummonFrontlineProxy slot2Proxy = RequireActiveSummonProxy(DamageTeam.AllySummon, 4.6f, "S2");
+            SummonFrontlineProxy slot2Proxy = RequireActiveSummonProxy(DamageTeam.AllySummon, 2.8f, "S2");
             AssertActiveSummonPresenterUsesCombatVfx(slot2Proxy, playerCuePlayer, 1, "S2");
-            AssertSummonProxyIsMarching(slot2Proxy, 4.6f, "S2");
+            AssertSummonProxyIsMarching(slot2Proxy, 2.8f, "S2");
             float slot2EntryProgress = slot2Proxy.AdvanceProgress01;
             yield return new WaitForSeconds(0.15f);
             AssertSummonProxyAdvancedWithoutSnapping(slot2Proxy, slot2EntryProgress, "S2");
+            yield return new WaitForSeconds(0.25f);
             Assert.Greater(
                 summonSlot2Action.ActiveProjectileCount,
                 0,
@@ -293,9 +294,9 @@ namespace DimensionBrawl.Tests
                 1,
                 "S2 should expose its repeated support-volley behavior for HUD and review tests.");
 
-            GrantEnergyToTier(energyLadder, 1);
+            GrantEnergyToTier(energyLadder, 3);
             Assert.IsTrue(summonSlot3Action.TryUseSummon());
-            Assert.AreEqual(1, summonSlot3Action.LastSpentTier);
+            Assert.AreEqual(3, summonSlot3Action.LastSpentTier);
             Assert.AreEqual(1, summonSlot3Action.TotalUseCount);
             Assert.AreEqual("FireDragon", summonSlot3Action.LastSummonActorRoleId);
             Assert.Greater(summonSlot3Action.ActiveSummonActorCount, 0);
@@ -307,12 +308,13 @@ namespace DimensionBrawl.Tests
                 float.IsPositiveInfinity(summonSlot3Action.LastSummonActorRemainingLifetimeSeconds),
                 "S3 is a normal body-bearing summon and should persist until defeated or recalled, not expire as a short effect.");
             Assert.AreEqual(SummonFrontlineProxyExitReason.None, summonSlot3Action.LastSummonActorExitReason);
-            SummonFrontlineProxy slot3Proxy = RequireActiveSummonProxy(DamageTeam.AllySummon, 3.8f, "S3");
-            AssertActiveSummonPresenterUsesCombatVfx(slot3Proxy, playerCuePlayer, 1, "S3");
-            AssertSummonProxyIsMarching(slot3Proxy, 3.8f, "S3");
+            SummonFrontlineProxy slot3Proxy = RequireActiveSummonProxy(DamageTeam.AllySummon, 2.95f, "S3");
+            AssertActiveSummonPresenterUsesCombatVfx(slot3Proxy, playerCuePlayer, 3, "S3");
+            AssertSummonProxyIsMarching(slot3Proxy, 2.95f, "S3");
             float slot3EntryProgress = slot3Proxy.AdvanceProgress01;
             yield return new WaitForSeconds(0.15f);
             AssertSummonProxyAdvancedWithoutSnapping(slot3Proxy, slot3EntryProgress, "S3");
+            yield return new WaitForSeconds(0.65f);
             Assert.Greater(
                 summonSlot3Action.ActiveProjectileCount,
                 0,
@@ -345,7 +347,7 @@ namespace DimensionBrawl.Tests
             Assert.IsNotNull(enemyProxy, "Boss summon pressure should expose the latest released summon actor.");
             Assert.AreEqual(DamageTeam.Enemy, enemyProxy.Health.Team);
             AssertActiveSummonPresenterUsesCombatVfx(enemyProxy, playerCuePlayer, 2, "boss summon");
-            AssertSummonProxyIsMarching(enemyProxy, 2.15f, "boss summon");
+            AssertSummonProxyIsMarching(enemyProxy, 3.6f, "boss summon");
             float enemyEntryProgress = enemyProxy.AdvanceProgress01;
             yield return new WaitForSeconds(0.15f);
             AssertSummonProxyAdvancedWithoutSnapping(enemyProxy, enemyEntryProgress, "boss summon");
@@ -385,8 +387,8 @@ namespace DimensionBrawl.Tests
                 "first loop");
 
             Assert.IsTrue(bossSummonPressureAction.TryReleasePressureSummon(1));
-            SummonFrontlineProxy secondEnemyProxy = RequireActiveSummonProxy(DamageTeam.Enemy, 2.35f, "second boss summon");
-            AssertSummonProxyIsMarching(secondEnemyProxy, 2.35f, "second boss summon");
+            SummonFrontlineProxy secondEnemyProxy = RequireActiveSummonProxy(DamageTeam.Enemy, 3.2f, "second boss summon");
+            AssertSummonProxyIsMarching(secondEnemyProxy, 3.2f, "second boss summon");
             CombatHealth secondEnemySummonHealth = secondEnemyProxy.Health;
             Assert.IsTrue(
                 secondEnemySummonHealth.TryApplyDamage(new DamageInfo(
@@ -438,8 +440,8 @@ namespace DimensionBrawl.Tests
 
             Assert.AreEqual(300f, energyLadder.CurrentMana, 0.001f);
             Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
-            Assert.AreEqual(200f, energyLadder.CurrentMana, 0.001f);
-            Assert.AreEqual(2, energyLadder.AvailableTier);
+            Assert.AreEqual(100f, energyLadder.CurrentMana, 0.001f);
+            Assert.AreEqual(1, energyLadder.AvailableTier);
             Assert.IsTrue(summonSlot1Action.IsSlotOnCooldown);
             Assert.IsFalse(
                 summonSlot2Action.IsSlotOnCooldown,
@@ -449,11 +451,12 @@ namespace DimensionBrawl.Tests
                 "Using Slot1 should not start Slot3 cooldown in the shared-mana EX-style selection model.");
 
             Assert.IsTrue(summonSlot2Action.TryUseSummon());
-            Assert.AreEqual(100f, energyLadder.CurrentMana, 0.001f);
-            Assert.AreEqual(1, energyLadder.AvailableTier);
+            Assert.AreEqual(0f, energyLadder.CurrentMana, 0.001f);
+            Assert.AreEqual(0, energyLadder.AvailableTier);
             Assert.IsTrue(summonSlot2Action.IsSlotOnCooldown);
             Assert.IsFalse(summonSlot3Action.IsSlotOnCooldown);
 
+            GrantEnergyToTier(energyLadder, 3);
             Assert.IsTrue(summonSlot3Action.TryUseSummon());
             Assert.AreEqual(0f, energyLadder.CurrentMana, 0.001f);
             Assert.AreEqual(0, energyLadder.AvailableTier);
@@ -530,19 +533,21 @@ namespace DimensionBrawl.Tests
 
         private static void AssertSupportSummonAction(
             PlayerSupportSummonSlotAction action,
-            string expectedActionName)
+            string expectedActionName,
+            int expectedMinimumTier,
+            float expectedRequiredMana)
         {
             Assert.AreEqual(expectedActionName, action.SlotActionName);
             Assert.IsTrue(action.HasRequiredPresentation);
             Assert.AreEqual(
-                1,
+                expectedMinimumTier,
                 action.MinimumSummonTier,
-                $"{expectedActionName} should be available from the LV1 summon tier and distinguish itself through behavior.");
+                $"{expectedActionName} should expose the reviewed summon tier gate for its role.");
             Assert.AreEqual(
-                100f,
+                expectedRequiredMana,
                 action.RequiredSummonMana,
                 0.001f,
-                $"{expectedActionName} should expose the shared LV1 summon cost, not only an inferred tier gate.");
+                $"{expectedActionName} should expose the reviewed summon mana cost, not only an inferred tier gate.");
             Assert.AreEqual(
                 1.35f,
                 GetFloat(action, "entryForwardOffset"),
@@ -580,12 +585,12 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("SummonSlot3.FireDragon", slot3Profile.ActionId);
             Assert.AreEqual(3, slot2Tiers.Length);
             Assert.AreEqual(3, slot3Tiers.Length);
-            float[] slot2ExpectedHealth = { 180f, 215f, 255f };
-            float[] slot2ExpectedMoveSpeed = { 4.6f, 5.1f, 5.6f };
-            float[] slot2ExpectedDps = { 32f, 46f, 62f };
-            float[] slot3ExpectedHealth = { 520f, 620f, 760f };
-            float[] slot3ExpectedMoveSpeed = { 3.8f, 4.2f, 4.6f };
-            float[] slot3ExpectedDps = { 44f, 64f, 88f };
+            float[] slot2ExpectedHealth = { 170f, 205f, 250f };
+            float[] slot2ExpectedMoveSpeed = { 2.8f, 3.1f, 3.4f };
+            float[] slot2ExpectedDps = { 9f, 12f, 16f };
+            float[] slot3ExpectedHealth = { 520f, 680f, 900f };
+            float[] slot3ExpectedMoveSpeed = { 2.35f, 2.65f, 2.95f };
+            float[] slot3ExpectedDps = { 32f, 46f, 68f };
             for (int i = 0; i < slot2Tiers.Length; i++)
             {
                 Assert.AreEqual("LaserSoldier", slot2Tiers[i].ActorRoleId);
@@ -611,11 +616,11 @@ namespace DimensionBrawl.Tests
                     "S3 should win sustained body trades through HP and fire-breath DPS instead of a shield screen.");
                 Assert.LessOrEqual(
                     slot2Tiers[i].ActorMoveSpeed,
-                    5.6f,
+                    3.4f,
                     "Laser soldier should stay within the reviewed fast-support movement budget.");
                 Assert.LessOrEqual(
                     slot3Tiers[i].ActorMoveSpeed,
-                    4.6f,
+                    2.95f,
                     "Fire dragon should remain slower than the laser soldier while still entering quickly enough to read.");
                 Assert.GreaterOrEqual(
                     slot3Tiers[i].ProjectileCount,
@@ -637,10 +642,10 @@ namespace DimensionBrawl.Tests
         {
             BossSummonPressureAction.BossSummonTierSettings[] tiers = profile.CopyTierSettings();
             string[] expectedRoles = { "EscortProbe", "PressureScreen", "ClampGuard" };
-            float[] expectedHealth = { 220f, 320f, 460f };
-            float[] expectedMoveSpeed = { 2.35f, 2.15f, 1.95f };
-            float[] expectedDps = { 32f, 44f, 58f };
-            int[] expectedScreens = { 2, 4, 7 };
+            float[] expectedHealth = { 560f, 820f, 1180f };
+            float[] expectedMoveSpeed = { 3.2f, 3.6f, 4.0f };
+            float[] expectedDps = { 42f, 62f, 88f };
+            int[] expectedScreens = { 3, 5, 8 };
 
             Assert.AreEqual(3, tiers.Length);
             for (int i = 0; i < tiers.Length; i++)
@@ -651,10 +656,10 @@ namespace DimensionBrawl.Tests
                 Assert.AreEqual(expectedMoveSpeed[i], tiers[i].ActorMoveSpeed, 0.001f);
                 Assert.AreEqual(expectedDps[i], tiers[i].ActorAttackDamagePerSecond, 0.001f);
                 Assert.AreEqual(expectedScreens[i], tiers[i].ScreenIntercepts);
-                Assert.LessOrEqual(
+                Assert.GreaterOrEqual(
                     tiers[i].ActorMoveSpeed,
-                    2.4f,
-                    "Boss pressure summons should rush into the player side while staying slower than a projectile snap.");
+                    3.2f,
+                    "Boss pressure summons should remain threatening without returning to the frantic over-speed tuning.");
 
                 if (i == 0)
                 {
@@ -662,6 +667,7 @@ namespace DimensionBrawl.Tests
                 }
 
                 Assert.Greater(tiers[i].ActorMaxHealth, tiers[i - 1].ActorMaxHealth);
+                Assert.Greater(tiers[i].ActorMoveSpeed, tiers[i - 1].ActorMoveSpeed);
                 Assert.Greater(tiers[i].ActorAttackDamagePerSecond, tiers[i - 1].ActorAttackDamagePerSecond);
                 Assert.Greater(tiers[i].ScreenIntercepts, tiers[i - 1].ScreenIntercepts);
             }
@@ -726,7 +732,7 @@ namespace DimensionBrawl.Tests
                 $"{label} should have real travel distance instead of spawning already at its target.");
             Assert.Less(
                 proxy.AdvanceProgress01,
-                0.25f,
+                0.3f,
                 $"{label} should not snap most of the way to the target on spawn.");
         }
 

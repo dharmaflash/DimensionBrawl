@@ -28,6 +28,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private BossBarrageLaneReviewHud reviewHud;
         [SerializeField] private BossBarrageLaneReviewMobileHud mobileHud;
         [SerializeField] private ActionScreenCuePresenter screenCuePresenter;
+        [SerializeField] private Behaviour[] inputLockBehaviours = new Behaviour[0];
 
         [Header("Routes")]
         [SerializeField] private string retrySceneName;
@@ -55,6 +56,9 @@ namespace DimensionBrawl.UI
 
         private OverlayMode mode;
         private bool hasPausedTime;
+        private bool hasCapturedControlState;
+        private bool mobileHudEnabledBeforeOverlay;
+        private bool[] inputLockEnabledBeforeOverlay = new bool[0];
         private float previousTimeScale = 1f;
         private float hudScale = 1f;
         private bool telemetryVisible;
@@ -98,6 +102,15 @@ namespace DimensionBrawl.UI
             CaptureSettings();
         }
 
+        public void ConfigureInputLocks(params Behaviour[] newInputLockBehaviours)
+        {
+            inputLockBehaviours = newInputLockBehaviours != null
+                ? newInputLockBehaviours
+                : new Behaviour[0];
+            inputLockEnabledBeforeOverlay = new bool[inputLockBehaviours.Length];
+            hasCapturedControlState = false;
+        }
+
         public void ConfigureRoutes(
             string newRetrySceneName,
             string newRetryScenePath,
@@ -129,7 +142,7 @@ namespace DimensionBrawl.UI
             }
 
             mode = OverlayMode.Pause;
-            SetMobileControlsEnabled(false);
+            DisableGameplayControls();
         }
 
         public void OpenSettings()
@@ -150,7 +163,7 @@ namespace DimensionBrawl.UI
 
             RestoreTimeScale();
             mode = OverlayMode.None;
-            SetMobileControlsEnabled(true);
+            RestoreGameplayControls();
         }
 
         private bool HasResult => pocketReviewOwner != null
@@ -179,7 +192,7 @@ namespace DimensionBrawl.UI
         private void OnDisable()
         {
             RestoreTimeScale();
-            SetMobileControlsEnabled(true);
+            RestoreGameplayControls();
         }
 
         private void Update()
@@ -187,7 +200,7 @@ namespace DimensionBrawl.UI
             if (!showOverlay)
             {
                 RestoreTimeScale();
-                SetMobileControlsEnabled(true);
+                RestoreGameplayControls();
                 return;
             }
 
@@ -195,7 +208,7 @@ namespace DimensionBrawl.UI
             {
                 RestoreTimeScale();
                 mode = OverlayMode.None;
-                SetMobileControlsEnabled(false);
+                DisableGameplayControls();
                 return;
             }
 
@@ -658,7 +671,7 @@ namespace DimensionBrawl.UI
         {
             RestoreTimeScale();
             Time.timeScale = 1f;
-            SetMobileControlsEnabled(false);
+            DisableGameplayControls();
 
 #if UNITY_EDITOR
             if (!string.IsNullOrWhiteSpace(scenePath))
@@ -693,6 +706,72 @@ namespace DimensionBrawl.UI
             if (mobileHud != null && mobileHud.enabled != enabled)
             {
                 mobileHud.enabled = enabled;
+            }
+        }
+
+        private void DisableGameplayControls()
+        {
+            CaptureControlState();
+            SetMobileControlsEnabled(false);
+            SetInputLockBehavioursEnabled(false);
+        }
+
+        private void RestoreGameplayControls()
+        {
+            if (!hasCapturedControlState)
+            {
+                return;
+            }
+
+            SetMobileControlsEnabled(mobileHudEnabledBeforeOverlay);
+
+            int lockCount = inputLockBehaviours != null ? inputLockBehaviours.Length : 0;
+            for (int i = 0; i < lockCount; i++)
+            {
+                bool wasEnabled = i < inputLockEnabledBeforeOverlay.Length && inputLockEnabledBeforeOverlay[i];
+                SetBehaviourEnabled(inputLockBehaviours[i], wasEnabled);
+            }
+
+            hasCapturedControlState = false;
+        }
+
+        private void CaptureControlState()
+        {
+            if (hasCapturedControlState)
+            {
+                return;
+            }
+
+            mobileHudEnabledBeforeOverlay = mobileHud != null && mobileHud.enabled;
+            int lockCount = inputLockBehaviours != null ? inputLockBehaviours.Length : 0;
+            if (inputLockEnabledBeforeOverlay == null || inputLockEnabledBeforeOverlay.Length != lockCount)
+            {
+                inputLockEnabledBeforeOverlay = new bool[lockCount];
+            }
+
+            for (int i = 0; i < lockCount; i++)
+            {
+                Behaviour behaviour = inputLockBehaviours[i];
+                inputLockEnabledBeforeOverlay[i] = behaviour != null && behaviour.enabled;
+            }
+
+            hasCapturedControlState = true;
+        }
+
+        private void SetInputLockBehavioursEnabled(bool enabled)
+        {
+            int lockCount = inputLockBehaviours != null ? inputLockBehaviours.Length : 0;
+            for (int i = 0; i < lockCount; i++)
+            {
+                SetBehaviourEnabled(inputLockBehaviours[i], enabled);
+            }
+        }
+
+        private static void SetBehaviourEnabled(Behaviour behaviour, bool enabled)
+        {
+            if (behaviour != null && behaviour.enabled != enabled)
+            {
+                behaviour.enabled = enabled;
             }
         }
 

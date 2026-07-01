@@ -280,7 +280,7 @@ namespace DimensionBrawl.Player
                 clash.ConfigureTuning(
                     damagePerSecond,
                     settings.ActorAttackIntervalSeconds,
-                    0.16f,
+                    0f,
                     0.24f,
                     settings.ActorEngageRadius);
                 clash.ConfigureHostileBodyDamage(1f, 0f);

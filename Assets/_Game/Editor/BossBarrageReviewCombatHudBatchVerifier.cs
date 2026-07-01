@@ -1094,9 +1094,9 @@ namespace DimensionBrawl.Editor
             PlayerSupportSummonSlotAction slot3 = ReadBinderReference<PlayerSupportSummonSlotAction>(binder, "summonSlot3Action");
 
             bool ready = true;
-            ready &= HasSummonSlot1Config(slot1, 100f, 1.1f, report);
-            ready &= HasSupportSummonConfig("SUMMON_S2", slot2, 1, 100f, 1.15f, report);
-            ready &= HasSupportSummonConfig("SUMMON_S3", slot3, 1, 100f, 1.8f, report);
+            ready &= HasSummonSlot1Config(slot1, 100f, 4.5f, report);
+            ready &= HasSupportSummonConfig("SUMMON_S2", slot2, 1, 100f, 5.5f, report);
+            ready &= HasSupportSummonConfig("SUMMON_S3", slot3, 1, 100f, 7.0f, report);
             if (energy == null)
             {
                 report.AppendLine("SUMMON_ENERGY=MISSING");

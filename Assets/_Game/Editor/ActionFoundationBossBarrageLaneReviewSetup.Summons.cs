@@ -47,13 +47,13 @@ namespace DimensionBrawl.Editor
                 "Player Summon - Jump Slam Bruiser",
                 SummonPresentationSide.PlayerSummon,
                 SummonSlot1ActorPrefabPath,
-                ActionFoundationEnemyRoleCandidateSetup.LungeChaserCandidateProfilePath,
+                ActionFoundationEnemyRoleCandidateSetup.ShieldBreakerEliteCandidateProfilePath,
                 SummonSlot1ActorVisualName,
                 SummonSlot1ActorVisualRoleId,
                 vfxCueProfile,
-                "Promoted LungeChaser Therionide Animator stands in for a far jump, arm slam, and lingering melee pressure read.",
+                "Promoted ShieldBreakerElite heavy armor Animator stands in for a far jump, arm slam, and lingering melee pressure read.",
                 "Magic-circle entry, high arc, landing pulse, short shock screen, and slam shockwave separate it from ranged summons.",
-                "Replace only the visual child after a dedicated ally bruiser model is reviewed; keep the jump-slam timing contract.");
+                "Keep the bulky sci-fi helmet body as the reviewed ally bruiser unless a dedicated ally model is approved.");
 
             ConfigureSummonPresentationCandidateProfile(
                 LoadOrCreateSummonPresentationCandidateProfile(SummonSlot2PresentationCandidateProfilePath),
@@ -390,11 +390,11 @@ namespace DimensionBrawl.Editor
                 Transform summonVisual = AttachRoleVisualOnly(
                     editableRoot.transform,
                     SummonSlot1ActorVisualRoleId,
-                    ActionFoundationEnemyRoleCandidateSetup.LungeChaserPrefabPath,
+                    ActionFoundationEnemyRoleCandidateSetup.ShieldBreakerElitePrefabPath,
                     SummonSlot1ActorVisualName,
                     new Vector3(0f, -0.04f, -0.08f),
                     Vector3.zero,
-                    new Vector3(0.78f, 0.78f, 0.78f));
+                    new Vector3(0.9f, 0.9f, 0.9f));
                 EnsureSummonHealthBar(
                     editableRoot,
                     proxy,
@@ -428,15 +428,20 @@ namespace DimensionBrawl.Editor
                 SetFloat(actorPresenter, "flashScale", 0.22f);
                 SetFloat(actorPresenter, "clashFlashScale", 0.16f);
                 SetFloat(actorPresenter, "pressureDamageCueScale", 0.64f);
-                ConfigureSummonActorAnimatorPresentation(actorPresenter, summonVisual);
+                ConfigureSummonActorAnimatorPresentation(
+                    actorPresenter,
+                    summonVisual,
+                    animatorMoveSpeedScale: 0.42f);
                 ConfigureSummonProxyVisualMotion(
                     editableRoot,
                     proxy,
                     summonVisual,
                     airborneHeight: 0f,
-                    jumpArcHeight: 2.3f,
-                    tierArcHeightStep: 0.48f,
-                    landingDip: 0.24f);
+                    jumpArcHeight: 1.35f,
+                    tierArcHeightStep: 0.22f,
+                    landingDip: 0.12f,
+                    arcEndProgress: 0.9f,
+                    landingSettleSeconds: 0.18f);
                 ConfigureSummonAttackBeamVisual(
                     editableRoot,
                     proxy,
@@ -452,8 +457,8 @@ namespace DimensionBrawl.Editor
                     new Color(1f, 0.92f, 0.42f, 0.72f),
                     new Color(1f, 0.55f, 0.18f, 0.82f),
                     tierScaleStep: 0.34f,
-                    pulseScale: 0.18f,
-                    pulseSpeed: 24f);
+                    pulseScale: 0.1f,
+                    pulseSpeed: 14f);
 
                 PrefabUtility.SaveAsPrefabAsset(editableRoot, SummonSlot1ActorPrefabPath);
             }
@@ -487,9 +492,9 @@ namespace DimensionBrawl.Editor
                 new Vector3(0f, -8f, 0f),
                 new Vector3(0.64f, 0.64f, 0.64f),
                 new Color(0.34f, 0.94f, 1f, 0.82f),
-                180f,
+                170f,
                 0.78f,
-                34f,
+                18f,
                 0.1f,
                 0.18f,
                 includePressureScreen: false,
@@ -706,7 +711,10 @@ namespace DimensionBrawl.Editor
                 SetFloat(actorPresenter, "flashScale", 0.18f);
                 SetFloat(actorPresenter, "clashFlashScale", 0.14f);
                 SetFloat(actorPresenter, "pressureDamageCueScale", 0.64f);
-                ConfigureSummonActorAnimatorPresentation(actorPresenter, summonVisual);
+                ConfigureSummonActorAnimatorPresentation(
+                    actorPresenter,
+                    summonVisual,
+                    animatorMoveSpeedScale: 0.46f);
                 if (roleId == SummonSlot2ActorVisualRoleId)
                 {
                     ConfigureSummonAttackPromotedParticleBeam(
@@ -734,7 +742,9 @@ namespace DimensionBrawl.Editor
                         airborneHeight: 1.12f,
                         jumpArcHeight: 0f,
                         tierArcHeightStep: 0f,
-                        landingDip: 0f);
+                        landingDip: 0f,
+                        arcEndProgress: 0.9f,
+                        landingSettleSeconds: 0f);
                     ConfigureSummonAttackPromotedParticleBeam(
                         editableRoot,
                         proxy,
@@ -896,6 +906,7 @@ namespace DimensionBrawl.Editor
                 SummonFrontlineClash clash = EnsureComponent<SummonFrontlineClash>(editableRoot);
                 clash.ConfigureReferences(proxy, proxyHealth);
                 clash.ConfigureTuning(36f, 0.35f, 0.16f, 0.24f);
+                clash.ConfigurePlayerBodyDamage(0.32f, 7.5f);
 
                 SphereCollider bodyCollider = EnsureComponent<SphereCollider>(editableRoot);
                 bodyCollider.isTrigger = true;
@@ -1049,7 +1060,10 @@ namespace DimensionBrawl.Editor
                 SetFloat(actorPresenter, "flashScale", 0.24f);
                 SetFloat(actorPresenter, "clashFlashScale", 0.18f);
                 SetFloat(actorPresenter, "pressureDamageCueScale", 0.64f);
-                ConfigureSummonActorAnimatorPresentation(actorPresenter, summonVisual);
+                ConfigureSummonActorAnimatorPresentation(
+                    actorPresenter,
+                    summonVisual,
+                    animatorMoveSpeedScale: 0.52f);
 
                 PrefabUtility.SaveAsPrefabAsset(editableRoot, BossSummonPressureActorPrefabPath);
             }
@@ -1082,7 +1096,9 @@ namespace DimensionBrawl.Editor
             float airborneHeight,
             float jumpArcHeight,
             float tierArcHeightStep,
-            float landingDip)
+            float landingDip,
+            float arcEndProgress = 0.82f,
+            float landingSettleSeconds = 0.12f)
         {
             SummonProxyVisualMotionPresenter motionPresenter =
                 EnsureComponent<SummonProxyVisualMotionPresenter>(actorRoot);
@@ -1092,8 +1108,8 @@ namespace DimensionBrawl.Editor
             SetFloat(motionPresenter, "jumpArcHeight", jumpArcHeight);
             SetFloat(motionPresenter, "tierArcHeightStep", tierArcHeightStep);
             SetFloat(motionPresenter, "arcStartProgress", 0f);
-            SetFloat(motionPresenter, "arcEndProgress", 0.82f);
-            SetFloat(motionPresenter, "landingSettleSeconds", landingDip > 0f ? 0.12f : 0f);
+            SetFloat(motionPresenter, "arcEndProgress", arcEndProgress);
+            SetFloat(motionPresenter, "landingSettleSeconds", landingDip > 0f ? landingSettleSeconds : 0f);
             SetFloat(motionPresenter, "landingDip", landingDip);
         }
 
@@ -1409,78 +1425,77 @@ namespace DimensionBrawl.Editor
                 new[]
                 {
                     CreateSummonTierSettings(
-                        62f,
+                        58f,
                         24f,
-                        1.35f,
-                        0.48f,
+                        1.25f,
+                        0.46f,
                         1,
-                        0.6f,
-                        5.4f,
+                        0.55f,
+                        4.0f,
                         2.0f,
                         1,
                         0f,
                         1.45f,
                         "JumpSlamBruiser",
-                        220f,
-                        5.8f,
-                        1.15f,
-                        19f,
-                        0.32f,
-                        counterDamage: 18.72f),
+                        250f,
+                        3.4f,
+                        1.1f,
+                        12f,
+                        1.05f),
                     CreateSummonTierSettings(
-                        84f,
-                        26f,
-                        1.45f,
-                        0.56f,
+                        92f,
+                        24f,
+                        1.35f,
+                        0.52f,
                         2,
-                        1.9f,
-                        6.2f,
+                        1.5f,
+                        4.8f,
                         2.36f,
                         2,
                         0f,
                         1.8f,
                         "JumpSlamBruiser",
-                        300f,
-                        6.4f,
-                        1.25f,
-                        34f,
-                        0.3f),
+                        420f,
+                        3.8f,
+                        1.2f,
+                        20f,
+                        1.1f),
                     CreateSummonTierSettings(
-                        112f,
-                        28f,
-                        1.55f,
-                        0.64f,
+                        126f,
+                        25f,
+                        1.45f,
+                        0.58f,
                         3,
-                        3.0f,
-                        7.0f,
+                        2.4f,
+                        5.6f,
                         2.74f,
                         3,
                         0f,
                         2.15f,
                         "JumpSlamBruiser",
-                        400f,
-                        7.1f,
-                        1.38f,
-                        51f,
-                        0.28f)
+                        600f,
+                        4.2f,
+                        1.32f,
+                        30f,
+                        1.15f)
                 },
                 new[]
                 {
                     CreateSummonReadout(
                         "LV1 Jump Slam",
-                        "Low-cost bruiser that crosses the lane fast, lands once, then stays as melee pressure.",
-                        "Spend early when walking summons would not reach the fight in time.",
-                        "LungeChaser bruiser jumps from the player front, lands with a small slam burst, and keeps punching the frontline."),
+                        "Mid-cost bruiser that spends a saved bar for one obvious landing impact, then stays as melee pressure.",
+                        "Hold EN until a boss summon or recovery window is worth a visible slam answer.",
+                        "SciFi bruiser jumps from the player front, lands with a clear slam burst, and keeps punching the frontline."),
                     CreateSummonReadout(
                         "LV2 Heavy Landing",
-                        "Mid-tier version with a wider landing and enough health to hold contact longer.",
-                        "Hold EN when the boss is about to stay in a punishable lane.",
-                        "Bigger arc, two shock bolts, a broader slam ring, and stronger sustained melee damage."),
+                        "Higher stored-EN version with a wider landing and enough health to hold contact longer.",
+                        "Use when the boss is about to stay in a punishable lane and a cheap laser will not change the exchange.",
+                        "Bigger arc, two shock bolts, a broader slam ring, and steadier melee lockdown."),
                     CreateSummonReadout(
                         "LV3 Crater Break",
-                        "High-risk payoff that should visibly interrupt the lane and keep fighting after impact.",
+                        "High-stored-EN payoff that should visibly interrupt the lane and keep fighting after impact.",
                         "Save for the exchange where one big arrival has to change the screen immediately.",
-                        "Tall jump arc, three shock bolts, large slam ring, and a durable bruiser body that remains in melee.")
+                        "Tall jump arc, three shock bolts, large slam ring, and a durable bruiser body that remains in melee without out-DPSing the boss summons.")
                 });
 
             ConfigureSummonSlotActionProfile(
@@ -1488,27 +1503,27 @@ namespace DimensionBrawl.Editor
                 "SummonSlot2.LaserSoldier",
                 new[]
                 {
-                    CreateSummonTierSettings(36f, 34f, 0.95f, 0.18f, 1, 0.35f, 1.6f, 2.08f, 0, 0f, 0.2f, "LaserSoldier", 180f, 4.6f, 0.78f, 32f, 0.28f),
-                    CreateSummonTierSettings(48f, 38f, 1.05f, 0.22f, 2, 1.2f, 1.9f, 2.32f, 0, 0f, 0.2f, "LaserSoldier", 215f, 5.1f, 0.84f, 46f, 0.25f),
-                    CreateSummonTierSettings(64f, 42f, 1.15f, 0.26f, 3, 2.1f, 2.2f, 2.56f, 0, 0f, 0.2f, "LaserSoldier", 255f, 5.6f, 0.9f, 62f, 0.22f)
+                    CreateSummonTierSettings(16f, 30f, 0.95f, 0.16f, 1, 0.3f, 1.35f, 2.08f, 0, 0f, 0.2f, "LaserSoldier", 170f, 2.8f, 0.72f, 9f, 1.15f),
+                    CreateSummonTierSettings(22f, 32f, 1.05f, 0.2f, 1, 0.8f, 1.6f, 2.32f, 0, 0f, 0.2f, "LaserSoldier", 205f, 3.1f, 0.78f, 12f, 1.25f),
+                    CreateSummonTierSettings(28f, 34f, 1.15f, 0.24f, 2, 1.3f, 1.85f, 2.56f, 0, 0f, 0.2f, "LaserSoldier", 250f, 3.4f, 0.84f, 16f, 1.35f)
                 },
                 new[]
                 {
                     CreateSummonReadout(
                         "LV1 Laser Tap",
-                        "Low-return ranged helper that starts firing almost immediately but cannot block pressure.",
+                        "Low-return ranged helper that sets up cleanly but cannot block pressure.",
                         "Spend when the boss lane is open and a cheap ranged body is enough.",
-                        "SciFi rifleman slides into a side lane, flashes a cyan muzzle beam, and fires one fast laser line per volley."),
+                        "SciFi rifleman slides into a side lane, flashes a cyan muzzle beam, and fires one clean laser line per volley."),
                     CreateSummonReadout(
                         "LV2 Split Laser",
-                        "Mid-tier ranged support with two visible lines and faster sustained pressure.",
+                        "Mid-tier ranged support with two visible lines and controlled sustained pressure.",
                         "Hold EN if the boss will stay exposed for more than one volley.",
-                        "Laser soldier fires paired cyan lines with a larger beam flash while staying fragile."),
+                        "Laser soldier fires one sharper cyan line with a larger beam flash while staying fragile."),
                     CreateSummonReadout(
                         "LV3 Prism Burst",
-                        "High-tier glass-cannon support that floods the lane with fast laser volleys.",
+                        "High-tier glass-cannon support that widens the lane punish without becoming a turret.",
                         "Use when the player has created a long punish window and does not need a blocker.",
-                        "Wider three-line laser burst, stronger muzzle beam, and higher fire rate, but still low body safety.")
+                        "Wider two-line laser burst and stronger muzzle beam, but a slower cadence and low body safety.")
                 });
 
             ConfigureSummonSlotActionProfile(
@@ -1516,27 +1531,27 @@ namespace DimensionBrawl.Editor
                 "SummonSlot3.FireDragon",
                 new[]
                 {
-                    CreateSummonTierSettings(74f, 21f, 1.35f, 0.44f, 2, 1.8f, 1.55f, 2.42f, 0, 0f, 0.2f, "FireDragon", 520f, 3.8f, 1.28f, 44f, 0.38f),
-                    CreateSummonTierSettings(98f, 23f, 1.5f, 0.52f, 3, 3.0f, 1.8f, 2.72f, 0, 0f, 0.2f, "FireDragon", 620f, 4.2f, 1.38f, 64f, 0.34f),
-                    CreateSummonTierSettings(132f, 25f, 1.65f, 0.62f, 4, 4.4f, 2.05f, 3.06f, 0, 0f, 0.2f, "FireDragon", 760f, 4.6f, 1.52f, 88f, 0.3f)
+                    CreateSummonTierSettings(90f, 18f, 1.35f, 0.4f, 1, 1.6f, 1.35f, 2.42f, 0, 0f, 0.2f, "FireDragon", 520f, 2.35f, 1.18f, 32f, 1.9f),
+                    CreateSummonTierSettings(130f, 19.5f, 1.5f, 0.48f, 2, 2.6f, 1.6f, 2.72f, 0, 0f, 0.2f, "FireDragon", 680f, 2.65f, 1.26f, 46f, 2.1f),
+                    CreateSummonTierSettings(220f, 21f, 1.65f, 0.56f, 3, 3.8f, 1.85f, 3.06f, 0, 0f, 0.2f, "FireDragon", 900f, 2.95f, 1.36f, 68f, 2.3f)
                 },
                 new[]
                 {
                     CreateSummonReadout(
                         "LV1 Fire Breath",
-                        "Expensive-feeling ranged summon that trades safety for a wide flame lane.",
+                        "Expensive ranged summon that trades speed and cadence for a wide flame lane.",
                         "Spend only when the boss is committed and the player can live without a blocker.",
-                        "Fire dragon hovers above the lane and breathes two broad fire chunks from a visible orange beam."),
+                        "Fire dragon hovers above the lane and breathes one broad fire lance from a visible orange beam."),
                     CreateSummonReadout(
                         "LV2 Furnace Sweep",
                         "Mid-tier dragon breath covers a wider lane and rewards a longer punish read.",
                         "Hold EN when the boss will remain exposed after the first breath tick.",
-                        "Larger hovering dragon, three fire chunks, wider lateral spread, and a stronger breath beam."),
+                        "Larger hovering dragon, two fire chunks, wider lateral spread, and a stronger breath beam."),
                     CreateSummonReadout(
                         "LV3 Inferno Beam",
                         "High-risk high-return dragon that should visibly dominate a punish window.",
                         "Save for the long boss recovery where raw damage matters more than defense.",
-                        "Largest hover silhouette, four wide fire chunks, long orange breath beam, and heavy sustained burn pressure.")
+                        "Largest hover silhouette, three wide fire chunks, long orange breath beam, and slow high-cost burn pressure.")
                 });
 
             AssetDatabase.SaveAssets();
@@ -1557,14 +1572,14 @@ namespace DimensionBrawl.Editor
                         actorAdvanceDistance: 2.4f,
                         actorAdvanceSeconds: 1.4f,
                         actorRoleId: "EscortProbe",
-                        actorMaxHealth: 220f,
-                        actorMoveSpeed: 2.35f,
+                        actorMaxHealth: 560f,
+                        actorMoveSpeed: 3.2f,
                         actorEngageRadius: 1.25f,
-                        actorAttackDamagePerSecond: 32f,
-                        actorAttackIntervalSeconds: 0.35f,
-                        screenIntercepts: 2,
+                        actorAttackDamagePerSecond: 42f,
+                        actorAttackIntervalSeconds: 0.78f,
+                        screenIntercepts: 3,
                         screenRadius: 1.2f,
-                        screenLifetimeSeconds: 2.6f),
+                        screenLifetimeSeconds: 3.2f),
                     CreateBossSummonTierSettings(
                         entryForwardBlend01: 0.38f,
                         lateralOffset: 1.4f,
@@ -1573,14 +1588,14 @@ namespace DimensionBrawl.Editor
                         actorAdvanceDistance: 3.8f,
                         actorAdvanceSeconds: 1.85f,
                         actorRoleId: "PressureScreen",
-                        actorMaxHealth: 320f,
-                        actorMoveSpeed: 2.15f,
+                        actorMaxHealth: 820f,
+                        actorMoveSpeed: 3.6f,
                         actorEngageRadius: 1.35f,
-                        actorAttackDamagePerSecond: 44f,
-                        actorAttackIntervalSeconds: 0.35f,
-                        screenIntercepts: 4,
+                        actorAttackDamagePerSecond: 62f,
+                        actorAttackIntervalSeconds: 0.84f,
+                        screenIntercepts: 5,
                         screenRadius: 1.55f,
-                        screenLifetimeSeconds: 3.4f),
+                        screenLifetimeSeconds: 4.0f),
                     CreateBossSummonTierSettings(
                         entryForwardBlend01: 0.5f,
                         lateralOffset: 2.0f,
@@ -1589,14 +1604,14 @@ namespace DimensionBrawl.Editor
                         actorAdvanceDistance: 5.2f,
                         actorAdvanceSeconds: 2.35f,
                         actorRoleId: "ClampGuard",
-                        actorMaxHealth: 460f,
-                        actorMoveSpeed: 1.95f,
+                        actorMaxHealth: 1180f,
+                        actorMoveSpeed: 4.0f,
                         actorEngageRadius: 1.5f,
-                        actorAttackDamagePerSecond: 58f,
-                        actorAttackIntervalSeconds: 0.35f,
-                        screenIntercepts: 7,
+                        actorAttackDamagePerSecond: 88f,
+                        actorAttackIntervalSeconds: 0.9f,
+                        screenIntercepts: 8,
                         screenRadius: 1.95f,
-                        screenLifetimeSeconds: 4.2f)
+                        screenLifetimeSeconds: 4.8f)
                 },
                 new[]
                 {

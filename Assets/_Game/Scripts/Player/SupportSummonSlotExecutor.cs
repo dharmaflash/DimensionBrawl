@@ -291,7 +291,7 @@ namespace DimensionBrawl.Player
             clash.ConfigureTuning(
                 damagePerSecond,
                 settings.ActorAttackIntervalSeconds,
-                0.16f,
+                0f,
                 0.24f,
                 settings.ActorEngageRadius);
             clash.ConfigureHostileBodyDamage(1f, 0f);
@@ -408,7 +408,7 @@ namespace DimensionBrawl.Player
                 Vector3 targetPosition = ResolveBattlefieldPoint(targetLane.x, targetLane.y, settings.TargetHeight);
                 Vector3 facingDirection = ResolvePlanarDirection(targetPosition - spawnBase);
                 actor.FaceTowards(targetPosition);
-                actor.NotifyAttackPerformed(Mathf.Clamp(owner.VolleyIntervalSeconds * 0.42f, 0.18f, 0.36f));
+                actor.NotifyAttackPerformed(Mathf.Clamp(owner.VolleyIntervalSeconds * 0.42f, 0.24f, 0.65f));
                 FireProjectiles(spawnBase, targetLane.x, targetLane.y, facingDirection, settings);
                 firedCount++;
                 lastVolleyWaveCount = firedCount;

@@ -97,16 +97,33 @@ namespace DimensionBrawl.Combat
             return currentMana + 0.001f >= Mathf.Max(1f, requiredMana);
         }
 
+        public int ResolveTierForManaCost(float requiredMana)
+        {
+            float cost = Mathf.Max(1f, requiredMana);
+            if (cost > levelOneEnergy + levelTwoEnergy + 0.001f)
+            {
+                return MaxTier;
+            }
+
+            if (cost > levelOneEnergy + 0.001f)
+            {
+                return 2;
+            }
+
+            return 1;
+        }
+
         public bool TrySpend(float requiredMana, out int spentTier)
         {
             requiredMana = Mathf.Max(1f, requiredMana);
-            spentTier = availableTier;
-            if (spentTier <= 0 || !CanSpendMana(requiredMana))
+            int costTier = ResolveTierForManaCost(requiredMana);
+            if (availableTier < costTier || !CanSpendMana(requiredMana))
             {
                 spentTier = 0;
                 return false;
             }
 
+            spentTier = costTier;
             SetCurrentMana(currentMana - requiredMana);
             EnergyChanged?.Invoke();
             EnergySpent?.Invoke(spentTier);

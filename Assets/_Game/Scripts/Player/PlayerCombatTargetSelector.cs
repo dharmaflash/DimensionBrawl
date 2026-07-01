@@ -107,7 +107,7 @@ namespace DimensionBrawl.Player
             return true;
         }
 
-        public bool TryGetAimAssistDirection(
+        public bool TryGetRangedAimAssistDirection(
             Vector3 originPosition,
             Vector3 rawAimDirection,
             float maxDistance,
@@ -422,14 +422,11 @@ namespace DimensionBrawl.Player
 
             float angleScore = 1f - Mathf.Clamp01(angle / maxAngleDegrees);
             float distanceScore = 1f - Mathf.Clamp01(distance / maxDistance);
+            float nearBodyScore = distanceScore * distanceScore;
             float threatScore = ResolveThreatScore(candidate);
-            float score = angleScore + distanceScore * 0.25f + threatScore * 0.2f;
-            if (candidate == currentTargetHealth)
-            {
-                score += currentTargetStickiness * 0.5f;
-            }
-
-            return score;
+            return angleScore * 0.75f
+                + nearBodyScore * 1.1f
+                + threatScore * 0.2f;
         }
 
         private float ResolveForwardScore(Vector3 forward, Vector3 direction)

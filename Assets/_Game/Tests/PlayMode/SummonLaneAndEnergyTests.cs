@@ -121,9 +121,9 @@ namespace DimensionBrawl.Tests
             energy.EnergySpent += tier => spentEventTier = tier;
 
             Assert.IsTrue(energy.TrySpend(100f, out int spentTier));
-            Assert.AreEqual(3, spentTier, "The action still sees the banked tier available at the moment of spend.");
+            Assert.AreEqual(1, spentTier, "A costed 100 EN summon should spend the low-cost role tier even from a full bank.");
             Assert.AreEqual(1, changeCount, "Shared mana spend should notify presentation/fill listeners.");
-            Assert.AreEqual(3, spentEventTier, "Shared mana spend should still emit the spend tier for ready/spend cues.");
+            Assert.AreEqual(1, spentEventTier, "Shared mana spend should emit the cost tier for ready/spend cues.");
             Assert.AreEqual(200f, energy.CurrentMana, 0.001f);
             Assert.AreEqual(2, energy.AvailableTier, "Spending a 100-cost summon from a full bank should leave LV2 mana ready.");
             Assert.AreEqual(3, energy.ChargingTier);
@@ -2395,6 +2395,7 @@ namespace DimensionBrawl.Tests
                 null,
                 actorPrefab,
                 null);
+            summonAction.ConfigureSlotCooldown(0f);
 
             Assert.IsTrue(summonAction.TryUseSummonSlot1());
             Vector2 entryLane = lane.GetLaneCoordinates(summonAction.LastEntryPosition);
@@ -2529,6 +2530,7 @@ namespace DimensionBrawl.Tests
                 null,
                 actorPrefab,
                 null);
+            summonAction.ConfigureSlotCooldown(0f);
 
             SerializedObject serializedAction = new SerializedObject(summonAction);
             SerializedProperty maxActiveActors = serializedAction.FindProperty("maxActiveSummonActors");
@@ -3342,8 +3344,8 @@ namespace DimensionBrawl.Tests
                 "Boss pressure summons should visibly march toward the player side after spawning.");
             Assert.Less(
                 activeProxy.AdvanceProgress01,
-                0.3f,
-                "Boss pressure summons should cross the corridor by walking, not by snapping to the player side.");
+                0.75f,
+                "Boss pressure summons should cross the corridor quickly by walking, not by snapping to the player side.");
 
             Object.DestroyImmediate(actorRoot);
             Object.DestroyImmediate(actorPrefabObject);

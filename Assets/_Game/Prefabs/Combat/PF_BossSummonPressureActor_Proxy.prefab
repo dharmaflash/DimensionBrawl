@@ -3800,7 +3800,7 @@ MonoBehaviour:
   attackTrigger: Attack
   hitTrigger: 
   deathTrigger: Death
-  animatorMoveSpeedScale: 1
+  animatorMoveSpeedScale: 0.52
   pulseRoot: {fileID: 3753305637982622612}
   actorRenderers:
   - {fileID: 880245023669801038}
@@ -3889,8 +3889,8 @@ MonoBehaviour:
   clashFeedbackSeconds: 0.28
   engageRadius: 0.95
   engageCenterHeight: 0.9
-  playerBodyDamageMultiplier: 0.12
-  playerBodyMaxDamagePerHit: 4
+  playerBodyDamageMultiplier: 0.32
+  playerBodyMaxDamagePerHit: 7.5
   hostileBodyDamageMultiplier: 1
   hostileBodyMaxDamagePerHit: 0
   contactLayers:

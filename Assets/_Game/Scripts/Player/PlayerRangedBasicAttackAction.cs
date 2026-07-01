@@ -10,8 +10,6 @@ namespace DimensionBrawl.Player
     [DisallowMultipleComponent]
     public sealed class PlayerRangedBasicAttackAction : MonoBehaviour
     {
-        private const float SelectedTargetAssistStrength = 0.08f;
-
         [Header("Input")]
         [SerializeField] private InputActionReference fireAction;
         [SerializeField] private bool fireContinuouslyWhileHeld = true;
@@ -913,39 +911,19 @@ namespace DimensionBrawl.Player
             CombatHealth directViewportTargetHealth)
         {
             LastRawAimDirection = ResolveFireTravelDirection(rawAimDirection, LastResolvedFireDirection);
-            if (!HasManualAimInput()
-                && TryResolveSelectedTargetAimDirection(
-                    projectileSpawnPosition,
-                    out Vector3 selectedTargetDirection,
-                    out CombatHealth selectedTargetHealth))
-            {
-                SetAimAssistState(
-                    selectedTargetHealth,
-                    SelectedTargetAssistStrength,
-                    selectedTargetDirection,
-                    allowCameraAimAssist: false,
-                    suppressViewportReprojection: true);
-                return selectedTargetDirection;
-            }
-
+            float assistAngle = aimController != null && aimController.IsAiming
+                ? aimedAimAssistAngleDegrees
+                : hipAimAssistAngleDegrees;
             if (IsValidDirectViewportTarget(directViewportTargetHealth))
             {
                 SetAimAssistState(directViewportTargetHealth, 1f, LastRawAimDirection);
                 return LastRawAimDirection;
             }
 
-            if (!useAimAssist
-                || targetSelector == null
-                || (disableAimAssistWithManualInput && HasManualAimInput()))
-            {
-                SetAimAssistState(null, 0f, LastRawAimDirection);
-                return rawAimDirection;
-            }
-
-            float assistAngle = aimController != null && aimController.IsAiming
-                ? aimedAimAssistAngleDegrees
-                : hipAimAssistAngleDegrees;
-            if (!targetSelector.TryGetAimAssistDirection(
+            bool canUseSoftAimAssist = useAimAssist
+                && targetSelector != null
+                && (!disableAimAssistWithManualInput || !HasManualAimInput());
+            if (canUseSoftAimAssist && targetSelector.TryGetRangedAimAssistDirection(
                 aimOriginPosition,
                 rawAimDirection,
                 aimAssistDistance,
@@ -953,54 +931,27 @@ namespace DimensionBrawl.Player
                 out Vector3 selectorAssistDirection,
                 out CombatHealth assistTargetHealth))
             {
-                SetAimAssistState(null, 0f, LastRawAimDirection);
-                return rawAimDirection;
+                Vector3 assistDirection = assistTargetHealth != null
+                    ? ResolveFireTravelDirection(
+                        assistTargetHealth.transform.position + Vector3.up * targetHeight - projectileSpawnPosition,
+                        selectorAssistDirection)
+                    : selectorAssistDirection;
+                Vector3 assistedDirection = Vector3.RotateTowards(
+                    rawAimDirection,
+                    assistDirection,
+                    aimAssistMaxTurnDegrees * Mathf.Deg2Rad,
+                    0f);
+                Vector3 resolvedDirection = ResolveFireTravelDirection(assistedDirection, rawAimDirection);
+                float assistTargetAngle = Vector3.Angle(LastRawAimDirection, assistDirection);
+                float assistStrength = assistAngle > 0f
+                    ? 1f - Mathf.Clamp01(assistTargetAngle / assistAngle)
+                    : 0f;
+                SetAimAssistState(assistTargetHealth, assistStrength, resolvedDirection);
+                return resolvedDirection;
             }
 
-            Vector3 assistDirection = assistTargetHealth != null
-                ? ResolveFireTravelDirection(
-                    assistTargetHealth.transform.position + Vector3.up * targetHeight - projectileSpawnPosition,
-                    selectorAssistDirection)
-                : selectorAssistDirection;
-            Vector3 assistedDirection = Vector3.RotateTowards(
-                rawAimDirection,
-                assistDirection,
-                aimAssistMaxTurnDegrees * Mathf.Deg2Rad,
-                0f);
-            Vector3 resolvedDirection = ResolveFireTravelDirection(assistedDirection, rawAimDirection);
-            float assistTargetAngle = Vector3.Angle(LastRawAimDirection, assistDirection);
-            float assistStrength = assistAngle > 0f
-                ? 1f - Mathf.Clamp01(assistTargetAngle / assistAngle)
-                : 0f;
-            SetAimAssistState(assistTargetHealth, assistStrength, resolvedDirection);
-            return resolvedDirection;
-        }
-
-        private bool TryResolveSelectedTargetAimDirection(
-            Vector3 projectileSpawnPosition,
-            out Vector3 direction,
-            out CombatHealth targetHealth)
-        {
-            direction = default;
-            targetHealth = null;
-            if (targetSelector == null
-                || !targetSelector.TryGetCurrentTarget(out Transform target, out targetHealth)
-                || target == null
-                || targetHealth == null
-                || !targetHealth.IsAlive)
-            {
-                return false;
-            }
-
-            if (sourceHealth != null
-                && !CombatTeamUtility.AreHostile(sourceHealth.Team, targetHealth.Team))
-            {
-                return false;
-            }
-
-            Vector3 targetPoint = targetHealth.transform.position + Vector3.up * targetHeight;
-            direction = ResolveFireTravelDirection(targetPoint - projectileSpawnPosition, LastRawAimDirection);
-            return direction.sqrMagnitude > 0.0001f;
+            SetAimAssistState(null, 0f, LastRawAimDirection);
+            return rawAimDirection;
         }
 
         private bool HasManualAimInput()

@@ -82,6 +82,15 @@ namespace DimensionBrawl.UI
                 hudPresenter.SetHealth(playerHealth.CurrentHealth, playerHealth.MaxHealth);
             }
 
+            if (bossHealth != null)
+            {
+                hudPresenter.SetBossHealth(bossHealth.CurrentHealth, bossHealth.MaxHealth);
+            }
+
+            bool rangedMode = combatModeController == null || combatModeController.IsRangedMode;
+            bool aimActive = rangedBasicAttackAction != null && rangedBasicAttackAction.IsAimPreviewActive;
+            hudPresenter.SetAimReticleVisible(rangedMode, aimActive);
+
             if (energyLadder != null)
             {
                 float target = Mathf.Max(1f, energyLadder.CurrentTierTarget);

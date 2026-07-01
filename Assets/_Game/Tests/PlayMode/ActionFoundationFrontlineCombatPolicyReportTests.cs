@@ -1680,7 +1680,7 @@ namespace DimensionBrawl.Tests
                         3,
                         true,
                         retreatAfterAvailableTier: 2,
-                        retreatForwardRisk01: BacklineEnergyProbeForwardRisk01,
+                        retreatForwardRisk01: 0f,
                         recommitForwardRiskBeforeSlot1: ForwardEnergyProbeForwardRisk01,
                         forceCounterRecoveryAfterRecommit: true);
                     break;
@@ -6220,7 +6220,7 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute:
                     return "LV3 wait cost converts into boss-screen suppress payoff";
                 case PolicyKind.ForwardRiskSlot3RetreatThenDelayedRecoveryRoute:
-                    return "LV2 retreat trades longer wait for safer counter recovery";
+                    return "deep LV2 retreat trades longer wait for safer counter recovery";
                 default:
                     return "not evaluated";
             }
@@ -7088,7 +7088,7 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute:
                     return "full-bank wait adds role choice and suppress payoff; still needs more during-wait agency evidence";
                 case PolicyKind.ForwardRiskSlot3RetreatThenDelayedRecoveryRoute:
-                    return "LV2 retreat lowers exposure, then forward recommit trades direct suppress for recovery";
+                    return "deep LV2 retreat lowers exposure, then forward recommit trades direct suppress for recovery";
                 default:
                     return "not a high-tier wait route";
             }
@@ -8918,14 +8918,14 @@ namespace DimensionBrawl.Tests
                 Does.Contain("PASS"),
                 "The current roster audit should prove profile effect budgets are not identical.");
 
-            Assert.AreEqual(1, rows[0].MinimumTier, "SummonSlot1 should stay the LV1 emergency answer.");
-            Assert.AreEqual(2, rows[1].MinimumTier, "SummonSlot2 should require the LV2 marksman mana gate.");
+            Assert.AreEqual(2, rows[0].MinimumTier, "SummonSlot1 should read as the saved-EN jump-slam answer.");
+            Assert.AreEqual(1, rows[1].MinimumTier, "SummonSlot2 should stay the low-cost laser poke.");
             Assert.AreEqual(3, rows[2].MinimumTier, "SummonSlot3 should require the LV3 vanguard mana gate.");
-            Assert.AreEqual(100f, rows[0].RequiredMana, 0.001f);
-            Assert.AreEqual(200f, rows[1].RequiredMana, 0.001f);
+            Assert.AreEqual(200f, rows[0].RequiredMana, 0.001f);
+            Assert.AreEqual(100f, rows[1].RequiredMana, 0.001f);
             Assert.AreEqual(300f, rows[2].RequiredMana, 0.001f);
-            Assert.Less(rows[0].RequiredMana, rows[1].RequiredMana);
-            Assert.Less(rows[1].RequiredMana, rows[2].RequiredMana);
+            Assert.Less(rows[1].RequiredMana, rows[0].RequiredMana);
+            Assert.Less(rows[0].RequiredMana, rows[2].RequiredMana);
 
             for (int tierIndex = 0; tierIndex < 3; tierIndex++)
             {
@@ -9392,21 +9392,21 @@ namespace DimensionBrawl.Tests
             Assert.Greater(
                 slot3RetreatRecovery.BackSafetyBandSeconds,
                 slot3DelayedRecovery.BackSafetyBandSeconds + 1f,
-                "The LV2-retreat route should prove the player moved the LV3 wait into a safer band.");
+                "The deep LV2-retreat route should prove the player moved the LV3 wait into a safer band.");
             Assert.Less(
                 slot3RetreatRecovery.ForwardRiskBandSeconds,
                 slot3DelayedRecovery.ForwardRiskBandSeconds,
-                "The LV2-retreat route should reduce time spent in the forward-risk band.");
+                "The deep LV2-retreat route should reduce time spent in the forward-risk band.");
             Assert.Greater(
                 ResolveHighTierWaitAgencySeconds(slot3RetreatRecovery),
                 ResolveHighTierWaitAgencySeconds(slot3DelayedRecovery),
-                "Retreating after LV2 should preserve the longer-wait tradeoff instead of becoming a free upgrade.");
+                "Deep LV2 retreat should preserve the longer-wait tradeoff instead of becoming a free upgrade.");
             Assert.IsTrue(
                 slot3RetreatRecovery.CounterRecoveryConfirmed,
-                "The LV2-retreat Slot3 branch should prove the safer recovery branch after forward recommit.");
+                "The deep LV2-retreat Slot3 branch should prove the safer recovery branch after forward recommit.");
             Assert.IsFalse(
                 slot3RetreatRecovery.BossScreenSuppressedByFollowup,
-                "The LV2-retreat Slot3 branch should keep the direct suppress payoff distinct from safer recovery.");
+                "The deep LV2-retreat Slot3 branch should keep the direct suppress payoff distinct from safer recovery.");
             Assert.That(
                 ResolveHighTierWaitAgencyRead(slot3RetreatRecovery),
                 Does.Contain("retreat").And.Contain("recovery"),
@@ -10405,8 +10405,8 @@ namespace DimensionBrawl.Tests
         private static SummonRosterAuditRow[] BuildSummonRosterAuditRows(IReadOnlyList<PolicyMetrics> results)
         {
             float[] sharedCosts = ResolveSharedSummonTierCosts(results);
-            int slot1MinimumTier = 1;
-            int slot2MinimumTier = ResolveSupportSummonMinimumTier("SummonSlot2", 2);
+            int slot1MinimumTier = 2;
+            int slot2MinimumTier = ResolveSupportSummonMinimumTier("SummonSlot2", 1);
             int slot3MinimumTier = ResolveSupportSummonMinimumTier("SummonSlot3", 3);
             float slot1RequiredMana =
                 ResolveSummonSlot1RequiredMana(ResolveCumulativeSummonMana(sharedCosts, slot1MinimumTier));
@@ -10425,7 +10425,7 @@ namespace DimensionBrawl.Tests
                     sharedCosts,
                     slot1MinimumTier,
                     slot1RequiredMana,
-                    "breaker screen/counter; LV1 emergency answer"),
+                    "saved-EN jump slam; mid-cost pressure answer"),
                 BuildSummonRosterAuditRow(
                     "SummonSlot2",
                     SummonSlot2ActionProfilePath,
@@ -10433,7 +10433,7 @@ namespace DimensionBrawl.Tests
                     sharedCosts,
                     slot2MinimumTier,
                     slot2RequiredMana,
-                    "marksman volley; no screen; LV2 cost gate"),
+                    "low-cost laser poke; no screen; LV1 cost gate"),
                 BuildSummonRosterAuditRow(
                     "SummonSlot3",
                     SummonSlot3ActionProfilePath,
@@ -11895,22 +11895,34 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(
                 0,
                 result.SkillProjectileHits,
-                $"{result.Policy} should expose that the waited route's Skill1 is blocked before boss damage lands.");
-            Assert.IsTrue(
-                result.BossBlockedSkill1Followup,
-                $"{result.Policy} should prove the waited route branches through boss-screen follow-up block.");
-            Assert.Greater(
-                result.FollowupMissCount,
-                0,
-                $"{result.Policy} should record the blocked follow-up as a missed punish branch.");
+                $"{result.Policy} should expose that the waited route does not land raw Skill1 boss damage.");
+            if (expectedTier == 1)
+            {
+                Assert.IsTrue(
+                    result.FollowupMissCount > 0 || result.BossBlockedSkill1Followup,
+                    $"{result.Policy} should keep LV1 as a low-return block route that still needs follow-up or counter handling.");
+            }
+            else
+            {
+                Assert.IsTrue(
+                    result.BossBlockedSkill1Followup,
+                    $"{result.Policy} should prove the waited route branches through boss-screen follow-up block.");
+                Assert.Greater(
+                    result.FollowupMissCount,
+                    0,
+                    $"{result.Policy} should record the blocked follow-up as a missed punish branch.");
+            }
+
             Assert.Greater(
                 result.CounterWaves,
                 0,
                 $"{result.Policy} should expose the next counter-answer state after the blocked punish.");
             Assert.AreEqual(
-                "CounterAnswer",
+                expectedTier == 1 && !result.BossBlockedSkill1Followup ? "FollowupConfirm" : "CounterAnswer",
                 ResolveFirstUnresolvedBeat(result),
-                $"{result.Policy} should leave counter answer as the next unresolved stage beat.");
+                expectedTier == 1
+                    ? $"{result.Policy} should remain unresolved after the low-return LV1 branch."
+                    : $"{result.Policy} should leave counter answer as the next unresolved stage beat.");
             Assert.AreEqual(
                 "Running",
                 result.ResultKind,
@@ -12251,17 +12263,31 @@ namespace DimensionBrawl.Tests
 
         private static bool IsEnergyDecisionRouteRepeatabilityPass(PolicyMetrics result, int expectedTier)
         {
+            if (expectedTier == 1)
+            {
+                return result.ResultKind == "Running"
+                    && result.PhysicalBarragePlayerHits == 0
+                    && result.SummonBlocks > 0
+                    && result.SkillProjectileHits == 0
+                    && result.FollowupMissCount > 0
+                    && result.CounterWaves > 0
+                    && result.ResultRecords == 0;
+            }
+
+            bool expectedUnresolvedBranch = result.BossBlockedSkill1Followup
+                && result.FollowupMissCount > 0
+                && ResolveFirstUnresolvedBeat(result) == "CounterAnswer";
+
             return result.ResultKind == "Running"
                 && result.EnergyProbeTargetTier == expectedTier
                 && ResolveEnergyTargetDuration(result) >= 0f
                 && result.HighestSummonSpentTier == expectedTier
                 && result.PhysicalBarragePlayerHits == 0
                 && result.SummonBlocks > 0
-                && result.SkillUses > 0
+                && (expectedTier == 1 || result.SkillUses > 0)
                 && result.SkillProjectileHits == 0
-                && (result.FollowupMissCount > 0 || result.BossBlockedSkill1Followup)
+                && expectedUnresolvedBranch
                 && result.CounterWaves > 0
-                && ResolveFirstUnresolvedBeat(result) == "CounterAnswer"
                 && result.ResultRecords == 0;
         }
 
@@ -12378,12 +12404,17 @@ namespace DimensionBrawl.Tests
             bool counterAnswerBranch = result.CounterWaves > 0
                 && ResolveFirstUnresolvedBeat(result) == "CounterAnswer"
                 && result.ResultRecords == 0;
+            bool marksmanLowReturnBranch = expectedSlotId == "SummonSlot2"
+                && result.CounterWaves > 0
+                && result.SkillProjectileHits == 0
+                && ResolveFirstUnresolvedBeat(result) == "FollowupConfirm"
+                && result.ResultRecords == 0;
             bool directClearBranch = expectedTargetTier >= 3
                 && result.ResultKind == "CleanFollowupClear"
                 && result.SkillProjectileHits > 0
                 && ResolveFirstUnresolvedBeat(result) == "Complete"
                 && result.ResultRecords > 0;
-            return counterAnswerBranch || directClearBranch;
+            return counterAnswerBranch || marksmanLowReturnBranch || directClearBranch;
         }
 
         private static bool IsSupportDelayedRecoveryRouteRepeatabilityPass(
