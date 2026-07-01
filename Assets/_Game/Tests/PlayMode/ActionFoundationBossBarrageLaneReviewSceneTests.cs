@@ -1248,7 +1248,7 @@ namespace DimensionBrawl.Tests
             Assert.AreSame(skill1Action, GetObjectReference<PlayerSkill1Action>(mobileHud, "skill1Action"));
             Assert.AreSame(summonSlot1Action, GetObjectReference<PlayerSummonSlot1Action>(mobileHud, "summonSlot1Action"));
             Assert.IsFalse(mobileHud.enabled, "The legacy IMGUI mobile HUD should stay disabled while UGUI owns combat input.");
-            Assert.IsTrue(GetBool(mobileHud, "useSingleSummonButton"));
+            Assert.IsFalse(GetBool(mobileHud, "useSingleSummonButton"));
             Assert.AreEqual("SUMMON", GetString(mobileHud, "summonSlot1Label"));
             Assert.AreEqual(0.42f, GetFloat(mobileHud, "summonButtonGroupCenterY01"), 0.001f);
             Assert.AreEqual(1.05f, GetFloat(mobileHud, "summonButtonGapMultiplier"), 0.001f);
@@ -1282,7 +1282,7 @@ namespace DimensionBrawl.Tests
             Component inputBridge = RequireObjectByTypeName("DimensionBrawl.UI.CombatHudInputBridge");
             Component aimDragInput = RequireObjectByTypeName("DimensionBrawl.UI.CombatHudAimDragInput");
             Component virtualJoystick = RequireObjectByTypeName("DimensionBrawl.UI.CombatHudVirtualJoystick");
-            Assert.IsTrue(GetBool(combatHudBinder, "useSingleSummonPresentation"));
+            Assert.IsFalse(GetBool(combatHudBinder, "useSingleSummonPresentation"));
             AssertObjectReferenceArrayContains(overlayHud, "inputLockBehaviours", inputBridge);
             AssertObjectReferenceArrayContains(overlayHud, "inputLockBehaviours", aimDragInput);
             AssertObjectReferenceArrayContains(overlayHud, "inputLockBehaviours", virtualJoystick);

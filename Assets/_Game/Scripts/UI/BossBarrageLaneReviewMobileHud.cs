@@ -36,7 +36,7 @@ namespace DimensionBrawl.UI
         [Header("Display")]
         [SerializeField] private bool showHud = true;
         [SerializeField] private bool drawHudVisuals = true;
-        [SerializeField] private bool useSingleSummonButton = true;
+        [SerializeField] private bool useSingleSummonButton;
         [SerializeField, Range(0f, 1f)] private float hudOpacity = 1f;
         [SerializeField, Min(40f)] private float buttonSize = 168f;
         [SerializeField, Min(0f)] private float buttonGap = 38f;

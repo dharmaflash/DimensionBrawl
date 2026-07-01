@@ -1647,7 +1647,7 @@ namespace DimensionBrawl.Editor
                     "boss barrage mobile review HUD");
 
             SetObjectReference(mobileHud, "energyLadder", energyLadder);
-            SetBool(mobileHud, "useSingleSummonButton", true);
+            SetBool(mobileHud, "useSingleSummonButton", false);
             SetString(mobileHud, "summonSlot1Label", "SUMMON");
             SetString(mobileHud, "summonSlot2Label", "S2 LASER");
             SetString(mobileHud, "summonSlot3Label", "S3 DRAGON");
@@ -5694,7 +5694,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(mobileHud, "summonSlot3Action", summonSlot3Action);
             SetString(mobileHud, "summonSlot2ActionName", "SummonSlot2");
             SetString(mobileHud, "summonSlot3ActionName", "SummonSlot3");
-            SetBool(mobileHud, "useSingleSummonButton", true);
+            SetBool(mobileHud, "useSingleSummonButton", false);
             SetString(mobileHud, "summonSlot1Label", "SUMMON");
             SetString(mobileHud, "summonSlot2Label", "S2 LASER");
             SetString(mobileHud, "summonSlot3Label", "S3 DRAGON");
@@ -9905,7 +9905,7 @@ namespace DimensionBrawl.Editor
             ValidateString(hud, "summonSlot3ActionName", "SummonSlot3");
             ValidateString(hud, "rangedAimActionName", "RangedAim");
             ValidateString(hud, "weaponSwapActionName", "WeaponSwap");
-            ValidateBool(hud, "useSingleSummonButton", true);
+            ValidateBool(hud, "useSingleSummonButton", false);
             ValidateString(hud, "summonSlot1Label", "SUMMON");
             ValidateString(hud, "summonSlot2Label", "S2 LASER");
             ValidateString(hud, "summonSlot3Label", "S3 DRAGON");

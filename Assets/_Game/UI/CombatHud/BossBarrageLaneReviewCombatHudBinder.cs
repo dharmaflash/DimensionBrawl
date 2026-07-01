@@ -12,7 +12,7 @@ namespace DimensionBrawl.UI
         [SerializeField] private CombatHudPresenter hudPresenter;
         [SerializeField] private CombatHudInputBridge inputBridge;
         [SerializeField] private BossBarrageLaneReviewOverlayHud overlayHud;
-        [SerializeField] private bool useSingleSummonPresentation = true;
+        [SerializeField] private bool useSingleSummonPresentation;
 
         [Header("Combat State")]
         [SerializeField] private BossBarragePocketReviewOwner pocketReviewOwner;

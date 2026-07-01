@@ -249,7 +249,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(binder, "summonSlot1Action", summonSlot1Action);
             SetObjectReference(binder, "summonSlot2Action", summonSlot2Action);
             SetObjectReference(binder, "summonSlot3Action", summonSlot3Action);
-            SetBool(binder, "useSingleSummonPresentation", true);
+            SetBool(binder, "useSingleSummonPresentation", false);
             CombatHudMockFlowPresenter mockFlow =
                 canvasRoot.GetComponentInChildren<CombatHudMockFlowPresenter>(includeInactive: true);
             if (mockFlow != null)

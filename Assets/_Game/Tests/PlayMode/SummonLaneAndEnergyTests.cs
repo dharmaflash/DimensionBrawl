@@ -265,23 +265,23 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
-        public void MobileHudDefaultsToSingleSummonButtonLayout()
+        public void MobileHudDefaultsToThreeSummonButtonLayout()
         {
             GameObject hudObject = new GameObject("MobileHud");
             try
             {
                 BossBarrageLaneReviewMobileHud hud = hudObject.AddComponent<BossBarrageLaneReviewMobileHud>();
 
-                Assert.IsTrue(hud.UseSingleSummonButton);
-                Assert.Greater(hud.SummonSlot1GuiRect.width, 0f);
-                Assert.AreEqual(Rect.zero, hud.SummonSlot2GuiRect);
-                Assert.AreEqual(Rect.zero, hud.SummonSlot3GuiRect);
-
-                SetPrivateInstanceField(hud, "useSingleSummonButton", false);
-
                 Assert.IsFalse(hud.UseSingleSummonButton);
+                Assert.Greater(hud.SummonSlot1GuiRect.width, 0f);
                 Assert.Greater(hud.SummonSlot2GuiRect.width, 0f);
                 Assert.Greater(hud.SummonSlot3GuiRect.width, 0f);
+
+                SetPrivateInstanceField(hud, "useSingleSummonButton", true);
+
+                Assert.IsTrue(hud.UseSingleSummonButton);
+                Assert.AreEqual(Rect.zero, hud.SummonSlot2GuiRect);
+                Assert.AreEqual(Rect.zero, hud.SummonSlot3GuiRect);
             }
             finally
             {
