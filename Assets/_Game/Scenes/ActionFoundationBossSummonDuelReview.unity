@@ -1714,29 +1714,29 @@ MonoBehaviour:
   useBlockedHintSeconds: 0.75
   tierSettings:
   - Damage: 84
-    ProjectileSpeed: 24
-    LifetimeSeconds: 1.7
-    Radius: 0.28
+    ProjectileSpeed: 31
+    LifetimeSeconds: 1.15
+    Radius: 0.42
     ProjectileCount: 1
     LateralSpread: 0
     SpawnForwardOffset: 0.85
     SpawnHeight: 1.15
     TargetHeight: 1.25
-  - Damage: 104
-    ProjectileSpeed: 25.5
-    LifetimeSeconds: 1.85
-    Radius: 0.3
-    ProjectileCount: 2
-    LateralSpread: 0.55
+  - Damage: 208
+    ProjectileSpeed: 34
+    LifetimeSeconds: 1.25
+    Radius: 0.5
+    ProjectileCount: 1
+    LateralSpread: 0
     SpawnForwardOffset: 0.9
     SpawnHeight: 1.2
     TargetHeight: 1.25
-  - Damage: 128
-    ProjectileSpeed: 27
-    LifetimeSeconds: 2
-    Radius: 0.32
-    ProjectileCount: 3
-    LateralSpread: 0.9
+  - Damage: 384
+    ProjectileSpeed: 38
+    LifetimeSeconds: 1.35
+    Radius: 0.62
+    ProjectileCount: 1
+    LateralSpread: 0
     SpawnForwardOffset: 0.95
     SpawnHeight: 1.25
     TargetHeight: 1.3

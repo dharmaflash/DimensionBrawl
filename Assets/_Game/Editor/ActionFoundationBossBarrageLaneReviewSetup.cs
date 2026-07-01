@@ -553,6 +553,26 @@ namespace DimensionBrawl.Editor
             AssetDatabase.SaveAssets();
         }
 
+        [MenuItem("DimensionBrawl/Reapply Action Foundation Player Skill1 Laser")]
+        public static void ReapplyPlayerSkill1LaserMenu()
+        {
+            EnsurePlayerSkill1Laser();
+            Debug.Log("Reapplied ActionFoundation player Skill1 laser VFX assets and bindings.");
+        }
+
+        public static void EnsurePlayerSkill1Laser()
+        {
+            EnsureSummonSlot2PromotedLaserBeamPrefab();
+            EnsureLaneActionProjectilePrefab(
+                Skill1ProjectilePrefabPath,
+                "PF_PlayerSkill1Projectile_LaneBolt",
+                Skill1ProjectileMaterialPath,
+                new Color(0.45f, 0.9f, 1f, 1f),
+                0.42f,
+                allowVerticalTravel: false);
+            AssetDatabase.SaveAssets();
+        }
+
         private static void EnsurePlayerRangedBasicVfxBinding(string scenePath)
         {
             if (AssetDatabase.LoadAssetAtPath<SceneAsset>(scenePath) == null)
@@ -1077,10 +1097,10 @@ namespace DimensionBrawl.Editor
                 rangedFireOrigin);
             ValidateRangedBasicProjectilePrefab();
             ValidateBossBarrageCombatCueAssetOverlays();
-            ValidateMagicMissilesLaneProjectilePrefab(
+            ValidatePromotedLaserLaneProjectilePrefab(
                 Skill1ProjectilePrefabPath,
-                "LaneActionProjectileVfx_MagicMissilesArcaneBolt",
-                "Skill1 lane bolt");
+                "LaneActionProjectileVfx_PlayerSkill1LaserBeam_FORGE3D",
+                "Skill1 laser bolt");
             ValidateMagicMissilesLaneProjectilePrefab(
                 SummonSlot1ProjectilePrefabPath,
                 "LaneActionProjectileVfx_MagicMissilesLightAssistBolt",
@@ -2537,6 +2557,9 @@ namespace DimensionBrawl.Editor
                 {
                     ConfigureRangedBasicProjectileVisuals(editableRoot, material);
                 }
+                else if (TryConfigureSkill1LaserProjectileVisuals(prefabPath, editableRoot))
+                {
+                }
                 else if (TryConfigurePrimitiveSummonProjectileVisuals(prefabPath, editableRoot))
                 {
                 }
@@ -2573,6 +2596,7 @@ namespace DimensionBrawl.Editor
         private static bool UsesAuthoredLaneProjectileVfx(string prefabPath)
         {
             return string.Equals(prefabPath, RangedBasicProjectilePrefabPath, StringComparison.Ordinal)
+                || IsSkill1LaserProjectileVfx(prefabPath)
                 || IsPrimitiveSummonProjectileVfx(prefabPath)
                 || TryGetMagicMissilesProjectileVfxSpec(
                     prefabPath,
@@ -2581,10 +2605,45 @@ namespace DimensionBrawl.Editor
                     out _);
         }
 
+        private static bool IsSkill1LaserProjectileVfx(string prefabPath)
+        {
+            return string.Equals(prefabPath, Skill1ProjectilePrefabPath, StringComparison.Ordinal);
+        }
+
         private static bool IsPrimitiveSummonProjectileVfx(string prefabPath)
         {
             return string.Equals(prefabPath, SummonSlot2ProjectilePrefabPath, StringComparison.Ordinal)
                 || string.Equals(prefabPath, SummonSlot3ProjectilePrefabPath, StringComparison.Ordinal);
+        }
+
+        private static bool TryConfigureSkill1LaserProjectileVisuals(string prefabPath, GameObject projectileRoot)
+        {
+            if (!IsSkill1LaserProjectileVfx(prefabPath))
+            {
+                return false;
+            }
+
+            const string VisualPrefix = "LaneActionProjectileVfx_";
+            RemoveChildrenWithPrefix(projectileRoot.transform, VisualPrefix);
+            TrailRenderer oldTrail = projectileRoot.GetComponent<TrailRenderer>();
+            if (oldTrail != null)
+            {
+                UnityEngine.Object.DestroyImmediate(oldTrail);
+            }
+
+            EnsureSummonSlot2PromotedLaserBeamPrefab();
+            GameObject beam = AttachPromotedVfxPrefab(
+                projectileRoot.transform,
+                VisualPrefix + "PlayerSkill1LaserBeam_FORGE3D",
+                SummonSlot2PromotedLaserBeamPrefabPath,
+                new Vector3(0f, 0f, 0.32f),
+                Vector3.zero,
+                new Vector3(0.34f, 0.34f, 0.62f),
+                loopParticles: true,
+                playOnAwake: true);
+            EditorUtility.SetDirty(beam);
+            EditorUtility.SetDirty(projectileRoot);
+            return true;
         }
 
         private static bool TryConfigurePrimitiveSummonProjectileVisuals(string prefabPath, GameObject projectileRoot)
@@ -5876,9 +5935,9 @@ namespace DimensionBrawl.Editor
             ConfigureSkill1TierSetting(
                 tierSettings.GetArrayElementAtIndex(0),
                 damage: 84f,
-                projectileSpeed: 24f,
-                lifetimeSeconds: 1.7f,
-                radius: 0.28f,
+                projectileSpeed: 31f,
+                lifetimeSeconds: 1.15f,
+                radius: 0.42f,
                 projectileCount: 1,
                 lateralSpread: 0f,
                 spawnForwardOffset: 0.85f,
@@ -5886,23 +5945,23 @@ namespace DimensionBrawl.Editor
                 targetHeight: 1.25f);
             ConfigureSkill1TierSetting(
                 tierSettings.GetArrayElementAtIndex(1),
-                damage: 104f,
-                projectileSpeed: 25.5f,
-                lifetimeSeconds: 1.85f,
-                radius: 0.3f,
-                projectileCount: 2,
-                lateralSpread: 0.55f,
+                damage: 208f,
+                projectileSpeed: 34f,
+                lifetimeSeconds: 1.25f,
+                radius: 0.5f,
+                projectileCount: 1,
+                lateralSpread: 0f,
                 spawnForwardOffset: 0.9f,
                 spawnHeight: 1.2f,
                 targetHeight: 1.25f);
             ConfigureSkill1TierSetting(
                 tierSettings.GetArrayElementAtIndex(2),
-                damage: 128f,
-                projectileSpeed: 27f,
-                lifetimeSeconds: 2f,
-                radius: 0.32f,
-                projectileCount: 3,
-                lateralSpread: 0.9f,
+                damage: 384f,
+                projectileSpeed: 38f,
+                lifetimeSeconds: 1.35f,
+                radius: 0.62f,
+                projectileCount: 1,
+                lateralSpread: 0f,
                 spawnForwardOffset: 0.95f,
                 spawnHeight: 1.25f,
                 targetHeight: 1.3f);
@@ -6980,6 +7039,30 @@ namespace DimensionBrawl.Editor
             }
 
             ValidatePromotedParticleVfx(projectilePrefab.transform.Find(childName), label, 2);
+            if (projectilePrefab.GetComponent<TrailRenderer>() != null)
+            {
+                throw new InvalidOperationException($"{label} should not fall back to generated TrailRenderer visuals.");
+            }
+        }
+
+        private static void ValidatePromotedLaserLaneProjectilePrefab(
+            string prefabPath,
+            string childName,
+            string label)
+        {
+            GameObject projectilePrefab = LoadAsset<GameObject>(prefabPath);
+            MeshRenderer rootRenderer = projectilePrefab.GetComponent<MeshRenderer>();
+            if (rootRenderer == null)
+            {
+                throw new InvalidOperationException($"{label} should keep a hidden collision root MeshRenderer.");
+            }
+
+            if (rootRenderer.enabled)
+            {
+                throw new InvalidOperationException($"{label} root MeshRenderer must stay hidden behind the FORGE3D beam VFX.");
+            }
+
+            ValidatePromotedParticleVfx(projectilePrefab.transform.Find(childName), label, 4);
             if (projectilePrefab.GetComponent<TrailRenderer>() != null)
             {
                 throw new InvalidOperationException($"{label} should not fall back to generated TrailRenderer visuals.");

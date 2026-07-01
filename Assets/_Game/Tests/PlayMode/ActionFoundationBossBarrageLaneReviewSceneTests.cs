@@ -822,10 +822,10 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(
                 LoadAsset<GameObject>(Skill1ProjectilePrefabPath).GetComponent<LaneActionProjectile>().AllowsVerticalTravel,
                 "Lane skill projectiles should stay planar until authored as aimed shots.");
-            AssertMagicMissilesLaneProjectile(
+            AssertPromotedLaserLaneProjectile(
                 Skill1ProjectilePrefabPath,
-                "LaneActionProjectileVfx_MagicMissilesArcaneBolt",
-                "Skill1 lane bolt");
+                "LaneActionProjectileVfx_PlayerSkill1LaserBeam_FORGE3D",
+                "Skill1 laser bolt");
             Assert.AreSame(projectileRoot.transform, GetObjectReference<Transform>(skill1Action, "projectileRoot"));
             Assert.AreSame(energyLadder, GetObjectReference<SummonEnergyLadder>(summonSlot1Action, "energyLadder"));
             Assert.AreSame(playerHealth, GetObjectReference<CombatHealth>(summonSlot1Action, "sourceHealth"));
@@ -3105,14 +3105,14 @@ namespace DimensionBrawl.Tests
 
             Assert.IsTrue(skill1Action.TryUseSkill1());
             Assert.AreEqual(2, skill1Action.LastSpentTier);
-            Assert.AreEqual(2, skill1Action.LastFiredProjectileCount);
+            Assert.AreEqual(1, skill1Action.LastFiredProjectileCount);
             Assert.AreEqual(0, energyLadder.AvailableTier);
             Assert.AreEqual(1, energyLadder.ChargingTier);
             Assert.AreEqual(0f, energyLadder.CurrentTierEnergy, 0.001f);
-            Assert.GreaterOrEqual(
+            Assert.AreEqual(
+                1,
                 skill1Action.ActiveProjectileCount,
-                2,
-                "Skill1 LV2 should be a visible intermediate spend, not only a numeric damage bump.");
+                "Skill1 LV2 should now read as one committed laser shot instead of a scattered projectile pair.");
             yield return null;
         }
 
@@ -6505,6 +6505,24 @@ namespace DimensionBrawl.Tests
                 projectileVfx,
                 label,
                 2);
+            AssertProjectileVfxAudioDoesNotAutoPlay(projectileVfx, label);
+        }
+
+        private static void AssertPromotedLaserLaneProjectile(string prefabPath, string childName, string label)
+        {
+            GameObject projectileObject = LoadAsset<GameObject>(prefabPath);
+            Assert.IsNotNull(projectileObject, $"{label} prefab should be assigned.");
+            MeshRenderer rootRenderer = projectileObject.GetComponent<MeshRenderer>();
+            Assert.IsNotNull(rootRenderer, $"{label} should keep a hidden collision root MeshRenderer.");
+            Assert.IsFalse(rootRenderer.enabled, $"{label} root MeshRenderer must stay disabled behind FORGE3D VFX.");
+            Assert.IsNull(
+                projectileObject.GetComponent<TrailRenderer>(),
+                $"{label} should not fall back to generated TrailRenderer visuals.");
+            Transform projectileVfx = projectileObject.transform.Find(childName);
+            AssertPromotedParticleVfx(
+                projectileVfx,
+                label,
+                4);
             AssertProjectileVfxAudioDoesNotAutoPlay(projectileVfx, label);
         }
 

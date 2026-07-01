@@ -47,9 +47,9 @@ namespace DimensionBrawl.Player
             new SkillTierSettings
             {
                 Damage = 84f,
-                ProjectileSpeed = 24f,
-                LifetimeSeconds = 1.7f,
-                Radius = 0.28f,
+                ProjectileSpeed = 31f,
+                LifetimeSeconds = 1.15f,
+                Radius = 0.42f,
                 ProjectileCount = 1,
                 LateralSpread = 0f,
                 SpawnForwardOffset = 0.85f,
@@ -58,24 +58,24 @@ namespace DimensionBrawl.Player
             },
             new SkillTierSettings
             {
-                Damage = 104f,
-                ProjectileSpeed = 25.5f,
-                LifetimeSeconds = 1.85f,
-                Radius = 0.3f,
-                ProjectileCount = 2,
-                LateralSpread = 0.55f,
+                Damage = 208f,
+                ProjectileSpeed = 34f,
+                LifetimeSeconds = 1.25f,
+                Radius = 0.5f,
+                ProjectileCount = 1,
+                LateralSpread = 0f,
                 SpawnForwardOffset = 0.9f,
                 SpawnHeight = 1.2f,
                 TargetHeight = 1.25f
             },
             new SkillTierSettings
             {
-                Damage = 128f,
-                ProjectileSpeed = 27f,
-                LifetimeSeconds = 2f,
-                Radius = 0.32f,
-                ProjectileCount = 3,
-                LateralSpread = 0.9f,
+                Damage = 384f,
+                ProjectileSpeed = 38f,
+                LifetimeSeconds = 1.35f,
+                Radius = 0.62f,
+                ProjectileCount = 1,
+                LateralSpread = 0f,
                 SpawnForwardOffset = 0.95f,
                 SpawnHeight = 1.25f,
                 TargetHeight = 1.3f

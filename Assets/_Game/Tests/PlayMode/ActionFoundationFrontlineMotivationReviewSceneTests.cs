@@ -1146,8 +1146,8 @@ namespace DimensionBrawl.Tests
             targetSelector.RefreshTarget();
             Assert.IsTrue(skill1Action.TryUseSkill1());
             Assert.AreEqual(3, skill1Action.LastSpentTier);
-            Assert.AreEqual(3, skill1Action.LastFiredProjectileCount);
-            Assert.AreEqual(3, ApplyActivePlayerSkillProjectiles(bossHitCollider));
+            Assert.AreEqual(1, skill1Action.LastFiredProjectileCount);
+            Assert.AreEqual(1, ApplyActivePlayerSkillProjectiles(bossHitCollider));
             pocketOwner.Tick(0f);
             Assert.AreEqual(3, pocketOwner.HighestSummonFollowupSkillTier);
             Assert.AreEqual(3, pocketOwner.HighestSkill1FollowupHitTier);
