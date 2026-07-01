@@ -65,8 +65,8 @@ namespace DimensionBrawl.Editor
 
         private const string PlayerRangedGunshotAudioName = "ReviewedGunshot_PlayerRangedBasic";
         private const float PlayerRangedGunshotBaseVolume = 0.78f;
-        private const float PlayerRangedGunshotMinimumPitch = 0.96f;
-        private const float PlayerRangedGunshotMaximumPitch = 1.01f;
+        private const float PlayerRangedGunshotMinimumPitch = 1.02f;
+        private const float PlayerRangedGunshotMaximumPitch = 1.08f;
         private const float PlayerRangedGunshotMinimumVolumeMultiplier = 0.98f;
         private const float PlayerRangedGunshotMaximumVolumeMultiplier = 1.06f;
         private const string PlayerRangedProjectileImpactAudioName = "ReviewedSfx_PlayerRangedProjectileImpact";

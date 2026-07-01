@@ -574,8 +574,9 @@ namespace DimensionBrawl.Player
                 rawAimDirection,
                 directViewportTargetHealth);
 
+            bool hasResolvedAimAssistTarget = AimAssistTargetHealth != null && AimAssistTargetHealth.IsAlive;
             bool hasSoftAimAssist = aimAssistSuppressesViewportReprojection
-                || (HasAimAssistTarget && directViewportTargetHealth == null);
+                || (hasResolvedAimAssistTarget && directViewportTargetHealth == null);
             if (hasViewportAimPoint && !hasSoftAimAssist)
             {
                 resolvedDirection = ResolveFireTravelDirection(rawViewportAimPoint - spawnPosition, resolvedDirection);

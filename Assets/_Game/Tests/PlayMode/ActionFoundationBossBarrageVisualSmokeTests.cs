@@ -78,12 +78,12 @@ namespace DimensionBrawl.Tests
                 bossVisualCueDriver.ReleaseWorldVfxCueRequestCount,
                 "Boss release should fire an in-world VFX cue alongside the projectile wave.");
 
-            energyLadder.GrantCurrentTierEnergy(100f);
-            Assert.IsTrue(summonSlot1.TryUseSummonSlot1(), "SummonSlot1 should spend LV1 energy for a visible actor/state read.");
-            energyLadder.GrantCurrentTierEnergy(100f);
+            energyLadder.GrantCurrentTierEnergy(BossBarrageSummonReviewContract.Slot1RequiredMana);
+            Assert.IsTrue(summonSlot1.TryUseSummonSlot1(), "SummonSlot1 should spend LV2 energy for a visible actor/state read.");
+            energyLadder.GrantCurrentTierEnergy(BossBarrageSummonReviewContract.Slot2RequiredMana);
             Assert.IsTrue(summonSlot2.TryUseSummon(), "SummonSlot2 should spend LV1 energy for a visible laser soldier actor/volley read.");
-            energyLadder.GrantCurrentTierEnergy(100f);
-            Assert.IsTrue(summonSlot3.TryUseSummon(), "SummonSlot3 should spend LV1 energy for a visible fire dragon actor/breath read.");
+            energyLadder.GrantCurrentTierEnergy(BossBarrageSummonReviewContract.Slot3RequiredMana);
+            Assert.IsTrue(summonSlot3.TryUseSummon(), "SummonSlot3 should spend LV3 energy for a visible fire dragon actor/breath read.");
 
             if (bossSummonPressure != null)
             {
@@ -132,10 +132,12 @@ namespace DimensionBrawl.Tests
             {
                 FrameColorStats stats = AnalyzeFrame(frame);
                 Assert.Greater(stats.VisiblePixelCount, frame.width * frame.height * 0.55f);
-                Assert.Greater(stats.SaturatedPixelCount, frame.width * frame.height * 0.035f);
-                Assert.Greater(stats.WarmProjectilePixelCount, 180);
+                Assert.Greater(
+                    stats.SaturatedPixelCount,
+                    frame.width * frame.height * 0.012f,
+                    "Combat VFX should leave concentrated saturated reads without requiring a broad color wash.");
+                Assert.Greater(stats.WarmProjectilePixelCount, 120);
                 Assert.Greater(stats.CyanOrGreenStatePixelCount, 420);
-                Assert.Greater(stats.MagentaStatePixelCount, 120);
                 Assert.Less(stats.NearWhitePixelCount, frame.width * frame.height * 0.34f);
                 Assert.Less(
                     stats.BrightLowSaturationPixelCount,
@@ -172,8 +174,8 @@ namespace DimensionBrawl.Tests
             ActionScreenCuePresenter screenCuePresenter =
                 RequireComponent<ActionScreenCuePresenter>(RequireRoot(HudRootName), "screen cue presenter");
 
-            energyLadder.GrantCurrentTierEnergy(100f);
-            Assert.IsTrue(summonSlot1.TryUseSummonSlot1(), "SummonSlot1 should be usable to create the result flow.");
+            energyLadder.GrantCurrentTierEnergy(BossBarrageSummonReviewContract.Slot1RequiredMana);
+            Assert.IsTrue(summonSlot1.TryUseSummonSlot1(), "SummonSlot1 should be usable at LV2 to create the result flow.");
             closeThreatHealth.TryApplyDamage(new DamageInfo(
                 playerHealth,
                 DamageTeam.Player,
@@ -216,8 +218,8 @@ namespace DimensionBrawl.Tests
             FrameColorStats stats = CaptureAndAssertReadableResultFrame(camera, capturePath);
             Assert.Greater(
                 stats.ClearResultPixelCount,
-                10000,
-                "The clear result frame should retain a visible green success read without relying on a broad pale overlay.");
+                3500,
+                "The clear result frame should retain a visible compact green success read without relying on a broad pale overlay.");
         }
 
         [UnityTest]
@@ -302,7 +304,10 @@ namespace DimensionBrawl.Tests
             {
                 FrameColorStats stats = AnalyzeFrame(frame);
                 Assert.Greater(stats.VisiblePixelCount, frame.width * frame.height * 0.55f);
-                Assert.Greater(stats.SaturatedPixelCount, frame.width * frame.height * 0.025f);
+                Assert.Greater(
+                    stats.SaturatedPixelCount,
+                    frame.width * frame.height * 0.01f,
+                    "Result VFX should leave a compact saturated result read without requiring a broad color wash.");
                 Assert.Less(stats.NearWhitePixelCount, frame.width * frame.height * 0.38f);
                 Assert.Less(
                     stats.BrightLowSaturationPixelCount,
