@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
 using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
@@ -18,6 +20,10 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Scenes/ActionFoundationFrontlineMotivationReview.unity";
         public const string StageProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_FrontlineWaveStage_MotivationReview.asset";
+        internal const string BatchValidationResultPath =
+            "C:/tmp/DimensionBrawl-FrontlineMotivationReview-Validation.result";
+        private const string BatchValidationReportPath =
+            "C:/tmp/DimensionBrawl-FrontlineMotivationReview-Validation.txt";
         private const string PocketOwnerRootName = "BossBarrageLaneReview_PocketOwner";
         private const string HudRootName = "BossBarrageLaneReview_DebugHud";
 
@@ -42,7 +48,44 @@ namespace DimensionBrawl.Editor
 
         public static void RunBatchValidation()
         {
-            ValidateFrontlineMotivationReviewScene();
+            ActionFoundationBatchVerificationResult.DeleteIfExists(BatchValidationResultPath);
+            ActionFoundationBatchVerificationResult.DeleteIfExists(BatchValidationReportPath);
+            var report = new List<string>
+            {
+                "Frontline motivation review validation",
+                $"Scene: {ScenePath}",
+                $"StageProfile: {StageProfilePath}"
+            };
+
+            try
+            {
+                ValidateFrontlineMotivationReviewScene();
+                report.Add("RESULT: PASS");
+                File.WriteAllLines(BatchValidationReportPath, report);
+                ActionFoundationBatchVerificationResult.WriteResult(
+                    BatchValidationResultPath,
+                    true,
+                    "COMPLETE",
+                    BatchValidationReportPath,
+                    report);
+            }
+            catch (Exception exception)
+            {
+                report.Add(exception.ToString());
+                report.Add("RESULT: FAIL");
+                File.WriteAllLines(BatchValidationReportPath, report);
+                ActionFoundationBatchVerificationResult.WriteResult(
+                    BatchValidationResultPath,
+                    false,
+                    "EXCEPTION",
+                    BatchValidationReportPath,
+                    report);
+                throw;
+            }
+
+            ActionFoundationBatchVerificationResult.RequirePassMarker(
+                BatchValidationResultPath,
+                "Frontline motivation review validation");
         }
 
         public static void EnsureFrontlineMotivationReviewScene()

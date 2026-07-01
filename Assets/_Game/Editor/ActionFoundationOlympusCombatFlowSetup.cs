@@ -71,6 +71,7 @@ namespace DimensionBrawl.Editor
         private const string CombatStartVisualPlacementName = "IntroGatePodReview_CombatStartInoriPlacement";
         private const string FirstPersonResidualVisualRootName = "IntroGatePodReview_InoriPlacement";
         private const string CutsceneCommandoIdleStateName = "IdleAim";
+        private const string ValidationResultPath = "C:/tmp/DimensionBrawl-OlympusCombatFlow-Validation.result";
         private const string ValidationReportPath = "C:/tmp/DimensionBrawl-OlympusCombatFlow-Validation.txt";
         internal const string PlayModeValidationResultPath =
             "C:/tmp/DimensionBrawl-OlympusCombatFlow-PlayMode.result";
@@ -363,6 +364,42 @@ namespace DimensionBrawl.Editor
         }
 
         public static void RunBatchValidateOlympusCorridorCombatFlow()
+        {
+            ActionFoundationBatchVerificationResult.DeleteIfExists(ValidationResultPath);
+            ActionFoundationBatchVerificationResult.DeleteIfExists(ValidationReportPath);
+
+            try
+            {
+                RunBatchValidateOlympusCorridorCombatFlowCore();
+            }
+            catch (Exception exception)
+            {
+                if (!File.Exists(ValidationResultPath))
+                {
+                    var report = new List<string>
+                    {
+                        "Olympus corridor combat flow validation",
+                        exception.ToString(),
+                        "RESULT: FAIL"
+                    };
+                    File.WriteAllLines(ValidationReportPath, report);
+                    ActionFoundationBatchVerificationResult.WriteResult(
+                        ValidationResultPath,
+                        false,
+                        "EXCEPTION",
+                        ValidationReportPath,
+                        report);
+                }
+
+                throw;
+            }
+
+            ActionFoundationBatchVerificationResult.RequirePassMarker(
+                ValidationResultPath,
+                "Olympus corridor combat flow validation");
+        }
+
+        private static void RunBatchValidateOlympusCorridorCombatFlowCore()
         {
             bool waitingStopStartsHandoff = ValidateIntroDirectorStoppedFromWaitingStartsHandoff();
             Scene stageScene = EditorSceneManager.OpenScene(StageScenePath, OpenSceneMode.Single);
@@ -1081,6 +1118,12 @@ namespace DimensionBrawl.Editor
                 && revealAnimationCoversOrHoldsTail;
             report.Add(passed ? "RESULT: PASS" : "RESULT: FAIL");
             File.WriteAllLines(ValidationReportPath, report);
+            ActionFoundationBatchVerificationResult.WriteResult(
+                ValidationResultPath,
+                passed,
+                "COMPLETE",
+                ValidationReportPath,
+                report);
             if (!passed)
             {
                 throw new InvalidOperationException(
@@ -5782,10 +5825,7 @@ namespace DimensionBrawl.Editor
 
         public static void Start(string resultPath, float timeoutSeconds)
         {
-            if (File.Exists(resultPath))
-            {
-                File.Delete(resultPath);
-            }
+            ActionFoundationBatchVerificationResult.DeleteIfExists(resultPath);
 
             EditorPrefs.SetBool(ActiveKey, true);
             EditorPrefs.SetString(ResultPathKey, resultPath);
@@ -5812,8 +5852,7 @@ namespace DimensionBrawl.Editor
             string resultPath = EditorPrefs.GetString(ResultPathKey, string.Empty);
             if (!string.IsNullOrWhiteSpace(resultPath) && File.Exists(resultPath))
             {
-                string result = File.ReadAllText(resultPath);
-                bool passed = result.Contains("RESULT=PASS");
+                bool passed = ActionFoundationBatchVerificationResult.IsPassMarkerFile(resultPath);
                 Clear();
                 if (passed)
                 {
@@ -5841,6 +5880,16 @@ namespace DimensionBrawl.Editor
             if (EditorApplication.timeSinceStartup - startedAt <= timeoutSeconds)
             {
                 return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(resultPath))
+            {
+                ActionFoundationBatchVerificationResult.WriteResult(
+                    resultPath,
+                    false,
+                    "TIMEOUT",
+                    ActionFoundationOlympusCombatFlowSetup.PlayModeValidationReportPath,
+                    new[] { $"Olympus combat flow Play Mode verification timed out after {timeoutSeconds:F1}s." });
             }
 
             Clear();

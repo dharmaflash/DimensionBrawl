@@ -134,10 +134,7 @@ namespace DimensionBrawl.Editor
 
         public static void Start(string resultPath, float timeoutSeconds)
         {
-            if (File.Exists(resultPath))
-            {
-                File.Delete(resultPath);
-            }
+            ActionFoundationBatchVerificationResult.DeleteIfExists(resultPath);
 
             EditorPrefs.SetBool(ActiveKey, true);
             EditorPrefs.SetString(ResultPathKey, resultPath);
@@ -164,8 +161,7 @@ namespace DimensionBrawl.Editor
             string resultPath = EditorPrefs.GetString(ResultPathKey, string.Empty);
             if (!string.IsNullOrWhiteSpace(resultPath) && File.Exists(resultPath))
             {
-                string result = File.ReadAllText(resultPath);
-                bool passed = result.Contains("RESULT=PASS");
+                bool passed = ActionFoundationBatchVerificationResult.IsPassMarkerFile(resultPath);
                 Clear();
                 if (passed)
                 {
@@ -193,6 +189,16 @@ namespace DimensionBrawl.Editor
             if (EditorApplication.timeSinceStartup - startedAt <= timeoutSeconds)
             {
                 return;
+            }
+
+            if (!string.IsNullOrWhiteSpace(resultPath))
+            {
+                ActionFoundationBatchVerificationResult.WriteResult(
+                    resultPath,
+                    false,
+                    "TIMEOUT",
+                    ActionFoundationBossBarrageLaneReviewSetup.ActionBridgeRouteReportPath,
+                    new[] { $"Action bridge input-route verification timed out after {timeoutSeconds:F1}s." });
             }
 
             Clear();

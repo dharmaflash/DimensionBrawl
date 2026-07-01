@@ -120,7 +120,7 @@ namespace DimensionBrawl.Editor
         public static void RunBatchVerification()
         {
             Clear();
-            DeleteIfExists(ResultPath);
+            ActionFoundationBatchVerificationResult.DeleteIfExists(ResultPath);
 
             Screen.SetResolution(CaptureWidth, CaptureHeight, FullScreenMode.Windowed);
             EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
@@ -1399,10 +1399,7 @@ namespace DimensionBrawl.Editor
 
         private static void WriteResult(bool passed, string state, string report)
         {
-            Directory.CreateDirectory(Path.GetDirectoryName(ResultPath) ?? Path.GetTempPath());
-            File.WriteAllText(
-                ResultPath,
-                $"STATE={state}{Environment.NewLine}{report}{Environment.NewLine}EXIT_CODE={(passed ? 0 : 1)}{Environment.NewLine}");
+            ActionFoundationBatchVerificationResult.WriteResult(ResultPath, passed, state, ResultPath, report);
             if (passed)
             {
                 Debug.Log($"Boss barrage combat HUD batch verification passed. See {ResultPath}.");
@@ -1425,14 +1422,6 @@ namespace DimensionBrawl.Editor
             EditorPrefs.DeleteKey(StartedAtKey);
             EditorPrefs.DeleteKey(CapturedKey);
             EditorApplication.update -= Monitor;
-        }
-
-        private static void DeleteIfExists(string path)
-        {
-            if (File.Exists(path))
-            {
-                File.Delete(path);
-            }
         }
 
         private static string BoolText(bool value)
