@@ -3746,7 +3746,7 @@ namespace DimensionBrawl.Tests
                     supportAction);
             context.Metrics.SupportComboHudSlot1LabelBeforeAttempt =
                 BossBarrageLaneReviewMobileHudLabels.BuildPrimarySummonLabel(
-                    "S1 SHIELD",
+                    BossBarrageSummonReviewContract.Slot1HudLabel,
                     context.EnergyLadder,
                     context.SummonSlot1Action);
             context.Metrics.SupportComboHudSlot1FillBeforeAttempt =
@@ -3762,8 +3762,8 @@ namespace DimensionBrawl.Tests
         private static string ResolveSupportHudSlotLabel(PlayerSupportSummonSlotAction supportAction)
         {
             return supportAction != null && supportAction.SlotActionName == "SummonSlot3"
-                ? "S3 TANK"
-                : "S2 ARROW";
+                ? BossBarrageSummonReviewContract.Slot3HudLabel
+                : BossBarrageSummonReviewContract.Slot2HudLabel;
         }
 
         private static void RecordSkillUse(CombatPolicyContext context)

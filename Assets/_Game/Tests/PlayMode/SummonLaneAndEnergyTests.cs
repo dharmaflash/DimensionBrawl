@@ -181,22 +181,22 @@ namespace DimensionBrawl.Tests
                 StringAssert.Contains(
                     "READY LV1",
                     BossBarrageLaneReviewMobileHudLabels.BuildPrimarySummonLabel(
-                        "S1 SHIELD",
+                        BossBarrageSummonReviewContract.Slot1HudLabel,
                         energy,
                         slot1));
                 StringAssert.Contains(
                     "NEED 200 EN",
                     BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
                         slot2,
-                        "S2 ARROW",
-                        "NEXT",
+                        BossBarrageSummonReviewContract.Slot2HudLabel,
+                        BossBarrageSummonReviewContract.LockedSummonLabel,
                         energy));
                 StringAssert.Contains(
                     "NEED 300 EN",
                     BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
                         slot3,
-                        "S3 TANK",
-                        "NEXT",
+                        BossBarrageSummonReviewContract.Slot3HudLabel,
+                        BossBarrageSummonReviewContract.LockedSummonLabel,
                         energy));
                 Assert.AreEqual(
                     1f,
@@ -217,15 +217,15 @@ namespace DimensionBrawl.Tests
                     "READY LV2",
                     BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
                         slot2,
-                        "S2 ARROW",
-                        "NEXT",
+                        BossBarrageSummonReviewContract.Slot2HudLabel,
+                        BossBarrageSummonReviewContract.LockedSummonLabel,
                         energy));
                 StringAssert.Contains(
                     "NEED 300 EN",
                     BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
                         slot3,
-                        "S3 TANK",
-                        "NEXT",
+                        BossBarrageSummonReviewContract.Slot3HudLabel,
+                        BossBarrageSummonReviewContract.LockedSummonLabel,
                         energy));
                 Assert.AreEqual(
                     1f,
@@ -242,8 +242,8 @@ namespace DimensionBrawl.Tests
                     "CD 0.8s",
                     BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
                         slot2,
-                        "S2 ARROW",
-                        "NEXT",
+                        BossBarrageSummonReviewContract.Slot2HudLabel,
+                        BossBarrageSummonReviewContract.LockedSummonLabel,
                         energy));
                 Assert.AreEqual(
                     1f - 0.8f / 1.5f,
@@ -253,8 +253,8 @@ namespace DimensionBrawl.Tests
                     "NEED 300 EN",
                     BossBarrageLaneReviewMobileHudLabels.BuildSupportSummonLabel(
                         slot3,
-                        "S3 TANK",
-                        "NEXT",
+                        BossBarrageSummonReviewContract.Slot3HudLabel,
+                        BossBarrageSummonReviewContract.LockedSummonLabel,
                         energy),
                     "Slot2 cooldown must not make Slot3 look globally locked or ready.");
             }

@@ -496,7 +496,9 @@ Use these instead of inventing parallel systems:
 ### Existing Data To Reuse
 
 - `DB_BossPressureActionDeck_PocketReview.asset`
-- `DB_SummonSlot1_ShieldBreaker.asset`
+- `DB_SummonSlot1_JumpSlamBruiser.asset`
+- `DB_SummonSlot2_LaserSoldier.asset`
+- `DB_SummonSlot3_FireDragon.asset`
 - `DB_SummonOpportunity_BossPressureBlock.asset`
 - current boss barrage pattern profiles
 - current support summon prototypes only if needed for comparison
@@ -911,7 +913,7 @@ Checkpoint evidence:
 - The policy report now writes a `Summon Roster Mana/Effect Identity Audit` section and matching JSON, using the three authored `SummonSlotActionProfile` assets instead of inferred UI labels.
 - Focused PlayMode `RosterAudit-4` passed after the runner waited through the real physical barrage flight window before judging follow-up confirmation.
 - Cost verdict is `CHECK`: all three summon slots still read the shared `SummonEnergyLadder` as tier costs `100/100/100`, so there is no slot-specific summon mana contract yet.
-- Effect verdict is `PASS`: `SummonSlot1.ShieldBreaker` owns screen/counter opening, `SummonSlot2.BacklineMarksman` owns high volley damage with no screen budget, and `SummonSlot3.VanguardCommander` owns high HP plus screen holding.
+- Effect verdict is `PASS`: `SummonSlot1.JumpSlamBruiser` owns the committed body-screen opener, `SummonSlot2.LaserSoldier` owns low-cost line damage, and `SummonSlot3.FireDragon` owns the high-tier pressure clear.
 
 Interpretation:
 
@@ -931,10 +933,10 @@ The audit found the missing cost identity, so this checkpoint introduces only th
 
 Checkpoint evidence:
 
-- `SummonSlot1` remains the LV1 emergency shield/counter answer.
-- `SummonSlot2.BacklineMarksman` requires LV2 and is blocked at LV1 with `Requires LV2 EN` in the focused Duel PlayMode test.
-- `SummonSlot3.VanguardCommander` requires LV3 and keeps the high-HP/screen vanguard role.
-- Focused policy report `SlotManaGate-2` passed. The roster audit now records cost verdict `PASS`, required mana `100/200/300`, shared tier targets `100/100/100`, and effect verdict `PASS`.
+- `SummonSlot1.JumpSlamBruiser` is the LV2 committed body-screen answer (`SUMMON`, 200 EN).
+- `SummonSlot2.LaserSoldier` opens from LV1 as the fast low-cost support route (`S2 LASER`, 100 EN).
+- `SummonSlot3.FireDragon` requires LV3 and keeps the high-tier pressure-clear role (`S3 DRAGON`, 300 EN).
+- The promoted roster contract records cost verdict `PASS`, required mana `200/100/300`, minimum tiers `2/1/3`, and effect verdict `PASS`.
 - Focused Duel PlayMode `SlotManaGate-4` passed, proving the runtime action gate in the authored support-summon scene, not only the report table.
 
 Interpretation:
