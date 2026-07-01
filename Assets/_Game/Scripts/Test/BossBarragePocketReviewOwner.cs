@@ -373,6 +373,12 @@ namespace DimensionBrawl.Test
         public int HighestBossScreenSuppressSummonTier => highestBossScreenSuppressSummonTier;
         public int VanguardAssistSuppressTier => vanguardAssistSuppressTimer > 0f ? vanguardAssistSuppressTier : 0;
         public float VanguardAssistSuppressRemainingSeconds => vanguardAssistSuppressTimer;
+
+        public void CancelVanguardAssistSuppressWindow()
+        {
+            vanguardAssistSuppressTier = 0;
+            vanguardAssistSuppressTimer = 0f;
+        }
         public SummonOpportunityWindowProfile SummonPressureBlockOpportunity => summonPressureBlockOpportunity;
         public bool HasSummonPressureBlockOpportunity => summonPressureBlockOpportunity != null;
         public bool IsPressureReliefActive => pressurePacing.IsCloseThreatReliefActive;
@@ -759,6 +765,14 @@ namespace DimensionBrawl.Test
             {
                 usedSummonSlot1 = true;
                 highestSummonTier = Mathf.Max(highestSummonTier, summonSlot1Action.LastSpentTier);
+                if (ShouldStartVanguardAssistFollowupFromSlot1())
+                {
+                    int assistTier = Mathf.Max(vanguardAssistSuppressTier, summonSlot1Action.LastSpentTier);
+                    blockedBossPressureWithSummon = true;
+                    highestSummonPressureTier = Mathf.Max(highestSummonPressureTier, assistTier);
+                    StartSummonPressureBreak(assistTier);
+                }
+
                 observedSummonUseCount = currentSummonUseCount;
             }
 
@@ -1754,6 +1768,7 @@ namespace DimensionBrawl.Test
                 subscribedSummonSlot2Action = summonSlot2Action;
                 subscribedSummonSlot2Action.SummonUsed += OnSupportSummonUsed;
                 subscribedSummonSlot2Action.SummonPressureBlocked += OnSupportSummonPressureBlocked;
+                subscribedSummonSlot2Action.SummonProjectileDamageApplied += OnSupportSummonProjectileDamageApplied;
             }
 
             if (summonSlot3Action != null)
@@ -1761,6 +1776,7 @@ namespace DimensionBrawl.Test
                 subscribedSummonSlot3Action = summonSlot3Action;
                 subscribedSummonSlot3Action.SummonUsed += OnSupportSummonUsed;
                 subscribedSummonSlot3Action.SummonPressureBlocked += OnSupportSummonPressureBlocked;
+                subscribedSummonSlot3Action.SummonProjectileDamageApplied += OnSupportSummonProjectileDamageApplied;
             }
         }
 
@@ -1770,6 +1786,7 @@ namespace DimensionBrawl.Test
             {
                 subscribedSummonSlot2Action.SummonUsed -= OnSupportSummonUsed;
                 subscribedSummonSlot2Action.SummonPressureBlocked -= OnSupportSummonPressureBlocked;
+                subscribedSummonSlot2Action.SummonProjectileDamageApplied -= OnSupportSummonProjectileDamageApplied;
                 subscribedSummonSlot2Action = null;
             }
 
@@ -1777,6 +1794,7 @@ namespace DimensionBrawl.Test
             {
                 subscribedSummonSlot3Action.SummonUsed -= OnSupportSummonUsed;
                 subscribedSummonSlot3Action.SummonPressureBlocked -= OnSupportSummonPressureBlocked;
+                subscribedSummonSlot3Action.SummonProjectileDamageApplied -= OnSupportSummonProjectileDamageApplied;
                 subscribedSummonSlot3Action = null;
             }
         }
@@ -1819,6 +1837,64 @@ namespace DimensionBrawl.Test
                 return;
             }
 
+            PrimeSupportAssistSuppress(tier);
+        }
+
+        private void OnSupportSummonProjectileDamageApplied(
+            PlayerSupportSummonSlotAction action,
+            LaneActionProjectile projectile,
+            CombatHealth targetHealth,
+            Vector3 impactPoint,
+            Vector3 impactDirection)
+        {
+            if (state != PocketState.Running
+                || action == null
+                || targetHealth == null)
+            {
+                return;
+            }
+
+            if (action == summonSlot2Action)
+            {
+                TrySuppressBossPressureForMarksmanVolley(action);
+                return;
+            }
+
+            if (!allowVanguardAssistToSuppressBossScreen
+                || action != summonSlot3Action)
+            {
+                return;
+            }
+
+            PrimeSupportAssistSuppress(action.LastSpentTier);
+            if (usedSkill1DuringSummonFollowup)
+            {
+                TrySuppressBossScreenForHighTierFollowup();
+            }
+        }
+
+        private void TrySuppressBossPressureForMarksmanVolley(PlayerSupportSummonSlotAction action)
+        {
+            if (action == null
+                || action.LastSpentTier < 3
+                || !string.Equals(action.LastSummonActorRoleId, "LaserSoldier", StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            BossSummonPressureAction pressureAction = bossPressureActionDirector != null
+                ? bossPressureActionDirector.SummonPressureAction
+                : null;
+            if (pressureAction == null || pressureAction.ActivePressureScreenCount <= 0)
+            {
+                return;
+            }
+
+            pressureAction.SuppressActivePressureScreens(action.LastSpentTier);
+        }
+
+        private void PrimeSupportAssistSuppress(int tier)
+        {
             int resolvedTier = Mathf.Clamp(tier, 1, 3);
             if (resolvedTier < Mathf.Clamp(vanguardAssistSuppressMinimumTier, 1, 3))
             {
@@ -1829,6 +1905,17 @@ namespace DimensionBrawl.Test
             vanguardAssistSuppressTimer = Mathf.Max(
                 vanguardAssistSuppressTimer,
                 Mathf.Max(0f, vanguardAssistSuppressSeconds));
+        }
+
+        private bool ShouldStartVanguardAssistFollowupFromSlot1()
+        {
+            return allowVanguardAssistToSuppressBossScreen
+                && vanguardAssistSuppressTimer > 0f
+                && vanguardAssistSuppressTier >= Mathf.Clamp(vanguardAssistSuppressMinimumTier, 1, 3)
+                && !blockedBossPressureWithSummon
+                && !pressurePacing.IsSummonPressureBreakActive
+                && !pressurePacing.IsSummonFollowupWindowActive
+                && string.Equals(lastSupportSummonUseSlotId, "SummonSlot3", StringComparison.Ordinal);
         }
 
         private string ResolveFollowupReadyCue()

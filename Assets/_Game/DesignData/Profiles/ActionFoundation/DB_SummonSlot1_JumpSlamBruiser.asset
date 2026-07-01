@@ -32,12 +32,12 @@ MonoBehaviour:
     ActorAdvanceDistance: 5.4
     ActorAdvanceSeconds: 2.74
     ActorEngageRadius: 1.15
-    ActorAttackDamagePerSecond: 38
+    ActorAttackDamagePerSecond: 19
     ActorAttackIntervalSeconds: 0.32
     ScreenIntercepts: 1
-    ScreenRadius: 1.31
-    ScreenLifetimeSeconds: 1.2
-    CounterDamage: 19.84
+    ScreenRadius: 1.55
+    ScreenLifetimeSeconds: 1.45
+    CounterDamage: 18.72
     CounterProjectileSpeed: 26
     CounterLifetimeSeconds: 1.45
     CounterRadius: 0.336
@@ -60,11 +60,11 @@ MonoBehaviour:
     ActorAdvanceDistance: 6.2
     ActorAdvanceSeconds: 3.02
     ActorEngageRadius: 1.25
-    ActorAttackDamagePerSecond: 54
+    ActorAttackDamagePerSecond: 34
     ActorAttackIntervalSeconds: 0.3
     ScreenIntercepts: 2
-    ScreenRadius: 1.47
-    ScreenLifetimeSeconds: 1.55
+    ScreenRadius: 1.75
+    ScreenLifetimeSeconds: 1.8
     CounterDamage: 26.88
     CounterProjectileSpeed: 28
     CounterLifetimeSeconds: 1.45
@@ -88,11 +88,11 @@ MonoBehaviour:
     ActorAdvanceDistance: 7
     ActorAdvanceSeconds: 3.3
     ActorEngageRadius: 1.38
-    ActorAttackDamagePerSecond: 76
+    ActorAttackDamagePerSecond: 51
     ActorAttackIntervalSeconds: 0.28
     ScreenIntercepts: 3
-    ScreenRadius: 1.63
-    ScreenLifetimeSeconds: 1.9
+    ScreenRadius: 1.95
+    ScreenLifetimeSeconds: 2.15
     CounterDamage: 35.84
     CounterProjectileSpeed: 30
     CounterLifetimeSeconds: 1.45

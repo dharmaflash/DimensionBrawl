@@ -256,7 +256,7 @@ namespace DimensionBrawl.Editor
         private const float BossProxyBodyHitboxRadius = 1.05f;
         private static readonly Vector3 BossProxyBodyHitboxCenter = new Vector3(0f, -0.35f, -0.05f);
         private const int PlayerRangedBasicPrewarmCount = 16;
-        private const float PlayerRangedBasicDamage = 14f;
+        private const float PlayerRangedBasicDamage = 30f;
         private const float PlayerRangedBasicProjectileSpeed = 24f;
         private const float PlayerRangedBasicProjectileLifetimeSeconds = 1.75f;
         private const float PlayerRangedBasicProjectileRadius = 0.31f;
@@ -5517,7 +5517,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(hud, "duelReviewOwner", null);
             SetObjectReference(hud, "stageProfile", stageProfile);
             hud.AssignStageProfileForReview(stageProfile);
-            SetBool(hud, "showCenterReticle", true);
+            SetBool(hud, "showCenterReticle", false);
             SetBool(hud, "showResultBanner", true);
             SetString(hud, "stageEpisodeLabel", stageProfile.StageEpisodeLabel);
             SetString(hud, "objectiveBadgeLabel", stageProfile.ObjectiveBadgeLabel);
@@ -6046,7 +6046,7 @@ namespace DimensionBrawl.Editor
                     cinematicSupportAnchor,
                     cinematicCueProfile);
             ActionCameraCueDriver cueDriver = EnsureComponent<ActionCameraCueDriver>(cameraController.gameObject);
-            SetBehaviourEnabled(cueDriver, false);
+            SetBehaviourEnabled(cueDriver, true);
             SetObjectReference(cueDriver, "actionController", actionController);
             SetObjectReference(cueDriver, "movement", movement);
             SetObjectReference(cueDriver, "skill1Action", skill1Action);
@@ -6268,7 +6268,7 @@ namespace DimensionBrawl.Editor
             Transform cueSpace)
         {
             BossBarrageCameraCueDriver cueDriver = EnsureComponent<BossBarrageCameraCueDriver>(cameraController.gameObject);
-            SetBehaviourEnabled(cueDriver, false);
+            SetBehaviourEnabled(cueDriver, true);
             cueDriver.Configure(bossBarrageEmitter, cameraController, cueSpace, bossPressureActionDirector);
             SetObjectReference(cueDriver, "bossBarrageEmitter", bossBarrageEmitter);
             SetObjectReference(cueDriver, "bossPressureActionDirector", bossPressureActionDirector);
@@ -6383,7 +6383,7 @@ namespace DimensionBrawl.Editor
             PlayerSummonSlot1Action summonSlot1Action,
             ActionCinematicCueDirector cinematicCueDirector)
         {
-            ValidateBehaviourEnabled(cueDriver, false);
+            ValidateBehaviourEnabled(cueDriver, true);
             ValidateObjectReference(cueDriver, "actionController", actionController);
             ValidateObjectReference(cueDriver, "movement", movement);
             ValidateObjectReference(cueDriver, "skill1Action", skill1Action);
@@ -6731,7 +6731,7 @@ namespace DimensionBrawl.Editor
             BossBarrageEmitter bossBarrageEmitter,
             Transform cueSpace)
         {
-            ValidateBehaviourEnabled(cueDriver, false);
+            ValidateBehaviourEnabled(cueDriver, true);
             ValidateObjectReference(cueDriver, "bossBarrageEmitter", bossBarrageEmitter);
             ValidateObjectReference(
                 cueDriver,
@@ -7510,11 +7510,14 @@ namespace DimensionBrawl.Editor
                 expectedActorMaxHealth: 220f,
                 expectedActorMoveSpeed: 5.8f,
                 expectedActorEngageRadius: 1.15f,
-                expectedActorAttackDamagePerSecond: 38f,
+                expectedActorAttackDamagePerSecond: 19f,
                 expectedActorAttackIntervalSeconds: 0.32f,
                 expectedActorLifetimeSeconds: 0f,
                 expectedActorAdvanceDistance: 5.4f,
-                expectedScreenIntercepts: 1);
+                expectedScreenIntercepts: 1,
+                expectedScreenRadius: 1.55f,
+                expectedScreenLifetimeSeconds: 1.45f,
+                expectedCounterDamage: 18.72f);
             ValidateSummonSlotTier(
                 summonSlot1Profile,
                 2,
@@ -7523,11 +7526,14 @@ namespace DimensionBrawl.Editor
                 expectedActorMaxHealth: 300f,
                 expectedActorMoveSpeed: 6.4f,
                 expectedActorEngageRadius: 1.25f,
-                expectedActorAttackDamagePerSecond: 54f,
+                expectedActorAttackDamagePerSecond: 34f,
                 expectedActorAttackIntervalSeconds: 0.3f,
                 expectedActorLifetimeSeconds: 0f,
                 expectedActorAdvanceDistance: 6.2f,
-                expectedScreenIntercepts: 2);
+                expectedScreenIntercepts: 2,
+                expectedScreenRadius: 1.75f,
+                expectedScreenLifetimeSeconds: 1.8f,
+                expectedCounterDamage: 26.88f);
             ValidateSummonSlotTier(
                 summonSlot1Profile,
                 3,
@@ -7536,11 +7542,14 @@ namespace DimensionBrawl.Editor
                 expectedActorMaxHealth: 400f,
                 expectedActorMoveSpeed: 7.1f,
                 expectedActorEngageRadius: 1.38f,
-                expectedActorAttackDamagePerSecond: 76f,
+                expectedActorAttackDamagePerSecond: 51f,
                 expectedActorAttackIntervalSeconds: 0.28f,
                 expectedActorLifetimeSeconds: 0f,
                 expectedActorAdvanceDistance: 7.0f,
-                expectedScreenIntercepts: 3);
+                expectedScreenIntercepts: 3,
+                expectedScreenRadius: 1.95f,
+                expectedScreenLifetimeSeconds: 2.15f,
+                expectedCounterDamage: 35.84f);
 
             SummonFrontlineProxy summonActorPrefab = LoadPrefabComponent<SummonFrontlineProxy>(SummonSlot1ActorPrefabPath);
             SummonPressureScreen pressureScreen = LoadPrefabComponent<SummonPressureScreen>(SummonSlot1ActorPrefabPath);
@@ -8418,7 +8427,10 @@ namespace DimensionBrawl.Editor
             float expectedActorAttackIntervalSeconds,
             float expectedActorLifetimeSeconds,
             float expectedActorAdvanceDistance,
-            int expectedScreenIntercepts)
+            int expectedScreenIntercepts,
+            float expectedScreenRadius = -1f,
+            float expectedScreenLifetimeSeconds = -1f,
+            float expectedCounterDamage = -1f)
         {
             if (profile == null)
             {
@@ -8473,6 +8485,30 @@ namespace DimensionBrawl.Editor
             if (settings.ScreenIntercepts != expectedScreenIntercepts)
             {
                 throw new InvalidOperationException($"Summon slot tier {tier} has the wrong screen intercept count.");
+            }
+
+            if (expectedScreenRadius >= 0f)
+            {
+                ValidateFloatValue(
+                    settings.ScreenRadius,
+                    expectedScreenRadius,
+                    $"Summon slot tier {tier} has the wrong screen radius.");
+            }
+
+            if (expectedScreenLifetimeSeconds >= 0f)
+            {
+                ValidateFloatValue(
+                    settings.ScreenLifetimeSeconds,
+                    expectedScreenLifetimeSeconds,
+                    $"Summon slot tier {tier} has the wrong screen lifetime.");
+            }
+
+            if (expectedCounterDamage >= 0f)
+            {
+                ValidateFloatValue(
+                    settings.CounterDamage,
+                    expectedCounterDamage,
+                    $"Summon slot tier {tier} has the wrong counter damage.");
             }
         }
 
@@ -8810,9 +8846,9 @@ namespace DimensionBrawl.Editor
             SetString(actorPresenter, "deathTrigger", SummonActorDeathTrigger);
             SetFloat(actorPresenter, "animatorMoveSpeedScale", 1f);
             SetBool(actorPresenter, "playDamageVfx", false);
-            SetBool(actorPresenter, "renderDamageFeedback", false);
-            SetFloat(actorPresenter, "damageFlashSeconds", 0f);
-            SetFloat(actorPresenter, "damageFlashScale", 0f);
+            SetBool(actorPresenter, "renderDamageFeedback", true);
+            SetFloat(actorPresenter, "damageFlashSeconds", 0.16f);
+            SetFloat(actorPresenter, "damageFlashScale", 0.18f);
         }
 
         private static void ValidatePulseOnlyActorRenderers(
@@ -8861,9 +8897,9 @@ namespace DimensionBrawl.Editor
             ValidateEnum(actorPresenter, "deathCueId", (int)CombatVfxCueId.EnemyDeath);
             ValidateFloat(actorPresenter, "pressureDamageCueScale", 0.64f);
             ValidateBool(actorPresenter, "playDamageVfx", false);
-            ValidateBool(actorPresenter, "renderDamageFeedback", false);
-            ValidateFloat(actorPresenter, "damageFlashSeconds", 0f);
-            ValidateFloat(actorPresenter, "damageFlashScale", 0f);
+            ValidateBool(actorPresenter, "renderDamageFeedback", true);
+            ValidateFloat(actorPresenter, "damageFlashSeconds", 0.16f);
+            ValidateFloat(actorPresenter, "damageFlashScale", 0.18f);
             ValidateAnimatorParameter(
                 animator,
                 SummonActorMoveSpeedParameter,
@@ -9606,7 +9642,7 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"{hud.name}.StageProfileForReview is not bound to {stageProfile.name}.");
             }
 
-            ValidateBool(hud, "showCenterReticle", true);
+            ValidateBool(hud, "showCenterReticle", false);
             ValidateBool(hud, "showResultBanner", true);
             ValidateString(hud, "stageEpisodeLabel", stageProfile.StageEpisodeLabel);
             ValidateString(hud, "objectiveBadgeLabel", stageProfile.ObjectiveBadgeLabel);

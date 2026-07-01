@@ -34,8 +34,6 @@ namespace DimensionBrawl.Test
 
         private void OnEnable()
         {
-            ResolveSummonSlot1Action();
-
             if (pocketReviewOwner != null)
             {
                 pocketReviewOwner.SummonBlockOpportunityOpened += HandleSummonBlockOpportunityOpened;
@@ -49,10 +47,6 @@ namespace DimensionBrawl.Test
                 pocketReviewOwner.PocketFailed += HandlePocketFailed;
             }
 
-            if (summonSlot1Action != null)
-            {
-                summonSlot1Action.SummonPressureBlocked += HandleSummonPressureBlocked;
-            }
         }
 
         private void OnDisable()
@@ -70,15 +64,6 @@ namespace DimensionBrawl.Test
                 pocketReviewOwner.PocketFailed -= HandlePocketFailed;
             }
 
-            if (summonSlot1Action != null)
-            {
-                summonSlot1Action.SummonPressureBlocked -= HandleSummonPressureBlocked;
-            }
-        }
-
-        private void HandleSummonPressureBlocked(int tier)
-        {
-            cameraCueDriver?.RequestSummonPressureBlockCue(tier);
         }
 
         private void ResolveSummonSlot1Action()

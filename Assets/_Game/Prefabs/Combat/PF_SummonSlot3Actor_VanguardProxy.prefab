@@ -564,7 +564,7 @@ MonoBehaviour:
   deathCueIntensity: 1.05
   tierCueIntensityStep: 0.1
   playDamageVfx: 0
-  renderDamageFeedback: 0
+  renderDamageFeedback: 1
   tierOneColor: {r: 1, g: 0.44, b: 0.16, a: 0.88}
   tierTwoColor: {r: 1, g: 0.58, b: 0.37, a: 0.90999997}
   tierThreeColor: {r: 1, g: 0.593, b: 0.18699999, a: 0.934}
@@ -577,7 +577,7 @@ MonoBehaviour:
   impactFlashSeconds: 0.18
   clashFlashSeconds: 0.14
   attackFlashSeconds: 0.12
-  damageFlashSeconds: 0
+  damageFlashSeconds: 0.16
   deathFlashSeconds: 0.22
   fullBodyHitReactionCooldownSeconds: 0.42
   heavyHitReactionBypassesCooldown: 1
@@ -589,7 +589,7 @@ MonoBehaviour:
   flashScale: 0.18
   clashFlashScale: 0.14
   attackFlashScale: 0.14
-  damageFlashScale: 0
+  damageFlashScale: 0.18
   deathFlashScale: 0.28
 --- !u!114 &2168765931106797276
 MonoBehaviour:

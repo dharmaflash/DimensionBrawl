@@ -10,6 +10,8 @@ namespace DimensionBrawl.Player
     [DisallowMultipleComponent]
     public sealed class PlayerRangedBasicAttackAction : MonoBehaviour
     {
+        private const float SelectedTargetAssistStrength = 0.08f;
+
         [Header("Input")]
         [SerializeField] private InputActionReference fireAction;
         [SerializeField] private bool fireContinuouslyWhileHeld = true;
@@ -33,7 +35,7 @@ namespace DimensionBrawl.Player
         [SerializeField] private Transform projectileRoot;
         [SerializeField] private Transform fireOrigin;
         [SerializeField] private DamageTeam sourceTeam = DamageTeam.Player;
-        [SerializeField, Min(0f)] private float damage = 14f;
+        [SerializeField, Min(0f)] private float damage = 30f;
         [SerializeField, Min(0.01f)] private float projectileSpeed = 24f;
         [SerializeField, Min(0.01f)] private float projectileLifetimeSeconds = 1.75f;
         [SerializeField, Min(0.01f)] private float projectileRadius = 0.31f;
@@ -103,6 +105,8 @@ namespace DimensionBrawl.Player
         private Vector3 cachedFirePreviewDirection = Vector3.forward;
         private Vector3 cachedFirePreviewSpawnPosition;
         private Vector3 cachedFirePreviewAimPoint;
+        private bool aimAssistMayDriveCamera;
+        private bool aimAssistSuppressesViewportReprojection;
 
         public float FireCooldownRemaining => Mathf.Max(0f, nextFireTime - Time.time);
         public bool IsFireReady => FireCooldownRemaining <= 0f;
@@ -144,6 +148,8 @@ namespace DimensionBrawl.Player
         public void SetFireHeld(bool active)
         {
             mobileFireHeld = active;
+            currentFireHeld = active && !cinematicInputLocked && IsRangedModeActive();
+            SetFireAimHold(currentFireHeld);
             InvalidateFirePreviewCache();
         }
 
@@ -568,7 +574,8 @@ namespace DimensionBrawl.Player
                 rawAimDirection,
                 directViewportTargetHealth);
 
-            bool hasSoftAimAssist = HasAimAssistTarget && directViewportTargetHealth == null;
+            bool hasSoftAimAssist = aimAssistSuppressesViewportReprojection
+                || (HasAimAssistTarget && directViewportTargetHealth == null);
             if (hasViewportAimPoint && !hasSoftAimAssist)
             {
                 resolvedDirection = ResolveFireTravelDirection(rawViewportAimPoint - spawnPosition, resolvedDirection);
@@ -675,6 +682,7 @@ namespace DimensionBrawl.Player
                 || !IsAimPreviewActive
                 || !TryGetAimPreviewDirection(out _)
                 || !HasAimAssistTarget
+                || !aimAssistMayDriveCamera
                 || AimAssistTargetHealth == null)
             {
                 return;
@@ -905,6 +913,21 @@ namespace DimensionBrawl.Player
             CombatHealth directViewportTargetHealth)
         {
             LastRawAimDirection = ResolveFireTravelDirection(rawAimDirection, LastResolvedFireDirection);
+            if (!HasManualAimInput()
+                && TryResolveSelectedTargetAimDirection(
+                    projectileSpawnPosition,
+                    out Vector3 selectedTargetDirection,
+                    out CombatHealth selectedTargetHealth))
+            {
+                SetAimAssistState(
+                    selectedTargetHealth,
+                    SelectedTargetAssistStrength,
+                    selectedTargetDirection,
+                    allowCameraAimAssist: false,
+                    suppressViewportReprojection: true);
+                return selectedTargetDirection;
+            }
+
             if (IsValidDirectViewportTarget(directViewportTargetHealth))
             {
                 SetAimAssistState(directViewportTargetHealth, 1f, LastRawAimDirection);
@@ -953,16 +976,50 @@ namespace DimensionBrawl.Player
             return resolvedDirection;
         }
 
+        private bool TryResolveSelectedTargetAimDirection(
+            Vector3 projectileSpawnPosition,
+            out Vector3 direction,
+            out CombatHealth targetHealth)
+        {
+            direction = default;
+            targetHealth = null;
+            if (targetSelector == null
+                || !targetSelector.TryGetCurrentTarget(out Transform target, out targetHealth)
+                || target == null
+                || targetHealth == null
+                || !targetHealth.IsAlive)
+            {
+                return false;
+            }
+
+            if (sourceHealth != null
+                && !CombatTeamUtility.AreHostile(sourceHealth.Team, targetHealth.Team))
+            {
+                return false;
+            }
+
+            Vector3 targetPoint = targetHealth.transform.position + Vector3.up * targetHeight;
+            direction = ResolveFireTravelDirection(targetPoint - projectileSpawnPosition, LastRawAimDirection);
+            return direction.sqrMagnitude > 0.0001f;
+        }
+
         private bool HasManualAimInput()
         {
             return aimInput.sqrMagnitude > aimInputDeadZone * aimInputDeadZone;
         }
 
-        private void SetAimAssistState(CombatHealth targetHealth, float strength01, Vector3 assistedDirection)
+        private void SetAimAssistState(
+            CombatHealth targetHealth,
+            float strength01,
+            Vector3 assistedDirection,
+            bool allowCameraAimAssist = true,
+            bool suppressViewportReprojection = false)
         {
             AimAssistTargetHealth = targetHealth;
             HasAimAssistTarget = targetHealth != null && targetHealth.IsAlive && strength01 > 0f;
             AimAssistStrength01 = HasAimAssistTarget ? Mathf.Clamp01(strength01) : 0f;
+            aimAssistMayDriveCamera = HasAimAssistTarget && allowCameraAimAssist;
+            aimAssistSuppressesViewportReprojection = HasAimAssistTarget && suppressViewportReprojection;
             LastAimAssistDirection = ResolveFireTravelDirection(assistedDirection, LastRawAimDirection);
         }
 

@@ -130,6 +130,12 @@ namespace DimensionBrawl.Player
 
         public bool RefreshTarget()
         {
+            if (IsValidTarget(currentTargetHealth) && Time.time < nextRetargetTime)
+            {
+                currentTarget = currentTargetHealth.transform;
+                return true;
+            }
+
             CombatHealth bestTarget = FindBestTarget();
             SetCurrentTarget(bestTarget);
             nextRetargetTime = Time.time + retargetIntervalSeconds;

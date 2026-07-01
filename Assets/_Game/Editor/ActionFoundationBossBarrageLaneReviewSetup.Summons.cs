@@ -1416,13 +1416,14 @@ namespace DimensionBrawl.Editor
                         2.0f,
                         1,
                         0f,
-                        1.2f,
+                        1.45f,
                         "JumpSlamBruiser",
                         220f,
                         5.8f,
                         1.15f,
-                        38f,
-                        0.32f),
+                        19f,
+                        0.32f,
+                        counterDamage: 18.72f),
                     CreateSummonTierSettings(
                         84f,
                         26f,
@@ -1434,12 +1435,12 @@ namespace DimensionBrawl.Editor
                         2.36f,
                         2,
                         0f,
-                        1.55f,
+                        1.8f,
                         "JumpSlamBruiser",
                         300f,
                         6.4f,
                         1.25f,
-                        54f,
+                        34f,
                         0.3f),
                     CreateSummonTierSettings(
                         112f,
@@ -1452,12 +1453,12 @@ namespace DimensionBrawl.Editor
                         2.74f,
                         3,
                         0f,
-                        1.9f,
+                        2.15f,
                         "JumpSlamBruiser",
                         400f,
                         7.1f,
                         1.38f,
-                        76f,
+                        51f,
                         0.28f)
                 },
                 new[]
@@ -1802,7 +1803,8 @@ namespace DimensionBrawl.Editor
             float actorMoveSpeed,
             float actorEngageRadius,
             float actorAttackDamagePerSecond,
-            float actorAttackIntervalSeconds)
+            float actorAttackIntervalSeconds,
+            float counterDamage = -1f)
         {
             var settings = new PlayerSummonSlot1Action.SummonTierSettings
             {
@@ -1827,9 +1829,9 @@ namespace DimensionBrawl.Editor
                 ActorAttackDamagePerSecond = actorAttackDamagePerSecond,
                 ActorAttackIntervalSeconds = actorAttackIntervalSeconds,
                 ScreenIntercepts = screenIntercepts,
-                ScreenRadius = 1.15f + screenIntercepts * 0.16f,
+                ScreenRadius = screenIntercepts > 0 ? 1.35f + screenIntercepts * 0.2f : 1.15f,
                 ScreenLifetimeSeconds = screenLifetimeSeconds,
-                CounterDamage = damage * 0.32f,
+                CounterDamage = counterDamage >= 0f ? counterDamage : damage * 0.32f,
                 CounterProjectileSpeed = projectileSpeed + 2f,
                 CounterLifetimeSeconds = 1.45f,
                 CounterRadius = Mathf.Max(0.2f, radius * 0.7f),

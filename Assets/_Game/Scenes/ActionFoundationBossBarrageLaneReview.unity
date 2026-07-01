@@ -284,7 +284,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 95c5c904e05ee3d43ba6d3da070c39eb, type: 3}
   m_Name: 
@@ -637,7 +637,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1000}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8f04b3c4c5df4d5a9a5ab1c067c2db7e, type: 3}
   m_Name: 
@@ -1362,7 +1362,7 @@ MonoBehaviour:
   projectileRoot: {fileID: 188710811}
   fireOrigin: {fileID: 724149925}
   sourceTeam: 1
-  damage: 14
+  damage: 30
   projectileSpeed: 24
   projectileLifetimeSeconds: 1.75
   projectileRadius: 0.31
@@ -11652,7 +11652,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 981272986}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 73a58b6f8dc54c8da48a9016d94d3f14, type: 3}
   m_Name: 
@@ -11771,7 +11771,7 @@ MonoBehaviour:
   width: 390
   height: 230
   margin: 18
-  showCenterReticle: 1
+  showCenterReticle: 0
   usePremiumCompactHud: 1
   stageEpisodeLabel: EP 03 Survival Pressure
   objectiveBadgeLabel: HP

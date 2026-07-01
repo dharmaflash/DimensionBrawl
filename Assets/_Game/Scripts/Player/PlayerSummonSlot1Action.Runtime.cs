@@ -379,7 +379,11 @@ namespace DimensionBrawl.Player
                     && targetHealth != null
                     && targetHealth.IsAlive)
                 {
-                    return owner.laneSpace.GetLaneCoordinates(target.position);
+                    Vector2 selectedTargetLane = owner.laneSpace.GetLaneCoordinates(target.position);
+                    if (selectedTargetLane.y >= owner.laneSpace.SummonEntryZ)
+                    {
+                        return selectedTargetLane;
+                    }
                 }
 
                 return fallback;

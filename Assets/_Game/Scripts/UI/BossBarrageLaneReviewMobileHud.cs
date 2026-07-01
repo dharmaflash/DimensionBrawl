@@ -251,7 +251,11 @@ namespace DimensionBrawl.UI
         {
             if (!showHud || hudOpacity <= 0.001f)
             {
-                ReleaseHudControls();
+                if (HasHeldReviewControl())
+                {
+                    ReleaseHudControls();
+                }
+
                 return;
             }
 
@@ -344,11 +348,24 @@ namespace DimensionBrawl.UI
         {
             movement?.SetMoveInput(Vector2.zero);
             ReleaseHudLookAim();
-            rangedBasicAttackAction?.SetFireHeld(false);
+            if (previousBasicHeld || firePointerHeld)
+            {
+                rangedBasicAttackAction?.SetFireHeld(false);
+            }
+
             ClearFirePointerState();
             ClearMovePointerState();
             ClearLookPointerState();
             previousBasicHeld = false;
+        }
+
+        private bool HasHeldReviewControl()
+        {
+            return previousBasicHeld
+                || firePointerHeld
+                || movePointerHeld
+                || lookPointerHeld
+                || hudLookAimActive;
         }
 
         private void OnGUI()

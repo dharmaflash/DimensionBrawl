@@ -148,7 +148,11 @@ namespace DimensionBrawl.Player
                 && targetHealth != null
                 && targetHealth.IsAlive)
             {
-                return owner.LaneSpace.GetLaneCoordinates(target.position);
+                Vector2 selectedTargetLane = owner.LaneSpace.GetLaneCoordinates(target.position);
+                if (selectedTargetLane.y >= owner.LaneSpace.SummonEntryZ)
+                {
+                    return selectedTargetLane;
+                }
             }
 
             return fallback;
@@ -291,8 +295,7 @@ namespace DimensionBrawl.Player
                 0.24f,
                 settings.ActorEngageRadius);
             clash.ConfigureHostileBodyDamage(1f, 0f);
-            if (string.Equals(settings.ActorRoleId, "BacklineMarksman", System.StringComparison.Ordinal)
-                || string.Equals(settings.ActorRoleId, "LaserSoldier", System.StringComparison.Ordinal)
+            if (string.Equals(settings.ActorRoleId, "LaserSoldier", System.StringComparison.Ordinal)
                 || string.Equals(settings.ActorRoleId, "FireDragon", System.StringComparison.Ordinal))
             {
                 clash.ConfigureHostileBodyDamage(0f, 0f);

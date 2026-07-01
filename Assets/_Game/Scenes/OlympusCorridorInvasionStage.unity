@@ -1261,7 +1261,7 @@ MonoBehaviour:
   useBlockedHintSeconds: 0.75
   requiredSummonMana: 100
   slotCooldownSeconds: 1.25
-  summonActionProfile: {fileID: 11400000, guid: ea0ac980cb10498e92d7f0dcf1ddf9e7, type: 2}
+  summonActionProfile: {fileID: 11400000, guid: 81a9e63aa866c9f4b8e2988a77a5a2f8, type: 2}
   tierSettings:
   - Damage: 48
     ProjectileSpeed: 17
@@ -1484,7 +1484,7 @@ MonoBehaviour:
   volleyIntervalSeconds: 1.05
   maxVolleyCount: 3
   maxActiveSummonActors: 1
-  summonActionProfile: {fileID: 11400000, guid: b10e45f1e903b6442bad3d929ca0bf33, type: 2}
+  summonActionProfile: {fileID: 11400000, guid: 9bc7fbdb97b406b42855197bfae07908, type: 2}
   useBlockedHintSeconds: 0.75
 --- !u!114 &4018
 MonoBehaviour:
@@ -1527,7 +1527,7 @@ MonoBehaviour:
   volleyIntervalSeconds: 0.78
   maxVolleyCount: 2
   maxActiveSummonActors: 1
-  summonActionProfile: {fileID: 11400000, guid: 5784354a50ccc314eab97b19cdb7aeb9, type: 2}
+  summonActionProfile: {fileID: 11400000, guid: 27a60a5e55626974282eae0192593fef, type: 2}
   useBlockedHintSeconds: 0.75
 --- !u!114 &4019
 MonoBehaviour:
