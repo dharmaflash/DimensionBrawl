@@ -304,6 +304,10 @@ namespace DimensionBrawl.Editor
             SetFloat(serializedObject, "counterWaveAllyHoldSeconds", 0.45f);
             SetFloat(serializedObject, "unstableCounterWaveFinalWindowScale", 0.85f);
             SetFloat(serializedObject, "criticalCounterWaveFinalWindowScale", 0.65f);
+            SetFloat(
+                serializedObject,
+                "cleanFollowupEnergyPulseOverride",
+                BossBarrageSummonReviewContract.Slot3RequiredMana);
             SetFloat(serializedObject, "counterWaveAnswerEnergyPulseOverride", 205f);
             SetInt(serializedObject, "objectiveStepCount", 3);
             SetString(serializedObject, "stepPrefix", "Survive");

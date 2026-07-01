@@ -93,7 +93,9 @@ namespace DimensionBrawl.Tests
             Assert.Greater(stageProfile.CounterWaveStabilizeRouteBonus01, 0f);
             Assert.That(stageProfile.CounterWaveAllyHoldSeconds, Is.InRange(0.25f, 0.75f));
             Assert.That(stageProfile.UnansweredBossHitRoutePenalty01, Is.InRange(0.04f, 0.12f));
-            Assert.That(stageProfile.CleanFollowupEnergyPulseOverride, Is.InRange(200f, 240f));
+            Assert.That(
+                stageProfile.CleanFollowupEnergyPulseOverride,
+                Is.EqualTo(BossBarrageSummonReviewContract.Slot3RequiredMana).Within(0.001f));
             Assert.That(stageProfile.CounterWaveAnswerEnergyPulseOverride, Is.InRange(200f, 220f));
             Assert.Greater(stageProfile.CounterWaveEntryRoutePenalty01, 0f);
             Assert.Greater(

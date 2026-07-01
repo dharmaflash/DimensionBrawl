@@ -38,7 +38,7 @@ MonoBehaviour:
   counterWaveAllyHoldSeconds: 0.45
   unstableCounterWaveFinalWindowScale: 0.85
   criticalCounterWaveFinalWindowScale: 0.65
-  cleanFollowupEnergyPulseOverride: 205
+  cleanFollowupEnergyPulseOverride: 300
   counterWaveAnswerEnergyPulseOverride: 205
   objectiveStepCount: 3
   stepPrefix: Survive

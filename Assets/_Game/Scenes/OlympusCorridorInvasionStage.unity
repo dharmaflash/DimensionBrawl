@@ -159,7 +159,7 @@ Transform:
   m_LocalScale: {x: 0.9999998, y: 1, z: 0.9999999}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1128800422}
+  m_Father: {fileID: 757503878}
   m_LocalEulerAnglesHint: {x: 24, y: 0, z: 0}
 --- !u!20 &1002
 Camera:
@@ -230,7 +230,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 68a992b8d629437bb642aeb3ea4a3342, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   target: {fileID: 4001}
   threat: {fileID: 656499980}
@@ -239,7 +239,7 @@ MonoBehaviour:
   followSmoothTime: 0.12
   rotationSmooth: 16
   useFixedRearYaw: 1
-  fixedRearYawReference: {fileID: 1128800422}
+  fixedRearYawReference: {fileID: 757503878}
   fixedRearYawOffsetDegrees: 0
   orbitAction: {fileID: 0}
   mobileOrbitInput: {x: 0, y: 0}
@@ -746,7 +746,7 @@ Transform:
   - {fileID: 1228450371}
   - {fileID: 1775871665}
   - {fileID: 189310888}
-  m_Father: {fileID: 1128800422}
+  m_Father: {fileID: 757503878}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!143 &4002
 CharacterController:
@@ -1807,7 +1807,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1128800422}
+  m_Father: {fileID: 757503878}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &6002
 MonoBehaviour:
@@ -1862,7 +1862,7 @@ Transform:
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1128800422}
+  m_Father: {fileID: 757503878}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &6102
 MeshFilter:
@@ -1952,7 +1952,7 @@ Transform:
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1128800422}
+  m_Father: {fileID: 757503878}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &6202
 MeshFilter:
@@ -3773,7 +3773,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1128800422}
+  m_Father: {fileID: 757503878}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &13441806
 GameObject:
@@ -8886,7 +8886,7 @@ Transform:
   - {fileID: 291209234}
   - {fileID: 746669974}
   - {fileID: 1530328621}
-  m_Father: {fileID: 1128800422}
+  m_Father: {fileID: 757503878}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &42410668
 GameObject:
@@ -34035,6 +34035,59 @@ RotationConstraint:
   m_Sources:
   - sourceTransform: {fileID: 1743763592}
     weight: 1
+--- !u!1 &198438210
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 198438211}
+  - component: {fileID: 198438212}
+  m_Layer: 0
+  m_Name: OlympusCorridor_StairToCorridorCombatTrigger
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &198438211
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 198438210}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -0.18340205, y: -7.3831196, z: 37.70208}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 757503878}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!135 &198438212
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 198438210}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 2.75
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &198855404
 GameObject:
   m_ObjectHideFlags: 0
@@ -35892,7 +35945,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1128800422}
+  m_Father: {fileID: 757503878}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &210079848
 GameObject:
@@ -40243,7 +40296,7 @@ Transform:
   m_Children:
   - {fileID: 2061114608}
   - {fileID: 1927441789}
-  m_Father: {fileID: 1128800422}
+  m_Father: {fileID: 757503878}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &234577704
 MonoBehaviour:
@@ -41855,7 +41908,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1128800422}
+  m_Father: {fileID: 757503878}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &243404718
 GameObject:
@@ -44885,59 +44938,6 @@ Transform:
   - {fileID: 1698565440}
   m_Father: {fileID: 1793320558}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &263195074
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 263195075}
-  - component: {fileID: 263195076}
-  m_Layer: 0
-  m_Name: LeftWall
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &263195075
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 263195074}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -4.2500005, y: 1.6999998, z: 31.000008}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1287249688}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &263195076
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 263195074}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 0.35, y: 3.4, z: 52}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &263200851
 GameObject:
   m_ObjectHideFlags: 0
@@ -60149,7 +60149,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1128800422}
+  m_Father: {fileID: 757503878}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &333788425
 GameObject:
@@ -71864,6 +71864,59 @@ Transform:
   - {fileID: 201575187}
   m_Father: {fileID: 1793320558}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &405809528
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 405809529}
+  - component: {fileID: 405809530}
+  m_Layer: 0
+  m_Name: BackGate
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &405809529
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 405809528}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 1.1368684e-13, y: 1.6999998, z: 8.500001}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1141331246}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &405809530
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 405809528}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 8.5, y: 3.4, z: 0.35}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &406231316
 GameObject:
   m_ObjectHideFlags: 0
@@ -74114,59 +74167,6 @@ Transform:
   - {fileID: 184768909}
   m_Father: {fileID: 108376835}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &420155060
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 420155061}
-  - component: {fileID: 420155062}
-  m_Layer: 0
-  m_Name: OlympusCorridor_IntroStairTraversalSupport
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &420155061
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 420155060}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0.09799558, y: -0.0024204552, z: 0.00023834035, w: 0.99518394}
-  m_LocalPosition: {x: -0.09162513, y: -3.7126722, z: 18.83544}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1641079238}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &420155062
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 420155060}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 7.25, y: 0.18, z: 40.44083}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &420318954
 GameObject:
   m_ObjectHideFlags: 0
@@ -78130,59 +78130,6 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 1.1907692, y: 1.3204042, z: 4.04116}
   m_Center: {x: 0, y: 0.20146765, z: 0.17008664}
---- !u!1 &444589173
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 444589174}
-  - component: {fileID: 444589175}
-  m_Layer: 0
-  m_Name: BackGate
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &444589174
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 444589173}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.1368684e-13, y: 1.6999998, z: 8.500001}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1287249688}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &444589175
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 444589173}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 8.5, y: 3.4, z: 0.35}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &444605180
 GameObject:
   m_ObjectHideFlags: 0
@@ -85021,7 +84968,9 @@ PlayableDirector:
     value: {fileID: 0}
   - key: {fileID: 0}
     value: {fileID: 0}
-  - key: {fileID: 2114508365354634696, guid: 78db0cf6d732b004db26927620f65656, type: 2}
+  - key: {fileID: 0}
+    value: {fileID: 0}
+  - key: {fileID: -9216677372597870393, guid: 78db0cf6d732b004db26927620f65656, type: 2}
     value: {fileID: 590892885}
   m_ExposedReferences:
     m_References:
@@ -95703,7 +95652,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1128800422}
+  m_Father: {fileID: 757503878}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &552196233
 GameObject:
@@ -95747,61 +95696,8 @@ Transform:
   - {fileID: 298219196}
   - {fileID: 1828030600}
   - {fileID: 1943493108}
-  m_Father: {fileID: 1128800422}
+  m_Father: {fileID: 757503878}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &552547778
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 552547779}
-  - component: {fileID: 552547780}
-  m_Layer: 0
-  m_Name: OlympusCorridor_StairToCorridorCombatTrigger
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &552547779
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 552547778}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.18340205, y: -7.3831196, z: 37.70208}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1128800422}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!135 &552547780
-SphereCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 552547778}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 1
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Radius: 2.75
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &552893956
 GameObject:
   m_ObjectHideFlags: 0
@@ -112931,6 +112827,59 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &636142471
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 636142472}
+  - component: {fileID: 636142473}
+  m_Layer: 0
+  m_Name: RightWall
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &636142472
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 636142471}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 4.2500005, y: 1.6999998, z: 31.000008}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1141331246}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &636142473
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 636142471}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.35, y: 3.4, z: 52}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &636180338
 GameObject:
   m_ObjectHideFlags: 0
@@ -116240,7 +116189,7 @@ Transform:
   - {fileID: 991397173}
   - {fileID: 198091567}
   - {fileID: 630676592}
-  m_Father: {fileID: 1128800422}
+  m_Father: {fileID: 757503878}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &656499981
 MonoBehaviour:
@@ -128858,7 +128807,7 @@ Transform:
   - {fileID: 218742575}
   - {fileID: 1201890038}
   - {fileID: 588551698}
-  m_Father: {fileID: 1128800422}
+  m_Father: {fileID: 757503878}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &725506939
 GameObject:
@@ -133454,7 +133403,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 1128800422}
+    m_TransformParent: {fileID: 757503878}
     m_Modifications:
     - target: {fileID: 149028, guid: bffbfb5b2823ee54692bcc11c2a88512, type: 3}
       propertyPath: m_Name
@@ -134461,6 +134410,65 @@ Transform:
   - {fileID: 1917761712}
   - {fileID: 1064023566}
   m_Father: {fileID: 1793320558}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &757503877
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 757503878}
+  m_Layer: 0
+  m_Name: OlympusCorridor_BossBarrageCombatPackage
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &757503878
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 757503877}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: -51.402077, y: 7.9849997, z: -0.4110782}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1001}
+  - {fileID: 4001}
+  - {fileID: 6001}
+  - {fileID: 6101}
+  - {fileID: 6201}
+  - {fileID: 42275784}
+  - {fileID: 725440397}
+  - {fileID: 1907862087}
+  - {fileID: 1051595598}
+  - {fileID: 551038523}
+  - {fileID: 209525650}
+  - {fileID: 1529378215}
+  - {fileID: 333558077}
+  - {fileID: 656499980}
+  - {fileID: 849479834}
+  - {fileID: 752959078}
+  - {fileID: 234577703}
+  - {fileID: 242798374}
+  - {fileID: 1546277501}
+  - {fileID: 13346178}
+  - {fileID: 1916027650}
+  - {fileID: 552196234}
+  - {fileID: 1860219035}
+  - {fileID: 1874492128}
+  - {fileID: 1345852258}
+  - {fileID: 198438211}
+  - {fileID: 1203837781}
+  - {fileID: 1141331246}
+  m_Father: {fileID: 1596357261}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &757758416
 GameObject:
@@ -147299,7 +147307,7 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 1128800422}
+    m_TransformParent: {fileID: 757503878}
     m_Modifications:
     - target: {fileID: 396118273611275809, guid: 3d5bd31d160d2064a9c8ff54e04d2d65, type: 3}
       propertyPath: targetCandidates.Array.size
@@ -156449,59 +156457,6 @@ Transform:
   - {fileID: 1802840123}
   m_Father: {fileID: 1793320558}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &910005380
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 910005381}
-  - component: {fileID: 910005382}
-  m_Layer: 0
-  m_Name: RightWall
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &910005381
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 910005380}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 4.2500005, y: 1.6999998, z: 31.000008}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1287249688}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &910005382
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 910005380}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 0.35, y: 3.4, z: 52}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &910530914
 GameObject:
   m_ObjectHideFlags: 0
@@ -177931,7 +177886,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1128800422}
+  m_Father: {fileID: 757503878}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1054861635
 GameObject:
@@ -189966,65 +189921,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &1128800421
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1128800422}
-  m_Layer: 0
-  m_Name: OlympusCorridor_BossBarrageCombatPackage
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1128800422
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1128800421}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: 0.7071068, z: -0, w: 0.7071068}
-  m_LocalPosition: {x: -51.402077, y: 7.9849997, z: -0.4110782}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1001}
-  - {fileID: 4001}
-  - {fileID: 6001}
-  - {fileID: 6101}
-  - {fileID: 6201}
-  - {fileID: 42275784}
-  - {fileID: 725440397}
-  - {fileID: 1907862087}
-  - {fileID: 1051595598}
-  - {fileID: 551038523}
-  - {fileID: 209525650}
-  - {fileID: 1529378215}
-  - {fileID: 333558077}
-  - {fileID: 656499980}
-  - {fileID: 849479834}
-  - {fileID: 752959078}
-  - {fileID: 234577703}
-  - {fileID: 242798374}
-  - {fileID: 1546277501}
-  - {fileID: 13346178}
-  - {fileID: 1916027650}
-  - {fileID: 552196234}
-  - {fileID: 1860219035}
-  - {fileID: 1874492128}
-  - {fileID: 1641079238}
-  - {fileID: 552547779}
-  - {fileID: 2083655948}
-  - {fileID: 1287249688}
-  m_Father: {fileID: 1473109808}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1129149761
 GameObject:
   m_ObjectHideFlags: 0
@@ -191384,6 +191280,41 @@ Transform:
   m_Children:
   - {fileID: 1306347394}
   m_Father: {fileID: 1793320558}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1141331245
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1141331246}
+  m_Layer: 0
+  m_Name: OlympusCorridor_CorridorCombatBounds
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &1141331246
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1141331245}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1232340884}
+  - {fileID: 636142472}
+  - {fileID: 405809529}
+  - {fileID: 1183385176}
+  m_Father: {fileID: 757503878}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1142124073
 GameObject:
@@ -198140,6 +198071,59 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.26248413, y: 0.41798544, z: 0.11978981}
   m_Center: {x: -0.003557086, y: 0, z: 0}
+--- !u!1 &1183385175
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1183385176}
+  - component: {fileID: 1183385177}
+  m_Layer: 0
+  m_Name: ForwardLimit
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1183385176
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1183385175}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 9.094947e-13, y: 1.6999998, z: 56.000015}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1141331246}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &1183385177
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1183385175}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 8.5, y: 3.4, z: 0.35}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1183916514
 GameObject:
   m_ObjectHideFlags: 0
@@ -201348,6 +201332,59 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 0.26959845, y: 0.41798544, z: 0.11978981}
   m_Center: {x: 0.000000074505806, y: 0, z: 0}
+--- !u!1 &1203837780
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1203837781}
+  - component: {fileID: 1203837782}
+  m_Layer: 0
+  m_Name: OlympusCorridor_IntroSwordGate_StairBlocker
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1203837781
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1203837780}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 1.1368684e-13, y: 1.6499996, z: 7.3500032}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 757503878}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &1203837782
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1203837780}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 8.5, y: 3.3, z: 0.45}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1203961690
 GameObject:
   m_ObjectHideFlags: 0
@@ -204618,6 +204655,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 4001}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1228619644
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1228619645}
+  m_Layer: 0
+  m_Name: OlympusCorridor_StairEntryAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1228619645
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1228619644}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.114702225, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1345852258}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1228761803
 GameObject:
   m_ObjectHideFlags: 0
@@ -204880,6 +204948,59 @@ Transform:
   - {fileID: 508868786}
   m_Father: {fileID: 1316854894}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1232340883
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1232340884}
+  - component: {fileID: 1232340885}
+  m_Layer: 0
+  m_Name: LeftWall
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1232340884
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1232340883}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -4.2500005, y: 1.6999998, z: 31.000008}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1141331246}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &1232340885
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1232340883}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.35, y: 3.4, z: 52}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1233285656
 GameObject:
   m_ObjectHideFlags: 0
@@ -211784,41 +211905,6 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
---- !u!1 &1287249687
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1287249688}
-  m_Layer: 0
-  m_Name: OlympusCorridor_CorridorCombatBounds
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!4 &1287249688
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1287249687}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 263195075}
-  - {fileID: 910005381}
-  - {fileID: 444589174}
-  - {fileID: 1769160776}
-  m_Father: {fileID: 1128800422}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1287664214
 GameObject:
   m_ObjectHideFlags: 0
@@ -222835,6 +222921,39 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 4300004, guid: abc00000000016968834784491431395, type: 3}
+--- !u!1 &1345852257
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1345852258}
+  m_Layer: 0
+  m_Name: OlympusCorridor_IntroSwordGate
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 0
+--- !u!4 &1345852258
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1345852257}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1228619645}
+  - {fileID: 1579389246}
+  m_Father: {fileID: 757503878}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1346300025
 GameObject:
   m_ObjectHideFlags: 0
@@ -242276,152 +242395,6 @@ Transform:
   - {fileID: 366905868}
   m_Father: {fileID: 1793320558}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1473109806
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1473109808}
-  - component: {fileID: 1473109807}
-  m_Layer: 0
-  m_Name: OlympusCorridor_CombatFlowRoot
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &1473109807
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1473109806}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c1b53ea836b66504abb007f07224a407, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.OlympusCorridorCombatFlowController
-  introDirector: {fileID: 488134470}
-  introHandoffSeconds: 36.524355053222656
-  introCamerasToDisable:
-  - {fileID: 1969907285}
-  - {fileID: 398794304}
-  - {fileID: 2086467313}
-  - {fileID: 508396617}
-  - {fileID: 1594950087}
-  introAudioListenersToDisable:
-  - {fileID: 1594950089}
-  cutsceneBehavioursToDisableOnHandoff:
-  - {fileID: 1513291588}
-  cutsceneRootsToDisableOnHandoff:
-  - {fileID: 590892885}
-  handoffRoots:
-  - {fileID: 1000}
-  - {fileID: 242798369}
-  - {fileID: 1546277496}
-  - {fileID: 13346175}
-  - {fileID: 1907862086}
-  - {fileID: 551038522}
-  - {fileID: 209525649}
-  alwaysDisabledRoots:
-  - {fileID: 42275783}
-  - {fileID: 725440396}
-  combatCameraController: {fileID: 1004}
-  combatCameraHandoffPose: {fileID: 1609306968}
-  introSwordGateRoot: {fileID: 1641079237}
-  introSwordEnemies:
-  - {fileID: 1484262218}
-  - {fileID: 1972162869}
-  - {fileID: 1570869591}
-  introSwordEnemyGameplayBehaviours:
-  - {fileID: 1484262218}
-  - {fileID: 1484262215}
-  - {fileID: 1484262217}
-  - {fileID: 1484262213}
-  - {fileID: 1484262211}
-  - {fileID: 1484262214}
-  - {fileID: 1484262216}
-  - {fileID: 1484262212}
-  - {fileID: 1972162869}
-  - {fileID: 1972162866}
-  - {fileID: 1972162868}
-  - {fileID: 1972162864}
-  - {fileID: 1972162862}
-  - {fileID: 1972162865}
-  - {fileID: 1972162867}
-  - {fileID: 1972162863}
-  - {fileID: 1570869591}
-  - {fileID: 1570869588}
-  - {fileID: 1570869590}
-  - {fileID: 1570869586}
-  - {fileID: 1570869584}
-  - {fileID: 1570869587}
-  - {fileID: 1570869589}
-  - {fileID: 1570869585}
-  stairBlockers:
-  - {fileID: 2083655949}
-  runTutorialAfterIntroHandoff: 1
-  tutorialDirector: {fileID: 0}
-  reviewHud: {fileID: 242798373}
-  mobileHud: {fileID: 242798372}
-  hudRevealDelaySeconds: 0.08
-  hudRevealDurationSeconds: 0.18
-  stairTriggerCenter: {fileID: 552547779}
-  stairTriggerRadius: 2.75
-  corridorCombatRoots:
-  - {fileID: 6000}
-  - {fileID: 6100}
-  - {fileID: 6200}
-  - {fileID: 1051595596}
-  - {fileID: 551038522}
-  - {fileID: 209525649}
-  - {fileID: 1529378214}
-  - {fileID: 333558076}
-  - {fileID: 656499977}
-  - {fileID: 849479835}
-  - {fileID: 752959080}
-  - {fileID: 234577701}
-  - {fileID: 1916027649}
-  - {fileID: 552196233}
-  - {fileID: 1860219034}
-  - {fileID: 1874492126}
-  corridorBoundsRoots:
-  - {fileID: 1287249687}
-  corridorTargets:
-  - {fileID: 849479833}
-  - {fileID: 656499979}
-  corridorClearTargets:
-  - {fileID: 849479833}
-  player: {fileID: 4004}
-  combatModeController: {fileID: 4013}
-  targetSelector: {fileID: 4008}
-  rangedBasicAttackAction: {fileID: 4011}
-  skill1Action: {fileID: 4017}
-  summonSlot1Action: {fileID: 4016}
-  supportSummonActions:
-  - {fileID: 4015}
-  - {fileID: 4014}
-  phase: 0
---- !u!4 &1473109808
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1473109806}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1128800422}
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1473728759
 GameObject:
   m_ObjectHideFlags: 0
@@ -249941,7 +249914,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1128800422}
+  m_Father: {fileID: 757503878}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1529441249
 GameObject:
@@ -254678,7 +254651,7 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1542562581}
-  m_Father: {fileID: 1128800422}
+  m_Father: {fileID: 757503878}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
@@ -260328,6 +260301,59 @@ Transform:
   - {fileID: 1155558428}
   m_Father: {fileID: 1793320558}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1579389245
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1579389246}
+  - component: {fileID: 1579389247}
+  m_Layer: 0
+  m_Name: OlympusCorridor_IntroStairTraversalSupport
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1579389246
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1579389245}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.09799558, y: -0.0024204552, z: 0.00023834035, w: 0.99518394}
+  m_LocalPosition: {x: -0.09162513, y: -3.7126722, z: 18.83544}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1345852258}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!65 &1579389247
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1579389245}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 7.25, y: 0.18, z: 40.44083}
+  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1581480831
 GameObject:
   m_ObjectHideFlags: 0
@@ -263134,6 +263160,153 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &1596357259
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1596357261}
+  - component: {fileID: 1596357260}
+  m_Layer: 0
+  m_Name: OlympusCorridor_CombatFlowRoot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1596357260
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1596357259}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c1b53ea836b66504abb007f07224a407, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.LevelDesign.OlympusCorridorCombatFlowController
+  introDirector: {fileID: 488134470}
+  introHandoffSeconds: 36.524355053222656
+  introCamerasToDisable:
+  - {fileID: 1969907285}
+  - {fileID: 398794304}
+  - {fileID: 2086467313}
+  - {fileID: 508396617}
+  - {fileID: 1594950087}
+  introAudioListenersToDisable:
+  - {fileID: 1594950089}
+  cutsceneBehavioursToDisableOnHandoff:
+  - {fileID: 1513291588}
+  cutsceneRootsToDisableOnHandoff:
+  - {fileID: 590892885}
+  handoffRoots:
+  - {fileID: 1000}
+  - {fileID: 242798369}
+  - {fileID: 1546277496}
+  - {fileID: 13346175}
+  - {fileID: 1907862086}
+  - {fileID: 551038522}
+  - {fileID: 209525649}
+  alwaysDisabledRoots:
+  - {fileID: 42275783}
+  - {fileID: 725440396}
+  combatCameraController: {fileID: 1004}
+  combatCameraHandoffPose: {fileID: 1609306968}
+  introSwordGateRoot: {fileID: 1345852257}
+  introSwordEnemies:
+  - {fileID: 1484262218}
+  - {fileID: 1972162869}
+  - {fileID: 1570869591}
+  introSwordEnemyGameplayBehaviours:
+  - {fileID: 1484262218}
+  - {fileID: 1484262215}
+  - {fileID: 1484262217}
+  - {fileID: 1484262213}
+  - {fileID: 1484262211}
+  - {fileID: 1484262214}
+  - {fileID: 1484262216}
+  - {fileID: 1484262212}
+  - {fileID: 1972162869}
+  - {fileID: 1972162866}
+  - {fileID: 1972162868}
+  - {fileID: 1972162864}
+  - {fileID: 1972162862}
+  - {fileID: 1972162865}
+  - {fileID: 1972162867}
+  - {fileID: 1972162863}
+  - {fileID: 1570869591}
+  - {fileID: 1570869588}
+  - {fileID: 1570869590}
+  - {fileID: 1570869586}
+  - {fileID: 1570869584}
+  - {fileID: 1570869587}
+  - {fileID: 1570869589}
+  - {fileID: 1570869585}
+  stairBlockers:
+  - {fileID: 1203837782}
+  runTutorialAfterIntroHandoff: 1
+  tutorialDirector: {fileID: 0}
+  reviewHud: {fileID: 242798373}
+  mobileHud: {fileID: 242798372}
+  hudRevealDelaySeconds: 0.08
+  hudRevealDurationSeconds: 0.18
+  stairEntryAnchor: {fileID: 1228619645}
+  stairTriggerCenter: {fileID: 198438211}
+  stairTriggerRadius: 2.75
+  corridorCombatRoots:
+  - {fileID: 6000}
+  - {fileID: 6100}
+  - {fileID: 6200}
+  - {fileID: 1051595596}
+  - {fileID: 551038522}
+  - {fileID: 209525649}
+  - {fileID: 1529378214}
+  - {fileID: 333558076}
+  - {fileID: 656499977}
+  - {fileID: 849479835}
+  - {fileID: 752959080}
+  - {fileID: 234577701}
+  - {fileID: 1916027649}
+  - {fileID: 552196233}
+  - {fileID: 1860219034}
+  - {fileID: 1874492126}
+  corridorBoundsRoots:
+  - {fileID: 1141331245}
+  corridorTargets:
+  - {fileID: 849479833}
+  - {fileID: 656499979}
+  corridorClearTargets:
+  - {fileID: 849479833}
+  player: {fileID: 4004}
+  combatModeController: {fileID: 4013}
+  targetSelector: {fileID: 4008}
+  rangedBasicAttackAction: {fileID: 4011}
+  skill1Action: {fileID: 4017}
+  summonSlot1Action: {fileID: 4016}
+  supportSummonActions:
+  - {fileID: 4015}
+  - {fileID: 4014}
+  phase: 0
+--- !u!4 &1596357261
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1596357259}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 757503878}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1596800791
 GameObject:
   m_ObjectHideFlags: 0
@@ -269770,38 +269943,6 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
---- !u!1 &1641079237
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1641079238}
-  m_Layer: 0
-  m_Name: OlympusCorridor_IntroSwordGate
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!4 &1641079238
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1641079237}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 420155061}
-  m_Father: {fileID: 1128800422}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1641319537
 GameObject:
   m_ObjectHideFlags: 0
@@ -292987,59 +293128,6 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 4300004, guid: abc00000000001152711253471505489, type: 3}
---- !u!1 &1769160775
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1769160776}
-  - component: {fileID: 1769160777}
-  m_Layer: 0
-  m_Name: ForwardLimit
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1769160776
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1769160775}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 9.094947e-13, y: 1.6999998, z: 56.000015}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1287249688}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &1769160777
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1769160775}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 8.5, y: 3.4, z: 0.35}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &1769866214
 GameObject:
   m_ObjectHideFlags: 0
@@ -310111,7 +310199,7 @@ Transform:
   - {fileID: 1273419024}
   - {fileID: 1873674861}
   - {fileID: 535400592}
-  m_Father: {fileID: 1128800422}
+  m_Father: {fileID: 757503878}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1860753554
 GameObject:
@@ -313458,7 +313546,7 @@ Transform:
   - {fileID: 1047954937}
   - {fileID: 465666818}
   - {fileID: 1300126077}
-  m_Father: {fileID: 1128800422}
+  m_Father: {fileID: 757503878}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1874589719
 GameObject:
@@ -319190,7 +319278,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1128800422}
+  m_Father: {fileID: 757503878}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1907890532
 GameObject:
@@ -320378,7 +320466,7 @@ Transform:
   - {fileID: 1394055149}
   - {fileID: 573346504}
   - {fileID: 1987807575}
-  m_Father: {fileID: 1128800422}
+  m_Father: {fileID: 757503878}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1916351898
 GameObject:
@@ -344777,59 +344865,6 @@ Transform:
   - {fileID: 541388822}
   m_Father: {fileID: 1793320558}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &2083655947
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 2083655948}
-  - component: {fileID: 2083655949}
-  m_Layer: 0
-  m_Name: OlympusCorridor_IntroSwordGate_StairBlocker
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &2083655948
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2083655947}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.1368684e-13, y: 1.6499996, z: 7.3500032}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1128800422}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!65 &2083655949
-BoxCollider:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2083655947}
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_IsTrigger: 0
-  m_ProvidesContacts: 0
-  m_Enabled: 1
-  serializedVersion: 3
-  m_Size: {x: 8.5, y: 3.3, z: 0.45}
-  m_Center: {x: 0, y: 0, z: 0}
 --- !u!1 &2083801273
 GameObject:
   m_ObjectHideFlags: 0
@@ -539166,4 +539201,4 @@ SceneRoots:
   - {fileID: 1412818859}
   - {fileID: 1681513017}
   - {fileID: 814795219}
-  - {fileID: 1473109808}
+  - {fileID: 1596357261}

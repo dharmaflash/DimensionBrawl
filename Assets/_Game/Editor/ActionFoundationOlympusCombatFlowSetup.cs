@@ -42,6 +42,7 @@ namespace DimensionBrawl.Editor
         private const string InvasionBridgeRootName = "IntroGatePodReview_InvasionBridge";
         private const string StairTriggerName = "OlympusCorridor_StairToCorridorCombatTrigger";
         private const string StairBlockerName = "OlympusCorridor_IntroSwordGate_StairBlocker";
+        private const string StairEntryAnchorName = "OlympusCorridor_StairEntryAnchor";
         private const string StairTraversalSupportName = "OlympusCorridor_IntroStairTraversalSupport";
         private const string CorridorBoundsRootName = "OlympusCorridor_CorridorCombatBounds";
         private const string StageClearExitAnchorName = "StageClear_CorridorExit";
@@ -729,6 +730,11 @@ namespace DimensionBrawl.Editor
                 playerRoot);
 
             SerializedObject flowSerialized = new SerializedObject(flowController);
+            Transform stairEntryAnchor =
+                ResolveTransformReference(GetObjectReferenceProperty(flowSerialized, "stairEntryAnchor"));
+            bool stairEntryAnchorResolved = stairEntryAnchor != null;
+            bool stairEntryAnchorMatchesTraversalStart = stairEntryAnchorResolved
+                && Vector3.Distance(stairEntryAnchor.position, playerRoot.transform.position) <= 0.05f;
             CombatHealth[] introEnemyHealthsForClearSample =
                 GetCombatHealthArrayProperty(flowSerialized, "introSwordEnemies");
             bool introEnemyHealthsResolvedForClearSample =
@@ -817,6 +823,8 @@ namespace DimensionBrawl.Editor
                 <= 0.05f;
 
             report.Add("Stair-to-corridor trigger sample:");
+            report.Add(
+                $"  {StairEntryAnchorName} resolved={stairEntryAnchorResolved} world={FormatObjectReference(stairEntryAnchor)} matchesTraversalStart={stairEntryAnchorMatchesTraversalStart}");
             report.Add($"  introEnemyHealthsResolved={introEnemyHealthsResolvedForClearSample}");
             report.Add($"  stairBlockerEnabledAtIntroGate={stairBlockerEnabledAtIntroGate}");
             report.Add($"  introAliveBeforeClear={introAliveBeforeClearSample}");
@@ -1078,6 +1086,8 @@ namespace DimensionBrawl.Editor
                 && introGateClearedAfterDamage
                 && stairBlockerDisabledAfterIntroClear
                 && introEnemyCollisionDisabledAfterClear
+                && stairEntryAnchorResolved
+                && stairEntryAnchorMatchesTraversalStart
                 && stairTriggerMatchesCorridorStartMarker
                 && corridorCombatStartMarkerNonBlocking
                 && stairTraversalClearToBottom
@@ -1226,6 +1236,11 @@ namespace DimensionBrawl.Editor
                 IntroSwordGateRootName,
                 packageRoot.transform.position,
                 packageRoot.transform.rotation).transform;
+            Transform stairEntryAnchor = CreateChild(
+                introSwordGateRoot,
+                StairEntryAnchorName,
+                stairTraversalStart,
+                packageRoot.transform.rotation).transform;
             CreateStairTraversalSupport(introSwordGateRoot, stairTraversalStart, stairTraversalEnd);
             StairTraversalCleanupSnapshot stairTraversalCleanup =
                 DisableStairTraversalBlockingColliders(
@@ -1290,6 +1305,7 @@ namespace DimensionBrawl.Editor
                 introEnemies,
                 introEnemyGameplayBehaviours,
                 new[] { stairBlocker },
+                stairEntryAnchor,
                 stairTrigger,
                 2.75f,
                 corridorRoots,

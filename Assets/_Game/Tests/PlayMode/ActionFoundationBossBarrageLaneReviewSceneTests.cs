@@ -286,6 +286,10 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual("Survive", stageProfile.StepPrefix);
             Assert.AreEqual(0.62f, stageProfile.RouteStabilityStart01, 0.001f);
             Assert.AreEqual(0.22f, stageProfile.CounterWaveStabilizeRouteBonus01, 0.001f);
+            Assert.AreEqual(
+                BossBarrageSummonReviewContract.Slot3RequiredMana,
+                stageProfile.CleanFollowupEnergyPulseOverride,
+                0.001f);
             Assert.AreEqual(205f, stageProfile.CounterWaveAnswerEnergyPulseOverride, 0.001f);
             Assert.GreaterOrEqual(stageProfile.BeatCount, 6);
             Assert.GreaterOrEqual(stageProfile.PressureSlotCount, 6);
@@ -4022,8 +4026,8 @@ namespace DimensionBrawl.Tests
                 "The summon follow-up objective should preserve which tier of SummonSlot1 created the opening.");
             Assert.That(
                 reviewHud.CompactObjectiveReadout,
-                Does.Contain("Skill1 LV2"),
-                "The compact HUD goal should name the stage-profile follow-up Skill tier instead of only saying Fire Skill1.");
+                Does.Contain($"Skill1 LV{BossBarrageSummonReviewContract.Slot3MinimumTier}"),
+                "The compact HUD goal should name the rewarded follow-up Skill tier instead of only saying Fire Skill1.");
             Assert.That(
                 pocketOwner.SummonPressureBreakRemainingSeconds,
                 Is.EqualTo(3.7f).Within(0.001f),
@@ -4063,10 +4067,11 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(
                 energyLadder.CanSpend,
                 "After a correct summon block, the EN reward pulse should reopen at least LV1 for a follow-up choice.");
-            Assert.AreEqual(2, energyLadder.AvailableTier);
+            Assert.AreEqual(3, energyLadder.AvailableTier);
 
             float bossHealthBeforeFollowup = bossHealth.CurrentHealth;
-            int cinematicCueCountBeforeHit = cinematicCueDirector.TotalPlayCount;
+            int summonFollowupHitCinematicCountBefore = cinematicCueDirector.SummonFollowupHitPlayCount;
+            int summonFollowupHitOverlayCountBefore = cinematicCueDirector.SummonFollowupHitFrameOverlayCount;
             Assert.IsTrue(skill1Action.TryUseSkill1());
             Assert.Greater(
                 skill1Action.ActiveProjectileCount,
@@ -4079,9 +4084,9 @@ namespace DimensionBrawl.Tests
             pocketOwner.Tick(0f);
 
             Assert.IsTrue(pocketOwner.UsedSkill1DuringSummonFollowup);
-            Assert.AreEqual(2, pocketOwner.HighestSummonFollowupSkillTier);
+            Assert.AreEqual(BossBarrageSummonReviewContract.Slot3MinimumTier, pocketOwner.HighestSummonFollowupSkillTier);
             Assert.IsTrue(pocketOwner.Skill1FollowupHitConfirmed);
-            Assert.AreEqual(2, pocketOwner.HighestSkill1FollowupHitTier);
+            Assert.AreEqual(BossBarrageSummonReviewContract.Slot3MinimumTier, pocketOwner.HighestSkill1FollowupHitTier);
             Assert.GreaterOrEqual(
                 pocketOwner.Skill1FollowupDamage / bossHealth.MaxHealth,
                 Skill1VisibleBossHpShiftRatio,
@@ -4090,12 +4095,19 @@ namespace DimensionBrawl.Tests
                 followupHitCueCountBefore + 1,
                 cameraCueDriver.SummonFollowupHitCueRequestCount,
                 "A confirmed Skill1 boss hit should produce the follow-up hit camera cue.");
-            Assert.AreEqual(2, cameraCueDriver.LastSummonFollowupHitTier);
+            Assert.AreEqual(BossBarrageSummonReviewContract.Slot3MinimumTier, cameraCueDriver.LastSummonFollowupHitTier);
             Assert.AreEqual(
-                cinematicCueCountBeforeHit + 1,
-                cinematicCueDirector.TotalPlayCount,
+                summonFollowupHitCinematicCountBefore + 1,
+                cinematicCueDirector.SummonFollowupHitPlayCount,
                 "A confirmed Skill1 hit should interrupt the opening reframe with a follow-up hit camera sequence.");
-            Assert.AreEqual(ActionCinematicCueProfile.CueKind.SummonFollowupHit, cinematicCueDirector.LastPlayedKind);
+            Assert.AreEqual(
+                summonFollowupHitOverlayCountBefore + 1,
+                cinematicCueDirector.SummonFollowupHitFrameOverlayCount,
+                "The follow-up hit should still register its frame overlay even when LV3 Skill1 also plays the ultimate cut-in.");
+            Assert.AreEqual(
+                BossBarrageSummonReviewContract.Slot3MinimumTier,
+                cinematicCueDirector.LastSummonFollowupHitTier);
+            Assert.IsNotEmpty(cinematicCueDirector.LastSummonFollowupHitCueId);
             Assert.IsTrue(cinematicCueDirector.HasActiveFrameOverlay);
             Assert.GreaterOrEqual(
                 cameraCueDriver.LastSummonFollowupHitDamage / bossHealth.MaxHealth,
@@ -4104,7 +4116,7 @@ namespace DimensionBrawl.Tests
                 followupHitVfxCueCountBefore + 1,
                 pocketVfxCueBridge.FollowupHitCueRequestCount,
                 "A confirmed Skill1 boss hit should also produce a follow-up hit VFX cue.");
-            Assert.AreEqual(2, pocketVfxCueBridge.LastFollowupHitTier);
+            Assert.AreEqual(BossBarrageSummonReviewContract.Slot3MinimumTier, pocketVfxCueBridge.LastFollowupHitTier);
             Assert.GreaterOrEqual(
                 pocketVfxCueBridge.LastFollowupHitDamage / bossHealth.MaxHealth,
                 Skill1VisibleBossHpShiftRatio);
@@ -4131,6 +4143,7 @@ namespace DimensionBrawl.Tests
 
             int resultCueCountBeforeClear = screenCuePresenter.ResultCueRequestCount;
             int pocketClearVfxCueCountBefore = pocketVfxCueBridge.PocketClearCueRequestCount;
+            int pocketClearCameraCueCountBefore = cameraCueDriver.PocketClearCueRequestCount;
             int cinematicCueCountBeforeClear = cinematicCueDirector.TotalPlayCount;
             Assert.AreEqual(
                 1,
@@ -4147,10 +4160,22 @@ namespace DimensionBrawl.Tests
                 "The completed pocket should produce a distinct screen cue instead of ending with only HUD text or a marker.");
             Assert.AreEqual("Pocket.Cleared", screenCuePresenter.LastCueId);
             Assert.AreEqual(
-                cinematicCueCountBeforeClear + 1,
-                cinematicCueDirector.TotalPlayCount,
-                "Pocket clear should finish with a result camera bridge instead of ending on the hit-confirm shot.");
-            Assert.AreEqual(ActionCinematicCueProfile.CueKind.PocketClear, cinematicCueDirector.LastPlayedKind);
+                pocketClearCameraCueCountBefore + 1,
+                cameraCueDriver.PocketClearCueRequestCount,
+                "Pocket clear should still request a result camera cue even when the LV3 cut-in keeps the cinematic lane.");
+            Assert.AreEqual(BossBarrageSummonReviewContract.Slot3MinimumTier, cameraCueDriver.LastPocketClearTier);
+            if (cinematicCueDirector.TotalPlayCount > cinematicCueCountBeforeClear)
+            {
+                Assert.AreEqual(ActionCinematicCueProfile.CueKind.PocketClear, cinematicCueDirector.LastPlayedKind);
+            }
+            else
+            {
+                Assert.AreEqual(
+                    ActionCinematicCueProfile.CueKind.UltimateCutIn,
+                    cinematicCueDirector.LastPlayedKind,
+                    "The LV3 ultimate cut-in should keep cinematic priority when PocketClear arrives before it has handed off.");
+            }
+
             Assert.IsTrue(cinematicCueDirector.HasActiveFrameOverlay);
             Assert.AreEqual(0.92f, screenCuePresenter.LastCueIntensity, 0.001f);
             Assert.IsTrue(screenCuePresenter.HasActiveCue);
@@ -4632,7 +4657,7 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator PocketLv3SummonBlockCarriesOverflowIntoLv2FollowupChoice()
+        public IEnumerator PocketLv3SummonBlockCarriesOverflowIntoLv3FollowupChoice()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             CombatHealth playerHealth = RequireComponent<CombatHealth>(player.gameObject, "player health");
@@ -4688,7 +4713,9 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(2, pocketOwner.LastSummonPressureBreakTier);
             Assert.That(pocketOwner.LastSummonPressureBreakDuration, Is.EqualTo(3.7f).Within(0.001f));
             Assert.That(pocketOwner.LastSummonFollowupWindowDuration, Is.EqualTo(2.7f).Within(0.001f));
-            Assert.That(pocketOwner.SummonFollowupEnergyPulse, Is.EqualTo(205f).Within(0.001f));
+            Assert.That(
+                pocketOwner.SummonFollowupEnergyPulse,
+                Is.EqualTo(BossBarrageSummonReviewContract.Slot3RequiredMana).Within(0.001f));
             Assert.AreEqual(
                 followupWindowCueCountBefore + 1,
                 cameraCueDriver.SummonFollowupWindowCueRequestCount,

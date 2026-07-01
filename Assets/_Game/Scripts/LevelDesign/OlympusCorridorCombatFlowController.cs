@@ -52,6 +52,7 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField, Min(0.01f)] private float hudRevealDurationSeconds = 0.18f;
 
         [Header("Stair To Corridor")]
+        [SerializeField] private Transform stairEntryAnchor;
         [SerializeField] private Transform stairTriggerCenter;
         [SerializeField, Min(0f)] private float stairTriggerRadius = 2.75f;
         [SerializeField] private GameObject[] corridorCombatRoots = System.Array.Empty<GameObject>();
@@ -99,6 +100,7 @@ namespace DimensionBrawl.LevelDesign
             CombatHealth[] newIntroSwordEnemies,
             Behaviour[] newIntroSwordEnemyGameplayBehaviours,
             Collider[] newStairBlockers,
+            Transform newStairEntryAnchor,
             Transform newStairTriggerCenter,
             float newStairTriggerRadius,
             GameObject[] newCorridorCombatRoots,
@@ -142,6 +144,7 @@ namespace DimensionBrawl.LevelDesign
             introSwordEnemyGameplayBehaviours =
                 newIntroSwordEnemyGameplayBehaviours ?? System.Array.Empty<Behaviour>();
             stairBlockers = newStairBlockers ?? System.Array.Empty<Collider>();
+            stairEntryAnchor = newStairEntryAnchor;
             stairTriggerCenter = newStairTriggerCenter;
             stairTriggerRadius = Mathf.Max(0f, newStairTriggerRadius);
             corridorCombatRoots = newCorridorCombatRoots ?? System.Array.Empty<GameObject>();
@@ -211,7 +214,7 @@ namespace DimensionBrawl.LevelDesign
                 case FlowPhase.Tutorial:
                     if (tutorialDirector == null || tutorialDirector.IsCompleted)
                     {
-                        BeginWaitingForStairEntry();
+                        BeginWaitingForStairEntry(realignPlayerToEntry: true);
                     }
                     break;
                 case FlowPhase.IntroSwordGate:
@@ -362,7 +365,7 @@ namespace DimensionBrawl.LevelDesign
 
             if (director.IsCompleted)
             {
-                BeginWaitingForStairEntry();
+                BeginWaitingForStairEntry(realignPlayerToEntry: true);
             }
         }
 
@@ -468,6 +471,11 @@ namespace DimensionBrawl.LevelDesign
 
         private void BeginWaitingForStairEntry()
         {
+            BeginWaitingForStairEntry(realignPlayerToEntry: false);
+        }
+
+        private void BeginWaitingForStairEntry(bool realignPlayerToEntry)
+        {
             phase = FlowPhase.WaitingForStairEntry;
             UnregisterTutorialCompletedHandler();
             if (tutorialDirector != null && tutorialDirector.IsRunning)
@@ -481,6 +489,11 @@ namespace DimensionBrawl.LevelDesign
             SetCollidersEnabled(stairBlockers, false);
             ReleasePlayerMovementLocksForGameplay();
             SetPlayerLaneConstraintEnabled(false);
+            if (realignPlayerToEntry)
+            {
+                SnapPlayerToStairEntryAnchor();
+            }
+
             ConfigureTargetCandidates(System.Array.Empty<CombatHealth>());
         }
 
@@ -611,7 +624,7 @@ namespace DimensionBrawl.LevelDesign
         {
             if (phase == FlowPhase.Tutorial)
             {
-                BeginWaitingForStairEntry();
+                BeginWaitingForStairEntry(realignPlayerToEntry: true);
             }
         }
 
@@ -774,6 +787,43 @@ namespace DimensionBrawl.LevelDesign
             {
                 characterController.enabled = controllerWasEnabled;
             }
+        }
+
+        private void SnapPlayerToStairEntryAnchor()
+        {
+            if (player == null || stairEntryAnchor == null)
+            {
+                return;
+            }
+
+            CharacterController characterController = player.GetComponent<CharacterController>();
+            bool controllerWasEnabled = characterController != null && characterController.enabled;
+            if (characterController != null)
+            {
+                characterController.enabled = false;
+            }
+
+            Transform playerTransform = player.transform;
+            playerTransform.position = stairEntryAnchor.position;
+
+            if (characterController != null)
+            {
+                characterController.enabled = controllerWasEnabled;
+            }
+
+            player.ClearScriptedInputOverride();
+            player.SetMoveInput(Vector2.zero);
+            player.SetLookInput(Vector2.zero);
+            player.BeginExternalPlanarBurst(Vector3.zero, 0f);
+            if (stairTriggerCenter != null)
+            {
+                player.RequestFacingDirection(
+                    stairTriggerCenter.position - playerTransform.position,
+                    0.2f,
+                    snapImmediately: true);
+            }
+
+            Physics.SyncTransforms();
         }
 
         private bool TryResolvePlayerFootMinY(out float footMinY)
