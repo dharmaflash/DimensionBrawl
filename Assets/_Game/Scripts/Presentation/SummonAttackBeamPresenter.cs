@@ -13,6 +13,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private SummonFrontlineProxy proxy;
         [SerializeField] private Transform beamRoot;
         [SerializeField] private Renderer[] beamRenderers = System.Array.Empty<Renderer>();
+        [SerializeField] private ParticleSystem[] beamParticles = System.Array.Empty<ParticleSystem>();
         [SerializeField] private Color tierOneColor = new Color(0.28f, 0.95f, 1f, 0.78f);
         [SerializeField] private Color tierTwoColor = new Color(0.62f, 0.86f, 1f, 0.86f);
         [SerializeField] private Color tierThreeColor = new Color(1f, 0.72f, 0.22f, 0.92f);
@@ -27,6 +28,7 @@ namespace DimensionBrawl.Presentation
         public SummonFrontlineProxy Proxy => proxy;
         public Transform BeamRoot => beamRoot;
         public int BeamRendererCount => beamRenderers != null ? beamRenderers.Length : 0;
+        public int BeamParticleCount => beamParticles != null ? beamParticles.Length : 0;
 
         private void Awake()
         {
@@ -78,9 +80,42 @@ namespace DimensionBrawl.Presentation
 
         private void SetBeamVisible(bool visible)
         {
-            if (beamRoot != null && beamRoot.gameObject.activeSelf != visible)
+            if (beamRoot == null)
             {
-                beamRoot.gameObject.SetActive(visible);
+                return;
+            }
+
+            if (beamRoot.gameObject.activeSelf == visible)
+            {
+                return;
+            }
+
+            beamRoot.gameObject.SetActive(visible);
+            ResolveParticleReferences();
+            if (beamParticles == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < beamParticles.Length; i++)
+            {
+                ParticleSystem particle = beamParticles[i];
+                if (particle == null)
+                {
+                    continue;
+                }
+
+                if (visible)
+                {
+                    particle.Clear(withChildren: true);
+                    particle.Play(withChildren: true);
+                }
+                else
+                {
+                    particle.Stop(
+                        withChildren: true,
+                        ParticleSystemStopBehavior.StopEmittingAndClear);
+                }
             }
         }
 
@@ -130,6 +165,18 @@ namespace DimensionBrawl.Presentation
                 beamRenderers = beamRoot != null
                     ? beamRoot.GetComponentsInChildren<Renderer>(includeInactive: true)
                     : System.Array.Empty<Renderer>();
+            }
+
+            ResolveParticleReferences();
+        }
+
+        private void ResolveParticleReferences()
+        {
+            if (beamParticles == null || beamParticles.Length == 0)
+            {
+                beamParticles = beamRoot != null
+                    ? beamRoot.GetComponentsInChildren<ParticleSystem>(includeInactive: true)
+                    : System.Array.Empty<ParticleSystem>();
             }
         }
 

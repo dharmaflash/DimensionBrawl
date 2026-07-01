@@ -137,7 +137,7 @@ namespace DimensionBrawl.Player
                 float actualAdvanceSeconds = actor.ActiveMoveSpeed > 0f
                     ? Vector3.Distance(actor.AdvanceStartPosition, actor.AdvanceTargetPosition) / actor.ActiveMoveSpeed
                     : actorAdvanceSeconds;
-                float delaySeconds = Mathf.Clamp(actualAdvanceSeconds * 0.72f, 0.18f, 0.62f);
+                float delaySeconds = Mathf.Clamp(actualAdvanceSeconds * 0.82f, 0.22f, 0.78f);
                 if (delaySeconds > 0f)
                 {
                     yield return new WaitForSeconds(delaySeconds);

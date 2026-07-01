@@ -95,6 +95,14 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonSlot3_FireDragon.asset";
         private const string SummonSlot3PresentationCandidateProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonPresentation_PlayerFireDragon.asset";
+        private const string SummonSlot2PromotedLaserBeamPrefabPath =
+            "Assets/_Game/Art/VFX/ActionFoundation/Summons/Prefabs/PF_SummonLaserBeam_FORGE3D.prefab";
+        private const string SummonSlot3PromotedFireBreathPrefabPath =
+            "Assets/_Game/Art/VFX/ActionFoundation/Summons/Prefabs/PF_SummonDragonFireBreath_FORGE3D.prefab";
+        private const string SummonSlot3DragonVisualPrefabPath =
+            "Assets/_Game/Art/Characters/Enemies/Dragons/VolcanoDragon/PF_SummonVisual_VolcanoDragon.prefab";
+        private const string SummonSlot3DragonControllerPath =
+            "Assets/_Game/Art/Characters/Enemies/Dragons/VolcanoDragon/Animations/DB_VolcanoDragon_Summon.controller";
         private const string BossSummonPressurePresentationCandidateProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonPresentation_BossAuraCaptain.asset";
         private const string LungeChaserRoleCandidateProfilePath =
@@ -882,6 +890,30 @@ namespace DimensionBrawl.Tests
                 summonActorPresenter,
                 summonActorAnimator,
                 "SummonSlot1 actor prefab");
+            SummonProxyVisualMotionPresenter summonSlot1MotionPresenter =
+                RequireComponent<SummonProxyVisualMotionPresenter>(
+                    summonActorPrefabObject,
+                    "SummonSlot1 jump-slam motion presenter");
+            Transform summonSlot1Visual = summonActorPrefabObject.transform.Find(SummonSlot1ActorVisualName);
+            Assert.AreSame(
+                summonSlot1Visual,
+                GetObjectReference<Transform>(summonSlot1MotionPresenter, "motionRoot"),
+                "SummonSlot1 jump-slam motion should lift the promoted bruiser visual, not the root collider.");
+            Assert.AreEqual(2.3f, GetFloat(summonSlot1MotionPresenter, "jumpArcHeight"), 0.001f);
+            Assert.AreEqual(0.48f, GetFloat(summonSlot1MotionPresenter, "tierArcHeightStep"), 0.001f);
+            Assert.AreEqual(0.82f, GetFloat(summonSlot1MotionPresenter, "arcEndProgress"), 0.001f);
+            Assert.AreEqual(0.24f, GetFloat(summonSlot1MotionPresenter, "landingDip"), 0.001f);
+            Transform slamImpactBurst = summonActorPrefabObject.transform.Find("SlamImpactBurst");
+            Assert.IsNotNull(slamImpactBurst, "SummonSlot1 actor prefab should keep a visible landing slam burst.");
+            Assert.GreaterOrEqual(
+                slamImpactBurst.localScale.x,
+                3f,
+                "SummonSlot1 landing slam should read as a broad impact ring, not a tiny contact puff.");
+            Assert.AreEqual(
+                slamImpactBurst,
+                RequireComponent<SummonAttackBeamPresenter>(
+                    summonActorPrefabObject,
+                    "SummonSlot1 slam impact presenter").BeamRoot);
             AssertSummonPresentationCandidateProfile(
                 summonSlot1PresentationCandidate,
                 "PlayerSummon.JumpSlamBruiser",
@@ -3026,8 +3058,9 @@ namespace DimensionBrawl.Tests
                 SummonSlot3PresentationCandidateProfilePath,
                 "PlayerSummon.FireDragon",
                 FinalStandCommanderEliteRoleCandidateProfilePath,
-                "SciFiSoldier.Elite.FinalStandCommander",
-                "SummonSlot3 fire dragon actor prefab");
+                "Summon.FireDragon.VolcanoDragon",
+                "SummonSlot3 fire dragon actor prefab",
+                SummonSlot3DragonVisualPrefabPath);
 
             player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.ForwardBoundaryZ, player.transform.position.y);
             targetSelector.NotifyTargetContact(bossHealth);
@@ -5634,7 +5667,8 @@ namespace DimensionBrawl.Tests
             string expectedCandidateId,
             string roleCandidateProfilePath,
             string expectedSourceRoleId,
-            string label)
+            string label,
+            string visualSourceOverridePath = null)
         {
             SummonFrontlineProxy actor = RequireComponent<SummonFrontlineProxy>(actorPrefab, label);
             SummonFrontlineProxyPresenter presenter =
@@ -5651,6 +5685,7 @@ namespace DimensionBrawl.Tests
             Assert.GreaterOrEqual(healthBarPresenter.RendererCount, 2);
             Animator animator = AssertSummonActorRoleVisual(actorPrefab, visualName);
             AssertSummonProxyAnimatorPresentation(presenter, animator, label);
+            AssertSupportSummonRoleSpecificVisuals(actorPrefab, visualName, actor, label);
             AssertSummonPresentationCandidateProfile(
                 LoadAsset<SummonPresentationCandidateProfile>(presentationCandidatePath),
                 expectedCandidateId,
@@ -5660,7 +5695,67 @@ namespace DimensionBrawl.Tests
                 visualName,
                 expectedSourceRoleId,
                 LoadAsset<CombatVfxCueProfile>(
-                    "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_CombatVfxCues_ActionFoundation.asset"));
+                    "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_CombatVfxCues_ActionFoundation.asset"),
+                visualSourceOverridePath);
+        }
+
+        private static void AssertSupportSummonRoleSpecificVisuals(
+            GameObject actorPrefab,
+            string visualName,
+            SummonFrontlineProxy actor,
+            string label)
+        {
+            if (string.Equals(visualName, SummonSlot2ActorVisualName, System.StringComparison.Ordinal))
+            {
+                AssertPromotedParticleVfx(
+                    actorPrefab.transform.Find("LaserMuzzleBeam"),
+                    $"{label} FORGE3D laser beam",
+                    4);
+                AssertSummonAttackBeamPresenter(
+                    actorPrefab,
+                    actor,
+                    "LaserMuzzleBeam",
+                    minimumParticles: 4);
+                AssertGameOwnedAsset(
+                    LoadAsset<GameObject>(SummonSlot2PromotedLaserBeamPrefabPath),
+                    "SummonSlot2 promoted laser beam prefab");
+            }
+            else if (string.Equals(visualName, SummonSlot3ActorVisualName, System.StringComparison.Ordinal))
+            {
+                AssertPromotedParticleVfx(
+                    actorPrefab.transform.Find("DragonFireBreathBeam"),
+                    $"{label} FORGE3D fire breath",
+                    2);
+                AssertSummonAttackBeamPresenter(
+                    actorPrefab,
+                    actor,
+                    "DragonFireBreathBeam",
+                    minimumParticles: 2);
+                AssertFireDragonVisual(actorPrefab.transform.Find(visualName), label);
+                AssertGameOwnedAsset(
+                    LoadAsset<GameObject>(SummonSlot3PromotedFireBreathPrefabPath),
+                    "SummonSlot3 promoted fire breath prefab");
+                AssertGameOwnedAsset(
+                    LoadAsset<GameObject>(SummonSlot3DragonVisualPrefabPath),
+                    "SummonSlot3 promoted dragon visual prefab");
+            }
+        }
+
+        private static void AssertSummonAttackBeamPresenter(
+            GameObject actorPrefab,
+            SummonFrontlineProxy actor,
+            string beamName,
+            int minimumParticles)
+        {
+            SummonAttackBeamPresenter beamPresenter =
+                RequireComponent<SummonAttackBeamPresenter>(actorPrefab, $"{actorPrefab.name} {beamName} presenter");
+            Transform beamRoot = actorPrefab.transform.Find(beamName);
+            Assert.IsNotNull(beamRoot, $"{actorPrefab.name} should include {beamName}.");
+            Assert.AreSame(actor, beamPresenter.Proxy, $"{beamName} presenter should target the summon actor.");
+            Assert.AreSame(beamRoot, beamPresenter.BeamRoot, $"{beamName} presenter should target the authored beam root.");
+            Assert.GreaterOrEqual(beamPresenter.BeamRendererCount, 1, $"{beamName} should expose beam renderers.");
+            Assert.GreaterOrEqual(beamPresenter.BeamParticleCount, minimumParticles, $"{beamName} should expose beam particles.");
+            Assert.IsFalse(beamRoot.gameObject.activeSelf, $"{beamName} should start hidden until the actor attacks.");
         }
 
         private static void AssertSummonActorVfx(GameObject actorPrefab, bool expectPressureScreen, string label)
@@ -6790,6 +6885,29 @@ namespace DimensionBrawl.Tests
             return animator;
         }
 
+        private static void AssertFireDragonVisual(Transform visual, string label)
+        {
+            Assert.IsNotNull(visual, $"{label} should include the promoted VolcanoDragon visual.");
+            Animator animator = visual.GetComponent<Animator>();
+            Assert.IsNotNull(animator, $"{label} dragon visual should keep an Animator.");
+            Assert.AreSame(
+                LoadAsset<RuntimeAnimatorController>(SummonSlot3DragonControllerPath),
+                animator.runtimeAnimatorController,
+                $"{label} dragon visual should use the promoted summon dragon controller.");
+            AssertGameOwnedAsset(animator.runtimeAnimatorController, $"{label} dragon controller");
+            AssertGameOwnedAsset(animator.avatar, $"{label} dragon avatar");
+            SkinnedMeshRenderer[] skinnedRenderers =
+                visual.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            Assert.Greater(
+                skinnedRenderers.Length,
+                0,
+                $"{label} should use the promoted VolcanoDragon skinned mesh, not generated primitives.");
+            Assert.IsNull(visual.Find("DragonBody"), $"{label} should not keep the generated primitive dragon body.");
+            Assert.IsNull(visual.Find("DragonHead"), $"{label} should not keep the generated primitive dragon head.");
+            Assert.IsNull(visual.Find("DragonLeftWing"), $"{label} should not keep the generated primitive dragon wing.");
+            Assert.IsNull(visual.Find("DragonRightWing"), $"{label} should not keep the generated primitive dragon wing.");
+        }
+
         private static void AssertSummonProxyAnimatorPresentation(
             SummonFrontlineProxyPresenter presenter,
             Animator animator,
@@ -6825,10 +6943,14 @@ namespace DimensionBrawl.Tests
             string roleCandidateProfilePath,
             string expectedVisualName,
             string expectedSourceRoleId,
-            CombatVfxCueProfile expectedVfxCueProfile)
+            CombatVfxCueProfile expectedVfxCueProfile,
+            string visualSourceOverridePath = null)
         {
             CombatEnemyRoleCandidateProfile roleCandidate =
                 LoadAsset<CombatEnemyRoleCandidateProfile>(roleCandidateProfilePath);
+            GameObject expectedVisualSource = !string.IsNullOrWhiteSpace(visualSourceOverridePath)
+                ? LoadAsset<GameObject>(visualSourceOverridePath)
+                : roleCandidate.PromotedVisualSource;
             Transform visual = expectedActorPrefab.transform.Find(expectedVisualName);
             Assert.IsNotNull(visual, $"{expectedActorPrefab.name} should include {expectedVisualName}.");
             Animator animator = visual.GetComponent<Animator>();
@@ -6837,7 +6959,7 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(expectedCandidateId, profile.CandidateId);
             Assert.AreEqual(expectedSide, profile.Side);
             Assert.AreSame(expectedActorPrefab, profile.ActorPrefab);
-            Assert.AreSame(roleCandidate.PromotedVisualSource, profile.VisualSourceAsset);
+            Assert.AreSame(expectedVisualSource, profile.VisualSourceAsset);
             Assert.AreEqual(expectedVisualName, profile.VisualChildName);
             Assert.AreEqual(expectedSourceRoleId, profile.SourceRoleId);
             Assert.AreSame(animator.runtimeAnimatorController, profile.AnimatorController);

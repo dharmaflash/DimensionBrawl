@@ -267,7 +267,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a21bf0d309e067a49a6c5b0bbd7aac05, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.MovementFootstepAudioPresenter
   source: {fileID: 9083556012271875696}
   trackedTransform: {fileID: 2724612303494267962}
@@ -686,7 +686,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1136869262952494433}
-  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 4300000, guid: baeaff6af209552428e19ba369e703e0, type: 2}
 --- !u!23 &177731494164491181
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1399,7 +1399,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3145221601225193622}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 4300000, guid: f0ad67ef49f191644881f46846bb001b, type: 2}
 --- !u!23 &880245023669801038
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -1758,7 +1758,7 @@ Animator:
   m_LinearVelocityBlending: 0
   m_StabilizeFeet: 0
   m_AnimatePhysics: 0
-  m_WarningMessage:
+  m_WarningMessage: 
   m_HasTransformHierarchy: 1
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
@@ -2204,7 +2204,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 945a81936f96ecf4286e8c0df159e218, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.SummonPressureScreen
   ownerTeam: 2
   defaultMaxIntercepts: 3
@@ -2414,7 +2414,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 5591653985248767363}
-  m_Mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 4300000, guid: f0ad67ef49f191644881f46846bb001b, type: 2}
 --- !u!23 &220082403188987380
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3049,7 +3049,7 @@ MeshFilter:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7241167181729252764}
-  m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+  m_Mesh: {fileID: 4300000, guid: baeaff6af209552428e19ba369e703e0, type: 2}
 --- !u!23 &8189111824866789665
 MeshRenderer:
   m_ObjectHideFlags: 0
@@ -3683,7 +3683,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6aac67f59f569014494be0476679f301, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.SummonFrontlineProxy
   projectileOrigin: {fileID: 6773153395912712062}
   pressureScreen: {fileID: 8929165748343824982}
@@ -3751,7 +3751,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 199bb0bc169b2be448de7703ddcc2a41, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.SummonPressureScreenPresenter
   pressureScreen: {fileID: 8929165748343824982}
   visualRoot: {fileID: 6693782277880877833}
@@ -3789,7 +3789,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 293a97ae51b245cdb6a1cc62b37c45b0, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.SummonFrontlineProxyPresenter
   proxy: {fileID: 4165639688873391562}
   clash: {fileID: 464064646071824282}
@@ -3798,7 +3798,7 @@ MonoBehaviour:
   moveSpeedParameter: MoveSpeed
   spawnTrigger: EliteSummonPackage
   attackTrigger: Attack
-  hitTrigger:
+  hitTrigger: 
   deathTrigger: Death
   animatorMoveSpeedScale: 1
   pulseRoot: {fileID: 3753305637982622612}
@@ -3857,7 +3857,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: b23638fbd22a4fef840e5e8c0f0d2225, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.CombatHealth
   team: 2
   maxHealth: 320
@@ -3878,7 +3878,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0f8e54a6c924c4a91a87f5df2698a67, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.SummonFrontlineClash
   proxy: {fileID: 4165639688873391562}
   health: {fileID: 7918965066423916655}
@@ -3907,7 +3907,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 957864eb97e83ad448073486f7d84e2f, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Presentation.SummonFrontlineHealthBarPresenter
   proxy: {fileID: 4165639688873391562}
   health: {fileID: 7918965066423916655}

@@ -16,16 +16,16 @@ MonoBehaviour:
   displayName: Player Summon - Fire Dragon Breath
   side: 0
   actorPrefab: {fileID: 2711879856745684854, guid: ee94eabc7ff7a0f4492db6205daf7efa, type: 3}
-  visualSourceAsset: {fileID: 919132149155446097, guid: ca9b7e33c3773344299b76decb3f17a3, type: 3}
+  visualSourceAsset: {fileID: 8107531701151569733, guid: be945306497800449bbfdd5c2cc97600, type: 3}
   visualChildName: SummonSlot3Visual_FireDragon
-  sourceRoleId: SciFiSoldier.Elite.FinalStandCommander
-  animatorController: {fileID: 9100000, guid: e7a48e72c87b9c642a8780165cf3893e, type: 2}
+  sourceRoleId: Summon.FireDragon.VolcanoDragon
+  animatorController: {fileID: 9100000, guid: 961c3ccb51f43d3469c1416f6ce1d030, type: 2}
   vfxCueProfile: {fileID: 11400000, guid: c00395ebb8d9682459aa3144cc6d2853, type: 2}
-  animationRead: Game-owned proxy dragon uses the FinalStand controller contract
-    until the VolcanoDragon_PBR model is promoted.
-  vfxRead: Magic-circle entry, airborne body, wing silhouette, orange breath beam,
-    and wide fire volleys distinguish it from S1/S2.
-  replacementPlan: Promote VolcanoDragon_PBR and FireBeam/FlameThrower VFX into `_Game`
-    before replacing this proxy visual.
+  animationRead: Promoted VolcanoDragon_PBR model uses a summon controller with hover,
+    entry, breath attack, and falling reads.
+  vfxRead: Magic-circle entry, airborne dragon body, authored flame-breath particle
+    stack, and wide fire volleys distinguish it from S1/S2.
+  replacementPlan: Keep the promoted VolcanoDragon summon visual and FORGE3D flame
+    breath as the reviewed high-cost summon package.
   ownershipNotes: Presentation candidate only; runtime cost, tier, projectile, and
     screen values remain in gameplay profiles.

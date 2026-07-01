@@ -25,6 +25,7 @@ namespace DimensionBrawl.Editor
         [MenuItem("DimensionBrawl/Reapply Action Foundation Summon Frontline VFX")]
         public static void ReapplySummonFrontlineVfxMenu()
         {
+            EnsureSummonPromotedPresentationAssets();
             EnsureSummonEntryCuePrefab();
             EnsureSummonActorPrefab();
             EnsureSummonSlot2ActorPrefab();
@@ -78,9 +79,10 @@ namespace DimensionBrawl.Editor
                 SummonSlot3ActorVisualName,
                 SummonSlot3ActorVisualRoleId,
                 vfxCueProfile,
-                "Game-owned proxy dragon uses the FinalStand controller contract until the VolcanoDragon_PBR model is promoted.",
-                "Magic-circle entry, airborne body, wing silhouette, orange breath beam, and wide fire volleys distinguish it from S1/S2.",
-                "Promote VolcanoDragon_PBR and FireBeam/FlameThrower VFX into `_Game` before replacing this proxy visual.");
+                "Promoted VolcanoDragon_PBR model uses a summon controller with hover, entry, breath attack, and falling reads.",
+                "Magic-circle entry, airborne dragon body, authored flame-breath particle stack, and wide fire volleys distinguish it from S1/S2.",
+                "Keep the promoted VolcanoDragon summon visual and FORGE3D flame breath as the reviewed high-cost summon package.",
+                SummonSlot3DragonVisualPrefabPath);
 
             ConfigureSummonPresentationCandidateProfile(
                 LoadOrCreateSummonPresentationCandidateProfile(BossSummonPressurePresentationCandidateProfilePath),
@@ -126,11 +128,15 @@ namespace DimensionBrawl.Editor
             CombatVfxCueProfile vfxCueProfile,
             string animationRead,
             string vfxRead,
-            string replacementPlan)
+            string replacementPlan,
+            string visualSourceOverridePath = null)
         {
             GameObject actorPrefab = LoadAsset<GameObject>(actorPrefabPath);
             CombatEnemyRoleCandidateProfile roleCandidate =
                 LoadAsset<CombatEnemyRoleCandidateProfile>(roleCandidateProfilePath);
+            GameObject visualSourceAsset = !string.IsNullOrWhiteSpace(visualSourceOverridePath)
+                ? LoadAsset<GameObject>(visualSourceOverridePath)
+                : roleCandidate.PromotedVisualSource;
             RuntimeAnimatorController animatorController =
                 ResolveActorVisualAnimatorController(actorPrefab, visualChildName);
 
@@ -138,7 +144,7 @@ namespace DimensionBrawl.Editor
             SetString(profile, "displayName", displayName);
             SetEnum(profile, "side", (int)side);
             SetObjectReference(profile, "actorPrefab", actorPrefab);
-            SetObjectReference(profile, "visualSourceAsset", roleCandidate.PromotedVisualSource);
+            SetObjectReference(profile, "visualSourceAsset", visualSourceAsset);
             SetString(profile, "visualChildName", visualChildName);
             SetString(profile, "sourceRoleId", sourceRoleId);
             SetObjectReference(profile, "animatorController", animatorController);
@@ -428,9 +434,9 @@ namespace DimensionBrawl.Editor
                     proxy,
                     summonVisual,
                     airborneHeight: 0f,
-                    jumpArcHeight: 1.65f,
-                    tierArcHeightStep: 0.34f,
-                    landingDip: 0.14f);
+                    jumpArcHeight: 2.3f,
+                    tierArcHeightStep: 0.48f,
+                    landingDip: 0.24f);
                 ConfigureSummonAttackBeamVisual(
                     editableRoot,
                     proxy,
@@ -439,15 +445,15 @@ namespace DimensionBrawl.Editor
                         SummonSlot1SlamImpactMaterialPath,
                         new Color(1f, 0.78f, 0.28f, 0.62f)),
                     PrimitiveType.Cylinder,
-                    new Vector3(0f, 0.06f, 0.48f),
+                    new Vector3(0f, 0.06f, 0.62f),
                     new Vector3(90f, 0f, 0f),
-                    new Vector3(2.4f, 0.035f, 2.4f),
+                    new Vector3(3.15f, 0.04f, 3.15f),
                     new Color(1f, 0.78f, 0.28f, 0.62f),
                     new Color(1f, 0.92f, 0.42f, 0.72f),
                     new Color(1f, 0.55f, 0.18f, 0.82f),
-                    tierScaleStep: 0.24f,
-                    pulseScale: 0.12f,
-                    pulseSpeed: 20f);
+                    tierScaleStep: 0.34f,
+                    pulseScale: 0.18f,
+                    pulseSpeed: 24f);
 
                 PrefabUtility.SaveAsPrefabAsset(editableRoot, SummonSlot1ActorPrefabPath);
             }
@@ -468,6 +474,7 @@ namespace DimensionBrawl.Editor
 
         private static SummonFrontlineProxy EnsureSummonSlot2ActorPrefab()
         {
+            EnsureSummonSlot2PromotedLaserBeamPrefab();
             return EnsureSupportSummonActorPrefab(
                 SummonSlot2ActorPrefabPath,
                 "PF_SummonSlot2Actor_LaserSoldierProxy",
@@ -492,6 +499,8 @@ namespace DimensionBrawl.Editor
 
         private static SummonFrontlineProxy EnsureSummonSlot3ActorPrefab()
         {
+            EnsureSummonSlot3PromotedFireBreathPrefab();
+            EnsureSummonSlot3PromotedDragonVisualPrefab();
             return EnsureSupportSummonActorPrefab(
                 SummonSlot3ActorPrefabPath,
                 "PF_SummonSlot3Actor_FireDragonProxy",
@@ -500,9 +509,9 @@ namespace DimensionBrawl.Editor
                 SummonSlot3ActorVisualRoleId,
                 ActionFoundationEnemyRoleCandidateSetup.FinalStandCommanderElitePrefabPath,
                 SummonSlot3ActorVisualName,
-                new Vector3(0f, 0.48f, -0.08f),
+                new Vector3(0f, 0.56f, -0.08f),
                 Vector3.zero,
-                Vector3.one,
+                Vector3.one * 0.18f,
                 new Color(1f, 0.44f, 0.16f, 0.88f),
                 520f,
                 1.36f,
@@ -650,10 +659,8 @@ namespace DimensionBrawl.Editor
                     Vector3.one * (roleId == SummonSlot2ActorVisualRoleId ? 0.56f : 0.78f));
 
                 Transform summonVisual = roleId == SummonSlot3ActorVisualRoleId
-                    ? AttachPrimitiveDragonVisual(
+                    ? AttachSummonDragonVisual(
                         editableRoot.transform,
-                        roleId,
-                        rolePrefabPath,
                         visualName,
                         visualLocalPosition,
                         visualLocalEulerAngles,
@@ -702,23 +709,21 @@ namespace DimensionBrawl.Editor
                 ConfigureSummonActorAnimatorPresentation(actorPresenter, summonVisual);
                 if (roleId == SummonSlot2ActorVisualRoleId)
                 {
-                    ConfigureSummonAttackBeamVisual(
+                    ConfigureSummonAttackPromotedParticleBeam(
                         editableRoot,
                         proxy,
                         "LaserMuzzleBeam",
-                        LoadOrCreateTransparentMaterial(
-                            SummonSlot2LaserBeamMaterialPath,
-                            new Color(0.18f, 0.92f, 1f, 0.72f)),
-                        PrimitiveType.Cube,
+                        SummonSlot2PromotedLaserBeamPrefabPath,
                         new Vector3(0f, 1.08f, 1.32f),
                         Vector3.zero,
-                        new Vector3(0.1f, 0.1f, 2.8f),
+                        new Vector3(0.92f, 0.92f, 1.38f),
                         new Color(0.18f, 0.92f, 1f, 0.72f),
                         new Color(0.62f, 0.86f, 1f, 0.82f),
                         new Color(1f, 0.86f, 0.34f, 0.9f),
                         tierScaleStep: 0.18f,
                         pulseScale: 0.1f,
-                        pulseSpeed: 22f);
+                        pulseSpeed: 22f,
+                        minimumParticleSystems: 4);
                 }
                 else if (roleId == SummonSlot3ActorVisualRoleId)
                 {
@@ -730,23 +735,21 @@ namespace DimensionBrawl.Editor
                         jumpArcHeight: 0f,
                         tierArcHeightStep: 0f,
                         landingDip: 0f);
-                    ConfigureSummonAttackBeamVisual(
+                    ConfigureSummonAttackPromotedParticleBeam(
                         editableRoot,
                         proxy,
                         "DragonFireBreathBeam",
-                        LoadOrCreateTransparentMaterial(
-                            SummonSlot3FireBreathMaterialPath,
-                            new Color(1f, 0.36f, 0.08f, 0.72f)),
-                        PrimitiveType.Cube,
-                        new Vector3(0f, 1.42f, 1.86f),
+                        SummonSlot3PromotedFireBreathPrefabPath,
+                        new Vector3(0f, 1.28f, 1.58f),
                         Vector3.zero,
-                        new Vector3(0.34f, 0.24f, 3.9f),
+                        new Vector3(1.18f, 1.18f, 2.3f),
                         new Color(1f, 0.38f, 0.08f, 0.72f),
                         new Color(1f, 0.62f, 0.14f, 0.82f),
                         new Color(1f, 0.86f, 0.32f, 0.9f),
                         tierScaleStep: 0.28f,
                         pulseScale: 0.14f,
-                        pulseSpeed: 16f);
+                        pulseSpeed: 16f,
+                        minimumParticleSystems: 2);
                 }
 
                 PrefabUtility.SaveAsPrefabAsset(editableRoot, prefabPath);
@@ -1089,7 +1092,7 @@ namespace DimensionBrawl.Editor
             SetFloat(motionPresenter, "jumpArcHeight", jumpArcHeight);
             SetFloat(motionPresenter, "tierArcHeightStep", tierArcHeightStep);
             SetFloat(motionPresenter, "arcStartProgress", 0f);
-            SetFloat(motionPresenter, "arcEndProgress", 0.88f);
+            SetFloat(motionPresenter, "arcEndProgress", 0.82f);
             SetFloat(motionPresenter, "landingSettleSeconds", landingDip > 0f ? 0.12f : 0f);
             SetFloat(motionPresenter, "landingDip", landingDip);
         }

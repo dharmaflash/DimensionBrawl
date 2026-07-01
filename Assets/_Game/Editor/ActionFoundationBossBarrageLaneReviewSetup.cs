@@ -111,7 +111,7 @@ namespace DimensionBrawl.Editor
         private const string BossSummonPressureActorVisualName = "BossSummonPressureVisual_AuraCaptainElite";
         private const string SummonSlot1ActorVisualRoleId = "SciFiSoldier.LungeChaser";
         private const string SummonSlot2ActorVisualRoleId = "SciFiSoldier.LineCaster";
-        private const string SummonSlot3ActorVisualRoleId = "SciFiSoldier.Elite.FinalStandCommander";
+        private const string SummonSlot3ActorVisualRoleId = "Summon.FireDragon.VolcanoDragon";
         private const string BossSummonPressureActorVisualRoleId = "SciFiSoldier.Elite.AuraCaptain";
         private const string SummonActorMoveSpeedParameter = "MoveSpeed";
         private const string SummonActorSpawnTrigger = "EliteSummonPackage";
@@ -1379,6 +1379,10 @@ namespace DimensionBrawl.Editor
             ValidateNoImportedAssetReference(SummonSlot3FireBreathMaterialPath);
             ValidateNoImportedAssetReference(SummonSlot3DragonBodyMaterialPath);
             ValidateNoImportedAssetReference(SummonSlot3DragonWingMaterialPath);
+            ValidateNoImportedAssetReference(SummonSlot2PromotedLaserBeamPrefabPath);
+            ValidateNoImportedAssetReference(SummonSlot3PromotedFireBreathPrefabPath);
+            ValidateNoImportedAssetReference(SummonSlot3DragonVisualPrefabPath);
+            ValidateNoImportedAssetReference(SummonSlot3DragonControllerPath);
             ValidateNoImportedAssetReference(BossSummonPressureActorMaterialPath);
             ValidateNoImportedAssetReference(BossSummonPressureScreenMaterialPath);
             ValidateNoImportedAssetReference(BossSummonPressureActorPulseMaterialPath);
@@ -9068,7 +9072,8 @@ namespace DimensionBrawl.Editor
                 ActionFoundationEnemyRoleCandidateSetup.FinalStandCommanderEliteCandidateProfilePath,
                 SummonSlot3ActorVisualName,
                 SummonSlot3ActorVisualRoleId,
-                vfxCueProfile);
+                vfxCueProfile,
+                SummonSlot3DragonVisualPrefabPath);
 
             ValidateSummonPresentationCandidateProfile(
                 LoadAsset<SummonPresentationCandidateProfile>(BossSummonPressurePresentationCandidateProfilePath),
@@ -9089,11 +9094,15 @@ namespace DimensionBrawl.Editor
             string roleCandidateProfilePath,
             string visualChildName,
             string sourceRoleId,
-            CombatVfxCueProfile vfxCueProfile)
+            CombatVfxCueProfile vfxCueProfile,
+            string visualSourceOverridePath = null)
         {
             GameObject actorPrefab = LoadAsset<GameObject>(actorPrefabPath);
             CombatEnemyRoleCandidateProfile roleCandidate =
                 LoadAsset<CombatEnemyRoleCandidateProfile>(roleCandidateProfilePath);
+            GameObject visualSourceAsset = !string.IsNullOrWhiteSpace(visualSourceOverridePath)
+                ? LoadAsset<GameObject>(visualSourceOverridePath)
+                : roleCandidate.PromotedVisualSource;
             RuntimeAnimatorController animatorController =
                 ResolveActorVisualAnimatorController(actorPrefab, visualChildName);
 
@@ -9112,7 +9121,7 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"{profile.name} points to the wrong actor prefab.");
             }
 
-            if (profile.VisualSourceAsset != roleCandidate.PromotedVisualSource)
+            if (profile.VisualSourceAsset != visualSourceAsset)
             {
                 throw new InvalidOperationException($"{profile.name} points to the wrong promoted visual source.");
             }
