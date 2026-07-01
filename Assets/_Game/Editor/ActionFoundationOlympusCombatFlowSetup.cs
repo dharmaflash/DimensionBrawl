@@ -183,12 +183,12 @@ namespace DimensionBrawl.Editor
 
         public static void RunBatchApplyOlympusCorridorCombatFlow()
         {
-            ApplyOlympusCorridorCombatFlow();
+            EnsureOlympusCorridorCombatFlowAppliedForBatch();
         }
 
         public static void RunBatchPlayModeValidateOlympusCorridorCombatFlow()
         {
-            ApplyOlympusCorridorCombatFlow();
+            EnsureOlympusCorridorCombatFlowAppliedForBatch();
             EditorSceneManager.OpenScene(StageScenePath, OpenSceneMode.Single);
             ActionFoundationOlympusCombatFlowPlayModeBatch.Start(PlayModeValidationResultPath, 90f);
             EditorApplication.isPlaying = true;
@@ -1325,6 +1325,39 @@ namespace DimensionBrawl.Editor
             EditorSceneManager.SaveScene(stageScene);
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
+        }
+
+        private static void EnsureOlympusCorridorCombatFlowAppliedForBatch()
+        {
+            if (TryCurrentOlympusCorridorCombatFlowPassesValidation())
+            {
+                Debug.Log("Olympus corridor combat flow already validates; skipping batch generator rewrite.");
+                return;
+            }
+
+            ApplyOlympusCorridorCombatFlow();
+        }
+
+        private static bool TryCurrentOlympusCorridorCombatFlowPassesValidation()
+        {
+            try
+            {
+                RunBatchValidateOlympusCorridorCombatFlow();
+                return true;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogWarning(
+                    $"Olympus corridor combat flow did not validate before batch apply; rebuilding. {exception.Message}");
+                return false;
+            }
+            finally
+            {
+                if (AssetDatabase.LoadAssetAtPath<SceneAsset>(StageScenePath) != null)
+                {
+                    EditorSceneManager.OpenScene(StageScenePath, OpenSceneMode.Single);
+                }
+            }
         }
 
         private static List<GameObject> MoveCanonicalCombatRoots(Scene stageScene)
