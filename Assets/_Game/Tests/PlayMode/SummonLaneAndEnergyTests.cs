@@ -1248,6 +1248,67 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void RangedBasicAimAssistUsesTargetColliderBodyInsteadOfTransformOrigin()
+        {
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.SetPositionAndRotation(Vector3.zero, Quaternion.LookRotation(Vector3.forward, Vector3.up));
+            CombatHealth playerHealth = playerObject.AddComponent<CombatHealth>();
+            playerHealth.ConfigureTeam(DamageTeam.Player);
+            PlayerCombatTargetSelector targetSelector = playerObject.AddComponent<PlayerCombatTargetSelector>();
+            PlayerRangedBasicAttackAction rangedAction = playerObject.AddComponent<PlayerRangedBasicAttackAction>();
+
+            GameObject targetObject = new GameObject("OffsetBodyThreat");
+            targetObject.transform.position = new Vector3(4f, 0f, 5f);
+            CombatHealth targetHealth = targetObject.AddComponent<CombatHealth>();
+            targetHealth.ConfigureTeam(DamageTeam.Enemy);
+            BoxCollider targetBody = targetObject.AddComponent<BoxCollider>();
+            targetBody.center = new Vector3(-3.4f, 0.6f, 0f);
+            targetBody.size = new Vector3(1.2f, 1.2f, 1.2f);
+
+            var serializedSelector = new SerializedObject(targetSelector);
+            serializedSelector.FindProperty("selfHealth").objectReferenceValue = playerHealth;
+            serializedSelector.FindProperty("selectionOrigin").objectReferenceValue = playerObject.transform;
+            SerializedProperty candidates = serializedSelector.FindProperty("targetCandidates");
+            candidates.arraySize = 1;
+            candidates.GetArrayElementAtIndex(0).objectReferenceValue = targetHealth;
+            serializedSelector.ApplyModifiedPropertiesWithoutUndo();
+
+            rangedAction.ConfigureReferences(null, null, null, targetSelector, playerHealth, null, null);
+            var serializedAction = new SerializedObject(rangedAction);
+            serializedAction.FindProperty("aimFromCameraViewport").boolValue = false;
+            serializedAction.FindProperty("preserveVerticalAim").boolValue = false;
+            serializedAction.FindProperty("useAimAssist").boolValue = true;
+            serializedAction.FindProperty("disableAimAssistWithManualInput").boolValue = false;
+            serializedAction.FindProperty("aimInputYawDegrees").floatValue = 0f;
+            serializedAction.FindProperty("aimAssistDistance").floatValue = 10f;
+            serializedAction.FindProperty("hipAimAssistAngleDegrees").floatValue = 12f;
+            serializedAction.FindProperty("aimAssistMaxTurnDegrees").floatValue = 12f;
+            serializedAction.FindProperty("spawnForwardOffset").floatValue = 0f;
+            serializedAction.FindProperty("spawnHeight").floatValue = 0f;
+            serializedAction.FindProperty("targetHeight").floatValue = 0f;
+            serializedAction.ApplyModifiedPropertiesWithoutUndo();
+
+            Physics.SyncTransforms();
+            Assert.IsTrue(rangedAction.TryGetAimPreviewDirection(out Vector3 assistedDirection));
+            Assert.IsTrue(
+                rangedAction.HasAimAssistTarget,
+                "A visible body collider near the aim line should still activate ranged assist even when the root transform is off to the side.");
+            Assert.AreSame(targetHealth, rangedAction.AimAssistTargetHealth);
+            Vector3 normalizedDirection = assistedDirection.normalized;
+            float projectedDistance = Mathf.Max(
+                0f,
+                Vector3.Dot(targetBody.bounds.center - playerObject.transform.position, normalizedDirection));
+            Vector3 closestPointOnPath = playerObject.transform.position + normalizedDirection * projectedDistance;
+            Assert.Less(
+                targetBody.bounds.SqrDistance(closestPointOnPath),
+                0.0001f,
+                "The assisted basic shot should pass through the combat body, not the off-center target root transform.");
+
+            Object.DestroyImmediate(targetObject);
+            Object.DestroyImmediate(playerObject);
+        }
+
+        [Test]
         public void SummonHealthBarPresenterShowsAfterActivationAndTracksDamage()
         {
             GameObject proxyObject = new GameObject("SummonProxy");

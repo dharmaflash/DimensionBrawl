@@ -115,15 +115,40 @@ namespace DimensionBrawl.Player
             out Vector3 direction,
             out CombatHealth targetHealth)
         {
+            return TryGetRangedAimAssistDirection(
+                originPosition,
+                rawAimDirection,
+                maxDistance,
+                maxAngleDegrees,
+                out direction,
+                out _,
+                out targetHealth);
+        }
+
+        public bool TryGetRangedAimAssistDirection(
+            Vector3 originPosition,
+            Vector3 rawAimDirection,
+            float maxDistance,
+            float maxAngleDegrees,
+            out Vector3 direction,
+            out Vector3 aimPoint,
+            out CombatHealth targetHealth)
+        {
             Vector3 rawPlanarDirection = ResolvePlanarDirection(rawAimDirection, ResolvePlanarForward(SelectionOrigin));
             targetHealth = FindBestAimAssistTarget(originPosition, rawPlanarDirection, maxDistance, maxAngleDegrees);
             if (targetHealth == null)
             {
+                aimPoint = default;
                 direction = rawPlanarDirection;
                 return false;
             }
 
-            Vector3 offset = Vector3.ProjectOnPlane(targetHealth.transform.position - originPosition, Vector3.up);
+            if (!TryResolveAimAssistPoint(targetHealth, originPosition, rawPlanarDirection, out aimPoint, out _))
+            {
+                aimPoint = targetHealth.transform.position;
+            }
+
+            Vector3 offset = aimPoint - originPosition;
             direction = offset.sqrMagnitude > 0.0001f ? offset.normalized : rawPlanarDirection;
             return true;
         }
@@ -406,7 +431,12 @@ namespace DimensionBrawl.Player
             float maxDistance,
             float maxAngleDegrees)
         {
-            Vector3 offset = Vector3.ProjectOnPlane(candidate.transform.position - originPosition, Vector3.up);
+            if (!TryResolveAimAssistPoint(candidate, originPosition, rawAimDirection, out Vector3 aimPoint, out Bounds bounds))
+            {
+                return float.NegativeInfinity;
+            }
+
+            Vector3 offset = Vector3.ProjectOnPlane(aimPoint - originPosition, Vector3.up);
             float distance = offset.magnitude;
             if (distance > maxDistance)
             {
@@ -423,10 +453,120 @@ namespace DimensionBrawl.Player
             float angleScore = 1f - Mathf.Clamp01(angle / maxAngleDegrees);
             float distanceScore = 1f - Mathf.Clamp01(distance / maxDistance);
             float nearBodyScore = distanceScore * distanceScore;
+            float bodyMissDistance = DistanceFromRayToBounds(originPosition, rawAimDirection, bounds);
+            float bodyRadius = Mathf.Max(0.05f, Mathf.Max(bounds.extents.x, bounds.extents.z));
+            float bodyRayScore = 1f - Mathf.Clamp01(bodyMissDistance / Mathf.Max(0.05f, bodyRadius));
             float threatScore = ResolveThreatScore(candidate);
             return angleScore * 0.75f
-                + nearBodyScore * 1.1f
+                + nearBodyScore * 1.5f
+                + bodyRayScore * 0.15f
                 + threatScore * 0.2f;
+        }
+
+        private static bool TryResolveAimAssistPoint(
+            CombatHealth candidate,
+            Vector3 originPosition,
+            Vector3 rawPlanarDirection,
+            out Vector3 aimPoint,
+            out Bounds bounds)
+        {
+            aimPoint = default;
+            bounds = default;
+            if (candidate == null)
+            {
+                return false;
+            }
+
+            if (!TryResolveCombatBounds(candidate, originPosition, rawPlanarDirection, out bounds))
+            {
+                aimPoint = candidate.transform.position;
+                bounds = new Bounds(aimPoint, Vector3.one * 0.1f);
+                return true;
+            }
+
+            Vector3 direction = ResolvePlanarDirection(rawPlanarDirection, ResolvePlanarForward(candidate.transform));
+            aimPoint = bounds.center;
+            if ((aimPoint - originPosition).sqrMagnitude <= 0.0001f)
+            {
+                aimPoint = originPosition + direction;
+            }
+
+            return true;
+        }
+
+        private static bool TryResolveCombatBounds(
+            CombatHealth candidate,
+            Vector3 originPosition,
+            Vector3 rawPlanarDirection,
+            out Bounds bounds)
+        {
+            bounds = default;
+            if (candidate == null)
+            {
+                return false;
+            }
+
+            Collider[] colliders = candidate.GetComponentsInChildren<Collider>();
+            float bestMissDistance = float.PositiveInfinity;
+            float bestCenterDistance = float.PositiveInfinity;
+            bool hasBounds = false;
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider collider = colliders[i];
+                if (!IsUsableAimAssistCollider(collider, candidate))
+                {
+                    continue;
+                }
+
+                Bounds candidateBounds = collider.bounds;
+                float missDistance = DistanceFromRayToBounds(originPosition, rawPlanarDirection, candidateBounds);
+                float centerDistance = Vector3.ProjectOnPlane(candidateBounds.center - originPosition, Vector3.up).magnitude;
+                if (!hasBounds
+                    || missDistance < bestMissDistance - 0.001f
+                    || (Mathf.Abs(missDistance - bestMissDistance) <= 0.001f && centerDistance < bestCenterDistance))
+                {
+                    bounds = candidateBounds;
+                    bestMissDistance = missDistance;
+                    bestCenterDistance = centerDistance;
+                    hasBounds = true;
+                }
+            }
+
+            return hasBounds;
+        }
+
+        private static bool IsUsableAimAssistCollider(Collider collider, CombatHealth candidate)
+        {
+            return collider != null
+                && collider.enabled
+                && collider.gameObject.activeInHierarchy
+                && collider.GetComponentInParent<SummonPressureScreen>() == null
+                && ResolveColliderCombatHealth(collider) == candidate;
+        }
+
+        private static CombatHealth ResolveColliderCombatHealth(Collider collider)
+        {
+            if (collider == null)
+            {
+                return null;
+            }
+
+            SummonFrontlineProxy proxy = collider.GetComponentInParent<SummonFrontlineProxy>();
+            if (proxy != null)
+            {
+                return proxy.Health ?? collider.GetComponentInParent<CombatHealth>();
+            }
+
+            return collider.GetComponentInParent<CombatHealth>();
+        }
+
+        private static float DistanceFromRayToBounds(Vector3 rayOrigin, Vector3 rayDirection, Bounds bounds)
+        {
+            Vector3 direction = ResolvePlanarDirection(rayDirection, Vector3.forward);
+            Vector3 toCenter = bounds.center - rayOrigin;
+            float projectedDistance = Mathf.Max(0f, Vector3.Dot(toCenter, direction));
+            Vector3 closestPointOnRay = rayOrigin + direction * projectedDistance;
+            return Mathf.Sqrt(bounds.SqrDistance(closestPointOnRay));
         }
 
         private float ResolveForwardScore(Vector3 forward, Vector3 direction)

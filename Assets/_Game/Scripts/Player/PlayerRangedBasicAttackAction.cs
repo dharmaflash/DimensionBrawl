@@ -103,6 +103,8 @@ namespace DimensionBrawl.Player
         private Vector3 cachedFirePreviewDirection = Vector3.forward;
         private Vector3 cachedFirePreviewSpawnPosition;
         private Vector3 cachedFirePreviewAimPoint;
+        private bool hasAimAssistPreviewPoint;
+        private Vector3 aimAssistPreviewPoint;
         private bool aimAssistMayDriveCamera;
         private bool aimAssistSuppressesViewportReprojection;
 
@@ -604,7 +606,9 @@ namespace DimensionBrawl.Player
                 return false;
             }
 
-            aimPoint = targetHealth.transform.position + Vector3.up * targetHeight;
+            aimPoint = hasAimAssistPreviewPoint
+                ? aimAssistPreviewPoint
+                : targetHealth.transform.position + Vector3.up * targetHeight;
             return true;
         }
 
@@ -914,6 +918,9 @@ namespace DimensionBrawl.Player
             float assistAngle = aimController != null && aimController.IsAiming
                 ? aimedAimAssistAngleDegrees
                 : hipAimAssistAngleDegrees;
+            float assistSelectionAngle = aimAssistMaxTurnDegrees > 0f
+                ? Mathf.Min(assistAngle, aimAssistMaxTurnDegrees)
+                : assistAngle;
             if (IsValidDirectViewportTarget(directViewportTargetHealth))
             {
                 SetAimAssistState(directViewportTargetHealth, 1f, LastRawAimDirection);
@@ -924,29 +931,24 @@ namespace DimensionBrawl.Player
                 && targetSelector != null
                 && (!disableAimAssistWithManualInput || !HasManualAimInput());
             if (canUseSoftAimAssist && targetSelector.TryGetRangedAimAssistDirection(
-                aimOriginPosition,
+                projectileSpawnPosition,
                 rawAimDirection,
                 aimAssistDistance,
-                assistAngle,
+                assistSelectionAngle,
                 out Vector3 selectorAssistDirection,
+                out Vector3 selectorAssistAimPoint,
                 out CombatHealth assistTargetHealth))
             {
-                Vector3 assistDirection = assistTargetHealth != null
-                    ? ResolveFireTravelDirection(
-                        assistTargetHealth.transform.position + Vector3.up * targetHeight - projectileSpawnPosition,
-                        selectorAssistDirection)
-                    : selectorAssistDirection;
-                Vector3 assistedDirection = Vector3.RotateTowards(
-                    rawAimDirection,
-                    assistDirection,
-                    aimAssistMaxTurnDegrees * Mathf.Deg2Rad,
-                    0f);
-                Vector3 resolvedDirection = ResolveFireTravelDirection(assistedDirection, rawAimDirection);
+                Vector3 assistDirection = ResolveFireTravelDirection(
+                    selectorAssistAimPoint - projectileSpawnPosition,
+                    selectorAssistDirection);
+                Vector3 resolvedDirection = ResolveFireTravelDirection(assistDirection, rawAimDirection);
                 float assistTargetAngle = Vector3.Angle(LastRawAimDirection, assistDirection);
-                float assistStrength = assistAngle > 0f
-                    ? 1f - Mathf.Clamp01(assistTargetAngle / assistAngle)
+                float assistStrength = assistSelectionAngle > 0f
+                    ? 1f - Mathf.Clamp01(assistTargetAngle / assistSelectionAngle)
                     : 0f;
                 SetAimAssistState(assistTargetHealth, assistStrength, resolvedDirection);
+                SetAimAssistPreviewPoint(assistTargetHealth, selectorAssistAimPoint);
                 return resolvedDirection;
             }
 
@@ -972,6 +974,14 @@ namespace DimensionBrawl.Player
             aimAssistMayDriveCamera = HasAimAssistTarget && allowCameraAimAssist;
             aimAssistSuppressesViewportReprojection = HasAimAssistTarget && suppressViewportReprojection;
             LastAimAssistDirection = ResolveFireTravelDirection(assistedDirection, LastRawAimDirection);
+            hasAimAssistPreviewPoint = false;
+            aimAssistPreviewPoint = default;
+        }
+
+        private void SetAimAssistPreviewPoint(CombatHealth targetHealth, Vector3 previewPoint)
+        {
+            hasAimAssistPreviewPoint = HasAimAssistTarget && targetHealth != null;
+            aimAssistPreviewPoint = hasAimAssistPreviewPoint ? previewPoint : default;
         }
 
         private bool IsValidDirectViewportTarget(CombatHealth targetHealth)
