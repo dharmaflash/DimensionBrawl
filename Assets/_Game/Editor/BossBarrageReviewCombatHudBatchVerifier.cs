@@ -5,6 +5,7 @@ using System.Text;
 using DimensionBrawl.Combat;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
+using DimensionBrawl.Test;
 using DimensionBrawl.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -1094,9 +1095,25 @@ namespace DimensionBrawl.Editor
             PlayerSupportSummonSlotAction slot3 = ReadBinderReference<PlayerSupportSummonSlotAction>(binder, "summonSlot3Action");
 
             bool ready = true;
-            ready &= HasSummonSlot1Config(slot1, 100f, 4.5f, report);
-            ready &= HasSupportSummonConfig("SUMMON_S2", slot2, 1, 100f, 5.5f, report);
-            ready &= HasSupportSummonConfig("SUMMON_S3", slot3, 1, 100f, 7.0f, report);
+            ready &= HasSummonSlot1Config(
+                slot1,
+                BossBarrageSummonReviewContract.Slot1RequiredMana,
+                BossBarrageSummonReviewContract.Slot1CooldownSeconds,
+                report);
+            ready &= HasSupportSummonConfig(
+                "SUMMON_S2",
+                slot2,
+                BossBarrageSummonReviewContract.Slot2MinimumTier,
+                BossBarrageSummonReviewContract.Slot2RequiredMana,
+                BossBarrageSummonReviewContract.Slot2CooldownSeconds,
+                report);
+            ready &= HasSupportSummonConfig(
+                "SUMMON_S3",
+                slot3,
+                BossBarrageSummonReviewContract.Slot3MinimumTier,
+                BossBarrageSummonReviewContract.Slot3RequiredMana,
+                BossBarrageSummonReviewContract.Slot3CooldownSeconds,
+                report);
             if (energy == null)
             {
                 report.AppendLine("SUMMON_ENERGY=MISSING");

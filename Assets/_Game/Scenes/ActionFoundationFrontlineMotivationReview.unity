@@ -269,6 +269,8 @@ MonoBehaviour:
   aimOrbitHoldsYawUntilAimEnds: 1
   aimOrbitRotatesCameraPosition: 1
   aimOrbitYawLimitDegrees: 45
+  aimOrbitUsesPitchInput: 1
+  aimOrbitPitchLimitDegrees: 16
   aimOrbitYawSpeedDegrees: 360
   aimOrbitReturnSpeedDegrees: 420
   aimAssistUsesYawTarget: 0
@@ -412,6 +414,42 @@ MonoBehaviour:
     focusHeightDelta: -0.02
     durationSeconds: 0.18
     finisherScale: 1
+  counterWaveCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.06, z: -0.22}
+    planarDirectionOffset: -0.12
+    fieldOfViewDelta: 2
+    cameraDistanceDelta: -0.22
+    focusHeightDelta: 0.05
+    durationSeconds: 0.2
+    finisherScale: 1.2
+  counterWaveStabilizedCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.04, z: -0.1}
+    planarDirectionOffset: 0.08
+    fieldOfViewDelta: 1
+    cameraDistanceDelta: -0.1
+    focusHeightDelta: 0.03
+    durationSeconds: 0.18
+    finisherScale: 1.1
+  pocketClearCue:
+    enabled: 1
+    localOffset: {x: 0, y: 0.06, z: -0.18}
+    planarDirectionOffset: 0.04
+    fieldOfViewDelta: 1.4
+    cameraDistanceDelta: -0.18
+    focusHeightDelta: 0.05
+    durationSeconds: 0.32
+    finisherScale: 1.15
+  pocketFailCue:
+    enabled: 1
+    localOffset: {x: 0, y: -0.04, z: -0.12}
+    planarDirectionOffset: -0.06
+    fieldOfViewDelta: 1.6
+    cameraDistanceDelta: -0.18
+    focusHeightDelta: -0.02
+    durationSeconds: 0.34
+    finisherScale: 1.05
 --- !u!114 &1006
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1076,6 +1114,8 @@ MonoBehaviour:
     hitRadius: 0.55
     hitDistance: 1.35
     hitStopSeconds: 0.03
+    responsePolicy: 2
+    controlLockPolicy: 0
   - animationTrigger: Attack2
     startupSeconds: 0.14
     activeSeconds: 0.09
@@ -1088,6 +1128,8 @@ MonoBehaviour:
     hitRadius: 0.6
     hitDistance: 1.45
     hitStopSeconds: 0.03
+    responsePolicy: 2
+    controlLockPolicy: 0
   - animationTrigger: Attack3
     startupSeconds: 0.16
     activeSeconds: 0.1
@@ -1100,6 +1142,8 @@ MonoBehaviour:
     hitRadius: 0.7
     hitDistance: 1.55
     hitStopSeconds: 0.04
+    responsePolicy: 2
+    controlLockPolicy: 0
   - animationTrigger: Attack4
     startupSeconds: 0.17
     activeSeconds: 0.1
@@ -1112,6 +1156,8 @@ MonoBehaviour:
     hitRadius: 0.72
     hitDistance: 1.62
     hitStopSeconds: 0.05
+    responsePolicy: 2
+    controlLockPolicy: 0
   - animationTrigger: Attack5
     startupSeconds: 0.2
     activeSeconds: 0.12
@@ -1124,6 +1170,8 @@ MonoBehaviour:
     hitRadius: 0.82
     hitDistance: 1.75
     hitStopSeconds: 0.05
+    responsePolicy: 4
+    controlLockPolicy: 1
   comboResetSeconds: 0.75
   comboQueueOpenAfterSeconds: 0.1
   comboChainRecoveryRatio: 0.45
@@ -1172,6 +1220,7 @@ MonoBehaviour:
   - {fileID: 9157468826393851034}
   - {fileID: 6514434415308070}
   - {fileID: 5938638756418942863}
+  renderHitFeedback: 0
   applyIdleColorOnEnable: 0
   idleColor: {r: 1, g: 1, b: 1, a: 1}
   flashSeconds: 0.08
@@ -1267,6 +1316,8 @@ MonoBehaviour:
   pressureDamageCueScale: 0.62
   criticalHealthRatio: 0.35
   criticalCueIntensity: 1.18
+  playDamageVfx: 0
+  playCriticalVfx: 0
 --- !u!114 &4010
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1336,6 +1387,7 @@ MonoBehaviour:
   preserveVerticalAim: 1
   cameraAimFallbackDistance: 32
   cameraAimRaycastDistance: 96
+  cameraAimIgnoresNonTargetHits: 0
   aimInputViewportOffsetX: 0.39
   aimInputViewportOffsetY: 0.2
   useStableAimOrigin: 1
@@ -1446,92 +1498,93 @@ MonoBehaviour:
   entryForwardOffset: 1.35
   actorEntryCatchupSecondsPerMeter: 0.55
   useBlockedHintSeconds: 0.75
-  requiredSummonMana: 100
+  requiredSummonMana: 200
+  slotCooldownSeconds: 9.5
   summonActionProfile: {fileID: 11400000, guid: 81a9e63aa866c9f4b8e2988a77a5a2f8, type: 2}
   tierSettings:
-  - Damage: 48
-    ProjectileSpeed: 17
-    LifetimeSeconds: 2.4
-    Radius: 0.34
+  - Damage: 58
+    ProjectileSpeed: 24
+    LifetimeSeconds: 1.25
+    Radius: 0.46
     ProjectileCount: 1
-    LateralReach: 1.2
+    LateralReach: 0.55
     EntryHeight: 0.18
     TargetHeight: 1.35
     CueScale: 0.46
     CueLifetimeSeconds: 0.36
-    ActorLifetimeSeconds: 4.4
-    ActorScale: 2.025
-    ActorRoleId: ShieldBreaker
-    ActorMaxHealth: 230
-    ActorMoveSpeed: 1.45
-    ActorAdvanceDistance: 2.2
-    ActorAdvanceSeconds: 1.62
-    ActorEngageRadius: 0.95
-    ActorAttackDamagePerSecond: 22
-    ActorAttackIntervalSeconds: 0.35
-    ScreenIntercepts: 2
-    ScreenRadius: 1.47
-    ScreenLifetimeSeconds: 2.4
-    CounterDamage: 15.36
-    CounterProjectileSpeed: 19
+    ActorLifetimeSeconds: 0
+    ActorScale: 2
+    ActorRoleId: JumpSlamBruiser
+    ActorMaxHealth: 250
+    ActorMoveSpeed: 3.4
+    ActorAdvanceDistance: 4
+    ActorAdvanceSeconds: 2.25
+    ActorEngageRadius: 1.1
+    ActorAttackDamagePerSecond: 12
+    ActorAttackIntervalSeconds: 1.05
+    ScreenIntercepts: 1
+    ScreenRadius: 1.5500001
+    ScreenLifetimeSeconds: 1.45
+    CounterDamage: 18.56
+    CounterProjectileSpeed: 26
     CounterLifetimeSeconds: 1.45
-    CounterRadius: 0.238
+    CounterRadius: 0.322
     CounterTargetHeight: 1.35
-  - Damage: 63
-    ProjectileSpeed: 18.5
-    LifetimeSeconds: 2.65
-    Radius: 0.38
+  - Damage: 92
+    ProjectileSpeed: 24
+    LifetimeSeconds: 1.35
+    Radius: 0.52
     ProjectileCount: 2
-    LateralReach: 4.2
+    LateralReach: 1.5
     EntryHeight: 0.18
     TargetHeight: 1.35
     CueScale: 0.51
     CueLifetimeSeconds: 0.36
-    ActorLifetimeSeconds: 5.2
-    ActorScale: 2.43
-    ActorRoleId: ShieldBreaker
-    ActorMaxHealth: 300
-    ActorMoveSpeed: 1.6
-    ActorAdvanceDistance: 3
-    ActorAdvanceSeconds: 1.9
-    ActorEngageRadius: 1.05
-    ActorAttackDamagePerSecond: 28
-    ActorAttackIntervalSeconds: 0.35
-    ScreenIntercepts: 4
-    ScreenRadius: 1.79
-    ScreenLifetimeSeconds: 3.2
-    CounterDamage: 20.16
-    CounterProjectileSpeed: 20.5
+    ActorLifetimeSeconds: 0
+    ActorScale: 2.36
+    ActorRoleId: JumpSlamBruiser
+    ActorMaxHealth: 420
+    ActorMoveSpeed: 3.8
+    ActorAdvanceDistance: 4.8
+    ActorAdvanceSeconds: 2.53
+    ActorEngageRadius: 1.2
+    ActorAttackDamagePerSecond: 20
+    ActorAttackIntervalSeconds: 1.1
+    ScreenIntercepts: 2
+    ScreenRadius: 1.75
+    ScreenLifetimeSeconds: 1.8
+    CounterDamage: 29.439999
+    CounterProjectileSpeed: 26
     CounterLifetimeSeconds: 1.45
-    CounterRadius: 0.266
+    CounterRadius: 0.364
     CounterTargetHeight: 1.35
-  - Damage: 83
-    ProjectileSpeed: 20
-    LifetimeSeconds: 2.9
-    Radius: 0.42
+  - Damage: 126
+    ProjectileSpeed: 25
+    LifetimeSeconds: 1.45
+    Radius: 0.58
     ProjectileCount: 3
-    LateralReach: 6.8
+    LateralReach: 2.4
     EntryHeight: 0.18
     TargetHeight: 1.35
     CueScale: 0.56
     CueLifetimeSeconds: 0.36
-    ActorLifetimeSeconds: 6.2
-    ActorScale: 2.88
-    ActorRoleId: ShieldBreaker
-    ActorMaxHealth: 380
-    ActorMoveSpeed: 1.7
-    ActorAdvanceDistance: 4
-    ActorAdvanceSeconds: 2.25
-    ActorEngageRadius: 1.15
-    ActorAttackDamagePerSecond: 38
-    ActorAttackIntervalSeconds: 0.35
-    ScreenIntercepts: 7
-    ScreenRadius: 2.27
-    ScreenLifetimeSeconds: 4
-    CounterDamage: 26.56
-    CounterProjectileSpeed: 22
+    ActorLifetimeSeconds: 0
+    ActorScale: 2.74
+    ActorRoleId: JumpSlamBruiser
+    ActorMaxHealth: 600
+    ActorMoveSpeed: 4.2
+    ActorAdvanceDistance: 5.6
+    ActorAdvanceSeconds: 2.81
+    ActorEngageRadius: 1.32
+    ActorAttackDamagePerSecond: 30
+    ActorAttackIntervalSeconds: 1.15
+    ScreenIntercepts: 3
+    ScreenRadius: 1.95
+    ScreenLifetimeSeconds: 2.15
+    CounterDamage: 40.32
+    CounterProjectileSpeed: 27
     CounterLifetimeSeconds: 1.45
-    CounterRadius: 0.294
+    CounterRadius: 0.406
     CounterTargetHeight: 1.35
 --- !u!114 &4015
 MonoBehaviour:
@@ -1628,6 +1681,9 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  backSafetyGainScale: 0.45
+  midChargeGainScale: 0.9
+  forwardRiskGainScale: 1.75
   gainEnabled: 1
 --- !u!114 &4017
 MonoBehaviour:
@@ -1642,8 +1698,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerSupportSummonSlotAction
   slotActionName: SummonSlot3
-  requiredSummonMana: 300
-  minimumSummonTier: 3
   summonAction: {fileID: 0}
   useKeyboardWhenActionMissing: 1
   keyboardTestKey: 43
@@ -1665,6 +1719,9 @@ MonoBehaviour:
   laneOffset: {x: 1.55, y: 0.55}
   entryForwardOffset: 1.35
   actorEntryCatchupSecondsPerMeter: 0.55
+  requiredSummonMana: 300
+  minimumSummonTier: 3
+  slotCooldownSeconds: 15
   firstVolleyDelaySeconds: 0.15
   volleyIntervalSeconds: 1.05
   maxVolleyCount: 3
@@ -1684,8 +1741,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.PlayerSupportSummonSlotAction
   slotActionName: SummonSlot2
-  requiredSummonMana: 200
-  minimumSummonTier: 2
   summonAction: {fileID: 0}
   useKeyboardWhenActionMissing: 1
   keyboardTestKey: 42
@@ -1707,6 +1762,9 @@ MonoBehaviour:
   laneOffset: {x: -1.55, y: 0.35}
   entryForwardOffset: 1.35
   actorEntryCatchupSecondsPerMeter: 0.55
+  requiredSummonMana: 100
+  minimumSummonTier: 1
+  slotCooldownSeconds: 4.8
   firstVolleyDelaySeconds: 0.1
   volleyIntervalSeconds: 0.78
   maxVolleyCount: 2
@@ -1755,6 +1813,7 @@ MonoBehaviour:
   muzzleFlashCueId: 33
   muzzleFlashIntensity: 1
   muzzleFlashAudioIntensity: 1
+  playImpactVfx: 0
   impactCueId: 34
   impactIntensity: 1
   impactAudioIntensity: 0.56
@@ -3707,7 +3766,14 @@ MonoBehaviour:
   summonFollowupWindowTierThreeBonusSeconds: 0.75
   summonFollowupEnergyPulseTierTwo: 185
   summonFollowupEnergyPulseTierThree: 240
+  counterWaveAnswerEnergyPulse: 0
+  bossScreenSuppressMinimumSummonTier: 3
+  allowVanguardAssistToSuppressBossScreen: 1
+  vanguardAssistSuppressSeconds: 8
+  vanguardAssistSuppressMinimumTier: 3
   requireSkill1FollowupHitToClear: 1
+  counterWaveAllyHoldSeconds: 0.45
+  summonFollowupSkillImpactGraceSeconds: 0.75
   stageProfile: {fileID: 11400000, guid: 7101edc08c522e741a112d90661ee230, type: 2}
   skill1FollowupClearDelaySeconds: 0.75
   stopEnergyGainOnEnd: 1
@@ -3747,6 +3813,7 @@ MonoBehaviour:
   followupWindowAnchor: {fileID: 85052602}
   followupHitAnchor: {fileID: 1426401972}
   followupMissedAnchor: {fileID: 1228450371}
+  bossScreenSuppressAnchor: {fileID: 0}
   counterWaveAnchor: {fileID: 0}
   counterWaveStabilizedAnchor: {fileID: 0}
   pocketClearAnchor: {fileID: 1426401972}
@@ -3756,10 +3823,12 @@ MonoBehaviour:
   windowIntensity: 1.15
   hitIntensity: 1.18
   missedIntensity: 0.85
+  bossScreenSuppressIntensity: 1.12
   counterWaveIntensity: 0.94
   counterWaveStabilizedIntensity: 0.88
   pocketClearIntensity: 0.92
   pocketFailIntensity: 1.02
+  bossScreenSuppressCueId: 25
   counterWaveCueId: 15
   counterWaveStabilizedCueId: 24
   pocketFailAccentCueId: 9
@@ -10585,6 +10654,7 @@ MonoBehaviour:
   reviewHud: {fileID: 981272990}
   mobileHud: {fileID: 981272989}
   screenCuePresenter: {fileID: 981272988}
+  inputLockBehaviours: []
   retrySceneName: ActionFoundationFrontlineMotivationReview
   retryScenePath: Assets/_Game/Scenes/ActionFoundationFrontlineMotivationReview.unity
   stageSelectSceneName: UI_StageSelectTest
@@ -10592,6 +10662,7 @@ MonoBehaviour:
   lobbySceneName: UI_LobbyTest
   lobbyScenePath: Assets/_Game/Scenes/UI/UI_LobbyTest.unity
   showOverlay: 1
+  drawIdleButton: 1
   pauseButtonSize: 72
   edgeInset: 32
   panelWidth: 560
@@ -10625,6 +10696,7 @@ MonoBehaviour:
   bossBarrageEmitter: {fileID: 1426401970}
   bossPressureActionDirector: {fileID: 1426401973}
   pocketReviewOwner: {fileID: 132563471}
+  duelReviewOwner: {fileID: 0}
   showScreenCues: 1
   maxFullScreenAlpha: 0.1
   maxEdgeAlpha: 0.26
@@ -10696,6 +10768,9 @@ MonoBehaviour:
   rangedAimActionName: RangedAim
   weaponSwapActionName: WeaponSwap
   showHud: 1
+  drawHudVisuals: 1
+  useSingleSummonButton: 0
+  hudOpacity: 1
   buttonSize: 168
   buttonGap: 38
   margin: 72
@@ -10709,9 +10784,9 @@ MonoBehaviour:
   heldButtonColor: {r: 0.18, g: 0.84, b: 1, a: 0.72}
   pendingButtonColor: {r: 0.04, g: 0.08, b: 0.11, a: 0.44}
   actionTextColor: {r: 1, g: 1, b: 1, a: 1}
-  summonSlot1Label: S1 SHIELD
-  summonSlot2Label: S2 ARROW
-  summonSlot3Label: S3 TANK
+  summonSlot1Label: SUMMON
+  summonSlot2Label: S2 LASER
+  summonSlot3Label: S3 DRAGON
   lockedSummonLabel: NEXT
   fireAccentColor: {r: 1, g: 0.74, b: 0.34, a: 1}
   dodgeAccentColor: {r: 0.38, g: 0.9, b: 1, a: 1}
@@ -10734,8 +10809,7 @@ MonoBehaviour:
   keyboardPeekRightKey: 19
   keyboardPeekRequiresActiveAim: 1
   lookAimDragDeadZone: 0.08
-  lookAimDragRadius: 230
-  lookAimKnobSize: 30
+  lookAimDragSensitivity: 0.00435
   lookAimScreenMinX: 0
   showFireAimReticle: 1
   fireAimReticleUsesScreenCenter: 1
@@ -10784,14 +10858,15 @@ MonoBehaviour:
   duelReviewOwner: {fileID: 0}
   stageProfile: {fileID: 11400000, guid: 7101edc08c522e741a112d90661ee230, type: 2}
   showHud: 1
+  hudOpacity: 1
   showDetailedTelemetry: 0
   width: 390
   height: 230
   margin: 18
   showCenterReticle: 0
   usePremiumCompactHud: 1
-  stageEpisodeLabel: EP 03 Frontline Stabilization
-  objectiveBadgeLabel: ROUTE
+  stageEpisodeLabel: EP 03 Survival Pressure
+  objectiveBadgeLabel: HP
   bossDisplayName: Dimensional Rift Curtain
   playerDisplayName: Player
   showResultBanner: 1
@@ -14975,17 +15050,17 @@ MonoBehaviour:
     QueuedWaves: 1
     MinimumIntervalSeconds: 4.2
     ResponseId: SummonSlot1PressureBlock
-    StageLoopRole: LV2 summon-pressure exchange that tests whether the player can
-      answer boss fire with a frontline summon screen.
-    PlayerAnswer: Hold forward-risk only long enough to charge EN, then create space
-      for the summon block.
-    SummonAnswer: Spend SummonSlot1 to place a pressure screen and intercept the
-      boss curtain.
-    UsePlayerForwardRiskGate: 1
-    MinimumPlayerForwardRisk01: 0.22
+    StageLoopRole: LV2 summon-pressure exchange that answers the player's heavy SUMMON
+      with an immediate boss-side body screen.
+    PlayerAnswer: Spend SUMMON deliberately; expect the boss to answer with a visible
+      pressure body before the punish window opens.
+    SummonAnswer: The player summon should clash with the boss screen, break the
+      curtain, and reopen ranged punish time.
+    UsePlayerForwardRiskGate: 0
+    MinimumPlayerForwardRisk01: 0
     MaximumPlayerForwardRisk01: 1
     UsePlayerSummonResponseGate: 1
-    MinimumPlayerSummonTier: 1
+    MinimumPlayerSummonTier: 2
   - Pattern: {fileID: 11400000, guid: b0b5e71e44209f74394f56e232db8d78, type: 2}
     ActionKind: 2
     MinimumTier: 3
@@ -15003,7 +15078,7 @@ MonoBehaviour:
     MaximumPlayerForwardRisk01: 1
     UsePlayerSummonResponseGate: 0
     MinimumPlayerSummonTier: 1
-  globalRecoverySeconds: 0.35
+  globalRecoverySeconds: 1.1
   holdForNextTierActionWhenGateAllows: 1
   actionsEnabled: 1
   playerSummonResponseWindowSeconds: 4
@@ -15040,48 +15115,48 @@ MonoBehaviour:
     ActorLifetimeSeconds: 0
     ActorScale: 2.07
     ActorRoleId: EscortProbe
-    ActorMaxHealth: 220
-    ActorMoveSpeed: 2.35
+    ActorMaxHealth: 560
+    ActorMoveSpeed: 3.2
     ActorAdvanceDistance: 2.4
     ActorAdvanceSeconds: 1.4
     ActorEngageRadius: 1.25
-    ActorAttackDamagePerSecond: 32
-    ActorAttackIntervalSeconds: 0.35
-    ScreenIntercepts: 2
+    ActorAttackDamagePerSecond: 42
+    ActorAttackIntervalSeconds: 0.78
+    ScreenIntercepts: 3
     ScreenRadius: 1.2
-    ScreenLifetimeSeconds: 2.6
+    ScreenLifetimeSeconds: 3.2
   - EntryForwardBlend01: 0.38
     LateralOffset: 1.4
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
     ActorScale: 2.52
     ActorRoleId: PressureScreen
-    ActorMaxHealth: 320
-    ActorMoveSpeed: 2.15
+    ActorMaxHealth: 820
+    ActorMoveSpeed: 3.6
     ActorAdvanceDistance: 3.8
     ActorAdvanceSeconds: 1.85
     ActorEngageRadius: 1.35
-    ActorAttackDamagePerSecond: 44
-    ActorAttackIntervalSeconds: 0.35
-    ScreenIntercepts: 4
+    ActorAttackDamagePerSecond: 62
+    ActorAttackIntervalSeconds: 0.84
+    ScreenIntercepts: 5
     ScreenRadius: 1.55
-    ScreenLifetimeSeconds: 3.4
+    ScreenLifetimeSeconds: 4
   - EntryForwardBlend01: 0.5
     LateralOffset: 2
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
     ActorScale: 3.06
     ActorRoleId: ClampGuard
-    ActorMaxHealth: 460
-    ActorMoveSpeed: 1.95
+    ActorMaxHealth: 1180
+    ActorMoveSpeed: 4
     ActorAdvanceDistance: 5.2
     ActorAdvanceSeconds: 2.35
     ActorEngageRadius: 1.5
-    ActorAttackDamagePerSecond: 58
-    ActorAttackIntervalSeconds: 0.35
-    ScreenIntercepts: 7
+    ActorAttackDamagePerSecond: 88
+    ActorAttackIntervalSeconds: 0.9
+    ScreenIntercepts: 8
     ScreenRadius: 1.95
-    ScreenLifetimeSeconds: 4.2
+    ScreenLifetimeSeconds: 4.8
 --- !u!114 &1426401975
 MonoBehaviour:
   m_ObjectHideFlags: 0

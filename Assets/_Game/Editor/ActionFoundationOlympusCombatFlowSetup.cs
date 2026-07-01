@@ -42,6 +42,7 @@ namespace DimensionBrawl.Editor
         private const string InvasionBridgeRootName = "IntroGatePodReview_InvasionBridge";
         private const string StairTriggerName = "OlympusCorridor_StairToCorridorCombatTrigger";
         private const string StairBlockerName = "OlympusCorridor_IntroSwordGate_StairBlocker";
+        private const string StairTraversalSupportName = "OlympusCorridor_IntroStairTraversalSupport";
         private const string CorridorBoundsRootName = "OlympusCorridor_CorridorCombatBounds";
         private const string StageClearExitAnchorName = "StageClear_CorridorExit";
         private const string CombatCameraName = "OlympusCorridor_Combat_MainCamera";
@@ -87,7 +88,7 @@ namespace DimensionBrawl.Editor
         private const float StairTraversalSurfaceClearance = 0.035f;
         private const float StairTraversalSupportProbeUp = 2.0f;
         private const float StairTraversalSupportProbeDown = 4.0f;
-        private const float StairTraversalSupportMaxAbovePath = 0.35f;
+        private const float StairTraversalSupportMaxAbovePath = 2.0f;
         private const float StairTraversalSupportMaxBelowPath = 1.25f;
         private const float StairTraversalSupportMinNormalY = 0.35f;
         private const float StairTraversalGravityDeltaTime = 1f / 60f;
@@ -165,7 +166,11 @@ namespace DimensionBrawl.Editor
             "OlympusCorridorStageRoot/OlympusCorridorStageMap/Meshes/StaticMeshActor_667/Collider",
             "OlympusCorridorStageRoot/OlympusCorridorStageMap/Meshes/StaticMeshActor_666/Collider",
             "OlympusCorridorStageRoot/OlympusCorridorStageMap/Meshes/StaticMeshActor_669/Collider",
-            "OlympusCorridorStageRoot/OlympusCorridorStageMap/Meshes/StaticMeshActor_668/Collider"
+            "OlympusCorridorStageRoot/OlympusCorridorStageMap/Meshes/StaticMeshActor_668/Collider",
+            "OlympusCorridorStageRoot/OlympusCorridorStageMap/Meshes/StaticMeshActor_667/SM_Stairs_modular_part_1",
+            "OlympusCorridorStageRoot/OlympusCorridorStageMap/Meshes/StaticMeshActor_666/SM_Stairs_modular_part_1",
+            "OlympusCorridorStageRoot/OlympusCorridorStageMap/Meshes/StaticMeshActor_669/SM_Stairs_modular_part_1",
+            "OlympusCorridorStageRoot/OlympusCorridorStageMap/Meshes/StaticMeshActor_668/SM_Stairs_modular_part_1"
         };
 
         [MenuItem("DimensionBrawl/Apply Olympus Corridor Combat Flow")]
@@ -430,6 +435,7 @@ namespace DimensionBrawl.Editor
                 RequireComponent<BossBarrageLaneReviewHud>(hudRoot, "Olympus validation review HUD");
             BossBarrageLaneReviewMobileHud mobileHud =
                 RequireComponent<BossBarrageLaneReviewMobileHud>(hudRoot, "Olympus validation mobile HUD");
+            ActionFoundationPromotedSummonReviewContractSetup.ValidateRoots(playerRoot, hudRoot);
             GameObject combatCameraRoot = RequireChildObject(packageRoot.transform, CombatCameraName);
             PlayerCombatModeController combatModeController =
                 RequireComponent<PlayerCombatModeController>(playerRoot, "combat mode controller");
@@ -1172,6 +1178,12 @@ namespace DimensionBrawl.Editor
             Vector3 stairTraversalEnd = corridorCombatStartMarker != null
                 ? corridorCombatStartMarker.position
                 : packageRoot.transform.TransformPoint(new Vector3(0f, 0f, 9.5f));
+            Transform introSwordGateRoot = CreateChild(
+                packageRoot.transform,
+                IntroSwordGateRootName,
+                packageRoot.transform.position,
+                packageRoot.transform.rotation).transform;
+            CreateStairTraversalSupport(introSwordGateRoot, stairTraversalStart, stairTraversalEnd);
             StairTraversalCleanupSnapshot stairTraversalCleanup =
                 DisableStairTraversalBlockingColliders(
                     stageScene,
@@ -1180,14 +1192,10 @@ namespace DimensionBrawl.Editor
                     playerController,
                     stairTraversalStart,
                     stairTraversalEnd);
+            DisableMarkerColliders(corridorCombatStartMarker);
             Debug.Log(
                 $"Olympus stair traversal cleanup restored {stairTraversalCleanup.RestoredSupportColliderCount} support colliders, disabled {stairTraversalCleanup.DisabledColliderCount} blockers. Remaining overlaps={stairTraversalCleanup.RemainingOverlapCount}.");
 
-            Transform introSwordGateRoot = CreateChild(
-                packageRoot.transform,
-                IntroSwordGateRootName,
-                packageRoot.transform.position,
-                packageRoot.transform.rotation).transform;
             CombatHealth[] introEnemies = ConfigureCutsceneCommandoIntroEnemies(
                 stageScene,
                 playerHealth,
@@ -1209,6 +1217,8 @@ namespace DimensionBrawl.Editor
                 RequireComponent<BossBarrageLaneReviewHud>(hudRoot, "Olympus handoff review HUD");
             BossBarrageLaneReviewMobileHud mobileHud =
                 RequireComponent<BossBarrageLaneReviewMobileHud>(hudRoot, "Olympus handoff mobile HUD");
+            ActionFoundationPromotedSummonReviewContractSetup.ApplyToRoots(playerRoot, hudRoot);
+            ActionFoundationPromotedSummonReviewContractSetup.ValidateRoots(playerRoot, hudRoot);
             Camera[] introCameras = FindIntroCamerasToDisable(stageScene, packageRoot.transform);
             AudioListener[] introAudioListeners = FindIntroAudioListenersToDisable(stageScene, packageRoot.transform);
             Behaviour[] cutsceneBehaviours = FindCutsceneBehavioursToDisableOnHandoff(stageScene);
@@ -2104,6 +2114,37 @@ namespace DimensionBrawl.Editor
             collider.radius = 2.75f;
             EditorUtility.SetDirty(collider);
             return trigger;
+        }
+
+        private static Collider CreateStairTraversalSupport(Transform parent, Vector3 from, Vector3 to)
+        {
+            Vector3 delta = to - from;
+            if (delta.sqrMagnitude <= 0.001f)
+            {
+                throw new InvalidOperationException("Olympus stair traversal support requires a non-zero path.");
+            }
+
+            Vector3 forward = delta.normalized;
+            Vector3 right = Vector3.Cross(Vector3.up, forward);
+            if (right.sqrMagnitude <= 0.0001f)
+            {
+                right = parent != null ? parent.right : Vector3.right;
+            }
+
+            right.Normalize();
+            Vector3 supportUp = Vector3.Cross(forward, right).normalized;
+            Quaternion rotation = Quaternion.LookRotation(forward, supportUp);
+            GameObject support = CreateChild(
+                parent,
+                StairTraversalSupportName,
+                (from + to) * 0.5f - supportUp * 0.08f,
+                rotation);
+            BoxCollider collider = support.AddComponent<BoxCollider>();
+            collider.size = new Vector3(7.25f, 0.18f, delta.magnitude + 2f);
+            collider.isTrigger = false;
+            EditorUtility.SetDirty(collider);
+            EditorUtility.SetDirty(support);
+            return collider;
         }
 
         private static Collider CreateStairBlocker(Transform packageRoot)

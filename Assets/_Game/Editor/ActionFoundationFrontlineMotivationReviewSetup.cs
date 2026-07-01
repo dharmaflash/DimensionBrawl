@@ -77,6 +77,7 @@ namespace DimensionBrawl.Editor
             SetString(hud, "bossDisplayName", "Dimensional Rift Curtain");
             SetString(overlayHud, "retrySceneName", "ActionFoundationFrontlineMotivationReview");
             SetString(overlayHud, "retryScenePath", ScenePath);
+            ActionFoundationPromotedSummonReviewContractSetup.ApplyToActiveScene();
 
             ValidateSceneBindings(profile);
             EditorSceneManager.MarkSceneDirty(scene);
@@ -144,6 +145,8 @@ namespace DimensionBrawl.Editor
             {
                 throw new InvalidOperationException("Pocket camera cue bridge must be enabled for guided one-round review readability.");
             }
+
+            ActionFoundationPromotedSummonReviewContractSetup.ValidateActiveScene();
         }
 
         private static void ValidateSceneBindings(FrontlineWaveStageProfile profile)
@@ -184,6 +187,7 @@ namespace DimensionBrawl.Editor
 
             ValidateString(overlayHud, "retrySceneName", "ActionFoundationFrontlineMotivationReview");
             ValidateString(overlayHud, "retryScenePath", ScenePath);
+            ActionFoundationPromotedSummonReviewContractSetup.ValidateActiveScene();
         }
 
         private static void EnsureSceneAsset()

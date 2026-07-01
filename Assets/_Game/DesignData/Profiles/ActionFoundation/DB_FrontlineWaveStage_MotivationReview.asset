@@ -19,8 +19,7 @@ MonoBehaviour:
   combatPromise: Survive boss pressure; summons buy the opening
   entryCue: Stay alive; block boss pressure, then confirm Skill1
   targetDurationSeconds: 90
-  waveSlotPattern: CloseProbe -> AimShot -> ScreenCurtain -> BodyRush
-    -> CoreExpose
+  waveSlotPattern: CloseProbe -> AimShot -> ScreenCurtain -> BodyRush -> CoreExpose
   spawnFamilyPattern: Drop | Dash | Jump | Normal
   observerLoop: condition gate -> combat observer -> completion record -> reward/state
     hook
@@ -65,8 +64,8 @@ MonoBehaviour:
   clearPressureDetail: Boss curtain suppressed; survival answer recorded
   failTitle: PLAYER DOWN
   failDetail: Player HP reached zero before the boss pressure was answered
-  routeCollapseFailDetail: Pressure control hit zero, but HP survival remains the fail
-    state
+  routeCollapseFailDetail: Pressure control hit zero, but HP survival remains the
+    fail state
   cleanRouteRewardHook: 'Clean survival logged: summon cover created a Skill1 confirm
     before counter pressure arrived.'
   counterRecoveryRewardHook: 'Counter recovery logged: summon absorbed pressure and
@@ -114,8 +113,8 @@ MonoBehaviour:
     objectiveCue: If the follow-up is missed, the boss screen returns and asks for
       another summon answer.
     observedEvent: followup_missed_or_blocked
-    sourcePattern: NIKKE ScreenCurtain/BodyRush pressure slot adaptation from
-      stage-wave slots.
+    sourcePattern: NIKKE ScreenCurtain/BodyRush pressure slot adaptation from stage-wave
+      slots.
   - beatId: B5.Result
     label: Suppression Result
     objectiveCue: Record HP survival under pressure, not boss HP death.
@@ -162,7 +161,8 @@ MonoBehaviour:
     label: RecordHook
     spawnFamily: Normal
     wavePathPattern: completion_record
-    playerRead: Commit the observed survival result without granting progression rewards.
+    playerRead: Commit the observed survival result without granting progression
+      rewards.
     observerEvent: survival_record_committed
     routePressureWeight: 0
   sourceReferences:

@@ -1150,7 +1150,7 @@ namespace DimensionBrawl.Editor
             ValidatePlayerEnergyActions(skill1Action, summonSlot1Action, energyLadder, playerHealth, targetSelector, bossHealth, laneSpace);
             ValidateSupportSummonSlotAction(
                 summonSlot2Action,
-                "SummonSlot2",
+                BossBarrageSummonReviewContract.Slot2ActionName,
                 energyLadder,
                 playerHealth,
                 targetSelector,
@@ -1160,8 +1160,8 @@ namespace DimensionBrawl.Editor
                 SummonSlot2ActorPrefabPath,
                 SummonSlot2ActorVisualName,
                 SummonSlot2ActionProfilePath,
-                1,
-                100f,
+                BossBarrageSummonReviewContract.Slot2MinimumTier,
+                BossBarrageSummonReviewContract.Slot2RequiredMana,
                 170f,
                 false,
                 0.18f,
@@ -1169,7 +1169,7 @@ namespace DimensionBrawl.Editor
                 3);
             ValidateSupportSummonSlotAction(
                 summonSlot3Action,
-                "SummonSlot3",
+                BossBarrageSummonReviewContract.Slot3ActionName,
                 energyLadder,
                 playerHealth,
                 targetSelector,
@@ -1179,8 +1179,8 @@ namespace DimensionBrawl.Editor
                 SummonSlot3ActorPrefabPath,
                 SummonSlot3ActorVisualName,
                 SummonSlot3ActionProfilePath,
-                3,
-                300f,
+                BossBarrageSummonReviewContract.Slot3MinimumTier,
+                BossBarrageSummonReviewContract.Slot3RequiredMana,
                 520f,
                 false,
                 0.65f,
@@ -1647,11 +1647,11 @@ namespace DimensionBrawl.Editor
                     "boss barrage mobile review HUD");
 
             SetObjectReference(mobileHud, "energyLadder", energyLadder);
-            SetBool(mobileHud, "useSingleSummonButton", false);
-            SetString(mobileHud, "summonSlot1Label", "SUMMON");
-            SetString(mobileHud, "summonSlot2Label", "S2 LASER");
-            SetString(mobileHud, "summonSlot3Label", "S3 DRAGON");
-            SetString(mobileHud, "lockedSummonLabel", "NEXT");
+            SetBool(mobileHud, "useSingleSummonButton", BossBarrageSummonReviewContract.UseSingleSummonButton);
+            SetString(mobileHud, "summonSlot1Label", BossBarrageSummonReviewContract.Slot1HudLabel);
+            SetString(mobileHud, "summonSlot2Label", BossBarrageSummonReviewContract.Slot2HudLabel);
+            SetString(mobileHud, "summonSlot3Label", BossBarrageSummonReviewContract.Slot3HudLabel);
+            SetString(mobileHud, "lockedSummonLabel", BossBarrageSummonReviewContract.LockedSummonLabel);
             EditorUtility.SetDirty(mobileHud);
 
             if (!EditorSceneManager.SaveScene(scene, scenePath))
@@ -5692,12 +5692,12 @@ namespace DimensionBrawl.Editor
                 summonSlot3Action);
             SetObjectReference(mobileHud, "summonSlot2Action", summonSlot2Action);
             SetObjectReference(mobileHud, "summonSlot3Action", summonSlot3Action);
-            SetString(mobileHud, "summonSlot2ActionName", "SummonSlot2");
-            SetString(mobileHud, "summonSlot3ActionName", "SummonSlot3");
-            SetBool(mobileHud, "useSingleSummonButton", false);
-            SetString(mobileHud, "summonSlot1Label", "SUMMON");
-            SetString(mobileHud, "summonSlot2Label", "S2 LASER");
-            SetString(mobileHud, "summonSlot3Label", "S3 DRAGON");
+            SetString(mobileHud, "summonSlot2ActionName", BossBarrageSummonReviewContract.Slot2ActionName);
+            SetString(mobileHud, "summonSlot3ActionName", BossBarrageSummonReviewContract.Slot3ActionName);
+            SetBool(mobileHud, "useSingleSummonButton", BossBarrageSummonReviewContract.UseSingleSummonButton);
+            SetString(mobileHud, "summonSlot1Label", BossBarrageSummonReviewContract.Slot1HudLabel);
+            SetString(mobileHud, "summonSlot2Label", BossBarrageSummonReviewContract.Slot2HudLabel);
+            SetString(mobileHud, "summonSlot3Label", BossBarrageSummonReviewContract.Slot3HudLabel);
             SetFloat(mobileHud, "buttonSize", 168f);
             SetFloat(mobileHud, "buttonGap", 38f);
             SetFloat(mobileHud, "margin", 72f);
@@ -5866,17 +5866,21 @@ namespace DimensionBrawl.Editor
             SetInt(summonSlot1Action, "maxActiveSummonActors", 1);
             SetFloat(summonSlot1Action, "entryForwardOffset", 1.35f);
             SetFloat(summonSlot1Action, "actorEntryCatchupSecondsPerMeter", 0.12f);
-            summonSlot1Action.ConfigureRequiredSummonMana(200f);
-            summonSlot1Action.ConfigureSlotCooldown(9.5f);
+            summonSlot1Action.ConfigureRequiredSummonMana(BossBarrageSummonReviewContract.Slot1RequiredMana);
+            summonSlot1Action.ConfigureSlotCooldown(BossBarrageSummonReviewContract.Slot1CooldownSeconds);
             summonSlot1Action.ConfigureSummonActionProfile(
                 LoadAsset<SummonSlotActionProfile>(SummonSlot1ActionProfilePath));
             EditorUtility.SetDirty(summonSlot1Action);
 
-            PlayerSupportSummonSlotAction summonSlot2Action = EnsureSupportSummonSlotAction(playerRoot, "SummonSlot2");
-            summonSlot2Action.ConfigureSlot("SummonSlot2", Key.Digit2, new Vector2(-1.55f, 0.35f));
-            summonSlot2Action.ConfigureRequiredSummonMana(100f);
-            summonSlot2Action.ConfigureMinimumSummonTier(1);
-            summonSlot2Action.ConfigureSlotCooldown(4.8f);
+            PlayerSupportSummonSlotAction summonSlot2Action =
+                EnsureSupportSummonSlotAction(playerRoot, BossBarrageSummonReviewContract.Slot2ActionName);
+            summonSlot2Action.ConfigureSlot(
+                BossBarrageSummonReviewContract.Slot2ActionName,
+                Key.Digit2,
+                new Vector2(-1.55f, 0.35f));
+            summonSlot2Action.ConfigureRequiredSummonMana(BossBarrageSummonReviewContract.Slot2RequiredMana);
+            summonSlot2Action.ConfigureMinimumSummonTier(BossBarrageSummonReviewContract.Slot2MinimumTier);
+            summonSlot2Action.ConfigureSlotCooldown(BossBarrageSummonReviewContract.Slot2CooldownSeconds);
             SetInt(summonSlot2Action, "maxActiveSummonActors", 1);
             SetFloat(summonSlot2Action, "entryForwardOffset", 1.35f);
             SetFloat(summonSlot2Action, "actorEntryCatchupSecondsPerMeter", 0.1f);
@@ -5899,11 +5903,15 @@ namespace DimensionBrawl.Editor
                 LoadAsset<SummonSlotActionProfile>(SummonSlot2ActionProfilePath));
             EditorUtility.SetDirty(summonSlot2Action);
 
-            PlayerSupportSummonSlotAction summonSlot3Action = EnsureSupportSummonSlotAction(playerRoot, "SummonSlot3");
-            summonSlot3Action.ConfigureSlot("SummonSlot3", Key.Digit3, new Vector2(1.55f, 0.55f));
-            summonSlot3Action.ConfigureRequiredSummonMana(300f);
-            summonSlot3Action.ConfigureMinimumSummonTier(3);
-            summonSlot3Action.ConfigureSlotCooldown(15.0f);
+            PlayerSupportSummonSlotAction summonSlot3Action =
+                EnsureSupportSummonSlotAction(playerRoot, BossBarrageSummonReviewContract.Slot3ActionName);
+            summonSlot3Action.ConfigureSlot(
+                BossBarrageSummonReviewContract.Slot3ActionName,
+                Key.Digit3,
+                new Vector2(1.55f, 0.55f));
+            summonSlot3Action.ConfigureRequiredSummonMana(BossBarrageSummonReviewContract.Slot3RequiredMana);
+            summonSlot3Action.ConfigureMinimumSummonTier(BossBarrageSummonReviewContract.Slot3MinimumTier);
+            summonSlot3Action.ConfigureSlotCooldown(BossBarrageSummonReviewContract.Slot3CooldownSeconds);
             SetInt(summonSlot3Action, "maxActiveSummonActors", 1);
             SetFloat(summonSlot3Action, "entryForwardOffset", 1.35f);
             SetFloat(summonSlot3Action, "actorEntryCatchupSecondsPerMeter", 0.12f);
@@ -7687,7 +7695,10 @@ namespace DimensionBrawl.Editor
             ValidateInt(summonSlot1Action, "maxActiveSummonActors", 1);
             ValidateFloat(summonSlot1Action, "entryForwardOffset", 1.35f);
             ValidateFloatAtLeast(summonSlot1Action, "actorEntryCatchupSecondsPerMeter", 0.1f);
-            ValidateFloat(summonSlot1Action, "requiredSummonMana", 200f);
+            ValidateFloat(
+                summonSlot1Action,
+                "requiredSummonMana",
+                BossBarrageSummonReviewContract.Slot1RequiredMana);
             SummonSlotActionProfile summonSlot1Profile = LoadAsset<SummonSlotActionProfile>(SummonSlot1ActionProfilePath);
             ValidateObjectReference(
                 summonSlot1Action,
@@ -9901,15 +9912,15 @@ namespace DimensionBrawl.Editor
             ValidateString(hud, "dodgeActionName", "Dodge");
             ValidateString(hud, "skill1ActionName", "Skill1");
             ValidateString(hud, "summonSlot1ActionName", "SummonSlot1");
-            ValidateString(hud, "summonSlot2ActionName", "SummonSlot2");
-            ValidateString(hud, "summonSlot3ActionName", "SummonSlot3");
+            ValidateString(hud, "summonSlot2ActionName", BossBarrageSummonReviewContract.Slot2ActionName);
+            ValidateString(hud, "summonSlot3ActionName", BossBarrageSummonReviewContract.Slot3ActionName);
             ValidateString(hud, "rangedAimActionName", "RangedAim");
             ValidateString(hud, "weaponSwapActionName", "WeaponSwap");
-            ValidateBool(hud, "useSingleSummonButton", false);
-            ValidateString(hud, "summonSlot1Label", "SUMMON");
-            ValidateString(hud, "summonSlot2Label", "S2 LASER");
-            ValidateString(hud, "summonSlot3Label", "S3 DRAGON");
-            ValidateString(hud, "lockedSummonLabel", "NEXT");
+            ValidateBool(hud, "useSingleSummonButton", BossBarrageSummonReviewContract.UseSingleSummonButton);
+            ValidateString(hud, "summonSlot1Label", BossBarrageSummonReviewContract.Slot1HudLabel);
+            ValidateString(hud, "summonSlot2Label", BossBarrageSummonReviewContract.Slot2HudLabel);
+            ValidateString(hud, "summonSlot3Label", BossBarrageSummonReviewContract.Slot3HudLabel);
+            ValidateString(hud, "lockedSummonLabel", BossBarrageSummonReviewContract.LockedSummonLabel);
             ValidateFloat(hud, "buttonSize", 168f);
             ValidateFloat(hud, "buttonGap", 38f);
             ValidateFloat(hud, "margin", 72f);

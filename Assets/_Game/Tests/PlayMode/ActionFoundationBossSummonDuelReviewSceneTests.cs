@@ -124,7 +124,7 @@ namespace DimensionBrawl.Tests
                 bossSummonPressureAction,
                 GetObjectReference<BossSummonPressureAction>(duelOwner, "bossSummonPressureAction"));
             Assert.AreEqual(
-                200f,
+                BossBarrageSummonReviewContract.Slot1RequiredMana,
                 summonSlot1Action.RequiredSummonMana,
                 0.001f,
                 "SummonSlot1 should expose its explicit mid-cost slam summon mana cost.");
@@ -180,8 +180,16 @@ namespace DimensionBrawl.Tests
                 DamageTeam.AllySummon,
                 "SummonSlot1 actor prefab",
                 expectPressureScreen: true);
-            AssertSupportSummonAction(summonSlot2Action, "SummonSlot2", 1, 100f);
-            AssertSupportSummonAction(summonSlot3Action, "SummonSlot3", 3, 300f);
+            AssertSupportSummonAction(
+                summonSlot2Action,
+                BossBarrageSummonReviewContract.Slot2ActionName,
+                BossBarrageSummonReviewContract.Slot2MinimumTier,
+                BossBarrageSummonReviewContract.Slot2RequiredMana);
+            AssertSupportSummonAction(
+                summonSlot3Action,
+                BossBarrageSummonReviewContract.Slot3ActionName,
+                BossBarrageSummonReviewContract.Slot3MinimumTier,
+                BossBarrageSummonReviewContract.Slot3RequiredMana);
             Assert.AreSame(
                 playerCuePlayer,
                 GetObjectReference<CombatVfxCuePlayer>(summonSlot1Action, "combatVfxCuePlayer"));
@@ -245,8 +253,10 @@ namespace DimensionBrawl.Tests
 
             SummonEnergyLadder energyLadder = RequireObject<SummonEnergyLadder>();
             PlayerCombatTargetSelector targetSelector = RequireObject<PlayerCombatTargetSelector>();
-            PlayerSupportSummonSlotAction summonSlot2Action = RequireSupportSummonAction("SummonSlot2");
-            PlayerSupportSummonSlotAction summonSlot3Action = RequireSupportSummonAction("SummonSlot3");
+            PlayerSupportSummonSlotAction summonSlot2Action =
+                RequireSupportSummonAction(BossBarrageSummonReviewContract.Slot2ActionName);
+            PlayerSupportSummonSlotAction summonSlot3Action =
+                RequireSupportSummonAction(BossBarrageSummonReviewContract.Slot3ActionName);
             BossSummonPressureAction bossSummonPressureAction = RequireObject<BossSummonPressureAction>();
             BossPressureActionDirector bossPressureActionDirector = RequireObject<BossPressureActionDirector>();
             BossPressureCostLadder bossPressureCostLadder = RequireObject<BossPressureCostLadder>();
@@ -438,9 +448,9 @@ namespace DimensionBrawl.Tests
             summonSlot3Action.ConfigureSlotCooldown(5f);
             GrantEnergyToTier(energyLadder, 3);
 
-            Assert.AreEqual(300f, energyLadder.CurrentMana, 0.001f);
+            Assert.AreEqual(BossBarrageSummonReviewContract.Slot3RequiredMana, energyLadder.CurrentMana, 0.001f);
             Assert.IsTrue(summonSlot1Action.TryUseSummonSlot1());
-            Assert.AreEqual(100f, energyLadder.CurrentMana, 0.001f);
+            Assert.AreEqual(BossBarrageSummonReviewContract.Slot2RequiredMana, energyLadder.CurrentMana, 0.001f);
             Assert.AreEqual(1, energyLadder.AvailableTier);
             Assert.IsTrue(summonSlot1Action.IsSlotOnCooldown);
             Assert.IsFalse(
