@@ -7686,6 +7686,9 @@ namespace DimensionBrawl.Tests
                 $"{label} should keep fast arrival from turning into frantic foot motion.");
             Assert.IsTrue(presenter.PlayDamageVfx);
             Assert.IsTrue(presenter.RenderDamageFeedback);
+            Assert.IsNotNull(presenter.DamageVfxAnchor, $"{label} should route hit VFX through a body-height damage anchor.");
+            Assert.AreNotSame(presenter.transform, presenter.DamageVfxAnchor, $"{label} hit VFX should not use the floor/root anchor.");
+            Assert.AreNotSame(presenter.PulseRoot, presenter.DamageVfxAnchor, $"{label} hit VFX should not use the hidden tier pulse anchor.");
             Assert.Greater(
                 presenter.DamageFlashRendererCount,
                 0,

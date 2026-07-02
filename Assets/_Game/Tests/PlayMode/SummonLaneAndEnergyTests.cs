@@ -2235,6 +2235,13 @@ namespace DimensionBrawl.Tests
                 Object.DestroyImmediate(pulseCollider);
                 Renderer pulseRenderer = pulseObject.GetComponent<Renderer>();
 
+                GameObject bodyObject = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+                bodyObject.name = "PromotedSummonBody";
+                bodyObject.transform.SetParent(victimObject.transform, worldPositionStays: false);
+                bodyObject.transform.localPosition = new Vector3(0f, 1.25f, 0f);
+                Collider bodyCollider = bodyObject.GetComponent<Collider>();
+                Object.DestroyImmediate(bodyCollider);
+
                 CombatVfxCuePlayer cuePlayer = victimObject.AddComponent<CombatVfxCuePlayer>();
                 cueProfile = CreateSummonDamageVfxCueProfile(damageCuePrefab);
                 ConfigureCombatVfxCuePlayer(cuePlayer, cueProfile);
@@ -2255,15 +2262,24 @@ namespace DimensionBrawl.Tests
                     DamageResponsePolicy.FlashOnly,
                     CombatControlLockPolicy.None)));
 
-                Transform damageCue = victimObject.transform.Find(damageCuePrefab.name);
                 float expectedIntensity = 0.9f * presenter.PressureDamageCueScale;
 
                 Assert.AreEqual(1, presenter.DamageVfxCueRequestCount);
+                Assert.Greater(
+                    presenter.DamageFlashRendererCount,
+                    0,
+                    "Summon damage VFX should resolve promoted body renderers rather than the hidden tier pulse.");
+                Assert.IsNotNull(presenter.DamageVfxAnchor);
+                Assert.Greater(
+                    presenter.DamageVfxAnchor.position.y,
+                    victimObject.transform.position.y + 0.4f,
+                    "Summon damage VFX should spawn around the torso/body bounds instead of the floor root.");
                 Assert.AreEqual(DamageResponsePolicy.FlashOnly, presenter.LastDamageResponsePolicy);
                 Assert.AreEqual(CombatControlLockPolicy.None, presenter.LastDamageControlLockPolicy);
                 Assert.IsFalse(presenter.LastDamageCueInterruptedAction);
                 Assert.AreEqual(presenter.PressureDamageCueScale, presenter.LastDamageCuePolicyScale, 0.001f);
                 Assert.AreEqual(expectedIntensity, presenter.LastDamageCueIntensity, 0.001f);
+                Transform damageCue = presenter.DamageVfxAnchor.Find(damageCuePrefab.name);
                 Assert.IsNotNull(damageCue);
             }
             finally

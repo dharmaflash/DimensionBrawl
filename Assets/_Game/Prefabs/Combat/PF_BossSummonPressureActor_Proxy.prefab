@@ -2496,6 +2496,37 @@ Transform:
   - {fileID: 4165328828458049629}
   m_Father: {fileID: 1662134822073730810}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &5670923538303627390
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1603861930526520762}
+  m_Layer: 0
+  m_Name: DamageVfxAnchor
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1603861930526520762
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5670923538303627390}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0.050992787, y: 0.56449944, z: 0.28884026}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2724612303494267962}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &5674255677621430717
 GameObject:
   m_ObjectHideFlags: 0
@@ -3614,6 +3645,7 @@ Transform:
   - {fileID: 7975460672542584000}
   - {fileID: 5721016710715430092}
   - {fileID: 967378219055242348}
+  - {fileID: 1603861930526520762}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &7352888140623209377
@@ -3809,6 +3841,7 @@ MonoBehaviour:
   - {fileID: 8727724952873624750}
   cuePlayer: {fileID: 0}
   vfxAnchor: {fileID: 0}
+  damageVfxAnchor: {fileID: 1603861930526520762}
   vfxDirectionTarget: {fileID: 0}
   entryCueId: 27
   attackCueId: 4

@@ -437,6 +437,8 @@ namespace DimensionBrawl.Editor
                     actorPresenter,
                     "damageFlashRenderers",
                     ToObjectArray(CollectEnabledRenderers(summonVisual.gameObject)));
+                Transform damageVfxAnchor = EnsureSummonDamageVfxAnchor(editableRoot, summonVisual);
+                SetObjectReference(actorPresenter, "damageVfxAnchor", damageVfxAnchor);
                 SetBool(actorPresenter, "renderPulseVisuals", false);
                 SetColor(actorPresenter, "tierOneColor", new Color(0.24f, 1f, 0.78f, 0.78f));
                 SetColor(actorPresenter, "tierTwoColor", new Color(0.38f, 0.74f, 1f, 0.9f));
@@ -728,6 +730,8 @@ namespace DimensionBrawl.Editor
                     actorPresenter,
                     "damageFlashRenderers",
                     ToObjectArray(CollectEnabledRenderers(summonVisual.gameObject)));
+                Transform damageVfxAnchor = EnsureSummonDamageVfxAnchor(editableRoot, summonVisual);
+                SetObjectReference(actorPresenter, "damageVfxAnchor", damageVfxAnchor);
                 SetBool(actorPresenter, "renderPulseVisuals", false);
                 SetColor(actorPresenter, "tierOneColor", pulseColor);
                 SetColor(actorPresenter, "tierTwoColor", Color.Lerp(pulseColor, Color.white, 0.25f));
@@ -1081,6 +1085,8 @@ namespace DimensionBrawl.Editor
                     actorPresenter,
                     "damageFlashRenderers",
                     ToObjectArray(CollectEnabledRenderers(summonVisual.gameObject)));
+                Transform damageVfxAnchor = EnsureSummonDamageVfxAnchor(editableRoot, summonVisual);
+                SetObjectReference(actorPresenter, "damageVfxAnchor", damageVfxAnchor);
                 SetBool(actorPresenter, "renderPulseVisuals", false);
                 SetColor(actorPresenter, "tierOneColor", new Color(1f, 0.32f, 0.55f, 0.82f));
                 SetColor(actorPresenter, "tierTwoColor", new Color(1f, 0.62f, 0.24f, 0.92f));
@@ -1156,6 +1162,66 @@ namespace DimensionBrawl.Editor
                 movementVfxRoot != null
                     ? ToObjectReferences(movementVfxRoot.GetComponentsInChildren<ParticleSystem>(includeInactive: true))
                     : Array.Empty<UnityEngine.Object>());
+        }
+
+        private static Transform EnsureSummonDamageVfxAnchor(GameObject actorRoot, Transform visual)
+        {
+            const string AnchorName = "DamageVfxAnchor";
+            Transform anchor = actorRoot.transform.Find(AnchorName);
+            if (anchor == null)
+            {
+                var anchorObject = new GameObject(AnchorName);
+                anchor = anchorObject.transform;
+                anchor.SetParent(actorRoot.transform, worldPositionStays: false);
+            }
+
+            if (TryResolveEnabledRendererBounds(CollectEnabledRenderers(visual.gameObject), out Bounds bounds)
+                && actorRoot.transform.InverseTransformPoint(bounds.center).y >= 0.35f)
+            {
+                anchor.position = bounds.center;
+            }
+            else
+            {
+                anchor.localPosition = ResolveFallbackDamageVfxAnchorLocalPosition(visual);
+            }
+
+            anchor.localRotation = Quaternion.identity;
+            anchor.localScale = Vector3.one;
+            EditorUtility.SetDirty(anchor.gameObject);
+            EditorUtility.SetDirty(actorRoot);
+            return anchor;
+        }
+
+        private static Vector3 ResolveFallbackDamageVfxAnchorLocalPosition(Transform visual)
+        {
+            float fallbackHeight = Mathf.Max(0.85f, visual.localPosition.y + Mathf.Max(visual.localScale.y, 0.8f));
+            return new Vector3(visual.localPosition.x, fallbackHeight, visual.localPosition.z);
+        }
+
+        private static bool TryResolveEnabledRendererBounds(Renderer[] renderers, out Bounds bounds)
+        {
+            bounds = default;
+            bool hasBounds = false;
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                Renderer renderer = renderers[i];
+                if (renderer == null || !renderer.enabled)
+                {
+                    continue;
+                }
+
+                if (!hasBounds)
+                {
+                    bounds = renderer.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(renderer.bounds);
+                }
+            }
+
+            return hasBounds;
         }
 
         private static Transform AttachPrimitiveDragonVisual(

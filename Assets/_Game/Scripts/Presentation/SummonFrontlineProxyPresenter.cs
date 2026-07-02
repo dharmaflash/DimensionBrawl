@@ -16,6 +16,8 @@ namespace DimensionBrawl.Presentation
         private const float MinimumVisibleDamageFlashSeconds = 0.2f;
         private const float MinimumDamageFlashBlend = 0.96f;
         private const float MinimumDamageEmissionBoost = 3.25f;
+        private const float MinimumDamageVfxAnchorLocalY = 0.35f;
+        private const string DamageVfxAnchorName = "DamageVfxAnchor";
 
         [SerializeField] private SummonFrontlineProxy proxy;
         [SerializeField] private SummonFrontlineClash clash;
@@ -34,6 +36,7 @@ namespace DimensionBrawl.Presentation
         [Header("VFX Cues")]
         [SerializeField] private CombatVfxCuePlayer cuePlayer;
         [SerializeField] private Transform vfxAnchor;
+        [SerializeField] private Transform damageVfxAnchor;
         [SerializeField] private Transform vfxDirectionTarget;
         [SerializeField] private CombatVfxCueId entryCueId = CombatVfxCueId.EliteSummonSignal;
         [SerializeField] private CombatVfxCueId attackCueId = CombatVfxCueId.EnemyAttackActive;
@@ -63,7 +66,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0f)] private float impactFlashSeconds = 0.18f;
         [SerializeField, Min(0f)] private float clashFlashSeconds = 0.14f;
         [SerializeField, Min(0f)] private float attackFlashSeconds = 0.12f;
-        [SerializeField, Min(0f)] private float damageFlashSeconds = 0.16f;
+        [SerializeField, Min(0f)] private float damageFlashSeconds = 0.2f;
         [SerializeField, Min(0f)] private float deathFlashSeconds = 0.22f;
         [SerializeField, Min(0f)] private float fullBodyHitReactionCooldownSeconds = 0.42f;
         [SerializeField] private bool heavyHitReactionBypassesCooldown = true;
@@ -130,6 +133,7 @@ namespace DimensionBrawl.Presentation
         public string DeathTrigger => deathTrigger;
         public CombatVfxCuePlayer CuePlayer => cuePlayer;
         public Transform VfxAnchor => vfxAnchor;
+        public Transform DamageVfxAnchor => damageVfxAnchor;
         public Transform VfxDirectionTarget => vfxDirectionTarget;
         public CombatVfxCueId EntryCueId => entryCueId;
         public CombatVfxCueId AttackCueId => attackCueId;
@@ -758,7 +762,7 @@ namespace DimensionBrawl.Presentation
                 return false;
             }
 
-            Transform anchor = vfxAnchor != null ? vfxAnchor : transform;
+            Transform anchor = ResolveCueAnchor(cueId);
             return resolvedCuePlayer.PlayCue(cueId, anchor, ResolveVfxDirection(anchor), ResolveTieredCueIntensity(baseIntensity, tier));
         }
 
@@ -770,8 +774,86 @@ namespace DimensionBrawl.Presentation
                 return false;
             }
 
-            Transform anchor = vfxAnchor != null ? vfxAnchor : transform;
+            Transform anchor = ResolveCueAnchor(cueId);
             return resolvedCuePlayer.PlayCue(cueId, anchor, ResolveVfxDirection(anchor), intensity);
+        }
+
+        private Transform ResolveCueAnchor(CombatVfxCueId cueId)
+        {
+            if (cueId == damageCueId)
+            {
+                return ResolveDamageVfxAnchor();
+            }
+
+            return vfxAnchor != null ? vfxAnchor : transform;
+        }
+
+        private Transform ResolveDamageVfxAnchor()
+        {
+            if (damageVfxAnchor == null)
+            {
+                Transform existing = transform.Find(DamageVfxAnchorName);
+                if (existing != null)
+                {
+                    damageVfxAnchor = existing;
+                }
+            }
+
+            if (damageVfxAnchor == null)
+            {
+                var anchorObject = new GameObject(DamageVfxAnchorName);
+                damageVfxAnchor = anchorObject.transform;
+                damageVfxAnchor.SetParent(transform, worldPositionStays: false);
+            }
+
+            UpdateDamageVfxAnchorFromRenderers();
+            return damageVfxAnchor != null ? damageVfxAnchor : (vfxAnchor != null ? vfxAnchor : transform);
+        }
+
+        private void UpdateDamageVfxAnchorFromRenderers()
+        {
+            if (damageVfxAnchor == null || !TryResolveDamageFlashBounds(out Bounds bounds))
+            {
+                return;
+            }
+
+            Vector3 localCenter = transform.InverseTransformPoint(bounds.center);
+            if (localCenter.y < MinimumDamageVfxAnchorLocalY
+                && damageVfxAnchor.localPosition.y >= MinimumDamageVfxAnchorLocalY)
+            {
+                return;
+            }
+
+            damageVfxAnchor.localPosition = localCenter;
+            damageVfxAnchor.rotation = transform.rotation;
+            damageVfxAnchor.localScale = Vector3.one;
+        }
+
+        private bool TryResolveDamageFlashBounds(out Bounds bounds)
+        {
+            Renderer[] targets = ResolveDamageFlashRenderers();
+            bounds = default;
+            bool hasBounds = false;
+            for (int i = 0; i < targets.Length; i++)
+            {
+                Renderer target = targets[i];
+                if (target == null || !target.enabled)
+                {
+                    continue;
+                }
+
+                if (!hasBounds)
+                {
+                    bounds = target.bounds;
+                    hasBounds = true;
+                }
+                else
+                {
+                    bounds.Encapsulate(target.bounds);
+                }
+            }
+
+            return hasBounds;
         }
 
         private float ResolveTieredCueIntensity(float baseIntensity, int tier)

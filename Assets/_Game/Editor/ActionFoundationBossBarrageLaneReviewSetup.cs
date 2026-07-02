@@ -9419,6 +9419,40 @@ namespace DimensionBrawl.Editor
             {
                 ValidateArrayReference(actorPresenter, "damageFlashRenderers", i, visualRenderers[i]);
             }
+
+            Transform damageVfxAnchor = RequireProperty(new SerializedObject(actorPresenter), "damageVfxAnchor")
+                .objectReferenceValue as Transform;
+            if (damageVfxAnchor == null)
+            {
+                throw new InvalidOperationException(
+                    $"{actorPresenter.name}.damageVfxAnchor should bind a torso-height body VFX anchor.");
+            }
+
+            if (damageVfxAnchor == actorPresenter.transform || damageVfxAnchor == actorPresenter.PulseRoot)
+            {
+                throw new InvalidOperationException(
+                    $"{actorPresenter.name}.damageVfxAnchor must not use the floor/root or hidden tier pulse anchor.");
+            }
+
+            if (!string.Equals(damageVfxAnchor.name, "DamageVfxAnchor", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"{actorPresenter.name}.damageVfxAnchor should use the reviewed DamageVfxAnchor transform.");
+            }
+
+            if (damageVfxAnchor.localPosition.y < 0.35f)
+            {
+                throw new InvalidOperationException(
+                    $"{actorPresenter.name}.damageVfxAnchor should sit at torso height, not at the actor root.");
+            }
+
+            if (TryResolveEnabledRendererBounds(visualRenderers, out Bounds visualBounds)
+                && actorPresenter.transform.InverseTransformPoint(visualBounds.center).y >= 0.35f
+                && Vector3.Distance(damageVfxAnchor.position, visualBounds.center) > 0.05f)
+            {
+                throw new InvalidOperationException(
+                    $"{actorPresenter.name}.damageVfxAnchor should sit on the promoted body bounds center, not at the feet.");
+            }
         }
 
         private static void ValidateSummonActorAnimatorPresentation(
