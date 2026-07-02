@@ -23,6 +23,13 @@ namespace DimensionBrawl.Editor
         private const string CombatHudEventSystemRootName = ReviewRootPrefix + "CombatHudEventSystem";
         private const string DimensionHudSkinRootName = "DimensionHudSkinRoot";
         private static readonly Vector2 DimensionHudDesignResolution = new Vector2(2560f, 1440f);
+        private static readonly Color CombatHudHealthReadoutColor = new Color(1f, 0.92f, 0.68f, 1f);
+        private static readonly Color CombatHudResourceReadoutColor = new Color(0.56f, 1f, 1f, 1f);
+        private static readonly Color CombatHudInputReadoutColor = new Color(0.9f, 0.98f, 1f, 1f);
+        private static readonly Color CombatHudReadoutOutlineColor = new Color(0f, 0.025f, 0.035f, 0.95f);
+        private static readonly Color CombatHudSummonStateColor = new Color(0.9f, 0.98f, 1f, 1f);
+        private static readonly Color CombatHudSummonLabelColor = new Color(1f, 0.92f, 0.68f, 1f);
+        private static readonly Color CombatHudSummonProgressColor = new Color(0.36f, 0.95f, 1f, 0.42f);
 
         [MenuItem("DimensionBrawl/Reapply Action Foundation Boss Barrage Combat HUD UI")]
         public static void ReapplyBossBarrageCombatHudUiMenu()
@@ -543,9 +550,24 @@ namespace DimensionBrawl.Editor
             ConfigureText(hudRoot, "Timer", new Rect(178f, 55f, 409f, 48f), Color.black, 18);
             ConfigureText(hudRoot, "Objective", new Rect(180f, 117f, 409f, 64f), Color.black, 18);
             ConfigureText(hudRoot, "ActionFeedback", new Rect(916f, 51f, 759f, 48f), Color.black, 18);
-            ConfigureText(hudRoot, "InputMode", new Rect(911f, 1212f, 215f, 43f), Color.black, 16);
-            ConfigureText(hudRoot, "HealthText", new Rect(1326f, 1220f, 201f, 32f), Color.black, 18);
-            ConfigureText(hudRoot, "ResourceText", new Rect(1359f, 1327f, 147f, 26f), Color.black, 16);
+            ConfigureReadoutText(
+                hudRoot,
+                "InputMode",
+                new Rect(911f, 1212f, 215f, 43f),
+                CombatHudInputReadoutColor,
+                17);
+            ConfigureReadoutText(
+                hudRoot,
+                "HealthText",
+                new Rect(1326f, 1220f, 201f, 32f),
+                CombatHudHealthReadoutColor,
+                20);
+            ConfigureReadoutText(
+                hudRoot,
+                "ResourceText",
+                new Rect(1359f, 1327f, 147f, 26f),
+                CombatHudResourceReadoutColor,
+                20);
 
             ConfigureImage(hudRoot, "PauseButton", sprites["Hud_ButtonPause"], new Rect(2396f, 47f, 100f, 95f), preserveAspect: false);
             ConfigureImage(hudRoot, "MoveJoystickRing", sprites["Hud_JoystickPanel"], new Rect(155f, 853f, 421f, 415f), preserveAspect: false);
@@ -785,8 +807,21 @@ namespace DimensionBrawl.Editor
                 Mathf.Max(24f, barRect.xMax - labelRect.xMax - 4f),
                 barRect.height);
 
-            ConfigureLocalText(button, "Label", labelRect, buttonSize, Color.black, Mathf.Max(11, fontSize - 2));
-            ConfigureLocalText(button, "State", stateRect, buttonSize, Color.black, fontSize);
+            ConfigureLocalText(
+                button,
+                "Label",
+                labelRect,
+                buttonSize,
+                CombatHudSummonLabelColor,
+                Mathf.Max(13, fontSize - 1));
+            ConfigureLocalText(
+                button,
+                "State",
+                stateRect,
+                buttonSize,
+                CombatHudSummonStateColor,
+                Mathf.Max(14, fontSize));
+            ConfigureSummonSlotProgressFill(button);
         }
 
         private static Rect ResolveSummonTextBarRect(Vector2 buttonSize)
@@ -819,6 +854,65 @@ namespace DimensionBrawl.Editor
             EditorUtility.SetDirty(target.gameObject);
         }
 
+        private static void ConfigureReadoutText(
+            GameObject hudRoot,
+            string objectName,
+            Rect designRect,
+            Color color,
+            int fontSize)
+        {
+            ConfigureText(hudRoot, objectName, designRect, color, fontSize);
+            Transform target = FindHudDescendant(hudRoot.transform, objectName);
+            Text text = target != null ? target.GetComponent<Text>() : null;
+            if (text == null)
+            {
+                return;
+            }
+
+            text.fontStyle = FontStyle.Bold;
+            text.resizeTextForBestFit = false;
+            text.horizontalOverflow = HorizontalWrapMode.Overflow;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
+            ConfigureTextOutline(text);
+            MarkComponentDirty(text);
+            EditorUtility.SetDirty(text.gameObject);
+        }
+
+        private static void ConfigureSummonSlotProgressFill(Transform button)
+        {
+            Transform fill = FindHudDescendant(button, "CooldownFill");
+            Image image = fill != null ? fill.GetComponent<Image>() : null;
+            if (image == null)
+            {
+                return;
+            }
+
+            image.color = CombatHudSummonProgressColor;
+            image.raycastTarget = false;
+            image.preserveAspect = false;
+            image.type = Image.Type.Filled;
+            image.fillMethod = Image.FillMethod.Radial360;
+            image.fillOrigin = (int)Image.Origin360.Top;
+            image.fillClockwise = true;
+            image.fillAmount = 0f;
+            MarkComponentDirty(image);
+            EditorUtility.SetDirty(image.gameObject);
+        }
+
+        private static void ConfigureTextOutline(Text text)
+        {
+            Outline outline = text.GetComponent<Outline>();
+            if (outline == null)
+            {
+                outline = text.gameObject.AddComponent<Outline>();
+            }
+
+            outline.effectColor = CombatHudReadoutOutlineColor;
+            outline.effectDistance = new Vector2(1.25f, -1.25f);
+            outline.useGraphicAlpha = true;
+            MarkComponentDirty(outline);
+        }
+
         private static void SetTextVisible(Text text, bool visible, Color color, int fontSize)
         {
             if (text == null)
@@ -831,13 +925,19 @@ namespace DimensionBrawl.Editor
             resolvedColor.a = visible ? 1f : 0f;
             text.color = resolvedColor;
             text.fontSize = fontSize;
+            text.fontStyle = visible ? FontStyle.Bold : FontStyle.Normal;
             text.alignment = TextAnchor.MiddleCenter;
             text.raycastTarget = false;
-            text.resizeTextForBestFit = visible;
+            text.resizeTextForBestFit = false;
             text.resizeTextMinSize = 8;
             text.resizeTextMaxSize = fontSize;
-            text.horizontalOverflow = HorizontalWrapMode.Wrap;
-            text.verticalOverflow = VerticalWrapMode.Truncate;
+            text.horizontalOverflow = HorizontalWrapMode.Overflow;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
+            if (visible)
+            {
+                ConfigureTextOutline(text);
+            }
+
             MarkComponentDirty(text);
             EditorUtility.SetDirty(text.gameObject);
         }

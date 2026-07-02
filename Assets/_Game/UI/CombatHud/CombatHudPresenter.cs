@@ -7,6 +7,14 @@ namespace DimensionBrawl.UI
     [DisallowMultipleComponent]
     public sealed class CombatHudPresenter : MonoBehaviour
     {
+        private static readonly Color HealthReadoutColor = new Color(1f, 0.92f, 0.68f, 1f);
+        private static readonly Color ResourceReadoutColor = new Color(0.56f, 1f, 1f, 1f);
+        private static readonly Color InputModeReadoutColor = new Color(0.9f, 0.98f, 1f, 1f);
+        private static readonly Color ReadoutOutlineColor = new Color(0f, 0.025f, 0.035f, 0.95f);
+        private static readonly Color SummonReadyFillColor = new Color(1f, 0.86f, 0.35f, 0.32f);
+        private static readonly Color SummonChargingFillColor = new Color(0.36f, 0.95f, 1f, 0.42f);
+        private static readonly Color SummonUnavailableFillColor = new Color(0.03f, 0.04f, 0.045f, 0.52f);
+
         [Serializable]
         public sealed class ActionSlotBinding
         {
@@ -90,24 +98,61 @@ namespace DimensionBrawl.UI
                 if (labelText != null)
                 {
                     labelText.text = label;
+                    labelText.fontStyle = FontStyle.Bold;
+                    labelText.color = HealthReadoutColor;
+                    ApplySlotTextOutline(labelText);
                 }
 
                 if (stateText != null)
                 {
                     stateText.text = state;
+                    stateText.fontSize = Mathf.Max(stateText.fontSize, 13);
+                    stateText.fontStyle = FontStyle.Bold;
+                    stateText.color = enabled ? HealthReadoutColor : InputModeReadoutColor;
+                    stateText.horizontalOverflow = HorizontalWrapMode.Overflow;
+                    stateText.verticalOverflow = VerticalWrapMode.Overflow;
+                    ApplySlotTextOutline(stateText);
                 }
 
                 if (cooldownFill != null)
                 {
-                    cooldownFill.fillAmount = enabled ? 0f : 1f - Mathf.Clamp01(availabilityFill01);
+                    ConfigureClockwiseSummonFill(cooldownFill, enabled, availabilityFill01);
                 }
 
                 if (canvasGroup != null)
                 {
-                    canvasGroup.alpha = enabled ? 1f : 0.55f;
+                    canvasGroup.alpha = enabled ? 1f : 0.72f;
                     canvasGroup.interactable = enabled;
                     canvasGroup.blocksRaycasts = enabled;
                 }
+            }
+
+            private static void ConfigureClockwiseSummonFill(Image image, bool enabled, float availabilityFill01)
+            {
+                image.type = Image.Type.Filled;
+                image.fillMethod = Image.FillMethod.Radial360;
+                image.fillOrigin = (int)Image.Origin360.Top;
+                image.fillClockwise = true;
+                image.raycastTarget = false;
+                image.fillAmount = Mathf.Clamp01(availabilityFill01);
+                image.color = enabled
+                    ? SummonReadyFillColor
+                    : availabilityFill01 > 0.001f
+                        ? SummonChargingFillColor
+                        : SummonUnavailableFillColor;
+            }
+
+            private static void ApplySlotTextOutline(Text text)
+            {
+                Outline outline = text.GetComponent<Outline>();
+                if (outline == null)
+                {
+                    outline = text.gameObject.AddComponent<Outline>();
+                }
+
+                outline.effectColor = ReadoutOutlineColor;
+                outline.effectDistance = new Vector2(1f, -1f);
+                outline.useGraphicAlpha = true;
             }
         }
 
@@ -135,6 +180,7 @@ namespace DimensionBrawl.UI
         private void Awake()
         {
             ResolveOptionalRuntimeReferences();
+            ApplyPlayerReadoutStyles();
             EnsureAimReticle();
         }
 
@@ -153,6 +199,7 @@ namespace DimensionBrawl.UI
 
         public void SetHealth(float current, float max)
         {
+            ApplyPlayerReadoutStyle(healthText, 19, HealthReadoutColor);
             float ratio = max > 0f ? Mathf.Clamp01(current / max) : 0f;
             if (healthFill != null)
             {
@@ -198,6 +245,7 @@ namespace DimensionBrawl.UI
 
         public void SetResource(float current, float max)
         {
+            ApplyPlayerReadoutStyle(resourceText, 19, ResourceReadoutColor);
             float ratio = max > 0f ? Mathf.Clamp01(current / max) : 0f;
             if (resourceFill != null)
             {
@@ -209,6 +257,7 @@ namespace DimensionBrawl.UI
 
         public void SetInputMode(string label)
         {
+            ApplyPlayerReadoutStyle(inputModeText, 15, InputModeReadoutColor);
             SetText(inputModeText, label);
         }
 
@@ -274,6 +323,39 @@ namespace DimensionBrawl.UI
             {
                 bossHealthText = FindText("BossHpText");
             }
+        }
+
+        private void ApplyPlayerReadoutStyles()
+        {
+            ApplyPlayerReadoutStyle(healthText, 19, HealthReadoutColor);
+            ApplyPlayerReadoutStyle(resourceText, 19, ResourceReadoutColor);
+            ApplyPlayerReadoutStyle(inputModeText, 15, InputModeReadoutColor);
+        }
+
+        private static void ApplyPlayerReadoutStyle(Text text, int fontSize, Color color)
+        {
+            if (text == null)
+            {
+                return;
+            }
+
+            text.fontSize = Mathf.Max(text.fontSize, fontSize);
+            text.fontStyle = FontStyle.Bold;
+            text.color = color;
+            text.alignment = TextAnchor.MiddleCenter;
+            text.horizontalOverflow = HorizontalWrapMode.Overflow;
+            text.verticalOverflow = VerticalWrapMode.Overflow;
+            text.resizeTextForBestFit = false;
+
+            Outline outline = text.GetComponent<Outline>();
+            if (outline == null)
+            {
+                outline = text.gameObject.AddComponent<Outline>();
+            }
+
+            outline.effectColor = ReadoutOutlineColor;
+            outline.effectDistance = new Vector2(1.25f, -1.25f);
+            outline.useGraphicAlpha = true;
         }
 
         private void EnsureAimReticle()
