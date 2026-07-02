@@ -658,7 +658,7 @@ namespace DimensionBrawl.Tests
         {
             BossSummonPressureAction.BossSummonTierSettings[] tiers = profile.CopyTierSettings();
             string[] expectedRoles = { "EscortProbe", "PressureScreen", "LaserSoldier" };
-            float[] expectedHealth = { 560f, 820f, 1180f };
+            float[] expectedHealth = { 520f, 700f, 760f };
             float[] expectedMoveSpeed = { 3.2f, 3.6f, 4.0f };
             float[] expectedDps = { 42f, 62f, 58f };
             int[] expectedScreens = { 3, 5, 0 };
@@ -695,6 +695,10 @@ namespace DimensionBrawl.Tests
                     0,
                     tiers[i].ScreenIntercepts,
                     "Boss LV3 laser soldier should be a dodge-line threat, not another pressure screen.");
+                Assert.Less(
+                    tiers[i].ActorMaxHealth,
+                    900f,
+                    "Boss LV3 laser soldier should stay punishable after the dodge read instead of out-tanking the player's high-cost dragon.");
                 Assert.Less(
                     tiers[i].ActorAttackIntervalSeconds,
                     tiers[i - 1].ActorAttackIntervalSeconds,

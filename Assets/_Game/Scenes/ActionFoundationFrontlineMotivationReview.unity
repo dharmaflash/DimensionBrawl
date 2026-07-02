@@ -11586,7 +11586,7 @@ MonoBehaviour:
     ActorScale: 2.07
     ActorRoleId: EscortProbe
     ActorPrefabOverride: {fileID: 0}
-    ActorMaxHealth: 560
+    ActorMaxHealth: 520
     ActorMoveSpeed: 3.2
     ActorAdvanceDistance: 2.4
     ActorAdvanceSeconds: 1.4
@@ -11603,7 +11603,7 @@ MonoBehaviour:
     ActorScale: 2.52
     ActorRoleId: PressureScreen
     ActorPrefabOverride: {fileID: 0}
-    ActorMaxHealth: 820
+    ActorMaxHealth: 700
     ActorMoveSpeed: 3.6
     ActorAdvanceDistance: 3.8
     ActorAdvanceSeconds: 1.85
@@ -11620,7 +11620,7 @@ MonoBehaviour:
     ActorScale: 2.48
     ActorRoleId: LaserSoldier
     ActorPrefabOverride: {fileID: 630318517341027331, guid: 371da9ae1f247be4a93dd5ccdd5c4e6d, type: 3}
-    ActorMaxHealth: 1180
+    ActorMaxHealth: 760
     ActorMoveSpeed: 4
     ActorAdvanceDistance: 4.4
     ActorAdvanceSeconds: 2.05
