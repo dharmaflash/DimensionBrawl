@@ -117,6 +117,11 @@ namespace DimensionBrawl.Tests
         private const string SummonSlot1ActorVisualName = "SummonSlot1Visual_ShieldBreakerElite";
         private const string SummonSlot2ActorVisualName = "SummonSlot2Visual_LaserRifleman";
         private const string SummonSlot3ActorVisualName = "SummonSlot3Visual_FireDragon";
+        private const float SummonSlot3DragonVisualLocalHeight = 0.24f;
+        private const float SummonSlot3DragonAirborneHeight = 0.34f;
+        private const float SummonSlot3DragonProjectileOriginHeight = 0.58f;
+        private const float SummonSlot3DragonHealthBarHeight = 1.18f;
+        private const float SummonSlot3DragonBreathBeamHeight = 0.88f;
         private const string BossSummonPressureActorVisualName = "BossSummonPressureVisual_AuraCaptainElite";
         private const string SummonActorMoveSpeedParameter = "MoveSpeed";
         private const string SummonActorSpawnTrigger = "EliteSummonPackage";
@@ -6229,8 +6234,34 @@ namespace DimensionBrawl.Tests
             }
             else if (string.Equals(visualName, SummonSlot3ActorVisualName, System.StringComparison.Ordinal))
             {
+                Transform dragonVisual = actorPrefab.transform.Find(visualName);
+                Assert.IsNotNull(dragonVisual, $"{label} should include {visualName}.");
+                AssertVectorNear(
+                    new Vector3(0f, SummonSlot3DragonVisualLocalHeight, -0.08f),
+                    dragonVisual.localPosition,
+                    $"{label} dragon visual local position");
+                SummonProxyVisualMotionPresenter motionPresenter =
+                    RequireComponent<SummonProxyVisualMotionPresenter>(actorPrefab, $"{label} dragon hover presenter");
+                Assert.AreSame(dragonVisual, motionPresenter.MotionRoot);
+                Assert.AreEqual(
+                    SummonSlot3DragonAirborneHeight,
+                    motionPresenter.AirborneHeight,
+                    0.001f,
+                    $"{label} dragon hover height should stay inside the player sightline.");
+                AssertVectorNear(
+                    new Vector3(0f, SummonSlot3DragonProjectileOriginHeight, 0.28f),
+                    actor.ProjectileOrigin.localPosition,
+                    $"{label} dragon projectile origin local position");
+                SummonFrontlineHealthBarPresenter healthBarPresenter =
+                    RequireComponent<SummonFrontlineHealthBarPresenter>(actorPrefab, $"{label} dragon health bar presenter");
+                AssertVectorNear(
+                    new Vector3(0f, SummonSlot3DragonHealthBarHeight, 0.02f),
+                    healthBarPresenter.BarRoot.localPosition,
+                    $"{label} dragon health bar local position");
+                Transform fireBreathBeam = actorPrefab.transform.Find("DragonFireBreathBeam");
+                Assert.IsNotNull(fireBreathBeam, $"{label} should include DragonFireBreathBeam.");
                 AssertPromotedParticleVfx(
-                    actorPrefab.transform.Find("DragonFireBreathBeam"),
+                    fireBreathBeam,
                     $"{label} FORGE3D fire breath",
                     2);
                 AssertSummonAttackBeamPresenter(
@@ -6238,7 +6269,11 @@ namespace DimensionBrawl.Tests
                     actor,
                     "DragonFireBreathBeam",
                     minimumParticles: 2);
-                AssertFireDragonVisual(actorPrefab.transform.Find(visualName), label);
+                AssertVectorNear(
+                    new Vector3(0f, SummonSlot3DragonBreathBeamHeight, 1.58f),
+                    fireBreathBeam.localPosition,
+                    $"{label} dragon breath beam local position");
+                AssertFireDragonVisual(dragonVisual, label);
                 AssertGameOwnedAsset(
                     LoadAsset<GameObject>(SummonSlot3PromotedFireBreathPrefabPath),
                     "SummonSlot3 promoted fire breath prefab");

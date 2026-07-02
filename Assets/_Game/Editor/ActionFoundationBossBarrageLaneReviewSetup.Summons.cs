@@ -514,7 +514,7 @@ namespace DimensionBrawl.Editor
                 SummonSlot3ActorVisualRoleId,
                 ActionFoundationEnemyRoleCandidateSetup.FinalStandCommanderElitePrefabPath,
                 SummonSlot3ActorVisualName,
-                new Vector3(0f, 0.56f, -0.08f),
+                new Vector3(0f, 0.24f, -0.08f),
                 Vector3.zero,
                 Vector3.one * 0.18f,
                 new Color(1f, 0.44f, 0.16f, 0.88f),
@@ -598,7 +598,9 @@ namespace DimensionBrawl.Editor
                 bodyRigidbody.isKinematic = true;
 
                 Transform projectileOrigin = EnsureChild(editableRoot.transform, "ProjectileOrigin");
-                projectileOrigin.localPosition = new Vector3(0f, 0.92f, 0.28f);
+                projectileOrigin.localPosition = roleId == SummonSlot3ActorVisualRoleId
+                    ? new Vector3(0f, 0.58f, 0.28f)
+                    : new Vector3(0f, 0.92f, 0.28f);
                 projectileOrigin.localRotation = Quaternion.identity;
                 projectileOrigin.localScale = Vector3.one;
                 SetObjectReference(proxy, "projectileOrigin", projectileOrigin);
@@ -683,7 +685,9 @@ namespace DimensionBrawl.Editor
                     proxy,
                     proxyHealth,
                     DamageTeam.AllySummon,
-                    new Vector3(0f, 1.78f, 0.02f),
+                    roleId == SummonSlot3ActorVisualRoleId
+                        ? new Vector3(0f, 1.18f, 0.02f)
+                        : new Vector3(0f, 1.78f, 0.02f),
                     Mathf.Max(0.68f, bodyRadius * 0.95f));
 
                 SummonFrontlineProxyPresenter actorPresenter =
@@ -739,7 +743,7 @@ namespace DimensionBrawl.Editor
                         editableRoot,
                         proxy,
                         summonVisual,
-                        airborneHeight: 1.12f,
+                        airborneHeight: 0.34f,
                         jumpArcHeight: 0f,
                         tierArcHeightStep: 0f,
                         landingDip: 0f,
@@ -750,7 +754,7 @@ namespace DimensionBrawl.Editor
                         proxy,
                         "DragonFireBreathBeam",
                         SummonSlot3PromotedFireBreathPrefabPath,
-                        new Vector3(0f, 1.28f, 1.58f),
+                        new Vector3(0f, 0.88f, 1.58f),
                         Vector3.zero,
                         new Vector3(1.18f, 1.18f, 2.3f),
                         new Color(1f, 0.38f, 0.08f, 0.72f),

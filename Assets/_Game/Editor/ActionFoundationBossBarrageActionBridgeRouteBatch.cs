@@ -26,7 +26,7 @@ namespace DimensionBrawl.Editor
             EditorSceneManager.OpenScene(ReviewScenePath, OpenSceneMode.Single);
             ActionFoundationBossBarrageActionBridgeRouteBatch.Start(
                 ActionBridgeRouteResultPath,
-                90f);
+                105f);
             EditorApplication.isPlaying = true;
         }
 
