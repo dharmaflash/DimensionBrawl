@@ -433,6 +433,10 @@ namespace DimensionBrawl.Editor
                     actorPresenter,
                     "actorRenderers",
                     BuildPulseRendererReferenceArray(pulseRenderer));
+                SetObjectReferenceArray(
+                    actorPresenter,
+                    "damageFlashRenderers",
+                    ToObjectArray(CollectEnabledRenderers(summonVisual.gameObject)));
                 SetBool(actorPresenter, "renderPulseVisuals", false);
                 SetColor(actorPresenter, "tierOneColor", new Color(0.24f, 1f, 0.78f, 0.78f));
                 SetColor(actorPresenter, "tierTwoColor", new Color(0.38f, 0.74f, 1f, 0.9f));
@@ -720,6 +724,10 @@ namespace DimensionBrawl.Editor
                     actorPresenter,
                     "actorRenderers",
                     BuildPulseRendererReferenceArray(pulseRenderer));
+                SetObjectReferenceArray(
+                    actorPresenter,
+                    "damageFlashRenderers",
+                    ToObjectArray(CollectEnabledRenderers(summonVisual.gameObject)));
                 SetBool(actorPresenter, "renderPulseVisuals", false);
                 SetColor(actorPresenter, "tierOneColor", pulseColor);
                 SetColor(actorPresenter, "tierTwoColor", Color.Lerp(pulseColor, Color.white, 0.25f));
@@ -1069,6 +1077,10 @@ namespace DimensionBrawl.Editor
                     actorPresenter,
                     "actorRenderers",
                     BuildPulseRendererReferenceArray(pulseRenderer));
+                SetObjectReferenceArray(
+                    actorPresenter,
+                    "damageFlashRenderers",
+                    ToObjectArray(CollectEnabledRenderers(summonVisual.gameObject)));
                 SetBool(actorPresenter, "renderPulseVisuals", false);
                 SetColor(actorPresenter, "tierOneColor", new Color(1f, 0.32f, 0.55f, 0.82f));
                 SetColor(actorPresenter, "tierTwoColor", new Color(1f, 0.62f, 0.24f, 0.92f));

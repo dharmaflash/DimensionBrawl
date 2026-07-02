@@ -3804,6 +3804,9 @@ MonoBehaviour:
   pulseRoot: {fileID: 3753305637982622612}
   actorRenderers:
   - {fileID: 880245023669801038}
+  damageFlashRenderers:
+  - {fileID: 581334091639845701}
+  - {fileID: 8727724952873624750}
   cuePlayer: {fileID: 0}
   vfxAnchor: {fileID: 0}
   vfxDirectionTarget: {fileID: 0}
@@ -3819,7 +3822,7 @@ MonoBehaviour:
   pressureDamageCueScale: 0.64
   deathCueIntensity: 1.05
   tierCueIntensityStep: 0.1
-  playDamageVfx: 0
+  playDamageVfx: 1
   renderDamageFeedback: 1
   tierOneColor: {r: 1, g: 0.32, b: 0.55, a: 0.82}
   tierTwoColor: {r: 1, g: 0.62, b: 0.24, a: 0.92}
@@ -3827,13 +3830,14 @@ MonoBehaviour:
   flashColor: {r: 1, g: 0.95, b: 0.84, a: 1}
   clashFlashColor: {r: 1, g: 0.78, b: 0.22, a: 1}
   attackFlashColor: {r: 1, g: 0.74, b: 0.24, a: 1}
-  damageFlashColor: {r: 1, g: 0.24, b: 0.18, a: 1}
+  damageFlashColor: {r: 1, g: 0.34, b: 0.18, a: 1}
+  damageFlashEmissionColor: {r: 1, g: 0.72, b: 0.24, a: 1}
   deathFlashColor: {r: 0.08, g: 0.08, b: 0.08, a: 1}
   entryFlashSeconds: 0.24
   impactFlashSeconds: 0.2
   clashFlashSeconds: 0.14
   attackFlashSeconds: 0.12
-  damageFlashSeconds: 0.16
+  damageFlashSeconds: 0.2
   deathFlashSeconds: 0.22
   fullBodyHitReactionCooldownSeconds: 0.42
   heavyHitReactionBypassesCooldown: 1
@@ -3845,7 +3849,9 @@ MonoBehaviour:
   flashScale: 0.24
   clashFlashScale: 0.18
   attackFlashScale: 0.14
-  damageFlashScale: 0.18
+  damageFlashScale: 0.22
+  damageFlashColorBlend: 0.98
+  damageFlashEmissionBoost: 3.4
   deathFlashScale: 0.28
 --- !u!114 &7918965066423916655
 MonoBehaviour:

@@ -1999,7 +1999,7 @@ namespace DimensionBrawl.Tests
                 Vector3.zero,
                 Vector3.back,
                 0f)));
-            Assert.AreEqual(0, presenter.DamageFlashCount);
+            Assert.AreEqual(1, presenter.DamageFlashCount);
             Assert.AreEqual(0, presenter.AnimatorHitTriggerCount);
 
             Assert.IsTrue(health.TryApplyDamage(new DamageInfo(
@@ -2069,11 +2069,11 @@ namespace DimensionBrawl.Tests
                 Vector3.zero,
                 Vector3.back,
                 0f)));
-            Assert.AreEqual(0, presenter.DamageFlashCount);
+            Assert.AreEqual(1, presenter.DamageFlashCount);
             Assert.AreEqual(
                 0,
                 presenter.AnimatorHitTriggerCount,
-                "Default damage should not trigger temporary hit animation feedback during cleanup.");
+                "Default damage should flash the summon body without forcing a full-body hit animation.");
 
             Assert.IsTrue(victimHealth.TryApplyDamage(new DamageInfo(
                 sourceHealth,
@@ -2084,11 +2084,11 @@ namespace DimensionBrawl.Tests
                 0f,
                 DamageResponsePolicy.Default,
                 CombatControlLockPolicy.None)));
-            Assert.AreEqual(0, presenter.DamageFlashCount);
+            Assert.AreEqual(2, presenter.DamageFlashCount);
             Assert.AreEqual(
                 0,
                 presenter.AnimatorHitTriggerCount,
-                "Default-looking pressure damage should not play a full-body hit animation unless it also declares action lock.");
+                "Default-looking pressure damage should keep body flash but not play a full-body hit animation unless it also declares action lock.");
             Assert.AreEqual(DamageResponsePolicy.Default, presenter.LastDamageResponsePolicy);
             Assert.AreEqual(CombatControlLockPolicy.None, presenter.LastDamageControlLockPolicy);
 
@@ -2100,7 +2100,7 @@ namespace DimensionBrawl.Tests
                 Vector3.back,
                 0f,
                 DamageResponsePolicy.FlashOnly)));
-            Assert.AreEqual(0, presenter.DamageFlashCount);
+            Assert.AreEqual(3, presenter.DamageFlashCount);
             Assert.AreEqual(
                 0,
                 presenter.AnimatorHitTriggerCount,
@@ -2116,7 +2116,7 @@ namespace DimensionBrawl.Tests
                 DamageResponsePolicy.DamageOnly,
                 CombatControlLockPolicy.None)));
             Assert.AreEqual(
-                0,
+                3,
                 presenter.DamageFlashCount,
                 "Damage-only policy should stay out of presentation hooks.");
             Assert.AreEqual(0, presenter.AnimatorHitTriggerCount);
@@ -2168,7 +2168,7 @@ namespace DimensionBrawl.Tests
                 0f,
                 DamageResponsePolicy.Stagger,
                 CombatControlLockPolicy.InterruptAction)));
-            Assert.AreEqual(0, presenter.DamageFlashCount);
+            Assert.AreEqual(1, presenter.DamageFlashCount);
             Assert.AreEqual(0, presenter.AnimatorHitTriggerCount);
             Assert.AreEqual(0, presenter.SuppressedAnimatorHitTriggerCount);
             Assert.IsFalse(presenter.LastFullBodyHitReactionSuppressed);
@@ -2183,9 +2183,9 @@ namespace DimensionBrawl.Tests
                 DamageResponsePolicy.Stagger,
                 CombatControlLockPolicy.InterruptAction)));
             Assert.AreEqual(
-                0,
+                2,
                 presenter.DamageFlashCount,
-                "Repeated hits should not render temporary damage flash feedback during cleanup.");
+                "Repeated hits should keep rendering material flash while hit animation stays gated.");
             Assert.AreEqual(
                 0,
                 presenter.AnimatorHitTriggerCount,
@@ -2202,11 +2202,11 @@ namespace DimensionBrawl.Tests
                 0f,
                 DamageResponsePolicy.Break,
                 CombatControlLockPolicy.HardLock)));
-            Assert.AreEqual(0, presenter.DamageFlashCount);
+            Assert.AreEqual(3, presenter.DamageFlashCount);
             Assert.AreEqual(
                 0,
                 presenter.AnimatorHitTriggerCount,
-                "Major authored reactions should not cut through while temporary hit animation feedback is suppressed.");
+                "Major authored reactions should keep the material flash without cutting through suppressed hit animation feedback.");
             Assert.AreEqual(0, presenter.SuppressedAnimatorHitTriggerCount);
             Assert.IsFalse(presenter.LastFullBodyHitReactionSuppressed);
 
@@ -2258,13 +2258,13 @@ namespace DimensionBrawl.Tests
                 Transform damageCue = victimObject.transform.Find(damageCuePrefab.name);
                 float expectedIntensity = 0.9f * presenter.PressureDamageCueScale;
 
-                Assert.AreEqual(0, presenter.DamageVfxCueRequestCount);
+                Assert.AreEqual(1, presenter.DamageVfxCueRequestCount);
                 Assert.AreEqual(DamageResponsePolicy.FlashOnly, presenter.LastDamageResponsePolicy);
                 Assert.AreEqual(CombatControlLockPolicy.None, presenter.LastDamageControlLockPolicy);
                 Assert.IsFalse(presenter.LastDamageCueInterruptedAction);
                 Assert.AreEqual(presenter.PressureDamageCueScale, presenter.LastDamageCuePolicyScale, 0.001f);
                 Assert.AreEqual(expectedIntensity, presenter.LastDamageCueIntensity, 0.001f);
-                Assert.IsNull(damageCue);
+                Assert.IsNotNull(damageCue);
             }
             finally
             {

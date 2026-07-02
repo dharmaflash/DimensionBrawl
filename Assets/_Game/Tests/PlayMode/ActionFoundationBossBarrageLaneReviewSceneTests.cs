@@ -3438,16 +3438,20 @@ namespace DimensionBrawl.Tests
                 0f)));
             activeActorPresenter.RefreshNow();
 
-            Assert.AreEqual(
-                damageVfxCueCountBefore,
+            Assert.Greater(
                 activeActorPresenter.DamageVfxCueRequestCount,
-                "SummonSlot1 actor damage should not request a hit VFX cue while using lightweight in-world flash feedback.");
-            Assert.IsFalse(activeActorPresenter.PlayDamageVfx);
+                damageVfxCueCountBefore,
+                "SummonSlot1 actor damage should request the shared hit VFX cue so summon hits are readable in play.");
+            Assert.IsTrue(activeActorPresenter.PlayDamageVfx);
             Assert.IsTrue(activeActorPresenter.RenderDamageFeedback);
+            Assert.Greater(
+                activeActorPresenter.DamageFlashRendererCount,
+                0,
+                "SummonSlot1 actor damage should bind promoted body renderers for material hit flash.");
             Assert.Greater(
                 activeActorPresenter.DamageFlashCount,
                 0,
-                "SummonSlot1 actor damage should visibly flash without spawning extra hit VFX.");
+                "SummonSlot1 actor damage should visibly flash its promoted body material.");
             Assert.AreEqual(0, activeActorPresenter.AnimatorHitTriggerCount);
             Assert.AreEqual(CombatVfxCueId.EnemyHit, activeActorPresenter.DamageCueId);
 
@@ -7680,8 +7684,12 @@ namespace DimensionBrawl.Tests
                 GetFloat(presenter, "animatorMoveSpeedScale"),
                 0.001f,
                 $"{label} should keep fast arrival from turning into frantic foot motion.");
-            Assert.IsFalse(presenter.PlayDamageVfx);
+            Assert.IsTrue(presenter.PlayDamageVfx);
             Assert.IsTrue(presenter.RenderDamageFeedback);
+            Assert.Greater(
+                presenter.DamageFlashRendererCount,
+                0,
+                $"{label} should bind promoted body renderers for readable summon hit flash.");
             AssertAnimatorParameter(animator, presenter.MoveSpeedParameter, AnimatorControllerParameterType.Float);
             AssertAnimatorParameter(animator, presenter.SpawnTrigger, AnimatorControllerParameterType.Trigger);
             AssertAnimatorParameter(animator, presenter.AttackTrigger, AnimatorControllerParameterType.Trigger);

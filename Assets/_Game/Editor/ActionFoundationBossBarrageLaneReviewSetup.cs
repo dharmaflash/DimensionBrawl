@@ -8064,6 +8064,10 @@ namespace DimensionBrawl.Editor
             }
 
             ValidatePulseOnlyActorRenderers(actorPresenter, pulseRenderer, "TierPulseCore");
+            ValidateSummonActorDamageFlashRenderers(
+                actorPresenter,
+                summonActorVisual,
+                $"{SummonSlot1ActorVisualName} body flash");
             ValidateSummonActorAnimatorPresentation(
                 actorPresenter,
                 summonActorVisual,
@@ -8178,6 +8182,10 @@ namespace DimensionBrawl.Editor
                 $"{slotActionName} actor prefab");
             ValidatePulseOnlyActorRenderers(actorPresenter, pulseRenderer, "TierPulseCore");
             Transform actorVisual = ValidateSummonActorRoleVisual(actorPrefab.gameObject, actorVisualName);
+            ValidateSummonActorDamageFlashRenderers(
+                actorPresenter,
+                actorVisual,
+                $"{slotActionName} promoted body flash");
             ValidateSummonActorAnimatorPresentation(
                 actorPresenter,
                 actorVisual,
@@ -8570,6 +8578,10 @@ namespace DimensionBrawl.Editor
             }
 
             ValidatePulseOnlyActorRenderers(bossSummonActorPresenter, tierPressureRenderer, "TierPressureCore");
+            ValidateSummonActorDamageFlashRenderers(
+                bossSummonActorPresenter,
+                bossSummonVisual,
+                "Boss summon pressure body flash");
             ValidateSummonActorAnimatorPresentation(
                 bossSummonActorPresenter,
                 bossSummonVisual,
@@ -9358,10 +9370,14 @@ namespace DimensionBrawl.Editor
             SetString(actorPresenter, "hitTrigger", string.Empty);
             SetString(actorPresenter, "deathTrigger", SummonActorDeathTrigger);
             SetFloat(actorPresenter, "animatorMoveSpeedScale", animatorMoveSpeedScale);
-            SetBool(actorPresenter, "playDamageVfx", false);
+            SetBool(actorPresenter, "playDamageVfx", true);
             SetBool(actorPresenter, "renderDamageFeedback", true);
-            SetFloat(actorPresenter, "damageFlashSeconds", 0.16f);
-            SetFloat(actorPresenter, "damageFlashScale", 0.18f);
+            SetColor(actorPresenter, "damageFlashColor", new Color(1f, 0.34f, 0.18f, 1f));
+            SetColor(actorPresenter, "damageFlashEmissionColor", new Color(1f, 0.72f, 0.24f, 1f));
+            SetFloat(actorPresenter, "damageFlashSeconds", 0.2f);
+            SetFloat(actorPresenter, "damageFlashScale", 0.22f);
+            SetFloat(actorPresenter, "damageFlashColorBlend", 0.98f);
+            SetFloat(actorPresenter, "damageFlashEmissionBoost", 3.4f);
         }
 
         private static void ValidatePulseOnlyActorRenderers(
@@ -9378,6 +9394,31 @@ namespace DimensionBrawl.Editor
             }
 
             ValidateArrayReference(actorPresenter, "actorRenderers", 0, pulseRenderer);
+        }
+
+        private static void ValidateSummonActorDamageFlashRenderers(
+            SummonFrontlineProxyPresenter actorPresenter,
+            Transform visual,
+            string label)
+        {
+            Renderer[] visualRenderers = CollectEnabledRenderers(visual.gameObject);
+            if (visualRenderers.Length == 0)
+            {
+                throw new InvalidOperationException($"{label} needs at least one enabled renderer for body hit flash.");
+            }
+
+            SerializedProperty damageFlashRenderers =
+                RequireProperty(new SerializedObject(actorPresenter), "damageFlashRenderers");
+            if (!damageFlashRenderers.isArray || damageFlashRenderers.arraySize != visualRenderers.Length)
+            {
+                throw new InvalidOperationException(
+                    $"{actorPresenter.name}.damageFlashRenderers should bind every enabled renderer on {label}.");
+            }
+
+            for (int i = 0; i < visualRenderers.Length; i++)
+            {
+                ValidateArrayReference(actorPresenter, "damageFlashRenderers", i, visualRenderers[i]);
+            }
         }
 
         private static void ValidateSummonActorAnimatorPresentation(
@@ -9410,10 +9451,14 @@ namespace DimensionBrawl.Editor
             ValidateEnum(actorPresenter, "damageCueId", (int)CombatVfxCueId.EnemyHit);
             ValidateEnum(actorPresenter, "deathCueId", (int)CombatVfxCueId.EnemyDeath);
             ValidateFloat(actorPresenter, "pressureDamageCueScale", 0.64f);
-            ValidateBool(actorPresenter, "playDamageVfx", false);
+            ValidateBool(actorPresenter, "playDamageVfx", true);
             ValidateBool(actorPresenter, "renderDamageFeedback", true);
-            ValidateFloat(actorPresenter, "damageFlashSeconds", 0.16f);
-            ValidateFloat(actorPresenter, "damageFlashScale", 0.18f);
+            ValidateColor(actorPresenter, "damageFlashColor", new Color(1f, 0.34f, 0.18f, 1f));
+            ValidateColor(actorPresenter, "damageFlashEmissionColor", new Color(1f, 0.72f, 0.24f, 1f));
+            ValidateFloat(actorPresenter, "damageFlashSeconds", 0.2f);
+            ValidateFloat(actorPresenter, "damageFlashScale", 0.22f);
+            ValidateFloat(actorPresenter, "damageFlashColorBlend", 0.98f);
+            ValidateFloat(actorPresenter, "damageFlashEmissionBoost", 3.4f);
             ValidateAnimatorParameter(
                 animator,
                 SummonActorMoveSpeedParameter,

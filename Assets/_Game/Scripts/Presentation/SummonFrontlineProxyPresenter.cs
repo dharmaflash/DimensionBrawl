@@ -9,6 +9,13 @@ namespace DimensionBrawl.Presentation
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
         private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
+        private static readonly int EmissionColorLdrId = Shader.PropertyToID("_EmissionColorLDR");
+        private static readonly int EmissionColorHdrId = Shader.PropertyToID("_EmissionColorHDR");
+        private static readonly int EmissionStrengthId = Shader.PropertyToID("_EmissionStrength");
+        private static readonly int UseEmissionId = Shader.PropertyToID("_UseEmission");
+        private const float MinimumVisibleDamageFlashSeconds = 0.2f;
+        private const float MinimumDamageFlashBlend = 0.96f;
+        private const float MinimumDamageEmissionBoost = 3.25f;
 
         [SerializeField] private SummonFrontlineProxy proxy;
         [SerializeField] private SummonFrontlineClash clash;
@@ -17,11 +24,12 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private string moveSpeedParameter = "MoveSpeed";
         [SerializeField] private string spawnTrigger = "EliteSummonPackage";
         [SerializeField] private string attackTrigger = "Attack";
-        [SerializeField] private string hitTrigger = "Hit";
+        [SerializeField] private string hitTrigger = string.Empty;
         [SerializeField] private string deathTrigger = "Death";
         [SerializeField, Min(0f)] private float animatorMoveSpeedScale = 1f;
         [SerializeField] private Transform pulseRoot;
         [SerializeField] private Renderer[] actorRenderers = System.Array.Empty<Renderer>();
+        [SerializeField] private Renderer[] damageFlashRenderers = System.Array.Empty<Renderer>();
 
         [Header("VFX Cues")]
         [SerializeField] private CombatVfxCuePlayer cuePlayer;
@@ -39,8 +47,8 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Range(0.1f, 1f)] private float pressureDamageCueScale = 0.64f;
         [SerializeField, Min(0f)] private float deathCueIntensity = 1.05f;
         [SerializeField, Min(0f)] private float tierCueIntensityStep = 0.1f;
-        [SerializeField] private bool playDamageVfx;
-        [SerializeField] private bool renderDamageFeedback;
+        [SerializeField] private bool playDamageVfx = true;
+        [SerializeField] private bool renderDamageFeedback = true;
 
         [SerializeField] private Color tierOneColor = new Color(0.24f, 1f, 0.78f, 0.78f);
         [SerializeField] private Color tierTwoColor = new Color(0.38f, 0.74f, 1f, 0.9f);
@@ -49,6 +57,7 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private Color clashFlashColor = new Color(1f, 0.9f, 0.38f, 1f);
         [SerializeField] private Color attackFlashColor = new Color(1f, 0.74f, 0.24f, 1f);
         [SerializeField] private Color damageFlashColor = new Color(1f, 0.24f, 0.18f, 1f);
+        [SerializeField] private Color damageFlashEmissionColor = new Color(1f, 0.68f, 0.24f, 1f);
         [SerializeField] private Color deathFlashColor = new Color(0.08f, 0.08f, 0.08f, 1f);
         [SerializeField, Min(0f)] private float entryFlashSeconds = 0.22f;
         [SerializeField, Min(0f)] private float impactFlashSeconds = 0.18f;
@@ -67,6 +76,8 @@ namespace DimensionBrawl.Presentation
         [SerializeField, Min(0f)] private float clashFlashScale = 0.16f;
         [SerializeField, Min(0f)] private float attackFlashScale = 0.14f;
         [SerializeField, Min(0f)] private float damageFlashScale = 0.18f;
+        [SerializeField, Range(0f, 1f)] private float damageFlashColorBlend = 0.98f;
+        [SerializeField, Min(0f)] private float damageFlashEmissionBoost = 3.4f;
         [SerializeField, Min(0f)] private float deathFlashScale = 0.28f;
 
         private MaterialPropertyBlock propertyBlock;
@@ -127,6 +138,7 @@ namespace DimensionBrawl.Presentation
         public CombatVfxCueId DeathCueId => deathCueId;
         public Transform PulseRoot => pulseRoot;
         public int RendererCount => actorRenderers != null ? actorRenderers.Length : 0;
+        public int DamageFlashRendererCount => ResolveDamageFlashRenderers().Length;
         public bool IsShowing => proxy != null && proxy.IsPresentationVisible;
         public int LastObservedTier => lastObservedTier;
         public int LastObservedClashCount => lastObservedClashCount;
@@ -320,7 +332,9 @@ namespace DimensionBrawl.Presentation
             float flash = ResolveEntryImpactFlashWeight();
             float clashFlash = ResolveClashFlashWeight();
             float attackFlash = ResolveFlashWeight(attackFlashTimer, attackFlashSeconds);
-            float damageFlash = ResolveFlashWeight(damageFlashTimer, damageFlashSeconds);
+            float damageFlash = ResolveFlashWeight(
+                damageFlashTimer,
+                Mathf.Max(damageFlashSeconds, MinimumVisibleDamageFlashSeconds));
             float deathFlash = ResolveFlashWeight(deathFlashTimer, deathFlashSeconds);
             Color color = Color.Lerp(tierColor, flashColor, flash);
             color = Color.Lerp(color, clashFlashColor, clashFlash);
@@ -328,6 +342,7 @@ namespace DimensionBrawl.Presentation
             color = Color.Lerp(color, damageFlashColor, damageFlash);
             color = Color.Lerp(color, deathFlashColor, deathFlash);
             ApplyColor(color);
+            ApplyDamageFlash(damageFlash);
 
             if (pulseRoot == null || !renderPulseVisuals)
             {
@@ -436,6 +451,123 @@ namespace DimensionBrawl.Presentation
             }
         }
 
+        private void ApplyDamageFlash(float weight)
+        {
+            Renderer[] targets = ResolveDamageFlashRenderers();
+            if (targets.Length == 0)
+            {
+                return;
+            }
+
+            float clampedWeight = Mathf.Clamp01(weight);
+            float blend = Mathf.Clamp01(Mathf.Max(damageFlashColorBlend, MinimumDamageFlashBlend) * clampedWeight);
+            float emissionBoost = Mathf.Max(damageFlashEmissionBoost, MinimumDamageEmissionBoost) * clampedWeight;
+            Color visibleDamageColor = Color.Lerp(Color.white, damageFlashColor, 0.5f);
+            Color boostedEmission = damageFlashEmissionColor * emissionBoost;
+            boostedEmission.a = 1f;
+
+            propertyBlock ??= new MaterialPropertyBlock();
+            for (int i = 0; i < targets.Length; i++)
+            {
+                Renderer targetRenderer = targets[i];
+                if (targetRenderer == null)
+                {
+                    continue;
+                }
+
+                targetRenderer.GetPropertyBlock(propertyBlock);
+                Color baseColor = ResolveRendererBaseColor(targetRenderer);
+                Color flashBodyColor = Color.Lerp(baseColor, visibleDamageColor, blend);
+                flashBodyColor.a = baseColor.a;
+                propertyBlock.SetColor(BaseColorId, flashBodyColor);
+                propertyBlock.SetColor(ColorId, flashBodyColor);
+                propertyBlock.SetColor(EmissionColorId, boostedEmission);
+                propertyBlock.SetColor(EmissionColorLdrId, boostedEmission);
+                propertyBlock.SetColor(EmissionColorHdrId, boostedEmission);
+                propertyBlock.SetFloat(EmissionStrengthId, emissionBoost);
+                propertyBlock.SetFloat(UseEmissionId, clampedWeight > 0f ? 1f : 0f);
+                targetRenderer.SetPropertyBlock(propertyBlock);
+            }
+        }
+
+        private Renderer[] ResolveDamageFlashRenderers()
+        {
+            if (damageFlashRenderers != null && damageFlashRenderers.Length > 0)
+            {
+                return damageFlashRenderers;
+            }
+
+            Renderer[] foundRenderers = GetComponentsInChildren<Renderer>(includeInactive: true);
+            if (foundRenderers == null || foundRenderers.Length == 0)
+            {
+                damageFlashRenderers = System.Array.Empty<Renderer>();
+                return damageFlashRenderers;
+            }
+
+            var resolvedRenderers = new System.Collections.Generic.List<Renderer>(foundRenderers.Length);
+            for (int i = 0; i < foundRenderers.Length; i++)
+            {
+                Renderer renderer = foundRenderers[i];
+                if (renderer == null || !renderer.enabled || IsActorRenderer(renderer))
+                {
+                    continue;
+                }
+
+                if (pulseRoot != null && renderer.transform.IsChildOf(pulseRoot))
+                {
+                    continue;
+                }
+
+                resolvedRenderers.Add(renderer);
+            }
+
+            damageFlashRenderers = resolvedRenderers.ToArray();
+            return damageFlashRenderers;
+        }
+
+        private bool IsActorRenderer(Renderer candidate)
+        {
+            if (candidate == null || actorRenderers == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < actorRenderers.Length; i++)
+            {
+                if (actorRenderers[i] == candidate)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static Color ResolveRendererBaseColor(Renderer targetRenderer)
+        {
+            Material[] materials = targetRenderer.sharedMaterials;
+            for (int i = 0; i < materials.Length; i++)
+            {
+                Material material = materials[i];
+                if (material == null)
+                {
+                    continue;
+                }
+
+                if (material.HasProperty(BaseColorId))
+                {
+                    return material.GetColor(BaseColorId);
+                }
+
+                if (material.HasProperty(ColorId))
+                {
+                    return material.GetColor(ColorId);
+                }
+            }
+
+            return Color.white;
+        }
+
         private void SetPulseVisible(bool value)
         {
             bool shouldRender = value && renderPulseVisuals;
@@ -523,7 +655,9 @@ namespace DimensionBrawl.Presentation
 
             if (renderDamageFeedback)
             {
-                damageFlashTimer = Mathf.Max(damageFlashTimer, damageFlashSeconds);
+                damageFlashTimer = Mathf.Max(
+                    damageFlashTimer,
+                    Mathf.Max(damageFlashSeconds, MinimumVisibleDamageFlashSeconds));
                 damageFlashCount++;
             }
 
