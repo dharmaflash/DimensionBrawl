@@ -157,6 +157,13 @@ namespace DimensionBrawl.Tests
         private const string LaneRootName = "BossBarrageLaneReview_SummonLaneSpace";
         private const string BossRootName = "BossBarrageLaneReview_BossProxy_NeedleLock";
         private const string BossHumanoidVisualName = "BossBarrageLaneReview_HumanoidBossVisual_SciFiSoldier01Commando";
+        private const string BossHumanoidControllerPath =
+            "Assets/_Game/Art/Animations/Enemies/SciFiSoldiers/SciFiSoldier01/DB_SciFiSoldier01_GeneralDeck.controller";
+        private const string BossHumanoidModelPath =
+            "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/SciFiSoldier01/Models/SK_SciFiSoldier01.fbx";
+        private const string BossHumanoidLineCasterVariantModelPath =
+            "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleVariants/LineCaster/Models/SK_LineCaster_SciFiSoldier01.fbx";
+        private const string BossHumanoidAssaultRifleName = "SciFiSoldier01_AssaultRifle";
         private const string RangedPlayerVisualRootName = "BossBarrageLaneReview_RangedVisual_Inori";
         private const string RangedPlayerWeaponName = "BossBarrageLaneReview_RangedWeapon_Rifle";
         private const string MeleePlayerWeaponRootName = "BossBarrageLaneReview_MeleeWeapons_CombatGirlSwordShield";
@@ -7245,6 +7252,11 @@ namespace DimensionBrawl.Tests
             Animator animator = visual.GetComponent<Animator>();
             Assert.IsNotNull(animator, "Boss humanoid visual should use a promoted Animator.");
             Assert.IsNotNull(animator.runtimeAnimatorController, "Boss humanoid visual should keep its promoted Animator Controller.");
+            string controllerPath = AssetDatabase.GetAssetPath(animator.runtimeAnimatorController).Replace('\\', '/');
+            Assert.AreEqual(
+                BossHumanoidControllerPath,
+                controllerPath,
+                "Boss humanoid visual should use the direct promoted SciFiSoldier01 Commando controller.");
             AssertGameOwnedAsset(animator.runtimeAnimatorController, "boss humanoid Animator Controller");
 
             Assert.IsNull(
@@ -7267,6 +7279,11 @@ namespace DimensionBrawl.Tests
                 AssertRendererUsesGameOwnedAssets(renderers[i], renderers[i].name);
             }
 
+            AssertBossHumanoidUsesDirectCommandoMesh(visual);
+            Assert.IsNotNull(
+                FindDescendant(visual, BossHumanoidAssaultRifleName),
+                $"Boss humanoid visual should carry promoted {BossHumanoidAssaultRifleName}.");
+
             Transform projectileCore = bossRoot.transform.Find(BossProjectileCoreName);
             Assert.IsNotNull(projectileCore, "Boss proxy should keep a hidden projectile source anchor.");
             MeshRenderer coreRenderer = projectileCore.GetComponent<MeshRenderer>();
@@ -7288,6 +7305,34 @@ namespace DimensionBrawl.Tests
             Assert.GreaterOrEqual(cueDriver.PressureActionCueCount, RequiredBossPressureActionCueKinds.Length);
             AssertBossPressureActionCueBindings(cueDriver, animator);
             Assert.Greater(cueDriver.PulseRendererCount, 0);
+        }
+
+        private static void AssertBossHumanoidUsesDirectCommandoMesh(Transform visual)
+        {
+            bool foundDirectCommandoMesh = false;
+            SkinnedMeshRenderer[] skinnedRenderers = visual.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            for (int i = 0; i < skinnedRenderers.Length; i++)
+            {
+                Mesh mesh = skinnedRenderers[i].sharedMesh;
+                if (mesh == null)
+                {
+                    continue;
+                }
+
+                string meshPath = AssetDatabase.GetAssetPath(mesh).Replace('\\', '/');
+                Assert.AreNotEqual(
+                    BossHumanoidLineCasterVariantModelPath,
+                    meshPath,
+                    "Boss humanoid visual should not use the LineCaster role variant mesh.");
+                if (string.Equals(meshPath, BossHumanoidModelPath, System.StringComparison.Ordinal))
+                {
+                    foundDirectCommandoMesh = true;
+                }
+            }
+
+            Assert.IsTrue(
+                foundDirectCommandoMesh,
+                $"Boss humanoid visual should use the direct promoted SciFiSoldier01 Commando model at {BossHumanoidModelPath}.");
         }
 
         private static void AssertSingleCharacterCombatModeVisual(

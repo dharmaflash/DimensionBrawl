@@ -23,6 +23,7 @@ namespace DimensionBrawl.Editor
     {
         public const string ReviewScenePath = "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity";
         public const string DuelReviewScenePath = "Assets/_Game/Scenes/ActionFoundationBossSummonDuelReview.unity";
+        private const string OlympusInvasionStageScenePath = "Assets/_Game/Scenes/OlympusCorridorInvasionStage.unity";
         public const string PatternProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_BossBarrage_NeedleLock.asset";
         public const string CoverFirePatternProfilePath =
@@ -272,6 +273,10 @@ namespace DimensionBrawl.Editor
         private static readonly Vector3 CloseThreatBodyHitboxCenter = new Vector3(0f, 1f, 0f);
         private const string BossTelegraphRootName = ReviewRootPrefix + "BossBarrageTelegraphMarkers";
         private const string BossProxyHumanoidVisualName = ReviewRootPrefix + "HumanoidBossVisual_SciFiSoldier01Commando";
+        private const string BossProxyHumanoidSourceVisualName = ActionFoundationSciFiSoldier01VisualSetup.VisualName;
+        private const string BossProxyHumanoidSourcePrefabPath = ActionFoundationEnemyPrefabSetup.GeneralDeckSoldierPrefabPath;
+        private const string BossProxyLineCasterVariantModelPath =
+            "Assets/_Game/Art/Characters/Enemies/SciFiSoldiers/RoleVariants/LineCaster/Models/SK_LineCaster_SciFiSoldier01.fbx";
         private const string CinematicSupportDragonRootName = ReviewRootPrefix + "CinematicSupportDragon_Volcano";
         private const string RangedPlayerVisualRootName = ReviewRootPrefix + "RangedVisual_Inori";
         private const string RetiredRifleGirlRangedPlayerVisualRootName = ReviewRootPrefix + "RangedVisual_RifleGirl";
@@ -413,8 +418,29 @@ namespace DimensionBrawl.Editor
 
         public static void PatchBossBarrageLaneReviewBossCommandoVisual()
         {
-            Scene scene = EditorSceneManager.OpenScene(ReviewScenePath, OpenSceneMode.Single);
-            GameObject bossProxy = RequireRoot(scene, BossProxyRootName);
+            string[] scenePaths =
+            {
+                ReviewScenePath,
+                DuelReviewScenePath,
+                ActionFoundationFrontlineMotivationReviewSetup.ScenePath,
+                OlympusInvasionStageScenePath
+            };
+
+            for (int i = 0; i < scenePaths.Length; i++)
+            {
+                if (AssetDatabase.LoadAssetAtPath<SceneAsset>(scenePaths[i]) == null)
+                {
+                    continue;
+                }
+
+                PatchBossBarrageLaneReviewBossCommandoVisual(scenePaths[i]);
+            }
+        }
+
+        private static void PatchBossBarrageLaneReviewBossCommandoVisual(string scenePath)
+        {
+            Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
+            GameObject bossProxy = RequireSceneObject(scene, BossProxyRootName);
             ReplaceBossProxyHumanoidVisual(bossProxy);
 
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossProxy, "boss barrage emitter");
@@ -422,13 +448,25 @@ namespace DimensionBrawl.Editor
                 RequireComponent<BossPressureActionDirector>(bossProxy, "boss pressure action director");
             ConfigureBossProxyVisualCueDriver(bossProxy, emitter, bossPressureActionDirector);
 
-            PlayerMovementController player = RequireObject<PlayerMovementController>(scene, "player movement");
-            CombatVfxCuePlayer playerCuePlayer =
-                RequireComponent<CombatVfxCuePlayer>(player.gameObject, "player combat VFX cue player");
-            ConfigureBossProxyWorldVfxCueDriver(bossProxy, playerCuePlayer, player.transform);
+            BossBarrageVisualCueDriver cueDriver =
+                RequireComponent<BossBarrageVisualCueDriver>(bossProxy, "boss barrage visual cue driver");
+            CombatVfxCuePlayer playerCuePlayer = ResolveScenePlayerCuePlayer(scene, cueDriver.CuePlayer);
+            if (playerCuePlayer == null)
+            {
+                throw new InvalidOperationException($"Missing player combat VFX cue player in {scenePath}.");
+            }
+
+            ConfigureBossProxyWorldVfxCueDriver(
+                bossProxy,
+                playerCuePlayer,
+                ResolveScenePlayerDirectionTarget(scene, playerCuePlayer));
+            ValidateBossProxyVisual(bossProxy, playerCuePlayer);
 
             EditorSceneManager.MarkSceneDirty(scene);
-            EditorSceneManager.SaveScene(scene);
+            if (!EditorSceneManager.SaveScene(scene, scenePath))
+            {
+                throw new InvalidOperationException($"Failed to save boss commando visual patch at {scenePath}.");
+            }
         }
 
         [MenuItem("DimensionBrawl/Refresh Action Foundation Boss Barrage Lane Review Ambient Audio")]
@@ -3735,23 +3773,22 @@ namespace DimensionBrawl.Editor
 
         private static void CreateHumanoidBossProxyVisual(Transform parent)
         {
-            CombatEnemyRoleCandidateProfile candidate = LoadAsset<CombatEnemyRoleCandidateProfile>(
-                ActionFoundationEnemyRoleCandidateSetup.LineCasterCandidateProfilePath);
-            string rolePrefabPath = AssetDatabase.GetAssetPath(candidate.RolePrefab).Replace('\\', '/');
-            if (string.IsNullOrWhiteSpace(rolePrefabPath))
+            GameObject prefabAsset = LoadAsset<GameObject>(BossProxyHumanoidSourcePrefabPath);
+            string prefabPath = AssetDatabase.GetAssetPath(prefabAsset).Replace('\\', '/');
+            if (!string.Equals(prefabPath, BossProxyHumanoidSourcePrefabPath, StringComparison.Ordinal))
             {
-                throw new InvalidOperationException("SciFiSoldier01 Commando boss candidate is missing its role prefab asset path.");
+                throw new InvalidOperationException(
+                    $"SciFiSoldier01 Commando boss source should be {BossProxyHumanoidSourcePrefabPath}, found {prefabPath}.");
             }
 
-            EnemyRoleVisualSpec visualSpec =
-                ActionFoundationEnemyRoleVisualSetup.CreateForRole("SciFiSoldier.LineCaster");
-            GameObject prefabContents = PrefabUtility.LoadPrefabContents(rolePrefabPath);
+            GameObject prefabContents = PrefabUtility.LoadPrefabContents(BossProxyHumanoidSourcePrefabPath);
             try
             {
-                Transform sourceVisual = prefabContents.transform.Find(visualSpec.VisualName);
+                Transform sourceVisual = prefabContents.transform.Find(BossProxyHumanoidSourceVisualName);
                 if (sourceVisual == null)
                 {
-                    throw new InvalidOperationException($"{rolePrefabPath} is missing {visualSpec.VisualName}.");
+                    throw new InvalidOperationException(
+                        $"{BossProxyHumanoidSourcePrefabPath} is missing {BossProxyHumanoidSourceVisualName}.");
                 }
 
                 GameObject visual = UnityEngine.Object.Instantiate(sourceVisual.gameObject);
@@ -8946,7 +8983,7 @@ namespace DimensionBrawl.Editor
             }
         }
 
-        private static void ValidateBossProxyVisual(GameObject bossProxy)
+        private static void ValidateBossProxyVisual(GameObject bossProxy, CombatVfxCuePlayer expectedPlayerCuePlayer = null)
         {
             Transform visual = bossProxy.transform.Find(BossProxyHumanoidVisualName);
             if (visual == null)
@@ -8958,6 +8995,13 @@ namespace DimensionBrawl.Editor
             if (animator == null || animator.runtimeAnimatorController == null)
             {
                 throw new InvalidOperationException($"{BossProxyHumanoidVisualName} should keep the promoted SciFiSoldier01 Commando Animator.");
+            }
+
+            string controllerPath = AssetDatabase.GetAssetPath(animator.runtimeAnimatorController).Replace('\\', '/');
+            if (!string.Equals(controllerPath, ActionFoundationSciFiSoldier01VisualSetup.ControllerPath, StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException(
+                    $"{BossProxyHumanoidVisualName} should use {ActionFoundationSciFiSoldier01VisualSetup.ControllerPath}, found {controllerPath}.");
             }
 
             ValidateGameOwnedAsset(animator.runtimeAnimatorController, $"{BossProxyHumanoidVisualName} Animator Controller");
@@ -8980,6 +9024,8 @@ namespace DimensionBrawl.Editor
             {
                 ValidateRendererAssets(renderers[i], $"{BossProxyHumanoidVisualName}.{renderers[i].name}");
             }
+
+            ValidateBossProxyCommandoMeshSource(visual);
 
             Transform projectileCore = bossProxy.transform.Find(BossProxyMarkerName);
             if (projectileCore == null)
@@ -9026,8 +9072,10 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException("Boss visual cue driver should pulse the authored projectile source core.");
             }
 
-            PlayerMovementController player = UnityEngine.Object.FindFirstObjectByType<PlayerMovementController>();
-            CombatVfxCuePlayer playerCuePlayer = player != null ? player.GetComponent<CombatVfxCuePlayer>() : null;
+            CombatVfxCuePlayer playerCuePlayer =
+                expectedPlayerCuePlayer != null
+                    ? expectedPlayerCuePlayer
+                    : ResolveScenePlayerCuePlayer(bossProxy.scene, cueDriver.CuePlayer);
             if (playerCuePlayer == null || cueDriver.CuePlayer != playerCuePlayer)
             {
                 throw new InvalidOperationException("Boss visual cue driver should request promoted world VFX through the player combat VFX cue player.");
@@ -9063,6 +9111,44 @@ namespace DimensionBrawl.Editor
             if (cueDriver.PulseRendererCount <= 0)
             {
                 throw new InvalidOperationException("Boss visual cue driver should have at least one pulse renderer.");
+            }
+        }
+
+        private static void ValidateBossProxyCommandoMeshSource(Transform visual)
+        {
+            bool foundDirectCommandoMesh = false;
+            SkinnedMeshRenderer[] skinnedRenderers = visual.GetComponentsInChildren<SkinnedMeshRenderer>(includeInactive: true);
+            for (int i = 0; i < skinnedRenderers.Length; i++)
+            {
+                Mesh mesh = skinnedRenderers[i].sharedMesh;
+                if (mesh == null)
+                {
+                    continue;
+                }
+
+                string meshPath = AssetDatabase.GetAssetPath(mesh).Replace('\\', '/');
+                if (string.Equals(meshPath, BossProxyLineCasterVariantModelPath, StringComparison.Ordinal))
+                {
+                    throw new InvalidOperationException(
+                        $"{BossProxyHumanoidVisualName} should not use the LineCaster role variant mesh: {meshPath}.");
+                }
+
+                if (string.Equals(meshPath, ActionFoundationSciFiSoldier01VisualSetup.ModelPath, StringComparison.Ordinal))
+                {
+                    foundDirectCommandoMesh = true;
+                }
+            }
+
+            if (!foundDirectCommandoMesh)
+            {
+                throw new InvalidOperationException(
+                    $"{BossProxyHumanoidVisualName} should use the direct promoted SciFiSoldier01 Commando model at {ActionFoundationSciFiSoldier01VisualSetup.ModelPath}.");
+            }
+
+            if (FindDescendant(visual, ActionFoundationSciFiSoldier01VisualSetup.AssaultRifleName) == null)
+            {
+                throw new InvalidOperationException(
+                    $"{BossProxyHumanoidVisualName} should carry {ActionFoundationSciFiSoldier01VisualSetup.AssaultRifleName} from the promoted Commando visual.");
             }
         }
 
@@ -10971,6 +11057,56 @@ namespace DimensionBrawl.Editor
             return found[0];
         }
 
+        private static CombatVfxCuePlayer ResolveScenePlayerCuePlayer(
+            Scene scene,
+            CombatVfxCuePlayer preferredCuePlayer)
+        {
+            PlayerMovementController[] players = CollectComponents<PlayerMovementController>(scene);
+            if (preferredCuePlayer != null)
+            {
+                for (int i = 0; i < players.Length; i++)
+                {
+                    if (players[i] != null && players[i].GetComponent<CombatVfxCuePlayer>() == preferredCuePlayer)
+                    {
+                        return preferredCuePlayer;
+                    }
+                }
+            }
+
+            for (int i = 0; i < players.Length; i++)
+            {
+                if (players[i] == null)
+                {
+                    continue;
+                }
+
+                CombatVfxCuePlayer cuePlayer = players[i].GetComponent<CombatVfxCuePlayer>();
+                if (cuePlayer != null)
+                {
+                    return cuePlayer;
+                }
+            }
+
+            return null;
+        }
+
+        private static Transform ResolveScenePlayerDirectionTarget(Scene scene, CombatVfxCuePlayer cuePlayer)
+        {
+            if (cuePlayer != null)
+            {
+                PlayerMovementController player = cuePlayer.GetComponent<PlayerMovementController>();
+                if (player != null)
+                {
+                    return player.transform;
+                }
+            }
+
+            PlayerMovementController[] players = CollectComponents<PlayerMovementController>(scene);
+            return players.Length > 0 && players[0] != null
+                ? players[0].transform
+                : cuePlayer != null ? cuePlayer.transform : null;
+        }
+
         private static GameObject RequireRoot(Scene scene, string rootName)
         {
             GameObject[] roots = scene.GetRootGameObjects();
@@ -10983,6 +11119,27 @@ namespace DimensionBrawl.Editor
             }
 
             throw new InvalidOperationException($"Missing root {rootName} in {scene.path}.");
+        }
+
+        private static GameObject RequireSceneObject(Scene scene, string objectName)
+        {
+            GameObject root = FindRoot(scene, objectName);
+            if (root != null)
+            {
+                return root;
+            }
+
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int i = 0; i < roots.Length; i++)
+            {
+                Transform match = FindDescendant(roots[i].transform, objectName);
+                if (match != null)
+                {
+                    return match.gameObject;
+                }
+            }
+
+            throw new InvalidOperationException($"Missing object {objectName} in {scene.path}.");
         }
 
         private static GameObject FindRoot(Scene scene, string rootName)
