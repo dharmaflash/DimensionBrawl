@@ -44,6 +44,7 @@ namespace DimensionBrawl.Player
 
         private bool actionEnabledHere;
         private bool queuedSwap;
+        private bool cinematicInputLocked;
 
         public PlayerCombatMode CurrentMode { get; private set; }
         public PlayerActionProfile CurrentActionProfile => CurrentMode == PlayerCombatMode.Melee
@@ -101,6 +102,15 @@ namespace DimensionBrawl.Player
         public void QueueCombatModeSwap()
         {
             queuedSwap = true;
+        }
+
+        public void SetCinematicInputLocked(bool locked)
+        {
+            cinematicInputLocked = locked;
+            if (locked)
+            {
+                queuedSwap = false;
+            }
         }
 
         public void ToggleCombatMode()
@@ -211,6 +221,12 @@ namespace DimensionBrawl.Player
 
         private bool ReadSwapPressed()
         {
+            if (cinematicInputLocked)
+            {
+                queuedSwap = false;
+                return false;
+            }
+
             bool pressed = queuedSwap;
             queuedSwap = false;
 

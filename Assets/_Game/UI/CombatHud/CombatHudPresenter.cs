@@ -49,6 +49,23 @@ namespace DimensionBrawl.UI
                     canvasGroup.alpha = clamped > 0f ? 0.65f : 1f;
                 }
             }
+
+            public void ApplyGuideFocus(bool focused, bool dimUnfocused)
+            {
+                if (canvasGroup == null)
+                {
+                    return;
+                }
+
+                if (focused)
+                {
+                    canvasGroup.alpha = Mathf.Max(canvasGroup.alpha, 1f);
+                }
+                else if (dimUnfocused)
+                {
+                    canvasGroup.alpha = Mathf.Min(canvasGroup.alpha, 0.42f);
+                }
+            }
         }
 
         [Serializable]
@@ -129,6 +146,23 @@ namespace DimensionBrawl.UI
                     canvasGroup.alpha = enabled ? 1f : 0.88f;
                     canvasGroup.interactable = enabled;
                     canvasGroup.blocksRaycasts = enabled;
+                }
+            }
+
+            public void ApplyGuideFocus(bool focused, bool dimUnfocused)
+            {
+                if (canvasGroup == null)
+                {
+                    return;
+                }
+
+                if (focused)
+                {
+                    canvasGroup.alpha = Mathf.Max(canvasGroup.alpha, 1f);
+                }
+                else if (dimUnfocused)
+                {
+                    canvasGroup.alpha = Mathf.Min(canvasGroup.alpha, 0.48f);
                 }
             }
 
@@ -316,6 +350,22 @@ namespace DimensionBrawl.UI
         public void SetActionFeedbackText(string feedback)
         {
             SetText(actionFeedbackText, feedback);
+        }
+
+        public void SetGuideFocus(CombatHudActionId focusAction, bool dimUnfocused)
+        {
+            bool shouldDim = dimUnfocused && focusAction != CombatHudActionId.None;
+            for (int i = 0; i < actionSlots.Length; i++)
+            {
+                ActionSlotBinding slot = actionSlots[i];
+                slot?.ApplyGuideFocus(slot.ActionId == focusAction, shouldDim);
+            }
+
+            for (int i = 0; i < summonSlots.Length; i++)
+            {
+                SummonSlotBinding slot = summonSlots[i];
+                slot?.ApplyGuideFocus(slot.ActionId == focusAction, shouldDim);
+            }
         }
 
         private void ResolveOptionalRuntimeReferences()

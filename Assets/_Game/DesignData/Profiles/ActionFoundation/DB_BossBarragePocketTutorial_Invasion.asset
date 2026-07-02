@@ -1,0 +1,81 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f2d7e58f012c4a2e8f91b6b3b0a5c4d1, type: 3}
+  m_Name: DB_BossBarragePocketTutorial_Invasion
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.BossBarrageLaneReviewTutorialProfile
+  tutorialEnabled: 1
+  clearObjective: 'CLEAR: S1 cover created the Skill1 confirm.'
+  failObjective: 'FAIL: HP or route pressure broke before the summon answer completed.'
+  steps:
+  - stepId: dodge_barrage
+    objectiveText: 'Read the rear barrage and dodge before committing EN.'
+    promptText: 'Move first. Dodge the warning line; BasicDefenseFire is not the boss answer.'
+    focusAction: 110
+    dimUnfocusedActions: 1
+    completionCondition: 10
+    requiredTier: 1
+    requiredMana: 0
+    minimumSeconds: 0.25
+  - stepId: forward_en
+    objectiveText: 'Step into forward risk long enough to charge EN.'
+    promptText: 'Forward risk charges EN faster. Do not cross the frontline; summons take that side.'
+    focusAction: 10
+    dimUnfocusedActions: 1
+    completionCondition: 30
+    requiredTier: 1
+    requiredMana: 0
+    minimumSeconds: 0.25
+  - stepId: slot_read
+    objectiveText: 'Build enough EN for S1. S1 blocks, S2/S3 punish openings.'
+    promptText: 'Keep all three slots visible: S1 cover, S2 laser support, S3 high-cost punish.'
+    focusAction: 200
+    dimUnfocusedActions: 1
+    completionCondition: 40
+    requiredTier: 2
+    requiredMana: 200
+    minimumSeconds: 0.35
+  - stepId: close_probe
+    objectiveText: 'Stop the close pressure without treating basic fire as boss DPS.'
+    promptText: 'Use local defense to survive the probe, then preserve S1 for the curtain.'
+    focusAction: 100
+    dimUnfocusedActions: 1
+    completionCondition: 51
+    requiredTier: 1
+    requiredMana: 0
+    minimumSeconds: 0.35
+  - stepId: s1_block
+    objectiveText: 'Spend S1 on the boss curtain.'
+    promptText: 'S1 is the block. Wait for the pressure screen, then commit the bruiser.'
+    focusAction: 200
+    dimUnfocusedActions: 1
+    completionCondition: 60
+    requiredTier: 2
+    requiredMana: 200
+    minimumSeconds: 0.35
+  - stepId: skill1_followup
+    objectiveText: 'Confirm the summon opening with Skill1.'
+    promptText: 'When S1 suppresses the curtain, Skill1 is the confirm. S2/S3 are not the block proof.'
+    focusAction: 120
+    dimUnfocusedActions: 1
+    completionCondition: 72
+    requiredTier: 1
+    requiredMana: 0
+    minimumSeconds: 0.35
+  - stepId: pocket_result
+    objectiveText: 'Finish the pocket by surviving the pressure route.'
+    promptText: 'Clear/fail is recorded from pocket evidence, not a next button.'
+    focusAction: 0
+    dimUnfocusedActions: 0
+    completionCondition: 90
+    requiredTier: 1
+    requiredMana: 0
+    minimumSeconds: 0.1

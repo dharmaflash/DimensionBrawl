@@ -254541,6 +254541,7 @@ GameObject:
   - component: {fileID: 1546277499}
   - component: {fileID: 1546277498}
   - component: {fileID: 1546277497}
+  - component: {fileID: 1546277502}
   m_Layer: 0
   m_Name: BossBarrageLaneReview_CombatHudCanvas
   m_TagString: Untagged
@@ -254563,6 +254564,7 @@ MonoBehaviour:
   hudPresenter: {fileID: 1542562592}
   inputBridge: {fileID: 1542562591}
   overlayHud: {fileID: 242798370}
+  tutorialGuide: {fileID: 1546277502}
   useSingleSummonPresentation: 0
   pocketReviewOwner: {fileID: 234577702}
   playerHealth: {fileID: 4003}
@@ -254575,6 +254577,20 @@ MonoBehaviour:
   summonSlot1Action: {fileID: 4016}
   summonSlot2Action: {fileID: 4015}
   summonSlot3Action: {fileID: 4014}
+--- !u!114 &1546277502
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1546277496}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9b8765c2d1e14367a06c3ea4bcb43d11, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::DimensionBrawl.UI.BossBarrageLaneReviewTutorialGuide
+  profile: {fileID: 11400000, guid: e87b0498cccb41bd8f0dca2be96f14f7, type: 2}
+  startOnEnable: 1
 --- !u!114 &1546277498
 MonoBehaviour:
   m_ObjectHideFlags: 0
