@@ -608,7 +608,7 @@ namespace DimensionBrawl.Presentation
             float moveSpeed = active
                 && proxy != null
                 && proxy.CurrentState == SummonFrontlineProxyState.Advancing
-                    ? proxy.CurrentMoveSpeed * animatorMoveSpeedScale
+                    ? Mathf.Max(proxy.CurrentMoveSpeed, proxy.ActiveMoveSpeed) * animatorMoveSpeedScale
                     : 0f;
             SetAnimatorMoveSpeed(moveSpeed);
         }
@@ -732,7 +732,10 @@ namespace DimensionBrawl.Presentation
                 damageFlashCount++;
             }
 
-            if (renderDamageFeedback && TryConsumeFullBodyHitReaction(damageInfo) && TriggerAnimator(hitTrigger))
+            if (renderDamageFeedback
+                && HasAnimatorParameter(hitTrigger, AnimatorControllerParameterType.Trigger)
+                && TryConsumeFullBodyHitReaction(damageInfo)
+                && TriggerAnimator(hitTrigger))
             {
                 animatorHitTriggerCount++;
             }

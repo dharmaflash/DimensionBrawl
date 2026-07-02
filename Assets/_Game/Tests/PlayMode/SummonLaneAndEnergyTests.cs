@@ -4322,6 +4322,119 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void BossPressureActionDirectorCanHoldAfterOpeningActionForLevelThreeLaser()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.BackLimitZ);
+            GameObject bossObject = new GameObject("BossProxy");
+            bossObject.transform.position = lane.GetBattlefieldWorldPoint(0f, lane.BossProxyZ);
+            CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+            bossHealth.ConfigureTeam(DamageTeam.Enemy);
+
+            BossBarragePatternProfile basePattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            BossBarragePatternProfile specialPattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            BossBarragePatternProfile summonPattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            BossBarragePatternProfile punishPattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            GameObject projectilePrefabObject = new GameObject("BossProjectilePrefab");
+            projectilePrefabObject.AddComponent<SphereCollider>();
+            projectilePrefabObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile projectilePrefab = projectilePrefabObject.AddComponent<BossBarrageProjectile>();
+            projectilePrefabObject.SetActive(false);
+
+            GameObject actorPrefabObject = new GameObject("BossSummonPressurePrefab");
+            actorPrefabObject.AddComponent<SphereCollider>();
+            actorPrefabObject.AddComponent<Rigidbody>();
+            SummonPressureScreen pressureScreen = actorPrefabObject.AddComponent<SummonPressureScreen>();
+            SummonFrontlineProxy actorPrefab = actorPrefabObject.AddComponent<SummonFrontlineProxy>();
+            actorPrefab.ConfigurePresentation(actorPrefabObject.transform, pressureScreen);
+            actorPrefabObject.SetActive(false);
+
+            GameObject actorRoot = new GameObject("BossSummonActorRoot");
+            BossSummonPressureAction summonAction = bossObject.AddComponent<BossSummonPressureAction>();
+            summonAction.ConfigureReferences(lane, playerObject.transform, actorPrefab, actorRoot.transform);
+
+            BossBarrageEmitter emitter = bossObject.AddComponent<BossBarrageEmitter>();
+            emitter.ConfigureReferences(lane, playerObject.transform, bossHealth);
+            emitter.ConfigurePattern(basePattern, projectilePrefab, basePattern.ProjectilesPerWave * 2);
+
+            BossPressureCostLadder bossCost = bossObject.AddComponent<BossPressureCostLadder>();
+            bossCost.ConfigureReferences(lane, bossObject.transform);
+
+            BossPressureActionDirector director = bossObject.AddComponent<BossPressureActionDirector>();
+            SerializedObject serializedDirector = new SerializedObject(director);
+            serializedDirector.FindProperty("globalRecoverySeconds").floatValue = 0f;
+            serializedDirector.ApplyModifiedPropertiesWithoutUndo();
+            director.ConfigureReferences(bossCost, emitter, summonAction, lane, playerObject.transform);
+            director.ConfigureActionSlots(new[]
+            {
+                new BossPressureActionDirector.BossPressureActionSlot(
+                    specialPattern,
+                    BossPressureActionKind.SpecialSkill,
+                    1,
+                    1,
+                    0f,
+                    responseId: "DodgeBossLinePressureSpecial",
+                    selectionPriority: 15,
+                    movementIntent: BossPressureMovementIntent.StrafeFire),
+                new BossPressureActionDirector.BossPressureActionSlot(
+                    summonPattern,
+                    BossPressureActionKind.SummonPressure,
+                    3,
+                    1,
+                    0f,
+                    responseId: "LaserSoldierDodgeLine",
+                    selectionPriority: 35,
+                    movementIntent: BossPressureMovementIntent.RetreatAndSummon),
+                new BossPressureActionDirector.BossPressureActionSlot(
+                    punishPattern,
+                    BossPressureActionKind.PunishOverextend,
+                    3,
+                    1,
+                    0f,
+                    usePlayerForwardRiskGate: true,
+                    minimumPlayerForwardRisk01: 0.66f,
+                    maximumPlayerForwardRisk01: 1f,
+                    responseId: "RetreatOrSpendHighTierAnswer",
+                    selectionPriority: 80,
+                    forwardRiskPriorityBonus: 80,
+                    movementIntent: BossPressureMovementIntent.CommitForward)
+            });
+            director.SetHoldForNextTierActionWhenGateAllows(true);
+
+            bossCost.GrantCurrentTierCost(100f);
+            Assert.IsTrue(director.TryQueueBestAvailableAction());
+            Assert.AreEqual(BossPressureActionKind.SpecialSkill, director.LastActionKind);
+            Assert.AreEqual(1, director.LastSpentTier);
+            emitter.CancelQueuedPriorityPattern(specialPattern);
+
+            bossCost.GrantCurrentTierCost(100f);
+            Assert.IsFalse(
+                director.TryQueueBestAvailableAction(),
+                "After the opening LV1 read, the boss should be allowed to bank cost for the authored LV3 laser soldier instead of spending another low-tier poke.");
+            Assert.AreEqual(1, bossCost.AvailableTier);
+            Assert.IsFalse(emitter.HasQueuedPriorityPattern);
+
+            bossCost.GrantCurrentTierCost(200f);
+            Assert.IsTrue(director.TryQueueBestAvailableAction());
+            Assert.AreEqual(BossPressureActionKind.SummonPressure, director.LastActionKind);
+            Assert.AreEqual(3, director.LastSpentTier);
+            Assert.AreEqual(3, summonAction.LastReleasedTier);
+
+            Object.DestroyImmediate(actorRoot);
+            Object.DestroyImmediate(actorPrefabObject);
+            Object.DestroyImmediate(projectilePrefabObject);
+            Object.DestroyImmediate(punishPattern);
+            Object.DestroyImmediate(summonPattern);
+            Object.DestroyImmediate(specialPattern);
+            Object.DestroyImmediate(basePattern);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(laneObject);
+        }
+
+        [Test]
         public void BossPressureActionDirectorPreservesSummonResponseWindowWhileHoldingNextTier()
         {
             GameObject laneObject = new GameObject("Lane");

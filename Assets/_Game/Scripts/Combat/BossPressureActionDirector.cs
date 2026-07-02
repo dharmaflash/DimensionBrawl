@@ -619,15 +619,9 @@ namespace DimensionBrawl.Combat
                 return false;
             }
 
-            nextTier = context.AvailableTier + 1;
-            BossPressureDecisionContext nextTierContext = new BossPressureDecisionContext(
-                nextTier,
-                context.PlayerForwardRisk01,
-                context.PlayerSummonResponseWindowActive,
-                context.LastObservedPlayerSummonTier,
-                context.BossForwardRisk01,
-                context.CanReleaseSummonPressure,
-                context.ActiveBossPressureSummonCount);
+            int highestHoldTier = totalActionCount > 0
+                ? 3
+                : context.AvailableTier + 1;
             int slotCount = actionSlots != null ? actionSlots.Length : 0;
             if (slotCount <= 0)
             {
@@ -641,26 +635,39 @@ namespace DimensionBrawl.Combat
             for (int i = 0; i < slotCount; i++)
             {
                 BossPressureActionSlot slot = actionSlots[i];
+                if (slot.MinimumTier <= context.AvailableTier || slot.MinimumTier > highestHoldTier)
+                {
+                    continue;
+                }
+
+                BossPressureDecisionContext holdContext = new BossPressureDecisionContext(
+                    slot.MinimumTier,
+                    context.PlayerForwardRisk01,
+                    context.PlayerSummonResponseWindowActive,
+                    context.LastObservedPlayerSummonTier,
+                    context.BossForwardRisk01,
+                    context.CanReleaseSummonPressure,
+                    context.ActiveBossPressureSummonCount);
                 if (slot.Pattern == null
-                    || slot.MinimumTier != nextTier
                     || perSlotTimers[i] > 0f
                     || !CanRunActionKind(slot.ActionKind)
-                    || !IsBossSummonPressureAllowed(slot, nextTierContext)
-                    || !IsPlayerRiskAllowed(slot, nextTierContext)
-                    || !IsPlayerSummonResponseAllowed(slot, nextTierContext)
+                    || !IsBossSummonPressureAllowed(slot, holdContext)
+                    || !IsPlayerRiskAllowed(slot, holdContext)
+                    || !IsPlayerSummonResponseAllowed(slot, holdContext)
                     || bossBarrageEmitter == null
                     || !bossBarrageEmitter.CanQueuePriorityPattern(slot.Pattern))
                 {
                     continue;
                 }
 
-                int score = ResolveSlotSelectionScore(slot, nextTierContext, i);
+                int score = ResolveSlotSelectionScore(slot, holdContext, i);
                 if (score < holdScore)
                 {
                     continue;
                 }
 
                 bestIndex = i;
+                nextTier = slot.MinimumTier;
                 holdScore = score;
             }
 
