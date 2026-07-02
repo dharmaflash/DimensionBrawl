@@ -26,7 +26,7 @@ namespace DimensionBrawl.Tests
         private const string ScenePath = "Assets/_Game/Scenes/ActionFoundationBossBarrageLaneReview.unity";
         private const string StageProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_FrontlineWaveStage_MotivationReview.asset";
-        private const float ReviewBossMaxHealth = 7200f;
+        private const float ReviewBossMaxHealth = 4800f;
         private const float Skill1VisibleBossHpShiftRatio = 0.008f;
         private const string PatternProfilePath =
             "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_BossBarrage_NeedleLock.asset";
@@ -1916,7 +1916,7 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
-        public IEnumerator BossHealthAndBasicFireBudgetAvoidsTwentySecondBurstClear()
+        public IEnumerator BossHealthAndBasicFireBudgetKeepsReadableButNotSpongyClear()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
             PlayerRangedBasicAttackAction rangedBasicAttackAction =
@@ -1937,8 +1937,8 @@ namespace DimensionBrawl.Tests
 
             Assert.That(
                 basicOnlyBossClearSeconds,
-                Is.InRange(65f, 85f),
-                "Restored basic-fire cadence should feel responsive while the per-shot damage keeps basic-only boss clear time out of burst-clear territory.");
+                Is.InRange(44f, 56f),
+                "Boss HP should keep a readable response loop without stretching the review fight into a sponge check.");
             Assert.That(
                 levelOneReadySeconds,
                 Is.InRange(9f, 13.5f),
