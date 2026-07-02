@@ -25,6 +25,9 @@ namespace DimensionBrawl.Presentation
         [SerializeField] private Animator animator;
         [SerializeField] private string moveSpeedParameter = "MoveSpeed";
         [SerializeField] private string spawnTrigger = "EliteSummonPackage";
+        [SerializeField] private bool lockAdvanceDuringSpawnState;
+        [SerializeField] private string spawnStateName = "EliteSummonPackage";
+        [SerializeField, Min(0f)] private float spawnMovementLockSeconds;
         [SerializeField] private string attackTrigger = "Attack";
         [SerializeField] private string hitTrigger = string.Empty;
         [SerializeField] private string deathTrigger = "Death";
@@ -91,6 +94,7 @@ namespace DimensionBrawl.Presentation
         private float attackFlashTimer;
         private float damageFlashTimer;
         private float deathFlashTimer;
+        private float spawnMovementLockTimer;
         private bool wasActive;
         private bool wasAttacking;
         private bool subscribedToHealth;
@@ -167,6 +171,9 @@ namespace DimensionBrawl.Presentation
         public bool PlayDamageVfx => playDamageVfx;
         public bool RenderDamageFeedback => renderDamageFeedback;
         public float FullBodyHitReactionCooldownSeconds => fullBodyHitReactionCooldownSeconds;
+        public bool LockAdvanceDuringSpawnState => lockAdvanceDuringSpawnState;
+        public string SpawnStateName => spawnStateName;
+        public float SpawnMovementLockSeconds => spawnMovementLockSeconds;
         public float LastDamageCueIntensity => lastDamageCueIntensity;
         public float LastDamageCuePolicyScale => lastDamageCuePolicyScale;
         public DamageResponsePolicy LastDamageResponsePolicy => lastDamageResponsePolicy;
@@ -202,6 +209,8 @@ namespace DimensionBrawl.Presentation
             UnsubscribeHealth();
             wasActive = false;
             wasAttacking = false;
+            spawnMovementLockTimer = 0f;
+            proxy?.SetAdvancePresentationLocked(false);
             SetAnimatorMoveSpeed(0f);
             SetPulseVisible(false);
         }
@@ -237,6 +246,11 @@ namespace DimensionBrawl.Presentation
             if (deathFlashTimer > 0f)
             {
                 deathFlashTimer = Mathf.Max(0f, deathFlashTimer - deltaTime);
+            }
+
+            if (spawnMovementLockTimer > 0f)
+            {
+                spawnMovementLockTimer = Mathf.Max(0f, spawnMovementLockTimer - deltaTime);
             }
 
             RefreshNow();
@@ -303,12 +317,19 @@ namespace DimensionBrawl.Presentation
                     if (active && TriggerAnimator(spawnTrigger))
                     {
                         animatorSpawnTriggerCount++;
+                        if (lockAdvanceDuringSpawnState)
+                        {
+                            spawnMovementLockTimer = Mathf.Max(
+                                spawnMovementLockTimer,
+                                spawnMovementLockSeconds);
+                        }
                     }
                 }
 
                 lastObservedTier = tier;
                 ObserveClashCount();
                 ObserveAttackState(active);
+                RefreshAdvancePresentationLock(active);
                 if (active && !impactFlashedThisActivation && proxy.AdvanceProgress01 >= impactFlashProgress)
                 {
                     impactFlashTimer = Mathf.Max(impactFlashTimer, impactFlashSeconds);
@@ -322,6 +343,7 @@ namespace DimensionBrawl.Presentation
             }
             else
             {
+                proxy?.SetAdvancePresentationLocked(false);
                 SetAnimatorMoveSpeed(0f);
                 SetPulseVisible(false);
             }
@@ -586,7 +608,7 @@ namespace DimensionBrawl.Presentation
             float moveSpeed = active
                 && proxy != null
                 && proxy.CurrentState == SummonFrontlineProxyState.Advancing
-                    ? proxy.ActiveMoveSpeed * animatorMoveSpeedScale
+                    ? proxy.CurrentMoveSpeed * animatorMoveSpeedScale
                     : 0f;
             SetAnimatorMoveSpeed(moveSpeed);
         }
@@ -600,6 +622,51 @@ namespace DimensionBrawl.Presentation
 
             animator.SetFloat(moveSpeedParameter, Mathf.Max(0f, value));
             animatorMoveSpeedSetCount++;
+        }
+
+        private void RefreshAdvancePresentationLock(bool active)
+        {
+            if (proxy == null)
+            {
+                return;
+            }
+
+            if (!lockAdvanceDuringSpawnState)
+            {
+                proxy.SetAdvancePresentationLocked(false);
+                return;
+            }
+
+            bool shouldLock = active
+                && (spawnMovementLockTimer > 0f || IsAnimatorInState(spawnStateName));
+            proxy.SetAdvancePresentationLocked(shouldLock);
+        }
+
+        private bool IsAnimatorInState(string stateName)
+        {
+            if (animator == null
+                || animator.runtimeAnimatorController == null
+                || animator.layerCount <= 0
+                || string.IsNullOrWhiteSpace(stateName))
+            {
+                return false;
+            }
+
+            const int Layer = 0;
+            AnimatorStateInfo currentState = animator.GetCurrentAnimatorStateInfo(Layer);
+            if (IsAnimatorStateName(currentState, stateName))
+            {
+                return true;
+            }
+
+            return animator.IsInTransition(Layer)
+                && IsAnimatorStateName(animator.GetNextAnimatorStateInfo(Layer), stateName);
+        }
+
+        private static bool IsAnimatorStateName(AnimatorStateInfo stateInfo, string stateName)
+        {
+            return stateInfo.IsName(stateName)
+                || stateInfo.IsName("Base Layer." + stateName);
         }
 
         private bool TriggerAnimator(string triggerName)
