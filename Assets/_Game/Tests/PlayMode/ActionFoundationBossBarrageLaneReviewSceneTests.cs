@@ -553,6 +553,53 @@ namespace DimensionBrawl.Tests
         }
 
         [UnityTest]
+        public IEnumerator BossResponseLoopSceneBanksAfterOpeningForLaserPressure()
+        {
+            PlayerMovementController player = RequireObject<PlayerMovementController>();
+            SummonLaneSpace laneSpace = RequireComponent<SummonLaneSpace>(RequireRoot(LaneRootName), "lane space");
+            GameObject bossRoot = RequireRoot(BossRootName);
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
+            BossPressureCostLadder bossPressureCost =
+                RequireComponent<BossPressureCostLadder>(bossRoot, "boss pressure cost ladder");
+            BossPressureActionDirector bossPressureActionDirector =
+                RequireComponent<BossPressureActionDirector>(bossRoot, "boss pressure action director");
+            BossSummonPressureAction bossSummonPressureAction =
+                RequireComponent<BossSummonPressureAction>(bossRoot, "boss summon pressure action");
+
+            player.transform.position = laneSpace.GetLaneWorldPoint(0f, laneSpace.BackLimitZ);
+            bossPressureCost.GrantCurrentTierCost(100f);
+            bossPressureActionDirector.Tick(0.3f);
+
+            Assert.AreEqual(BossPressureActionKind.SpecialSkill, bossPressureActionDirector.LastActionKind);
+            Assert.AreEqual(1, bossPressureActionDirector.LastSpentTier);
+            Assert.AreSame(LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath), emitter.QueuedPriorityPattern);
+            emitter.CancelQueuedPriorityPattern(emitter.QueuedPriorityPattern);
+
+            bossPressureCost.GrantCurrentTierCost(100f);
+            bossPressureActionDirector.Tick(1.2f);
+
+            Assert.AreEqual(1, bossPressureCost.AvailableTier);
+            Assert.IsFalse(
+                emitter.HasQueuedPriorityPattern,
+                "After the opening LV1 read, the real review boss should bank cost for the authored LV3 laser soldier instead of spending another low-tier pressure action.");
+            Assert.AreEqual(
+                BossPressureActionKind.SpecialSkill,
+                bossPressureActionDirector.LastActionKind,
+                "Holding should preserve the last completed read until the laser pressure tier is actually available.");
+
+            bossPressureCost.GrantCurrentTierCost(200f);
+            bossPressureActionDirector.Tick(0.3f);
+
+            Assert.AreEqual(BossPressureActionKind.SummonPressure, bossPressureActionDirector.LastActionKind);
+            Assert.AreEqual(BossPressureMovementIntent.RetreatAndSummon, bossPressureActionDirector.LastMovementIntent);
+            Assert.AreEqual(3, bossPressureActionDirector.LastSpentTier);
+            Assert.AreEqual(3, bossSummonPressureAction.LastReleasedTier);
+            Assert.AreEqual("LaserSoldier", bossSummonPressureAction.LastSummonActorRoleId);
+
+            yield return null;
+        }
+
+        [UnityTest]
         public IEnumerator ReviewSceneBindsPlayerEnergyAndBossBarrage()
         {
             PlayerMovementController player = RequireObject<PlayerMovementController>();
