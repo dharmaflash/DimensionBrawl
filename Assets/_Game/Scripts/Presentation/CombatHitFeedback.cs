@@ -9,6 +9,13 @@ namespace DimensionBrawl.Presentation
         private static readonly int BaseColorId = Shader.PropertyToID("_BaseColor");
         private static readonly int ColorId = Shader.PropertyToID("_Color");
         private static readonly int EmissionColorId = Shader.PropertyToID("_EmissionColor");
+        private static readonly int EmissionColorLdrId = Shader.PropertyToID("_EmissionColorLDR");
+        private static readonly int EmissionColorHdrId = Shader.PropertyToID("_EmissionColorHDR");
+        private static readonly int EmissionStrengthId = Shader.PropertyToID("_EmissionStrength");
+        private static readonly int UseEmissionId = Shader.PropertyToID("_UseEmission");
+        private const float MinimumVisibleFlashSeconds = 0.2f;
+        private const float MinimumHitColorBlend = 0.96f;
+        private const float MinimumHitEmissionBoost = 3.25f;
 
         [Header("References")]
         [SerializeField] private CombatHealth health;
@@ -93,6 +100,7 @@ namespace DimensionBrawl.Presentation
                 StopCoroutine(flashRoutine);
             }
 
+            ApplyFlash(hitColor, hitEmissionColor, 1f);
             flashRoutine = StartCoroutine(Flash(hitColor, hitEmissionColor, flashSeconds, clearAfter: true));
         }
 
@@ -113,7 +121,7 @@ namespace DimensionBrawl.Presentation
 
         private IEnumerator Flash(Color color, Color emissionColor, float seconds, bool clearAfter)
         {
-            float duration = Mathf.Max(0.001f, seconds);
+            float duration = Mathf.Max(MinimumVisibleFlashSeconds, seconds);
             float elapsed = 0f;
 
             while (elapsed < duration)
@@ -158,14 +166,22 @@ namespace DimensionBrawl.Presentation
                 propertyBlock ??= new MaterialPropertyBlock();
                 targetRenderer.GetPropertyBlock(propertyBlock);
                 Color baseColor = ResolveRendererBaseColor(targetRenderer);
-                Color flashColor = Color.Lerp(baseColor, color, Mathf.Clamp01(hitColorBlend * weight));
+                Color visibleHitColor = Color.Lerp(Color.white, color, 0.5f);
+                Color flashColor = Color.Lerp(
+                    baseColor,
+                    visibleHitColor,
+                    Mathf.Clamp01(Mathf.Max(hitColorBlend, MinimumHitColorBlend) * weight));
                 flashColor.a = baseColor.a;
-                Color boostedEmission = emissionColor * (hitEmissionBoost * weight);
-                boostedEmission.a = emissionColor.a;
+                Color boostedEmission = emissionColor * (Mathf.Max(hitEmissionBoost, MinimumHitEmissionBoost) * weight);
+                boostedEmission.a = 1f;
 
                 propertyBlock.SetColor(BaseColorId, flashColor);
                 propertyBlock.SetColor(ColorId, flashColor);
                 propertyBlock.SetColor(EmissionColorId, boostedEmission);
+                propertyBlock.SetColor(EmissionColorLdrId, boostedEmission);
+                propertyBlock.SetColor(EmissionColorHdrId, boostedEmission);
+                propertyBlock.SetFloat(EmissionStrengthId, Mathf.Max(hitEmissionBoost, MinimumHitEmissionBoost) * weight);
+                propertyBlock.SetFloat(UseEmissionId, weight > 0f ? 1f : 0f);
                 targetRenderer.SetPropertyBlock(propertyBlock);
             }
         }
@@ -190,6 +206,10 @@ namespace DimensionBrawl.Presentation
                 propertyBlock.SetColor(BaseColorId, color);
                 propertyBlock.SetColor(ColorId, color);
                 propertyBlock.SetColor(EmissionColorId, emissionColor);
+                propertyBlock.SetColor(EmissionColorLdrId, emissionColor);
+                propertyBlock.SetColor(EmissionColorHdrId, emissionColor);
+                propertyBlock.SetFloat(EmissionStrengthId, 0f);
+                propertyBlock.SetFloat(UseEmissionId, emissionColor.maxColorComponent > 0f ? 1f : 0f);
                 targetRenderer.SetPropertyBlock(propertyBlock);
             }
         }

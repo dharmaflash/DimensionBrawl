@@ -780,12 +780,23 @@ namespace DimensionBrawl.Tests
         {
             GameObject enemyObject = new GameObject("Enemy");
             GameObject bodyObject = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            Material bodyMaterial = null;
             try
             {
                 bodyObject.name = "EnemyBody";
                 bodyObject.transform.SetParent(enemyObject.transform, worldPositionStays: false);
                 Renderer bodyRenderer = bodyObject.GetComponent<Renderer>();
                 Assert.IsNotNull(bodyRenderer);
+                Shader shader = Shader.Find("Universal Render Pipeline/Lit");
+                if (shader == null)
+                {
+                    shader = Shader.Find("Standard");
+                }
+
+                bodyMaterial = new Material(shader);
+                bodyMaterial.SetColor("_BaseColor", new Color(0.18f, 0.24f, 0.32f, 1f));
+                bodyMaterial.SetColor("_Color", new Color(0.18f, 0.24f, 0.32f, 1f));
+                bodyRenderer.sharedMaterial = bodyMaterial;
 
                 CombatHealth enemyHealth = enemyObject.AddComponent<CombatHealth>();
                 enemyHealth.ConfigureTeam(DamageTeam.Enemy);
@@ -820,6 +831,13 @@ namespace DimensionBrawl.Tests
                     1,
                     feedback.DamageFlashCount,
                     "Enemy body shader feedback should react to non-locking hit presentation events.");
+                MaterialPropertyBlock appliedBlock = new MaterialPropertyBlock();
+                bodyRenderer.GetPropertyBlock(appliedBlock);
+                Color appliedColor = appliedBlock.GetColor(Shader.PropertyToID("_Color"));
+                Assert.Greater(
+                    appliedColor.g,
+                    0.45f,
+                    "Enemy body shader feedback should push the body toward a clearly visible warm flash, not a barely changed base color.");
 
                 Assert.IsTrue(enemyHealth.TryApplyDamage(new DamageInfo(
                     null,
@@ -838,6 +856,11 @@ namespace DimensionBrawl.Tests
             }
             finally
             {
+                if (bodyMaterial != null)
+                {
+                    Object.DestroyImmediate(bodyMaterial);
+                }
+
                 Object.DestroyImmediate(enemyObject);
             }
         }
