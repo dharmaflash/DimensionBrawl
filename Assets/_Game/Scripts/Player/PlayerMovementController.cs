@@ -92,6 +92,11 @@ namespace DimensionBrawl.Player
         private float cinematicMoveInputSpeedScale = 1f;
         private bool actionMoveInputScaleActive;
         private bool cinematicMoveInputScaleActive;
+        private bool laneConstraintEnabled = true;
+        private bool scriptedMoveInputOverrideActive;
+        private Vector2 scriptedMoveInputOverride;
+        private bool scriptedLookInputOverrideActive;
+        private Vector2 scriptedLookInputOverride;
         private bool inputWasMoving;
         private bool enabledMoveAction;
         private bool enabledLookAction;
@@ -102,6 +107,7 @@ namespace DimensionBrawl.Player
         public bool HasMoveInput => currentMoveInput.sqrMagnitude > 0f;
         public bool IsStopSettling => stopSettleTimer > 0f;
         public bool IsCinematicMoveInputLocked => cinematicMoveInputScaleActive && cinematicMoveInputSpeedScale <= 0f;
+        public bool LaneConstraintEnabled => laneConstraintEnabled;
         public Vector3 FacingDirection => transform.forward;
         public SummonLaneSpace LaneSpace => laneSpace;
 
@@ -122,6 +128,22 @@ namespace DimensionBrawl.Player
         public void SetLookInput(Vector2 input)
         {
             mobileLookInput = Vector2.ClampMagnitude(input, 1f);
+        }
+
+        internal void SetScriptedInputOverride(Vector2 moveInput, Vector2 lookInput)
+        {
+            scriptedMoveInputOverride = Vector2.ClampMagnitude(moveInput, 1f);
+            scriptedLookInputOverride = Vector2.ClampMagnitude(lookInput, 1f);
+            scriptedMoveInputOverrideActive = true;
+            scriptedLookInputOverrideActive = true;
+        }
+
+        internal void ClearScriptedInputOverride()
+        {
+            scriptedMoveInputOverride = Vector2.zero;
+            scriptedLookInputOverride = Vector2.zero;
+            scriptedMoveInputOverrideActive = false;
+            scriptedLookInputOverrideActive = false;
         }
 
         public void BeginExternalPlanarBurst(Vector3 velocity, float durationSeconds)
@@ -193,6 +215,11 @@ namespace DimensionBrawl.Player
             cinematicMoveInputScaleActive = false;
         }
 
+        public void SetLaneConstraintEnabled(bool enabled)
+        {
+            laneConstraintEnabled = enabled;
+        }
+
         public void RequestFacingDirection(Vector3 direction, float holdSeconds, bool snapImmediately)
         {
             Vector3 planarDirection = Vector3.ProjectOnPlane(direction, Vector3.up);
@@ -232,6 +259,7 @@ namespace DimensionBrawl.Player
 
         private void OnDisable()
         {
+            ClearScriptedInputOverride();
             DisableActionIfOwned(moveAction, enabledMoveAction);
             DisableActionIfOwned(lookAction, enabledLookAction);
         }
@@ -278,6 +306,11 @@ namespace DimensionBrawl.Player
 
         private Vector2 ReadMoveInput()
         {
+            if (scriptedMoveInputOverrideActive)
+            {
+                return scriptedMoveInputOverride;
+            }
+
             Vector2 input = ReadSharedInput(moveAction, mobileMoveInput);
 
             if (useDeviceFallbackWhenActionMissing && IsActionMissing(moveAction) && input.sqrMagnitude <= 0f)
@@ -290,6 +323,11 @@ namespace DimensionBrawl.Player
 
         private Vector2 ReadLookInput()
         {
+            if (scriptedLookInputOverrideActive)
+            {
+                return scriptedLookInputOverride;
+            }
+
             return ReadSharedInput(lookAction, mobileLookInput);
         }
 
@@ -560,7 +598,7 @@ namespace DimensionBrawl.Player
 
         private void ClampToLaneSpace()
         {
-            if (laneSpace == null)
+            if (!laneConstraintEnabled || laneSpace == null)
             {
                 return;
             }

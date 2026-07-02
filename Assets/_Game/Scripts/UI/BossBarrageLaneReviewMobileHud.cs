@@ -35,6 +35,7 @@ namespace DimensionBrawl.UI
 
         [Header("Display")]
         [SerializeField] private bool showHud = true;
+        [SerializeField] private bool drawHudVisuals = true;
         [SerializeField, Range(0f, 1f)] private float hudOpacity = 1f;
         [SerializeField, Min(40f)] private float buttonSize = 168f;
         [SerializeField, Min(0f)] private float buttonGap = 38f;
@@ -49,9 +50,9 @@ namespace DimensionBrawl.UI
         [SerializeField] private Color heldButtonColor = new Color(0.18f, 0.84f, 1f, 0.72f);
         [SerializeField] private Color pendingButtonColor = new Color(0.04f, 0.08f, 0.11f, 0.44f);
         [SerializeField] private Color actionTextColor = Color.white;
-        [SerializeField] private string summonSlot1Label = "S1 SHIELD";
-        [SerializeField] private string summonSlot2Label = "S2 ARROW";
-        [SerializeField] private string summonSlot3Label = "S3 TANK";
+        [SerializeField] private string summonSlot1Label = "S1 SLAM";
+        [SerializeField] private string summonSlot2Label = "S2 LASER";
+        [SerializeField] private string summonSlot3Label = "S3 DRAGON";
         [SerializeField] private string lockedSummonLabel = "NEXT";
 
         [Header("Chrome")]
@@ -137,6 +138,15 @@ namespace DimensionBrawl.UI
         public string SummonSlot1ActionName => summonSlot1ActionName;
         public string SummonSlot2ActionName => summonSlot2ActionName;
         public string SummonSlot3ActionName => summonSlot3ActionName;
+        public Rect MoveJoystickGuiRect => ResolveCurrentGuiRect(ref moveJoystickRect);
+        public Rect MoveJoystickTouchGuiRect => ResolveCurrentGuiRect(ref moveJoystickTouchRect);
+        public Rect BasicButtonGuiRect => ResolveCurrentGuiRect(ref basicRect);
+        public Rect DodgeButtonGuiRect => ResolveCurrentGuiRect(ref dodgeRect);
+        public Rect SwapButtonGuiRect => ResolveCurrentGuiRect(ref swapRect);
+        public Vector2 MoveJoystickScreenAnchor => ToScreenAnchor(MoveJoystickGuiRect.center);
+        public Vector2 BasicButtonScreenAnchor => ToScreenAnchor(BasicButtonGuiRect.center);
+        public Vector2 DodgeButtonScreenAnchor => ToScreenAnchor(DodgeButtonGuiRect.center);
+        public Vector2 SwapButtonScreenAnchor => ToScreenAnchor(SwapButtonGuiRect.center);
         public string RangedAimActionName => rangedAimActionName;
         public string WeaponSwapActionName => weaponSwapActionName;
         public bool HasActiveReviewPointerInput => movePointerHeld || firePointerHeld || lookPointerHeld;
@@ -241,7 +251,11 @@ namespace DimensionBrawl.UI
         {
             if (!showHud || hudOpacity <= 0.001f)
             {
-                ReleaseHudControls();
+                if (HasHeldReviewControl())
+                {
+                    ReleaseHudControls();
+                }
+
                 return;
             }
 
@@ -334,16 +348,29 @@ namespace DimensionBrawl.UI
         {
             movement?.SetMoveInput(Vector2.zero);
             ReleaseHudLookAim();
-            rangedBasicAttackAction?.SetFireHeld(false);
+            if (previousBasicHeld || firePointerHeld)
+            {
+                rangedBasicAttackAction?.SetFireHeld(false);
+            }
+
             ClearFirePointerState();
             ClearMovePointerState();
             ClearLookPointerState();
             previousBasicHeld = false;
         }
 
+        private bool HasHeldReviewControl()
+        {
+            return previousBasicHeld
+                || firePointerHeld
+                || movePointerHeld
+                || lookPointerHeld
+                || hudLookAimActive;
+        }
+
         private void OnGUI()
         {
-            if (!showHud || hudOpacity <= 0.001f)
+            if (!showHud || !drawHudVisuals || hudOpacity <= 0.001f)
             {
                 return;
             }
@@ -412,6 +439,24 @@ namespace DimensionBrawl.UI
             summonSlot1Rect = new Rect(summonX, summonY, summonWidth, summonHeight);
             summonSlot2Rect = new Rect(summonX, summonY + summonHeight + summonGap, summonWidth, summonHeight);
             summonSlot3Rect = new Rect(summonX, summonY + (summonHeight + summonGap) * 2f, summonWidth, summonHeight);
+        }
+
+        private Rect ResolveCurrentGuiRect(ref Rect rect)
+        {
+            BuildLayout();
+            return rect;
+        }
+
+        private static Vector2 ToScreenAnchor(Vector2 guiPoint)
+        {
+            if (Screen.width <= 0 || Screen.height <= 0)
+            {
+                return Vector2.zero;
+            }
+
+            return new Vector2(
+                Mathf.Clamp01(guiPoint.x / Screen.width),
+                Mathf.Clamp01(1f - guiPoint.y / Screen.height));
         }
 
         private float ResolveScale()

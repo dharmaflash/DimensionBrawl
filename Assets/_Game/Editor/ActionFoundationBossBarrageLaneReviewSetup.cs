@@ -70,9 +70,9 @@ namespace DimensionBrawl.Editor
         public const string SummonSlot1ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Projectile_AssistBolt.prefab";
         public const string SummonSlot2ProjectilePrefabPath =
-            "Assets/_Game/Prefabs/Combat/PF_SummonSlot2Projectile_MarksmanBolt.prefab";
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot2Projectile_LaserBolt.prefab";
         public const string SummonSlot3ProjectilePrefabPath =
-            "Assets/_Game/Prefabs/Combat/PF_SummonSlot3Projectile_VanguardBolt.prefab";
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot3Projectile_FireBreath.prefab";
         public const string SummonSlot1EntryCuePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1EntryCue_MagicCircle.prefab";
         public const string SummonSlot1ActorPrefabPath =
@@ -84,11 +84,11 @@ namespace DimensionBrawl.Editor
         public const string BossSummonPressureActorPrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossSummonPressureActor_Proxy.prefab";
         public const string SummonSlot1ActionProfilePath =
-            ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonSlot1_ShieldBreaker.asset";
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonSlot1_JumpSlamBruiser.asset";
         public const string SummonSlot2ActionProfilePath =
-            ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonSlot2_BacklineMarksman.asset";
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonSlot2_LaserSoldier.asset";
         public const string SummonSlot3ActionProfilePath =
-            ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonSlot3_VanguardCommander.asset";
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonSlot3_FireDragon.asset";
         public const string BossSummonPressureProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_BossSummonPressure_SummonCaller.asset";
         public const string BossPressureActionDeckProfilePath =
@@ -98,20 +98,20 @@ namespace DimensionBrawl.Editor
         private const string UIRouteTablePath =
             "Assets/_Game/DesignData/UI/DB_UIRouteTable.asset";
         public const string SummonSlot1PresentationCandidateProfilePath =
-            ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonPresentation_PlayerShieldBreaker.asset";
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonPresentation_PlayerJumpSlamBruiser.asset";
         public const string SummonSlot2PresentationCandidateProfilePath =
-            ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonPresentation_PlayerBacklineMarksman.asset";
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonPresentation_PlayerLaserSoldier.asset";
         public const string SummonSlot3PresentationCandidateProfilePath =
-            ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonPresentation_PlayerVanguardCommander.asset";
+            ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonPresentation_PlayerFireDragon.asset";
         public const string BossSummonPressurePresentationCandidateProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonPresentation_BossAuraCaptain.asset";
         private const string SummonSlot1ActorVisualName = "SummonSlot1Visual_ShieldBreakerElite";
-        private const string SummonSlot2ActorVisualName = "SummonSlot2Visual_CommandoRifleman";
-        private const string SummonSlot3ActorVisualName = "SummonSlot3Visual_FinalStandCommanderElite";
+        private const string SummonSlot2ActorVisualName = "SummonSlot2Visual_LaserRifleman";
+        private const string SummonSlot3ActorVisualName = "SummonSlot3Visual_FireDragon";
         private const string BossSummonPressureActorVisualName = "BossSummonPressureVisual_AuraCaptainElite";
         private const string SummonSlot1ActorVisualRoleId = "SciFiSoldier.Elite.ShieldBreaker";
         private const string SummonSlot2ActorVisualRoleId = "SciFiSoldier.LineCaster";
-        private const string SummonSlot3ActorVisualRoleId = "SciFiSoldier.Elite.FinalStandCommander";
+        private const string SummonSlot3ActorVisualRoleId = "Summon.FireDragon.VolcanoDragon";
         private const string BossSummonPressureActorVisualRoleId = "SciFiSoldier.Elite.AuraCaptain";
         private const string SummonActorMoveSpeedParameter = "MoveSpeed";
         private const string SummonActorSpawnTrigger = "EliteSummonPackage";
@@ -166,6 +166,8 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Art/VFX/CombatCues/Materials";
         private const string CombatVfxMeshRoot =
             "Assets/_Game/Art/VFX/CombatCues/Meshes";
+        private const string ActionFoundationPrimitiveMeshRoot =
+            "Assets/_Game/Art/Meshes/ActionFoundation";
         private const string CombatVfxPrefabRoot =
             "Assets/_Game/Art/VFX/CombatCues/Prefabs";
         private const string MuzzleFlashFrontMaterialPath =
@@ -200,6 +202,16 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot3ActorPulse.mat";
         private const string SummonSlot3PressureScreenMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot3PressureScreen.mat";
+        private const string SummonSlot1SlamImpactMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot1SlamImpact.mat";
+        private const string SummonSlot2LaserBeamMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot2LaserBeam.mat";
+        private const string SummonSlot3FireBreathMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot3FireBreath.mat";
+        private const string SummonSlot3DragonBodyMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot3DragonBody.mat";
+        private const string SummonSlot3DragonWingMaterialPath =
+            "Assets/_Game/Art/Materials/ActionFoundation/AF_SummonSlot3DragonWing.mat";
         private const string BossSummonPressureActorMaterialPath =
             "Assets/_Game/Art/Materials/ActionFoundation/AF_BossSummonPressureActor.mat";
         private const string BossSummonPressureScreenMaterialPath =
@@ -229,6 +241,7 @@ namespace DimensionBrawl.Editor
         private const string DuelClearMarkerName = ReviewRootPrefix + "DuelClearMarker";
         private const string DuelFailMarkerName = ReviewRootPrefix + "DuelFailMarker";
         private const string HudRootName = ReviewRootPrefix + "DebugHud";
+        private const string ArenaVfxRootName = "ActionFoundation_ArenaVfx";
         private const string MarkerRootName = ReviewRootPrefix + "Markers";
         private const string AmbientVfxRootName = ReviewRootPrefix + "AmbientVfx";
         private const string AmbientAudioRootName = ReviewRootPrefix + "AmbientAudio";
@@ -240,11 +253,11 @@ namespace DimensionBrawl.Editor
         private const string PocketFailMarkerName = ReviewRootPrefix + "PocketFailMarker";
         private const string SummonEntryMarkerName = ReviewRootPrefix + "SummonEntryMarker";
         private const string BossProxyMarkerName = ReviewRootPrefix + "BossProxyMarker";
-        private const float BossProxyReviewMaxHealth = 980f;
+        private const float BossProxyReviewMaxHealth = 7200f;
         private const float BossProxyBodyHitboxRadius = 1.05f;
         private static readonly Vector3 BossProxyBodyHitboxCenter = new Vector3(0f, -0.35f, -0.05f);
         private const int PlayerRangedBasicPrewarmCount = 16;
-        private const float PlayerRangedBasicDamage = 14f;
+        private const float PlayerRangedBasicDamage = 12f;
         private const float PlayerRangedBasicProjectileSpeed = 24f;
         private const float PlayerRangedBasicProjectileLifetimeSeconds = 1.75f;
         private const float PlayerRangedBasicProjectileRadius = 0.31f;
@@ -253,7 +266,7 @@ namespace DimensionBrawl.Editor
         private const float PlayerRangedBasicCameraAimRaycastDistance = 96f;
         private const float PlayerRangedBasicTargetHeight = 1.1f;
         private const float PlayerRangedBasicAimAssistDistance = 30f;
-        private const float PlayerRangedBasicAimAssistAngleDegrees = 14f;
+        private const float PlayerRangedBasicAimAssistAngleDegrees = 28f;
         private const string CloseThreatBodyHitboxName = ReviewRootPrefix + "CloseThreatBodyHitbox";
         private const float CloseThreatBodyHitboxRadius = 0.68f;
         private static readonly Vector3 CloseThreatBodyHitboxCenter = new Vector3(0f, 1f, 0f);
@@ -616,6 +629,8 @@ namespace DimensionBrawl.Editor
                 return;
             }
 
+            EnsureSupportSummonActionProfiles();
+
             Scene scene = EditorSceneManager.OpenScene(scenePath, OpenSceneMode.Single);
             PlayerMovementController player = RequireObject<PlayerMovementController>(scene, "player movement");
             PlayerSkill1Action skill1Action =
@@ -695,14 +710,14 @@ namespace DimensionBrawl.Editor
                 allowVerticalTravel: false);
             LaneActionProjectile summonSlot2ProjectilePrefab = EnsureLaneActionProjectilePrefab(
                 SummonSlot2ProjectilePrefabPath,
-                "PF_SummonSlot2Projectile_MarksmanBolt",
+                "PF_SummonSlot2Projectile_LaserBolt",
                 SummonSlot2ProjectileMaterialPath,
                 new Color(0.86f, 0.94f, 1f, 1f),
                 0.36f,
                 allowVerticalTravel: false);
             LaneActionProjectile summonSlot3ProjectilePrefab = EnsureLaneActionProjectilePrefab(
                 SummonSlot3ProjectilePrefabPath,
-                "PF_SummonSlot3Projectile_VanguardBolt",
+                "PF_SummonSlot3Projectile_FireBreath",
                 SummonSlot3ProjectileMaterialPath,
                 new Color(1f, 0.82f, 0.38f, 1f),
                 0.64f,
@@ -758,7 +773,10 @@ namespace DimensionBrawl.Editor
             SummonEnergyLadder energyLadder = EnsureComponent<SummonEnergyLadder>(player.gameObject);
             SetObjectReference(energyLadder, "laneSpace", laneSpace);
             SetObjectReference(energyLadder, "trackedPlayer", player.transform);
-            SetFloat(energyLadder, "baseEnergyPerSecond", 16.5f);
+            SetFloat(energyLadder, "baseEnergyPerSecond", 9.0f);
+            SetFloat(energyLadder, "backSafetyGainScale", 0.45f);
+            SetFloat(energyLadder, "midChargeGainScale", 0.9f);
+            SetFloat(energyLadder, "forwardRiskGainScale", 1.75f);
 
             GameObject projectileRoot = CreateRoot(scene, ProjectilePoolRootName);
             GameObject actionCueRoot = CreateRoot(scene, ActionCuePoolRootName);
@@ -844,6 +862,7 @@ namespace DimensionBrawl.Editor
                 laneSpace);
             ConfigureFixedRearCamera(cameraController, player.transform, bossProxy.transform, laneSpace.transform);
             PlayerCombatModeVisualBinding combatModeVisuals = CreatePlayerCombatModeVisuals(scene, player.gameObject);
+            ConfigurePlayerDamageShaderFeedback(player.gameObject, playerHealth, combatModeVisuals);
             ConfigureCombatModeController(player.gameObject, playerActionController, player, localDefenseProfile, combatModeVisuals);
             ConfigureRangedAimController(player.gameObject, cameraController, combatModeVisuals.RangedAnimator);
             PlayerCombatModeController combatModeController =
@@ -948,6 +967,7 @@ namespace DimensionBrawl.Editor
             ConfigureArenaInfluenceTargets(scene, player.transform, bossProxy.transform, closeThreat.transform);
             CreateLaneMarkers(scene, laneSpace);
             CreateLaneAmbientVfx(scene, laneSpace);
+            DeactivateArenaDressingVfx(scene);
             CreateLaneAmbientAudio(scene, laneSpace);
             ConfigureBossBarrageLaneReviewFootstepAudio(scene);
             CreateBossBarrageTelegraphMarkers(scene, laneSpace, bossBarrageEmitter);
@@ -992,13 +1012,13 @@ namespace DimensionBrawl.Editor
             ValidateBossProxyVisual(bossProxy);
             GameObject closeThreat = RequireRoot(scene, CloseThreatRootName);
             CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreat, "close threat health");
-            ValidateSuppressedCombatHitFeedback(scene);
             PlayerCombatModeController combatModeController =
                 RequireComponent<PlayerCombatModeController>(player.gameObject, "player combat mode controller");
             PlayerRangedAimController rangedAimController =
                 RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
             PlayerRangedBasicAttackAction rangedBasicAttackAction =
                 RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
+            ValidatePlayerDamageShaderFeedback(scene, player.gameObject, playerHealth);
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "player Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "player SummonSlot1 action");
@@ -1065,14 +1085,14 @@ namespace DimensionBrawl.Editor
                 SummonSlot1ProjectilePrefabPath,
                 "LaneActionProjectileVfx_MagicMissilesLightAssistBolt",
                 "SummonSlot1 assist bolt");
-            ValidateMagicMissilesLaneProjectilePrefab(
+            ValidatePrimitiveLaneProjectilePrefab(
                 SummonSlot2ProjectilePrefabPath,
-                "LaneActionProjectileVfx_MagicMissilesArcaneMarksmanBolt",
-                "SummonSlot2 marksman bolt");
-            ValidateMagicMissilesLaneProjectilePrefab(
+                "LaneActionProjectileVfx_LaserBolt",
+                "SummonSlot2 laser bolt");
+            ValidatePrimitiveLaneProjectilePrefab(
                 SummonSlot3ProjectilePrefabPath,
-                "LaneActionProjectileVfx_MagicMissilesHolyVanguardBolt",
-                "SummonSlot3 vanguard bolt");
+                "LaneActionProjectileVfx_FireBreathChunk",
+                "SummonSlot3 fire breath");
             ValidatePlayerRangedBasicVfxCueDriver(
                 rangedBasicVfxCueDriver,
                 rangedBasicAttackAction,
@@ -1103,7 +1123,10 @@ namespace DimensionBrawl.Editor
                 rangedBasicAttackAction);
             ValidateObjectReference(energyLadder, "laneSpace", laneSpace);
             ValidateObjectReference(energyLadder, "trackedPlayer", player.transform);
-            ValidateFloat(energyLadder, "baseEnergyPerSecond", 16.5f);
+            ValidateFloat(energyLadder, "baseEnergyPerSecond", 9.0f);
+            ValidateFloat(energyLadder, "backSafetyGainScale", 0.45f);
+            ValidateFloat(energyLadder, "midChargeGainScale", 0.9f);
+            ValidateFloat(energyLadder, "forwardRiskGainScale", 1.75f);
             ValidatePlayerEnergyActions(skill1Action, summonSlot1Action, energyLadder, playerHealth, targetSelector, bossHealth, laneSpace);
             ValidateSupportSummonSlotAction(
                 summonSlot2Action,
@@ -1117,13 +1140,13 @@ namespace DimensionBrawl.Editor
                 SummonSlot2ActorPrefabPath,
                 SummonSlot2ActorVisualName,
                 SummonSlot2ActionProfilePath,
-                2,
-                200f,
-                160f,
+                1,
+                100f,
+                170f,
                 false,
-                0.1f,
-                0.78f,
-                2);
+                0.18f,
+                1.05f,
+                3);
             ValidateSupportSummonSlotAction(
                 summonSlot3Action,
                 "SummonSlot3",
@@ -1138,11 +1161,11 @@ namespace DimensionBrawl.Editor
                 SummonSlot3ActionProfilePath,
                 3,
                 300f,
-                360f,
-                true,
-                0.15f,
-                1.05f,
-                3);
+                520f,
+                false,
+                0.65f,
+                2.4f,
+                1);
             ValidateObjectReference(emitter, "laneSpace", laneSpace);
             ValidateObjectReference(emitter, "trackedPlayer", player.transform);
             ValidateObjectReference(emitter, "sourceHealth", bossHealth);
@@ -1253,6 +1276,7 @@ namespace DimensionBrawl.Editor
                     "boss barrage lane telegraph presenter"),
                 emitter,
                 laneSpace);
+            ValidateSuppressedSceneVfxRoot(scene, ArenaVfxRootName);
             ValidateSuppressedSceneVfxRoot(scene, MarkerRootName);
             ValidateLaneAmbientVfx(scene);
             ValidateLaneAmbientAudio(scene);
@@ -1358,9 +1382,19 @@ namespace DimensionBrawl.Editor
             ValidateNoImportedAssetReference(SummonSlot1ActorPrefabPath);
             ValidateNoImportedAssetReference(BossSummonPressureActorPrefabPath);
             ValidateNoImportedAssetReference(SummonSlot1PresentationCandidateProfilePath);
+            ValidateNoImportedAssetReference(SummonSlot2PresentationCandidateProfilePath);
+            ValidateNoImportedAssetReference(SummonSlot3PresentationCandidateProfilePath);
             ValidateNoImportedAssetReference(BossSummonPressurePresentationCandidateProfilePath);
             ValidateNoImportedAssetReference(SummonPressureScreenMaterialPath);
             ValidateNoImportedAssetReference(SummonSlot1ActorPulseMaterialPath);
+            ValidateNoImportedAssetReference(SummonSlot2LaserBeamMaterialPath);
+            ValidateNoImportedAssetReference(SummonSlot3FireBreathMaterialPath);
+            ValidateNoImportedAssetReference(SummonSlot3DragonBodyMaterialPath);
+            ValidateNoImportedAssetReference(SummonSlot3DragonWingMaterialPath);
+            ValidateNoImportedAssetReference(SummonSlot2PromotedLaserBeamPrefabPath);
+            ValidateNoImportedAssetReference(SummonSlot3PromotedFireBreathPrefabPath);
+            ValidateNoImportedAssetReference(SummonSlot3DragonVisualPrefabPath);
+            ValidateNoImportedAssetReference(SummonSlot3DragonControllerPath);
             ValidateNoImportedAssetReference(BossSummonPressureActorMaterialPath);
             ValidateNoImportedAssetReference(BossSummonPressureScreenMaterialPath);
             ValidateNoImportedAssetReference(BossSummonPressureActorPulseMaterialPath);
@@ -1593,9 +1627,9 @@ namespace DimensionBrawl.Editor
                     "boss barrage mobile review HUD");
 
             SetObjectReference(mobileHud, "energyLadder", energyLadder);
-            SetString(mobileHud, "summonSlot1Label", "S1 SHIELD");
-            SetString(mobileHud, "summonSlot2Label", "S2 ARROW");
-            SetString(mobileHud, "summonSlot3Label", "S3 TANK");
+            SetString(mobileHud, "summonSlot1Label", "S1 SLAM");
+            SetString(mobileHud, "summonSlot2Label", "S2 LASER");
+            SetString(mobileHud, "summonSlot3Label", "S3 DRAGON");
             SetString(mobileHud, "lockedSummonLabel", "NEXT");
             EditorUtility.SetDirty(mobileHud);
 
@@ -2502,6 +2536,9 @@ namespace DimensionBrawl.Editor
                 {
                     ConfigureRangedBasicProjectileVisuals(editableRoot, material);
                 }
+                else if (TryConfigurePrimitiveSummonProjectileVisuals(prefabPath, editableRoot))
+                {
+                }
                 else if (TryGetMagicMissilesProjectileVfxSpec(
                     prefabPath,
                     out string sourcePrefabPath,
@@ -2535,11 +2572,70 @@ namespace DimensionBrawl.Editor
         private static bool UsesAuthoredLaneProjectileVfx(string prefabPath)
         {
             return string.Equals(prefabPath, RangedBasicProjectilePrefabPath, StringComparison.Ordinal)
+                || IsPrimitiveSummonProjectileVfx(prefabPath)
                 || TryGetMagicMissilesProjectileVfxSpec(
                     prefabPath,
                     out _,
                     out _,
                     out _);
+        }
+
+        private static bool IsPrimitiveSummonProjectileVfx(string prefabPath)
+        {
+            return string.Equals(prefabPath, SummonSlot2ProjectilePrefabPath, StringComparison.Ordinal)
+                || string.Equals(prefabPath, SummonSlot3ProjectilePrefabPath, StringComparison.Ordinal);
+        }
+
+        private static bool TryConfigurePrimitiveSummonProjectileVisuals(string prefabPath, GameObject projectileRoot)
+        {
+            const string VisualPrefix = "LaneActionProjectileVfx_";
+            if (string.Equals(prefabPath, SummonSlot2ProjectilePrefabPath, StringComparison.Ordinal))
+            {
+                RemoveChildrenWithPrefix(projectileRoot.transform, VisualPrefix);
+                TrailRenderer oldTrail = projectileRoot.GetComponent<TrailRenderer>();
+                if (oldTrail != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(oldTrail);
+                }
+
+                AddProjectileVisualPrimitive(
+                    projectileRoot.transform,
+                    VisualPrefix + "LaserBolt",
+                    PrimitiveType.Cube,
+                    LoadOrCreateTransparentMaterial(
+                        SummonSlot2LaserBeamMaterialPath,
+                        new Color(0.18f, 0.92f, 1f, 0.72f)),
+                    new Vector3(0f, 0f, -0.12f),
+                    Vector3.zero,
+                    new Vector3(0.08f, 0.08f, 1.62f));
+                EditorUtility.SetDirty(projectileRoot);
+                return true;
+            }
+
+            if (string.Equals(prefabPath, SummonSlot3ProjectilePrefabPath, StringComparison.Ordinal))
+            {
+                RemoveChildrenWithPrefix(projectileRoot.transform, VisualPrefix);
+                TrailRenderer oldTrail = projectileRoot.GetComponent<TrailRenderer>();
+                if (oldTrail != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(oldTrail);
+                }
+
+                AddProjectileVisualPrimitive(
+                    projectileRoot.transform,
+                    VisualPrefix + "FireBreathChunk",
+                    PrimitiveType.Capsule,
+                    LoadOrCreateTransparentMaterial(
+                        SummonSlot3FireBreathMaterialPath,
+                        new Color(1f, 0.36f, 0.08f, 0.72f)),
+                    new Vector3(0f, 0f, -0.2f),
+                    new Vector3(90f, 0f, 0f),
+                    new Vector3(0.3f, 0.92f, 0.3f));
+                EditorUtility.SetDirty(projectileRoot);
+                return true;
+            }
+
+            return false;
         }
 
         private static bool TryGetMagicMissilesProjectileVfxSpec(
@@ -2561,22 +2657,6 @@ namespace DimensionBrawl.Editor
                 sourcePrefabPath = ImportedMagicMissilesLightMissilePrefabPath;
                 visualName = "MagicMissilesLightAssistBolt";
                 localScale = new Vector3(0.38f, 0.38f, 0.86f);
-                return true;
-            }
-
-            if (string.Equals(prefabPath, SummonSlot2ProjectilePrefabPath, StringComparison.Ordinal))
-            {
-                sourcePrefabPath = ImportedMagicMissilesArcaneMissilePrefabPath;
-                visualName = "MagicMissilesArcaneMarksmanBolt";
-                localScale = new Vector3(0.26f, 0.26f, 0.72f);
-                return true;
-            }
-
-            if (string.Equals(prefabPath, SummonSlot3ProjectilePrefabPath, StringComparison.Ordinal))
-            {
-                sourcePrefabPath = ImportedMagicMissilesHolyMissilePrefabPath;
-                visualName = "MagicMissilesHolyVanguardBolt";
-                localScale = new Vector3(0.44f, 0.44f, 0.95f);
                 return true;
             }
 
@@ -3321,7 +3401,7 @@ namespace DimensionBrawl.Editor
 
             BossPressureCostLadder bossPressureCost = EnsureComponent<BossPressureCostLadder>(bossProxy);
             bossPressureCost.ConfigureReferences(laneSpace, bossProxy.transform);
-            SetFloat(bossPressureCost, "baseCostPerSecond", 23f);
+            SetFloat(bossPressureCost, "baseCostPerSecond", 12f);
             SetFloat(bossPressureCost, "fallbackBossForwardRisk01", 0.25f);
 
             BossSummonPressureAction bossSummonPressureAction = EnsureComponent<BossSummonPressureAction>(bossProxy);
@@ -3697,6 +3777,18 @@ namespace DimensionBrawl.Editor
                 laneSpace.GetBattlefieldWorldPoint(laneSpace.HalfWidth + 1.2f, laneSpace.SummonEntryZ, 0.45f),
                 new Vector3(0.55f, 0.9f, 0.55f),
                 summonMaterial);
+        }
+
+        private static void DeactivateArenaDressingVfx(Scene scene)
+        {
+            GameObject root = FindRoot(scene, ArenaVfxRootName);
+            if (root == null)
+            {
+                return;
+            }
+
+            root.SetActive(false);
+            EditorUtility.SetDirty(root);
         }
 
         private static void CreateBossBarrageTelegraphMarkers(
@@ -4529,6 +4621,72 @@ namespace DimensionBrawl.Editor
                 rangedAnimator);
         }
 
+        private static void ConfigurePlayerDamageShaderFeedback(
+            GameObject player,
+            CombatHealth playerHealth,
+            PlayerCombatModeVisualBinding combatModeVisuals)
+        {
+            CombatHitFeedback feedback = EnsureComponent<CombatHitFeedback>(player);
+            Renderer[] renderers = CollectPlayerDamageFeedbackRenderers(combatModeVisuals);
+            if (renderers.Length == 0)
+            {
+                throw new InvalidOperationException("Player damage shader feedback needs at least one promoted player renderer.");
+            }
+
+            SetObjectReference(feedback, "health", playerHealth);
+            SetObjectReferenceArray(feedback, "flashRenderers", ToObjectArray(renderers));
+            SetBool(feedback, "renderHitFeedback", true);
+            SetBool(feedback, "applyIdleColorOnEnable", false);
+            SetFloat(feedback, "flashSeconds", 0.12f);
+            SetColor(feedback, "hitColor", new Color(1f, 0.46f, 0.38f, 1f));
+            SetColor(feedback, "deathColor", new Color(0.12f, 0.02f, 0.025f, 1f));
+            EditorUtility.SetDirty(player);
+            EditorUtility.SetDirty(feedback);
+        }
+
+        private static Renderer[] CollectPlayerDamageFeedbackRenderers(PlayerCombatModeVisualBinding combatModeVisuals)
+        {
+            var renderers = new List<Renderer>();
+            AddEnabledRenderers(renderers, combatModeVisuals.RangedRoot);
+            AddEnabledRenderers(renderers, combatModeVisuals.RangedWeaponRoot);
+            AddEnabledRenderers(renderers, combatModeVisuals.MeleeRoot);
+            AddEnabledRenderers(renderers, combatModeVisuals.MeleeWeaponRoot);
+            return renderers.ToArray();
+        }
+
+        private static void AddEnabledRenderers(List<Renderer> renderers, GameObject root)
+        {
+            if (renderers == null || root == null)
+            {
+                return;
+            }
+
+            Renderer[] found = CollectEnabledRenderers(root);
+            for (int i = 0; i < found.Length; i++)
+            {
+                if (found[i] != null && !renderers.Contains(found[i]))
+                {
+                    renderers.Add(found[i]);
+                }
+            }
+        }
+
+        private static UnityEngine.Object[] ToObjectArray(Renderer[] renderers)
+        {
+            if (renderers == null || renderers.Length == 0)
+            {
+                return Array.Empty<UnityEngine.Object>();
+            }
+
+            var objects = new UnityEngine.Object[renderers.Length];
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                objects[i] = renderers[i];
+            }
+
+            return objects;
+        }
+
         private static GameObject CreateInoriRangedWeapon(Scene scene, Transform inoriModelRoot)
         {
             GameObject sourceAsset = LoadAsset<GameObject>(RifleGirlSourcePrefabPath);
@@ -5084,8 +5242,8 @@ namespace DimensionBrawl.Editor
             SetEnum(driver, "damagedCueId", (int)CombatVfxCueId.PlayerDamaged);
             SetEnum(driver, "criticalCueId", (int)CombatVfxCueId.PlayerCritical);
             SetFloat(driver, "pressureDamageCueScale", 0.62f);
-            SetBool(driver, "playDamageVfx", false);
-            SetBool(driver, "playCriticalVfx", false);
+            SetBool(driver, "playDamageVfx", true);
+            SetBool(driver, "playCriticalVfx", true);
             EditorUtility.SetDirty(player);
             EditorUtility.SetDirty(driver);
         }
@@ -5243,8 +5401,8 @@ namespace DimensionBrawl.Editor
             ValidateEnum(driver, "damagedCueId", (int)CombatVfxCueId.PlayerDamaged);
             ValidateEnum(driver, "criticalCueId", (int)CombatVfxCueId.PlayerCritical);
             ValidateFloat(driver, "pressureDamageCueScale", 0.62f);
-            ValidateBool(driver, "playDamageVfx", false);
-            ValidateBool(driver, "playCriticalVfx", false);
+            ValidateBool(driver, "playDamageVfx", true);
+            ValidateBool(driver, "playCriticalVfx", true);
         }
 
         private static void ValidateSummonEnergyVfxCuePresenter(
@@ -5453,7 +5611,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(hud, "duelReviewOwner", null);
             SetObjectReference(hud, "stageProfile", stageProfile);
             hud.AssignStageProfileForReview(stageProfile);
-            SetBool(hud, "showCenterReticle", false);
+            SetBool(hud, "showCenterReticle", true);
             SetBool(hud, "showResultBanner", true);
             SetString(hud, "stageEpisodeLabel", stageProfile.StageEpisodeLabel);
             SetString(hud, "objectiveBadgeLabel", stageProfile.ObjectiveBadgeLabel);
@@ -5476,6 +5634,9 @@ namespace DimensionBrawl.Editor
             SetObjectReference(mobileHud, "summonSlot3Action", summonSlot3Action);
             SetString(mobileHud, "summonSlot2ActionName", "SummonSlot2");
             SetString(mobileHud, "summonSlot3ActionName", "SummonSlot3");
+            SetString(mobileHud, "summonSlot1Label", "S1 SLAM");
+            SetString(mobileHud, "summonSlot2Label", "S2 LASER");
+            SetString(mobileHud, "summonSlot3Label", "S3 DRAGON");
             SetFloat(mobileHud, "buttonSize", 168f);
             SetFloat(mobileHud, "buttonGap", 38f);
             SetFloat(mobileHud, "margin", 72f);
@@ -5542,6 +5703,23 @@ namespace DimensionBrawl.Editor
                 mobileHud,
                 screenCuePresenter);
             ConfigureOverlayRoutes(overlayHud);
+            SetBool(hud, "showHud", false);
+            SetBool(mobileHud, "drawHudVisuals", false);
+            SetBool(overlayHud, "drawIdleButton", false);
+            CreateCombatHudCanvas(
+                scene,
+                playerHealth,
+                bossHealth,
+                energyLadder,
+                player.GetComponent<PlayerActionController>(),
+                combatModeController,
+                rangedBasicAttackAction,
+                skill1Action,
+                summonSlot1Action,
+                summonSlot2Action,
+                summonSlot3Action,
+                pocketOwner,
+                overlayHud);
             // Touch/reticle composition is review-scene HUD tuning. Keep it Inspector-authored.
             EditorUtility.SetDirty(hud);
             EditorUtility.SetDirty(mobileHud);
@@ -5626,20 +5804,22 @@ namespace DimensionBrawl.Editor
             SetInt(summonSlot1Action, "actorPrewarmCount", 2);
             SetInt(summonSlot1Action, "maxActiveSummonActors", 1);
             SetFloat(summonSlot1Action, "entryForwardOffset", 1.35f);
-            SetFloat(summonSlot1Action, "actorEntryCatchupSecondsPerMeter", 0.55f);
-            summonSlot1Action.ConfigureRequiredSummonMana(100f);
+            SetFloat(summonSlot1Action, "actorEntryCatchupSecondsPerMeter", 0.12f);
+            summonSlot1Action.ConfigureRequiredSummonMana(200f);
+            summonSlot1Action.ConfigureSlotCooldown(9.5f);
             summonSlot1Action.ConfigureSummonActionProfile(
                 LoadAsset<SummonSlotActionProfile>(SummonSlot1ActionProfilePath));
             EditorUtility.SetDirty(summonSlot1Action);
 
             PlayerSupportSummonSlotAction summonSlot2Action = EnsureSupportSummonSlotAction(playerRoot, "SummonSlot2");
             summonSlot2Action.ConfigureSlot("SummonSlot2", Key.Digit2, new Vector2(-1.55f, 0.35f));
-            summonSlot2Action.ConfigureRequiredSummonMana(200f);
-            summonSlot2Action.ConfigureMinimumSummonTier(2);
+            summonSlot2Action.ConfigureRequiredSummonMana(100f);
+            summonSlot2Action.ConfigureMinimumSummonTier(1);
+            summonSlot2Action.ConfigureSlotCooldown(4.8f);
             SetInt(summonSlot2Action, "maxActiveSummonActors", 1);
             SetFloat(summonSlot2Action, "entryForwardOffset", 1.35f);
-            SetFloat(summonSlot2Action, "actorEntryCatchupSecondsPerMeter", 0.55f);
-            summonSlot2Action.ConfigureSupportCadence(0.1f, 0.78f, 2);
+            SetFloat(summonSlot2Action, "actorEntryCatchupSecondsPerMeter", 0.1f);
+            summonSlot2Action.ConfigureSupportCadence(0.18f, 1.05f, 3);
             summonSlot2Action.ConfigureReferences(
                 energyLadder,
                 playerHealth,
@@ -5662,10 +5842,11 @@ namespace DimensionBrawl.Editor
             summonSlot3Action.ConfigureSlot("SummonSlot3", Key.Digit3, new Vector2(1.55f, 0.55f));
             summonSlot3Action.ConfigureRequiredSummonMana(300f);
             summonSlot3Action.ConfigureMinimumSummonTier(3);
+            summonSlot3Action.ConfigureSlotCooldown(15.0f);
             SetInt(summonSlot3Action, "maxActiveSummonActors", 1);
             SetFloat(summonSlot3Action, "entryForwardOffset", 1.35f);
-            SetFloat(summonSlot3Action, "actorEntryCatchupSecondsPerMeter", 0.55f);
-            summonSlot3Action.ConfigureSupportCadence(0.15f, 1.05f, 3);
+            SetFloat(summonSlot3Action, "actorEntryCatchupSecondsPerMeter", 0.12f);
+            summonSlot3Action.ConfigureSupportCadence(0.65f, 2.4f, 1);
             summonSlot3Action.ConfigureReferences(
                 energyLadder,
                 playerHealth,
@@ -5959,7 +6140,7 @@ namespace DimensionBrawl.Editor
                     cinematicSupportAnchor,
                     cinematicCueProfile);
             ActionCameraCueDriver cueDriver = EnsureComponent<ActionCameraCueDriver>(cameraController.gameObject);
-            SetBehaviourEnabled(cueDriver, false);
+            SetBehaviourEnabled(cueDriver, true);
             SetObjectReference(cueDriver, "actionController", actionController);
             SetObjectReference(cueDriver, "movement", movement);
             SetObjectReference(cueDriver, "skill1Action", skill1Action);
@@ -6181,7 +6362,7 @@ namespace DimensionBrawl.Editor
             Transform cueSpace)
         {
             BossBarrageCameraCueDriver cueDriver = EnsureComponent<BossBarrageCameraCueDriver>(cameraController.gameObject);
-            SetBehaviourEnabled(cueDriver, false);
+            SetBehaviourEnabled(cueDriver, true);
             cueDriver.Configure(bossBarrageEmitter, cameraController, cueSpace, bossPressureActionDirector);
             SetObjectReference(cueDriver, "bossBarrageEmitter", bossBarrageEmitter);
             SetObjectReference(cueDriver, "bossPressureActionDirector", bossPressureActionDirector);
@@ -6296,7 +6477,7 @@ namespace DimensionBrawl.Editor
             PlayerSummonSlot1Action summonSlot1Action,
             ActionCinematicCueDirector cinematicCueDirector)
         {
-            ValidateBehaviourEnabled(cueDriver, false);
+            ValidateBehaviourEnabled(cueDriver, true);
             ValidateObjectReference(cueDriver, "actionController", actionController);
             ValidateObjectReference(cueDriver, "movement", movement);
             ValidateObjectReference(cueDriver, "skill1Action", skill1Action);
@@ -6644,7 +6825,7 @@ namespace DimensionBrawl.Editor
             BossBarrageEmitter bossBarrageEmitter,
             Transform cueSpace)
         {
-            ValidateBehaviourEnabled(cueDriver, false);
+            ValidateBehaviourEnabled(cueDriver, true);
             ValidateObjectReference(cueDriver, "bossBarrageEmitter", bossBarrageEmitter);
             ValidateObjectReference(
                 cueDriver,
@@ -6797,6 +6978,43 @@ namespace DimensionBrawl.Editor
             }
 
             ValidatePromotedParticleVfx(projectilePrefab.transform.Find(childName), label, 2);
+            if (projectilePrefab.GetComponent<TrailRenderer>() != null)
+            {
+                throw new InvalidOperationException($"{label} should not fall back to generated TrailRenderer visuals.");
+            }
+        }
+
+        private static void ValidatePrimitiveLaneProjectilePrefab(
+            string prefabPath,
+            string childName,
+            string label)
+        {
+            GameObject projectilePrefab = LoadAsset<GameObject>(prefabPath);
+            MeshRenderer rootRenderer = projectilePrefab.GetComponent<MeshRenderer>();
+            if (rootRenderer == null)
+            {
+                throw new InvalidOperationException($"{label} should keep a hidden collision root MeshRenderer.");
+            }
+
+            if (rootRenderer.enabled)
+            {
+                throw new InvalidOperationException($"{label} root MeshRenderer must stay hidden behind the authored primitive VFX.");
+            }
+
+            Transform visual = projectilePrefab.transform.Find(childName);
+            if (visual == null)
+            {
+                throw new InvalidOperationException($"{label} is missing {childName}.");
+            }
+
+            MeshRenderer renderer = visual.GetComponent<MeshRenderer>();
+            if (renderer == null || !renderer.enabled)
+            {
+                throw new InvalidOperationException($"{label} primitive VFX should expose an enabled MeshRenderer.");
+            }
+
+            ValidateGameOwnedAsset(renderer.sharedMaterial, $"{label} primitive material");
+            ValidateRenderableMaterialShader(renderer.sharedMaterial, $"{label} primitive material shader");
             if (projectilePrefab.GetComponent<TrailRenderer>() != null)
             {
                 throw new InvalidOperationException($"{label} should not fall back to generated TrailRenderer visuals.");
@@ -7072,8 +7290,36 @@ namespace DimensionBrawl.Editor
             }
         }
 
-        private static void ValidateSuppressedCombatHitFeedback(Scene scene)
+        private static void ValidatePlayerDamageShaderFeedback(
+            Scene scene,
+            GameObject player,
+            CombatHealth playerHealth)
         {
+            CombatHitFeedback playerFeedback =
+                RequireComponent<CombatHitFeedback>(player, "player damage shader feedback");
+            ValidateObjectReference(playerFeedback, "health", playerHealth);
+            ValidateBool(playerFeedback, "renderHitFeedback", true);
+            ValidateBool(playerFeedback, "applyIdleColorOnEnable", false);
+            ValidateFloat(playerFeedback, "flashSeconds", 0.12f);
+            ValidateColor(playerFeedback, "hitColor", new Color(1f, 0.46f, 0.38f, 1f));
+
+            SerializedProperty flashRenderers =
+                RequireProperty(new SerializedObject(playerFeedback), "flashRenderers");
+            if (!flashRenderers.isArray || flashRenderers.arraySize < 3)
+            {
+                throw new InvalidOperationException(
+                    "Player damage shader feedback should bind multiple promoted player renderers.");
+            }
+
+            for (int i = 0; i < flashRenderers.arraySize; i++)
+            {
+                if (flashRenderers.GetArrayElementAtIndex(i).objectReferenceValue is not Renderer)
+                {
+                    throw new InvalidOperationException(
+                        $"Player damage shader feedback renderer slot {i} should reference a Renderer.");
+                }
+            }
+
             GameObject[] rootObjects = scene.GetRootGameObjects();
             for (int i = 0; i < rootObjects.Length; i++)
             {
@@ -7081,6 +7327,11 @@ namespace DimensionBrawl.Editor
                     rootObjects[i].GetComponentsInChildren<CombatHitFeedback>(includeInactive: true);
                 for (int j = 0; j < hitFeedbacks.Length; j++)
                 {
+                    if (hitFeedbacks[j] == playerFeedback)
+                    {
+                        continue;
+                    }
+
                     ValidateBool(hitFeedbacks[j], "renderHitFeedback", false);
                 }
             }
@@ -7350,8 +7601,8 @@ namespace DimensionBrawl.Editor
             ValidateEnum(summonSlot1Action, "sourceTeam", (int)DamageTeam.AllySummon);
             ValidateInt(summonSlot1Action, "maxActiveSummonActors", 1);
             ValidateFloat(summonSlot1Action, "entryForwardOffset", 1.35f);
-            ValidateFloatAtLeast(summonSlot1Action, "actorEntryCatchupSecondsPerMeter", 0.3f);
-            ValidateFloat(summonSlot1Action, "requiredSummonMana", 100f);
+            ValidateFloatAtLeast(summonSlot1Action, "actorEntryCatchupSecondsPerMeter", 0.1f);
+            ValidateFloat(summonSlot1Action, "requiredSummonMana", 200f);
             SummonSlotActionProfile summonSlot1Profile = LoadAsset<SummonSlotActionProfile>(SummonSlot1ActionProfilePath);
             ValidateObjectReference(
                 summonSlot1Action,
@@ -7360,63 +7611,72 @@ namespace DimensionBrawl.Editor
             ValidateSummonSlotReadout(
                 summonSlot1Profile,
                 1,
-                "LV1 Guard Entry",
-                "Emergency pressure screen for urgent boss fire after close-threat relief.",
-                "Spend early when the pocket needs an immediate boss-fire block.",
-                "Small ShieldBreaker enters from the player front, advances toward the boss lane, and fires one assist bolt.");
+                "LV1 Jump Slam",
+                "Mid-cost bruiser that spends a saved bar for one obvious landing impact, then stays as melee pressure.",
+                "Hold EN until a boss summon or recovery window is worth a visible slam answer.",
+                "SciFi bruiser jumps from the player front, lands with a clear slam burst, and keeps punching the frontline.");
             ValidateSummonSlotReadout(
                 summonSlot1Profile,
                 2,
-                "LV2 Frontline Push",
-                "Mid-tier exchange that starts converting a successful block into forward damage.",
-                "Hold forward-risk long enough for LV2 when the barrage is readable.",
-                "Wider screen, four-shot block budget, two assist bolts, and a timed frontline push.");
+                "LV2 Heavy Landing",
+                "Higher stored-EN version with a wider landing and enough health to hold contact longer.",
+                "Use when the boss is about to stay in a punishable lane and a cheap laser will not change the exchange.",
+                "Bigger arc, two shock bolts, a broader slam ring, and steadier melee lockdown.");
             ValidateSummonSlotReadout(
                 summonSlot1Profile,
                 3,
-                "LV3 Break Window",
-                "High-risk payoff that should visibly win the pressure exchange and open the Skill1 follow-up.",
-                "Save for hard boss pressure when retreat alone will not stabilize the pocket.",
-                "Large ShieldBreaker screen, seven-shot block budget, three assist bolts, and a committed boss-lane push.");
+                "LV3 Crater Break",
+                "High-stored-EN payoff that should visibly interrupt the lane and keep fighting after impact.",
+                "Save for the exchange where one big arrival has to change the screen immediately.",
+                "Tall jump arc, three shock bolts, large slam ring, and a durable bruiser body that remains in melee without out-DPSing the boss summons.");
             ValidateSummonSlotTier(
                 summonSlot1Profile,
                 1,
-                "ShieldBreaker",
-                expectedActorScale: 2.025f,
-                expectedActorMaxHealth: 230f,
-                expectedActorMoveSpeed: 1.45f,
-                expectedActorEngageRadius: 0.95f,
-                expectedActorAttackDamagePerSecond: 22f,
-                expectedActorAttackIntervalSeconds: 0.35f,
-                expectedActorLifetimeSeconds: 4.4f,
-                expectedActorAdvanceDistance: 2.2f,
-                expectedScreenIntercepts: 2);
+                "JumpSlamBruiser",
+                expectedActorScale: 2.0f,
+                expectedActorMaxHealth: 250f,
+                expectedActorMoveSpeed: 3.4f,
+                expectedActorEngageRadius: 1.1f,
+                expectedActorAttackDamagePerSecond: 12f,
+                expectedActorAttackIntervalSeconds: 1.05f,
+                expectedActorLifetimeSeconds: 0f,
+                expectedActorAdvanceDistance: 4.0f,
+                expectedScreenIntercepts: 1,
+                expectedScreenRadius: 1.55f,
+                expectedScreenLifetimeSeconds: 1.45f,
+                expectedCounterDamage: 18.56f);
             ValidateSummonSlotTier(
                 summonSlot1Profile,
                 2,
-                "ShieldBreaker",
-                expectedActorScale: 2.43f,
-                expectedActorMaxHealth: 300f,
-                expectedActorMoveSpeed: 1.6f,
-                expectedActorEngageRadius: 1.05f,
-                expectedActorAttackDamagePerSecond: 28f,
-                expectedActorAttackIntervalSeconds: 0.35f,
-                expectedActorLifetimeSeconds: 5.2f,
-                expectedActorAdvanceDistance: 3.0f,
-                expectedScreenIntercepts: 4);
+                "JumpSlamBruiser",
+                expectedActorScale: 2.36f,
+                expectedActorMaxHealth: 420f,
+                expectedActorMoveSpeed: 3.8f,
+                expectedActorEngageRadius: 1.2f,
+                expectedActorAttackDamagePerSecond: 20f,
+                expectedActorAttackIntervalSeconds: 1.1f,
+                expectedActorLifetimeSeconds: 0f,
+                expectedActorAdvanceDistance: 4.8f,
+                expectedScreenIntercepts: 2,
+                expectedScreenRadius: 1.75f,
+                expectedScreenLifetimeSeconds: 1.8f,
+                expectedCounterDamage: 29.44f);
             ValidateSummonSlotTier(
                 summonSlot1Profile,
                 3,
-                "ShieldBreaker",
-                expectedActorScale: 2.88f,
-                expectedActorMaxHealth: 380f,
-                expectedActorMoveSpeed: 1.7f,
-                expectedActorEngageRadius: 1.15f,
-                expectedActorAttackDamagePerSecond: 38f,
-                expectedActorAttackIntervalSeconds: 0.35f,
-                expectedActorLifetimeSeconds: 6.2f,
-                expectedActorAdvanceDistance: 4.0f,
-                expectedScreenIntercepts: 7);
+                "JumpSlamBruiser",
+                expectedActorScale: 2.74f,
+                expectedActorMaxHealth: 600f,
+                expectedActorMoveSpeed: 4.2f,
+                expectedActorEngageRadius: 1.32f,
+                expectedActorAttackDamagePerSecond: 30f,
+                expectedActorAttackIntervalSeconds: 1.15f,
+                expectedActorLifetimeSeconds: 0f,
+                expectedActorAdvanceDistance: 5.6f,
+                expectedScreenIntercepts: 3,
+                expectedScreenRadius: 1.95f,
+                expectedScreenLifetimeSeconds: 2.15f,
+                expectedCounterDamage: 40.32f);
 
             SummonFrontlineProxy summonActorPrefab = LoadPrefabComponent<SummonFrontlineProxy>(SummonSlot1ActorPrefabPath);
             SummonPressureScreen pressureScreen = LoadPrefabComponent<SummonPressureScreen>(SummonSlot1ActorPrefabPath);
@@ -7504,7 +7764,8 @@ namespace DimensionBrawl.Editor
             ValidateSummonActorAnimatorPresentation(
                 actorPresenter,
                 summonActorVisual,
-                "SummonSlot1 actor prefab");
+                "SummonSlot1 actor prefab",
+                expectedAnimatorMoveSpeedScale: 0.42f);
             ValidateFloat(actorPresenter, "entryFlashSeconds", 0.22f);
             ValidateFloat(actorPresenter, "impactFlashSeconds", 0.18f);
             ValidateFloat(actorPresenter, "clashFlashSeconds", 0.14f);
@@ -7561,7 +7822,7 @@ namespace DimensionBrawl.Editor
             ValidateInt(action, "minimumSummonTier", expectedMinimumSummonTier);
             ValidateInt(action, "maxActiveSummonActors", 1);
             ValidateFloat(action, "entryForwardOffset", 1.35f);
-            ValidateFloatAtLeast(action, "actorEntryCatchupSecondsPerMeter", 0.3f);
+            ValidateFloatAtLeast(action, "actorEntryCatchupSecondsPerMeter", 0.1f);
             SummonSlotActionProfile actionProfile = LoadAsset<SummonSlotActionProfile>(actionProfilePath);
             ValidateObjectReference(action, "summonActionProfile", actionProfile);
             ValidateSupportSummonRoleProfile(actionProfile, slotActionName);
@@ -7617,7 +7878,8 @@ namespace DimensionBrawl.Editor
             ValidateSummonActorAnimatorPresentation(
                 actorPresenter,
                 actorVisual,
-                $"{slotActionName} actor prefab");
+                $"{slotActionName} actor prefab",
+                expectedAnimatorMoveSpeedScale: 0.46f);
             ValidateFloat(actorPresenter, "clashFlashSeconds", 0.14f);
             ValidateFloat(actorPresenter, "clashFlashScale", 0.14f);
             ValidateNoImportedAssetReference(projectilePrefabPath);
@@ -7634,62 +7896,62 @@ namespace DimensionBrawl.Editor
                 ValidateSummonSlotReadout(
                     profile,
                     1,
-                    "LV1 Cover Shot",
-                    "Quick ranged support that adds two clean bolts without blocking boss pressure.",
-                    "Spend when the boss is open but the shield slot is not needed yet.",
-                    "Commando rifleman enters left of the player lane, advances toward the boss lane, and fires a narrow cover pair.");
+                    "LV1 Laser Tap",
+                    "Low-return ranged helper that sets up cleanly but cannot block pressure.",
+                    "Spend when the boss lane is open and a cheap ranged body is enough.",
+                    "SciFi rifleman slides into a side lane, flashes a cyan muzzle beam, and fires one clean laser line per volley.");
                 ValidateSummonSlotTier(
                     profile,
                     1,
-                    "BacklineMarksman",
-                    expectedActorScale: 2.1375f,
-                    expectedActorMaxHealth: 160f,
-                    expectedActorMoveSpeed: 1.35f,
-                    expectedActorEngageRadius: 0.82f,
-                    expectedActorAttackDamagePerSecond: 30f,
-                    expectedActorAttackIntervalSeconds: 0.35f,
+                    "LaserSoldier",
+                    expectedActorScale: 2.08f,
+                    expectedActorMaxHealth: 170f,
+                    expectedActorMoveSpeed: 2.8f,
+                    expectedActorEngageRadius: 0.72f,
+                    expectedActorAttackDamagePerSecond: 9f,
+                    expectedActorAttackIntervalSeconds: 1.15f,
                     expectedActorLifetimeSeconds: 0f,
-                    expectedActorAdvanceDistance: 1.2f,
+                    expectedActorAdvanceDistance: 1.35f,
                     expectedScreenIntercepts: 0);
                 ValidateSummonSlotReadout(
                     profile,
                     2,
-                    "LV2 Focus Volley",
-                    "Mid-tier support that pressures the boss lane with a wider three-shot answer.",
-                    "Hold EN when you can stay forward long enough for a stronger punish.",
-                    "Commando rifleman keeps a side-lane advance toward the boss and fires a three-bolt focused volley.");
+                    "LV2 Split Laser",
+                    "Mid-tier ranged support with two visible lines and controlled sustained pressure.",
+                    "Hold EN if the boss will stay exposed for more than one volley.",
+                    "Laser soldier fires one sharper cyan line with a larger beam flash while staying fragile.");
                 ValidateSummonSlotTier(
                     profile,
                     2,
-                    "BacklineMarksman",
-                    expectedActorScale: 2.3625f,
-                    expectedActorMaxHealth: 190f,
-                    expectedActorMoveSpeed: 1.42f,
-                    expectedActorEngageRadius: 0.86f,
-                    expectedActorAttackDamagePerSecond: 44f,
-                    expectedActorAttackIntervalSeconds: 0.35f,
+                    "LaserSoldier",
+                    expectedActorScale: 2.32f,
+                    expectedActorMaxHealth: 205f,
+                    expectedActorMoveSpeed: 3.1f,
+                    expectedActorEngageRadius: 0.78f,
+                    expectedActorAttackDamagePerSecond: 12f,
+                    expectedActorAttackIntervalSeconds: 1.25f,
                     expectedActorLifetimeSeconds: 0f,
-                    expectedActorAdvanceDistance: 1.45f,
+                    expectedActorAdvanceDistance: 1.6f,
                     expectedScreenIntercepts: 0);
                 ValidateSummonSlotReadout(
                     profile,
                     3,
-                    "LV3 Marksman Burst",
-                    "High-tier ranged support for a clear boss punish window after surviving pressure.",
-                    "Use when the next exchange should convert defense into visible boss damage.",
-                    "Commando rifleman stays alive long enough to send repeated four-bolt volleys across the contested lane.");
+                    "LV3 Prism Burst",
+                    "High-tier glass-cannon support that widens the lane punish without becoming a turret.",
+                    "Use when the player has created a long punish window and does not need a blocker.",
+                    "Wider two-line laser burst and stronger muzzle beam, but a slower cadence and low body safety.");
                 ValidateSummonSlotTier(
                     profile,
                     3,
-                    "BacklineMarksman",
-                    expectedActorScale: 2.61f,
-                    expectedActorMaxHealth: 225f,
-                    expectedActorMoveSpeed: 1.5f,
-                    expectedActorEngageRadius: 0.9f,
-                    expectedActorAttackDamagePerSecond: 58f,
-                    expectedActorAttackIntervalSeconds: 0.35f,
+                    "LaserSoldier",
+                    expectedActorScale: 2.56f,
+                    expectedActorMaxHealth: 250f,
+                    expectedActorMoveSpeed: 3.4f,
+                    expectedActorEngageRadius: 0.84f,
+                    expectedActorAttackDamagePerSecond: 16f,
+                    expectedActorAttackIntervalSeconds: 1.35f,
                     expectedActorLifetimeSeconds: 0f,
-                    expectedActorAdvanceDistance: 1.75f,
+                    expectedActorAdvanceDistance: 1.85f,
                     expectedScreenIntercepts: 0);
                 return;
             }
@@ -7699,63 +7961,63 @@ namespace DimensionBrawl.Editor
                 ValidateSummonSlotReadout(
                     profile,
                     1,
-                    "LV1 Body Block",
-                    "Short vanguard entry that brings an actual guard screen before answering once.",
-                    "Spend if the player is cornered near the backline and needs breathing room.",
-                    "FinalStandCommander enters right of the lane and pushes toward the frontline with a body-and-screen block.");
+                    "LV1 Fire Breath",
+                    "Expensive ranged summon that trades speed and cadence for a wide flame lane.",
+                    "Spend only when the boss is committed and the player can live without a blocker.",
+                    "Fire dragon hovers above the lane and breathes one broad fire lance from a visible orange beam.");
                 ValidateSummonSlotTier(
                     profile,
                     1,
-                    "VanguardCommander",
-                    expectedActorScale: 2.3625f,
-                    expectedActorMaxHealth: 360f,
-                    expectedActorMoveSpeed: 1.15f,
+                    "FireDragon",
+                    expectedActorScale: 2.42f,
+                    expectedActorMaxHealth: 520f,
+                    expectedActorMoveSpeed: 2.35f,
                     expectedActorEngageRadius: 1.18f,
                     expectedActorAttackDamagePerSecond: 32f,
-                    expectedActorAttackIntervalSeconds: 0.35f,
+                    expectedActorAttackIntervalSeconds: 1.9f,
                     expectedActorLifetimeSeconds: 0f,
                     expectedActorAdvanceDistance: 1.35f,
-                    expectedScreenIntercepts: 2);
+                    expectedScreenIntercepts: 0);
                 ValidateSummonSlotReadout(
                     profile,
                     2,
-                    "LV2 Hold Line",
-                    "Tankier frontline actor that can absorb a small boss curtain before counterfire.",
-                    "Hold EN when the next boss pressure wave is readable but dense.",
-                    "FinalStandCommander advances until contested, holds a four-hit screen, then fires two heavy bolts.");
+                    "LV2 Furnace Sweep",
+                    "Mid-tier dragon breath covers a wider lane and rewards a longer punish read.",
+                    "Hold EN when the boss will remain exposed after the first breath tick.",
+                    "Larger hovering dragon, two fire chunks, wider lateral spread, and a stronger breath beam.");
                 ValidateSummonSlotTier(
                     profile,
                     2,
-                    "VanguardCommander",
-                    expectedActorScale: 2.655f,
-                    expectedActorMaxHealth: 430f,
-                    expectedActorMoveSpeed: 1.2f,
-                    expectedActorEngageRadius: 1.25f,
+                    "FireDragon",
+                    expectedActorScale: 2.72f,
+                    expectedActorMaxHealth: 680f,
+                    expectedActorMoveSpeed: 2.65f,
+                    expectedActorEngageRadius: 1.26f,
                     expectedActorAttackDamagePerSecond: 46f,
-                    expectedActorAttackIntervalSeconds: 0.35f,
+                    expectedActorAttackIntervalSeconds: 2.1f,
                     expectedActorLifetimeSeconds: 0f,
-                    expectedActorAdvanceDistance: 1.7f,
-                    expectedScreenIntercepts: 4);
+                    expectedActorAdvanceDistance: 1.6f,
+                    expectedScreenIntercepts: 0);
                 ValidateSummonSlotReadout(
                     profile,
                     3,
-                    "LV3 Break Wall",
-                    "High-cost vanguard actor and screen for stabilizing a bad exchange and forcing a counter window.",
-                    "Save for the committed boss pattern that would otherwise push the player back.",
-                    "FinalStandCommander drives into the frontline with a seven-hit screen and heavy three-shot response.");
+                    "LV3 Inferno Beam",
+                    "High-risk high-return dragon that should visibly dominate a punish window.",
+                    "Save for the long boss recovery where raw damage matters more than defense.",
+                    "Largest hover silhouette, three wide fire chunks, long orange breath beam, and slow high-cost burn pressure.");
                 ValidateSummonSlotTier(
                     profile,
                     3,
-                    "VanguardCommander",
-                    expectedActorScale: 3.015f,
-                    expectedActorMaxHealth: 520f,
-                    expectedActorMoveSpeed: 1.25f,
-                    expectedActorEngageRadius: 1.34f,
-                    expectedActorAttackDamagePerSecond: 62f,
-                    expectedActorAttackIntervalSeconds: 0.35f,
+                    "FireDragon",
+                    expectedActorScale: 3.06f,
+                    expectedActorMaxHealth: 900f,
+                    expectedActorMoveSpeed: 2.95f,
+                    expectedActorEngageRadius: 1.36f,
+                    expectedActorAttackDamagePerSecond: 68f,
+                    expectedActorAttackIntervalSeconds: 2.3f,
                     expectedActorLifetimeSeconds: 0f,
-                    expectedActorAdvanceDistance: 2.1f,
-                    expectedScreenIntercepts: 7);
+                    expectedActorAdvanceDistance: 1.85f,
+                    expectedScreenIntercepts: 0);
             }
         }
 
@@ -7839,7 +8101,7 @@ namespace DimensionBrawl.Editor
         {
             ValidateObjectReference(bossPressureCost, "laneSpace", laneSpace);
             ValidateObjectReference(bossPressureCost, "trackedBoss", bossTransform);
-            ValidateFloat(bossPressureCost, "baseCostPerSecond", 23f);
+            ValidateFloat(bossPressureCost, "baseCostPerSecond", 12f);
             ValidateFloat(bossPressureCost, "fallbackBossForwardRisk01", 0.25f);
 
             ValidateObjectReference(bossPressurePosition, "laneSpace", laneSpace);
@@ -7892,13 +8154,13 @@ namespace DimensionBrawl.Editor
                 expectedActorLifetimeSeconds: 0f,
                 expectedActorAdvanceDistance: 2.4f,
                 expectedActorRoleId: "EscortProbe",
-                expectedActorMaxHealth: 220f,
-                expectedActorMoveSpeed: 2.35f,
+                expectedActorMaxHealth: 560f,
+                expectedActorMoveSpeed: 3.2f,
                 expectedActorEngageRadius: 1.25f,
-                expectedActorAttackDamagePerSecond: 32f,
-                expectedActorAttackIntervalSeconds: 0.35f,
-                expectedScreenIntercepts: 2,
-                expectedScreenLifetimeSeconds: 2.6f);
+                expectedActorAttackDamagePerSecond: 42f,
+                expectedActorAttackIntervalSeconds: 0.78f,
+                expectedScreenIntercepts: 3,
+                expectedScreenLifetimeSeconds: 3.2f);
             ValidateBossSummonPressureReadout(
                 bossSummonPressureProfile,
                 2,
@@ -7914,13 +8176,13 @@ namespace DimensionBrawl.Editor
                 expectedActorLifetimeSeconds: 0f,
                 expectedActorAdvanceDistance: 3.8f,
                 expectedActorRoleId: "PressureScreen",
-                expectedActorMaxHealth: 320f,
-                expectedActorMoveSpeed: 2.15f,
+                expectedActorMaxHealth: 820f,
+                expectedActorMoveSpeed: 3.6f,
                 expectedActorEngageRadius: 1.35f,
-                expectedActorAttackDamagePerSecond: 44f,
-                expectedActorAttackIntervalSeconds: 0.35f,
-                expectedScreenIntercepts: 4,
-                expectedScreenLifetimeSeconds: 3.4f);
+                expectedActorAttackDamagePerSecond: 62f,
+                expectedActorAttackIntervalSeconds: 0.84f,
+                expectedScreenIntercepts: 5,
+                expectedScreenLifetimeSeconds: 4.0f);
             ValidateBossSummonPressureReadout(
                 bossSummonPressureProfile,
                 3,
@@ -7936,13 +8198,13 @@ namespace DimensionBrawl.Editor
                 expectedActorLifetimeSeconds: 0f,
                 expectedActorAdvanceDistance: 5.2f,
                 expectedActorRoleId: "ClampGuard",
-                expectedActorMaxHealth: 460f,
-                expectedActorMoveSpeed: 1.95f,
+                expectedActorMaxHealth: 1180f,
+                expectedActorMoveSpeed: 4.0f,
                 expectedActorEngageRadius: 1.5f,
-                expectedActorAttackDamagePerSecond: 58f,
-                expectedActorAttackIntervalSeconds: 0.35f,
-                expectedScreenIntercepts: 7,
-                expectedScreenLifetimeSeconds: 4.2f);
+                expectedActorAttackDamagePerSecond: 88f,
+                expectedActorAttackIntervalSeconds: 0.9f,
+                expectedScreenIntercepts: 8,
+                expectedScreenLifetimeSeconds: 4.8f);
 
             SummonFrontlineProxy bossSummonActorPrefab =
                 LoadPrefabComponent<SummonFrontlineProxy>(BossSummonPressureActorPrefabPath);
@@ -8008,7 +8270,8 @@ namespace DimensionBrawl.Editor
             ValidateSummonActorAnimatorPresentation(
                 bossSummonActorPresenter,
                 bossSummonVisual,
-                "Boss summon pressure actor prefab");
+                "Boss summon pressure actor prefab",
+                expectedAnimatorMoveSpeedScale: 0.52f);
             ValidateFloat(bossSummonActorPresenter, "clashFlashSeconds", 0.14f);
             ValidateFloat(bossSummonActorPresenter, "clashFlashScale", 0.18f);
 
@@ -8023,7 +8286,7 @@ namespace DimensionBrawl.Editor
                 LoadAsset<BossPressureActionDeckProfile>(BossPressureActionDeckProfilePath));
             ValidateBool(bossPressureActionDirector, "actionsEnabled", true);
             ValidateBool(bossPressureActionDirector, "holdForNextTierActionWhenGateAllows", true);
-            ValidateFloat(bossPressureActionDirector, "globalRecoverySeconds", 0.35f);
+            ValidateFloat(bossPressureActionDirector, "globalRecoverySeconds", 1.1f);
             ValidateFloat(bossPressureActionDirector, "playerSummonResponseWindowSeconds", 4f);
             ValidateBossPressureActionSlot(
                 bossPressureActionDirector,
@@ -8065,7 +8328,7 @@ namespace DimensionBrawl.Editor
                 0.22f,
                 1f,
                 true,
-                1);
+                2);
             ValidateBossPressureActionSlot(
                 bossPressureActionDirector,
                 3,
@@ -8294,7 +8557,10 @@ namespace DimensionBrawl.Editor
             float expectedActorAttackIntervalSeconds,
             float expectedActorLifetimeSeconds,
             float expectedActorAdvanceDistance,
-            int expectedScreenIntercepts)
+            int expectedScreenIntercepts,
+            float expectedScreenRadius = -1f,
+            float expectedScreenLifetimeSeconds = -1f,
+            float expectedCounterDamage = -1f)
         {
             if (profile == null)
             {
@@ -8349,6 +8615,30 @@ namespace DimensionBrawl.Editor
             if (settings.ScreenIntercepts != expectedScreenIntercepts)
             {
                 throw new InvalidOperationException($"Summon slot tier {tier} has the wrong screen intercept count.");
+            }
+
+            if (expectedScreenRadius >= 0f)
+            {
+                ValidateFloatValue(
+                    settings.ScreenRadius,
+                    expectedScreenRadius,
+                    $"Summon slot tier {tier} has the wrong screen radius.");
+            }
+
+            if (expectedScreenLifetimeSeconds >= 0f)
+            {
+                ValidateFloatValue(
+                    settings.ScreenLifetimeSeconds,
+                    expectedScreenLifetimeSeconds,
+                    $"Summon slot tier {tier} has the wrong screen lifetime.");
+            }
+
+            if (expectedCounterDamage >= 0f)
+            {
+                ValidateFloatValue(
+                    settings.CounterDamage,
+                    expectedCounterDamage,
+                    $"Summon slot tier {tier} has the wrong counter damage.");
             }
         }
 
@@ -8664,7 +8954,8 @@ namespace DimensionBrawl.Editor
 
         private static void ConfigureSummonActorAnimatorPresentation(
             SummonFrontlineProxyPresenter actorPresenter,
-            Transform visual)
+            Transform visual,
+            float animatorMoveSpeedScale)
         {
             if (actorPresenter == null)
             {
@@ -8684,11 +8975,11 @@ namespace DimensionBrawl.Editor
             SetString(actorPresenter, "attackTrigger", SummonActorAttackTrigger);
             SetString(actorPresenter, "hitTrigger", string.Empty);
             SetString(actorPresenter, "deathTrigger", SummonActorDeathTrigger);
-            SetFloat(actorPresenter, "animatorMoveSpeedScale", 1f);
+            SetFloat(actorPresenter, "animatorMoveSpeedScale", animatorMoveSpeedScale);
             SetBool(actorPresenter, "playDamageVfx", false);
-            SetBool(actorPresenter, "renderDamageFeedback", false);
-            SetFloat(actorPresenter, "damageFlashSeconds", 0f);
-            SetFloat(actorPresenter, "damageFlashScale", 0f);
+            SetBool(actorPresenter, "renderDamageFeedback", true);
+            SetFloat(actorPresenter, "damageFlashSeconds", 0.16f);
+            SetFloat(actorPresenter, "damageFlashScale", 0.18f);
         }
 
         private static void ValidatePulseOnlyActorRenderers(
@@ -8710,7 +9001,8 @@ namespace DimensionBrawl.Editor
         private static void ValidateSummonActorAnimatorPresentation(
             SummonFrontlineProxyPresenter actorPresenter,
             Transform visual,
-            string label)
+            string label,
+            float expectedAnimatorMoveSpeedScale)
         {
             if (actorPresenter == null || visual == null)
             {
@@ -8729,7 +9021,7 @@ namespace DimensionBrawl.Editor
             ValidateString(actorPresenter, "attackTrigger", SummonActorAttackTrigger);
             ValidateString(actorPresenter, "hitTrigger", string.Empty);
             ValidateString(actorPresenter, "deathTrigger", SummonActorDeathTrigger);
-            ValidateFloat(actorPresenter, "animatorMoveSpeedScale", 1f);
+            ValidateFloat(actorPresenter, "animatorMoveSpeedScale", expectedAnimatorMoveSpeedScale);
             ValidateEnum(actorPresenter, "entryCueId", (int)CombatVfxCueId.EliteSummonSignal);
             ValidateEnum(actorPresenter, "attackCueId", (int)CombatVfxCueId.EnemyAttackActive);
             ValidateEnum(actorPresenter, "clashCueId", (int)CombatVfxCueId.EliteShieldSignal);
@@ -8737,9 +9029,9 @@ namespace DimensionBrawl.Editor
             ValidateEnum(actorPresenter, "deathCueId", (int)CombatVfxCueId.EnemyDeath);
             ValidateFloat(actorPresenter, "pressureDamageCueScale", 0.64f);
             ValidateBool(actorPresenter, "playDamageVfx", false);
-            ValidateBool(actorPresenter, "renderDamageFeedback", false);
-            ValidateFloat(actorPresenter, "damageFlashSeconds", 0f);
-            ValidateFloat(actorPresenter, "damageFlashScale", 0f);
+            ValidateBool(actorPresenter, "renderDamageFeedback", true);
+            ValidateFloat(actorPresenter, "damageFlashSeconds", 0.16f);
+            ValidateFloat(actorPresenter, "damageFlashScale", 0.18f);
             ValidateAnimatorParameter(
                 animator,
                 SummonActorMoveSpeedParameter,
@@ -8882,13 +9174,34 @@ namespace DimensionBrawl.Editor
 
             ValidateSummonPresentationCandidateProfile(
                 LoadAsset<SummonPresentationCandidateProfile>(SummonSlot1PresentationCandidateProfilePath),
-                "PlayerSummon.ShieldBreaker",
+                "PlayerSummon.JumpSlamBruiser",
                 SummonPresentationSide.PlayerSummon,
                 SummonSlot1ActorPrefabPath,
                 ActionFoundationEnemyRoleCandidateSetup.ShieldBreakerEliteCandidateProfilePath,
                 SummonSlot1ActorVisualName,
                 SummonSlot1ActorVisualRoleId,
                 vfxCueProfile);
+
+            ValidateSummonPresentationCandidateProfile(
+                LoadAsset<SummonPresentationCandidateProfile>(SummonSlot2PresentationCandidateProfilePath),
+                "PlayerSummon.LaserSoldier",
+                SummonPresentationSide.PlayerSummon,
+                SummonSlot2ActorPrefabPath,
+                ActionFoundationEnemyRoleCandidateSetup.LineCasterCandidateProfilePath,
+                SummonSlot2ActorVisualName,
+                SummonSlot2ActorVisualRoleId,
+                vfxCueProfile);
+
+            ValidateSummonPresentationCandidateProfile(
+                LoadAsset<SummonPresentationCandidateProfile>(SummonSlot3PresentationCandidateProfilePath),
+                "PlayerSummon.FireDragon",
+                SummonPresentationSide.PlayerSummon,
+                SummonSlot3ActorPrefabPath,
+                ActionFoundationEnemyRoleCandidateSetup.FinalStandCommanderEliteCandidateProfilePath,
+                SummonSlot3ActorVisualName,
+                SummonSlot3ActorVisualRoleId,
+                vfxCueProfile,
+                SummonSlot3DragonVisualPrefabPath);
 
             ValidateSummonPresentationCandidateProfile(
                 LoadAsset<SummonPresentationCandidateProfile>(BossSummonPressurePresentationCandidateProfilePath),
@@ -8909,11 +9222,15 @@ namespace DimensionBrawl.Editor
             string roleCandidateProfilePath,
             string visualChildName,
             string sourceRoleId,
-            CombatVfxCueProfile vfxCueProfile)
+            CombatVfxCueProfile vfxCueProfile,
+            string visualSourceOverridePath = null)
         {
             GameObject actorPrefab = LoadAsset<GameObject>(actorPrefabPath);
             CombatEnemyRoleCandidateProfile roleCandidate =
                 LoadAsset<CombatEnemyRoleCandidateProfile>(roleCandidateProfilePath);
+            GameObject visualSourceAsset = !string.IsNullOrWhiteSpace(visualSourceOverridePath)
+                ? LoadAsset<GameObject>(visualSourceOverridePath)
+                : roleCandidate.PromotedVisualSource;
             RuntimeAnimatorController animatorController =
                 ResolveActorVisualAnimatorController(actorPrefab, visualChildName);
 
@@ -8932,7 +9249,7 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"{profile.name} points to the wrong actor prefab.");
             }
 
-            if (profile.VisualSourceAsset != roleCandidate.PromotedVisualSource)
+            if (profile.VisualSourceAsset != visualSourceAsset)
             {
                 throw new InvalidOperationException($"{profile.name} points to the wrong promoted visual source.");
             }
@@ -9462,7 +9779,7 @@ namespace DimensionBrawl.Editor
                 throw new InvalidOperationException($"{hud.name}.StageProfileForReview is not bound to {stageProfile.name}.");
             }
 
-            ValidateBool(hud, "showCenterReticle", false);
+            ValidateBool(hud, "showCenterReticle", true);
             ValidateBool(hud, "showResultBanner", true);
             ValidateString(hud, "stageEpisodeLabel", stageProfile.StageEpisodeLabel);
             ValidateString(hud, "objectiveBadgeLabel", stageProfile.ObjectiveBadgeLabel);
@@ -9503,9 +9820,9 @@ namespace DimensionBrawl.Editor
             ValidateString(hud, "summonSlot3ActionName", "SummonSlot3");
             ValidateString(hud, "rangedAimActionName", "RangedAim");
             ValidateString(hud, "weaponSwapActionName", "WeaponSwap");
-            ValidateString(hud, "summonSlot1Label", "S1 SHIELD");
-            ValidateString(hud, "summonSlot2Label", "S2 ARROW");
-            ValidateString(hud, "summonSlot3Label", "S3 TANK");
+            ValidateString(hud, "summonSlot1Label", "S1 SLAM");
+            ValidateString(hud, "summonSlot2Label", "S2 LASER");
+            ValidateString(hud, "summonSlot3Label", "S3 DRAGON");
             ValidateString(hud, "lockedSummonLabel", "NEXT");
             ValidateFloat(hud, "buttonSize", 168f);
             ValidateFloat(hud, "buttonGap", 38f);
@@ -10328,10 +10645,28 @@ namespace DimensionBrawl.Editor
 
         private static Mesh LoadPrimitiveMesh(PrimitiveType primitiveType)
         {
+            string meshPath = ActionFoundationPrimitiveMeshRoot + "/DB_Primitive_" + primitiveType + ".asset";
+            EnsureFolderForAsset(meshPath);
+            Mesh promotedMesh = AssetDatabase.LoadAssetAtPath<Mesh>(meshPath);
+            if (promotedMesh != null)
+            {
+                return promotedMesh;
+            }
+
             GameObject primitive = GameObject.CreatePrimitive(primitiveType);
-            Mesh mesh = primitive.GetComponent<MeshFilter>().sharedMesh;
-            UnityEngine.Object.DestroyImmediate(primitive);
-            return mesh;
+            try
+            {
+                Mesh sourceMesh = primitive.GetComponent<MeshFilter>().sharedMesh;
+                promotedMesh = UnityEngine.Object.Instantiate(sourceMesh);
+                promotedMesh.name = "DB_Primitive_" + primitiveType;
+                AssetDatabase.CreateAsset(promotedMesh, meshPath);
+                AssetDatabase.ImportAsset(meshPath, ImportAssetOptions.ForceUpdate);
+                return promotedMesh;
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(primitive);
+            }
         }
 
         private static Shader ResolveUnlitShader()

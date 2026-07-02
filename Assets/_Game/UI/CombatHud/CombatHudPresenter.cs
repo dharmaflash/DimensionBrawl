@@ -88,9 +88,24 @@ namespace DimensionBrawl.UI
         [SerializeField] private Text actionFeedbackText;
         [SerializeField] private Image healthFill;
         [SerializeField] private Image resourceFill;
+        [SerializeField] private Text bossHealthText;
+        [SerializeField] private Image bossHealthFill;
+        [SerializeField] private RectTransform aimReticleRoot;
+        [SerializeField] private Image[] aimReticleSegments = Array.Empty<Image>();
+        [SerializeField] private Color aimReticleColor = new Color(0.82f, 0.96f, 1f, 0.88f);
+        [SerializeField] private Color aimReticleActiveColor = new Color(0.42f, 0.95f, 1f, 0.96f);
         [SerializeField] private CombatHudActionCatalog actionCatalog;
         [SerializeField] private ActionSlotBinding[] actionSlots = Array.Empty<ActionSlotBinding>();
         [SerializeField] private SummonSlotBinding[] summonSlots = Array.Empty<SummonSlotBinding>();
+
+        public float BossHealthFillAmount => bossHealthFill != null ? bossHealthFill.fillAmount : 0f;
+        public bool AimReticleVisible => aimReticleRoot != null && aimReticleRoot.gameObject.activeInHierarchy;
+
+        private void Awake()
+        {
+            ResolveOptionalRuntimeReferences();
+            EnsureAimReticle();
+        }
 
         public void SetObjective(string objective)
         {
@@ -114,6 +129,40 @@ namespace DimensionBrawl.UI
             }
 
             SetText(healthText, $"{Mathf.CeilToInt(Mathf.Max(0f, current))}/{Mathf.CeilToInt(Mathf.Max(0f, max))}");
+        }
+
+        public void SetBossHealth(float current, float max)
+        {
+            ResolveOptionalRuntimeReferences();
+            float ratio = max > 0f ? Mathf.Clamp01(current / max) : 0f;
+            if (bossHealthFill != null)
+            {
+                bossHealthFill.type = Image.Type.Filled;
+                bossHealthFill.fillMethod = Image.FillMethod.Horizontal;
+                bossHealthFill.fillOrigin = (int)Image.OriginHorizontal.Left;
+                bossHealthFill.fillAmount = ratio;
+            }
+
+            SetText(bossHealthText, $"{Mathf.CeilToInt(Mathf.Max(0f, current))}/{Mathf.CeilToInt(Mathf.Max(0f, max))}");
+        }
+
+        public void SetAimReticleVisible(bool visible, bool active)
+        {
+            EnsureAimReticle();
+            if (aimReticleRoot == null)
+            {
+                return;
+            }
+
+            aimReticleRoot.gameObject.SetActive(visible);
+            Color color = active ? aimReticleActiveColor : aimReticleColor;
+            for (int i = 0; i < aimReticleSegments.Length; i++)
+            {
+                if (aimReticleSegments[i] != null)
+                {
+                    aimReticleSegments[i].color = color;
+                }
+            }
         }
 
         public void SetResource(float current, float max)
@@ -166,6 +215,74 @@ namespace DimensionBrawl.UI
             SetText(actionFeedbackText, feedback);
         }
 
+        private void ResolveOptionalRuntimeReferences()
+        {
+            if (bossHealthFill == null)
+            {
+                bossHealthFill = FindImage("BossHpFill");
+            }
+
+            if (bossHealthText == null)
+            {
+                bossHealthText = FindText("BossHpText");
+            }
+        }
+
+        private void EnsureAimReticle()
+        {
+            if (aimReticleRoot == null)
+            {
+                Transform existing = FindDeepChild(transform, "CenterAimReticle");
+                aimReticleRoot = existing != null ? existing.GetComponent<RectTransform>() : null;
+            }
+
+            if (aimReticleRoot == null)
+            {
+                GameObject root = new GameObject("CenterAimReticle", typeof(RectTransform));
+                root.transform.SetParent(transform, worldPositionStays: false);
+                aimReticleRoot = root.GetComponent<RectTransform>();
+                aimReticleRoot.anchorMin = new Vector2(0.5f, 0.5f);
+                aimReticleRoot.anchorMax = new Vector2(0.5f, 0.5f);
+                aimReticleRoot.pivot = new Vector2(0.5f, 0.5f);
+                aimReticleRoot.sizeDelta = new Vector2(96f, 96f);
+                aimReticleRoot.anchoredPosition = Vector2.zero;
+                aimReticleRoot.SetAsLastSibling();
+            }
+
+            if (aimReticleSegments == null || aimReticleSegments.Length < 4)
+            {
+                aimReticleSegments = new[]
+                {
+                    EnsureReticleSegment("Left", new Vector2(-23f, 0f), new Vector2(18f, 2f)),
+                    EnsureReticleSegment("Right", new Vector2(23f, 0f), new Vector2(18f, 2f)),
+                    EnsureReticleSegment("Top", new Vector2(0f, 23f), new Vector2(2f, 18f)),
+                    EnsureReticleSegment("Bottom", new Vector2(0f, -23f), new Vector2(2f, 18f))
+                };
+            }
+        }
+
+        private Image EnsureReticleSegment(string name, Vector2 anchoredPosition, Vector2 size)
+        {
+            Transform child = aimReticleRoot.Find(name);
+            if (child == null)
+            {
+                child = new GameObject(name, typeof(RectTransform), typeof(CanvasRenderer), typeof(Image)).transform;
+                child.SetParent(aimReticleRoot, worldPositionStays: false);
+            }
+
+            RectTransform rectTransform = child.GetComponent<RectTransform>();
+            rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
+            rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
+            rectTransform.pivot = new Vector2(0.5f, 0.5f);
+            rectTransform.anchoredPosition = anchoredPosition;
+            rectTransform.sizeDelta = size;
+
+            Image image = child.GetComponent<Image>();
+            image.raycastTarget = false;
+            image.color = aimReticleColor;
+            return image;
+        }
+
         private ActionSlotBinding FindActionSlot(CombatHudActionId actionId)
         {
             for (int i = 0; i < actionSlots.Length; i++)
@@ -186,6 +303,42 @@ namespace DimensionBrawl.UI
                 if (summonSlots[i] != null && summonSlots[i].ActionId == actionId)
                 {
                     return summonSlots[i];
+                }
+            }
+
+            return null;
+        }
+
+        private Image FindImage(string objectName)
+        {
+            Transform found = FindDeepChild(transform, objectName);
+            return found != null ? found.GetComponent<Image>() : null;
+        }
+
+        private Text FindText(string objectName)
+        {
+            Transform found = FindDeepChild(transform, objectName);
+            return found != null ? found.GetComponent<Text>() : null;
+        }
+
+        private static Transform FindDeepChild(Transform root, string objectName)
+        {
+            if (root == null)
+            {
+                return null;
+            }
+
+            if (root.name == objectName)
+            {
+                return root;
+            }
+
+            for (int i = 0; i < root.childCount; i++)
+            {
+                Transform found = FindDeepChild(root.GetChild(i), objectName);
+                if (found != null)
+                {
+                    return found;
                 }
             }
 

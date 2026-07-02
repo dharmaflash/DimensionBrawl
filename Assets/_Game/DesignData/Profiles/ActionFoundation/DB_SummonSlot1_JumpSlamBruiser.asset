@@ -1,0 +1,122 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2c09f3d5d2d4a9ca1671a60e75091f2, type: 3}
+  m_Name: DB_SummonSlot1_JumpSlamBruiser
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.SummonSlotActionProfile
+  actionId: SummonSlot1.JumpSlamBruiser
+  tierSettings:
+  - Damage: 58
+    ProjectileSpeed: 24
+    LifetimeSeconds: 1.25
+    Radius: 0.46
+    ProjectileCount: 1
+    LateralReach: 0.55
+    EntryHeight: 0.18
+    TargetHeight: 1.35
+    CueScale: 0.46
+    CueLifetimeSeconds: 0.36
+    ActorLifetimeSeconds: 0
+    ActorScale: 2
+    ActorRoleId: JumpSlamBruiser
+    ActorMaxHealth: 250
+    ActorMoveSpeed: 3.4
+    ActorAdvanceDistance: 4
+    ActorAdvanceSeconds: 2.25
+    ActorEngageRadius: 1.1
+    ActorAttackDamagePerSecond: 12
+    ActorAttackIntervalSeconds: 1.05
+    ScreenIntercepts: 1
+    ScreenRadius: 1.5500001
+    ScreenLifetimeSeconds: 1.45
+    CounterDamage: 18.56
+    CounterProjectileSpeed: 26
+    CounterLifetimeSeconds: 1.45
+    CounterRadius: 0.322
+    CounterTargetHeight: 1.35
+  - Damage: 92
+    ProjectileSpeed: 24
+    LifetimeSeconds: 1.35
+    Radius: 0.52
+    ProjectileCount: 2
+    LateralReach: 1.5
+    EntryHeight: 0.18
+    TargetHeight: 1.35
+    CueScale: 0.51
+    CueLifetimeSeconds: 0.36
+    ActorLifetimeSeconds: 0
+    ActorScale: 2.36
+    ActorRoleId: JumpSlamBruiser
+    ActorMaxHealth: 420
+    ActorMoveSpeed: 3.8
+    ActorAdvanceDistance: 4.8
+    ActorAdvanceSeconds: 2.53
+    ActorEngageRadius: 1.2
+    ActorAttackDamagePerSecond: 20
+    ActorAttackIntervalSeconds: 1.1
+    ScreenIntercepts: 2
+    ScreenRadius: 1.75
+    ScreenLifetimeSeconds: 1.8
+    CounterDamage: 29.439999
+    CounterProjectileSpeed: 26
+    CounterLifetimeSeconds: 1.45
+    CounterRadius: 0.364
+    CounterTargetHeight: 1.35
+  - Damage: 126
+    ProjectileSpeed: 25
+    LifetimeSeconds: 1.45
+    Radius: 0.58
+    ProjectileCount: 3
+    LateralReach: 2.4
+    EntryHeight: 0.18
+    TargetHeight: 1.35
+    CueScale: 0.56
+    CueLifetimeSeconds: 0.36
+    ActorLifetimeSeconds: 0
+    ActorScale: 2.74
+    ActorRoleId: JumpSlamBruiser
+    ActorMaxHealth: 600
+    ActorMoveSpeed: 4.2
+    ActorAdvanceDistance: 5.6
+    ActorAdvanceSeconds: 2.81
+    ActorEngageRadius: 1.32
+    ActorAttackDamagePerSecond: 30
+    ActorAttackIntervalSeconds: 1.15
+    ScreenIntercepts: 3
+    ScreenRadius: 1.95
+    ScreenLifetimeSeconds: 2.15
+    CounterDamage: 40.32
+    CounterProjectileSpeed: 27
+    CounterLifetimeSeconds: 1.45
+    CounterRadius: 0.406
+    CounterTargetHeight: 1.35
+  tierReadouts:
+  - TierLabel: LV1 Jump Slam
+    StageRole: Mid-cost bruiser that spends a saved bar for one obvious landing impact,
+      then stays as melee pressure.
+    PlayerUse: Hold EN until a boss summon or recovery window is worth a visible
+      slam answer.
+    SummonRead: SciFi bruiser jumps from the player front, lands with a clear slam
+      burst, and keeps punching the frontline.
+  - TierLabel: LV2 Heavy Landing
+    StageRole: Higher stored-EN version with a wider landing and enough health to
+      hold contact longer.
+    PlayerUse: Use when the boss is about to stay in a punishable lane and a cheap
+      laser will not change the exchange.
+    SummonRead: Bigger arc, two shock bolts, a broader slam ring, and steadier melee
+      lockdown.
+  - TierLabel: LV3 Crater Break
+    StageRole: High-stored-EN payoff that should visibly interrupt the lane and keep
+      fighting after impact.
+    PlayerUse: Save for the exchange where one big arrival has to change the screen
+      immediately.
+    SummonRead: Tall jump arc, three shock bolts, large slam ring, and a durable
+      bruiser body that remains in melee without out-DPSing the boss summons.

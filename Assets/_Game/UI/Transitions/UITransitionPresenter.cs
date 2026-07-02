@@ -10,12 +10,15 @@ namespace DimensionBrawl.UI
         [SerializeField] private CanvasGroup fadeGroup;
         [SerializeField] private Text titleText;
         [SerializeField] private Text descriptionText;
+        [SerializeField] private Image loadingBackgroundImage;
+        [SerializeField] private bool hideLoadingBackgroundWhenMissing = true;
         [SerializeField] private Text progressText;
         [SerializeField] private Image progressFill;
         [SerializeField] private UIMotionCatalog motionCatalog;
         [SerializeField] private UILoadingCardDeck loadingCardDeck;
         [SerializeField] private UILoadingCardPresenter loadingCardPresenter;
         [SerializeField] private Graphic[] loadingDetailGraphics;
+        [SerializeField] private bool hideLoadingDetailsWhenBackgroundVisible = true;
         [SerializeField, Min(0f)] private float defaultFadeSeconds = 0.45f;
 
         private bool showsLoadingDetails;
@@ -78,20 +81,26 @@ namespace DimensionBrawl.UI
                 return;
             }
 
+            SetLoadingBackground(null);
             bool applied = false;
+            bool hasBackground = false;
             if (loadingCardPresenter != null)
             {
                 applied = loadingCardPresenter.TryShowCard(route.LoadingCardId);
+                hasBackground = applied && loadingCardPresenter.LastShownCardHasBackground;
             }
             else if (loadingCardDeck != null && loadingCardDeck.TryGetCard(route.LoadingCardId, out UILoadingCardDeck.LoadingCard card))
             {
                 SetText(titleText, card.Title);
                 SetText(descriptionText, card.Description);
+                SetLoadingBackground(card.BackgroundSprite);
+                hasBackground = card.BackgroundSprite != null;
                 applied = true;
             }
 
-            showsLoadingDetails = applied;
-            SetLoadingDetailsVisible(applied);
+            bool showDetails = applied && (!hideLoadingDetailsWhenBackgroundVisible || !hasBackground);
+            showsLoadingDetails = showDetails;
+            SetLoadingDetailsVisible(showDetails);
             if (!applied)
             {
                 ClearLoadingText();
@@ -170,8 +179,23 @@ namespace DimensionBrawl.UI
         {
             SetText(titleText, string.Empty);
             SetText(descriptionText, string.Empty);
+            SetLoadingBackground(null);
             SetProgressText(string.Empty);
             SetProgressFill(0f);
+        }
+
+        private void SetLoadingBackground(Sprite sprite)
+        {
+            if (loadingBackgroundImage == null)
+            {
+                return;
+            }
+
+            loadingBackgroundImage.sprite = sprite;
+            if (hideLoadingBackgroundWhenMissing)
+            {
+                loadingBackgroundImage.enabled = sprite != null;
+            }
         }
 
         private void SetProgressText(string value)

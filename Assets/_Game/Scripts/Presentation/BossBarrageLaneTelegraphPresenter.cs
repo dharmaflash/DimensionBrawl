@@ -43,6 +43,8 @@ namespace DimensionBrawl.Presentation
         private BossBarragePatternProfile visiblePattern;
         private Vector3 lastMarkerScale;
         private Color lastMarkerColor;
+        private bool countedCurrentWindup;
+        private bool countedCurrentRelease;
 
         public BossBarrageEmitter BossBarrageEmitter => bossBarrageEmitter;
         public SummonLaneSpace LaneSpace => laneSpace;
@@ -77,6 +79,7 @@ namespace DimensionBrawl.Presentation
         public void RefreshNow()
         {
             EnsurePreviewBuffer();
+            RefreshReleaseFlashFallback();
             bool shouldShow = bossBarrageEmitter != null
                 && laneSpace != null
                 && markerTransforms != null
@@ -93,6 +96,12 @@ namespace DimensionBrawl.Presentation
                 visiblePattern = bossBarrageEmitter.CurrentPattern;
                 lastPatternId = visiblePattern != null ? visiblePattern.PatternId : string.Empty;
                 lastPreviewCount = bossBarrageEmitter.BuildPendingLaneTargetPreview(previewBuffer);
+                CountWindupRefreshOnce();
+                countedCurrentRelease = false;
+            }
+            else
+            {
+                countedCurrentWindup = false;
             }
 
             int count = Mathf.Min(lastPreviewCount, markerTransforms.Length);
@@ -152,8 +161,19 @@ namespace DimensionBrawl.Presentation
         {
             visiblePattern = pattern;
             lastPatternId = pattern != null ? pattern.PatternId : string.Empty;
-            windupRefreshCount++;
+            CountWindupRefreshOnce();
             RefreshNow();
+        }
+
+        private void CountWindupRefreshOnce()
+        {
+            if (countedCurrentWindup)
+            {
+                return;
+            }
+
+            windupRefreshCount++;
+            countedCurrentWindup = true;
         }
 
         private void HandleWaveFired(BossBarrageEmitter emitter, BossBarragePatternProfile pattern, int spawnedCount)
@@ -162,7 +182,25 @@ namespace DimensionBrawl.Presentation
             lastPatternId = pattern != null ? pattern.PatternId : string.Empty;
             releaseFlashTimer = releaseFlashSeconds;
             releaseFlashCount++;
+            countedCurrentRelease = true;
             RefreshNow();
+        }
+
+        private void RefreshReleaseFlashFallback()
+        {
+            if (bossBarrageEmitter == null
+                || bossBarrageEmitter.IsWindupActive
+                || countedCurrentRelease
+                || releaseFlashTimer > 0f
+                || lastPreviewCount <= 0
+                || bossBarrageEmitter.ActiveProjectileCount <= 0)
+            {
+                return;
+            }
+
+            releaseFlashTimer = releaseFlashSeconds;
+            releaseFlashCount++;
+            countedCurrentRelease = true;
         }
 
         private void RefreshMarkerTransform(

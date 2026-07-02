@@ -266,13 +266,15 @@ namespace DimensionBrawl.Player
             }
 
             int availableTier = energyLadder.AvailableTier;
-            if (availableTier < MinimumSummonTier)
+            int costTier = energyLadder.ResolveTierForManaCost(RequiredSummonMana);
+            int requiredTier = Mathf.Max(MinimumSummonTier, costTier);
+            if (availableTier < requiredTier)
             {
-                SetUseBlocked($"Requires LV{MinimumSummonTier} EN");
+                SetUseBlocked($"Requires LV{requiredTier} EN");
                 return false;
             }
 
-            if (!TryResolveTierSettings(availableTier, out PlayerSummonSlot1Action.SummonTierSettings tierSettings))
+            if (!TryResolveTierSettings(costTier, out PlayerSummonSlot1Action.SummonTierSettings tierSettings))
             {
                 SetUseBlocked("Summon profile missing");
                 return false;

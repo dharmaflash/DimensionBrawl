@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: DB_BossPressureActionDeck_PocketReview
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossPressureActionDeckProfile
   deckId: PocketReviewBoss
-  globalRecoverySeconds: 0.35
+  globalRecoverySeconds: 1.1
   actionSlots:
   - Pattern: {fileID: 11400000, guid: 25cd6927b39e10048ab562c4e150cb3a, type: 2}
     ActionKind: 0
@@ -56,7 +56,7 @@ MonoBehaviour:
     MinimumPlayerForwardRisk01: 0.22
     MaximumPlayerForwardRisk01: 1
     UsePlayerSummonResponseGate: 1
-    MinimumPlayerSummonTier: 1
+    MinimumPlayerSummonTier: 2
   - Pattern: {fileID: 11400000, guid: b0b5e71e44209f74394f56e232db8d78, type: 2}
     ActionKind: 2
     MinimumTier: 3

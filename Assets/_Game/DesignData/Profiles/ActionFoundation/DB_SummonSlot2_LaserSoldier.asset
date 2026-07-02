@@ -1,0 +1,119 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b2c09f3d5d2d4a9ca1671a60e75091f2, type: 3}
+  m_Name: DB_SummonSlot2_LaserSoldier
+  m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Player.SummonSlotActionProfile
+  actionId: SummonSlot2.LaserSoldier
+  tierSettings:
+  - Damage: 16
+    ProjectileSpeed: 30
+    LifetimeSeconds: 0.95
+    Radius: 0.16
+    ProjectileCount: 1
+    LateralReach: 0.3
+    EntryHeight: 0.18
+    TargetHeight: 1.35
+    CueScale: 0.46
+    CueLifetimeSeconds: 0.36
+    ActorLifetimeSeconds: 0
+    ActorScale: 2.08
+    ActorRoleId: LaserSoldier
+    ActorMaxHealth: 170
+    ActorMoveSpeed: 2.8
+    ActorAdvanceDistance: 1.35
+    ActorAdvanceSeconds: 1.3225
+    ActorEngageRadius: 0.72
+    ActorAttackDamagePerSecond: 9
+    ActorAttackIntervalSeconds: 1.15
+    ScreenIntercepts: 0
+    ScreenRadius: 1.15
+    ScreenLifetimeSeconds: 0.2
+    CounterDamage: 5.12
+    CounterProjectileSpeed: 32
+    CounterLifetimeSeconds: 1.45
+    CounterRadius: 0.2
+    CounterTargetHeight: 1.35
+  - Damage: 22
+    ProjectileSpeed: 32
+    LifetimeSeconds: 1.05
+    Radius: 0.2
+    ProjectileCount: 1
+    LateralReach: 0.8
+    EntryHeight: 0.18
+    TargetHeight: 1.35
+    CueScale: 0.46
+    CueLifetimeSeconds: 0.36
+    ActorLifetimeSeconds: 0
+    ActorScale: 2.32
+    ActorRoleId: LaserSoldier
+    ActorMaxHealth: 205
+    ActorMoveSpeed: 3.1
+    ActorAdvanceDistance: 1.6
+    ActorAdvanceSeconds: 1.41
+    ActorEngageRadius: 0.78
+    ActorAttackDamagePerSecond: 12
+    ActorAttackIntervalSeconds: 1.25
+    ScreenIntercepts: 0
+    ScreenRadius: 1.15
+    ScreenLifetimeSeconds: 0.2
+    CounterDamage: 7.04
+    CounterProjectileSpeed: 34
+    CounterLifetimeSeconds: 1.45
+    CounterRadius: 0.2
+    CounterTargetHeight: 1.35
+  - Damage: 28
+    ProjectileSpeed: 34
+    LifetimeSeconds: 1.15
+    Radius: 0.24
+    ProjectileCount: 2
+    LateralReach: 1.3
+    EntryHeight: 0.18
+    TargetHeight: 1.35
+    CueScale: 0.51
+    CueLifetimeSeconds: 0.36
+    ActorLifetimeSeconds: 0
+    ActorScale: 2.56
+    ActorRoleId: LaserSoldier
+    ActorMaxHealth: 250
+    ActorMoveSpeed: 3.4
+    ActorAdvanceDistance: 1.85
+    ActorAdvanceSeconds: 1.4975001
+    ActorEngageRadius: 0.84
+    ActorAttackDamagePerSecond: 16
+    ActorAttackIntervalSeconds: 1.35
+    ScreenIntercepts: 0
+    ScreenRadius: 1.15
+    ScreenLifetimeSeconds: 0.2
+    CounterDamage: 8.96
+    CounterProjectileSpeed: 36
+    CounterLifetimeSeconds: 1.45
+    CounterRadius: 0.2
+    CounterTargetHeight: 1.35
+  tierReadouts:
+  - TierLabel: LV1 Laser Tap
+    StageRole: Low-return ranged helper that sets up cleanly but cannot block pressure.
+    PlayerUse: Spend when the boss lane is open and a cheap ranged body is enough.
+    SummonRead: SciFi rifleman slides into a side lane, flashes a cyan muzzle beam,
+      and fires one clean laser line per volley.
+  - TierLabel: LV2 Split Laser
+    StageRole: Mid-tier ranged support with two visible lines and controlled sustained
+      pressure.
+    PlayerUse: Hold EN if the boss will stay exposed for more than one volley.
+    SummonRead: Laser soldier fires one sharper cyan line with a larger beam flash
+      while staying fragile.
+  - TierLabel: LV3 Prism Burst
+    StageRole: High-tier glass-cannon support that widens the lane punish without
+      becoming a turret.
+    PlayerUse: Use when the player has created a long punish window and does not
+      need a blocker.
+    SummonRead: Wider two-line laser burst and stronger muzzle beam, but a slower
+      cadence and low body safety.

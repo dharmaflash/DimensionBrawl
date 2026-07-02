@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using DimensionBrawl.Combat;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Presentation;
@@ -449,7 +449,7 @@ namespace DimensionBrawl.Player
                     CueLifetimeSeconds = 0.85f,
                     ActorLifetimeSeconds = 0f,
                     ActorScale = 2.25f,
-                    ActorRoleId = "ShieldBreaker",
+                    ActorRoleId = "JumpSlamBruiser",
                     ActorMaxHealth = 260f,
                     ActorMoveSpeed = 1.55f,
                     ActorAdvanceDistance = 2.2f,
@@ -502,7 +502,7 @@ namespace DimensionBrawl.Player
                     CueLifetimeSeconds = 0.85f,
                     ActorLifetimeSeconds = 0f,
                     ActorScale = 2.025f,
-                    ActorRoleId = "ShieldBreaker",
+                    ActorRoleId = "JumpSlamBruiser",
                     ActorMaxHealth = 230f,
                     ActorMoveSpeed = 1.45f,
                     ActorAdvanceDistance = 2.2f,
@@ -533,7 +533,7 @@ namespace DimensionBrawl.Player
                     CueLifetimeSeconds = 1f,
                     ActorLifetimeSeconds = 0f,
                     ActorScale = 2.43f,
-                    ActorRoleId = "ShieldBreaker",
+                    ActorRoleId = "JumpSlamBruiser",
                     ActorMaxHealth = 300f,
                     ActorMoveSpeed = 1.6f,
                     ActorAdvanceDistance = 3.0f,
@@ -564,7 +564,7 @@ namespace DimensionBrawl.Player
                     CueLifetimeSeconds = 1.15f,
                     ActorLifetimeSeconds = 0f,
                     ActorScale = 2.88f,
-                    ActorRoleId = "ShieldBreaker",
+                    ActorRoleId = "JumpSlamBruiser",
                     ActorMaxHealth = 380f,
                     ActorMoveSpeed = 1.7f,
                     ActorAdvanceDistance = 4.0f,

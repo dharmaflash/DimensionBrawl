@@ -10,6 +10,7 @@ namespace DimensionBrawl.UI
         public struct SoundContext
         {
             [SerializeField] private string id;
+            [SerializeField] private AudioClip clip;
             [SerializeField] private string description;
             [SerializeField, Range(0f, 1f)] private float volume;
             [SerializeField, Min(0f)] private float fadeCrossSeconds;
@@ -17,6 +18,7 @@ namespace DimensionBrawl.UI
             [SerializeField, Min(0f)] private float loopIntervalSeconds;
 
             public string Id => id;
+            public AudioClip Clip => clip;
             public string Description => description;
             public float Volume => volume;
             public float FadeCrossSeconds => fadeCrossSeconds;

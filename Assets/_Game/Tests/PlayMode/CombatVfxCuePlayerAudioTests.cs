@@ -27,9 +27,9 @@ namespace DimensionBrawl.Tests
         private const string SummonSlot1ProjectilePrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot1Projectile_AssistBolt.prefab";
         private const string SummonSlot2ProjectilePrefabPath =
-            "Assets/_Game/Prefabs/Combat/PF_SummonSlot2Projectile_MarksmanBolt.prefab";
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot2Projectile_LaserBolt.prefab";
         private const string SummonSlot3ProjectilePrefabPath =
-            "Assets/_Game/Prefabs/Combat/PF_SummonSlot3Projectile_VanguardBolt.prefab";
+            "Assets/_Game/Prefabs/Combat/PF_SummonSlot3Projectile_FireBreath.prefab";
 
         [UnityTest]
         public IEnumerator CombatVfxCuePlayerRestartsAudioSourcesInsideCuePrefab()

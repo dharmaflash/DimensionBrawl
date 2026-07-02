@@ -33,7 +33,7 @@ namespace DimensionBrawl.Player
         [SerializeField] private Transform projectileRoot;
         [SerializeField] private Transform fireOrigin;
         [SerializeField] private DamageTeam sourceTeam = DamageTeam.Player;
-        [SerializeField, Min(0f)] private float damage = 14f;
+        [SerializeField, Min(0f)] private float damage = 30f;
         [SerializeField, Min(0.01f)] private float projectileSpeed = 24f;
         [SerializeField, Min(0.01f)] private float projectileLifetimeSeconds = 1.75f;
         [SerializeField, Min(0.01f)] private float projectileRadius = 0.31f;
@@ -91,6 +91,7 @@ namespace DimensionBrawl.Player
         private bool queuedFire;
         private bool mobileFireHeld;
         private bool currentFireHeld;
+        private bool externalAimPreviewHeld;
         private bool pendingFireThisFrame;
         private bool suppressDeviceFallbackThisFrame;
         private bool cinematicInputLocked;
@@ -102,15 +103,20 @@ namespace DimensionBrawl.Player
         private Vector3 cachedFirePreviewDirection = Vector3.forward;
         private Vector3 cachedFirePreviewSpawnPosition;
         private Vector3 cachedFirePreviewAimPoint;
+        private bool aimAssistMayDriveCamera;
+        private bool aimAssistSuppressesViewportReprojection;
 
         public float FireCooldownRemaining => Mathf.Max(0f, nextFireTime - Time.time);
         public bool IsFireReady => FireCooldownRemaining <= 0f;
         public bool IsFireHeld => currentFireHeld;
         public bool HasExternalFireHeldInput => mobileFireHeld;
         public bool IsAimPreviewActive => IsRangedModeActive()
-            && (currentFireHeld || (aimController != null && aimController.IsAiming));
+            && (currentFireHeld
+                || externalAimPreviewHeld
+                || (aimController != null && aimController.IsAiming));
         public Vector2 AimInput => aimInput;
         public Transform FireOrigin => fireOrigin;
+        public Transform ProjectileRoot => projectileRoot;
         public Vector3 LastResolvedFireDirection { get; private set; } = Vector3.forward;
         public bool HasAimAssistTarget { get; private set; }
         public float AimAssistStrength01 { get; private set; }
@@ -128,17 +134,28 @@ namespace DimensionBrawl.Player
         }
 
         public event Action RangedFireStarted;
+        public event Action RangedFireInputStarted;
         public event Action<LaneActionProjectile> RangedProjectileFired;
 
         public void QueueFire()
         {
             queuedFire = true;
+            RangedFireInputStarted?.Invoke();
         }
 
         public void SetFireHeld(bool active)
         {
             mobileFireHeld = active;
+            currentFireHeld = active && !cinematicInputLocked && IsRangedModeActive();
+            SetFireAimHold(currentFireHeld);
             InvalidateFirePreviewCache();
+        }
+
+        public void SetExternalAimPreviewHeld(bool active)
+        {
+            externalAimPreviewHeld = active;
+            InvalidateFirePreviewCache();
+            SetFireAimHold(currentFireHeld);
         }
 
         public void SetAimInput(Vector2 input)
@@ -169,6 +186,7 @@ namespace DimensionBrawl.Player
             queuedFire = false;
             mobileFireHeld = false;
             currentFireHeld = false;
+            externalAimPreviewHeld = false;
             pendingFireThisFrame = false;
             suppressDeviceFallbackThisFrame = true;
             InvalidateFirePreviewCache();
@@ -282,6 +300,7 @@ namespace DimensionBrawl.Player
 
         private void OnDisable()
         {
+            externalAimPreviewHeld = false;
             SetFireAimHold(false);
             DisableActionIfOwned(fireAction, actionEnabledHere);
             actionEnabledHere = false;
@@ -319,8 +338,14 @@ namespace DimensionBrawl.Player
 
             bool pressed = ReadFirePressed();
             bool held = fireContinuouslyWhileHeld && ReadFireHeld();
+            bool wasFireHeld = currentFireHeld;
             currentFireHeld = held || pressed;
             SetFireAimHold(currentFireHeld);
+            if (pressed || (currentFireHeld && !wasFireHeld))
+            {
+                RangedFireInputStarted?.Invoke();
+            }
+
             if (pressed || held)
             {
                 pendingFireThisFrame = true;
@@ -547,7 +572,8 @@ namespace DimensionBrawl.Player
                 rawAimDirection,
                 directViewportTargetHealth);
 
-            bool hasSoftAimAssist = HasAimAssistTarget && directViewportTargetHealth == null;
+            bool hasSoftAimAssist = aimAssistSuppressesViewportReprojection
+                || (HasAimAssistTarget && directViewportTargetHealth == null);
             if (hasViewportAimPoint && !hasSoftAimAssist)
             {
                 resolvedDirection = ResolveFireTravelDirection(rawViewportAimPoint - spawnPosition, resolvedDirection);
@@ -650,10 +676,11 @@ namespace DimensionBrawl.Player
         {
             if (!driveCameraAimAssist
                 || cameraController == null
-                || !currentFireHeld
+                || (!currentFireHeld && !externalAimPreviewHeld)
                 || !IsAimPreviewActive
                 || !TryGetAimPreviewDirection(out _)
                 || !HasAimAssistTarget
+                || !aimAssistMayDriveCamera
                 || AimAssistTargetHealth == null)
             {
                 return;
@@ -884,24 +911,19 @@ namespace DimensionBrawl.Player
             CombatHealth directViewportTargetHealth)
         {
             LastRawAimDirection = ResolveFireTravelDirection(rawAimDirection, LastResolvedFireDirection);
+            float assistAngle = aimController != null && aimController.IsAiming
+                ? aimedAimAssistAngleDegrees
+                : hipAimAssistAngleDegrees;
             if (IsValidDirectViewportTarget(directViewportTargetHealth))
             {
                 SetAimAssistState(directViewportTargetHealth, 1f, LastRawAimDirection);
                 return LastRawAimDirection;
             }
 
-            if (!useAimAssist
-                || targetSelector == null
-                || (disableAimAssistWithManualInput && HasManualAimInput()))
-            {
-                SetAimAssistState(null, 0f, LastRawAimDirection);
-                return rawAimDirection;
-            }
-
-            float assistAngle = aimController != null && aimController.IsAiming
-                ? aimedAimAssistAngleDegrees
-                : hipAimAssistAngleDegrees;
-            if (!targetSelector.TryGetAimAssistDirection(
+            bool canUseSoftAimAssist = useAimAssist
+                && targetSelector != null
+                && (!disableAimAssistWithManualInput || !HasManualAimInput());
+            if (canUseSoftAimAssist && targetSelector.TryGetRangedAimAssistDirection(
                 aimOriginPosition,
                 rawAimDirection,
                 aimAssistDistance,
@@ -909,27 +931,27 @@ namespace DimensionBrawl.Player
                 out Vector3 selectorAssistDirection,
                 out CombatHealth assistTargetHealth))
             {
-                SetAimAssistState(null, 0f, LastRawAimDirection);
-                return rawAimDirection;
+                Vector3 assistDirection = assistTargetHealth != null
+                    ? ResolveFireTravelDirection(
+                        assistTargetHealth.transform.position + Vector3.up * targetHeight - projectileSpawnPosition,
+                        selectorAssistDirection)
+                    : selectorAssistDirection;
+                Vector3 assistedDirection = Vector3.RotateTowards(
+                    rawAimDirection,
+                    assistDirection,
+                    aimAssistMaxTurnDegrees * Mathf.Deg2Rad,
+                    0f);
+                Vector3 resolvedDirection = ResolveFireTravelDirection(assistedDirection, rawAimDirection);
+                float assistTargetAngle = Vector3.Angle(LastRawAimDirection, assistDirection);
+                float assistStrength = assistAngle > 0f
+                    ? 1f - Mathf.Clamp01(assistTargetAngle / assistAngle)
+                    : 0f;
+                SetAimAssistState(assistTargetHealth, assistStrength, resolvedDirection);
+                return resolvedDirection;
             }
 
-            Vector3 assistDirection = assistTargetHealth != null
-                ? ResolveFireTravelDirection(
-                    assistTargetHealth.transform.position + Vector3.up * targetHeight - projectileSpawnPosition,
-                    selectorAssistDirection)
-                : selectorAssistDirection;
-            Vector3 assistedDirection = Vector3.RotateTowards(
-                rawAimDirection,
-                assistDirection,
-                aimAssistMaxTurnDegrees * Mathf.Deg2Rad,
-                0f);
-            Vector3 resolvedDirection = ResolveFireTravelDirection(assistedDirection, rawAimDirection);
-            float assistTargetAngle = Vector3.Angle(LastRawAimDirection, assistDirection);
-            float assistStrength = assistAngle > 0f
-                ? 1f - Mathf.Clamp01(assistTargetAngle / assistAngle)
-                : 0f;
-            SetAimAssistState(assistTargetHealth, assistStrength, resolvedDirection);
-            return resolvedDirection;
+            SetAimAssistState(null, 0f, LastRawAimDirection);
+            return rawAimDirection;
         }
 
         private bool HasManualAimInput()
@@ -937,11 +959,18 @@ namespace DimensionBrawl.Player
             return aimInput.sqrMagnitude > aimInputDeadZone * aimInputDeadZone;
         }
 
-        private void SetAimAssistState(CombatHealth targetHealth, float strength01, Vector3 assistedDirection)
+        private void SetAimAssistState(
+            CombatHealth targetHealth,
+            float strength01,
+            Vector3 assistedDirection,
+            bool allowCameraAimAssist = true,
+            bool suppressViewportReprojection = false)
         {
             AimAssistTargetHealth = targetHealth;
             HasAimAssistTarget = targetHealth != null && targetHealth.IsAlive && strength01 > 0f;
             AimAssistStrength01 = HasAimAssistTarget ? Mathf.Clamp01(strength01) : 0f;
+            aimAssistMayDriveCamera = HasAimAssistTarget && allowCameraAimAssist;
+            aimAssistSuppressesViewportReprojection = HasAimAssistTarget && suppressViewportReprojection;
             LastAimAssistDirection = ResolveFireTravelDirection(assistedDirection, LastRawAimDirection);
         }
 
@@ -1029,7 +1058,7 @@ namespace DimensionBrawl.Player
         {
             if (holdFireActivatesAim)
             {
-                aimController?.SetFireAimHeld(active && IsRangedModeActive());
+                aimController?.SetFireAimHeld((active || externalAimPreviewHeld) && IsRangedModeActive());
             }
         }
 

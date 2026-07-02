@@ -112,11 +112,13 @@ namespace DimensionBrawl.Player
 
         public void SetRangedMode()
         {
+            queuedSwap = false;
             SetCombatMode(PlayerCombatMode.Ranged);
         }
 
         public void SetMeleeMode()
         {
+            queuedSwap = false;
             SetCombatMode(PlayerCombatMode.Melee);
         }
 
@@ -183,7 +185,10 @@ namespace DimensionBrawl.Player
 
             activeAnimator.runtimeAnimatorController = targetController;
             activeAnimator.Rebind();
-            activeAnimator.Update(0f);
+            if (activeAnimator.isActiveAndEnabled)
+            {
+                activeAnimator.Update(0f);
+            }
         }
 
         private void RoutePresentationAnimator(Animator activeAnimator, PlayerCombatMode combatMode)

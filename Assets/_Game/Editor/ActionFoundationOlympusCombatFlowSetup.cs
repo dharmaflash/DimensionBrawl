@@ -8,6 +8,7 @@ using DimensionBrawl.Enemies;
 using DimensionBrawl.LevelDesign;
 using DimensionBrawl.Player;
 using DimensionBrawl.Presentation;
+using DimensionBrawl.Test;
 using DimensionBrawl.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -34,6 +35,7 @@ namespace DimensionBrawl.Editor
         private const string CombatStartVisualActivationTrackName = "Combat Start Inori Active";
         private const string CombatStartVisualBodyTrackName = "Combat Start Inori Body";
         private const string FirstPersonResidualActivationTrackName = "First Person Inori Residual Active";
+        private const string CorridorCombatStartMarkerName = "Bokdo_Point";
         private const string FlowRootName = "OlympusCorridor_CombatFlowRoot";
         private const string CombatPackageRootName = "OlympusCorridor_BossBarrageCombatPackage";
         private const string IntroSwordGateRootName = "OlympusCorridor_IntroSwordGate";
@@ -41,12 +43,15 @@ namespace DimensionBrawl.Editor
         private const string StairTriggerName = "OlympusCorridor_StairToCorridorCombatTrigger";
         private const string StairBlockerName = "OlympusCorridor_IntroSwordGate_StairBlocker";
         private const string CorridorBoundsRootName = "OlympusCorridor_CorridorCombatBounds";
+        private const string StageClearExitAnchorName = "StageClear_CorridorExit";
         private const string CombatCameraName = "OlympusCorridor_Combat_MainCamera";
         private const float OlympusCorridorGameplayYawDegrees = 90f;
 
         private const string SourcePlayerRootName = "Player_CombatGirl_ActionFoundation";
         private const string SourceMainCameraRootName = "Main Camera";
         private const string SourceHudRootName = "BossBarrageLaneReview_DebugHud";
+        private const string SourceCombatHudCanvasRootName = "BossBarrageLaneReview_CombatHudCanvas";
+        private const string SourceCombatHudEventSystemRootName = "BossBarrageLaneReview_CombatHudEventSystem";
         private const string SourceCombatVfxRootName = "ActionFoundation_CombatVfxPool";
         private const string SourceArenaVfxRootName = "ActionFoundation_ArenaVfx";
         private const string SourceArenaGridRootName = "ActionFoundation_ArenaGrid";
@@ -66,11 +71,44 @@ namespace DimensionBrawl.Editor
         private const string FirstPersonResidualVisualRootName = "IntroGatePodReview_InoriPlacement";
         private const string CutsceneCommandoIdleStateName = "IdleAim";
         private const string ValidationReportPath = "C:/tmp/DimensionBrawl-OlympusCombatFlow-Validation.txt";
+        internal const string PlayModeValidationResultPath =
+            "C:/tmp/DimensionBrawl-OlympusCombatFlow-PlayMode.result";
+        internal const string PlayModeValidationReportPath =
+            "C:/tmp/DimensionBrawl-OlympusCombatFlow-PlayMode.txt";
+        private const string PlayModeValidationProbeName =
+            "OlympusCorridor_CombatFlowPlayModeProbe";
         private const float HudRevealDelaySeconds = 0.08f;
         private const float HudRevealDurationSeconds = 0.18f;
         private const float CharacterGroundClearance = 0.015f;
         private const float CharacterGroundSnapTolerance = 0.005f;
         private const float CommandoStrideBobHeight = 0f;
+        private const int StairTraversalSampleSteps = 32;
+        private const int StairTraversalCleanupPasses = 4;
+        private const float StairTraversalSurfaceClearance = 0.035f;
+        private const float StairTraversalSupportProbeUp = 2.0f;
+        private const float StairTraversalSupportProbeDown = 4.0f;
+        private const float StairTraversalSupportMaxAbovePath = 0.35f;
+        private const float StairTraversalSupportMaxBelowPath = 1.25f;
+        private const float StairTraversalSupportMinNormalY = 0.35f;
+        private const float StairTraversalGravityDeltaTime = 1f / 60f;
+        private const int StairTraversalGravityMaxFrames = 900;
+        private const float StairTraversalGravityFallbackMoveSpeed = 5.5f;
+        private const float StairTraversalGravityFallback = -24f;
+        private const float StairTraversalGravityPlanarTolerance = 0.35f;
+        private const float StairTraversalGravityMaxDropBelowPath = 1.25f;
+        private const float StairTraversalGravityMaxUnsupportedSeconds = 0.35f;
+        private const float StairTraversalGravityGroundProbeLift = 0.25f;
+        private const float StairTraversalGravityGroundProbeDistance = 1.35f;
+        private const float StairTraversalGravityStallEpsilon = 0.01f;
+        private const float StairTraversalGravityBlockerProbeDistance = 0.8f;
+        private static readonly float[] StairTraversalGravityLateralOffsets =
+        {
+            0f,
+            -1.25f,
+            1.25f,
+            -2.5f,
+            2.5f
+        };
 
         private static readonly Vector3 SourcePlayerStartPosition = new Vector3(0f, 0f, -8.5f);
         private static readonly Vector3 CenteredCombatCameraOffset = new Vector3(0f, 0.68f, -4.25f);
@@ -108,6 +146,28 @@ namespace DimensionBrawl.Editor
             "Weapon_Shiled"
         };
 
+        private static readonly string[] KnownStairTraversalBlockingRoots =
+        {
+            "StaticMeshActor_1253",
+            "StaticMeshActor_891",
+            "StaticMeshActor_892",
+            "StaticMeshActor_890",
+            "StaticMeshActor_8",
+            "StaticMeshActor_9",
+            "StaticMeshActor_667",
+            "StaticMeshActor_666",
+            "StaticMeshActor_669",
+            "StaticMeshActor_668"
+        };
+
+        private static readonly string[] KnownStairTraversalSideBlockingColliderPaths =
+        {
+            "OlympusCorridorStageRoot/OlympusCorridorStageMap/Meshes/StaticMeshActor_667/Collider",
+            "OlympusCorridorStageRoot/OlympusCorridorStageMap/Meshes/StaticMeshActor_666/Collider",
+            "OlympusCorridorStageRoot/OlympusCorridorStageMap/Meshes/StaticMeshActor_669/Collider",
+            "OlympusCorridorStageRoot/OlympusCorridorStageMap/Meshes/StaticMeshActor_668/Collider"
+        };
+
         [MenuItem("DimensionBrawl/Apply Olympus Corridor Combat Flow")]
         public static void ApplyOlympusCorridorCombatFlowMenu()
         {
@@ -118,6 +178,183 @@ namespace DimensionBrawl.Editor
         public static void RunBatchApplyOlympusCorridorCombatFlow()
         {
             ApplyOlympusCorridorCombatFlow();
+        }
+
+        public static void RunBatchPlayModeValidateOlympusCorridorCombatFlow()
+        {
+            ApplyOlympusCorridorCombatFlow();
+            EditorSceneManager.OpenScene(StageScenePath, OpenSceneMode.Single);
+            ActionFoundationOlympusCombatFlowPlayModeBatch.Start(PlayModeValidationResultPath, 90f);
+            EditorApplication.isPlaying = true;
+        }
+
+        public static void RunBatchPlayModeValidateCurrentOlympusCorridorCombatFlow()
+        {
+            AssetDatabase.Refresh();
+            EditorSceneManager.OpenScene(StageScenePath, OpenSceneMode.Single);
+            ActionFoundationOlympusCombatFlowPlayModeBatch.Start(PlayModeValidationResultPath, 90f);
+            EditorApplication.isPlaying = true;
+        }
+
+        internal static void ConfigurePlayModeValidationProbe(Scene scene)
+        {
+            GameObject existing = FindRootOrDescendant(scene, PlayModeValidationProbeName);
+            if (existing != null)
+            {
+                if (EditorApplication.isPlaying)
+                {
+                    UnityEngine.Object.Destroy(existing);
+                }
+                else
+                {
+                    UnityEngine.Object.DestroyImmediate(existing);
+                }
+            }
+
+            GameObject probeObject = new GameObject(PlayModeValidationProbeName);
+            SceneManager.MoveGameObjectToScene(probeObject, scene);
+            OlympusCorridorCombatFlowPlayModeProbe probe =
+                probeObject.AddComponent<OlympusCorridorCombatFlowPlayModeProbe>();
+            probe.Configure(PlayModeValidationResultPath, PlayModeValidationReportPath, 45f);
+            EditorUtility.SetDirty(probe);
+        }
+
+        public static void RunBatchDiagnoseOlympusStairColliders()
+        {
+            Scene stageScene = EditorSceneManager.OpenScene(StageScenePath, OpenSceneMode.Single);
+            GameObject packageRoot = RequireObjectInScene(stageScene, CombatPackageRootName);
+            GameObject flowRoot = RequireObjectInScene(stageScene, FlowRootName);
+            GameObject playerRoot = RequireChildObject(packageRoot.transform, SourcePlayerRootName);
+            GameObject stairBlocker = RequireChildObject(packageRoot.transform, StairBlockerName);
+            Collider stairBlockerCollider =
+                RequireComponent<Collider>(stairBlocker, "Olympus intro stair blocker");
+            GameObject stairTrigger = RequireChildObject(packageRoot.transform, StairTriggerName);
+            GameObject corridorCombatStartMarker = FindRootOrDescendant(stageScene, CorridorCombatStartMarkerName);
+            OlympusCorridorCombatFlowController flowController =
+                RequireComponent<OlympusCorridorCombatFlowController>(
+                    flowRoot,
+                    "Olympus corridor combat flow controller");
+
+            var report = new List<string>
+            {
+                "Olympus stair collider diagnostics",
+                $"Scene: {stageScene.path}",
+                $"Player start={FormatVector3(playerRoot.transform.position)}",
+                $"Stair blocker path={GetHierarchyPath(stairBlocker.transform)} enabledBefore={stairBlockerCollider.enabled}",
+                $"Stair blocker bounds center={FormatVector3(stairBlockerCollider.bounds.center)} size={FormatVector3(stairBlockerCollider.bounds.size)}",
+                $"Stair trigger path={GetHierarchyPath(stairTrigger.transform)} world={FormatVector3(stairTrigger.transform.position)}",
+                $"{CorridorCombatStartMarkerName} path={FormatObjectReference(corridorCombatStartMarker)}"
+            };
+
+            Bounds stairBlockerBoundsBeforeClear = stairBlockerCollider.bounds;
+            InvokePrivate(flowController, "BeginIntroSwordGate");
+            SerializedObject flowSerialized = new SerializedObject(flowController);
+            CombatHealth[] introEnemies = GetCombatHealthArrayProperty(flowSerialized, "introSwordEnemies");
+            report.Add($"Intro active alive before clear={CountActiveAliveHealths(introEnemies)}");
+            report.Add($"Intro total alive before clear={CountAliveHealths(introEnemies)}");
+            report.Add($"Applied lethal damage to intro enemies={ApplyLethalDamageToAll(introEnemies, DamageTeam.Player)}");
+            Physics.SyncTransforms();
+            report.Add($"Intro active alive after clear={CountActiveAliveHealths(introEnemies)}");
+            report.Add($"Intro total alive after clear={CountAliveHealths(introEnemies)}");
+            report.Add($"IntroGateCleared after clear={flowController.IntroGateCleared}");
+            report.Add($"Stair blocker enabled after clear={stairBlockerCollider.enabled}");
+
+            AppendColliderDiagnosticsNearBounds(
+                report,
+                stageScene,
+                "Active solid colliders near cleared stair blocker",
+                stairBlockerBoundsBeforeClear,
+                new Vector3(5f, 3f, 5f),
+                packageRoot.transform);
+
+            if (corridorCombatStartMarker != null)
+            {
+                var markerBounds = new Bounds(corridorCombatStartMarker.transform.position, Vector3.one);
+                AppendColliderDiagnosticsNearBounds(
+                    report,
+                    stageScene,
+                    "Active solid colliders near Bokdo_Point",
+                    markerBounds,
+                    new Vector3(5f, 4f, 5f),
+                    packageRoot.transform);
+            }
+
+            const string reportPath = "C:/tmp/DimensionBrawl-Olympus-StairColliderDiagnostics.txt";
+            File.WriteAllLines(reportPath, report);
+            Debug.Log($"Wrote Olympus stair collider diagnostics to {reportPath}");
+        }
+
+        public static void RunBatchDirectMoveOlympusPlayerToBokdoPoint()
+        {
+            Scene stageScene = EditorSceneManager.OpenScene(StageScenePath, OpenSceneMode.Single);
+            GameObject packageRoot = RequireObjectInScene(stageScene, CombatPackageRootName);
+            GameObject flowRoot = RequireObjectInScene(stageScene, FlowRootName);
+            GameObject playerRoot = RequireChildObject(packageRoot.transform, SourcePlayerRootName);
+            GameObject stairBlocker = RequireChildObject(packageRoot.transform, StairBlockerName);
+            Collider stairBlockerCollider =
+                RequireComponent<Collider>(stairBlocker, "Olympus intro stair blocker");
+            GameObject corridorCombatStartMarker =
+                RequireObjectInScene(stageScene, CorridorCombatStartMarkerName);
+            OlympusCorridorCombatFlowController flowController =
+                RequireComponent<OlympusCorridorCombatFlowController>(
+                    flowRoot,
+                    "Olympus corridor combat flow controller");
+            CharacterController playerController =
+                RequireComponent<CharacterController>(playerRoot, "Olympus direct move player controller");
+
+            var report = new List<string>
+            {
+                "Olympus direct player coordinate walk",
+                $"Scene: {stageScene.path}",
+                $"Marker={GetHierarchyPath(corridorCombatStartMarker.transform)} world={FormatVector3(corridorCombatStartMarker.transform.position)}",
+                $"Player authoring start={FormatVector3(playerRoot.transform.position)}",
+                $"CharacterController center={FormatVector3(playerController.center)} radius={playerController.radius:0.###} height={playerController.height:0.###}"
+            };
+
+            InvokePrivate(flowController, "BeginIntroSwordGate");
+            SerializedObject flowSerialized = new SerializedObject(flowController);
+            CombatHealth[] introEnemies = GetCombatHealthArrayProperty(flowSerialized, "introSwordEnemies");
+            Vector3 walkStart = playerRoot.transform.position;
+            report.Add($"Player after intro handoff={FormatVector3(walkStart)}");
+            report.Add($"Intro active alive before clear={CountActiveAliveHealths(introEnemies)}");
+            report.Add($"Applied lethal damage to intro enemies={ApplyLethalDamageToAll(introEnemies, DamageTeam.Player)}");
+            Physics.SyncTransforms();
+            report.Add($"Intro active alive after clear={CountActiveAliveHealths(introEnemies)}");
+            report.Add($"IntroGateCleared={flowController.IntroGateCleared}");
+            report.Add($"Stair blocker enabled after clear={stairBlockerCollider.enabled}");
+            report.Add($"Intro enabled solid colliders after clear={CountEnabledSolidColliders(introEnemies)}");
+
+            Vector3 markerPosition = corridorCombatStartMarker.transform.position;
+            AppendDirectCoordinateWalkSamples(
+                report,
+                stageScene,
+                playerRoot,
+                playerController,
+                walkStart,
+                markerPosition,
+                24);
+
+            playerRoot.transform.position = markerPosition;
+            Physics.SyncTransforms();
+            bool triggerContainsMarkerY = InvokePrivateBool(flowController, "IsPlayerInsideStairTrigger");
+            report.Add($"Direct set player to Bokdo_Point position={FormatVector3(markerPosition)} triggerContains={triggerContainsMarkerY}");
+
+            Vector3 markerWithHandoffY = new Vector3(markerPosition.x, walkStart.y, markerPosition.z);
+            playerRoot.transform.position = markerWithHandoffY;
+            Physics.SyncTransforms();
+            bool triggerContainsHandoffY = InvokePrivateBool(flowController, "IsPlayerInsideStairTrigger");
+            report.Add($"Direct set player to Bokdo XZ with handoff Y={FormatVector3(markerWithHandoffY)} triggerContains={triggerContainsHandoffY}");
+
+            if (triggerContainsMarkerY || triggerContainsHandoffY)
+            {
+                InvokePrivate(flowController, "BeginCorridorCombat");
+            }
+
+            report.Add($"CorridorCombatStartedAfterDirectCoordinateMove={flowController.CorridorCombatStarted}");
+
+            const string reportPath = "C:/tmp/DimensionBrawl-Olympus-DirectPlayerCoordinateWalk.txt";
+            File.WriteAllLines(reportPath, report);
+            Debug.Log($"Wrote Olympus direct player coordinate walk report to {reportPath}");
         }
 
         public static void RunBatchValidateOlympusCorridorCombatFlow()
@@ -186,6 +423,8 @@ namespace DimensionBrawl.Editor
 
             OlympusCorridorCombatFlowController flowController =
                 RequireComponent<OlympusCorridorCombatFlowController>(flowRoot, "Olympus corridor combat flow controller");
+            CharacterController playerController =
+                RequireComponent<CharacterController>(playerRoot, "Olympus validation player controller");
             GameObject hudRoot = RequireChildObject(packageRoot.transform, SourceHudRootName);
             BossBarrageLaneReviewHud reviewHud =
                 RequireComponent<BossBarrageLaneReviewHud>(hudRoot, "Olympus validation review HUD");
@@ -196,7 +435,38 @@ namespace DimensionBrawl.Editor
                 RequireComponent<PlayerCombatModeController>(playerRoot, "combat mode controller");
             GameObject introSwordGateRoot = RequireChildObject(packageRoot.transform, IntroSwordGateRootName);
             GameObject canonicalEncounterRoot = RequireChildObject(packageRoot.transform, "ActionFoundationTestEncounter");
+            ActionFoundationTestEncounter canonicalEncounter =
+                RequireComponent<ActionFoundationTestEncounter>(
+                    canonicalEncounterRoot,
+                    "canonical corridor encounter");
             GameObject corridorBoundsRoot = RequireChildObject(packageRoot.transform, CorridorBoundsRootName);
+            GameObject stairTrigger = RequireChildObject(packageRoot.transform, StairTriggerName);
+            GameObject stairBlocker = RequireChildObject(packageRoot.transform, StairBlockerName);
+            Collider stairBlockerCollider =
+                RequireComponent<Collider>(stairBlocker, "Olympus intro stair blocker");
+            GameObject corridorCombatStartMarker = FindRootOrDescendant(stageScene, CorridorCombatStartMarkerName);
+            Vector3 stairTriggerPosition = stairTrigger.transform.position;
+            Vector3 corridorCombatStartMarkerPosition =
+                corridorCombatStartMarker != null ? corridorCombatStartMarker.transform.position : default;
+            float stairTriggerMarkerPlanarDistance = corridorCombatStartMarker != null
+                ? Vector3.ProjectOnPlane(
+                    stairTriggerPosition - corridorCombatStartMarkerPosition,
+                    Vector3.up).magnitude
+                : float.PositiveInfinity;
+            float stairTriggerMarkerVerticalDistance = corridorCombatStartMarker != null
+                ? Mathf.Abs(stairTriggerPosition.y - corridorCombatStartMarkerPosition.y)
+                : float.PositiveInfinity;
+            bool stairTriggerMatchesCorridorStartMarker =
+                corridorCombatStartMarker != null
+                && stairTriggerMarkerPlanarDistance <= 0.05f
+                && stairTriggerMarkerVerticalDistance <= 0.05f;
+            int corridorCombatStartMarkerEnabledSolidColliders =
+                CountEnabledSolidColliders(corridorCombatStartMarker);
+            bool corridorCombatStartMarkerNonBlocking =
+                corridorCombatStartMarker != null && corridorCombatStartMarkerEnabledSolidColliders == 0;
+            GameObject stageClearExitAnchor = FindRootOrDescendant(stageScene, StageClearExitAnchorName);
+            Vector3 stageClearExitPosition =
+                stageClearExitAnchor != null ? stageClearExitAnchor.transform.position : default;
             GameObject runtimePayloadRoot = FindRootOrDescendant(stageScene, IntroGatePodRuntimePayloadRootName);
             GameObject firstPersonResidualRoot = FindRootOrDescendant(stageScene, FirstPersonResidualVisualRootName);
             GameObject arenaVfxRoot = FindDirectChildObject(packageRoot.transform, SourceArenaVfxRootName);
@@ -415,7 +685,73 @@ namespace DimensionBrawl.Editor
                 packageRoot.transform,
                 playerRoot);
 
-            InvokePrivate(flowController, "BeginCorridorCombat");
+            SerializedObject flowSerialized = new SerializedObject(flowController);
+            CombatHealth[] introEnemyHealthsForClearSample =
+                GetCombatHealthArrayProperty(flowSerialized, "introSwordEnemies");
+            bool introEnemyHealthsResolvedForClearSample =
+                introEnemyHealthsForClearSample.Length > 0
+                && AllHealthReferencesResolved(introEnemyHealthsForClearSample);
+            bool stairBlockerEnabledAtIntroGate = stairBlockerCollider.enabled;
+            int introAliveBeforeClearSample = CountAliveHealths(introEnemyHealthsForClearSample);
+            bool introClearDamageApplied =
+                ApplyLethalDamageToAll(introEnemyHealthsForClearSample, DamageTeam.Player);
+            int introAliveAfterClearSample = CountAliveHealths(introEnemyHealthsForClearSample);
+            bool introGateClearedAfterDamage = flowController.IntroGateCleared;
+            bool stairBlockerDisabledAfterIntroClear = !stairBlockerCollider.enabled;
+            int introEnabledSolidCollidersAfterClear =
+                CountEnabledSolidColliders(introEnemyHealthsForClearSample);
+            bool introEnemyCollisionDisabledAfterClear =
+                introEnabledSolidCollidersAfterClear == 0;
+            if (!stairBlockerDisabledAfterIntroClear)
+            {
+                InvokePrivate(flowController, "BeginWaitingForStairEntry");
+            }
+
+            Vector3 playerPositionBeforeStairTriggerSample = playerRoot.transform.position;
+            Vector3 stairTraversalEndPosition = corridorCombatStartMarker != null
+                ? corridorCombatStartMarkerPosition
+                : stairTriggerPosition;
+            StairTraversalSampleSnapshot stairTraversalSample =
+                CaptureStairTraversalSample(
+                    stageScene,
+                    playerRoot,
+                    playerController,
+                    playerPositionBeforeStairTriggerSample,
+                    stairTraversalEndPosition,
+                    StairTraversalSampleSteps);
+            bool stairTraversalClearToBottom =
+                stairTraversalSample.IsValid
+                && stairTraversalSample.OverlapCount == 0;
+            GravityTraversalSnapshot stairGravityTraversalSample =
+                CaptureGravityTraversalSample(
+                    stageScene,
+                    playerRoot,
+                    playerController,
+                    playerPositionBeforeStairTriggerSample,
+                    stairTraversalEndPosition);
+            GravityTraversalEnvelopeSnapshot stairGravityTraversalEnvelope =
+                CaptureGravityTraversalEnvelopeSample(
+                    stageScene,
+                    playerRoot,
+                    playerController,
+                    playerPositionBeforeStairTriggerSample,
+                    stairTraversalEndPosition);
+            Vector3 playerPositionAtStairTrigger = new Vector3(
+                stairTriggerPosition.x,
+                playerPositionBeforeStairTriggerSample.y,
+                stairTriggerPosition.z);
+            playerRoot.transform.position = playerPositionAtStairTrigger;
+            bool stairTriggerContainsPlayer = InvokePrivateBool(flowController, "IsPlayerInsideStairTrigger");
+            if (stairTriggerContainsPlayer)
+            {
+                InvokePrivate(flowController, "BeginCorridorCombat");
+            }
+
+            bool corridorStartedFromStairTrigger = flowController.CorridorCombatStarted;
+            if (corridorStartedFromStairTrigger)
+            {
+                playerRoot.transform.position = playerPositionBeforeStairTriggerSample;
+            }
 
             CameraPhaseSnapshot corridorCameraSnapshot = CaptureCameraPhase(
                 stageScene,
@@ -436,6 +772,64 @@ namespace DimensionBrawl.Editor
             bool corridorCameraKeepsSourcePose =
                 Vector3.Distance(corridorCameraSnapshot.CombatCameraLocalPosition, CenteredCombatCameraLocalPosition)
                 <= 0.05f;
+
+            report.Add("Stair-to-corridor trigger sample:");
+            report.Add($"  introEnemyHealthsResolved={introEnemyHealthsResolvedForClearSample}");
+            report.Add($"  stairBlockerEnabledAtIntroGate={stairBlockerEnabledAtIntroGate}");
+            report.Add($"  introAliveBeforeClear={introAliveBeforeClearSample}");
+            report.Add($"  introClearDamageApplied={introClearDamageApplied}");
+            report.Add($"  introAliveAfterClear={introAliveAfterClearSample}");
+            report.Add($"  introGateClearedAfterDamage={introGateClearedAfterDamage}");
+            report.Add($"  stairBlockerDisabledAfterIntroClear={stairBlockerDisabledAfterIntroClear}");
+            report.Add($"  introEnabledSolidCollidersAfterClear={introEnabledSolidCollidersAfterClear}");
+            report.Add($"  introEnemyCollisionDisabledAfterClear={introEnemyCollisionDisabledAfterClear}");
+            report.Add(
+                $"  {CorridorCombatStartMarkerName} found={corridorCombatStartMarker != null} world={FormatVector3(corridorCombatStartMarkerPosition)}");
+            report.Add(
+                $"  {StairTriggerName} world={FormatVector3(stairTriggerPosition)} local={FormatVector3(stairTrigger.transform.localPosition)}");
+            report.Add(
+                $"  markerPlanarDelta={stairTriggerMarkerPlanarDistance:0.###} verticalDelta={stairTriggerMarkerVerticalDistance:0.###} matchesMarker={stairTriggerMatchesCorridorStartMarker}");
+            report.Add($"  markerEnabledSolidColliders={corridorCombatStartMarkerEnabledSolidColliders}");
+            report.Add($"  markerNonBlocking={corridorCombatStartMarkerNonBlocking}");
+            report.Add("Stair traversal clearance sample:");
+            report.Add($"  valid={stairTraversalSample.IsValid}");
+            report.Add(
+                $"  from={FormatVector3(stairTraversalSample.From)} to={FormatVector3(stairTraversalSample.To)} steps={stairTraversalSample.Steps}");
+            report.Add($"  overlapCount={stairTraversalSample.OverlapCount}");
+            report.Add($"  clearToBottom={stairTraversalClearToBottom}");
+            for (int i = 0; i < stairTraversalSample.OverlapSummaries.Count; i++)
+            {
+                report.Add($"  {i + 1:00}. {stairTraversalSample.OverlapSummaries[i]}");
+            }
+
+            report.Add("Stair traversal gravity sample:");
+            report.Add($"  valid={stairGravityTraversalSample.IsValid} pass={stairGravityTraversalSample.Passed}");
+            report.Add(
+                $"  reachedTarget={stairGravityTraversalSample.ReachedTarget} stayedAboveFloor={stairGravityTraversalSample.StayedAboveFloor} supportStable={stairGravityTraversalSample.SupportStable} hadGrounding={stairGravityTraversalSample.HadGrounding}");
+            report.Add(
+                $"  frames={stairGravityTraversalSample.Frames} from={FormatVector3(stairGravityTraversalSample.From)} to={FormatVector3(stairGravityTraversalSample.To)} final={FormatVector3(stairGravityTraversalSample.FinalPosition)}");
+            report.Add(
+                $"  finalPlanarDistance={stairGravityTraversalSample.FinalPlanarDistance:0.###} minY={stairGravityTraversalSample.MinY:0.###} maxUnsupportedSeconds={stairGravityTraversalSample.MaxUnsupportedSeconds:0.###}");
+            report.Add($"  failureReason={stairGravityTraversalSample.FailureReason}");
+            for (int i = 0; i < stairGravityTraversalSample.SampleSummaries.Count; i++)
+            {
+                report.Add($"  {i + 1:00}. {stairGravityTraversalSample.SampleSummaries[i]}");
+            }
+
+            report.Add("Stair traversal gravity envelope:");
+            report.Add(
+                $"  pass={stairGravityTraversalEnvelope.Passed} sampleCount={stairGravityTraversalEnvelope.Samples.Count} failedCount={stairGravityTraversalEnvelope.FailedCount}");
+            for (int i = 0; i < stairGravityTraversalEnvelope.Samples.Count; i++)
+            {
+                GravityTraversalSnapshot sample = stairGravityTraversalEnvelope.Samples[i];
+                report.Add(
+                    $"  offset={sample.LateralOffset:0.###} pass={sample.Passed} reached={sample.ReachedTarget} stable={sample.SupportStable} stayedAbove={sample.StayedAboveFloor} final={FormatVector3(sample.FinalPosition)} finalPlanarDistance={sample.FinalPlanarDistance:0.###} minY={sample.MinY:0.###} maxUnsupportedSeconds={sample.MaxUnsupportedSeconds:0.###} failure={sample.FailureReason}");
+            }
+
+            report.Add(
+                $"  playerBeforeSample={FormatVector3(playerPositionBeforeStairTriggerSample)} playerAtTriggerSample={FormatVector3(playerPositionAtStairTrigger)}");
+            report.Add($"  stairTriggerContainsPlayer={stairTriggerContainsPlayer}");
+            report.Add($"  corridorStartedFromStairTrigger={corridorStartedFromStairTrigger}");
 
             report.Add("Corridor combat sample:");
             report.Add($"  {SourceHudRootName} activeSelf={hudRoot.activeSelf} activeInHierarchy={hudRoot.activeInHierarchy}");
@@ -466,6 +860,120 @@ namespace DimensionBrawl.Editor
                 stageScene,
                 packageRoot.transform,
                 playerRoot);
+
+            SerializedObject canonicalEncounterSerialized = new SerializedObject(canonicalEncounter);
+            CombatHealth corridorEndEnemyHealth =
+                GetObjectReferenceProperty(canonicalEncounterSerialized, "enemyHealth") as CombatHealth;
+            GameObject corridorWinMarker =
+                ResolveGameObjectReference(GetObjectReferenceProperty(canonicalEncounterSerialized, "winMarker"));
+            GameObject corridorFailMarker =
+                ResolveGameObjectReference(GetObjectReferenceProperty(canonicalEncounterSerialized, "failMarker"));
+            bool corridorEndEnemyResolved = corridorEndEnemyHealth != null;
+            bool corridorEndWinMarkerResolved = corridorWinMarker != null;
+            bool corridorEndFailMarkerResolved = corridorFailMarker != null;
+            CombatHealth[] corridorClearTargetHealthsForClearSample =
+                GetCombatHealthArrayProperty(flowSerialized, "corridorClearTargets");
+            bool corridorClearTargetHealthsResolvedForClearSample =
+                corridorClearTargetHealthsForClearSample.Length > 0
+                && AllHealthReferencesResolved(corridorClearTargetHealthsForClearSample);
+            int corridorAliveBeforeStageClear =
+                CountActiveAliveHealths(corridorClearTargetHealthsForClearSample);
+            bool corridorEndDamageApplied = false;
+            if (corridorStartedFromStairTrigger && corridorEndEnemyHealth != null)
+            {
+                corridorEndEnemyHealth.ResetHealthToFull();
+                InvokePrivate(canonicalEncounter, "OnDisable");
+                InvokePrivate(canonicalEncounter, "OnEnable");
+                var lethalDamage = new DamageInfo(
+                    null,
+                    DamageTeam.Player,
+                    corridorEndEnemyHealth.MaxHealth + 1000f,
+                    corridorEndEnemyHealth.transform.position,
+                    Vector3.forward,
+                    0f);
+                corridorEndDamageApplied = corridorEndEnemyHealth.TryApplyDamage(lethalDamage);
+                InvokePrivate(flowController, "TryAdvanceFromCorridorCombat");
+            }
+
+            bool corridorCombatEndedAsWin =
+                corridorEndDamageApplied
+                && canonicalEncounter.IsWon
+                && corridorWinMarker != null
+                && corridorWinMarker.activeSelf
+                && corridorFailMarker != null
+                && !corridorFailMarker.activeSelf;
+
+            int corridorAliveAfterStageClear =
+                CountActiveAliveHealths(corridorClearTargetHealthsForClearSample);
+            bool flowCorridorClearedAfterClearTargets = flowController.CorridorCleared;
+            bool stageClearedAfterClearTargets = flowController.StageCleared;
+            bool corridorBoundsInactiveAfterStageClear = !corridorBoundsRoot.activeInHierarchy;
+            int corridorEnabledSolidCollidersAfterStageClear =
+                CountEnabledSolidColliders(corridorClearTargetHealthsForClearSample);
+            bool corridorTargetCollisionDisabledAfterStageClear =
+                corridorEnabledSolidCollidersAfterStageClear == 0;
+            Vector3 stageClearTraversalStart = stairGravityTraversalSample.Passed
+                ? stairGravityTraversalSample.FinalPosition
+                : stairTraversalEndPosition;
+            GravityTraversalSnapshot stageClearExitTraversal =
+                stageClearExitAnchor != null
+                    ? CaptureGravityTraversalSample(
+                        stageScene,
+                        playerRoot,
+                        playerController,
+                        stageClearTraversalStart,
+                        stageClearExitPosition)
+                    : new GravityTraversalSnapshot(
+                        false,
+                        false,
+                        false,
+                        false,
+                        false,
+                        0,
+                        0f,
+                        stageClearTraversalStart,
+                        stageClearTraversalStart,
+                        stageClearTraversalStart,
+                        stageClearTraversalStart.y,
+                        float.PositiveInfinity,
+                        0f,
+                        $"{StageClearExitAnchorName} is missing.",
+                        new List<string>());
+            report.Add("Corridor combat completion sample:");
+            report.Add($"  enemyHealthResolved={corridorEndEnemyResolved}");
+            report.Add($"  winMarkerResolved={corridorEndWinMarkerResolved} active={corridorWinMarker != null && corridorWinMarker.activeSelf}");
+            report.Add($"  failMarkerResolved={corridorEndFailMarkerResolved} active={corridorFailMarker != null && corridorFailMarker.activeSelf}");
+            report.Add($"  lethalDamageApplied={corridorEndDamageApplied}");
+            report.Add($"  encounterWon={canonicalEncounter.IsWon} encounterFailed={canonicalEncounter.IsFailed}");
+            report.Add($"  corridorCombatEndedAsWin={corridorCombatEndedAsWin}");
+
+            report.Add("Stage clear exit sample:");
+            report.Add(
+                $"  {StageClearExitAnchorName} found={stageClearExitAnchor != null} world={FormatVector3(stageClearExitPosition)}");
+            report.Add($"  corridorClearTargetHealthsResolved={corridorClearTargetHealthsResolvedForClearSample}");
+            report.Add($"  corridorAliveBeforeStageClear={corridorAliveBeforeStageClear}");
+            report.Add($"  corridorClearDamageAppliedByEncounter={corridorEndDamageApplied}");
+            report.Add($"  corridorAliveAfterStageClear={corridorAliveAfterStageClear}");
+            report.Add($"  flowCorridorClearedAfterClearTargets={flowCorridorClearedAfterClearTargets}");
+            report.Add($"  stageClearedAfterClearTargets={stageClearedAfterClearTargets}");
+            report.Add($"  corridorBoundsInactiveAfterStageClear={corridorBoundsInactiveAfterStageClear}");
+            report.Add(
+                $"  corridorEnabledSolidCollidersAfterStageClear={corridorEnabledSolidCollidersAfterStageClear}");
+            report.Add(
+                $"  corridorTargetCollisionDisabledAfterStageClear={corridorTargetCollisionDisabledAfterStageClear}");
+            report.Add(
+                $"  exitTraversal valid={stageClearExitTraversal.IsValid} pass={stageClearExitTraversal.Passed}");
+            report.Add(
+                $"  exitTraversal reachedTarget={stageClearExitTraversal.ReachedTarget} stayedAboveFloor={stageClearExitTraversal.StayedAboveFloor} supportStable={stageClearExitTraversal.SupportStable} hadGrounding={stageClearExitTraversal.HadGrounding}");
+            report.Add(
+                $"  exitTraversal frames={stageClearExitTraversal.Frames} from={FormatVector3(stageClearExitTraversal.From)} to={FormatVector3(stageClearExitTraversal.To)} final={FormatVector3(stageClearExitTraversal.FinalPosition)}");
+            report.Add(
+                $"  exitTraversal finalPlanarDistance={stageClearExitTraversal.FinalPlanarDistance:0.###} minY={stageClearExitTraversal.MinY:0.###} maxUnsupportedSeconds={stageClearExitTraversal.MaxUnsupportedSeconds:0.###}");
+            report.Add($"  exitTraversal failureReason={stageClearExitTraversal.FailureReason}");
+            for (int i = 0; i < stageClearExitTraversal.SampleSummaries.Count; i++)
+            {
+                report.Add($"  {i + 1:00}. {stageClearExitTraversal.SampleSummaries[i]}");
+            }
 
             report.Add("Timeline handoff coverage:");
             report.Add($"  Director duration={directorDuration:0.###}");
@@ -519,6 +1027,21 @@ namespace DimensionBrawl.Editor
                 && introCameraSnapshot.CombatCameraCentersPlayerRenderer
                 && introCameraPrediction.BaseCentersPlayer
                 && introCameraPrediction.FullAimCentersPlayer
+                && introEnemyHealthsResolvedForClearSample
+                && stairBlockerEnabledAtIntroGate
+                && introAliveBeforeClearSample > 0
+                && introClearDamageApplied
+                && introAliveAfterClearSample == 0
+                && introGateClearedAfterDamage
+                && stairBlockerDisabledAfterIntroClear
+                && introEnemyCollisionDisabledAfterClear
+                && stairTriggerMatchesCorridorStartMarker
+                && corridorCombatStartMarkerNonBlocking
+                && stairTraversalClearToBottom
+                && stairGravityTraversalSample.Passed
+                && stairGravityTraversalEnvelope.Passed
+                && stairTriggerContainsPlayer
+                && corridorStartedFromStairTrigger
                 && corridorHudActive
                 && corridorCameraActive
                 && corridorCameraSnapshot.OnlyCombatCameraEnabled
@@ -531,6 +1054,19 @@ namespace DimensionBrawl.Editor
                 && corridorCameraSnapshot.CombatCameraCentersPlayerRenderer
                 && corridorCameraPrediction.BaseCentersPlayer
                 && corridorCameraPrediction.FullAimCentersPlayer
+                && corridorEndEnemyResolved
+                && corridorEndWinMarkerResolved
+                && corridorEndFailMarkerResolved
+                && corridorCombatEndedAsWin
+                && stageClearExitAnchor != null
+                && corridorClearTargetHealthsResolvedForClearSample
+                && corridorEndDamageApplied
+                && corridorAliveAfterStageClear == 0
+                && flowCorridorClearedAfterClearTargets
+                && stageClearedAfterClearTargets
+                && corridorBoundsInactiveAfterStageClear
+                && corridorTargetCollisionDisabledAfterStageClear
+                && stageClearExitTraversal.Passed
                 && finalHandoffBinding.ObsoleteCombatStartVisualRemoved
                 && finalHandoffBinding.BodyTrackBoundToCombatPlayer
                 && finalHandoffBinding.ActivationTrackBoundToCombatPlayer
@@ -590,6 +1126,9 @@ namespace DimensionBrawl.Editor
             Transform combatStartAnchor = RequireObjectInScene(stageScene, CombatStartAnchorName).transform;
             Transform combatCameraHandoffPose =
                 RequireObjectInScene(stageScene, PlayerRevealHandoffCameraName).transform;
+            Transform corridorCombatStartMarker =
+                FindRootOrDescendant(stageScene, CorridorCombatStartMarkerName)?.transform;
+            DisableMarkerColliders(corridorCombatStartMarker);
             PlayableDirector introDirector = FindObjectByName<PlayableDirector>(stageScene, TimelineDirectorName);
             double introHandoffSeconds = ResolveIntroHandoffSeconds(introDirector);
             RemoveRootIfPresent(stageScene, FlowRootName);
@@ -607,6 +1146,8 @@ namespace DimensionBrawl.Editor
 
             GameObject playerRoot = RequireChildObject(packageRoot.transform, SourcePlayerRootName);
             PlayerMovementController player = RequireComponent<PlayerMovementController>(playerRoot, "combat player movement");
+            CharacterController playerController =
+                RequireComponent<CharacterController>(playerRoot, "combat player controller");
             CombatHealth playerHealth = RequireComponent<CombatHealth>(playerRoot, "combat player health");
             PlayerCombatTargetSelector targetSelector =
                 RequireComponent<PlayerCombatTargetSelector>(playerRoot, "combat player target selector");
@@ -627,6 +1168,20 @@ namespace DimensionBrawl.Editor
             ConfigurePlayerSwordOnlyHandoff(playerRoot, combatModeController);
             SnapCombatPlayerToHandoffGround(introDirector, playerRoot, packageRoot.transform);
             StabilizeRevealHandoffTimeline(introDirector, packageRoot.transform, playerRoot);
+            Vector3 stairTraversalStart = playerRoot.transform.position;
+            Vector3 stairTraversalEnd = corridorCombatStartMarker != null
+                ? corridorCombatStartMarker.position
+                : packageRoot.transform.TransformPoint(new Vector3(0f, 0f, 9.5f));
+            StairTraversalCleanupSnapshot stairTraversalCleanup =
+                DisableStairTraversalBlockingColliders(
+                    stageScene,
+                    packageRoot.transform,
+                    playerRoot,
+                    playerController,
+                    stairTraversalStart,
+                    stairTraversalEnd);
+            Debug.Log(
+                $"Olympus stair traversal cleanup restored {stairTraversalCleanup.RestoredSupportColliderCount} support colliders, disabled {stairTraversalCleanup.DisabledColliderCount} blockers. Remaining overlaps={stairTraversalCleanup.RemainingOverlapCount}.");
 
             Transform introSwordGateRoot = CreateChild(
                 packageRoot.transform,
@@ -641,7 +1196,7 @@ namespace DimensionBrawl.Editor
                 introHandoffSeconds,
                 out Behaviour[] introEnemyGameplayBehaviours);
 
-            Transform stairTrigger = CreateStairTrigger(packageRoot.transform).transform;
+            Transform stairTrigger = CreateStairTrigger(packageRoot.transform, corridorCombatStartMarker).transform;
             Collider stairBlocker = CreateStairBlocker(packageRoot.transform);
             GameObject boundsRoot = CreateCorridorBounds(packageRoot.transform);
 
@@ -663,6 +1218,7 @@ namespace DimensionBrawl.Editor
             GameObject[] corridorRoots = ResolveCorridorCombatRoots(packageRoot.transform);
             GameObject[] boundsRoots = { boundsRoot };
             CombatHealth[] corridorTargets = { closeThreatHealth, bossHealth };
+            CombatHealth[] corridorClearTargets = { closeThreatHealth };
 
             OlympusCorridorCombatFlowController flowController =
                 flowRoot.AddComponent<OlympusCorridorCombatFlowController>();
@@ -686,6 +1242,7 @@ namespace DimensionBrawl.Editor
                 corridorRoots,
                 boundsRoots,
                 corridorTargets,
+                corridorClearTargets,
                 player,
                 combatModeController,
                 targetSelector,
@@ -778,6 +1335,16 @@ namespace DimensionBrawl.Editor
             for (int i = 0; i < importedRoots.Count; i++)
             {
                 GameObject root = importedRoots[i];
+                if (IsNonSpatialImportedRoot(root.name))
+                {
+                    root.transform.SetParent(packageRoot, worldPositionStays: false);
+                    root.transform.localPosition = Vector3.zero;
+                    root.transform.localRotation = Quaternion.identity;
+                    root.transform.localScale = Vector3.one;
+                    EditorUtility.SetDirty(root);
+                    continue;
+                }
+
                 Vector3 sourceOffset = root.transform.position - SourcePlayerStartPosition;
                 Vector3 mappedPosition = targetPosition + targetRotation * sourceOffset;
                 Quaternion mappedRotation = targetRotation * root.transform.rotation;
@@ -785,6 +1352,12 @@ namespace DimensionBrawl.Editor
                 root.transform.SetParent(packageRoot, worldPositionStays: true);
                 EditorUtility.SetDirty(root);
             }
+        }
+
+        private static bool IsNonSpatialImportedRoot(string rootName)
+        {
+            return string.Equals(rootName, SourceCombatHudCanvasRootName, StringComparison.Ordinal)
+                || string.Equals(rootName, SourceCombatHudEventSystemRootName, StringComparison.Ordinal);
         }
 
         private static void RenameCombatCamera(List<GameObject> importedRoots)
@@ -1516,12 +2089,15 @@ namespace DimensionBrawl.Editor
             SetBehaviourEnabled(enemy.GetComponent<CombatVfxCuePlayer>(), enabled);
         }
 
-        private static GameObject CreateStairTrigger(Transform packageRoot)
+        private static GameObject CreateStairTrigger(Transform packageRoot, Transform startMarker)
         {
+            Vector3 triggerPosition = startMarker != null
+                ? startMarker.position
+                : packageRoot.TransformPoint(new Vector3(0f, 0f, 9.5f));
             GameObject trigger = CreateChild(
                 packageRoot,
                 StairTriggerName,
-                packageRoot.TransformPoint(new Vector3(0f, 0f, 9.5f)),
+                triggerPosition,
                 packageRoot.rotation);
             SphereCollider collider = trigger.AddComponent<SphereCollider>();
             collider.isTrigger = true;
@@ -1576,7 +2152,11 @@ namespace DimensionBrawl.Editor
             return FilterExisting(
                 RequireChildObject(packageRoot, CombatCameraName),
                 FindDirectChildObject(packageRoot, SourceHudRootName),
-                FindDirectChildObject(packageRoot, SourceCombatVfxRootName));
+                FindDirectChildObject(packageRoot, SourceCombatHudCanvasRootName),
+                FindDirectChildObject(packageRoot, SourceCombatHudEventSystemRootName),
+                FindDirectChildObject(packageRoot, SourceCombatVfxRootName),
+                FindDirectChildObject(packageRoot, SourceProjectilePoolRootName),
+                FindDirectChildObject(packageRoot, SourceActionCuePoolRootName));
         }
 
         private static GameObject[] ResolveAlwaysDisabledRoots(Transform packageRoot)
@@ -1609,6 +2189,8 @@ namespace DimensionBrawl.Editor
                 || string.Equals(rootName, CombatCameraName, StringComparison.Ordinal)
                 || string.Equals(rootName, SourceCombatVfxRootName, StringComparison.Ordinal)
                 || string.Equals(rootName, SourceHudRootName, StringComparison.Ordinal)
+                || string.Equals(rootName, SourceCombatHudCanvasRootName, StringComparison.Ordinal)
+                || string.Equals(rootName, SourceCombatHudEventSystemRootName, StringComparison.Ordinal)
                 || string.Equals(rootName, SourceArenaVfxRootName, StringComparison.Ordinal)
                 || string.Equals(rootName, SourceArenaGridRootName, StringComparison.Ordinal)
                 || string.Equals(rootName, IntroSwordGateRootName, StringComparison.Ordinal)
@@ -2934,6 +3516,1354 @@ namespace DimensionBrawl.Editor
             return property != null ? property.objectReferenceValue : null;
         }
 
+        private static CombatHealth[] GetCombatHealthArrayProperty(
+            SerializedObject serialized,
+            string propertyName)
+        {
+            SerializedProperty property = serialized.FindProperty(propertyName);
+            if (property == null || !property.isArray)
+            {
+                return Array.Empty<CombatHealth>();
+            }
+
+            var healths = new CombatHealth[property.arraySize];
+            for (int i = 0; i < property.arraySize; i++)
+            {
+                healths[i] = property.GetArrayElementAtIndex(i).objectReferenceValue as CombatHealth;
+            }
+
+            return healths;
+        }
+
+        private static bool AllHealthReferencesResolved(CombatHealth[] healths)
+        {
+            if (healths == null || healths.Length == 0)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < healths.Length; i++)
+            {
+                if (healths[i] == null)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private static int CountAliveHealths(CombatHealth[] healths)
+        {
+            if (healths == null)
+            {
+                return 0;
+            }
+
+            int aliveCount = 0;
+            for (int i = 0; i < healths.Length; i++)
+            {
+                if (healths[i] != null && healths[i].IsAlive)
+                {
+                    aliveCount++;
+                }
+            }
+
+            return aliveCount;
+        }
+
+        private static int CountActiveAliveHealths(CombatHealth[] healths)
+        {
+            if (healths == null)
+            {
+                return 0;
+            }
+
+            int aliveCount = 0;
+            for (int i = 0; i < healths.Length; i++)
+            {
+                CombatHealth health = healths[i];
+                if (health != null && health.gameObject.activeInHierarchy && health.IsAlive)
+                {
+                    aliveCount++;
+                }
+            }
+
+            return aliveCount;
+        }
+
+        private static bool ApplyLethalDamageToAll(CombatHealth[] healths, DamageTeam sourceTeam)
+        {
+            if (healths == null || healths.Length == 0)
+            {
+                return false;
+            }
+
+            bool appliedToAll = true;
+            for (int i = 0; i < healths.Length; i++)
+            {
+                CombatHealth health = healths[i];
+                if (health == null)
+                {
+                    appliedToAll = false;
+                    continue;
+                }
+
+                health.ResetHealthToFull();
+                var lethalDamage = new DamageInfo(
+                    null,
+                    sourceTeam,
+                    health.MaxHealth + 1000f,
+                    health.transform.position,
+                    Vector3.forward,
+                    0f);
+                appliedToAll &= health.TryApplyDamage(lethalDamage);
+            }
+
+            return appliedToAll;
+        }
+
+        private static int CountEnabledSolidColliders(CombatHealth[] healths)
+        {
+            if (healths == null)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            for (int i = 0; i < healths.Length; i++)
+            {
+                CombatHealth health = healths[i];
+                if (health == null)
+                {
+                    continue;
+                }
+
+                Collider[] colliders = health.GetComponentsInChildren<Collider>(includeInactive: true);
+                for (int colliderIndex = 0; colliderIndex < colliders.Length; colliderIndex++)
+                {
+                    Collider collider = colliders[colliderIndex];
+                    if (collider != null && collider.enabled && !collider.isTrigger)
+                    {
+                        count++;
+                    }
+                }
+            }
+
+            return count;
+        }
+
+        private static int CountEnabledSolidColliders(GameObject root)
+        {
+            if (root == null)
+            {
+                return 0;
+            }
+
+            int count = 0;
+            Collider[] colliders = root.GetComponentsInChildren<Collider>(includeInactive: true);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider collider = colliders[i];
+                if (collider != null && collider.enabled && !collider.isTrigger)
+                {
+                    count++;
+                }
+            }
+
+            return count;
+        }
+
+        private static void DisableMarkerColliders(Transform marker)
+        {
+            if (marker == null)
+            {
+                return;
+            }
+
+            Collider[] colliders = marker.GetComponentsInChildren<Collider>(includeInactive: true);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider collider = colliders[i];
+                if (collider != null && collider.enabled)
+                {
+                    collider.enabled = false;
+                    EditorUtility.SetDirty(collider);
+                }
+            }
+        }
+
+        private static StairTraversalCleanupSnapshot DisableStairTraversalBlockingColliders(
+            Scene scene,
+            Transform packageRoot,
+            GameObject playerRoot,
+            CharacterController playerController,
+            Vector3 from,
+            Vector3 to)
+        {
+            var disabledPaths = new SortedSet<string>(StringComparer.Ordinal);
+            int restoredSupportColliderCount =
+                RestoreStairTraversalSupportColliders(scene, packageRoot, playerRoot.transform, from, to);
+            DisableKnownStairTraversalBlockingColliders(scene, disabledPaths, from, to);
+
+            for (int pass = 0; pass < StairTraversalCleanupPasses; pass++)
+            {
+                List<ControllerOverlapDiagnosticEntry> overlaps =
+                    CollectControllerSolidOverlapsAlongPath(
+                        scene,
+                        playerRoot,
+                        playerController,
+                        from,
+                        to,
+                        StairTraversalSampleSteps);
+                bool disabledAny = false;
+                for (int i = 0; i < overlaps.Count; i++)
+                {
+                    Collider collider = overlaps[i].Collider;
+                    if (!ShouldDisableStairTraversalCollider(collider, packageRoot, playerRoot.transform, from, to))
+                    {
+                        continue;
+                    }
+
+                    DisableSolidCollider(collider, disabledPaths);
+                    disabledAny = true;
+                }
+
+                if (!disabledAny)
+                {
+                    break;
+                }
+            }
+
+            List<ControllerOverlapDiagnosticEntry> remainingOverlaps =
+                CollectControllerSolidOverlapsAlongPath(
+                    scene,
+                    playerRoot,
+                    playerController,
+                    from,
+                    to,
+                    StairTraversalSampleSteps);
+            int remainingBlockingOverlapCount = 0;
+            for (int i = 0; i < remainingOverlaps.Count; i++)
+            {
+                if (ShouldDisableStairTraversalCollider(remainingOverlaps[i].Collider, packageRoot, playerRoot.transform, from, to))
+                {
+                    remainingBlockingOverlapCount++;
+                }
+            }
+
+            return new StairTraversalCleanupSnapshot(
+                restoredSupportColliderCount,
+                disabledPaths.Count,
+                remainingBlockingOverlapCount);
+        }
+
+        private static void DisableKnownStairTraversalBlockingColliders(
+            Scene scene,
+            SortedSet<string> disabledPaths,
+            Vector3 from,
+            Vector3 to)
+        {
+            for (int i = 0; i < KnownStairTraversalBlockingRoots.Length; i++)
+            {
+                GameObject root = FindRootOrDescendant(scene, KnownStairTraversalBlockingRoots[i]);
+                DisableSolidColliders(root, disabledPaths, from, to);
+            }
+        }
+
+        private static bool ShouldDisableStairTraversalCollider(
+            Collider collider,
+            Transform packageRoot,
+            Transform playerRoot,
+            Vector3 from,
+            Vector3 to)
+        {
+            if (collider == null
+                || !collider.enabled
+                || collider.isTrigger
+                || !collider.gameObject.activeInHierarchy)
+            {
+                return false;
+            }
+
+            Transform colliderTransform = collider.transform;
+            if (playerRoot != null
+                && (colliderTransform == playerRoot || colliderTransform.IsChildOf(playerRoot)))
+            {
+                return false;
+            }
+
+            if (IsKnownStairTraversalSideBlockingCollider(collider))
+            {
+                return true;
+            }
+
+            if (IsStairTraversalSupportCollider(collider, from, to))
+            {
+                return false;
+            }
+
+            return packageRoot == null
+                || (colliderTransform != packageRoot && !colliderTransform.IsChildOf(packageRoot));
+        }
+
+        private static int RestoreStairTraversalSupportColliders(
+            Scene scene,
+            Transform packageRoot,
+            Transform playerRoot,
+            Vector3 from,
+            Vector3 to)
+        {
+            int restoredCount = 0;
+            Collider[] colliders = UnityEngine.Object.FindObjectsByType<Collider>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider collider = colliders[i];
+                if (collider == null
+                    || collider.gameObject.scene != scene
+                    || collider.enabled
+                    || collider.isTrigger
+                    || !collider.gameObject.activeInHierarchy)
+                {
+                    continue;
+                }
+
+                Transform colliderTransform = collider.transform;
+                if (playerRoot != null
+                    && (colliderTransform == playerRoot || colliderTransform.IsChildOf(playerRoot)))
+                {
+                    continue;
+                }
+
+                if (packageRoot != null
+                    && (colliderTransform == packageRoot || colliderTransform.IsChildOf(packageRoot)))
+                {
+                    continue;
+                }
+
+                if (IsKnownStairTraversalSideBlockingCollider(collider))
+                {
+                    continue;
+                }
+
+                collider.enabled = true;
+                Physics.SyncTransforms();
+                if (IsStairTraversalSupportCollider(collider, from, to))
+                {
+                    restoredCount++;
+                    EditorUtility.SetDirty(collider);
+                    continue;
+                }
+
+                collider.enabled = false;
+            }
+
+            Physics.SyncTransforms();
+            return restoredCount;
+        }
+
+        private static void DisableSolidColliders(
+            GameObject root,
+            SortedSet<string> disabledPaths,
+            Vector3 from,
+            Vector3 to,
+            bool disableSupportSurfaces = false)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            Collider[] colliders = root.GetComponentsInChildren<Collider>(includeInactive: true);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                if (!IsKnownStairTraversalSideBlockingCollider(colliders[i])
+                    && !disableSupportSurfaces
+                    && IsStairTraversalSupportCollider(colliders[i], from, to))
+                {
+                    continue;
+                }
+
+                DisableSolidCollider(colliders[i], disabledPaths);
+            }
+        }
+
+        private static bool IsKnownStairTraversalSideBlockingCollider(Collider collider)
+        {
+            if (collider == null)
+            {
+                return false;
+            }
+
+            string path = GetHierarchyPath(collider.transform);
+            for (int i = 0; i < KnownStairTraversalSideBlockingColliderPaths.Length; i++)
+            {
+                if (string.Equals(path, KnownStairTraversalSideBlockingColliderPaths[i], StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static void DisableSolidCollider(Collider collider, SortedSet<string> disabledPaths)
+        {
+            if (collider == null || !collider.enabled || collider.isTrigger)
+            {
+                return;
+            }
+
+            disabledPaths.Add(GetHierarchyPath(collider.transform));
+            collider.enabled = false;
+            EditorUtility.SetDirty(collider);
+        }
+
+        private static bool IsStairTraversalSupportCollider(Collider collider, Vector3 from, Vector3 to)
+        {
+            if (collider == null
+                || !collider.enabled
+                || collider.isTrigger
+                || !collider.gameObject.activeInHierarchy)
+            {
+                return false;
+            }
+
+            int safeSteps = Mathf.Max(1, StairTraversalSampleSteps);
+            float probeDistance = StairTraversalSupportProbeUp + StairTraversalSupportProbeDown;
+            for (int i = 0; i <= safeSteps; i++)
+            {
+                float t = i / (float)safeSteps;
+                Vector3 sample = Vector3.Lerp(from, to, t);
+                var ray = new Ray(sample + Vector3.up * StairTraversalSupportProbeUp, Vector3.down);
+                if (!collider.Raycast(ray, out RaycastHit hit, probeDistance))
+                {
+                    continue;
+                }
+
+                float hitOffsetFromPath = hit.point.y - sample.y;
+                if (hit.normal.y >= StairTraversalSupportMinNormalY
+                    && hitOffsetFromPath <= StairTraversalSupportMaxAbovePath
+                    && hitOffsetFromPath >= -StairTraversalSupportMaxBelowPath)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static StairTraversalSampleSnapshot CaptureStairTraversalSample(
+            Scene scene,
+            GameObject playerRoot,
+            CharacterController playerController,
+            Vector3 from,
+            Vector3 to,
+            int steps)
+        {
+            if (playerRoot == null || playerController == null)
+            {
+                return default;
+            }
+
+            List<ControllerOverlapDiagnosticEntry> overlaps =
+                CollectControllerSolidOverlapsAlongPath(scene, playerRoot, playerController, from, to, steps);
+            overlaps.RemoveAll(entry => IsStairTraversalSupportCollider(entry.Collider, from, to));
+            var summaries = new List<string>();
+            int count = Mathf.Min(overlaps.Count, 24);
+            for (int i = 0; i < count; i++)
+            {
+                ControllerOverlapDiagnosticEntry overlap = overlaps[i];
+                summaries.Add(
+                    $"distance={overlap.Distance:0.###} type={overlap.ColliderType} center={FormatVector3(overlap.Center)} size={FormatVector3(overlap.Size)} path={overlap.Path}");
+            }
+
+            if (overlaps.Count > count)
+            {
+                summaries.Add($"... {overlaps.Count - count} more");
+            }
+
+            return new StairTraversalSampleSnapshot(true, from, to, Mathf.Max(1, steps), overlaps.Count, summaries);
+        }
+
+        private static GravityTraversalSnapshot CaptureGravityTraversalSample(
+            Scene scene,
+            GameObject playerRoot,
+            CharacterController playerController,
+            Vector3 from,
+            Vector3 to,
+            float lateralOffset = 0f)
+        {
+            if (playerRoot == null || playerController == null)
+            {
+                return new GravityTraversalSnapshot(
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    0,
+                    lateralOffset,
+                    from,
+                    to,
+                    from,
+                    from.y,
+                    float.PositiveInfinity,
+                    0f,
+                    "Missing player root or CharacterController.",
+                    new List<string>());
+            }
+
+            if (!playerRoot.activeInHierarchy)
+            {
+                return new GravityTraversalSnapshot(
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    0,
+                    lateralOffset,
+                    from,
+                    to,
+                    playerRoot.transform.position,
+                    playerRoot.transform.position.y,
+                    Vector3.ProjectOnPlane(to - playerRoot.transform.position, Vector3.up).magnitude,
+                    0f,
+                    "Player root is inactive.",
+                    new List<string>());
+            }
+
+            Vector3 originalPosition = playerRoot.transform.position;
+            bool originalControllerEnabled = playerController.enabled;
+            bool originalDetectCollisions = playerController.detectCollisions;
+            var sampleSummaries = new List<string>();
+            ResolveGravityTraversalSettings(
+                playerRoot,
+                out float moveSpeed,
+                out float gravity);
+
+            try
+            {
+                if (!playerController.enabled)
+                {
+                    playerController.enabled = true;
+                }
+
+                playerController.detectCollisions = true;
+                playerRoot.transform.position = from;
+                Physics.SyncTransforms();
+
+                float totalPlanarDistance = Vector3.ProjectOnPlane(to - from, Vector3.up).magnitude;
+                float verticalVelocity = 0f;
+                float minY = playerRoot.transform.position.y;
+                float maxUnsupportedSeconds = 0f;
+                float currentUnsupportedSeconds = 0f;
+                bool hadGrounding = playerController.isGrounded;
+                bool stayedAboveFloor = true;
+                int frames = 0;
+
+                TryFindTraversalSupportBelow(
+                    scene,
+                    playerRoot.transform,
+                    playerController,
+                    out float supportDistance,
+                    out string supportPath);
+                AppendGravityTraversalSampleSummary(
+                    sampleSummaries,
+                    0,
+                    playerRoot.transform.position,
+                    playerController.isGrounded,
+                    supportDistance,
+                    supportPath,
+                    verticalVelocity,
+                    "<not-sampled>");
+                int stalledFrames = 0;
+
+                for (int frame = 0; frame < StairTraversalGravityMaxFrames; frame++)
+                {
+                    Vector3 currentPosition = playerRoot.transform.position;
+                    Vector3 planarToTarget = Vector3.ProjectOnPlane(to - currentPosition, Vector3.up);
+                    float planarDistance = planarToTarget.magnitude;
+                    if (planarDistance <= StairTraversalGravityPlanarTolerance)
+                    {
+                        break;
+                    }
+
+                    if (playerController.isGrounded && verticalVelocity < 0f)
+                    {
+                        verticalVelocity = -1f;
+                    }
+
+                    verticalVelocity += gravity * StairTraversalGravityDeltaTime;
+                    Vector3 planarStep = planarToTarget.normalized
+                        * Mathf.Min(moveSpeed * StairTraversalGravityDeltaTime, planarDistance);
+                    CollisionFlags flags = playerController.Move(
+                        planarStep + Vector3.up * (verticalVelocity * StairTraversalGravityDeltaTime));
+                    Physics.SyncTransforms();
+
+                    frames = frame + 1;
+                    currentPosition = playerRoot.transform.position;
+                    minY = Mathf.Min(minY, currentPosition.y);
+                    bool grounded =
+                        (flags & CollisionFlags.Below) != 0
+                        || playerController.isGrounded;
+                    hadGrounding |= grounded;
+                    bool supported = TryFindTraversalSupportBelow(
+                        scene,
+                        playerRoot.transform,
+                        playerController,
+                        out supportDistance,
+                        out supportPath);
+
+                    if (grounded || supported)
+                    {
+                        currentUnsupportedSeconds = 0f;
+                    }
+                    else
+                    {
+                        currentUnsupportedSeconds += StairTraversalGravityDeltaTime;
+                        maxUnsupportedSeconds = Mathf.Max(maxUnsupportedSeconds, currentUnsupportedSeconds);
+                    }
+
+                    float remainingPlanarDistance = Vector3.ProjectOnPlane(to - currentPosition, Vector3.up).magnitude;
+                    float planarAdvance = planarDistance - remainingPlanarDistance;
+                    if (planarAdvance <= StairTraversalGravityStallEpsilon
+                        && remainingPlanarDistance > StairTraversalGravityPlanarTolerance)
+                    {
+                        stalledFrames++;
+                    }
+                    else
+                    {
+                        stalledFrames = 0;
+                    }
+
+                    float progress = totalPlanarDistance > 0.001f
+                        ? Mathf.Clamp01(1f - (remainingPlanarDistance / totalPlanarDistance))
+                        : 1f;
+                    float expectedY = Mathf.Lerp(from.y, to.y, progress);
+                    bool belowPath = currentPosition.y < expectedY - StairTraversalGravityMaxDropBelowPath;
+                    stayedAboveFloor &= !belowPath;
+
+                    if (frame % 60 == 59
+                        || belowPath
+                        || stalledFrames >= 10
+                        || (!grounded && !supported && currentUnsupportedSeconds >= StairTraversalGravityDeltaTime))
+                    {
+                        string blockerAhead = TryFindTraversalBlockerAhead(
+                            scene,
+                            playerRoot.transform,
+                            playerController,
+                            planarToTarget,
+                            out string blockerSummary)
+                                ? blockerSummary
+                                : "<none>";
+                        AppendGravityTraversalSampleSummary(
+                            sampleSummaries,
+                            frames,
+                            currentPosition,
+                            grounded,
+                            supported ? supportDistance : float.PositiveInfinity,
+                            supportPath,
+                            verticalVelocity,
+                            blockerAhead);
+                    }
+
+                    if (belowPath
+                        && currentUnsupportedSeconds > StairTraversalGravityMaxUnsupportedSeconds)
+                    {
+                        break;
+                    }
+                }
+
+                Vector3 finalPosition = playerRoot.transform.position;
+                float finalPlanarDistance = Vector3.ProjectOnPlane(to - finalPosition, Vector3.up).magnitude;
+                bool reachedTarget = finalPlanarDistance <= StairTraversalGravityPlanarTolerance;
+                bool supportStable = maxUnsupportedSeconds <= StairTraversalGravityMaxUnsupportedSeconds;
+                var failureReasons = new List<string>();
+                if (!reachedTarget)
+                {
+                    Vector3 finalPlanarToTarget = Vector3.ProjectOnPlane(to - finalPosition, Vector3.up);
+                    string blockerAhead = TryFindTraversalBlockerAhead(
+                        scene,
+                        playerRoot.transform,
+                        playerController,
+                        finalPlanarToTarget,
+                        out string blockerSummary)
+                            ? blockerSummary
+                            : "<none>";
+                    failureReasons.Add(
+                        $"target not reached, planarDistance={finalPlanarDistance:0.###}, blockerAhead={blockerAhead}");
+                }
+
+                if (!stayedAboveFloor)
+                {
+                    failureReasons.Add(
+                        $"fell below path by more than {StairTraversalGravityMaxDropBelowPath:0.###}m");
+                }
+
+                if (!supportStable)
+                {
+                    failureReasons.Add(
+                        $"unsupported for {maxUnsupportedSeconds:0.###}s");
+                }
+
+                AppendGravityTraversalSampleSummary(
+                    sampleSummaries,
+                    frames,
+                    finalPosition,
+                    playerController.isGrounded,
+                    float.PositiveInfinity,
+                    "<final>",
+                    verticalVelocity,
+                    "<final>");
+
+                return new GravityTraversalSnapshot(
+                    true,
+                    reachedTarget,
+                    stayedAboveFloor,
+                    supportStable,
+                    hadGrounding,
+                    frames,
+                    lateralOffset,
+                    from,
+                    to,
+                    finalPosition,
+                    minY,
+                    finalPlanarDistance,
+                    maxUnsupportedSeconds,
+                    failureReasons.Count == 0 ? "<none>" : string.Join("; ", failureReasons),
+                    sampleSummaries);
+            }
+            catch (Exception exception)
+            {
+                sampleSummaries.Add(exception.GetType().Name + ": " + exception.Message);
+                return new GravityTraversalSnapshot(
+                    false,
+                    false,
+                    false,
+                    false,
+                    false,
+                    0,
+                    lateralOffset,
+                    from,
+                    to,
+                    playerRoot.transform.position,
+                    playerRoot.transform.position.y,
+                    Vector3.ProjectOnPlane(to - playerRoot.transform.position, Vector3.up).magnitude,
+                    0f,
+                    "Gravity traversal threw an exception.",
+                    sampleSummaries);
+            }
+            finally
+            {
+                playerRoot.transform.position = originalPosition;
+                playerController.detectCollisions = originalDetectCollisions;
+                playerController.enabled = originalControllerEnabled;
+                Physics.SyncTransforms();
+            }
+        }
+
+        private static GravityTraversalEnvelopeSnapshot CaptureGravityTraversalEnvelopeSample(
+            Scene scene,
+            GameObject playerRoot,
+            CharacterController playerController,
+            Vector3 from,
+            Vector3 to)
+        {
+            Vector3 lateral = ResolveStairTraversalLateral(from, to);
+            var samples = new List<GravityTraversalSnapshot>(StairTraversalGravityLateralOffsets.Length);
+            for (int i = 0; i < StairTraversalGravityLateralOffsets.Length; i++)
+            {
+                float offset = StairTraversalGravityLateralOffsets[i];
+                Vector3 sampleOffset = lateral * offset;
+                samples.Add(CaptureGravityTraversalSample(
+                    scene,
+                    playerRoot,
+                    playerController,
+                    from + sampleOffset,
+                    to + sampleOffset,
+                    offset));
+            }
+
+            return new GravityTraversalEnvelopeSnapshot(samples);
+        }
+
+        private static Vector3 ResolveStairTraversalLateral(Vector3 from, Vector3 to)
+        {
+            Vector3 travel = Vector3.ProjectOnPlane(to - from, Vector3.up);
+            if (travel.sqrMagnitude <= 0.001f)
+            {
+                return Vector3.right;
+            }
+
+            return Vector3.Cross(Vector3.up, travel.normalized).normalized;
+        }
+
+        private static void ResolveGravityTraversalSettings(
+            GameObject playerRoot,
+            out float moveSpeed,
+            out float gravity)
+        {
+            moveSpeed = StairTraversalGravityFallbackMoveSpeed;
+            gravity = StairTraversalGravityFallback;
+            PlayerMovementController movement = playerRoot.GetComponent<PlayerMovementController>();
+            if (movement != null)
+            {
+                var serialized = new SerializedObject(movement);
+                moveSpeed = GetFloatProperty(serialized, "moveSpeed");
+                gravity = GetFloatProperty(serialized, "gravity");
+            }
+
+            if (moveSpeed <= 0.01f)
+            {
+                moveSpeed = StairTraversalGravityFallbackMoveSpeed;
+            }
+
+            if (Mathf.Abs(gravity) <= 0.01f)
+            {
+                gravity = StairTraversalGravityFallback;
+            }
+            else if (gravity > 0f)
+            {
+                gravity = -gravity;
+            }
+        }
+
+        private static bool TryFindTraversalSupportBelow(
+            Scene scene,
+            Transform playerRoot,
+            CharacterController playerController,
+            out float supportDistance,
+            out string supportPath)
+        {
+            supportDistance = float.PositiveInfinity;
+            supportPath = "<none>";
+            GetCharacterControllerCapsule(
+                playerController,
+                out _,
+                out Vector3 lowerSphereCenter,
+                out float radius,
+                out _);
+            Vector3 foot = lowerSphereCenter - (playerController.transform.up * radius);
+            Vector3 origin = foot + Vector3.up * StairTraversalGravityGroundProbeLift;
+            float rayDistance = StairTraversalGravityGroundProbeLift + StairTraversalGravityGroundProbeDistance;
+            RaycastHit[] hits = Physics.RaycastAll(
+                origin,
+                Vector3.down,
+                rayDistance,
+                Physics.AllLayers,
+                QueryTriggerInteraction.Ignore);
+
+            for (int i = 0; i < hits.Length; i++)
+            {
+                RaycastHit hit = hits[i];
+                Collider collider = hit.collider;
+                if (collider == null
+                    || collider.gameObject.scene != scene
+                    || !collider.enabled
+                    || collider.isTrigger
+                    || !collider.gameObject.activeInHierarchy
+                    || collider.transform == playerRoot
+                    || collider.transform.IsChildOf(playerRoot)
+                    || hit.normal.y < StairTraversalSupportMinNormalY)
+                {
+                    continue;
+                }
+
+                float distanceFromFoot = Mathf.Max(0f, hit.distance - StairTraversalGravityGroundProbeLift);
+                if (distanceFromFoot >= supportDistance)
+                {
+                    continue;
+                }
+
+                supportDistance = distanceFromFoot;
+                supportPath = GetHierarchyPath(collider.transform);
+            }
+
+            return !float.IsPositiveInfinity(supportDistance);
+        }
+
+        private static bool TryFindTraversalBlockerAhead(
+            Scene scene,
+            Transform playerRoot,
+            CharacterController playerController,
+            Vector3 planarDirection,
+            out string blockerSummary)
+        {
+            blockerSummary = "<none>";
+            Vector3 direction = Vector3.ProjectOnPlane(planarDirection, Vector3.up);
+            if (direction.sqrMagnitude <= 0.0001f)
+            {
+                return false;
+            }
+
+            direction.Normalize();
+            GetCharacterControllerCapsule(
+                playerController,
+                out Vector3 pointA,
+                out Vector3 pointB,
+                out float radius,
+                out _);
+            RaycastHit[] hits = Physics.CapsuleCastAll(
+                pointA,
+                pointB,
+                Mathf.Max(0.01f, radius - 0.015f),
+                direction,
+                StairTraversalGravityBlockerProbeDistance,
+                Physics.AllLayers,
+                QueryTriggerInteraction.Ignore);
+            float nearestDistance = float.PositiveInfinity;
+            string nearestPath = "<none>";
+            Vector3 nearestNormal = Vector3.zero;
+            for (int i = 0; i < hits.Length; i++)
+            {
+                RaycastHit hit = hits[i];
+                Collider collider = hit.collider;
+                if (collider == null
+                    || collider.gameObject.scene != scene
+                    || !collider.enabled
+                    || collider.isTrigger
+                    || !collider.gameObject.activeInHierarchy
+                    || collider.transform == playerRoot
+                    || collider.transform.IsChildOf(playerRoot)
+                    || hit.normal.y >= StairTraversalSupportMinNormalY)
+                {
+                    continue;
+                }
+
+                if (hit.distance >= nearestDistance)
+                {
+                    continue;
+                }
+
+                nearestDistance = hit.distance;
+                nearestPath = GetHierarchyPath(collider.transform);
+                nearestNormal = hit.normal;
+            }
+
+            if (float.IsPositiveInfinity(nearestDistance))
+            {
+                return false;
+            }
+
+            blockerSummary =
+                $"{nearestDistance:0.###}m normal={FormatVector3(nearestNormal)} path={nearestPath}";
+            return true;
+        }
+
+        private static void AppendGravityTraversalSampleSummary(
+            List<string> summaries,
+            int frame,
+            Vector3 position,
+            bool grounded,
+            float supportDistance,
+            string supportPath,
+            float verticalVelocity,
+            string blockerAhead)
+        {
+            if (summaries.Count >= 18)
+            {
+                return;
+            }
+
+            string support = float.IsPositiveInfinity(supportDistance)
+                ? "none"
+                : $"{supportDistance:0.###}m {supportPath}";
+            summaries.Add(
+                $"frame={frame:000} pos={FormatVector3(position)} grounded={grounded} support={support} verticalVelocity={verticalVelocity:0.###} blockerAhead={blockerAhead}");
+        }
+
+        private static List<ControllerOverlapDiagnosticEntry> CollectControllerSolidOverlapsAlongPath(
+            Scene scene,
+            GameObject playerRoot,
+            CharacterController playerController,
+            Vector3 from,
+            Vector3 to,
+            int steps)
+        {
+            var uniqueOverlaps = new Dictionary<Collider, ControllerOverlapDiagnosticEntry>();
+            Vector3 originalPosition = playerRoot.transform.position;
+            int safeSteps = Mathf.Max(1, steps);
+            try
+            {
+                for (int i = 0; i <= safeSteps; i++)
+                {
+                    float t = i / (float)safeSteps;
+                    playerRoot.transform.position = Vector3.Lerp(from, to, t);
+                    Physics.SyncTransforms();
+                    List<ControllerOverlapDiagnosticEntry> overlaps =
+                        CollectControllerSolidOverlaps(scene, playerRoot.transform, playerController);
+                    for (int overlapIndex = 0; overlapIndex < overlaps.Count; overlapIndex++)
+                    {
+                        ControllerOverlapDiagnosticEntry overlap = overlaps[overlapIndex];
+                        if (overlap.Collider != null && !uniqueOverlaps.ContainsKey(overlap.Collider))
+                        {
+                            uniqueOverlaps.Add(overlap.Collider, overlap);
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                playerRoot.transform.position = originalPosition;
+                Physics.SyncTransforms();
+            }
+
+            var entries = new List<ControllerOverlapDiagnosticEntry>(uniqueOverlaps.Values);
+            entries.Sort((left, right) => left.Distance.CompareTo(right.Distance));
+            return entries;
+        }
+
+        private static void AppendColliderDiagnosticsNearBounds(
+            List<string> report,
+            Scene scene,
+            string label,
+            Bounds sourceBounds,
+            Vector3 expansion,
+            Transform packageRoot)
+        {
+            Bounds queryBounds = sourceBounds;
+            queryBounds.Expand(expansion);
+            var entries = new List<ColliderDiagnosticEntry>();
+            Collider[] colliders = UnityEngine.Object.FindObjectsByType<Collider>(
+                FindObjectsInactive.Exclude,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider collider = colliders[i];
+                if (collider == null
+                    || collider.gameObject.scene != scene
+                    || !collider.enabled
+                    || collider.isTrigger
+                    || !collider.gameObject.activeInHierarchy
+                    || !collider.bounds.Intersects(queryBounds))
+                {
+                    continue;
+                }
+
+                Bounds bounds = collider.bounds;
+                Vector3 closest = bounds.ClosestPoint(sourceBounds.center);
+                Vector3 planarOffset = Vector3.ProjectOnPlane(closest - sourceBounds.center, Vector3.up);
+                float planarDistance = planarOffset.magnitude;
+                float verticalDistance = Mathf.Abs(closest.y - sourceBounds.center.y);
+                entries.Add(new ColliderDiagnosticEntry(
+                    planarDistance,
+                    verticalDistance,
+                    collider.GetType().Name,
+                    GetHierarchyPath(collider.transform),
+                    collider.transform.IsChildOf(packageRoot),
+                    bounds.center,
+                    bounds.size,
+                    collider.gameObject.layer));
+            }
+
+            entries.Sort((left, right) =>
+            {
+                int planarComparison = left.PlanarDistance.CompareTo(right.PlanarDistance);
+                return planarComparison != 0
+                    ? planarComparison
+                    : left.VerticalDistance.CompareTo(right.VerticalDistance);
+            });
+
+            report.Add(label + ":");
+            report.Add(
+                $"  queryCenter={FormatVector3(queryBounds.center)} querySize={FormatVector3(queryBounds.size)} count={entries.Count}");
+            int count = Mathf.Min(entries.Count, 40);
+            for (int i = 0; i < count; i++)
+            {
+                ColliderDiagnosticEntry entry = entries[i];
+                report.Add(
+                    $"  {i + 1:00}. planar={entry.PlanarDistance:0.###} vertical={entry.VerticalDistance:0.###} type={entry.ColliderType} layer={entry.Layer} inPackage={entry.IsInPackage} center={FormatVector3(entry.Center)} size={FormatVector3(entry.Size)} path={entry.Path}");
+            }
+
+            if (entries.Count > count)
+            {
+                report.Add($"  ... {entries.Count - count} more");
+            }
+        }
+
+        private static void AppendDirectCoordinateWalkSamples(
+            List<string> report,
+            Scene scene,
+            GameObject playerRoot,
+            CharacterController playerController,
+            Vector3 from,
+            Vector3 to,
+            int steps)
+        {
+            report.Add("Direct coordinate sample path:");
+            int safeSteps = Mathf.Max(1, steps);
+            for (int i = 0; i <= safeSteps; i++)
+            {
+                float t = i / (float)safeSteps;
+                Vector3 position = Vector3.Lerp(from, to, t);
+                playerRoot.transform.position = position;
+                Physics.SyncTransforms();
+                List<ControllerOverlapDiagnosticEntry> overlaps =
+                    CollectControllerSolidOverlaps(scene, playerRoot.transform, playerController);
+                report.Add(
+                    $"  sample={i:00}/{safeSteps:00} t={t:0.###} pos={FormatVector3(position)} overlapCount={overlaps.Count}");
+                int count = Mathf.Min(overlaps.Count, 5);
+                for (int overlapIndex = 0; overlapIndex < count; overlapIndex++)
+                {
+                    ControllerOverlapDiagnosticEntry overlap = overlaps[overlapIndex];
+                    report.Add(
+                        $"    {overlapIndex + 1}. distance={overlap.Distance:0.###} type={overlap.ColliderType} center={FormatVector3(overlap.Center)} size={FormatVector3(overlap.Size)} path={overlap.Path}");
+                }
+            }
+        }
+
+        private static List<ControllerOverlapDiagnosticEntry> CollectControllerSolidOverlaps(
+            Scene scene,
+            Transform playerRoot,
+            CharacterController playerController)
+        {
+            GetCharacterControllerCapsule(
+                playerController,
+                out Vector3 pointA,
+                out Vector3 pointB,
+                out float radius,
+                out Vector3 capsuleCenter);
+            Collider[] overlaps = Physics.OverlapCapsule(
+                pointA,
+                pointB,
+                radius,
+                Physics.AllLayers,
+                QueryTriggerInteraction.Ignore);
+            var entries = new List<ControllerOverlapDiagnosticEntry>();
+            for (int i = 0; i < overlaps.Length; i++)
+            {
+                Collider collider = overlaps[i];
+                if (collider == null
+                    || collider.gameObject.scene != scene
+                    || !collider.enabled
+                    || collider.isTrigger
+                    || !collider.gameObject.activeInHierarchy
+                    || collider.transform == playerRoot
+                    || collider.transform.IsChildOf(playerRoot))
+                {
+                    continue;
+                }
+
+                Bounds bounds = collider.bounds;
+                float distance = Vector3.Distance(bounds.ClosestPoint(capsuleCenter), capsuleCenter);
+                entries.Add(new ControllerOverlapDiagnosticEntry(
+                    collider,
+                    distance,
+                    collider.GetType().Name,
+                    GetHierarchyPath(collider.transform),
+                    bounds.center,
+                    bounds.size));
+            }
+
+            entries.Sort((left, right) => left.Distance.CompareTo(right.Distance));
+            return entries;
+        }
+
+        private static void GetCharacterControllerCapsule(
+            CharacterController controller,
+            out Vector3 pointA,
+            out Vector3 pointB,
+            out float radius,
+            out Vector3 center)
+        {
+            Transform transform = controller.transform;
+            Vector3 lossyScale = transform.lossyScale;
+            float scaleY = Mathf.Abs(lossyScale.y);
+            float scaleXZ = Mathf.Max(Mathf.Abs(lossyScale.x), Mathf.Abs(lossyScale.z));
+            radius = Mathf.Max(0.01f, controller.radius * scaleXZ);
+            float height = Mathf.Max(radius * 2f, controller.height * scaleY);
+            center = transform.TransformPoint(controller.center);
+            Vector3 up = transform.up;
+            float halfSegment = Mathf.Max(0f, (height * 0.5f) - radius);
+            pointA = center + up * halfSegment;
+            pointB = center - up * halfSegment;
+        }
+
+        private readonly struct ControllerOverlapDiagnosticEntry
+        {
+            public ControllerOverlapDiagnosticEntry(
+                Collider collider,
+                float distance,
+                string colliderType,
+                string path,
+                Vector3 center,
+                Vector3 size)
+            {
+                Collider = collider;
+                Distance = distance;
+                ColliderType = colliderType;
+                Path = path;
+                Center = center;
+                Size = size;
+            }
+
+            public Collider Collider { get; }
+            public float Distance { get; }
+            public string ColliderType { get; }
+            public string Path { get; }
+            public Vector3 Center { get; }
+            public Vector3 Size { get; }
+        }
+
+        private readonly struct StairTraversalCleanupSnapshot
+        {
+            public StairTraversalCleanupSnapshot(
+                int restoredSupportColliderCount,
+                int disabledColliderCount,
+                int remainingOverlapCount)
+            {
+                RestoredSupportColliderCount = restoredSupportColliderCount;
+                DisabledColliderCount = disabledColliderCount;
+                RemainingOverlapCount = remainingOverlapCount;
+            }
+
+            public int RestoredSupportColliderCount { get; }
+            public int DisabledColliderCount { get; }
+            public int RemainingOverlapCount { get; }
+        }
+
+        private readonly struct GravityTraversalSnapshot
+        {
+            public GravityTraversalSnapshot(
+                bool isValid,
+                bool reachedTarget,
+                bool stayedAboveFloor,
+                bool supportStable,
+                bool hadGrounding,
+                int frames,
+                float lateralOffset,
+                Vector3 from,
+                Vector3 to,
+                Vector3 finalPosition,
+                float minY,
+                float finalPlanarDistance,
+                float maxUnsupportedSeconds,
+                string failureReason,
+                List<string> sampleSummaries)
+            {
+                IsValid = isValid;
+                ReachedTarget = reachedTarget;
+                StayedAboveFloor = stayedAboveFloor;
+                SupportStable = supportStable;
+                HadGrounding = hadGrounding;
+                Frames = frames;
+                LateralOffset = lateralOffset;
+                From = from;
+                To = to;
+                FinalPosition = finalPosition;
+                MinY = minY;
+                FinalPlanarDistance = finalPlanarDistance;
+                MaxUnsupportedSeconds = maxUnsupportedSeconds;
+                FailureReason = failureReason ?? "<none>";
+                SampleSummaries = sampleSummaries ?? new List<string>();
+            }
+
+            public bool IsValid { get; }
+            public bool ReachedTarget { get; }
+            public bool StayedAboveFloor { get; }
+            public bool SupportStable { get; }
+            public bool HadGrounding { get; }
+            public int Frames { get; }
+            public float LateralOffset { get; }
+            public Vector3 From { get; }
+            public Vector3 To { get; }
+            public Vector3 FinalPosition { get; }
+            public float MinY { get; }
+            public float FinalPlanarDistance { get; }
+            public float MaxUnsupportedSeconds { get; }
+            public string FailureReason { get; }
+            public List<string> SampleSummaries { get; }
+            public bool Passed =>
+                IsValid
+                && ReachedTarget
+                && StayedAboveFloor
+                && SupportStable;
+        }
+
+        private readonly struct GravityTraversalEnvelopeSnapshot
+        {
+            public GravityTraversalEnvelopeSnapshot(List<GravityTraversalSnapshot> samples)
+            {
+                Samples = samples ?? new List<GravityTraversalSnapshot>();
+                int failedCount = 0;
+                for (int i = 0; i < Samples.Count; i++)
+                {
+                    if (!Samples[i].Passed)
+                    {
+                        failedCount++;
+                    }
+                }
+
+                FailedCount = failedCount;
+            }
+
+            public List<GravityTraversalSnapshot> Samples { get; }
+            public int FailedCount { get; }
+            public bool Passed => Samples.Count > 0 && FailedCount == 0;
+        }
+
+        private readonly struct StairTraversalSampleSnapshot
+        {
+            public StairTraversalSampleSnapshot(
+                bool isValid,
+                Vector3 from,
+                Vector3 to,
+                int steps,
+                int overlapCount,
+                List<string> overlapSummaries)
+            {
+                IsValid = isValid;
+                From = from;
+                To = to;
+                Steps = steps;
+                OverlapCount = overlapCount;
+                OverlapSummaries = overlapSummaries ?? new List<string>();
+            }
+
+            public bool IsValid { get; }
+            public Vector3 From { get; }
+            public Vector3 To { get; }
+            public int Steps { get; }
+            public int OverlapCount { get; }
+            public List<string> OverlapSummaries { get; }
+        }
+
+        private readonly struct ColliderDiagnosticEntry
+        {
+            public ColliderDiagnosticEntry(
+                float planarDistance,
+                float verticalDistance,
+                string colliderType,
+                string path,
+                bool isInPackage,
+                Vector3 center,
+                Vector3 size,
+                int layer)
+            {
+                PlanarDistance = planarDistance;
+                VerticalDistance = verticalDistance;
+                ColliderType = colliderType;
+                Path = path;
+                IsInPackage = isInPackage;
+                Center = center;
+                Size = size;
+                Layer = layer;
+            }
+
+            public float PlanarDistance { get; }
+            public float VerticalDistance { get; }
+            public string ColliderType { get; }
+            public string Path { get; }
+            public bool IsInPackage { get; }
+            public Vector3 Center { get; }
+            public Vector3 Size { get; }
+            public int Layer { get; }
+        }
+
         private static Transform ResolveTransformReference(UnityEngine.Object reference)
         {
             if (reference is Transform transform)
@@ -3632,6 +5562,24 @@ namespace DimensionBrawl.Editor
             method.Invoke(target, null);
         }
 
+        private static bool InvokePrivateBool(object target, string methodName)
+        {
+            MethodInfo method = target.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic);
+            if (method == null)
+            {
+                throw new InvalidOperationException($"Missing private method `{methodName}` on {target.GetType().Name}.");
+            }
+
+            object result = method.Invoke(target, null);
+            if (result is bool boolResult)
+            {
+                return boolResult;
+            }
+
+            throw new InvalidOperationException(
+                $"Private method `{methodName}` on {target.GetType().Name} did not return a bool.");
+        }
+
         private static GameObject RequireChildObject(Transform parent, string childName)
         {
             GameObject child = FindDirectChildObject(parent, childName);
@@ -3769,5 +5717,104 @@ namespace DimensionBrawl.Editor
             property.boolValue = value;
         }
 
+    }
+
+    [InitializeOnLoad]
+    internal static class ActionFoundationOlympusCombatFlowPlayModeBatch
+    {
+        private const string ActiveKey =
+            "DimensionBrawl.OlympusCombatFlow.PlayMode.Active";
+        private const string ResultPathKey =
+            "DimensionBrawl.OlympusCombatFlow.PlayMode.ResultPath";
+        private const string StartedAtKey =
+            "DimensionBrawl.OlympusCombatFlow.PlayMode.StartedAt";
+        private const string TimeoutSecondsKey =
+            "DimensionBrawl.OlympusCombatFlow.PlayMode.TimeoutSeconds";
+        private const string ProbeInstalledKey =
+            "DimensionBrawl.OlympusCombatFlow.PlayMode.ProbeInstalled";
+
+        static ActionFoundationOlympusCombatFlowPlayModeBatch()
+        {
+            EditorApplication.update -= Monitor;
+            EditorApplication.update += Monitor;
+        }
+
+        public static void Start(string resultPath, float timeoutSeconds)
+        {
+            if (File.Exists(resultPath))
+            {
+                File.Delete(resultPath);
+            }
+
+            EditorPrefs.SetBool(ActiveKey, true);
+            EditorPrefs.SetString(ResultPathKey, resultPath);
+            EditorPrefs.SetFloat(StartedAtKey, (float)EditorApplication.timeSinceStartup);
+            EditorPrefs.SetFloat(TimeoutSecondsKey, timeoutSeconds);
+            EditorPrefs.SetBool(ProbeInstalledKey, false);
+            EditorApplication.update -= Monitor;
+            EditorApplication.update += Monitor;
+            Debug.Log($"Started Olympus combat flow Play Mode verification monitor: {resultPath}");
+        }
+
+        private static void Monitor()
+        {
+            if (!EditorPrefs.GetBool(ActiveKey, false))
+            {
+                return;
+            }
+
+            if (!EditorApplication.isPlaying && !EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                return;
+            }
+
+            string resultPath = EditorPrefs.GetString(ResultPathKey, string.Empty);
+            if (!string.IsNullOrWhiteSpace(resultPath) && File.Exists(resultPath))
+            {
+                string result = File.ReadAllText(resultPath);
+                bool passed = result.Contains("RESULT=PASS");
+                Clear();
+                if (passed)
+                {
+                    Debug.Log($"Olympus combat flow Play Mode verification passed. See {resultPath}.");
+                }
+                else
+                {
+                    Debug.LogError($"Olympus combat flow Play Mode verification failed. See {resultPath}.");
+                }
+
+                EditorApplication.Exit(passed ? 0 : 1);
+                return;
+            }
+
+            if (EditorApplication.isPlaying && !EditorPrefs.GetBool(ProbeInstalledKey, false))
+            {
+                ActionFoundationOlympusCombatFlowSetup.ConfigurePlayModeValidationProbe(
+                    SceneManager.GetActiveScene());
+                EditorPrefs.SetBool(ProbeInstalledKey, true);
+                Debug.Log("Installed Olympus combat flow Play Mode verification probe in active scene.");
+            }
+
+            float startedAt = EditorPrefs.GetFloat(StartedAtKey, (float)EditorApplication.timeSinceStartup);
+            float timeoutSeconds = EditorPrefs.GetFloat(TimeoutSecondsKey, 90f);
+            if (EditorApplication.timeSinceStartup - startedAt <= timeoutSeconds)
+            {
+                return;
+            }
+
+            Clear();
+            Debug.LogError($"Olympus combat flow Play Mode verification timed out after {timeoutSeconds:F1}s.");
+            EditorApplication.Exit(1);
+        }
+
+        private static void Clear()
+        {
+            EditorPrefs.DeleteKey(ActiveKey);
+            EditorPrefs.DeleteKey(ResultPathKey);
+            EditorPrefs.DeleteKey(StartedAtKey);
+            EditorPrefs.DeleteKey(TimeoutSecondsKey);
+            EditorPrefs.DeleteKey(ProbeInstalledKey);
+            EditorApplication.update -= Monitor;
+        }
     }
 }

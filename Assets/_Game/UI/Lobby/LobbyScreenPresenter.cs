@@ -1,3 +1,4 @@
+using System.Collections;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
@@ -19,7 +20,13 @@ namespace DimensionBrawl.UI
         [SerializeField] private LobbyGuideCondition guideCondition = LobbyGuideCondition.Default;
         [SerializeField] private string guideNameTextKey;
         [SerializeField] private string primaryCtaTextKey;
+        [SerializeField] private bool playOperationEntryBeat = true;
+        [SerializeField, Min(0f)] private float operationEntryDelaySeconds = 0.35f;
+        [SerializeField] private string operationEntryLineTextKey = "ui.lobby.operation_entry";
+        [SerializeField, TextArea] private string operationEntryFallbackLine = "Operation route acquired. Opening chapter map.";
         [SerializeField] private UnityEvent primaryCtaRequested = new UnityEvent();
+
+        private Coroutine primaryRouteRoutine;
 
         private void OnEnable()
         {
@@ -33,6 +40,13 @@ namespace DimensionBrawl.UI
 
         private void OnDisable()
         {
+            if (primaryRouteRoutine != null)
+            {
+                StopCoroutine(primaryRouteRoutine);
+                primaryRouteRoutine = null;
+                SetPrimaryCtaInteractable(true);
+            }
+
             if (primaryCtaButton != null)
             {
                 primaryCtaButton.onClick.RemoveListener(HandlePrimaryCtaClicked);
@@ -47,12 +61,42 @@ namespace DimensionBrawl.UI
 
         public void HandlePrimaryCtaClicked()
         {
-            primaryCtaRequested.Invoke();
-
-            if (router != null)
+            if (primaryRouteRoutine != null)
             {
-                router.RequestRoute(primaryRoute);
+                return;
             }
+
+            primaryCtaRequested.Invoke();
+            if (!playOperationEntryBeat || operationEntryDelaySeconds <= 0f)
+            {
+                RequestPrimaryRoute();
+                return;
+            }
+
+            primaryRouteRoutine = StartCoroutine(PrimaryRouteRoutine());
+        }
+
+        private IEnumerator PrimaryRouteRoutine()
+        {
+            SetOperationEntryLine();
+            SetPrimaryCtaInteractable(false);
+
+            if (operationEntryDelaySeconds > 0f)
+            {
+                yield return new WaitForSecondsRealtime(operationEntryDelaySeconds);
+            }
+
+            bool accepted = RequestPrimaryRoute();
+            primaryRouteRoutine = null;
+            if (!accepted)
+            {
+                SetPrimaryCtaInteractable(true);
+            }
+        }
+
+        private bool RequestPrimaryRoute()
+        {
+            return router != null && router.RequestRoute(primaryRoute);
         }
 
         private void ApplyGuideCondition(LobbyGuideCondition condition)
@@ -68,6 +112,25 @@ namespace DimensionBrawl.UI
             }
 
             SetText(guideLineText, string.Empty);
+        }
+
+        private void SetOperationEntryLine()
+        {
+            if (TryGetCatalogText(operationEntryLineTextKey, out string value))
+            {
+                SetText(guideLineText, value);
+                return;
+            }
+
+            SetText(guideLineText, operationEntryFallbackLine);
+        }
+
+        private void SetPrimaryCtaInteractable(bool interactable)
+        {
+            if (primaryCtaButton != null)
+            {
+                primaryCtaButton.interactable = interactable;
+            }
         }
 
         private bool TryGetGuideLineKey(LobbyGuideCondition condition, out string lineKey)
@@ -102,15 +165,26 @@ namespace DimensionBrawl.UI
                 return;
             }
 
-            if (textCatalog != null &&
-                !string.IsNullOrWhiteSpace(key) &&
-                textCatalog.TryGetText(key, out string value))
+            if (TryGetCatalogText(key, out string value))
             {
                 target.text = value;
                 return;
             }
 
             target.text = string.Empty;
+        }
+
+        private bool TryGetCatalogText(string key, out string value)
+        {
+            if (textCatalog != null &&
+                !string.IsNullOrWhiteSpace(key) &&
+                textCatalog.TryGetText(key, out value))
+            {
+                return true;
+            }
+
+            value = string.Empty;
+            return false;
         }
 
         private static void SetText(Text target, string value)

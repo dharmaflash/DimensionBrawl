@@ -12,11 +12,13 @@ namespace DimensionBrawl.UI
             [SerializeField] private string id;
             [SerializeField] private string title;
             [SerializeField, TextArea] private string description;
+            [SerializeField] private Sprite backgroundSprite;
             [SerializeField, Min(0)] private int weight;
 
             public string Id => id;
             public string Title => title;
             public string Description => description;
+            public Sprite BackgroundSprite => backgroundSprite;
             public int Weight => weight;
         }
 

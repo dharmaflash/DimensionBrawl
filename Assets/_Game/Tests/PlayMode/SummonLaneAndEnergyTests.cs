@@ -56,16 +56,36 @@ namespace DimensionBrawl.Tests
             playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.BackLimitZ);
             energy.Tick(1f);
             float backlineEnergy = energy.CurrentTierEnergy;
+            float backlineGainMultiplier = energy.CurrentGainMultiplier;
+            SummonEnergyRiskBand backlineRiskBand = energy.CurrentRiskBand;
 
             energy.ResetLadder();
             playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.ForwardBoundaryZ);
             energy.Tick(1f);
             float forwardEnergy = energy.CurrentTierEnergy;
+            float forwardGainMultiplier = energy.CurrentGainMultiplier;
+            SummonEnergyRiskBand forwardRiskBand = energy.CurrentRiskBand;
 
             Assert.Greater(
                 forwardEnergy,
-                backlineEnergy,
-                "Forward-risk positioning should charge summon energy faster than the backline.");
+                backlineEnergy * 8f,
+                "Forward-risk positioning should charge summon energy dramatically faster than the backline.");
+            Assert.AreEqual(
+                SummonEnergyRiskBand.BackSafety,
+                backlineRiskBand,
+                "Backline positioning should be classified as safe, slow EN farming.");
+            Assert.AreEqual(
+                SummonEnergyRiskBand.ForwardRisk,
+                forwardRiskBand,
+                "Forward boundary positioning should be classified as the high-gain risk band.");
+            Assert.Less(
+                backlineGainMultiplier,
+                0.35f,
+                "Backline EN gain should be slow enough that hiding does not refill summons quickly.");
+            Assert.Greater(
+                forwardGainMultiplier,
+                2.5f,
+                "Forward-risk EN gain should be visually obvious within a short demo beat.");
 
             energy.Tick(20f);
             Assert.GreaterOrEqual(energy.AvailableTier, 1, "The EN ladder should expose at least LV1 after enough gain.");
@@ -121,9 +141,9 @@ namespace DimensionBrawl.Tests
             energy.EnergySpent += tier => spentEventTier = tier;
 
             Assert.IsTrue(energy.TrySpend(100f, out int spentTier));
-            Assert.AreEqual(3, spentTier, "The action still sees the banked tier available at the moment of spend.");
+            Assert.AreEqual(1, spentTier, "A costed 100 EN summon should spend the low-cost role tier even from a full bank.");
             Assert.AreEqual(1, changeCount, "Shared mana spend should notify presentation/fill listeners.");
-            Assert.AreEqual(3, spentEventTier, "Shared mana spend should still emit the spend tier for ready/spend cues.");
+            Assert.AreEqual(1, spentEventTier, "Shared mana spend should emit the cost tier for ready/spend cues.");
             Assert.AreEqual(200f, energy.CurrentMana, 0.001f);
             Assert.AreEqual(2, energy.AvailableTier, "Spending a 100-cost summon from a full bank should leave LV2 mana ready.");
             Assert.AreEqual(3, energy.ChargingTier);
@@ -2395,6 +2415,7 @@ namespace DimensionBrawl.Tests
                 null,
                 actorPrefab,
                 null);
+            summonAction.ConfigureSlotCooldown(0f);
 
             Assert.IsTrue(summonAction.TryUseSummonSlot1());
             Vector2 entryLane = lane.GetLaneCoordinates(summonAction.LastEntryPosition);
@@ -2529,6 +2550,7 @@ namespace DimensionBrawl.Tests
                 null,
                 actorPrefab,
                 null);
+            summonAction.ConfigureSlotCooldown(0f);
 
             SerializedObject serializedAction = new SerializedObject(summonAction);
             SerializedProperty maxActiveActors = serializedAction.FindProperty("maxActiveSummonActors");
@@ -3342,8 +3364,8 @@ namespace DimensionBrawl.Tests
                 "Boss pressure summons should visibly march toward the player side after spawning.");
             Assert.Less(
                 activeProxy.AdvanceProgress01,
-                0.3f,
-                "Boss pressure summons should cross the corridor by walking, not by snapping to the player side.");
+                0.75f,
+                "Boss pressure summons should cross the corridor quickly by walking, not by snapping to the player side.");
 
             Object.DestroyImmediate(actorRoot);
             Object.DestroyImmediate(actorPrefabObject);

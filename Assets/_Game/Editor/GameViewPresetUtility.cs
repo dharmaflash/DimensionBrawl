@@ -7,8 +7,8 @@ namespace IsekaiBrawl.EditorTools
 {
     public static class GameViewPresetUtility
     {
-        private const string WorkPresetLabel = "IsekaiBrawl Work 720x1280";
-        private const string CapturePresetLabel = "IsekaiBrawl MCP Capture 1440x2560";
+        private const string WorkPresetLabel = "IsekaiBrawl Work 1280x720";
+        private const string CapturePresetLabel = "IsekaiBrawl MCP Capture 2560x1440";
 
         [MenuItem("Tools/IsekaiBrawl/Game View/Apply Work Preset")]
         public static void ApplyWorkPresetMenu()
@@ -26,12 +26,12 @@ namespace IsekaiBrawl.EditorTools
 
         public static bool TryApplyWorkPreset(out string message)
         {
-            return TryApplyPreset(WorkPresetLabel, 720, 1280, out message);
+            return TryApplyPreset(WorkPresetLabel, 1280, 720, out message);
         }
 
         public static bool TryApplyCapturePreset(out string message)
         {
-            return TryApplyPreset(CapturePresetLabel, 1440, 2560, out message);
+            return TryApplyPreset(CapturePresetLabel, 2560, 1440, out message);
         }
 
         private static bool TryApplyPreset(string label, int width, int height, out string message)

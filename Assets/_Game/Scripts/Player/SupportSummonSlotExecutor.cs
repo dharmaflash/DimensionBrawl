@@ -148,7 +148,11 @@ namespace DimensionBrawl.Player
                 && targetHealth != null
                 && targetHealth.IsAlive)
             {
-                return owner.LaneSpace.GetLaneCoordinates(target.position);
+                Vector2 selectedTargetLane = owner.LaneSpace.GetLaneCoordinates(target.position);
+                if (selectedTargetLane.y >= owner.LaneSpace.SummonEntryZ)
+                {
+                    return selectedTargetLane;
+                }
             }
 
             return fallback;
@@ -287,11 +291,12 @@ namespace DimensionBrawl.Player
             clash.ConfigureTuning(
                 damagePerSecond,
                 settings.ActorAttackIntervalSeconds,
-                0.16f,
+                0f,
                 0.24f,
                 settings.ActorEngageRadius);
             clash.ConfigureHostileBodyDamage(1f, 0f);
-            if (string.Equals(settings.ActorRoleId, "BacklineMarksman", System.StringComparison.Ordinal))
+            if (string.Equals(settings.ActorRoleId, "LaserSoldier", System.StringComparison.Ordinal)
+                || string.Equals(settings.ActorRoleId, "FireDragon", System.StringComparison.Ordinal))
             {
                 clash.ConfigureHostileBodyDamage(0f, 0f);
             }
@@ -402,6 +407,8 @@ namespace DimensionBrawl.Player
                 Vector3 spawnBase = actor.ProjectileOrigin.position;
                 Vector3 targetPosition = ResolveBattlefieldPoint(targetLane.x, targetLane.y, settings.TargetHeight);
                 Vector3 facingDirection = ResolvePlanarDirection(targetPosition - spawnBase);
+                actor.FaceTowards(targetPosition);
+                actor.NotifyAttackPerformed(Mathf.Clamp(owner.VolleyIntervalSeconds * 0.42f, 0.24f, 0.65f));
                 FireProjectiles(spawnBase, targetLane.x, targetLane.y, facingDirection, settings);
                 firedCount++;
                 lastVolleyWaveCount = firedCount;

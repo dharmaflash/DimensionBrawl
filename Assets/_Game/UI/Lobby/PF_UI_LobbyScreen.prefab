@@ -1753,7 +1753,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.RawImage
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -5569,7 +5569,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &7987241530273181864
 RectTransform:
   m_ObjectHideFlags: 0
@@ -7457,7 +7457,6 @@ RectTransform:
   - {fileID: 76140162110580433}
   - {fileID: 7457852080233936465}
   - {fileID: 3653633044753053168}
-  - {fileID: 2451604147037923957}
   - {fileID: 644454076941763010}
   - {fileID: 6197876335540375543}
   - {fileID: 2034981626040118881}
@@ -7474,6 +7473,7 @@ RectTransform:
   - {fileID: 7711151192897868556}
   - {fileID: 4090408932606600983}
   - {fileID: 6060225756363739487}
+  - {fileID: 8960626531304678428}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -10881,6 +10881,57 @@ MonoBehaviour:
   textKey: ui.lobby.mail
   fallbackText: "\uC6B0\uD3B8"
   applyOnEnable: 1
+--- !u!1 &4336554991642273315
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 8960626531304678428}
+  - component: {fileID: 2014128829089225692}
+  m_Layer: 0
+  m_Name: LobbyInputFrame
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &8960626531304678428
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4336554991642273315}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 2451604147037923957}
+  m_Father: {fileID: 6142302053853892284}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &2014128829089225692
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4336554991642273315}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 86710e43de46f6f4bac7c8e50813a599, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.AspectRatioFitter
+  m_AspectMode: 3
+  m_AspectRatio: 1.7777778
 --- !u!1 &8058556560768315104
 GameObject:
   m_ObjectHideFlags: 0
@@ -10913,10 +10964,10 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 7987241530273181864}
-  m_Father: {fileID: 6142302053853892284}
+  m_Father: {fileID: 8960626531304678428}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.58, y: 0.49}
-  m_AnchorMax: {x: 0.96, y: 0.81}
+  m_AnchorMin: {x: 0.674609, y: 0.517361}
+  m_AnchorMax: {x: 0.984375, y: 0.852083}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -10998,7 +11049,7 @@ MonoBehaviour:
     m_SelectedTrigger: Selected
     m_DisabledTrigger: Disabled
   m_Interactable: 1
-  m_TargetGraphic: {fileID: 6570460214605770130}
+  m_TargetGraphic: {fileID: 1066925459519133079}
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []

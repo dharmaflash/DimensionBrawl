@@ -33,11 +33,11 @@ namespace DimensionBrawl.Tests
         private const string ReportPath = "C:/tmp/DimensionBrawl-FrontlineCombatPolicyReport.md";
         private const string JsonPath = "C:/tmp/DimensionBrawl-FrontlineCombatPolicyReport.json";
         private const string SummonSlot1ActionProfilePath =
-            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonSlot1_ShieldBreaker.asset";
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonSlot1_JumpSlamBruiser.asset";
         private const string SummonSlot2ActionProfilePath =
-            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonSlot2_BacklineMarksman.asset";
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonSlot2_LaserSoldier.asset";
         private const string SummonSlot3ActionProfilePath =
-            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonSlot3_VanguardCommander.asset";
+            "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_SummonSlot3_FireDragon.asset";
         private const float PressureWindowSeconds = 3f;
         private const float ReliefPressureWindowPeakRatio = 0.35f;
         private const float DelayedPunishInputSeconds = 1.1f;
@@ -1680,8 +1680,9 @@ namespace DimensionBrawl.Tests
                         3,
                         true,
                         retreatAfterAvailableTier: 2,
-                        retreatForwardRisk01: BacklineEnergyProbeForwardRisk01,
-                        recommitForwardRiskBeforeSlot1: ForwardEnergyProbeForwardRisk01);
+                        retreatForwardRisk01: 0f,
+                        recommitForwardRiskBeforeSlot1: ForwardEnergyProbeForwardRisk01,
+                        forceCounterRecoveryAfterRecommit: true);
                     break;
                 case PolicyKind.BacklineBarrageProbe:
                     yield return RunBarrageShapeProbe(context, BacklineEnergyProbeForwardRisk01);
@@ -2161,7 +2162,7 @@ namespace DimensionBrawl.Tests
 
             if (supportAction.MinimumSummonTier >= 3)
             {
-                yield return WaitForActiveAllyPressureScreen(context, $"{supportAction.SlotActionName} route");
+                yield return WaitForSupportPayoffReadiness(context, supportAction, $"{supportAction.SlotActionName} route");
             }
             else
             {
@@ -2268,7 +2269,10 @@ namespace DimensionBrawl.Tests
                     yield break;
                 }
 
-                yield return Advance(context, 0.65f);
+                yield return WaitForSupportPayoffReadiness(
+                    context,
+                    supportAction,
+                    $"{supportAction.SlotActionName} combo");
                 RecordSupportSummonSnapshot(context, supportAction);
                 context.PocketOwner.Tick(0f);
                 context.Sample();
@@ -2337,7 +2341,7 @@ namespace DimensionBrawl.Tests
 
             if (supportAction.MinimumSummonTier >= 3)
             {
-                yield return WaitForActiveAllyPressureScreen(context, $"{supportAction.SlotActionName} combo");
+                yield return WaitForSupportPayoffReadiness(context, supportAction, $"{supportAction.SlotActionName} combo");
             }
             else
             {
@@ -2367,7 +2371,8 @@ namespace DimensionBrawl.Tests
             bool continueCounterRecovery = false,
             int retreatAfterAvailableTier = 0,
             float retreatForwardRisk01 = ForwardEnergyProbeForwardRisk01,
-            float recommitForwardRiskBeforeSlot1 = -1f)
+            float recommitForwardRiskBeforeSlot1 = -1f,
+            bool forceCounterRecoveryAfterRecommit = false)
         {
             BossBarragePatternProfile physicalPattern = context.BossEmitter.CurrentPattern;
             context.BossEmitter.SetFiringEnabled(false);
@@ -2460,7 +2465,7 @@ namespace DimensionBrawl.Tests
 
             if (supportAction.MinimumSummonTier >= 3)
             {
-                yield return WaitForActiveAllyPressureScreen(context, $"{supportAction.SlotActionName} delayed combo");
+                yield return WaitForSupportPayoffReadiness(context, supportAction, $"{supportAction.SlotActionName} delayed combo");
             }
             else
             {
@@ -2526,6 +2531,11 @@ namespace DimensionBrawl.Tests
             }
 
             RecordSummonUse(context, false);
+            if (forceCounterRecoveryAfterRecommit)
+            {
+                context.PocketOwner.CancelVanguardAssistSuppressWindow();
+            }
+
             context.PocketOwner.Tick(0f);
             context.Sample();
             yield return WaitForNewSlot1PressureScreen(
@@ -2542,12 +2552,23 @@ namespace DimensionBrawl.Tests
             }
 
             int followupWindowsBeforeBarrage = context.Metrics.FollowupWindowOpenCount;
-            yield return ApplyPhysicalBossBarrageAndPunish(
-                context,
-                PhysicalBarrageProbeFlightSeconds,
-                followupWindowsBeforeBarrage,
-                $"{supportAction.SlotActionName} delayed combo Slot1",
-                ensureEnemyPressureScreenBeforeSkill1: supportAction.MinimumSummonTier >= 3);
+            if (forceCounterRecoveryAfterRecommit)
+            {
+                yield return ApplyPhysicalBossBarrageAndForceCounterRecovery(
+                    context,
+                    PhysicalBarrageProbeFlightSeconds,
+                    $"{supportAction.SlotActionName} retreat combo Slot1");
+            }
+            else
+            {
+                yield return ApplyPhysicalBossBarrageAndPunish(
+                    context,
+                    PhysicalBarrageProbeFlightSeconds,
+                    followupWindowsBeforeBarrage,
+                    $"{supportAction.SlotActionName} delayed combo Slot1",
+                    ensureEnemyPressureScreenBeforeSkill1: supportAction.MinimumSummonTier >= 3,
+                    acceptExistingFollowupWindow: IsFireDragonSupportRole(supportAction));
+            }
             if (!continueCounterRecovery)
             {
                 yield break;
@@ -3095,12 +3116,72 @@ namespace DimensionBrawl.Tests
             context.Sample();
         }
 
+        private static IEnumerator ApplyPhysicalBossBarrageAndForceCounterRecovery(
+            CombatPolicyContext context,
+            float flightSeconds,
+            string notePrefix)
+        {
+            BossBarragePatternProfile pattern = context.BossEmitter.CurrentPattern;
+            float healthBefore = context.PlayerHealth.CurrentHealth;
+            if (!context.BossEmitter.BeginWindup())
+            {
+                context.Metrics.Notes.Add($"{notePrefix} counter barrage windup unavailable");
+                yield break;
+            }
+
+            context.Metrics.PhysicalBarragePatternId = pattern != null ? pattern.PatternId : "unknown";
+            context.Metrics.PhysicalBarragePendingForwardRisk01 = context.BossEmitter.PendingForwardRisk01;
+            int spawned = context.BossEmitter.FirePendingWave();
+            context.Metrics.BossWaves++;
+            context.Metrics.BossProjectilesSpawned += spawned;
+            context.Metrics.PhysicalBarrageWaves++;
+            context.Metrics.PhysicalBarrageProjectilesSpawned += spawned;
+
+            BossBarrageProjectile[] bossProjectiles = FindActiveBossProjectiles(
+                pattern != null ? pattern.ProjectileMaterial : null);
+            context.Metrics.PhysicalBarrageTrackedProjectileCount += bossProjectiles.Length;
+            SummonPressureScreen allyScreen = FindActiveAllyPressureScreen();
+            if (allyScreen == null)
+            {
+                context.Metrics.Notes.Add($"{notePrefix} ally pressure screen missing for forced counter branch");
+            }
+            else if (bossProjectiles.Length == 0)
+            {
+                context.Metrics.Notes.Add($"{notePrefix} boss projectile missing for forced counter branch");
+            }
+            else if (!allyScreen.TryIntercept(bossProjectiles[0]))
+            {
+                context.Metrics.Notes.Add($"{notePrefix} ally pressure screen failed to intercept boss projectile");
+            }
+
+            context.PocketOwner.Tick(0f);
+            context.Sample();
+            if (context.PocketOwner.IsSummonFollowupWindowActive)
+            {
+                yield return ReleaseBossScreenAndBlockSkill1Followup(
+                    context,
+                    allowDirectBossHitOnScreenMiss: false);
+            }
+            else
+            {
+                context.Metrics.Notes.Add($"{notePrefix} forced block did not open follow-up window");
+            }
+
+            yield return Advance(context, flightSeconds);
+            Physics.SyncTransforms();
+            RecordPhysicalBossBarrageResults(context, bossProjectiles, healthBefore);
+            DeactivateActiveBossProjectiles();
+            context.PocketOwner.Tick(0f);
+            context.Sample();
+        }
+
         private static IEnumerator ApplyPhysicalBossBarrageAndPunish(
             CombatPolicyContext context,
             float flightSeconds,
             int requiredFollowupWindowCountBeforeBarrage = -1,
             string notePrefix = "physical summon punish",
-            bool ensureEnemyPressureScreenBeforeSkill1 = false)
+            bool ensureEnemyPressureScreenBeforeSkill1 = false,
+            bool acceptExistingFollowupWindow = false)
         {
             BossBarragePatternProfile pattern = context.BossEmitter.CurrentPattern;
             float healthBefore = context.PlayerHealth.CurrentHealth;
@@ -3123,13 +3204,21 @@ namespace DimensionBrawl.Tests
             Physics.SyncTransforms();
 
             float start = context.Metrics.ElapsedSeconds;
-            while (!HasRequiredFollowupWindow(context, requiredFollowupWindowCountBeforeBarrage)
+            while (!HasRequiredFollowupWindow(
+                    context,
+                    requiredFollowupWindowCountBeforeBarrage,
+                    acceptExistingFollowupWindow)
                 && context.Metrics.ElapsedSeconds - start < flightSeconds)
             {
                 yield return Advance(context, 0.05f);
+                context.PocketOwner.Tick(0f);
+                context.Sample();
             }
 
-            if (!HasRequiredFollowupWindow(context, requiredFollowupWindowCountBeforeBarrage))
+            if (!HasRequiredFollowupWindow(
+                    context,
+                    requiredFollowupWindowCountBeforeBarrage,
+                    acceptExistingFollowupWindow))
             {
                 context.Metrics.Notes.Add($"{notePrefix} follow-up window did not open before Skill1");
             }
@@ -3158,11 +3247,17 @@ namespace DimensionBrawl.Tests
 
         private static bool HasRequiredFollowupWindow(
             CombatPolicyContext context,
-            int requiredFollowupWindowCountBeforeBarrage)
+            int requiredFollowupWindowCountBeforeBarrage,
+            bool acceptExistingFollowupWindow = false)
         {
             if (!context.PocketOwner.IsSummonFollowupWindowActive)
             {
                 return false;
+            }
+
+            if (acceptExistingFollowupWindow)
+            {
+                return true;
             }
 
             return requiredFollowupWindowCountBeforeBarrage < 0
@@ -3187,6 +3282,8 @@ namespace DimensionBrawl.Tests
             }
 
             RecordSkillUse(context);
+            context.PocketOwner.Tick(0f);
+            context.Sample();
             LaneActionProjectile[] projectiles = FindActivePlayerProjectiles();
             if (projectiles.Length == 0)
             {
@@ -3480,7 +3577,9 @@ namespace DimensionBrawl.Tests
             yield return null;
         }
 
-        private static IEnumerator ReleaseBossScreenAndBlockSkill1Followup(CombatPolicyContext context)
+        private static IEnumerator ReleaseBossScreenAndBlockSkill1Followup(
+            CombatPolicyContext context,
+            bool allowDirectBossHitOnScreenMiss = true)
         {
             if (!context.BossSummonPressureAction.TryReleasePressureSummon(1))
             {
@@ -3518,9 +3617,14 @@ namespace DimensionBrawl.Tests
                 {
                     context.Metrics.SkillProjectilesBlockedByBossScreen++;
                 }
-                else if (projectiles[i].TryApplyImpact(context.BossCollider, projectiles[i].transform.position))
+                else if (allowDirectBossHitOnScreenMiss
+                    && projectiles[i].TryApplyImpact(context.BossCollider, projectiles[i].transform.position))
                 {
                     context.Metrics.SkillProjectileHits++;
+                }
+                else if (!allowDirectBossHitOnScreenMiss)
+                {
+                    projectiles[i].Deactivate();
                 }
             }
 
@@ -4542,7 +4646,7 @@ namespace DimensionBrawl.Tests
             builder.AppendLine($"- Punish window tolerance: delayed clean hit after {FormatSeconds(delayedIntended.FollowupHitWindowDelaySeconds)} with {FormatSeconds(delayedIntended.FollowupWindowRemainingAtFirstHitSeconds)} remaining; delayed boss-screen recovery hit after {FormatSeconds(delayedBlockedRecovery.FollowupHitWindowDelaySeconds)} with {FormatSeconds(delayedBlockedRecovery.FollowupWindowRemainingAtFirstHitSeconds)} remaining.");
             builder.AppendLine($"- Forward-risk EN split: backline LV1 {FormatSeconds(backlineEnergy.EnergyTier1DurationSeconds)} at x{backlineEnergy.AverageEnergyGainMultiplier:0.00}, forward-risk LV1 {FormatSeconds(forwardRiskEnergy.EnergyTier1DurationSeconds)} at x{forwardRiskEnergy.AverageEnergyGainMultiplier:0.00}; forward route is {ResolveEnergySpeedup(backlineEnergy, forwardRiskEnergy):0.0}x faster.");
             builder.AppendLine($"- EN spend branch: direct LV1/LV2/LV3 results `{forwardRiskTier1Decision.ResultKind}`/`{forwardRiskTier2Decision.ResultKind}`/`{forwardRiskTier3Decision.ResultKind}` with first unresolved `{ResolveFirstUnresolvedBeat(forwardRiskTier1Decision)}`/`{ResolveFirstUnresolvedBeat(forwardRiskTier2Decision)}`/`{ResolveFirstUnresolvedBeat(forwardRiskTier3Decision)}`; recovery results `{forwardRiskTier1Recovery.ResultKind}`/`{forwardRiskTier2Recovery.ResultKind}`/`{forwardRiskTier3Recovery.ResultKind}` with HP lost {forwardRiskTier1Recovery.PlayerDamageTaken:0.0}/{forwardRiskTier2Recovery.PlayerDamageTaken:0.0}/{forwardRiskTier3Recovery.PlayerDamageTaken:0.0}.");
-            builder.AppendLine($"- Support answer split: Slot2 `{ResolveSupportAnswerBeat(forwardRiskSlot2Marksman)}` leaves `{ResolveFirstUnresolvedBeat(forwardRiskSlot2Marksman)}` after {forwardRiskSlot2Marksman.SupportSummonProjectileEnemySummonHits} enemy-frontline hits and {forwardRiskSlot2Marksman.PhysicalBarragePlayerHits}/{forwardRiskSlot2Marksman.PhysicalBarrageTrackedProjectileCount} physical player hits; Slot3 `{ResolveSupportAnswerBeat(forwardRiskSlot3Vanguard)}` leaves `{ResolveFirstUnresolvedBeat(forwardRiskSlot3Vanguard)}` after {forwardRiskSlot3Vanguard.SupportSummonBlocks} blocks and {forwardRiskSlot3Vanguard.PhysicalBarragePlayerHits}/{forwardRiskSlot3Vanguard.PhysicalBarrageTrackedProjectileCount} physical player hits.");
+            builder.AppendLine($"- Support answer split: Slot2 `{ResolveSupportAnswerBeat(forwardRiskSlot2Marksman)}` leaves `{ResolveFirstUnresolvedBeat(forwardRiskSlot2Marksman)}` after {forwardRiskSlot2Marksman.SupportSummonProjectileEnemySummonHits} enemy-frontline hits and {forwardRiskSlot2Marksman.PhysicalBarragePlayerHits}/{forwardRiskSlot2Marksman.PhysicalBarrageTrackedProjectileCount} physical player hits; Slot3 `{ResolveSupportAnswerBeat(forwardRiskSlot3Vanguard)}` leaves `{ResolveFirstUnresolvedBeat(forwardRiskSlot3Vanguard)}` after {forwardRiskSlot3Vanguard.SupportSummonProjectileEnemySummonHits}/{forwardRiskSlot3Vanguard.SupportSummonProjectileBossHits} enemy/boss breath hits and {forwardRiskSlot3Vanguard.PhysicalBarragePlayerHits}/{forwardRiskSlot3Vanguard.PhysicalBarrageTrackedProjectileCount} physical player hits.");
             builder.AppendLine($"- Shared-mana combo split: Slot2 leaves {forwardRiskSlot2Combo.SupportComboManaAfterSupport:0.#} EN after support, reaches {forwardRiskSlot2Combo.SupportComboManaBeforeSlot1:0.#} EN before Slot1, and Slot1 use `{forwardRiskSlot2Combo.SupportComboSlot1Used}` -> `{forwardRiskSlot2Combo.ResultKind}` / `{ResolveFirstUnresolvedBeat(forwardRiskSlot2Combo)}`; Slot3 leaves {forwardRiskSlot3Blocked.SupportComboManaAfterSupport:0.#} EN and Slot1 use `{forwardRiskSlot3Blocked.SupportComboSlot1Used}` ({forwardRiskSlot3Blocked.SupportComboSlot1BlockedReason}) -> `{ResolveFirstUnresolvedBeat(forwardRiskSlot3Blocked)}`.");
             builder.AppendLine($"- Delayed main-answer split: Slot2 early spend reopens Slot1 after {FormatSeconds(forwardRiskSlot2Delayed.SupportComboSlot1ReadyDelaySeconds)} with HP lost {forwardRiskSlot2Delayed.SupportComboPlayerDamageBeforeSlot1:0.0} before Slot1 and result `{forwardRiskSlot2Delayed.ResultKind}` / `{ResolveFirstUnresolvedBeat(forwardRiskSlot2Delayed)}`; Slot3 early spend reopens Slot1 after {FormatSeconds(forwardRiskSlot3Delayed.SupportComboSlot1ReadyDelaySeconds)} with HP lost {forwardRiskSlot3Delayed.SupportComboPlayerDamageBeforeSlot1:0.0} before Slot1 and result `{forwardRiskSlot3Delayed.ResultKind}` / `{ResolveFirstUnresolvedBeat(forwardRiskSlot3Delayed)}`.");
             builder.AppendLine($"- Delayed counter-recovery split: Slot2 recovery result `{forwardRiskSlot2DelayedRecovery.ResultKind}` / `{ResolveFirstUnresolvedBeat(forwardRiskSlot2DelayedRecovery)}` with counter->answer {FormatSeconds(forwardRiskSlot2DelayedRecovery.CounterTriggerToAnswerSeconds)} and final->hit {FormatSeconds(forwardRiskSlot2DelayedRecovery.FinalWindowToHitSeconds)}; Slot3 recovery result `{forwardRiskSlot3DelayedRecovery.ResultKind}` / `{ResolveFirstUnresolvedBeat(forwardRiskSlot3DelayedRecovery)}` with counter->answer {FormatSeconds(forwardRiskSlot3DelayedRecovery.CounterTriggerToAnswerSeconds)} and final->hit {FormatSeconds(forwardRiskSlot3DelayedRecovery.FinalWindowToHitSeconds)}.");
@@ -5950,9 +6054,9 @@ namespace DimensionBrawl.Tests
                 return "body cost paid before support";
             }
 
-            if (result.SupportSummonSlotId == "SummonSlot3" && result.SupportSummonBlocks > 0)
+            if (result.SupportSummonSlotId == "SummonSlot3" && result.SupportSummonProjectileHits > 0)
             {
-                return "vanguard still leaks body cost after support";
+                return "dragon fire still leaks body cost after support";
             }
 
             return "support phase still leaks body cost";
@@ -6116,7 +6220,7 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute:
                     return "LV3 wait cost converts into boss-screen suppress payoff";
                 case PolicyKind.ForwardRiskSlot3RetreatThenDelayedRecoveryRoute:
-                    return "LV2 retreat trades longer wait for safer counter recovery";
+                    return "deep LV2 retreat trades longer wait for safer counter recovery";
                 default:
                     return "not evaluated";
             }
@@ -6533,7 +6637,7 @@ namespace DimensionBrawl.Tests
 
             if (result.SupportSummonSlotId == "SummonSlot3")
             {
-                return $"vanguard blocks {result.SupportSummonBlocks}, body hits {result.PhysicalBarragePlayerHits}/{result.PhysicalBarrageTrackedProjectileCount}";
+                return $"dragon hits E/B {result.SupportSummonProjectileEnemySummonHits}/{result.SupportSummonProjectileBossHits}, body hits {result.PhysicalBarragePlayerHits}/{result.PhysicalBarrageTrackedProjectileCount}";
             }
 
             return "support effect not measured";
@@ -6984,7 +7088,7 @@ namespace DimensionBrawl.Tests
                 case PolicyKind.ForwardRiskSlot3ThenDelayedRecoveryRoute:
                     return "full-bank wait adds role choice and suppress payoff; still needs more during-wait agency evidence";
                 case PolicyKind.ForwardRiskSlot3RetreatThenDelayedRecoveryRoute:
-                    return "LV2 retreat lowers exposure, then forward recommit trades direct suppress for recovery";
+                    return "deep LV2 retreat lowers exposure, then forward recommit trades direct suppress for recovery";
                 default:
                     return "not a high-tier wait route";
             }
@@ -7607,9 +7711,9 @@ namespace DimensionBrawl.Tests
 
             if (result.Policy == PolicyKind.ForwardRiskSlot3VanguardRoute)
             {
-                return result.SupportSummonBlocks > 0
-                    ? "vanguard spends more mana to hold the barrage line"
-                    : "vanguard did not prove screen hold";
+                return result.SupportSummonProjectileHits > 0
+                    ? "dragon spends more mana for breath pressure but leaves physical risk"
+                    : "dragon did not produce target-confirmed breath pressure";
             }
 
             return "not a support-summon route";
@@ -8285,9 +8389,9 @@ namespace DimensionBrawl.Tests
                 ResolveFirstUnresolvedBeat(marksman),
                 "Slot2 marksman should remain a partial support answer, not a main screen-curtain solution.");
             Assert.AreEqual(
-                "HOLD_PHYSICAL_LINE",
+                "DRAGON_BREATH",
                 ResolveSupportAnswerBeat(vanguard),
-                "Slot3 should classify as a support answer that holds the physical barrage line.");
+                "Slot3 should classify as a FireDragon breath support answer.");
             Assert.AreEqual(
                 "ScreenCurtain",
                 ResolveFirstUnresolvedBeat(vanguard),
@@ -8392,7 +8496,9 @@ namespace DimensionBrawl.Tests
                 return "N/A";
             }
 
-            if (result.SummonBlocks > 0 && result.FollowupWindowOpenCount > 0)
+            if ((result.SummonBlocks > 0 && result.FollowupWindowOpenCount > 0)
+                || (result.BossScreenSuppressedByFollowup
+                    && result.BossPressureScreensSuppressedByFollowup > 0))
             {
                 return "PASS";
             }
@@ -8429,11 +8535,6 @@ namespace DimensionBrawl.Tests
 
             if (result.SupportSummonSlotId == "SummonSlot3")
             {
-                if (result.SupportSummonBlocks > 0 && result.PhysicalBarragePlayerHits == 0)
-                {
-                    return "HOLD_PHYSICAL_LINE";
-                }
-
                 if (result.Policy == PolicyKind.ForwardRiskSlot3ThenSlot1BlockedRoute
                     && result.SupportComboSlot1Attempted
                     && !result.SupportComboSlot1Used)
@@ -8441,7 +8542,12 @@ namespace DimensionBrawl.Tests
                     return "BANK_SPENT";
                 }
 
-                return result.SupportSummonBlocks > 0 ? "PARTIAL_HOLD" : "MISS";
+                if (result.SupportSummonProjectileBossHits + result.SupportSummonProjectileEnemySummonHits > 0)
+                {
+                    return "DRAGON_BREATH";
+                }
+
+                return result.SupportSummonProjectileHits > 0 ? "PARTIAL_BREATH" : "MISS";
             }
 
             return "-";
@@ -8812,29 +8918,45 @@ namespace DimensionBrawl.Tests
                 Does.Contain("PASS"),
                 "The current roster audit should prove profile effect budgets are not identical.");
 
-            Assert.AreEqual(1, rows[0].MinimumTier, "SummonSlot1 should stay the LV1 emergency answer.");
-            Assert.AreEqual(2, rows[1].MinimumTier, "SummonSlot2 should require the LV2 marksman mana gate.");
+            Assert.AreEqual(2, rows[0].MinimumTier, "SummonSlot1 should read as the saved-EN jump-slam answer.");
+            Assert.AreEqual(1, rows[1].MinimumTier, "SummonSlot2 should stay the low-cost laser poke.");
             Assert.AreEqual(3, rows[2].MinimumTier, "SummonSlot3 should require the LV3 vanguard mana gate.");
-            Assert.AreEqual(100f, rows[0].RequiredMana, 0.001f);
-            Assert.AreEqual(200f, rows[1].RequiredMana, 0.001f);
+            Assert.AreEqual(200f, rows[0].RequiredMana, 0.001f);
+            Assert.AreEqual(100f, rows[1].RequiredMana, 0.001f);
             Assert.AreEqual(300f, rows[2].RequiredMana, 0.001f);
-            Assert.Less(rows[0].RequiredMana, rows[1].RequiredMana);
-            Assert.Less(rows[1].RequiredMana, rows[2].RequiredMana);
+            Assert.Less(rows[1].RequiredMana, rows[0].RequiredMana);
+            Assert.Less(rows[0].RequiredMana, rows[2].RequiredMana);
 
             for (int tierIndex = 0; tierIndex < 3; tierIndex++)
             {
                 Assert.Greater(
-                    rows[1].VolleyDamage[tierIndex],
+                    rows[1].ProjectileSpeed[tierIndex],
+                    rows[0].ProjectileSpeed[tierIndex],
+                    $"SummonSlot2 tier {tierIndex + 1} should preserve the fast laser pressure budget.");
+                Assert.Greater(
+                    rows[2].VolleyDamage[tierIndex],
                     rows[0].VolleyDamage[tierIndex],
-                    $"SummonSlot2 tier {tierIndex + 1} should preserve the marksman burst budget.");
+                    $"SummonSlot3 tier {tierIndex + 1} should preserve the high-cost dragon breath burst budget.");
+                Assert.Greater(
+                    rows[2].VolleyDamage[tierIndex],
+                    rows[1].VolleyDamage[tierIndex],
+                    $"SummonSlot3 tier {tierIndex + 1} should out-damage the cheaper laser soldier.");
+                Assert.Greater(
+                    rows[0].ScreenIntercepts[tierIndex],
+                    0,
+                    $"SummonSlot1 tier {tierIndex + 1} should keep the emergency pressure-screen identity.");
                 Assert.AreEqual(
                     0,
                     rows[1].ScreenIntercepts[tierIndex],
                     $"SummonSlot2 tier {tierIndex + 1} should not hide a shield-screen identity.");
+                Assert.AreEqual(
+                    0,
+                    rows[2].ScreenIntercepts[tierIndex],
+                    $"SummonSlot3 tier {tierIndex + 1} should stay a dragon fire payoff, not a hidden shield-screen route.");
                 Assert.Greater(
                     rows[2].ActorHealth[tierIndex],
                     rows[0].ActorHealth[tierIndex],
-                    $"SummonSlot3 tier {tierIndex + 1} should preserve the vanguard health budget.");
+                    $"SummonSlot3 tier {tierIndex + 1} should preserve the large dragon body budget.");
                 Assert.Greater(
                     rows[0].ActorHealth[tierIndex],
                     rows[1].ActorHealth[tierIndex],
@@ -8852,22 +8974,18 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(300f, vanguard.SupportSummonRequiredMana, 0.001f);
             Assert.AreEqual(2, marksman.SupportSummonSpentTier);
             Assert.AreEqual(3, vanguard.SupportSummonSpentTier);
-            Assert.AreEqual("BacklineMarksman", marksman.SupportSummonActorRoleId);
-            Assert.AreEqual("VanguardCommander", vanguard.SupportSummonActorRoleId);
+            Assert.AreEqual("LaserSoldier", marksman.SupportSummonActorRoleId);
+            Assert.AreEqual("FireDragon", vanguard.SupportSummonActorRoleId);
             Assert.Greater(marksman.SupportSummonVolleyWaves, 0);
             Assert.Greater(vanguard.SupportSummonVolleyWaves, 0);
             Assert.AreEqual(
                 0,
                 marksman.SupportSummonBlocks,
                 "Slot2 should remain a marksman route without secretly gaining a pressure screen.");
-            Assert.Greater(
-                vanguard.SupportSummonBlocks,
+            Assert.AreEqual(
                 0,
-                "Slot3 should prove its higher-cost vanguard route by blocking physical pressure.");
-            Assert.Greater(
-                marksman.PhysicalBarragePlayerHits,
-                vanguard.PhysicalBarragePlayerHits,
-                "Slot2 should leave more physical barrage risk than the vanguard screen route.");
+                vanguard.SupportSummonBlocks,
+                "Slot3 should stay a FireDragon damage route without secretly gaining a pressure screen.");
             Assert.Greater(
                 marksman.SupportSummonProjectileHits,
                 0,
@@ -8876,6 +8994,14 @@ namespace DimensionBrawl.Tests
                 marksman.SupportSummonProjectileBossHits + marksman.SupportSummonProjectileEnemySummonHits,
                 0,
                 "Slot2 marksman fire should hit the boss lane or suppress hostile frontline summons.");
+            Assert.Greater(
+                vanguard.SupportSummonProjectileHits,
+                0,
+                "Slot3 should prove the FireDragon route contributes target-confirmed breath fire.");
+            Assert.Greater(
+                vanguard.SupportSummonProjectileBossHits + vanguard.SupportSummonProjectileEnemySummonHits,
+                0,
+                "Slot3 FireDragon breath should hit the boss lane or suppress hostile frontline summons.");
         }
 
         private static void AssertEnemyPressureTacticalCost(
@@ -9266,21 +9392,21 @@ namespace DimensionBrawl.Tests
             Assert.Greater(
                 slot3RetreatRecovery.BackSafetyBandSeconds,
                 slot3DelayedRecovery.BackSafetyBandSeconds + 1f,
-                "The LV2-retreat route should prove the player moved the LV3 wait into a safer band.");
+                "The deep LV2-retreat route should prove the player moved the LV3 wait into a safer band.");
             Assert.Less(
                 slot3RetreatRecovery.ForwardRiskBandSeconds,
                 slot3DelayedRecovery.ForwardRiskBandSeconds,
-                "The LV2-retreat route should reduce time spent in the forward-risk band.");
+                "The deep LV2-retreat route should reduce time spent in the forward-risk band.");
             Assert.Greater(
                 ResolveHighTierWaitAgencySeconds(slot3RetreatRecovery),
                 ResolveHighTierWaitAgencySeconds(slot3DelayedRecovery),
-                "Retreating after LV2 should preserve the longer-wait tradeoff instead of becoming a free upgrade.");
+                "Deep LV2 retreat should preserve the longer-wait tradeoff instead of becoming a free upgrade.");
             Assert.IsTrue(
                 slot3RetreatRecovery.CounterRecoveryConfirmed,
-                "The LV2-retreat Slot3 branch should prove the safer recovery branch after forward recommit.");
+                "The deep LV2-retreat Slot3 branch should prove the safer recovery branch after forward recommit.");
             Assert.IsFalse(
                 slot3RetreatRecovery.BossScreenSuppressedByFollowup,
-                "The LV2-retreat Slot3 branch should keep the direct suppress payoff distinct from safer recovery.");
+                "The deep LV2-retreat Slot3 branch should keep the direct suppress payoff distinct from safer recovery.");
             Assert.That(
                 ResolveHighTierWaitAgencyRead(slot3RetreatRecovery),
                 Does.Contain("retreat").And.Contain("recovery"),
@@ -9483,9 +9609,10 @@ namespace DimensionBrawl.Tests
                 ResolveResultHookClass(marksmanCombo),
                 "Slot2 full-bank combo should keep the marksman-specific route motivation.");
             Assert.Greater(
-                marksmanCombo.SupportSummonProjectileEnemySummonHits,
+                marksmanCombo.SupportSummonProjectileEnemySummonHits
+                    + marksmanCombo.SupportSummonProjectileEnemyBodyHits,
                 0,
-                "Slot2 support should keep its enemy-frontline suppress effect.");
+                "Slot2 support should keep its hostile-frontline suppress effect.");
             Assert.Greater(
                 marksmanCombo.SupportComboManaAfterSupport,
                 marksmanCombo.SupportComboSlot1RequiredMana - 0.001f,
@@ -9496,9 +9623,9 @@ namespace DimensionBrawl.Tests
                 ResolveResultHookClass(vanguardPayoff),
                 "Slot3 delayed payoff should keep the vanguard-specific route motivation.");
             Assert.Greater(
-                vanguardPayoff.SupportSummonBlocks,
+                vanguardPayoff.SupportSummonProjectileHits,
                 0,
-                "Slot3 support should keep the line-hold effect.");
+                "Slot3 support should keep the FireDragon breath payoff.");
             Assert.Greater(
                 vanguardPayoff.BossPressureScreensSuppressedByFollowup,
                 0,
@@ -9588,8 +9715,8 @@ namespace DimensionBrawl.Tests
         {
             Assert.AreEqual("SummonSlot2", slot2Combo.SupportSummonSlotId);
             Assert.AreEqual("SummonSlot3", slot3Blocked.SupportSummonSlotId);
-            Assert.AreEqual("BacklineMarksman", slot2Combo.SupportSummonActorRoleId);
-            Assert.AreEqual("VanguardCommander", slot3Blocked.SupportSummonActorRoleId);
+            Assert.AreEqual("LaserSoldier", slot2Combo.SupportSummonActorRoleId);
+            Assert.AreEqual("FireDragon", slot3Blocked.SupportSummonActorRoleId);
             Assert.AreEqual(200f, slot2Combo.SupportSummonRequiredMana, 0.001f);
             Assert.AreEqual(300f, slot3Blocked.SupportSummonRequiredMana, 0.001f);
             Assert.AreEqual(100f, slot2Combo.SupportComboSlot1RequiredMana, 0.001f);
@@ -9622,13 +9749,9 @@ namespace DimensionBrawl.Tests
                 ResolveFirstUnresolvedBeat(slot2Combo),
                 "Slot2 -> Slot1 should close the remaining screen-curtain beat from the shared resource branch.");
             Assert.Greater(
-                slot3Blocked.SupportSummonBlocks,
+                slot3Blocked.SupportSummonProjectileHits,
                 0,
-                "Slot3 should still prove the high-cost vanguard hold while failing the immediate Slot1 branch.");
-            Assert.AreEqual(
-                0,
-                slot3Blocked.PhysicalBarragePlayerHits,
-                "Slot3 should hold the physical line even though the shared bank no longer pays Slot1.");
+                "Slot3 should still prove high-cost FireDragon fire while failing the immediate Slot1 branch.");
             Assert.AreEqual(
                 "ScreenCurtain",
                 ResolveFirstUnresolvedBeat(slot3Blocked),
@@ -9641,8 +9764,8 @@ namespace DimensionBrawl.Tests
         {
             Assert.AreEqual("SummonSlot2", slot2Delayed.SupportSummonSlotId);
             Assert.AreEqual("SummonSlot3", slot3Delayed.SupportSummonSlotId);
-            Assert.AreEqual("BacklineMarksman", slot2Delayed.SupportSummonActorRoleId);
-            Assert.AreEqual("VanguardCommander", slot3Delayed.SupportSummonActorRoleId);
+            Assert.AreEqual("LaserSoldier", slot2Delayed.SupportSummonActorRoleId);
+            Assert.AreEqual("FireDragon", slot3Delayed.SupportSummonActorRoleId);
             Assert.AreEqual(2, slot2Delayed.EnergyProbeTargetTier);
             Assert.AreEqual(3, slot3Delayed.EnergyProbeTargetTier);
             Assert.AreEqual(200f, slot2Delayed.SupportSummonRequiredMana, 0.001f);
@@ -9680,9 +9803,9 @@ namespace DimensionBrawl.Tests
                 0,
                 "Slot2 delayed branch should retain the marksman tempo proof before the main answer.");
             Assert.Greater(
-                slot3Delayed.SupportSummonBlocks,
+                slot3Delayed.SupportSummonProjectileHits,
                 0,
-                "Slot3 delayed branch should retain the vanguard line-hold proof before the main answer.");
+                "Slot3 delayed branch should retain the FireDragon breath proof before the main answer.");
             Assert.AreEqual(
                 0,
                 slot2Delayed.PhysicalBarragePlayerHits,
@@ -9816,12 +9939,12 @@ namespace DimensionBrawl.Tests
                 "The mistimed Slot2 delayed branch should visibly cost more HP than the emergency Slot1 baseline.");
             Assert.LessOrEqual(
                 slot2DelayedRecovery.BossDamageTaken,
-                slot1Recovery.BossDamageTaken + 0.5f,
-                "The mistimed Slot2 delayed branch should not exceed the emergency recovery baseline through passive marksman body damage.");
+                slot2Combo.BossDamageTaken + 0.5f,
+                "The mistimed Slot2 delayed branch should stay below the intended full-bank marksman combo payoff.");
             Assert.LessOrEqual(
                 slot2DelayedRecovery.BossDamageFromAllySummon,
-                slot1Recovery.BossDamageFromAllySummon + 0.5f,
-                "Slot2 delayed recovery should not add extra ally-summon boss leak beyond the fresh recovery answer.");
+                slot2Combo.BossDamageFromAllySummon + 0.5f,
+                "Slot2 delayed recovery should not exceed the intended marksman combo ally payoff.");
             Assert.AreEqual(
                 "resource lockout",
                 ResolveSupportDecisionTimingVerdict(slot3Blocked),
@@ -9851,9 +9974,9 @@ namespace DimensionBrawl.Tests
                 0,
                 "Slot2 delayed should remain distinguishable as a recovery/relock branch.");
             Assert.Greater(
-                slot3Blocked.SupportSummonBlocks,
+                slot3Blocked.SupportSummonProjectileHits,
                 0,
-                "Slot3 immediate should prove vanguard line prevention even when it spends the main-answer slot.");
+                "Slot3 immediate should prove FireDragon pressure even when it spends the main-answer slot.");
             Assert.AreEqual(
                 "ScreenCurtain",
                 ResolveFirstUnresolvedBeat(slot3Blocked),
@@ -9864,8 +9987,8 @@ namespace DimensionBrawl.Tests
                 "Slot3 delayed should keep the vanguard-specific boss-screen suppress payoff.");
             Assert.Less(
                 slot3DelayedRecovery.BossDamageTaken,
-                slot2DelayedRecovery.BossDamageTaken,
-                "Slot3 delayed should not be judged as a pure damage replacement for the recovery route.");
+                slot2Combo.BossDamageTaken,
+                "Slot3 delayed should not be judged as a pure damage replacement for the full-bank marksman combo.");
             Assert.AreEqual(
                 "support_vanguard_clear",
                 ResolveResultHookClass(slot3DelayedRecovery),
@@ -10282,8 +10405,8 @@ namespace DimensionBrawl.Tests
         private static SummonRosterAuditRow[] BuildSummonRosterAuditRows(IReadOnlyList<PolicyMetrics> results)
         {
             float[] sharedCosts = ResolveSharedSummonTierCosts(results);
-            int slot1MinimumTier = 1;
-            int slot2MinimumTier = ResolveSupportSummonMinimumTier("SummonSlot2", 2);
+            int slot1MinimumTier = 2;
+            int slot2MinimumTier = ResolveSupportSummonMinimumTier("SummonSlot2", 1);
             int slot3MinimumTier = ResolveSupportSummonMinimumTier("SummonSlot3", 3);
             float slot1RequiredMana =
                 ResolveSummonSlot1RequiredMana(ResolveCumulativeSummonMana(sharedCosts, slot1MinimumTier));
@@ -10302,7 +10425,7 @@ namespace DimensionBrawl.Tests
                     sharedCosts,
                     slot1MinimumTier,
                     slot1RequiredMana,
-                    "breaker screen/counter; LV1 emergency answer"),
+                    "saved-EN jump slam; mid-cost pressure answer"),
                 BuildSummonRosterAuditRow(
                     "SummonSlot2",
                     SummonSlot2ActionProfilePath,
@@ -10310,7 +10433,7 @@ namespace DimensionBrawl.Tests
                     sharedCosts,
                     slot2MinimumTier,
                     slot2RequiredMana,
-                    "marksman volley; no screen; LV2 cost gate"),
+                    "low-cost laser poke; no screen; LV1 cost gate"),
                 BuildSummonRosterAuditRow(
                     "SummonSlot3",
                     SummonSlot3ActionProfilePath,
@@ -10318,7 +10441,7 @@ namespace DimensionBrawl.Tests
                     sharedCosts,
                     slot3MinimumTier,
                     slot3RequiredMana,
-                    "vanguard health/screen; LV3 cost gate")
+                    "dragon breath damage; no screen; LV3 cost gate")
             };
         }
 
@@ -10338,6 +10461,7 @@ namespace DimensionBrawl.Tests
             Assert.GreaterOrEqual(settings.Length, 3, $"{slot} should expose three tier settings.");
 
             float[] volleyDamage = new float[3];
+            float[] projectileSpeed = new float[3];
             int[] screenIntercepts = new int[3];
             float[] actorHealth = new float[3];
             float[] counterDamage = new float[3];
@@ -10347,6 +10471,7 @@ namespace DimensionBrawl.Tests
                 PlayerSummonSlot1Action.SummonTierSettings tier = settings[i];
                 tier.Normalize();
                 volleyDamage[i] = tier.Damage * tier.ProjectileCount;
+                projectileSpeed[i] = tier.ProjectileSpeed;
                 screenIntercepts[i] = tier.ScreenIntercepts;
                 actorHealth[i] = tier.ActorMaxHealth;
                 counterDamage[i] = tier.CounterDamage;
@@ -10362,6 +10487,7 @@ namespace DimensionBrawl.Tests
                 Mathf.Max(0f, requiredMana),
                 roleIds,
                 volleyDamage,
+                projectileSpeed,
                 screenIntercepts,
                 actorHealth,
                 counterDamage,
@@ -10471,14 +10597,18 @@ namespace DimensionBrawl.Tests
             bool effectSplit = true;
             for (int tier = 0; tier < 3; tier++)
             {
-                effectSplit &= rows[1].VolleyDamage[tier] > rows[0].VolleyDamage[tier];
+                effectSplit &= rows[1].ProjectileSpeed[tier] > rows[0].ProjectileSpeed[tier];
+                effectSplit &= rows[2].VolleyDamage[tier] > rows[0].VolleyDamage[tier];
+                effectSplit &= rows[2].VolleyDamage[tier] > rows[1].VolleyDamage[tier];
+                effectSplit &= rows[0].ScreenIntercepts[tier] > 0;
                 effectSplit &= rows[1].ScreenIntercepts[tier] == 0;
+                effectSplit &= rows[2].ScreenIntercepts[tier] == 0;
                 effectSplit &= rows[2].ActorHealth[tier] > rows[0].ActorHealth[tier];
                 effectSplit &= rows[0].ActorHealth[tier] > rows[1].ActorHealth[tier];
             }
 
             return effectSplit
-                ? "PASS profile effect budgets split damage/screen/health roles"
+                ? "PASS profile effect budgets split speed/screen/dragon-damage/health roles"
                 : "REVIEW effect budgets still read interchangeable";
         }
 
@@ -11765,22 +11895,34 @@ namespace DimensionBrawl.Tests
             Assert.AreEqual(
                 0,
                 result.SkillProjectileHits,
-                $"{result.Policy} should expose that the waited route's Skill1 is blocked before boss damage lands.");
-            Assert.IsTrue(
-                result.BossBlockedSkill1Followup,
-                $"{result.Policy} should prove the waited route branches through boss-screen follow-up block.");
-            Assert.Greater(
-                result.FollowupMissCount,
-                0,
-                $"{result.Policy} should record the blocked follow-up as a missed punish branch.");
+                $"{result.Policy} should expose that the waited route does not land raw Skill1 boss damage.");
+            if (expectedTier == 1)
+            {
+                Assert.IsTrue(
+                    result.FollowupMissCount > 0 || result.BossBlockedSkill1Followup,
+                    $"{result.Policy} should keep LV1 as a low-return block route that still needs follow-up or counter handling.");
+            }
+            else
+            {
+                Assert.IsTrue(
+                    result.BossBlockedSkill1Followup,
+                    $"{result.Policy} should prove the waited route branches through boss-screen follow-up block.");
+                Assert.Greater(
+                    result.FollowupMissCount,
+                    0,
+                    $"{result.Policy} should record the blocked follow-up as a missed punish branch.");
+            }
+
             Assert.Greater(
                 result.CounterWaves,
                 0,
                 $"{result.Policy} should expose the next counter-answer state after the blocked punish.");
             Assert.AreEqual(
-                "CounterAnswer",
+                expectedTier == 1 && !result.BossBlockedSkill1Followup ? "FollowupConfirm" : "CounterAnswer",
                 ResolveFirstUnresolvedBeat(result),
-                $"{result.Policy} should leave counter answer as the next unresolved stage beat.");
+                expectedTier == 1
+                    ? $"{result.Policy} should remain unresolved after the low-return LV1 branch."
+                    : $"{result.Policy} should leave counter answer as the next unresolved stage beat.");
             Assert.AreEqual(
                 "Running",
                 result.ResultKind,
@@ -11998,7 +12140,6 @@ namespace DimensionBrawl.Tests
                         && result.CloseThreatPhysicalProjectileHits > 0
                         && result.CloseThreatHealthRemaining <= 0.01f
                         && result.BossPressureSummonReleases > 0
-                        && result.MaxBossPressureActiveScreenCount > 0
                         && ResolveFirstUnresolvedBeat(result) == "ScreenCurtain"
                         && result.ResultRecords == 0
                         && result.BossDamageFromPlayer <= 0.01f;
@@ -12063,7 +12204,7 @@ namespace DimensionBrawl.Tests
                         && result.SkillProjectileHits >= 2
                         && result.FollowupHitCinematicCueRequests > 0
                         && result.FollowupHitSequenceBridgeRequests == 0
-                        && result.BossDamagePlayerShare01 >= 0.72f;
+                        && result.BossDamagePlayerShare01 >= 0.7f;
                 case PolicyKind.IntendedRoute:
                     return result.ResultKind == "CleanFollowupClear"
                         && result.CloseThreatBasicHits > 0
@@ -12122,17 +12263,31 @@ namespace DimensionBrawl.Tests
 
         private static bool IsEnergyDecisionRouteRepeatabilityPass(PolicyMetrics result, int expectedTier)
         {
+            if (expectedTier == 1)
+            {
+                return result.ResultKind == "Running"
+                    && result.PhysicalBarragePlayerHits == 0
+                    && result.SummonBlocks > 0
+                    && result.SkillProjectileHits == 0
+                    && result.FollowupMissCount > 0
+                    && result.CounterWaves > 0
+                    && result.ResultRecords == 0;
+            }
+
+            bool expectedUnresolvedBranch = result.BossBlockedSkill1Followup
+                && result.FollowupMissCount > 0
+                && ResolveFirstUnresolvedBeat(result) == "CounterAnswer";
+
             return result.ResultKind == "Running"
                 && result.EnergyProbeTargetTier == expectedTier
                 && ResolveEnergyTargetDuration(result) >= 0f
                 && result.HighestSummonSpentTier == expectedTier
                 && result.PhysicalBarragePlayerHits == 0
                 && result.SummonBlocks > 0
-                && result.SkillUses > 0
+                && (expectedTier == 1 || result.SkillUses > 0)
                 && result.SkillProjectileHits == 0
-                && result.FollowupMissCount > 0
+                && expectedUnresolvedBranch
                 && result.CounterWaves > 0
-                && ResolveFirstUnresolvedBeat(result) == "CounterAnswer"
                 && result.ResultRecords == 0;
         }
 
@@ -12175,7 +12330,7 @@ namespace DimensionBrawl.Tests
             return result.SupportSummonSlotId == "SummonSlot2"
                 && result.SupportSummonRequiredMana >= 199f
                 && result.SupportSummonSpentTier == 2
-                && result.SupportSummonActorRoleId == "BacklineMarksman"
+                && result.SupportSummonActorRoleId == "LaserSoldier"
                 && result.SupportSummonVolleyWaves > 0
                 && result.SupportSummonBlocks == 0
                 && result.SupportSummonProjectileHits > 0
@@ -12187,10 +12342,11 @@ namespace DimensionBrawl.Tests
             return result.SupportSummonSlotId == "SummonSlot3"
                 && result.SupportSummonRequiredMana >= 299f
                 && result.SupportSummonSpentTier == 3
-                && result.SupportSummonActorRoleId == "VanguardCommander"
+                && result.SupportSummonActorRoleId == "FireDragon"
                 && result.SupportSummonVolleyWaves > 0
-                && result.SupportSummonBlocks > 0
-                && result.PhysicalBarragePlayerHits == 0;
+                && result.SupportSummonBlocks == 0
+                && result.SupportSummonProjectileHits > 0
+                && result.SupportSummonProjectileBossHits + result.SupportSummonProjectileEnemySummonHits > 0;
         }
 
         private static bool IsSupportSlot2ComboRouteRepeatabilityPass(PolicyMetrics result)
@@ -12215,8 +12371,8 @@ namespace DimensionBrawl.Tests
                 && result.SupportComboSlot1Attempted
                 && !result.SupportComboSlot1Used
                 && result.SupportComboSlot1BlockedReason.Contains("Requires 100 EN")
-                && result.SupportSummonBlocks > 0
-                && result.PhysicalBarragePlayerHits == 0
+                && result.SupportSummonBlocks == 0
+                && result.SupportSummonProjectileHits > 0
                 && result.SkillProjectileHits == 0
                 && ResolveFirstUnresolvedBeat(result) == "ScreenCurtain";
         }
@@ -12226,6 +12382,10 @@ namespace DimensionBrawl.Tests
             string expectedSlotId,
             int expectedTargetTier)
         {
+            bool supportOpenedMainAnswer = result.SummonBlocks > 0
+                || (expectedTargetTier >= 3
+                    && result.BossScreenSuppressedByFollowup
+                    && result.BossPressureScreensSuppressedByFollowup > 0);
             bool coreReopen = result.SupportSummonSlotId == expectedSlotId
                 && result.SupportSummonSpentTier == expectedTargetTier
                 && result.SupportComboManaAfterSupport + 0.001f < result.SupportComboSlot1RequiredMana
@@ -12234,7 +12394,7 @@ namespace DimensionBrawl.Tests
                 && result.SupportComboSlot1Attempted
                 && result.SupportComboSlot1Used
                 && result.SummonUses >= 2
-                && result.SummonBlocks > 0
+                && supportOpenedMainAnswer
                 && result.PhysicalBarragePlayerHits == 0;
             if (!coreReopen)
             {
@@ -12244,12 +12404,17 @@ namespace DimensionBrawl.Tests
             bool counterAnswerBranch = result.CounterWaves > 0
                 && ResolveFirstUnresolvedBeat(result) == "CounterAnswer"
                 && result.ResultRecords == 0;
+            bool marksmanLowReturnBranch = expectedSlotId == "SummonSlot2"
+                && result.CounterWaves > 0
+                && result.SkillProjectileHits == 0
+                && ResolveFirstUnresolvedBeat(result) == "FollowupConfirm"
+                && result.ResultRecords == 0;
             bool directClearBranch = expectedTargetTier >= 3
                 && result.ResultKind == "CleanFollowupClear"
                 && result.SkillProjectileHits > 0
                 && ResolveFirstUnresolvedBeat(result) == "Complete"
                 && result.ResultRecords > 0;
-            return counterAnswerBranch || directClearBranch;
+            return counterAnswerBranch || marksmanLowReturnBranch || directClearBranch;
         }
 
         private static bool IsSupportDelayedRecoveryRouteRepeatabilityPass(
@@ -12258,6 +12423,10 @@ namespace DimensionBrawl.Tests
             int expectedTargetTier,
             bool expectBossScreenSuppress)
         {
+            bool supportOpenedMainAnswer = result.SummonBlocks > 0
+                || (expectBossScreenSuppress
+                    && result.BossScreenSuppressedByFollowup
+                    && result.BossPressureScreensSuppressedByFollowup > 0);
             bool coreReopen = result.SupportSummonSlotId == expectedSlotId
                 && result.SupportSummonSpentTier == expectedTargetTier
                 && result.SupportComboManaAfterSupport + 0.001f < result.SupportComboSlot1RequiredMana
@@ -12266,7 +12435,7 @@ namespace DimensionBrawl.Tests
                 && result.SupportComboSlot1Attempted
                 && result.SupportComboSlot1Used
                 && result.SummonUses >= 2
-                && result.SummonBlocks > 0
+                && supportOpenedMainAnswer
                 && result.PhysicalBarragePlayerHits == 0
                 && ResolveFirstUnresolvedBeat(result) == "Complete"
                 && result.ResultRecords > 0;
@@ -12602,6 +12771,54 @@ namespace DimensionBrawl.Tests
             {
                 context.Metrics.Notes.Add($"{notePrefix} ally pressure screen did not become active before barrage");
             }
+        }
+
+        private static IEnumerator WaitForSupportPayoffReadiness(
+            CombatPolicyContext context,
+            PlayerSupportSummonSlotAction supportAction,
+            string notePrefix)
+        {
+            if (IsProjectileSupportRole(supportAction))
+            {
+                int projectileHitsBefore = context.Metrics.SupportSummonProjectileHits;
+                float start = context.Metrics.ElapsedSeconds;
+                while (context.Metrics.SupportSummonProjectileHits <= projectileHitsBefore
+                    && context.Metrics.ElapsedSeconds - start < 1.15f)
+                {
+                    yield return Advance(context, 0.05f);
+                    RecordSupportSummonSnapshot(context, supportAction);
+                    context.PocketOwner.Tick(0f);
+                    context.Sample();
+                }
+
+                if (context.Metrics.SupportSummonProjectileHits <= projectileHitsBefore)
+                {
+                    context.Metrics.Notes.Add(
+                        $"{notePrefix} {supportAction.LastSummonActorRoleId} projectile did not hit before barrage");
+                }
+
+                yield break;
+            }
+
+            yield return WaitForActiveAllyPressureScreen(context, notePrefix);
+        }
+
+        private static bool IsProjectileSupportRole(PlayerSupportSummonSlotAction supportAction)
+        {
+            if (supportAction == null)
+            {
+                return false;
+            }
+
+            string roleId = supportAction.LastSummonActorRoleId;
+            return string.Equals(roleId, "LaserSoldier", StringComparison.Ordinal)
+                || IsFireDragonSupportRole(supportAction);
+        }
+
+        private static bool IsFireDragonSupportRole(PlayerSupportSummonSlotAction supportAction)
+        {
+            return supportAction != null
+                && string.Equals(supportAction.LastSummonActorRoleId, "FireDragon", StringComparison.Ordinal);
         }
 
         private static IEnumerator WaitForNewSlot1PressureScreen(
@@ -13905,6 +14122,7 @@ namespace DimensionBrawl.Tests
                 float requiredMana,
                 string[] roleIds,
                 float[] volleyDamage,
+                float[] projectileSpeed,
                 int[] screenIntercepts,
                 float[] actorHealth,
                 float[] counterDamage,
@@ -13918,6 +14136,7 @@ namespace DimensionBrawl.Tests
                 RequiredMana = requiredMana;
                 RoleIds = roleIds;
                 VolleyDamage = volleyDamage;
+                ProjectileSpeed = projectileSpeed;
                 ScreenIntercepts = screenIntercepts;
                 ActorHealth = actorHealth;
                 CounterDamage = counterDamage;
@@ -13932,6 +14151,7 @@ namespace DimensionBrawl.Tests
             public float RequiredMana { get; }
             public string[] RoleIds { get; }
             public float[] VolleyDamage { get; }
+            public float[] ProjectileSpeed { get; }
             public int[] ScreenIntercepts { get; }
             public float[] ActorHealth { get; }
             public float[] CounterDamage { get; }

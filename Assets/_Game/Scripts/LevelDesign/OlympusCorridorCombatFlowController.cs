@@ -14,9 +14,11 @@ namespace DimensionBrawl.LevelDesign
         private enum FlowPhase
         {
             WaitingForIntroHandoff,
+            Tutorial,
             IntroSwordGate,
             WaitingForStairEntry,
-            CorridorCombat
+            CorridorCombat,
+            StageCleared
         }
 
         [Header("Intro Handoff")]
@@ -39,6 +41,10 @@ namespace DimensionBrawl.LevelDesign
             System.Array.Empty<Behaviour>();
         [SerializeField] private Collider[] stairBlockers = System.Array.Empty<Collider>();
 
+        [Header("Tutorial")]
+        [SerializeField] private bool runTutorialAfterIntroHandoff = true;
+        [SerializeField] private OlympusCorridorTutorialDirector tutorialDirector;
+
         [Header("Handoff UI Reveal")]
         [SerializeField] private BossBarrageLaneReviewHud reviewHud;
         [SerializeField] private BossBarrageLaneReviewMobileHud mobileHud;
@@ -51,6 +57,7 @@ namespace DimensionBrawl.LevelDesign
         [SerializeField] private GameObject[] corridorCombatRoots = System.Array.Empty<GameObject>();
         [SerializeField] private GameObject[] corridorBoundsRoots = System.Array.Empty<GameObject>();
         [SerializeField] private CombatHealth[] corridorTargets = System.Array.Empty<CombatHealth>();
+        [SerializeField] private CombatHealth[] corridorClearTargets = System.Array.Empty<CombatHealth>();
 
         [Header("Player")]
         [SerializeField] private PlayerMovementController player;
@@ -69,7 +76,13 @@ namespace DimensionBrawl.LevelDesign
         private bool observedIntroDirectorPlayback;
 
         public bool IntroGateCleared => CountAlive(introSwordEnemies) == 0;
+        public bool TutorialRunning => phase == FlowPhase.Tutorial
+            && tutorialDirector != null
+            && tutorialDirector.IsRunning;
+        public bool TutorialCompleted => tutorialDirector != null && tutorialDirector.IsCompleted;
+        public bool CorridorCleared => HasAny(corridorClearTargets) && CountAlive(corridorClearTargets) == 0;
         public bool CorridorCombatStarted => phase == FlowPhase.CorridorCombat;
+        public bool StageCleared => phase == FlowPhase.StageCleared;
 
         public void Configure(
             PlayableDirector newIntroDirector,
@@ -91,6 +104,7 @@ namespace DimensionBrawl.LevelDesign
             GameObject[] newCorridorCombatRoots,
             GameObject[] newCorridorBoundsRoots,
             CombatHealth[] newCorridorTargets,
+            CombatHealth[] newCorridorClearTargets,
             PlayerMovementController newPlayer,
             PlayerCombatModeController newCombatModeController,
             PlayerCombatTargetSelector newTargetSelector,
@@ -104,8 +118,14 @@ namespace DimensionBrawl.LevelDesign
             float newHudRevealDurationSeconds)
         {
             UnregisterIntroDirectorStoppedHandler();
+            UnregisterIntroSwordEnemyHandlers();
+            UnregisterCorridorClearTargetHandlers();
             introDirector = newIntroDirector;
-            RegisterIntroDirectorStoppedHandler();
+            if (Application.isPlaying && isActiveAndEnabled)
+            {
+                RegisterIntroDirectorStoppedHandler();
+            }
+
             introHandoffSeconds = System.Math.Max(0d, newIntroHandoffSeconds);
             introCamerasToDisable = newIntroCamerasToDisable ?? System.Array.Empty<Camera>();
             introAudioListenersToDisable = newIntroAudioListenersToDisable ?? System.Array.Empty<AudioListener>();
@@ -127,6 +147,7 @@ namespace DimensionBrawl.LevelDesign
             corridorCombatRoots = newCorridorCombatRoots ?? System.Array.Empty<GameObject>();
             corridorBoundsRoots = newCorridorBoundsRoots ?? System.Array.Empty<GameObject>();
             corridorTargets = newCorridorTargets ?? System.Array.Empty<CombatHealth>();
+            corridorClearTargets = newCorridorClearTargets ?? System.Array.Empty<CombatHealth>();
             player = newPlayer;
             combatModeController = newCombatModeController;
             targetSelector = newTargetSelector;
@@ -142,11 +163,21 @@ namespace DimensionBrawl.LevelDesign
 
         private void Awake()
         {
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+
             PrepareInitialState();
         }
 
         private void OnEnable()
         {
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+
             RegisterIntroDirectorStoppedHandler();
             PrepareInitialState();
         }
@@ -154,10 +185,18 @@ namespace DimensionBrawl.LevelDesign
         private void OnDisable()
         {
             UnregisterIntroDirectorStoppedHandler();
+            UnregisterTutorialCompletedHandler();
+            UnregisterIntroSwordEnemyHandlers();
+            UnregisterCorridorClearTargetHandlers();
         }
 
         private void Update()
         {
+            if (!Application.isPlaying)
+            {
+                return;
+            }
+
             UpdateHudReveal();
             UpdateIntroDirectorPlaybackObservation();
 
@@ -166,7 +205,13 @@ namespace DimensionBrawl.LevelDesign
                 case FlowPhase.WaitingForIntroHandoff:
                     if (IsIntroHandoffReady() || HasIntroDirectorStoppedAfterObservedPlayback())
                     {
-                        BeginIntroSwordGate();
+                        BeginPostIntroHandoffGameplay();
+                    }
+                    break;
+                case FlowPhase.Tutorial:
+                    if (tutorialDirector == null || tutorialDirector.IsCompleted)
+                    {
+                        BeginWaitingForStairEntry();
                     }
                     break;
                 case FlowPhase.IntroSwordGate:
@@ -176,12 +221,22 @@ namespace DimensionBrawl.LevelDesign
                     }
                     break;
                 case FlowPhase.WaitingForStairEntry:
+                    ReleasePlayerMovementLocksForGameplay();
+                    SetPlayerLaneConstraintEnabled(false);
                     if (IsPlayerInsideStairTrigger())
                     {
                         BeginCorridorCombat();
                     }
                     break;
                 case FlowPhase.CorridorCombat:
+                    if (CorridorCleared)
+                    {
+                        BeginStageCleared();
+                    }
+                    break;
+                case FlowPhase.StageCleared:
+                    ReleasePlayerMovementLocksForGameplay();
+                    SetPlayerLaneConstraintEnabled(false);
                     break;
             }
         }
@@ -203,6 +258,7 @@ namespace DimensionBrawl.LevelDesign
             SetObjectsActive(corridorCombatRoots, false);
             SetObjectsActive(corridorBoundsRoots, false);
             SetCollidersEnabled(stairBlockers, true);
+            SetPlayerLaneConstraintEnabled(true);
         }
 
         private bool IsIntroHandoffReady()
@@ -235,16 +291,90 @@ namespace DimensionBrawl.LevelDesign
             SetHudOpacity(0f);
             hudRevealTimer = -hudRevealDelaySeconds;
             SetObjectsActive(handoffRoots, true);
+            SetObjectActive(introSwordGateRoot, true);
             SetObjectActive(player != null ? player.gameObject : null, true);
+            ReleasePlayerMovementLocksForGameplay();
+            SetPlayerLaneConstraintEnabled(true);
             SetSwordGateMode(true);
             SnapPlayerToHandoffGround();
-            SetObjectActive(introSwordGateRoot, true);
             SetCombatHealthRootsActive(introSwordEnemies, true);
+            SetCombatHealthRootCollidersEnabled(introSwordEnemies, true);
             SetBehavioursEnabled(introSwordEnemyGameplayBehaviours, true);
+            RegisterIntroSwordEnemyHandlers();
             SetObjectsActive(corridorCombatRoots, false);
             SetObjectsActive(corridorBoundsRoots, false);
             SetCollidersEnabled(stairBlockers, true);
-            targetSelector?.ConfigureTargetCandidates(introSwordEnemies);
+            ConfigureTargetCandidates(introSwordEnemies);
+            TryAdvanceFromIntroSwordGate();
+        }
+
+        private void BeginTutorial()
+        {
+            OlympusCorridorTutorialDirector director = ResolveTutorialDirector();
+            if (director == null || !director.TutorialEnabled)
+            {
+                BeginIntroSwordGate();
+                return;
+            }
+
+            phase = FlowPhase.Tutorial;
+            PrimeCombatCameraHandoff();
+            StopIntroDirectorForHandoff();
+            SetCamerasEnabled(introCamerasToDisable, false);
+            SetAudioListenersEnabled(introAudioListenersToDisable, false);
+            SetBehavioursEnabled(cutsceneBehavioursToDisableOnHandoff, false);
+            SetObjectsActive(cutsceneRootsToDisableOnHandoff, false);
+            SetObjectsActive(alwaysDisabledRoots, false);
+            SetHudOpacity(0f);
+            hudRevealTimer = -hudRevealDelaySeconds;
+            SetObjectsActive(handoffRoots, true);
+            SetObjectActive(introSwordGateRoot, true);
+            SetObjectActive(player != null ? player.gameObject : null, true);
+            ReleasePlayerMovementLocksForGameplay();
+            SetPlayerLaneConstraintEnabled(false);
+            SetSwordGateMode(false);
+            SnapPlayerToHandoffGround();
+            SetCombatHealthRootsActive(introSwordEnemies, true);
+            SetCombatHealthRootCollidersEnabled(introSwordEnemies, true);
+            SetBehavioursEnabled(introSwordEnemyGameplayBehaviours, false);
+            UnregisterIntroSwordEnemyHandlers();
+            SetObjectsActive(corridorCombatRoots, false);
+            SetObjectsActive(corridorBoundsRoots, false);
+            SetCollidersEnabled(stairBlockers, true);
+            ConfigureTargetCandidates(System.Array.Empty<CombatHealth>());
+
+            director.BindRuntimeContext(
+                player,
+                combatModeController,
+                targetSelector,
+                player != null ? player.GetComponent<PlayerActionController>() : null,
+                rangedBasicAttackAction,
+                skill1Action,
+                summonSlot1Action,
+                supportSummonActions,
+                mobileHud,
+                ResolveTutorialPromptPresenter(),
+                introSwordEnemies,
+                introSwordEnemyGameplayBehaviours,
+                stairBlockers);
+            RegisterTutorialCompletedHandler();
+            director.BeginTutorial();
+
+            if (director.IsCompleted)
+            {
+                BeginWaitingForStairEntry();
+            }
+        }
+
+        private void BeginPostIntroHandoffGameplay()
+        {
+            if (ShouldRunTutorial())
+            {
+                BeginTutorial();
+                return;
+            }
+
+            BeginIntroSwordGate();
         }
 
         private void StopIntroDirectorForHandoff()
@@ -276,6 +406,11 @@ namespace DimensionBrawl.LevelDesign
 
         private void HandleIntroDirectorStopped(PlayableDirector stoppedDirector)
         {
+            if (!Application.isPlaying || stoppedDirector != introDirector)
+            {
+                return;
+            }
+
             observedIntroDirectorPlayback = true;
             HandleIntroDirectorCompleted();
         }
@@ -284,8 +419,24 @@ namespace DimensionBrawl.LevelDesign
         {
             if (phase == FlowPhase.WaitingForIntroHandoff)
             {
-                BeginIntroSwordGate();
+                BeginPostIntroHandoffGameplay();
+                return;
             }
+
+            if (phase == FlowPhase.IntroSwordGate)
+            {
+                ReassertIntroSwordGateVisibility();
+            }
+        }
+
+        private void ReassertIntroSwordGateVisibility()
+        {
+            SetObjectsActive(handoffRoots, true);
+            SetObjectActive(player != null ? player.gameObject : null, true);
+            SetObjectActive(introSwordGateRoot, true);
+            SetCombatHealthRootsActive(introSwordEnemies, true);
+            SetCombatHealthRootCollidersEnabled(introSwordEnemies, true);
+            TryAdvanceFromIntroSwordGate();
         }
 
         private void UpdateIntroDirectorPlaybackObservation()
@@ -318,20 +469,245 @@ namespace DimensionBrawl.LevelDesign
         private void BeginWaitingForStairEntry()
         {
             phase = FlowPhase.WaitingForStairEntry;
+            UnregisterTutorialCompletedHandler();
+            if (tutorialDirector != null && tutorialDirector.IsRunning)
+            {
+                tutorialDirector.CancelTutorial();
+            }
+
+            UnregisterIntroSwordEnemyHandlers();
             SetBehavioursEnabled(introSwordEnemyGameplayBehaviours, false);
+            SetCombatHealthRootCollidersEnabled(introSwordEnemies, false);
             SetCollidersEnabled(stairBlockers, false);
-            targetSelector?.ConfigureTargetCandidates(System.Array.Empty<CombatHealth>());
+            ReleasePlayerMovementLocksForGameplay();
+            SetPlayerLaneConstraintEnabled(false);
+            ConfigureTargetCandidates(System.Array.Empty<CombatHealth>());
         }
 
         private void BeginCorridorCombat()
         {
             phase = FlowPhase.CorridorCombat;
+            tutorialDirector?.HideGuide();
+            UnregisterIntroSwordEnemyHandlers();
+            SetCombatHealthRootCollidersEnabled(introSwordEnemies, false);
             SetObjectsActive(alwaysDisabledRoots, false);
             SetObjectsActive(corridorCombatRoots, true);
             SetObjectsActive(corridorBoundsRoots, true);
             SetCollidersEnabled(stairBlockers, false);
+            ReleasePlayerMovementLocksForGameplay();
+            SetPlayerLaneConstraintEnabled(false);
             SetSwordGateMode(false);
-            targetSelector?.ConfigureTargetCandidates(corridorTargets);
+            ConfigureTargetCandidates(corridorTargets);
+            RegisterCorridorClearTargetHandlers();
+            TryAdvanceFromCorridorCombat();
+        }
+
+        private void BeginStageCleared()
+        {
+            phase = FlowPhase.StageCleared;
+            UnregisterCorridorClearTargetHandlers();
+            SetObjectsActive(corridorBoundsRoots, false);
+            SetCollidersEnabled(stairBlockers, false);
+            ReleasePlayerMovementLocksForGameplay();
+            SetPlayerLaneConstraintEnabled(false);
+            SetCombatHealthRootCollidersEnabled(corridorTargets, false);
+            SetCombatHealthRootCollidersEnabled(corridorClearTargets, false);
+            ConfigureTargetCandidates(System.Array.Empty<CombatHealth>());
+        }
+
+        private void RegisterIntroSwordEnemyHandlers()
+        {
+            if (introSwordEnemies == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < introSwordEnemies.Length; i++)
+            {
+                CombatHealth health = introSwordEnemies[i];
+                if (health == null)
+                {
+                    continue;
+                }
+
+                health.Died -= HandleIntroSwordEnemyDied;
+                health.Died += HandleIntroSwordEnemyDied;
+            }
+        }
+
+        private void UnregisterIntroSwordEnemyHandlers()
+        {
+            if (introSwordEnemies == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < introSwordEnemies.Length; i++)
+            {
+                CombatHealth health = introSwordEnemies[i];
+                if (health != null)
+                {
+                    health.Died -= HandleIntroSwordEnemyDied;
+                }
+            }
+        }
+
+        private void HandleIntroSwordEnemyDied()
+        {
+            TryAdvanceFromIntroSwordGate();
+        }
+
+        private void RegisterCorridorClearTargetHandlers()
+        {
+            if (corridorClearTargets == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < corridorClearTargets.Length; i++)
+            {
+                CombatHealth health = corridorClearTargets[i];
+                if (health == null)
+                {
+                    continue;
+                }
+
+                health.Died -= HandleCorridorClearTargetDied;
+                health.Died += HandleCorridorClearTargetDied;
+            }
+        }
+
+        private void UnregisterCorridorClearTargetHandlers()
+        {
+            if (corridorClearTargets == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < corridorClearTargets.Length; i++)
+            {
+                CombatHealth health = corridorClearTargets[i];
+                if (health != null)
+                {
+                    health.Died -= HandleCorridorClearTargetDied;
+                }
+            }
+        }
+
+        private void HandleCorridorClearTargetDied()
+        {
+            TryAdvanceFromCorridorCombat();
+        }
+
+        private void TryAdvanceFromIntroSwordGate()
+        {
+            if (phase == FlowPhase.IntroSwordGate && IntroGateCleared)
+            {
+                BeginWaitingForStairEntry();
+            }
+        }
+
+        private void HandleTutorialCompleted()
+        {
+            if (phase == FlowPhase.Tutorial)
+            {
+                BeginWaitingForStairEntry();
+            }
+        }
+
+        private bool ShouldRunTutorial()
+        {
+            OlympusCorridorTutorialDirector director = ResolveTutorialDirector();
+            return runTutorialAfterIntroHandoff
+                && director != null
+                && director.TutorialEnabled;
+        }
+
+        private OlympusCorridorTutorialDirector ResolveTutorialDirector()
+        {
+            if (tutorialDirector == null)
+            {
+                tutorialDirector = GetComponent<OlympusCorridorTutorialDirector>();
+            }
+
+            if (tutorialDirector == null && runTutorialAfterIntroHandoff && Application.isPlaying)
+            {
+                tutorialDirector = gameObject.AddComponent<OlympusCorridorTutorialDirector>();
+            }
+
+            return tutorialDirector;
+        }
+
+        private CinematicTutorialPromptPresenter ResolveTutorialPromptPresenter()
+        {
+            CinematicTutorialPromptPresenter[] presenters =
+                Object.FindObjectsByType<CinematicTutorialPromptPresenter>(
+                    FindObjectsInactive.Include,
+                    FindObjectsSortMode.None);
+            return presenters.Length > 0 ? presenters[0] : null;
+        }
+
+        private void RegisterTutorialCompletedHandler()
+        {
+            if (tutorialDirector == null)
+            {
+                return;
+            }
+
+            tutorialDirector.Completed -= HandleTutorialCompleted;
+            tutorialDirector.Completed += HandleTutorialCompleted;
+        }
+
+        private void UnregisterTutorialCompletedHandler()
+        {
+            if (tutorialDirector != null)
+            {
+                tutorialDirector.Completed -= HandleTutorialCompleted;
+            }
+        }
+
+        private void TryAdvanceFromCorridorCombat()
+        {
+            if (phase == FlowPhase.CorridorCombat && CorridorCleared)
+            {
+                BeginStageCleared();
+            }
+        }
+
+        private void ConfigureTargetCandidates(CombatHealth[] candidates)
+        {
+            if (targetSelector != null)
+            {
+                targetSelector.ConfigureTargetCandidates(candidates);
+            }
+        }
+
+        private void SetPlayerLaneConstraintEnabled(bool enabled)
+        {
+            if (player != null)
+            {
+                player.SetLaneConstraintEnabled(enabled);
+            }
+        }
+
+        private void ReleasePlayerMovementLocksForGameplay()
+        {
+            if (player == null)
+            {
+                return;
+            }
+
+            player.enabled = true;
+            CharacterController characterController = player.GetComponent<CharacterController>();
+            if (characterController != null)
+            {
+                characterController.enabled = true;
+            }
+
+            player.ClearCinematicMoveInputSpeedScale();
+            player.ClearActionMoveInputSpeedScale();
+            player.SetMoveInput(Vector2.zero);
+            player.SetLookInput(Vector2.zero);
         }
 
         private void UpdateHudReveal()
@@ -608,13 +984,33 @@ namespace DimensionBrawl.LevelDesign
             int count = 0;
             for (int i = 0; i < healths.Length; i++)
             {
-                if (healths[i] != null && healths[i].IsAlive)
+                if (healths[i] != null
+                    && healths[i].gameObject.activeInHierarchy
+                    && healths[i].IsAlive)
                 {
                     count++;
                 }
             }
 
             return count;
+        }
+
+        private static bool HasAny(CombatHealth[] healths)
+        {
+            if (healths == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < healths.Length; i++)
+            {
+                if (healths[i] != null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static void SetObjectsActive(GameObject[] objects, bool active)
@@ -698,6 +1094,32 @@ namespace DimensionBrawl.LevelDesign
                 if (healths[i] != null)
                 {
                     SetObjectActive(healths[i].gameObject, active);
+                }
+            }
+        }
+
+        private static void SetCombatHealthRootCollidersEnabled(CombatHealth[] healths, bool enabled)
+        {
+            if (healths == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < healths.Length; i++)
+            {
+                CombatHealth health = healths[i];
+                if (health == null)
+                {
+                    continue;
+                }
+
+                Collider[] colliders = health.GetComponentsInChildren<Collider>(includeInactive: true);
+                for (int colliderIndex = 0; colliderIndex < colliders.Length; colliderIndex++)
+                {
+                    if (colliders[colliderIndex] != null)
+                    {
+                        colliders[colliderIndex].enabled = enabled;
+                    }
                 }
             }
         }

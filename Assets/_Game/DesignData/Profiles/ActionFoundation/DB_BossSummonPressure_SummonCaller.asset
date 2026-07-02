@@ -20,48 +20,48 @@ MonoBehaviour:
     ActorLifetimeSeconds: 0
     ActorScale: 2.07
     ActorRoleId: EscortProbe
-    ActorMaxHealth: 220
-    ActorMoveSpeed: 2.35
+    ActorMaxHealth: 560
+    ActorMoveSpeed: 3.2
     ActorAdvanceDistance: 2.4
     ActorAdvanceSeconds: 1.4
     ActorEngageRadius: 1.25
-    ActorAttackDamagePerSecond: 32
-    ActorAttackIntervalSeconds: 0.35
-    ScreenIntercepts: 2
+    ActorAttackDamagePerSecond: 42
+    ActorAttackIntervalSeconds: 0.78
+    ScreenIntercepts: 3
     ScreenRadius: 1.2
-    ScreenLifetimeSeconds: 2.6
+    ScreenLifetimeSeconds: 3.2
   - EntryForwardBlend01: 0.38
     LateralOffset: 1.4
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
     ActorScale: 2.52
     ActorRoleId: PressureScreen
-    ActorMaxHealth: 320
-    ActorMoveSpeed: 2.15
+    ActorMaxHealth: 820
+    ActorMoveSpeed: 3.6
     ActorAdvanceDistance: 3.8
     ActorAdvanceSeconds: 1.85
     ActorEngageRadius: 1.35
-    ActorAttackDamagePerSecond: 44
-    ActorAttackIntervalSeconds: 0.35
-    ScreenIntercepts: 4
+    ActorAttackDamagePerSecond: 62
+    ActorAttackIntervalSeconds: 0.84
+    ScreenIntercepts: 5
     ScreenRadius: 1.55
-    ScreenLifetimeSeconds: 3.4
+    ScreenLifetimeSeconds: 4
   - EntryForwardBlend01: 0.5
     LateralOffset: 2
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
     ActorScale: 3.06
     ActorRoleId: ClampGuard
-    ActorMaxHealth: 460
-    ActorMoveSpeed: 1.95
+    ActorMaxHealth: 1180
+    ActorMoveSpeed: 4
     ActorAdvanceDistance: 5.2
     ActorAdvanceSeconds: 2.35
     ActorEngageRadius: 1.5
-    ActorAttackDamagePerSecond: 58
-    ActorAttackIntervalSeconds: 0.35
-    ScreenIntercepts: 7
+    ActorAttackDamagePerSecond: 88
+    ActorAttackIntervalSeconds: 0.9
+    ScreenIntercepts: 8
     ScreenRadius: 1.95
-    ScreenLifetimeSeconds: 4.2
+    ScreenLifetimeSeconds: 4.8
   tierReadouts:
   - TierLabel: LV1 Escort Probe
     StageRole: Low-cost boss proxy that holds the lane long enough for the player

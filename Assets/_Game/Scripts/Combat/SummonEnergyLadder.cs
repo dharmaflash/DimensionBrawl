@@ -35,6 +35,9 @@ namespace DimensionBrawl.Combat
         [SerializeField, Min(0f)] private float baseEnergyPerSecond = 12.5f;
         [SerializeField, Range(0f, 1f)] private float fallbackForwardRisk01 = 0.5f;
         [SerializeField] private AnimationCurve forwardRiskGainCurve = AnimationCurve.EaseInOut(0f, 0.55f, 1f, 1.65f);
+        [SerializeField, Min(0f)] private float backSafetyGainScale = 0.45f;
+        [SerializeField, Min(0f)] private float midChargeGainScale = 0.9f;
+        [SerializeField, Min(0f)] private float forwardRiskGainScale = 1.75f;
         [SerializeField] private bool gainEnabled = true;
 
         private int chargingTier = 1;
@@ -71,6 +74,10 @@ namespace DimensionBrawl.Combat
             {
                 forwardRiskStartForwardRisk01 = backSafetyMaxForwardRisk01;
             }
+
+            backSafetyGainScale = Mathf.Max(0f, backSafetyGainScale);
+            midChargeGainScale = Mathf.Max(0f, midChargeGainScale);
+            forwardRiskGainScale = Mathf.Max(0f, forwardRiskGainScale);
         }
 
         public void ConfigureReferences(SummonLaneSpace newLaneSpace, Transform newTrackedPlayer)
@@ -97,16 +104,33 @@ namespace DimensionBrawl.Combat
             return currentMana + 0.001f >= Mathf.Max(1f, requiredMana);
         }
 
+        public int ResolveTierForManaCost(float requiredMana)
+        {
+            float cost = Mathf.Max(1f, requiredMana);
+            if (cost > levelOneEnergy + levelTwoEnergy + 0.001f)
+            {
+                return MaxTier;
+            }
+
+            if (cost > levelOneEnergy + 0.001f)
+            {
+                return 2;
+            }
+
+            return 1;
+        }
+
         public bool TrySpend(float requiredMana, out int spentTier)
         {
             requiredMana = Mathf.Max(1f, requiredMana);
-            spentTier = availableTier;
-            if (spentTier <= 0 || !CanSpendMana(requiredMana))
+            int costTier = ResolveTierForManaCost(requiredMana);
+            if (availableTier < costTier || !CanSpendMana(requiredMana))
             {
                 spentTier = 0;
                 return false;
             }
 
+            spentTier = costTier;
             SetCurrentMana(currentMana - requiredMana);
             EnergyChanged?.Invoke();
             EnergySpent?.Invoke(spentTier);
@@ -130,7 +154,7 @@ namespace DimensionBrawl.Combat
             currentTierEnergy = 0f;
             currentMana = 0f;
             currentForwardRisk01 = Mathf.Clamp01(fallbackForwardRisk01);
-            currentGainMultiplier = Mathf.Max(0f, forwardRiskGainCurve.Evaluate(currentForwardRisk01));
+            currentGainMultiplier = EvaluateGainMultiplier(currentForwardRisk01);
             EnergyChanged?.Invoke();
         }
 
@@ -201,7 +225,24 @@ namespace DimensionBrawl.Combat
                 currentForwardRisk01 = laneSpace.EvaluateForwardRisk01(trackedPlayer.position);
             }
 
-            return Mathf.Max(0f, forwardRiskGainCurve.Evaluate(currentForwardRisk01));
+            return EvaluateGainMultiplier(currentForwardRisk01);
+        }
+
+        private float EvaluateGainMultiplier(float forwardRisk01)
+        {
+            float clampedForwardRisk01 = Mathf.Clamp01(forwardRisk01);
+            float curveMultiplier = forwardRiskGainCurve != null ? forwardRiskGainCurve.Evaluate(clampedForwardRisk01) : 1f;
+            return Mathf.Max(0f, curveMultiplier * ResolveRiskBandGainScale(EvaluateRiskBand(clampedForwardRisk01)));
+        }
+
+        private float ResolveRiskBandGainScale(SummonEnergyRiskBand riskBand)
+        {
+            return riskBand switch
+            {
+                SummonEnergyRiskBand.ForwardRisk => forwardRiskGainScale,
+                SummonEnergyRiskBand.MidCharge => midChargeGainScale,
+                _ => backSafetyGainScale
+            };
         }
 
         private SummonEnergyRiskBand EvaluateRiskBand(float forwardRisk01)
