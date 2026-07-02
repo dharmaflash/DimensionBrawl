@@ -3778,6 +3778,7 @@ namespace DimensionBrawl.Editor
             visual.transform.localScale = new Vector3(0.46f, 0.46f, 0.46f);
             MeshRenderer renderer = visual.GetComponent<MeshRenderer>();
             renderer.sharedMaterial = material;
+            renderer.enabled = false;
         }
 
         private static void ConfigureBossProxyVisualCueDriver(
@@ -8983,13 +8984,18 @@ namespace DimensionBrawl.Editor
             Transform projectileCore = bossProxy.transform.Find(BossProxyMarkerName);
             if (projectileCore == null)
             {
-                throw new InvalidOperationException($"Boss proxy should include {BossProxyMarkerName} as the readable projectile source core.");
+                throw new InvalidOperationException($"Boss proxy should include {BossProxyMarkerName} as the hidden projectile source anchor.");
             }
 
             MeshRenderer projectileCoreRenderer = projectileCore.GetComponent<MeshRenderer>();
             if (projectileCoreRenderer == null || projectileCoreRenderer.sharedMaterial == null)
             {
                 throw new InvalidOperationException($"{BossProxyMarkerName} should keep a game-owned material.");
+            }
+
+            if (projectileCoreRenderer.enabled)
+            {
+                throw new InvalidOperationException($"{BossProxyMarkerName} renderer should stay disabled; it is a VFX/projectile anchor, not an in-game marker.");
             }
 
             ValidateGameOwnedAsset(projectileCoreRenderer.sharedMaterial, $"{BossProxyMarkerName} material");

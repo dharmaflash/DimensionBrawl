@@ -7268,9 +7268,10 @@ namespace DimensionBrawl.Tests
             }
 
             Transform projectileCore = bossRoot.transform.Find(BossProjectileCoreName);
-            Assert.IsNotNull(projectileCore, "Boss proxy should keep a readable projectile source core.");
+            Assert.IsNotNull(projectileCore, "Boss proxy should keep a hidden projectile source anchor.");
             MeshRenderer coreRenderer = projectileCore.GetComponent<MeshRenderer>();
-            Assert.IsNotNull(coreRenderer, "Boss projectile source core should be visible.");
+            Assert.IsNotNull(coreRenderer, "Boss projectile source anchor should keep a repairable MeshRenderer.");
+            Assert.IsFalse(coreRenderer.enabled, "Boss projectile source anchor renderer must stay hidden in gameplay.");
             AssertGameOwnedAsset(coreRenderer.sharedMaterial, "boss projectile source material");
 
             BossBarrageVisualCueDriver cueDriver =
