@@ -79,10 +79,10 @@ MonoBehaviour:
     alignForwardToDirection: 1
   - cueId: 3
     prefab: {fileID: 6317775638521204061, guid: 89d9b914c94405042b977ab715f15e61, type: 3}
-    localPositionOffset: {x: 0, y: 0, z: 0}
+    localPositionOffset: {x: 0, y: 0.08, z: 0}
     localEulerOffset: {x: 0, y: 0, z: 0}
-    localScale: {x: 1, y: 1, z: 1}
-    lifetimeSeconds: 0.55
+    localScale: {x: 0.72, y: 0.72, z: 0.72}
+    lifetimeSeconds: 0.24
     prewarmCount: 0
     parentToAnchor: 1
     alignForwardToDirection: 1
