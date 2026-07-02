@@ -542,10 +542,10 @@ namespace DimensionBrawl.Editor
             AddOrUpdateSkinImage(skinRoot, "BossHpFill", sprites["Hud_BossHpFill"], new Rect(867f, 113f, 823f, 24f));
             AddOrUpdateSkinImage(skinRoot, "BossCostBackground", sprites["Hud_BossCostBackground"], new Rect(854f, 142f, 849f, 34f));
             AddOrUpdateSkinImage(skinRoot, "BossCostFill", sprites["Hud_BossCostFill"], new Rect(870f, 144f, 819f, 25f));
-            AddOrUpdateSkinImage(skinRoot, "PlayerSymbol", sprites["Hud_PlayerSymbol"], new Rect(814f, 1195f, 85f, 142f));
-            AddOrUpdateSkinImage(skinRoot, "PlayerNameArea", sprites["Hud_PlayerNameArea"], new Rect(911f, 1212f, 215f, 43f), visible: false);
-            AddOrUpdateSkinImage(skinRoot, "PlayerHpAmountArea", sprites["Hud_PlayerHpAmountArea"], new Rect(1326f, 1220f, 201f, 32f), visible: false);
-            AddOrUpdateSkinImage(skinRoot, "PlayerMpAmountArea", sprites["Hud_PlayerMpAmountArea"], new Rect(1359f, 1327f, 147f, 26f), visible: false);
+            AddOrUpdateSkinImage(skinRoot, "PlayerSymbol", sprites["Hud_PlayerSymbol"], new Rect(916.5f, 1195f, 85f, 142f));
+            AddOrUpdateSkinImage(skinRoot, "PlayerNameArea", sprites["Hud_PlayerNameArea"], new Rect(1013.5f, 1212f, 215f, 43f), visible: false);
+            AddOrUpdateSkinImage(skinRoot, "PlayerHpAmountArea", sprites["Hud_PlayerHpAmountArea"], new Rect(1428.5f, 1220f, 201f, 32f), visible: false);
+            AddOrUpdateSkinImage(skinRoot, "PlayerMpAmountArea", sprites["Hud_PlayerMpAmountArea"], new Rect(1461.5f, 1327f, 147f, 26f), visible: false);
             AddOrUpdateSkinImage(skinRoot, "SettingsButton", sprites["Hud_ButtonSettings"], new Rect(2250f, 47f, 100f, 95f));
 
             ConfigureText(hudRoot, "Timer", new Rect(178f, 55f, 409f, 48f), Color.black, 18);
@@ -554,19 +554,19 @@ namespace DimensionBrawl.Editor
             ConfigureReadoutText(
                 hudRoot,
                 "InputMode",
-                new Rect(911f, 1212f, 215f, 43f),
+                new Rect(1013.5f, 1212f, 215f, 43f),
                 CombatHudInputReadoutColor,
                 17);
             ConfigureReadoutText(
                 hudRoot,
                 "HealthText",
-                new Rect(1326f, 1220f, 201f, 32f),
+                new Rect(1428.5f, 1220f, 201f, 32f),
                 CombatHudHealthReadoutColor,
                 20);
             ConfigureReadoutText(
                 hudRoot,
                 "ResourceText",
-                new Rect(1359f, 1327f, 147f, 26f),
+                new Rect(1461.5f, 1327f, 147f, 26f),
                 CombatHudResourceReadoutColor,
                 20);
 
@@ -580,10 +580,10 @@ namespace DimensionBrawl.Editor
             ConfigureImage(hudRoot, "SummonSlot1Button", sprites["Hud_SummonSlot1Frame"], new Rect(2293f, 235f, 211f, 216f), preserveAspect: false);
             ConfigureImage(hudRoot, "SummonSlot2Button", sprites["Hud_SummonSlot2Frame"], new Rect(2308f, 472f, 182f, 186f), preserveAspect: false);
             ConfigureImage(hudRoot, "SummonSlot3Button", sprites["Hud_SummonSlot3Frame"], new Rect(2312f, 683f, 179f, 183f), preserveAspect: false);
-            ConfigureImage(hudRoot, "HealthBar_Track", sprites["Hud_PlayerHpBackground"], new Rect(901f, 1263f, 640f, 21f), preserveAspect: false);
-            ConfigureFillImage(hudRoot, "HealthBar", sprites["Hud_PlayerHpFill"], new Rect(904f, 1263f, 633f, 20f));
-            ConfigureImage(hudRoot, "ResourceBar_Track", sprites["Hud_PlayerMpBackground"], new Rect(909f, 1296f, 616f, 28f), preserveAspect: false);
-            ConfigureFillImage(hudRoot, "ResourceBar", sprites["Hud_PlayerMpFill"], new Rect(915f, 1299f, 605f, 21f));
+            ConfigureImage(hudRoot, "HealthBar_Track", sprites["Hud_PlayerHpBackground"], new Rect(1003.5f, 1263f, 640f, 21f), preserveAspect: false);
+            ConfigureFillImage(hudRoot, "HealthBar", sprites["Hud_PlayerHpFill"], new Rect(1006.5f, 1263f, 633f, 20f));
+            ConfigureImage(hudRoot, "ResourceBar_Track", sprites["Hud_PlayerMpBackground"], new Rect(1011.5f, 1296f, 616f, 28f), preserveAspect: false);
+            ConfigureFillImage(hudRoot, "ResourceBar", sprites["Hud_PlayerMpFill"], new Rect(1017.5f, 1299f, 605f, 21f));
             HideLegacyHudLabels(hudRoot);
             HideActionButtonTexts(hudRoot);
             ConfigureSummonSlotPresentation(
