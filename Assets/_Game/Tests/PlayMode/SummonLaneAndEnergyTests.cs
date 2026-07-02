@@ -2840,6 +2840,72 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void BossPressurePositionControllerStrafesAfterObservedBasicFire()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.BackLimitZ);
+            GameObject bossObject = new GameObject("BossProxy");
+            bossObject.transform.position = lane.GetBattlefieldWorldPoint(0f, lane.BossProxyZ, 1.6f);
+            CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+            bossHealth.ConfigureTeam(DamageTeam.Enemy);
+
+            GameObject projectilePrefabObject = new GameObject("BossBasicProjectilePrefab");
+            projectilePrefabObject.AddComponent<SphereCollider>();
+            projectilePrefabObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile projectilePrefab =
+                projectilePrefabObject.AddComponent<BossBarrageProjectile>();
+            projectilePrefabObject.SetActive(false);
+
+            BossBasicFireProfile fireProfile = ScriptableObject.CreateInstance<BossBasicFireProfile>();
+            BossBasicFireEmitter basicFireEmitter = bossObject.AddComponent<BossBasicFireEmitter>();
+            basicFireEmitter.ConfigureReferences(lane, playerObject.transform, bossHealth);
+            basicFireEmitter.ConfigureProfile(fireProfile, projectilePrefab, 2);
+
+            BossPressureCostLadder bossCost = bossObject.AddComponent<BossPressureCostLadder>();
+            bossCost.ConfigureReferences(lane, bossObject.transform);
+            BossBarrageEmitter barrageEmitter = bossObject.AddComponent<BossBarrageEmitter>();
+            barrageEmitter.ConfigureReferences(lane, playerObject.transform, bossHealth);
+
+            BossPressureActionDirector director = bossObject.AddComponent<BossPressureActionDirector>();
+            director.ConfigureReferences(
+                bossCost,
+                barrageEmitter,
+                null,
+                lane,
+                playerObject.transform,
+                basicFireEmitter);
+
+            BossPressurePositionController positionController =
+                bossObject.AddComponent<BossPressurePositionController>();
+            positionController.ConfigureReferences(lane, bossCost, director, bossObject.transform);
+
+            int firedCount = basicFireEmitter.FireVolley();
+            positionController.Tick(0.1f);
+
+            Assert.AreEqual(fireProfile.ProjectilesPerVolley, firedCount);
+            Assert.AreEqual(1, director.TotalBasicShotVolleys);
+            Assert.AreEqual(firedCount, director.LastBasicShotProjectileCount);
+            Assert.AreEqual(0f, director.LastBasicShotAgeSeconds, 0.001f);
+            Assert.AreEqual(
+                0.34f,
+                positionController.CurrentTargetRisk01,
+                0.001f,
+                "A boss that has just fired basic shots should strafe instead of reading as a static turret.");
+            Assert.Greater(
+                Mathf.Abs(lane.GetLaneCoordinates(bossObject.transform.position).x),
+                0.01f,
+                "The basic-fire strafe intent should visibly move the boss laterally.");
+
+            Object.DestroyImmediate(fireProfile);
+            Object.DestroyImmediate(projectilePrefabObject);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(laneObject);
+        }
+
+        [Test]
         public void BossPressureActionDirectorQueuesCostedPriorityPattern()
         {
             GameObject laneObject = new GameObject("Lane");
@@ -2898,6 +2964,136 @@ namespace DimensionBrawl.Tests
             Object.DestroyImmediate(projectilePrefabObject);
             Object.DestroyImmediate(levelThreePattern);
             Object.DestroyImmediate(levelOnePattern);
+            Object.DestroyImmediate(basePattern);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(laneObject);
+        }
+
+        [Test]
+        public void BossPressureActionDirectorSuppressesBasicFireDuringCostedAction()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.ForwardBoundaryZ);
+            GameObject bossObject = new GameObject("BossProxy");
+            CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+            bossHealth.ConfigureTeam(DamageTeam.Enemy);
+
+            BossBarragePatternProfile basePattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            BossBarragePatternProfile specialPattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            GameObject projectilePrefabObject = new GameObject("BossProjectilePrefab");
+            projectilePrefabObject.AddComponent<SphereCollider>();
+            projectilePrefabObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile projectilePrefab = projectilePrefabObject.AddComponent<BossBarrageProjectile>();
+            projectilePrefabObject.SetActive(false);
+
+            BossBarrageEmitter emitter = bossObject.AddComponent<BossBarrageEmitter>();
+            emitter.ConfigureReferences(lane, playerObject.transform, bossHealth);
+            emitter.ConfigurePattern(basePattern, projectilePrefab, basePattern.ProjectilesPerWave * 2);
+
+            BossBasicFireEmitter basicFireEmitter = bossObject.AddComponent<BossBasicFireEmitter>();
+            BossPressureCostLadder bossCost = bossObject.AddComponent<BossPressureCostLadder>();
+            bossCost.ConfigureReferences(lane, bossObject.transform);
+            bossCost.GrantCurrentTierCost(100f);
+
+            BossPressureActionDirector director = bossObject.AddComponent<BossPressureActionDirector>();
+            director.ConfigureReferences(bossCost, emitter, null, lane, playerObject.transform, basicFireEmitter);
+            director.ConfigureActionSlots(new[]
+            {
+                new BossPressureActionDirector.BossPressureActionSlot(
+                    specialPattern,
+                    BossPressureActionKind.SpecialSkill,
+                    1,
+                    1,
+                    0f)
+            });
+
+            Assert.IsFalse(basicFireEmitter.IsAutoFireSuppressed);
+            Assert.IsTrue(director.TryQueueBestAvailableAction());
+            Assert.AreEqual(BossPressureActionKind.SpecialSkill, director.LastActionKind);
+            Assert.IsTrue(
+                basicFireEmitter.IsAutoFireSuppressed,
+                "A committed boss pressure action should briefly hold regular basic fire so both reads do not overlap.");
+            Assert.AreEqual(
+                director.BasicFireSuppressionSecondsAfterPressureAction,
+                basicFireEmitter.AutoFireSuppressionRemaining,
+                0.001f);
+
+            Object.DestroyImmediate(projectilePrefabObject);
+            Object.DestroyImmediate(specialPattern);
+            Object.DestroyImmediate(basePattern);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(laneObject);
+        }
+
+        [Test]
+        public void BossPressureActionDirectorUsesThinkIntervalBetweenAutomaticDecisions()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.ForwardBoundaryZ);
+            GameObject bossObject = new GameObject("BossProxy");
+            CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+            bossHealth.ConfigureTeam(DamageTeam.Enemy);
+
+            BossBarragePatternProfile basePattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            BossBarragePatternProfile specialPattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            GameObject projectilePrefabObject = new GameObject("BossProjectilePrefab");
+            projectilePrefabObject.AddComponent<SphereCollider>();
+            projectilePrefabObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile projectilePrefab = projectilePrefabObject.AddComponent<BossBarrageProjectile>();
+            projectilePrefabObject.SetActive(false);
+
+            BossBarrageEmitter emitter = bossObject.AddComponent<BossBarrageEmitter>();
+            emitter.ConfigureReferences(lane, playerObject.transform, bossHealth);
+            emitter.ConfigurePattern(basePattern, projectilePrefab, basePattern.ProjectilesPerWave * 2);
+
+            BossPressureCostLadder bossCost = bossObject.AddComponent<BossPressureCostLadder>();
+            bossCost.ConfigureReferences(lane, bossObject.transform);
+            bossCost.GrantCurrentTierCost(300f);
+
+            BossPressureActionDirector director = bossObject.AddComponent<BossPressureActionDirector>();
+            SerializedObject serializedDirector = new SerializedObject(director);
+            serializedDirector.FindProperty("globalRecoverySeconds").floatValue = 0f;
+            serializedDirector.FindProperty("decisionThinkIntervalSeconds").floatValue = 0.25f;
+            serializedDirector.ApplyModifiedPropertiesWithoutUndo();
+            director.ConfigureReferences(bossCost, emitter);
+            director.ConfigureActionSlots(new[]
+            {
+                new BossPressureActionDirector.BossPressureActionSlot(
+                    specialPattern,
+                    BossPressureActionKind.SpecialSkill,
+                    1,
+                    1,
+                    0f)
+            });
+
+            director.Tick(0.1f);
+
+            Assert.AreEqual(1, director.TotalActionCount);
+            Assert.AreEqual(0.25f, director.DecisionThinkIntervalSeconds, 0.001f);
+            Assert.Greater(director.DecisionThinkRemainingSeconds, 0f);
+            emitter.CancelQueuedPriorityPattern(specialPattern);
+            bossCost.GrantCurrentTierCost(100f);
+
+            director.Tick(0.1f);
+
+            Assert.AreEqual(
+                1,
+                director.TotalActionCount,
+                "Automatic boss decisions should wait for the authored think interval even when cost and slots are ready.");
+
+            director.Tick(0.2f);
+
+            Assert.AreEqual(2, director.TotalActionCount);
+            Assert.AreSame(specialPattern, emitter.QueuedPriorityPattern);
+
+            Object.DestroyImmediate(projectilePrefabObject);
+            Object.DestroyImmediate(specialPattern);
             Object.DestroyImmediate(basePattern);
             Object.DestroyImmediate(bossObject);
             Object.DestroyImmediate(playerObject);
@@ -3088,6 +3284,98 @@ namespace DimensionBrawl.Tests
             Object.DestroyImmediate(actorPrefabObject);
             Object.DestroyImmediate(projectilePrefabObject);
             Object.DestroyImmediate(summonPattern);
+            Object.DestroyImmediate(basePattern);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(laneObject);
+        }
+
+        [Test]
+        public void BossPressureActionDirectorDoesNotReplaceActiveBossPressureSummon()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.ForwardBoundaryZ);
+            GameObject bossObject = new GameObject("BossProxy");
+            CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+            bossHealth.ConfigureTeam(DamageTeam.Enemy);
+
+            BossBarragePatternProfile basePattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            BossBarragePatternProfile specialPattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            BossBarragePatternProfile summonPattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+
+            GameObject projectilePrefabObject = new GameObject("BossProjectilePrefab");
+            projectilePrefabObject.AddComponent<SphereCollider>();
+            projectilePrefabObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile projectilePrefab = projectilePrefabObject.AddComponent<BossBarrageProjectile>();
+            projectilePrefabObject.SetActive(false);
+
+            GameObject actorPrefabObject = new GameObject("BossSummonPressurePrefab");
+            actorPrefabObject.AddComponent<SphereCollider>();
+            actorPrefabObject.AddComponent<Rigidbody>();
+            SummonPressureScreen pressureScreen = actorPrefabObject.AddComponent<SummonPressureScreen>();
+            SummonFrontlineProxy actorPrefab = actorPrefabObject.AddComponent<SummonFrontlineProxy>();
+            actorPrefab.ConfigurePresentation(actorPrefabObject.transform, pressureScreen);
+            actorPrefabObject.SetActive(false);
+
+            GameObject actorRoot = new GameObject("BossSummonActorRoot");
+            BossSummonPressureAction summonAction = bossObject.AddComponent<BossSummonPressureAction>();
+            summonAction.ConfigureReferences(lane, playerObject.transform, actorPrefab, actorRoot.transform);
+
+            BossBarrageEmitter emitter = bossObject.AddComponent<BossBarrageEmitter>();
+            emitter.ConfigureReferences(lane, playerObject.transform, bossHealth);
+            emitter.ConfigurePattern(basePattern, projectilePrefab, basePattern.ProjectilesPerWave * 2);
+
+            BossPressureCostLadder bossCost = bossObject.AddComponent<BossPressureCostLadder>();
+            bossCost.ConfigureReferences(lane, bossObject.transform);
+            bossCost.GrantCurrentTierCost(300f);
+
+            BossPressureActionDirector director = bossObject.AddComponent<BossPressureActionDirector>();
+            director.ConfigureReferences(bossCost, emitter, summonAction, lane, playerObject.transform);
+            director.ConfigureActionSlots(new[]
+            {
+                new BossPressureActionDirector.BossPressureActionSlot(
+                    specialPattern,
+                    BossPressureActionKind.SpecialSkill,
+                    1,
+                    1,
+                    0f,
+                    selectionPriority: 20,
+                    movementIntent: BossPressureMovementIntent.StrafeFire),
+                new BossPressureActionDirector.BossPressureActionSlot(
+                    summonPattern,
+                    BossPressureActionKind.SummonPressure,
+                    3,
+                    1,
+                    0f,
+                    selectionPriority: 60,
+                    movementIntent: BossPressureMovementIntent.RetreatAndSummon)
+            });
+
+            Assert.IsTrue(director.TryQueueBestAvailableAction());
+            Assert.AreSame(summonPattern, emitter.QueuedPriorityPattern);
+            Assert.AreEqual(BossPressureActionKind.SummonPressure, director.LastActionKind);
+            Assert.AreEqual(1, summonAction.ActiveSummonActorCount);
+
+            emitter.CancelQueuedPriorityPattern(summonPattern);
+            bossCost.GrantCurrentTierCost(300f);
+            director.Tick(0.5f);
+
+            Assert.AreEqual(
+                1,
+                summonAction.TotalReleaseCount,
+                "An active boss pressure summon should stay in play instead of being replaced by another summon-pressure slot.");
+            Assert.AreEqual(BossPressureActionKind.SpecialSkill, director.LastActionKind);
+            Assert.AreSame(specialPattern, emitter.QueuedPriorityPattern);
+            Assert.IsTrue(director.LastDecisionContext.HasActiveBossPressureSummon);
+            Assert.AreEqual(1, director.LastDecisionContext.ActiveBossPressureSummonCount);
+
+            Object.DestroyImmediate(actorRoot);
+            Object.DestroyImmediate(actorPrefabObject);
+            Object.DestroyImmediate(projectilePrefabObject);
+            Object.DestroyImmediate(summonPattern);
+            Object.DestroyImmediate(specialPattern);
             Object.DestroyImmediate(basePattern);
             Object.DestroyImmediate(bossObject);
             Object.DestroyImmediate(playerObject);
@@ -3490,6 +3778,384 @@ namespace DimensionBrawl.Tests
             Object.DestroyImmediate(projectilePrefabObject);
             Object.DestroyImmediate(summonPattern);
             Object.DestroyImmediate(punishPattern);
+            Object.DestroyImmediate(basePattern);
+            Object.DestroyImmediate(bossObject);
+            Object.DestroyImmediate(playerObject);
+            Object.DestroyImmediate(laneObject);
+        }
+
+        [Test]
+        public void BossPressureActionDirectorSelectsReviewedResponseDeckByContext()
+        {
+            RunScenario(
+                "LV1 backline pressure should use the regular special shot pattern.",
+                playerForward: false,
+                grantedCost: 100f,
+                observedPlayerSummonTier: 0,
+                expectedActionKind: BossPressureActionKind.SpecialSkill,
+                expectedSlotIndex: 0,
+                expectedSpentTier: 1,
+                expectedMovementIntent: BossPressureMovementIntent.StrafeFire,
+                expectedPositionRisk01: 0.34f,
+                expectedRespondsToPlayerSummon: false,
+                expectedSummonTier: 0);
+
+            RunScenario(
+                "A fresh player summon should pull the boss into the authored response slot before LV3.",
+                playerForward: false,
+                grantedCost: 200f,
+                observedPlayerSummonTier: 2,
+                expectedActionKind: BossPressureActionKind.SummonPressure,
+                expectedSlotIndex: 2,
+                expectedSpentTier: 2,
+                expectedMovementIntent: BossPressureMovementIntent.RetreatAndSummon,
+                expectedPositionRisk01: 0.18f,
+                expectedRespondsToPlayerSummon: true,
+                expectedSummonTier: 2);
+
+            RunScenario(
+                "LV3 without overextend risk should release the laser summon pressure slot.",
+                playerForward: false,
+                grantedCost: 300f,
+                observedPlayerSummonTier: 0,
+                expectedActionKind: BossPressureActionKind.SummonPressure,
+                expectedSlotIndex: 3,
+                expectedSpentTier: 3,
+                expectedMovementIntent: BossPressureMovementIntent.RetreatAndSummon,
+                expectedPositionRisk01: 0.18f,
+                expectedRespondsToPlayerSummon: false,
+                expectedSummonTier: 3);
+
+            RunScenario(
+                "LV3 with the player committed forward should pick the overextend punish over more summon pressure.",
+                playerForward: true,
+                grantedCost: 300f,
+                observedPlayerSummonTier: 0,
+                expectedActionKind: BossPressureActionKind.PunishOverextend,
+                expectedSlotIndex: 4,
+                expectedSpentTier: 3,
+                expectedMovementIntent: BossPressureMovementIntent.CommitForward,
+                expectedPositionRisk01: 0.74f,
+                expectedRespondsToPlayerSummon: false,
+                expectedSummonTier: 0);
+
+            static void RunScenario(
+                string scenarioName,
+                bool playerForward,
+                float grantedCost,
+                int observedPlayerSummonTier,
+                BossPressureActionKind expectedActionKind,
+                int expectedSlotIndex,
+                int expectedSpentTier,
+                BossPressureMovementIntent expectedMovementIntent,
+                float expectedPositionRisk01,
+                bool expectedRespondsToPlayerSummon,
+                int expectedSummonTier)
+            {
+                GameObject laneObject = new GameObject("Lane");
+                SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+                GameObject playerObject = new GameObject("Player");
+                playerObject.transform.position = lane.GetLaneWorldPoint(
+                    0f,
+                    playerForward ? lane.ForwardBoundaryZ : lane.BackLimitZ);
+                GameObject bossObject = new GameObject("BossProxy");
+                bossObject.transform.position = lane.GetBattlefieldWorldPoint(0f, lane.BossProxyZ);
+                CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+                bossHealth.ConfigureTeam(DamageTeam.Enemy);
+
+                BossBarragePatternProfile basePattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+                BossBarragePatternProfile specialPattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+                BossBarragePatternProfile summonPattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+                BossBarragePatternProfile punishPattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+
+                GameObject projectilePrefabObject = new GameObject("BossProjectilePrefab");
+                projectilePrefabObject.AddComponent<SphereCollider>();
+                projectilePrefabObject.AddComponent<Rigidbody>();
+                BossBarrageProjectile projectilePrefab = projectilePrefabObject.AddComponent<BossBarrageProjectile>();
+                projectilePrefabObject.SetActive(false);
+
+                GameObject actorPrefabObject = new GameObject("BossSummonPressurePrefab");
+                actorPrefabObject.AddComponent<SphereCollider>();
+                actorPrefabObject.AddComponent<Rigidbody>();
+                SummonPressureScreen pressureScreen = actorPrefabObject.AddComponent<SummonPressureScreen>();
+                SummonFrontlineProxy actorPrefab = actorPrefabObject.AddComponent<SummonFrontlineProxy>();
+                actorPrefab.ConfigurePresentation(actorPrefabObject.transform, pressureScreen);
+                actorPrefabObject.SetActive(false);
+
+                GameObject actorRoot = new GameObject("BossSummonActorRoot");
+                BossSummonPressureAction summonAction = bossObject.AddComponent<BossSummonPressureAction>();
+                summonAction.ConfigureReferences(lane, playerObject.transform, actorPrefab, actorRoot.transform);
+
+                BossBarrageEmitter emitter = bossObject.AddComponent<BossBarrageEmitter>();
+                emitter.ConfigureReferences(lane, playerObject.transform, bossHealth);
+                emitter.ConfigurePattern(basePattern, projectilePrefab, basePattern.ProjectilesPerWave * 2);
+
+                BossBasicFireEmitter basicFireEmitter = bossObject.AddComponent<BossBasicFireEmitter>();
+                BossPressureCostLadder bossCost = bossObject.AddComponent<BossPressureCostLadder>();
+                bossCost.ConfigureReferences(lane, bossObject.transform);
+                bossCost.GrantCurrentTierCost(grantedCost);
+
+                BossPressureActionDirector director = bossObject.AddComponent<BossPressureActionDirector>();
+                director.ConfigureReferences(
+                    bossCost,
+                    emitter,
+                    summonAction,
+                    lane,
+                    playerObject.transform,
+                    basicFireEmitter);
+                director.ConfigureActionSlots(new[]
+                {
+                    new BossPressureActionDirector.BossPressureActionSlot(
+                        specialPattern,
+                        BossPressureActionKind.SpecialSkill,
+                        1,
+                        1,
+                        0f,
+                        responseId: "DodgeBossLinePressureSpecial",
+                        selectionPriority: 15,
+                        movementIntent: BossPressureMovementIntent.StrafeFire),
+                    new BossPressureActionDirector.BossPressureActionSlot(
+                        summonPattern,
+                        BossPressureActionKind.SummonPressure,
+                        1,
+                        1,
+                        0f,
+                        responseId: "BossSummonPressureLV1",
+                        selectionPriority: 5,
+                        movementIntent: BossPressureMovementIntent.RetreatAndSummon),
+                    new BossPressureActionDirector.BossPressureActionSlot(
+                        summonPattern,
+                        BossPressureActionKind.SummonPressure,
+                        2,
+                        1,
+                        0f,
+                        usePlayerSummonResponseGate: true,
+                        minimumPlayerSummonTier: 2,
+                        responseId: "CounterPlayerSummonWithBossPressure",
+                        selectionPriority: 30,
+                        summonResponsePriorityBonus: 140,
+                        movementIntent: BossPressureMovementIntent.RetreatAndSummon),
+                    new BossPressureActionDirector.BossPressureActionSlot(
+                        summonPattern,
+                        BossPressureActionKind.SummonPressure,
+                        3,
+                        1,
+                        0f,
+                        responseId: "LaserSoldierDodgeLine",
+                        selectionPriority: 35,
+                        movementIntent: BossPressureMovementIntent.RetreatAndSummon),
+                    new BossPressureActionDirector.BossPressureActionSlot(
+                        punishPattern,
+                        BossPressureActionKind.PunishOverextend,
+                        3,
+                        1,
+                        0f,
+                        usePlayerForwardRiskGate: true,
+                        minimumPlayerForwardRisk01: 0.66f,
+                        maximumPlayerForwardRisk01: 1f,
+                        responseId: "PunishOverextendCommit",
+                        selectionPriority: 80,
+                        forwardRiskPriorityBonus: 80,
+                        movementIntent: BossPressureMovementIntent.CommitForward)
+                });
+
+                BossPressurePositionController positionController =
+                    bossObject.AddComponent<BossPressurePositionController>();
+                positionController.ConfigureReferences(
+                    lane,
+                    bossCost,
+                    director,
+                    bossObject.transform);
+
+                if (observedPlayerSummonTier > 0)
+                {
+                    director.NotifyPlayerSummonFrontlineCreated(observedPlayerSummonTier);
+                }
+
+                Assert.IsTrue(director.TryQueueBestAvailableAction(), scenarioName);
+                Assert.AreEqual(expectedActionKind, director.LastActionKind, scenarioName);
+                Assert.AreEqual(expectedSlotIndex, director.LastQueuedActionSlotIndex, scenarioName);
+                Assert.AreEqual(expectedSpentTier, director.LastSpentTier, scenarioName);
+                Assert.AreEqual(expectedMovementIntent, director.LastMovementIntent, scenarioName);
+                positionController.Tick(0.1f);
+                Assert.AreEqual(
+                    expectedPositionRisk01,
+                    positionController.CurrentTargetRisk01,
+                    0.001f,
+                    scenarioName);
+                Assert.AreEqual(expectedRespondsToPlayerSummon, director.LastActionRespondedToPlayerSummon, scenarioName);
+                Assert.IsTrue(
+                    basicFireEmitter.IsAutoFireSuppressed,
+                    "Costed response actions should hold basic fire briefly so the boss read stays legible.");
+
+                if (expectedActionKind == BossPressureActionKind.SummonPressure)
+                {
+                    Assert.AreEqual(expectedSummonTier, summonAction.LastReleasedTier, scenarioName);
+                    Assert.AreEqual(1, summonAction.TotalReleaseCount, scenarioName);
+                }
+                else
+                {
+                    Assert.AreEqual(0, summonAction.TotalReleaseCount, scenarioName);
+                }
+
+                if (expectedRespondsToPlayerSummon)
+                {
+                    Assert.AreEqual(1, director.TotalPlayerSummonResponseCount, scenarioName);
+                    Assert.AreEqual(0f, director.PlayerSummonResponseRemainingSeconds, 0.001f, scenarioName);
+                }
+
+                Object.DestroyImmediate(actorRoot);
+                Object.DestroyImmediate(actorPrefabObject);
+                Object.DestroyImmediate(projectilePrefabObject);
+                Object.DestroyImmediate(punishPattern);
+                Object.DestroyImmediate(summonPattern);
+                Object.DestroyImmediate(specialPattern);
+                Object.DestroyImmediate(basePattern);
+                Object.DestroyImmediate(bossObject);
+                Object.DestroyImmediate(playerObject);
+                Object.DestroyImmediate(laneObject);
+            }
+        }
+
+        [Test]
+        public void BossPressureLoopObservesBasicFireSpecialSummonAndPunishMovement()
+        {
+            GameObject laneObject = new GameObject("Lane");
+            SummonLaneSpace lane = laneObject.AddComponent<SummonLaneSpace>();
+            GameObject playerObject = new GameObject("Player");
+            playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.BackLimitZ);
+            GameObject bossObject = new GameObject("BossProxy");
+            bossObject.transform.position = lane.GetBattlefieldWorldPoint(0f, lane.BossProxyZ);
+            CombatHealth bossHealth = bossObject.AddComponent<CombatHealth>();
+            bossHealth.ConfigureTeam(DamageTeam.Enemy);
+
+            BossBarragePatternProfile basePattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            BossBarragePatternProfile specialPattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            BossBarragePatternProfile summonPattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            BossBarragePatternProfile punishPattern = ScriptableObject.CreateInstance<BossBarragePatternProfile>();
+            BossBasicFireProfile basicFireProfile = ScriptableObject.CreateInstance<BossBasicFireProfile>();
+
+            GameObject projectilePrefabObject = new GameObject("BossProjectilePrefab");
+            projectilePrefabObject.AddComponent<SphereCollider>();
+            projectilePrefabObject.AddComponent<Rigidbody>();
+            BossBarrageProjectile projectilePrefab = projectilePrefabObject.AddComponent<BossBarrageProjectile>();
+            projectilePrefabObject.SetActive(false);
+
+            GameObject actorPrefabObject = new GameObject("BossSummonPressurePrefab");
+            actorPrefabObject.AddComponent<SphereCollider>();
+            actorPrefabObject.AddComponent<Rigidbody>();
+            SummonPressureScreen pressureScreen = actorPrefabObject.AddComponent<SummonPressureScreen>();
+            SummonFrontlineProxy actorPrefab = actorPrefabObject.AddComponent<SummonFrontlineProxy>();
+            actorPrefab.ConfigurePresentation(actorPrefabObject.transform, pressureScreen);
+            actorPrefabObject.SetActive(false);
+
+            GameObject actorRoot = new GameObject("BossSummonActorRoot");
+            BossSummonPressureAction summonAction = bossObject.AddComponent<BossSummonPressureAction>();
+            summonAction.ConfigureReferences(lane, playerObject.transform, actorPrefab, actorRoot.transform);
+
+            BossBarrageEmitter emitter = bossObject.AddComponent<BossBarrageEmitter>();
+            emitter.ConfigureReferences(lane, playerObject.transform, bossHealth);
+            emitter.ConfigurePattern(basePattern, projectilePrefab, basePattern.ProjectilesPerWave * 2);
+
+            BossBasicFireEmitter basicFireEmitter = bossObject.AddComponent<BossBasicFireEmitter>();
+            basicFireEmitter.ConfigureReferences(lane, playerObject.transform, bossHealth);
+            basicFireEmitter.ConfigureProfile(basicFireProfile, projectilePrefab, 4);
+
+            BossPressureCostLadder bossCost = bossObject.AddComponent<BossPressureCostLadder>();
+            bossCost.ConfigureReferences(lane, bossObject.transform);
+
+            BossPressureActionDirector director = bossObject.AddComponent<BossPressureActionDirector>();
+            SerializedObject serializedDirector = new SerializedObject(director);
+            serializedDirector.FindProperty("globalRecoverySeconds").floatValue = 0.35f;
+            serializedDirector.FindProperty("decisionThinkIntervalSeconds").floatValue = 0.25f;
+            serializedDirector.ApplyModifiedPropertiesWithoutUndo();
+            director.ConfigureReferences(
+                bossCost,
+                emitter,
+                summonAction,
+                lane,
+                playerObject.transform,
+                basicFireEmitter);
+            director.ConfigureActionSlots(new[]
+            {
+                new BossPressureActionDirector.BossPressureActionSlot(
+                    specialPattern,
+                    BossPressureActionKind.SpecialSkill,
+                    1,
+                    1,
+                    0f,
+                    selectionPriority: 15,
+                    movementIntent: BossPressureMovementIntent.StrafeFire),
+                new BossPressureActionDirector.BossPressureActionSlot(
+                    summonPattern,
+                    BossPressureActionKind.SummonPressure,
+                    3,
+                    1,
+                    0f,
+                    responseId: "LaserSoldierDodgeLine",
+                    selectionPriority: 35,
+                    movementIntent: BossPressureMovementIntent.RetreatAndSummon),
+                new BossPressureActionDirector.BossPressureActionSlot(
+                    punishPattern,
+                    BossPressureActionKind.PunishOverextend,
+                    3,
+                    1,
+                    0f,
+                    usePlayerForwardRiskGate: true,
+                    minimumPlayerForwardRisk01: 0.66f,
+                    maximumPlayerForwardRisk01: 1f,
+                    selectionPriority: 80,
+                    forwardRiskPriorityBonus: 80,
+                    movementIntent: BossPressureMovementIntent.CommitForward)
+            });
+
+            BossPressurePositionController positionController =
+                bossObject.AddComponent<BossPressurePositionController>();
+            positionController.ConfigureReferences(lane, bossCost, director, bossObject.transform);
+
+            basicFireEmitter.Tick(basicFireProfile.InitialDelaySeconds + 0.05f);
+
+            Assert.GreaterOrEqual(director.TotalBasicShotVolleys, 1);
+            Assert.Greater(director.LastBasicShotProjectileCount, 0);
+
+            bossCost.GrantCurrentTierCost(100f);
+            director.Tick(0.3f);
+            positionController.Tick(0.1f);
+
+            Assert.AreEqual(BossPressureActionKind.SpecialSkill, director.LastActionKind);
+            Assert.AreEqual(BossPressureMovementIntent.StrafeFire, director.LastMovementIntent);
+            Assert.AreEqual(0.34f, positionController.CurrentTargetRisk01, 0.001f);
+            emitter.CancelQueuedPriorityPattern(specialPattern);
+
+            bossCost.GrantCurrentTierCost(300f);
+            director.Tick(0.45f);
+            positionController.Tick(0.1f);
+
+            Assert.AreEqual(BossPressureActionKind.SummonPressure, director.LastActionKind);
+            Assert.AreEqual(BossPressureMovementIntent.RetreatAndSummon, director.LastMovementIntent);
+            Assert.AreEqual(1, summonAction.TotalReleaseCount);
+            Assert.AreEqual(1, summonAction.ActiveSummonActorCount);
+            Assert.AreEqual(0.18f, positionController.CurrentTargetRisk01, 0.001f);
+            emitter.CancelQueuedPriorityPattern(summonPattern);
+
+            playerObject.transform.position = lane.GetLaneWorldPoint(0f, lane.ForwardBoundaryZ);
+            bossCost.GrantCurrentTierCost(300f);
+            director.Tick(0.45f);
+            positionController.Tick(0.1f);
+
+            Assert.AreEqual(BossPressureActionKind.PunishOverextend, director.LastActionKind);
+            Assert.AreEqual(BossPressureMovementIntent.CommitForward, director.LastMovementIntent);
+            Assert.AreEqual(1, summonAction.TotalReleaseCount);
+            Assert.IsTrue(director.LastDecisionContext.HasActiveBossPressureSummon);
+            Assert.AreEqual(0.74f, positionController.CurrentTargetRisk01, 0.001f);
+
+            Object.DestroyImmediate(actorRoot);
+            Object.DestroyImmediate(actorPrefabObject);
+            Object.DestroyImmediate(projectilePrefabObject);
+            Object.DestroyImmediate(basicFireProfile);
+            Object.DestroyImmediate(punishPattern);
+            Object.DestroyImmediate(summonPattern);
+            Object.DestroyImmediate(specialPattern);
             Object.DestroyImmediate(basePattern);
             Object.DestroyImmediate(bossObject);
             Object.DestroyImmediate(playerObject);

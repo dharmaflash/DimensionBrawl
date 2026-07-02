@@ -84,6 +84,8 @@ namespace DimensionBrawl.Editor
             "Assets/_Game/Prefabs/Combat/PF_SummonSlot3Actor_VanguardProxy.prefab";
         public const string BossSummonPressureActorPrefabPath =
             "Assets/_Game/Prefabs/Combat/PF_BossSummonPressureActor_Proxy.prefab";
+        public const string BossLaserSummonActorPrefabPath =
+            "Assets/_Game/Prefabs/Combat/PF_BossLaserSummonActor_Proxy.prefab";
         public const string SummonSlot1ActionProfilePath =
             ActionFoundationProfileSetup.ProfileRoot + "/DB_SummonSlot1_ChargeBruiser.asset";
         public const string SummonSlot2ActionProfilePath =
@@ -408,7 +410,7 @@ namespace DimensionBrawl.Editor
         };
         private static readonly BossPressureActionKind[] RequiredBossPressureActionCueKinds =
         {
-            BossPressureActionKind.SkillPattern,
+            BossPressureActionKind.SpecialSkill,
             BossPressureActionKind.SummonPressure,
             BossPressureActionKind.PunishOverextend
         };
@@ -1328,6 +1330,7 @@ namespace DimensionBrawl.Editor
             ValidateBossPressureLoop(
                 bossPressureCost,
                 bossPressureActionDirector,
+                bossBasicFireEmitter,
                 bossSummonPressureAction,
                 bossPressurePosition,
                 laneSpace,
@@ -3564,12 +3567,14 @@ namespace DimensionBrawl.Editor
                 emitter,
                 bossSummonPressureAction,
                 laneSpace,
-                playerTransform);
+                playerTransform,
+                basicFireEmitter);
             bossPressureActionDirector.ConfigureActionDeck(
                 LoadAsset<BossPressureActionDeckProfile>(BossPressureActionDeckProfilePath));
             bossPressureActionDirector.SetHoldForNextTierActionWhenGateAllows(true);
             SetBool(bossPressureActionDirector, "actionsEnabled", true);
             SetFloat(bossPressureActionDirector, "playerSummonResponseWindowSeconds", 4f);
+            SetFloat(bossPressureActionDirector, "basicFireSuppressionSecondsAfterPressureAction", 0.65f);
 
             BossPressurePositionController bossPressurePosition =
                 EnsureComponent<BossPressurePositionController>(bossProxy);
@@ -3585,6 +3590,15 @@ namespace DimensionBrawl.Editor
             SetFloat(bossPressurePosition, "retreatRiskPerSecond", 0.32f);
             SetBool(bossPressurePosition, "returnToRestWhenActionsDisabled", true);
             SetBool(bossPressurePosition, "movementEnabled", true);
+            SetFloat(bossPressurePosition, "actionIntentHoldSeconds", 1.35f);
+            SetFloat(bossPressurePosition, "holdBacklineRisk01", 0.16f);
+            SetFloat(bossPressurePosition, "strafeFireRisk01", 0.34f);
+            SetFloat(bossPressurePosition, "specialCommitRisk01", 0.68f);
+            SetFloat(bossPressurePosition, "summonRetreatRisk01", 0.18f);
+            SetFloat(bossPressurePosition, "punishCommitRisk01", 0.74f);
+            SetBool(bossPressurePosition, "lateralStrafeEnabled", true);
+            SetFloat(bossPressurePosition, "lateralStrafeUnitsPerSecond", 1.25f);
+            SetFloat(bossPressurePosition, "lateralStrafeHalfWidthRatio", 0.34f);
             EditorUtility.SetDirty(bossPressureCost);
             EditorUtility.SetDirty(basicFireEmitter);
             EditorUtility.SetDirty(bossSummonPressureAction);
@@ -3613,6 +3627,7 @@ namespace DimensionBrawl.Editor
             SetObjectReference(basicFireEmitter, "projectileRoot", projectileRoot);
             SetInt(basicFireEmitter, "sourceTeam", (int)DamageTeam.Enemy);
             SetBool(basicFireEmitter, "firingEnabled", true);
+            SetFloat(basicFireEmitter, "resumeCooldownAfterSuppressionSeconds", 0.25f);
             SetInt(basicFireEmitter, "prewarmCount", 10);
             return basicFireEmitter;
         }
@@ -7446,6 +7461,7 @@ namespace DimensionBrawl.Editor
             ValidateObjectReference(basicFireEmitter, "projectileRoot", projectileRoot);
             ValidateEnum(basicFireEmitter, "sourceTeam", (int)DamageTeam.Enemy);
             ValidateBool(basicFireEmitter, "firingEnabled", true);
+            ValidateFloat(basicFireEmitter, "resumeCooldownAfterSuppressionSeconds", 0.25f);
             ValidateInt(basicFireEmitter, "prewarmCount", 10);
 
             BossBasicFireProfile profile = LoadAsset<BossBasicFireProfile>(BossBasicFireProfilePath);
@@ -8403,6 +8419,7 @@ namespace DimensionBrawl.Editor
         private static void ValidateBossPressureLoop(
             BossPressureCostLadder bossPressureCost,
             BossPressureActionDirector bossPressureActionDirector,
+            BossBasicFireEmitter bossBasicFireEmitter,
             BossSummonPressureAction bossSummonPressureAction,
             BossPressurePositionController bossPressurePosition,
             SummonLaneSpace laneSpace,
@@ -8425,6 +8442,15 @@ namespace DimensionBrawl.Editor
             ValidateFloat(bossPressurePosition, "retreatRiskPerSecond", 0.32f);
             ValidateBool(bossPressurePosition, "returnToRestWhenActionsDisabled", true);
             ValidateBool(bossPressurePosition, "movementEnabled", true);
+            ValidateFloat(bossPressurePosition, "actionIntentHoldSeconds", 1.35f);
+            ValidateFloat(bossPressurePosition, "holdBacklineRisk01", 0.16f);
+            ValidateFloat(bossPressurePosition, "strafeFireRisk01", 0.34f);
+            ValidateFloat(bossPressurePosition, "specialCommitRisk01", 0.68f);
+            ValidateFloat(bossPressurePosition, "summonRetreatRisk01", 0.18f);
+            ValidateFloat(bossPressurePosition, "punishCommitRisk01", 0.74f);
+            ValidateBool(bossPressurePosition, "lateralStrafeEnabled", true);
+            ValidateFloat(bossPressurePosition, "lateralStrafeUnitsPerSecond", 1.25f);
+            ValidateFloat(bossPressurePosition, "lateralStrafeHalfWidthRatio", 0.34f);
 
             ValidateObjectReference(bossSummonPressureAction, "laneSpace", laneSpace);
             ValidateObjectReference(bossSummonPressureAction, "trackedPlayer", playerTransform);
@@ -8497,25 +8523,25 @@ namespace DimensionBrawl.Editor
             ValidateBossSummonPressureReadout(
                 bossSummonPressureProfile,
                 3,
-                "LV3 Clamp Guard",
-                "High-cost boss proxy that punishes overextension and demands a committed high-tier answer or retreat.",
-                "Back off from forward-risk lanes unless a summon answer is already charged.",
-                "A saved LV2/LV3 summon should create a visible pressure-break window before counterfire.");
+                "LV3 Laser Soldier",
+                "High-cost boss laser summon that creates a dodgeable line threat instead of another pressure screen.",
+                "Read the thin line, dodge after the aim locks, then punish during the rifleman's recovery.",
+                "Boss laser soldier repositions, draws a cyan warning line, locks aim, then fires a short ticking beam.");
             ValidateBossSummonPressureTier(
                 bossSummonPressureProfile,
                 3,
                 expectedEntryForwardBlend01: 0.5f,
-                expectedActorScale: 3.06f,
+                expectedActorScale: 2.48f,
                 expectedActorLifetimeSeconds: 0f,
-                expectedActorAdvanceDistance: 5.2f,
-                expectedActorRoleId: "ClampGuard",
+                expectedActorAdvanceDistance: 4.4f,
+                expectedActorRoleId: "LaserSoldier",
                 expectedActorMaxHealth: 1180f,
                 expectedActorMoveSpeed: 4.0f,
-                expectedActorEngageRadius: 1.5f,
-                expectedActorAttackDamagePerSecond: 88f,
-                expectedActorAttackIntervalSeconds: 0.9f,
-                expectedScreenIntercepts: 8,
-                expectedScreenLifetimeSeconds: 4.8f);
+                expectedActorEngageRadius: 1.15f,
+                expectedActorAttackDamagePerSecond: 58f,
+                expectedActorAttackIntervalSeconds: 0.12f,
+                expectedScreenIntercepts: 0,
+                expectedScreenLifetimeSeconds: 0.2f);
 
             SummonFrontlineProxy bossSummonActorPrefab =
                 LoadPrefabComponent<SummonFrontlineProxy>(BossSummonPressureActorPrefabPath);
@@ -8592,6 +8618,7 @@ namespace DimensionBrawl.Editor
 
             ValidateObjectReference(bossPressureActionDirector, "costLadder", bossPressureCost);
             ValidateObjectReference(bossPressureActionDirector, "bossBarrageEmitter", bossBarrageEmitter);
+            ValidateObjectReference(bossPressureActionDirector, "basicFireEmitter", bossBasicFireEmitter);
             ValidateObjectReference(bossPressureActionDirector, "summonPressureAction", bossSummonPressureAction);
             ValidateObjectReference(bossPressureActionDirector, "laneSpace", laneSpace);
             ValidateObjectReference(bossPressureActionDirector, "trackedPlayer", playerTransform);
@@ -8602,20 +8629,28 @@ namespace DimensionBrawl.Editor
             ValidateBool(bossPressureActionDirector, "actionsEnabled", true);
             ValidateBool(bossPressureActionDirector, "holdForNextTierActionWhenGateAllows", true);
             ValidateFloat(bossPressureActionDirector, "globalRecoverySeconds", 1.1f);
+            ValidateFloat(bossPressureActionDirector, "decisionThinkIntervalSeconds", 0.25f);
             ValidateFloat(bossPressureActionDirector, "playerSummonResponseWindowSeconds", 4f);
+            ValidateFloat(bossPressureActionDirector, "basicFireSuppressionSecondsAfterPressureAction", 0.65f);
             ValidateBossPressureActionSlot(
                 bossPressureActionDirector,
                 0,
                 LoadAsset<BossBarragePatternProfile>(LinePressurePatternProfilePath),
-                BossPressureActionKind.SkillPattern,
+                BossPressureActionKind.SpecialSkill,
                 1,
-                "DodgeLineOrUseSkill1",
-                "LV1 skill pressure that asks the player to read a committed rail before spending summon resources.",
-                "Strafe or dodge out of the rail, then use ranged fire or Skill1 when the lane is clear.",
-                "No summon is required; save SummonSlot1 for screen pressure.",
+                "DodgeBossLinePressureSpecial",
+                "LV1 boss special shot that asks the player to read a committed rail before spending summon resources.",
+                "Strafe or dodge out of the rail, then punish with ranged fire when the lane is clear.",
+                "No summon is required; save SummonSlot1 for boss-side summon pressure.",
                 false,
                 0f,
-                1f);
+                1f,
+                false,
+                1,
+                15,
+                0,
+                0,
+                BossPressureMovementIntent.StrafeFire);
             ValidateBossPressureActionSlot(
                 bossPressureActionDirector,
                 1,
@@ -8628,7 +8663,13 @@ namespace DimensionBrawl.Editor
                 "A low-tier summon can body-clash or absorb the probe without waiting for a perfect LV2 answer.",
                 false,
                 0f,
-                1f);
+                1f,
+                false,
+                1,
+                5,
+                0,
+                0,
+                BossPressureMovementIntent.RetreatAndSummon);
             ValidateBossPressureActionSlot(
                 bossPressureActionDirector,
                 2,
@@ -8643,10 +8684,33 @@ namespace DimensionBrawl.Editor
                 0f,
                 1f,
                 true,
-                2);
+                2,
+                30,
+                0,
+                140,
+                BossPressureMovementIntent.RetreatAndSummon);
             ValidateBossPressureActionSlot(
                 bossPressureActionDirector,
                 3,
+                LoadAsset<BossBarragePatternProfile>(EscortScreenPatternProfilePath),
+                BossPressureActionKind.SummonPressure,
+                3,
+                "LaserSoldierDodgeLine",
+                "LV3 laser-soldier summon pressure that turns stored boss cost into a readable dodge line instead of another body block.",
+                "Watch the thin aim line, dodge after the lock, then punish while the laser soldier recovers.",
+                "A prepared summon can body-screen the lane, but the intended read is movement first and summon only as a backup.",
+                false,
+                0f,
+                1f,
+                false,
+                1,
+                35,
+                0,
+                0,
+                BossPressureMovementIntent.RetreatAndSummon);
+            ValidateBossPressureActionSlot(
+                bossPressureActionDirector,
+                4,
                 LoadAsset<BossBarragePatternProfile>(PunishNetPatternProfilePath),
                 BossPressureActionKind.PunishOverextend,
                 3,
@@ -8656,7 +8720,13 @@ namespace DimensionBrawl.Editor
                 "A prepared high-tier summon screen can buy the follow-up window, but it should cost the player's stored EN.",
                 true,
                 0.66f,
-                1f);
+                1f,
+                false,
+                1,
+                80,
+                80,
+                0,
+                BossPressureMovementIntent.CommitForward);
         }
 
         private static void ValidateBossPressureActionSlot(
@@ -8673,7 +8743,11 @@ namespace DimensionBrawl.Editor
             float expectedMinimumPlayerForwardRisk01,
             float expectedMaximumPlayerForwardRisk01,
             bool expectedUsePlayerSummonResponseGate = false,
-            int expectedMinimumPlayerSummonTier = 1)
+            int expectedMinimumPlayerSummonTier = 1,
+            int expectedSelectionPriority = 0,
+            int expectedForwardRiskPriorityBonus = 0,
+            int expectedSummonResponsePriorityBonus = 0,
+            BossPressureMovementIntent expectedMovementIntent = BossPressureMovementIntent.CostPressure)
         {
             if (!bossPressureActionDirector.TryGetActionSlot(
                     index,
@@ -8726,6 +8800,26 @@ namespace DimensionBrawl.Editor
             if (slot.MinimumPlayerSummonTier != expectedMinimumPlayerSummonTier)
             {
                 throw new InvalidOperationException($"Boss pressure action slot {index} has the wrong player summon response tier.");
+            }
+
+            if (slot.SelectionPriority != expectedSelectionPriority)
+            {
+                throw new InvalidOperationException($"Boss pressure action slot {index} has the wrong selection priority.");
+            }
+
+            if (slot.ForwardRiskPriorityBonus != expectedForwardRiskPriorityBonus)
+            {
+                throw new InvalidOperationException($"Boss pressure action slot {index} has the wrong forward-risk priority bonus.");
+            }
+
+            if (slot.SummonResponsePriorityBonus != expectedSummonResponsePriorityBonus)
+            {
+                throw new InvalidOperationException($"Boss pressure action slot {index} has the wrong summon-response priority bonus.");
+            }
+
+            if (slot.MovementIntent != expectedMovementIntent)
+            {
+                throw new InvalidOperationException($"Boss pressure action slot {index} has the wrong movement intent.");
             }
         }
 
@@ -9961,6 +10055,11 @@ namespace DimensionBrawl.Editor
         {
             GameObject source = PrefabUtility.GetCorrespondingObjectFromSource(visual);
             string sourcePath = AssetDatabase.GetAssetPath(source).Replace('\\', '/');
+            if (string.IsNullOrEmpty(sourcePath))
+            {
+                sourcePath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(visual).Replace('\\', '/');
+            }
+
             if (!string.Equals(sourcePath, BossProxyHumanoidSourcePrefabPath, StringComparison.Ordinal))
             {
                 throw new InvalidOperationException(

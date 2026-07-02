@@ -17,6 +17,7 @@ namespace DimensionBrawl.Combat
             [Min(0f)] public float ActorLifetimeSeconds;
             [Min(0.01f)] public float ActorScale;
             public string ActorRoleId;
+            public SummonFrontlineProxy ActorPrefabOverride;
             [Min(0f)] public float ActorMaxHealth;
             [Min(0f)] public float ActorMoveSpeed;
             [Min(0f)] public float ActorAdvanceDistance;
@@ -81,6 +82,7 @@ namespace DimensionBrawl.Combat
         private int totalSummonActorDefeatCount;
         private Vector3 lastSummonActorPosition;
         private SummonFrontlineProxy lastSummonActor;
+        private string lastSummonActorRoleId;
 
         public event Action<BossSummonPressureAction, int> PressureSummonReleased;
         public event Action<BossSummonPressureAction, int> PressureSummonIntercepted;
@@ -97,6 +99,7 @@ namespace DimensionBrawl.Combat
         public int TotalSummonActorDefeatCount => totalSummonActorDefeatCount;
         public Vector3 LastSummonActorPosition => lastSummonActorPosition;
         public SummonFrontlineProxy LastSummonActor => lastSummonActor;
+        public string LastSummonActorRoleId => lastSummonActorRoleId;
         public int ActiveSummonActorCount => summonActorPool.CountActive();
         public int ActivePressureScreenCount => summonActorPool.CountActivePressureScreens();
         public int ActivePressureScreenRemainingIntercepts => summonActorPool.CountActivePressureScreenRemainingIntercepts();
@@ -135,7 +138,7 @@ namespace DimensionBrawl.Combat
         public SummonFrontlineProxyExitReason LastSummonActorExitReason => lastSummonActor != null
             ? lastSummonActor.LastExitReason
             : SummonFrontlineProxyExitReason.None;
-        public bool CanRelease => laneSpace != null && ResolveSummonActorPrefab() != null;
+        public bool CanRelease => laneSpace != null && HasAnySummonActorPrefab();
         public BossSummonPressureProfile PressureProfile => pressureProfile;
         public bool HasPressureProfile => pressureProfile != null;
         private int MaxActiveSummonActors => Mathf.Max(1, maxActiveSummonActors);
@@ -209,15 +212,21 @@ namespace DimensionBrawl.Combat
 
         public bool TryReleasePressureSummon(int tier)
         {
-            if (!CanRelease)
+            if (laneSpace == null)
             {
                 return false;
             }
 
             int resolvedTier = Mathf.Clamp(tier, 1, 3);
             BossSummonTierSettings settings = ResolveTierSettings(resolvedTier);
+            SummonFrontlineProxy actorPrefab = ResolveSummonActorPrefab(settings);
+            if (actorPrefab == null)
+            {
+                return false;
+            }
+
             summonActorPool.TrimActiveCountBeforeSpawn(MaxActiveSummonActors);
-            SummonFrontlineProxy actor = GetSummonActor();
+            SummonFrontlineProxy actor = GetSummonActor(actorPrefab);
             if (actor == null)
             {
                 return false;
@@ -268,6 +277,7 @@ namespace DimensionBrawl.Combat
             totalReleaseCount++;
             lastSummonActorPosition = actor.transform.position;
             lastSummonActor = actor;
+            lastSummonActorRoleId = settings.ActorRoleId;
             PressureSummonReleased?.Invoke(this, resolvedTier);
             return true;
         }
@@ -409,9 +419,18 @@ namespace DimensionBrawl.Combat
             return settings.ActorAdvanceSeconds + extraDistance * actorEntryCatchupSecondsPerMeter;
         }
 
-        private static void ConfigureActorCombat(SummonFrontlineProxy actor, BossSummonTierSettings settings)
+        private void ConfigureActorCombat(SummonFrontlineProxy actor, BossSummonTierSettings settings)
         {
-            SummonFrontlineClash clash = actor != null ? actor.GetComponent<SummonFrontlineClash>() : null;
+            if (actor == null)
+            {
+                return;
+            }
+
+            CombatHealth actorHealth = actor.Health;
+            actorHealth?.ConfigureTeam(ownerTeam);
+            ConfigureBossLaserPattern(actor, settings, actorHealth);
+
+            SummonFrontlineClash clash = actor.GetComponent<SummonFrontlineClash>();
             if (clash == null)
             {
                 return;
@@ -426,7 +445,40 @@ namespace DimensionBrawl.Combat
                 0.16f,
                 0.24f,
                 settings.ActorEngageRadius);
-            clash.ConfigurePlayerBodyDamage(0.32f, 7.5f);
+            if (IsLaserSoldier(settings))
+            {
+                clash.ConfigurePlayerBodyDamage(0f, 0f);
+                clash.ConfigureHostileBodyDamage(0f, 0f);
+            }
+            else
+            {
+                clash.ConfigurePlayerBodyDamage(0.32f, 7.5f);
+            }
+        }
+
+        private void ConfigureBossLaserPattern(
+            SummonFrontlineProxy actor,
+            BossSummonTierSettings settings,
+            CombatHealth actorHealth)
+        {
+            BossLaserSummonPattern laserPattern = actor.GetComponent<BossLaserSummonPattern>();
+            if (laserPattern == null)
+            {
+                return;
+            }
+
+            float damagePerSecond = settings.ActorAttackDamagePerSecond > 0f
+                ? settings.ActorAttackDamagePerSecond
+                : 58f;
+            DamageTeam resolvedTeam = actorHealth != null && actorHealth.Team != DamageTeam.Neutral
+                ? actorHealth.Team
+                : ownerTeam;
+            laserPattern.ConfigurePattern(
+                trackedPlayer,
+                resolvedTeam,
+                damagePerSecond,
+                settings.ActorAttackIntervalSeconds,
+                settings.ActorMoveSpeed);
         }
 
         private Vector3 ResolveFacingDirection(Vector3 entryPosition, Vector3 targetPosition)
@@ -481,9 +533,8 @@ namespace DimensionBrawl.Combat
             });
         }
 
-        private SummonFrontlineProxy GetSummonActor()
+        private SummonFrontlineProxy GetSummonActor(SummonFrontlineProxy prefab)
         {
-            SummonFrontlineProxy prefab = ResolveSummonActorPrefab();
             if (prefab == null)
             {
                 return null;
@@ -491,6 +542,13 @@ namespace DimensionBrawl.Combat
 
             Transform parent = summonActorRoot != null ? summonActorRoot : transform;
             return summonActorPool.Get(prefab, parent);
+        }
+
+        private SummonFrontlineProxy ResolveSummonActorPrefab(BossSummonTierSettings settings)
+        {
+            return settings.ActorPrefabOverride != null
+                ? settings.ActorPrefabOverride
+                : ResolveSummonActorPrefab();
         }
 
         private SummonFrontlineProxy ResolveSummonActorPrefab()
@@ -508,6 +566,29 @@ namespace DimensionBrawl.Combat
             return summonActorPrefab;
         }
 
+        private bool HasAnySummonActorPrefab()
+        {
+            if (ResolveSummonActorPrefab() != null)
+            {
+                return true;
+            }
+
+            if (tierSettings == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < tierSettings.Length; i++)
+            {
+                if (tierSettings[i].ActorPrefabOverride != null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         private void ApplyPressureProfile()
         {
             if (pressureProfile == null)
@@ -520,14 +601,31 @@ namespace DimensionBrawl.Combat
 
         private void PrewarmSummonActors()
         {
-            SummonFrontlineProxy prefab = ResolveSummonActorPrefab();
-            if (prefab == null || actorPrewarmCount <= 0)
+            if (actorPrewarmCount <= 0)
             {
                 return;
             }
 
             Transform parent = summonActorRoot != null ? summonActorRoot : transform;
-            summonActorPool.Prewarm(prefab, parent, actorPrewarmCount);
+            SummonFrontlineProxy defaultPrefab = ResolveSummonActorPrefab();
+            if (defaultPrefab != null)
+            {
+                summonActorPool.Prewarm(defaultPrefab, parent, actorPrewarmCount);
+            }
+
+            if (tierSettings == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < tierSettings.Length; i++)
+            {
+                SummonFrontlineProxy overridePrefab = tierSettings[i].ActorPrefabOverride;
+                if (overridePrefab != null && overridePrefab != defaultPrefab)
+                {
+                    summonActorPool.Prewarm(overridePrefab, parent, 1);
+                }
+            }
         }
 
         private BossSummonTierSettings ResolveTierSettings(int tier)
@@ -601,20 +699,25 @@ namespace DimensionBrawl.Combat
                     LateralOffset = 2.0f,
                     EntryHeight = 0.2f,
                     ActorLifetimeSeconds = 0f,
-                    ActorScale = 3.06f,
-                    ActorRoleId = "ClampGuard",
+                    ActorScale = 2.48f,
+                    ActorRoleId = "LaserSoldier",
                     ActorMaxHealth = 1180f,
                     ActorMoveSpeed = 4.0f,
-                    ActorAdvanceDistance = 5.2f,
-                    ActorAdvanceSeconds = 2.35f,
-                    ActorEngageRadius = 1.5f,
-                    ActorAttackDamagePerSecond = 88f,
-                    ActorAttackIntervalSeconds = 0.9f,
-                    ScreenIntercepts = 8,
-                    ScreenRadius = 1.95f,
-                    ScreenLifetimeSeconds = 4.8f
+                    ActorAdvanceDistance = 4.4f,
+                    ActorAdvanceSeconds = 2.05f,
+                    ActorEngageRadius = 1.15f,
+                    ActorAttackDamagePerSecond = 58f,
+                    ActorAttackIntervalSeconds = 0.12f,
+                    ScreenIntercepts = 0,
+                    ScreenRadius = 1.15f,
+                    ScreenLifetimeSeconds = 0.2f
                 }
             };
+        }
+
+        private static bool IsLaserSoldier(BossSummonTierSettings settings)
+        {
+            return string.Equals(settings.ActorRoleId, "LaserSoldier", StringComparison.Ordinal);
         }
     }
 }

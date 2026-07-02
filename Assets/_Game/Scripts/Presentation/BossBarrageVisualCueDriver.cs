@@ -429,6 +429,13 @@ namespace DimensionBrawl.Presentation
                     0.28f,
                     0.06f),
                 new PressureActionCue(
+                    BossPressureActionKind.SpecialSkill,
+                    "AttackLinePressure",
+                    new Color(1f, 0.96f, 0.38f, 1f),
+                    0.34f,
+                    0.36f,
+                    0.08f),
+                new PressureActionCue(
                     BossPressureActionKind.SummonPressure,
                     "EliteSummonPackage",
                     new Color(0.35f, 1f, 0.78f, 1f),

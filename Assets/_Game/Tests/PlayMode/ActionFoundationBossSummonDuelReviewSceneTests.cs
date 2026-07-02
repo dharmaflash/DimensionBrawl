@@ -136,13 +136,13 @@ namespace DimensionBrawl.Tests
                 new Vector3(0.45f, 0.88f, 2.72f),
                 GetVector3(cameraController, "aimCameraOffset"),
                 "Boss summon duel aim camera offset should keep the reviewed inspector framing.");
-            Assert.AreEqual(4, bossPressureActionDirector.ActionSlotCount);
+            Assert.AreEqual(5, bossPressureActionDirector.ActionSlotCount);
             AssertBossPressureSlot(
                 bossPressureActionDirector,
                 0,
-                BossPressureActionKind.SkillPattern,
+                BossPressureActionKind.SpecialSkill,
                 1,
-                "DodgeLineOrUseSkill1");
+                "DodgeBossLinePressureSpecial");
             AssertBossPressureSlot(
                 bossPressureActionDirector,
                 1,
@@ -160,6 +160,12 @@ namespace DimensionBrawl.Tests
             AssertBossPressureSlot(
                 bossPressureActionDirector,
                 3,
+                BossPressureActionKind.SummonPressure,
+                3,
+                "LaserSoldierDodgeLine");
+            AssertBossPressureSlot(
+                bossPressureActionDirector,
+                4,
                 BossPressureActionKind.PunishOverextend,
                 3,
                 "RetreatOrSpendHighTierAnswer");
@@ -651,11 +657,11 @@ namespace DimensionBrawl.Tests
         private static void AssertBossSummonPressureRoleProfile(BossSummonPressureProfile profile)
         {
             BossSummonPressureAction.BossSummonTierSettings[] tiers = profile.CopyTierSettings();
-            string[] expectedRoles = { "EscortProbe", "PressureScreen", "ClampGuard" };
+            string[] expectedRoles = { "EscortProbe", "PressureScreen", "LaserSoldier" };
             float[] expectedHealth = { 560f, 820f, 1180f };
             float[] expectedMoveSpeed = { 3.2f, 3.6f, 4.0f };
-            float[] expectedDps = { 42f, 62f, 88f };
-            int[] expectedScreens = { 3, 5, 8 };
+            float[] expectedDps = { 42f, 62f, 58f };
+            int[] expectedScreens = { 3, 5, 0 };
 
             Assert.AreEqual(3, tiers.Length);
             for (int i = 0; i < tiers.Length; i++)
@@ -678,8 +684,21 @@ namespace DimensionBrawl.Tests
 
                 Assert.Greater(tiers[i].ActorMaxHealth, tiers[i - 1].ActorMaxHealth);
                 Assert.Greater(tiers[i].ActorMoveSpeed, tiers[i - 1].ActorMoveSpeed);
-                Assert.Greater(tiers[i].ActorAttackDamagePerSecond, tiers[i - 1].ActorAttackDamagePerSecond);
-                Assert.Greater(tiers[i].ScreenIntercepts, tiers[i - 1].ScreenIntercepts);
+                if (i == 1)
+                {
+                    Assert.Greater(tiers[i].ActorAttackDamagePerSecond, tiers[i - 1].ActorAttackDamagePerSecond);
+                    Assert.Greater(tiers[i].ScreenIntercepts, tiers[i - 1].ScreenIntercepts);
+                    continue;
+                }
+
+                Assert.AreEqual(
+                    0,
+                    tiers[i].ScreenIntercepts,
+                    "Boss LV3 laser soldier should be a dodge-line threat, not another pressure screen.");
+                Assert.Less(
+                    tiers[i].ActorAttackIntervalSeconds,
+                    tiers[i - 1].ActorAttackIntervalSeconds,
+                    "Boss LV3 laser soldier should trade screen blocks for a faster ticking laser cadence.");
             }
         }
 

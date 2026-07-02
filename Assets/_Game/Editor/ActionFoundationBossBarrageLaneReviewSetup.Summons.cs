@@ -18,6 +18,7 @@ namespace DimensionBrawl.Editor
             EnsureSummonSlot2ActorPrefab();
             EnsureSummonSlot3ActorPrefab();
             EnsureBossSummonPressureActorPrefab();
+            EnsureBossLaserSummonActorPrefab();
             AssetDatabase.SaveAssets();
             Debug.Log("Reapplied ActionFoundation summon actor health bars.");
         }
@@ -31,9 +32,19 @@ namespace DimensionBrawl.Editor
             EnsureSummonSlot2ActorPrefab();
             EnsureSummonSlot3ActorPrefab();
             EnsureBossSummonPressureActorPrefab();
+            EnsureBossLaserSummonActorPrefab();
             EnsureSummonPresentationCandidateProfiles();
             AssetDatabase.SaveAssets();
             Debug.Log("Reapplied ActionFoundation summon frontline VFX assets.");
+        }
+
+        [MenuItem("DimensionBrawl/Reapply Action Foundation Boss Laser Summon")]
+        public static void ReapplyBossLaserSummonMenu()
+        {
+            EnsureBossLaserSummonActorPrefab();
+            EnsureBossSummonPressureProfile();
+            AssetDatabase.SaveAssets();
+            Debug.Log("Reapplied ActionFoundation boss laser summon assets.");
         }
 
         private static void EnsureSummonPresentationCandidateProfiles()
@@ -529,6 +540,68 @@ namespace DimensionBrawl.Editor
                 pressureScreenColor: Color.clear);
         }
 
+        private static SummonFrontlineProxy EnsureBossLaserSummonActorPrefab()
+        {
+            EnsureSummonSlot2PromotedLaserBeamPrefab();
+            SummonFrontlineProxy proxy = EnsureSupportSummonActorPrefab(
+                BossLaserSummonActorPrefabPath,
+                "PF_BossLaserSummonActor_Proxy",
+                SummonSlot2ActorMaterialPath,
+                SummonSlot2ActorPulseMaterialPath,
+                SummonSlot2ActorVisualRoleId,
+                ActionFoundationEnemyRoleCandidateSetup.LineCasterPrefabPath,
+                SummonSlot2ActorVisualName,
+                new Vector3(-0.06f, -0.04f, -0.08f),
+                new Vector3(0f, -8f, 0f),
+                new Vector3(0.64f, 0.64f, 0.64f),
+                new Color(0.34f, 0.94f, 1f, 0.82f),
+                1180f,
+                0.78f,
+                0f,
+                0f,
+                0.12f,
+                includePressureScreen: false,
+                pressureScreenMaterialPath: null,
+                pressureScreenColor: Color.clear,
+                ownerTeam: DamageTeam.Enemy);
+
+            GameObject editableRoot = PrefabUtility.LoadPrefabContents(BossLaserSummonActorPrefabPath);
+            try
+            {
+                SummonFrontlineProxy editableProxy = EnsureComponent<SummonFrontlineProxy>(editableRoot);
+                SetFloat(editableProxy, "advanceAcceleration", 9.5f);
+                SetFloat(editableProxy, "advanceDeceleration", 12f);
+                SetFloat(editableProxy, "advanceSlowdownDistance", 1.7f);
+                SetFloat(editableProxy, "minimumAdvanceSpeedScale", 0.38f);
+                SetFloat(editableProxy, "facingTurnSpeedDegrees", 540f);
+                SetFloat(editableProxy, "turnAlignmentSpeedFloor", 0.34f);
+
+                BossLaserSummonPattern laserPattern = EnsureComponent<BossLaserSummonPattern>(editableRoot);
+                SetObjectReference(laserPattern, "proxy", editableProxy);
+                SetObjectReference(laserPattern, "sourceHealth", editableProxy.Health);
+                SetFloat(laserPattern, "telegraphSeconds", 0.78f);
+                SetFloat(laserPattern, "aimLockSeconds", 0.2f);
+                SetFloat(laserPattern, "activeSeconds", 0.92f);
+                SetFloat(laserPattern, "recoverySeconds", 0.42f);
+                SetFloat(laserPattern, "repositionSeconds", 0.62f);
+                SetFloat(laserPattern, "laserLength", 22f);
+                SetFloat(laserPattern, "hitRadius", 0.62f);
+                SetFloat(laserPattern, "damagePerSecond", 58f);
+                SetFloat(laserPattern, "damageIntervalSeconds", 0.12f);
+                SetFloat(laserPattern, "desiredDistanceFromTarget", 4.2f);
+                SetFloat(laserPattern, "strafeDistance", 1.45f);
+                SetFloat(laserPattern, "repositionMoveSpeed", 4f);
+
+                PrefabUtility.SaveAsPrefabAsset(editableRoot, BossLaserSummonActorPrefabPath);
+            }
+            finally
+            {
+                PrefabUtility.UnloadPrefabContents(editableRoot);
+            }
+
+            return proxy;
+        }
+
         private static SummonFrontlineProxy EnsureSummonSlot3ActorPrefab()
         {
             EnsureSummonSlot3PromotedFireBreathPrefab();
@@ -574,7 +647,8 @@ namespace DimensionBrawl.Editor
             float clashHoldSeconds,
             bool includePressureScreen,
             string pressureScreenMaterialPath,
-            Color pressureScreenColor)
+            Color pressureScreenColor,
+            DamageTeam ownerTeam = DamageTeam.AllySummon)
         {
             EnsureFolderForAsset(prefabPath);
             Material material = LoadOrCreateMaterial(materialPath, pulseColor);
@@ -606,7 +680,7 @@ namespace DimensionBrawl.Editor
 
                 SummonFrontlineProxy proxy = EnsureComponent<SummonFrontlineProxy>(editableRoot);
                 CombatHealth proxyHealth = EnsureComponent<CombatHealth>(editableRoot);
-                SetEnum(proxyHealth, "team", (int)DamageTeam.AllySummon);
+                SetEnum(proxyHealth, "team", (int)ownerTeam);
                 SetFloat(proxyHealth, "maxHealth", maxHealth);
                 SetBool(proxyHealth, "startAtFullHealth", true);
                 SetObjectReference(proxy, "health", proxyHealth);
@@ -711,7 +785,7 @@ namespace DimensionBrawl.Editor
                     editableRoot,
                     proxy,
                     proxyHealth,
-                    DamageTeam.AllySummon,
+                    ownerTeam,
                     roleId == SummonSlot3ActorVisualRoleId
                         ? new Vector3(0f, 1.18f, 0.02f)
                         : new Vector3(0f, 1.78f, 0.02f),
@@ -1621,6 +1695,7 @@ namespace DimensionBrawl.Editor
 
         private static BossSummonPressureProfile EnsureBossSummonPressureProfile()
         {
+            SummonFrontlineProxy bossLaserActorPrefab = EnsureBossLaserSummonActorPrefab();
             ConfigureBossSummonPressureProfile(
                 LoadOrCreateBossSummonPressureProfile(BossSummonPressureProfilePath),
                 "BossSummonPressure.SummonCaller",
@@ -1662,18 +1737,19 @@ namespace DimensionBrawl.Editor
                         entryForwardBlend01: 0.5f,
                         lateralOffset: 2.0f,
                         actorLifetimeSeconds: 0f,
-                        actorScale: 3.06f,
-                        actorAdvanceDistance: 5.2f,
-                        actorAdvanceSeconds: 2.35f,
-                        actorRoleId: "ClampGuard",
+                        actorScale: 2.48f,
+                        actorAdvanceDistance: 4.4f,
+                        actorAdvanceSeconds: 2.05f,
+                        actorRoleId: "LaserSoldier",
                         actorMaxHealth: 1180f,
                         actorMoveSpeed: 4.0f,
-                        actorEngageRadius: 1.5f,
-                        actorAttackDamagePerSecond: 88f,
-                        actorAttackIntervalSeconds: 0.9f,
-                        screenIntercepts: 8,
-                        screenRadius: 1.95f,
-                        screenLifetimeSeconds: 4.8f)
+                        actorEngageRadius: 1.15f,
+                        actorAttackDamagePerSecond: 58f,
+                        actorAttackIntervalSeconds: 0.12f,
+                        screenIntercepts: 0,
+                        screenRadius: 1.15f,
+                        screenLifetimeSeconds: 0.2f,
+                        actorPrefabOverride: bossLaserActorPrefab)
                 },
                 new[]
                 {
@@ -1688,10 +1764,10 @@ namespace DimensionBrawl.Editor
                         "Take EN only long enough to prepare a clean response, then break the screen before the next boss pattern layers on top.",
                         "Use SummonSlot1 or Vanguard support to absorb the curtain and reopen ranged punish time."),
                     CreateBossSummonReadout(
-                        "LV3 Clamp Guard",
-                        "High-cost boss proxy that punishes overextension and demands a committed high-tier answer or retreat.",
-                        "Back off from forward-risk lanes unless a summon answer is already charged.",
-                        "A saved LV2/LV3 summon should create a visible pressure-break window before counterfire.")
+                        "LV3 Laser Soldier",
+                        "High-cost boss laser summon that creates a dodgeable line threat instead of another pressure screen.",
+                        "Read the thin line, dodge after the aim locks, then punish during the rifleman's recovery.",
+                        "Boss laser soldier repositions, draws a cyan warning line, locks aim, then fires a short ticking beam.")
                 });
 
             AssetDatabase.SaveAssets();
@@ -1754,7 +1830,8 @@ namespace DimensionBrawl.Editor
             float actorAttackIntervalSeconds,
             int screenIntercepts,
             float screenRadius,
-            float screenLifetimeSeconds)
+            float screenLifetimeSeconds,
+            SummonFrontlineProxy actorPrefabOverride = null)
         {
             var settings = new BossSummonPressureAction.BossSummonTierSettings
             {
@@ -1764,6 +1841,7 @@ namespace DimensionBrawl.Editor
                 ActorLifetimeSeconds = actorLifetimeSeconds,
                 ActorScale = actorScale,
                 ActorRoleId = actorRoleId,
+                ActorPrefabOverride = actorPrefabOverride,
                 ActorMaxHealth = actorMaxHealth,
                 ActorMoveSpeed = actorMoveSpeed,
                 ActorAdvanceDistance = actorAdvanceDistance,
@@ -1804,6 +1882,7 @@ namespace DimensionBrawl.Editor
             property.FindPropertyRelative("ActorLifetimeSeconds").floatValue = settings.ActorLifetimeSeconds;
             property.FindPropertyRelative("ActorScale").floatValue = settings.ActorScale;
             property.FindPropertyRelative("ActorRoleId").stringValue = settings.ActorRoleId;
+            property.FindPropertyRelative("ActorPrefabOverride").objectReferenceValue = settings.ActorPrefabOverride;
             property.FindPropertyRelative("ActorMaxHealth").floatValue = settings.ActorMaxHealth;
             property.FindPropertyRelative("ActorMoveSpeed").floatValue = settings.ActorMoveSpeed;
             property.FindPropertyRelative("ActorAdvanceDistance").floatValue = settings.ActorAdvanceDistance;

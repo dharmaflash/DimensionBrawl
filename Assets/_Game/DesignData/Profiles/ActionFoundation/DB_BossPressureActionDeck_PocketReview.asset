@@ -14,21 +14,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: DimensionBrawl.Runtime::DimensionBrawl.Combat.BossPressureActionDeckProfile
   deckId: PocketReviewBoss
   globalRecoverySeconds: 1.1
+  decisionThinkIntervalSeconds: 0.25
   actionSlots:
   - Pattern: {fileID: 11400000, guid: 25cd6927b39e10048ab562c4e150cb3a, type: 2}
-    ActionKind: 0
+    ActionKind: 4
     MinimumTier: 1
     QueuedWaves: 1
     MinimumIntervalSeconds: 4.2
-    ResponseId: DodgeLineOrUseSkill1
-    StageLoopRole: LV1 skill pressure that asks the player to read a committed rail before spending summon resources.
-    PlayerAnswer: Strafe or dodge out of the rail, then use ranged fire or Skill1 when the lane is clear.
-    SummonAnswer: No summon is required; save SummonSlot1 for screen pressure.
+    ResponseId: DodgeBossLinePressureSpecial
+    StageLoopRole: LV1 boss special shot that asks the player to read a committed rail before spending summon resources.
+    PlayerAnswer: Strafe or dodge out of the rail, then punish with ranged fire when the lane is clear.
+    SummonAnswer: No summon is required; save SummonSlot1 for boss-side summon pressure.
     UsePlayerForwardRiskGate: 0
     MinimumPlayerForwardRisk01: 0
     MaximumPlayerForwardRisk01: 1
     UsePlayerSummonResponseGate: 0
     MinimumPlayerSummonTier: 1
+    SelectionPriority: 15
+    ForwardRiskPriorityBonus: 0
+    SummonResponsePriorityBonus: 0
+    MovementIntent: 2
   - Pattern: {fileID: 11400000, guid: 732ffa1eae726f14386a4a02115611c9, type: 2}
     ActionKind: 1
     MinimumTier: 1
@@ -43,6 +48,10 @@ MonoBehaviour:
     MaximumPlayerForwardRisk01: 1
     UsePlayerSummonResponseGate: 0
     MinimumPlayerSummonTier: 1
+    SelectionPriority: 5
+    ForwardRiskPriorityBonus: 0
+    SummonResponsePriorityBonus: 0
+    MovementIntent: 4
   - Pattern: {fileID: 11400000, guid: 732ffa1eae726f14386a4a02115611c9, type: 2}
     ActionKind: 1
     MinimumTier: 2
@@ -57,6 +66,28 @@ MonoBehaviour:
     MaximumPlayerForwardRisk01: 1
     UsePlayerSummonResponseGate: 1
     MinimumPlayerSummonTier: 2
+    SelectionPriority: 30
+    ForwardRiskPriorityBonus: 0
+    SummonResponsePriorityBonus: 140
+    MovementIntent: 4
+  - Pattern: {fileID: 11400000, guid: 732ffa1eae726f14386a4a02115611c9, type: 2}
+    ActionKind: 1
+    MinimumTier: 3
+    QueuedWaves: 1
+    MinimumIntervalSeconds: 7.5
+    ResponseId: LaserSoldierDodgeLine
+    StageLoopRole: LV3 laser-soldier summon pressure that turns stored boss cost into a readable dodge line instead of another body block.
+    PlayerAnswer: Watch the thin aim line, dodge after the lock, then punish while the laser soldier recovers.
+    SummonAnswer: A prepared summon can body-screen the lane, but the intended read is movement first and summon only as a backup.
+    UsePlayerForwardRiskGate: 0
+    MinimumPlayerForwardRisk01: 0
+    MaximumPlayerForwardRisk01: 1
+    UsePlayerSummonResponseGate: 0
+    MinimumPlayerSummonTier: 1
+    SelectionPriority: 35
+    ForwardRiskPriorityBonus: 0
+    SummonResponsePriorityBonus: 0
+    MovementIntent: 4
   - Pattern: {fileID: 11400000, guid: b0b5e71e44209f74394f56e232db8d78, type: 2}
     ActionKind: 2
     MinimumTier: 3
@@ -71,3 +102,7 @@ MonoBehaviour:
     MaximumPlayerForwardRisk01: 1
     UsePlayerSummonResponseGate: 0
     MinimumPlayerSummonTier: 1
+    SelectionPriority: 80
+    ForwardRiskPriorityBonus: 80
+    SummonResponsePriorityBonus: 0
+    MovementIntent: 3

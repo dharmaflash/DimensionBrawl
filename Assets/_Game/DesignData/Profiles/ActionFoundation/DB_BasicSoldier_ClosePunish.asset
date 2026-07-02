@@ -17,17 +17,22 @@ MonoBehaviour:
   approachSpeed: 2.7
   turnRateDegrees: 540
   gravity: -24
-  prepareSeconds: 0
-  prepareRetreatSpeed: 0
+  approachAcceleration: 11
+  approachDeceleration: 18
+  attackRangeSlowdownDistance: 0.95
+  minimumAttackRangeSpeedScale: 0.34
+  turnAlignmentSpeedFloor: 0.45
+  prepareSeconds: 0.14
+  prepareRetreatSpeed: 0.65
   lockAttackDirectionAfterPrepare: 1
-  attackRange: 1.65
+  attackRange: 1.72
   attackFacingDotThreshold: -0.15
-  telegraphSeconds: 0.65
-  activeSeconds: 0.14
-  activeLungeSpeed: 0
-  recoverySeconds: 0.45
+  telegraphSeconds: 0.58
+  activeSeconds: 0.18
+  activeLungeSpeed: 1.65
+  recoverySeconds: 0.54
   damage: 15
-  hitStopSeconds: 0.03
+  hitStopSeconds: 0.035
   damageResponsePolicy: 2
   controlLockPolicy: 0
   attackShape: 0
@@ -39,8 +44,8 @@ MonoBehaviour:
   recoveryRetreatSpeed: 1.4
   recoveryRetreatSeconds: 0.18
   cameraCueKind: 0
-  windupThreatLevel: 0.85
-  activeCameraCueStrength: 0.75
+  windupThreatLevel: 0.95
+  activeCameraCueStrength: 0.85
   deathCameraCueStrength: 0.6
   windupCameraCue:
     enabled: 1
@@ -71,9 +76,9 @@ MonoBehaviour:
     finisherScale: 1
   telegraphWindupStartScale: {x: 0.35, y: 0.02, z: 0.65}
   telegraphWindupEndScale: {x: 1.05, y: 0.02, z: 1.55}
-  telegraphActiveScale: {x: 1.25, y: 0.025, z: 1.8}
-  windupPoseOffset: {x: 0, y: 0, z: -0.08}
-  activePoseOffset: {x: 0, y: 0, z: 0.12}
+  telegraphActiveScale: {x: 1.32, y: 0.025, z: 2.05}
+  windupPoseOffset: {x: 0, y: 0, z: -0.12}
+  activePoseOffset: {x: 0, y: 0, z: 0.22}
   windupStartColor: {r: 1, g: 0.45, b: 0.08, a: 1}
   windupEndColor: {r: 1, g: 0.08, b: 0.02, a: 1}
   activeColor: {r: 1, g: 1, b: 1, a: 1}

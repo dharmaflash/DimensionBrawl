@@ -18,6 +18,7 @@ namespace DimensionBrawl.Combat
         [SerializeField] private GameObject projectilePrefabObject;
         [SerializeField] private DamageTeam sourceTeam = DamageTeam.Enemy;
         [SerializeField] private bool firingEnabled = true;
+        [SerializeField, Min(0f)] private float resumeCooldownAfterSuppressionSeconds = 0.25f;
 
         [Header("Pooling")]
         [SerializeField, Min(0)] private int prewarmCount = 10;
@@ -29,9 +30,14 @@ namespace DimensionBrawl.Combat
         private int totalVolleysFired;
         private int lastVolleyProjectileCount;
         private Vector2 lastTargetLanePoint;
+        private float autoFireSuppressionTimer;
+
+        public event System.Action<BossBasicFireEmitter, int> VolleyFired;
 
         public BossBasicFireProfile FireProfile => fireProfile;
         public bool IsFiringEnabled => firingEnabled;
+        public bool IsAutoFireSuppressed => autoFireSuppressionTimer > 0f;
+        public float AutoFireSuppressionRemaining => autoFireSuppressionTimer;
         public float LastForwardRisk01 => lastForwardRisk01;
         public int TotalVolleysFired => totalVolleysFired;
         public int LastVolleyProjectileCount => lastVolleyProjectileCount;
@@ -84,6 +90,11 @@ namespace DimensionBrawl.Combat
             cooldownTimer = fireProfile != null ? fireProfile.InitialDelaySeconds : 0f;
         }
 
+        private void OnValidate()
+        {
+            resumeCooldownAfterSuppressionSeconds = Mathf.Max(0f, resumeCooldownAfterSuppressionSeconds);
+        }
+
         public void SetFiringEnabled(bool enabled)
         {
             if (firingEnabled == enabled)
@@ -100,11 +111,23 @@ namespace DimensionBrawl.Combat
             if (!enabled)
             {
                 cooldownTimer = fireProfile != null ? fireProfile.InitialDelaySeconds : 0f;
+                autoFireSuppressionTimer = 0f;
                 DeactivateActiveProjectiles();
                 return;
             }
 
             cooldownTimer = fireProfile != null ? fireProfile.InitialDelaySeconds : cooldownTimer;
+        }
+
+        public void SuppressAutoFire(float seconds)
+        {
+            if (seconds <= 0f)
+            {
+                return;
+            }
+
+            autoFireSuppressionTimer = Mathf.Max(autoFireSuppressionTimer, seconds);
+            cooldownTimer = Mathf.Max(cooldownTimer, resumeCooldownAfterSuppressionSeconds);
         }
 
         public void Tick(float deltaTime)
@@ -120,6 +143,13 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
+            if (autoFireSuppressionTimer > 0f)
+            {
+                autoFireSuppressionTimer = Mathf.Max(0f, autoFireSuppressionTimer - deltaTime);
+                cooldownTimer = Mathf.Max(cooldownTimer, resumeCooldownAfterSuppressionSeconds);
+                return;
+            }
+
             cooldownTimer -= deltaTime;
             if (cooldownTimer <= 0f)
             {
@@ -130,7 +160,11 @@ namespace DimensionBrawl.Combat
 
         public int FireVolley()
         {
-            if (!firingEnabled || fireProfile == null || laneSpace == null || trackedPlayer == null)
+            if (!firingEnabled
+                || autoFireSuppressionTimer > 0f
+                || fireProfile == null
+                || laneSpace == null
+                || trackedPlayer == null)
             {
                 return 0;
             }
@@ -156,6 +190,7 @@ namespace DimensionBrawl.Combat
 
             totalVolleysFired++;
             lastVolleyProjectileCount = spawnedCount;
+            VolleyFired?.Invoke(this, spawnedCount);
             return spawnedCount;
         }
 

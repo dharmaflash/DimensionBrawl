@@ -360,6 +360,25 @@ namespace DimensionBrawl.Combat
             ApplyFacing(ResolvePlanarDirection(worldPosition - transform.position));
         }
 
+        public void BeginAdvanceTo(Vector3 targetPosition, float advanceDurationSeconds, float moveSpeed = 0f)
+        {
+            if (!active)
+            {
+                return;
+            }
+
+            Vector3 planarDirection = ResetAdvance(
+                transform.position,
+                targetPosition - transform.position,
+                targetPosition,
+                advanceDurationSeconds,
+                moveSpeed);
+            ApplyFacing(planarDirection);
+            currentState = advanceDistance > 0f && advanceStartDelayTimer <= 0f
+                ? SummonFrontlineProxyState.Advancing
+                : SummonFrontlineProxyState.Spawned;
+        }
+
         public void Deactivate()
         {
             Deactivate(SummonFrontlineProxyExitReason.Recalled);
@@ -749,6 +768,8 @@ namespace DimensionBrawl.Combat
     {
         private readonly List<SummonFrontlineProxy> actors = new List<SummonFrontlineProxy>(4);
         private readonly Queue<SummonFrontlineProxy> queuedActors = new Queue<SummonFrontlineProxy>(4);
+        private readonly Dictionary<SummonFrontlineProxy, SummonFrontlineProxy> prefabByActor =
+            new Dictionary<SummonFrontlineProxy, SummonFrontlineProxy>();
 
         public SummonFrontlineProxy Get(SummonFrontlineProxy prefab, Transform parent)
         {
@@ -757,20 +778,28 @@ namespace DimensionBrawl.Combat
                 return null;
             }
 
-            while (queuedActors.Count > 0)
+            int queuedChecks = queuedActors.Count;
+            for (int i = 0; i < queuedChecks; i++)
             {
                 SummonFrontlineProxy pooled = queuedActors.Dequeue();
-                if (pooled != null)
+                if (pooled == null)
+                {
+                    continue;
+                }
+
+                if (MatchesPrefab(pooled, prefab))
                 {
                     pooled.gameObject.SetActive(true);
                     return pooled;
                 }
+
+                queuedActors.Enqueue(pooled);
             }
 
             for (int i = 0; i < actors.Count; i++)
             {
                 SummonFrontlineProxy reusable = actors[i];
-                if (reusable != null && !reusable.IsActive)
+                if (reusable != null && !reusable.IsActive && MatchesPrefab(reusable, prefab))
                 {
                     reusable.gameObject.SetActive(true);
                     return reusable;
@@ -780,6 +809,7 @@ namespace DimensionBrawl.Combat
             SummonFrontlineProxy instance = UnityEngine.Object.Instantiate(prefab, parent);
             instance.name = prefab.name;
             actors.Add(instance);
+            prefabByActor[instance] = prefab;
             return instance;
         }
 
@@ -790,12 +820,13 @@ namespace DimensionBrawl.Combat
                 return;
             }
 
-            while (actors.Count < count)
+            while (CountForPrefab(prefab) < count)
             {
                 SummonFrontlineProxy actor = UnityEngine.Object.Instantiate(prefab, parent);
                 actor.name = prefab.name;
                 actor.Deactivate(SummonFrontlineProxyExitReason.None);
                 actors.Add(actor);
+                prefabByActor[actor] = prefab;
                 queuedActors.Enqueue(actor);
             }
         }
@@ -936,6 +967,28 @@ namespace DimensionBrawl.Combat
             }
 
             return null;
+        }
+
+        private bool MatchesPrefab(SummonFrontlineProxy actor, SummonFrontlineProxy prefab)
+        {
+            return actor != null
+                && prefab != null
+                && prefabByActor.TryGetValue(actor, out SummonFrontlineProxy sourcePrefab)
+                && sourcePrefab == prefab;
+        }
+
+        private int CountForPrefab(SummonFrontlineProxy prefab)
+        {
+            int count = 0;
+            for (int i = 0; i < actors.Count; i++)
+            {
+                if (MatchesPrefab(actors[i], prefab))
+                {
+                    count++;
+                }
+            }
+
+            return count;
         }
     }
 }

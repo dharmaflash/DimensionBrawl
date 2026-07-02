@@ -21,6 +21,13 @@ namespace DimensionBrawl.AI
         [SerializeField, Min(0f)] private float turnRateDegrees = 540f;
         [SerializeField] private float gravity = -24f;
 
+        [Header("Approach Motion")]
+        [SerializeField, Min(0f)] private float approachAcceleration = 10f;
+        [SerializeField, Min(0f)] private float approachDeceleration = 16f;
+        [SerializeField, Min(0f)] private float attackRangeSlowdownDistance = 0.75f;
+        [SerializeField, Range(0f, 1f)] private float minimumAttackRangeSpeedScale = 0.38f;
+        [SerializeField, Range(0f, 1f)] private float turnAlignmentSpeedFloor = 0.42f;
+
         [Header("Pre-Attack Reposition")]
         [SerializeField, Min(0f)] private float prepareSeconds;
         [SerializeField, Min(0f)] private float prepareRetreatSpeed;
@@ -113,6 +120,11 @@ namespace DimensionBrawl.AI
         public float ApproachSpeed => approachSpeed;
         public float TurnRateDegrees => turnRateDegrees;
         public float Gravity => gravity;
+        public float ApproachAcceleration => approachAcceleration;
+        public float ApproachDeceleration => approachDeceleration;
+        public float AttackRangeSlowdownDistance => attackRangeSlowdownDistance;
+        public float MinimumAttackRangeSpeedScale => minimumAttackRangeSpeedScale;
+        public float TurnAlignmentSpeedFloor => turnAlignmentSpeedFloor;
         public float PrepareSeconds => prepareSeconds;
         public float PrepareRetreatSpeed => prepareRetreatSpeed;
         public bool LockAttackDirectionAfterPrepare => lockAttackDirectionAfterPrepare;

@@ -13,7 +13,8 @@ Material:
   m_ModifiedSerializedProperties: 0
   m_ValidKeywords:
   - _SURFACE_TYPE_TRANSPARENT
-  m_InvalidKeywords: []
+  m_InvalidKeywords:
+  - _ALPHAPREMULTIPLY_ON
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
@@ -56,7 +57,7 @@ Material:
     - _ZWrite: 0
     m_Colors:
     - _BaseColor: {r: 1.37541, g: 2.6110861, b: 5.9507527, a: 1}
-    - _Color: {r: 1.37541, g: 2.6110861, b: 5.950753, a: 1}
+    - _Color: {r: 1.37541, g: 2.6110861, b: 5.9507527, a: 1}
   m_BuildTextureStacks: []
   m_AllowLocking: 1
 --- !u!114 &6993103004595687376

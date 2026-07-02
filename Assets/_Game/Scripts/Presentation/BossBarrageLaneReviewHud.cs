@@ -567,7 +567,9 @@ namespace DimensionBrawl.Presentation
             BossBasicFireProfile profile = bossBasicFireEmitter.FireProfile;
             string label = profile != null ? profile.ReadoutLabel : "-";
             string state = bossBasicFireEmitter.IsFiringEnabled
-                ? $"next {bossBasicFireEmitter.CooldownRemaining:0.0}s"
+                ? bossBasicFireEmitter.IsAutoFireSuppressed
+                    ? $"hold {bossBasicFireEmitter.AutoFireSuppressionRemaining:0.0}s"
+                    : $"next {bossBasicFireEmitter.CooldownRemaining:0.0}s"
                 : "off";
             return $"Boss Basic Fire {label}   {state}   shots {bossBasicFireEmitter.ActiveProjectileCount} "
                 + $"volley {bossBasicFireEmitter.LastVolleyProjectileCount} "

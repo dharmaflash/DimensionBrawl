@@ -20,6 +20,7 @@ MonoBehaviour:
     ActorLifetimeSeconds: 0
     ActorScale: 2.07
     ActorRoleId: EscortProbe
+    ActorPrefabOverride: {fileID: 0}
     ActorMaxHealth: 560
     ActorMoveSpeed: 3.2
     ActorAdvanceDistance: 2.4
@@ -36,6 +37,7 @@ MonoBehaviour:
     ActorLifetimeSeconds: 0
     ActorScale: 2.52
     ActorRoleId: PressureScreen
+    ActorPrefabOverride: {fileID: 0}
     ActorMaxHealth: 820
     ActorMoveSpeed: 3.6
     ActorAdvanceDistance: 3.8
@@ -50,18 +52,19 @@ MonoBehaviour:
     LateralOffset: 2
     EntryHeight: 0.2
     ActorLifetimeSeconds: 0
-    ActorScale: 3.06
-    ActorRoleId: ClampGuard
+    ActorScale: 2.48
+    ActorRoleId: LaserSoldier
+    ActorPrefabOverride: {fileID: 630318517341027331, guid: 371da9ae1f247be4a93dd5ccdd5c4e6d, type: 3}
     ActorMaxHealth: 1180
     ActorMoveSpeed: 4
-    ActorAdvanceDistance: 5.2
-    ActorAdvanceSeconds: 2.35
-    ActorEngageRadius: 1.5
-    ActorAttackDamagePerSecond: 88
-    ActorAttackIntervalSeconds: 0.9
-    ScreenIntercepts: 8
-    ScreenRadius: 1.95
-    ScreenLifetimeSeconds: 4.8
+    ActorAdvanceDistance: 4.4
+    ActorAdvanceSeconds: 2.05
+    ActorEngageRadius: 1.15
+    ActorAttackDamagePerSecond: 58
+    ActorAttackIntervalSeconds: 0.12
+    ScreenIntercepts: 0
+    ScreenRadius: 1.15
+    ScreenLifetimeSeconds: 0.2
   tierReadouts:
   - TierLabel: LV1 Escort Probe
     StageRole: Low-cost boss proxy that holds the lane long enough for the player
@@ -77,10 +80,10 @@ MonoBehaviour:
       the screen before the next boss pattern layers on top.
     SummonRead: Use SummonSlot1 or Vanguard support to absorb the curtain and reopen
       ranged punish time.
-  - TierLabel: LV3 Clamp Guard
-    StageRole: High-cost boss proxy that punishes overextension and demands a committed
-      high-tier answer or retreat.
-    PlayerRead: Back off from forward-risk lanes unless a summon answer is already
-      charged.
-    SummonRead: A saved LV2/LV3 summon should create a visible pressure-break window
-      before counterfire.
+  - TierLabel: LV3 Laser Soldier
+    StageRole: High-cost boss laser summon that creates a dodgeable line threat instead
+      of another pressure screen.
+    PlayerRead: Read the thin line, dodge after the aim locks, then punish during
+      the rifleman's recovery.
+    SummonRead: Boss laser soldier repositions, draws a cyan warning line, locks
+      aim, then fires a short ticking beam.
