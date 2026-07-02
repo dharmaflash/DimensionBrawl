@@ -156,7 +156,7 @@ namespace DimensionBrawl.Tests
             "Assets/_Game/Art/Animations/Player/CombatGirlSwordShield/DB_CombatGirl_ActionFoundation.controller";
         private const string LaneRootName = "BossBarrageLaneReview_SummonLaneSpace";
         private const string BossRootName = "BossBarrageLaneReview_BossProxy_NeedleLock";
-        private const string BossHumanoidVisualName = "BossBarrageLaneReview_HumanoidBossVisual_SummonCallerElite";
+        private const string BossHumanoidVisualName = "BossBarrageLaneReview_HumanoidBossVisual_SciFiSoldier01Commando";
         private const string RangedPlayerVisualRootName = "BossBarrageLaneReview_RangedVisual_Inori";
         private const string RangedPlayerWeaponName = "BossBarrageLaneReview_RangedWeapon_Rifle";
         private const string MeleePlayerWeaponRootName = "BossBarrageLaneReview_MeleeWeapons_CombatGirlSwordShield";
@@ -6417,8 +6417,9 @@ namespace DimensionBrawl.Tests
         {
             CombatVfxCueProfile profile = LoadAsset<CombatVfxCueProfile>(
                 "Assets/_Game/DesignData/Profiles/ActionFoundation/DB_CombatVfxCues_ActionFoundation.asset");
-            Assert.AreEqual(CombatVfxCuePlaybackMode.PlayerRangedOnly, profile.PlaybackMode);
+            Assert.AreEqual(CombatVfxCuePlaybackMode.ReviewedCombatFeedbackOnly, profile.PlaybackMode);
             Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.PlayerRangedMuzzleFlash));
+            Assert.IsTrue(profile.AllowsPlayback(CombatVfxCueId.EnemyHit));
             Assert.IsFalse(
                 profile.AllowsPlayback(CombatVfxCueId.PlayerRangedProjectileImpact),
                 "Player ranged projectile impact VFX should stay suppressed during the cleanup pass.");
@@ -6427,21 +6428,18 @@ namespace DimensionBrawl.Tests
                 CombatVfxCueId.PlayerRangedProjectileImpact,
                 "CueAssetVfx_MagicMissilesLightImpact",
                 "player ranged impact MagicMissiles overlay");
-            AssertCombatCueAssetOverlay(
+            AssertCombatCuePromotedParticlePrefab(
                 profile,
                 CombatVfxCueId.PlayerDamaged,
-                "CueAssetVfx_MagicMissilesLightImpact",
-                "player damaged MagicMissiles overlay");
-            AssertCombatCueAssetOverlay(
+                "player damaged Vefects hit reference");
+            AssertCombatCuePromotedParticlePrefab(
                 profile,
                 CombatVfxCueId.PlayerCritical,
-                "CueAssetVfx_MagicMissilesLightImpact",
-                "player critical MagicMissiles impact overlay");
-            AssertCombatCueAssetOverlay(
+                "player critical Vefects hit reference");
+            AssertCombatCuePromotedParticlePrefab(
                 profile,
                 CombatVfxCueId.EnemyHit,
-                "CueAssetVfx_MagicMissilesLightImpact",
-                "enemy hit MagicMissiles overlay");
+                "enemy hit Vefects impact");
             AssertCombatCueAssetOverlay(
                 profile,
                 CombatVfxCueId.EnemyDeath,
@@ -6487,11 +6485,10 @@ namespace DimensionBrawl.Tests
                 CombatVfxCueId.PocketCleared,
                 "CueAssetVfx_MagicMissilesSummonState",
                 "pocket clear MagicMissiles overlay");
-            AssertCombatCueAssetOverlay(
+            AssertCombatCuePromotedParticlePrefab(
                 profile,
                 CombatVfxCueId.PocketFailed,
-                "CueAssetVfx_MagicMissilesLightImpact",
-                "pocket fail MagicMissiles impact overlay");
+                "pocket fail Vefects hit reference");
             AssertDistinctCombatCuePrefabs(
                 profile,
                 CombatVfxCueId.EliteSummonSignal,
@@ -6546,6 +6543,17 @@ namespace DimensionBrawl.Tests
             Assert.IsTrue(profile.TryGetCue(cueId, out CombatVfxCue cue), $"{cueId} should exist.");
             Assert.IsNotNull(cue.Prefab, $"{cueId} should keep a cue prefab.");
             AssertPromotedParticleVfx(cue.Prefab.transform.Find(childName), label, 1);
+            AssertGameOwnedAsset(cue.Prefab, $"{cueId} cue prefab");
+        }
+
+        private static void AssertCombatCuePromotedParticlePrefab(
+            CombatVfxCueProfile profile,
+            CombatVfxCueId cueId,
+            string label)
+        {
+            Assert.IsTrue(profile.TryGetCue(cueId, out CombatVfxCue cue), $"{cueId} should exist.");
+            Assert.IsNotNull(cue.Prefab, $"{cueId} should keep a cue prefab.");
+            AssertPromotedParticleVfx(cue.Prefab.transform, label, 1);
             AssertGameOwnedAsset(cue.Prefab, $"{cueId} cue prefab");
         }
 

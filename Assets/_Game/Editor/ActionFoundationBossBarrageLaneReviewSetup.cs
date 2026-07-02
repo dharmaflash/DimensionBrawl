@@ -271,7 +271,7 @@ namespace DimensionBrawl.Editor
         private const float CloseThreatBodyHitboxRadius = 0.68f;
         private static readonly Vector3 CloseThreatBodyHitboxCenter = new Vector3(0f, 1f, 0f);
         private const string BossTelegraphRootName = ReviewRootPrefix + "BossBarrageTelegraphMarkers";
-        private const string BossProxyHumanoidVisualName = ReviewRootPrefix + "HumanoidBossVisual_SummonCallerElite";
+        private const string BossProxyHumanoidVisualName = ReviewRootPrefix + "HumanoidBossVisual_SciFiSoldier01Commando";
         private const string CinematicSupportDragonRootName = ReviewRootPrefix + "CinematicSupportDragon_Volcano";
         private const string RangedPlayerVisualRootName = ReviewRootPrefix + "RangedVisual_Inori";
         private const string RetiredRifleGirlRangedPlayerVisualRootName = ReviewRootPrefix + "RangedVisual_RifleGirl";
@@ -402,6 +402,33 @@ namespace DimensionBrawl.Editor
         {
             EnsureBossBarrageLaneReviewScene();
             Debug.Log("Reapplied ActionFoundation boss barrage lane review scene.");
+        }
+
+        [MenuItem("DimensionBrawl/Patch Action Foundation Boss Barrage Boss Commando Visual")]
+        public static void PatchBossBarrageLaneReviewBossCommandoVisualMenu()
+        {
+            PatchBossBarrageLaneReviewBossCommandoVisual();
+            Debug.Log("Patched ActionFoundation boss barrage boss visual to SciFiSoldier01 Commando.");
+        }
+
+        public static void PatchBossBarrageLaneReviewBossCommandoVisual()
+        {
+            Scene scene = EditorSceneManager.OpenScene(ReviewScenePath, OpenSceneMode.Single);
+            GameObject bossProxy = RequireRoot(scene, BossProxyRootName);
+            ReplaceBossProxyHumanoidVisual(bossProxy);
+
+            BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossProxy, "boss barrage emitter");
+            BossPressureActionDirector bossPressureActionDirector =
+                RequireComponent<BossPressureActionDirector>(bossProxy, "boss pressure action director");
+            ConfigureBossProxyVisualCueDriver(bossProxy, emitter, bossPressureActionDirector);
+
+            PlayerMovementController player = RequireObject<PlayerMovementController>(scene, "player movement");
+            CombatVfxCuePlayer playerCuePlayer =
+                RequireComponent<CombatVfxCuePlayer>(player.gameObject, "player combat VFX cue player");
+            ConfigureBossProxyWorldVfxCueDriver(bossProxy, playerCuePlayer, player.transform);
+
+            EditorSceneManager.MarkSceneDirty(scene);
+            EditorSceneManager.SaveScene(scene);
         }
 
         [MenuItem("DimensionBrawl/Refresh Action Foundation Boss Barrage Lane Review Ambient Audio")]
@@ -2407,15 +2434,6 @@ namespace DimensionBrawl.Editor
                 loopParticles: false);
             EnsureCombatCueAssetOverlay(
                 profile,
-                CombatVfxCueId.EnemyHit,
-                "CueAssetVfx_MagicMissilesLightImpact",
-                ImportedMagicMissilesLightImpactPrefabPath,
-                new Vector3(0f, 0.1f, 0f),
-                Vector3.zero,
-                Vector3.one * 0.34f,
-                loopParticles: false);
-            EnsureCombatCueAssetOverlay(
-                profile,
                 CombatVfxCueId.EnemyDeath,
                 "CueAssetVfx_MagicMissilesDeathBurst",
                 ImportedMagicMissilesDeathImpactPrefabPath,
@@ -3686,22 +3704,47 @@ namespace DimensionBrawl.Editor
 
         private static void CreateBossProxyVisual(Transform parent)
         {
+            RemoveBossProxyHumanoidVisualChildren(parent);
             CreateHumanoidBossProxyVisual(parent);
             CreateBossProjectileCore(parent);
+        }
+
+        private static void ReplaceBossProxyHumanoidVisual(GameObject bossProxy)
+        {
+            if (bossProxy == null)
+            {
+                throw new ArgumentNullException(nameof(bossProxy));
+            }
+
+            RemoveBossProxyHumanoidVisualChildren(bossProxy.transform);
+            CreateHumanoidBossProxyVisual(bossProxy.transform);
+        }
+
+        private static void RemoveBossProxyHumanoidVisualChildren(Transform parent)
+        {
+            for (int i = parent.childCount - 1; i >= 0; i--)
+            {
+                Transform child = parent.GetChild(i);
+                if (child != null
+                    && child.name.StartsWith(ReviewRootPrefix + "HumanoidBossVisual_", StringComparison.Ordinal))
+                {
+                    UnityEngine.Object.DestroyImmediate(child.gameObject);
+                }
+            }
         }
 
         private static void CreateHumanoidBossProxyVisual(Transform parent)
         {
             CombatEnemyRoleCandidateProfile candidate = LoadAsset<CombatEnemyRoleCandidateProfile>(
-                ActionFoundationEnemyRoleCandidateSetup.SummonCallerEliteCandidateProfilePath);
+                ActionFoundationEnemyRoleCandidateSetup.LineCasterCandidateProfilePath);
             string rolePrefabPath = AssetDatabase.GetAssetPath(candidate.RolePrefab).Replace('\\', '/');
             if (string.IsNullOrWhiteSpace(rolePrefabPath))
             {
-                throw new InvalidOperationException("SummonCallerElite boss candidate is missing its role prefab asset path.");
+                throw new InvalidOperationException("SciFiSoldier01 Commando boss candidate is missing its role prefab asset path.");
             }
 
             EnemyRoleVisualSpec visualSpec =
-                ActionFoundationEnemyRoleVisualSetup.CreateForRole("SciFiSoldier.Elite.SummonCaller");
+                ActionFoundationEnemyRoleVisualSetup.CreateForRole("SciFiSoldier.LineCaster");
             GameObject prefabContents = PrefabUtility.LoadPrefabContents(rolePrefabPath);
             try
             {
@@ -3717,7 +3760,7 @@ namespace DimensionBrawl.Editor
                 visual.transform.SetParent(parent, worldPositionStays: false);
                 visual.transform.localPosition = new Vector3(0f, -1.58f, 0f);
                 visual.transform.localRotation = Quaternion.identity;
-                visual.transform.localScale *= 1.18f;
+                visual.transform.localScale *= 1.22f;
             }
             finally
             {
@@ -7183,14 +7226,19 @@ namespace DimensionBrawl.Editor
         {
             CombatVfxCueProfile profile =
                 LoadAsset<CombatVfxCueProfile>(ActionFoundationCombatVfxSetup.CombatVfxCueProfilePath);
-            if (profile.PlaybackMode != CombatVfxCuePlaybackMode.PlayerRangedOnly)
+            if (profile.PlaybackMode != CombatVfxCuePlaybackMode.ReviewedCombatFeedbackOnly)
             {
-                throw new InvalidOperationException("Combat VFX cue profile should stay in cleanup playback mode.");
+                throw new InvalidOperationException("Combat VFX cue profile should allow only reviewed combat feedback cues.");
             }
 
             if (!profile.AllowsPlayback(CombatVfxCueId.PlayerRangedMuzzleFlash))
             {
                 throw new InvalidOperationException("Player ranged muzzle flash should stay enabled as the only reviewed gun VFX cue.");
+            }
+
+            if (!profile.AllowsPlayback(CombatVfxCueId.EnemyHit))
+            {
+                throw new InvalidOperationException("Enemy hit VFX should play in the reviewed combat feedback pass.");
             }
 
             if (profile.AllowsPlayback(CombatVfxCueId.PlayerRangedProjectileImpact))
@@ -7203,21 +7251,18 @@ namespace DimensionBrawl.Editor
                 CombatVfxCueId.PlayerRangedProjectileImpact,
                 "CueAssetVfx_MagicMissilesLightImpact",
                 "player ranged impact MagicMissiles overlay");
-            ValidateCombatCueAssetOverlay(
+            ValidateCombatCuePromotedParticlePrefab(
                 profile,
                 CombatVfxCueId.PlayerDamaged,
-                "CueAssetVfx_MagicMissilesLightImpact",
-                "player damaged MagicMissiles overlay");
-            ValidateCombatCueAssetOverlay(
+                "player damaged Vefects hit reference");
+            ValidateCombatCuePromotedParticlePrefab(
                 profile,
                 CombatVfxCueId.PlayerCritical,
-                "CueAssetVfx_MagicMissilesLightImpact",
-                "player critical MagicMissiles impact overlay");
-            ValidateCombatCueAssetOverlay(
+                "player critical Vefects hit reference");
+            ValidateCombatCuePromotedParticlePrefab(
                 profile,
                 CombatVfxCueId.EnemyHit,
-                "CueAssetVfx_MagicMissilesLightImpact",
-                "enemy hit MagicMissiles overlay");
+                "enemy hit Vefects impact");
             ValidateCombatCueAssetOverlay(
                 profile,
                 CombatVfxCueId.EnemyDeath,
@@ -7262,6 +7307,21 @@ namespace DimensionBrawl.Editor
             }
 
             ValidatePromotedParticleVfx(cue.Prefab.transform.Find(childName), label, 1);
+            string prefabPath = AssetDatabase.GetAssetPath(cue.Prefab).Replace('\\', '/');
+            ValidateNoImportedAssetReference(prefabPath);
+        }
+
+        private static void ValidateCombatCuePromotedParticlePrefab(
+            CombatVfxCueProfile profile,
+            CombatVfxCueId cueId,
+            string label)
+        {
+            if (!profile.TryGetCue(cueId, out CombatVfxCue cue) || cue.Prefab == null)
+            {
+                throw new InvalidOperationException($"Boss barrage combat cue profile is missing {cueId}.");
+            }
+
+            ValidatePromotedParticleVfx(cue.Prefab.transform, label, 1);
             string prefabPath = AssetDatabase.GetAssetPath(cue.Prefab).Replace('\\', '/');
             ValidateNoImportedAssetReference(prefabPath);
         }
@@ -8896,7 +8956,7 @@ namespace DimensionBrawl.Editor
             Animator animator = visual.GetComponent<Animator>();
             if (animator == null || animator.runtimeAnimatorController == null)
             {
-                throw new InvalidOperationException($"{BossProxyHumanoidVisualName} should keep the promoted SummonCaller Animator.");
+                throw new InvalidOperationException($"{BossProxyHumanoidVisualName} should keep the promoted SciFiSoldier01 Commando Animator.");
             }
 
             ValidateGameOwnedAsset(animator.runtimeAnimatorController, $"{BossProxyHumanoidVisualName} Animator Controller");
