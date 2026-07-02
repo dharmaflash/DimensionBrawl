@@ -620,7 +620,7 @@ namespace DimensionBrawl.Editor
                 new CueDefinition(CombatVfxCueId.PlayerRangedProjectileImpact, prefabs.PlayerRangedProjectileImpact, new Vector3(0f, 0.04f, 0f), Vector3.zero, new Vector3(0.9f, 0.9f, 0.9f), 0.46f, false, true),
                 new CueDefinition(CombatVfxCueId.EnemyWindup, prefabs.EnemyWindup, Vector3.zero, Vector3.zero, Vector3.one, 0.55f, true, true),
                 new CueDefinition(CombatVfxCueId.EnemyAttackActive, prefabs.EnemyAttackActive, new Vector3(0f, 0f, 0.7f), Vector3.zero, Vector3.one, 0.28f, false, true),
-                new CueDefinition(CombatVfxCueId.EnemyHit, prefabs.EnemyHit, new Vector3(0f, 0.08f, 0f), Vector3.zero, new Vector3(0.72f, 0.72f, 0.72f), 0.24f, false, true),
+                new CueDefinition(CombatVfxCueId.EnemyHit, prefabs.EnemyHit, new Vector3(0f, 0.1f, 0f), Vector3.zero, Vector3.one, 0.32f, false, true),
                 new CueDefinition(CombatVfxCueId.EnemyDeath, prefabs.EnemyDeath, new Vector3(0f, 0.05f, 0f), Vector3.zero, new Vector3(1.25f, 1f, 1.25f), 0.82f, false, false),
                 new CueDefinition(CombatVfxCueId.EliteSignal, prefabs.EliteShield, new Vector3(0f, 0.1f, 0f), Vector3.zero, Vector3.one, 0.65f, true, false),
                 new CueDefinition(CombatVfxCueId.EnemyClosePunishWindup, prefabs.ClosePunishWindup, Vector3.zero, Vector3.zero, Vector3.one, 0.52f, true, true),
@@ -789,7 +789,6 @@ namespace DimensionBrawl.Editor
                 RemoveColliders(root);
                 DisableVfxAudioSources(root);
                 ConfigurePromotedHitFeedbackParticles(root);
-                SuppressPromotedHitFeedbackCore(root);
                 RemapPromotedHitFeedbackRenderers(root);
 
                 Renderer[] renderers = root.GetComponentsInChildren<Renderer>(includeInactive: true);
@@ -847,40 +846,6 @@ namespace DimensionBrawl.Editor
                 ParticleSystem.EmissionModule emission = particleSystem.emission;
                 emission.enabled = true;
                 particleSystem.Clear(withChildren: true);
-                EditorUtility.SetDirty(particleSystem);
-            }
-        }
-
-        private static void SuppressPromotedHitFeedbackCore(GameObject root)
-        {
-            ParticleSystem[] particleSystems = root.GetComponentsInChildren<ParticleSystem>(includeInactive: true);
-            for (int i = 0; i < particleSystems.Length; i++)
-            {
-                ParticleSystem particleSystem = particleSystems[i];
-                if (particleSystem.name.IndexOf("Flipbook", StringComparison.OrdinalIgnoreCase) < 0)
-                {
-                    continue;
-                }
-
-                ParticleSystem.MainModule main = particleSystem.main;
-                main.startLifetime = new ParticleSystem.MinMaxCurve(0.14f);
-                main.startSize3D = true;
-                main.startSizeX = new ParticleSystem.MinMaxCurve(0.42f);
-                main.startSizeY = new ParticleSystem.MinMaxCurve(0.72f);
-                main.startSizeZ = new ParticleSystem.MinMaxCurve(0.42f);
-
-                ParticleSystem.EmissionModule emission = particleSystem.emission;
-                emission.rateOverTime = new ParticleSystem.MinMaxCurve(0f);
-                emission.SetBursts(new[] { new ParticleSystem.Burst(0f, 1) });
-
-                ParticleSystemRenderer particleRenderer = particleSystem.GetComponent<ParticleSystemRenderer>();
-                if (particleRenderer != null)
-                {
-                    particleRenderer.maxParticleSize = 0.35f;
-                    particleRenderer.lengthScale = 0.7f;
-                    EditorUtility.SetDirty(particleRenderer);
-                }
-
                 EditorUtility.SetDirty(particleSystem);
             }
         }
@@ -976,6 +941,7 @@ namespace DimensionBrawl.Editor
             }
 
             RemapImportedSerializedHitFeedbackTextures(material);
+            ReplacePromotedHitFeedbackCoreTexture(material);
             EditorUtility.SetDirty(material);
             AssetDatabase.SaveAssets();
             AssetDatabase.ImportAsset(targetPath, ImportAssetOptions.ForceUpdate);
@@ -2091,6 +2057,21 @@ namespace DimensionBrawl.Editor
 
             EditorUtility.SetDirty(material);
             return material;
+        }
+
+        private static void ReplacePromotedHitFeedbackCoreTexture(Material material)
+        {
+            Texture directionalMask = material.HasProperty("_MaskTexture")
+                ? material.GetTexture("_MaskTexture")
+                : null;
+            if (directionalMask == null)
+            {
+                return;
+            }
+
+            SetMaterialTextureIfPresent(material, "_MainTexture", directionalMask);
+            SetMaterialTextureIfPresent(material, "_MainTex", directionalMask);
+            SetMaterialTextureIfPresent(material, "_BaseMap", directionalMask);
         }
 
         private static Texture2D EnsurePromotedTexture(string sourcePath, string targetPath)
