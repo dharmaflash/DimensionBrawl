@@ -776,6 +776,73 @@ namespace DimensionBrawl.Tests
         }
 
         [Test]
+        public void CombatHitFeedbackCountsEnemyBodyFlashOnDamage()
+        {
+            GameObject enemyObject = new GameObject("Enemy");
+            GameObject bodyObject = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            try
+            {
+                bodyObject.name = "EnemyBody";
+                bodyObject.transform.SetParent(enemyObject.transform, worldPositionStays: false);
+                Renderer bodyRenderer = bodyObject.GetComponent<Renderer>();
+                Assert.IsNotNull(bodyRenderer);
+
+                CombatHealth enemyHealth = enemyObject.AddComponent<CombatHealth>();
+                enemyHealth.ConfigureTeam(DamageTeam.Enemy);
+                enemyHealth.ConfigureMaxHealth(100f);
+
+                CombatHitFeedback feedback = enemyObject.AddComponent<CombatHitFeedback>();
+                feedback.enabled = false;
+                SerializedObject serializedFeedback = new SerializedObject(feedback);
+                serializedFeedback.FindProperty("health").objectReferenceValue = enemyHealth;
+                SerializedProperty flashRenderers = serializedFeedback.FindProperty("flashRenderers");
+                flashRenderers.arraySize = 1;
+                flashRenderers.GetArrayElementAtIndex(0).objectReferenceValue = bodyRenderer;
+                serializedFeedback.FindProperty("renderHitFeedback").boolValue = true;
+                serializedFeedback.FindProperty("applyIdleColorOnEnable").boolValue = false;
+                serializedFeedback.ApplyModifiedPropertiesWithoutUndo();
+                feedback.enabled = true;
+
+                Assert.AreEqual(0, feedback.DamageFlashCount);
+                Assert.AreEqual(1, feedback.FlashRendererCount);
+
+                Assert.IsTrue(enemyHealth.TryApplyDamage(new DamageInfo(
+                    null,
+                    DamageTeam.Player,
+                    12f,
+                    enemyObject.transform.position,
+                    Vector3.forward,
+                    0f,
+                    DamageResponsePolicy.FlashOnly,
+                    CombatControlLockPolicy.None)));
+
+                Assert.AreEqual(
+                    1,
+                    feedback.DamageFlashCount,
+                    "Enemy body shader feedback should react to non-locking hit presentation events.");
+
+                Assert.IsTrue(enemyHealth.TryApplyDamage(new DamageInfo(
+                    null,
+                    DamageTeam.Player,
+                    4f,
+                    enemyObject.transform.position,
+                    Vector3.forward,
+                    0f,
+                    DamageResponsePolicy.DamageOnly,
+                    CombatControlLockPolicy.None)));
+
+                Assert.AreEqual(
+                    1,
+                    feedback.DamageFlashCount,
+                    "DamageOnly events should not request body hit flash presentation.");
+            }
+            finally
+            {
+                Object.DestroyImmediate(enemyObject);
+            }
+        }
+
+        [Test]
         public void EnergyRewardPulseCarriesOverflowIntoHigherTierReadiness()
         {
             GameObject playerObject = new GameObject("Player");

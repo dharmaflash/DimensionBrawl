@@ -1114,7 +1114,7 @@ namespace DimensionBrawl.Editor
                 RequireComponent<PlayerRangedAimController>(player.gameObject, "player ranged aim controller");
             PlayerRangedBasicAttackAction rangedBasicAttackAction =
                 RequireComponent<PlayerRangedBasicAttackAction>(player.gameObject, "player ranged basic attack action");
-            ValidatePlayerDamageShaderFeedback(scene, player.gameObject, playerHealth);
+            ValidatePlayerDamageShaderFeedback(scene, player.gameObject, playerHealth, closeThreat, closeThreatHealth);
             PlayerSkill1Action skill1Action = RequireComponent<PlayerSkill1Action>(player.gameObject, "player Skill1 action");
             PlayerSummonSlot1Action summonSlot1Action =
                 RequireComponent<PlayerSummonSlot1Action>(player.gameObject, "player SummonSlot1 action");
@@ -7497,7 +7497,9 @@ namespace DimensionBrawl.Editor
         private static void ValidatePlayerDamageShaderFeedback(
             Scene scene,
             GameObject player,
-            CombatHealth playerHealth)
+            CombatHealth playerHealth,
+            GameObject closeThreat,
+            CombatHealth closeThreatHealth)
         {
             CombatHitFeedback playerFeedback =
                 RequireComponent<CombatHitFeedback>(player, "player damage shader feedback");
@@ -7524,6 +7526,8 @@ namespace DimensionBrawl.Editor
                 }
             }
 
+            CombatHitFeedback closeThreatFeedback =
+                ValidateCloseThreatDamageShaderFeedback(closeThreat, closeThreatHealth);
             GameObject[] rootObjects = scene.GetRootGameObjects();
             for (int i = 0; i < rootObjects.Length; i++)
             {
@@ -7531,7 +7535,7 @@ namespace DimensionBrawl.Editor
                     rootObjects[i].GetComponentsInChildren<CombatHitFeedback>(includeInactive: true);
                 for (int j = 0; j < hitFeedbacks.Length; j++)
                 {
-                    if (hitFeedbacks[j] == playerFeedback)
+                    if (hitFeedbacks[j] == playerFeedback || hitFeedbacks[j] == closeThreatFeedback)
                     {
                         continue;
                     }
@@ -7539,6 +7543,38 @@ namespace DimensionBrawl.Editor
                     ValidateBool(hitFeedbacks[j], "renderHitFeedback", false);
                 }
             }
+        }
+
+        private static CombatHitFeedback ValidateCloseThreatDamageShaderFeedback(
+            GameObject closeThreat,
+            CombatHealth closeThreatHealth)
+        {
+            CombatHitFeedback feedback =
+                RequireComponent<CombatHitFeedback>(closeThreat, "close threat damage shader feedback");
+            ValidateObjectReference(feedback, "health", closeThreatHealth);
+            ValidateBool(feedback, "renderHitFeedback", true);
+            ValidateBool(feedback, "applyIdleColorOnEnable", false);
+            ValidateFloat(feedback, "flashSeconds", 0.12f);
+            ValidateColor(feedback, "hitColor", new Color(1f, 0.36f, 0.18f, 1f));
+
+            SerializedProperty flashRenderers =
+                RequireProperty(new SerializedObject(feedback), "flashRenderers");
+            if (!flashRenderers.isArray || flashRenderers.arraySize == 0)
+            {
+                throw new InvalidOperationException(
+                    "Close threat damage shader feedback should bind promoted enemy body renderers.");
+            }
+
+            for (int i = 0; i < flashRenderers.arraySize; i++)
+            {
+                if (flashRenderers.GetArrayElementAtIndex(i).objectReferenceValue is not Renderer)
+                {
+                    throw new InvalidOperationException(
+                        $"Close threat damage shader feedback renderer slot {i} should reference a Renderer.");
+                }
+            }
+
+            return feedback;
         }
 
         private static void ValidateLaneAmbientAudio(Scene scene)

@@ -28,8 +28,11 @@ namespace DimensionBrawl.Presentation
 
         private MaterialPropertyBlock propertyBlock;
         private Coroutine flashRoutine;
+        private int damageFlashCount;
 
         public bool RenderHitFeedback => renderHitFeedback;
+        public int FlashRendererCount => flashRenderers != null ? flashRenderers.Length : 0;
+        public int DamageFlashCount => damageFlashCount;
 
         private void Awake()
         {
@@ -84,6 +87,7 @@ namespace DimensionBrawl.Presentation
                 return;
             }
 
+            damageFlashCount++;
             if (flashRoutine != null)
             {
                 StopCoroutine(flashRoutine);

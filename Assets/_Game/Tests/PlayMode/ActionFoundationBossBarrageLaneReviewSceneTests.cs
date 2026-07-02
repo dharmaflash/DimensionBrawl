@@ -364,7 +364,12 @@ namespace DimensionBrawl.Tests
             AssertBossHumanoidVisual(bossRoot);
             GameObject closeThreatRoot = RequireRoot(CloseThreatRootName);
             CombatHealth closeThreatHealth = RequireComponent<CombatHealth>(closeThreatRoot, "close threat health");
-            AssertPlayerDamageShaderFeedback(player.gameObject, playerHealth);
+            AssertPlayerDamageShaderFeedback(player.gameObject, playerHealth, closeThreatRoot, closeThreatHealth);
+            EnemyCombatVfxCueDriver closeThreatVfxCueDriver =
+                RequireComponent<EnemyCombatVfxCueDriver>(closeThreatRoot, "close threat VFX cue driver");
+            Assert.IsTrue(
+                closeThreatVfxCueDriver.PlayDamageVfx,
+                "Close threat should keep EnemyHit VFX enabled alongside body shader feedback.");
             BossBarrageEmitter emitter = RequireComponent<BossBarrageEmitter>(bossRoot, "boss barrage emitter");
             BossBasicFireEmitter bossBasicFireEmitter =
                 RequireComponent<BossBasicFireEmitter>(bossRoot, "boss basic fire emitter");
@@ -6389,7 +6394,11 @@ namespace DimensionBrawl.Tests
             Assert.IsFalse(root.gameObject.activeSelf, $"{label} should not be active during the gameplay VFX cleanup pass.");
         }
 
-        private static void AssertPlayerDamageShaderFeedback(GameObject player, CombatHealth playerHealth)
+        private static void AssertPlayerDamageShaderFeedback(
+            GameObject player,
+            CombatHealth playerHealth,
+            GameObject closeThreat,
+            CombatHealth closeThreatHealth)
         {
             CombatHitFeedback playerFeedback =
                 RequireComponent<CombatHitFeedback>(player, "player damage shader feedback");
@@ -6414,12 +6423,25 @@ namespace DimensionBrawl.Tests
                     $"Player damage shader feedback slot {i} should reference a renderer.");
             }
 
+            CombatHitFeedback closeThreatFeedback =
+                RequireComponent<CombatHitFeedback>(closeThreat, "close threat damage shader feedback");
+            Assert.IsTrue(
+                closeThreatFeedback.RenderHitFeedback,
+                "Close threat should flash its promoted renderers when damaged.");
+            Assert.AreSame(closeThreatHealth, GetObjectReference<CombatHealth>(closeThreatFeedback, "health"));
+            Assert.IsFalse(GetBool(closeThreatFeedback, "applyIdleColorOnEnable"));
+            Assert.AreEqual(0.12f, GetFloat(closeThreatFeedback, "flashSeconds"), 0.001f);
+            Assert.Greater(
+                closeThreatFeedback.FlashRendererCount,
+                0,
+                "Close threat damage shader feedback should bind promoted enemy renderers.");
+
             CombatHitFeedback[] hitFeedbacks = Object.FindObjectsByType<CombatHitFeedback>(
                 FindObjectsInactive.Include,
                 FindObjectsSortMode.None);
             for (int i = 0; i < hitFeedbacks.Length; i++)
             {
-                if (hitFeedbacks[i] == playerFeedback)
+                if (hitFeedbacks[i] == playerFeedback || hitFeedbacks[i] == closeThreatFeedback)
                 {
                     continue;
                 }
